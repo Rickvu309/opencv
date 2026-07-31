@@ -1,4 +1,3 @@
-import { COPILOT_CAPTURE_CANDIDATE_ID } from "@/lib/data/track-record";
 import type { Nudge, WeeklyReviewScript } from "@/lib/types";
 
 // 6 nudges covering all four attention-queue families: opportunity (stale,
@@ -76,6 +75,8 @@ export const weeklyReviewScript: WeeklyReviewScript = {
     "Cascade AI was saved as a new opportunity, still waiting on a first Copilot read.",
     "Sent the Brightpath Bank thank-you note right after the final loop wrapped.",
   ],
+  connectedSourcesRecap:
+    "From your connected sources: Copilot scanned 9 emails this week and linked 7 threads to opportunities you're tracking.",
   observations: [
     {
       id: "review-observation-1",
@@ -93,7 +94,6 @@ export const weeklyReviewScript: WeeklyReviewScript = {
       why: "Every other active opportunity already has a suggested or accepted next action, this is the one exception right now.",
     },
   ],
-  captureCandidateId: COPILOT_CAPTURE_CANDIDATE_ID,
   suggestedFocus: [
     {
       id: "review-focus-1",

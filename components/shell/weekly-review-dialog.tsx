@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, Check, PartyPopper } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Mail, PartyPopper } from "lucide-react";
 
 import {
   Dialog,
@@ -14,8 +14,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { CopilotTag } from "@/components/shared/copilot-tag";
-import { buildCopilotCaptureCandidate } from "@/lib/data/track-record";
-import { today, useStore } from "@/lib/store";
+import { EvidenceChip } from "@/components/ai/evidence-chip";
+import { ConfirmCandidateDialog } from "@/components/track-record/confirm-candidate-dialog";
+import { emailEvidence } from "@/lib/data/sources";
+import { useStore } from "@/lib/store";
+import type { TrackRecordEntry } from "@/lib/types";
+
+// The 2 seeded, unconfirmed AI-drafted candidates Weekly Review's "worth
+// capturing" step reviews directly, each backed by its own grouped email
+// evidence.
+const WEEKLY_REVIEW_CANDIDATE_IDS = ["tre-11", "tre-12"];
 
 const STEP_TITLES = ["What moved", "What Copilot noticed", "Worth capturing", "Focus for next week"];
 const TOTAL_STEPS = STEP_TITLES.length;
@@ -34,7 +42,7 @@ export function WeeklyReviewDialog() {
     markWeeklyReviewViewed,
     acceptWeeklyReviewSuggestion,
     dismissWeeklyReviewSuggestion,
-    addTrackRecordEntry,
+    dismissTrackRecordCandidate,
   } = useStore();
   const { weeklyReview } = state;
   const open = state.weeklyReviewOpen;
@@ -49,14 +57,10 @@ export function WeeklyReviewDialog() {
     resetToFirstStep();
   }, [open]);
 
-  const candidatePreview = buildCopilotCaptureCandidate(today());
-  const candidateAdded = state.trackRecordEntries.some((entry) => entry.id === weeklyReview.captureCandidateId);
+  const captureCandidates = WEEKLY_REVIEW_CANDIDATE_IDS.map((id) =>
+    state.trackRecordEntries.find((entry) => entry.id === id)
+  ).filter((entry): entry is TrackRecordEntry => Boolean(entry));
   const isSummary = step > TOTAL_STEPS;
-
-  function handleAcceptCandidate() {
-    if (candidateAdded) return;
-    addTrackRecordEntry(buildCopilotCaptureCandidate(today()));
-  }
 
   function handleToggleSuggestion(id: string, suggestionState: string) {
     if (suggestionState === "accepted") {
@@ -90,11 +94,17 @@ export function WeeklyReviewDialog() {
 
         <div className="flex min-h-48 flex-col gap-4 text-sm">
           {step === 1 ? (
-            <ul className="list-disc space-y-1.5 pl-4 text-muted-foreground">
-              {weeklyReview.whatMoved.map((line) => (
-                <li key={line}>{line}</li>
-              ))}
-            </ul>
+            <div className="flex flex-col gap-3">
+              <ul className="list-disc space-y-1.5 pl-4 text-muted-foreground">
+                {weeklyReview.whatMoved.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+              <div className="flex items-start gap-2 rounded-lg border border-dashed border-border bg-muted/20 p-3">
+                <Mail className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground">{weeklyReview.connectedSourcesRecap}</p>
+              </div>
+            </div>
           ) : null}
 
           {step === 2 ? (
@@ -111,22 +121,53 @@ export function WeeklyReviewDialog() {
           {step === 3 ? (
             <div className="flex flex-col gap-3">
               <p className="text-xs text-muted-foreground">
-                One piece of evidence Copilot noticed from this week, worth capturing before it fades.
+                2 achievements Copilot noticed from your connected sources this week, worth capturing before they
+                fade.
               </p>
-              <div className="rounded-lg border border-border bg-muted/30 p-3">
-                <p className="font-medium text-foreground">{candidatePreview.title}</p>
-                <p className="mt-1 text-muted-foreground">{candidatePreview.story}</p>
-                <p className="mt-1 text-foreground">{candidatePreview.impact}</p>
-              </div>
-              {candidateAdded ? (
+              {captureCandidates.length === 0 ? (
                 <span className="inline-flex w-fit items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
                   <Check className="size-3.5" />
-                  Sent to your Track Record review inbox
+                  Both already reviewed
                 </span>
               ) : (
-                <Button size="sm" className="w-fit" onClick={handleAcceptCandidate}>
-                  Send to review inbox
-                </Button>
+                captureCandidates.map((entry) => {
+                  const evidence = emailEvidence.filter(
+                    (item) => item.mapsToType === "trackRecord" && item.mapsToId === entry.id
+                  );
+                  const confirmed = entry.status === "confirmed";
+                  return (
+                    <div key={entry.id} className="flex flex-col gap-2 rounded-lg border border-border bg-muted/30 p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="font-medium text-foreground">{entry.title}</p>
+                        <CopilotTag className="shrink-0" />
+                      </div>
+                      <p className="text-muted-foreground">{entry.story}</p>
+                      <p className="text-foreground">{entry.impact}</p>
+                      {evidence.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          {evidence.map((item) => (
+                            <EvidenceChip key={item.id} evidence={item} />
+                          ))}
+                        </div>
+                      ) : null}
+                      {confirmed ? (
+                        <span className="inline-flex w-fit items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                          <Check className="size-3.5" />
+                          Added to Track Record
+                        </span>
+                      ) : (
+                        <div className="flex gap-2 pt-0.5">
+                          <ConfirmCandidateDialog entry={entry}>
+                            <Button size="sm">Approve into Track Record</Button>
+                          </ConfirmCandidateDialog>
+                          <Button size="sm" variant="ghost" onClick={() => dismissTrackRecordCandidate(entry.id)}>
+                            Dismiss
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
               )}
             </div>
           ) : null}
