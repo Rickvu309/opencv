@@ -967,4 +967,42 @@ export const copilotScripts: CopilotSurfaceScript[] = [
       },
     ],
   },
+  {
+    surface: "Rewind",
+    suggestedPrompts: [
+      "Why these three candidates?",
+      "What happens once I save one?",
+      "What if I skip a carry-forward?",
+    ],
+    exchanges: [
+      {
+        id: "copilot-rewind-1",
+        prompt: "Why these three candidates?",
+        response: {
+          lead: "Each ties to one of this week's three theme clusters: Meridian Labs prep, the Halo Bank decision, and the AI review sync.",
+          points: [
+            { label: "Grounding", detail: "Every candidate carries the evidence chip it was drafted from, never a claim without a source." },
+            { label: "Your call", detail: "Nothing joins Track Record until you save it, and every field is editable first." },
+          ],
+        },
+      },
+      {
+        id: "copilot-rewind-2",
+        prompt: "What happens once I save one?",
+        response: {
+          lead: "It becomes a Track Record entry with the achievement depth attached: impact signals, the evidence it cites, and how it ties to your target direction.",
+          points: [{ label: "Where it shows up", detail: "Highlighted on the Track Record Highlights shelf, same object everywhere entries render." }],
+          handoff: { kind: "route", href: "/track-record", label: "Open Track Record" },
+        },
+      },
+      {
+        id: "copilot-rewind-3",
+        prompt: "What if I skip a carry-forward?",
+        response: {
+          lead: "Dismissing one just leaves it off next week's queue, nothing else changes.",
+          points: [{ label: "Accepting instead", detail: "Pins it to your Home attention queue, and adds a next action when it names one." }],
+        },
+      },
+    ],
+  },
 ];

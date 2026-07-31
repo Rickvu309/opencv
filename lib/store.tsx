@@ -32,6 +32,7 @@ import { planItems as seedPlanItems, plannerGapAnalyses as seedPlannerGapAnalyse
 import { insights as seedInsights } from "@/lib/data/insights";
 import { nextActions as seedNextActions } from "@/lib/data/actions";
 import { nudges as seedNudges, weeklyReviewScript } from "@/lib/data/nudges";
+import { rewindCandidates as seedRewindCandidates } from "@/lib/data/rewind";
 import { copilotScripts } from "@/lib/data/copilot-scripts";
 import { aiSignals as seedAiSignals } from "@/lib/data/ai-signals";
 import { connectedSources as seedConnectedSources } from "@/lib/data/sources";
@@ -66,6 +67,8 @@ import type {
   Priority,
   Profile,
   ProfilePreferences,
+  RewindCandidate,
+  RewindCandidateState,
   Skill,
   SourceEvidence,
   TrackRecordEntry,
@@ -118,6 +121,8 @@ export interface StoreState {
   weeklyReview: WeeklyReviewScript;
   weeklyReviewOpen: boolean;
   weeklyReviewViewedThisSession: boolean;
+  rewindCandidates: RewindCandidate[];
+  rewindViewedThisSession: boolean;
   onboarded: boolean;
   copilot: CopilotState;
   highlightedOpportunityId?: string;
@@ -152,6 +157,8 @@ const initialState: StoreState = {
   weeklyReview: weeklyReviewScript,
   weeklyReviewOpen: false,
   weeklyReviewViewedThisSession: false,
+  rewindCandidates: seedRewindCandidates,
+  rewindViewedThisSession: false,
   onboarded: false,
   copilot: {
     open: false,
@@ -254,6 +261,9 @@ type Action =
     }
   | { type: "SET_WEEKLY_REVIEW_OPEN"; open: boolean }
   | { type: "MARK_WEEKLY_REVIEW_VIEWED" }
+  | { type: "SAVE_REWIND_CANDIDATE"; candidateId: string; entry: TrackRecordEntry }
+  | { type: "SET_REWIND_CANDIDATE_STATE"; id: string; state: RewindCandidateState }
+  | { type: "MARK_REWIND_VIEWED" }
   | { type: "SET_PROFILE_SUMMARY"; summary: string }
   | { type: "SET_PROFILE_EXPERIENCE_ENTRY"; id: string; patch: Partial<Omit<ExperienceEntry, "id">> }
   | { type: "ADD_PROFILE_EXPERIENCE_ENTRY"; entry: ExperienceEntry }
@@ -971,6 +981,30 @@ function reducer(state: StoreState, action: Action): StoreState {
     case "MARK_WEEKLY_REVIEW_VIEWED":
       return { ...state, weeklyReviewViewedThisSession: true };
 
+    case "SAVE_REWIND_CANDIDATE": {
+      const exists = state.trackRecordEntries.some((entry) => entry.id === action.entry.id);
+      return {
+        ...state,
+        trackRecordEntries: exists
+          ? state.trackRecordEntries.map((entry) => (entry.id === action.entry.id ? action.entry : entry))
+          : [action.entry, ...state.trackRecordEntries],
+        rewindCandidates: state.rewindCandidates.map((candidate) =>
+          candidate.id === action.candidateId ? { ...candidate, state: "saved" } : candidate
+        ),
+      };
+    }
+
+    case "SET_REWIND_CANDIDATE_STATE":
+      return {
+        ...state,
+        rewindCandidates: state.rewindCandidates.map((candidate) =>
+          candidate.id === action.id ? { ...candidate, state: action.state } : candidate
+        ),
+      };
+
+    case "MARK_REWIND_VIEWED":
+      return { ...state, rewindViewedThisSession: true };
+
     case "SET_PROFILE_SUMMARY":
       return { ...state, profile: { ...state.profile, summary: action.summary } };
 
@@ -1124,6 +1158,10 @@ interface StoreContextValue {
   openWeeklyReview: () => void;
   closeWeeklyReview: () => void;
   markWeeklyReviewViewed: () => void;
+  saveRewindCandidate: (candidateId: string, entry: TrackRecordEntry) => void;
+  dismissRewindCandidate: (id: string) => void;
+  deferRewindCandidate: (id: string) => void;
+  resetRewindCandidate: (id: string) => void;
   updateProfileSummary: (summary: string) => void;
   updateExperienceEntry: (id: string, patch: Partial<Omit<ExperienceEntry, "id">>) => void;
   addExperienceEntry: (entry: ExperienceEntry) => void;
@@ -1570,6 +1608,47 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: "MARK_WEEKLY_REVIEW_VIEWED" });
   }, []);
 
+  const saveRewindCandidate = useCallback(
+    (candidateId: string, entry: TrackRecordEntry) => {
+      dispatch({ type: "SAVE_REWIND_CANDIDATE", candidateId, entry });
+      dispatch({ type: "MARK_REWIND_VIEWED" });
+      toast.success("Added to Track Record", {
+        description: entry.title,
+        action: {
+          label: "Open",
+          onClick: () => router.push("/track-record"),
+        },
+      });
+    },
+    [router]
+  );
+
+  const dismissRewindCandidate = useCallback((id: string) => {
+    dispatch({ type: "SET_REWIND_CANDIDATE_STATE", id, state: "dismissed" });
+    dispatch({ type: "MARK_REWIND_VIEWED" });
+    toast("Not this one", {
+      action: {
+        label: "Undo",
+        onClick: () => dispatch({ type: "SET_REWIND_CANDIDATE_STATE", id, state: "pending" }),
+      },
+    });
+  }, []);
+
+  const deferRewindCandidate = useCallback((id: string) => {
+    dispatch({ type: "SET_REWIND_CANDIDATE_STATE", id, state: "deferred" });
+    dispatch({ type: "MARK_REWIND_VIEWED" });
+    toast("Deferred to next week's Rewind", {
+      action: {
+        label: "Undo",
+        onClick: () => dispatch({ type: "SET_REWIND_CANDIDATE_STATE", id, state: "pending" }),
+      },
+    });
+  }, []);
+
+  const resetRewindCandidate = useCallback((id: string) => {
+    dispatch({ type: "SET_REWIND_CANDIDATE_STATE", id, state: "pending" });
+  }, []);
+
   const updateProfileSummary = useCallback((summary: string) => {
     dispatch({ type: "SET_PROFILE_SUMMARY", summary });
     toast.success("Summary saved");
@@ -1713,6 +1792,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       openWeeklyReview,
       closeWeeklyReview,
       markWeeklyReviewViewed,
+      saveRewindCandidate,
+      dismissRewindCandidate,
+      deferRewindCandidate,
+      resetRewindCandidate,
       updateProfileSummary,
       updateExperienceEntry,
       addExperienceEntry,
@@ -1787,6 +1870,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       openWeeklyReview,
       closeWeeklyReview,
       markWeeklyReviewViewed,
+      saveRewindCandidate,
+      dismissRewindCandidate,
+      deferRewindCandidate,
+      resetRewindCandidate,
       updateProfileSummary,
       updateExperienceEntry,
       addExperienceEntry,

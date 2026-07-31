@@ -2,8 +2,9 @@
 
 import { PlannerPage } from "@/components/shell/planner-page";
 import { WeekStoryBand } from "@/components/rewind/week-story-band";
+import { WorthKeepingSection } from "@/components/rewind/worth-keeping-section";
 import { rewindWeekStory } from "@/lib/data/rewind";
-import { useCopilotSurface } from "@/lib/store";
+import { useCopilotSurface, useStore } from "@/lib/store";
 
 /**
  * Rewind (RDS-980): the connected weekly review, promoted from a 4-step
@@ -12,6 +13,7 @@ import { useCopilotSurface } from "@/lib/store";
  */
 export default function RewindPage() {
   useCopilotSurface("Rewind");
+  const { state } = useStore();
 
   return (
     <PlannerPage
@@ -19,7 +21,7 @@ export default function RewindPage() {
       description="The story of your week, and what's worth keeping."
       band={<WeekStoryBand story={rewindWeekStory} />}
     >
-      {null}
+      <WorthKeepingSection candidates={state.rewindCandidates} skills={state.skills} />
     </PlannerPage>
   );
 }

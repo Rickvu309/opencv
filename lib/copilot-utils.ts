@@ -25,6 +25,7 @@ const CONTEXT_CHIP_CATEGORY: Record<string, string> = {
   "Track Record": "Track Record",
   Goals: "Goals",
   "Skills & Learning": "Skills",
+  Rewind: "Rewind",
 };
 
 /** Builds the panel header's context chip text, for example "Opportunity: AI Product Designer at Metriq" or plain "Skills" on an index page. */

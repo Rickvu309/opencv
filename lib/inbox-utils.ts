@@ -27,6 +27,11 @@ interface InboxSourceState {
   inboxItemLinks: Record<string, InboxItemLink>;
 }
 
+/** Every seeded evidence item, email and meeting notes combined, regardless of live connection status. Backs lookups by id for surfaces (Rewind, the old candidate scripts) that cite specific evidence directly rather than through the live inbox. */
+export function findEvidenceById(id: string): SourceEvidence | undefined {
+  return [...emailEvidence, ...meetingNoteEvidence].find((evidence) => evidence.id === id);
+}
+
 /** The subject line or meeting title, whichever this evidence kind carries. */
 export function evidenceTitle(evidence: SourceEvidence): string {
   return evidence.kind === "email" ? evidence.subject : evidence.title;

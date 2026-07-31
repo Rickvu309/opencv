@@ -6,14 +6,19 @@ import { Rewind } from "lucide-react";
 import { CopilotTag } from "@/components/shared/copilot-tag";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useStore } from "@/lib/store";
 
 /**
  * Home's prompt into Rewind, the connected weekly review promoted to its own
  * route. Unlike the dialog it replaced, this is a plain link: Rewind is a
- * full surface you land on and can revisit, not a one-shot flow to finish
- * before the banner disappears.
+ * full surface you land on and can revisit. The banner quiets down once
+ * you've made at least one decision there this session.
  */
 export function RewindBanner() {
+  const { state } = useStore();
+
+  if (state.rewindViewedThisSession) return null;
+
   return (
     <Card className="ring-foreground/8 bg-indigo-50/40 dark:bg-indigo-500/5">
       <CardContent className="flex items-center justify-between gap-4">

@@ -1,4 +1,4 @@
-import type { RewindWeekStory } from "@/lib/types";
+import type { RewindCandidate, RewindWeekStory } from "@/lib/types";
 
 // Rewind (RDS-980): the connected weekly review as a full route. This file
 // holds the current week's seed content: the top-band story first, with
@@ -55,3 +55,100 @@ export const rewindWeekStory: RewindWeekStory = {
     },
   ],
 };
+
+// ---------------------------------------------------------------------------
+// "Worth keeping": 3 evidence-backed candidates, one per theme cluster
+// above, each with the strict Observed, Read, Proposed anatomy (Miller's
+// Law: 3 candidates, never more per glance). Candidate 3 reuses tre-11, the
+// existing drafted Track Record candidate from this same underlying event,
+// rather than forking a second object for it: saving confirms that entry in
+// place with the new achievement depth added. Candidates 1 and 2 are net
+// new, saving creates a fresh TrackRecordEntry at targetEntryId.
+// ---------------------------------------------------------------------------
+
+export const rewindCandidates: RewindCandidate[] = [
+  {
+    id: "rewind-candidate-1",
+    targetEntryId: "tre-rewind-1",
+    date: "2026-07-31",
+    evidenceTag: "Artifact",
+    observed: {
+      activityLine:
+        "Jordan Ellis asked for a ten-minute case-study walkthrough instead of open Q&A, two days before Thursday's panel, and rehearsed it twice in a prep call with Linh Vu the same week.",
+      evidenceIds: ["email-meridian-recruiter", "meeting-panel-prep"],
+    },
+    read: {
+      interpretation:
+        "Reworking panel prep around a late format change, calmly and with time to spare, reads as evaluation-under-pressure skill, not just interview prep.",
+      tag: "Adaptability",
+    },
+    proposed: {
+      title: "Reworked Meridian Labs panel prep around a late format change",
+      impactLine: "Walked into Thursday's panel round with the case-study walkthrough tightened across 2 prep passes.",
+      impactSignals: [
+        { kind: "scope", label: "Live panel round, senior-level loop" },
+        { kind: "metric", label: "2 prep passes before the deadline" },
+      ],
+      skillIds: ["skill-5", "skill-9"],
+      pathRelevance:
+        "Direct evidence for landing a senior or staff AI product design role, the strongest active loop in that lane.",
+    },
+    state: "pending",
+  },
+  {
+    id: "rewind-candidate-2",
+    targetEntryId: "tre-rewind-2",
+    date: "2026-07-29",
+    evidenceTag: "Reference quote",
+    observed: {
+      activityLine:
+        "Thao Bui asked for a Friday call to confirm start-date flexibility as Halo Bank's decision neared, the same week Linh Vu pushed back on rushing into the design-lead title.",
+      evidenceIds: ["email-brightpath-scheduling", "meeting-mentor-conversation"],
+    },
+    read: {
+      interpretation:
+        "Treating a live leadership offer as a real decision instead of an automatic yes shows the same judgment a staff-level panel would want to see.",
+      tag: "Strategic judgment",
+    },
+    proposed: {
+      title: "Weighed the Halo Bank leadership track against the AI-forward direction",
+      impactLine: "Held the decision open through 1 mentor conversation and Halo Bank's Friday follow-up call, instead of defaulting to the title.",
+      impactSignals: [
+        { kind: "scope", label: "Senior leadership decision, three-person team" },
+        { kind: "recognition", label: "Mentor pushback taken seriously, not dismissed" },
+      ],
+      skillIds: ["skill-8", "skill-9"],
+      pathRelevance:
+        "Direct evidence for growing into people leadership, the exact tension between IC depth and a first management role.",
+    },
+    state: "pending",
+  },
+  {
+    id: "rewind-candidate-3",
+    targetEntryId: "tre-11",
+    date: "2026-07-28",
+    evidenceTag: "Artifact",
+    observed: {
+      activityLine:
+        "Defined checks for when the underwriting assistant should flag a low-confidence case for human review, working through edge cases with the data science team until the rule held up.",
+      evidenceIds: ["email-trackrecord-heuristic"],
+    },
+    read: {
+      interpretation:
+        "A heuristic the data science team is already citing in this week's model review reads as production-proven judgment, not just a good idea.",
+      tag: "AI craft",
+    },
+    proposed: {
+      title: "Drafted the credibility-check heuristic used in this week's AI review",
+      impactLine: "Heuristic is already referenced in this week's model review notes.",
+      impactSignals: [
+        { kind: "scope", label: "Adopted into this week's model review process" },
+        { kind: "recognition", label: "Already cited by the data science team" },
+      ],
+      skillIds: ["skill-5", "skill-6"],
+      pathRelevance:
+        "Direct evidence for landing a senior or staff AI product design role, closing the AI and ML literacy gap with a shipped judgment call, not just coursework.",
+    },
+    state: "pending",
+  },
+];

@@ -193,6 +193,22 @@ export interface TrackRecordEntry {
   whySuggested?: string;
   /** Candidate-only: a hint at what evidence would back the draft once confirmed. */
   evidenceHint?: string;
+  /** Achievement depth (RDS-980): typed chips naming what kind of impact this entry proves. */
+  impactSignals?: ImpactSignal[];
+  /** Achievement depth: ids of the SourceEvidence items grounding this entry, shown as an evidence footer. */
+  sourceRefs?: string[];
+  /** Achievement depth: one line tying this entry to the target direction. */
+  pathRelevance?: string;
+  /** Achievement depth: flags this entry for the Track Record Highlights shelf. */
+  highlight?: boolean;
+}
+
+/** The three kinds of typed impact chip an achievement's proposed depth can carry. */
+export type ImpactSignalKind = "metric" | "scope" | "recognition";
+
+export interface ImpactSignal {
+  kind: ImpactSignalKind;
+  label: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -892,6 +908,47 @@ export interface RewindWeekStory {
   weekLabel: string;
   shapeOfWeek: string;
   clusters: RewindThemeCluster[];
+}
+
+export type RewindCandidateState = "pending" | "saved" | "dismissed" | "deferred";
+
+/** Beat 1 of a Rewind candidate: what happened, plus the evidence grounding it. */
+export interface RewindObserved {
+  activityLine: string;
+  evidenceIds: string[];
+}
+
+/** Beat 2: Copilot's one-line interpretation, tagged with a short category. */
+export interface RewindRead {
+  interpretation: string;
+  tag: string;
+}
+
+/** Beat 3: the drafted achievement, editable in full before it's saved. */
+export interface RewindProposedAchievement {
+  title: string;
+  impactLine: string;
+  impactSignals: ImpactSignal[];
+  skillIds: string[];
+  pathRelevance: string;
+}
+
+/**
+ * One evidence-backed candidate in Rewind's "Worth keeping" review: Observed,
+ * Read, Proposed, visually separated. Saving writes a TrackRecordEntry at
+ * targetEntryId, either confirming an existing candidate in place (the same
+ * id already sitting in Track Record's own review queue) or creating a
+ * fresh entry, never a second object for the same achievement.
+ */
+export interface RewindCandidate {
+  id: string;
+  targetEntryId: string;
+  date: string;
+  evidenceTag: string;
+  observed: RewindObserved;
+  read: RewindRead;
+  proposed: RewindProposedAchievement;
+  state: RewindCandidateState;
 }
 
 export interface CopilotSurfaceScript {
