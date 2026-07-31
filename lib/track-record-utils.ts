@@ -25,6 +25,23 @@ export function matchesSkillArea(entry: TrackRecordEntry, area: string | "all", 
   return entry.skillIds.some((skillId) => skills.find((skill) => skill.id === skillId)?.category === area);
 }
 
+export interface SkillAreaCoverage {
+  area: string;
+  count: number;
+}
+
+/**
+ * How many confirmed entries link to each skill area, in the same area
+ * order as findLinkedSkillAreas. Backs Track Record's coverage rail, a
+ * read-only echo of the filter row above the timeline.
+ */
+export function countEntriesBySkillArea(entries: TrackRecordEntry[], skills: Skill[]): SkillAreaCoverage[] {
+  return findLinkedSkillAreas(entries, skills).map((area) => ({
+    area,
+    count: entries.filter((entry) => matchesSkillArea(entry, area, skills)).length,
+  }));
+}
+
 export interface TrackRecordYearGroup {
   year: string;
   entries: TrackRecordEntry[];
