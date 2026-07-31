@@ -6,7 +6,6 @@ import type { ReactNode } from "react";
 import { AppSidebar } from "@/components/shell/sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { CopilotPanel } from "@/components/shell/copilot-panel";
-import { WeeklyReviewDialog } from "@/components/shell/weekly-review-dialog";
 import { useStore } from "@/lib/store";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
@@ -35,7 +34,6 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           {state.copilot.open ? <CopilotPanel /> : null}
         </div>
       </SidebarInset>
-      <WeeklyReviewDialog />
     </SidebarProvider>
   );
 }

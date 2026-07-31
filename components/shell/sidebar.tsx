@@ -4,13 +4,13 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Briefcase,
-  CalendarCheck,
   Compass,
   FileText,
   GraduationCap,
   History,
   Home,
   Inbox,
+  Rewind,
   RotateCcw,
   Route,
   Target,
@@ -54,6 +54,7 @@ const primaryNav: NavItem[] = [
   { label: "Home", href: "/home", icon: Home },
   { label: "Opportunities", href: "/opportunities", icon: Briefcase },
   { label: "Sources", href: "/sources", icon: Inbox },
+  { label: "Rewind", href: "/rewind", icon: Rewind },
 ];
 
 const careerMemoryNav: NavItem[] = [
@@ -98,7 +99,7 @@ function NavGroup({ items, isActive }: { items: NavItem[]; isActive: (href: stri
 export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { state, resetOnboarding, openWeeklyReview } = useStore();
+  const { state, resetOnboarding } = useStore();
 
   function restartSetup() {
     resetOnboarding();
@@ -143,9 +144,11 @@ export function AppSidebar() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Weekly Review" onClick={openWeeklyReview}>
-              <CalendarCheck />
-              <span>Weekly Review</span>
+            <SidebarMenuButton asChild tooltip="Rewind">
+              <Link href="/rewind">
+                <Rewind />
+                <span>Rewind</span>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>

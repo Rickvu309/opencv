@@ -7,8 +7,8 @@ import { AddOpportunityDialog } from "@/components/opportunities/add-opportunity
 import { AttentionQueue } from "@/components/home/attention-queue";
 import { GreetingBand } from "@/components/home/greeting-band";
 import { NextActionsCard } from "@/components/home/next-actions-card";
+import { RewindBanner } from "@/components/home/rewind-banner";
 import { StatTiles } from "@/components/home/stat-tiles";
-import { WeeklyReviewBanner } from "@/components/home/weekly-review-banner";
 import { Button } from "@/components/ui/button";
 import { getAttentionQueue } from "@/lib/nudge-utils";
 import { useCopilotSurface, useStore } from "@/lib/store";
@@ -37,7 +37,7 @@ export default function HomePage() {
 
       <StatTiles opportunities={state.opportunities} needsDecisionCount={needsDecisionCount} />
 
-      <WeeklyReviewBanner />
+      <RewindBanner />
 
       <AttentionQueue />
 

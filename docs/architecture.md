@@ -35,6 +35,7 @@ OpenPath (logo)
   Home                    /home
   Opportunities           /opportunities
   Sources                 /sources
+  Rewind                  /rewind
 CAREER MEMORY
   Profile                 /profile
   CV Versions             /cvs
@@ -44,7 +45,7 @@ DIRECTION
   Goals                   /goals
   Skills & Learning       /skills
 (bottom)
-  Weekly Review           opens review dialog
+  Rewind                  shortcut into /rewind, mirrors the primary nav item
   Demo Tour               opens tour dialog
   Connected sources       shortcut into /sources, compact status only
   Persona chip (Mai Tran)
@@ -55,6 +56,7 @@ Drill-downs:
 - /opportunities -> /opportunities/[id] (tabs: Overview, AI Analysis, Actions, Materials, Activity)
 - /cvs -> /cvs/[id]
 - /sources: connected tools hub plus the synced-context inbox, see section 7
+- /rewind: the connected weekly review as a full surface, see flow 9
 
 ### Page template system
 
@@ -65,7 +67,7 @@ Four layout components under `components/shell/` codify one frame rule set (cont
 | `DashboardPage` | max-w-6xl | Single column, no rail | /home |
 | `WorkspacePage` | max-w-[1600px] | Object listing, optional `band` and `rail` slots | /opportunities, /sources, /cvs, /track-record |
 | `DetailPage` | max-w-5xl | Primary column plus an optional quiet support rail (standardized to w-72, e.g. `CvMetaRail`, `CoverageRail`, Profile's three support cards) | /opportunities/[id], /cvs/[id], /profile |
-| `PlannerPage` | max-w-6xl | Single column, optional full-bleed `band` | /planner, /goals, /skills |
+| `PlannerPage` | max-w-6xl | Single column, optional full-bleed `band` | /planner, /goals, /skills, /rewind |
 
 `band` is full-bleed content directly under the header (edge to edge, no padding), for a top-of-page summary like `ProfileIdentityBand` or `DirectionBand`. It differs from a page's own inline summary band (`OpportunitySummaryBand`), which stays inside the padded content column since it was designed as a chip row, not a bleed panel.
 - /onboarding: full-screen flow shown on first run (store flag `onboarded`), skippable, ends at /home
@@ -84,7 +86,7 @@ Nine flows. Each must have one complete clickable path.
 6. Tailor materials: opportunity Materials tab -> link a CV version -> "Tailor for this role" -> AI suggestions per section -> accept or dismiss each -> creates a tailored CV version in /cvs.
 7. Capture track record: /track-record -> manual add, or review AI-drafted candidates (from recent activity) -> confirm or dismiss -> entry joins timeline and links to skills.
 8. Review direction: /goals gap analysis against target direction -> /skills gap map -> learning recommendations linked to goals -> accept a learning item to plan.
-9. Proactive loop: /home nudges (stale opportunity, capture prompt, high-potential flag) plus Weekly Review dialog: what happened, what changed, suggested focus -> each suggestion accepted, edited, or dismissed.
+9. Proactive loop: /home nudges (stale opportunity, capture prompt, high-potential flag) plus Rewind (RDS-980), the connected weekly review as a full route: the week's story, evidence-backed achievement candidates to review (save, edit, dismiss, defer), and carry-forwards into next week -> each proposal accepted, edited, or dismissed, nothing applies itself.
 
 AI helps inside every flow. It never auto-applies anything (see section 9).
 
@@ -95,7 +97,7 @@ AI helps inside every flow. It never auto-applies anything (see section 9).
 | Opportunity | role, company, status, fit level, priority, next action, Dream flag, source, salary range, location | /opportunities | change status, flag, open, archive | AiInsight, NextAction, CvVersion, Goal |
 | Profile | headline, summary, strengths, experience entries, preferences, target direction | /profile | edit sections, see "what AI uses" | everything |
 | CvVersion | name, base or tailored, linked opportunity, sections, last edit | /cvs | create, duplicate, tailor, link | Opportunity |
-| TrackRecordEntry | title, story, impact, date, evidence tag, skills | /track-record | add, confirm draft, edit, dismiss | Skill, Profile |
+| TrackRecordEntry | title, story, impact, date, evidence tag, skills, optional achievement depth (impact signals, source refs, path relevance, highlight flag) | /track-record | add, confirm draft, edit, dismiss | Skill, Profile, SourceEvidence |
 | Goal | title, why, target date, progress note, status | /goals | add, edit, mark progress | Opportunity, LearningItem |
 | Skill | name, level, target level, gap flag | /skills | adjust level, mark focus | TrackRecordEntry, LearningItem |
 | LearningItem | title, type (course, project, habit), effort, linked skill or goal | /skills | accept to plan, dismiss | Skill, Goal |
@@ -128,7 +130,7 @@ AI-native, source-connected, embedded first (RDS-975). The Copilot is one system
 
 1. embedded AI proposals, the default pattern: `components/ai/` (AiActionCard, EvidenceChip, EvidenceExtract, ReviewQueue, SaveBackConfirmation), used wherever AI proposes concrete work
 2. inline insight blocks inside pages (fit judgment, tailoring suggestions, drafted candidates)
-3. proactive surfaces (the Home attention queue mixes AiActionCards with legacy nudges, Weekly Review dialog)
+3. proactive surfaces (the Home attention queue mixes AiActionCards with legacy nudges, Rewind at /rewind)
 4. the right panel, now secondary deep help: Cmd+K and the header toggle still open it, but primary-level "Ask Copilot" CTAs are removed wherever an embedded surface already covers the job
 
 ### The five-beat pattern
@@ -193,3 +195,4 @@ Trust boundary, absolute rule: the AI drafts and suggests, the user accepts, edi
 - 17 sources model: section 7's connected-sources registry and evidence shape
 - RDS-977 sources workflow: section 3 nav (/sources), section 7's tools hub and synced-context inbox
 - RDS-982 path planner: section 3 nav (/planner, PlannerPage template), the strategic path-recommendation and staged-growth-plan workflow, ending at a chosen working path and a concrete plan rather than an insights page
+- RDS-980 Rewind: section 3 nav (/rewind, PlannerPage template), flow 9's connected weekly review promoted from a dialog to a full surface, and the TrackRecordEntry achievement depth (impactSignals, sourceRefs, pathRelevance, highlight) it writes into section 5's object model

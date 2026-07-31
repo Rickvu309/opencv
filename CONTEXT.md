@@ -12,7 +12,7 @@ Shared vocabulary for the OpenPath prototype. Use these exact terms in UI copy, 
 - **CV version**: one named CV. A **tailored** version is linked to a specific opportunity.
 - **Career memory**: the group of surfaces that persist beyond any application: Profile, CV Versions, Track Record.
 - **Direction**: the group of forward-looking surfaces: Goals, Skills & Learning.
-- **Nudge**: a proactive prompt on Home. **Weekly Review**: the recurring review dialog.
+- **Nudge**: a proactive prompt on Home. **Rewind**: the recurring connected weekly review, a full route at /rewind, not a dialog.
 - **Persona**: all seeded content belongs to Mai Tran, senior product designer in Ho Chi Minh City moving toward AI product work.
 
 Prototype rules that never bend: desktop web only, mock data only, scripted AI only, no persistence, shadcn/ui as the component base.
