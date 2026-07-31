@@ -873,6 +873,27 @@ export interface CopilotExchange {
   response: CopilotResponse;
 }
 
+// ---------------------------------------------------------------------------
+// Rewind: the connected weekly review as a full surface (RDS-980)
+// ---------------------------------------------------------------------------
+
+/** One compact theme cluster in the week's story: a handful of activity grouped under one label, product activity plus connected items. */
+export interface RewindThemeCluster {
+  id: string;
+  title: string;
+  productActivityCount: number;
+  connectedItemCount: number;
+  /** The underlying moments, one line each, shown once the cluster expands. */
+  moments: string[];
+}
+
+/** The top-band summary for one week of Rewind: a one-line shape of the week plus its theme clusters. */
+export interface RewindWeekStory {
+  weekLabel: string;
+  shapeOfWeek: string;
+  clusters: RewindThemeCluster[];
+}
+
 export interface CopilotSurfaceScript {
   surface: string;
   suggestedPrompts: string[];
