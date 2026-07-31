@@ -3,7 +3,9 @@ import type { AiSignal } from "@/lib/types";
 // 4 AI signal scenarios across 4 different opportunities, each grounded in
 // one seeded email from lib/data/sources.ts. Accepting any of these changes
 // real store state and logs Activity with the evidence, see
-// lib/store.tsx's APPROVE_AI_SIGNAL case.
+// lib/store/reducers/ai-signals-and-sources.ts's APPROVE_AI_SIGNAL case.
+// Surface: Home's attention queue ("Needs a decision"), /opportunities/[id]
+// Overview, both through components/ai/signal-card.tsx.
 export const aiSignals: AiSignal[] = [
   // Recruiter email proposes a new next action: Meridian Labs' recruiter
   // adds a new expectation for Thursday's panel, so the existing prep

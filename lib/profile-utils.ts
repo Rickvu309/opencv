@@ -1,7 +1,7 @@
 import type { Profile, TrackRecordEntry } from "@/lib/types";
 
 // Shared read-only helper for the Profile page's strength meter. Kept
-// separate from lib/store.tsx so the score always reads live off the
+// separate from lib/store/ so the score always reads live off the
 // current profile in state, with no separate percent to keep in sync.
 
 export interface ProfileStrengthCheck {

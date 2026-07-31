@@ -6,6 +6,7 @@ import type { RoadmapMilestone, RoadmapResource } from "@/lib/types";
 // res-<milestoneId>-<n>. Kept separate from lib/data/planner.ts because a
 // milestone reads across skills, plan items, and track record entries
 // rather than owning a flat list the way the growth plan stages do.
+// Surface: /roadmap.
 
 // ---------------------------------------------------------------------------
 // Orientation: the 2 strongest skills relevant to each scenario, shown in

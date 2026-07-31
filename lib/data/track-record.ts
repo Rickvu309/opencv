@@ -11,9 +11,8 @@ export const EVIDENCE_TAGS = [
   "Artifact",
 ] as const;
 
-export type EvidenceTag = (typeof EVIDENCE_TAGS)[number];
-
 // 10 confirmed entries plus 2 unconfirmed AI-drafted candidates.
+// Surface: /track-record.
 export const trackRecordEntries: TrackRecordEntry[] = [
   {
     id: "tre-1",
@@ -194,7 +193,7 @@ export const trackRecordEntries: TrackRecordEntry[] = [
 
 // The single scripted example of a next action, marked done on an
 // Interview-stage opportunity, seeding a new candidate into the review
-// inbox. Wired from lib/store.tsx's SET_NEXT_ACTION_STATE case.
+// inbox. Wired from lib/store/reducers/opportunities.ts's SET_NEXT_ACTION_STATE case.
 export const PANEL_PREP_TRIGGER_ACTION_ID = "action-3";
 export const PANEL_PREP_CANDIDATE_ID = "tre-panel-prep";
 

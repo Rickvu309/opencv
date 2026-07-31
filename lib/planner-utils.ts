@@ -2,7 +2,7 @@ import type { PathScenario, PlanItem, PlanStage } from "@/lib/types";
 
 // Shared read-only helpers for the Path Planner: resolving the working path,
 // grouping its growth plan by stage, and reading the pinned recommended next
-// move. Kept separate from lib/store.tsx so the planner page and its
+// move. Kept separate from lib/store/ so the planner page and its
 // sections stay thin and testable against plain data, the same split
 // lib/opportunity-utils.ts and lib/inbox-utils.ts already use.
 

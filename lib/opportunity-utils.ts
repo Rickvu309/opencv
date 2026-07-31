@@ -2,7 +2,7 @@ import type { ActivityMoment, FitLevel, NextAction, Nudge, Opportunity, Priority
 
 // Shared read-only helpers for the Opportunities workspace: staleness,
 // filtering, sorting, and the Focus strip's recommendation logic. Kept
-// separate from lib/store.tsx so the workspace page and its views can stay
+// separate from lib/store/ so the workspace page and its views can stay
 // thin and testable against plain data.
 
 export const STALE_DAYS = 14;

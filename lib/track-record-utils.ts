@@ -1,7 +1,7 @@
 import type { Skill, TrackRecordEntry } from "@/lib/types";
 
 // Shared read-only helpers for the Track Record timeline: skill-area
-// filtering and year grouping. Kept separate from lib/store.tsx so the page
+// filtering and year grouping. Kept separate from lib/store/ so the page
 // stays thin and testable against plain data.
 
 /**

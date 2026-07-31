@@ -16,9 +16,15 @@ export interface ObjectCardProps {
 }
 
 /**
- * Standard card anatomy shared by opportunity, CV, track record, goal, and
- * skill cards: title and subtitle, a chip row, optional meta line, an
- * optional corner action, and a body slot for anything object-specific.
+ * The navigate-away card anatomy (title and subtitle, a chip row, optional
+ * meta line, an optional corner action, a body slot): the whole card is a
+ * link to the object's own page. Used by CV Versions' list.
+ *
+ * Objects with a click-to-expand-in-place surface instead (Goals,
+ * Track Record, its candidate queue) don't fit this shape, since the whole
+ * card toggles inline detail rather than navigating; those share their own
+ * button-header-plus-chevron pattern (see GoalCard, TrackRecordEntryCard)
+ * instead of this component.
  */
 export function ObjectCard({ title, subtitle, href, chips, meta, action, children, className }: ObjectCardProps) {
   const content = (

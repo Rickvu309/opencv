@@ -5,6 +5,7 @@ import type { ConfidenceLevel, FitLevel, OpportunityStatus } from "@/lib/types";
 // and falls back to the first entry when nothing matches. Every sample
 // leaves one field unfilled on purpose, so the structured preview can show
 // a "Copilot suggests adding this" hint instead of an error.
+// Surface: components/opportunities/add-opportunity-dialog.tsx.
 export interface ParseSample {
   id: string;
   keywords: string[];

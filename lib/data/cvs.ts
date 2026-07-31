@@ -2,6 +2,7 @@ import type { CvVersion } from "@/lib/types";
 
 // 3 CV versions: Base CV, Product-lead CV, and one tailored version linked
 // to an Interview opportunity (Meridian Labs, opp-6).
+// Surface: /cvs, /cvs/[id].
 export const cvVersions: CvVersion[] = [
   {
     id: "cv-1",

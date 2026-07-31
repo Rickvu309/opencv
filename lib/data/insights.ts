@@ -4,6 +4,7 @@ import type { AiInsight } from "@/lib/types";
 // the three AI Analysis tab layers, interpretation, credibility, and fit.
 // Plus one tailoring insight for the opportunity with a linked tailored CV,
 // and gap insights for each skill flagged as a gap.
+// Surface: /opportunities/[id] (Overview, AI Analysis, Materials tabs), /skills.
 export const insights: AiInsight[] = [
   // --- opp-1: Solace AI ---------------------------------------------------
   {

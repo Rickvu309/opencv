@@ -4,6 +4,7 @@ import type { RewindArchivedWeek, RewindCandidate, RewindCarryForward, RewindWee
 // holds the current week's seed content: the top-band story, the "worth
 // keeping" candidates, the carry-forward closing zone, and the past-weeks
 // archive.
+// Surface: /rewind.
 
 // ---------------------------------------------------------------------------
 // The week story: a one-line shape of the week plus 3 compact theme

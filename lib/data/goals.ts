@@ -2,6 +2,10 @@ import type { DirectionGapAnalysis, Goal, PathScenario } from "@/lib/types";
 
 // 4 goals, one with a gap analysis (goal-1, against the target direction).
 // Split across horizon (near term, long term) for the Goals page's two zones.
+// Also seeds pathScenarios and directionGapAnalysis: the path scenarios feed
+// both /goals' scenario cards and the Path Planner's recommended/alternative
+// zones (/planner, /roadmap).
+// Surface: /goals, /planner, /roadmap.
 export const goals: Goal[] = [
   {
     id: "goal-1",

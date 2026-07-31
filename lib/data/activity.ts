@@ -3,6 +3,7 @@ import type { ActivityMoment } from "@/lib/types";
 // Seed activity moments per opportunity: created, Copilot analysis ran,
 // status changes, notes added, and next actions accepted. Ordered oldest to
 // newest within each opportunity; the Activity tab re-sorts newest first.
+// Surface: /opportunities/[id] Activity tab.
 export const activityMoments: ActivityMoment[] = [
   // --- opp-1: Solace AI ---------------------------------------------------
   {

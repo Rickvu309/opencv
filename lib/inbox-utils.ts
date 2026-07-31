@@ -11,7 +11,7 @@ import type {
 // Shared read-only helpers for the synced-context inbox (/sources): merging
 // the seeded evidence with live store state, and the small bits of copy
 // every surface that shows a linked item needs to agree on. Kept separate
-// from lib/store.tsx so the inbox list and its filters stay plain and
+// from lib/store/ so the inbox list and its filters stay plain and
 // testable against plain data, the same split lib/opportunity-utils.ts and
 // lib/nudge-utils.ts already use.
 
@@ -103,7 +103,7 @@ export function buildSyncStatusLine(sources: ConnectedSource[]): string {
  * Builds the fresh Track Record candidate "link as track record material"
  * creates: the item's own signal and extract become the drafted story, kept
  * open on skills since any inbox item can be linked this way, not just the
- * one seeded example. The id and date come from the caller (lib/store.tsx
+ * one seeded example. The id and date come from the caller (lib/store/
  * already generates both for every other seeded-at-runtime object).
  */
 export function buildInboxTrackRecordCandidate(

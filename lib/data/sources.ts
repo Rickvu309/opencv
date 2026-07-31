@@ -5,6 +5,8 @@ import type { ConnectedSource, EmailEvidence, MeetingNoteEvidence } from "@/lib/
 // Granola start not connected so /sources has a real onboarding moment to
 // demonstrate. Extensible: a future source adds a new ConnectedSourceType
 // and a row here.
+// Surface: /sources, plus every evidence chip and extract app-wide
+// (components/ai/evidence-chip.tsx, components/ai/evidence-extract.tsx).
 export const connectedSources: ConnectedSource[] = [
   {
     id: "source-gmail",

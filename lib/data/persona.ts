@@ -1,6 +1,8 @@
 import type { Profile } from "@/lib/types";
 
 // Persona: Mai Tran. All seeded content across the prototype belongs to her.
+// Surface: /profile primarily; read broadly wherever the store's `profile`
+// slice appears (onboarding, the Add opportunity dialog's fit context).
 export const persona: Profile = {
   name: "Mai Tran",
   headline: "Senior Product Designer moving into AI product leadership",

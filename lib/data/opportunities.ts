@@ -3,6 +3,7 @@ import type { Opportunity } from "@/lib/types";
 // 10 opportunities: 4 Saved (one Dream, one low-credibility posting, one
 // freshly saved with no next step queued yet), 2 Applied, 2 Interview,
 // 1 Offer, 1 Closed. Mixed fit levels and priorities.
+// Surface: /opportunities (board and list), /opportunities/[id].
 export const opportunities: Opportunity[] = [
   {
     id: "opp-1",

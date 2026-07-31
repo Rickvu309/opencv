@@ -3,6 +3,7 @@ import type { LearningItem, Skill } from "@/lib/types";
 // Shared 4-level scale for every skill: 1 Beginning, 2 Working, 3 Strong,
 // 4 Expert. Used by the level meter and by learning items' expected-benefit
 // lines ("Moves X from Working to Strong").
+// Surface: /skills.
 export const LEVEL_LABELS: Record<number, string> = {
   1: "Beginning",
   2: "Working",

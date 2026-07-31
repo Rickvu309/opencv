@@ -6,6 +6,7 @@ import type { PlanItem, PlannerGapAnalysis } from "@/lib/types";
 // relabeling the same one. Ordering inside each scenario's stage array is
 // meaningful: index 0 of the "now" stage is the pinned recommended next move
 // (Serial Position), read by lib/planner-utils.ts.
+// Surface: /planner.
 
 // ---------------------------------------------------------------------------
 // One line under the alternatives comparison: what would change the ranking.

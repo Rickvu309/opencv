@@ -1,27 +1,10 @@
 import type { Nudge, NudgeTrigger } from "@/lib/types";
 
-// Shared read-only helpers for the Home attention queue: family grouping,
+// Shared read-only helpers for the Home attention queue: trigger labels,
 // queue ranking, and the stable id a pinned Nudge uses so promoting the
 // same source suggestion twice never duplicates it. Kept separate from
-// lib/store.tsx so the queue's ranking logic stays plain and testable
+// lib/store/ so the queue's ranking logic stays plain and testable
 // against plain data.
-
-export type NudgeFamily = "opportunity" | "capture" | "goal" | "learning" | "focus";
-
-/**
- * Groups the six seeded triggers into the four families the attention queue
- * is required to cover. "rewind-carry-forward" sits outside the four, it
- * only ever appears once a Rewind carry-forward is accepted.
- */
-export const NUDGE_FAMILY: Record<NudgeTrigger, NudgeFamily> = {
-  "stale-opportunity": "opportunity",
-  "high-potential": "opportunity",
-  "missing-next-step": "opportunity",
-  "capture-prompt": "capture",
-  "goal-reminder": "goal",
-  "learning-nudge": "learning",
-  "rewind-carry-forward": "focus",
-};
 
 export const NUDGE_TRIGGER_LABEL: Record<NudgeTrigger, string> = {
   "stale-opportunity": "Stale opportunity",

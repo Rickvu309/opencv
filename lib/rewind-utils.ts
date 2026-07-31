@@ -11,7 +11,7 @@ import type {
 // progress indicator and completion card, the builder that turns a
 // candidate plus its (possibly edited) proposed fields into the
 // TrackRecordEntry Saving actually writes, and the pinned-nudge bridge from
-// an accepted carry-forward. Kept separate from lib/store.tsx so the review
+// an accepted carry-forward. Kept separate from lib/store/ so the review
 // cards and the store stay thin and testable against plain data, the same
 // split lib/inbox-utils.ts and lib/nudge-utils.ts already use.
 

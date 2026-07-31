@@ -13,14 +13,6 @@ export type Priority = "High" | "Medium" | "Low";
 
 export type NextActionState = "suggested" | "accepted" | "done" | "dismissed";
 
-export type InsightKind =
-  | "summary"
-  | "interpretation"
-  | "credibility"
-  | "fit"
-  | "tailoring"
-  | "gap";
-
 export type ConfidenceLevel = "High" | "Medium" | "Low";
 
 export type InsightHostType =
@@ -852,11 +844,11 @@ export type AiSignal = NextActionSignal | StatusChangeSignal | PriorityBumpSigna
 // ---------------------------------------------------------------------------
 
 /**
- * The six triggers the attention queue seeds from, grouped into four
- * families by lib/nudge-utils.ts's NUDGE_FAMILY map (opportunity, capture,
- * goal, learning). "rewind-carry-forward" is a seventh trigger reserved for
- * items promoted from an accepted Rewind carry-forward, pinned on top of the
- * seeded set rather than counted toward the four families.
+ * The six triggers the attention queue seeds from, covering four families:
+ * opportunity (stale-opportunity, high-potential, missing-next-step),
+ * capture, goal, and learning. "rewind-carry-forward" is a seventh trigger
+ * reserved for items promoted from an accepted Rewind carry-forward, pinned
+ * on top of the seeded set rather than counted toward the four families.
  */
 export type NudgeTrigger =
   | "stale-opportunity"

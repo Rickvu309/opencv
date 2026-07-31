@@ -10,6 +10,9 @@ import type { CopilotSurfaceScript } from "@/lib/types";
 // per type. Every exchange's response renders as a structured block: a short
 // lead line, optional labeled points, a confidence chip only where a
 // judgment is made, and exactly one of a store-wired action or a handoff.
+// Surface: components/shell/copilot-panel.tsx, on every route that calls
+// useCopilotSurface (see lib/copilot-surface-names.ts for the forked-surface
+// naming rule).
 export const copilotScripts: CopilotSurfaceScript[] = [
   {
     surface: "Home",
