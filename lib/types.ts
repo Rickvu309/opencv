@@ -73,7 +73,8 @@ export type ActivityMomentKind =
   | "action-done"
   | "dream-flagged"
   | "cv-tailored"
-  | "signal-accepted";
+  | "signal-accepted"
+  | "evidence-linked";
 
 export interface ActivityMoment {
   id: string;
@@ -503,40 +504,102 @@ export interface NextAction {
 // Connected sources (simulated) and evidence
 // ---------------------------------------------------------------------------
 
-/** Extensible: only "email" is seeded for this ticket, a future source adds a new type here. */
-export type ConnectedSourceType = "email";
+/** Extensible: a future source adds a new type here. */
+export type ConnectedSourceType = "email" | "meetingNotes";
 
-export type ConnectedSourceStatus = "connected";
+export type ConnectedSourceStatus = "connected" | "not-connected" | "needs-attention";
 
 export interface ConnectedSource {
   id: string;
   type: ConnectedSourceType;
+  /** Display name shown on its tool card and every evidence chip: "Gmail", "Outlook", "Granola". */
   name: string;
-  provider: string;
+  /** Human label for the source type, "Email" or "Meeting notes", used in secondary copy. */
+  category: string;
   status: ConnectedSourceStatus;
-  lastSyncedMinutesAgo: number;
-  /** Shown in the Connected sources dialog: what Copilot reads from this source. */
+  /** Present only once status is "connected". */
+  lastSyncedMinutesAgo?: number;
+  /** What OpenPath reads, plain language, shown on the tool card and connect dialog step 1. */
   readsDescription: string;
+  /** What connecting this source unlocks, specific product value, shown on the tool card and connect dialog step 2. */
+  unlocksDescription: string;
 }
 
-export type EmailEvidenceMapsToType = "opportunity" | "trackRecord";
+/** What kind of object a piece of source evidence is suggested to belong to. */
+export type SourceEvidenceMapsToType = "opportunity" | "trackRecord" | "goal";
 
-/**
- * One seeded email extract behind an AI proposal: sender, subject,
- * timestamp, a short extract, and the opportunity or Track Record candidate
- * it maps to. Every AI proposal that cites a source shows this as an
- * EvidenceChip plus an expandable EvidenceExtract, never hidden grounding.
- */
-export interface EmailEvidence {
+interface SourceEvidenceBase {
   id: string;
   sourceId: string;
-  sender: string;
-  subject: string;
   timestamp: string;
+  /** Minutes since this item arrived, used to sort the synced-context inbox newest first without parsing the display timestamp. */
+  freshnessMinutesAgo: number;
   extract: string;
-  mapsToType: EmailEvidenceMapsToType;
+  mapsToType: SourceEvidenceMapsToType;
+  /** Empty when mapsToType is "trackRecord" and no candidate exists yet: linking creates one. */
   mapsToId: string;
   mapsToLabel: string;
+  /** Present only when the suggested target is a guess worth naming honestly, "Looks related to Meridian Labs". */
+  hedge?: string;
+  /** One-line extracted signal, what the system noticed in this item. */
+  signal: string;
+  /** One quiet line on why this item matters. */
+  whyItMatters: string;
+  /** One honest line on what the system may use this item for next. */
+  usesNext: string;
+}
+
+/**
+ * One seeded email extract behind an AI proposal or an inbox item: sender,
+ * subject, timestamp, a short extract, and the opportunity, Track Record
+ * candidate, or goal it maps to. Every AI proposal or inbox row that cites
+ * this shows it as an EvidenceChip plus an expandable EvidenceExtract, never
+ * hidden grounding.
+ */
+export interface EmailEvidence extends SourceEvidenceBase {
+  kind: "email";
+  sender: string;
+  subject: string;
+}
+
+/** One seeded Granola meeting-note extract, the same evidence shape as an email but from a call or debrief. */
+export interface MeetingNoteEvidence extends SourceEvidenceBase {
+  kind: "meetingNotes";
+  /** Who the note is with, "Prep call with Linh Vu", shown in place of a sender. */
+  withWhom: string;
+  /** The meeting title, shown in place of a subject line. */
+  title: string;
+}
+
+export type SourceEvidence = EmailEvidence | MeetingNoteEvidence;
+
+// ---------------------------------------------------------------------------
+// Synced-context inbox: source-to-object linking (the workflow /sources adds
+// on top of the ticket 17 connected-sources and evidence model above)
+// ---------------------------------------------------------------------------
+
+export type InboxItemStatus = "needs-review" | "linked" | "dismissed";
+
+export interface InboxLinkTarget {
+  type: SourceEvidenceMapsToType;
+  id: string;
+  label: string;
+}
+
+/** What the user chose in the Link action or the target picker. Track Record never links to an existing entry, it always creates a fresh candidate. */
+export type InboxLinkChoice =
+  | { type: "opportunity"; id: string; label: string }
+  | { type: "goal"; id: string; label: string }
+  | { type: "trackRecord" };
+
+/** Runtime link state for one inbox item, keyed by its evidence id in the store. Absent means "needs-review". */
+export interface InboxItemLink {
+  status: InboxItemStatus;
+  linkedTarget?: InboxLinkTarget;
+  /** Set when linking logged a fresh Activity moment, so Undo can remove exactly that moment. */
+  activityMomentId?: string;
+  /** Set when linking created a fresh Track Record candidate, so Undo can remove exactly that entry. */
+  createdTrackRecordEntryId?: string;
 }
 
 // ---------------------------------------------------------------------------

@@ -33,12 +33,15 @@ import { nextActions as seedNextActions } from "@/lib/data/actions";
 import { nudges as seedNudges, weeklyReviewScript } from "@/lib/data/nudges";
 import { copilotScripts } from "@/lib/data/copilot-scripts";
 import { aiSignals as seedAiSignals } from "@/lib/data/ai-signals";
+import { connectedSources as seedConnectedSources } from "@/lib/data/sources";
 import { buildPinnedNudgeFromSuggestion, pinnedNudgeId } from "@/lib/nudge-utils";
 import { buildSignalActivityMessage } from "@/lib/ai-signal-utils";
+import { buildInboxTrackRecordCandidate, evidenceTitle } from "@/lib/inbox-utils";
 import type {
   ActivityMoment,
   AiInsight,
   AiSignal,
+  ConnectedSource,
   CopilotMessage,
   CopilotResponse,
   CvVersion,
@@ -47,6 +50,8 @@ import type {
   Goal,
   GoalProgressNote,
   GoalStatus,
+  InboxItemLink,
+  InboxLinkChoice,
   LearningItem,
   NextAction,
   NextActionState,
@@ -58,6 +63,7 @@ import type {
   Profile,
   ProfilePreferences,
   Skill,
+  SourceEvidence,
   TrackRecordEntry,
   WeeklyReviewScript,
 } from "@/lib/types";
@@ -100,6 +106,8 @@ export interface StoreState {
   nextActions: NextAction[];
   nudges: Nudge[];
   aiSignals: AiSignal[];
+  connectedSources: ConnectedSource[];
+  inboxItemLinks: Record<string, InboxItemLink>;
   weeklyReview: WeeklyReviewScript;
   weeklyReviewOpen: boolean;
   weeklyReviewViewedThisSession: boolean;
@@ -127,6 +135,8 @@ const initialState: StoreState = {
   nextActions: seedNextActions,
   nudges: seedNudges,
   aiSignals: seedAiSignals,
+  connectedSources: seedConnectedSources,
+  inboxItemLinks: {},
   weeklyReview: weeklyReviewScript,
   weeklyReviewOpen: false,
   weeklyReviewViewedThisSession: false,
@@ -195,6 +205,11 @@ type Action =
   | { type: "UNDO_AI_SIGNAL"; id: string }
   | { type: "DISMISS_AI_SIGNAL"; id: string }
   | { type: "UNDISMISS_AI_SIGNAL"; id: string }
+  | { type: "CONNECT_SOURCE"; id: string }
+  | { type: "LINK_INBOX_ITEM"; evidence: SourceEvidence; target: InboxLinkChoice }
+  | { type: "UNDO_LINK_INBOX_ITEM"; evidenceId: string }
+  | { type: "DISMISS_INBOX_ITEM"; evidenceId: string }
+  | { type: "UNDO_DISMISS_INBOX_ITEM"; evidenceId: string }
   | {
       type: "SET_TAILORING_SUGGESTION_STATE";
       insightId: string;
@@ -681,6 +696,102 @@ function reducer(state: StoreState, action: Action): StoreState {
         ),
       };
 
+    case "CONNECT_SOURCE":
+      return {
+        ...state,
+        connectedSources: state.connectedSources.map((source) =>
+          source.id === action.id ? { ...source, status: "connected", lastSyncedMinutesAgo: 0 } : source
+        ),
+      };
+
+    case "LINK_INBOX_ITEM": {
+      const dateStamp = today();
+      const source = state.connectedSources.find((entry) => entry.id === action.evidence.sourceId);
+      const sourceName = source?.name ?? "a connected source";
+      const itemLabel = evidenceTitle(action.evidence);
+
+      let trackRecordEntries = state.trackRecordEntries;
+      let activityMoments = state.activityMoments;
+      let activityMomentId: string | undefined;
+      let createdTrackRecordEntryId: string | undefined;
+      let linkedTarget: NonNullable<InboxItemLink["linkedTarget"]>;
+
+      if (action.target.type === "opportunity") {
+        activityMomentId = makeId("activity");
+        activityMoments = [
+          ...activityMoments,
+          {
+            id: activityMomentId,
+            opportunityId: action.target.id,
+            kind: "evidence-linked",
+            message: `Evidence linked from ${sourceName}: ${itemLabel}.`,
+            createdAt: dateStamp,
+          },
+        ];
+        linkedTarget = action.target;
+      } else if (action.target.type === "goal") {
+        linkedTarget = action.target;
+      } else {
+        const entryId = makeId("tre-inbox");
+        const candidate = buildInboxTrackRecordCandidate(action.evidence, sourceName, entryId, dateStamp);
+        trackRecordEntries = [candidate, ...trackRecordEntries];
+        createdTrackRecordEntryId = candidate.id;
+        linkedTarget = { type: "trackRecord", id: candidate.id, label: candidate.title };
+      }
+
+      return {
+        ...state,
+        trackRecordEntries,
+        activityMoments,
+        inboxItemLinks: {
+          ...state.inboxItemLinks,
+          [action.evidence.id]: {
+            status: "linked",
+            linkedTarget,
+            activityMomentId,
+            createdTrackRecordEntryId,
+          },
+        },
+      };
+    }
+
+    case "UNDO_LINK_INBOX_ITEM": {
+      const link = state.inboxItemLinks[action.evidenceId];
+      if (!link || link.status !== "linked") return state;
+
+      return {
+        ...state,
+        activityMoments: link.activityMomentId
+          ? state.activityMoments.filter((moment) => moment.id !== link.activityMomentId)
+          : state.activityMoments,
+        trackRecordEntries: link.createdTrackRecordEntryId
+          ? state.trackRecordEntries.filter((entry) => entry.id !== link.createdTrackRecordEntryId)
+          : state.trackRecordEntries,
+        inboxItemLinks: {
+          ...state.inboxItemLinks,
+          [action.evidenceId]: { status: "needs-review" },
+        },
+      };
+    }
+
+    case "DISMISS_INBOX_ITEM":
+      return {
+        ...state,
+        inboxItemLinks: {
+          ...state.inboxItemLinks,
+          [action.evidenceId]: { status: "dismissed" },
+        },
+      };
+
+    case "UNDO_DISMISS_INBOX_ITEM":
+      return {
+        ...state,
+        inboxItemLinks: {
+          ...state.inboxItemLinks,
+          [action.evidenceId]: { status: "needs-review" },
+        },
+      };
+
     case "SET_TAILORING_SUGGESTION_STATE":
       return {
         ...state,
@@ -958,6 +1069,10 @@ interface StoreContextValue {
   undoAiSignal: (id: string) => void;
   dismissAiSignal: (id: string) => void;
   undismissAiSignal: (id: string) => void;
+  connectSource: (id: string) => void;
+  linkInboxItem: (evidence: SourceEvidence, target: InboxLinkChoice) => void;
+  undoLinkInboxItem: (evidenceId: string) => void;
+  dismissInboxItem: (evidenceId: string) => void;
   acceptTailoringSuggestion: (insightId: string, suggestionId: string) => void;
   dismissTailoringSuggestion: (insightId: string, suggestionId: string) => void;
   addCvVersion: (cv: CvVersion) => void;
@@ -1240,6 +1355,30 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: "UNDISMISS_AI_SIGNAL", id });
   }, []);
 
+  const connectSource = useCallback((id: string) => {
+    dispatch({ type: "CONNECT_SOURCE", id });
+  }, []);
+
+  // Linking shows its own inline save-back confirmation with Undo (the same
+  // five-beat pattern SignalCard's approve uses), so no extra toast here.
+  const linkInboxItem = useCallback((evidence: SourceEvidence, target: InboxLinkChoice) => {
+    dispatch({ type: "LINK_INBOX_ITEM", evidence, target });
+  }, []);
+
+  const undoLinkInboxItem = useCallback((evidenceId: string) => {
+    dispatch({ type: "UNDO_LINK_INBOX_ITEM", evidenceId });
+  }, []);
+
+  const dismissInboxItem = useCallback((evidenceId: string) => {
+    dispatch({ type: "DISMISS_INBOX_ITEM", evidenceId });
+    toast("Marked not relevant", {
+      action: {
+        label: "Undo",
+        onClick: () => dispatch({ type: "UNDO_DISMISS_INBOX_ITEM", evidenceId }),
+      },
+    });
+  }, []);
+
   const acceptTailoringSuggestion = useCallback((insightId: string, suggestionId: string) => {
     dispatch({ type: "SET_TAILORING_SUGGESTION_STATE", insightId, suggestionId, state: "accepted" });
     toast.success("Suggestion accepted");
@@ -1471,6 +1610,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       undoAiSignal,
       dismissAiSignal,
       undismissAiSignal,
+      connectSource,
+      linkInboxItem,
+      undoLinkInboxItem,
+      dismissInboxItem,
       acceptTailoringSuggestion,
       dismissTailoringSuggestion,
       addCvVersion,
@@ -1538,6 +1681,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       undoAiSignal,
       dismissAiSignal,
       undismissAiSignal,
+      connectSource,
+      linkInboxItem,
+      undoLinkInboxItem,
+      dismissInboxItem,
       acceptTailoringSuggestion,
       dismissTailoringSuggestion,
       addCvVersion,

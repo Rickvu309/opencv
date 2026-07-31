@@ -10,6 +10,7 @@ import {
   GraduationCap,
   History,
   Home,
+  Inbox,
   RotateCcw,
   Target,
   User,
@@ -40,6 +41,7 @@ interface NavItem {
 const primaryNav: NavItem[] = [
   { label: "Home", href: "/home", icon: Home },
   { label: "Opportunities", href: "/opportunities", icon: Briefcase },
+  { label: "Sources", href: "/sources", icon: Inbox },
 ];
 
 const careerMemoryNav: NavItem[] = [

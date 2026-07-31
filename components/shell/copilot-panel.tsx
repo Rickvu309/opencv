@@ -14,16 +14,11 @@ import { AiThinking } from "@/components/shared/ai-thinking";
 import { EmptyState } from "@/components/shared/empty-state";
 import { copilotScripts } from "@/lib/data/copilot-scripts";
 import { buildCopilotCaptureCandidate } from "@/lib/data/track-record";
-import { connectedSources, emailEvidence } from "@/lib/data/sources";
+import { emailEvidence } from "@/lib/data/sources";
 import { getCopilotContextChip } from "@/lib/copilot-utils";
+import { freshnessLabel } from "@/lib/inbox-utils";
 import { today, useStore } from "@/lib/store";
 import type { CopilotHandoff, CopilotMessage, CopilotSuggestedAction } from "@/lib/types";
-
-function freshnessLabel(minutes: number): string {
-  if (minutes < 60) return `${minutes} min ago`;
-  const hours = Math.round(minutes / 60);
-  return `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
-}
 
 /**
  * Whether the panel's current surface has connected-source evidence behind
@@ -49,7 +44,9 @@ export function CopilotPanel() {
   const surface = state.copilot.surface;
   const script = copilotScripts.find((entry) => entry.surface === surface);
   const messages = state.copilot.messagesBySurface[surface] ?? [];
-  const emailSource = connectedSources.find((source) => source.type === "email");
+  const emailSource = state.connectedSources.find(
+    (source) => source.type === "email" && source.status === "connected"
+  );
   const showSourceLine =
     emailSource && surfaceHasEvidence(surface, state.copilot.objectLabel, state.opportunities);
 
@@ -72,7 +69,7 @@ export function CopilotPanel() {
           {showSourceLine && emailSource ? (
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
               <Mail className="size-3" />
-              Reading: Email, synced {freshnessLabel(emailSource.lastSyncedMinutesAgo)}
+              Reading: Email, synced {freshnessLabel(emailSource.lastSyncedMinutesAgo ?? 0)}
             </span>
           ) : null}
         </div>
