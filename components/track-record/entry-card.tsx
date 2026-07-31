@@ -83,7 +83,7 @@ export function TrackRecordEntryCard({
           className="flex w-full items-start justify-between gap-3 text-left"
         >
           <div className="flex min-w-0 flex-col gap-1">
-            <div className="flex items-center gap-1.5">
+            <div className="flex min-w-0 items-center gap-1.5">
               <p className="truncate text-sm font-medium text-foreground">{entry.title}</p>
               {isAchievement ? (
                 <Badge variant="secondary" className="shrink-0 gap-1">

@@ -1,18 +1,17 @@
 import { Chip } from "@/components/shared/chip";
+import { CHIP_TONES } from "@/components/shared/chip-tones";
+import { cn } from "@/lib/utils";
 
 export type CredibilityVerdict = "pass" | "fail";
 
-const CREDIBILITY_STYLES: Record<CredibilityVerdict, { className: string; dot: string; label: string }> = {
-  pass: {
-    className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
-    dot: "bg-emerald-500",
-    label: "Passes checks",
-  },
-  fail: {
-    className: "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
-    dot: "bg-rose-500",
-    label: "Fails checks",
-  },
+const CREDIBILITY_TONE: Record<CredibilityVerdict, keyof typeof CHIP_TONES> = {
+  pass: "success",
+  fail: "danger",
+};
+
+const CREDIBILITY_LABEL: Record<CredibilityVerdict, string> = {
+  pass: "Passes checks",
+  fail: "Fails checks",
 };
 
 /**
@@ -31,12 +30,12 @@ export function CredibilityChip({
   label?: string;
   className?: string;
 }) {
-  const style = CREDIBILITY_STYLES[verdict];
+  const tone = CHIP_TONES[CREDIBILITY_TONE[verdict]];
   return (
     <Chip
-      label={label ?? style.label}
-      dotClassName={style.dot}
-      className={className ? `${style.className} ${className}` : style.className}
+      label={label ?? CREDIBILITY_LABEL[verdict]}
+      dotClassName={tone.dot}
+      className={cn(tone.className, className)}
     />
   );
 }

@@ -25,8 +25,8 @@ export function SkillLevelMeter({ level, targetLevel }: SkillLevelMeterProps) {
             key={dot}
             className={cn(
               "size-2.5 rounded-full",
-              dot <= level ? "bg-indigo-500" : "bg-muted",
-              hasTargetMarker && dot === targetLevel && "ring-2 ring-offset-1 ring-indigo-500/60 ring-offset-background"
+              dot <= level ? "bg-primary" : "bg-muted",
+              hasTargetMarker && dot === targetLevel && "ring-2 ring-offset-1 ring-primary/50 ring-offset-background"
             )}
           />
         ))}
