@@ -105,11 +105,28 @@ File layout: `lib/types.ts` (all types), `lib/data/persona.ts`, `opportunities.t
 
 ## 7. Simulated AI behavior model
 
-The Copilot is one system that appears in three forms:
+AI-native, source-connected, embedded first (RDS-975). The Copilot is one system, but it no longer leads with the right panel. It appears in four forms:
 
-1. the right panel (conversation plus suggested prompts, context follows the current surface and object)
+1. embedded AI proposals, the default pattern: `components/ai/` (AiActionCard, EvidenceChip, EvidenceExtract, ReviewQueue, SaveBackConfirmation), used wherever AI proposes concrete work
 2. inline insight blocks inside pages (fit judgment, tailoring suggestions, drafted candidates)
-3. proactive surfaces (nudges on /home, Weekly Review dialog)
+3. proactive surfaces (the Home attention queue mixes AiActionCards with legacy nudges, Weekly Review dialog)
+4. the right panel, now secondary deep help: Cmd+K and the header toggle still open it, but primary-level "Ask Copilot" CTAs are removed wherever an embedded surface already covers the job
+
+### The five-beat pattern
+
+Every embedded AI proposal is one compact block, five beats:
+
+1. **Signal**: what the system noticed, one line with a kind icon
+2. **Why it matters**: one line
+3. **Evidence**: a source chip ("Email, Sarah Nguyen, 2h ago") plus an expandable extract, never hidden grounding
+4. **Proposed action**: the concrete change, stated as what will happen if you accept
+5. **Controls**: Approve, Edit (inline adjust before approving), Dismiss. Approving shows a save-back confirmation that names exactly what changed, with an Undo, then settles into a quiet done state
+
+Approving a proposal changes real store state and logs an Activity moment carrying the same evidence, see `lib/store.tsx`'s `APPROVE_AI_SIGNAL` case and `lib/ai-signal-utils.ts`.
+
+### Connected sources (simulated)
+
+`lib/data/sources.ts` seeds a connected-sources registry (Email, "Connected", last synced N minutes ago, extensible to other source types) and a set of email extracts, each with a sender, subject, timestamp, and the opportunity or Track Record candidate it maps to. A quiet "Connected sources" affordance in the sidebar shows Email's freshness and opens a dialog listing every source and what Copilot reads from it. Every AI proposal that cites a source shows its evidence chip and extract; the panel's context header shows the same connected source line on any surface backed by evidence.
 
 Scripted behaviors:
 
@@ -119,7 +136,8 @@ Scripted behaviors:
 - judge fit: labeled blocks for strengths, concerns, unknowns, plus a confidence chip
 - recommend next actions with a one-line rationale each
 - tailor CV guidance per section
-- draft track record candidates from recent activity
+- propose next-action, status, priority, and drafted-reply changes grounded in connected-source evidence (the five-beat pattern)
+- draft track record candidates from recent activity and from grouped connected-source evidence
 - flag skill gaps against target direction and suggest learning items
 - nudge on stale or high-potential opportunities, run the weekly review
 
