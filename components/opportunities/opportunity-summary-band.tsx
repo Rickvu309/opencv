@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { Check, ChevronLeft, Star } from "lucide-react";
+import { Check, Star } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -34,30 +33,20 @@ interface OpportunitySummaryBandProps {
 }
 
 /**
- * The band that stays visible above the tabs: breadcrumb back link, role and
- * company header, and the chip row with inline status and priority change,
- * the Dream toggle, the read-only fit judgment, and the current next action
- * as a compact pill.
+ * The band that stays visible above the tabs: the chip row with inline
+ * status and priority change, the Dream toggle, the read-only fit judgment,
+ * and the current next action as a compact pill. The role, company, and
+ * location already live in the page header above, this band never repeats
+ * them.
  */
 export function OpportunitySummaryBand({ opportunity, primaryNextAction }: OpportunitySummaryBandProps) {
   const { setOpportunityStatus, setOpportunityPriority, toggleDream } = useStore();
 
   return (
     <div className="flex flex-col gap-3">
-      <Link
-        href="/opportunities"
-        className="flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-      >
-        <ChevronLeft className="size-3.5" />
-        Opportunities
-      </Link>
-
-      <div className="flex min-w-0 flex-col gap-1">
-        <h1 className="break-words">{opportunity.role}</h1>
-        <p className="break-words text-sm text-muted-foreground">
-          {opportunity.company} · {opportunity.location} · {opportunity.salaryRange} · Source: {opportunity.source}
-        </p>
-      </div>
+      <p className="text-xs text-muted-foreground">
+        {opportunity.salaryRange} · Source: {opportunity.source}
+      </p>
 
       <div className="flex flex-wrap items-center gap-1.5">
         <DropdownMenu>

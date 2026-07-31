@@ -59,6 +59,7 @@ export function OpportunityListView({
             <TableHead>Next action</TableHead>
             <SortableHead
               label="Last activity"
+              align="right"
               active={sort === "recently-active"}
               onClick={() => onSortChange("recently-active")}
             />
@@ -102,7 +103,7 @@ export function OpportunityListView({
                 <TableCell className="max-w-56 truncate text-muted-foreground">
                   {nextAction ? nextAction.verb : "No next action suggested yet."}
                 </TableCell>
-                <TableCell className="text-muted-foreground">{opportunity.lastActivityAt}</TableCell>
+                <TableCell className="text-right text-muted-foreground">{opportunity.lastActivityAt}</TableCell>
                 <TableCell className="text-right" onClick={(event) => event.stopPropagation()}>
                   <OpportunityQuickActionsMenu opportunity={opportunity} />
                 </TableCell>
@@ -119,18 +120,21 @@ function SortableHead({
   label,
   active,
   onClick,
+  align,
 }: {
   label: string;
   active: boolean;
   onClick: () => void;
+  align?: "left" | "right";
 }) {
   return (
-    <TableHead>
+    <TableHead className={align === "right" ? "text-right" : undefined}>
       <button
         type="button"
         onClick={onClick}
         className={cn(
           "flex items-center gap-1 font-medium",
+          align === "right" && "ml-auto flex-row-reverse",
           active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
         )}
       >
