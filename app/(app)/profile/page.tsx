@@ -68,8 +68,20 @@ export default function ProfilePage() {
             <h3>Preferences and direction</h3>
             <dl className="grid grid-cols-2 gap-3 text-sm">
               <div>
+                <dt className="text-xs text-muted-foreground">Current role</dt>
+                <dd className="text-foreground">
+                  {profile.currentRole} · {profile.experienceLevel}
+                </dd>
+              </div>
+              <div>
                 <dt className="text-xs text-muted-foreground">Location</dt>
                 <dd className="text-foreground">{profile.preferences.location}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted-foreground">Work style and company size</dt>
+                <dd className="text-foreground">
+                  {profile.preferences.workStyle} · {profile.preferences.companySize}
+                </dd>
               </div>
               <div>
                 <dt className="text-xs text-muted-foreground">Role types</dt>
@@ -80,6 +92,10 @@ export default function ProfilePage() {
                 <dd className="text-foreground">{profile.preferences.compensationNote}</dd>
               </div>
               <div>
+                <dt className="text-xs text-muted-foreground">Near-term priority</dt>
+                <dd className="text-foreground">{profile.nearTermPriority}</dd>
+              </div>
+              <div className="col-span-2">
                 <dt className="text-xs text-muted-foreground">Target direction</dt>
                 <dd className="text-foreground">{profile.targetDirection}</dd>
               </div>

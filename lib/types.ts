@@ -67,11 +67,15 @@ export interface ProfilePreferences {
   location: string;
   roleTypes: string[];
   compensationNote: string;
+  workStyle: "Remote" | "Hybrid" | "On-site";
+  companySize: string;
 }
 
 export interface Profile {
   name: string;
   headline: string;
+  currentRole: string;
+  experienceLevel: string;
   location: string;
   yearsExperience: number;
   summary: string;
@@ -79,6 +83,8 @@ export interface Profile {
   experience: ExperienceEntry[];
   preferences: ProfilePreferences;
   targetDirection: string;
+  targetDirectionLabel: string;
+  nearTermPriority: string;
 }
 
 // ---------------------------------------------------------------------------

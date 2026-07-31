@@ -33,10 +33,15 @@ import type {
   Opportunity,
   OpportunityStatus,
   Profile,
+  ProfilePreferences,
   Skill,
   TrackRecordEntry,
   WeeklyReviewScript,
 } from "@/lib/types";
+
+export type OnboardingProfilePatch = Partial<Omit<Profile, "preferences">> & {
+  preferences?: Partial<ProfilePreferences>;
+};
 
 interface CopilotState {
   open: boolean;
@@ -85,6 +90,8 @@ const initialState: StoreState = {
 
 type Action =
   | { type: "MARK_ONBOARDED" }
+  | { type: "RESET_ONBOARDING" }
+  | { type: "COMPLETE_ONBOARDING"; profilePatch: OnboardingProfilePatch; goals: Goal[] }
   | { type: "SET_OPPORTUNITY_STATUS"; id: string; status: OpportunityStatus }
   | { type: "TOGGLE_OPPORTUNITY_DREAM"; id: string }
   | { type: "ADD_OPPORTUNITY"; opportunity: Opportunity }
@@ -118,6 +125,23 @@ function reducer(state: StoreState, action: Action): StoreState {
   switch (action.type) {
     case "MARK_ONBOARDED":
       return { ...state, onboarded: true };
+
+    case "RESET_ONBOARDING":
+      return { ...state, onboarded: false };
+
+    case "COMPLETE_ONBOARDING": {
+      const { preferences: preferencesPatch, ...profilePatch } = action.profilePatch;
+      return {
+        ...state,
+        profile: {
+          ...state.profile,
+          ...profilePatch,
+          preferences: { ...state.profile.preferences, ...preferencesPatch },
+        },
+        goals: action.goals,
+        onboarded: true,
+      };
+    }
 
     case "SET_OPPORTUNITY_STATUS":
       return {
@@ -263,6 +287,8 @@ function makeId(prefix: string): string {
 interface StoreContextValue {
   state: StoreState;
   markOnboarded: () => void;
+  resetOnboarding: () => void;
+  completeOnboarding: (profilePatch: OnboardingProfilePatch, goals: Goal[]) => void;
   setOpportunityStatus: (id: string, status: OpportunityStatus) => void;
   toggleDream: (id: string) => void;
   addOpportunity: (opportunity: Opportunity) => void;
@@ -302,6 +328,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const markOnboarded = useCallback(() => dispatch({ type: "MARK_ONBOARDED" }), []);
+
+  const resetOnboarding = useCallback(() => {
+    dispatch({ type: "RESET_ONBOARDING" });
+  }, []);
+
+  const completeOnboarding = useCallback((profilePatch: OnboardingProfilePatch, goals: Goal[]) => {
+    dispatch({ type: "COMPLETE_ONBOARDING", profilePatch, goals });
+    toast.success("Workspace ready");
+  }, []);
 
   const setOpportunityStatus = useCallback(
     (id: string, status: OpportunityStatus) => {
@@ -443,6 +478,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     () => ({
       state,
       markOnboarded,
+      resetOnboarding,
+      completeOnboarding,
       setOpportunityStatus,
       toggleDream,
       addOpportunity,
@@ -468,6 +505,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     [
       state,
       markOnboarded,
+      resetOnboarding,
+      completeOnboarding,
       setOpportunityStatus,
       toggleDream,
       addOpportunity,

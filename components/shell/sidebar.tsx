@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Briefcase,
   CalendarCheck,
@@ -10,12 +10,21 @@ import {
   GraduationCap,
   History,
   Home,
+  RotateCcw,
   Target,
   User,
 } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { WeeklyReviewDialog } from "@/components/shell/weekly-review-dialog";
 import { DemoTourDialog } from "@/components/shell/demo-tour-dialog";
@@ -72,7 +81,13 @@ function NavGroupLabel({ children }: { children: React.ReactNode }) {
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { state } = useStore();
+  const router = useRouter();
+  const { state, resetOnboarding } = useStore();
+
+  function restartSetup() {
+    resetOnboarding();
+    router.push("/onboarding");
+  }
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
@@ -120,15 +135,30 @@ export function Sidebar() {
 
       <Separator className="bg-sidebar-border" />
 
-      <div className="flex items-center gap-2.5 px-4 py-3">
-        <Avatar size="sm">
-          <AvatarFallback>MT</AvatarFallback>
-        </Avatar>
-        <div className="flex flex-col leading-tight">
-          <span className="text-sm font-medium">{state.profile.name}</span>
-          <span className="text-xs text-sidebar-foreground/55">{state.profile.headline}</span>
-        </div>
-      </div>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            className="flex items-center gap-2.5 px-4 py-3 text-left transition-colors hover:bg-sidebar-accent/60"
+          >
+            <Avatar size="sm">
+              <AvatarFallback>MT</AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col leading-tight">
+              <span className="text-sm font-medium">{state.profile.name}</span>
+              <span className="text-xs text-sidebar-foreground/55">{state.profile.headline}</span>
+            </div>
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" side="top" className="w-56">
+          <DropdownMenuLabel>{state.profile.name}</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={restartSetup}>
+            <RotateCcw className="size-4" />
+            Restart setup
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </aside>
   );
 }

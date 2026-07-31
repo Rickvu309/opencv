@@ -33,7 +33,7 @@ export default function HomePage() {
     <div className="flex flex-col">
       <PageHeader
         title={`Good to see you, ${state.profile.name.split(" ")[0]}`}
-        description="Here's where things stand across your search."
+        description={`Steering toward ${state.profile.targetDirectionLabel}. Here's where things stand across your search.`}
       />
 
       <div className="flex flex-col gap-6 p-6">

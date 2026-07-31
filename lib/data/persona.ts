@@ -4,6 +4,8 @@ import type { Profile } from "@/lib/types";
 export const persona: Profile = {
   name: "Mai Tran",
   headline: "Senior Product Designer moving into AI product leadership",
+  currentRole: "Senior Product Designer",
+  experienceLevel: "Senior (6 to 10 years)",
   location: "Ho Chi Minh City, Vietnam",
   yearsExperience: 7,
   summary:
@@ -57,7 +59,11 @@ export const persona: Profile = {
     location: "Ho Chi Minh City, Vietnam (remote-first, open to relocation for the right role)",
     roleTypes: ["Full-time", "Contract-to-hire"],
     compensationNote: "Targeting senior or staff-level product design compensation, open on structure for the right leadership scope.",
+    workStyle: "Remote",
+    companySize: "No strong preference, prioritizing the work itself",
   },
   targetDirection:
     "Move from senior individual-contributor product design into AI product design and product leadership, ideally at a company building AI-native tools.",
+  targetDirectionLabel: "AI product design and leadership",
+  nearTermPriority: "Be selective, only pursue strong-fit roles",
 };
