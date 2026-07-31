@@ -1,0 +1,153 @@
+# OpenPath prototype architecture
+
+This is the structural foundation for the OpenPath high-fidelity prototype (Linear ticket RDS-959). Every downstream ticket builds against this document. If a downstream ticket conflicts with this document, the ticket wins, then this document gets updated.
+
+## 1. Product intent
+
+OpenPath is an AI-native career workspace. The prototype must feel like a serious desktop product where AI participates in the work, not a tracker and not a chat app.
+
+The product helps the user:
+
+1. organize opportunities
+2. understand which ones deserve attention
+3. decide what to do next
+4. adapt profile and CV materials per opportunity
+5. build long-term career memory: track record, goals, skills
+
+## 2. Stack and constraints
+
+- Next.js 16 (App Router), TypeScript, Tailwind 4, shadcn/ui, npm.
+- Desktop web only. Below 1024px, show a polite "OpenPath is a desktop product" screen.
+- No backend, no persistence, no real AI calls. All data is typed TS mock modules. All AI output is scripted.
+- State lives in one client store (React context + reducer). State resets on reload by design.
+- All components client-render from the store; pages are thin route wrappers.
+
+## 3. App structure and navigation
+
+Left sidebar (fixed, 240px), main content area, and a Copilot panel that docks on the right (360px, toggleable, context-aware).
+
+Sidebar structure:
+
+```
+OpenPath (logo)
+  Home                    /home
+  Opportunities           /opportunities
+CAREER MEMORY
+  Profile                 /profile
+  CV Versions             /cvs
+  Track Record            /track-record
+DIRECTION
+  Goals                   /goals
+  Skills & Learning       /skills
+(bottom)
+  Weekly Review           opens review dialog
+  Demo Tour               opens tour dialog
+  Persona chip (Mai Tran)
+```
+
+Drill-downs:
+
+- /opportunities -> /opportunities/[id] (tabs: Overview, AI Analysis, Actions, Materials, Activity)
+- /cvs -> /cvs/[id]
+- /onboarding: full-screen flow shown on first run (store flag `onboarded`), skippable, ends at /home
+
+Header per page: page title, primary action button, Copilot toggle button.
+
+## 4. User-flow map
+
+Nine flows. Each must have one complete clickable path.
+
+1. First-run setup: /onboarding -> welcome -> role and location -> target direction -> goals seed -> import profile (mock) -> land on /home with context banner.
+2. Add an opportunity: /opportunities "Add" -> dialog with two tabs (Paste link or description, Manual) -> paste path shows AI parsing state -> structured preview -> user edits and confirms -> new card appears in Saved.
+3. Scan and prioritize: /opportunities board or list -> filter and sort by fit, priority, status -> quick actions on cards (change status, flag Dream, open).
+4. Understand one opportunity: /opportunities/[id] Overview -> AI Analysis tab: summary, credibility check, fit judgment (strengths, concerns, unknowns, confidence) -> user asks Copilot follow-ups (scripted).
+5. Decide next step: opportunity Actions tab or /home: recommended next actions with rationale -> accept, edit, or dismiss -> accepted action shows on card and /home.
+6. Tailor materials: opportunity Materials tab -> link a CV version -> "Tailor for this role" -> AI suggestions per section -> accept or dismiss each -> creates a tailored CV version in /cvs.
+7. Capture track record: /track-record -> manual add, or review AI-drafted candidates (from recent activity) -> confirm or dismiss -> entry joins timeline and links to skills.
+8. Review direction: /goals gap analysis against target direction -> /skills gap map -> learning recommendations linked to goals -> accept a learning item to plan.
+9. Proactive loop: /home nudges (stale opportunity, capture prompt, high-potential flag) plus Weekly Review dialog: what happened, what changed, suggested focus -> each suggestion accepted, edited, or dismissed.
+
+AI helps inside every flow. It never auto-applies anything (see section 9).
+
+## 5. Object model (UI terms)
+
+| Object | Key visible fields | Home surface | User actions | Links |
+|---|---|---|---|---|
+| Opportunity | role, company, status, fit level, priority, next action, Dream flag, source, salary range, location | /opportunities | change status, flag, open, archive | AiInsight, NextAction, CvVersion, Goal |
+| Profile | headline, summary, strengths, experience entries, preferences, target direction | /profile | edit sections, see "what AI uses" | everything |
+| CvVersion | name, base or tailored, linked opportunity, sections, last edit | /cvs | create, duplicate, tailor, link | Opportunity |
+| TrackRecordEntry | title, story, impact, date, evidence tag, skills | /track-record | add, confirm draft, edit, dismiss | Skill, Profile |
+| Goal | title, why, target date, progress note, status | /goals | add, edit, mark progress | Opportunity, LearningItem |
+| Skill | name, level, target level, gap flag | /skills | adjust level, mark focus | TrackRecordEntry, LearningItem |
+| LearningItem | title, type (course, project, habit), effort, linked skill or goal | /skills | accept to plan, dismiss | Skill, Goal |
+| AiInsight | kind (summary, credibility, fit, tailoring, gap), body blocks, confidence | inside host object | expand, ask follow-up | host object |
+| NextAction | verb phrase, rationale, effort, due hint, state (suggested, accepted, done, dismissed) | opportunity + /home | accept, edit, dismiss, mark done | Opportunity |
+| Nudge | trigger, message, suggested action | /home | act, snooze, dismiss | any object |
+
+Opportunity statuses: Saved, Applied, Interview, Offer, Closed. Dream is a flag, not a status. Fit levels: Strong, Medium, Weak, Unknown. Priority: High, Medium, Low.
+
+## 6. Mock data blueprint
+
+Persona: Mai Tran, senior product designer, 7 years, based in Ho Chi Minh City, moving toward AI product design and product leadership, open to remote roles. All seeded content must read as this one coherent person.
+
+Seed set (lives in `lib/data/`):
+
+- 9 opportunities: 3 Saved (one Dream, one low-credibility posting), 2 Applied, 2 Interview, 1 Offer, 1 Closed. Mixed fit levels and priorities. Every one has full AI output.
+- Profile: headline, summary, 4 strengths, 4 experience entries, preferences, target direction.
+- 3 CV versions: "Base CV", "Product-lead CV", one tailored version linked to an Interview opportunity.
+- 10 track record entries plus 2 unconfirmed AI-drafted candidates.
+- 4 goals, one with a gap analysis.
+- 12 skills, 4 flagged as gaps; 6 learning items.
+- 6 next actions in mixed states, 3 nudges, 1 weekly review script.
+- Copilot scripts: per-surface suggested prompts and 2 to 3 scripted exchanges per major surface.
+
+File layout: `lib/types.ts` (all types), `lib/data/persona.ts`, `opportunities.ts`, `cvs.ts`, `track-record.ts`, `goals.ts`, `skills.ts`, `insights.ts`, `actions.ts`, `nudges.ts`, `copilot-scripts.ts`. Store in `lib/store.tsx`.
+
+## 7. Simulated AI behavior model
+
+The Copilot is one system that appears in three forms:
+
+1. the right panel (conversation plus suggested prompts, context follows the current surface and object)
+2. inline insight blocks inside pages (fit judgment, tailoring suggestions, drafted candidates)
+3. proactive surfaces (nudges on /home, Weekly Review dialog)
+
+Scripted behaviors:
+
+- interpret messy intake input into structured opportunity fields
+- summarize a role in plain language
+- validate credibility (one seeded posting fails checks, with reasons)
+- judge fit: labeled blocks for strengths, concerns, unknowns, plus a confidence chip
+- recommend next actions with a one-line rationale each
+- tailor CV guidance per section
+- draft track record candidates from recent activity
+- flag skill gaps against target direction and suggest learning items
+- nudge on stale or high-potential opportunities, run the weekly review
+
+Trust boundary, absolute rule: the AI drafts and suggests, the user accepts, edits, or dismisses. Nothing AI-generated applies itself. Every AI block shows a small "Copilot" label so scripted output is visually distinct.
+
+## 8. Realism rules
+
+1. No placeholder text anywhere. Every object has believable content written for the Mai Tran persona.
+2. Every flow in section 4 has at least one complete clickable path.
+3. AI output always references the specific object it sits on, never generic filler.
+4. Empty states are designed: one line of guidance plus the action to fill them.
+5. Visual patterns stay consistent: same card anatomy, same chip system for status, fit, priority, confidence across all surfaces.
+6. Interactions give feedback: toasts on accept and dismiss, brief simulated "thinking" states (600 to 1200ms) before AI output appears.
+
+## 9. Ticket map
+
+- 02 shell and patterns: sections 3, 7 (panel shell), chips, card anatomy
+- 03 onboarding: flow 1
+- 04 intake: flow 2
+- 05 workspace: flow 3
+- 06 detail: flow 4 surface
+- 07 AI understanding: flow 4 AI content
+- 08 next actions: flow 5
+- 09 profile: Profile object
+- 10 CVs: flow 6
+- 11 track record: flow 7
+- 12 goals: flow 8 (goals half)
+- 13 skills and learning: flow 8 (skills half)
+- 14 copilot layer: section 7 form 1 everywhere
+- 15 proactive: flow 9
+- 16 polish: section 8 audit end to end
