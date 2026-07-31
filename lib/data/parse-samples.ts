@@ -42,7 +42,7 @@ export const parseSamples: ParseSample[] = [
     id: "parse-startup-note",
     keywords: ["startup", "pre-seed", "founding designer", "small team", "meetup"],
     role: "Product Designer (founding)",
-    company: "Ferrous Labs",
+    company: "Saola Labs",
     location: "Ho Chi Minh City (hybrid, flexible)",
     salaryRange: "",
     source: "Pasted rough notes",

@@ -64,12 +64,12 @@ export const activityMoments: ActivityMoment[] = [
     createdAt: "2026-07-10",
   },
 
-  // --- opp-3: Northwind Robotics --------------------------------------------
+  // --- opp-3: Mekong Robotics --------------------------------------------
   {
     id: "activity-opp-3-created",
     opportunityId: "opp-3",
     kind: "created",
-    message: "Saved to Opportunities from Northwind's company careers page.",
+    message: "Saved to Opportunities from Mekong's company careers page.",
     createdAt: "2026-05-14",
   },
   {
@@ -117,7 +117,7 @@ export const activityMoments: ActivityMoment[] = [
     createdAt: "2026-07-15",
   },
 
-  // --- opp-5: Tidal Finance --------------------------------------------------
+  // --- opp-5: Lotus Finance --------------------------------------------------
   {
     id: "activity-opp-5-created",
     opportunityId: "opp-5",
@@ -198,7 +198,7 @@ export const activityMoments: ActivityMoment[] = [
     createdAt: "2026-07-27",
   },
 
-  // --- opp-7: Brightpath Bank ------------------------------------------------
+  // --- opp-7: Halo Bank ------------------------------------------------
   {
     id: "activity-opp-7-created",
     opportunityId: "opp-7",
@@ -231,7 +231,7 @@ export const activityMoments: ActivityMoment[] = [
     id: "activity-opp-7-action-accepted",
     opportunityId: "opp-7",
     kind: "action-accepted",
-    message: "Accepted the next action: Send a thank-you note after the Brightpath Bank final loop.",
+    message: "Accepted the next action: Send a thank-you note after the Halo Bank final loop.",
     createdAt: "2026-07-15",
   },
   {

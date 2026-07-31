@@ -107,11 +107,11 @@ export const nextActions: NextAction[] = [
       "If a verifiable hiring manager or current employee turns up on LinkedIn, confirming the contact moves ahead of archiving.",
   },
 
-  // --- opp-3: Northwind Robotics (Saved, Medium fit, 11 weeks stale) -------
+  // --- opp-3: Mekong Robotics (Saved, Medium fit, 11 weeks stale) -------
   {
     id: "action-6",
     opportunityId: "opp-3",
-    verb: "Decide: pursue or archive Northwind Robotics",
+    verb: "Decide: pursue or archive Mekong Robotics",
     rationale:
       "Medium fit and eleven weeks with no update means this is worth a clear decision rather than sitting in Saved indefinitely.",
     effort: "10 min",
@@ -124,14 +124,14 @@ export const nextActions: NextAction[] = [
         verb: "Research the team before deciding",
         chooseWhen: "you want to confirm whether the posting is still an active search before committing time.",
         rationale:
-          "A closer look at Northwind's recent product launches would confirm whether the eleven-week silence means a stalled search.",
+          "A closer look at Mekong's recent product launches would confirm whether the eleven-week silence means a stalled search.",
         effort: "15 min",
         dueHint: "No rush",
         confidence: "Medium",
         handoff: "copilot",
-        copilotPrompt: "Give me a research summary on Northwind Robotics",
+        copilotPrompt: "Give me a research summary on Mekong Robotics",
         followUp: {
-          verb: "Reach out to Northwind's hiring manager with what you learned",
+          verb: "Reach out to Mekong's hiring manager with what you learned",
           rationale:
             "Once you've confirmed the search is still active, a direct message referencing what you found is a stronger opener than a generic follow-up.",
           effort: "15 min",
@@ -141,7 +141,7 @@ export const nextActions: NextAction[] = [
       },
       {
         id: "alt-action-6-tailor",
-        verb: "Tailor your CV for Northwind before applying",
+        verb: "Tailor your CV for Mekong before applying",
         chooseWhen: "you decide to pursue this and want strong materials ready first.",
         rationale:
           "The mentoring and operations-dashboard scope is real leadership evidence worth surfacing clearly in your materials.",
@@ -162,7 +162,7 @@ export const nextActions: NextAction[] = [
       },
     ],
     whatWouldChangeThis:
-      "If Northwind's team confirms the search is still active and open to remote candidates, researching first moves ahead of archiving.",
+      "If Mekong's team confirms the search is still active and open to remote candidates, researching first moves ahead of archiving.",
   },
 
   // --- opp-4: Arclight AI (Applied, Strong fit) ----------------------------
@@ -210,11 +210,11 @@ export const nextActions: NextAction[] = [
       "If the recruiter confirms the committee already reviewed your application this week, waiting moves ahead of following up again.",
   },
 
-  // --- opp-5: Tidal Finance (Applied, Weak fit) ----------------------------
+  // --- opp-5: Lotus Finance (Applied, Weak fit) ----------------------------
   {
     id: "action-8",
     opportunityId: "opp-5",
-    verb: "Decide whether to formally withdraw from Tidal Finance",
+    verb: "Decide whether to formally withdraw from Lotus Finance",
     rationale:
       "On-site only and no AI-facing scope both run counter to your preferences, worth a clean decision instead of a quiet drift.",
     effort: "10 min",
@@ -242,7 +242,7 @@ export const nextActions: NextAction[] = [
         confidence: "Low",
       },
     ],
-    whatWouldChangeThis: "If Tidal confirms a hybrid option, asking about flexibility moves ahead of withdrawing.",
+    whatWouldChangeThis: "If Lotus confirms a hybrid option, asking about flexibility moves ahead of withdrawing.",
   },
 
   // --- opp-6: Meridian Labs (Interview, Strong fit) ------------------------
@@ -292,19 +292,19 @@ export const nextActions: NextAction[] = [
     followUp: {
       verb: "Send a thank-you note after the panel round",
       rationale:
-        "A same-week note after a panel keeps momentum while the committee deliberates, the same pattern that worked well at Brightpath Bank.",
+        "A same-week note after a panel keeps momentum while the committee deliberates, the same pattern that worked well at Halo Bank.",
       effort: "10 min",
       dueHint: "Same day",
       confidence: "High",
     },
   },
 
-  // --- opp-7: Brightpath Bank (Interview, Medium fit) ----------------------
+  // --- opp-7: Halo Bank (Interview, Medium fit) ----------------------
   // Historical: already done, kept for the Activity and Plan history.
   {
     id: "action-4",
     opportunityId: "opp-7",
-    verb: "Send a thank-you note after the Brightpath Bank final loop",
+    verb: "Send a thank-you note after the Halo Bank final loop",
     rationale: "A same-week note after a final loop keeps momentum while the panel deliberates.",
     effort: "10 min",
     dueHint: "Same day",
@@ -315,7 +315,7 @@ export const nextActions: NextAction[] = [
   {
     id: "action-9",
     opportunityId: "opp-7",
-    verb: "Ask the Brightpath Bank committee for a decision timeline",
+    verb: "Ask the Halo Bank committee for a decision timeline",
     rationale: "The final loop wrapped without a stated timeline, the one open question left before an offer decision.",
     effort: "10 min",
     dueHint: "This week",
@@ -353,7 +353,7 @@ export const nextActions: NextAction[] = [
       },
     ],
     whatWouldChangeThis:
-      "If Meridian Labs' panel result lands first, weighing the tradeoff moves ahead of checking in with Brightpath.",
+      "If Meridian Labs' panel result lands first, weighing the tradeoff moves ahead of checking in with Halo.",
   },
 
   // --- opp-8: Orbit Logistics (Offer, Strong fit) --------------------------

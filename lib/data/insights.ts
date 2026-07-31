@@ -309,14 +309,14 @@ export const insights: AiInsight[] = [
     ],
   },
 
-  // --- opp-3: Northwind Robotics -----------------------------------------
+  // --- opp-3: Mekong Robotics -----------------------------------------
   {
     id: "insight-opp-3-summary",
     kind: "summary",
     hostType: "opportunity",
     hostId: "opp-3",
     createdAt: "2026-05-14",
-    body: "Product Design Lead role at Northwind Robotics, leading design for a fleet-operations dashboard used by on-site warehouse technicians. Hybrid in Ho Chi Minh City.",
+    body: "Product Design Lead role at Mekong Robotics, leading design for a fleet-operations dashboard used by on-site warehouse technicians. Hybrid in Ho Chi Minh City.",
   },
   {
     id: "insight-opp-3-interpretation",
@@ -325,7 +325,7 @@ export const insights: AiInsight[] = [
     hostId: "opp-3",
     createdAt: "2026-05-14",
     plainLanguageRead:
-      "Northwind wants a lead designer for the dashboard their on-site technicians use to run a robot fleet, a hands-on operational tool, not a growth or consumer surface.",
+      "Mekong wants a lead designer for the dashboard their on-site technicians use to run a robot fleet, a hands-on operational tool, not a growth or consumer surface.",
     expectations: [
       {
         id: "exp-opp-3-1",
@@ -372,12 +372,12 @@ export const insights: AiInsight[] = [
       {
         id: "cred-opp-3-pos-1",
         label: "Company and funding are verifiable",
-        why: "Northwind's Series C round, roughly 200-person headcount, and customer list are all publicly confirmable.",
+        why: "Mekong's Series C round, roughly 200-person headcount, and customer list are all publicly confirmable.",
       },
       {
         id: "cred-opp-3-pos-2",
         label: "Posting matches the public product description",
-        why: "The scope described lines up with what Northwind's own site says the fleet-operations product does.",
+        why: "The scope described lines up with what Mekong's own site says the fleet-operations product does.",
       },
     ],
     cautionSignals: [
@@ -617,14 +617,14 @@ export const insights: AiInsight[] = [
     ],
   },
 
-  // --- opp-5: Tidal Finance -------------------------------------------------
+  // --- opp-5: Lotus Finance -------------------------------------------------
   {
     id: "insight-opp-5-summary",
     kind: "summary",
     hostType: "opportunity",
     hostId: "opp-5",
     createdAt: "2026-06-05",
-    body: "Generalist senior product designer role at Tidal Finance, a consumer savings app, covering onboarding and rewards. On-site in Ho Chi Minh City.",
+    body: "Generalist senior product designer role at Lotus Finance, a consumer savings app, covering onboarding and rewards. On-site in Ho Chi Minh City.",
   },
   {
     id: "insight-opp-5-interpretation",
@@ -633,7 +633,7 @@ export const insights: AiInsight[] = [
     hostId: "opp-5",
     createdAt: "2026-06-05",
     plainLanguageRead:
-      "Tidal wants one generalist to cover both onboarding and rewards for a consumer savings app, breadth over depth, and entirely on-site.",
+      "Lotus wants one generalist to cover both onboarding and rewards for a consumer savings app, breadth over depth, and entirely on-site.",
     expectations: [
       {
         id: "exp-opp-5-1",
@@ -674,14 +674,14 @@ export const insights: AiInsight[] = [
       {
         id: "cred-opp-5-pos-1",
         label: "Company and product are verifiable",
-        why: "Tidal has a live app-store presence and roughly 40 employees, both independently checkable.",
+        why: "Lotus has a live app-store presence and roughly 40 employees, both independently checkable.",
       },
     ],
     cautionSignals: [
       {
         id: "cred-opp-5-caution-1",
         label: "Recruiter outreach, not a direct posting",
-        why: "Came through recruiter outreach rather than Tidal's own careers page, worth confirming scope directly with the hiring manager before going further.",
+        why: "Came through recruiter outreach rather than Lotus's own careers page, worth confirming scope directly with the hiring manager before going further.",
       },
     ],
     whyThisReading:
@@ -743,7 +743,7 @@ export const insights: AiInsight[] = [
         proposedText:
           "Fintra: Senior Product Designer, Apr 2023 to present. Loop Commerce: Product Designer, Jun 2020 to Mar 2023, covered onboarding and lifecycle surfaces for a consumer e-commerce product. Kestrel Analytics: Product Designer, Feb 2019 to May 2020.",
         rationale:
-          "Brings the Loop Commerce onboarding breadth forward, the closest precedent to Tidal's onboarding and rewards scope your fit analysis found only partial overlap for.",
+          "Brings the Loop Commerce onboarding breadth forward, the closest precedent to Lotus's onboarding and rewards scope your fit analysis found only partial overlap for.",
         state: "suggested",
       },
       {
@@ -912,14 +912,14 @@ export const insights: AiInsight[] = [
     ],
   },
 
-  // --- opp-7: Brightpath Bank --------------------------------------------
+  // --- opp-7: Halo Bank --------------------------------------------
   {
     id: "insight-opp-7-summary",
     kind: "summary",
     hostType: "opportunity",
     hostId: "opp-7",
     createdAt: "2026-04-18",
-    body: "Product Design Manager role at Brightpath Bank, a digital-first retail bank, leading a three-person design team on lending products. First-time manager role.",
+    body: "Product Design Manager role at Halo Bank, a digital-first retail bank, leading a three-person design team on lending products. First-time manager role.",
   },
   {
     id: "insight-opp-7-interpretation",
@@ -928,7 +928,7 @@ export const insights: AiInsight[] = [
     hostId: "opp-7",
     createdAt: "2026-04-18",
     plainLanguageRead:
-      "Brightpath wants a first-time manager to lead three designers on lending products, a real people-leadership seat, but lighter on the AI-facing work you are prioritizing.",
+      "Halo wants a first-time manager to lead three designers on lending products, a real people-leadership seat, but lighter on the AI-facing work you are prioritizing.",
     expectations: [
       {
         id: "exp-opp-7-1",
@@ -952,7 +952,7 @@ export const insights: AiInsight[] = [
     vagueLanguage: {
       phrase: "first-time manager for a three-person design team",
       decoded:
-        "'First-time' signals Brightpath expects to invest in ramping you up as a manager, not that you will be thrown in with no support, worth confirming what that onboarding looks like.",
+        "'First-time' signals Halo expects to invest in ramping you up as a manager, not that you will be thrown in with no support, worth confirming what that onboarding looks like.",
     },
     whyThisReading:
       "Read from the explicit people-management language paired with continued individual design work, both markers of a hybrid manager-plus-individual-contributor seat rather than a pure management role.",
@@ -969,7 +969,7 @@ export const insights: AiInsight[] = [
       {
         id: "cred-opp-7-pos-1",
         label: "Verified recruiter with company history",
-        why: "Outreach came from a Brightpath recruiter with a confirmed LinkedIn history at the company, not a third party.",
+        why: "Outreach came from a Halo recruiter with a confirmed LinkedIn history at the company, not a third party.",
       },
       {
         id: "cred-opp-7-pos-2",
@@ -1039,7 +1039,7 @@ export const insights: AiInsight[] = [
         proposedText:
           "Fintra: Senior Product Designer, Apr 2023 to present, informal lead for two junior designers, representing design in stakeholder and risk reviews on lending products. Loop Commerce: Product Designer, Jun 2020 to Mar 2023, led a three-squad design system rollout.",
         rationale:
-          "Surfaces the mentoring and stakeholder-facing lending work your fit analysis calls the closest overlap with Brightpath's regulated lending domain.",
+          "Surfaces the mentoring and stakeholder-facing lending work your fit analysis calls the closest overlap with Halo's regulated lending domain.",
         state: "suggested",
       },
       {
@@ -1360,7 +1360,7 @@ export const insights: AiInsight[] = [
     hostId: "skill-8",
     createdAt: "2026-07-01",
     skillId: "skill-8",
-    note: "People management sits at level 1 against a target of 4. Mentorship shows real leadership instinct, but you've never had formal direct reports. Both Meridian Labs' panel round and Brightpath Bank's manager loop are already testing this directly, making it the main open question behind the leadership branch of your target direction.",
+    note: "People management sits at level 1 against a target of 4. Mentorship shows real leadership instinct, but you've never had formal direct reports. Both Meridian Labs' panel round and Halo Bank's manager loop are already testing this directly, making it the main open question behind the leadership branch of your target direction.",
     confidence: "High",
   },
   {

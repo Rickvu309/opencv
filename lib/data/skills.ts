@@ -206,7 +206,7 @@ export const learningItems: LearningItem[] = [
     goalId: "goal-3",
     state: "suggested",
     expectedBenefit:
-      "Moves People management from Beginning to Working, direct preparation for Brightpath Bank's people-management ask.",
+      "Moves People management from Beginning to Working, direct preparation for Halo Bank's people-management ask.",
   },
   {
     id: "li-4",

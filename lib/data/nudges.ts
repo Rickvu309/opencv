@@ -7,7 +7,7 @@ export const nudges: Nudge[] = [
   {
     id: "nudge-1",
     trigger: "stale-opportunity",
-    message: "Northwind Robotics has had no activity in 11 weeks.",
+    message: "Mekong Robotics has had no activity in 11 weeks.",
     why: "Medium fit and hardware-adjacent scope, worth a clear decision instead of sitting in Saved indefinitely.",
     actions: [{ label: "Decide: pursue or archive", href: "/opportunities/opp-3#actions" }],
     relatedOpportunityId: "opp-3",
@@ -70,10 +70,10 @@ export const nudges: Nudge[] = [
 export const weeklyReviewScript: WeeklyReviewScript = {
   whatMoved: [
     "Meridian Labs moved to the panel round after two positive interview rounds.",
-    "Brightpath Bank's final loop wrapped, decision still pending.",
+    "Halo Bank's final loop wrapped, decision still pending.",
     "Orbit Logistics extended an offer with a deadline approaching.",
     "Cascade AI was saved as a new opportunity, still waiting on a first Copilot read.",
-    "Sent the Brightpath Bank thank-you note right after the final loop wrapped.",
+    "Sent the Halo Bank thank-you note right after the final loop wrapped.",
   ],
   connectedSourcesRecap:
     "From your connected sources: Copilot scanned 9 emails this week and linked 7 threads to opportunities you're tracking.",

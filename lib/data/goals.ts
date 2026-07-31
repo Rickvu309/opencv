@@ -45,14 +45,14 @@ export const goals: Goal[] = [
   {
     id: "goal-3",
     title: "Grow into people leadership",
-    why: "Mai has mentored two designers informally but has never had direct reports. Brightpath Bank's manager role would make this official.",
+    why: "Mai has mentored two designers informally but has never had direct reports. Halo Bank's manager role would make this official.",
     targetDate: "2026-12-01",
     horizon: "long term",
     status: "needs attention",
     progressNotes: [
       {
         id: "goal-3-note-1",
-        note: "Brightpath Bank final interview loop complete, awaiting a decision.",
+        note: "Halo Bank final interview loop complete, awaiting a decision.",
         createdAt: "2026-07-20",
       },
       {
@@ -79,7 +79,7 @@ export const goals: Goal[] = [
       },
       {
         id: "goal-4-note-2",
-        note: "Paused this quarter to focus on the Meridian Labs and Brightpath Bank interview loops. Picking the writing cadence back up once both decisions land.",
+        note: "Paused this quarter to focus on the Meridian Labs and Halo Bank interview loops. Picking the writing cadence back up once both decisions land.",
         createdAt: "2026-07-28",
       },
     ],
@@ -116,7 +116,7 @@ export const pathScenarios: PathScenario[] = [
     tradeoff: "Less hands-on AI craft time day to day, since more hours go to managing and hiring.",
     fitWithStrengths: "Medium",
     nextSixMonths: [
-      "Decide on the Brightpath Bank offer once it lands, weighing its lending-only scope against a more AI-forward manager role.",
+      "Decide on the Halo Bank offer once it lands, weighing its lending-only scope against a more AI-forward manager role.",
       "Start the engineering-manager shadow week already lined up to test the leadership transition.",
       "Look for a second design-lead opening at an AI-forward company as a hedge.",
     ],
@@ -197,7 +197,7 @@ export const directionGapAnalysis: DirectionGapAnalysis = {
     {
       id: "gap-uncertain-2",
       label: "Whether a design-lead title requires management experience she doesn't have yet",
-      note: "Brightpath Bank is treating this as a first-time manager role, but it's unclear whether AI-forward companies expect prior direct reports before making the same call.",
+      note: "Halo Bank is treating this as a first-time manager role, but it's unclear whether AI-forward companies expect prior direct reports before making the same call.",
     },
   ],
   pathIntoLearningNote: "Skills & Learning has 3 suggested learning items already lined up against these gaps.",

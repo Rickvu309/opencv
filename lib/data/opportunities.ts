@@ -72,7 +72,7 @@ export const opportunities: Opportunity[] = [
   {
     id: "opp-3",
     role: "Product Design Lead",
-    company: "Northwind Robotics",
+    company: "Mekong Robotics",
     location: "Ho Chi Minh City (hybrid)",
     remote: false,
     status: "Saved",
@@ -80,14 +80,14 @@ export const opportunities: Opportunity[] = [
     priority: "Low",
     isDream: false,
     source: "Company careers page",
-    salaryRange: "$90,000 to $110,000 USD",
+    salaryRange: "50,000,000 to 70,000,000 VND per month",
     description:
-      "Northwind builds warehouse robotics fleet software. The role leads design for the fleet-operations dashboard used by on-site technicians. Hardware-adjacent domain is new territory for Mai, and the posting has been open for eleven weeks with no update.",
+      "Mekong builds warehouse robotics fleet software. The role leads design for the fleet-operations dashboard used by on-site technicians. Hardware-adjacent domain is new territory for Mai, and the posting has been open for eleven weeks with no update.",
     savedAt: "2026-05-14",
     lastActivityAt: "2026-05-14",
     nextActionId: "action-6",
     companyContext:
-      "Northwind Robotics is a Series C hardware company building autonomous fleet software for warehouse operators, roughly 200 employees, with a verifiable customer list.",
+      "Mekong Robotics is a Series C hardware company building autonomous fleet software for warehouse operators, roughly 200 employees, with a verifiable customer list.",
     responsibilities: [
       "Lead design for the fleet-operations dashboard used by on-site technicians.",
       "Run field research directly with warehouse technicians to validate workflows.",
@@ -139,7 +139,7 @@ export const opportunities: Opportunity[] = [
   {
     id: "opp-5",
     role: "Senior Product Designer",
-    company: "Tidal Finance",
+    company: "Lotus Finance",
     location: "Ho Chi Minh City (on-site)",
     remote: false,
     status: "Applied",
@@ -147,15 +147,15 @@ export const opportunities: Opportunity[] = [
     priority: "Low",
     isDream: false,
     source: "Recruiter outreach",
-    salaryRange: "$85,000 to $100,000 USD",
+    salaryRange: "35,000,000 to 50,000,000 VND per month",
     description:
-      "Tidal is a consumer savings app looking for a generalist product designer across onboarding and rewards. Scope is broad but shallow relative to Mai's current depth, and the role is on-site only.",
+      "Lotus is a consumer savings app looking for a generalist product designer across onboarding and rewards. Scope is broad but shallow relative to Mai's current depth, and the role is on-site only.",
     savedAt: "2026-06-05",
     lastActivityAt: "2026-06-22",
     appliedAt: "2026-06-08",
     nextActionId: "action-8",
     companyContext:
-      "Tidal Finance is a consumer savings app with roughly 40 employees, live in market for three years with a verifiable app-store presence.",
+      "Lotus Finance is a consumer savings app with roughly 40 employees, live in market for three years with a verifiable app-store presence.",
     responsibilities: [
       "Design across onboarding and the rewards program end to end.",
       "Partner with a single product manager covering both surfaces.",
@@ -208,7 +208,7 @@ export const opportunities: Opportunity[] = [
   {
     id: "opp-7",
     role: "Product Design Manager",
-    company: "Brightpath Bank",
+    company: "Halo Bank",
     location: "Ho Chi Minh City (hybrid)",
     remote: false,
     status: "Interview",
@@ -216,16 +216,16 @@ export const opportunities: Opportunity[] = [
     priority: "Medium",
     isDream: false,
     source: "LinkedIn outreach",
-    salaryRange: "$100,000 to $125,000 USD",
+    salaryRange: "60,000,000 to 85,000,000 VND per month",
     description:
-      "Brightpath is a digital-first retail bank hiring a first-time manager for a three-person design team on lending products. Strong leadership-track match, lighter on the AI-specific work Mai wants more of. Final loop complete, awaiting decision.",
+      "Halo is a digital-first retail bank hiring a first-time manager for a three-person design team on lending products. Strong leadership-track match, lighter on the AI-specific work Mai wants more of. Final loop complete, awaiting decision.",
     savedAt: "2026-04-18",
     lastActivityAt: "2026-07-20",
     appliedAt: "2026-04-25",
     nextActionId: "action-9",
     goalIds: ["goal-3"],
     companyContext:
-      "Brightpath Bank is a digital-first retail bank with a three-person design team, hiring its first design manager to lead lending-product design.",
+      "Halo Bank is a digital-first retail bank with a three-person design team, hiring its first design manager to lead lending-product design.",
     responsibilities: [
       "Manage a three-person design team covering lending products.",
       "Set critique cadence and career growth plans for each designer.",

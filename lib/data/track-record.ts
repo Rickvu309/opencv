@@ -84,7 +84,7 @@ export const trackRecordEntries: TrackRecordEntry[] = [
     skillIds: ["skill-8", "skill-10"],
     status: "confirmed",
     usedIn: [{ kind: "cv", id: "cv-2", label: "Product-lead CV" }],
-    strengthens: "Grow into people leadership, the direct evidence Brightpath Bank's panel probed hardest.",
+    strengthens: "Grow into people leadership, the direct evidence Halo Bank's panel probed hardest.",
   },
   {
     id: "tre-6",
@@ -220,7 +220,7 @@ export function buildCopilotCaptureCandidate(dateStamp: string): TrackRecordEntr
     id: COPILOT_CAPTURE_CANDIDATE_ID,
     title: "Managed three concurrent senior-level interview loops to a decision point in one month",
     story:
-      "Ran Meridian Labs, Brightpath Bank, and Orbit Logistics through final-stage steps in the same four-week window, prepping separately for a panel round, a final loop, and an offer decision without letting any one process stall.",
+      "Ran Meridian Labs, Halo Bank, and Orbit Logistics through final-stage steps in the same four-week window, prepping separately for a panel round, a final loop, and an offer decision without letting any one process stall.",
     impact: "All three opportunities reached a decision point, panel round, completed loop, or offer, within the same month.",
     date: dateStamp,
     evidenceTag: "Metric",

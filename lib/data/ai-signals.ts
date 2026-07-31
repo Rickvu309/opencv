@@ -29,7 +29,7 @@ export const aiSignals: AiSignal[] = [
       "Panel round is scheduled and typically probes how you'd lead design decisions, not just make them.",
   },
 
-  // Thread activity proposes a status change: Tidal Finance's recruiter
+  // Thread activity proposes a status change: Lotus Finance's recruiter
   // says they moved forward with someone else, so Applied no longer
   // reflects reality.
   {
@@ -37,7 +37,7 @@ export const aiSignals: AiSignal[] = [
     opportunityId: "opp-5",
     kind: "status-change",
     iconKind: "status",
-    signal: "Tidal Finance's recruiter says they moved forward with another candidate.",
+    signal: "Lotus Finance's recruiter says they moved forward with another candidate.",
     whyItMatters: "Applied status no longer reflects reality, worth a clean close instead of a quiet drift.",
     evidenceId: "email-tidal-cold",
     proposedAction: "Move status to: Closed",
@@ -46,7 +46,7 @@ export const aiSignals: AiSignal[] = [
     previousStatus: "Applied",
   },
 
-  // Interview scheduling signal raises urgency: Brightpath Bank's
+  // Interview scheduling signal raises urgency: Halo Bank's
   // committee wants an expedited follow-up call, a sign a decision is
   // close, worth a priority bump and a fresh prep action.
   {
@@ -54,7 +54,7 @@ export const aiSignals: AiSignal[] = [
     opportunityId: "opp-7",
     kind: "priority-bump",
     iconKind: "urgency",
-    signal: "Brightpath Bank's committee wants a follow-up call this Friday before finalizing.",
+    signal: "Halo Bank's committee wants a follow-up call this Friday before finalizing.",
     whyItMatters:
       "A late-stage scheduling ask like this usually means a decision is close, worth treating as higher priority.",
     evidenceId: "email-brightpath-scheduling",
