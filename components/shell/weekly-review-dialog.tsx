@@ -189,7 +189,18 @@ export function WeeklyReviewDialog() {
                   key={suggestion.id}
                   className="flex items-start justify-between gap-3 rounded-lg border border-border bg-muted/30 p-3"
                 >
-                  <p className="text-foreground">{suggestion.text}</p>
+                  <div className="flex flex-col gap-1">
+                    <p className="text-foreground">{suggestion.text}</p>
+                    {suggestion.id === "review-focus-1" ? (
+                      <Link
+                        href="/planner"
+                        onClick={closeWeeklyReview}
+                        className="w-fit text-xs text-muted-foreground underline-offset-2 hover:underline"
+                      >
+                        Also the top item in your Path Planner growth plan
+                      </Link>
+                    ) : null}
+                  </div>
                   <Switch
                     className="mt-0.5 shrink-0"
                     checked={suggestion.state === "accepted"}

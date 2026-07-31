@@ -929,4 +929,42 @@ export const copilotScripts: CopilotSurfaceScript[] = [
       },
     ],
   },
+  {
+    surface: "Path Planner",
+    suggestedPrompts: [
+      "Why is this the recommended path?",
+      "What would change the ranking?",
+      "What's the single next move?",
+    ],
+    exchanges: [
+      {
+        id: "copilot-planner-1",
+        prompt: "Why is this the recommended path?",
+        response: {
+          lead: "Three of your four Strong-fit opportunities already sit in this exact lane.",
+          points: [
+            { label: "Evidence", detail: "Solace AI, Arclight AI, and Meridian Labs all lean on the same explainability work you already ship at Fintra." },
+            { label: "Cost", detail: "Pursuing it costs nothing you aren't already doing, every active AI-forward loop stays exactly where it is." },
+          ],
+          confidence: "High",
+        },
+      },
+      {
+        id: "copilot-planner-2",
+        prompt: "What would change the ranking?",
+        response: {
+          lead: "A Meridian Labs offer would lock this path in. A Halo Bank acceptance paired with a stalled AI-forward pipeline would favor the design-lead path instead.",
+          handoff: { kind: "route", href: "/opportunities/opp-6", label: "Open Meridian Labs" },
+        },
+      },
+      {
+        id: "copilot-planner-3",
+        prompt: "What's the single next move?",
+        response: {
+          lead: "Prioritize Meridian Labs panel prep, the panel round Thursday, August 6 is the nearest live decision point on your strongest AI-forward loop.",
+          handoff: { kind: "route", href: "/opportunities/opp-6#actions", label: "Open Actions tab" },
+        },
+      },
+    ],
+  },
 ];

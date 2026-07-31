@@ -3,11 +3,21 @@ import { ConfidenceChip } from "@/components/shared/confidence-chip";
 import { CopilotTag } from "@/components/shared/copilot-tag";
 import { WhyThisReading } from "@/components/shared/why-this-reading";
 import { PlanItemCard } from "@/components/planner/plan-item-card";
-import type { Goal, LearningItem, Opportunity, PathScenario, PlanItem, Skill, TrackRecordEntry } from "@/lib/types";
+import type {
+  Goal,
+  LearningItem,
+  Opportunity,
+  PathScenario,
+  PlanItem,
+  Profile,
+  Skill,
+  TrackRecordEntry,
+} from "@/lib/types";
 
 interface RecommendedPathCardProps {
   scenario: PathScenario;
   nextMove?: PlanItem;
+  profile: Profile;
   skills: Skill[];
   goals: Goal[];
   opportunities: Opportunity[];
@@ -25,6 +35,7 @@ interface RecommendedPathCardProps {
 export function RecommendedPathCard({
   scenario,
   nextMove,
+  profile,
   skills,
   goals,
   opportunities,
@@ -48,6 +59,11 @@ export function RecommendedPathCard({
         </div>
 
         <WhyThisReading text={scenario.whyThisReading} />
+
+        <div className="flex flex-col gap-1">
+          <span className="text-section-label">Grounded in your strengths</span>
+          <p className="text-sm text-foreground">{profile.strengths.join(" · ")}</p>
+        </div>
 
         {nextMove ? (
           <div className="flex flex-col gap-1.5">

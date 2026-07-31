@@ -32,6 +32,7 @@ export default function PathPlannerPage() {
       <RecommendedPathCard
         scenario={workingScenario}
         nextMove={nextMove}
+        profile={state.profile}
         skills={state.skills}
         goals={state.goals}
         opportunities={state.opportunities}
