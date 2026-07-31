@@ -9,6 +9,7 @@ import {
   useReducer,
   useRef,
 } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { persona } from "@/lib/data/persona";
@@ -65,6 +66,7 @@ export interface StoreState {
   weeklyReview: WeeklyReviewScript;
   onboarded: boolean;
   copilot: CopilotState;
+  highlightedOpportunityId?: string;
 }
 
 const initialState: StoreState = {
@@ -86,6 +88,7 @@ const initialState: StoreState = {
     thinking: false,
     messagesBySurface: {},
   },
+  highlightedOpportunityId: undefined,
 };
 
 type Action =
@@ -94,7 +97,13 @@ type Action =
   | { type: "COMPLETE_ONBOARDING"; profilePatch: OnboardingProfilePatch; goals: Goal[] }
   | { type: "SET_OPPORTUNITY_STATUS"; id: string; status: OpportunityStatus }
   | { type: "TOGGLE_OPPORTUNITY_DREAM"; id: string }
-  | { type: "ADD_OPPORTUNITY"; opportunity: Opportunity }
+  | {
+      type: "ADD_OPPORTUNITY";
+      opportunity: Opportunity;
+      insight?: AiInsight;
+      nextAction?: NextAction;
+    }
+  | { type: "CLEAR_OPPORTUNITY_HIGHLIGHT"; id: string }
   | { type: "SET_NEXT_ACTION_STATE"; id: string; state: NextActionState }
   | {
       type: "EDIT_NEXT_ACTION";
@@ -167,7 +176,17 @@ function reducer(state: StoreState, action: Action): StoreState {
       return {
         ...state,
         opportunities: [action.opportunity, ...state.opportunities],
+        insights: action.insight ? [...state.insights, action.insight] : state.insights,
+        nextActions: action.nextAction
+          ? [...state.nextActions, action.nextAction]
+          : state.nextActions,
+        highlightedOpportunityId: action.opportunity.id,
       };
+
+    case "CLEAR_OPPORTUNITY_HIGHLIGHT":
+      return state.highlightedOpportunityId === action.id
+        ? { ...state, highlightedOpportunityId: undefined }
+        : state;
 
     case "SET_NEXT_ACTION_STATE":
       return {
@@ -276,11 +295,11 @@ function reducer(state: StoreState, action: Action): StoreState {
   }
 }
 
-function today(): string {
+export function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-function makeId(prefix: string): string {
+export function makeId(prefix: string): string {
   return `${prefix}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
@@ -291,7 +310,8 @@ interface StoreContextValue {
   completeOnboarding: (profilePatch: OnboardingProfilePatch, goals: Goal[]) => void;
   setOpportunityStatus: (id: string, status: OpportunityStatus) => void;
   toggleDream: (id: string) => void;
-  addOpportunity: (opportunity: Opportunity) => void;
+  addOpportunity: (opportunity: Opportunity, insight?: AiInsight, nextAction?: NextAction) => void;
+  clearOpportunityHighlight: (id: string) => void;
   acceptNextAction: (id: string) => void;
   editNextAction: (
     id: string,
@@ -320,6 +340,7 @@ const StoreContext = createContext<StoreContextValue | null>(null);
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const thinkingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     return () => {
@@ -350,9 +371,22 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: "TOGGLE_OPPORTUNITY_DREAM", id });
   }, []);
 
-  const addOpportunity = useCallback((opportunity: Opportunity) => {
-    dispatch({ type: "ADD_OPPORTUNITY", opportunity });
-    toast.success("Opportunity added");
+  const addOpportunity = useCallback(
+    (opportunity: Opportunity, insight?: AiInsight, nextAction?: NextAction) => {
+      dispatch({ type: "ADD_OPPORTUNITY", opportunity, insight, nextAction });
+      toast.success("Opportunity added", {
+        description: `${opportunity.role} at ${opportunity.company} is now in Saved.`,
+        action: {
+          label: "Open",
+          onClick: () => router.push(`/opportunities/${opportunity.id}`),
+        },
+      });
+    },
+    [router]
+  );
+
+  const clearOpportunityHighlight = useCallback((id: string) => {
+    dispatch({ type: "CLEAR_OPPORTUNITY_HIGHLIGHT", id });
   }, []);
 
   const acceptNextAction = useCallback((id: string) => {
@@ -483,6 +517,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setOpportunityStatus,
       toggleDream,
       addOpportunity,
+      clearOpportunityHighlight,
       acceptNextAction,
       editNextAction,
       dismissNextAction,
@@ -510,6 +545,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setOpportunityStatus,
       toggleDream,
       addOpportunity,
+      clearOpportunityHighlight,
       acceptNextAction,
       editNextAction,
       dismissNextAction,

@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
-import { Star } from "lucide-react";
+import { Plus, Star } from "lucide-react";
 
 import { PageHeader } from "@/components/shell/page-header";
+import { AddOpportunityDialog } from "@/components/opportunities/add-opportunity-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +14,7 @@ import { StatusChip } from "@/components/shared/status-chip";
 import { FitChip } from "@/components/shared/fit-chip";
 import { PriorityChip } from "@/components/shared/priority-chip";
 import { EmptyState } from "@/components/shared/empty-state";
+import { cn } from "@/lib/utils";
 import { useCopilotSurface, useStore } from "@/lib/store";
 import type { OpportunityStatus } from "@/lib/types";
 
@@ -19,13 +22,28 @@ const STATUS_OPTIONS: OpportunityStatus[] = ["Saved", "Applied", "Interview", "O
 
 export default function OpportunitiesPage() {
   useCopilotSurface("Opportunities");
-  const { state, toggleDream, setOpportunityStatus } = useStore();
+  const { state, toggleDream, setOpportunityStatus, clearOpportunityHighlight } = useStore();
+  const highlightedId = state.highlightedOpportunityId;
+
+  useEffect(() => {
+    if (!highlightedId) return;
+    const timeout = setTimeout(() => clearOpportunityHighlight(highlightedId), 2500);
+    return () => clearTimeout(timeout);
+  }, [highlightedId, clearOpportunityHighlight]);
 
   return (
     <div className="flex flex-col">
       <PageHeader
         title="Opportunities"
         description={`${state.opportunities.length} tracked, across every stage from saved to closed.`}
+        primaryAction={
+          <AddOpportunityDialog>
+            <Button size="sm">
+              <Plus className="size-4" />
+              Add opportunity
+            </Button>
+          </AddOpportunityDialog>
+        }
       />
 
       <div className="flex flex-col gap-3 p-6">
@@ -33,7 +51,14 @@ export default function OpportunitiesPage() {
           <EmptyState message="No opportunities yet. Save one to start tracking it here." />
         ) : (
           state.opportunities.map((opportunity) => (
-            <Card key={opportunity.id} className="ring-foreground/8">
+            <Card
+              key={opportunity.id}
+              className={cn(
+                "ring-foreground/8 transition-colors duration-700",
+                opportunity.id === highlightedId &&
+                  "ring-2 ring-indigo-400 bg-indigo-50/50 dark:ring-indigo-500/60 dark:bg-indigo-500/5"
+              )}
+            >
               <CardHeader className="gap-2">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex flex-col gap-0.5">

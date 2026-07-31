@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { AlarmClock, Check, Flame, Inbox, X } from "lucide-react";
+import { AlarmClock, Check, Flame, Inbox, Plus, X } from "lucide-react";
 
 import { PageHeader } from "@/components/shell/page-header";
+import { AddOpportunityDialog } from "@/components/opportunities/add-opportunity-dialog";
 import { CopilotTag } from "@/components/shared/copilot-tag";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,14 @@ export default function HomePage() {
       <PageHeader
         title={`Good to see you, ${state.profile.name.split(" ")[0]}`}
         description={`Steering toward ${state.profile.targetDirectionLabel}. Here's where things stand across your search.`}
+        primaryAction={
+          <AddOpportunityDialog>
+            <Button size="sm" variant="outline">
+              <Plus className="size-4" />
+              Add opportunity
+            </Button>
+          </AddOpportunityDialog>
+        }
       />
 
       <div className="flex flex-col gap-6 p-6">
