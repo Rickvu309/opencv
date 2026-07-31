@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { AskCopilotButton } from "@/components/shared/ask-copilot-button";
 import { CopilotTag } from "@/components/shared/copilot-tag";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,9 +28,12 @@ export function GapAnalysisSection({ gapAnalysis, skills, learningItems }: GapAn
   return (
     <Card className="ring-foreground/8">
       <CardContent className="flex flex-col gap-4">
-        <div className="flex items-center gap-2">
-          <h2>Gap analysis against the target direction</h2>
-          <CopilotTag />
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <h2>Gap analysis against the target direction</h2>
+            <CopilotTag />
+          </div>
+          <AskCopilotButton surface="Goals" objectLabel="Gap analysis" />
         </div>
 
         <div className="flex flex-col gap-2">

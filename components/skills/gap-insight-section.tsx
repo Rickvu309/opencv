@@ -1,3 +1,4 @@
+import { AskCopilotButton } from "@/components/shared/ask-copilot-button";
 import { CopilotTag } from "@/components/shared/copilot-tag";
 import { ConfidenceChip } from "@/components/shared/confidence-chip";
 import { SkillLevelMeter } from "@/components/skills/skill-level-meter";
@@ -19,9 +20,12 @@ export function GapInsightSection({ gapInsights, skills }: GapInsightSectionProp
   return (
     <Card className="ring-foreground/8">
       <CardContent className="flex flex-col gap-4">
-        <div className="flex items-center gap-2">
-          <h2>What is between you and your target direction</h2>
-          <CopilotTag />
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <h2>What is between you and your target direction</h2>
+            <CopilotTag />
+          </div>
+          <AskCopilotButton surface="Skills & Learning" objectLabel="Gap insights" />
         </div>
 
         <div className="flex flex-col gap-3">

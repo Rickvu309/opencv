@@ -532,10 +532,55 @@ export interface WeeklyReviewScript {
 // Copilot
 // ---------------------------------------------------------------------------
 
+/** One labeled point inside a structured Copilot answer, never a long paragraph. */
+export interface CopilotResponsePoint {
+  label: string;
+  detail: string;
+}
+
+/**
+ * The three kinds of store-wired action a scripted answer can end with. Each
+ * carries the id of a real seed object already known to the store, except
+ * "create-candidate-entry", which carries the full drafted entry since the
+ * candidate does not exist in the store yet when Copilot proposes it.
+ */
+export type CopilotSuggestedAction =
+  | { kind: "accept-next-action"; targetId: string; label: string }
+  | { kind: "add-learning-item"; targetId: string; label: string }
+  | { kind: "create-candidate-entry"; entryId: string; label: string };
+
+/**
+ * Where a scripted answer hands off to next. "opportunity-tab" resolves
+ * against whichever opportunity is currently the panel's object (by role and
+ * company), so one scripted line works for both the seeded per-opportunity
+ * scripts and any opportunity added later at runtime. "route" is a plain,
+ * fixed destination.
+ */
+export type CopilotHandoff =
+  | { kind: "route"; href: string; label: string }
+  | {
+      kind: "opportunity-tab";
+      tab: "overview" | "ai-analysis" | "actions" | "materials" | "activity";
+      label: string;
+    };
+
+/**
+ * The anatomy every scripted answer renders as: a short lead line, optional
+ * labeled points, a confidence chip only where a judgment is made, and
+ * exactly one of a store-wired action or a handoff, never both.
+ */
+export interface CopilotResponse {
+  lead: string;
+  points?: CopilotResponsePoint[];
+  confidence?: ConfidenceLevel;
+  action?: CopilotSuggestedAction;
+  handoff?: CopilotHandoff;
+}
+
 export interface CopilotExchange {
   id: string;
   prompt: string;
-  response: string;
+  response: CopilotResponse;
 }
 
 export interface CopilotSurfaceScript {
@@ -547,6 +592,9 @@ export interface CopilotSurfaceScript {
 export interface CopilotMessage {
   id: string;
   role: "user" | "copilot";
+  /** Raw user text, or the copilot's plain-text fallback (lead line, or the honest limit-state line). */
   text: string;
+  /** Present on copilot messages that matched a scripted exchange, carries the structured render. */
+  response?: CopilotResponse;
   createdAt: string;
 }

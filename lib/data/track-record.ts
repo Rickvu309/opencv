@@ -207,3 +207,27 @@ export function buildPanelPrepCandidate(dateStamp: string): TrackRecordEntry {
     status: "candidate",
   };
 }
+
+// The one scripted example of the Copilot panel's "create candidate entry"
+// action, offered from the Track Record surface's "What is worth capturing
+// from last month?" prompt. Built at click time (dateStamp is "today") the
+// same way buildPanelPrepCandidate is, guarded by id so accepting it twice
+// never duplicates the entry.
+export const COPILOT_CAPTURE_CANDIDATE_ID = "tre-copilot-capture-1";
+
+export function buildCopilotCaptureCandidate(dateStamp: string): TrackRecordEntry {
+  return {
+    id: COPILOT_CAPTURE_CANDIDATE_ID,
+    title: "Managed three concurrent senior-level interview loops to a decision point in one month",
+    story:
+      "Ran Meridian Labs, Brightpath Bank, and Orbit Logistics through final-stage steps in the same four-week window, prepping separately for a panel round, a final loop, and an offer decision without letting any one process stall.",
+    impact: "All three opportunities reached a decision point, panel round, completed loop, or offer, within the same month.",
+    date: dateStamp,
+    evidenceTag: "Metric",
+    whySuggested:
+      "Copilot noticed three separate opportunities advanced to final stages within the same month, worth capturing as evidence of running a high-stakes pipeline at once.",
+    evidenceHint: "Cross-reference each opportunity's Activity tab for the exact interview dates.",
+    skillIds: ["skill-9"],
+    status: "candidate",
+  };
+}

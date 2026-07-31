@@ -1,19 +1,19 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, MessageCircleQuestion, Quote, RefreshCw } from "lucide-react";
+import { ArrowRight, Quote, RefreshCw } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AiThinking } from "@/components/shared/ai-thinking";
+import { AskCopilotButton } from "@/components/shared/ask-copilot-button";
 import { ConfidenceChip } from "@/components/shared/confidence-chip";
 import { CopilotTag } from "@/components/shared/copilot-tag";
 import { ExpandableRow } from "@/components/shared/expandable-row";
 import { FitChip } from "@/components/shared/fit-chip";
 import { WhyThisReading } from "@/components/shared/why-this-reading";
-import { copilotScripts } from "@/lib/data/copilot-scripts";
-import { useStore } from "@/lib/store";
+import { resolveOpportunitySurface } from "@/lib/copilot-utils";
 import type { CredibilityInsight, FitInsight, InterpretationInsight, Opportunity } from "@/lib/types";
 
 interface OpportunityAiAnalysisTabProps {
@@ -39,7 +39,6 @@ export function OpportunityAiAnalysisTab({
   fit,
   onGoToActions,
 }: OpportunityAiAnalysisTabProps) {
-  const { setCopilotSurface, setCopilotOpen } = useStore();
   const [refreshing, setRefreshing] = useState(false);
   const refreshTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -55,14 +54,7 @@ export function OpportunityAiAnalysisTab({
     refreshTimeout.current = setTimeout(() => setRefreshing(false), 900);
   }
 
-  function handleAskFollowUp() {
-    const objectLabel = `${opportunity.role} at ${opportunity.company}`;
-    const opportunitySurface = `Opportunity Detail: ${opportunity.company}`;
-    const hasScriptedFollowUps = copilotScripts.some((script) => script.surface === opportunitySurface);
-    setCopilotSurface(hasScriptedFollowUps ? opportunitySurface : "Opportunity Detail", objectLabel);
-    setCopilotOpen(true);
-  }
-
+  const objectLabel = `${opportunity.role} at ${opportunity.company}`;
   const hasAnyLayer = Boolean(interpretation || credibility || fit);
 
   return (
@@ -221,10 +213,12 @@ export function OpportunityAiAnalysisTab({
         <div className="flex items-center justify-between rounded-lg border border-border bg-muted/20 px-4 py-3">
           <p className="text-xs text-muted-foreground">Ready to act on this reading?</p>
           <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" onClick={handleAskFollowUp}>
-              <MessageCircleQuestion className="size-3.5" />
-              Ask a follow-up
-            </Button>
+            <AskCopilotButton
+              surface={resolveOpportunitySurface(opportunity.company)}
+              objectLabel={objectLabel}
+              label="Ask a follow-up"
+              className="border border-border"
+            />
             <Button size="sm" onClick={onGoToActions}>
               Decide next step
               <ArrowRight className="size-3.5" />

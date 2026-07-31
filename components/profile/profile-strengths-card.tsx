@@ -5,8 +5,9 @@ import Link from "next/link";
 import { Plus, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { AskCopilotButton } from "@/components/shared/ask-copilot-button";
 import { useStore } from "@/lib/store";
 
 /**
@@ -38,6 +39,9 @@ export function ProfileStrengthsCard() {
     <Card>
       <CardHeader>
         <CardTitle>Strengths</CardTitle>
+        <CardAction>
+          <AskCopilotButton surface="Profile" objectLabel="Strengths section" />
+        </CardAction>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         <div className="grid grid-cols-2 gap-2">

@@ -11,6 +11,8 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { CvSectionCard } from "@/components/cvs/cv-section-card";
 import { CvMetaRail } from "@/components/cvs/cv-meta-rail";
 import { TailoringDialog } from "@/components/cvs/tailoring-dialog";
+import { AskCopilotButton } from "@/components/shared/ask-copilot-button";
+import { resolveCvSurface } from "@/lib/copilot-utils";
 import { useCopilotSurface, useStore } from "@/lib/store";
 
 export default function CvDetailPage() {
@@ -19,7 +21,7 @@ export default function CvDetailPage() {
   const { state } = useStore();
   const cv = state.cvVersions.find((item) => item.id === params.id);
 
-  useCopilotSurface("CV Versions", cv?.name);
+  useCopilotSurface(cv ? resolveCvSurface(cv.name) : "CV Versions", cv?.name);
 
   if (!cv) {
     return (
@@ -62,17 +64,20 @@ export default function CvDetailPage() {
       />
 
       <div className="flex flex-col gap-4 p-6">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <Badge variant={cv.kind === "tailored" ? "default" : "secondary"} className="capitalize">
-            {cv.kind}
-          </Badge>
-          {linkedOpportunity ? (
-            <Button asChild size="sm" variant="outline">
-              <Link href={`/opportunities/${linkedOpportunity.id}`}>
-                Tailored for {linkedOpportunity.role} at {linkedOpportunity.company}
-              </Link>
-            </Button>
-          ) : null}
+        <div className="flex flex-wrap items-center justify-between gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Badge variant={cv.kind === "tailored" ? "default" : "secondary"} className="capitalize">
+              {cv.kind}
+            </Badge>
+            {linkedOpportunity ? (
+              <Button asChild size="sm" variant="outline">
+                <Link href={`/opportunities/${linkedOpportunity.id}`}>
+                  Tailored for {linkedOpportunity.role} at {linkedOpportunity.company}
+                </Link>
+              </Button>
+            ) : null}
+          </div>
+          <AskCopilotButton surface={resolveCvSurface(cv.name)} objectLabel={cv.name} />
         </div>
 
         <div className="flex gap-4">

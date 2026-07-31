@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import type { ReactNode } from "react";
 
 import { Sidebar } from "@/components/shell/sidebar";
@@ -7,7 +8,20 @@ import { CopilotPanel } from "@/components/shell/copilot-panel";
 import { useStore } from "@/lib/store";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
-  const { state } = useStore();
+  const { state, toggleCopilot } = useStore();
+
+  // A quiet keyboard entry to the Copilot panel, available anywhere in the
+  // app shell regardless of whether the panel is currently open.
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        toggleCopilot();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [toggleCopilot]);
 
   return (
     <div className="flex h-full w-full">

@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { Plus } from "lucide-react";
 
 import { PageHeader } from "@/components/shell/page-header";
+import { AskCopilotButton } from "@/components/shared/ask-copilot-button";
 import { CopilotTag } from "@/components/shared/copilot-tag";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
@@ -46,12 +47,15 @@ export default function GoalsPage() {
         <section className="flex flex-col gap-3">
           <div className="flex items-center justify-between gap-3">
             <h2>Active goals</h2>
-            <GoalFormDialog>
-              <Button size="sm">
-                <Plus className="size-4" />
-                Add goal
-              </Button>
-            </GoalFormDialog>
+            <div className="flex items-center gap-1.5">
+              <AskCopilotButton surface="Goals" objectLabel="Active goals" />
+              <GoalFormDialog>
+                <Button size="sm">
+                  <Plus className="size-4" />
+                  Add goal
+                </Button>
+              </GoalFormDialog>
+            </div>
           </div>
 
           {state.goals.length === 0 ? (
@@ -110,9 +114,12 @@ export default function GoalsPage() {
         </section>
 
         <section className="flex flex-col gap-3">
-          <div className="flex items-center gap-2">
-            <h2>Where this can go</h2>
-            <CopilotTag />
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <h2>Where this can go</h2>
+              <CopilotTag />
+            </div>
+            <AskCopilotButton surface="Goals" objectLabel="Where this can go" />
           </div>
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
             {state.pathScenarios.map((scenario) => (

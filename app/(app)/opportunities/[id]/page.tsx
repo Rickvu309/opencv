@@ -15,6 +15,7 @@ import { OpportunityActionsTab } from "@/components/opportunities/opportunity-ac
 import { OpportunityMaterialsTab } from "@/components/opportunities/opportunity-materials-tab";
 import { OpportunityActivityTab } from "@/components/opportunities/opportunity-activity-tab";
 import { findOpportunityActivity, findPrimaryNextAction } from "@/lib/opportunity-utils";
+import { resolveOpportunitySurface } from "@/lib/copilot-utils";
 import { useCopilotSurface, useStore } from "@/lib/store";
 import type { CredibilityInsight, FitInsight, InterpretationInsight, SummaryInsight } from "@/lib/types";
 
@@ -27,18 +28,24 @@ export default function OpportunityDetailPage() {
 
   const TAB_VALUES = ["overview", "ai-analysis", "actions", "materials", "activity"];
   useEffect(() => {
-    const hash = window.location.hash.replace("#", "");
-    if (TAB_VALUES.includes(hash)) {
-      // A link into a specific tab (for example Home's Next actions card)
-      // sets the location hash before this page mounts, one-time sync only.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setActiveTab(hash);
+    function syncTabFromHash() {
+      const hash = window.location.hash.replace("#", "");
+      if (TAB_VALUES.includes(hash)) {
+        setActiveTab(hash);
+      }
     }
+    // A link into a specific tab (for example Home's Next actions card, or a
+    // Copilot handoff) sets the location hash. Synced on mount and again on
+    // every hash change, so a handoff clicked while already on this exact
+    // opportunity still switches tabs, not just a fresh navigation here.
+    syncTabFromHash();
+    window.addEventListener("hashchange", syncTabFromHash);
+    return () => window.removeEventListener("hashchange", syncTabFromHash);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useCopilotSurface(
-    "Opportunity Detail",
+    opportunity ? resolveOpportunitySurface(opportunity.company) : "Opportunity Detail",
     opportunity ? `${opportunity.role} at ${opportunity.company}` : undefined
   );
 
@@ -119,6 +126,7 @@ export default function OpportunityDetailPage() {
             <OpportunityActionsTab
               actions={actions}
               companyName={opportunity.company}
+              objectLabel={`${opportunity.role} at ${opportunity.company}`}
               onGoToMaterials={() => setActiveTab("materials")}
             />
           </TabsContent>

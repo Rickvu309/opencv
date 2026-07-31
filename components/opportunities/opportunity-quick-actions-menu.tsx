@@ -15,6 +15,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { resolveOpportunitySurface } from "@/lib/copilot-utils";
 import { useStore } from "@/lib/store";
 import type { Opportunity, OpportunityStatus, Priority } from "@/lib/types";
 
@@ -33,7 +34,7 @@ export function OpportunityQuickActionsMenu({ opportunity }: { opportunity: Oppo
   const router = useRouter();
 
   function askCopilot() {
-    setCopilotSurface("Opportunity Detail", `${opportunity.role} at ${opportunity.company}`);
+    setCopilotSurface(resolveOpportunitySurface(opportunity.company), `${opportunity.role} at ${opportunity.company}`);
     setCopilotOpen(true);
   }
 

@@ -1,3 +1,4 @@
+import { AskCopilotButton } from "@/components/shared/ask-copilot-button";
 import { CopilotTag } from "@/components/shared/copilot-tag";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LearningItemCard } from "@/components/skills/learning-item-card";
@@ -28,9 +29,12 @@ export function LearningPlanSection({ skills, learningItems, goals }: LearningPl
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-2">
-        <h2>Learning plan</h2>
-        <CopilotTag />
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <h2>Learning plan</h2>
+          <CopilotTag />
+        </div>
+        <AskCopilotButton surface="Skills & Learning" objectLabel="Learning plan" />
       </div>
 
       <div className="flex flex-col gap-1.5">

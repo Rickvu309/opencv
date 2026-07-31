@@ -6,6 +6,7 @@ import { Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { AskCopilotButton } from "@/components/shared/ask-copilot-button";
 import { useStore } from "@/lib/store";
 
 /**
@@ -36,7 +37,8 @@ export function ProfileSummaryCard() {
       <CardHeader>
         <CardTitle>Summary</CardTitle>
         {editing ? null : (
-          <CardAction>
+          <CardAction className="flex items-center gap-1">
+            <AskCopilotButton surface="Profile" objectLabel="Summary section" />
             <Button size="icon-sm" variant="ghost" aria-label="Edit summary" onClick={startEditing}>
               <Pencil className="size-3.5" />
             </Button>

@@ -7,7 +7,9 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { AskCopilotButton } from "@/components/shared/ask-copilot-button";
 import { CopilotTag } from "@/components/shared/copilot-tag";
+import { resolveOpportunitySurface } from "@/lib/copilot-utils";
 import { useStore } from "@/lib/store";
 import type { CvVersion, Goal, Opportunity, SummaryInsight } from "@/lib/types";
 
@@ -29,10 +31,15 @@ export function OpportunityOverviewTab({
   const [sourceExpanded, setSourceExpanded] = useState(false);
 
   const notesDirty = notesDraft !== (opportunity.notes ?? "");
+  const objectLabel = `${opportunity.role} at ${opportunity.company}`;
 
   return (
     <div className="grid grid-cols-3 gap-4">
       <div className="col-span-2 flex flex-col gap-3">
+        <div className="flex justify-end">
+          <AskCopilotButton surface={resolveOpportunitySurface(opportunity.company)} objectLabel={objectLabel} />
+        </div>
+
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">

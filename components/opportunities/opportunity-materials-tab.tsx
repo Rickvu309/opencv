@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AskCopilotButton } from "@/components/shared/ask-copilot-button";
 import { EmptyState } from "@/components/shared/empty-state";
 import { TailoringDialog } from "@/components/cvs/tailoring-dialog";
+import { resolveOpportunitySurface } from "@/lib/copilot-utils";
 import { useStore } from "@/lib/store";
 import type { CvVersion, Opportunity } from "@/lib/types";
 
@@ -24,9 +26,14 @@ interface OpportunityMaterialsTabProps {
  */
 export function OpportunityMaterialsTab({ opportunity, cvVersion }: OpportunityMaterialsTabProps) {
   const { state, setCvOpportunityLink } = useStore();
+  const objectLabel = `${opportunity.role} at ${opportunity.company}`;
 
   return (
     <div className="flex flex-col gap-3">
+      <div className="flex justify-end">
+        <AskCopilotButton surface={resolveOpportunitySurface(opportunity.company)} objectLabel={objectLabel} />
+      </div>
+
       {cvVersion ? (
         <Card>
           <CardContent className="flex items-center justify-between">

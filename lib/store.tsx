@@ -36,6 +36,7 @@ import type {
   ActivityMoment,
   AiInsight,
   CopilotMessage,
+  CopilotResponse,
   CvVersion,
   DirectionGapAnalysis,
   ExperienceEntry,
@@ -1177,9 +1178,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const matchedExchange = script?.exchanges.find(
         (exchange) => exchange.prompt.toLowerCase() === trimmed.toLowerCase()
       );
-      const responseText =
-        matchedExchange?.response ??
-        "Noted. That's outside what's scripted for this prototype, try one of the suggested prompts above for the full response.";
+      // The graceful limit state: any free-typed input that doesn't match a
+      // scripted prompt gets one honest line back, plus this surface's
+      // suggested prompts stay visible below for the user to pick instead.
+      const response: CopilotResponse = matchedExchange?.response ?? {
+        lead: "In this prototype I only handle the suggested prompts, pick one below.",
+      };
 
       const delay = 600 + Math.random() * 600;
       if (thinkingTimeout.current) clearTimeout(thinkingTimeout.current);
@@ -1187,7 +1191,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         const copilotMessage: CopilotMessage = {
           id: makeId("msg"),
           role: "copilot",
-          text: responseText,
+          text: response.lead,
+          response,
           createdAt: new Date().toISOString(),
         };
         dispatch({ type: "ADD_COPILOT_MESSAGE", surface, message: copilotMessage });

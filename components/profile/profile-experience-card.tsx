@@ -8,6 +8,7 @@ import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/componen
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { AskCopilotButton } from "@/components/shared/ask-copilot-button";
 import { makeId, useStore } from "@/lib/store";
 import type { ExperienceEntry } from "@/lib/types";
 
@@ -96,7 +97,8 @@ export function ProfileExperienceCard() {
     <Card>
       <CardHeader>
         <CardTitle>Experience</CardTitle>
-        <CardAction>
+        <CardAction className="flex items-center gap-1">
+          <AskCopilotButton surface="Profile" objectLabel="Experience section" />
           <Button size="sm" variant="outline" onClick={startAdding}>
             <Plus className="size-3.5" />
             Add role

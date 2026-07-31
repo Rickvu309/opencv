@@ -20,7 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ConfidenceChip } from "@/components/shared/confidence-chip";
 import { CopilotTag } from "@/components/shared/copilot-tag";
 import { EmptyState } from "@/components/shared/empty-state";
-import { copilotScripts } from "@/lib/data/copilot-scripts";
+import { resolveOpportunitySurface } from "@/lib/copilot-utils";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import type { NextAction, NextActionAlternative } from "@/lib/types";
@@ -28,6 +28,7 @@ import type { NextAction, NextActionAlternative } from "@/lib/types";
 interface OpportunityActionsTabProps {
   actions: NextAction[];
   companyName: string;
+  objectLabel: string;
   onGoToMaterials: () => void;
 }
 
@@ -37,7 +38,12 @@ interface OpportunityActionsTabProps {
  * Alternatives lists the other paths worth weighing, and Plan is the
  * running checklist of what's been accepted for this opportunity.
  */
-export function OpportunityActionsTab({ actions, companyName, onGoToMaterials }: OpportunityActionsTabProps) {
+export function OpportunityActionsTab({
+  actions,
+  companyName,
+  objectLabel,
+  onGoToMaterials,
+}: OpportunityActionsTabProps) {
   const {
     acceptNextAction,
     dismissNextAction,
@@ -66,9 +72,7 @@ export function OpportunityActionsTab({ actions, companyName, onGoToMaterials }:
 
   function handleAskCopilot(prompt?: string) {
     if (!prompt) return;
-    const opportunitySurface = `Opportunity Detail: ${companyName}`;
-    const hasScript = copilotScripts.some((script) => script.surface === opportunitySurface);
-    setCopilotSurface(hasScript ? opportunitySurface : "Opportunity Detail", companyName);
+    setCopilotSurface(resolveOpportunitySurface(companyName), objectLabel);
     setCopilotOpen(true);
     sendCopilotMessage(prompt);
   }

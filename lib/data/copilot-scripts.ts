@@ -1,6 +1,15 @@
+import { cvForkedSurface, opportunityForkedSurface } from "@/lib/copilot-surface-names";
+import { COPILOT_CAPTURE_CANDIDATE_ID } from "@/lib/data/track-record";
 import type { CopilotSurfaceScript } from "@/lib/types";
 
-// Per-surface suggested prompts and scripted exchanges for the Copilot panel.
+// The Copilot layer's one script registry: every surface's suggested
+// prompts and scripted exchanges, for the right panel everywhere it opens.
+// A surface is forked (a ":" suffix naming the specific object) only where
+// the scripted content genuinely differs per instance, opportunities (fit
+// judgment) and CVs (tailoring guidance); everything else shares one surface
+// per type. Every exchange's response renders as a structured block: a short
+// lead line, optional labeled points, a confidence chip only where a
+// judgment is made, and exactly one of a store-wired action or a handoff.
 export const copilotScripts: CopilotSurfaceScript[] = [
   {
     surface: "Home",
@@ -13,20 +22,52 @@ export const copilotScripts: CopilotSurfaceScript[] = [
       {
         id: "copilot-home-1",
         prompt: "What should I focus on this week?",
-        response:
-          "Meridian Labs' panel round is your nearest deadline and strongest AI-direction match, I'd prep for that first. Orbit Logistics' offer window is also closing, worth a compensation decision before it lapses.",
+        response: {
+          lead: "Meridian Labs and Orbit Logistics, in that order.",
+          points: [
+            {
+              label: "Meridian Labs",
+              detail: "Nearest deadline and your strongest AI-direction match, prep for the panel round first.",
+            },
+            {
+              label: "Orbit Logistics",
+              detail: "The offer window is closing, worth a compensation decision before it lapses.",
+            },
+          ],
+          confidence: "High",
+          handoff: { kind: "route", href: "/opportunities/opp-6#actions", label: "Open Meridian Labs" },
+        },
       },
       {
         id: "copilot-home-2",
         prompt: "Which opportunity needs attention right now?",
-        response:
-          "Solace AI: it's a Dream, strong-fit match with a warm referral, and it's been 4 weeks since you saved it with no message sent yet. The accepted next action to send your case study is still open.",
+        response: {
+          lead: "Solace AI.",
+          points: [
+            {
+              label: "Why it's first",
+              detail: "A Dream, Strong-fit match with a warm referral, saved 4 weeks ago with no message sent yet.",
+            },
+            {
+              label: "Open item",
+              detail: "The accepted next action to send your case study is still outstanding.",
+            },
+          ],
+          handoff: { kind: "route", href: "/opportunities/opp-1", label: "Open Solace AI" },
+        },
       },
       {
         id: "copilot-home-3",
         prompt: "Summarize what changed since last week.",
-        response:
-          "Meridian Labs advanced to the panel round, Brightpath Bank's final loop wrapped, and Orbit Logistics extended an offer. I also drafted 2 Track Record candidates from this week's activity, worth a look before the details fade.",
+        response: {
+          lead: "Three opportunities moved, and 2 Track Record candidates were drafted.",
+          points: [
+            { label: "Meridian Labs", detail: "Advanced to the panel round." },
+            { label: "Brightpath Bank", detail: "Final loop wrapped, decision pending." },
+            { label: "Orbit Logistics", detail: "Extended an offer." },
+          ],
+          handoff: { kind: "route", href: "/track-record", label: "Review drafted candidates" },
+        },
       },
     ],
   },
@@ -41,20 +82,49 @@ export const copilotScripts: CopilotSurfaceScript[] = [
       {
         id: "copilot-opportunities-1",
         prompt: "Which of these have the strongest fit?",
-        response:
-          "Solace AI, Arclight AI, Meridian Labs, and Orbit Logistics are all rated Strong. Solace AI and Meridian Labs are the closest matches to your target direction in AI product design specifically.",
+        response: {
+          lead: "Solace AI, Arclight AI, Meridian Labs, and Orbit Logistics are all rated Strong.",
+          points: [
+            {
+              label: "Closest to your direction",
+              detail: "Solace AI and Meridian Labs are the closest matches to AI product design specifically.",
+            },
+          ],
+          confidence: "High",
+          handoff: { kind: "route", href: "/opportunities/opp-1", label: "Open Solace AI" },
+        },
       },
       {
         id: "copilot-opportunities-2",
         prompt: "What's stale and worth archiving?",
-        response:
-          "Northwind Robotics hasn't moved in 11 weeks. I'd either move it to Applied this week or archive it, it's the one saved role without a clear next step.",
+        response: {
+          lead: "Northwind Robotics, it hasn't moved in 11 weeks.",
+          points: [
+            {
+              label: "The call",
+              detail: "Move it to Applied this week or archive it, it's the one saved role without a clear next step.",
+            },
+          ],
+          action: {
+            kind: "accept-next-action",
+            targetId: "action-6",
+            label: "Accept: Decide on Northwind Robotics",
+          },
+        },
       },
       {
         id: "copilot-opportunities-3",
         prompt: "Help me add a new opportunity from a link.",
-        response:
-          "Paste the job link or description into the Add dialog's first tab and I'll parse it into role, company, location, and salary fields for you to review before it's saved.",
+        response: {
+          lead: "Paste the job link or description into the Add dialog's first tab.",
+          points: [
+            {
+              label: "What happens next",
+              detail: "I'll parse it into role, company, location, and salary fields for you to review before it's saved.",
+            },
+          ],
+          handoff: { kind: "route", href: "/opportunities", label: "Open the Add dialog" },
+        },
       },
     ],
   },
@@ -69,25 +139,38 @@ export const copilotScripts: CopilotSurfaceScript[] = [
       {
         id: "copilot-opportunity-detail-1",
         prompt: "Why is the fit rated the way it is?",
-        response:
-          "This role's core scope overlaps closely with work you've already shipped, that's the main driver of a Strong rating. Check the AI Analysis tab for the specific strengths, concerns, and unknowns behind the judgment.",
+        response: {
+          lead: "This role's core scope overlaps closely with work you've already shipped, that's the main driver of the rating.",
+          points: [
+            { label: "See the detail", detail: "The AI Analysis tab breaks down the specific strengths, concerns, and unknowns behind it." },
+          ],
+          handoff: { kind: "opportunity-tab", tab: "ai-analysis", label: "Open AI Analysis" },
+        },
       },
       {
         id: "copilot-opportunity-detail-2",
         prompt: "What should my next step be here?",
-        response:
-          "The Actions tab has a suggested next step with a one-line rationale. You can accept it as is, edit it, or dismiss it if it doesn't fit, nothing happens automatically either way.",
+        response: {
+          lead: "The Actions tab has a suggested next step with a one-line rationale.",
+          points: [
+            { label: "Your call", detail: "Accept it as is, edit it, or dismiss it, nothing happens automatically either way." },
+          ],
+          handoff: { kind: "opportunity-tab", tab: "actions", label: "Open Actions tab" },
+        },
       },
       {
         id: "copilot-opportunity-detail-3",
         prompt: "Draft a message to follow up.",
-        response:
-          "Something like: 'Hi, following up on my application, still very interested and happy to share more detail on my explainability work if useful.' Edit the specifics before sending, I don't send anything myself.",
+        response: {
+          lead: "Something like: \"Hi, following up on my application, still very interested and happy to share more detail on my explainability work if useful.\"",
+          points: [{ label: "Before sending", detail: "Edit the specifics, I don't send anything myself." }],
+          handoff: { kind: "opportunity-tab", tab: "actions", label: "Open Actions tab" },
+        },
       },
     ],
   },
   {
-    surface: "Opportunity Detail: Solace AI",
+    surface: opportunityForkedSurface("Solace AI"),
     suggestedPrompts: [
       "What does 'trustworthy interface patterns' actually mean here?",
       "How much weight should I put on the referral?",
@@ -97,31 +180,56 @@ export const copilotScripts: CopilotSurfaceScript[] = [
       {
         id: "copilot-opp-1-1",
         prompt: "What does 'trustworthy interface patterns' actually mean here?",
-        response:
-          "It means you'd be designing the visual language for model confidence and uncertainty from scratch, Solace doesn't have an existing pattern for this yet. Expect to invent it, not adapt one.",
+        response: {
+          lead: "You'd be designing the visual language for model confidence and uncertainty from scratch.",
+          points: [{ label: "No existing pattern", detail: "Solace doesn't have one yet, expect to invent it, not adapt one." }],
+          handoff: { kind: "opportunity-tab", tab: "ai-analysis", label: "See the full interpretation" },
+        },
       },
       {
         id: "copilot-opp-1-2",
         prompt: "How much weight should I put on the referral?",
-        response:
-          "A lot. Your contact has worked directly with Solace's design team, that's a credible internal voice, not just a secondhand tip. It's part of why credibility confidence sits at High.",
+        response: {
+          lead: "A lot.",
+          points: [
+            {
+              label: "Why",
+              detail: "Your contact has worked directly with Solace's design team, a credible internal voice, not just a secondhand tip.",
+            },
+          ],
+          confidence: "High",
+          handoff: { kind: "opportunity-tab", tab: "ai-analysis", label: "See the credibility check" },
+        },
       },
       {
         id: "copilot-opp-1-3",
         prompt: "What should I lead with in my case study for this one?",
-        response:
-          "Lead with the explainability panel from Fintra first. It's the single piece of evidence that maps most directly onto owning Solace's explainability layer.",
+        response: {
+          lead: "Lead with the explainability panel from Fintra first.",
+          points: [
+            { label: "Why this one", detail: "It's the single piece of evidence that maps most directly onto owning Solace's explainability layer." },
+          ],
+          handoff: { kind: "opportunity-tab", tab: "materials", label: "Open Materials to tailor your CV" },
+        },
       },
       {
         id: "copilot-opp-1-research",
         prompt: "Give me a research summary on Solace AI",
-        response:
-          "Solace AI's engineering blog and their VP of Product's public talks focus heavily on model-explainability for clinical decision support, particularly contributing-factor visualizations for their diagnosis-support product. Their most recent post, from June 2026, covers how they render model confidence for non-technical clinicians, a close match for the explainability layer this role owns. Worth referencing that post directly in your case study.",
+        response: {
+          lead: "Solace's engineering blog and their VP of Product's talks focus heavily on model-explainability for clinical decision support.",
+          points: [
+            {
+              label: "Most relevant",
+              detail: "Their June 2026 post on rendering model confidence for non-technical clinicians is a close match for this role's explainability layer.",
+            },
+          ],
+          handoff: { kind: "opportunity-tab", tab: "materials", label: "Tailor your CV with this angle" },
+        },
       },
     ],
   },
   {
-    surface: "Opportunity Detail: Vanta Growth Labs",
+    surface: opportunityForkedSurface("Vanta Growth Labs"),
     suggestedPrompts: [
       "Is this posting worth pursuing at all?",
       "What would it take to clear the credibility flag?",
@@ -131,25 +239,40 @@ export const copilotScripts: CopilotSurfaceScript[] = [
       {
         id: "copilot-opp-2-1",
         prompt: "Is this posting worth pursuing at all?",
-        response:
-          "Not yet. Three separate checks, company presence, named team, and product description, all came back empty. I'd hold this in Saved until at least one clears.",
+        response: {
+          lead: "Not yet.",
+          points: [
+            { label: "Three checks failed", detail: "Company presence, named team, and product description all came back empty." },
+          ],
+          action: {
+            kind: "accept-next-action",
+            targetId: "action-7",
+            label: "Accept: Confirm a real hiring contact",
+          },
+        },
       },
       {
         id: "copilot-opp-2-2",
         prompt: "What would it take to clear the credibility flag?",
-        response:
-          "A real hiring manager or current employee you can verify on LinkedIn, or a company site with more than a single unregistered-looking domain page.",
+        response: {
+          lead: "A real hiring manager or employee you can verify on LinkedIn, or a company site with more than one unregistered-looking domain page.",
+          handoff: { kind: "opportunity-tab", tab: "ai-analysis", label: "See the credibility signals" },
+        },
       },
       {
         id: "copilot-opp-2-3",
         prompt: "Why is fit marked Unknown instead of Weak?",
-        response:
-          "Unknown means there isn't enough verified information to judge fit responsibly yet. Weak would imply I've seen the role and it doesn't match, which isn't true here.",
+        response: {
+          lead: "Unknown means there isn't enough verified information to judge fit responsibly yet.",
+          points: [{ label: "Why not Weak", detail: "Weak would imply I've seen the role and it doesn't match, which isn't true here." }],
+          confidence: "Medium",
+          handoff: { kind: "opportunity-tab", tab: "ai-analysis", label: "See the fit judgment" },
+        },
       },
     ],
   },
   {
-    surface: "Opportunity Detail: Northwind Robotics",
+    surface: opportunityForkedSurface("Northwind Robotics"),
     suggestedPrompts: [
       "Should I keep this one active or archive it?",
       "Why does mentoring count toward fit here?",
@@ -159,31 +282,54 @@ export const copilotScripts: CopilotSurfaceScript[] = [
       {
         id: "copilot-opp-3-1",
         prompt: "Should I keep this one active or archive it?",
-        response:
-          "Worth one more check before deciding. Eleven weeks with no update is long enough that either it's stalled or deprioritized on their end, I'd ask directly rather than keep waiting.",
+        response: {
+          lead: "Worth one more check before deciding.",
+          points: [
+            { label: "Why", detail: "Eleven weeks with no update means it's either stalled or deprioritized, ask directly rather than keep waiting." },
+          ],
+          action: {
+            kind: "accept-next-action",
+            targetId: "action-6",
+            label: "Accept: Decide on Northwind Robotics",
+          },
+        },
       },
       {
         id: "copilot-opp-3-2",
         prompt: "Why does mentoring count toward fit here?",
-        response:
-          "Because the lead scope names mentoring two designers explicitly, that's real progress toward your goal to grow into people leadership, even outside your primary AI direction.",
+        response: {
+          lead: "Because the lead scope names mentoring two designers explicitly.",
+          points: [{ label: "Why it counts", detail: "Real progress toward your goal to grow into people leadership, even outside your primary AI direction." }],
+          handoff: { kind: "opportunity-tab", tab: "ai-analysis", label: "See the fit judgment" },
+        },
       },
       {
         id: "copilot-opp-3-3",
         prompt: "What's the biggest gap against my target direction?",
-        response:
-          "No AI or model-facing work anywhere in the listed scope. It's the clearest gap against your target direction of AI product design and leadership.",
+        response: {
+          lead: "No AI or model-facing work anywhere in the listed scope.",
+          points: [{ label: "Clearest gap", detail: "Against your target direction of AI product design and leadership." }],
+          handoff: { kind: "opportunity-tab", tab: "ai-analysis", label: "See the fit judgment" },
+        },
       },
       {
         id: "copilot-opp-3-research",
         prompt: "Give me a research summary on Northwind Robotics",
-        response:
-          "Northwind's last two product announcements, from April and June 2026, both focus on fleet-routing efficiency for their existing operations dashboard, not a new hardware line. That's a sign the eleven-week-old posting is likely still an active operations-design need rather than a stalled or deprioritized search. No new hiring-manager name has surfaced publicly yet, so a direct check-in is still worth it.",
+        response: {
+          lead: "Northwind's last two product announcements focus on fleet-routing efficiency for their existing dashboard, not a new hardware line.",
+          points: [
+            {
+              label: "Reading",
+              detail: "A sign the 11-week-old posting is likely still active rather than stalled, though no new hiring-manager name has surfaced publicly.",
+            },
+          ],
+          handoff: { kind: "opportunity-tab", tab: "actions", label: "Decide next step" },
+        },
       },
     ],
   },
   {
-    surface: "Opportunity Detail: Arclight AI",
+    surface: opportunityForkedSurface("Arclight AI"),
     suggestedPrompts: [
       "How is this different from Meridian Labs?",
       "What's the biggest risk if I get an offer here?",
@@ -193,25 +339,38 @@ export const copilotScripts: CopilotSurfaceScript[] = [
       {
         id: "copilot-opp-4-1",
         prompt: "How is this different from Meridian Labs?",
-        response:
-          "Arclight is about the suggestion-and-approval interaction itself, workflow automation for operations teams. Meridian is about reviewer-facing confidence and uncertainty for evaluating models. Both are trust-boundary work, different audiences.",
+        response: {
+          lead: "Arclight is about the suggestion-and-approval interaction itself, workflow automation for operations teams.",
+          points: [{ label: "Meridian, by contrast", detail: "Reviewer-facing confidence and uncertainty for evaluating models. Both are trust-boundary work, different audiences." }],
+          handoff: { kind: "route", href: "/opportunities/opp-6", label: "Compare with Meridian Labs" },
+        },
       },
       {
         id: "copilot-opp-4-2",
         prompt: "What's the biggest risk if I get an offer here?",
-        response:
-          "The unclear path to design leadership as the team grows. Worth asking directly in a follow-up conversation before you'd need to decide on an offer.",
+        response: {
+          lead: "The unclear path to design leadership as the team grows.",
+          points: [{ label: "Worth doing first", detail: "Ask directly in a follow-up conversation before you'd need to decide on an offer." }],
+          action: {
+            kind: "accept-next-action",
+            targetId: "action-2",
+            label: "Accept: Follow up on application status",
+          },
+        },
       },
       {
         id: "copilot-opp-4-3",
         prompt: "Why is the team size listed as a concern?",
-        response:
-          "A three-person pod is efficient day to day but has less slack for structured mentorship, which matters for your goal to grow into people leadership.",
+        response: {
+          lead: "A three-person pod is efficient day to day but has less slack for structured mentorship.",
+          points: [{ label: "Why it matters", detail: "That slack is what your goal to grow into people leadership actually needs." }],
+          handoff: { kind: "opportunity-tab", tab: "ai-analysis", label: "See the fit judgment" },
+        },
       },
     ],
   },
   {
-    surface: "Opportunity Detail: Tidal Finance",
+    surface: opportunityForkedSurface("Tidal Finance"),
     suggestedPrompts: [
       "Why is this rated Weak instead of Medium?",
       "Is the on-site requirement really a dealbreaker?",
@@ -221,25 +380,41 @@ export const copilotScripts: CopilotSurfaceScript[] = [
       {
         id: "copilot-opp-5-1",
         prompt: "Why is this rated Weak instead of Medium?",
-        response:
-          "Three things stack against it at once: broad-shallow scope, on-site only, and no AI-facing work. Any one alone might land at Medium, together they pull it to Weak.",
+        response: {
+          lead: "Three things stack against it at once.",
+          points: [
+            { label: "Stacked concerns", detail: "Broad-shallow scope, on-site only, and no AI-facing work. Any one alone might land at Medium, together they pull it to Weak." },
+          ],
+          confidence: "High",
+          handoff: { kind: "opportunity-tab", tab: "ai-analysis", label: "See the fit judgment" },
+        },
       },
       {
         id: "copilot-opp-5-2",
         prompt: "Is the on-site requirement really a dealbreaker?",
-        response:
-          "It's your call, but it runs directly against your Remote work-style preference, and there's no hybrid option mentioned anywhere in the listing.",
+        response: {
+          lead: "It's your call, but it runs directly against your Remote work-style preference.",
+          points: [{ label: "No hybrid option", detail: "There's no hybrid option mentioned anywhere in the listing." }],
+          action: {
+            kind: "accept-next-action",
+            targetId: "action-8",
+            label: "Accept: Decide on withdrawing",
+          },
+        },
       },
       {
         id: "copilot-opp-5-3",
         prompt: "What would change my mind about this one?",
-        response:
-          "A narrower scope on one surface, or a path to remote work, either would meaningfully change the read here.",
+        response: {
+          lead: "A narrower scope on one surface, or a path to remote work.",
+          points: [{ label: "Either one", detail: "Would meaningfully change the read here." }],
+          handoff: { kind: "opportunity-tab", tab: "ai-analysis", label: "See the fit judgment" },
+        },
       },
     ],
   },
   {
-    surface: "Opportunity Detail: Meridian Labs",
+    surface: opportunityForkedSurface("Meridian Labs"),
     suggestedPrompts: [
       "What should I focus on for the panel round?",
       "How confident are we in the Strong rating?",
@@ -249,25 +424,40 @@ export const copilotScripts: CopilotSurfaceScript[] = [
       {
         id: "copilot-opp-6-1",
         prompt: "What should I focus on for the panel round?",
-        response:
-          "Leadership judgment, that's what the panel is most likely to probe next, per the fit concern. Your craft evidence is already strong, spend your prep time on decisions and tradeoffs, not portfolio polish.",
+        response: {
+          lead: "Leadership judgment, that's what the panel is most likely to probe next.",
+          points: [{ label: "Where to spend prep time", detail: "Your craft evidence is already strong, spend prep time on decisions and tradeoffs, not portfolio polish." }],
+          handoff: { kind: "opportunity-tab", tab: "actions", label: "Open Actions tab" },
+        },
       },
       {
         id: "copilot-opp-6-2",
         prompt: "How confident are we in the Strong rating?",
-        response:
-          "High. A referral with direct hiring-manager contact, two rounds matching the original posting, and console scope nearly identical to your Fintra explainability panel, all three line up.",
+        response: {
+          lead: "High.",
+          points: [
+            {
+              label: "Why",
+              detail: "A referral with direct hiring-manager contact, two rounds matching the original posting, and console scope nearly identical to your Fintra explainability panel.",
+            },
+          ],
+          confidence: "High",
+          handoff: { kind: "opportunity-tab", tab: "ai-analysis", label: "See the fit judgment" },
+        },
       },
       {
         id: "copilot-opp-6-3",
         prompt: "What's still unknown about this one?",
-        response:
-          "Final compensation band hasn't been discussed yet, that's the one open item left before an offer decision.",
+        response: {
+          lead: "Final compensation band hasn't been discussed yet.",
+          points: [{ label: "What's left", detail: "That's the one open item before an offer decision." }],
+          handoff: { kind: "route", href: "/cvs/cv-3", label: "Review the tailored CV" },
+        },
       },
     ],
   },
   {
-    surface: "Opportunity Detail: Brightpath Bank",
+    surface: opportunityForkedSurface("Brightpath Bank"),
     suggestedPrompts: [
       "Is the management scope worth the AI tradeoff?",
       "What should I ask about the decision timeline?",
@@ -277,25 +467,38 @@ export const copilotScripts: CopilotSurfaceScript[] = [
       {
         id: "copilot-opp-7-1",
         prompt: "Is the management scope worth the AI tradeoff?",
-        response:
-          "That's the real tradeoff to weigh: real progress on your people-leadership goal against time away from your AI-product goal. Neither is wrong, it depends which you want to prioritize next.",
+        response: {
+          lead: "That's the real tradeoff to weigh: people-leadership progress against time away from your AI-product goal.",
+          points: [{ label: "Neither is wrong", detail: "It depends which you want to prioritize next." }],
+          handoff: { kind: "route", href: "/goals", label: "See the goals tension" },
+        },
       },
       {
         id: "copilot-opp-7-2",
         prompt: "What should I ask about the decision timeline?",
-        response:
-          "Ask directly when the committee expects to decide, the final loop wrapped without a stated timeline, and it's the one unknown left.",
+        response: {
+          lead: "Ask directly when the committee expects to decide.",
+          points: [{ label: "Why now", detail: "The final loop wrapped without a stated timeline, it's the one unknown left." }],
+          action: {
+            kind: "accept-next-action",
+            targetId: "action-9",
+            label: "Accept: Ask for a decision timeline",
+          },
+        },
       },
       {
         id: "copilot-opp-7-3",
         prompt: "How does this compare to my other Interview-stage role?",
-        response:
-          "Meridian Labs is your stronger AI-direction match. Brightpath is your stronger leadership match. They're pulling in different directions on purpose.",
+        response: {
+          lead: "Meridian Labs is your stronger AI-direction match, Brightpath is your stronger leadership match.",
+          points: [{ label: "By design", detail: "They're pulling in different directions on purpose." }],
+          handoff: { kind: "route", href: "/opportunities/opp-6", label: "Compare with Meridian Labs" },
+        },
       },
     ],
   },
   {
-    surface: "Opportunity Detail: Orbit Logistics",
+    surface: opportunityForkedSurface("Orbit Logistics"),
     suggestedPrompts: [
       "Should I negotiate on the base salary?",
       "How does this offer compare to my target direction?",
@@ -305,25 +508,39 @@ export const copilotScripts: CopilotSurfaceScript[] = [
       {
         id: "copilot-opp-8-1",
         prompt: "Should I negotiate on the base salary?",
-        response:
-          "Worth trying. The concern notes it sits at the low end of your target range, that's exactly the kind of gap worth raising before you accept.",
+        response: {
+          lead: "Worth trying.",
+          points: [{ label: "Why", detail: "The concern notes it sits at the low end of your target range, exactly the kind of gap worth raising before you accept." }],
+          action: {
+            kind: "accept-next-action",
+            targetId: "action-5",
+            label: "Accept: Review the offer terms",
+          },
+        },
       },
       {
         id: "copilot-opp-8-2",
         prompt: "How does this offer compare to my target direction?",
-        response:
-          "It's a lateral move on the AI dimension specifically, strong on craft and your remote preference, but not advancing your goal to land a senior or staff AI product design role.",
+        response: {
+          lead: "It's a lateral move on the AI dimension specifically.",
+          points: [{ label: "Tradeoff", detail: "Strong on craft and your remote preference, but not advancing your goal to land a senior or staff AI product design role." }],
+          handoff: { kind: "route", href: "/goals", label: "See target direction" },
+        },
       },
       {
         id: "copilot-opp-8-3",
         prompt: "What's the honest tradeoff here?",
-        response:
-          "You'd gain a confirmed offer with scope you're already good at. You'd give up ground on your AI-direction goal and settle for below-target pay unless you negotiate.",
+        response: {
+          lead: "You'd gain a confirmed offer with scope you're already good at.",
+          points: [{ label: "You'd give up", detail: "Ground on your AI-direction goal, and below-target pay unless you negotiate." }],
+          confidence: "Medium",
+          handoff: { kind: "opportunity-tab", tab: "actions", label: "Open Actions tab" },
+        },
       },
     ],
   },
   {
-    surface: "Opportunity Detail: Vela Studio",
+    surface: opportunityForkedSurface("Vela Studio"),
     suggestedPrompts: [
       "Why did this end up Closed?",
       "Was withdrawing the right call?",
@@ -333,20 +550,29 @@ export const copilotScripts: CopilotSurfaceScript[] = [
       {
         id: "copilot-opp-9-1",
         prompt: "Why did this end up Closed?",
-        response:
-          "Timezone overlap with the US team proved unworkable against your Ho Chi Minh City schedule, that's the specific reason logged, not a credibility or scope issue.",
+        response: {
+          lead: "Timezone overlap with the US team proved unworkable against your Ho Chi Minh City schedule.",
+          points: [{ label: "Not a fit or credibility issue", detail: "That's the specific reason logged." }],
+          handoff: { kind: "opportunity-tab", tab: "activity", label: "See the activity log" },
+        },
       },
       {
         id: "copilot-opp-9-2",
         prompt: "Was withdrawing the right call?",
-        response:
-          "Yes. Continuing past the first screen would have meant testing an incompatible schedule further, with little upside toward your target direction either way.",
+        response: {
+          lead: "Yes.",
+          points: [{ label: "Why", detail: "Continuing past the first screen meant testing an incompatible schedule further, with little upside toward your target direction." }],
+          handoff: { kind: "opportunity-tab", tab: "ai-analysis", label: "See the fit judgment" },
+        },
       },
       {
         id: "copilot-opp-9-3",
         prompt: "What would make a similar agency role work next time?",
-        response:
-          "APAC or Ho Chi Minh City-hours client work specifically, the agency model itself wasn't the problem, the timezone was.",
+        response: {
+          lead: "APAC or Ho Chi Minh City-hours client work specifically.",
+          points: [{ label: "What wasn't the problem", detail: "The agency model itself, the timezone was the issue." }],
+          handoff: { kind: "route", href: "/opportunities", label: "Back to Opportunities" },
+        },
       },
     ],
   },
@@ -355,19 +581,41 @@ export const copilotScripts: CopilotSurfaceScript[] = [
     suggestedPrompts: [
       "What do you use from my profile when judging fit?",
       "What should I update before applying more broadly?",
+      "What's missing from my profile?",
     ],
     exchanges: [
       {
         id: "copilot-profile-1",
         prompt: "What do you use from my profile when judging fit?",
-        response:
-          "Mainly your target direction, strengths, and the specific experience entries, especially the Fintra explainability work, since it's the strongest evidence for the AI-direction roles you're pursuing.",
+        response: {
+          lead: "Mainly your target direction, strengths, and specific experience entries.",
+          points: [
+            { label: "Strongest signal", detail: "The Fintra explainability work, the strongest evidence for the AI-direction roles you're pursuing." },
+          ],
+          handoff: { kind: "route", href: "/opportunities", label: "See fit judgments" },
+        },
       },
       {
         id: "copilot-profile-2",
         prompt: "What should I update before applying more broadly?",
-        response:
-          "Your summary still leads with general fintech breadth. Leading with the explainability panel work first would better match the AI-forward roles you're prioritizing right now.",
+        response: {
+          lead: "Your summary still leads with general fintech breadth.",
+          points: [
+            { label: "Better lead", detail: "Leading with the explainability panel work would better match the AI-forward roles you're prioritizing right now." },
+          ],
+          handoff: { kind: "route", href: "/cvs/cv-1", label: "Open Base CV" },
+        },
+      },
+      {
+        id: "copilot-profile-3",
+        prompt: "What's missing from my profile?",
+        response: {
+          lead: "Two things: no compensation history captured, and public speaking evidence isn't reflected yet.",
+          points: [
+            { label: "Public speaking", detail: "Skills & Learning already tracks it as a gap, but your Strengths list doesn't mention the meetup talk from Track Record." },
+          ],
+          handoff: { kind: "route", href: "/skills", label: "See the public speaking gap" },
+        },
       },
     ],
   },
@@ -376,19 +624,150 @@ export const copilotScripts: CopilotSurfaceScript[] = [
     suggestedPrompts: [
       "Which CV should I use for an AI-focused role?",
       "Tailor my base CV for a new opportunity.",
+      "What's the difference between my CV versions?",
     ],
     exchanges: [
       {
         id: "copilot-cvs-1",
         prompt: "Which CV should I use for an AI-focused role?",
-        response:
-          "Start from Base CV and tailor it, the way the Meridian Labs version leads with your explainability panel work. Product-lead CV is better suited when management scope is the primary ask.",
+        response: {
+          lead: "Start from Base CV and tailor it, the way the Meridian Labs version leads with your explainability panel work.",
+          points: [{ label: "For management-first roles", detail: "Product-lead CV is better suited when management scope is the primary ask." }],
+          handoff: { kind: "route", href: "/cvs/cv-3", label: "See the tailored example" },
+        },
       },
       {
         id: "copilot-cvs-2",
         prompt: "Tailor my base CV for a new opportunity.",
-        response:
-          "Link a base CV to the opportunity from its Materials tab, then choose Tailor for this role. I'll suggest section-by-section changes for you to accept, edit, or dismiss.",
+        response: {
+          lead: "Link a base CV to the opportunity from its Materials tab, then choose Tailor for this role.",
+          points: [{ label: "What happens next", detail: "I'll suggest section-by-section changes for you to accept, edit, or dismiss." }],
+          handoff: { kind: "route", href: "/opportunities", label: "Pick a target opportunity" },
+        },
+      },
+      {
+        id: "copilot-cvs-3",
+        prompt: "What's the difference between my CV versions?",
+        response: {
+          lead: "Three versions, each pitched differently.",
+          points: [
+            { label: "Base CV", detail: "General-purpose, fintech breadth first." },
+            { label: "Product-lead CV", detail: "Leads with mentoring and the design-system rollout, for management-first roles." },
+            { label: "Meridian Labs, tailored", detail: "Rewritten to lead with the explainability panel for one specific opportunity." },
+          ],
+          handoff: { kind: "route", href: "/cvs/cv-2", label: "Open Product-lead CV" },
+        },
+      },
+    ],
+  },
+  {
+    surface: cvForkedSurface("Base CV"),
+    suggestedPrompts: [
+      "What should I strengthen in this CV for an AI-focused role?",
+      "Who is this CV best used for right now?",
+      "Should I tailor this before applying somewhere new?",
+    ],
+    exchanges: [
+      {
+        id: "copilot-cv-1-1",
+        prompt: "What should I strengthen in this CV for an AI-focused role?",
+        response: {
+          lead: "The summary leads with general fintech breadth, not the explainability work AI-forward roles care about most.",
+          points: [{ label: "Fix", detail: "Reorder the summary to open with the AI underwriting explainability panel, the way the Meridian Labs tailored version does." }],
+          handoff: { kind: "route", href: "/cvs/cv-3", label: "See how the tailored version reorders this" },
+        },
+      },
+      {
+        id: "copilot-cv-1-2",
+        prompt: "Who is this CV best used for right now?",
+        response: {
+          lead: "The general-purpose starting point, best for any role you haven't tailored a version for yet.",
+          handoff: { kind: "route", href: "/opportunities", label: "Pick a target opportunity" },
+        },
+      },
+      {
+        id: "copilot-cv-1-3",
+        prompt: "Should I tailor this before applying somewhere new?",
+        response: {
+          lead: "Yes, for anything AI-forward.",
+          points: [{ label: "Good candidate", detail: "Solace AI doesn't have a linked CV yet, and it's your top Dream match." }],
+          handoff: { kind: "route", href: "/opportunities/opp-1#materials", label: "Open Materials for Solace AI" },
+        },
+      },
+    ],
+  },
+  {
+    surface: cvForkedSurface("Product-lead CV"),
+    suggestedPrompts: [
+      "What should I strengthen in this CV for a design-lead role?",
+      "Who is this CV best used for right now?",
+      "Does this cover enough AI-specific work?",
+    ],
+    exchanges: [
+      {
+        id: "copilot-cv-2-1",
+        prompt: "What should I strengthen in this CV for a design-lead role?",
+        response: {
+          lead: "The Leadership highlights section is strong, but it doesn't name any AI-specific scope.",
+          points: [{ label: "Worth adding", detail: "A line connecting your mentoring and design-system work to AI-forward product teams, if you use this for an AI-adjacent role." }],
+          handoff: { kind: "route", href: "/opportunities/opp-7", label: "Open Brightpath Bank" },
+        },
+      },
+      {
+        id: "copilot-cv-2-2",
+        prompt: "Who is this CV best used for right now?",
+        response: {
+          lead: "Roles where management scope is the primary ask, like Brightpath Bank's Product Design Manager role.",
+          handoff: { kind: "route", href: "/opportunities/opp-7", label: "Open Brightpath Bank" },
+        },
+      },
+      {
+        id: "copilot-cv-2-3",
+        prompt: "Does this cover enough AI-specific work?",
+        response: {
+          lead: "Not yet, it leans entirely on leadership evidence.",
+          points: [{ label: "Gap", detail: "No AI or model-facing work named anywhere in this version." }],
+          confidence: "Medium",
+          handoff: { kind: "route", href: "/skills", label: "See the AI fluency gap" },
+        },
+      },
+    ],
+  },
+  {
+    surface: cvForkedSurface("Meridian Labs, tailored"),
+    suggestedPrompts: [
+      "What was changed from Base CV for this role?",
+      "Is this still the strongest version for the panel round?",
+      "What should I strengthen further before the panel?",
+    ],
+    exchanges: [
+      {
+        id: "copilot-cv-3-1",
+        prompt: "What was changed from Base CV for this role?",
+        response: {
+          lead: "The summary and experience sections were rewritten to lead with the explainability panel.",
+          points: [{ label: "New section", detail: "\"Relevant to this role\" was added, naming the trust-boundary discovery sprint directly." }],
+          handoff: { kind: "route", href: "/opportunities/opp-6", label: "Open Meridian Labs" },
+        },
+      },
+      {
+        id: "copilot-cv-3-2",
+        prompt: "Is this still the strongest version for the panel round?",
+        response: {
+          lead: "Yes.",
+          points: [{ label: "Why", detail: "It's the version most closely mapped to Meridian's evaluation console scope." }],
+          confidence: "High",
+          handoff: { kind: "route", href: "/opportunities/opp-6#actions", label: "Open Actions tab" },
+        },
+      },
+      {
+        id: "copilot-cv-3-3",
+        prompt: "What should I strengthen further before the panel?",
+        response: {
+          lead: "The CV itself is in good shape, the open gap is leadership judgment, not craft.",
+          points: [{ label: "Where to focus instead", detail: "Prep talking points on decisions and tradeoffs, that's what the panel is likely to probe next." }],
+          handoff: { kind: "route", href: "/goals", label: "See the leadership goal" },
+        },
       },
     ],
   },
@@ -397,19 +776,44 @@ export const copilotScripts: CopilotSurfaceScript[] = [
     suggestedPrompts: [
       "What should I confirm from this week?",
       "Which entries best support my AI direction?",
+      "What is worth capturing from last month?",
     ],
     exchanges: [
       {
         id: "copilot-track-record-1",
         prompt: "What should I confirm from this week?",
-        response:
-          "Two drafted candidates: the credibility-check heuristic from Tuesday's AI review sync, and the trust-cue research sprint. Both are already referenced elsewhere this week, worth confirming while details are fresh.",
+        response: {
+          lead: "Two drafted candidates: the credibility-check heuristic from Tuesday's AI review sync, and the trust-cue research sprint.",
+          points: [{ label: "Why now", detail: "Both are already referenced elsewhere this week, worth confirming while details are fresh." }],
+          handoff: { kind: "route", href: "/skills", label: "See the AI fluency connection" },
+        },
       },
       {
         id: "copilot-track-record-2",
         prompt: "Which entries best support my AI direction?",
-        response:
-          "The explainability panel launch and the AI assistant discovery sprint are your strongest evidence. Both are already linked to your AI and ML literacy skill.",
+        response: {
+          lead: "The explainability panel launch and the AI assistant discovery sprint are your strongest evidence.",
+          points: [{ label: "Already linked", detail: "Both are already linked to your AI and ML literacy skill." }],
+          handoff: { kind: "route", href: "/goals", label: "See goal-1's progress" },
+        },
+      },
+      {
+        id: "copilot-track-record-3",
+        prompt: "What is worth capturing from last month?",
+        response: {
+          lead: "Running three senior-level interview loops to a decision point at once, that's not captured anywhere yet.",
+          points: [
+            {
+              label: "Why it's worth it",
+              detail: "Meridian Labs, Brightpath Bank, and Orbit Logistics all reached a decision point in the same four-week window.",
+            },
+          ],
+          action: {
+            kind: "create-candidate-entry",
+            entryId: COPILOT_CAPTURE_CANDIDATE_ID,
+            label: "Draft this as a candidate",
+          },
+        },
       },
     ],
   },
@@ -418,40 +822,87 @@ export const copilotScripts: CopilotSurfaceScript[] = [
     suggestedPrompts: [
       "Am I on track for my AI product design goal?",
       "What's the gap analysis showing me?",
+      "Is my pipeline aligned with my target direction?",
     ],
     exchanges: [
       {
         id: "copilot-goals-1",
         prompt: "Am I on track for my AI product design goal?",
-        response:
-          "Yes, on track. Three strong-fit opportunities are active against it, and Meridian Labs is a near-exact scope match. The case study goal supporting it is behind schedule though.",
+        response: {
+          lead: "Yes, on track.",
+          points: [
+            { label: "Evidence", detail: "Three strong-fit opportunities are active against it, and Meridian Labs is a near-exact scope match." },
+            { label: "Watch", detail: "The case study goal supporting it is behind schedule." },
+          ],
+          confidence: "High",
+          handoff: { kind: "route", href: "/opportunities/opp-6", label: "Open Meridian Labs" },
+        },
       },
       {
         id: "copilot-goals-2",
         prompt: "What's the gap analysis showing me?",
-        response:
-          "Your target direction goal shows the same 4 skill gaps as the Skills page: AI and ML literacy, AI interaction design, people management, and public speaking. All 4 have a learning item suggested already.",
+        response: {
+          lead: "The same 4 skill gaps as the Skills page.",
+          points: [
+            { label: "Gaps", detail: "AI and ML literacy, AI interaction design, people management, and public speaking." },
+            { label: "Coverage", detail: "All 4 already have a learning item suggested." },
+          ],
+          handoff: { kind: "route", href: "/skills", label: "Open Skills & Learning" },
+        },
+      },
+      {
+        id: "copilot-goals-3",
+        prompt: "Is my pipeline aligned with my target direction?",
+        response: {
+          lead: "Mostly, with one real tension.",
+          points: [
+            { label: "Aligned", detail: "Land a senior or staff AI product design role is on track, backed by 3 active strong-fit opportunities." },
+            { label: "Tension", detail: "Grow into people leadership needs attention, and Brightpath Bank pulls toward management over AI depth." },
+          ],
+          confidence: "Medium",
+          handoff: { kind: "route", href: "/opportunities", label: "Review the pipeline" },
+        },
       },
     ],
   },
   {
     surface: "Skills & Learning",
     suggestedPrompts: [
-      "Which gap should I close first?",
+      "Which skill should I learn first?",
       "What learning items are already planned?",
+      "How do my skills compare to what active opportunities require?",
     ],
     exchanges: [
       {
         id: "copilot-skills-1",
-        prompt: "Which gap should I close first?",
-        response:
-          "AI and ML literacy, it's the gap most directly blocking your target direction and the one with the most upcoming panel exposure at Meridian Labs.",
+        prompt: "Which skill should I learn first?",
+        response: {
+          lead: "AI and ML literacy, it's the gap most directly blocking your target direction.",
+          points: [{ label: "Timing", detail: "It's also the one with the most upcoming panel exposure at Meridian Labs." }],
+          action: {
+            kind: "add-learning-item",
+            targetId: "li-1",
+            label: "Accept: AI Product Design Fundamentals course",
+          },
+        },
       },
       {
         id: "copilot-skills-2",
         prompt: "What learning items are already planned?",
-        response:
-          "Two are planned: shipping a small AI-assisted side project, and the quarterly public case study habit. The rest are still suggested, waiting on you to accept them.",
+        response: {
+          lead: "Two are planned: shipping a small AI-assisted side project, and the quarterly public case study habit.",
+          points: [{ label: "Rest", detail: "The rest are still suggested, waiting on you to accept them." }],
+          handoff: { kind: "route", href: "/goals", label: "See linked goals" },
+        },
+      },
+      {
+        id: "copilot-skills-3",
+        prompt: "How do my skills compare to what active opportunities require?",
+        response: {
+          lead: "AI and ML literacy and AI interaction design are named directly by Solace AI, Northwind Robotics, Meridian Labs, and Arclight AI.",
+          points: [{ label: "Reading", detail: "Both are gaps at Working against a targeted Strong, the clearest overlap between your pipeline and your learning plan." }],
+          handoff: { kind: "route", href: "/opportunities", label: "See related opportunities" },
+        },
       },
     ],
   },

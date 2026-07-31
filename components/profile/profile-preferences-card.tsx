@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { AskCopilotButton } from "@/components/shared/ask-copilot-button";
 import { useStore } from "@/lib/store";
 import type { ProfilePreferences } from "@/lib/types";
 
@@ -82,7 +83,8 @@ export function ProfilePreferencesCard() {
       <CardHeader>
         <CardTitle>Preferences and constraints</CardTitle>
         {editing ? null : (
-          <CardAction>
+          <CardAction className="flex items-center gap-1">
+            <AskCopilotButton surface="Profile" objectLabel="Preferences section" />
             <Button size="icon-sm" variant="ghost" aria-label="Edit preferences" onClick={startEditing}>
               <Pencil className="size-3.5" />
             </Button>

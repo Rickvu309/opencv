@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 
 import { PageHeader } from "@/components/shell/page-header";
+import { AskCopilotButton } from "@/components/shared/ask-copilot-button";
 import { GapInsightSection } from "@/components/skills/gap-insight-section";
 import { LearningPlanSection } from "@/components/skills/learning-plan-section";
 import { SkillMapSection } from "@/components/skills/skill-map-section";
@@ -36,7 +37,10 @@ export default function SkillsPage() {
 
       <div className="flex flex-col gap-8 p-6">
         <section className="flex flex-col gap-3">
-          <h2>Skill map</h2>
+          <div className="flex items-center justify-between gap-3">
+            <h2>Skill map</h2>
+            <AskCopilotButton surface="Skills & Learning" objectLabel="Skill map" />
+          </div>
           <SkillMapSection
             skills={state.skills}
             trackRecordEntries={state.trackRecordEntries}
