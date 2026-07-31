@@ -131,7 +131,7 @@ export default function TrackRecordPage() {
                 </div>
 
                 {yearGroups.length === 0 ? (
-                  <EmptyState message="No entries in this skill area yet." />
+                  <EmptyState message="No entries in this skill area yet. Try a different filter above." />
                 ) : (
                   <div className="flex flex-col gap-5">
                     {yearGroups.map((group) => (

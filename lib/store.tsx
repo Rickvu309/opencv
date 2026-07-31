@@ -1073,8 +1073,8 @@ interface StoreContextValue {
   linkInboxItem: (evidence: SourceEvidence, target: InboxLinkChoice) => void;
   undoLinkInboxItem: (evidenceId: string) => void;
   dismissInboxItem: (evidenceId: string) => void;
-  acceptTailoringSuggestion: (insightId: string, suggestionId: string) => void;
-  dismissTailoringSuggestion: (insightId: string, suggestionId: string) => void;
+  acceptTailoringSuggestion: (insightId: string, suggestionId: string, section: string) => void;
+  dismissTailoringSuggestion: (insightId: string, suggestionId: string, section: string) => void;
   addCvVersion: (cv: CvVersion) => void;
   deleteCvVersion: (id: string) => void;
   updateCvSectionContent: (cvId: string, sectionId: string, content: string) => void;
@@ -1390,14 +1390,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const acceptTailoringSuggestion = useCallback((insightId: string, suggestionId: string) => {
+  const acceptTailoringSuggestion = useCallback((insightId: string, suggestionId: string, section: string) => {
     dispatch({ type: "SET_TAILORING_SUGGESTION_STATE", insightId, suggestionId, state: "accepted" });
-    toast.success("Suggestion accepted");
+    toast.success(`${section} suggestion accepted`);
   }, []);
 
-  const dismissTailoringSuggestion = useCallback((insightId: string, suggestionId: string) => {
+  const dismissTailoringSuggestion = useCallback((insightId: string, suggestionId: string, section: string) => {
     dispatch({ type: "SET_TAILORING_SUGGESTION_STATE", insightId, suggestionId, state: "dismissed" });
-    toast("Suggestion dismissed");
+    toast(`${section} suggestion dismissed`);
   }, []);
 
   const addCvVersion = useCallback(
@@ -1484,12 +1484,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const acceptWeeklyReviewSuggestion = useCallback((id: string) => {
     dispatch({ type: "SET_WEEKLY_REVIEW_SUGGESTION_STATE", id, state: "accepted" });
-    toast.success("Suggestion accepted");
+    toast.success("Pinned to your attention queue");
   }, []);
 
   const dismissWeeklyReviewSuggestion = useCallback((id: string) => {
     dispatch({ type: "SET_WEEKLY_REVIEW_SUGGESTION_STATE", id, state: "dismissed" });
-    toast("Suggestion dismissed");
+    toast("Removed from focus for next week");
   }, []);
 
   const openWeeklyReview = useCallback(() => {

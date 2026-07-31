@@ -55,7 +55,7 @@ export function LearningPlanSection({ skills, learningItems, goals }: LearningPl
       </div>
 
       {skillGroups.length === 0 ? (
-        <EmptyState message="No learning items yet." />
+        <EmptyState message="No learning items yet. Copilot suggests items as skill gaps open up." />
       ) : (
         <div className="flex flex-col gap-5">
           {skillGroups.map(({ skill, items }) => (

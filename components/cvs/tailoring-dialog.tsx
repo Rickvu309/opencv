@@ -222,8 +222,8 @@ export function TailoringDialog({ trigger, fixedCv, fixedOpportunity, defaultCvI
                   <SuggestionCard
                     key={suggestion.id}
                     suggestion={suggestion}
-                    onAccept={() => insight && acceptTailoringSuggestion(insight.id, suggestion.id)}
-                    onSkip={() => insight && dismissTailoringSuggestion(insight.id, suggestion.id)}
+                    onAccept={() => insight && acceptTailoringSuggestion(insight.id, suggestion.id, suggestion.section)}
+                    onSkip={() => insight && dismissTailoringSuggestion(insight.id, suggestion.id, suggestion.section)}
                   />
                 ))}
               </div>
