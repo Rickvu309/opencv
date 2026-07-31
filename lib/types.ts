@@ -242,6 +242,18 @@ export interface PathScenario {
   isClosestToCurrentTrajectory?: boolean;
   /** One-line reason, present only when isClosestToCurrentTrajectory is true. */
   closestReason?: string;
+  /** Path Planner zone 2/3: how sure Copilot is in this path reading. */
+  confidence: ConfidenceLevel;
+  /** Path Planner zone 2: the two-line why, grounded in named strengths, track record entries, and pipeline signals. */
+  whySummary: string;
+  /** Path Planner zone 2: the expandable "Why this reading" detail behind whySummary. */
+  whyThisReading: string;
+  /** Path Planner zone 3: where this path stands today, one line. */
+  readinessToday: string;
+  /** Path Planner zone 3: how long until this path is viable, one line. */
+  timeToViable: string;
+  /** Path Planner zone 3: how strong the supporting evidence is, reusing FitLevel's Strong/Medium/Weak vocabulary. */
+  evidenceStrength: FitLevel;
 }
 
 // ---------------------------------------------------------------------------
@@ -277,6 +289,71 @@ export interface DirectionGapAnalysis {
   missing: DirectionMissingItem[];
   uncertain: DirectionUncertainItem[];
   pathIntoLearningNote: string;
+}
+
+// ---------------------------------------------------------------------------
+// Path Planner: staged growth plan and gap analysis for one working path
+// scenario at a time (the working path is whichever PathScenario the store's
+// workingPathScenarioId points at).
+// ---------------------------------------------------------------------------
+
+export type PlanItemType = "learn" | "build" | "prove" | "pursue";
+
+export type PlanStage = "now" | "months-1-3" | "months-4-6";
+
+export type PlanItemState = "suggested" | "accepted" | "dismissed";
+
+/**
+ * One concrete item in the staged growth plan roadmap for a given path
+ * scenario. "learn" items link an existing Skill and LearningItem, so
+ * accepting one also plans that learning item, the same way accepting it
+ * would from Skills & Learning directly. "build", "prove", and "pursue"
+ * items persist only in this planner collection: there is no existing
+ * object type yet for a portfolio project, a piece of captured evidence, or
+ * a change in how an opportunity is pursued.
+ */
+export interface PlanItem {
+  id: string;
+  scenarioId: string;
+  stage: PlanStage;
+  type: PlanItemType;
+  title: string;
+  detail: string;
+  state: PlanItemState;
+  /** Goal-Gradient: already true today, backed by a track record entry, shown without accept or dismiss controls. */
+  alreadyDone?: boolean;
+  linkedSkillId?: string;
+  linkedLearningItemId?: string;
+  linkedGoalId?: string;
+  linkedOpportunityId?: string;
+  trackRecordEntryId?: string;
+}
+
+/** When a gap analysis row matters most: right away, or before the horizon closes. */
+export type GapTiming = "now" | "by month 6";
+
+/** One ranked skill gap row in the planner's gap analysis, timed against the working path. */
+export interface PlannerSkillGap {
+  skillId: string;
+  timing: GapTiming;
+}
+
+/** One evidence gap: proof the working path still needs, honestly named. */
+export interface PlannerProofGap {
+  id: string;
+  label: string;
+  note: string;
+  timing: GapTiming;
+  linkedLearningItemId?: string;
+  proposedActionLabel: string;
+  proposedActionHref: string;
+}
+
+/** The planner's gap and proof analysis for one path scenario. */
+export interface PlannerGapAnalysis {
+  scenarioId: string;
+  skills: PlannerSkillGap[];
+  proof: PlannerProofGap[];
 }
 
 // ---------------------------------------------------------------------------

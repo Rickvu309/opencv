@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import Link from "next/link";
+import { ChevronDown, ChevronUp, Route } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -71,14 +72,22 @@ export function PathScenarioCard({ scenario }: PathScenarioCardProps) {
           ) : null}
         </div>
 
-        <Button
-          size="sm"
-          variant="ghost"
-          className="w-fit text-muted-foreground"
-          onClick={() => setScenarioAsTargetDirection(scenario)}
-        >
-          Set as target direction
-        </Button>
+        <div className="flex flex-wrap gap-1.5">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="w-fit text-muted-foreground"
+            onClick={() => setScenarioAsTargetDirection(scenario)}
+          >
+            Set as target direction
+          </Button>
+          <Button size="sm" variant="ghost" className="w-fit text-muted-foreground" asChild>
+            <Link href="/planner">
+              <Route className="size-3.5" />
+              Work through this in the planner
+            </Link>
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

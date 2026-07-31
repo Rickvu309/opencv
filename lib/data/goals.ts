@@ -106,6 +106,14 @@ export const pathScenarios: PathScenario[] = [
     isClosestToCurrentTrajectory: true,
     closestReason:
       "Two of three active strong-fit opportunities, Solace AI and Meridian Labs, already sit squarely in this lane.",
+    confidence: "High",
+    whySummary:
+      "Three of your four Strong-fit opportunities right now, Solace AI, Arclight AI, and Meridian Labs, already sit in this exact lane. It draws directly on your strongest named strength, translating ambiguous AI model behavior into trustworthy user flows, proven by the Fintra explainability panel that cut support tickets 22 percent.",
+    whyThisReading:
+      "Built from three signals: the strength evidence above, the trust-boundary discovery sprint documented in your track record that already anchors both the Meridian Labs and Solace AI positioning, and the fact that pursuing this path costs nothing you are not already doing, every active AI-forward loop stays exactly where it is.",
+    readinessToday: "Two loops already in a live decision window: Meridian Labs' panel round and Solace AI's warm referral.",
+    timeToViable: "0 to 3 months, largely a matter of which live loop closes first.",
+    evidenceStrength: "Strong",
   },
   {
     id: "scenario-2",
@@ -120,6 +128,14 @@ export const pathScenarios: PathScenario[] = [
       "Start the engineering-manager shadow week already lined up to test the leadership transition.",
       "Look for a second design-lead opening at an AI-forward company as a hedge.",
     ],
+    confidence: "Medium",
+    whySummary:
+      "Halo Bank's people-management loop is the furthest along of any leadership-track opportunity, and your mentoring track record, two designers promoted within a year, is real evidence. It is also your only proof point for management specifically, so this reading leans on one strong data point rather than a pattern.",
+    whyThisReading:
+      "Weighed the completed Halo Bank final loop and the mentoring outcomes against the honest fact that no track record entry shows you with a direct report, the exact gap the leadership branch of your target direction still needs closed.",
+    readinessToday: "One completed leadership loop, Halo Bank, awaiting a decision, no confirmed management experience yet.",
+    timeToViable: "3 to 6 months, pending the Halo Bank decision and whatever ramp-up follows.",
+    evidenceStrength: "Medium",
   },
   {
     id: "scenario-3",
@@ -134,6 +150,14 @@ export const pathScenarios: PathScenario[] = [
       "Has not yet tested pricing, contracts, or scope-setting as an independent consultant.",
       "No immediate next step planned, this stays a longer-range option.",
     ],
+    confidence: "Low",
+    whySummary:
+      "No active opportunity or track record entry tests independent consulting work directly, so this stays the most speculative of the three paths. It reflects stated interest rather than anything demonstrated yet.",
+    whyThisReading:
+      "Nothing in your pipeline or track record has tested pricing, contracts, or scope-setting as an independent consultant, so this reading leans entirely on stated interest, not proof.",
+    readinessToday: "Not started, no clients, pricing, or contracts tested yet.",
+    timeToViable: "6 to 12 months at minimum before it could replace steady income.",
+    evidenceStrength: "Weak",
   },
 ];
 

@@ -28,6 +28,7 @@ import {
   directionGapAnalysis as seedDirectionGapAnalysis,
 } from "@/lib/data/goals";
 import { skills as seedSkills, learningItems as seedLearningItems } from "@/lib/data/skills";
+import { planItems as seedPlanItems, plannerGapAnalyses as seedPlannerGapAnalyses } from "@/lib/data/planner";
 import { insights as seedInsights } from "@/lib/data/insights";
 import { nextActions as seedNextActions } from "@/lib/data/actions";
 import { nudges as seedNudges, weeklyReviewScript } from "@/lib/data/nudges";
@@ -59,6 +60,9 @@ import type {
   Opportunity,
   OpportunityStatus,
   PathScenario,
+  PlanItem,
+  PlanItemState,
+  PlannerGapAnalysis,
   Priority,
   Profile,
   ProfilePreferences,
@@ -102,6 +106,9 @@ export interface StoreState {
   directionGapAnalysis: DirectionGapAnalysis;
   skills: Skill[];
   learningItems: LearningItem[];
+  workingPathScenarioId: string;
+  planItems: PlanItem[];
+  plannerGapAnalyses: PlannerGapAnalysis[];
   insights: AiInsight[];
   nextActions: NextAction[];
   nudges: Nudge[];
@@ -132,6 +139,10 @@ const initialState: StoreState = {
   directionGapAnalysis: seedDirectionGapAnalysis,
   skills: seedSkills,
   learningItems: seedLearningItems,
+  workingPathScenarioId:
+    seedPathScenarios.find((scenario) => scenario.isClosestToCurrentTrajectory)?.id ?? seedPathScenarios[0].id,
+  planItems: seedPlanItems,
+  plannerGapAnalyses: seedPlannerGapAnalyses,
   insights: seedInsights,
   nextActions: seedNextActions,
   nudges: seedNudges,
@@ -229,6 +240,8 @@ type Action =
       activityMoment: ActivityMoment;
     }
   | { type: "SET_LEARNING_ITEM_STATE"; id: string; state: LearningItem["state"] }
+  | { type: "SET_WORKING_PATH_SCENARIO"; scenarioId: string }
+  | { type: "SET_PLAN_ITEM_STATE"; id: string; state: PlanItemState }
   | { type: "TOGGLE_SKILL_FOCUS"; id: string }
   | { type: "SET_SKILL_HIGHLIGHT"; id: string }
   | { type: "CLEAR_SKILL_HIGHLIGHT"; id: string }
@@ -891,6 +904,17 @@ function reducer(state: StoreState, action: Action): StoreState {
         ),
       };
 
+    case "SET_WORKING_PATH_SCENARIO":
+      return { ...state, workingPathScenarioId: action.scenarioId };
+
+    case "SET_PLAN_ITEM_STATE":
+      return {
+        ...state,
+        planItems: state.planItems.map((item) =>
+          item.id === action.id ? { ...item, state: action.state } : item
+        ),
+      };
+
     case "TOGGLE_SKILL_FOCUS":
       return {
         ...state,
@@ -1088,6 +1112,8 @@ interface StoreContextValue {
   createTailoredCvVersion: (cv: CvVersion, opportunity: Opportunity) => void;
   acceptLearningItem: (id: string) => void;
   dismissLearningItem: (id: string) => void;
+  acceptPlanItem: (id: string) => void;
+  dismissPlanItem: (id: string) => void;
   toggleSkillFocus: (id: string) => void;
   setSkillHighlight: (id: string) => void;
   clearSkillHighlight: (id: string) => void;
@@ -1233,7 +1259,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
+  // Shared by Goals' path scenario cards and the Path Planner's alternatives
+  // comparison: choosing a scenario as the working path updates both the
+  // target direction (read by Home, Profile, Goals) and the planner's
+  // working path in one action, so the two surfaces never disagree about
+  // which scenario is currently active.
   const setScenarioAsTargetDirection = useCallback((scenario: PathScenario) => {
+    dispatch({ type: "SET_WORKING_PATH_SCENARIO", scenarioId: scenario.id });
     dispatch({
       type: "UPDATE_TARGET_DIRECTION",
       patch: { targetDirection: scenario.description, targetDirectionLabel: scenario.title },
@@ -1469,6 +1501,33 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  // Accepting a "learn" type plan item also plans the linked learning item,
+  // the same store action Skills & Learning's own accept uses, so it shows
+  // up there too rather than only inside the planner's own collection.
+  const acceptPlanItem = useCallback(
+    (id: string) => {
+      const item = state.planItems.find((entry) => entry.id === id);
+      dispatch({ type: "SET_PLAN_ITEM_STATE", id, state: "accepted" });
+      if (item?.linkedLearningItemId) {
+        dispatch({ type: "SET_LEARNING_ITEM_STATE", id: item.linkedLearningItemId, state: "planned" });
+      }
+      toast.success("Added to growth plan", {
+        description: item?.linkedLearningItemId ? "Also added to your Skills & Learning plan." : undefined,
+      });
+    },
+    [state.planItems]
+  );
+
+  const dismissPlanItem = useCallback((id: string) => {
+    dispatch({ type: "SET_PLAN_ITEM_STATE", id, state: "dismissed" });
+    toast("Removed from growth plan", {
+      action: {
+        label: "Undo",
+        onClick: () => dispatch({ type: "SET_PLAN_ITEM_STATE", id, state: "suggested" }),
+      },
+    });
+  }, []);
+
   const toggleSkillFocus = useCallback((id: string) => {
     dispatch({ type: "TOGGLE_SKILL_FOCUS", id });
   }, []);
@@ -1642,6 +1701,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       createTailoredCvVersion,
       acceptLearningItem,
       dismissLearningItem,
+      acceptPlanItem,
+      dismissPlanItem,
       toggleSkillFocus,
       setSkillHighlight,
       clearSkillHighlight,
@@ -1714,6 +1775,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       createTailoredCvVersion,
       acceptLearningItem,
       dismissLearningItem,
+      acceptPlanItem,
+      dismissPlanItem,
       toggleSkillFocus,
       setSkillHighlight,
       clearSkillHighlight,

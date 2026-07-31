@@ -40,6 +40,7 @@ CAREER MEMORY
   CV Versions             /cvs
   Track Record            /track-record
 DIRECTION
+  Path Planner            /planner
   Goals                   /goals
   Skills & Learning       /skills
 (bottom)
@@ -64,7 +65,7 @@ Four layout components under `components/shell/` codify one frame rule set (cont
 | `DashboardPage` | max-w-6xl | Single column, no rail | /home |
 | `WorkspacePage` | max-w-[1600px] | Object listing, optional `band` and `rail` slots | /opportunities, /sources, /cvs, /track-record |
 | `DetailPage` | max-w-5xl | Primary column plus an optional quiet support rail (standardized to w-72, e.g. `CvMetaRail`, `CoverageRail`, Profile's three support cards) | /opportunities/[id], /cvs/[id], /profile |
-| `PlannerPage` | max-w-6xl | Single column, optional full-bleed `band` | /goals, /skills |
+| `PlannerPage` | max-w-6xl | Single column, optional full-bleed `band` | /planner, /goals, /skills |
 
 `band` is full-bleed content directly under the header (edge to edge, no padding), for a top-of-page summary like `ProfileIdentityBand` or `DirectionBand`. It differs from a page's own inline summary band (`OpportunitySummaryBand`), which stays inside the padded content column since it was designed as a chip row, not a bleed panel.
 - /onboarding: full-screen flow shown on first run (store flag `onboarded`), skippable, ends at /home
@@ -191,3 +192,4 @@ Trust boundary, absolute rule: the AI drafts and suggests, the user accepts, edi
 - 16 polish: section 8 audit end to end
 - 17 sources model: section 7's connected-sources registry and evidence shape
 - RDS-977 sources workflow: section 3 nav (/sources), section 7's tools hub and synced-context inbox
+- RDS-982 path planner: section 3 nav (/planner, PlannerPage template), the strategic path-recommendation and staged-growth-plan workflow, ending at a chosen working path and a concrete plan rather than an insights page

@@ -12,6 +12,7 @@ import {
   Home,
   Inbox,
   RotateCcw,
+  Route,
   Target,
   User,
 } from "lucide-react";
@@ -62,6 +63,7 @@ const careerMemoryNav: NavItem[] = [
 ];
 
 const directionNav: NavItem[] = [
+  { label: "Path Planner", href: "/planner", icon: Route },
   { label: "Goals", href: "/goals", icon: Target },
   { label: "Skills & Learning", href: "/skills", icon: GraduationCap },
 ];
