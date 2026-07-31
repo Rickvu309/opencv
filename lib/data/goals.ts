@@ -6,7 +6,7 @@ export const goals: Goal[] = [
   {
     id: "goal-1",
     title: "Land a senior or staff AI product design role",
-    why: "Two years designing the explainability layer at Fintra confirmed this is the work Mai wants more of, at a company where AI product design is the core job, not a side project.",
+    why: "Three years designing the explainability layer at Fintra confirmed this is the work Mai wants more of, at a company where AI product design is the core job, not a side project.",
     targetDate: "2026-10-01",
     horizon: "near term",
     status: "on track",

@@ -13,7 +13,7 @@ export const cvVersions: CvVersion[] = [
         id: "cv-1-summary",
         title: "Summary",
         content:
-          "Senior product designer with seven years across fintech, e-commerce, and analytics tools. Led design for an AI underwriting assistant at Fintra, including the explainability panel applicants see when a decision is made.",
+          "Senior product designer with nine years across fintech, e-commerce, and analytics tools. Led design for an AI underwriting assistant at Fintra, including the explainability panel applicants see when a decision is made.",
       },
       {
         id: "cv-1-experience",

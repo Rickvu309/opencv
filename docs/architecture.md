@@ -88,7 +88,7 @@ Opportunity statuses: Saved, Applied, Interview, Offer, Closed. Dream is a flag,
 
 ## 6. Mock data blueprint
 
-Persona: Mai Tran, senior product designer, 7 years, based in Ho Chi Minh City, moving toward AI product design and product leadership, open to remote roles. All seeded content must read as this one coherent person.
+Persona: Mai Tran, senior product designer, 9 years, based in Ho Chi Minh City, moving toward AI product design and product leadership, open to remote roles. All seeded content must read as this one coherent person.
 
 Seed set (lives in `lib/data/`):
 

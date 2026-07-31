@@ -127,9 +127,9 @@ export const insights: AiInsight[] = [
         section: "Summary",
         changeType: "rewrite",
         currentText:
-          "Senior product designer with seven years across fintech, e-commerce, and analytics tools. Led design for an AI underwriting assistant at Fintra, including the explainability panel applicants see when a decision is made.",
+          "Senior product designer with nine years across fintech, e-commerce, and analytics tools. Led design for an AI underwriting assistant at Fintra, including the explainability panel applicants see when a decision is made.",
         proposedText:
-          "Senior product designer with seven years across fintech, e-commerce, and analytics tools, six of them building trust surfaces for people making high-stakes decisions. At Fintra, owned the explainability panel loan applicants see when the underwriting model reaches a decision, the same end-to-end ownership Solace's model-explainability layer calls for.",
+          "Senior product designer with nine years across fintech, e-commerce, and analytics tools, six of them building trust surfaces for people making high-stakes decisions. At Fintra, owned the explainability panel loan applicants see when the underwriting model reaches a decision, the same end-to-end ownership Solace's model-explainability layer calls for.",
         rationale:
           "Your fit analysis names this the strongest match for the staff scope, mirroring the explainability panel you shipped at Fintra.",
         state: "suggested",
@@ -275,9 +275,9 @@ export const insights: AiInsight[] = [
         section: "Summary",
         changeType: "rewrite",
         currentText:
-          "Senior product designer with seven years across fintech, e-commerce, and analytics tools. Led design for an AI underwriting assistant at Fintra, including the explainability panel applicants see when a decision is made.",
+          "Senior product designer with nine years across fintech, e-commerce, and analytics tools. Led design for an AI underwriting assistant at Fintra, including the explainability panel applicants see when a decision is made.",
         proposedText:
-          "Senior product designer with seven years across fintech, e-commerce, and analytics tools, comfortable stepping into loosely scoped, fast-moving environments while a role's real shape is still forming.",
+          "Senior product designer with nine years across fintech, e-commerce, and analytics tools, comfortable stepping into loosely scoped, fast-moving environments while a role's real shape is still forming.",
         rationale:
           "Your fit analysis can't judge this against a real product yet, so this leans on adaptability instead of overclaiming a match that isn't verifiable.",
         state: "suggested",
@@ -432,9 +432,9 @@ export const insights: AiInsight[] = [
         section: "Summary",
         changeType: "rewrite",
         currentText:
-          "Senior product designer with seven years across fintech, e-commerce, and analytics tools. Led design for an AI underwriting assistant at Fintra, including the explainability panel applicants see when a decision is made.",
+          "Senior product designer with nine years across fintech, e-commerce, and analytics tools. Led design for an AI underwriting assistant at Fintra, including the explainability panel applicants see when a decision is made.",
         proposedText:
-          "Senior product designer with seven years across fintech, e-commerce, and analytics tools, including operations-dashboard work at Kestrel Analytics that translated dense technical data into a usable console for non-technical operators.",
+          "Senior product designer with nine years across fintech, e-commerce, and analytics tools, including operations-dashboard work at Kestrel Analytics that translated dense technical data into a usable console for non-technical operators.",
         rationale:
           "Leads with the Kestrel Analytics dashboard work your fit analysis calls the closest overlap, since this role has no AI-facing scope to lead with instead.",
         state: "suggested",
@@ -583,9 +583,9 @@ export const insights: AiInsight[] = [
         section: "Summary",
         changeType: "rewrite",
         currentText:
-          "Senior product designer with seven years across fintech, e-commerce, and analytics tools. Led design for an AI underwriting assistant at Fintra, including the explainability panel applicants see when a decision is made.",
+          "Senior product designer with nine years across fintech, e-commerce, and analytics tools. Led design for an AI underwriting assistant at Fintra, including the explainability panel applicants see when a decision is made.",
         proposedText:
-          "Senior product designer with seven years across fintech, e-commerce, and analytics tools. At Fintra, owned the trust-boundary pattern behind an AI underwriting assistant: what it suggests, how confident it says it is, and what a human does next, the same suggest-then-approve problem Arclight's workflow assistant is built around.",
+          "Senior product designer with nine years across fintech, e-commerce, and analytics tools. At Fintra, owned the trust-boundary pattern behind an AI underwriting assistant: what it suggests, how confident it says it is, and what a human does next, the same suggest-then-approve problem Arclight's workflow assistant is built around.",
         rationale:
           "Your fit analysis calls this the closest match to the Fintra trust-boundary work, the strongest evidence behind your AI interaction and prompt design skill.",
         state: "suggested",
@@ -727,9 +727,9 @@ export const insights: AiInsight[] = [
         section: "Summary",
         changeType: "cut",
         currentText:
-          "Senior product designer with seven years across fintech, e-commerce, and analytics tools. Led design for an AI underwriting assistant at Fintra, including the explainability panel applicants see when a decision is made.",
+          "Senior product designer with nine years across fintech, e-commerce, and analytics tools. Led design for an AI underwriting assistant at Fintra, including the explainability panel applicants see when a decision is made.",
         proposedText:
-          "Senior product designer with seven years across fintech, e-commerce, and analytics tools, comfortable owning a generalist mandate across onboarding and lifecycle surfaces.",
+          "Senior product designer with nine years across fintech, e-commerce, and analytics tools, comfortable owning a generalist mandate across onboarding and lifecycle surfaces.",
         rationale:
           "Your fit analysis flags no AI-facing work in this scope, leading with the AI framing here would ring hollow against a generalist ask.",
         state: "suggested",
@@ -878,7 +878,7 @@ export const insights: AiInsight[] = [
         section: "Summary",
         changeType: "reorder",
         currentText:
-          "Senior product designer with seven years across fintech, e-commerce, and analytics tools. Led design for an AI underwriting assistant at Fintra, including the explainability panel applicants see when a decision is made.",
+          "Senior product designer with nine years across fintech, e-commerce, and analytics tools. Led design for an AI underwriting assistant at Fintra, including the explainability panel applicants see when a decision is made.",
         proposedText:
           "Senior product designer who has shipped a model-explainability surface in production. At Fintra, designed the panel that shows loan applicants why the AI underwriting assistant reached its decision, the closest direct match to Meridian's evaluation console.",
         rationale:
@@ -1023,9 +1023,9 @@ export const insights: AiInsight[] = [
         section: "Summary",
         changeType: "rewrite",
         currentText:
-          "Senior product designer with seven years across fintech, e-commerce, and analytics tools. Led design for an AI underwriting assistant at Fintra, including the explainability panel applicants see when a decision is made.",
+          "Senior product designer with nine years across fintech, e-commerce, and analytics tools. Led design for an AI underwriting assistant at Fintra, including the explainability panel applicants see when a decision is made.",
         proposedText:
-          "Senior product designer with seven years across fintech and lending-adjacent products, ready for a first people-management seat after informally mentoring designers at Fintra and Loop Commerce.",
+          "Senior product designer with nine years across fintech and lending-adjacent products, ready for a first people-management seat after informally mentoring designers at Fintra and Loop Commerce.",
         rationale:
           "Your fit analysis names first-time management scope as the clear strength here, this leads with readiness for it instead of AI framing this role doesn't test.",
         state: "suggested",
@@ -1161,9 +1161,9 @@ export const insights: AiInsight[] = [
         section: "Summary",
         changeType: "rewrite",
         currentText:
-          "Senior product designer with seven years across fintech, e-commerce, and analytics tools. Led design for an AI underwriting assistant at Fintra, including the explainability panel applicants see when a decision is made.",
+          "Senior product designer with nine years across fintech, e-commerce, and analytics tools. Led design for an AI underwriting assistant at Fintra, including the explainability panel applicants see when a decision is made.",
         proposedText:
-          "Senior product designer with seven years across fintech, e-commerce, and analytics tools, including dense, data-heavy console work at Kestrel Analytics built for operators, not consumers.",
+          "Senior product designer with nine years across fintech, e-commerce, and analytics tools, including dense, data-heavy console work at Kestrel Analytics built for operators, not consumers.",
         rationale:
           "Your fit analysis calls the console-design scope a clean match for the Kestrel Analytics dashboard work, this leads with it since the role isn't AI-forward.",
         state: "suggested",
@@ -1298,9 +1298,9 @@ export const insights: AiInsight[] = [
         section: "Summary",
         changeType: "cut",
         currentText:
-          "Senior product designer with seven years across fintech, e-commerce, and analytics tools. Led design for an AI underwriting assistant at Fintra, including the explainability panel applicants see when a decision is made.",
+          "Senior product designer with nine years across fintech, e-commerce, and analytics tools. Led design for an AI underwriting assistant at Fintra, including the explainability panel applicants see when a decision is made.",
         proposedText:
-          "Senior product designer with seven years delivering end to end across fintech, e-commerce, and analytics tools, comfortable moving fast across multiple concurrent client engagements.",
+          "Senior product designer with nine years delivering end to end across fintech, e-commerce, and analytics tools, comfortable moving fast across multiple concurrent client engagements.",
         rationale:
           "Your fit analysis found no continuity toward the target direction here, so this drops the AI framing in favor of the agency pace the role actually tests.",
         state: "suggested",

@@ -18,7 +18,7 @@ export const nudges: Nudge[] = [
     id: "nudge-3",
     trigger: "high-potential",
     message: "Solace AI is a Dream, Strong-fit opportunity with a warm referral, still sitting in Saved.",
-    why: "It's been 4 weeks since you saved it and the accepted outreach action hasn't gone out yet.",
+    why: "It's been 8 weeks since you saved it and the accepted outreach action hasn't gone out yet.",
     actions: [
       { label: "Open Actions tab", href: "/opportunities/opp-1#actions" },
       { label: "View opportunity", href: "/opportunities/opp-1" },

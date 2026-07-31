@@ -7,9 +7,9 @@ export const persona: Profile = {
   currentRole: "Senior Product Designer",
   experienceLevel: "Senior (6 to 10 years)",
   location: "Ho Chi Minh City, Vietnam",
-  yearsExperience: 7,
+  yearsExperience: 9,
   summary:
-    "Senior product designer with seven years across fintech, e-commerce, and analytics tools. Spent the last two years designing the AI underwriting assistant at Fintra, and is now aiming for roles that blend AI product design with team leadership. Comfortable owning a problem from messy discovery through to a shipped, measurable outcome.",
+    "Senior product designer with nine years across fintech, e-commerce, and analytics tools. Spent the last three years designing the AI underwriting assistant at Fintra, and is now aiming for roles that blend AI product design with team leadership. Comfortable owning a problem from messy discovery through to a shipped, measurable outcome.",
   strengths: [
     "Translates ambiguous AI model behavior into clear, trustworthy user flows",
     "Runs discovery research end to end, from screener design to synthesis",

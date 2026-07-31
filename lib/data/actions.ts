@@ -12,7 +12,7 @@ export const nextActions: NextAction[] = [
     opportunityId: "opp-1",
     verb: "Send your AI explainability case study to the referral contact",
     rationale:
-      "Solace AI is a Dream, Strong-fit match and the referral is still warm three weeks after you saved it.",
+      "Solace AI is a Dream, Strong-fit match and the referral is still warm eight weeks after you saved it.",
     effort: "20 min",
     dueHint: "This week",
     state: "accepted",
@@ -170,7 +170,7 @@ export const nextActions: NextAction[] = [
     id: "action-2",
     opportunityId: "opp-4",
     verb: "Follow up with the Arclight AI recruiter on application status",
-    rationale: "No update in 12 days on a Strong-fit, high-priority application is worth a light nudge.",
+    rationale: "No update in 16 days on a Strong-fit, high-priority application is worth a light nudge.",
     effort: "10 min",
     dueHint: "Next 2 days",
     state: "suggested",

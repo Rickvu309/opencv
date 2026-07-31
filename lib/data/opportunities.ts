@@ -1,7 +1,8 @@
 import type { Opportunity } from "@/lib/types";
 
-// 9 opportunities: 3 Saved (one Dream, one low-credibility posting), 2 Applied,
-// 2 Interview, 1 Offer, 1 Closed. Mixed fit levels and priorities.
+// 10 opportunities: 4 Saved (one Dream, one low-credibility posting, one
+// freshly saved with no next step queued yet), 2 Applied, 2 Interview,
+// 1 Offer, 1 Closed. Mixed fit levels and priorities.
 export const opportunities: Opportunity[] = [
   {
     id: "opp-1",
@@ -202,7 +203,7 @@ export const opportunities: Opportunity[] = [
       "Some exposure to leading design decisions across a small team.",
     ],
     notes:
-      "Panel round Thursday. Reused the tailored CV in prep, want to lead with the explainability story.",
+      "Panel round Thursday, August 6. Reused the tailored CV in prep, want to lead with the explainability story.",
   },
   {
     id: "opp-7",

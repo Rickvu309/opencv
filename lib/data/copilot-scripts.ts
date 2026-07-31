@@ -46,7 +46,7 @@ export const copilotScripts: CopilotSurfaceScript[] = [
           points: [
             {
               label: "Why it's first",
-              detail: "A Dream, Strong-fit match with a warm referral, saved 4 weeks ago with no message sent yet.",
+              detail: "A Dream, Strong-fit match with a warm referral, saved 8 weeks ago with no message sent yet.",
             },
             {
               label: "Open item",
