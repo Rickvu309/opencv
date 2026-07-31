@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 
-import { PageHeader } from "@/components/shell/page-header";
+import { WorkspacePage } from "@/components/shell/workspace-page";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ObjectCard } from "@/components/shared/object-card";
@@ -28,19 +28,17 @@ export default function CvsPage() {
   }
 
   return (
-    <div className="flex flex-col">
-      <PageHeader
-        title="CV Versions"
-        description={`${state.cvVersions.length} versions, base and tailored.`}
-        primaryAction={
-          <Button size="sm" onClick={() => openNewVersion(undefined)}>
-            <Plus className="size-4" />
-            New version
-          </Button>
-        }
-      />
-
-      <div className="flex flex-col gap-8 p-6">
+    <WorkspacePage
+      title="CV Versions"
+      description={`${state.cvVersions.length} versions, base and tailored.`}
+      primaryAction={
+        <Button size="sm" onClick={() => openNewVersion(undefined)}>
+          <Plus className="size-4" />
+          New version
+        </Button>
+      }
+    >
+      <div className="flex flex-col gap-8">
         {state.cvVersions.length === 0 ? (
           <EmptyState message="No CV versions yet. Create a base CV to start tailoring it per opportunity." />
         ) : (
@@ -71,7 +69,7 @@ export default function CvsPage() {
         defaultSourceId={duplicateSourceId}
       />
       <DeleteCvDialog cv={deleteTarget} onClose={() => setDeleteTarget(null)} />
-    </div>
+    </WorkspacePage>
   );
 }
 

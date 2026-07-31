@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { LayoutGrid, Plus, Rows3, X } from "lucide-react";
 
-import { PageHeader } from "@/components/shell/page-header";
+import { WorkspacePage } from "@/components/shell/workspace-page";
 import { AddOpportunityDialog } from "@/components/opportunities/add-opportunity-dialog";
 import { OpportunitiesFocusStrip } from "@/components/opportunities/opportunities-focus-strip";
 import { OpportunitiesControls } from "@/components/opportunities/opportunities-controls";
@@ -64,43 +64,41 @@ export default function OpportunitiesPage() {
   );
 
   return (
-    <div className="flex flex-col">
-      <PageHeader
-        title="Opportunities"
-        description={`${state.opportunities.length} tracked, across every stage from saved to closed.`}
-        primaryAction={
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-0.5 rounded-lg border border-border p-0.5">
-              <Button
-                size="sm"
-                variant={state.opportunitiesView === "board" ? "secondary" : "ghost"}
-                aria-pressed={state.opportunitiesView === "board"}
-                onClick={() => setOpportunitiesView("board")}
-              >
-                <LayoutGrid className="size-4" />
-                Board
-              </Button>
-              <Button
-                size="sm"
-                variant={state.opportunitiesView === "list" ? "secondary" : "ghost"}
-                aria-pressed={state.opportunitiesView === "list"}
-                onClick={() => setOpportunitiesView("list")}
-              >
-                <Rows3 className="size-4" />
-                List
-              </Button>
-            </div>
-            <AddOpportunityDialog>
-              <Button size="sm">
-                <Plus className="size-4" />
-                Add opportunity
-              </Button>
-            </AddOpportunityDialog>
+    <WorkspacePage
+      title="Opportunities"
+      description={`${state.opportunities.length} tracked, across every stage from saved to closed.`}
+      primaryAction={
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-0.5 rounded-lg border border-border p-0.5">
+            <Button
+              size="sm"
+              variant={state.opportunitiesView === "board" ? "secondary" : "ghost"}
+              aria-pressed={state.opportunitiesView === "board"}
+              onClick={() => setOpportunitiesView("board")}
+            >
+              <LayoutGrid className="size-4" />
+              Board
+            </Button>
+            <Button
+              size="sm"
+              variant={state.opportunitiesView === "list" ? "secondary" : "ghost"}
+              aria-pressed={state.opportunitiesView === "list"}
+              onClick={() => setOpportunitiesView("list")}
+            >
+              <Rows3 className="size-4" />
+              List
+            </Button>
           </div>
-        }
-      />
-
-      <div className="flex flex-col gap-4 p-6">
+          <AddOpportunityDialog>
+            <Button size="sm">
+              <Plus className="size-4" />
+              Add opportunity
+            </Button>
+          </AddOpportunityDialog>
+        </div>
+      }
+    >
+      <div className="flex flex-col gap-4">
         <OpportunitiesFocusStrip />
 
         {statusFilter ? (
@@ -140,6 +138,6 @@ export default function OpportunitiesPage() {
           />
         )}
       </div>
-    </div>
+    </WorkspacePage>
   );
 }

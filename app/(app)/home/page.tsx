@@ -2,7 +2,7 @@
 
 import { Plus } from "lucide-react";
 
-import { PageHeader } from "@/components/shell/page-header";
+import { DashboardPage } from "@/components/shell/dashboard-page";
 import { AddOpportunityDialog } from "@/components/opportunities/add-opportunity-dialog";
 import { AttentionQueue } from "@/components/home/attention-queue";
 import { GreetingBand } from "@/components/home/greeting-band";
@@ -17,31 +17,27 @@ export default function HomePage() {
   const { state } = useStore();
 
   return (
-    <div className="flex flex-col">
-      <PageHeader
-        title="Home"
-        primaryAction={
-          <AddOpportunityDialog>
-            <Button size="sm" variant="outline">
-              <Plus className="size-4" />
-              Add opportunity
-            </Button>
-          </AddOpportunityDialog>
-        }
-      />
+    <DashboardPage
+      title="Home"
+      primaryAction={
+        <AddOpportunityDialog>
+          <Button size="sm" variant="outline">
+            <Plus className="size-4" />
+            Add opportunity
+          </Button>
+        </AddOpportunityDialog>
+      }
+    >
+      <GreetingBand profile={state.profile} opportunities={state.opportunities} />
 
-      <div className="flex flex-col gap-8 p-6">
-        <GreetingBand profile={state.profile} opportunities={state.opportunities} />
+      <WeeklyReviewBanner />
 
-        <WeeklyReviewBanner />
+      <AttentionQueue />
 
-        <AttentionQueue />
-
-        <div className="grid grid-cols-2 gap-6">
-          <NextActionsCard />
-          <PipelineSnapshot opportunities={state.opportunities} />
-        </div>
+      <div className="grid grid-cols-2 gap-6">
+        <NextActionsCard />
+        <PipelineSnapshot opportunities={state.opportunities} />
       </div>
-    </div>
+    </DashboardPage>
   );
 }

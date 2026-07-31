@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { Plus } from "lucide-react";
 
-import { PageHeader } from "@/components/shell/page-header";
+import { PlannerPage } from "@/components/shell/planner-page";
 import { AskCopilotButton } from "@/components/shared/ask-copilot-button";
 import { CopilotTag } from "@/components/shared/copilot-tag";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -35,15 +35,11 @@ export default function GoalsPage() {
   const longTermGoals = state.goals.filter((goal) => goal.horizon === "long term");
 
   return (
-    <div className="flex flex-col">
-      <PageHeader
-        title="Goals"
-        description={`${state.goals.length} active goals toward your target direction.`}
-      />
-
-      <DirectionBand profile={state.profile} alignment={alignment} />
-
-      <div className="flex flex-col gap-8 p-6">
+    <PlannerPage
+      title="Goals"
+      description={`${state.goals.length} active goals toward your target direction.`}
+      band={<DirectionBand profile={state.profile} alignment={alignment} />}
+    >
         <section className="flex flex-col gap-3">
           <div className="flex items-center justify-between gap-3">
             <h2>Active goals</h2>
@@ -135,7 +131,6 @@ export default function GoalsPage() {
             learningItems={state.learningItems}
           />
         </section>
-      </div>
-    </div>
+    </PlannerPage>
   );
 }

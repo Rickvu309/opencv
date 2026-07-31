@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 
+import { DetailPage } from "@/components/shell/detail-page";
 import { PageHeader } from "@/components/shell/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
@@ -88,10 +89,8 @@ export default function OpportunityDetailPage() {
   const activity = findOpportunityActivity(opportunity.id, state.activityMoments);
 
   return (
-    <div className="flex flex-col">
-      <PageHeader title={opportunity.role} description={`${opportunity.company} · ${opportunity.location}`} />
-
-      <div className="flex flex-col gap-4 p-6">
+    <DetailPage title={opportunity.role} description={`${opportunity.company} · ${opportunity.location}`}>
+      <div className="flex flex-col gap-4">
         <OpportunitySummaryBand opportunity={opportunity} primaryNextAction={primaryNextAction} />
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -140,6 +139,6 @@ export default function OpportunityDetailPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </DetailPage>
   );
 }

@@ -24,7 +24,9 @@ The product helps the user:
 
 ## 3. App structure and navigation
 
-Left sidebar (fixed, 240px), main content area, and a Copilot panel that docks on the right (360px, toggleable, context-aware).
+Left sidebar (16rem expanded, collapsible to a 3rem icon rail), main content area, and a Copilot panel that docks on the right (360px, toggleable, context-aware). Sidebar and content share one integrated frame: no floating gap between them.
+
+The sidebar is built on the shadcn/ui Sidebar primitives (`components/ui/sidebar.tsx`, `SidebarProvider` + `SidebarInset`), adapted in `components/shell/sidebar.tsx` (exported as `AppSidebar`) rather than hand-rolled. Collapse state is `sidebarOpen` in the app store (`setSidebarOpen`), consistent with the rest of the prototype's session-only state, not a cookie. Toggle it from the trigger in every page header (`PageHeader`, next to the title) or the Cmd/Ctrl+B shortcut; Cmd/Ctrl+K still opens the Copilot panel. Collapsed to icons, every nav row shows its label as a tooltip on hover.
 
 Sidebar structure:
 
@@ -52,6 +54,19 @@ Drill-downs:
 - /opportunities -> /opportunities/[id] (tabs: Overview, AI Analysis, Actions, Materials, Activity)
 - /cvs -> /cvs/[id]
 - /sources: connected tools hub plus the synced-context inbox, see section 7
+
+### Page template system
+
+Four layout components under `components/shell/` codify one frame rule set (content max-width per page type, one padding scale, one header anatomy: sidebar trigger, title, one-line purpose, primary action, Copilot toggle) so pages stop each inventing their own container. Every route in the `(app)` group renders through one of these; none render `PageHeader` and their own wrapper `div` directly.
+
+| Template | Max width | Shape | Routes |
+|---|---|---|---|
+| `DashboardPage` | max-w-6xl | Single column, no rail | /home |
+| `WorkspacePage` | max-w-[1600px] | Object listing, optional `band` and `rail` slots | /opportunities, /sources, /cvs, /track-record |
+| `DetailPage` | max-w-5xl | Primary column plus an optional quiet support rail (standardized to w-72, e.g. `CvMetaRail`, `CoverageRail`, Profile's three support cards) | /opportunities/[id], /cvs/[id], /profile |
+| `PlannerPage` | max-w-6xl | Single column, optional full-bleed `band` | /goals, /skills |
+
+`band` is full-bleed content directly under the header (edge to edge, no padding), for a top-of-page summary like `ProfileIdentityBand` or `DirectionBand`. It differs from a page's own inline summary band (`OpportunitySummaryBand`), which stays inside the padded content column since it was designed as a chip row, not a bleed panel.
 - /onboarding: full-screen flow shown on first run (store flag `onboarded`), skippable, ends at /home
 
 Header per page: page title, primary action button, Copilot toggle button.

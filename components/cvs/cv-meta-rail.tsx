@@ -35,7 +35,7 @@ export function CvMetaRail({
   }
 
   return (
-    <div className="flex w-72 shrink-0 flex-col gap-3">
+    <>
       <Card size="sm">
         <CardHeader>
           <CardTitle>Version info</CardTitle>
@@ -105,6 +105,6 @@ export function CvMetaRail({
       </Button>
 
       <NewCvVersionDialog open={duplicateOpen} onOpenChange={setDuplicateOpen} defaultSourceId={cv.id} />
-    </div>
+    </>
   );
 }

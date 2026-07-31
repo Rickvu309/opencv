@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Check, Plus } from "lucide-react";
 
-import { PageHeader } from "@/components/shell/page-header";
+import { WorkspacePage } from "@/components/shell/workspace-page";
 import { CopilotTag } from "@/components/shared/copilot-tag";
 import { EmptyState } from "@/components/shared/empty-state";
 import { AddEntryDialog } from "@/components/track-record/add-entry-dialog";
@@ -57,22 +57,26 @@ export default function TrackRecordPage() {
   );
 
   return (
-    <div className="flex flex-col">
-      <PageHeader
-        title="Track Record"
-        description={`${confirmed.length} confirmed ${confirmed.length === 1 ? "entry" : "entries"}, ${candidates.length} drafted ${candidates.length === 1 ? "candidate" : "candidates"} to review.`}
-        primaryAction={
-          <AddEntryDialog>
-            <Button size="sm">
-              <Plus className="size-4" />
-              Add entry
-            </Button>
-          </AddEntryDialog>
-        }
-      />
-
-      <div className="flex gap-4 p-6">
-        <div className="flex flex-1 flex-col gap-8">
+    <WorkspacePage
+      title="Track Record"
+      description={`${confirmed.length} confirmed ${confirmed.length === 1 ? "entry" : "entries"}, ${candidates.length} drafted ${candidates.length === 1 ? "candidate" : "candidates"} to review.`}
+      primaryAction={
+        <AddEntryDialog>
+          <Button size="sm">
+            <Plus className="size-4" />
+            Add entry
+          </Button>
+        </AddEntryDialog>
+      }
+      rail={
+        <CoverageRail
+          confirmedCount={confirmed.length}
+          candidateCount={candidates.length}
+          coverage={skillAreaCoverage}
+        />
+      }
+    >
+      <div className="flex flex-col gap-8">
           <section className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
               <h2>For your review</h2>
@@ -160,14 +164,7 @@ export default function TrackRecordPage() {
               </>
             )}
           </section>
-        </div>
-
-        <CoverageRail
-          confirmedCount={confirmed.length}
-          candidateCount={candidates.length}
-          coverage={skillAreaCoverage}
-        />
       </div>
-    </div>
+    </WorkspacePage>
   );
 }

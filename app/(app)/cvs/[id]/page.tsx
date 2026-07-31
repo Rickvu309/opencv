@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
 
+import { DetailPage } from "@/components/shell/detail-page";
 import { PageHeader } from "@/components/shell/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -46,24 +47,23 @@ export default function CvDetailPage() {
     : undefined;
 
   return (
-    <div className="flex flex-col">
-      <PageHeader
-        title={cv.name}
-        description={`Last edited ${cv.lastEditedAt}`}
-        primaryAction={
-          <TailoringDialog
-            fixedCv={cv}
-            trigger={
-              <Button size="sm">
-                <Sparkles className="size-4" />
-                Tailor for this role
-              </Button>
-            }
-          />
-        }
-      />
-
-      <div className="flex flex-col gap-4 p-6">
+    <DetailPage
+      title={cv.name}
+      description={`Last edited ${cv.lastEditedAt}`}
+      primaryAction={
+        <TailoringDialog
+          fixedCv={cv}
+          trigger={
+            <Button size="sm">
+              <Sparkles className="size-4" />
+              Tailor for this role
+            </Button>
+          }
+        />
+      }
+      rail={<CvMetaRail cv={cv} linkedOpportunity={linkedOpportunity} />}
+    >
+      <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-1.5">
           <div className="flex flex-wrap items-center gap-1.5">
             <Badge variant={cv.kind === "tailored" ? "default" : "secondary"} className="capitalize">
@@ -80,16 +80,12 @@ export default function CvDetailPage() {
           <AskCopilotButton surface={resolveCvSurface(cv.name)} objectLabel={cv.name} />
         </div>
 
-        <div className="flex gap-4">
-          <div className="flex flex-1 flex-col gap-3">
-            {cv.sections.map((section) => (
-              <CvSectionCard key={section.id} cvId={cv.id} section={section} />
-            ))}
-          </div>
-
-          <CvMetaRail cv={cv} linkedOpportunity={linkedOpportunity} />
+        <div className="flex flex-col gap-3">
+          {cv.sections.map((section) => (
+            <CvSectionCard key={section.id} cvId={cv.id} section={section} />
+          ))}
         </div>
       </div>
-    </div>
+    </DetailPage>
   );
 }

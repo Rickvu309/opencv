@@ -1,6 +1,6 @@
 "use client";
 
-import { PageHeader } from "@/components/shell/page-header";
+import { DetailPage } from "@/components/shell/detail-page";
 import { ProfileIdentityBand } from "@/components/profile/profile-identity-band";
 import { ProfileSummaryCard } from "@/components/profile/profile-summary-card";
 import { ProfileExperienceCard } from "@/components/profile/profile-experience-card";
@@ -32,25 +32,24 @@ export default function ProfilePage() {
   });
 
   return (
-    <div className="flex flex-col">
-      <PageHeader title="Profile" description="Your career context, and how Copilot puts it to work." />
-
-      <ProfileIdentityBand profile={profile} strengthPercent={percent} />
-
-      <div className="grid grid-cols-3 gap-4 p-6">
-        <div className="col-span-2 flex flex-col gap-4">
-          <ProfileSummaryCard />
-          <ProfileExperienceCard />
-          <ProfileStrengthsCard />
-          <ProfilePreferencesCard />
-        </div>
-
-        <div className="col-span-1 flex flex-col gap-4">
+    <DetailPage
+      title="Profile"
+      description="Your career context, and how Copilot puts it to work."
+      band={<ProfileIdentityBand profile={profile} strengthPercent={percent} />}
+      rail={
+        <>
           <ProfileCopilotUsesCard />
           <ProfileStrengthCard percent={percent} prompts={prompts} />
           <ProfileUsedByCard opportunities={citingOpportunities} />
-        </div>
+        </>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        <ProfileSummaryCard />
+        <ProfileExperienceCard />
+        <ProfileStrengthsCard />
+        <ProfilePreferencesCard />
       </div>
-    </div>
+    </DetailPage>
   );
 }

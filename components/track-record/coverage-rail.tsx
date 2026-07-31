@@ -15,7 +15,7 @@ interface CoverageRailProps {
  */
 export function CoverageRail({ confirmedCount, candidateCount, coverage }: CoverageRailProps) {
   return (
-    <div className="flex w-64 shrink-0 flex-col gap-3">
+    <>
       <Card size="sm">
         <CardHeader>
           <CardTitle>Coverage</CardTitle>
@@ -49,6 +49,6 @@ export function CoverageRail({ confirmedCount, candidateCount, coverage }: Cover
           )}
         </CardContent>
       </Card>
-    </div>
+    </>
   );
 }

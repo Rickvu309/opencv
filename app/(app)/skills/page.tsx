@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-import { PageHeader } from "@/components/shell/page-header";
+import { PlannerPage } from "@/components/shell/planner-page";
 import { AskCopilotButton } from "@/components/shared/ask-copilot-button";
 import { GapInsightSection } from "@/components/skills/gap-insight-section";
 import { LearningPlanSection } from "@/components/skills/learning-plan-section";
@@ -29,13 +29,10 @@ export default function SkillsPage() {
   );
 
   return (
-    <div className="flex flex-col">
-      <PageHeader
-        title="Skills & Learning"
-        description={`${state.skills.length} tracked skills, ${state.skills.filter((s) => s.isGap).length} flagged as gaps against your target direction.`}
-      />
-
-      <div className="flex flex-col gap-8 p-6">
+    <PlannerPage
+      title="Skills & Learning"
+      description={`${state.skills.length} tracked skills, ${state.skills.filter((s) => s.isGap).length} flagged as gaps against your target direction.`}
+    >
         <section className="flex flex-col gap-3">
           <div className="flex items-center justify-between gap-3">
             <h2>Skill map</h2>
@@ -60,7 +57,6 @@ export default function SkillsPage() {
             goals={state.goals}
           />
         </section>
-      </div>
-    </div>
+    </PlannerPage>
   );
 }
