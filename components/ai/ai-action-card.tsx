@@ -69,11 +69,17 @@ export function AiActionCard({
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [settled, setSettled] = useState(false);
 
+  // Resetting settled when approved flips back to false (an Undo) happens
+  // during render, the React-recommended way to adjust state on a prop
+  // change, rather than as a synchronous setState inside the effect below.
+  const [trackedApproved, setTrackedApproved] = useState(approved);
+  if (approved !== trackedApproved) {
+    setTrackedApproved(approved);
+    setSettled(false);
+  }
+
   useEffect(() => {
-    if (!approved) {
-      setSettled(false);
-      return;
-    }
+    if (!approved) return;
     const timeout = window.setTimeout(() => setSettled(true), SETTLE_DELAY_MS);
     return () => window.clearTimeout(timeout);
   }, [approved]);
