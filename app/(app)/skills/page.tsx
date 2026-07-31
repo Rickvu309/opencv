@@ -1,121 +1,60 @@
 "use client";
 
-import Link from "next/link";
-import { Check, X } from "lucide-react";
+import { useEffect } from "react";
 
 import { PageHeader } from "@/components/shell/page-header";
-import { CopilotTag } from "@/components/shared/copilot-tag";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { GapInsightSection } from "@/components/skills/gap-insight-section";
+import { LearningPlanSection } from "@/components/skills/learning-plan-section";
+import { SkillMapSection } from "@/components/skills/skill-map-section";
 import { useCopilotSurface, useStore } from "@/lib/store";
+import type { GapInsight } from "@/lib/types";
+
+const SKILL_HIGHLIGHT_DURATION_MS = 2500;
 
 export default function SkillsPage() {
   useCopilotSurface("Skills & Learning");
-  const { state, acceptLearningItem, dismissLearningItem, setGoalHighlight } = useStore();
+  const { state, clearSkillHighlight } = useStore();
 
-  const categories = Array.from(new Set(state.skills.map((skill) => skill.category)));
+  const highlightedId = state.highlightedSkillId;
+
+  useEffect(() => {
+    if (!highlightedId) return;
+    const timeout = setTimeout(() => clearSkillHighlight(highlightedId), SKILL_HIGHLIGHT_DURATION_MS);
+    return () => clearTimeout(timeout);
+  }, [highlightedId, clearSkillHighlight]);
+
+  const gapInsights = state.insights.filter(
+    (insight): insight is GapInsight => insight.kind === "gap" && insight.hostType === "skill"
+  );
 
   return (
     <div className="flex flex-col">
       <PageHeader
         title="Skills & Learning"
-        description={`${state.skills.length} tracked skills, ${state.skills.filter((s) => s.isGap).length} flagged as gaps.`}
+        description={`${state.skills.length} tracked skills, ${state.skills.filter((s) => s.isGap).length} flagged as gaps against your target direction.`}
       />
 
-      <div className="flex flex-col gap-6 p-6">
+      <div className="flex flex-col gap-8 p-6">
         <section className="flex flex-col gap-3">
-          <h2>Skills</h2>
-          <div className="grid grid-cols-2 gap-3">
-            {categories.map((category) => (
-              <Card key={category} className="ring-foreground/8">
-                <CardContent className="flex flex-col gap-3">
-                  <span className="text-xs font-semibold text-muted-foreground">{category}</span>
-                  <div className="flex flex-col gap-3">
-                    {state.skills
-                      .filter((skill) => skill.category === category)
-                      .map((skill) => (
-                        <div key={skill.id} className="flex flex-col gap-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-sm text-foreground">{skill.name}</span>
-                            <div className="flex items-center gap-1.5">
-                              {skill.isGap ? (
-                                <Badge className="bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300">
-                                  Gap
-                                </Badge>
-                              ) : null}
-                              <span className="text-xs text-muted-foreground">
-                                {skill.level} / {skill.targetLevel}
-                              </span>
-                            </div>
-                          </div>
-                          <Progress value={(skill.level / 5) * 100} />
-                        </div>
-                      ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <h2>Skill map</h2>
+          <SkillMapSection
+            skills={state.skills}
+            trackRecordEntries={state.trackRecordEntries}
+            opportunities={state.opportunities}
+            highlightedSkillId={highlightedId}
+          />
         </section>
 
-        <section className="flex flex-col gap-3">
-          <div className="flex items-center gap-2">
-            <h2>Learning items</h2>
-            <CopilotTag />
-          </div>
-          <div className="flex flex-col gap-2">
-            {state.learningItems.map((item) => {
-              const skill = item.skillId ? state.skills.find((s) => s.id === item.skillId) : undefined;
-              const goal = item.goalId ? state.goals.find((g) => g.id === item.goalId) : undefined;
-              return (
-                <Card key={item.id} className="ring-foreground/8">
-                  <CardContent className="flex items-start justify-between gap-4">
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-1.5">
-                        <Badge variant="secondary" className="capitalize">
-                          {item.type}
-                        </Badge>
-                        {skill ? <Badge variant="outline">{skill.name}</Badge> : null}
-                        {goal ? (
-                          <Badge variant="outline" asChild>
-                            <Link href="/goals" onClick={() => setGoalHighlight(goal.id)}>
-                              {goal.title}
-                            </Link>
-                          </Badge>
-                        ) : null}
-                      </div>
-                      <p className="text-sm font-medium text-foreground">{item.title}</p>
-                      <p className="text-xs text-muted-foreground">{item.effort}</p>
-                    </div>
-                    {item.state === "suggested" ? (
-                      <div className="flex shrink-0 gap-1.5">
-                        <Button
-                          size="icon-sm"
-                          variant="outline"
-                          aria-label="Accept into plan"
-                          onClick={() => acceptLearningItem(item.id)}
-                        >
-                          <Check className="size-3.5" />
-                        </Button>
-                        <Button
-                          size="icon-sm"
-                          variant="ghost"
-                          aria-label="Dismiss"
-                          onClick={() => dismissLearningItem(item.id)}
-                        >
-                          <X className="size-3.5" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <span className="shrink-0 text-xs text-muted-foreground capitalize">{item.state}</span>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+        <section>
+          <GapInsightSection gapInsights={gapInsights} skills={state.skills} />
+        </section>
+
+        <section>
+          <LearningPlanSection
+            skills={state.skills}
+            learningItems={state.learningItems}
+            goals={state.goals}
+          />
         </section>
       </div>
     </div>

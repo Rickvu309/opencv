@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Check, Plus } from "lucide-react";
 
 import { PageHeader } from "@/components/shell/page-header";
@@ -14,12 +14,22 @@ import { Button } from "@/components/ui/button";
 import { findLinkedSkillAreas, groupEntriesByYear, matchesSkillArea } from "@/lib/track-record-utils";
 import { useCopilotSurface, useStore } from "@/lib/store";
 
+const TRACK_RECORD_HIGHLIGHT_DURATION_MS = 2500;
+
 export default function TrackRecordPage() {
   useCopilotSurface("Track Record");
-  const { state, dismissTrackRecordCandidate } = useStore();
+  const { state, dismissTrackRecordCandidate, clearTrackRecordHighlight } = useStore();
 
   const [skillAreaFilter, setSkillAreaFilter] = useState<string>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const highlightedId = state.highlightedTrackRecordEntryId;
+
+  useEffect(() => {
+    if (!highlightedId) return;
+    const timeout = setTimeout(() => clearTrackRecordHighlight(highlightedId), TRACK_RECORD_HIGHLIGHT_DURATION_MS);
+    return () => clearTimeout(timeout);
+  }, [highlightedId, clearTrackRecordHighlight]);
 
   const candidates = state.trackRecordEntries.filter((entry) => entry.status === "candidate");
   const confirmed = state.trackRecordEntries.filter((entry) => entry.status === "confirmed");
@@ -122,7 +132,8 @@ export default function TrackRecordPage() {
                             skills={state.skills}
                             cvVersions={state.cvVersions}
                             opportunities={state.opportunities}
-                            expanded={expandedId === entry.id}
+                            expanded={expandedId === entry.id || highlightedId === entry.id}
+                            highlighted={highlightedId === entry.id}
                             onToggle={() =>
                               setExpandedId((current) => (current === entry.id ? null : entry.id))
                             }

@@ -285,11 +285,18 @@ export interface Skill {
   id: string;
   name: string;
   category: string;
+  /** 1 to 4: Beginning, Working, Strong, Expert. See LEVEL_LABELS in lib/data/skills.ts. */
   level: number;
   targetLevel: number;
   isGap: boolean;
+  /** User-set priority marker, independent of isGap: "I'm focusing on this one now." */
+  isFocus: boolean;
+  /** One line tying this skill to the profile's current target direction. */
+  targetDirectionRelevance: string;
   trackRecordEntryIds?: string[];
   learningItemIds?: string[];
+  /** Opportunities whose fit analysis names this skill directly, for the "which opportunities require it" chips. */
+  relatedOpportunityIds?: string[];
 }
 
 export type LearningItemType = "course" | "project" | "habit";
@@ -303,6 +310,10 @@ export interface LearningItem {
   skillId?: string;
   goalId?: string;
   state: LearningItemState;
+  /** One line naming the skill-level move and the opportunity or goal it unblocks. */
+  expectedBenefit: string;
+  /** Present only on the one item recommended as the first step, a one-line reason why. */
+  startHereReason?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -416,6 +427,8 @@ export interface GapInsight extends AiInsightBase {
   skillId: string;
   note: string;
   confidence: ConfidenceLevel;
+  /** Present only where the signal behind this gap is honestly thin, shown as a distinct caveat. */
+  uncertaintyNote?: string;
 }
 
 export type AiInsight =

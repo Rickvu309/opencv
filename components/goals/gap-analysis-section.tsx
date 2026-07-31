@@ -1,8 +1,11 @@
+"use client";
+
 import Link from "next/link";
 
 import { CopilotTag } from "@/components/shared/copilot-tag";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { useStore } from "@/lib/store";
 import type { DirectionGapAnalysis, LearningItem, Skill } from "@/lib/types";
 
 interface GapAnalysisSectionProps {
@@ -13,11 +16,14 @@ interface GapAnalysisSectionProps {
 
 /**
  * Zone 3: gap analysis against the target direction, in three honest groups.
- * Missing items link out to the relevant skill and, once one exists, a
- * specific learning item, so the connections are already in place for
- * ticket 13's full learning plan to build on.
+ * Missing items deep-link into the matching skill's expanded state on
+ * Skills & Learning, and aligned items deep-link into the specific Track
+ * Record entry that backs them, so the connections ticket 13 builds land
+ * on the right row instead of a generic page.
  */
 export function GapAnalysisSection({ gapAnalysis, skills, learningItems }: GapAnalysisSectionProps) {
+  const { setSkillHighlight, setTrackRecordHighlight } = useStore();
+
   return (
     <Card className="ring-foreground/8">
       <CardContent className="flex flex-col gap-4">
@@ -35,7 +41,12 @@ export function GapAnalysisSection({ gapAnalysis, skills, learningItems }: GapAn
                 <p className="text-sm text-muted-foreground">{item.evidenceNote}</p>
                 {item.trackRecordEntryId ? (
                   <Badge variant="outline" className="mt-1.5" asChild>
-                    <Link href="/track-record">See evidence in Track Record</Link>
+                    <Link
+                      href="/track-record"
+                      onClick={() => setTrackRecordHighlight(item.trackRecordEntryId!)}
+                    >
+                      See evidence in Track Record
+                    </Link>
                   </Badge>
                 ) : null}
               </div>
@@ -58,11 +69,18 @@ export function GapAnalysisSection({ gapAnalysis, skills, learningItems }: GapAn
                   <div className="mt-1.5 flex flex-wrap gap-1.5">
                     {learningItem ? (
                       <Badge variant="outline" asChild>
-                        <Link href="/skills">{learningItem.title}</Link>
+                        <Link
+                          href="/skills"
+                          onClick={() => item.skillId && setSkillHighlight(item.skillId)}
+                        >
+                          {learningItem.title}
+                        </Link>
                       </Badge>
                     ) : skill ? (
                       <Badge variant="outline" asChild>
-                        <Link href="/skills">{skill.name} on Skills &amp; Learning</Link>
+                        <Link href="/skills" onClick={() => setSkillHighlight(skill.id)}>
+                          {skill.name} on Skills &amp; Learning
+                        </Link>
                       </Badge>
                     ) : null}
                   </div>

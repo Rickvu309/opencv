@@ -1340,7 +1340,7 @@ export const insights: AiInsight[] = [
     hostId: "skill-5",
     createdAt: "2026-07-01",
     skillId: "skill-5",
-    note: "AI and ML literacy sits at level 2 against a target of 4 for the AI product design direction. Your explainability and discovery-sprint work shows strong instincts, but you have not yet formally studied how the underlying models behave.",
+    note: "AI and ML literacy sits at level 2 against a target of 4 for the AI product design direction. Your explainability and discovery-sprint work shows strong instincts, but you have not yet formally studied how the underlying models behave. Solace AI, Arclight AI, and Meridian Labs all lean on this directly, making it the single biggest lever behind your target direction of AI product design and leadership.",
     confidence: "High",
   },
   {
@@ -1350,7 +1350,7 @@ export const insights: AiInsight[] = [
     hostId: "skill-6",
     createdAt: "2026-07-01",
     skillId: "skill-6",
-    note: "AI interaction and prompt design sits at level 2 against a target of 4. You've designed around model output, but haven't yet designed the prompting or interaction layer itself.",
+    note: "AI interaction and prompt design sits at level 2 against a target of 4. You've designed around model output, but haven't yet designed the prompting or interaction layer itself. Arclight AI's suggestion-and-approval design ask depends on exactly this skill, one of the clearest openings toward your target direction.",
     confidence: "High",
   },
   {
@@ -1360,7 +1360,7 @@ export const insights: AiInsight[] = [
     hostId: "skill-8",
     createdAt: "2026-07-01",
     skillId: "skill-8",
-    note: "People management sits at level 1 against a target of 4. Mentorship shows real leadership instinct, but you've never had formal direct reports, which several of your active opportunities will test.",
+    note: "People management sits at level 1 against a target of 4. Mentorship shows real leadership instinct, but you've never had formal direct reports. Both Meridian Labs' panel round and Brightpath Bank's manager loop are already testing this directly, making it the main open question behind the leadership branch of your target direction.",
     confidence: "High",
   },
   {
@@ -1370,7 +1370,9 @@ export const insights: AiInsight[] = [
     hostId: "skill-12",
     createdAt: "2026-07-01",
     skillId: "skill-12",
-    note: "Public speaking and thought leadership sits at level 2 against a target of 4. One well-received talk in 2022 with nothing published since is the main gap holding back your visibility goal.",
+    note: "Public speaking and thought leadership sits at level 2 against a target of 4. One well-received talk in 2022 with nothing published since is the main gap holding back your visibility goal. It supports both branches of your target direction, though no active opportunity currently names it as a requirement.",
     confidence: "Medium",
+    uncertaintyNote:
+      "Only one of your track record entries touches this area, so how much weight your target roles actually put on it stays an honest unknown.",
   },
 ];

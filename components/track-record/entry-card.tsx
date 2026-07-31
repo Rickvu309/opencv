@@ -1,11 +1,13 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { CvVersion, Opportunity, Skill, TrackRecordEntry, TrackRecordUsedInRef } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 interface EntryCardProps {
   entry: TrackRecordEntry;
@@ -14,13 +16,16 @@ interface EntryCardProps {
   opportunities: Opportunity[];
   expanded: boolean;
   onToggle: () => void;
+  highlighted?: boolean;
 }
 
 /**
  * One confirmed timeline entry. Collapsed shows the scannable card anatomy
  * (title, impact, date, evidence tag, skill chips); expanding in place adds
  * the full story, the evidence note, where it's already been used, and the
- * Strengthens line, without navigating away from the timeline.
+ * Strengthens line, without navigating away from the timeline. When deep-linked
+ * from a skill's evidence chip or a goal's aligned-item chip, `highlighted`
+ * rings the card and scrolls it into view.
  */
 export function TrackRecordEntryCard({
   entry,
@@ -29,7 +34,15 @@ export function TrackRecordEntryCard({
   opportunities,
   expanded,
   onToggle,
+  highlighted,
 }: EntryCardProps) {
+  const cardRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (highlighted) {
+      cardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [highlighted]);
   const linkedSkills = entry.skillIds
     .map((id) => skills.find((skill) => skill.id === id))
     .filter((skill): skill is Skill => Boolean(skill));
@@ -47,7 +60,7 @@ export function TrackRecordEntryCard({
   }
 
   return (
-    <Card className="ring-foreground/8">
+    <Card ref={cardRef} className={cn("ring-foreground/8 transition-colors", highlighted && "ring-2 ring-primary")}>
       <CardHeader className="gap-2">
         <button
           type="button"

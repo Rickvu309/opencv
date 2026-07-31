@@ -99,6 +99,8 @@ export interface StoreState {
   copilot: CopilotState;
   highlightedOpportunityId?: string;
   highlightedGoalId?: string;
+  highlightedSkillId?: string;
+  highlightedTrackRecordEntryId?: string;
   opportunitiesView: OpportunitiesView;
 }
 
@@ -126,6 +128,8 @@ const initialState: StoreState = {
   },
   highlightedOpportunityId: undefined,
   highlightedGoalId: undefined,
+  highlightedSkillId: undefined,
+  highlightedTrackRecordEntryId: undefined,
   opportunitiesView: "board",
 };
 
@@ -193,6 +197,11 @@ type Action =
       activityMoment: ActivityMoment;
     }
   | { type: "SET_LEARNING_ITEM_STATE"; id: string; state: LearningItem["state"] }
+  | { type: "TOGGLE_SKILL_FOCUS"; id: string }
+  | { type: "SET_SKILL_HIGHLIGHT"; id: string }
+  | { type: "CLEAR_SKILL_HIGHLIGHT"; id: string }
+  | { type: "SET_TRACK_RECORD_HIGHLIGHT"; id: string }
+  | { type: "CLEAR_TRACK_RECORD_HIGHLIGHT"; id: string }
   | {
       type: "SET_WEEKLY_REVIEW_SUGGESTION_STATE";
       id: string;
@@ -619,6 +628,30 @@ function reducer(state: StoreState, action: Action): StoreState {
         ),
       };
 
+    case "TOGGLE_SKILL_FOCUS":
+      return {
+        ...state,
+        skills: state.skills.map((skill) =>
+          skill.id === action.id ? { ...skill, isFocus: !skill.isFocus } : skill
+        ),
+      };
+
+    case "SET_SKILL_HIGHLIGHT":
+      return { ...state, highlightedSkillId: action.id };
+
+    case "CLEAR_SKILL_HIGHLIGHT":
+      return state.highlightedSkillId === action.id
+        ? { ...state, highlightedSkillId: undefined }
+        : state;
+
+    case "SET_TRACK_RECORD_HIGHLIGHT":
+      return { ...state, highlightedTrackRecordEntryId: action.id };
+
+    case "CLEAR_TRACK_RECORD_HIGHLIGHT":
+      return state.highlightedTrackRecordEntryId === action.id
+        ? { ...state, highlightedTrackRecordEntryId: undefined }
+        : state;
+
     case "SET_WEEKLY_REVIEW_SUGGESTION_STATE":
       return {
         ...state,
@@ -759,6 +792,11 @@ interface StoreContextValue {
   createTailoredCvVersion: (cv: CvVersion, opportunity: Opportunity) => void;
   acceptLearningItem: (id: string) => void;
   dismissLearningItem: (id: string) => void;
+  toggleSkillFocus: (id: string) => void;
+  setSkillHighlight: (id: string) => void;
+  clearSkillHighlight: (id: string) => void;
+  setTrackRecordHighlight: (id: string) => void;
+  clearTrackRecordHighlight: (id: string) => void;
   acceptWeeklyReviewSuggestion: (id: string) => void;
   dismissWeeklyReviewSuggestion: (id: string) => void;
   updateProfileSummary: (summary: string) => void;
@@ -1047,7 +1085,32 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const dismissLearningItem = useCallback((id: string) => {
     dispatch({ type: "SET_LEARNING_ITEM_STATE", id, state: "dismissed" });
-    toast("Learning item dismissed");
+    toast("Learning item dismissed", {
+      action: {
+        label: "Undo",
+        onClick: () => dispatch({ type: "SET_LEARNING_ITEM_STATE", id, state: "suggested" }),
+      },
+    });
+  }, []);
+
+  const toggleSkillFocus = useCallback((id: string) => {
+    dispatch({ type: "TOGGLE_SKILL_FOCUS", id });
+  }, []);
+
+  const setSkillHighlight = useCallback((id: string) => {
+    dispatch({ type: "SET_SKILL_HIGHLIGHT", id });
+  }, []);
+
+  const clearSkillHighlight = useCallback((id: string) => {
+    dispatch({ type: "CLEAR_SKILL_HIGHLIGHT", id });
+  }, []);
+
+  const setTrackRecordHighlight = useCallback((id: string) => {
+    dispatch({ type: "SET_TRACK_RECORD_HIGHLIGHT", id });
+  }, []);
+
+  const clearTrackRecordHighlight = useCallback((id: string) => {
+    dispatch({ type: "CLEAR_TRACK_RECORD_HIGHLIGHT", id });
   }, []);
 
   const acceptWeeklyReviewSuggestion = useCallback((id: string) => {
@@ -1177,6 +1240,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       createTailoredCvVersion,
       acceptLearningItem,
       dismissLearningItem,
+      toggleSkillFocus,
+      setSkillHighlight,
+      clearSkillHighlight,
+      setTrackRecordHighlight,
+      clearTrackRecordHighlight,
       acceptWeeklyReviewSuggestion,
       dismissWeeklyReviewSuggestion,
       updateProfileSummary,
@@ -1231,6 +1299,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       createTailoredCvVersion,
       acceptLearningItem,
       dismissLearningItem,
+      toggleSkillFocus,
+      setSkillHighlight,
+      clearSkillHighlight,
+      setTrackRecordHighlight,
+      clearTrackRecordHighlight,
       acceptWeeklyReviewSuggestion,
       dismissWeeklyReviewSuggestion,
       updateProfileSummary,
