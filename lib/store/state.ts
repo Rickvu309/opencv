@@ -17,6 +17,7 @@ import { skills as seedSkills, learningItems as seedLearningItems } from "@/lib/
 import { planItems as seedPlanItems, plannerGapAnalyses as seedPlannerGapAnalyses } from "@/lib/data/planner";
 import { roadmapResources as seedRoadmapResources } from "@/lib/data/roadmap";
 import { insights as seedInsights } from "@/lib/data/insights";
+import { comparisonProfiles as seedComparisonProfiles } from "@/lib/data/comparison";
 import { nextActions as seedNextActions } from "@/lib/data/actions";
 import { nudges as seedNudges } from "@/lib/data/nudges";
 import {
@@ -39,6 +40,7 @@ import type {
   NextAction,
   Nudge,
   Opportunity,
+  OpportunityComparisonProfile,
   PathScenario,
   PlanItem,
   PlannerGapAnalysis,
@@ -77,6 +79,9 @@ export interface CopilotState {
 export interface StoreState {
   profile: Profile;
   opportunities: Opportunity[];
+  comparisonProfiles: OpportunityComparisonProfile[];
+  comparisonSelection: string[];
+  comparisonModeActive: boolean;
   activityMoments: ActivityMoment[];
   cvVersions: CvVersion[];
   trackRecordEntries: TrackRecordEntry[];
@@ -111,6 +116,9 @@ export interface StoreState {
 export const initialState: StoreState = {
   profile: persona,
   opportunities: seedOpportunities,
+  comparisonProfiles: seedComparisonProfiles,
+  comparisonSelection: [],
+  comparisonModeActive: false,
   activityMoments: seedActivityMoments,
   cvVersions: seedCvVersions,
   trackRecordEntries: seedTrackRecordEntries,

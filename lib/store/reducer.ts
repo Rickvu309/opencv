@@ -30,6 +30,11 @@ export function reducer(state: StoreState, action: Action): StoreState {
     case "SET_OPPORTUNITIES_VIEW":
     case "ADD_OPPORTUNITY":
     case "CLEAR_OPPORTUNITY_HIGHLIGHT":
+    case "SET_COMPARISON_MODE":
+    case "SET_COMPARISON_SELECTION":
+    case "TOGGLE_COMPARISON_SELECTION":
+    case "FOCUS_OPPORTUNITY_FROM_COMPARISON":
+    case "UNDO_FOCUS_OPPORTUNITY_FROM_COMPARISON":
     case "SET_NEXT_ACTION_STATE":
     case "EDIT_NEXT_ACTION":
     case "ACCEPT_ALTERNATIVE":

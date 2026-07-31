@@ -66,7 +66,8 @@ export type ActivityMomentKind =
   | "dream-flagged"
   | "cv-tailored"
   | "signal-accepted"
-  | "evidence-linked";
+  | "evidence-linked"
+  | "comparison-decision";
 
 export interface ActivityMoment {
   id: string;
@@ -1059,4 +1060,49 @@ export interface CopilotMessage {
   /** Present on copilot messages that matched a scripted exchange, carries the structured render. */
   response?: CopilotResponse;
   createdAt: string;
+}
+
+// ---------------------------------------------------------------------------
+// Opportunity comparison (RDS-985): the /opportunities/compare decision
+// workspace. Fit and Goal alignment render straight off existing Opportunity/
+// Goal data; the four remaining dimensions are soft judgments a plain field
+// diff can't produce, seeded per opportunity in lib/data/comparison.ts and
+// kept consistent with that opportunity's own AI Analysis fit insight.
+// ---------------------------------------------------------------------------
+
+/** The same four-tone vocabulary the shared chip tone table uses (success, warning, danger, neutral), plus muted for "not yet judged." */
+export type ComparisonTone = "success" | "warning" | "danger" | "neutral" | "muted";
+
+/** One dimension-row cell for a soft-judgment dimension: a tone plus a compact phrase, never prose. */
+export interface ComparisonJudgment {
+  tone: ComparisonTone;
+  label: string;
+}
+
+/**
+ * One candidate's-worth-of-lines for the tradeoffs strip: this candidate's
+ * single strongest point and single honest caveat, written so
+ * `${company} ${strength}, but ${caveat}.` reads as one natural sentence.
+ */
+export interface ComparisonTradeoffHighlight {
+  strength: string;
+  caveat: string;
+}
+
+/** Two-sentence grounded "why" text behind each of the three Copilot verdict slots, keyed by which slot it backs. */
+export interface ComparisonVerdictReasons {
+  bestForNow: string;
+  bestLongTerm: string;
+  safest: string;
+}
+
+/** The comparison seed module's one entry per opportunity. */
+export interface OpportunityComparisonProfile {
+  opportunityId: string;
+  growthPotential: ComparisonJudgment;
+  timing: ComparisonJudgment;
+  risk: ComparisonJudgment;
+  preparationEffort: ComparisonJudgment;
+  tradeoffHighlight: ComparisonTradeoffHighlight;
+  verdictReasons: ComparisonVerdictReasons;
 }

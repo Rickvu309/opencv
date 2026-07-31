@@ -51,6 +51,23 @@ export type Action =
       activityMoments?: ActivityMoment[];
     }
   | { type: "CLEAR_OPPORTUNITY_HIGHLIGHT"; id: string }
+  | { type: "SET_COMPARISON_MODE"; active: boolean }
+  | { type: "SET_COMPARISON_SELECTION"; ids: string[] }
+  | { type: "TOGGLE_COMPARISON_SELECTION"; id: string }
+  | {
+      type: "FOCUS_OPPORTUNITY_FROM_COMPARISON";
+      id: string;
+      activityMoment: ActivityMoment;
+      pinNextActionId?: string;
+    }
+  | {
+      type: "UNDO_FOCUS_OPPORTUNITY_FROM_COMPARISON";
+      id: string;
+      activityMomentId: string;
+      previousPriority: Priority;
+      nextActionId?: string;
+      previousNextActionState?: NextActionState;
+    }
   | { type: "SET_NEXT_ACTION_STATE"; id: string; state: NextActionState }
   | {
       type: "EDIT_NEXT_ACTION";

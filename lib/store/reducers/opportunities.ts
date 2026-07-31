@@ -4,6 +4,7 @@
 // (RDS-981).
 
 import { PANEL_PREP_TRIGGER_ACTION_ID, PANEL_PREP_CANDIDATE_ID, buildPanelPrepCandidate } from "@/lib/data/track-record";
+import { MAX_COMPARISON } from "@/lib/comparison-utils";
 import { makeId, today } from "@/lib/store/helpers";
 import type { StoreState } from "@/lib/store/state";
 import type { Action } from "@/lib/store/actions";
@@ -20,6 +21,11 @@ type OpportunitiesAction = Extract<
       | "SET_OPPORTUNITIES_VIEW"
       | "ADD_OPPORTUNITY"
       | "CLEAR_OPPORTUNITY_HIGHLIGHT"
+      | "SET_COMPARISON_MODE"
+      | "SET_COMPARISON_SELECTION"
+      | "TOGGLE_COMPARISON_SELECTION"
+      | "FOCUS_OPPORTUNITY_FROM_COMPARISON"
+      | "UNDO_FOCUS_OPPORTUNITY_FROM_COMPARISON"
       | "SET_NEXT_ACTION_STATE"
       | "EDIT_NEXT_ACTION"
       | "ACCEPT_ALTERNATIVE"
@@ -114,6 +120,54 @@ export function reduceOpportunities(state: StoreState, action: OpportunitiesActi
       return state.highlightedOpportunityId === action.id
         ? { ...state, highlightedOpportunityId: undefined }
         : state;
+
+    case "SET_COMPARISON_MODE":
+      return { ...state, comparisonModeActive: action.active };
+
+    case "SET_COMPARISON_SELECTION":
+      return { ...state, comparisonSelection: action.ids };
+
+    case "TOGGLE_COMPARISON_SELECTION": {
+      const alreadySelected = state.comparisonSelection.includes(action.id);
+      if (alreadySelected) {
+        return {
+          ...state,
+          comparisonSelection: state.comparisonSelection.filter((id) => id !== action.id),
+        };
+      }
+      if (state.comparisonSelection.length >= MAX_COMPARISON) return state;
+      return { ...state, comparisonSelection: [...state.comparisonSelection, action.id] };
+    }
+
+    case "FOCUS_OPPORTUNITY_FROM_COMPARISON":
+      return {
+        ...state,
+        opportunities: state.opportunities.map((opportunity) =>
+          opportunity.id === action.id ? { ...opportunity, priority: "High" } : opportunity
+        ),
+        nextActions: action.pinNextActionId
+          ? state.nextActions.map((nextAction) =>
+              nextAction.id === action.pinNextActionId ? { ...nextAction, state: "accepted" } : nextAction
+            )
+          : state.nextActions,
+        activityMoments: [...state.activityMoments, action.activityMoment],
+      };
+
+    case "UNDO_FOCUS_OPPORTUNITY_FROM_COMPARISON":
+      return {
+        ...state,
+        opportunities: state.opportunities.map((opportunity) =>
+          opportunity.id === action.id ? { ...opportunity, priority: action.previousPriority } : opportunity
+        ),
+        nextActions: action.nextActionId
+          ? state.nextActions.map((nextAction) =>
+              nextAction.id === action.nextActionId
+                ? { ...nextAction, state: action.previousNextActionState ?? nextAction.state }
+                : nextAction
+            )
+          : state.nextActions,
+        activityMoments: state.activityMoments.filter((moment) => moment.id !== action.activityMomentId),
+      };
 
     case "SET_NEXT_ACTION_STATE": {
       const target = state.nextActions.find((nextAction) => nextAction.id === action.id);

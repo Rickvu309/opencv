@@ -1,0 +1,305 @@
+import { findPrimaryNextAction } from "@/lib/opportunity-utils";
+import type {
+  AiInsight,
+  ComparisonTone,
+  FitInsight,
+  FitLevel,
+  Goal,
+  NextAction,
+  Opportunity,
+  OpportunityComparisonProfile,
+  Priority,
+} from "@/lib/types";
+
+// Read-only helpers behind the /opportunities/compare decision workspace
+// (RDS-985): selection bounds, the dimension grid's row definitions, and the
+// deterministic generators behind the tradeoffs strip and the Copilot
+// verdict cards. Every generator here is a fixed, parameterized script, the
+// same pattern lib/opportunity-utils.ts's getFocusItems already uses to
+// template a reason string from real seed fields, never free text.
+
+export const MIN_COMPARISON = 2;
+export const MAX_COMPARISON = 4;
+
+export type ComparisonDimensionId =
+  | "fit"
+  | "goal-alignment"
+  | "growth-potential"
+  | "timing"
+  | "risk"
+  | "preparation-effort";
+
+export interface ComparisonDimensionDef {
+  id: ComparisonDimensionId;
+  label: string;
+  /** The info affordance's "how this is judged" text, Progressive Disclosure behind each row. */
+  methodology: string;
+}
+
+// Priority order per the brief: Fit, Goal alignment, Growth potential,
+// Timing, Risk and unknowns, Preparation effort.
+export const COMPARISON_DIMENSIONS: ComparisonDimensionDef[] = [
+  {
+    id: "fit",
+    label: "Fit",
+    methodology:
+      "Pulled straight from this opportunity's own AI Analysis fit judgment, Strong, Medium, Weak, or Unknown, unchanged from what its detail page already says.",
+  },
+  {
+    id: "goal-alignment",
+    label: "Goal alignment",
+    methodology:
+      "Whether the opportunity is linked to one of your active goals. A link means its fit analysis or notes name that goal directly, not a guess made for this view.",
+  },
+  {
+    id: "growth-potential",
+    label: "Growth potential",
+    methodology:
+      "How much room this specific role has to deepen your target direction over the next year, weighed against the scope, team, and company stage described in the listing.",
+  },
+  {
+    id: "timing",
+    label: "Timing",
+    methodology:
+      "Where the opportunity sits in its pipeline stage and how much momentum it currently has, drawn from its status and how recently something moved on it.",
+  },
+  {
+    id: "risk",
+    label: "Risk and unknowns",
+    methodology:
+      "What's still unverified: credibility signals, open questions from the fit judgment, and anything the process hasn't tested yet.",
+  },
+  {
+    id: "preparation-effort",
+    label: "Preparation effort",
+    methodology:
+      "How much work stands between here and your next real decision: a case study to send, a CV to tailor, a credibility check to clear.",
+  },
+];
+
+export function isValidComparisonSelection(ids: string[], opportunities: Opportunity[]): boolean {
+  if (ids.length < MIN_COMPARISON || ids.length > MAX_COMPARISON) return false;
+  const unique = new Set(ids);
+  if (unique.size !== ids.length) return false;
+  return ids.every((id) => opportunities.some((opportunity) => opportunity.id === id));
+}
+
+export function getComparisonProfile(
+  opportunityId: string,
+  profiles: OpportunityComparisonProfile[]
+): OpportunityComparisonProfile | undefined {
+  return profiles.find((profile) => profile.opportunityId === opportunityId);
+}
+
+export function shortCompanyName(company: string): string {
+  return company.split(" ")[0];
+}
+
+const FIT_RANK: Record<FitLevel, number> = { Strong: 3, Medium: 2, Weak: 1, Unknown: 0 };
+const TONE_RANK: Record<ComparisonTone, number> = { danger: 0, muted: 1, warning: 2, neutral: 2, success: 3 };
+const PRIORITY_RANK: Record<Priority, number> = { High: 3, Medium: 2, Low: 1 };
+
+function findFitInsight(opportunityId: string, insights: AiInsight[]): FitInsight | undefined {
+  return insights.find(
+    (insight): insight is FitInsight => insight.kind === "fit" && insight.hostId === opportunityId
+  );
+}
+
+export function goalAlignmentLabel(opportunity: Opportunity, goals: Goal[]): { tone: ComparisonTone; label: string } {
+  const linked = (opportunity.goalIds ?? [])
+    .map((id) => goals.find((goal) => goal.id === id))
+    .filter((goal): goal is Goal => Boolean(goal));
+  if (linked.length === 0) return { tone: "muted", label: "Not linked" };
+  if (linked.length === 1) return { tone: "success", label: `Linked: ${linked[0].title}` };
+  return { tone: "success", label: `Linked to ${linked.length} goals` };
+}
+
+// ---------------------------------------------------------------------------
+// Tradeoffs strip: one clause per candidate ("{Company} {strength}, but
+// {caveat}."), picking the up-to-3 most differentiated candidates when 4 are
+// selected so the strip stays within the 2-to-3-line budget.
+// ---------------------------------------------------------------------------
+
+function candidateProfileVector(
+  opportunity: Opportunity,
+  profile: OpportunityComparisonProfile,
+  insights: AiInsight[]
+): number[] {
+  const fitInsight = findFitInsight(opportunity.id, insights);
+  return [
+    FIT_RANK[fitInsight?.level ?? opportunity.fit],
+    TONE_RANK[profile.growthPotential.tone],
+    TONE_RANK[profile.timing.tone],
+    TONE_RANK[profile.risk.tone],
+    TONE_RANK[profile.preparationEffort.tone],
+  ];
+}
+
+/** Sum of |this candidate's rank - the mean of the others' rank| across every axis, how much this candidate stands out from the rest of the selection. */
+function distinctiveness(index: number, vectors: number[][]): number {
+  const others = vectors.filter((_, otherIndex) => otherIndex !== index);
+  if (others.length === 0) return 0;
+  const target = vectors[index];
+  return target.reduce((sum, value, axis) => {
+    const othersMean = others.reduce((total, vector) => total + vector[axis], 0) / others.length;
+    return sum + Math.abs(value - othersMean);
+  }, 0);
+}
+
+export function buildTradeoffLines(
+  selected: Opportunity[],
+  profiles: OpportunityComparisonProfile[],
+  insights: AiInsight[]
+): string[] {
+  const withProfiles = selected
+    .map((opportunity) => ({ opportunity, profile: getComparisonProfile(opportunity.id, profiles) }))
+    .filter((entry): entry is { opportunity: Opportunity; profile: OpportunityComparisonProfile } =>
+      Boolean(entry.profile)
+    );
+
+  let chosen = withProfiles;
+  if (withProfiles.length > 3) {
+    const vectors = withProfiles.map((entry) => candidateProfileVector(entry.opportunity, entry.profile, insights));
+    const scored = withProfiles
+      .map((entry, index) => ({ entry, score: distinctiveness(index, vectors) }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3);
+    chosen = scored.map((item) => item.entry);
+  }
+
+  return chosen.map(
+    ({ opportunity, profile }) =>
+      `${shortCompanyName(opportunity.company)} ${profile.tradeoffHighlight.strength}, but ${profile.tradeoffHighlight.caveat}.`
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Copilot decision layer: up to 3 verdicts (Best for now, Best long-term
+// upside, Safest), computed from the same structured judgments the grid
+// renders, merged into one card when two verdicts pick the same candidate.
+// ---------------------------------------------------------------------------
+
+export type VerdictKind = "best-for-now" | "best-long-term" | "safest";
+
+export const VERDICT_LABELS: Record<VerdictKind, string> = {
+  "best-for-now": "Best for now",
+  "best-long-term": "Best long-term upside",
+  safest: "Safest",
+};
+
+export interface ComparisonVerdictCard {
+  opportunityId: string;
+  kinds: VerdictKind[];
+  why: string;
+  confidence: "High" | "Medium" | "Low";
+}
+
+function pickWinner(
+  selected: Opportunity[],
+  score: (opportunity: Opportunity) => number
+): Opportunity {
+  return [...selected].sort((a, b) => {
+    const diff = score(b) - score(a);
+    if (diff !== 0) return diff;
+    const priorityDiff = PRIORITY_RANK[b.priority] - PRIORITY_RANK[a.priority];
+    if (priorityDiff !== 0) return priorityDiff;
+    return a.company.localeCompare(b.company);
+  })[0];
+}
+
+export function buildComparisonVerdicts(
+  selected: Opportunity[],
+  profiles: OpportunityComparisonProfile[],
+  insights: AiInsight[],
+  nextActions: NextAction[]
+): ComparisonVerdictCard[] {
+  const profileFor = (opportunity: Opportunity) => getComparisonProfile(opportunity.id, profiles);
+
+  const bestForNowWinner = pickWinner(selected, (opportunity) => {
+    const profile = profileFor(opportunity);
+    if (!profile) return -1;
+    return TONE_RANK[profile.timing.tone] * 2 + TONE_RANK[profile.preparationEffort.tone];
+  });
+
+  const bestLongTermWinner = pickWinner(selected, (opportunity) => {
+    const profile = profileFor(opportunity);
+    const fitInsight = findFitInsight(opportunity.id, insights);
+    const fitRank = FIT_RANK[fitInsight?.level ?? opportunity.fit];
+    const goalBonus = (opportunity.goalIds?.length ?? 0) > 0 ? 1 : 0;
+    return fitRank * 2 + (profile ? TONE_RANK[profile.growthPotential.tone] * 2 : 0) + goalBonus;
+  });
+
+  const safestWinner = pickWinner(selected, (opportunity) => {
+    const profile = profileFor(opportunity);
+    const flagPenalty = opportunity.hasCredibilityFlag ? -4 : 0;
+    return (profile ? TONE_RANK[profile.risk.tone] * 2 : 0) + flagPenalty;
+  });
+
+  function confidenceFor(kind: VerdictKind, opportunity: Opportunity): "High" | "Medium" | "Low" {
+    if (kind === "best-for-now") {
+      const primaryAction = findPrimaryNextAction(opportunity.id, nextActions);
+      return primaryAction?.confidence ?? "Medium";
+    }
+    if (kind === "best-long-term") {
+      const fitInsight = findFitInsight(opportunity.id, insights);
+      return fitInsight?.confidence ?? "Medium";
+    }
+    if (opportunity.hasCredibilityFlag) return "Low";
+    const fitInsight = findFitInsight(opportunity.id, insights);
+    return fitInsight?.confidence ?? "Medium";
+  }
+
+  const verdictOrder: { kind: VerdictKind; winner: Opportunity }[] = [
+    { kind: "best-for-now", winner: bestForNowWinner },
+    { kind: "best-long-term", winner: bestLongTermWinner },
+    { kind: "safest", winner: safestWinner },
+  ];
+
+  const cards: ComparisonVerdictCard[] = [];
+  for (const { kind, winner } of verdictOrder) {
+    const existing = cards.find((card) => card.opportunityId === winner.id);
+    if (existing) {
+      existing.kinds.push(kind);
+      continue;
+    }
+    const profile = profileFor(winner);
+    const reasonKey = kind === "best-for-now" ? "bestForNow" : kind === "best-long-term" ? "bestLongTerm" : "safest";
+    cards.push({
+      opportunityId: winner.id,
+      kinds: [kind],
+      why: profile?.verdictReasons[reasonKey] ?? "Copilot hasn't judged this candidate on this dimension yet.",
+      confidence: confidenceFor(kind, winner),
+    });
+  }
+
+  return cards;
+}
+
+/** One honest line on what could change the verdicts: the "Best for now" winner's own next action already names what would change its advice. */
+export function buildWhatCouldChangeVerdicts(
+  selected: Opportunity[],
+  verdicts: ComparisonVerdictCard[],
+  nextActions: NextAction[]
+): string {
+  const bestForNowCard = verdicts.find((card) => card.kinds.includes("best-for-now"));
+  const ordered = bestForNowCard
+    ? [bestForNowCard.opportunityId, ...selected.map((opportunity) => opportunity.id)]
+    : selected.map((opportunity) => opportunity.id);
+
+  for (const opportunityId of ordered) {
+    const opportunity = selected.find((entry) => entry.id === opportunityId);
+    if (!opportunity) continue;
+    const primaryAction = findPrimaryNextAction(opportunity.id, nextActions);
+    if (primaryAction?.whatWouldChangeThis) return primaryAction.whatWouldChangeThis;
+  }
+
+  return "This reading could change once Copilot has run a full analysis on every candidate here.";
+}
+
+/** Join company-style labels the way this app's copy already reads: "X", "X and Y", or "X, Y, and Z". */
+export function joinWithAnd(labels: string[]): string {
+  if (labels.length === 0) return "";
+  if (labels.length === 1) return labels[0];
+  if (labels.length === 2) return `${labels[0]} and ${labels[1]}`;
+  return `${labels.slice(0, -1).join(", ")}, and ${labels[labels.length - 1]}`;
+}

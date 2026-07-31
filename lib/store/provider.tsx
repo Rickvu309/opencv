@@ -24,7 +24,9 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { copilotScripts } from "@/lib/data/copilot-scripts";
+import { joinWithAnd } from "@/lib/comparison-utils";
 import { evidenceTitle } from "@/lib/inbox-utils";
+import { findPrimaryNextAction } from "@/lib/opportunity-utils";
 import { resourceToLearningItemType, resourceToPlanItemType } from "@/lib/roadmap-utils";
 import { makeId, today } from "@/lib/store/helpers";
 import { reducer } from "@/lib/store/reducer";
@@ -47,6 +49,7 @@ import type {
   InboxLinkChoice,
   LearningItem,
   NextAction,
+  NextActionState,
   Opportunity,
   OpportunityStatus,
   PathScenario,
@@ -76,6 +79,29 @@ interface StoreContextValue {
     activityMoments?: ActivityMoment[]
   ) => void;
   clearOpportunityHighlight: (id: string) => void;
+  setComparisonMode: (active: boolean) => void;
+  setComparisonSelection: (ids: string[]) => void;
+  toggleComparisonSelection: (id: string) => void;
+  focusOpportunityFromComparison: (
+    opportunity: Opportunity,
+    comparedOpportunities: Opportunity[]
+  ) => {
+    activityMomentId: string;
+    previousPriority: Priority;
+    nextActionId?: string;
+    previousNextActionState?: NextActionState;
+    priorityChanged: boolean;
+    nextActionPinned: boolean;
+  };
+  undoFocusOpportunityFromComparison: (
+    id: string,
+    undo: {
+      activityMomentId: string;
+      previousPriority: Priority;
+      nextActionId?: string;
+      previousNextActionState?: NextActionState;
+    }
+  ) => void;
   addGoal: (goal: Goal) => void;
   editGoal: (
     id: string,
@@ -223,6 +249,75 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const clearOpportunityHighlight = useCallback((id: string) => {
     dispatch({ type: "CLEAR_OPPORTUNITY_HIGHLIGHT", id });
   }, []);
+
+  const setComparisonMode = useCallback((active: boolean) => {
+    dispatch({ type: "SET_COMPARISON_MODE", active });
+  }, []);
+
+  const setComparisonSelection = useCallback((ids: string[]) => {
+    dispatch({ type: "SET_COMPARISON_SELECTION", ids });
+  }, []);
+
+  const toggleComparisonSelection = useCallback((id: string) => {
+    dispatch({ type: "TOGGLE_COMPARISON_SELECTION", id });
+  }, []);
+
+  // Applies the comparison workspace's "Make this my focus" decision: raises
+  // priority to High, pins the primary next action into Home's accepted
+  // list (if one exists and isn't already accepted or done), and logs an
+  // Activity moment naming who it was chosen over. Returns exactly what
+  // changed so the caller's SaveBackConfirmation can name it and, if the
+  // user hits Undo, hand the same values back to undoFocusOpportunityFromComparison.
+  const focusOpportunityFromComparison = useCallback(
+    (opportunity: Opportunity, comparedOpportunities: Opportunity[]) => {
+      const previousPriority = opportunity.priority;
+      const primaryAction = findPrimaryNextAction(opportunity.id, state.nextActions);
+      const previousNextActionState = primaryAction?.state;
+      const shouldPin = Boolean(
+        primaryAction && primaryAction.state !== "accepted" && primaryAction.state !== "done"
+      );
+
+      const activityMoment: ActivityMoment = {
+        id: makeId("activity"),
+        opportunityId: opportunity.id,
+        kind: "comparison-decision",
+        message: `Chosen over ${joinWithAnd(comparedOpportunities.map((entry) => entry.company))} after comparison.`,
+        createdAt: today(),
+      };
+
+      dispatch({
+        type: "FOCUS_OPPORTUNITY_FROM_COMPARISON",
+        id: opportunity.id,
+        activityMoment,
+        pinNextActionId: shouldPin ? primaryAction!.id : undefined,
+      });
+
+      return {
+        activityMomentId: activityMoment.id,
+        previousPriority,
+        nextActionId: shouldPin ? primaryAction!.id : undefined,
+        previousNextActionState,
+        priorityChanged: previousPriority !== "High",
+        nextActionPinned: shouldPin,
+      };
+    },
+    [state.nextActions]
+  );
+
+  const undoFocusOpportunityFromComparison = useCallback(
+    (
+      id: string,
+      undo: {
+        activityMomentId: string;
+        previousPriority: Priority;
+        nextActionId?: string;
+        previousNextActionState?: NextActionState;
+      }
+    ) => {
+      dispatch({ type: "UNDO_FOCUS_OPPORTUNITY_FROM_COMPARISON", id, ...undo });
+    },
+    []
+  );
 
   const addGoal = useCallback((goal: Goal) => {
     dispatch({ type: "ADD_GOAL", goal });
@@ -762,6 +857,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setOpportunitiesView,
       addOpportunity,
       clearOpportunityHighlight,
+      setComparisonMode,
+      setComparisonSelection,
+      toggleComparisonSelection,
+      focusOpportunityFromComparison,
+      undoFocusOpportunityFromComparison,
       addGoal,
       editGoal,
       parkGoal,
@@ -840,6 +940,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setOpportunitiesView,
       addOpportunity,
       clearOpportunityHighlight,
+      setComparisonMode,
+      setComparisonSelection,
+      toggleComparisonSelection,
+      focusOpportunityFromComparison,
+      undoFocusOpportunityFromComparison,
       addGoal,
       editGoal,
       parkGoal,
