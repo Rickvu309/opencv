@@ -62,12 +62,12 @@ export default function TrackRecordPage() {
       />
 
       <div className="flex flex-col gap-6 p-6">
-        {candidates.length > 0 ? (
-          <section className="flex flex-col gap-3">
-            <div className="flex items-center gap-2">
-              <h2>For your review</h2>
-              <CopilotTag />
-            </div>
+        <section className="flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <h2>For your review</h2>
+            <CopilotTag />
+          </div>
+          {candidates.length > 0 ? (
             <div className="flex flex-col gap-2">
               {candidates.map((entry) => (
                 <CandidateCard
@@ -85,8 +85,10 @@ export default function TrackRecordPage() {
                 />
               ))}
             </div>
-          </section>
-        ) : null}
+          ) : (
+            <EmptyState message="Nothing drafted for review right now. Copilot will surface new candidates from recent activity." />
+          )}
+        </section>
 
         <section className="flex flex-col gap-3">
           <h2>Confirmed timeline</h2>
