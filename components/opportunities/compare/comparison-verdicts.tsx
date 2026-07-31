@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { Button } from "@/components/ui/button";
 import { ConfidenceChip } from "@/components/shared/confidence-chip";
 import { CopilotTag } from "@/components/shared/copilot-tag";
 import { WhyThisReading } from "@/components/shared/why-this-reading";
@@ -18,9 +19,17 @@ import type { Opportunity } from "@/lib/types";
  * at 3, never more), each naming one candidate. Two verdicts landing on the
  * same candidate merge into one card with both badges rather than showing
  * the same opportunity twice. Closes with one honest line on what would
- * change the read.
+ * change the read. Each card's one primary action is "Make this my focus"
+ * (Hick's Law: one primary action per card, the closing action row below
+ * offers the same choice for every candidate as a secondary option).
  */
-export function ComparisonVerdicts({ opportunities }: { opportunities: Opportunity[] }) {
+export function ComparisonVerdicts({
+  opportunities,
+  onFocus,
+}: {
+  opportunities: Opportunity[];
+  onFocus: (opportunity: Opportunity) => void;
+}) {
   const { state } = useStore();
   const verdicts = buildComparisonVerdicts(opportunities, state.comparisonProfiles, state.insights, state.nextActions);
   const whatCouldChange = buildWhatCouldChangeVerdicts(opportunities, verdicts, state.nextActions);
@@ -71,6 +80,10 @@ export function ComparisonVerdicts({ opportunities }: { opportunities: Opportuni
                 <WhyThisReading
                   text={buildVerdictExpandedReasoning(primaryKind, opportunity, state.insights, state.nextActions)}
                 />
+
+                <Button size="sm" className="mt-1 w-fit" onClick={() => onFocus(opportunity)}>
+                  Make this my focus
+                </Button>
               </CardContent>
             </Card>
           );

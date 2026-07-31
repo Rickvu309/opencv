@@ -338,6 +338,24 @@ export function buildWhatCouldChangeVerdicts(
   return "This reading could change once Copilot has run a full analysis on every candidate here.";
 }
 
+/**
+ * The "Make this my focus" save-back confirmation's message: names exactly
+ * what changed, never a generic "Done." A priority already at High, or a
+ * candidate with no next action to pin, both honestly drop that clause
+ * instead of claiming a change that didn't happen.
+ */
+export function buildFocusConfirmationMessage(
+  opportunity: Opportunity,
+  changed: { priorityChanged: boolean; nextActionPinned: boolean }
+): string {
+  const clauses: string[] = [];
+  if (changed.priorityChanged) clauses.push("priority set to High");
+  if (changed.nextActionPinned) clauses.push("its next action pinned to Home");
+  clauses.push("logged in Activity");
+
+  return `${opportunity.role} at ${opportunity.company} is now your focus: ${joinWithAnd(clauses)}.`;
+}
+
 /** Join company-style labels the way this app's copy already reads: "X", "X and Y", or "X, Y, and Z". */
 export function joinWithAnd(labels: string[]): string {
   if (labels.length === 0) return "";
