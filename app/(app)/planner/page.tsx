@@ -2,6 +2,7 @@
 
 import { PlannerPage } from "@/components/shell/planner-page";
 import { AlternativesSection } from "@/components/planner/alternatives-section";
+import { GapProofSection } from "@/components/planner/gap-proof-section";
 import { RecommendedPathCard } from "@/components/planner/recommended-path-card";
 import { whatWouldChangeRanking } from "@/lib/data/planner";
 import {
@@ -18,6 +19,7 @@ export default function PathPlannerPage() {
   const workingScenario = getWorkingPathScenario(state.pathScenarios, state.workingPathScenarioId);
   const alternatives = getAlternativeScenarios(state.pathScenarios, workingScenario.id);
   const nextMove = getRecommendedNextMove(state.planItems, workingScenario.id);
+  const gapAnalysis = state.plannerGapAnalyses.find((entry) => entry.scenarioId === workingScenario.id);
 
   return (
     <PlannerPage
@@ -39,6 +41,17 @@ export default function PathPlannerPage() {
         whatWouldChangeRanking={whatWouldChangeRanking}
         onChoose={setScenarioAsTargetDirection}
       />
+
+      {gapAnalysis ? (
+        <GapProofSection
+          scenarioTitle={workingScenario.title}
+          gapAnalysis={gapAnalysis}
+          skills={state.skills}
+          insights={state.insights}
+          learningItems={state.learningItems}
+          uncertain={state.directionGapAnalysis.uncertain}
+        />
+      ) : null}
     </PlannerPage>
   );
 }
