@@ -12,7 +12,7 @@ import { CvQuickActionsMenu } from "@/components/cvs/cv-quick-actions-menu";
 import { NewCvVersionDialog } from "@/components/cvs/new-cv-version-dialog";
 import { DeleteCvDialog } from "@/components/cvs/delete-cv-dialog";
 import { useCopilotSurface, useStore } from "@/lib/store";
-import type { CvVersion } from "@/lib/types";
+import type { CvVersion, Opportunity } from "@/lib/types";
 
 export default function CvsPage() {
   useCopilotSurface("CV Versions");
@@ -40,42 +40,28 @@ export default function CvsPage() {
         }
       />
 
-      <div className="grid grid-cols-2 gap-3 p-6">
+      <div className="flex flex-col gap-8 p-6">
         {state.cvVersions.length === 0 ? (
-          <div className="col-span-2">
-            <EmptyState message="No CV versions yet. Create a base CV to start tailoring it per opportunity." />
-          </div>
+          <EmptyState message="No CV versions yet. Create a base CV to start tailoring it per opportunity." />
         ) : (
-          state.cvVersions.map((cv) => {
-            const linkedOpportunity = cv.opportunityId
-              ? state.opportunities.find((opportunity) => opportunity.id === cv.opportunityId)
-              : undefined;
-            return (
-              <ObjectCard
-                key={cv.id}
-                title={cv.name}
-                subtitle={`${cv.sections.length} sections · last edited ${cv.lastEditedAt}`}
-                href={`/cvs/${cv.id}`}
-                chips={
-                  <>
-                    <Badge variant={cv.kind === "tailored" ? "default" : "secondary"} className="capitalize">
-                      {cv.kind}
-                    </Badge>
-                    {linkedOpportunity ? (
-                      <Badge variant="outline">{linkedOpportunity.company}</Badge>
-                    ) : null}
-                  </>
-                }
-                action={
-                  <CvQuickActionsMenu
-                    cv={cv}
-                    onDuplicate={() => openNewVersion(cv.id)}
-                    onDelete={() => setDeleteTarget(cv)}
-                  />
-                }
-              />
-            );
-          })
+          <>
+            <CvGroup
+              label="Base versions"
+              versions={state.cvVersions.filter((cv) => cv.kind === "base")}
+              emptyMessage="No base version yet. Create one to start tailoring it per opportunity."
+              opportunities={state.opportunities}
+              onDuplicate={openNewVersion}
+              onDelete={setDeleteTarget}
+            />
+            <CvGroup
+              label="Tailored versions"
+              versions={state.cvVersions.filter((cv) => cv.kind === "tailored")}
+              emptyMessage="No tailored version yet. Duplicate a base version and tailor it for a specific opportunity."
+              opportunities={state.opportunities}
+              onDuplicate={openNewVersion}
+              onDelete={setDeleteTarget}
+            />
+          </>
         )}
       </div>
 
@@ -86,5 +72,57 @@ export default function CvsPage() {
       />
       <DeleteCvDialog cv={deleteTarget} onClose={() => setDeleteTarget(null)} />
     </div>
+  );
+}
+
+function CvGroup({
+  label,
+  versions,
+  emptyMessage,
+  opportunities,
+  onDuplicate,
+  onDelete,
+}: {
+  label: string;
+  versions: CvVersion[];
+  emptyMessage: string;
+  opportunities: Opportunity[];
+  onDuplicate: (sourceId: string) => void;
+  onDelete: (cv: CvVersion) => void;
+}) {
+  return (
+    <section className="flex flex-col gap-3">
+      <div className="flex items-center gap-2">
+        <h2>{label}</h2>
+        <span className="text-xs text-muted-foreground">{versions.length}</span>
+      </div>
+      {versions.length === 0 ? (
+        <EmptyState message={emptyMessage} />
+      ) : (
+        <div className="grid grid-cols-2 gap-3">
+          {versions.map((cv) => {
+            const linkedOpportunity = cv.opportunityId
+              ? opportunities.find((opportunity) => opportunity.id === cv.opportunityId)
+              : undefined;
+            return (
+              <ObjectCard
+                key={cv.id}
+                title={cv.name}
+                subtitle={`${cv.sections.length} sections · last edited ${cv.lastEditedAt}`}
+                href={`/cvs/${cv.id}`}
+                chips={linkedOpportunity ? <Badge variant="outline">{linkedOpportunity.company}</Badge> : null}
+                action={
+                  <CvQuickActionsMenu
+                    cv={cv}
+                    onDuplicate={() => onDuplicate(cv.id)}
+                    onDelete={() => onDelete(cv)}
+                  />
+                }
+              />
+            );
+          })}
+        </div>
+      )}
+    </section>
   );
 }
