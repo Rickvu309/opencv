@@ -28,25 +28,27 @@ export function NextActionsCard() {
           {acceptedActions.map((action) => {
             const opportunity = state.opportunities.find((item) => item.id === action.opportunityId);
             return (
-              <Card key={action.id} className="ring-foreground/8">
-                <CardContent className="flex items-start gap-3">
+              <Card key={action.id} className="ring-foreground/8 py-0">
+                <CardContent className="flex items-start gap-3 py-2.5">
                   <Checkbox
                     checked={false}
                     onCheckedChange={(checked) => checked === true && markNextActionDone(action.id)}
                     aria-label="Mark done"
                     className="mt-1"
                   />
-                  <div className="flex flex-1 flex-col gap-1">
+                  <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <p className="truncate text-sm text-foreground">
+                      <span className="font-medium">{action.verb}</span>
+                      <span className="text-muted-foreground"> · {action.effort} · {action.dueHint}</span>
+                    </p>
                     <Link
                       href={opportunity ? `/opportunities/${opportunity.id}#actions` : "/opportunities"}
-                      className="w-fit text-xs font-medium text-muted-foreground hover:text-foreground hover:underline"
+                      className="block truncate text-xs text-muted-foreground hover:text-foreground hover:underline"
                     >
                       {opportunity ? `${opportunity.role} · ${opportunity.company}` : "Opportunity"}
+                      {" — "}
+                      {action.rationale}
                     </Link>
-                    <p className="text-sm text-foreground">{action.verb}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {action.rationale} · {action.effort} · {action.dueHint}
-                    </p>
                   </div>
                   <Button
                     size="icon-sm"

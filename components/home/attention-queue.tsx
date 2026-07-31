@@ -3,7 +3,19 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlarmClock, Check, Flame, GraduationCap, Inbox, ListChecks, Pin, Target, X } from "lucide-react";
+import {
+  AlarmClock,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Flame,
+  GraduationCap,
+  Inbox,
+  ListChecks,
+  Pin,
+  Target,
+  X,
+} from "lucide-react";
 
 import { SignalCard } from "@/components/ai/signal-card";
 import { CopilotTag } from "@/components/shared/copilot-tag";
@@ -42,6 +54,19 @@ export function AttentionQueue() {
   const { state, snoozeNudge, dismissNudge, markNudgeHandled, setGoalHighlight } = useStore();
   const router = useRouter();
   const [handledIds, setHandledIds] = useState<Set<string>>(new Set());
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+  function toggleExpanded(id: string) {
+    setExpandedIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
 
   const queue = getAttentionQueue(state.nudges);
   const proposedSignals = state.aiSignals.filter((signal) => signal.state === "proposed");
@@ -56,7 +81,7 @@ export function AttentionQueue() {
   }
 
   return (
-    <section className="flex flex-col gap-3">
+    <section id="attention" className="flex scroll-mt-4 flex-col gap-3">
       <div className="flex items-center gap-2">
         <h2>For your attention</h2>
         <CopilotTag />
@@ -132,8 +157,22 @@ export function AttentionQueue() {
                                 </span>
                               ) : null}
                             </div>
-                            <p className="text-sm text-foreground">{nudge.message}</p>
-                            <p className="text-xs text-muted-foreground">{nudge.why}</p>
+                            <button
+                              type="button"
+                              onClick={() => toggleExpanded(nudge.id)}
+                              aria-expanded={expandedIds.has(nudge.id)}
+                              className="flex items-center gap-1 rounded text-left outline-none hover:text-foreground/80 focus-visible:ring-2 focus-visible:ring-ring"
+                            >
+                              <span className="text-sm text-foreground">{nudge.message}</span>
+                              {expandedIds.has(nudge.id) ? (
+                                <ChevronUp className="size-3.5 shrink-0 text-muted-foreground" />
+                              ) : (
+                                <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
+                              )}
+                            </button>
+                            {expandedIds.has(nudge.id) ? (
+                              <p className="text-xs text-muted-foreground">{nudge.why}</p>
+                            ) : null}
                           </div>
                         </div>
                         {handled ? (

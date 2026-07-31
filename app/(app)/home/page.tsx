@@ -7,14 +7,19 @@ import { AddOpportunityDialog } from "@/components/opportunities/add-opportunity
 import { AttentionQueue } from "@/components/home/attention-queue";
 import { GreetingBand } from "@/components/home/greeting-band";
 import { NextActionsCard } from "@/components/home/next-actions-card";
-import { PipelineSnapshot } from "@/components/home/pipeline-snapshot";
+import { StatTiles } from "@/components/home/stat-tiles";
 import { WeeklyReviewBanner } from "@/components/home/weekly-review-banner";
 import { Button } from "@/components/ui/button";
+import { getAttentionQueue } from "@/lib/nudge-utils";
 import { useCopilotSurface, useStore } from "@/lib/store";
 
 export default function HomePage() {
   useCopilotSurface("Home");
   const { state } = useStore();
+
+  const needsDecisionCount =
+    state.aiSignals.filter((signal) => signal.state === "proposed").length +
+    getAttentionQueue(state.nudges).length;
 
   return (
     <DashboardPage
@@ -28,16 +33,15 @@ export default function HomePage() {
         </AddOpportunityDialog>
       }
     >
-      <GreetingBand profile={state.profile} opportunities={state.opportunities} />
+      <GreetingBand profile={state.profile} />
+
+      <StatTiles opportunities={state.opportunities} needsDecisionCount={needsDecisionCount} />
 
       <WeeklyReviewBanner />
 
       <AttentionQueue />
 
-      <div className="grid grid-cols-2 gap-6">
-        <NextActionsCard />
-        <PipelineSnapshot opportunities={state.opportunities} />
-      </div>
+      <NextActionsCard />
     </DashboardPage>
   );
 }

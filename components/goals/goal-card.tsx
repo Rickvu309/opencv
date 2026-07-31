@@ -94,7 +94,7 @@ export function GoalCard({ goal, opportunities, learningItems, highlighted }: Go
           </span>
         </div>
 
-        {latestNote ? <p className="text-sm text-foreground">{latestNote.note}</p> : null}
+        {latestNote ? <p className="line-clamp-1 text-sm text-foreground">{latestNote.note}</p> : null}
 
         {expanded ? (
           <>

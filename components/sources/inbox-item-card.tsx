@@ -54,11 +54,9 @@ export function InboxItemCard({ item }: { item: InboxItem }) {
         </span>
 
         <div className="flex flex-col gap-0.5">
-          <p className="text-sm font-medium text-foreground">{evidenceTitle(evidence)}</p>
-          <p className="text-sm text-foreground">{evidence.signal}</p>
+          <p className="truncate text-sm font-medium text-foreground">{evidenceTitle(evidence)}</p>
+          <p className="truncate text-sm text-foreground">{evidence.signal}</p>
         </div>
-
-        <p className="text-xs text-muted-foreground">{evidence.whyItMatters}</p>
 
         <div className="flex flex-col gap-1.5">
           <button
@@ -74,7 +72,12 @@ export function InboxItemCard({ item }: { item: InboxItem }) {
               <ChevronDown className="size-3 text-muted-foreground" />
             )}
           </button>
-          {evidenceOpen ? <EvidenceExtract evidence={evidence} /> : null}
+          {evidenceOpen ? (
+            <div className="flex flex-col gap-1.5">
+              <p className="text-xs text-muted-foreground">{evidence.whyItMatters}</p>
+              <EvidenceExtract evidence={evidence} />
+            </div>
+          ) : null}
         </div>
 
         {status === "linked" && linkedTarget ? (

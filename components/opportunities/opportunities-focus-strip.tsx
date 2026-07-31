@@ -39,11 +39,11 @@ export function OpportunitiesFocusStrip() {
                 <Link
                   key={item.opportunityId}
                   href={`/opportunities/${item.opportunityId}`}
-                  className="flex flex-wrap items-baseline gap-x-1.5 rounded-md px-1 py-0.5 text-sm hover:bg-indigo-100/60 dark:hover:bg-indigo-500/10"
+                  className="block truncate rounded-md px-1 py-0.5 text-sm hover:bg-indigo-100/60 dark:hover:bg-indigo-500/10"
                 >
                   <span className="font-medium text-foreground">
                     {opportunity.role} · {opportunity.company}
-                  </span>
+                  </span>{" "}
                   <span className="text-muted-foreground">{item.reason}</span>
                 </Link>
               );

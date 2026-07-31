@@ -1,5 +1,4 @@
-import { buildPipelinePulse } from "@/lib/opportunity-utils";
-import type { Opportunity, Profile } from "@/lib/types";
+import type { Profile } from "@/lib/types";
 
 function timeOfDayGreeting(hour: number): string {
   if (hour < 5) return "Still up";
@@ -9,22 +8,20 @@ function timeOfDayGreeting(hour: number): string {
 }
 
 /**
- * Home's opening line: a time-aware greeting that references the target
- * direction, plus a one-line pipeline pulse (interviews in motion, offers
- * waiting on a reply). The proactive surface starts with where things stand,
- * not a blank slate.
+ * Home's opening line: a single time-aware greeting that references the
+ * target direction. The pipeline pulse that used to run as a second prose
+ * sentence here now lives as real numbers in StatTiles, right below, so
+ * this band stays a one-line hero instead of restating counts as text.
  */
-export function GreetingBand({ profile, opportunities }: { profile: Profile; opportunities: Opportunity[] }) {
+export function GreetingBand({ profile }: { profile: Profile }) {
   const firstName = profile.name.split(" ")[0];
   const greeting = timeOfDayGreeting(new Date().getHours());
-  const pulse = buildPipelinePulse(opportunities);
 
   return (
-    <div className="flex flex-col gap-1 rounded-xl border border-border/60 bg-card px-5 py-4">
+    <div className="rounded-xl border border-border/60 bg-card px-5 py-4">
       <p className="text-display">
         {greeting}, {firstName}. Still steering toward {profile.targetDirectionLabel}.
       </p>
-      <p className="text-sm text-muted-foreground">{pulse}</p>
     </div>
   );
 }
