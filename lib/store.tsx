@@ -134,6 +134,16 @@ type Action =
       suggestionId: string;
       state: "accepted" | "dismissed";
     }
+  | { type: "ADD_CV_VERSION"; cv: CvVersion }
+  | { type: "DELETE_CV_VERSION"; id: string }
+  | { type: "SET_CV_SECTION_CONTENT"; cvId: string; sectionId: string; content: string }
+  | { type: "SET_CV_OPPORTUNITY_LINK"; cvId: string; opportunityId?: string }
+  | {
+      type: "CREATE_TAILORED_CV_VERSION";
+      cv: CvVersion;
+      opportunityId: string;
+      activityMoment: ActivityMoment;
+    }
   | { type: "SET_LEARNING_ITEM_STATE"; id: string; state: LearningItem["state"] }
   | {
       type: "SET_WEEKLY_REVIEW_SUGGESTION_STATE";
@@ -414,6 +424,78 @@ function reducer(state: StoreState, action: Action): StoreState {
         }),
       };
 
+    case "ADD_CV_VERSION":
+      return { ...state, cvVersions: [action.cv, ...state.cvVersions] };
+
+    case "DELETE_CV_VERSION":
+      return {
+        ...state,
+        cvVersions: state.cvVersions.filter((cv) => cv.id !== action.id),
+        opportunities: state.opportunities.map((opportunity) =>
+          opportunity.cvVersionId === action.id
+            ? { ...opportunity, cvVersionId: undefined }
+            : opportunity
+        ),
+      };
+
+    case "SET_CV_SECTION_CONTENT": {
+      const dateStamp = today();
+      return {
+        ...state,
+        cvVersions: state.cvVersions.map((cv) =>
+          cv.id === action.cvId
+            ? {
+                ...cv,
+                lastEditedAt: dateStamp,
+                sections: cv.sections.map((section) =>
+                  section.id === action.sectionId
+                    ? { ...section, content: action.content }
+                    : section
+                ),
+              }
+            : cv
+        ),
+      };
+    }
+
+    case "SET_CV_OPPORTUNITY_LINK": {
+      const dateStamp = today();
+      return {
+        ...state,
+        cvVersions: state.cvVersions.map((cv) =>
+          cv.id === action.cvId
+            ? {
+                ...cv,
+                opportunityId: action.opportunityId,
+                kind: action.opportunityId ? "tailored" : "base",
+                lastEditedAt: dateStamp,
+              }
+            : cv
+        ),
+        opportunities: state.opportunities.map((opportunity) => {
+          if (opportunity.id === action.opportunityId) {
+            return { ...opportunity, cvVersionId: action.cvId };
+          }
+          if (opportunity.cvVersionId === action.cvId) {
+            return { ...opportunity, cvVersionId: undefined };
+          }
+          return opportunity;
+        }),
+      };
+    }
+
+    case "CREATE_TAILORED_CV_VERSION":
+      return {
+        ...state,
+        cvVersions: [action.cv, ...state.cvVersions],
+        opportunities: state.opportunities.map((opportunity) =>
+          opportunity.id === action.opportunityId
+            ? { ...opportunity, cvVersionId: action.cv.id, lastActivityAt: today() }
+            : opportunity
+        ),
+        activityMoments: [...state.activityMoments, action.activityMoment],
+      };
+
     case "SET_LEARNING_ITEM_STATE":
       return {
         ...state,
@@ -540,6 +622,11 @@ interface StoreContextValue {
   snoozeNudge: (id: string) => void;
   acceptTailoringSuggestion: (insightId: string, suggestionId: string) => void;
   dismissTailoringSuggestion: (insightId: string, suggestionId: string) => void;
+  addCvVersion: (cv: CvVersion) => void;
+  deleteCvVersion: (id: string) => void;
+  updateCvSectionContent: (cvId: string, sectionId: string, content: string) => void;
+  setCvOpportunityLink: (cvId: string, opportunityId?: string) => void;
+  createTailoredCvVersion: (cv: CvVersion, opportunity: Opportunity) => void;
   acceptLearningItem: (id: string) => void;
   dismissLearningItem: (id: string) => void;
   acceptWeeklyReviewSuggestion: (id: string) => void;
@@ -700,6 +787,53 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     toast("Suggestion dismissed");
   }, []);
 
+  const addCvVersion = useCallback(
+    (cv: CvVersion) => {
+      dispatch({ type: "ADD_CV_VERSION", cv });
+      toast.success("CV version created", {
+        description: `${cv.name} is ready to edit.`,
+        action: {
+          label: "Open",
+          onClick: () => router.push(`/cvs/${cv.id}`),
+        },
+      });
+    },
+    [router]
+  );
+
+  const deleteCvVersion = useCallback((id: string) => {
+    dispatch({ type: "DELETE_CV_VERSION", id });
+    toast("CV version deleted");
+  }, []);
+
+  const updateCvSectionContent = useCallback((cvId: string, sectionId: string, content: string) => {
+    dispatch({ type: "SET_CV_SECTION_CONTENT", cvId, sectionId, content });
+    toast.success("Section saved");
+  }, []);
+
+  const setCvOpportunityLink = useCallback((cvId: string, opportunityId?: string) => {
+    dispatch({ type: "SET_CV_OPPORTUNITY_LINK", cvId, opportunityId });
+    toast.success(opportunityId ? "Linked to opportunity" : "Opportunity link cleared");
+  }, []);
+
+  const createTailoredCvVersion = useCallback(
+    (cv: CvVersion, opportunity: Opportunity) => {
+      const activityMoment: ActivityMoment = {
+        id: makeId("activity"),
+        opportunityId: opportunity.id,
+        kind: "cv-tailored",
+        message: `Copilot created a tailored CV version: ${cv.name}.`,
+        createdAt: today(),
+      };
+      dispatch({ type: "CREATE_TAILORED_CV_VERSION", cv, opportunityId: opportunity.id, activityMoment });
+      toast.success("Tailored version created", {
+        description: `${cv.name} is now linked to ${opportunity.company}.`,
+      });
+      router.push(`/cvs/${cv.id}`);
+    },
+    [router]
+  );
+
   const acceptLearningItem = useCallback((id: string) => {
     dispatch({ type: "SET_LEARNING_ITEM_STATE", id, state: "planned" });
     toast.success("Added to your learning plan");
@@ -820,6 +954,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       snoozeNudge,
       acceptTailoringSuggestion,
       dismissTailoringSuggestion,
+      addCvVersion,
+      deleteCvVersion,
+      updateCvSectionContent,
+      setCvOpportunityLink,
+      createTailoredCvVersion,
       acceptLearningItem,
       dismissLearningItem,
       acceptWeeklyReviewSuggestion,
@@ -859,6 +998,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       snoozeNudge,
       acceptTailoringSuggestion,
       dismissTailoringSuggestion,
+      addCvVersion,
+      deleteCvVersion,
+      updateCvSectionContent,
+      setCvOpportunityLink,
+      createTailoredCvVersion,
       acceptLearningItem,
       dismissLearningItem,
       acceptWeeklyReviewSuggestion,

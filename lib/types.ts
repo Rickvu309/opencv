@@ -71,7 +71,8 @@ export type ActivityMomentKind =
   | "copilot-analysis"
   | "action-accepted"
   | "action-done"
-  | "dream-flagged";
+  | "dream-flagged"
+  | "cv-tailored";
 
 export interface ActivityMoment {
   id: string;
@@ -295,10 +296,21 @@ export interface FitInsight extends AiInsightBase {
 
 export type TailoringSuggestionState = "suggested" | "accepted" | "dismissed";
 
+/**
+ * The kind of edit a tailoring suggestion makes, shown as a small label next
+ * to the before and after text so the change reads as one of a handful of
+ * recognizable moves rather than an unlabeled rewrite.
+ */
+export type TailoringChangeType = "reorder" | "rewrite" | "keyword" | "cut";
+
 export interface TailoringSuggestion {
   id: string;
   section: string;
-  suggestion: string;
+  changeType: TailoringChangeType;
+  currentText: string;
+  proposedText: string;
+  /** One line tying this change to a specific strength or concern from the target opportunity's fit analysis. */
+  rationale: string;
   state: TailoringSuggestionState;
 }
 

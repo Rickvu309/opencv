@@ -1,17 +1,21 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { Sparkles } from "lucide-react";
 
 import { PageHeader } from "@/components/shell/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/shared/empty-state";
+import { CvSectionCard } from "@/components/cvs/cv-section-card";
+import { CvMetaRail } from "@/components/cvs/cv-meta-rail";
+import { TailoringDialog } from "@/components/cvs/tailoring-dialog";
 import { useCopilotSurface, useStore } from "@/lib/store";
 
 export default function CvDetailPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const { state } = useStore();
   const cv = state.cvVersions.find((item) => item.id === params.id);
 
@@ -25,8 +29,8 @@ export default function CvDetailPage() {
           <EmptyState
             message="This CV version doesn't exist, or was removed."
             action={
-              <Button asChild size="sm" variant="outline">
-                <Link href="/cvs">Back to CV Versions</Link>
+              <Button size="sm" variant="outline" onClick={() => router.push("/cvs")}>
+                Back to CV Versions
               </Button>
             }
           />
@@ -41,7 +45,21 @@ export default function CvDetailPage() {
 
   return (
     <div className="flex flex-col">
-      <PageHeader title={cv.name} description={`Last edited ${cv.lastEditedAt}`} />
+      <PageHeader
+        title={cv.name}
+        description={`Last edited ${cv.lastEditedAt}`}
+        primaryAction={
+          <TailoringDialog
+            fixedCv={cv}
+            trigger={
+              <Button size="sm">
+                <Sparkles className="size-4" />
+                Tailor for this role
+              </Button>
+            }
+          />
+        }
+      />
 
       <div className="flex flex-col gap-4 p-6">
         <div className="flex flex-wrap items-center gap-1.5">
@@ -57,15 +75,14 @@ export default function CvDetailPage() {
           ) : null}
         </div>
 
-        <div className="flex flex-col gap-3">
-          {cv.sections.map((section) => (
-            <Card key={section.id}>
-              <CardContent className="flex flex-col gap-1.5">
-                <h3>{section.title}</h3>
-                <p className="text-sm text-muted-foreground">{section.content}</p>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="flex gap-4">
+          <div className="flex flex-1 flex-col gap-3">
+            {cv.sections.map((section) => (
+              <CvSectionCard key={section.id} cvId={cv.id} section={section} />
+            ))}
+          </div>
+
+          <CvMetaRail cv={cv} linkedOpportunity={linkedOpportunity} />
         </div>
       </div>
     </div>

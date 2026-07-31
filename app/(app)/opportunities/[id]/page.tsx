@@ -124,7 +124,7 @@ export default function OpportunityDetailPage() {
           </TabsContent>
 
           <TabsContent value="materials" className="pt-4">
-            <OpportunityMaterialsTab cvVersion={cvVersion} />
+            <OpportunityMaterialsTab opportunity={opportunity} cvVersion={cvVersion} />
           </TabsContent>
 
           <TabsContent value="activity" className="pt-4">

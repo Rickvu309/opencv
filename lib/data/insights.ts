@@ -114,6 +114,52 @@ export const insights: AiInsight[] = [
       "Weighed your Fintra explainability work, the referral's credibility, and the staff-level scope against the one open question on team structure.",
     confidence: "High",
   },
+  {
+    id: "insight-opp-1-tailoring",
+    kind: "tailoring",
+    hostType: "opportunity",
+    hostId: "opp-1",
+    createdAt: "2026-06-03",
+    confidence: "High",
+    suggestions: [
+      {
+        id: "tailor-opp-1-summary",
+        section: "Summary",
+        changeType: "rewrite",
+        currentText:
+          "Senior product designer with seven years across fintech, e-commerce, and analytics tools. Led design for an AI underwriting assistant at Fintra, including the explainability panel applicants see when a decision is made.",
+        proposedText:
+          "Senior product designer with seven years across fintech, e-commerce, and analytics tools, six of them building trust surfaces for people making high-stakes decisions. At Fintra, owned the explainability panel loan applicants see when the underwriting model reaches a decision, the same end-to-end ownership Solace's model-explainability layer calls for.",
+        rationale:
+          "Your fit analysis names this the strongest match for the staff scope, mirroring the explainability panel you shipped at Fintra.",
+        state: "suggested",
+      },
+      {
+        id: "tailor-opp-1-experience",
+        section: "Experience",
+        changeType: "rewrite",
+        currentText:
+          "Fintra: Senior Product Designer, Apr 2023 to present. Loop Commerce: Product Designer, Jun 2020 to Mar 2023. Kestrel Analytics: Product Designer, Feb 2019 to May 2020. Bambu Studio: UX Designer, Jul 2017 to Jan 2019.",
+        proposedText:
+          "Fintra: Senior Product Designer, Apr 2023 to present. Owned the explainability panel for an AI underwriting assistant, the closest available precedent to Solace's clinical decision-support surface, translating a lending model's reasoning into interface patterns a non-technical reviewer trusts. Loop Commerce: Product Designer, Jun 2020 to Mar 2023. Kestrel Analytics: Product Designer, Feb 2019 to May 2020.",
+        rationale:
+          "Your fit analysis flags the clinical domain as new territory, this draws the line from lending to healthcare explicitly.",
+        state: "suggested",
+      },
+      {
+        id: "tailor-opp-1-skills",
+        section: "Skills",
+        changeType: "keyword",
+        currentText:
+          "Interaction design, design systems, user research, prototyping, stakeholder communication, accessibility design.",
+        proposedText:
+          "Interaction design, design systems, user research, prototyping, stakeholder communication, accessibility design, model explainability and trust design.",
+        rationale:
+          "Adds the keyword the staff-level posting is built around, backed by the same explainability work your fit analysis leans on.",
+        state: "suggested",
+      },
+    ],
+  },
 
   // --- opp-2: Vanta Growth Labs (fails credibility) ----------------------
   {
@@ -215,6 +261,52 @@ export const insights: AiInsight[] = [
     whyThisReading:
       "With the credibility check failing, judging fit would mean inventing a product and team that do not yet check out anywhere.",
     confidence: "Low",
+  },
+  {
+    id: "insight-opp-2-tailoring",
+    kind: "tailoring",
+    hostType: "opportunity",
+    hostId: "opp-2",
+    createdAt: "2026-07-10",
+    confidence: "Low",
+    suggestions: [
+      {
+        id: "tailor-opp-2-summary",
+        section: "Summary",
+        changeType: "rewrite",
+        currentText:
+          "Senior product designer with seven years across fintech, e-commerce, and analytics tools. Led design for an AI underwriting assistant at Fintra, including the explainability panel applicants see when a decision is made.",
+        proposedText:
+          "Senior product designer with seven years across fintech, e-commerce, and analytics tools, comfortable stepping into loosely scoped, fast-moving environments while a role's real shape is still forming.",
+        rationale:
+          "Your fit analysis can't judge this against a real product yet, so this leans on adaptability instead of overclaiming a match that isn't verifiable.",
+        state: "suggested",
+      },
+      {
+        id: "tailor-opp-2-experience",
+        section: "Experience",
+        changeType: "cut",
+        currentText:
+          "Fintra: Senior Product Designer, Apr 2023 to present. Loop Commerce: Product Designer, Jun 2020 to Mar 2023. Kestrel Analytics: Product Designer, Feb 2019 to May 2020. Bambu Studio: UX Designer, Jul 2017 to Jan 2019.",
+        proposedText:
+          "Fintra: Senior Product Designer, Apr 2023 to present. Loop Commerce: Product Designer, Jun 2020 to Mar 2023. Kestrel Analytics: Product Designer, Feb 2019 to May 2020.",
+        rationale:
+          "With the credibility flag still open, your fit analysis suggests keeping this tight rather than padding it with an entry this listing gives no way to judge relevance for.",
+        state: "suggested",
+      },
+      {
+        id: "tailor-opp-2-skills",
+        section: "Skills",
+        changeType: "keyword",
+        currentText:
+          "Interaction design, design systems, user research, prototyping, stakeholder communication, accessibility design.",
+        proposedText:
+          "Interaction design, design systems, user research, prototyping, stakeholder communication, accessibility design, defining scope from ambiguous requirements.",
+        rationale:
+          "Matches the listing's own vague ambiguity language your interpretation insight flagged, useful only if this posting turns out to be real.",
+        state: "suggested",
+      },
+    ],
   },
 
   // --- opp-3: Northwind Robotics -----------------------------------------
@@ -327,6 +419,52 @@ export const insights: AiInsight[] = [
       "Mentoring scope counts in your favor, the missing AI-facing work and the stalled-looking posting both pull the rating down to Medium.",
     confidence: "Medium",
   },
+  {
+    id: "insight-opp-3-tailoring",
+    kind: "tailoring",
+    hostType: "opportunity",
+    hostId: "opp-3",
+    createdAt: "2026-05-15",
+    confidence: "Medium",
+    suggestions: [
+      {
+        id: "tailor-opp-3-summary",
+        section: "Summary",
+        changeType: "rewrite",
+        currentText:
+          "Senior product designer with seven years across fintech, e-commerce, and analytics tools. Led design for an AI underwriting assistant at Fintra, including the explainability panel applicants see when a decision is made.",
+        proposedText:
+          "Senior product designer with seven years across fintech, e-commerce, and analytics tools, including operations-dashboard work at Kestrel Analytics that translated dense technical data into a usable console for non-technical operators.",
+        rationale:
+          "Leads with the Kestrel Analytics dashboard work your fit analysis calls the closest overlap, since this role has no AI-facing scope to lead with instead.",
+        state: "suggested",
+      },
+      {
+        id: "tailor-opp-3-experience",
+        section: "Experience",
+        changeType: "reorder",
+        currentText:
+          "Fintra: Senior Product Designer, Apr 2023 to present. Loop Commerce: Product Designer, Jun 2020 to Mar 2023. Kestrel Analytics: Product Designer, Feb 2019 to May 2020. Bambu Studio: UX Designer, Jul 2017 to Jan 2019.",
+        proposedText:
+          "Fintra: Senior Product Designer, Apr 2023 to present. Kestrel Analytics: Product Designer, Feb 2019 to May 2020, owned an operations dashboard translating raw metrics into technician-ready views. Loop Commerce: Product Designer, Jun 2020 to Mar 2023. Bambu Studio: UX Designer, Jul 2017 to Jan 2019.",
+        rationale:
+          "Surfaces the Kestrel Analytics dashboard experience your fit analysis names directly, ahead of roles with no operational-tooling overlap.",
+        state: "suggested",
+      },
+      {
+        id: "tailor-opp-3-skills",
+        section: "Skills",
+        changeType: "keyword",
+        currentText:
+          "Interaction design, design systems, user research, prototyping, stakeholder communication, accessibility design.",
+        proposedText:
+          "Interaction design, design systems, user research, prototyping, stakeholder communication, accessibility design, mentoring and team growth.",
+        rationale:
+          "Names the mentoring scope this lead role explicitly asks for, matching your goal to grow into people leadership.",
+        state: "suggested",
+      },
+    ],
+  },
 
   // --- opp-4: Arclight AI --------------------------------------------------
   {
@@ -432,6 +570,52 @@ export const insights: AiInsight[] = [
       "Scope overlap with your Fintra work and your remote preference both pull this to Strong, the smaller team and unclear leadership path are the honest offsets.",
     confidence: "High",
   },
+  {
+    id: "insight-opp-4-tailoring",
+    kind: "tailoring",
+    hostType: "opportunity",
+    hostId: "opp-4",
+    createdAt: "2026-06-21",
+    confidence: "High",
+    suggestions: [
+      {
+        id: "tailor-opp-4-summary",
+        section: "Summary",
+        changeType: "rewrite",
+        currentText:
+          "Senior product designer with seven years across fintech, e-commerce, and analytics tools. Led design for an AI underwriting assistant at Fintra, including the explainability panel applicants see when a decision is made.",
+        proposedText:
+          "Senior product designer with seven years across fintech, e-commerce, and analytics tools. At Fintra, owned the trust-boundary pattern behind an AI underwriting assistant: what it suggests, how confident it says it is, and what a human does next, the same suggest-then-approve problem Arclight's workflow assistant is built around.",
+        rationale:
+          "Your fit analysis calls this the closest match to the Fintra trust-boundary work, the strongest evidence behind your AI interaction and prompt design skill.",
+        state: "suggested",
+      },
+      {
+        id: "tailor-opp-4-experience",
+        section: "Experience",
+        changeType: "rewrite",
+        currentText:
+          "Fintra: Senior Product Designer, Apr 2023 to present. Loop Commerce: Product Designer, Jun 2020 to Mar 2023. Kestrel Analytics: Product Designer, Feb 2019 to May 2020. Bambu Studio: UX Designer, Jul 2017 to Jan 2019.",
+        proposedText:
+          "Fintra: Senior Product Designer, Apr 2023 to present. Designed the full suggestion-to-approval loop for an AI underwriting assistant: what it proposes, how confident it says it is, and what happens once a human overrides it. Loop Commerce: Product Designer, Jun 2020 to Mar 2023.",
+        rationale:
+          "Names the exact suggestion and approval surfaces the posting asks one designer to own end to end.",
+        state: "suggested",
+      },
+      {
+        id: "tailor-opp-4-skills",
+        section: "Skills",
+        changeType: "keyword",
+        currentText:
+          "Interaction design, design systems, user research, prototyping, stakeholder communication, accessibility design.",
+        proposedText:
+          "Interaction design, design systems, user research, prototyping, stakeholder communication, accessibility design, AI interaction and prompt design.",
+        rationale:
+          "Directly advances your goal to land a senior or staff AI product design role, the goal this opportunity is closest to.",
+        state: "suggested",
+      },
+    ],
+  },
 
   // --- opp-5: Tidal Finance -------------------------------------------------
   {
@@ -529,6 +713,52 @@ export const insights: AiInsight[] = [
     whyThisReading:
       "The only real positive is domain familiarity, weighed against location and scope working against nearly every stated preference.",
     confidence: "High",
+  },
+  {
+    id: "insight-opp-5-tailoring",
+    kind: "tailoring",
+    hostType: "opportunity",
+    hostId: "opp-5",
+    createdAt: "2026-06-06",
+    confidence: "Medium",
+    suggestions: [
+      {
+        id: "tailor-opp-5-summary",
+        section: "Summary",
+        changeType: "cut",
+        currentText:
+          "Senior product designer with seven years across fintech, e-commerce, and analytics tools. Led design for an AI underwriting assistant at Fintra, including the explainability panel applicants see when a decision is made.",
+        proposedText:
+          "Senior product designer with seven years across fintech, e-commerce, and analytics tools, comfortable owning a generalist mandate across onboarding and lifecycle surfaces.",
+        rationale:
+          "Your fit analysis flags no AI-facing work in this scope, leading with the AI framing here would ring hollow against a generalist ask.",
+        state: "suggested",
+      },
+      {
+        id: "tailor-opp-5-experience",
+        section: "Experience",
+        changeType: "reorder",
+        currentText:
+          "Fintra: Senior Product Designer, Apr 2023 to present. Loop Commerce: Product Designer, Jun 2020 to Mar 2023. Kestrel Analytics: Product Designer, Feb 2019 to May 2020. Bambu Studio: UX Designer, Jul 2017 to Jan 2019.",
+        proposedText:
+          "Fintra: Senior Product Designer, Apr 2023 to present. Loop Commerce: Product Designer, Jun 2020 to Mar 2023, covered onboarding and lifecycle surfaces for a consumer e-commerce product. Kestrel Analytics: Product Designer, Feb 2019 to May 2020.",
+        rationale:
+          "Brings the Loop Commerce onboarding breadth forward, the closest precedent to Tidal's onboarding and rewards scope your fit analysis found only partial overlap for.",
+        state: "suggested",
+      },
+      {
+        id: "tailor-opp-5-skills",
+        section: "Skills",
+        changeType: "keyword",
+        currentText:
+          "Interaction design, design systems, user research, prototyping, stakeholder communication, accessibility design.",
+        proposedText:
+          "Interaction design, design systems, user research, prototyping, stakeholder communication, accessibility design, consumer onboarding and lifecycle design.",
+        rationale:
+          "Matches the two surfaces the listing actually names, onboarding and rewards, rather than leaning on skills this role won't test.",
+        state: "suggested",
+      },
+    ],
   },
 
   // --- opp-6: Meridian Labs ---------------------------------------------
@@ -646,19 +876,37 @@ export const insights: AiInsight[] = [
       {
         id: "tailor-opp-6-summary",
         section: "Summary",
-        suggestion: "Lead with the explainability panel work first, since it maps directly to Meridian's evaluation console, rather than your general fintech background.",
+        changeType: "reorder",
+        currentText:
+          "Senior product designer with seven years across fintech, e-commerce, and analytics tools. Led design for an AI underwriting assistant at Fintra, including the explainability panel applicants see when a decision is made.",
+        proposedText:
+          "Senior product designer who has shipped a model-explainability surface in production. At Fintra, designed the panel that shows loan applicants why the AI underwriting assistant reached its decision, the closest direct match to Meridian's evaluation console.",
+        rationale:
+          "Your fit analysis calls this the strongest evidence behind your AI and ML literacy skill, lead with it instead of the general fintech framing.",
         state: "accepted",
       },
       {
         id: "tailor-opp-6-experience",
         section: "Experience",
-        suggestion: "Name the specific confidence and contributing-factor indicators you designed, panel reviewers will recognize the pattern immediately.",
+        changeType: "rewrite",
+        currentText:
+          "Fintra: Senior Product Designer, Apr 2023 to present. Loop Commerce: Product Designer, Jun 2020 to Mar 2023. Kestrel Analytics: Product Designer, Feb 2019 to May 2020. Bambu Studio: UX Designer, Jul 2017 to Jan 2019.",
+        proposedText:
+          "Fintra: Senior Product Designer, Apr 2023 to present. Owned the explainability panel for the AI underwriting assistant, including how confidence and contributing factors are surfaced to applicants and reviewers.",
+        rationale:
+          "Names the specific confidence and contributing-factor indicators, the same evaluation-console problem your fit analysis flags as the closest scope overlap.",
         state: "accepted",
       },
       {
         id: "tailor-opp-6-relevant-work",
         section: "Relevant to this role",
-        suggestion: "Add a line on the trust-boundary spec from your discovery sprint, it answers the leadership-judgment question before they ask it.",
+        changeType: "rewrite",
+        currentText:
+          "Designed confidence and uncertainty indicators reviewers rely on daily. Led discovery sprint that shaped the assistant's trust boundary: the model drafts, a human always confirms.",
+        proposedText:
+          "Designed confidence and uncertainty indicators reviewers rely on daily. Led discovery sprint that shaped the assistant's trust boundary: the model drafts, a human always confirms. Documented the trust-boundary spec that same sprint produced, the reference the panel round is likely to probe.",
+        rationale:
+          "Your fit analysis flags the panel round testing leadership judgment as the one open concern, this answers it before they ask.",
         state: "suggested",
       },
     ],
@@ -762,6 +1010,52 @@ export const insights: AiInsight[] = [
       "Management scope is the clear strength here, the missing AI-facing work and unproven People management skill are the honest counterweights.",
     confidence: "Medium",
   },
+  {
+    id: "insight-opp-7-tailoring",
+    kind: "tailoring",
+    hostType: "opportunity",
+    hostId: "opp-7",
+    createdAt: "2026-04-19",
+    confidence: "Medium",
+    suggestions: [
+      {
+        id: "tailor-opp-7-summary",
+        section: "Summary",
+        changeType: "rewrite",
+        currentText:
+          "Senior product designer with seven years across fintech, e-commerce, and analytics tools. Led design for an AI underwriting assistant at Fintra, including the explainability panel applicants see when a decision is made.",
+        proposedText:
+          "Senior product designer with seven years across fintech and lending-adjacent products, ready for a first people-management seat after informally mentoring designers at Fintra and Loop Commerce.",
+        rationale:
+          "Your fit analysis names first-time management scope as the clear strength here, this leads with readiness for it instead of AI framing this role doesn't test.",
+        state: "suggested",
+      },
+      {
+        id: "tailor-opp-7-experience",
+        section: "Experience",
+        changeType: "rewrite",
+        currentText:
+          "Fintra: Senior Product Designer, Apr 2023 to present. Loop Commerce: Product Designer, Jun 2020 to Mar 2023. Kestrel Analytics: Product Designer, Feb 2019 to May 2020. Bambu Studio: UX Designer, Jul 2017 to Jan 2019.",
+        proposedText:
+          "Fintra: Senior Product Designer, Apr 2023 to present, informal lead for two junior designers, representing design in stakeholder and risk reviews on lending products. Loop Commerce: Product Designer, Jun 2020 to Mar 2023, led a three-squad design system rollout.",
+        rationale:
+          "Surfaces the mentoring and stakeholder-facing lending work your fit analysis calls the closest overlap with Brightpath's regulated lending domain.",
+        state: "suggested",
+      },
+      {
+        id: "tailor-opp-7-skills",
+        section: "Skills",
+        changeType: "reorder",
+        currentText:
+          "Interaction design, design systems, user research, prototyping, stakeholder communication, accessibility design.",
+        proposedText:
+          "Stakeholder communication, mentoring and team growth, interaction design, design systems, user research, accessibility design.",
+        rationale:
+          "Brings stakeholder communication and mentoring to the front, the two areas the panel is most likely to weigh for a first-time manager.",
+        state: "suggested",
+      },
+    ],
+  },
 
   // --- opp-8: Orbit Logistics --------------------------------------------
   {
@@ -854,6 +1148,52 @@ export const insights: AiInsight[] = [
       "Scope and remote fit are genuinely strong, the AI-direction gap and below-target pay are the real tradeoffs behind this offer.",
     confidence: "High",
   },
+  {
+    id: "insight-opp-8-tailoring",
+    kind: "tailoring",
+    hostType: "opportunity",
+    hostId: "opp-8",
+    createdAt: "2026-05-26",
+    confidence: "High",
+    suggestions: [
+      {
+        id: "tailor-opp-8-summary",
+        section: "Summary",
+        changeType: "rewrite",
+        currentText:
+          "Senior product designer with seven years across fintech, e-commerce, and analytics tools. Led design for an AI underwriting assistant at Fintra, including the explainability panel applicants see when a decision is made.",
+        proposedText:
+          "Senior product designer with seven years across fintech, e-commerce, and analytics tools, including dense, data-heavy console work at Kestrel Analytics built for operators, not consumers.",
+        rationale:
+          "Your fit analysis calls the console-design scope a clean match for the Kestrel Analytics dashboard work, this leads with it since the role isn't AI-forward.",
+        state: "suggested",
+      },
+      {
+        id: "tailor-opp-8-experience",
+        section: "Experience",
+        changeType: "reorder",
+        currentText:
+          "Fintra: Senior Product Designer, Apr 2023 to present. Loop Commerce: Product Designer, Jun 2020 to Mar 2023. Kestrel Analytics: Product Designer, Feb 2019 to May 2020. Bambu Studio: UX Designer, Jul 2017 to Jan 2019.",
+        proposedText:
+          "Fintra: Senior Product Designer, Apr 2023 to present. Kestrel Analytics: Product Designer, Feb 2019 to May 2020, owned a data-dense operations console for internal analysts. Loop Commerce: Product Designer, Jun 2020 to Mar 2023.",
+        rationale:
+          "Brings the dashboard experience your Data storytelling with metrics skill is built on ahead of less relevant e-commerce work.",
+        state: "suggested",
+      },
+      {
+        id: "tailor-opp-8-skills",
+        section: "Skills",
+        changeType: "keyword",
+        currentText:
+          "Interaction design, design systems, user research, prototyping, stakeholder communication, accessibility design.",
+        proposedText:
+          "Interaction design, design systems, user research, prototyping, stakeholder communication, accessibility design, dense data console design.",
+        rationale:
+          "Names the specific console-density skill the dispatcher role calls for directly in its requirements.",
+        state: "suggested",
+      },
+    ],
+  },
 
   // --- opp-9: Vela Studio (closed) ---------------------------------------
   {
@@ -944,6 +1284,52 @@ export const insights: AiInsight[] = [
     whyThisReading:
       "The schedule conflict was decisive on its own, continuity concerns toward your target direction were a secondary factor.",
     confidence: "High",
+  },
+  {
+    id: "insight-opp-9-tailoring",
+    kind: "tailoring",
+    hostType: "opportunity",
+    hostId: "opp-9",
+    createdAt: "2026-04-03",
+    confidence: "Medium",
+    suggestions: [
+      {
+        id: "tailor-opp-9-summary",
+        section: "Summary",
+        changeType: "cut",
+        currentText:
+          "Senior product designer with seven years across fintech, e-commerce, and analytics tools. Led design for an AI underwriting assistant at Fintra, including the explainability panel applicants see when a decision is made.",
+        proposedText:
+          "Senior product designer with seven years delivering end to end across fintech, e-commerce, and analytics tools, comfortable moving fast across multiple concurrent client engagements.",
+        rationale:
+          "Your fit analysis found no continuity toward the target direction here, so this drops the AI framing in favor of the agency pace the role actually tests.",
+        state: "suggested",
+      },
+      {
+        id: "tailor-opp-9-experience",
+        section: "Experience",
+        changeType: "reorder",
+        currentText:
+          "Fintra: Senior Product Designer, Apr 2023 to present. Loop Commerce: Product Designer, Jun 2020 to Mar 2023. Kestrel Analytics: Product Designer, Feb 2019 to May 2020. Bambu Studio: UX Designer, Jul 2017 to Jan 2019.",
+        proposedText:
+          "Bambu Studio: UX Designer, Jul 2017 to Jan 2019, delivered end to end on compressed agency timelines across several concurrent clients. Fintra: Senior Product Designer, Apr 2023 to present. Loop Commerce: Product Designer, Jun 2020 to Mar 2023.",
+        rationale:
+          "Brings the Bambu Studio agency pace forward, the same fast-turnaround evidence your fit analysis credits behind your Prototyping skill.",
+        state: "suggested",
+      },
+      {
+        id: "tailor-opp-9-skills",
+        section: "Skills",
+        changeType: "keyword",
+        currentText:
+          "Interaction design, design systems, user research, prototyping, stakeholder communication, accessibility design.",
+        proposedText:
+          "Interaction design, design systems, user research, prototyping, stakeholder communication, accessibility design, rapid delivery across concurrent engagements.",
+        rationale:
+          "Matches the rotation-across-clients pattern the listing describes, separate from the timezone mismatch that ultimately closed this one.",
+        state: "suggested",
+      },
+    ],
   },
 
   // --- Skill gap insights --------------------------------------------------

@@ -5,15 +5,26 @@ import { Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EmptyState } from "@/components/shared/empty-state";
-import type { CvVersion } from "@/lib/types";
+import { TailoringDialog } from "@/components/cvs/tailoring-dialog";
+import { useStore } from "@/lib/store";
+import type { CvVersion, Opportunity } from "@/lib/types";
+
+interface OpportunityMaterialsTabProps {
+  opportunity: Opportunity;
+  cvVersion?: CvVersion;
+}
 
 /**
- * Structured layout for Materials: the linked CV version, plus a quiet
- * "Tailor for this role" stub pointing at the CVs surface. Ticket 10 builds
- * the real per-section tailoring workflow on top of this.
+ * Materials: link a CV version to this opportunity, then hand off into the
+ * shared tailoring flow. The other entry point to the same flow lives on the
+ * CV detail page's "Tailor for this role" button.
  */
-export function OpportunityMaterialsTab({ cvVersion }: { cvVersion?: CvVersion }) {
+export function OpportunityMaterialsTab({ opportunity, cvVersion }: OpportunityMaterialsTabProps) {
+  const { state, setCvOpportunityLink } = useStore();
+
   return (
     <div className="flex flex-col gap-3">
       {cvVersion ? (
@@ -33,7 +44,7 @@ export function OpportunityMaterialsTab({ cvVersion }: { cvVersion?: CvVersion }
         </Card>
       ) : (
         <EmptyState
-          message="No CV version linked yet. Link one from CV Versions to tailor it for this role."
+          message="No CV version linked yet. Pick one below, or create one from CV Versions."
           action={
             <Button asChild size="sm" variant="outline">
               <Link href="/cvs">Go to CV Versions</Link>
@@ -42,20 +53,46 @@ export function OpportunityMaterialsTab({ cvVersion }: { cvVersion?: CvVersion }
         />
       )}
 
+      <Card>
+        <CardContent className="flex flex-col gap-2">
+          <Label className="text-xs text-muted-foreground">Link a CV version to this opportunity</Label>
+          <Select
+            value={cvVersion?.id ?? ""}
+            onValueChange={(value) => setCvOpportunityLink(value, opportunity.id)}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Choose a CV version" />
+            </SelectTrigger>
+            <SelectContent>
+              {state.cvVersions.map((cv) => (
+                <SelectItem key={cv.id} value={cv.id}>
+                  {cv.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
+
       <Card className="border-dashed bg-muted/20">
         <CardContent className="flex items-center justify-between gap-3">
           <div className="flex flex-col gap-0.5">
             <span className="text-sm text-foreground">Tailor for this role</span>
             <span className="text-xs text-muted-foreground">
-              Opens the CV surface to start tailoring section by section.
+              Copilot drafts section-by-section suggestions tied to the fit analysis, you accept or skip
+              each one before creating a new tailored version.
             </span>
           </div>
-          <Button asChild size="sm" variant="ghost">
-            <Link href={cvVersion ? `/cvs/${cvVersion.id}` : "/cvs"}>
-              <Sparkles className="size-3.5" />
-              Tailor for this role
-            </Link>
-          </Button>
+          <TailoringDialog
+            fixedOpportunity={opportunity}
+            defaultCvId={cvVersion?.id}
+            trigger={
+              <Button size="sm" variant="ghost" disabled={state.cvVersions.length === 0}>
+                <Sparkles className="size-3.5" />
+                Tailor for this role
+              </Button>
+            }
+          />
         </CardContent>
       </Card>
     </div>
