@@ -1,16 +1,16 @@
 import type { RewindArchivedWeek, RewindCandidate, RewindCarryForward, RewindWeekStory } from "@/lib/types";
 
 // Rewind (RDS-980): the connected weekly review as a full route. This file
-// holds the current week's seed content: the top-band story first, with
-// candidates, carry-forwards, and the past-weeks archive added alongside the
-// review and closing zones later in this same file.
+// holds the current week's seed content: the top-band story, the "worth
+// keeping" candidates, the carry-forward closing zone, and the past-weeks
+// archive.
 
 // ---------------------------------------------------------------------------
 // The week story: a one-line shape of the week plus 3 compact theme
 // clusters. Counts are narrative, not a literal re-render of
-// activityMoments or emailEvidence, the same synthesis weeklyReviewScript's
-// old whatMoved list already did, kept consistent with the real seed facts
-// each cluster draws from.
+// activityMoments or emailEvidence, the same kind of synthesis the seeded
+// nudges already do, kept consistent with the real seed facts each cluster
+// draws from.
 // ---------------------------------------------------------------------------
 
 export const rewindWeekStory: RewindWeekStory = {

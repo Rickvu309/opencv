@@ -757,7 +757,7 @@ export interface DraftReplySignal extends AiSignalBase {
 export type AiSignal = NextActionSignal | StatusChangeSignal | PriorityBumpSignal | DraftReplySignal;
 
 // ---------------------------------------------------------------------------
-// Nudge / Weekly Review
+// Nudge
 // ---------------------------------------------------------------------------
 
 /**

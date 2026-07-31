@@ -35,10 +35,9 @@ export const NUDGE_TRIGGER_LABEL: Record<NudgeTrigger, string> = {
 
 /**
  * The merged, prioritized attention queue: pinned items (promoted from an
- * accepted Weekly Review focus suggestion) always float to the top, the rest
- * keep their seed order. Capped at 6 so the queue stays "few and relevant,
- * not noisy" even once Weekly Review starts pinning items on top of the
- * seeded set.
+ * accepted Rewind carry-forward) always float to the top, the rest keep
+ * their seed order. Capped at 6 so the queue stays "few and relevant, not
+ * noisy" even once Rewind starts pinning items on top of the seeded set.
  */
 export function getAttentionQueue(nudges: Nudge[]): Nudge[] {
   const active = nudges.filter((nudge) => nudge.state === "active");

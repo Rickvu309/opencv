@@ -14,8 +14,7 @@ interface ReviewQueueProps {
 /**
  * A list of AiActionCards with a count header, the shared shell around the
  * five-beat pattern wherever a surface offers more than one AI proposal at
- * once: opportunity Signals, the Home attention queue, Weekly Review
- * capture.
+ * once: opportunity Signals, the Home attention queue.
  */
 export function ReviewQueue({ title, count, emptyMessage, children, className }: ReviewQueueProps) {
   return (

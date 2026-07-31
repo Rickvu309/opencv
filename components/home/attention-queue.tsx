@@ -45,7 +45,7 @@ const HANDLED_DELAY_MS = 650;
 /**
  * Home's core proactive surface: a merged, prioritized queue across every
  * nudge family (opportunity, capture, goal, learning), plus any items
- * pinned from an accepted Weekly Review focus. Capped at 6 by
+ * pinned from an accepted Rewind carry-forward. Capped at 6 by
  * getAttentionQueue so it stays few and relevant. Every action deep-links
  * into a real workflow; acting on an item flashes a check state before it
  * leaves the queue, snoozing and dismissing resolve quietly with an undo.

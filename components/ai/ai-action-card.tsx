@@ -47,8 +47,8 @@ interface AiActionCardProps {
  * The default AI workflow pattern: one compact block for the five beats
  * (signal, why it matters, evidence, proposed action, controls). Used
  * everywhere AI proposes work, opportunity Signals, the Home attention
- * queue, and Weekly Review capture. Approve, Edit, and Dismiss never apply
- * anything themselves, the caller wires Approve to the real store change.
+ * queue. Approve, Edit, and Dismiss never apply anything themselves, the
+ * caller wires Approve to the real store change.
  */
 export function AiActionCard({
   icon: Icon,
