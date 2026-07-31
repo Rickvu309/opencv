@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { ReactNode } from "react";
 import { ArrowLeft, ArrowRight, Check, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { freshnessLabel } from "@/lib/inbox-utils";
 import { useStore } from "@/lib/store";
 import type { ConnectedSource } from "@/lib/types";
 
@@ -28,24 +28,27 @@ function completionCopy(source: ConnectedSource): string {
   return "Connected. Nothing new yet, checks hourly.";
 }
 
-interface ConnectSourceDialogProps {
-  source: ConnectedSource;
-  children: ReactNode;
-}
-
 /**
- * The simulated connection flow every not-connected tool card opens into:
- * what OpenPath will read, what it unlocks, a brief connecting beat, then
- * an honest completion state. Connecting dispatches to the store exactly
- * when the completion state shows, which is what makes Granola's 3 seeded
- * meeting notes "immediately" appear in the inbox below.
+ * The simulated connection flow every tool card opens into: what OpenPath
+ * will read, what it unlocks, a brief connecting beat, then an honest
+ * completion state. Connecting dispatches to the store exactly when the
+ * completion state shows, which is what makes Granola's 3 seeded meeting
+ * notes "immediately" appear in the inbox below.
+ *
+ * The Dialog stays mounted and keeps its own open and step state
+ * regardless of the source's live connected status: the connecting beat
+ * flips that status mid-flow, and if the card above swapped this whole
+ * component out at that moment the completion state would never get a
+ * chance to render. Once already connected, this renders as a quiet
+ * synced line instead of a trigger.
  */
-export function ConnectSourceDialog({ source, children }: ConnectSourceDialogProps) {
+export function ConnectSourceDialog({ source }: { source: ConnectedSource }) {
   const { connectSource } = useStore();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(1);
   const isConnecting = step === TOTAL_STEPS;
   const isSummary = step > TOTAL_STEPS;
+  const alreadyConnected = source.status === "connected" && !open;
 
   useEffect(() => {
     function resetToFirstStep() {
@@ -65,7 +68,17 @@ export function ConnectSourceDialog({ source, children }: ConnectSourceDialogPro
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      {alreadyConnected ? (
+        <span className="text-xs text-muted-foreground">
+          Synced {freshnessLabel(source.lastSyncedMinutesAgo ?? 0)}
+        </span>
+      ) : (
+        <DialogTrigger asChild>
+          <Button size="sm" variant="outline" className="w-fit">
+            Connect
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>

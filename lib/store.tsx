@@ -1359,10 +1359,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: "CONNECT_SOURCE", id });
   }, []);
 
-  // Linking shows its own inline save-back confirmation with Undo (the same
-  // five-beat pattern SignalCard's approve uses), so no extra toast here.
+  // The linked item also shows an inline save-back confirmation with Undo
+  // wherever it stays visible (the Linked filter, or an object's own linked
+  // evidence list), the same pattern SignalCard's approve uses. But linking
+  // moves the item out of the default Needs review filter immediately, so
+  // unlike an approved signal it doesn't stay in place to show that inline
+  // confirmation there, hence the toast here too.
   const linkInboxItem = useCallback((evidence: SourceEvidence, target: InboxLinkChoice) => {
     dispatch({ type: "LINK_INBOX_ITEM", evidence, target });
+    const label = target.type === "trackRecord" ? evidenceTitle(evidence) : target.label;
+    toast.success(`Linked to ${label} as evidence.`, {
+      action: {
+        label: "Undo",
+        onClick: () => dispatch({ type: "UNDO_LINK_INBOX_ITEM", evidenceId: evidence.id }),
+      },
+    });
   }, []);
 
   const undoLinkInboxItem = useCallback((evidenceId: string) => {
