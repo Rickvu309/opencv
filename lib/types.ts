@@ -13,7 +13,13 @@ export type Priority = "High" | "Medium" | "Low";
 
 export type NextActionState = "suggested" | "accepted" | "done" | "dismissed";
 
-export type InsightKind = "summary" | "credibility" | "fit" | "tailoring" | "gap";
+export type InsightKind =
+  | "summary"
+  | "interpretation"
+  | "credibility"
+  | "fit"
+  | "tailoring"
+  | "gap";
 
 export type ConfidenceLevel = "High" | "Medium" | "Low";
 
@@ -209,11 +215,56 @@ export interface SummaryInsight extends AiInsightBase {
   body: string;
 }
 
+// ---------------------------------------------------------------------------
+// Interpretation (AI Analysis tab, layer 1: "What this role really asks for")
+// ---------------------------------------------------------------------------
+
+export interface ExpectationRow {
+  id: string;
+  label: string;
+  rationale: string;
+}
+
+export interface VagueLanguageDecode {
+  phrase: string;
+  decoded: string;
+}
+
+export interface InterpretationInsight extends AiInsightBase {
+  kind: "interpretation";
+  plainLanguageRead: string;
+  expectations: ExpectationRow[];
+  vagueLanguage: VagueLanguageDecode;
+  whyThisReading: string;
+  confidence: ConfidenceLevel;
+}
+
+// ---------------------------------------------------------------------------
+// Credibility (AI Analysis tab, layer 2: "Is this worth your attention")
+// ---------------------------------------------------------------------------
+
+export interface CredibilitySignal {
+  id: string;
+  label: string;
+  why: string;
+}
+
 export interface CredibilityInsight extends AiInsightBase {
   kind: "credibility";
   verdict: "pass" | "fail";
-  reasons: string[];
+  positiveSignals: CredibilitySignal[];
+  cautionSignals: CredibilitySignal[];
+  whyThisReading: string;
   confidence: ConfidenceLevel;
+}
+
+// ---------------------------------------------------------------------------
+// Fit (AI Analysis tab, layer 3: "How it fits you")
+// ---------------------------------------------------------------------------
+
+export interface FitTradeoff {
+  gain: string;
+  give: string;
 }
 
 export interface FitInsight extends AiInsightBase {
@@ -222,6 +273,9 @@ export interface FitInsight extends AiInsightBase {
   strengths: string[];
   concerns: string[];
   unknowns: string[];
+  tradeoff: FitTradeoff;
+  alignmentLine: string;
+  whyThisReading: string;
   confidence: ConfidenceLevel;
 }
 
@@ -249,6 +303,7 @@ export interface GapInsight extends AiInsightBase {
 
 export type AiInsight =
   | SummaryInsight
+  | InterpretationInsight
   | CredibilityInsight
   | FitInsight
   | TailoringInsight

@@ -25,11 +25,16 @@ import { CopilotTag } from "@/components/shared/copilot-tag";
 import { FitChip } from "@/components/shared/fit-chip";
 import { ConfidenceChip } from "@/components/shared/confidence-chip";
 import { matchParseSample } from "@/lib/data/parse-samples";
+import { persona } from "@/lib/data/persona";
 import { makeId, today, useStore } from "@/lib/store";
 import type {
   ActivityMoment,
+  AiInsight,
   ConfidenceLevel,
+  CredibilityInsight,
+  FitInsight,
   FitLevel,
+  InterpretationInsight,
   NextAction,
   Opportunity,
   OpportunityStatus,
@@ -108,6 +113,120 @@ function buildIntakeSummaryInsight(opportunity: Opportunity, viaCopilotParse: bo
     hostId: opportunity.id,
     createdAt: today(),
     body,
+  };
+}
+
+function buildIntakeInterpretationInsight(
+  opportunity: Opportunity,
+  viaCopilotParse: boolean
+): InterpretationInsight {
+  const plainLanguageRead = viaCopilotParse
+    ? `${opportunity.role} at ${opportunity.company} was structured from your paste. This first read covers only what Copilot could extract, confirm it against the full listing.`
+    : `${opportunity.role} at ${opportunity.company} was entered manually, so this reading reflects only the notes you provided rather than a parsed listing.`;
+
+  return {
+    id: makeId("insight"),
+    kind: "interpretation",
+    hostType: "opportunity",
+    hostId: opportunity.id,
+    createdAt: today(),
+    plainLanguageRead,
+    expectations: [
+      {
+        id: makeId("exp"),
+        label: `Scope centers on ${opportunity.role}`,
+        rationale: `Structured from ${viaCopilotParse ? "the pasted listing" : "the details you entered"}, this is the primary scope Copilot will track fit and next actions against.`,
+      },
+      {
+        id: makeId("exp"),
+        label: `Sourced as "${opportunity.source}"`,
+        rationale: "Worth weighing how that channel usually holds up when judging credibility below.",
+      },
+    ],
+    vagueLanguage: {
+      phrase: opportunity.description,
+      decoded:
+        "Nothing has been parsed out of this yet beyond what's shown here. Add more detail to the listing or notes for a sharper read.",
+    },
+    whyThisReading: `Based only on the ${viaCopilotParse ? "parsed" : "manually entered"} fields available right now, this reading will sharpen as more detail is added.`,
+    confidence: "Low",
+  };
+}
+
+function buildIntakeCredibilityInsight(
+  opportunity: Opportunity,
+  viaCopilotParse: boolean
+): CredibilityInsight {
+  const positiveSignals: CredibilityInsight["positiveSignals"] = [];
+  const cautionSignals: CredibilityInsight["cautionSignals"] = [];
+
+  if (opportunity.salaryRange && opportunity.salaryRange !== "Not shared yet.") {
+    positiveSignals.push({
+      id: makeId("cred"),
+      label: "Salary range was provided",
+      why: `A stated range of ${opportunity.salaryRange} gives Copilot something concrete to check against market data later.`,
+    });
+  } else {
+    cautionSignals.push({
+      id: makeId("cred"),
+      label: "No salary range yet",
+      why: "Nothing to compare against market rates until a range is added.",
+    });
+  }
+
+  if (viaCopilotParse) {
+    positiveSignals.push({
+      id: makeId("cred"),
+      label: "Sourced from a real paste",
+      why: `Structured from a pasted listing via ${opportunity.source}, rather than starting from a blank form.`,
+    });
+  } else {
+    cautionSignals.push({
+      id: makeId("cred"),
+      label: "Entered manually, unverified",
+      why: "No listing was parsed, so nothing here has been checked against outside sources yet.",
+    });
+  }
+
+  return {
+    id: makeId("insight"),
+    kind: "credibility",
+    hostType: "opportunity",
+    hostId: opportunity.id,
+    createdAt: today(),
+    verdict: cautionSignals.length > positiveSignals.length ? "fail" : "pass",
+    positiveSignals,
+    cautionSignals,
+    whyThisReading:
+      "Based on what's been entered so far, this check will sharpen once more detail is confirmed.",
+    confidence: "Low",
+  };
+}
+
+function buildIntakeFitInsight(
+  opportunity: Opportunity,
+  fit: FitLevel,
+  fitRationale: string
+): FitInsight {
+  return {
+    id: makeId("insight"),
+    kind: "fit",
+    hostType: "opportunity",
+    hostId: opportunity.id,
+    createdAt: today(),
+    level: fit,
+    strengths: fitRationale ? [fitRationale] : [],
+    concerns: [
+      `This reading is an initial pass only, revisit once you've reviewed the ${opportunity.role} listing yourself.`,
+    ],
+    unknowns: [`How this role compares against your target direction of ${persona.targetDirectionLabel} until more detail is confirmed.`],
+    tradeoff: {
+      gain: "An early read while the listing is fresh.",
+      give: "Confidence, this hasn't been checked against your full profile in depth yet.",
+    },
+    alignmentLine: `Provisional against your target direction of ${persona.targetDirectionLabel} until confirmed.`,
+    whyThisReading: "Built from the intake fields only, the AI Analysis tab will read as more detail is added.",
+    confidence: "Low",
   };
 }
 
@@ -232,10 +351,16 @@ export function AddOpportunityDialog({ children }: { children: React.ReactNode }
 
     const nextAction = buildIntakeNextAction(opportunity);
     opportunity.nextActionId = nextAction.id;
-    const insight = buildIntakeSummaryInsight(opportunity, isPasteReady);
+    const fitRationale = isPasteReady && pasteDraft ? pasteDraft.fitRationale : "";
+    const insights: AiInsight[] = [
+      buildIntakeSummaryInsight(opportunity, isPasteReady),
+      buildIntakeInterpretationInsight(opportunity, isPasteReady),
+      buildIntakeCredibilityInsight(opportunity, isPasteReady),
+      buildIntakeFitInsight(opportunity, fit, fitRationale),
+    ];
     const activityMoments = buildIntakeActivityMoments(opportunity, isPasteReady);
 
-    addOpportunity(opportunity, insight, nextAction, activityMoments);
+    addOpportunity(opportunity, insights, nextAction, activityMoments);
     handleOpenChange(false);
   }
 

@@ -112,7 +112,7 @@ type Action =
   | {
       type: "ADD_OPPORTUNITY";
       opportunity: Opportunity;
-      insight?: AiInsight;
+      insights?: AiInsight[];
       nextAction?: NextAction;
       activityMoments?: ActivityMoment[];
     }
@@ -236,7 +236,7 @@ function reducer(state: StoreState, action: Action): StoreState {
       return {
         ...state,
         opportunities: [action.opportunity, ...state.opportunities],
-        insights: action.insight ? [...state.insights, action.insight] : state.insights,
+        insights: action.insights ? [...state.insights, ...action.insights] : state.insights,
         nextActions: action.nextAction
           ? [...state.nextActions, action.nextAction]
           : state.nextActions,
@@ -394,7 +394,7 @@ interface StoreContextValue {
   setOpportunitiesView: (view: OpportunitiesView) => void;
   addOpportunity: (
     opportunity: Opportunity,
-    insight?: AiInsight,
+    insights?: AiInsight[],
     nextAction?: NextAction,
     activityMoments?: ActivityMoment[]
   ) => void;
@@ -475,11 +475,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const addOpportunity = useCallback(
     (
       opportunity: Opportunity,
-      insight?: AiInsight,
+      insights?: AiInsight[],
       nextAction?: NextAction,
       activityMoments?: ActivityMoment[]
     ) => {
-      dispatch({ type: "ADD_OPPORTUNITY", opportunity, insight, nextAction, activityMoments });
+      dispatch({ type: "ADD_OPPORTUNITY", opportunity, insights, nextAction, activityMoments });
       toast.success("Opportunity added", {
         description: `${opportunity.role} at ${opportunity.company} is now in Saved.`,
         action: {

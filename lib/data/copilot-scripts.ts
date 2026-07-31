@@ -87,6 +87,258 @@ export const copilotScripts: CopilotSurfaceScript[] = [
     ],
   },
   {
+    surface: "Opportunity Detail: Solace AI",
+    suggestedPrompts: [
+      "What does 'trustworthy interface patterns' actually mean here?",
+      "How much weight should I put on the referral?",
+      "What should I lead with in my case study for this one?",
+    ],
+    exchanges: [
+      {
+        id: "copilot-opp-1-1",
+        prompt: "What does 'trustworthy interface patterns' actually mean here?",
+        response:
+          "It means you'd be designing the visual language for model confidence and uncertainty from scratch, Solace doesn't have an existing pattern for this yet. Expect to invent it, not adapt one.",
+      },
+      {
+        id: "copilot-opp-1-2",
+        prompt: "How much weight should I put on the referral?",
+        response:
+          "A lot. Your contact has worked directly with Solace's design team, that's a credible internal voice, not just a secondhand tip. It's part of why credibility confidence sits at High.",
+      },
+      {
+        id: "copilot-opp-1-3",
+        prompt: "What should I lead with in my case study for this one?",
+        response:
+          "Lead with the explainability panel from Fintra first. It's the single piece of evidence that maps most directly onto owning Solace's explainability layer.",
+      },
+    ],
+  },
+  {
+    surface: "Opportunity Detail: Vanta Growth Labs",
+    suggestedPrompts: [
+      "Is this posting worth pursuing at all?",
+      "What would it take to clear the credibility flag?",
+      "Why is fit marked Unknown instead of Weak?",
+    ],
+    exchanges: [
+      {
+        id: "copilot-opp-2-1",
+        prompt: "Is this posting worth pursuing at all?",
+        response:
+          "Not yet. Three separate checks, company presence, named team, and product description, all came back empty. I'd hold this in Saved until at least one clears.",
+      },
+      {
+        id: "copilot-opp-2-2",
+        prompt: "What would it take to clear the credibility flag?",
+        response:
+          "A real hiring manager or current employee you can verify on LinkedIn, or a company site with more than a single unregistered-looking domain page.",
+      },
+      {
+        id: "copilot-opp-2-3",
+        prompt: "Why is fit marked Unknown instead of Weak?",
+        response:
+          "Unknown means there isn't enough verified information to judge fit responsibly yet. Weak would imply I've seen the role and it doesn't match, which isn't true here.",
+      },
+    ],
+  },
+  {
+    surface: "Opportunity Detail: Northwind Robotics",
+    suggestedPrompts: [
+      "Should I keep this one active or archive it?",
+      "Why does mentoring count toward fit here?",
+      "What's the biggest gap against my target direction?",
+    ],
+    exchanges: [
+      {
+        id: "copilot-opp-3-1",
+        prompt: "Should I keep this one active or archive it?",
+        response:
+          "Worth one more check before deciding. Eleven weeks with no update is long enough that either it's stalled or deprioritized on their end, I'd ask directly rather than keep waiting.",
+      },
+      {
+        id: "copilot-opp-3-2",
+        prompt: "Why does mentoring count toward fit here?",
+        response:
+          "Because the lead scope names mentoring two designers explicitly, that's real progress toward your goal to grow into people leadership, even outside your primary AI direction.",
+      },
+      {
+        id: "copilot-opp-3-3",
+        prompt: "What's the biggest gap against my target direction?",
+        response:
+          "No AI or model-facing work anywhere in the listed scope. It's the clearest gap against your target direction of AI product design and leadership.",
+      },
+    ],
+  },
+  {
+    surface: "Opportunity Detail: Arclight AI",
+    suggestedPrompts: [
+      "How is this different from Meridian Labs?",
+      "What's the biggest risk if I get an offer here?",
+      "Why is the team size listed as a concern?",
+    ],
+    exchanges: [
+      {
+        id: "copilot-opp-4-1",
+        prompt: "How is this different from Meridian Labs?",
+        response:
+          "Arclight is about the suggestion-and-approval interaction itself, workflow automation for operations teams. Meridian is about reviewer-facing confidence and uncertainty for evaluating models. Both are trust-boundary work, different audiences.",
+      },
+      {
+        id: "copilot-opp-4-2",
+        prompt: "What's the biggest risk if I get an offer here?",
+        response:
+          "The unclear path to design leadership as the team grows. Worth asking directly in a follow-up conversation before you'd need to decide on an offer.",
+      },
+      {
+        id: "copilot-opp-4-3",
+        prompt: "Why is the team size listed as a concern?",
+        response:
+          "A three-person pod is efficient day to day but has less slack for structured mentorship, which matters for your goal to grow into people leadership.",
+      },
+    ],
+  },
+  {
+    surface: "Opportunity Detail: Tidal Finance",
+    suggestedPrompts: [
+      "Why is this rated Weak instead of Medium?",
+      "Is the on-site requirement really a dealbreaker?",
+      "What would change my mind about this one?",
+    ],
+    exchanges: [
+      {
+        id: "copilot-opp-5-1",
+        prompt: "Why is this rated Weak instead of Medium?",
+        response:
+          "Three things stack against it at once: broad-shallow scope, on-site only, and no AI-facing work. Any one alone might land at Medium, together they pull it to Weak.",
+      },
+      {
+        id: "copilot-opp-5-2",
+        prompt: "Is the on-site requirement really a dealbreaker?",
+        response:
+          "It's your call, but it runs directly against your Remote work-style preference, and there's no hybrid option mentioned anywhere in the listing.",
+      },
+      {
+        id: "copilot-opp-5-3",
+        prompt: "What would change my mind about this one?",
+        response:
+          "A narrower scope on one surface, or a path to remote work, either would meaningfully change the read here.",
+      },
+    ],
+  },
+  {
+    surface: "Opportunity Detail: Meridian Labs",
+    suggestedPrompts: [
+      "What should I focus on for the panel round?",
+      "How confident are we in the Strong rating?",
+      "What's still unknown about this one?",
+    ],
+    exchanges: [
+      {
+        id: "copilot-opp-6-1",
+        prompt: "What should I focus on for the panel round?",
+        response:
+          "Leadership judgment, that's what the panel is most likely to probe next, per the fit concern. Your craft evidence is already strong, spend your prep time on decisions and tradeoffs, not portfolio polish.",
+      },
+      {
+        id: "copilot-opp-6-2",
+        prompt: "How confident are we in the Strong rating?",
+        response:
+          "High. A referral with direct hiring-manager contact, two rounds matching the original posting, and console scope nearly identical to your Fintra explainability panel, all three line up.",
+      },
+      {
+        id: "copilot-opp-6-3",
+        prompt: "What's still unknown about this one?",
+        response:
+          "Final compensation band hasn't been discussed yet, that's the one open item left before an offer decision.",
+      },
+    ],
+  },
+  {
+    surface: "Opportunity Detail: Brightpath Bank",
+    suggestedPrompts: [
+      "Is the management scope worth the AI tradeoff?",
+      "What should I ask about the decision timeline?",
+      "How does this compare to my other Interview-stage role?",
+    ],
+    exchanges: [
+      {
+        id: "copilot-opp-7-1",
+        prompt: "Is the management scope worth the AI tradeoff?",
+        response:
+          "That's the real tradeoff to weigh: real progress on your people-leadership goal against time away from your AI-product goal. Neither is wrong, it depends which you want to prioritize next.",
+      },
+      {
+        id: "copilot-opp-7-2",
+        prompt: "What should I ask about the decision timeline?",
+        response:
+          "Ask directly when the committee expects to decide, the final loop wrapped without a stated timeline, and it's the one unknown left.",
+      },
+      {
+        id: "copilot-opp-7-3",
+        prompt: "How does this compare to my other Interview-stage role?",
+        response:
+          "Meridian Labs is your stronger AI-direction match. Brightpath is your stronger leadership match. They're pulling in different directions on purpose.",
+      },
+    ],
+  },
+  {
+    surface: "Opportunity Detail: Orbit Logistics",
+    suggestedPrompts: [
+      "Should I negotiate on the base salary?",
+      "How does this offer compare to my target direction?",
+      "What's the honest tradeoff here?",
+    ],
+    exchanges: [
+      {
+        id: "copilot-opp-8-1",
+        prompt: "Should I negotiate on the base salary?",
+        response:
+          "Worth trying. The concern notes it sits at the low end of your target range, that's exactly the kind of gap worth raising before you accept.",
+      },
+      {
+        id: "copilot-opp-8-2",
+        prompt: "How does this offer compare to my target direction?",
+        response:
+          "It's a lateral move on the AI dimension specifically, strong on craft and your remote preference, but not advancing your goal to land a senior or staff AI product design role.",
+      },
+      {
+        id: "copilot-opp-8-3",
+        prompt: "What's the honest tradeoff here?",
+        response:
+          "You'd gain a confirmed offer with scope you're already good at. You'd give up ground on your AI-direction goal and settle for below-target pay unless you negotiate.",
+      },
+    ],
+  },
+  {
+    surface: "Opportunity Detail: Vela Studio",
+    suggestedPrompts: [
+      "Why did this end up Closed?",
+      "Was withdrawing the right call?",
+      "What would make a similar agency role work next time?",
+    ],
+    exchanges: [
+      {
+        id: "copilot-opp-9-1",
+        prompt: "Why did this end up Closed?",
+        response:
+          "Timezone overlap with the US team proved unworkable against your Ho Chi Minh City schedule, that's the specific reason logged, not a credibility or scope issue.",
+      },
+      {
+        id: "copilot-opp-9-2",
+        prompt: "Was withdrawing the right call?",
+        response:
+          "Yes. Continuing past the first screen would have meant testing an incompatible schedule further, with little upside toward your target direction either way.",
+      },
+      {
+        id: "copilot-opp-9-3",
+        prompt: "What would make a similar agency role work next time?",
+        response:
+          "APAC or Ho Chi Minh City-hours client work specifically, the agency model itself wasn't the problem, the timezone was.",
+      },
+    ],
+  },
+  {
     surface: "Profile",
     suggestedPrompts: [
       "What do you use from my profile when judging fit?",

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 
@@ -15,11 +16,12 @@ import { OpportunityMaterialsTab } from "@/components/opportunities/opportunity-
 import { OpportunityActivityTab } from "@/components/opportunities/opportunity-activity-tab";
 import { findOpportunityActivity, findPrimaryNextAction } from "@/lib/opportunity-utils";
 import { useCopilotSurface, useStore } from "@/lib/store";
-import type { CredibilityInsight, FitInsight, SummaryInsight } from "@/lib/types";
+import type { CredibilityInsight, FitInsight, InterpretationInsight, SummaryInsight } from "@/lib/types";
 
 export default function OpportunityDetailPage() {
   const params = useParams<{ id: string }>();
   const { state } = useStore();
+  const [activeTab, setActiveTab] = useState("overview");
 
   const opportunity = state.opportunities.find((item) => item.id === params.id);
 
@@ -50,6 +52,9 @@ export default function OpportunityDetailPage() {
     (insight) => insight.hostType === "opportunity" && insight.hostId === opportunity.id
   );
   const summary = insights.find((insight): insight is SummaryInsight => insight.kind === "summary");
+  const interpretation = insights.find(
+    (insight): insight is InterpretationInsight => insight.kind === "interpretation"
+  );
   const credibility = insights.find(
     (insight): insight is CredibilityInsight => insight.kind === "credibility"
   );
@@ -70,7 +75,7 @@ export default function OpportunityDetailPage() {
       <div className="flex flex-col gap-4 p-6">
         <OpportunitySummaryBand opportunity={opportunity} primaryNextAction={primaryNextAction} />
 
-        <Tabs defaultValue="overview">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="ai-analysis">AI Analysis</TabsTrigger>
@@ -89,7 +94,13 @@ export default function OpportunityDetailPage() {
           </TabsContent>
 
           <TabsContent value="ai-analysis" className="pt-4">
-            <OpportunityAiAnalysisTab summary={summary} credibility={credibility} fit={fit} />
+            <OpportunityAiAnalysisTab
+              opportunity={opportunity}
+              interpretation={interpretation}
+              credibility={credibility}
+              fit={fit}
+              onGoToActions={() => setActiveTab("actions")}
+            />
           </TabsContent>
 
           <TabsContent value="actions" className="pt-4">
