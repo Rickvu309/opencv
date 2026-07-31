@@ -64,7 +64,7 @@ export const copilotScripts: CopilotSurfaceScript[] = [
           lead: "Three opportunities moved, and 2 Track Record candidates were drafted.",
           points: [
             { label: "Meridian Labs", detail: "Advanced to the panel round." },
-            { label: "Brightpath Bank", detail: "Final loop wrapped, decision pending." },
+            { label: "Halo Bank", detail: "Final loop wrapped, decision pending." },
             { label: "Orbit Logistics", detail: "Extended an offer." },
           ],
           handoff: { kind: "route", href: "/track-record", label: "Review drafted candidates" },
@@ -99,7 +99,7 @@ export const copilotScripts: CopilotSurfaceScript[] = [
         id: "copilot-opportunities-2",
         prompt: "What's stale and worth archiving?",
         response: {
-          lead: "Northwind Robotics, it hasn't moved in 11 weeks.",
+          lead: "Mekong Robotics, it hasn't moved in 11 weeks.",
           points: [
             {
               label: "The call",
@@ -109,7 +109,7 @@ export const copilotScripts: CopilotSurfaceScript[] = [
           action: {
             kind: "accept-next-action",
             targetId: "action-6",
-            label: "Accept: Decide on Northwind Robotics",
+            label: "Accept: Decide on Mekong Robotics",
           },
         },
       },
@@ -121,7 +121,7 @@ export const copilotScripts: CopilotSurfaceScript[] = [
           points: [
             {
               label: "What happens next",
-              detail: "I'll parse it into role, company, location, and salary fields for you to review before it's saved.",
+              detail: "Copilot parses it into role, company, location, and salary fields for you to review before it's saved.",
             },
           ],
           handoff: { kind: "route", href: "/opportunities", label: "Open the Add dialog" },
@@ -164,7 +164,7 @@ export const copilotScripts: CopilotSurfaceScript[] = [
         prompt: "Draft a message to follow up.",
         response: {
           lead: "Something like: \"Hi, following up on my application, still very interested and happy to share more detail on my explainability work if useful.\"",
-          points: [{ label: "Before sending", detail: "Edit the specifics, I don't send anything myself." }],
+          points: [{ label: "Before sending", detail: "Edit the specifics first, nothing sends automatically." }],
           handoff: { kind: "opportunity-tab", tab: "actions", label: "Open Actions tab" },
         },
       },
@@ -269,7 +269,7 @@ export const copilotScripts: CopilotSurfaceScript[] = [
         prompt: "Why is fit marked Unknown instead of Weak?",
         response: {
           lead: "Unknown means there isn't enough verified information to judge fit responsibly yet.",
-          points: [{ label: "Why not Weak", detail: "Weak would imply I've seen the role and it doesn't match, which isn't true here." }],
+          points: [{ label: "Why not Weak", detail: "Weak would mean the role was checked and ruled out, and that hasn't happened here." }],
           confidence: "Medium",
           handoff: { kind: "opportunity-tab", tab: "ai-analysis", label: "See the fit judgment" },
         },
@@ -277,7 +277,7 @@ export const copilotScripts: CopilotSurfaceScript[] = [
     ],
   },
   {
-    surface: opportunityForkedSurface("Northwind Robotics"),
+    surface: opportunityForkedSurface("Mekong Robotics"),
     suggestedPrompts: [
       "Should I keep this one active or archive it?",
       "Why does mentoring count toward fit here?",
@@ -295,7 +295,7 @@ export const copilotScripts: CopilotSurfaceScript[] = [
           action: {
             kind: "accept-next-action",
             targetId: "action-6",
-            label: "Accept: Decide on Northwind Robotics",
+            label: "Accept: Decide on Mekong Robotics",
           },
         },
       },
@@ -319,9 +319,9 @@ export const copilotScripts: CopilotSurfaceScript[] = [
       },
       {
         id: "copilot-opp-3-research",
-        prompt: "Give me a research summary on Northwind Robotics",
+        prompt: "Give me a research summary on Mekong Robotics",
         response: {
-          lead: "Northwind's last two product announcements focus on fleet-routing efficiency for their existing dashboard, not a new hardware line.",
+          lead: "Mekong's last two product announcements focus on fleet-routing efficiency for their existing dashboard, not a new hardware line.",
           points: [
             {
               label: "Reading",
@@ -375,7 +375,7 @@ export const copilotScripts: CopilotSurfaceScript[] = [
     ],
   },
   {
-    surface: opportunityForkedSurface("Tidal Finance"),
+    surface: opportunityForkedSurface("Lotus Finance"),
     suggestedPrompts: [
       "Why is this rated Weak instead of Medium?",
       "Is the on-site requirement really a dealbreaker?",
@@ -468,7 +468,7 @@ export const copilotScripts: CopilotSurfaceScript[] = [
     ],
   },
   {
-    surface: opportunityForkedSurface("Brightpath Bank"),
+    surface: opportunityForkedSurface("Halo Bank"),
     suggestedPrompts: [
       "Is the management scope worth the AI tradeoff?",
       "What should I ask about the decision timeline?",
@@ -493,7 +493,7 @@ export const copilotScripts: CopilotSurfaceScript[] = [
             { label: "Why now", detail: "The final loop wrapped without a stated timeline, it's the one unknown left." },
             {
               label: "Fresh signal",
-              detail: "Priya Shah's email 5 hours ago already asks for a follow-up call this Friday, a good moment to ask directly.",
+              detail: "Thao Bui's email 5 hours ago already asks for a follow-up call this Friday, a good moment to ask directly.",
             },
           ],
           action: {
@@ -507,7 +507,7 @@ export const copilotScripts: CopilotSurfaceScript[] = [
         id: "copilot-opp-7-3",
         prompt: "How does this compare to my other Interview-stage role?",
         response: {
-          lead: "Meridian Labs is your stronger AI-direction match, Brightpath is your stronger leadership match.",
+          lead: "Meridian Labs is your stronger AI-direction match, Halo is your stronger leadership match.",
           points: [{ label: "By design", detail: "They're pulling in different directions on purpose." }],
           handoff: { kind: "route", href: "/opportunities/opp-6", label: "Compare with Meridian Labs" },
         },
@@ -658,7 +658,7 @@ export const copilotScripts: CopilotSurfaceScript[] = [
         prompt: "Tailor my base CV for a new opportunity.",
         response: {
           lead: "Link a base CV to the opportunity from its Materials tab, then choose Tailor for this role.",
-          points: [{ label: "What happens next", detail: "I'll suggest section-by-section changes for you to accept, edit, or dismiss." }],
+          points: [{ label: "What happens next", detail: "Copilot suggests section-by-section changes for you to accept, edit, or dismiss." }],
           handoff: { kind: "route", href: "/opportunities", label: "Pick a target opportunity" },
         },
       },
@@ -727,15 +727,15 @@ export const copilotScripts: CopilotSurfaceScript[] = [
         response: {
           lead: "The Leadership highlights section is strong, but it doesn't name any AI-specific scope.",
           points: [{ label: "Worth adding", detail: "A line connecting your mentoring and design-system work to AI-forward product teams, if you use this for an AI-adjacent role." }],
-          handoff: { kind: "route", href: "/opportunities/opp-7", label: "Open Brightpath Bank" },
+          handoff: { kind: "route", href: "/opportunities/opp-7", label: "Open Halo Bank" },
         },
       },
       {
         id: "copilot-cv-2-2",
         prompt: "Who is this CV best used for right now?",
         response: {
-          lead: "Roles where management scope is the primary ask, like Brightpath Bank's Product Design Manager role.",
-          handoff: { kind: "route", href: "/opportunities/opp-7", label: "Open Brightpath Bank" },
+          lead: "Roles where management scope is the primary ask, like Halo Bank's Product Design Manager role.",
+          handoff: { kind: "route", href: "/opportunities/opp-7", label: "Open Halo Bank" },
         },
       },
       {
@@ -828,7 +828,7 @@ export const copilotScripts: CopilotSurfaceScript[] = [
           points: [
             {
               label: "Why it's worth it",
-              detail: "Meridian Labs, Brightpath Bank, and Orbit Logistics all reached a decision point in the same four-week window.",
+              detail: "Meridian Labs, Halo Bank, and Orbit Logistics all reached a decision point in the same four-week window.",
             },
           ],
           action: {
@@ -880,7 +880,7 @@ export const copilotScripts: CopilotSurfaceScript[] = [
           lead: "Mostly, with one real tension.",
           points: [
             { label: "Aligned", detail: "Land a senior or staff AI product design role is on track, backed by 3 active strong-fit opportunities." },
-            { label: "Tension", detail: "Grow into people leadership needs attention, and Brightpath Bank pulls toward management over AI depth." },
+            { label: "Tension", detail: "Grow into people leadership needs attention, and Halo Bank pulls toward management over AI depth." },
           ],
           confidence: "Medium",
           handoff: { kind: "route", href: "/opportunities", label: "Review the pipeline" },
@@ -922,7 +922,7 @@ export const copilotScripts: CopilotSurfaceScript[] = [
         id: "copilot-skills-3",
         prompt: "How do my skills compare to what active opportunities require?",
         response: {
-          lead: "AI and ML literacy and AI interaction design are named directly by Solace AI, Northwind Robotics, Meridian Labs, and Arclight AI.",
+          lead: "AI and ML literacy and AI interaction design are named directly by Solace AI, Mekong Robotics, Meridian Labs, and Arclight AI.",
           points: [{ label: "Reading", detail: "Both are gaps at Working against a targeted Strong, the clearest overlap between your pipeline and your learning plan." }],
           handoff: { kind: "route", href: "/opportunities", label: "See related opportunities" },
         },

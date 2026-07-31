@@ -31,7 +31,7 @@ export function DemoTourDialog({ children }: { children: React.ReactNode }) {
             <Compass className="size-4 text-muted-foreground" />
             <DialogTitle>Demo tour</DialogTitle>
           </div>
-          <DialogDescription>A quick walk through OpenPath&rsquo;s four main areas.</DialogDescription>
+          <DialogDescription>A short walk through OpenPath&rsquo;s four main areas.</DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-3 text-sm">
           {TOUR_STOPS.map((stop, index) => (

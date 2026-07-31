@@ -41,9 +41,9 @@ export function CopilotStep({ data, onReady }: CopilotStepProps) {
   const firstGoal = goalTitles[0] ?? "your first goal";
 
   const lines = [
-    `You're aiming at ${direction}, so I will judge every opportunity against that direction first.`,
+    `You're aiming at ${direction}, so Copilot will judge every opportunity against that direction first.`,
     `Your near-term priority is to ${priority.charAt(0).toLowerCase()}${priority.slice(1)}, so nudges and next actions will follow that pace.`,
-    `You picked ${goalTitles.length} starting goal${goalTitles.length === 1 ? "" : "s"}, including "${firstGoal}", so I will track progress and flag skill gaps against them.`,
+    `You picked ${goalTitles.length} starting goal${goalTitles.length === 1 ? "" : "s"}, including "${firstGoal}", so Copilot will track progress and flag skill gaps against them.`,
   ];
 
   return (
