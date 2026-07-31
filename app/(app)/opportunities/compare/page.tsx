@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { WorkspacePage } from "@/components/shell/workspace-page";
+import { ComparisonDimensionGrid } from "@/components/opportunities/compare/comparison-dimension-grid";
 import { ComparisonHeaderCards } from "@/components/opportunities/compare/comparison-header-cards";
 import { ComparisonRecoverState, type ComparisonRecoverReason } from "@/components/opportunities/compare/comparison-recover-state";
 import { isValidComparisonSelection } from "@/lib/comparison-utils";
@@ -68,6 +69,7 @@ export default function OpportunityComparePage() {
       ) : (
         <div className="flex flex-col gap-6">
           <ComparisonHeaderCards opportunities={selected} />
+          <ComparisonDimensionGrid opportunities={selected} />
         </div>
       )}
     </WorkspacePage>
