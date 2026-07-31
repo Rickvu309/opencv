@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, FilePenLine, FileText, Flag, Sparkles, Star } from "lucide-react";
+import { Check, FilePenLine, FileText, Flag, Mail, Sparkles, Star } from "lucide-react";
 
 import { CopilotTag } from "@/components/shared/copilot-tag";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -16,6 +16,7 @@ const KIND_ICON: Record<ActivityMomentKind, typeof Flag> = {
   "action-done": Check,
   "dream-flagged": Star,
   "cv-tailored": FilePenLine,
+  "signal-accepted": Mail,
 };
 
 const KIND_DOT: Record<ActivityMomentKind, string> = {
@@ -27,6 +28,7 @@ const KIND_DOT: Record<ActivityMomentKind, string> = {
   "action-done": "bg-emerald-600",
   "dream-flagged": "bg-amber-500",
   "cv-tailored": "bg-indigo-500",
+  "signal-accepted": "bg-indigo-500",
 };
 
 /**
@@ -55,7 +57,11 @@ export function OpportunityActivityTab({ moments }: { moments: ActivityMoment[] 
             </span>
             <div className="flex items-center gap-1.5">
               <span className="text-xs text-muted-foreground">{moment.createdAt}</span>
-              {moment.kind === "copilot-analysis" || moment.kind === "cv-tailored" ? <CopilotTag /> : null}
+              {moment.kind === "copilot-analysis" ||
+              moment.kind === "cv-tailored" ||
+              moment.kind === "signal-accepted" ? (
+                <CopilotTag />
+              ) : null}
             </div>
             <p className="text-sm text-foreground">{moment.message}</p>
           </li>

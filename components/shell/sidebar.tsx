@@ -26,6 +26,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
+import { ConnectedSourcesButton } from "@/components/shell/connected-sources";
 import { DemoTourDialog } from "@/components/shell/demo-tour-dialog";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -133,6 +134,12 @@ export function Sidebar() {
             Demo Tour
           </Button>
         </DemoTourDialog>
+      </div>
+
+      <Separator className="bg-sidebar-border" />
+
+      <div className="px-3 py-2">
+        <ConnectedSourcesButton />
       </div>
 
       <Separator className="bg-sidebar-border" />

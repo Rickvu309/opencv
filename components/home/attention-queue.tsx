@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AlarmClock, Check, Flame, GraduationCap, Inbox, ListChecks, Pin, Target, X } from "lucide-react";
 
+import { SignalCard } from "@/components/ai/signal-card";
 import { CopilotTag } from "@/components/shared/copilot-tag";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
@@ -42,6 +44,7 @@ export function AttentionQueue() {
   const [handledIds, setHandledIds] = useState<Set<string>>(new Set());
 
   const queue = getAttentionQueue(state.nudges);
+  const proposedSignals = state.aiSignals.filter((signal) => signal.state === "proposed");
 
   function handleAct(nudge: Nudge, href: string) {
     setHandledIds((current) => new Set(current).add(nudge.id));
@@ -59,10 +62,29 @@ export function AttentionQueue() {
         <CopilotTag />
       </div>
 
-      {queue.length === 0 ? (
+      {queue.length === 0 && proposedSignals.length === 0 ? (
         <EmptyState message="Nothing needs you right now. Copilot will surface stale opportunities, capture prompts, and goal or learning reminders here as they come up." />
       ) : (
         <div className="flex flex-col gap-2">
+          {proposedSignals.map((signal) => {
+            const opportunity = state.opportunities.find((item) => item.id === signal.opportunityId);
+            return (
+              <SignalCard
+                key={signal.id}
+                signal={signal}
+                context={
+                  opportunity ? (
+                    <Link
+                      href={`/opportunities/${opportunity.id}`}
+                      className="w-fit text-xs font-medium text-muted-foreground hover:text-foreground hover:underline"
+                    >
+                      {opportunity.role} · {opportunity.company}
+                    </Link>
+                  ) : undefined
+                }
+              />
+            );
+          })}
           {queue.map((nudge) => {
             const Icon = NUDGE_ICON[nudge.trigger];
             const handled = handledIds.has(nudge.id);

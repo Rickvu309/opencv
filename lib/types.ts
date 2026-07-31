@@ -72,7 +72,8 @@ export type ActivityMomentKind =
   | "action-accepted"
   | "action-done"
   | "dream-flagged"
-  | "cv-tailored";
+  | "cv-tailored"
+  | "signal-accepted";
 
 export interface ActivityMoment {
   id: string;
@@ -499,6 +500,107 @@ export interface NextAction {
 }
 
 // ---------------------------------------------------------------------------
+// Connected sources (simulated) and evidence
+// ---------------------------------------------------------------------------
+
+/** Extensible: only "email" is seeded for this ticket, a future source adds a new type here. */
+export type ConnectedSourceType = "email";
+
+export type ConnectedSourceStatus = "connected";
+
+export interface ConnectedSource {
+  id: string;
+  type: ConnectedSourceType;
+  name: string;
+  provider: string;
+  status: ConnectedSourceStatus;
+  lastSyncedMinutesAgo: number;
+  /** Shown in the Connected sources dialog: what Copilot reads from this source. */
+  readsDescription: string;
+}
+
+export type EmailEvidenceMapsToType = "opportunity" | "trackRecord";
+
+/**
+ * One seeded email extract behind an AI proposal: sender, subject,
+ * timestamp, a short extract, and the opportunity or Track Record candidate
+ * it maps to. Every AI proposal that cites a source shows this as an
+ * EvidenceChip plus an expandable EvidenceExtract, never hidden grounding.
+ */
+export interface EmailEvidence {
+  id: string;
+  sourceId: string;
+  sender: string;
+  subject: string;
+  timestamp: string;
+  extract: string;
+  mapsToType: EmailEvidenceMapsToType;
+  mapsToId: string;
+  mapsToLabel: string;
+}
+
+// ---------------------------------------------------------------------------
+// AI signal (the five-beat proposal pattern behind components/ai/)
+// ---------------------------------------------------------------------------
+
+export type AiSignalState = "proposed" | "approved" | "dismissed";
+
+/** Which icon AiActionCard renders for the signal line, resolved by the connected component in components/ai/signal-card.tsx. */
+export type AiSignalIconKind = "email" | "status" | "urgency" | "draft";
+
+interface AiSignalBase {
+  id: string;
+  opportunityId: string;
+  iconKind: AiSignalIconKind;
+  /** Beat 1: what the system noticed, one line. */
+  signal: string;
+  /** Beat 2: one line on why it matters. */
+  whyItMatters: string;
+  /** Beat 3: the id of the EmailEvidence backing this proposal. */
+  evidenceId: string;
+  /** Beat 4: the concrete change, stated as what will happen if you accept. */
+  proposedAction: string;
+  state: AiSignalState;
+  /** Set on approve so Undo can remove exactly the Activity moment this signal logged; cleared again on undo. */
+  appliedActivityMomentId?: string;
+}
+
+/** Accepting updates an existing next action's verb and rationale in place. */
+export interface NextActionSignal extends AiSignalBase {
+  kind: "next-action";
+  nextActionId: string;
+  newVerb: string;
+  newRationale: string;
+  previousVerb: string;
+  previousRationale: string;
+}
+
+/** Accepting moves the opportunity's status; the board reflects it immediately. */
+export interface StatusChangeSignal extends AiSignalBase {
+  kind: "status-change";
+  newStatus: OpportunityStatus;
+  previousStatus: OpportunityStatus;
+}
+
+/** Accepting bumps priority and adds a fresh prep next action. */
+export interface PriorityBumpSignal extends AiSignalBase {
+  kind: "priority-bump";
+  newPriority: Priority;
+  previousPriority: Priority;
+  addedNextAction: NextAction;
+}
+
+/** Accepting sends the scripted draft and marks the linked next action done. */
+export interface DraftReplySignal extends AiSignalBase {
+  kind: "draft-reply";
+  nextActionId: string;
+  draftText: string;
+  previousNextActionState: NextActionState;
+}
+
+export type AiSignal = NextActionSignal | StatusChangeSignal | PriorityBumpSignal | DraftReplySignal;
+
+// ---------------------------------------------------------------------------
 // Nudge / Weekly Review
 // ---------------------------------------------------------------------------
 
@@ -568,10 +670,10 @@ export interface WeeklyReviewObservation {
 export interface WeeklyReviewScript {
   /** Step 1: this week's changes, status moves, new opportunities, and actions done, as a compact recap list. */
   whatMoved: string[];
+  /** Step 1: one line recapping activity from connected sources, emails scanned and threads linked. */
+  connectedSourcesRecap: string;
   /** Step 2: 3 observations with a why line each. */
   observations: WeeklyReviewObservation[];
-  /** Step 3: the id of the Track Record candidate offered for confirmation, built at accept time by lib/data/track-record.ts's buildCopilotCaptureCandidate. */
-  captureCandidateId: string;
   /** Step 4: 3 toggleable focus suggestions. */
   suggestedFocus: WeeklyReviewSuggestion[];
 }

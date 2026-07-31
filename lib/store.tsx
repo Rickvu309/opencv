@@ -32,10 +32,13 @@ import { insights as seedInsights } from "@/lib/data/insights";
 import { nextActions as seedNextActions } from "@/lib/data/actions";
 import { nudges as seedNudges, weeklyReviewScript } from "@/lib/data/nudges";
 import { copilotScripts } from "@/lib/data/copilot-scripts";
+import { aiSignals as seedAiSignals } from "@/lib/data/ai-signals";
 import { buildPinnedNudgeFromSuggestion, pinnedNudgeId } from "@/lib/nudge-utils";
+import { buildSignalActivityMessage } from "@/lib/ai-signal-utils";
 import type {
   ActivityMoment,
   AiInsight,
+  AiSignal,
   CopilotMessage,
   CopilotResponse,
   CvVersion,
@@ -96,6 +99,7 @@ export interface StoreState {
   insights: AiInsight[];
   nextActions: NextAction[];
   nudges: Nudge[];
+  aiSignals: AiSignal[];
   weeklyReview: WeeklyReviewScript;
   weeklyReviewOpen: boolean;
   weeklyReviewViewedThisSession: boolean;
@@ -122,6 +126,7 @@ const initialState: StoreState = {
   insights: seedInsights,
   nextActions: seedNextActions,
   nudges: seedNudges,
+  aiSignals: seedAiSignals,
   weeklyReview: weeklyReviewScript,
   weeklyReviewOpen: false,
   weeklyReviewViewedThisSession: false,
@@ -186,6 +191,10 @@ type Action =
   | { type: "REMOVE_TRACK_RECORD_ENTRY"; id: string }
   | { type: "ADD_TRACK_RECORD_ENTRY"; entry: TrackRecordEntry }
   | { type: "SET_NUDGE_STATE"; id: string; state: Nudge["state"] }
+  | { type: "APPROVE_AI_SIGNAL"; id: string; editedValue?: string }
+  | { type: "UNDO_AI_SIGNAL"; id: string }
+  | { type: "DISMISS_AI_SIGNAL"; id: string }
+  | { type: "UNDISMISS_AI_SIGNAL"; id: string }
   | {
       type: "SET_TAILORING_SUGGESTION_STATE";
       insightId: string;
@@ -540,6 +549,138 @@ function reducer(state: StoreState, action: Action): StoreState {
         ),
       };
 
+    case "APPROVE_AI_SIGNAL": {
+      const original = state.aiSignals.find((signal) => signal.id === action.id);
+      if (!original || original.state !== "proposed") return state;
+
+      // An edited value (from the card's inline Edit control) supersedes
+      // the seeded proposal before anything else reads it, so the applied
+      // effect, the save-back confirmation, and the Activity log entry all
+      // agree on exactly what was accepted.
+      const trimmedEdit = action.editedValue?.trim();
+      const finalSignal: AiSignal =
+        original.kind === "next-action" && trimmedEdit
+          ? { ...original, newVerb: trimmedEdit }
+          : original.kind === "draft-reply" && trimmedEdit
+            ? { ...original, draftText: trimmedEdit }
+            : original;
+
+      const dateStamp = today();
+      const activityId = makeId("activity");
+
+      let opportunities = state.opportunities;
+      let nextActions = state.nextActions;
+
+      if (finalSignal.kind === "next-action") {
+        nextActions = nextActions.map((nextAction) =>
+          nextAction.id === finalSignal.nextActionId
+            ? { ...nextAction, verb: finalSignal.newVerb, rationale: finalSignal.newRationale }
+            : nextAction
+        );
+      } else if (finalSignal.kind === "status-change") {
+        opportunities = opportunities.map((opportunity) =>
+          opportunity.id === finalSignal.opportunityId
+            ? { ...opportunity, status: finalSignal.newStatus, lastActivityAt: dateStamp }
+            : opportunity
+        );
+      } else if (finalSignal.kind === "priority-bump") {
+        opportunities = opportunities.map((opportunity) =>
+          opportunity.id === finalSignal.opportunityId
+            ? { ...opportunity, priority: finalSignal.newPriority }
+            : opportunity
+        );
+        nextActions = [...nextActions, finalSignal.addedNextAction];
+      } else if (finalSignal.kind === "draft-reply") {
+        nextActions = nextActions.map((nextAction) =>
+          nextAction.id === finalSignal.nextActionId ? { ...nextAction, state: "done" } : nextAction
+        );
+      }
+
+      return {
+        ...state,
+        opportunities,
+        nextActions,
+        activityMoments: [
+          ...state.activityMoments,
+          {
+            id: activityId,
+            opportunityId: finalSignal.opportunityId,
+            kind: "signal-accepted",
+            message: buildSignalActivityMessage(finalSignal),
+            createdAt: dateStamp,
+          },
+        ],
+        aiSignals: state.aiSignals.map((signal) =>
+          signal.id === action.id
+            ? { ...finalSignal, state: "approved", appliedActivityMomentId: activityId }
+            : signal
+        ),
+      };
+    }
+
+    case "UNDO_AI_SIGNAL": {
+      const signal = state.aiSignals.find((entry) => entry.id === action.id);
+      if (!signal || signal.state !== "approved") return state;
+
+      let opportunities = state.opportunities;
+      let nextActions = state.nextActions;
+
+      if (signal.kind === "next-action") {
+        nextActions = nextActions.map((nextAction) =>
+          nextAction.id === signal.nextActionId
+            ? { ...nextAction, verb: signal.previousVerb, rationale: signal.previousRationale }
+            : nextAction
+        );
+      } else if (signal.kind === "status-change") {
+        opportunities = opportunities.map((opportunity) =>
+          opportunity.id === signal.opportunityId
+            ? { ...opportunity, status: signal.previousStatus }
+            : opportunity
+        );
+      } else if (signal.kind === "priority-bump") {
+        opportunities = opportunities.map((opportunity) =>
+          opportunity.id === signal.opportunityId
+            ? { ...opportunity, priority: signal.previousPriority }
+            : opportunity
+        );
+        nextActions = nextActions.filter((nextAction) => nextAction.id !== signal.addedNextAction.id);
+      } else if (signal.kind === "draft-reply") {
+        nextActions = nextActions.map((nextAction) =>
+          nextAction.id === signal.nextActionId
+            ? { ...nextAction, state: signal.previousNextActionState }
+            : nextAction
+        );
+      }
+
+      return {
+        ...state,
+        opportunities,
+        nextActions,
+        activityMoments: signal.appliedActivityMomentId
+          ? state.activityMoments.filter((moment) => moment.id !== signal.appliedActivityMomentId)
+          : state.activityMoments,
+        aiSignals: state.aiSignals.map((entry) =>
+          entry.id === action.id ? { ...entry, state: "proposed", appliedActivityMomentId: undefined } : entry
+        ),
+      };
+    }
+
+    case "DISMISS_AI_SIGNAL":
+      return {
+        ...state,
+        aiSignals: state.aiSignals.map((signal) =>
+          signal.id === action.id ? { ...signal, state: "dismissed" } : signal
+        ),
+      };
+
+    case "UNDISMISS_AI_SIGNAL":
+      return {
+        ...state,
+        aiSignals: state.aiSignals.map((signal) =>
+          signal.id === action.id ? { ...signal, state: "proposed" } : signal
+        ),
+      };
+
     case "SET_TAILORING_SUGGESTION_STATE":
       return {
         ...state,
@@ -813,6 +954,10 @@ interface StoreContextValue {
   dismissNudge: (id: string) => void;
   snoozeNudge: (id: string) => void;
   markNudgeHandled: (id: string) => void;
+  approveAiSignal: (id: string, editedValue?: string) => void;
+  undoAiSignal: (id: string) => void;
+  dismissAiSignal: (id: string) => void;
+  undismissAiSignal: (id: string) => void;
   acceptTailoringSuggestion: (insightId: string, suggestionId: string) => void;
   dismissTailoringSuggestion: (insightId: string, suggestionId: string) => void;
   addCvVersion: (cv: CvVersion) => void;
@@ -1071,6 +1216,30 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: "SET_NUDGE_STATE", id, state: "dismissed" });
   }, []);
 
+  // Approve shows its own in-card save-back confirmation with Undo, so no
+  // extra toast here, that would just repeat what the card already says.
+  const approveAiSignal = useCallback((id: string, editedValue?: string) => {
+    dispatch({ type: "APPROVE_AI_SIGNAL", id, editedValue });
+  }, []);
+
+  const undoAiSignal = useCallback((id: string) => {
+    dispatch({ type: "UNDO_AI_SIGNAL", id });
+  }, []);
+
+  const dismissAiSignal = useCallback((id: string) => {
+    dispatch({ type: "DISMISS_AI_SIGNAL", id });
+    toast("Signal dismissed", {
+      action: {
+        label: "Undo",
+        onClick: () => dispatch({ type: "UNDISMISS_AI_SIGNAL", id }),
+      },
+    });
+  }, []);
+
+  const undismissAiSignal = useCallback((id: string) => {
+    dispatch({ type: "UNDISMISS_AI_SIGNAL", id });
+  }, []);
+
   const acceptTailoringSuggestion = useCallback((insightId: string, suggestionId: string) => {
     dispatch({ type: "SET_TAILORING_SUGGESTION_STATE", insightId, suggestionId, state: "accepted" });
     toast.success("Suggestion accepted");
@@ -1298,6 +1467,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       dismissNudge,
       snoozeNudge,
       markNudgeHandled,
+      approveAiSignal,
+      undoAiSignal,
+      dismissAiSignal,
+      undismissAiSignal,
       acceptTailoringSuggestion,
       dismissTailoringSuggestion,
       addCvVersion,
@@ -1361,6 +1534,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       dismissNudge,
       snoozeNudge,
       markNudgeHandled,
+      approveAiSignal,
+      undoAiSignal,
+      dismissAiSignal,
+      undismissAiSignal,
       acceptTailoringSuggestion,
       dismissTailoringSuggestion,
       addCvVersion,
