@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { LayoutGrid, Plus, Rows3 } from "lucide-react";
+import { LayoutGrid, Plus, Rows3, X } from "lucide-react";
 
 import { PageHeader } from "@/components/shell/page-header";
 import { AddOpportunityDialog } from "@/components/opportunities/add-opportunity-dialog";
@@ -13,6 +13,9 @@ import { Button } from "@/components/ui/button";
 import { compareOpportunities, matchesFilter } from "@/lib/opportunity-utils";
 import type { OpportunityFilter, OpportunitySort } from "@/lib/opportunity-utils";
 import { today, useCopilotSurface, useStore } from "@/lib/store";
+import type { OpportunityStatus } from "@/lib/types";
+
+const STATUS_VALUES: OpportunityStatus[] = ["Saved", "Applied", "Interview", "Offer", "Closed"];
 
 export default function OpportunitiesPage() {
   useCopilotSurface("Opportunities");
@@ -20,6 +23,7 @@ export default function OpportunitiesPage() {
 
   const [filter, setFilter] = useState<OpportunityFilter>("all");
   const [sort, setSort] = useState<OpportunitySort>("recently-active");
+  const [statusFilter, setStatusFilter] = useState<OpportunityStatus | null>(null);
 
   const highlightedId = state.highlightedOpportunityId;
   const todayIso = today();
@@ -30,12 +34,28 @@ export default function OpportunitiesPage() {
     return () => clearTimeout(timeout);
   }, [highlightedId, clearOpportunityHighlight]);
 
+  // Home's pipeline snapshot deep-links here with a `status` query param, for
+  // example /opportunities?status=Interview. Read directly off the URL
+  // (matching the opportunity detail page's hash-sync pattern) rather than
+  // useSearchParams, so this page never needs a Suspense boundary.
+  useEffect(() => {
+    function syncStatusFromQuery() {
+      const status = new URLSearchParams(window.location.search).get("status");
+      if (status && STATUS_VALUES.includes(status as OpportunityStatus)) {
+        setStatusFilter(status as OpportunityStatus);
+      }
+    }
+    syncStatusFromQuery();
+  }, []);
+
   const filtered = useMemo(
     () =>
-      state.opportunities.filter((opportunity) =>
-        matchesFilter(opportunity, filter, state.nextActions, todayIso)
+      state.opportunities.filter(
+        (opportunity) =>
+          matchesFilter(opportunity, filter, state.nextActions, todayIso) &&
+          (!statusFilter || opportunity.status === statusFilter)
       ),
-    [state.opportunities, state.nextActions, filter, todayIso]
+    [state.opportunities, state.nextActions, filter, todayIso, statusFilter]
   );
 
   const sortedForList = useMemo(
@@ -82,6 +102,22 @@ export default function OpportunitiesPage() {
 
       <div className="flex flex-col gap-4 p-6">
         <OpportunitiesFocusStrip />
+
+        {statusFilter ? (
+          <div className="flex items-center gap-1.5">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-foreground">
+              Status: {statusFilter}
+              <button
+                type="button"
+                aria-label="Clear status filter"
+                onClick={() => setStatusFilter(null)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="size-3" />
+              </button>
+            </span>
+          </div>
+        ) : null}
 
         <OpportunitiesControls
           filter={filter}

@@ -120,6 +120,28 @@ export function computeDirectionAlignment(opportunities: Opportunity[]): Directi
   return { active: active.length, aligned: aligned.length };
 }
 
+/**
+ * The Home greeting band's one-line pipeline pulse: interviews in motion and
+ * offers waiting on a reply, the two counts worth surfacing at a glance.
+ */
+export function buildPipelinePulse(opportunities: Opportunity[]): string {
+  const interviewCount = opportunities.filter((opportunity) => opportunity.status === "Interview").length;
+  const offerCount = opportunities.filter((opportunity) => opportunity.status === "Offer").length;
+
+  const parts: string[] = [];
+  if (interviewCount > 0) {
+    parts.push(`${interviewCount} ${interviewCount === 1 ? "interview" : "interviews"} this week`);
+  }
+  if (offerCount > 0) {
+    parts.push(`${offerCount} ${offerCount === 1 ? "offer" : "offers"} waiting on your answer`);
+  }
+
+  if (parts.length === 0) {
+    return "Nothing urgent in motion right now, a good week to move something forward.";
+  }
+  return `${parts.join(", ")}.`;
+}
+
 export interface FocusItem {
   opportunityId: string;
   reason: string;

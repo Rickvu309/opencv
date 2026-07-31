@@ -82,7 +82,7 @@ AI helps inside every flow. It never auto-applies anything (see section 9).
 | LearningItem | title, type (course, project, habit), effort, linked skill or goal | /skills | accept to plan, dismiss | Skill, Goal |
 | AiInsight | kind (summary, credibility, fit, tailoring, gap), body blocks, confidence | inside host object | expand, ask follow-up | host object |
 | NextAction | verb phrase, rationale, effort, due hint, state (suggested, accepted, done, dismissed) | opportunity + /home | accept, edit, dismiss, mark done | Opportunity |
-| Nudge | trigger, message, suggested action | /home | act, snooze, dismiss | any object |
+| Nudge | trigger, message, why, 1 to 2 deep-link actions | /home | act, snooze, dismiss | any object |
 
 Opportunity statuses: Saved, Applied, Interview, Offer, Closed. Dream is a flag, not a status. Fit levels: Strong, Medium, Weak, Unknown. Priority: High, Medium, Low.
 
@@ -92,13 +92,13 @@ Persona: Mai Tran, senior product designer, 7 years, based in Ho Chi Minh City, 
 
 Seed set (lives in `lib/data/`):
 
-- 9 opportunities: 3 Saved (one Dream, one low-credibility posting), 2 Applied, 2 Interview, 1 Offer, 1 Closed. Mixed fit levels and priorities. Every one has full AI output.
+- 10 opportunities: 4 Saved (one Dream, one low-credibility posting, one freshly saved with no next step queued yet), 2 Applied, 2 Interview, 1 Offer, 1 Closed. Mixed fit levels and priorities. The 9 original opportunities all have full AI output; the 10th (added for ticket 15's missing-next-step nudge) is intentionally still raw, Copilot hasn't read it yet.
 - Profile: headline, summary, 4 strengths, 4 experience entries, preferences, target direction.
 - 3 CV versions: "Base CV", "Product-lead CV", one tailored version linked to an Interview opportunity.
 - 10 track record entries plus 2 unconfirmed AI-drafted candidates.
 - 4 goals, one with a gap analysis.
 - 12 skills, 4 flagged as gaps; 6 learning items.
-- 6 next actions in mixed states, 3 nudges, 1 weekly review script.
+- 6 next actions in mixed states, 6 nudges covering all four attention-queue families (opportunity, capture, goal, learning), 1 weekly review script.
 - Copilot scripts: per-surface suggested prompts and 2 to 3 scripted exchanges per major surface.
 
 File layout: `lib/types.ts` (all types), `lib/data/persona.ts`, `opportunities.ts`, `cvs.ts`, `track-record.ts`, `goals.ts`, `skills.ts`, `insights.ts`, `actions.ts`, `nudges.ts`, `copilot-scripts.ts`. Store in `lib/store.tsx`.

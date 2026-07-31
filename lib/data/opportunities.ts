@@ -300,4 +300,22 @@ export const opportunities: Opportunity[] = [
     ],
     notes: "Timezone overlap made this unworkable. No regrets closing it out.",
   },
+  {
+    id: "opp-10",
+    role: "Senior Product Designer, AI Workflows",
+    company: "Cascade AI",
+    location: "Remote (APAC hours)",
+    remote: true,
+    status: "Saved",
+    fit: "Unknown",
+    priority: "Medium",
+    isDream: false,
+    source: "Job board listing",
+    salaryRange: "$110,000 to $135,000 USD",
+    description:
+      "Cascade AI builds a workflow-automation platform for support and operations teams, adjacent territory to Arclight AI but an earlier-stage company. Saved after a strong first skim; Copilot hasn't run its full read yet, and no next step is queued.",
+    savedAt: "2026-07-29",
+    lastActivityAt: "2026-07-29",
+    notes: "Saved after a strong first skim. Still need Copilot's read and a decided next step.",
+  },
 ];

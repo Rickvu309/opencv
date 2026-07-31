@@ -26,7 +26,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
-import { WeeklyReviewDialog } from "@/components/shell/weekly-review-dialog";
 import { DemoTourDialog } from "@/components/shell/demo-tour-dialog";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -82,7 +81,7 @@ function NavGroupLabel({ children }: { children: React.ReactNode }) {
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { state, resetOnboarding } = useStore();
+  const { state, resetOnboarding, openWeeklyReview } = useStore();
 
   function restartSetup() {
     resetOnboarding();
@@ -119,12 +118,15 @@ export function Sidebar() {
       <Separator className="bg-sidebar-border" />
 
       <div className="flex flex-col gap-1 px-3 py-3">
-        <WeeklyReviewDialog>
-          <Button variant="ghost" size="sm" className="justify-start gap-2.5 px-2.5 text-sidebar-foreground/80 hover:bg-sidebar-accent/60">
-            <CalendarCheck className="size-4" />
-            Weekly Review
-          </Button>
-        </WeeklyReviewDialog>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="justify-start gap-2.5 px-2.5 text-sidebar-foreground/80 hover:bg-sidebar-accent/60"
+          onClick={openWeeklyReview}
+        >
+          <CalendarCheck className="size-4" />
+          Weekly Review
+        </Button>
         <DemoTourDialog>
           <Button variant="ghost" size="sm" className="justify-start gap-2.5 px-2.5 text-sidebar-foreground/80 hover:bg-sidebar-accent/60">
             <Compass className="size-4" />

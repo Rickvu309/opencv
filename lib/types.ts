@@ -502,29 +502,77 @@ export interface NextAction {
 // Nudge / Weekly Review
 // ---------------------------------------------------------------------------
 
-export type NudgeTrigger = "stale-opportunity" | "capture-prompt" | "high-potential";
+/**
+ * The six triggers the attention queue seeds from, grouped into four
+ * families by lib/nudge-utils.ts's NUDGE_FAMILY map (opportunity, capture,
+ * goal, learning). "weekly-focus" is a seventh trigger reserved for items
+ * promoted from an accepted Weekly Review suggestion, pinned on top of the
+ * seeded set rather than counted toward the four families.
+ */
+export type NudgeTrigger =
+  | "stale-opportunity"
+  | "high-potential"
+  | "missing-next-step"
+  | "capture-prompt"
+  | "goal-reminder"
+  | "learning-nudge"
+  | "weekly-focus";
+
 export type NudgeState = "active" | "dismissed" | "snoozed";
+
+/** One deep link out of a Nudge card, always into a real workflow, never a dead end. */
+export interface NudgeAction {
+  label: string;
+  href: string;
+}
 
 export interface Nudge {
   id: string;
   trigger: NudgeTrigger;
+  /** The proactive message itself, referencing the specific object it's about. */
   message: string;
-  suggestedAction: string;
+  /** One line on why this surfaced now. */
+  why: string;
+  /** 1 or 2 deep links into the right workflow. */
+  actions: NudgeAction[];
   relatedOpportunityId?: string;
+  relatedGoalId?: string;
+  relatedLearningItemId?: string;
   state: NudgeState;
+  /** Set on items promoted from an accepted Weekly Review focus suggestion; pinned items float to the top of the attention queue. */
+  pinned?: boolean;
 }
 
 export type WeeklyReviewSuggestionState = "suggested" | "accepted" | "dismissed";
 
+/**
+ * One toggleable focus suggestion in Weekly Review step 4. Accepting it
+ * (state "accepted") pins a matching Nudge into the Home attention queue via
+ * the action's own label and href; toggling back off removes it again.
+ */
 export interface WeeklyReviewSuggestion {
   id: string;
   text: string;
   state: WeeklyReviewSuggestionState;
+  actionLabel: string;
+  actionHref: string;
+}
+
+/** One "what Copilot noticed" observation in Weekly Review step 2: the observation plus why it matters. */
+export interface WeeklyReviewObservation {
+  id: string;
+  text: string;
+  why: string;
 }
 
 export interface WeeklyReviewScript {
-  whatHappened: string[];
-  whatChanged: string[];
+  /** Step 1: this week's changes, status moves, new opportunities, and actions done, as a compact recap list. */
+  whatMoved: string[];
+  /** Step 2: 3 observations with a why line each. */
+  observations: WeeklyReviewObservation[];
+  /** Step 3: the id of the Track Record candidate offered for confirmation, built at accept time by lib/data/track-record.ts's buildCopilotCaptureCandidate. */
+  captureCandidateId: string;
+  /** Step 4: 3 toggleable focus suggestions. */
   suggestedFocus: WeeklyReviewSuggestion[];
 }
 

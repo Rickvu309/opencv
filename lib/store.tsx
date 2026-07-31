@@ -32,6 +32,7 @@ import { insights as seedInsights } from "@/lib/data/insights";
 import { nextActions as seedNextActions } from "@/lib/data/actions";
 import { nudges as seedNudges, weeklyReviewScript } from "@/lib/data/nudges";
 import { copilotScripts } from "@/lib/data/copilot-scripts";
+import { buildPinnedNudgeFromSuggestion, pinnedNudgeId } from "@/lib/nudge-utils";
 import type {
   ActivityMoment,
   AiInsight,
@@ -96,6 +97,8 @@ export interface StoreState {
   nextActions: NextAction[];
   nudges: Nudge[];
   weeklyReview: WeeklyReviewScript;
+  weeklyReviewOpen: boolean;
+  weeklyReviewViewedThisSession: boolean;
   onboarded: boolean;
   copilot: CopilotState;
   highlightedOpportunityId?: string;
@@ -120,6 +123,8 @@ const initialState: StoreState = {
   nextActions: seedNextActions,
   nudges: seedNudges,
   weeklyReview: weeklyReviewScript,
+  weeklyReviewOpen: false,
+  weeklyReviewViewedThisSession: false,
   onboarded: false,
   copilot: {
     open: false,
@@ -208,6 +213,8 @@ type Action =
       id: string;
       state: "accepted" | "dismissed";
     }
+  | { type: "SET_WEEKLY_REVIEW_OPEN"; open: boolean }
+  | { type: "MARK_WEEKLY_REVIEW_VIEWED" }
   | { type: "SET_PROFILE_SUMMARY"; summary: string }
   | { type: "SET_PROFILE_EXPERIENCE_ENTRY"; id: string; patch: Partial<Omit<ExperienceEntry, "id">> }
   | { type: "ADD_PROFILE_EXPERIENCE_ENTRY"; entry: ExperienceEntry }
@@ -653,16 +660,37 @@ function reducer(state: StoreState, action: Action): StoreState {
         ? { ...state, highlightedTrackRecordEntryId: undefined }
         : state;
 
-    case "SET_WEEKLY_REVIEW_SUGGESTION_STATE":
+    case "SET_WEEKLY_REVIEW_SUGGESTION_STATE": {
+      const suggestion = state.weeklyReview.suggestedFocus.find((entry) => entry.id === action.id);
+      const nudgeId = pinnedNudgeId(action.id);
+
+      // Accepting a focus suggestion pins a matching Nudge into the Home
+      // attention queue (guarded by id, so accepting twice never duplicates
+      // it); toggling back off removes that pinned card again.
+      let nudges = state.nudges;
+      if (suggestion && action.state === "accepted" && !state.nudges.some((nudge) => nudge.id === nudgeId)) {
+        nudges = [...state.nudges, buildPinnedNudgeFromSuggestion(suggestion)];
+      } else if (action.state === "dismissed") {
+        nudges = state.nudges.filter((nudge) => nudge.id !== nudgeId);
+      }
+
       return {
         ...state,
+        nudges,
         weeklyReview: {
           ...state.weeklyReview,
-          suggestedFocus: state.weeklyReview.suggestedFocus.map((suggestion) =>
-            suggestion.id === action.id ? { ...suggestion, state: action.state } : suggestion
+          suggestedFocus: state.weeklyReview.suggestedFocus.map((entry) =>
+            entry.id === action.id ? { ...entry, state: action.state } : entry
           ),
         },
       };
+    }
+
+    case "SET_WEEKLY_REVIEW_OPEN":
+      return { ...state, weeklyReviewOpen: action.open };
+
+    case "MARK_WEEKLY_REVIEW_VIEWED":
+      return { ...state, weeklyReviewViewedThisSession: true };
 
     case "SET_PROFILE_SUMMARY":
       return { ...state, profile: { ...state.profile, summary: action.summary } };
@@ -784,6 +812,7 @@ interface StoreContextValue {
   addTrackRecordEntry: (entry: TrackRecordEntry) => void;
   dismissNudge: (id: string) => void;
   snoozeNudge: (id: string) => void;
+  markNudgeHandled: (id: string) => void;
   acceptTailoringSuggestion: (insightId: string, suggestionId: string) => void;
   dismissTailoringSuggestion: (insightId: string, suggestionId: string) => void;
   addCvVersion: (cv: CvVersion) => void;
@@ -800,6 +829,9 @@ interface StoreContextValue {
   clearTrackRecordHighlight: (id: string) => void;
   acceptWeeklyReviewSuggestion: (id: string) => void;
   dismissWeeklyReviewSuggestion: (id: string) => void;
+  openWeeklyReview: () => void;
+  closeWeeklyReview: () => void;
+  markWeeklyReviewViewed: () => void;
   updateProfileSummary: (summary: string) => void;
   updateExperienceEntry: (id: string, patch: Partial<Omit<ExperienceEntry, "id">>) => void;
   addExperienceEntry: (entry: ExperienceEntry) => void;
@@ -1014,12 +1046,29 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const dismissNudge = useCallback((id: string) => {
     dispatch({ type: "SET_NUDGE_STATE", id, state: "dismissed" });
-    toast("Nudge dismissed");
+    toast("Nudge dismissed", {
+      action: {
+        label: "Undo",
+        onClick: () => dispatch({ type: "SET_NUDGE_STATE", id, state: "active" }),
+      },
+    });
   }, []);
 
   const snoozeNudge = useCallback((id: string) => {
     dispatch({ type: "SET_NUDGE_STATE", id, state: "snoozed" });
-    toast("Nudge snoozed for later");
+    toast("Nudge snoozed for later", {
+      action: {
+        label: "Undo",
+        onClick: () => dispatch({ type: "SET_NUDGE_STATE", id, state: "active" }),
+      },
+    });
+  }, []);
+
+  // Marks an item handled once its Act deep link is taken: no toast, since
+  // the card's own check state already gives the confirmation before it
+  // leaves the queue.
+  const markNudgeHandled = useCallback((id: string) => {
+    dispatch({ type: "SET_NUDGE_STATE", id, state: "dismissed" });
   }, []);
 
   const acceptTailoringSuggestion = useCallback((insightId: string, suggestionId: string) => {
@@ -1122,6 +1171,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const dismissWeeklyReviewSuggestion = useCallback((id: string) => {
     dispatch({ type: "SET_WEEKLY_REVIEW_SUGGESTION_STATE", id, state: "dismissed" });
     toast("Suggestion dismissed");
+  }, []);
+
+  const openWeeklyReview = useCallback(() => {
+    dispatch({ type: "SET_WEEKLY_REVIEW_OPEN", open: true });
+  }, []);
+
+  const closeWeeklyReview = useCallback(() => {
+    dispatch({ type: "SET_WEEKLY_REVIEW_OPEN", open: false });
+  }, []);
+
+  const markWeeklyReviewViewed = useCallback(() => {
+    dispatch({ type: "MARK_WEEKLY_REVIEW_VIEWED" });
   }, []);
 
   const updateProfileSummary = useCallback((summary: string) => {
@@ -1236,6 +1297,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       addTrackRecordEntry,
       dismissNudge,
       snoozeNudge,
+      markNudgeHandled,
       acceptTailoringSuggestion,
       dismissTailoringSuggestion,
       addCvVersion,
@@ -1252,6 +1314,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       clearTrackRecordHighlight,
       acceptWeeklyReviewSuggestion,
       dismissWeeklyReviewSuggestion,
+      openWeeklyReview,
+      closeWeeklyReview,
+      markWeeklyReviewViewed,
       updateProfileSummary,
       updateExperienceEntry,
       addExperienceEntry,
@@ -1295,6 +1360,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       addTrackRecordEntry,
       dismissNudge,
       snoozeNudge,
+      markNudgeHandled,
       acceptTailoringSuggestion,
       dismissTailoringSuggestion,
       addCvVersion,
@@ -1311,6 +1377,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       clearTrackRecordHighlight,
       acceptWeeklyReviewSuggestion,
       dismissWeeklyReviewSuggestion,
+      openWeeklyReview,
+      closeWeeklyReview,
+      markWeeklyReviewViewed,
       updateProfileSummary,
       updateExperienceEntry,
       addExperienceEntry,

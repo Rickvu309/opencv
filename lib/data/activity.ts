@@ -322,4 +322,13 @@ export const activityMoments: ActivityMoment[] = [
     message: "Added a note that timezone overlap made this unworkable, closing it out with no regrets.",
     createdAt: "2026-04-20",
   },
+
+  // --- opp-10: Cascade AI ---------------------------------------------------
+  {
+    id: "activity-opp-10-created",
+    opportunityId: "opp-10",
+    kind: "created",
+    message: "Saved to Opportunities from a job board listing.",
+    createdAt: "2026-07-29",
+  },
 ];
