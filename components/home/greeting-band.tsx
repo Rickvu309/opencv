@@ -20,10 +20,10 @@ export function GreetingBand({ profile, opportunities }: { profile: Profile; opp
   const pulse = buildPipelinePulse(opportunities);
 
   return (
-    <div className="flex flex-col gap-0.5">
-      <h1>
+    <div className="flex flex-col gap-1 rounded-xl border border-border/60 bg-card px-5 py-4">
+      <p className="text-display">
         {greeting}, {firstName}. Still steering toward {profile.targetDirectionLabel}.
-      </h1>
+      </p>
       <p className="text-sm text-muted-foreground">{pulse}</p>
     </div>
   );

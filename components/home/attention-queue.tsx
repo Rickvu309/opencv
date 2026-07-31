@@ -65,87 +65,118 @@ export function AttentionQueue() {
       {queue.length === 0 && proposedSignals.length === 0 ? (
         <EmptyState message="Nothing needs you right now. Copilot will surface stale opportunities, capture prompts, and goal or learning reminders here as they come up." />
       ) : (
-        <div className="flex flex-col gap-2">
-          {proposedSignals.map((signal) => {
-            const opportunity = state.opportunities.find((item) => item.id === signal.opportunityId);
-            return (
-              <SignalCard
-                key={signal.id}
-                signal={signal}
-                context={
-                  opportunity ? (
-                    <Link
-                      href={`/opportunities/${opportunity.id}`}
-                      className="w-fit text-xs font-medium text-muted-foreground hover:text-foreground hover:underline"
-                    >
-                      {opportunity.role} · {opportunity.company}
-                    </Link>
-                  ) : undefined
-                }
-              />
-            );
-          })}
-          {queue.map((nudge) => {
-            const Icon = NUDGE_ICON[nudge.trigger];
-            const handled = handledIds.has(nudge.id);
-            return (
-              <Card
-                key={nudge.id}
-                className={cn("ring-foreground/8 transition-opacity duration-300", handled && "opacity-70")}
-              >
-                <CardContent className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-3">
-                    <span
-                      className={cn(
-                        "mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full",
-                        handled
-                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
-                          : "bg-accent text-accent-foreground"
-                      )}
-                    >
-                      {handled ? <Check className="size-3.5" /> : <Icon className="size-3.5" />}
-                    </span>
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-medium text-muted-foreground">
-                          {NUDGE_TRIGGER_LABEL[nudge.trigger]}
-                        </span>
-                        {nudge.pinned ? (
-                          <span className="text-xs font-medium text-indigo-600 dark:text-indigo-300">Pinned</span>
-                        ) : null}
+        <div className="flex flex-col gap-5">
+          {proposedSignals.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              <p className="text-section-label">Needs a decision</p>
+              <div className="flex flex-col gap-2">
+                {proposedSignals.map((signal) => {
+                  const opportunity = state.opportunities.find((item) => item.id === signal.opportunityId);
+                  return (
+                    <SignalCard
+                      key={signal.id}
+                      signal={signal}
+                      context={
+                        opportunity ? (
+                          <Link
+                            href={`/opportunities/${opportunity.id}`}
+                            className="w-fit text-xs font-medium text-muted-foreground hover:text-foreground hover:underline"
+                          >
+                            {opportunity.role} · {opportunity.company}
+                          </Link>
+                        ) : undefined
+                      }
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+
+          {queue.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              <p className="text-section-label">Also worth a look</p>
+              <Card className="ring-foreground/8 py-0">
+                <CardContent className="flex flex-col gap-0 px-0">
+                  {queue.map((nudge, index) => {
+                    const Icon = NUDGE_ICON[nudge.trigger];
+                    const handled = handledIds.has(nudge.id);
+                    return (
+                      <div
+                        key={nudge.id}
+                        className={cn(
+                          "flex items-start justify-between gap-4 px-4 py-3 transition-opacity duration-300",
+                          index > 0 && "border-t border-border",
+                          handled && "opacity-70"
+                        )}
+                      >
+                        <div className="flex items-start gap-3">
+                          <span
+                            className={cn(
+                              "mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full",
+                              handled
+                                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
+                                : "bg-accent text-accent-foreground"
+                            )}
+                          >
+                            {handled ? <Check className="size-3.5" /> : <Icon className="size-3.5" />}
+                          </span>
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs font-medium text-muted-foreground">
+                                {NUDGE_TRIGGER_LABEL[nudge.trigger]}
+                              </span>
+                              {nudge.pinned ? (
+                                <span className="text-xs font-medium text-indigo-600 dark:text-indigo-300">
+                                  Pinned
+                                </span>
+                              ) : null}
+                            </div>
+                            <p className="text-sm text-foreground">{nudge.message}</p>
+                            <p className="text-xs text-muted-foreground">{nudge.why}</p>
+                          </div>
+                        </div>
+                        {handled ? (
+                          <span className="shrink-0 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                            Handled
+                          </span>
+                        ) : (
+                          <div className="flex shrink-0 items-center gap-1.5">
+                            {nudge.actions.map((action, actionIndex) => (
+                              <Button
+                                key={action.label}
+                                size="sm"
+                                variant={actionIndex === 0 ? "default" : "outline"}
+                                onClick={() => handleAct(nudge, action.href)}
+                              >
+                                {action.label}
+                              </Button>
+                            ))}
+                            <Button
+                              size="icon-sm"
+                              variant="ghost"
+                              aria-label="Snooze"
+                              onClick={() => snoozeNudge(nudge.id)}
+                            >
+                              <AlarmClock className="size-3.5" />
+                            </Button>
+                            <Button
+                              size="icon-sm"
+                              variant="ghost"
+                              aria-label="Dismiss"
+                              onClick={() => dismissNudge(nudge.id)}
+                            >
+                              <X className="size-3.5" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
-                      <p className="text-sm text-foreground">{nudge.message}</p>
-                      <p className="text-xs text-muted-foreground">{nudge.why}</p>
-                    </div>
-                  </div>
-                  {handled ? (
-                    <span className="shrink-0 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                      Handled
-                    </span>
-                  ) : (
-                    <div className="flex shrink-0 items-center gap-1.5">
-                      {nudge.actions.map((action, index) => (
-                        <Button
-                          key={action.label}
-                          size="sm"
-                          variant={index === 0 ? "default" : "outline"}
-                          onClick={() => handleAct(nudge, action.href)}
-                        >
-                          {action.label}
-                        </Button>
-                      ))}
-                      <Button size="icon-sm" variant="ghost" aria-label="Snooze" onClick={() => snoozeNudge(nudge.id)}>
-                        <AlarmClock className="size-3.5" />
-                      </Button>
-                      <Button size="icon-sm" variant="ghost" aria-label="Dismiss" onClick={() => dismissNudge(nudge.id)}>
-                        <X className="size-3.5" />
-                      </Button>
-                    </div>
-                  )}
+                    );
+                  })}
                 </CardContent>
               </Card>
-            );
-          })}
+            </div>
+          ) : null}
         </div>
       )}
     </section>
