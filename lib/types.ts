@@ -158,6 +158,19 @@ export interface CvVersion {
 
 export type TrackRecordStatus = "confirmed" | "candidate";
 
+export type TrackRecordUsedInKind = "cv" | "opportunity";
+
+/**
+ * One place a confirmed entry has already been put to work, from seed data
+ * only: a CV version that cites it, or an opportunity whose positioning
+ * leans on it.
+ */
+export interface TrackRecordUsedInRef {
+  kind: TrackRecordUsedInKind;
+  id: string;
+  label: string;
+}
+
 export interface TrackRecordEntry {
   id: string;
   title: string;
@@ -167,6 +180,16 @@ export interface TrackRecordEntry {
   evidenceTag: string;
   skillIds: string[];
   status: TrackRecordStatus;
+  /** Confirmed-entry depth: a short note on what backs this entry up, shown on expand. */
+  evidenceNote?: string;
+  /** Confirmed-entry depth: where this entry has already been cited or relied on. */
+  usedIn?: TrackRecordUsedInRef[];
+  /** Confirmed-entry depth: one line naming the goal or opportunity positioning this entry supports. */
+  strengthens?: string;
+  /** Candidate-only: why Copilot drafted this, referencing the triggering context. */
+  whySuggested?: string;
+  /** Candidate-only: a hint at what evidence would back the draft once confirmed. */
+  evidenceHint?: string;
 }
 
 // ---------------------------------------------------------------------------

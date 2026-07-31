@@ -16,7 +16,12 @@ import { persona } from "@/lib/data/persona";
 import { opportunities as seedOpportunities } from "@/lib/data/opportunities";
 import { activityMoments as seedActivityMoments } from "@/lib/data/activity";
 import { cvVersions as seedCvVersions } from "@/lib/data/cvs";
-import { trackRecordEntries as seedTrackRecordEntries } from "@/lib/data/track-record";
+import {
+  buildPanelPrepCandidate,
+  PANEL_PREP_TRIGGER_ACTION_ID,
+  PANEL_PREP_CANDIDATE_ID,
+  trackRecordEntries as seedTrackRecordEntries,
+} from "@/lib/data/track-record";
 import { goals as seedGoals } from "@/lib/data/goals";
 import { skills as seedSkills, learningItems as seedLearningItems } from "@/lib/data/skills";
 import { insights as seedInsights } from "@/lib/data/insights";
@@ -49,6 +54,15 @@ export type OpportunitiesView = "board" | "list";
 export type OnboardingProfilePatch = Partial<Omit<Profile, "preferences">> & {
   preferences?: Partial<ProfilePreferences>;
 };
+
+// The fields the entry editor can change when a candidate is reviewed and
+// confirmed: the user can edit every drafted field before it joins the
+// timeline, but the candidate-only fields (whySuggested, evidenceHint) and
+// the record's id and status are not user-editable here.
+export type TrackRecordConfirmPatch = Pick<
+  TrackRecordEntry,
+  "title" | "story" | "impact" | "date" | "evidenceTag" | "skillIds"
+>;
 
 interface CopilotState {
   open: boolean;
@@ -126,7 +140,13 @@ type Action =
     }
   | { type: "ACCEPT_ALTERNATIVE"; id: string; alternativeId: string }
   | { type: "REMOVE_NEXT_ACTION"; id: string }
-  | { type: "SET_TRACK_RECORD_STATUS"; id: string; status: "confirmed" | "candidate"; remove?: boolean }
+  | {
+      type: "CONFIRM_TRACK_RECORD_CANDIDATE";
+      id: string;
+      patch: TrackRecordConfirmPatch;
+    }
+  | { type: "REMOVE_TRACK_RECORD_ENTRY"; id: string }
+  | { type: "ADD_TRACK_RECORD_ENTRY"; entry: TrackRecordEntry }
   | { type: "SET_NUDGE_STATE"; id: string; state: Nudge["state"] }
   | {
       type: "SET_TAILORING_SUGGESTION_STATE";
@@ -322,6 +342,22 @@ function reducer(state: StoreState, action: Action): StoreState {
         });
       }
 
+      // The one scripted example of flow 9's capture prompt: marking done
+      // the Meridian Labs panel-prep action while that opportunity sits at
+      // Interview seeds a fresh Track Record candidate into the review
+      // inbox. Guarded by opportunity status (not just the action id) and
+      // by checking the candidate isn't already seeded, so replaying the
+      // done transition never duplicates it.
+      const targetOpportunity = target
+        ? state.opportunities.find((opportunity) => opportunity.id === target.opportunityId)
+        : undefined;
+      const shouldSeedCandidate =
+        becameDone &&
+        action.id === PANEL_PREP_TRIGGER_ACTION_ID &&
+        targetOpportunity?.status === "Interview" &&
+        !state.trackRecordEntries.some((entry) => entry.id === PANEL_PREP_CANDIDATE_ID);
+      const seededCandidate = shouldSeedCandidate ? buildPanelPrepCandidate(dateStamp) : null;
+
       return {
         ...state,
         nextActions: followUpAction ? [...updatedActions, followUpAction] : updatedActions,
@@ -329,6 +365,9 @@ function reducer(state: StoreState, action: Action): StoreState {
           newActivityMoments.length > 0
             ? [...state.activityMoments, ...newActivityMoments]
             : state.activityMoments,
+        trackRecordEntries: seededCandidate
+          ? [...state.trackRecordEntries, seededCandidate]
+          : state.trackRecordEntries,
       };
     }
 
@@ -386,18 +425,26 @@ function reducer(state: StoreState, action: Action): StoreState {
         nextActions: state.nextActions.filter((nextAction) => nextAction.id !== action.id),
       };
 
-    case "SET_TRACK_RECORD_STATUS":
-      if (action.remove) {
-        return {
-          ...state,
-          trackRecordEntries: state.trackRecordEntries.filter((entry) => entry.id !== action.id),
-        };
-      }
+    case "CONFIRM_TRACK_RECORD_CANDIDATE":
       return {
         ...state,
         trackRecordEntries: state.trackRecordEntries.map((entry) =>
-          entry.id === action.id ? { ...entry, status: action.status } : entry
+          entry.id === action.id
+            ? { ...entry, ...action.patch, status: "confirmed" }
+            : entry
         ),
+      };
+
+    case "REMOVE_TRACK_RECORD_ENTRY":
+      return {
+        ...state,
+        trackRecordEntries: state.trackRecordEntries.filter((entry) => entry.id !== action.id),
+      };
+
+    case "ADD_TRACK_RECORD_ENTRY":
+      return {
+        ...state,
+        trackRecordEntries: [action.entry, ...state.trackRecordEntries],
       };
 
     case "SET_NUDGE_STATE":
@@ -616,8 +663,9 @@ interface StoreContextValue {
   markNextActionDone: (id: string) => void;
   acceptAlternative: (id: string, alternativeId: string) => void;
   removeNextAction: (id: string) => void;
-  confirmTrackRecordCandidate: (id: string) => void;
+  confirmTrackRecordCandidate: (id: string, patch: TrackRecordConfirmPatch) => void;
   dismissTrackRecordCandidate: (id: string) => void;
+  addTrackRecordEntry: (entry: TrackRecordEntry) => void;
   dismissNudge: (id: string) => void;
   snoozeNudge: (id: string) => void;
   acceptTailoringSuggestion: (insightId: string, suggestionId: string) => void;
@@ -757,14 +805,30 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     toast("Removed from your plan");
   }, []);
 
-  const confirmTrackRecordCandidate = useCallback((id: string) => {
-    dispatch({ type: "SET_TRACK_RECORD_STATUS", id, status: "confirmed" });
+  const confirmTrackRecordCandidate = useCallback((id: string, patch: TrackRecordConfirmPatch) => {
+    dispatch({ type: "CONFIRM_TRACK_RECORD_CANDIDATE", id, patch });
     toast.success("Added to Track Record");
   }, []);
 
-  const dismissTrackRecordCandidate = useCallback((id: string) => {
-    dispatch({ type: "SET_TRACK_RECORD_STATUS", id, status: "candidate", remove: true });
-    toast("Candidate dismissed");
+  const dismissTrackRecordCandidate = useCallback(
+    (id: string) => {
+      const entry = state.trackRecordEntries.find((candidate) => candidate.id === id);
+      dispatch({ type: "REMOVE_TRACK_RECORD_ENTRY", id });
+      toast("Candidate dismissed", {
+        action: entry
+          ? {
+              label: "Undo",
+              onClick: () => dispatch({ type: "ADD_TRACK_RECORD_ENTRY", entry }),
+            }
+          : undefined,
+      });
+    },
+    [state.trackRecordEntries]
+  );
+
+  const addTrackRecordEntry = useCallback((entry: TrackRecordEntry) => {
+    dispatch({ type: "ADD_TRACK_RECORD_ENTRY", entry });
+    toast.success("Added to Track Record");
   }, []);
 
   const dismissNudge = useCallback((id: string) => {
@@ -950,6 +1014,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       removeNextAction,
       confirmTrackRecordCandidate,
       dismissTrackRecordCandidate,
+      addTrackRecordEntry,
       dismissNudge,
       snoozeNudge,
       acceptTailoringSuggestion,
@@ -994,6 +1059,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       removeNextAction,
       confirmTrackRecordCandidate,
       dismissTrackRecordCandidate,
+      addTrackRecordEntry,
       dismissNudge,
       snoozeNudge,
       acceptTailoringSuggestion,

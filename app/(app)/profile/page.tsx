@@ -17,7 +17,7 @@ export default function ProfilePage() {
   const { state } = useStore();
   const { profile } = state;
 
-  const { percent, prompts } = computeProfileStrength(profile);
+  const { percent, prompts } = computeProfileStrength(profile, state.trackRecordEntries);
 
   // Opportunities whose fit analysis actually cites this profile: any
   // opportunity Copilot judged fit for and found something to say, as

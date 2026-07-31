@@ -1,4 +1,4 @@
-import type { Profile } from "@/lib/types";
+import type { Profile, TrackRecordEntry } from "@/lib/types";
 
 // Shared read-only helper for the Profile page's strength meter. Kept
 // separate from lib/store.tsx so the score always reads live off the
@@ -23,13 +23,25 @@ export interface ProfileStrengthResult {
 }
 
 const HAS_DIGIT = /\d/;
+const RECENT_ENTRY_WINDOW_DAYS = 90;
+
+function isWithinDays(dateIso: string, days: number): boolean {
+  const entryTime = new Date(dateIso).getTime();
+  if (Number.isNaN(entryTime)) return false;
+  const elapsedDays = (Date.now() - entryTime) / (1000 * 60 * 60 * 24);
+  return elapsedDays >= 0 && elapsedDays <= days;
+}
 
 /**
- * Every check the strength meter runs against the current profile. Each
- * check is worth an equal share of the percent, and a failed check becomes
- * a candidate improvement prompt, most specific first.
+ * Every check the strength meter runs against the current profile and, for
+ * the Track Record connection, the store's confirmed entries. Each check is
+ * worth an equal share of the percent, and a failed check becomes a
+ * candidate improvement prompt, most specific first.
  */
-export function computeProfileStrength(profile: Profile): ProfileStrengthResult {
+export function computeProfileStrength(
+  profile: Profile,
+  trackRecordEntries: TrackRecordEntry[] = []
+): ProfileStrengthResult {
   const entryMissingOutcome = profile.experience.find(
     (entry) => !entry.bullets.some((bullet) => HAS_DIGIT.test(bullet))
   );
@@ -104,6 +116,14 @@ export function computeProfileStrength(profile: Profile): ProfileStrengthResult 
       label: "Deal breakers listed",
       passed: profile.preferences.dealBreakers.length > 0,
       prompt: "Add your deal breakers to Preferences and constraints.",
+    },
+    {
+      id: "track-record-recency",
+      label: "Track Record has a recent confirmed entry",
+      passed: trackRecordEntries.some(
+        (entry) => entry.status === "confirmed" && isWithinDays(entry.date, RECENT_ENTRY_WINDOW_DAYS)
+      ),
+      prompt: "Confirm or add a Track Record entry from the last few months.",
     },
   ];
 
