@@ -29,6 +29,8 @@ import {
 } from "@/lib/data/goals";
 import { skills as seedSkills, learningItems as seedLearningItems } from "@/lib/data/skills";
 import { planItems as seedPlanItems, plannerGapAnalyses as seedPlannerGapAnalyses } from "@/lib/data/planner";
+import { roadmapResources as seedRoadmapResources } from "@/lib/data/roadmap";
+import { resourceToLearningItemType, resourceToPlanItemType } from "@/lib/roadmap-utils";
 import { insights as seedInsights } from "@/lib/data/insights";
 import { nextActions as seedNextActions } from "@/lib/data/actions";
 import { nudges as seedNudges } from "@/lib/data/nudges";
@@ -75,6 +77,8 @@ import type {
   RewindCandidateState,
   RewindCarryForward,
   RewindCarryForwardState,
+  RoadmapResource,
+  RoadmapResourceState,
   Skill,
   SourceEvidence,
   TrackRecordEntry,
@@ -117,6 +121,7 @@ export interface StoreState {
   workingPathScenarioId: string;
   planItems: PlanItem[];
   plannerGapAnalyses: PlannerGapAnalysis[];
+  roadmapResources: RoadmapResource[];
   insights: AiInsight[];
   nextActions: NextAction[];
   nudges: Nudge[];
@@ -151,6 +156,7 @@ const initialState: StoreState = {
     seedPathScenarios.find((scenario) => scenario.isClosestToCurrentTrajectory)?.id ?? seedPathScenarios[0].id,
   planItems: seedPlanItems,
   plannerGapAnalyses: seedPlannerGapAnalyses,
+  roadmapResources: seedRoadmapResources,
   insights: seedInsights,
   nextActions: seedNextActions,
   nudges: seedNudges,
@@ -250,6 +256,13 @@ type Action =
   | { type: "SET_LEARNING_ITEM_STATE"; id: string; state: LearningItem["state"] }
   | { type: "SET_WORKING_PATH_SCENARIO"; scenarioId: string }
   | { type: "SET_PLAN_ITEM_STATE"; id: string; state: PlanItemState }
+  | {
+      type: "ADD_ROADMAP_RESOURCE_TO_PLAN";
+      resourceId: string;
+      planItem: PlanItem;
+      learningItem: LearningItem;
+    }
+  | { type: "SET_ROADMAP_RESOURCE_STATE"; id: string; state: RoadmapResourceState }
   | { type: "TOGGLE_SKILL_FOCUS"; id: string }
   | { type: "SET_SKILL_HIGHLIGHT"; id: string }
   | { type: "CLEAR_SKILL_HIGHLIGHT"; id: string }
@@ -920,6 +933,24 @@ function reducer(state: StoreState, action: Action): StoreState {
         ),
       };
 
+    case "ADD_ROADMAP_RESOURCE_TO_PLAN":
+      return {
+        ...state,
+        planItems: [...state.planItems, action.planItem],
+        learningItems: [...state.learningItems, action.learningItem],
+        roadmapResources: state.roadmapResources.map((resource) =>
+          resource.id === action.resourceId ? { ...resource, state: "added" } : resource
+        ),
+      };
+
+    case "SET_ROADMAP_RESOURCE_STATE":
+      return {
+        ...state,
+        roadmapResources: state.roadmapResources.map((resource) =>
+          resource.id === action.id ? { ...resource, state: action.state } : resource
+        ),
+      };
+
     case "TOGGLE_SKILL_FOCUS":
       return {
         ...state,
@@ -1158,6 +1189,8 @@ interface StoreContextValue {
   dismissLearningItem: (id: string) => void;
   acceptPlanItem: (id: string) => void;
   dismissPlanItem: (id: string) => void;
+  addRoadmapResourceToPlan: (resource: RoadmapResource) => void;
+  dismissRoadmapResource: (id: string) => void;
   toggleSkillFocus: (id: string) => void;
   setSkillHighlight: (id: string) => void;
   clearSkillHighlight: (id: string) => void;
@@ -1574,6 +1607,50 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  // Turns a roadmap resource into a real PlanItem (in its milestone's
+  // planStage) and a LearningItem against its linked skill, the same two
+  // objects Path Planner and Skills & Learning already render, so the
+  // resource shows up on both surfaces immediately, not just inside the
+  // roadmap's own collection.
+  const addRoadmapResourceToPlan = useCallback((resource: RoadmapResource) => {
+    const learningItem: LearningItem = {
+      id: makeId("li-roadmap"),
+      title: resource.title,
+      type: resourceToLearningItemType(resource.type),
+      effort: resource.effort,
+      skillId: resource.linkedSkillId,
+      goalId: resource.linkedGoalId,
+      state: "planned",
+      expectedBenefit: resource.whatItUnlocks,
+    };
+    const planItem: PlanItem = {
+      id: makeId("plan-roadmap"),
+      scenarioId: resource.scenarioId,
+      stage: resource.planStage,
+      type: resourceToPlanItemType(resource.type),
+      title: resource.title,
+      detail: resource.whyItMatters,
+      state: "accepted",
+      linkedSkillId: resource.linkedSkillId,
+      linkedGoalId: resource.linkedGoalId,
+      linkedLearningItemId: learningItem.id,
+    };
+    dispatch({ type: "ADD_ROADMAP_RESOURCE_TO_PLAN", resourceId: resource.id, planItem, learningItem });
+    toast.success("Added to your plan", {
+      description: "Now on your growth plan and in Skills & Learning.",
+    });
+  }, []);
+
+  const dismissRoadmapResource = useCallback((id: string) => {
+    dispatch({ type: "SET_ROADMAP_RESOURCE_STATE", id, state: "dismissed" });
+    toast("Not for me", {
+      action: {
+        label: "Undo",
+        onClick: () => dispatch({ type: "SET_ROADMAP_RESOURCE_STATE", id, state: "suggested" }),
+      },
+    });
+  }, []);
+
   const toggleSkillFocus = useCallback((id: string) => {
     dispatch({ type: "TOGGLE_SKILL_FOCUS", id });
   }, []);
@@ -1790,6 +1867,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       dismissLearningItem,
       acceptPlanItem,
       dismissPlanItem,
+      addRoadmapResourceToPlan,
+      dismissRoadmapResource,
       toggleSkillFocus,
       setSkillHighlight,
       clearSkillHighlight,
@@ -1866,6 +1945,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       dismissLearningItem,
       acceptPlanItem,
       dismissPlanItem,
+      addRoadmapResourceToPlan,
+      dismissRoadmapResource,
       toggleSkillFocus,
       setSkillHighlight,
       clearSkillHighlight,

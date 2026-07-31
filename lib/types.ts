@@ -373,6 +373,97 @@ export interface PlannerGapAnalysis {
 }
 
 // ---------------------------------------------------------------------------
+// Roadmap (RDS-983): the working path turned into a guided, staged journey
+// with 3 milestones per scenario. Reads live off Skill, PlanItem, and
+// TrackRecordEntry state so a milestone's progress moves the moment the
+// growth plan or Track Record does, never a separately tracked number.
+// ---------------------------------------------------------------------------
+
+export type MilestoneStatus = "in-progress" | "up-next" | "later";
+
+/**
+ * One skill move a milestone depends on: done once the skill's live level
+ * reaches toLevel. sequence is either "now" or an "after X" line naming the
+ * item it waits on, shown as-is (Sequencing logic must stay visible).
+ */
+export interface MilestoneSkillMove {
+  id: string;
+  skillId: string;
+  fromLevel: number;
+  toLevel: number;
+  sequence: string;
+}
+
+/**
+ * One proof requirement a milestone depends on. Exactly one of
+ * trackRecordEntryId or linkedPlanItemId is present when the proof already
+ * has a home elsewhere in the app (done once that entry is confirmed, or
+ * that plan item is accepted or already done); when neither is present it's
+ * a proposed capture action with no object yet, done only once the user
+ * follows proposedActionHref and adds one.
+ */
+export interface MilestoneProofItem {
+  id: string;
+  label: string;
+  sequence: string;
+  trackRecordEntryId?: string;
+  linkedPlanItemId?: string;
+  proposedActionLabel?: string;
+  proposedActionHref?: string;
+}
+
+/**
+ * One of 3 milestones for a given path scenario, ordered 1 to 3. Status is
+ * never stored, always computed live (see lib/roadmap-utils.ts) from how far
+ * its skill moves and proof items have progressed.
+ */
+export interface RoadmapMilestone {
+  id: string;
+  scenarioId: string;
+  order: number;
+  name: string;
+  /** "What is true when this is done", one sentence. */
+  outcomeStatement: string;
+  unlockLine: string;
+  skillMoves: MilestoneSkillMove[];
+  proofItems: MilestoneProofItem[];
+}
+
+export type RoadmapResourceType = "course" | "project-brief" | "practice-routine" | "community";
+
+export type RoadmapResourceState = "suggested" | "added" | "dismissed";
+
+/**
+ * One recommended resource inside a milestone's drill-in, 2 to 3 per
+ * milestone. Always names the gap it closes, why it's sequenced where it is,
+ * and what accepting it unlocks, so a resource never reads as a bare list
+ * item. "Add to plan" turns it into a real PlanItem (in planStage) and a
+ * LearningItem against linkedSkillId, the same objects Path Planner and
+ * Skills & Learning already render, so the resource shows up on both.
+ */
+export interface RoadmapResource {
+  id: string;
+  milestoneId: string;
+  scenarioId: string;
+  title: string;
+  type: RoadmapResourceType;
+  effort: string;
+  /** Ties to a named gap. */
+  whyItMatters: string;
+  /** Sequencing. */
+  whyNow: string;
+  /** A named milestone or opportunity effect. */
+  whatItUnlocks: string;
+  isCopilotPick?: boolean;
+  /** Present only when isCopilotPick is true. */
+  copilotPickReason?: string;
+  state: RoadmapResourceState;
+  planStage: PlanStage;
+  linkedSkillId: string;
+  linkedGoalId?: string;
+}
+
+// ---------------------------------------------------------------------------
 // Skill / Learning
 // ---------------------------------------------------------------------------
 

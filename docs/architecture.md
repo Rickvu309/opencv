@@ -42,6 +42,7 @@ CAREER MEMORY
   Track Record            /track-record
 DIRECTION
   Path Planner            /planner
+  Roadmap                 /roadmap
   Goals                   /goals
   Skills & Learning       /skills
 (bottom)
@@ -67,7 +68,7 @@ Four layout components under `components/shell/` codify one frame rule set (cont
 | `DashboardPage` | max-w-6xl | Single column, no rail | /home |
 | `WorkspacePage` | max-w-[1600px] | Object listing, optional `band` and `rail` slots | /opportunities, /sources, /cvs, /track-record |
 | `DetailPage` | max-w-5xl | Primary column plus an optional quiet support rail (standardized to w-72, e.g. `CvMetaRail`, `CoverageRail`, Profile's three support cards) | /opportunities/[id], /cvs/[id], /profile |
-| `PlannerPage` | max-w-6xl | Single column, optional full-bleed `band` | /planner, /goals, /skills, /rewind |
+| `PlannerPage` | max-w-6xl | Single column, optional full-bleed `band` | /planner, /roadmap, /goals, /skills, /rewind |
 
 `band` is full-bleed content directly under the header (edge to edge, no padding), for a top-of-page summary like `ProfileIdentityBand` or `DirectionBand`. It differs from a page's own inline summary band (`OpportunitySummaryBand`), which stays inside the padded content column since it was designed as a chip row, not a bleed panel.
 - /onboarding: full-screen flow shown on first run (store flag `onboarded`), skippable, ends at /home
@@ -196,3 +197,4 @@ Trust boundary, absolute rule: the AI drafts and suggests, the user accepts, edi
 - RDS-977 sources workflow: section 3 nav (/sources), section 7's tools hub and synced-context inbox
 - RDS-982 path planner: section 3 nav (/planner, PlannerPage template), the strategic path-recommendation and staged-growth-plan workflow, ending at a chosen working path and a concrete plan rather than an insights page
 - RDS-980 Rewind: section 3 nav (/rewind, PlannerPage template), flow 9's connected weekly review promoted from a dialog to a full surface, and the TrackRecordEntry achievement depth (impactSignals, sourceRefs, pathRelevance, highlight) it writes into section 5's object model
+- RDS-983 roadmap: section 3 nav (/roadmap, PlannerPage template), flow 8 deepened: the Path Planner's chosen working path turned into a guided, staged journey (RoadmapMilestone, RoadmapResource, `lib/data/roadmap.ts`, `lib/roadmap-utils.ts`) rather than a flat content list, reading live off Skill, PlanItem, and TrackRecordEntry state so completing a plan item or confirming a Rewind achievement advances milestone progress without a separately tracked number

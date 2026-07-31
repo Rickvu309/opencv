@@ -10,6 +10,7 @@ import {
   History,
   Home,
   Inbox,
+  Milestone,
   Rewind,
   RotateCcw,
   Route,
@@ -65,6 +66,7 @@ const careerMemoryNav: NavItem[] = [
 
 const directionNav: NavItem[] = [
   { label: "Path Planner", href: "/planner", icon: Route },
+  { label: "Roadmap", href: "/roadmap", icon: Milestone },
   { label: "Goals", href: "/goals", icon: Target },
   { label: "Skills & Learning", href: "/skills", icon: GraduationCap },
 ];
