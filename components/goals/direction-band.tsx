@@ -82,7 +82,7 @@ export function DirectionBand({ profile, alignment }: DirectionBandProps) {
         ) : (
           <div className="flex items-start justify-between gap-4">
             <div className="flex min-w-0 flex-col gap-1">
-              <p className="break-words text-base font-medium text-foreground">{profile.targetDirection}</p>
+              <p className="text-display break-words">{profile.targetDirection}</p>
               <p className="text-xs text-muted-foreground">Time horizon: {profile.targetDirectionHorizon}</p>
             </div>
             <Button size="sm" variant="outline" className="shrink-0" onClick={startEditing}>
