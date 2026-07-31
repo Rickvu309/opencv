@@ -22,7 +22,11 @@ import {
   PANEL_PREP_CANDIDATE_ID,
   trackRecordEntries as seedTrackRecordEntries,
 } from "@/lib/data/track-record";
-import { goals as seedGoals } from "@/lib/data/goals";
+import {
+  goals as seedGoals,
+  pathScenarios as seedPathScenarios,
+  directionGapAnalysis as seedDirectionGapAnalysis,
+} from "@/lib/data/goals";
 import { skills as seedSkills, learningItems as seedLearningItems } from "@/lib/data/skills";
 import { insights as seedInsights } from "@/lib/data/insights";
 import { nextActions as seedNextActions } from "@/lib/data/actions";
@@ -33,14 +37,18 @@ import type {
   AiInsight,
   CopilotMessage,
   CvVersion,
+  DirectionGapAnalysis,
   ExperienceEntry,
   Goal,
+  GoalProgressNote,
+  GoalStatus,
   LearningItem,
   NextAction,
   NextActionState,
   Nudge,
   Opportunity,
   OpportunityStatus,
+  PathScenario,
   Priority,
   Profile,
   ProfilePreferences,
@@ -79,6 +87,8 @@ export interface StoreState {
   cvVersions: CvVersion[];
   trackRecordEntries: TrackRecordEntry[];
   goals: Goal[];
+  pathScenarios: PathScenario[];
+  directionGapAnalysis: DirectionGapAnalysis;
   skills: Skill[];
   learningItems: LearningItem[];
   insights: AiInsight[];
@@ -88,6 +98,7 @@ export interface StoreState {
   onboarded: boolean;
   copilot: CopilotState;
   highlightedOpportunityId?: string;
+  highlightedGoalId?: string;
   opportunitiesView: OpportunitiesView;
 }
 
@@ -98,6 +109,8 @@ const initialState: StoreState = {
   cvVersions: seedCvVersions,
   trackRecordEntries: seedTrackRecordEntries,
   goals: seedGoals,
+  pathScenarios: seedPathScenarios,
+  directionGapAnalysis: seedDirectionGapAnalysis,
   skills: seedSkills,
   learningItems: seedLearningItems,
   insights: seedInsights,
@@ -112,6 +125,7 @@ const initialState: StoreState = {
     messagesBySurface: {},
   },
   highlightedOpportunityId: undefined,
+  highlightedGoalId: undefined,
   opportunitiesView: "board",
 };
 
@@ -132,6 +146,20 @@ type Action =
       activityMoments?: ActivityMoment[];
     }
   | { type: "CLEAR_OPPORTUNITY_HIGHLIGHT"; id: string }
+  | { type: "ADD_GOAL"; goal: Goal }
+  | {
+      type: "EDIT_GOAL";
+      id: string;
+      patch: Partial<Pick<Goal, "title" | "why" | "targetDate" | "horizon">>;
+    }
+  | { type: "SET_GOAL_STATUS"; id: string; status: GoalStatus }
+  | { type: "ADD_GOAL_PROGRESS_NOTE"; id: string; note: GoalProgressNote }
+  | { type: "SET_GOAL_HIGHLIGHT"; id: string }
+  | { type: "CLEAR_GOAL_HIGHLIGHT"; id: string }
+  | {
+      type: "UPDATE_TARGET_DIRECTION";
+      patch: Partial<Pick<Profile, "targetDirection" | "targetDirectionLabel" | "targetDirectionHorizon">>;
+    }
   | { type: "SET_NEXT_ACTION_STATE"; id: string; state: NextActionState }
   | {
       type: "EDIT_NEXT_ACTION";
@@ -288,6 +316,46 @@ function reducer(state: StoreState, action: Action): StoreState {
       return state.highlightedOpportunityId === action.id
         ? { ...state, highlightedOpportunityId: undefined }
         : state;
+
+    case "ADD_GOAL":
+      return { ...state, goals: [action.goal, ...state.goals] };
+
+    case "EDIT_GOAL":
+      return {
+        ...state,
+        goals: state.goals.map((goal) =>
+          goal.id === action.id ? { ...goal, ...action.patch } : goal
+        ),
+      };
+
+    case "SET_GOAL_STATUS":
+      return {
+        ...state,
+        goals: state.goals.map((goal) =>
+          goal.id === action.id ? { ...goal, status: action.status } : goal
+        ),
+      };
+
+    case "ADD_GOAL_PROGRESS_NOTE":
+      return {
+        ...state,
+        goals: state.goals.map((goal) =>
+          goal.id === action.id
+            ? { ...goal, progressNotes: [...goal.progressNotes, action.note] }
+            : goal
+        ),
+      };
+
+    case "SET_GOAL_HIGHLIGHT":
+      return { ...state, highlightedGoalId: action.id };
+
+    case "CLEAR_GOAL_HIGHLIGHT":
+      return state.highlightedGoalId === action.id
+        ? { ...state, highlightedGoalId: undefined }
+        : state;
+
+    case "UPDATE_TARGET_DIRECTION":
+      return { ...state, profile: { ...state.profile, ...action.patch } };
 
     case "SET_NEXT_ACTION_STATE": {
       const target = state.nextActions.find((nextAction) => nextAction.id === action.id);
@@ -653,6 +721,20 @@ interface StoreContextValue {
     activityMoments?: ActivityMoment[]
   ) => void;
   clearOpportunityHighlight: (id: string) => void;
+  addGoal: (goal: Goal) => void;
+  editGoal: (
+    id: string,
+    patch: Partial<Pick<Goal, "title" | "why" | "targetDate" | "horizon">>
+  ) => void;
+  parkGoal: (id: string) => void;
+  setGoalStatus: (id: string, status: GoalStatus) => void;
+  addGoalProgressNote: (id: string, note: string) => void;
+  setGoalHighlight: (id: string) => void;
+  clearGoalHighlight: (id: string) => void;
+  updateTargetDirection: (
+    patch: Partial<Pick<Profile, "targetDirection" | "targetDirectionLabel" | "targetDirectionHorizon">>
+  ) => void;
+  setScenarioAsTargetDirection: (scenario: PathScenario) => void;
   acceptNextAction: (id: string) => void;
   editNextAction: (
     id: string,
@@ -761,6 +843,66 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const clearOpportunityHighlight = useCallback((id: string) => {
     dispatch({ type: "CLEAR_OPPORTUNITY_HIGHLIGHT", id });
+  }, []);
+
+  const addGoal = useCallback((goal: Goal) => {
+    dispatch({ type: "ADD_GOAL", goal });
+    toast.success("Goal added");
+  }, []);
+
+  const editGoal = useCallback(
+    (id: string, patch: Partial<Pick<Goal, "title" | "why" | "targetDate" | "horizon">>) => {
+      dispatch({ type: "EDIT_GOAL", id, patch });
+      toast.success("Goal updated");
+    },
+    []
+  );
+
+  const setGoalStatus = useCallback((id: string, status: GoalStatus) => {
+    dispatch({ type: "SET_GOAL_STATUS", id, status });
+    toast.success(`Goal status set to ${status}`);
+  }, []);
+
+  const parkGoal = useCallback((id: string) => {
+    dispatch({ type: "SET_GOAL_STATUS", id, status: "parked" });
+    toast("Goal parked");
+  }, []);
+
+  const addGoalProgressNote = useCallback((id: string, note: string) => {
+    const trimmed = note.trim();
+    if (!trimmed) return;
+    dispatch({
+      type: "ADD_GOAL_PROGRESS_NOTE",
+      id,
+      note: { id: makeId("goal-note"), note: trimmed, createdAt: today() },
+    });
+    toast.success("Progress note added");
+  }, []);
+
+  const setGoalHighlight = useCallback((id: string) => {
+    dispatch({ type: "SET_GOAL_HIGHLIGHT", id });
+  }, []);
+
+  const clearGoalHighlight = useCallback((id: string) => {
+    dispatch({ type: "CLEAR_GOAL_HIGHLIGHT", id });
+  }, []);
+
+  const updateTargetDirection = useCallback(
+    (patch: Partial<Pick<Profile, "targetDirection" | "targetDirectionLabel" | "targetDirectionHorizon">>) => {
+      dispatch({ type: "UPDATE_TARGET_DIRECTION", patch });
+      toast.success("Target direction updated");
+    },
+    []
+  );
+
+  const setScenarioAsTargetDirection = useCallback((scenario: PathScenario) => {
+    dispatch({
+      type: "UPDATE_TARGET_DIRECTION",
+      patch: { targetDirection: scenario.description, targetDirectionLabel: scenario.title },
+    });
+    toast.success("Target direction updated", {
+      description: `Now steering toward ${scenario.title}.`,
+    });
   }, []);
 
   const acceptNextAction = useCallback((id: string) => {
@@ -1005,6 +1147,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setOpportunitiesView,
       addOpportunity,
       clearOpportunityHighlight,
+      addGoal,
+      editGoal,
+      parkGoal,
+      setGoalStatus,
+      addGoalProgressNote,
+      setGoalHighlight,
+      clearGoalHighlight,
+      updateTargetDirection,
+      setScenarioAsTargetDirection,
       acceptNextAction,
       editNextAction,
       dismissNextAction,
@@ -1050,6 +1201,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setOpportunitiesView,
       addOpportunity,
       clearOpportunityHighlight,
+      addGoal,
+      editGoal,
+      parkGoal,
+      setGoalStatus,
+      addGoalProgressNote,
+      setGoalHighlight,
+      clearGoalHighlight,
+      updateTargetDirection,
+      setScenarioAsTargetDirection,
       acceptNextAction,
       editNextAction,
       dismissNextAction,

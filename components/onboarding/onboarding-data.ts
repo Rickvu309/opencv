@@ -111,7 +111,10 @@ export function createCustomGoal(title: string, targetDirectionLabel: string): G
       ? `Added during setup, in support of the move toward ${targetDirectionLabel}.`
       : "Added during setup.",
     targetDate: addMonths(today, 6),
-    progressNote: "Just added, no progress yet.",
-    status: "not started",
+    horizon: "near term",
+    status: "needs attention",
+    progressNotes: [
+      { id: `${makeGoalId()}-note-1`, note: "Just added, no progress yet.", createdAt: today },
+    ],
   };
 }

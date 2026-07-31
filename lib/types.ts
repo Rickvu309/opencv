@@ -130,6 +130,7 @@ export interface Profile {
   preferences: ProfilePreferences;
   targetDirection: string;
   targetDirectionLabel: string;
+  targetDirectionHorizon: string;
   nearTermPriority: string;
 }
 
@@ -196,17 +197,84 @@ export interface TrackRecordEntry {
 // Goal
 // ---------------------------------------------------------------------------
 
-export type GoalStatus = "not started" | "in progress" | "on track" | "at risk";
+export type GoalStatus = "on track" | "needs attention" | "parked";
+
+export type GoalHorizon = "near term" | "long term";
+
+/** One append-only progress note on a goal, oldest first in the array. */
+export interface GoalProgressNote {
+  id: string;
+  note: string;
+  createdAt: string;
+}
 
 export interface Goal {
   id: string;
   title: string;
   why: string;
   targetDate: string;
-  progressNote: string;
+  horizon: GoalHorizon;
   status: GoalStatus;
+  progressNotes: GoalProgressNote[];
   opportunityIds?: string[];
   learningItemIds?: string[];
+}
+
+// ---------------------------------------------------------------------------
+// Path scenario ("Where this can go", Goals Zone 2)
+// ---------------------------------------------------------------------------
+
+/**
+ * One framing aid on the Goals page showing a plausible path forward. Never
+ * a commitment: the user can mark one as the target direction, which updates
+ * the direction band, but nothing here applies itself.
+ */
+export interface PathScenario {
+  id: string;
+  title: string;
+  description: string;
+  optimizesFor: string;
+  tradeoff: string;
+  fitWithStrengths: FitLevel;
+  nextSixMonths: string[];
+  isClosestToCurrentTrajectory?: boolean;
+  /** One-line reason, present only when isClosestToCurrentTrajectory is true. */
+  closestReason?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Direction gap analysis (Goals Zone 3)
+// ---------------------------------------------------------------------------
+
+/** One strength already backed by track record evidence, in the Already aligned group. */
+export interface DirectionAlignedItem {
+  id: string;
+  label: string;
+  evidenceNote: string;
+  trackRecordEntryId?: string;
+}
+
+/** One skill or experience gap, each linking to a skill and, where one exists, a learning item. */
+export interface DirectionMissingItem {
+  id: string;
+  label: string;
+  note: string;
+  skillId?: string;
+  learningItemId?: string;
+}
+
+/** One honest unknown: not yet resolved as aligned or missing. */
+export interface DirectionUncertainItem {
+  id: string;
+  label: string;
+  note: string;
+}
+
+export interface DirectionGapAnalysis {
+  aligned: DirectionAlignedItem[];
+  missing: DirectionMissingItem[];
+  uncertain: DirectionUncertainItem[];
+  pathIntoLearningNote: string;
 }
 
 // ---------------------------------------------------------------------------

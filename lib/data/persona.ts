@@ -92,5 +92,6 @@ export const persona: Profile = {
   targetDirection:
     "Move from senior individual-contributor product design into AI product design and product leadership, ideally at a company building AI-native tools.",
   targetDirectionLabel: "AI product design and leadership",
+  targetDirectionHorizon: "Next 12 to 18 months",
   nearTermPriority: "Be selective, only pursue strong-fit roles",
 };

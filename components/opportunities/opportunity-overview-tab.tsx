@@ -24,7 +24,7 @@ export function OpportunityOverviewTab({
   cvVersion,
   relatedGoals,
 }: OpportunityOverviewTabProps) {
-  const { setOpportunityNotes } = useStore();
+  const { setOpportunityNotes, setGoalHighlight } = useStore();
   const [notesDraft, setNotesDraft] = useState(opportunity.notes ?? "");
   const [sourceExpanded, setSourceExpanded] = useState(false);
 
@@ -152,6 +152,7 @@ export function OpportunityOverviewTab({
                   <Link
                     key={goal.id}
                     href="/goals"
+                    onClick={() => setGoalHighlight(goal.id)}
                     className="text-sm text-foreground underline-offset-2 hover:underline"
                   >
                     {goal.title}

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Check, X } from "lucide-react";
 
 import { PageHeader } from "@/components/shell/page-header";
@@ -12,7 +13,7 @@ import { useCopilotSurface, useStore } from "@/lib/store";
 
 export default function SkillsPage() {
   useCopilotSurface("Skills & Learning");
-  const { state, acceptLearningItem, dismissLearningItem } = useStore();
+  const { state, acceptLearningItem, dismissLearningItem, setGoalHighlight } = useStore();
 
   const categories = Array.from(new Set(state.skills.map((skill) => skill.category)));
 
@@ -77,7 +78,13 @@ export default function SkillsPage() {
                           {item.type}
                         </Badge>
                         {skill ? <Badge variant="outline">{skill.name}</Badge> : null}
-                        {goal ? <Badge variant="outline">{goal.title}</Badge> : null}
+                        {goal ? (
+                          <Badge variant="outline" asChild>
+                            <Link href="/goals" onClick={() => setGoalHighlight(goal.id)}>
+                              {goal.title}
+                            </Link>
+                          </Badge>
+                        ) : null}
                       </div>
                       <p className="text-sm font-medium text-foreground">{item.title}</p>
                       <p className="text-xs text-muted-foreground">{item.effort}</p>

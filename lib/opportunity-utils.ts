@@ -103,6 +103,23 @@ export function matchesFilter(
   }
 }
 
+export interface DirectionAlignment {
+  active: number;
+  aligned: number;
+}
+
+/**
+ * How many active (non-Closed) opportunities are linked to at least one
+ * goal, read straight off seed alignment data (Opportunity.goalIds) so the
+ * Goals direction band's alignment line never drifts from what's actually
+ * linked on the Opportunities side.
+ */
+export function computeDirectionAlignment(opportunities: Opportunity[]): DirectionAlignment {
+  const active = opportunities.filter((opportunity) => opportunity.status !== "Closed");
+  const aligned = active.filter((opportunity) => (opportunity.goalIds?.length ?? 0) > 0);
+  return { active: active.length, aligned: aligned.length };
+}
+
 export interface FocusItem {
   opportunityId: string;
   reason: string;
