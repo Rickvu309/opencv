@@ -12,7 +12,7 @@ export function DesktopGuard({ children }: { children: ReactNode }) {
       <div className="hidden min-h-0 flex-1 lg:flex">{children}</div>
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-8 text-center lg:hidden">
         <Monitor className="size-10 text-muted-foreground" />
-        <h1 className="text-xl font-semibold">OpenPath is a desktop product</h1>
+        <h1>OpenPath is a desktop product</h1>
         <p className="max-w-sm text-sm text-muted-foreground">
           The workspace, the Copilot panel, and the navigation all need room to work together. Open OpenPath on a
           laptop or desktop browser at least 1024 pixels wide.
