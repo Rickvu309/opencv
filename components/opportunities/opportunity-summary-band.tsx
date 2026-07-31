@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { Check, ChevronLeft, Star } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ConfidenceChip } from "@/components/shared/confidence-chip";
+import { CredibilityChip } from "@/components/shared/credibility-chip";
 import { FitChip } from "@/components/shared/fit-chip";
 import { PriorityChip } from "@/components/shared/priority-chip";
 import { StatusChip } from "@/components/shared/status-chip";
@@ -52,9 +52,9 @@ export function OpportunitySummaryBand({ opportunity, primaryNextAction }: Oppor
         Opportunities
       </Link>
 
-      <div className="flex flex-col gap-1">
-        <h1>{opportunity.role}</h1>
-        <p className="text-sm text-muted-foreground">
+      <div className="flex min-w-0 flex-col gap-1">
+        <h1 className="break-words">{opportunity.role}</h1>
+        <p className="break-words text-sm text-muted-foreground">
           {opportunity.company} · {opportunity.location} · {opportunity.salaryRange} · Source: {opportunity.source}
         </p>
       </div>
@@ -103,7 +103,9 @@ export function OpportunitySummaryBand({ opportunity, primaryNextAction }: Oppor
           {opportunity.isDream ? "Dream" : "Flag as Dream"}
         </Button>
 
-        {opportunity.hasCredibilityFlag ? <Badge variant="destructive">Credibility flag</Badge> : null}
+        {opportunity.hasCredibilityFlag ? (
+          <CredibilityChip verdict="fail" label="Credibility flag" />
+        ) : null}
 
         <span className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3 py-1 text-xs">
           <span className="font-medium text-foreground">

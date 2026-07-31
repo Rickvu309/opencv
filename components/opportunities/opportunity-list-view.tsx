@@ -99,7 +99,7 @@ export function OpportunityListView({
                 <TableCell>
                   <PriorityChip priority={opportunity.priority} />
                 </TableCell>
-                <TableCell className="max-w-56 truncate whitespace-normal text-muted-foreground">
+                <TableCell className="max-w-56 truncate text-muted-foreground">
                   {nextAction ? nextAction.verb : "No next action suggested yet."}
                 </TableCell>
                 <TableCell className="text-muted-foreground">{opportunity.lastActivityAt}</TableCell>

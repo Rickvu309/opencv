@@ -202,7 +202,7 @@ export function TailoringDialog({ trigger, fixedCv, fixedOpportunity, defaultCvI
 
         {phase === "review" ? (
           <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2">
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/30 p-3">
               <div className="flex items-center gap-2">
                 <CopilotTag />
                 <span className="text-sm text-foreground">

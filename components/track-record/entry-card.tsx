@@ -6,6 +6,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { LinkChip } from "@/components/shared/link-chip";
 import type { CvVersion, Opportunity, Skill, TrackRecordEntry, TrackRecordUsedInRef } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -68,8 +69,8 @@ export function TrackRecordEntryCard({
           aria-expanded={expanded}
           className="flex w-full items-start justify-between gap-3 text-left"
         >
-          <div className="flex flex-col gap-1">
-            <p className="text-sm font-medium text-foreground">{entry.title}</p>
+          <div className="flex min-w-0 flex-col gap-1">
+            <p className="truncate text-sm font-medium text-foreground">{entry.title}</p>
             <p className="text-xs text-muted-foreground">{entry.impact}</p>
           </div>
           {expanded ? (
@@ -82,11 +83,9 @@ export function TrackRecordEntryCard({
           <Badge variant="secondary">{entry.evidenceTag}</Badge>
           <span className="text-xs text-muted-foreground">{entry.date}</span>
           {linkedSkills.map((skill) => (
-            <Link key={skill.id} href="/skills">
-              <Badge variant="outline" className="hover:bg-muted">
-                {skill.name}
-              </Badge>
-            </Link>
+            <LinkChip key={skill.id} href="/skills">
+              {skill.name}
+            </LinkChip>
           ))}
         </div>
       </CardHeader>

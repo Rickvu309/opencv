@@ -35,7 +35,7 @@ export function PathScenarioCard({ scenario }: PathScenarioCardProps) {
         </div>
 
         {scenario.isClosestToCurrentTrajectory ? (
-          <div className="flex flex-col gap-1 rounded-lg border border-primary/30 bg-accent/40 p-2.5">
+          <div className="flex flex-col gap-1 rounded-lg border border-primary/30 bg-accent/40 p-3">
             <Badge className="w-fit">Closest to your current trajectory</Badge>
             <p className="text-xs text-muted-foreground">{scenario.closestReason}</p>
           </div>
@@ -57,7 +57,7 @@ export function PathScenarioCard({ scenario }: PathScenarioCardProps) {
             type="button"
             onClick={() => setExpanded((current) => !current)}
             aria-expanded={expanded}
-            className="flex w-full items-center justify-between gap-2 rounded-lg border border-dashed border-border bg-muted/20 px-3 py-2 text-left text-xs font-medium text-muted-foreground"
+            className="flex w-full items-center justify-between gap-2 rounded-lg border border-dashed border-border bg-muted/20 px-3 py-2 text-left text-xs font-medium text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
           >
             What the next 6 months look like
             {expanded ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}

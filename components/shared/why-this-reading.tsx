@@ -20,7 +20,7 @@ export function WhyThisReading({ text }: WhyThisReadingProps) {
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
-        className="flex w-fit items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+        className="flex w-fit items-center gap-1 rounded text-xs font-medium text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
         aria-expanded={open}
       >
         Why this reading

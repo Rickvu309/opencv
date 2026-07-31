@@ -344,7 +344,7 @@ export function AddOpportunityDialog({ children }: { children: React.ReactNode }
         confidence: sample.confidence,
       });
       setPastePhase("preview");
-    }, 900);
+    }, 600 + Math.random() * 600);
   }
 
   function handleStartOver() {

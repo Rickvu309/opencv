@@ -4,7 +4,7 @@ import Link from "next/link";
 
 import { AskCopilotButton } from "@/components/shared/ask-copilot-button";
 import { CopilotTag } from "@/components/shared/copilot-tag";
-import { Badge } from "@/components/ui/badge";
+import { LinkChip } from "@/components/shared/link-chip";
 import { Card, CardContent } from "@/components/ui/card";
 import { useStore } from "@/lib/store";
 import type { DirectionGapAnalysis, LearningItem, Skill } from "@/lib/types";
@@ -40,18 +40,18 @@ export function GapAnalysisSection({ gapAnalysis, skills, learningItems }: GapAn
           <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300">Already aligned</span>
           <div className="flex flex-col gap-2">
             {gapAnalysis.aligned.map((item) => (
-              <div key={item.id} className="rounded-lg border border-border bg-muted/30 p-2.5">
+              <div key={item.id} className="rounded-lg border border-border bg-muted/30 p-3">
                 <p className="text-sm font-medium text-foreground">{item.label}</p>
                 <p className="text-sm text-muted-foreground">{item.evidenceNote}</p>
                 {item.trackRecordEntryId ? (
-                  <Badge variant="outline" className="mt-1.5" asChild>
-                    <Link
+                  <div className="mt-1.5">
+                    <LinkChip
                       href="/track-record"
                       onClick={() => setTrackRecordHighlight(item.trackRecordEntryId!)}
                     >
                       See evidence in Track Record
-                    </Link>
-                  </Badge>
+                    </LinkChip>
+                  </div>
                 ) : null}
               </div>
             ))}
@@ -67,25 +67,21 @@ export function GapAnalysisSection({ gapAnalysis, skills, learningItems }: GapAn
                 ? learningItems.find((candidate) => candidate.id === item.learningItemId)
                 : undefined;
               return (
-                <div key={item.id} className="rounded-lg border border-border bg-muted/30 p-2.5">
+                <div key={item.id} className="rounded-lg border border-border bg-muted/30 p-3">
                   <p className="text-sm font-medium text-foreground">{item.label}</p>
                   <p className="text-sm text-muted-foreground">{item.note}</p>
                   <div className="mt-1.5 flex flex-wrap gap-1.5">
                     {learningItem ? (
-                      <Badge variant="outline" asChild>
-                        <Link
-                          href="/skills"
-                          onClick={() => item.skillId && setSkillHighlight(item.skillId)}
-                        >
-                          {learningItem.title}
-                        </Link>
-                      </Badge>
+                      <LinkChip
+                        href="/skills"
+                        onClick={() => item.skillId && setSkillHighlight(item.skillId)}
+                      >
+                        {learningItem.title}
+                      </LinkChip>
                     ) : skill ? (
-                      <Badge variant="outline" asChild>
-                        <Link href="/skills" onClick={() => setSkillHighlight(skill.id)}>
-                          {skill.name} on Skills &amp; Learning
-                        </Link>
-                      </Badge>
+                      <LinkChip href="/skills" onClick={() => setSkillHighlight(skill.id)}>
+                        {skill.name} on Skills &amp; Learning
+                      </LinkChip>
                     ) : null}
                   </div>
                 </div>
@@ -98,7 +94,7 @@ export function GapAnalysisSection({ gapAnalysis, skills, learningItems }: GapAn
           <span className="text-xs font-medium text-muted-foreground">Uncertain</span>
           <div className="flex flex-col gap-2">
             {gapAnalysis.uncertain.map((item) => (
-              <div key={item.id} className="rounded-lg border border-dashed border-border bg-muted/20 p-2.5">
+              <div key={item.id} className="rounded-lg border border-dashed border-border bg-muted/20 p-3">
                 <p className="text-sm font-medium text-foreground">{item.label}</p>
                 <p className="text-sm text-muted-foreground">{item.note}</p>
               </div>

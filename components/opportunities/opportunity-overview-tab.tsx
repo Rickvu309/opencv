@@ -89,11 +89,11 @@ export function OpportunityOverviewTab({
           </CardContent>
         </Card>
 
-        <div className="rounded-lg border border-dashed border-border bg-muted/20">
+        <div className="overflow-hidden rounded-lg border border-dashed border-border bg-muted/20">
           <button
             type="button"
             onClick={() => setSourceExpanded((current) => !current)}
-            className="flex w-full items-center justify-between px-4 py-3 text-left text-xs font-medium text-muted-foreground"
+            className="flex w-full items-center justify-between px-4 py-3 text-left text-xs font-medium text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
             aria-expanded={sourceExpanded}
           >
             Source content, raw
@@ -101,7 +101,7 @@ export function OpportunityOverviewTab({
           </button>
           {sourceExpanded ? (
             <div className="border-t border-dashed border-border px-4 py-3">
-              <p className="text-sm text-muted-foreground">{opportunity.description}</p>
+              <p className="break-words text-sm text-muted-foreground">{opportunity.description}</p>
             </div>
           ) : null}
         </div>

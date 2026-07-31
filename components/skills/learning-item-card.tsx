@@ -1,11 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { Check, X } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { LinkChip } from "@/components/shared/link-chip";
 import { useStore } from "@/lib/store";
 import type { Goal, LearningItem } from "@/lib/types";
 
@@ -36,17 +36,11 @@ export function LearningItemCard({ item, goal }: LearningItemCardProps) {
             <Badge variant="secondary" className="capitalize">
               {item.type}
             </Badge>
-            {item.startHereReason ? (
-              <Badge className="bg-indigo-100 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">
-                Start here
-              </Badge>
-            ) : null}
+            {item.startHereReason ? <Badge variant="secondary">Start here</Badge> : null}
             {goal ? (
-              <Badge variant="outline" asChild>
-                <Link href="/goals" onClick={() => setGoalHighlight(goal.id)}>
-                  {goal.title}
-                </Link>
-              </Badge>
+              <LinkChip href="/goals" onClick={() => setGoalHighlight(goal.id)}>
+                {goal.title}
+              </LinkChip>
             ) : null}
           </div>
           <p className="text-sm font-medium text-foreground">{item.title}</p>

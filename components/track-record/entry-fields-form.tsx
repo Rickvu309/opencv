@@ -1,14 +1,11 @@
 "use client";
 
-import { Check } from "lucide-react";
-
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { SelectableChip } from "@/components/onboarding/selectable-chip";
 import { EVIDENCE_TAGS } from "@/lib/data/track-record";
-import { cn } from "@/lib/utils";
 import type { Skill } from "@/lib/types";
 
 export interface EntryDraft {
@@ -102,26 +99,14 @@ export function EntryFieldsForm({ draft, skills, onChange }: EntryFieldsFormProp
       <div className="flex flex-col gap-1.5">
         <Label>Skills</Label>
         <div className="flex flex-wrap gap-1.5">
-          {skills.map((skill) => {
-            const selected = draft.skillIds.includes(skill.id);
-            return (
-              <button
-                key={skill.id}
-                type="button"
-                onClick={() => toggleSkill(skill.id)}
-                aria-pressed={selected}
-                className="focus-visible:outline-none"
-              >
-                <Badge
-                  variant={selected ? "default" : "outline"}
-                  className={cn("cursor-pointer gap-1 px-2.5 py-1 text-xs", !selected && "hover:bg-muted")}
-                >
-                  {selected ? <Check className="size-3" /> : null}
-                  {skill.name}
-                </Badge>
-              </button>
-            );
-          })}
+          {skills.map((skill) => (
+            <SelectableChip
+              key={skill.id}
+              label={skill.name}
+              selected={draft.skillIds.includes(skill.id)}
+              onClick={() => toggleSkill(skill.id)}
+            />
+          ))}
         </div>
       </div>
     </div>

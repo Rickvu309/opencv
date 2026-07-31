@@ -33,7 +33,7 @@ export function ProfileIdentityBand({ profile, strengthPercent }: ProfileIdentit
             <Chip
               label={profile.targetDirectionLabel}
               icon={<Target className="size-3" />}
-              className="bg-indigo-100 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300"
+              className="bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300"
             />
           </div>
         </div>

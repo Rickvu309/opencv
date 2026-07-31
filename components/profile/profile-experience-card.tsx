@@ -126,9 +126,9 @@ export function ProfileExperienceCard() {
               />
             ) : (
               <div className="flex items-start justify-between gap-2">
-                <div className="flex flex-col gap-1">
+                <div className="flex min-w-0 flex-col gap-1">
                   <div className="flex items-baseline gap-2">
-                    <p className="text-sm font-medium text-foreground">
+                    <p className="min-w-0 truncate text-sm font-medium text-foreground">
                       {entry.title} · {entry.company}
                     </p>
                     <span className="shrink-0 text-xs text-muted-foreground">

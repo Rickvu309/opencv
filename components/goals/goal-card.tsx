@@ -1,16 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { ChevronDown, ChevronUp, Pencil } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { GoalFormDialog } from "@/components/goals/goal-form-dialog";
 import { GoalStatusChip } from "@/components/goals/goal-status-chip";
+import { LinkChip } from "@/components/shared/link-chip";
 import { useStore } from "@/lib/store";
 import type { Goal, LearningItem, Opportunity } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -71,10 +70,10 @@ export function GoalCard({ goal, opportunities, learningItems, highlighted }: Go
           type="button"
           onClick={() => setManuallyExpanded(!expanded)}
           aria-expanded={expanded}
-          className="flex w-full items-start justify-between gap-3 text-left"
+          className="flex w-full items-start justify-between gap-3 rounded text-left outline-none hover:text-foreground/80 focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <div className="flex flex-col gap-0.5">
-            <h3>{goal.title}</h3>
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <h3 className="truncate">{goal.title}</h3>
             <p className="line-clamp-1 text-xs text-muted-foreground">{goal.why}</p>
           </div>
           {expanded ? (
@@ -107,7 +106,7 @@ export function GoalCard({ goal, opportunities, learningItems, highlighted }: Go
               <span className="text-xs font-medium text-muted-foreground">Progress notes</span>
               <div className="flex flex-col gap-1.5">
                 {goal.progressNotes.map((note) => (
-                  <div key={note.id} className="rounded-lg border border-border bg-muted/30 p-2.5">
+                  <div key={note.id} className="rounded-lg border border-border bg-muted/30 p-3">
                     <p className="text-sm text-foreground">{note.note}</p>
                     <p className="mt-1 text-xs text-muted-foreground">{note.createdAt}</p>
                   </div>
@@ -137,9 +136,9 @@ export function GoalCard({ goal, opportunities, learningItems, highlighted }: Go
                 <span className="text-xs font-medium text-muted-foreground">Linked opportunities</span>
                 <div className="flex flex-wrap gap-1.5">
                   {linkedOpportunities.map((opportunity) => (
-                    <Badge key={opportunity.id} variant="outline" asChild>
-                      <Link href={`/opportunities/${opportunity.id}`}>{opportunity.company}</Link>
-                    </Badge>
+                    <LinkChip key={opportunity.id} href={`/opportunities/${opportunity.id}`}>
+                      {opportunity.company}
+                    </LinkChip>
                   ))}
                 </div>
               </div>
@@ -150,12 +149,10 @@ export function GoalCard({ goal, opportunities, learningItems, highlighted }: Go
                 <span className="text-xs font-medium text-muted-foreground">Linked learning items</span>
                 <div className="flex flex-wrap gap-1.5">
                   {linkedLearningItems.map((item) => (
-                    <Badge key={item.id} variant="secondary" asChild>
-                      <Link href="/skills">
-                        {item.title}
-                        {item.state === "planned" ? " · Planned" : ""}
-                      </Link>
-                    </Badge>
+                    <LinkChip key={item.id} href="/skills">
+                      {item.title}
+                      {item.state === "planned" ? " · Planned" : ""}
+                    </LinkChip>
                   ))}
                 </div>
               </div>

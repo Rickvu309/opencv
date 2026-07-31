@@ -51,13 +51,13 @@ export function ProfileStrengthsCard() {
             return (
               <div
                 key={strength}
-                className="flex flex-col gap-1.5 rounded-lg border border-border bg-muted/30 p-2.5 text-sm"
+                className="flex flex-col gap-1.5 rounded-lg border border-border bg-muted/30 p-3 text-sm"
               >
                 <div className="flex items-start justify-between gap-2">
                   <button
                     type="button"
                     onClick={() => setExpanded(isExpanded ? null : strength)}
-                    className="text-left text-foreground"
+                    className="rounded text-left text-foreground outline-none hover:text-foreground/80 focus-visible:ring-2 focus-visible:ring-ring"
                     aria-expanded={isExpanded}
                   >
                     {strength}

@@ -3,13 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Quote, RefreshCw } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AiThinking } from "@/components/shared/ai-thinking";
 import { AskCopilotButton } from "@/components/shared/ask-copilot-button";
+import { Chip } from "@/components/shared/chip";
 import { ConfidenceChip } from "@/components/shared/confidence-chip";
 import { CopilotTag } from "@/components/shared/copilot-tag";
+import { CredibilityChip } from "@/components/shared/credibility-chip";
 import { ExpandableRow } from "@/components/shared/expandable-row";
 import { FitChip } from "@/components/shared/fit-chip";
 import { WhyThisReading } from "@/components/shared/why-this-reading";
@@ -51,7 +52,7 @@ export function OpportunityAiAnalysisTab({
   function handleRefresh() {
     setRefreshing(true);
     if (refreshTimeout.current) clearTimeout(refreshTimeout.current);
-    refreshTimeout.current = setTimeout(() => setRefreshing(false), 900);
+    refreshTimeout.current = setTimeout(() => setRefreshing(false), 600 + Math.random() * 600);
   }
 
   const objectLabel = `${opportunity.role} at ${opportunity.company}`;
@@ -103,10 +104,11 @@ export function OpportunityAiAnalysisTab({
                     <ExpandableRow
                       label={
                         <span className="flex items-center gap-1.5">
-                          <Badge className="gap-1 bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
-                            <Quote className="size-3" />
-                            Vague language decoded
-                          </Badge>
+                          <Chip
+                            label="Vague language decoded"
+                            icon={<Quote className="size-3" />}
+                            className="bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"
+                          />
                           <span className="italic text-muted-foreground">
                             &ldquo;{interpretation.vagueLanguage.phrase}&rdquo;
                           </span>
@@ -134,15 +136,7 @@ export function OpportunityAiAnalysisTab({
                 <div className="flex items-center gap-1.5">
                   {credibility ? (
                     <>
-                      <Badge
-                        className={
-                          credibility.verdict === "pass"
-                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
-                            : "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300"
-                        }
-                      >
-                        {credibility.verdict === "pass" ? "Passes checks" : "Fails checks"}
-                      </Badge>
+                      <CredibilityChip verdict={credibility.verdict} />
                       <ConfidenceChip confidence={credibility.confidence} />
                     </>
                   ) : null}

@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { ChevronDown, ChevronUp, Star } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Chip } from "@/components/shared/chip";
+import { LinkChip } from "@/components/shared/link-chip";
 import { SkillLevelMeter } from "@/components/skills/skill-level-meter";
 import { useStore } from "@/lib/store";
 import type { Opportunity, Skill, TrackRecordEntry } from "@/lib/types";
@@ -63,7 +63,7 @@ export function SkillRow({ skill, trackRecordEntries, opportunities, highlighted
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="text-sm text-foreground">{skill.name}</span>
             {skill.isGap ? (
-              <Badge className="bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300">Gap</Badge>
+              <Chip label="Gap" className="bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300" />
             ) : null}
           </div>
           <SkillLevelMeter level={skill.level} targetLevel={skill.targetLevel} />
@@ -103,11 +103,9 @@ export function SkillRow({ skill, trackRecordEntries, opportunities, highlighted
             {evidenceEntries.length > 0 ? (
               <div className="flex flex-wrap gap-1.5">
                 {evidenceEntries.map((entry) => (
-                  <Badge key={entry.id} variant="outline" asChild>
-                    <Link href="/track-record" onClick={() => setTrackRecordHighlight(entry.id)}>
-                      {entry.title}
-                    </Link>
-                  </Badge>
+                  <LinkChip key={entry.id} href="/track-record" onClick={() => setTrackRecordHighlight(entry.id)}>
+                    {entry.title}
+                  </LinkChip>
                 ))}
               </div>
             ) : (
@@ -120,9 +118,9 @@ export function SkillRow({ skill, trackRecordEntries, opportunities, highlighted
             {requiredByOpportunities.length > 0 ? (
               <div className="flex flex-wrap gap-1.5">
                 {requiredByOpportunities.map((opportunity) => (
-                  <Badge key={opportunity.id} variant="outline" asChild>
-                    <Link href={`/opportunities/${opportunity.id}#ai-analysis`}>{opportunity.company}</Link>
-                  </Badge>
+                  <LinkChip key={opportunity.id} href={`/opportunities/${opportunity.id}#ai-analysis`}>
+                    {opportunity.company}
+                  </LinkChip>
                 ))}
               </div>
             ) : (

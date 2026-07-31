@@ -60,7 +60,7 @@ export function CopilotStep({ data, onReady }: CopilotStepProps) {
           {lines.map((line) => (
             <p
               key={line}
-              className="animate-in fade-in-0 slide-in-from-bottom-1 rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-sm text-foreground duration-300"
+              className="animate-in fade-in-0 slide-in-from-bottom-1 rounded-lg border border-border bg-muted/30 p-3 text-sm text-foreground duration-300"
             >
               {line}
             </p>

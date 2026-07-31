@@ -32,7 +32,7 @@ export function CandidateCard({ entry, reviewAction, onDismiss }: CandidateCardP
     >
       <CardHeader className="gap-2">
         <div className="flex items-start justify-between gap-3">
-          <p className="text-sm font-medium text-foreground">{entry.title}</p>
+          <p className="min-w-0 break-words text-sm font-medium text-foreground">{entry.title}</p>
           <CopilotTag className="shrink-0" />
         </div>
       </CardHeader>

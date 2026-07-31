@@ -25,11 +25,11 @@ export function ObjectCard({ title, subtitle, href, chips, meta, action, childre
     <>
       <CardHeader className="gap-2">
         <div className="flex items-start justify-between gap-2">
-          <div className="flex flex-col gap-0.5">
-            <CardTitle>{title}</CardTitle>
-            {subtitle ? <CardDescription>{subtitle}</CardDescription> : null}
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <CardTitle className="truncate">{title}</CardTitle>
+            {subtitle ? <CardDescription className="truncate">{subtitle}</CardDescription> : null}
           </div>
-          {action ? <CardAction>{action}</CardAction> : null}
+          {action ? <CardAction className="shrink-0">{action}</CardAction> : null}
         </div>
         {chips ? <div className="flex flex-wrap items-center gap-1.5">{chips}</div> : null}
       </CardHeader>

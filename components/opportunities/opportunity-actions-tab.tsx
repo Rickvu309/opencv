@@ -167,13 +167,13 @@ function RecommendationCard({
   return (
     <Card className="ring-foreground/8">
       <CardContent className="flex items-start justify-between gap-4">
-        <div className="flex flex-col gap-1.5">
+        <div className="flex min-w-0 flex-col gap-1.5">
           <div className="flex items-center gap-2">
             <CopilotTag />
             <ConfidenceChip confidence={action.confidence} />
           </div>
-          <p className="text-base font-medium text-foreground">{action.verb}</p>
-          <p className="text-xs text-muted-foreground">
+          <p className="break-words text-base font-medium text-foreground">{action.verb}</p>
+          <p className="break-words text-xs text-muted-foreground">
             {action.rationale} · {action.effort} · {action.dueHint}
           </p>
         </div>
@@ -246,11 +246,11 @@ function PlanRow({
           aria-label={done ? "Mark not done" : "Mark done"}
           className="mt-1"
         />
-        <div className="flex flex-1 flex-col gap-1">
-          <p className={cn("text-sm text-foreground", done && "text-muted-foreground line-through")}>
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <p className={cn("break-words text-sm text-foreground", done && "text-muted-foreground line-through")}>
             {action.verb}
           </p>
-          <p className="text-xs text-muted-foreground">
+          <p className="break-words text-xs text-muted-foreground">
             {action.rationale} · {action.effort} · {action.dueHint}
           </p>
         </div>

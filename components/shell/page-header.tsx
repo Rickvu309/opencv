@@ -17,9 +17,9 @@ export function PageHeader({ title, description, primaryAction }: PageHeaderProp
 
   return (
     <div className="flex items-start justify-between gap-4 border-b border-border bg-background px-6 py-4">
-      <div className="flex flex-col gap-0.5">
-        <h1>{title}</h1>
-        {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <h1 className="break-words">{title}</h1>
+        {description ? <p className="break-words text-sm text-muted-foreground">{description}</p> : null}
       </div>
       <div className="flex shrink-0 items-center gap-2">
         {primaryAction}

@@ -40,7 +40,10 @@ export function ExpandableRow({
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
-        className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm text-foreground"
+        className={cn(
+          "flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm text-foreground outline-none hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring",
+          open ? "rounded-t-lg" : "rounded-lg"
+        )}
         aria-expanded={open}
       >
         <span>{label}</span>
