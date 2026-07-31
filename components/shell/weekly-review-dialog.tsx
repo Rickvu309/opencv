@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { ArrowLeft, ArrowRight, Check, Mail, PartyPopper } from "lucide-react";
 
 import {
@@ -102,7 +103,16 @@ export function WeeklyReviewDialog() {
               </ul>
               <div className="flex items-start gap-2 rounded-lg border border-dashed border-border bg-muted/20 p-3">
                 <Mail className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
-                <p className="text-xs text-muted-foreground">{weeklyReview.connectedSourcesRecap}</p>
+                <div className="flex flex-col gap-1">
+                  <p className="text-xs text-muted-foreground">{weeklyReview.connectedSourcesRecap}</p>
+                  <Link
+                    href="/sources"
+                    onClick={closeWeeklyReview}
+                    className="w-fit text-xs font-medium text-foreground underline-offset-2 hover:underline"
+                  >
+                    Open Sources
+                  </Link>
+                </div>
               </div>
             </div>
           ) : null}

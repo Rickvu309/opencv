@@ -2,6 +2,7 @@
 
 import { PageHeader } from "@/components/shell/page-header";
 import { ToolsHub } from "@/components/sources/tools-hub";
+import { SyncedContextInbox } from "@/components/sources/synced-context-inbox";
 import { useCopilotSurface, useStore } from "@/lib/store";
 
 export default function SourcesPage() {
@@ -16,6 +17,7 @@ export default function SourcesPage() {
       />
       <div className="flex flex-col gap-6 p-6">
         <ToolsHub sources={state.connectedSources} />
+        <SyncedContextInbox />
       </div>
     </div>
   );

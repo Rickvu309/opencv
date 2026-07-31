@@ -10,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { GoalFormDialog } from "@/components/goals/goal-form-dialog";
 import { GoalStatusChip } from "@/components/goals/goal-status-chip";
 import { LinkChip } from "@/components/shared/link-chip";
+import { LinkedEvidenceList } from "@/components/sources/linked-evidence-list";
+import { getLinkedInboxItemsFor } from "@/lib/inbox-utils";
 import { useStore } from "@/lib/store";
 import type { Goal, LearningItem, Opportunity } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -29,11 +31,12 @@ interface GoalCardProps {
  * learning items as chips.
  */
 export function GoalCard({ goal, opportunities, learningItems, highlighted }: GoalCardProps) {
-  const { parkGoal, addGoalProgressNote } = useStore();
+  const { state, parkGoal, addGoalProgressNote } = useStore();
   const [manuallyExpanded, setManuallyExpanded] = useState(false);
   const [noteDraft, setNoteDraft] = useState("");
   const cardRef = useRef<HTMLDivElement | null>(null);
   const expanded = manuallyExpanded || Boolean(highlighted);
+  const linkedEvidence = getLinkedInboxItemsFor(state, "goal", goal.id);
 
   useEffect(() => {
     if (highlighted) {
@@ -130,6 +133,13 @@ export function GoalCard({ goal, opportunities, learningItems, highlighted }: Go
                 </Button>
               </div>
             </div>
+
+            {linkedEvidence.length > 0 ? (
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs font-medium text-muted-foreground">Linked evidence</span>
+                <LinkedEvidenceList items={linkedEvidence} />
+              </div>
+            ) : null}
 
             {linkedOpportunities.length > 0 ? (
               <div className="flex flex-col gap-1.5">
