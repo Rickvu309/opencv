@@ -69,7 +69,14 @@ export function AttentionQueue() {
   }
 
   const queue = getAttentionQueue(state.nudges);
-  const proposedSignals = state.aiSignals.filter((signal) => signal.state === "proposed");
+  // Not just "proposed": once approved, a signal needs to stay mounted so
+  // its own AiActionCard can show the save-back confirmation and settle
+  // into a quiet done row, the same "!== dismissed" filter the opportunity
+  // Overview tab's Signals section already uses. Filtering strictly to
+  // "proposed" would unmount the card the instant it's approved, before
+  // its confirmation ever renders (docs/lessons.md's #16 pattern, found
+  // again here on Home during the RDS-984 pass).
+  const activeSignals = state.aiSignals.filter((signal) => signal.state !== "dismissed");
 
   function handleAct(nudge: Nudge, href: string) {
     setHandledIds((current) => new Set(current).add(nudge.id));
@@ -87,15 +94,15 @@ export function AttentionQueue() {
         <CopilotTag />
       </div>
 
-      {queue.length === 0 && proposedSignals.length === 0 ? (
+      {queue.length === 0 && activeSignals.length === 0 ? (
         <EmptyState message="Nothing needs you right now. Copilot will surface stale opportunities, capture prompts, and goal or learning reminders here as they come up." />
       ) : (
         <div className="flex flex-col gap-5">
-          {proposedSignals.length > 0 ? (
+          {activeSignals.length > 0 ? (
             <div className="flex flex-col gap-2">
               <p className="text-section-label">Needs a decision</p>
               <div className="flex flex-col gap-2">
-                {proposedSignals.map((signal) => {
+                {activeSignals.map((signal) => {
                   const opportunity = state.opportunities.find((item) => item.id === signal.opportunityId);
                   return (
                     <SignalCard
