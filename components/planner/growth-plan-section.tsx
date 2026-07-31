@@ -1,6 +1,10 @@
+import Link from "next/link";
+import { Milestone } from "lucide-react";
+
 import { AskCopilotButton } from "@/components/shared/ask-copilot-button";
 import { CopilotTag } from "@/components/shared/copilot-tag";
 import { EmptyState } from "@/components/shared/empty-state";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { PlanItemCard } from "@/components/planner/plan-item-card";
 import { PLAN_STAGES, computeStageProgress, groupPlanItemsByStage } from "@/lib/planner-utils";
@@ -40,7 +44,15 @@ export function GrowthPlanSection({
           <h2>Growth plan</h2>
           <CopilotTag />
         </div>
-        <AskCopilotButton surface="Path Planner" objectLabel="Growth plan" />
+        <div className="flex items-center gap-1.5">
+          <AskCopilotButton surface="Path Planner" objectLabel="Growth plan" />
+          <Button asChild size="sm">
+            <Link href="/roadmap">
+              <Milestone className="size-4" />
+              Build the full roadmap
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">

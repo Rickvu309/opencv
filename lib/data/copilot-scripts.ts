@@ -968,6 +968,45 @@ export const copilotScripts: CopilotSurfaceScript[] = [
     ],
   },
   {
+    surface: "Roadmap",
+    suggestedPrompts: [
+      "Why these 3 milestones?",
+      "What should I do first?",
+      "Which resource is your pick and why?",
+    ],
+    exchanges: [
+      {
+        id: "copilot-roadmap-1",
+        prompt: "Why these 3 milestones?",
+        response: {
+          lead: "Each one builds on the last: ship the AI feature story, make it public, then use it to operate at staff altitude.",
+          points: [
+            { label: "Milestone 1", detail: "Closes the AI interaction and prompt design gap and ships a real artifact, not just the course." },
+            { label: "Milestone 2", detail: "Turns that artifact into the public case study every AI-forward loop has been asking for." },
+            { label: "Milestone 3", detail: "Backs a staff-level pitch with metrics fluency and a review you actually led." },
+          ],
+          confidence: "High",
+        },
+      },
+      {
+        id: "copilot-roadmap-2",
+        prompt: "What should I do first?",
+        response: {
+          lead: "Start the AI Product Design Fundamentals course, it's the pinned next move and the foundation the rest of milestone 1 depends on.",
+          handoff: { kind: "route", href: "/skills", label: "Open Skills & Learning" },
+        },
+      },
+      {
+        id: "copilot-roadmap-3",
+        prompt: "Which resource is your pick and why?",
+        response: {
+          lead: "Prompt Systems for Product Teams, in milestone 1. It closes the single largest skill gap on this path before anything else in the milestone can move.",
+          handoff: { kind: "route", href: "/roadmap", label: "See it in the milestone" },
+        },
+      },
+    ],
+  },
+  {
     surface: "Rewind",
     suggestedPrompts: [
       "Why these three candidates?",
