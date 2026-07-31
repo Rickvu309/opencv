@@ -123,7 +123,9 @@ Seed set (lives in `lib/data/`):
 - 6 next actions in mixed states, 6 nudges covering all four attention-queue families (opportunity, capture, goal, learning), 1 weekly review script.
 - Copilot scripts: per-surface suggested prompts and 2 to 3 scripted exchanges per major surface.
 
-File layout: `lib/types.ts` (all types), `lib/data/persona.ts`, `opportunities.ts`, `cvs.ts`, `track-record.ts`, `goals.ts`, `skills.ts`, `insights.ts`, `actions.ts`, `nudges.ts`, `copilot-scripts.ts`. Store in `lib/store.tsx`.
+File layout: `lib/types.ts` (all types), `lib/data/persona.ts`, `opportunities.ts`, `cvs.ts`, `track-record.ts`, `goals.ts`, `skills.ts`, `insights.ts`, `actions.ts`, `nudges.ts`, `copilot-scripts.ts`. Store in `lib/store/` (state, actions, reducer domains under `reducers/`, and the provider).
+
+`lib/store/` (RDS-981 hygiene pass, split from one 1993-line `lib/store.tsx`): `state.ts` (StoreState, initial state), `actions.ts` (the reducer's Action union), `reducer.ts` (routes each action to its domain), `reducers/*.ts` (one file per domain: onboarding, opportunities, ai-signals-and-sources, cvs, direction, track-record-and-rewind, profile, shell), `provider.tsx` (StoreProvider, useStore, useCopilotSurface, the action-creator callbacks), `helpers.ts` (today, makeId), `index.tsx` (re-exports the same public API so `@/lib/store` imports are unchanged).
 
 ## 7. Simulated AI behavior model
 
@@ -144,13 +146,13 @@ Every embedded AI proposal is one compact block, five beats:
 4. **Proposed action**: the concrete change, stated as what will happen if you accept
 5. **Controls**: Approve, Edit (inline adjust before approving), Dismiss. Approving shows a save-back confirmation that names exactly what changed, with an Undo, then settles into a quiet done state
 
-Approving a proposal changes real store state and logs an Activity moment carrying the same evidence, see `lib/store.tsx`'s `APPROVE_AI_SIGNAL` case and `lib/ai-signal-utils.ts`.
+Approving a proposal changes real store state and logs an Activity moment carrying the same evidence, see `lib/store/reducers/ai-signals-and-sources.ts`'s `APPROVE_AI_SIGNAL` case and `lib/ai-signal-utils.ts`.
 
 ### Connected sources (simulated)
 
 `lib/data/sources.ts` seeds a connected-sources registry (Gmail connected, Outlook and Granola not connected, extensible to further source types) and a shared evidence shape covering both email extracts and Granola meeting notes, each with a sender or attendee line, a subject or title, a timestamp, and the opportunity, Track Record candidate, or goal it maps to. A quiet "Connected sources" affordance in the sidebar shows how many sources are connected and links straight to /sources. Every AI proposal that cites a source shows its evidence chip and extract; the panel's context header shows the same connected source line on any surface backed by evidence.
 
-`/sources` (RDS-977) turns this registry into a workflow surface, not a settings page: a connected tools hub (status chip, what each tool gives OpenPath, what it unlocks, a 3-step simulated connect flow) above a synced-context inbox listing every evidence item from a connected source, newest first, filterable by source and by review state. Each row proposes a link target (an opportunity, a Track Record candidate, or a goal), with a confidence hedge when the read is uncertain. Linking is store-wired: to an opportunity it logs an Activity moment and shows in that opportunity's Overview; as Track Record material it drafts a fresh candidate in the review inbox; to a goal it attaches an evidence chip on the goal card. `lib/inbox-utils.ts` holds the read-only merge of seed evidence with live connection and link state; `lib/store.tsx`'s `CONNECT_SOURCE`, `LINK_INBOX_ITEM`, `UNDO_LINK_INBOX_ITEM`, and `DISMISS_INBOX_ITEM` cases hold the writes.
+`/sources` (RDS-977) turns this registry into a workflow surface, not a settings page: a connected tools hub (status chip, what each tool gives OpenPath, what it unlocks, a 3-step simulated connect flow) above a synced-context inbox listing every evidence item from a connected source, newest first, filterable by source and by review state. Each row proposes a link target (an opportunity, a Track Record candidate, or a goal), with a confidence hedge when the read is uncertain. Linking is store-wired: to an opportunity it logs an Activity moment and shows in that opportunity's Overview; as Track Record material it drafts a fresh candidate in the review inbox; to a goal it attaches an evidence chip on the goal card. `lib/inbox-utils.ts` holds the read-only merge of seed evidence with live connection and link state; `lib/store/reducers/ai-signals-and-sources.ts`'s `CONNECT_SOURCE`, `LINK_INBOX_ITEM`, `UNDO_LINK_INBOX_ITEM`, and `DISMISS_INBOX_ITEM` cases hold the writes.
 
 Scripted behaviors:
 
