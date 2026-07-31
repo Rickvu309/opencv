@@ -7,9 +7,24 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AskCopilotButton } from "@/components/shared/ask-copilot-button";
+import { Chip } from "@/components/shared/chip";
 import { CopilotTag } from "@/components/shared/copilot-tag";
 import { FitChip } from "@/components/shared/fit-chip";
-import type { PathScenario } from "@/lib/types";
+import type { FitLevel, PathScenario } from "@/lib/types";
+
+// Evidence strength reuses FitLevel's Strong/Medium/Weak vocabulary (never
+// Unknown here), but it answers a different question than fit, so it gets
+// its own label instead of borrowing FitChip's "Strong fit" wording.
+const EVIDENCE_STRENGTH_STYLES: Record<Exclude<FitLevel, "Unknown">, string> = {
+  Strong: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+  Medium: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+  Weak: "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
+};
+
+function EvidenceStrengthChip({ strength }: { strength: FitLevel }) {
+  if (strength === "Unknown") return null;
+  return <Chip label={strength} className={EVIDENCE_STRENGTH_STYLES[strength]} />;
+}
 
 interface AlternativesSectionProps {
   /** The 2 seeded scenarios that are not the current working path. Hick's Law: capped at what Goals seeds, never more. */
@@ -43,7 +58,9 @@ export function AlternativesSection({ alternatives, whatWouldChangeRanking, onCh
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-40" />
+                <TableHead className="w-40">
+                  <span className="sr-only">Comparison</span>
+                </TableHead>
                 {alternatives.map((scenario) => (
                   <TableHead key={scenario.id}>
                     <div className="flex flex-col gap-1 whitespace-normal py-1">
@@ -91,7 +108,7 @@ export function AlternativesSection({ alternatives, whatWouldChangeRanking, onCh
                 <TableCell className="text-xs font-medium text-muted-foreground">Evidence strength</TableCell>
                 {alternatives.map((scenario) => (
                   <TableCell key={scenario.id}>
-                    <FitChip fit={scenario.evidenceStrength} />
+                    <EvidenceStrengthChip strength={scenario.evidenceStrength} />
                   </TableCell>
                 ))}
               </TableRow>
