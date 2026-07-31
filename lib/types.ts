@@ -91,7 +91,7 @@ export interface ExperienceEntry {
   company: string;
   start: string;
   end: string;
-  summary: string;
+  bullets: string[];
 }
 
 export interface ProfilePreferences {
@@ -101,6 +101,18 @@ export interface ProfilePreferences {
   compensationNote: string;
   workStyle: "Remote" | "Hybrid" | "On-site";
   companySize: string;
+  salaryFloor: string;
+  dealBreakers: string[];
+}
+
+/**
+ * One-line evidence note behind a strength chip on the Profile page, linked
+ * back to the track record entry that proves it where seed data has one.
+ */
+export interface StrengthEvidence {
+  strength: string;
+  note: string;
+  trackRecordEntryId?: string;
 }
 
 export interface Profile {
@@ -112,6 +124,7 @@ export interface Profile {
   yearsExperience: number;
   summary: string;
   strengths: string[];
+  strengthEvidence: StrengthEvidence[];
   experience: ExperienceEntry[];
   preferences: ProfilePreferences;
   targetDirection: string;

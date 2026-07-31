@@ -16,6 +16,23 @@ export const persona: Profile = {
     "Builds and maintains design systems that scale cleanly across squads",
     "Coaches junior designers and facilitates cross-functional critique",
   ],
+  strengthEvidence: [
+    {
+      strength: "Translates ambiguous AI model behavior into clear, trustworthy user flows",
+      note: "Directly shown by the AI underwriting explainability panel shipped at Fintra, which cut related support tickets by 22 percent.",
+      trackRecordEntryId: "tre-1",
+    },
+    {
+      strength: "Runs discovery research end to end, from screener design to synthesis",
+      note: "Evidenced by building Fintra's first structured usability testing program, from screener design through synthesis.",
+      trackRecordEntryId: "tre-4",
+    },
+    {
+      strength: "Builds and maintains design systems that scale cleanly across squads",
+      note: "Backed by the three-squad design system rollout at Loop Commerce that cut new-screen build time by about 33 percent.",
+      trackRecordEntryId: "tre-3",
+    },
+  ],
   experience: [
     {
       id: "exp-fintra",
@@ -23,8 +40,10 @@ export const persona: Profile = {
       company: "Fintra",
       start: "Apr 2023",
       end: "Present",
-      summary:
-        "Leads design for lending and onboarding. Partnered with the data science team to launch the AI underwriting assistant, including the explainability panel that shows applicants why a decision was made.",
+      bullets: [
+        "Led design of the AI underwriting assistant's explainability panel, cutting related support tickets by 22 percent in the first quarter after launch.",
+        "Partnered with data science to define the trust-boundary spec that still governs what the assistant can decide on its own.",
+      ],
     },
     {
       id: "exp-loop-commerce",
@@ -32,8 +51,10 @@ export const persona: Profile = {
       company: "Loop Commerce",
       start: "Jun 2020",
       end: "Mar 2023",
-      summary:
-        "Owned checkout and seller-tools experience for a regional marketplace. Led the design system rollout across three product squads, cutting new-screen build time by roughly a third.",
+      bullets: [
+        "Led the design system rollout across three product squads, cutting new-screen build time by about 33 percent.",
+        "Reworked seller-tools checkout and payout flow, cutting related support tickets by 25 percent within two months of launch.",
+      ],
     },
     {
       id: "exp-kestrel",
@@ -41,8 +62,10 @@ export const persona: Profile = {
       company: "Kestrel Analytics",
       start: "Feb 2019",
       end: "May 2020",
-      summary:
-        "Designed operational dashboards for logistics analysts and ran the company's first structured usability testing program.",
+      bullets: [
+        "Designed operational dashboards for logistics analysts tracking fleet and warehouse throughput.",
+        "Established the company's first structured usability testing program, taking sessions from about 1 per quarter to weekly.",
+      ],
     },
     {
       id: "exp-bambu",
@@ -50,8 +73,10 @@ export const persona: Profile = {
       company: "Bambu Studio",
       start: "Jul 2017",
       end: "Jan 2019",
-      summary:
-        "Agency work across retail and health clients. Shipped mobile and web product experiences end to end under senior design mentors.",
+      bullets: [
+        "Delivered agency design work across retail and health clients under senior design mentors.",
+        "Shipped mobile and web product experiences end to end, from early concepts through developer handoff.",
+      ],
     },
   ],
   preferences: {
@@ -61,6 +86,8 @@ export const persona: Profile = {
     compensationNote: "Targeting senior or staff-level product design compensation, open on structure for the right leadership scope.",
     workStyle: "Remote",
     companySize: "No strong preference, prioritizing the work itself",
+    salaryFloor: "$115,000 USD base",
+    dealBreakers: [],
   },
   targetDirection:
     "Move from senior individual-contributor product design into AI product design and product leadership, ideally at a company building AI-native tools.",

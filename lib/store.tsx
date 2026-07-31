@@ -28,6 +28,7 @@ import type {
   AiInsight,
   CopilotMessage,
   CvVersion,
+  ExperienceEntry,
   Goal,
   LearningItem,
   NextAction,
@@ -139,6 +140,11 @@ type Action =
       id: string;
       state: "accepted" | "dismissed";
     }
+  | { type: "SET_PROFILE_SUMMARY"; summary: string }
+  | { type: "SET_PROFILE_EXPERIENCE_ENTRY"; id: string; patch: Partial<Omit<ExperienceEntry, "id">> }
+  | { type: "ADD_PROFILE_EXPERIENCE_ENTRY"; entry: ExperienceEntry }
+  | { type: "SET_PROFILE_STRENGTHS"; strengths: string[] }
+  | { type: "SET_PROFILE_PREFERENCES"; patch: Partial<ProfilePreferences> }
   | { type: "SET_COPILOT_OPEN"; open: boolean }
   | { type: "TOGGLE_COPILOT" }
   | { type: "SET_COPILOT_SURFACE"; surface: string; objectLabel?: string }
@@ -427,6 +433,38 @@ function reducer(state: StoreState, action: Action): StoreState {
         },
       };
 
+    case "SET_PROFILE_SUMMARY":
+      return { ...state, profile: { ...state.profile, summary: action.summary } };
+
+    case "SET_PROFILE_EXPERIENCE_ENTRY":
+      return {
+        ...state,
+        profile: {
+          ...state.profile,
+          experience: state.profile.experience.map((entry) =>
+            entry.id === action.id ? { ...entry, ...action.patch } : entry
+          ),
+        },
+      };
+
+    case "ADD_PROFILE_EXPERIENCE_ENTRY":
+      return {
+        ...state,
+        profile: { ...state.profile, experience: [action.entry, ...state.profile.experience] },
+      };
+
+    case "SET_PROFILE_STRENGTHS":
+      return { ...state, profile: { ...state.profile, strengths: action.strengths } };
+
+    case "SET_PROFILE_PREFERENCES":
+      return {
+        ...state,
+        profile: {
+          ...state.profile,
+          preferences: { ...state.profile.preferences, ...action.patch },
+        },
+      };
+
     case "SET_COPILOT_OPEN":
       return { ...state, copilot: { ...state.copilot, open: action.open } };
 
@@ -506,6 +544,11 @@ interface StoreContextValue {
   dismissLearningItem: (id: string) => void;
   acceptWeeklyReviewSuggestion: (id: string) => void;
   dismissWeeklyReviewSuggestion: (id: string) => void;
+  updateProfileSummary: (summary: string) => void;
+  updateExperienceEntry: (id: string, patch: Partial<Omit<ExperienceEntry, "id">>) => void;
+  addExperienceEntry: (entry: ExperienceEntry) => void;
+  updateProfileStrengths: (strengths: string[]) => void;
+  updateProfilePreferences: (patch: Partial<ProfilePreferences>) => void;
   setCopilotOpen: (open: boolean) => void;
   toggleCopilot: () => void;
   setCopilotSurface: (surface: string, objectLabel?: string) => void;
@@ -677,6 +720,34 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     toast("Suggestion dismissed");
   }, []);
 
+  const updateProfileSummary = useCallback((summary: string) => {
+    dispatch({ type: "SET_PROFILE_SUMMARY", summary });
+    toast.success("Summary saved");
+  }, []);
+
+  const updateExperienceEntry = useCallback(
+    (id: string, patch: Partial<Omit<ExperienceEntry, "id">>) => {
+      dispatch({ type: "SET_PROFILE_EXPERIENCE_ENTRY", id, patch });
+      toast.success("Experience saved");
+    },
+    []
+  );
+
+  const addExperienceEntry = useCallback((entry: ExperienceEntry) => {
+    dispatch({ type: "ADD_PROFILE_EXPERIENCE_ENTRY", entry });
+    toast.success("Experience added");
+  }, []);
+
+  const updateProfileStrengths = useCallback((strengths: string[]) => {
+    dispatch({ type: "SET_PROFILE_STRENGTHS", strengths });
+    toast.success("Strengths saved");
+  }, []);
+
+  const updateProfilePreferences = useCallback((patch: Partial<ProfilePreferences>) => {
+    dispatch({ type: "SET_PROFILE_PREFERENCES", patch });
+    toast.success("Preferences saved");
+  }, []);
+
   const setCopilotOpen = useCallback((open: boolean) => dispatch({ type: "SET_COPILOT_OPEN", open }), []);
   const toggleCopilot = useCallback(() => dispatch({ type: "TOGGLE_COPILOT" }), []);
 
@@ -753,6 +824,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       dismissLearningItem,
       acceptWeeklyReviewSuggestion,
       dismissWeeklyReviewSuggestion,
+      updateProfileSummary,
+      updateExperienceEntry,
+      addExperienceEntry,
+      updateProfileStrengths,
+      updateProfilePreferences,
       setCopilotOpen,
       toggleCopilot,
       setCopilotSurface,
@@ -787,6 +863,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       dismissLearningItem,
       acceptWeeklyReviewSuggestion,
       dismissWeeklyReviewSuggestion,
+      updateProfileSummary,
+      updateExperienceEntry,
+      addExperienceEntry,
+      updateProfileStrengths,
+      updateProfilePreferences,
       setCopilotOpen,
       toggleCopilot,
       setCopilotSurface,
