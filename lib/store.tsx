@@ -33,12 +33,15 @@ import type {
   Nudge,
   Opportunity,
   OpportunityStatus,
+  Priority,
   Profile,
   ProfilePreferences,
   Skill,
   TrackRecordEntry,
   WeeklyReviewScript,
 } from "@/lib/types";
+
+export type OpportunitiesView = "board" | "list";
 
 export type OnboardingProfilePatch = Partial<Omit<Profile, "preferences">> & {
   preferences?: Partial<ProfilePreferences>;
@@ -67,6 +70,7 @@ export interface StoreState {
   onboarded: boolean;
   copilot: CopilotState;
   highlightedOpportunityId?: string;
+  opportunitiesView: OpportunitiesView;
 }
 
 const initialState: StoreState = {
@@ -89,6 +93,7 @@ const initialState: StoreState = {
     messagesBySurface: {},
   },
   highlightedOpportunityId: undefined,
+  opportunitiesView: "board",
 };
 
 type Action =
@@ -96,7 +101,9 @@ type Action =
   | { type: "RESET_ONBOARDING" }
   | { type: "COMPLETE_ONBOARDING"; profilePatch: OnboardingProfilePatch; goals: Goal[] }
   | { type: "SET_OPPORTUNITY_STATUS"; id: string; status: OpportunityStatus }
+  | { type: "SET_OPPORTUNITY_PRIORITY"; id: string; priority: Priority }
   | { type: "TOGGLE_OPPORTUNITY_DREAM"; id: string }
+  | { type: "SET_OPPORTUNITIES_VIEW"; view: OpportunitiesView }
   | {
       type: "ADD_OPPORTUNITY";
       opportunity: Opportunity;
@@ -162,6 +169,16 @@ function reducer(state: StoreState, action: Action): StoreState {
         ),
       };
 
+    case "SET_OPPORTUNITY_PRIORITY":
+      return {
+        ...state,
+        opportunities: state.opportunities.map((opportunity) =>
+          opportunity.id === action.id
+            ? { ...opportunity, priority: action.priority }
+            : opportunity
+        ),
+      };
+
     case "TOGGLE_OPPORTUNITY_DREAM":
       return {
         ...state,
@@ -171,6 +188,9 @@ function reducer(state: StoreState, action: Action): StoreState {
             : opportunity
         ),
       };
+
+    case "SET_OPPORTUNITIES_VIEW":
+      return { ...state, opportunitiesView: action.view };
 
     case "ADD_OPPORTUNITY":
       return {
@@ -309,7 +329,9 @@ interface StoreContextValue {
   resetOnboarding: () => void;
   completeOnboarding: (profilePatch: OnboardingProfilePatch, goals: Goal[]) => void;
   setOpportunityStatus: (id: string, status: OpportunityStatus) => void;
+  setOpportunityPriority: (id: string, priority: Priority) => void;
   toggleDream: (id: string) => void;
+  setOpportunitiesView: (view: OpportunitiesView) => void;
   addOpportunity: (opportunity: Opportunity, insight?: AiInsight, nextAction?: NextAction) => void;
   clearOpportunityHighlight: (id: string) => void;
   acceptNextAction: (id: string) => void;
@@ -367,8 +389,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
+  const setOpportunityPriority = useCallback((id: string, priority: Priority) => {
+    dispatch({ type: "SET_OPPORTUNITY_PRIORITY", id, priority });
+    toast.success(`Priority set to ${priority}`);
+  }, []);
+
   const toggleDream = useCallback((id: string) => {
     dispatch({ type: "TOGGLE_OPPORTUNITY_DREAM", id });
+  }, []);
+
+  const setOpportunitiesView = useCallback((view: OpportunitiesView) => {
+    dispatch({ type: "SET_OPPORTUNITIES_VIEW", view });
   }, []);
 
   const addOpportunity = useCallback(
@@ -515,7 +546,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       resetOnboarding,
       completeOnboarding,
       setOpportunityStatus,
+      setOpportunityPriority,
       toggleDream,
+      setOpportunitiesView,
       addOpportunity,
       clearOpportunityHighlight,
       acceptNextAction,
@@ -543,7 +576,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       resetOnboarding,
       completeOnboarding,
       setOpportunityStatus,
+      setOpportunityPriority,
       toggleDream,
+      setOpportunitiesView,
       addOpportunity,
       clearOpportunityHighlight,
       acceptNextAction,
