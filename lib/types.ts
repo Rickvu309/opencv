@@ -43,10 +43,35 @@ export interface Opportunity {
   description: string;
   savedAt: string;
   lastActivityAt: string;
+  appliedAt?: string;
   nextActionId?: string;
   cvVersionId?: string;
   goalIds?: string[];
   hasCredibilityFlag?: boolean;
+  companyContext?: string;
+  responsibilities?: string[];
+  requirements?: string[];
+  notes?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Activity moment
+// ---------------------------------------------------------------------------
+
+export type ActivityMomentKind =
+  | "created"
+  | "status-change"
+  | "note-added"
+  | "copilot-analysis"
+  | "action-accepted"
+  | "dream-flagged";
+
+export interface ActivityMoment {
+  id: string;
+  opportunityId: string;
+  kind: ActivityMomentKind;
+  message: string;
+  createdAt: string;
 }
 
 // ---------------------------------------------------------------------------

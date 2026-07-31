@@ -1,4 +1,4 @@
-import type { FitLevel, NextAction, Nudge, Opportunity, Priority } from "@/lib/types";
+import type { ActivityMoment, FitLevel, NextAction, Nudge, Opportunity, Priority } from "@/lib/types";
 
 // Shared read-only helpers for the Opportunities workspace: staleness,
 // filtering, sorting, and the Focus strip's recommendation logic. Kept
@@ -25,6 +25,19 @@ export function findSuggestedAction(
   return nextActions.find(
     (action) => action.opportunityId === opportunityId && action.state === "suggested"
   );
+}
+
+/**
+ * Every activity moment for one opportunity, newest first, for the Activity
+ * tab's vertical timeline.
+ */
+export function findOpportunityActivity(
+  opportunityId: string,
+  activityMoments: ActivityMoment[]
+): ActivityMoment[] {
+  return activityMoments
+    .filter((moment) => moment.opportunityId === opportunityId)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 export function findPrimaryNextAction(

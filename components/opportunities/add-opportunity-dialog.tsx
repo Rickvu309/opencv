@@ -27,6 +27,7 @@ import { ConfidenceChip } from "@/components/shared/confidence-chip";
 import { matchParseSample } from "@/lib/data/parse-samples";
 import { makeId, today, useStore } from "@/lib/store";
 import type {
+  ActivityMoment,
   ConfidenceLevel,
   FitLevel,
   NextAction,
@@ -122,6 +123,33 @@ function buildIntakeNextAction(opportunity: Opportunity): NextAction {
   };
 }
 
+function buildIntakeActivityMoments(opportunity: Opportunity, viaCopilotParse: boolean): ActivityMoment[] {
+  const dateStamp = opportunity.savedAt;
+  const moments: ActivityMoment[] = [
+    {
+      id: makeId("activity"),
+      opportunityId: opportunity.id,
+      kind: "created",
+      message: viaCopilotParse
+        ? `Saved to Opportunities, structured by Copilot from a pasted listing (${opportunity.source}).`
+        : `Saved to Opportunities, entered manually (${opportunity.source}).`,
+      createdAt: dateStamp,
+    },
+  ];
+
+  if (viaCopilotParse) {
+    moments.push({
+      id: makeId("activity"),
+      opportunityId: opportunity.id,
+      kind: "copilot-analysis",
+      message: "Copilot parsed the pasted listing into structured fields and an initial fit signal.",
+      createdAt: dateStamp,
+    });
+  }
+
+  return moments;
+}
+
 export function AddOpportunityDialog({ children }: { children: React.ReactNode }) {
   const { addOpportunity } = useStore();
 
@@ -205,8 +233,9 @@ export function AddOpportunityDialog({ children }: { children: React.ReactNode }
     const nextAction = buildIntakeNextAction(opportunity);
     opportunity.nextActionId = nextAction.id;
     const insight = buildIntakeSummaryInsight(opportunity, isPasteReady);
+    const activityMoments = buildIntakeActivityMoments(opportunity, isPasteReady);
 
-    addOpportunity(opportunity, insight, nextAction);
+    addOpportunity(opportunity, insight, nextAction, activityMoments);
     handleOpenChange(false);
   }
 

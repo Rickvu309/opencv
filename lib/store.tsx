@@ -14,6 +14,7 @@ import { toast } from "sonner";
 
 import { persona } from "@/lib/data/persona";
 import { opportunities as seedOpportunities } from "@/lib/data/opportunities";
+import { activityMoments as seedActivityMoments } from "@/lib/data/activity";
 import { cvVersions as seedCvVersions } from "@/lib/data/cvs";
 import { trackRecordEntries as seedTrackRecordEntries } from "@/lib/data/track-record";
 import { goals as seedGoals } from "@/lib/data/goals";
@@ -23,6 +24,7 @@ import { nextActions as seedNextActions } from "@/lib/data/actions";
 import { nudges as seedNudges, weeklyReviewScript } from "@/lib/data/nudges";
 import { copilotScripts } from "@/lib/data/copilot-scripts";
 import type {
+  ActivityMoment,
   AiInsight,
   CopilotMessage,
   CvVersion,
@@ -58,6 +60,7 @@ interface CopilotState {
 export interface StoreState {
   profile: Profile;
   opportunities: Opportunity[];
+  activityMoments: ActivityMoment[];
   cvVersions: CvVersion[];
   trackRecordEntries: TrackRecordEntry[];
   goals: Goal[];
@@ -76,6 +79,7 @@ export interface StoreState {
 const initialState: StoreState = {
   profile: persona,
   opportunities: seedOpportunities,
+  activityMoments: seedActivityMoments,
   cvVersions: seedCvVersions,
   trackRecordEntries: seedTrackRecordEntries,
   goals: seedGoals,
@@ -103,12 +107,14 @@ type Action =
   | { type: "SET_OPPORTUNITY_STATUS"; id: string; status: OpportunityStatus }
   | { type: "SET_OPPORTUNITY_PRIORITY"; id: string; priority: Priority }
   | { type: "TOGGLE_OPPORTUNITY_DREAM"; id: string }
+  | { type: "SET_OPPORTUNITY_NOTES"; id: string; notes: string }
   | { type: "SET_OPPORTUNITIES_VIEW"; view: OpportunitiesView }
   | {
       type: "ADD_OPPORTUNITY";
       opportunity: Opportunity;
       insight?: AiInsight;
       nextAction?: NextAction;
+      activityMoments?: ActivityMoment[];
     }
   | { type: "CLEAR_OPPORTUNITY_HIGHLIGHT"; id: string }
   | { type: "SET_NEXT_ACTION_STATE"; id: string; state: NextActionState }
@@ -159,15 +165,27 @@ function reducer(state: StoreState, action: Action): StoreState {
       };
     }
 
-    case "SET_OPPORTUNITY_STATUS":
+    case "SET_OPPORTUNITY_STATUS": {
+      const dateStamp = today();
       return {
         ...state,
         opportunities: state.opportunities.map((opportunity) =>
           opportunity.id === action.id
-            ? { ...opportunity, status: action.status, lastActivityAt: today() }
+            ? { ...opportunity, status: action.status, lastActivityAt: dateStamp }
             : opportunity
         ),
+        activityMoments: [
+          ...state.activityMoments,
+          {
+            id: makeId("activity"),
+            opportunityId: action.id,
+            kind: "status-change",
+            message: `Status changed to ${action.status}.`,
+            createdAt: dateStamp,
+          },
+        ],
       };
+    }
 
     case "SET_OPPORTUNITY_PRIORITY":
       return {
@@ -189,6 +207,28 @@ function reducer(state: StoreState, action: Action): StoreState {
         ),
       };
 
+    case "SET_OPPORTUNITY_NOTES": {
+      const dateStamp = today();
+      return {
+        ...state,
+        opportunities: state.opportunities.map((opportunity) =>
+          opportunity.id === action.id
+            ? { ...opportunity, notes: action.notes, lastActivityAt: dateStamp }
+            : opportunity
+        ),
+        activityMoments: [
+          ...state.activityMoments,
+          {
+            id: makeId("activity"),
+            opportunityId: action.id,
+            kind: "note-added",
+            message: "Added a note to this opportunity.",
+            createdAt: dateStamp,
+          },
+        ],
+      };
+    }
+
     case "SET_OPPORTUNITIES_VIEW":
       return { ...state, opportunitiesView: action.view };
 
@@ -200,6 +240,9 @@ function reducer(state: StoreState, action: Action): StoreState {
         nextActions: action.nextAction
           ? [...state.nextActions, action.nextAction]
           : state.nextActions,
+        activityMoments: action.activityMoments
+          ? [...state.activityMoments, ...action.activityMoments]
+          : state.activityMoments,
         highlightedOpportunityId: action.opportunity.id,
       };
 
@@ -208,13 +251,29 @@ function reducer(state: StoreState, action: Action): StoreState {
         ? { ...state, highlightedOpportunityId: undefined }
         : state;
 
-    case "SET_NEXT_ACTION_STATE":
+    case "SET_NEXT_ACTION_STATE": {
+      const target = state.nextActions.find((nextAction) => nextAction.id === action.id);
+      const becameAccepted = action.state === "accepted" && target?.state !== "accepted";
       return {
         ...state,
         nextActions: state.nextActions.map((nextAction) =>
           nextAction.id === action.id ? { ...nextAction, state: action.state } : nextAction
         ),
+        activityMoments:
+          becameAccepted && target
+            ? [
+                ...state.activityMoments,
+                {
+                  id: makeId("activity"),
+                  opportunityId: target.opportunityId,
+                  kind: "action-accepted",
+                  message: `Accepted the next action: ${target.verb}`,
+                  createdAt: today(),
+                },
+              ]
+            : state.activityMoments,
       };
+    }
 
     case "EDIT_NEXT_ACTION":
       return {
@@ -331,8 +390,14 @@ interface StoreContextValue {
   setOpportunityStatus: (id: string, status: OpportunityStatus) => void;
   setOpportunityPriority: (id: string, priority: Priority) => void;
   toggleDream: (id: string) => void;
+  setOpportunityNotes: (id: string, notes: string) => void;
   setOpportunitiesView: (view: OpportunitiesView) => void;
-  addOpportunity: (opportunity: Opportunity, insight?: AiInsight, nextAction?: NextAction) => void;
+  addOpportunity: (
+    opportunity: Opportunity,
+    insight?: AiInsight,
+    nextAction?: NextAction,
+    activityMoments?: ActivityMoment[]
+  ) => void;
   clearOpportunityHighlight: (id: string) => void;
   acceptNextAction: (id: string) => void;
   editNextAction: (
@@ -398,13 +463,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: "TOGGLE_OPPORTUNITY_DREAM", id });
   }, []);
 
+  const setOpportunityNotes = useCallback((id: string, notes: string) => {
+    dispatch({ type: "SET_OPPORTUNITY_NOTES", id, notes });
+    toast.success("Note saved");
+  }, []);
+
   const setOpportunitiesView = useCallback((view: OpportunitiesView) => {
     dispatch({ type: "SET_OPPORTUNITIES_VIEW", view });
   }, []);
 
   const addOpportunity = useCallback(
-    (opportunity: Opportunity, insight?: AiInsight, nextAction?: NextAction) => {
-      dispatch({ type: "ADD_OPPORTUNITY", opportunity, insight, nextAction });
+    (
+      opportunity: Opportunity,
+      insight?: AiInsight,
+      nextAction?: NextAction,
+      activityMoments?: ActivityMoment[]
+    ) => {
+      dispatch({ type: "ADD_OPPORTUNITY", opportunity, insight, nextAction, activityMoments });
       toast.success("Opportunity added", {
         description: `${opportunity.role} at ${opportunity.company} is now in Saved.`,
         action: {
@@ -548,6 +623,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setOpportunityStatus,
       setOpportunityPriority,
       toggleDream,
+      setOpportunityNotes,
       setOpportunitiesView,
       addOpportunity,
       clearOpportunityHighlight,
@@ -578,6 +654,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setOpportunityStatus,
       setOpportunityPriority,
       toggleDream,
+      setOpportunityNotes,
       setOpportunitiesView,
       addOpportunity,
       clearOpportunityHighlight,

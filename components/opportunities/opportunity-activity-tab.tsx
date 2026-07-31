@@ -1,0 +1,62 @@
+"use client";
+
+import { Check, FileText, Flag, Sparkles, Star } from "lucide-react";
+
+import { CopilotTag } from "@/components/shared/copilot-tag";
+import { EmptyState } from "@/components/shared/empty-state";
+import { cn } from "@/lib/utils";
+import type { ActivityMoment, ActivityMomentKind } from "@/lib/types";
+
+const KIND_ICON: Record<ActivityMomentKind, typeof Flag> = {
+  created: Flag,
+  "status-change": Check,
+  "note-added": FileText,
+  "copilot-analysis": Sparkles,
+  "action-accepted": Check,
+  "dream-flagged": Star,
+};
+
+const KIND_DOT: Record<ActivityMomentKind, string> = {
+  created: "bg-slate-500",
+  "status-change": "bg-sky-500",
+  "note-added": "bg-slate-400",
+  "copilot-analysis": "bg-indigo-500",
+  "action-accepted": "bg-emerald-500",
+  "dream-flagged": "bg-amber-500",
+};
+
+/**
+ * Vertical timeline of everything that has happened on this opportunity,
+ * newest first: created, Copilot analysis, status changes, notes, and
+ * accepted actions.
+ */
+export function OpportunityActivityTab({ moments }: { moments: ActivityMoment[] }) {
+  if (moments.length === 0) {
+    return <EmptyState message="Nothing has happened on this opportunity yet." />;
+  }
+
+  return (
+    <ol className="flex flex-col gap-4 border-l-2 border-border pl-4">
+      {moments.map((moment) => {
+        const Icon = KIND_ICON[moment.kind];
+        return (
+          <li key={moment.id} className="relative flex flex-col gap-0.5">
+            <span
+              className={cn(
+                "absolute -left-[1.4rem] flex size-4 items-center justify-center rounded-full text-white",
+                KIND_DOT[moment.kind]
+              )}
+            >
+              <Icon className="size-2.5" />
+            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-muted-foreground">{moment.createdAt}</span>
+              {moment.kind === "copilot-analysis" ? <CopilotTag /> : null}
+            </div>
+            <p className="text-sm text-foreground">{moment.message}</p>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
