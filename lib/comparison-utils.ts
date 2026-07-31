@@ -2,6 +2,7 @@ import { findPrimaryNextAction } from "@/lib/opportunity-utils";
 import type {
   AiInsight,
   ComparisonTone,
+  CredibilityInsight,
   FitInsight,
   FitLevel,
   Goal,
@@ -113,12 +114,18 @@ function findFitInsight(opportunityId: string, insights: AiInsight[]): FitInsigh
   );
 }
 
+/**
+ * Deliberately stays to one or two words: a full goal title can run long
+ * enough to overflow a compact grid cell, and this dimension's job is to
+ * answer "linked or not," not to repeat the goal's own title (the detail
+ * page's Related goal card already shows that in full).
+ */
 export function goalAlignmentLabel(opportunity: Opportunity, goals: Goal[]): { tone: ComparisonTone; label: string } {
   const linked = (opportunity.goalIds ?? [])
     .map((id) => goals.find((goal) => goal.id === id))
     .filter((goal): goal is Goal => Boolean(goal));
   if (linked.length === 0) return { tone: "muted", label: "Not linked" };
-  if (linked.length === 1) return { tone: "success", label: `Linked: ${linked[0].title}` };
+  if (linked.length === 1) return { tone: "success", label: "Linked to 1 goal" };
   return { tone: "success", label: `Linked to ${linked.length} goals` };
 }
 
@@ -281,6 +288,33 @@ export function buildComparisonVerdicts(
   }
 
   return cards;
+}
+
+/**
+ * The verdict card's expandable reasoning: real per-object AI Analysis
+ * content grounding whichever axis that verdict is actually about, rather
+ * than repeating the card's own two-line why. Best for now digs into the
+ * primary next action's own rationale, Best long-term upside into the fit
+ * judgment's reasoning, Safest into the credibility check's reasoning.
+ */
+export function buildVerdictExpandedReasoning(
+  kind: VerdictKind,
+  opportunity: Opportunity,
+  insights: AiInsight[],
+  nextActions: NextAction[]
+): string {
+  if (kind === "best-for-now") {
+    const primaryAction = findPrimaryNextAction(opportunity.id, nextActions);
+    return primaryAction?.rationale ?? "No next action queued yet, so there's nothing pulling this forward right now.";
+  }
+  if (kind === "best-long-term") {
+    const fitInsight = findFitInsight(opportunity.id, insights);
+    return fitInsight?.whyThisReading ?? "Fit hasn't been fully judged for this opportunity yet.";
+  }
+  const credibilityInsight = insights.find(
+    (insight): insight is CredibilityInsight => insight.kind === "credibility" && insight.hostId === opportunity.id
+  );
+  return credibilityInsight?.whyThisReading ?? "This opportunity hasn't been credibility-checked yet.";
 }
 
 /** One honest line on what could change the verdicts: the "Best for now" winner's own next action already names what would change its advice. */

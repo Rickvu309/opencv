@@ -7,6 +7,8 @@ import { WorkspacePage } from "@/components/shell/workspace-page";
 import { ComparisonDimensionGrid } from "@/components/opportunities/compare/comparison-dimension-grid";
 import { ComparisonHeaderCards } from "@/components/opportunities/compare/comparison-header-cards";
 import { ComparisonRecoverState, type ComparisonRecoverReason } from "@/components/opportunities/compare/comparison-recover-state";
+import { ComparisonTradeoffs } from "@/components/opportunities/compare/comparison-tradeoffs";
+import { ComparisonVerdicts } from "@/components/opportunities/compare/comparison-verdicts";
 import { isValidComparisonSelection } from "@/lib/comparison-utils";
 import { useCopilotSurface, useStore } from "@/lib/store";
 
@@ -70,6 +72,8 @@ export default function OpportunityComparePage() {
         <div className="flex flex-col gap-6">
           <ComparisonHeaderCards opportunities={selected} />
           <ComparisonDimensionGrid opportunities={selected} />
+          <ComparisonTradeoffs opportunities={selected} />
+          <ComparisonVerdicts opportunities={selected} />
         </div>
       )}
     </WorkspacePage>
