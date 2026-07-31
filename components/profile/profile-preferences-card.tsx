@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import type { ReactNode } from "react";
+import { cloneElement, isValidElement, useId, useState } from "react";
+import type { ReactElement } from "react";
 import { Pencil, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -206,11 +206,14 @@ export function ProfilePreferencesCard() {
   );
 }
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
+function Field({ label, children }: { label: string; children: ReactElement<{ id?: string }> }) {
+  const id = useId();
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-xs text-muted-foreground">{label}</label>
-      {children}
+      <label htmlFor={id} className="text-xs text-muted-foreground">
+        {label}
+      </label>
+      {isValidElement(children) ? cloneElement(children, { id }) : children}
     </div>
   );
 }

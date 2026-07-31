@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { cloneElement, isValidElement, useEffect, useId, useRef, useState, type ReactElement } from "react";
 import { Sparkles } from "lucide-react";
 
 import {
@@ -613,11 +613,12 @@ export function AddOpportunityDialog({ children }: { children: React.ReactNode }
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children }: { label: string; children: ReactElement<{ id?: string }> }) {
+  const id = useId();
   return (
     <div className="flex flex-col gap-1.5">
-      <Label>{label}</Label>
-      {children}
+      <Label htmlFor={id}>{label}</Label>
+      {isValidElement(children) ? cloneElement(children, { id }) : children}
     </div>
   );
 }
