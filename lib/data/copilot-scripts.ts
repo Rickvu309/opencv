@@ -50,7 +50,8 @@ export const copilotScripts: CopilotSurfaceScript[] = [
             },
             {
               label: "Open item",
-              detail: "The accepted next action to send your case study is still outstanding.",
+              detail:
+                "The accepted next action to send your case study is still outstanding, and Duy Nguyen's email checked in about it an hour ago.",
             },
           ],
           handoff: { kind: "route", href: "/opportunities/opp-1", label: "Open Solace AI" },
@@ -195,6 +196,10 @@ export const copilotScripts: CopilotSurfaceScript[] = [
             {
               label: "Why",
               detail: "Your contact has worked directly with Solace's design team, a credible internal voice, not just a secondhand tip.",
+            },
+            {
+              label: "Recent signal",
+              detail: "Duy Nguyen's email an hour ago confirms the role is still open and he's ready to route your case study.",
             },
           ],
           confidence: "High",
@@ -426,7 +431,13 @@ export const copilotScripts: CopilotSurfaceScript[] = [
         prompt: "What should I focus on for the panel round?",
         response: {
           lead: "Leadership judgment, that's what the panel is most likely to probe next.",
-          points: [{ label: "Where to spend prep time", detail: "Your craft evidence is already strong, spend prep time on decisions and tradeoffs, not portfolio polish." }],
+          points: [
+            { label: "Where to spend prep time", detail: "Your craft evidence is already strong, spend prep time on decisions and tradeoffs, not portfolio polish." },
+            {
+              label: "New from the recruiter",
+              detail: "Jordan Ellis's email 2 hours ago adds a specific ask: a ten-minute case-study walkthrough instead of open Q&A.",
+            },
+          ],
           handoff: { kind: "opportunity-tab", tab: "actions", label: "Open Actions tab" },
         },
       },
@@ -478,7 +489,13 @@ export const copilotScripts: CopilotSurfaceScript[] = [
         prompt: "What should I ask about the decision timeline?",
         response: {
           lead: "Ask directly when the committee expects to decide.",
-          points: [{ label: "Why now", detail: "The final loop wrapped without a stated timeline, it's the one unknown left." }],
+          points: [
+            { label: "Why now", detail: "The final loop wrapped without a stated timeline, it's the one unknown left." },
+            {
+              label: "Fresh signal",
+              detail: "Priya Shah's email 5 hours ago already asks for a follow-up call this Friday, a good moment to ask directly.",
+            },
+          ],
           action: {
             kind: "accept-next-action",
             targetId: "action-9",
@@ -784,7 +801,13 @@ export const copilotScripts: CopilotSurfaceScript[] = [
         prompt: "What should I confirm from this week?",
         response: {
           lead: "Two drafted candidates: the credibility-check heuristic from Tuesday's AI review sync, and the trust-cue research sprint.",
-          points: [{ label: "Why now", detail: "Both are already referenced elsewhere this week, worth confirming while details are fresh." }],
+          points: [
+            { label: "Why now", detail: "Both are already referenced elsewhere this week, worth confirming while details are fresh." },
+            {
+              label: "Source",
+              detail: "Ravi Desai's and Hana Kobayashi's recap emails back each one, both show up as evidence chips on the drafts.",
+            },
+          ],
           handoff: { kind: "route", href: "/skills", label: "See the AI fluency connection" },
         },
       },

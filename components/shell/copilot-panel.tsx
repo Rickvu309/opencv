@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Check, Send, X } from "lucide-react";
+import { ArrowRight, Check, Mail, Send, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,9 +14,32 @@ import { AiThinking } from "@/components/shared/ai-thinking";
 import { EmptyState } from "@/components/shared/empty-state";
 import { copilotScripts } from "@/lib/data/copilot-scripts";
 import { buildCopilotCaptureCandidate } from "@/lib/data/track-record";
+import { connectedSources, emailEvidence } from "@/lib/data/sources";
 import { getCopilotContextChip } from "@/lib/copilot-utils";
 import { today, useStore } from "@/lib/store";
 import type { CopilotHandoff, CopilotMessage, CopilotSuggestedAction } from "@/lib/types";
+
+function freshnessLabel(minutes: number): string {
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.round(minutes / 60);
+  return `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
+}
+
+/**
+ * Whether the panel's current surface has connected-source evidence behind
+ * it: an opportunity with mapped email evidence, or a surface (Home, Track
+ * Record) that aggregates evidence across opportunities.
+ */
+function surfaceHasEvidence(surface: string, objectLabel: string | undefined, opportunities: { id: string; role: string; company: string }[]): boolean {
+  const relatedOpportunity = opportunities.find((item) => `${item.role} at ${item.company}` === objectLabel);
+  if (relatedOpportunity) {
+    return emailEvidence.some(
+      (evidence) => evidence.mapsToType === "opportunity" && evidence.mapsToId === relatedOpportunity.id
+    );
+  }
+  const base = surface.split(":")[0].trim();
+  return base === "Home" || base === "Track Record";
+}
 
 export function CopilotPanel() {
   const { state, sendCopilotMessage, setCopilotOpen } = useStore();
@@ -26,6 +49,9 @@ export function CopilotPanel() {
   const surface = state.copilot.surface;
   const script = copilotScripts.find((entry) => entry.surface === surface);
   const messages = state.copilot.messagesBySurface[surface] ?? [];
+  const emailSource = connectedSources.find((source) => source.type === "email");
+  const showSourceLine =
+    emailSource && surfaceHasEvidence(surface, state.copilot.objectLabel, state.opportunities);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -43,6 +69,12 @@ export function CopilotPanel() {
         <div className="flex flex-col gap-1.5">
           <CopilotTag />
           <Chip label={getCopilotContextChip(surface, state.copilot.objectLabel)} className="bg-muted text-foreground" />
+          {showSourceLine && emailSource ? (
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Mail className="size-3" />
+              Reading: Email, synced {freshnessLabel(emailSource.lastSyncedMinutesAgo)}
+            </span>
+          ) : null}
         </div>
         <Button variant="ghost" size="icon-sm" aria-label="Close Copilot" onClick={() => setCopilotOpen(false)}>
           <X className="size-4" />
