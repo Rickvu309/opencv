@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 
 import { StoreProvider } from "@/lib/store";
@@ -7,9 +7,14 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { DesktopGuard } from "@/components/shell/desktop-guard";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// IBM Plex Sans over the default Geist Sans: a deliberate, enterprise-grade
+// sans with distinct character at dense sizes, tabular figures for chip and
+// table data, and enough weight range to carry a real display/heading/body
+// scale without leaning on a second family.
+const displaySans = IBM_Plex_Sans({
+  variable: "--font-display-sans",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 const geistMono = Geist_Mono({
@@ -30,7 +35,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${displaySans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
         <StoreProvider>
