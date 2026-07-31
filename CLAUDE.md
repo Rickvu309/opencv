@@ -21,7 +21,8 @@ For each issue, in this order:
 Delegation order:
 
 1. **Droid CLI (Sonnet)** first: `droid exec` with a brief file.
-2. **Sonnet sub-agent** as fallback: an Agent-tool sub-agent with `model: sonnet`.
+2. **Light CLI workers for easy tasks** (to save Claude tokens while droid is out): the antigravity CLI and the oz CLI (Warp) may be assigned small, low-stakes work. Health check before every use; only delegate if the check passes. Status 2026-07-31: antigravity is not installed; `oz agent run -p "..."` is logged in but hangs past 90 seconds on a trivial prompt, so neither is usable yet.
+3. **Sonnet sub-agent** as fallback: an Agent-tool sub-agent with `model: sonnet`.
 
 If droid fails, run the health check once: `droid exec --auto low "Reply with the single word: ready"`. If that also fails, treat it as a service outage and dispatch the same brief to a Sonnet sub-agent instead. Retry droid at the next natural checkpoint.
 
