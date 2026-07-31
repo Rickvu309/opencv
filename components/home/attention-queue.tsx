@@ -34,7 +34,7 @@ const NUDGE_ICON: Record<NudgeTrigger, typeof AlarmClock> = {
   "capture-prompt": Inbox,
   "goal-reminder": Target,
   "learning-nudge": GraduationCap,
-  "weekly-focus": Pin,
+  "rewind-carry-forward": Pin,
 };
 
 // How long the "handled" check state holds before the Act deep link actually

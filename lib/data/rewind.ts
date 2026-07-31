@@ -1,4 +1,4 @@
-import type { RewindCandidate, RewindWeekStory } from "@/lib/types";
+import type { RewindArchivedWeek, RewindCandidate, RewindCarryForward, RewindWeekStory } from "@/lib/types";
 
 // Rewind (RDS-980): the connected weekly review as a full route. This file
 // holds the current week's seed content: the top-band story first, with
@@ -150,5 +150,88 @@ export const rewindCandidates: RewindCandidate[] = [
         "Direct evidence for landing a senior or staff AI product design role, closing the AI and ML literacy gap with a shipped judgment call, not just coursework.",
     },
     state: "pending",
+  },
+];
+
+// ---------------------------------------------------------------------------
+// Carry-forward: 3 closing-zone proposals for next week, one per required
+// shape (unfinished important work, a growth prompt tied to the planner's
+// next move, one opportunity follow-up). Five-beat acceptable: accepting
+// pins a Nudge into the Home attention queue and, for the one that names an
+// opportunity, adds a next action to that opportunity's plan.
+// ---------------------------------------------------------------------------
+
+export const rewindCarryForwards: RewindCarryForward[] = [
+  {
+    id: "carry-forward-1",
+    kind: "unfinished-work",
+    message: "The AI explainability case study is still just an outline, three weeks out from the August 15 target.",
+    why: "Every AI-forward loop you're running, Meridian Labs included, asks for exactly this proof, and it only exists as internal Fintra documents right now.",
+    proposedAction: "Pins a reminder to your Home attention queue, linked to the goal.",
+    actionLabel: "Open goal",
+    actionHref: "/goals",
+    state: "suggested",
+  },
+  {
+    id: "carry-forward-2",
+    kind: "growth-prompt",
+    message: "The Path Planner's next recommended move, starting the AI Product Design Fundamentals course, hasn't started yet.",
+    why: "It's the single biggest lever on your strongest active path, and this month's panel and offer decisions leave less excuse to keep deferring it.",
+    proposedAction: "Pins a reminder to your Home attention queue and keeps it visible in the Path Planner.",
+    actionLabel: "Open Path Planner",
+    actionHref: "/planner",
+    state: "suggested",
+  },
+  {
+    id: "carry-forward-3",
+    kind: "opportunity-follow-up",
+    message: "Arclight AI's review committee meets again next week; still no update since the last biweekly cycle.",
+    why: "The committee's cadence means silence past two cycles is worth a deliberate follow-up, not just more waiting.",
+    proposedAction: "Pins a reminder to your Home attention queue and adds a follow-up next action to Arclight AI's plan.",
+    actionLabel: "Open Arclight AI",
+    actionHref: "/opportunities/opp-4#actions",
+    relatedOpportunityId: "opp-4",
+    plannedNextAction: {
+      verb: "Follow up with Arclight AI's recruiter on the review committee's decision",
+      rationale: "Two biweekly review cycles have passed without an update.",
+      effort: "15 minutes",
+      dueHint: "This week",
+    },
+    state: "suggested",
+  },
+];
+
+// ---------------------------------------------------------------------------
+// Past weeks: a compact archive of 3 seeded previous Rewinds, each opening
+// to a read-only summary.
+// ---------------------------------------------------------------------------
+
+export const rewindArchive: RewindArchivedWeek[] = [
+  {
+    id: "archive-week-1",
+    weekLabel: "Week of July 20 to 24, 2026",
+    shapeOfWeek: "A waiting week: Halo Bank's committee deliberated, Meridian Labs' panel prep ramped up, and the Orbit Logistics offer conversation began.",
+    achievementsKept: 2,
+    followUpsQueued: 2,
+    highlightTitles: [
+      "Tailored the Meridian Labs CV ahead of the panel round",
+      "Documented the Halo Bank final-loop debrief while it was fresh",
+    ],
+  },
+  {
+    id: "archive-week-2",
+    weekLabel: "Week of July 13 to 17, 2026",
+    shapeOfWeek: "Halo Bank's final loop wrapped and the thank-you note went out same-day, while the AI explainability case study outline finally got started.",
+    achievementsKept: 1,
+    followUpsQueued: 3,
+    highlightTitles: ["Outlined the AI explainability case study from the Fintra panel work"],
+  },
+  {
+    id: "archive-week-3",
+    weekLabel: "Week of July 6 to 10, 2026",
+    shapeOfWeek: "Vanta Growth Labs' credibility flag got caught early, and Cascade AI research began.",
+    achievementsKept: 1,
+    followUpsQueued: 2,
+    highlightTitles: ["Caught Vanta Growth Labs' credibility flag before applying further"],
   },
 ];

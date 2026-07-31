@@ -31,12 +31,16 @@ import { skills as seedSkills, learningItems as seedLearningItems } from "@/lib/
 import { planItems as seedPlanItems, plannerGapAnalyses as seedPlannerGapAnalyses } from "@/lib/data/planner";
 import { insights as seedInsights } from "@/lib/data/insights";
 import { nextActions as seedNextActions } from "@/lib/data/actions";
-import { nudges as seedNudges, weeklyReviewScript } from "@/lib/data/nudges";
-import { rewindCandidates as seedRewindCandidates } from "@/lib/data/rewind";
+import { nudges as seedNudges } from "@/lib/data/nudges";
+import {
+  rewindCandidates as seedRewindCandidates,
+  rewindCarryForwards as seedRewindCarryForwards,
+} from "@/lib/data/rewind";
 import { copilotScripts } from "@/lib/data/copilot-scripts";
 import { aiSignals as seedAiSignals } from "@/lib/data/ai-signals";
 import { connectedSources as seedConnectedSources } from "@/lib/data/sources";
-import { buildPinnedNudgeFromSuggestion, pinnedNudgeId } from "@/lib/nudge-utils";
+import { pinnedNudgeId } from "@/lib/nudge-utils";
+import { buildPinnedNudgeFromCarryForward } from "@/lib/rewind-utils";
 import { buildSignalActivityMessage } from "@/lib/ai-signal-utils";
 import { buildInboxTrackRecordCandidate, evidenceTitle } from "@/lib/inbox-utils";
 import type {
@@ -69,10 +73,11 @@ import type {
   ProfilePreferences,
   RewindCandidate,
   RewindCandidateState,
+  RewindCarryForward,
+  RewindCarryForwardState,
   Skill,
   SourceEvidence,
   TrackRecordEntry,
-  WeeklyReviewScript,
 } from "@/lib/types";
 
 export type OpportunitiesView = "board" | "list";
@@ -118,10 +123,8 @@ export interface StoreState {
   aiSignals: AiSignal[];
   connectedSources: ConnectedSource[];
   inboxItemLinks: Record<string, InboxItemLink>;
-  weeklyReview: WeeklyReviewScript;
-  weeklyReviewOpen: boolean;
-  weeklyReviewViewedThisSession: boolean;
   rewindCandidates: RewindCandidate[];
+  rewindCarryForwards: RewindCarryForward[];
   rewindViewedThisSession: boolean;
   onboarded: boolean;
   copilot: CopilotState;
@@ -154,10 +157,8 @@ const initialState: StoreState = {
   aiSignals: seedAiSignals,
   connectedSources: seedConnectedSources,
   inboxItemLinks: {},
-  weeklyReview: weeklyReviewScript,
-  weeklyReviewOpen: false,
-  weeklyReviewViewedThisSession: false,
   rewindCandidates: seedRewindCandidates,
+  rewindCarryForwards: seedRewindCarryForwards,
   rewindViewedThisSession: false,
   onboarded: false,
   copilot: {
@@ -254,15 +255,9 @@ type Action =
   | { type: "CLEAR_SKILL_HIGHLIGHT"; id: string }
   | { type: "SET_TRACK_RECORD_HIGHLIGHT"; id: string }
   | { type: "CLEAR_TRACK_RECORD_HIGHLIGHT"; id: string }
-  | {
-      type: "SET_WEEKLY_REVIEW_SUGGESTION_STATE";
-      id: string;
-      state: "accepted" | "dismissed";
-    }
-  | { type: "SET_WEEKLY_REVIEW_OPEN"; open: boolean }
-  | { type: "MARK_WEEKLY_REVIEW_VIEWED" }
   | { type: "SAVE_REWIND_CANDIDATE"; candidateId: string; entry: TrackRecordEntry }
   | { type: "SET_REWIND_CANDIDATE_STATE"; id: string; state: RewindCandidateState }
+  | { type: "SET_REWIND_CARRY_FORWARD_STATE"; id: string; state: RewindCarryForwardState }
   | { type: "MARK_REWIND_VIEWED" }
   | { type: "SET_PROFILE_SUMMARY"; summary: string }
   | { type: "SET_PROFILE_EXPERIENCE_ENTRY"; id: string; patch: Partial<Omit<ExperienceEntry, "id">> }
@@ -949,37 +944,52 @@ function reducer(state: StoreState, action: Action): StoreState {
         ? { ...state, highlightedTrackRecordEntryId: undefined }
         : state;
 
-    case "SET_WEEKLY_REVIEW_SUGGESTION_STATE": {
-      const suggestion = state.weeklyReview.suggestedFocus.find((entry) => entry.id === action.id);
+    case "SET_REWIND_CARRY_FORWARD_STATE": {
+      const carryForward = state.rewindCarryForwards.find((entry) => entry.id === action.id);
       const nudgeId = pinnedNudgeId(action.id);
 
-      // Accepting a focus suggestion pins a matching Nudge into the Home
+      // Accepting a carry-forward pins a matching Nudge into the Home
       // attention queue (guarded by id, so accepting twice never duplicates
-      // it); toggling back off removes that pinned card again.
+      // it) and, where it names one, adds its planned next action to that
+      // opportunity's plan (also guarded by id). Toggling back off removes
+      // the pinned card again; the planned next action, once added, stays.
       let nudges = state.nudges;
-      if (suggestion && action.state === "accepted" && !state.nudges.some((nudge) => nudge.id === nudgeId)) {
-        nudges = [...state.nudges, buildPinnedNudgeFromSuggestion(suggestion)];
-      } else if (action.state === "dismissed") {
+      let nextActions = state.nextActions;
+
+      if (carryForward && action.state === "accepted" && !state.nudges.some((nudge) => nudge.id === nudgeId)) {
+        nudges = [...nudges, buildPinnedNudgeFromCarryForward(carryForward)];
+
+        if (carryForward.relatedOpportunityId && carryForward.plannedNextAction) {
+          const plannedId = `action-rewind-${carryForward.id}`;
+          if (!nextActions.some((entry) => entry.id === plannedId)) {
+            nextActions = [
+              ...nextActions,
+              {
+                id: plannedId,
+                opportunityId: carryForward.relatedOpportunityId,
+                verb: carryForward.plannedNextAction.verb,
+                rationale: carryForward.plannedNextAction.rationale,
+                effort: carryForward.plannedNextAction.effort,
+                dueHint: carryForward.plannedNextAction.dueHint,
+                state: "suggested",
+                confidence: "Medium",
+              },
+            ];
+          }
+        }
+      } else if (action.state !== "accepted") {
         nudges = state.nudges.filter((nudge) => nudge.id !== nudgeId);
       }
 
       return {
         ...state,
         nudges,
-        weeklyReview: {
-          ...state.weeklyReview,
-          suggestedFocus: state.weeklyReview.suggestedFocus.map((entry) =>
-            entry.id === action.id ? { ...entry, state: action.state } : entry
-          ),
-        },
+        nextActions,
+        rewindCarryForwards: state.rewindCarryForwards.map((entry) =>
+          entry.id === action.id ? { ...entry, state: action.state } : entry
+        ),
       };
     }
-
-    case "SET_WEEKLY_REVIEW_OPEN":
-      return { ...state, weeklyReviewOpen: action.open };
-
-    case "MARK_WEEKLY_REVIEW_VIEWED":
-      return { ...state, weeklyReviewViewedThisSession: true };
 
     case "SAVE_REWIND_CANDIDATE": {
       const exists = state.trackRecordEntries.some((entry) => entry.id === action.entry.id);
@@ -1153,15 +1163,13 @@ interface StoreContextValue {
   clearSkillHighlight: (id: string) => void;
   setTrackRecordHighlight: (id: string) => void;
   clearTrackRecordHighlight: (id: string) => void;
-  acceptWeeklyReviewSuggestion: (id: string) => void;
-  dismissWeeklyReviewSuggestion: (id: string) => void;
-  openWeeklyReview: () => void;
-  closeWeeklyReview: () => void;
-  markWeeklyReviewViewed: () => void;
   saveRewindCandidate: (candidateId: string, entry: TrackRecordEntry) => void;
   dismissRewindCandidate: (id: string) => void;
   deferRewindCandidate: (id: string) => void;
   resetRewindCandidate: (id: string) => void;
+  acceptRewindCarryForward: (id: string) => void;
+  dismissRewindCarryForward: (id: string) => void;
+  undoRewindCarryForward: (id: string) => void;
   updateProfileSummary: (summary: string) => void;
   updateExperienceEntry: (id: string, patch: Partial<Omit<ExperienceEntry, "id">>) => void;
   addExperienceEntry: (entry: ExperienceEntry) => void;
@@ -1586,28 +1594,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: "CLEAR_TRACK_RECORD_HIGHLIGHT", id });
   }, []);
 
-  const acceptWeeklyReviewSuggestion = useCallback((id: string) => {
-    dispatch({ type: "SET_WEEKLY_REVIEW_SUGGESTION_STATE", id, state: "accepted" });
-    toast.success("Pinned to your attention queue");
-  }, []);
-
-  const dismissWeeklyReviewSuggestion = useCallback((id: string) => {
-    dispatch({ type: "SET_WEEKLY_REVIEW_SUGGESTION_STATE", id, state: "dismissed" });
-    toast("Removed from focus for next week");
-  }, []);
-
-  const openWeeklyReview = useCallback(() => {
-    dispatch({ type: "SET_WEEKLY_REVIEW_OPEN", open: true });
-  }, []);
-
-  const closeWeeklyReview = useCallback(() => {
-    dispatch({ type: "SET_WEEKLY_REVIEW_OPEN", open: false });
-  }, []);
-
-  const markWeeklyReviewViewed = useCallback(() => {
-    dispatch({ type: "MARK_WEEKLY_REVIEW_VIEWED" });
-  }, []);
-
   const saveRewindCandidate = useCallback(
     (candidateId: string, entry: TrackRecordEntry) => {
       dispatch({ type: "SAVE_REWIND_CANDIDATE", candidateId, entry });
@@ -1647,6 +1633,28 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const resetRewindCandidate = useCallback((id: string) => {
     dispatch({ type: "SET_REWIND_CANDIDATE_STATE", id, state: "pending" });
+  }, []);
+
+  const acceptRewindCarryForward = useCallback((id: string) => {
+    dispatch({ type: "SET_REWIND_CARRY_FORWARD_STATE", id, state: "accepted" });
+    dispatch({ type: "MARK_REWIND_VIEWED" });
+    toast.success("Pinned to your attention queue");
+  }, []);
+
+  const dismissRewindCarryForward = useCallback((id: string) => {
+    dispatch({ type: "SET_REWIND_CARRY_FORWARD_STATE", id, state: "dismissed" });
+    dispatch({ type: "MARK_REWIND_VIEWED" });
+    toast("Removed from next week's carry-forward", {
+      action: {
+        label: "Undo",
+        onClick: () => dispatch({ type: "SET_REWIND_CARRY_FORWARD_STATE", id, state: "suggested" }),
+      },
+    });
+  }, []);
+
+  // No toast: the card's own save-back confirmation is what Undo reverses.
+  const undoRewindCarryForward = useCallback((id: string) => {
+    dispatch({ type: "SET_REWIND_CARRY_FORWARD_STATE", id, state: "suggested" });
   }, []);
 
   const updateProfileSummary = useCallback((summary: string) => {
@@ -1787,15 +1795,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       clearSkillHighlight,
       setTrackRecordHighlight,
       clearTrackRecordHighlight,
-      acceptWeeklyReviewSuggestion,
-      dismissWeeklyReviewSuggestion,
-      openWeeklyReview,
-      closeWeeklyReview,
-      markWeeklyReviewViewed,
       saveRewindCandidate,
       dismissRewindCandidate,
       deferRewindCandidate,
       resetRewindCandidate,
+      acceptRewindCarryForward,
+      dismissRewindCarryForward,
+      undoRewindCarryForward,
       updateProfileSummary,
       updateExperienceEntry,
       addExperienceEntry,
@@ -1865,15 +1871,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       clearSkillHighlight,
       setTrackRecordHighlight,
       clearTrackRecordHighlight,
-      acceptWeeklyReviewSuggestion,
-      dismissWeeklyReviewSuggestion,
-      openWeeklyReview,
-      closeWeeklyReview,
-      markWeeklyReviewViewed,
       saveRewindCandidate,
       dismissRewindCandidate,
       deferRewindCandidate,
       resetRewindCandidate,
+      acceptRewindCarryForward,
+      dismissRewindCarryForward,
+      undoRewindCarryForward,
       updateProfileSummary,
       updateExperienceEntry,
       addExperienceEntry,

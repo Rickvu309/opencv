@@ -763,8 +763,8 @@ export type AiSignal = NextActionSignal | StatusChangeSignal | PriorityBumpSigna
 /**
  * The six triggers the attention queue seeds from, grouped into four
  * families by lib/nudge-utils.ts's NUDGE_FAMILY map (opportunity, capture,
- * goal, learning). "weekly-focus" is a seventh trigger reserved for items
- * promoted from an accepted Weekly Review suggestion, pinned on top of the
+ * goal, learning). "rewind-carry-forward" is a seventh trigger reserved for
+ * items promoted from an accepted Rewind carry-forward, pinned on top of the
  * seeded set rather than counted toward the four families.
  */
 export type NudgeTrigger =
@@ -774,7 +774,7 @@ export type NudgeTrigger =
   | "capture-prompt"
   | "goal-reminder"
   | "learning-nudge"
-  | "weekly-focus";
+  | "rewind-carry-forward";
 
 export type NudgeState = "active" | "dismissed" | "snoozed";
 
@@ -797,41 +797,8 @@ export interface Nudge {
   relatedGoalId?: string;
   relatedLearningItemId?: string;
   state: NudgeState;
-  /** Set on items promoted from an accepted Weekly Review focus suggestion; pinned items float to the top of the attention queue. */
+  /** Set on items promoted from an accepted Rewind carry-forward; pinned items float to the top of the attention queue. */
   pinned?: boolean;
-}
-
-export type WeeklyReviewSuggestionState = "suggested" | "accepted" | "dismissed";
-
-/**
- * One toggleable focus suggestion in Weekly Review step 4. Accepting it
- * (state "accepted") pins a matching Nudge into the Home attention queue via
- * the action's own label and href; toggling back off removes it again.
- */
-export interface WeeklyReviewSuggestion {
-  id: string;
-  text: string;
-  state: WeeklyReviewSuggestionState;
-  actionLabel: string;
-  actionHref: string;
-}
-
-/** One "what Copilot noticed" observation in Weekly Review step 2: the observation plus why it matters. */
-export interface WeeklyReviewObservation {
-  id: string;
-  text: string;
-  why: string;
-}
-
-export interface WeeklyReviewScript {
-  /** Step 1: this week's changes, status moves, new opportunities, and actions done, as a compact recap list. */
-  whatMoved: string[];
-  /** Step 1: one line recapping activity from connected sources, emails scanned and threads linked. */
-  connectedSourcesRecap: string;
-  /** Step 2: 3 observations with a why line each. */
-  observations: WeeklyReviewObservation[];
-  /** Step 4: 3 toggleable focus suggestions. */
-  suggestedFocus: WeeklyReviewSuggestion[];
 }
 
 // ---------------------------------------------------------------------------
@@ -949,6 +916,50 @@ export interface RewindCandidate {
   read: RewindRead;
   proposed: RewindProposedAchievement;
   state: RewindCandidateState;
+}
+
+/** The 3 shapes a carry-forward proposal takes: unfinished important work, a growth prompt tied to the planner's next move, or one opportunity follow-up. */
+export type RewindCarryForwardKind = "unfinished-work" | "growth-prompt" | "opportunity-follow-up";
+
+export type RewindCarryForwardState = "suggested" | "accepted" | "dismissed";
+
+/** What accepting an opportunity-follow-up carry-forward adds to that opportunity's next-action plan. */
+export interface RewindPlannedNextAction {
+  verb: string;
+  rationale: string;
+  effort: string;
+  dueHint: string;
+}
+
+/**
+ * One closing-zone proposal for next week, five-beat acceptable: a signal,
+ * why it matters, optional grounding evidence, the proposed action, and
+ * accept or dismiss controls. Accepting pins a Nudge into the Home
+ * attention queue and, when it names one, adds plannedNextAction to
+ * relatedOpportunityId's plan.
+ */
+export interface RewindCarryForward {
+  id: string;
+  kind: RewindCarryForwardKind;
+  message: string;
+  why: string;
+  evidenceId?: string;
+  proposedAction: string;
+  actionLabel: string;
+  actionHref: string;
+  relatedOpportunityId?: string;
+  plannedNextAction?: RewindPlannedNextAction;
+  state: RewindCarryForwardState;
+}
+
+/** One past week in Rewind's compact archive list, opening to a read-only summary. */
+export interface RewindArchivedWeek {
+  id: string;
+  weekLabel: string;
+  shapeOfWeek: string;
+  achievementsKept: number;
+  followUpsQueued: number;
+  highlightTitles: string[];
 }
 
 export interface CopilotSurfaceScript {

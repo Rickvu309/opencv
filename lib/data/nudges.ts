@@ -1,4 +1,4 @@
-import type { Nudge, WeeklyReviewScript } from "@/lib/types";
+import type { Nudge } from "@/lib/types";
 
 // 6 nudges covering all four attention-queue families: opportunity (stale,
 // high-potential, missing next step), capture, goal, and learning. Every
@@ -39,8 +39,8 @@ export const nudges: Nudge[] = [
     trigger: "capture-prompt",
     message:
       "This week's AI review sync and the trust-cue research sprint both look worth capturing in Track Record.",
-    why: "Two drafted candidates are waiting in your review inbox before the details fade.",
-    actions: [{ label: "Review candidates", href: "/track-record" }],
+    why: "Two drafted candidates are waiting in review before the details fade, one of them already grouped into this week's Rewind.",
+    actions: [{ label: "Review in Rewind", href: "/rewind" }],
     state: "active",
   },
   {
@@ -64,57 +64,3 @@ export const nudges: Nudge[] = [
     state: "active",
   },
 ];
-
-// The one weekly review script: what moved, what Copilot noticed, one
-// candidate worth capturing, and 3 toggleable focus suggestions.
-export const weeklyReviewScript: WeeklyReviewScript = {
-  whatMoved: [
-    "Meridian Labs moved to the panel round after two positive interview rounds.",
-    "Halo Bank's final loop wrapped, decision still pending.",
-    "Orbit Logistics extended an offer with a deadline approaching.",
-    "Cascade AI was saved as a new opportunity, still waiting on a first Copilot read.",
-    "Sent the Halo Bank thank-you note right after the final loop wrapped.",
-  ],
-  connectedSourcesRecap:
-    "From your connected sources: Copilot scanned 9 emails this week and linked 7 threads to opportunities you're tracking.",
-  observations: [
-    {
-      id: "review-observation-1",
-      text: "Two Strong-fit opportunities, Arclight AI and Meridian Labs, are both waiting on someone else's timeline right now.",
-      why: "Arclight's review committee meets on a biweekly cadence and Meridian's panel decision is still pending, worth planning this week around both waits instead of just one.",
-    },
-    {
-      id: "review-observation-2",
-      text: "The Orbit Logistics offer sits at the low end of your stated target compensation.",
-      why: "You told Copilot your salary floor during onboarding, and the base-pay concern flagged in Orbit's fit read lines up with it directly.",
-    },
-    {
-      id: "review-observation-3",
-      text: "Cascade AI has been sitting in Saved for 2 days with no next step queued.",
-      why: "Every other active opportunity already has a suggested or accepted next action, this is the one exception right now.",
-    },
-  ],
-  suggestedFocus: [
-    {
-      id: "review-focus-1",
-      text: "Prioritize Meridian Labs panel prep, it's your strongest AI-direction match with the nearest deadline.",
-      state: "suggested",
-      actionLabel: "Open Meridian Labs",
-      actionHref: "/opportunities/opp-6#actions",
-    },
-    {
-      id: "review-focus-2",
-      text: "Decide on Orbit Logistics before the offer window closes, even if the decision is to negotiate or decline.",
-      state: "suggested",
-      actionLabel: "Open Orbit Logistics",
-      actionHref: "/opportunities/opp-8#actions",
-    },
-    {
-      id: "review-focus-3",
-      text: "Confirm or dismiss the 2 drafted Track Record candidates while the details are still fresh.",
-      state: "suggested",
-      actionLabel: "Review candidates",
-      actionHref: "/track-record",
-    },
-  ],
-};
