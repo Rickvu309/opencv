@@ -18,7 +18,6 @@ import { findEvidenceById } from "@/lib/inbox-utils";
 import { buildAchievementEntry } from "@/lib/rewind-utils";
 import { useStore } from "@/lib/store";
 import type { RewindCandidate, RewindProposedAchievement, Skill, SourceEvidence } from "@/lib/types";
-import { cn } from "@/lib/utils";
 
 interface RewindCandidateCardProps {
   candidate: RewindCandidate;
@@ -216,7 +215,7 @@ export function RewindCandidateCard({ candidate, skills }: RewindCandidateCardPr
           )}
         </div>
 
-        <div className={cn("flex items-center gap-1.5")}>
+        <div className="flex items-center gap-1.5">
           <Button size="sm" onClick={handleSave}>
             <Check className="size-3.5" />
             Save

@@ -33,7 +33,7 @@ export function HighlightsShelf({ entries, skills, cvVersions, opportunities }: 
       {highlights.length === 0 ? (
         <EmptyState message="No highlighted achievements yet. Saving a candidate from Rewind adds one here." />
       ) : (
-        <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-2 lg:grid-cols-2 xl:grid-cols-3">
           {highlights.map((entry) => (
             <TrackRecordEntryCard
               key={entry.id}

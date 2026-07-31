@@ -25,7 +25,7 @@ export function WeekStoryBand({ story }: WeekStoryBandProps) {
           <p className="text-display break-words">{story.shapeOfWeek}</p>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
           {story.clusters.map((cluster) => (
             <ThemeClusterCard key={cluster.id} cluster={cluster} />
           ))}
