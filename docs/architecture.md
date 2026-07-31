@@ -32,6 +32,7 @@ Sidebar structure:
 OpenPath (logo)
   Home                    /home
   Opportunities           /opportunities
+  Sources                 /sources
 CAREER MEMORY
   Profile                 /profile
   CV Versions             /cvs
@@ -42,6 +43,7 @@ DIRECTION
 (bottom)
   Weekly Review           opens review dialog
   Demo Tour               opens tour dialog
+  Connected sources       shortcut into /sources, compact status only
   Persona chip (Mai Tran)
 ```
 
@@ -49,6 +51,7 @@ Drill-downs:
 
 - /opportunities -> /opportunities/[id] (tabs: Overview, AI Analysis, Actions, Materials, Activity)
 - /cvs -> /cvs/[id]
+- /sources: connected tools hub plus the synced-context inbox, see section 7
 - /onboarding: full-screen flow shown on first run (store flag `onboarded`), skippable, ends at /home
 
 Header per page: page title, primary action button, Copilot toggle button.
@@ -126,7 +129,9 @@ Approving a proposal changes real store state and logs an Activity moment carryi
 
 ### Connected sources (simulated)
 
-`lib/data/sources.ts` seeds a connected-sources registry (Email, "Connected", last synced N minutes ago, extensible to other source types) and a set of email extracts, each with a sender, subject, timestamp, and the opportunity or Track Record candidate it maps to. A quiet "Connected sources" affordance in the sidebar shows Email's freshness and opens a dialog listing every source and what Copilot reads from it. Every AI proposal that cites a source shows its evidence chip and extract; the panel's context header shows the same connected source line on any surface backed by evidence.
+`lib/data/sources.ts` seeds a connected-sources registry (Gmail connected, Outlook and Granola not connected, extensible to further source types) and a shared evidence shape covering both email extracts and Granola meeting notes, each with a sender or attendee line, a subject or title, a timestamp, and the opportunity, Track Record candidate, or goal it maps to. A quiet "Connected sources" affordance in the sidebar shows how many sources are connected and links straight to /sources. Every AI proposal that cites a source shows its evidence chip and extract; the panel's context header shows the same connected source line on any surface backed by evidence.
+
+`/sources` (RDS-977) turns this registry into a workflow surface, not a settings page: a connected tools hub (status chip, what each tool gives OpenPath, what it unlocks, a 3-step simulated connect flow) above a synced-context inbox listing every evidence item from a connected source, newest first, filterable by source and by review state. Each row proposes a link target (an opportunity, a Track Record candidate, or a goal), with a confidence hedge when the read is uncertain. Linking is store-wired: to an opportunity it logs an Activity moment and shows in that opportunity's Overview; as Track Record material it drafts a fresh candidate in the review inbox; to a goal it attaches an evidence chip on the goal card. `lib/inbox-utils.ts` holds the read-only merge of seed evidence with live connection and link state; `lib/store.tsx`'s `CONNECT_SOURCE`, `LINK_INBOX_ITEM`, `UNDO_LINK_INBOX_ITEM`, and `DISMISS_INBOX_ITEM` cases hold the writes.
 
 Scripted behaviors:
 
@@ -169,3 +174,5 @@ Trust boundary, absolute rule: the AI drafts and suggests, the user accepts, edi
 - 14 copilot layer: section 7 form 1 everywhere
 - 15 proactive: flow 9
 - 16 polish: section 8 audit end to end
+- 17 sources model: section 7's connected-sources registry and evidence shape
+- RDS-977 sources workflow: section 3 nav (/sources), section 7's tools hub and synced-context inbox
