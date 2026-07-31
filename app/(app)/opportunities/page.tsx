@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { LayoutGrid, Plus, Rows3, X } from "lucide-react";
+import { LayoutGrid, Plus, Rows3, Scale, X } from "lucide-react";
 
 import { WorkspacePage } from "@/components/shell/workspace-page";
 import { AddOpportunityDialog } from "@/components/opportunities/add-opportunity-dialog";
+import { ComparisonBar } from "@/components/opportunities/comparison-bar";
 import { OpportunitiesFocusStrip } from "@/components/opportunities/opportunities-focus-strip";
 import { OpportunitiesControls } from "@/components/opportunities/opportunities-controls";
 import { OpportunityBoardView } from "@/components/opportunities/opportunity-board-view";
@@ -19,7 +20,7 @@ const STATUS_VALUES: OpportunityStatus[] = ["Saved", "Applied", "Interview", "Of
 
 export default function OpportunitiesPage() {
   useCopilotSurface("Opportunities");
-  const { state, setOpportunitiesView, clearOpportunityHighlight } = useStore();
+  const { state, setOpportunitiesView, clearOpportunityHighlight, setComparisonMode } = useStore();
 
   const [filter, setFilter] = useState<OpportunityFilter>("all");
   const [sort, setSort] = useState<OpportunitySort>("recently-active");
@@ -46,6 +47,16 @@ export default function OpportunitiesPage() {
       }
     }
     syncStatusFromQuery();
+  }, []);
+
+  // The compare workspace's "Change selection" and its recover state's "Back
+  // to Opportunities" both deep-link here with ?compare=1 so returning lands
+  // straight back in selection mode rather than a plain workspace view.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("compare") === "1") {
+      setComparisonMode(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const filtered = useMemo(
@@ -89,6 +100,15 @@ export default function OpportunitiesPage() {
               List
             </Button>
           </div>
+          <Button
+            size="sm"
+            variant={state.comparisonModeActive ? "secondary" : "outline"}
+            aria-pressed={state.comparisonModeActive}
+            onClick={() => setComparisonMode(!state.comparisonModeActive)}
+          >
+            <Scale className="size-4" />
+            Compare
+          </Button>
           <AddOpportunityDialog>
             <Button size="sm">
               <Plus className="size-4" />
@@ -138,6 +158,7 @@ export default function OpportunitiesPage() {
           />
         )}
       </div>
+      <ComparisonBar />
     </WorkspacePage>
   );
 }

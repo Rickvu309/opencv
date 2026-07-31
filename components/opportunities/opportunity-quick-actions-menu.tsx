@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Check, MoreHorizontal, Sparkles, Star } from "lucide-react";
+import { Check, MoreHorizontal, Scale, Sparkles, Star } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +16,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { MAX_COMPARISON } from "@/lib/comparison-utils";
 import { resolveOpportunitySurface } from "@/lib/copilot-utils";
 import { useStore } from "@/lib/store";
 import type { Opportunity, OpportunityStatus, Priority } from "@/lib/types";
@@ -29,13 +31,32 @@ const PRIORITY_OPTIONS: Priority[] = ["High", "Medium", "Low"];
  * spec requires on every card.
  */
 export function OpportunityQuickActionsMenu({ opportunity }: { opportunity: Opportunity }) {
-  const { setOpportunityStatus, setOpportunityPriority, toggleDream, setCopilotSurface, setCopilotOpen } =
-    useStore();
+  const {
+    state,
+    setOpportunityStatus,
+    setOpportunityPriority,
+    toggleDream,
+    setCopilotSurface,
+    setCopilotOpen,
+    setComparisonMode,
+    toggleComparisonSelection,
+  } = useStore();
   const router = useRouter();
 
   function askCopilot() {
     setCopilotSurface(resolveOpportunitySurface(opportunity.company), `${opportunity.role} at ${opportunity.company}`);
     setCopilotOpen(true);
+  }
+
+  const inComparison = state.comparisonSelection.includes(opportunity.id);
+  const comparisonFull = !inComparison && state.comparisonSelection.length >= MAX_COMPARISON;
+
+  function addToComparison() {
+    setComparisonMode(true);
+    toggleComparisonSelection(opportunity.id);
+    if (inComparison) return;
+    const nextCount = state.comparisonSelection.length + 1;
+    toast.success("Added to comparison", { description: `${nextCount} of ${MAX_COMPARISON} selected.` });
   }
 
   return (
@@ -101,6 +122,14 @@ export function OpportunityQuickActionsMenu({ opportunity }: { opportunity: Oppo
         <DropdownMenuItem onSelect={askCopilot}>
           <Sparkles className="size-3.5" />
           Ask Copilot about this
+        </DropdownMenuItem>
+        <DropdownMenuItem disabled={comparisonFull} onSelect={addToComparison}>
+          <Scale className="size-3.5" />
+          {inComparison
+            ? "Remove from comparison"
+            : comparisonFull
+              ? `Comparison full (${MAX_COMPARISON} max)`
+              : "Add to comparison"}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

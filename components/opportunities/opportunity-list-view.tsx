@@ -8,6 +8,7 @@ import { FitChip } from "@/components/shared/fit-chip";
 import { PriorityChip } from "@/components/shared/priority-chip";
 import { StatusChip } from "@/components/shared/status-chip";
 import { AttentionDot } from "@/components/opportunities/attention-dot";
+import { ComparisonCheckbox } from "@/components/opportunities/comparison-checkbox";
 import { OpportunityQuickActionsMenu } from "@/components/opportunities/opportunity-quick-actions-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
@@ -48,6 +49,7 @@ export function OpportunityListView({
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
+            {state.comparisonModeActive ? <TableHead className="w-8" /> : null}
             <TableHead>Role and company</TableHead>
             <TableHead>Status</TableHead>
             <SortableHead label="Fit" active={sort === "fit"} onClick={() => onSortChange("fit")} />
@@ -81,6 +83,14 @@ export function OpportunityListView({
                 )}
                 onClick={() => router.push(`/opportunities/${opportunity.id}`)}
               >
+                {state.comparisonModeActive ? (
+                  <TableCell onClick={(event) => event.stopPropagation()}>
+                    <ComparisonCheckbox
+                      opportunityId={opportunity.id}
+                      label={`${opportunity.role} at ${opportunity.company}`}
+                    />
+                  </TableCell>
+                ) : null}
                 <TableCell className="max-w-64 whitespace-normal">
                   <div className="flex items-center gap-1.5">
                     {opportunity.isDream ? (

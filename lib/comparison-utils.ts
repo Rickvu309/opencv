@@ -21,6 +21,14 @@ import type {
 export const MIN_COMPARISON = 2;
 export const MAX_COMPARISON = 4;
 
+/** The dimension grid's row-label gutter width, shared with the pinned header cards row above it so both stay column-aligned. */
+export const COMPARISON_LABEL_GUTTER = "12rem";
+
+/** One grid-template-columns string shared by the pinned header cards and the dimension grid, so a candidate's column lines up top to bottom. */
+export function comparisonGridTemplate(candidateCount: number): string {
+  return `${COMPARISON_LABEL_GUTTER} repeat(${candidateCount}, minmax(0, 1fr))`;
+}
+
 export type ComparisonDimensionId =
   | "fit"
   | "goal-alignment"

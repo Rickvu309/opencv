@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { FitChip } from "@/components/shared/fit-chip";
 import { PriorityChip } from "@/components/shared/priority-chip";
 import { AttentionDot } from "@/components/opportunities/attention-dot";
+import { ComparisonCheckbox } from "@/components/opportunities/comparison-checkbox";
 import { OpportunityQuickActionsMenu } from "@/components/opportunities/opportunity-quick-actions-menu";
 import {
   compareOpportunities,
@@ -87,6 +88,8 @@ function BoardCard({
   staleDays: number;
   highlighted: boolean;
 }) {
+  const { state } = useStore();
+
   return (
     <Link href={`/opportunities/${opportunity.id}`} className="block">
       <Card
@@ -99,7 +102,13 @@ function BoardCard({
       >
         <div className="flex flex-col gap-1.5 px-3">
           <div className="flex items-start justify-between gap-1">
-            <div className="flex min-w-0 items-center gap-1">
+            <div className="flex min-w-0 items-center gap-1.5">
+              {state.comparisonModeActive ? (
+                <ComparisonCheckbox
+                  opportunityId={opportunity.id}
+                  label={`${opportunity.role} at ${opportunity.company}`}
+                />
+              ) : null}
               {opportunity.isDream ? (
                 <Star className="size-3 shrink-0 fill-amber-500 text-amber-500" />
               ) : null}
