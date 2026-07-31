@@ -55,6 +55,7 @@ export const opportunities: Opportunity[] = [
     savedAt: "2026-07-10",
     lastActivityAt: "2026-07-10",
     hasCredibilityFlag: true,
+    nextActionId: "action-7",
     companyContext:
       "The listing names no company beyond 'Vanta Growth Labs' and a single-page domain registered two months ago. No leadership team, funding history, or product description could be verified.",
     responsibilities: [
@@ -83,6 +84,7 @@ export const opportunities: Opportunity[] = [
       "Northwind builds warehouse robotics fleet software. The role leads design for the fleet-operations dashboard used by on-site technicians. Hardware-adjacent domain is new territory for Mai, and the posting has been open for eleven weeks with no update.",
     savedAt: "2026-05-14",
     lastActivityAt: "2026-05-14",
+    nextActionId: "action-6",
     companyContext:
       "Northwind Robotics is a Series C hardware company building autonomous fleet software for warehouse operators, roughly 200 employees, with a verifiable customer list.",
     responsibilities: [
@@ -150,6 +152,7 @@ export const opportunities: Opportunity[] = [
     savedAt: "2026-06-05",
     lastActivityAt: "2026-06-22",
     appliedAt: "2026-06-08",
+    nextActionId: "action-8",
     companyContext:
       "Tidal Finance is a consumer savings app with roughly 40 employees, live in market for three years with a verifiable app-store presence.",
     responsibilities: [
@@ -218,6 +221,7 @@ export const opportunities: Opportunity[] = [
     savedAt: "2026-04-18",
     lastActivityAt: "2026-07-20",
     appliedAt: "2026-04-25",
+    nextActionId: "action-9",
     goalIds: ["goal-3"],
     companyContext:
       "Brightpath Bank is a digital-first retail bank with a three-person design team, hiring its first design manager to lead lending-product design.",
@@ -283,6 +287,7 @@ export const opportunities: Opportunity[] = [
     savedAt: "2026-04-02",
     lastActivityAt: "2026-04-20",
     appliedAt: "2026-04-05",
+    nextActionId: "action-10",
     companyContext:
       "Vela Studio is a 30-person design agency staffing designers onto short-term client engagements, primarily for US-based clients.",
     responsibilities: [

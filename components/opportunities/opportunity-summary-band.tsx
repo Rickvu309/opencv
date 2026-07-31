@@ -11,14 +11,22 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ConfidenceChip } from "@/components/shared/confidence-chip";
 import { FitChip } from "@/components/shared/fit-chip";
 import { PriorityChip } from "@/components/shared/priority-chip";
 import { StatusChip } from "@/components/shared/status-chip";
 import { useStore } from "@/lib/store";
-import type { NextAction, Opportunity, OpportunityStatus, Priority } from "@/lib/types";
+import type { NextAction, NextActionState, Opportunity, OpportunityStatus, Priority } from "@/lib/types";
 
 const STATUS_OPTIONS: OpportunityStatus[] = ["Saved", "Applied", "Interview", "Offer", "Closed"];
 const PRIORITY_OPTIONS: Priority[] = ["High", "Medium", "Low"];
+
+const NEXT_ACTION_STATE_LABEL: Record<NextActionState, string> = {
+  suggested: "Recommended",
+  accepted: "In plan",
+  done: "Done",
+  dismissed: "Dismissed",
+};
 
 interface OpportunitySummaryBandProps {
   opportunity: Opportunity;
@@ -102,9 +110,10 @@ export function OpportunitySummaryBand({ opportunity, primaryNextAction }: Oppor
             {primaryNextAction ? primaryNextAction.verb : "No next action suggested yet"}
           </span>
           {primaryNextAction ? (
-            <span className="capitalize text-muted-foreground">· {primaryNextAction.state}</span>
+            <span className="text-muted-foreground">· {NEXT_ACTION_STATE_LABEL[primaryNextAction.state]}</span>
           ) : null}
         </span>
+        {primaryNextAction ? <ConfidenceChip confidence={primaryNextAction.confidence} /> : null}
       </div>
     </div>
   );

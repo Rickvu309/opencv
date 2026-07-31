@@ -123,6 +123,8 @@ type Action =
       id: string;
       patch: Partial<Pick<NextAction, "verb" | "rationale" | "effort" | "dueHint">>;
     }
+  | { type: "ACCEPT_ALTERNATIVE"; id: string; alternativeId: string }
+  | { type: "REMOVE_NEXT_ACTION"; id: string }
   | { type: "SET_TRACK_RECORD_STATUS"; id: string; status: "confirmed" | "candidate"; remove?: boolean }
   | { type: "SET_NUDGE_STATE"; id: string; state: Nudge["state"] }
   | {
@@ -254,23 +256,62 @@ function reducer(state: StoreState, action: Action): StoreState {
     case "SET_NEXT_ACTION_STATE": {
       const target = state.nextActions.find((nextAction) => nextAction.id === action.id);
       const becameAccepted = action.state === "accepted" && target?.state !== "accepted";
+      const becameDone = action.state === "done" && target?.state !== "done";
+      const dateStamp = today();
+
+      const updatedActions = state.nextActions.map((nextAction) =>
+        nextAction.id === action.id ? { ...nextAction, state: action.state } : nextAction
+      );
+
+      const followUpAction: NextAction | null =
+        becameDone && target?.followUp
+          ? {
+              id: makeId("action"),
+              opportunityId: target.opportunityId,
+              verb: target.followUp.verb,
+              rationale: target.followUp.rationale,
+              effort: target.followUp.effort,
+              dueHint: target.followUp.dueHint,
+              state: "suggested",
+              confidence: target.followUp.confidence,
+            }
+          : null;
+
+      const newActivityMoments: ActivityMoment[] = [];
+      if (becameAccepted && target) {
+        newActivityMoments.push({
+          id: makeId("activity"),
+          opportunityId: target.opportunityId,
+          kind: "action-accepted",
+          message: `Accepted the next action: ${target.verb}`,
+          createdAt: dateStamp,
+        });
+      }
+      if (becameDone && target) {
+        newActivityMoments.push({
+          id: makeId("activity"),
+          opportunityId: target.opportunityId,
+          kind: "action-done",
+          message: `Marked done: ${target.verb}`,
+          createdAt: dateStamp,
+        });
+      }
+      if (followUpAction) {
+        newActivityMoments.push({
+          id: makeId("activity"),
+          opportunityId: followUpAction.opportunityId,
+          kind: "copilot-analysis",
+          message: `Copilot suggested a follow-up: ${followUpAction.verb}`,
+          createdAt: dateStamp,
+        });
+      }
+
       return {
         ...state,
-        nextActions: state.nextActions.map((nextAction) =>
-          nextAction.id === action.id ? { ...nextAction, state: action.state } : nextAction
-        ),
+        nextActions: followUpAction ? [...updatedActions, followUpAction] : updatedActions,
         activityMoments:
-          becameAccepted && target
-            ? [
-                ...state.activityMoments,
-                {
-                  id: makeId("activity"),
-                  opportunityId: target.opportunityId,
-                  kind: "action-accepted",
-                  message: `Accepted the next action: ${target.verb}`,
-                  createdAt: today(),
-                },
-              ]
+          newActivityMoments.length > 0
+            ? [...state.activityMoments, ...newActivityMoments]
             : state.activityMoments,
       };
     }
@@ -281,6 +322,52 @@ function reducer(state: StoreState, action: Action): StoreState {
         nextActions: state.nextActions.map((nextAction) =>
           nextAction.id === action.id ? { ...nextAction, ...action.patch } : nextAction
         ),
+      };
+
+    case "ACCEPT_ALTERNATIVE": {
+      const target = state.nextActions.find((nextAction) => nextAction.id === action.id);
+      const alternative = target?.alternatives?.find((entry) => entry.id === action.alternativeId);
+      if (!target || !alternative) return state;
+      const dateStamp = today();
+
+      return {
+        ...state,
+        nextActions: state.nextActions.map((nextAction) =>
+          nextAction.id === action.id
+            ? {
+                ...nextAction,
+                verb: alternative.verb,
+                rationale: alternative.rationale,
+                effort: alternative.effort,
+                dueHint: alternative.dueHint,
+                confidence: alternative.confidence,
+                state: "accepted",
+                followUp: alternative.followUp,
+                handoff: alternative.handoff,
+                copilotPrompt: alternative.copilotPrompt,
+                alternatives: nextAction.alternatives?.filter(
+                  (entry) => entry.id !== action.alternativeId
+                ),
+              }
+            : nextAction
+        ),
+        activityMoments: [
+          ...state.activityMoments,
+          {
+            id: makeId("activity"),
+            opportunityId: target.opportunityId,
+            kind: "action-accepted",
+            message: `Accepted the next action: ${alternative.verb}`,
+            createdAt: dateStamp,
+          },
+        ],
+      };
+    }
+
+    case "REMOVE_NEXT_ACTION":
+      return {
+        ...state,
+        nextActions: state.nextActions.filter((nextAction) => nextAction.id !== action.id),
       };
 
     case "SET_TRACK_RECORD_STATUS":
@@ -405,7 +492,10 @@ interface StoreContextValue {
     patch: Partial<Pick<NextAction, "verb" | "rationale" | "effort" | "dueHint">>
   ) => void;
   dismissNextAction: (id: string) => void;
+  undismissNextAction: (id: string) => void;
   markNextActionDone: (id: string) => void;
+  acceptAlternative: (id: string, alternativeId: string) => void;
+  removeNextAction: (id: string) => void;
   confirmTrackRecordCandidate: (id: string) => void;
   dismissTrackRecordCandidate: (id: string) => void;
   dismissNudge: (id: string) => void;
@@ -510,12 +600,31 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const dismissNextAction = useCallback((id: string) => {
     dispatch({ type: "SET_NEXT_ACTION_STATE", id, state: "dismissed" });
-    toast("Next action dismissed");
+    toast("Next action dismissed", {
+      action: {
+        label: "Undo",
+        onClick: () => dispatch({ type: "SET_NEXT_ACTION_STATE", id, state: "suggested" }),
+      },
+    });
+  }, []);
+
+  const undismissNextAction = useCallback((id: string) => {
+    dispatch({ type: "SET_NEXT_ACTION_STATE", id, state: "suggested" });
   }, []);
 
   const markNextActionDone = useCallback((id: string) => {
     dispatch({ type: "SET_NEXT_ACTION_STATE", id, state: "done" });
     toast.success("Next action marked done");
+  }, []);
+
+  const acceptAlternative = useCallback((id: string, alternativeId: string) => {
+    dispatch({ type: "ACCEPT_ALTERNATIVE", id, alternativeId });
+    toast.success("Switched to the alternative path");
+  }, []);
+
+  const removeNextAction = useCallback((id: string) => {
+    dispatch({ type: "REMOVE_NEXT_ACTION", id });
+    toast("Removed from your plan");
   }, []);
 
   const confirmTrackRecordCandidate = useCallback((id: string) => {
@@ -630,7 +739,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       acceptNextAction,
       editNextAction,
       dismissNextAction,
+      undismissNextAction,
       markNextActionDone,
+      acceptAlternative,
+      removeNextAction,
       confirmTrackRecordCandidate,
       dismissTrackRecordCandidate,
       dismissNudge,
@@ -661,7 +773,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       acceptNextAction,
       editNextAction,
       dismissNextAction,
+      undismissNextAction,
       markNextActionDone,
+      acceptAlternative,
+      removeNextAction,
       confirmTrackRecordCandidate,
       dismissTrackRecordCandidate,
       dismissNudge,

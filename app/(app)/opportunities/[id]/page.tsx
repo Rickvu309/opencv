@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 
@@ -24,6 +24,18 @@ export default function OpportunityDetailPage() {
   const [activeTab, setActiveTab] = useState("overview");
 
   const opportunity = state.opportunities.find((item) => item.id === params.id);
+
+  const TAB_VALUES = ["overview", "ai-analysis", "actions", "materials", "activity"];
+  useEffect(() => {
+    const hash = window.location.hash.replace("#", "");
+    if (TAB_VALUES.includes(hash)) {
+      // A link into a specific tab (for example Home's Next actions card)
+      // sets the location hash before this page mounts, one-time sync only.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setActiveTab(hash);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useCopilotSurface(
     "Opportunity Detail",
@@ -104,7 +116,11 @@ export default function OpportunityDetailPage() {
           </TabsContent>
 
           <TabsContent value="actions" className="pt-4">
-            <OpportunityActionsTab actions={actions} />
+            <OpportunityActionsTab
+              actions={actions}
+              companyName={opportunity.company}
+              onGoToMaterials={() => setActiveTab("materials")}
+            />
           </TabsContent>
 
           <TabsContent value="materials" className="pt-4">

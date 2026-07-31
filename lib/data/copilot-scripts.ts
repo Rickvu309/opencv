@@ -112,6 +112,12 @@ export const copilotScripts: CopilotSurfaceScript[] = [
         response:
           "Lead with the explainability panel from Fintra first. It's the single piece of evidence that maps most directly onto owning Solace's explainability layer.",
       },
+      {
+        id: "copilot-opp-1-research",
+        prompt: "Give me a research summary on Solace AI",
+        response:
+          "Solace AI's engineering blog and their VP of Product's public talks focus heavily on model-explainability for clinical decision support, particularly contributing-factor visualizations for their diagnosis-support product. Their most recent post, from June 2026, covers how they render model confidence for non-technical clinicians, a close match for the explainability layer this role owns. Worth referencing that post directly in your case study.",
+      },
     ],
   },
   {
@@ -167,6 +173,12 @@ export const copilotScripts: CopilotSurfaceScript[] = [
         prompt: "What's the biggest gap against my target direction?",
         response:
           "No AI or model-facing work anywhere in the listed scope. It's the clearest gap against your target direction of AI product design and leadership.",
+      },
+      {
+        id: "copilot-opp-3-research",
+        prompt: "Give me a research summary on Northwind Robotics",
+        response:
+          "Northwind's last two product announcements, from April and June 2026, both focus on fleet-routing efficiency for their existing operations dashboard, not a new hardware line. That's a sign the eleven-week-old posting is likely still an active operations-design need rather than a stalled or deprioritized search. No new hiring-manager name has surfaced publicly yet, so a direct check-in is still worth it.",
       },
     ],
   },

@@ -70,6 +70,7 @@ export type ActivityMomentKind =
   | "note-added"
   | "copilot-analysis"
   | "action-accepted"
+  | "action-done"
   | "dream-flagged";
 
 export interface ActivityMoment {
@@ -313,6 +314,45 @@ export type AiInsight =
 // Next Action
 // ---------------------------------------------------------------------------
 
+/**
+ * What happens automatically, without applying itself, once a next action is
+ * marked done: a fresh suggested next action Copilot proposes as the logical
+ * follow-up (for example after "research the team", "reach out to the
+ * design director").
+ */
+export interface NextActionFollowUp {
+  verb: string;
+  rationale: string;
+  effort: string;
+  dueHint: string;
+  confidence: ConfidenceLevel;
+}
+
+/**
+ * Where an accepted next action hands off to next: a "tailor CV" action
+ * links into the Materials tab, a research action opens the Copilot panel
+ * with a scripted research summary.
+ */
+export type NextActionHandoff = "materials" | "copilot";
+
+/**
+ * One alternate path shown as a compact card in the Actions tab's
+ * Alternatives zone. Carries the same shape a next action needs so accepting
+ * it can fully replace the primary recommendation.
+ */
+export interface NextActionAlternative {
+  id: string;
+  verb: string;
+  chooseWhen: string;
+  rationale: string;
+  effort: string;
+  dueHint: string;
+  confidence: ConfidenceLevel;
+  followUp?: NextActionFollowUp;
+  handoff?: NextActionHandoff;
+  copilotPrompt?: string;
+}
+
 export interface NextAction {
   id: string;
   opportunityId: string;
@@ -321,6 +361,12 @@ export interface NextAction {
   effort: string;
   dueHint: string;
   state: NextActionState;
+  confidence: ConfidenceLevel;
+  alternatives?: NextActionAlternative[];
+  whatWouldChangeThis?: string;
+  followUp?: NextActionFollowUp;
+  handoff?: NextActionHandoff;
+  copilotPrompt?: string;
 }
 
 // ---------------------------------------------------------------------------

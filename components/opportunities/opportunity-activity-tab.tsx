@@ -13,6 +13,7 @@ const KIND_ICON: Record<ActivityMomentKind, typeof Flag> = {
   "note-added": FileText,
   "copilot-analysis": Sparkles,
   "action-accepted": Check,
+  "action-done": Check,
   "dream-flagged": Star,
 };
 
@@ -22,6 +23,7 @@ const KIND_DOT: Record<ActivityMomentKind, string> = {
   "note-added": "bg-slate-400",
   "copilot-analysis": "bg-indigo-500",
   "action-accepted": "bg-emerald-500",
+  "action-done": "bg-emerald-600",
   "dream-flagged": "bg-amber-500",
 };
 

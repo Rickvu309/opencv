@@ -239,6 +239,29 @@ function buildIntakeNextAction(opportunity: Opportunity): NextAction {
     effort: "10 min",
     dueHint: "This week",
     state: "suggested",
+    confidence: "Low",
+    alternatives: [
+      {
+        id: makeId("alt"),
+        verb: `Research ${opportunity.company} before deciding`,
+        chooseWhen: "the listing or notes left the scope unclear.",
+        rationale: "A closer look would sharpen the fit read before you commit any more time.",
+        effort: "15 min",
+        dueHint: "No rush",
+        confidence: "Low",
+      },
+      {
+        id: makeId("alt"),
+        verb: `Archive ${opportunity.role} at ${opportunity.company} for now`,
+        chooseWhen: "it doesn't look worth pursuing on a first read.",
+        rationale: "Nothing here is confirmed enough yet to justify holding a slot in Saved.",
+        effort: "2 min",
+        dueHint: "This week",
+        confidence: "Low",
+      },
+    ],
+    whatWouldChangeThis:
+      "If more detail is confirmed about the role or team, this reading will sharpen and this recommendation may change.",
   };
 }
 

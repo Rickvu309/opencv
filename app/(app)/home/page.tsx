@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AlarmClock, Check, Flame, Inbox, Plus, X } from "lucide-react";
+import { AlarmClock, Flame, Inbox, Plus, X } from "lucide-react";
 
 import { PageHeader } from "@/components/shell/page-header";
 import { AddOpportunityDialog } from "@/components/opportunities/add-opportunity-dialog";
@@ -9,6 +9,7 @@ import { CopilotTag } from "@/components/shared/copilot-tag";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useCopilotSurface, useStore } from "@/lib/store";
 import type { NudgeTrigger } from "@/lib/types";
 
@@ -108,33 +109,42 @@ export default function HomePage() {
         </section>
 
         <section className="flex flex-col gap-3">
-          <h2>Accepted next actions</h2>
+          <h2>Next actions</h2>
           {acceptedActions.length === 0 ? (
-            <EmptyState message="Nothing accepted yet. Accept a suggested next action from an opportunity to see it here." />
+            <EmptyState message="Nothing accepted yet. Accept a recommended next action from an opportunity to see it here." />
           ) : (
             <div className="flex flex-col gap-2">
               {acceptedActions.map((action) => {
                 const opportunity = state.opportunities.find((item) => item.id === action.opportunityId);
                 return (
                   <Card key={action.id} className="ring-foreground/8">
-                    <CardContent className="flex items-start justify-between gap-4">
-                      <div className="flex flex-col gap-1">
-                        <span className="text-xs font-medium text-muted-foreground">
+                    <CardContent className="flex items-start gap-3">
+                      <Checkbox
+                        checked={false}
+                        onCheckedChange={(checked) => checked === true && markNextActionDone(action.id)}
+                        aria-label="Mark done"
+                        className="mt-1"
+                      />
+                      <div className="flex flex-1 flex-col gap-1">
+                        <Link
+                          href={opportunity ? `/opportunities/${opportunity.id}#actions` : "/opportunities"}
+                          className="w-fit text-xs font-medium text-muted-foreground hover:text-foreground hover:underline"
+                        >
                           {opportunity ? `${opportunity.role} · ${opportunity.company}` : "Opportunity"}
-                        </span>
+                        </Link>
                         <p className="text-sm text-foreground">{action.verb}</p>
                         <p className="text-xs text-muted-foreground">
                           {action.rationale} · {action.effort} · {action.dueHint}
                         </p>
                       </div>
-                      <div className="flex shrink-0 gap-1.5">
-                        <Button size="icon-sm" variant="outline" aria-label="Mark done" onClick={() => markNextActionDone(action.id)}>
-                          <Check className="size-3.5" />
-                        </Button>
-                        <Button size="icon-sm" variant="ghost" aria-label="Dismiss" onClick={() => dismissNextAction(action.id)}>
-                          <X className="size-3.5" />
-                        </Button>
-                      </div>
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        aria-label="Dismiss"
+                        onClick={() => dismissNextAction(action.id)}
+                      >
+                        <X className="size-3.5" />
+                      </Button>
                     </CardContent>
                   </Card>
                 );
