@@ -118,6 +118,7 @@ export interface StoreState {
   highlightedSkillId?: string;
   highlightedTrackRecordEntryId?: string;
   opportunitiesView: OpportunitiesView;
+  sidebarOpen: boolean;
 }
 
 const initialState: StoreState = {
@@ -152,6 +153,7 @@ const initialState: StoreState = {
   highlightedSkillId: undefined,
   highlightedTrackRecordEntryId: undefined,
   opportunitiesView: "board",
+  sidebarOpen: true,
 };
 
 type Action =
@@ -246,6 +248,7 @@ type Action =
   | { type: "SET_PROFILE_PREFERENCES"; patch: Partial<ProfilePreferences> }
   | { type: "SET_COPILOT_OPEN"; open: boolean }
   | { type: "TOGGLE_COPILOT" }
+  | { type: "SET_SIDEBAR_OPEN"; open: boolean }
   | { type: "SET_COPILOT_SURFACE"; surface: string; objectLabel?: string }
   | { type: "ADD_COPILOT_MESSAGE"; surface: string; message: CopilotMessage }
   | { type: "SET_COPILOT_THINKING"; thinking: boolean };
@@ -1005,6 +1008,9 @@ function reducer(state: StoreState, action: Action): StoreState {
     case "SET_COPILOT_THINKING":
       return { ...state, copilot: { ...state.copilot, thinking: action.thinking } };
 
+    case "SET_SIDEBAR_OPEN":
+      return { ...state, sidebarOpen: action.open };
+
     default:
       return state;
   }
@@ -1101,6 +1107,7 @@ interface StoreContextValue {
   toggleCopilot: () => void;
   setCopilotSurface: (surface: string, objectLabel?: string) => void;
   sendCopilotMessage: (text: string) => void;
+  setSidebarOpen: (open: boolean) => void;
 }
 
 const StoreContext = createContext<StoreContextValue | null>(null);
@@ -1534,6 +1541,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const setCopilotOpen = useCallback((open: boolean) => dispatch({ type: "SET_COPILOT_OPEN", open }), []);
   const toggleCopilot = useCallback(() => dispatch({ type: "TOGGLE_COPILOT" }), []);
+  const setSidebarOpen = useCallback((open: boolean) => dispatch({ type: "SET_SIDEBAR_OPEN", open }), []);
 
   const setCopilotSurface = useCallback((surface: string, objectLabel?: string) => {
     dispatch({ type: "SET_COPILOT_SURFACE", surface, objectLabel });
@@ -1653,6 +1661,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       toggleCopilot,
       setCopilotSurface,
       sendCopilotMessage,
+      setSidebarOpen,
     }),
     [
       state,
@@ -1724,6 +1733,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       toggleCopilot,
       setCopilotSurface,
       sendCopilotMessage,
+      setSidebarOpen,
     ]
   );
 

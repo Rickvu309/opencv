@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,11 +25,23 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Separator } from "@/components/ui/separator";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+  SidebarSeparator,
+} from "@/components/ui/sidebar";
 import { ConnectedSourcesButton } from "@/components/shell/connected-sources";
 import { DemoTourDialog } from "@/components/shell/demo-tour-dialog";
 import { useStore } from "@/lib/store";
-import { cn } from "@/lib/utils";
 
 interface NavItem {
   label: string;
@@ -55,33 +66,34 @@ const directionNav: NavItem[] = [
   { label: "Skills & Learning", href: "/skills", icon: GraduationCap },
 ];
 
-function NavLink({ item, active }: { item: NavItem; active: boolean }) {
-  const Icon = item.icon;
+function NavGroup({ items, isActive }: { items: NavItem[]; isActive: (href: string) => boolean }) {
   return (
-    <Link
-      href={item.href}
-      className={cn(
-        "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors",
-        active
-          ? "bg-sidebar-accent text-sidebar-accent-foreground"
-          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
-      )}
-    >
-      <Icon className="size-4 shrink-0" />
-      {item.label}
-    </Link>
+    <SidebarMenu>
+      {items.map((item) => {
+        const Icon = item.icon;
+        const active = isActive(item.href);
+        return (
+          <SidebarMenuItem key={item.href}>
+            <SidebarMenuButton asChild isActive={active} tooltip={item.label}>
+              <Link href={item.href}>
+                <Icon />
+                <span>{item.label}</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        );
+      })}
+    </SidebarMenu>
   );
 }
 
-function NavGroupLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="px-2.5 pt-4 pb-1 text-[11px] font-semibold tracking-wide text-sidebar-foreground/45">
-      {children}
-    </p>
-  );
-}
-
-export function Sidebar() {
+/**
+ * The app shell's left navigation, rebuilt on the shadcn Sidebar primitives
+ * (SidebarProvider/SidebarInset own the frame, this component only owns
+ * content) so the icon rail, active states, and tooltip-on-collapse
+ * behavior come from one shared system instead of hand-rolled CSS.
+ */
+export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { state, resetOnboarding, openWeeklyReview } = useStore();
@@ -94,82 +106,91 @@ export function Sidebar() {
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
   return (
-    <aside className="flex h-full w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
-      <div className="flex items-center gap-2 px-4 py-4">
-        <span className="flex size-6 items-center justify-center rounded-md bg-sidebar-primary text-xs font-bold text-sidebar-primary-foreground">
-          OP
-        </span>
-        <span className="text-sm font-semibold">OpenPath</span>
-      </div>
+    <Sidebar collapsible="icon">
+      <SidebarHeader>
+        <div className="flex items-center gap-2 px-2 py-1 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
+          <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-sidebar-primary text-xs font-bold text-sidebar-primary-foreground">
+            OP
+          </span>
+          <span className="text-sm font-semibold group-data-[collapsible=icon]:hidden">OpenPath</span>
+        </div>
+      </SidebarHeader>
 
-      <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 pb-3">
-        {primaryNav.map((item) => (
-          <NavLink key={item.href} item={item} active={isActive(item.href)} />
-        ))}
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <NavGroup items={primaryNav} isActive={isActive} />
+          </SidebarGroupContent>
+        </SidebarGroup>
 
-        <NavGroupLabel>Career Memory</NavGroupLabel>
-        {careerMemoryNav.map((item) => (
-          <NavLink key={item.href} item={item} active={isActive(item.href)} />
-        ))}
+        <SidebarGroup>
+          <SidebarGroupLabel>Career Memory</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <NavGroup items={careerMemoryNav} isActive={isActive} />
+          </SidebarGroupContent>
+        </SidebarGroup>
 
-        <NavGroupLabel>Direction</NavGroupLabel>
-        {directionNav.map((item) => (
-          <NavLink key={item.href} item={item} active={isActive(item.href)} />
-        ))}
-      </nav>
+        <SidebarGroup>
+          <SidebarGroupLabel>Direction</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <NavGroup items={directionNav} isActive={isActive} />
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
 
-      <Separator className="bg-sidebar-border" />
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton tooltip="Weekly Review" onClick={openWeeklyReview}>
+              <CalendarCheck />
+              <span>Weekly Review</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <DemoTourDialog>
+              <SidebarMenuButton tooltip="Demo Tour">
+                <Compass />
+                <span>Demo Tour</span>
+              </SidebarMenuButton>
+            </DemoTourDialog>
+          </SidebarMenuItem>
+        </SidebarMenu>
 
-      <div className="flex flex-col gap-1 px-3 py-3">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="justify-start gap-2.5 px-2.5 text-sidebar-foreground/80 hover:bg-sidebar-accent/60"
-          onClick={openWeeklyReview}
-        >
-          <CalendarCheck className="size-4" />
-          Weekly Review
-        </Button>
-        <DemoTourDialog>
-          <Button variant="ghost" size="sm" className="justify-start gap-2.5 px-2.5 text-sidebar-foreground/80 hover:bg-sidebar-accent/60">
-            <Compass className="size-4" />
-            Demo Tour
-          </Button>
-        </DemoTourDialog>
-      </div>
+        <SidebarSeparator />
 
-      <Separator className="bg-sidebar-border" />
+        <SidebarMenu>
+          <ConnectedSourcesButton />
+        </SidebarMenu>
 
-      <div className="px-3 py-2">
-        <ConnectedSourcesButton />
-      </div>
+        <SidebarSeparator />
 
-      <Separator className="bg-sidebar-border" />
-
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            className="flex items-center gap-2.5 px-4 py-3 text-left transition-colors hover:bg-sidebar-accent/60"
-          >
-            <Avatar size="sm">
-              <AvatarFallback>MT</AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col leading-tight">
-              <span className="text-sm font-medium">{state.profile.name}</span>
-              <span className="text-xs text-sidebar-foreground/55">{state.profile.headline}</span>
-            </div>
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" side="top" className="w-56">
-          <DropdownMenuLabel>{state.profile.name}</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={restartSetup}>
-            <RotateCcw className="size-4" />
-            Restart setup
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </aside>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton size="lg" tooltip={state.profile.name}>
+                  <Avatar size="sm">
+                    <AvatarFallback>MT</AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col leading-tight group-data-[collapsible=icon]:hidden">
+                    <span className="text-sm font-medium">{state.profile.name}</span>
+                    <span className="text-xs text-sidebar-foreground/55">{state.profile.headline}</span>
+                  </div>
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" side="top" className="w-56">
+                <DropdownMenuLabel>{state.profile.name}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={restartSetup}>
+                  <RotateCcw className="size-4" />
+                  Restart setup
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+      <SidebarRail />
+    </Sidebar>
   );
 }

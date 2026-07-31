@@ -3,16 +3,18 @@
 import { useEffect } from "react";
 import type { ReactNode } from "react";
 
-import { Sidebar } from "@/components/shell/sidebar";
+import { AppSidebar } from "@/components/shell/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { CopilotPanel } from "@/components/shell/copilot-panel";
 import { WeeklyReviewDialog } from "@/components/shell/weekly-review-dialog";
 import { useStore } from "@/lib/store";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
-  const { state, toggleCopilot } = useStore();
+  const { state, toggleCopilot, setSidebarOpen } = useStore();
 
   // A quiet keyboard entry to the Copilot panel, available anywhere in the
-  // app shell regardless of whether the panel is currently open.
+  // app shell regardless of whether the panel is currently open. The
+  // sidebar's own Cmd/Ctrl+B shortcut lives inside SidebarProvider.
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
@@ -25,11 +27,15 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   }, [toggleCopilot]);
 
   return (
-    <div className="flex h-full w-full">
-      <Sidebar />
-      <main className="min-w-0 flex-1 overflow-y-auto">{children}</main>
-      {state.copilot.open ? <CopilotPanel /> : null}
+    <SidebarProvider open={state.sidebarOpen} onOpenChange={setSidebarOpen} className="h-full min-h-0">
+      <AppSidebar />
+      <SidebarInset className="min-w-0">
+        <div className="flex h-full min-w-0 flex-1">
+          <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">{children}</div>
+          {state.copilot.open ? <CopilotPanel /> : null}
+        </div>
+      </SidebarInset>
       <WeeklyReviewDialog />
-    </div>
+    </SidebarProvider>
   );
 }
