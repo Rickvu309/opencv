@@ -31,6 +31,13 @@ export const trackRecordEntries: TrackRecordEntry[] = [
       { kind: "cv", id: "cv-1", label: "Base CV" },
     ],
     strengthens: "Land a senior or staff AI product design role, the headline proof point behind the Meridian Labs and Solace AI applications.",
+    impactSignals: [
+      { kind: "metric", label: "Cut related support tickets 22 percent in Q1" },
+      { kind: "scope", label: "Shipped company-wide, AI underwriting assistant" },
+    ],
+    pathRelevance:
+      "The flagship proof behind landing a senior or staff AI product design role, already the headline case study in two active applications.",
+    highlight: true,
   },
   {
     id: "tre-2",

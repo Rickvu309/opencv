@@ -11,6 +11,7 @@ import { CandidateCard } from "@/components/track-record/candidate-card";
 import { ConfirmCandidateDialog } from "@/components/track-record/confirm-candidate-dialog";
 import { TrackRecordEntryCard } from "@/components/track-record/entry-card";
 import { CoverageRail } from "@/components/track-record/coverage-rail";
+import { HighlightsShelf } from "@/components/track-record/highlights-shelf";
 import { Button } from "@/components/ui/button";
 import {
   countEntriesBySkillArea,
@@ -77,6 +78,13 @@ export default function TrackRecordPage() {
       }
     >
       <div className="flex flex-col gap-8">
+          <HighlightsShelf
+            entries={confirmed}
+            skills={state.skills}
+            cvVersions={state.cvVersions}
+            opportunities={state.opportunities}
+          />
+
           <section className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
               <h2>For your review</h2>

@@ -2,12 +2,14 @@
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { Award, ChevronDown, ChevronUp } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { EvidenceChip } from "@/components/ai/evidence-chip";
 import { LinkChip } from "@/components/shared/link-chip";
-import type { CvVersion, Opportunity, Skill, TrackRecordEntry, TrackRecordUsedInRef } from "@/lib/types";
+import { findEvidenceById } from "@/lib/inbox-utils";
+import type { CvVersion, Opportunity, Skill, SourceEvidence, TrackRecordEntry, TrackRecordUsedInRef } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 interface EntryCardProps {
@@ -47,6 +49,10 @@ export function TrackRecordEntryCard({
   const linkedSkills = entry.skillIds
     .map((id) => skills.find((skill) => skill.id === id))
     .filter((skill): skill is Skill => Boolean(skill));
+  const sourceEvidence = (entry.sourceRefs ?? [])
+    .map((id) => findEvidenceById(id))
+    .filter((item): item is SourceEvidence => Boolean(item));
+  const isAchievement = Boolean(entry.highlight);
 
   function usedInHref(ref: TrackRecordUsedInRef) {
     return ref.kind === "cv" ? `/cvs/${ref.id}` : `/opportunities/${ref.id}`;
@@ -61,7 +67,14 @@ export function TrackRecordEntryCard({
   }
 
   return (
-    <Card ref={cardRef} className={cn("ring-foreground/8 transition-colors", highlighted && "ring-2 ring-primary")}>
+    <Card
+      ref={cardRef}
+      className={cn(
+        "ring-foreground/8 transition-colors",
+        isAchievement && "ring-1 ring-primary/25",
+        highlighted && "ring-2 ring-primary"
+      )}
+    >
       <CardHeader className="gap-2">
         <button
           type="button"
@@ -70,7 +83,15 @@ export function TrackRecordEntryCard({
           className="flex w-full items-start justify-between gap-3 text-left"
         >
           <div className="flex min-w-0 flex-col gap-1">
-            <p className="truncate text-sm font-medium text-foreground">{entry.title}</p>
+            <div className="flex items-center gap-1.5">
+              <p className="truncate text-sm font-medium text-foreground">{entry.title}</p>
+              {isAchievement ? (
+                <Badge variant="secondary" className="shrink-0 gap-1">
+                  <Award className="size-3" />
+                  Highlight
+                </Badge>
+              ) : null}
+            </div>
             <p className="text-xs text-muted-foreground">{entry.impact}</p>
           </div>
           {expanded ? (
@@ -90,8 +111,17 @@ export function TrackRecordEntryCard({
         </div>
       </CardHeader>
       {expanded ? (
-        <CardContent className="flex flex-col gap-3 border-t border-border pt-3">
+        <CardContent className={cn("flex flex-col gap-3 border-t border-border pt-3", isAchievement && "gap-2.5")}>
           <p className="text-sm text-foreground">{entry.story}</p>
+          {entry.impactSignals && entry.impactSignals.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {entry.impactSignals.map((signal) => (
+                <Badge key={`${signal.kind}-${signal.label}`} variant="outline">
+                  {signal.label}
+                </Badge>
+              ))}
+            </div>
+          ) : null}
           {entry.evidenceNote ? (
             <p className="text-xs text-muted-foreground">
               <span className="font-medium text-foreground">Evidence: </span>
@@ -115,11 +145,26 @@ export function TrackRecordEntryCard({
               </ul>
             </div>
           ) : null}
-          {entry.strengthens ? (
+          {entry.pathRelevance ? (
+            <p className="text-xs text-muted-foreground">
+              <span className="font-medium text-foreground">Ties to: </span>
+              {entry.pathRelevance}
+            </p>
+          ) : entry.strengthens ? (
             <p className="text-xs text-muted-foreground">
               <span className="font-medium text-foreground">Strengthens: </span>
               {entry.strengthens}
             </p>
+          ) : null}
+          {sourceEvidence.length > 0 ? (
+            <div className="flex flex-col gap-1.5 border-t border-border pt-2.5">
+              <span className="text-xs font-medium text-muted-foreground">Evidence</span>
+              <div className="flex flex-wrap gap-1.5">
+                {sourceEvidence.map((evidence) => (
+                  <EvidenceChip key={evidence.id} evidence={evidence} />
+                ))}
+              </div>
+            </div>
           ) : null}
         </CardContent>
       ) : null}

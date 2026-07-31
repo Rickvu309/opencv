@@ -882,7 +882,7 @@ export const insights: AiInsight[] = [
         proposedText:
           "Senior product designer who has shipped a model-explainability surface in production. At Fintra, designed the panel that shows loan applicants why the AI underwriting assistant reached its decision, the closest direct match to Meridian's evaluation console.",
         rationale:
-          "Your fit analysis calls this the strongest evidence behind your AI and ML literacy skill, lead with it instead of the general fintech framing.",
+          "Your Track Record highlight \"Shipped the AI underwriting explainability panel\" is the strongest evidence behind your AI and ML literacy skill, lead with it instead of the general fintech framing.",
         state: "accepted",
       },
       {
