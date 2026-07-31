@@ -26,12 +26,12 @@ export function OpportunitiesFocusStrip() {
   return (
     <Card className="ring-foreground/8 bg-indigo-50/40 dark:bg-indigo-500/5">
       <CardContent className="flex items-start justify-between gap-4">
-        <div className="flex flex-1 flex-col gap-2">
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
           <div className="flex items-center gap-1.5">
             <span className="text-xs font-medium text-foreground">Focus</span>
             <CopilotTag />
           </div>
-          <div className="flex flex-col gap-1.5">
+          <div className="flex min-w-0 flex-col gap-1.5">
             {items.map((item) => {
               const opportunity = state.opportunities.find((entry) => entry.id === item.opportunityId);
               if (!opportunity) return null;
