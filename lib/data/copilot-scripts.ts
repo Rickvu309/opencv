@@ -844,6 +844,65 @@ export const copilotScripts: CopilotSurfaceScript[] = [
     ],
   },
   {
+    surface: "Proof Builder",
+    suggestedPrompts: [
+      "Which of my claims need stronger proof?",
+      "What's my strongest unused evidence?",
+      "How does accepting a proof transformation work?",
+    ],
+    exchanges: [
+      {
+        id: "copilot-proof-1",
+        prompt: "Which of my claims need stronger proof?",
+        response: {
+          lead: "Your profile summary and one strength are the thinnest right now.",
+          points: [
+            { label: "Profile summary", detail: "Names your Fintra work but doesn't cite a specific number yet." },
+            {
+              label: "\"Coaches junior designers...\"",
+              detail: "No Track Record entry linked yet, even though the mentoring outcome already exists.",
+            },
+          ],
+          confidence: "High",
+          handoff: { kind: "route", href: "/proof?context=profile", label: "Verify profile claims" },
+        },
+      },
+      {
+        id: "copilot-proof-2",
+        prompt: "What's my strongest unused evidence?",
+        response: {
+          lead: "The loan-onboarding redesign and the AI assistant discovery sprint are your strongest entries not yet cited everywhere they could be.",
+          points: [
+            {
+              label: "Loan-onboarding redesign",
+              detail: "Cut drop-off 18 percent, not yet cited on the Meridian Labs tailored CV.",
+            },
+            {
+              label: "AI assistant discovery sprint",
+              detail: "Defines the trust-boundary spec, not yet positioned on Solace AI.",
+            },
+          ],
+          handoff: { kind: "route", href: "/proof", label: "Open Proof Builder" },
+        },
+      },
+      {
+        id: "copilot-proof-3",
+        prompt: "How does accepting a proof transformation work?",
+        response: {
+          lead: "Accepting writes the grounded proof straight to its real target, and always shows what changed with an Undo.",
+          points: [
+            { label: "CV context", detail: "Updates the CV section, visible immediately on that CV's own page." },
+            { label: "Profile context", detail: "Updates your summary or a strength's evidence note." },
+            {
+              label: "Opportunity or path context",
+              detail: "Adds a positioning note to Materials, or pins a \"prove it\" item into your growth plan.",
+            },
+          ],
+        },
+      },
+    ],
+  },
+  {
     surface: "Goals",
     suggestedPrompts: [
       "Am I on track for my AI product design goal?",

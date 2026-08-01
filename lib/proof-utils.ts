@@ -316,3 +316,20 @@ export function groupClaimVerificationsByState(
     items: verifications.filter((verification) => verification.state === state),
   })).filter((group) => group.items.length > 0);
 }
+
+export const PROOF_STRENGTH_ORDER: ProofStrengthLevel[] = ["Strong", "Medium", "Weak"];
+
+/**
+ * Groups evidence rankings by strength band, strongest first, dropping
+ * empty bands. Chunks the evidence layer's own dense list the same way
+ * claim verification's state groups already chunk theirs (Miller's Law
+ * consistency between two sibling sections on the same page).
+ */
+export function groupEvidenceByStrength(
+  rankings: ProofEvidenceRanking[]
+): { strength: ProofStrengthLevel; items: ProofEvidenceRanking[] }[] {
+  return PROOF_STRENGTH_ORDER.map((strength) => ({
+    strength,
+    items: rankings.filter((ranking) => ranking.strength === strength),
+  })).filter((group) => group.items.length > 0);
+}

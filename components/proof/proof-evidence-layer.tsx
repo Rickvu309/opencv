@@ -7,6 +7,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ProofStrengthChip } from "@/components/proof/proof-strength-chip";
+import { groupEvidenceByStrength } from "@/lib/proof-utils";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import type { ProofEvidenceRanking } from "@/lib/types";
@@ -72,20 +73,36 @@ interface ProofEvidenceLayerProps {
 
 /**
  * Section 3, the evidence layer: every confirmed entry ranked strongest
- * first for the chosen context, each carrying a labeled strength chip with
- * an expandable why (Progressive Disclosure) and a quiet "could be
- * stronger" hint where an entry is missing both an impact number and an
- * evidence reference.
+ * first for the chosen context, chunked into strength bands (Miller's Law,
+ * the same grouping treatment claim verification's state groups already
+ * use), each carrying a labeled strength chip with an expandable why
+ * (Progressive Disclosure) and a quiet "could be stronger" hint where an
+ * entry is missing both an impact number and an evidence reference.
  */
 export function ProofEvidenceLayer({ rankings, highlightedEntryId }: ProofEvidenceLayerProps) {
   if (rankings.length === 0) {
     return <EmptyState message="No confirmed Track Record entries yet. Confirm one to start building proof from it." />;
   }
 
+  const groups = groupEvidenceByStrength(rankings);
+
   return (
-    <div className="flex flex-col gap-2">
-      {rankings.map((ranking) => (
-        <EvidenceCard key={ranking.entry.id} ranking={ranking} highlighted={highlightedEntryId === ranking.entry.id} />
+    <div className="flex flex-col gap-4">
+      {groups.map((group) => (
+        <div key={group.strength} className="flex flex-col gap-2">
+          <span className="text-section-label">
+            {group.strength} proof ({group.items.length})
+          </span>
+          <div className="flex flex-col gap-2">
+            {group.items.map((ranking) => (
+              <EvidenceCard
+                key={ranking.entry.id}
+                ranking={ranking}
+                highlighted={highlightedEntryId === ranking.entry.id}
+              />
+            ))}
+          </div>
+        </div>
       ))}
     </div>
   );
