@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Chip } from "@/components/shared/chip";
 import { CHIP_TONES } from "@/components/shared/chip-tones";
 import { ConfidenceChip } from "@/components/shared/confidence-chip";
+import { CopilotTag } from "@/components/shared/copilot-tag";
 import type { RecruiterReview, RecruiterReviewPoint } from "@/lib/types";
 
 const STATUS_TONE: Record<RecruiterReview["status"], keyof typeof CHIP_TONES> = {
@@ -71,7 +72,10 @@ export function CandidateReviewSection({ review }: { review: RecruiterReview }) 
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Review</CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle>Review</CardTitle>
+            <CopilotTag />
+          </div>
           <Chip label={review.status} dotClassName={tone.dot} className={tone.className} />
         </div>
       </CardHeader>
