@@ -46,6 +46,7 @@ export function RecruiterPipelineList({ candidates, roles, sort, onSortChange, s
               label="Days in stage"
               active={sort === "days-in-stage"}
               onClick={() => onSortChange("days-in-stage")}
+              align="right"
             />
             <TableHead>Source</TableHead>
             <TableHead className="text-right">Actions</TableHead>
@@ -84,7 +85,7 @@ export function RecruiterPipelineList({ candidates, roles, sort, onSortChange, s
                 <TableCell>
                   <RecruiterReadinessChip readiness={candidate.readiness} />
                 </TableCell>
-                <TableCell className={cn(stale && "font-medium text-rose-600 dark:text-rose-400")}>
+                <TableCell className={cn("text-right", stale && "font-medium text-rose-600 dark:text-rose-400")}>
                   {days} {days === 1 ? "day" : "days"}
                 </TableCell>
                 <TableCell>
@@ -102,14 +103,25 @@ export function RecruiterPipelineList({ candidates, roles, sort, onSortChange, s
   );
 }
 
-function SortableHead({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+function SortableHead({
+  label,
+  active,
+  onClick,
+  align,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+  align?: "left" | "right";
+}) {
   return (
-    <TableHead>
+    <TableHead className={align === "right" ? "text-right" : undefined}>
       <button
         type="button"
         onClick={onClick}
         className={cn(
           "flex items-center gap-1 font-medium",
+          align === "right" && "ml-auto flex-row-reverse",
           active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
         )}
       >
