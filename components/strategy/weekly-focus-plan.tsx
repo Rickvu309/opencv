@@ -6,7 +6,7 @@ import { CopilotTag } from "@/components/shared/copilot-tag";
 import { FocusMoveCard } from "@/components/strategy/focus-move-card";
 import { StrategyPlanCompletionCard } from "@/components/strategy/strategy-plan-completion-card";
 import { buildWeeklyFocusPlan } from "@/lib/strategy-utils";
-import type { StrategyMove } from "@/lib/strategy-utils";
+import type { StrategyMove, StrategyObservation } from "@/lib/strategy-utils";
 import { useStore } from "@/lib/store";
 import type { Goal, NextAction, Opportunity } from "@/lib/types";
 
@@ -15,6 +15,8 @@ interface WeeklyFocusPlanProps {
   nextActions: NextAction[];
   goals: Goal[];
   todayIso: string;
+  /** The same observations Key observations renders, for the Proximity cross-reference on each move card. */
+  observations: StrategyObservation[];
 }
 
 /**
@@ -25,7 +27,7 @@ interface WeeklyFocusPlanProps {
  * buildWeeklyFocusPlan doc comment). Ends in a quiet Peak-End completion
  * state naming the count of moves made.
  */
-export function WeeklyFocusPlan({ opportunities, nextActions, goals, todayIso }: WeeklyFocusPlanProps) {
+export function WeeklyFocusPlan({ opportunities, nextActions, goals, todayIso, observations }: WeeklyFocusPlanProps) {
   const { state } = useStore();
   const [plan] = useState<StrategyMove[]>(() => buildWeeklyFocusPlan(opportunities, nextActions, goals, todayIso));
 
@@ -51,6 +53,10 @@ export function WeeklyFocusPlan({ opportunities, nextActions, goals, todayIso }:
             opportunities={opportunities}
             nextActions={nextActions}
             todayIso={todayIso}
+            relatedObservation={observations.find(
+              (observation) =>
+                move.opportunityId && observation.evidenceOpportunityIds.includes(move.opportunityId)
+            )}
           />
         ))}
       </div>

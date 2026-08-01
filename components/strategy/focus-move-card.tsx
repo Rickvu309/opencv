@@ -16,7 +16,7 @@ import {
   buildFocusMove,
   buildInvestMove,
 } from "@/lib/strategy-utils";
-import type { StrategyMove } from "@/lib/strategy-utils";
+import type { StrategyMove, StrategyObservation } from "@/lib/strategy-utils";
 import { useStore } from "@/lib/store";
 import type { NextAction, Opportunity, Priority } from "@/lib/types";
 
@@ -32,6 +32,8 @@ interface FocusMoveCardProps {
   opportunities: Opportunity[];
   nextActions: NextAction[];
   todayIso: string;
+  /** The key observation naming this same opportunity, shown right on the card (Proximity: the observation sits beside the move it motivates). */
+  relatedObservation?: StrategyObservation;
 }
 
 function computeAltMove(
@@ -66,6 +68,7 @@ export function FocusMoveCard({
   opportunities,
   nextActions,
   todayIso,
+  relatedObservation,
 }: FocusMoveCardProps) {
   const { state, applyStrategyMove, undoStrategyMove, dismissStrategyMove, undismissStrategyMove } = useStore();
   const [showingAlt, setShowingAlt] = useState(false);
@@ -161,6 +164,12 @@ export function FocusMoveCard({
           >
             {opportunity.role} · {opportunity.company}
           </Link>
+        ) : null}
+
+        {!showingAlt && relatedObservation ? (
+          <p className="rounded-md bg-muted/40 px-2 py-1.5 text-xs text-muted-foreground">
+            Observed: {relatedObservation.pattern}
+          </p>
         ) : null}
 
         {activeMove.kind === "deprioritize" && activeMove.reasoning ? (
