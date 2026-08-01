@@ -1,21 +1,10 @@
-"use client";
+import { LandingPage } from "@/components/marketing/landing-page";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-
-import { useStore } from "@/lib/store";
-
+// The public marketing landing (RDS-991). Renders outside DesktopGuard on
+// purpose, fully responsive down to mobile, unlike every route under
+// (app), (recruiter), and /onboarding. "Open OpenPath" (in the hero and
+// the closing section) carries the old root-page redirect logic instead:
+// see components/marketing/open-openpath-button.tsx.
 export default function RootPage() {
-  const router = useRouter();
-  const { state } = useStore();
-
-  useEffect(() => {
-    router.replace(state.onboarded ? "/home" : "/onboarding");
-  }, [router, state.onboarded]);
-
-  return (
-    <div className="flex flex-1 items-center justify-center">
-      <span className="text-sm text-muted-foreground">Loading OpenPath...</span>
-    </div>
-  );
+  return <LandingPage />;
 }
