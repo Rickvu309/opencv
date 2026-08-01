@@ -1,5 +1,6 @@
 import { cvForkedSurface, opportunityForkedSurface } from "@/lib/copilot-surface-names";
 import { COPILOT_CAPTURE_CANDIDATE_ID } from "@/lib/data/track-record";
+import { recruiterCopilotScripts } from "@/lib/data/recruiter/copilot-scripts";
 import type { CopilotSurfaceScript } from "@/lib/types";
 
 // The Copilot layer's one script registry: every surface's suggested
@@ -1149,4 +1150,9 @@ export const copilotScripts: CopilotSurfaceScript[] = [
       },
     ],
   },
+  // Recruiter mode (RDS-988): its own persona mode's surfaces, kept in a
+  // separate module (lib/data/recruiter/copilot-scripts.ts) and spread in
+  // here so this one registry, and the one CopilotPanel component that
+  // reads it, keeps working unmodified across both persona modes.
+  ...recruiterCopilotScripts,
 ];
