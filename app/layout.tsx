@@ -5,7 +5,6 @@ import "./globals.css";
 import { StoreProvider } from "@/lib/store";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { DesktopGuard } from "@/components/shell/desktop-guard";
 
 // IBM Plex Sans over the default Geist Sans: a deliberate, enterprise-grade
 // sans with distinct character at dense sizes, tabular figures for chip and
@@ -40,7 +39,7 @@ export default function RootLayout({
       <body className="flex min-h-full flex-col">
         <StoreProvider>
           <TooltipProvider delayDuration={200}>
-            <DesktopGuard>{children}</DesktopGuard>
+            {children}
             <Toaster position="bottom-right" />
           </TooltipProvider>
         </StoreProvider>

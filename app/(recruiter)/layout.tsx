@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { RecruiterSidebar } from "@/components/shell/recruiter-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { CopilotPanel } from "@/components/shell/copilot-panel";
+import { DesktopGuard } from "@/components/shell/desktop-guard";
 import { useStore } from "@/lib/store";
 
 // Recruiter mode's own layout (RDS-988): the same shell primitives as
@@ -30,14 +31,16 @@ export default function RecruiterLayout({ children }: { children: ReactNode }) {
   }, [toggleCopilot]);
 
   return (
-    <SidebarProvider open={state.sidebarOpen} onOpenChange={setSidebarOpen} className="h-full min-h-0">
-      <RecruiterSidebar />
-      <SidebarInset className="min-w-0">
-        <div className="flex h-full min-w-0 flex-1">
-          <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">{children}</div>
-          {state.copilot.open ? <CopilotPanel /> : null}
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+    <DesktopGuard>
+      <SidebarProvider open={state.sidebarOpen} onOpenChange={setSidebarOpen} className="h-full min-h-0">
+        <RecruiterSidebar />
+        <SidebarInset className="min-w-0">
+          <div className="flex h-full min-w-0 flex-1">
+            <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">{children}</div>
+            {state.copilot.open ? <CopilotPanel /> : null}
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
+    </DesktopGuard>
   );
 }

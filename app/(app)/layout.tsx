@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { AppSidebar } from "@/components/shell/sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { CopilotPanel } from "@/components/shell/copilot-panel";
+import { DesktopGuard } from "@/components/shell/desktop-guard";
 import { useStore } from "@/lib/store";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
@@ -26,14 +27,16 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   }, [toggleCopilot]);
 
   return (
-    <SidebarProvider open={state.sidebarOpen} onOpenChange={setSidebarOpen} className="h-full min-h-0">
-      <AppSidebar />
-      <SidebarInset className="min-w-0">
-        <div className="flex h-full min-w-0 flex-1">
-          <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">{children}</div>
-          {state.copilot.open ? <CopilotPanel /> : null}
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+    <DesktopGuard>
+      <SidebarProvider open={state.sidebarOpen} onOpenChange={setSidebarOpen} className="h-full min-h-0">
+        <AppSidebar />
+        <SidebarInset className="min-w-0">
+          <div className="flex h-full min-w-0 flex-1">
+            <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">{children}</div>
+            {state.copilot.open ? <CopilotPanel /> : null}
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
+    </DesktopGuard>
   );
 }
