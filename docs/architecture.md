@@ -17,7 +17,7 @@ The product helps the user:
 ## 2. Stack and constraints
 
 - Next.js 16 (App Router), TypeScript, Tailwind 4, shadcn/ui, npm.
-- Desktop web only. Below 1024px, show a polite "OpenPath is a desktop product" screen.
+- Desktop web only. Below 1024px, show a polite "OpenPath is a desktop product" screen. The one exception is the public landing at `/` (RDS-991), which is fully responsive down to mobile since it is marketing, not the workspace; see section 3's "Public landing" entry.
 - No backend, no persistence, no real AI calls. All data is typed TS mock modules. All AI output is scripted.
 - State lives in one client store (React context + reducer). State resets on reload by design.
 - All components client-render from the store; pages are thin route wrappers.
@@ -76,6 +76,10 @@ Four layout components under `components/shell/` codify one frame rule set (cont
 - /onboarding: full-screen flow shown on first run (store flag `onboarded`), skippable, ends at /home
 
 Header per page: page title, primary action button, Copilot toggle button.
+
+### Public landing (RDS-991)
+
+`/` (`app/page.tsx`) is the public marketing landing, not the app shell: one guided narrative (hero, problem and thesis, how it works, four signature-workflow showcases, the AI difference, recruiter mode, closing CTA, a minimal footer), built in `components/marketing/`. It renders outside `DesktopGuard` on purpose (moved out of the root layout and into each guarded area's own layout instead: `app/(app)/layout.tsx`, `app/(recruiter)/layout.tsx`, and the new `app/onboarding/layout.tsx`), so it holds down to 390px while every app route keeps the desktop-only guard unchanged. "Open OpenPath" (`components/marketing/open-openpath-button.tsx`) carries the same check the old root page's own redirect used: `state.onboarded ? "/home" : "/onboarding"`, so it still routes a returning user straight into the app and a first-time visitor into onboarding. The four signature-workflow showcases render real, live product components (`components/marketing/showcases/`) inside a framed, `inert`, non-interactive shell (`components/marketing/browser-frame.tsx`) that measures its own width live and scales a fixed-width real composition to fit, rather than a screenshot; each one lazy-mounts on scroll proximity (`components/marketing/lazy-mount.tsx`) to keep the real product data and components those showcases pull in out of the landing page's initial bundle.
 
 ### Recruiter mode (RDS-988)
 
