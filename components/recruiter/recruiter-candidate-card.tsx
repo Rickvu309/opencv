@@ -27,7 +27,7 @@ export function RecruiterCandidateCard({ candidate }: { candidate: RecruiterCand
       <Card size="sm" className="ring-foreground/8 gap-2 transition-colors hover:ring-foreground/20">
         <div className="flex flex-col gap-1.5 px-3">
           <div className="flex items-start justify-between gap-1">
-            <div className="flex min-w-0 items-center gap-1.5">
+            <div className="flex min-w-0 flex-1 items-center gap-1.5">
               {candidate.flaggedForReview ? (
                 <Flag className="size-3 shrink-0 fill-amber-500 text-amber-500" />
               ) : null}

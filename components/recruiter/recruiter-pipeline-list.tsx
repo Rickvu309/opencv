@@ -74,7 +74,7 @@ export function RecruiterPipelineList({ candidates, roles, sort, onSortChange, s
                   </div>
                 </TableCell>
                 {showRoleColumn ? (
-                  <TableCell className="text-muted-foreground">{role?.title ?? "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">{role?.title ?? "Unknown role"}</TableCell>
                 ) : null}
                 <TableCell>
                   <RecruiterStageChip stage={candidate.stage} />
