@@ -1047,4 +1047,47 @@ export const copilotScripts: CopilotSurfaceScript[] = [
       },
     ],
   },
+  {
+    surface: "Strategy",
+    suggestedPrompts: [
+      "How is pipeline health judged?",
+      "Why these moves this week?",
+      "What happens if I skip a move?",
+    ],
+    exchanges: [
+      {
+        id: "copilot-strategy-1",
+        prompt: "How is pipeline health judged?",
+        response: {
+          lead: "Three signals: strong-fit coverage, momentum, and effort balance.",
+          points: [
+            { label: "Strong-fit coverage", detail: "Share of your active opportunities Copilot currently rates Strong fit." },
+            { label: "Momentum", detail: "Share of active opportunities with any activity in the last 7 days." },
+            {
+              label: "Effort balance",
+              detail: "Whether your accepted next actions concentrate on your best-fit opportunities or your weakest ones.",
+            },
+          ],
+        },
+      },
+      {
+        id: "copilot-strategy-2",
+        prompt: "Why these moves this week?",
+        response: {
+          lead: "Each one is grounded in a real gap: one opportunity worth focusing on, one worth a follow-up, one worth deprioritizing, and one honest gap in your pipeline.",
+          points: [
+            { label: "Nothing applies itself", detail: "Approve, adjust to a different candidate, or set any of them aside, your call." },
+          ],
+        },
+      },
+      {
+        id: "copilot-strategy-3",
+        prompt: "What happens if I skip a move?",
+        response: {
+          lead: "Nothing changes, it just sits as Not now with an Undo if you change your mind.",
+          handoff: { kind: "route", href: "/opportunities", label: "Review your pipeline" },
+        },
+      },
+    ],
+  },
 ];

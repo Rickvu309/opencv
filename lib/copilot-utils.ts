@@ -19,6 +19,7 @@ export function resolveCvSurface(cvName: string): string {
 const CONTEXT_CHIP_CATEGORY: Record<string, string> = {
   Home: "Home",
   Opportunities: "Opportunities",
+  Strategy: "Strategy",
   "Opportunity Detail": "Opportunity",
   Profile: "Profile",
   "CV Versions": "CV",
