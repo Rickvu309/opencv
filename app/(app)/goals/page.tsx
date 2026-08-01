@@ -117,7 +117,7 @@ export default function GoalsPage() {
             </div>
             <AskCopilotButton surface="Goals" objectLabel="Where this can go" />
           </div>
-          <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+          <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-3">
             {state.pathScenarios.map((scenario) => (
               <PathScenarioCard key={scenario.id} scenario={scenario} />
             ))}

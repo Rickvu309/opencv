@@ -23,7 +23,7 @@ export function SkillMapSection({
   const categories = Array.from(new Set(skills.map((skill) => skill.category)));
 
   return (
-    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+    <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-2">
       {categories.map((category) => (
         <Card key={category} className="ring-foreground/8">
           <CardContent className="flex flex-col gap-1">
