@@ -50,7 +50,7 @@ export function WhatChangedDigest() {
                     <Icon className="size-3" />
                   </span>
                   <span className="min-w-0 flex-1 truncate text-sm text-foreground">
-                    <span className="text-muted-foreground">{item.objectLabel} — </span>
+                    <span className="text-muted-foreground">{item.objectLabel}: </span>
                     {item.message}
                   </span>
                   {isCopilotActivityKind(item.kind) ? <CopilotTag className="shrink-0" /> : null}
