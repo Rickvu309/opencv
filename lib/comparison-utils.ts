@@ -38,9 +38,13 @@ export type ComparisonDimensionId =
   | "risk"
   | "preparation-effort";
 
+/** The 3 pairs the grid chunks its 6 rows into (Miller's Law): a dense flat list of 6 reads as more to hold at once than 3 named pairs of 2. */
+export type ComparisonDimensionGroup = "How it fits" | "Momentum" | "Watch for";
+
 export interface ComparisonDimensionDef {
   id: ComparisonDimensionId;
   label: string;
+  group: ComparisonDimensionGroup;
   /** The info affordance's "how this is judged" text, Progressive Disclosure behind each row. */
   methodology: string;
 }
@@ -51,36 +55,42 @@ export const COMPARISON_DIMENSIONS: ComparisonDimensionDef[] = [
   {
     id: "fit",
     label: "Fit",
+    group: "How it fits",
     methodology:
       "Pulled straight from this opportunity's own AI Analysis fit judgment, Strong, Medium, Weak, or Unknown, unchanged from what its detail page already says.",
   },
   {
     id: "goal-alignment",
     label: "Goal alignment",
+    group: "How it fits",
     methodology:
       "Whether the opportunity is linked to one of your active goals. A link means its fit analysis or notes name that goal directly, not a guess made for this view.",
   },
   {
     id: "growth-potential",
     label: "Growth potential",
+    group: "Momentum",
     methodology:
       "How much room this specific role has to deepen your target direction over the next year, weighed against the scope, team, and company stage described in the listing.",
   },
   {
     id: "timing",
     label: "Timing",
+    group: "Momentum",
     methodology:
       "Where the opportunity sits in its pipeline stage and how much momentum it currently has, drawn from its status and how recently something moved on it.",
   },
   {
     id: "risk",
     label: "Risk and unknowns",
+    group: "Watch for",
     methodology:
       "What's still unverified: credibility signals, open questions from the fit judgment, and anything the process hasn't tested yet.",
   },
   {
     id: "preparation-effort",
     label: "Preparation effort",
+    group: "Watch for",
     methodology:
       "How much work stands between here and your next real decision: a case study to send, a CV to tailor, a credibility check to clear.",
   },
