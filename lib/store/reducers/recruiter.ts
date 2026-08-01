@@ -120,10 +120,11 @@ export function reduceRecruiter(state: StoreState, action: RecruiterAction): Sto
       };
 
     case "UNDO_SEND_RECRUITER_OUTREACH_DRAFT": {
-      const { [action.draftId]: _removed, ...rest } = state.recruiterOutreachDraftStates;
+      const nextDraftStates = { ...state.recruiterOutreachDraftStates };
+      delete nextDraftStates[action.draftId];
       return {
         ...state,
-        recruiterOutreachDraftStates: rest,
+        recruiterOutreachDraftStates: nextDraftStates,
         recruiterCandidates: state.recruiterCandidates.map((candidate) =>
           candidate.id === action.candidateId
             ? {
@@ -141,8 +142,9 @@ export function reduceRecruiter(state: StoreState, action: RecruiterAction): Sto
 
     case "SET_RECRUITER_OUTREACH_DRAFT_STATE": {
       if (action.state === "proposed") {
-        const { [action.draftId]: _removed, ...rest } = state.recruiterOutreachDraftStates;
-        return { ...state, recruiterOutreachDraftStates: rest };
+        const nextDraftStates = { ...state.recruiterOutreachDraftStates };
+        delete nextDraftStates[action.draftId];
+        return { ...state, recruiterOutreachDraftStates: nextDraftStates };
       }
       return {
         ...state,

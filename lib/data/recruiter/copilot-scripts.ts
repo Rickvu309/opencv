@@ -14,7 +14,12 @@ import type { CopilotSurfaceScript, RecruiterCandidate } from "@/lib/types";
 
 const pipelineScript: CopilotSurfaceScript = {
   surface: "Recruiter Pipeline",
-  suggestedPrompts: ["Who needs attention today?", "Where's the Senior Product Designer role stuck?"],
+  suggestedPrompts: [
+    "Who needs attention today?",
+    "Where's the Senior Product Designer role stuck?",
+    "Who's on hold right now?",
+    "Who's ready to submit to the hiring manager?",
+  ],
   exchanges: [
     {
       id: "copilot-recruiter-pipeline-1",
@@ -50,6 +55,34 @@ const pipelineScript: CopilotSurfaceScript = {
           },
         ],
         handoff: { kind: "route", href: "/recruiter/roles", label: "Open Roles" },
+      },
+    },
+    {
+      id: "copilot-recruiter-pipeline-3",
+      prompt: "Who's on hold right now?",
+      response: {
+        lead: "One candidate is on hold today.",
+        points: [
+          {
+            label: "Ngoc Anh Vu",
+            detail: "Waiting on her updated case-study deck before the panel can be scheduled.",
+          },
+        ],
+        handoff: { kind: "route", href: "/recruiter/candidates/rc-5", label: "Open Ngoc Anh Vu" },
+      },
+    },
+    {
+      id: "copilot-recruiter-pipeline-4",
+      prompt: "Who's ready to submit to the hiring manager?",
+      response: {
+        lead: "Hoang Minh Chau is ready to package up for Trong Le.",
+        points: [
+          {
+            label: "Hoang Minh Chau",
+            detail: "Review complete, outreach current, notes on file, no open questions left.",
+          },
+        ],
+        handoff: { kind: "route", href: "/recruiter/candidates/rc-10", label: "Open Hoang Minh Chau" },
       },
     },
   ],

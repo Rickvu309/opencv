@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { ArrowDown, Flag } from "lucide-react";
 
 import { EmptyState } from "@/components/shared/empty-state";
+import { CandidateStatusIndicators } from "@/components/recruiter/candidate-status-indicators";
 import { RecruiterReadinessChip } from "@/components/recruiter/recruiter-readiness-chip";
 import { RecruiterSourceChip } from "@/components/recruiter/recruiter-source-chip";
 import { RecruiterStageChip } from "@/components/recruiter/recruiter-stage-chip";
@@ -68,6 +69,7 @@ export function RecruiterPipelineList({ candidates, roles, sort, onSortChange, s
                       <Flag className="size-3 shrink-0 fill-amber-500 text-amber-500" />
                     ) : null}
                     <span className="truncate font-medium text-foreground">{candidate.name}</span>
+                    <CandidateStatusIndicators candidate={candidate} />
                   </div>
                   <div className="truncate text-xs text-muted-foreground">
                     {candidate.currentTitle} at {candidate.currentCompany}

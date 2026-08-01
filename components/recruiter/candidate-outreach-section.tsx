@@ -1,25 +1,35 @@
-import { Mail, MessageCircle, Phone } from "lucide-react";
+import { Mail, MessageCircle, Phone, StickyNote } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Chip } from "@/components/shared/chip";
 import { CHIP_TONES } from "@/components/shared/chip-tones";
-import type { RecruiterOutreachScaffold, RecruiterOutreachTouch } from "@/lib/types";
+import { OutreachDraftCard } from "@/components/recruiter/outreach-draft-card";
+import { getRecruiterOutreachDrafts } from "@/lib/recruiter-outreach-utils";
+import type { RecruiterCandidate, RecruiterOutreach, RecruiterOutreachChannel, RecruiterRole } from "@/lib/types";
 
-const CHANNEL_ICON: Record<RecruiterOutreachTouch["channel"], typeof Mail> = {
+const CHANNEL_ICON: Record<RecruiterOutreachChannel, typeof Mail> = {
   Email: Mail,
   LinkedIn: MessageCircle,
   Phone: Phone,
+  "Internal note": StickyNote,
 };
 
-const STATUS_TONE: Record<RecruiterOutreachScaffold["status"], keyof typeof CHIP_TONES> = {
+const STATUS_TONE: Record<RecruiterOutreach["status"], keyof typeof CHIP_TONES> = {
   "Not started": "neutral",
   "Awaiting reply": "warning",
   Responded: "success",
 };
 
-/** The touch log plus a scripted suggested next message, the pattern ticket 06 established: structured content now, that RDS-30 deepens into real drafting and send flows. */
-export function CandidateOutreachSection({ outreach }: { outreach: RecruiterOutreachScaffold }) {
+/**
+ * The touch log plus a set of scripted, editable drafts for the common
+ * recruiting moments (RDS-989): screening invite, interview scheduling, a
+ * nudge to a slow hiring manager, the respectful close.
+ */
+export function CandidateOutreachSection({ candidate, role }: { candidate: RecruiterCandidate; role: RecruiterRole | undefined }) {
+  const outreach = candidate.outreach;
   const tone = CHIP_TONES[STATUS_TONE[outreach.status]];
+  const drafts = getRecruiterOutreachDrafts(candidate, role);
+
   return (
     <Card>
       <CardHeader>
@@ -28,7 +38,7 @@ export function CandidateOutreachSection({ outreach }: { outreach: RecruiterOutr
           <Chip label={outreach.status} dotClassName={tone.dot} className={tone.className} />
         </div>
       </CardHeader>
-      <CardContent className="flex flex-col gap-3">
+      <CardContent className="flex flex-col gap-4">
         {outreach.touches.length > 0 ? (
           <ul className="flex flex-col gap-2">
             {outreach.touches.map((touch) => {
@@ -50,9 +60,13 @@ export function CandidateOutreachSection({ outreach }: { outreach: RecruiterOutr
           <p className="text-sm text-muted-foreground">No outreach sent yet.</p>
         )}
 
-        <div className="rounded-md border border-dashed border-border bg-muted/20 px-3 py-2">
-          <p className="text-xs font-medium text-muted-foreground">Suggested next message</p>
-          <p className="text-sm text-foreground">{outreach.suggestedNextMessage}</p>
+        <div className="flex flex-col gap-2">
+          <p className="text-section-label">Drafts</p>
+          <div className="flex flex-col gap-2">
+            {drafts.map((draft) => (
+              <OutreachDraftCard key={draft.id} candidate={candidate} draft={draft} />
+            ))}
+          </div>
         </div>
       </CardContent>
     </Card>

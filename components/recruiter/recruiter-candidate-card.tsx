@@ -5,6 +5,7 @@ import { Flag } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
 import { AttentionDot } from "@/components/opportunities/attention-dot";
+import { CandidateStatusIndicators } from "@/components/recruiter/candidate-status-indicators";
 import { RecruiterReadinessChip } from "@/components/recruiter/recruiter-readiness-chip";
 import { RecruiterSourceChip } from "@/components/recruiter/recruiter-source-chip";
 import { RecruiterQuickActionsMenu } from "@/components/recruiter/recruiter-quick-actions-menu";
@@ -39,9 +40,12 @@ export function RecruiterCandidateCard({ candidate }: { candidate: RecruiterCand
           <span className="truncate text-xs text-muted-foreground">
             {candidate.currentTitle} at {candidate.currentCompany}
           </span>
-          <div className="flex flex-wrap items-center gap-1">
-            <RecruiterReadinessChip readiness={candidate.readiness} />
-            <RecruiterSourceChip source={candidate.source} />
+          <div className="flex flex-wrap items-center justify-between gap-1">
+            <div className="flex flex-wrap items-center gap-1">
+              <RecruiterReadinessChip readiness={candidate.readiness} />
+              <RecruiterSourceChip source={candidate.source} />
+            </div>
+            <CandidateStatusIndicators candidate={candidate} />
           </div>
           <p className="text-xs text-muted-foreground">
             {days} {days === 1 ? "day" : "days"} in {candidate.stage}

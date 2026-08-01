@@ -12,6 +12,7 @@ import { CandidateAiSummaryBlock } from "@/components/recruiter/candidate-ai-sum
 import { CandidateHighlights } from "@/components/recruiter/candidate-highlights";
 import { CandidateStageHistory } from "@/components/recruiter/candidate-stage-history";
 import { CandidateReviewSection } from "@/components/recruiter/candidate-review-section";
+import { CandidateDecisionBlock } from "@/components/recruiter/candidate-decision-block";
 import { CandidateOutreachSection } from "@/components/recruiter/candidate-outreach-section";
 import { CandidateSubmissionSection } from "@/components/recruiter/candidate-submission-section";
 import { CandidateNotes } from "@/components/recruiter/candidate-notes";
@@ -59,12 +60,10 @@ export default function RecruiterCandidateDetailPage() {
           <CandidateStageHistory candidate={candidate} />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <CandidateReviewSection review={candidate.review} />
-          <CandidateOutreachSection outreach={candidate.outreach} />
-        </div>
-
-        <CandidateSubmissionSection submission={candidate.submission} />
+        <CandidateReviewSection review={candidate.review} />
+        <CandidateDecisionBlock candidate={candidate} />
+        <CandidateOutreachSection candidate={candidate} role={role} />
+        <CandidateSubmissionSection candidate={candidate} />
 
         <CandidateNotes candidate={candidate} />
       </div>
