@@ -87,7 +87,7 @@ Nine flows. Each must have one complete clickable path.
 
 1. First-run setup: /onboarding -> welcome -> role and location -> target direction -> goals seed -> import profile (mock) -> land on /home with context banner.
 2. Add an opportunity: /opportunities "Add" -> dialog with two tabs (Paste link or description, Manual) -> paste path shows AI parsing state -> structured preview -> user edits and confirms -> new card appears in Saved.
-3. Scan and prioritize: /opportunities board or list -> filter and sort by fit, priority, status -> quick actions on cards (change status, flag Dream, open).
+3. Scan and prioritize: /opportunities Active or Watchlist mode, board or list -> filter and sort by fit, priority, status (Active only) -> quick actions on cards (change status, set priority, flag Dream, move Active/Watchlist, add to comparison, open).
 4. Understand one opportunity: /opportunities/[id] Overview -> AI Analysis tab: summary, credibility check, fit judgment (strengths, concerns, unknowns, confidence) -> user asks Copilot follow-ups (scripted).
 5. Decide next step: opportunity Actions tab or /home: recommended next actions with rationale -> accept, edit, or dismiss -> accepted action shows on card and /home.
 6. Tailor materials: opportunity Materials tab -> link a CV version -> "Tailor for this role" -> AI suggestions per section -> accept or dismiss each -> creates a tailored CV version in /cvs.
@@ -274,3 +274,63 @@ section 8's realism rules forbid. The tiles stay honest live counts, each
 one wired to the same combined signal-plus-nudge count the "Needs a
 decision" module itself renders, so the tile and the module below it can
 never disagree.
+
+## 11. Opportunities workspace, the Active/Watchlist lens (RDS-994)
+
+RDS-993 decided what Home is for. This ticket does the same job for
+/opportunities: the page must answer three questions in seconds, what is
+active now, what deserves attention next, what is promising but not yet
+active, and a flat board mixing the operational pipeline with Dream and
+freshly-saved items answered none of them cleanly.
+
+**The rule:** a page-level segmented control, Active (default) and
+Watchlist, directly under the header. Both are a lens over the same
+`Opportunity[]`/`NextAction[]` store data, no schema change, no new field
+on `Opportunity` itself:
+
+- **Active**: `isActiveOpportunity` (`lib/opportunity-utils.ts`). Applied,
+  Interview, and Offer are always Active by status. Saved joins only once
+  it has an accepted (or done) next action, the same "being worked" bar
+  the mode-change dialogs check before they let an item cross. Closed
+  belongs to neither lens; it lives behind Active's own collapsed count
+  chip, on demand rather than a permanent fifth column.
+- **Watchlist**: `isWatchlistOpportunity`, the complement: Dream-flagged or
+  Saved opportunities not yet claimed by Active, not Closed. A
+  Dream-flagged opportunity that already has an accepted next action
+  (`opp-1` in seed data) is Active, not Watchlist, the flag is a quality
+  the card still shows, not a queue membership test.
+
+Moving between modes is a real state change, not a filter toggle, and
+both directions require a named confirmation dialog
+(`MoveToActiveDialog`/`MoveToWatchlistDialog`): Move to Active accepts the
+opportunity's suggested next action (that's what actually pulls it into
+the Active lens); Move to Watchlist un-accepts it back to suggested. An
+opportunity with no suggested next action yet can't be moved blind, the
+dialog says so and hands off to the Actions tab instead of offering a
+button that would silently do nothing. Watchlist's own card/row exposes
+this as one of its two named actions (Move to Active, Archive, which
+reuses the existing Closed status rather than a new archived flag);
+`OpportunityQuickActionsMenu` exposes the same pair (whichever direction
+applies) on every Saved opportunity's menu, Applied/Interview/Offer never
+show it since their lens membership is fixed by status alone.
+
+A compact summary band sits above both modes: pipeline counts (Saved
+narrowed to the Active slice, Applied, Interview, Offer), a needs-attention
+count, and the Watchlist size, each a real filter, not decoration. Needs
+attention is scoped to the Active lens (the same `needsAttention` check
+flow 3 already used, still fed the full opportunity list, just displayed
+inside Active), since "what deserves attention next" is a question about
+work already in motion; a Watchlist item's own one-line "why it is here"
+already answers the analogous question for that lens without a second
+count to reconcile against Strategy's own `staleOrDrifting` segment, which
+spans both lenses on purpose (see `lib/strategy-utils.ts`'s
+`buildStrategySegments`). When a Strategy or Home deep link's filter or
+status narrows Active down to nothing, the page says so and offers a
+one-click switch to Watchlist rather than a silent empty board.
+
+The overview level keeps exactly two AI affordances (docs/design.md
+section 1's indigo rule): the Focus strip, unchanged, and a new per-item
+signal glyph, a small indigo dot with a count, shown only when an
+opportunity has a pending `AiSignal`. It never carries prose; clicking it
+opens the opportunity's own Overview tab, where the Signals section
+already lives, not a second drawer duplicating that reasoning.
