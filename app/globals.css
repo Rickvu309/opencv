@@ -147,4 +147,37 @@
   .text-section-label {
     @apply text-[11px] font-semibold tracking-wide text-muted-foreground/80 uppercase;
   }
+
+  /* The landing page hero visual's one considered entrance (RDS-991): a
+     single fade-and-rise on mount, transform and opacity only. Scroll
+     reveals elsewhere on the page use components/marketing/scroll-reveal.tsx
+     instead, this one utility is only for the hero, which has nothing to
+     scroll past yet. */
+  .animate-hero-in {
+    animation: hero-in 900ms 150ms both cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+@keyframes hero-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Reduced motion, respected everywhere (RDS-991 brief section 5): the hero
+   visual's own entrance animation is a plain CSS keyframe, not a Tailwind
+   utility, so it needs its own override here. Every other landing-page
+   motion effect already uses Tailwind's `motion-safe:` variant at the call
+   site (components/marketing/scroll-reveal.tsx, sticky-cta.tsx) or checks
+   `matchMedia` itself before ever starting (components/marketing/use-
+   parallax.ts), so nothing else needs a rule here. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-hero-in {
+    animation: none !important;
+  }
 }
