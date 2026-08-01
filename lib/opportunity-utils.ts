@@ -40,6 +40,11 @@ export function findOpportunityActivity(
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
+/** The activity kinds Copilot itself produced, so the Activity tab and Home's what-changed digest tag exactly the same set with CopilotTag. */
+export function isCopilotActivityKind(kind: ActivityMoment["kind"]): boolean {
+  return kind === "copilot-analysis" || kind === "cv-tailored" || kind === "signal-accepted" || kind === "proof-added";
+}
+
 export function findPrimaryNextAction(
   opportunityId: string,
   nextActions: NextAction[]

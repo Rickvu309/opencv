@@ -49,7 +49,7 @@ export function StatTiles({ opportunities, needsDecisionCount }: StatTilesProps)
   return (
     <Card className="ring-foreground/8">
       <CardContent className="flex items-stretch gap-1">
-        <Tile value={needsDecisionCount} label="Needs a decision" href="/home#attention" emphasis />
+        <Tile value={needsDecisionCount} label="Needs a decision" href="/home#decisions" emphasis />
         <Tile value={interviewCount} label="Interviews this week" href="/opportunities?status=Interview" />
         <Separator orientation="vertical" className="mx-1 h-auto self-stretch" />
         {STATUSES.map((status) => (

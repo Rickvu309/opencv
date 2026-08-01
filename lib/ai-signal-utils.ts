@@ -1,10 +1,21 @@
+import type { LucideIcon } from "lucide-react";
+import { ArrowRightLeft, Flame, Mail, PenLine } from "lucide-react";
+
 import { emailEvidence } from "@/lib/data/sources";
-import type { AiSignal, EmailEvidence } from "@/lib/types";
+import type { AiSignal, AiSignalIconKind, EmailEvidence } from "@/lib/types";
 
 // Shared read-only helpers for the AI signal pattern (components/ai/): the
 // evidence lookup and the "what exactly changed" message, reused by the
 // save-back confirmation banner and the Activity log entry so both always
 // say the same thing.
+
+/** Beat 1's kind icon, one source of truth so SignalCard and Home's decision queue never drift on which icon means what. */
+export const AI_SIGNAL_ICON: Record<AiSignalIconKind, LucideIcon> = {
+  email: Mail,
+  status: ArrowRightLeft,
+  urgency: Flame,
+  draft: PenLine,
+};
 
 export function findSignalEvidence(signal: AiSignal): EmailEvidence | undefined {
   return emailEvidence.find((entry) => entry.id === signal.evidenceId);

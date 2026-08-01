@@ -5,7 +5,7 @@ import type { NextAction } from "@/lib/types";
 // "what would change this advice" line. Some primaries and alternatives also
 // carry a follow-up (a fresh suggestion Copilot proposes once the action is
 // marked done) or a handoff into Materials or the Copilot panel.
-// Surface: /opportunities/[id] Actions tab, Home's NextActionsCard.
+// Surface: /opportunities/[id] Actions tab, Home's TodayChecklist.
 export const nextActions: NextAction[] = [
   // --- opp-1: Solace AI (Saved, Dream, Strong fit) -------------------------
   {

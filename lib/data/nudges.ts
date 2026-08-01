@@ -3,7 +3,7 @@ import type { Nudge } from "@/lib/types";
 // 6 nudges covering all four attention-queue families: opportunity (stale,
 // high-potential, missing next step), capture, goal, and learning. Every
 // action is a real deep link, never a dead end.
-// Surface: /home attention queue (components/home/attention-queue.tsx).
+// Surface: /home's "Needs a decision" module (components/home/decision-queue.tsx).
 export const nudges: Nudge[] = [
   {
     id: "nudge-1",

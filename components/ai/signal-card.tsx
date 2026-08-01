@@ -2,20 +2,11 @@
 
 import { useState } from "react";
 import type { ReactNode } from "react";
-import type { LucideIcon } from "lucide-react";
-import { ArrowRightLeft, Flame, Mail, PenLine } from "lucide-react";
 
 import { AiActionCard } from "@/components/ai/ai-action-card";
-import { buildSignalConfirmationMessage, findSignalEvidence } from "@/lib/ai-signal-utils";
+import { AI_SIGNAL_ICON, buildSignalConfirmationMessage, findSignalEvidence } from "@/lib/ai-signal-utils";
 import { useStore } from "@/lib/store";
-import type { AiSignal, AiSignalIconKind } from "@/lib/types";
-
-const SIGNAL_ICON: Record<AiSignalIconKind, LucideIcon> = {
-  email: Mail,
-  status: ArrowRightLeft,
-  urgency: Flame,
-  draft: PenLine,
-};
+import type { AiSignal } from "@/lib/types";
 
 interface SignalCardProps {
   signal: AiSignal;
@@ -45,7 +36,7 @@ export function SignalCard({ signal, context, className }: SignalCardProps) {
 
   return (
     <AiActionCard
-      icon={SIGNAL_ICON[signal.iconKind]}
+      icon={AI_SIGNAL_ICON[signal.iconKind]}
       context={context}
       signal={signal.signal}
       whyItMatters={signal.whyItMatters}

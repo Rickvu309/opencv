@@ -16,10 +16,12 @@ import {
 
 import { CopilotTag } from "@/components/shared/copilot-tag";
 import { EmptyState } from "@/components/shared/empty-state";
+import { isCopilotActivityKind } from "@/lib/opportunity-utils";
 import { cn } from "@/lib/utils";
 import type { ActivityMoment, ActivityMomentKind } from "@/lib/types";
 
-const KIND_ICON: Record<ActivityMomentKind, typeof Flag> = {
+/** Exported so Home's what-changed digest (components/home/what-changed-digest.tsx) draws the same icon per kind instead of a second local map. */
+export const KIND_ICON: Record<ActivityMomentKind, typeof Flag> = {
   created: Flag,
   "status-change": Check,
   "note-added": FileText,
@@ -35,7 +37,8 @@ const KIND_ICON: Record<ActivityMomentKind, typeof Flag> = {
   "proof-added": ShieldCheck,
 };
 
-const KIND_DOT: Record<ActivityMomentKind, string> = {
+/** Exported for the same reason as KIND_ICON above. */
+export const KIND_DOT: Record<ActivityMomentKind, string> = {
   created: "bg-slate-500",
   "status-change": "bg-sky-500",
   "note-added": "bg-slate-400",
@@ -77,12 +80,7 @@ export function OpportunityActivityTab({ moments }: { moments: ActivityMoment[] 
             </span>
             <div className="flex items-center gap-1.5">
               <span className="text-xs text-muted-foreground">{moment.createdAt}</span>
-              {moment.kind === "copilot-analysis" ||
-              moment.kind === "cv-tailored" ||
-              moment.kind === "signal-accepted" ||
-              moment.kind === "proof-added" ? (
-                <CopilotTag />
-              ) : null}
+              {isCopilotActivityKind(moment.kind) ? <CopilotTag /> : null}
             </div>
             <p className="text-sm text-foreground">{moment.message}</p>
           </li>
