@@ -102,11 +102,15 @@ everywhere rather than re-picked per component:
 | Success / positive | `emerald` | Offer status, Strong fit, "on track" goal, "passes checks" credibility, a completed/confirmed state |
 | Warning / needs attention | `amber` | "needs attention" goal/source status, Medium fit, Medium priority, a stale-but-not-failed state |
 | Destructive / negative | `--destructive` token (a red-orange, not raw `rose-*`) for real destructive actions (delete buttons, the destructive badge variant); `rose-*` for negative-but-not-destructive chip semantics (Weak fit, High priority, "fails checks" credibility). These read as the same hue family so a user never has to learn two different "this is bad" colors, but they are not merged into one token because a delete button and a "Weak fit" chip are different weights of "negative" and the destructive token carries real focus-ring and hover behavior a chip doesn't need |
-| Neutral | `slate` / `muted` | Saved/Closed status, Low priority, Unknown fit, "parked" goal |
+| Neutral | `slate` | Saved status, Low priority: a real value, just an unremarkable one |
+| Muted | plain `--muted`/`--muted-foreground`, no hue | Closed status, Unknown fit, a parked goal, a not-connected source: the literal absence of a judgment, not a colored one |
 
-These four meanings are the only ones a chip or status indicator may use.
-Don't introduce a fifth hue for a new status; map it onto one of these four
-first and only add a new meaning if none of the four honestly fits.
+These five tones (`components/shared/chip-tones.ts`'s `ChipTone`) are the
+only ones a chip or status indicator may use. Don't introduce a sixth hue
+for a new status; map it onto one of these first and only add a new meaning
+if none honestly fits. Muted isn't a fifth judgment stacked on the four
+colored meanings above it, it's the deliberate lack of one: nothing to
+color, so nothing gets a hue.
 
 ### The chip color map
 
@@ -116,10 +120,10 @@ is built on the one `Chip` primitive (`components/shared/chip.tsx`: a
 `Badge variant="outline"` with a dot or icon plus a label) and draws its
 colors from the shared tone table in `components/shared/chip-tones.ts`
 (added in this pass, section 3) so the literal Tailwind strings for
-"success," "warning," "danger," and "neutral" exist in exactly one place
-instead of being retyped per chip file. A chip's own file maps its domain
-values (`Strong`/`Medium`/`Weak`/`Unknown`, `Saved`/`Applied`/...) onto one
-of those four tones; it never invents a new color pairing locally.
+"success," "warning," "danger," "neutral," and "muted" exist in exactly one
+place instead of being retyped per chip file. A chip's own file maps its
+domain values (`Strong`/`Medium`/`Weak`/`Unknown`, `Saved`/`Applied`/...)
+onto one of those five tones; it never invents a new color pairing locally.
 
 Confidence is the one chip type that uses indigo instead of a status tone,
 because confidence is inherently a Copilot-attributed judgment (`Gauge`
@@ -203,8 +207,8 @@ max-width and the presence of a `band`/`rail` slot differ:
 | Template | Max width | Density intent | Routes |
 |---|---|---|---|
 | `DashboardPage` | `max-w-6xl` | Loosest: a five-second glance, not a document. Generous gaps between stat tiles and queue sections | `/home`, `/strategy` |
-| `WorkspacePage` | `max-w-[1600px]` | Densest: board/list layouts need room for many small cards or table rows at once | `/opportunities`, `/sources`, `/cvs`, `/track-record`, `/proof` |
-| `DetailPage` | `max-w-5xl` | Reading density: a primary column plus an optional `w-72` support rail, tuned for long-form content (role summaries, profile sections) | `/opportunities/[id]`, `/cvs/[id]`, `/profile` |
+| `WorkspacePage` | `max-w-[1600px]` | Densest: board/list layouts need room for many small cards or table rows at once | `/opportunities`, `/opportunities/compare`, `/sources`, `/cvs`, `/track-record`, `/proof`, `/recruiter`, `/recruiter/roles`, `/recruiter/candidates` |
+| `DetailPage` | `max-w-5xl` | Reading density: a primary column plus an optional `w-72` support rail, tuned for long-form content (role summaries, profile sections) | `/opportunities/[id]`, `/cvs/[id]`, `/profile`, `/recruiter/candidates/[id]` |
 | `PlannerPage` | `max-w-6xl` | Section-stacked reading density, same width as Dashboard but built for longer forward-looking content (goals, skills, planner stages) | `/planner`, `/roadmap`, `/goals`, `/skills`, `/rewind` |
 
 A page never hand-builds its own header, padding, or max-width. If a new

@@ -1,11 +1,15 @@
 # Delivery map
 
-An index for the next reviewer: what each ticket from RDS-959 through RDS-983
-actually shipped, where it lives, and what was intentionally simplified or
-simulated. Built from `git log` and verified against the current code as
-part of RDS-981's hygiene pass, not from ticket descriptions alone. Sections
-are numbered 01 to 24, one per RDS ticket number in that range; see the note
-on RDS-979 and the footnote on RDS-992 below.
+An index for the next reviewer: what each ticket from RDS-959 through
+RDS-994 actually shipped, where it lives, and what was intentionally
+simplified or simulated. Built from `git log` and verified against the
+current code, first as part of RDS-981's hygiene pass (sections 01 to 24),
+then extended by RDS-990's closing quality gate (sections 25 to 34).
+Sections are numbered sequentially, one per RDS ticket that actually shipped
+commits, in the order it shipped; see the note on RDS-979, and the
+footnotes on RDS-981 and RDS-992, for the two tickets that don't fit that
+pattern (each restructured how this file itself is organized rather than
+shipping a product surface).
 
 For the product-level model (object types, flows, the simulated-AI rules),
 read `docs/architecture.md` first. This file is the "which ticket built
@@ -185,7 +189,9 @@ dialog; promoted to the `/rewind` route by RDS-980).
   `components/home/greeting-band.tsx`, `components/home/next-actions-card.tsx`,
   `lib/data/nudges.ts`, `lib/nudge-utils.ts`.
 - Simplified: the Weekly Review dialog this ticket built no longer exists,
-  see RDS-980.
+  see RDS-980. `attention-queue.tsx` and `next-actions-card.tsx` no longer
+  exist either, replaced by `components/home/decision-queue.tsx` and
+  `today-checklist.tsx`, see the RDS-993 entry below.
 
 ## 16, RDS-974: Final polish pass (QA-16 audit)
 
@@ -223,7 +229,8 @@ into Base/Tailored, a Track Record coverage rail, Goals' hero treatment.
 
 - Surfaces: `/home`, `/opportunities`, `/cvs`, `/track-record`, `/goals`.
 - Key files: `app/globals.css`, `app/layout.tsx`,
-  `components/home/attention-queue.tsx`, `components/track-record/coverage-rail.tsx`,
+  `components/home/attention-queue.tsx` (since replaced, see the RDS-993
+  entry below), `components/track-record/coverage-rail.tsx`,
   `app/(app)/cvs/page.tsx`.
 
 ## 19, RDS-977: Sources model and workflow
@@ -303,6 +310,246 @@ progress never needs a separately tracked number.
   (`orientation-band.tsx`, `do-today-card.tsx`, `milestone-journey.tsx`,
   `milestone-node.tsx`, `resource-card.tsx`, `connections-section.tsx`),
   `lib/data/roadmap.ts`, `lib/roadmap-utils.ts`.
+
+## 25, RDS-984: Product-wide UI design maturity pass
+
+Wrote `docs/design.md` as the visual design authority, then brought the
+codebase into line with it: a token pass in `globals.css`, one shared chip
+tone table, `Card` primitive standardization, a product-wide consistency
+audit, and a UX-law gate.
+
+- Surfaces: whole app (visual pass, no structural change).
+- Key files: `docs/design.md` (new), `app/globals.css`,
+  `components/shared/chip-tones.ts` (new),
+  `components/shared/{credibility,fit,priority,status}-chip.tsx`,
+  `components/ui/card.tsx`, `components/goals/goal-status-chip.tsx`,
+  `components/sources/source-status-chip.tsx`,
+  `components/skills/skill-level-meter.tsx`,
+  `components/shell/desktop-guard.tsx`.
+- Simplified: nothing simulated changed, this pass touched pixels and
+  tokens, not behavior.
+
+## 26, RDS-985: Opportunity comparison and decision workspace
+
+Gave `/opportunities` a Compare selection mode (2 to 4 candidates) launching
+`/opportunities/compare`: pinned candidate header cards, a 6-dimension
+comparison grid, a tradeoffs strip, up to 3 Copilot verdict cards, and a
+"Make this my focus" decision that ends the scan-and-prioritize flow with an
+actual decision rather than more comparison.
+
+- Surfaces: `/opportunities` (Compare mode), `/opportunities/compare`.
+- Key files: `app/(app)/opportunities/compare/page.tsx` (new),
+  `components/opportunities/compare/*` (`comparison-header-cards.tsx`,
+  `comparison-dimension-grid.tsx`, `comparison-tradeoffs.tsx`,
+  `comparison-verdicts.tsx`, `comparison-decision-actions.tsx`,
+  `comparison-judgment-chip.tsx`, `comparison-recover-state.tsx`),
+  `components/opportunities/{comparison-bar,comparison-checkbox}.tsx` (new),
+  `components/ui/popover.tsx` (new), `lib/comparison-utils.ts` (new),
+  `lib/data/comparison.ts` (new).
+- Simplified: the verdict cards are computed deterministically from seed
+  data, not a real ranking model; "Make this my focus" raises priority and
+  pins the next action, it doesn't apply anything the user didn't approve.
+
+## 27, RDS-986: Pipeline strategy and focus coach
+
+Added `/strategy`, a weekly coaching surface reading live off Opportunity,
+NextAction, ActivityMoment, and Goal state: a pipeline health verdict plus 3
+indicators, up to 3 seeded strategic observations, a weekly focus plan of up
+to 4 moves (focus, deprioritize, invest, pursue-more) with real save-backs,
+and a 3-segment drill-down into `/opportunities` and the RDS-985 comparison
+flow.
+
+- Surfaces: `/strategy`.
+- Key files: `app/(app)/strategy/page.tsx` (new), `components/strategy/*`
+  (`pipeline-health-band.tsx`, `health-indicator-card.tsx`,
+  `key-observations.tsx`, `observation-card.tsx`, `weekly-focus-plan.tsx`,
+  `focus-move-card.tsx`, `segment-strip.tsx`,
+  `strategy-plan-completion-card.tsx`), `lib/strategy-utils.ts` (new),
+  `lib/data/strategy.ts` (new), `lib/store/reducers/strategy.ts` (new).
+- Simplified: the weekly plan is computed once at mount (a lazy
+  `useState` initializer), not re-ranked live, so approving one move never
+  reshuffles the others mid-decision; a fresh visit computes a fresh plan.
+
+## 28, RDS-987: Proof Builder
+
+Added `/proof`, a proof-construction and verification workflow: a context
+picker (a CV version, the profile, an opportunity, or the target path)
+frames an evidence layer (every confirmed Track Record entry ranked by
+proof strength), claim verification for CV and profile contexts, and 7
+seeded before-after transformation blocks with Accept, Edit inline, and
+Skip.
+
+- Surfaces: `/proof`.
+- Key files: `app/(app)/proof/page.tsx` (new), `components/proof/*`
+  (`proof-context-picker.tsx`, `proof-evidence-layer.tsx`,
+  `proof-claim-verification.tsx`, `proof-transformation-card.tsx`,
+  `proof-session-summary.tsx`, `claim-state-chip.tsx`,
+  `proof-strength-chip.tsx`, `track-record-evidence-chip.tsx`),
+  `lib/proof-utils.ts` (new), `lib/data/proof.ts` (new),
+  `lib/store/reducers/proof.ts` (new).
+- Simplified: Accept always writes to one of five real targets (a CV
+  section, the profile summary, a strength's evidence note, an
+  opportunity's positioning notes, or a growth-plan `PlanItem`) and stores
+  its own undo payload on the `ProofTransformation` itself, so Undo survives
+  a remount without the component holding state.
+
+## 29, RDS-988: Recruiter mode (a second persona inside one product)
+
+Added a second, distinct persona mode at `/recruiter/*`: its own route
+group and layout, its own sidebar, and its own store domain
+(`recruiterRoles`/`recruiterCandidates`), sharing the design system and
+shell primitives but never a reskin of the candidate-side screens. Object
+model: `RecruiterRole` (2 seeded) and `RecruiterCandidate` (12 seeded)
+across 6 pipeline stages.
+
+- Surfaces: `/recruiter`, `/recruiter/roles`, `/recruiter/candidates`,
+  `/recruiter/candidates/[id]`.
+- Key files: `app/(recruiter)/*` (layout plus 4 pages, new),
+  `components/recruiter/*` (17 new files at this point, including
+  `recruiter-pipeline-board.tsx`, `recruiter-pipeline-list.tsx`,
+  `recruiter-candidate-card.tsx`, `candidate-identity-band.tsx`,
+  `candidate-ai-summary-block.tsx`, `candidate-highlights.tsx`,
+  `candidate-stage-history.tsx`, `recruiter-advance-stage-dialog.tsx`),
+  `components/shell/recruiter-sidebar.tsx` (new), `lib/data/recruiter/*`
+  (`roles.ts`, `candidates.ts`, `copilot-scripts.ts`, `persona.ts`, all
+  new), `lib/recruiter-utils.ts` (new), `lib/store/reducers/recruiter.ts`
+  (new), `CONTEXT.md` (Recruiter mode section added).
+- Simplified: every recruiter-mode type carries an explicit `Recruiter`
+  prefix (`RecruiterCandidate`, `RecruiterRole`, `RecruiterStage`) so its
+  domain vocabulary can reuse plain English words ("Candidate", "Role")
+  that already mean something different on the candidate side, without a
+  TypeScript collision. The Review/Outreach/Submission sections this ticket
+  scaffolds are deepened by RDS-989 below.
+
+## 30, RDS-993: Home information architecture (a stronger command center)
+
+Decided what Home is for (docs/architecture.md section 10) and rebuilt it
+top to bottom on that rule: the command band, a merged "Needs a decision"
+list (`AiSignal` and `Nudge` ranked together, capped at 3), "Today" (accepted
+next actions only), and a read-only "What changed" digest. The old
+`attention-queue.tsx` and `next-actions-card.tsx` (RDS-973/976) are gone,
+replaced by this ticket's own components.
+
+- Surfaces: `/home`.
+- Key files: `app/(app)/home/page.tsx`, `components/home/*`
+  (`decision-queue.tsx`, `decision-detail-sheet.tsx`, `today-checklist.tsx`,
+  `what-changed-digest.tsx`, `entry-tiles-row.tsx`, `stat-tiles.tsx`, all
+  new or rebuilt; `greeting-band.tsx` kept), `lib/home-utils.ts` (new).
+  Deleted: `components/home/attention-queue.tsx`,
+  `components/home/next-actions-card.tsx`, `components/home/rewind-banner.tsx`.
+- Simplified: stat tiles show live counts only, never a delta, since the
+  prototype has no persisted prior snapshot to compare against and a
+  fabricated delta would be exactly the placeholder content the realism
+  rules forbid.
+
+## 31, RDS-989: Recruiter candidate review, outreach, and submission workflow
+
+Deepened RDS-988's Review/Outreach/Submission scaffolds into the
+recruiter's decision-and-action surface: a `RecruiterReview` (Strengths,
+Concerns, Unknowns), a `RecruiterDecision` block (advance, hold, request
+more info, do not advance, each logging to stage history with its own
+save-back and Undo), scripted `RecruiterOutreachDraft`s for 4 common
+moments, and a `RecruiterSubmission` packet workflow gated on a live
+readiness checklist.
+
+- Surfaces: `/recruiter/candidates/[id]` (Review, Decision, Outreach,
+  Submission sections).
+- Key files: `components/recruiter/{candidate-review-section,
+  candidate-decision-block,recruiter-decision-dialog,outreach-draft-card,
+  candidate-outreach-section,candidate-submission-section,
+  candidate-status-indicators,candidate-notes}.tsx`,
+  `lib/recruiter-outreach-utils.ts` (new),
+  `lib/recruiter-submission-utils.ts` (new), `lib/recruiter-utils.ts`,
+  `lib/data/recruiter/{candidates,copilot-scripts}.ts`,
+  `lib/store/reducers/recruiter.ts`.
+- Simplified: 6 candidates (rc-1, rc-3, rc-4, rc-5, rc-6, rc-8) carry full
+  seeded review/decision/outreach content; the rest carry a shorter version
+  plus computed fallbacks (`buildFallbackOutreachDrafts`,
+  `buildFallbackHiringManagerSummary`), so every candidate has something
+  real to show without every candidate needing hand-authored copy.
+
+## 32, RDS-994: Opportunities Active/Watchlist workspace lens
+
+Replaced the flat 5-status board with a page-level Active/Watchlist
+segmented control, two lenses over the same `Opportunity[]`/`NextAction[]`
+data: Active (Applied/Interview/Offer always, Saved once it has an accepted
+next action), Watchlist (Dream-flagged or freshly-saved items not yet
+claimed by Active). Moving between them is a real state change with a named
+confirmation dialog, not a filter toggle.
+
+- Surfaces: `/opportunities`.
+- Key files: `app/(app)/opportunities/page.tsx`, `components/opportunities/
+  {opportunities-mode-toggle,opportunities-summary-band,watchlist-view,
+  move-to-active-dialog,move-to-watchlist-dialog,ai-signal-glyph}.tsx` (new),
+  `components/opportunities/{opportunity-board-view,opportunity-list-view,
+  opportunity-quick-actions-menu}.tsx`, `lib/opportunity-utils.ts`,
+  `lib/store/reducers/opportunities.ts`.
+- Simplified: the Active board's 4 pipeline-stage columns are fixed-width
+  in a horizontally scrolling row rather than an equal-fraction grid (the
+  same fix RDS-988's 6-column recruiter board needed), since a positional
+  pipeline can't reflow per viewport the way Watchlist's plain card grid
+  can.
+
+## 33, RDS-991: Public landing page
+
+Added `/`, the public marketing landing: one guided narrative (hero,
+problem and thesis, how it works, four signature-workflow showcases
+rendering real live product components in a framed, `inert`, non-interactive
+shell, the AI difference, recruiter mode, closing CTA). Renders outside
+`DesktopGuard` on purpose, so it holds down to 390px while every app route
+keeps the desktop-only guard, moved out of the root layout and into each
+guarded area's own layout instead.
+
+- Surfaces: `/`.
+- Key files: `app/page.tsx`, `app/layout.tsx`, `app/(app)/layout.tsx`,
+  `app/(recruiter)/layout.tsx`, `app/onboarding/layout.tsx` (new),
+  `components/marketing/*` (18 files: `hero-section.tsx`,
+  `problem-thesis-section.tsx`, `how-it-works-section.tsx`,
+  `signature-workflows-section.tsx`, `showcases/*` (4 files),
+  `ai-difference-section.tsx`, `recruiter-section.tsx`,
+  `closing-section.tsx`, `browser-frame.tsx`, `lazy-mount.tsx`,
+  `scroll-reveal.tsx`, `showcase-block.tsx`, `showcase-skeleton.tsx`,
+  `sticky-cta.tsx`, `open-openpath-button.tsx`, `marketing-footer.tsx`,
+  `landing-page.tsx`, `use-parallax.ts`).
+- Simplified: the showcases render real product components with real seed
+  data, not screenshots, but the whole composition is `inert` and
+  non-interactive; "Open OpenPath" reads `state.onboarded` fresh on every
+  mount, so a hard reload of `/` always re-offers onboarding even in a
+  browser tab that just finished it, the same no-persistence rule as the
+  rest of the prototype.
+
+## 34, RDS-990: End-to-end review, testing, cleanup, and repository documentation (this ticket)
+
+The closing quality gate over tickets 25 through 33 above (RDS-984 through
+RDS-994) plus a final look at the whole product: a headless-browser
+walkthrough of every major journey in both modes, state verification (save-
+back naming, Undo, empty states, refresh mid-flow, long input text, 1440
+and 1280-with-panel widths), the fix these found, a repository cleanup pass
+(dead exports, an orphan file, stale doc references), this delivery-map
+extension, and a real `README.md`. See `docs/qa-final.md` for the full audit
+record and `docs/lessons.md` for this pass's own entry.
+
+- Surfaces: whole app (audit and fixes), plus documentation only
+  (`README.md`, this file, `docs/qa-final.md`).
+- Key files: `components/shell/copilot-panel.tsx` (the one real defect this
+  pass found and fixed, see `docs/qa-final.md`), `lib/recruiter-utils.ts`
+  (dead export removed), `README.md` (new), `docs/qa-final.md` (new),
+  `docs/delivery-map.md`, `docs/architecture.md`, `docs/design.md`,
+  `docs/lessons.md`. Removed: `components/ui/input-group.tsx` (orphan,
+  predates this range).
+- Simplified: nothing simulated changed; this ticket found the product
+  already close to shipped condition after 9 UX-law-reviewed tickets, one
+  real layout defect and a handful of stale doc references, not a rebuild.
+
+---
+
+Sections 25 to 34 above cover the 9 RDS tickets with commits in this range
+(984 through 989, 991, 993, 994, in the order they actually shipped, which
+is not strict numeric order: RDS-993 shipped before RDS-989, and RDS-991
+shipped last) plus RDS-990 itself as the closing section, the same role
+RDS-974 played for the first range's own final-polish ticket. RDS-992
+remains covered by its own footnote below, out of chronological order for
+the same reason noted there, not duplicated into this range's numbering.
 
 ---
 

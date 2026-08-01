@@ -55,16 +55,6 @@ export function recruiterReadinessTone(readiness: RecruiterReadiness): ChipTone 
   return READINESS_TONE[readiness];
 }
 
-const SOURCE_LABEL: Record<RecruiterSource, string> = {
-  Referral: "Referral",
-  Inbound: "Inbound",
-  Sourced: "Sourced",
-};
-
-export function recruiterSourceLabel(source: RecruiterSource): string {
-  return SOURCE_LABEL[source];
-}
-
 export function findRecruiterRole(roleId: string, roles: RecruiterRole[]): RecruiterRole | undefined {
   return roles.find((role) => role.id === roleId);
 }

@@ -57,9 +57,11 @@ DIRECTION
 Drill-downs:
 
 - /opportunities -> /opportunities/[id] (tabs: Overview, AI Analysis, Actions, Materials, Activity)
+- /opportunities -> /opportunities/compare (Compare selection mode, RDS-985)
 - /cvs -> /cvs/[id]
 - /sources: connected tools hub plus the synced-context inbox, see section 7
 - /rewind: the connected weekly review as a full surface, see flow 9
+- /recruiter -> /recruiter/candidates/[id], see the RDS-988 entry below
 
 ### Page template system
 
@@ -68,8 +70,8 @@ Four layout components under `components/shell/` codify one frame rule set (cont
 | Template | Max width | Shape | Routes |
 |---|---|---|---|
 | `DashboardPage` | max-w-6xl | Single column, no rail | /home, /strategy |
-| `WorkspacePage` | max-w-[1600px] | Object listing, optional `band` and `rail` slots | /opportunities, /sources, /cvs, /track-record, /proof |
-| `DetailPage` | max-w-5xl | Primary column plus an optional quiet support rail (standardized to w-72, e.g. `CvMetaRail`, `CoverageRail`, Profile's three support cards) | /opportunities/[id], /cvs/[id], /profile |
+| `WorkspacePage` | max-w-[1600px] | Object listing, optional `band` and `rail` slots | /opportunities, /opportunities/compare, /sources, /cvs, /track-record, /proof, /recruiter, /recruiter/roles, /recruiter/candidates |
+| `DetailPage` | max-w-5xl | Primary column plus an optional quiet support rail (standardized to w-72, e.g. `CvMetaRail`, `CoverageRail`, Profile's three support cards) | /opportunities/[id], /cvs/[id], /profile, /recruiter/candidates/[id] |
 | `PlannerPage` | max-w-6xl | Single column, optional full-bleed `band` | /planner, /roadmap, /goals, /skills, /rewind |
 
 `band` is full-bleed content directly under the header (edge to edge, no padding), for a top-of-page summary like `ProfileIdentityBand` or `DirectionBand`. It differs from a page's own inline summary band (`OpportunitySummaryBand`), which stays inside the padded content column since it was designed as a chip row, not a bleed panel.
