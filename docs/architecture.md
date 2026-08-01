@@ -264,3 +264,12 @@ repeating it here would be why-text on a page whose whole job is do-text.
 meaningful change across every opportunity, RDS-993 didn't need a new data
 shape, just a query: the 4 most recent moments, each linking to its
 opportunity's Activity tab.
+
+**Stat tiles stay counts, not counts-and-deltas.** A delta ("+2 this week")
+would need a real prior snapshot to compare against, and the prototype's own
+rule (section 2) is mock data only, no persistence, state resets on reload
+by design. A fabricated delta would be exactly the placeholder content
+section 8's realism rules forbid. The tiles stay honest live counts, each
+one wired to the same combined signal-plus-nudge count the "Needs a
+decision" module itself renders, so the tile and the module below it can
+never disagree.

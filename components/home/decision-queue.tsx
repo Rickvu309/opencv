@@ -85,7 +85,7 @@ export function DecisionQueue() {
       </div>
 
       {visibleItems.length === 0 ? (
-        <EmptyState message="Nothing needs a decision right now. Copilot will bring proposals and nudges here as they come up." />
+        <EmptyState message="Nothing needs a decision right now. Copilot brings proposals here as they come up." />
       ) : (
         <Card className="ring-foreground/8 py-0">
           <CardContent className="flex flex-col gap-0 px-0">
