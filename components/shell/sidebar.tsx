@@ -15,6 +15,7 @@ import {
   Rewind,
   RotateCcw,
   Route,
+  ShieldCheck,
   Target,
   User,
 } from "lucide-react";
@@ -64,6 +65,7 @@ const careerMemoryNav: NavItem[] = [
   { label: "Profile", href: "/profile", icon: User },
   { label: "CV Versions", href: "/cvs", icon: FileText },
   { label: "Track Record", href: "/track-record", icon: History },
+  { label: "Proof Builder", href: "/proof", icon: ShieldCheck },
 ];
 
 const directionNav: NavItem[] = [
