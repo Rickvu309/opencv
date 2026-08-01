@@ -12,3 +12,8 @@ export function opportunityForkedSurface(company: string): string {
 export function cvForkedSurface(cvName: string): string {
   return `CV Versions: ${cvName}`;
 }
+
+/** Recruiter mode's own fork: a per-candidate surface, only used where the pipeline's "Needs attention" strip flagged that candidate for a specific scripted answer. */
+export function recruiterCandidateForkedSurface(candidateName: string): string {
+  return `Recruiter Candidate: ${candidateName}`;
+}

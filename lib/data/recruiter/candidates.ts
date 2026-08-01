@@ -21,6 +21,8 @@ export const recruiterCandidates: RecruiterCandidate[] = [
     readiness: "Ready to advance",
     aiSummary:
       "Nine years in product design with direct AI-explainability experience at Fintra, a strong structural match for the seller workspace's trust-and-clarity problems.",
+    aiStrengths: "Nine years in product design with direct AI-explainability experience at Fintra.",
+    aiWatchouts: "No prior logistics or marketplace experience, worth probing in the first screen.",
     highlights: [
       "Led the AI underwriting explainability panel at Fintra, cutting related support tickets by 22 percent",
       "Built and scaled a cross-squad design system at Loop Commerce",
@@ -63,6 +65,8 @@ export const recruiterCandidates: RecruiterCandidate[] = [
     stageEnteredAt: "2026-07-28",
     readiness: "Ready to advance",
     aiSummary: "Strong marketplace and seller-tooling background, the technical screen went well, ready for the panel round.",
+    aiStrengths: "Deep marketplace and seller-tooling background, the technical screen passed cleanly.",
+    aiWatchouts: "Only 5 years of experience against a senior bar, worth weighing scope at the panel round.",
     highlights: [
       "Redesigned Beacon Retail's seller onboarding, cutting drop-off by 18 percent",
       "5 years of experience, all in marketplace and seller tooling",
@@ -105,6 +109,8 @@ export const recruiterCandidates: RecruiterCandidate[] = [
     stageEnteredAt: "2026-07-23",
     readiness: "Needs review",
     aiSummary: "Strong logistics-UX portfolio, but the technical screen still isn't booked well into Screening, the file is going cold.",
+    aiStrengths: "7 years of logistics UX with a strong internal referral behind her.",
+    aiWatchouts: "9 days into Screening with no technical screen booked, the file is going cold.",
     highlights: [
       "7 years in logistics and operations UX",
       "Referred by a current Saola Labs engineer she worked with previously",
@@ -152,6 +158,8 @@ export const recruiterCandidates: RecruiterCandidate[] = [
     stageEnteredAt: "2026-07-26",
     readiness: "Needs review",
     aiSummary: "Panel round split: strong on craft, the team wants a second opinion on leadership scope before moving further.",
+    aiStrengths: "Panel praised his systems thinking on a genuinely complex workspace problem.",
+    aiWatchouts: "One panelist flagged thin evidence of managing up to executives.",
     highlights: [
       "6 years, most recently leading a 2-person design pod",
       "Panel feedback praised his systems thinking",
@@ -197,6 +205,8 @@ export const recruiterCandidates: RecruiterCandidate[] = [
     readiness: "Blocked",
     aiSummary:
       "The panel is ready, but the case-study update she promised still hasn't arrived, the interview can't be scheduled without it.",
+    aiStrengths: "8 years of B2B workspace depth, sourced directly off a strong conference talk.",
+    aiWatchouts: "The panel can't be scheduled until her updated case-study deck arrives.",
     highlights: [
       "8 years, deep expertise in B2B workspace design",
       "Sourced directly after her conference talk on operational UX",
@@ -251,6 +261,8 @@ export const recruiterCandidates: RecruiterCandidate[] = [
     stageEnteredAt: "2026-07-29",
     readiness: "Ready to advance",
     aiSummary: "Offer sent with a Friday deadline, he's gone quiet since the call that confirmed he received it.",
+    aiStrengths: "Staff-level scope today, compensation already agreed verbally before the offer went out.",
+    aiWatchouts: "Gone quiet since confirming he received the offer, Friday's deadline is close.",
     highlights: [
       "10 years, staff-level scope at his current company",
       "Referred by An Vo Thi's former manager",
@@ -300,6 +312,8 @@ export const recruiterCandidates: RecruiterCandidate[] = [
     stageEnteredAt: "2026-07-31",
     readiness: "Needs review",
     aiSummary: "Fresh referral with direct pricing-model experience, worth a first screen before the pipeline gets deeper.",
+    aiStrengths: "Direct pricing-model experience and a warm internal referral.",
+    aiWatchouts: "Still unscreened, worth confirming interest hasn't cooled since he was referred.",
     highlights: [
       "5 years shipping pricing models to production",
       "Referred by a current Saola Labs data scientist",
@@ -340,6 +354,8 @@ export const recruiterCandidates: RecruiterCandidate[] = [
     stageEnteredAt: "2026-07-22",
     readiness: "Stale",
     aiSummary: "Applied inbound with a strong recommendation-systems background, but no outreach has gone out yet.",
+    aiStrengths: "6 years in recommendation systems, cover note references this role's problem specifically.",
+    aiWatchouts: "Applied 10 days ago with zero outreach sent, he may assume the role is filled.",
     highlights: [
       "6 years in recommendation systems at consumer marketplaces",
       "Cover note references Saola Labs' seller-matching problem specifically",
@@ -381,6 +397,8 @@ export const recruiterCandidates: RecruiterCandidate[] = [
     stageEnteredAt: "2026-07-29",
     readiness: "Ready to advance",
     aiSummary: "Technical screen went smoothly, strong production ML background, ready for the case-study round.",
+    aiStrengths: "Take-home exercise scored in the top band, comfortable presenting tradeoffs to non-technical stakeholders.",
+    aiWatchouts: "No watchouts yet, the pipeline so far has been clean.",
     highlights: [
       "4 years, shipped 3 models to production at her current company",
       "Take-home exercise scored in the top band",
@@ -423,6 +441,8 @@ export const recruiterCandidates: RecruiterCandidate[] = [
     stageEnteredAt: "2026-07-27",
     readiness: "Ready to advance",
     aiSummary: "Case-study round landed well, the team's ready to move to an offer once compensation expectations are confirmed.",
+    aiStrengths: "Case-study round scored the highest of this pipeline, direct pricing-model fit.",
+    aiWatchouts: "Compensation expectations aren't confirmed yet, worth locking down before drafting an offer.",
     highlights: [
       "5 years, direct pricing-model experience matching the role exactly",
       "Case-study round scored the highest of this pipeline",
@@ -469,6 +489,8 @@ export const recruiterCandidates: RecruiterCandidate[] = [
     stageEnteredAt: "2026-07-31",
     readiness: "Ready to advance",
     aiSummary: "Signed and accepted, starting August 18th, the search for this seat is closed.",
+    aiStrengths: "7 years leading pricing-model rollouts, accepted the offer within 24 hours.",
+    aiWatchouts: "None, this search is closed.",
     highlights: [
       "7 years, led pricing-model rollouts at her last two companies",
       "Referred by Trong Le's former colleague",
@@ -515,6 +537,8 @@ export const recruiterCandidates: RecruiterCandidate[] = [
     stageEnteredAt: "2026-07-18",
     readiness: "Blocked",
     aiSummary: "Strong data engineering background but no production ML model experience, closed out after the technical screen.",
+    aiStrengths: "6 years of strong data engineering fundamentals.",
+    aiWatchouts: "No production ML model experience, the core requirement for this specific role.",
     highlights: [
       "6 years in data engineering, no direct model-shipping experience",
       "Technical screen confirmed the gap the resume hinted at",

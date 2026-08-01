@@ -1317,8 +1317,12 @@ export interface RecruiterCandidate {
   /** ISO date the candidate entered its current stage; days-in-stage is computed live off this, never stored as a number. */
   stageEnteredAt: string;
   readiness: RecruiterReadiness;
-  /** One-line Copilot summary shown on the card and the detail identity band. */
+  /** One-line Copilot summary shown on the pipeline card and the attention strip. */
   aiSummary: string;
+  /** Detail page's AI summary block, line 1 of 3: what's working. */
+  aiStrengths: string;
+  /** Detail page's AI summary block, line 2 of 3: what to check before moving forward. */
+  aiWatchouts: string;
   /** 2 to 3 highlight facts, short phrases, never a paragraph. */
   highlights: string[];
   source: RecruiterSource;

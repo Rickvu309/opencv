@@ -6,6 +6,7 @@ import { ArrowDown, Flag } from "lucide-react";
 import { EmptyState } from "@/components/shared/empty-state";
 import { RecruiterReadinessChip } from "@/components/recruiter/recruiter-readiness-chip";
 import { RecruiterSourceChip } from "@/components/recruiter/recruiter-source-chip";
+import { RecruiterStageChip } from "@/components/recruiter/recruiter-stage-chip";
 import { RecruiterQuickActionsMenu } from "@/components/recruiter/recruiter-quick-actions-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { daysInStage, findRecruiterRole, isStaleInStage, type RecruiterCandidateSort } from "@/lib/recruiter-utils";
@@ -75,7 +76,9 @@ export function RecruiterPipelineList({ candidates, roles, sort, onSortChange, s
                 {showRoleColumn ? (
                   <TableCell className="text-muted-foreground">{role?.title ?? "—"}</TableCell>
                 ) : null}
-                <TableCell>{candidate.stage}</TableCell>
+                <TableCell>
+                  <RecruiterStageChip stage={candidate.stage} />
+                </TableCell>
                 <TableCell>
                   <RecruiterReadinessChip readiness={candidate.readiness} />
                 </TableCell>
