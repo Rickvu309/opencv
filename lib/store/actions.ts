@@ -145,6 +145,26 @@ export type Action =
   | { type: "SET_REWIND_CANDIDATE_STATE"; id: string; state: RewindCandidateState }
   | { type: "SET_REWIND_CARRY_FORWARD_STATE"; id: string; state: RewindCarryForwardState }
   | { type: "MARK_REWIND_VIEWED" }
+  // strategy (weekly focus plan)
+  | {
+      type: "APPLY_STRATEGY_MOVE";
+      moveId: string;
+      opportunityId?: string;
+      nextActionId?: string;
+      newPriority?: Priority;
+      previousPriority?: Priority;
+      activityMoment?: ActivityMoment;
+    }
+  | {
+      type: "UNDO_STRATEGY_MOVE";
+      moveId: string;
+      opportunityId?: string;
+      nextActionId?: string;
+      previousPriority?: Priority;
+      activityMomentId?: string;
+    }
+  | { type: "DISMISS_STRATEGY_MOVE"; moveId: string }
+  | { type: "UNDISMISS_STRATEGY_MOVE"; moveId: string }
   // profile
   | { type: "SET_PROFILE_SUMMARY"; summary: string }
   | { type: "SET_PROFILE_EXPERIENCE_ENTRY"; id: string; patch: Partial<Omit<ExperienceEntry, "id">> }

@@ -190,7 +190,7 @@ max-width and the presence of a `band`/`rail` slot differ:
 
 | Template | Max width | Density intent | Routes |
 |---|---|---|---|
-| `DashboardPage` | `max-w-6xl` | Loosest: a five-second glance, not a document. Generous gaps between stat tiles and queue sections | `/home` |
+| `DashboardPage` | `max-w-6xl` | Loosest: a five-second glance, not a document. Generous gaps between stat tiles and queue sections | `/home`, `/strategy` |
 | `WorkspacePage` | `max-w-[1600px]` | Densest: board/list layouts need room for many small cards or table rows at once | `/opportunities`, `/sources`, `/cvs`, `/track-record` |
 | `DetailPage` | `max-w-5xl` | Reading density: a primary column plus an optional `w-72` support rail, tuned for long-form content (role summaries, profile sections) | `/opportunities/[id]`, `/cvs/[id]`, `/profile` |
 | `PlannerPage` | `max-w-6xl` | Section-stacked reading density, same width as Dashboard but built for longer forward-looking content (goals, skills, planner stages) | `/planner`, `/roadmap`, `/goals`, `/skills`, `/rewind` |

@@ -34,6 +34,7 @@ Sidebar structure:
 OpenPath (logo)
   Home                    /home
   Opportunities           /opportunities
+  Strategy                /strategy
   Sources                 /sources
   Rewind                  /rewind
 CAREER MEMORY
@@ -65,7 +66,7 @@ Four layout components under `components/shell/` codify one frame rule set (cont
 
 | Template | Max width | Shape | Routes |
 |---|---|---|---|
-| `DashboardPage` | max-w-6xl | Single column, no rail | /home |
+| `DashboardPage` | max-w-6xl | Single column, no rail | /home, /strategy |
 | `WorkspacePage` | max-w-[1600px] | Object listing, optional `band` and `rail` slots | /opportunities, /sources, /cvs, /track-record |
 | `DetailPage` | max-w-5xl | Primary column plus an optional quiet support rail (standardized to w-72, e.g. `CvMetaRail`, `CoverageRail`, Profile's three support cards) | /opportunities/[id], /cvs/[id], /profile |
 | `PlannerPage` | max-w-6xl | Single column, optional full-bleed `band` | /planner, /roadmap, /goals, /skills, /rewind |
@@ -201,3 +202,4 @@ Trust boundary, absolute rule: the AI drafts and suggests, the user accepts, edi
 - RDS-980 Rewind: section 3 nav (/rewind, PlannerPage template), flow 9's connected weekly review promoted from a dialog to a full surface, and the TrackRecordEntry achievement depth (impactSignals, sourceRefs, pathRelevance, highlight) it writes into section 5's object model
 - RDS-983 roadmap: section 3 nav (/roadmap, PlannerPage template), flow 8 deepened: the Path Planner's chosen working path turned into a guided, staged journey (RoadmapMilestone, RoadmapResource, `lib/data/roadmap.ts`, `lib/roadmap-utils.ts`) rather than a flat content list, reading live off Skill, PlanItem, and TrackRecordEntry state so completing a plan item or confirming a Rewind achievement advances milestone progress without a separately tracked number
 - RDS-985 opportunity comparison: /opportunities gets a Compare selection mode (2 to 4 candidates, a floating count bar, a quick "Add to comparison" action) launching /opportunities/compare on the WorkspacePage template: pinned candidate header cards, a 6-dimension comparison grid (`OpportunityComparisonProfile`, `lib/data/comparison.ts`, `lib/comparison-utils.ts`), a tradeoffs strip and up to 3 Copilot verdict cards computed deterministically from that same seed data, and a "Make this my focus" decision (raises priority, pins the next action into Home, logs Activity, save-back with Undo) ending the flow 3 workspace scan with an actual decision rather than more comparison
+- RDS-986 pipeline strategy and focus coach: section 3 nav (/strategy, DashboardPage template), a coaching surface reading live off Opportunity, NextAction, ActivityMoment, and Goal state (`lib/strategy-utils.ts`, `lib/data/strategy.ts`): a pipeline health verdict plus 3 indicators, up to 3 seeded strategic observations with an evidence expand, a weekly focus plan of up to 4 moves (focus, deprioritize, invest, pursue-more; `StrategyMove`, `lib/store/reducers/strategy.ts`) with Approve, Adjust, and Not now controls and real save-backs into Home, opportunity priority, and Activity, a 3-segment drill-down into /opportunities and the RDS-985 comparison flow, and a quiet weekly continuity marker consistent with Rewind's own

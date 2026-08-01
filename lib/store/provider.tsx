@@ -28,6 +28,7 @@ import { joinWithAnd } from "@/lib/comparison-utils";
 import { evidenceTitle } from "@/lib/inbox-utils";
 import { findPrimaryNextAction } from "@/lib/opportunity-utils";
 import { resourceToLearningItemType, resourceToPlanItemType } from "@/lib/roadmap-utils";
+import type { StrategyMove } from "@/lib/strategy-utils";
 import { makeId, today } from "@/lib/store/helpers";
 import { reducer } from "@/lib/store/reducer";
 import {
@@ -165,6 +166,18 @@ interface StoreContextValue {
   acceptRewindCarryForward: (id: string) => void;
   dismissRewindCarryForward: (id: string) => void;
   undoRewindCarryForward: (id: string) => void;
+  applyStrategyMove: (move: StrategyMove) => {
+    activityMomentId?: string;
+    previousPriority?: Priority;
+    opportunityId?: string;
+    nextActionId?: string;
+  };
+  undoStrategyMove: (
+    moveId: string,
+    undo: { opportunityId?: string; nextActionId?: string; previousPriority?: Priority; activityMomentId?: string }
+  ) => void;
+  dismissStrategyMove: (moveId: string) => void;
+  undismissStrategyMove: (moveId: string) => void;
   updateProfileSummary: (summary: string) => void;
   updateExperienceEntry: (id: string, patch: Partial<Omit<ExperienceEntry, "id">>) => void;
   addExperienceEntry: (entry: ExperienceEntry) => void;
@@ -765,6 +778,88 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: "SET_REWIND_CARRY_FORWARD_STATE", id, state: "suggested" });
   }, []);
 
+  // Approve on a weekly focus plan move: focus and invest accept the move's
+  // next action, deprioritize sets priority to Low, both log one Activity
+  // moment naming what happened. Returns exactly what changed so the card's
+  // own SaveBackConfirmation can name it and Undo can hand the same values
+  // back to undoStrategyMove, the same contract focusOpportunityFromComparison
+  // already establishes for the comparison workspace's "Make this my focus".
+  const applyStrategyMove = useCallback(
+    (move: StrategyMove) => {
+      const opportunity = move.opportunityId
+        ? state.opportunities.find((entry) => entry.id === move.opportunityId)
+        : undefined;
+      const previousPriority = opportunity?.priority;
+      const nextAction = move.nextActionId
+        ? state.nextActions.find((entry) => entry.id === move.nextActionId)
+        : undefined;
+
+      let activityMoment: ActivityMoment | undefined;
+      if (move.kind === "deprioritize" && opportunity && move.reasoning) {
+        activityMoment = {
+          id: makeId("activity"),
+          opportunityId: opportunity.id,
+          kind: "priority-change",
+          message: `Deprioritized to Low from this week's focus plan: ${move.reasoning}`,
+          createdAt: today(),
+        };
+      } else if ((move.kind === "focus" || move.kind === "invest") && opportunity && nextAction) {
+        activityMoment = {
+          id: makeId("activity"),
+          opportunityId: opportunity.id,
+          kind: "action-accepted",
+          message: `Accepted from this week's focus plan: ${nextAction.verb}`,
+          createdAt: today(),
+        };
+      }
+
+      dispatch({
+        type: "APPLY_STRATEGY_MOVE",
+        moveId: move.id,
+        opportunityId: opportunity?.id,
+        nextActionId: nextAction?.id,
+        newPriority: move.kind === "deprioritize" ? "Low" : undefined,
+        previousPriority,
+        activityMoment,
+      });
+
+      return {
+        activityMomentId: activityMoment?.id,
+        previousPriority,
+        opportunityId: opportunity?.id,
+        nextActionId: nextAction?.id,
+      };
+    },
+    [state.opportunities, state.nextActions]
+  );
+
+  const undoStrategyMove = useCallback(
+    (
+      moveId: string,
+      undo: { opportunityId?: string; nextActionId?: string; previousPriority?: Priority; activityMomentId?: string }
+    ) => {
+      dispatch({ type: "UNDO_STRATEGY_MOVE", moveId, ...undo });
+    },
+    []
+  );
+
+  // Leaves the plan area (its own quiet dismissed row replaces the card), so
+  // a toast pairs with it, the same "item leaves the current view" pattern
+  // dismissNextAction and dismissNudge already use.
+  const dismissStrategyMove = useCallback((moveId: string) => {
+    dispatch({ type: "DISMISS_STRATEGY_MOVE", moveId });
+    toast("Set aside for this week", {
+      action: {
+        label: "Undo",
+        onClick: () => dispatch({ type: "UNDISMISS_STRATEGY_MOVE", moveId }),
+      },
+    });
+  }, []);
+
+  const undismissStrategyMove = useCallback((moveId: string) => {
+    dispatch({ type: "UNDISMISS_STRATEGY_MOVE", moveId });
+  }, []);
+
   const updateProfileSummary = useCallback((summary: string) => {
     dispatch({ type: "SET_PROFILE_SUMMARY", summary });
     toast.success("Summary saved");
@@ -917,6 +1012,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       acceptRewindCarryForward,
       dismissRewindCarryForward,
       undoRewindCarryForward,
+      applyStrategyMove,
+      undoStrategyMove,
+      dismissStrategyMove,
+      undismissStrategyMove,
       updateProfileSummary,
       updateExperienceEntry,
       addExperienceEntry,
@@ -1000,6 +1099,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       acceptRewindCarryForward,
       dismissRewindCarryForward,
       undoRewindCarryForward,
+      applyStrategyMove,
+      undoStrategyMove,
+      dismissStrategyMove,
+      undismissStrategyMove,
       updateProfileSummary,
       updateExperienceEntry,
       addExperienceEntry,

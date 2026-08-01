@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, FilePenLine, FileText, Flag, Link2, Mail, Scale, Sparkles, Star } from "lucide-react";
+import { ArrowDownToLine, Check, FilePenLine, FileText, Flag, Link2, Mail, Scale, Sparkles, Star } from "lucide-react";
 
 import { CopilotTag } from "@/components/shared/copilot-tag";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -19,6 +19,7 @@ const KIND_ICON: Record<ActivityMomentKind, typeof Flag> = {
   "signal-accepted": Mail,
   "evidence-linked": Link2,
   "comparison-decision": Scale,
+  "priority-change": ArrowDownToLine,
 };
 
 const KIND_DOT: Record<ActivityMomentKind, string> = {
@@ -33,6 +34,7 @@ const KIND_DOT: Record<ActivityMomentKind, string> = {
   "signal-accepted": "bg-indigo-500",
   "evidence-linked": "bg-teal-500",
   "comparison-decision": "bg-primary",
+  "priority-change": "bg-slate-500",
 };
 
 /**

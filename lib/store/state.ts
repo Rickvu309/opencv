@@ -103,6 +103,8 @@ export interface StoreState {
   rewindCandidates: RewindCandidate[];
   rewindCarryForwards: RewindCarryForward[];
   rewindViewedThisSession: boolean;
+  /** Strategy (RDS-986): decision state for the weekly focus plan's moves, keyed by the move's stable slot id. Absent means "suggested". */
+  strategyMoveStates: Record<string, "approved" | "dismissed">;
   onboarded: boolean;
   copilot: CopilotState;
   highlightedOpportunityId?: string;
@@ -141,6 +143,7 @@ export const initialState: StoreState = {
   rewindCandidates: seedRewindCandidates,
   rewindCarryForwards: seedRewindCarryForwards,
   rewindViewedThisSession: false,
+  strategyMoveStates: {},
   onboarded: false,
   copilot: {
     open: false,

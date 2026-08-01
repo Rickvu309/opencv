@@ -63,6 +63,20 @@ export function needsAttention(
   );
 }
 
+/**
+ * A Weak- or Unknown-fit opportunity that has moved past Saved (Applied,
+ * Interview, or Offer) and so is still drawing real time and attention
+ * despite the low fit read, as opposed to one still sitting untouched in
+ * Saved. Backs the Strategy surface's "Low fit, still consuming effort"
+ * segment (lib/strategy-utils.ts).
+ */
+export function isLowFitConsumingEffort(opportunity: Opportunity): boolean {
+  return (
+    (opportunity.fit === "Weak" || opportunity.fit === "Unknown") &&
+    (opportunity.status === "Applied" || opportunity.status === "Interview" || opportunity.status === "Offer")
+  );
+}
+
 const FIT_RANK: Record<FitLevel, number> = { Strong: 3, Medium: 2, Weak: 1, Unknown: 0 };
 const PRIORITY_RANK: Record<Priority, number> = { High: 3, Medium: 2, Low: 1 };
 
@@ -82,7 +96,16 @@ export function compareOpportunities(sort: OpportunitySort) {
   };
 }
 
-export type OpportunityFilter = "all" | "needs-attention" | "strong-fit" | "dream";
+export type OpportunityFilter = "all" | "needs-attention" | "strong-fit" | "dream" | "low-fit-effort";
+
+/** Every valid OpportunityFilter value, for validating a `filter` query param against (see /opportunities' Strategy deep-link sync). */
+export const OPPORTUNITY_FILTER_VALUES: OpportunityFilter[] = [
+  "all",
+  "needs-attention",
+  "strong-fit",
+  "dream",
+  "low-fit-effort",
+];
 
 export function matchesFilter(
   opportunity: Opportunity,
@@ -97,6 +120,8 @@ export function matchesFilter(
       return opportunity.fit === "Strong";
     case "dream":
       return opportunity.isDream;
+    case "low-fit-effort":
+      return isLowFitConsumingEffort(opportunity);
     case "all":
     default:
       return true;

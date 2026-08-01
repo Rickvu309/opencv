@@ -67,7 +67,8 @@ export type ActivityMomentKind =
   | "cv-tailored"
   | "signal-accepted"
   | "evidence-linked"
-  | "comparison-decision";
+  | "comparison-decision"
+  | "priority-change";
 
 export interface ActivityMoment {
   id: string;

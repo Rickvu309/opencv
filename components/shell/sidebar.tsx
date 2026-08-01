@@ -11,6 +11,7 @@ import {
   Home,
   Inbox,
   Milestone,
+  Radar,
   Rewind,
   RotateCcw,
   Route,
@@ -54,6 +55,7 @@ interface NavItem {
 const primaryNav: NavItem[] = [
   { label: "Home", href: "/home", icon: Home },
   { label: "Opportunities", href: "/opportunities", icon: Briefcase },
+  { label: "Strategy", href: "/strategy", icon: Radar },
   { label: "Sources", href: "/sources", icon: Inbox },
   { label: "Rewind", href: "/rewind", icon: Rewind },
 ];
