@@ -11,7 +11,7 @@ import { OpportunitiesControls } from "@/components/opportunities/opportunities-
 import { OpportunityBoardView } from "@/components/opportunities/opportunity-board-view";
 import { OpportunityListView } from "@/components/opportunities/opportunity-list-view";
 import { Button } from "@/components/ui/button";
-import { compareOpportunities, matchesFilter } from "@/lib/opportunity-utils";
+import { OPPORTUNITY_FILTER_VALUES, compareOpportunities, matchesFilter } from "@/lib/opportunity-utils";
 import type { OpportunityFilter, OpportunitySort } from "@/lib/opportunity-utils";
 import { today, useCopilotSurface, useStore } from "@/lib/store";
 import type { OpportunityStatus } from "@/lib/types";
@@ -47,6 +47,19 @@ export default function OpportunitiesPage() {
       }
     }
     syncStatusFromQuery();
+  }, []);
+
+  // The Strategy surface's segment strip deep-links here with a `filter`
+  // query param, for example /opportunities?filter=low-fit-effort, the same
+  // URL-sync convention as the `status` param above.
+  useEffect(() => {
+    function syncFilterFromQuery() {
+      const param = new URLSearchParams(window.location.search).get("filter");
+      if (param && OPPORTUNITY_FILTER_VALUES.includes(param as OpportunityFilter)) {
+        setFilter(param as OpportunityFilter);
+      }
+    }
+    syncFilterFromQuery();
   }, []);
 
   // The compare workspace's "Change selection" and its recover state's "Back

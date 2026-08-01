@@ -3,6 +3,7 @@
 import { DashboardPage } from "@/components/shell/dashboard-page";
 import { KeyObservations } from "@/components/strategy/key-observations";
 import { PipelineHealthBand } from "@/components/strategy/pipeline-health-band";
+import { SegmentStrip } from "@/components/strategy/segment-strip";
 import { WeeklyFocusPlan } from "@/components/strategy/weekly-focus-plan";
 import { today, useCopilotSurface, useStore } from "@/lib/store";
 
@@ -32,6 +33,8 @@ export default function StrategyPage() {
         goals={state.goals}
         todayIso={todayIso}
       />
+
+      <SegmentStrip opportunities={state.opportunities} nextActions={state.nextActions} todayIso={todayIso} />
     </DashboardPage>
   );
 }
