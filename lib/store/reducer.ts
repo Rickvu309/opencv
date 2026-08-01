@@ -13,6 +13,7 @@ import { reduceDirection } from "@/lib/store/reducers/direction";
 import { reduceTrackRecordAndRewind } from "@/lib/store/reducers/track-record-and-rewind";
 import { reduceProfile } from "@/lib/store/reducers/profile";
 import { reduceProof } from "@/lib/store/reducers/proof";
+import { reduceRecruiter } from "@/lib/store/reducers/recruiter";
 import { reduceShell } from "@/lib/store/reducers/shell";
 import { reduceStrategy } from "@/lib/store/reducers/strategy";
 import type { StoreState } from "@/lib/store/state";
@@ -116,6 +117,11 @@ export function reducer(state: StoreState, action: Action): StoreState {
     case "ADD_COPILOT_MESSAGE":
     case "SET_COPILOT_THINKING":
       return reduceShell(state, action);
+
+    case "ADVANCE_RECRUITER_CANDIDATE_STAGE":
+    case "TOGGLE_RECRUITER_CANDIDATE_FLAG":
+    case "SET_RECRUITER_CANDIDATE_NOTES":
+      return reduceRecruiter(state, action);
 
     default:
       return state;

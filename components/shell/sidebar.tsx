@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   Target,
   User,
+  Users,
 } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -195,6 +196,13 @@ export function AppSidebar() {
                 <DropdownMenuItem onSelect={restartSetup}>
                   <RotateCcw className="size-4" />
                   Restart setup
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/recruiter">
+                    <Users className="size-4" />
+                    Switch to recruiter mode
+                  </Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

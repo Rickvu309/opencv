@@ -1219,3 +1219,122 @@ export interface OpportunityPositioningNote {
   backingEntryIds: string[];
   createdAt: string;
 }
+
+// ---------------------------------------------------------------------------
+// Recruiter mode (RDS-988): a distinct persona mode at /recruiter, sharing
+// the same design system and shell primitives as the candidate-side product
+// but with its own architecture and its own store domain (never mixed with
+// the candidate-side state above). See CONTEXT.md's "Recruiter mode"
+// section for the exact vocabulary these types follow. Two words below,
+// Candidate and Role, are deliberate homonyms with candidate-side terms
+// already defined earlier in this file (a Track Record candidate, an
+// Opportunity); every type here is named with a Recruiter prefix so the two
+// never collide in code even though the seeded copy uses the plain English
+// word in recruiter-mode UI.
+// ---------------------------------------------------------------------------
+
+/** The recruiter pipeline's 6 stages, left to right on the board. Closed is reachable from any stage, not just a terminal step after Hired. */
+export type RecruiterStage = "Sourced" | "Screening" | "Interview" | "Offer" | "Hired" | "Closed";
+
+/** Copilot's read on whether a candidate is moving, and why not if it isn't. */
+export type RecruiterReadiness = "Ready to advance" | "Needs review" | "Blocked" | "Stale";
+
+/** How a candidate entered the pipeline. */
+export type RecruiterSource = "Referral" | "Inbound" | "Sourced";
+
+/** One open role the recruiter is hiring for. */
+export interface RecruiterRole {
+  id: string;
+  title: string;
+  company: string;
+  location: string;
+  remote: boolean;
+  seniority: string;
+  /** ISO date the role opened, used to compute "days open" live. */
+  openedAt: string;
+  aboutTheRole: string;
+  mustHaves: string[];
+}
+
+/** One entry in a candidate's stage history, oldest first. */
+export interface RecruiterStageHistoryEntry {
+  id: string;
+  stage: RecruiterStage;
+  enteredAt: string;
+  note?: string;
+}
+
+/** One checklist row inside a candidate's Review section. */
+export interface RecruiterReviewChecklistItem {
+  id: string;
+  label: string;
+  done: boolean;
+}
+
+/**
+ * Candidate detail's Review section: not a placeholder, a real compact
+ * checklist naming what's actually been done and what's left, that ticket
+ * 30 deepens into a full review workflow.
+ */
+export interface RecruiterReviewScaffold {
+  status: "Not started" | "In progress" | "Complete";
+  summary: string;
+  checklist: RecruiterReviewChecklistItem[];
+}
+
+/** One past touch in a candidate's Outreach section. */
+export interface RecruiterOutreachTouch {
+  id: string;
+  channel: "Email" | "LinkedIn" | "Phone";
+  sentAt: string;
+  summary: string;
+  responded: boolean;
+}
+
+/** Candidate detail's Outreach section: the touch log plus a scripted suggested next message, that ticket 30 deepens into real drafting and send flows. */
+export interface RecruiterOutreachScaffold {
+  status: "Not started" | "Awaiting reply" | "Responded";
+  touches: RecruiterOutreachTouch[];
+  suggestedNextMessage: string;
+}
+
+/** Candidate detail's Submission section: what a submission packet to the hiring manager looks like today, that ticket 30 deepens into a real submission workflow. */
+export interface RecruiterSubmissionScaffold {
+  status: "Not started" | "Packet in progress" | "Submitted to hiring manager" | "Feedback pending";
+  hiringManager: string;
+  packageIncludes: string[];
+  targetDate?: string;
+}
+
+/** One person in the recruiter's hiring pipeline. */
+export interface RecruiterCandidate {
+  id: string;
+  name: string;
+  roleId: string;
+  currentTitle: string;
+  currentCompany: string;
+  stage: RecruiterStage;
+  /** ISO date the candidate entered its current stage; days-in-stage is computed live off this, never stored as a number. */
+  stageEnteredAt: string;
+  readiness: RecruiterReadiness;
+  /** One-line Copilot summary shown on the card and the detail identity band. */
+  aiSummary: string;
+  /** 2 to 3 highlight facts, short phrases, never a paragraph. */
+  highlights: string[];
+  source: RecruiterSource;
+  sourceDetail: string;
+  suggestedNextStep: string;
+  stageHistory: RecruiterStageHistoryEntry[];
+  review: RecruiterReviewScaffold;
+  outreach: RecruiterOutreachScaffold;
+  submission: RecruiterSubmissionScaffold;
+  notes?: string;
+  flaggedForReview?: boolean;
+  /**
+   * Present only on the up-to-3 candidates the pipeline's "Needs attention"
+   * strip surfaces. Carries a `{days}` token, filled in live with the
+   * candidate's current days-in-stage so the strip's reason and the card's
+   * own days-in-stage figure can never drift apart from each other.
+   */
+  attentionTemplate?: string;
+}

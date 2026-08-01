@@ -27,6 +27,8 @@ import {
 } from "@/lib/data/rewind";
 import { aiSignals as seedAiSignals } from "@/lib/data/ai-signals";
 import { connectedSources as seedConnectedSources } from "@/lib/data/sources";
+import { recruiterRoles as seedRecruiterRoles } from "@/lib/data/recruiter/roles";
+import { recruiterCandidates as seedRecruiterCandidates } from "@/lib/data/recruiter/candidates";
 import type {
   ActivityMoment,
   AiInsight,
@@ -48,6 +50,8 @@ import type {
   Profile,
   ProfilePreferences,
   ProofTransformation,
+  RecruiterCandidate,
+  RecruiterRole,
   RewindCandidate,
   RewindCarryForward,
   RoadmapResource,
@@ -116,6 +120,13 @@ export interface StoreState {
   highlightedTrackRecordEntryId?: string;
   opportunitiesView: OpportunitiesView;
   sidebarOpen: boolean;
+  /**
+   * Recruiter mode's own domain (RDS-988), read only from /recruiter/*.
+   * Never mixed with the candidate-side slices above: no shared ids, no
+   * cross-references, a genuinely separate persona mode inside one store.
+   */
+  recruiterRoles: RecruiterRole[];
+  recruiterCandidates: RecruiterCandidate[];
 }
 
 export const initialState: StoreState = {
@@ -161,4 +172,6 @@ export const initialState: StoreState = {
   highlightedTrackRecordEntryId: undefined,
   opportunitiesView: "board",
   sidebarOpen: true,
+  recruiterRoles: seedRecruiterRoles,
+  recruiterCandidates: seedRecruiterCandidates,
 };

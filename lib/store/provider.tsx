@@ -61,6 +61,9 @@ import type {
   ProfilePreferences,
   ProofSaveBackUndo,
   ProofTransformation,
+  RecruiterCandidate,
+  RecruiterStage,
+  RecruiterStageHistoryEntry,
   RoadmapResource,
   SourceEvidence,
   TrackRecordEntry,
@@ -195,6 +198,9 @@ interface StoreContextValue {
   setCopilotSurface: (surface: string, objectLabel?: string) => void;
   sendCopilotMessage: (text: string) => void;
   setSidebarOpen: (open: boolean) => void;
+  advanceRecruiterCandidateStage: (candidate: RecruiterCandidate, stage: RecruiterStage) => void;
+  toggleRecruiterCandidateFlag: (id: string) => void;
+  setRecruiterCandidateNotes: (id: string, notes: string) => void;
 }
 
 const StoreContext = createContext<StoreContextValue | null>(null);
@@ -1005,6 +1011,29 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     toast.success("Preferences saved");
   }, []);
 
+  // Advancing shows a toast naming exactly who moved where, the confirmation
+  // the quick-actions dialog already named before this fired; no Undo here
+  // since a mis-move is just another quick action away, the same weight
+  // as setOpportunityStatus's own toast.
+  const advanceRecruiterCandidateStage = useCallback((candidate: RecruiterCandidate, stage: RecruiterStage) => {
+    const historyEntry: RecruiterStageHistoryEntry = {
+      id: makeId("rc-sh"),
+      stage,
+      enteredAt: today(),
+    };
+    dispatch({ type: "ADVANCE_RECRUITER_CANDIDATE_STAGE", id: candidate.id, stage, historyEntry });
+    toast.success(`${candidate.name} moved to ${stage}`);
+  }, []);
+
+  const toggleRecruiterCandidateFlag = useCallback((id: string) => {
+    dispatch({ type: "TOGGLE_RECRUITER_CANDIDATE_FLAG", id });
+  }, []);
+
+  const setRecruiterCandidateNotes = useCallback((id: string, notes: string) => {
+    dispatch({ type: "SET_RECRUITER_CANDIDATE_NOTES", id, notes });
+    toast.success("Note saved");
+  }, []);
+
   const setCopilotOpen = useCallback((open: boolean) => dispatch({ type: "SET_COPILOT_OPEN", open }), []);
   const toggleCopilot = useCallback(() => dispatch({ type: "TOGGLE_COPILOT" }), []);
   const setSidebarOpen = useCallback((open: boolean) => dispatch({ type: "SET_SIDEBAR_OPEN", open }), []);
@@ -1147,6 +1176,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setCopilotSurface,
       sendCopilotMessage,
       setSidebarOpen,
+      advanceRecruiterCandidateStage,
+      toggleRecruiterCandidateFlag,
+      setRecruiterCandidateNotes,
     }),
     [
       state,
@@ -1238,6 +1270,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setCopilotSurface,
       sendCopilotMessage,
       setSidebarOpen,
+      advanceRecruiterCandidateStage,
+      toggleRecruiterCandidateFlag,
+      setRecruiterCandidateNotes,
     ]
   );
 

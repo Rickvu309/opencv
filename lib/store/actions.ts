@@ -27,6 +27,8 @@ import type {
   ProfilePreferences,
   ProofSaveBackUndo,
   ProofTransformationState,
+  RecruiterStage,
+  RecruiterStageHistoryEntry,
   RewindCandidateState,
   RewindCarryForwardState,
   RoadmapResourceState,
@@ -193,4 +195,8 @@ export type Action =
   | { type: "SET_SIDEBAR_OPEN"; open: boolean }
   | { type: "SET_COPILOT_SURFACE"; surface: string; objectLabel?: string }
   | { type: "ADD_COPILOT_MESSAGE"; surface: string; message: CopilotMessage }
-  | { type: "SET_COPILOT_THINKING"; thinking: boolean };
+  | { type: "SET_COPILOT_THINKING"; thinking: boolean }
+  // recruiter mode (RDS-988), its own domain, never mixed with the actions above
+  | { type: "ADVANCE_RECRUITER_CANDIDATE_STAGE"; id: string; stage: RecruiterStage; historyEntry: RecruiterStageHistoryEntry }
+  | { type: "TOGGLE_RECRUITER_CANDIDATE_FLAG"; id: string }
+  | { type: "SET_RECRUITER_CANDIDATE_NOTES"; id: string; notes: string };
