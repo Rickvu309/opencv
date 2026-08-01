@@ -19,11 +19,14 @@ import type {
   Nudge,
   Opportunity,
   OpportunityStatus,
+  OpportunityPositioningNote,
   PlanItem,
   PlanItemState,
   Priority,
   Profile,
   ProfilePreferences,
+  ProofSaveBackUndo,
+  ProofTransformationState,
   RewindCandidateState,
   RewindCarryForwardState,
   RoadmapResourceState,
@@ -103,6 +106,18 @@ export type Action =
       opportunityId: string;
       activityMoment: ActivityMoment;
     }
+  // proof builder
+  | { type: "SET_PROOF_TRANSFORMATION_STATE"; id: string; state: ProofTransformationState }
+  | {
+      type: "ACCEPT_PROOF_TRANSFORMATION";
+      id: string;
+      groundedProof: string;
+      saveBackUndo: ProofSaveBackUndo;
+      activityMoment?: ActivityMoment;
+      addedNote?: OpportunityPositioningNote;
+      addedPlanItem?: PlanItem;
+    }
+  | { type: "UNDO_PROOF_TRANSFORMATION"; id: string }
   // direction: goals, path planner, roadmap, skills & learning
   | { type: "ADD_GOAL"; goal: Goal }
   | {

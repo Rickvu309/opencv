@@ -50,6 +50,8 @@ export interface Opportunity {
   responsibilities?: string[];
   requirements?: string[];
   notes?: string;
+  /** Proof Builder (RDS-987): positioning notes accepted into this opportunity's Materials, each grounded in named track record evidence. */
+  positioningNotes?: OpportunityPositioningNote[];
 }
 
 // ---------------------------------------------------------------------------
@@ -68,7 +70,8 @@ export type ActivityMomentKind =
   | "signal-accepted"
   | "evidence-linked"
   | "comparison-decision"
-  | "priority-change";
+  | "priority-change"
+  | "proof-added";
 
 export interface ActivityMoment {
   id: string;
@@ -1106,4 +1109,113 @@ export interface OpportunityComparisonProfile {
   preparationEffort: ComparisonJudgment;
   tradeoffHighlight: ComparisonTradeoffHighlight;
   verdictReasons: ComparisonVerdictReasons;
+}
+
+// ---------------------------------------------------------------------------
+// Proof Builder (RDS-987): a proof-construction and verification workflow at
+// /proof. Not a document editor: every proposed rewrite stays grounded in
+// named TrackRecordEntry evidence, and nothing here applies itself. The
+// session frame is one ProofContext at a time (a CV version, the profile,
+// an opportunity, or the target path); switching context never discards
+// work, since transformation and claim state lives in the store, not on the
+// page. Evidence ranking (lib/proof-utils.ts's rankEvidenceForContext) and
+// claim verification (verifyClaims) are computed live off real state, never
+// seeded; only the transformation blocks themselves are seeded, the same
+// split the Path Planner's gap analysis and Rewind's candidates already use
+// between "computed live" and "scripted content."
+// ---------------------------------------------------------------------------
+
+export type ProofContextType = "cv" | "profile" | "opportunity" | "path";
+
+/** One session frame choice: which real object the evidence layer, claim verification, and transformations below are all read against. */
+export interface ProofContext {
+  type: ProofContextType;
+  /** cvId for "cv", opportunityId for "opportunity". Absent for "profile" and "path" (the target path is always the current working path scenario). */
+  refId?: string;
+}
+
+export type ProofStrengthLevel = "Strong" | "Medium" | "Weak";
+
+/** One confirmed entry ranked for the current context: strength plus the expandable why behind it. */
+export interface ProofEvidenceRanking {
+  entry: TrackRecordEntry;
+  strength: ProofStrengthLevel;
+  whyStrength: string;
+  /** True when the entry is missing both an impact number and an evidence reference, the quiet "could be stronger" hint. */
+  couldBeStronger: boolean;
+}
+
+export type ClaimVerificationState = "well-supported" | "needs-stronger-proof" | "no-evidence-yet";
+
+export type ProofClaimSourceKind = "cv-section" | "profile-strength" | "profile-summary";
+
+/** One existing claim read live off CV or profile state, never seeded: a CV section's content, one profile strength, or the profile summary. */
+export interface ProofClaim {
+  id: string;
+  contextType: "cv" | "profile";
+  sourceKind: ProofClaimSourceKind;
+  /** The CV section title for a cv-section claim, or the strength text for a profile-strength claim. Absent for profile-summary. */
+  label: string;
+  text: string;
+  /** The CV id for a cv-section claim, absent otherwise. */
+  cvId?: string;
+}
+
+/** Verification verdict for one claim, computed live off track record state, never seeded. */
+export interface ClaimVerification {
+  claim: ProofClaim;
+  state: ClaimVerificationState;
+  /** Well supported: names the backing entries. Needs stronger proof: the entries that exist, honestly thin. */
+  backingEntryIds: string[];
+  note: string;
+  /** No evidence yet: proposes which track record capture would fix it. */
+  proposedCaptureLabel?: string;
+}
+
+export type ProofTransformationState = "proposed" | "accepted" | "skipped";
+
+/** Where accepting a proof transformation writes, mirroring the real save-back surface named in docs/architecture.md's Proof Builder entry. */
+export type ProofSaveTarget =
+  | { kind: "cv-section"; cvId: string; sectionId: string; sectionTitle: string }
+  | { kind: "profile-strength"; strength: string }
+  | { kind: "profile-summary" }
+  | { kind: "opportunity-positioning"; opportunityId: string }
+  | { kind: "path-plan-item" };
+
+/** Exactly enough to fully reverse one accepted transformation's save-back, stored on the transformation itself (the same pattern AiSignal's appliedActivityMomentId already uses) so Undo works even after the page remounts. */
+export type ProofSaveBackUndo =
+  | { kind: "cv-section"; cvId: string; sectionId: string; previousContent: string; activityMomentId?: string }
+  | { kind: "profile-summary"; previousSummary: string }
+  | { kind: "profile-strength"; strength: string; previousEvidence?: StrengthEvidence }
+  | { kind: "opportunity-positioning"; opportunityId: string; noteId: string; activityMomentId?: string }
+  | { kind: "path-plan-item"; planItemId: string };
+
+/**
+ * One seeded before-after proof block: Raw (the current weak claim, or a
+ * strong-but-unused entry's own story), Grounded proof (the proposed
+ * rewrite, concrete, one to two lines, using the backing entries' real
+ * numbers and scope), and the evidence footer naming backingEntryIds.
+ * Accept writes groundedProof to target and never applies itself first.
+ */
+export interface ProofTransformation {
+  id: string;
+  contextType: ProofContextType;
+  /** cvId or opportunityId, matching target's ref where one applies. */
+  contextRefId?: string;
+  raw: string;
+  groundedProof: string;
+  backingEntryIds: string[];
+  confidence: ConfidenceLevel;
+  target: ProofSaveTarget;
+  state: ProofTransformationState;
+  /** Set on accept so Undo can fully reverse the save-back; cleared again on undo. */
+  saveBackUndo?: ProofSaveBackUndo;
+}
+
+/** One positioning note an accepted opportunity-context proof attaches to that opportunity's Materials. */
+export interface OpportunityPositioningNote {
+  id: string;
+  text: string;
+  backingEntryIds: string[];
+  createdAt: string;
 }

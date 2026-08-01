@@ -53,11 +53,14 @@ import type {
   NextActionState,
   Opportunity,
   OpportunityStatus,
+  OpportunityPositioningNote,
   PathScenario,
   PlanItem,
   Priority,
   Profile,
   ProfilePreferences,
+  ProofSaveBackUndo,
+  ProofTransformation,
   RoadmapResource,
   SourceEvidence,
   TrackRecordEntry,
@@ -141,6 +144,10 @@ interface StoreContextValue {
   linkInboxItem: (evidence: SourceEvidence, target: InboxLinkChoice) => void;
   undoLinkInboxItem: (evidenceId: string) => void;
   dismissInboxItem: (evidenceId: string) => void;
+  acceptProofTransformation: (transformation: ProofTransformation, groundedProof: string) => void;
+  skipProofTransformation: (id: string) => void;
+  unskipProofTransformation: (id: string) => void;
+  undoProofTransformation: (id: string) => void;
   acceptTailoringSuggestion: (insightId: string, suggestionId: string, section: string) => void;
   dismissTailoringSuggestion: (insightId: string, suggestionId: string, section: string) => void;
   addCvVersion: (cv: CvVersion) => void;
@@ -550,6 +557,116 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         onClick: () => dispatch({ type: "UNDO_DISMISS_INBOX_ITEM", evidenceId }),
       },
     });
+  }, []);
+
+  // Accept writes the (possibly edited) grounded proof to the transformation's
+  // real target: a CV section, the profile summary, a strength's evidence
+  // note, a fresh positioning note on an opportunity's Materials, or a fresh
+  // "prove" plan item pinned into the growth plan's months-1-3 stage. Builds
+  // the real objects here (the provider-builds, reducer-applies split
+  // CREATE_TAILORED_CV_VERSION and APPLY_STRATEGY_MOVE already use) and
+  // stores exactly enough on the transformation itself for Undo to fully
+  // reverse it, the same pattern AiSignal's appliedActivityMomentId uses. No
+  // toast: the card's own inline SaveBackConfirmation is the feedback.
+  const acceptProofTransformation = useCallback(
+    (transformation: ProofTransformation, groundedProof: string) => {
+      const target = transformation.target;
+      let activityMoment: ActivityMoment | undefined;
+      let addedNote: OpportunityPositioningNote | undefined;
+      let addedPlanItem: PlanItem | undefined;
+      let saveBackUndo: ProofSaveBackUndo;
+
+      if (target.kind === "cv-section") {
+        const cv = state.cvVersions.find((item) => item.id === target.cvId);
+        const section = cv?.sections.find((item) => item.id === target.sectionId);
+        if (cv?.opportunityId) {
+          activityMoment = {
+            id: makeId("activity"),
+            opportunityId: cv.opportunityId,
+            kind: "proof-added",
+            message: `Copilot added grounded proof to ${cv.name}'s ${target.sectionTitle} section.`,
+            createdAt: today(),
+          };
+        }
+        saveBackUndo = {
+          kind: "cv-section",
+          cvId: target.cvId,
+          sectionId: target.sectionId,
+          previousContent: section?.content ?? "",
+          activityMomentId: activityMoment?.id,
+        };
+      } else if (target.kind === "profile-summary") {
+        saveBackUndo = { kind: "profile-summary", previousSummary: state.profile.summary };
+      } else if (target.kind === "profile-strength") {
+        const previousEvidence = state.profile.strengthEvidence.find((item) => item.strength === target.strength);
+        saveBackUndo = { kind: "profile-strength", strength: target.strength, previousEvidence };
+      } else if (target.kind === "opportunity-positioning") {
+        const opportunity = state.opportunities.find((item) => item.id === target.opportunityId);
+        addedNote = {
+          id: makeId("positioning"),
+          text: groundedProof,
+          backingEntryIds: transformation.backingEntryIds,
+          createdAt: today(),
+        };
+        activityMoment = opportunity
+          ? {
+              id: makeId("activity"),
+              opportunityId: opportunity.id,
+              kind: "proof-added",
+              message: "Copilot added a positioning note to Materials.",
+              createdAt: today(),
+            }
+          : undefined;
+        saveBackUndo = {
+          kind: "opportunity-positioning",
+          opportunityId: target.opportunityId,
+          noteId: addedNote.id,
+          activityMomentId: activityMoment?.id,
+        };
+      } else {
+        addedPlanItem = {
+          id: makeId("plan-proof"),
+          scenarioId: state.workingPathScenarioId,
+          stage: "months-1-3",
+          type: "prove",
+          title: groundedProof,
+          detail: transformation.raw,
+          state: "accepted",
+          trackRecordEntryId: transformation.backingEntryIds[0],
+        };
+        saveBackUndo = { kind: "path-plan-item", planItemId: addedPlanItem.id };
+      }
+
+      dispatch({
+        type: "ACCEPT_PROOF_TRANSFORMATION",
+        id: transformation.id,
+        groundedProof,
+        saveBackUndo,
+        activityMoment,
+        addedNote,
+        addedPlanItem,
+      });
+    },
+    [state.cvVersions, state.profile, state.opportunities, state.workingPathScenarioId]
+  );
+
+  const skipProofTransformation = useCallback((id: string) => {
+    dispatch({ type: "SET_PROOF_TRANSFORMATION_STATE", id, state: "skipped" });
+    toast("Proof skipped", {
+      action: {
+        label: "Undo",
+        onClick: () => dispatch({ type: "SET_PROOF_TRANSFORMATION_STATE", id, state: "proposed" }),
+      },
+    });
+  }, []);
+
+  const unskipProofTransformation = useCallback((id: string) => {
+    dispatch({ type: "SET_PROOF_TRANSFORMATION_STATE", id, state: "proposed" });
+  }, []);
+
+  // No toast: the card's own SaveBackConfirmation is what Undo reverses.
+  const undoProofTransformation = useCallback((id: string) => {
+    dispatch({ type: "UNDO_PROOF_TRANSFORMATION", id });
   }, []);
 
   const acceptTailoringSuggestion = useCallback((insightId: string, suggestionId: string, section: string) => {
@@ -987,6 +1104,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       linkInboxItem,
       undoLinkInboxItem,
       dismissInboxItem,
+      acceptProofTransformation,
+      skipProofTransformation,
+      unskipProofTransformation,
+      undoProofTransformation,
       acceptTailoringSuggestion,
       dismissTailoringSuggestion,
       addCvVersion,
@@ -1074,6 +1195,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       linkInboxItem,
       undoLinkInboxItem,
       dismissInboxItem,
+      acceptProofTransformation,
+      skipProofTransformation,
+      unskipProofTransformation,
+      undoProofTransformation,
       acceptTailoringSuggestion,
       dismissTailoringSuggestion,
       addCvVersion,

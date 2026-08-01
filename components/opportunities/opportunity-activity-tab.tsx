@@ -1,6 +1,18 @@
 "use client";
 
-import { ArrowDownToLine, Check, FilePenLine, FileText, Flag, Link2, Mail, Scale, Sparkles, Star } from "lucide-react";
+import {
+  ArrowDownToLine,
+  Check,
+  FilePenLine,
+  FileText,
+  Flag,
+  Link2,
+  Mail,
+  Scale,
+  ShieldCheck,
+  Sparkles,
+  Star,
+} from "lucide-react";
 
 import { CopilotTag } from "@/components/shared/copilot-tag";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -20,6 +32,7 @@ const KIND_ICON: Record<ActivityMomentKind, typeof Flag> = {
   "evidence-linked": Link2,
   "comparison-decision": Scale,
   "priority-change": ArrowDownToLine,
+  "proof-added": ShieldCheck,
 };
 
 const KIND_DOT: Record<ActivityMomentKind, string> = {
@@ -35,6 +48,7 @@ const KIND_DOT: Record<ActivityMomentKind, string> = {
   "evidence-linked": "bg-teal-500",
   "comparison-decision": "bg-primary",
   "priority-change": "bg-slate-500",
+  "proof-added": "bg-indigo-500",
 };
 
 /**
@@ -65,7 +79,8 @@ export function OpportunityActivityTab({ moments }: { moments: ActivityMoment[] 
               <span className="text-xs text-muted-foreground">{moment.createdAt}</span>
               {moment.kind === "copilot-analysis" ||
               moment.kind === "cv-tailored" ||
-              moment.kind === "signal-accepted" ? (
+              moment.kind === "signal-accepted" ||
+              moment.kind === "proof-added" ? (
                 <CopilotTag />
               ) : null}
             </div>

@@ -17,6 +17,7 @@ import { skills as seedSkills, learningItems as seedLearningItems } from "@/lib/
 import { planItems as seedPlanItems, plannerGapAnalyses as seedPlannerGapAnalyses } from "@/lib/data/planner";
 import { roadmapResources as seedRoadmapResources } from "@/lib/data/roadmap";
 import { insights as seedInsights } from "@/lib/data/insights";
+import { proofTransformations as seedProofTransformations } from "@/lib/data/proof";
 import { comparisonProfiles as seedComparisonProfiles } from "@/lib/data/comparison";
 import { nextActions as seedNextActions } from "@/lib/data/actions";
 import { nudges as seedNudges } from "@/lib/data/nudges";
@@ -46,6 +47,7 @@ import type {
   PlannerGapAnalysis,
   Profile,
   ProfilePreferences,
+  ProofTransformation,
   RewindCandidate,
   RewindCarryForward,
   RoadmapResource,
@@ -95,6 +97,7 @@ export interface StoreState {
   plannerGapAnalyses: PlannerGapAnalysis[];
   roadmapResources: RoadmapResource[];
   insights: AiInsight[];
+  proofTransformations: ProofTransformation[];
   nextActions: NextAction[];
   nudges: Nudge[];
   aiSignals: AiSignal[];
@@ -135,6 +138,7 @@ export const initialState: StoreState = {
   plannerGapAnalyses: seedPlannerGapAnalyses,
   roadmapResources: seedRoadmapResources,
   insights: seedInsights,
+  proofTransformations: seedProofTransformations,
   nextActions: seedNextActions,
   nudges: seedNudges,
   aiSignals: seedAiSignals,

@@ -12,6 +12,7 @@ import { reduceCvs } from "@/lib/store/reducers/cvs";
 import { reduceDirection } from "@/lib/store/reducers/direction";
 import { reduceTrackRecordAndRewind } from "@/lib/store/reducers/track-record-and-rewind";
 import { reduceProfile } from "@/lib/store/reducers/profile";
+import { reduceProof } from "@/lib/store/reducers/proof";
 import { reduceShell } from "@/lib/store/reducers/shell";
 import { reduceStrategy } from "@/lib/store/reducers/strategy";
 import type { StoreState } from "@/lib/store/state";
@@ -88,6 +89,11 @@ export function reducer(state: StoreState, action: Action): StoreState {
     case "SET_REWIND_CANDIDATE_STATE":
     case "MARK_REWIND_VIEWED":
       return reduceTrackRecordAndRewind(state, action);
+
+    case "SET_PROOF_TRANSFORMATION_STATE":
+    case "ACCEPT_PROOF_TRANSFORMATION":
+    case "UNDO_PROOF_TRANSFORMATION":
+      return reduceProof(state, action);
 
     case "APPLY_STRATEGY_MOVE":
     case "UNDO_STRATEGY_MOVE":
