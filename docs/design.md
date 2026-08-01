@@ -242,11 +242,32 @@ which component carries it:
   - `size-7`/`size-8` in avatar-adjacent or hero-band icon treatments
 - No decorative icons: every icon either labels a control (paired with visible or `sr-only` text), carries chip/status semantics (a chip's dot or `Gauge`/`Sparkles`), or marks a genuinely distinct row kind (an activity timeline's kind icon, a nudge's trigger icon). An icon that exists purely because a card "felt bare" gets removed, not added.
 
-## 8. What this pass changed
+## 8. Table and grid conventions
+
+- **Table columns**: text (names, titles, labels) left-aligns to the
+  leading edge; numeric, date, and duration columns (a count, a last-edited
+  date, "N days in stage") right-align to the trailing edge, header and
+  cells together. `OpportunityListView`'s date and count columns set this
+  convention first; every other data table in the app (`RecruiterPipelineList`
+  included) follows it, not a per-table judgment call.
+- **Equal-height card grids**: a `grid` of sibling `Card`s whose content
+  length genuinely varies between siblings (a category with 4 rows next to
+  one with 2, a recommended path card next to two shorter alternatives)
+  gets `items-start` on the grid container. Without it, CSS Grid's default
+  stretch forces every card in the row to the tallest sibling's height,
+  which reads as a rendering bug (a mostly-empty card) rather than a
+  deliberate layout. Reach for `items-start` whenever a grid's cards can
+  honestly differ in content length; leave the default stretch only when
+  the row's cards are the same shape by design (a stat strip, a fixed
+  filter row).
+
+## 9. What this pass changed
 
 See `docs/lessons.md`'s RDS-984 entry for the full UX-law review. In brief:
 consolidated the chip tone strings into `chip-tones.ts`, moved
 `SkillLevelMeter` off indigo onto `--primary`, fixed a missing `min-w-0`
 truncation bug on `TrackRecordEntryCard`'s title row (same class of bug as
 lessons.md #22), and swept spacing/hierarchy/emphasis drift across every
-route per the checklist above.
+route per the checklist above. `docs/lessons.md`'s RDS-995 entry covers a
+later spacing, layering, and visual-structure pass (section 8's two
+conventions came out of that pass).

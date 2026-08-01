@@ -239,3 +239,125 @@ The final audit over tickets 25 through 33 (RDS-984 through RDS-994): a headless
     - *Aesthetic-Usability*: the Copilot panel's header truncation gap (lesson 75) is exactly this, one docked surface not matching a pattern (`Chip`'s own shrink-to-truncate contract) every other chip consumer in the product already gets for free.
     - Repository hygiene: 1 genuinely dead export removed (`recruiterSourceLabel`/`SOURCE_LABEL` in `lib/recruiter-utils.ts`, wired up but never called, its consumer renders the raw `RecruiterSource` string directly since the label map was an identity map anyway), 1 orphan file removed (`components/ui/input-group.tsx`, unused since it was vendored, predates this range), a handful of stale doc references fixed (two `docs/delivery-map.md` entries pointing at components RDS-993 later deleted, `docs/architecture.md` and `docs/design.md`'s page-template tables missing the compare and recruiter routes, `docs/design.md`'s chip-tone table undercounting `ChipTone` by one, the `muted` tone that was already live in `chip-tones.ts` but never named in prose).
     - Final verification: a route crawl of all 37 reachable URLs (every nav route, every seeded opportunity/CV/recruiter-candidate detail page, 3 invalid-id direct URLs, the compare workspace) at 1440x900 found zero console or page errors and zero server-side errors in the dev log across the whole run; a 1280px-with-Copilot-panel-open squeeze across 20 routes found the one overflow bug above (lesson 75) and confirmed zero overflow everywhere else, including a full second pass across all 10 opportunity detail pages, all 3 tested recruiter candidate detail pages, and 2 more CV detail pages after the fix; the below-1024 guard renders correctly at 1023px and below and correctly does not render at 1024px and above on every app and recruiter route tested, while `/` never shows it down to 320px with zero overflow at any width; `npm run lint`, `npx tsc --noEmit`, and `npm run build` all pass with zero errors.
+
+## 2026-08-01, RDS-995 layout quality pass (spacing, padding, layering, visual structure)
+
+An invisible-quality pass over the whole product: no feature or concept
+changes, just rhythm, breathing room, containment, and balance. Method:
+read the newly installed `better-layout` and `better-ui` skill files in
+full (skimmed `better-typography`, `better-colors`, `better-accessibility`
+for the closing gate), then `docs/design.md`, `CONTEXT.md`,
+`docs/lessons.md`, and `docs/qa-final.md`, then walked all 21 major
+surfaces (every nav route in both candidate and recruiter mode, plus the
+landing page) in a headless Chromium session at 1440x900, screenshotting
+each one before and after. Rather than eyeballing every screenshot for
+spacing drift, wrote a small measurement script
+(`getBoundingClientRect`/`getComputedStyle`, the same method lessons #37
+and #42 already used) that flags any `Card` grid row where sibling cards'
+actual content height, not their stretched box height, differs by more
+than 60px, since that specific shape (a CSS Grid row stretching every cell
+to its tallest sibling) reads as a rendering bug, not a screenshot judgment
+call.
+
+78. **A base `Card` component's own default can silently drift from the
+    design token the docs already name, and nothing catches it because
+    every recently-touched call site overrides the default explicitly.**
+    `docs/design.md` section 4 has said "default resting card: `ring-1
+    ring-foreground/8`" since RDS-984, and about 30 `Card` consumers across
+    recruiter mode, Profile, the opportunity tabs, CV Versions, and Sources
+    already render correctly because each one repeats `className="ring-foreground/8"`.
+    `components/ui/card.tsx`'s own base default was still `ring-foreground/10`
+    (the value only floating layers like `Dialog`/`Popover`/`DropdownMenu`
+    are supposed to use), so every bare `<Card>` with no explicit ring
+    override quietly rendered 2 percentage points darker than the
+    documented rule, in the same file (`opportunity-overview-tab.tsx`,
+    `profile-summary-card.tsx`, `cv-meta-rail.tsx`, a dozen recruiter
+    candidate-detail cards, and more) that other cards nearby got right.
+    Fixed at the base component so every bare consumer is correct by
+    construction instead of needing its own override; the pre-existing
+    explicit `ring-foreground/8` overrides are harmless duplicates that
+    `cn()`'s `tailwind-merge` step already resolves correctly, confirmed by
+    the fact that those cards rendered right before this fix too.
+79. **CSS Grid's default `align-items: stretch` turns a genuinely uneven
+    sibling comparison into a rendering bug: the shorter card's ring
+    border stretches down into blank space instead of hugging its own
+    content.** Two real instances, both found by the measurement script
+    above, not by eye: Skills' 2x2 skill-map grid (`Design craft`, 4 rows,
+    stretched `Research`'s 2-row card to match, leaving 116px of dead
+    space inside its ring) and Goals' 3-up "Where this can go" row (the
+    recommended path card's extra "Closest to your current trajectory"
+    badge made it the tallest, stretching the two shorter alternative-path
+    cards by 94px and 114px of dead space). Both are the same root cause
+    lesson #29 already named for Roadmap's milestone drill-in ("a lopsided
+    gap"), just at the grid level instead of the flex level: fixed with
+    `items-start` on the grid container in both places, so each card now
+    ends where its own content ends. Applying the same fix to Sources'
+    "Connected tools" row (see lesson 80) surfaced a third instance that
+    had been invisible to the measurement script only because the
+    placeholder tile wasn't a `Card` yet.
+80. **A hand-rolled placeholder tile sitting beside real cards in the same
+    grid row needs to match their radius and padding, not invent its
+    own.** Sources' "More tools soon" tile was a plain `div` with
+    `rounded-lg` and `p-4` next to three `ToolCard`s built on `size="sm"`
+    `Card` (`rounded-xl`, 12px padding), a real interior-padding and
+    corner-radius mismatch between siblings playing the identical visual
+    role in the identical row. Rebuilt on the same `Card`/`CardContent`
+    primitive at the same `size="sm"` with a dashed border and `ring-0`
+    (the same "explicit border width plus `ring-0` to cancel the default
+    ring" pattern lesson #28 already established for draft/placeholder
+    content) instead of a parallel set of hand-picked values.
+81. **A table that documents itself as mirroring a sibling table's shape
+    still needs the alignment convention checked separately, since
+    "same shape" doesn't get enforced by the type system.**
+    `RecruiterPipelineList`'s own doc comment says it mirrors
+    `OpportunityListView`'s scanning pattern (Jakob's Law), and it does,
+    except `OpportunityListView`'s numeric/date columns right-align
+    (`text-right` on both header and cell, an explicit `align` prop on its
+    `SortableHead`) while `RecruiterPipelineList`'s equivalent "Days in
+    stage" column had no such prop and rendered left-aligned. Copied the
+    exact `align?: "left" | "right"` prop and `ml-auto flex-row-reverse`
+    treatment from `OpportunityListView`'s `SortableHead` rather than
+    inventing a second right-align pattern.
+82. Layout quality review checklist for this pass, one line per audit
+    category from the brief:
+    - *Spacing and padding refinement*: swept every template's `gap-6`
+      page rhythm, `gap-3`/`gap-2` card-internal rhythm, and `p-6` page
+      margin against `docs/design.md` section 3's closed stop set; found
+      one real drift (lesson 80, Sources' placeholder padding) and no
+      others, since the RDS-984 and RDS-992 passes had already swept this
+      class of issue hard.
+    - *Layering and containment*: found and fixed the base `Card` ring
+      default (lesson 78) and the two grid-stretch containment bugs
+      (lesson 79); re-verified the Copilot panel and sidebar still read as
+      distinct layers from content (`border-l border-border`, per
+      `docs/design.md` section 4's docked-panel exception) and that
+      grouped lists (Sources' synced-context inbox, Track Record's
+      confirmed timeline) stay properly inset inside their containers.
+      Preferred spacing and surface changes over new borders throughout,
+      per the brief; no new border was added anywhere in this pass.
+    - *Visual structure polish*: fixed the one real alignment gap (lesson
+      81); re-verified left edges hold within each template, region widths
+      balance at 1440 and hold at 1280 with the Copilot panel open (see
+      final verification below), and the landing page's section rhythm
+      holds at 1440, 1024, 768, and 390px (0px horizontal overflow at
+      every width, scroll-triggered reveals forced open first so the
+      measurement doesn't false-negative on lazy content).
+    - *Gate*: no unambiguous `better-typography`/`better-colors`/
+      `better-accessibility` quick win surfaced beyond what the RDS-984 and
+      RDS-990 passes already fixed; a grep for icon-only buttons without
+      `aria-label` and for `outline-none` without a `focus-visible`
+      replacement outside vendored shadcn primitives found nothing new to
+      fix, so nothing was touched under this category rather than forcing
+      a restyle to fill it.
+    - Final verification: `npm run lint`, `npx tsc --noEmit`, and
+      `npm run build` all pass with zero errors. A full route sweep (all
+      20 app/recruiter routes plus the landing page, plus `/onboarding`,
+      3 invalid-id direct URLs, and the compare workspace with no `?ids=`)
+      at 1440x900 found zero console or page errors; the same 20 routes
+      re-checked at 1280px with the Copilot panel opened via the header
+      toggle found 0px horizontal overflow and zero console errors on
+      every one; the grid-stretch measurement script re-run after every
+      fix confirmed zero remaining instances across all 20 routes; the
+      5-second scan test (Home, Opportunities) holds, both pages still
+      read their sections and hierarchy at a glance with no regression
+      from these changes.
