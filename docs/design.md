@@ -181,6 +181,18 @@ handful of shadcn primitives that already ship with one internally (button
 press states); don't add new `shadow-md`/`shadow-lg` to a custom
 component, it reads as heavier and more "demo" than this system wants.
 
+`Sheet` (first real usage: Home's decision drawer, RDS-993) is a floating
+layer too, but a docked one, not a free one, so it keeps its vendored
+`shadow-lg` (the primitive's own built-in exemption above) and its single
+inner-edge `border-l`/`border-r`/`border-t`/`border-b` rather than a
+four-sided ring: a ring composites outward on all sides evenly, which
+reads wrong on a panel attached to one screen edge. This is the same
+choice the Copilot panel already made for its own docked edge
+(`border-l border-border` in `components/shell/copilot-panel.tsx`), not a
+new pattern. Always give a `Sheet` its own `SheetTitle` (and
+`SheetDescription` naming the object it's about); a title-less Sheet is
+invisible to screen readers even though it reads fine on screen.
+
 ## 5. Density per template
 
 Four page templates (`components/shell/*-page.tsx`), one shared
