@@ -127,6 +127,8 @@ export interface StoreState {
    */
   recruiterRoles: RecruiterRole[];
   recruiterCandidates: RecruiterCandidate[];
+  /** RDS-989: session-only sent/discarded state for outreach drafts, keyed by draft id. Absent means "proposed". Applies to both seeded and fallback-generated drafts, which use deterministic ids for exactly this reason. */
+  recruiterOutreachDraftStates: Record<string, "sent" | "discarded">;
 }
 
 export const initialState: StoreState = {
@@ -174,4 +176,5 @@ export const initialState: StoreState = {
   sidebarOpen: true,
   recruiterRoles: seedRecruiterRoles,
   recruiterCandidates: seedRecruiterCandidates,
+  recruiterOutreachDraftStates: {},
 };

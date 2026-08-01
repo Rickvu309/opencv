@@ -121,6 +121,13 @@ export function reducer(state: StoreState, action: Action): StoreState {
     case "ADVANCE_RECRUITER_CANDIDATE_STAGE":
     case "TOGGLE_RECRUITER_CANDIDATE_FLAG":
     case "SET_RECRUITER_CANDIDATE_NOTES":
+    case "APPLY_RECRUITER_DECISION":
+    case "UNDO_RECRUITER_DECISION":
+    case "SEND_RECRUITER_OUTREACH_DRAFT":
+    case "UNDO_SEND_RECRUITER_OUTREACH_DRAFT":
+    case "SET_RECRUITER_OUTREACH_DRAFT_STATE":
+    case "PREPARE_RECRUITER_SUBMISSION_PACKET":
+    case "SHARE_RECRUITER_SUBMISSION_PACKET":
       return reduceRecruiter(state, action);
 
     default:

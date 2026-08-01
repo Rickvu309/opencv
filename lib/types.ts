@@ -1256,7 +1256,7 @@ export interface RecruiterRole {
   mustHaves: string[];
 }
 
-/** One entry in a candidate's stage history, oldest first. */
+/** One entry in a candidate's stage history, oldest first. Also doubles as the decision log (RDS-989): a Hold, Request-more-info, or Do-not-advance decision pushes an entry here too, stage unchanged for the first two, so "open detail and read the history" always tells the full story, not just the stage moves. */
 export interface RecruiterStageHistoryEntry {
   id: string;
   stage: RecruiterStage;
@@ -1272,38 +1272,166 @@ export interface RecruiterReviewChecklistItem {
 }
 
 /**
- * Candidate detail's Review section: not a placeholder, a real compact
- * checklist naming what's actually been done and what's left, that ticket
- * 30 deepens into a full review workflow.
+ * One evidence-backed point inside a candidate's structured review,
+ * expandable to the one-line evidence behind it: something from the
+ * application, screen notes, or a portfolio signal. Never hidden grounding,
+ * the same rule the candidate-side five-beat pattern's evidence chip
+ * already follows, in recruiter language instead of a source chip.
  */
-export interface RecruiterReviewScaffold {
+export interface RecruiterReviewPoint {
+  id: string;
+  point: string;
+  evidence: string;
+}
+
+/**
+ * Candidate detail's Review section (RDS-989): a structured evaluation
+ * mirroring the candidate-side fit anatomy (Strengths, Concerns, Unknowns),
+ * but in recruiter language, plus a readiness verdict with a confidence
+ * chip and 1 to 2 open questions the recruiter should resolve before
+ * advancing. At least 6 seeded candidates carry the full shape; the rest
+ * carry a believable, shorter version (fewer points, no open questions),
+ * never placeholder text.
+ */
+export interface RecruiterReview {
   status: "Not started" | "In progress" | "Complete";
   summary: string;
   checklist: RecruiterReviewChecklistItem[];
+  strengths: RecruiterReviewPoint[];
+  concerns: RecruiterReviewPoint[];
+  unknowns: RecruiterReviewPoint[];
+  readinessVerdict: string;
+  confidence: ConfidenceLevel;
+  openQuestions: string[];
+}
+
+/** The 4 calls the candidate detail's Decision block can make. "advance" always means the pipeline's next stage; there is no separate target field, it's derived from the candidate's current stage. */
+export type RecruiterDecisionCall = "advance" | "hold" | "request-info" | "do-not-advance";
+
+/**
+ * Candidate detail's Decision block (RDS-989), directly under Review
+ * (Proximity): the Copilot's recommended call with a two-line why grounded
+ * in that same review, seeded alongside it so the two can never disagree.
+ * The other 3 calls always render as quiet secondary actions (Hick's Law).
+ * Present only for candidates still in an active stage (Sourced through
+ * Offer); Hired and Closed need no further decision.
+ */
+export interface RecruiterDecision {
+  recommended: RecruiterDecisionCall;
+  why: string;
+}
+
+/** Set once a Hold decision is applied; cleared once the candidate advances or closes. Shown as a Held chip on every pipeline surface, reason on hover. */
+export interface RecruiterHoldState {
+  reason: string;
+  since: string;
+}
+
+/** One follow-up task a Request-more-info decision adds to a candidate; open (not done) tasks surface in the pipeline's "Needs attention" strip. */
+export interface RecruiterFollowUpTask {
+  id: string;
+  label: string;
+  createdAt: string;
+  done: boolean;
+}
+
+/**
+ * Exactly enough to fully reverse the last applied Hold, Request-more-info,
+ * or Do-not-advance decision, stored on the candidate itself (the same
+ * pattern AiSignal's appliedActivityMomentId and ProofTransformation's
+ * saveBackUndo already use) so Undo survives a remount within the session.
+ * Advance keeps its own existing, separate, undo-less confirmation (see
+ * lib/store/provider.tsx's advanceRecruiterCandidateStage).
+ */
+export interface RecruiterDecisionUndo {
+  confirmationMessage: string;
+  historyEntryId: string;
+  previousStage: RecruiterStage;
+  previousStageEnteredAt: string;
+  previousHold?: RecruiterHoldState;
+  addedFollowUpTaskId?: string;
+}
+
+/** The 4 common recruiting moments Outreach drafts script for. */
+export type RecruiterOutreachDraftKind =
+  | "screening-invite"
+  | "interview-scheduling"
+  | "hiring-manager-nudge"
+  | "respectful-close";
+
+export type RecruiterOutreachChannel = "Email" | "LinkedIn" | "Phone" | "Internal note";
+
+/**
+ * One scripted Copilot draft for a common recruiting moment, in recruiter
+ * voice: compact, professional, no hype. A "hiring-manager-nudge" draft
+ * uses the "Internal note" channel, addressed to the hiring manager, not
+ * the candidate. The read-time hint is computed live off the body's word
+ * count (lib/recruiter-outreach-utils.ts), never a fabricated number.
+ */
+export interface RecruiterOutreachDraft {
+  id: string;
+  kind: RecruiterOutreachDraftKind;
+  channel: RecruiterOutreachChannel;
+  purposeLine: string;
+  body: string;
 }
 
 /** One past touch in a candidate's Outreach section. */
 export interface RecruiterOutreachTouch {
   id: string;
-  channel: "Email" | "LinkedIn" | "Phone";
+  channel: RecruiterOutreachChannel;
   sentAt: string;
   summary: string;
   responded: boolean;
 }
 
-/** Candidate detail's Outreach section: the touch log plus a scripted suggested next message, that ticket 30 deepens into real drafting and send flows. */
-export interface RecruiterOutreachScaffold {
+/**
+ * Candidate detail's Outreach section (RDS-989): the touch log plus a set
+ * of scripted, editable drafts. Seeded only for the fully-seeded
+ * candidates; every other candidate falls back to
+ * lib/recruiter-outreach-utils.ts's buildFallbackOutreachDrafts, computed
+ * live off the same shape so the UI never branches on which source a draft
+ * came from.
+ */
+export interface RecruiterOutreach {
   status: "Not started" | "Awaiting reply" | "Responded";
   touches: RecruiterOutreachTouch[];
-  suggestedNextMessage: string;
+  drafts?: RecruiterOutreachDraft[];
 }
 
-/** Candidate detail's Submission section: what a submission packet to the hiring manager looks like today, that ticket 30 deepens into a real submission workflow. */
-export interface RecruiterSubmissionScaffold {
+/** The Copilot-drafted hiring-manager summary behind a submission packet: 3 labeled lines, never a paragraph. */
+export interface RecruiterHiringManagerSummary {
+  recommendation: string;
+  evidence: string;
+  risk: string;
+}
+
+/** The compact packet preview "Prepare submission packet" produces: the (possibly edited) summary, the candidate's highlights, and a snapshot of their stage history at the moment it was prepared. */
+export interface RecruiterSubmissionPacket {
+  preparedAt: string;
+  summary: RecruiterHiringManagerSummary;
+  highlights: string[];
+  stageHistorySnapshot: RecruiterStageHistoryEntry[];
+  /** Set once "Share with hiring manager" is confirmed. */
+  sharedAt?: string;
+}
+
+/**
+ * Candidate detail's Submission section (RDS-989): a readiness checklist
+ * computed live off real state (lib/recruiter-utils.ts's
+ * computeSubmissionChecklist), a draft hiring-manager summary editable
+ * before preparing a packet, and the packet itself once prepared. Seeded
+ * draftSummary only for the fully-seeded candidates; every other eligible
+ * candidate falls back to lib/recruiter-submission-utils.ts's
+ * buildFallbackHiringManagerSummary.
+ */
+export interface RecruiterSubmission {
   status: "Not started" | "Packet in progress" | "Submitted to hiring manager" | "Feedback pending";
   hiringManager: string;
   packageIncludes: string[];
   targetDate?: string;
+  draftSummary?: RecruiterHiringManagerSummary;
+  packet?: RecruiterSubmissionPacket;
 }
 
 /** One person in the recruiter's hiring pipeline. */
@@ -1329,16 +1457,26 @@ export interface RecruiterCandidate {
   sourceDetail: string;
   suggestedNextStep: string;
   stageHistory: RecruiterStageHistoryEntry[];
-  review: RecruiterReviewScaffold;
-  outreach: RecruiterOutreachScaffold;
-  submission: RecruiterSubmissionScaffold;
+  review: RecruiterReview;
+  outreach: RecruiterOutreach;
+  submission: RecruiterSubmission;
   notes?: string;
   flaggedForReview?: boolean;
+  /** Present only for candidates in an active stage (Sourced through Offer); absent for Hired and Closed, which need no further decision. */
+  decision?: RecruiterDecision;
+  /** Set once a Hold decision is applied; cleared on advancing or closing. */
+  hold?: RecruiterHoldState;
+  /** Set by a Request-more-info decision; open tasks surface in the "Needs attention" strip. */
+  followUpTasks?: RecruiterFollowUpTask[];
+  /** Set on applying a Hold, Request-more-info, or Do-not-advance decision; cleared on Undo. */
+  pendingDecisionUndo?: RecruiterDecisionUndo;
   /**
    * Present only on the up-to-3 candidates the pipeline's "Needs attention"
    * strip surfaces. Carries a `{days}` token, filled in live with the
    * candidate's current days-in-stage so the strip's reason and the card's
-   * own days-in-stage figure can never drift apart from each other.
+   * own days-in-stage figure can never drift apart from each other. Once a
+   * candidate has an open follow-up task, getRecruiterAttentionItems shows
+   * that live reason instead of this static one.
    */
   attentionTemplate?: string;
 }

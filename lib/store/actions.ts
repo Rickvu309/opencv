@@ -27,8 +27,15 @@ import type {
   ProfilePreferences,
   ProofSaveBackUndo,
   ProofTransformationState,
+  RecruiterDecisionUndo,
+  RecruiterFollowUpTask,
+  RecruiterHiringManagerSummary,
+  RecruiterHoldState,
+  RecruiterOutreach,
+  RecruiterOutreachTouch,
   RecruiterStage,
   RecruiterStageHistoryEntry,
+  RecruiterSubmissionPacket,
   RewindCandidateState,
   RewindCarryForwardState,
   RoadmapResourceState,
@@ -196,7 +203,35 @@ export type Action =
   | { type: "SET_COPILOT_SURFACE"; surface: string; objectLabel?: string }
   | { type: "ADD_COPILOT_MESSAGE"; surface: string; message: CopilotMessage }
   | { type: "SET_COPILOT_THINKING"; thinking: boolean }
-  // recruiter mode (RDS-988), its own domain, never mixed with the actions above
+  // recruiter mode (RDS-988/989), its own domain, never mixed with the actions above
   | { type: "ADVANCE_RECRUITER_CANDIDATE_STAGE"; id: string; stage: RecruiterStage; historyEntry: RecruiterStageHistoryEntry }
   | { type: "TOGGLE_RECRUITER_CANDIDATE_FLAG"; id: string }
-  | { type: "SET_RECRUITER_CANDIDATE_NOTES"; id: string; notes: string };
+  | { type: "SET_RECRUITER_CANDIDATE_NOTES"; id: string; notes: string }
+  | {
+      type: "APPLY_RECRUITER_DECISION";
+      id: string;
+      historyEntry: RecruiterStageHistoryEntry;
+      newStage?: RecruiterStage;
+      hold?: RecruiterHoldState;
+      clearHold?: boolean;
+      addedFollowUpTask?: RecruiterFollowUpTask;
+      undo: RecruiterDecisionUndo;
+    }
+  | { type: "UNDO_RECRUITER_DECISION"; id: string }
+  | {
+      type: "SEND_RECRUITER_OUTREACH_DRAFT";
+      candidateId: string;
+      draftId: string;
+      touch: RecruiterOutreachTouch;
+      newStatus: RecruiterOutreach["status"];
+    }
+  | {
+      type: "UNDO_SEND_RECRUITER_OUTREACH_DRAFT";
+      candidateId: string;
+      draftId: string;
+      touchId: string;
+      previousStatus: RecruiterOutreach["status"];
+    }
+  | { type: "SET_RECRUITER_OUTREACH_DRAFT_STATE"; draftId: string; state: "proposed" | "discarded" }
+  | { type: "PREPARE_RECRUITER_SUBMISSION_PACKET"; id: string; packet: RecruiterSubmissionPacket; summary: RecruiterHiringManagerSummary }
+  | { type: "SHARE_RECRUITER_SUBMISSION_PACKET"; id: string; sharedAt: string; historyEntry: RecruiterStageHistoryEntry };

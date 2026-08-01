@@ -62,8 +62,14 @@ import type {
   ProofSaveBackUndo,
   ProofTransformation,
   RecruiterCandidate,
+  RecruiterDecisionCall,
+  RecruiterFollowUpTask,
+  RecruiterHiringManagerSummary,
+  RecruiterHoldState,
+  RecruiterOutreachDraft,
   RecruiterStage,
   RecruiterStageHistoryEntry,
+  RecruiterSubmissionPacket,
   RoadmapResource,
   SourceEvidence,
   TrackRecordEntry,
@@ -201,6 +207,13 @@ interface StoreContextValue {
   advanceRecruiterCandidateStage: (candidate: RecruiterCandidate, stage: RecruiterStage) => void;
   toggleRecruiterCandidateFlag: (id: string) => void;
   setRecruiterCandidateNotes: (id: string, notes: string) => void;
+  applyRecruiterDecision: (candidate: RecruiterCandidate, call: Exclude<RecruiterDecisionCall, "advance">, input: string) => void;
+  undoRecruiterDecision: (id: string) => void;
+  sendRecruiterOutreachDraft: (candidate: RecruiterCandidate, draft: RecruiterOutreachDraft) => void;
+  discardRecruiterOutreachDraft: (draftId: string) => void;
+  undiscardRecruiterOutreachDraft: (draftId: string) => void;
+  prepareRecruiterSubmissionPacket: (candidate: RecruiterCandidate, summary: RecruiterHiringManagerSummary) => void;
+  shareRecruiterSubmissionPacket: (candidate: RecruiterCandidate) => void;
 }
 
 const StoreContext = createContext<StoreContextValue | null>(null);
@@ -1034,6 +1047,119 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     toast.success("Note saved");
   }, []);
 
+  // The Decision block's Hold, Request-more-info, and Do-not-advance calls
+  // (Advance keeps its own separate, already-established flow above). Builds
+  // the real stage-history entry and enough of an undo payload to fully
+  // reverse it, stored on the candidate itself so the block's own inline
+  // SaveBackConfirmation survives a remount within the session, the same
+  // provider-builds-reducer-applies split ACCEPT_PROOF_TRANSFORMATION and
+  // APPLY_STRATEGY_MOVE already use.
+  const applyRecruiterDecision = useCallback(
+    (candidate: RecruiterCandidate, call: Exclude<RecruiterDecisionCall, "advance">, input: string) => {
+      const enteredAt = today();
+      const historyEntry: RecruiterStageHistoryEntry = { id: makeId("rc-sh"), stage: candidate.stage, enteredAt };
+      let newStage: RecruiterStage | undefined;
+      let hold: RecruiterHoldState | undefined;
+      let clearHold = false;
+      let addedFollowUpTask: RecruiterFollowUpTask | undefined;
+      let confirmationMessage = "";
+
+      if (call === "hold") {
+        hold = { reason: input, since: enteredAt };
+        historyEntry.note = `Held: ${input}`;
+        confirmationMessage = `${candidate.name} put on hold.`;
+      } else if (call === "request-info") {
+        addedFollowUpTask = { id: makeId("rc-task"), label: input, createdAt: enteredAt, done: false };
+        historyEntry.note = `Follow-up requested: ${input}`;
+        confirmationMessage = `Follow-up task added for ${candidate.name}.`;
+      } else {
+        newStage = "Closed";
+        historyEntry.stage = "Closed";
+        historyEntry.note = `Closed: ${input}`;
+        clearHold = true;
+        confirmationMessage = `${candidate.name} moved to Closed.`;
+      }
+
+      dispatch({
+        type: "APPLY_RECRUITER_DECISION",
+        id: candidate.id,
+        historyEntry,
+        newStage,
+        hold,
+        clearHold,
+        addedFollowUpTask,
+        undo: {
+          confirmationMessage,
+          historyEntryId: historyEntry.id,
+          previousStage: candidate.stage,
+          previousStageEnteredAt: candidate.stageEnteredAt,
+          previousHold: candidate.hold,
+          addedFollowUpTaskId: addedFollowUpTask?.id,
+        },
+      });
+    },
+    []
+  );
+
+  // No toast: the decision block's own inline SaveBackConfirmation is the feedback.
+  const undoRecruiterDecision = useCallback((id: string) => {
+    dispatch({ type: "UNDO_RECRUITER_DECISION", id });
+  }, []);
+
+  const sendRecruiterOutreachDraft = useCallback((candidate: RecruiterCandidate, draft: RecruiterOutreachDraft) => {
+    const touch = { id: makeId("rc-ot"), channel: draft.channel, sentAt: today(), summary: draft.purposeLine, responded: false };
+    const newStatus = draft.channel === "Internal note" ? candidate.outreach.status : "Awaiting reply";
+    dispatch({ type: "SEND_RECRUITER_OUTREACH_DRAFT", candidateId: candidate.id, draftId: draft.id, touch, newStatus });
+    toast.success("Marked as sent", {
+      description: draft.purposeLine,
+      action: {
+        label: "Undo",
+        onClick: () =>
+          dispatch({
+            type: "UNDO_SEND_RECRUITER_OUTREACH_DRAFT",
+            candidateId: candidate.id,
+            draftId: draft.id,
+            touchId: touch.id,
+            previousStatus: candidate.outreach.status,
+          }),
+      },
+    });
+  }, []);
+
+  const discardRecruiterOutreachDraft = useCallback((draftId: string) => {
+    dispatch({ type: "SET_RECRUITER_OUTREACH_DRAFT_STATE", draftId, state: "discarded" });
+    toast("Draft discarded", {
+      action: { label: "Undo", onClick: () => dispatch({ type: "SET_RECRUITER_OUTREACH_DRAFT_STATE", draftId, state: "proposed" }) },
+    });
+  }, []);
+
+  const undiscardRecruiterOutreachDraft = useCallback((draftId: string) => {
+    dispatch({ type: "SET_RECRUITER_OUTREACH_DRAFT_STATE", draftId, state: "proposed" });
+  }, []);
+
+  const prepareRecruiterSubmissionPacket = useCallback((candidate: RecruiterCandidate, summary: RecruiterHiringManagerSummary) => {
+    const packet: RecruiterSubmissionPacket = {
+      preparedAt: today(),
+      summary,
+      highlights: candidate.highlights,
+      stageHistorySnapshot: candidate.stageHistory,
+    };
+    dispatch({ type: "PREPARE_RECRUITER_SUBMISSION_PACKET", id: candidate.id, packet, summary });
+    toast.success("Submission packet prepared", { description: `Ready to share with ${candidate.submission.hiringManager}.` });
+  }, []);
+
+  const shareRecruiterSubmissionPacket = useCallback((candidate: RecruiterCandidate) => {
+    const sharedAt = today();
+    const historyEntry: RecruiterStageHistoryEntry = {
+      id: makeId("rc-sh"),
+      stage: candidate.stage,
+      enteredAt: sharedAt,
+      note: `Submission packet shared with ${candidate.submission.hiringManager}.`,
+    };
+    dispatch({ type: "SHARE_RECRUITER_SUBMISSION_PACKET", id: candidate.id, sharedAt, historyEntry });
+    toast.success("Shared with hiring manager", { description: candidate.submission.hiringManager });
+  }, []);
+
   const setCopilotOpen = useCallback((open: boolean) => dispatch({ type: "SET_COPILOT_OPEN", open }), []);
   const toggleCopilot = useCallback(() => dispatch({ type: "TOGGLE_COPILOT" }), []);
   const setSidebarOpen = useCallback((open: boolean) => dispatch({ type: "SET_SIDEBAR_OPEN", open }), []);
@@ -1179,6 +1305,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       advanceRecruiterCandidateStage,
       toggleRecruiterCandidateFlag,
       setRecruiterCandidateNotes,
+      applyRecruiterDecision,
+      undoRecruiterDecision,
+      sendRecruiterOutreachDraft,
+      discardRecruiterOutreachDraft,
+      undiscardRecruiterOutreachDraft,
+      prepareRecruiterSubmissionPacket,
+      shareRecruiterSubmissionPacket,
     }),
     [
       state,
@@ -1273,6 +1406,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       advanceRecruiterCandidateStage,
       toggleRecruiterCandidateFlag,
       setRecruiterCandidateNotes,
+      applyRecruiterDecision,
+      undoRecruiterDecision,
+      sendRecruiterOutreachDraft,
+      discardRecruiterOutreachDraft,
+      undiscardRecruiterOutreachDraft,
+      prepareRecruiterSubmissionPacket,
+      shareRecruiterSubmissionPacket,
     ]
   );
 

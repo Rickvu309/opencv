@@ -1,6 +1,13 @@
 import { daysBetween } from "@/lib/opportunity-utils";
 import type { ChipTone } from "@/components/shared/chip-tones";
-import type { RecruiterCandidate, RecruiterReadiness, RecruiterRole, RecruiterSource, RecruiterStage } from "@/lib/types";
+import type {
+  RecruiterCandidate,
+  RecruiterDecisionCall,
+  RecruiterReadiness,
+  RecruiterRole,
+  RecruiterSource,
+  RecruiterStage,
+} from "@/lib/types";
 
 // Shared read-only helpers for recruiter mode: staleness, stage sequencing,
 // filtering, sorting, and the pipeline's "Needs attention" strip. Mirrors
@@ -78,16 +85,22 @@ export interface RecruiterAttentionItem {
  * seed" split docs/architecture.md's Strategy and Proof Builder entries use
  * elsewhere), but the day count inside each reason is always computed live
  * off stageEnteredAt so it can never drift from the same figure the card
- * itself renders.
+ * itself renders. RDS-989: a candidate with an open (not done) follow-up
+ * task, from a Request-more-info decision, shows that live reason instead
+ * of the static seeded one, since it's the most current, recruiter-confirmed
+ * next step; a candidate with neither is skipped, same as before.
  */
 export function getRecruiterAttentionItems(candidates: RecruiterCandidate[], todayIso: string): RecruiterAttentionItem[] {
-  return candidates
-    .filter((candidate): candidate is RecruiterCandidate & { attentionTemplate: string } => Boolean(candidate.attentionTemplate))
-    .map((candidate) => ({
-      candidateId: candidate.id,
-      reason: candidate.attentionTemplate.replace("{days}", String(daysInStage(candidate, todayIso))),
-    }))
-    .slice(0, 3);
+  const items: RecruiterAttentionItem[] = [];
+  for (const candidate of candidates) {
+    const openTask = candidate.followUpTasks?.find((task) => !task.done);
+    if (openTask) {
+      items.push({ candidateId: candidate.id, reason: `Follow-up: ${openTask.label}` });
+    } else if (candidate.attentionTemplate) {
+      items.push({ candidateId: candidate.id, reason: candidate.attentionTemplate.replace("{days}", String(daysInStage(candidate, todayIso))) });
+    }
+  }
+  return items.slice(0, 3);
 }
 
 export type RecruiterReadinessFilter = "all" | RecruiterReadiness;
@@ -161,4 +174,73 @@ export function summarizeRecruiterRole(role: RecruiterRole, candidates: Recruite
     daysOpen: daysBetween(role.openedAt, todayIso),
     topWaitingCandidate,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Decision layer (RDS-989)
+// ---------------------------------------------------------------------------
+
+/** Fixed display order for the decision block's recommended-plus-secondary calls. */
+export const RECRUITER_DECISION_CALLS: RecruiterDecisionCall[] = ["advance", "hold", "request-info", "do-not-advance"];
+
+/** The label a decision call renders as, "advance" always naming the actual next stage. */
+export function decisionCallLabel(call: RecruiterDecisionCall, candidate: RecruiterCandidate): string {
+  switch (call) {
+    case "advance": {
+      const next = nextRecruiterStage(candidate.stage);
+      return next ? `Advance to ${next}` : "Advance";
+    }
+    case "hold":
+      return "Hold";
+    case "request-info":
+      return "Request more info";
+    case "do-not-advance":
+      return "Do not advance";
+  }
+}
+
+/**
+ * The decision block's secondary calls: every call other than the
+ * recommended one, minus "advance" once there's no further stage to move to
+ * (the decision block itself is hidden entirely for Hired/Closed, so this
+ * only matters for an Offer-stage candidate recommended something other
+ * than advance, where "Advance to Hired" still needs to stay available).
+ */
+export function secondaryDecisionCalls(candidate: RecruiterCandidate): RecruiterDecisionCall[] {
+  const recommended = candidate.decision?.recommended;
+  const canAdvance = Boolean(nextRecruiterStage(candidate.stage));
+  return RECRUITER_DECISION_CALLS.filter((call) => call !== recommended && (call !== "advance" || canAdvance));
+}
+
+// ---------------------------------------------------------------------------
+// Submission readiness (RDS-989)
+// ---------------------------------------------------------------------------
+
+/** Candidates at Interview or later are eligible for submission, including a candidate later Closed after having reached Interview; everyone else honestly isn't yet. */
+export function isSubmissionEligible(candidate: RecruiterCandidate): boolean {
+  const interviewRank = RECRUITER_STAGES.indexOf("Interview");
+  const reachedInterview = (stage: RecruiterStage) => RECRUITER_STAGES.indexOf(stage) >= interviewRank;
+  return reachedInterview(candidate.stage) || candidate.stageHistory.some((entry) => reachedInterview(entry.stage));
+}
+
+export interface RecruiterSubmissionChecklistItem {
+  label: string;
+  done: boolean;
+}
+
+/** The submission readiness checklist, computed live off real candidate state, never seeded. */
+export function computeSubmissionChecklist(candidate: RecruiterCandidate): RecruiterSubmissionChecklistItem[] {
+  return [
+    { label: "Review complete", done: candidate.review.status === "Complete" },
+    { label: "Outreach current", done: candidate.outreach.touches.length > 0 && candidate.outreach.status !== "Not started" },
+    { label: "Notes present", done: Boolean(candidate.notes?.trim()) },
+    { label: "No open questions", done: candidate.review.openQuestions.length === 0 },
+  ];
+}
+
+/** True once every checklist item is done and the packet hasn't already been shared, the pipeline's submission-ready indicator. */
+export function isSubmissionReady(candidate: RecruiterCandidate): boolean {
+  if (!isSubmissionEligible(candidate)) return false;
+  if (candidate.submission.status === "Submitted to hiring manager") return false;
+  return computeSubmissionChecklist(candidate).every((item) => item.done);
 }
