@@ -210,3 +210,57 @@ Trust boundary, absolute rule: the AI drafts and suggests, the user accepts, edi
 - RDS-986 pipeline strategy and focus coach: section 3 nav (/strategy, DashboardPage template), a coaching surface reading live off Opportunity, NextAction, ActivityMoment, and Goal state (`lib/strategy-utils.ts`, `lib/data/strategy.ts`): a pipeline health verdict plus 3 indicators, up to 3 seeded strategic observations with an evidence expand, a weekly focus plan of up to 4 moves (focus, deprioritize, invest, pursue-more; `StrategyMove`, `lib/store/reducers/strategy.ts`) with Approve, Adjust, and Not now controls and real save-backs into Home, opportunity priority, and Activity, a 3-segment drill-down into /opportunities and the RDS-985 comparison flow, and a quiet weekly continuity marker consistent with Rewind's own
 - RDS-987 Proof Builder: section 3 nav (/proof, under Career Memory, WorkspacePage template), a proof-construction and verification workflow, not a document editor: a context picker (`ProofContext`, one of a CV version, the profile, an opportunity, or the target path) frames an evidence layer (every confirmed Track Record entry ranked by proof strength for that context, `lib/proof-utils.ts`'s `rankEvidenceForContext`, computed live), claim verification for CV and profile contexts (`buildClaimsForContext`/`verifyClaims`, grouped well supported, needs stronger proof, no evidence yet), and 7 seeded before-after transformation blocks (`ProofTransformation`, `lib/data/proof.ts`) with Accept, Edit inline, and Skip. Accept writes to the real target and always shows a named save-back with Undo (`lib/store/reducers/proof.ts`): a CV section (visible on /cvs/[id]), the profile summary or a strength's evidence note, a positioning note on an opportunity's Materials (`Opportunity.positioningNotes`), or a "prove it" `PlanItem` pinned into the growth plan. Entry points: a "Build proof from this" action on confirmed Track Record entries (`components/track-record/entry-card.tsx`) and a "Verify claims" link on Profile's strength rail (`components/profile/profile-strength-card.tsx`).
 - RDS-988 Recruiter mode (Option A: a distinct persona mode inside one product): `app/(recruiter)/` route group and layout, `components/shell/recruiter-sidebar.tsx` (its own nav, Pipeline/Roles/Candidates, a compact "Recruiter" mode badge, and a distinct `sidebar-primary`-tinted active item, no new palette), and its own store domain (`StoreState.recruiterRoles`/`recruiterCandidates`, `lib/store/reducers/recruiter.ts`, seeded from `lib/data/recruiter/`), never mixed with the candidate-side state above. Object model: `RecruiterRole` (2 seeded, both at the fictional Saola Labs) and `RecruiterCandidate` (12 seeded, spread across `RecruiterStage`'s 6 stages: Sourced, Screening, Interview, Offer, Hired, Closed), each carrying a `RecruiterReadiness` (Ready to advance, Needs review, Blocked, Stale), a one-line Copilot summary, 2 to 3 highlight facts, a source, a suggested next step, a stage history, and 3 structured detail scaffolds (Review, Outreach, Submission) that RDS-30 deepens into full workflows, the same "scaffold now, deepen later" pattern ticket 06 established for the opportunity detail tabs. Mai Tran bridges the two persona modes: she appears as an inbound Candidate for the Senior Product Designer Role, consistent with her own candidate-side profile. Surfaces: `/recruiter` (WorkspacePage, the daily pipeline: a role select, a "Needs attention" strip capped at 3 by `lib/recruiter-utils.ts`'s `getRecruiterAttentionItems`, a stage board or sortable list, filtered by readiness/source/role, quick actions per card for advance-stage-with-a-named-confirmation, flag for review, and open detail), `/recruiter/roles` (WorkspacePage, one card per role: stage counts, days open, top waiting candidate), `/recruiter/candidates` (WorkspacePage, the dense cross-role list with name search), `/recruiter/candidates/[id]` (DetailPage: identity band with inline stage-advance, a Copilot-tagged 3-line AI summary block, highlights, a stage-history timeline, editable notes, and the Review/Outreach/Submission sections). Copilot: 2 recruiter-only surfaces (`lib/data/recruiter/copilot-scripts.ts`, merged into the shared `copilotScripts` registry), a pipeline-wide surface (who needs attention today, this role's bottleneck) and a per-candidate forked surface (summarize for the hiring manager) for the pipeline's 3 flagged candidates, every scripted answer ending in a route handoff, naming real seeded candidates.
+
+## 10. Home information architecture (RDS-993)
+
+RDS-992 densified Home's existing modules. This ticket decides what Home is
+for, so the next ticket has a rule to build against instead of another
+density pass.
+
+**The rule:** Home owns four things only:
+
+1. the situation at a glance (the command band: one greeting line, the stat
+   tiles)
+2. what needs a decision now (proposed AI signals plus active nudges,
+   merged into one ranked list)
+3. today's actions (accepted next actions, nothing else)
+4. one what-changed digest (the most recent activity, read-only)
+
+Everything else, full queues, full plans, full analyses, lives on its own
+route. Home links into it, never repeats it. A weekly-cadence surface
+(Rewind, Strategy) is never quoted or summarized in prose on Home, it
+appears only as a small entry tile: a state chip plus one line, click
+through for the rest.
+
+**What this cuts:** the old attention queue rendered every active nudge (up
+to 6) inline with an expandable why-line, and kept every approved AI signal
+mounted indefinitely. The old Next actions card was a full `Card` per
+action with a rationale line always visible. The Rewind banner was a
+standing prose card that only hid itself after a decision. All three
+violated the one-message-per-module rule this ticket enforces: a module
+states its one thing and links to the surface that holds the reasoning
+behind it.
+
+**"Needs a decision" is a merge, not two lists.** An `AiSignal` (evidenced,
+one grounded change, Approve/Edit/Dismiss) and a `Nudge` (a softer
+stale/high-potential/goal/learning prompt) are different shapes, but both
+ask the same question on Home: does this need you right now. Splitting them
+into "Needs a decision" and "Also worth a look," the RDS-992 shape, kept the
+module honest about which items were real store-changing decisions but cost
+a second heading and an unbounded nudge list. RDS-993 merges them into one
+ranked, capped-at-3 list (signals first, since they're grounded and
+reversible-with-Undo; nudges after) with a single "+N more" overflow link.
+The five-beat detail and the nudge's full why-and-actions both move into a
+`Sheet` drawer, never inline, so the capped list stays exactly what it says:
+one line per item.
+
+**"Today" is action items only.** Accepted next actions, a checkbox, a due
+hint. No rationale line: the reasoning that justified accepting the action
+already did its job at accept time, on the opportunity's own Actions tab;
+repeating it here would be why-text on a page whose whole job is do-text.
+
+**"What changed" reads the existing activity log, seeds nothing new.**
+`ActivityMoment` already carries a message and a timestamp for every
+meaningful change across every opportunity, RDS-993 didn't need a new data
+shape, just a query: the 4 most recent moments, each linking to its
+opportunity's Activity tab.
