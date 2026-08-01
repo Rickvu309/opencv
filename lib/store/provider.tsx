@@ -26,7 +26,7 @@ import { toast } from "sonner";
 import { copilotScripts } from "@/lib/data/copilot-scripts";
 import { joinWithAnd } from "@/lib/comparison-utils";
 import { evidenceTitle } from "@/lib/inbox-utils";
-import { findPrimaryNextAction } from "@/lib/opportunity-utils";
+import { findPrimaryNextAction, type OpportunityFilter, type OpportunitySort } from "@/lib/opportunity-utils";
 import { resourceToLearningItemType, resourceToPlanItemType } from "@/lib/roadmap-utils";
 import type { StrategyMove } from "@/lib/strategy-utils";
 import { makeId, today } from "@/lib/store/helpers";
@@ -34,6 +34,7 @@ import { reducer } from "@/lib/store/reducer";
 import {
   initialState,
   type OnboardingProfilePatch,
+  type OpportunitiesMode,
   type OpportunitiesView,
   type StoreState,
   type TrackRecordConfirmPatch,
@@ -85,6 +86,13 @@ interface StoreContextValue {
   toggleDream: (id: string) => void;
   setOpportunityNotes: (id: string, notes: string) => void;
   setOpportunitiesView: (view: OpportunitiesView) => void;
+  setOpportunitiesMode: (mode: OpportunitiesMode) => void;
+  setOpportunitiesFilter: (filter: OpportunityFilter) => void;
+  setOpportunitiesSort: (sort: OpportunitySort) => void;
+  setOpportunitiesStatusFilter: (status: OpportunityStatus | null) => void;
+  setOpportunitiesClosedExpanded: (expanded: boolean) => void;
+  moveOpportunityToActive: (opportunity: Opportunity) => void;
+  moveOpportunityToWatchlist: (opportunity: Opportunity) => void;
   addOpportunity: (
     opportunity: Opportunity,
     insights?: AiInsight[],
@@ -264,6 +272,43 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const setOpportunitiesView = useCallback((view: OpportunitiesView) => {
     dispatch({ type: "SET_OPPORTUNITIES_VIEW", view });
+  }, []);
+
+  const setOpportunitiesMode = useCallback((mode: OpportunitiesMode) => {
+    dispatch({ type: "SET_OPPORTUNITIES_MODE", mode });
+  }, []);
+
+  const setOpportunitiesFilter = useCallback((filter: OpportunityFilter) => {
+    dispatch({ type: "SET_OPPORTUNITIES_FILTER", filter });
+  }, []);
+
+  const setOpportunitiesSort = useCallback((sort: OpportunitySort) => {
+    dispatch({ type: "SET_OPPORTUNITIES_SORT", sort });
+  }, []);
+
+  const setOpportunitiesStatusFilter = useCallback((status: OpportunityStatus | null) => {
+    dispatch({ type: "SET_OPPORTUNITIES_STATUS_FILTER", status });
+  }, []);
+
+  const setOpportunitiesClosedExpanded = useCallback((expanded: boolean) => {
+    dispatch({ type: "SET_OPPORTUNITIES_CLOSED_EXPANDED", expanded });
+  }, []);
+
+  // Named confirmations (docs/architecture.md section 2): moving between
+  // modes is a real state change, so both directions get their own toast
+  // naming exactly what moved, on top of the dialogs that gate them.
+  const moveOpportunityToActive = useCallback((opportunity: Opportunity) => {
+    dispatch({ type: "MOVE_OPPORTUNITY_TO_ACTIVE", id: opportunity.id });
+    toast.success("Moved to Active", {
+      description: `${opportunity.role} at ${opportunity.company} joined your active pipeline.`,
+    });
+  }, []);
+
+  const moveOpportunityToWatchlist = useCallback((opportunity: Opportunity) => {
+    dispatch({ type: "MOVE_OPPORTUNITY_TO_WATCHLIST", id: opportunity.id });
+    toast.success("Moved to Watchlist", {
+      description: `${opportunity.role} at ${opportunity.company} is back on the watchlist.`,
+    });
   }, []);
 
   const addOpportunity = useCallback(
@@ -1222,6 +1267,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       toggleDream,
       setOpportunityNotes,
       setOpportunitiesView,
+      setOpportunitiesMode,
+      setOpportunitiesFilter,
+      setOpportunitiesSort,
+      setOpportunitiesStatusFilter,
+      setOpportunitiesClosedExpanded,
+      moveOpportunityToActive,
+      moveOpportunityToWatchlist,
       addOpportunity,
       clearOpportunityHighlight,
       setComparisonMode,
@@ -1323,6 +1375,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       toggleDream,
       setOpportunityNotes,
       setOpportunitiesView,
+      setOpportunitiesMode,
+      setOpportunitiesFilter,
+      setOpportunitiesSort,
+      setOpportunitiesStatusFilter,
+      setOpportunitiesClosedExpanded,
+      moveOpportunityToActive,
+      moveOpportunityToWatchlist,
       addOpportunity,
       clearOpportunityHighlight,
       setComparisonMode,

@@ -19,6 +19,13 @@ type OpportunitiesAction = Extract<
       | "TOGGLE_OPPORTUNITY_DREAM"
       | "SET_OPPORTUNITY_NOTES"
       | "SET_OPPORTUNITIES_VIEW"
+      | "SET_OPPORTUNITIES_MODE"
+      | "SET_OPPORTUNITIES_FILTER"
+      | "SET_OPPORTUNITIES_SORT"
+      | "SET_OPPORTUNITIES_STATUS_FILTER"
+      | "SET_OPPORTUNITIES_CLOSED_EXPANDED"
+      | "MOVE_OPPORTUNITY_TO_ACTIVE"
+      | "MOVE_OPPORTUNITY_TO_WATCHLIST"
       | "ADD_OPPORTUNITY"
       | "CLEAR_OPPORTUNITY_HIGHLIGHT"
       | "SET_COMPARISON_MODE"
@@ -101,6 +108,81 @@ export function reduceOpportunities(state: StoreState, action: OpportunitiesActi
 
     case "SET_OPPORTUNITIES_VIEW":
       return { ...state, opportunitiesView: action.view };
+
+    case "SET_OPPORTUNITIES_MODE":
+      return { ...state, opportunitiesMode: action.mode };
+
+    case "SET_OPPORTUNITIES_FILTER":
+      return { ...state, opportunitiesFilter: action.filter };
+
+    case "SET_OPPORTUNITIES_SORT":
+      return { ...state, opportunitiesSort: action.sort };
+
+    case "SET_OPPORTUNITIES_STATUS_FILTER":
+      return { ...state, opportunitiesStatusFilter: action.status };
+
+    case "SET_OPPORTUNITIES_CLOSED_EXPANDED":
+      return { ...state, opportunitiesClosedExpanded: action.expanded };
+
+    // The Watchlist card/row's own confirmed move: accepts the opportunity's
+    // suggested next action (the "being worked" bar isActiveOpportunity
+    // checks), which is what actually pulls it into the Active lens, no
+    // separate flag to keep in sync. A no-op if there's nothing suggested to
+    // accept, the dialog that dispatches this only offers the action once a
+    // suggested next action exists.
+    case "MOVE_OPPORTUNITY_TO_ACTIVE": {
+      const dateStamp = today();
+      const suggested = state.nextActions.find(
+        (nextAction) => nextAction.opportunityId === action.id && nextAction.state === "suggested"
+      );
+      if (!suggested) return state;
+
+      return {
+        ...state,
+        nextActions: state.nextActions.map((nextAction) =>
+          nextAction.id === suggested.id ? { ...nextAction, state: "accepted" } : nextAction
+        ),
+        activityMoments: [
+          ...state.activityMoments,
+          {
+            id: makeId("activity"),
+            opportunityId: action.id,
+            kind: "action-accepted",
+            message: `Moved to Active: accepted the next action, ${suggested.verb}.`,
+            createdAt: dateStamp,
+          },
+        ],
+      };
+    }
+
+    // The reverse move, offered from the quick-actions menu on a Saved
+    // opportunity that's currently in the Active lens: un-accepts its
+    // accepted next action back to suggested, the same "being worked" bar
+    // in reverse, so it drops back into Watchlist without touching status.
+    case "MOVE_OPPORTUNITY_TO_WATCHLIST": {
+      const dateStamp = today();
+      const accepted = state.nextActions.find(
+        (nextAction) => nextAction.opportunityId === action.id && nextAction.state === "accepted"
+      );
+      if (!accepted) return state;
+
+      return {
+        ...state,
+        nextActions: state.nextActions.map((nextAction) =>
+          nextAction.id === accepted.id ? { ...nextAction, state: "suggested" } : nextAction
+        ),
+        activityMoments: [
+          ...state.activityMoments,
+          {
+            id: makeId("activity"),
+            opportunityId: action.id,
+            kind: "status-change",
+            message: `Moved to Watchlist: ${accepted.verb} is queued again, not yet accepted.`,
+            createdAt: dateStamp,
+          },
+        ],
+      };
+    }
 
     case "ADD_OPPORTUNITY":
       return {

@@ -42,7 +42,13 @@ import type {
   SourceEvidence,
   TrackRecordEntry,
 } from "@/lib/types";
-import type { OnboardingProfilePatch, OpportunitiesView, TrackRecordConfirmPatch } from "./state";
+import type { OpportunityFilter, OpportunitySort } from "@/lib/opportunity-utils";
+import type {
+  OnboardingProfilePatch,
+  OpportunitiesMode,
+  OpportunitiesView,
+  TrackRecordConfirmPatch,
+} from "./state";
 
 export type Action =
   // onboarding
@@ -55,6 +61,13 @@ export type Action =
   | { type: "TOGGLE_OPPORTUNITY_DREAM"; id: string }
   | { type: "SET_OPPORTUNITY_NOTES"; id: string; notes: string }
   | { type: "SET_OPPORTUNITIES_VIEW"; view: OpportunitiesView }
+  | { type: "SET_OPPORTUNITIES_MODE"; mode: OpportunitiesMode }
+  | { type: "SET_OPPORTUNITIES_FILTER"; filter: OpportunityFilter }
+  | { type: "SET_OPPORTUNITIES_SORT"; sort: OpportunitySort }
+  | { type: "SET_OPPORTUNITIES_STATUS_FILTER"; status: OpportunityStatus | null }
+  | { type: "SET_OPPORTUNITIES_CLOSED_EXPANDED"; expanded: boolean }
+  | { type: "MOVE_OPPORTUNITY_TO_ACTIVE"; id: string }
+  | { type: "MOVE_OPPORTUNITY_TO_WATCHLIST"; id: string }
   | {
       type: "ADD_OPPORTUNITY";
       opportunity: Opportunity;

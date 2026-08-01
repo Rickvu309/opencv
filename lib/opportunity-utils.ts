@@ -1,4 +1,4 @@
-import type { ActivityMoment, FitLevel, NextAction, Nudge, Opportunity, Priority } from "@/lib/types";
+import type { ActivityMoment, AiSignal, FitLevel, NextAction, Nudge, Opportunity, Priority } from "@/lib/types";
 
 // Shared read-only helpers for the Opportunities workspace: staleness,
 // filtering, sorting, and the Focus strip's recommendation logic. Kept
@@ -57,6 +57,11 @@ export function findPrimaryNextAction(
   );
 }
 
+/** How many of this opportunity's AiSignals are still awaiting a decision, backing the per-item signal glyph (section 4). */
+export function countPendingSignals(opportunityId: string, aiSignals: AiSignal[]): number {
+  return aiSignals.filter((signal) => signal.opportunityId === opportunityId && signal.state === "proposed").length;
+}
+
 export function needsAttention(
   opportunity: Opportunity,
   nextActions: NextAction[],
@@ -66,6 +71,72 @@ export function needsAttention(
     isStaleOpportunity(opportunity, todayIso) ||
     Boolean(findSuggestedAction(opportunity.id, nextActions))
   );
+}
+
+/**
+ * A Saved opportunity counts as "being worked" once one of its next actions
+ * has moved past suggested (accepted or done), the same bar RDS-994's
+ * Active/Watchlist split uses everywhere. Deliberately not "any next
+ * action exists": a Saved item with only a suggested action is exactly the
+ * "not yet started" case the Watchlist lens exists to hold.
+ */
+export function hasAcceptedNextAction(opportunityId: string, nextActions: NextAction[]): boolean {
+  return nextActions.some(
+    (action) =>
+      action.opportunityId === opportunityId && (action.state === "accepted" || action.state === "done")
+  );
+}
+
+/**
+ * RDS-994's operating-model correction: the workspace is a lens over the
+ * same store data, not a schema change. Active is the operational pipeline
+ * Applied, Interview, and Offer always belong to it; Saved only joins once
+ * it has an accepted next action, the same "being worked" bar
+ * hasAcceptedNextAction defines. Closed belongs to neither lens, it lives
+ * behind Active's own collapsed count chip.
+ */
+export function isActiveOpportunity(opportunity: Opportunity, nextActions: NextAction[]): boolean {
+  if (opportunity.status === "Applied" || opportunity.status === "Interview" || opportunity.status === "Offer") {
+    return true;
+  }
+  if (opportunity.status === "Saved") {
+    return hasAcceptedNextAction(opportunity.id, nextActions);
+  }
+  return false;
+}
+
+/**
+ * The complementary lens: Dream-flagged or Saved opportunities with no
+ * active work yet, i.e. everything not already claimed by
+ * isActiveOpportunity and not Closed. A Dream-flagged opportunity that
+ * already has an accepted next action (opp-1 in seed data) is Active, not
+ * Watchlist, the flag is a quality, not a queue.
+ */
+export function isWatchlistOpportunity(opportunity: Opportunity, nextActions: NextAction[]): boolean {
+  if (opportunity.status === "Closed") return false;
+  if (isActiveOpportunity(opportunity, nextActions)) return false;
+  return opportunity.isDream || opportunity.status === "Saved";
+}
+
+/**
+ * The Watchlist card/row's one "why it is here" line, built from the
+ * object's own real fields (Dream flag, a suggested-but-not-accepted next
+ * action, or plain Saved-with-nothing-queued) rather than a generic
+ * placeholder, matching section 8's realism rule.
+ */
+export function buildWatchlistReason(opportunity: Opportunity, nextActions: NextAction[]): string {
+  const suggested = findSuggestedAction(opportunity.id, nextActions);
+
+  if (opportunity.isDream && suggested) {
+    return `On your dream list, next up: ${suggested.verb.toLowerCase()}.`;
+  }
+  if (opportunity.isDream) {
+    return "On your dream list, no next step queued yet.";
+  }
+  if (suggested) {
+    return `Saved, Copilot suggests: ${suggested.verb.toLowerCase()}.`;
+  }
+  return "Saved with no next step suggested yet.";
 }
 
 /**

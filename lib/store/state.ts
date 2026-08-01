@@ -3,6 +3,7 @@
 // domains, and the provider's action creators can each live in their own
 // file while `@/lib/store` keeps re-exporting the same public API.
 
+import type { OpportunityFilter, OpportunitySort } from "@/lib/opportunity-utils";
 import { persona } from "@/lib/data/persona";
 import { opportunities as seedOpportunities } from "@/lib/data/opportunities";
 import { activityMoments as seedActivityMoments } from "@/lib/data/activity";
@@ -44,6 +45,7 @@ import type {
   Nudge,
   Opportunity,
   OpportunityComparisonProfile,
+  OpportunityStatus,
   PathScenario,
   PlanItem,
   PlannerGapAnalysis,
@@ -60,6 +62,9 @@ import type {
 } from "@/lib/types";
 
 export type OpportunitiesView = "board" | "list";
+
+/** RDS-994: the page-level lens over the same opportunity data, never a schema change. See lib/opportunity-utils.ts's isActiveOpportunity/isWatchlistOpportunity. */
+export type OpportunitiesMode = "active" | "watchlist";
 
 export type OnboardingProfilePatch = Partial<Omit<Profile, "preferences">> & {
   preferences?: Partial<ProfilePreferences>;
@@ -119,6 +124,20 @@ export interface StoreState {
   highlightedSkillId?: string;
   highlightedTrackRecordEntryId?: string;
   opportunitiesView: OpportunitiesView;
+  /**
+   * RDS-994: saved-view state for the Opportunities workspace, extending the
+   * same session-only persistence opportunitiesView already established
+   * (survives in-app navigation away and back, resets on reload with the
+   * rest of the store). Previously local useState on the page itself, which
+   * meant leaving the page and coming back silently dropped the mode,
+   * filter, sort, and status filter.
+   */
+  opportunitiesMode: OpportunitiesMode;
+  opportunitiesFilter: OpportunityFilter;
+  opportunitiesSort: OpportunitySort;
+  opportunitiesStatusFilter: OpportunityStatus | null;
+  /** Whether Active mode's collapsed Closed column is expanded this session. */
+  opportunitiesClosedExpanded: boolean;
   sidebarOpen: boolean;
   /**
    * Recruiter mode's own domain (RDS-988), read only from /recruiter/*.
@@ -173,6 +192,11 @@ export const initialState: StoreState = {
   highlightedSkillId: undefined,
   highlightedTrackRecordEntryId: undefined,
   opportunitiesView: "board",
+  opportunitiesMode: "active",
+  opportunitiesFilter: "all",
+  opportunitiesSort: "recently-active",
+  opportunitiesStatusFilter: null,
+  opportunitiesClosedExpanded: false,
   sidebarOpen: true,
   recruiterRoles: seedRecruiterRoles,
   recruiterCandidates: seedRecruiterCandidates,
