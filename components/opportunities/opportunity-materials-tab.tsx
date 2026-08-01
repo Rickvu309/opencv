@@ -1,18 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { Sparkles } from "lucide-react";
+import { ShieldCheck, Sparkles } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AskCopilotButton } from "@/components/shared/ask-copilot-button";
+import { CopilotTag } from "@/components/shared/copilot-tag";
 import { EmptyState } from "@/components/shared/empty-state";
 import { TailoringDialog } from "@/components/cvs/tailoring-dialog";
+import { TrackRecordEvidenceChip } from "@/components/proof/track-record-evidence-chip";
 import { resolveOpportunitySurface } from "@/lib/copilot-utils";
 import { useStore } from "@/lib/store";
-import type { CvVersion, Opportunity } from "@/lib/types";
+import type { CvVersion, Opportunity, TrackRecordEntry } from "@/lib/types";
 
 interface OpportunityMaterialsTabProps {
   opportunity: Opportunity;
@@ -100,6 +103,52 @@ export function OpportunityMaterialsTab({ opportunity, cvVersion }: OpportunityM
               </Button>
             }
           />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="flex flex-col gap-2">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-foreground">Positioning notes</span>
+              {opportunity.positioningNotes && opportunity.positioningNotes.length > 0 ? <CopilotTag /> : null}
+            </div>
+            <Button asChild size="sm" variant="ghost">
+              <Link href={`/proof?context=opportunity&opportunityId=${opportunity.id}`}>
+                <ShieldCheck className="size-3.5" />
+                Build proof for this opportunity
+              </Link>
+            </Button>
+          </div>
+          {opportunity.positioningNotes && opportunity.positioningNotes.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              {opportunity.positioningNotes.map((note) => {
+                const backingEntries = note.backingEntryIds
+                  .map((id) => state.trackRecordEntries.find((entry) => entry.id === id))
+                  .filter((entry): entry is TrackRecordEntry => Boolean(entry));
+                return (
+                  <div key={note.id} className="flex flex-col gap-1.5 rounded-lg border border-border bg-muted/30 p-3">
+                    <p className="text-sm text-foreground">{note.text}</p>
+                    {backingEntries.length > 0 ? (
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <Badge variant="outline" className="text-xs">
+                          Evidence
+                        </Badge>
+                        {backingEntries.map((entry) => (
+                          <TrackRecordEvidenceChip key={entry.id} entry={entry} />
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <EmptyState
+              message="No positioning notes yet. Build proof for this opportunity to attach one."
+              className="border-none bg-transparent px-0 py-2 text-left"
+            />
+          )}
         </CardContent>
       </Card>
     </div>

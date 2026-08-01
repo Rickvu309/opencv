@@ -1,3 +1,6 @@
+import Link from "next/link";
+import { ShieldCheck } from "lucide-react";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import type { ProfileStrengthPrompt } from "@/lib/profile-utils";
@@ -37,6 +40,13 @@ export function ProfileStrengthCard({ percent, prompts }: ProfileStrengthCardPro
         ) : (
           <p className="text-xs text-muted-foreground">Every strength check is passing.</p>
         )}
+        <Link
+          href="/proof?context=profile"
+          className="flex w-fit items-center gap-1 text-xs font-medium text-foreground underline-offset-2 hover:underline"
+        >
+          <ShieldCheck className="size-3.5" />
+          Verify claims
+        </Link>
       </CardContent>
     </Card>
   );

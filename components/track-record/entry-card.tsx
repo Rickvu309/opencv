@@ -2,13 +2,15 @@
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
-import { Award, ChevronDown, ChevronUp } from "lucide-react";
+import { Award, ChevronDown, ChevronUp, ShieldCheck } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { EvidenceChip } from "@/components/ai/evidence-chip";
 import { LinkChip } from "@/components/shared/link-chip";
 import { findEvidenceById } from "@/lib/inbox-utils";
+import { useStore } from "@/lib/store";
 import type { CvVersion, Opportunity, Skill, SourceEvidence, TrackRecordEntry, TrackRecordUsedInRef } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -39,6 +41,7 @@ export function TrackRecordEntryCard({
   onToggle,
   highlighted,
 }: EntryCardProps) {
+  const { setTrackRecordHighlight } = useStore();
   const cardRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -166,6 +169,14 @@ export function TrackRecordEntryCard({
               </div>
             </div>
           ) : null}
+          <div className="border-t border-border pt-2.5">
+            <Button asChild size="sm" variant="outline" onClick={() => setTrackRecordHighlight(entry.id)}>
+              <Link href="/proof">
+                <ShieldCheck className="size-3.5" />
+                Build proof from this
+              </Link>
+            </Button>
+          </div>
         </CardContent>
       ) : null}
     </Card>
