@@ -1,6 +1,7 @@
 "use client";
 
 import { DashboardPage } from "@/components/shell/dashboard-page";
+import { KeyObservations } from "@/components/strategy/key-observations";
 import { PipelineHealthBand } from "@/components/strategy/pipeline-health-band";
 import { today, useCopilotSurface, useStore } from "@/lib/store";
 
@@ -21,6 +22,8 @@ export default function StrategyPage() {
       description="Strategic clarity that changes what you do this week, not another dashboard."
     >
       <PipelineHealthBand opportunities={state.opportunities} nextActions={state.nextActions} todayIso={todayIso} />
+
+      <KeyObservations opportunities={state.opportunities} todayIso={todayIso} />
     </DashboardPage>
   );
 }
