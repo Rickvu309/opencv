@@ -63,9 +63,9 @@ export function CopilotPanel() {
   return (
     <aside className="flex h-full w-[360px] shrink-0 flex-col border-l border-border bg-card">
       <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
-        <div className="flex flex-col gap-1.5">
+        <div className="flex min-w-0 flex-col gap-1.5">
           <CopilotTag />
-          <Chip label={getCopilotContextChip(surface, state.copilot.objectLabel)} className="bg-muted text-foreground" />
+          <Chip label={getCopilotContextChip(surface, state.copilot.objectLabel)} className="max-w-full bg-muted text-foreground" />
           {showSourceLine && emailSource ? (
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
               <Mail className="size-3" />
