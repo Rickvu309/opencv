@@ -11,7 +11,9 @@ import { applyAction } from "@/lib/actions/registry";
 import { seedState } from "@/lib/actions/seed";
 import { nextId } from "@/lib/cv/build";
 import { fileStem, toMarkdown, toPlainText } from "@/lib/cv/export";
-import { bullets, resumeCompleteness } from "@/lib/cv/types";
+import { bullets, defaultTheme, resumeCompleteness, templates } from "@/lib/cv/types";
+import { locales } from "@/lib/i18n/locale";
+import { messages } from "@/lib/i18n/messages";
 import type { AppState } from "@/lib/actions/types";
 
 /** A state holding one CV built from the fixture profile. */
@@ -259,4 +261,59 @@ test("completeness rewards a filled CV and ignores an empty one", () => {
   const { state } = withResume();
   const built = resumeCompleteness(state.resumes[0]);
   assert.ok(built > 0 && built < 100, `expected partial, got ${built}`);
+});
+
+/* ── Templates, named for what they are for ─────────────────────────────── */
+
+test("AC-PAPERS-010.1: no template is named by an abstract style word", () => {
+  // The rename is the whole work order, so this is the thing that would silently
+  // regress: somebody edits the catalog back to "Classic" because it is shorter.
+  const labels = [
+    messages.cv.templateClassic,
+    messages.cv.templateModern,
+    messages.cv.templateCompact,
+  ];
+  const styleWords = /^(cổ điển|hiện đại|gọn|classic|modern|compact)$/i;
+  for (const label of labels) {
+    for (const locale of locales) {
+      assert.doesNotMatch(
+        label[locale],
+        styleWords,
+        `"${label[locale]}" names a style, not the situation it fits`,
+      );
+    }
+  }
+});
+
+test("AC-PAPERS-010.2: a new CV gets a template without the user choosing one", () => {
+  const { state } = applyAction(seedState(), "resume.create", {
+    label: "CV, Data Analyst",
+    fromProfile: false,
+  });
+  assert.equal(state.resumes[0].theme.template, defaultTheme.template);
+  assert.ok(templates.includes(state.resumes[0].theme.template));
+});
+
+test("AC-PAPERS-010.3: changing the template leaves the content alone", () => {
+  let state = applyAction(seedState(), "resume.create", {
+    label: "CV, Data Analyst",
+    fromProfile: false,
+  }).state;
+  const id = state.resumes[0].id;
+  state = applyAction(state, "resume.addEntry", {
+    id,
+    sectionId: state.resumes[0].sections[0].id,
+    title: "Thực tập sinh phân tích",
+  }).state;
+
+  const before = state.resumes[0];
+  const after = applyAction(state, "resume.setTheme", { id, template: "modern" })
+    .state.resumes[0];
+
+  assert.equal(after.theme.template, "modern");
+  // Everything that is not the theme is byte-identical, timestamp aside.
+  assert.deepEqual(
+    { ...after, theme: before.theme, updatedAt: before.updatedAt },
+    before,
+  );
 });

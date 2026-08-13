@@ -71,7 +71,17 @@ export type ResumeHeader = {
   links: ResumeLink[];
 };
 
+/**
+ * The three layouts, by identifier.
+ *
+ * The identifiers stay as they are; only the labels the user reads were renamed
+ * to say what each is for. Changing these would mean migrating every stored CV
+ * to buy nothing but a tidier word in the source.
+ */
 export type ResumeTemplate = "classic" | "modern" | "compact";
+
+/** In the order the picker offers them, most-used first. */
+export const templates: ResumeTemplate[] = ["classic", "modern", "compact"];
 export type ResumeAccent = "ink" | "blue" | "green" | "plum";
 export type ResumeDensity = "airy" | "normal" | "tight";
 
@@ -82,6 +92,9 @@ export type ResumeTheme = {
 };
 
 export const defaultTheme: ResumeTheme = {
+  // The Vietnamese standard layout, because that is the application most users
+  // here send first. Somebody applying abroad changes one setting; the default
+  // should not make the common case the one that needs changing.
   template: "classic",
   accent: "ink",
   density: "normal",

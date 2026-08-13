@@ -58,6 +58,7 @@ import {
   sectionDefaults,
   sectionOrder,
   type Resume,
+  templates,
   type ResumeSectionKind,
 } from "@/lib/cv/types";
 import { localeNames, locales } from "@/lib/i18n/locale";
@@ -299,7 +300,8 @@ function Toolbar({
   );
 }
 
-const templateKeys = ["classic", "modern", "compact"] as const;
+// One list, in lib/cv/types.ts, so the picker and the model cannot drift.
+const templateKeys = templates;
 const accentKeys = ["ink", "blue", "green", "plum"] as const;
 const densityKeys = ["airy", "normal", "tight"] as const;
 

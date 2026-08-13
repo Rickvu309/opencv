@@ -505,10 +505,15 @@ export const messages = {
     completeness: m("Mức hoàn thiện của CV này", "How complete this CV is"),
 
     appearance: m("Giao diện", "Appearance"),
+    // Named for the situation each one fits, not for its style. "Cổ điển" and
+    // "Hiện đại" describe how a template looks to somebody who already knows
+    // what a CV should look like; this audience is choosing their first one and
+    // needs to be told which to use for a Vietnamese employer and which for an
+    // application abroad. The identifiers in the model are unchanged.
     template: m("Mẫu", "Template"),
-    templateClassic: m("Cổ điển", "Classic"),
-    templateModern: m("Hiện đại", "Modern"),
-    templateCompact: m("Gọn", "Compact"),
+    templateClassic: m("Chuẩn Việt Nam", "Vietnamese standard"),
+    templateModern: m("Chuẩn quốc tế", "International"),
+    templateCompact: m("Gọn một trang", "Fits one page"),
     accent: m("Màu nhấn", "Accent colour"),
     cvLanguage: m("Ngôn ngữ của CV", "CV language"),
     accentInk: m("Mực", "Ink"),
