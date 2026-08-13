@@ -87,6 +87,8 @@ export const messages = {
     cv: m("CV", "CV"),
     papers: m("Thư và bài viết", "Letters"),
     pitch: m("Giới thiệu bản thân", "Your pitch"),
+    search: m("Việc đang tuyển", "Openings"),
+    applications: m("Đơn ứng tuyển", "Applications"),
     // One name for one destination. This link used to be "Cập nhật thông tin"
     // in the account menu and "Làm lại onboarding" in the help menu, which read
     // as two different places.
@@ -630,6 +632,103 @@ export const messages = {
 
 
 
+
+  /* ── My Search ──────────────────────────────────────────────────────── */
+  search: {
+    title: m("Việc đang tuyển", "Openings"),
+    lead: m(
+      "Tin tuyển dụng thật, xếp theo mức khớp với hồ sơ của bạn.",
+      "Real postings, ordered by how well they match your profile.",
+    ),
+    addOpening: m("Thêm tin tuyển dụng", "Add an opening"),
+    pasteLabel: m("Dán tin tuyển dụng hoặc link", "Paste a posting or a link"),
+    pastePlaceholder: m(
+      "Dán cả tin ở đây. Mình tự tách yêu cầu ra.",
+      "Paste the whole posting. I'll pull the requirements out.",
+    ),
+    pasteTooShort: m(
+      "Dán thêm chút nữa nhé, chừng này chưa đủ để đọc.",
+      "Paste a bit more; that isn't enough to read.",
+    ),
+    searchPlaceholder: m("Tìm theo vị trí hoặc công ty", "Search title or company"),
+    filterAll: m("Tất cả", "All"),
+    filterSaved: m("Đã lưu", "Saved"),
+    filterSeeded: m("Ví dụ", "Examples"),
+    save: m("Lưu tin này", "Save"),
+    unsave: m("Bỏ lưu", "Unsave"),
+    saved: m("Đã lưu", "Saved"),
+    apply: m("Bắt đầu ứng tuyển", "Start applying"),
+    seededNote: m(
+      "Tin ví dụ, để bạn thấy phần khớp hoạt động thế nào.",
+      "An example, so you can see how the match reads.",
+    ),
+    fitCount: (met: number, total: number) =>
+      m(`Khớp ${met}/${total} yêu cầu`, `Meets ${met} of ${total} requirements`),
+    fitUnknown: m(
+      "Tin này chưa nêu yêu cầu nào đọc được",
+      "This posting lists no requirement we can read",
+    ),
+    metHeading: m("Bạn đã có", "You have"),
+    missingHeading: m("Còn thiếu", "Still missing"),
+    unprovableHeading: m(
+      "Không chấm được, nên không tính",
+      "Not scoreable, so not counted",
+    ),
+    emptyProfileTitle: m("Hồ sơ còn trống", "Your profile is empty"),
+    emptyProfileBody: m(
+      "Thêm vài khoá học hoặc một mục kinh nghiệm, rồi mình xếp được.",
+      "Add a course or two, or one experience, and I can rank these.",
+    ),
+    emptyProfileAction: m("Điền hồ sơ", "Fill in your profile"),
+    noOpeningsTitle: m("Chưa có tin nào", "No openings yet"),
+    noOpeningsBody: m(
+      "Dán một tin bạn đang cân nhắc, mình đọc yêu cầu và nói bạn khớp tới đâu.",
+      "Paste one you're considering and I'll read its requirements and tell you where you stand.",
+    ),
+    noMatches: m("Không có tin nào khớp", "Nothing matches that"),
+  },
+
+  /* ── My Applications ────────────────────────────────────────────────── */
+  applications: {
+    title: m("Đơn ứng tuyển", "Applications"),
+    lead: m(
+      "Mỗi vị trí bạn đã nộp, đang ở đâu, và việc tiếp theo là gì.",
+      "Every job you've gone for, where it stands, and what to do next.",
+    ),
+    statusInterested: m("Đang cân nhắc", "Interested"),
+    statusApplied: m("Đã nộp", "Applied"),
+    statusInterviewing: m("Đang phỏng vấn", "Interviewing"),
+    statusOffer: m("Có offer", "Offer"),
+    statusRejected: m("Bị từ chối", "Rejected"),
+    nextStep: m("Việc tiếp theo", "Next step"),
+    notesLabel: m("Ghi chú", "Notes"),
+    notesPlaceholder: m(
+      "Ai phỏng vấn, họ hỏi gì, cần chuẩn bị gì.",
+      "Who you spoke to, what they asked, what to prepare.",
+    ),
+    deadlineLabel: m("Hạn nộp", "Deadline"),
+    clearDeadline: m("Bỏ hạn nộp", "Clear the deadline"),
+    askCoach: m("Hỏi Coach việc tiếp theo", "Ask the Coach what's next"),
+    askCoachPrompt: (title: string, org: string, status: string) =>
+      m(
+        `Mình đang ứng tuyển ${title}${org ? ` ở ${org}` : ""}, trạng thái: ${status}. Việc tiếp theo mình nên làm là gì?`,
+        `I'm applying for ${title}${org ? ` at ${org}` : ""}, currently ${status}. What should I do next?`,
+      ),
+    tailorCv: m("Tạo bản CV riêng", "Tailor a CV for this"),
+    tailorLetter: m("Tạo thư riêng", "Tailor a letter for this"),
+    tailoredHeading: m("Hồ sơ riêng cho vị trí này", "Tailored for this job"),
+    tailorNeedsCv: m(
+      "Bạn dựng một CV trước đã, rồi mình sao ra bản riêng.",
+      "Build a CV first, then I can copy it for this job.",
+    ),
+    emptyTitle: m("Chưa có đơn nào", "No applications yet"),
+    emptyBody: m(
+      "Lưu một tin ở mục Việc đang tuyển, rồi bắt đầu từ đó.",
+      "Save an opening in Openings and start from there.",
+    ),
+    emptyAction: m("Xem việc đang tuyển", "Browse openings"),
+    remove: m("Xoá đơn này", "Delete this application"),
+  },
 
   /* ── Waiting list ───────────────────────────────────────────────────── */
   waitlist: {

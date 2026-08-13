@@ -11,6 +11,7 @@
 // Everything else is earned.
 
 import { defaultLocale, type Locale } from "@/lib/i18n/locale";
+import { SEED_OPENINGS } from "@/lib/search/types";
 import type { AppState } from "./types";
 
 /**
@@ -31,5 +32,11 @@ export function seedState(locale: Locale = defaultLocale): AppState {
     resumes: [],
     papers: [],
     pitch: [],
+    // Seeded, unlike everything else here, and for a reason that survives the
+    // "no demo persona" rule: these are not this person's data pretending to
+    // be theirs, they are examples, marked as examples, and an empty search
+    // screen teaches nobody what the fit read is for.
+    openings: [...SEED_OPENINGS],
+    applications: [],
   };
 }

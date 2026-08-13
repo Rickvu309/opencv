@@ -4,11 +4,13 @@
 // width). Those are presentation concerns; the agent has no business touching
 // them, and keeping them out means every field here is safe to expose as a tool.
 
+import type { Application } from "@/lib/applications/types";
 import type { VaultItemId } from "@/lib/catalog";
 import type { Resume } from "@/lib/cv/types";
 import type { Locale } from "@/lib/i18n/locale";
 import type { ProseDocument } from "@/lib/papers/types";
 import type { PitchItem } from "@/lib/pitch/types";
+import type { Opening } from "@/lib/search/types";
 
 export type Experience = {
   title: string;
@@ -90,4 +92,20 @@ export type AppState = {
    * documents anybody exports; they are lines to reuse.
    */
   pitch: PitchItem[];
+  /**
+   * Real postings, saved or merely pasted.
+   *
+   * Unlike the role catalogue in `lib/career-graph.ts`, which is the same list
+   * for everybody, these belong to the person: what they found, what they
+   * pasted, what they saved. See `lib/search/types.ts`.
+   */
+  openings: Opening[];
+  /**
+   * The applications made from saved openings.
+   *
+   * Separate from `openings` because they have different lifetimes: an opening
+   * stops existing when the posting closes, and the record of having applied to
+   * it does not.
+   */
+  applications: Application[];
 };

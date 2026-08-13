@@ -15,6 +15,7 @@ import {
   Languages,
   Route,
   Search,
+  Send,
   Settings,
 } from "lucide-react";
 
@@ -87,7 +88,12 @@ function primaryNav(): NavItem[] {
   ];
 }
 
-function careerNav(cvCount: number, paperCount: number): NavItem[] {
+function careerNav(
+  cvCount: number,
+  paperCount: number,
+  openingCount: number,
+  applicationCount: number,
+): NavItem[] {
   return [
     { title: messages.nav.profile, href: "/profile", icon: LayoutDashboard },
     // Next to the profile, not under Tài liệu: a CV is a thing you build here,
@@ -103,6 +109,20 @@ function careerNav(cvCount: number, paperCount: number): NavItem[] {
       count: badge(paperCount),
     },
     { title: messages.nav.pitch, href: "/pitch", icon: MessageSquareQuote },
+    // Search and Applications sit at the end of the career group because they
+    // are the last two steps: everything above is what you take into them.
+    {
+      title: messages.nav.search,
+      href: "/search",
+      icon: Search,
+      count: badge(openingCount),
+    },
+    {
+      title: messages.nav.applications,
+      href: "/applications",
+      icon: Send,
+      count: badge(applicationCount),
+    },
   ];
 }
 
@@ -150,7 +170,7 @@ export function AppSidebar() {
   // Counts and identity read from live state, not seed data, so adding a CV
   // updates the rail immediately and renaming yourself in onboarding is
   // reflected here rather than in a fixture nobody can edit.
-  const { profile, resumes, papers } = useAppState();
+  const { profile, resumes, papers, openings, applications } = useAppState();
   const dispatch = useDispatch();
   const { t, m, locale } = useT();
   const name = profile.identity.name.trim();
@@ -162,7 +182,14 @@ export function AppSidebar() {
       .join("")
       .toUpperCase() || "?";
   const primary = primaryNav();
-  const career = careerNav(resumes.length, papers.length);
+  // Saved openings rather than all of them: the count is a shortlist, and
+  // seeded examples are not somebody's shortlist.
+  const career = careerNav(
+    resumes.length,
+    papers.length,
+    openings.filter((opening) => opening.saved).length,
+    applications.length,
+  );
   const router = useRouter();
 
   return (

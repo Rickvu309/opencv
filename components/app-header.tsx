@@ -24,6 +24,8 @@ const titleKeys = [
   ["/cv", "cv"],
   ["/papers", "papers"],
   ["/pitch", "pitch"],
+  ["/search", "search"],
+  ["/applications", "applications"],
 ] as const;
 
 /**
