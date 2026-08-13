@@ -97,7 +97,7 @@ function ApplicationCard({
   return (
     <div
       className={cn(
-        "rounded-xl border bg-card p-4 transition-colors duration-[var(--duration-state)] motion-reduce:transition-none",
+        "rounded-xl border bg-card p-4 transition-colors duration-[var(--duration-state)] ease-[var(--ease-enter)] motion-reduce:transition-none",
         flash && "bg-muted",
       )}
     >
@@ -125,7 +125,7 @@ function ApplicationCard({
 
       {/* The next step is shown, not hidden behind a click. Somebody who opens
           this screen has already decided to do something today. */}
-      <div className="mt-3 rounded-lg bg-muted px-3 py-2">
+      <div className="mt-3 border-t border-border pt-3">
         <p className="text-xs font-medium">{t(m.applications.nextStep)}</p>
         <p className="mt-0.5 text-sm">{nextStep(application.status)[locale]}</p>
         {opening && <AskCoach application={application} opening={opening} />}
@@ -146,7 +146,7 @@ function ApplicationCard({
                 { silent: true },
               )
             }
-            className="h-9 text-sm"
+            className="h-9 text-sm tabular-nums"
           />
         </div>
       </div>
@@ -198,7 +198,10 @@ function StatusRow({ application }: { application: Application }) {
             key={status}
             variant={current ? "secondary" : "ghost"}
             size="sm"
-            className={current ? undefined : "text-muted-foreground"}
+            className={cn(
+              "transition-colors duration-[var(--duration-press)] ease-[var(--ease-snap)] motion-reduce:transition-none",
+              current ? undefined : "text-muted-foreground",
+            )}
             disabled={!current && !canTransition(application.status, status)}
             onClick={() => set(status)}
           >

@@ -97,7 +97,7 @@ function Turn({ trace }: { trace: AgentTrace }) {
                 {span.kind}
               </span>
               <span className="min-w-0 flex-1 break-all">{span.name}</span>
-              <span className="shrink-0 text-muted-foreground">
+              <span className="shrink-0 text-muted-foreground tabular-nums">
                 {span.durationMs} ms
               </span>
             </li>

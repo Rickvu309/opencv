@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    {
+      "path": "/api/cron",
+      "//": "Hourly. The jobs themselves decide what is due: the eval sweep is keyed by the day and the check-in by the ISO week, so firing twelve extra times a day costs twelve no-op enqueues and gives the queue twelve chances to drain a retry.",
+      "schedule": "0 * * * *"
+    }
+  ]
+}

@@ -73,6 +73,10 @@ test("English is written, not left as the Vietnamese", () => {
     "cv.headerEmail",
     // A proper noun: the course is called this in both languages.
     "profile.certificatePlaceholder",
+    // Plan names. Translating "Pro" would mean the button and the invoice
+    // disagreed about what the user bought.
+    "billing.tierPro",
+    "billing.tierUltra",
     "onboarding.gpa",
     "waitlist.emailPlaceholder",
     "profile.versionCount",

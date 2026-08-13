@@ -197,7 +197,7 @@ function OpeningCard({
   return (
     <div
       className={cn(
-        "rounded-xl border bg-card p-4 transition-colors duration-[var(--duration-state)] motion-reduce:transition-none",
+        "rounded-xl border bg-card p-4 transition-colors duration-[var(--duration-state)] ease-[var(--ease-enter)] motion-reduce:transition-none",
         flash && "bg-muted",
       )}
     >
@@ -220,7 +220,13 @@ function OpeningCard({
             variant="ghost"
             size="icon-sm"
             aria-label={t(opening.saved ? m.search.unsave : m.search.save)}
-            className={opening.saved ? undefined : "text-muted-foreground"}
+            // Motion joins the icon swap and the colour change rather than
+            // carrying the meaning alone: under reduced motion the filled
+            // bookmark still says saved.
+            className={cn(
+              "transition-colors duration-[var(--duration-press)] ease-[var(--ease-snap)] motion-reduce:transition-none",
+              opening.saved ? undefined : "text-muted-foreground",
+            )}
             onClick={() =>
               dispatch(opening.saved ? "opening.unsave" : "opening.save", {
                 id: opening.id,
@@ -247,14 +253,14 @@ function OpeningCard({
 
       {/* Met versus total, never a score. AC-SEARCH-003.2 is explicit that the
           number shown has to be derived from the requirements themselves. */}
-      <p className="mt-2 text-xs text-muted-foreground">
+      <p className="mt-2 text-xs text-muted-foreground tabular-nums">
         {fit.total === 0
           ? t(m.search.fitUnknown)
           : t(m.search.fitCount(fit.metCount, fit.total))}
       </p>
 
       {open && (
-        <div className="mt-3 space-y-3 border-t border-border pt-3">
+        <div className="mt-3 space-y-3 border-t border-border pt-3 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-1 motion-safe:duration-[var(--duration-state)] motion-safe:ease-enter">
           <RequirementList
             heading={t(m.search.metHeading)}
             items={fit.met.map((requirement) => requirement.label[locale])}

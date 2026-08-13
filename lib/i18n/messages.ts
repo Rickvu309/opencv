@@ -89,6 +89,8 @@ export const messages = {
     pitch: m("Giới thiệu bản thân", "Your pitch"),
     search: m("Việc đang tuyển", "Openings"),
     applications: m("Đơn ứng tuyển", "Applications"),
+    billing: m("Gói và thanh toán", "Plan and billing"),
+    support: m("Trợ giúp", "Help"),
     // One name for one destination. This link used to be "Cập nhật thông tin"
     // in the account menu and "Làm lại onboarding" in the help menu, which read
     // as two different places.
@@ -807,6 +809,87 @@ export const messages = {
     ),
     emptyAction: m("Xem việc đang tuyển", "Browse openings"),
     remove: m("Xoá đơn này", "Delete this application"),
+  },
+
+  /* ── Plans and billing ──────────────────────────────────────────────── */
+  billing: {
+    title: m("Gói và thanh toán", "Plan and billing"),
+    lead: m(
+      "Gói quyết định số lượt Coach mỗi tháng. Mọi thứ khác dùng thoải mái.",
+      "Your plan sets how many Coach turns you get a month. Everything else is unlimited.",
+    ),
+    currentPlan: m("Gói hiện tại", "Current plan"),
+    tierFree: m("Miễn phí", "Free"),
+    tierPro: m("Pro", "Pro"),
+    tierUltra: m("Ultra", "Ultra"),
+    perMonth: (usd: number) => m(`$${usd}/tháng`, `$${usd}/month`),
+    turnsPerMonth: (n: number) =>
+      m(`${n} lượt Coach mỗi tháng`, `${n} Coach turns a month`),
+    used: (used: number, total: number) =>
+      m(`Đã dùng ${used}/${total} lượt`, `${used} of ${total} turns used`),
+    renewsOn: (date: string) => m(`Kỳ mới ngày ${date}`, `Renews ${date}`),
+    endsOn: (date: string) => m(`Hết hạn ngày ${date}`, `Ends ${date}`),
+    upgrade: m("Nâng gói", "Upgrade"),
+    downgrade: m("Hạ gói", "Downgrade"),
+    cancelPlan: m("Huỷ gói", "Cancel plan"),
+    cancelling: m("Đã hẹn huỷ, dùng hết kỳ này", "Cancelling at the end of this period"),
+    pastDue: m("Thanh toán chưa thành công", "A payment didn't go through"),
+    unavailable: m(
+      "Chưa thanh toán được lúc này. Gói của bạn giữ nguyên.",
+      "Payment isn't available right now. Your plan is unchanged.",
+    ),
+    // What the Coach says when the allowance is gone. The other tools keep
+    // working, and the sentence says so.
+    outOfTurns: m("Hết lượt Coach tháng này", "Out of Coach turns this month"),
+    outOfTurnsBody: m(
+      "CV, thư và đơn ứng tuyển vẫn dùng bình thường. Chỉ Coach cần chờ kỳ mới hoặc nâng gói.",
+      "Your CV, letters and applications still work. Only the Coach waits for a new period or an upgrade.",
+    ),
+  },
+
+  /* ── Help and support ───────────────────────────────────────────────── */
+  // Named `support` because `help` is already the help *menu* further down;
+  // this is the page it should have pointed at all along.
+  support: {
+    title: m("Trợ giúp", "Help"),
+    lead: m(
+      "Câu hỏi hay gặp, và cách báo lỗi cho tụi mình.",
+      "Common questions, and how to tell us something is wrong.",
+    ),
+    q1: m("Coach có tự sửa hồ sơ của mình không?", "Does the Coach change my work?"),
+    a1: m(
+      "Có, khi bạn nhờ. Mỗi thay đổi hiện một thẻ kèm nút hoàn tác, và hành động xoá thì hỏi trước.",
+      "Yes, when you ask. Every change shows a card with an undo button, and deletions ask first.",
+    ),
+    q2: m("Dữ liệu của mình ở đâu?", "Where is my data?"),
+    a2: m(
+      "Trong tài khoản của bạn trên máy chủ. Đăng nhập ở máy khác là thấy đủ.",
+      "In your account on the server. Sign in anywhere and it's all there.",
+    ),
+    q3: m("Coach viết sai thì sao?", "What if the Coach gets something wrong?"),
+    a3: m(
+      "Bấm hoàn tác, rồi nói lại cho đúng. Nó cũng không được bịa số hay bịa kinh nghiệm.",
+      "Press undo and tell it again. It also isn't allowed to invent numbers or experience.",
+    ),
+    q4: m("Hết lượt Coach thì mất gì?", "What happens when Coach turns run out?"),
+    a4: m(
+      "Không mất gì. CV, thư, đơn ứng tuyển vẫn dùng được; chỉ Coach phải chờ.",
+      "Nothing. Your CV, letters and applications keep working; only the Coach waits.",
+    ),
+    reportTitle: m("Báo lỗi hoặc góp ý", "Report a problem"),
+    reportPlaceholder: m(
+      "Bạn đang làm gì thì gặp lỗi?",
+      "What were you doing when it went wrong?",
+    ),
+    reportSend: m("Gửi", "Send"),
+    reportThanks: m(
+      "Mình nhận được rồi. Cảm ơn bạn.",
+      "Got it. Thank you.",
+    ),
+    reportFailed: m(
+      "Chưa gửi được. Bạn thử lại sau chút nhé.",
+      "That didn't send. Try again shortly.",
+    ),
   },
 
   /* ── Waiting list ───────────────────────────────────────────────────── */

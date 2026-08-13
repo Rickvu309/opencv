@@ -46,7 +46,7 @@ export default function Home() {
         <LanguageToggle />
       </div>
 
-      <div className="flex w-full max-w-2xl flex-1 flex-col items-center justify-center text-center">
+      <div className="flex w-full max-w-2xl flex-1 flex-col items-center justify-center text-center motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-[var(--duration-reveal)] motion-safe:ease-enter">
         <div className="flex items-center gap-2.5">
           <span className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <Route className="size-5" />

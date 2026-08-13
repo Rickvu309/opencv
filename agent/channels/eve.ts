@@ -2,7 +2,7 @@ import { eveChannel, defaultEveAuth } from "eve/channels/eve";
 import { localDev, vercelOidc } from "eve/channels/auth";
 
 import { userSession } from "../../lib/auth/agent-session";
-import { screenInboundTurn } from "../../lib/guardrails/server";
+import { meterTurn, screenInboundTurn } from "../../lib/guardrails/server";
 
 export default eveChannel({
   auth: [
@@ -30,13 +30,15 @@ export default eveChannel({
    * the guard decorative.
    */
   async onMessage(ctx, message) {
+    const accountId = ctx.eve.caller?.principalId ?? null;
     const text = typeof message === "string" ? message : textOf(message);
     if (text) {
-      await screenInboundTurn({
-        text,
-        accountId: ctx.eve.caller?.principalId ?? null,
-      });
+      await screenInboundTurn({ text, accountId });
     }
+    // After the guard, before the model. A turn refused by the guard should
+    // not spend an allowance, and a turn refused for allowance should not have
+    // been screened for nothing.
+    await meterTurn(accountId);
     return { auth: defaultEveAuth(ctx) };
   },
 });

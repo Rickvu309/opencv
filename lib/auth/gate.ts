@@ -57,6 +57,10 @@ const PUBLIC_PATHS = new Set([
 const PUBLIC_PREFIXES = [
   "/api/auth/",
   "/api/waitlist",
+  // The scheduler's own door. Public to the gate because there is no session
+  // behind a cron request; it authenticates itself with `CRON_SECRET` and
+  // refuses when that is unset, which is a stronger check than this one.
+  "/api/cron",
   "/eve/",
   "/.well-known/",
   "/_next/",

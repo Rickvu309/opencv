@@ -185,7 +185,7 @@ function Answer({ answer, flash }: { answer: PitchItem; flash: boolean }) {
   return (
     <div
       className={cn(
-        "rounded-xl border bg-card p-4 transition-colors duration-[var(--duration-state)] motion-reduce:transition-none",
+        "rounded-xl border bg-card p-4 transition-colors duration-[var(--duration-state)] ease-[var(--ease-enter)] motion-reduce:transition-none",
         flash && "bg-muted",
       )}
     >

@@ -14,6 +14,7 @@
 
 import type { ClientBase } from "pg";
 
+import { allowanceMessage, checkAllowance, recordTurn } from "@/lib/billing/usage";
 import { guardrailConfig } from "@/lib/guardrails/config";
 import { carriesInjection, carriesSensitiveData } from "@/lib/guardrails/input";
 import { newCollector } from "@/lib/trace/collector";
@@ -28,6 +29,45 @@ export class GuardrailRefusal extends Error {
     this.name = "GuardrailRefusal";
     this.rule = rule;
   }
+}
+
+/**
+ * Thrown when the account has used its Coach allowance.
+ *
+ * A different class from a guardrail refusal because it means something
+ * different to the user: nothing is wrong with what they asked, they have
+ * simply run out. The message is theirs to read.
+ */
+export class AllowanceReached extends Error {
+  readonly vi: string;
+  readonly en: string;
+
+  constructor(message: { vi: string; en: string }) {
+    super(message.en);
+    this.name = "AllowanceReached";
+    this.vi = message.vi;
+    this.en = message.en;
+  }
+}
+
+/**
+ * Count this turn against the plan, and refuse when there is nothing left.
+ *
+ * At the channel rather than at the model call, which is the seam the work
+ * order names: a turn that is refused here has cost nothing, and the tools the
+ * user owns (their CV, their letters, their applications) are untouched,
+ * because none of them come through this door.
+ */
+export async function meterTurn(accountId: string | null): Promise<void> {
+  // No account means a local-dev or platform caller, which is not somebody's
+  // subscription and must not be billed against one.
+  if (!accountId) return;
+
+  const verdict = await checkAllowance(accountId);
+  if (verdict.kind === "refuse") {
+    throw new AllowanceReached(allowanceMessage(verdict.plan));
+  }
+  await recordTurn(accountId);
 }
 
 /**

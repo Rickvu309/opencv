@@ -42,7 +42,13 @@ export function GuidedTour({ onDone }: { onDone: () => void }) {
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-col">
-      <div className="rounded-xl border bg-card p-6">
+      <div
+        // Keyed on the step so each card animates in as its own element rather
+        // than the text swapping inside a static box. Under reduced motion the
+        // counter and the changed words carry it.
+        key={at}
+        className="rounded-xl border bg-card p-6 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-right-2 motion-safe:duration-[var(--duration-state)] motion-safe:ease-enter"
+      >
         <span className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
           <Icon className="size-4" />
         </span>
@@ -66,7 +72,7 @@ export function GuidedTour({ onDone }: { onDone: () => void }) {
         >
           {t(m.onboarding.tourSkip)}
         </Button>
-        <span className="text-xs tabular-nums text-muted-foreground">
+        <span className="text-xs text-muted-foreground tabular-nums">
           {t(m.onboarding.tourStep(at + 1, cards.length))}
         </span>
         <Button

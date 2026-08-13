@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   Check,
   ChevronRight,
+  CircleQuestionMark,
   ChevronsUpDown,
   FileText,
   LayoutDashboard,
@@ -253,6 +254,23 @@ export function AppSidebar() {
                   {locale === code && <Check className="size-3.5" />}
                 </DropdownMenuItem>
               ))}
+
+              {/* Plan and help sit in the account menu rather than the rail:
+                  neither is somewhere anybody goes daily, and the rail is for
+                  the work. */}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/settings">
+                  <Settings className="size-3.5" />
+                  <span className="flex-1">{t(m.nav.billing)}</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/help">
+                  <CircleQuestionMark className="size-3.5" />
+                  <span className="flex-1">{t(m.nav.support)}</span>
+                </Link>
+              </DropdownMenuItem>
 
               {/* Last, and behind a separator: it is the one item here that
                   ends the session, and it should not sit a mis-click away

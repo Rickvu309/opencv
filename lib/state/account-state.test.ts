@@ -148,7 +148,11 @@ test("a row of the wrong shape is left alone, never deleted", OPTIONS, async () 
     // rather than refusing to load.
     await db.query("insert into app_state (account_id, state) values ($1, $2)", [
       account.id,
-      JSON.stringify({ todos: "not a state" }),
+      // A key the shape check still reads, holding the wrong type. This used
+      // to say `todos`, which was a fine choice until that field was retired:
+      // an unknown key merges harmlessly over the seed and the row becomes
+      // readable, which is the right behaviour and the wrong test.
+      JSON.stringify({ pitch: "not a state" }),
     ]);
 
     assert.equal(await readAccountState(account.id, db), null);

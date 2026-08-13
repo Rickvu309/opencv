@@ -75,7 +75,7 @@ export function ActivationChecklist() {
             <Link
               href={step.href}
               className={cn(
-                "flex items-baseline gap-2 text-sm",
+                "flex items-baseline gap-2 text-sm transition-colors duration-[var(--duration-state)] ease-[var(--ease-enter)] motion-reduce:transition-none",
                 step.done
                   ? "text-muted-foreground line-through"
                   : "underline-offset-4 hover:underline",
