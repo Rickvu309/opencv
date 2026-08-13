@@ -80,6 +80,7 @@ function looksLikeState(value: unknown): value is AppState {
     state.plan !== null &&
     Array.isArray(state.resumes) &&
     Array.isArray(state.papers) &&
+    Array.isArray(state.pitch) &&
     typeof state.paths === "object" &&
     state.paths !== null
   );

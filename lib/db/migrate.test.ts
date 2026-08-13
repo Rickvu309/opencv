@@ -31,14 +31,21 @@ function fixtureDir(files: Record<string, string>): string {
 
 test("the repository's own migrations are complete pairs", () => {
   const migrations = readMigrations();
-  assert.ok(migrations.length >= 5, "expected at least five migrations");
+  assert.ok(migrations.length >= 6, "expected at least six migrations");
   for (const migration of migrations) {
     assert.ok(migration.up.trim().length > 0, `${migration.id} has an empty up`);
     assert.ok(migration.down.trim().length > 0, `${migration.id} has an empty down`);
   }
   assert.deepEqual(
     migrations.map((m) => m.name),
-    ["accounts", "sessions", "app_state", "conversations", "papers_in_state"],
+    [
+      "accounts",
+      "sessions",
+      "app_state",
+      "conversations",
+      "papers_in_state",
+      "pitch_in_state",
+    ],
     "order matters: everything after the first depends on what came before it",
   );
 });

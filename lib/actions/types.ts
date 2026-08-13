@@ -9,6 +9,7 @@ import type { PlanKind, PlanResource, Todo, VaultItemId } from "@/lib/catalog";
 import type { Resume } from "@/lib/cv/types";
 import type { Locale } from "@/lib/i18n/locale";
 import type { ProseDocument } from "@/lib/papers/types";
+import type { PitchItem } from "@/lib/pitch/types";
 
 /** One thing to do. Courses carry a resource; projects and tasks do not. */
 export type PlanEntry = {
@@ -111,6 +112,12 @@ export type AppState = {
    * fit neither. See `lib/papers/types.ts`.
    */
   papers: ProseDocument[];
+  /**
+   * How the user describes themselves: one bio, one self-introduction, and a
+   * bank of interview answers. Separate from `papers` because these are not
+   * documents anybody exports; they are lines to reuse.
+   */
+  pitch: PitchItem[];
   paths: {
     targetId: string | null;
     customNodes: PathNode[];
