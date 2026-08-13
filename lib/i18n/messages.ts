@@ -813,7 +813,79 @@ export const messages = {
   // Every one of these says what happened and what to do about it. The change
   // that mattered most: the failed-action toast used to print the raw Zod
   // validation message, which is a developer's sentence shown to a student.
+  /* ── Accounts ───────────────────────────────────────────────────────── */
+  // The first words most people read after the landing page. Two rules the
+  // rest of this catalog already follows matter more than usual here: the
+  // buttons name the action rather than saying "Submit", and every error is
+  // an instruction placed beside the field that failed.
+  //
+  // What is deliberately absent: any promise about recovering a forgotten
+  // password. There is no recovery this phase, so the copy does not imply one.
+  auth: {
+    signInTitle: m("Đăng nhập", "Sign in"),
+    signInLead: m(
+      "Đăng nhập để xem lại phần bạn đang làm.",
+      "Sign in to pick up where you left off.",
+    ),
+    signUpTitle: m("Tạo tài khoản", "Create an account"),
+    signUpLead: m(
+      "Tạo tài khoản để giữ lại phần bạn làm.",
+      "Create an account and your work is saved.",
+    ),
+    username: m("Tên đăng nhập", "Username"),
+    password: m("Mật khẩu", "Password"),
+    // Said before they type, not after they get it wrong.
+    passwordHint: m("Ít nhất 8 ký tự.", "At least 8 characters."),
+    signIn: m("Đăng nhập", "Sign in"),
+    signingIn: m("Đang đăng nhập", "Signing in"),
+    signUp: m("Tạo tài khoản", "Create account"),
+    signingUp: m("Đang tạo tài khoản", "Creating your account"),
+    signOut: m("Đăng xuất", "Sign out"),
+    noAccountYet: m("Chưa có tài khoản?", "No account yet?"),
+    haveAccount: m("Đã có tài khoản?", "Already have an account?"),
+    // No recovery exists, so this says what to do instead of offering a link
+    // that goes nowhere.
+    forgotNote: m(
+      "Chưa có cách khôi phục mật khẩu, bạn nhớ giữ kỹ nhé.",
+      "There's no password reset yet, so keep yours somewhere safe.",
+    ),
+  },
+
   errors: {
+    // The account failures. Each one names what to do, and the one for bad
+    // credentials deliberately does not say which field was wrong: telling
+    // somebody the username exists is most of the work of breaking into it.
+    authUsernameRequired: m(
+      "Bạn nhập tên đăng nhập nhé.",
+      "Enter a username.",
+    ),
+    authPasswordRequired: m("Bạn nhập mật khẩu nhé.", "Enter a password."),
+    authUsernameTaken: m(
+      "Tên này có người dùng rồi. Bạn chọn tên khác nhé.",
+      "That username is taken. Pick another one.",
+    ),
+    authUsernameTooLong: m("Tên này dài quá.", "That username is too long."),
+    authPasswordTooShort: m(
+      "Mật khẩu cần từ 8 đến 72 ký tự.",
+      "Use between 8 and 72 characters.",
+    ),
+    authBadCredentials: m(
+      "Tên đăng nhập hoặc mật khẩu chưa đúng.",
+      "That username and password don't match.",
+    ),
+    authRateLimited: m(
+      "Bạn thử hơi nhiều lần. Đợi một phút rồi thử lại.",
+      "Too many tries. Wait a minute and try again.",
+    ),
+    authStoreDown: m(
+      "Chưa xử lý được. Thử lại sau chút nhé.",
+      "That didn't go through. Try again shortly.",
+    ),
+    authOffline: m(
+      "Không kết nối được. Kiểm tra mạng rồi thử lại.",
+      "No connection. Check your network and try again.",
+    ),
+
     actionFailedTitle: m("Chưa thực hiện được thay đổi", "That change didn't go through"),
     actionFailedBody: m(
       "Không có gì bị mất. Bạn thử lại nhé.",

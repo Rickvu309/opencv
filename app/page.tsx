@@ -62,8 +62,12 @@ export default function Home() {
             led into the product, so a visitor who was interested but not ready
             had nowhere to go and left no trace. */}
         <div className="mt-9 flex w-full max-w-xs flex-col items-center gap-2 sm:w-auto sm:max-w-none sm:flex-row sm:gap-3">
+          {/* To account creation rather than straight into onboarding: the
+              product now keeps your work under a name, and answering eight
+              questions before there is anywhere to put the answers would mean
+              losing them. Sign-up hands over to onboarding immediately. */}
           <Button asChild size="lg" className="h-11 w-full px-5 sm:h-10 sm:w-auto">
-            <Link href="/onboarding">
+            <Link href="/sign-up">
               {t(m.landing.tryIt)}
               <ArrowRight data-icon="inline-end" />
             </Link>

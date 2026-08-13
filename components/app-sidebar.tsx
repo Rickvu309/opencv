@@ -18,6 +18,7 @@ import {
   Settings,
 } from "lucide-react";
 
+import { SignOutItem } from "@/components/auth/sign-out-item";
 import { useAppState, useDispatch } from "@/lib/actions/store";
 import { localeNames, locales } from "@/lib/i18n/locale";
 import { messages } from "@/lib/i18n/messages";
@@ -236,6 +237,12 @@ export function AppSidebar() {
                   {locale === code && <Check className="size-3.5" />}
                 </DropdownMenuItem>
               ))}
+
+              {/* Last, and behind a separator: it is the one item here that
+                  ends the session, and it should not sit a mis-click away
+                  from switching language. */}
+              <DropdownMenuSeparator />
+              <SignOutItem />
             </DropdownMenuContent>
           </DropdownMenu>
 
