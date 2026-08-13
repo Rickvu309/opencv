@@ -29,6 +29,8 @@ import {
 
 import { MODEL_REGISTRY, type ModelRole, type RegisteredModel } from "@/lib/ai/registry";
 import { candidates, type RoutingPolicy } from "@/lib/ai/router";
+import { costOf } from "@/lib/trace/collector";
+import { currentCollector } from "@/lib/trace/current";
 
 /** Where the sampling defaults for a model id are found at request time. */
 const SAMPLING_BY_ID = new Map(
@@ -165,6 +167,83 @@ async function walk<T>(
 }
 
 /**
+ * Records a span for every model call, when a trace is listening.
+ *
+ * Wrapped outside the fallback middleware on purpose, so the span covers the
+ * whole attempt including any fallback: what a caller waited for is the number
+ * worth having, not what the first model spent before giving up.
+ *
+ * When nothing is listening the call runs untouched. A span with no trace to
+ * belong to answers no question, so it is dropped rather than buffered.
+ */
+function tracingMiddleware(entry: RegisteredModel): LanguageModelV4Middleware {
+  const priced = (usage: {
+    inputTokens?: { total?: number };
+    outputTokens?: { total?: number };
+  }) =>
+    costOf(entry.cost, {
+      inputTokens: usage.inputTokens?.total ?? 0,
+      outputTokens: usage.outputTokens?.total ?? 0,
+    });
+
+  return {
+    specificationVersion: "v4",
+
+    async wrapGenerate({ doGenerate }) {
+      const collector = currentCollector();
+      if (!collector) return doGenerate();
+      const startedAt = Date.now();
+      try {
+        const result = await doGenerate();
+        collector.span({
+          name: `model:${entry.id}`,
+          kind: "model",
+          startedAt,
+          attributes: {
+            model: entry.id,
+            role: entry.role,
+            inputTokens: result.usage.inputTokens.total ?? 0,
+            outputTokens: result.usage.outputTokens.total ?? 0,
+            costUsd: priced(result.usage),
+          },
+        });
+        return result;
+      } catch (error) {
+        collector.span({
+          name: `model:${entry.id}`,
+          kind: "model",
+          startedAt,
+          status: "error",
+          attributes: {
+            model: entry.id,
+            role: entry.role,
+            error: error instanceof Error ? error.message : String(error),
+          },
+        });
+        throw error;
+      }
+    },
+
+    async wrapStream({ doStream }) {
+      const collector = currentCollector();
+      if (!collector) return doStream();
+      // Only the time to first byte is recorded for a stream. The rest of the
+      // duration is the user reading, not the model working, and a span that
+      // called that latency would make every long answer look like a slow one.
+      const startedAt = Date.now();
+      const result = await doStream();
+      collector.span({
+        name: `model:${entry.id}`,
+        kind: "model",
+        startedAt,
+        attributes: { model: entry.id, role: entry.role, streamed: true },
+      });
+      return result;
+    },
+  };
+}
+
+/**
  * The model for a role, with its fallbacks already behind it.
  *
  * Handed to callers that want a model instance rather than a call, which is
@@ -177,11 +256,16 @@ export function model(
   const chain = candidates(role, policy);
   const [first, ...rest] = chain;
   const primary = openrouter().chatModel(first.id);
-  if (rest.length === 0) return primary;
-  return wrapLanguageModel({
-    model: primary,
-    middleware: fallbackMiddleware(rest.map((entry) => openrouter().chatModel(entry.id))),
-  });
+  const middleware: LanguageModelV4Middleware[] =
+    rest.length === 0
+      ? [tracingMiddleware(first)]
+      : [
+          tracingMiddleware(first),
+          fallbackMiddleware(
+            rest.map((entry) => openrouter().chatModel(entry.id)),
+          ),
+        ];
+  return wrapLanguageModel({ model: primary, middleware });
 }
 
 /** The registry entry a role currently resolves to. */

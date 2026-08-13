@@ -11,6 +11,7 @@ import * as React from "react";
 import { toast } from "sonner";
 
 import { messages } from "@/lib/i18n/messages";
+import { emitOutcome } from "@/lib/trace/client";
 import {
   configurePersistence,
   flushState,
@@ -24,7 +25,17 @@ import type { AppState } from "./types";
 type Dispatch = <N extends ActionName>(
   name: N,
   input: unknown,
-  opts?: { silent?: boolean },
+  opts?: {
+    silent?: boolean;
+    /**
+     * The Coach turn this change came from, when it came from one.
+     *
+     * Present so that pressing undo can say so. Whether the user kept a Coach
+     * change is the most honest quality signal the product has, and it is only
+     * observable here, at the button.
+     */
+    traceId?: string;
+  },
 ) => void;
 
 const StateContext = React.createContext<AppState | null>(null);
@@ -184,6 +195,9 @@ export function AppStateProvider({
                 // Undo is a write like any other, or the reverted state comes
                 // back on the next reload.
                 persist(previous);
+                // And it is the clearest thing the user ever says about a
+                // Coach change: they did not want it.
+                if (opts?.traceId) emitOutcome(opts.traceId, "undone");
               },
             },
           });
