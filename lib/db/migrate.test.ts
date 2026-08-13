@@ -31,7 +31,7 @@ function fixtureDir(files: Record<string, string>): string {
 
 test("the repository's own migrations are complete pairs", () => {
   const migrations = readMigrations();
-  assert.ok(migrations.length >= 6, "expected at least six migrations");
+  assert.ok(migrations.length >= 7, "expected at least seven migrations");
   for (const migration of migrations) {
     assert.ok(migration.up.trim().length > 0, `${migration.id} has an empty up`);
     assert.ok(migration.down.trim().length > 0, `${migration.id} has an empty down`);
@@ -45,6 +45,7 @@ test("the repository's own migrations are complete pairs", () => {
       "conversations",
       "papers_in_state",
       "pitch_in_state",
+      "cv_photos",
     ],
     "order matters: everything after the first depends on what came before it",
   );
@@ -151,7 +152,14 @@ test("every migration applies to an empty schema", { skip: skipWithoutDatabase }
     );
     assert.deepEqual(
       rows.map((r) => r.table_name),
-      ["accounts", "app_state", "conversations", "schema_migrations", "sessions"],
+      [
+        "accounts",
+        "app_state",
+        "conversations",
+        "cv_photos",
+        "schema_migrations",
+        "sessions",
+      ],
     );
   });
 });

@@ -58,9 +58,11 @@ import {
   sectionDefaults,
   sectionOrder,
   type Resume,
+  templateHasPhoto,
   templates,
   type ResumeSectionKind,
 } from "@/lib/cv/types";
+import { PhotoField } from "@/components/cv/photo-field";
 import { localeNames, locales } from "@/lib/i18n/locale";
 import { useT } from "@/lib/i18n/use-t";
 
@@ -477,6 +479,11 @@ function HeaderEditor({ resume }: { resume: Resume }) {
 
   return (
     <div className="space-y-4 border-b p-4">
+      {/* Only where the chosen template has somewhere to put it. Offering an
+          upload for a template that will not print it is offering the user a
+          decision the document then ignores. AC-PAPERS-010.4. */}
+      {templateHasPhoto(resume.theme.template) && <PhotoField resume={resume} />}
+
       <DraftInput
         id="cv-label"
         label={t(m.cv.cvName)}

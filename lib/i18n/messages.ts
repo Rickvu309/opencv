@@ -512,6 +512,21 @@ export const messages = {
     // what a CV should look like; this audience is choosing their first one and
     // needs to be told which to use for a Vietnamese employer and which for an
     // application abroad. The identifiers in the model are unchanged.
+    // A photo is a real decision here, not decoration: Vietnamese employers
+    // expect one and many international and tech employers screen it out.
+    photo: m("Ảnh chân dung", "Photo"),
+    photoHint: m(
+      "Mẫu chuẩn Việt Nam có chỗ cho ảnh.",
+      "The Vietnamese standard template has a place for one.",
+    ),
+    photoAdd: m("Thêm ảnh", "Add a photo"),
+    photoReplace: m("Đổi ảnh", "Replace it"),
+    photoRemove: m("Bỏ ảnh", "Remove the photo"),
+    photoAlt: m("Ảnh chân dung trên CV", "The photo on this CV"),
+    photoFailed: m(
+      "Chưa tải được ảnh lên. Thử lại nhé.",
+      "That photo didn't upload. Try again.",
+    ),
     template: m("Mẫu", "Template"),
     templateClassic: m("Chuẩn Việt Nam", "Vietnamese standard"),
     templateModern: m("Chuẩn quốc tế", "International"),

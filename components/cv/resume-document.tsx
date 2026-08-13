@@ -7,6 +7,7 @@
 // opens. The only thing the user chooses is the template, the accent and how
 // tightly it packs.
 
+import { visiblePhotoUrl } from "@/lib/cv/photo-url";
 import { messages } from "@/lib/i18n/messages";
 import {
   bullets,
@@ -145,6 +146,8 @@ export function ResumeDocument({
   });
 
   const centred = theme.template === "classic";
+  // Null unless the user uploaded one *and* this template has a photo area.
+  const photo = visiblePhotoUrl(resume);
 
   return (
     <div
@@ -162,6 +165,27 @@ export function ResumeDocument({
       }}
     >
       {/* ── Header ─────────────────────────────────────────── */}
+      {/* The photo, where the template has somewhere to put it. Above the name
+          and centred, which is where a Vietnamese CV carries one. Rendered as
+          a plain <img> pointing at a same-origin route: the browser fetches it
+          for the print copy too, which is what carries it into the PDF. */}
+      {photo && (
+        <div style={{ textAlign: centred ? "center" : "left", marginBottom: Math.round(12 * d) }}>
+          {/* eslint-disable-next-line @next/next/no-img-element -- bytes from
+              Postgres behind a session, not an optimisable static asset. */}
+          <img
+            src={photo}
+            alt=""
+            style={{
+              width: 96,
+              height: 96,
+              borderRadius: 6,
+              objectFit: "cover",
+              display: "inline-block",
+            }}
+          />
+        </div>
+      )}
       <header
         style={{
           textAlign: centred ? "center" : "left",

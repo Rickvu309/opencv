@@ -82,6 +82,22 @@ export type ResumeTemplate = "classic" | "modern" | "compact";
 
 /** In the order the picker offers them, most-used first. */
 export const templates: ResumeTemplate[] = ["classic", "modern", "compact"];
+
+/**
+ * The templates with a photo area.
+ *
+ * A Vietnamese CV usually carries a photo and an international or tech CV
+ * usually does not, so this is not decoration: it is the difference between an
+ * application that looks complete to a Vietnamese employer and one that gets
+ * filtered by a company screening for bias. The template decides whether the
+ * area exists; the user decides what goes in it.
+ */
+export const templatesWithPhoto: ResumeTemplate[] = ["classic"];
+
+export function templateHasPhoto(template: ResumeTemplate): boolean {
+  return templatesWithPhoto.includes(template);
+}
+
 export type ResumeAccent = "ink" | "blue" | "green" | "plum";
 export type ResumeDensity = "airy" | "normal" | "tight";
 
@@ -114,6 +130,17 @@ export type Resume = {
   header: ResumeHeader;
   sections: ResumeSection[];
   theme: ResumeTheme;
+  /**
+   * When the photo was last replaced, or absent when there is none.
+   *
+   * The image itself is not here. It is tens of kilobytes and this document is
+   * written on every keystroke, so keeping it in `AppState` would multiply the
+   * cost of every edit by the size of a picture that changed once. It lives in
+   * `cv_photos` and is fetched by URL; this stamp is what says a photo exists
+   * and what makes the URL change when it is replaced, so the browser does not
+   * keep showing the old one.
+   */
+  photoStamp?: string;
   /** Display string, not a timestamp; no clock skew between server and client. */
   updatedAt: string;
 };

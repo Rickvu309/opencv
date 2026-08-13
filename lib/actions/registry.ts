@@ -931,6 +931,30 @@ export const actions = {
     summary: () => msg("Đã cập nhật thông tin liên hệ", "Contact details updated"),
   }),
 
+  "resume.setPhoto": defineAction({
+    description:
+      "Record that this CV now has a photo, or that it no longer does. The " +
+      "image itself is uploaded by the user through the CV screen and is not " +
+      "something you can set; this only writes down that one exists. You will " +
+      "rarely need it.",
+    input: z.object({
+      id: z.string().min(1),
+      stamp: z
+        .string()
+        .optional()
+        .describe("Absent means the CV has no photo"),
+    }),
+    apply: (state, { id, stamp }) =>
+      editResume(state, id, (resume) => {
+        const next = { ...resume };
+        if (stamp) next.photoStamp = stamp;
+        else delete next.photoStamp;
+        return next;
+      }),
+    summary: ({ stamp }) =>
+      stamp ? msg("Đã thêm ảnh vào CV", "Photo added") : msg("Đã bỏ ảnh khỏi CV", "Photo removed"),
+  }),
+
   "resume.setTheme": defineAction({
     description:
       "Change how a CV looks: template, accent colour, and how tightly it is " +
