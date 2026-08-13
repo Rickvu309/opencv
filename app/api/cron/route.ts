@@ -8,9 +8,15 @@ import { WORKFLOWS, scheduleDue } from "@/lib/jobs/workflows";
 /**
  * The heartbeat: schedule what is due, then run some of it.
  *
- * Called by Vercel Cron. Two things happen per invocation and both are
- * idempotent, so the schedule can fire late, twice, or from two regions at once
- * without anybody getting two of anything.
+ * Called by Vercel Cron, once a day: this account is on the Hobby plan, which
+ * allows one run per day, and an hourly schedule is rejected when the
+ * deployment is created rather than when it runs. Both things that happen here
+ * are idempotent, so the schedule can also fire late, twice, or from two
+ * regions at once without anybody getting two of anything.
+ *
+ * The constraint costs retry latency rather than correctness: a job that fails
+ * backs off and then waits for tomorrow. Both current jobs are a daily sweep
+ * and a weekly nudge, so neither notices.
  *
  * ## Why this is not open
  *
