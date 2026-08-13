@@ -26,6 +26,11 @@ import {
 import { useTurnWatchdog } from "@/lib/coach/watchdog";
 import { looksVietnamese, type Msg } from "@/lib/i18n/locale";
 import { messages as ui } from "@/lib/i18n/messages";
+import { screenInput } from "@/lib/guardrails/input";
+import { reportInputFindings, reportOutputFindings } from "@/lib/guardrails/client";
+import { checkGrounding } from "@/lib/guardrails/grounding";
+import { checkOutput } from "@/lib/guardrails/output";
+import { useTurnTrace } from "@/lib/trace/use-turn-trace";
 import { pickReply } from "./replies";
 
 /** What `agent/tools/apply_action.ts` returns on a successful call. */
@@ -123,6 +128,26 @@ export function useCoachThread({
     },
     [locale],
   );
+
+  /**
+   * Say something in the thread without asking a model.
+   *
+   * How the guards answer. A refusal or a redirect is a complete, honest reply
+   * that costs nothing to produce, so it is written straight into the thread
+   * rather than sent to a model that would only be told to say the same thing.
+   */
+  const sayLocally = React.useCallback((content: string) => {
+    idCounter.current += 1;
+    setLocal((prev) => [
+      ...prev,
+      {
+        id: `coach-${idCounter.current}`,
+        role: "coach",
+        content,
+        after: agentCount.current,
+      },
+    ]);
+  }, []);
 
   /**
    * One-way transition to the canned replies.
@@ -274,6 +299,10 @@ export function useCoachThread({
     onTimeout: handleTurnFailure,
   });
 
+  // The browser is the only participant that sees a whole turn: when it was
+  // asked, when it stopped, what it changed, and whether the user kept it.
+  const trace = useTurnTrace(turnRunning);
+
   /**
    * The other half of the loop: apply what the Coach did.
    *
@@ -309,10 +338,17 @@ export function useCoachThread({
         // arrived over the wire from a model turn. A bad envelope is dropped
         // rather than dispatched, and the agent's own error path reports it.
         if (!envelope?.ok || !isActionName(envelope.action)) continue;
-        dispatch(envelope.action, envelope.input);
+        // The trace id travels with the dispatch so that pressing undo on the
+        // toast can report which turn the user rejected.
+        trace.toolSpan(`apply_action:${envelope.action}`, {
+          action: envelope.action,
+        });
+        dispatch(envelope.action, envelope.input, {
+          traceId: trace.traceId ?? undefined,
+        });
       }
     }
-  }, [agent.data.messages, dispatch]);
+  }, [agent.data.messages, dispatch, trace]);
 
   React.useEffect(
     () => () => {
@@ -324,6 +360,65 @@ export function useCoachThread({
   React.useEffect(() => {
     agentCount.current = agent.data.messages.length;
   }, [agent.data.messages]);
+
+  /**
+   * The output guard, on the finished turn.
+   *
+   * It runs here and not sooner because the check that matters needs both
+   * halves: the Coach's words, and whether any action actually succeeded. A
+   * sentence claiming a change is correct after a successful tool call and a
+   * lie without one, and only the whole turn tells them apart.
+   *
+   * It revises rather than blocks. The reply has already streamed into view by
+   * the time the turn ends, so the honest move is to add the correction under
+   * it, which is also what a person would do on realising they had misspoken.
+   */
+  const checkedTurns = React.useRef(new Set<string>());
+  React.useEffect(() => {
+    if (turnRunning) return;
+    const last = agent.data.messages.at(-1);
+    if (!last || last.role !== "assistant" || checkedTurns.current.has(last.id)) {
+      return;
+    }
+    checkedTurns.current.add(last.id);
+
+    const text = last.parts
+      .filter((part): part is { type: "text"; text: string } => part.type === "text")
+      .map((part) => part.text)
+      .join("\n")
+      .trim();
+    if (!text) return;
+
+    const toolResults = last.parts
+      .filter((part) => part.type === "dynamic-tool" && part.toolName === "apply_action")
+      .map((part) => {
+        const envelope = (part as { output?: ApplyActionEnvelope }).output;
+        return { action: envelope?.action ?? "", ok: Boolean(envelope?.ok) };
+      });
+
+    const verdict = checkOutput({ reply: text, toolResults, locale });
+    if (verdict.findings.length > 0) {
+      reportOutputFindings(verdict.findings, trace.traceId, verdict.kind !== "allow");
+      if (verdict.kind === "revise") {
+        // Only the correction is appended. The reply itself stays as the agent
+        // rendered it, so nothing the user already read changes under them.
+        sayLocally(ui.guardrails.noActionTaken[locale]);
+      }
+    }
+
+    // And the grounding check, against the profile the user can see. Separate
+    // from the check above because it asks a different question: not "did this
+    // happen" but "where did this come from".
+    const grounded = checkGrounding({
+      reply: text,
+      state,
+      userSaid: lastAsked.current ?? "",
+      locale,
+    });
+    if (grounded.findings.length === 0) return;
+    reportOutputFindings(grounded.findings, trace.traceId, grounded.kind === "revise");
+    if (grounded.kind === "revise") sayLocally(ui.guardrails.notGrounded[locale]);
+  }, [agent.data.messages, turnRunning, locale, sayLocally, trace.traceId, state]);
 
   const messages = React.useMemo<CoachMessage[]>(
     () => interleave(local, agent.data.messages),
@@ -353,6 +448,36 @@ export function useCoachThread({
    */
   const ask = React.useCallback(
     (text: string) => {
+      // The input guard, before anything is sent or billed. A refusal and a
+      // redirect are both complete answers, so the thread shows the user's
+      // question and the Coach's reply exactly as a real turn would, and no
+      // model is asked to produce a sentence we already know.
+      const screened = screenInput({ text });
+      if (screened.kind === "refuse" || screened.kind === "redirect") {
+        idCounter.current += 1;
+        setLocal((prev) => [
+          ...prev,
+          {
+            id: `user-${idCounter.current}`,
+            role: "user",
+            content: text,
+            after: agentCount.current,
+          },
+        ]);
+        sayLocally(screened.reply[locale]);
+        reportInputFindings(screened.findings, trace.traceId);
+        return;
+      }
+      // A redaction is not a refusal: the question is a real one, it simply
+      // travels without the number in it. The user is told, because a message
+      // silently altered on its way out is the kind of thing that destroys
+      // trust when it is noticed later.
+      if (screened.kind === "redact") {
+        sayLocally(ui.guardrails.sensitiveRemoved[locale]);
+        reportInputFindings(screened.findings, trace.traceId);
+        text = screened.text;
+      }
+
       if (offline) {
         // Offline is a state, not a verdict. It used to be a one-way latch: one
         // hung turn dropped the thread to canned replies and nothing ever put it
@@ -398,7 +523,7 @@ export function useCoachThread({
       // would be an unhandled rejection, and a real failure needs the fallback.
       agent.send({ message: text }).catch(() => handleTurnFailure(text));
     },
-    [agent, answerLocally, handleTurnFailure, locale, lock, offline],
+    [agent, answerLocally, handleTurnFailure, locale, lock, offline, sayLocally, trace.traceId],
   );
 
   /**

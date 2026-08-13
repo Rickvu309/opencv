@@ -959,6 +959,43 @@ export const messages = {
     ),
   },
 
+  // What the guards say when they stop something. Written as the Coach would
+  // say it, not as a system: the user is talking to a person, and a refusal
+  // that suddenly reads like a firewall log tells them the person was never
+  // there. Each one says what it will not do and offers what it will.
+  guardrails: {
+    injectionRefused: m(
+      "Câu này bảo mình bỏ qua hướng dẫn của mình, nên mình không làm theo.",
+      "That asks me to ignore my own instructions, so I won't.",
+    ),
+    outOfScope: m(
+      "Mình không tư vấn pháp lý, y tế hay tài chính. Về nghề nghiệp thì mình giúp được.",
+      "I don't give legal, medical or financial advice. On your career, I can help.",
+    ),
+    sensitiveRemoved: m(
+      "Mình đã bỏ số giấy tờ trong tin nhắn. Hồ sơ xin việc không cần nó.",
+      "I removed the ID number from your message. A job application doesn't need it.",
+    ),
+    overBudget: m(
+      "Cuộc trò chuyện này dài quá rồi. Bạn mở một cuộc mới nhé.",
+      "This conversation has got too long. Start a new one.",
+    ),
+    // Appended to a reply that claimed a change with nothing to back it up.
+    // Blunt on purpose: the user is about to open a screen and find it
+    // unchanged, and hearing it here is better than finding it there.
+    noActionTaken: m(
+      "Đính chính: mình chưa thay đổi gì cả. Bạn nhắc lại để mình làm nhé.",
+      "Correction: I didn't actually change anything. Ask me again and I'll do it.",
+    ),
+    // Said when a reply carries a number or a fact the profile does not.
+    // Naming it rather than deleting it: the user is the only one who knows
+    // whether it is true, and they are about to use it in an interview.
+    notGrounded: m(
+      "Có chi tiết ở trên mình lấy từ đâu không rõ. Bạn kiểm lại trước khi dùng nhé.",
+      "Something above isn't in your profile. Check it before you use it.",
+    ),
+  },
+
   errors: {
     // The account failures. Each one names what to do, and the one for bad
     // credentials deliberately does not say which field was wrong: telling

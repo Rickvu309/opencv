@@ -1,7 +1,8 @@
-import { eveChannel } from "eve/channels/eve";
+import { eveChannel, defaultEveAuth } from "eve/channels/eve";
 import { localDev, vercelOidc } from "eve/channels/auth";
 
 import { userSession } from "../../lib/auth/agent-session";
+import { screenInboundTurn } from "../../lib/guardrails/server";
 
 export default eveChannel({
   auth: [
@@ -15,4 +16,42 @@ export default eveChannel({
     // by whoever is actually signed in. See lib/auth/agent-session.ts.
     userSession(),
   ],
+
+  /**
+   * The input guard, where it cannot be skipped.
+   *
+   * Runs after auth and before dispatch, which is the only point in the turn
+   * where a refusal costs nothing: no model call has been made and none will
+   * be. The browser screens the same message before sending, so in normal use
+   * this never fires. It fires when the browser was not ours.
+   *
+   * Throwing is the refusal. There is no way to hand a different message on
+   * from here, and passing a screened-out message through unchanged would make
+   * the guard decorative.
+   */
+  async onMessage(ctx, message) {
+    const text = typeof message === "string" ? message : textOf(message);
+    if (text) {
+      await screenInboundTurn({
+        text,
+        accountId: ctx.eve.caller?.principalId ?? null,
+      });
+    }
+    return { auth: defaultEveAuth(ctx) };
+  },
 });
+
+/** The words out of a multi-part message; attachments are not screened here. */
+function textOf(content: unknown): string {
+  if (!Array.isArray(content)) return "";
+  return content
+    .filter(
+      (part): part is { type: "text"; text: string } =>
+        typeof part === "object" &&
+        part !== null &&
+        (part as { type?: unknown }).type === "text" &&
+        typeof (part as { text?: unknown }).text === "string",
+    )
+    .map((part) => part.text)
+    .join("\n");
+}
