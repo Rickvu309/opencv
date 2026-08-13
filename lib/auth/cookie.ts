@@ -27,6 +27,24 @@ import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypt
 /** The one cookie this product sets. */
 export const SESSION_COOKIE = "openpath_session";
 
+/**
+ * The session cookie's value out of a raw `Cookie` header.
+ *
+ * For the two places that have a `Request` rather than Next's cookie jar: the
+ * sign-out route and the agent channel. Written once here so neither has to
+ * parse a header correctly on its own.
+ */
+export function readSessionCookie(header: string | null | undefined): string | undefined {
+  if (!header) return undefined;
+  for (const pair of header.split(";")) {
+    const trimmed = pair.trimStart();
+    if (trimmed.startsWith(`${SESSION_COOKIE}=`)) {
+      return trimmed.slice(SESSION_COOKIE.length + 1);
+    }
+  }
+  return undefined;
+}
+
 export function sessionSecret(): string {
   const secret = process.env.SESSION_SECRET;
   if (!secret) throw new Error("SESSION_SECRET is not set");

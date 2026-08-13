@@ -16,7 +16,7 @@ import { chatTitle } from "@/lib/coach/messages";
 import { useT } from "@/lib/i18n/use-t";
 import { Composer } from "./composer";
 import { NewChatButton } from "./history";
-import { CoachSignIn } from "./sign-in";
+import { CoachSessionEnded } from "./session-ended";
 import { useCoach } from "./provider";
 import { CoachGreeting, CoachMessages, CoachStarters } from "./thread-view";
 
@@ -199,14 +199,10 @@ function CoachPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
       </header>
 
       {thread.access === "locked" ? (
-        // Same door as /coach, so signing in from either surface unlocks both.
+        // Same door as /coach, so signing in from either surface brings both
+        // back: there is one session now, not one per surface.
         <div className="min-h-0 flex-1 overflow-y-auto">
-          <CoachSignIn
-            onSubmit={thread.signIn}
-            busy={thread.signingIn}
-            error={thread.signInError}
-            compact
-          />
+          <CoachSessionEnded compact />
         </div>
       ) : (
         <>

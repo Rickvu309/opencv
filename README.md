@@ -18,11 +18,12 @@ Live and working, with the limits of a demo. What that means:
 - It can change the app for you. Ask it to add a task and the task appears,
   with an undo. Ask it to sharpen a bullet in your CV and you watch that line
   change.
-- One shared demo account, printed on the sign-in screen. Everyone who visits
-  uses it.
-- Your work is kept in your own browser, not on a server. That is deliberate:
-  with one shared account, a server store would show every visitor everyone
-  else's edits. A refresh keeps your work; another device will not have it.
+- **Real accounts.** A username and a password, and everything behind the
+  landing page needs one. Auth is deliberately minimal this phase: no email
+  verification, no social login, and **no password recovery**, so a forgotten
+  password is a lost account.
+- **Your work is on the server, under your account.** Sign in on another device
+  and it is there. Postgres on Railway holds it; see `docs/database.md`.
 - **An account starts empty.** There is no seeded persona any more. Onboarding
   is where the profile comes from, and every screen reads the store, so what
   you type is what the app shows you.
@@ -42,11 +43,20 @@ npm install
 npm run dev     # http://localhost:3000
 ```
 
+Accounts need a database. Put `DATABASE_URL` and `SESSION_SECRET` in
+`.env.local`, then apply the schema. `docs/database.md` has both values and the
+rest of the setup.
+
+```bash
+npm run db:migrate   # apply the schema
+npm run db:status    # what is applied, what is pending
+```
+
 Other commands:
 
 ```bash
 npm run build   # production build
-npm test        # 66 tests: the registry, the CV, the copy catalog, storage
+npm test        # the registry, the CV, the copy catalog, accounts, storage
 npm run lint
 ```
 
@@ -64,8 +74,10 @@ tools. Because both go through `lib/actions/store.tsx`, a change the Coach makes
 is indistinguishable from one you make yourself, and it shows up everywhere at
 once.
 
-That is where persistence, the Coach's context and its auth header are written:
-once, behind `dispatch`, rather than 41 times.
+That is where persistence and the Coach's context are written: once, behind
+`dispatch`, rather than 41 times. Persistence moved from the browser to a row
+per account without a single action or screen changing, which is what having
+that seam was for.
 
 ```
 lib/actions/
@@ -74,7 +86,7 @@ lib/actions/
   context.ts    what the Coach is allowed to see, sent on every turn
   persistence.ts where your work is kept between visits
   types.ts      the shape the Coach is allowed to see and change
-  seed.ts       an empty account; the file a real backend replaces
+  seed.ts       the state a new account starts from, deliberately empty
   fixture.ts    a populated account for tests, built by dispatching
 lib/
   catalog.ts    the app's fixed vocabulary: kinds of thing, and their weights
@@ -141,14 +153,16 @@ browser's own print dialog), Markdown, plain text, or JSON.
 
 ## Stack
 
-Next.js 16, React 19, TypeScript, Tailwind v4, shadcn/ui. Tests run on Node's
-built-in runner, with no extra dependencies.
+Next.js 16, React 19, TypeScript, Tailwind v4, shadcn/ui. Accounts add Postgres
+on Railway (`pg`), bcrypt for the password hashes, and a signed HTTP-only
+cookie for the session. Tests run on Node's built-in runner.
 
 ## Docs
 
 - `PRODUCT.md`: who this is for, and the design principles.
 - `DESIGN.md`: the visual system. Colour, type, motion, and how a Coach edit
   behaves.
+- `docs/database.md`: where the database is, and how to apply the schema.
 - `agent-native.md`: the technical spec for embedding the Coach.
 - `wayfinder/`: the working maps of what is decided and what is still open.
   `backend/` and `launch/` are complete; the UI/UX effort is archived.

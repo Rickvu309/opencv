@@ -339,34 +339,14 @@ export const messages = {
       "That didn't come through. Ask me again.",
     ),
 
-    signInTitle: m(
-      "Đăng nhập để trò chuyện với Coach",
-      "Sign in to talk to the Coach",
-    ),
-    signInBody: m(
-      "Bản demo dùng chung một tài khoản. Mật khẩu ở ngay dưới.",
-      "One shared account for this demo. The password is below.",
-    ),
-    email: m("Email", "Email"),
-    password: m("Mật khẩu", "Password"),
-    signIn: m("Đăng nhập", "Sign in"),
-    signingIn: m("Đang kiểm tra", "Checking"),
-    demoAccount: m("Tài khoản demo", "Demo account"),
-    signInMissingFields: m(
-      "Nhập email và mật khẩu để tiếp tục.",
-      "Enter your email and password to continue.",
-    ),
-    signInWrong: m(
-      "Email hoặc mật khẩu chưa đúng.",
-      "That email and password don't match.",
-    ),
-    signInUnreachable: m(
-      "Chưa kết nối được tới Coach. Thử lại sau chút nhé.",
-      "Can't reach the Coach. Try again shortly.",
-    ),
-    sessionExpired: m(
-      "Phiên đăng nhập đã hết. Đăng nhập lại nhé.",
-      "Session expired. Sign in again.",
+    // The Coach's own sign-in is gone. It collected a shared demo password,
+    // printed under the form, which was the whole tenancy story of that phase.
+    // The agent now answers to the account, so the only thing left to say is
+    // that the session ended, and where the way back is.
+    sessionEndedTitle: m("Phiên đăng nhập đã hết", "Your session has ended"),
+    sessionEndedBody: m(
+      "Đăng nhập lại để tiếp tục đoạn chat này.",
+      "Sign in again to pick this conversation back up.",
     ),
   },
 

@@ -9,8 +9,7 @@ import { useEveAgent } from "eve/react";
 import { coachContext } from "@/lib/actions/context";
 import { isActionName } from "@/lib/actions/registry";
 import { useAppState, useDispatch } from "@/lib/actions/store";
-import { useCoachAccess } from "@/lib/coach/access";
-import { checkAccess } from "@/lib/coach/credential";
+import { probeAccess, useCoachAccess } from "@/lib/coach/access";
 import {
   flatten,
   interleave,
@@ -96,13 +95,12 @@ export function useCoachThread({
   const lastAsked = React.useRef("");
   const fellBack = React.useRef(false);
 
-  // Whether the agent will talk to us at all, and the sign-in flow that opens
-  // the door. See lib/coach/access.ts. `credential` and `lock` are pulled out
-  // by name, not read as `coachAccess.x`, so callbacks that depend on them
-  // can list the stable ref/callback itself rather than the whole object,
+  // Whether the agent will talk to us at all. See lib/coach/access.ts. `lock`
+  // is pulled out by name, not read as `coachAccess.lock`, so callbacks that
+  // depend on it can list the stable callback rather than the whole object,
   // which `useCoachAccess` returns fresh every render.
-  const coachAccess = useCoachAccess(locale);
-  const { credential, lock } = coachAccess;
+  const coachAccess = useCoachAccess();
+  const { lock } = coachAccess;
 
   /** The canned path: used before the agent exists, and after it has failed. */
   const answerLocally = React.useCallback(
@@ -153,24 +151,24 @@ export function useCoachThread({
   /**
    * A failed turn is two different problems wearing one error.
    *
-   * A 401 means the credential expired or was cleared, and the answer is the
-   * front door. Anything else means the agent is down, and the answer is the
-   * canned replies. Sending a signed-out user to the offline fallback would
-   * quietly downgrade them forever, with a toast blaming a service that is
-   * working. `useEveAgent`'s error does not carry a status, so this re-probes,
-   * which costs no model call.
+   * A 401 means the session ended, and the answer is the front door. Anything
+   * else means the agent is down, and the answer is the canned replies.
+   * Sending a signed-out user to the offline fallback would quietly downgrade
+   * them forever, with a toast blaming a service that is working.
+   * `useEveAgent`'s error does not carry a status, so this re-probes, which
+   * costs no model call.
    */
   const handleTurnFailure = React.useCallback(
     (question: string) => {
-      void checkAccess(credential.current).then((result) => {
+      void probeAccess().then((result) => {
         if (result === "locked") {
-          lock(ui.coach.sessionExpired[locale]);
+          lock();
           return;
         }
         fallBack(question);
       });
     },
-    [fallBack, lock, credential, locale],
+    [fallBack, lock],
   );
 
   // Read through refs: `prepareSend` runs outside the render that produced the
@@ -215,11 +213,6 @@ export function useCoachThread({
     onEvent: () => {
       lastProgress.current = Date.now();
     },
-    // A function value, so the client re-resolves it before every request,
-    // reconnects included. A credential captured once would go stale the moment
-    // the user signs in or out.
-    headers: (): Record<string, string> =>
-      credential.current ? { authorization: credential.current } : {},
     // Every turn carries the user's actual state. Without this the Coach is
     // talking to a stranger, and every principle in `agent/instructions.md`
     // that starts "based on the user's profile" is unenforceable.
@@ -379,10 +372,10 @@ export function useCoachThread({
         ]);
         // Shown while the probe runs, which can take up to its 8s deadline.
         setPending(true);
-        void checkAccess(credential.current).then((result) => {
+        void probeAccess().then((result) => {
           setPending(false);
           if (result === "locked") {
-            lock(ui.coach.sessionExpired[locale]);
+            lock();
             return;
           }
           if (result === "unreachable") {
@@ -405,15 +398,7 @@ export function useCoachThread({
       // would be an unhandled rejection, and a real failure needs the fallback.
       agent.send({ message: text }).catch(() => handleTurnFailure(text));
     },
-    [
-      agent,
-      answerLocally,
-      credential,
-      handleTurnFailure,
-      locale,
-      lock,
-      offline,
-    ],
+    [agent, answerLocally, handleTurnFailure, locale, lock, offline],
   );
 
   /**
@@ -579,11 +564,8 @@ export function useCoachThread({
     stop,
     answer,
     respond,
-    /** "locked" means render the front door instead of the thread. */
+    /** "locked" means the session ended: show the way back, not the thread. */
     access: coachAccess.access,
-    signingIn: coachAccess.signingIn,
-    signInError: coachAccess.signInError,
-    signIn: coachAccess.signIn,
   };
 }
 

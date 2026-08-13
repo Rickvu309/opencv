@@ -4,7 +4,7 @@ import * as React from "react";
 import { useSearchParams } from "next/navigation";
 
 import { Composer } from "@/components/coach/composer";
-import { CoachSignIn } from "@/components/coach/sign-in";
+import { CoachSessionEnded } from "@/components/coach/session-ended";
 import { useCoach } from "@/components/coach/provider";
 import {
   CoachGreeting,
@@ -53,15 +53,12 @@ function CoachChat() {
   const isEmpty = thread.messages.length === 0 && !thread.isTyping;
 
   // The door comes before everything: a composer the user cannot send from is
-  // worse than a sign-in form, because it fails only after they have typed.
+  // worse than being told the session ended, because it fails only after they
+  // have typed.
   if (thread.access === "locked") {
     return (
       <div className="flex h-full flex-col justify-center">
-        <CoachSignIn
-          onSubmit={thread.signIn}
-          busy={thread.signingIn}
-          error={thread.signInError}
-        />
+        <CoachSessionEnded />
       </div>
     );
   }

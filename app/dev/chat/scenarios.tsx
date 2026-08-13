@@ -35,9 +35,6 @@ function stubThread(messages: CoachMessage[], isTyping: boolean): CoachThread {
     answer: () => {},
     respond: () => {},
     access: "open",
-    signingIn: false,
-    signInError: null,
-    signIn: () => {},
   };
 }
 
