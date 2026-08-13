@@ -39,6 +39,7 @@ export function seedState(locale: Locale = defaultLocale): AppState {
       })),
     },
     resumes: [],
+    papers: [],
     paths: {
       // No goal until the user picks one. Lighting a route to a role nobody
       // chose is the map asserting something it has not been told.

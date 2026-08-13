@@ -8,6 +8,7 @@ import type { PathEdge, PathNode } from "@/lib/career-graph";
 import type { PlanKind, PlanResource, Todo, VaultItemId } from "@/lib/catalog";
 import type { Resume } from "@/lib/cv/types";
 import type { Locale } from "@/lib/i18n/locale";
+import type { ProseDocument } from "@/lib/papers/types";
 
 /** One thing to do. Courses carry a resource; projects and tasks do not. */
 export type PlanEntry = {
@@ -102,6 +103,14 @@ export type AppState = {
    * last year and a version they are building here now.
    */
   resumes: Resume[];
+  /**
+   * Cover letters and project write-ups, built here.
+   *
+   * Beside `resumes` rather than inside it: a résumé is sections and dated
+   * entries, these are paragraphs, and the one model that covered both would
+   * fit neither. See `lib/papers/types.ts`.
+   */
+  papers: ProseDocument[];
   paths: {
     targetId: string | null;
     customNodes: PathNode[];

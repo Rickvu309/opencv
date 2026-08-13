@@ -50,9 +50,47 @@ export function looksLikeState(value: unknown): value is AppState {
     typeof state.plan === "object" &&
     state.plan !== null &&
     Array.isArray(state.resumes) &&
+    Array.isArray(state.papers) &&
     typeof state.paths === "object" &&
     state.paths !== null
   );
+}
+
+/**
+ * A stored row, brought up to the current shape.
+ *
+ * ## The cliff this exists to remove
+ *
+ * `AppState` gains a top-level field every time the product grows one: `papers`
+ * arrived with cover letters, and something else will arrive next. A stored row
+ * written before that field existed does not have it, and a strict shape check
+ * would call it corrupt.
+ *
+ * That was survivable in the browser, where the blob was demo data and the cost
+ * of rejecting it was a reseed. It is not survivable here, and the failure is
+ * worse than losing the row: rejecting it means the page renders the seed, and
+ * the user's next click saves that seed **over** their real work. A shape check
+ * with no migration behind it is a data-loss bug wearing a safety check.
+ *
+ * So a row that is merely *older* is filled in from the seed and kept. A row
+ * that is genuinely wrong, `todos` holding a string, something that is not an
+ * object at all, is still refused, and refusing is still the right answer for
+ * those, because there is nothing to salvage.
+ *
+ * The database migration that backfills the same field is the other half of
+ * this. This makes the app correct the moment the code ships; the migration
+ * makes the stored rows correct too, so this never has to fill in more than
+ * one release's worth of drift.
+ */
+export function reviveState(value: unknown): AppState | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return null;
+  }
+  // Shallow on purpose. A missing top-level key is what a new release causes;
+  // a missing key three levels down is what corruption causes, and quietly
+  // patching that would hide it.
+  const merged = { ...seedState(), ...(value as Partial<AppState>) };
+  return looksLikeState(merged) ? merged : null;
 }
 
 /**
@@ -80,12 +118,15 @@ export async function readAccountState(
   if (!rows[0]) return null;
 
   // `jsonb` comes back parsed, so there is no JSON.parse to fail here; what
-  // can still be wrong is the shape.
-  if (!looksLikeState(rows[0].state)) {
+  // can still be wrong is the shape. A row from an older release is filled in
+  // rather than refused; see `reviveState` for why that distinction is the
+  // difference between an inconvenience and losing somebody's work.
+  const revived = reviveState(rows[0].state);
+  if (!revived) {
     console.error("app_state: a stored row does not match AppState", { accountId });
     return null;
   }
-  return rows[0].state;
+  return revived;
 }
 
 /**

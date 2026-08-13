@@ -19,6 +19,8 @@ import {
 import { sectionDefaults } from "@/lib/cv/types";
 import type { Resume, ResumeSection } from "@/lib/cv/types";
 import type { Msg } from "@/lib/i18n/locale";
+import { bodyFrom, paperKinds, paragraphsOf } from "@/lib/papers/types";
+import type { PaperKind, ProseDocument } from "@/lib/papers/types";
 import type { AppState } from "./types";
 
 export type Action<S extends z.ZodType = z.ZodType> = {
@@ -110,6 +112,28 @@ function editResume(
     ...state,
     resumes: state.resumes.map((r) =>
       r.id === id ? { ...edit(r), updatedAt: "Vừa xong" } : r,
+    ),
+  };
+}
+
+/**
+ * Rewrite one prose document, restamping it.
+ *
+ * The same shape as `editResume`, and separate rather than generic: the two
+ * arrays hold different models, and a helper that took a key name would make
+ * every call site one type assertion longer to save four lines here.
+ */
+function editPaper(
+  state: AppState,
+  id: string,
+  edit: (paper: ProseDocument) => ProseDocument,
+): AppState {
+  const target = state.papers.find((p) => p.id === id);
+  if (!target) return state;
+  return {
+    ...state,
+    papers: state.papers.map((p) =>
+      p.id === id ? { ...edit(p), updatedAt: "Vừa xong" } : p,
     ),
   };
 }
@@ -1124,6 +1148,181 @@ export const actions = {
       }),
     summary: () => msg("Đã đổi thứ tự trong CV", "Entries reordered"),
     touched: ({ entryId }) => [entryId],
+  }),
+
+  /* ── Prose documents: cover letters and project write-ups ─────────────── */
+  // The résumé actions above edit sections and dated entries. These edit
+  // paragraphs, which is what a letter is made of. Same pattern, different
+  // structure; see `lib/papers/types.ts` for why one model could not be both.
+
+  "paper.create": defineAction({
+    description:
+      "Start a cover letter or a project write-up. Give it a label naming " +
+      "what it is for. Pass `body` to write the first draft in the same " +
+      "step, with a blank line between paragraphs; leave it out to create an " +
+      "empty one for the user to fill in.",
+    input: z.object({
+      kind: z.enum(paperKinds as [PaperKind, ...PaperKind[]]),
+      label: z.string().min(1).describe('e.g. "Thư cho VNG"'),
+      targetRole: z.string().optional(),
+      body: z.string().optional(),
+      language: z
+        .enum(["vi", "en"])
+        .optional()
+        .describe(
+          "The document's own language. Defaults to the app's. Set it when " +
+            "the user is applying abroad and needs an English letter while " +
+            "reading the app in Vietnamese.",
+        ),
+    }),
+    apply: (state, { kind, label, targetRole, body, language }) => {
+      const paper: ProseDocument = {
+        id: nextId(
+          "paper",
+          state.papers.map((p) => p.id),
+        ),
+        kind,
+        label,
+        // The document's language defaults to the one the user is reading in,
+        // which is the right guess and the wrong assumption to hard-code.
+        language: language ?? state.locale,
+        body: body ?? "",
+        updatedAt: "Vừa xong",
+      };
+      if (targetRole) paper.targetRole = targetRole;
+      return { ...state, papers: [...state.papers, paper] };
+    },
+    summary: ({ label }) => msg(`Đã tạo “${label}”`, `Created “${label}”`),
+    touched: (_input, after) => {
+      const added = after.papers.at(-1);
+      return added ? [added.id] : [];
+    },
+  }),
+
+  "paper.rename": defineAction({
+    description:
+      "Change what a letter or write-up is called, which role it targets, or " +
+      "its language.",
+    input: z.object({
+      id: z.string().min(1),
+      label: z.string().min(1).optional(),
+      targetRole: z.string().optional(),
+      language: z.enum(["vi", "en"]).optional(),
+    }),
+    apply: (state, { id, ...fields }) =>
+      editPaper(state, id, (paper) => ({ ...paper, ...fields })),
+    summary: () => msg("Đã lưu", "Saved"),
+  }),
+
+  "paper.setBody": defineAction({
+    description:
+      "Replace the whole text of a letter or write-up. Use this ONLY for a " +
+      "first draft or a complete rewrite the user asked for. To change one " +
+      "paragraph, use paper.updateParagraph instead: replacing the whole " +
+      "document would discard anything the user typed since the last turn.",
+    input: z.object({
+      id: z.string().min(1),
+      body: z.string().describe("Paragraphs separated by a blank line"),
+    }),
+    apply: (state, { id, body }) => editPaper(state, id, (paper) => ({ ...paper, body })),
+    summary: () => msg("Đã viết lại", "Rewritten"),
+  }),
+
+  "paper.updateParagraph": defineAction({
+    description:
+      "Rewrite one paragraph, counting from 1. This is the action to use when " +
+      "sharpening a sentence or fixing a claim: it leaves every other " +
+      "paragraph exactly as the user left it.",
+    input: z.object({
+      id: z.string().min(1),
+      index: z.number().int().min(1).describe("1 is the first paragraph"),
+      text: z.string().min(1),
+    }),
+    apply: (state, { id, index, text }) =>
+      editPaper(state, id, (paper) => {
+        const paragraphs = paragraphsOf(paper.body);
+        // Out of range changes nothing rather than appending. A model that
+        // miscounted should not silently add a paragraph nobody asked for.
+        if (index > paragraphs.length) return paper;
+        paragraphs[index - 1] = text;
+        return { ...paper, body: bodyFrom(paragraphs) };
+      }),
+    summary: ({ index }) =>
+      msg(`Đã sửa đoạn ${index}`, `Paragraph ${index} rewritten`),
+  }),
+
+  "paper.addParagraph": defineAction({
+    description:
+      "Add a paragraph. It goes at the end unless `at` names a position, " +
+      "counting from 1.",
+    input: z.object({
+      id: z.string().min(1),
+      text: z.string().min(1),
+      at: z.number().int().min(1).optional().describe("1 puts it first"),
+    }),
+    apply: (state, { id, text, at }) =>
+      editPaper(state, id, (paper) => {
+        const paragraphs = paragraphsOf(paper.body);
+        const position = at === undefined ? paragraphs.length : Math.min(at - 1, paragraphs.length);
+        paragraphs.splice(position, 0, text);
+        return { ...paper, body: bodyFrom(paragraphs) };
+      }),
+    summary: () => msg("Đã thêm một đoạn", "Paragraph added"),
+  }),
+
+  "paper.removeParagraph": defineAction({
+    // Every `.remove*` action asks first, without exception. A paragraph is
+    // sentences the user wrote, and undo lives in a toast that leaves.
+    destructive: true,
+    confirm: ({ index }) =>
+      msg(`Xoá đoạn ${index}?`, `Delete paragraph ${index}?`),
+    description: "Delete one paragraph, counting from 1.",
+    input: z.object({
+      id: z.string().min(1),
+      index: z.number().int().min(1),
+    }),
+    apply: (state, { id, index }) =>
+      editPaper(state, id, (paper) => {
+        const paragraphs = paragraphsOf(paper.body);
+        if (index > paragraphs.length) return paper;
+        paragraphs.splice(index - 1, 1);
+        return { ...paper, body: bodyFrom(paragraphs) };
+      }),
+    summary: ({ index }) => msg(`Đã xoá đoạn ${index}`, `Paragraph ${index} deleted`),
+  }),
+
+  "paper.moveParagraph": defineAction({
+    description: "Move a paragraph up or down.",
+    input: z.object({
+      id: z.string().min(1),
+      index: z.number().int().min(1),
+      by: z.number().int().describe("-1 for up, 1 for down"),
+    }),
+    apply: (state, { id, index, by }) =>
+      editPaper(state, id, (paper) => {
+        const paragraphs = paragraphsOf(paper.body);
+        if (index > paragraphs.length) return paper;
+        return { ...paper, body: bodyFrom(shift(paragraphs, index - 1, by)) };
+      }),
+    summary: () => msg("Đã đổi thứ tự các đoạn", "Paragraphs reordered"),
+  }),
+
+  "paper.remove": defineAction({
+    destructive: true,
+    confirm: ({ id }) => {
+      void id;
+      return msg(
+        "Xoá hẳn văn bản này? Không khôi phục lại được.",
+        "Delete this document for good? It cannot be restored.",
+      );
+    },
+    description: "Delete a letter or write-up the user no longer wants.",
+    input: z.object({ id: z.string().min(1) }),
+    apply: (state, { id }) => ({
+      ...state,
+      papers: state.papers.filter((p) => p.id !== id),
+    }),
+    summary: () => msg("Đã xoá văn bản", "Document deleted"),
   }),
 } satisfies Record<string, Action>;
 

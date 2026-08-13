@@ -95,15 +95,32 @@ test("a value of the wrong shape is discarded", async () => {
   assert.equal(storage.getItem(STORAGE_KEY), null);
 });
 
-test("a blob from before CVs existed is discarded, not half-loaded", async () => {
-  // The v1 shape: everything the reducer needs except `resumes`. Loading it
-  // would put `undefined` where every `resume.*` action expects an array, and
-  // the CV screen would throw on its first read rather than on a write.
-  const v1: Record<string, unknown> = { ...seedState() };
-  delete v1.resumes;
-  storage.setItem(STORAGE_KEY, JSON.stringify(v1));
+test("a blob from before a field existed is filled in, not discarded", async () => {
+  // The old shape: everything the reducer needs except `resumes`. Loading it
+  // as-is would put `undefined` where every `resume.*` action expects an array.
+  //
+  // This used to be discarded, and that was right while the blob was demo
+  // data. It is wrong now that the same code path reads an account's real work
+  // from the server, so the missing field is filled in from the seed and
+  // everything the user actually wrote is kept.
+  const older: Record<string, unknown> = { ...seedState() };
+  delete older.resumes;
+  older.todos = [{ id: "t1", title: "Ôn SQL", done: false }];
+  storage.setItem(STORAGE_KEY, JSON.stringify(older));
 
-  assert.deepEqual(loadState().resumes, [], "a discarded blob reseeds");
+  const loaded = loadState();
+  assert.deepEqual(loaded.resumes, [], "the missing field takes the seed's value");
+  assert.equal(loaded.todos.length, 1, "the user's work survived the shape change");
+  assert.equal(loaded.todos[0].title, "Ôn SQL");
+});
+
+test("a blob that is genuinely wrong is still discarded", async () => {
+  // Filling in a missing key is a migration. Patching a key that holds the
+  // wrong type would be hiding corruption, so this is still refused.
+  const broken: Record<string, unknown> = { ...seedState(), todos: "nope" };
+  storage.setItem(STORAGE_KEY, JSON.stringify(broken));
+
+  assert.equal(loadState().todos.length, 0);
   assert.equal(storage.getItem(STORAGE_KEY), null);
 });
 

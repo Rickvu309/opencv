@@ -79,9 +79,27 @@ function looksLikeState(value: unknown): value is AppState {
     typeof state.plan === "object" &&
     state.plan !== null &&
     Array.isArray(state.resumes) &&
+    Array.isArray(state.papers) &&
     typeof state.paths === "object" &&
     state.paths !== null
   );
+}
+
+/**
+ * A local blob, brought up to the current shape.
+ *
+ * The same shallow fill-in the account store does, and here for a smaller
+ * reason: this copy only ever holds an anonymous visitor's language choice, so
+ * discarding it costs almost nothing. It is done anyway because two rules for
+ * "what happens when the shape moves on" is one rule too many, and the cheap
+ * case is the one where a divergence goes unnoticed.
+ */
+function revive(value: unknown): AppState | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return null;
+  }
+  const merged = { ...seedState(), ...(value as Partial<AppState>) };
+  return looksLikeState(merged) ? merged : null;
 }
 
 /**
@@ -108,12 +126,12 @@ export function loadState(fromServer?: AppState | null): AppState {
     // A blob we cannot read is worse than none, so both failures below discard
     // it. Keeping it means re-failing this on every load forever, and the user
     // has no way to clear it.
-    const parsed: unknown = JSON.parse(raw);
-    if (!looksLikeState(parsed)) {
+    const revived = revive(JSON.parse(raw));
+    if (!revived) {
       clearState();
       return fresh();
     }
-    return parsed;
+    return revived;
   } catch {
     // Malformed JSON, or storage itself refusing to answer (private mode).
     // Losing persistence is not a reason to fail to render the app.

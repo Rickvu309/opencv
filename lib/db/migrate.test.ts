@@ -31,15 +31,15 @@ function fixtureDir(files: Record<string, string>): string {
 
 test("the repository's own migrations are complete pairs", () => {
   const migrations = readMigrations();
-  assert.ok(migrations.length >= 4, "expected at least four migrations");
+  assert.ok(migrations.length >= 5, "expected at least five migrations");
   for (const migration of migrations) {
     assert.ok(migration.up.trim().length > 0, `${migration.id} has an empty up`);
     assert.ok(migration.down.trim().length > 0, `${migration.id} has an empty down`);
   }
   assert.deepEqual(
     migrations.map((m) => m.name),
-    ["accounts", "sessions", "app_state", "conversations"],
-    "order matters: everything after the first references accounts",
+    ["accounts", "sessions", "app_state", "conversations", "papers_in_state"],
+    "order matters: everything after the first depends on what came before it",
   );
 });
 
@@ -168,11 +168,13 @@ test("rollback undoes the last migration only", { skip: skipWithoutDatabase }, a
     const left = (await applied(client)).map((row) => row.id);
     assert.deepEqual(left, ran.slice(0, -1), "only the newest is undone");
 
-    const { rows } = await client.query<{ n: string }>(
-      "select count(*) n from information_schema.tables where table_schema = $1 and table_name = 'conversations'",
-      [schema],
+    // What the newest migration undoes is whatever it did; the property under
+    // test is that exactly one came off, which the ids above already show.
+    const still = await migrationStatus(client, { schema });
+    assert.equal(
+      still.filter((row) => row.appliedAt !== null).length,
+      ran.length - 1,
     );
-    assert.equal(rows[0].n, "0", "the table is gone");
   });
 });
 
