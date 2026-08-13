@@ -5,37 +5,62 @@ import type { AppState } from "./types";
 /**
  * Where the user's state lives between visits.
  *
- * ## Why the browser, for now
+ * ## The swap this file was waiting for
  *
- * The obvious answer is a database, and that is still the answer for more than
- * one device. It is not the answer *today*, for one reason worth writing down:
- * no server store exists yet, and the Coach does not need one. *Close the loop*
- * chose to send state to the agent on the turn (`context.ts`), so the Coach
- * already reads exactly what the UI holds, wherever that is kept. Persistence
- * and the agent's read path are therefore independent, which they would not
- * have been under read tools.
+ * This module used to open with an argument for the browser, and with a
+ * promise: every write funnels through `dispatch`, so this is the only file
+ * that has to change when a store both browsers can reach exists. That store
+ * exists now, and this is the change. No reducer moved. No screen moved. The
+ * registry does not know this happened.
  *
- * So this closes the gap it can close honestly: a reload keeps your work. It
- * does **not** give you a second device, and it never will. That needs a store
- * both browsers can reach, and this module is the only file that has to change
- * when one exists, because every write already funnels through `dispatch`.
+ * ## Two stores, and the line between them
  *
- * ## Why the whole state, not an action log
+ * - **Signed in:** the account's row in Postgres. It follows the person to
+ *   another device, which is the entire point, and it is the only copy.
+ * - **Signed out:** localStorage, exactly as before. The only thing an
+ *   anonymous visitor can change is the language, on the landing page, and
+ *   asking them to make an account before the page will remember which
+ *   language they read would be an absurd trade.
  *
- * The registry is a pure reducer, so an append-only action log would replay
- * cleanly and give an audit trail for free. It also grows without bound until
- * snapshots exist, and needs a migration story the moment an action's schema
- * changes. With one user in one tab, last-write-wins is correct and costs
- * nothing. Revisit if the log becomes worth something on its own.
+ * There is no syncing between the two. A signed-in session never reads the
+ * local copy, so nothing anonymous can leak into an account, and WO-24 is
+ * explicit that browser-local demo data is not carried over.
+ *
+ * ## Why writes are coalesced
+ *
+ * localStorage was free and synchronous. A row in Southeast Asia is neither.
+ * Typing a CV line dispatches on every keystroke, and a request each would be
+ * both slow and pointless, because only the last one's contents survive
+ * anyway. So writes collapse into one request per quiet moment, and the tab
+ * flushes what it is holding before it closes.
  */
 
 /**
- * Bumped when `AppState`'s shape changes incompatibly. A stored blob from an
- * older shape is discarded rather than migrated: this is a demo account holding
- * seeded data, so the cost of dropping it is a reseed, and the cost of loading
- * it into a reducer that no longer understands it is a corrupted account.
+ * Bumped when `AppState`'s shape changes incompatibly, for the local copy only.
+ *
+ * The old comment here said a stored blob from an older shape is discarded
+ * rather than migrated, because the cost of dropping it is a reseed. That is
+ * still true of *this* key, which holds an anonymous visitor's language choice
+ * and nothing else. It is emphatically not true of an account's row, which is
+ * somebody's real work: a shape change there is a migration
+ * (`lib/db/migrations/`), never a delete.
  */
 export const STORAGE_KEY = "openpath:state:v3";
+
+const ENDPOINT = "/api/state";
+
+/**
+ * Whether there is an account behind this tab.
+ *
+ * Set once from the server render rather than sniffed from a cookie, because
+ * the cookie is `httpOnly` and the client cannot see it, which is the point of
+ * it being `httpOnly`.
+ */
+let signedIn = false;
+
+export function configurePersistence(options: { signedIn: boolean }): void {
+  signedIn = options.signedIn;
+}
 
 /**
  * A stored blob is untrusted input: hand-edited, half-written by a killed tab,
@@ -60,12 +85,15 @@ function looksLikeState(value: unknown): value is AppState {
 }
 
 /**
- * The state to start from: what was stored, or the seed.
+ * The state to start from.
  *
- * Returns the seed on the server and on the first visit, so callers never have
- * to branch on whether storage exists.
+ * `fromServer` is the signed-in account's state, rendered into the page by the
+ * root layout. When it is present it simply wins: it is authoritative, it is
+ * already here, and it costs no request. When it is absent nobody is signed in,
+ * and this falls back to the local copy exactly as it always did.
  */
-export function loadState(): AppState {
+export function loadState(fromServer?: AppState | null): AppState {
+  if (fromServer) return fromServer;
   if (typeof window === "undefined") return seedState();
 
   // A first visit gets the browser's language rather than ours. Nothing is
@@ -94,18 +122,123 @@ export function loadState(): AppState {
   }
 }
 
-/** Persist the state. Returns false if the write did not land. */
-export function saveState(state: AppState): boolean {
-  if (typeof window === "undefined") return false;
+/* ── The write queue ─────────────────────────────────────────────────────── */
+
+/** Long enough to swallow a burst of keystrokes, short enough to feel instant. */
+const QUIET_MS = 700;
+
+let pending: AppState | null = null;
+let timer: ReturnType<typeof setTimeout> | null = null;
+let sending = false;
+let waiting: ((landed: boolean) => void)[] = [];
+
+async function put(state: AppState): Promise<boolean> {
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    return true;
+    const response = await fetch(ENDPOINT, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ state }),
+      // The cookie is same-origin and `httpOnly`; this is the default, said
+      // out loud because a save that quietly went out unauthenticated would
+      // look exactly like a save that worked.
+      credentials: "same-origin",
+    });
+    return response.ok;
   } catch {
+    // Offline, or the server is down. The app keeps working from memory.
     return false;
   }
 }
 
-/** Forget everything and fall back to the seed on the next load. */
+function schedule(): void {
+  if (timer) clearTimeout(timer);
+  timer = setTimeout(() => void send(), QUIET_MS);
+}
+
+async function send(): Promise<void> {
+  timer = null;
+  // One request at a time. A second would race the first and could land the
+  // older state last, which is the one failure a last-write-wins store cannot
+  // tolerate. The `finally` picks up anything that arrived meanwhile.
+  if (sending || !pending) return;
+
+  const state = pending;
+  pending = null;
+  const told = waiting;
+  waiting = [];
+  sending = true;
+
+  let landed = false;
+  try {
+    landed = await put(state);
+  } finally {
+    sending = false;
+    for (const resolve of told) resolve(landed);
+    if (pending) schedule();
+  }
+}
+
+/**
+ * Persist the state. Resolves false if the write did not land.
+ *
+ * Several dispatches in one burst share one request and one answer, which is
+ * what the caller wants: the warning is about having stopped remembering, not
+ * about a particular keystroke.
+ */
+export function saveState(state: AppState): Promise<boolean> {
+  if (typeof window === "undefined") return Promise.resolve(false);
+
+  if (!signedIn) {
+    // The anonymous path stays synchronous and local, as it always was.
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      return Promise.resolve(true);
+    } catch {
+      return Promise.resolve(false);
+    }
+  }
+
+  pending = state;
+  return new Promise<boolean>((resolve) => {
+    waiting.push(resolve);
+    schedule();
+  });
+}
+
+/**
+ * Send whatever is still queued, now, because the tab is going away.
+ *
+ * `sendBeacon` rather than `fetch`: a browser tearing down a page cancels
+ * outstanding requests, and the beacon is the one thing it promises to deliver
+ * anyway. It can only POST, which is why the endpoint accepts POST as well as
+ * PUT.
+ */
+export function flushState(): void {
+  if (typeof window === "undefined" || !signedIn || !pending) return;
+  if (timer) clearTimeout(timer);
+  timer = null;
+
+  const body = JSON.stringify({ state: pending });
+  pending = null;
+  try {
+    const sent = navigator.sendBeacon?.(
+      ENDPOINT,
+      new Blob([body], { type: "application/json" }),
+    );
+    if (sent) return;
+  } catch {
+    // Fall through to the fetch below.
+  }
+  void fetch(ENDPOINT, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body,
+    credentials: "same-origin",
+    keepalive: true,
+  }).catch(() => {});
+}
+
+/** Forget the local copy. Never touches an account's row. */
 export function clearState(): void {
   if (typeof window === "undefined") return;
   try {

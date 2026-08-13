@@ -17,9 +17,19 @@
  * which somebody notices in a minute and nobody is harmed by.
  */
 
+/**
+ * Three outcomes, not two.
+ *
+ * A screen and an endpoint are refused differently. Sending a browser to the
+ * sign-in page is right for a screen and wrong for `fetch`, which follows the
+ * redirect, receives a page of HTML and reports whatever that page's status
+ * was. The caller then cannot tell "your session ended" from "the server is
+ * broken", and the user is told the wrong thing about their own work.
+ */
 export type GateDecision =
-  | { allow: true }
-  | { allow: false; redirectTo: string };
+  | { kind: "allow" }
+  | { kind: "redirect"; to: string }
+  | { kind: "unauthorized" };
 
 /** Where somebody without a session is sent. */
 export const SIGN_IN_PATH = "/sign-in";
@@ -83,17 +93,22 @@ export function safeNext(target: string | null | undefined): string | null {
  * only whether to bother rendering.
  */
 export function gateFor(pathname: string, hasSession: boolean): GateDecision {
-  if (hasSession) return { allow: true };
+  if (hasSession) return { kind: "allow" };
 
-  if (PUBLIC_PATHS.has(pathname)) return { allow: true };
+  if (PUBLIC_PATHS.has(pathname)) return { kind: "allow" };
   if (PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
-    return { allow: true };
+    return { kind: "allow" };
   }
-  if (isAsset(pathname)) return { allow: true };
+  if (isAsset(pathname)) return { kind: "allow" };
+
+  // An endpoint is told, not redirected. Every one of them checks the session
+  // itself before touching a row, so this is the answer arriving earlier and
+  // in the right shape, never the only thing standing in the way.
+  if (pathname.startsWith("/api/")) return { kind: "unauthorized" };
 
   const next = safeNext(pathname);
   return {
-    allow: false,
-    redirectTo: next ? `${SIGN_IN_PATH}?next=${encodeURIComponent(next)}` : SIGN_IN_PATH,
+    kind: "redirect",
+    to: next ? `${SIGN_IN_PATH}?next=${encodeURIComponent(next)}` : SIGN_IN_PATH,
   };
 }

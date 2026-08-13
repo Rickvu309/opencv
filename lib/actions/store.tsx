@@ -11,7 +11,12 @@ import * as React from "react";
 import { toast } from "sonner";
 
 import { messages } from "@/lib/i18n/messages";
-import { loadState, saveState } from "./persistence";
+import {
+  configurePersistence,
+  flushState,
+  loadState,
+  saveState,
+} from "./persistence";
 import { applyAction, type ActionName } from "./registry";
 import { seedState } from "./seed";
 import type { AppState } from "./types";
@@ -34,7 +39,23 @@ const TouchedContext = React.createContext<string[]>([]);
  */
 const serverSnapshot = seedState();
 
-export function AppStateProvider({ children }: { children: React.ReactNode }) {
+/**
+ * `initial` is the signed-in account's state, read on the server and rendered
+ * into the page. Null means nobody is signed in, and the store falls back to
+ * the browser copy the anonymous landing page has always used.
+ *
+ * Passing it as a prop rather than fetching it here is what keeps hydration
+ * honest: the server and the client's first snapshot are the same object,
+ * rendered from the same value, so there is no seed to correct afterwards and
+ * no flash of somebody's empty profile before their real one arrives.
+ */
+export function AppStateProvider({
+  children,
+  initial = null,
+}: {
+  children: React.ReactNode;
+  initial?: AppState | null;
+}) {
   // State lives in a ref rather than `useState`, and React reads it through
   // `useSyncExternalStore`. Three things fall out of that:
   //
@@ -52,6 +73,21 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   const ref = React.useRef<AppState | null>(null);
   const listeners = React.useRef(new Set<() => void>());
 
+  // Told once, before anything can dispatch: which of the two stores this tab
+  // writes to. During render rather than in an effect, because a dispatch can
+  // happen on the first paint and a save that went to the wrong place would be
+  // silently lost.
+  configurePersistence({ signedIn: initial !== null });
+
+  // Flush what the queue is holding when the tab goes away. `pagehide` rather
+  // than `beforeunload`: it is the one that fires on mobile, where a tab is
+  // usually closed by being switched away from and never coming back.
+  React.useEffect(() => {
+    const flush = () => flushState();
+    window.addEventListener("pagehide", flush);
+    return () => window.removeEventListener("pagehide", flush);
+  }, []);
+
   const subscribe = React.useCallback((onChange: () => void) => {
     listeners.current.add(onChange);
     return () => listeners.current.delete(onChange);
@@ -59,8 +95,17 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
 
   // Reads storage exactly once, on the first client snapshot, then returns the
   // same reference until `dispatch` replaces it.
-  const getSnapshot = React.useCallback(() => (ref.current ??= loadState()), []);
-  const getServerSnapshot = React.useCallback(() => serverSnapshot, []);
+  const getSnapshot = React.useCallback(
+    () => (ref.current ??= loadState(initial)),
+    [initial],
+  );
+  // The signed-in server render has the account's real state, so that is what
+  // the client must hydrate against. Only an anonymous page falls back to the
+  // fixed seed, which is the case this indirection existed for.
+  const getServerSnapshot = React.useCallback(
+    () => initial ?? serverSnapshot,
+    [initial],
+  );
 
   const state = React.useSyncExternalStore(
     subscribe,
@@ -95,10 +140,15 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
    */
   const warnedAboutStorage = React.useRef(false);
   const persist = React.useCallback((next: AppState) => {
-    if (saveState(next) || warnedAboutStorage.current) return;
-    warnedAboutStorage.current = true;
-    toast.warning(messages.errors.storageFailedTitle[next.locale], {
-      description: messages.errors.storageFailedBody[next.locale],
+    // The answer now arrives from the network rather than from a synchronous
+    // call, and a burst of dispatches shares one. Everything else about this
+    // is unchanged: warn once, keep working.
+    void saveState(next).then((landed) => {
+      if (landed || warnedAboutStorage.current) return;
+      warnedAboutStorage.current = true;
+      toast.warning(messages.errors.storageFailedTitle[next.locale], {
+        description: messages.errors.storageFailedBody[next.locale],
+      });
     });
   }, []);
 
@@ -107,7 +157,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       // Never null in practice: dispatch only runs from a client event, by
       // which point React has taken a snapshot. Falling back keeps the type
       // honest without pretending a branch is unreachable.
-      const previous = ref.current ?? loadState();
+      const previous = ref.current ?? loadState(initial);
       try {
         const next = applyAction(previous, name, input);
         ref.current = next.state;
@@ -153,7 +203,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
         });
       }
     },
-    [emit, persist],
+    [emit, persist, initial],
   );
 
   return (

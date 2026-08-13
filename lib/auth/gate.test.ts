@@ -21,9 +21,9 @@ const PRODUCT_SCREENS = [
 test("without a session, every product screen sends the user to sign in", () => {
   for (const path of PRODUCT_SCREENS) {
     const decision = gateFor(path, false);
-    assert.equal(decision.allow, false, `${path} was left open`);
+    assert.equal(decision.kind, "redirect", `${path} was left open`);
     assert.ok(
-      decision.allow === false && decision.redirectTo.startsWith(SIGN_IN_PATH),
+      decision.kind === "redirect" && decision.to.startsWith(SIGN_IN_PATH),
       `${path} was sent somewhere other than sign-in`,
     );
   }
@@ -33,14 +33,13 @@ test("a screen nobody has written yet is closed, not open", () => {
   // The reason the rule is a list of open paths rather than closed ones: the
   // screen added next month is closed by default, and the failure mode of
   // getting it wrong is a redirect rather than a leak.
-  const decision = gateFor("/applications", false);
-  assert.equal(decision.allow, false);
+  assert.equal(gateFor("/applications", false).kind, "redirect");
 });
 
 test("the landing page and account creation are open, as the requirement says", () => {
   // AC-ACCT-005.2, exactly.
   for (const path of ["/", "/sign-in", "/sign-up"]) {
-    assert.deepEqual(gateFor(path, false), { allow: true }, `${path} was closed`);
+    assert.deepEqual(gateFor(path, false), { kind: "allow" }, `${path} was closed`);
   }
 });
 
@@ -56,22 +55,20 @@ test("the machinery a visitor needs before an account is open", () => {
     "/favicon.ico",
     "/globe.svg",
   ]) {
-    assert.deepEqual(gateFor(path, false), { allow: true }, `${path} was closed`);
+    assert.deepEqual(gateFor(path, false), { kind: "allow" }, `${path} was closed`);
   }
 });
 
 test("with a session, everything is open", () => {
   for (const path of [...PRODUCT_SCREENS, "/", "/anything"]) {
-    assert.deepEqual(gateFor(path, true), { allow: true }, `${path} was closed`);
+    assert.deepEqual(gateFor(path, true), { kind: "allow" }, `${path} was closed`);
   }
 });
 
 test("the redirect carries where the user was going", () => {
   const decision = gateFor("/cv", false);
-  assert.equal(decision.allow, false);
-  assert.ok(
-    decision.allow === false && decision.redirectTo === `${SIGN_IN_PATH}?next=%2Fcv`,
-  );
+  assert.equal(decision.kind, "redirect");
+  assert.ok(decision.kind === "redirect" && decision.to === `${SIGN_IN_PATH}?next=%2Fcv`);
 });
 
 test("the return path cannot be pointed at another site", () => {
@@ -93,6 +90,17 @@ test("a path that only looks like an asset is still gated when it is a screen", 
   // The dot test is a heuristic, so it is worth knowing what it does: a screen
   // with a dot in its last segment would be treated as a file. No route in
   // this product has one, and this records the limit rather than hiding it.
-  assert.deepEqual(gateFor("/profile/cv.pdf", false), { allow: true });
-  assert.equal(gateFor("/profile/edit", false).allow, false);
+  assert.deepEqual(gateFor("/profile/cv.pdf", false), { kind: "allow" });
+  assert.equal(gateFor("/profile/edit", false).kind, "redirect");
+});
+
+test("an endpoint is refused with a status, not with a page", () => {
+  // A fetch follows a redirect and reads the sign-in page's status, so the
+  // caller cannot tell "your session ended" from "the server is broken", and
+  // the user gets told the wrong thing about their own work.
+  assert.deepEqual(gateFor("/api/state", false), { kind: "unauthorized" });
+  assert.deepEqual(gateFor("/api/anything/else", false), { kind: "unauthorized" });
+  // The endpoints a visitor needs before an account are still open.
+  assert.deepEqual(gateFor("/api/auth/sign-in", false), { kind: "allow" });
+  assert.deepEqual(gateFor("/api/waitlist", false), { kind: "allow" });
 });

@@ -22,9 +22,12 @@ export function proxy(request: NextRequest) {
   const hasSession = readToken(cookie) !== null;
 
   const decision = gateFor(request.nextUrl.pathname, hasSession);
-  if (decision.allow) return NextResponse.next();
+  if (decision.kind === "allow") return NextResponse.next();
+  if (decision.kind === "unauthorized") {
+    return NextResponse.json({ ok: false, code: "no-session" }, { status: 401 });
+  }
 
-  return NextResponse.redirect(new URL(decision.redirectTo, request.nextUrl));
+  return NextResponse.redirect(new URL(decision.to, request.nextUrl));
 }
 
 export const config = {
