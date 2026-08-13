@@ -86,6 +86,8 @@ export const messages = {
     career: m("Sự nghiệp", "Career"),
     profile: m("Hồ sơ", "Profile"),
     cv: m("CV", "CV"),
+    papers: m("Thư và bài viết", "Letters"),
+    pitch: m("Giới thiệu bản thân", "Your pitch"),
     map: m("Bản đồ hướng đi", "Career map"),
     plan: m("Kế hoạch", "Plan"),
     // One name for one destination. This link used to be "Cập nhật thông tin"
@@ -798,6 +800,95 @@ export const messages = {
   // Every one of these says what happened and what to do about it. The change
   // that mattered most: the failed-action toast used to print the raw Zod
   // validation message, which is a developer's sentence shown to a student.
+  /* ── Papers: cover letters and project write-ups ────────────────────── */
+  papers: {
+    title: m("Thư và bài viết", "Letters and write-ups"),
+    lead: m(
+      "Thư xin việc và bài viết dự án, viết cùng Coach.",
+      "Cover letters and project write-ups, written with the Coach.",
+    ),
+    newCoverLetter: m("Thư xin việc mới", "New cover letter"),
+    newWriteUp: m("Bài viết dự án mới", "New project write-up"),
+    untitled: m("Chưa đặt tên", "Untitled"),
+    labelField: m("Tên văn bản", "Document name"),
+    labelPlaceholder: m("Thư cho VNG", "Letter for VNG"),
+    targetRoleField: m("Vị trí ứng tuyển", "Role you're applying for"),
+    targetRolePlaceholder: m("Data Analyst", "Data Analyst"),
+    paragraph: (n: number) => m(`Đoạn ${n}`, `Paragraph ${n}`),
+    addParagraph: m("Thêm đoạn", "Add a paragraph"),
+    moveUp: m("Đưa lên trên", "Move up"),
+    moveDown: m("Đưa xuống dưới", "Move down"),
+    removeParagraph: m("Xoá đoạn này", "Delete this paragraph"),
+    paragraphPlaceholder: m("Viết đoạn này…", "Write this paragraph…"),
+    // The empty state is the first thing most people see here, so it says what
+    // to do rather than that there is nothing.
+    emptyTitle: m("Chưa có văn bản nào", "Nothing written yet"),
+    emptyBody: m(
+      "Nhờ Coach viết bản nháp đầu, hoặc tự tạo rồi viết.",
+      "Ask the Coach for a first draft, or start one yourself.",
+    ),
+    emptyDocument: m(
+      "Văn bản này còn trống. Thêm đoạn đầu tiên bên dưới.",
+      "This one is empty. Add the first paragraph below.",
+    ),
+    askCoach: m("Nhờ Coach viết nháp", "Ask the Coach to draft it"),
+    // Sent to the Coach as if the user typed it, so it reads like a request.
+    askCoachPrompt: m(
+      "Viết giúp mình bản nháp cho văn bản này nhé.",
+      "Write me a first draft of this document.",
+    ),
+    count: (n: number) => m(`${n} văn bản`, n === 1 ? "1 document" : `${n} documents`),
+  },
+
+  /* ── Pitch: the bio, the introduction, the answer bank ──────────────── */
+  pitch: {
+    title: m("Giới thiệu bản thân", "Your pitch"),
+    lead: m(
+      "Những gì bạn nói về mình, chuẩn bị sẵn để dùng lại.",
+      "What you say about yourself, ready to reuse.",
+    ),
+    bioTitle: m("Giới thiệu ngắn", "Online bio"),
+    bioLead: m(
+      "Đoạn ngắn để đăng lên LinkedIn hay hồ sơ trực tuyến.",
+      "The short paragraph for LinkedIn or an online profile.",
+    ),
+    introTitle: m("Bài tự giới thiệu", "Self-introduction"),
+    introLead: m(
+      "Câu trả lời cho “Bạn giới thiệu về mình đi”.",
+      "Your answer to “tell me about yourself”.",
+    ),
+    answersTitle: m("Câu trả lời phỏng vấn", "Interview answers"),
+    answersLead: m(
+      "Chuẩn bị trước những câu hay được hỏi.",
+      "The questions you'll be asked, answered in advance.",
+    ),
+    questionField: m("Câu hỏi", "The question"),
+    questionPlaceholder: m(
+      "Điểm yếu của bạn là gì?",
+      "What's your greatest weakness?",
+    ),
+    answerField: m("Câu trả lời của bạn", "Your answer"),
+    answerPlaceholder: m("Viết câu trả lời…", "Write your answer…"),
+    addAnswer: m("Thêm câu hỏi", "Add a question"),
+    removeAnswer: m("Xoá câu này", "Delete this one"),
+    bioPlaceholder: m("Viết vài dòng về bạn…", "A few lines about you…"),
+    introPlaceholder: m("Viết bài tự giới thiệu…", "Write your introduction…"),
+    emptyAnswers: m(
+      "Chưa có câu nào. Thêm câu hỏi bạn sợ bị hỏi nhất.",
+      "None yet. Start with the question you dread most.",
+    ),
+    askCoachBio: m("Nhờ Coach viết giúp", "Ask the Coach to draft it"),
+    askCoachBioPrompt: m(
+      "Viết giúp mình đoạn giới thiệu ngắn dựa trên hồ sơ nhé.",
+      "Draft my online bio from my profile.",
+    ),
+    askCoachIntroPrompt: m(
+      "Viết giúp mình bài tự giới thiệu dựa trên hồ sơ và mục tiêu nhé.",
+      "Draft my self-introduction from my profile and my goal.",
+    ),
+    notWrittenYet: m("Chưa viết", "Not written yet"),
+  },
+
   /* ── Accounts ───────────────────────────────────────────────────────── */
   // The first words most people read after the landing page. Two rules the
   // rest of this catalog already follows matter more than usual here: the

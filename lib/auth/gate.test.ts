@@ -12,6 +12,8 @@ const PRODUCT_SCREENS = [
   "/todo",
   "/career-map",
   "/cv",
+  "/papers",
+  "/pitch",
   "/plan",
   "/profile",
   "/onboarding",

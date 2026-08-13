@@ -11,7 +11,9 @@ import {
   FileText,
   LayoutDashboard,
   ListChecks,
+  Mail,
   Megaphone,
+  MessageSquareQuote,
   Languages,
   Route,
   Search,
@@ -96,12 +98,26 @@ function primaryNav(openTasks: number): NavItem[] {
   ];
 }
 
-function careerNav(openTasks: number, cvCount: number): NavItem[] {
+function careerNav(
+  openTasks: number,
+  cvCount: number,
+  paperCount: number,
+): NavItem[] {
   return [
     { title: messages.nav.profile, href: "/profile", icon: LayoutDashboard },
     // Next to the profile, not under Tài liệu: a CV is a thing you build here,
     // and the count says how many versions are on the go.
     { title: messages.nav.cv, href: "/cv", icon: FileText, count: badge(cvCount) },
+    // Letters and write-ups sit beside the CV because they are the same job:
+    // things you write here and send somewhere. Pitch sits beside them because
+    // it is the same job again, said out loud.
+    {
+      title: messages.nav.papers,
+      href: "/papers",
+      icon: Mail,
+      count: badge(paperCount),
+    },
+    { title: messages.nav.pitch, href: "/pitch", icon: MessageSquareQuote },
     { title: messages.nav.map, href: "/career-map", icon: Route },
     {
       title: messages.nav.plan,
@@ -156,7 +172,7 @@ export function AppSidebar() {
   // Counts and identity read from live state, not seed data, so ticking an
   // item on the plan updates the rail immediately and renaming yourself in
   // onboarding is reflected here rather than in a fixture nobody can edit.
-  const { plan, profile, resumes } = useAppState();
+  const { plan, profile, resumes, papers } = useAppState();
   const dispatch = useDispatch();
   const { t, m, locale } = useT();
   const name = profile.identity.name.trim();
@@ -172,7 +188,7 @@ export function AppSidebar() {
     0,
   );
   const primary = primaryNav(openTasks);
-  const career = careerNav(openTasks, resumes.length);
+  const career = careerNav(openTasks, resumes.length, papers.length);
   const router = useRouter();
   const onPlan = pathname.startsWith("/plan");
 
