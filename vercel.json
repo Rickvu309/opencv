@@ -3,7 +3,6 @@
   "crons": [
     {
       "path": "/api/cron",
-      "//": "Daily, because this account is on Vercel's Hobby plan and Hobby allows one cron run a day. An hourly schedule is rejected at deploy time, not at run time: the deployment is never created, which is how it was found. The jobs are keyed by day and by ISO week, so a daily heartbeat runs each of them exactly once. The cost of the constraint is retry latency: a job that fails backs off and then waits for tomorrow rather than for an hour.",
       "schedule": "0 3 * * *"
     }
   ]

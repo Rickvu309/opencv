@@ -18,6 +18,10 @@ import { WORKFLOWS, scheduleDue } from "@/lib/jobs/workflows";
  * backs off and then waits for tomorrow. Both current jobs are a daily sweep
  * and a weekly nudge, so neither notices.
  *
+ * The schedule itself lives in `vercel.json`, which takes no comments: its cron
+ * entries reject any key outside the schema, `//` included. So the reasoning is
+ * here, next to the handler it explains.
+ *
  * ## Why this is not open
  *
  * It runs background work, so an unauthenticated caller could spin the queue.
