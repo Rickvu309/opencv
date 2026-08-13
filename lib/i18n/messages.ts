@@ -848,9 +848,25 @@ export const messages = {
     ),
     askCoach: m("Nhờ Coach viết nháp", "Ask the Coach to draft it"),
     // Sent to the Coach as if the user typed it, so it reads like a request.
-    askCoachPrompt: m(
-      "Viết giúp mình bản nháp cho văn bản này nhé.",
-      "Write me a first draft of this document.",
+    //
+    // One entry per kind rather than one generic sentence, because "write a
+    // draft of this document" tells the Coach nothing about what it is holding.
+    // A cover letter and a project write-up want different shapes, and the
+    // write-up's three parts are the difference between a story and a summary.
+    // These are read in the *document's* language, not the app's, so an English
+    // letter is asked for in English.
+    askCoachLetter: m(
+      "Viết giúp mình bản nháp thư xin việc này nhé.",
+      "Write me a first draft of this cover letter.",
+    ),
+    askCoachLetterFor: (role: string) =>
+      m(
+        `Viết giúp mình bản nháp thư xin việc cho vị trí ${role} nhé.`,
+        `Write me a first draft of a cover letter for the ${role} role.`,
+      ),
+    askCoachWriteUp: m(
+      "Viết giúp mình bài viết dự án: dự án là gì, mình đã làm gì, kết quả ra sao.",
+      "Draft this project write-up: what it was, what I did, what came of it.",
     ),
     count: (n: number) => m(`${n} văn bản`, n === 1 ? "1 document" : `${n} documents`),
   },
@@ -892,7 +908,8 @@ export const messages = {
       "Chưa có câu nào. Thêm câu hỏi bạn sợ bị hỏi nhất.",
       "None yet. Start with the question you dread most.",
     ),
-    askCoachBio: m("Nhờ Coach viết giúp", "Ask the Coach to draft it"),
+    askCoachBio: m("Nhờ Coach viết giới thiệu", "Ask the Coach to draft it"),
+    askCoachIntro: m("Nhờ Coach viết bài này", "Ask the Coach to draft this"),
     askCoachBioPrompt: m(
       "Viết giúp mình đoạn giới thiệu ngắn dựa trên hồ sơ nhé.",
       "Draft my online bio from my profile.",

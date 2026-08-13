@@ -102,3 +102,15 @@ test("the voice rules the whole product shares are still stated", () => {
   assert.match(instructions, /Không dùng dấu chấm than/);
   assert.match(instructions, /xưng \*\*"mình"\*\*/);
 });
+
+test("AC-PITCH-004.3 and AC-PAPERS-009.2: a rewrite keeps the item's own language", () => {
+  // The failure this guards: somebody reading the app in Vietnamese has an
+  // English interview answer ready for a foreign employer, asks the Coach to
+  // sharpen it, and gets it back in Vietnamese. The item carries a `language`
+  // and the rewrite has to follow it rather than the conversation.
+  assert.match(
+    instructions,
+    /Sửa lại một mục đã có thì viết bằng đúng ngôn ngữ của mục đó/i,
+  );
+  assert.match(instructions, /sửa theo `language` của văn bản/i);
+});

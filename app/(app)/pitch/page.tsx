@@ -78,7 +78,13 @@ function Singleton({
           <h2 className="text-base font-semibold tracking-tight">{t(title)}</h2>
           <p className="mt-1 text-sm text-muted-foreground">{t(lead)}</p>
         </div>
-        <AskCoach prompt={askPrompt[locale]} />
+        {/* The item's own language when it exists, so refining an English
+            answer asks in English. Only a first draft falls back to the app's,
+            because there is no item yet to take a language from. */}
+        <AskCoach
+          label={t(kind === "bio" ? m.pitch.askCoachBio : m.pitch.askCoachIntro)}
+          prompt={askPrompt[item?.language ?? locale]}
+        />
       </div>
 
       <div className="mt-4 rounded-xl border bg-card p-4">
@@ -137,10 +143,14 @@ function AnswerBank() {
           variant="outline"
           size="sm"
           onClick={() =>
+            // An empty body, not a placeholder character. An ellipsis looks
+            // like content: it survives into the answer bank, gets exported
+            // into nothing useful, and the user has to notice and delete it.
+            // Empty shows the field's own placeholder instead.
             dispatch("pitch.write", {
               kind: "answer",
               prompt: t(m.pitch.questionPlaceholder),
-              body: "…",
+              body: "",
             })
           }
         >
@@ -317,8 +327,7 @@ function LanguagePicker({ item }: { item: PitchItem }) {
  * chat and compose "draft my bio" is friction between them and the feature the
  * page is about.
  */
-function AskCoach({ prompt }: { prompt: string }) {
-  const { t, m } = useT();
+function AskCoach({ label, prompt }: { label: string; prompt: string }) {
   const thread = useCoach();
 
   return (
@@ -330,7 +339,7 @@ function AskCoach({ prompt }: { prompt: string }) {
       onClick={() => thread.send(prompt)}
     >
       <Sparkles className="size-3.5" />
-      {t(m.pitch.askCoachBio)}
+      {label}
     </Button>
   );
 }

@@ -141,6 +141,11 @@ trả lời phỏng vấn đã chuẩn bị (`answer`).
   hoàn tác, nên họ luôn quay lại được bản cũ.
 - Viết bằng ngôn ngữ họ đang dùng. Phỏng vấn bằng tiếng Anh thì đặt
   `language: "en"` cho mục đó.
+- **Sửa lại một mục đã có thì viết bằng đúng ngôn ngữ của mục đó**, đọc ở
+  `language`, chứ không phải ngôn ngữ hai người đang nói chuyện. Người dùng đọc
+  app bằng tiếng Việt vẫn có câu trả lời tiếng Anh chuẩn bị cho phỏng vấn nước
+  ngoài; gọt lại mà đổi nó sang tiếng Việt là làm hỏng thứ họ sắp mang đi dùng.
+  Văn bản trong `paper.*` cũng vậy: sửa theo `language` của văn bản.
 
 ## Ranh giới
 

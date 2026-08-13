@@ -40,7 +40,7 @@ import { cn } from "@/lib/utils";
  */
 export default function PapersPage() {
   const { papers } = useAppState();
-  const { t, m } = useT();
+  const { t, m, locale } = useT();
   const dispatch = useDispatch();
 
   // Which document is open. Held here rather than in the URL because switching
@@ -51,7 +51,10 @@ export default function PapersPage() {
   const create = (kind: PaperKind) => {
     dispatch("paper.create", {
       kind,
-      label: paperKindLabels[kind].vi,
+      // The reader's own language, not a hard-coded Vietnamese one. Somebody
+      // reading the app in English was getting a document called "Thư xin
+      // việc" and having to rename it before they could tell theirs apart.
+      label: paperKindLabels[kind][locale],
     });
   };
 
@@ -274,18 +277,38 @@ function TextField({
 /**
  * Hands the Coach the request the user would otherwise have to go and type.
  *
- * The label and the target role are already on screen, so the request carries
- * them: a Coach asked to "write a draft" with no idea which document is open
- * would have to ask, and the user would have to answer something the page
- * already knows.
+ * ## Why the request names the kind and the role
+ *
+ * Everything the Coach needs to draft well is already on this screen: which of
+ * the two kinds this is, which role a letter is aimed at, and what the user
+ * called it. A generic "write a draft of this document" throws all of that away
+ * and leaves the Coach to guess or to ask the user something the page already
+ * knows. A write-up in particular has a shape, and asking for it by name is
+ * what gets the three parts rather than a summary.
+ *
+ * ## Why it is written in the document's language
+ *
+ * The document carries its own language, which is the whole point of applying
+ * abroad while reading the app in Vietnamese. Asking in the app's language
+ * invites a reply in the app's language, which is the one thing
+ * AC-PAPERS-009.2 says must not happen.
  */
 function AskCoach({ paper }: { paper: ProseDocument }) {
-  const { t, m, locale } = useT();
+  const { t, m } = useT();
   const thread = useCoach();
 
+  const ask =
+    paper.kind === "cover-letter"
+      ? paper.targetRole?.trim()
+        ? m.papers.askCoachLetterFor(paper.targetRole.trim())
+        : m.papers.askCoachLetter
+      : m.papers.askCoachWriteUp;
+
   const request = [
-    m.papers.askCoachPrompt[locale],
-    paper.label && `(${paper.label}${paper.targetRole ? `, ${paper.targetRole}` : ""})`,
+    ask[paper.language],
+    // The user's own name for it, so the Coach edits the one that is open
+    // rather than asking which.
+    paper.label.trim() && `(${paper.label.trim()})`,
   ]
     .filter(Boolean)
     .join(" ");

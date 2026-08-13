@@ -155,3 +155,39 @@ test("only the bio and the self-introduction are singletons", () => {
   assert.equal(isSingletonPitchKind("intro"), true);
   assert.equal(isSingletonPitchKind("answer"), false);
 });
+
+test("WO-39: an answer can start empty, so no placeholder ends up in a saved answer", () => {
+  // The bank's "add a question" starts a row the user types into. Seeding it
+  // with an ellipsis left that character in their answer until they noticed.
+  const state = applyAction(seedState(), "pitch.write", {
+    kind: "answer",
+    prompt: "Điểm yếu của bạn là gì?",
+    body: "",
+  }).state;
+
+  const [answer] = answersOf(state.pitch);
+  assert.equal(answer.body, "");
+  assert.equal(answer.prompt, "Điểm yếu của bạn là gì?");
+});
+
+test("WO-39: rewriting an item's body leaves its language alone", () => {
+  // An English answer refined while the app is in Vietnamese must stay English:
+  // it is what the user is about to take into a real interview.
+  let state = seedState("vi");
+  state = applyAction(state, "pitch.write", {
+    kind: "answer",
+    prompt: "Tell me about yourself",
+    body: "I am a final-year economics student.",
+    language: "en",
+  }).state;
+
+  const before = answersOf(state.pitch)[0];
+  state = applyAction(state, "pitch.update", {
+    id: before.id,
+    body: "I am a final-year economics student moving into data analysis.",
+  }).state;
+
+  const after = answersOf(state.pitch)[0];
+  assert.equal(after.language, "en", "the refine changed the item's language");
+  assert.match(after.body, /data analysis/);
+});

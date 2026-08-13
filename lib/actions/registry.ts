@@ -1362,7 +1362,11 @@ export const actions = {
       "the profile does not contain; ask the user instead.",
     input: z.object({
       kind: z.enum(pitchKinds as [PitchKind, ...PitchKind[]]),
-      body: z.string().min(1),
+      // Empty is allowed, because the answer bank's "add a question" starts a
+      // row the user then types into, and seeding it with a placeholder
+      // character would leave that character in their saved answer. The Coach
+      // always sends text; nothing stops it, and nothing needs to.
+      body: z.string(),
       prompt: z
         .string()
         .optional()
