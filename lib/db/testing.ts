@@ -64,3 +64,21 @@ export async function withTestSchema<T>(
     await client.end();
   }
 }
+
+/**
+ * The same, with the product's tables already in place.
+ *
+ * What almost every test above the database wants: a real `accounts` table
+ * with its real constraints, and nothing in it.
+ */
+export async function withMigratedSchema<T>(
+  body: (client: pg.Client, schema: string) => Promise<T>,
+): Promise<T> {
+  // Imported here rather than at the top so that the migration runner is not
+  // loaded by tests that never touch a database.
+  const { migrateUp } = await import("./migrate");
+  return withTestSchema(async (client, schema) => {
+    await migrateUp(client, { schema });
+    return body(client, schema);
+  });
+}
