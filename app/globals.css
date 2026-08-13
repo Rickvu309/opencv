@@ -1,0 +1,350 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-be-vietnam), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", monospace;
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  /* Linear's radius ladder: buttons 8, cards 12, large panels 16, fixed values,
+     không nhân chuỗi, để mỗi bậc là một quyết định chứ không phải hệ quả. */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
+  --radius-3xl: 32px;
+  --radius-4xl: 40px;
+}
+
+:root {
+  --background: oklch(0.98 0 0);
+  --foreground: oklch(0.16 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.16 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.16 0 0);
+  --primary: oklch(0.2 0 0);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.965 0 0);
+  --secondary-foreground: oklch(0.24 0 0);
+  --muted: oklch(0.965 0 0);
+  --muted-foreground: oklch(0.505 0 0);
+  --accent: oklch(0.955 0 0);
+  --accent-foreground: oklch(0.2 0 0);
+  --destructive: oklch(0.575 0.19 27);
+  --border: oklch(0.916 0 0);
+  --input: oklch(0.916 0 0);
+  --ring: oklch(0.6 0 0);
+
+  /* Semantic status, used as dots, icons and text only, never as fills. */
+  --success: oklch(0.58 0.13 155);
+  --warning: oklch(0.68 0.14 70);
+  --danger: oklch(0.575 0.19 27);
+  --info: oklch(0.55 0.15 255);
+
+  /* Charts read as a graphite ramp; ink = attained, haze = remaining. */
+  --chart-1: oklch(0.24 0 0);
+  --chart-2: oklch(0.86 0 0);
+  --chart-3: oklch(0.62 0 0);
+  --chart-4: oklch(0.44 0 0);
+  --chart-5: oklch(0.75 0 0);
+
+  --radius: 0.625rem;
+  /* Three surface layers: the rail recedes, the page sits between, panels come forward. */
+  --sidebar: oklch(0.958 0 0);
+  --sidebar-foreground: oklch(0.24 0 0);
+  --sidebar-primary: oklch(0.2 0 0);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.918 0 0);
+  --sidebar-accent-foreground: oklch(0.16 0 0);
+  --sidebar-border: oklch(0.916 0 0);
+  --sidebar-ring: oklch(0.6 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.97 0 0);
+  --card: oklch(0.19 0 0);
+  --card-foreground: oklch(0.97 0 0);
+  --popover: oklch(0.19 0 0);
+  --popover-foreground: oklch(0.97 0 0);
+  --primary: oklch(0.97 0 0);
+  --primary-foreground: oklch(0.16 0 0);
+  --secondary: oklch(0.25 0 0);
+  --secondary-foreground: oklch(0.97 0 0);
+  --muted: oklch(0.25 0 0);
+  --muted-foreground: oklch(0.68 0 0);
+  --accent: oklch(0.27 0 0);
+  --accent-foreground: oklch(0.97 0 0);
+  --destructive: oklch(0.7 0.19 22);
+
+  --success: oklch(0.7 0.14 155);
+  --warning: oklch(0.78 0.14 70);
+  --danger: oklch(0.7 0.19 22);
+  --info: oklch(0.68 0.14 255);
+
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.55 0 0);
+  --chart-1: oklch(0.92 0 0);
+  --chart-2: oklch(0.33 0 0);
+  --chart-3: oklch(0.62 0 0);
+  --chart-4: oklch(0.75 0 0);
+  --chart-5: oklch(0.45 0 0);
+  --sidebar: oklch(0.125 0 0);
+  --sidebar-foreground: oklch(0.9 0 0);
+  --sidebar-primary: oklch(0.97 0 0);
+  --sidebar-primary-foreground: oklch(0.16 0 0);
+  --sidebar-accent: oklch(0.27 0 0);
+  --sidebar-accent-foreground: oklch(0.97 0 0);
+  --sidebar-border: oklch(1 0 0 / 12%);
+  --sidebar-ring: oklch(0.55 0 0);
+}
+
+/*
+ * The bigger the type, the tighter, Linear scales negative tracking with size
+ * (-3px at 80px ≈ -0.037em) rather than one value for every heading.
+ */
+@utility tracking-display {
+  letter-spacing: -0.032em;
+}
+
+
+/*
+ * Motion vocabulary, three curves and four durations, named once.
+ *
+ * These are not new: the codebase had already converged on all three curves,
+ * they were just unnamed and retyped at each call site, which is how a fourth
+ * one creeps in. Naming them makes drift visible in review.
+ *
+ *   --ease-enter  enter, expand, settle. Expo, leaves fast, lands soft.
+ *   --ease-exit   exit, collapse. Dismissal should feel decisive.
+ *   --ease-snap   state flips inside a control (icon swaps, checks, presses).
+ *
+ * Named `enter`/`exit` rather than `out`/`in` on purpose: in Tailwind v4 a
+ * `--ease-out` token silently redefines the built-in `ease-out` utility, so
+ * every existing use of it would change curve without appearing in any diff.
+ */
+@theme {
+  --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-exit: cubic-bezier(0.32, 0, 0.67, 0);
+  --ease-snap: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Duration is chosen by how far a thing travels, not by taste.
+     press/hover · state change · surface open · full-width reveal */
+  --duration-press: 120ms;
+  --duration-state: 200ms;
+  --duration-surface: 300ms;
+  --duration-reveal: 500ms;
+}
+
+/*
+ * Sidebar: shadcn ships `ease-linear 200ms`, an even slide that reads cheap.
+ * Swapped for expo so it leaves fast and lands soft. Overrides a utility, hence !important.
+ */
+[data-slot="sidebar-gap"],
+[data-slot="sidebar-container"] {
+  transition-duration: var(--duration-surface) !important;
+  transition-timing-function: var(--ease-enter) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="sidebar-gap"],
+  [data-slot="sidebar-container"] {
+    transition-duration: 0ms !important;
+  }
+}
+
+/*
+ * Accordion: height opens on an expo curve (fast out, settling softly) and the
+ * content arrives just as the frame finishes, readable immediately rather than
+ * after the animation. Closing is decisive, no delay.
+ */
+@keyframes acc-open {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes acc-close {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+@keyframes acc-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@layer components {
+  .acc-panel[data-state="open"] {
+    animation: acc-open var(--duration-surface) var(--ease-enter);
+  }
+
+  .acc-panel[data-state="closed"] {
+    animation: acc-close 180ms var(--ease-exit);
+  }
+
+  .acc-panel[data-state="open"] > * {
+    animation: acc-reveal 260ms 80ms var(--ease-enter) backwards;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .acc-panel[data-state="open"],
+    .acc-panel[data-state="closed"],
+    .acc-panel[data-state="open"] > * {
+      animation: none;
+    }
+  }
+}
+
+/*
+ * A row the Coach just changed. The toast says what happened; this says where,
+ * so the user's eye lands on the row instead of hunting for it. Deliberately
+ * a wash of the selection colour rather than a flash; it should read as
+ * "look here", not as an alert.
+ */
+@keyframes just-changed {
+  from {
+    background-color: var(--color-accent);
+  }
+}
+
+@utility animate-just-changed {
+  animation: just-changed 1.2s var(--ease-enter);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-just-changed {
+    animation: none;
+    outline: 2px solid var(--color-ring);
+    outline-offset: -2px;
+  }
+}
+
+/* Skill bars grow from 0 on mount; change `key` to replay. */
+@keyframes bar-grow {
+  from {
+    width: 0;
+  }
+}
+
+@utility animate-bar-grow {
+  animation: bar-grow var(--duration-reveal) var(--ease-enter);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-bar-grow {
+    animation: none;
+  }
+}
+
+/*
+ * Printing a CV.
+ *
+ * `components/cv/resume-preview.tsx` mounts a second copy of the document
+ * straight onto `document.body`, marked `data-print-portal`. On screen it is
+ * hidden; on paper it is the only thing left. The app shell is `h-svh
+ * overflow-hidden` around several nested scroll panes, so printing the preview
+ * where it sits would clip the CV to one screenful, and unwinding that with
+ * `!important` overrides would break the next time the shell changed.
+ *
+ * No `margin` on `@page`: the document sets its own padding, so the margin is
+ * part of the design rather than the browser's guess at one.
+ */
+[data-print-portal] {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  html,
+  body {
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  body > *:not([data-print-portal]) {
+    display: none !important;
+  }
+
+  [data-print-portal] {
+    display: block !important;
+  }
+
+  /* Accent colours and rules are the document, not decoration; without this
+     most browsers drop them to save ink and the CV prints structureless. */
+  [data-print-portal] * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
