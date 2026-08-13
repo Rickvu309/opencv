@@ -4,6 +4,7 @@ import * as React from "react";
 import { useSearchParams } from "next/navigation";
 
 import { Composer } from "@/components/coach/composer";
+import { ActivationChecklist } from "@/components/onboarding/activation-checklist";
 import { CoachSessionEnded } from "@/components/coach/session-ended";
 import { useCoach } from "@/components/coach/provider";
 import {
@@ -71,6 +72,10 @@ function CoachChat() {
           <CoachGreeting />
           <Composer thread={thread} autoFocus />
           <CoachStarters thread={thread} />
+          {/* On the empty state only. Somebody mid-conversation has already
+              found their way in and does not need a list of first steps under
+              the thread they are reading. */}
+          <ActivationChecklist />
         </div>
       </div>
     );

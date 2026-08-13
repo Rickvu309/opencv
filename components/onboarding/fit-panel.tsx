@@ -9,9 +9,12 @@
 //
 // This is the other half of the bargain: every field the user fills moves a
 // number they can see, against the role they said they wanted, with the
-// requirements they have and have not met listed underneath. It is the same
-// `fitFor` the career map uses, so the figure they meet here is the figure that
-// greets them there.
+// requirements they have and have not met listed underneath.
+//
+// It scores against the goal the user has just stated, which is what WO-64
+// asks for. That used to be described as "the same figure the career map
+// shows"; the map is retired and the roles it drew are now a catalogue this
+// screen owns, so the sentence went with it. The calculation did not change.
 
 import { Check, Circle } from "lucide-react";
 

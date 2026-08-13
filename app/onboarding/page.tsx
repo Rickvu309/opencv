@@ -34,6 +34,7 @@ import { ArrowRight, Check, ChevronLeft, Compass, Loader2, Route } from "lucide-
 
 import { useAppState, useDispatch } from "@/lib/actions/store";
 import { pathNodes, stages } from "@/lib/career-graph";
+import { GuidedTour } from "@/components/onboarding/guided-tour";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -93,6 +94,7 @@ export default function OnboardingPage() {
   );
 
   const [finishing, setFinishing] = React.useState(false);
+  const [touring, setTouring] = React.useState(false);
 
   const roleGroups = stages
     .filter((stage) => stage.id !== "now")
@@ -144,9 +146,20 @@ export default function OnboardingPage() {
     }
 
     markJustOnboarded();
-    // To the Coach. Three screens of questions earn an answer, and the profile
-    // is only the visitor's own typing handed back to them.
-    setTimeout(() => router.push("/coach"), 1200);
+    // The tour, then the Coach. Setup is over and the questions are answered;
+    // what is missing is any idea of what the product does with them, which is
+    // four cards rather than a paragraph nobody reads.
+    setTimeout(() => setTouring(true), 1200);
+  }
+
+  // The tour takes over the whole screen: the two-pane setup layout is about
+  // answering questions, and there are none left to answer.
+  if (touring) {
+    return (
+      <div className="flex min-h-svh flex-col justify-center px-6 py-10">
+        <GuidedTour onDone={() => router.push("/coach")} />
+      </div>
+    );
   }
 
   const current = steps[step];

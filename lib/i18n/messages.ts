@@ -98,18 +98,25 @@ export const messages = {
   },
 
   /* ── Landing ────────────────────────────────────────────────────────── */
+  // The page has one job: say what this is, who it is for, and what makes it
+  // different, in the two sentences a visitor gives it. Written per language
+  // rather than translated: the Vietnamese leads with the reassurance, the
+  // English leads with the claim, because that is how each reads naturally.
   landing: {
-    // Three short declarations, one per line at every width. The English is
-    // three imperatives rather than a rendering of the Vietnamese nouns.
-    headline1: m("Hiểu bản thân.", "Know your strengths."),
-    headline2: m("Chọn đúng hướng.", "Pick a real direction."),
-    headline3: m("Biết bắt đầu từ đâu.", "Take the first step."),
-    subhead: m(
-      "Cố vấn nghề nghiệp cho người trẻ Việt, dựa trên hồ sơ thật của bạn.",
-      "A career coach for Vietnamese students, built on your real profile.",
+    audience: m(
+      "Cho sinh viên và người mới ra trường",
+      "For students and new graduates",
     ),
-    tryIt: m("Dùng thử OpenPath", "Try OpenPath"),
-    joinWaitlist: m("Tham gia danh sách chờ", "Join the waiting list"),
+    // The promise, not a tagline. "Sẵn sàng" carries readiness; the English
+    // says what readiness is for.
+    headline1: m("Sẵn sàng cho công việc", "Be ready for work"),
+    headline2: m("bạn thật sự muốn làm.", "that's actually worth doing."),
+    subhead: m(
+      "Coach viết CV, gọt lời giới thiệu và tìm việc hợp với bạn. Bạn vẫn là người quyết.",
+      "The Coach writes your CV, sharpens your pitch and finds jobs that fit. You stay in control.",
+    ),
+    tryIt: m("Bắt đầu miễn phí", "Start free"),
+    joinWaitlist: m("Để lại email", "Leave your email"),
     waitlistLead: m(
       "Có chỗ trống là mình báo bạn ngay.",
       "We'll email you when a place opens.",
@@ -118,9 +125,41 @@ export const messages = {
       "Bạn đã ở trong danh sách chờ. Cứ dùng thử trong lúc đợi.",
       "You're on the list. Look around while you wait.",
     ),
-    feature1: m("Hiểu bản thân", "Understand yourself"),
-    feature2: m("Cơ hội phù hợp", "Roles that fit"),
-    feature3: m("Lộ trình rõ ràng", "A plan you can follow"),
+
+    // Two pillars, in student words. Not "personal branding" and "job
+    // discovery": prepare, then land something.
+    pillarsHeading: m("Hai việc, theo thứ tự", "Two things, in order"),
+    pillar1Title: m("Chuẩn bị cho tử tế", "Get yourself ready"),
+    pillar1Body: m(
+      "CV, thư xin việc, bài giới thiệu bản thân, câu trả lời phỏng vấn. Viết từ hồ sơ thật của bạn, không bịa.",
+      "A CV, a cover letter, a self-introduction, interview answers. Written from your real profile, nothing invented.",
+    ),
+    pillar2Title: m("Rồi tìm đúng chỗ", "Then find the right place"),
+    pillar2Body: m(
+      "Dán một tin tuyển dụng vào, app nói bạn khớp mấy phần và còn thiếu gì. Theo dõi từng đơn tới lúc có kết quả.",
+      "Paste a posting and see which requirements you meet. Track every application to an outcome.",
+    ),
+
+    // How it works. Three concrete steps, no numbers nobody measured.
+    howHeading: m("Cách nó chạy", "How it works"),
+    how1: m(
+      "Bạn nói mục tiêu và những gì đã có.",
+      "You say what you're aiming at and what you've got.",
+    ),
+    how2: m(
+      "Coach dựng hồ sơ cùng bạn, sửa được từng dòng.",
+      "The Coach builds your materials with you, editable line by line.",
+    ),
+    how3: m(
+      "Bạn nộp, và biết chính xác mình đang đứng ở đâu.",
+      "You apply, and you know exactly where you stand.",
+    ),
+    // The control promise, said plainly because it is the differentiator and
+    // the thing a reader is right to be suspicious of.
+    controlNote: m(
+      "Mọi thay đổi Coach làm đều hiện ra kèm nút hoàn tác. Không có gì xảy ra sau lưng bạn.",
+      "Every change the Coach makes shows up with an undo button. Nothing happens behind your back.",
+    ),
   },
 
   /* ── Onboarding ─────────────────────────────────────────────────────── */
@@ -169,6 +208,46 @@ export const messages = {
     finishNext: m("Xong · gặp Coach", "Finish · meet the Coach"),
 
     fitFor: m("Mức phù hợp của bạn", "How close you are"),
+
+    // The guided tour. Four cards, in the order somebody meets the product:
+    // who does the work, where their materials live, how jobs are found, and
+    // the promise that makes the first card acceptable.
+    tourSkip: m("Bỏ qua", "Skip"),
+    tourNext: m("Tiếp", "Next"),
+    tourDone: m("Xong, vào Coach", "Done, meet the Coach"),
+    tourStep: (at: number, of: number) => m(`${at}/${of}`, `${at} of ${of}`),
+    tour1Title: m("Coach làm cùng bạn", "The Coach works with you"),
+    tour1Body: m(
+      "Không chỉ khuyên. Bạn nhờ một câu, Coach viết CV, sửa thư, thêm mục vào hồ sơ, ngay trong app.",
+      "Not just advice. Ask once and the Coach writes your CV or edits a letter, here.",
+    ),
+    tour2Title: m("Bạn vẫn là người quyết", "You stay in control"),
+    tour2Body: m(
+      "Mỗi thay đổi hiện một thẻ kèm nút hoàn tác. Xoá thì Coach hỏi trước. Không có gì xảy ra sau lưng bạn.",
+      "Every change shows a card with an undo button. Deletions ask first. Nothing happens behind your back.",
+    ),
+    tour3Title: m("Hồ sơ của bạn ở đâu", "Where your materials live"),
+    tour3Body: m(
+      "CV, thư xin việc, bài giới thiệu bản thân, mỗi thứ một màn hình bên trái. Sửa tay lúc nào cũng được.",
+      "Your CV, letters and pitch each have a screen. Edit any of it by hand.",
+    ),
+    tour4Title: m("Tìm việc và theo dõi", "Find jobs and track them"),
+    tour4Body: m(
+      "Dán một tin tuyển dụng, app nói bạn khớp mấy phần và thiếu gì. Nộp rồi thì theo dõi tới lúc có kết quả.",
+      "Paste a posting and see what you're missing. Then track it to an outcome.",
+    ),
+
+    // The activation checklist.
+    checklistTitle: m("Bốn việc đầu tiên", "Your first four"),
+    checklistLead: m(
+      "Làm xong bốn việc này là bạn dùng được hết app.",
+      "Do these four and you've used the whole product.",
+    ),
+    checklistDismiss: m("Ẩn danh sách này", "Hide this"),
+    stepGoal: m("Đặt mục tiêu nghề nghiệp", "Set a career goal"),
+    stepFacts: m("Thêm một khoá học hoặc kinh nghiệm", "Add a course or an experience"),
+    stepDocument: m("Dựng thứ đầu tiên: CV, thư, hoặc lời giới thiệu", "Make something: a CV, a letter, or a pitch"),
+    stepCoach: m("Nói chuyện với Coach một lần", "Talk to the Coach once"),
     // These two moved here from the career map when it was retired. The live
     // fit score outlived the map, and so did the words it needs.
     requirementMet: m("Đã đạt", "Met"),
