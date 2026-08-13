@@ -42,7 +42,9 @@ test("AC-PAPERS-010.4: some templates have a photo area and some do not", () => 
 });
 
 test("switching to a template without a photo hides it rather than losing it", () => {
-  let { state, id } = withCv();
+  const cv = withCv();
+  const { id } = cv;
+  let state = cv.state;
   state = applyAction(state, "resume.setPhoto", { id, stamp: "123" }).state;
 
   const withPhoto = state.resumes[0];
@@ -69,7 +71,9 @@ test("a CV with no photo has no URL to fetch", () => {
 test("replacing the photo changes the URL", () => {
   // Without this the browser keeps showing the old picture from its cache and
   // the user clicks upload again on a photo that did upload.
-  let { state, id } = withCv();
+  const cv = withCv();
+  const { id } = cv;
+  let state = cv.state;
   state = applyAction(state, "resume.setPhoto", { id, stamp: "1" }).state;
   const first = photoUrl(state.resumes[0]);
   state = applyAction(state, "resume.setPhoto", { id, stamp: "2" }).state;
@@ -77,7 +81,9 @@ test("replacing the photo changes the URL", () => {
 });
 
 test("removing the photo clears the stamp", () => {
-  let { state, id } = withCv();
+  const cv = withCv();
+  const { id } = cv;
+  let state = cv.state;
   state = applyAction(state, "resume.setPhoto", { id, stamp: "1" }).state;
   state = applyAction(state, "resume.setPhoto", { id }).state;
   assert.equal(state.resumes[0].photoStamp, undefined);

@@ -38,7 +38,11 @@ export function PaperPrintPortal({ paper }: { paper: ProseDocument }) {
     <article
       lang={paper.language}
       style={{
-        display: "none",
+        // No `display: none` here. The host carries `data-print-portal`, and
+        // `globals.css` hides *that* on screen and reveals it in print. Hiding
+        // the article as well looked equivalent and was not: the print rule
+        // targets the host, so the host turned back on and the article stayed
+        // off, and the PDF came out blank.
         padding: "56px 64px",
         fontFamily: "var(--font-be-vietnam), sans-serif",
         fontSize: 13.5,
