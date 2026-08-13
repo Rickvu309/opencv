@@ -1,11 +1,22 @@
 import { withAuthChallenges, type AuthFn } from "eve/channels/auth";
 import type { ClientBase } from "pg";
 
-import { readSessionCookie, readToken } from "../../lib/auth/cookie";
-import { readSession } from "../../lib/auth/sessions";
+import { readSessionCookie, readToken } from "./cookie";
+import { readSession } from "./sessions";
 
 /**
  * The agent's door, opened by the signed-in user rather than a shared password.
+ *
+ * ## Why this lives in `lib/auth/` and not beside the channel
+ *
+ * eve loads every file under `agent/channels/` as a channel and validates its
+ * default export against the channel shape. This is a helper, not a channel, so
+ * sitting there killed the agent process on boot: `eve dev` refused the file and
+ * exited before printing a server URL, which takes the Coach down with it.
+ * Moving it one directory up only traded that for a warning on every boot,
+ * because `channels/`, `tools/` and `skills/` are the only directories eve
+ * knows about. So it belongs here, with the session code it is made of;
+ * `agent/channels/eve.ts` imports it.
  *
  * ## What this replaces
  *

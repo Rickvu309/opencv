@@ -70,7 +70,27 @@ Verdict for this dimension: **pass**.
 
 ### Findings
 
-No blocking findings. No advisory findings recorded for this work order.
+1. **Blocking — fixed after the first audit round.** `agent/channels/session.ts`,
+   dimension: architecture and conventions. eve loads every file under
+   `agent/channels/` as a channel and validates its default export against the
+   channel shape. The session helper was placed there, so `eve dev` refused it
+   and the agent process exited before printing a server URL: the Coach was
+   completely down, in dev and on any deploy that boots the agent the same way.
+
+   It survived the first audit because nothing in the pipeline boots eve.
+   `npm run build`, `npm test`, `tsc` and `eslint` all pass with the agent
+   broken, and the earlier live checks reused a dev server that had been started
+   before the file existed.
+
+   Fixed by moving it to `lib/auth/agent-session.ts`. An intermediate move to
+   `agent/auth/` booted but warned on every start, because `channels/`, `tools/`
+   and `skills/` are the only directories eve knows.
+
+   Process lesson, recorded here because it generalises: a green build is not
+   evidence that the agent runs. Any change under `agent/` needs `npm run dev`
+   watched to the line `[eve:dev] server listening`.
+
+No advisory findings.
 
 ### Verdict
 

@@ -5,11 +5,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { createAccount } from "../../lib/auth/accounts";
-import { SESSION_COOKIE, readSessionCookie, signToken } from "../../lib/auth/cookie";
-import { startSession } from "../../lib/auth/sessions";
-import { skipWithoutDatabase, withMigratedSchema } from "../../lib/db/testing";
-import { userSession } from "./session";
+import { createAccount } from "@/lib/auth/accounts";
+import { SESSION_COOKIE, readSessionCookie, signToken } from "@/lib/auth/cookie";
+import { startSession } from "@/lib/auth/sessions";
+import { skipWithoutDatabase, withMigratedSchema } from "@/lib/db/testing";
+import { userSession } from "@/lib/auth/agent-session";
 
 const OPTIONS = { skip: skipWithoutDatabase };
 

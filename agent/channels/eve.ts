@@ -1,7 +1,7 @@
 import { eveChannel } from "eve/channels/eve";
 import { localDev, vercelOidc } from "eve/channels/auth";
 
-import { userSession } from "./session";
+import { userSession } from "../../lib/auth/agent-session";
 
 export default eveChannel({
   auth: [
@@ -12,7 +12,7 @@ export default eveChannel({
     localDev(),
     // The signed-in user. This used to be one shared demo account over HTTP
     // Basic, with its password printed on the form; the turn is now authorized
-    // by whoever is actually signed in. See ./session.ts.
+    // by whoever is actually signed in. See lib/auth/agent-session.ts.
     userSession(),
   ],
 });
