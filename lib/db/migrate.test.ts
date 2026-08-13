@@ -31,15 +31,15 @@ function fixtureDir(files: Record<string, string>): string {
 
 test("the repository's own migrations are complete pairs", () => {
   const migrations = readMigrations();
-  assert.ok(migrations.length >= 3, "expected at least three migrations");
+  assert.ok(migrations.length >= 4, "expected at least four migrations");
   for (const migration of migrations) {
     assert.ok(migration.up.trim().length > 0, `${migration.id} has an empty up`);
     assert.ok(migration.down.trim().length > 0, `${migration.id} has an empty down`);
   }
   assert.deepEqual(
     migrations.map((m) => m.name),
-    ["accounts", "sessions", "app_state"],
-    "order matters: sessions and app_state both reference accounts",
+    ["accounts", "sessions", "app_state", "conversations"],
+    "order matters: everything after the first references accounts",
   );
 });
 
@@ -136,7 +136,7 @@ test("the checksum follows the up text and ignores line endings", () => {
 test("every migration applies to an empty schema", { skip: skipWithoutDatabase }, async () => {
   await withTestSchema(async (client, schema) => {
     const ran = await migrateUp(client, { schema });
-    assert.deepEqual(ran, ["001", "002", "003"]);
+    assert.deepEqual(ran, readMigrations().map((m) => m.id));
 
     const { rows } = await client.query<{ table_name: string }>(
       "select table_name from information_schema.tables where table_schema = $1 order by 1",
@@ -144,31 +144,32 @@ test("every migration applies to an empty schema", { skip: skipWithoutDatabase }
     );
     assert.deepEqual(
       rows.map((r) => r.table_name),
-      ["accounts", "app_state", "schema_migrations", "sessions"],
+      ["accounts", "app_state", "conversations", "schema_migrations", "sessions"],
     );
   });
 });
 
 test("applying twice is a no-op, not an error", { skip: skipWithoutDatabase }, async () => {
   await withTestSchema(async (client, schema) => {
-    await migrateUp(client, { schema });
+    const first = await migrateUp(client, { schema });
     // This is the property that lets the command run in front of every deploy
     // without anyone having to know what the last one did.
     assert.deepEqual(await migrateUp(client, { schema }), []);
-    assert.equal((await applied(client)).length, 3);
+    assert.equal((await applied(client)).length, first.length);
   });
 });
 
 test("rollback undoes the last migration only", { skip: skipWithoutDatabase }, async () => {
   await withTestSchema(async (client, schema) => {
-    await migrateUp(client, { schema });
+    const ran = await migrateUp(client, { schema });
+    const newest = ran.at(-1)!;
 
-    assert.equal(await migrateDown(client, { schema }), "003");
+    assert.equal(await migrateDown(client, { schema }), newest);
     const left = (await applied(client)).map((row) => row.id);
-    assert.deepEqual(left, ["001", "002"], "only the newest is undone");
+    assert.deepEqual(left, ran.slice(0, -1), "only the newest is undone");
 
     const { rows } = await client.query<{ n: string }>(
-      "select count(*) n from information_schema.tables where table_schema = $1 and table_name = 'app_state'",
+      "select count(*) n from information_schema.tables where table_schema = $1 and table_name = 'conversations'",
       [schema],
     );
     assert.equal(rows[0].n, "0", "the table is gone");
@@ -177,9 +178,9 @@ test("rollback undoes the last migration only", { skip: skipWithoutDatabase }, a
 
 test("a rolled back migration can be applied again", { skip: skipWithoutDatabase }, async () => {
   await withTestSchema(async (client, schema) => {
-    await migrateUp(client, { schema });
+    const ran = await migrateUp(client, { schema });
     await migrateDown(client, { schema });
-    assert.deepEqual(await migrateUp(client, { schema }), ["003"]);
+    assert.deepEqual(await migrateUp(client, { schema }), [ran.at(-1)]);
   });
 });
 
@@ -213,7 +214,7 @@ test("editing an applied migration is refused", { skip: skipWithoutDatabase }, a
 test("status reports pending and applied", { skip: skipWithoutDatabase }, async () => {
   await withTestSchema(async (client, schema) => {
     const before = await migrationStatus(client, { schema });
-    assert.equal(before.length, 3);
+    assert.equal(before.length, readMigrations().length);
     assert.ok(before.every((row) => row.appliedAt === null));
 
     await migrateUp(client, { schema });

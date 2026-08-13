@@ -6,7 +6,9 @@ import assert from "node:assert/strict";
 
 import {
   clearConversations,
+  configureConversations,
   conversationTitle,
+  flushConversations,
   loadConversations,
   removeConversation,
   upsertConversation,
@@ -149,3 +151,167 @@ test("a conversation is named by what was asked first", () => {
 test("a conversation with nothing asked yet has no name", () => {
   assert.equal(conversationTitle([] as never), "");
 });
+
+/* ── Signed in: the account's row, not this browser ──────────────────────── */
+
+/** Every request the module made, so the queue can be watched. */
+function withServer(
+  run: (sent: { body: unknown }[]) => Promise<void>,
+): () => Promise<void> {
+  return async () => {
+    const globals = globalThis as { window?: unknown; fetch?: unknown };
+    const hadWindow = "window" in globals;
+    const previousWindow = globals.window;
+    const previousFetch = globals.fetch;
+
+    const sent: { body: unknown }[] = [];
+    globals.window = fakeWindow();
+    globals.fetch = async (_url: string, init: { body: string }) => {
+      sent.push({ body: JSON.parse(init.body) });
+      return { ok: true };
+    };
+    try {
+      await run(sent);
+    } finally {
+      configureConversations({ signedIn: false });
+      if (hadWindow) globals.window = previousWindow;
+      else delete globals.window;
+      globals.fetch = previousFetch;
+    }
+  };
+}
+
+/** Long enough for the queue's quiet period to pass. */
+const afterTheQueue = () => new Promise((resolve) => setTimeout(resolve, 2200));
+
+test(
+  "AC-ACCT-004.3: a signed-in tab starts from the account's threads",
+  withServer(async () => {
+    const carried: Conversation = {
+      id: "from-the-laptop",
+      title: "CV cho VNG",
+      savedAt: 5,
+      events: [],
+      session: undefined,
+    };
+    configureConversations({ signedIn: true, initial: [carried] });
+
+    const [found] = loadConversations();
+    assert.equal(found.id, "from-the-laptop");
+    assert.equal(found.title, "CV cho VNG");
+  }),
+);
+
+test(
+  "a signed-in tab never shows threads left in this browser",
+  withServer(async () => {
+    // Somebody used this device before, signed out, and somebody else signed
+    // in. The first person's questions must not be in the second's sidebar.
+    configureConversations({ signedIn: false });
+    upsertConversation({
+      id: "somebody-else",
+      title: "their question",
+      savedAt: 1,
+      events: [],
+      session: undefined,
+    });
+
+    configureConversations({ signedIn: true, initial: [] });
+    assert.deepEqual(loadConversations(), []);
+  }),
+);
+
+test(
+  "a saved conversation goes to the server and not to the browser",
+  withServer(async (sent) => {
+    configureConversations({ signedIn: true, initial: [] });
+    upsertConversation({
+      id: "new",
+      title: "Mình nên học gì tiếp?",
+      savedAt: 1,
+      events: [],
+      session: undefined,
+    });
+
+    // Readable at once, because the next read may be one line later.
+    assert.deepEqual(loadConversations().map((c) => c.id), ["new"]);
+
+    await afterTheQueue();
+    assert.equal(sent.length, 1);
+    const body = sent[0].body as { conversations: Conversation[] };
+    assert.deepEqual(body.conversations.map((c) => c.id), ["new"]);
+  }),
+);
+
+test(
+  "a burst of saves becomes one request carrying the latest list",
+  withServer(async (sent) => {
+    configureConversations({ signedIn: true, initial: [] });
+    // A conversation is saved on every stream event. One request per token
+    // would be a transcript a second going to another continent.
+    for (let i = 0; i < 5; i += 1) {
+      upsertConversation({
+        id: "streaming",
+        title: "t",
+        savedAt: i,
+        events: [],
+        session: undefined,
+      });
+    }
+
+    await afterTheQueue();
+    assert.equal(sent.length, 1, `expected one request, got ${sent.length}`);
+    const body = sent[0].body as { conversations: Conversation[] };
+    assert.equal(body.conversations[0].savedAt, 4, "the last save is the one sent");
+  }),
+);
+
+test(
+  "deleting a conversation reaches the account, not just the screen",
+  withServer(async (sent) => {
+    configureConversations({
+      signedIn: true,
+      initial: [
+        { id: "a", title: "a", savedAt: 2, events: [], session: undefined },
+        { id: "b", title: "b", savedAt: 1, events: [], session: undefined },
+      ],
+    });
+
+    removeConversation("a");
+    assert.deepEqual(loadConversations().map((c) => c.id), ["b"]);
+
+    await afterTheQueue();
+    const body = sent.at(-1)!.body as { conversations: Conversation[] };
+    assert.deepEqual(body.conversations.map((c) => c.id), ["b"]);
+  }),
+);
+
+test(
+  "the tab flushing on its way out sends what the queue is holding",
+  withServer(async (sent) => {
+    const beacons: unknown[] = [];
+    const original = Object.getOwnPropertyDescriptor(globalThis, "navigator");
+    Object.defineProperty(globalThis, "navigator", {
+      configurable: true,
+      value: { sendBeacon: (_url: string, blob: unknown) => (beacons.push(blob), true) },
+    });
+    try {
+      configureConversations({ signedIn: true, initial: [] });
+      upsertConversation({
+        id: "unsaved",
+        title: "t",
+        savedAt: 1,
+        events: [],
+        session: undefined,
+      });
+      // Inside the quiet period: without the flush, this is the end of the
+      // thread somebody loses every time they close the tab.
+      flushConversations();
+
+      assert.equal(beacons.length, 1);
+      assert.equal(sent.length, 0, "the beacon replaces the request");
+    } finally {
+      if (original) Object.defineProperty(globalThis, "navigator", original);
+    }
+  }),
+);

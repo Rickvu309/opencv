@@ -2,6 +2,11 @@
 
 import * as React from "react";
 
+import {
+  configureConversations,
+  flushConversations,
+  type Conversation,
+} from "@/lib/coach/sessions";
 import { useCoachThread, type CoachThread } from "./thread";
 
 /**
@@ -36,7 +41,33 @@ function CoachThreadHost({
   return <CoachContext.Provider value={thread}>{children}</CoachContext.Provider>;
 }
 
-export function CoachProvider({ children }: { children: React.ReactNode }) {
+/**
+ * `initial` is the signed-in account's threads, read on the server and rendered
+ * into the page. Null means nobody is signed in, and the store falls back to
+ * the browser copy, which is what the unauthenticated path has always used.
+ *
+ * Handed to the store during render rather than in an effect, because the
+ * thread below reads the list in a `useState` initialiser and would otherwise
+ * find it empty on the render that matters.
+ */
+export function CoachProvider({
+  children,
+  initial = null,
+}: {
+  children: React.ReactNode;
+  initial?: readonly Conversation[] | null;
+}) {
+  configureConversations({ signedIn: initial !== null, initial });
+
+  // The queue holds a saved conversation for two seconds. Closing the tab
+  // inside that window used to cost nothing, because the write was already in
+  // localStorage; it now costs the end of the thread.
+  React.useEffect(() => {
+    const flush = () => flushConversations();
+    window.addEventListener("pagehide", flush);
+    return () => window.removeEventListener("pagehide", flush);
+  }, []);
+
   // The server has no stored session, so it renders the seeded conversation.
   // Remounting the host once after hydration lets the restored session be read
   // at store creation, where `useEveAgent` needs it, without the server and the

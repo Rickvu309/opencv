@@ -9,15 +9,20 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SkipLink } from "@/components/skip-link";
 import { WaitlistPrompt } from "@/components/waitlist-prompt";
+import { initialConversations } from "@/lib/coach/server";
 
-export default function AppLayout({
+export default async function AppLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // The signed-in account's Coach threads, so a second device shows the same
+  // conversations rather than an empty sidebar beside a full profile.
+  const conversations = await initialConversations();
+
   return (
     <TooltipProvider>
       <AppShell>
 <SkipLink />
-        <CoachProvider>
+        <CoachProvider initial={conversations}>
         <AppSidebar />
         {/* Content frame floating on the grey canvas, Linear-style; the bottom gutter holds the coach strip. */}
         <SidebarInset

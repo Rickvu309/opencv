@@ -20,18 +20,51 @@ const KEY = "openpath:coach-conversations:v1";
 /** The single-conversation key this replaces. Read once, then removed. */
 const LEGACY_KEY = "openpath:coach-session:v1";
 
+const ENDPOINT = "/api/coach/conversations";
+
 /** Enough events to redraw a thread without storing a transcript forever. */
-const MAX_EVENTS = 400;
+export const MAX_EVENTS = 400;
 
 /**
  * How many conversations are kept.
  *
- * Not unbounded: every one of these carries up to 400 stream events, and
- * localStorage is a handful of megabytes that the app's own state also lives
- * in. Twelve is more than anyone will scroll and small enough that the oldest
- * falling off is a non-event.
+ * Not unbounded: every one of these carries up to 400 stream events. The
+ * original reason was localStorage's few megabytes, shared with the app's own
+ * state. The cap matters more now, not less: the list is a single document sent
+ * to a database in another region on every change, so its size is paid in
+ * latency as well as in storage. Twelve is more than anyone will scroll and
+ * small enough that the oldest falling off is a non-event.
  */
-const MAX_CONVERSATIONS = 12;
+export const MAX_CONVERSATIONS = 12;
+
+/* ── Which store this tab is talking to ─────────────────────────────────── */
+
+/**
+ * Signed in, the account's row. Signed out, the browser, exactly as before.
+ *
+ * The same split `lib/actions/persistence.ts` makes, for the same reason, with
+ * one difference that matters: this module's readers are synchronous. They run
+ * inside `useState` initialisers where a promise cannot be awaited. So the
+ * signed-in list is fetched on the server, rendered into the page, and handed
+ * here before anything reads it, and the cache below is what `loadConversations`
+ * returns from then on.
+ */
+let signedIn = false;
+let cache: Conversation[] | null = null;
+
+export function configureConversations(options: {
+  signedIn: boolean;
+  initial?: readonly Conversation[] | null;
+}): void {
+  signedIn = options.signedIn;
+  if (options.signedIn) {
+    // Only on the first configure: a remount must not throw away conversations
+    // saved since the page was rendered.
+    cache ??= [...(options.initial ?? [])];
+  } else {
+    cache = null;
+  }
+}
 
 export type Conversation = {
   id: string;
@@ -45,6 +78,11 @@ export type Conversation = {
 
 /** Everything stored, newest first. */
 export function loadConversations(): Conversation[] {
+  // The account's list, already here. Never falls through to the browser: a
+  // signed-in user must not be shown threads left by whoever used this device
+  // before them.
+  if (signedIn) return cache ? [...cache] : [];
+
   if (typeof window === "undefined") return [];
   try {
     const raw = window.localStorage.getItem(KEY);
@@ -98,23 +136,119 @@ function migrateLegacy(): Conversation[] {
   }
 }
 
+/** The list as it should be stored: newest first, and inside both caps. */
+function trim(list: readonly Conversation[]): Conversation[] {
+  return [...list]
+    .sort((a, b) => b.savedAt - a.savedAt)
+    .slice(0, MAX_CONVERSATIONS)
+    .map((c) => ({
+      ...c,
+      // `initialEvents` must be an ordered prefix of the same session, so
+      // this keeps the newest run rather than sampling across it.
+      events: c.events.slice(-MAX_EVENTS),
+    }));
+}
+
 export function saveConversations(list: readonly Conversation[]): void {
+  const trimmed = trim(list);
+
+  if (signedIn) {
+    // The cache is updated first and synchronously, because the next read may
+    // be one line later. The request catches up.
+    cache = trimmed;
+    queue(trimmed);
+    return;
+  }
+
   if (typeof window === "undefined") return;
   try {
-    const trimmed = [...list]
-      .sort((a, b) => b.savedAt - a.savedAt)
-      .slice(0, MAX_CONVERSATIONS)
-      .map((c) => ({
-        ...c,
-        // `initialEvents` must be an ordered prefix of the same session, so
-        // this keeps the newest run rather than sampling across it.
-        events: c.events.slice(-MAX_EVENTS),
-      }));
     window.localStorage.setItem(KEY, JSON.stringify(trimmed));
   } catch {
     // Private mode or a full quota. The conversation still works; it just will
     // not outlive the tab.
   }
+}
+
+/* ── Sending the list to the account's row ──────────────────────────────── */
+
+/**
+ * Longer than the state store's quiet period, deliberately.
+ *
+ * A conversation is saved on every stream event, and the document is the whole
+ * transcript rather than a 5KB state blob. Sending it 700ms after each token
+ * would be a megabyte a second going to another continent to say almost nothing
+ * new. Two seconds still lands well inside the gap between turns.
+ */
+const QUIET_MS = 2_000;
+
+let pending: Conversation[] | null = null;
+let timer: ReturnType<typeof setTimeout> | null = null;
+let sending = false;
+
+function queue(list: Conversation[]): void {
+  if (typeof window === "undefined") return;
+  pending = list;
+  if (timer) clearTimeout(timer);
+  timer = setTimeout(() => void send(), QUIET_MS);
+}
+
+async function send(): Promise<void> {
+  timer = null;
+  // One request at a time; the `finally` picks up whatever arrived meanwhile.
+  // Two in flight could land the older transcript last, which would silently
+  // delete the end of a conversation.
+  if (sending || !pending) return;
+
+  const list = pending;
+  pending = null;
+  sending = true;
+  try {
+    await fetch(ENDPOINT, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ conversations: list }),
+      credentials: "same-origin",
+    });
+  } catch {
+    // Offline, or the server is down. The thread is still on screen and still
+    // in the cache; it simply will not be on the next device. There is no toast
+    // here on purpose: `lib/actions/store.tsx` already warns once when saving
+    // stops working, and two warnings for one broken connection is noise.
+  } finally {
+    sending = false;
+    if (pending) queue(pending);
+  }
+}
+
+/**
+ * Send what is queued now, because the tab is going away.
+ *
+ * Same bargain as the state store's flush, and the same mechanism: a browser
+ * tearing down a page cancels outstanding requests, and `sendBeacon` is the one
+ * thing it promises to deliver anyway. It can only POST, which is why the
+ * endpoint accepts POST as well as PUT.
+ */
+export function flushConversations(): void {
+  if (typeof window === "undefined" || !signedIn || !pending) return;
+  if (timer) clearTimeout(timer);
+  timer = null;
+
+  const body = JSON.stringify({ conversations: pending });
+  pending = null;
+  try {
+    if (navigator.sendBeacon?.(ENDPOINT, new Blob([body], { type: "application/json" }))) {
+      return;
+    }
+  } catch {
+    // Fall through.
+  }
+  void fetch(ENDPOINT, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body,
+    credentials: "same-origin",
+    keepalive: true,
+  }).catch(() => {});
 }
 
 /** Write one conversation into the list, replacing any earlier version. */
@@ -132,6 +266,11 @@ export function removeConversation(id: string): Conversation[] {
 }
 
 export function clearConversations(): void {
+  if (signedIn) {
+    cache = [];
+    queue([]);
+    return;
+  }
   if (typeof window === "undefined") return;
   try {
     window.localStorage.removeItem(KEY);
