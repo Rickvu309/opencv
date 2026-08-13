@@ -81,12 +81,12 @@ export function FitPanel({
                 {done ? (
                   <Check
                     className="mt-0.5 size-3 shrink-0"
-                    aria-label={t(m.map.requirementMet)}
+                    aria-label={t(m.onboarding.requirementMet)}
                   />
                 ) : (
                   <Circle
                     className="mt-0.5 size-3 shrink-0 opacity-50"
-                    aria-label={t(m.map.requirementMissing)}
+                    aria-label={t(m.onboarding.requirementMissing)}
                   />
                 )}
                 <span className="min-w-0">{requirement.label[locale]}</span>

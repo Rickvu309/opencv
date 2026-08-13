@@ -68,30 +68,31 @@ const afterTheQueue = () => new Promise((resolve) => setTimeout(resolve, 900));
 
 test("a round trip through the browser returns what was written", async () => {
   configurePersistence({ signedIn: false });
-  const { state } = applyAction(seedState(), "todo.add", { title: "Ôn SQL" });
+  const { state } = applyAction(seedState(), "profile.addCourse", {
+    name: "Ôn SQL",
+  });
 
   assert.equal(await saveState(state), true);
   const loaded = loadState();
-  assert.equal(loaded.todos.length, state.todos.length);
-  assert.equal(loaded.todos[0].title, "Ôn SQL");
+  assert.deepEqual(loaded.profile.education.courses, ["Ôn SQL"]);
   assert.equal(sent.length, 0, "an anonymous visitor must not reach the server");
 });
 
 test("an empty store falls back to the seed", async () => {
-  assert.deepEqual(loadState().todos.length, seedState().todos.length);
+  assert.deepEqual(loadState().papers.length, seedState().papers.length);
 });
 
 test("a corrupt blob is discarded rather than loaded", async () => {
   storage.setItem(STORAGE_KEY, "{ not json");
-  assert.deepEqual(loadState().todos.length, seedState().todos.length);
+  assert.deepEqual(loadState().papers.length, seedState().papers.length);
   // And it is removed, or this check would fail on every load forever.
   assert.equal(storage.getItem(STORAGE_KEY), null);
 });
 
 test("a value of the wrong shape is discarded", async () => {
   // Valid JSON, but not an AppState: an older schema, or someone's console.
-  storage.setItem(STORAGE_KEY, JSON.stringify({ todos: "nope" }));
-  assert.equal(loadState().todos.length, seedState().todos.length);
+  storage.setItem(STORAGE_KEY, JSON.stringify({ papers: "nope" }));
+  assert.equal(loadState().papers.length, seedState().papers.length);
   assert.equal(storage.getItem(STORAGE_KEY), null);
 });
 
@@ -105,22 +106,24 @@ test("a blob from before a field existed is filled in, not discarded", async () 
   // everything the user actually wrote is kept.
   const older: Record<string, unknown> = { ...seedState() };
   delete older.resumes;
-  older.todos = [{ id: "t1", title: "Ôn SQL", done: false }];
+  older.pitch = [
+    { id: "p1", kind: "bio", body: "Sinh viên năm ba", language: "vi", updatedAt: 0 },
+  ];
   storage.setItem(STORAGE_KEY, JSON.stringify(older));
 
   const loaded = loadState();
   assert.deepEqual(loaded.resumes, [], "the missing field takes the seed's value");
-  assert.equal(loaded.todos.length, 1, "the user's work survived the shape change");
-  assert.equal(loaded.todos[0].title, "Ôn SQL");
+  assert.equal(loaded.pitch.length, 1, "the user's work survived the shape change");
+  assert.equal(loaded.pitch[0].body, "Sinh viên năm ba");
 });
 
 test("a blob that is genuinely wrong is still discarded", async () => {
   // Filling in a missing key is a migration. Patching a key that holds the
   // wrong type would be hiding corruption, so this is still refused.
-  const broken: Record<string, unknown> = { ...seedState(), todos: "nope" };
+  const broken: Record<string, unknown> = { ...seedState(), pitch: "nope" };
   storage.setItem(STORAGE_KEY, JSON.stringify(broken));
 
-  assert.equal(loadState().todos.length, 0);
+  assert.equal(loadState().pitch.length, 0);
   assert.equal(storage.getItem(STORAGE_KEY), null);
 });
 
@@ -136,22 +139,25 @@ test("a failed browser write is reported, not thrown", async () => {
 test("the server's state wins over anything in the browser", async () => {
   // A leftover local copy from before this person signed in must never be
   // what their account shows. WO-24 is explicit that it is not carried over.
-  const { state: local } = applyAction(seedState(), "todo.add", { title: "somebody else's" });
+  const { state: local } = applyAction(seedState(), "profile.addCourse", { name: "somebody else's" });
   storage.setItem(STORAGE_KEY, JSON.stringify(local));
 
-  const { state: mine } = applyAction(seedState(), "todo.add", { title: "mine" });
-  assert.equal(loadState(mine).todos[0].title, "mine");
+  const { state: mine } = applyAction(seedState(), "profile.addCourse", { name: "mine" });
+  assert.equal(loadState(mine).profile.education.courses[0], "mine");
 });
 
 test("a signed-in save goes to the server and not to the browser", async () => {
   configurePersistence({ signedIn: true });
-  const { state } = applyAction(seedState(), "todo.add", { title: "Ôn SQL" });
+  const { state } = applyAction(seedState(), "profile.addCourse", {
+    name: "Ôn SQL",
+  });
 
   assert.equal(await saveState(state), true);
   assert.equal(sent.length, 1);
   assert.equal(sent[0].method, "PUT");
   assert.equal(
-    (sent[0].body as { state: { todos: { title: string }[] } }).state.todos[0].title,
+    (sent[0].body as { state: { profile: { education: { courses: string[] } } } })
+      .state.profile.education.courses[0],
     "Ôn SQL",
   );
   assert.equal(storage.getItem(STORAGE_KEY), null, "the account's work is not left in the browser");
@@ -165,19 +171,19 @@ test("a burst of dispatches becomes one request carrying the last state", async 
   // the last one's contents survive anyway.
   let state = seedState();
   const answers: Promise<boolean>[] = [];
-  for (const title of ["A", "B", "C", "D", "E", "F", "G", "H"]) {
-    state = applyAction(state, "todo.add", { title }).state;
+  for (const name of ["A", "B", "C", "D", "E", "F", "G", "H"]) {
+    state = applyAction(state, "profile.addCourse", { name }).state;
     answers.push(saveState(state));
   }
   await Promise.all(answers);
 
   assert.equal(sent.length, 1, `expected one request, got ${sent.length}`);
-  const written = (sent[0].body as { state: { todos: { title: string }[] } }).state;
-  assert.equal(written.todos.length, 8, "the request must carry every change, not just the last");
-  assert.deepEqual(
-    written.todos.map((t) => t.title).sort(),
-    ["A", "B", "C", "D", "E", "F", "G", "H"],
-  );
+  const written = (
+    sent[0].body as { state: { profile: { education: { courses: string[] } } } }
+  ).state;
+  const courses = written.profile.education.courses;
+  assert.equal(courses.length, 8, "the request must carry every change, not just the last");
+  assert.deepEqual([...courses].sort(), ["A", "B", "C", "D", "E", "F", "G", "H"]);
 });
 
 test("a save that did not land is reported as false", async () => {
@@ -204,20 +210,22 @@ test("a later save still lands after an earlier one failed", async () => {
 test("a change made while a request is in flight is sent afterwards", async () => {
   configurePersistence({ signedIn: true });
 
-  const first = applyAction(seedState(), "todo.add", { title: "first" }).state;
+  const first = applyAction(seedState(), "profile.addCourse", { name: "first" }).state;
   const answer = saveState(first);
   await afterTheQueue();
 
   // Two requests must never overlap, or the older state could land last, which
   // is the one failure a last-write-wins store cannot tolerate.
-  const second = applyAction(first, "todo.add", { title: "second" }).state;
+  const second = applyAction(first, "profile.addCourse", { name: "second" }).state;
   const later = saveState(second);
   await answer;
   await later;
 
   assert.equal(sent.length, 2);
-  const last = (sent[1].body as { state: { todos: { title: string }[] } }).state;
-  assert.equal(last.todos.some((t) => t.title === "second"), true);
+  const last = (
+    sent[1].body as { state: { profile: { education: { courses: string[] } } } }
+  ).state;
+  assert.equal(last.profile.education.courses.includes("second"), true);
 });
 
 test("the tab flushing on its way out sends a beacon", async (t) => {
@@ -242,7 +250,9 @@ test("the tab flushing on its way out sends a beacon", async (t) => {
 
   // Queued, and the quiet period has not passed: without the flush this is the
   // work somebody loses every time they close the tab.
-  void saveState(applyAction(seedState(), "todo.add", { title: "unsaved" }).state);
+  void saveState(
+    applyAction(seedState(), "profile.addCourse", { name: "unsaved" }).state,
+  );
   flushState();
 
   assert.equal(beacons.length, 1);

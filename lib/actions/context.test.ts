@@ -15,18 +15,24 @@ import { applyAction, isActionName } from "@/lib/actions/registry";
 import { seedState } from "@/lib/actions/seed";
 
 test("context carries the ids the Coach needs to act on", () => {
-  const state = populated();
-  const ctx = coachContext(state, "/todo");
+  const withPitch = applyAction(populated(), "pitch.write", {
+    kind: "bio",
+    body: "Sinh viên năm ba, đang hướng tới data analyst.",
+  }).state;
+  const ctx = coachContext(withPitch, "/pitch");
 
-  assert.equal(ctx.route, "/todo");
-  assert.ok(ctx.availableActions.includes("todo.toggle"));
+  assert.equal(ctx.route, "/pitch");
+  assert.ok(ctx.availableActions.includes("pitch.update"));
 
-  // A context that described the user's todos without their ids would let the
-  // Coach discuss a task it has no way to toggle.
-  const todo = ctx.state.todos[0];
-  assert.ok(todo?.id, "todos must carry ids");
-  const { state: after } = applyAction(state, "todo.toggle", { id: todo.id });
-  assert.notEqual(after.todos[0].done, state.todos[0].done);
+  // A context that described the user's pitch without its id would let the
+  // Coach discuss a paragraph it has no way to edit.
+  const item = ctx.state.pitch[0];
+  assert.ok(item?.id, "pitch items must carry ids");
+  const { state: after } = applyAction(withPitch, "pitch.update", {
+    id: item.id,
+    body: "Đã sửa.",
+  });
+  assert.notEqual(after.pitch[0].body, withPitch.pitch[0].body);
 });
 
 test("the Coach is told it can build a CV", () => {
@@ -52,9 +58,9 @@ test("context stays inside the per-turn budget it claims", () => {
 });
 
 test("isActionName accepts real actions and rejects everything else", () => {
-  assert.ok(isActionName("todo.add"));
-  assert.ok(isActionName("path.setTarget"));
-  assert.ok(!isActionName("todo.destroyEverything"));
+  assert.ok(isActionName("profile.addCourse"));
+  assert.ok(isActionName("pitch.write"));
+  assert.ok(!isActionName("profile.destroyEverything"));
   assert.ok(!isActionName(""));
 });
 
@@ -71,14 +77,21 @@ test("a well-formed envelope applies; a malformed one is rejected before dispatc
   const state = seedState();
 
   // What apply_action returns on success, replayed through the client's guard.
-  const envelope = { ok: true, action: "todo.add", input: { title: "Ôn SQL" } };
+  const envelope = {
+    ok: true,
+    action: "profile.addCourse",
+    input: { name: "SQL cơ bản" },
+  };
   assert.ok(envelope.ok && isActionName(envelope.action));
   const { state: after, summary } = applyAction(
     state,
     envelope.action,
     envelope.input,
   );
-  assert.equal(after.todos.length, state.todos.length + 1);
+  assert.equal(
+    after.profile.education.courses.length,
+    state.profile.education.courses.length + 1,
+  );
   // Announceable in both languages: a toast that falls back to the other one
   // is the language setting failing in the most visible place there is.
   assert.ok(summary.vi.length > 0, "every applied edit must be announceable in Vietnamese");
@@ -86,5 +99,5 @@ test("a well-formed envelope applies; a malformed one is rejected before dispatc
 
   // A payload that passed the model but not the schema must throw here rather
   // than half-applying: applyAction parses before it reduces.
-  assert.throws(() => applyAction(state, "todo.toggle", { id: 42 }));
+  assert.throws(() => applyAction(state, "profile.addCourse", { name: 42 }));
 });

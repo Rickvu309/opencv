@@ -16,7 +16,7 @@ import type { AppState } from "@/lib/actions/types";
 
 export function coachStarters(state: AppState): Msg[] {
   const s = messages.coach;
-  const { profile, todos, resumes } = state;
+  const { profile, resumes, papers, pitch } = state;
   const role = profile.identity.targetRole.trim();
 
   return [
@@ -25,8 +25,14 @@ export function coachStarters(state: AppState): Msg[] {
     //    the useful move is aiming an existing one at a real posting.
     resumes.length === 0 ? s.starterBuildCv : s.starterTailorCv,
 
-    // 2. What to do with the time they have.
-    todos.length === 0 ? s.starterWhereToStart : s.starterPrioritise,
+    // 2. What to do with the time they have. This used to branch on whether
+    //    the todo list was empty; with the list retired, the honest stand-in
+    //    for "has this person started" is whether anything has been built here
+    //    at all. Someone with three documents on the go needs an order to work
+    //    in, not a starting point.
+    resumes.length + papers.length + pitch.length === 0
+      ? s.starterWhereToStart
+      : s.starterPrioritise,
 
     // 3. The gap, named against their own target when they have given one.
     role ? s.starterGapForRole(role) : s.starterWhichDirection,

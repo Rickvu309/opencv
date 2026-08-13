@@ -4,32 +4,11 @@
 // width). Those are presentation concerns; the agent has no business touching
 // them, and keeping them out means every field here is safe to expose as a tool.
 
-import type { PathEdge, PathNode } from "@/lib/career-graph";
-import type { PlanKind, PlanResource, Todo, VaultItemId } from "@/lib/catalog";
+import type { VaultItemId } from "@/lib/catalog";
 import type { Resume } from "@/lib/cv/types";
 import type { Locale } from "@/lib/i18n/locale";
 import type { ProseDocument } from "@/lib/papers/types";
 import type { PitchItem } from "@/lib/pitch/types";
-
-/** One thing to do. Courses carry a resource; projects and tasks do not. */
-export type PlanEntry = {
-  id: string;
-  title: string;
-  detail?: string;
-  kind: PlanKind;
-  effort: string;
-  done: boolean;
-  /** Which skill gap it closes. */
-  skill?: string;
-  resource?: PlanResource;
-};
-
-export type PlanStage = {
-  id: string;
-  label: string;
-  period: string;
-  entries: PlanEntry[];
-};
 
 export type Experience = {
   title: string;
@@ -89,13 +68,6 @@ export type AppState = {
      *  when at least one document exists for it. */
     documents: ProfileDocument[];
   };
-  todos: Todo[];
-  /**
-   * The plan the Coach can build. One uniform entry shape; no special cases
-   * for milestones or headings, so `plan.addEntry` is the only thing the
-   * agent has to learn to extend it.
-   */
-  plan: { stages: PlanStage[] };
   /**
    * CVs built inside OpenPath, content and all.
    *
@@ -118,9 +90,4 @@ export type AppState = {
    * documents anybody exports; they are lines to reuse.
    */
   pitch: PitchItem[];
-  paths: {
-    targetId: string | null;
-    customNodes: PathNode[];
-    customEdges: PathEdge[];
-  };
 };

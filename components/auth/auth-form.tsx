@@ -51,7 +51,7 @@ export function AuthForm({ mode, next }: { mode: "sign-in" | "sign-up"; next?: s
       const response = await fetch(`/api/auth/${mode}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        // The locale goes with the sign-up so the new account's plan stages are
+        // The locale goes with the sign-up so the new account's state is
         // labelled in the language this person is reading right now. From then
         // on those labels are their text, not ours.
         body: JSON.stringify(

@@ -75,14 +75,9 @@ function looksLikeState(value: unknown): value is AppState {
     isLocale(state.locale) &&
     typeof state.profile === "object" &&
     state.profile !== null &&
-    Array.isArray(state.todos) &&
-    typeof state.plan === "object" &&
-    state.plan !== null &&
     Array.isArray(state.resumes) &&
     Array.isArray(state.papers) &&
-    Array.isArray(state.pitch) &&
-    typeof state.paths === "object" &&
-    state.paths !== null
+    Array.isArray(state.pitch)
   );
 }
 

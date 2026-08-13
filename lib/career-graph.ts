@@ -95,52 +95,17 @@ export type PathEdge = {
 };
 
 /**
- * The origin node, before the user's own profile is folded in.
+ * The roles OpenPath knows about.
  *
- * Carries no name and no history on purpose: it is a position on a diagram, not
- * a person. `youNode()` below fills it from state, so the map says who you are
- * rather than who the seed data was.
+ * This was the career map's dataset. The map is retired (WO-60), and the list
+ * outlived it because two things still read it: onboarding, which offers these
+ * as goals and scores a live fit against the one you pick, and Fit Scoring,
+ * which needs a target with requirements on it to score against at all.
+ *
+ * The map's own furniture is gone: the edges between roles, the "you today"
+ * origin node, and the canvas that drew them. What is left is a catalogue.
  */
-export const originNode: PathNode = {
-  id: "you",
-  title: "",
-  stage: "now",
-  summary: m("Điểm xuất phát của bạn", "Where you're starting from"),
-};
-
-/** Fallback title for the origin node, when the profile has no name yet. */
-export const originTitle = m("Bạn hôm nay", "You today");
-
-/** The origin node as it should render for this user, in this language. */
-export function youNode(
-  profile: {
-    identity: { name: string };
-    education: { school: string; major: string; year: string; gpa: string };
-    experience: { title: string; org: string }[];
-  },
-  locale: keyof Msg,
-): PathNode {
-  const summary =
-    [profile.education.year, profile.education.major, profile.education.school]
-      .filter(Boolean)
-      .join(" · ") || originNode.summary[locale];
-
-  return {
-    ...originNode,
-    title: profile.identity.name || originTitle[locale],
-    summary: { vi: summary, en: summary },
-    does: profile.experience.length
-      ? profile.experience.map((x) => {
-          const line = `${x.title} · ${x.org}`;
-          return { vi: line, en: line };
-        })
-      : undefined,
-  };
-}
-
 export const pathNodes: PathNode[] = [
-  originNode,
-
   {
     id: "intern-da",
     title: "Data Analyst Intern",
@@ -505,104 +470,8 @@ export const pathNodes: PathNode[] = [
   },
 ];
 
-export const pathEdges: PathEdge[] = [
-  {
-    from: "you",
-    to: "intern-da",
-    via: m(
-      "Học SQL nâng cao + 1 dự án portfolio",
-      "Advanced SQL, plus one portfolio project",
-    ),
-  },
-  {
-    from: "you",
-    to: "intern-ba",
-    via: m("Luyện viết tài liệu, học Jira", "Practise writing specs, learn Jira"),
-  },
-  {
-    from: "you",
-    to: "intern-mkt",
-    via: m("Cửa vào ít rào cản nhất", "The fewest gates to get through"),
-  },
-
-  {
-    from: "intern-da",
-    to: "data-analyst",
-    via: m("6–9 tháng làm thật, thêm Python", "6–9 months on the job, plus Python"),
-  },
-  {
-    from: "intern-da",
-    to: "business-analyst",
-    via: m("Chuyển hướng sang nghiệp vụ", "Move towards the business side"),
-  },
-  {
-    from: "intern-ba",
-    to: "business-analyst",
-    via: m(
-      "6–12 tháng làm tài liệu và nghiệm thu",
-      "6–12 months writing and signing off specs",
-    ),
-  },
-  {
-    from: "intern-ba",
-    to: "product-owner",
-    via: m("Cần thêm tư duy sản phẩm", "Add product judgement"),
-  },
-  {
-    from: "intern-mkt",
-    to: "digital-marketing",
-    via: m("Nắm được Ads và tối ưu phễu", "Learn Ads and funnel work"),
-  },
-  {
-    from: "intern-mkt",
-    to: "data-analyst",
-    via: m("Chuyển hướng: học SQL và phân tích", "Switch across: learn SQL and analysis"),
-  },
-
-  {
-    from: "data-analyst",
-    to: "senior-da",
-    via: m("2–3 năm, dẫn dắt phân tích", "2–3 years, then lead it"),
-  },
-  {
-    from: "data-analyst",
-    to: "analytics-engineer",
-    via: m("Đi sâu kỹ thuật: dbt, Python", "Go deeper: dbt, Python"),
-  },
-  {
-    from: "data-analyst",
-    to: "product-analyst",
-    via: m("Gắn với một sản phẩm cụ thể", "Attach yourself to one product"),
-  },
-  {
-    from: "business-analyst",
-    to: "ba-lead",
-    via: m("Nhận trách nhiệm về kết quả", "Own the outcome"),
-  },
-  {
-    from: "business-analyst",
-    to: "product-analyst",
-    via: m("Bổ sung kỹ năng phân tích", "Add the analysis skills"),
-  },
-  {
-    from: "product-owner",
-    to: "ba-lead",
-    via: m("Tự nhiên tiếp nối", "The natural next step"),
-  },
-  {
-    from: "digital-marketing",
-    to: "growth-lead",
-    via: m("Sở hữu chỉ tiêu tăng trưởng", "Take on the growth target"),
-  },
-  {
-    from: "digital-marketing",
-    to: "product-analyst",
-    via: m("Chuyển sang phân tích sản phẩm", "Move into product analysis"),
-  },
-];
 
 /**
  * Roles the map offers, other than the origin. Used where a list of real
  * destinations is wanted and "you today" would be noise.
  */
-export const destinationNodes = pathNodes.filter((n) => n.id !== originNode.id);

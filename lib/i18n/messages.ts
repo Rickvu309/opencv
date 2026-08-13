@@ -82,14 +82,11 @@ export const messages = {
   /* ── Navigation ─────────────────────────────────────────────────────── */
   nav: {
     coach: m("Coach", "Coach"),
-    todo: m("Việc cần làm", "Tasks"),
     career: m("Sự nghiệp", "Career"),
     profile: m("Hồ sơ", "Profile"),
     cv: m("CV", "CV"),
     papers: m("Thư và bài viết", "Letters"),
     pitch: m("Giới thiệu bản thân", "Your pitch"),
-    map: m("Bản đồ hướng đi", "Career map"),
-    plan: m("Kế hoạch", "Plan"),
     // One name for one destination. This link used to be "Cập nhật thông tin"
     // in the account menu and "Làm lại onboarding" in the help menu, which read
     // as two different places.
@@ -170,6 +167,10 @@ export const messages = {
     finishNext: m("Xong · gặp Coach", "Finish · meet the Coach"),
 
     fitFor: m("Mức phù hợp của bạn", "How close you are"),
+    // These two moved here from the career map when it was retired. The live
+    // fit score outlived the map, and so did the words it needs.
+    requirementMet: m("Đã đạt", "Met"),
+    requirementMissing: m("Chưa đạt", "Not yet"),
     fitClosest: m("Hiện bạn gần nhất với", "Right now you're closest to"),
     fitNote: m(
       "Đây là điểm xuất phát, không phải kết luận. Coach sẽ giúp bạn rút ngắn.",
@@ -231,12 +232,11 @@ export const messages = {
       "Chưa rõ cũng không sao. Đó là việc của Coach.",
       "Not sure? That's what the Coach is for.",
     ),
-    // The four role blurbs that used to live here are gone: the roles are read
-    // from the career map now, and every one of them already carries its own
-    // summary and pay band written once, in lib/career-graph.ts.
+    // The four role blurbs that used to live here are gone: each role carries
+    // its own summary and pay band, written once in lib/career-graph.ts.
     rolePickHint: m(
-      "Hoặc chọn một vai trò trên bản đồ hướng đi:",
-      "Or pick a role from the career map:",
+      "Hoặc chọn một vai trò:",
+      "Or pick a role:",
     ),
 
     // Honest about what is happening. The old screen showed a spinner and
@@ -628,157 +628,8 @@ export const messages = {
 
   },
 
-  /* ── Career map ─────────────────────────────────────────────────────── */
-  map: {
-    intro: m(
-      "Từ hôm nay tới các vai trò bạn có thể tới. Kéo để xem, bấm để mở chi tiết.",
-      "From where you are to where you could go. Drag to explore, select a role for detail.",
-    ),
-    youToday: m("Bạn hôm nay", "You today"),
-    zoomIn: m("Phóng to", "Zoom in"),
-    zoomOut: m("Thu nhỏ", "Zoom out"),
-    fit: m("Vừa khung", "Fit to screen"),
-    requirementMet: m("Đã đạt", "Met"),
-    requirementMissing: m("Chưa đạt", "Not yet"),
-    legendRoute: m("Đường tới mục tiêu", "Route to your goal"),
-    legendFit: m("Độ phù hợp", "Fit"),
-    goal: m("Mục tiêu", "Goal"),
-    addPath: m("Thêm hướng đi", "Add a direction"),
-    addPathRoleName: m("Tên vai trò", "Role name"),
-    addPathRolePlaceholder: m("VD: Data Scientist", "e.g. Data Scientist"),
-    addPathColumn: m("Nằm ở cột", "Which column"),
-    addPathFrom: (title: string) =>
-      m(
-        `Nối từ ${title}. Chọn nút khác để đổi điểm nối.`,
-        `Connects from ${title}. Select another role to change that.`,
-      ),
-    addPathSubmit: m("Thêm vào sơ đồ", "Add to the map"),
-    detailOf: (title: string) => m(`Chi tiết ${title}`, `About ${title}`),
-    closeDetail: m("Đóng chi tiết", "Close detail"),
-    fitScore: m("Độ phù hợp", "Fit"),
-    salary: m("Lương tham khảo", "Typical pay"),
-    youHave: m("Bạn đang có", "What you have"),
-    roleDoes: m("Bạn sẽ làm gì", "What you'd do"),
-    roleRequires: m("Cần có để bước vào", "What it takes to get in"),
-    comesFrom: m("Đến từ", "Reached from"),
-    leadsTo: m("Từ đây đi tiếp", "Leads on to"),
-    setAsGoal: m("Đặt làm mục tiêu", "Set as my goal"),
-    isGoal: m("Đang là mục tiêu của bạn", "Your goal"),
-    onRoute: m(
-      "Vai trò này nằm trên đường tới mục tiêu của bạn.",
-      "This role is on the route to your goal.",
-    ),
-    removeFromMap: m("Xoá khỏi sơ đồ", "Remove from the map"),
-    askAboutRole: m("Hỏi Coach về hướng này", "Ask the Coach about this"),
-    askAboutYouPrompt: m(
-      "Nhìn hồ sơ hiện tại, mình hợp với hướng đi nào nhất?",
-      "Looking at my profile, which direction suits me best?",
-    ),
-    askAboutRolePrompt: (title: string) =>
-      m(
-        `Mình cần gì để đi tới vai trò ${title}?`,
-        `What would it take for me to reach ${title}?`,
-      ),
-    goalSet: (title: string) =>
-      m(`Đã đặt ${title} làm mục tiêu`, `${title} is now your goal`),
-    goalSetBody: m(
-      "Mọi đường tới đích đang sáng trên sơ đồ.",
-      "Every route there is now lit.",
-    ),
-    added: (title: string) => m(`Đã thêm ${title}`, `Added ${title}`),
-    addedBody: m(
-      "Kéo để đặt lại vị trí, hoặc nhờ Coach đánh giá.",
-      "Drag to reposition, or ask the Coach what they think.",
-    ),
-  },
 
-  /* ── Plan ───────────────────────────────────────────────────────────── */
-  plan: {
-    titleWithRole: (role: string) => m(`Lộ trình tới ${role}`, `Your route to ${role}`),
-    title: m("Lộ trình của bạn", "Your route"),
-    progress: (done: number, total: number, percent: number) =>
-      m(
-        `${done}/${total} việc · hoàn thành ${percent}%`,
-        `${done} of ${total} done · ${percent}% complete`,
-      ),
-    intro: m(
-      "Mỗi việc một dòng. Mở mũi tên để xem chi tiết và học phí.",
-      "One line per task. Open the arrow for detail and cost.",
-    ),
-    stageEmpty: m(
-      "Chưa có việc nào. Nhờ Coach thêm giúp bạn.",
-      "Nothing here yet. Ask the Coach to fill it in.",
-    ),
-    viewMap: m("Mở bản đồ hướng đi", "Open the career map"),
-    askCoachToReview: m("Nhờ Coach xem lại kế hoạch", "Ask the Coach to review this"),
-    reviewPromptWithRole: (role: string) =>
-      m(
-        `Kế hoạch tới ${role} của mình có gì cần điều chỉnh không?`,
-        `Anything you'd change about my plan for ${role}?`,
-      ),
-    reviewPrompt: m(
-      "Kế hoạch hiện tại của mình có gì cần điều chỉnh không?",
-      "Anything you'd change about my current plan?",
-    ),
-    markDone: (title: string) => m(`Đánh dấu xong: ${title}`, `Mark done: ${title}`),
-    showDetail: (title: string) => m(`Xem chi tiết ${title}`, `Show detail for ${title}`),
-    hideDetail: (title: string) => m(`Ẩn chi tiết ${title}`, `Hide detail for ${title}`),
-    openCourse: m("Mở khoá học", "Open the course"),
-    partner: m("Đối tác", "Partner"),
-    removeFromPlan: m("Xoá khỏi kế hoạch", "Remove from the plan"),
-    kindCourse: m("Khoá học", "Course"),
-    kindProject: m("Dự án", "Project"),
-    kindTask: m("Việc làm đều", "Habit"),
-  },
 
-  /* ── Tasks ──────────────────────────────────────────────────────────── */
-  todo: {
-    heading: m("Việc cần làm", "Tasks"),
-    addPlaceholder: m("Thêm việc…", "Add a task…"),
-    addLabel: m("Thêm việc", "Add a task"),
-    filterBySource: m("Lọc theo nguồn", "Filter by source"),
-    sourceHeading: m("Nguồn việc", "Source"),
-    displayOptions: m("Tuỳ chọn hiển thị", "Display options"),
-    showDone: m("Hiện việc đã xong", "Show completed tasks"),
-    doneCount: (n: number) => m(`Đã xong · ${n}`, `Done · ${n}`),
-    sourcePlan: m("Kế hoạch", "Plan"),
-    sourceCoach: m("Coach", "Coach"),
-    sourceSelf: m("Bạn thêm", "Added by you"),
-    // Two different emptinesses. Calling both "no tasks match these filters"
-    // told someone with a brand-new account that a filter they never set was
-    // hiding work they never had.
-    emptyTitle: m("Chưa có việc nào", "No tasks yet"),
-    filterEmptyTitle: m(
-      "Không có việc nào khớp bộ lọc",
-      "No tasks match these filters",
-    ),
-    filterEmptyAll: m(
-      "Thêm việc ở ô trên, hoặc nhờ Coach gợi ý.",
-      "Add one above, or ask the Coach what to do next.",
-    ),
-    filterEmptyFiltered: m(
-      "Bỏ bớt bộ lọc để xem lại tất cả.",
-      "Clear a filter to see everything.",
-    ),
-    showAllSources: m("Hiện tất cả", "Show all"),
-    noSelectionTitle: m("Chưa chọn việc nào", "No task selected"),
-    noSelectionBody: m(
-      "Chọn một việc bên trái, hoặc thêm việc mới ở ô trên.",
-      "Pick a task on the left, or add one above.",
-    ),
-    detailTitle: m("Chi tiết việc", "Task detail"),
-    markDone: m("Đánh dấu xong", "Mark as done"),
-    markNotDone: m("Bỏ đánh dấu", "Mark as not done"),
-    fieldSource: m("Nguồn", "Source"),
-    fieldStage: m("Giai đoạn", "Stage"),
-    fieldEffort: m("Thời lượng", "Time needed"),
-    fieldResource: m("Tài nguyên", "Resource"),
-    askCoach: m("Hỏi Coach về việc này", "Ask the Coach about this task"),
-    askCoachPrompt: (title: string) =>
-      m(`Giúp mình bắt đầu việc: ${title}`, `Help me get started on: ${title}`),
-    openInPlan: m("Mở trong kế hoạch", "Open in the plan"),
-    completed: (title: string) => m(`Đã xong: ${title}`, `Done: ${title}`),
-  },
 
   /* ── Waiting list ───────────────────────────────────────────────────── */
   waitlist: {

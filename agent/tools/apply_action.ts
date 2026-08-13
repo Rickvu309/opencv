@@ -20,17 +20,17 @@ import {
 /**
  * The fields an action takes, as a signature the model can copy.
  *
- * Without this the catalogue named forty-one actions and described what each
- * one was *for*, while `input` was documented only as "payload matching the
- * chosen action's schema" — a schema the model was never shown. So it guessed
- * the field names. Measured: asked to add a task it sent
- * `{action:"todo.add", input:{content:"học SQL cơ bản"}}`, the schema wanted
- * `title`, and the call failed. The model does not know what it does not know,
- * so it read the failure as bad luck and gave up rather than trying `title`.
+ * Without this the catalogue named every action and described what each one was
+ * *for*, while `input` was documented only as "payload matching the chosen
+ * action's schema", a schema the model was never shown. So it guessed the field
+ * names. Measured, on an action since retired: asked to add a task it sent
+ * `input:{content:"học SQL cơ bản"}` where the schema wanted `title`, and the
+ * call failed. The model does not know what it does not know, so it read the
+ * failure as bad luck and gave up rather than trying the other name.
  *
  * Required fields first, optional ones marked, no types: the names are what was
- * missing, and a full JSON Schema for all forty-one would cost more context
- * than it buys on a model that already reasons for fifty seconds.
+ * missing, and a full JSON Schema for every action would cost more context than
+ * it buys.
  */
 function signature(schema: unknown): string {
   const shape =
@@ -85,7 +85,7 @@ export default defineTool({
   /**
    * Ask before destroying anything; apply everything else on sight.
    *
-   * Per call rather than per tool, because one tool covers all forty-one
+   * Per call rather than per tool, because one tool covers every
    * actions and the answer differs by which one. `toolInput` carries the
    * arguments the model chose, so the decision is made against the actual
    * action rather than against the tool's name.

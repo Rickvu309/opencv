@@ -49,21 +49,21 @@ test("a new account starts empty, and not as somebody else", OPTIONS, async () =
     // There was a seeded demo persona here once and every screen read her
     // instead of the person signed in. WO-24 says in as many words not to
     // bring her back.
-    assert.deepEqual(state.todos, []);
     assert.deepEqual(state.resumes, []);
+    assert.deepEqual(state.papers, []);
+    assert.deepEqual(state.pitch, []);
     assert.deepEqual(state.profile.documents, []);
     assert.equal(state.profile.identity.name, "");
-    assert.equal(state.paths.targetId, null);
-    // Structure, though, is there: the shape of a plan rather than anyone's.
-    assert.equal(state.plan.stages.length, seedState().plan.stages.length);
-    assert.ok(state.plan.stages.every((stage) => stage.entries.length === 0));
+    assert.equal(state.profile.identity.targetRole, "");
   });
 });
 
 test("AC-ACCT-004.1: state is stored under the account", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
     const account = await createAccount("mai", "a good long password", db);
-    const { state } = applyAction(seedState(), "todo.add", { title: "Ôn SQL" });
+    const { state } = applyAction(seedState(), "profile.addCourse", {
+      name: "Ôn SQL",
+    });
     await writeAccountState(account.id, state, db);
 
     const { rows } = await db.query<{ account_id: string }>("select account_id from app_state");
@@ -78,14 +78,15 @@ test("AC-ACCT-004.3: the same account on another device sees the same work", OPT
     await createAccountState(account.id, "vi", db);
 
     // The laptop writes.
-    const { state } = applyAction(seedState(), "todo.add", { title: "Nộp CV" });
+    const { state } = applyAction(seedState(), "profile.addCourse", {
+      name: "Nộp CV",
+    });
     await writeAccountState(account.id, state, db);
 
     // The phone reads. There is one row and it is the same one, which is the
     // whole reason this moved off the browser.
     const onThePhone = await loadAccountState(account.id, db);
-    assert.equal(onThePhone.todos.length, 1);
-    assert.equal(onThePhone.todos[0].title, "Nộp CV");
+    assert.deepEqual(onThePhone.profile.education.courses, ["Nộp CV"]);
   });
 });
 
@@ -94,15 +95,20 @@ test("AC-ACCT-004.2 and 004.4: one account never sees another's state", OPTIONS,
     const mai = await createAccount("mai", "a good long password", db);
     const nam = await createAccount("nam", "another long password", db);
 
-    await writeAccountState(mai.id, applyAction(seedState(), "todo.add", { title: "mai's" }).state, db);
-    await writeAccountState(nam.id, applyAction(seedState(), "todo.add", { title: "nam's" }).state, db);
+    const withCourse = (name: string) =>
+      applyAction(seedState(), "profile.addCourse", { name }).state;
+    const courses = async (id: string) =>
+      (await loadAccountState(id, db)).profile.education.courses;
 
-    assert.equal((await loadAccountState(mai.id, db)).todos[0].title, "mai's");
-    assert.equal((await loadAccountState(nam.id, db)).todos[0].title, "nam's");
+    await writeAccountState(mai.id, withCourse("mai's"), db);
+    await writeAccountState(nam.id, withCourse("nam's"), db);
+
+    assert.deepEqual(await courses(mai.id), ["mai's"]);
+    assert.deepEqual(await courses(nam.id), ["nam's"]);
 
     // And writing as one leaves the other exactly as it was.
-    await writeAccountState(mai.id, applyAction(seedState(), "todo.add", { title: "mai's again" }).state, db);
-    assert.equal((await loadAccountState(nam.id, db)).todos[0].title, "nam's");
+    await writeAccountState(mai.id, withCourse("mai's again"), db);
+    assert.deepEqual(await courses(nam.id), ["nam's"]);
   });
 });
 
@@ -111,14 +117,17 @@ test("a write replaces the row rather than adding one", OPTIONS, async () => {
     const account = await createAccount("mai", "a good long password", db);
 
     let state = seedState();
-    for (const title of ["A", "B", "C"]) {
-      state = applyAction(state, "todo.add", { title }).state;
+    for (const name of ["A", "B", "C"]) {
+      state = applyAction(state, "profile.addCourse", { name }).state;
       await writeAccountState(account.id, state, db);
     }
 
     const { rows } = await db.query<{ n: string }>("select count(*) n from app_state");
     assert.equal(rows[0].n, "1", "last-write-wins means one row, not a history");
-    assert.equal((await loadAccountState(account.id, db)).todos.length, 3);
+    assert.equal(
+      (await loadAccountState(account.id, db)).profile.education.courses.length,
+      3,
+    );
   });
 });
 
@@ -153,13 +162,15 @@ test("a row of the wrong shape is left alone, never deleted", OPTIONS, async () 
 test("the state survives a round trip with Vietnamese text intact", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
     const account = await createAccount("mai", "a good long password", db);
-    const { state } = applyAction(seedState(), "todo.add", {
-      title: "Ôn lại SQL và viết CV tiếng Việt",
+    const { state } = applyAction(seedState(), "profile.addCourse", {
+      name: "Ôn lại SQL và viết CV tiếng Việt",
     });
     await writeAccountState(account.id, state, db);
 
     const back = await loadAccountState(account.id, db);
-    assert.equal(back.todos[0].title, "Ôn lại SQL và viết CV tiếng Việt");
+    assert.deepEqual(back.profile.education.courses, [
+      "Ôn lại SQL và viết CV tiếng Việt",
+    ]);
   });
 });
 

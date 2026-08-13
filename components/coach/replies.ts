@@ -32,23 +32,23 @@ const cannedReplies: {
   {
     keywords: ["ưu tiên", "tuần tới", "bắt đầu", "priorit", "next week", "start"],
     content: msg(
-      "Mình đang ngoại tuyến nên chưa xem được kế hoạch của bạn.\n\nNguyên " +
-        "tắc vẫn đúng: hai việc làm xong hơn năm việc dở dang. Mở kế hoạch, " +
-        "chọn hai việc gần nhất, để phần còn lại đấy đã.",
-      "I'm offline, so I can't see your plan.\n\nThe rule holds anyway: two " +
-        "things finished beat five started. Open the plan, take the two " +
-        "nearest, leave the rest.",
+      "Mình đang ngoại tuyến nên chưa xem được hồ sơ của bạn.\n\nNguyên " +
+        "tắc vẫn đúng: hai việc làm xong hơn năm việc dở dang. Tuần này bạn " +
+        "chọn đúng hai việc, để phần còn lại đấy đã.",
+      "I'm offline, so I can't read your profile.\n\nThe rule holds anyway: " +
+        "two things finished beat five started. Pick exactly two for this " +
+        "week and leave the rest.",
     ),
   },
   {
     keywords: ["so sánh", "nên chọn", "hướng nào", "compare", "which", "should i"],
     content: msg(
       "Câu này mình muốn trả lời từ hồ sơ thật của bạn, mà lúc này chưa đọc " +
-        "được.\n\nBạn mở bản đồ hướng đi xem mỗi hướng cần gì, rồi hỏi lại " +
-        "mình một lần nữa.",
+        "được.\n\nBạn thử lại sau một chút nhé, mình sẽ so từng hướng với " +
+        "những gì bạn đã có.",
       "I'd rather answer this from your real profile, and I can't read it " +
-        "right now.\n\nOpen the career map to see what each direction asks " +
-        "for, then ask me again.",
+        "right now.\n\nTry again in a moment and I'll weigh each direction " +
+        "against what you already have.",
     ),
   },
 ];

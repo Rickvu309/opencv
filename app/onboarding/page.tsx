@@ -123,19 +123,15 @@ export default function OnboardingPage() {
     const filled = <T extends Record<string, string>>(fields: T) =>
       Object.fromEntries(Object.entries(fields).filter(([, v]) => v.trim()));
 
+    // The goal is one field on the profile now. It used to be written twice,
+    // here and on the career map, and keeping the two in step was the reason
+    // `path.setTarget` existed. With the map gone there is one place for it.
     const identity = filled({
       name,
       targetRole: targetNodeId === UNSURE ? "" : targetRole,
     });
     if (Object.keys(identity).length > 0) {
       dispatch("profile.setIdentity", identity, quiet);
-    }
-
-    // Naming a goal has to reach the map, not just the profile: `path.setTarget`
-    // writes both halves, and onboarding used to write only one, so the career
-    // map lit no route to the role the user had just picked.
-    if (targetNodeId && targetNodeId !== UNSURE) {
-      dispatch("path.setTarget", { id: targetNodeId }, quiet);
     }
 
     const education = filled({ school, major, year });

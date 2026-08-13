@@ -7,42 +7,10 @@
 
 import type { Msg } from "@/lib/i18n/locale";
 
-/** A course the plan can point at. Some are affiliate partnerships, which is
- *  why price and rating are part of the record: the plan has to be honest
- *  about what it recommends and what it costs. */
-export type PlanResource = {
-  name: string;
-  provider: string;
-  price: string;
-  rating?: number;
-  learners?: string;
-  /** True when OpenPath earns on the referral. Surfaced in the UI. */
-  affiliate?: boolean;
-  url?: string;
-};
-
-/** Card kind for a plan entry. */
-export type PlanKind = "course" | "project" | "task";
-
 export type ChatMessage = {
   id: string;
   role: "user" | "coach";
   content: string;
-};
-
-/** Todo items come from three sources: the plan, coach suggestions, or the user. */
-export type TodoSource = "plan" | "coach" | "self";
-
-export type Todo = {
-  id: string;
-  title: string;
-  detail?: string;
-  source: TodoSource;
-  /** Plan stage, when the task came from there. */
-  phase?: string;
-  effort?: string;
-  resource?: { name: string; provider: string };
-  done: boolean;
 };
 
 export type VaultItemId =
@@ -155,29 +123,3 @@ export const profileWeights = {
   courses: 8,
 } as const;
 
-/**
- * The three stages every plan starts with.
- *
- * These become *stored* strings the moment an account is seeded, so they are
- * written in whichever language the user arrived in and then stay put. That is
- * deliberate: a stage the user may have renamed is their text, and rewriting it
- * underneath them when they switch language would be the app editing their
- * plan. The label is theirs from the first render.
- */
-export const planStageTemplate: { id: string; label: Msg; period: Msg }[] = [
-  {
-    id: "phase-1",
-    label: msg("Giai đoạn 1, Nền tảng", "Stage 1, Foundations"),
-    period: msg("Tháng 1–3", "Months 1–3"),
-  },
-  {
-    id: "phase-2",
-    label: msg("Giai đoạn 2, Portfolio", "Stage 2, Portfolio"),
-    period: msg("Tháng 4–6", "Months 4–6"),
-  },
-  {
-    id: "phase-3",
-    label: msg("Giai đoạn 3, Ứng tuyển", "Stage 3, Applying"),
-    period: msg("Tháng 7–9", "Months 7–9"),
-  },
-];

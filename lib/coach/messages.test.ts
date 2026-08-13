@@ -368,12 +368,12 @@ test("a payload the schema refused is a failure, not a success", () => {
   // reply carried on saying it had added something while nothing had.
   const flat = flatten(
     coachTurn(
-      toolPart("output-available", { error: "Invalid input for todo.add" }),
+      toolPart("output-available", { error: "Invalid input for profile.addCourse" }),
       text("Mình đã thêm việc đó vào danh sách của bạn."),
     ),
   );
   assert.equal(flat?.tools?.[0].state, "error");
-  assert.equal(flat?.tools?.[0].errorText, "Invalid input for todo.add");
+  assert.equal(flat?.tools?.[0].errorText, "Invalid input for profile.addCourse");
 });
 
 test("upstream failures and refusals are distinguished", () => {

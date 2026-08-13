@@ -46,14 +46,9 @@ export function looksLikeState(value: unknown): value is AppState {
     isLocale(state.locale) &&
     typeof state.profile === "object" &&
     state.profile !== null &&
-    Array.isArray(state.todos) &&
-    typeof state.plan === "object" &&
-    state.plan !== null &&
     Array.isArray(state.resumes) &&
     Array.isArray(state.papers) &&
-    Array.isArray(state.pitch) &&
-    typeof state.paths === "object" &&
-    state.paths !== null
+    Array.isArray(state.pitch)
   );
 }
 
@@ -157,10 +152,10 @@ export async function writeAccountState(
  *
  * Called when the account is created rather than on its first dispatch, so
  * that "this account exists" and "this account has somewhere to keep its work"
- * are true at the same instant. `seedState` is deliberately almost empty: three
- * plan stages, which are the shape of a plan rather than anybody's plan. There
- * was a demo persona here once and every screen quietly read her instead of the
- * person signed in; WO-24 says in as many words not to bring her back.
+ * are true at the same instant. `seedState` is deliberately empty apart from
+ * the language the visitor arrived in. There was a demo persona here once and
+ * every screen quietly read her instead of the person signed in; WO-24 says in
+ * as many words not to bring her back.
  */
 export async function createAccountState(
   accountId: string,

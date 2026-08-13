@@ -87,7 +87,7 @@ export function toolPart(
     type: "dynamic-tool" as const,
     toolCallId: nextId("call"),
     toolName: "apply_action",
-    input: { action: options.action ?? "todo.add", input: {} },
+    input: { action: options.action ?? "profile.addCourse", input: {} },
   };
 
   switch (state) {
@@ -99,7 +99,7 @@ export function toolPart(
           ? { ok: false, error: options.error }
           : {
               ok: true,
-              action: options.action ?? "todo.add",
+              action: options.action ?? "profile.addCourse",
               input: {},
               summary: options.summary ?? {
                 vi: "Đã thêm việc “học SQL”",
@@ -140,7 +140,7 @@ export function approvalPart(prompt: string): EveMessagePart {
     toolCallId: nextId("call"),
     toolName: "apply_action",
     state: "approval-requested",
-    input: { action: "todo.remove", input: { id: "t-1" } },
+    input: { action: "resume.remove", input: { id: "t-1" } },
     approval: { id: nextId("ap") },
     toolMetadata: {
       eve: {
@@ -224,7 +224,7 @@ export const scenarios: { id: string; label: string; messages: EveMessage[] }[] 
       messages: [
         userTurn("Thêm việc"),
         coachTurn(
-          toolPart("output-available", { error: "Invalid input for todo.add" }),
+          toolPart("output-available", { error: "Invalid input for profile.addCourse" }),
           text("Mình đã thêm việc đó vào danh sách của bạn."),
         ),
       ],
@@ -242,7 +242,7 @@ export const scenarios: { id: string; label: string; messages: EveMessage[] }[] 
       label: "A change the user refused",
       messages: [
         userTurn("Xoá hết việc trong danh sách"),
-        coachTurn(toolPart("output-denied", { action: "todo.remove" })),
+        coachTurn(toolPart("output-denied", { action: "resume.remove" })),
       ],
     },
     {

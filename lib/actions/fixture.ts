@@ -1,6 +1,6 @@
 // A populated state for tests, built the only way the app can build one.
 //
-// The seed is empty now, so a test that wants a todo to toggle has to make one.
+// The seed is empty now, so a test that wants something to edit has to make it.
 // It makes it by dispatching, not by hand-writing an `AppState` literal, and
 // that is the point: a fixture assembled by hand drifts from what the reducers
 // actually produce, and then the tests pass against a state the app can never
@@ -23,7 +23,7 @@ export function build(steps: Step[], from: AppState = seedState()): AppState {
   );
 }
 
-/** A profile, a plan with work in it, and two todos from different sources. */
+/** A filled-in profile: identity, education, a course, and one experience. */
 export function populated(): AppState {
   return build([
     ["profile.setIdentity", { name: "Lê Thu Hà", targetRole: "Data Analyst" }],
@@ -42,18 +42,5 @@ export function populated(): AppState {
         detail: "Dựng báo cáo tuần cho đội marketing",
       },
     ],
-    [
-      "plan.addEntry",
-      { stageId: "phase-1", title: "Hoàn thành khoá SQL", kind: "course", effort: "5h/tuần" },
-    ],
-    [
-      "plan.addEntry",
-      { stageId: "phase-2", title: "Dự án phân tích đầu tiên", kind: "project" },
-    ],
-    [
-      "todo.add",
-      { title: "Nhắn 5 người đang làm Data", detail: "Mỗi tuần 5 người", source: "coach" },
-    ],
-    ["todo.add", { title: "Tự thêm việc", source: "self" }],
   ]);
 }

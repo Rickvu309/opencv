@@ -5,10 +5,11 @@
 // her instead of the person signed in. That made the app impossible to try
 // honestly: you filled in onboarding and the sidebar still greeted someone else.
 //
-// So the only thing seeded now is *structure*: the three plan stages, which are
-// the shape of a plan rather than anyone's plan. Everything else is earned.
+// So nothing is seeded but the language the visitor arrived in. There used to
+// be one exception, the three plan stages, which were the shape of a plan
+// rather than anyone's plan; the plan feature is retired and they went with it.
+// Everything else is earned.
 
-import { planStageTemplate } from "@/lib/catalog";
 import { defaultLocale, type Locale } from "@/lib/i18n/locale";
 import type { AppState } from "./types";
 
@@ -27,26 +28,8 @@ export function seedState(locale: Locale = defaultLocale): AppState {
       education: { school: "", major: "", year: "", gpa: "", courses: [] },
       documents: [],
     },
-    todos: [],
-    plan: {
-      stages: planStageTemplate.map((stage) => ({
-        id: stage.id,
-        // Resolved once, here: from this point the label is stored text the
-        // user can rename, not a string the app keeps re-deciding.
-        label: stage.label[locale],
-        period: stage.period[locale],
-        entries: [],
-      })),
-    },
     resumes: [],
     papers: [],
     pitch: [],
-    paths: {
-      // No goal until the user picks one. Lighting a route to a role nobody
-      // chose is the map asserting something it has not been told.
-      targetId: null,
-      customNodes: [],
-      customEdges: [],
-    },
   };
 }

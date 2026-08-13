@@ -8,14 +8,14 @@ import assert from "node:assert/strict";
 import { checkOutput } from "@/lib/guardrails/output";
 import { messages } from "@/lib/i18n/messages";
 
-const added = [{ action: "todo.add", ok: true }];
-const failed = [{ action: "todo.add", ok: false }];
+const added = [{ action: "profile.addCourse", ok: true }];
+const failed = [{ action: "profile.addCourse", ok: false }];
 
 test("AC-TRUST-002.2: a claim with nothing behind it is corrected", () => {
   for (const reply of [
-    "Mình thêm việc đó vào danh sách rồi nhé.",
+    "Mình thêm khoá học đó vào hồ sơ rồi nhé.",
     "Mình đã cập nhật CV của bạn.",
-    "I've added that to your list.",
+    "I've added that course to your profile.",
     "I updated your CV for you.",
   ]) {
     const verdict = checkOutput({ reply, toolResults: [], locale: "vi" });
@@ -27,7 +27,7 @@ test("AC-TRUST-002.1: the same sentence after a successful action is fine", () =
   // The Coach doing exactly what it should. A guard that flagged this would
   // make every real change look like a lie.
   const verdict = checkOutput({
-    reply: "Mình thêm việc đó vào danh sách rồi nhé.",
+    reply: "Mình thêm khoá học đó vào hồ sơ rồi nhé.",
     toolResults: added,
     locale: "vi",
   });
@@ -58,9 +58,9 @@ test("an offer to act is not a claim to have acted", () => {
   // "I will add" and "you can add" tell the user nothing is done yet. Flagging
   // them would make the Coach unable to offer anything.
   for (const reply of [
-    "Mình sẽ thêm việc đó vào danh sách nếu bạn muốn.",
+    "Mình sẽ thêm khoá học đó nếu bạn muốn.",
     "Bạn có thể thêm mục này vào CV.",
-    "I can add that to your list if you'd like.",
+    "I can add that course if you'd like.",
     "Should I update your CV?",
   ]) {
     assert.equal(

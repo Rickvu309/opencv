@@ -20,11 +20,10 @@ import {
  *  can never call the same screen two different things. */
 const titleKeys = [
   ["/coach", "coach"],
-  ["/todo", "todo"],
   ["/profile", "profile"],
   ["/cv", "cv"],
-  ["/career-map", "map"],
-  ["/plan", "plan"],
+  ["/papers", "papers"],
+  ["/pitch", "pitch"],
 ] as const;
 
 /**

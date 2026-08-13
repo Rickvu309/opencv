@@ -7,6 +7,7 @@ import assert from "node:assert/strict";
 
 import { build, populated } from "@/lib/actions/fixture";
 import { seedState } from "@/lib/actions/seed";
+import { applyAction } from "@/lib/actions/registry";
 import { coachStarters } from "@/lib/coach/starters";
 import { messages } from "@/lib/i18n/messages";
 
@@ -39,9 +40,15 @@ test("once a CV exists, the offer moves on", () => {
   assert.deepEqual(coachStarters(withCv)[0], s.starterTailorCv);
 });
 
-test("an empty task list asks where to start; a full one asks what comes first", () => {
+test("an empty account asks where to start; one with work asks what comes first", () => {
+  // The branch used to read the todo list. With that retired, "has this person
+  // started" is whether anything has been built here: a CV, a letter, a pitch.
   assert.deepEqual(coachStarters(seedState())[1], s.starterWhereToStart);
-  assert.deepEqual(coachStarters(populated())[1], s.starterPrioritise);
+
+  const started = applyAction(populated(), "resume.create", {
+    label: "CV, Data Analyst",
+  }).state;
+  assert.deepEqual(coachStarters(started)[1], s.starterPrioritise);
 });
 
 test("a named target role is used by name", () => {

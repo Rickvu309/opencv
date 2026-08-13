@@ -64,9 +64,9 @@ function outcomeOf(
     const verdict = checkOutput({
       reply: entry.reply ?? "",
       toolResults: entry.actionSucceeded
-        ? [{ action: "todo.add", ok: true }]
+        ? [{ action: "profile.addCourse", ok: true }]
         : entry.actionSucceeded === false
-          ? [{ action: "todo.add", ok: false }]
+          ? [{ action: "profile.addCourse", ok: false }]
           : [],
       locale: "vi",
       config,

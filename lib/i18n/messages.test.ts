@@ -7,7 +7,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { vaultItems } from "@/lib/catalog";
-import { pathEdges, pathNodes, stages } from "@/lib/career-graph";
+import { pathNodes, stages } from "@/lib/career-graph";
 import { actions, actionNames } from "@/lib/actions/registry";
 import { sectionDefaults } from "@/lib/cv/types";
 import {
@@ -73,8 +73,6 @@ test("English is written, not left as the Vietnamese", () => {
     "cv.headerEmail",
     // A proper noun: the course is called this in both languages.
     "profile.certificatePlaceholder",
-    "plan.stageProgress",
-    "todo.sourceCoach",
     "onboarding.gpa",
     "waitlist.emailPlaceholder",
     "profile.versionCount",
@@ -162,7 +160,7 @@ test("every action announces itself in both languages", () => {
   }
 });
 
-test("the career map reads in both languages", () => {
+test("the role catalogue reads in both languages", () => {
   for (const stage of stages) {
     for (const locale of locales) {
       assert.ok(stage.label[locale], `stage ${stage.id} has no ${locale} label`);
@@ -185,17 +183,6 @@ test("the career map reads in both languages", () => {
     }
   }
 
-  // Every edge carries its condition; an edge without one is a route the map
-  // draws but cannot explain.
-  for (const edge of pathEdges) {
-    assert.ok(edge.via, `${edge.from}->${edge.to} has no condition`);
-    for (const locale of locales) {
-      assert.ok(
-        edge.via?.[locale],
-        `${edge.from}->${edge.to} is missing its ${locale} condition`,
-      );
-    }
-  }
 });
 
 test("document kinds and CV sections read in both languages", () => {

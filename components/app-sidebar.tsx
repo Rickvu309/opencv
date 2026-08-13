@@ -7,10 +7,8 @@ import {
   Check,
   ChevronRight,
   ChevronsUpDown,
-  CheckSquare,
   FileText,
   LayoutDashboard,
-  ListChecks,
   Mail,
   Megaphone,
   MessageSquareQuote,
@@ -49,9 +47,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import {
   Tooltip,
@@ -82,27 +77,17 @@ type NavItem = {
 // quiet. `undefined` hides the number entirely.
 const badge = (n: number) => n || undefined;
 
-function primaryNav(openTasks: number): NavItem[] {
+function primaryNav(): NavItem[] {
   return [
     // Clicking Coach starts a new chat, like Linear's Agent.
     // Plain /coach: this is "go to the Coach", not "throw the conversation
     // away". Starting over is an explicit choice, and it lives in the
     // history popover as "Đoạn chat mới".
     { title: messages.nav.coach, href: "/coach", icon: Megaphone },
-    {
-      title: messages.nav.todo,
-      href: "/todo",
-      icon: CheckSquare,
-      count: badge(openTasks),
-    },
   ];
 }
 
-function careerNav(
-  openTasks: number,
-  cvCount: number,
-  paperCount: number,
-): NavItem[] {
+function careerNav(cvCount: number, paperCount: number): NavItem[] {
   return [
     { title: messages.nav.profile, href: "/profile", icon: LayoutDashboard },
     // Next to the profile, not under Tài liệu: a CV is a thing you build here,
@@ -118,13 +103,6 @@ function careerNav(
       count: badge(paperCount),
     },
     { title: messages.nav.pitch, href: "/pitch", icon: MessageSquareQuote },
-    { title: messages.nav.map, href: "/career-map", icon: Route },
-    {
-      title: messages.nav.plan,
-      href: "/plan",
-      icon: ListChecks,
-      count: badge(openTasks),
-    },
   ];
 }
 
@@ -169,10 +147,10 @@ function NavRow({ item, active }: { item: NavItem; active: boolean }) {
 
 export function AppSidebar() {
   const pathname = usePathname();
-  // Counts and identity read from live state, not seed data, so ticking an
-  // item on the plan updates the rail immediately and renaming yourself in
-  // onboarding is reflected here rather than in a fixture nobody can edit.
-  const { plan, profile, resumes, papers } = useAppState();
+  // Counts and identity read from live state, not seed data, so adding a CV
+  // updates the rail immediately and renaming yourself in onboarding is
+  // reflected here rather than in a fixture nobody can edit.
+  const { profile, resumes, papers } = useAppState();
   const dispatch = useDispatch();
   const { t, m, locale } = useT();
   const name = profile.identity.name.trim();
@@ -183,14 +161,9 @@ export function AppSidebar() {
       .map((word) => word[0])
       .join("")
       .toUpperCase() || "?";
-  const openTasks = plan.stages.reduce(
-    (n, st) => n + st.entries.filter((e) => !e.done).length,
-    0,
-  );
-  const primary = primaryNav(openTasks);
-  const career = careerNav(openTasks, resumes.length, papers.length);
+  const primary = primaryNav();
+  const career = careerNav(resumes.length, papers.length);
   const router = useRouter();
-  const onPlan = pathname.startsWith("/plan");
 
   return (
     <Sidebar id="app-sidebar" variant="inset" collapsible="offcanvas">
@@ -305,40 +278,11 @@ export function AppSidebar() {
               <SidebarGroupContent>
                 <SidebarMenu>
                   {career.map((item) => (
-                    <React.Fragment key={item.href}>
-                      <NavRow
-                        item={item}
-                        active={pathname.startsWith(item.href)}
-                      />
-                      {/* Plan phases nest below, shown only while on that page. */}
-                      {item.href === "/plan" && onPlan && (
-                        <SidebarMenuSub>
-                          {plan.stages.map((phase) => {
-                            const done = phase.entries.filter(
-                              (e) => e.done,
-                            ).length;
-                            return (
-                              <SidebarMenuSubItem key={phase.id}>
-                                <SidebarMenuSubButton
-                                  asChild
-                                  size="sm"
-                                  className="text-muted-foreground"
-                                >
-                                  <Link href="/plan">
-                                    <span className="truncate">
-                                      {phase.label.replace(/^Giai đoạn /, "GĐ ")}
-                                    </span>
-                                    <span className="ml-auto text-[11px] tabular-nums">
-                                      {done}/{phase.entries.length}
-                                    </span>
-                                  </Link>
-                                </SidebarMenuSubButton>
-                              </SidebarMenuSubItem>
-                            );
-                          })}
-                        </SidebarMenuSub>
-                      )}
-                    </React.Fragment>
+                    <NavRow
+                      key={item.href}
+                      item={item}
+                      active={pathname.startsWith(item.href)}
+                    />
                   ))}
                 </SidebarMenu>
               </SidebarGroupContent>

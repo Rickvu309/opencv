@@ -47,6 +47,8 @@ test("the repository's own migrations are complete pairs", () => {
       "pitch_in_state",
       "cv_photos",
       "traces",
+      "drop_todos_and_plan",
+      "drop_paths",
     ],
     "order matters: everything after the first depends on what came before it",
   );
