@@ -52,8 +52,9 @@ const serverSnapshot = seedState();
 
 /**
  * `initial` is the signed-in account's state, read on the server and rendered
- * into the page. Null means nobody is signed in, and the store falls back to
- * the browser copy the anonymous landing page has always used.
+ * into the page. Null means nobody is signed in *or* the account's row could
+ * not be read. `signedIn` is the separate question, so a failed read does not
+ * look like a signed-out visitor and save the seed over the real row.
  *
  * Passing it as a prop rather than fetching it here is what keeps hydration
  * honest: the server and the client's first snapshot are the same object,
@@ -63,9 +64,11 @@ const serverSnapshot = seedState();
 export function AppStateProvider({
   children,
   initial = null,
+  signedIn,
 }: {
   children: React.ReactNode;
   initial?: AppState | null;
+  signedIn?: boolean;
 }) {
   // State lives in a ref rather than `useState`, and React reads it through
   // `useSyncExternalStore`. Three things fall out of that:
@@ -88,7 +91,11 @@ export function AppStateProvider({
   // writes to. During render rather than in an effect, because a dispatch can
   // happen on the first paint and a save that went to the wrong place would be
   // silently lost.
-  configurePersistence({ signedIn: initial !== null });
+  const isSignedIn = signedIn ?? initial !== null;
+  configurePersistence({
+    signedIn: isSignedIn,
+    writable: !isSignedIn || initial !== null,
+  });
 
   // Flush what the queue is holding when the tab goes away. `pagehide` rather
   // than `beforeunload`: it is the one that fires on mobile, where a tab is

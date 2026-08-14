@@ -16,7 +16,6 @@
     "@ai-sdk/openai-compatible": "^3.0.21",
     "@ai-sdk/provider": "4.0.5",
     "@radix-ui/react-use-controllable-state": "^1.2.6",
-    "@vercel/blob": "^2.6.1",
     "@vercel/connect": "0.4.3",
     "ai": "^7.0.38",
     "bcryptjs": "^3.0.3",

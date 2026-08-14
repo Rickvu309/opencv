@@ -31,7 +31,7 @@ export default async function RootLayout({
   // shape of a product where the answer to "what does this page show" now
   // depends on who is asking. An anonymous request pays a cookie read and no
   // database call.
-  const initial = await initialAppState();
+  const { state: initial, signedIn } = await initialAppState();
 
   return (
     // `lang` starts at Vietnamese, the default, and `HtmlLang` corrects it on
@@ -43,7 +43,7 @@ export default async function RootLayout({
           outside (app) and must write the user's answers into the same state
           the profile then reads. */}
       <body className="min-h-full flex flex-col">
-        <AppStateProvider initial={initial}>
+        <AppStateProvider initial={initial} signedIn={signedIn}>
           <HtmlLang />
           {children}
         </AppStateProvider>

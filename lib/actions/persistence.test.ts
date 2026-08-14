@@ -258,3 +258,13 @@ test("the tab flushing on its way out sends a beacon", async (t) => {
   assert.equal(beacons.length, 1);
   assert.equal(sent.length, 0, "the beacon replaces the request rather than adding one");
 });
+
+test("a signed-in tab with no loaded row does not write anywhere", async () => {
+  configurePersistence({ signedIn: true, writable: false });
+  const { state } = applyAction(seedState(), "profile.addCourse", {
+    name: "must not land",
+  });
+  assert.equal(await saveState(state), false);
+  assert.equal(sent.length, 0, "must not PUT the seed over the account");
+  assert.equal(storage.getItem(STORAGE_KEY), null, "must not mix the two stores");
+});

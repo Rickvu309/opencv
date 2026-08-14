@@ -1,8 +1,8 @@
 # The database
 
-Postgres on Railway, in the project `openpath`. It holds accounts, sessions and
-each account's `AppState`. Nothing else in the product needs it: the waiting
-list stays on Blob storage, and an unauthenticated visitor never reaches it.
+Postgres on Railway, in the project `openpath`. It holds accounts, sessions,
+each account's `AppState`, the waiting list, traces, plans and background jobs.
+An unauthenticated visitor never reaches it except to join the waiting list.
 
 ## Where it is
 
@@ -11,7 +11,7 @@ list stays on Blob storage, and an unauthenticated visitor never reaches it.
 | Provider | Railway managed Postgres, image `postgres-ssl:18` |
 | Project | `openpath` (The Redcat Studio) |
 | Region | Southeast Asia |
-| Reached from the app | the public TCP proxy, because the app runs on Vercel and is not on Railway's private network |
+| Reached from the app | the private network (`postgres.railway.internal`), because the app runs on Railway in the same project |
 | Transport | TLS 1.3, without certificate verification (Railway's proxy presents a self-signed certificate) |
 
 ## Which schema
@@ -34,16 +34,14 @@ Both are server-side only. Neither is ever committed: `.gitignore` excludes
 
 | Variable | What it is | Where it must be set |
 |---|---|---|
-| `DATABASE_URL` | the full connection string, using the public proxy host | `.env.local` for development, and the Vercel project for deployment |
-| `TEST_DATABASE_URL` | the same instance; the tests isolate themselves by schema, not by database | `.env.local` only, never on Vercel |
+| `DATABASE_URL` | the full connection string | `.env.local` for development, and the Railway **web** and **agent** services for deployment. On Railway this is the private host, referenced as `${{Postgres.DATABASE_URL}}`. |
+| `TEST_DATABASE_URL` | the same instance; the tests isolate themselves by schema, not by database | `.env.local` only, never on Railway |
 | `DB_SCHEMA` | optional; defaults to `openpath` | nowhere, normally |
 
-The value of `DATABASE_URL` is on the Railway service, under the Postgres
-plugin's variables. Build it from `PGUSER`, `PGPASSWORD`, `PGDATABASE` and the
-**proxy** host and port (`RAILWAY_TCP_PROXY_DOMAIN`, `RAILWAY_TCP_PROXY_PORT`).
-The `DATABASE_URL` that Railway itself publishes points at
-`postgres.railway.internal`, which resolves only inside Railway and not from
-Vercel.
+The value of `DATABASE_URL` is on the Railway Postgres service. Inside the
+project, `PGHOST` is `postgres.railway.internal`. The public TCP proxy
+(`RAILWAY_TCP_PROXY_DOMAIN` / `RAILWAY_TCP_PROXY_PORT`) is only for a laptop
+or anything else that is not on that private network.
 
 ## Commands
 
@@ -64,7 +62,7 @@ before doing anything. There is no flag to aim them somewhere else.
 3. Run `npm run db:migrate`.
 
 That creates the schema, the `schema_migrations` bookkeeping table, and the
-three tables below. Nothing else is needed; there is no seed step, because an
+tables below. Nothing else is needed; there is no seed step, because an
 account's state is created the first time that account dispatches an action.
 
 ## The tables
@@ -74,6 +72,7 @@ account's state is created the first time that account dispatches an action.
 | `accounts` | `id`, `username`, `password_hash`, `created_at`. Unique on `lower(username)`. |
 | `sessions` | `id`, `account_id`, `expires_at`, `created_at`. The `id` is the SHA-256 of the cookie's token, not the token. |
 | `app_state` | `account_id`, `state jsonb`, `updated_at`. One row per account, at most, created on first write. |
+| `waitlist` | email addresses from the landing page, unique on the normalized address. |
 
 Deleting an account removes its sessions and its state, by cascade.
 

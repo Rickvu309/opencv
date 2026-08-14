@@ -71,9 +71,8 @@ export function problemCode(problem: EmailProblem): WaitlistErrorCode {
  * because `Minh@Example.com ` and `minh@example.com` are one person.
  *
  * Lives here rather than beside the store because it is a pure string function
- * with no storage concern, and the store pulls in `node:crypto` and the Blob
- * client. Anything that needs to normalize an address should not have to drag
- * those along.
+ * with no storage concern, and the store talks to Postgres. Anything that
+ * needs to normalize an address should not have to drag that along.
  */
 export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();

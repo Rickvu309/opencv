@@ -46,8 +46,8 @@ function isSource(value: unknown): value is WaitlistSource {
 export async function POST(request: Request) {
   // The store is the whole feature. Without it a success response would be a
   // lie, and the person's address would be gone.
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
-    console.error("waitlist: BLOB_READ_WRITE_TOKEN is not set");
+  if (!process.env.DATABASE_URL) {
+    console.error("waitlist: DATABASE_URL is not set");
     return Response.json({ ok: false, code: "store-down" }, { status: 503 });
   }
 

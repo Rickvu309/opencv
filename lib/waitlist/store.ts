@@ -1,37 +1,25 @@
-import { createHash } from "node:crypto";
+import type { ClientBase } from "pg";
 
-import { get, head, list, put } from "@vercel/blob";
-
+import { getPool } from "@/lib/db/client";
 import { normalizeEmail } from "./email";
 
 /**
  * The waiting list. The first thing this product stores centrally.
  *
- * ## Why this is not localStorage, when everything else is
+ * ## Why this is not localStorage
  *
- * `AppState` lives in the browser on purpose: one shared demo account plus a
- * server store would show every visitor everyone else's edits. A waiting list
- * inverts that. It is not per-visitor state, it is one list the team reads, so
- * the browser is exactly the wrong place for it.
+ * `AppState` is per-account. A waiting list inverts that: it is one list the
+ * team reads, so the browser is exactly the wrong place for it.
  *
- * ## Why Blob, and why a private store
+ * ## Why Postgres, and why it used to be Blob
  *
- * A few hundred addresses need no schema, no migrations and no connection
- * pooling inside a serverless function, which is most of the argument against
- * Postgres here. The store is **private**: Blob defaults to public, and a
- * public store means every blob is readable by URL, which is not a place to
- * keep strangers' email addresses. Verified `access: "private"` on the store.
- *
- * ## Why the pathname is a hash
- *
- * One blob per address, named by a hash of the normalized address. That buys
- * dedupe from the filesystem rather than from a read-modify-write: the same
- * address always lands on the same pathname, and `put` overwrites. Two people
- * submitting at once cannot produce two rows, which a list-then-append would
- * allow.
- *
- * The hash also keeps the address out of the pathname. Even in a private store,
- * a pathname is the part most likely to end up in a log or a dashboard.
+ * A few hundred addresses need no schema when the app has no database. That
+ * was the argument for a private Vercel Blob store, and it held until accounts
+ * arrived. There is one Postgres now, on Railway, and a second store is a
+ * second credential, a second dashboard, and a second thing that can be down
+ * while the rest of the product is not. The unique index on `email` is the
+ * same guarantee the blob pathname-hash used to buy: two submits of the same
+ * person are one row, and two concurrent submits cannot both insert.
  */
 
 export type WaitlistSource = "landing" | "end-of-demo";
@@ -42,24 +30,20 @@ export type WaitlistEntry = {
   joinedAt: string;
 };
 
-const PREFIX = "waitlist/";
-
-function pathnameFor(email: string): string {
-  const digest = createHash("sha256").update(normalizeEmail(email)).digest("hex");
-  return `${PREFIX}${digest}.json`;
+function isSource(value: string): value is WaitlistSource {
+  return value === "landing" || value === "end-of-demo";
 }
 
 /** True when this address is already on the list. */
-export async function alreadyJoined(email: string): Promise<boolean> {
-  try {
-    await head(pathnameFor(email));
-    return true;
-  } catch {
-    // `head` throws when the blob does not exist. Any other failure is also
-    // safest read as "not known", because the caller's next step is a write
-    // that overwrites rather than duplicates.
-    return false;
-  }
+export async function alreadyJoined(
+  email: string,
+  db: Pick<ClientBase, "query"> = getPool(),
+): Promise<boolean> {
+  const { rows } = await db.query<{ email: string }>(
+    "select email from waitlist where email = $1",
+    [normalizeEmail(email)],
+  );
+  return rows.length > 0;
 }
 
 /**
@@ -73,46 +57,30 @@ export async function alreadyJoined(email: string): Promise<boolean> {
 export async function join(
   email: string,
   source: WaitlistSource,
+  db: Pick<ClientBase, "query"> = getPool(),
 ): Promise<{ created: boolean }> {
   const normalized = normalizeEmail(email);
-  if (await alreadyJoined(normalized)) return { created: false };
-
-  const entry: WaitlistEntry = {
-    email: normalized,
-    source,
-    joinedAt: new Date().toISOString(),
-  };
-
-  await put(pathnameFor(normalized), JSON.stringify(entry), {
-    // The store is private, and the SDK refuses a mismatch rather than silently
-    // widening access. Good: this is the setting that keeps addresses off the
-    // open internet, so it should be loud.
-    access: "private",
-    contentType: "application/json",
-    // The pathname is the identity. A random suffix would give the same address
-    // a new blob on every submit, which is exactly the duplicate this avoids.
-    addRandomSuffix: false,
-    allowOverwrite: true,
-  });
-
-  return { created: true };
+  const { rowCount } = await db.query(
+    `insert into waitlist (email, source)
+     values ($1, $2)
+     on conflict (email) do nothing`,
+    [normalized, source],
+  );
+  return { created: (rowCount ?? 0) > 0 };
 }
 
 /** Everyone on the list, newest first. For whoever reads it. */
-export async function readAll(): Promise<WaitlistEntry[]> {
-  const { blobs } = await list({ prefix: PREFIX });
-  const entries = await Promise.all(
-    blobs.map(async (blob) => {
-      // `get`, not a plain fetch of `blob.url`: a private blob is not readable
-      // without the token, which is the entire point of the private store.
-      const result = await get(blob.pathname, { access: "private" });
-      // `blob` on the result is metadata; the body is the stream.
-      if (!result || result.statusCode !== 200) return null;
-      const text = await new Response(result.stream).text();
-      return JSON.parse(text) as WaitlistEntry;
-    }),
-  );
-  return entries
-    .filter((entry): entry is WaitlistEntry => entry !== null)
-    .sort((a, b) => b.joinedAt.localeCompare(a.joinedAt));
+export async function readAll(
+  db: Pick<ClientBase, "query"> = getPool(),
+): Promise<WaitlistEntry[]> {
+  const { rows } = await db.query<{
+    email: string;
+    source: string;
+    joined_at: Date;
+  }>("select email, source, joined_at from waitlist order by joined_at desc");
+  return rows.map((row) => ({
+    email: row.email,
+    source: isSource(row.source) ? row.source : "landing",
+    joinedAt: row.joined_at.toISOString(),
+  }));
 }
