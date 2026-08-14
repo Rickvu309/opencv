@@ -46,3 +46,6 @@ next-env.d.ts
 # Claude Code local state
 .claude/
 .env*.local
+
+# The eve agent's server build. Produced by `eve build`, deployed to Railway.
+/.output
