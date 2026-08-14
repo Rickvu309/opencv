@@ -2,7 +2,7 @@
 
 // The four "about you" sections. Each owns its own draft through useEditable,
 // so adding a section means adding a component; not another branch in a
-// page-level save().
+// page-level save(). Empty sections open as the form.
 
 import * as React from "react";
 import { Plus, Trash2, X } from "lucide-react";
@@ -14,9 +14,18 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { EditableSection, Field, Row, useEditable } from "./editable";
 import type { AppState, Experience } from "@/lib/actions/types";
+import { matchesMsg } from "@/lib/i18n/locale";
+import { messages } from "@/lib/i18n/messages";
 import { useT } from "@/lib/i18n/use-t";
+import {
+  contextDraft,
+  contextKeys,
+  filledContextRows,
+} from "@/lib/profile/context-draft";
 
 type Profile = AppState["profile"];
+
+const blankExperience: Experience = { title: "", org: "", period: "", detail: "" };
 
 export function IdentitySection({
   identity,
@@ -26,8 +35,10 @@ export function IdentitySection({
   onSave: (v: Profile["identity"]) => void;
 }) {
   const { t, m } = useT();
+  const isEmpty = !identity.name.trim();
   const e = useEditable({
     value: identity,
+    isEmpty,
     validate: (d) =>
       !d.name.trim()
         ? t(m.profile.identityNameRequired)
@@ -36,25 +47,33 @@ export function IdentitySection({
           : null,
     onSave,
   });
+  const showInvalid = Boolean(e.error);
 
   return (
-    <EditableSection title={t(m.profile.identity)} editable={e}>
+    <EditableSection
+      title={t(m.profile.identity)}
+      hint={isEmpty || e.editing ? t(m.profile.identityHint) : undefined}
+      editable={e}
+      isEmpty={isEmpty}
+    >
       {e.editing ? (
         <div className="grid max-w-md gap-4">
           <Field
             id="p-name"
             label={t(m.profile.fullName)}
+            autoComplete="name"
             autoFocus
             value={e.draft.name}
-            invalid={!e.draft.name.trim()}
+            invalid={showInvalid && !e.draft.name.trim()}
             onChange={(v) => e.set({ name: v })}
           />
           <Field
             id="p-role"
             label={t(m.profile.targetRole)}
+            autoComplete="organization-title"
             placeholder="Data Analyst"
             value={e.draft.targetRole}
-            invalid={!e.draft.targetRole.trim()}
+            invalid={showInvalid && !e.draft.targetRole.trim()}
             onChange={(v) => e.set({ targetRole: v })}
           />
         </div>
@@ -68,6 +87,13 @@ export function IdentitySection({
   );
 }
 
+const contextPlaceholders = {
+  gender: messages.profile.contextGenderPlaceholder,
+  birthYear: messages.profile.contextBirthYearPlaceholder,
+  certainty: messages.profile.contextCertaintyPlaceholder,
+  location: messages.profile.contextLocationPlaceholder,
+} as const;
+
 export function ContextSection({
   context,
   onSave,
@@ -75,35 +101,50 @@ export function ContextSection({
   context: Profile["context"];
   onSave: (v: Profile["context"]) => void;
 }) {
-  const { t, m } = useT();
+  const { t, m, locale } = useT();
+  const isEmpty = context.length === 0;
+  const prepareDraft = React.useCallback(
+    (rows: Profile["context"]) => contextDraft(rows, locale),
+    [locale],
+  );
   const e = useEditable({
     value: context,
-    validate: (d) => {
-      const blank = d.find((r) => !r.value.trim());
-      return blank ? t(m.profile.contextValueRequired(blank.label)) : null;
-    },
-    onSave,
+    isEmpty,
+    prepareDraft,
+    validate: (d) =>
+      filledContextRows(d).length === 0 ? t(m.profile.contextNeedOne) : null,
+    onSave: (d) => onSave(filledContextRows(d)),
   });
 
   return (
-    <EditableSection title={t(m.profile.context)} editable={e}>
+    <EditableSection
+      title={t(m.profile.context)}
+      hint={isEmpty || e.editing ? t(m.profile.contextHint) : undefined}
+      editable={e}
+      isEmpty={isEmpty}
+    >
       {e.editing ? (
         <div className="grid max-w-md gap-4">
-          {e.draft.map((row, i) => (
-            <Field
-              key={row.label}
-              id={`ctx-${i}`}
-              label={row.label}
-              autoFocus={i === 0}
-              value={row.value}
-              invalid={!row.value.trim()}
-              onChange={(v) =>
-                e.replace(
-                  e.draft.map((r, j) => (j === i ? { ...r, value: v } : r)),
-                )
-              }
-            />
-          ))}
+          {e.draft.map((row, i) => {
+            const known = contextKeys.find((key) =>
+              matchesMsg(messages.context[key], row.label),
+            );
+            return (
+              <Field
+                key={row.label}
+                id={`ctx-${i}`}
+                label={row.label}
+                autoFocus={i === 0}
+                placeholder={known ? t(contextPlaceholders[known]) : undefined}
+                value={row.value}
+                onChange={(v) =>
+                  e.replace(
+                    e.draft.map((r, j) => (j === i ? { ...r, value: v } : r)),
+                  )
+                }
+              />
+            );
+          })}
         </div>
       ) : (
         <dl className="max-w-md divide-y divide-border rounded-lg border">
@@ -126,94 +167,57 @@ export function ExperienceSection({
   onSave: (v: Experience[]) => void;
 }) {
   const { t, m } = useT();
+  const isEmpty = experience.length === 0;
+  const prepareDraft = React.useCallback(
+    (rows: Experience[]) => (rows.length === 0 ? [blankExperience] : rows),
+    [],
+  );
   const e = useEditable<Experience[]>({
     value: experience,
+    isEmpty,
+    prepareDraft,
     validate: (d) =>
-      d.some((x) => !x.title.trim() || !x.org.trim())
+      d.length === 0 || d.some((x) => !x.title.trim() || !x.org.trim())
         ? t(m.profile.experienceRequired)
         : null,
     onSave,
   });
 
-  const blank: Experience = { title: "", org: "", period: "", detail: "" };
-  const addRow = () => e.replace([...e.draft, blank]);
+  const addRow = () => e.replace([...e.draft, blankExperience]);
+  const compact = e.draft.length === 1;
 
   return (
     <EditableSection
       title={t(m.profile.experience)}
+      hint={isEmpty || e.editing ? t(m.profile.experienceEmptyBody) : undefined}
       editable={e}
+      isEmpty={isEmpty}
       meta={
-        <span className="text-xs text-muted-foreground tabular-nums">
-          {t(m.profile.itemCount(experience.length))}
-        </span>
+        !isEmpty ? (
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {t(m.profile.itemCount(experience.length))}
+          </span>
+        ) : undefined
       }
     >
       {e.editing ? (
-        <div className="space-y-5">
-          {e.draft.map((x, i) => (
-            <fieldset key={i} className="grid gap-3 rounded-xl border p-3">
-              <legend className="px-1 text-xs text-muted-foreground">
-                {t(m.profile.experienceEntry(i + 1))}
-              </legend>
-              <Field
-                id={`exp-title-${i}`}
-                label={t(m.profile.experienceRole)}
-                placeholder={t(m.cv.entryTitlePlaceholder)}
-                value={x.title}
-                invalid={!x.title.trim()}
-                onChange={(v) =>
-                  e.replace(e.draft.map((y, j) => (j === i ? { ...y, title: v } : y)))
+        <div className="space-y-8">
+          <div className={compact ? "grid gap-4" : "space-y-5"}>
+            {e.draft.map((x, i) => (
+              <ExperienceFields
+                key={i}
+                index={i}
+                value={x}
+                boxed={!compact}
+                showRemove={!compact || Boolean(x.title || x.org || x.period || x.detail)}
+                onChange={(patch) =>
+                  e.replace(e.draft.map((y, j) => (j === i ? { ...y, ...patch } : y)))
                 }
+                onRemove={() => e.replace(e.draft.filter((_, j) => j !== i))}
               />
-              <Field
-                id={`exp-org-${i}`}
-                label={t(m.profile.experienceOrg)}
-                placeholder={t(m.cv.entryOrgPlaceholder)}
-                value={x.org}
-                invalid={!x.org.trim()}
-                onChange={(v) =>
-                  e.replace(e.draft.map((y, j) => (j === i ? { ...y, org: v } : y)))
-                }
-              />
-              <Field
-                id={`exp-period-${i}`}
-                label={t(m.profile.experiencePeriod)}
-                placeholder={t(m.cv.entryPeriodPlaceholder)}
-                value={x.period}
-                onChange={(v) =>
-                  e.replace(e.draft.map((y, j) => (j === i ? { ...y, period: v } : y)))
-                }
-              />
-              <div className="grid gap-1.5">
-                <Label htmlFor={`exp-detail-${i}`}>
-                  {t(m.profile.experienceDetail)}
-                </Label>
-                <Textarea
-                  id={`exp-detail-${i}`}
-                  className="min-h-16"
-                  placeholder={t(m.cv.entryDetailPlaceholder)}
-                  value={x.detail}
-                  onChange={(ev) =>
-                    e.replace(
-                      e.draft.map((y, j) =>
-                        j === i ? { ...y, detail: ev.target.value } : y,
-                      ),
-                    )
-                  }
-                />
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="justify-self-start text-muted-foreground"
-                onClick={() => e.replace(e.draft.filter((_, j) => j !== i))}
-              >
-                <Trash2 className="size-3.5" />
-                {t(m.profile.experienceRemove)}
-              </Button>
-            </fieldset>
-          ))}
-          <Button variant="outline" size="sm" onClick={addRow}>
+            ))}
+          </div>
+          <Button type="button" variant="outline" size="sm" onClick={addRow}>
             <Plus className="size-3.5" />
             {t(m.profile.experienceAdd)}
           </Button>
@@ -222,10 +226,89 @@ export function ExperienceSection({
         <Timeline
           items={experience}
           targetRole={targetRole}
-          onAdd={() => e.start([...experience, blank])}
+          onAdd={() => e.start([...experience, blankExperience])}
         />
       )}
     </EditableSection>
+  );
+}
+
+function ExperienceFields({
+  index,
+  value,
+  boxed,
+  showRemove,
+  onChange,
+  onRemove,
+}: {
+  index: number;
+  value: Experience;
+  boxed: boolean;
+  showRemove: boolean;
+  onChange: (patch: Partial<Experience>) => void;
+  onRemove: () => void;
+}) {
+  const { t, m } = useT();
+  const fields = (
+    <>
+      <Field
+        id={`exp-title-${index}`}
+        label={t(m.profile.experienceRole)}
+        placeholder={t(m.cv.entryTitlePlaceholder)}
+        value={value.title}
+        autoFocus={index === 0}
+        onChange={(v) => onChange({ title: v })}
+      />
+      <Field
+        id={`exp-org-${index}`}
+        label={t(m.profile.experienceOrg)}
+        placeholder={t(m.cv.entryOrgPlaceholder)}
+        value={value.org}
+        onChange={(v) => onChange({ org: v })}
+      />
+      <Field
+        id={`exp-period-${index}`}
+        label={t(m.profile.experiencePeriod)}
+        placeholder={t(m.cv.entryPeriodPlaceholder)}
+        value={value.period}
+        onChange={(v) => onChange({ period: v })}
+      />
+      <div className="grid gap-1.5">
+        <Label htmlFor={`exp-detail-${index}`}>
+          {t(m.profile.experienceDetail)}
+        </Label>
+        <Textarea
+          id={`exp-detail-${index}`}
+          className="min-h-16"
+          placeholder={t(m.cv.entryDetailPlaceholder)}
+          value={value.detail}
+          onChange={(ev) => onChange({ detail: ev.target.value })}
+        />
+      </div>
+      {showRemove && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="justify-self-start text-muted-foreground"
+          onClick={onRemove}
+        >
+          <Trash2 className="size-3.5" />
+          {t(m.profile.experienceRemove)}
+        </Button>
+      )}
+    </>
+  );
+
+  if (!boxed) return <div className="grid gap-4">{fields}</div>;
+
+  return (
+    <fieldset className="grid gap-3 rounded-xl border p-3">
+      <legend className="px-1 text-xs text-muted-foreground">
+        {t(m.profile.experienceEntry(index + 1))}
+      </legend>
+      {fields}
+    </fieldset>
   );
 }
 
@@ -243,20 +326,6 @@ function Timeline({
   onAdd: () => void;
 }) {
   const { t, m } = useT();
-  if (items.length === 0) {
-    return (
-      <div className="rounded-xl border border-dashed px-4 py-10 text-center">
-        <p className="text-sm font-medium">{t(m.profile.experienceEmptyTitle)}</p>
-        <p className="mx-auto mt-1 max-w-xs text-sm text-muted-foreground text-pretty">
-          {t(m.profile.experienceEmptyBody)}
-        </p>
-        <Button size="sm" className="mt-4" onClick={onAdd}>
-          <Plus className="size-3.5" />
-          {t(m.profile.experienceAdd)}
-        </Button>
-      </div>
-    );
-  }
 
   return (
     <>
@@ -294,7 +363,7 @@ function Timeline({
           <p className="text-sm font-medium">{targetRole}</p>
         </li>
       </ol>
-      <Button variant="outline" size="sm" className="mt-5" onClick={onAdd}>
+      <Button type="button" variant="outline" size="sm" className="mt-5" onClick={onAdd}>
         <Plus className="size-3.5" />
         {t(m.profile.experienceAdd)}
       </Button>
@@ -314,23 +383,32 @@ export function EducationSection({
   onRemoveCourse: (name: string) => void;
 }) {
   const { t, m } = useT();
+  const isEmpty = !education.school.trim();
   const e = useEditable({
     value: education,
+    isEmpty,
     validate: (d) => (!d.school.trim() ? t(m.profile.schoolRequired) : null),
     onSave,
   });
   const [newCourse, setNewCourse] = React.useState("");
+  const showInvalid = Boolean(e.error);
 
   return (
-    <EditableSection title={t(m.profile.education)} editable={e}>
+    <EditableSection
+      title={t(m.profile.education)}
+      hint={isEmpty || e.editing ? t(m.profile.educationHint) : undefined}
+      editable={e}
+      isEmpty={isEmpty}
+    >
       {e.editing ? (
         <div className="grid max-w-md gap-4">
           <Field
             id="edu-school"
             label={t(m.profile.school)}
+            autoComplete="organization"
             autoFocus
             value={e.draft.school}
-            invalid={!e.draft.school.trim()}
+            invalid={showInvalid && !e.draft.school.trim()}
             onChange={(v) => e.set({ school: v })}
           />
           <Field
@@ -357,7 +435,7 @@ export function EducationSection({
           </div>
         </div>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-8">
           <dl className="max-w-md divide-y divide-border rounded-lg border">
             <Row label={t(m.profile.school)} value={education.school} />
             <Row label={t(m.profile.major)} value={education.major} />
@@ -373,7 +451,7 @@ export function EducationSection({
             <h3 className="text-sm font-medium">{t(m.profile.certificates)}</h3>
             <div className="mt-2 flex flex-wrap gap-1.5">
               {education.courses.map((c) => (
-                <Badge key={c} variant="secondary" className="gap-1 pr-1 font-normal">
+                <Badge key={c} variant="secondary" className="gap-1 pe-1 font-normal">
                   {c}
                   <button
                     type="button"
