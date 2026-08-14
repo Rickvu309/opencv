@@ -1,7 +1,5 @@
 "use client";
 
-import { Languages } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
 import { useDispatch } from "@/lib/actions/store";
 import { localeNames, locales } from "@/lib/i18n/locale";
@@ -28,25 +26,21 @@ export function LanguageToggle({ className }: { className?: string }) {
       role="group"
       aria-label={t(m.common.language)}
       className={cn(
-        "inline-flex items-center gap-0.5 rounded-lg border bg-card p-0.5",
+        "inline-flex items-center rounded-md border bg-card p-px",
         className,
       )}
     >
-      <Languages
-        aria-hidden
-        className="ml-1.5 size-3.5 shrink-0 text-muted-foreground"
-      />
       {locales.map((code) => (
         <Button
           key={code}
           type="button"
-          size="sm"
+          size="xs"
           variant={locale === code ? "secondary" : "ghost"}
           aria-pressed={locale === code}
           onClick={() =>
             dispatch("settings.setLanguage", { language: code }, { silent: true })
           }
-          className="h-7 px-2 text-xs font-normal"
+          className="px-1.5 font-normal"
         >
           {localeNames[code]}
         </Button>

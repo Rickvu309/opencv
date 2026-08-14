@@ -183,6 +183,22 @@ export const messages = {
 
   /* ── Onboarding ─────────────────────────────────────────────────────── */
   onboarding: {
+    // One screen, once, at sign-up. A name, a direction (or not sure), and an
+    // optional CV. School, courses and the rest wait until the Coach asks.
+    beforeCoach: m("Trước khi gặp Coach", "Before you meet the Coach"),
+    roleWanted: m("Hướng đang nhắm", "The role you want"),
+    cvYours: m("CV của bạn", "Your CV"),
+    cvLead: m(
+      "Tải file có sẵn. Coach đọc từ đây.",
+      "Upload the file you already have. The Coach reads it.",
+    ),
+    cvDrop: m("Kéo CV vào, hoặc chọn file.", "Drop a CV, or choose a file."),
+    cvNone: m(
+      "Chưa có CV. Coach sẽ dựng cùng mình.",
+      "No CV yet. The Coach will build one with you.",
+    ),
+    removeFile: m("Gỡ tệp", "Remove file"),
+
     stepOf: (step: number, total: number) =>
       m(`Bước ${step}/${total}`, `Step ${step} of ${total}`),
     privacy: m(
@@ -200,15 +216,15 @@ export const messages = {
 
     goalHeadline: m("Bạn đang nhắm tới đâu?", "What are you aiming at?"),
     goalSupport: m(
-      "Chọn một hướng, hoặc nói thẳng là chưa biết. Cả hai đều dùng được.",
-      "Pick a direction, or say you're not sure. Either works.",
+      "Một câu hỏi. Xong là nói chuyện với Coach.",
+      "One question. Then you talk to the Coach.",
     ),
     goalNext: m("Tiếp tục · Xuất phát", "Continue · Your start"),
 
     unsureTitle: m("Mình chưa biết", "I'm not sure yet"),
     unsureNote: m(
-      "Mình sẽ chỉ hướng gần bạn nhất.",
-      "We'll show the direction you're closest to.",
+      "Coach sẽ cùng mình tìm hướng gần nhất.",
+      "The Coach will help find the nearest fit.",
     ),
     otherRole: m("Hoặc tự ghi vị trí khác", "Or name another role"),
 
@@ -224,7 +240,7 @@ export const messages = {
       "Khoá học, chứng chỉ, kỹ năng. Mỗi dòng một thứ.",
       "Courses, certificates, skills. One per line.",
     ),
-    finishNext: m("Xong · gặp Coach", "Finish · meet the Coach"),
+    finishNext: m("Gặp Coach", "Talk to the Coach"),
 
     fitFor: m("Mức phù hợp của bạn", "How close you are"),
 
@@ -350,15 +366,20 @@ export const messages = {
     ),
     savingStatus: m("Đang lưu hồ sơ…", "Saving your profile…"),
 
-    // The first Coach turn after setup. The four-card tour used to lecture;
-    // this asks, so they meet the product by using it.
-    firstQuestion: m(
-      "Nhìn hồ sơ mình vừa điền, việc đầu tiên nên làm là gì?",
-      "Looking at what I just entered, what should I do first?",
+    // The first Coach turn after setup. Names the goal they just chose, or
+    // admits they have not, so the first answer is not generic.
+    firstQuestionUnsure: m(
+      "Mình chưa biết mình hợp hướng nào. Bắt đầu từ đâu?",
+      "I don't know which direction fits. Where should I start?",
     ),
+    firstQuestionForRole: (role: string) =>
+      m(
+        `Mình muốn làm ${role}. Việc đầu tiên nên làm là gì?`,
+        `I want to be a ${role}. What should I do first?`,
+      ),
     asideCoachHint: m(
-      "Coach đọc những dòng này rồi viết CV cùng bạn. Mọi sửa đều hoàn tác được.",
-      "The Coach reads this and writes your CV with you. You can undo.",
+      "Trường, khoá, kinh nghiệm — Coach hỏi lúc cần.",
+      "School, courses, experience — the Coach asks when it needs them.",
     ),
     previewEmpty: m("Chưa điền", "Not filled in yet"),
   },

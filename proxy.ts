@@ -21,7 +21,12 @@ export function proxy(request: NextRequest) {
   // A signature we did not write is the same as no cookie at all.
   const hasSession = readToken(cookie) !== null;
 
-  const decision = gateFor(request.nextUrl.pathname, hasSession);
+  // Local `next dev` only: onboarding is a form, and signing up just to look
+  // at it is ceremony. Production stays closed — finishing still writes a
+  // profile, and that belongs to an account.
+  const extraPublic =
+    process.env.NODE_ENV === "development" ? ["/onboarding"] : [];
+  const decision = gateFor(request.nextUrl.pathname, hasSession, extraPublic);
   if (decision.kind === "allow") return NextResponse.next();
   if (decision.kind === "unauthorized") {
     return NextResponse.json({ ok: false, code: "no-session" }, { status: 401 });
