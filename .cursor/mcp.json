@@ -4,7 +4,8 @@
       "type": "http",
       "url": "https://api.factory.8090.dev/v2/mcp?sf_project=d04c0633-bcce-4e62-8dcc-dd9395fac914",
       "headers": {
-        "X-Sofa-Mcp-Project-Id": "d04c0633-bcce-4e62-8dcc-dd9395fac914"
+        "X-Sofa-Mcp-Project-Id": "d04c0633-bcce-4e62-8dcc-dd9395fac914",
+        "Authorization": "Bearer ${env:SOFTWARE_FACTORY_MCP_TOKEN}"
       }
     }
   }
