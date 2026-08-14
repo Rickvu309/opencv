@@ -170,6 +170,7 @@ test("every migration applies to an empty schema", { skip: skipWithoutDatabase }
         "schema_migrations",
         "sessions",
         "traces",
+        "waitlist",
       ],
     );
   });
