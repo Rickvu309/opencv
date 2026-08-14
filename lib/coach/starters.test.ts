@@ -1,4 +1,4 @@
-// The four chips on an empty chat. They are the only thing in the product that
+// The four suggestions on an empty chat. They are the only thing in the product that
 // suggests what to say to the Coach, so a stale one is a wrong recommendation
 // with a button attached.
 

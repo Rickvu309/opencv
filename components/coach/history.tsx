@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Check, Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -12,9 +12,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  SidebarGroupContent,
+  SidebarMenu,
+  SidebarMenuAction,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
+} from "@/components/ui/sidebar";
 import { useT } from "@/lib/i18n/use-t";
 import { cn } from "@/lib/utils";
 import { useCoach } from "./provider";
+
+/** Same density and active lift as `components/app-sidebar.tsx`. */
+const rowSize = "h-10 text-sm md:h-7 md:text-[13px]";
+const activeItem =
+  "data-active:bg-card data-active:shadow-xs data-active:ring-1 data-active:ring-border";
 
 /**
  * Starts a new chat, without throwing the current one away.
@@ -117,5 +130,59 @@ export function ConversationMenu({
         })}
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+/**
+ * Stored threads for the rail History section.
+ *
+ * New chat lives in the header switcher, not in this list. Empty means
+ * nothing: no placeholder, no badge. Both call the same `useCoach()` APIs.
+ */
+export function ConversationRail() {
+  const thread = useCoach();
+  const router = useRouter();
+  const pathname = usePathname();
+  const { isMobile, setOpenMobile } = useSidebar();
+  const { t, m } = useT();
+  const onCoach = pathname.startsWith("/coach");
+
+  if (thread.conversations.length === 0) return null;
+
+  return (
+    <SidebarGroupContent>
+      <SidebarMenu>
+        {thread.conversations.map((conversation) => {
+          const current = onCoach && conversation.id === thread.conversationId;
+          return (
+            <SidebarMenuItem key={conversation.id}>
+              <SidebarMenuButton
+                isActive={current}
+                className={cn(rowSize, activeItem)}
+                onClick={() => {
+                  thread.switchTo(conversation.id);
+                  router.push("/coach");
+                  if (isMobile) setOpenMobile(false);
+                }}
+              >
+                <span>{conversation.title || t(m.coach.newChat)}</span>
+              </SidebarMenuButton>
+              <SidebarMenuAction
+                showOnHover
+                className="top-2.5 md:top-1"
+                aria-label={t(m.coach.deleteChat)}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  thread.deleteConversation(conversation.id);
+                }}
+              >
+                <Trash2 />
+              </SidebarMenuAction>
+            </SidebarMenuItem>
+          );
+        })}
+      </SidebarMenu>
+    </SidebarGroupContent>
   );
 }

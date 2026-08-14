@@ -20,6 +20,7 @@ import {
   Globe,
   Mail,
   Plus,
+  User,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -179,6 +180,11 @@ export default function ProfilePage() {
   const selectedVisible = visible.some((s) => s.id === selected);
   const selectedLabel =
     groups.flatMap((g) => g.items).find((s) => s.id === selected)?.label ?? "";
+  const missingTotal = groups.flatMap((g) => g.items).filter((s) => !s.filled).length;
+  const nextEmptyId = visible
+    .slice(visible.findIndex((s) => s.id === selected) + 1)
+    .find((s) => !s.filled)?.id
+    ?? visible.find((s) => !s.filled && s.id !== selected)?.id;
 
   const doc = vaultItems.find((v) => v.id === selected);
 
@@ -188,29 +194,47 @@ export default function ProfilePage() {
       {/* ── Index rail ─────────────────────────────────────── */}
       <div
         className={cn(
-          "w-full shrink-0 flex-col border-r md:flex md:w-[20rem]",
-          mobileView === "index" ? "flex" : "hidden",
+          "w-full shrink-0 flex-col border-e md:flex md:w-[20rem]",
+          mobileView === "index"
+            ? "flex motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-left-2 motion-safe:duration-[var(--duration-state)] motion-safe:ease-enter"
+            : "hidden",
         )}
       >
         <div className="flex h-14 shrink-0 items-center gap-3 border-b px-4">
           <span
             aria-hidden
-            className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground"
+            className={cn(
+              "flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
+              profile.identity.name.trim()
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground",
+            )}
           >
-            {profile.identity.name
-              .split(" ")
-              .slice(-2)
-              .map((w) => w[0])
-              .join("")}
+            {profile.identity.name.trim() ? (
+              profile.identity.name
+                .split(" ")
+                .slice(-2)
+                .map((w) => w[0])
+                .join("")
+            ) : (
+              <User className="size-4" />
+            )}
           </span>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium">{profile.identity.name}</p>
+            <p className="truncate text-sm font-medium">
+              {profile.identity.name.trim() || t(m.nav.yourProfile)}
+            </p>
             <p className="truncate text-xs text-muted-foreground">
-              {profile.identity.targetRole}
+              {profile.identity.targetRole.trim()
+                || (missingTotal > 0
+                  ? t(m.profile.missingCount(missingTotal))
+                  : t(m.profile.completeness))}
             </p>
           </div>
-          <span className="text-sm font-semibold tabular-nums">
-            <span className="sr-only">{t(m.profile.completeness)} </span>
+          <span
+            className="text-sm font-semibold tabular-nums"
+            aria-label={`${t(m.profile.completeness)} ${score}%`}
+          >
             {score}%
           </span>
         </div>
@@ -249,7 +273,7 @@ export default function ProfilePage() {
                     {/* The count only appears when collapsed, the rail stays
                         still until you interact with it. */}
                     {!open && missing > 0 && (
-                      <span className="ml-auto tabular-nums">
+                      <span className="ms-auto tabular-nums">
                         {t(m.profile.missingCount(missing))}
                       </span>
                     )}
@@ -275,7 +299,7 @@ export default function ProfilePage() {
                           setMobileView("panel");
                         }}
                         className={cn(
-                          "flex w-full items-center gap-2.5 px-4 py-2 text-left transition active:translate-y-px outline-none hover:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset motion-reduce:transition-none",
+                          "flex w-full items-center gap-2.5 px-4 py-2 text-start transition active:translate-y-px outline-none hover:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset motion-reduce:transition-none",
                           active && "bg-muted",
                           touched.includes(s.id) && "animate-just-changed",
                         )}
@@ -286,7 +310,14 @@ export default function ProfilePage() {
                           <span aria-hidden className="size-3.5 shrink-0" />
                         )}
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm">{s.label}</span>
+                          <span
+                            className={cn(
+                              "block truncate text-sm",
+                              (active || s.id === nextEmptyId) && "font-medium",
+                            )}
+                          >
+                            {s.label}
+                          </span>
                           <span className="block truncate text-xs text-muted-foreground">
                             {s.meta}
                           </span>
@@ -299,7 +330,12 @@ export default function ProfilePage() {
                         ) : (
                           <Plus
                             aria-hidden
-                            className="size-3.5 shrink-0 text-muted-foreground"
+                            className={cn(
+                              "size-3.5 shrink-0",
+                              active || s.id === nextEmptyId
+                                ? "text-foreground"
+                                : "text-muted-foreground",
+                            )}
                           />
                         )}
                         <span className="sr-only">
@@ -326,7 +362,9 @@ export default function ProfilePage() {
         tabIndex={0}
         className={cn(
           "min-w-0 flex-1 flex-col overflow-y-auto outline-none md:flex",
-          mobileView === "panel" ? "flex" : "hidden",
+          mobileView === "panel"
+            ? "flex motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-right-2 motion-safe:duration-[var(--duration-state)] motion-safe:ease-enter"
+            : "hidden",
           touched.includes(selected) && "animate-just-changed",
         )}
       >
@@ -390,6 +428,7 @@ export default function ProfilePage() {
 
         {doc && (
           <DocumentPanel
+            key={doc.id}
             item={doc}
             documents={docsOf(doc.id)}
             onAdd={(d) => dispatch("document.add", { kind: doc.id, ...trim(d) })}

@@ -329,19 +329,10 @@
 }
 
 /*
- * Cat poses. Listen settles the ears once. Done is one blink plus a 2° glance,
- * then Sit. Never loop. Reduced motion keeps the static mark.
+ * Box poses. Done is one blink, then Sit. Never loop. Reduced motion keeps
+ * the static mark. Listen is a static U-arc in the SVG, not a keyframe.
  */
-@keyframes cat-ear-settle {
-  from {
-    transform: rotate(-8deg);
-  }
-  to {
-    transform: none;
-  }
-}
-
-@keyframes cat-blink {
+@keyframes box-blink {
   0%,
   70%,
   100% {
@@ -352,38 +343,46 @@
   }
 }
 
-@keyframes cat-glance {
-  0%,
-  100% {
-    transform: rotate(0deg);
-  }
-  40% {
-    transform: rotate(2deg);
-  }
-}
-
 @layer components {
-  .cat-listen .cat-ear-l,
-  .cat-listen .cat-ear-r {
-    animation: cat-ear-settle var(--duration-state) var(--ease-snap) both;
-  }
-
-  .cat-done {
-    transform-origin: 12px 16px;
-    animation: cat-glance var(--duration-state) var(--ease-snap) both;
-  }
-
-  .cat-done .cat-eye {
+  .box-done .box-eye {
     transform-origin: center;
-    animation: cat-blink var(--duration-state) var(--ease-snap) both;
+    animation: box-blink var(--duration-state) var(--ease-enter) both;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cat-listen .cat-ear-l,
-  .cat-listen .cat-ear-r,
-  .cat-done,
-  .cat-done .cat-eye {
+  .box-done .box-eye {
+    animation: none;
+  }
+}
+
+@keyframes field-error-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-6px);
+  }
+  40% {
+    transform: translateX(6px);
+  }
+  60% {
+    transform: translateX(-4px);
+  }
+  80% {
+    transform: translateX(4px);
+  }
+}
+
+@layer components {
+  .field-error-shake {
+    animation: field-error-shake 400ms var(--ease-snap) both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .field-error-shake {
     animation: none;
   }
 }

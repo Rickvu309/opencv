@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import { CoachCat } from "@/components/brand/coach-cat";
+import { CoachBox } from "@/components/brand/coach-box";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n/use-t";
 
@@ -10,7 +10,7 @@ export default function NotFound() {
   const { t, m } = useT();
   return (
     <div className="mx-auto flex min-h-svh w-full max-w-md flex-col items-center justify-center px-5 text-center">
-      <CoachCat size="lg" className="text-foreground" />
+      <CoachBox size="lg" className="text-foreground" />
       <h1 className="mt-4 text-xl font-semibold tracking-tight">
         {t(m.support.notFoundTitle)}
       </h1>

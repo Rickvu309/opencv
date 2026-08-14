@@ -15,6 +15,12 @@ import {
   openingFit,
   rankOpenings,
 } from "@/lib/search/fit";
+import {
+  excludesOpening,
+  matchOpening,
+  matchOpeningField,
+  queryTokens,
+} from "@/lib/search/match";
 import { SEED_OPENINGS, parseOpening, savedOpenings } from "@/lib/search/types";
 
 const POSTING = `Data Analyst Intern - Công ty ABC
@@ -141,6 +147,83 @@ test("a pasted opening lands at the top of the user's own list", () => {
   assert.equal(state.openings.length, SEED_OPENINGS.length + 1);
   assert.equal(state.openings[0].title, "Data Analyst Intern");
   assert.equal(state.openings[0].seeded, undefined, "the user's own is not an example");
+});
+
+test("an empty query keeps every opening", () => {
+  assert.ok(SEED_OPENINGS.every((opening) => matchOpening(opening, "")));
+  assert.ok(SEED_OPENINGS.every((opening) => matchOpening(opening, "   ở   ")));
+});
+
+test("a city query hits location, not only the title", () => {
+  const hanoi = SEED_OPENINGS.filter((opening) =>
+    matchOpening(opening, "việc data ở Hà Nội"),
+  );
+  assert.ok(hanoi.some((opening) => opening.id === "seed-da-intern"));
+  assert.ok(hanoi.every((opening) => opening.location === "Hà Nội"));
+  assert.ok(!hanoi.some((opening) => opening.id === "seed-ba-junior"));
+});
+
+test("a company or requirement query is not limited to the title", () => {
+  const fintech = SEED_OPENINGS.filter((opening) =>
+    matchOpening(opening, "công ty fintech"),
+  );
+  assert.deepEqual(
+    fintech.map((opening) => opening.id),
+    ["seed-de-junior"],
+  );
+
+  const sql = SEED_OPENINGS.filter((opening) => matchOpening(opening, "sql"));
+  assert.ok(sql.length >= 3);
+  assert.ok(sql.every((opening) =>
+    opening.requirements.some((requirement) => requirement.skills.includes("sql")),
+  ));
+});
+
+test("saved and example intents read the flags, not the posting text", () => {
+  const saved = { ...SEED_OPENINGS[0], saved: true };
+  assert.equal(matchOpening(saved, "tin đã lưu"), true);
+  assert.equal(matchOpening(SEED_OPENINGS[0], "tin đã lưu"), false);
+  assert.equal(matchOpening(SEED_OPENINGS[0], "tin ví dụ"), true);
+  assert.equal(matchOpening({ ...SEED_OPENINGS[0], seeded: false }, "example"), false);
+});
+
+test("a title scope does not read the city field", () => {
+  const hanoi = SEED_OPENINGS.filter((opening) =>
+    matchOpeningField(opening, "Hà Nội", "title"),
+  );
+  assert.equal(hanoi.length, 0);
+  const city = SEED_OPENINGS.filter((opening) =>
+    matchOpeningField(opening, "Hà Nội", "city"),
+  );
+  assert.ok(city.every((opening) => opening.location === "Hà Nội"));
+});
+
+test("exclude hides an opening that mentions any of the words", () => {
+  const opening = SEED_OPENINGS.find((row) => row.id === "seed-de-junior")!;
+  assert.equal(excludesOpening(opening, "fintech"), true);
+  assert.equal(excludesOpening(opening, "fintech marketing"), true);
+  assert.equal(excludesOpening(opening, "retail"), false);
+  assert.equal(excludesOpening(opening, ""), false);
+});
+
+test("query tokens drop particles so a spoken phrase still matches", () => {
+  assert.deepEqual(queryTokens("Việc data ở Hà Nội"), ["data", "ha", "noi"]);
+});
+
+test("the English starter phrases hit the seed set", () => {
+  assert.ok(
+    SEED_OPENINGS.some((opening) => matchOpening(opening, "Data jobs in Hanoi")),
+  );
+  assert.ok(
+    SEED_OPENINGS.some((opening) => matchOpening(opening, "Analyst intern")),
+  );
+  assert.ok(
+    SEED_OPENINGS.some((opening) => matchOpening(opening, "Fintech company")),
+  );
+  assert.equal(
+    SEED_OPENINGS.some((opening) => matchOpening(opening, "Saved openings")),
+    false,
+  );
 });
 
 test("a new account starts with examples, marked as examples", () => {

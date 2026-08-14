@@ -2,7 +2,9 @@ import type { NextConfig } from "next";
 import { withEve } from "eve/next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  async redirects() {
+    return [{ source: "/papers", destination: "/cv", permanent: false }];
+  },
 };
 
 /**

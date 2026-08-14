@@ -85,12 +85,26 @@ export const messages = {
   /* ── Navigation ─────────────────────────────────────────────────────── */
   nav: {
     coach: m("Coach", "Coach"),
-    career: m("Sự nghiệp", "Career"),
+    // Names the conversation list in the rail, not a destination. Coach is
+    // the destination; this only labels the threads that fill leftover height.
+    chats: m("Đoạn chat", "Chats"),
+    // The two pillars, in student words. Prepare Yourself / My Kit is not its
+    // own screen; this label groups papers and pitch. Land the Right
+    // Opportunity groups search then applications. "Sự nghiệp" mixed those
+    // with Profile, which is Settings and lives in the workspace switcher.
+    prepare: m("Chuẩn bị", "Prepare"),
+    land: m("Cơ hội", "Opportunities"),
     profile: m("Hồ sơ", "Profile"),
-    cv: m("CV", "CV"),
-    papers: m("Thư và bài viết", "Letters"),
-    pitch: m("Giới thiệu bản thân", "Your pitch"),
-    search: m("Việc đang tuyển", "Openings"),
+    // CVs and letters share one destination. "Giấy tờ" is what students say
+    // for the paperwork they send; not a calque of the English name.
+    cv: m("Giấy tờ", "My Paper"),
+    papers: m("Giấy tờ", "My Paper"),
+    // 8090 name. "Your pitch" put the product in the second person; the
+    // feature is something the user owns.
+    pitch: m("Giới thiệu bản thân", "My Pitch"),
+    // The action, not the objects. "Openings" / "Việc đang tuyển" named the
+    // listings; this is the screen where you look.
+    search: m("Tìm việc", "Search"),
     applications: m("Đơn ứng tuyển", "Applications"),
     billing: m("Gói và thanh toán", "Plan and billing"),
     support: m("Trợ giúp", "Help"),
@@ -327,8 +341,8 @@ export const messages = {
     ),
     tour3Title: m("Hồ sơ của bạn ở đâu", "Where your materials live"),
     tour3Body: m(
-      "CV, thư xin việc, bài giới thiệu bản thân, mỗi thứ một màn hình bên trái. Sửa tay lúc nào cũng được.",
-      "Your CV, letters and pitch each have a screen. Edit any of it by hand.",
+      "CV và thư xin việc nằm cùng một chỗ. Bài giới thiệu bản thân ở mục riêng. Sửa tay lúc nào cũng được.",
+      "CVs and letters live together. Your pitch has its own screen. Edit any of it by hand.",
     ),
     tour4Title: m("Tìm việc và theo dõi", "Find jobs and track them"),
     tour4Body: m(
@@ -342,7 +356,6 @@ export const messages = {
       "Làm xong bốn việc này là bạn dùng được hết app.",
       "Do these four and you've used the whole product.",
     ),
-    checklistDismiss: m("Ẩn danh sách này", "Hide this"),
     stepGoal: m("Đặt mục tiêu nghề nghiệp", "Set a career goal"),
     stepFacts: m("Thêm một khoá học hoặc kinh nghiệm", "Add a course or an experience"),
     stepDocument: m("Dựng thứ đầu tiên: CV, thư, hoặc lời giới thiệu", "Make something: a CV, a letter, or a pitch"),
@@ -457,6 +470,16 @@ export const messages = {
     minimise: m("Thu nhỏ", "Minimise"),
     hideRecent: m("Ẩn đoạn chat gần đây", "Hide recent chat"),
     composerPlaceholder: m("Hỏi Coach…", "Ask the Coach…"),
+    startersLabel: m("Gợi ý", "Suggestions"),
+    // Shown in the composer, cycling. The field's accessible name stays
+    // "Hỏi Coach…"; these are examples of what to type, picked from the
+    // screen you are on and from the same state the suggestions read.
+    hintCv: m("Bản này còn thiếu gì?", "What's still missing on this page?"),
+    hintPapers: m("Viết thư cho một vị trí", "Draft a letter for a role"),
+    hintPitch: m("Viết bài tự giới thiệu", "Draft my self-introduction"),
+    hintSearch: m("Tin này mình khớp tới đâu?", "How well do I fit this posting?"),
+    hintApplications: m("Đơn này nên làm gì tiếp?", "What's next on this application?"),
+    hintProfile: m("Hồ sơ mình nên thêm gì?", "What should I add to my profile?"),
     send: m("Gửi tin nhắn", "Send message"),
     typing: m("Coach đang trả lời", "The Coach is answering"),
     stop: m("Dừng trả lời", "Stop answering"),
@@ -474,6 +497,9 @@ export const messages = {
     toolRunning: m("Đang cập nhật…", "Making the change…"),
     toolFailed: m("Chưa thay đổi được gì", "Nothing was changed"),
     toolDenied: m("Bạn đã từ chối thay đổi này", "You declined this change"),
+    toolChanges: (n: number) =>
+      m(`${n} thay đổi`, n === 1 ? "1 change" : `${n} changes`),
+    jumpToLatest: m("Xuống tin mới nhất", "Jump to latest"),
     approvalTitle: m("Cần bạn xác nhận", "Needs your confirmation"),
     openCv: m("Mở CV này", "Open this CV"),
     deleteChat: m("Xoá đoạn chat này", "Delete this chat"),
@@ -483,9 +509,14 @@ export const messages = {
       "Mở đoạn chat mới để tiếp tục. Đoạn này vẫn được giữ lại.",
       "Start a new one to carry on. This one is kept.",
     ),
+    // Empty canvas. The box sits above this; the line is dry on
+    // purpose, not a mascot caption. The named form keeps the same two beats.
     readyWithName: (name: string) =>
-      m(`Sẵn sàng khi bạn cần, ${name}`, `Ready when you are, ${name}`),
-    ready: m("Sẵn sàng khi bạn cần", "Ready when you are"),
+      m(
+        `Mình vẫn nghe, ${name}. Cứ thong thả.`,
+        `Still listening, ${name}. No rush.`,
+      ),
+    ready: m("Mình vẫn nghe. Cứ thong thả.", "Still listening. No rush."),
     answerInComposer: m(
       "Hoặc bạn cứ trả lời bằng lời của mình ở ô bên dưới.",
       "Or answer in your own words below.",
@@ -566,6 +597,10 @@ export const messages = {
     fullName: m("Họ tên", "Full name"),
     aimingFor: m("Hướng tới", "Aiming for"),
     targetRole: m("Vai trò hướng tới", "Role you're aiming for"),
+    identityHint: m(
+      "Tên và vai trò bạn đang hướng tới.",
+      "Your name and the role you want.",
+    ),
     identityNameRequired: m(
       "Nhập họ tên để lưu.",
       "Enter your name to save.",
@@ -576,8 +611,20 @@ export const messages = {
     ),
 
     context: m("Bối cảnh & mục tiêu", "Situation and goals"),
+    contextHint: m(
+      "Nơi bạn đang đứng, để lời khuyên vừa với bạn.",
+      "Where you are now, so advice can fit.",
+    ),
+    contextNeedOne: m(
+      "Điền ít nhất một mục để lưu.",
+      "Fill in at least one row to save.",
+    ),
     contextValueRequired: (label: string) =>
       m(`Điền giá trị cho “${label}” để lưu.`, `Fill in “${label}” to save.`),
+    contextGenderPlaceholder: m("Nữ", "Woman"),
+    contextBirthYearPlaceholder: m("2003", "2003"),
+    contextCertaintyPlaceholder: m("Đang tìm hiểu", "Still exploring"),
+    contextLocationPlaceholder: m("Hà Nội", "Hanoi"),
 
     experience: m("Kinh nghiệm", "Experience"),
     experienceRole: m("Vai trò", "Role"),
@@ -598,6 +645,10 @@ export const messages = {
     ),
 
     education: m("Học vấn & chứng chỉ", "Education and certificates"),
+    educationHint: m(
+      "Trường và chuyên ngành. Chứng chỉ thêm được sau.",
+      "School and field of study. Add courses after.",
+    ),
     school: m("Trường", "School"),
     major: m("Chuyên ngành", "Field of study"),
     yearAndGpa: m("Năm học", "Year"),
@@ -614,7 +665,9 @@ export const messages = {
     docEmptyTitle: (kind: string) =>
       m(`Chưa có ${kind.toLowerCase()}`, `No ${kind.toLowerCase()} yet`),
     docBuildCv: m("Dựng CV trong OpenPath", "Build a CV here"),
+    docBuildLetter: m("Viết thư trong OpenPath", "Write a letter here"),
     docUploadExisting: m("Tải CV có sẵn lên", "Upload an existing CV"),
+    docAddFile: m("Thêm tệp có sẵn", "Add an existing file"),
     docAskCoach: m("Nhờ Coach xem lại", "Ask the Coach to review"),
     docAddVersion: m("Thêm bản", "Add a version"),
     docPrimary: m("Bản chính", "Primary"),
@@ -681,20 +734,37 @@ export const messages = {
 
   /* ── CV builder ─────────────────────────────────────────────────────── */
   cv: {
-    emptyTitle: m("Dựng CV đầu tiên của bạn", "Build your first CV"),
+    emptyTitle: m("Dựng CV đầu tiên", "Build your first CV"),
     emptyWithProfile: m(
-      "Bắt đầu từ hồ sơ bạn đã điền, rồi sửa cho đúng vị trí bạn nhắm tới.",
+      "Bắt đầu từ hồ sơ, rồi sửa cho đúng vị trí bạn nhắm tới.",
       "Start from your profile, then tailor it to the job.",
     ),
     emptyWithoutProfile: m(
-      "Điền hồ sơ trước thì CV có sẵn phần lớn nội dung. Hoặc bắt đầu từ trang trắng.",
+      "Điền hồ sơ trước thì phần lớn nội dung có sẵn. Hoặc bắt đầu trống.",
       "Fill in your profile first and most of it writes itself. Or start blank.",
     ),
     buildFromProfile: m("Dựng từ hồ sơ", "Build from my profile"),
     startBlank: m("Bắt đầu trống", "Start blank"),
     fillProfileFirst: m("Điền hồ sơ trước", "Fill in your profile first"),
+    emptyCanvas: m(
+      "Trang in hiện ở đây sau khi bạn dựng.",
+      "The printed page appears here after you build.",
+    ),
+    editPane: m("Sửa", "Edit"),
+    previewPane: m("Xem trước", "Preview"),
+    paneSwitch: m(
+      "Chọn khung sửa hoặc xem trước",
+      "Switch between edit and preview",
+    ),
+    outlineLabel: m("Mục trên CV này", "Sections on this CV"),
+    outlineHeader: m("Đầu trang", "Header"),
+    sectionEmpty: m("Trống", "Empty"),
+    sectionFilled: m("Đã điền", "Filled"),
 
     yourCvs: m("CV của bạn", "Your CVs"),
+    documentCount: (n: number) =>
+      m(`${n} CV`, n === 1 ? "1 CV" : `${n} CVs`),
+    backToLibrary: m("Về giấy tờ", "Back to your papers"),
     duplicate: m("Nhân bản CV này", "Duplicate this CV"),
     deleteCv: m("Xoá CV này", "Delete this CV"),
     blankCv: m("CV trống", "Blank CV"),
@@ -704,6 +774,13 @@ export const messages = {
     completeness: m("Mức hoàn thiện của CV này", "How complete this CV is"),
 
     appearance: m("Giao diện", "Appearance"),
+    style: m("Kiểu", "Style"),
+    styleHarvard: m("Phong cách Harvard", "Harvard style"),
+    styleMarketing: m("Marketing", "Marketing"),
+    styleTech: m("Tech", "Tech"),
+    styleHarvardHint: m("Trang trọng, một cột", "Formal, one column"),
+    styleMarketingHint: m("Dễ đọc, có không gian", "Clear story, room to breathe"),
+    styleTechHint: m("Gọn, một trang", "Dense, one page"),
     // Named for the situation each one fits, not for its style. "Cổ điển" and
     // "Hiện đại" describe how a template looks to somebody who already knows
     // what a CV should look like; this audience is choosing their first one and
@@ -739,6 +816,8 @@ export const messages = {
     densityAiry: m("Thoáng", "Roomy"),
     densityNormal: m("Vừa", "Normal"),
     densityTight: m("Chặt", "Tight"),
+    fitOnePage: m("Vừa một trang", "Fit to one page"),
+    sectionsMenu: m("Mục", "Sections"),
 
     exportLabel: m("Xuất", "Export"),
     exportDownload: m("Tải về", "Download"),
@@ -776,7 +855,7 @@ export const messages = {
       "linkedin.com/in/ten-cua-ban",
       "linkedin.com/in/your-name",
     ),
-    askCoachToRewrite: m("Nhờ Coach viết lại CV này", "Ask the Coach to rewrite this"),
+    askCoachHelp: m("Nhờ Coach gọt giúp", "Ask the Coach to sharpen this"),
     askCoachPrompt: (label: string) =>
       m(
         `Xem lại CV “${label}” của mình và sửa giúp mình những chỗ còn yếu`,
@@ -830,12 +909,14 @@ export const messages = {
 
   /* ── My Search ──────────────────────────────────────────────────────── */
   search: {
-    title: m("Việc đang tuyển", "Openings"),
+    title: m("Tìm việc", "Search"),
+    askLabel: m("Tìm cơ hội của bạn", "Search your opportunities"),
     lead: m(
-      "Tin tuyển dụng thật, xếp theo mức khớp với hồ sơ của bạn.",
-      "Real postings, ordered by how well they match your profile.",
+      "Hỏi về vị trí, công ty, thành phố, yêu cầu, tin đã lưu hoặc tin ví dụ.",
+      "Ask about a role, company, city, requirement, saved or example opening.",
     ),
     addOpening: m("Thêm tin tuyển dụng", "Add an opening"),
+    pasteAction: m("Dán tin hoặc link", "Paste a posting"),
     pasteLabel: m("Dán tin tuyển dụng hoặc link", "Paste a posting or a link"),
     pastePlaceholder: m(
       "Dán cả tin ở đây. Mình tự tách yêu cầu ra.",
@@ -845,10 +926,18 @@ export const messages = {
       "Dán thêm chút nữa nhé, chừng này chưa đủ để đọc.",
       "Paste a bit more; that isn't enough to read.",
     ),
-    searchPlaceholder: m("Tìm theo vị trí hoặc công ty", "Search title or company"),
+    searchPlaceholder: m("Việc data ở Hà Nội", "Data jobs in Hanoi"),
+    startersLabel: m("Câu hỏi để bắt đầu", "Start with a question"),
+    starterRoleCity: m("Việc data ở Hà Nội", "Data jobs in Hanoi"),
+    starterRole: m("Thực tập phân tích", "Analyst intern"),
+    starterCompany: m("Công ty fintech", "Fintech company"),
+    starterSaved: m("Tin đã lưu", "Saved openings"),
+    filterGroup: m("Phạm vi cơ hội", "Which openings"),
     filterAll: m("Tất cả", "All"),
     filterSaved: m("Đã lưu", "Saved"),
     filterSeeded: m("Ví dụ", "Examples"),
+    resultCount: (n: number) =>
+      m(`${n} tin`, n === 1 ? "1 opening" : `${n} openings`),
     save: m("Lưu tin này", "Save"),
     unsave: m("Bỏ lưu", "Unsave"),
     saved: m("Đã lưu", "Saved"),
@@ -877,19 +966,86 @@ export const messages = {
     emptyProfileAction: m("Điền hồ sơ", "Fill in your profile"),
     noOpeningsTitle: m("Chưa có tin nào", "No openings yet"),
     noOpeningsBody: m(
-      "Dán một tin bạn đang cân nhắc, mình đọc yêu cầu và nói bạn khớp tới đâu.",
-      "Paste one you're considering and I'll read its requirements and tell you where you stand.",
+      "Danh sách đang trống. Dán một tin khi bạn có.",
+      "The list is empty. Paste a posting when you have one.",
     ),
-    noMatches: m("Không có tin nào khớp", "Nothing matches that"),
+    noMatches: (query: string) =>
+      m(`Không có tin nào khớp “${query}”.`, `Nothing matches “${query}”.`),
+    commandPlaceholder: m(
+      "Thực tập data ở Hà Nội, chỉ tin đã lưu",
+      "Data intern in Hanoi, saved only",
+    ),
+    refinementsLabel: m("Đọc thành", "Read as"),
+    removeConstraint: m("Bỏ điều kiện này", "Remove this filter"),
+    fieldRole: m("Vị trí", "Role"),
+    fieldOrg: m("Công ty", "Company"),
+    fieldCity: m("Thành phố", "City"),
+    fieldCityPlaceholder: m("Hà Nội", "Hanoi"),
+    fieldAsk: m("Từ khoá khác", "Other keywords"),
+    facetAnyCity: m("Mọi thành phố", "Any city"),
+    facetAnyOrg: m("Mọi công ty", "Any company"),
+    facetAnyRole: m("Mọi vị trí", "Any role"),
+    keywordPlaceholder: m("Việc data ở Hà Nội", "Data jobs in Hanoi"),
+    excludeLabel: m("Loại trừ", "Exclude"),
+    excludePlaceholder: m("fintech, thực tập", "fintech, intern"),
+    scopeLabel: m("Tìm trong", "Search in"),
+    scopeAnywhere: m("Mọi chỗ", "Anywhere"),
+    scopeTitle: m("Tiêu đề + mô tả", "Title + description"),
+    scopeOrg: m("Công ty", "Company"),
+    scopeCity: m("Thành phố", "City"),
+    scopeRequirements: m("Yêu cầu", "Requirements"),
+    filterLocation: m("Thành phố", "Location"),
+    filterCompany: m("Công ty", "Company"),
+    filterSource: m("Nguồn", "Source"),
+    filterRole: m("Vị trí", "Role"),
+    topMatches: m("Tin khớp nhất", "Top matches"),
+    allOpenings: m("Mọi tin", "All openings"),
+    openTracker: m("Mở theo dõi", "Open tracker"),
+    noFilterMatches: m(
+      "Không có tin nào khớp bộ lọc này.",
+      "No openings match this filter.",
+    ),
+    colFit: m("Khớp", "Fit"),
+    fitPercent: (n: number) => m(`${n}% khớp`, `${n}% match`),
+    inTracker: m("Đang theo dõi", "In your tracker"),
+    clearFilter: m("Xoá bộ lọc này", "Clear this filter"),
+    filtersWord: m("bộ lọc", "filters"),
+    filtersLeadBefore: m("Mình đặt các", "These"),
+    filtersLeadAfter: (n: number) =>
+      m(
+        `này theo câu hỏi của bạn (${n} tin)`,
+        n === 1
+          ? "follow your ask (1 opening)"
+          : `follow your ask (${n} openings)`,
+      ),
+    criteriaWord: m("tiêu chí", "criteria"),
+    criteriaLeadBefore: m("Mình thêm các", "These"),
+    criteriaLeadAfter: m("này để xếp tin khớp", "rank your matches"),
+    editFilters: m("Sửa bộ lọc", "Edit filters"),
+    editCriteria: m("Sửa tiêu chí", "Edit criteria"),
+    resetSearch: m("Xoá tìm kiếm", "Reset search"),
+    runSearch: m("Chạy tìm kiếm", "Run search"),
+    filtersControl: (n: number) => m(`Bộ lọc (${n})`, `Filters (${n})`),
+    criteriaControl: (n: number) => m(`Tiêu chí (${n})`, `Criteria (${n})`),
+    matchesHeading: (n: number) => m(`Khớp (${n})`, `Matches (${n})`),
+    whyHeading: m("Vì sao khớp", "Why it fits"),
+    whyNames: (skill: string) =>
+      m(`Tin này nêu ${skill}.`, `This posting names ${skill}.`),
+    whyYouMeet: m("Có trong hồ sơ của bạn.", "It's on your profile."),
+    whyYouMiss: m("Hồ sơ chưa thấy cái này.", "Not on your profile yet."),
+    whyHave: (skill: string) =>
+      m(`Hồ sơ có ${skill}.`, `Your profile has ${skill}.`),
+    whyMiss: (skill: string) =>
+      m(`Hồ sơ chưa có ${skill}.`, `Your profile still needs ${skill}.`),
+    addCriterion: m("Thêm tiêu chí", "Add a criterion"),
+    criterionPlaceholder: m("SQL hay Python", "SQL or Python"),
+    doneEditing: m("Xong", "Done"),
+    editAsk: m("Sửa câu hỏi", "Edit your ask"),
   },
 
   /* ── My Applications ────────────────────────────────────────────────── */
   applications: {
     title: m("Đơn ứng tuyển", "Applications"),
-    lead: m(
-      "Mỗi vị trí bạn đã nộp, đang ở đâu, và việc tiếp theo là gì.",
-      "Every job you've gone for, where it stands, and what to do next.",
-    ),
     statusInterested: m("Đang cân nhắc", "Interested"),
     statusApplied: m("Đã nộp", "Applied"),
     statusInterviewing: m("Đang phỏng vấn", "Interviewing"),
@@ -918,11 +1074,18 @@ export const messages = {
     ),
     emptyTitle: m("Chưa có đơn nào", "No applications yet"),
     emptyBody: m(
-      "Lưu một tin ở mục Việc đang tuyển, rồi bắt đầu từ đó.",
-      "Save an opening in Openings and start from there.",
+      "Lưu một tin ở mục Tìm việc, rồi bắt đầu từ đó.",
+      "Save a posting in Search, then start from there.",
     ),
-    emptyAction: m("Xem việc đang tuyển", "Browse openings"),
+    emptyAction: m("Sang mục Tìm việc", "Go to Search"),
     remove: m("Xoá đơn này", "Delete this application"),
+    endedHeading: m("Đã kết thúc", "Ended"),
+    endedCount: (n: number) => m(`${n} đơn đã đóng`, `${n} closed`),
+    stationEmpty: m("Không có đơn ở cột này.", "Nothing in this column."),
+    addOpenings: m("Thêm tin từ Tìm việc", "Add openings from Search"),
+    fitCount: (met: number, total: number) =>
+      m(`Khớp ${met}/${total}`, `Fit ${met}/${total}`),
+    advanceStatus: m("Chuyển bước tiếp", "Move to next stage"),
   },
 
   /* ── Plans and billing ──────────────────────────────────────────────── */
@@ -1026,23 +1189,11 @@ export const messages = {
       "Xong rồi. Có chỗ trống là mình báo bạn.",
       "You're on the list. We'll email when a place opens.",
     ),
-    promptLabel: m("Danh sách chờ", "Waiting list"),
-    promptTitle: m("Đây mới là bản demo", "This is a demo"),
-    promptBody: m(
-      "Bạn vừa thấy OpenPath làm được gì. Để lại email cho bản đầy đủ.",
-      "You've seen what OpenPath does. Leave your email for the full version.",
-    ),
-    dismiss: m("Đóng lời mời", "Dismiss"),
   },
 
   /* ── Help ───────────────────────────────────────────────────────────── */
   help: {
     label: m("Trợ giúp", "Help"),
-    askHowToUse: m("Hỏi Coach cách dùng OpenPath", "Ask the Coach how to use OpenPath"),
-    askHowToUsePrompt: m(
-      "OpenPath dùng thế nào? Chỉ mình những gì nên làm trước.",
-      "How does OpenPath work? Tell me what to do first.",
-    ),
     sendFeedback: m("Gửi góp ý", "Send feedback"),
     prototypeNote: m("OpenPath · bản prototype", "OpenPath · prototype"),
   },
@@ -1051,38 +1202,77 @@ export const messages = {
   // Every one of these says what happened and what to do about it. The change
   // that mattered most: the failed-action toast used to print the raw Zod
   // validation message, which is a developer's sentence shown to a student.
+  /* ── My Paper: CVs and letters in one library ───────────────────────── */
+  myPaper: {
+    emptyTitle: m("Dựng giấy tờ đầu tiên", "Start your papers"),
+    emptyWithProfile: m(
+      "CV và thư xin việc ở đây. Bắt đầu từ hồ sơ, rồi sửa cho đúng việc.",
+      "CVs and letters live here. Start from your profile, then tailor them.",
+    ),
+    emptyWithoutProfile: m(
+      "Điền hồ sơ trước thì CV có sẵn phần lớn. Hoặc viết thư, hoặc bắt đầu trống.",
+      "Fill in your profile first and most of a CV writes itself. Or write a letter.",
+    ),
+    newDocument: m("Tạo mới", "New"),
+    kindCv: m("CV", "CV"),
+    yourDocuments: m("Giấy tờ của bạn", "Your papers"),
+    documentCount: (n: number) =>
+      m(`${n} bản`, n === 1 ? "1 document" : `${n} documents`),
+    nameColumn: m("Tên", "Name"),
+    kindColumn: m("Loại", "Kind"),
+    updatedColumn: m("Cập nhật", "Updated"),
+    viewGrid: m("Xem lưới", "Grid view"),
+    viewList: m("Xem danh sách", "List view"),
+    modeCv: m("CV", "CV"),
+    modeLetter: m("Thư", "Letter"),
+    modeSwitch: m("Chọn CV hoặc thư", "Switch between CV and letter"),
+    more: m("Thêm", "More"),
+  },
+
   /* ── Papers: cover letters and project write-ups ────────────────────── */
   papers: {
-    title: m("Thư và bài viết", "Letters and write-ups"),
+    title: m("Thư và bài viết", "Letters"),
     lead: m(
-      "Thư xin việc và bài viết dự án, viết cùng Coach.",
-      "Cover letters and project write-ups, written with the Coach.",
+      "Thư xin việc và bài viết. Viết trước, nhờ Coach khi cần.",
+      "Cover letters and write-ups. Write first, then sharpen.",
     ),
     newCoverLetter: m("Thư xin việc mới", "New cover letter"),
     newWriteUp: m("Bài viết dự án mới", "New project write-up"),
+    newFromOpening: m("Thư cho tin đã lưu", "Letter for a saved opening"),
+    forOpening: (title: string) => m(`Thư · ${title}`, `Letter · ${title}`),
     untitled: m("Chưa đặt tên", "Untitled"),
     labelField: m("Tên văn bản", "Document name"),
     labelPlaceholder: m("Thư cho VNG", "Letter for VNG"),
     targetRoleField: m("Vị trí ứng tuyển", "Role you're applying for"),
     targetRolePlaceholder: m("Data Analyst", "Data Analyst"),
+    listLabel: m("Thư của bạn", "Your letters"),
+    listPane: m("Danh sách", "List"),
+    writePane: m("Viết", "Write"),
+    paneSwitch: m(
+      "Chọn danh sách hoặc khung viết",
+      "Switch between list and editor",
+    ),
     paragraph: (n: number) => m(`Đoạn ${n}`, `Paragraph ${n}`),
     addParagraph: m("Thêm đoạn", "Add a paragraph"),
     moveUp: m("Đưa lên trên", "Move up"),
     moveDown: m("Đưa xuống dưới", "Move down"),
     removeParagraph: m("Xoá đoạn này", "Delete this paragraph"),
-    paragraphPlaceholder: m("Viết đoạn này…", "Write this paragraph…"),
-    // The empty state is the first thing most people see here, so it says what
-    // to do rather than that there is nothing.
-    emptyTitle: m("Chưa có văn bản nào", "Nothing written yet"),
+    paragraphPlaceholder: m("Kính gửi anh chị,", "Dear hiring team,"),
+    emptyTitle: m("Viết thư đầu tiên", "Write your first letter"),
     emptyBody: m(
-      "Nhờ Coach viết bản nháp đầu, hoặc tự tạo rồi viết.",
-      "Ask the Coach for a first draft, or start one yourself.",
+      "Một thư cho mỗi việc. Tạo mới, hoặc từ tin đã lưu.",
+      "One letter per job. Start new, or from a saved opening.",
+    ),
+    emptyCanvas: m(
+      "Trang in hiện ở đây khi bạn viết.",
+      "The printed page appears here when you write.",
     ),
     emptyDocument: m(
-      "Văn bản này còn trống. Thêm đoạn đầu tiên bên dưới.",
-      "This one is empty. Add the first paragraph below.",
+      "Văn bản này còn trống. Viết đoạn đầu bên dưới.",
+      "This one is empty. Write the first paragraph below.",
     ),
-    askCoach: m("Nhờ Coach viết nháp", "Ask the Coach to draft it"),
+    askCoach: m("Nhờ Coach viết nháp", "Ask the Coach to draft this"),
+    askCoachHelp: m("Nhờ Coach gọt giúp", "Ask the Coach to sharpen this"),
     // Sent to the Coach as if the user typed it, so it reads like a request.
     //
     // One entry per kind rather than one generic sentence, because "write a
@@ -1109,25 +1299,25 @@ export const messages = {
 
   /* ── Pitch: the bio, the introduction, the answer bank ──────────────── */
   pitch: {
-    title: m("Giới thiệu bản thân", "Your pitch"),
+    title: m("Giới thiệu bản thân", "My pitch"),
     lead: m(
-      "Những gì bạn nói về mình, chuẩn bị sẵn để dùng lại.",
-      "What you say about yourself, ready to reuse.",
+      "Chỗ để viết rồi gọt những lời bạn sẽ nói về mình.",
+      "A place to write, then sharpen, what you say about yourself.",
     ),
     bioTitle: m("Giới thiệu ngắn", "Online bio"),
     bioLead: m(
-      "Đoạn ngắn để đăng lên LinkedIn hay hồ sơ trực tuyến.",
-      "The short paragraph for LinkedIn or an online profile.",
+      "Đoạn cho LinkedIn hay hồ sơ. Dán bản đang có, rồi gọt cho đúng mình.",
+      "For LinkedIn or a profile. Paste what you have, then make it sound like you.",
     ),
     introTitle: m("Bài tự giới thiệu", "Self-introduction"),
     introLead: m(
-      "Câu trả lời cho “Bạn giới thiệu về mình đi”.",
-      "Your answer to “tell me about yourself”.",
+      "Khi người ta bảo kể về mình. Viết một lần, đọc lại cho tự nhiên.",
+      "When they ask you to introduce yourself. Write it, then read it aloud.",
     ),
     answersTitle: m("Câu trả lời phỏng vấn", "Interview answers"),
     answersLead: m(
-      "Chuẩn bị trước những câu hay được hỏi.",
-      "The questions you'll be asked, answered in advance.",
+      "Những câu hay bị hỏi. Viết câu trả lời, rồi gọt cho gọn.",
+      "Questions you will get. Write an answer, then tighten it.",
     ),
     questionField: m("Câu hỏi", "The question"),
     questionPlaceholder: m(
@@ -1135,26 +1325,35 @@ export const messages = {
       "What's your greatest weakness?",
     ),
     answerField: m("Câu trả lời của bạn", "Your answer"),
-    answerPlaceholder: m("Viết câu trả lời…", "Write your answer…"),
+    answerPlaceholder: m("Viết câu trả lời, rồi gọt lại…", "Write your answer, then sharpen it…"),
     addAnswer: m("Thêm câu hỏi", "Add a question"),
     removeAnswer: m("Xoá câu này", "Delete this one"),
-    bioPlaceholder: m("Viết vài dòng về bạn…", "A few lines about you…"),
-    introPlaceholder: m("Viết bài tự giới thiệu…", "Write your introduction…"),
-    emptyAnswers: m(
-      "Chưa có câu nào. Thêm câu hỏi bạn sợ bị hỏi nhất.",
-      "None yet. Start with the question you dread most.",
+    bioPlaceholder: m(
+      "Dán đoạn đang dùng, hoặc viết vài câu về mình…",
+      "Paste the bio you use, or a few lines about you…",
     ),
-    askCoachBio: m("Nhờ Coach viết giới thiệu", "Ask the Coach to draft it"),
-    askCoachIntro: m("Nhờ Coach viết bài này", "Ask the Coach to draft this"),
+    introPlaceholder: m(
+      "Viết như đang nói với người đối diện…",
+      "Write it as if you are speaking to them…",
+    ),
+    emptyAnswers: m(
+      "Chưa có câu nào. Thêm câu bạn sợ nhất, viết rồi gọt.",
+      "None yet. Add the question you dread, then write and tighten.",
+    ),
+    askCoachHelp: m("Nhờ Coach gọt giúp", "Ask the Coach to sharpen this"),
     askCoachBioPrompt: m(
-      "Viết giúp mình đoạn giới thiệu ngắn dựa trên hồ sơ nhé.",
-      "Draft my online bio from my profile.",
+      "Gọt giúp mình đoạn giới thiệu ngắn cho tự nhiên và đúng hồ sơ nhé.",
+      "Sharpen my online bio so it sounds like me and matches my profile.",
     ),
     askCoachIntroPrompt: m(
-      "Viết giúp mình bài tự giới thiệu dựa trên hồ sơ và mục tiêu nhé.",
-      "Draft my self-introduction from my profile and my goal.",
+      "Gọt giúp mình bài tự giới thiệu cho tự nhiên, dựa trên hồ sơ và mục tiêu nhé.",
+      "Sharpen my self-introduction so it sounds natural, from my profile and goal.",
     ),
-    notWrittenYet: m("Chưa viết", "Not written yet"),
+    askCoachAnswerPrompt: (question: string) =>
+      m(
+        `Gọt giúp mình câu trả lời cho “${question}” cho tự nhiên hơn nhé.`,
+        `Sharpen my answer to “${question}” so it sounds more natural.`,
+      ),
   },
 
   /* ── Accounts ───────────────────────────────────────────────────────── */

@@ -22,7 +22,7 @@ const titleKeys = [
   ["/coach", "coach"],
   ["/profile", "profile"],
   ["/cv", "cv"],
-  ["/papers", "papers"],
+  ["/papers", "cv"],
   ["/pitch", "pitch"],
   ["/search", "search"],
   ["/applications", "applications"],

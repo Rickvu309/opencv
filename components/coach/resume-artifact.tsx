@@ -129,7 +129,7 @@ export function ResumeArtifact({
           {completeness}%
         </span>
         <Link
-          href="/cv"
+          href={`/cv?resume=${encodeURIComponent(resume.id)}`}
           aria-label={t(m.coach.openCv)}
           className="flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
         >

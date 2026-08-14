@@ -69,15 +69,15 @@ The active nav item is the exception that proves it: it jumps to `bg-card` with 
 
 ## Navigation
 
-Modelled on Linear. The rail is quiet by default and reveals structure only where it earns attention.
+Modelled on Linear. The rail is quiet by default and reveals structure only where it earns attention. The grouping matches the product's two pillars: prepare yourself, then land the right opportunity. Coach is the operating layer, not a third pillar.
 
-- **Header row**: a workspace switcher (mark + name + `ChevronsUpDown`, opening a menu with the user's identity) sits left; search and new-chat are *icon* buttons on the right, not full rows. Frequent actions cost one glyph, not one line.
-- **Primary group carries no label**, Coach is where you land daily; a heading over one item is scaffolding. The profile and career artifacts sit below under "Sự nghiệp". Coach's mark is the **cat** (`components/brand/coach-cat.tsx`), the same glyph in the nav, the dock chip, the message avatar, and the landing header. Clicking Coach opens `/coach`, the live thread. Starting over is an explicit choice in the history switcher.
-- **Labelled sections** ("Sự nghiệp", "Gần đây") are `Collapsible`. The disclosure chevron is `opacity-0` until hover or focus, and the item count appears *only when the section is closed*, the rail stays still until you interact with it.
+- **Header row**: a workspace switcher (mark + name + `ChevronsUpDown`) opening a menu with the user's identity, **Hồ sơ của bạn**, billing, help, and sign out. No icon buttons beside it. ⌘K opens a command palette as a keyboard-only jump list; there is no Search button in the rail header.
+- **Primary group carries no label.** Coach is where you land daily; a heading over one item is scaffolding. Coach's mark is the **box mascot**, the same glyph in the nav, the dock chip and the message avatar. Clicking Coach opens `/coach`, the current conversation. Starting a new thread is an explicit choice in the header `ChatSwitcher`, not clicking Coach.
+- **Two labelled sections** sit compact under Coach, `Collapsible` and open by default: **Prepare** (My Paper, My Pitch) then **Opportunities** (Search, Applications). Profile is Settings, the source of facts, so it is not a kit item on the rail. The disclosure chevron sits after the label and stays visible, so a closed section still reads as collapsible.
+- **Chats** is a third `Collapsible` with the same chevron, listing stored threads only (title = first question). Clicking a thread selects it and goes to `/coach`. Empty is empty: no new-chat row, no fake threads, no "0". New chat lives in the header `ChatSwitcher`; both drive the same `useCoach()` thread.
 - **Counts are plain 11px muted numerals**, never badge pills. No component in the rail carries a filled background except the active item.
-- **Nested items** (`SidebarMenuSub`) hang under Kế hoạch with a 1px guide line, and only while you're on that page, context appears where it's useful and disappears where it isn't.
-- **Rows are 28px** (`h-7 text-[13px]`), Linear's density, not the 32px shadcn default.
-- **The rail has no footer**, identity lives in the workspace switcher, readiness and tasks live on their pages. A `?` button floats at the app's bottom-left (`components/help-button.tsx`), like Linear's, opening a lean help menu upward: ask the coach how to use OpenPath, send feedback, and the ⌘B shortcut (which actually toggles). On mobile it gains `border bg-card`, same as the coach chip.
+- **Rows are 28px** (`h-7 text-[13px]`), Linear's density, not the 32px shadcn default. On touch they are 40px (`h-10`).
+- **The rail has no footer**, identity lives in the workspace switcher. A `?` button floats at the app's bottom-left (`components/help-button.tsx`), like Linear's, opening a lean help menu upward: the first four steps, send feedback, switch language, and the ⌘B shortcut (which actually toggles). On mobile it gains `border bg-card`, same as the coach chip.
 
 ### Collapse and resize
 
@@ -99,7 +99,7 @@ Defined once on `.acc-panel` in `globals.css` so every accordion shares it.
 - **Closing** is deliberately quicker and sharper (180ms on `--ease-exit`), dismissal should feel decisive, not reluctant.
 - `prefers-reduced-motion` drops all three to none.
 
-**Coach is always reachable.** Every screen except `/coach` carries the bottom-right coach strip (see "Coach dock"). This is why the chat lives in `components/coach/`: `thread.tsx` owns state (the `useCoachThread` hook), `thread-view.tsx` owns message rendering, `composer.tsx` the input, `history.tsx` the new-chat action, and the page, the dock and the header switcher all consume them.
+**Coach is always reachable.** Every screen except `/coach` carries the bottom-right coach strip (see "Coach dock"). This is why the chat lives in `components/coach/`: `thread.tsx` owns state (the `useCoachThread` hook), `thread-view.tsx` owns message rendering, `composer.tsx` the input, `history.tsx` the conversation list and new-chat action, and the page, the dock, the rail and the header switcher all consume them.
 
 ## Feedback & waiting
 
@@ -129,18 +129,18 @@ draft. Both call `useCoach()`; neither owns state the other would contradict.
 The layouts differ because a full page and a 24rem panel should differ. Nothing
 else does.
 
-- **Chat switcher**: conversations are several named threads (`lib/coach/sessions.ts`). The header names the live one and opens a list (`ConversationMenu` in `components/coach/history.tsx`). A new thread is named from the first question. `?new=1` starts empty; `?q=` asks that question in the current thread.
-- **Composer** (`components/coach/composer.tsx`): a bordered panel, the auto-growing textarea on top, a circular primary send below right. Enter sends, Shift+Enter newlines, IME-safe. `compact` tightens padding for the floating panel. It takes the thread rather than four wiring props, the same way `CoachMessages` does; three mounts wiring `value`/`onChange`/`onSubmit`/`disabled` by hand is three chances to wire them differently.
-- **Empty state**: the cat sits, one greeting line, the one next step from `nextStepOf` (`lib/next-step.ts`), the composer (`Hỏi Coach…`), and a row of suggestion chips. On **both** surfaces, from the same `CoachGreeting` and `CoachStarters`. The chips grow to fit rather than being pinned to one line, because a Vietnamese starter runs half again as long as its English pair.
-- **The chips are read from state** (`lib/coach/starters.ts`), four slots each answering a different question: the nearest artefact, the week, the gap named against the user's own target role, and whatever is thinnest in the profile. Fixed chips went stale in a single turn, offering to build a first CV to someone who had built three.
-- **Onboarding ends here, not on the profile.** Three screens of questions earn an answer, and the profile is only the visitor's own typing handed back. The waiting-list ask moved to the app layout so it still finds them on whichever screen is first.
+- **Chat switcher**: on `/coach` the header names the open thread (its first question, or "New chat" while empty) and opens the same conversation menu the rail list uses (`ConversationMenu` in `components/coach/history.tsx`). The rail is the place you scan history; the header is the place you switch when the rail is collapsed. Both call `useCoach()`. `/coach?q=` still asks a question on open. Starting a new thread is `startNewChat`, not `/coach?new=1`.
+- **Composer** (`components/coach/composer.tsx`): a bordered panel, the auto-growing textarea on top, a circular primary send below right. Enter sends, Shift+Enter newlines, IME-safe. `compact` tightens padding for the floating panel. It takes the thread rather than four wiring props, the same way `CoachMessages` does; three mounts wiring `value`/`onChange`/`onSubmit`/`disabled` by hand is three chances to wire them differently. The placeholder cycles the state-aware starters (`lib/coach/placeholder.ts`), and on artefact screens leads with a line for that page; the accessible name stays "Ask Coach…".
+- **Empty state**: the box mascot, one greeting line, the one next step from `nextStepOf` (`lib/next-step.ts`), the composer, and four suggestions in one hairline-divided panel (`CoachStarters`). On the page that panel is a 2×2; in the 24rem dock it stacks. Not a wrap of pills: a leftover chip on the second row read as tags, not as questions.
+- **The suggestions are read from state** (`lib/coach/starters.ts`), four slots each answering a different question: the nearest artefact, the week, the gap named against the user's own target role, and whatever is thinnest in the profile. Fixed lines went stale in a single turn, offering to build a first CV to someone who had built three.
+- **Onboarding ends here, not on the profile.** One screen at sign-up, then the Coach. There is no in-app waiting-list ask: the visitor already has an account.
 - **Messages**: coach replies are unbubbled prose on the page background at `text-[15px] leading-7` with a small mark to the left; user turns are a `rounded-2xl bg-muted` bubble, right-aligned. Numbered points use a hanging indent with the numeral in muted tabular figures.
 - **The thread is ordered by time, not by author.** Two things write to it: the agent's stream, and this app when the agent is unreachable. Local messages record how many agent messages existed when they were written, and `interleave` (`lib/coach/messages.ts`) merges on that. Concatenating the two lists instead put every local message above the whole conversation, so from the first failed turn onward the thread read backwards.
 - **Sending is refused while the door is unchecked**, not only while a turn is in flight. Access is probed once on mount; a question sent into that window comes back 401 and dies behind the sign-in form with nothing said about it.
 - **Confirmations come from the tool, never from the prose.** `AppliedActions` renders `apply_action`'s own returned envelope, so a change the Coach only *claims* to have made shows nothing. This is not defensive decoration: the model was measured answering "Tôi đã thêm việc đó vào danh sách" having called no tool at all, leaving the user with an empty list and a sentence saying otherwise.
 - **Offline is a state, not a latch.** A failed turn drops to `replies.ts`, and the next question re-probes the agent and goes live again if it is back. It used to be one-way, so a single hung turn downgraded the conversation permanently and the only exit was discarding it.
 - **A turn can be stopped.** The send button becomes a stop button while streaming. Necessary because the model reasons before it answers — see below — and a bare greeting can take the better part of a minute.
-- Cross-screen handoff: `/coach?q=<question>` opens the chat with that question already asked and answered; `/coach?new=1` opens an empty thread.
+- Cross-screen handoff: `/coach?q=<question>` opens the chat with that question already asked and answered. A new thread is `startNewChat`, not a query flag.
 
 **The model reasons before it answers, and that is not a tuning choice.**
 `enable_thinking` is on in `agent/agent.ts` because this model does not call
@@ -153,17 +153,18 @@ first, not another round of prompt engineering.
 ## Two languages
 
 Vietnamese and English, and the switcher is never more than one click away: the
-account menu inside the app, a segmented pair on the landing page and in
-onboarding. Those two screens have no account menu yet, and they are exactly
-where a reader who does not read Vietnamese most needs to find it.
+`?` menu inside the app, a segmented pair on the landing page and in
+onboarding. Those two screens have no help button yet, and they are exactly
+where a reader who does not read Vietnamese most needs to find it. English is
+the default when the browser does not say otherwise.
 
-The landing page is a brand surface: sticky header (cat mark, language, sign in,
+The landing page is a brand surface: sticky header (box mark, language, sign in,
 try-it), an interactive Coach demo that plays a turn and lets the visitor undo,
 and no testimonials or invented metrics. Onboarding is a name, a direction (or
 not sure, with a quiet payback line when the goal is typed), and an optional CV,
 then `/coach?q=` with that goal in the first turn. School and courses wait
-until the Coach asks. The activation checklist is for a later empty chat,
-not under the seeded first turn.
+until the Coach asks. There is no in-app waiting-list ask. The activation
+checklist lives in the `?` menu, not on the empty Coach.
 
 - **Each language names itself in its own language.** Offering "Vietnamese" to
   someone who only reads Vietnamese is a menu they cannot use.
@@ -197,26 +198,26 @@ not under the seeded first turn.
 
 ## Mark
 
-The Coach's face is a quiet cat, not a second character and not lucide
-`Megaphone`. One SVG: `components/brand/coach-cat.tsx`, `currentColor`, sizes
+The Coach's face is a 2D rounded square with two eyes, not a cat and not lucide
+`Megaphone`. One SVG: `components/brand/coach-box.tsx`, `currentColor`, sizes
 `sm | md | lg`, outline at rest, filled when Coach is the active nav item or
 the dock is open.
 
 **She is the Coach.** No given name on launch. She does not speak; copy stays
 the mentor voice.
 
-**Four poses, not twelve.** Sit is the default and has no motion. Listen settles
-the ears once (composer focused, landing demo waiting). Think is Sit — typing
-dots do that work. Done is one blink and a 2° glance toward the flashed row,
-once, after a successful `apply_action` or when the landing undo chip appears.
-Reduced motion: Sit only; Listen/Done become a static fill on the active mark.
+**Four poses, not twelve.** Sit is the default and has no motion. Listen closes
+the eyes into U-arcs once (landing demo waiting). Think is Sit — typing dots
+do that work. Done is one blink, once, after a successful `apply_action` or
+when the landing undo chip appears. Reduced motion: Sit only; filled when the
+mark is the active surface.
 
 **Where she appears:** landing header and demo avatar; app rail, dock chip,
-message avatar; empty kit (Profile / Papers / Applications / Coach greeting);
-Ask Coach rows. **Not on:** settings billing, help form, printed CV, toasts.
+message avatar; empty kit and Coach greeting; Ask Coach rows. **Not on:**
+settings billing, help form, printed CV, toasts.
 
-**Never:** walk cycles, hover-follow eyes, idle breathing, bounce-in, meow,
-seasonal hats, a fifth pose.
+**Never:** hover-follow eyes, idle blink loop, walk, bounce-in, seasonal hats,
+a fifth pose, a 3D cube, a lid flap.
 
 ## Motion
 
@@ -228,14 +229,14 @@ paint (`hero-enter` in `globals.css`, 100ms apart, `--duration-surface` on
 `--ease-enter`). Reduced motion keeps the fade and drops the travel.
 
 A new easing or an off-scale duration in a diff is a review failure. Do not add
-a fifth curve. Rejected and still rejected: idle loops, sparkles, AI-glow, cat
+a fifth curve. Rejected and still rejected: idle loops, sparkles, AI-glow, box
 pulse, bounce, `transition: all`.
 
 **Frequency.** 100+ times/day (keystrokes, list hover, rail clicks, composer
 typing): no animation. Tens/day (filters, tab switches): colour or 120ms
 opacity. Occasional (dock, sheet, toast, accordion, undo flash): 200–300ms,
 origin-aware. Rare / first-time (landing hero, demo play, first artifact, empty
-kit): the only place for stagger, a 500ms reveal, or the cat's extra pose.
+kit): the only place for stagger, a 500ms reveal, or the box's extra pose.
 
 **Named recipes.** Press: `active:translate-y-px` in-app; landing primary CTA
 may `scale(0.96)` over 120ms `--ease-snap`. Origin-aware open/close: dock and
@@ -363,37 +364,58 @@ Linear's published system is a **dark marketing canvas**; OpenPath is a **light 
 
 `/profile` is a **workbench you navigate, not a page you scroll**: an index rail (20rem) listing every part of the profile, and an inspector beside it showing the one you picked. Below `md` the two panes push, index → section → back.
 
-- **The rail is a vertical tablist** in two groups, Bản thân (thông tin cá nhân, bối cảnh, kinh nghiệm, học vấn) and Tài liệu (`vaultItems` in `lib/catalog.ts`). Each row carries its own meta line and a filled/empty glyph, so what is missing is legible without opening anything. Collapsing a group moves the selection to the first tab still visible, or the panel would be labelled by a hidden tab.
+- **The rail is a vertical tablist** in two groups, Bản thân (thông tin cá nhân, bối cảnh, kinh nghiệm, học vấn) and Tài liệu (`vaultItems` in `lib/catalog.ts`). Each row carries its own meta line and a filled/empty glyph, so what is missing is legible without opening anything. The selected row and the next empty row are the only emphasis, a fill checklist, not a second progress widget. Collapsing a group moves the selection to the first tab still visible, or the panel would be labelled by a hidden tab.
 - **Every point of the score is earned.** `profileWeights` (context 14, experience 14, education 10, courses 8) plus the vault's weights make 100. There is no base score: an empty profile opens at 0%, because a number handed out before the user typed anything cannot say what is missing.
-- **Empty is an invitation, never a guilt-trip.** An unfilled kind shows the sitting cat, its `benefit` line, and one add button. CV is the exception with two: it is the one kind you can *build* here (→ `/cv`) rather than only point at. The shared empty is `components/empty-state.tsx`.
+- **Empty is the editor.** An unfilled About-you section opens on its form: a one-line hint grouped with the title, then the fields, with no extra Edit click to start typing. Edit remains for filled sections (view → edit). `Esc`/Huỷ on an empty section resets the draft and stays on the form; there is no blank preview to return to.
+- **Documents:** an unfilled kind is content-sized and leading-aligned, never a full-pane dashed void. CV and cover letters keep a builder link (`/cv`) plus an add/upload control. Link kinds (LinkedIn, GitHub, portfolio) open the add form directly.
 - **The coach's read is an offer, not a verdict.** Each kind carries a `coachPrompt` that hands the question to `/coach?q=…`. What used to sit here, a fixed observation about a seeded CV shown to everyone regardless of what they had uploaded, is gone: a verdict has to come from a real read.
 
 ### The section panel
 
 Every editable block is one `EditableSection` (`components/profile/editable.tsx`), so the surface reads as one system instead of five hand-built cards:
 
-- **A fixed 56px header**, title left at `text-base font-semibold`, one action right. Optional `meta` (e.g. "2 mục") sits after the title.
-- **At rest the header shows a ghost "Chỉnh sửa"**; in edit mode it disappears and a sticky footer bar carries Huỷ + Lưu thay đổi, so the commit point is always the same place. `Esc` cancels from anywhere in the panel.
+- **A header that grows with its hint**, title left at `text-base font-semibold`, one action right. Optional `meta` (e.g. "2 mục") sits after the title; a one-line `hint` sits under it. Empty sections hide the action because the body already is the form.
+- **At rest on a filled section the header shows a ghost "Chỉnh sửa"**; in edit mode it disappears and a sticky footer bar carries Huỷ + Lưu thay đổi, so the commit point is always the same place. `Esc` cancels from anywhere in the panel. On an empty section Huỷ is omitted: cancel would only reveal a blank preview.
 - **`useEditable` holds a draft copy.** Fields write to the draft, Lưu validates then commits and toasts, Huỷ/`Esc` discards; nothing is saved by keystroke. `start(seed)` **replaces** the value rather than merging into it: a `{ ...value, ...seed }` merge is meaningless when the value is a list, and used to crash the experience editor.
 - **Editing vocabulary is fixed across panels**: `Field` for a labelled input (it owns the label association and the `aria-invalid`/`aria-describedby` wiring), list rows get a trailing `Trash2` ghost button, list panels get one "Thêm…" outline button at the bottom, and tag sets (chứng chỉ) use `Badge` + an inline field with a 16px × per tag.
 
-## CV
+## My Paper
 
-`/cv` is where a CV gets **built**, not uploaded. Two panes: what you are writing on the left, what a recruiter opens on the right.
+`/cv` is **My Paper** (Giấy tờ): one Prepare destination for written artefacts. CVs and letters share a library; Pitch stays its own screen. `/papers` redirects here.
 
-- **The preview is the document.** `components/cv/resume-document.tsx` renders both the on-screen preview and the printed page, scaled to fit by a `ResizeObserver` rather than reimplemented. "Looks right here" and "prints right" are therefore the same claim.
-- **A document, not a screen.** The CV is black on white at A4 in dark mode, in the preview and on paper, because that is what the reader opens. Its colours are its own values, not the app's theme tokens. The only choices are template (cổ điển / hiện đại / gọn), accent, and density, and `density: tight` is a real page-fitting tool, offered before "cut some content".
-- **Start from what is already typed.** "Dựng từ hồ sơ" carries identity, experience, education and certificates across; a blank CV invents nothing. Either way the sections arrive **named but empty**, because an editor that opens on nothing asks the user to invent the structure of a CV, which is the part they came here not to know.
-- **Fourteen `resume.*` actions, not one `resume.set`.** The Coach has to be able to sharpen one bullet without resending the document; a whole-document write is the one edit that can silently delete work the user did between turns. Every control on this screen dispatches the same actions the Coach calls, so an edit made on your behalf flashes the row it changed.
+- **The library is posters.** Each CV fills an A4 card via `ResumePreview`; each letter is the same ratio with the first paragraphs on the sheet. Grid and list toggle. Opening one leaves the library.
+- **A CV opens as the page.** Type on the paper: no form beside a preview. Two toolbars sit above a centred white page on the grey canvas. The main bar is back, an editable name and switcher, delete, CV | Letter tabs, build-from-profile, and print. The second bar is template (Harvard / Marketing / Tech), fit-to-one-page (`theme.density`), and section order — not a font engine. `components/cv/resume-document.tsx` still renders the printed page and the library poster, scaled to fit by a `ResizeObserver`.
+- **A letter opens as the writing sheet.** Same main bar (Letter tab active); no format bar, because a letter has no template or density. Paragraphs, not sections. Title as an inline name, opening or role as a meta line, language and a quiet Coach offer. Coach drafts when the sheet is empty and sharpens when it is not. The CV | Letter tabs switch artefacts in this workspace; they do not fold a letter into the CV model.
+- **A document, not a screen.** The CV is black on white at A4 in dark mode, in the poster and on paper, because that is what the reader opens. Its colours are its own values, not the app's theme tokens.
+- **Start from what is already typed.** "Dựng từ hồ sơ" carries identity, experience, education and certificates across; a blank CV invents nothing. Letters start new, or from a saved opening.
+- **Fourteen `resume.*` actions, not one `resume.set`.** The Coach has to be able to sharpen one bullet without resending the document; a whole-document write is the one edit that can silently delete work the user did between turns.
 - **Hiding beats deleting.** Tailoring one version per application means taking a section off the page while keeping its content, so `hidden` is a section field and "Nhân bản" is one menu item away.
 - **Committing on blur, not per keystroke** (`components/cv/draft-field.tsx`). Per keystroke would make every letter an undoable action in the toast stack, a full serialisation to `localStorage`, and a separate edit for the Coach to read mid-word.
-- **Four ways out, one per reader**: PDF through the browser's own print dialog (a bundled renderer would add ~500KB to lay out HTML the preview already lays out correctly), Markdown for ATS forms, plain text for paste boxes, JSON because the data is the user's. Printing mounts a second copy of the document on `document.body`; the app shell is `h-svh overflow-hidden` around nested scroll panes and would otherwise clip the CV to one screenful.
+- **Four ways out, one per reader**: PDF through the browser's own print dialog, Markdown for ATS forms, plain text for paste boxes, JSON for CVs because the data is the user's. Letters skip JSON. Printing mounts a second copy on `document.body`; the app shell is `h-svh overflow-hidden` around nested scroll panes and would otherwise clip the page to one screenful.
+
+## Career Map
+
+`/career-map` is **a map, not a list**, the product's signature surface. It answers "where am I, where can I go, and what do I pass through" in one picture.
+
+- **Time runs left to right** across four columns (`stages` in `lib/career-graph.ts`): Bạn hôm nay → Bước vào nghề (0–12 tháng) → Vai trò chính (1–2 năm) → Đi xa hơn (3–5 năm). Column headings sit above the canvas, so the x-axis is self-explaining.
+- **A directed graph, not a tree.** `pathNodes` + `pathEdges` form a DAG; roles genuinely converge (Marketing intern *can* reach Data Analyst) and every edge carries a `via`, the actual condition for making that move, surfaced in the inspector.
+- **The corridor, not a single route.** Setting a target highlights *every* edge on a valid path from `you` to it (`corridor()`, forward-reachable ∩ backward-reachable), because there is rarely one way in. Hovering any node lights its full lineage (`lineage()`) and dims the rest.
+- **Rendering**: SVG bezier edges *behind* real HTML `<button>` nodes in one transformed layer. Chosen over `<canvas>` deliberately, nodes stay focusable, keyboard-operable, screen-reader legible and styled with the same tokens as the rest of the app; only the connectors need vector drawing.
+- **Node = one glance**: title, salary band, and a hairline fit bar with its `%`. `you` is the one filled near-black card, the anchor. The target carries a small inverted "Mục tiêu" chip.
+- **The fit number is computed, and it can explain itself** (`lib/career-fit.ts`). It was a literal in the data — `fit: 84` — so a visitor who had entered nothing was told they were an 84% fit, and the number never moved however much they added. It now scores evidence against the role's own `requires`, weighted 65/35 against readiness for the stage, and the inspector ticks the requirements met and greys the rest so the figure and the list cannot disagree. Requirements carry their match tokens in the same object as their prose, because two parallel lists drift the first time someone edits one and not the other. Anything unprovable — "willingness to ask" — is excluded from the denominator rather than counted as a failure nobody can act on.
+- **The pay bands are still literals**, and are the last invented number on this screen. Whatever replaces this surface has to make them real or drop them.
+- **Direct manipulation**: drag the background to pan, wheel/⌘-wheel or the toolbar to zoom (0.4–1.6), drag any node to rearrange, "Vừa khung" to refit. Node drags capture the pointer on the node itself and stop propagation, so the canvas never pans underneath a drag.
+- **Editing is first-class**: "Thêm hướng đi" adds your own role, wired from whichever node is selected, into the column you pick; custom nodes are draggable and deletable. The map is yours to argue with.
+- **Motion carries state, not decoration**: nodes stagger in on first paint (40ms apart, capped); programmatic view changes (zoom, fit, reveal) glide 300ms while hand-panning stays 1:1, a transition on drag would feel broken. All `motion-safe`.
+- **The inspector is a split, never an overlay**, a 320px right column from `sm` (a bottom sheet below it), so it can't cover the diagram. Selecting a node minimally pans the canvas to keep that node visible beside the panel, accounting for the mobile sheet height.
+- **Fit is clamped at 0.55**, on a narrow screen the map anchors left at a readable scale and invites a sideways drag instead of shrinking into illegibility.
+
 ## Coach dock
 
-On every screen, a **strip in the bottom gutter** below the content frame, modelled on Linear's agent bar (`components/coach/coach-dock.tsx`): what the user last actually asked, in a dismissible `bg-muted` pill (× hides it; hidden when the thread is empty; hidden on mobile), a `MousePointer2` + `Coach` chip, and a pen icon that starts a new chat. On the grey gutter the chip is borderless; on mobile it regains `border bg-card`. The only exception: `/coach` on mobile hides the strip entirely; it would sit on the page's own composer.
+On every screen, a **strip in the bottom gutter** below the content frame, modelled on Linear's agent bar (`components/coach/coach-dock.tsx`): what the user last actually asked, in a dismissible `bg-muted` pill (× hides it; hidden when the thread is empty; hidden on mobile), a box mark + `Coach` chip, and a pen icon that starts a new chat. On the grey gutter the chip is borderless; on mobile it regains `border bg-card`. The only exception: `/coach` on mobile hides the strip entirely; it would sit on the page's own composer.
 
 **Below `md` the strip is in flow, not floating.** There is no bottom gutter at that width, so the strip and the help button share one real row at the foot of the frame (`app/(app)/layout.tsx`, dissolved again from `md` with `md:contents`). The scroll area above therefore ends exactly where the controls begin. **A screen must never add its own bottom padding to clear the strip.** Four screens had each invented a different magic number for this (`pb-20`, `pb-14`, `pb-11`, `pb-16`), which is how a shared obstruction turns into four private ones, and three of them were still wrong.
 
-Clicking the title or the chip opens a **floating panel** above the strip, `w-[min(24rem,100vw-2rem)]`, `h-[min(32rem,100svh-7rem)]`, `rounded-xl border shadow-lg`, bottom edge flush with the content frame's, with a header (chat title, then minimise / open-full-screen / close icons), the thread in `compact` mode, and the compact composer. The panel stays mounted while hidden so minimising never loses the conversation; `Esc` closes it; entrance is origin-aware from the cat chip (`origin-bottom-right`, fade + scale, `--duration-surface`). The chip fills while the panel is open.
+Clicking the title or the chip opens a **floating panel** above the strip, `w-[min(24rem,100vw-2rem)]`, `h-[min(32rem,100svh-7rem)]`, `rounded-xl border shadow-lg`, bottom edge flush with the content frame's, with a header (chat title, then minimise / open-full-screen / close icons), the thread in `compact` mode, and the compact composer. The panel stays mounted while hidden so minimising never loses the conversation; `Esc` closes it. Entrance grows from the chip (`origin-bottom-right`, `scale(0.93)` plus 8% of its own height, `--duration-surface` on `--ease-enter`); exit is quicker on `--ease-exit`. The chip mark and close crossfade (`scale` 0.25 / `opacity` / `blur` 4px, `--duration-state` on `--ease-snap`). No sparkles, no press-scale; the chip uses `translate-y-px`.
 
-The header search button opens a command palette (`⌘K`, `components/command-palette.tsx`): a jump list to Coach, Profile, CV, Papers, Pitch, Search, Applications, and Help.
+⌘K opens a command palette (`components/command-palette.tsx`): a jump list to Coach, Profile, My Paper, Pitch, Search, Applications, and Help. Keyboard only — no Search button in the rail header.

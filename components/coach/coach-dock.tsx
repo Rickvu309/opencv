@@ -4,7 +4,8 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Maximize2, Minus, PenLine, X } from "lucide-react";
-import { CoachCat } from "@/components/brand/coach-cat";
+
+import { CoachBox } from "@/components/brand/coach-box";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +21,23 @@ import { NewChatButton } from "./history";
 import { CoachSessionEnded } from "./session-ended";
 import { useCoach } from "./provider";
 import { CoachGreeting, CoachMessages, CoachStarters } from "./thread-view";
+
+const dockIconClass =
+  "absolute inset-0 size-3.5 transition-[opacity,scale,filter] duration-[var(--duration-state)] ease-snap motion-reduce:scale-100 motion-reduce:blur-none motion-reduce:transition-[opacity] motion-reduce:duration-[var(--duration-press)]";
+const dockLabelClass =
+  "inline-block transition-[opacity,scale,filter] duration-[var(--duration-state)] ease-snap motion-reduce:scale-100 motion-reduce:blur-none motion-reduce:transition-[opacity] motion-reduce:duration-[var(--duration-press)]";
+const dockIconIn = "scale-100 opacity-100 blur-none";
+const dockIconOut = "scale-[0.25] opacity-0 blur-[4px]";
+
+function panelChunkClass(open: boolean, delay: boolean) {
+  return cn(
+    "transition-[opacity,translate] duration-[var(--duration-state)] ease-enter",
+    "motion-reduce:translate-y-0 motion-reduce:delay-0 motion-reduce:transition-[opacity] motion-reduce:duration-[var(--duration-press)]",
+    open
+      ? cn("translate-y-0 opacity-100", delay && "delay-100")
+      : "translate-y-1 opacity-0 delay-0",
+  );
+}
 
 /**
  * The coach strip sits in the gutter below the content frame, like Linear's
@@ -78,7 +96,7 @@ export function CoachDock() {
             <button
               type="button"
               onClick={() => setOpen(true)}
-              className="min-w-0 truncate rounded-md py-1 pr-1 pl-2 text-xs text-muted-foreground transition active:translate-y-px outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none"
+              className="min-w-0 truncate rounded-md py-1 pr-1 pl-2 text-xs text-muted-foreground transition-colors duration-[var(--duration-press)] active:translate-y-px outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none"
             >
               {lastAsked}
             </button>
@@ -86,7 +104,7 @@ export function CoachDock() {
               type="button"
               onClick={() => setShowLast(false)}
               aria-label={t(m.coach.hideRecent)}
-              className="flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition active:translate-y-px outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none"
+              className="flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors duration-[var(--duration-press)] active:translate-y-px outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none"
             >
               <X className="size-3" />
             </button>
@@ -97,10 +115,37 @@ export function CoachDock() {
           type="button"
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
-          className="flex h-7 items-center gap-1.5 rounded-md border bg-card px-2 text-xs font-medium shadow-xs transition active:translate-y-px outline-none hover:bg-muted/70 focus-visible:ring-3 focus-visible:ring-ring/50 md:border-transparent md:bg-transparent md:shadow-none motion-reduce:transition-none"
+          className="flex h-7 items-center gap-1.5 rounded-md border bg-card px-2 text-xs font-medium shadow-xs transition-colors duration-[var(--duration-press)] active:translate-y-px outline-none hover:bg-muted/70 focus-visible:ring-3 focus-visible:ring-ring/50 md:border-transparent md:bg-transparent md:shadow-none motion-reduce:transition-none"
         >
-          <CoachCat size="sm" filled={open} pose={open ? "listen" : "sit"} />
-          {t(m.nav.coach)}
+          <span className="relative size-3.5 shrink-0">
+            <CoachBox
+              size="sm"
+              filled={open}
+              className={cn(dockIconClass, open ? dockIconOut : dockIconIn)}
+            />
+            <X
+              aria-hidden
+              className={cn(dockIconClass, open ? dockIconIn : dockIconOut)}
+            />
+          </span>
+          <span className="relative">
+            <span
+              aria-hidden={open}
+              className={cn(dockLabelClass, open ? dockIconOut : dockIconIn)}
+            >
+              {t(m.nav.coach)}
+            </span>
+            <span
+              aria-hidden={!open}
+              className={cn(
+                "absolute inset-0 flex items-center",
+                dockLabelClass,
+                open ? dockIconIn : dockIconOut,
+              )}
+            >
+              {t(m.common.close)}
+            </span>
+          </span>
         </button>
         <NewChatButton
           trigger={
@@ -121,7 +166,8 @@ export function CoachDock() {
 
 /**
  * Floating chat panel, bottom right. Stays mounted so minimising never loses
- * the conversation, open/close only toggles visibility.
+ * the conversation, and so open/close can reverse on the same origin path.
+ * `hidden` would snap the exit (`display: none` cannot transition).
  */
 function CoachPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
   // The shared conversation, not a private one: see components/coach/provider.
@@ -141,16 +187,27 @@ function CoachPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
       role="dialog"
       aria-label={t(m.nav.coach)}
       aria-hidden={!open}
+      inert={!open}
       className={cn(
         "fixed right-4 bottom-12 z-30 flex w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border bg-card shadow-lg",
         "h-[min(32rem,calc(100svh-7rem))]",
+        // Chip is `right-4 bottom-2.5`; this surface sits just above it.
         "origin-bottom-right",
+        // 0.93 + 8% of the panel's own height, not a 3% fade: first frames
+        // sit on the chip. Transitions so a second click reverses mid-flight.
+        "transition-[opacity,scale,translate]",
+        "motion-reduce:scale-100 motion-reduce:translate-y-0 motion-reduce:transition-[opacity] motion-reduce:duration-[var(--duration-press)]",
         open
-          ? "motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95 motion-safe:duration-[var(--duration-surface)] motion-safe:ease-enter"
-          : "hidden",
+          ? "translate-y-0 scale-100 opacity-100 duration-[var(--duration-surface)] ease-enter"
+          : "pointer-events-none translate-y-[8%] scale-[0.93] opacity-0 duration-[var(--duration-state)] ease-exit",
       )}
     >
-      <header className="flex shrink-0 items-center gap-0.5 border-b py-2 pr-2 pl-4">
+      <header
+        className={cn(
+          "flex shrink-0 items-center gap-0.5 border-b py-2 pr-2 pl-4",
+          panelChunkClass(open, false),
+        )}
+      >
         <h2 className="min-w-0 flex-1 truncate text-sm font-medium">
           {t(chatTitle(thread.messages))}
         </h2>
@@ -203,12 +260,22 @@ function CoachPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
       {thread.access === "locked" ? (
         // Same door as /coach, so signing in from either surface brings both
         // back: there is one session now, not one per surface.
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div
+          className={cn(
+            "min-h-0 flex-1 overflow-y-auto",
+            panelChunkClass(open, true),
+          )}
+        >
           <CoachSessionEnded compact />
         </div>
       ) : (
         <>
-          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+          <div
+            className={cn(
+              "min-h-0 flex-1 overflow-y-auto px-4 py-4",
+              panelChunkClass(open, true),
+            )}
+          >
             {isEmpty ? (
               // The same welcome `/coach` shows, laid out for a 24rem panel.
               // Without it the panel opened on a blank rectangle.
@@ -221,7 +288,12 @@ function CoachPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
             )}
           </div>
 
-          <div className="shrink-0 border-t p-2">
+          <div
+            className={cn(
+              "shrink-0 border-t p-2",
+              panelChunkClass(open, false),
+            )}
+          >
             <Composer thread={thread} compact />
           </div>
         </>

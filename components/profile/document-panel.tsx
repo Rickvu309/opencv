@@ -8,6 +8,8 @@
 
 import * as React from "react";
 import Link from "next/link";
+
+import { CoachBox } from "@/components/brand/coach-box";
 import {
   Link2,
   Paperclip,
@@ -18,8 +20,6 @@ import {
   Star,
   Trash2,
 } from "lucide-react";
-
-import { CoachCat } from "@/components/brand/coach-cat";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -83,8 +83,23 @@ export function DocumentPanel({
   const { t, m, locale } = useT();
   const title = item.title[locale];
   const isLink = LINK_KINDS.has(item.id);
-  const [mode, setMode] = React.useState<"list" | "add" | string>("list");
-  const [draft, setDraft] = React.useState<Draft>(emptyDraft);
+  const isEmpty = documents.length === 0;
+  const buildsHere = item.id === "cv" || item.id === "cover-letter";
+  // CV and letters have a builder elsewhere. Other empty kinds open as the form.
+  const opensAsForm = isEmpty && !buildsHere;
+  const [mode, setMode] = React.useState<"list" | "add" | string>(
+    opensAsForm ? "add" : "list",
+  );
+  const [draft, setDraft] = React.useState<Draft>(() =>
+    opensAsForm
+      ? {
+          ...emptyDraft,
+          label: `${title}, `,
+          language: locale,
+          makePrimary: true,
+        }
+      : emptyDraft,
+  );
   const [error, setError] = React.useState<string | null>(null);
 
   const editing = mode !== "list";
@@ -94,6 +109,7 @@ export function DocumentPanel({
     setDraft({
       ...emptyDraft,
       label: `${title}, `,
+      language: locale,
       makePrimary: documents.length === 0,
     });
     setError(null);
@@ -134,26 +150,36 @@ export function DocumentPanel({
 
   return (
     <section aria-labelledby="doc-title">
-      <div className="flex h-14 shrink-0 items-center justify-between gap-3 border-b px-6">
-        <div className="flex min-w-0 items-baseline gap-2">
-          <h2 id="doc-title" className="text-base font-semibold tracking-tight">
-            {title}
-          </h2>
-          {documents.length > 0 && (
-            <span className="text-xs text-muted-foreground tabular-nums">
-              {t(m.profile.versionCount(documents.length))}
-            </span>
+      <div className="flex min-h-14 shrink-0 items-start justify-between gap-3 border-b px-6 py-4">
+        <div className="min-w-0">
+          <div className="flex min-w-0 items-baseline gap-2">
+            <h2
+              id="doc-title"
+              className="text-base font-semibold tracking-tight text-pretty"
+            >
+              {title}
+            </h2>
+            {documents.length > 0 && (
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {t(m.profile.versionCount(documents.length))}
+              </span>
+            )}
+          </div>
+          {isEmpty && (
+            <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground text-pretty">
+              {item.benefit[locale]}
+            </p>
           )}
         </div>
         {!editing && documents.length > 0 && (
-          <Button variant="ghost" size="sm" onClick={startAdd}>
+          <Button variant="ghost" size="sm" className="shrink-0" onClick={startAdd}>
             <Plus className="size-3.5" />
             {t(m.profile.docAddVersion)}
           </Button>
         )}
       </div>
 
-      <div className="max-w-2xl px-6 py-5">
+      <div className="max-w-2xl px-6 pt-6 pb-5">
         {editing ? (
           <DocumentForm
             item={item}
@@ -162,40 +188,49 @@ export function DocumentPanel({
             setDraft={setDraft}
             error={error}
             isEdit={!!editingDoc}
+            hideCancel={isEmpty}
             onSubmit={submit}
             onCancel={() => {
+              if (isEmpty) {
+                startAdd();
+                return;
+              }
               setMode("list");
               setError(null);
             }}
           />
         ) : documents.length === 0 ? (
-          <div className="rounded-xl border border-dashed px-4 py-10 text-center">
-            <CoachCat size="lg" className="mx-auto text-foreground" />
-            <p className="mt-4 text-sm font-medium">{t(m.profile.docEmptyTitle(title))}</p>
-            <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground text-pretty">
-              {item.benefit[locale]}
-            </p>
-            <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-              {/* A CV is the one kind you can make here rather than only point
-                  at, so the builder is offered first and uploading is the
-                  alternative. Every other kind lives outside OpenPath. */}
-              {item.id === "cv" && (
-                <Button asChild size="sm">
-                  <Link href="/cv">
-                    <Sparkles className="size-3.5" />
-                    {t(m.profile.docBuildCv)}
-                  </Link>
-                </Button>
-              )}
-              <Button
-                size="sm"
-                variant={item.id === "cv" ? "outline" : "default"}
-                onClick={startAdd}
-              >
-                <Plus className="size-3.5" />
-                {item.id === "cv" ? t(m.profile.docUploadExisting) : item.addLabel[locale]}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* CV and cover letters can be built in-app; uploading is the
+                alternative. Other kinds live outside OpenPath. */}
+            {item.id === "cv" && (
+              <Button asChild size="sm">
+                <Link href="/cv">
+                  <Sparkles className="size-3.5" />
+                  {t(m.profile.docBuildCv)}
+                </Link>
               </Button>
-            </div>
+            )}
+            {item.id === "cover-letter" && (
+              <Button asChild size="sm">
+                <Link href="/cv">
+                  <Sparkles className="size-3.5" />
+                  {t(m.profile.docBuildLetter)}
+                </Link>
+              </Button>
+            )}
+            <Button
+              size="sm"
+              variant={buildsHere ? "outline" : "default"}
+              onClick={startAdd}
+            >
+              <Plus className="size-3.5" />
+              {item.id === "cv"
+                ? t(m.profile.docUploadExisting)
+                : item.id === "cover-letter"
+                  ? t(m.profile.docAddFile)
+                  : item.addLabel[locale]}
+            </Button>
           </div>
         ) : (
           <div className="space-y-3">
@@ -219,7 +254,7 @@ export function DocumentPanel({
                 look is honest; the verdict has to come from a real read. */}
             <Button asChild variant="outline" size="sm">
               <Link href={`/coach?q=${encodeURIComponent(item.coachPrompt[locale])}`}>
-                <CoachCat size="sm" />
+                <CoachBox size="sm" />
                 {t(m.profile.docAskCoach)}
               </Link>
             </Button>
@@ -399,6 +434,7 @@ function DocumentForm({
   setDraft,
   error,
   isEdit,
+  hideCancel,
   onSubmit,
   onCancel,
 }: {
@@ -408,6 +444,7 @@ function DocumentForm({
   setDraft: React.Dispatch<React.SetStateAction<Draft>>;
   error: string | null;
   isEdit: boolean;
+  hideCancel?: boolean;
   onSubmit: (e: React.FormEvent) => void;
   onCancel: () => void;
 }) {
@@ -429,7 +466,7 @@ function DocumentForm({
         autoFocus
         value={draft.label}
         placeholder={`${item.title[locale]}, Data Analyst`}
-        invalid={!draft.label.trim()}
+        invalid={Boolean(error) && !draft.label.trim()}
         hint={t(m.profile.docFormLabelHint)}
         onChange={(v) => set("label", v)}
       />
@@ -486,7 +523,7 @@ function DocumentForm({
           type="url"
           value={draft.url}
           placeholder="https://linkedin.com/in/tenban"
-          invalid={!draft.url.trim()}
+          invalid={Boolean(error) && !draft.url.trim()}
           hint={t(m.profile.docFormUrlHint)}
           onChange={(v) => set("url", v)}
         />
@@ -544,9 +581,11 @@ function DocumentForm({
         <Button type="submit" size="sm">
           {t(isEdit ? m.profile.docFormSave : m.profile.docFormAdd)}
         </Button>
-        <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
-          {t(m.common.cancel)}
-        </Button>
+        {!hideCancel && (
+          <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
+            {t(m.common.cancel)}
+          </Button>
+        )}
         {error && (
           <p role="alert" className="text-sm text-danger">
             {error}

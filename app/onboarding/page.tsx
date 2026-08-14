@@ -14,7 +14,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Check } from "lucide-react";
 
-import { CoachCat } from "@/components/brand/coach-cat";
+import { CoachBox } from "@/components/brand/coach-box";
 import { ResumeDrop } from "@/components/onboarding/resume-drop";
 import { LanguageToggle } from "@/components/language-toggle";
 import { knownDirection } from "@/lib/onboarding/known-direction";
@@ -22,7 +22,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Toaster } from "@/components/ui/sonner";
 import { Toggle } from "@/components/ui/toggle";
-import { markJustOnboarded } from "@/components/waitlist-prompt";
 import { flushState } from "@/lib/actions/persistence";
 import { useAppState, useDispatch } from "@/lib/actions/store";
 import { useT } from "@/lib/i18n/use-t";
@@ -79,7 +78,6 @@ export default function OnboardingPage() {
       );
     }
 
-    markJustOnboarded();
     flushState();
 
     const question = role
@@ -93,7 +91,7 @@ export default function OnboardingPage() {
       <header className="flex items-center justify-between px-5 py-5 sm:px-8">
         <p className="flex items-center gap-2 text-sm font-semibold tracking-tight">
           <span className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <CoachCat size="sm" filled />
+            <CoachBox size="sm" filled />
           </span>
           OpenPath
         </p>
@@ -222,7 +220,7 @@ export default function OnboardingPage() {
         </button>
       </main>
 
-      <Toaster position="top-right" />
+      <Toaster position="top-center" />
     </div>
   );
 }

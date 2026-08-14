@@ -4,29 +4,25 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Check,
   ChevronRight,
   CircleQuestionMark,
   ChevronsUpDown,
   FileText,
   LayoutDashboard,
-  Mail,
   MessageSquareQuote,
-  Languages,
+  Route,
   Search,
   Send,
   Settings,
 } from "lucide-react";
 
-import { CoachCat } from "@/components/brand/coach-cat";
-import { CommandPalette, useCommandPalette } from "@/components/command-palette";
+import { CoachBox } from "@/components/brand/coach-box";
 import { SignOutItem } from "@/components/auth/sign-out-item";
-import { useAppState, useDispatch } from "@/lib/actions/store";
-import { localeNames, locales } from "@/lib/i18n/locale";
+import { ConversationRail } from "@/components/coach/history";
+import { useAppState } from "@/lib/actions/store";
 import { messages } from "@/lib/i18n/messages";
 import { useT } from "@/lib/i18n/use-t";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import {
   Collapsible,
   CollapsibleContent,
@@ -50,11 +46,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import type { Msg } from "@/lib/i18n/locale";
 import { cn } from "@/lib/utils";
 
@@ -72,6 +63,7 @@ type NavItem = {
   href: string;
   icon: React.ElementType;
   count?: number;
+  aliases?: string[];
 };
 
 // A count of zero is not information: with the demo persona gone every rail
@@ -79,39 +71,23 @@ type NavItem = {
 // quiet. `undefined` hides the number entirely.
 const badge = (n: number) => n || undefined;
 
-function primaryNav(): NavItem[] {
+function prepareNav(paperCount: number): NavItem[] {
   return [
-    // Clicking Coach starts a new chat, like Linear's Agent.
-    // Plain /coach: this is "go to the Coach", not "throw the conversation
-    // away". Starting over is an explicit choice, and it lives in the
-    // history popover as "Đoạn chat mới".
-    { title: messages.nav.coach, href: "/coach", icon: CoachCat },
+    // My Paper: CVs and letters in one library. Pitch stays how you present.
+    {
+      title: messages.nav.cv,
+      href: "/cv",
+      icon: FileText,
+      count: badge(paperCount),
+      aliases: ["/papers"],
+    },
+    { title: messages.nav.pitch, href: "/pitch", icon: MessageSquareQuote },
   ];
 }
 
-function careerNav(
-  cvCount: number,
-  paperCount: number,
-  openingCount: number,
-  applicationCount: number,
-): NavItem[] {
+function landNav(openingCount: number, applicationCount: number): NavItem[] {
   return [
-    { title: messages.nav.profile, href: "/profile", icon: LayoutDashboard },
-    // Next to the profile, not under Tài liệu: a CV is a thing you build here,
-    // and the count says how many versions are on the go.
-    { title: messages.nav.cv, href: "/cv", icon: FileText, count: badge(cvCount) },
-    // Letters and write-ups sit beside the CV because they are the same job:
-    // things you write here and send somewhere. Pitch sits beside them because
-    // it is the same job again, said out loud.
-    {
-      title: messages.nav.papers,
-      href: "/papers",
-      icon: Mail,
-      count: badge(paperCount),
-    },
-    { title: messages.nav.pitch, href: "/pitch", icon: MessageSquareQuote },
-    // Search and Applications sit at the end of the career group because they
-    // are the last two steps: everything above is what you take into them.
+    // Split at "interested": search until you save one, then applications.
     {
       title: messages.nav.search,
       href: "/search",
@@ -153,11 +129,7 @@ function NavRow({ item, active }: { item: NavItem; active: boolean }) {
         className={cn(rowSize, activeItem)}
       >
         <Link href={item.href}>
-          {item.href === "/coach" ? (
-            <CoachCat size="sm" filled={active} />
-          ) : (
-            <item.icon />
-          )}
+          <item.icon />
           <span>{title}</span>
           {item.count !== undefined && (
             <span className="ml-auto text-[11px] text-muted-foreground tabular-nums">
@@ -170,14 +142,48 @@ function NavRow({ item, active }: { item: NavItem; active: boolean }) {
   );
 }
 
+function NavSection({
+  label,
+  items,
+  pathname,
+}: {
+  label: string;
+  items: NavItem[];
+  pathname: string;
+}) {
+  return (
+    <Collapsible defaultOpen className="group/section mt-3 shrink-0">
+      <SidebarGroup className="p-0">
+        <SectionLabel>{label}</SectionLabel>
+        <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {items.map((item) => (
+                <NavRow
+                  key={item.href}
+                  item={item}
+                  active={
+                    pathname.startsWith(item.href) ||
+                    (item.aliases?.some((alias) => pathname.startsWith(alias)) ??
+                      false)
+                  }
+                />
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </CollapsibleContent>
+      </SidebarGroup>
+    </Collapsible>
+  );
+}
+
 export function AppSidebar() {
   const pathname = usePathname();
   // Counts and identity read from live state, not seed data, so adding a CV
   // updates the rail immediately and renaming yourself in onboarding is
   // reflected here rather than in a fixture nobody can edit.
   const { profile, resumes, papers, openings, applications } = useAppState();
-  const dispatch = useDispatch();
-  const { t, m, locale } = useT();
+  const { t, m } = useT();
   const name = profile.identity.name.trim();
   const initials =
     name
@@ -186,28 +192,24 @@ export function AppSidebar() {
       .map((word) => word[0])
       .join("")
       .toUpperCase() || "?";
-  const primary = primaryNav();
+  const prepare = prepareNav(resumes.length + papers.length);
   // Saved openings rather than all of them: the count is a shortlist, and
   // seeded examples are not somebody's shortlist.
-  const career = careerNav(
-    resumes.length,
-    papers.length,
+  const land = landNav(
     openings.filter((opening) => opening.saved).length,
     applications.length,
   );
   const router = useRouter();
-  const palette = useCommandPalette();
 
   return (
     <Sidebar id="app-sidebar" variant="inset" collapsible="offcanvas">
-      <CommandPalette open={palette.open} onOpenChange={palette.setOpen} />
-      {/* Top row: workspace switcher + the two most-used actions. */}
+      {/* Top row: workspace switcher only. New chat lives in the header switcher. */}
       <SidebarHeader className="h-14 justify-center px-2">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center">
           <DropdownMenu>
-            <DropdownMenuTrigger className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-1.5 py-1 transition-colors outline-none hover:bg-sidebar-accent/70 focus-visible:ring-3 focus-visible:ring-sidebar-ring/50 motion-reduce:transition-none">
+            <DropdownMenuTrigger className="flex w-full min-w-0 items-center gap-2 rounded-md px-1.5 py-1 transition-colors outline-none hover:bg-sidebar-accent/70 focus-visible:ring-3 focus-visible:ring-sidebar-ring/50 motion-reduce:transition-none">
               <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
-                <CoachCat size="sm" filled />
+                <Route className="size-3.5" />
               </span>
               <span className="truncate text-[13px] font-semibold tracking-tight">
                 OpenPath
@@ -236,30 +238,10 @@ export function AppSidebar() {
                 {t(m.nav.yourProfile)}
               </DropdownMenuItem>
 
-              <DropdownMenuSeparator />
-              {/* The switcher lives beside the account rather than in a
-                  settings screen there is no room for. Each language names
-                  itself in its own language: offering "Vietnamese" to someone
-                  who only reads Vietnamese is a menu they cannot use. */}
-              <DropdownMenuLabel className="flex items-center gap-2 font-normal text-muted-foreground">
-                <Languages className="size-3.5" />
-                {t(m.common.language)}
-              </DropdownMenuLabel>
-              {locales.map((code) => (
-                <DropdownMenuItem
-                  key={code}
-                  onSelect={() =>
-                    dispatch("settings.setLanguage", { language: code })
-                  }
-                >
-                  <span className="flex-1">{localeNames[code]}</span>
-                  {locale === code && <Check className="size-3.5" />}
-                </DropdownMenuItem>
-              ))}
-
               {/* Plan and help sit in the account menu rather than the rail:
                   neither is somewhere anybody goes daily, and the rail is for
-                  the work. */}
+                  the work. Language lives on the ? button, one tap from
+                  every screen. */}
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <Link href="/settings">
@@ -276,69 +258,46 @@ export function AppSidebar() {
 
               {/* Last, and behind a separator: it is the one item here that
                   ends the session, and it should not sit a mis-click away
-                  from switching language. */}
+                  from the rest of the account. */}
               <DropdownMenuSeparator />
               <SignOutItem />
             </DropdownMenuContent>
           </DropdownMenu>
-
-          <div className="flex items-center">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={t(m.common.search)}
-                  className="text-muted-foreground"
-                  onClick={() => palette.setOpen(true)}
-                >
-                  <Search />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                {t(m.common.search)} <kbd className="ml-1 opacity-70">⌘K</kbd>
-              </TooltipContent>
-            </Tooltip>
-          </div>
         </div>
       </SidebarHeader>
 
       <SidebarContent className="gap-0 px-2 py-2">
         {/* The primary group needs no label; this is where you land daily. */}
-        <SidebarGroup className="p-0">
+        <SidebarGroup className="shrink-0 p-0">
           <SidebarGroupContent>
             <SidebarMenu>
-              {primary.map((item) => (
-                <NavRow
-                  key={item.href}
-                  item={item}
-                  active={pathname.startsWith(item.href.split("?")[0])}
-                />
-              ))}
+              <NavRow
+                item={{
+                  title: messages.nav.coach,
+                  href: "/coach",
+                  icon: CoachBox,
+                }}
+                active={pathname.startsWith("/coach")}
+              />
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <Collapsible defaultOpen className="group/section mt-3">
+        <NavSection
+          label={t(m.nav.prepare)}
+          items={prepare}
+          pathname={pathname}
+        />
+        <NavSection label={t(m.nav.land)} items={land} pathname={pathname} />
+        <Collapsible defaultOpen className="group/section mt-3 shrink-0">
           <SidebarGroup className="p-0">
-            <SectionLabel>{t(m.nav.career)}</SectionLabel>
+            <SectionLabel>{t(m.nav.chats)}</SectionLabel>
             <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {career.map((item) => (
-                    <NavRow
-                      key={item.href}
-                      item={item}
-                      active={pathname.startsWith(item.href)}
-                    />
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
+              <ConversationRail />
             </CollapsibleContent>
           </SidebarGroup>
         </Collapsible>
       </SidebarContent>
-
     </Sidebar>
   );
 }

@@ -235,6 +235,24 @@ export function bullets(detail: string | undefined): string[] {
     .filter(Boolean);
 }
 
+/** A section the outline can mark as filled, without opening it. */
+export function sectionHasContent(section: ResumeSection): boolean {
+  return isProseKind(section.kind)
+    ? Boolean(section.body?.trim())
+    : section.entries.some((e) => e.title.trim());
+}
+
+/** The contact block has something a reader could use. */
+export function headerHasContent(header: ResumeHeader): boolean {
+  return Boolean(
+    header.name.trim() ||
+      header.headline.trim() ||
+      header.email.trim() ||
+      header.phone.trim() ||
+      header.location.trim(),
+  );
+}
+
 /**
  * How full this CV is, 0–100, so the editor can say what is still missing
  * rather than only showing an empty page. Weighted by what a reader looks at
@@ -248,12 +266,7 @@ export function resumeCompleteness(resume: Resume): number {
   if (header.email.trim() || header.phone.trim()) score += 10;
 
   const visible = resume.sections.filter((s) => !s.hidden);
-  const filled = (section: ResumeSection) =>
-    isProseKind(section.kind)
-      ? Boolean(section.body?.trim())
-      : section.entries.some((e) => e.title.trim());
-
-  const withContent = visible.filter(filled).length;
+  const withContent = visible.filter(sectionHasContent).length;
   // Four filled sections is a complete CV; more is detail, not completeness.
   score += Math.min(withContent, 4) * 15;
 

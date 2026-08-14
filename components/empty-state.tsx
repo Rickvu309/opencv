@@ -1,11 +1,11 @@
 import Link from "next/link";
 
-import { CoachCat } from "@/components/brand/coach-cat";
+import { CoachBox } from "@/components/brand/coach-box";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 /**
- * Empty is an invitation. The cat sits; the copy names the place and the
+ * Empty is an invitation. The box sits; the copy names the place and the
  * one next move. First visit only gets a 300ms settle — never again that session.
  */
 export function EmptyState({
@@ -27,7 +27,7 @@ export function EmptyState({
         className,
       )}
     >
-      <CoachCat size="lg" className="text-foreground" />
+      <CoachBox size="lg" className="text-foreground" />
       <p className="mt-4 text-sm font-medium">{title}</p>
       <p className="mt-1 max-w-md text-sm text-pretty text-muted-foreground">
         {body}

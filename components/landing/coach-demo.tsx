@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Undo2 } from "lucide-react";
 
-import { CoachCat } from "@/components/brand/coach-cat";
+import { CoachBox } from "@/components/brand/coach-box";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n/use-t";
 import { cn } from "@/lib/utils";
@@ -50,7 +50,7 @@ export function CoachDemo() {
       <div className="overflow-hidden rounded-xl border bg-card shadow-sm outline outline-1 -outline-offset-1 outline-black/10">
         <div className="flex items-center gap-2 border-b px-3 py-2">
           <span className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <CoachCat size="sm" filled />
+            <CoachBox size="sm" filled />
           </span>
           <span className="text-xs font-medium">{t(m.nav.coach)}</span>
         </div>
@@ -69,7 +69,7 @@ export function CoachDemo() {
           {showCoach ? (
             <div className="flex gap-3 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-[var(--duration-state)] motion-safe:ease-enter">
               <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <CoachCat size="sm" pose={pose} filled />
+                <CoachBox size="sm" pose={pose} filled />
               </span>
               <div className="min-w-0 flex-1 space-y-3">
                 <p className="text-[15px] leading-7">{t(m.landing.frameCoach)}</p>
