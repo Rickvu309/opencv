@@ -4,7 +4,8 @@
       "type": "http",
       "url": "https://api.factory.8090.dev/v2/mcp?sf_project=d04c0633-bcce-4e62-8dcc-dd9395fac914",
       "headers": {
-        "X-Sofa-Mcp-Project-Id": "d04c0633-bcce-4e62-8dcc-dd9395fac914"
+        "X-Sofa-Mcp-Project-Id": "d04c0633-bcce-4e62-8dcc-dd9395fac914",
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2FwaS5mYWN0b3J5LjgwOTAuZGV2L3YyL21jcCIsImF1ZCI6Imh0dHBzOi8vYXBpLmZhY3RvcnkuODA5MC5kZXYvdjIvbWNwIiwiY2xpZW50X2lkIjoiMmZlYTU5NTctZTY0ZS00MjQzLWEyOWMtY2M0M2NlMmJmM2EyIiwic2NvcGUiOiJvcGVuaWQgZW1haWwgcHJvZmlsZSIsImV4cCI6MTc4Njc3MDE5OCwiaWF0IjoxNzg2NjgzNzk4LCJqdGkiOiJ4dmtMRWZXdTFFOFVqN2FScU9QOXRyeUNUZFRUV0V6MmFsWWN3TFVwNnNrIn0.L3aPZJ4KkR-SEVJapCu1PEi5dCMjSCYddPVa-t08_oo"
       }
     }
   }
