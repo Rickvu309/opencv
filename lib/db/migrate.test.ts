@@ -52,6 +52,7 @@ test("the repository's own migrations are complete pairs", () => {
       "search_and_applications",
       "jobs",
       "plans",
+      "waitlist",
     ],
     "order matters: everything after the first depends on what came before it",
   );

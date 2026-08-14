@@ -57,9 +57,15 @@ const ENDPOINT = "/api/state";
  * it being `httpOnly`.
  */
 let signedIn = false;
+/** When false, saves are refused rather than written to the wrong store. */
+let writable = true;
 
-export function configurePersistence(options: { signedIn: boolean }): void {
+export function configurePersistence(options: {
+  signedIn: boolean;
+  writable?: boolean;
+}): void {
   signedIn = options.signedIn;
+  writable = options.writable ?? true;
 }
 
 /**
@@ -201,6 +207,10 @@ async function send(): Promise<void> {
  */
 export function saveState(state: AppState): Promise<boolean> {
   if (typeof window === "undefined") return Promise.resolve(false);
+  // Signed in, but the account's row never arrived. Writing the seed to the
+  // server would destroy their work; writing it to the browser would mix the
+  // two stores. Refuse and keep whatever is in memory.
+  if (!writable) return Promise.resolve(false);
 
   if (!signedIn) {
     // The anonymous path stays synchronous and local, as it always was.
@@ -228,7 +238,7 @@ export function saveState(state: AppState): Promise<boolean> {
  * PUT.
  */
 export function flushState(): void {
-  if (typeof window === "undefined" || !signedIn || !pending) return;
+  if (typeof window === "undefined" || !signedIn || !writable || !pending) return;
   if (timer) clearTimeout(timer);
   timer = null;
 

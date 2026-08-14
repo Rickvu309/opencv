@@ -4,7 +4,7 @@ An AI career coach for Vietnamese students and new graduates. It reads your
 profile, shows the roles you can realistically reach, turns the gap into a plan
 you can work through week by week, and builds the CV you send.
 
-Live: [openpath-app.vercel.app](https://openpath-app.vercel.app)
+Live: [openpath.up.railway.app](https://openpath.up.railway.app)
 
 The interface is Vietnamese or English, switchable anywhere. The code and
 internal docs are English.
@@ -13,11 +13,10 @@ internal docs are English.
 
 Live and working, with the limits of a demo. What that means:
 
-- The Coach is real. An Eve agent runs alongside the app on Vercel and answers
-  in your language in about five seconds.
-- It can change the app for you. Ask it to add a task and the task appears,
-  with an undo. Ask it to sharpen a bullet in your CV and you watch that line
-  change.
+- The Coach is real. An Eve agent runs on Railway beside the app and answers
+  in your language.
+- It can change the app for you. Ask it to add a line to your CV and the line
+  appears, with an undo.
 - **Real accounts.** A username and a password, and everything behind the
   landing page needs one. Auth is deliberately minimal this phase: no email
   verification, no social login, and **no password recovery**, so a forgotten
@@ -30,7 +29,7 @@ Live and working, with the limits of a demo. What that means:
 - **Two languages, neither one a translation.** Vietnamese and English are
   written separately, and the Coach answers in whichever you are reading.
 
-The waiting list is the one thing stored centrally.
+The waiting list is stored in the same Postgres as the accounts.
 
 ## Run it
 
@@ -153,9 +152,10 @@ browser's own print dialog), Markdown, plain text, or JSON.
 
 ## Stack
 
-Next.js 16, React 19, TypeScript, Tailwind v4, shadcn/ui. Accounts add Postgres
-on Railway (`pg`), bcrypt for the password hashes, and a signed HTTP-only
-cookie for the session. Tests run on Node's built-in runner.
+Next.js 16, React 19, TypeScript, Tailwind v4, shadcn/ui. The app, the Coach
+and Postgres all run on Railway. Accounts add bcrypt for the password hashes
+and a signed HTTP-only cookie for the session. Tests run on Node's built-in
+runner.
 
 ## Docs
 

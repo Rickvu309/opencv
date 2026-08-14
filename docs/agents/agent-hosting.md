@@ -2,56 +2,42 @@
 
 ## The short answer
 
-The agent runs on **Vercel**, in the same deployment as the Next app. The
-Coach Agent blueprint says it runs on **Railway**, proxied same-origin. Those
-disagree, and this file explains why.
+The product runs on **Railway**. Postgres, the Next app, and the Coach agent
+are three services in the project `openpath`. Users hit one public URL,
+`https://openpath.up.railway.app`. The agent is private.
 
-## What was tried
+## Topology
 
-The agent was deployed to Railway (`openpath-agent` service, project
-`openpath`). It builds with `npx eve build` and starts with `npx eve start`,
-per `railway.json`. It boots, serves `/eve/v1/*`, and fails closed with 401
-when no session cookie is present. That part works.
+| Service | What it is | Public |
+|---|---|---|
+| `openpath` | Next.js, `npm run build` / `npm start` | `openpath.up.railway.app` |
+| `openpath-agent` | eve, `npx eve build` / `npx eve start` | no — `openpath-agent.railway.internal:8080` |
+| Postgres | accounts, sessions, `AppState`, waitlist, jobs | no — `postgres.railway.internal` |
 
-`EVE_NEXT_PRODUCTION_ORIGIN` was then set on Vercel to point the app at it.
-It had no effect, twice: once because Vercel withholds *sensitive* environment
-variables from the build, and then, after re-adding it as non-sensitive,
-because of this, in `eve/dist/src/public/next/index.js`:
+`scripts/railway-build.mjs` and `scripts/railway-start.mjs` pick which command
+to run from `RAILWAY_SERVICE_NAME`, because one `railway.json` cannot say two
+start commands. The web process also runs the job heartbeat hourly, in place
+of Vercel Cron.
 
-```js
-function resolveProductionDestination(e) {
-  if (process.env.VERCEL) return { destinationPrefix: e.servicePrefix };
-  let t = process.env.EVE_NEXT_PRODUCTION_ORIGIN;
-  ...
-}
-```
+The Next app proxies `/eve/:path*` and `/.well-known/workflow/:path*` to the
+agent, same-origin for the browser. `withEve` is still what `next dev` uses.
+It is not what production uses: on Vercel it ignores
+`EVE_NEXT_PRODUCTION_ORIGIN`, and off Vercel it rewrites to
+`/_eve_internal/eve/eve/*`, which `eve start` does not serve. The rewrites
+live in `next.config.ts` and only apply when that variable is set and `VERCEL`
+is not.
 
-When the build runs on Vercel, `withEve` always routes `/eve/*` to its own
-co-deployed Vercel service and never reads the variable. The variable exists
-for a **self-hosted** Next app pointing at a remote agent, which is not this
-deployment.
+## What was tried, and why Vercel is not the host
 
-## What that means
+The Coach was first co-deployed on Vercel via `withEve`. A measured turn took
+43 seconds. Hobby kills that. `EVE_NEXT_PRODUCTION_ORIGIN` was then set on
+Vercel to point at `openpath-agent`; `withEve` never reads it when `VERCEL` is
+set. Railway is the topology the Coach Agent blueprint asked for, and the one
+that can finish a turn.
 
-The blueprint's topology is not reachable through `withEve` on Vercel. Getting
-it would mean dropping `withEve`'s production rewrite and hand-writing a Next
-rewrite from `/eve/:path*` to the Railway origin, while keeping `withEve` for
-the dev server. That is a change to the Coach transport, which is the most
-fragile path in this repo, and it is a decision rather than a fix.
+## What is worth keeping
 
-## The state right now
-
-- **Postgres**: Railway. Correct and unchanged.
-- **Next app**: Vercel.
-- **Coach agent**: Vercel, serving traffic. Verified with a complete turn.
-- **`openpath-agent` on Railway**: deployed, healthy, and receiving no traffic.
-  It costs money while it runs. Delete it, or route to it, but do not leave it.
-
-## What is worth keeping either way
-
-`railway.json` and `.railwayignore` are correct and ready if the routing
-decision goes to Railway. So is the fact that `agent/skills/` is now empty:
-that directory is loaded by eve as the *Coach's* skills, and it used to hold
-the software-factory development skill, shell scripts and all. That is what
-made eve initialise a bash sandbox on boot. The Coach's only tool validates a
-payload and runs no code, so it never needed one.
+`agent/skills/` is empty: that directory is loaded by eve as the *Coach's*
+skills, and it used to hold the software-factory development skill. The
+Coach's only tool validates a payload and runs no code, so it never needed a
+bash sandbox.

@@ -54,7 +54,7 @@ function openrouter() {
     apiKey: process.env.OPENROUTER_API_KEY,
     // OpenRouter attributes traffic by these; harmless elsewhere.
     headers: {
-      "HTTP-Referer": "https://openpath-app.vercel.app",
+      "HTTP-Referer": "https://openpath.up.railway.app",
       "X-Title": "OpenPath",
     },
     // The AI SDK has no per-model sampling channel that survives to an
