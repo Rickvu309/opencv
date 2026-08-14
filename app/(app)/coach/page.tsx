@@ -74,10 +74,11 @@ function CoachChat() {
           {/* A seeded question from onboarding is the introduction. Starters
               under it would compete with the turn that is about to start. */}
           {!asked && <CoachStarters thread={thread} />}
-          {/* On the empty state only. Somebody mid-conversation has already
-              found their way in and does not need a list of first steps under
-              the thread they are reading. */}
-          <ActivationChecklist />
+          {/* A seeded first turn is the introduction. The four-step list
+              under it would lecture over the conversation that is about to
+              start. Show it on a later empty chat, once they have arrived
+              without a question in hand. */}
+          {!asked && <ActivationChecklist />}
         </div>
       </div>
     );

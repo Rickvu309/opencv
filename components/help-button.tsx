@@ -3,7 +3,6 @@
 import Link from "next/link";
 import {
   CircleHelp,
-  GraduationCap,
   MessageCircleQuestion,
   PanelLeft,
   Send,
@@ -23,8 +22,8 @@ import { useSidebar } from "@/components/ui/sidebar";
 import { useT } from "@/lib/i18n/use-t";
 
 /**
- * The ? button, bottom left like Linear's, but lean: redo onboarding,
- * ask the coach how to use it, send feedback, and one shortcut worth knowing.
+ * The ? button, bottom left like Linear's, but lean: ask the coach how to
+ * use it, send feedback, and one shortcut worth knowing.
  */
 export function HelpButton() {
   const { toggleSidebar } = useSidebar();
@@ -51,12 +50,6 @@ export function HelpButton() {
           sideOffset={6}
           className="w-64"
         >
-          <DropdownMenuItem asChild>
-            <Link href="/onboarding">
-              <GraduationCap />
-              {t(m.nav.editProfileDetails)}
-            </Link>
-          </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link
               href={`/coach?q=${encodeURIComponent(t(m.help.askHowToUsePrompt))}`}

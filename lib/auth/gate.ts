@@ -95,11 +95,20 @@ export function safeNext(target: string | null | undefined): string | null {
  * proof of a live session, and it is not meant to be. The database has the
  * truth and is asked by the data access layer, next to the data. This decides
  * only whether to bother rendering.
+ *
+ * `extraPublic` is for the local proxy: `next dev` can preview onboarding
+ * without a session. Tests and production omit it, so the screen stays closed.
  */
-export function gateFor(pathname: string, hasSession: boolean): GateDecision {
+export function gateFor(
+  pathname: string,
+  hasSession: boolean,
+  extraPublic: readonly string[] = [],
+): GateDecision {
   if (hasSession) return { kind: "allow" };
 
-  if (PUBLIC_PATHS.has(pathname)) return { kind: "allow" };
+  if (PUBLIC_PATHS.has(pathname) || extraPublic.includes(pathname)) {
+    return { kind: "allow" };
+  }
   if (PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
     return { kind: "allow" };
   }

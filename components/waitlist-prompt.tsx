@@ -28,8 +28,8 @@ export function markJustOnboarded() {
  *
  * ## Why here, and why once
  *
- * Onboarding is the earliest honest moment: the visitor has just answered four
- * screens of questions and is looking at the profile those answers produced.
+ * Onboarding is the earliest honest moment: the visitor has just named a
+ * direction (or said they do not have one) and is about to talk to the Coach.
  * The product has demonstrated something. Asking on arrival, before that, is
  * asking a stranger for their address in exchange for nothing.
  *

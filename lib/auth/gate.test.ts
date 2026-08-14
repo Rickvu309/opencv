@@ -45,6 +45,13 @@ test("the landing page and account creation are open, as the requirement says", 
   }
 });
 
+test("local preview can open onboarding without making it public by default", () => {
+  assert.equal(gateFor("/onboarding", false).kind, "redirect");
+  assert.deepEqual(gateFor("/onboarding", false, ["/onboarding"]), {
+    kind: "allow",
+  });
+});
+
 test("the machinery a visitor needs before an account is open", () => {
   for (const path of [
     "/api/auth/sign-in",

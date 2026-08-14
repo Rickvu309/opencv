@@ -229,10 +229,6 @@ export function AppSidebar() {
                 <LayoutDashboard />
                 {t(m.nav.yourProfile)}
               </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => router.push("/onboarding")}>
-                <Settings />
-                {t(m.nav.editProfileDetails)}
-              </DropdownMenuItem>
 
               <DropdownMenuSeparator />
               {/* The switcher lives beside the account rather than in a

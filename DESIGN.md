@@ -77,7 +77,7 @@ Modelled on Linear. The rail is quiet by default and reveals structure only wher
 - **Counts are plain 11px muted numerals**, never badge pills. No component in the rail carries a filled background except the active item.
 - **Nested items** (`SidebarMenuSub`) hang under Kế hoạch with a 1px guide line, and only while you're on that page, context appears where it's useful and disappears where it isn't.
 - **Rows are 28px** (`h-7 text-[13px]`), Linear's density, not the 32px shadcn default.
-- **The rail has no footer**, identity lives in the workspace switcher, readiness and tasks live on their pages. A `?` button floats at the app's bottom-left (`components/help-button.tsx`), like Linear's, opening a lean help menu upward: redo onboarding, ask the coach how to use OpenPath, send feedback, and the ⌘B shortcut (which actually toggles). On mobile it gains `border bg-card`, same as the coach chip.
+- **The rail has no footer**, identity lives in the workspace switcher, readiness and tasks live on their pages. A `?` button floats at the app's bottom-left (`components/help-button.tsx`), like Linear's, opening a lean help menu upward: ask the coach how to use OpenPath, send feedback, and the ⌘B shortcut (which actually toggles). On mobile it gains `border bg-card`, same as the coach chip.
 
 ### Collapse and resize
 
@@ -159,9 +159,10 @@ where a reader who does not read Vietnamese most needs to find it.
 
 The landing page is a brand surface: sticky header (mark, language, sign in,
 try-it), a product frame that shows a Coach turn with undo, and no testimonials
-or invented metrics. Finishing onboarding seeds `/coach?q=` with
-`onboarding.firstQuestion` so the first lesson is a real turn, not a lecture.
-The activation checklist on the Coach empty state is the second lesson.
+or invented metrics. Onboarding is a name, a direction (or not sure), and an
+optional CV, then `/coach?q=` with that goal in the first turn. School and courses wait
+until the Coach asks. The activation checklist is for a later empty chat,
+not under the seeded first turn.
 
 - **Each language names itself in its own language.** Offering "Vietnamese" to
   someone who only reads Vietnamese is a menu they cannot use.

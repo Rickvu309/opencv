@@ -98,9 +98,8 @@ export type PathEdge = {
  * The roles OpenPath knows about.
  *
  * This was the career map's dataset. The map is retired (WO-60), and the list
- * outlived it because two things still read it: onboarding, which offers these
- * as goals and scores a live fit against the one you pick, and Fit Scoring,
- * which needs a target with requirements on it to score against at all.
+ * outlived it because Fit Scoring needs a target with requirements on it to
+ * score against at all.
  *
  * The map's own furniture is gone: the edges between roles, the "you today"
  * origin node, and the canvas that drew them. What is left is a catalogue.
