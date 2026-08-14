@@ -15,7 +15,7 @@ import { paragraphsOf, type ProseDocument } from "@/lib/papers/types";
 import { useT } from "@/lib/i18n/use-t";
 
 /**
- * The letter itself: one box per paragraph.
+ * The letter itself: one box per paragraph, written on the canvas.
  *
  * ## Why not one textarea for the whole thing
  *
@@ -29,41 +29,103 @@ import { useT } from "@/lib/i18n/use-t";
  * Coach edits, which is the only arrangement where the two cannot clobber each
  * other. It is also what makes "rewrite paragraph 2" a thing the user can see
  * happen.
+ *
+ * ## Why a new paragraph is not stored as "…"
+ *
+ * An ellipsis looks like content: it survives into the export, and the user
+ * has to notice and delete it. An uncommitted composer shows the placeholder
+ * instead, and only dispatches once there is a sentence to keep.
  */
 export function ParagraphEditor({ paper }: { paper: ProseDocument }) {
   const paragraphs = paragraphsOf(paper.body);
   const { t, m } = useT();
-  const dispatch = useDispatch();
+  const [adding, setAdding] = React.useState(false);
+  const showComposer = paragraphs.length === 0 || adding;
 
   return (
-    <div className="space-y-3">
-      {paragraphs.map((paragraph, index) => (
-        <Paragraph
-          // The index, not the text: a key made from the content remounts the
-          // box on every keystroke and the caret jumps to the end.
-          key={index}
-          paper={paper}
-          index={index + 1}
-          text={paragraph}
-          count={paragraphs.length}
-        />
-      ))}
+    <div>
+      <div className="divide-y divide-border">
+        {paragraphs.map((paragraph, index) => (
+          <Paragraph
+            // The index, not the text: a key made from the content remounts the
+            // box on every keystroke and the caret jumps to the end.
+            key={index}
+            paper={paper}
+            index={index + 1}
+            text={paragraph}
+            count={paragraphs.length}
+          />
+        ))}
+        {showComposer && (
+          <Composer
+            paperId={paper.id}
+            label={t(m.papers.paragraph(paragraphs.length + 1))}
+            placeholder={t(m.papers.paragraphPlaceholder)}
+            dismissable={paragraphs.length > 0}
+            onAdded={() => setAdding(false)}
+            onDismiss={() => setAdding(false)}
+          />
+        )}
+      </div>
 
-      {paragraphs.length === 0 && (
-        <p className="text-sm text-muted-foreground">{t(m.papers.emptyDocument)}</p>
+      {!showComposer && (
+        <div className="px-4 py-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground"
+            onClick={() => setAdding(true)}
+          >
+            <Plus className="size-3.5" />
+            {t(m.papers.addParagraph)}
+          </Button>
+        </div>
       )}
+    </div>
+  );
+}
 
-      <Button
-        variant="ghost"
-        size="sm"
-        className="text-muted-foreground"
-        onClick={() =>
-          dispatch("paper.addParagraph", { id: paper.id, text: "…" }, { silent: true })
-        }
-      >
-        <Plus className="size-3.5" />
-        {t(m.papers.addParagraph)}
-      </Button>
+function Composer({
+  paperId,
+  label,
+  placeholder,
+  dismissable,
+  onAdded,
+  onDismiss,
+}: {
+  paperId: string;
+  label: string;
+  placeholder: string;
+  dismissable: boolean;
+  onAdded: () => void;
+  onDismiss: () => void;
+}) {
+  const dispatch = useDispatch();
+  const [draft, setDraft] = React.useState("");
+
+  const commit = () => {
+    const next = draft.trim();
+    if (next.length === 0) {
+      if (dismissable) onDismiss();
+      return;
+    }
+    dispatch("paper.addParagraph", { id: paperId, text: next }, { silent: true });
+    setDraft("");
+    onAdded();
+  };
+
+  return (
+    <div className="px-5 py-4">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <Textarea
+        value={draft}
+        onChange={(event) => setDraft(event.target.value)}
+        onBlur={commit}
+        placeholder={placeholder}
+        aria-label={label}
+        rows={Math.max(3, Math.ceil(draft.length / 70) + draft.split("\n").length)}
+        className="mt-1.5 resize-none border-0 bg-transparent p-0 text-sm leading-6 shadow-none focus-visible:ring-0"
+      />
     </div>
   );
 }
@@ -106,7 +168,7 @@ function Paragraph({
   };
 
   return (
-    <div className="group/paragraph rounded-lg border bg-card p-3">
+    <div className="group/paragraph px-5 py-4">
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs text-muted-foreground">
           {t(m.papers.paragraph(index))}
@@ -148,8 +210,6 @@ function Paragraph({
         onBlur={commit}
         placeholder={t(m.papers.paragraphPlaceholder)}
         aria-label={t(m.papers.paragraph(index))}
-        // Grows with the text rather than scrolling inside itself: a paragraph
-        // you cannot see the end of is one you cannot edit with any confidence.
         rows={Math.max(3, Math.ceil(draft.length / 70) + draft.split("\n").length)}
         className="mt-1.5 resize-none border-0 bg-transparent p-0 text-sm leading-6 shadow-none focus-visible:ring-0"
       />

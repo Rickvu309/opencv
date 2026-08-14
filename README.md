@@ -146,9 +146,10 @@ form that gives nothing back until the end is a form nobody finishes.
 The Coach is the home screen. Every other screen is an artifact the
 conversation produced or reads from.
 
-`/cv` is the one that leaves the building. It builds a CV from the profile you
-already filled in, previews it at A4, and exports it as PDF (through the
-browser's own print dialog), Markdown, plain text, or JSON.
+`/cv` is My Paper: CVs and letters in one library. A CV is built from the
+profile you already filled in, typed on the page, and exported as PDF (through
+the browser's own print dialog), Markdown, plain text, or JSON. `/papers`
+redirects here.
 
 ## Stack
 

@@ -11,7 +11,14 @@ import { applyAction } from "@/lib/actions/registry";
 import { seedState } from "@/lib/actions/seed";
 import { nextId } from "@/lib/cv/build";
 import { fileStem, toMarkdown, toPlainText } from "@/lib/cv/export";
-import { bullets, defaultTheme, resumeCompleteness, templates } from "@/lib/cv/types";
+import {
+  bullets,
+  defaultTheme,
+  headerHasContent,
+  resumeCompleteness,
+  sectionHasContent,
+  templates,
+} from "@/lib/cv/types";
 import { locales } from "@/lib/i18n/locale";
 import { messages } from "@/lib/i18n/messages";
 import type { AppState } from "@/lib/actions/types";
@@ -249,6 +256,20 @@ test("a filename survives Vietnamese and a filesystem", () => {
 
   const nameless = { ...state.resumes[0], header: { ...state.resumes[0].header, name: "" }, label: "" };
   assert.equal(fileStem(nameless), "CV", "never produce an empty filename");
+});
+
+test("section and header content are readable without opening the editor", () => {
+  const blank = applyAction(seedState(), "resume.create", {
+    label: "CV trống",
+    fromProfile: false,
+  }).state.resumes[0];
+  assert.equal(headerHasContent(blank.header), false);
+  assert.ok(blank.sections.every((section) => !sectionHasContent(section)));
+
+  const { state } = withResume();
+  const built = state.resumes[0];
+  assert.equal(headerHasContent(built.header), true);
+  assert.ok(built.sections.some(sectionHasContent));
 });
 
 test("completeness rewards a filled CV and ignores an empty one", () => {

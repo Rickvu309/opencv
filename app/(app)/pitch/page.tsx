@@ -1,11 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { Plus, Sparkles, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useCoach } from "@/components/coach/provider";
 import { useAppState, useDispatch, useTouched } from "@/lib/actions/store";
@@ -18,41 +17,49 @@ import { cn } from "@/lib/utils";
 /**
  * What the user says about themselves, kept in one place.
  *
- * Three surfaces on one screen rather than three screens, because they are the
- * same job seen from three distances: a paragraph for a profile, a minute of
- * speech, and the answers to the questions that follow. Someone preparing for
- * an interview works on all three in one sitting.
+ * A workbench for rewriting: write in the box first, then sharpen. Bio and
+ * self-introduction share one panel. Interview answers sit below as a list.
+ * The Coach is a quiet offer, not the headline.
  */
 export default function PitchPage() {
   const { t, m } = useT();
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-8">
+    <div className="mx-auto w-full max-w-6xl px-5 py-8 sm:px-8">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight">{t(m.pitch.title)}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t(m.pitch.lead)}</p>
+        <h1 className="text-xl font-semibold tracking-tight text-pretty">
+          {t(m.pitch.title)}
+        </h1>
+        <p className="mt-1 text-sm text-pretty text-muted-foreground">{t(m.pitch.lead)}</p>
       </header>
 
-      <Singleton
-        kind="bio"
-        title={m.pitch.bioTitle}
-        lead={m.pitch.bioLead}
-        placeholder={m.pitch.bioPlaceholder}
-        askPrompt={m.pitch.askCoachBioPrompt}
-      />
-      <Singleton
-        kind="intro"
-        title={m.pitch.introTitle}
-        lead={m.pitch.introLead}
-        placeholder={m.pitch.introPlaceholder}
-        askPrompt={m.pitch.askCoachIntroPrompt}
-      />
+      <div className="@container mt-8">
+        <div className="overflow-hidden rounded-xl border bg-card">
+          <div className="grid divide-y divide-border @min-[36rem]:grid-cols-2 @min-[36rem]:divide-x @min-[36rem]:divide-y-0">
+            <Singleton
+              kind="bio"
+              title={m.pitch.bioTitle}
+              lead={m.pitch.bioLead}
+              placeholder={m.pitch.bioPlaceholder}
+              askPrompt={m.pitch.askCoachBioPrompt}
+            />
+            <Singleton
+              kind="intro"
+              title={m.pitch.introTitle}
+              lead={m.pitch.introLead}
+              placeholder={m.pitch.introPlaceholder}
+              askPrompt={m.pitch.askCoachIntroPrompt}
+            />
+          </div>
+        </div>
+      </div>
+
       <AnswerBank />
     </div>
   );
 }
 
-/** The bio or the self-introduction: one box, or an invitation to fill it. */
+/** The bio or the self-introduction: one artefact in the workbench. */
 function Singleton({
   kind,
   title,
@@ -69,29 +76,33 @@ function Singleton({
   const { pitch } = useAppState();
   const { t, m, locale } = useT();
   const dispatch = useDispatch();
+  const touched = useTouched();
   const item = singletonOf(pitch, kind);
+  const headingId = React.useId();
+  const leadId = React.useId();
 
   return (
-    <section className="mt-10">
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <h2 className="text-base font-semibold tracking-tight">{t(title)}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">{t(lead)}</p>
-        </div>
-        {/* The item's own language when it exists, so refining an English
-            answer asks in English. Only a first draft falls back to the app's,
-            because there is no item yet to take a language from. */}
-        <AskCoach
-          label={t(kind === "bio" ? m.pitch.askCoachBio : m.pitch.askCoachIntro)}
-          prompt={askPrompt[item?.language ?? locale]}
-        />
-      </div>
+    <article
+      className={cn(
+        "flex min-w-0 flex-col",
+        item && touched.includes(item.id) && "animate-just-changed",
+      )}
+    >
+      <header className="border-b border-border px-4 py-3">
+        <h2 id={headingId} className="text-sm font-semibold tracking-tight text-pretty">
+          {t(title)}
+        </h2>
+      </header>
 
-      <div className="mt-4 rounded-xl border bg-card p-4">
+      <div className="px-4 py-3">
+        <p id={leadId} className="mb-3 text-xs text-pretty text-muted-foreground">
+          {t(lead)}
+        </p>
         <BodyBox
           value={item?.body ?? ""}
           placeholder={t(placeholder)}
-          label={t(title)}
+          labelledBy={headingId}
+          describedBy={leadId}
           onCommit={(body) => {
             if (!body) return;
             // `pitch.write` replaces the one of this kind, so editing and
@@ -100,26 +111,28 @@ function Singleton({
             else dispatch("pitch.write", { kind, body });
           }}
         />
-        {item ? (
-          <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
-            <LanguagePicker item={item} />
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label={t(m.common.delete)}
-              className="text-muted-foreground"
-              onClick={() => dispatch("pitch.remove", { id: item.id })}
-            >
-              <Trash2 className="size-3.5" />
-            </Button>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+          {item ? <LanguagePicker item={item} /> : null}
+          <div className="ms-auto flex flex-wrap items-center gap-1">
+            <AskCoach
+              label={t(m.pitch.askCoachHelp)}
+              prompt={askPrompt[item?.language ?? locale]}
+            />
+            {item ? (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={t(m.common.delete)}
+                className="text-muted-foreground"
+                onClick={() => dispatch("pitch.remove", { id: item.id })}
+              >
+                <Trash2 className="size-3.5" aria-hidden="true" />
+              </Button>
+            ) : null}
           </div>
-        ) : (
-          <p className="mt-3 border-t border-border pt-3 text-xs text-muted-foreground">
-            {t(m.pitch.notWrittenYet)}
-          </p>
-        )}
+        </div>
       </div>
-    </section>
+    </article>
   );
 }
 
@@ -132,16 +145,19 @@ function AnswerBank() {
 
   return (
     <section className="mt-10">
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <h2 className="text-base font-semibold tracking-tight">
+      <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
+        <div className="min-w-0">
+          <h2 className="text-base font-semibold tracking-tight text-pretty">
             {t(m.pitch.answersTitle)}
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">{t(m.pitch.answersLead)}</p>
+          <p className="mt-1 text-sm text-pretty text-muted-foreground">
+            {t(m.pitch.answersLead)}
+          </p>
         </div>
         <Button
-          variant="outline"
+          variant="ghost"
           size="sm"
+          className="shrink-0 text-muted-foreground"
           onClick={() =>
             // An empty body, not a placeholder character. An ellipsis looks
             // like content: it survives into the answer bank, gets exported
@@ -154,26 +170,28 @@ function AnswerBank() {
             })
           }
         >
-          <Plus className="size-3.5" />
+          <Plus className="size-3.5" aria-hidden="true" />
           {t(m.pitch.addAnswer)}
         </Button>
       </div>
 
-      {answers.length === 0 ? (
-        <p className="mt-4 rounded-xl border bg-card px-4 py-8 text-center text-sm text-muted-foreground">
-          {t(m.pitch.emptyAnswers)}
-        </p>
-      ) : (
-        <div className="mt-4 space-y-3">
-          {answers.map((answer) => (
-            <Answer
-              key={answer.id}
-              answer={answer}
-              flash={touched.includes(answer.id)}
-            />
-          ))}
-        </div>
-      )}
+      <div className="mt-4 overflow-hidden rounded-xl border bg-card">
+        {answers.length === 0 ? (
+          <p className="px-4 py-3 text-sm text-pretty text-muted-foreground">
+            {t(m.pitch.emptyAnswers)}
+          </p>
+        ) : (
+          <div className="divide-y divide-border">
+            {answers.map((answer) => (
+              <Answer
+                key={answer.id}
+                answer={answer}
+                flash={touched.includes(answer.id)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </section>
   );
 }
@@ -183,20 +201,13 @@ function Answer({ answer, flash }: { answer: PitchItem; flash: boolean }) {
   const dispatch = useDispatch();
 
   return (
-    <div
-      className={cn(
-        "rounded-xl border bg-card p-4 transition-colors duration-[var(--duration-state)] ease-[var(--ease-enter)] motion-reduce:transition-none",
-        flash && "bg-muted",
-      )}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 flex-1 space-y-1.5">
-          <Label className="text-xs text-muted-foreground">
-            {t(m.pitch.questionField)}
-          </Label>
+    <div className={cn("px-4 py-3", flash && "animate-just-changed")}>
+      <div className="flex items-start gap-3">
+        <div className="min-w-0 flex-1">
           <CommitInput
             value={answer.prompt ?? ""}
             placeholder={t(m.pitch.questionPlaceholder)}
+            ariaLabel={t(m.pitch.questionField)}
             onCommit={(prompt) =>
               dispatch("pitch.update", { id: answer.id, prompt }, { silent: true })
             }
@@ -206,15 +217,14 @@ function Answer({ answer, flash }: { answer: PitchItem; flash: boolean }) {
           variant="ghost"
           size="icon-sm"
           aria-label={t(m.pitch.removeAnswer)}
-          className="mt-6 text-muted-foreground"
+          className="mt-0.5 shrink-0 text-muted-foreground"
           onClick={() => dispatch("pitch.remove", { id: answer.id })}
         >
-          <Trash2 className="size-3.5" />
+          <Trash2 className="size-3.5" aria-hidden="true" />
         </Button>
       </div>
 
-      <div className="mt-3 space-y-1.5">
-        <Label className="text-xs text-muted-foreground">{t(m.pitch.answerField)}</Label>
+      <div className="mt-2">
         <BodyBox
           value={answer.body}
           placeholder={t(m.pitch.answerPlaceholder)}
@@ -225,8 +235,12 @@ function Answer({ answer, flash }: { answer: PitchItem; flash: boolean }) {
         />
       </div>
 
-      <div className="mt-3 border-t border-border pt-3">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <LanguagePicker item={answer} />
+        <AskCoach
+          label={t(m.pitch.askCoachHelp)}
+          prompt={m.pitch.askCoachAnswerPrompt(answer.prompt ?? "")[answer.language]}
+        />
       </div>
     </div>
   );
@@ -238,16 +252,22 @@ function Answer({ answer, flash }: { answer: PitchItem; flash: boolean }) {
  * The store can change under it: that is what a Coach draft looks like from
  * here. Compared against the last value this box was given rather than against
  * the draft, so somebody typing is not interrupted by their own keystrokes.
+ *
+ * Sized to its content. An empty artefact is two lines, not a vacant field.
  */
 function BodyBox({
   value,
   placeholder,
   label,
+  labelledBy,
+  describedBy,
   onCommit,
 }: {
   value: string;
   placeholder: string;
-  label: string;
+  label?: string;
+  labelledBy?: string;
+  describedBy?: string;
   onCommit: (value: string) => void;
 }) {
   const [draft, setDraft] = React.useState(value);
@@ -260,12 +280,14 @@ function BodyBox({
   return (
     <Textarea
       value={draft}
-      aria-label={label}
+      aria-label={labelledBy ? undefined : label}
+      aria-labelledby={labelledBy}
+      aria-describedby={describedBy}
       placeholder={placeholder}
       onChange={(event) => setDraft(event.target.value)}
       onBlur={() => draft.trim() !== value && onCommit(draft.trim())}
-      rows={Math.max(4, Math.ceil(draft.length / 70) + draft.split("\n").length)}
-      className="resize-none border-0 bg-transparent p-0 text-sm leading-6 shadow-none focus-visible:ring-0"
+      rows={2}
+      className="min-h-12 resize-none border-0 bg-transparent p-0 text-base leading-6 shadow-none focus-visible:ring-2 focus-visible:ring-ring/50 md:text-sm"
     />
   );
 }
@@ -273,10 +295,12 @@ function BodyBox({
 function CommitInput({
   value,
   placeholder,
+  ariaLabel,
   onCommit,
 }: {
   value: string;
   placeholder: string;
+  ariaLabel: string;
   onCommit: (value: string) => void;
 }) {
   const [draft, setDraft] = React.useState(value);
@@ -289,10 +313,11 @@ function CommitInput({
   return (
     <Input
       value={draft}
+      aria-label={ariaLabel}
       placeholder={placeholder}
       onChange={(event) => setDraft(event.target.value)}
       onBlur={() => draft.trim() !== value && onCommit(draft.trim())}
-      className="h-9 text-sm"
+      className="h-8 min-w-0 border-0 bg-transparent px-0 text-base font-medium shadow-none focus-visible:ring-2 focus-visible:ring-ring/50 md:text-sm"
     />
   );
 }
@@ -302,7 +327,7 @@ function LanguagePicker({ item }: { item: PitchItem }) {
   const dispatch = useDispatch();
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex flex-wrap items-center gap-1">
       {locales.map((code) => (
         <Button
           key={code}
@@ -321,11 +346,11 @@ function LanguagePicker({ item }: { item: PitchItem }) {
 }
 
 /**
- * Hands the Coach the request the user would have typed.
+ * A modest offer to sharpen what is in the box.
  *
- * The Coach is the way these get written, and making somebody switch to the
- * chat and compose "draft my bio" is friction between them and the feature the
- * page is about.
+ * Kept as `thread.send` with the artefact's own prompt, so the Coach still
+ * writes in the item's language. The control is a trailing text action: writing
+ * in the box is the work; this is help if they want it.
  */
 function AskCoach({ label, prompt }: { label: string; prompt: string }) {
   const thread = useCoach();
@@ -333,12 +358,11 @@ function AskCoach({ label, prompt }: { label: string; prompt: string }) {
   return (
     <Button
       variant="ghost"
-      size="sm"
-      className="text-muted-foreground"
+      size="xs"
+      className="font-normal text-muted-foreground hover:text-foreground"
       disabled={thread.busy}
       onClick={() => thread.send(prompt)}
     >
-      <Sparkles className="size-3.5" />
       {label}
     </Button>
   );

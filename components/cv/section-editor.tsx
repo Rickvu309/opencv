@@ -13,7 +13,6 @@ import {
   ChevronUp,
   Eye,
   EyeOff,
-  GripVertical,
   Plus,
   Trash2,
 } from "lucide-react";
@@ -55,9 +54,10 @@ export function SectionEditor({
 
   return (
     <section
-      aria-labelledby={`sec-${section.id}`}
+      id={`sec-${section.id}`}
+      aria-labelledby={`sec-label-${section.id}`}
       className={cn(
-        "rounded-xl border bg-card",
+        "scroll-mt-3",
         section.hidden && "opacity-60",
         touched.includes(section.id) && "animate-just-changed",
       )}
@@ -65,12 +65,11 @@ export function SectionEditor({
       {/* The heading is a heading and the input is an input. Nesting the input
           inside the `h3` made the heading's accessible name the input's too,
           so a screen reader announced "Tên mục: Giới thiệu Giới thiệu". */}
-      <h3 id={`sec-${section.id}`} className="sr-only">
+      <h3 id={`sec-label-${section.id}`} className="sr-only">
         {section.heading}
       </h3>
 
-      <div className="flex items-center gap-1 border-b py-2 pr-2 pl-3">
-        <GripVertical aria-hidden className="size-3.5 shrink-0 text-muted-foreground/50" />
+      <div className="flex items-center gap-1 border-b border-border py-2 pe-2 ps-4">
         <DraftInput
           id={`heading-${section.id}`}
           label={t(m.cv.sectionName)}
@@ -155,7 +154,7 @@ export function SectionEditor({
         </Button>
       </div>
 
-      <div id={`sec-body-${section.id}`} hidden={!open} className="space-y-4 p-3">
+      <div id={`sec-body-${section.id}`} hidden={!open} className="space-y-4 p-4">
         {prose ? (
           <DraftTextarea
             id={`body-${section.id}`}
@@ -168,11 +167,11 @@ export function SectionEditor({
         ) : (
           <>
             {section.entries.length === 0 ? (
-              <p className="rounded-lg border border-dashed px-3 py-6 text-center text-sm text-muted-foreground text-pretty">
+              <p className="text-sm text-muted-foreground text-pretty">
                 {hint}
               </p>
             ) : (
-              <ul className="space-y-3">
+              <ul className="divide-y divide-border">
                 {section.entries.map((entry, i) => (
                   <EntryEditor
                     key={entry.id}
@@ -244,7 +243,7 @@ function EntryEditor({
   return (
     <li
       className={cn(
-        "grid gap-3 rounded-lg border bg-background p-3",
+        "grid gap-3 py-3 first:pt-0 last:pb-0",
         touched.includes(entry.id) && "animate-just-changed",
       )}
     >
@@ -252,7 +251,7 @@ function EntryEditor({
         <span className="text-xs text-muted-foreground tabular-nums">
           {t(m.cv.entryNumber(index + 1))}
         </span>
-        <div className="ml-auto flex items-center">
+        <div className="ms-auto flex items-center">
           <Button
             variant="ghost"
             size="icon-sm"
