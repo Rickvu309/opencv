@@ -26,6 +26,7 @@ import {
 import { useDispatch, useTouched } from "@/lib/actions/store";
 import { isProseKind, sectionDefaults, type ResumeSection } from "@/lib/cv/types";
 import { useT } from "@/lib/i18n/use-t";
+import { disclose, discloseInner } from "@/components/ui/disclose";
 import { cn } from "@/lib/utils";
 import { DraftInput, DraftTextarea } from "./draft-field";
 
@@ -154,7 +155,12 @@ export function SectionEditor({
         </Button>
       </div>
 
-      <div id={`sec-body-${section.id}`} hidden={!open} className="space-y-4 p-4">
+      <div
+        id={`sec-body-${section.id}`}
+        className={disclose(open)}
+        inert={!open || undefined}
+      >
+        <div className={cn(discloseInner, "space-y-4 p-4")}>
         {prose ? (
           <DraftTextarea
             id={`body-${section.id}`}
@@ -202,6 +208,7 @@ export function SectionEditor({
             </Button>
           </>
         )}
+        </div>
       </div>
     </section>
   );

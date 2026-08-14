@@ -6,8 +6,8 @@
 // onboarding screen thirty seconds earlier. A suggestion that ignores what the
 // user has already done reads as a product that has not been paying attention.
 //
-// Four slots, each answering a different question, each resolved against state.
-// Always four, and always in the same order, so the row does not reshuffle
+// Six slots, each answering a different question, each resolved against state.
+// Always six, and always in the same order, so the row does not reshuffle
 // under someone who was reaching for the second suggestion.
 
 import type { Msg } from "@/lib/i18n/locale";
@@ -16,8 +16,9 @@ import type { AppState } from "@/lib/actions/types";
 
 export function coachStarters(state: AppState): Msg[] {
   const s = messages.coach;
-  const { profile, resumes, papers, pitch } = state;
+  const { profile, resumes, papers, pitch, openings, applications } = state;
   const role = profile.identity.targetRole.trim();
+  const saved = openings.filter((opening) => opening.saved).length;
 
   return [
     // 1. The nearest concrete artefact. Building the first CV is the single
@@ -44,5 +45,16 @@ export function coachStarters(state: AppState): Msg[] {
       : !profile.education.school
         ? s.starterFillProfile
         : s.starterMarketGap,
+
+    // 5. The other paper: a letter. Same rule as the CV slot — do not offer
+    //    to write the first one to someone who already has three.
+    papers.length === 0 ? s.starterWriteLetter : s.starterReviewLetter,
+
+    // 6. Getting in front of a job: search, then pitch, then a follow-up.
+    saved === 0 && applications.length === 0
+      ? s.starterFindOpenings
+      : pitch.length === 0
+        ? s.starterWritePitch
+        : s.starterFollowUp,
   ];
 }

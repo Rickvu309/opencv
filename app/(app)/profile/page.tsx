@@ -34,6 +34,7 @@ import {
 import { useAppState, useDispatch, useTouched } from "@/lib/actions/store";
 import { profileWeights, vaultItems, type VaultItemId } from "@/lib/catalog";
 import { useT } from "@/lib/i18n/use-t";
+import { disclose, discloseInner } from "@/components/ui/disclose";
 import { cn } from "@/lib/utils";
 
 const docIcons: Record<VaultItemId, React.ElementType> = {
@@ -280,7 +281,12 @@ export default function ProfilePage() {
                   </button>
                 </h3>
 
-                <div id={`group-${g.id}`} hidden={!open}>
+                <div
+                  id={`group-${g.id}`}
+                  className={disclose(open)}
+                  inert={!open || undefined}
+                >
+                  <div className={discloseInner}>
                   {g.items.map((s) => {
                     const active = s.id === selected;
                     return (
@@ -344,6 +350,7 @@ export default function ProfilePage() {
                       </button>
                     );
                   })}
+                  </div>
                 </div>
               </div>
             );

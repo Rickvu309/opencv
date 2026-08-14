@@ -329,30 +329,130 @@
 }
 
 /*
- * Box poses. Done is one blink, then Sit. Never loop. Reduced motion keeps
- * the static mark. Listen is a static U-arc in the SVG, not a keyframe.
+ * Box poses. Classes are real names (`box-mark`, `box-eye`) — a `motion-safe:`
+ * prefix would mint a different selector and the motion would never attach.
+ * `live` marks float on one loop only. Swapping keyframes on pose made the
+ * mark jump. Reduced motion keeps the static mark.
  */
 @keyframes box-blink {
   0%,
-  70%,
+  20% {
+    transform: scaleY(1);
+  }
+  40%,
+  62% {
+    transform: scaleY(0.08);
+  }
   100% {
     transform: scaleY(1);
   }
-  78% {
-    transform: scaleY(0.15);
+}
+
+@keyframes box-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
   }
 }
 
-@layer components {
-  .box-done .box-eye {
+.box-eyes-listen {
+  opacity: 0;
+}
+
+[data-pose="listen"] .box-eyes-open {
+  opacity: 0;
+}
+
+[data-pose="listen"] .box-eyes-listen {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .box-eyes-open,
+  .box-eyes-listen {
+    transition: opacity var(--duration-state) var(--ease-enter);
+  }
+
+  .box-mark[data-pose="done"] .box-eye {
     transform-origin: center;
-    animation: box-blink var(--duration-state) var(--ease-enter) both;
+    animation: box-blink var(--duration-reveal) var(--ease-enter) both;
+  }
+
+  .box-mark {
+    transform-origin: 50% 100%;
+    animation: box-float 3s linear infinite;
+  }
+}
+
+/*
+ * Coach thinking orb (AICSS S1). 3×3 lattice, wavefront from the centre.
+ * Ambient 1.7s cycle — longer than the UI scale on purpose. Linear, with
+ * the swell written into the keyframe stops so we do not add a fifth curve.
+ */
+.coach-orb {
+  position: relative;
+  display: block;
+  flex: none;
+  overflow: hidden;
+  contain: strict;
+}
+
+.coach-orb-lattice {
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 28px;
+  height: 28px;
+  transform-origin: 0 0;
+  transform: scale(var(--orb-k, 1)) translate(6.5px, 6.5px);
+  --orb-rest: 0.22;
+}
+
+.coach-orb-cell {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: var(--orb-rest);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .coach-orb-cell {
+    animation: coach-orb-wave 1.7s linear infinite both;
+  }
+}
+
+@keyframes coach-orb-wave {
+  0%,
+  56%,
+  100% {
+    opacity: var(--orb-rest);
+    transform: scale(1);
+  }
+  14% {
+    opacity: 0.55;
+    transform: scale(1.08);
+  }
+  28% {
+    opacity: 1;
+    transform: scale(1.18);
+  }
+  42% {
+    opacity: 0.55;
+    transform: scale(1.08);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .box-done .box-eye {
+  .coach-orb-cell {
     animation: none;
+  }
+
+  .coach-orb-cell[data-mid] {
+    opacity: 1;
   }
 }
 
@@ -384,6 +484,45 @@
 @media (prefers-reduced-motion: reduce) {
   .field-error-shake {
     animation: none;
+  }
+}
+
+/*
+ * transitions.dev text-states-swap (04). House tokens: 300ms `--ease-snap`
+ * — a beat slower than `--duration-state`, still on the scale. 4px / 2px stay.
+ * Three-phase: `.is-exit` → swap text + `.is-enter-start` → reflow → rest.
+ */
+.t-text-swap {
+  --text-swap-dur: var(--duration-surface);
+  --text-swap-translate-y: 4px;
+  --text-swap-blur: 2px;
+  display: inline-block;
+  transform: translateY(0);
+  filter: blur(0);
+  opacity: 1;
+  transition:
+    transform var(--text-swap-dur) var(--ease-snap),
+    filter var(--text-swap-dur) var(--ease-snap),
+    opacity var(--text-swap-dur) var(--ease-snap);
+  will-change: transform, filter, opacity;
+}
+
+.t-text-swap.is-exit {
+  transform: translateY(calc(var(--text-swap-translate-y) * -1));
+  filter: blur(var(--text-swap-blur));
+  opacity: 0;
+}
+
+.t-text-swap.is-enter-start {
+  transform: translateY(var(--text-swap-translate-y));
+  filter: blur(var(--text-swap-blur));
+  opacity: 0;
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-text-swap {
+    transition: none !important;
   }
 }
 
