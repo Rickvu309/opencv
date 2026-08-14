@@ -162,6 +162,23 @@ export const messages = {
       "Mọi thay đổi Coach làm đều hiện ra kèm nút hoàn tác. Không có gì xảy ra sau lưng bạn.",
       "Every change the Coach makes shows up with an undo button. Nothing happens behind your back.",
     ),
+
+    // The product frame: a fake turn, not a screenshot. Same claim as
+    // controlNote, visible as a conversation.
+    you: m("Bạn", "You"),
+    coachName: m("Coach", "Coach"),
+    frameUser: m(
+      "Sửa giúp câu này trên CV: chịu được áp lực cao.",
+      "Rewrite this CV line: works well under pressure.",
+    ),
+    frameCoach: m(
+      "Theo dõi sprint, giao đúng hạn dù phạm vi đổi hai lần.",
+      "Shipped sprints on time after the scope changed twice.",
+    ),
+    footerPrivacy: m(
+      "Chỉ dùng email để báo khi có chỗ. Không bán danh sách.",
+      "We only email when a place opens. The list is not sold.",
+    ),
   },
 
   /* ── Onboarding ─────────────────────────────────────────────────────── */
@@ -332,6 +349,18 @@ export const messages = {
       "Saving your profile, then taking you to the Coach.",
     ),
     savingStatus: m("Đang lưu hồ sơ…", "Saving your profile…"),
+
+    // The first Coach turn after setup. The four-card tour used to lecture;
+    // this asks, so they meet the product by using it.
+    firstQuestion: m(
+      "Nhìn hồ sơ mình vừa điền, việc đầu tiên nên làm là gì?",
+      "Looking at what I just entered, what should I do first?",
+    ),
+    asideCoachHint: m(
+      "Coach đọc những dòng này rồi viết CV cùng bạn. Mọi sửa đều hoàn tác được.",
+      "The Coach reads this and writes your CV with you. You can undo.",
+    ),
+    previewEmpty: m("Chưa điền", "Not filled in yet"),
   },
 
   /* ── Coach ──────────────────────────────────────────────────────────── */
