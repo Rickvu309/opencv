@@ -20,7 +20,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Toaster } from "@/components/ui/sonner";
 import { Toggle } from "@/components/ui/toggle";
-import { markJustOnboarded } from "@/components/waitlist-prompt";
 import { flushState } from "@/lib/actions/persistence";
 import { useAppState, useDispatch } from "@/lib/actions/store";
 import { useT } from "@/lib/i18n/use-t";
@@ -77,7 +76,6 @@ export default function OnboardingPage() {
       );
     }
 
-    markJustOnboarded();
     flushState();
 
     const question = role

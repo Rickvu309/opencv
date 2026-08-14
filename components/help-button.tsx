@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import {
+  Check,
   CircleHelp,
-  MessageCircleQuestion,
+  Languages,
   PanelLeft,
   Send,
 } from "lucide-react";
@@ -18,16 +18,23 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ActivationChecklist } from "@/components/onboarding/activation-checklist";
+import { useDispatch } from "@/lib/actions/store";
+import { localeNames, locales } from "@/lib/i18n/locale";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useT } from "@/lib/i18n/use-t";
 
 /**
- * The ? button, bottom left like Linear's, but lean: ask the coach how to
- * use it, send feedback, and one shortcut worth knowing.
+ * The ? button, bottom left like Linear's: the first four steps, send
+ * feedback, switch language, and one shortcut worth knowing.
+ *
+ * Language lives here rather than in the account menu so it is one tap from
+ * every screen, including when the rail is closed.
  */
 export function HelpButton() {
   const { toggleSidebar } = useSidebar();
-  const { t, m } = useT();
+  const dispatch = useDispatch();
+  const { t, m, locale } = useT();
 
   // In flow inside the layout's mobile control row; floats into the frame's
   // bottom gutter from md.
@@ -48,22 +55,34 @@ export function HelpButton() {
           align="start"
           side="top"
           sideOffset={6}
-          className="w-64"
+          className="w-72"
         >
-          <DropdownMenuItem asChild>
-            <Link
-              href={`/coach?q=${encodeURIComponent(t(m.help.askHowToUsePrompt))}`}
-            >
-              <MessageCircleQuestion />
-              {t(m.help.askHowToUse)}
-            </Link>
-          </DropdownMenuItem>
+          <ActivationChecklist />
           <DropdownMenuItem asChild>
             <a href="mailto:hello@openpath.vn">
               <Send />
               {t(m.help.sendFeedback)}
             </a>
           </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          {/* Each language names itself in its own language: offering
+              "Vietnamese" to someone who only reads Vietnamese is a menu
+              they cannot use. */}
+          <DropdownMenuLabel className="flex items-center gap-2 font-normal text-muted-foreground">
+            <Languages className="size-3.5" />
+            {t(m.common.language)}
+          </DropdownMenuLabel>
+          {locales.map((code) => (
+            <DropdownMenuItem
+              key={code}
+              onSelect={() =>
+                dispatch("settings.setLanguage", { language: code }, { silent: true })
+              }
+            >
+              <span className="flex-1">{localeNames[code]}</span>
+              {locale === code && <Check className="size-3.5" />}
+            </DropdownMenuItem>
+          ))}
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={toggleSidebar}>
             <PanelLeft />

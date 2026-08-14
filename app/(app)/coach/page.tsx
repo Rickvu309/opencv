@@ -4,7 +4,6 @@ import * as React from "react";
 import { useSearchParams } from "next/navigation";
 
 import { Composer } from "@/components/coach/composer";
-import { ActivationChecklist } from "@/components/onboarding/activation-checklist";
 import { CoachSessionEnded } from "@/components/coach/session-ended";
 import { useCoach } from "@/components/coach/provider";
 import {
@@ -74,11 +73,6 @@ function CoachChat() {
           {/* A seeded question from onboarding is the introduction. Starters
               under it would compete with the turn that is about to start. */}
           {!asked && <CoachStarters thread={thread} />}
-          {/* A seeded first turn is the introduction. The four-step list
-              under it would lecture over the conversation that is about to
-              start. Show it on a later empty chat, once they have arrived
-              without a question in hand. */}
-          {!asked && <ActivationChecklist />}
         </div>
       </div>
     );

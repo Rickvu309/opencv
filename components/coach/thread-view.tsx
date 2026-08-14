@@ -19,6 +19,7 @@ import {
   type CoachReasoning,
   type CoachToolCall,
 } from "@/lib/coach/messages";
+import { CatMascot } from "./cat-mascot";
 import { CoachProse } from "./prose";
 import { ResumeArtifact, type ResumeEdit } from "./resume-artifact";
 import { coachStarters } from "@/lib/coach/starters";
@@ -254,7 +255,7 @@ function QuestionCard({
 }
 
 /**
- * The line above an empty thread.
+ * The line above an empty thread, with the sleeping-cat mascot over it.
  *
  * Vietnamese names put the given name last, so the familiar form is the tail
  * rather than the head. Empty until the user has told us, and the greeting drops
@@ -270,27 +271,33 @@ export function CoachGreeting({ compact }: { compact?: boolean }) {
     .join(" ");
 
   return (
-    <p
+    <div
       className={cn(
-        "text-center text-muted-foreground",
-        compact ? "text-sm" : "text-[15px]",
+        "flex flex-col items-center",
+        compact ? "gap-1.5" : "gap-2",
       )}
     >
-      {firstName ? t(m.coach.readyWithName(firstName)) : t(m.coach.ready)}
-    </p>
+      <CatMascot compact={compact} />
+      <p
+        className={cn(
+          "text-center text-muted-foreground",
+          compact ? "text-sm" : "text-[15px]",
+        )}
+      >
+        {firstName ? t(m.coach.readyWithName(firstName)) : t(m.coach.ready)}
+      </p>
+    </div>
   );
 }
 
 /**
  * Four questions worth asking on day one.
  *
- * On both surfaces. The floating panel used to open on a blank rectangle:
- * once the seeded conversation was removed there was nothing in it, and nothing
- * saying what it was for.
- *
- * The chips grow rather than being pinned to one line. A Vietnamese starter is
- * half again as long as its English pair, and the panel is 24rem wide, so a
- * fixed-height chip either overflows or has to carry different copy per surface.
+ * One panel, hairline-divided, not a wrap of pills. The pills left a leftover
+ * chip on the second row and read as tags, not as things you can ask. The
+ * house pattern is a bordered container subdivided, so these sit in a 2×2
+ * on the page and a stacked list in the 24rem dock, where two columns would
+ * clip a Vietnamese line.
  */
 export function CoachStarters({
   thread,
@@ -299,29 +306,73 @@ export function CoachStarters({
   thread: CoachThread;
   compact?: boolean;
 }) {
-  const { t } = useT();
+  const { t, m } = useT();
   const state = useAppState();
   const starters = coachStarters(state).map(t);
 
   return (
     <div
+      role="group"
+      aria-label={t(m.coach.startersLabel)}
+      className="overflow-hidden rounded-xl border bg-card"
+    >
+      {compact ? (
+        <div className="divide-y divide-border">
+          {starters.map((prompt) => (
+            <StarterRow
+              key={prompt}
+              prompt={prompt}
+              thread={thread}
+              compact
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="divide-y divide-border">
+          {[0, 2].map((start) => (
+            <div
+              key={start}
+              className="grid divide-y divide-border sm:grid-cols-2 sm:divide-x sm:divide-y-0"
+            >
+              {starters.slice(start, start + 2).map((prompt) => (
+                <StarterRow key={prompt} prompt={prompt} thread={thread} />
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StarterRow({
+  prompt,
+  thread,
+  compact,
+}: {
+  prompt: string;
+  thread: CoachThread;
+  compact?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={thread.busy}
+      onClick={() => thread.send(prompt)}
       className={cn(
-        "flex flex-wrap gap-2",
-        compact ? "justify-start" : "justify-center",
+        "h-full w-full text-left text-muted-foreground outline-none",
+        "transition-colors duration-[var(--duration-press)]",
+        "hover:bg-muted/40 hover:text-foreground",
+        "focus-visible:bg-muted/40 focus-visible:text-foreground focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring/50",
+        "active:translate-y-px disabled:pointer-events-none disabled:opacity-50",
+        "motion-reduce:transition-none",
+        compact
+          ? "min-h-10 px-3 py-2.5 text-xs leading-5"
+          : "min-h-10 px-4 py-3 text-sm leading-6",
       )}
     >
-      {starters.map((prompt) => (
-        <button
-          key={prompt}
-          type="button"
-          disabled={thread.busy}
-          onClick={() => thread.send(prompt)}
-          className="min-h-7 rounded-full border bg-card px-3 py-1 text-left text-xs leading-5 text-muted-foreground transition active:translate-y-px outline-none hover:bg-muted/60 hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none"
-        >
-          {prompt}
-        </button>
-      ))}
-    </div>
+      {prompt}
+    </button>
   );
 }
 

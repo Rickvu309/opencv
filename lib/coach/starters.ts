@@ -8,7 +8,7 @@
 //
 // Four slots, each answering a different question, each resolved against state.
 // Always four, and always in the same order, so the row does not reshuffle
-// under someone who was reaching for the second chip.
+// under someone who was reaching for the second suggestion.
 
 import type { Msg } from "@/lib/i18n/locale";
 import { messages } from "@/lib/i18n/messages";
