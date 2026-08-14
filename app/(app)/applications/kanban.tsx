@@ -12,6 +12,7 @@ import {
   type ApplicationStatus,
 } from "@/lib/applications/types";
 import { useT } from "@/lib/i18n/use-t";
+import { disclose, discloseInner } from "@/components/ui/disclose";
 import { cn } from "@/lib/utils";
 import {
   ApplicationDetailPanel,
@@ -267,8 +268,11 @@ export function ApplicationsKanban(props: ApplicationsWorkspaceProps) {
               </span>
               <span aria-hidden>{endedOpen ? "–" : "+"}</span>
             </button>
-            {endedOpen && ended.length > 0 && (
-              <div className="divide-y divide-border border-t border-border">
+            <div
+              className={disclose(endedOpen && ended.length > 0)}
+              inert={!endedOpen || ended.length === 0 || undefined}
+            >
+              <div className={cn(discloseInner, "divide-y divide-border border-t border-border")}>
                 {ended.map((item) => (
                   <KanbanCard
                     key={item.application.id}
@@ -294,7 +298,7 @@ export function ApplicationsKanban(props: ApplicationsWorkspaceProps) {
                   />
                 ))}
               </div>
-            )}
+            </div>
           </div>
         </>
       )}

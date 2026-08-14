@@ -20,6 +20,13 @@ import { useCoachThread, type CoachThread } from "./thread";
  */
 const CoachContext = React.createContext<CoachThread | null>(null);
 
+const CoachSwitchContext = React.createContext({ fading: false });
+
+/** True while a conversation switch is fading the chat surfaces, not the shell. */
+export function useCoachSwitch() {
+  return React.useContext(CoachSwitchContext);
+}
+
 /** Whether we are on the client never changes after the first render. */
 const subscribeNever = () => () => {};
 
@@ -98,16 +105,42 @@ export function CoachProvider({
   // cannot be handed a different thread afterwards. The key below is what
   // performs the switch, so the id has to sit above the thing being keyed.
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
+  const [fading, setFading] = React.useState(false);
+  const fadeTimer = React.useRef(0);
+
+  React.useEffect(() => () => window.clearTimeout(fadeTimer.current), []);
+
+  // Fade the chat surfaces, then remount the host. The key still has to
+  // change — `useEveAgent` cannot be handed a different thread — but the
+  // shell around it must not fade with it.
+  const onSelect = React.useCallback((id: string) => {
+    if (id === selectedId) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setSelectedId(id);
+      setFading(false);
+      return;
+    }
+    window.clearTimeout(fadeTimer.current);
+    setFading(true);
+    fadeTimer.current = window.setTimeout(() => {
+      setSelectedId(id);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => setFading(false));
+      });
+    }, 200);
+  }, [selectedId]);
 
   return (
-    <CoachThreadHost
-      key={hydrated ? (selectedId ?? "newest") : "seed"}
-      restore={hydrated}
-      selectedId={selectedId}
-      onSelect={setSelectedId}
-    >
-      {children}
-    </CoachThreadHost>
+    <CoachSwitchContext.Provider value={{ fading }}>
+      <CoachThreadHost
+        key={hydrated ? (selectedId ?? "newest") : "seed"}
+        restore={hydrated}
+        selectedId={selectedId}
+        onSelect={onSelect}
+      >
+        {children}
+      </CoachThreadHost>
+    </CoachSwitchContext.Provider>
   );
 }
 

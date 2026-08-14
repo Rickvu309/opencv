@@ -104,7 +104,11 @@ Defined once on `.acc-panel` in `globals.css` so every accordion shares it.
 ## Feedback & waiting
 
 - `<Spinner size="sm|md|lg" />` (`components/ui/spinner.tsx`), two-tone ring, `role="status"`. Reduced motion swaps rotation for a pulse so activity still reads. Use for transitions and async work.
-- `<TypingDots />`, three dots, only for the coach composing a reply.
+- `<TypingDots />`, three dots, kept for other waits. Coach thinking uses
+  `ThinkingOrb` (`components/coach/thinking-orb.tsx`): AICSS S1, a 3×3
+  wavefront from the centre, on the reasoning trigger while it streams and on
+  the composing row when there is no live reasoning yet. Reduced motion keeps
+  the centre cell lit.
 - Skeletons for content that has a known shape; a spinner only when it doesn't.
 - Every state change gets immediate, quiet feedback: a checkbox strikes its row through, a filter updates a visible result count, an accepted suggestion turns into a confirmation line.
 
@@ -130,9 +134,9 @@ The layouts differ because a full page and a 24rem panel should differ. Nothing
 else does.
 
 - **Chat switcher**: on `/coach` the header names the open thread (its first question, or "New chat" while empty) and opens the same conversation menu the rail list uses (`ConversationMenu` in `components/coach/history.tsx`). The rail is the place you scan history; the header is the place you switch when the rail is collapsed. Both call `useCoach()`. `/coach?q=` still asks a question on open. Starting a new thread is `startNewChat`, not `/coach?new=1`.
-- **Composer** (`components/coach/composer.tsx`): a bordered panel, the auto-growing textarea on top, a circular primary send below right. Enter sends, Shift+Enter newlines, IME-safe. `compact` tightens padding for the floating panel. It takes the thread rather than four wiring props, the same way `CoachMessages` does; three mounts wiring `value`/`onChange`/`onSubmit`/`disabled` by hand is three chances to wire them differently. The placeholder cycles the state-aware starters (`lib/coach/placeholder.ts`), and on artefact screens leads with a line for that page; the accessible name stays "Ask Coach…".
-- **Empty state**: the box mascot, one greeting line, the one next step from `nextStepOf` (`lib/next-step.ts`), the composer, and four suggestions in one hairline-divided panel (`CoachStarters`). On the page that panel is a 2×2; in the 24rem dock it stacks. Not a wrap of pills: a leftover chip on the second row read as tags, not as questions.
-- **The suggestions are read from state** (`lib/coach/starters.ts`), four slots each answering a different question: the nearest artefact, the week, the gap named against the user's own target role, and whatever is thinnest in the profile. Fixed lines went stale in a single turn, offering to build a first CV to someone who had built three.
+- **Composer** (`components/coach/composer.tsx`): a bordered panel, the auto-growing textarea on top, a single + on the left of the footer (rotates 45° open; new chat and the state-aware asks) and a circular primary send on the right. `/` opens the same asks as a slash palette and inserts one. No model picker, attachments, or enhance — those would be chrome the turn cannot honour. Enter sends, Shift+Enter newlines, IME-safe. `compact` tightens padding for the floating panel. It takes the thread rather than four wiring props, the same way `CoachMessages` does; three mounts wiring `value`/`onChange`/`onSubmit`/`disabled` by hand is three chances to wire them differently. The placeholder cycles the state-aware starters (`lib/coach/placeholder.ts`), and on artefact screens leads with a line for that page; the accessible name stays "Ask Coach…".
+- **Empty state**: the box mascot, one greeting line, and the composer. Suggested questions cycle in the composer placeholder (`lib/coach/placeholder.ts`), not as a list or a next-step chip under the kit.
+- **Those suggestions are read from state** (`lib/coach/starters.ts`), six slots: the nearest artefact, the week, the gap named against the user's own target role, whatever is thinnest in the profile, the other paper (letter), and the land-side move (search / pitch / follow-up). Fixed lines went stale in a single turn, offering to build a first CV to someone who had built three.
 - **Onboarding ends here, not on the profile.** One screen at sign-up, then the Coach. There is no in-app waiting-list ask: the visitor already has an account.
 - **Messages**: coach replies are unbubbled prose on the page background at `text-[15px] leading-7` with a small mark to the left; user turns are a `rounded-2xl bg-muted` bubble, right-aligned. Numbered points use a hanging indent with the numeral in muted tabular figures.
 - **The thread is ordered by time, not by author.** Two things write to it: the agent's stream, and this app when the agent is unreachable. Local messages record how many agent messages existed when they were written, and `interleave` (`lib/coach/messages.ts`) merges on that. Concatenating the two lists instead put every local message above the whole conversation, so from the first failed turn onward the thread read backwards.
@@ -206,11 +210,13 @@ the dock is open.
 **She is the Coach.** No given name on launch. She does not speak; copy stays
 the mentor voice.
 
-**Four poses, not twelve.** Sit is the default and has no motion. Listen closes
-the eyes into U-arcs once (landing demo waiting). Think is Sit — typing dots
-do that work. Done is one blink, once, after a successful `apply_action` or
-when the landing undo chip appears. Reduced motion: Sit only; filled when the
-mark is the active surface.
+**Four poses, not twelve.** Sit is the default. Listen closes the eyes into
+U-arcs (landing demo waiting; empty greeting after one blink). Think is Sit —
+typing dots do that work. Done is one blink, once, after a successful
+`apply_action` or when the landing undo chip appears. The empty-kit greeting
+opts into one 3px float (`live`); chrome marks stay still. Pose only changes
+the eyes — no keyframe swap, so the mark does not jump. Reduced motion: Sit
+only, no float; filled when the mark is the active surface.
 
 **Where she appears:** landing header and demo avatar; app rail, dock chip,
 message avatar; empty kit and Coach greeting; Ask Coach rows. **Not on:**
@@ -229,8 +235,9 @@ paint (`hero-enter` in `globals.css`, 100ms apart, `--duration-surface` on
 `--ease-enter`). Reduced motion keeps the fade and drops the travel.
 
 A new easing or an off-scale duration in a diff is a review failure. Do not add
-a fifth curve. Rejected and still rejected: idle loops, sparkles, AI-glow, box
-pulse, bounce, `transition: all`.
+a fifth curve. Rejected and still rejected: idle blink loops, sparkles, AI-glow,
+box pulse, bounce, `transition: all`. The empty-kit greeting float is the one
+ambient exception (3s linear, 3px, one loop — never swapped on pose).
 
 **Frequency.** 100+ times/day (keystrokes, list hover, rail clicks, composer
 typing): no animation. Tens/day (filters, tab switches): colour or 120ms
@@ -241,10 +248,14 @@ kit): the only place for stagger, a 500ms reveal, or the box's extra pose.
 **Named recipes.** Press: `active:translate-y-px` in-app; landing primary CTA
 may `scale(0.96)` over 120ms `--ease-snap`. Origin-aware open/close: dock and
 menus grow from the trigger, 300ms enter, 180–200ms exit. Crossfade:
-conversation switch and language swap, opacity 200ms `--ease-snap`. Stagger:
-landing hero only; demo messages 80–100ms apart, cap three. Wash: `.animate-just-changed`.
+conversation switch and language swap, opacity 200ms `--ease-snap`. Text swap:
+`.t-text-swap` (composer hints, thinking label), 4px / 2px blur / 300ms
+`--ease-snap`. Stagger:
+landing hero; empty coach kit (greeting → composer, 100ms apart, cap three); demo messages 80–100ms apart, cap three. Wash: `.animate-just-changed`.
 Bar grow: `.animate-bar-grow` on fit / completeness, replay on `key` change.
-Typing dots: Coach composing only. Height accordion: `.acc-panel`.
+Typing dots: Coach composing only. Height accordion: `.acc-panel` (Radix) and
+`disclose()` (grid `0fr`/`1fr` for Profile groups, CV sections, Applications
+Ended, empty-kit fold).
 
 ### Three curves, named in `globals.css`
 

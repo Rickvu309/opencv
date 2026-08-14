@@ -1,15 +1,20 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
-import { Ban, Check, Loader2, TriangleAlert } from "lucide-react";
-import { CoachBox } from "@/components/brand/coach-box";
-import { nextStepOf } from "@/lib/next-step";
+import {
+  Ban,
+  BrainIcon,
+  Check,
+  ChevronDownIcon,
+  Loader2,
+  TriangleAlert,
+} from "lucide-react";
+import { CoachBox, type CoachBoxPose } from "@/components/brand/coach-box";
 
 import { type EveMessageInputRequest } from "eve/react";
 
 import { Button } from "@/components/ui/button";
-import { TypingDots } from "@/components/ui/spinner";
+import { ThinkingOrb } from "./thinking-orb";
 import { lookupAction } from "@/lib/actions/registry";
 import { useAppState } from "@/lib/actions/store";
 import { cn } from "@/lib/utils";
@@ -17,6 +22,7 @@ import {
   Reasoning,
   ReasoningContent,
   ReasoningTrigger,
+  useReasoning,
 } from "@/components/ai-elements/reasoning";
 import {
   type CoachReasoning,
@@ -24,8 +30,13 @@ import {
 } from "@/lib/coach/messages";
 import { CoachProse } from "./prose";
 import { ResumeArtifact, type ResumeEdit } from "./resume-artifact";
-import { coachStarters } from "@/lib/coach/starters";
 import { useT } from "@/lib/i18n/use-t";
+import {
+  TextSwap,
+  iconSwapIn,
+  iconSwapItem,
+  iconSwapOut,
+} from "./motion";
 import { type CoachThread } from "./thread";
 
 /**
@@ -50,8 +61,6 @@ function CoachReasoningPanel({
   reasoning: CoachReasoning;
   compact?: boolean;
 }) {
-  const { t, m } = useT();
-
   return (
     <Reasoning
       className="mb-0"
@@ -60,20 +69,39 @@ function CoachReasoningPanel({
       // this is the audit trail behind it.
       defaultOpen={reasoning.streaming}
     >
-      <ReasoningTrigger
-        className={compact ? "text-xs" : "text-sm"}
-        getThinkingMessage={(streaming, duration) => (
-          <span className={streaming ? "animate-pulse" : undefined}>
-            {streaming
-              ? t(m.coach.thinking)
-              : duration
-                ? t(m.coach.thoughtFor(duration))
-                : t(m.coach.thoughtBriefly)}
-          </span>
-        )}
-      />
+      <CoachThinkingTrigger compact={compact} />
       <ReasoningContent>{reasoning.text}</ReasoningContent>
     </Reasoning>
+  );
+}
+
+function CoachThinkingTrigger({ compact }: { compact?: boolean }) {
+  const { t, m } = useT();
+  const { isStreaming, isOpen, duration } = useReasoning();
+
+  return (
+    <ReasoningTrigger className={compact ? "text-xs" : "text-sm"}>
+      {isStreaming ? (
+        <ThinkingOrb className="text-foreground" />
+      ) : (
+        <BrainIcon className="size-4" />
+      )}
+      <TextSwap
+        text={
+          isStreaming
+            ? t(m.coach.thinking)
+            : duration
+              ? t(m.coach.thoughtFor(duration))
+              : t(m.coach.thoughtBriefly)
+        }
+      />
+      <ChevronDownIcon
+        className={cn(
+          "size-4 transition-transform duration-[var(--duration-state)] ease-enter motion-reduce:transition-none",
+          isOpen ? "rotate-180" : "rotate-0",
+        )}
+      />
+    </ReasoningTrigger>
   );
 }
 
@@ -112,11 +140,22 @@ function ToolChip({
           "border-destructive/30 bg-destructive/5 text-destructive",
       )}
     >
-      {call.state === "running" ? (
-        <Loader2 className="size-3 shrink-0 animate-spin" />
-      ) : (
-        <Check className="size-3 shrink-0 text-foreground" />
-      )}
+      <span className="relative size-3 shrink-0">
+        <Loader2
+          className={cn(
+            iconSwapItem,
+            "animate-spin",
+            call.state === "running" ? iconSwapIn : iconSwapOut,
+          )}
+        />
+        <Check
+          className={cn(
+            iconSwapItem,
+            "text-foreground",
+            call.state === "running" ? iconSwapOut : iconSwapIn,
+          )}
+        />
+      </span>
       <span className="min-w-0 truncate">{label}</span>
     </div>
   );
@@ -321,7 +360,27 @@ function QuestionCard({
 }
 
 /**
- * The line above an empty thread, with the sleeping-cat mascot over it.
+ * Empty-kit extra pose: Sit, one blink, then Listen. Once. Not a loop.
+ * Reduced motion stays Sit. The copy already says she is listening.
+ */
+function useGreetingPose(): CoachBoxPose {
+  const [pose, setPose] = React.useState<CoachBoxPose>("sit");
+
+  React.useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const blink = window.setTimeout(() => setPose("done"), 700);
+    const listen = window.setTimeout(() => setPose("listen"), 1500);
+    return () => {
+      window.clearTimeout(blink);
+      window.clearTimeout(listen);
+    };
+  }, []);
+
+  return pose;
+}
+
+/**
+ * The line above an empty thread, with the box over it.
  *
  * Vietnamese names put the given name last, so the familiar form is the tail
  * rather than the head. Empty until the user has told us, and the greeting drops
@@ -330,15 +389,12 @@ function QuestionCard({
 export function CoachGreeting({ compact }: { compact?: boolean }) {
   const state = useAppState();
   const { t, m } = useT();
+  const pose = useGreetingPose();
   const firstName = state.profile.identity.name
     .trim()
     .split(/\s+/)
     .slice(-2)
     .join(" ");
-  const step = nextStepOf(state);
-  const href = step.prompt
-    ? `/coach?q=${encodeURIComponent(t(step.prompt))}`
-    : step.href;
 
   return (
     <div
@@ -347,7 +403,19 @@ export function CoachGreeting({ compact }: { compact?: boolean }) {
         compact ? "gap-1.5 px-1" : "gap-2 px-4",
       )}
     >
-      <CoachBox size={compact ? "md" : "lg"} className="text-foreground" />
+      <span
+        className={cn(
+          "flex items-center justify-center",
+          compact ? "size-6" : "size-12",
+        )}
+      >
+        <CoachBox
+          size={compact ? "md" : "lg"}
+          pose={pose}
+          live={!compact}
+          className="text-foreground"
+        />
+      </span>
       <p
         className={cn(
           "text-center text-muted-foreground",
@@ -356,96 +424,7 @@ export function CoachGreeting({ compact }: { compact?: boolean }) {
       >
         {firstName ? t(m.coach.readyWithName(firstName)) : t(m.coach.ready)}
       </p>
-      <Button asChild variant="outline" size="sm">
-        <Link href={href}>{t(step.label)}</Link>
-      </Button>
     </div>
-  );
-}
-
-/**
- * Four questions worth asking on day one.
- *
- * One panel, hairline-divided, not a wrap of pills. The pills left a leftover
- * chip on the second row and read as tags, not as things you can ask. The
- * house pattern is a bordered container subdivided, so these sit in a 2×2
- * on the page and a stacked list in the 24rem dock, where two columns would
- * clip a Vietnamese line.
- */
-export function CoachStarters({
-  thread,
-  compact,
-}: {
-  thread: CoachThread;
-  compact?: boolean;
-}) {
-  const { t, m } = useT();
-  const state = useAppState();
-  const starters = coachStarters(state).map(t);
-
-  return (
-    <div
-      role="group"
-      aria-label={t(m.coach.startersLabel)}
-      className="overflow-hidden rounded-xl border bg-card"
-    >
-      {compact ? (
-        <div className="divide-y divide-border">
-          {starters.map((prompt) => (
-            <StarterRow
-              key={prompt}
-              prompt={prompt}
-              thread={thread}
-              compact
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="divide-y divide-border">
-          {[0, 2].map((start) => (
-            <div
-              key={start}
-              className="grid divide-y divide-border sm:grid-cols-2 sm:divide-x sm:divide-y-0"
-            >
-              {starters.slice(start, start + 2).map((prompt) => (
-                <StarterRow key={prompt} prompt={prompt} thread={thread} />
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function StarterRow({
-  prompt,
-  thread,
-  compact,
-}: {
-  prompt: string;
-  thread: CoachThread;
-  compact?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      disabled={thread.busy}
-      onClick={() => thread.send(prompt)}
-      className={cn(
-        "h-full w-full text-left text-muted-foreground outline-none",
-        "transition-colors duration-[var(--duration-press)]",
-        "hover:bg-muted/40 hover:text-foreground",
-        "focus-visible:bg-muted/40 focus-visible:text-foreground focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring/50",
-        "active:translate-y-px disabled:pointer-events-none disabled:opacity-50",
-        "motion-reduce:transition-none",
-        compact
-          ? "min-h-10 px-3 py-2.5 text-xs leading-5"
-          : "min-h-10 px-4 py-3 text-sm leading-6",
-      )}
-    >
-      {prompt}
-    </button>
   );
 }
 
@@ -488,14 +467,16 @@ export function CoachMessages({
 }) {
   const { messages, isTyping } = thread;
   const { t, m } = useT();
+  const last = messages[messages.length - 1];
+  const reasoningLive =
+    last?.role === "assistant" && Boolean(last.reasoning?.streaming);
+  const composing =
+    last?.role === "assistant" && last.content.trim().length > 0;
   const rootRef = React.useRef<HTMLDivElement>(null);
   const bottomRef = React.useRef<HTMLDivElement>(null);
   const settled = React.useRef(false);
   const following = React.useRef(true);
   const [showJump, setShowJump] = React.useState(false);
-  const last = messages.at(-1);
-  const showFollowUps =
-    !isTyping && last?.role === "coach" && !last.question;
 
   React.useEffect(() => {
     const pane = scrollPane(rootRef.current);
@@ -603,19 +584,27 @@ export function CoachMessages({
           ),
         )}
 
-        {isTyping && (
-          <div className={cn("flex gap-4", compact && "gap-3")}>
+        {isTyping && !reasoningLive && (
+          <div
+            className={cn(
+              "flex items-center gap-4 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-[var(--duration-state)] motion-safe:ease-enter",
+              compact && "gap-3",
+            )}
+          >
             <CoachMark className={compact ? "size-6" : undefined} />
-            <TypingDots
-              className="h-7 text-muted-foreground"
-              label={t(m.coach.typing)}
-            />
+            <span
+              role="status"
+              aria-live="polite"
+              className="flex h-7 items-center gap-2 text-muted-foreground"
+            >
+              <ThinkingOrb />
+              <span className={compact ? "text-sm" : "text-[15px]"}>
+                {composing ? t(m.coach.typing) : t(m.coach.thinking)}
+              </span>
+            </span>
           </div>
         )}
 
-        {showFollowUps && (
-          <CoachStarters thread={thread} compact />
-        )}
       </div>
 
       {/* Outside the spaced list: as a child of it, the anchor would inherit
@@ -626,7 +615,7 @@ export function CoachMessages({
         <button
           type="button"
           onClick={jumpToLatest}
-          className="sticky bottom-2 mx-auto mt-3 flex rounded-full border bg-card px-3 py-1 text-xs text-muted-foreground shadow-xs outline-none hover:bg-muted/70 hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="sticky bottom-2 mx-auto mt-3 flex rounded-full border bg-card px-3 py-1 text-xs text-muted-foreground shadow-xs outline-none hover:bg-muted/70 hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-[var(--duration-state)] motion-safe:ease-enter"
         >
           {t(m.coach.jumpToLatest)}
         </button>

@@ -18,16 +18,13 @@ import { chatTitle } from "@/lib/coach/messages";
 import { useT } from "@/lib/i18n/use-t";
 import { Composer } from "./composer";
 import { NewChatButton } from "./history";
+import { iconSwapIn, iconSwapItem, iconSwapOut } from "./motion";
 import { CoachSessionEnded } from "./session-ended";
 import { useCoach } from "./provider";
-import { CoachGreeting, CoachMessages, CoachStarters } from "./thread-view";
+import { CoachGreeting, CoachMessages } from "./thread-view";
 
-const dockIconClass =
-  "absolute inset-0 size-3.5 transition-[opacity,scale,filter] duration-[var(--duration-state)] ease-snap motion-reduce:scale-100 motion-reduce:blur-none motion-reduce:transition-[opacity] motion-reduce:duration-[var(--duration-press)]";
 const dockLabelClass =
   "inline-block transition-[opacity,scale,filter] duration-[var(--duration-state)] ease-snap motion-reduce:scale-100 motion-reduce:blur-none motion-reduce:transition-[opacity] motion-reduce:duration-[var(--duration-press)]";
-const dockIconIn = "scale-100 opacity-100 blur-none";
-const dockIconOut = "scale-[0.25] opacity-0 blur-[4px]";
 
 function panelChunkClass(open: boolean, delay: boolean) {
   return cn(
@@ -121,17 +118,17 @@ export function CoachDock() {
             <CoachBox
               size="sm"
               filled={open}
-              className={cn(dockIconClass, open ? dockIconOut : dockIconIn)}
+              className={cn(iconSwapItem, open ? iconSwapOut : iconSwapIn)}
             />
             <X
               aria-hidden
-              className={cn(dockIconClass, open ? dockIconIn : dockIconOut)}
+              className={cn(iconSwapItem, open ? iconSwapIn : iconSwapOut)}
             />
           </span>
           <span className="relative">
             <span
               aria-hidden={open}
-              className={cn(dockLabelClass, open ? dockIconOut : dockIconIn)}
+              className={cn(dockLabelClass, open ? iconSwapOut : iconSwapIn)}
             >
               {t(m.nav.coach)}
             </span>
@@ -140,7 +137,7 @@ export function CoachDock() {
               className={cn(
                 "absolute inset-0 flex items-center",
                 dockLabelClass,
-                open ? dockIconIn : dockIconOut,
+                open ? iconSwapIn : iconSwapOut,
               )}
             >
               {t(m.common.close)}
@@ -279,9 +276,8 @@ function CoachPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
             {isEmpty ? (
               // The same welcome `/coach` shows, laid out for a 24rem panel.
               // Without it the panel opened on a blank rectangle.
-              <div className="flex h-full flex-col justify-center gap-4">
+              <div className="flex h-full flex-col justify-center">
                 <CoachGreeting compact />
-                <CoachStarters thread={thread} compact />
               </div>
             ) : (
               <CoachMessages thread={thread} compact visible={open} />

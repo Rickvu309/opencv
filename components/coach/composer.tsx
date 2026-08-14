@@ -1,10 +1,23 @@
 "use client";
 
 import * as React from "react";
-import { ArrowUp, Square } from "lucide-react";
+import { ArrowUp, PenLine, Plus, Square } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useAppState } from "@/lib/actions/store";
 import {
   COMPOSER_HINT_MS,
@@ -12,21 +25,18 @@ import {
   cyclingHint,
   type CyclingHint,
 } from "@/lib/coach/placeholder";
+import { applySlash, filterBySlash, slashToken } from "@/lib/coach/slash";
+import { coachStarters } from "@/lib/coach/starters";
 import { useT } from "@/lib/i18n/use-t";
 import { cn } from "@/lib/utils";
+import {
+  TextSwap,
+  iconSwapIn,
+  iconSwapItem,
+  iconSwapOut,
+  usePrefersReducedMotion,
+} from "./motion";
 import { type CoachThread } from "./thread";
-
-function usePrefersReducedMotion(): boolean {
-  return React.useSyncExternalStore(
-    (onChange) => {
-      const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-      media.addEventListener("change", onChange);
-      return () => media.removeEventListener("change", onChange);
-    },
-    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-    () => true,
-  );
-}
 
 function useCyclingHint(
   hints: readonly string[],
@@ -57,93 +67,182 @@ function useCyclingHint(
 /**
  * Decorative stand-in for the textarea placeholder, which cannot crossfade.
  *
- * Both lines stay mounted and stacked in the same box so a swap is a dissolve,
- * not a pop: incoming fades in while outgoing is still fading out. Opacity
- * only, a 3px shift on 15px type read as a jump. Transitions are attached
- * after first paint so the first swap already has them, instead of adding
- * `transition` in the same frame as the opacity flip (that popped). Reduced
- * motion and the first paint snap.
+ * One line, transitions.dev text-states-swap: old hint exits 4px up with a
+ * 2px blur, new hint enters from below. Reduced motion snaps. The accessible
+ * name on the textarea stays put.
  */
 function CyclingHintOverlay({
   current,
-  previous,
   compact,
-  reduced,
 }: {
   current: string;
-  previous: string | null;
   compact?: boolean;
-  reduced: boolean;
 }) {
-  const [pair, setPair] = React.useState<{
-    active: 0 | 1;
-    layers: [string, string];
-  }>({ active: 0, layers: [current, ""] });
-  const [canAnimate, setCanAnimate] = React.useState(false);
-
-  if (previous == null) {
-    if (
-      pair.active !== 0 ||
-      pair.layers[0] !== current ||
-      pair.layers[1] !== ""
-    ) {
-      setPair({ active: 0, layers: [current, ""] });
-    }
-  } else if (pair.layers[pair.active] !== current) {
-    const next: 0 | 1 = pair.active === 0 ? 1 : 0;
-    const layers: [string, string] = [pair.layers[0], pair.layers[1]];
-    layers[next] = current;
-    setPair({ active: next, layers });
-  }
-
-  React.useEffect(() => {
-    setCanAnimate(true);
-  }, []);
-
-  // Keep the transition on after first paint, even when `previous` is null.
-  // Gating it on `previous` attached the class in the same commit as the first
-  // opacity flip, so that swap never interpolated.
-  const animate = canAnimate && !reduced;
-  const type = cn(
-    "absolute inset-0 truncate text-base leading-6 text-muted-foreground sm:text-[15px]",
-    compact ? "px-3 pt-3 sm:text-sm" : "px-4 pt-3.5",
-  );
-
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute inset-0 z-[1] overflow-hidden"
+      className={cn(
+        "pointer-events-none absolute inset-0 z-[1] overflow-hidden",
+        compact ? "px-3 pt-3" : "px-4 pt-3.5",
+      )}
     >
-      {pair.layers.map((text, i) => (
-        <span
-          key={i}
-          className={cn(
-            type,
-            animate &&
-              "transition-[opacity] duration-[var(--duration-surface)] ease-enter",
-            "motion-reduce:transition-none",
-            i === pair.active ? "opacity-100" : "opacity-0",
-          )}
-        >
-          {text}
-        </span>
-      ))}
+      <TextSwap
+        text={current}
+        className={cn(
+          "max-w-full truncate text-base leading-6 text-muted-foreground sm:text-[15px]",
+          compact && "sm:text-sm",
+        )}
+      />
+    </div>
+  );
+}
+
+function toolButtonClass(compact?: boolean) {
+  return cn(
+    "text-muted-foreground",
+    compact && "size-6",
+  );
+}
+
+/**
+ * One + control. Open, it rotates 45° like a standard chat bar. The menu
+ * holds a new thread and the state-aware asks — not models, files, or a
+ * mode the turn would ignore.
+ */
+function ComposerTools({
+  thread,
+  compact,
+}: {
+  thread: CoachThread;
+  compact?: boolean;
+}) {
+  const { t, m } = useT();
+  const state = useAppState();
+  const [open, setOpen] = React.useState(false);
+  const starters = React.useMemo(
+    () => coachStarters(state).map(t),
+    [state, t],
+  );
+  const ask = (prompt: string) => {
+    if (!thread.busy) thread.send(prompt);
+  };
+
+  return (
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              size="icon-sm"
+              variant="ghost"
+              disabled={thread.busy}
+              aria-label={t(m.coach.composerAdd)}
+              aria-expanded={open}
+              data-open={open || undefined}
+              className={cn(
+                toolButtonClass(compact),
+                "rounded-full",
+                open && "bg-muted text-foreground",
+              )}
+            >
+              <Plus
+                className={cn(
+                  "transition-transform duration-[var(--duration-state)] ease-enter motion-reduce:transition-none",
+                  open && "rotate-45",
+                )}
+              />
+            </Button>
+          </DropdownMenuTrigger>
+        </TooltipTrigger>
+        <TooltipContent side="top">{t(m.coach.composerAdd)}</TooltipContent>
+      </Tooltip>
+      <DropdownMenuContent align="start" side="top" className="w-72">
+        <DropdownMenuItem onSelect={() => thread.startNewChat()}>
+          <PenLine />
+          {t(m.coach.startNewChat)}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>{t(m.coach.startersLabel)}</DropdownMenuLabel>
+        {starters.map((prompt) => (
+          <DropdownMenuItem
+            key={prompt}
+            disabled={thread.busy}
+            onSelect={() => ask(prompt)}
+          >
+            {prompt}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function SlashPalette({
+  results,
+  active,
+  compact,
+  onPick,
+  onHover,
+}: {
+  results: readonly string[];
+  active: number;
+  compact?: boolean;
+  onPick: (prompt: string) => void;
+  onHover: (index: number) => void;
+}) {
+  const { t, m } = useT();
+
+  return (
+    <div
+      role="listbox"
+      aria-label={t(m.coach.startersLabel)}
+      className={cn(
+        "absolute inset-x-2 bottom-full z-10 mb-1 max-h-48 overflow-y-auto rounded-lg border bg-popover p-1 shadow-md",
+        compact && "inset-x-1.5",
+      )}
+    >
+      <div className="px-1.5 py-1 text-xs font-medium text-muted-foreground">
+        {t(m.coach.startersLabel)}
+      </div>
+      {results.length === 0 ? (
+        <div className="px-1.5 py-1.5 text-sm text-muted-foreground">
+          {t(m.coach.slashEmpty)}
+        </div>
+      ) : (
+        results.map((prompt, index) => (
+          <button
+            key={prompt}
+            type="button"
+            role="option"
+            aria-selected={index === active}
+            className={cn(
+              "flex w-full rounded-md px-1.5 py-1.5 text-left text-sm outline-none",
+              index === active
+                ? "bg-accent text-accent-foreground"
+                : "text-foreground",
+            )}
+            onMouseDown={(event) => event.preventDefault()}
+            onMouseEnter={() => onHover(index)}
+            onClick={() => onPick(prompt)}
+          >
+            {prompt}
+          </button>
+        ))
+      )}
     </div>
   );
 }
 
 /**
- * The composer: a textarea, and a send button.
+ * The composer: a textarea, one + menu, slash suggestions, and a send button.
  *
  * There used to be an answer-mode menu on the left offering "Tự động", "Tư
  * vấn", "Dữ liệu thị trường" and "Review hồ sơ", each with a sentence saying
- * what it would change. It changed nothing: the selection was local state that
- * no turn ever read, so a user who picked "Dữ liệu thị trường" got the same
- * reply as one who did not, having been told otherwise.
- *
- * Removed rather than reworded, on the precedent of "Remove five controls that
- * lied". A label that promises behaviour the product does not have is the one
- * kind of copy no rewrite can fix.
+ * what it would change. It changed nothing. + holds a new thread and the
+ * same state-aware questions the placeholder cycles. `/` opens those
+ * questions as a palette and inserts one — it does not invent skills, models,
+ * or an enhance step we cannot run.
  *
  * Takes the thread rather than value/onChange/onSubmit/disabled, the same way
  * `CoachMessages` does. Three mounts wiring those four props by hand is three
@@ -177,6 +276,30 @@ export function Composer({
   );
   const hint = useCyclingHint(hints, canSend || thread.busy, reduced);
   const showOverlay = thread.draft.length === 0 && !thread.busy;
+  const starters = React.useMemo(
+    () => coachStarters(state).map(t),
+    [state, t],
+  );
+  const slash = slashToken(thread.draft);
+  const slashResults = React.useMemo(
+    () => (slash ? filterBySlash(starters, slash.query) : []),
+    [slash, starters],
+  );
+  const slashOpen = Boolean(slash) && !thread.busy;
+  const [slashIndex, setSlashIndex] = React.useState(0);
+
+  React.useEffect(() => {
+    setSlashIndex(0);
+  }, [slash?.query]);
+
+  React.useEffect(() => {
+    if (slashIndex >= slashResults.length) setSlashIndex(0);
+  }, [slashIndex, slashResults.length]);
+
+  const pickSlash = (prompt: string) => {
+    if (!slash) return;
+    thread.setDraft(applySlash(thread.draft, slash.from, prompt));
+  };
 
   return (
     <form
@@ -185,25 +308,47 @@ export function Composer({
         if (canSend) thread.submitDraft();
       }}
       className={cn(
-        "border bg-card shadow-sm transition-shadow focus-within:shadow-md motion-reduce:transition-none",
+        "relative border bg-card shadow-sm",
+        "transition-[border-color,box-shadow] duration-[var(--duration-state)] ease-enter",
+        "focus-within:border-ring/50 focus-within:shadow-md focus-within:ring-3 focus-within:ring-ring/30",
+        "motion-reduce:transition-none",
         // Inside the floating panel (radius 16, padding 8): inner = 16 − 8. Standalone: 16.
         compact ? "rounded-md" : "rounded-xl",
       )}
     >
       <div className="relative">
         {showOverlay ? (
-          <CyclingHintOverlay
-            current={hint.current}
-            previous={hint.previous}
-            compact={compact}
-            reduced={reduced}
-          />
+          <CyclingHintOverlay current={hint.current} compact={compact} />
         ) : null}
         <textarea
           value={thread.draft}
           autoFocus={autoFocus}
           onChange={(e) => thread.setDraft(e.target.value)}
           onKeyDown={(e) => {
+            if (slashOpen && slashResults.length > 0) {
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                setSlashIndex((i) => (i + 1) % slashResults.length);
+                return;
+              }
+              if (e.key === "ArrowUp") {
+                e.preventDefault();
+                setSlashIndex(
+                  (i) => (i - 1 + slashResults.length) % slashResults.length,
+                );
+                return;
+              }
+              if (e.key === "Enter" || e.key === "Tab") {
+                e.preventDefault();
+                pickSlash(slashResults[slashIndex] ?? slashResults[0]);
+                return;
+              }
+            }
+            if (slashOpen && e.key === "Escape") {
+              e.preventDefault();
+              thread.setDraft(thread.draft.slice(0, slash?.from ?? 0));
+              return;
+            }
             if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
               e.preventDefault();
               if (canSend) thread.submitDraft();
@@ -220,7 +365,17 @@ export function Composer({
         />
       </div>
 
-      <div className={cn("flex items-center gap-1 p-2", compact && "p-1.5")}>
+      <div className={cn("relative flex items-center gap-1 p-2", compact && "p-1.5")}>
+        {slashOpen ? (
+          <SlashPalette
+            results={slashResults}
+            active={slashIndex}
+            compact={compact}
+            onPick={pickSlash}
+            onHover={setSlashIndex}
+          />
+        ) : null}
+        <ComposerTools thread={thread} compact={compact} />
         <span className="ml-auto flex items-center gap-1">
           {/* One button, two jobs, because they are never both available and a
               second control would sit dead most of the time. The Coach reasons
@@ -238,18 +393,15 @@ export function Composer({
             <span className="relative size-3.5">
               <Square
                 className={cn(
-                  "absolute inset-0 size-3.5 fill-current transition-[opacity,transform] duration-[var(--duration-press)] ease-snap motion-reduce:transition-none",
-                  thread.isTyping
-                    ? "scale-100 opacity-100"
-                    : "scale-75 opacity-0",
+                  iconSwapItem,
+                  "fill-current",
+                  thread.isTyping ? iconSwapIn : iconSwapOut,
                 )}
               />
               <ArrowUp
                 className={cn(
-                  "absolute inset-0 size-3.5 transition-[opacity,transform] duration-[var(--duration-press)] ease-snap motion-reduce:transition-none",
-                  thread.isTyping
-                    ? "scale-75 opacity-0"
-                    : "scale-100 opacity-100",
+                  iconSwapItem,
+                  thread.isTyping ? iconSwapOut : iconSwapIn,
                 )}
               />
             </span>

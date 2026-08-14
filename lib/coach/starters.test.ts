@@ -1,4 +1,4 @@
-// The four suggestions on an empty chat. They are the only thing in the product that
+// The six suggestions on an empty chat. They are the only thing in the product that
 // suggests what to say to the Coach, so a stale one is a wrong recommendation
 // with a button attached.
 
@@ -13,12 +13,12 @@ import { messages } from "@/lib/i18n/messages";
 
 const s = messages.coach;
 
-test("there are always exactly four, in a stable order", () => {
+test("there are always exactly six, in a stable order", () => {
   // Fixed count and fixed slot meaning: the row must not reshuffle under
   // someone who was reaching for the second chip.
   for (const state of [seedState(), populated()]) {
     const starters = coachStarters(state);
-    assert.equal(starters.length, 4);
+    assert.equal(starters.length, 6);
     for (const entry of starters) {
       assert.equal(typeof entry.vi, "string");
       assert.equal(typeof entry.en, "string");
@@ -79,4 +79,17 @@ test("someone with experience but no school is asked to finish the profile", () 
     ],
   ]);
   assert.deepEqual(coachStarters(state)[3], s.starterFillProfile);
+});
+
+test("a first letter is offered until one exists, then a review", () => {
+  assert.deepEqual(coachStarters(seedState())[4], s.starterWriteLetter);
+  const withLetter = build([
+    ["paper.create", { kind: "cover-letter", label: "Thư Data Analyst" }],
+  ]);
+  assert.deepEqual(coachStarters(withLetter)[4], s.starterReviewLetter);
+});
+
+test("with nothing saved, the land-side slot is a search", () => {
+  assert.deepEqual(coachStarters(seedState())[5], s.starterFindOpenings);
+  assert.deepEqual(coachStarters(populated())[5], s.starterFindOpenings);
 });

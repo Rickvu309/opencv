@@ -5,12 +5,14 @@ import { useSearchParams } from "next/navigation";
 
 import { Composer } from "@/components/coach/composer";
 import { CoachSessionEnded } from "@/components/coach/session-ended";
-import { useCoach } from "@/components/coach/provider";
+import { useCoach, useCoachSwitch } from "@/components/coach/provider";
+import { coachReveal, kitFold } from "@/components/coach/motion";
 import {
   CoachGreeting,
   CoachMessages,
-  CoachStarters,
 } from "@/components/coach/thread-view";
+import { discloseInner } from "@/components/ui/disclose";
+import { cn } from "@/lib/utils";
 
 export default function CoachPage() {
   return (
@@ -27,6 +29,7 @@ function CoachChat() {
   // The same conversation the floating panel shows. Opening this page is a
   // change of view, not a new chat.
   const thread = useCoach();
+  const { fading } = useCoachSwitch();
 
   // `?new=1` is gone. It existed because there was one thread and starting a
   // new one meant destroying it, so the reset had to be a URL the buttons could
@@ -52,49 +55,70 @@ function CoachChat() {
 
   const isEmpty = thread.messages.length === 0 && !thread.isTyping;
 
+  const fadeClass = cn(
+    "flex h-full min-h-0 flex-col transition-opacity duration-[var(--duration-state)] motion-reduce:transition-none",
+    fading ? "opacity-0 ease-exit" : "opacity-100 ease-snap",
+  );
+
   // The door comes before everything: a composer the user cannot send from is
   // worse than being told the session ended, because it fails only after they
   // have typed.
   if (thread.access === "locked") {
     return (
-      <div className="flex h-full flex-col justify-center">
+      <div className={cn(fadeClass, "justify-center")}>
         <CoachSessionEnded />
       </div>
     );
   }
 
-  // Linear-style empty state: a quiet canvas with one composer in the middle.
-  if (isEmpty) {
-    return (
-      <div className="flex h-full flex-col justify-center px-5 pb-16 sm:px-8">
-        <div className="mx-auto w-full max-w-[44rem] space-y-4 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-[var(--duration-state)] motion-safe:ease-enter">
-          <CoachGreeting />
-          <Composer thread={thread} autoFocus />
-          {/* A seeded question from onboarding is the introduction. Starters
-              under it would compete with the turn that is about to start. */}
-          {!asked && <CoachStarters thread={thread} />}
-        </div>
-      </div>
-    );
-  }
-
+  // One tree so the composer never remounts when the first turn starts.
+  // Empty: equal flex spacers centre the kit. Thread: the top spacer becomes
+  // the message pane and the greeting collapses on the 0fr track.
   return (
-    <div className="flex h-full flex-col">
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto w-full max-w-[46rem] px-5 py-10 sm:px-8">
-          <CoachMessages thread={thread} />
+    <div className={cn(fadeClass, isEmpty ? "pb-16" : "pb-0")}>
+      <div
+        className={cn(
+          "min-h-0",
+          isEmpty ? "flex-1" : "flex-1 overflow-y-auto",
+        )}
+      >
+        {!isEmpty && (
+          <div className="mx-auto w-full max-w-[46rem] px-5 py-10 sm:px-8">
+            <CoachMessages thread={thread} />
+          </div>
+        )}
+      </div>
+
+      <div
+        className={cn(
+          "relative mx-auto w-full shrink-0 px-5 sm:px-8",
+          isEmpty ? "max-w-[44rem] pb-0" : "max-w-[46rem] pb-6",
+        )}
+      >
+        <div className={kitFold(isEmpty)}>
+          <div className={cn(discloseInner, isEmpty && coachReveal(0))}>
+            <CoachGreeting />
+          </div>
+        </div>
+
+        {!isEmpty && (
+          <div
+            className="pointer-events-none absolute inset-x-5 -top-10 h-10 bg-gradient-to-t from-background to-transparent sm:inset-x-8"
+            aria-hidden
+          />
+        )}
+
+        <div className={isEmpty ? coachReveal(1) : undefined}>
+          <Composer thread={thread} autoFocus={isEmpty} />
         </div>
       </div>
 
-      <div className="relative shrink-0">
-        <div
-          className="pointer-events-none absolute inset-x-0 -top-10 h-10 bg-gradient-to-t from-background to-transparent"
-          aria-hidden
-        />
-        <div className="mx-auto w-full max-w-[46rem] px-5 pb-6 sm:px-8">
-          <Composer thread={thread} />
-        </div>
-      </div>
+      <div
+        className={cn(
+          "min-h-0 transition-[flex-grow] duration-[var(--duration-state)] ease-exit motion-reduce:transition-none",
+          isEmpty ? "grow" : "grow-0",
+        )}
+      />
     </div>
   );
 }

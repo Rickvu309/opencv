@@ -6,7 +6,7 @@ import { composerHints, cyclingHint } from "@/lib/coach/placeholder";
 import { coachStarters } from "@/lib/coach/starters";
 import { messages } from "@/lib/i18n/messages";
 
-test("the Coach page cycles the four starters, nothing extra", () => {
+test("the Coach page cycles the starters, nothing extra", () => {
   const state = seedState();
   assert.deepEqual(composerHints("/coach", state), coachStarters(state));
 });

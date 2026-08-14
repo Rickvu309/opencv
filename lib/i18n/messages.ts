@@ -481,6 +481,8 @@ export const messages = {
     hintApplications: m("Đơn này nên làm gì tiếp?", "What's next on this application?"),
     hintProfile: m("Hồ sơ mình nên thêm gì?", "What should I add to my profile?"),
     send: m("Gửi tin nhắn", "Send message"),
+    composerAdd: m("Thêm", "Add"),
+    slashEmpty: m("Không có gợi ý khớp", "No matching suggestions"),
     typing: m("Coach đang trả lời", "The Coach is answering"),
     stop: m("Dừng trả lời", "Stop answering"),
 
@@ -522,7 +524,7 @@ export const messages = {
       "Or answer in your own words below.",
     ),
 
-    // Chosen from state by lib/coach/starters.ts, four at a time. They used to
+    // Chosen from state by lib/coach/starters.ts, six at a time. They used to
     // be four fixed lines, which meant the app offered to build a CV to someone
     // who had built three, and asked which direction suits you to someone who
     // had already named one.
@@ -556,6 +558,26 @@ export const messages = {
     starterMarketGap: m(
       "Hồ sơ của mình so với thị trường thế nào?",
       "How does my profile compare to the market?",
+    ),
+    starterWriteLetter: m(
+      "Viết thư xin việc từ hồ sơ của mình",
+      "Write a cover letter from my profile",
+    ),
+    starterReviewLetter: m(
+      "Đọc lại thư xin việc của mình",
+      "Review my cover letter",
+    ),
+    starterFindOpenings: m(
+      "Tìm việc phù hợp với mình",
+      "Find openings that fit me",
+    ),
+    starterWritePitch: m(
+      "Viết pitch giới thiệu bản thân",
+      "Help me write my pitch",
+    ),
+    starterFollowUp: m(
+      "Nhắc việc đã nộp thế nào cho lịch sự?",
+      "How do I follow up on an application?",
     ),
 
     offlineTitle: m("Coach đang ngoại tuyến", "The Coach is offline"),
