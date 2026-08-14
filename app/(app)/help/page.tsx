@@ -29,6 +29,10 @@ export default function HelpPage() {
   ] as const;
 
   const send = async () => {
+    if (text.trim().length < 5) {
+      toast.error(t(m.support.reportTooShort));
+      return;
+    }
     setBusy(true);
     try {
       const response = await fetch("/api/support", {
@@ -82,7 +86,7 @@ export default function HelpPage() {
               onChange={(event) => setText(event.target.value)}
               className="text-sm"
             />
-            <Button size="sm" disabled={busy || text.trim().length < 5} onClick={send}>
+            <Button size="sm" disabled={busy} onClick={send}>
               {t(m.support.reportSend)}
             </Button>
           </div>

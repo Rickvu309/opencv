@@ -51,6 +51,12 @@ export function HelpButton() {
           className="w-64"
         >
           <DropdownMenuItem asChild>
+            <Link href="/help">
+              <CircleHelp />
+              {t(m.nav.support)}
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
             <Link
               href={`/coach?q=${encodeURIComponent(t(m.help.askHowToUsePrompt))}`}
             >

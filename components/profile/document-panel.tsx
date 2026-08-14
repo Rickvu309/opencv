@@ -10,7 +10,6 @@ import * as React from "react";
 import Link from "next/link";
 import {
   Link2,
-  Megaphone,
   Paperclip,
   Pencil,
   Plus,
@@ -19,6 +18,8 @@ import {
   Star,
   Trash2,
 } from "lucide-react";
+
+import { CoachCat } from "@/components/brand/coach-cat";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -169,7 +170,8 @@ export function DocumentPanel({
           />
         ) : documents.length === 0 ? (
           <div className="rounded-xl border border-dashed px-4 py-10 text-center">
-            <p className="text-sm font-medium">{t(m.profile.docEmptyTitle(title))}</p>
+            <CoachCat size="lg" className="mx-auto text-foreground" />
+            <p className="mt-4 text-sm font-medium">{t(m.profile.docEmptyTitle(title))}</p>
             <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground text-pretty">
               {item.benefit[locale]}
             </p>
@@ -217,7 +219,7 @@ export function DocumentPanel({
                 look is honest; the verdict has to come from a real read. */}
             <Button asChild variant="outline" size="sm">
               <Link href={`/coach?q=${encodeURIComponent(item.coachPrompt[locale])}`}>
-                <Megaphone className="size-3.5" />
+                <CoachCat size="sm" />
                 {t(m.profile.docAskCoach)}
               </Link>
             </Button>

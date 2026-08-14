@@ -305,6 +305,7 @@ export const actions = {
       targetRole
         ? msg(`Đã đổi mục tiêu sang ${targetRole}`, `Now aiming for ${targetRole}`)
         : msg("Đã cập nhật hồ sơ", "Profile updated"),
+    touched: () => ["identity"],
   }),
 
   "profile.setContext": defineAction({
@@ -330,6 +331,7 @@ export const actions = {
       };
     },
     summary: ({ label }) => msg(`Đã cập nhật “${label}”`, `Updated “${label}”`),
+    touched: () => ["context"],
   }),
 
   "profile.addExperience": defineAction({
@@ -350,6 +352,7 @@ export const actions = {
     }),
     summary: ({ title }) =>
       msg(`Đã thêm kinh nghiệm “${title}”`, `Added “${title}” to your experience`),
+    touched: () => ["experience"],
   }),
 
   "profile.updateExperience": defineAction({
@@ -372,6 +375,7 @@ export const actions = {
       },
     }),
     summary: () => msg("Đã lưu kinh nghiệm", "Experience saved"),
+    touched: () => ["experience"],
   }),
 
   "profile.removeExperience": defineAction({
@@ -387,6 +391,7 @@ export const actions = {
       },
     }),
     summary: () => msg("Đã xoá kinh nghiệm", "Experience deleted"),
+    touched: () => ["experience"],
   }),
 
   "profile.setEducation": defineAction({
@@ -405,6 +410,7 @@ export const actions = {
       },
     }),
     summary: () => msg("Đã lưu học vấn", "Education saved"),
+    touched: () => ["education"],
   }),
 
   "profile.addCourse": defineAction({
@@ -424,6 +430,7 @@ export const actions = {
             },
           },
     summary: ({ name }) => msg(`Đã thêm “${name}”`, `Added “${name}”`),
+    touched: () => ["education"],
   }),
 
   "profile.removeCourse": defineAction({
@@ -442,6 +449,7 @@ export const actions = {
       },
     }),
     summary: () => msg("Đã xoá chứng chỉ", "Certificate removed"),
+    touched: () => ["education"],
   }),
 
   "settings.setLanguage": defineAction({

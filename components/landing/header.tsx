@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Route } from "lucide-react";
+import { CoachCat } from "@/components/brand/coach-cat";
 
 import { Button } from "@/components/ui/button";
 import { LanguageToggle } from "@/components/language-toggle";
@@ -25,7 +25,7 @@ export function LandingHeader() {
           className="flex items-center gap-2 rounded-lg outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <span className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Route className="size-4" />
+            <CoachCat size="sm" filled />
           </span>
           <span className="text-sm font-semibold tracking-tight">OpenPath</span>
         </Link>

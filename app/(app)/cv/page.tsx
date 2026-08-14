@@ -20,7 +20,6 @@ import {
   Download,
   FileDown,
   FilePlus2,
-  Megaphone,
   Plus,
   Printer,
   Sparkles,
@@ -28,6 +27,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { CoachCat } from "@/components/brand/coach-cat";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -166,7 +166,7 @@ function EmptyState({
         aria-hidden
         className="flex size-12 items-center justify-center rounded-xl border bg-card"
       >
-        <FilePlus2 className="size-5 text-muted-foreground" />
+        <CoachCat size="lg" className="text-foreground" />
       </span>
       <h2 className="mt-5 text-lg font-semibold tracking-tight">
         {t(m.cv.emptyTitle)}
@@ -270,7 +270,7 @@ function Toolbar({
           <span className="hidden shrink-0 items-center gap-1.5 text-xs text-muted-foreground sm:flex">
             <span className="h-1 w-16 overflow-hidden rounded-full bg-muted">
               <span
-                className="block h-full rounded-full bg-foreground transition-[width] duration-[var(--duration-surface)] ease-enter motion-reduce:transition-none"
+                className="block h-full rounded-full bg-foreground animate-bar-grow motion-reduce:animate-none"
                 style={{ width: `${complete}%` }}
               />
             </span>
@@ -542,7 +542,7 @@ function HeaderEditor({ resume }: { resume: Resume }) {
         <Link
           href={`/coach?q=${encodeURIComponent(t(m.cv.askCoachPrompt(resume.label)))}`}
         >
-          <Megaphone className="size-3.5" />
+          <CoachCat size="sm" />
           {t(m.cv.askCoachToRewrite)}
         </Link>
       </Button>

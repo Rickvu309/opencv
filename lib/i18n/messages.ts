@@ -63,6 +63,9 @@ export const messages = {
       "Drag to resize the sidebar, double-click to close",
     ),
     skipToContent: m("Bỏ qua tới nội dung chính", "Skip to main content"),
+    signIn: m("Đăng nhập", "Sign in"),
+    commandPalette: m("Đi tới…", "Go to…"),
+    commandHint: m("Gõ để lọc", "Type to filter"),
     moveUp: m("Chuyển lên trên", "Move up"),
     moveDown: m("Chuyển xuống dưới", "Move down"),
     explain: (title: string) => m(`Giải thích: ${title}`, `About ${title}`),
@@ -99,6 +102,40 @@ export const messages = {
     noGoalYet: m("Chưa đặt mục tiêu", "No goal set yet"),
   },
 
+  /* ── One next step ──────────────────────────────────────────────────── */
+  nextStep: {
+    setGoal: m("Đặt hướng đang nhắm", "Set a direction"),
+    setGoalPrompt: m(
+      "Mình chưa chắc hướng. Hỏi mình vài câu rồi ghi mục tiêu vào hồ sơ.",
+      "I'm not sure of a direction. Ask a few questions and write a goal into my profile.",
+    ),
+    addFacts: m("Thêm một việc đã làm", "Add something you've done"),
+    addFactsPrompt: m(
+      "Hỏi mình một việc đã làm hoặc một môn đã học, rồi ghi vào hồ sơ.",
+      "Ask me for one job or course I've done, then write it into my profile.",
+    ),
+    buildCv: m("Dựng CV từ hồ sơ", "Build a CV from the profile"),
+    buildCvPrompt: m(
+      "Dựng CV đầu tiên từ hồ sơ của mình.",
+      "Build my first CV from my profile.",
+    ),
+    findOpening: m("Xem việc đang tuyển", "Look at openings"),
+    findOpeningPrompt: m(
+      "Tìm vài việc hợp với hồ sơ và nói mình khớp mấy phần.",
+      "Find a few openings that fit my profile and say which requirements I meet.",
+    ),
+    startApplication: m("Bắt đầu một đơn", "Start an application"),
+    startApplicationPrompt: m(
+      "Giúp mình bắt đầu đơn cho việc đã lưu.",
+      "Help me start an application for a saved opening.",
+    ),
+    advanceApplication: m("Việc tiếp theo trên đơn", "Next step on an application"),
+    advanceApplicationPrompt: m(
+      "Nhìn các đơn đang mở và nói mình nên làm gì tiếp theo.",
+      "Look at my open applications and tell me the one next thing to do.",
+    ),
+  },
+
   /* ── Landing ────────────────────────────────────────────────────────── */
   // The page has one job: say what this is, who it is for, and what makes it
   // different, in the two sentences a visitor gives it. Written per language
@@ -109,23 +146,40 @@ export const messages = {
       "Cho sinh viên và người mới ra trường",
       "For students and new graduates",
     ),
-    // The promise, not a tagline. "Sẵn sàng" carries readiness; the English
-    // says what readiness is for.
-    headline1: m("Sẵn sàng cho công việc", "Be ready for work"),
-    headline2: m("bạn thật sự muốn làm.", "that's actually worth doing."),
+    headline1: m("Sẵn sàng cho việc", "Ready for work"),
+    headline2: m("đáng để làm.", "that is worth doing."),
     subhead: m(
-      "Coach viết CV, gọt lời giới thiệu và tìm việc hợp với bạn. Bạn vẫn là người quyết.",
-      "The Coach writes your CV, sharpens your pitch and finds jobs that fit. You stay in control.",
+      "Coach sửa CV, gọt lời nói, tìm việc khớp hồ sơ. Mọi thay đổi đều hoàn tác được. Bạn quyết.",
+      "The Coach edits your CV and finds openings that fit. Every change has undo. You decide.",
     ),
     tryIt: m("Bắt đầu miễn phí", "Start free"),
     joinWaitlist: m("Để lại email", "Leave your email"),
     waitlistLead: m(
-      "Có chỗ trống là mình báo bạn ngay.",
-      "We'll email you when a place opens.",
+      "Có chỗ là mình gửi một email. Không bán danh sách.",
+      "One email when a place opens. The list is not sold.",
     ),
     alreadyJoined: m(
-      "Bạn đã ở trong danh sách chờ. Cứ dùng thử trong lúc đợi.",
-      "You're on the list. Look around while you wait.",
+      "Bạn đã ở trong danh sách. Cứ bắt đầu trong lúc đợi.",
+      "You're on the list. Start while you wait.",
+    ),
+    waitlistInvalid: m(
+      "Nhập một địa chỉ email, ví dụ ten@gmail.com.",
+      "Enter an email address, for example name@gmail.com.",
+    ),
+    waitlistFail: m(
+      "Chưa gửi được. Kiểm tra mạng rồi thử lại.",
+      "Unable to send. Check the connection and try again.",
+    ),
+    demoReplay: m("Chạy lại", "Play again"),
+    demoLineWas: m("Chịu được áp lực cao.", "Works well under pressure."),
+    demoLineNow: m(
+      "Theo dõi sprint, giao đúng hạn dù phạm vi đổi hai lần.",
+      "Shipped sprints on time after the scope changed twice.",
+    ),
+    demoArtifact: m("CV · kinh nghiệm", "CV · experience"),
+    demoCaption: m(
+      "Coach sửa. Bạn hoàn tác. Không có gì xảy ra sau lưng.",
+      "The Coach edits. You undo. Nothing happens behind your back.",
     ),
 
     // Two pillars, in student words. Not "personal branding" and "job
@@ -241,6 +295,16 @@ export const messages = {
       "Courses, certificates, skills. One per line.",
     ),
     finishNext: m("Gặp Coach", "Talk to the Coach"),
+
+    knownDirection: (role: string) =>
+      m(
+        `Hướng này mình biết: ${role}. Coach sẽ đối chiếu với hồ sơ thật.`,
+        `A direction we know: ${role}. The Coach will read it against your real profile.`,
+      ),
+    writtenDirection: m(
+      "Sẽ ghi đúng như bạn viết. Coach hỏi thêm khi cần.",
+      "We'll keep the words you typed. The Coach will ask if more is needed.",
+    ),
 
     fitFor: m("Mức phù hợp của bạn", "How close you are"),
 
@@ -940,6 +1004,16 @@ export const messages = {
       "Chưa gửi được. Bạn thử lại sau chút nhé.",
       "That didn't send. Try again shortly.",
     ),
+    reportTooShort: m(
+      "Viết thêm một câu về việc đang làm thì mình hiểu hơn.",
+      "Add a sentence about what you were doing so we can follow.",
+    ),
+    notFoundTitle: m("Không có trang này", "This page isn't here"),
+    notFoundBody: m(
+      "Đường dẫn này không mở được. Về Coach, hoặc tìm từ thanh bên.",
+      "That address doesn't open anything. Go to the Coach, or pick a place in the rail.",
+    ),
+    notFoundAction: m("Về Coach", "Go to the Coach"),
   },
 
   /* ── Waiting list ───────────────────────────────────────────────────── */

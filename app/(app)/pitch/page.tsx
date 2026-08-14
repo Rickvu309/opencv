@@ -1,7 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { Plus, Sparkles, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
+
+import { CoachCat } from "@/components/brand/coach-cat";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -338,7 +340,7 @@ function AskCoach({ label, prompt }: { label: string; prompt: string }) {
       disabled={thread.busy}
       onClick={() => thread.send(prompt)}
     >
-      <Sparkles className="size-3.5" />
+      <CoachCat size="sm" />
       {label}
     </Button>
   );

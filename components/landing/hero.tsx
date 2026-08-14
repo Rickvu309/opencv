@@ -6,7 +6,7 @@ import { ArrowRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { WaitlistForm, useHasJoinedWaitlist } from "@/components/waitlist-form";
-import { ProductFrame } from "@/components/landing/product-frame";
+import { CoachDemo } from "@/components/landing/coach-demo";
 import { useT } from "@/lib/i18n/use-t";
 import { cn } from "@/lib/utils";
 
@@ -110,7 +110,7 @@ export function LandingHero() {
       </div>
 
       <Chunk i={4} className="lg:justify-self-end lg:w-full lg:max-w-lg">
-        <ProductFrame />
+        <CoachDemo />
       </Chunk>
     </section>
   );

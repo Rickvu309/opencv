@@ -30,7 +30,7 @@ import {
   ExperienceSection,
   IdentitySection,
 } from "@/components/profile/sections";
-import { useAppState, useDispatch } from "@/lib/actions/store";
+import { useAppState, useDispatch, useTouched } from "@/lib/actions/store";
 import { profileWeights, vaultItems, type VaultItemId } from "@/lib/catalog";
 import { useT } from "@/lib/i18n/use-t";
 import { cn } from "@/lib/utils";
@@ -56,6 +56,7 @@ type Group = { id: string; label: string; items: Entry[] };
 export default function ProfilePage() {
   const { profile } = useAppState();
   const dispatch = useDispatch();
+  const touched = useTouched();
   const { t, m, locale } = useT();
 
   const [selected, setSelected] = React.useState<SectionId>("identity");
@@ -276,6 +277,7 @@ export default function ProfilePage() {
                         className={cn(
                           "flex w-full items-center gap-2.5 px-4 py-2 text-left transition active:translate-y-px outline-none hover:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset motion-reduce:transition-none",
                           active && "bg-muted",
+                          touched.includes(s.id) && "animate-just-changed",
                         )}
                       >
                         {s.icon ? (
@@ -325,6 +327,7 @@ export default function ProfilePage() {
         className={cn(
           "min-w-0 flex-1 flex-col overflow-y-auto outline-none md:flex",
           mobileView === "panel" ? "flex" : "hidden",
+          touched.includes(selected) && "animate-just-changed",
         )}
       >
         <div className="shrink-0 border-b px-2 py-1.5 md:hidden">

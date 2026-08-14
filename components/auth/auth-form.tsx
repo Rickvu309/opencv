@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Route } from "lucide-react";
+import { CoachCat } from "@/components/brand/coach-cat";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -86,7 +86,7 @@ export function AuthForm({ mode, next }: { mode: "sign-in" | "sign-up"; next?: s
       <div className="w-full max-w-sm">
         <Link href="/" className="flex items-center gap-2.5">
           <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Route className="size-4" />
+            <CoachCat size="md" filled />
           </span>
           <span className="text-base font-semibold tracking-tight">OpenPath</span>
         </Link>

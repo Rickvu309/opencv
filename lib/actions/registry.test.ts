@@ -45,12 +45,11 @@ test("an action reports which rows it touched, so the UI can flash them", () => 
   });
   assert.deepEqual(added.touched, [added.state.pitch[0].id]);
 
-  // An action with nothing row-shaped to point at simply reports nothing.
   const context = applyAction(before, "profile.setContext", {
     label: "Địa điểm",
     value: "Hà Nội",
   });
-  assert.deepEqual(context.touched, []);
+  assert.deepEqual(context.touched, ["context"]);
 });
 
 // ── which actions have to ask first ───────────────────────────────────────
