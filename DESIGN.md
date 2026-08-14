@@ -157,6 +157,12 @@ account menu inside the app, a segmented pair on the landing page and in
 onboarding. Those two screens have no account menu yet, and they are exactly
 where a reader who does not read Vietnamese most needs to find it.
 
+The landing page is a brand surface: sticky header (mark, language, sign in,
+try-it), a product frame that shows a Coach turn with undo, and no testimonials
+or invented metrics. Finishing onboarding seeds `/coach?q=` with
+`onboarding.firstQuestion` so the first lesson is a real turn, not a lecture.
+The activation checklist on the Coach empty state is the second lesson.
+
 - **Each language names itself in its own language.** Offering "Vietnamese" to
   someone who only reads Vietnamese is a menu they cannot use.
 - **Neither is a translation.** Every string is a `{ vi, en }` pair written
@@ -191,7 +197,10 @@ where a reader who does not read Vietnamese most needs to find it.
 
 Motion signals a state change. It never decorates, and it is never the only
 channel; every animated change also reads statically, in colour, icon or label.
-No page-load choreography.
+No page-load choreography **inside the signed-in app**. The landing page is the
+exception: it is the brand surface, and its hero chunks stagger once on first
+paint (`hero-enter` in `globals.css`, 100ms apart, `--duration-surface` on
+`--ease-enter`). Reduced motion keeps the fade and drops the travel.
 
 ### Three curves, named in `globals.css`
 
@@ -250,8 +259,10 @@ goes in `globals.css` (as the sidebar's does) rather than editing the primitive.
 
 Buttons nudge down one pixel: `active:not-aria-[haspopup]:translate-y-px`, set
 once in `components/ui/button.tsx`. Menu triggers are excluded because the menu
-itself is the feedback. Use this idiom rather than a scale; one press language
-across the app, and a raw `<button>` that needs feedback adopts this one.
+itself is the feedback. Use this idiom rather than a scale inside the app, and
+a raw `<button>` that needs feedback adopts this one. Landing and onboarding
+**primary** CTAs also `scale(0.96)` on press: those pages have one high-stakes
+action. Do not spread that scale into the chrome.
 
 ### Animate only
 

@@ -26,10 +26,13 @@ import { cn } from "@/lib/utils";
 export function FitPanel({
   profile,
   targetId,
+  onDark = false,
 }: {
   profile: FitProfile;
   /** The role they chose, or null when they said they are not sure yet. */
   targetId: string | null;
+  /** The onboarding aside is ink-on-near-black; tokens would wash out. */
+  onDark?: boolean;
 }) {
   const { t, m, locale } = useT();
 
@@ -46,8 +49,13 @@ export function FitPanel({
   const total = fit.met.length + fit.missing.length;
 
   return (
-    <div className="rounded-xl border bg-muted/30 p-4">
-      <p className="text-xs text-muted-foreground">
+    <div
+      className={cn(
+        "rounded-xl border p-4",
+        onDark ? "border-background/20 bg-background/10" : "bg-muted/30",
+      )}
+    >
+      <p className={cn("text-xs", onDark ? "text-background/60" : "text-muted-foreground")}>
         {targetId ? t(m.onboarding.fitFor) : t(m.onboarding.fitClosest)}
       </p>
 
@@ -61,10 +69,16 @@ export function FitPanel({
       {/* The bar is the same one the map draws, so the two agree on sight. */}
       <span
         aria-hidden
-        className="mt-2 block h-1 overflow-hidden rounded-full bg-muted"
+        className={cn(
+          "mt-2 block h-1 overflow-hidden rounded-full",
+          onDark ? "bg-background/20" : "bg-muted",
+        )}
       >
         <span
-          className="block h-full rounded-full bg-foreground transition-[width] duration-[var(--duration-surface)] ease-enter motion-reduce:transition-none"
+          className={cn(
+            "block h-full rounded-full transition-[width] duration-[var(--duration-surface)] ease-enter motion-reduce:transition-none",
+            onDark ? "bg-background" : "bg-foreground",
+          )}
           style={{ width: `${fit.score}%` }}
         />
       </span>
@@ -78,7 +92,13 @@ export function FitPanel({
                 key={requirement.label.en}
                 className={cn(
                   "flex items-start gap-2 text-xs leading-5",
-                  done ? "text-foreground" : "text-muted-foreground",
+                  done
+                    ? onDark
+                      ? "text-background"
+                      : "text-foreground"
+                    : onDark
+                      ? "text-background/50"
+                      : "text-muted-foreground",
                 )}
               >
                 {done ? (
@@ -102,7 +122,12 @@ export function FitPanel({
       {/* Said once, plainly. The number is low at the start for everyone, and a
           student reading a low number about themselves deserves to know it is
           the starting line rather than a verdict. */}
-      <p className="mt-3 text-xs leading-5 text-muted-foreground">
+      <p
+        className={cn(
+          "mt-3 text-xs leading-5",
+          onDark ? "text-background/55" : "text-muted-foreground",
+        )}
+      >
         {t(m.onboarding.fitNote)}
       </p>
     </div>

@@ -292,6 +292,43 @@
 }
 
 /*
+ * Landing hero only. Brand register is allowed one first-load; product screens
+ * still do not choreograph. Chunks stagger with `animation-delay`. Reduced
+ * motion keeps the fade and drops the travel and blur.
+ */
+@keyframes hero-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+@keyframes hero-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@utility hero-enter {
+  animation: hero-enter var(--duration-surface) var(--ease-enter) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-enter {
+    animation: hero-fade 150ms var(--ease-enter) both;
+  }
+}
+
+/*
  * Printing a CV.
  *
  * `components/cv/resume-preview.tsx` mounts a second copy of the document

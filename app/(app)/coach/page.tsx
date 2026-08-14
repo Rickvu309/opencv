@@ -68,10 +68,12 @@ function CoachChat() {
   if (isEmpty) {
     return (
       <div className="flex h-full flex-col justify-center px-5 pb-16 sm:px-8">
-        <div className="mx-auto w-full max-w-[44rem] space-y-4">
+        <div className="mx-auto w-full max-w-[44rem] space-y-4 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-[var(--duration-state)] motion-safe:ease-enter">
           <CoachGreeting />
           <Composer thread={thread} autoFocus />
-          <CoachStarters thread={thread} />
+          {/* A seeded question from onboarding is the introduction. Starters
+              under it would compete with the turn that is about to start. */}
+          {!asked && <CoachStarters thread={thread} />}
           {/* On the empty state only. Somebody mid-conversation has already
               found their way in and does not need a list of first steps under
               the thread they are reading. */}

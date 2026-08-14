@@ -34,7 +34,6 @@ import { ArrowRight, Check, ChevronLeft, Compass, Loader2, Route } from "lucide-
 
 import { useAppState, useDispatch } from "@/lib/actions/store";
 import { pathNodes, stages } from "@/lib/career-graph";
-import { GuidedTour } from "@/components/onboarding/guided-tour";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,6 +53,9 @@ import { cn } from "@/lib/utils";
 import { markJustOnboarded } from "@/components/waitlist-prompt";
 
 const TOTAL_STEPS = 3;
+
+const pressCta =
+  "active:scale-[0.96] transition-transform duration-[var(--duration-press)] ease-snap motion-reduce:transition-none";
 
 // 16px on mobile, matching the shadcn Input/Textarea default: iOS Safari zooms
 // the whole page when a focused field's text is smaller than that.
@@ -94,7 +96,6 @@ export default function OnboardingPage() {
   );
 
   const [finishing, setFinishing] = React.useState(false);
-  const [touring, setTouring] = React.useState(false);
 
   const roleGroups = stages
     .filter((stage) => stage.id !== "now")
@@ -146,20 +147,12 @@ export default function OnboardingPage() {
     }
 
     markJustOnboarded();
-    // The tour, then the Coach. Setup is over and the questions are answered;
-    // what is missing is any idea of what the product does with them, which is
-    // four cards rather than a paragraph nobody reads.
-    setTimeout(() => setTouring(true), 1200);
-  }
-
-  // The tour takes over the whole screen: the two-pane setup layout is about
-  // answering questions, and there are none left to answer.
-  if (touring) {
-    return (
-      <div className="flex min-h-svh flex-col justify-center px-6 py-10">
-        <GuidedTour onDone={() => router.push("/coach")} />
-      </div>
-    );
+    // The Coach doing something is the introduction. A four-card lecture
+    // between setup and the product is the thing people skip.
+    const question = t(m.onboarding.firstQuestion);
+    setTimeout(() => {
+      router.push(`/coach?q=${encodeURIComponent(question)}`);
+    }, 1200);
   }
 
   const current = steps[step];
@@ -221,7 +214,7 @@ export default function OnboardingPage() {
           </p>
         </div>
 
-        <div className="hidden flex-1 flex-col justify-center lg:flex">
+        <div className="hidden min-h-0 flex-1 flex-col justify-center overflow-y-auto lg:flex">
           <div
             key={headline}
             className="animate-in fade-in-0 slide-in-from-bottom-2 duration-[var(--duration-surface)] ease-enter motion-reduce:animate-none"
@@ -232,6 +225,42 @@ export default function OnboardingPage() {
             <p className="mt-5 max-w-sm text-[15px] leading-7 text-background/70">
               {support}
             </p>
+            <div className="mt-8 max-w-sm">
+              {!finishing && step === 0 && (
+                <FitPanel
+                  profile={draftProfile}
+                  targetId={scoredAgainst}
+                  onDark
+                />
+              )}
+              {!finishing && step === 1 && (
+                <PreviewList
+                  rows={[
+                    { label: t(m.onboarding.name), value: name },
+                    { label: t(m.onboarding.school), value: school },
+                    { label: t(m.onboarding.major), value: major },
+                    { label: t(m.onboarding.year), value: year },
+                  ]}
+                  empty={t(m.onboarding.previewEmpty)}
+                />
+              )}
+              {!finishing && step === 2 && (
+                <div className="grid gap-3">
+                  <PreviewList
+                    rows={[
+                      {
+                        label: t(m.onboarding.courses),
+                        value: draftProfile.education.courses.join(", "),
+                      },
+                    ]}
+                    empty={t(m.onboarding.previewEmpty)}
+                  />
+                  <p className="text-xs leading-5 text-background/55">
+                    {t(m.onboarding.asideCoachHint)}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -366,6 +395,10 @@ export default function OnboardingPage() {
                         }}
                       />
                     </Field>
+
+                    <div className="lg:hidden">
+                      <FitPanel profile={draftProfile} targetId={scoredAgainst} />
+                    </div>
                   </div>
                 )}
 
@@ -419,7 +452,9 @@ export default function OnboardingPage() {
                       </Field>
                     </div>
 
-                    <FitPanel profile={draftProfile} targetId={scoredAgainst} />
+                    <div className="lg:hidden">
+                      <FitPanel profile={draftProfile} targetId={scoredAgainst} />
+                    </div>
                   </div>
                 )}
 
@@ -437,7 +472,9 @@ export default function OnboardingPage() {
                       />
                     </Field>
 
-                    <FitPanel profile={draftProfile} targetId={scoredAgainst} />
+                    <div className="lg:hidden">
+                      <FitPanel profile={draftProfile} targetId={scoredAgainst} />
+                    </div>
                   </div>
                 )}
               </>
@@ -454,7 +491,7 @@ export default function OnboardingPage() {
               aria-label={t(m.onboarding.backStep)}
               onClick={() => setStep((s) => s - 1)}
               disabled={step === 0 || finishing}
-              className="size-11 shrink-0 rounded-full sm:size-10"
+              className="size-11 shrink-0 rounded-lg sm:size-10 [&_svg]:-translate-x-px"
             >
               <ChevronLeft />
             </Button>
@@ -469,7 +506,10 @@ export default function OnboardingPage() {
                 // on without one would show a fit panel with nothing to be a
                 // fit for. "Not sure yet" satisfies it, which is the point.
                 disabled={step === 0 && !chose}
-                className="ml-auto h-11 flex-1 rounded-full px-5 sm:h-10 sm:flex-none"
+                className={cn(
+                  "ml-auto h-11 flex-1 rounded-lg px-5 sm:h-10 sm:flex-none",
+                  pressCta,
+                )}
               >
                 {t(current.next)}
                 <ArrowRight data-icon="inline-end" />
@@ -478,7 +518,10 @@ export default function OnboardingPage() {
               <Button
                 onClick={handleFinish}
                 disabled={finishing}
-                className="ml-auto h-11 flex-1 rounded-full px-5 sm:h-10 sm:flex-none"
+                className={cn(
+                  "ml-auto h-11 flex-1 rounded-lg px-5 sm:h-10 sm:flex-none",
+                  pressCta,
+                )}
               >
                 {finishing ? (
                   <>
@@ -499,6 +542,34 @@ export default function OnboardingPage() {
 
       <Toaster position="top-right" />
     </div>
+  );
+}
+
+function PreviewList({
+  rows,
+  empty,
+}: {
+  rows: { label: string; value: string }[];
+  empty: string;
+}) {
+  return (
+    <dl className="grid gap-3">
+      {rows.map((row) => (
+        <div key={row.label} className="grid gap-0.5">
+          <dt className="text-[11px] tracking-wide text-background/50 uppercase">
+            {row.label}
+          </dt>
+          <dd
+            className={cn(
+              "truncate text-sm",
+              row.value.trim() ? "text-background" : "text-background/40",
+            )}
+          >
+            {row.value.trim() || empty}
+          </dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 

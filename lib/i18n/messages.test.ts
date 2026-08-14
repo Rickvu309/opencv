@@ -83,6 +83,8 @@ test("English is written, not left as the Vietnamese", () => {
     // A job title, written the same way on a Vietnamese posting and an
     // English one.
     "papers.targetRolePlaceholder",
+    // The Coach's name in the product frame, same word in both languages.
+    "landing.coachName",
   ]);
 
   const untranslated = catalog
