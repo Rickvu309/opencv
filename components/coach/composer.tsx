@@ -3,6 +3,7 @@
 import * as React from "react";
 import { ArrowUp, Square } from "lucide-react";
 
+import { CoachCat } from "@/components/brand/coach-cat";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n/use-t";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,7 @@ export function Composer({
   compact?: boolean;
 }) {
   const { t, m } = useT();
+  const [focused, setFocused] = React.useState(false);
   const canSend = thread.draft.trim().length > 0 && !thread.busy;
 
   return (
@@ -60,6 +62,8 @@ export function Composer({
             if (canSend) thread.submitDraft();
           }
         }}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         placeholder={t(m.coach.composerPlaceholder)}
         aria-label={t(m.coach.composerPlaceholder)}
         rows={1}
@@ -71,6 +75,11 @@ export function Composer({
       />
 
       <div className={cn("flex items-center gap-1 p-2", compact && "p-1.5")}>
+        <CoachCat
+          size="sm"
+          pose={focused ? "listen" : "sit"}
+          className="text-muted-foreground"
+        />
         <span className="ml-auto flex items-center gap-1">
           {/* One button, two jobs, because they are never both available and a
               second control would sit dead most of the time. The Coach reasons

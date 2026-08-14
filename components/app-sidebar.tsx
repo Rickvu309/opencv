@@ -11,15 +11,15 @@ import {
   FileText,
   LayoutDashboard,
   Mail,
-  Megaphone,
   MessageSquareQuote,
   Languages,
-  Route,
   Search,
   Send,
   Settings,
 } from "lucide-react";
 
+import { CoachCat } from "@/components/brand/coach-cat";
+import { CommandPalette, useCommandPalette } from "@/components/command-palette";
 import { SignOutItem } from "@/components/auth/sign-out-item";
 import { useAppState, useDispatch } from "@/lib/actions/store";
 import { localeNames, locales } from "@/lib/i18n/locale";
@@ -85,7 +85,7 @@ function primaryNav(): NavItem[] {
     // Plain /coach: this is "go to the Coach", not "throw the conversation
     // away". Starting over is an explicit choice, and it lives in the
     // history popover as "Đoạn chat mới".
-    { title: messages.nav.coach, href: "/coach", icon: Megaphone },
+    { title: messages.nav.coach, href: "/coach", icon: CoachCat },
   ];
 }
 
@@ -153,7 +153,11 @@ function NavRow({ item, active }: { item: NavItem; active: boolean }) {
         className={cn(rowSize, activeItem)}
       >
         <Link href={item.href}>
-          <item.icon />
+          {item.href === "/coach" ? (
+            <CoachCat size="sm" filled={active} />
+          ) : (
+            <item.icon />
+          )}
           <span>{title}</span>
           {item.count !== undefined && (
             <span className="ml-auto text-[11px] text-muted-foreground tabular-nums">
@@ -192,16 +196,18 @@ export function AppSidebar() {
     applications.length,
   );
   const router = useRouter();
+  const palette = useCommandPalette();
 
   return (
     <Sidebar id="app-sidebar" variant="inset" collapsible="offcanvas">
+      <CommandPalette open={palette.open} onOpenChange={palette.setOpen} />
       {/* Top row: workspace switcher + the two most-used actions. */}
       <SidebarHeader className="h-14 justify-center px-2">
         <div className="flex items-center gap-1">
           <DropdownMenu>
             <DropdownMenuTrigger className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-1.5 py-1 transition-colors outline-none hover:bg-sidebar-accent/70 focus-visible:ring-3 focus-visible:ring-sidebar-ring/50 motion-reduce:transition-none">
               <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
-                <Route className="size-3.5" />
+                <CoachCat size="sm" filled />
               </span>
               <span className="truncate text-[13px] font-semibold tracking-tight">
                 OpenPath
@@ -284,6 +290,7 @@ export function AppSidebar() {
                   size="icon-sm"
                   aria-label={t(m.common.search)}
                   className="text-muted-foreground"
+                  onClick={() => palette.setOpen(true)}
                 >
                   <Search />
                 </Button>

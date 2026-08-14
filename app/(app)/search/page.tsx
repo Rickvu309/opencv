@@ -2,13 +2,13 @@
 
 import * as React from "react";
 import { Bookmark, BookmarkCheck, Check, Circle, Minus, Plus, Trash2 } from "lucide-react";
-import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { EmptyState } from "@/components/empty-state";
 import { useAppState, useDispatch, useTouched } from "@/lib/actions/store";
 import { useT } from "@/lib/i18n/use-t";
 import { fitProfileOf, hasProfileFacts, rankOpenings, type OpeningFit } from "@/lib/search/fit";
@@ -60,7 +60,7 @@ export default function SearchPage() {
       {/* Ranking an empty profile produces a list where everything scores zero,
           ordered by nothing. Saying so is more useful than showing it. */}
       {!ready && (
-        <Notice
+        <EmptyState
           title={t(m.search.emptyProfileTitle)}
           body={t(m.search.emptyProfileBody)}
           action={{ href: "/profile", label: t(m.search.emptyProfileAction) }}
@@ -68,7 +68,7 @@ export default function SearchPage() {
       )}
 
       {state.openings.length === 0 ? (
-        <Notice
+        <EmptyState
           title={t(m.search.noOpeningsTitle)}
           body={t(m.search.noOpeningsBody)}
         />
@@ -106,7 +106,7 @@ export default function SearchPage() {
               {t(m.search.noMatches)}
             </p>
           ) : (
-            <div className="mt-4 space-y-3">
+            <div className="mt-4 space-y-3 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-[var(--duration-state)] motion-safe:ease-snap">
               {shown.map(({ opening, fit }) => (
                 <OpeningCard
                   key={opening.id}
@@ -253,11 +253,22 @@ function OpeningCard({
 
       {/* Met versus total, never a score. AC-SEARCH-003.2 is explicit that the
           number shown has to be derived from the requirements themselves. */}
-      <p className="mt-2 text-xs text-muted-foreground tabular-nums">
-        {fit.total === 0
-          ? t(m.search.fitUnknown)
-          : t(m.search.fitCount(fit.metCount, fit.total))}
-      </p>
+      <div className="mt-2">
+        {fit.total > 0 && (
+          <span className="mb-1.5 block h-1 w-24 overflow-hidden rounded-full bg-muted">
+            <span
+              key={`${opening.id}-${fit.metCount}`}
+              className="block h-full rounded-full bg-foreground animate-bar-grow motion-reduce:animate-none"
+              style={{ width: `${(fit.metCount / fit.total) * 100}%` }}
+            />
+          </span>
+        )}
+        <p className="text-xs text-muted-foreground tabular-nums">
+          {fit.total === 0
+            ? t(m.search.fitUnknown)
+            : t(m.search.fitCount(fit.metCount, fit.total))}
+        </p>
+      </div>
 
       {open && (
         <div className="mt-3 space-y-3 border-t border-border pt-3 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-1 motion-safe:duration-[var(--duration-state)] motion-safe:ease-enter">
@@ -339,24 +350,3 @@ function RequirementList({
   );
 }
 
-function Notice({
-  title,
-  body,
-  action,
-}: {
-  title: string;
-  body: string;
-  action?: { href: string; label: string };
-}) {
-  return (
-    <div className="mt-6 rounded-xl border bg-card p-4">
-      <p className="text-sm font-medium">{title}</p>
-      <p className="mt-1 text-sm text-muted-foreground">{body}</p>
-      {action && (
-        <Button asChild variant="outline" size="sm" className="mt-3">
-          <Link href={action.href}>{action.label}</Link>
-        </Button>
-      )}
-    </div>
-  );
-}

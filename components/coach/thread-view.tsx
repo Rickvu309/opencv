@@ -1,7 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { Ban, Check, Loader2, Megaphone, TriangleAlert } from "lucide-react";
+import Link from "next/link";
+import { Ban, Check, Loader2, TriangleAlert } from "lucide-react";
+import { CoachCat } from "@/components/brand/coach-cat";
+import { nextStepOf } from "@/lib/next-step";
 
 import { type EveMessageInputRequest } from "eve/react";
 
@@ -130,7 +133,13 @@ function CoachToolCalls({ calls }: { calls: CoachToolCall[] }) {
   );
 }
 
-export function CoachMark({ className }: { className?: string }) {
+export function CoachMark({
+  className,
+  pose = "sit",
+}: {
+  className?: string;
+  pose?: "sit" | "listen" | "think" | "done";
+}) {
   return (
     <span
       className={cn(
@@ -138,7 +147,7 @@ export function CoachMark({ className }: { className?: string }) {
         className,
       )}
     >
-      <Megaphone className="size-3.5" />
+      <CoachCat size="sm" filled pose={pose} />
     </span>
   );
 }
@@ -261,23 +270,33 @@ function QuestionCard({
  * the name rather than inventing one.
  */
 export function CoachGreeting({ compact }: { compact?: boolean }) {
-  const { profile } = useAppState();
+  const state = useAppState();
   const { t, m } = useT();
-  const firstName = profile.identity.name
+  const firstName = state.profile.identity.name
     .trim()
     .split(/\s+/)
     .slice(-2)
     .join(" ");
+  const step = nextStepOf(state);
+  const href = step.prompt
+    ? `/coach?q=${encodeURIComponent(t(step.prompt))}`
+    : step.href;
 
   return (
-    <p
-      className={cn(
-        "text-center text-muted-foreground",
-        compact ? "text-sm" : "text-[15px]",
-      )}
-    >
-      {firstName ? t(m.coach.readyWithName(firstName)) : t(m.coach.ready)}
-    </p>
+    <div className={cn("text-center", compact ? "px-1" : "px-4")}>
+      <CoachCat size={compact ? "md" : "lg"} className="mx-auto text-foreground" />
+      <p
+        className={cn(
+          "mt-3 text-muted-foreground",
+          compact ? "text-sm" : "text-[15px]",
+        )}
+      >
+        {firstName ? t(m.coach.readyWithName(firstName)) : t(m.coach.ready)}
+      </p>
+      <Button asChild variant="outline" size="sm" className="mt-3">
+        <Link href={href}>{t(step.label)}</Link>
+      </Button>
+    </div>
   );
 }
 
@@ -372,7 +391,10 @@ export function CoachMessages({
       <div className={cn("space-y-8", compact && "space-y-6")}>
         {messages.map((message) =>
           message.role === "user" ? (
-            <div key={message.id} className="flex justify-end pl-8">
+            <div
+              key={message.id}
+              className="flex justify-end pl-8 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-[var(--duration-state)] motion-safe:ease-enter"
+            >
               <div
                 className={cn(
                   "rounded-2xl bg-muted px-4 py-2.5 leading-7",
@@ -385,9 +407,20 @@ export function CoachMessages({
           ) : (
             <div
               key={message.id}
-              className={cn("flex gap-4", compact && "gap-3")}
+              className={cn(
+                "flex gap-4 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-[var(--duration-state)] motion-safe:ease-enter",
+                compact && "gap-3",
+              )}
             >
-              <CoachMark className={compact ? "size-6" : undefined} />
+              <CoachMark
+                className={compact ? "size-6" : undefined}
+                pose={
+                  resumeEdits(message.tools).length > 0 ||
+                  message.tools?.some((call) => call.state === "done")
+                    ? "done"
+                    : "sit"
+                }
+              />
               <div
                 className={cn(
                   "min-w-0 flex-1 space-y-4",

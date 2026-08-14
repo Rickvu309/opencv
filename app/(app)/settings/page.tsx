@@ -1,8 +1,7 @@
-import Link from "next/link";
-
 import { currentAccount } from "@/lib/auth/dal";
 import { planFor } from "@/lib/billing/plan";
 import { PlansPanel } from "./plans";
+import { SignInNeeded } from "./sign-in-needed";
 
 /**
  * Plans and billing.
@@ -14,15 +13,7 @@ import { PlansPanel } from "./plans";
 export default async function SettingsPage() {
   const account = await currentAccount();
   if (!account) {
-    return (
-      <div className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-8">
-        <p className="text-sm text-muted-foreground">
-          <Link href="/sign-in" className="underline underline-offset-4">
-            Sign in
-          </Link>
-        </p>
-      </div>
-    );
+    return <SignInNeeded />;
   }
 
   const plan = await planFor(account.id);

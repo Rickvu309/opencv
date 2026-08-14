@@ -329,6 +329,66 @@
 }
 
 /*
+ * Cat poses. Listen settles the ears once. Done is one blink plus a 2° glance,
+ * then Sit. Never loop. Reduced motion keeps the static mark.
+ */
+@keyframes cat-ear-settle {
+  from {
+    transform: rotate(-8deg);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes cat-blink {
+  0%,
+  70%,
+  100% {
+    transform: scaleY(1);
+  }
+  78% {
+    transform: scaleY(0.15);
+  }
+}
+
+@keyframes cat-glance {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  40% {
+    transform: rotate(2deg);
+  }
+}
+
+@layer components {
+  .cat-listen .cat-ear-l,
+  .cat-listen .cat-ear-r {
+    animation: cat-ear-settle var(--duration-state) var(--ease-snap) both;
+  }
+
+  .cat-done {
+    transform-origin: 12px 16px;
+    animation: cat-glance var(--duration-state) var(--ease-snap) both;
+  }
+
+  .cat-done .cat-eye {
+    transform-origin: center;
+    animation: cat-blink var(--duration-state) var(--ease-snap) both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cat-listen .cat-ear-l,
+  .cat-listen .cat-ear-r,
+  .cat-done,
+  .cat-done .cat-eye {
+    animation: none;
+  }
+}
+
+/*
  * Printing a CV.
  *
  * `components/cv/resume-preview.tsx` mounts a second copy of the document

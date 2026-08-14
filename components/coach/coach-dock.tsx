@@ -3,7 +3,8 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Maximize2, Megaphone, Minus, PenLine, X } from "lucide-react";
+import { Maximize2, Minus, PenLine, X } from "lucide-react";
+import { CoachCat } from "@/components/brand/coach-cat";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -98,7 +99,7 @@ export function CoachDock() {
           aria-expanded={open}
           className="flex h-7 items-center gap-1.5 rounded-md border bg-card px-2 text-xs font-medium shadow-xs transition active:translate-y-px outline-none hover:bg-muted/70 focus-visible:ring-3 focus-visible:ring-ring/50 md:border-transparent md:bg-transparent md:shadow-none motion-reduce:transition-none"
         >
-          <Megaphone className="size-3.5" />
+          <CoachCat size="sm" filled={open} pose={open ? "listen" : "sit"} />
           {t(m.nav.coach)}
         </button>
         <NewChatButton
@@ -143,8 +144,9 @@ function CoachPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
       className={cn(
         "fixed right-4 bottom-12 z-30 flex w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border bg-card shadow-lg",
         "h-[min(32rem,calc(100svh-7rem))]",
+        "origin-bottom-right",
         open
-          ? "motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-[var(--duration-surface)] motion-safe:ease-enter"
+          ? "motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95 motion-safe:duration-[var(--duration-surface)] motion-safe:ease-enter"
           : "hidden",
       )}
     >

@@ -1,8 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { Sparkles, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import Link from "next/link";
+
+import { CoachCat } from "@/components/brand/coach-cat";
+import { EmptyState } from "@/components/empty-state";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -49,15 +52,11 @@ export default function ApplicationsPage() {
       </header>
 
       {ordered.length === 0 ? (
-        <div className="mt-6 rounded-xl border bg-card p-4">
-          <p className="text-sm font-medium">{t(m.applications.emptyTitle)}</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {t(m.applications.emptyBody)}
-          </p>
-          <Button asChild variant="outline" size="sm" className="mt-3">
-            <Link href="/search">{t(m.applications.emptyAction)}</Link>
-          </Button>
-        </div>
+        <EmptyState
+          title={t(m.applications.emptyTitle)}
+          body={t(m.applications.emptyBody)}
+          action={{ href: "/search", label: t(m.applications.emptyAction) }}
+        />
       ) : (
         <div className="mt-6 space-y-3">
           {ordered.map((application) => (
@@ -250,7 +249,7 @@ function AskCoach({
         )
       }
     >
-      <Sparkles className="size-3.5" />
+      <CoachCat size="sm" />
       {t(m.applications.askCoach)}
     </Button>
   );

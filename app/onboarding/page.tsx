@@ -14,8 +14,10 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Check } from "lucide-react";
 
+import { CoachCat } from "@/components/brand/coach-cat";
 import { ResumeDrop } from "@/components/onboarding/resume-drop";
 import { LanguageToggle } from "@/components/language-toggle";
+import { knownDirection } from "@/lib/onboarding/known-direction";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Toaster } from "@/components/ui/sonner";
@@ -89,7 +91,12 @@ export default function OnboardingPage() {
   return (
     <div className="flex min-h-svh flex-col bg-muted/40">
       <header className="flex items-center justify-between px-5 py-5 sm:px-8">
-        <p className="text-sm font-semibold tracking-tight">OpenPath</p>
+        <p className="flex items-center gap-2 text-sm font-semibold tracking-tight">
+          <span className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
+            <CoachCat size="sm" filled />
+          </span>
+          OpenPath
+        </p>
         <LanguageToggle />
       </header>
 
@@ -171,6 +178,13 @@ export default function OnboardingPage() {
             </span>
             {t(m.onboarding.unsureTitle)}
           </Toggle>
+          {!unsure && targetRole.trim().length >= 3 ? (
+            <p className="mt-3 text-sm text-muted-foreground" role="status">
+              {knownDirection(targetRole)
+                ? t(m.onboarding.knownDirection(knownDirection(targetRole)!))
+                : t(m.onboarding.writtenDirection)}
+            </p>
+          ) : null}
         </div>
 
         <div className="mt-3 rounded-xl border bg-card p-5">

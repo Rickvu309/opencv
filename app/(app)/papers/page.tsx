@@ -1,9 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { Download, FileDown, FilePlus2, Printer, Sparkles, Trash2 } from "lucide-react";
+import { Download, FileDown, FilePlus2, Printer, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { CoachCat } from "@/components/brand/coach-cat";
+import { EmptyState } from "@/components/empty-state";
 import { useCoach } from "@/components/coach/provider";
 import { ParagraphEditor } from "@/components/papers/paragraph-editor";
 import { PaperPrintPortal } from "@/components/papers/paper-print";
@@ -81,7 +83,7 @@ export default function PapersPage() {
       </header>
 
       {papers.length === 0 ? (
-        <EmptyState />
+        <KitEmpty />
       ) : (
         <div className="mt-8 grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)]">
           <DocumentList papers={papers} openId={open?.id ?? null} onOpen={setOpenId} />
@@ -92,15 +94,17 @@ export default function PapersPage() {
   );
 }
 
-function EmptyState() {
+function KitEmpty() {
   const { t, m } = useT();
   return (
-    <div className="mt-10 rounded-xl border bg-card px-6 py-12 text-center">
-      <h2 className="text-base font-semibold tracking-tight">{t(m.papers.emptyTitle)}</h2>
-      <p className="mx-auto mt-1.5 max-w-sm text-sm text-muted-foreground">
-        {t(m.papers.emptyBody)}
-      </p>
-    </div>
+    <EmptyState
+      title={t(m.papers.emptyTitle)}
+      body={t(m.papers.emptyBody)}
+      action={{
+        href: `/coach?q=${encodeURIComponent(t(m.papers.askCoachLetter))}`,
+        label: t(m.papers.askCoach),
+      }}
+    />
   );
 }
 
@@ -321,7 +325,7 @@ function AskCoach({ paper }: { paper: ProseDocument }) {
       disabled={thread.busy}
       onClick={() => thread.send(request)}
     >
-      <Sparkles className="size-3.5" />
+      <CoachCat size="sm" />
       <span className="hidden sm:inline">{t(m.papers.askCoach)}</span>
     </Button>
   );

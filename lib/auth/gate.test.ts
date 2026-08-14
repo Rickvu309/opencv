@@ -9,14 +9,15 @@ import { SIGN_IN_PATH, gateFor, safeNext } from "@/lib/auth/gate";
 /** The screens the product is made of. AC-ACCT-005.1 covers all of them. */
 const PRODUCT_SCREENS = [
   "/coach",
-  "/todo",
-  "/career-map",
   "/cv",
   "/papers",
   "/pitch",
-  "/plan",
   "/profile",
+  "/search",
+  "/applications",
   "/onboarding",
+  "/settings",
+  "/help",
   "/dev/chat",
 ];
 
@@ -35,7 +36,7 @@ test("a screen nobody has written yet is closed, not open", () => {
   // The reason the rule is a list of open paths rather than closed ones: the
   // screen added next month is closed by default, and the failure mode of
   // getting it wrong is a redirect rather than a leak.
-  assert.equal(gateFor("/applications", false).kind, "redirect");
+  assert.equal(gateFor("/career-map", false).kind, "redirect");
 });
 
 test("the landing page and account creation are open, as the requirement says", () => {
