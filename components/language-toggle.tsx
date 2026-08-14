@@ -9,9 +9,9 @@ import { cn } from "@/lib/utils";
 /**
  * The language switcher, for surfaces outside the app shell.
  *
- * Inside the app it lives in the account menu, where a setting belongs. On the
- * landing page and in onboarding there is no account menu yet, and those are
- * the two screens where a reader who does not read Vietnamese most needs to
+ * Inside the app it lives in the help menu (`?`), one tap from every screen.
+ * On the landing page and in onboarding there is no help button yet, and those
+ * are the two screens where a reader who does not read Vietnamese most needs to
  * find it: one is the first thing they see, the other asks them to type.
  *
  * A segmented pair rather than a dropdown, because there are exactly two and

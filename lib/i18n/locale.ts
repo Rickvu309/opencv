@@ -9,7 +9,7 @@
 
 export type Locale = "vi" | "en";
 
-export const locales: Locale[] = ["vi", "en"];
+export const locales: Locale[] = ["en", "vi"];
 
 /** A string in both languages. The unit everything user-facing is stored in. */
 export type Msg = Record<Locale, string>;
@@ -23,7 +23,7 @@ export const localeNames: Record<Locale, string> = {
   en: "English",
 };
 
-export const defaultLocale: Locale = "vi";
+export const defaultLocale: Locale = "en";
 
 export function isLocale(value: unknown): value is Locale {
   return value === "vi" || value === "en";
@@ -79,9 +79,9 @@ export function looksVietnamese(text: string): boolean {
  * Pick a starting language from the browser.
  *
  * Only ever used for a first visit; once the user has chosen, the choice is in
- * `AppState` and wins. Vietnamese is the default rather than the fallback: this
- * product is for Vietnamese early-career users, and someone arriving with an
- * unconfigured browser is far more likely to be one of them than not.
+ * `AppState` and wins. English is the default rather than the fallback: the
+ * switcher is one tap away, and an unconfigured browser should land on the
+ * language a first-time visitor can read without guessing.
  */
 export function preferredLocale(
   languages: readonly string[] | undefined,

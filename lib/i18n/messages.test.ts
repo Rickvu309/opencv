@@ -63,7 +63,10 @@ test("English is written, not left as the Vietnamese", () => {
   // the language switch that confirms itself in the language being switched to.
   const sameByDesign = new Set([
     "nav.coach",
-    "nav.cv",
+    "myPaper.kindCv",
+    "myPaper.modeCv",
+    "cv.styleMarketing",
+    "cv.styleTech",
     "cv.exportMarkdown",
     "cv.cvNamePlaceholder",
     "cv.forRole",
@@ -73,6 +76,7 @@ test("English is written, not left as the Vietnamese", () => {
     "cv.headerEmail",
     // A proper noun: the course is called this in both languages.
     "profile.certificatePlaceholder",
+    "profile.contextBirthYearPlaceholder",
     // Plan names. Translating "Pro" would mean the button and the invoice
     // disagreed about what the user bought.
     "billing.tierPro",
@@ -209,14 +213,14 @@ test("document kinds and CV sections read in both languages", () => {
   }
 });
 
-test("the browser's language is honoured, with Vietnamese as the default", () => {
+test("the browser's language is honoured, with English as the default", () => {
   assert.equal(preferredLocale(["en-GB", "vi"]), "en");
   assert.equal(preferredLocale(["vi-VN"]), "vi");
-  // An unconfigured or unrecognised browser gets Vietnamese: this product is
-  // for Vietnamese early-career users, so that is the better guess.
-  assert.equal(preferredLocale(["fr", "de"]), "vi");
-  assert.equal(preferredLocale([]), "vi");
-  assert.equal(preferredLocale(undefined), "vi");
+  // An unconfigured or unrecognised browser gets English: the switcher is
+  // one tap away, and this is the language a first visit can read as-is.
+  assert.equal(preferredLocale(["fr", "de"]), "en");
+  assert.equal(preferredLocale([]), "en");
+  assert.equal(preferredLocale(undefined), "en");
 });
 
 test("a stored label is recognised whichever language wrote it", () => {

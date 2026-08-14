@@ -1,0 +1,314 @@
+"use client";
+
+import { FilePlus2, Plus } from "lucide-react";
+
+import { DraftInput, DraftTextarea } from "@/components/cv/draft-field";
+import { ResumePrintPortal } from "@/components/cv/resume-preview";
+import { Button } from "@/components/ui/button";
+import { useDispatch } from "@/lib/actions/store";
+import { isProseKind, type Resume } from "@/lib/cv/types";
+import type { PaperKind, ProseDocument } from "@/lib/papers/types";
+import { useT } from "@/lib/i18n/use-t";
+import { cn } from "@/lib/utils";
+import {
+  AddSectionMenu,
+  DownloadButton,
+  EditorMainBar,
+  FormatBar,
+  type ArtefactRef,
+  type EditorMode,
+} from "./workspace-parts";
+
+export function CvEditor({
+  resume,
+  resumes,
+  papers,
+  onSelect,
+  onCreateResume,
+  onCreatePaper,
+  onMode,
+  onBack,
+}: {
+  resume: Resume;
+  resumes: Resume[];
+  papers: ProseDocument[];
+  onSelect: (ref: ArtefactRef) => void;
+  onCreateResume: (fromProfile: boolean) => void;
+  onCreatePaper: (kind: PaperKind) => void;
+  onMode: (mode: EditorMode) => void;
+  onBack: () => void;
+}) {
+  const dispatch = useDispatch();
+  const { t, m } = useT();
+
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      <EditorMainBar
+        mode="resume"
+        currentId={resume.id}
+        currentLabel={resume.label}
+        nameLabel={t(m.cv.cvName)}
+        onRename={(label) =>
+          dispatch("resume.rename", { id: resume.id, label }, { silent: true })
+        }
+        onDelete={() => dispatch("resume.remove", { id: resume.id })}
+        deleteLabel={t(m.cv.deleteCv)}
+        resumes={resumes}
+        papers={papers}
+        onSelect={onSelect}
+        onCreateResume={onCreateResume}
+        onCreatePaper={onCreatePaper}
+        onMode={onMode}
+        onBack={onBack}
+        trailing={
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground"
+              onClick={() => onCreateResume(true)}
+            >
+              <FilePlus2 className="size-3.5" />
+              <span className="hidden sm:inline">{t(m.cv.buildFromProfile)}</span>
+            </Button>
+            <DownloadButton hint={t(m.cv.exportPdfHint)} />
+          </>
+        }
+      />
+      <FormatBar resume={resume} />
+      <OnePageEditor resume={resume} />
+      <ResumePrintPortal resume={resume} />
+    </div>
+  );
+}
+
+const ghostField =
+  "[&_input]:h-auto [&_input]:border-0 [&_input]:bg-transparent [&_input]:px-0 [&_input]:shadow-none [&_input]:focus-visible:ring-0";
+
+/** The CV page is the editor. No form beside a preview. */
+function OnePageEditor({ resume }: { resume: Resume }) {
+  const dispatch = useDispatch();
+  const { t, m } = useT();
+  const { header } = resume;
+  const setHeader = (fields: Record<string, unknown>) =>
+    dispatch("resume.setHeader", { id: resume.id, ...fields }, { silent: true });
+
+  return (
+    <div className="min-h-0 flex-1 overflow-y-auto bg-muted/40">
+      <div className="mx-auto max-w-[52rem] px-4 py-6">
+        <article className="min-h-[1123px] bg-white px-12 py-10 text-neutral-900 shadow-md ring-1 ring-black/10">
+          <DraftInput
+            id="page-name"
+            label={t(m.cv.headerName)}
+            srLabel
+            value={header.name}
+            placeholder={t(m.cv.headerName)}
+            onCommit={(name) => setHeader({ name })}
+            className={cn(ghostField, "[&_input]:text-3xl [&_input]:font-semibold")}
+          />
+          <DraftInput
+            id="page-headline"
+            label={t(m.cv.headerHeadline)}
+            srLabel
+            value={header.headline}
+            placeholder={t(m.cv.headerHeadlinePlaceholder)}
+            onCommit={(headline) => setHeader({ headline })}
+            className={cn(
+              ghostField,
+              "mt-1 [&_input]:text-base [&_input]:text-neutral-600",
+            )}
+          />
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-neutral-600">
+            <DraftInput
+              id="page-email"
+              label={t(m.cv.headerEmail)}
+              srLabel
+              value={header.email}
+              placeholder={t(m.cv.headerEmail)}
+              onCommit={(email) => setHeader({ email })}
+              className={cn(ghostField, "w-auto min-w-40")}
+            />
+            <DraftInput
+              id="page-phone"
+              label={t(m.cv.headerPhone)}
+              srLabel
+              value={header.phone}
+              placeholder={t(m.cv.headerPhone)}
+              onCommit={(phone) => setHeader({ phone })}
+              className={cn(ghostField, "w-auto min-w-32")}
+            />
+            <DraftInput
+              id="page-location"
+              label={t(m.cv.headerLocation)}
+              srLabel
+              value={header.location}
+              placeholder={t(m.cv.headerLocationPlaceholder)}
+              onCommit={(location) => setHeader({ location })}
+              className={cn(ghostField, "w-auto min-w-32")}
+            />
+          </div>
+
+          {resume.sections.map((section) => (
+            <PageSection
+              key={section.id}
+              resumeId={resume.id}
+              section={section}
+            />
+          ))}
+
+          <div className="mt-8">
+            <AddSectionMenu resume={resume} />
+          </div>
+        </article>
+      </div>
+    </div>
+  );
+}
+
+function PageSection({
+  resumeId,
+  section,
+}: {
+  resumeId: string;
+  section: Resume["sections"][number];
+}) {
+  const dispatch = useDispatch();
+  const { t, m } = useT();
+  const update = (fields: Record<string, unknown>) =>
+    dispatch(
+      "resume.updateSection",
+      { id: resumeId, sectionId: section.id, ...fields },
+      { silent: true },
+    );
+
+  return (
+    <section className="mt-8">
+      <DraftInput
+        id={`page-h-${section.id}`}
+        label={t(m.cv.sectionName)}
+        srLabel
+        value={section.heading}
+        onCommit={(heading) => heading && update({ heading })}
+        className={cn(
+          ghostField,
+          "border-b border-neutral-300 pb-1 [&_input]:text-xs [&_input]:font-semibold [&_input]:tracking-wide [&_input]:uppercase",
+        )}
+      />
+      {isProseKind(section.kind) ? (
+        <div className="mt-2 [&_label]:sr-only [&_textarea]:min-h-24 [&_textarea]:border-0 [&_textarea]:bg-transparent [&_textarea]:px-0 [&_textarea]:shadow-none [&_textarea]:focus-visible:ring-0">
+          <DraftTextarea
+            id={`page-b-${section.id}`}
+            label={section.heading}
+            value={section.body ?? ""}
+            onCommit={(body) => update({ body })}
+            rows={4}
+          />
+        </div>
+      ) : (
+        <div className="mt-2 space-y-4">
+          {section.entries.map((entry) => (
+            <div key={entry.id}>
+              <DraftInput
+                id={`page-t-${entry.id}`}
+                label={t(m.cv.entryTitle)}
+                srLabel
+                value={entry.title}
+                placeholder={t(m.cv.entryTitle)}
+                onCommit={(title) =>
+                  dispatch(
+                    "resume.updateEntry",
+                    {
+                      id: resumeId,
+                      sectionId: section.id,
+                      entryId: entry.id,
+                      title,
+                    },
+                    { silent: true },
+                  )
+                }
+                className={cn(ghostField, "[&_input]:font-medium")}
+              />
+              <div className="flex flex-wrap gap-x-3">
+                <DraftInput
+                  id={`page-o-${entry.id}`}
+                  label={t(m.cv.entryOrg)}
+                  srLabel
+                  value={entry.org ?? ""}
+                  placeholder={t(m.cv.entryOrg)}
+                  onCommit={(org) =>
+                    dispatch(
+                      "resume.updateEntry",
+                      {
+                        id: resumeId,
+                        sectionId: section.id,
+                        entryId: entry.id,
+                        org,
+                      },
+                      { silent: true },
+                    )
+                  }
+                  className={cn(ghostField, "min-w-40 flex-1 [&_input]:text-sm")}
+                />
+                <DraftInput
+                  id={`page-p-${entry.id}`}
+                  label={t(m.cv.entryPeriod)}
+                  srLabel
+                  value={entry.period ?? ""}
+                  placeholder={t(m.cv.entryPeriod)}
+                  onCommit={(period) =>
+                    dispatch(
+                      "resume.updateEntry",
+                      {
+                        id: resumeId,
+                        sectionId: section.id,
+                        entryId: entry.id,
+                        period,
+                      },
+                      { silent: true },
+                    )
+                  }
+                  className={cn(ghostField, "w-36 [&_input]:text-sm")}
+                />
+              </div>
+              <div className="[&_label]:sr-only [&_textarea]:border-0 [&_textarea]:bg-transparent [&_textarea]:px-0 [&_textarea]:text-sm [&_textarea]:shadow-none [&_textarea]:focus-visible:ring-0">
+                <DraftTextarea
+                  id={`page-d-${entry.id}`}
+                  label={t(m.cv.entryDetail)}
+                  value={entry.detail ?? ""}
+                  onCommit={(detail) =>
+                    dispatch(
+                      "resume.updateEntry",
+                      {
+                        id: resumeId,
+                        sectionId: section.id,
+                        entryId: entry.id,
+                        detail,
+                      },
+                      { silent: true },
+                    )
+                  }
+                  rows={3}
+                />
+              </div>
+            </div>
+          ))}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground"
+            onClick={() =>
+              dispatch(
+                "resume.addEntry",
+                { id: resumeId, sectionId: section.id, title: "" },
+                { silent: true },
+              )
+            }
+          >
+            <Plus className="size-3.5" />
+            {t(m.cv.addEntry)}
+          </Button>
+        </div>
+      )}
+    </section>
+  );
+}

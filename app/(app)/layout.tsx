@@ -8,7 +8,6 @@ import { SidebarInset } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SkipLink } from "@/components/skip-link";
-import { WaitlistPrompt } from "@/components/waitlist-prompt";
 import { initialConversations } from "@/lib/coach/server";
 
 export default async function AppLayout({
@@ -30,10 +29,6 @@ export default async function AppLayout({
           className="h-svh overflow-hidden md:h-[calc(100svh-3.5rem)] md:border md:peer-data-[variant=inset]:mb-12"
         >
           <AppHeader />
-          {/* Here rather than on /profile, because onboarding now hands over to
-              the Coach and the ask has to survive that. It shows itself only
-              once, on the first screen after onboarding, whichever that is. */}
-          <WaitlistPrompt />
           <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
           {/* Below md both controls form one real row at the foot of the frame,
               so the scroll area above ends where they begin. `md:contents`

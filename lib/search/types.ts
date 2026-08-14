@@ -59,7 +59,7 @@ export function openingById(
  * matches against; a vocabulary full of "communication" and "teamwork" would
  * produce requirements nobody can evidence and a fit score that means nothing.
  */
-const SKILL_VOCABULARY: Record<string, string[]> = {
+export const SKILL_VOCABULARY: Record<string, string[]> = {
   sql: ["sql"],
   python: ["python"],
   r: ["r studio", "rstudio"],
