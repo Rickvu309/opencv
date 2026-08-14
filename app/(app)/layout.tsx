@@ -1,6 +1,7 @@
 import { AppHeader } from "@/components/app-header";
 import { AppShell } from "@/components/app-shell";
 import { AppSidebar } from "@/components/app-sidebar";
+import { CommandPaletteHost } from "@/components/command-palette-host";
 import { CoachDock } from "@/components/coach/coach-dock";
 import { CoachProvider } from "@/components/coach/provider";
 import { HelpButton } from "@/components/help-button";
@@ -40,6 +41,7 @@ export default async function AppLayout({
           </div>
         </SidebarInset>
         </CoachProvider>
+        <CommandPaletteHost />
         <Toaster position="top-center" />
       </AppShell>
     </TooltipProvider>

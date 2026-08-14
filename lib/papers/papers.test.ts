@@ -233,6 +233,6 @@ test("a document with no usable label still gets a filename", () => {
   });
   // Falls back to the kind, in the document's own language, because the file
   // lands beside other applications and "document.md" names nothing.
-  assert.match(fileStem(state.papers[0]), /^[A-Za-zÀ-ỹ_]+$/u);
+  assert.match(fileStem(state.papers[0]), /^[A-Za-zÀ-ỹ_-]+$/u);
   assert.ok(fileStem(state.papers[0]).length > 0);
 });

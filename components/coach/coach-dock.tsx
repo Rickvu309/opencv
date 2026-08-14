@@ -3,7 +3,9 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Maximize2, Megaphone, Minus, PenLine, X } from "lucide-react";
+import { Maximize2, Minus, PenLine, X } from "lucide-react";
+
+import { CoachBox } from "@/components/brand/coach-box";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -116,8 +118,9 @@ export function CoachDock() {
           className="flex h-7 items-center gap-1.5 rounded-md border bg-card px-2 text-xs font-medium shadow-xs transition-colors duration-[var(--duration-press)] active:translate-y-px outline-none hover:bg-muted/70 focus-visible:ring-3 focus-visible:ring-ring/50 md:border-transparent md:bg-transparent md:shadow-none motion-reduce:transition-none"
         >
           <span className="relative size-3.5 shrink-0">
-            <Megaphone
-              aria-hidden
+            <CoachBox
+              size="sm"
+              filled={open}
               className={cn(dockIconClass, open ? dockIconOut : dockIconIn)}
             />
             <X

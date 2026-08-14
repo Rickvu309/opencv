@@ -14,6 +14,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Check } from "lucide-react";
 
+import { CoachBox } from "@/components/brand/coach-box";
 import { ResumeDrop } from "@/components/onboarding/resume-drop";
 import { LanguageToggle } from "@/components/language-toggle";
 import { knownDirection } from "@/lib/onboarding/known-direction";
@@ -88,7 +89,12 @@ export default function OnboardingPage() {
   return (
     <div className="flex min-h-svh flex-col bg-muted/40">
       <header className="flex items-center justify-between px-5 py-5 sm:px-8">
-        <p className="text-sm font-semibold tracking-tight">OpenPath</p>
+        <p className="flex items-center gap-2 text-sm font-semibold tracking-tight">
+          <span className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
+            <CoachBox size="sm" filled />
+          </span>
+          OpenPath
+        </p>
         <LanguageToggle />
       </header>
 
@@ -214,7 +220,7 @@ export default function OnboardingPage() {
         </button>
       </main>
 
-      <Toaster position="top-right" />
+      <Toaster position="top-center" />
     </div>
   );
 }

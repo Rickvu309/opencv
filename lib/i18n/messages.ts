@@ -101,7 +101,7 @@ export const messages = {
     papers: m("Giấy tờ", "My Paper"),
     // 8090 name. "Your pitch" put the product in the second person; the
     // feature is something the user owns.
-    pitch: m("Giới thiệu bản thân", "My pitch"),
+    pitch: m("Giới thiệu bản thân", "My Pitch"),
     // The action, not the objects. "Openings" / "Việc đang tuyển" named the
     // listings; this is the screen where you look.
     search: m("Tìm việc", "Search"),
@@ -497,6 +497,9 @@ export const messages = {
     toolRunning: m("Đang cập nhật…", "Making the change…"),
     toolFailed: m("Chưa thay đổi được gì", "Nothing was changed"),
     toolDenied: m("Bạn đã từ chối thay đổi này", "You declined this change"),
+    toolChanges: (n: number) =>
+      m(`${n} thay đổi`, n === 1 ? "1 change" : `${n} changes`),
+    jumpToLatest: m("Xuống tin mới nhất", "Jump to latest"),
     approvalTitle: m("Cần bạn xác nhận", "Needs your confirmation"),
     openCv: m("Mở CV này", "Open this CV"),
     deleteChat: m("Xoá đoạn chat này", "Delete this chat"),
@@ -506,7 +509,7 @@ export const messages = {
       "Mở đoạn chat mới để tiếp tục. Đoạn này vẫn được giữ lại.",
       "Start a new one to carry on. This one is kept.",
     ),
-    // Empty canvas. The sleeping cat sits above this; the line is dry on
+    // Empty canvas. The box sits above this; the line is dry on
     // purpose, not a mascot caption. The named form keeps the same two beats.
     readyWithName: (name: string) =>
       m(

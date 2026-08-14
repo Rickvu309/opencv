@@ -246,7 +246,10 @@ test("markdown carries the bullets a reader is scanning for", () => {
   assert.ok(markdown.includes("- Dựng 3 dashboard"));
 
   const text = toPlainText(after.resumes[0]);
-  assert.ok(text.includes("KINH NGHIỆM"), "plain text separates by case");
+  assert.ok(
+    text.includes(after.resumes[0].sections.find((s) => s.kind === "experience")!.heading.toUpperCase()),
+    "plain text separates by case",
+  );
   assert.ok(!text.includes("###"), "plain text must carry no markup");
 });
 

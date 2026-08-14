@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { CoachCat } from "@/components/brand/coach-cat";
+import { CoachBox } from "@/components/brand/coach-box";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -86,7 +86,7 @@ export function AuthForm({ mode, next }: { mode: "sign-in" | "sign-up"; next?: s
       <div className="w-full max-w-sm">
         <Link href="/" className="flex items-center gap-2.5">
           <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <CoachCat size="md" filled />
+            <CoachBox size="md" filled />
           </span>
           <span className="text-base font-semibold tracking-tight">OpenPath</span>
         </Link>
@@ -214,7 +214,11 @@ function Field({
       {/* Inline and next to the field that failed, never a toast: an error the
           user has to act on should not be able to disappear on its own. */}
       {error ? (
-        <p id={errorId} role="alert" className="text-sm text-destructive">
+        <p
+          id={errorId}
+          role="alert"
+          className="field-error-shake text-sm text-destructive motion-reduce:animate-none"
+        >
           {error}
         </p>
       ) : (

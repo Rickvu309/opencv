@@ -226,28 +226,34 @@ export function Composer({
               second control would sit dead most of the time. The Coach reasons
               before it answers and a turn can run past fifty seconds; without
               this the only way out of a slow one is reloading the page. */}
-          {thread.isTyping ? (
-            <Button
-              type="button"
-              size="icon-sm"
-              variant="secondary"
-              onClick={thread.stop}
-              aria-label={t(m.coach.stop)}
-              className="rounded-full"
-            >
-              <Square className="fill-current" />
-            </Button>
-          ) : (
-            <Button
-              type="submit"
-              size="icon-sm"
-              disabled={!canSend}
-              aria-label={t(m.coach.send)}
-              className="rounded-full"
-            >
-              <ArrowUp />
-            </Button>
-          )}
+          <Button
+            type={thread.isTyping ? "button" : "submit"}
+            size="icon-sm"
+            variant={thread.isTyping ? "secondary" : "default"}
+            disabled={!thread.isTyping && !canSend}
+            onClick={thread.isTyping ? thread.stop : undefined}
+            aria-label={t(thread.isTyping ? m.coach.stop : m.coach.send)}
+            className="rounded-full"
+          >
+            <span className="relative size-3.5">
+              <Square
+                className={cn(
+                  "absolute inset-0 size-3.5 fill-current transition-[opacity,transform] duration-[var(--duration-press)] ease-snap motion-reduce:transition-none",
+                  thread.isTyping
+                    ? "scale-100 opacity-100"
+                    : "scale-75 opacity-0",
+                )}
+              />
+              <ArrowUp
+                className={cn(
+                  "absolute inset-0 size-3.5 transition-[opacity,transform] duration-[var(--duration-press)] ease-snap motion-reduce:transition-none",
+                  thread.isTyping
+                    ? "scale-75 opacity-0"
+                    : "scale-100 opacity-100",
+                )}
+              />
+            </span>
+          </Button>
         </span>
       </div>
     </form>

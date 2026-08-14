@@ -8,9 +8,10 @@
 
 import * as React from "react";
 import Link from "next/link";
+
+import { CoachBox } from "@/components/brand/coach-box";
 import {
   Link2,
-  Megaphone,
   Paperclip,
   Pencil,
   Plus,
@@ -253,7 +254,7 @@ export function DocumentPanel({
                 look is honest; the verdict has to come from a real read. */}
             <Button asChild variant="outline" size="sm">
               <Link href={`/coach?q=${encodeURIComponent(item.coachPrompt[locale])}`}>
-                <Megaphone className="size-3.5" />
+                <CoachBox size="sm" />
                 {t(m.profile.docAskCoach)}
               </Link>
             </Button>

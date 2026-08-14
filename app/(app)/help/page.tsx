@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useT } from "@/lib/i18n/use-t";
+import { cn } from "@/lib/utils";
 
 /**
  * Four questions and a box.
@@ -20,6 +21,7 @@ export default function HelpPage() {
   const [text, setText] = React.useState("");
   const [sent, setSent] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
+  const [short, setShort] = React.useState(false);
 
   const questions = [
     [m.support.q1, m.support.a1],
@@ -30,9 +32,11 @@ export default function HelpPage() {
 
   const send = async () => {
     if (text.trim().length < 5) {
+      setShort(true);
       toast.error(t(m.support.reportTooShort));
       return;
     }
+    setShort(false);
     setBusy(true);
     try {
       const response = await fetch("/api/support", {
@@ -83,8 +87,12 @@ export default function HelpPage() {
               rows={4}
               placeholder={t(m.support.reportPlaceholder)}
               aria-label={t(m.support.reportTitle)}
-              onChange={(event) => setText(event.target.value)}
-              className="text-sm"
+              onChange={(event) => {
+                setText(event.target.value);
+                if (short) setShort(false);
+              }}
+              aria-invalid={short || undefined}
+              className={cn("text-sm", short && "field-error-shake")}
             />
             <Button size="sm" disabled={busy} onClick={send}>
               {t(m.support.reportSend)}

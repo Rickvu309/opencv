@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 
-import { CoachCat } from "@/components/brand/coach-cat";
+import { CoachBox } from "@/components/brand/coach-box";
 import {
   Dialog,
   DialogContent,
@@ -50,7 +50,7 @@ export function CommandPalette({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="top-[20%] max-w-md translate-y-0 gap-0 overflow-hidden p-0">
+      <DialogContent className="top-[20%] max-w-md translate-y-0 gap-0 overflow-hidden p-0 data-open:duration-[var(--duration-press)] data-closed:duration-[var(--duration-press)]">
         <DialogTitle className="sr-only">{t(messages.common.commandPalette)}</DialogTitle>
         <Input
           autoFocus
@@ -74,7 +74,7 @@ export function CommandPalette({
                 )}
               >
                 {"cat" in item ? (
-                  <CoachCat size="sm" />
+                  <CoachBox size="sm" />
                 ) : (
                   <span className="size-3.5" />
                 )}

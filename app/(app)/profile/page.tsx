@@ -195,7 +195,9 @@ export default function ProfilePage() {
       <div
         className={cn(
           "w-full shrink-0 flex-col border-e md:flex md:w-[20rem]",
-          mobileView === "index" ? "flex" : "hidden",
+          mobileView === "index"
+            ? "flex motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-left-2 motion-safe:duration-[var(--duration-state)] motion-safe:ease-enter"
+            : "hidden",
         )}
       >
         <div className="flex h-14 shrink-0 items-center gap-3 border-b px-4">
@@ -360,7 +362,9 @@ export default function ProfilePage() {
         tabIndex={0}
         className={cn(
           "min-w-0 flex-1 flex-col overflow-y-auto outline-none md:flex",
-          mobileView === "panel" ? "flex" : "hidden",
+          mobileView === "panel"
+            ? "flex motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-right-2 motion-safe:duration-[var(--duration-state)] motion-safe:ease-enter"
+            : "hidden",
           touched.includes(selected) && "animate-just-changed",
         )}
       >

@@ -198,26 +198,26 @@ checklist lives in the `?` menu, not on the empty Coach.
 
 ## Mark
 
-The Coach's face is a quiet cat, not a second character and not lucide
-`Megaphone`. One SVG: `components/brand/coach-cat.tsx`, `currentColor`, sizes
+The Coach's face is a 2D rounded square with two eyes, not a cat and not lucide
+`Megaphone`. One SVG: `components/brand/coach-box.tsx`, `currentColor`, sizes
 `sm | md | lg`, outline at rest, filled when Coach is the active nav item or
 the dock is open.
 
 **She is the Coach.** No given name on launch. She does not speak; copy stays
 the mentor voice.
 
-**Four poses, not twelve.** Sit is the default and has no motion. Listen settles
-the ears once (composer focused, landing demo waiting). Think is Sit — typing
-dots do that work. Done is one blink and a 2° glance toward the flashed row,
-once, after a successful `apply_action` or when the landing undo chip appears.
-Reduced motion: Sit only; Listen/Done become a static fill on the active mark.
+**Four poses, not twelve.** Sit is the default and has no motion. Listen closes
+the eyes into U-arcs once (landing demo waiting). Think is Sit — typing dots
+do that work. Done is one blink, once, after a successful `apply_action` or
+when the landing undo chip appears. Reduced motion: Sit only; filled when the
+mark is the active surface.
 
 **Where she appears:** landing header and demo avatar; app rail, dock chip,
-message avatar; empty kit (Profile / Papers / Applications / Coach greeting);
-Ask Coach rows. **Not on:** settings billing, help form, printed CV, toasts.
+message avatar; empty kit and Coach greeting; Ask Coach rows. **Not on:**
+settings billing, help form, printed CV, toasts.
 
-**Never:** walk cycles, hover-follow eyes, idle breathing, bounce-in, meow,
-seasonal hats, a fifth pose.
+**Never:** hover-follow eyes, idle blink loop, walk, bounce-in, seasonal hats,
+a fifth pose, a 3D cube, a lid flap.
 
 ## Motion
 
@@ -229,14 +229,14 @@ paint (`hero-enter` in `globals.css`, 100ms apart, `--duration-surface` on
 `--ease-enter`). Reduced motion keeps the fade and drops the travel.
 
 A new easing or an off-scale duration in a diff is a review failure. Do not add
-a fifth curve. Rejected and still rejected: idle loops, sparkles, AI-glow, cat
+a fifth curve. Rejected and still rejected: idle loops, sparkles, AI-glow, box
 pulse, bounce, `transition: all`.
 
 **Frequency.** 100+ times/day (keystrokes, list hover, rail clicks, composer
 typing): no animation. Tens/day (filters, tab switches): colour or 120ms
 opacity. Occasional (dock, sheet, toast, accordion, undo flash): 200–300ms,
 origin-aware. Rare / first-time (landing hero, demo play, first artifact, empty
-kit): the only place for stagger, a 500ms reveal, or the cat's extra pose.
+kit): the only place for stagger, a 500ms reveal, or the box's extra pose.
 
 **Named recipes.** Press: `active:translate-y-px` in-app; landing primary CTA
 may `scale(0.96)` over 120ms `--ease-snap`. Origin-aware open/close: dock and
@@ -412,7 +412,7 @@ Every editable block is one `EditableSection` (`components/profile/editable.tsx`
 
 ## Coach dock
 
-On every screen, a **strip in the bottom gutter** below the content frame, modelled on Linear's agent bar (`components/coach/coach-dock.tsx`): what the user last actually asked, in a dismissible `bg-muted` pill (× hides it; hidden when the thread is empty; hidden on mobile), a megaphone + `Coach` chip, and a pen icon that starts a new chat. On the grey gutter the chip is borderless; on mobile it regains `border bg-card`. The only exception: `/coach` on mobile hides the strip entirely; it would sit on the page's own composer.
+On every screen, a **strip in the bottom gutter** below the content frame, modelled on Linear's agent bar (`components/coach/coach-dock.tsx`): what the user last actually asked, in a dismissible `bg-muted` pill (× hides it; hidden when the thread is empty; hidden on mobile), a box mark + `Coach` chip, and a pen icon that starts a new chat. On the grey gutter the chip is borderless; on mobile it regains `border bg-card`. The only exception: `/coach` on mobile hides the strip entirely; it would sit on the page's own composer.
 
 **Below `md` the strip is in flow, not floating.** There is no bottom gutter at that width, so the strip and the help button share one real row at the foot of the frame (`app/(app)/layout.tsx`, dissolved again from `md` with `md:contents`). The scroll area above therefore ends exactly where the controls begin. **A screen must never add its own bottom padding to clear the strip.** Four screens had each invented a different magic number for this (`pb-20`, `pb-14`, `pb-11`, `pb-16`), which is how a shared obstruction turns into four private ones, and three of them were still wrong.
 

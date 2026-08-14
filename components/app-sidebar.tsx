@@ -9,7 +9,6 @@ import {
   ChevronsUpDown,
   FileText,
   LayoutDashboard,
-  Megaphone,
   MessageSquareQuote,
   Route,
   Search,
@@ -17,6 +16,7 @@ import {
   Settings,
 } from "lucide-react";
 
+import { CoachBox } from "@/components/brand/coach-box";
 import { SignOutItem } from "@/components/auth/sign-out-item";
 import { ConversationRail } from "@/components/coach/history";
 import { useAppState } from "@/lib/actions/store";
@@ -275,7 +275,7 @@ export function AppSidebar() {
                 item={{
                   title: messages.nav.coach,
                   href: "/coach",
-                  icon: Megaphone,
+                  icon: CoachBox,
                 }}
                 active={pathname.startsWith("/coach")}
               />

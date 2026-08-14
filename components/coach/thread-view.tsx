@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { Ban, Check, Loader2, TriangleAlert } from "lucide-react";
-import { CoachCat } from "@/components/brand/coach-cat";
+import { CoachBox } from "@/components/brand/coach-box";
 import { nextStepOf } from "@/lib/next-step";
 
 import { type EveMessageInputRequest } from "eve/react";
@@ -22,7 +22,6 @@ import {
   type CoachReasoning,
   type CoachToolCall,
 } from "@/lib/coach/messages";
-import { CatMascot } from "./cat-mascot";
 import { CoachProse } from "./prose";
 import { ResumeArtifact, type ResumeEdit } from "./resume-artifact";
 import { coachStarters } from "@/lib/coach/starters";
@@ -86,8 +85,46 @@ function CoachReasoningPanel({
  * been measured writing "Tôi đã thêm việc đó vào danh sách" having called
  * nothing; prose is not evidence, and this is not built from prose.
  */
+function toolLabel(
+  call: CoachToolCall,
+  t: (msg: { vi: string; en: string }) => string,
+  m: typeof import("@/lib/i18n/messages").messages.coach,
+  locale: "vi" | "en",
+) {
+  if (call.state === "done" && call.summary) return call.summary[locale];
+  if (call.state === "running") return t(m.toolRunning);
+  if (call.state === "denied") return t(m.toolDenied);
+  return t(m.toolFailed);
+}
+
+function ToolChip({
+  call,
+  label,
+}: {
+  call: CoachToolCall;
+  label: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "inline-flex max-w-full items-center gap-1.5 rounded-full border bg-muted/40 px-2.5 py-1 text-xs text-muted-foreground",
+        call.state === "error" &&
+          "border-destructive/30 bg-destructive/5 text-destructive",
+      )}
+    >
+      {call.state === "running" ? (
+        <Loader2 className="size-3 shrink-0 animate-spin" />
+      ) : (
+        <Check className="size-3 shrink-0 text-foreground" />
+      )}
+      <span className="min-w-0 truncate">{label}</span>
+    </div>
+  );
+}
+
 function CoachToolCalls({ calls }: { calls: CoachToolCall[] }) {
   const { t, m, locale } = useT();
+  const [expanded, setExpanded] = React.useState(false);
 
   // A call parked on the user renders as nothing here: the approval card is
   // already on screen saying what is about to happen, and a second chip under
@@ -95,41 +132,61 @@ function CoachToolCalls({ calls }: { calls: CoachToolCall[] }) {
   const visible = calls.filter((call) => call.state !== "awaiting");
   if (visible.length === 0) return null;
 
-  return (
-    <div className="space-y-1.5">
-      {visible.map((call) => {
-        const label =
-          call.state === "done" && call.summary
-            ? call.summary[locale]
-            : call.state === "running"
-              ? t(m.coach.toolRunning)
-              : call.state === "denied"
-                ? t(m.coach.toolDenied)
-                : t(m.coach.toolFailed);
+  const chips = visible.filter(
+    (call) => call.state === "running" || call.state === "done",
+  );
+  const alerts = visible.filter(
+    (call) => call.state === "error" || call.state === "denied",
+  );
+  const done = chips.filter((call) => call.state === "done");
+  const running = chips.filter((call) => call.state === "running");
+  const collapseDone = done.length > 1 && !expanded;
 
-        return (
-          <div
+  return (
+    <div className="flex flex-col items-start gap-1.5">
+      {running.map((call) => (
+        <ToolChip
+          key={call.id}
+          call={call}
+          label={toolLabel(call, t, m.coach, locale)}
+        />
+      ))}
+      {collapseDone ? (
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="inline-flex items-center gap-1.5 rounded-full border bg-muted/40 px-2.5 py-1 text-xs text-muted-foreground outline-none hover:bg-muted/70 focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          <Check className="size-3 shrink-0 text-foreground" />
+          {t(m.coach.toolChanges(done.length))}
+        </button>
+      ) : (
+        done.map((call) => (
+          <ToolChip
             key={call.id}
-            className={cn(
-              "flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs",
-              call.state === "error"
-                ? "border-destructive/30 bg-destructive/5 text-destructive"
-                : "bg-muted/40 text-muted-foreground",
-            )}
-          >
-            {call.state === "running" ? (
-              <Loader2 className="size-3.5 shrink-0 animate-spin" />
-            ) : call.state === "done" ? (
-              <Check className="size-3.5 shrink-0 text-foreground" />
-            ) : call.state === "denied" ? (
-              <Ban className="size-3.5 shrink-0" />
-            ) : (
-              <TriangleAlert className="size-3.5 shrink-0" />
-            )}
-            <span className="min-w-0 flex-1">{label}</span>
-          </div>
-        );
-      })}
+            call={call}
+            label={toolLabel(call, t, m.coach, locale)}
+          />
+        ))
+      )}
+      {alerts.map((call) => (
+        <div
+          key={call.id}
+          className={cn(
+            "flex w-full items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs",
+            call.state === "error"
+              ? "border-destructive/30 bg-destructive/5 text-destructive"
+              : "bg-muted/40 text-muted-foreground",
+          )}
+        >
+          {call.state === "denied" ? (
+            <Ban className="size-3.5 shrink-0" />
+          ) : (
+            <TriangleAlert className="size-3.5 shrink-0" />
+          )}
+          <span className="min-w-0 flex-1">{toolLabel(call, t, m.coach, locale)}</span>
+        </div>
+      ))}
     </div>
   );
 }
@@ -148,7 +205,7 @@ export function CoachMark({
         className,
       )}
     >
-      <CoachCat size="sm" filled pose={pose} />
+      <CoachBox size="sm" filled pose={pose} />
     </span>
   );
 }
@@ -290,7 +347,7 @@ export function CoachGreeting({ compact }: { compact?: boolean }) {
         compact ? "gap-1.5 px-1" : "gap-2 px-4",
       )}
     >
-      <CatMascot compact={compact} />
+      <CoachBox size={compact ? "md" : "lg"} className="text-foreground" />
       <p
         className={cn(
           "text-center text-muted-foreground",
@@ -405,6 +462,20 @@ function resumeEdits(calls: CoachToolCall[] | undefined): ResumeEdit[] {
     .map((c) => ({ action: c.action, input: c.input }));
 }
 
+function scrollPane(from: HTMLElement | null): HTMLElement | null {
+  let node = from?.parentElement ?? null;
+  while (node) {
+    const overflow = getComputedStyle(node).overflowY;
+    if (overflow === "auto" || overflow === "scroll") return node;
+    node = node.parentElement;
+  }
+  return null;
+}
+
+function nearLiveEdge(pane: HTMLElement) {
+  return pane.scrollHeight - pane.scrollTop - pane.clientHeight < 56;
+}
+
 export function CoachMessages({
   thread,
   compact,
@@ -417,25 +488,52 @@ export function CoachMessages({
 }) {
   const { messages, isTyping } = thread;
   const { t, m } = useT();
+  const rootRef = React.useRef<HTMLDivElement>(null);
   const bottomRef = React.useRef<HTMLDivElement>(null);
   const settled = React.useRef(false);
+  const following = React.useRef(true);
+  const [showJump, setShowJump] = React.useState(false);
+  const last = messages.at(-1);
+  const showFollowUps =
+    !isTyping && last?.role === "coach" && !last.question;
 
-  // One scroll rule for both surfaces, which had two: the page jumped on first
-  // paint and eased afterwards, the panel always jumped. `visible` is a prop
-  // because the panel stays mounted while hidden so minimising cannot lose the
-  // conversation, and scrolling a hidden element does nothing, so this has to
-  // run again when it opens.
   React.useEffect(() => {
-    if (!visible || messages.length === 0) return;
+    const pane = scrollPane(rootRef.current);
+    if (!pane) return;
+    const onScroll = () => {
+      const atEdge = nearLiveEdge(pane);
+      following.current = atEdge;
+      setShowJump(!atEdge);
+    };
+    pane.addEventListener("scroll", onScroll, { passive: true });
+    return () => pane.removeEventListener("scroll", onScroll);
+  }, [visible]);
+
+  // Follow the live edge only while the reader is still there. Scrolling up
+  // during a stream must not yank them back.
+  React.useEffect(() => {
+    if (!visible || messages.length === 0 || !following.current) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     bottomRef.current?.scrollIntoView({
-      behavior: settled.current ? "smooth" : "instant",
+      behavior: settled.current && !reduced ? "smooth" : "instant",
       block: "end",
     });
     settled.current = true;
   }, [visible, messages, isTyping]);
 
+  function jumpToLatest() {
+    following.current = true;
+    setShowJump(false);
+    bottomRef.current?.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "instant"
+        : "smooth",
+      block: "end",
+    });
+  }
+
   return (
-    <div>
+    <div ref={rootRef} className="relative">
       <div className={cn("space-y-8", compact && "space-y-6")}>
         {messages.map((message) =>
           message.role === "user" ? (
@@ -514,11 +612,25 @@ export function CoachMessages({
             />
           </div>
         )}
+
+        {showFollowUps && (
+          <CoachStarters thread={thread} compact />
+        )}
       </div>
 
       {/* Outside the spaced list: as a child of it, the anchor would inherit
           the gap and leave a message-sized hole under the last reply. */}
       <div ref={bottomRef} />
+
+      {showJump && (
+        <button
+          type="button"
+          onClick={jumpToLatest}
+          className="sticky bottom-2 mx-auto mt-3 flex rounded-full border bg-card px-3 py-1 text-xs text-muted-foreground shadow-xs outline-none hover:bg-muted/70 hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          {t(m.coach.jumpToLatest)}
+        </button>
+      )}
     </div>
   );
 }
