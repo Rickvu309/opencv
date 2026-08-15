@@ -32,7 +32,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { ProfileDocument } from "@/lib/actions/types";
+import type { ProfileDocument } from "@/lib/profile/types";
 import type { VaultItem } from "@/lib/profile/vault";
 import { useT } from "@/lib/i18n/use-t";
 import { cn } from "@/lib/utils";

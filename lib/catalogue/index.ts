@@ -9,3 +9,5 @@ export type {
   StageId,
 } from "./graph";
 export { pathNodes, stages } from "./graph";
+export type { Fit, FitProfile, RequirementMatch } from "./fit";
+export { fitFor, matchRequirements, rankByFit } from "./fit";

@@ -26,7 +26,7 @@
 import type { AppState } from "@/lib/actions/types";
 import { DEFAULT_CONFIG, type GuardrailConfig } from "@/lib/guardrails/config";
 import { messages } from "@/lib/i18n/messages";
-import { isCvPaper, paragraphsOf } from "@/lib/paper/types";
+import { isCvPaper, paragraphsOf } from "@/lib/paper";
 
 export type GroundingFinding = {
   rule: "ungrounded-number" | "ungrounded-claim";

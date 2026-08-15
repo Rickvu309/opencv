@@ -5,43 +5,11 @@
 // them, and keeping them out means every field here is safe to expose as a tool.
 
 import type { Application } from "@/lib/applications/types";
-import type { VaultItemId } from "@/lib/profile/vault";
 import type { Locale } from "@/lib/i18n/locale";
 import type { Paper } from "@/lib/paper/types";
 import type { PitchItem } from "@/lib/pitch/types";
+import type { Experience, ProfileDocument } from "@/lib/profile/types";
 import type { Opening } from "@/lib/search/types";
-
-export type Experience = {
-  title: string;
-  org: string;
-  period: string;
-  detail: string;
-};
-
-/**
- * One stored document. A profile keeps many per kind, a CV tailored for Data
- * Analyst, another for BA, an English one, and exactly one per kind is
- * primary: the version the Coach reads and the one shown first.
- */
-export type ProfileDocument = {
-  id: string;
-  kind: VaultItemId;
-  /** What the user calls this version, e.g. "CV, Data Analyst". */
-  label: string;
-  /** What it's tailored for. The reason this version exists. */
-  purpose?: string;
-  targetRole?: string;
-  language: "vi" | "en";
-  /** Link-backed documents (LinkedIn, GitHub, hosted portfolio). */
-  url?: string;
-  /** File-backed documents (CV, cover letter). */
-  fileName?: string;
-  note?: string;
-  isPrimary: boolean;
-  /** Display strings, not timestamps; no clock skew between server and client. */
-  updatedAt: string;
-  syncedAt?: string;
-};
 
 export type AppState = {
   /**

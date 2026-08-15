@@ -10,7 +10,7 @@
  * score not derived from those requirements.
  */
 
-import { matchRequirements, type FitProfile, type RequirementMatch } from "@/lib/career-fit";
+import { matchRequirements, type FitProfile, type RequirementMatch } from "@/lib/catalogue";
 import type { AppState } from "@/lib/actions/types";
 import type { Opening } from "@/lib/search/types";
 

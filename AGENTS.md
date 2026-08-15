@@ -16,8 +16,9 @@ The five canonical roles, each label string equal to its name. See `docs/agents/
 
 ### Domain docs
 
-Single-context: one `CONTEXT.md` and `docs/adr/` at the repo root, both created lazily.
-See `docs/agents/domain.md`.
+Product language: `CONTEXT.md`. Where a file goes: `docs/map.md`. How to read both: `docs/agents/domain.md`. Locked decisions: `docs/adr/`.
+
+This repo has no `src/` tree. Do not invent one.
 
 ## Cursor Cloud specific instructions
 

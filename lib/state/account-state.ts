@@ -4,7 +4,7 @@ import { seedState } from "@/lib/actions/seed";
 import type { AppState } from "@/lib/actions/types";
 import { getPool } from "@/lib/db/client";
 import { isLocale, type Locale } from "@/lib/i18n/locale";
-import { migrateStateShape } from "@/lib/paper/migrate";
+import { migrateStateShape } from "@/lib/paper";
 
 /**
  * One account's `AppState`, on the server.

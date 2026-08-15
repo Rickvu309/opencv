@@ -1,5 +1,5 @@
 import { isLocale } from "@/lib/i18n/locale";
-import { migrateStateShape } from "@/lib/paper/migrate";
+import { migrateStateShape } from "@/lib/paper";
 import { seedState } from "./seed";
 import type { AppState } from "./types";
 

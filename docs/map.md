@@ -1,6 +1,8 @@
-# How a change travels
+# How a change travels, and where a file goes
 
-Chrome → artefacts + Coach → `applyAction` → AppState. Both a click and a Coach turn hit the same registry. Viewport and layout width stay out of AppState.
+Coding agents: read this after [`CONTEXT.md`](../CONTEXT.md). Product nouns live there. Placement lives here.
+
+Chrome → artefacts + Coach → `applyAction` → AppState. A click and a Coach turn hit the same registry. Viewport and layout width stay out of AppState.
 
 ```mermaid
 flowchart TB
@@ -24,30 +26,48 @@ flowchart TB
   Registry --> State
 ```
 
-## Module vs adapter
+## Hierarchy
 
-`lib/<artefact>` is the module. `app/` and `components/` are Next adapters for that module. There is no `src/` wrapper and no `artefacts/` colocation.
+```
+app/(app)/<route>/     thin adapters: page, route-local chrome
+components/<name>/     only when two routes share UI
+components/ui/         primitives, no product nouns
+lib/actions/           the write module: AppState, defineAction, registry, store, persistence
+lib/<noun>/            shared domain when two callers exist
+lib/<support>/         auth, db, billing, i18n, catalogue, coach, guardrails, onboarding
+```
 
-Pitch and Search have no `components/` folder: nothing shared needs one. Do not add empty folders to complete a table.
+There is no `src/` wrapper, no `features/` tree, no `artefacts/` colocation.
 
-Action tables live next to the artefact (`lib/paper/actions.ts`, and so on). [`lib/actions/registry.ts`](../lib/actions/registry.ts) spreads them into one `applyAction`. Tailor calls the paper table directly; it does not import `applyAction`.
+**Where a new file goes**
+
+- Mutates AppState → an action on the existing prefix, or a new prefix if the noun is new. Tests call `applyAction`.
+- Two callers share it → `lib/<noun>/` or `lib/<support>/`.
+- One screen's chrome → `app/(app)/<route>/`.
+- Two routes share UI → `components/<name>/`.
+- A primitive with no product noun → `components/ui/`.
+- Unknown noun, one caller → wait. Do not add an empty folder.
+
+Pitch and Search have no `components/` folder. Do not add empty ones.
 
 ## Write path
 
 1. UI calls `dispatch` in [`lib/actions/store.tsx`](../lib/actions/store.tsx).
-2. Coach tool `apply_action` in [`agent/tools/apply_action.ts`](../agent/tools/apply_action.ts) **validates** the payload and returns `{ ok, action, input, summary }`. It does not mutate.
-3. [`components/coach/thread.tsx`](../components/coach/thread.tsx) reads that envelope from the stream and calls the same `dispatch`.
+2. Coach tool `apply_action` in [`agent/tools/apply_action.ts`](../agent/tools/apply_action.ts) **validates** and returns `{ ok, action, input, summary }`. It does not mutate.
+3. [`components/coach/thread.tsx`](../components/coach/thread.tsx) reads that envelope and calls the same `dispatch`.
 4. `dispatch` runs [`applyAction`](../lib/actions/registry.ts), toasts, offers undo, persists.
 
-The store lives in the tab. That is why the agent cannot write AppState itself. See [ADR 0001](adr/0001-coach-validates-browser-applies.md).
+The store lives in the tab. See [ADR 0001](adr/0001-coach-validates-browser-applies.md).
 
 `/coach` and the dock are two layouts of [`useCoach()`](../components/coach/provider.tsx).
 
-## Where each artefact lives
+Action tables live next to the noun (`lib/paper/actions.ts`, and so on). The registry spreads them. Tailor calls the paper table directly; it does not import `applyAction`. Callers still enter through `applyAction("application.tailor…")`.
 
-| Artefact | Module | Adapters | AppState | Actions |
+## Where each product noun lives
+
+| Noun | Shared domain | Adapters | AppState | Actions |
 |---|---|---|---|---|
-| Profile | [`lib/profile/`](../lib/profile/) (vault in [`vault.ts`](../lib/profile/vault.ts)) | [`app/(app)/profile/`](../app/(app)/profile/), [`components/profile/`](../components/profile/) | `profile` | `profile.*`, `document.*` |
+| Profile | [`lib/profile/`](../lib/profile/) | [`app/(app)/profile/`](../app/(app)/profile/), [`components/profile/`](../components/profile/) | `profile` | `profile.*`, `document.*` |
 | Paper | [`lib/paper/`](../lib/paper/) | [`app/(app)/paper/`](../app/(app)/paper/), [`components/paper/`](../components/paper/) | `paper` | `paper.*` |
 | Pitch | [`lib/pitch/`](../lib/pitch/) | [`app/(app)/pitch/`](../app/(app)/pitch/) | `pitch` | `pitch.*` |
 | Search | [`lib/search/`](../lib/search/) | [`app/(app)/search/`](../app/(app)/search/) | `openings` | `opening.*` |
@@ -56,24 +76,19 @@ The store lives in the tab. That is why the agent cannot write AppState itself. 
 
 Profile is in the account menu, not the Prepare rail. Paper is one artefact with types CV, letter, and write-up. Open a paper at `/paper?id=`. There is no `/cv` or `/papers`.
 
-A paper is a discriminated union: CV layout (sections) and letter layout (paragraphs) live inside [`lib/paper/`](../lib/paper/). Callers see `Paper`. See [ADR 0002](adr/0002-paper-is-a-union-of-types.md).
+A paper is a discriminated union. Layout stays inside [`lib/paper/`](../lib/paper/). Callers see `Paper`. See [ADR 0002](adr/0002-paper-is-a-union-of-types.md).
 
-## Supporting, not artefacts
+## Supporting, not product nouns
 
-[`lib/catalogue/`](../lib/catalogue/) holds shared role archetypes and the `Requirement` type. Search and the catalogue scorer both use it. There is no Catalogue screen.
+[`lib/catalogue/`](../lib/catalogue/) holds shared role archetypes and `Requirement`. Search and the catalogue scorer both use it. There is no Catalogue screen.
 
-[`lib/career-fit.ts`](../lib/career-fit.ts) splits the scorer: `matchRequirements` is met / missing / unprovable from `{ requires }`; `fitFor` adds the readiness term for a catalogue role. Openings never dress up as a `PathNode`.
+[`lib/catalogue/fit.ts`](../lib/catalogue/fit.ts) splits the scorer: `matchRequirements` is met / missing / unprovable from `{ requires }`; `fitFor` adds readiness for a catalogue role. Openings never dress up as a `PathNode`.
 
-## What is already deep
+Also supporting: [`lib/auth/`](../lib/auth/), [`lib/db/`](../lib/db/), [`lib/billing/`](../lib/billing/), [`lib/i18n/`](../lib/i18n/), [`lib/guardrails/`](../lib/guardrails/), [`lib/onboarding/`](../lib/onboarding/). Ids (`nextId`) live in [`lib/ids.ts`](../lib/ids.ts), not on a product noun. Persistence (anonymous localStorage vs signed-in Postgres) is inside [`lib/actions/persistence.ts`](../lib/actions/persistence.ts). Shared id minting is [`lib/ids.ts`](../lib/ids.ts) — Pitch and Application do not import Paper for a counter.
 
-- The registry and store ([`lib/actions/`](../lib/actions/))
-- Auth ([`lib/auth/`](../lib/auth/))
-- Billing ([`lib/billing/`](../lib/billing/))
-- Persistence: signed-in row vs anonymous localStorage ([`lib/actions/persistence.ts`](../lib/actions/persistence.ts))
+## Five layouts, not five stores
 
-## What is five layouts, not five stores
-
-Each artefact screen invented its own chrome. They all `dispatch` into the same AppState. Do not split the registry to match the folders.
+Each screen invented its own chrome. They all `dispatch` into the same AppState. Do not split the registry to match the folders.
 
 ## Working paper, not architecture
 

@@ -13,7 +13,7 @@
 import type { Msg } from "@/lib/i18n/locale";
 import { messages } from "@/lib/i18n/messages";
 import type { AppState } from "@/lib/actions/types";
-import { cvsOf, lettersOf } from "@/lib/paper/types";
+import { cvsOf, lettersOf } from "@/lib/paper";
 
 export function coachStarters(state: AppState): Msg[] {
   const s = messages.coach;

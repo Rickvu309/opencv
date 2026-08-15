@@ -13,7 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { EditableSection, Field, Row, useEditable } from "./editable";
-import type { AppState, Experience } from "@/lib/actions/types";
+import type { AppState } from "@/lib/actions/types";
+import type { Experience } from "@/lib/profile/types";
 import { matchesMsg } from "@/lib/i18n/locale";
 import { messages } from "@/lib/i18n/messages";
 import { useT } from "@/lib/i18n/use-t";
@@ -254,7 +255,7 @@ function ExperienceFields({
       <Field
         id={`exp-title-${index}`}
         label={t(m.profile.experienceRole)}
-        placeholder={t(m.cv.entryTitlePlaceholder)}
+        placeholder={t(m.paper.cv.entryTitlePlaceholder)}
         value={value.title}
         autoFocus={index === 0}
         onChange={(v) => onChange({ title: v })}
@@ -262,14 +263,14 @@ function ExperienceFields({
       <Field
         id={`exp-org-${index}`}
         label={t(m.profile.experienceOrg)}
-        placeholder={t(m.cv.entryOrgPlaceholder)}
+        placeholder={t(m.paper.cv.entryOrgPlaceholder)}
         value={value.org}
         onChange={(v) => onChange({ org: v })}
       />
       <Field
         id={`exp-period-${index}`}
         label={t(m.profile.experiencePeriod)}
-        placeholder={t(m.cv.entryPeriodPlaceholder)}
+        placeholder={t(m.paper.cv.entryPeriodPlaceholder)}
         value={value.period}
         onChange={(v) => onChange({ period: v })}
       />
@@ -280,7 +281,7 @@ function ExperienceFields({
         <Textarea
           id={`exp-detail-${index}`}
           className="min-h-16"
-          placeholder={t(m.cv.entryDetailPlaceholder)}
+          placeholder={t(m.paper.cv.entryDetailPlaceholder)}
           value={value.detail}
           onChange={(ev) => onChange({ detail: ev.target.value })}
         />

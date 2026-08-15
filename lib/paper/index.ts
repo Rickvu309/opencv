@@ -1,5 +1,5 @@
-// The Paper module's public surface. Callers see `Paper` and a few helpers.
-// CV theme, section defaults, and paragraph splitting stay next to the layouts.
+// The Paper module's public surface. Callers see `Paper` and the helpers they
+// actually use. Theme, section defaults, and layout stay next to the layouts.
 
 export type {
   Paper,
@@ -20,3 +20,5 @@ export {
 export { migrateStateShape, papersFromLegacy } from "./migrate";
 export { photoUrl, visiblePhotoUrl } from "./photo-url";
 export { letterTargets, openingForPaper, type LetterTarget } from "./opening";
+export { cvCompleteness } from "./cv";
+export { paragraphsOf } from "./letter";

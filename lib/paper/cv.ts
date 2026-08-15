@@ -3,7 +3,6 @@
 import type { AppState } from "@/lib/actions/types";
 import { matchesMsg, type DocumentLanguage, type Msg } from "@/lib/i18n/locale";
 import { messages } from "@/lib/i18n/messages";
-import { nextId } from "./types";
 import type {
   CvEntry,
   CvHeader,
@@ -13,8 +12,6 @@ import type {
   CvTemplate,
   CvTheme,
 } from "./types";
-
-export { nextId };
 
 export const PROSE_KINDS: CvSectionKind[] = ["summary", "skills"];
 
