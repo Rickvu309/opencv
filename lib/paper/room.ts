@@ -50,3 +50,8 @@ export function roomMode(input: {
 export function shouldTravel(kind: "open" | "back" | "land"): boolean {
   return kind === "open" || kind === "back";
 }
+
+/** Drive slab, gallery pick, and opened A4 must use this same name. */
+export function sheetTransitionName(id: string): string {
+  return `paper-sheet-${id}`;
+}

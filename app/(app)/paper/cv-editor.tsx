@@ -7,7 +7,6 @@ import { useDispatch } from "@/lib/actions/store";
 import type { CvPaper } from "@/lib/paper/types";
 import { useT } from "@/lib/i18n/use-t";
 import { CvCanvas } from "./cv-canvas";
-import { AddSectionMenu } from "./workspace-parts";
 
 export function CvEditor({
   cv,
@@ -63,7 +62,6 @@ export function CvEditor({
             >
               {t(m.paper.cv.fitOnePage)}
             </Button>
-            <AddSectionMenu cv={cv} />
             <QuietCoachOffer
               label={t(m.paper.cv.askCoachHelp)}
               prompt={t(m.paper.cv.askCoachPrompt(cv.label))}

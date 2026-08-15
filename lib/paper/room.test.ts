@@ -26,6 +26,27 @@ test("opening a row travels; a land does not", () => {
   assert.equal(shouldTravel("land"), false);
 });
 
+test("New CV and Format reopen the gallery in the same room", () => {
+  assert.equal(
+    roomMode({ id: null, creating: "cv", format: false }),
+    "gallery",
+  );
+  assert.equal(
+    roomMode({
+      id: "paper-1",
+      creating: null,
+      format: true,
+      openedType: "cv",
+    }),
+    "gallery",
+  );
+  assert.equal(paperHref({ creating: "cv" }), "/paper?new=cv");
+  assert.equal(
+    paperHref({ id: "paper-1", format: true }),
+    "/paper?id=paper-1&format=1",
+  );
+});
+
 test("create and rename go through paper actions", () => {
   let state = applyAction(seedState(), "paper.create", {
     type: "cv",

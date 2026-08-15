@@ -19,6 +19,7 @@ import {
   sectionOrder,
   templateHasPhoto,
 } from "@/lib/paper/cv";
+import { sheetTransitionName } from "@/lib/paper/room";
 import type { CvEntry, CvPaper, CvSection, CvSectionKind } from "@/lib/paper/types";
 import { useT } from "@/lib/i18n/use-t";
 import { cn } from "@/lib/utils";
@@ -35,7 +36,7 @@ export function CvCanvas({ cv }: { cv: CvPaper }) {
   return (
     <div
       className="w-full min-h-[36rem] max-w-[794px] bg-white text-black shadow-sm ring-1 ring-black/10"
-      style={{ viewTransitionName: `paper-sheet-${cv.id}` }}
+      style={{ viewTransitionName: sheetTransitionName(cv.id) }}
     >
       <div className="flex h-full flex-col gap-5 overflow-y-auto px-6 py-7 sm:px-10 sm:py-9">
         {templateHasPhoto(cv.theme.template) && (
@@ -91,16 +92,12 @@ export function CvCanvas({ cv }: { cv: CvPaper }) {
 
         {cv.sections.map((section, index) => (
           <React.Fragment key={section.id}>
-            {index > 0 && (
-              <AddBetween cv={cv} />
-            )}
+            {index > 0 && <AddBetween cv={cv} />}
             <CanvasSection cv={cv} section={section} index={index} />
           </React.Fragment>
         ))}
 
-        <div className="mt-auto pt-2 md:hidden">
-          <AddBetween cv={cv} />
-        </div>
+        <AddBetween cv={cv} />
       </div>
     </div>
   );

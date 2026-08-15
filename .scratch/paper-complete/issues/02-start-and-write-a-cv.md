@@ -18,4 +18,13 @@
 
 ## Answer
 
-Gallery is a Drive mode. Format reopens it on this CV. Upload write doors use `fromProfile: false`. Blocks drag-reorder via `paper.moveSection`.
+Gallery pick and Format pick travel the chosen tile into the A4 using `sheetTransitionName` (same name as the Drive slab). `+` between blocks is the add door: a short list, then `paper.addSection` Reveals an empty ghost. The desk is not a second CV palette. Upload write doors stay `fromProfile: false`; New → Upload and onboarding do not open Docs.
+
+## Verify
+
+- Unmade CV / New → CV: eight-situation wall. Arrows, Enter, Escape. Pick a tile: it travels into the A4 (`prefers-reduced-motion`: instant land).
+- Format → Where it’s going: same wall on this paper. Typed lines stay; ATS hides the photo frame.
+- `+` between blocks: pick Employment / Education / … → a new empty ghost Reveals. Drag a selected block to reorder.
+- Phone: sheet only, quiet % and Export on the band, photo frame on the A4 when the situation has one.
+- Empty-room file door: Uploaded + built CV, skip gallery, no Profile seed. New → Upload and onboarding: file on Drive only.
+- `lib/paper/cv.test.ts`: upload write door, siblings, addSection ghost. `lib/paper/photos.test.ts`: photo hide. `lib/paper/room.test.ts`: New CV and Format are gallery.

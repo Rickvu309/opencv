@@ -21,6 +21,7 @@ import {
   wordForTemplate,
 } from "@/lib/paper/cv";
 import { messages } from "@/lib/i18n/messages";
+import { isCvPaper } from "@/lib/paper/types";
 import type { AppState } from "@/lib/actions/types";
 
 /** A state holding one CV built from the fixture profile. */
@@ -317,6 +318,76 @@ test("AC-PAPERS-010.2: a new CV gets a template without the user choosing one", 
   });
   assert.equal(state.paper[0].theme.template, defaultTheme.template);
   assert.ok(templates.includes(state.paper[0].theme.template));
+});
+
+test("the upload write door starts a blank CV beside the file", () => {
+  let state = populated();
+  state = applyAction(state, "paper.addUpload", {
+    kind: "cv",
+    label: "ha.pdf",
+    fileName: "ha.pdf",
+  }).state;
+  state = applyAction(state, "paper.create", {
+    type: "cv",
+    label: "CV 1",
+    fromProfile: false,
+    template: "compact",
+  }).state;
+
+  const cv = state.paper[0];
+  assert.ok(isCvPaper(cv));
+  assert.equal(state.uploads.length, 1);
+  assert.equal(cv.header.name, "", "must not seed the Profile name");
+  assert.equal(cv.header.email, "");
+  assert.deepEqual(
+    cv.sections.map((section) => section.kind),
+    ["summary", "experience", "education", "skills"],
+  );
+  assert.deepEqual(
+    cv.sections.flatMap((section) => section.entries),
+    [],
+    "ghost starters, not invented jobs",
+  );
+});
+
+test("deleting the built CV leaves the uploaded file", () => {
+  let state = applyAction(seedState(), "paper.addUpload", {
+    kind: "cv",
+    label: "Old CV",
+    fileName: "ha.pdf",
+  }).state;
+  state = applyAction(state, "paper.create", {
+    type: "cv",
+    label: "CV 1",
+    fromProfile: false,
+    template: "compact",
+  }).state;
+  const cvId = state.paper[0]?.id;
+  assert.ok(cvId);
+  state = applyAction(state, "paper.remove", { id: cvId }).state;
+  assert.equal(state.paper.length, 0);
+  assert.equal(state.uploads.length, 1);
+});
+
+test("adding a section Reveals an empty ghost, not fake content", () => {
+  let state = applyAction(seedState(), "paper.create", {
+    type: "cv",
+    label: "CV 1",
+    fromProfile: false,
+  }).state;
+  const id = state.paper[0].id;
+  state = applyAction(state, "paper.addSection", {
+    id,
+    kind: "projects",
+  }).state;
+  const paper = state.paper[0];
+  assert.ok(isCvPaper(paper));
+  const added = paper.sections.find(
+    (section) => section.kind === "projects",
+  );
+  assert.ok(added);
+  assert.deepEqual(added.entries, []);
+  assert.equal(added.body, undefined);
 });
 
 test("AC-PAPERS-010.3: changing the template leaves the content alone", () => {

@@ -3,6 +3,7 @@
 import { useAppState, useDispatch } from "@/lib/actions/store";
 import { cvCompleteness, wordForTemplate } from "@/lib/paper/cv";
 import { openingForPaper } from "@/lib/paper/opening";
+import { sheetTransitionName } from "@/lib/paper/room";
 import {
   isCvPaper,
   isLetterPaper,
@@ -47,7 +48,7 @@ export function OpenedBand({
         deleteLabel={t(m.paper.cv.deleteCv)}
         onBack={onBack}
         meta={
-          <span className="hidden text-xs text-muted-foreground tabular-nums sm:inline">
+          <span className="text-xs text-muted-foreground tabular-nums">
             {t(m.paper.cv.readyPercent(cvCompleteness(paper)))}
           </span>
         }
@@ -157,7 +158,7 @@ export function Opened({
     return (
       <div
         className="h-full min-h-0"
-        style={{ viewTransitionName: `paper-sheet-${paper.id}` }}
+        style={{ viewTransitionName: sheetTransitionName(paper.id) }}
       >
         <ProofEditor
           paper={paper}

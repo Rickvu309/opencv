@@ -15,6 +15,7 @@ import { useAppState, useDispatch } from "@/lib/actions/store";
 import { nextId } from "@/lib/ids";
 import { wordForTemplate } from "@/lib/paper/cv";
 import { mimeFromName } from "@/lib/paper/files";
+import { sheetTransitionName } from "@/lib/paper/room";
 import {
   isCvPaper,
   isProofPaper,
@@ -316,7 +317,7 @@ function PaperRow({
         <span className="flex min-w-0 items-center gap-3">
           <Slab
             className={`paper-slab-${paper.id}`}
-            transitionName={`paper-sheet-${paper.id}`}
+            transitionName={sheetTransitionName(paper.id)}
           />
           <span className="min-w-0">
             <span

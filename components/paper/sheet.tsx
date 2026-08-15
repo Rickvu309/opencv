@@ -17,6 +17,7 @@ import {
 import { useDispatch } from "@/lib/actions/store";
 import { download } from "@/lib/paper/cv-export";
 import { fileStem, toMarkdown, toPlainText } from "@/lib/paper/letter-export";
+import { sheetTransitionName } from "@/lib/paper/room";
 import type { LetterPaper } from "@/lib/paper/types";
 import type { Opening } from "@/lib/search/types";
 import { useT } from "@/lib/i18n/use-t";
@@ -43,7 +44,7 @@ export function PaperSheet({
   return (
     <div
       className="w-full min-h-[36rem] max-w-[794px] bg-white text-black shadow-sm ring-1 ring-black/10"
-      style={{ viewTransitionName: `paper-sheet-${paper.id}` }}
+      style={{ viewTransitionName: sheetTransitionName(paper.id) }}
     >
       <div className="flex h-full flex-col gap-4 px-6 py-7 sm:px-10 sm:py-9">
         {speculative ? (

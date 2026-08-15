@@ -8,7 +8,7 @@ import { PaperToolbar } from "@/components/paper/toolbar";
 import { Button } from "@/components/ui/button";
 import { useAppState, useDispatch } from "@/lib/actions/store";
 import { themeForTemplate, wordForTemplate } from "@/lib/paper/cv";
-import { paperHref, roomMode, shouldTravel } from "@/lib/paper/room";
+import { paperHref, roomMode, sheetTransitionName, shouldTravel } from "@/lib/paper/room";
 import {
   isCvPaper,
   isLetterPaper,
@@ -64,15 +64,23 @@ function MyPaperWorkspace() {
   const arranging = searchParams.get("arrange") === "1";
   const fromUpload = searchParams.get("from") === "upload";
   const opened = id ? (paper.find((item) => item.id === id) ?? null) : null;
+  const newest = paper.at(-1);
   const mode = roomMode({
     id,
     creating,
     format,
     openedType: opened?.type ?? null,
   });
+  const galleryTravelName =
+    opened && isCvPaper(opened)
+      ? sheetTransitionName(opened.id)
+      : creating === "cv" && newest
+        ? sheetTransitionName(newest.id)
+        : undefined;
 
   const pending = React.useRef(false);
   const pendingFromUpload = React.useRef(false);
+  const pendingTravel = React.useRef(false);
 
   React.useEffect(() => {
     if (!pending.current) return;
@@ -80,8 +88,14 @@ function MyPaperWorkspace() {
     if (!newest) return;
     pending.current = false;
     const upload = pendingFromUpload.current;
+    const travel = pendingTravel.current;
     pendingFromUpload.current = false;
-    go(router, paperHref({ id: newest.id, fromUpload: upload }), "land");
+    pendingTravel.current = false;
+    go(
+      router,
+      paperHref({ id: newest.id, fromUpload: upload }),
+      travel ? "open" : "land",
+    );
   }, [paper, router]);
 
   React.useEffect(() => {
@@ -91,15 +105,16 @@ function MyPaperWorkspace() {
   }, [id, paper, router]);
 
   const goDrive = () => go(router, paperHref(), "back");
-  const onWillCreate = (opts?: { fromUpload?: boolean }) => {
+  const onWillCreate = (opts?: { fromUpload?: boolean; travel?: boolean }) => {
     pending.current = true;
     pendingFromUpload.current = Boolean(opts?.fromUpload);
+    pendingTravel.current = Boolean(opts?.travel);
   };
 
   const createCv = (template: CvTemplate, fromProfile: boolean) => {
     const role = profile.identity.targetRole.trim();
     const word = wordForTemplate(template);
-    onWillCreate();
+    onWillCreate({ travel: true });
     dispatch(
       "paper.create",
       {
@@ -186,6 +201,7 @@ function MyPaperWorkspace() {
             current={
               opened && isCvPaper(opened) ? opened.theme.template : undefined
             }
+            travelName={galleryTravelName || undefined}
             onBack={() =>
               go(router, opened ? paperHref({ id: opened.id }) : paperHref(), "land")
             }
@@ -196,7 +212,7 @@ function MyPaperWorkspace() {
                   { id: opened.id, ...themeForTemplate[template] },
                   { silent: true },
                 );
-                go(router, paperHref({ id: opened.id }), "land");
+                go(router, paperHref({ id: opened.id }), "open");
                 return;
               }
               createCv(template, false);

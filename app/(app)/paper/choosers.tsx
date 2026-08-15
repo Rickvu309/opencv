@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { flushSync } from "react-dom";
 
 import { templateHasPhoto, templates, wordForTemplate } from "@/lib/paper/cv";
 import {
@@ -15,10 +16,12 @@ export function CvGallery({
   onPick,
   onBack,
   current,
+  travelName,
 }: {
   onPick: (template: CvTemplate) => void;
   onBack: () => void;
   current?: CvTemplate;
+  travelName?: string;
 }) {
   const { t, m } = useT();
   const labels: Record<CvTemplate, string> = {
@@ -34,6 +37,7 @@ export function CvGallery({
   const [focus, setFocus] = React.useState(() =>
     current ? Math.max(0, templates.indexOf(current)) : 0,
   );
+  const [origin, setOrigin] = React.useState<CvTemplate | null>(null);
   const tileRefs = React.useRef<Array<HTMLButtonElement | null>>([]);
 
   React.useEffect(() => {
@@ -46,6 +50,14 @@ export function CvGallery({
       if (next < 0 || next >= templates.length) return i;
       return next;
     });
+  };
+
+  const pick = (template: CvTemplate) => {
+    flushSync(() => {
+      setFocus(templates.indexOf(template));
+      setOrigin(template);
+    });
+    onPick(template);
   };
 
   return (
@@ -80,7 +92,7 @@ export function CvGallery({
                 }}
                 type="button"
                 tabIndex={index === focus ? 0 : -1}
-                onClick={() => onPick(template)}
+                onClick={() => pick(template)}
                 onFocus={() => setFocus(index)}
                 className={cn(
                   "flex w-full flex-col text-start outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
@@ -94,8 +106,8 @@ export function CvGallery({
                   )}
                   style={{
                     aspectRatio: "1 / 1.414",
-                    ...(current === template
-                      ? { viewTransitionName: "paper-gallery-pick" }
+                    ...(travelName && origin === template
+                      ? { viewTransitionName: travelName }
                       : {}),
                   }}
                 >
