@@ -14,18 +14,27 @@ import {
 import { MIN_POSTING_CHARS, parseOpening } from "@/lib/search/types";
 
 import {
+  blankCv,
   blankEntry,
-  blankResume,
+  cvFromProfile,
+  duplicateCv,
   emptySection,
   insertionIndex,
+} from "@/lib/paper/cv";
+import {
+  bodyFrom,
+  isCvPaper,
+  isLetterPaper,
   nextId,
-  resumeFromProfile,
-} from "@/lib/cv/build";
-import { sectionDefaults } from "@/lib/cv/types";
-import type { Resume, ResumeSection } from "@/lib/cv/types";
+  paragraphsOf,
+  paperTypes,
+  sectionDefaults,
+  type CvPaper,
+  type CvSection,
+  type LetterPaper,
+  type Paper,
+} from "@/lib/paper/types";
 import type { Msg } from "@/lib/i18n/locale";
-import { bodyFrom, paperKinds, paragraphsOf } from "@/lib/papers/types";
-import type { PaperKind, ProseDocument } from "@/lib/papers/types";
 import { isSingletonPitchKind, pitchKinds, singletonOf } from "@/lib/pitch/types";
 import type { PitchItem, PitchKind } from "@/lib/pitch/types";
 import type { AppState } from "./types";
@@ -99,59 +108,50 @@ const sectionKinds = z.enum([
 ]);
 
 /**
- * Rewrite one CV, leaving every other one alone, and stamp it as just-changed.
- *
- * Every `resume.*` reducer goes through here so the timestamp cannot be
- * forgotten by one of fourteen actions, which is exactly how the "cập nhật"
- * line on a card starts lying.
- */
-function editResume(
-  state: AppState,
-  id: string,
-  edit: (resume: Resume) => Resume,
-): AppState {
-  const target = state.resumes.find((r) => r.id === id);
-  if (!target) return state;
-  return {
-    ...state,
-    resumes: state.resumes.map((r) =>
-      r.id === id ? { ...edit(r), updatedAt: "Just now" } : r,
-    ),
-  };
-}
-
-/**
- * Rewrite one prose document, restamping it.
- *
- * The same shape as `editResume`, and separate rather than generic: the two
- * arrays hold different models, and a helper that took a key name would make
- * every call site one type assertion longer to save four lines here.
+ * Rewrite one paper, leaving every other one alone, and stamp it as just-changed.
  */
 function editPaper(
   state: AppState,
   id: string,
-  edit: (paper: ProseDocument) => ProseDocument,
+  edit: (paper: Paper) => Paper,
 ): AppState {
-  const target = state.papers.find((p) => p.id === id);
+  const target = state.paper.find((p) => p.id === id);
   if (!target) return state;
   return {
     ...state,
-    papers: state.papers.map((p) =>
+    paper: state.paper.map((p) =>
       p.id === id ? { ...edit(p), updatedAt: "Just now" } : p,
     ),
   };
 }
 
-/** Rewrite one section of one CV. */
+function editCv(
+  state: AppState,
+  id: string,
+  edit: (paper: CvPaper) => CvPaper,
+): AppState {
+  return editPaper(state, id, (paper) => (isCvPaper(paper) ? edit(paper) : paper));
+}
+
+function editLetter(
+  state: AppState,
+  id: string,
+  edit: (paper: LetterPaper) => LetterPaper,
+): AppState {
+  return editPaper(state, id, (paper) =>
+    isLetterPaper(paper) ? edit(paper) : paper,
+  );
+}
+
 function editSection(
   state: AppState,
-  resumeId: string,
+  paperId: string,
   sectionId: string,
-  edit: (section: ResumeSection) => ResumeSection,
+  edit: (section: CvSection) => CvSection,
 ): AppState {
-  return editResume(state, resumeId, (resume) => ({
-    ...resume,
-    sections: resume.sections.map((s) => (s.id === sectionId ? edit(s) : s)),
+  return editCv(state, paperId, (paper) => ({
+    ...paper,
+    sections: paper.sections.map((s) => (s.id === sectionId ? edit(s) : s)),
   }));
 }
 
@@ -450,111 +450,92 @@ export const actions = {
     touched: () => ["education"],
   }),
 
-  // ── CV builder ──────────────────────────────────────────────────────────
+  // ── Paper: CVs, letters, write-ups ─────────────────────────────────────
   //
-  // Fourteen actions rather than one `resume.set`, for the reason the rest of
-  // this registry exists: the model has to be able to change one bullet without
-  // resending the document, and a whole-document write is the one edit that can
-  // silently delete work the user did between turns.
+  // One artefact, two layouts. Shared actions take `type`. CV-only and
+  // letter-only actions no-op on the wrong type rather than invent a second
+  // artefact.
 
-  "resume.create": defineAction({
+  "paper.create": defineAction({
     description:
-      "Start a new CV for the user. With fromProfile, it arrives already " +
-      "filled in from their profile, name, experience, education, " +
-      "certificates, which is almost always what they want; a blank one is " +
-      "for a CV unlike anything on file. Always give it a label naming the " +
-      "job it is for.",
+      "Start a paper. type is cv, letter, or write-up. For a CV, fromProfile " +
+      "fills it from the profile (almost always what they want). For a letter " +
+      "or write-up, pass body to write the first draft, with a blank line " +
+      "between paragraphs. Always give it a label naming what it is for.",
     input: z.object({
-      label: z.string().min(1).describe('e.g. "CV, Data Analyst"'),
+      type: z.enum(paperTypes as ["cv", "letter", "write-up"]),
+      label: z.string().min(1).describe('e.g. "CV, Data Analyst" or "Letter for VNG"'),
       targetRole: z.string().optional(),
       fromProfile: z.boolean().default(true),
+      body: z.string().optional(),
       language: z
         .enum(["vi", "en"])
         .optional()
-        .describe(
-          "The CV's own language. Defaults to English. Set it when the " +
-            "user needs a Vietnamese CV.",
-        ),
+        .describe("The document's own language. Defaults to English."),
     }),
-    apply: (state, { label, targetRole, fromProfile, language }) => {
+    apply: (state, { type, label, targetRole, fromProfile, body, language }) => {
       const id = nextId(
-        "cv",
-        state.resumes.map((r) => r.id),
+        "paper",
+        state.paper.map((p) => p.id),
       );
       const documentLanguage = language ?? "en";
-      const resume = fromProfile
-        ? resumeFromProfile(state, id, label, documentLanguage)
-        : blankResume(id, label, documentLanguage);
-      if (targetRole) resume.targetRole = targetRole;
-      return { ...state, resumes: [...state.resumes, resume] };
+      let created: Paper;
+      if (type === "cv") {
+        created = fromProfile
+          ? cvFromProfile(state, id, label, documentLanguage)
+          : blankCv(id, label, documentLanguage);
+        if (targetRole) created.targetRole = targetRole;
+      } else {
+        created = {
+          id,
+          type,
+          label,
+          language: documentLanguage,
+          body: body ?? "",
+          updatedAt: "Just now",
+        };
+        if (targetRole) created.targetRole = targetRole;
+      }
+      return { ...state, paper: [...state.paper, created] };
     },
     summary: ({ label }) => msg(`Created “${label}”`),
     touched: (_input, after) => {
-      const added = after.resumes.at(-1);
+      const added = after.paper.at(-1);
       return added ? [added.id] : [];
     },
   }),
 
-  "resume.duplicate": defineAction({
+  "paper.duplicate": defineAction({
     description:
-      "Copy an existing CV so the user can tailor it for another job without " +
-      "losing the original. Prefer this over creating a second one from " +
-      "scratch when the two share most of their content.",
+      "Copy an existing paper so the user can tailor it without losing the " +
+      "original. Prefer this over creating a second one from scratch when the " +
+      "two share most of their content.",
     input: z.object({
       id: z.string().min(1),
       label: z.string().min(1),
     }),
     apply: (state, { id, label }) => {
-      const source = state.resumes.find((r) => r.id === id);
+      const source = state.paper.find((p) => p.id === id);
       if (!source) return state;
       const newId = nextId(
-        "cv",
-        state.resumes.map((r) => r.id),
+        "paper",
+        state.paper.map((p) => p.id),
       );
-      // Ids are rewritten, not copied: two sections sharing an id would make
-      // every later edit land on both CVs at once.
-      const copy: Resume = {
-        ...source,
-        id: newId,
-        label,
-        updatedAt: "Just now",
-        sections: source.sections.map((section, i) => {
-          const sectionId = `${newId}-s-${i + 1}`;
-          return {
-            ...section,
-            id: sectionId,
-            entries: section.entries.map((entry, j) => ({
-              ...entry,
-              id: `${sectionId}-${j + 1}`,
-            })),
-          };
-        }),
-      };
-      return { ...state, resumes: [...state.resumes, copy] };
+      const copy: Paper = isCvPaper(source)
+        ? duplicateCv(source, newId, label)
+        : { ...source, id: newId, label, updatedAt: "Just now" };
+      return { ...state, paper: [...state.paper, copy] };
     },
-    summary: ({ label }) =>
-      msg(`Duplicated as “${label}”`),
+    summary: ({ label }) => msg(`Duplicated as “${label}”`),
     touched: (_input, after) => {
-      const added = after.resumes.at(-1);
+      const added = after.paper.at(-1);
       return added ? [added.id] : [];
     },
   }),
 
-  "resume.remove": defineAction({
-    destructive: true,
-    confirm: () => msg("Delete this CV for good? It cannot be restored."),
-    description: "Delete a CV the user no longer wants.",
-    input: z.object({ id: z.string().min(1) }),
-    apply: (state, { id }) => ({
-      ...state,
-      resumes: state.resumes.filter((r) => r.id !== id),
-    }),
-    summary: () => msg("CV deleted"),
-  }),
-
-  "resume.rename": defineAction({
+  "paper.rename": defineAction({
     description:
-      "Change what a CV is called, which job it targets, or its language.",
+      "Change what a paper is called, which job it targets, or its language.",
     input: z.object({
       id: z.string().min(1),
       label: z.string().min(1).optional(),
@@ -562,11 +543,23 @@ export const actions = {
       language: z.enum(["vi", "en"]).optional(),
     }),
     apply: (state, { id, ...fields }) =>
-      editResume(state, id, (resume) => ({ ...resume, ...fields })),
-    summary: () => msg("CV saved"),
+      editPaper(state, id, (paper) => ({ ...paper, ...fields })),
+    summary: () => msg("Saved"),
   }),
 
-  "resume.setHeader": defineAction({
+  "paper.remove": defineAction({
+    destructive: true,
+    confirm: () => msg("Delete this paper for good? It cannot be restored."),
+    description: "Delete a paper the user no longer wants.",
+    input: z.object({ id: z.string().min(1) }),
+    apply: (state, { id }) => ({
+      ...state,
+      paper: state.paper.filter((p) => p.id !== id),
+    }),
+    summary: () => msg("Paper deleted"),
+  }),
+
+  "paper.setHeader": defineAction({
     description:
       "Set the contact block at the top of a CV. The headline is the one line " +
       "under the name, e.g. “Sinh viên năm 3 · hướng Data Analyst”.",
@@ -583,17 +576,17 @@ export const actions = {
         .describe("Replaces the whole list, e.g. LinkedIn and GitHub"),
     }),
     apply: (state, { id, ...fields }) =>
-      editResume(state, id, (resume) => ({
-        ...resume,
-        header: { ...resume.header, ...fields },
+      editCv(state, id, (paper) => ({
+        ...paper,
+        header: { ...paper.header, ...fields },
       })),
     summary: () => msg("Contact details updated"),
   }),
 
-  "resume.setPhoto": defineAction({
+  "paper.setPhoto": defineAction({
     description:
       "Record that this CV now has a photo, or that it no longer does. The " +
-      "image itself is uploaded by the user through the CV screen and is not " +
+      "image itself is uploaded by the user through the Paper screen and is not " +
       "something you can set; this only writes down that one exists. You will " +
       "rarely need it.",
     input: z.object({
@@ -604,8 +597,8 @@ export const actions = {
         .describe("Absent means the CV has no photo"),
     }),
     apply: (state, { id, stamp }) =>
-      editResume(state, id, (resume) => {
-        const next = { ...resume };
+      editCv(state, id, (paper) => {
+        const next = { ...paper };
         if (stamp) next.photoStamp = stamp;
         else delete next.photoStamp;
         return next;
@@ -614,7 +607,7 @@ export const actions = {
       stamp ? msg("Photo added") : msg("Photo removed"),
   }),
 
-  "resume.setTheme": defineAction({
+  "paper.setTheme": defineAction({
     description:
       "Change how a CV looks: template, accent colour, and how tightly it is " +
       "packed. Use tight when the user needs to fit one page.",
@@ -625,50 +618,50 @@ export const actions = {
       density: z.enum(["airy", "normal", "tight"]).optional(),
     }),
     apply: (state, { id, ...fields }) =>
-      editResume(state, id, (resume) => ({
-        ...resume,
-        theme: { ...resume.theme, ...fields },
+      editCv(state, id, (paper) => ({
+        ...paper,
+        theme: { ...paper.theme, ...fields },
       })),
     summary: () => msg("CV appearance updated"),
   }),
 
-  "resume.addSection": defineAction({
+  "paper.addSection": defineAction({
     description:
       "Add a section to a CV. It lands where that kind belongs in the reading " +
       "order rather than at the end. Use custom for anything unnamed here, " +
       "and give it a heading.",
     input: z.object({
-      id: z.string().min(1).describe("The CV's id"),
+      id: z.string().min(1).describe("The paper's id"),
       kind: sectionKinds,
       heading: z.string().optional(),
     }),
     apply: (state, { id, kind, heading }) =>
-      editResume(state, id, (resume) => {
+      editCv(state, id, (paper) => {
         const section = emptySection(
           kind,
           nextId(
-            `${resume.id}-s`,
-            resume.sections.map((s) => s.id),
+            `${paper.id}-s`,
+            paper.sections.map((s) => s.id),
           ),
-          resume.language,
+          paper.language,
           heading,
         );
-        const at = insertionIndex(resume.sections, kind);
-        const sections = [...resume.sections];
+        const at = insertionIndex(paper.sections, kind);
+        const sections = [...paper.sections];
         sections.splice(at, 0, section);
-        return { ...resume, sections };
+        return { ...paper, sections };
       }),
     summary: ({ kind, heading }) =>
       msg(`Added the “${heading ?? sectionDefaults[kind].heading}” section`),
   }),
 
-  "resume.updateSection": defineAction({
+  "paper.updateSection": defineAction({
     description:
       "Edit a section: rename its heading, rewrite its prose (summary and " +
       "skills use body), or hide it. Hiding keeps the content but leaves it " +
       "off the printed CV, which is how a user tailors one version per job.",
     input: z.object({
-      id: z.string().min(1).describe("The CV's id"),
+      id: z.string().min(1).describe("The paper's id"),
       sectionId: z.string().min(1),
       heading: z.string().min(1).optional(),
       body: z.string().optional(),
@@ -683,7 +676,7 @@ export const actions = {
     touched: ({ sectionId }) => [sectionId],
   }),
 
-  "resume.removeSection": defineAction({
+  "paper.removeSection": defineAction({
     destructive: true,
     confirm: () => msg("Delete this CV section? Hiding it keeps the content."),
     description:
@@ -694,14 +687,14 @@ export const actions = {
       sectionId: z.string().min(1),
     }),
     apply: (state, { id, sectionId }) =>
-      editResume(state, id, (resume) => ({
-        ...resume,
-        sections: resume.sections.filter((s) => s.id !== sectionId),
+      editCv(state, id, (paper) => ({
+        ...paper,
+        sections: paper.sections.filter((s) => s.id !== sectionId),
       })),
     summary: () => msg("Section deleted"),
   }),
 
-  "resume.moveSection": defineAction({
+  "paper.moveSection": defineAction({
     description:
       "Move a section up or down. Order matters: a reader spends longest on " +
       "whatever is first, so the strongest section belongs near the top.",
@@ -711,27 +704,24 @@ export const actions = {
       by: z.number().int().describe("-1 for up, 1 for down"),
     }),
     apply: (state, { id, sectionId, by }) =>
-      editResume(state, id, (resume) => {
-        const index = resume.sections.findIndex((s) => s.id === sectionId);
-        if (index === -1) return resume;
-        return { ...resume, sections: shift(resume.sections, index, by) };
+      editCv(state, id, (paper) => {
+        const index = paper.sections.findIndex((s) => s.id === sectionId);
+        if (index === -1) return paper;
+        return { ...paper, sections: shift(paper.sections, index, by) };
       }),
     summary: () => msg("Sections reordered"),
     touched: ({ sectionId }) => [sectionId],
   }),
 
-  "resume.addEntry": defineAction({
+  "paper.addEntry": defineAction({
     description:
       "Add one job, degree, project or certificate to a section. Put each " +
       "result on its own line in detail; they become bullets. Write what " +
       "changed because of the user, with a number where there is one, not a " +
       "list of duties.",
     input: z.object({
-      id: z.string().min(1).describe("The CV's id"),
+      id: z.string().min(1).describe("The paper's id"),
       sectionId: z.string().min(1),
-      // Not `.min(1)`: the editor adds a blank entry and lets the user type
-      // into it, which is the only sane order for a form. An untitled entry is
-      // simply skipped by the preview and by every export.
       title: z.string().default("").describe("Role, degree or project name"),
       org: z.string().optional().describe("Company, school or publisher"),
       period: z.string().optional().describe("e.g. 06/2025 – 09/2025"),
@@ -760,23 +750,23 @@ export const actions = {
         ? msg(`Added “${title}” to your CV`)
         : msg("Added an entry to your CV"),
     touched: ({ sectionId }, after) => {
-      const section = after.resumes
-        .flatMap((r) => r.sections)
+      const section = after.paper
+        .filter(isCvPaper)
+        .flatMap((p) => p.sections)
         .find((s) => s.id === sectionId);
       const added = section?.entries.at(-1);
       return added ? [added.id] : [];
     },
   }),
 
-  "resume.updateEntry": defineAction({
+  "paper.updateEntry": defineAction({
     description:
       "Rewrite one entry in a CV. This is the action to use when sharpening a " +
       "bullet: send only the fields that change.",
     input: z.object({
-      id: z.string().min(1).describe("The CV's id"),
+      id: z.string().min(1).describe("The paper's id"),
       sectionId: z.string().min(1),
       entryId: z.string().min(1),
-      /** Clearable, for the same reason `resume.addEntry` allows it. */
       title: z.string().optional(),
       org: z.string().optional(),
       period: z.string().optional(),
@@ -795,7 +785,7 @@ export const actions = {
     touched: ({ entryId }) => [entryId],
   }),
 
-  "resume.removeEntry": defineAction({
+  "paper.removeEntry": defineAction({
     destructive: true,
     confirm: () => msg("Delete this entry from the CV?"),
     description: "Remove one entry from a CV section.",
@@ -812,7 +802,7 @@ export const actions = {
     summary: () => msg("Entry deleted"),
   }),
 
-  "resume.moveEntry": defineAction({
+  "paper.moveEntry": defineAction({
     description:
       "Move an entry up or down inside its section. Most recent first is the " +
       "convention readers expect.",
@@ -832,67 +822,6 @@ export const actions = {
     touched: ({ entryId }) => [entryId],
   }),
 
-  /* ── Prose documents: cover letters and project write-ups ─────────────── */
-  // The résumé actions above edit sections and dated entries. These edit
-  // paragraphs, which is what a letter is made of. Same pattern, different
-  // structure; see `lib/papers/types.ts` for why one model could not be both.
-
-  "paper.create": defineAction({
-    description:
-      "Start a cover letter or a project write-up. Give it a label naming " +
-      "what it is for. Pass `body` to write the first draft in the same " +
-      "step, with a blank line between paragraphs; leave it out to create an " +
-      "empty one for the user to fill in.",
-    input: z.object({
-      kind: z.enum(paperKinds as [PaperKind, ...PaperKind[]]),
-      label: z.string().min(1).describe('e.g. "Thư cho VNG"'),
-      targetRole: z.string().optional(),
-      body: z.string().optional(),
-      language: z
-        .enum(["vi", "en"])
-        .optional()
-        .describe(
-          "The document's own language. Defaults to English. Set it when the " +
-            "user needs a Vietnamese letter.",
-        ),
-    }),
-    apply: (state, { kind, label, targetRole, body, language }) => {
-      const paper: ProseDocument = {
-        id: nextId(
-          "paper",
-          state.papers.map((p) => p.id),
-        ),
-        kind,
-        label,
-        language: language ?? "en",
-        body: body ?? "",
-        updatedAt: "Just now",
-      };
-      if (targetRole) paper.targetRole = targetRole;
-      return { ...state, papers: [...state.papers, paper] };
-    },
-    summary: ({ label }) => msg(`Created “${label}”`),
-    touched: (_input, after) => {
-      const added = after.papers.at(-1);
-      return added ? [added.id] : [];
-    },
-  }),
-
-  "paper.rename": defineAction({
-    description:
-      "Change what a letter or write-up is called, which role it targets, or " +
-      "its language.",
-    input: z.object({
-      id: z.string().min(1),
-      label: z.string().min(1).optional(),
-      targetRole: z.string().optional(),
-      language: z.enum(["vi", "en"]).optional(),
-    }),
-    apply: (state, { id, ...fields }) =>
-      editPaper(state, id, (paper) => ({ ...paper, ...fields })),
-    summary: () => msg("Saved"),
-  }),
-
   "paper.setBody": defineAction({
     description:
       "Replace the whole text of a letter or write-up. Use this ONLY for a " +
@@ -903,7 +832,8 @@ export const actions = {
       id: z.string().min(1),
       body: z.string().describe("Paragraphs separated by a blank line"),
     }),
-    apply: (state, { id, body }) => editPaper(state, id, (paper) => ({ ...paper, body })),
+    apply: (state, { id, body }) =>
+      editLetter(state, id, (paper) => ({ ...paper, body })),
     summary: () => msg("Rewritten"),
   }),
 
@@ -918,16 +848,13 @@ export const actions = {
       text: z.string().min(1),
     }),
     apply: (state, { id, index, text }) =>
-      editPaper(state, id, (paper) => {
+      editLetter(state, id, (paper) => {
         const paragraphs = paragraphsOf(paper.body);
-        // Out of range changes nothing rather than appending. A model that
-        // miscounted should not silently add a paragraph nobody asked for.
         if (index > paragraphs.length) return paper;
         paragraphs[index - 1] = text;
         return { ...paper, body: bodyFrom(paragraphs) };
       }),
-    summary: ({ index }) =>
-      msg(`Paragraph ${index} rewritten`),
+    summary: ({ index }) => msg(`Paragraph ${index} rewritten`),
   }),
 
   "paper.addParagraph": defineAction({
@@ -940,9 +867,10 @@ export const actions = {
       at: z.number().int().min(1).optional().describe("1 puts it first"),
     }),
     apply: (state, { id, text, at }) =>
-      editPaper(state, id, (paper) => {
+      editLetter(state, id, (paper) => {
         const paragraphs = paragraphsOf(paper.body);
-        const position = at === undefined ? paragraphs.length : Math.min(at - 1, paragraphs.length);
+        const position =
+          at === undefined ? paragraphs.length : Math.min(at - 1, paragraphs.length);
         paragraphs.splice(position, 0, text);
         return { ...paper, body: bodyFrom(paragraphs) };
       }),
@@ -950,18 +878,15 @@ export const actions = {
   }),
 
   "paper.removeParagraph": defineAction({
-    // Every `.remove*` action asks first, without exception. A paragraph is
-    // sentences the user wrote, and undo lives in a toast that leaves.
     destructive: true,
-    confirm: ({ index }) =>
-      msg(`Delete paragraph ${index}?`),
+    confirm: ({ index }) => msg(`Delete paragraph ${index}?`),
     description: "Delete one paragraph, counting from 1.",
     input: z.object({
       id: z.string().min(1),
       index: z.number().int().min(1),
     }),
     apply: (state, { id, index }) =>
-      editPaper(state, id, (paper) => {
+      editLetter(state, id, (paper) => {
         const paragraphs = paragraphsOf(paper.body);
         if (index > paragraphs.length) return paper;
         paragraphs.splice(index - 1, 1);
@@ -978,27 +903,12 @@ export const actions = {
       by: z.number().int().describe("-1 for up, 1 for down"),
     }),
     apply: (state, { id, index, by }) =>
-      editPaper(state, id, (paper) => {
+      editLetter(state, id, (paper) => {
         const paragraphs = paragraphsOf(paper.body);
         if (index > paragraphs.length) return paper;
         return { ...paper, body: bodyFrom(shift(paragraphs, index - 1, by)) };
       }),
     summary: () => msg("Paragraphs reordered"),
-  }),
-
-  "paper.remove": defineAction({
-    destructive: true,
-    confirm: ({ id }) => {
-      void id;
-      return msg("Delete this document for good? It cannot be restored.");
-    },
-    description: "Delete a letter or write-up the user no longer wants.",
-    input: z.object({ id: z.string().min(1) }),
-    apply: (state, { id }) => ({
-      ...state,
-      papers: state.papers.filter((p) => p.id !== id),
-    }),
-    summary: () => msg("Document deleted"),
   }),
 
   /* ── Pitch: the bio, the self-introduction, the answer bank ───────────── */
@@ -1299,24 +1209,20 @@ export const actions = {
       "tailoring anything, then edit the copy.",
     input: z.object({
       id: z.string().min(1).describe("Application id"),
-      resumeId: z.string().min(1).describe("The CV to copy"),
+      paperId: z.string().min(1).describe("The CV-type paper to copy"),
       label: z.string().min(1),
     }),
-    apply: (state, { id, resumeId, label }) => {
+    apply: (state, { id, paperId, label }) => {
       const application = state.applications.find((app) => app.id === id);
-      const source = state.resumes.find((resume) => resume.id === resumeId);
-      if (!application || !source) return state;
+      const source = state.paper.find((p) => p.id === paperId);
+      if (!application || !source || !isCvPaper(source)) return state;
 
-      // The copy is made by the same duplicate the CV screen uses, so a
-      // tailored CV is an ordinary CV in every respect except what it is bound
-      // to. Nothing here reimplements the copying, which is what keeps ids
-      // rewritten and sections independent.
-      const copied = applyAction(state, "resume.duplicate", {
-        id: resumeId,
+      const copied = applyAction(state, "paper.duplicate", {
+        id: paperId,
         label,
       }).state;
-      const created = copied.resumes.find(
-        (resume) => !state.resumes.some((before) => before.id === resume.id),
+      const created = copied.paper.find(
+        (p) => !state.paper.some((before) => before.id === p.id),
       );
       if (!created) return state;
 
@@ -1352,13 +1258,13 @@ export const actions = {
       if (!application) return state;
 
       const created = applyAction(state, "paper.create", {
-        kind: "cover-letter",
+        type: "letter",
         label,
         targetRole,
         body,
       }).state;
-      const paper = created.papers.find(
-        (entry) => !state.papers.some((before) => before.id === entry.id),
+      const paper = created.paper.find(
+        (entry) => !state.paper.some((before) => before.id === entry.id),
       );
       if (!paper) return state;
 

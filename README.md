@@ -57,42 +57,25 @@ npm run lint
 
 ## How it fits together
 
-One idea carries most of the design: **every change to the app goes through one
-registry.**
+**Every change goes through one registry.** The UI dispatches when you click.
+The Coach calls the same actions as tools. Both go through
+`lib/actions/store.tsx`, so a Coach edit is indistinguishable from yours, with
+undo.
 
-`lib/actions/registry.ts` holds 41 actions across seven groups (profile,
-documents, plan, todos, career paths, CVs, settings). Each one is a description
-the model reads, a Zod schema that validates the input, and a pure reducer.
-
-The UI dispatches those actions when you click. The Coach calls the same set as
-tools. Because both go through `lib/actions/store.tsx`, a change the Coach makes
-is indistinguishable from one you make yourself, and it shows up everywhere at
-once.
-
-That is where persistence and the Coach's context are written: once, behind
-`dispatch`, rather than 41 times. Persistence moved from the browser to a row
-per account without a single action or screen changing, which is what having
-that seam was for.
+The Coach does not write AppState itself. It validates and returns an envelope;
+the browser applies it. `CONTEXT.md` is the glossary. `docs/map.md` is the
+one-page picture. `docs/adr/` is why the surprising bits are that way.
 
 ```
 lib/actions/
-  registry.ts   every change the app can make, one definition each
-  store.tsx     the one way state changes; UI and Coach both call it
-  context.ts    what the Coach is allowed to see, sent on every turn
+  registry.ts    every change the app can make, one definition each
+  store.tsx      the one way state changes; UI and Coach both call it
+  context.ts     what the Coach is allowed to see, sent on every turn
   persistence.ts where your work is kept between visits
-  types.ts      the shape the Coach is allowed to see and change
-  seed.ts       the state a new account starts from, deliberately empty
-  fixture.ts    a populated account for tests, built by dispatching
-lib/
-  catalog.ts    the app's fixed vocabulary: kinds of thing, and their weights
-  cv/           the CV itself: types, building one, and getting it back out
-  i18n/         every word the product says
+  types.ts       the shape the Coach is allowed to see and change
+  seed.ts        the state a new account starts from, deliberately empty
+  fixture.ts     a populated account for tests, built by dispatching
 ```
-
-The CV is the clearest case for the registry. Fourteen of the forty-one actions
-are `resume.*`, because the Coach has to be able to rewrite one bullet without
-resending the document, and a whole-document write is the one edit that can
-silently delete work you did between turns.
 
 The agent is a sibling, not a service you run separately:
 
@@ -101,7 +84,7 @@ agent/
   agent.ts            the model, and the two settings it needs
   instructions.md     who the Coach is
   channels/eve.ts     who is allowed to reach it
-  tools/apply_action.ts  the Coach's hands, wired to the registry above
+  tools/apply_action.ts  validates; the browser applies the envelope
 ```
 
 ## Copy
@@ -115,13 +98,19 @@ code they describe. A CV can still record its own language for the document.
 Five artefact screens, then Coach:
 
 - **My Profile** (`/profile`) — who you are. Lives in the account menu.
-- **My Paper** (`/paper`) — CVs and letters in one library. `/papers` redirects here.
+- **My Paper** (`/paper`) — a library of papers. CV, letter, and write-up are
+  types, not extra screens. Open one at `/paper?id=`.
 - **My Pitch** (`/pitch`) — bio, self-intro, interview answers.
 - **My Search** (`/search`) — openings ranked against the profile.
 - **My Application** (`/applications`) — the board of applications you are in.
 
 **My Coach** (`/coach`) is the conversation. The dock on every other screen is
 the same conversation, not a second one.
+
+Each artefact has one URL, one AppState field, one action prefix, and a
+folder trio: `app/(app)/<name>`, `lib/<name>`, and `components/<name>` when
+the screen has shared UI. Search stores **openings**; Application stays at
+`/applications`. `lib/actions/` is the write spine — not five stores.
 
 Under those: Discover (landing), onboarding, accounts, Help, Plan and billing.
 
@@ -138,6 +127,9 @@ runner.
 
 ## Docs
 
+- `CONTEXT.md`: product words (artefacts, Paper vs vault, Coach vs AppState).
+- `docs/map.md`: how a click and a Coach turn both hit `dispatch`.
+- `docs/adr/`: surprising choices (Coach validates; the browser applies).
 - `PRODUCT.md`: who this is for, and the design principles.
 - `DESIGN.md`: the visual system. Colour, type, motion, and how a Coach edit
   behaves.

@@ -52,8 +52,8 @@ test("anything produced here ticks the document step", () => {
   // with this", and insisting on a CV would leave somebody who wrote a cover
   // letter first staring at an unticked box.
   for (const [action, input] of [
-    ["resume.create", { label: "CV" }],
-    ["paper.create", { kind: "cover-letter", label: "Thư" }],
+    ["paper.create", { type: "cv", label: "CV" }],
+    ["paper.create", { type: "letter", label: "Thư" }],
     ["pitch.write", { kind: "bio", body: "Sinh viên năm ba" }],
   ] as const) {
     const state = applyAction(seedState(), action, input).state;
@@ -70,7 +70,7 @@ test("the list disappears only when every step is done", () => {
     targetRole: "Data Analyst",
   }).state;
   state = applyAction(state, "profile.addCourse", { name: "SQL" }).state;
-  state = applyAction(state, "resume.create", { label: "CV" }).state;
+  state = applyAction(state, "paper.create", { type: "cv", label: "CV" }).state;
 
   assert.equal(checklistComplete(checklistSteps(state, false)), false);
   assert.equal(checklistComplete(checklistSteps(state, true)), true);

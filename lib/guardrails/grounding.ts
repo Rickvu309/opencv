@@ -26,7 +26,7 @@
 import type { AppState } from "@/lib/actions/types";
 import { DEFAULT_CONFIG, type GuardrailConfig } from "@/lib/guardrails/config";
 import { messages } from "@/lib/i18n/messages";
-import { paragraphsOf } from "@/lib/papers/types";
+import { isCvPaper, paragraphsOf } from "@/lib/paper/types";
 
 export type GroundingFinding = {
   rule: "ungrounded-number" | "ungrounded-claim";
@@ -70,22 +70,24 @@ export function profileFacts(state: AppState): string {
       doc.targetRole ?? "",
       doc.note ?? "",
     ]),
-    ...state.resumes.flatMap((resume) => [
-      resume.label,
-      ...resume.sections.flatMap((section) => [
-        section.heading,
-        section.body ?? "",
-        ...section.entries.flatMap((entry) => [
-          entry.title,
-          entry.org,
-          entry.period,
-          entry.detail,
-        ]),
-      ]),
-    ]),
-    // What the user has already written about themselves counts as fact: they
-    // wrote it, and a Coach repeating it back is not inventing anything.
-    ...state.papers.flatMap((paper) => [paper.label, ...paragraphsOf(paper.body)]),
+    ...state.paper.flatMap((item) => {
+      if (isCvPaper(item)) {
+        return [
+          item.label,
+          ...item.sections.flatMap((section) => [
+            section.heading,
+            section.body ?? "",
+            ...section.entries.flatMap((entry) => [
+              entry.title,
+              entry.org,
+              entry.period,
+              entry.detail,
+            ]),
+          ]),
+        ];
+      }
+      return [item.label, ...paragraphsOf(item.body)];
+    }),
     ...state.pitch.map((item) => item.body),
   ];
   return parts.filter(Boolean).join("\n").toLowerCase();

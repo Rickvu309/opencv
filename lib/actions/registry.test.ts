@@ -29,8 +29,7 @@ test("a new account starts empty, not as somebody else", () => {
   assert.equal(state.profile.identity.targetRole, "");
   assert.deepEqual(state.profile.experience, []);
   assert.deepEqual(state.profile.documents, []);
-  assert.deepEqual(state.resumes, []);
-  assert.deepEqual(state.papers, []);
+  assert.deepEqual(state.paper, []);
   assert.deepEqual(state.pitch, []);
 });
 
@@ -94,7 +93,7 @@ test("adding and editing stay automatic", () => {
     "profile.addCourse",
     "profile.setIdentity",
     "pitch.write",
-    "resume.create",
+    "paper.create",
   ]) {
     assert.equal(
       isDestructiveAction(name),

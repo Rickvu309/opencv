@@ -10,8 +10,6 @@ import { SIGN_IN_PATH, gateFor, safeNext } from "@/lib/auth/gate";
 const PRODUCT_SCREENS = [
   "/coach",
   "/paper",
-  "/cv",
-  "/papers",
   "/pitch",
   "/profile",
   "/search",

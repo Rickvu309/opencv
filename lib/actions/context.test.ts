@@ -40,7 +40,7 @@ test("the Coach is told it can build a CV", () => {
   // The catalog in the tool description is what the model reads to decide; if
   // these fall out of the registry the Coach can describe a CV it cannot make.
   const offered = new Set<string>(ctx.availableActions);
-  for (const name of ["resume.create", "resume.addEntry", "resume.updateEntry"]) {
+  for (const name of ["paper.create", "paper.addEntry", "paper.updateEntry"]) {
     assert.ok(offered.has(name), `${name} must be offered`);
   }
 });
@@ -50,7 +50,8 @@ test("context stays inside the per-turn budget it claims", () => {
   // holding, `context.ts` says to slice, and this is the test that says when.
   // Measured against a filled-in account with a CV, not an empty one, or the
   // budget is checked against the cheapest state the app ever holds.
-  const state = applyAction(populated(), "resume.create", {
+  const state = applyAction(populated(), "paper.create", {
+    type: "cv",
     label: "CV, Data Analyst",
   }).state;
   const bytes = JSON.stringify(coachContext(state, "/coach")).length;

@@ -51,10 +51,9 @@ export function checklistSteps(
       // step is "you have made something with this", not "you have made a CV".
       label: c.stepDocument,
       done:
-        state.resumes.length > 0 ||
-        state.papers.length > 0 ||
+        state.paper.length > 0 ||
         state.pitch.length > 0,
-      href: "/cv",
+      href: "/paper",
     },
     {
       id: "coach",

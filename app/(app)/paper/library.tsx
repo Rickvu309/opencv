@@ -4,8 +4,8 @@ import * as React from "react";
 import Link from "next/link";
 import { FilePlus2, FileText, LayoutGrid, List, Mail, Plus } from "lucide-react";
 
-import { ResumePreview } from "@/components/cv/resume-preview";
-import { PrepareToolbar } from "@/components/prepare/workbench";
+import { ResumePreview } from "@/components/paper/resume-preview";
+import { PaperToolbar } from "@/components/paper/toolbar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -15,15 +15,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { resumeCompleteness, type Resume } from "@/lib/cv/types";
-import type { LetterTarget } from "@/lib/papers/opening";
+import { cvCompleteness, type CvPaper } from "@/lib/paper/types";
+import type { LetterTarget } from "@/lib/paper/opening";
 import {
-  paperKindLabels,
-  paperKinds,
+  paperTypeLabels,
+  letterTypes,
   paragraphsOf,
-  type PaperKind,
-  type ProseDocument,
-} from "@/lib/papers/types";
+  type LetterPaper,
+} from "@/lib/paper/types";
 import { useT } from "@/lib/i18n/use-t";
 import { cn } from "@/lib/utils";
 
@@ -38,23 +37,23 @@ export function Library({
   onCreatePaper,
   onCreateFromOpening,
 }: {
-  resumes: Resume[];
-  papers: ProseDocument[];
+  resumes: CvPaper[];
+  papers: LetterPaper[];
   hasProfile: boolean;
   targets: LetterTarget[];
   onOpenResume: (id: string) => void;
   onOpenPaper: (id: string) => void;
   onCreateResume: (fromProfile: boolean) => void;
-  onCreatePaper: (kind: PaperKind) => void;
+  onCreatePaper: (kind: LetterType) => void;
   onCreateFromOpening: (target: LetterTarget) => void;
 }) {
-  const { t, m, locale } = useT();
+  const { t, m } = useT();
   const [view, setView] = React.useState<"grid" | "list">("grid");
   const empty = resumes.length === 0 && papers.length === 0;
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <PrepareToolbar>
+      <PaperToolbar>
         <div className="flex flex-wrap items-center gap-2">
           <Button size="sm" onClick={() => onCreateResume(true)}>
             <FilePlus2 className="size-3.5" />
@@ -77,7 +76,7 @@ export function Library({
             <ViewToggle view={view} onView={setView} />
           </div>
         )}
-      </PrepareToolbar>
+      </PaperToolbar>
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
         {empty ? (
           <EmptyLibrary
@@ -129,7 +128,7 @@ export function Library({
                       </span>
                     </span>
                     <span className="truncate text-xs text-muted-foreground">
-                      {paperKindLabels[paper.kind][locale]}
+                      {paperTypeLabels[paper.type]}
                     </span>
                     <span className="text-end text-xs text-muted-foreground tabular-nums">
                       {paper.updatedAt}
@@ -153,7 +152,7 @@ export function Library({
                   </div>
                   <p className="mt-2 truncate text-sm font-medium">{resume.label}</p>
                   <p className="text-xs text-muted-foreground tabular-nums">
-                    {t(m.myPaper.kindCv)} · {resumeCompleteness(resume)}% · {resume.updatedAt}
+                    {t(m.myPaper.kindCv)} · {cvCompleteness(resume)}% · {resume.updatedAt}
                   </p>
                 </button>
               </li>
@@ -170,7 +169,7 @@ export function Library({
                     {paper.label || t(m.papers.untitled)}
                   </p>
                   <p className="text-xs text-muted-foreground tabular-nums">
-                    {paperKindLabels[paper.kind][locale]} · {paper.updatedAt}
+                    {paperTypeLabels[paper.type]} · {paper.updatedAt}
                   </p>
                 </button>
               </li>
@@ -182,7 +181,7 @@ export function Library({
   );
 }
 
-function PaperPoster({ paper }: { paper: ProseDocument }) {
+function PaperPoster({ paper }: { paper: LetterPaper }) {
   const { t, m } = useT();
   const paragraphs = paragraphsOf(paper.body);
 
@@ -248,7 +247,7 @@ function NewMenu({
   targets,
 }: {
   onCreateResume: (fromProfile: boolean) => void;
-  onCreatePaper: (kind: PaperKind) => void;
+  onCreatePaper: (kind: LetterType) => void;
   onCreateFromOpening: (target: LetterTarget) => void;
   targets: LetterTarget[];
 }) {
@@ -266,9 +265,9 @@ function NewMenu({
         <DropdownMenuItem onSelect={() => onCreateResume(false)}>
           {t(m.cv.blankCv)}
         </DropdownMenuItem>
-        {paperKinds.map((kind) => (
+        {letterTypes.map((kind) => (
           <DropdownMenuItem key={kind} onSelect={() => onCreatePaper(kind)}>
-            {t(kind === "cover-letter" ? m.papers.newCoverLetter : m.papers.newWriteUp)}
+            {t(kind === "letter" ? m.papers.newCoverLetter : m.papers.newWriteUp)}
           </DropdownMenuItem>
         ))}
         {targets.length > 0 && (
@@ -305,7 +304,7 @@ function EmptyLibrary({
   hasProfile: boolean;
   targets: LetterTarget[];
   onCreateResume: (fromProfile: boolean) => void;
-  onCreatePaper: (kind: PaperKind) => void;
+  onCreatePaper: (kind: LetterType) => void;
   onCreateFromOpening: (target: LetterTarget) => void;
 }) {
   const { t, m } = useT();
@@ -343,7 +342,7 @@ function EmptyLibrary({
           <Button
             variant="outline"
             className={choiceClass}
-            onClick={() => onCreatePaper("cover-letter")}
+            onClick={() => onCreatePaper("letter")}
           >
             <Plus className="size-4 shrink-0" />
             {t(m.papers.newCoverLetter)}
@@ -353,7 +352,7 @@ function EmptyLibrary({
           <Button
             variant="outline"
             className={choiceClass}
-            onClick={() => onCreatePaper("project-write-up")}
+            onClick={() => onCreatePaper("write-up")}
           >
             <Plus className="size-4 shrink-0" />
             {t(m.papers.newWriteUp)}

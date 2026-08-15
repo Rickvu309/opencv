@@ -26,8 +26,7 @@ export function seedState(locale: Locale = defaultLocale): AppState {
       education: { school: "", major: "", year: "", gpa: "", courses: [] },
       documents: [],
     },
-    resumes: [],
-    papers: [],
+    paper: [],
     pitch: [],
     // Seeded, unlike everything else here, and for a reason that survives the
     // "no demo persona" rule: these are not this person's data pretending to

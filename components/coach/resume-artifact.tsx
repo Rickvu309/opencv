@@ -4,7 +4,7 @@
 //
 // Editing a CV through the chat used to end with a sentence saying it was done
 // and a chip saying which action ran. To see the result you left the
-// conversation, went to /cv, and found the change — or didn't, and had no way
+// conversation, went to /paper, and found the change — or didn't, and had no way
 // to tell which. For the one thing in this product that is a *document*, the
 // confirmation should be the document.
 //
@@ -17,14 +17,14 @@ import * as React from "react";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 
-import { ResumeDocument, PAGE_WIDTH } from "@/components/cv/resume-document";
+import { ResumeDocument, PAGE_WIDTH } from "@/components/paper/resume-document";
 import { useAppState } from "@/lib/actions/store";
-import { resumeCompleteness } from "@/lib/cv/types";
+import { cvCompleteness, cvsOf, isCvPaper, type Paper } from "@/lib/paper/types";
 import { useT } from "@/lib/i18n/use-t";
 import { cn } from "@/lib/utils";
 
-/** A successful `resume.*` call, reduced to what this component needs. */
-export type ResumeEdit = {
+/** A successful `paper.*` call, reduced to what this component needs. */
+export type CvPaperEdit = {
   action?: string;
   input?: Record<string, unknown>;
 };
@@ -32,43 +32,38 @@ export type ResumeEdit = {
 /**
  * Which CV a turn's edits landed on.
  *
- * Most `resume.*` actions name their target: `resumeId` on the ones that edit
- * a section or an entry, `id` on the ones that act on the document itself.
- * Section and entry ids are `sec-N` and `ent-N`, so requiring the `cv-` prefix
- * keeps those from being mistaken for a document.
+ * Most `paper.*` actions name their target as `id`. Create and duplicate mint
+ * the id inside the reducer, so it appears in no payload: the new paper is the
+ * last item in `state.paper`, and we only show this thumbnail when that item
+ * is a CV.
  *
- * `resume.create` and `resume.duplicate` are the exception and the case that
- * matters most, because building someone their first CV is the whole feature.
- * Their id is minted inside the reducer, so it appears in no payload. The newly
- * made document is the one with the highest `cv-N`, and it was made moments ago
- * by the call we are looking at, so that is what gets shown.
+ * Migrated CVs keep their old ids (`cv-1`); new ones are `paper-N`. Matching
+ * against the live list covers both.
  */
-function resolveResumeId(
-  edits: readonly ResumeEdit[],
-  resumes: readonly { id: string }[],
+function resolveCvId(
+  edits: readonly CvPaperEdit[],
+  papers: readonly Paper[],
 ): string | undefined {
+  const cvIds = new Set(cvsOf(papers).map((cv) => cv.id));
   for (const edit of edits) {
-    const id = edit.input?.resumeId ?? edit.input?.id;
-    if (typeof id === "string" && id.startsWith("cv-")) return id;
+    const id = edit.input?.id;
+    if (typeof id === "string" && cvIds.has(id)) return id;
   }
 
   const minted = edits.some(
-    (e) => e.action === "resume.create" || e.action === "resume.duplicate",
+    (e) => e.action === "paper.create" || e.action === "paper.duplicate",
   );
   if (!minted) return undefined;
 
-  return resumes
-    .map((r) => r.id)
-    .filter((id) => /^cv-\d+$/.test(id))
-    .sort((a, b) => Number(a.slice(3)) - Number(b.slice(3)))
-    .at(-1);
+  const last = papers.at(-1);
+  return last && isCvPaper(last) ? last.id : undefined;
 }
 
 /**
  * A live thumbnail of one CV.
  *
  * Reads from the store rather than from the tool result, so it shows the
- * document as it is *now*: if the user edits a line on /cv while the panel is
+ * document as it is *now*: if the user edits a line on /paper while the panel is
  * open, or the Coach makes three changes in one turn, this follows. A snapshot
  * taken at tool time would go stale inside the same conversation.
  */
@@ -76,13 +71,13 @@ export function ResumeArtifact({
   edits,
   compact,
 }: {
-  edits: readonly ResumeEdit[];
+  edits: readonly CvPaperEdit[];
   compact?: boolean;
 }) {
-  const { resumes } = useAppState();
+  const { paper } = useAppState();
   const { t, m } = useT();
-  const resumeId = resolveResumeId(edits, resumes);
-  const resume = resumes.find((r) => r.id === resumeId);
+  const resumeId = resolveCvId(edits, paper);
+  const resume = cvsOf(paper).find((r) => r.id === resumeId);
 
   // The thumbnail is a real render of the real document, scaled to the width it
   // is given, so what it shows is what prints.
@@ -114,7 +109,7 @@ export function ResumeArtifact({
   // already said what happened, and an empty frame would suggest otherwise.
   if (!resume) return null;
 
-  const completeness = resumeCompleteness(resume);
+  const completeness = cvCompleteness(resume);
 
   return (
     <div className="overflow-hidden rounded-xl border bg-card">
@@ -129,7 +124,7 @@ export function ResumeArtifact({
           {completeness}%
         </span>
         <Link
-          href={`/paper?resume=${encodeURIComponent(resume.id)}`}
+          href={`/paper?id=${encodeURIComponent(resume.id)}`}
           aria-label={t(m.coach.openCv)}
           className="flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
         >

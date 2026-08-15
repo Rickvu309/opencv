@@ -63,7 +63,6 @@ type NavItem = {
   href: string;
   icon: React.ElementType;
   count?: number;
-  aliases?: string[];
 };
 
 // A count of zero is not information: with the demo persona gone every rail
@@ -73,13 +72,12 @@ const badge = (n: number) => n || undefined;
 
 function prepareNav(paperCount: number): NavItem[] {
   return [
-    // My Paper: CVs and letters in one library. Pitch stays how you present.
+    // My Paper: CV and letter are types in one library. Pitch stays how you present.
     {
-      title: messages.nav.cv,
+      title: messages.nav.paper,
       href: "/paper",
       icon: FileText,
       count: badge(paperCount),
-      aliases: ["/cv", "/papers"],
     },
     { title: messages.nav.pitch, href: "/pitch", icon: MessageSquareQuote },
   ];
@@ -162,11 +160,7 @@ function NavSection({
                 <NavRow
                   key={item.href}
                   item={item}
-                  active={
-                    pathname.startsWith(item.href) ||
-                    (item.aliases?.some((alias) => pathname.startsWith(alias)) ??
-                      false)
-                  }
+                  active={pathname.startsWith(item.href)}
                 />
               ))}
             </SidebarMenu>
@@ -182,7 +176,7 @@ export function AppSidebar() {
   // Counts and identity read from live state, not seed data, so adding a CV
   // updates the rail immediately and renaming yourself in onboarding is
   // reflected here rather than in a fixture nobody can edit.
-  const { profile, resumes, papers, openings, applications } = useAppState();
+  const { profile, paper, openings, applications } = useAppState();
   const { t, m } = useT();
   const name = profile.identity.name.trim();
   const initials =
@@ -192,7 +186,7 @@ export function AppSidebar() {
       .map((word) => word[0])
       .join("")
       .toUpperCase() || "?";
-  const prepare = prepareNav(resumes.length + papers.length);
+  const prepare = prepareNav(paper.length);
   // Saved openings rather than all of them: the count is a shortlist, and
   // seeded examples are not somebody's shortlist.
   const land = landNav(

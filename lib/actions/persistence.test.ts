@@ -79,42 +79,82 @@ test("a round trip through the browser returns what was written", async () => {
 });
 
 test("an empty store falls back to the seed", async () => {
-  assert.deepEqual(loadState().papers.length, seedState().papers.length);
+  assert.deepEqual(loadState().paper.length, seedState().paper.length);
 });
 
 test("a corrupt blob is discarded rather than loaded", async () => {
   storage.setItem(STORAGE_KEY, "{ not json");
-  assert.deepEqual(loadState().papers.length, seedState().papers.length);
+  assert.deepEqual(loadState().paper.length, seedState().paper.length);
   // And it is removed, or this check would fail on every load forever.
   assert.equal(storage.getItem(STORAGE_KEY), null);
 });
 
 test("a value of the wrong shape is discarded", async () => {
   // Valid JSON, but not an AppState: an older schema, or someone's console.
-  storage.setItem(STORAGE_KEY, JSON.stringify({ papers: "nope" }));
-  assert.equal(loadState().papers.length, seedState().papers.length);
+  storage.setItem(STORAGE_KEY, JSON.stringify({ paper: "nope" }));
+  assert.equal(loadState().paper.length, seedState().paper.length);
   assert.equal(storage.getItem(STORAGE_KEY), null);
 });
 
 test("a blob from before a field existed is filled in, not discarded", async () => {
-  // The old shape: everything the reducer needs except `resumes`. Loading it
-  // as-is would put `undefined` where every `resume.*` action expects an array.
+  // The old shape: everything the reducer needs except `paper`. Loading it
+  // as-is would put `undefined` where every `paper.*` action expects an array.
   //
   // This used to be discarded, and that was right while the blob was demo
   // data. It is wrong now that the same code path reads an account's real work
   // from the server, so the missing field is filled in from the seed and
   // everything the user actually wrote is kept.
   const older: Record<string, unknown> = { ...seedState() };
-  delete older.resumes;
+  delete older.paper;
   older.pitch = [
     { id: "p1", kind: "bio", body: "Sinh viên năm ba", language: "vi", updatedAt: 0 },
   ];
   storage.setItem(STORAGE_KEY, JSON.stringify(older));
 
   const loaded = loadState();
-  assert.deepEqual(loaded.resumes, [], "the missing field takes the seed's value");
+  assert.deepEqual(loaded.paper, [], "the missing field takes the seed's value");
   assert.equal(loaded.pitch.length, 1, "the user's work survived the shape change");
   assert.equal(loaded.pitch[0].body, "Sinh viên năm ba");
+});
+
+test("a blob with resumes and papers is lifted into paper[]", async () => {
+  const older: Record<string, unknown> = { ...seedState() };
+  delete older.paper;
+  older.resumes = [
+    {
+      id: "cv-1",
+      label: "CV, Data Analyst",
+      language: "en",
+      updatedAt: "Just now",
+      header: {
+        name: "Lê Thu Hà",
+        headline: "",
+        email: "",
+        phone: "",
+        location: "",
+        links: [],
+      },
+      sections: [],
+      theme: { template: "classic", accent: "ink", density: "normal" },
+    },
+  ];
+  older.papers = [
+    {
+      id: "paper-1",
+      kind: "cover-letter",
+      label: "Thư",
+      language: "vi",
+      body: "Kính gửi",
+      updatedAt: "Just now",
+    },
+  ];
+  storage.setItem(STORAGE_KEY, JSON.stringify(older));
+
+  const loaded = loadState();
+  assert.equal(loaded.paper.length, 2);
+  assert.equal(loaded.paper[0]?.type, "cv");
+  assert.equal(loaded.paper[0]?.id, "cv-1");
+  assert.equal(loaded.paper[1]?.type, "letter");
 });
 
 test("a blob that is genuinely wrong is still discarded", async () => {

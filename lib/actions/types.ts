@@ -6,9 +6,8 @@
 
 import type { Application } from "@/lib/applications/types";
 import type { VaultItemId } from "@/lib/catalog";
-import type { Resume } from "@/lib/cv/types";
 import type { Locale } from "@/lib/i18n/locale";
-import type { ProseDocument } from "@/lib/papers/types";
+import type { Paper } from "@/lib/paper/types";
 import type { PitchItem } from "@/lib/pitch/types";
 import type { Opening } from "@/lib/search/types";
 
@@ -71,21 +70,12 @@ export type AppState = {
     documents: ProfileDocument[];
   };
   /**
-   * CVs built inside OpenPath, content and all.
+   * Papers built inside OpenPath. CV, letter, and write-up are types.
    *
-   * Distinct from `profile.documents`, which only ever points at a file the
-   * user keeps somewhere else. A person can have both: an uploaded PDF from
-   * last year and a version they are building here now.
+   * Distinct from `profile.documents` (vault pointers). A person can have both:
+   * an uploaded PDF and a CV-type paper they are building here.
    */
-  resumes: Resume[];
-  /**
-   * Cover letters and project write-ups, built here.
-   *
-   * Beside `resumes` rather than inside it: a résumé is sections and dated
-   * entries, these are paragraphs, and the one model that covered both would
-   * fit neither. See `lib/papers/types.ts`.
-   */
-  papers: ProseDocument[];
+  paper: Paper[];
   /**
    * How the user describes themselves: one bio, one self-introduction, and a
    * bank of interview answers. Separate from `papers` because these are not

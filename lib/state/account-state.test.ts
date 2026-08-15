@@ -24,9 +24,9 @@ test("looksLikeState refuses what is not an AppState", () => {
   for (const value of [null, undefined, 1, "state", [], {}, { locale: "fr" }]) {
     assert.equal(looksLikeState(value), false, `${JSON.stringify(value)} got through`);
   }
-  const missingResumes: Record<string, unknown> = { ...seedState() };
-  delete missingResumes.resumes;
-  assert.equal(looksLikeState(missingResumes), false);
+  const missingPaper: Record<string, unknown> = { ...seedState() };
+  delete missingPaper.paper;
+  assert.equal(looksLikeState(missingPaper), false);
 });
 
 test("AC-ACCT-001.5: a new account has state from the moment it exists", OPTIONS, async () => {
@@ -49,8 +49,7 @@ test("a new account starts empty, and not as somebody else", OPTIONS, async () =
     // There was a seeded demo persona here once and every screen read her
     // instead of the person signed in. WO-24 says in as many words not to
     // bring her back.
-    assert.deepEqual(state.resumes, []);
-    assert.deepEqual(state.papers, []);
+    assert.deepEqual(state.paper, []);
     assert.deepEqual(state.pitch, []);
     assert.deepEqual(state.profile.documents, []);
     assert.equal(state.profile.identity.name, "");
@@ -160,6 +159,52 @@ test("a row of the wrong shape is left alone, never deleted", OPTIONS, async () 
 
     const { rows } = await db.query<{ n: string }>("select count(*) n from app_state");
     assert.equal(rows[0].n, "1", "the unreadable row was deleted; it must not be");
+  });
+});
+
+test("a stored row with resumes and papers is lifted into paper[]", OPTIONS, async () => {
+  await withMigratedSchema(async (db) => {
+    const account = await createAccount("mai", "a good long password", db);
+    const older: Record<string, unknown> = { ...seedState() };
+    delete older.paper;
+    older.resumes = [
+      {
+        id: "cv-1",
+        label: "CV",
+        language: "en",
+        updatedAt: "Just now",
+        header: {
+          name: "Mai",
+          headline: "",
+          email: "",
+          phone: "",
+          location: "",
+          links: [],
+        },
+        sections: [],
+        theme: { template: "classic", accent: "ink", density: "normal" },
+      },
+    ];
+    older.papers = [
+      {
+        id: "paper-1",
+        kind: "cover-letter",
+        label: "Thư",
+        language: "vi",
+        body: "Kính gửi",
+        updatedAt: "Just now",
+      },
+    ];
+    await db.query("insert into app_state (account_id, state) values ($1, $2)", [
+      account.id,
+      JSON.stringify(older),
+    ]);
+
+    const loaded = await readAccountState(account.id, db);
+    assert.equal(loaded?.paper.length, 2);
+    assert.equal(loaded?.paper[0]?.type, "cv");
+    assert.equal(loaded?.paper[0]?.id, "cv-1");
+    assert.equal(loaded?.paper[1]?.type, "letter");
   });
 });
 

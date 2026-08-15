@@ -34,8 +34,8 @@ test("a brand new account is offered the first CV, not a tailoring job", () => {
 test("once a CV exists, the offer moves on", () => {
   // The regression this file exists for: the app kept offering to build a CV
   // from the profile to someone who had already built one.
-  const withCv = build([["resume.create", { label: "CV Data Analyst" }]]);
-  assert.ok(withCv.resumes.length > 0, "fixture should have made a CV");
+  const withCv = build([["paper.create", { type: "cv", label: "CV Data Analyst" }]]);
+  assert.ok(withCv.paper.length > 0, "fixture should have made a CV");
   assert.deepEqual(coachStarters(withCv)[0], s.starterTailorCv);
 });
 
@@ -44,7 +44,8 @@ test("an empty account asks where to start; one with work asks what comes first"
   // started" is whether anything has been built here: a CV, a letter, a pitch.
   assert.deepEqual(coachStarters(seedState())[1], s.starterWhereToStart);
 
-  const started = applyAction(populated(), "resume.create", {
+  const started = applyAction(populated(), "paper.create", {
+    type: "cv",
     label: "CV, Data Analyst",
   }).state;
   assert.deepEqual(coachStarters(started)[1], s.starterPrioritise);
@@ -83,7 +84,7 @@ test("someone with experience but no school is asked to finish the profile", () 
 test("a first letter is offered until one exists, then a review", () => {
   assert.deepEqual(coachStarters(seedState())[4], s.starterWriteLetter);
   const withLetter = build([
-    ["paper.create", { kind: "cover-letter", label: "Thư Data Analyst" }],
+    ["paper.create", { type: "letter", label: "Thư Data Analyst" }],
   ]);
   assert.deepEqual(coachStarters(withLetter)[4], s.starterReviewLetter);
 });

@@ -19,20 +19,20 @@ const instructions = readFileSync(
   "utf8",
 );
 
-/** "resume.create" and "resume.remove" are one group: `resume`. */
+/** "paper.create" and "paper.remove" are one group: `paper`. */
 const groups = [...new Set(actionNames.map((name) => name.split(".")[0]))];
 
 /**
  * The groups where knowing the action exists is not enough.
  *
  * Most of the registry needs no instruction: `todo.add` adds a task, the tool
- * description says so, and there is nothing else to know. These four are
+ * description says so, and there is nothing else to know. These are
  * different, because using them well means following a rule the schema cannot
  * express, edit one line rather than the document, never invent a number,
  * never invent an experience. A group added here without a section is a
  * feature the Coach will use badly rather than not at all.
  */
-const NEEDS_TEACHING = ["resume", "paper", "pitch"];
+const NEEDS_TEACHING = ["paper", "pitch"];
 
 test("the groups that need a rule have one", () => {
   const untaught = NEEDS_TEACHING.filter((group) => !instructions.includes(`${group}.`));
@@ -53,6 +53,7 @@ test("the drafting actions are named specifically, not just their group", () => 
   // the ones a requirement turns on, so they are checked by name.
   for (const name of [
     "paper.create",
+    "paper.updateEntry",
     "paper.updateParagraph",
     "paper.setBody",
     "pitch.write",

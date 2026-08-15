@@ -1,14 +1,7 @@
 import type { NextConfig } from "next";
 import { withEve } from "eve/next";
 
-const nextConfig: NextConfig = {
-  async redirects() {
-    return [
-      { source: "/cv", destination: "/paper", permanent: false },
-      { source: "/papers", destination: "/paper", permanent: false },
-    ];
-  },
-};
+const nextConfig: NextConfig = {};
 
 /**
  * Mounts the agent in `agent/` on this app's own origin at `/eve/v1/*`.

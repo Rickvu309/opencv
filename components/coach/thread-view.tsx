@@ -29,7 +29,7 @@ import {
   type CoachToolCall,
 } from "@/lib/coach/messages";
 import { CoachProse } from "./prose";
-import { ResumeArtifact, type ResumeEdit } from "./resume-artifact";
+import { ResumeArtifact, type CvPaperEdit } from "./resume-artifact";
 import { useT } from "@/lib/i18n/use-t";
 import {
   TextSwap,
@@ -430,13 +430,13 @@ export function CoachGreeting({ compact }: { compact?: boolean }) {
 /**
  * The CV edits a turn actually landed.
  *
- * Only successful calls count. A `resume.*` call that failed or was refused
+ * Only successful calls count. A `paper.*` call that failed or was refused
  * changed nothing, and showing the document under it would read as though it
  * had.
  */
-function resumeEdits(calls: CoachToolCall[] | undefined): ResumeEdit[] {
+function paperEdits(calls: CoachToolCall[] | undefined): CvPaperEdit[] {
   return (calls ?? [])
-    .filter((c) => c.state === "done" && c.action?.startsWith("resume."))
+    .filter((c) => c.state === "done" && c.action?.startsWith("paper."))
     .map((c) => ({ action: c.action, input: c.input }));
 }
 
@@ -561,9 +561,9 @@ export function CoachMessages({
                 )}
                 <CoachProse content={message.content} />
                 {message.tools && <CoachToolCalls calls={message.tools} />}
-                {resumeEdits(message.tools).length > 0 && (
+                {paperEdits(message.tools).length > 0 && (
                   <ResumeArtifact
-                    edits={resumeEdits(message.tools)}
+                    edits={paperEdits(message.tools)}
                     compact={compact}
                   />
                 )}

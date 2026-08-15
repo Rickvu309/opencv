@@ -1,10 +1,9 @@
 "use client";
 
-import { PaperPrintPortal } from "@/components/papers/paper-print";
-import { PaperExportMenu, PaperSheet } from "@/components/papers/sheet";
+import { PaperPrintPortal } from "@/components/paper/paper-print";
+import { PaperExportMenu, PaperSheet } from "@/components/paper/sheet";
 import { useDispatch } from "@/lib/actions/store";
-import type { Resume } from "@/lib/cv/types";
-import type { PaperKind, ProseDocument } from "@/lib/papers/types";
+import type { CvPaper, LetterPaper, LetterType } from "@/lib/paper/types";
 import type { Opening } from "@/lib/search/types";
 import { useT } from "@/lib/i18n/use-t";
 import {
@@ -25,13 +24,13 @@ export function PaperEditor({
   onMode,
   onBack,
 }: {
-  paper: ProseDocument;
-  resumes: Resume[];
-  papers: ProseDocument[];
+  paper: LetterPaper;
+  resumes: CvPaper[];
+  papers: LetterPaper[];
   opening: Opening | undefined;
   onSelect: (ref: ArtefactRef) => void;
   onCreateResume: (fromProfile: boolean) => void;
-  onCreatePaper: (kind: PaperKind) => void;
+  onCreatePaper: (kind: LetterType) => void;
   onMode: (mode: EditorMode) => void;
   onBack: () => void;
 }) {

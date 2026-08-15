@@ -13,10 +13,13 @@
 import type { Msg } from "@/lib/i18n/locale";
 import { messages } from "@/lib/i18n/messages";
 import type { AppState } from "@/lib/actions/types";
+import { cvsOf, lettersOf } from "@/lib/paper/types";
 
 export function coachStarters(state: AppState): Msg[] {
   const s = messages.coach;
-  const { profile, resumes, papers, pitch, openings, applications } = state;
+  const { profile, paper, pitch, openings, applications } = state;
+  const cvs = cvsOf(paper);
+  const letters = lettersOf(paper);
   const role = profile.identity.targetRole.trim();
   const saved = openings.filter((opening) => opening.saved).length;
 
@@ -24,14 +27,14 @@ export function coachStarters(state: AppState): Msg[] {
     // 1. The nearest concrete artefact. Building the first CV is the single
     //    most useful thing a student without one can do this week; after that
     //    the useful move is aiming an existing one at a real posting.
-    resumes.length === 0 ? s.starterBuildCv : s.starterTailorCv,
+    cvs.length === 0 ? s.starterBuildCv : s.starterTailorCv,
 
     // 2. What to do with the time they have. This used to branch on whether
     //    the todo list was empty; with the list retired, the honest stand-in
     //    for "has this person started" is whether anything has been built here
     //    at all. Someone with three documents on the go needs an order to work
     //    in, not a starting point.
-    resumes.length + papers.length + pitch.length === 0
+    cvs.length + letters.length + pitch.length === 0
       ? s.starterWhereToStart
       : s.starterPrioritise,
 
@@ -48,7 +51,7 @@ export function coachStarters(state: AppState): Msg[] {
 
     // 5. The other paper: a letter. Same rule as the CV slot — do not offer
     //    to write the first one to someone who already has three.
-    papers.length === 0 ? s.starterWriteLetter : s.starterReviewLetter,
+    letters.length === 0 ? s.starterWriteLetter : s.starterReviewLetter,
 
     // 6. Getting in front of a job: search, then pitch, then a follow-up.
     saved === 0 && applications.length === 0

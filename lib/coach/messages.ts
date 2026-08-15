@@ -30,7 +30,7 @@ export type CoachToolCall = {
   errorText?: string;
   /**
    * The action's payload, so the thread can show *what* was changed and not
-   * only that something was. Used to find the CV a `resume.*` call was aimed
+   * only that something was. Used to find the CV a `paper.*` call was aimed
    * at; see components/coach/resume-artifact.tsx.
    */
   input?: Record<string, unknown>;

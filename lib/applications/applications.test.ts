@@ -156,27 +156,27 @@ test("the next step differs by stage", () => {
 
 test("AC-APP-003: tailoring copies the CV and binds the copy, not the original", () => {
   let state = tracking();
-  state = applyAction(state, "resume.create", { label: "CV chính" }).state;
-  const original = state.resumes[0];
+  state = applyAction(state, "paper.create", { type: "cv", label: "CV chính" }).state;
+  const original = state.paper[0];
 
   state = applyAction(state, "application.tailorResume", {
     id: state.applications[0].id,
-    resumeId: original.id,
+    paperId: original.id,
     label: "CV · Data Analyst Intern",
   }).state;
 
-  assert.equal(state.resumes.length, 2, "the original is still there");
-  const copy = state.resumes.find((resume) => resume.id !== original.id)!;
+  assert.equal(state.paper.length, 2, "the original is still there");
+  const copy = state.paper.find((resume) => resume.id !== original.id)!;
   assert.notEqual(copy.id, original.id, "the copy has its own id");
   assert.deepEqual(state.applications[0].tailoredDocumentIds, [copy.id]);
 
   // AC-APP-003.2: editing the copy must not reach the original.
-  const edited = applyAction(state, "resume.rename", {
+  const edited = applyAction(state, "paper.rename", {
     id: copy.id,
     label: "CV · sửa riêng",
   }).state;
   assert.equal(
-    edited.resumes.find((resume) => resume.id === original.id)?.label,
+    edited.paper.find((resume) => resume.id === original.id)?.label,
     "CV chính",
   );
 });
@@ -189,9 +189,9 @@ test("tailoring a letter binds a new cover letter to the application", () => {
     targetRole: "Data Analyst Intern",
   }).state;
 
-  assert.equal(state.papers.length, 1);
-  assert.equal(state.papers[0].kind, "cover-letter");
-  assert.deepEqual(state.applications[0].tailoredDocumentIds, [state.papers[0].id]);
+  assert.equal(state.paper.length, 1);
+  assert.equal(state.paper[0].type, "letter");
+  assert.deepEqual(state.applications[0].tailoredDocumentIds, [state.paper[0].id]);
 });
 
 test("tailoring for an application that does not exist changes nothing", () => {
@@ -200,7 +200,7 @@ test("tailoring for an application that does not exist changes nothing", () => {
     id: "app-nothing",
     label: "Thư",
   }).state;
-  assert.equal(after.papers.length, 0);
+  assert.equal(after.paper.length, 0);
 });
 
 test("removing an application does not remove its tailored documents", () => {
@@ -216,7 +216,7 @@ test("removing an application does not remove its tailored documents", () => {
   }).state;
 
   assert.equal(state.applications.length, 0);
-  assert.equal(state.papers.length, 1);
+  assert.equal(state.paper.length, 1);
 });
 
 test("the soonest deadline comes first, and closed rows sink", () => {

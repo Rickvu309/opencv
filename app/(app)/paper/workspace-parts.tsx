@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { DraftInput } from "@/components/cv/draft-field";
+import { DraftInput } from "@/components/paper/draft-field";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -38,7 +38,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { PrepareToolbar } from "@/components/prepare/workbench";
+import { PaperToolbar } from "@/components/paper/toolbar";
 import { useDispatch } from "@/lib/actions/store";
 import {
   download,
@@ -46,20 +46,19 @@ import {
   toJson,
   toMarkdown,
   toPlainText,
-} from "@/lib/cv/export";
+} from "@/lib/paper/cv-export";
 import {
   sectionDefaults,
   sectionOrder,
   templates,
-  type Resume,
-  type ResumeSectionKind,
-} from "@/lib/cv/types";
+  type CvPaper,
+  type CvSectionKind,
+} from "@/lib/paper/types";
 import {
-  paperKindLabels,
-  paperKinds,
-  type PaperKind,
-  type ProseDocument,
-} from "@/lib/papers/types";
+  paperTypeLabels,
+  letterTypes,
+  type LetterPaper,
+} from "@/lib/paper/types";
 import { useT } from "@/lib/i18n/use-t";
 import { cn } from "@/lib/utils";
 
@@ -79,11 +78,11 @@ export function DocumentSwitcher({
   extra,
 }: {
   currentId: string;
-  resumes: Resume[];
-  papers: ProseDocument[];
+  resumes: CvPaper[];
+  papers: LetterPaper[];
   onSelect: (ref: ArtefactRef) => void;
   onCreateResume: (fromProfile: boolean) => void;
-  onCreatePaper: (kind: PaperKind) => void;
+  onCreatePaper: (kind: LetterType) => void;
   extra?: React.ReactNode;
 }) {
   const { t, m } = useT();
@@ -124,7 +123,7 @@ export function DocumentSwitcher({
               {paper.label || t(m.papers.untitled)}
             </span>
             <span className="shrink-0 text-xs text-muted-foreground">
-              {paperKindLabels[paper.kind]}
+              {paperTypeLabels[paper.type]}
             </span>
             {paper.id === currentId && <Check className="size-3.5" />}
           </DropdownMenuItem>
@@ -138,11 +137,11 @@ export function DocumentSwitcher({
           <Plus />
           {t(m.cv.blankCv)}
         </DropdownMenuItem>
-        {paperKinds.map((kind) => (
+        {letterTypes.map((kind) => (
           <DropdownMenuItem key={kind} onSelect={() => onCreatePaper(kind)}>
             <Plus />
             {t(
-              kind === "cover-letter"
+              kind === "letter"
                 ? m.papers.newCoverLetter
                 : m.papers.newWriteUp,
             )}
@@ -216,11 +215,11 @@ export function EditorMainBar({
   onRename: (label: string) => void;
   onDelete: () => void;
   deleteLabel: string;
-  resumes: Resume[];
-  papers: ProseDocument[];
+  resumes: CvPaper[];
+  papers: LetterPaper[];
   onSelect: (ref: ArtefactRef) => void;
   onCreateResume: (fromProfile: boolean) => void;
-  onCreatePaper: (kind: PaperKind) => void;
+  onCreatePaper: (kind: LetterType) => void;
   onMode: (mode: EditorMode) => void;
   onBack: () => void;
   trailing: React.ReactNode;
@@ -228,7 +227,7 @@ export function EditorMainBar({
   const { t, m } = useT();
 
   return (
-    <PrepareToolbar>
+    <PaperToolbar>
       <div className="flex min-w-0 items-center gap-0.5">
         <Button
           variant="ghost"
@@ -272,7 +271,7 @@ export function EditorMainBar({
       </div>
 
       <div className="flex items-center gap-1">{trailing}</div>
-    </PrepareToolbar>
+    </PaperToolbar>
   );
 }
 
@@ -286,7 +285,7 @@ const stylePresets: Record<
   compact: { template: "compact", accent: "ink", density: "tight" },
 };
 
-export function FormatBar({ resume }: { resume: Resume }) {
+export function FormatBar({ resume }: { resume: CvPaper }) {
   const dispatch = useDispatch();
   const { t, m } = useT();
   const styleLabels = {
@@ -298,13 +297,13 @@ export function FormatBar({ resume }: { resume: Resume }) {
   const fit = resume.theme.density === "tight";
   const applyStyle = (key: (typeof styleKeys)[number]) =>
     dispatch(
-      "resume.setTheme",
+      "paper.setTheme",
       { id: resume.id, ...stylePresets[key] },
       { silent: true },
     );
 
   return (
-    <PrepareToolbar compact>
+    <PaperToolbar compact>
       <div className="flex min-w-0 flex-1 items-center gap-3 overflow-x-auto">
         <div className="flex shrink-0 items-center gap-1.5">
           <span className="text-xs text-muted-foreground">{t(m.cv.template)}</span>
@@ -333,7 +332,7 @@ export function FormatBar({ resume }: { resume: Resume }) {
           className="h-7 shrink-0"
           onClick={() =>
             dispatch(
-              "resume.setTheme",
+              "paper.setTheme",
               { id: resume.id, density: fit ? "normal" : "tight" },
               { silent: true },
             )
@@ -346,11 +345,11 @@ export function FormatBar({ resume }: { resume: Resume }) {
       </div>
 
       <MoreMenu resume={resume} />
-    </PrepareToolbar>
+    </PaperToolbar>
   );
 }
 
-function SectionsMenu({ resume }: { resume: Resume }) {
+function SectionsMenu({ resume }: { resume: CvPaper }) {
   const dispatch = useDispatch();
   const { t, m } = useT();
 
@@ -379,7 +378,7 @@ function SectionsMenu({ resume }: { resume: Resume }) {
               aria-label={t(m.cv.moveSectionUp(section.heading))}
               onClick={() =>
                 dispatch(
-                  "resume.moveSection",
+                  "paper.moveSection",
                   { id: resume.id, sectionId: section.id, by: -1 },
                   { silent: true },
                 )
@@ -395,7 +394,7 @@ function SectionsMenu({ resume }: { resume: Resume }) {
               aria-label={t(m.cv.moveSectionDown(section.heading))}
               onClick={() =>
                 dispatch(
-                  "resume.moveSection",
+                  "paper.moveSection",
                   { id: resume.id, sectionId: section.id, by: 1 },
                   { silent: true },
                 )
@@ -413,7 +412,7 @@ function SectionsMenu({ resume }: { resume: Resume }) {
   );
 }
 
-function AddSectionItems({ resume }: { resume: Resume }) {
+function AddSectionItems({ resume }: { resume: CvPaper }) {
   const dispatch = useDispatch();
   const used = new Set(resume.sections.map((s) => s.kind));
   const available = sectionOrder.filter(
@@ -422,12 +421,12 @@ function AddSectionItems({ resume }: { resume: Resume }) {
 
   return (
     <>
-      {available.map((kind: ResumeSectionKind) => (
+      {available.map((kind: CvSectionKind) => (
         <DropdownMenuItem
           key={kind}
           onSelect={() =>
             dispatch(
-              "resume.addSection",
+              "paper.addSection",
               { id: resume.id, kind },
               { silent: true },
             )
@@ -441,7 +440,7 @@ function AddSectionItems({ resume }: { resume: Resume }) {
   );
 }
 
-function MoreMenu({ resume }: { resume: Resume }) {
+function MoreMenu({ resume }: { resume: CvPaper }) {
   const dispatch = useDispatch();
   const { t, m } = useT();
 
@@ -460,7 +459,7 @@ function MoreMenu({ resume }: { resume: Resume }) {
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuItem
           onSelect={() =>
-            dispatch("resume.duplicate", {
+            dispatch("paper.duplicate", {
               id: resume.id,
               label: t(m.cv.copySuffix(resume.label)),
             })
@@ -476,7 +475,7 @@ function MoreMenu({ resume }: { resume: Resume }) {
   );
 }
 
-function ExportItems({ resume }: { resume: Resume }) {
+function ExportItems({ resume }: { resume: CvPaper }) {
   const { t, m } = useT();
   const stem = fileStem(resume);
 
@@ -545,7 +544,7 @@ export function DownloadButton({ hint }: { hint: string }) {
   );
 }
 
-export function AddSectionMenu({ resume }: { resume: Resume }) {
+export function AddSectionMenu({ resume }: { resume: CvPaper }) {
   const { t, m } = useT();
 
   return (
@@ -563,7 +562,7 @@ export function AddSectionMenu({ resume }: { resume: Resume }) {
   );
 }
 
-export function ExportMenu({ resume }: { resume: Resume }) {
+export function ExportMenu({ resume }: { resume: CvPaper }) {
   const { t, m } = useT();
 
   return (

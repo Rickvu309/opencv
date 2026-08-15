@@ -2,12 +2,12 @@
 
 import { FilePlus2, Plus } from "lucide-react";
 
-import { DraftInput, DraftTextarea } from "@/components/cv/draft-field";
-import { ResumePrintPortal } from "@/components/cv/resume-preview";
+import { DraftInput, DraftTextarea } from "@/components/paper/draft-field";
+import { ResumePrintPortal } from "@/components/paper/resume-preview";
 import { Button } from "@/components/ui/button";
 import { useDispatch } from "@/lib/actions/store";
-import { isProseKind, type Resume } from "@/lib/cv/types";
-import type { PaperKind, ProseDocument } from "@/lib/papers/types";
+import { isProseKind, type CvPaper } from "@/lib/paper/types";
+import type { LetterType, LetterPaper } from "@/lib/paper/types";
 import { useT } from "@/lib/i18n/use-t";
 import { cn } from "@/lib/utils";
 import {
@@ -29,12 +29,12 @@ export function CvEditor({
   onMode,
   onBack,
 }: {
-  resume: Resume;
-  resumes: Resume[];
-  papers: ProseDocument[];
+  resume: CvPaper;
+  resumes: CvPaper[];
+  papers: LetterPaper[];
   onSelect: (ref: ArtefactRef) => void;
   onCreateResume: (fromProfile: boolean) => void;
-  onCreatePaper: (kind: PaperKind) => void;
+  onCreatePaper: (kind: LetterType) => void;
   onMode: (mode: EditorMode) => void;
   onBack: () => void;
 }) {
@@ -49,9 +49,9 @@ export function CvEditor({
         currentLabel={resume.label}
         nameLabel={t(m.cv.cvName)}
         onRename={(label) =>
-          dispatch("resume.rename", { id: resume.id, label }, { silent: true })
+          dispatch("paper.rename", { id: resume.id, label }, { silent: true })
         }
-        onDelete={() => dispatch("resume.remove", { id: resume.id })}
+        onDelete={() => dispatch("paper.remove", { id: resume.id })}
         deleteLabel={t(m.cv.deleteCv)}
         resumes={resumes}
         papers={papers}
@@ -86,12 +86,12 @@ const ghostField =
   "[&_input]:h-auto [&_input]:border-0 [&_input]:bg-transparent [&_input]:px-0 [&_input]:shadow-none [&_input]:focus-visible:ring-0";
 
 /** The CV page is the editor. No form beside a preview. */
-function OnePageEditor({ resume }: { resume: Resume }) {
+function OnePageEditor({ resume }: { resume: CvPaper }) {
   const dispatch = useDispatch();
   const { t, m } = useT();
   const { header } = resume;
   const setHeader = (fields: Record<string, unknown>) =>
-    dispatch("resume.setHeader", { id: resume.id, ...fields }, { silent: true });
+    dispatch("paper.setHeader", { id: resume.id, ...fields }, { silent: true });
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto bg-muted/40">
@@ -170,13 +170,13 @@ function PageSection({
   section,
 }: {
   resumeId: string;
-  section: Resume["sections"][number];
+  section: CvPaper["sections"][number];
 }) {
   const dispatch = useDispatch();
   const { t, m } = useT();
   const update = (fields: Record<string, unknown>) =>
     dispatch(
-      "resume.updateSection",
+      "paper.updateSection",
       { id: resumeId, sectionId: section.id, ...fields },
       { silent: true },
     );
@@ -216,7 +216,7 @@ function PageSection({
                 placeholder={t(m.cv.entryTitle)}
                 onCommit={(title) =>
                   dispatch(
-                    "resume.updateEntry",
+                    "paper.updateEntry",
                     {
                       id: resumeId,
                       sectionId: section.id,
@@ -237,7 +237,7 @@ function PageSection({
                   placeholder={t(m.cv.entryOrg)}
                   onCommit={(org) =>
                     dispatch(
-                      "resume.updateEntry",
+                      "paper.updateEntry",
                       {
                         id: resumeId,
                         sectionId: section.id,
@@ -257,7 +257,7 @@ function PageSection({
                   placeholder={t(m.cv.entryPeriod)}
                   onCommit={(period) =>
                     dispatch(
-                      "resume.updateEntry",
+                      "paper.updateEntry",
                       {
                         id: resumeId,
                         sectionId: section.id,
@@ -277,7 +277,7 @@ function PageSection({
                   value={entry.detail ?? ""}
                   onCommit={(detail) =>
                     dispatch(
-                      "resume.updateEntry",
+                      "paper.updateEntry",
                       {
                         id: resumeId,
                         sectionId: section.id,
@@ -298,7 +298,7 @@ function PageSection({
             className="text-muted-foreground"
             onClick={() =>
               dispatch(
-                "resume.addEntry",
+                "paper.addEntry",
                 { id: resumeId, sectionId: section.id, title: "" },
                 { silent: true },
               )

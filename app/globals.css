@@ -529,7 +529,7 @@
 /*
  * Printing a CV.
  *
- * `components/cv/resume-preview.tsx` mounts a second copy of the document
+ * `components/paper/resume-preview.tsx` mounts a second copy of the document
  * straight onto `document.body`, marked `data-print-portal`. On screen it is
  * hidden; on paper it is the only thing left. The app shell is `h-svh
  * overflow-hidden` around several nested scroll panes, so printing the preview

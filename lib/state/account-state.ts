@@ -4,6 +4,7 @@ import { seedState } from "@/lib/actions/seed";
 import type { AppState } from "@/lib/actions/types";
 import { getPool } from "@/lib/db/client";
 import { isLocale, type Locale } from "@/lib/i18n/locale";
+import { migrateStateShape } from "@/lib/paper/migrate";
 
 /**
  * One account's `AppState`, on the server.
@@ -46,8 +47,7 @@ export function looksLikeState(value: unknown): value is AppState {
     isLocale(state.locale) &&
     typeof state.profile === "object" &&
     state.profile !== null &&
-    Array.isArray(state.resumes) &&
-    Array.isArray(state.papers) &&
+    Array.isArray(state.paper) &&
     Array.isArray(state.pitch)
   );
 }
@@ -85,7 +85,8 @@ export function reviveState(value: unknown): AppState | null {
   // Shallow on purpose. A missing top-level key is what a new release causes;
   // a missing key three levels down is what corruption causes, and quietly
   // patching that would hide it.
-  const merged = { ...seedState(), ...(value as Partial<AppState>), locale: "en" };
+  const migrated = migrateStateShape(value as Record<string, unknown>);
+  const merged = { ...seedState(), ...migrated, locale: "en" as const };
   return looksLikeState(merged) ? merged : null;
 }
 

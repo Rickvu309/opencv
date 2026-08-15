@@ -1,4 +1,5 @@
 import { isLocale } from "@/lib/i18n/locale";
+import { migrateStateShape } from "@/lib/paper/migrate";
 import { seedState } from "./seed";
 import type { AppState } from "./types";
 
@@ -44,7 +45,7 @@ import type { AppState } from "./types";
  * somebody's real work: a shape change there is a migration
  * (`lib/db/migrations/`), never a delete.
  */
-export const STORAGE_KEY = "openpath:state:v3";
+export const STORAGE_KEY = "openpath:state:v4";
 
 const ENDPOINT = "/api/state";
 
@@ -80,8 +81,7 @@ function looksLikeState(value: unknown): value is AppState {
     isLocale(state.locale) &&
     typeof state.profile === "object" &&
     state.profile !== null &&
-    Array.isArray(state.resumes) &&
-    Array.isArray(state.papers) &&
+    Array.isArray(state.paper) &&
     Array.isArray(state.pitch)
   );
 }
@@ -99,7 +99,8 @@ function revive(value: unknown): AppState | null {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     return null;
   }
-  const merged = { ...seedState(), ...(value as Partial<AppState>), locale: "en" };
+  const migrated = migrateStateShape(value as Record<string, unknown>);
+  const merged = { ...seedState(), ...migrated, locale: "en" as const };
   return looksLikeState(merged) ? merged : null;
 }
 

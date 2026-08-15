@@ -53,6 +53,7 @@ test("the repository's own migrations are complete pairs", () => {
       "jobs",
       "plans",
       "waitlist",
+      "paper_artefact",
     ],
     "order matters: everything after the first depends on what came before it",
   );
@@ -163,9 +164,9 @@ test("every migration applies to an empty schema", { skip: skipWithoutDatabase }
         "accounts",
         "app_state",
         "conversations",
-        "cv_photos",
         "guardrail_violations",
         "jobs",
+        "paper_photos",
         "plans",
         "schema_migrations",
         "sessions",

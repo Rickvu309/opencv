@@ -211,7 +211,7 @@ export function AppStateProvider({
         //
         // The reason this does not print `error.message`: that message comes
         // from Zod, and it is a developer's sentence. "Invalid input for
-        // resume.updateEntry: [{"code":"too_small"…}]" tells a student nothing
+        // paper.updateEntry: [{"code":"too_small"…}]" tells a student nothing
         // they can act on. The detail belongs in the console, where whoever
         // can fix it will look.
         console.error("dispatch failed", name, error);
