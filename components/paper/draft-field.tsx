@@ -105,6 +105,8 @@ export function DraftTextarea({
   placeholder,
   hint,
   rows = 4,
+  srLabel,
+  className,
 }: {
   id: string;
   label: string;
@@ -113,13 +115,17 @@ export function DraftTextarea({
   placeholder?: string;
   hint?: string;
   rows?: number;
+  srLabel?: boolean;
+  className?: string;
 }) {
   const { draft, setDraft, commit } = useDraft(value, onCommit);
   const hintId = hint ? `${id}-hint` : undefined;
 
   return (
-    <div className="grid gap-1.5">
-      <Label htmlFor={id}>{label}</Label>
+    <div className={cn("grid gap-1.5", className)}>
+      <Label htmlFor={id} className={srLabel ? "sr-only" : undefined}>
+        {label}
+      </Label>
       <Textarea
         id={id}
         rows={rows}

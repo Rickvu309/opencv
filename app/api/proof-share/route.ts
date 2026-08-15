@@ -5,6 +5,7 @@ import { failure, readBody } from "@/lib/auth/http";
 import { isProofPaper } from "@/lib/paper/types";
 import {
   defaultHandle,
+  deleteProofPage,
   isHandle,
   readSiteForAccount,
   snapshotOf,
@@ -44,12 +45,31 @@ export async function POST(request: Request) {
       slug,
       accountId: account.id,
       paperId: paper.id,
-      snapshot: snapshotOf(paper),
+      snapshot: snapshotOf(paper, new Date(), {
+        name: state.profile.identity.name || undefined,
+      }),
     });
 
     return NextResponse.json({ ok: true, slug, handle: site.handle });
   } catch (error) {
     console.error("proof-share: write failed", error);
+    return failure("store-down", 502);
+  }
+}
+
+export async function DELETE(request: Request) {
+  const account = await currentAccount();
+  if (!account) return failure("no-session", 401);
+
+  const body = await readBody(request);
+  const paperId = typeof body?.paperId === "string" ? body.paperId.trim() : "";
+  if (!paperId) return failure("bad-request", 400);
+
+  try {
+    await deleteProofPage(paperId);
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error("proof-share: delete failed", error);
     return failure("store-down", 502);
   }
 }

@@ -95,7 +95,7 @@ code they describe. A CV can still record its own language for the document.
 
 ## Screens
 
-Five artefact screens, then Coach:
+Five feature screens, then Coach:
 
 - **My Profile** (`/profile`) — who you are. Lives in the account menu.
 - **My Paper** (`/paper`) — a Drive of papers. CV, cover letter, Proof, and
@@ -107,7 +107,7 @@ Five artefact screens, then Coach:
 **My Coach** (`/coach`) is the conversation. The dock on every other screen is
 the same conversation, not a second one.
 
-Each artefact has one URL, one AppState field, one action prefix, and a
+Each feature has one URL, one AppState field, one action prefix, and a
 folder trio: `app/(app)/<name>`, `lib/<name>`, and `components/<name>` when
 the screen has shared UI. Search stores **openings**; Application stays at
 `/applications`. `lib/actions/` is the write spine — not five stores.
@@ -127,10 +127,12 @@ runner.
 
 ## Docs
 
-- `CONTEXT.md`: product words (artefacts, Paper vs vault, Coach vs AppState).
+- `CONTEXT.md`: product words (features, Paper vs vault, Coach vs AppState).
 - `docs/map.md`: how a click and a Coach turn both hit `dispatch`.
 - `PRODUCT.md`: who this is for, and the design principles.
 - `DESIGN.md`: the visual system. Colour, type, motion, and how a Coach edit
   behaves.
 - `docs/database.md`: where the database is, and how to apply the schema.
 - `docs/hosting.md`: Railway topology (app, agent, Postgres).
+- `docs/agents/`: issue tracker, triage labels, and how skills read domain docs.
+- `.scratch/`: local markdown tickets and specs.

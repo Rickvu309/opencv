@@ -4,7 +4,6 @@ import assert from "node:assert/strict";
 import {
   defaultHandle,
   isHandle,
-  loggedDays,
   slugifyHandle,
   snapshotOf,
 } from "./share";
@@ -25,17 +24,33 @@ test("the default handle is the name plus a short id", () => {
   assert.equal(slugifyHandle(""), "you");
 });
 
-test("publishing stamps note days so the calendar has a record", () => {
+test("a snapshot keeps the arranged notes and their kind", () => {
   const paper: ProofPaper = {
     id: "paper-1",
     type: "proof",
     label: "Class project",
     language: "en",
-    notes: [{ id: "n-1", text: "Built a dashboard", at: "Just now" }],
+    why: "I wanted to see if the numbers held.",
+    arrangeNoteIds: ["n-1", "n-3"],
+    notes: [
+      { id: "n-1", text: "Built a dashboard", at: "Just now" },
+      { id: "n-2", text: "Left out", at: "Just now" },
+      {
+        id: "n-3",
+        kind: "link",
+        text: "Repo",
+        url: "https://example.com",
+        at: "Just now",
+      },
+    ],
     updatedAt: "Just now",
   };
   const at = new Date("2026-08-15T10:00:00.000Z");
-  const snapshot = snapshotOf(paper, at);
+  const snapshot = snapshotOf(paper, at, { name: "Hà" });
   assert.equal(snapshot.notes[0]?.at, "2026-08-15");
-  assert.deepEqual(loggedDays([snapshot]), ["2026-08-15"]);
+  assert.equal(snapshot.notes.length, 2);
+  assert.equal(snapshot.notes[1]?.kind, "link");
+  assert.equal(snapshot.notes[1]?.url, "https://example.com");
+  assert.equal(snapshot.why, "I wanted to see if the numbers held.");
+  assert.equal(snapshot.name, "Hà");
 });

@@ -1,17 +1,17 @@
 # OpenPath
 
-An AI career coach. Five artefacts hold the person's work. The Coach edits them through one write path.
+An AI career coach. Five features besides the Coach: Profile, Paper, Pitch, Search, Application. The Coach edits them through one write path.
 
 ## Language
 
 ### Product
 
-**Artefact**:
-One of the five things the person builds: Profile, Paper, Pitch, Search, Application. The Coach and the screens read and write the same artefacts.
-_Avoid_: feature, module, kit, document (as the product noun)
+**Feature**:
+One of the five parts of the product: Profile, Paper, Pitch, Search, Application. In code, a module. The Coach and the screens read and write the same ones.
+_Avoid_: artefact, artifact, kit, document (as the grouping noun)
 
 **Coach**:
-One conversation that can change artefacts on the person's behalf. The full-page view and the dock are the same thread.
+One conversation that can change any of the five features on the person's behalf. The full-page view and the dock are the same thread.
 _Avoid_: chatbot, assistant, agent (as a product word)
 
 **AppState**:
@@ -22,22 +22,30 @@ _Avoid_: Redux slice, per-screen store
 The one write path. A click and a Coach turn both go through it. The Coach validates and returns an envelope; the browser applies that envelope because the store lives in the tab.
 _Avoid_: the Coach writes the database, the Coach mutates AppState directly
 
-### Artefacts
+### Features
 
 **Profile**:
 Who the person is: identity, context, experience, education, and vault documents.
 _Avoid_: settings (the account menu holds Profile; settings is plan and billing)
 
 **Paper**:
-A document the person takes into an application. The artefact is Paper. A paper has a **type**: CV, cover letter, or Proof. The screen, My Paper, is a flat list of built papers and uploaded files; opening one is its own editing chrome.
-_Avoid_: Papers (as a product name, rail label, or heading), My Papers, CV (as a screen), letter (as a second artefact), write-up (retired; Proof replaced it)
+A document the person takes into an application. Paper is the feature. A paper has a **type**: CV, cover letter, or Proof. The screen is My Paper: Drive, then Docs.
+_Avoid_: Papers (as a product name, rail label, or heading), My Papers, CV (as a screen), letter (as a second feature), write-up (retired; Proof replaced it)
+
+**Drive**:
+The list mode of My Paper: built papers, uploaded files, and the create doors. Type is chosen here, before a paper opens.
+_Avoid_: library (as a screen), Documents, Drive as a rail label or heading
+
+**Docs**:
+The opened mode of My Paper: one paper and its chrome. Application and Coach open this. Not the documentation tree.
+_Avoid_: editor, CV screen, Docs as the `docs/` folder
 
 **CV / Resume**:
 One structured paper type; the word follows the template's audience. Vietnamese employer, internship, academic, service, and one-page templates say CV. Abroad/ATS, technical, and design templates say Resume. Changing the template changes the word.
 _Avoid_: Resume (on a Vietnam-facing paper), CV and Resume (as two separate types)
 
 **Proof**:
-A paper type for work that is not yet a story: a running dump of notes, photos, and links about a project, experiment, or shift. Prepare publishes it as a designed share page; published Proofs collect on one personal link. Its content can be reused on a CV. Never required, never auto-inserted.
+A paper type for work that is not yet a story: a running dump of notes, photos, and links about a project, experiment, or shift. Arrange then Publish puts it on a designed share page; published Proofs collect on one personal link. Its content can be reused on a CV. Never required, never auto-inserted.
 _Avoid_: brag document, journal, wins, evidence locker, write-up
 
 **Pitch**:
@@ -67,7 +75,7 @@ A CV-type, cover-letter-type, or Proof paper written inside OpenPath, with conte
 _Avoid_: vault document, uploaded file (as if it were the same object)
 
 **Uploaded file**:
-A CV or cover-letter file the person brought with them, kept as a row in My Paper. Preview and send it; you cannot type in it, and OpenPath does not parse it. It does not count as a built CV.
+A CV or cover-letter file the person brought with them, kept as a row in My Paper. Preview and send it; you cannot type in it, and OpenPath does not parse it until extract is real. Starting a built CV from an upload does not turn the file into a paper. It does not count as a built CV.
 _Avoid_: built paper, vault document
 
 **Vault document**:
@@ -78,4 +86,4 @@ _Avoid_: Paper, Resume, the CV (as if there were only one)
 
 **Plan**:
 Not a todo list. “Plan and billing” is the subscription screen.
-_Avoid_: plan (as tasks), todos, weekly plan (as an artefact)
+_Avoid_: plan (as tasks), todos, weekly plan (as a sixth feature)

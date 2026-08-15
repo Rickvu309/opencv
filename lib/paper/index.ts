@@ -12,6 +12,7 @@ export type {
   LetterPaper,
   ProofPaper,
   ProofNote,
+  ProofNoteKind,
 } from "./types";
 export {
   paperTypes,

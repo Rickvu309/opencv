@@ -26,6 +26,7 @@ import {
   type LetterPaper,
   type Paper,
   type PaperUpload,
+  type ProofNoteKind,
   type ProofPaper,
 } from "@/lib/paper/types";
 
@@ -139,6 +140,7 @@ export const paperActions = {
       body: z.string().optional(),
       template: z.enum(cvTemplates).optional(),
       situation: z.enum(letterSituations).optional(),
+      org: z.string().optional(),
       language: z
         .enum(["vi", "en"])
         .optional()
@@ -146,7 +148,7 @@ export const paperActions = {
     }),
     apply: (
       state,
-      { type, label, targetRole, fromProfile, body, template, situation, language },
+      { type, label, targetRole, fromProfile, body, template, situation, language, org },
     ) => {
       const id = nextId(
         "paper",
@@ -171,6 +173,7 @@ export const paperActions = {
           updatedAt: "Just now",
         };
         if (targetRole) created.targetRole = targetRole;
+        if (org) created.org = org;
       } else {
         created = {
           id,
@@ -611,12 +614,23 @@ export const paperActions = {
 
   "paper.addNote": defineAction({
     description:
-      "Add a note to a Proof. Newest first. Dump what happened; do not polish.",
-    input: z.object({
-      id: z.string().min(1),
-      text: z.string().min(1),
-    }),
-    apply: (state, { id, text }) =>
+      "Add a proof to a Proof space: a note, photo, file, or link. Newest first.",
+    input: z
+      .object({
+        id: z.string().min(1),
+        text: z.string().default(""),
+        kind: z.enum(["note", "photo", "file", "link"]).default("note"),
+        url: z.string().optional(),
+        fileName: z.string().optional(),
+      })
+      .refine(
+        (value) =>
+          value.text.trim().length > 0 ||
+          Boolean(value.url?.trim()) ||
+          Boolean(value.fileName?.trim()),
+        { message: "A proof needs words, a link, or a file name." },
+      ),
+    apply: (state, { id, text, kind, url, fileName }) =>
       editProof(state, id, (paper) => ({
         ...paper,
         notes: [
@@ -625,7 +639,10 @@ export const paperActions = {
               `${paper.id}-n`,
               paper.notes.map((note) => note.id),
             ),
-            text,
+            kind: kind as ProofNoteKind,
+            text: text.trim(),
+            ...(url?.trim() ? { url: url.trim() } : {}),
+            ...(fileName?.trim() ? { fileName: fileName.trim() } : {}),
             at: "Just now",
           },
           ...paper.notes,
@@ -674,16 +691,44 @@ export const paperActions = {
   }),
 
   "paper.setProofMeta": defineAction({
-    description: "Set the title-adjacent facts on a Proof: role, dates, link.",
+    description:
+      "Set the title-adjacent facts on a Proof: role, dates, link, why, " +
+      "and which notes the published page will keep.",
     input: z.object({
       id: z.string().min(1),
       role: z.string().optional(),
       dates: z.string().optional(),
       link: z.string().optional(),
+      why: z.string().optional(),
+      arrangeNoteIds: z.array(z.string()).optional(),
     }),
     apply: (state, { id, ...fields }) =>
       editProof(state, id, (paper) => ({ ...paper, ...fields })),
     summary: () => msg("Saved"),
+  }),
+
+  "paper.setLetterSituation": defineAction({
+    description:
+      "Change who a letter is for. Typed paragraphs stay. An unused scaffold " +
+      "is replaced.",
+    input: z.object({
+      id: z.string().min(1),
+      situation: z.enum(letterSituations),
+    }),
+    apply: (state, { id, situation }) =>
+      editPaper(state, id, (paper) => {
+        if (!isLetterPaper(paper)) return paper;
+        const unused =
+          !paper.body.trim() ||
+          (paper.situation != null &&
+            paper.body.trim() === letterScaffold(paper.situation));
+        return {
+          ...paper,
+          situation,
+          body: unused ? letterScaffold(situation) : paper.body,
+        };
+      }),
+    summary: () => msg("Letter situation updated"),
   }),
 
   "paper.publishProof": defineAction({
@@ -703,6 +748,37 @@ export const paperActions = {
         },
       })),
     summary: () => msg("Proof published"),
+  }),
+
+  "paper.unpublishProof": defineAction({
+    description:
+      "Take a published Proof page down. The space and its notes stay.",
+    input: z.object({
+      id: z.string().min(1),
+    }),
+    apply: (state, { id }) =>
+      editProof(state, id, (paper) => {
+        const next = { ...paper };
+        delete next.published;
+        return next;
+      }),
+    summary: () => msg("Proof unpublished"),
+  }),
+
+  "paper.setLetterMeta": defineAction({
+    description:
+      "Set addressing on a letter: organisation, and for a speculative " +
+      "approach the email to and subject lines.",
+    input: z.object({
+      id: z.string().min(1),
+      org: z.string().optional(),
+      to: z.string().optional(),
+      subject: z.string().optional(),
+      targetRole: z.string().optional(),
+    }),
+    apply: (state, { id, ...fields }) =>
+      editLetter(state, id, (paper) => ({ ...paper, ...fields })),
+    summary: () => msg("Saved"),
   }),
 
   "paper.addUpload": defineAction({

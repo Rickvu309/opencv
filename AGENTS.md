@@ -8,15 +8,15 @@ This version has breaking changes, APIs, conventions, and file structure may all
 
 ### Issue tracker
 
-GitHub Issues on `quanvu309/openpath`, via the `gh` CLI. PRs are not a request surface.
+Local markdown under `.scratch/<feature>/`. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
-`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`.
+`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
 
 ### Domain docs
 
-Product language: `CONTEXT.md`. Where a file goes: `docs/map.md`.
+Single-context: product language in `CONTEXT.md`, placement in `docs/map.md`, decisions in `docs/adr/`. See `docs/agents/domain.md`.
 
 This repo has no `src/` tree. Do not invent one.
 

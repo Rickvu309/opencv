@@ -1,181 +1,77 @@
 "use client";
 
-import * as React from "react";
-
-import { DraftInput } from "@/components/paper/draft-field";
-import { PhotoField } from "@/components/paper/photo-field";
-import { SectionEditor } from "@/components/paper/section-editor";
-import { CvPreview, CvPrintPortal } from "@/components/paper/cv-preview";
+import { QuietCoachOffer } from "@/components/coach/quiet-offer";
+import { CvPrintPortal } from "@/components/paper/cv-preview";
 import { Button } from "@/components/ui/button";
 import { useDispatch } from "@/lib/actions/store";
-import { cvCompleteness, templateHasPhoto, wordForTemplate } from "@/lib/paper/cv";
 import type { CvPaper } from "@/lib/paper/types";
 import { useT } from "@/lib/i18n/use-t";
-import { cn } from "@/lib/utils";
-import {
-  AddSectionMenu,
-  DownloadButton,
-  EditorMainBar,
-  FormatBar,
-} from "./workspace-parts";
+import { CvCanvas } from "./cv-canvas";
+import { AddSectionMenu } from "./workspace-parts";
 
 export function CvEditor({
   cv,
-  onBack,
+  fromUpload,
+  onFormat,
 }: {
   cv: CvPaper;
+  fromUpload?: boolean;
   onBack: () => void;
+  onFormat: () => void;
 }) {
   const dispatch = useDispatch();
   const { t, m } = useT();
-  const [pane, setPane] = React.useState<"edit" | "preview">("edit");
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <EditorMainBar
-        currentId={cv.id}
-        currentLabel={cv.label}
-        nameLabel={t(m.paper.cv.cvName)}
-        typeLabel={wordForTemplate(cv.theme.template)}
-        onRename={(label) =>
-          dispatch("paper.rename", { id: cv.id, label }, { silent: true })
-        }
-        onDelete={() => dispatch("paper.remove", { id: cv.id })}
-        deleteLabel={t(m.paper.cv.deleteCv)}
-        onBack={onBack}
-        trailing={<DownloadButton hint={t(m.paper.cv.exportPdfHint)} />}
-      />
-      <FormatBar cv={cv} />
-      <div
-        role="group"
-        aria-label={t(m.paper.cv.paneSwitch)}
-        className="flex border-b border-border px-3 py-1 md:hidden"
-      >
-        <Button
-          type="button"
-          size="sm"
-          variant={pane === "edit" ? "secondary" : "ghost"}
-          className="h-7"
-          aria-pressed={pane === "edit"}
-          onClick={() => setPane("edit")}
-        >
-          {t(m.paper.cv.editPane)}
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant={pane === "preview" ? "secondary" : "ghost"}
-          className="h-7"
-          aria-pressed={pane === "preview"}
-          onClick={() => setPane("preview")}
-        >
-          {t(m.paper.cv.previewPane)}
-        </Button>
-      </div>
-      <div className="grid min-h-0 flex-1 md:grid-cols-[minmax(20rem,24rem)_minmax(0,1fr)]">
-        <div
-          className={cn(
-            "min-h-0 overflow-y-auto border-e border-border",
-            pane === "preview" && "hidden md:block",
-          )}
-        >
-          <CvForm cv={cv} />
-        </div>
-        <div
-          className={cn(
-            "min-h-0 overflow-y-auto bg-muted/40 p-4",
-            pane === "edit" && "hidden md:block",
-          )}
-        >
-          <CvPreview cv={cv} />
+      <div className="min-h-0 flex-1 overflow-y-auto bg-[oklch(0.96_0.008_85)]">
+        <div className="flex justify-start gap-4 p-4 md:gap-6 md:p-6">
+          <div className="min-w-0 flex-1">
+            {fromUpload && (
+              <p className="mb-3 text-pretty text-sm text-muted-foreground">
+                {t(m.paper.uploadStartHint)}
+              </p>
+            )}
+            <CvCanvas cv={cv} />
+          </div>
+          <aside className="hidden w-52 shrink-0 space-y-3 pt-1 md:block">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full justify-start"
+              onClick={onFormat}
+            >
+              {t(m.paper.cv.whereGoing)}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={cv.theme.density === "tight" ? "secondary" : "ghost"}
+              aria-pressed={cv.theme.density === "tight"}
+              className="w-full justify-start"
+              onClick={() =>
+                dispatch(
+                  "paper.setTheme",
+                  {
+                    id: cv.id,
+                    density: cv.theme.density === "tight" ? "normal" : "tight",
+                  },
+                  { silent: true },
+                )
+              }
+            >
+              {t(m.paper.cv.fitOnePage)}
+            </Button>
+            <AddSectionMenu cv={cv} />
+            <QuietCoachOffer
+              label={t(m.paper.cv.askCoachHelp)}
+              prompt={t(m.paper.cv.askCoachPrompt(cv.label))}
+            />
+          </aside>
         </div>
       </div>
       <CvPrintPortal cv={cv} />
-    </div>
-  );
-}
-
-function CvForm({ cv }: { cv: CvPaper }) {
-  const dispatch = useDispatch();
-  const { t, m } = useT();
-  const completeness = cvCompleteness(cv);
-  const setHeader = (fields: Record<string, unknown>) =>
-    dispatch("paper.setHeader", { id: cv.id, ...fields }, { silent: true });
-
-  return (
-    <div className="space-y-6 px-4 py-4">
-      <div className="flex items-center gap-2">
-        <p className="text-xs text-muted-foreground tabular-nums">
-          {t(m.paper.cv.readyPercent(completeness))}
-        </p>
-        <span
-          role="progressbar"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={completeness}
-          aria-label={t(m.paper.cv.completeness)}
-          className="h-1 w-16 overflow-hidden rounded-full bg-muted"
-        >
-          <span
-            className="block h-full bg-foreground"
-            style={{ width: `${completeness}%` }}
-          />
-        </span>
-      </div>
-
-      {templateHasPhoto(cv.theme.template) && <PhotoField cv={cv} />}
-
-      <div className="space-y-3">
-        <DraftInput
-          id="form-name"
-          label={t(m.paper.cv.headerName)}
-          autoComplete="name"
-          value={cv.header.name}
-          onCommit={(name) => setHeader({ name })}
-        />
-        <DraftInput
-          id="form-headline"
-          label={t(m.paper.cv.headerHeadline)}
-          value={cv.header.headline}
-          placeholder={t(m.paper.cv.headerHeadlinePlaceholder)}
-          onCommit={(headline) => setHeader({ headline })}
-        />
-        <DraftInput
-          id="form-email"
-          type="email"
-          autoComplete="email"
-          label={t(m.paper.cv.headerEmail)}
-          value={cv.header.email}
-          onCommit={(email) => setHeader({ email })}
-        />
-        <DraftInput
-          id="form-phone"
-          type="tel"
-          autoComplete="tel"
-          label={t(m.paper.cv.headerPhone)}
-          value={cv.header.phone}
-          onCommit={(phone) => setHeader({ phone })}
-        />
-        <DraftInput
-          id="form-location"
-          label={t(m.paper.cv.headerLocation)}
-          value={cv.header.location}
-          placeholder={t(m.paper.cv.headerLocationPlaceholder)}
-          onCommit={(location) => setHeader({ location })}
-        />
-      </div>
-
-      {cv.sections.map((section, index) => (
-        <SectionEditor
-          key={section.id}
-          paperId={cv.id}
-          section={section}
-          isFirst={index === 0}
-          isLast={index === cv.sections.length - 1}
-        />
-      ))}
-
-      <AddSectionMenu cv={cv} />
     </div>
   );
 }

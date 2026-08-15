@@ -111,12 +111,20 @@ export type CvPaper = PaperBase & {
 export type LetterPaper = PaperBase & {
   type: "letter";
   situation?: LetterSituation;
+  org?: string;
+  to?: string;
+  subject?: string;
   body: string;
 };
 
+export type ProofNoteKind = "note" | "photo" | "file" | "link";
+
 export type ProofNote = {
   id: string;
+  kind?: ProofNoteKind;
   text: string;
+  url?: string;
+  fileName?: string;
   at: string;
 };
 
@@ -125,6 +133,8 @@ export type ProofPaper = PaperBase & {
   role?: string;
   dates?: string;
   link?: string;
+  why?: string;
+  arrangeNoteIds?: string[];
   notes: ProofNote[];
   published?: { slug: string; at: string };
 };

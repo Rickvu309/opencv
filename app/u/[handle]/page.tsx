@@ -2,11 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { listProofPages, readSite } from "@/lib/paper/share";
 import {
-  listProofPages,
-  loggedDays,
-  readSite,
-} from "@/lib/paper/share";
+  sentenceForSite,
+  spanFromSnapshot,
+  spansByYear,
+  yearRange,
+  type ProofSpan,
+} from "@/lib/paper/spans";
 
 export async function generateMetadata({
   params,
@@ -27,68 +30,104 @@ export default async function PersonalLinkPage({
   if (!site) notFound();
 
   const pages = await listProofPages(site.accountId);
-  const days = loggedDays(pages.map((page) => page.snapshot));
+  const spans = pages.map((page) => spanFromSnapshot(page.slug, page.snapshot));
+  const byYear = spansByYear(spans);
+  const name = pages.find((page) => page.snapshot.name)?.snapshot.name;
 
   return (
-    <main className="min-h-svh bg-[#111110] text-[#f4efe6]">
+    <main className="min-h-svh bg-[#f6f1e8] text-[#1a1714]">
       <div className="mx-auto max-w-2xl px-6 py-16">
-        <p className="text-xs tracking-[0.2em] uppercase text-[#9a9388]">
-          /u/{site.handle}
-        </p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight">A record</h1>
-        <p className="mt-2 text-sm text-[#9a9388]">
-          Days something was logged. No streaks. No counts.
-        </p>
-        <ActivityCalendar days={days} />
-        <ul className="mt-12 space-y-4">
-          {pages.map((page) => (
-            <li key={page.slug}>
-              <Link
-                href={`/p/${page.slug}`}
-                className="block rounded-xl border border-white/10 px-4 py-3 hover:bg-white/5"
-              >
-                <span className="block text-sm font-medium">
-                  {page.snapshot.title || "Untitled Proof"}
-                </span>
-                <span className="mt-1 block text-xs text-[#9a9388]">
-                  {[page.snapshot.role, page.snapshot.dates].filter(Boolean).join(" · ")}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-        <p className="mt-16 text-xs text-[#6b645c]">OpenPath</p>
+        <h1 className="text-3xl font-semibold tracking-tight text-pretty">
+          {sentenceForSite(name, spans)}
+        </h1>
+
+        {spans.length > 0 && (
+          <div className="mt-10 space-y-6">
+            {[...byYear.entries()].map(([year, yearSpans]) => (
+              <YearHairline key={year} year={year} spans={yearSpans} />
+            ))}
+          </div>
+        )}
+
+        {spans.length > 0 && (
+          <ol className="mt-14 space-y-8">
+            {[...byYear.entries()].map(([year, yearSpans]) => (
+              <li key={year}>
+                <h2 className="text-xs tabular-nums text-[#6b645c]">{year}</h2>
+                <ul className="mt-3 space-y-3">
+                  {yearSpans.map((span) => (
+                    <li key={span.slug}>
+                      <Link
+                        href={`/p/${span.slug}`}
+                        className="block text-pretty underline-offset-4 hover:underline"
+                      >
+                        <span className="text-sm text-[#6b645c]">
+                          {span.dates || "Published"}
+                        </span>
+                        <span className="mt-0.5 block text-base font-medium">
+                          {span.title || "Untitled Proof"}
+                        </span>
+                        {span.why && (
+                          <span className="mt-1 block max-w-[65ch] text-sm text-[#4a453f]">
+                            {span.why}
+                          </span>
+                        )}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ol>
+        )}
       </div>
     </main>
   );
 }
 
-function ActivityCalendar({ days }: { days: string[] }) {
-  const marked = new Set(days);
-  const today = new Date();
-  const cells: { key: string; on: boolean }[] = [];
-  for (let i = 83; i >= 0; i -= 1) {
-    const date = new Date(today);
-    date.setDate(today.getDate() - i);
-    const key = date.toISOString().slice(0, 10);
-    cells.push({ key, on: marked.has(key) });
-  }
+function YearHairline({ year, spans }: { year: number; spans: ProofSpan[] }) {
+  const range = yearRange(spans);
+  if (!range) return null;
+  const pad = 2;
+  const min = range.start - pad;
+  const max = range.end + pad;
+  const width = Math.max(1, max - min);
 
   return (
-    <div
-      aria-hidden
-      className="mt-8 grid grid-cols-12 gap-1"
-    >
-      {cells.map((cell) => (
+    <div>
+      <p className="text-xs tabular-nums text-[#6b645c]">{year}</p>
+      <div className="relative mt-2 h-8">
         <span
-          key={cell.key}
-          className={
-            cell.on
-              ? "aspect-square rounded-sm bg-[#f4efe6]"
-              : "aspect-square rounded-sm bg-white/8"
-          }
+          aria-hidden
+          className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-[#1a1714]/20"
         />
-      ))}
+        {spans.map((span) => {
+          const left = ((span.start - min) / width) * 100;
+          const spanWidth = Math.max(
+            span.tick ? 0 : ((span.end - span.start) / width) * 100,
+            span.tick ? 0 : 2,
+          );
+          return (
+            <Link
+              key={span.slug}
+              href={`/p/${span.slug}`}
+              title={span.title}
+              className="absolute top-1/2 -translate-y-1/2"
+              style={{
+                left: `${left}%`,
+                width: span.tick ? undefined : `${spanWidth}%`,
+              }}
+            >
+              {span.tick ? (
+                <span className="block size-1.5 -translate-x-1/2 rounded-full bg-[#1a1714]" />
+              ) : (
+                <span className="block h-1.5 rounded-full bg-[#1a1714]" />
+              )}
+              <span className="sr-only">{span.title}</span>
+            </Link>
+          );
+        })}
+      </div>
     </div>
   );
 }

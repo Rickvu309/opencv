@@ -1,14 +1,24 @@
 import type { ClientBase } from "pg";
 
 import { getPool } from "@/lib/db/client";
-import type { ProofPaper } from "./types";
+import type { ProofNoteKind, ProofPaper } from "./types";
+
+export type ProofSnapshotNote = {
+  text: string;
+  at: string;
+  kind?: ProofNoteKind;
+  url?: string;
+  fileName?: string;
+};
 
 export type ProofSnapshot = {
   title: string;
+  name?: string;
   role?: string;
   dates?: string;
   link?: string;
-  notes: { text: string; at: string }[];
+  why?: string;
+  notes: ProofSnapshotNote[];
   publishedAt: string;
 };
 
@@ -46,16 +56,30 @@ export function defaultHandle(name: string, accountId: string): string {
   return `${slugifyHandle(name)}-${accountId.replace(/-/g, "").slice(0, 6)}`;
 }
 
-export function snapshotOf(paper: ProofPaper, at = new Date()): ProofSnapshot {
+export function snapshotOf(
+  paper: ProofPaper,
+  at = new Date(),
+  extras: { name?: string } = {},
+): ProofSnapshot {
   const day = at.toISOString().slice(0, 10);
+  const chosen = paper.arrangeNoteIds
+    ? paper.arrangeNoteIds
+        .map((id) => paper.notes.find((note) => note.id === id))
+        .filter((note): note is NonNullable<typeof note> => Boolean(note))
+    : paper.notes;
   return {
     title: paper.label,
+    name: extras.name,
     role: paper.role,
     dates: paper.dates,
     link: paper.link,
-    notes: paper.notes.map((note) => ({
+    why: paper.why,
+    notes: chosen.map((note) => ({
       text: note.text,
       at: /^\d{4}-\d{2}-\d{2}/.test(note.at) ? note.at.slice(0, 10) : day,
+      ...(note.kind && note.kind !== "note" ? { kind: note.kind } : {}),
+      ...(note.url ? { url: note.url } : {}),
+      ...(note.fileName ? { fileName: note.fileName } : {}),
     })),
     publishedAt: at.toISOString(),
   };
@@ -154,6 +178,13 @@ export async function listProofPages(
     snapshot: row.snapshot,
     publishedAt: row.published_at,
   }));
+}
+
+export async function deleteProofPage(
+  paperId: string,
+  db: Pick<ClientBase, "query"> = getPool(),
+): Promise<void> {
+  await db.query("delete from proof_pages where paper_id = $1", [paperId]);
 }
 
 export async function writeProofPage(

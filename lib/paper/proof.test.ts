@@ -55,6 +55,84 @@ test("an upload is a row, not a paper", () => {
   assert.equal(state.uploads[0]?.fileName, "ha.pdf");
 });
 
+test("arrange keeps a why and the notes they picked", () => {
+  let state = applyAction(seedState(), "paper.create", {
+    type: "proof",
+    label: "Campus app",
+  }).state;
+  const id = state.paper[0].id;
+  state = applyAction(state, "paper.addNote", { id, text: "Keep" }).state;
+  state = applyAction(state, "paper.addNote", { id, text: "Drop" }).state;
+  const keep = state.paper[0];
+  assert.ok(isProofPaper(keep));
+  const keepId = keep.notes.find((note) => note.text === "Keep")?.id;
+  state = applyAction(state, "paper.setProofMeta", {
+    id,
+    why: "To see if it worked.",
+    arrangeNoteIds: keepId ? [keepId] : [],
+  }).state;
+  assert.ok(isProofPaper(state.paper[0]));
+  assert.equal(state.paper[0].why, "To see if it worked.");
+  assert.deepEqual(state.paper[0].arrangeNoteIds, keepId ? [keepId] : []);
+});
+
+test("a photo, file, or link is still a Proof note", () => {
+  let state = applyAction(seedState(), "paper.create", {
+    type: "proof",
+    label: "Campus app",
+  }).state;
+  const id = state.paper[0].id;
+  state = applyAction(state, "paper.addNote", {
+    id,
+    kind: "link",
+    text: "Repo",
+    url: "https://example.com",
+  }).state;
+  state = applyAction(state, "paper.addNote", {
+    id,
+    kind: "photo",
+    fileName: "shift.jpg",
+  }).state;
+  assert.ok(isProofPaper(state.paper[0]));
+  assert.equal(state.paper[0].notes[0]?.kind, "photo");
+  assert.equal(state.paper[0].notes[1]?.kind, "link");
+  assert.equal(state.paper[0].notes[1]?.url, "https://example.com");
+});
+
+test("unpublish clears the URL and leaves the space", () => {
+  let state = applyAction(seedState(), "paper.create", {
+    type: "proof",
+    label: "Campus app",
+  }).state;
+  const id = state.paper[0].id;
+  state = applyAction(state, "paper.addNote", { id, text: "Shipped" }).state;
+  state = applyAction(state, "paper.publishProof", { id, slug: "campus-app" }).state;
+  state = applyAction(state, "paper.unpublishProof", { id }).state;
+  assert.ok(isProofPaper(state.paper[0]));
+  assert.equal(state.paper[0].published, undefined);
+  assert.equal(state.paper[0].notes.length, 1);
+});
+
+test("deleting an upload leaves the built CV", () => {
+  let state = applyAction(seedState(), "paper.addUpload", {
+    kind: "cv",
+    label: "Old CV",
+    fileName: "ha.pdf",
+  }).state;
+  state = applyAction(state, "paper.create", {
+    type: "cv",
+    label: "CV 1",
+    fromProfile: false,
+    template: "compact",
+  }).state;
+  const uploadId = state.uploads[0]?.id;
+  assert.ok(uploadId);
+  state = applyAction(state, "paper.removeUpload", { id: uploadId }).state;
+  assert.equal(state.uploads.length, 0);
+  assert.equal(state.paper.length, 1);
+  assert.equal(state.paper[0]?.type, "cv");
+});
+
 test("wordForTemplate follows the audience", () => {
   assert.equal(wordForTemplate("classic"), "CV");
   assert.equal(wordForTemplate("internship"), "CV");

@@ -1,12 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ArrowLeft } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { PaperToolbar } from "@/components/paper/toolbar";
 import { templateHasPhoto, templates, wordForTemplate } from "@/lib/paper/cv";
 import {
   letterSituations,
@@ -16,15 +11,14 @@ import {
 import { useT } from "@/lib/i18n/use-t";
 import { cn } from "@/lib/utils";
 
-const tileClass =
-  "flex h-full w-full flex-col rounded-xl border bg-card p-4 text-start outline-none transition-colors hover:bg-muted/70 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
-
 export function CvGallery({
   onPick,
   onBack,
+  current,
 }: {
   onPick: (template: CvTemplate) => void;
   onBack: () => void;
+  current?: CvTemplate;
 }) {
   const { t, m } = useT();
   const labels: Record<CvTemplate, string> = {
@@ -37,47 +31,90 @@ export function CvGallery({
     technical: t(m.paper.cv.templateTechnical),
     design: t(m.paper.cv.templateDesign),
   };
+  const [focus, setFocus] = React.useState(() =>
+    current ? Math.max(0, templates.indexOf(current)) : 0,
+  );
+  const tileRefs = React.useRef<Array<HTMLButtonElement | null>>([]);
+
+  React.useEffect(() => {
+    tileRefs.current[focus]?.focus();
+  }, [focus]);
+
+  const move = (delta: number) => {
+    setFocus((i) => {
+      const next = i + delta;
+      if (next < 0 || next >= templates.length) return i;
+      return next;
+    });
+  };
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <PaperToolbar>
-        <Button
-          variant="ghost"
-          size="sm"
-          aria-label={t(m.paper.backToList)}
-          onClick={onBack}
-        >
-          <ArrowLeft className="size-3.5 rtl:-scale-x-100" />
-          {t(m.paper.backToList)}
-        </Button>
-      </PaperToolbar>
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
-        <h1 className="text-balance text-base font-semibold tracking-tight">
-          {t(m.paper.galleryTitle)}
-        </h1>
-        <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {templates.map((template) => (
+        <ul
+          className="grid grid-cols-2 gap-4 md:grid-cols-4"
+          onKeyDown={(event) => {
+            if (event.key === "ArrowRight") {
+              event.preventDefault();
+              move(1);
+            } else if (event.key === "ArrowLeft") {
+              event.preventDefault();
+              move(-1);
+            } else if (event.key === "ArrowDown") {
+              event.preventDefault();
+              move(window.matchMedia("(min-width: 768px)").matches ? 4 : 2);
+            } else if (event.key === "ArrowUp") {
+              event.preventDefault();
+              move(window.matchMedia("(min-width: 768px)").matches ? -4 : -2);
+            } else if (event.key === "Escape") {
+              event.preventDefault();
+              onBack();
+            }
+          }}
+        >
+          {templates.map((template, index) => (
             <li key={template}>
               <button
+                ref={(node) => {
+                  tileRefs.current[index] = node;
+                }}
                 type="button"
+                tabIndex={index === focus ? 0 : -1}
                 onClick={() => onPick(template)}
-                className={tileClass}
+                onFocus={() => setFocus(index)}
+                className={cn(
+                  "flex w-full flex-col text-start outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+                )}
               >
-                <TemplateMark template={template} />
-                <span className="text-pretty text-sm font-medium">
+                <span
+                  className={cn(
+                    "block w-full bg-white ring-1 ring-foreground/15",
+                    current === template && "ring-foreground",
+                    "hover:ring-foreground",
+                  )}
+                  style={{
+                    aspectRatio: "1 / 1.414",
+                    ...(current === template
+                      ? { viewTransitionName: "paper-gallery-pick" }
+                      : {}),
+                  }}
+                >
+                  <TemplateMark template={template} />
+                </span>
+                <span className="mt-2 text-pretty text-sm font-medium">
                   {labels[template]}
                 </span>
-                <span className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                  <span>{wordForTemplate(template)}</span>
-                  {templateHasPhoto(template) && (
+                <span className="mt-0.5 text-xs text-muted-foreground">
+                  {wordForTemplate(template)}
+                  {templateHasPhoto(template) ? (
                     <>
-                      <span aria-hidden>·</span>
-                      <span>{t(m.paper.includesPhoto)}</span>
+                      <span aria-hidden> · </span>
+                      {t(m.paper.includesPhoto)}
                     </>
-                  )}
+                  ) : null}
                 </span>
                 {template === "design" && (
-                  <span className="mt-2 text-pretty text-xs text-muted-foreground">
+                  <span className="mt-1 text-pretty text-xs text-muted-foreground">
                     {t(m.paper.cv.templateDesignHint)}
                   </span>
                 )}
@@ -98,25 +135,30 @@ function TemplateMark({ template }: { template: CvTemplate }) {
   return (
     <span
       aria-hidden
-      className="mb-3 flex aspect-[3/4] w-11 flex-col gap-1 rounded-sm border border-border bg-background p-1"
+      className="flex h-full w-full flex-col gap-[6%] bg-white p-[10%] text-black"
     >
       {template === "design" && (
-        <span className="h-0.5 w-full bg-foreground/70" />
+        <span className="h-[2%] w-full bg-black/70" />
       )}
-      <span className="flex gap-1">
+      <span className="flex gap-[4%]">
         {photo && (
-          <span className="size-2.5 shrink-0 rounded-[1px] bg-muted-foreground/40" />
+          <span className="aspect-square w-[18%] shrink-0 bg-black/15" />
         )}
-        <span className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
-          <span className="h-0.5 w-3/4 bg-foreground/50" />
-          <span className="h-0.5 w-1/2 bg-muted-foreground/40" />
+        <span className="flex min-w-0 flex-1 flex-col justify-center gap-[8%]">
+          <span className="h-[8%] w-3/4 bg-black/55" />
+          <span className="h-[6%] w-1/2 bg-black/25" />
         </span>
       </span>
-      <span className={cn("mt-auto grid gap-0.5", twoCol && "grid-cols-2")}>
-        <span className="h-0.5 bg-muted-foreground/30" />
-        <span className="h-0.5 bg-muted-foreground/30" />
-        <span className="h-0.5 bg-muted-foreground/30" />
-        {twoCol && <span className="h-0.5 bg-muted-foreground/30" />}
+      <span
+        className={cn(
+          "mt-auto grid gap-[6%]",
+          twoCol && "grid-cols-2",
+        )}
+      >
+        <span className="h-1.5 bg-black/20" />
+        <span className="h-1.5 bg-black/20" />
+        <span className="h-1.5 bg-black/20" />
+        {twoCol && <span className="h-1.5 bg-black/20" />}
       </span>
     </span>
   );
@@ -124,7 +166,6 @@ function TemplateMark({ template }: { template: CvTemplate }) {
 
 export function LetterChooser({
   onPick,
-  onBack,
 }: {
   onPick: (
     situation: LetterSituation,
@@ -133,9 +174,6 @@ export function LetterChooser({
   onBack: () => void;
 }) {
   const { t, m } = useT();
-  const [situation, setSituation] = React.useState<LetterSituation | null>(null);
-  const [role, setRole] = React.useState("");
-  const [org, setOrg] = React.useState("");
 
   const labels: Record<LetterSituation, string> = {
     posted: t(m.paper.letter.situationPosted),
@@ -151,90 +189,25 @@ export function LetterChooser({
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <PaperToolbar>
-        <Button
-          variant="ghost"
-          size="sm"
-          aria-label={
-            situation ? t(m.paper.backToSituations) : t(m.paper.backToList)
-          }
-          onClick={() => (situation ? setSituation(null) : onBack())}
-        >
-          <ArrowLeft className="size-3.5 rtl:-scale-x-100" />
-          {situation ? t(m.paper.backToSituations) : t(m.paper.backToList)}
-        </Button>
-      </PaperToolbar>
-      <div className="min-h-0 flex-1 overflow-y-auto p-4">
-        <h1 className="text-balance text-base font-semibold tracking-tight">
-          {t(m.paper.letterChooserTitle)}
-        </h1>
-        {!situation ? (
-          <ul className="mt-4 grid gap-3 sm:grid-cols-2">
-            {letterSituations.map((item) => (
-              <li key={item}>
-                <button
-                  type="button"
-                  onClick={() => setSituation(item)}
-                  className={tileClass}
-                >
-                  <span className="text-pretty text-sm font-medium">
-                    {labels[item]}
-                  </span>
-                  <span className="mt-1 text-pretty text-xs text-muted-foreground">
-                    {hints[item]}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <form
-            className="mt-4 max-w-md space-y-4"
-            onSubmit={(event) => {
-              event.preventDefault();
-              onPick(situation, {
-                role: role.trim() || undefined,
-                org: org.trim() || undefined,
-              });
-            }}
-          >
-            <p className="text-pretty text-sm text-muted-foreground">
-              {labels[situation]}
-            </p>
-            {(situation === "posted" || situation === "internship") && (
-              <div className="grid gap-1.5">
-                <Label htmlFor="letter-role">
-                  {situation === "internship"
-                    ? t(m.paper.letter.situationProgram)
-                    : t(m.paper.letter.situationRole)}
-                </Label>
-                <Input
-                  id="letter-role"
-                  name="role"
-                  value={role}
-                  onChange={(event) => setRole(event.target.value)}
-                />
-              </div>
-            )}
-            <div className="grid gap-1.5">
-              <Label htmlFor="letter-org">
-                {situation === "scholarship"
-                  ? t(m.paper.letter.situationAward)
-                  : t(m.paper.letter.situationOrg)}
-              </Label>
-              <Input
-                id="letter-org"
-                name="organization"
-                autoComplete="organization"
-                value={org}
-                onChange={(event) => setOrg(event.target.value)}
-              />
-            </div>
-            <Button type="submit">{t(m.paper.letter.startLetter)}</Button>
-          </form>
-        )}
-      </div>
+    <div className="min-h-0 flex-1 overflow-y-auto p-4">
+      <ul className="grid gap-3 sm:grid-cols-2">
+        {letterSituations.map((item) => (
+          <li key={item}>
+            <button
+              type="button"
+              onClick={() => onPick(item, {})}
+              className="flex h-full w-full flex-col rounded-lg border bg-card p-4 text-start outline-none hover:bg-muted/70 focus-visible:ring-3 focus-visible:ring-ring/50"
+            >
+              <span className="text-pretty text-sm font-medium">
+                {labels[item]}
+              </span>
+              <span className="mt-1 text-pretty text-xs text-muted-foreground">
+                {hints[item]}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

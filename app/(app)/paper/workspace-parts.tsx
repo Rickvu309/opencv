@@ -64,6 +64,7 @@ export function EditorMainBar({
   deleteLabel,
   onBack,
   trailing,
+  meta,
 }: {
   currentId: string;
   currentLabel: string;
@@ -74,11 +75,12 @@ export function EditorMainBar({
   deleteLabel: string;
   onBack: () => void;
   trailing: React.ReactNode;
+  meta?: React.ReactNode;
 }) {
   const { t, m } = useT();
 
   return (
-    <PaperToolbar>
+    <>
       <div className="flex min-w-0 items-center gap-0.5">
         <Button
           variant="ghost"
@@ -90,17 +92,20 @@ export function EditorMainBar({
           <ArrowLeft className="size-3.5 rtl:-scale-x-100" />
         </Button>
         <h1 className="sr-only">{currentLabel}</h1>
-        <DraftInput
-          id={`doc-name-${currentId}`}
-          label={nameLabel}
-          srLabel
-          value={currentLabel}
-          onCommit={(label) => label && onRename(label)}
-          className="min-w-0 max-w-[12rem] gap-0 sm:max-w-[14rem] [&_input]:h-7 [&_input]:border-0 [&_input]:bg-transparent [&_input]:px-1.5 [&_input]:text-base [&_input]:font-medium [&_input]:shadow-none sm:[&_input]:text-sm"
-        />
+        <span style={{ viewTransitionName: `paper-name-${currentId}` }}>
+          <DraftInput
+            id={`doc-name-${currentId}`}
+            label={nameLabel}
+            srLabel
+            value={currentLabel}
+            onCommit={(label) => label && onRename(label)}
+            className="min-w-0 max-w-[12rem] gap-0 sm:max-w-[14rem] [&_input]:h-7 [&_input]:border-0 [&_input]:bg-transparent [&_input]:px-1.5 [&_input]:text-base [&_input]:font-medium [&_input]:shadow-none sm:[&_input]:text-sm"
+          />
+        </span>
         <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">
           {typeLabel}
         </span>
+        {meta}
         <Button
           variant="ghost"
           size="icon-sm"
@@ -113,7 +118,7 @@ export function EditorMainBar({
       </div>
 
       <div className="flex items-center gap-1">{trailing}</div>
-    </PaperToolbar>
+    </>
   );
 }
 

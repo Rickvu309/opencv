@@ -235,3 +235,49 @@ test("a document with no usable label still gets a filename", () => {
   assert.match(fileStem(state.paper[0]), /^[A-Za-zÀ-ỹ_-]+$/u);
   assert.ok(fileStem(state.paper[0]).length > 0);
 });
+
+test("addressing lives on the letter, not only in the label", () => {
+  const { state, id } = withLetter();
+  const after = applyAction(state, "paper.setLetterMeta", {
+    id,
+    org: "VNG",
+    to: "hiring@vng.com.vn",
+    subject: "Data intern",
+  }).state.paper[0];
+  assert.equal(after.type, "letter");
+  if (after.type === "letter") {
+    assert.equal(after.org, "VNG");
+    assert.equal(after.to, "hiring@vng.com.vn");
+    assert.equal(after.subject, "Data intern");
+    assert.equal(after.body, LETTER);
+  }
+});
+
+test("changing situation keeps typed words and replaces an unused scaffold", () => {
+  const typed = withLetter();
+  const afterTyped = applyAction(typed.state, "paper.setLetterSituation", {
+    id: typed.id,
+    situation: "scholarship",
+  }).state.paper[0];
+  assert.equal(afterTyped.type, "letter");
+  if (afterTyped.type === "letter") {
+    assert.equal(afterTyped.situation, "scholarship");
+    assert.equal(afterTyped.body, LETTER);
+  }
+
+  const blank = applyAction(seedState(), "paper.create", {
+    type: "letter",
+    label: "Letter",
+    situation: "posted",
+  }).state;
+  const id = blank.paper[0].id;
+  const afterBlank = applyAction(blank, "paper.setLetterSituation", {
+    id,
+    situation: "speculative",
+  }).state.paper[0];
+  assert.equal(afterBlank.type, "letter");
+  if (afterBlank.type === "letter") {
+    assert.equal(afterBlank.situation, "speculative");
+    assert.match(afterBlank.body, /Why this company/);
+  }
+});

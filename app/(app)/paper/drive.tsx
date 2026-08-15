@@ -1,10 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { FileText, FileUp, Mail, MoreHorizontal, NotebookPen, Plus } from "lucide-react";
+import { MoreHorizontal, Plus } from "lucide-react";
 
 import { QuietCoachOffer } from "@/components/coach/quiet-offer";
-import { PaperToolbar } from "@/components/paper/toolbar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -18,7 +17,6 @@ import { wordForTemplate } from "@/lib/paper/cv";
 import { mimeFromName } from "@/lib/paper/files";
 import {
   isCvPaper,
-  isLetterPaper,
   isProofPaper,
   paperTypeLabels,
   type Paper,
@@ -26,35 +24,51 @@ import {
 } from "@/lib/paper/types";
 import { useT } from "@/lib/i18n/use-t";
 import { cn } from "@/lib/utils";
-
-type Filter = "all" | "cv" | "letter" | "proof" | "upload";
+export type DriveFilter = "all" | "cv" | "letter" | "proof" | "upload";
 
 const rowFocus =
-  "outline-none hover:bg-muted/70 focus-visible:ring-3 focus-visible:ring-ring/50";
+  "outline-none hover:bg-transparent focus-visible:ring-3 focus-visible:ring-ring/50";
 
-export function Library({
+const warmInk = "text-[oklch(0.52_0.11_55)]";
+const warmSlab = "bg-[oklch(0.52_0.11_55)]";
+
+export function Drive({
+  filter,
   onOpen,
-  onCreateCv,
-  onCreateLetter,
-  onCreateProof,
+  onRequestCreateCv,
+  onWillCreate,
 }: {
-  onOpen: (id: string) => void;
-  onCreateCv: () => void;
-  onCreateLetter: () => void;
-  onCreateProof: () => void;
+  filter: DriveFilter;
+  onOpen: (id: string, extras?: { fromUpload?: boolean }) => void;
+  onRequestCreateCv: () => void;
+  onWillCreate: (opts?: { fromUpload?: boolean }) => void;
 }) {
-  const { paper, uploads, profile } = useAppState();
+  const { paper, uploads } = useAppState();
+  const dispatch = useDispatch();
   const { t, m } = useT();
-  const [filter, setFilter] = React.useState<Filter>("all");
   const [unsigned, setUnsigned] = React.useState<Record<string, true>>({});
+
+  const startCvFromFile = () => {
+    const n = paper.filter(isCvPaper).length + 1;
+    onWillCreate({ fromUpload: true });
+    dispatch(
+      "paper.create",
+      {
+        type: "cv",
+        label: t(m.paper.cv.untitled(n)),
+        template: "compact",
+        fromProfile: false,
+      },
+      { silent: true },
+    );
+  };
+
   const empty = paper.length === 0 && uploads.length === 0;
-  const hasName = Boolean(profile.identity.name.trim());
   const uploadsOnly = paper.length === 0 && uploads.length > 0;
-  const present = new Set<Filter>([
-    ...paper.map((item) => item.type as Filter),
+  const present = new Set<DriveFilter>([
+    ...paper.map((item) => item.type as DriveFilter),
     ...(uploads.length > 0 ? (["upload"] as const) : []),
   ]);
-  const showFilter = present.size > 1;
   const activeFilter = filter === "all" || present.has(filter) ? filter : "all";
 
   const rows = [
@@ -66,114 +80,69 @@ export function Library({
     return row.kind === "paper" && row.item.type === activeFilter;
   });
 
-  const filterOptions = (
-    [
-      ["all", t(m.paper.filterAll)],
-      ["cv", t(m.paper.kindCv)],
-      ["letter", t(m.paper.kindLetter)],
-      ["proof", t(m.paper.kindProof)],
-      ["upload", t(m.paper.kindUploaded)],
-    ] as const
-  ).filter(([key]) => key === "all" || present.has(key));
+  const airy = rows.length <= 4;
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {!empty && (
-        <PaperToolbar>
-          <NewMenu
-            onCreateCv={onCreateCv}
-            onCreateLetter={onCreateLetter}
-            onCreateProof={onCreateProof}
-            onKeepFailed={(id) =>
-              setUnsigned((current) => ({ ...current, [id]: true }))
-            }
-            onKept={(id) =>
-              setUnsigned((current) => {
-                if (!current[id]) return current;
-                const next = { ...current };
-                delete next[id];
-                return next;
-              })
-            }
-          />
-          {showFilter && (
-            <div
-              role="group"
-              aria-label={t(m.paper.filterByType)}
-              className="ms-auto flex flex-wrap gap-1"
-            >
-              {filterOptions.map(([key, label]) => (
-                <Button
-                  key={key}
-                  type="button"
-                  size="sm"
-                  variant={activeFilter === key ? "secondary" : "ghost"}
-                  aria-pressed={activeFilter === key}
-                  className="h-7"
-                  onClick={() => setFilter(key)}
-                >
-                  {label}
-                </Button>
-              ))}
-            </div>
-          )}
-        </PaperToolbar>
-      )}
-      <div className="min-h-0 flex-1 overflow-y-auto p-4">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6">
         {empty ? (
-          <div className="overflow-hidden rounded-xl border bg-card">
-            <div className="px-4 py-3">
-              <h1 className="text-pretty text-sm font-semibold tracking-tight">
+          <div className="max-w-xl space-y-3">
+            <h1 className="sr-only">{t(m.paper.yourDocuments)}</h1>
+            <button
+              type="button"
+              onClick={onRequestCreateCv}
+              className={cn(
+                "flex w-full items-center gap-3 rounded-md px-1 py-3 text-start",
+                rowFocus,
+              )}
+            >
+              <Slab warm className="unmade-slab" />
+              <span className={cn("text-sm font-medium", warmInk)}>
                 {t(m.paper.emptyTitle)}
-              </h1>
-              <p className="mt-1 text-pretty text-sm text-muted-foreground">
-                {t(
-                  hasName
-                    ? m.paper.emptyWithProfile
-                    : m.paper.emptyWithoutProfile,
-                )}
-              </p>
-            </div>
-            <div className="border-t border-border p-2">
-              <Button
-                className="h-auto min-h-10 w-full justify-start"
-                onClick={onCreateCv}
-              >
-                {t(m.paper.buildCv)}
-              </Button>
-            </div>
+              </span>
+            </button>
+            <EmptyUpload
+              onKeepFailed={(id) =>
+                setUnsigned((current) => ({ ...current, [id]: true }))
+              }
+              onKept={(id) =>
+                setUnsigned((current) => {
+                  if (!current[id]) return current;
+                  const next = { ...current };
+                  delete next[id];
+                  return next;
+                })
+              }
+              onStarted={startCvFromFile}
+            />
           </div>
         ) : (
           <>
             <h1 className="sr-only">{t(m.paper.yourDocuments)}</h1>
             {uploadsOnly && (
-              <p className="mb-3 text-pretty text-sm text-muted-foreground">
+              <p className="mb-4 text-pretty text-sm text-muted-foreground">
                 {t(m.paper.emptyUploadsOnly)}
               </p>
             )}
-            <div className="mb-1 hidden grid-cols-[minmax(0,1fr)_7rem_6rem_1.75rem] items-center gap-3 px-3 text-xs text-muted-foreground sm:grid">
-              <span>{t(m.paper.nameColumn)}</span>
-              <span>{t(m.paper.kindColumn)}</span>
-              <span className="text-end">{t(m.paper.updatedColumn)}</span>
-              <span className="sr-only">{t(m.paper.more)}</span>
-            </div>
             {rows.length === 0 ? (
-              <p className="px-3 py-6 text-pretty text-sm text-muted-foreground">
+              <p className="py-6 text-pretty text-sm text-muted-foreground">
                 {t(m.paper.noRowsForFilter)}
               </p>
             ) : (
-              <ul>
+              <ul className={cn(airy ? "space-y-1" : "space-y-0")}>
                 {rows.map((row) =>
                   row.kind === "paper" ? (
                     <PaperRow
                       key={row.item.id}
                       paper={row.item}
+                      airy={airy}
                       onOpen={() => onOpen(row.item.id)}
                     />
                   ) : (
                     <UploadRow
                       key={row.item.id}
                       upload={row.item}
+                      airy={airy}
                       keepFailed={Boolean(unsigned[row.item.id])}
                       onKeepFailed={() =>
                         setUnsigned((current) => ({
@@ -189,12 +158,13 @@ export function Library({
                           return next;
                         })
                       }
+                      onStartCv={startCvFromFile}
                     />
                   ),
                 )}
               </ul>
             )}
-            <div className="mt-4">
+            <div className="mt-8">
               <QuietCoachOffer
                 label={t(m.paper.askCoachList)}
                 prompt={t(m.paper.askCoachListPrompt)}
@@ -207,14 +177,122 @@ export function Library({
   );
 }
 
-function PaperRow({ paper, onOpen }: { paper: Paper; onOpen: () => void }) {
+export function DriveBand({
+  filter,
+  onFilter,
+  onRequestCreateCv,
+  onRequestCreateLetter,
+  onWillCreate,
+}: {
+  filter: DriveFilter;
+  onFilter: (filter: DriveFilter) => void;
+  onRequestCreateCv: () => void;
+  onRequestCreateLetter: () => void;
+  onWillCreate: (opts?: { fromUpload?: boolean }) => void;
+}) {
+  const { paper, uploads } = useAppState();
+  const dispatch = useDispatch();
+  const { t, m } = useT();
+  const empty = paper.length === 0 && uploads.length === 0;
+  const present = new Set<DriveFilter>([
+    ...paper.map((item) => item.type as DriveFilter),
+    ...(uploads.length > 0 ? (["upload"] as const) : []),
+  ]);
+  const showFilter = present.size > 1;
+  const activeFilter = filter === "all" || present.has(filter) ? filter : "all";
+  const filterOptions = (
+    [
+      ["all", t(m.paper.filterAll)],
+      ["cv", t(m.paper.kindCv)],
+      ["letter", t(m.paper.kindLetter)],
+      ["proof", t(m.paper.kindProof)],
+      ["upload", t(m.paper.kindUploaded)],
+    ] as const
+  ).filter(([key]) => key === "all" || present.has(key));
+
+  if (empty) {
+    return <h1 className="sr-only">{t(m.paper.yourDocuments)}</h1>;
+  }
+
+  return (
+    <>
+      <NewMenu
+        onCreateCv={onRequestCreateCv}
+        onCreateLetter={onRequestCreateLetter}
+        onCreateProof={() => {
+          onWillCreate();
+          dispatch("paper.create", {
+            type: "proof",
+            label: t(m.paper.proof.untitled),
+          });
+        }}
+        onKeepFailed={() => undefined}
+        onKept={() => undefined}
+      />
+      {showFilter && (
+        <div
+          role="group"
+          aria-label={t(m.paper.filterByType)}
+          className="ms-auto flex flex-wrap gap-1"
+        >
+          {filterOptions.map(([key, label]) => (
+            <Button
+              key={key}
+              type="button"
+              size="sm"
+              variant={activeFilter === key ? "secondary" : "ghost"}
+              aria-pressed={activeFilter === key}
+              className="h-7"
+              onClick={() => onFilter(key)}
+            >
+              {label}
+            </Button>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+function Slab({
+  warm,
+  file,
+  className,
+  transitionName,
+}: {
+  warm?: boolean;
+  file?: boolean;
+  className?: string;
+  transitionName?: string;
+}) {
+  return (
+    <span
+      aria-hidden
+      style={transitionName ? { viewTransitionName: transitionName } : undefined}
+      className={cn(
+        "block h-7 w-0.5 shrink-0 rounded-full",
+        file
+          ? "w-px bg-muted-foreground/40"
+          : warm
+            ? warmSlab
+            : "bg-foreground/70",
+        className,
+      )}
+    />
+  );
+}
+
+function PaperRow({
+  paper,
+  airy,
+  onOpen,
+}: {
+  paper: Paper;
+  airy: boolean;
+  onOpen: () => void;
+}) {
   const { t, m } = useT();
   const dispatch = useDispatch();
-  const Icon = isCvPaper(paper)
-    ? FileText
-    : isLetterPaper(paper)
-      ? Mail
-      : NotebookPen;
   const typeWord = isCvPaper(paper)
     ? wordForTemplate(paper.theme.template)
     : t(paperTypeLabels[paper.type]);
@@ -230,14 +308,23 @@ function PaperRow({ paper, onOpen }: { paper: Paper; onOpen: () => void }) {
         type="button"
         onClick={onOpen}
         className={cn(
-          "grid w-full items-center gap-3 rounded-lg px-3 py-2.5 pe-10 text-start text-sm sm:grid-cols-[minmax(0,1fr)_7rem_6rem] sm:pe-12",
+          "grid w-full items-center gap-3 rounded-md pe-10 text-start text-sm sm:grid-cols-[minmax(0,1fr)_7rem_6rem] sm:pe-12",
+          airy ? "py-3.5" : "py-2.5",
           rowFocus,
         )}
       >
         <span className="flex min-w-0 items-center gap-3">
-          <Icon className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+          <Slab
+            className={`paper-slab-${paper.id}`}
+            transitionName={`paper-sheet-${paper.id}`}
+          />
           <span className="min-w-0">
-            <span className="block truncate font-medium">{name}</span>
+            <span
+              className="block truncate font-medium"
+              style={{ viewTransitionName: `paper-name-${paper.id}` }}
+            >
+              {name}
+            </span>
             <span className="mt-0.5 block truncate text-xs text-muted-foreground sm:hidden">
               {typeWord}
               <span aria-hidden> · </span>
@@ -288,14 +375,18 @@ function PaperRow({ paper, onOpen }: { paper: Paper; onOpen: () => void }) {
 
 function UploadRow({
   upload,
+  airy,
   keepFailed,
   onKeepFailed,
   onKept,
+  onStartCv,
 }: {
   upload: PaperUpload;
+  airy: boolean;
   keepFailed: boolean;
   onKeepFailed: () => void;
   onKept: () => void;
+  onStartCv: () => void;
 }) {
   const { t, m } = useT();
   const dispatch = useDispatch();
@@ -317,17 +408,15 @@ function UploadRow({
         aria-controls={panelId}
         onClick={() => setOpen((value) => !value)}
         className={cn(
-          "grid w-full items-center gap-3 rounded-lg px-3 py-2.5 text-start text-sm sm:grid-cols-[minmax(0,1fr)_7rem_6rem_1.75rem]",
+          "grid w-full items-center gap-3 rounded-md text-start text-sm sm:grid-cols-[minmax(0,1fr)_7rem_6rem]",
+          airy ? "py-3.5" : "py-2.5",
           rowFocus,
         )}
       >
         <span className="flex min-w-0 items-center gap-3">
-          <FileUp className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+          <Slab file />
           <span className="min-w-0">
             <span className="block truncate font-medium">{upload.label}</span>
-            <span className="block truncate text-xs text-muted-foreground">
-              {upload.fileName}
-            </span>
             <span className="mt-0.5 block truncate text-xs text-muted-foreground sm:hidden">
               {t(m.paper.kindUploaded)}
               <span aria-hidden> · </span>
@@ -341,12 +430,11 @@ function UploadRow({
         <span className="hidden text-end text-xs text-muted-foreground tabular-nums sm:block">
           {upload.updatedAt}
         </span>
-        <span className="hidden sm:block" />
       </button>
       {open && (
         <div
           id={panelId}
-          className="mb-2 ms-8 space-y-2 rounded-lg border bg-card p-3"
+          className="mb-2 ms-4 space-y-2 border-s border-border ps-4"
         >
           {upload.mime === "application/pdf" || upload.fileName.endsWith(".pdf") ? (
             <iframe title={upload.fileName} src={href} className="h-64 w-full rounded-md border" />
@@ -359,6 +447,9 @@ function UploadRow({
             </p>
           )}
           <div className="flex flex-wrap gap-2">
+            <Button size="sm" onClick={onStartCv}>
+              {t(m.paper.startCvFromFile)}
+            </Button>
             <Button size="sm" variant="outline" asChild>
               <a href={href} download={upload.fileName}>
                 {t(m.paper.downloadFile)}
@@ -404,6 +495,91 @@ function UploadRow({
   );
 }
 
+function putUpload(
+  id: string,
+  file: File,
+  onKeepFailed: (id: string) => void,
+  onKept: (id: string) => void,
+) {
+  void fetch(`/api/paper-file?uploadId=${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: {
+      "content-type": file.type || mimeFromName(file.name) || "application/pdf",
+      "x-file-name": file.name,
+    },
+    body: file,
+  }).then((response) => {
+    if (response.status === 401) onKeepFailed(id);
+    else if (response.ok) onKept(id);
+  });
+}
+
+function useAddUpload() {
+  const { uploads } = useAppState();
+  const dispatch = useDispatch();
+
+  return (file: File) => {
+    const id = nextId(
+      "upload",
+      uploads.map((item) => item.id),
+    );
+    dispatch("paper.addUpload", {
+      id,
+      kind: "cv",
+      label: file.name,
+      fileName: file.name,
+      mime: file.type || mimeFromName(file.name) || undefined,
+      size: file.size,
+    });
+    return id;
+  };
+}
+
+function EmptyUpload({
+  onKeepFailed,
+  onKept,
+  onStarted,
+}: {
+  onKeepFailed: (id: string) => void;
+  onKept: (id: string) => void;
+  onStarted: () => void;
+}) {
+  const { t, m } = useT();
+  const addUpload = useAddUpload();
+  const fileRef = React.useRef<HTMLInputElement>(null);
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => fileRef.current?.click()}
+        className={cn(
+          "flex w-full items-center gap-3 rounded-md px-1 py-2 text-start text-sm text-muted-foreground",
+          rowFocus,
+        )}
+      >
+        <Slab file />
+        <span>{t(m.paper.alreadyHaveFile)}</span>
+      </button>
+      <input
+        ref={fileRef}
+        type="file"
+        accept=".pdf,.doc,.docx,application/pdf"
+        className="sr-only"
+        aria-label={t(m.paper.alreadyHaveFile)}
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          event.target.value = "";
+          if (!file) return;
+          const id = addUpload(file);
+          putUpload(id, file, onKeepFailed, onKept);
+          onStarted();
+        }}
+      />
+    </>
+  );
+}
+
 function NewMenu({
   onCreateCv,
   onCreateLetter,
@@ -418,15 +594,18 @@ function NewMenu({
   onKept: (id: string) => void;
 }) {
   const { t, m } = useT();
-  const { uploads } = useAppState();
-  const dispatch = useDispatch();
+  const addUpload = useAddUpload();
   const fileRef = React.useRef<HTMLInputElement>(null);
 
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm">
+          <Button
+            variant="outline"
+            size="sm"
+            className={cn("border-current", warmInk)}
+          >
             <Plus className="size-3.5" />
             {t(m.paper.newDocument)}
           </Button>
@@ -452,30 +631,8 @@ function NewMenu({
           const file = event.target.files?.[0];
           event.target.value = "";
           if (!file) return;
-          const id = nextId(
-            "upload",
-            uploads.map((item) => item.id),
-          );
-          dispatch("paper.addUpload", {
-            id,
-            kind: "cv",
-            label: file.name,
-            fileName: file.name,
-            mime: file.type || mimeFromName(file.name) || undefined,
-            size: file.size,
-          });
-          void fetch(`/api/paper-file?uploadId=${encodeURIComponent(id)}`, {
-            method: "PUT",
-            headers: {
-              "content-type":
-                file.type || mimeFromName(file.name) || "application/pdf",
-              "x-file-name": file.name,
-            },
-            body: file,
-          }).then((response) => {
-            if (response.status === 401) onKeepFailed(id);
-            else if (response.ok) onKept(id);
-          });
+          const id = addUpload(file);
+          putUpload(id, file, onKeepFailed, onKept);
         }}
       />
     </>

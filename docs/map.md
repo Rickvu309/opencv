@@ -2,14 +2,14 @@
 
 Coding agents: read this after [`CONTEXT.md`](../CONTEXT.md). Product nouns live there. Placement lives here.
 
-Chrome → artefacts + Coach → `applyAction` → AppState. A click and a Coach turn hit the same registry. Viewport and layout width stay out of AppState.
+Chrome → features + Coach → `applyAction` → AppState. A click and a Coach turn hit the same registry. Viewport and layout width stay out of AppState.
 
 ```mermaid
 flowchart TB
   subgraph chrome [Product chrome]
     Shell["AppShell"]
   end
-  subgraph artefacts [Artefacts]
+  subgraph features [Features]
     Profile["Profile /profile"]
     Paper["Paper /paper"]
     Pitch["Pitch /pitch"]
@@ -19,9 +19,9 @@ flowchart TB
   Coach["Coach /coach and dock"]
   Registry["applyAction"]
   State["AppState"]
-  Shell --> artefacts
+  Shell --> features
   Shell --> Coach
-  artefacts --> Registry
+  features --> Registry
   Coach --> Registry
   Registry --> State
 ```
@@ -37,7 +37,7 @@ lib/<noun>/            shared domain when two callers exist
 lib/<support>/         auth, db, billing, i18n, catalogue, coach, guardrails, onboarding
 ```
 
-There is no `src/` wrapper, no `features/` tree, no `artefacts/` colocation.
+There is no `src/` wrapper, no `features/` tree. A feature is a product noun, not a folder.
 
 **Where a new file goes**
 
@@ -74,9 +74,9 @@ Action tables live next to the noun (`lib/paper/actions.ts`, and so on). The reg
 | Application | [`lib/applications/`](../lib/applications/) | [`app/(app)/applications/`](../app/(app)/applications/) | `applications` | `application.*` |
 | Coach | [`lib/coach/`](../lib/coach/) | [`app/(app)/coach/`](../app/(app)/coach/) + dock, [`components/coach/`](../components/coach/) | conversation, not AppState | — |
 
-Profile is in the account menu, not the Prepare rail. `Experience` and `ProfileDocument` live in [`lib/profile/types.ts`](../lib/profile/types.ts); vault kinds stay in [`lib/profile/vault.ts`](../lib/profile/vault.ts). Paper is one artefact with types CV, letter, and Proof. Uploads sit beside papers on `uploads`. Open a paper at `/paper?id=`. Public Proofs live at `/p/[slug]`; the personal link is `/u/[handle]`. There is no `/cv` or `/papers`.
+Profile is in the account menu, not the Prepare rail. `Experience` and `ProfileDocument` live in [`lib/profile/types.ts`](../lib/profile/types.ts); vault kinds stay in [`lib/profile/vault.ts`](../lib/profile/vault.ts). Paper is one feature with types CV, letter, and Proof. Uploads sit beside papers on `uploads`. Open a paper at `/paper?id=`. Public Proofs live at `/p/[slug]`; the personal link is `/u/[handle]`. There is no `/cv` or `/papers`.
 
-A paper is a discriminated union. Layout stays inside [`lib/paper/`](../lib/paper/). Callers see `Paper`. Two artefacts (two routes, two store keys, two action families) would make type look like a product.
+A paper is a discriminated union. Layout stays inside [`lib/paper/`](../lib/paper/). Callers see `Paper`. Two features (two routes, two store keys, two action families) would make type look like a product.
 
 ## Supporting, not product nouns
 
@@ -92,4 +92,4 @@ Each screen invented its own chrome. They all `dispatch` into the same AppState.
 
 ## Docs that stay
 
-`CONTEXT.md`, `DESIGN.md`, `PRODUCT.md`, `README.md`. Hosting is [`docs/hosting.md`](hosting.md). The database is [`docs/database.md`](database.md).
+`CONTEXT.md`, `DESIGN.md`, `PRODUCT.md`, `README.md`. Hosting is [`docs/hosting.md`](hosting.md). The database is [`docs/database.md`](database.md). Locked My Paper grill answers are [`docs/paper.md`](paper.md). Engineering-skill config is [`docs/agents/`](agents/). Local tickets and specs live under `.scratch/<feature>/`.
