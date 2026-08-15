@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useDispatch } from "@/lib/actions/store";
-import type { Requirement } from "@/lib/career-graph";
+import type { Requirement } from "@/lib/catalogue";
 import { useT } from "@/lib/i18n/use-t";
 import { skillDisplayName } from "@/lib/search/interpret";
 import type { SearchField } from "@/lib/search/match";

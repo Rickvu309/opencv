@@ -32,7 +32,7 @@ import {
   IdentitySection,
 } from "@/components/profile/sections";
 import { useAppState, useDispatch, useTouched } from "@/lib/actions/store";
-import { profileWeights, vaultItems, type VaultItemId } from "@/lib/catalog";
+import { profileWeights, vaultItems, type VaultItemId } from "@/lib/profile/vault";
 import { useT } from "@/lib/i18n/use-t";
 import { disclose, discloseInner } from "@/components/ui/disclose";
 import { cn } from "@/lib/utils";
@@ -59,7 +59,7 @@ export default function ProfilePage() {
   const { profile } = useAppState();
   const dispatch = useDispatch();
   const touched = useTouched();
-  const { t, m, locale } = useT();
+  const { t, m } = useT();
 
   const [selected, setSelected] = React.useState<SectionId>("identity");
   // Narrow screens can't show both panes, so they push: index → section → back.
@@ -124,7 +124,7 @@ export default function ProfilePage() {
         const primary = docs.find((d) => d.isPrimary);
         return {
           id: v.id as SectionId,
-          label: v.title[locale],
+          label: v.title,
           meta:
             docs.length === 0
               ? t(m.common.notAddedYet)

@@ -19,7 +19,7 @@ import { useT } from "@/lib/i18n/use-t";
 import { CvEditor } from "./cv-editor";
 import { Library } from "./library";
 import { PaperEditor } from "./paper-editor";
-import type { ArtefactRef, EditorMode } from "./workspace-parts";
+import type { EditorMode } from "./workspace-parts";
 
 export default function PaperPage() {
   return (
@@ -73,8 +73,8 @@ function MyPaperWorkspace() {
       {
         type: "cv" satisfies PaperType,
         label: role
-          ? t(m.cv.forRole(role))
-          : t(m.cv.untitled(resumes.length + 1)),
+          ? t(m.paper.cv.forRole(role))
+          : t(m.paper.cv.untitled(resumes.length + 1)),
         ...(role ? { targetRole: role } : {}),
         fromProfile,
       },
@@ -91,7 +91,7 @@ function MyPaperWorkspace() {
   };
 
   const createFromOpening = (target: LetterTarget) => {
-    const label = t(m.papers.forOpening(target.opening.title));
+    const label = t(m.paper.letter.forOpening(target.opening.title));
     pending.current = true;
     if (target.applicationId) {
       dispatch("application.tailorLetter", {
@@ -108,16 +108,16 @@ function MyPaperWorkspace() {
     });
   };
 
-  const select = (ref: ArtefactRef) => {
-    router.replace(hrefFor(ref.id), { scroll: false });
+  const select = (paperId: string) => {
+    router.replace(hrefFor(paperId), { scroll: false });
   };
 
   const switchMode = (mode: EditorMode) => {
-    if (mode === "resume") {
+    if (mode === "cv") {
       if (editingCv) return;
       const existing = resumes.at(-1);
       if (existing) {
-        select({ type: "resume", id: existing.id });
+        select(existing.id);
         return;
       }
       createResume(true);
@@ -127,7 +127,7 @@ function MyPaperWorkspace() {
     const existing =
       letters.find((item) => item.type === "letter") ?? letters.at(-1);
     if (existing) {
-      select({ type: "paper", id: existing.id });
+      select(existing.id);
       return;
     }
     createPaper("letter");

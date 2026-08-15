@@ -13,7 +13,7 @@
 
 import { matchesMsg } from "@/lib/i18n/locale";
 import { messages } from "@/lib/i18n/messages";
-import type { PathNode, Requirement, StageId } from "@/lib/career-graph";
+import type { PathNode, Requirement, StageId } from "@/lib/catalogue";
 
 /** The slice of profile this reads. Narrow so tests need not build a whole app. */
 export type FitProfile = {
@@ -21,9 +21,7 @@ export type FitProfile = {
   experience: { title: string; org: string; detail?: string }[];
 };
 
-export type Fit = {
-  /** 0–100. */
-  score: number;
+export type RequirementMatch = {
   /** Requirements the profile shows evidence for. */
   met: Requirement[];
   /** Requirements it does not. */
@@ -34,6 +32,11 @@ export type Fit = {
    * would cap everyone below a hundred for a reason they cannot act on.
    */
   unprovable: Requirement[];
+};
+
+export type Fit = RequirementMatch & {
+  /** 0–100. Catalogue roles only: requirement match plus readiness. */
+  score: number;
 };
 
 /**
@@ -119,15 +122,14 @@ function readiness(profile: FitProfile, stage: StageId): number {
 }
 
 /**
- * Fit, and the reasoning behind it.
- *
- * Weighted toward evidence rather than seniority, because what you can show is
- * more actionable than how long you have been studying: a second-year with SQL
- * and a project should outrank a final-year with neither, and the product's
- * whole argument is that the gap is closable.
+ * Requirement match only: met, missing, unprovable. Search uses this; it has
+ * no catalogue stage and must not pick up a readiness term.
  */
-export function fitFor(profile: FitProfile, node: PathNode): Fit {
-  const requirements = node.requires ?? [];
+export function matchRequirements(
+  profile: FitProfile,
+  target: { requires?: readonly Requirement[] },
+): RequirementMatch {
+  const requirements = target.requires ?? [];
   const evidence = evidenceFrom(profile);
 
   const unprovable = requirements.filter((r) => r.skills.length === 0);
@@ -137,16 +139,28 @@ export function fitFor(profile: FitProfile, node: PathNode): Fit {
   );
   const missing = provable.filter((r) => !met.includes(r));
 
+  return { met, missing, unprovable };
+}
+
+/**
+ * Fit, and the reasoning behind it.
+ *
+ * Weighted toward evidence rather than seniority, because what you can show is
+ * more actionable than how long you have been studying: a second-year with SQL
+ * and a project should outrank a final-year with neither, and the product's
+ * whole argument is that the gap is closable.
+ */
+export function fitFor(profile: FitProfile, node: PathNode): Fit {
+  const match = matchRequirements(profile, node);
   const ready = readiness(profile, node.stage);
+  const provable = match.met.length + match.missing.length;
   // A role with nothing provable — every requirement is judgement or years
   // served — is scored on readiness alone rather than on a division by zero.
-  const evidenceRatio = provable.length > 0 ? met.length / provable.length : ready;
+  const evidenceRatio = provable > 0 ? match.met.length / provable : ready;
 
   return {
+    ...match,
     score: Math.round(100 * (0.65 * evidenceRatio + 0.35 * ready)),
-    met,
-    missing,
-    unprovable,
   };
 }
 

@@ -51,22 +51,18 @@ import {
   sectionDefaults,
   sectionOrder,
   templates,
-  type CvPaper,
-  type CvSectionKind,
-} from "@/lib/paper/types";
+} from "@/lib/paper/cv";
 import {
   paperTypeLabels,
   letterTypes,
+  type CvPaper,
+  type CvSectionKind,
   type LetterPaper,
 } from "@/lib/paper/types";
 import { useT } from "@/lib/i18n/use-t";
 import { cn } from "@/lib/utils";
 
-export type ArtefactRef =
-  | { type: "resume"; id: string }
-  | { type: "paper"; id: string };
-
-export type EditorMode = "resume" | "paper";
+export type EditorMode = "cv" | "letter";
 
 export function DocumentSwitcher({
   currentId,
@@ -80,7 +76,7 @@ export function DocumentSwitcher({
   currentId: string;
   resumes: CvPaper[];
   papers: LetterPaper[];
-  onSelect: (ref: ArtefactRef) => void;
+  onSelect: (id: string) => void;
   onCreateResume: (fromProfile: boolean) => void;
   onCreatePaper: (kind: LetterType) => void;
   extra?: React.ReactNode;
@@ -91,7 +87,7 @@ export function DocumentSwitcher({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        aria-label={t(m.myPaper.yourDocuments)}
+        aria-label={t(m.paper.yourDocuments)}
         className="flex size-7 shrink-0 items-center justify-center rounded-md outline-none transition-colors hover:bg-muted/70 focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none"
       >
         <ChevronDown className="size-3.5 text-muted-foreground" />
@@ -99,17 +95,17 @@ export function DocumentSwitcher({
       <DropdownMenuContent align="start" className="w-64">
         <DropdownMenuLabel className="text-muted-foreground">
           {total > 1
-            ? `${t(m.myPaper.yourDocuments)} · ${t(m.myPaper.documentCount(total))}`
-            : t(m.myPaper.yourDocuments)}
+            ? `${t(m.paper.yourDocuments)} · ${t(m.paper.documentCount(total))}`
+            : t(m.paper.yourDocuments)}
         </DropdownMenuLabel>
         {resumes.map((resume) => (
           <DropdownMenuItem
             key={resume.id}
-            onSelect={() => onSelect({ type: "resume", id: resume.id })}
+            onSelect={() => onSelect(resume.id)}
           >
             <span className="min-w-0 flex-1 truncate">{resume.label}</span>
             <span className="shrink-0 text-xs text-muted-foreground">
-              {t(m.myPaper.kindCv)}
+              {t(m.paper.kindCv)}
             </span>
             {resume.id === currentId && <Check className="size-3.5" />}
           </DropdownMenuItem>
@@ -117,10 +113,10 @@ export function DocumentSwitcher({
         {papers.map((paper) => (
           <DropdownMenuItem
             key={paper.id}
-            onSelect={() => onSelect({ type: "paper", id: paper.id })}
+            onSelect={() => onSelect(paper.id)}
           >
             <span className="min-w-0 flex-1 truncate">
-              {paper.label || t(m.papers.untitled)}
+              {paper.label || t(m.paper.letter.untitled)}
             </span>
             <span className="shrink-0 text-xs text-muted-foreground">
               {paperTypeLabels[paper.type]}
@@ -131,19 +127,19 @@ export function DocumentSwitcher({
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => onCreateResume(true)}>
           <FilePlus2 />
-          {t(m.cv.buildFromProfile)}
+          {t(m.paper.cv.buildFromProfile)}
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => onCreateResume(false)}>
           <Plus />
-          {t(m.cv.blankCv)}
+          {t(m.paper.cv.blankCv)}
         </DropdownMenuItem>
         {letterTypes.map((kind) => (
           <DropdownMenuItem key={kind} onSelect={() => onCreatePaper(kind)}>
             <Plus />
             {t(
               kind === "letter"
-                ? m.papers.newCoverLetter
-                : m.papers.newWriteUp,
+                ? m.paper.letter.newCoverLetter
+                : m.paper.letter.newWriteUp,
             )}
           </DropdownMenuItem>
         ))}
@@ -164,28 +160,28 @@ function ModeTabs({
   return (
     <div
       role="group"
-      aria-label={t(m.myPaper.modeSwitch)}
+      aria-label={t(m.paper.modeSwitch)}
       className="flex rounded-md border border-border p-0.5"
     >
       <Button
         type="button"
         size="sm"
-        variant={mode === "resume" ? "secondary" : "ghost"}
-        aria-pressed={mode === "resume"}
+        variant={mode === "cv" ? "secondary" : "ghost"}
+        aria-pressed={mode === "cv"}
         className="h-7 px-2.5"
-        onClick={() => onMode("resume")}
+        onClick={() => onMode("cv")}
       >
-        {t(m.myPaper.modeCv)}
+        {t(m.paper.modeCv)}
       </Button>
       <Button
         type="button"
         size="sm"
-        variant={mode === "paper" ? "secondary" : "ghost"}
-        aria-pressed={mode === "paper"}
+        variant={mode === "letter" ? "secondary" : "ghost"}
+        aria-pressed={mode === "letter"}
         className="h-7 px-2.5"
-        onClick={() => onMode("paper")}
+        onClick={() => onMode("letter")}
       >
-        {t(m.myPaper.modeLetter)}
+        {t(m.paper.modeLetter)}
       </Button>
     </div>
   );
@@ -217,7 +213,7 @@ export function EditorMainBar({
   deleteLabel: string;
   resumes: CvPaper[];
   papers: LetterPaper[];
-  onSelect: (ref: ArtefactRef) => void;
+  onSelect: (id: string) => void;
   onCreateResume: (fromProfile: boolean) => void;
   onCreatePaper: (kind: LetterType) => void;
   onMode: (mode: EditorMode) => void;
@@ -233,7 +229,7 @@ export function EditorMainBar({
           variant="ghost"
           size="sm"
           className="shrink-0"
-          aria-label={t(m.cv.backToLibrary)}
+          aria-label={t(m.paper.cv.backToLibrary)}
           onClick={onBack}
         >
           <ArrowLeft className="size-3.5 rtl:-scale-x-100" />
@@ -289,9 +285,9 @@ export function FormatBar({ resume }: { resume: CvPaper }) {
   const dispatch = useDispatch();
   const { t, m } = useT();
   const styleLabels = {
-    classic: t(m.cv.styleHarvard),
-    modern: t(m.cv.styleMarketing),
-    compact: t(m.cv.styleTech),
+    classic: t(m.paper.cv.styleHarvard),
+    modern: t(m.paper.cv.styleMarketing),
+    compact: t(m.paper.cv.styleTech),
   };
   const current = resume.theme.template;
   const fit = resume.theme.density === "tight";
@@ -306,7 +302,7 @@ export function FormatBar({ resume }: { resume: CvPaper }) {
     <PaperToolbar compact>
       <div className="flex min-w-0 flex-1 items-center gap-3 overflow-x-auto">
         <div className="flex shrink-0 items-center gap-1.5">
-          <span className="text-xs text-muted-foreground">{t(m.cv.template)}</span>
+          <span className="text-xs text-muted-foreground">{t(m.paper.cv.template)}</span>
           <div className="flex rounded-md border border-border p-0.5">
             {styleKeys.map((key) => (
               <Button
@@ -338,7 +334,7 @@ export function FormatBar({ resume }: { resume: CvPaper }) {
             )
           }
         >
-          {t(m.cv.fitOnePage)}
+          {t(m.paper.cv.fitOnePage)}
         </Button>
 
         <SectionsMenu resume={resume} />
@@ -357,13 +353,13 @@ function SectionsMenu({ resume }: { resume: CvPaper }) {
     <Popover>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="sm" className="h-7 text-muted-foreground">
-          {t(m.cv.sectionsMenu)}
+          {t(m.paper.cv.sectionsMenu)}
           <ChevronDown className="size-3.5" />
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-64 gap-1 p-1.5">
         <p className="px-2 py-1 text-xs text-muted-foreground">
-          {t(m.cv.outlineLabel)}
+          {t(m.paper.cv.outlineLabel)}
         </p>
         {resume.sections.map((section, index) => (
           <div key={section.id} className="flex items-center gap-0.5">
@@ -375,7 +371,7 @@ function SectionsMenu({ resume }: { resume: CvPaper }) {
               variant="ghost"
               size="icon-sm"
               disabled={index === 0}
-              aria-label={t(m.cv.moveSectionUp(section.heading))}
+              aria-label={t(m.paper.cv.moveSectionUp(section.heading))}
               onClick={() =>
                 dispatch(
                   "paper.moveSection",
@@ -391,7 +387,7 @@ function SectionsMenu({ resume }: { resume: CvPaper }) {
               variant="ghost"
               size="icon-sm"
               disabled={index === resume.sections.length - 1}
-              aria-label={t(m.cv.moveSectionDown(section.heading))}
+              aria-label={t(m.paper.cv.moveSectionDown(section.heading))}
               onClick={() =>
                 dispatch(
                   "paper.moveSection",
@@ -450,7 +446,7 @@ function MoreMenu({ resume }: { resume: CvPaper }) {
         <Button
           variant="ghost"
           size="icon-sm"
-          aria-label={t(m.myPaper.more)}
+          aria-label={t(m.paper.more)}
           className="text-muted-foreground"
         >
           <MoreHorizontal className="size-3.5" />
@@ -461,12 +457,12 @@ function MoreMenu({ resume }: { resume: CvPaper }) {
           onSelect={() =>
             dispatch("paper.duplicate", {
               id: resume.id,
-              label: t(m.cv.copySuffix(resume.label)),
+              label: t(m.paper.cv.copySuffix(resume.label)),
             })
           }
         >
           <Copy />
-          {t(m.cv.duplicate)}
+          {t(m.paper.cv.duplicate)}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <ExportItems resume={resume} />
@@ -481,49 +477,49 @@ function ExportItems({ resume }: { resume: CvPaper }) {
 
   const save = (extension: string, contents: string, mime: string) => {
     download(`${stem}.${extension}`, contents, mime);
-    toast.success(t(m.cv.downloaded(`${stem}.${extension}`)));
+    toast.success(t(m.paper.cv.downloaded(`${stem}.${extension}`)));
   };
 
   return (
     <>
       <DropdownMenuLabel className="text-muted-foreground">
-        {t(m.cv.exportDownload)}
+        {t(m.paper.cv.exportDownload)}
       </DropdownMenuLabel>
       <DropdownMenuItem
         onSelect={() => save("md", toMarkdown(resume), "text/markdown")}
       >
         <Download />
-        <span className="flex-1">{t(m.cv.exportMarkdown)}</span>
+        <span className="flex-1">{t(m.paper.cv.exportMarkdown)}</span>
         <span className="text-xs text-muted-foreground">.md</span>
       </DropdownMenuItem>
       <DropdownMenuItem
         onSelect={() => save("txt", toPlainText(resume), "text/plain")}
       >
         <Download />
-        <span className="flex-1">{t(m.cv.exportText)}</span>
+        <span className="flex-1">{t(m.paper.cv.exportText)}</span>
         <span className="text-xs text-muted-foreground">.txt</span>
       </DropdownMenuItem>
       <DropdownMenuItem
         onSelect={() => save("json", toJson(resume), "application/json")}
       >
         <Download />
-        <span className="flex-1">{t(m.cv.exportJson)}</span>
+        <span className="flex-1">{t(m.paper.cv.exportJson)}</span>
         <span className="text-xs text-muted-foreground">.json</span>
       </DropdownMenuItem>
       <DropdownMenuItem
         onSelect={() => {
           void navigator.clipboard
             .writeText(toPlainText(resume))
-            .then(() => toast.success(t(m.cv.copied)))
+            .then(() => toast.success(t(m.paper.cv.copied)))
             .catch(() =>
-              toast.error(t(m.cv.copyFailedTitle), {
-                description: t(m.cv.copyFailedBody),
+              toast.error(t(m.paper.cv.copyFailedTitle), {
+                description: t(m.paper.cv.copyFailedBody),
               }),
             );
         }}
       >
         <Copy />
-        {t(m.cv.exportCopy)}
+        {t(m.paper.cv.exportCopy)}
       </DropdownMenuItem>
     </>
   );
@@ -536,7 +532,7 @@ export function DownloadButton({ hint }: { hint: string }) {
       <TooltipTrigger asChild>
         <Button size="sm" onClick={() => window.print()}>
           <Printer className="size-3.5" />
-          <span className="hidden sm:inline">{t(m.cv.exportPdf)}</span>
+          <span className="hidden sm:inline">{t(m.paper.cv.exportPdf)}</span>
         </Button>
       </TooltipTrigger>
       <TooltipContent side="bottom">{hint}</TooltipContent>
@@ -552,7 +548,7 @@ export function AddSectionMenu({ resume }: { resume: CvPaper }) {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm" className="text-muted-foreground">
           <Plus className="size-3.5" />
-          {t(m.cv.addSection)}
+          {t(m.paper.cv.addSection)}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-56">
@@ -570,7 +566,7 @@ export function ExportMenu({ resume }: { resume: CvPaper }) {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm" className="text-muted-foreground">
           <FileDown className="size-3.5" />
-          <span className="hidden sm:inline">{t(m.cv.exportLabel)}</span>
+          <span className="hidden sm:inline">{t(m.paper.cv.exportLabel)}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">

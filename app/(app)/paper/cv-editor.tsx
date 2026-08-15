@@ -3,11 +3,11 @@
 import { FilePlus2, Plus } from "lucide-react";
 
 import { DraftInput, DraftTextarea } from "@/components/paper/draft-field";
-import { ResumePrintPortal } from "@/components/paper/resume-preview";
+import { CvPrintPortal } from "@/components/paper/cv-preview";
 import { Button } from "@/components/ui/button";
 import { useDispatch } from "@/lib/actions/store";
-import { isProseKind, type CvPaper } from "@/lib/paper/types";
-import type { LetterType, LetterPaper } from "@/lib/paper/types";
+import { isProseKind } from "@/lib/paper/cv";
+import type { CvPaper, LetterType, LetterPaper } from "@/lib/paper/types";
 import { useT } from "@/lib/i18n/use-t";
 import { cn } from "@/lib/utils";
 import {
@@ -15,7 +15,6 @@ import {
   DownloadButton,
   EditorMainBar,
   FormatBar,
-  type ArtefactRef,
   type EditorMode,
 } from "./workspace-parts";
 
@@ -32,7 +31,7 @@ export function CvEditor({
   resume: CvPaper;
   resumes: CvPaper[];
   papers: LetterPaper[];
-  onSelect: (ref: ArtefactRef) => void;
+  onSelect: (id: string) => void;
   onCreateResume: (fromProfile: boolean) => void;
   onCreatePaper: (kind: LetterType) => void;
   onMode: (mode: EditorMode) => void;
@@ -44,15 +43,15 @@ export function CvEditor({
   return (
     <div className="flex h-full min-h-0 flex-col">
       <EditorMainBar
-        mode="resume"
+        mode="cv"
         currentId={resume.id}
         currentLabel={resume.label}
-        nameLabel={t(m.cv.cvName)}
+        nameLabel={t(m.paper.cv.cvName)}
         onRename={(label) =>
           dispatch("paper.rename", { id: resume.id, label }, { silent: true })
         }
         onDelete={() => dispatch("paper.remove", { id: resume.id })}
-        deleteLabel={t(m.cv.deleteCv)}
+        deleteLabel={t(m.paper.cv.deleteCv)}
         resumes={resumes}
         papers={papers}
         onSelect={onSelect}
@@ -69,15 +68,15 @@ export function CvEditor({
               onClick={() => onCreateResume(true)}
             >
               <FilePlus2 className="size-3.5" />
-              <span className="hidden sm:inline">{t(m.cv.buildFromProfile)}</span>
+              <span className="hidden sm:inline">{t(m.paper.cv.buildFromProfile)}</span>
             </Button>
-            <DownloadButton hint={t(m.cv.exportPdfHint)} />
+            <DownloadButton hint={t(m.paper.cv.exportPdfHint)} />
           </>
         }
       />
       <FormatBar resume={resume} />
       <OnePageEditor resume={resume} />
-      <ResumePrintPortal resume={resume} />
+      <CvPrintPortal resume={resume} />
     </div>
   );
 }
@@ -99,19 +98,19 @@ function OnePageEditor({ resume }: { resume: CvPaper }) {
         <article className="min-h-[1123px] bg-white px-12 py-10 text-neutral-900 shadow-md ring-1 ring-black/10">
           <DraftInput
             id="page-name"
-            label={t(m.cv.headerName)}
+            label={t(m.paper.cv.headerName)}
             srLabel
             value={header.name}
-            placeholder={t(m.cv.headerName)}
+            placeholder={t(m.paper.cv.headerName)}
             onCommit={(name) => setHeader({ name })}
             className={cn(ghostField, "[&_input]:text-3xl [&_input]:font-semibold")}
           />
           <DraftInput
             id="page-headline"
-            label={t(m.cv.headerHeadline)}
+            label={t(m.paper.cv.headerHeadline)}
             srLabel
             value={header.headline}
-            placeholder={t(m.cv.headerHeadlinePlaceholder)}
+            placeholder={t(m.paper.cv.headerHeadlinePlaceholder)}
             onCommit={(headline) => setHeader({ headline })}
             className={cn(
               ghostField,
@@ -121,28 +120,28 @@ function OnePageEditor({ resume }: { resume: CvPaper }) {
           <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-neutral-600">
             <DraftInput
               id="page-email"
-              label={t(m.cv.headerEmail)}
+              label={t(m.paper.cv.headerEmail)}
               srLabel
               value={header.email}
-              placeholder={t(m.cv.headerEmail)}
+              placeholder={t(m.paper.cv.headerEmail)}
               onCommit={(email) => setHeader({ email })}
               className={cn(ghostField, "w-auto min-w-40")}
             />
             <DraftInput
               id="page-phone"
-              label={t(m.cv.headerPhone)}
+              label={t(m.paper.cv.headerPhone)}
               srLabel
               value={header.phone}
-              placeholder={t(m.cv.headerPhone)}
+              placeholder={t(m.paper.cv.headerPhone)}
               onCommit={(phone) => setHeader({ phone })}
               className={cn(ghostField, "w-auto min-w-32")}
             />
             <DraftInput
               id="page-location"
-              label={t(m.cv.headerLocation)}
+              label={t(m.paper.cv.headerLocation)}
               srLabel
               value={header.location}
-              placeholder={t(m.cv.headerLocationPlaceholder)}
+              placeholder={t(m.paper.cv.headerLocationPlaceholder)}
               onCommit={(location) => setHeader({ location })}
               className={cn(ghostField, "w-auto min-w-32")}
             />
@@ -185,7 +184,7 @@ function PageSection({
     <section className="mt-8">
       <DraftInput
         id={`page-h-${section.id}`}
-        label={t(m.cv.sectionName)}
+        label={t(m.paper.cv.sectionName)}
         srLabel
         value={section.heading}
         onCommit={(heading) => heading && update({ heading })}
@@ -210,10 +209,10 @@ function PageSection({
             <div key={entry.id}>
               <DraftInput
                 id={`page-t-${entry.id}`}
-                label={t(m.cv.entryTitle)}
+                label={t(m.paper.cv.entryTitle)}
                 srLabel
                 value={entry.title}
-                placeholder={t(m.cv.entryTitle)}
+                placeholder={t(m.paper.cv.entryTitle)}
                 onCommit={(title) =>
                   dispatch(
                     "paper.updateEntry",
@@ -231,10 +230,10 @@ function PageSection({
               <div className="flex flex-wrap gap-x-3">
                 <DraftInput
                   id={`page-o-${entry.id}`}
-                  label={t(m.cv.entryOrg)}
+                  label={t(m.paper.cv.entryOrg)}
                   srLabel
                   value={entry.org ?? ""}
-                  placeholder={t(m.cv.entryOrg)}
+                  placeholder={t(m.paper.cv.entryOrg)}
                   onCommit={(org) =>
                     dispatch(
                       "paper.updateEntry",
@@ -251,10 +250,10 @@ function PageSection({
                 />
                 <DraftInput
                   id={`page-p-${entry.id}`}
-                  label={t(m.cv.entryPeriod)}
+                  label={t(m.paper.cv.entryPeriod)}
                   srLabel
                   value={entry.period ?? ""}
-                  placeholder={t(m.cv.entryPeriod)}
+                  placeholder={t(m.paper.cv.entryPeriod)}
                   onCommit={(period) =>
                     dispatch(
                       "paper.updateEntry",
@@ -273,7 +272,7 @@ function PageSection({
               <div className="[&_label]:sr-only [&_textarea]:border-0 [&_textarea]:bg-transparent [&_textarea]:px-0 [&_textarea]:text-sm [&_textarea]:shadow-none [&_textarea]:focus-visible:ring-0">
                 <DraftTextarea
                   id={`page-d-${entry.id}`}
-                  label={t(m.cv.entryDetail)}
+                  label={t(m.paper.cv.entryDetail)}
                   value={entry.detail ?? ""}
                   onCommit={(detail) =>
                     dispatch(
@@ -305,7 +304,7 @@ function PageSection({
             }
           >
             <Plus className="size-3.5" />
-            {t(m.cv.addEntry)}
+            {t(m.paper.cv.addEntry)}
           </Button>
         </div>
       )}

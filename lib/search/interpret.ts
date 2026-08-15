@@ -7,7 +7,7 @@
  * what the result row cites when it says why a posting fits.
  */
 
-import type { Requirement } from "@/lib/career-graph";
+import type { Requirement } from "@/lib/catalogue";
 import {
   CITY_ALIASES,
   foldText,

@@ -9,7 +9,6 @@ import { useT } from "@/lib/i18n/use-t";
 import {
   DownloadButton,
   EditorMainBar,
-  type ArtefactRef,
   type EditorMode,
 } from "./workspace-parts";
 
@@ -28,7 +27,7 @@ export function PaperEditor({
   resumes: CvPaper[];
   papers: LetterPaper[];
   opening: Opening | undefined;
-  onSelect: (ref: ArtefactRef) => void;
+  onSelect: (id: string) => void;
   onCreateResume: (fromProfile: boolean) => void;
   onCreatePaper: (kind: LetterType) => void;
   onMode: (mode: EditorMode) => void;
@@ -40,10 +39,10 @@ export function PaperEditor({
   return (
     <div className="flex h-full min-h-0 flex-col">
       <EditorMainBar
-        mode="paper"
+        mode="letter"
         currentId={paper.id}
-        currentLabel={paper.label || t(m.papers.untitled)}
-        nameLabel={t(m.papers.labelField)}
+        currentLabel={paper.label || t(m.paper.letter.untitled)}
+        nameLabel={t(m.paper.letter.labelField)}
         onRename={(label) =>
           dispatch("paper.rename", { id: paper.id, label }, { silent: true })
         }
@@ -59,7 +58,7 @@ export function PaperEditor({
         trailing={
           <>
             <PaperExportMenu paper={paper} />
-            <DownloadButton hint={t(m.cv.exportPdfHint)} />
+            <DownloadButton hint={t(m.paper.cv.exportPdfHint)} />
           </>
         }
       />

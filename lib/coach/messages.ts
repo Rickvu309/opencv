@@ -1,8 +1,13 @@
 import type { EveMessage, EveMessageInputRequest } from "eve/react";
 
-import type { ChatMessage } from "@/lib/catalog";
 import type { Msg } from "@/lib/i18n/locale";
 import { messages as uiMessages } from "@/lib/i18n/messages";
+
+export type ChatMessage = {
+  id: string;
+  role: "user" | "coach";
+  content: string;
+};
 
 /** A change the Coach actually made, read back from the tool's own result. */
 export type AppliedAction = { action: string; summary: Msg };
@@ -31,7 +36,7 @@ export type CoachToolCall = {
   /**
    * The action's payload, so the thread can show *what* was changed and not
    * only that something was. Used to find the CV a `paper.*` call was aimed
-   * at; see components/coach/resume-artifact.tsx.
+   * at; see components/coach/cv-artifact.tsx.
    */
   input?: Record<string, unknown>;
 };

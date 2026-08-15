@@ -6,8 +6,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { fitFor, rankByFit, type FitProfile } from "@/lib/career-fit";
-import { pathNodes } from "@/lib/career-graph";
+import { fitFor, matchRequirements, rankByFit, type FitProfile } from "@/lib/career-fit";
+import { pathNodes } from "@/lib/catalogue";
 
 const node = (id: string) => pathNodes.find((n) => n.id === id)!;
 
@@ -50,6 +50,14 @@ test("it says which requirements are met and which are not", () => {
   assert.equal(fit.met.length, 1);
   assert.equal(fit.met[0].label, "SQL joins and aggregates");
   assert.equal(fit.missing.length, 2);
+});
+
+test("requirement match does not need a catalogue role", () => {
+  const match = matchRequirements(profile({ courses: ["SQL"] }), {
+    requires: [{ label: "SQL joins and aggregates", skills: ["sql"] }],
+  });
+  assert.equal(match.met.length, 1);
+  assert.equal(match.missing.length, 0);
 });
 
 test("a skill is matched however it was typed", () => {

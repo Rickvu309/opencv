@@ -1,22 +1,133 @@
 // Making a CV-type paper exist: blank, or filled from what the profile already knows.
 
 import type { AppState } from "@/lib/actions/types";
-import { matchesMsg, type DocumentLanguage } from "@/lib/i18n/locale";
+import { matchesMsg, type DocumentLanguage, type Msg } from "@/lib/i18n/locale";
 import { messages } from "@/lib/i18n/messages";
-import {
-  defaultTheme,
-  isProseKind,
-  nextId,
-  sectionDefaults,
-  sectionOrder,
-  starterSections,
-  type CvEntry,
-  type CvPaper,
-  type CvSection,
-  type CvSectionKind,
+import { nextId } from "./types";
+import type {
+  CvEntry,
+  CvHeader,
+  CvPaper,
+  CvSection,
+  CvSectionKind,
+  CvTemplate,
+  CvTheme,
 } from "./types";
 
 export { nextId };
+
+export const PROSE_KINDS: CvSectionKind[] = ["summary", "skills"];
+
+export function isProseKind(kind: CvSectionKind): boolean {
+  return PROSE_KINDS.includes(kind);
+}
+
+export const templates: CvTemplate[] = ["classic", "modern", "compact"];
+export const templatesWithPhoto: CvTemplate[] = ["classic"];
+
+export function templateHasPhoto(template: CvTemplate): boolean {
+  return templatesWithPhoto.includes(template);
+}
+
+export const defaultTheme: CvTheme = {
+  template: "classic",
+  accent: "ink",
+  density: "normal",
+};
+
+export const sectionDefaults: Record<
+  CvSectionKind,
+  { heading: Msg; hint: Msg }
+> = {
+  summary: {
+    heading: "Summary",
+    hint: "Three sentences: who you are, what you can do, what you want.",
+  },
+  experience: {
+    heading: "Experience",
+    hint: "Internships, part-time work, clubs. One result per bullet.",
+  },
+  education: {
+    heading: "Education",
+    hint: "School, field of study, dates.",
+  },
+  skills: {
+    heading: "Skills",
+    hint: "Group them: languages, tools, ways of working.",
+  },
+  projects: {
+    heading: "Projects",
+    hint: "What it was, what you did, what came of it.",
+  },
+  certifications: {
+    heading: "Certificates",
+    hint: "Name, who issued it, year.",
+  },
+  custom: {
+    heading: "New section",
+    hint: "Give this section a name.",
+  },
+};
+
+export const sectionOrder: CvSectionKind[] = [
+  "summary",
+  "experience",
+  "education",
+  "projects",
+  "skills",
+  "certifications",
+  "custom",
+];
+
+export const starterSections: CvSectionKind[] = [
+  "summary",
+  "experience",
+  "education",
+  "skills",
+];
+
+export function bullets(detail: string | undefined): string[] {
+  if (!detail) return [];
+  return detail
+    .split("\n")
+    .map((line) => line.replace(/^\s*[-*•]\s*/, "").trim())
+    .filter(Boolean);
+}
+
+export function sectionHasContent(section: CvSection): boolean {
+  return isProseKind(section.kind)
+    ? Boolean(section.body?.trim())
+    : section.entries.some((e) => e.title.trim());
+}
+
+export function headerHasContent(header: CvHeader): boolean {
+  return Boolean(
+    header.name.trim() ||
+      header.headline.trim() ||
+      header.email.trim() ||
+      header.phone.trim() ||
+      header.location.trim(),
+  );
+}
+
+export function cvCompleteness(paper: CvPaper): number {
+  const { header } = paper;
+  let score = 0;
+  if (header.name.trim()) score += 15;
+  if (header.headline.trim()) score += 5;
+  if (header.email.trim() || header.phone.trim()) score += 10;
+
+  const visible = paper.sections.filter((s) => !s.hidden);
+  const withContent = visible.filter(sectionHasContent).length;
+  score += Math.min(withContent, 4) * 15;
+
+  const hasBullets = visible.some((s) =>
+    s.entries.some((e) => bullets(e.detail).length > 0),
+  );
+  if (hasBullets) score += 10;
+
+  return Math.min(100, score);
+}
 
 export function emptySection(
   kind: CvSectionKind,

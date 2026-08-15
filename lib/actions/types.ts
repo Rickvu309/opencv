@@ -5,7 +5,7 @@
 // them, and keeping them out means every field here is safe to expose as a tool.
 
 import type { Application } from "@/lib/applications/types";
-import type { VaultItemId } from "@/lib/catalog";
+import type { VaultItemId } from "@/lib/profile/vault";
 import type { Locale } from "@/lib/i18n/locale";
 import type { Paper } from "@/lib/paper/types";
 import type { PitchItem } from "@/lib/pitch/types";
@@ -85,7 +85,7 @@ export type AppState = {
   /**
    * Real postings, saved or merely pasted.
    *
-   * Unlike the role catalogue in `lib/career-graph.ts`, which is the same list
+   * Unlike the role catalogue in `lib/catalogue/`, which is the same list
    * for everybody, these belong to the person: what they found, what they
    * pasted, what they saved. See `lib/search/types.ts`.
    */

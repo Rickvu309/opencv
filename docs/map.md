@@ -24,6 +24,14 @@ flowchart TB
   Registry --> State
 ```
 
+## Module vs adapter
+
+`lib/<artefact>` is the module. `app/` and `components/` are Next adapters for that module. There is no `src/` wrapper and no `artefacts/` colocation.
+
+Pitch and Search have no `components/` folder: nothing shared needs one. Do not add empty folders to complete a table.
+
+Action tables live next to the artefact (`lib/paper/actions.ts`, and so on). [`lib/actions/registry.ts`](../lib/actions/registry.ts) spreads them into one `applyAction`. Tailor calls the paper table directly; it does not import `applyAction`.
+
 ## Write path
 
 1. UI calls `dispatch` in [`lib/actions/store.tsx`](../lib/actions/store.tsx).
@@ -37,18 +45,24 @@ The store lives in the tab. That is why the agent cannot write AppState itself. 
 
 ## Where each artefact lives
 
-| Artefact | Screen | Domain | AppState | Actions |
+| Artefact | Module | Adapters | AppState | Actions |
 |---|---|---|---|---|
-| Profile | [`app/(app)/profile/`](../app/(app)/profile/) | [`lib/profile/`](../lib/profile/), [`components/profile/`](../components/profile/), vault kinds in [`lib/catalog.ts`](../lib/catalog.ts) | `profile` | `profile.*`, `document.*` |
-| Paper | [`app/(app)/paper/`](../app/(app)/paper/) | [`lib/paper/`](../lib/paper/), [`components/paper/`](../components/paper/) | `paper` | `paper.*` |
-| Pitch | [`app/(app)/pitch/`](../app/(app)/pitch/) | [`lib/pitch/`](../lib/pitch/) | `pitch` | `pitch.*` |
-| Search | [`app/(app)/search/`](../app/(app)/search/) | [`lib/search/`](../lib/search/) | `openings` | `opening.*` |
-| Application | [`app/(app)/applications/`](../app/(app)/applications/) | [`lib/applications/`](../lib/applications/) | `applications` | `application.*` |
-| Coach | [`app/(app)/coach/`](../app/(app)/coach/) + dock | [`lib/coach/`](../lib/coach/), [`components/coach/`](../components/coach/) | conversation, not AppState | — |
+| Profile | [`lib/profile/`](../lib/profile/) (vault in [`vault.ts`](../lib/profile/vault.ts)) | [`app/(app)/profile/`](../app/(app)/profile/), [`components/profile/`](../components/profile/) | `profile` | `profile.*`, `document.*` |
+| Paper | [`lib/paper/`](../lib/paper/) | [`app/(app)/paper/`](../app/(app)/paper/), [`components/paper/`](../components/paper/) | `paper` | `paper.*` |
+| Pitch | [`lib/pitch/`](../lib/pitch/) | [`app/(app)/pitch/`](../app/(app)/pitch/) | `pitch` | `pitch.*` |
+| Search | [`lib/search/`](../lib/search/) | [`app/(app)/search/`](../app/(app)/search/) | `openings` | `opening.*` |
+| Application | [`lib/applications/`](../lib/applications/) | [`app/(app)/applications/`](../app/(app)/applications/) | `applications` | `application.*` |
+| Coach | [`lib/coach/`](../lib/coach/) | [`app/(app)/coach/`](../app/(app)/coach/) + dock, [`components/coach/`](../components/coach/) | conversation, not AppState | — |
 
 Profile is in the account menu, not the Prepare rail. Paper is one artefact with types CV, letter, and write-up. Open a paper at `/paper?id=`. There is no `/cv` or `/papers`.
 
 A paper is a discriminated union: CV layout (sections) and letter layout (paragraphs) live inside [`lib/paper/`](../lib/paper/). Callers see `Paper`. See [ADR 0002](adr/0002-paper-is-a-union-of-types.md).
+
+## Supporting, not artefacts
+
+[`lib/catalogue/`](../lib/catalogue/) holds shared role archetypes and the `Requirement` type. Search and the catalogue scorer both use it. There is no Catalogue screen.
+
+[`lib/career-fit.ts`](../lib/career-fit.ts) splits the scorer: `matchRequirements` is met / missing / unprovable from `{ requires }`; `fitFor` adds the readiness term for a catalogue role. Openings never dress up as a `PathNode`.
 
 ## What is already deep
 
@@ -61,4 +75,6 @@ A paper is a discriminated union: CV layout (sections) and letter layout (paragr
 
 Each artefact screen invented its own chrome. They all `dispatch` into the same AppState. Do not split the registry to match the folders.
 
-Search fit still wraps an Opening as a catalogue-shaped target so it can reuse `fitFor`; the percentage is discarded. Catalogue roles live in [`lib/career-graph.ts`](../lib/career-graph.ts).
+## Working paper, not architecture
+
+[`plans/`](../plans/) is Coach-dock motion notes. Root docs stay: `CONTEXT.md`, `DESIGN.md`, `PRODUCT.md`, `README.md`.

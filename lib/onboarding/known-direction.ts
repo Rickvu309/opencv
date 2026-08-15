@@ -1,4 +1,4 @@
-import { pathNodes } from "@/lib/career-graph";
+import { pathNodes } from "@/lib/catalogue";
 
 /**
  * Quiet payback while someone types a goal. Not a score — a known direction
