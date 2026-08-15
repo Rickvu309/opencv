@@ -14,11 +14,9 @@ import {
   Check,
   ChevronDown,
   ChevronLeft,
-  FileText,
   Folder,
   FolderGit2,
   Globe,
-  Mail,
   Plus,
   User,
 } from "lucide-react";
@@ -38,8 +36,6 @@ import { disclose, discloseInner } from "@/components/ui/disclose";
 import { cn } from "@/lib/utils";
 
 const docIcons: Record<VaultItemId, React.ElementType> = {
-  cv: FileText,
-  "cover-letter": Mail,
   linkedin: Globe,
   portfolio: Folder,
   github: FolderGit2,

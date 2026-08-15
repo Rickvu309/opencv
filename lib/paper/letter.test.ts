@@ -9,7 +9,7 @@ import { applyAction } from "@/lib/actions/registry";
 import { seedState } from "@/lib/actions/seed";
 import type { AppState } from "@/lib/actions/types";
 import { fileStem, toMarkdown, toPlainText } from "@/lib/paper/letter-export";
-import { bodyFrom, isEmptyLetter, paragraphsOf } from "@/lib/paper/types";
+import { bodyFrom, isEmptyLetter, paragraphsOf } from "@/lib/paper/letter";
 
 const LETTER = [
   "Kính gửi anh chị,",
@@ -74,15 +74,15 @@ test("a new document is English unless told otherwise", () => {
   assert.equal(vi.locale, "en");
 });
 
-test("documents get their own ids, and a write-up is not a letter", () => {
+test("documents get their own ids, and a Proof is not a letter", () => {
   let state = seedState();
   state = applyAction(state, "paper.create", { type: "letter", label: "A" }).state;
-  state = applyAction(state, "paper.create", { type: "write-up", label: "B" }).state;
+  state = applyAction(state, "paper.create", { type: "proof", label: "B" }).state;
 
   assert.equal(state.paper.length, 2);
   assert.notEqual(state.paper[0].id, state.paper[1].id);
   assert.equal(state.paper[0].type, "letter");
-  assert.equal(state.paper[1].type, "write-up");
+  assert.equal(state.paper[1].type, "proof");
 });
 
 test("rewriting one paragraph leaves the others exactly as they were", () => {
@@ -180,7 +180,7 @@ test("renaming changes the label without touching the text", () => {
 test("removing a document leaves the others", () => {
   let { state } = withLetter();
   state = applyAction(state, "paper.create", {
-    type: "write-up",
+    type: "proof",
     label: "Dự án tốt nghiệp",
   }).state;
 
@@ -227,7 +227,7 @@ test("a filename survives Vietnamese and a filesystem", () => {
 
 test("a document with no usable label still gets a filename", () => {
   const { state } = applyAction(seedState(), "paper.create", {
-    type: "write-up",
+    type: "letter",
     label: "。。。",
   });
   // Falls back to the kind, in the document's own language, because the file

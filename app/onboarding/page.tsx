@@ -7,8 +7,7 @@
 // "not sure") and, if they have one, the CV they already keep. School,
 // courses and the rest wait until the Coach asks.
 //
-// A dropped file is stored as a filename on the profile vault, the same
-// pointer the profile screen already keeps. OpenPath does not parse PDFs.
+// A dropped file lands in My Paper as an upload. OpenPath does not parse PDFs.
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
@@ -32,10 +31,10 @@ const pressCta =
 export default function OnboardingPage() {
   const router = useRouter();
   const dispatch = useDispatch();
-  const { profile, locale } = useAppState();
+  const { profile, uploads } = useAppState();
   const { t, m } = useT();
 
-  const existingCv = profile.documents.find((d) => d.kind === "cv");
+  const existingCv = uploads.find((item) => item.kind === "cv");
 
   const [name, setName] = React.useState(profile.identity.name);
   const [targetRole, setTargetRole] = React.useState(profile.identity.targetRole);
@@ -60,18 +59,14 @@ export default function OnboardingPage() {
     }
 
     const fileName = keepResume ? resumeName : null;
-    const already = profile.documents.some(
-      (d) => d.kind === "cv" && d.fileName === fileName,
-    );
+    const already = uploads.some((item) => item.fileName === fileName);
     if (fileName && !already) {
       dispatch(
-        "document.add",
+        "paper.addUpload",
         {
           kind: "cv",
           label: fileName,
           fileName,
-          language: locale,
-          makePrimary: true,
         },
         quiet,
       );

@@ -27,6 +27,7 @@ export function seedState(locale: Locale = defaultLocale): AppState {
       documents: [],
     },
     paper: [],
+    uploads: [],
     pitch: [],
     // Seeded, unlike everything else here, and for a reason that survives the
     // "no demo persona" rule: these are not this person's data pretending to

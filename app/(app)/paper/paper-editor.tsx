@@ -3,34 +3,18 @@
 import { PaperPrintPortal } from "@/components/paper/paper-print";
 import { PaperExportMenu, PaperSheet } from "@/components/paper/sheet";
 import { useDispatch } from "@/lib/actions/store";
-import type { CvPaper, LetterPaper, LetterType } from "@/lib/paper/types";
+import type { LetterPaper } from "@/lib/paper/types";
 import type { Opening } from "@/lib/search/types";
 import { useT } from "@/lib/i18n/use-t";
-import {
-  DownloadButton,
-  EditorMainBar,
-  type EditorMode,
-} from "./workspace-parts";
+import { DownloadButton, EditorMainBar } from "./workspace-parts";
 
 export function PaperEditor({
   paper,
-  resumes,
-  papers,
   opening,
-  onSelect,
-  onCreateResume,
-  onCreatePaper,
-  onMode,
   onBack,
 }: {
   paper: LetterPaper;
-  resumes: CvPaper[];
-  papers: LetterPaper[];
   opening: Opening | undefined;
-  onSelect: (id: string) => void;
-  onCreateResume: (fromProfile: boolean) => void;
-  onCreatePaper: (kind: LetterType) => void;
-  onMode: (mode: EditorMode) => void;
   onBack: () => void;
 }) {
   const dispatch = useDispatch();
@@ -39,21 +23,15 @@ export function PaperEditor({
   return (
     <div className="flex h-full min-h-0 flex-col">
       <EditorMainBar
-        mode="letter"
         currentId={paper.id}
         currentLabel={paper.label || t(m.paper.letter.untitled)}
         nameLabel={t(m.paper.letter.labelField)}
+        typeLabel={t(m.paper.kindLetter)}
         onRename={(label) =>
           dispatch("paper.rename", { id: paper.id, label }, { silent: true })
         }
         onDelete={() => dispatch("paper.remove", { id: paper.id })}
         deleteLabel={t(m.common.delete)}
-        resumes={resumes}
-        papers={papers}
-        onSelect={onSelect}
-        onCreateResume={onCreateResume}
-        onCreatePaper={onCreatePaper}
-        onMode={onMode}
         onBack={onBack}
         trailing={
           <>

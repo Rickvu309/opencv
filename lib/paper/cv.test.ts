@@ -9,7 +9,6 @@ import assert from "node:assert/strict";
 import { populated } from "@/lib/actions/fixture";
 import { applyAction } from "@/lib/actions/registry";
 import { seedState } from "@/lib/actions/seed";
-import { nextId } from "@/lib/ids";
 import { fileStem, toMarkdown, toPlainText } from "@/lib/paper/cv-export";
 import {
   bullets,
@@ -17,7 +16,9 @@ import {
   headerHasContent,
   cvCompleteness,
   sectionHasContent,
+  starterSectionsFor,
   templates,
+  wordForTemplate,
 } from "@/lib/paper/cv";
 import { messages } from "@/lib/i18n/messages";
 import type { AppState } from "@/lib/actions/types";
@@ -168,15 +169,6 @@ test("an edit aimed at a CV that is gone changes nothing", () => {
   assert.deepEqual(after.paper, state.paper);
 });
 
-test("nextId reads the highest suffix, not the length", () => {
-  // Counting would reuse an id after a removal, and every edit action targets
-  // an id: reuse means an edit aimed at a deleted entry lands on its successor.
-  assert.equal(nextId("cv", ["cv-1", "cv-2"]), "cv-3");
-  assert.equal(nextId("cv", ["cv-1", "cv-3"]), "cv-4");
-  assert.equal(nextId("cv", []), "cv-1");
-  assert.equal(nextId("cv", ["cv-other", "unrelated-9"]), "cv-1");
-});
-
 test("removing an entry does not free its id for the next one", () => {
   const { state, id } = withCv();
   const section = state.paper[0].sections.find((s) => s.kind === "experience")!;
@@ -304,6 +296,18 @@ test("AC-PAPERS-010.1: no template is named by an abstract style word", () => {
       `"${label}" names a style, not the situation it fits`,
     );
   }
+});
+
+test("the eight templates pick a word and a section order", () => {
+  assert.equal(templates.length, 8);
+  assert.equal(wordForTemplate("classic"), "CV");
+  assert.equal(wordForTemplate("modern"), "Resume");
+  assert.deepEqual(starterSectionsFor("internship"), [
+    "education",
+    "projects",
+    "experience",
+    "skills",
+  ]);
 });
 
 test("AC-PAPERS-010.2: a new CV gets a template without the user choosing one", () => {

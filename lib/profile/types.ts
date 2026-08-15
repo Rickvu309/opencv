@@ -8,9 +8,9 @@ export type Experience = {
 };
 
 /**
- * One stored document. A profile keeps many per kind, a CV tailored for Data
- * Analyst, another for BA, an English one, and exactly one per kind is
- * primary: the version the Coach reads and the one shown first.
+ * One stored vault pointer. A profile keeps many per kind, a LinkedIn for
+ * English and another for Vietnamese, and exactly one per kind is primary:
+ * the version the Coach reads and the one shown first.
  */
 export type ProfileDocument = {
   id: string;
@@ -23,7 +23,7 @@ export type ProfileDocument = {
   language: "vi" | "en";
   /** Link-backed documents (LinkedIn, GitHub, hosted portfolio). */
   url?: string;
-  /** File-backed documents (CV, cover letter). */
+  /** Optional filename when a link also has a file they named. */
   fileName?: string;
   note?: string;
   isPrimary: boolean;

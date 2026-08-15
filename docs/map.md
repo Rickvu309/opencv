@@ -68,13 +68,13 @@ Action tables live next to the noun (`lib/paper/actions.ts`, and so on). The reg
 | Noun | Shared domain | Adapters | AppState | Actions |
 |---|---|---|---|---|
 | Profile | [`lib/profile/`](../lib/profile/) | [`app/(app)/profile/`](../app/(app)/profile/), [`components/profile/`](../components/profile/) | `profile` | `profile.*`, `document.*` |
-| Paper | [`lib/paper/`](../lib/paper/) | [`app/(app)/paper/`](../app/(app)/paper/), [`components/paper/`](../components/paper/) | `paper` | `paper.*` |
+| Paper | [`lib/paper/`](../lib/paper/) | [`app/(app)/paper/`](../app/(app)/paper/), [`components/paper/`](../components/paper/) | `paper`, `uploads` | `paper.*` |
 | Pitch | [`lib/pitch/`](../lib/pitch/) | [`app/(app)/pitch/`](../app/(app)/pitch/) | `pitch` | `pitch.*` |
 | Search | [`lib/search/`](../lib/search/) | [`app/(app)/search/`](../app/(app)/search/) | `openings` | `opening.*` |
 | Application | [`lib/applications/`](../lib/applications/) | [`app/(app)/applications/`](../app/(app)/applications/) | `applications` | `application.*` |
 | Coach | [`lib/coach/`](../lib/coach/) | [`app/(app)/coach/`](../app/(app)/coach/) + dock, [`components/coach/`](../components/coach/) | conversation, not AppState | — |
 
-Profile is in the account menu, not the Prepare rail. `Experience` and `ProfileDocument` live in [`lib/profile/types.ts`](../lib/profile/types.ts); vault kinds stay in [`lib/profile/vault.ts`](../lib/profile/vault.ts). Paper is one artefact with types CV, letter, and write-up. Open a paper at `/paper?id=`. There is no `/cv` or `/papers`.
+Profile is in the account menu, not the Prepare rail. `Experience` and `ProfileDocument` live in [`lib/profile/types.ts`](../lib/profile/types.ts); vault kinds stay in [`lib/profile/vault.ts`](../lib/profile/vault.ts). Paper is one artefact with types CV, letter, and Proof. Uploads sit beside papers on `uploads`. Open a paper at `/paper?id=`. Public Proofs live at `/p/[slug]`; the personal link is `/u/[handle]`. There is no `/cv` or `/papers`.
 
 A paper is a discriminated union. Layout stays inside [`lib/paper/`](../lib/paper/). Callers see `Paper`. Two artefacts (two routes, two store keys, two action families) would make type look like a product.
 

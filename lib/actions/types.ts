@@ -6,7 +6,7 @@
 
 import type { Application } from "@/lib/applications/types";
 import type { Locale } from "@/lib/i18n/locale";
-import type { Paper } from "@/lib/paper/types";
+import type { Paper, PaperUpload } from "@/lib/paper/types";
 import type { PitchItem } from "@/lib/pitch/types";
 import type { Experience, ProfileDocument } from "@/lib/profile/types";
 import type { Opening } from "@/lib/search/types";
@@ -38,12 +38,17 @@ export type AppState = {
     documents: ProfileDocument[];
   };
   /**
-   * Papers built inside OpenPath. CV, letter, and write-up are types.
+   * Papers built inside OpenPath. CV, letter, and Proof are types.
    *
-   * Distinct from `profile.documents` (vault pointers). A person can have both:
-   * an uploaded PDF and a CV-type paper they are building here.
+   * Distinct from `uploads` (files they brought) and `profile.documents`
+   * (vault pointers: LinkedIn, GitHub, portfolio).
    */
   paper: Paper[];
+  /**
+   * CV and cover-letter files the person brought. Filename is enough;
+   * bytes live on the server when they are signed in.
+   */
+  uploads: PaperUpload[];
   /**
    * How the user describes themselves: one bio, one self-introduction, and a
    * bank of interview answers. Separate from `papers` because these are not

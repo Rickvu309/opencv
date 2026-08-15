@@ -1,16 +1,12 @@
 // Vault kinds the profile can hold, and what each is worth. Not anyone's data.
 //
-// Filled means the Coach can read it. Weights are the remaining 54 of the
+// Filled means the Coach can read it. Weights are the remaining 40 of the
 // profile completeness score; `profileWeights` covers identity-adjacent facts.
+// CV and cover-letter files live in My Paper, not here.
 
 import type { Msg } from "@/lib/i18n/locale";
 
-export type VaultItemId =
-  | "cv"
-  | "cover-letter"
-  | "linkedin"
-  | "portfolio"
-  | "github";
+export type VaultItemId = "linkedin" | "portfolio" | "github";
 
 /** A document kind the profile can hold. Filled means the Coach can read it. */
 export type VaultItem = {
@@ -30,33 +26,17 @@ const msg = (en: string): Msg => en;
 
 export const vaultItems: VaultItem[] = [
   {
-    id: "cv",
-    title: msg("CV"),
-    weight: 18,
-    benefit: msg("Your main document. You can build one here."),
-    addLabel: msg("Add a CV"),
-    coachPrompt: msg("Review my current CV"),
-  },
-  {
     id: "portfolio",
     title: msg("Portfolio"),
-    weight: 12,
+    weight: 18,
     benefit: msg("Your strongest evidence before a long CV. One finished project is enough."),
     addLabel: msg("Add a project"),
     coachPrompt: msg("How should I write up my portfolio projects?"),
   },
   {
-    id: "cover-letter",
-    title: msg("Cover letter"),
-    weight: 10,
-    benefit: msg("The Coach drafts one from your CV and your goal."),
-    addLabel: msg("Ask the Coach to draft"),
-    coachPrompt: msg("Draft a cover letter for me"),
-  },
-  {
     id: "linkedin",
     title: msg("LinkedIn"),
-    weight: 8,
+    weight: 12,
     benefit: msg("Lets the Coach check your profile against real job ads."),
     addLabel: msg("Add the link"),
     coachPrompt: msg("What should I change on my LinkedIn?"),
@@ -64,7 +44,7 @@ export const vaultItems: VaultItem[] = [
   {
     id: "github",
     title: msg("GitHub"),
-    weight: 6,
+    weight: 10,
     benefit: msg("Where your project code lives. Technical reviewers look for it."),
     addLabel: msg("Add the link"),
     coachPrompt: msg("How should I present my repos?"),
@@ -76,11 +56,11 @@ export const vaultItems: VaultItem[] = [
  *
  * Every point is earned. There is no base score: a profile that has been filled
  * in is the only thing that scores, which is the whole signal the number
- * carries. The vault weights above account for the remaining 54.
+ * carries. The vault weights above account for the remaining 40.
  */
 export const profileWeights = {
-  context: 14,
-  experience: 14,
-  education: 10,
+  context: 18,
+  experience: 22,
+  education: 12,
   courses: 8,
 } as const;

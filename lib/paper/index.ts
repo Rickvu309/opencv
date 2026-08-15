@@ -4,21 +4,28 @@
 export type {
   Paper,
   PaperType,
-  LetterType,
+  PaperUpload,
+  PaperUploadKind,
+  PaperWord,
+  LetterSituation,
   CvPaper,
   LetterPaper,
+  ProofPaper,
+  ProofNote,
 } from "./types";
 export {
   paperTypes,
-  letterTypes,
   paperTypeLabels,
+  letterSituations,
   isCvPaper,
   isLetterPaper,
+  isProofPaper,
   cvsOf,
   lettersOf,
+  proofsOf,
 } from "./types";
-export { migrateStateShape, papersFromLegacy } from "./migrate";
+export { migrateStateShape, papersFromLegacy, uploadsFromLegacy } from "./migrate";
 export { photoUrl, visiblePhotoUrl } from "./photo-url";
 export { letterTargets, openingForPaper, type LetterTarget } from "./opening";
-export { cvCompleteness } from "./cv";
-export { paragraphsOf } from "./letter";
+export { cvCompleteness, wordForTemplate, templates, templateHasPhoto } from "./cv";
+export { paragraphsOf, letterScaffold, letterSituationLabels } from "./letter";

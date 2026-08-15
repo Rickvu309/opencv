@@ -13,14 +13,20 @@ import {
   sectionDefaults,
 } from "@/lib/paper/cv";
 import { bodyFrom, paragraphsOf } from "@/lib/paper/letter";
+import { letterScaffold } from "@/lib/paper/letter";
 import {
   isCvPaper,
   isLetterPaper,
+  isProofPaper,
+  letterSituations,
   paperTypes,
   type CvPaper,
   type CvSection,
+  type CvTemplate,
   type LetterPaper,
   type Paper,
+  type PaperUpload,
+  type ProofPaper,
 } from "@/lib/paper/types";
 
 const sectionKinds = z.enum([
@@ -69,6 +75,16 @@ function editLetter(
   );
 }
 
+function editProof(
+  state: AppState,
+  id: string,
+  edit: (paper: ProofPaper) => ProofPaper,
+): AppState {
+  return editPaper(state, id, (paper) =>
+    isProofPaper(paper) ? edit(paper) : paper,
+  );
+}
+
 function editSection(
   state: AppState,
   paperId: string,
@@ -91,31 +107,47 @@ function shift<T>(items: T[], index: number, by: number): T[] {
   return next;
 }
 
+const cvTemplates = [
+  "classic",
+  "modern",
+  "compact",
+  "internship",
+  "academic",
+  "service",
+  "technical",
+  "design",
+] as const satisfies readonly CvTemplate[];
+
 export const paperActions = {
-  // ── Paper: CVs, letters, write-ups ─────────────────────────────────────
+  // ── Paper: CVs, letters, Proofs ────────────────────────────────────────
   //
-  // One artefact, two layouts. Shared actions take `type`. CV-only and
-  // letter-only actions no-op on the wrong type rather than invent a second
-  // artefact.
+  // One artefact, three layouts. Shared actions take `type`. Layout-only
+  // actions no-op on the wrong type rather than invent a second artefact.
 
   "paper.create": defineAction({
     description:
-      "Start a paper. type is cv, letter, or write-up. For a CV, fromProfile " +
-      "fills it from the profile (almost always what they want). For a letter " +
-      "or write-up, pass body to write the first draft, with a blank line " +
-      "between paragraphs. Always give it a label naming what it is for.",
+      "Start a paper. type is cv, letter, or proof. For a CV, fromProfile " +
+      "fills it from the profile and template picks the situation. For a " +
+      "letter, situation seeds placeholder paragraphs; pass body to write a " +
+      "real first draft. For a Proof, start an empty dump. Always give it a " +
+      "label naming what it is for.",
     input: z.object({
-      type: z.enum(paperTypes as ["cv", "letter", "write-up"]),
+      type: z.enum(paperTypes as ["cv", "letter", "proof"]),
       label: z.string().min(1).describe('e.g. "CV, Data Analyst" or "Letter for VNG"'),
       targetRole: z.string().optional(),
       fromProfile: z.boolean().default(true),
       body: z.string().optional(),
+      template: z.enum(cvTemplates).optional(),
+      situation: z.enum(letterSituations).optional(),
       language: z
         .enum(["vi", "en"])
         .optional()
         .describe("The document's own language. Defaults to English."),
     }),
-    apply: (state, { type, label, targetRole, fromProfile, body, language }) => {
+    apply: (
+      state,
+      { type, label, targetRole, fromProfile, body, template, situation, language },
+    ) => {
       const id = nextId(
         "paper",
         state.paper.map((p) => p.id),
@@ -123,17 +155,29 @@ export const paperActions = {
       const documentLanguage = language ?? "en";
       let created: Paper;
       if (type === "cv") {
+        const chosen = template ?? "classic";
         created = fromProfile
-          ? cvFromProfile(state, id, label, documentLanguage)
-          : blankCv(id, label, documentLanguage);
+          ? cvFromProfile(state, id, label, documentLanguage, chosen)
+          : blankCv(id, label, documentLanguage, chosen);
+        if (targetRole) created.targetRole = targetRole;
+      } else if (type === "letter") {
+        created = {
+          id,
+          type: "letter",
+          label,
+          language: documentLanguage,
+          situation,
+          body: body ?? (situation ? letterScaffold(situation) : ""),
+          updatedAt: "Just now",
+        };
         if (targetRole) created.targetRole = targetRole;
       } else {
         created = {
           id,
-          type,
+          type: "proof",
           label,
           language: documentLanguage,
-          body: body ?? "",
+          notes: [],
           updatedAt: "Just now",
         };
         if (targetRole) created.targetRole = targetRole;
@@ -165,7 +209,19 @@ export const paperActions = {
       );
       const copy: Paper = isCvPaper(source)
         ? duplicateCv(source, newId, label)
-        : { ...source, id: newId, label, updatedAt: "Just now" };
+        : isProofPaper(source)
+          ? {
+              ...source,
+              id: newId,
+              label,
+              updatedAt: "Just now",
+              notes: source.notes.map((note, i) => ({
+                ...note,
+                id: `${newId}-n-${i + 1}`,
+              })),
+              published: undefined,
+            }
+          : { ...source, id: newId, label, updatedAt: "Just now" };
       return { ...state, paper: [...state.paper, copy] };
     },
     summary: ({ label }) => msg(`Duplicated as “${label}”`),
@@ -255,7 +311,7 @@ export const paperActions = {
       "packed. Use tight when the user needs to fit one page.",
     input: z.object({
       id: z.string().min(1),
-      template: z.enum(["classic", "modern", "compact"]).optional(),
+      template: z.enum(cvTemplates).optional(),
       accent: z.enum(["ink", "blue", "green", "plum"]).optional(),
       density: z.enum(["airy", "normal", "tight"]).optional(),
     }),
@@ -288,7 +344,7 @@ export const paperActions = {
           paper.language,
           heading,
         );
-        const at = insertionIndex(paper.sections, kind);
+        const at = insertionIndex(paper.sections, kind, paper.theme.template);
         const sections = [...paper.sections];
         sections.splice(at, 0, section);
         return { ...paper, sections };
@@ -466,7 +522,7 @@ export const paperActions = {
 
   "paper.setBody": defineAction({
     description:
-      "Replace the whole text of a letter or write-up. Use this ONLY for a " +
+      "Replace the whole text of a letter. Use this ONLY for a " +
       "first draft or a complete rewrite the user asked for. To change one " +
       "paragraph, use paper.updateParagraph instead: replacing the whole " +
       "document would discard anything the user typed since the last turn.",
@@ -551,5 +607,164 @@ export const paperActions = {
         return { ...paper, body: bodyFrom(shift(paragraphs, index - 1, by)) };
       }),
     summary: () => msg("Paragraphs reordered"),
+  }),
+
+  "paper.addNote": defineAction({
+    description:
+      "Add a note to a Proof. Newest first. Dump what happened; do not polish.",
+    input: z.object({
+      id: z.string().min(1),
+      text: z.string().min(1),
+    }),
+    apply: (state, { id, text }) =>
+      editProof(state, id, (paper) => ({
+        ...paper,
+        notes: [
+          {
+            id: nextId(
+              `${paper.id}-n`,
+              paper.notes.map((note) => note.id),
+            ),
+            text,
+            at: "Just now",
+          },
+          ...paper.notes,
+        ],
+      })),
+    summary: () => msg("Note added"),
+    touched: ({ id }, after) => {
+      const paper = after.paper.find((item) => item.id === id);
+      const added = paper && isProofPaper(paper) ? paper.notes[0] : undefined;
+      return added ? [added.id] : [];
+    },
+  }),
+
+  "paper.updateNote": defineAction({
+    description: "Rewrite one note on a Proof.",
+    input: z.object({
+      id: z.string().min(1),
+      noteId: z.string().min(1),
+      text: z.string().min(1),
+    }),
+    apply: (state, { id, noteId, text }) =>
+      editProof(state, id, (paper) => ({
+        ...paper,
+        notes: paper.notes.map((note) =>
+          note.id === noteId ? { ...note, text } : note,
+        ),
+      })),
+    summary: () => msg("Note saved"),
+    touched: ({ noteId }) => [noteId],
+  }),
+
+  "paper.removeNote": defineAction({
+    destructive: true,
+    confirm: () => msg("Delete this note?"),
+    description: "Delete one note from a Proof.",
+    input: z.object({
+      id: z.string().min(1),
+      noteId: z.string().min(1),
+    }),
+    apply: (state, { id, noteId }) =>
+      editProof(state, id, (paper) => ({
+        ...paper,
+        notes: paper.notes.filter((note) => note.id !== noteId),
+      })),
+    summary: () => msg("Note deleted"),
+  }),
+
+  "paper.setProofMeta": defineAction({
+    description: "Set the title-adjacent facts on a Proof: role, dates, link.",
+    input: z.object({
+      id: z.string().min(1),
+      role: z.string().optional(),
+      dates: z.string().optional(),
+      link: z.string().optional(),
+    }),
+    apply: (state, { id, ...fields }) =>
+      editProof(state, id, (paper) => ({ ...paper, ...fields })),
+    summary: () => msg("Saved"),
+  }),
+
+  "paper.publishProof": defineAction({
+    description:
+      "Publish a Proof as a shareable page. Needs a signed-in account in the " +
+      "browser; this action only stamps the slug on the paper.",
+    input: z.object({
+      id: z.string().min(1),
+      slug: z.string().min(1).optional(),
+    }),
+    apply: (state, { id, slug }) =>
+      editProof(state, id, (paper) => ({
+        ...paper,
+        published: {
+          slug: slug ?? paper.id,
+          at: "Just now",
+        },
+      })),
+    summary: () => msg("Proof published"),
+  }),
+
+  "paper.addUpload": defineAction({
+    description:
+      "Remember a CV or cover-letter file the person brought. Filename only " +
+      "is enough; the bytes are stored separately when they are signed in.",
+    input: z.object({
+      id: z.string().optional(),
+      kind: z.enum(["cv", "cover-letter"]),
+      label: z.string().min(1),
+      fileName: z.string().min(1),
+      mime: z.string().optional(),
+      size: z.number().int().nonnegative().optional(),
+    }),
+    apply: (state, input) => {
+      const upload: PaperUpload = {
+        id:
+          input.id ??
+          nextId(
+            "upload",
+            state.uploads.map((item) => item.id),
+          ),
+        kind: input.kind,
+        label: input.label,
+        fileName: input.fileName,
+        mime: input.mime,
+        size: input.size,
+        updatedAt: "Just now",
+      };
+      return { ...state, uploads: [upload, ...state.uploads] };
+    },
+    summary: ({ label }) => msg(`Added “${label}”`),
+    touched: (_input, after) => {
+      const added = after.uploads[0];
+      return added ? [added.id] : [];
+    },
+  }),
+
+  "paper.renameUpload": defineAction({
+    description: "Rename an uploaded file in My Paper.",
+    input: z.object({
+      id: z.string().min(1),
+      label: z.string().min(1),
+    }),
+    apply: (state, { id, label }) => ({
+      ...state,
+      uploads: state.uploads.map((item) =>
+        item.id === id ? { ...item, label, updatedAt: "Just now" } : item,
+      ),
+    }),
+    summary: () => msg("Saved"),
+  }),
+
+  "paper.removeUpload": defineAction({
+    destructive: true,
+    confirm: () => msg("Remove this file from My Paper?"),
+    description: "Remove an uploaded file from My Paper.",
+    input: z.object({ id: z.string().min(1) }),
+    apply: (state, { id }) => ({
+      ...state,
+      uploads: state.uploads.filter((item) => item.id !== id),
+    }),
+    summary: () => msg("File removed"),
   }),
 } satisfies Record<string, Action>;

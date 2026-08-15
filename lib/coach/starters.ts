@@ -13,13 +13,14 @@
 import type { Msg } from "@/lib/i18n/locale";
 import { messages } from "@/lib/i18n/messages";
 import type { AppState } from "@/lib/actions/types";
-import { cvsOf, lettersOf } from "@/lib/paper";
+import { cvsOf, lettersOf, proofsOf } from "@/lib/paper";
 
 export function coachStarters(state: AppState): Msg[] {
   const s = messages.coach;
   const { profile, paper, pitch, openings, applications } = state;
   const cvs = cvsOf(paper);
   const letters = lettersOf(paper);
+  const proofs = proofsOf(paper);
   const role = profile.identity.targetRole.trim();
   const saved = openings.filter((opening) => opening.saved).length;
 
@@ -34,7 +35,7 @@ export function coachStarters(state: AppState): Msg[] {
     //    for "has this person started" is whether anything has been built here
     //    at all. Someone with three documents on the go needs an order to work
     //    in, not a starting point.
-    cvs.length + letters.length + pitch.length === 0
+    cvs.length + letters.length + proofs.length + pitch.length === 0
       ? s.starterWhereToStart
       : s.starterPrioritise,
 

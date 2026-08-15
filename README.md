@@ -98,8 +98,8 @@ code they describe. A CV can still record its own language for the document.
 Five artefact screens, then Coach:
 
 - **My Profile** (`/profile`) — who you are. Lives in the account menu.
-- **My Paper** (`/paper`) — a library of papers. CV, letter, and write-up are
-  types, not extra screens. Open one at `/paper?id=`.
+- **My Paper** (`/paper`) — a Drive of papers. CV, cover letter, Proof, and
+  uploaded files. Open one at `/paper?id=`. Published Proofs are `/p/[slug]`.
 - **My Pitch** (`/pitch`) — bio, self-intro, interview answers.
 - **My Search** (`/search`) — openings ranked against the profile.
 - **My Application** (`/applications`) — the board of applications you are in.

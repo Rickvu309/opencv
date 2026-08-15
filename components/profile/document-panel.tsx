@@ -16,7 +16,6 @@ import {
   Pencil,
   Plus,
   RefreshCw,
-  Sparkles,
   Star,
   Trash2,
 } from "lucide-react";
@@ -37,8 +36,8 @@ import type { VaultItem } from "@/lib/profile/vault";
 import { useT } from "@/lib/i18n/use-t";
 import { cn } from "@/lib/utils";
 
-/** Link-backed kinds sync from a URL; file-backed kinds carry an upload. */
-const LINK_KINDS = new Set(["linkedin", "github"]);
+/** Vault kinds are links the Coach can read. Files live in My Paper. */
+const LINK_KINDS = new Set(["linkedin", "github", "portfolio"]);
 
 type Draft = {
   label: string;
@@ -83,9 +82,7 @@ export function DocumentPanel({
   const title = item.title;
   const isLink = LINK_KINDS.has(item.id);
   const isEmpty = documents.length === 0;
-  const buildsHere = item.id === "cv" || item.id === "cover-letter";
-  // CV and letters have a builder elsewhere. Other empty kinds open as the form.
-  const opensAsForm = isEmpty && !buildsHere;
+  const opensAsForm = isEmpty;
   const [mode, setMode] = React.useState<"list" | "add" | string>(
     opensAsForm ? "add" : "list",
   );
@@ -200,35 +197,9 @@ export function DocumentPanel({
           />
         ) : documents.length === 0 ? (
           <div className="flex flex-wrap items-center gap-2">
-            {/* CV and cover letters can be built in-app; uploading is the
-                alternative. Other kinds live outside OpenPath. */}
-            {item.id === "cv" && (
-              <Button asChild size="sm">
-                <Link href="/paper">
-                  <Sparkles className="size-3.5" />
-                  {t(m.profile.docBuildCv)}
-                </Link>
-              </Button>
-            )}
-            {item.id === "cover-letter" && (
-              <Button asChild size="sm">
-                <Link href="/paper">
-                  <Sparkles className="size-3.5" />
-                  {t(m.profile.docBuildLetter)}
-                </Link>
-              </Button>
-            )}
-            <Button
-              size="sm"
-              variant={buildsHere ? "outline" : "default"}
-              onClick={startAdd}
-            >
+            <Button size="sm" onClick={startAdd}>
               <Plus className="size-3.5" />
-              {item.id === "cv"
-                ? t(m.profile.docUploadExisting)
-                : item.id === "cover-letter"
-                  ? t(m.profile.docAddFile)
-                  : item.addLabel}
+              {item.addLabel}
             </Button>
           </div>
         ) : (

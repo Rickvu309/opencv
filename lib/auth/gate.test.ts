@@ -63,6 +63,8 @@ test("the machinery a visitor needs before an account is open", () => {
     "/_next/static/chunks/main.js",
     "/favicon.ico",
     "/globe.svg",
+    "/p/a-class-project",
+    "/u/mai-ab12cd",
   ]) {
     assert.deepEqual(gateFor(path, false), { kind: "allow" }, `${path} was closed`);
   }

@@ -1,23 +1,37 @@
 // A paper the person builds inside OpenPath, rather than a file they keep
-// elsewhere. Vault pointers live on Profile. This is the document itself.
+// elsewhere. Uploaded files live beside papers in My Paper. Vault pointers
+// (LinkedIn, GitHub, portfolio) live on Profile.
 //
 // Paper is one artefact with a type. A CV is sections and dated entries. A
-// letter is paragraphs. Callers see `Paper`. CV theme, section defaults, and
-// paragraph helpers live next to the layouts.
+// letter is paragraphs. A Proof is a running dump of notes. Callers see
+// `Paper`. See ADR 0002 and ADR 0003.
 
 import type { DocumentLanguage, Msg } from "@/lib/i18n/locale";
 
-export type PaperType = "cv" | "letter" | "write-up";
+export type PaperType = "cv" | "letter" | "proof";
 
-export const paperTypes: PaperType[] = ["cv", "letter", "write-up"];
-export const letterTypes = ["letter", "write-up"] as const;
-export type LetterType = (typeof letterTypes)[number];
+export const paperTypes: PaperType[] = ["cv", "letter", "proof"];
 
 export const paperTypeLabels: Record<PaperType, Msg> = {
   cv: "CV",
   letter: "Cover letter",
-  "write-up": "Project write-up",
+  proof: "Proof",
 };
+
+export type LetterSituation =
+  | "posted"
+  | "internship"
+  | "speculative"
+  | "scholarship";
+
+export const letterSituations: LetterSituation[] = [
+  "posted",
+  "internship",
+  "speculative",
+  "scholarship",
+];
+
+export type PaperWord = "CV" | "Resume";
 
 type PaperBase = {
   id: string;
@@ -67,7 +81,16 @@ export type CvHeader = {
   links: CvLink[];
 };
 
-export type CvTemplate = "classic" | "modern" | "compact";
+export type CvTemplate =
+  | "classic"
+  | "modern"
+  | "compact"
+  | "internship"
+  | "academic"
+  | "service"
+  | "technical"
+  | "design";
+
 export type CvAccent = "ink" | "blue" | "green" | "plum";
 export type CvDensity = "airy" | "normal" | "tight";
 
@@ -86,18 +109,50 @@ export type CvPaper = PaperBase & {
 };
 
 export type LetterPaper = PaperBase & {
-  type: LetterType;
+  type: "letter";
+  situation?: LetterSituation;
   body: string;
 };
 
-export type Paper = CvPaper | LetterPaper;
+export type ProofNote = {
+  id: string;
+  text: string;
+  at: string;
+};
+
+export type ProofPaper = PaperBase & {
+  type: "proof";
+  role?: string;
+  dates?: string;
+  link?: string;
+  notes: ProofNote[];
+  published?: { slug: string; at: string };
+};
+
+export type Paper = CvPaper | LetterPaper | ProofPaper;
+
+export type PaperUploadKind = "cv" | "cover-letter";
+
+export type PaperUpload = {
+  id: string;
+  kind: PaperUploadKind;
+  label: string;
+  fileName: string;
+  mime?: string;
+  size?: number;
+  updatedAt: string;
+};
 
 export function isCvPaper(paper: Paper): paper is CvPaper {
   return paper.type === "cv";
 }
 
 export function isLetterPaper(paper: Paper): paper is LetterPaper {
-  return paper.type === "letter" || paper.type === "write-up";
+  return paper.type === "letter";
+}
+
+export function isProofPaper(paper: Paper): paper is ProofPaper {
+  return paper.type === "proof";
 }
 
 export function cvsOf(papers: readonly Paper[]): CvPaper[] {
@@ -106,4 +161,8 @@ export function cvsOf(papers: readonly Paper[]): CvPaper[] {
 
 export function lettersOf(papers: readonly Paper[]): LetterPaper[] {
   return papers.filter(isLetterPaper);
+}
+
+export function proofsOf(papers: readonly Paper[]): ProofPaper[] {
+  return papers.filter(isProofPaper);
 }

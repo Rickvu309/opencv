@@ -11,6 +11,7 @@ import type {
   CvSectionKind,
   CvTemplate,
   CvTheme,
+  PaperWord,
 } from "./types";
 
 export const PROSE_KINDS: CvSectionKind[] = ["summary", "skills"];
@@ -19,17 +20,48 @@ export function isProseKind(kind: CvSectionKind): boolean {
   return PROSE_KINDS.includes(kind);
 }
 
-export const templates: CvTemplate[] = ["classic", "modern", "compact"];
-export const templatesWithPhoto: CvTemplate[] = ["classic"];
+export const templates: CvTemplate[] = [
+  "classic",
+  "internship",
+  "academic",
+  "service",
+  "compact",
+  "modern",
+  "technical",
+  "design",
+];
+
+export const templatesWithPhoto: CvTemplate[] = [
+  "classic",
+  "internship",
+  "service",
+];
 
 export function templateHasPhoto(template: CvTemplate): boolean {
   return templatesWithPhoto.includes(template);
+}
+
+export function wordForTemplate(template: CvTemplate): PaperWord {
+  return template === "modern" || template === "technical" || template === "design"
+    ? "Resume"
+    : "CV";
 }
 
 export const defaultTheme: CvTheme = {
   template: "classic",
   accent: "ink",
   density: "normal",
+};
+
+export const themeForTemplate: Record<CvTemplate, CvTheme> = {
+  classic: { template: "classic", accent: "ink", density: "normal" },
+  internship: { template: "internship", accent: "ink", density: "normal" },
+  academic: { template: "academic", accent: "ink", density: "airy" },
+  service: { template: "service", accent: "ink", density: "normal" },
+  compact: { template: "compact", accent: "ink", density: "tight" },
+  modern: { template: "modern", accent: "ink", density: "normal" },
+  technical: { template: "technical", accent: "ink", density: "normal" },
+  design: { template: "design", accent: "blue", density: "normal" },
 };
 
 export const sectionDefaults: Record<
@@ -76,12 +108,106 @@ export const sectionOrder: CvSectionKind[] = [
   "custom",
 ];
 
+const sectionOrderByTemplate: Record<CvTemplate, CvSectionKind[]> = {
+  classic: [
+    "summary",
+    "experience",
+    "education",
+    "skills",
+    "projects",
+    "certifications",
+    "custom",
+  ],
+  internship: [
+    "education",
+    "projects",
+    "experience",
+    "skills",
+    "summary",
+    "certifications",
+    "custom",
+  ],
+  academic: [
+    "education",
+    "projects",
+    "certifications",
+    "skills",
+    "experience",
+    "summary",
+    "custom",
+  ],
+  service: [
+    "experience",
+    "skills",
+    "education",
+    "summary",
+    "projects",
+    "certifications",
+    "custom",
+  ],
+  compact: [
+    "summary",
+    "experience",
+    "education",
+    "skills",
+    "projects",
+    "certifications",
+    "custom",
+  ],
+  modern: [
+    "summary",
+    "experience",
+    "education",
+    "skills",
+    "projects",
+    "certifications",
+    "custom",
+  ],
+  technical: [
+    "skills",
+    "projects",
+    "experience",
+    "education",
+    "summary",
+    "certifications",
+    "custom",
+  ],
+  design: [
+    "projects",
+    "skills",
+    "experience",
+    "education",
+    "summary",
+    "certifications",
+    "custom",
+  ],
+};
+
+export function sectionOrderFor(template: CvTemplate): CvSectionKind[] {
+  return sectionOrderByTemplate[template];
+}
+
 export const starterSections: CvSectionKind[] = [
   "summary",
   "experience",
   "education",
   "skills",
 ];
+
+const starterByTemplate: Record<CvTemplate, CvSectionKind[]> = {
+  classic: ["summary", "experience", "education", "skills"],
+  internship: ["education", "projects", "experience", "skills"],
+  academic: ["education", "projects", "certifications", "skills"],
+  service: ["experience", "skills", "education", "summary"],
+  compact: ["summary", "experience", "education", "skills"],
+  modern: ["summary", "experience", "education", "skills"],
+  technical: ["skills", "projects", "experience", "education"],
+  design: ["projects", "skills", "experience", "education"],
+};
+
+export function starterSectionsFor(template: CvTemplate): CvSectionKind[] {
+  return starterByTemplate[template];
+}
 
 export function bullets(detail: string | undefined): string[] {
   if (!detail) return [];
@@ -144,9 +270,11 @@ export function emptySection(
 export function insertionIndex(
   sections: CvSection[],
   kind: CvSectionKind,
+  template: CvTemplate = "classic",
 ): number {
-  const rank = sectionOrder.indexOf(kind);
-  const after = sections.findIndex((s) => sectionOrder.indexOf(s.kind) > rank);
+  const order = sectionOrderFor(template);
+  const rank = order.indexOf(kind);
+  const after = sections.findIndex((s) => order.indexOf(s.kind) > rank);
   return after === -1 ? sections.length : after;
 }
 
@@ -154,7 +282,9 @@ export function blankCv(
   id: string,
   label: string,
   language: DocumentLanguage,
+  template: CvTemplate = "classic",
 ): CvPaper {
+  const theme = { ...themeForTemplate[template] };
   return {
     id,
     type: "cv",
@@ -168,10 +298,10 @@ export function blankCv(
       location: "",
       links: [],
     },
-    sections: starterSections.map((kind, i) =>
+    sections: starterSectionsFor(template).map((kind, i) =>
       emptySection(kind, `${id}-s-${i + 1}`, language),
     ),
-    theme: { ...defaultTheme },
+    theme,
     updatedAt: "Just now",
   };
 }
@@ -181,9 +311,10 @@ export function cvFromProfile(
   id: string,
   label: string,
   language: DocumentLanguage,
+  template: CvTemplate = "classic",
 ): CvPaper {
   const { profile } = state;
-  const paper = blankCv(id, label, language);
+  const paper = blankCv(id, label, language, template);
 
   paper.targetRole = profile.identity.targetRole || undefined;
   paper.header = {
@@ -200,24 +331,23 @@ export function cvFromProfile(
       )?.value ?? "",
   };
 
-  const sections: CvSection[] = [];
-  let n = 0;
-  const sectionId = () => `${id}-s-${++n}`;
+  const fill = (kind: CvSectionKind, edit: (section: CvSection) => void) => {
+    const section = paper.sections.find((s) => s.kind === kind);
+    if (section) edit(section);
+  };
 
-  sections.push(emptySection("summary", sectionId(), language));
+  fill("experience", (experience) => {
+    experience.entries = profile.experience.map((x, i) => ({
+      id: `${experience.id}-${i + 1}`,
+      title: x.title,
+      org: x.org,
+      period: x.period,
+      detail: x.detail,
+    }));
+  });
 
-  const experience = emptySection("experience", sectionId(), language);
-  experience.entries = profile.experience.map((x, i) => ({
-    id: `${experience.id}-${i + 1}`,
-    title: x.title,
-    org: x.org,
-    period: x.period,
-    detail: x.detail,
-  }));
-  sections.push(experience);
-
-  const education = emptySection("education", sectionId(), language);
-  if (profile.education.school) {
+  fill("education", (education) => {
+    if (!profile.education.school) return;
     education.entries = [
       {
         id: `${education.id}-1`,
@@ -227,21 +357,28 @@ export function cvFromProfile(
         detail: profile.education.gpa ? `GPA ${profile.education.gpa}` : "",
       },
     ];
-  }
-  sections.push(education);
-
-  sections.push(emptySection("skills", sectionId(), language));
+  });
 
   if (profile.education.courses.length > 0) {
-    const certs = emptySection("certifications", sectionId(), language);
+    let certs = paper.sections.find((s) => s.kind === "certifications");
+    if (!certs) {
+      certs = emptySection(
+        "certifications",
+        `${id}-s-${paper.sections.length + 1}`,
+        language,
+      );
+      paper.sections.splice(
+        insertionIndex(paper.sections, "certifications", template),
+        0,
+        certs,
+      );
+    }
     certs.entries = profile.education.courses.map((name, i) => ({
       id: `${certs.id}-${i + 1}`,
       title: name,
     }));
-    sections.push(certs);
   }
 
-  paper.sections = sections;
   return paper;
 }
 

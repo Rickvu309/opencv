@@ -5,21 +5,21 @@ import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { useAppState, useDispatch } from "@/lib/actions/store";
-import { letterTargets, openingForPaper, type LetterTarget } from "@/lib/paper/opening";
+import { openingForPaper } from "@/lib/paper/opening";
 import {
-  cvsOf,
   isCvPaper,
   isLetterPaper,
-  lettersOf,
-  paperTypeLabels,
-  type LetterType,
-  type PaperType,
+  isProofPaper,
+  type CvTemplate,
+  type LetterSituation,
 } from "@/lib/paper/types";
+import { wordForTemplate } from "@/lib/paper/cv";
 import { useT } from "@/lib/i18n/use-t";
 import { CvEditor } from "./cv-editor";
 import { Library } from "./library";
 import { PaperEditor } from "./paper-editor";
-import type { EditorMode } from "./workspace-parts";
+import { ProofEditor } from "./proof-editor";
+import { CvGallery, LetterChooser } from "./choosers";
 
 export default function PaperPage() {
   return (
@@ -41,13 +41,9 @@ function MyPaperWorkspace() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const id = searchParams.get("id");
-  const targets = letterTargets(state);
-  const resumes = cvsOf(paper);
-  const letters = lettersOf(paper);
+  const creating = searchParams.get("new");
 
   const editing = id ? (paper.find((item) => item.id === id) ?? null) : null;
-  const editingCv = editing && isCvPaper(editing) ? editing : null;
-  const editingLetter = editing && isLetterPaper(editing) ? editing : null;
 
   const pending = React.useRef(false);
 
@@ -65,100 +61,87 @@ function MyPaperWorkspace() {
     }
   }, [id, paper, router]);
 
-  const createResume = (fromProfile: boolean) => {
+  const createCv = (template: CvTemplate, fromProfile: boolean) => {
     const role = profile.identity.targetRole.trim();
+    const word = wordForTemplate(template);
     pending.current = true;
     dispatch(
       "paper.create",
       {
-        type: "cv" satisfies PaperType,
-        label: role
-          ? t(m.paper.cv.forRole(role))
-          : t(m.paper.cv.untitled(resumes.length + 1)),
-        ...(role ? { targetRole: role } : {}),
+        type: "cv",
+        label: role ? `${word}, ${role}` : t(m.paper.cv.untitled(1)),
+        template,
         fromProfile,
+        ...(role ? { targetRole: role } : {}),
       },
       { silent: true },
     );
   };
 
-  const createPaper = (kind: LetterType) => {
+  const createLetter = (
+    situation: LetterSituation,
+    extras: { role?: string; org?: string } = {},
+  ) => {
+    const role = extras.role?.trim();
+    const org = extras.org?.trim();
     pending.current = true;
-    dispatch("paper.create", {
-      type: kind,
-      label: paperTypeLabels[kind],
-    });
-  };
-
-  const createFromOpening = (target: LetterTarget) => {
-    const label = t(m.paper.letter.forOpening(target.opening.title));
-    pending.current = true;
-    if (target.applicationId) {
-      dispatch("application.tailorLetter", {
-        id: target.applicationId,
-        label,
-        targetRole: target.opening.title,
-      });
-      return;
-    }
     dispatch("paper.create", {
       type: "letter",
-      label,
-      targetRole: target.opening.title,
+      label: [role, org].filter(Boolean).join(" · ") || t(m.paper.letter.untitled),
+      situation,
+      ...(role ? { targetRole: role } : {}),
     });
   };
 
-  const select = (paperId: string) => {
-    router.replace(hrefFor(paperId), { scroll: false });
+  const createProof = () => {
+    pending.current = true;
+    dispatch("paper.create", {
+      type: "proof",
+      label: t(m.paper.proof.untitled),
+    });
   };
 
-  const switchMode = (mode: EditorMode) => {
-    if (mode === "cv") {
-      if (editingCv) return;
-      const existing = resumes.at(-1);
-      if (existing) {
-        select(existing.id);
-        return;
-      }
-      createResume(true);
-      return;
-    }
-    if (editingLetter) return;
-    const existing =
-      letters.find((item) => item.type === "letter") ?? letters.at(-1);
-    if (existing) {
-      select(existing.id);
-      return;
-    }
-    createPaper("letter");
-  };
-
-  if (editingCv) {
+  if (creating === "cv" && !editing) {
     return (
-      <CvEditor
-        resume={editingCv}
-        resumes={resumes}
-        papers={letters}
-        onSelect={select}
-        onCreateResume={createResume}
-        onCreatePaper={createPaper}
-        onMode={switchMode}
+      <CvGallery
+        onPick={(template) => createCv(template, Boolean(profile.identity.name))}
         onBack={() => router.replace("/paper", { scroll: false })}
       />
     );
   }
 
-  if (editingLetter) {
+  if (creating === "letter" && !editing) {
+    return (
+      <LetterChooser
+        onPick={createLetter}
+        onBack={() => router.replace("/paper", { scroll: false })}
+      />
+    );
+  }
+
+  if (editing && isCvPaper(editing)) {
+    return (
+      <CvEditor
+        cv={editing}
+        onBack={() => router.replace("/paper", { scroll: false })}
+      />
+    );
+  }
+
+  if (editing && isLetterPaper(editing)) {
     return (
       <PaperEditor
-        paper={editingLetter}
-        resumes={resumes}
-        papers={letters}
-        opening={openingForPaper(state, editingLetter.id)}
-        onSelect={select}
-        onCreateResume={createResume}
-        onCreatePaper={createPaper}
-        onMode={switchMode}
+        paper={editing}
+        opening={openingForPaper(state, editing.id)}
+        onBack={() => router.replace("/paper", { scroll: false })}
+      />
+    );
+  }
+
+  if (editing && isProofPaper(editing)) {
+    return (
+      <ProofEditor
+        paper={editing}
         onBack={() => router.replace("/paper", { scroll: false })}
       />
     );
@@ -166,15 +149,10 @@ function MyPaperWorkspace() {
 
   return (
     <Library
-      resumes={resumes}
-      papers={letters}
-      hasProfile={Boolean(profile.identity.name)}
-      targets={targets}
-      onOpenResume={(openId) => router.push(hrefFor(openId))}
-      onOpenPaper={(openId) => router.push(hrefFor(openId))}
-      onCreateResume={createResume}
-      onCreatePaper={createPaper}
-      onCreateFromOpening={createFromOpening}
+      onOpen={(openId) => router.push(hrefFor(openId))}
+      onCreateCv={() => router.replace("/paper?new=cv", { scroll: false })}
+      onCreateLetter={() => router.replace("/paper?new=letter", { scroll: false })}
+      onCreateProof={createProof}
     />
   );
 }

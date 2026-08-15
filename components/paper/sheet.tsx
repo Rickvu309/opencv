@@ -18,11 +18,8 @@ import { Input } from "@/components/ui/input";
 import { useDispatch, useTouched } from "@/lib/actions/store";
 import { download } from "@/lib/paper/cv-export";
 import { fileStem, toMarkdown, toPlainText } from "@/lib/paper/letter-export";
-import {
-  isEmptyLetter,
-  paperTypeLabels,
-  type LetterPaper,
-} from "@/lib/paper/types";
+import { isEmptyLetter } from "@/lib/paper/letter";
+import { paperTypeLabels, type LetterPaper } from "@/lib/paper/types";
 import type { Opening } from "@/lib/search/types";
 import { useT } from "@/lib/i18n/use-t";
 import { cn } from "@/lib/utils";
@@ -42,12 +39,9 @@ export function PaperSheet({
     ? [opening.title, opening.org].filter(Boolean).join(" · ")
     : paper.targetRole?.trim() || t(paperTypeLabels[paper.type]);
 
-  const ask =
-    paper.type === "letter"
-      ? paper.targetRole?.trim()
-        ? m.papers.askCoachLetterFor(paper.targetRole.trim())
-        : m.papers.askCoachLetter
-      : m.papers.askCoachWriteUp;
+  const ask = paper.targetRole?.trim()
+    ? m.paper.letter.askCoachLetterFor(paper.targetRole.trim())
+    : m.paper.letter.askCoachLetter;
 
   const request = [t(ask), paper.label.trim() && `(${paper.label.trim()})`]
     .filter(Boolean)
@@ -64,8 +58,8 @@ export function PaperSheet({
         <header className="border-b border-border px-5 py-4">
           <TextField
             value={paper.label}
-            placeholder={t(m.papers.labelPlaceholder)}
-            ariaLabel={t(m.papers.labelField)}
+            placeholder={t(m.paper.letter.labelPlaceholder)}
+            ariaLabel={t(m.paper.letter.labelField)}
             onCommit={(label) =>
               label && dispatch("paper.rename", { id: paper.id, label }, { silent: true })
             }
@@ -74,7 +68,7 @@ export function PaperSheet({
           <div className="mt-3 flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
             <div className="flex items-center gap-1">
               <QuietCoachOffer
-                label={t(empty ? m.papers.askCoach : m.papers.askCoachHelp)}
+                label={t(empty ? m.paper.letter.askCoach : m.paper.letter.askCoachHelp)}
                 prompt={request}
               />
               <Button
@@ -132,7 +126,7 @@ export function PaperExportMenu({ paper }: { paper: LetterPaper }) {
 
   const save = (extension: string, contents: string, mime: string) => {
     download(`${stem}.${extension}`, contents, mime);
-    toast.success(t(m.cv.downloaded(`${stem}.${extension}`)));
+    toast.success(t(m.paper.cv.downloaded(`${stem}.${extension}`)));
   };
 
   return (
@@ -140,21 +134,21 @@ export function PaperExportMenu({ paper }: { paper: LetterPaper }) {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm" className="text-muted-foreground">
           <FileDown className="size-3.5" />
-          <span className="hidden sm:inline">{t(m.cv.exportLabel)}</span>
+          <span className="hidden sm:inline">{t(m.paper.cv.exportLabel)}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel className="text-muted-foreground">
-          {t(m.cv.exportDownload)}
+          {t(m.paper.cv.exportDownload)}
         </DropdownMenuLabel>
         <DropdownMenuItem onSelect={() => save("md", toMarkdown(paper), "text/markdown")}>
           <Download />
-          <span className="flex-1">{t(m.cv.exportMarkdown)}</span>
+          <span className="flex-1">{t(m.paper.cv.exportMarkdown)}</span>
           <span className="text-xs text-muted-foreground">.md</span>
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => save("txt", toPlainText(paper), "text/plain")}>
           <Download />
-          <span className="flex-1">{t(m.cv.exportText)}</span>
+          <span className="flex-1">{t(m.paper.cv.exportText)}</span>
           <span className="text-xs text-muted-foreground">.txt</span>
         </DropdownMenuItem>
       </DropdownMenuContent>

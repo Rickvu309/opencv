@@ -26,7 +26,7 @@
 import type { AppState } from "@/lib/actions/types";
 import { DEFAULT_CONFIG, type GuardrailConfig } from "@/lib/guardrails/config";
 import { messages } from "@/lib/i18n/messages";
-import { isCvPaper, paragraphsOf } from "@/lib/paper";
+import { isCvPaper, isLetterPaper, paragraphsOf } from "@/lib/paper";
 
 export type GroundingFinding = {
   rule: "ungrounded-number" | "ungrounded-claim";
@@ -86,7 +86,10 @@ export function profileFacts(state: AppState): string {
           ]),
         ];
       }
-      return [item.label, ...paragraphsOf(item.body)];
+      if (isLetterPaper(item)) {
+        return [item.label, ...paragraphsOf(item.body)];
+      }
+      return [item.label, ...item.notes.map((note) => note.text)];
     }),
     ...state.pitch.map((item) => item.body),
   ];

@@ -55,6 +55,8 @@ const PUBLIC_PATHS = new Set([
  * - `/_next/` and the rest are the framework's own files.
  */
 const PUBLIC_PREFIXES = [
+  "/p/",
+  "/u/",
   "/api/auth/",
   "/api/waitlist",
   // The scheduler's own door. Public to the gate because there is no session

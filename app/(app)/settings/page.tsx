@@ -1,5 +1,8 @@
 import { currentAccount } from "@/lib/auth/dal";
 import { planFor } from "@/lib/billing/plan";
+import { defaultHandle, readSiteForAccount } from "@/lib/paper/share";
+import { readAccountState } from "@/lib/state/account-state";
+import { HandlePanel } from "./handle";
 import { PlansPanel } from "./plans";
 import { SignInNeeded } from "./sign-in-needed";
 
@@ -17,16 +20,26 @@ export default async function SettingsPage() {
   }
 
   const plan = await planFor(account.id);
+  const site = await readSiteForAccount(account.id);
+  const state = await readAccountState(account.id);
+  const handle =
+    site?.handle ??
+    defaultHandle(state?.profile.identity.name || account.username, account.id);
 
   return (
-    <PlansPanel
-      plan={{
-        tier: plan.tier,
-        coachAllowance: plan.coachAllowance,
-        usedThisPeriod: plan.usedThisPeriod,
-        periodEnd: plan.periodEnd ? plan.periodEnd.toISOString() : null,
-        billingStatus: plan.billingStatus,
-      }}
-    />
+    <div className="space-y-6">
+      <div className="mx-auto w-full max-w-3xl px-5 pt-8 sm:px-8">
+        <HandlePanel initial={handle} />
+      </div>
+      <PlansPanel
+        plan={{
+          tier: plan.tier,
+          coachAllowance: plan.coachAllowance,
+          usedThisPeriod: plan.usedThisPeriod,
+          periodEnd: plan.periodEnd ? plan.periodEnd.toISOString() : null,
+          billingStatus: plan.billingStatus,
+        }}
+      />
+    </div>
   );
 }

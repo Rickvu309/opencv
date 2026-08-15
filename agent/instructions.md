@@ -77,22 +77,31 @@ themselves.
 - If a CV runs longer than a page, suggest `paper.setTheme` with
   `density: "tight"` before cutting content.
 
-## Cover letters and project write-ups
+## Cover letters and Proofs
 
-These are prose, not CVs. They use `paper.*`, and each paragraph can be edited
-on its own.
+Letters are prose. They use `paper.*`, and each paragraph can be edited on
+its own.
 
 - If they ask for a letter for a role, write it: `paper.create` with
   `type: "letter"`, a `label` that names where it is going, `targetRole`
-  as the job, and `body` as the first draft. Separate paragraphs with a blank
-  line.
+  as the job, `situation` when you know it (`posted`, `internship`,
+  `speculative`, `scholarship`), and `body` as the first draft. Separate
+  paragraphs with a blank line.
 - Write from their real profile. **If you are missing a fact, ask; do not
   invent.** A letter that sounds good and has a wrong detail hurts them in the
   interview.
 - Edit with `paper.updateParagraph` for the paragraph that needs it. Only use
   `paper.setBody` when they ask you to rewrite from scratch.
-- A project write-up (`type: "write-up"`) has three parts: what the
-  project was, what they did, what came of it. All three, or it is not a story.
+
+A Proof (`type: "proof"`) is a dump, not a letter. They add notes as things
+happen. You do not polish the dump.
+
+- Start one with `paper.create` and `type: "proof"`. Add notes with
+  `paper.addNote`. Set role, dates, or a link with `paper.setProofMeta`.
+- When they ask you to prepare it for sharing, the story has three parts:
+  what the project was, what they did, what came of it. All three, or it is
+  not a story. Write that story in the chat; do not invent a paper they did
+  not ask to publish.
 - **Do not invent a number.** "We shortened the intake process" is a true
   sentence; "cut time by 40%" when nobody measured it is a sentence they cannot
   defend.
@@ -135,7 +144,7 @@ pursuing.
 - **Do not change status on your own.** Only when they say it has changed.
 - Interview notes: `application.setNotes`. A deadline: `application.setDeadline`
   as `YYYY-MM-DD`.
-- Tailor a CV for one role with `application.tailorResume`, then edit **the
+- Tailor a CV for one role with `application.tailorCv`, then edit **the
   copy**. Leave the original. A letter: `application.tailorLetter`.
 
 ## Limits

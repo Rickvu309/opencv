@@ -29,8 +29,16 @@ Who the person is: identity, context, experience, education, and vault documents
 _Avoid_: settings (the account menu holds Profile; settings is plan and billing)
 
 **Paper**:
-A document the person takes into an application. The artefact is Paper. A paper has a **type**: CV, letter, or write-up. The screen is a library of papers.
-_Avoid_: Papers (as a product name, rail label, or heading), My Papers, CV (as a screen), Resume (as a product word), letter (as a second artefact)
+A document the person takes into an application. The artefact is Paper. A paper has a **type**: CV, cover letter, or Proof. The screen, My Paper, is a flat list of built papers and uploaded files; opening one is its own editing chrome.
+_Avoid_: Papers (as a product name, rail label, or heading), My Papers, CV (as a screen), letter (as a second artefact), write-up (retired; Proof replaced it)
+
+**CV / Resume**:
+One structured paper type; the word follows the template's audience. Vietnamese employer, internship, academic, service, and one-page templates say CV. Abroad/ATS, technical, and design templates say Resume. Changing the template changes the word.
+_Avoid_: Resume (on a Vietnam-facing paper), CV and Resume (as two separate types)
+
+**Proof**:
+A paper type for work that is not yet a story: a running dump of notes, photos, and links about a project, experiment, or shift. Prepare publishes it as a designed share page; published Proofs collect on one personal link. Its content can be reused on a CV. Never required, never auto-inserted.
+_Avoid_: brag document, journal, wins, evidence locker, write-up
 
 **Pitch**:
 How the person describes themselves: bio, self-introduction, interview answers. Lines to reuse, not a document they export.
@@ -52,14 +60,18 @@ _Avoid_: Opening, job posting
 The record of applying to an opening. Status is a verb the person takes.
 _Avoid_: Opening (an application outlives the posting)
 
-### Paper vs vault
+### Built, uploaded, vault
 
 **Built paper**:
-A CV-type, letter-type, or write-up paper written inside OpenPath, with content the Coach can edit.
+A CV-type, cover-letter-type, or Proof paper written inside OpenPath, with content the Coach can edit.
 _Avoid_: vault document, uploaded file (as if it were the same object)
 
+**Uploaded file**:
+A CV or cover-letter file the person brought with them, kept as a row in My Paper. Preview and send it; you cannot type in it, and OpenPath does not parse it. It does not count as a built CV.
+_Avoid_: built paper, vault document
+
 **Vault document**:
-A pointer on the Profile to a file or link the person keeps elsewhere. Evidence for the Coach, not a built paper. A vault CV and a built CV-type paper can both exist.
+A pointer on the Profile to something kept elsewhere: LinkedIn, GitHub, portfolio. Evidence for the Coach, not a paper. CV and cover-letter files are not vault documents; they live in My Paper.
 _Avoid_: Paper, Resume, the CV (as if there were only one)
 
 ### What this product is not

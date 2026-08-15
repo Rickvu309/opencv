@@ -54,6 +54,8 @@ test("the repository's own migrations are complete pairs", () => {
       "plans",
       "waitlist",
       "paper_artefact",
+      "paper_files",
+      "proof_share",
     ],
     "order matters: everything after the first depends on what came before it",
   );
@@ -161,13 +163,16 @@ test("every migration applies to an empty schema", { skip: skipWithoutDatabase }
     assert.deepEqual(
       rows.map((r) => r.table_name),
       [
+        "account_sites",
         "accounts",
         "app_state",
         "conversations",
         "guardrail_violations",
         "jobs",
+        "paper_files",
         "paper_photos",
         "plans",
+        "proof_pages",
         "schema_migrations",
         "sessions",
         "traces",
