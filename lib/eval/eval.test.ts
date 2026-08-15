@@ -18,7 +18,6 @@ test("a clean turn scores clean on everything judgeable", () => {
     reply:
       "Với vị trí data analyst, hai thứ nhà tuyển dụng nhìn đầu tiên là SQL và một dự án thật.",
     state,
-    locale: "vi",
   });
   assert.equal(passed(score), true);
   assert.equal(score.overall, 1);
@@ -27,7 +26,7 @@ test("a clean turn scores clean on everything judgeable", () => {
 test("relevance is scored null, never optimistically", () => {
   // A suite that scored relevance as perfect because it cannot read would
   // report a rising average every time the Coach got more irrelevant.
-  const score = scoreTurn({ reply: "Chào bạn.", state, locale: "vi" });
+  const score = scoreTurn({ reply: "Chào bạn.", state });
   const relevance = score.scores.find((s) => s.dimension === "relevance");
   assert.equal(relevance?.score, null);
   assert.match(relevance?.detail ?? "", /judge/);
@@ -38,7 +37,6 @@ test("a false claim of action scores zero on action honesty", () => {
     reply: "Mình đã cập nhật CV của bạn.",
     toolResults: [],
     state,
-    locale: "vi",
   });
   const honesty = score.scores.find((s) => s.dimension === "action-honesty");
   assert.equal(honesty?.score, 0);
@@ -48,9 +46,8 @@ test("a false claim of action scores zero on action honesty", () => {
 test("the same claim after a successful action scores clean", () => {
   const score = scoreTurn({
     reply: "Mình đã cập nhật CV của bạn.",
-    toolResults: [{ action: "resume.rename", ok: true }],
+    toolResults: [{ action: "paper.rename", ok: true }],
     state,
-    locale: "vi",
   });
   assert.equal(passed(score), true);
 });
@@ -59,7 +56,6 @@ test("an invented number scores zero on groundedness", () => {
   const score = scoreTurn({
     reply: "Bạn đã giảm 40% thời gian làm báo cáo.",
     state,
-    locale: "vi",
   });
   assert.equal(
     score.scores.find((s) => s.dimension === "groundedness")?.score,
@@ -74,7 +70,6 @@ test("any zero fails the turn, rather than being averaged away", () => {
     reply: "Mình đã cập nhật CV của bạn.",
     toolResults: [],
     state,
-    locale: "vi",
   });
   assert.ok((score.overall ?? 0) > 0, "the average is still above zero");
   assert.equal(passed(score), false);

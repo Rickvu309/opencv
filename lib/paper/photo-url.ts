@@ -1,4 +1,5 @@
-import { templateHasPhoto, type CvPaper } from "./types";
+import type { CvPaper } from "./types";
+import { templateHasPhoto } from "./cv";
 
 export function photoUrl(paper: CvPaper): string | null {
   if (!paper.photoStamp) return null;

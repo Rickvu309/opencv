@@ -1,6 +1,6 @@
 ---
 name: OpenPath
-description: Monochrome light product UI. Conversation-first, bilingual, scarce colour.
+description: Monochrome light product UI. Conversation-first, scarce colour.
 colors:
   page: "oklch(0.98 0 0)"
   canvas: "oklch(0.958 0 0)"
@@ -114,165 +114,189 @@ components:
 
 # Design System: OpenPath
 
-Tokens: `app/globals.css` (Tailwind classes). Who/why: `PRODUCT.md`. A colour, easing, duration, or radius not in this file is a review failure.
+Tokens live in `app/globals.css` and are used as Tailwind classes. `PRODUCT.md` covers who and why. A colour, easing, duration, or radius missing from this file fails review.
 
 ## 1. Overview
 
 **Creative North Star: "The Daylight Desk"**
 
-Paper-white panels on a grey canvas, near-black ink, 1px hairlines. Colour is status, never a surface. The chat is the product; every other screen is an artifact.
+White panels on a grey canvas, near-black ink, 1px hairlines. Colour marks status. Chat is the product; other screens are artifacts of the conversation.
 
-**Register:** product. Discover (`/`, auth, onboarding) shares tokens, not chrome.
+Register is **product**. Discover (`/`, auth, onboarding) uses the same tokens and none of the app chrome.
 
 | | Discover | Product |
 | --- | --- | --- |
-| Type | Display allowed | Fixed rem; page title `text-xl` |
-| Motion | One first-load **Stagger** | No **Page transition**, no load **Orchestration** |
+| Type | Display size allowed | Fixed rem. Page title is 20px (`text-xl`) |
+| Motion | One first-load **Stagger** | No **Page transition**. No load **Orchestration** |
 | Chrome | None | Inset frame, rail, dock |
 
-**The Two-Register Rule.** No rail, dock, or ⌘K on Discover. No `text-5xl` or **Stagger** inside `/coach`.
+**The Two-Register Rule.** Discover has no rail, dock, or command palette. Product pages have no display type and no **Stagger**.
 
-**Key characteristics**
+- Monochrome. Semantic colour is a dot, a word, or one icon.
+- Depth from three surfaces and hairlines.
+- One bordered panel, subdivided. No nested cards.
+- Be Vietnam Pro only. Fixed rem in product.
+- **Purposeful animation**, limited by **Frequency of use**, with **Reduced motion**.
+- Copy is English. Layout still wraps; do not size chrome to one sentence.
+- WCAG 2.1 AA: 4.5:1 body, keyboard, 40px chrome / 44px primary, `lang`, unclipped diacritics.
 
-- Restrained monochrome. Semantic colour = dot, word, or one icon.
-- Depth from three surfaces + hairlines, not shadows.
-- Panels subdivided by rules. Never nested cards.
-- One family: Be Vietnam Pro. Fixed rem in product.
-- **Purposeful animation**, gated by **Frequency of use**, with **Reduced motion**.
-- `{ vi, en }` pairs. Layout leaves room for both.
-- WCAG 2.1 AA: contrast, keyboard, 40/44px targets, `lang`, diacritics unclipped.
+References: Linear's product app, OpenAI's product chrome, Stripe dashboards. Linear's dark marketing site and lavender accent stay out.
 
-Craft: Linear *product* surfaces, OpenAI chrome, Stripe dashboards. Not Linear’s dark marketing canvas, not lavender.
+**The Token Rule.** Use token classes. Raw hex, a one-off `cubic-bezier`, and an off-scale duration fail review.
 
-**The Token Rule.** Token classes only. No raw hex. No one-off `cubic-bezier`. No off-scale duration.
+**The Grouping Rule.** Group with space. Hairlines only inside a panel. Gap between groups is at least twice the gap inside a group. A heading and its supporting line are related text: they take the inner gap.
 
-**The Grouping Rule.** Space groups first. Hairlines only *inside* a panel. Inter-group gap ≥ 2× intra-group.
+**The Growth Rule.** Rows wrap. Primary actions stay in flow or in the shell.
 
-**The Growth Rule.** Nothing is sized to one language. Rows wrap. Critical actions stay in flow or stable chrome.
+**The Evidence Rule.** Show computed numbers. An empty profile is 0%. Invented scores fail review.
 
-**The Evidence Rule.** Numbers are computed. Empty opens at 0%. Invented scores are forbidden.
+**The Optical-Pad Rule.** Vertical padding around text is slightly tighter than horizontal, because line-height already adds space. Prefer `px-5 py-4` to `p-5`. List rows stay `px-4 py-3`.
 
-Density: rail `h-7` (`h-10` touch). Product page `max-w-6xl px-5 py-8 sm:px-8`. Discover `max-w-3xl px-5 sm:px-8 lg:px-12`, top-aligned. Sections `mt-10`, heading→content `mt-4`. Rows `px-4 py-3 divide-y`. Dock gutter `mb-12`. Safe area on mobile chrome. Screens never pad to clear the dock.
+**The Sticky-Edge Rule.** Sticky chrome uses `border-b border-border` (or `border-t`) so it separates from scrolling content.
 
-Copy: sentence case, verb-first. She is **the Coach** (no given name). Placeholders are examples. Counts are templated (`m.profile.itemCount(n)`).
+Rail rows are 28px, 40px on touch. Product page is `max-w-6xl` with `px-5 py-8 sm:px-8`. Discover is `max-w-3xl` with `px-5 sm:px-8 lg:px-12`, aligned to the top. Sections sit `mt-10` apart; a heading sits `mt-4` above its content. List rows are `px-4 py-3` with `divide-y`. The dock gutter is 48px (`mb-12`). Mobile chrome includes the safe area. Do not add page padding to clear the dock.
 
-A11y: body ≥ 4.5:1. Native elements. `:focus-visible` `ring-3 ring-ring/50`. Skip link first. Status is never colour alone. Display leading ≥ 1.2.
+UI copy is sentence case and verb-first. The Coach has no given name. Placeholders show an example, not a label. Counts are whole templates (`m.profile.itemCount(n)`).
+
+Focus uses `:focus-visible` and `ring-3 ring-ring/50`. Native controls first. Skip link is the first tab stop. Status always has a non-colour cue. Display leading is at least 1.2.
 
 ### Motion
 
-**Purposeful animation.** **Frequency of use** decides. Keyboard actions (⌘K, ⌘B, Enter) never play **Enter / Exit**. CSS transitions for interruptible UI; **Keyframes** only as named recipes in `globals.css`. **Exit** faster than **Enter**. UI **Duration** ≤ 300ms except rare **Reveal** (500ms). Never `scale(0)`: **Scale in** from ≥ 0.93. **Hover effect** behind `@media (hover: hover) and (pointer: fine)`. Animate **Translate**, **Scale**, **Rotate**, opacity, colour; **Layout animation** only in **Accordion / Collapse**. Never `transition: all`. Never **Ease-in**.
+Motion has a job: orient, give feedback, or show a relationship. **Frequency of use** decides whether it runs. Keyboard actions (⌘K, ⌘B, Enter) have no **Enter / Exit**. Use CSS transitions so UI can be interrupted. Put **Keyframes** only in named recipes in `globals.css`. **Exit** is faster than **Enter**. Product UI stays at or under 300ms; a rare **Reveal** may use 500ms. **Scale in** starts at 0.93 or above, never `scale(0)`. Gate **Hover effect** with `@media (hover: hover) and (pointer: fine)`. Animate **Translate**, **Scale**, **Rotate**, and opacity. **Layout animation** belongs only in **Accordion / Collapse**. `transition: all` and **Ease-in** fail review.
+
+**The Instant-Hover Rule.** Colour on hover is immediate. `transition-colors` on hover fails review. Press still uses `--duration-press`. Colour that marks a state (selected, invalid) may use `--duration-press`.
 
 | Frequency | Decision |
 | --- | --- |
 | 100+/day | Instant |
-| Tens/day | Colour, or 120ms **Fade in / Fade out** |
+| Tens/day | Instant hover colour, or 120ms **Fade in / Fade out** |
 | Occasional | 200–300ms **Enter / Exit**, **Origin-aware animation** |
 | Rare / first-time | **Stagger**, 500ms **Reveal**, box **Float** |
 
 | Token | Value | Use |
 | --- | --- | --- |
-| `--ease-enter` | `cubic-bezier(0.16, 1, 0.3, 1)` | **Ease-out** for **Enter** |
+| `--ease-enter` | `cubic-bezier(0.16, 1, 0.3, 1)` | **Ease-out** on **Enter** |
 | `--ease-exit` | `cubic-bezier(0.32, 0, 0.67, 0)` | **Exit**, collapse |
 | `--ease-snap` | `cubic-bezier(0.2, 0, 0, 1)` | **Press / Tap feedback**, **Crossfade** |
-| `--duration-press` | 120ms | Press, hover, colour |
+| `--duration-press` | 120ms | Press. State colour. Not hover colour |
 | `--duration-state` | 200ms | **Crossfade**, state |
 | `--duration-surface` | 300ms | Surface **Enter / Exit** |
 | `--duration-reveal` | 500ms | **Reveal**, one blink |
 
-Easings mint utilities (`ease-enter`). Durations do not: `duration-[var(--duration-surface)]`. A fourth curve or any other ms value is drift.
+`--ease-*` tokens create utilities (`ease-enter`). `--duration-*` tokens do not. Write `duration-[var(--duration-surface)]`. A fourth curve, or any other millisecond value, fails review.
 
-| Term | OpenPath |
+| Term | Where |
 | --- | --- |
-| **Enter / Exit** | Dock, sheet, menu, toast, sidebar. Enter `--duration-surface` / `--ease-enter`; exit `--ease-exit`. |
-| **Scale in** | Dock from `scale(0.93)`. Menus `zoom-in-95`. Never `scale(0)`. |
-| **Origin-aware animation** | Dock `origin-bottom-right`; popovers `--radix-*-transform-origin`. Modals stay centered. |
-| **Press / Tap feedback** | In-app `translate-y-px` on `Button`. Discover primary **Scale** `0.96`. No menu-trigger press. |
-| **Stagger** | Discover `hero-enter` once. Empty kit, cap 3, 100ms. Map nodes, 40ms, capped. Never product load. |
-| **Accordion / Collapse** | `.acc-panel`, `disclose()`. Inner **Fade in** + 3px **Translate**, 80ms **Delay**, `backwards`. Close 180ms. |
-| **Crossfade** | Thread, language, dock mark↔close, `.t-text-swap`. Pair 2–4px **Blur**. Not **Text morph**. |
-| **Reveal** | `.animate-bar-grow`. Reduced motion snaps width. |
-| **Continuity transition** | `.animate-just-changed` wash. Reduced motion: outline. |
-| **Drag** | Sidebar 208–400px; map pan/nodes 1:1 while down. Programmatic fit 300ms. |
-| **Float** | Empty-kit mark only: 3px, 3s **Linear**. |
-| **Loop** | Spinner, `ThinkingOrb` 1.7s **Linear**. Reduced motion: **Pulse** / centre cell. |
-| **Shake / Wiggle** | `.field-error-shake` only. Error text is the channel. |
-| **Skeleton / Shimmer** | Known shape. Spinner if unknown. |
-| **Tabular numbers** | Any updating or columnar number. |
+| **Enter / Exit** | Dock, sheet, menu, toast, sidebar. Enter uses `--duration-surface` and `--ease-enter`. Exit uses `--ease-exit`. |
+| **Scale in** | Dock from `scale(0.93)`. Menus `zoom-in-95`. |
+| **Origin-aware animation** | Dock from `origin-bottom-right`. Popovers from `--radix-*-transform-origin`. Modals stay centered. |
+| **Press / Tap feedback** | `translate-y-px` on `Button`. Discover primary scales to `0.96`. Menu triggers have no press motion. |
+| **Stagger** | Discover `hero-enter`, once. Empty kit, three items, 100ms. Map nodes, 40ms, capped. Never on product load. |
+| **Accordion / Collapse** | `.acc-panel` and `disclose()`. Inner **Fade in** plus 3px **Translate**, 80ms **Delay**, `backwards`. Close in 180ms. **The Collapse-Size Rule:** the inner child keeps its width or height while the clip closes. Do not `w-full min-w-0` a collapsing pane. |
+| **Crossfade** | Thread, language, dock mark and close, `.t-text-swap`. Add 2–4px **Blur**. Not **Text morph**. |
+| **Reveal** | `.animate-bar-grow`. Reduced motion jumps to the final width. |
+| **Continuity transition** | `.animate-just-changed` wash. Reduced motion uses an outline. |
+| **Drag** | Sidebar 208–400px. Map pan and nodes track 1:1. Programmatic fit takes 300ms. |
+| **Float** | Empty-kit mark only. 3px, 3s, **Linear**. |
+| **Loop** | Spinner and `ThinkingOrb` (1.7s **Linear**). Reduced motion uses **Pulse** or the centre cell. |
+| **Shake / Wiggle** | `.field-error-shake` only. The error text carries the meaning. |
+| **Skeleton / Shimmer** | When the shape is known. Spinner when it is not. |
+| **Tabular numbers** | Any number that updates or sits in a column. |
 
-**Forbidden:** **Pop in**, **Bounce**, **Spring**, **Page transition**, **Parallax**, **Ripple**, **Typewriter**, **Idle animation**, **Morph**, **Slide in** on chrome (sheets ok), **Ease-in**.
+Do not use **Pop in**, **Bounce**, **Spring**, **Page transition**, **Parallax**, **Ripple**, **Typewriter**, **Idle animation**, **Morph**, **Ease-in**, or **Slide in** on product chrome (sheets may slide).
 
-**The Reduced-Motion Rule.** Every recipe has a branch. Drop **Translate** / **Scale** / **Rotate**. Keep **Fade in / Fade out** and colour if they carry meaning.
+**The Reduced-Motion Rule.** Every recipe has a `prefers-reduced-motion` branch. Drop **Translate**, **Scale**, and **Rotate**. Keep **Fade in / Fade out** and colour when they still explain the change.
 
 ## 2. Colors
 
-Chroma 0 neutrals. One near-black primary. Semantic colour ≤ a few dots per view. Token classes, never hex.
+Restrained: grey surfaces, one near-black primary, semantic colour on a few marks per screen. Use token classes.
 
-**Neutral.** Page `bg-background` (0.98). Canvas `bg-sidebar` (0.958), recedes. Panel `bg-card` (white), forward. Ink `text-foreground` (0.16): anything that must be read. Primary `bg-primary` (0.2): the one filled action. Fill `bg-muted` (0.965). Muted `text-muted-foreground` (0.505): labels/meta only, never body, never lightened. Hairline `border-border` (0.916), always 1px. Ring: focus only.
+### Neutral
 
-**Semantic.** `success` / `warning` / `danger` / `info`: dot (`size-1.5 rounded-full`), word, or one icon. Never a wash, card, or left stripe. Charts: `chart-1` attained, `chart-2` remainder. No rainbow.
+- **Page** (`bg-background`): content frame and Discover canvas.
+- **Canvas** (`bg-sidebar`): rail. Recedes.
+- **Panel** (`bg-card`): white sheets, menus, posters. Comes forward.
+- **Ink** (`text-foreground`): headings, values, body.
+- **Primary** (`bg-primary`): the one filled action. Text is `text-primary-foreground`.
+- **Fill** (`bg-muted`): idle chips, tracks, user bubbles.
+- **Muted** (`text-muted-foreground`): labels and meta. Never body, never the only text, never lightened.
+- **Hairline** (`border-border`): every edge and divider, 1px.
+- **Ring** (`ring-ring`): focus only.
 
-**The Scarce Accent Rule.** One filled primary per view. Active chips/tabs may invert; that is state.
+### Semantic
 
-**The Scene Rule.** Light is the product. No theme toggle. `.dark` exists so forced dark does not invert into illegibility. Printed CV is always black on white.
+`success`, `warning`, `danger`, `info` as a 6px dot, a status word, or one icon. No wash, no coloured card, no left stripe. Charts use `chart-1` for the attained value and `chart-2` for the rest.
+
+**The Scarce Accent Rule.** One filled primary per view. If a second control is filled, it is wrong. An active chip or tab may invert; that is state.
+
+**The Scene Rule.** Ship light. No theme toggle. `.dark` exists so a forced dark scheme stays readable. A printed CV is black on white in every theme.
 
 ## 3. Typography
 
-**Display / body:** Be Vietnam Pro (`font-sans`). One family. Weight and size do hierarchy. No `clamp()` in product.
+Be Vietnam Pro (`font-sans`) for everything. Size and weight make hierarchy. No second family. No `clamp()` in product.
 
-| Role | Spec | Where |
+| Role | Size and treatment | Where |
 | --- | --- | --- |
-| Display | `text-5xl sm:text-6xl font-semibold leading-[1.2] tracking-display text-balance` | Discover h1 only. Max 60px. |
-| Display next | `text-xl sm:text-2xl font-medium leading-snug tracking-tight text-pretty` | Discover permission line. |
-| Page title | `text-xl font-semibold tracking-tight text-balance` | Product h1. |
-| Section | `text-base font-semibold tracking-tight` | Panel headings. |
-| Body / cell | `text-sm` | Product UI. |
-| Chat | `text-[15px] leading-7 text-pretty` | Coach replies. ≤ 75ch. |
-| Label | `text-xs text-muted-foreground` | Meta, headers. Not instructions. |
-| Metric | `text-2xl font-semibold tracking-tight tabular-nums` | Computed numbers only. |
-| Rail | `text-[13px]` | Nav. |
+| Display | 48–60px, semibold, leading 1.2, `tracking-display`, `text-balance` | Discover headline only |
+| Display next | 20–24px, medium, snug, `tracking-tight`, `text-pretty` | Line under the Discover headline |
+| Page title | 20px, semibold, `tracking-tight`, `text-balance` | Product `h1` |
+| Section | 16px, semibold, `tracking-tight` | Panel headings |
+| Body | 14px (`text-sm`) | Product UI, tables, forms |
+| Chat | 15px, leading 1.75, `text-pretty`, measure ≤ 75ch | Coach replies |
+| Label | 12px, muted | Meta and table headers, not instructions |
+| Metric | 24px, semibold, `tracking-tight`, tabular | Computed numbers |
+| Rail | 13px | Nav rows |
 
-**The Tracking Rule.** Bigger type, tighter tracking. `tracking-display` (−0.032em) at 40px+; `tracking-tight` below. Floor −0.04em.
+**The Tracking Rule.** Larger type gets tighter tracking. Use `tracking-display` (−0.032em) from 40px up, `tracking-tight` below. Do not go tighter than −0.04em. Body, buttons, and labels keep default tracking; no `tracking-*` on those.
 
-**The Diacritic Rule.** Display leading ≥ 1.2. Body 1.5–1.75. `text-wrap: balance` on h1–h3; `pretty` on short prose. Inputs `text-base md:text-sm` (no iOS zoom).
+**The Weight Rule.** Never `font-bold`. Headings are `font-semibold`. Inline emphasis is `font-medium`.
+
+**The Inline-Mono Rule.** `font-mono` inside a sentence is `text-[0.9em]`. Mono is for fragments (paths, keys), not a second brand family.
+
+**The Diacritic Rule.** Display leading is at least 1.2 so Vietnamese tone marks clear. Body is 1.5–1.75. Balance headings (`h1`–`h3`). Use `text-pretty` on short prose. Inputs are `text-base` on mobile, `text-sm` from `md`, so iOS does not zoom.
 
 ## 4. Elevation
 
-Tonal ladder, not shadows.
+Hierarchy comes from stepped surfaces.
 
-| Layer | Token | Job |
+| Layer | Token | Role |
 | --- | --- | --- |
 | Canvas | `bg-sidebar` | Rail. Recedes. |
 | Frame | `bg-background` | Inset sheet. |
-| Panel | `bg-card` | Content, menus. |
+| Panel | `bg-card` | Content and menus. |
 
-**Inset frame.** `Sidebar variant="inset"`: rail borderless on canvas; content `m-2 ml-0 rounded-xl border shadow-sm`. `mb-12` is the dock gutter. Height-capped (`h-[calc(100svh-3.5rem)]`, `h-svh` mobile); scroll inside. Use `h-full`, never nested `100svh`. Active nav: `bg-card` + hairline (tab pulled forward). Hover: `bg-sidebar-accent`.
+The shell is Linear's inset frame. The rail sits on the canvas with no border. Content is `m-2 ml-0 rounded-xl shadow-sm ring-1 ring-border`. The 48px bottom margin (`mb-12`) is the dock gutter. The frame is height-capped (`h-[calc(100svh-3.5rem)]`, `h-svh` on mobile) and scrolls inside. Full-height views use `h-full`, not nested `100svh`. The active nav item uses `bg-card` and a hairline, like a tab pulled forward. Hover uses `bg-sidebar-accent`.
 
-**The Flat-By-Default Rule.** Frame `shadow-sm`. Menus `shadow-md` + `ring-1 ring-foreground/10`. Dock panel `shadow-lg`. If a card needs a shadow to exist, it should have been a panel. Overlay dim: `bg-black/10`. Not glass on content.
+**The Flat-By-Default Rule.** The frame may use `shadow-sm` with `ring-1 ring-border`. Menus use `shadow-md` and `ring-1 ring-foreground/10`. The dock panel uses `shadow-lg` because it floats. A card that needs a shadow to read as a card should have been a panel. Overlay dim is `bg-black/10`. No glass on content.
+
+**The Shadow-Ring Rule.** Never pair `border` with a drop shadow. Shadowed surfaces use `ring-1 ring-border`. A hairline with no shadow stays `border-border`.
 
 | Radius | Use |
 | --- | --- |
-| 8 `rounded-md` | Inner controls |
-| 12 `rounded-lg` | `Button`, `Input`, menus |
-| 16 `rounded-xl` | Frame, dock, large panels |
-| 24 `rounded-2xl` | User bubbles, pills |
+| 8px (`rounded-md`) | Inner controls |
+| 12px (`rounded-lg`) | Button, input, menus |
+| 16px (`rounded-xl`) | Frame, dock, large panels |
+| 24px (`rounded-2xl`) | User bubbles, pills |
 
-Never `rounded-full` on a filled CTA. Concentric: outer = inner + padding. Overlays `z-50` (portals). Never `z-[999]`.
+A filled primary is never a pill. Nested radii stay concentric (outer = inner + padding). Overlays use `z-50` via portals. `z-[999]` fails review.
 
 ## 5. Components
 
-shadcn/ui in `components/ui`. Compose; don’t restyle a primitive. States: default, hover, focus-visible, active, disabled. Icons: lucide `size-4`, outline at rest, fill when active.
+Primitives live in `components/ui` (shadcn/ui, Radix). Compose them. Do not restyle a primitive in place. Every control has default, hover, focus-visible, active, and disabled. Lucide icons are 16px, outline at rest, filled when they mark the active state.
+
+**The Icon-Line Rule.** Inline icons sit on the first line of text. Wrapping rows use `items-start`; wrap the icon in `h-lh flex items-center`. `items-center` on a wrapping row fails review.
 
 ### Buttons
 
-`rounded-lg`, `h-8` (Discover primary `h-11`). One `bg-primary` per view. Ghost for in-panel edit. Destructive: `bg-destructive/10 text-destructive`, never a red fill. **Press / Tap feedback** on `Button`. Disabled: opacity 50; spinner *with* the label, only in flight.
+12px radius, 32px tall. Discover primary is 44px. One filled primary per view. Ghost for in-panel edit. Destructive is tinted danger text (`bg-destructive/10 text-destructive`), never a red fill. **Press / Tap feedback** lives on `Button`. Disabled is 50% opacity. Show a spinner with the original label, and only while the request is in flight.
 
 ### Chips
 
-Active: primary invert. Idle: `border bg-card text-muted-foreground`. Rail counts: 11px numerals, never badge pills.
+Active inverts to primary. Idle is a hairline on a white panel, muted text. Rail counts are 11px numerals. No badge pills.
 
 ### Panels
 
-House pattern: one bordered container, hairline subdivisions.
+The house pattern is one bordered container, split by hairlines. Do not nest a panel inside a panel.
 
 ```tsx
 <div className="overflow-hidden rounded-xl border bg-card">
@@ -280,74 +304,114 @@ House pattern: one bordered container, hairline subdivisions.
 </div>
 ```
 
-Tables: `text-xs` header on `bg-muted/50`, `divide-y`, `hover:bg-muted/40`. `Card` only for discrete objects (CV posters). Everywhere else, a panel.
+Table headers are 12px muted on a light fill, with `divide-y` and a muted row hover. Use `Card` for objects you can pick up (the Coach's CV thumbnail). Use a panel everywhere else.
 
 ### Inputs
 
-`h-8`, transparent, `border-input`. Focus: `ring-3 ring-ring/50`. Error: `aria-invalid` + inline text. `Field` owns the label. **Shake / Wiggle** is optional.
+32px, transparent fill, hairline. Focus adds the ring. Errors use `aria-invalid` and text under the field. `Field` owns the label. **Shake / Wiggle** is optional.
+
+### Dialogs
+
+**The Dialog-Mount Rule.** Never `{open && <Dialog>}`. Keep the dialog mounted and drive it with `open` / `onOpenChange`, or the open/close motion will not run.
 
 ### Navigation
 
-Linear product rail. Quiet. Coach unlabelled (daily home, box mark). Then **Prepare** / **Opportunities** (`Collapsible`, open). Profile is Settings, not a kit item. Chats: stored threads only; new chat in header `ChatSwitcher`. Rows 28/40px. No footer. `?` bottom-left. ⌘K keyboard-only; no Search button.
+Quiet Linear rail. Coach has no section label; it is home, with the box mark. **Prepare** and **Opportunities** are collapsible and open. Profile is Settings, not a kit row. Chats lists stored threads. New chat lives in the header `ChatSwitcher`. Rows are 28px, 40px on touch. No footer. Help (`?`) sits bottom-left. ⌘K is keyboard-only. There is no Search button in the rail.
 
-Rail resizable 208–400px (**Drag** to `--sidebar-width`, persist on release). Hideable (`offcanvas`); no icon stub. Reopen is explicit (header toggle when collapsed; always on mobile). ⌘B does not animate; the rail **Enter / Exit** is the pointer path.
+The rail resizes 208–400px by **Drag** on `--sidebar-width`, saved on release. It hides fully (`offcanvas`), with no icon stub. Reopening is explicit: a header toggle when collapsed, always visible on mobile. ⌘B does not animate. The rail **Enter / Exit** follows the pointer.
 
 ### Feedback
 
-`Spinner`: **Rotate** **Loop**; reduced motion **Pulse**. Coach thinking: `ThinkingOrb`. Toasts top-center, 4s; undo stays. `<Tip>`: two or three per screen, max.
+`Spinner` is a **Rotate** **Loop**. Reduced motion uses **Pulse**. Coach thinking uses `ThinkingOrb`. Toasts sit top-center for 4s. Undo stays until used. `Tip` appears at most two or three times per screen.
 
 ### Discover
 
-One column, one promise, two doors. No chrome, demo, pillars, metrics. `hero-enter` **Stagger** once; reduced motion keeps **Fade in**. Onboarding: name, direction, optional CV → `/coach?q=`. Language: segmented pair on Discover/onboarding; `?` menu in-app. Each language names itself.
-
-### Languages
-
-`{ vi, en }` pairs, structure may differ. State in `AppState`. Composer Vietnamese → switch once with undo (`looksVietnamese`); never the reverse. CV language ≠ UI language is a real case. `<html lang>` follows the UI. Language swap: **Crossfade**.
+One column, one promise, two doors. No chrome, demo, pillars, or metrics. `hero-enter` **Stagger** runs once; reduced motion keeps **Fade in**. Onboarding is name, direction, optional CV, then `/coach?q=`. The product is English. `<html lang="en">`.
 
 ### Mark
 
-`components/brand/coach-box.tsx`. Outline at rest, filled when Coach is active. Four poses: Sit, Listen, Think (= Sit), Done (one blink). **Float** on empty-kit only. Not on billing, help, print, toasts. Never a fifth pose, name, **Idle animation**, **Pop in**.
+One SVG (`components/brand/coach-box.tsx`). Outline at rest, filled when Coach is the active surface. Four poses: Sit, Listen, Think (same as Sit), Done (one blink). **Float** only on the empty-kit greeting. Keep it off billing, help, print, and toasts. No fifth pose, no name, no **Idle animation**, no **Pop in**.
 
 ### Coach
 
-Two views, one thread (`useCoach()`). `/coach` vs dock: layout differs, state does not. Unbubbled coach prose `text-[15px] leading-7`; user `rounded-2xl bg-muted`. Empty: mark + greeting + composer (**Stagger** cap 3). Composer: textarea, `+` (**Rotate** 45°), send. No model picker. Thread **Crossfade**. Confirmations from `apply_action`, not prose. Send → stop while streaming.
+Two views, one thread (`useCoach()`). `/coach` and the dock differ in layout only. Coach replies are unbubbled 15px prose. User turns are a muted 24px-radius bubble. Empty state is mark, greeting, composer, **Stagger** of three. Composer is a textarea, a `+` that **Rotate**s 45°, and send. No model picker. Switching threads is a **Crossfade**. Confirmations come from `apply_action`. Send becomes stop while streaming.
 
-**Dock.** Bottom gutter strip on every screen except mobile `/coach`. In flow below `md` (shared row with `?`). Panel `w-[min(24rem,100vw-2rem)]`, **Origin-aware animation** + **Scale in** 0.93, **Exit** faster, mark **Crossfade**. Never pad a screen to clear it.
+The dock is a strip in the bottom gutter on every screen except mobile `/coach`. Below `md` it sits in flow, in one row with help. The panel is at most 24rem wide, **Origin-aware animation**, **Scale in** from 0.93, faster **Exit**, mark **Crossfade**. Do not pad a page to clear the strip.
 
-**Coach edits.** Act (same registry action). Announce (toast + Hoàn tác). Reveal (product step): `useTouched()` **Continuity transition**. Screens render from the store.
+Coach edits: Act through the same registry action. Announce with a toast and Undo. Reveal (the product step) with `useTouched()` **Continuity transition**. Screens read from the store.
 
-### Hồ sơ
+### My Profile
 
-Workbench: 20rem index + inspector; push below `md`. Empty = the form. `EditableSection` + sticky Huỷ/Lưu. Draft until save.
+A workbench: 20rem index and an inspector. Below `md` the panes push. An empty section is the form. `EditableSection` uses a sticky Cancel / Save bar. Edits stay in a draft until save.
 
 ### My Paper
 
-Library of A4 posters. Open = type on the page. Document colours are the document’s, always black on white. Commit on blur. Print via `data-print-portal`.
+A Drive, then a Docs. `/paper` is home even with one paper: flat rows — name · type word · updated — of built papers and uploaded files. No folders, no poster grid. Uploads read `Uploaded` with a file icon and open as preview/download, never an editor; OpenPath does not parse them, and they do not count as a built CV. Open a paper at `/paper?id=` into its own chrome: Back, editable title, type label, Export. No CV | Letter tabs and no in-editor switcher — the list is how you switch. Application, Coach, Profile, and onboarding open this same chrome; nobody types on a kanban card or in a chat bubble.
 
-### Career Map
+Types: CV, cover letter, Proof. The CV word follows the template's audience — Vietnamese employer, internship, academic, service, and one page say CV; abroad/ATS, technical, and design say Resume. A new CV opens that eight-tile situation gallery; accent and spacing stay in the Format bar. A new letter asks the situation — posted job, internship, speculative, scholarship — then gives the page; no letter skins. An open CV is structured fields beside the live A4. Letters are typed on the page. Document colour is the document's: black on white, in every theme. Commit on blur. Print through `data-print-portal`; Export is PDF via the print dialog. Completeness sits on the open CV and the Coach thumbnail, never on a row.
 
-Map, not a list. HTML `<button>` nodes, SVG edges. Inspector is a split, never an overlay. **Drag** 1:1; fit **Ease-out** 300ms; node **Stagger** 40ms capped.
+A Proof is a running dump: title, optional role · dates · link, then notes and photos, newest first. Prepare publishes a designed share page; published Proofs collect on one personal link with a quiet mark — no feed, no follow, no streaks. A Proof may sound human in ways a CV must never; its content can be reused on a CV, never auto-inserted. An empty Proof teaches what already counts (a class project, a shift, a failed experiment) and can suggest one from the profile — never required.
 
-## 6. Do's and Don'ts
+The empty list is one next step: build the CV you'll send tonight. Profile is in the account menu, not this rail.
+
+### My Pitch
+
+Bio and intro share one panel. Interview answers sit below as a list. Writing is the work; Coach is a quiet offer.
+
+### My Search
+
+One search field, then a ranked list. Fit is evidence from the profile, never a badge.
+
+### My Application
+
+A board. Status is a verb the user takes, announced through the store.
+
+## 6. Craft
+
+Kumo rules, written in OpenPath tokens. Do not import `LayerCard`, `Text`, or `kumo-*` classes.
+
+| Kumo | OpenPath |
+| --- | --- |
+| Content text 14px; 16px+ is headings | §3. Chat 15px, rail 13px, labels 12px |
+| Sentence-case headings; product names title case | Copy is sentence case |
+| Never change tracking on body or controls | **The Tracking Rule** |
+| Never `font-bold` | **The Weight Rule** |
+| Related text closer than the group | **The Grouping Rule** |
+| Optical pad around text | **The Optical-Pad Rule** |
+| Never transition hover colour | **The Instant-Hover Rule** |
+| Never `border` plus a drop shadow | **The Shadow-Ring Rule** |
+| Concentric nested radii | §4 |
+| Icons aligned to the first line of text | **The Icon-Line Rule** |
+| Inline mono slightly smaller | **The Inline-Mono Rule** |
+| Sticky chrome gets a hairline | **The Sticky-Edge Rule** |
+| Collapse keeps content size | **The Collapse-Size Rule** |
+| Never nest cards | §5 Panels |
+| Never conditionally render dialogs | **The Dialog-Mount Rule** |
+
+## 7. Do's and Don'ts
 
 ### Do
 
-- **Do** keep the desk quiet: hairlines, ink, one filled primary, one next step.
+- **Do** use hairlines, ink, one filled primary, and a visible next step.
 - **Do** treat `/coach` and the dock as two views of one thread.
-- **Do** subdivide a panel; don’t start a card grid.
-- **Do** write `{ vi, en }`, name each language in itself, leave room.
-- **Do** name motion from the vocabulary, spell **Duration** from tokens, honour **Reduced motion**.
-- **Do** Act / Announce / Reveal from the store, with undo.
+- **Do** subdivide a panel before you reach for a card grid.
+- **Do** write sentence-case English, and leave room for wrapping.
+- **Do** name motion from the vocabulary, take **Duration** from tokens, and honour **Reduced motion**.
+- **Do** Act, Announce, and Reveal from the store, with undo.
 - **Do** show computed numbers, and 0% when there is no evidence.
+- **Do** keep dialogs mounted, hover colour instant, and icons on the first line of wrapping text.
+- **Do** use a ring on a shadowed surface.
 
 ### Don't
 
-- **Don't** ship confetti, badges, personality-test astrology, or HR KPI grids.
-- **Don't** ship hero-metric templates, identical card grids, or cream/beige AI palettes.
-- **Don't** bolt Coach on as a support widget. No sparkles, AI-glow, or brand **Pulse**.
-- **Don't** use colour as a fill, a left stripe, or gradient text. Don’t glass content cards.
-- **Don't** put a tracked uppercase eyebrow or `01 / 02 / 03` on every section.
-- **Don't** nest cards, add a fourth surface, a theme toggle, or `transition: all`.
-- **Don't** animate keystrokes, rail clicks, or ⌘K. Don’t **Pop in**, **Bounce**, **Spring**, **Parallax**, **Typewriter**.
-- **Don't** invent a fit number, size chrome to one language, or pad to clear the dock.
-- **Don't** use `z-[999]`, raw hex, muted as body, or a duration other than 120 / 200 / 300 / 500.
+- **Don't** ship confetti, badges, personality-test astrology, or HR KPI grids. (`PRODUCT.md`)
+- **Don't** ship hero-metric templates, identical card grids, or cream/beige AI palettes. (`PRODUCT.md`)
+- **Don't** treat Coach as a support widget. No sparkles, AI-glow, or brand **Pulse**. (`PRODUCT.md`)
+- **Don't** fill a surface with semantic colour, add a left stripe, use gradient text, or put glass on a card.
+- **Don't** put a tracked uppercase eyebrow or `01 / 02 / 03` above every section.
+- **Don't** nest cards, add a fourth surface, add a theme toggle, or write `transition: all`.
+- **Don't** animate keystrokes, rail clicks, or ⌘K. Don't use **Pop in**, **Bounce**, **Spring**, **Parallax**, or **Typewriter**.
+- **Don't** invent a fit number, or pad a page to clear the dock.
+- **Don't** use `z-[999]`, raw hex, muted ink for body, or a duration other than 120 / 200 / 300 / 500.
+- **Don't** use `font-bold`, `transition-colors` on hover, or `border` plus a drop shadow.
+- **Don't** mount a dialog with `{open && …}`. Don't `items-center` a row whose text can wrap.

@@ -14,8 +14,8 @@ export function PaperToolbar({
   return (
     <div
       className={cn(
-        "flex shrink-0 items-center gap-2 border-b border-border px-3",
-        compact ? "h-10" : "h-12",
+        "flex shrink-0 flex-wrap items-center gap-2 border-b border-border px-3 py-1.5",
+        compact ? "min-h-10" : "min-h-12",
       )}
     >
       {children}

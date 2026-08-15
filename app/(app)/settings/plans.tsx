@@ -38,7 +38,7 @@ const TIER_LABEL = {
  * feature grid designed to make the free column look thin.
  */
 export function PlansPanel({ plan }: { plan: PlanView }) {
-  const { t, m, locale } = useT();
+  const { t, m } = useT();
   const [busy, setBusy] = React.useState(false);
 
   const change = async (body: Record<string, unknown>) => {
@@ -96,12 +96,12 @@ export function PlansPanel({ plan }: { plan: PlanView }) {
         <div className="mt-3">
           <Progress value={(used / Math.max(1, plan.coachAllowance)) * 100} />
           <p className="mt-1.5 text-xs text-muted-foreground tabular-nums">
-            {m.billing.used(plan.usedThisPeriod, plan.coachAllowance)[locale]}
+            {m.billing.used(plan.usedThisPeriod, plan.coachAllowance)}
             {ends
               ? ` · ${
                   plan.billingStatus === "cancelling"
-                    ? m.billing.endsOn(ends)[locale]
-                    : m.billing.renewsOn(ends)[locale]
+                    ? m.billing.endsOn(ends)
+                    : m.billing.renewsOn(ends)
                 }`
               : ""}
           </p>
@@ -131,11 +131,11 @@ export function PlansPanel({ plan }: { plan: PlanView }) {
           >
             <p className="text-sm font-medium">{t(m.billing[TIER_LABEL[tier]])}</p>
             <p className="mt-0.5 text-sm text-muted-foreground tabular-nums">
-              {m.billing.perMonth(PRICES_USD[tier])[locale]}
+              {m.billing.perMonth(PRICES_USD[tier])}
             </p>
             <p className="mt-2 flex items-baseline gap-1.5 text-xs text-muted-foreground tabular-nums">
               <Check className="size-3 shrink-0" aria-hidden />
-              {m.billing.turnsPerMonth(ALLOWANCES[tier])[locale]}
+              {m.billing.turnsPerMonth(ALLOWANCES[tier])}
             </p>
             {tier !== plan.tier && (
               <Button

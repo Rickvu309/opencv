@@ -29,7 +29,7 @@ import {
   type CoachToolCall,
 } from "@/lib/coach/messages";
 import { CoachProse } from "./prose";
-import { ResumeArtifact, type CvPaperEdit } from "./resume-artifact";
+import { CvArtifact, type CvPaperEdit } from "./cv-artifact";
 import { useT } from "@/lib/i18n/use-t";
 import {
   TextSwap,
@@ -251,7 +251,7 @@ export function CoachMark({
 /**
  * A question the Coach parked the turn on.
  *
- * eve suspends the turn durably until this is answered, so the buttons resume
+ * eve suspends the turn durably until this is answered, so the buttons cv
  * a live conversation rather than starting a new one. Rendered as coach prose
  * with choices, not as a form: it is the Coach talking.
  *
@@ -541,7 +541,7 @@ export function CoachMessages({
               <CoachMark
                 className={compact ? "size-6" : undefined}
                 pose={
-                  resumeEdits(message.tools).length > 0 ||
+                  paperEdits(message.tools).length > 0 ||
                   message.tools?.some((call) => call.state === "done")
                     ? "done"
                     : "sit"
@@ -562,7 +562,7 @@ export function CoachMessages({
                 <CoachProse content={message.content} />
                 {message.tools && <CoachToolCalls calls={message.tools} />}
                 {paperEdits(message.tools).length > 0 && (
-                  <ResumeArtifact
+                  <CvArtifact
                     edits={paperEdits(message.tools)}
                     compact={compact}
                   />

@@ -159,14 +159,14 @@ test("AC-APP-003: tailoring copies the CV and binds the copy, not the original",
   state = applyAction(state, "paper.create", { type: "cv", label: "CV chính" }).state;
   const original = state.paper[0];
 
-  state = applyAction(state, "application.tailorResume", {
+  state = applyAction(state, "application.tailorCv", {
     id: state.applications[0].id,
     paperId: original.id,
     label: "CV · Data Analyst Intern",
   }).state;
 
   assert.equal(state.paper.length, 2, "the original is still there");
-  const copy = state.paper.find((resume) => resume.id !== original.id)!;
+  const copy = state.paper.find((cv) => cv.id !== original.id)!;
   assert.notEqual(copy.id, original.id, "the copy has its own id");
   assert.deepEqual(state.applications[0].tailoredDocumentIds, [copy.id]);
 
@@ -176,7 +176,7 @@ test("AC-APP-003: tailoring copies the CV and binds the copy, not the original",
     label: "CV · sửa riêng",
   }).state;
   assert.equal(
-    edited.paper.find((resume) => resume.id === original.id)?.label,
+    edited.paper.find((cv) => cv.id === original.id)?.label,
     "CV chính",
   );
 });

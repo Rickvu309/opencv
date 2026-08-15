@@ -30,7 +30,7 @@ import { useT } from "@/lib/i18n/use-t";
 const MAX_EDGE = 512;
 const QUALITY = 0.85;
 
-export function PhotoField({ resume }: { resume: CvPaper }) {
+export function PhotoField({ cv }: { cv: CvPaper }) {
   const { t, m } = useT();
   const dispatch = useDispatch();
   const input = React.useRef<HTMLInputElement>(null);
@@ -41,15 +41,15 @@ export function PhotoField({ resume }: { resume: CvPaper }) {
     try {
       const shrunk = await downscale(file);
       const response = await fetch(
-        `/api/paper-photo?paperId=${encodeURIComponent(resume.id)}`,
+        `/api/paper-photo?paperId=${encodeURIComponent(cv.id)}`,
         { method: "PUT", headers: { "content-type": "image/jpeg" }, body: shrunk },
       );
       if (!response.ok) throw new Error(String(response.status));
       // The stamp is what makes the URL change, so the browser fetches the new
       // photo instead of showing the one it already has.
-      dispatch("paper.setPhoto", { id: resume.id, stamp: String(Date.now()) });
+      dispatch("paper.setPhoto", { id: cv.id, stamp: String(Date.now()) });
     } catch {
-      toast.error(t(m.cv.photoFailed));
+      toast.error(t(m.paper.cv.photoFailed));
     } finally {
       setBusy(false);
       if (input.current) input.current.value = "";
@@ -59,19 +59,19 @@ export function PhotoField({ resume }: { resume: CvPaper }) {
   async function remove() {
     setBusy(true);
     try {
-      await fetch(`/api/paper-photo?paperId=${encodeURIComponent(resume.id)}`, {
+      await fetch(`/api/paper-photo?paperId=${encodeURIComponent(cv.id)}`, {
         method: "DELETE",
       });
     } catch {
       // The row may still be there. Clearing the stamp anyway is right: the
       // user asked for it gone, and a photo with no stamp is never rendered.
     } finally {
-      dispatch("paper.setPhoto", { id: resume.id });
+      dispatch("paper.setPhoto", { id: cv.id });
       setBusy(false);
     }
   }
 
-  const url = photoUrl(resume);
+  const url = photoUrl(cv);
 
   return (
     <div className="flex items-center gap-3">
@@ -81,7 +81,7 @@ export function PhotoField({ resume }: { resume: CvPaper }) {
            session, not a static asset next/image could optimise. */
         <img
           src={url}
-          alt={t(m.cv.photoAlt)}
+          alt={t(m.paper.cv.photoAlt)}
           className="size-16 rounded-md border object-cover"
         />
       ) : (
@@ -91,8 +91,8 @@ export function PhotoField({ resume }: { resume: CvPaper }) {
       )}
 
       <div className="min-w-0">
-        <p className="text-sm font-medium">{t(m.cv.photo)}</p>
-        <p className="mt-0.5 text-xs text-muted-foreground">{t(m.cv.photoHint)}</p>
+        <p className="text-sm font-medium">{t(m.paper.cv.photo)}</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">{t(m.paper.cv.photoHint)}</p>
         <div className="mt-2 flex items-center gap-1">
           <Button
             variant="outline"
@@ -101,13 +101,13 @@ export function PhotoField({ resume }: { resume: CvPaper }) {
             onClick={() => input.current?.click()}
           >
             {busy && <Spinner />}
-            {t(url ? m.cv.photoReplace : m.cv.photoAdd)}
+            {t(url ? m.paper.cv.photoReplace : m.paper.cv.photoAdd)}
           </Button>
           {url && (
             <Button
               variant="ghost"
               size="icon-sm"
-              aria-label={t(m.cv.photoRemove)}
+              aria-label={t(m.paper.cv.photoRemove)}
               disabled={busy}
               onClick={remove}
               className="text-muted-foreground"

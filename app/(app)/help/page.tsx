@@ -65,7 +65,7 @@ export default function HelpPage() {
 
       <dl className="mt-6 space-y-3">
         {questions.map(([question, answer]) => (
-          <div key={question.en} className="rounded-xl border bg-card p-4">
+          <div key={question} className="rounded-xl border bg-card p-4">
             <dt className="text-sm font-medium">{t(question)}</dt>
             <dd className="mt-1 text-sm text-muted-foreground">{t(answer)}</dd>
           </div>

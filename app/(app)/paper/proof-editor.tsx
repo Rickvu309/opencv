@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { QuietCoachOffer } from "@/components/coach/quiet-offer";
 import { DraftInput } from "@/components/paper/draft-field";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { useAppState, useDispatch } from "@/lib/actions/store";
 import { cvsOf, type ProofPaper } from "@/lib/paper/types";
@@ -23,7 +25,9 @@ export function ProofEditor({
   const dispatch = useDispatch();
   const { t, m } = useT();
   const [draft, setDraft] = React.useState("");
+  const [noteError, setNoteError] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
+  const noteRef = React.useRef<HTMLTextAreaElement>(null);
   const empty = paper.notes.length === 0;
   const master = cvsOf(state.paper)[0];
 
@@ -120,6 +124,7 @@ export function ProofEditor({
               </Button>
             ) : (
               <Button size="sm" disabled={busy} onClick={() => void publish()}>
+                {busy && <Spinner size="sm" />}
                 {t(m.paper.proof.publish)}
               </Button>
             )}
@@ -155,6 +160,8 @@ export function ProofEditor({
             />
             <DraftInput
               id="proof-link"
+              type="url"
+              autoComplete="url"
               label={t(m.paper.proof.linkField)}
               value={paper.link ?? ""}
               onCommit={(link) =>
@@ -205,22 +212,41 @@ export function ProofEditor({
             onSubmit={(event) => {
               event.preventDefault();
               const text = draft.trim();
-              if (!text) return;
+              if (!text) {
+                setNoteError(true);
+                noteRef.current?.focus();
+                return;
+              }
               dispatch("paper.addNote", { id: paper.id, text });
               setDraft("");
+              setNoteError(false);
             }}
           >
-            <Textarea
-              id="proof-note"
-              aria-label={t(m.paper.proof.notePlaceholder)}
-              placeholder={t(m.paper.proof.notePlaceholder)}
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              rows={4}
-            />
+            <div className="grid gap-1.5">
+              <Label htmlFor="proof-note">{t(m.paper.proof.noteLabel)}</Label>
+              <Textarea
+                ref={noteRef}
+                id="proof-note"
+                name="note"
+                placeholder={t(m.paper.proof.notePlaceholder)}
+                value={draft}
+                aria-invalid={noteError || undefined}
+                aria-describedby={noteError ? "proof-note-error" : undefined}
+                onChange={(event) => {
+                  setDraft(event.target.value);
+                  if (noteError) setNoteError(false);
+                }}
+                rows={4}
+              />
+              {noteError && (
+                <p id="proof-note-error" className="text-xs text-destructive">
+                  {t(m.paper.proof.noteEmpty)}
+                </p>
+              )}
+            </div>
             <div className="flex flex-wrap items-center gap-2">
-              <Button type="submit" size="sm" disabled={!draft.trim()}>
-                {t(m.common.add)}
+              <Button type="submit" size="sm">
+                {t(m.paper.proof.addNote)}
               </Button>
               {master && !empty && (
                 <Button type="button" size="sm" variant="ghost" onClick={addToCv}>

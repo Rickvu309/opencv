@@ -82,30 +82,15 @@ export function canTransition(
 export function nextStep(status: ApplicationStatus): Msg {
   switch (status) {
     case "interested":
-      return {
-        vi: "Đọc kỹ yêu cầu, sửa CV cho khớp, rồi nộp.",
-        en: "Read the requirements, tailor your CV to them, then send it.",
-      };
+      return "Read the requirements, tailor your CV to them, then send it." ;
     case "applied":
-      return {
-        vi: "Đợi một tuần. Chưa thấy hồi âm thì nhắn hỏi một câu ngắn.",
-        en: "Give it a week. No reply, send one short follow-up.",
-      };
+      return "Give it a week. No reply, send one short follow-up." ;
     case "interviewing":
-      return {
-        vi: "Chuẩn bị hai ví dụ thật từ hồ sơ, và một câu hỏi cho họ.",
-        en: "Prepare two real examples from your profile, and one question for them.",
-      };
+      return "Prepare two real examples from your profile, and one question for them." ;
     case "offer":
-      return {
-        vi: "Hỏi rõ lương, thời gian thử việc và người bạn sẽ làm cùng.",
-        en: "Ask about pay, the probation period, and who you'd work with.",
-      };
+      return "Ask about pay, the probation period, and who you'd work with." ;
     case "rejected":
-      return {
-        vi: "Ghi lại một điều học được, rồi tìm vị trí tiếp theo.",
-        en: "Write down one thing you learned, then find the next one.",
-      };
+      return "Write down one thing you learned, then find the next one." ;
   }
 }
 

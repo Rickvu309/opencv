@@ -5,6 +5,7 @@ import { Check } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import {
@@ -68,11 +69,13 @@ export function WaitlistForm({
   className?: string;
   autoFocus?: boolean;
 }) {
-  const { t, m, locale } = useT();
+  const { t, m } = useT();
   const [email, setEmail] = React.useState("");
   const [state, setState] = React.useState<"idle" | "sending" | "done">("idle");
   const [error, setError] = React.useState<string | null>(null);
   const errorId = React.useId();
+  const inputId = React.useId();
+  const inputRef = React.useRef<HTMLInputElement>(null);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -83,6 +86,7 @@ export function WaitlistForm({
     const problem = checkEmail(email);
     if (problem) {
       setError(t(emailProblemMessage(problem)));
+      inputRef.current?.focus();
       return;
     }
 
@@ -103,7 +107,8 @@ export function WaitlistForm({
       };
       if (!response.ok || !payload.ok) {
         setState("idle");
-        setError(waitlistErrorMessage(payload.code)[locale]);
+        setError(t(waitlistErrorMessage(payload.code)));
+        inputRef.current?.focus();
         return;
       }
       writeLocalFlag(JOINED_KEY);
@@ -112,6 +117,7 @@ export function WaitlistForm({
     } catch {
       setState("idle");
       setError(t(m.errors.waitlistOffline));
+      inputRef.current?.focus();
     }
   }
 
@@ -132,14 +138,18 @@ export function WaitlistForm({
 
   return (
     <form onSubmit={submit} className={cn("w-full", className)} noValidate>
+      <Label htmlFor={inputId} className="mb-2">
+        {t(m.waitlist.emailLabel)}
+      </Label>
       <div className="flex w-full flex-col gap-2 sm:flex-row">
         <Input
+          ref={inputRef}
+          id={inputId}
           type="email"
           name="email"
           inputMode="email"
           autoComplete="email"
           placeholder={t(m.waitlist.emailPlaceholder)}
-          aria-label={t(m.waitlist.emailLabel)}
           aria-invalid={error !== null}
           aria-describedby={error ? errorId : undefined}
           value={email}

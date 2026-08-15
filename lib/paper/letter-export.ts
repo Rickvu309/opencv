@@ -1,4 +1,5 @@
-import { paperTypeLabels, paragraphsOf, type LetterPaper } from "./types";
+import { paperTypeLabels, type LetterPaper } from "./types";
+import { paragraphsOf } from "./letter";
 
 export function fileStem(paper: LetterPaper): string {
   const base = [paper.label, paper.targetRole].filter((s) => s?.trim()).join(" - ");

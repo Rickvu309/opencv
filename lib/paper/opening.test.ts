@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 import { applyAction } from "@/lib/actions/registry";
 import { seedState } from "@/lib/actions/seed";
-import { letterTargets, openingForPaper } from "@/lib/papers/opening";
+import { letterTargets, openingForPaper } from "@/lib/paper/opening";
 import { SEED_OPENINGS } from "@/lib/search/types";
 
 const opening = SEED_OPENINGS[0];
@@ -37,7 +37,7 @@ test("a tailored letter points back at the opening", () => {
     label: "Thư · Data",
     targetRole: opening.title,
   }).state;
-  const paper = state.papers[0];
+  const paper = state.paper[0];
   assert.ok(paper);
   const found = openingForPaper(state, paper.id);
   assert.equal(found?.id, opening.id);
@@ -45,8 +45,8 @@ test("a tailored letter points back at the opening", () => {
 
 test("an unbound letter has no opening", () => {
   const { state } = applyAction(seedState(), "paper.create", {
-    kind: "cover-letter",
+    type: "letter",
     label: "Thư",
   });
-  assert.equal(openingForPaper(state, state.papers[0].id), undefined);
+  assert.equal(openingForPaper(state, state.paper[0].id), undefined);
 });

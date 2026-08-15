@@ -5,9 +5,9 @@ import {
   canTransition,
   type Application,
 } from "@/lib/applications/types";
-import { paperActions } from "@/lib/paper/actions";
 import { nextId } from "@/lib/ids";
 import { isCvPaper } from "@/lib/paper";
+import { paperActions } from "@/lib/paper/actions";
 
 export const applicationActions = {
   /* ── My Applications ──────────────────────────────────────────────────── */

@@ -47,6 +47,9 @@ export function DraftInput({
   placeholder,
   className,
   srLabel,
+  type = "text",
+  autoComplete,
+  name,
 }: {
   id: string;
   label: string;
@@ -56,6 +59,9 @@ export function DraftInput({
   className?: string;
   /** Keep the label for screen readers only, where the column heading says it. */
   srLabel?: boolean;
+  type?: React.HTMLInputTypeAttribute;
+  autoComplete?: string;
+  name?: string;
 }) {
   const { draft, setDraft, commit } = useDraft(value, onCommit);
 
@@ -66,6 +72,9 @@ export function DraftInput({
       </Label>
       <Input
         id={id}
+        name={name ?? id}
+        type={type}
+        autoComplete={autoComplete}
         value={draft}
         placeholder={placeholder}
         onChange={(e) => setDraft(e.target.value)}

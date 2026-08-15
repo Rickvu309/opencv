@@ -7,14 +7,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PaperToolbar } from "@/components/paper/toolbar";
-import { templates, wordForTemplate } from "@/lib/paper/cv";
+import { templateHasPhoto, templates, wordForTemplate } from "@/lib/paper/cv";
 import {
   letterSituations,
   type CvTemplate,
   type LetterSituation,
 } from "@/lib/paper/types";
-import { letterSituationLabels } from "@/lib/paper/letter";
 import { useT } from "@/lib/i18n/use-t";
+import { cn } from "@/lib/utils";
+
+const tileClass =
+  "flex h-full w-full flex-col rounded-xl border bg-card p-4 text-start outline-none transition-colors hover:bg-muted/70 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 export function CvGallery({
   onPick,
@@ -49,7 +52,7 @@ export function CvGallery({
         </Button>
       </PaperToolbar>
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
-        <h1 className="text-pretty text-base font-semibold tracking-tight">
+        <h1 className="text-balance text-base font-semibold tracking-tight">
           {t(m.paper.galleryTitle)}
         </h1>
         <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -58,14 +61,23 @@ export function CvGallery({
               <button
                 type="button"
                 onClick={() => onPick(template)}
-                className="flex h-full w-full flex-col rounded-xl border bg-card p-4 text-start hover:bg-muted/70"
+                className={tileClass}
               >
-                <span className="text-sm font-medium">{labels[template]}</span>
-                <span className="mt-1 text-xs text-muted-foreground">
-                  {wordForTemplate(template)}
+                <TemplateMark template={template} />
+                <span className="text-pretty text-sm font-medium">
+                  {labels[template]}
+                </span>
+                <span className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                  <span>{wordForTemplate(template)}</span>
+                  {templateHasPhoto(template) && (
+                    <>
+                      <span aria-hidden>·</span>
+                      <span>{t(m.paper.includesPhoto)}</span>
+                    </>
+                  )}
                 </span>
                 {template === "design" && (
-                  <span className="mt-2 text-xs text-muted-foreground">
+                  <span className="mt-2 text-pretty text-xs text-muted-foreground">
                     {t(m.paper.cv.templateDesignHint)}
                   </span>
                 )}
@@ -75,6 +87,38 @@ export function CvGallery({
         </ul>
       </div>
     </div>
+  );
+}
+
+function TemplateMark({ template }: { template: CvTemplate }) {
+  const photo = templateHasPhoto(template);
+  const twoCol =
+    template === "modern" || template === "technical" || template === "design";
+
+  return (
+    <span
+      aria-hidden
+      className="mb-3 flex aspect-[3/4] w-11 flex-col gap-1 rounded-sm border border-border bg-background p-1"
+    >
+      {template === "design" && (
+        <span className="h-0.5 w-full bg-foreground/70" />
+      )}
+      <span className="flex gap-1">
+        {photo && (
+          <span className="size-2.5 shrink-0 rounded-[1px] bg-muted-foreground/40" />
+        )}
+        <span className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
+          <span className="h-0.5 w-3/4 bg-foreground/50" />
+          <span className="h-0.5 w-1/2 bg-muted-foreground/40" />
+        </span>
+      </span>
+      <span className={cn("mt-auto grid gap-0.5", twoCol && "grid-cols-2")}>
+        <span className="h-0.5 bg-muted-foreground/30" />
+        <span className="h-0.5 bg-muted-foreground/30" />
+        <span className="h-0.5 bg-muted-foreground/30" />
+        {twoCol && <span className="h-0.5 bg-muted-foreground/30" />}
+      </span>
+    </span>
   );
 }
 
@@ -99,6 +143,12 @@ export function LetterChooser({
     speculative: t(m.paper.letter.situationSpeculative),
     scholarship: t(m.paper.letter.situationScholarship),
   };
+  const hints: Record<LetterSituation, string> = {
+    posted: t(m.paper.letter.situationPostedHint),
+    internship: t(m.paper.letter.situationInternshipHint),
+    speculative: t(m.paper.letter.situationSpeculativeHint),
+    scholarship: t(m.paper.letter.situationScholarshipHint),
+  };
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -106,15 +156,17 @@ export function LetterChooser({
         <Button
           variant="ghost"
           size="sm"
-          aria-label={t(m.paper.backToList)}
+          aria-label={
+            situation ? t(m.paper.backToSituations) : t(m.paper.backToList)
+          }
           onClick={() => (situation ? setSituation(null) : onBack())}
         >
           <ArrowLeft className="size-3.5 rtl:-scale-x-100" />
-          {t(m.paper.backToList)}
+          {situation ? t(m.paper.backToSituations) : t(m.paper.backToList)}
         </Button>
       </PaperToolbar>
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
-        <h1 className="text-pretty text-base font-semibold tracking-tight">
+        <h1 className="text-balance text-base font-semibold tracking-tight">
           {t(m.paper.letterChooserTitle)}
         </h1>
         {!situation ? (
@@ -124,11 +176,13 @@ export function LetterChooser({
                 <button
                   type="button"
                   onClick={() => setSituation(item)}
-                  className="flex h-full w-full flex-col rounded-xl border bg-card p-4 text-start hover:bg-muted/70"
+                  className={tileClass}
                 >
-                  <span className="text-sm font-medium">{labels[item]}</span>
-                  <span className="mt-1 text-xs text-muted-foreground">
-                    {letterSituationLabels[item]}
+                  <span className="text-pretty text-sm font-medium">
+                    {labels[item]}
+                  </span>
+                  <span className="mt-1 text-pretty text-xs text-muted-foreground">
+                    {hints[item]}
                   </span>
                 </button>
               </li>
@@ -145,7 +199,9 @@ export function LetterChooser({
               });
             }}
           >
-            <p className="text-sm text-muted-foreground">{labels[situation]}</p>
+            <p className="text-pretty text-sm text-muted-foreground">
+              {labels[situation]}
+            </p>
             {(situation === "posted" || situation === "internship") && (
               <div className="grid gap-1.5">
                 <Label htmlFor="letter-role">
@@ -155,6 +211,7 @@ export function LetterChooser({
                 </Label>
                 <Input
                   id="letter-role"
+                  name="role"
                   value={role}
                   onChange={(event) => setRole(event.target.value)}
                 />
@@ -168,6 +225,8 @@ export function LetterChooser({
               </Label>
               <Input
                 id="letter-org"
+                name="organization"
+                autoComplete="organization"
                 value={org}
                 onChange={(event) => setOrg(event.target.value)}
               />

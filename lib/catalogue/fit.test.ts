@@ -6,8 +6,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { fitFor, matchRequirements, rankByFit, type FitProfile } from "@/lib/career-fit";
-import { pathNodes } from "@/lib/catalogue";
+import {
+  fitFor,
+  matchRequirements,
+  pathNodes,
+  rankByFit,
+  type FitProfile,
+} from "@/lib/catalogue";
 
 const node = (id: string) => pathNodes.find((n) => n.id === id)!;
 

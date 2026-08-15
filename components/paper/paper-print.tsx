@@ -3,12 +3,13 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 
-import { paragraphsOf, type ProseDocument } from "@/lib/papers/types";
+import { paragraphsOf } from "@/lib/paper/letter";
+import type { LetterPaper } from "@/lib/paper/types";
 
 /**
  * The printable copy of a letter, mounted on `document.body`.
  *
- * Same reason as `ResumePrintPortal`: the app shell is `h-svh overflow-hidden`
+ * Same reason as `CvPrintPortal`: the app shell is `h-svh overflow-hidden`
  * with nested scroll panes, and every one of those ancestors clips the page to
  * one screenful. Rather than fight them with `!important` overrides that break
  * the next time the shell changes, the document goes where nothing is above it.
@@ -17,7 +18,7 @@ import { paragraphsOf, type ProseDocument } from "@/lib/papers/types";
  * paper is the margin, a readable size, and paragraphs that do not split across
  * a page break in the middle of a sentence.
  */
-export function PaperPrintPortal({ paper }: { paper: ProseDocument }) {
+export function PaperPrintPortal({ paper }: { paper: LetterPaper }) {
   const host = React.useMemo(
     () => (typeof document === "undefined" ? null : document.createElement("div")),
     [],

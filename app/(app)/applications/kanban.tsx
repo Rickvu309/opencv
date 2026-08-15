@@ -48,7 +48,7 @@ function nextForward(status: ApplicationStatus): ApplicationStatus | undefined {
 }
 
 export function ApplicationsKanban(props: ApplicationsWorkspaceProps) {
-  const { t, m, locale } = props;
+  const { t, m } = props;
   const dispatch = useDispatch();
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = React.useState(false);
@@ -176,7 +176,7 @@ export function ApplicationsKanban(props: ApplicationsWorkspaceProps) {
                             title={card.job.opening.title}
                             org={card.job.opening.org}
                             location={card.job.opening.location}
-                            step={nextStep("interested")[locale]}
+                            step={nextStep("interested")}
                             fit={card.job.fit}
                             flash={false}
                             selected={false}
@@ -202,7 +202,7 @@ export function ApplicationsKanban(props: ApplicationsWorkspaceProps) {
                             location={card.item.opening?.location}
                             deadline={card.item.application.deadline}
                             overdue={isOverdue(card.item.application)}
-                            step={nextStep(card.item.application.status)[locale]}
+                            step={nextStep(card.item.application.status)}
                             fit={
                               props.board.find(
                                 (job) =>
@@ -280,7 +280,7 @@ export function ApplicationsKanban(props: ApplicationsWorkspaceProps) {
                     org={item.opening?.org}
                     location={item.opening?.location}
                     deadline={item.application.deadline}
-                    step={nextStep(item.application.status)[locale]}
+                    step={nextStep(item.application.status)}
                     fit={
                       props.board.find(
                         (job) => job.opening.id === item.application.openingId,

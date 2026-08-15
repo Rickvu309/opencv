@@ -68,7 +68,6 @@ function outcomeOf(
         : entry.actionSucceeded === false
           ? [{ action: "profile.addCourse", ok: false }]
           : [],
-      locale: "vi",
       config,
     });
     return verdict.kind === "revise" ? "revised" : "allowed";
@@ -78,7 +77,6 @@ function outcomeOf(
     reply: entry.reply ?? "",
     state,
     userSaid: entry.userSaid,
-    locale: "vi",
     config,
   });
   return verdict.kind === "revise" ? "revised" : "allowed";

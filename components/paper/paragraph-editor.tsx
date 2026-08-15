@@ -11,7 +11,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useDispatch } from "@/lib/actions/store";
-import { paragraphsOf, type ProseDocument } from "@/lib/papers/types";
+import { paragraphsOf } from "@/lib/paper/letter";
+import type { LetterPaper } from "@/lib/paper/types";
 import { useT } from "@/lib/i18n/use-t";
 
 /**
@@ -36,7 +37,7 @@ import { useT } from "@/lib/i18n/use-t";
  * has to notice and delete it. An uncommitted composer shows the placeholder
  * instead, and only dispatches once there is a sentence to keep.
  */
-export function ParagraphEditor({ paper }: { paper: ProseDocument }) {
+export function ParagraphEditor({ paper }: { paper: LetterPaper }) {
   const paragraphs = paragraphsOf(paper.body);
   const { t, m } = useT();
   const [adding, setAdding] = React.useState(false);
@@ -59,8 +60,8 @@ export function ParagraphEditor({ paper }: { paper: ProseDocument }) {
         {showComposer && (
           <Composer
             paperId={paper.id}
-            label={t(m.papers.paragraph(paragraphs.length + 1))}
-            placeholder={t(m.papers.paragraphPlaceholder)}
+            label={t(m.paper.letter.paragraph(paragraphs.length + 1))}
+            placeholder={t(m.paper.letter.paragraphPlaceholder)}
             dismissable={paragraphs.length > 0}
             onAdded={() => setAdding(false)}
             onDismiss={() => setAdding(false)}
@@ -77,7 +78,7 @@ export function ParagraphEditor({ paper }: { paper: ProseDocument }) {
             onClick={() => setAdding(true)}
           >
             <Plus className="size-3.5" />
-            {t(m.papers.addParagraph)}
+            {t(m.paper.letter.addParagraph)}
           </Button>
         </div>
       )}
@@ -136,7 +137,7 @@ function Paragraph({
   text,
   count,
 }: {
-  paper: ProseDocument;
+  paper: LetterPaper;
   index: number;
   text: string;
   count: number;
@@ -171,14 +172,14 @@ function Paragraph({
     <div className="group/paragraph px-5 py-4">
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs text-muted-foreground">
-          {t(m.papers.paragraph(index))}
+          {t(m.paper.letter.paragraph(index))}
         </span>
         {/* Controls stay hidden until the paragraph is hovered or focused
             within, so a page of six paragraphs is not a page of eighteen
             buttons. They are always reachable by keyboard. */}
         <div className="flex items-center gap-0.5 opacity-0 transition-opacity duration-[var(--duration-press)] group-hover/paragraph:opacity-100 group-focus-within/paragraph:opacity-100 motion-reduce:transition-none">
           <IconAction
-            label={t(m.papers.moveUp)}
+            label={t(m.paper.letter.moveUp)}
             disabled={index === 1}
             onClick={() =>
               dispatch("paper.moveParagraph", { id: paper.id, index, by: -1 }, { silent: true })
@@ -187,7 +188,7 @@ function Paragraph({
             <ArrowUp className="size-3.5" />
           </IconAction>
           <IconAction
-            label={t(m.papers.moveDown)}
+            label={t(m.paper.letter.moveDown)}
             disabled={index === count}
             onClick={() =>
               dispatch("paper.moveParagraph", { id: paper.id, index, by: 1 }, { silent: true })
@@ -196,7 +197,7 @@ function Paragraph({
             <ArrowDown className="size-3.5" />
           </IconAction>
           <IconAction
-            label={t(m.papers.removeParagraph)}
+            label={t(m.paper.letter.removeParagraph)}
             onClick={() => dispatch("paper.removeParagraph", { id: paper.id, index })}
           >
             <Trash2 className="size-3.5" />
@@ -208,8 +209,8 @@ function Paragraph({
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
         onBlur={commit}
-        placeholder={t(m.papers.paragraphPlaceholder)}
-        aria-label={t(m.papers.paragraph(index))}
+        placeholder={t(m.paper.letter.paragraphPlaceholder)}
+        aria-label={t(m.paper.letter.paragraph(index))}
         rows={Math.max(3, Math.ceil(draft.length / 70) + draft.split("\n").length)}
         className="mt-1.5 resize-none border-0 bg-transparent p-0 text-sm leading-6 shadow-none focus-visible:ring-0"
       />

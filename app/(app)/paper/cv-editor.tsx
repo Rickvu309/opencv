@@ -56,6 +56,7 @@ export function CvEditor({
           size="sm"
           variant={pane === "edit" ? "secondary" : "ghost"}
           className="h-7"
+          aria-pressed={pane === "edit"}
           onClick={() => setPane("edit")}
         >
           {t(m.paper.cv.editPane)}
@@ -65,6 +66,7 @@ export function CvEditor({
           size="sm"
           variant={pane === "preview" ? "secondary" : "ghost"}
           className="h-7"
+          aria-pressed={pane === "preview"}
           onClick={() => setPane("preview")}
         >
           {t(m.paper.cv.previewPane)}
@@ -102,13 +104,23 @@ function CvForm({ cv }: { cv: CvPaper }) {
 
   return (
     <div className="space-y-6 px-4 py-4">
-      <div className="flex items-center justify-between gap-3">
-        <p
-          aria-label={t(m.paper.cv.completeness)}
-          className="text-xs text-muted-foreground tabular-nums"
-        >
-          {completeness}%
+      <div className="flex items-center gap-2">
+        <p className="text-xs text-muted-foreground tabular-nums">
+          {t(m.paper.cv.readyPercent(completeness))}
         </p>
+        <span
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={completeness}
+          aria-label={t(m.paper.cv.completeness)}
+          className="h-1 w-16 overflow-hidden rounded-full bg-muted"
+        >
+          <span
+            className="block h-full bg-foreground"
+            style={{ width: `${completeness}%` }}
+          />
+        </span>
       </div>
 
       {templateHasPhoto(cv.theme.template) && <PhotoField cv={cv} />}
@@ -117,6 +129,7 @@ function CvForm({ cv }: { cv: CvPaper }) {
         <DraftInput
           id="form-name"
           label={t(m.paper.cv.headerName)}
+          autoComplete="name"
           value={cv.header.name}
           onCommit={(name) => setHeader({ name })}
         />
@@ -129,12 +142,16 @@ function CvForm({ cv }: { cv: CvPaper }) {
         />
         <DraftInput
           id="form-email"
+          type="email"
+          autoComplete="email"
           label={t(m.paper.cv.headerEmail)}
           value={cv.header.email}
           onCommit={(email) => setHeader({ email })}
         />
         <DraftInput
           id="form-phone"
+          type="tel"
+          autoComplete="tel"
           label={t(m.paper.cv.headerPhone)}
           value={cv.header.phone}
           onCommit={(phone) => setHeader({ phone })}

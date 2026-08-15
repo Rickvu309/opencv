@@ -4,7 +4,7 @@ import * as React from "react";
 import { createPortal } from "react-dom";
 
 import type { CvPaper } from "@/lib/paper/types";
-import { PAGE_WIDTH, ResumeDocument } from "./resume-document";
+import { PAGE_WIDTH, CvDocument } from "./cv-document";
 
 /**
  * The A4 page, scaled to whatever width the pane happens to be.
@@ -15,7 +15,7 @@ import { PAGE_WIDTH, ResumeDocument } from "./resume-document";
  * paint is already at the right size and there is no `setState` in the effect
  * body to cascade a render.
  */
-export function ResumePreview({ resume }: { resume: CvPaper }) {
+export function CvPreview({ cv }: { cv: CvPaper }) {
   const paneRef = React.useRef<HTMLDivElement>(null);
   const pageRef = React.useRef<HTMLDivElement>(null);
   const [scale, setScale] = React.useState(1);
@@ -58,7 +58,7 @@ export function ResumePreview({ resume }: { resume: CvPaper }) {
           }}
           className="shadow-md ring-1 ring-black/10"
         >
-          <ResumeDocument resume={resume} />
+          <CvDocument cv={cv} />
         </div>
       </div>
     </div>
@@ -78,7 +78,7 @@ export function ResumePreview({ resume }: { resume: CvPaper }) {
  * The host element is made during render but attached in an effect, so there is
  * no `setState` to cascade and the server renders nothing at all.
  */
-export function ResumePrintPortal({ resume }: { resume: CvPaper }) {
+export function CvPrintPortal({ cv }: { cv: CvPaper }) {
   const host = React.useMemo(
     () =>
       typeof document === "undefined" ? null : document.createElement("div"),
@@ -93,5 +93,5 @@ export function ResumePrintPortal({ resume }: { resume: CvPaper }) {
   }, [host]);
 
   if (!host) return null;
-  return createPortal(<ResumeDocument resume={resume} print />, host);
+  return createPortal(<CvDocument cv={cv} print />, host);
 }

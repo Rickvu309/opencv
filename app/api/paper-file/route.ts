@@ -2,14 +2,8 @@ import { NextResponse } from "next/server";
 
 import { currentAccount } from "@/lib/auth/dal";
 import { failure } from "@/lib/auth/http";
-import {
-  MAX_FILE_BYTES,
-  deleteFile,
-  isFileMime,
-  mimeFromName,
-  readFile,
-  writeFile,
-} from "@/lib/paper/files";
+import { deleteFile, readFile, writeFile } from "@/lib/paper/file-store";
+import { MAX_FILE_BYTES, isFileMime, mimeFromName } from "@/lib/paper/files";
 
 function uploadIdOf(request: Request): string | null {
   const id = new URL(request.url).searchParams.get("uploadId");

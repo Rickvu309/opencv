@@ -96,7 +96,7 @@ export function EditorMainBar({
           srLabel
           value={currentLabel}
           onCommit={(label) => label && onRename(label)}
-          className="min-w-0 max-w-[12rem] gap-0 sm:max-w-[14rem] [&_input]:h-7 [&_input]:border-0 [&_input]:bg-transparent [&_input]:px-1.5 [&_input]:text-sm [&_input]:font-medium [&_input]:shadow-none [&_input]:focus-visible:ring-0"
+          className="min-w-0 max-w-[12rem] gap-0 sm:max-w-[14rem] [&_input]:h-7 [&_input]:border-0 [&_input]:bg-transparent [&_input]:px-1.5 [&_input]:text-base [&_input]:font-medium [&_input]:shadow-none sm:[&_input]:text-sm"
         />
         <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">
           {typeLabel}
@@ -142,7 +142,12 @@ export function FormatBar({ cv }: { cv: CvPaper }) {
           </span>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-7 max-w-[14rem]">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 max-w-[14rem]"
+                aria-label={`${t(m.paper.cv.template)}: ${styleLabels[current]}`}
+              >
                 <span className="truncate">{styleLabels[current]}</span>
                 <ChevronDown className="size-3.5" />
               </Button>
@@ -159,12 +164,14 @@ export function FormatBar({ cv }: { cv: CvPaper }) {
                     )
                   }
                 >
-                  <span className="min-w-0 flex-1 truncate">{styleLabels[key]}</span>
-                  {key === "design" && (
-                    <span className="text-xs text-muted-foreground">
-                      {t(m.paper.cv.templateDesignHint)}
-                    </span>
-                  )}
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="truncate">{styleLabels[key]}</span>
+                    {key === "design" && (
+                      <span className="text-pretty text-xs text-muted-foreground">
+                        {t(m.paper.cv.templateDesignHint)}
+                      </span>
+                    )}
+                  </span>
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
@@ -377,7 +384,11 @@ export function DownloadButton({ hint }: { hint: string }) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Button size="sm" onClick={() => window.print()}>
+        <Button
+          size="sm"
+          aria-label={t(m.paper.cv.exportPdf)}
+          onClick={() => window.print()}
+        >
           <Printer className="size-3.5" />
           <span className="hidden sm:inline">{t(m.paper.cv.exportPdf)}</span>
         </Button>

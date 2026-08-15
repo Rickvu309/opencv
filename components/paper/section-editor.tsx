@@ -24,19 +24,20 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useDispatch, useTouched } from "@/lib/actions/store";
-import { isProseKind, sectionDefaults, type CvSection } from "@/lib/paper/types";
+import { isProseKind, sectionDefaults } from "@/lib/paper/cv";
+import type { CvSection } from "@/lib/paper/types";
 import { useT } from "@/lib/i18n/use-t";
 import { disclose, discloseInner } from "@/components/ui/disclose";
 import { cn } from "@/lib/utils";
 import { DraftInput, DraftTextarea } from "./draft-field";
 
 export function SectionEditor({
-  resumeId,
+  paperId,
   section,
   isFirst,
   isLast,
 }: {
-  resumeId: string;
+  paperId: string;
   section: CvSection;
   isFirst: boolean;
   isLast: boolean;
@@ -50,7 +51,7 @@ export function SectionEditor({
   const hint = sectionDefaults[section.kind].hint;
 
   const update = (fields: Record<string, unknown>) =>
-    dispatch("paper.updateSection", { id: resumeId, sectionId: section.id, ...fields }, { silent: true });
+    dispatch("paper.updateSection", { id: paperId, sectionId: section.id, ...fields }, { silent: true });
 
   return (
     <section
@@ -72,7 +73,7 @@ export function SectionEditor({
       <div className="flex items-center gap-1 border-b border-border py-2 pe-2 ps-4">
         <DraftInput
           id={`heading-${section.id}`}
-          label={t(m.cv.sectionName)}
+          label={t(m.paper.cv.sectionName)}
           srLabel
           value={section.heading}
           onCommit={(heading) => heading && update({ heading })}
@@ -87,8 +88,8 @@ export function SectionEditor({
               className="text-muted-foreground"
               aria-label={t(
                 section.hidden
-                  ? m.cv.showSection(section.heading)
-                  : m.cv.hideSection(section.heading),
+                  ? m.paper.cv.showSection(section.heading)
+                  : m.paper.cv.hideSection(section.heading),
               )}
               onClick={() => update({ hidden: !section.hidden })}
             >
@@ -96,7 +97,7 @@ export function SectionEditor({
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">
-            {t(section.hidden ? m.cv.sectionHidden : m.cv.sectionHide)}
+            {t(section.hidden ? m.paper.cv.sectionHidden : m.paper.cv.sectionHide)}
           </TooltipContent>
         </Tooltip>
 
@@ -104,10 +105,10 @@ export function SectionEditor({
           variant="ghost"
           size="icon-sm"
           className="text-muted-foreground"
-          aria-label={t(m.cv.moveSectionUp(section.heading))}
+          aria-label={t(m.paper.cv.moveSectionUp(section.heading))}
           disabled={isFirst}
           onClick={() =>
-            dispatch("paper.moveSection", { id: resumeId, sectionId: section.id, by: -1 }, { silent: true })
+            dispatch("paper.moveSection", { id: paperId, sectionId: section.id, by: -1 }, { silent: true })
           }
         >
           <ChevronUp />
@@ -116,10 +117,10 @@ export function SectionEditor({
           variant="ghost"
           size="icon-sm"
           className="text-muted-foreground"
-          aria-label={t(m.cv.moveSectionDown(section.heading))}
+          aria-label={t(m.paper.cv.moveSectionDown(section.heading))}
           disabled={isLast}
           onClick={() =>
-            dispatch("paper.moveSection", { id: resumeId, sectionId: section.id, by: 1 }, { silent: true })
+            dispatch("paper.moveSection", { id: paperId, sectionId: section.id, by: 1 }, { silent: true })
           }
         >
           <ChevronDown />
@@ -128,9 +129,9 @@ export function SectionEditor({
           variant="ghost"
           size="icon-sm"
           className="text-muted-foreground"
-          aria-label={t(m.cv.removeSection(section.heading))}
+          aria-label={t(m.paper.cv.removeSection(section.heading))}
           onClick={() =>
-            dispatch("paper.removeSection", { id: resumeId, sectionId: section.id })
+            dispatch("paper.removeSection", { id: paperId, sectionId: section.id })
           }
         >
           <Trash2 />
@@ -143,7 +144,7 @@ export function SectionEditor({
           aria-controls={`sec-body-${section.id}`}
           onClick={() => setOpen((o) => !o)}
         >
-          <span className="sr-only">{t(m.cv.toggleSection(section.heading))}</span>
+          <span className="sr-only">{t(m.paper.cv.toggleSection(section.heading))}</span>
           <ChevronDown
             aria-hidden
             className={cn(
@@ -180,7 +181,7 @@ export function SectionEditor({
                 {section.entries.map((entry, i) => (
                   <EntryEditor
                     key={entry.id}
-                    resumeId={resumeId}
+                    paperId={paperId}
                     sectionId={section.id}
                     entry={entry}
                     index={i}
@@ -197,13 +198,13 @@ export function SectionEditor({
               onClick={() =>
                 dispatch(
                   "paper.addEntry",
-                  { id: resumeId, sectionId: section.id, title: "" },
+                  { id: paperId, sectionId: section.id, title: "" },
                   { silent: true },
                 )
               }
             >
               <Plus className="size-3.5" />
-              {t(m.cv.addEntry)}
+              {t(m.paper.cv.addEntry)}
             </Button>
           </>
         )}
@@ -214,14 +215,14 @@ export function SectionEditor({
 }
 
 function EntryEditor({
-  resumeId,
+  paperId,
   sectionId,
   entry,
   index,
   isFirst,
   isLast,
 }: {
-  resumeId: string;
+  paperId: string;
   sectionId: string;
   entry: CvSection["entries"][number];
   index: number;
@@ -235,14 +236,14 @@ function EntryEditor({
   const update = (fields: Record<string, unknown>) =>
     dispatch(
       "paper.updateEntry",
-      { id: resumeId, sectionId, entryId: entry.id, ...fields },
+      { id: paperId, sectionId, entryId: entry.id, ...fields },
       { silent: true },
     );
 
   const move = (by: number) =>
     dispatch(
       "paper.moveEntry",
-      { id: resumeId, sectionId, entryId: entry.id, by },
+      { id: paperId, sectionId, entryId: entry.id, by },
       { silent: true },
     );
 
@@ -255,7 +256,7 @@ function EntryEditor({
     >
       <div className="flex items-center gap-1">
         <span className="text-xs text-muted-foreground tabular-nums">
-          {t(m.cv.entryNumber(index + 1))}
+          {t(m.paper.cv.entryNumber(index + 1))}
         </span>
         <div className="ms-auto flex items-center">
           <Button
@@ -283,11 +284,11 @@ function EntryEditor({
             size="icon-sm"
             className="text-muted-foreground"
             aria-label={t(
-              m.cv.removeEntry(entry.title || t(m.cv.entryNumber(index + 1))),
+              m.paper.cv.removeEntry(entry.title || t(m.paper.cv.entryNumber(index + 1))),
             )}
             onClick={() =>
               dispatch("paper.removeEntry", {
-                id: resumeId,
+                id: paperId,
                 sectionId,
                 entryId: entry.id,
               })
@@ -300,34 +301,34 @@ function EntryEditor({
 
       <DraftInput
         id={`t-${entry.id}`}
-        label={t(m.cv.entryTitle)}
+        label={t(m.paper.cv.entryTitle)}
         value={entry.title}
-        placeholder={t(m.cv.entryTitlePlaceholder)}
+        placeholder={t(m.paper.cv.entryTitlePlaceholder)}
         onCommit={(title) => update({ title })}
       />
       <div className="grid gap-3 sm:grid-cols-2">
         <DraftInput
           id={`o-${entry.id}`}
-          label={t(m.cv.entryOrg)}
+          label={t(m.paper.cv.entryOrg)}
           value={entry.org ?? ""}
-          placeholder={t(m.cv.entryOrgPlaceholder)}
+          placeholder={t(m.paper.cv.entryOrgPlaceholder)}
           onCommit={(org) => update({ org })}
         />
         <DraftInput
           id={`p-${entry.id}`}
-          label={t(m.cv.entryPeriod)}
+          label={t(m.paper.cv.entryPeriod)}
           value={entry.period ?? ""}
-          placeholder={t(m.cv.entryPeriodPlaceholder)}
+          placeholder={t(m.paper.cv.entryPeriodPlaceholder)}
           onCommit={(period) => update({ period })}
         />
       </div>
       <DraftTextarea
         id={`d-${entry.id}`}
-        label={t(m.cv.entryDetail)}
+        label={t(m.paper.cv.entryDetail)}
         value={entry.detail ?? ""}
         rows={3}
-        placeholder={t(m.cv.entryDetailPlaceholder)}
-        hint={t(m.cv.entryDetailHint)}
+        placeholder={t(m.paper.cv.entryDetailPlaceholder)}
+        hint={t(m.paper.cv.entryDetailHint)}
         onCommit={(detail) => update({ detail })}
       />
     </li>

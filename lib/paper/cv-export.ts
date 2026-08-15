@@ -1,4 +1,5 @@
-import { bullets, isProseKind, type CvPaper, type CvSection } from "./types";
+import type { CvPaper, CvSection } from "./types";
+import { bullets, isProseKind } from "./cv";
 
 export function fileStem(paper: CvPaper): string {
   const base = [paper.header.name, paper.label]

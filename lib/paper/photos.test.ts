@@ -8,26 +8,26 @@ import assert from "node:assert/strict";
 import { applyAction } from "@/lib/actions/registry";
 import { seedState } from "@/lib/actions/seed";
 import { createAccount } from "@/lib/auth/accounts";
-import { photoUrl, visiblePhotoUrl } from "@/lib/cv/photo-url";
+import { photoUrl, visiblePhotoUrl } from "@/lib/paper/photo-url";
 import {
   MAX_PHOTO_BYTES,
   deletePhoto,
   isPhotoMime,
   readPhoto,
   writePhoto,
-} from "@/lib/cv/photos";
-import { templateHasPhoto, templates } from "@/lib/cv/types";
+} from "@/lib/paper/photos";
+import { templateHasPhoto, templates } from "@/lib/paper/cv";
 import { skipWithoutDatabase, withMigratedSchema } from "@/lib/db/testing";
 
 const OPTIONS = { skip: skipWithoutDatabase };
 
 /** A CV in a state, and the state around it. */
 function withCv() {
-  const { state } = applyAction(seedState(), "resume.create", {
+  const { state } = applyAction(seedState(), "paper.create", { type: "cv",
     label: "CV, Data Analyst",
     fromProfile: false,
   });
-  return { state, id: state.resumes[0].id };
+  return { state, id: state.paper[0].id };
 }
 
 /* ── Which templates have a photo area ──────────────────────────────────── */
@@ -45,27 +45,27 @@ test("switching to a template without a photo hides it rather than losing it", (
   const cv = withCv();
   const { id } = cv;
   let state = cv.state;
-  state = applyAction(state, "resume.setPhoto", { id, stamp: "123" }).state;
+  state = applyAction(state, "paper.setPhoto", { id, stamp: "123" }).state;
 
-  const withPhoto = state.resumes[0];
+  const withPhoto = state.paper[0];
   assert.ok(visiblePhotoUrl(withPhoto), "the classic template should show it");
 
-  const international = applyAction(state, "resume.setTheme", { id, template: "modern" })
-    .state.resumes[0];
+  const international = applyAction(state, "paper.setTheme", { id, template: "modern" })
+    .state.paper[0];
   assert.equal(visiblePhotoUrl(international), null, "the photo area is omitted");
   // But the photo is still attached, so switching back brings it home rather
   // than making the user upload it again.
   assert.ok(photoUrl(international), "the photo was forgotten, not just hidden");
 
-  const back = applyAction(state, "resume.setTheme", { id, template: "classic" })
-    .state.resumes[0];
+  const back = applyAction(state, "paper.setTheme", { id, template: "classic" })
+    .state.paper[0];
   assert.ok(visiblePhotoUrl(back));
 });
 
 test("a CV with no photo has no URL to fetch", () => {
   const { state } = withCv();
-  assert.equal(photoUrl(state.resumes[0]), null);
-  assert.equal(visiblePhotoUrl(state.resumes[0]), null);
+  assert.equal(photoUrl(state.paper[0]), null);
+  assert.equal(visiblePhotoUrl(state.paper[0]), null);
 });
 
 test("replacing the photo changes the URL", () => {
@@ -74,20 +74,20 @@ test("replacing the photo changes the URL", () => {
   const cv = withCv();
   const { id } = cv;
   let state = cv.state;
-  state = applyAction(state, "resume.setPhoto", { id, stamp: "1" }).state;
-  const first = photoUrl(state.resumes[0]);
-  state = applyAction(state, "resume.setPhoto", { id, stamp: "2" }).state;
-  assert.notEqual(photoUrl(state.resumes[0]), first);
+  state = applyAction(state, "paper.setPhoto", { id, stamp: "1" }).state;
+  const first = photoUrl(state.paper[0]);
+  state = applyAction(state, "paper.setPhoto", { id, stamp: "2" }).state;
+  assert.notEqual(photoUrl(state.paper[0]), first);
 });
 
 test("removing the photo clears the stamp", () => {
   const cv = withCv();
   const { id } = cv;
   let state = cv.state;
-  state = applyAction(state, "resume.setPhoto", { id, stamp: "1" }).state;
-  state = applyAction(state, "resume.setPhoto", { id }).state;
-  assert.equal(state.resumes[0].photoStamp, undefined);
-  assert.equal(photoUrl(state.resumes[0]), null);
+  state = applyAction(state, "paper.setPhoto", { id, stamp: "1" }).state;
+  state = applyAction(state, "paper.setPhoto", { id }).state;
+  assert.equal(state.paper[0].photoStamp, undefined);
+  assert.equal(photoUrl(state.paper[0]), null);
 });
 
 test("only real image types are accepted", () => {
@@ -135,7 +135,7 @@ test("replacing a photo leaves one row, not two", OPTIONS, async () => {
     await writePhoto(account.id, "cv-1", PIXEL, "image/jpeg", db);
     await writePhoto(account.id, "cv-1", Buffer.from([0x89, 0x50]), "image/png", db);
 
-    const { rows } = await db.query<{ n: string }>("select count(*) n from cv_photos");
+    const { rows } = await db.query<{ n: string }>("select count(*) n from paper_photos");
     assert.equal(rows[0].n, "1");
     assert.equal((await readPhoto(account.id, "cv-1", db))?.mime, "image/png");
   });
@@ -173,7 +173,7 @@ test("deleting an account takes its photos with it", OPTIONS, async () => {
 
     await db.query("delete from accounts where id = $1", [account.id]);
 
-    const { rows } = await db.query<{ n: string }>("select count(*) n from cv_photos");
+    const { rows } = await db.query<{ n: string }>("select count(*) n from paper_photos");
     assert.equal(rows[0].n, "0", "somebody's face outlived their account");
   });
 });

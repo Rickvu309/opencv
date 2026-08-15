@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Sparkles, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,8 @@ import {
   type ApplicationStatus,
 } from "@/lib/applications/types";
 import { useT } from "@/lib/i18n/use-t";
-import { paperKindLabels } from "@/lib/papers/types";
+import { nextId } from "@/lib/ids";
+import { paperTypeLabels, cvsOf } from "@/lib/paper";
 import {
   fitProfileOf,
   hasProfileFacts,
@@ -54,7 +56,7 @@ export type BoardJob = {
 
 export function useApplicationsWorkspace() {
   const state = useAppState();
-  const { t, m, locale } = useT();
+  const { t, m } = useT();
   const touched = useTouched();
   const ordered = byUrgency(state.applications);
   const items: ApplicationItem[] = ordered.map((application) => ({
@@ -82,7 +84,7 @@ export function useApplicationsWorkspace() {
       return b.opening.addedAt - a.opening.addedAt;
     });
 
-  return { items, ordered, state, touched, t, m, locale, board, hasFit: ranked };
+  return { items, ordered, state, touched, t, m, board, hasFit: ranked };
 }
 
 export type ApplicationsWorkspaceProps = ReturnType<typeof useApplicationsWorkspace>;
@@ -119,7 +121,7 @@ export function ApplicationDetailPanel({
   opening,
   showHeader = true,
 }: ApplicationItem & { showHeader?: boolean }) {
-  const { t, m, locale } = useT();
+  const { t, m } = useT();
   const dispatch = useDispatch();
 
   return (
@@ -150,7 +152,7 @@ export function ApplicationDetailPanel({
 
       <div className="mt-3 border-t border-border pt-3">
         <p className="text-xs font-medium">{t(m.applications.nextStep)}</p>
-        <p className="mt-0.5 text-sm">{nextStep(application.status)[locale]}</p>
+        <p className="mt-0.5 text-sm">{nextStep(application.status)}</p>
         {opening && <AskCoach application={application} opening={opening} />}
       </div>
 
@@ -259,7 +261,7 @@ export function AskCoach({
   application: Application;
   opening: Opening;
 }) {
-  const { t, m, locale } = useT();
+  const { t, m } = useT();
   const thread = useCoach();
   const status = t(m.applications[STATUS_LABEL[application.status]]);
 
@@ -271,7 +273,7 @@ export function AskCoach({
       disabled={thread.busy}
       onClick={() =>
         thread.send(
-          m.applications.askCoachPrompt(opening.title, opening.org, status)[locale],
+          m.applications.askCoachPrompt(opening.title, opening.org, status),
         )
       }
     >
@@ -289,27 +291,19 @@ export function Tailoring({
   opening: Opening | undefined;
 }) {
   const state = useAppState();
-  const { t, m, locale } = useT();
+  const { t, m } = useT();
   const dispatch = useDispatch();
+  const router = useRouter();
 
-  const tailored = [
-    ...state.resumes
-      .filter((resume) => application.tailoredDocumentIds.includes(resume.id))
-      .map((resume) => ({
-        id: resume.id,
-        label: resume.label,
-        href: `/cv?resume=${encodeURIComponent(resume.id)}`,
-      })),
-    ...state.papers
-      .filter((paper) => application.tailoredDocumentIds.includes(paper.id))
-      .map((paper) => ({
-        id: paper.id,
-        label: paper.label,
-        href: `/cv?paper=${encodeURIComponent(paper.id)}`,
-      })),
-  ];
+  const tailored = state.paper
+    .filter((item) => application.tailoredDocumentIds.includes(item.id))
+    .map((item) => ({
+      id: item.id,
+      label: item.label,
+      href: `/paper?id=${encodeURIComponent(item.id)}`,
+    }));
 
-  const base = state.resumes[0];
+  const base = cvsOf(state.paper)[0];
   const label = opening
     ? `${opening.title}${opening.org ? ` · ${opening.org}` : ""}`
     : t(m.applications.title);
@@ -336,29 +330,41 @@ export function Tailoring({
           <Button
             variant="outline"
             size="sm"
-            onClick={() =>
-              dispatch("application.tailorResume", {
+            onClick={() => {
+              const paperId = nextId(
+                "paper",
+                state.paper.map((item) => item.id),
+              );
+              dispatch("application.tailorCv", {
                 id: application.id,
-                resumeId: base.id,
+                paperId: base.id,
                 label: `CV · ${label}`,
-              })
-            }
+              });
+              router.push(`/paper?id=${encodeURIComponent(paperId)}`);
+            }}
           >
             {t(m.applications.tailorCv)}
           </Button>
         ) : (
-          <p className="text-xs text-muted-foreground">{t(m.applications.tailorNeedsCv)}</p>
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/paper?new=cv">{t(m.applications.tailorNeedsCv)}</Link>
+          </Button>
         )}
         <Button
           variant="outline"
           size="sm"
-          onClick={() =>
+          onClick={() => {
+            const paperId = nextId(
+              "paper",
+              state.paper.map((item) => item.id),
+            );
             dispatch("application.tailorLetter", {
               id: application.id,
-              label: `${paperKindLabels["cover-letter"][locale]} · ${label}`,
+              label: `${paperTypeLabels.letter} · ${label}`,
               targetRole: opening?.title ?? "",
-            })
-          }
+            });
+            router.push(`/paper?id=${encodeURIComponent(paperId)}`);
+          }}
         >
           {t(m.applications.tailorLetter)}
         </Button>

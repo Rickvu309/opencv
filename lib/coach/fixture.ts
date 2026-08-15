@@ -137,7 +137,7 @@ export function approvalPart(prompt: string): EveMessagePart {
     toolCallId: nextId("call"),
     toolName: "apply_action",
     state: "approval-requested",
-    input: { action: "resume.remove", input: { id: "t-1" } },
+    input: { action: "paper.remove", input: { id: "t-1" } },
     approval: { id: nextId("ap") },
     toolMetadata: {
       eve: {
@@ -239,7 +239,7 @@ export const scenarios: { id: string; label: string; messages: EveMessage[] }[] 
       label: "A change the user refused",
       messages: [
         userTurn("Xoá hết việc trong danh sách"),
-        coachTurn(toolPart("output-denied", { action: "resume.remove" })),
+        coachTurn(toolPart("output-denied", { action: "paper.remove" })),
       ],
     },
     {
@@ -249,7 +249,7 @@ export const scenarios: { id: string; label: string; messages: EveMessage[] }[] 
         userTurn("Dựng CV cho mình từ hồ sơ"),
         coachTurn(
           toolPart("output-available", {
-            action: "resume.create",
+            action: "paper.create",
             summary: "Created a new CV",
           }),
           text("Xong bản đầu rồi. Phần Giới thiệu còn trống, bạn viết ba câu nhé."),
@@ -274,7 +274,7 @@ export const scenarios: { id: string; label: string; messages: EveMessage[] }[] 
         coachTurn(
           reasoning("Hồ sơ đã có tên, trường, mục tiêu. Đủ để dựng bản đầu."),
           toolPart("output-available", {
-            action: "resume.create",
+            action: "paper.create",
             summary: "Created a new CV",
           }),
           text("Mình dựng xong bản đầu rồi. Bạn xem lại phần Giới thiệu nhé."),
