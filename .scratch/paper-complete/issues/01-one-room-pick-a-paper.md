@@ -18,4 +18,11 @@
 
 ## Answer
 
-One `PaperToolbar` stays mounted. Body is Drive, gallery, letter chooser, or Docs. Open/Back uses view transitions unless reduced motion. Deep link still opens Docs from `?id=`.
+One `PaperToolbar` stays mounted. `roomMode` treats an `id` in the URL as Docs even before the paper is found, so a deep link never paints Drive. Opening a built row and Back travel (name→title, slab→sheet); create, Format, and a land do not. Reduced motion skips travel.
+
+## Verify
+
+- Empty `/paper`: unmade CV + quieter file door. No New, no filter, no Ask Coach.
+- Open a built row: name and slab travel into the title and sheet. Back reverses to Drive.
+- Open `/paper?id=` for an existing paper: Docs, no list flash, no travel.
+- `prefers-reduced-motion: reduce`: instant land. Typing stays instant.

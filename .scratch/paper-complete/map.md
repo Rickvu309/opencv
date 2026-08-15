@@ -16,6 +16,7 @@ Product locks: `docs/paper.md`. Visual locks: `.scratch/paper-redesign/spec.md`.
 - Tickets approved 16 Aug 2026: five slices, merged from eight. Upload lives inside **Start and write a CV**, not its own ticket.
 - Writes stay on `paper.*` via applyAction. Public pages and the span record stay on snapshot / span helpers. No third test seam.
 - 16 Aug 2026: all five tickets implemented. Drive and Docs share one `PaperToolbar`. Gallery and letter chooser are Drive modes. Proof notes gained photo/file/link; Arrange renders the public article; Unpublish exists. Personal link uses `sentenceForSite`.
+- 16 Aug 2026: **One room, pick a paper** tightened. `roomMode` keeps an `id` on Docs (no Drive flash). Travel only on open/back.
 
 ## Fog
 

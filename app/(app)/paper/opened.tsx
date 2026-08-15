@@ -155,12 +155,17 @@ export function Opened({
   }
   if (isProofPaper(paper)) {
     return (
-      <ProofEditor
-        paper={paper}
-        onBack={onBack}
-        arranging={arranging}
-        onArrange={onArrange}
-      />
+      <div
+        className="h-full min-h-0"
+        style={{ viewTransitionName: `paper-sheet-${paper.id}` }}
+      >
+        <ProofEditor
+          paper={paper}
+          onBack={onBack}
+          arranging={arranging}
+          onArrange={onArrange}
+        />
+      </div>
     );
   }
 

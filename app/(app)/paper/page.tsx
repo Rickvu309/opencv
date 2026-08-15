@@ -8,6 +8,7 @@ import { PaperToolbar } from "@/components/paper/toolbar";
 import { Button } from "@/components/ui/button";
 import { useAppState, useDispatch } from "@/lib/actions/store";
 import { themeForTemplate, wordForTemplate } from "@/lib/paper/cv";
+import { paperHref, roomMode, shouldTravel } from "@/lib/paper/room";
 import {
   isCvPaper,
   isLetterPaper,
@@ -27,31 +28,20 @@ export default function PaperPage() {
   );
 }
 
-function hrefFor(
-  opts: {
-    id?: string;
-    creating?: "cv" | "letter";
-    format?: boolean;
-    arrange?: boolean;
-    fromUpload?: boolean;
-  } = {},
+function go(
+  router: ReturnType<typeof useRouter>,
+  href: string,
+  kind: "open" | "back" | "land",
 ) {
-  const params = new URLSearchParams();
-  if (opts.id) params.set("id", opts.id);
-  if (opts.creating) params.set("new", opts.creating);
-  if (opts.format) params.set("format", "1");
-  if (opts.arrange) params.set("arrange", "1");
-  if (opts.fromUpload) params.set("from", "upload");
-  const query = params.toString();
-  return query ? `/paper?${query}` : "/paper";
-}
-
-function go(router: ReturnType<typeof useRouter>, href: string) {
   const run = () => router.replace(href, { scroll: false });
   const reduce =
     typeof window !== "undefined" &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (reduce || typeof document.startViewTransition !== "function") {
+  if (
+    !shouldTravel(kind) ||
+    reduce ||
+    typeof document.startViewTransition !== "function"
+  ) {
     run();
     return;
   }
@@ -74,6 +64,12 @@ function MyPaperWorkspace() {
   const arranging = searchParams.get("arrange") === "1";
   const fromUpload = searchParams.get("from") === "upload";
   const opened = id ? (paper.find((item) => item.id === id) ?? null) : null;
+  const mode = roomMode({
+    id,
+    creating,
+    format,
+    openedType: opened?.type ?? null,
+  });
 
   const pending = React.useRef(false);
   const pendingFromUpload = React.useRef(false);
@@ -85,16 +81,16 @@ function MyPaperWorkspace() {
     pending.current = false;
     const upload = pendingFromUpload.current;
     pendingFromUpload.current = false;
-    go(router, hrefFor({ id: newest.id, fromUpload: upload }));
+    go(router, paperHref({ id: newest.id, fromUpload: upload }), "land");
   }, [paper, router]);
 
   React.useEffect(() => {
     if (id && !paper.some((item) => item.id === id)) {
-      go(router, hrefFor());
+      go(router, paperHref(), "land");
     }
   }, [id, paper, router]);
 
-  const goDrive = () => go(router, hrefFor());
+  const goDrive = () => go(router, paperHref(), "back");
   const onWillCreate = (opts?: { fromUpload?: boolean }) => {
     pending.current = true;
     pendingFromUpload.current = Boolean(opts?.fromUpload);
@@ -133,50 +129,51 @@ function MyPaperWorkspace() {
     });
   };
 
-  const gallery = creating === "cv" || Boolean(format && opened && isCvPaper(opened));
-  const letterChooser =
-    creating === "letter" || Boolean(format && opened && isLetterPaper(opened));
-  const docs = Boolean(opened) && !gallery && !letterChooser;
-  const drive = !opened && !creating;
-
   return (
     <div className="flex h-full min-h-0 flex-col">
       <PaperToolbar>
-        {drive ? (
+        {mode === "drive" ? (
           <DriveBand
             filter={filter}
             onFilter={setFilter}
-            onRequestCreateCv={() => go(router, hrefFor({ creating: "cv" }))}
-            onRequestCreateLetter={() => go(router, hrefFor({ creating: "letter" }))}
+            onRequestCreateCv={() =>
+              go(router, paperHref({ creating: "cv" }), "land")
+            }
+            onRequestCreateLetter={() =>
+              go(router, paperHref({ creating: "letter" }), "land")
+            }
             onWillCreate={onWillCreate}
           />
         ) : null}
-        {gallery ? (
+        {mode === "gallery" ? (
           <ChooserBand
             title={t(m.paper.galleryTitle)}
             onBack={() =>
-              go(router, opened ? hrefFor({ id: opened.id }) : hrefFor())
+              go(router, opened ? paperHref({ id: opened.id }) : paperHref(), "land")
             }
           />
         ) : null}
-        {letterChooser ? (
+        {mode === "letter" ? (
           <ChooserBand
             title={t(m.paper.letterChooserTitle)}
             onBack={() =>
-              go(router, opened ? hrefFor({ id: opened.id }) : hrefFor())
+              go(router, opened ? paperHref({ id: opened.id }) : paperHref(), "land")
             }
           />
         ) : null}
-        {docs && opened ? (
+        {mode === "docs" && opened ? (
           <OpenedBand
             paper={opened}
             arranging={arranging}
             onBack={goDrive}
-            onFormat={() => go(router, hrefFor({ id: opened.id, format: true }))}
+            onFormat={() =>
+              go(router, paperHref({ id: opened.id, format: true }), "land")
+            }
             onArrange={() =>
               go(
                 router,
-                hrefFor({ id: opened.id, arrange: !arranging }),
+                paperHref({ id: opened.id, arrange: !arranging }),
+                "land",
               )
             }
           />
@@ -184,13 +181,13 @@ function MyPaperWorkspace() {
       </PaperToolbar>
 
       <div className="min-h-0 flex-1">
-        {gallery ? (
+        {mode === "gallery" ? (
           <CvGallery
             current={
               opened && isCvPaper(opened) ? opened.theme.template : undefined
             }
             onBack={() =>
-              go(router, opened ? hrefFor({ id: opened.id }) : hrefFor())
+              go(router, opened ? paperHref({ id: opened.id }) : paperHref(), "land")
             }
             onPick={(template) => {
               if (opened && isCvPaper(opened)) {
@@ -199,17 +196,17 @@ function MyPaperWorkspace() {
                   { id: opened.id, ...themeForTemplate[template] },
                   { silent: true },
                 );
-                go(router, hrefFor({ id: opened.id }));
+                go(router, paperHref({ id: opened.id }), "land");
                 return;
               }
               createCv(template, false);
             }}
           />
         ) : null}
-        {letterChooser ? (
+        {mode === "letter" ? (
           <LetterChooser
             onBack={() =>
-              go(router, opened ? hrefFor({ id: opened.id }) : hrefFor())
+              go(router, opened ? paperHref({ id: opened.id }) : paperHref(), "land")
             }
             onPick={(situation, extras) => {
               if (opened && isLetterPaper(opened)) {
@@ -229,32 +226,44 @@ function MyPaperWorkspace() {
                     { silent: true },
                   );
                 }
-                go(router, hrefFor({ id: opened.id }));
+                go(router, paperHref({ id: opened.id }), "land");
                 return;
               }
               createLetter(situation, extras);
             }}
           />
         ) : null}
-        {docs && opened ? (
+        {mode === "docs" && opened ? (
           <Opened
             paper={opened}
             fromUpload={fromUpload}
             arranging={arranging}
             onBack={goDrive}
-            onFormat={() => go(router, hrefFor({ id: opened.id, format: true }))}
+            onFormat={() =>
+              go(router, paperHref({ id: opened.id, format: true }), "land")
+            }
             onArrange={() =>
-              go(router, hrefFor({ id: opened.id, arrange: !arranging }))
+              go(
+                router,
+                paperHref({ id: opened.id, arrange: !arranging }),
+                "land",
+              )
             }
           />
         ) : null}
-        {drive ? (
+        {mode === "drive" ? (
           <Drive
             filter={filter}
             onOpen={(openId, extras) =>
-              go(router, hrefFor({ id: openId, fromUpload: extras?.fromUpload }))
+              go(
+                router,
+                paperHref({ id: openId, fromUpload: extras?.fromUpload }),
+                extras?.fromUpload ? "land" : "open",
+              )
             }
-            onRequestCreateCv={() => go(router, hrefFor({ creating: "cv" }))}
+            onRequestCreateCv={() =>
+              go(router, paperHref({ creating: "cv" }), "land")
+            }
             onWillCreate={onWillCreate}
           />
         ) : null}
@@ -275,7 +284,7 @@ function ChooserBand({ title, onBack }: { title: string; onBack: () => void }) {
       >
         {t(m.paper.backToList)}
       </Button>
-      <h1 className="text-sm font-medium">{title}</h1>
+      <h1 className="text-sm font-semibold">{title}</h1>
     </>
   );
 }
