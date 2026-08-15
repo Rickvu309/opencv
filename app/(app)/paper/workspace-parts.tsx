@@ -60,7 +60,6 @@ import {
   type PaperKind,
   type ProseDocument,
 } from "@/lib/papers/types";
-import { localeNames, locales } from "@/lib/i18n/locale";
 import { useT } from "@/lib/i18n/use-t";
 import { cn } from "@/lib/utils";
 
@@ -87,7 +86,7 @@ export function DocumentSwitcher({
   onCreatePaper: (kind: PaperKind) => void;
   extra?: React.ReactNode;
 }) {
-  const { t, m, locale } = useT();
+  const { t, m } = useT();
   const total = resumes.length + papers.length;
 
   return (
@@ -125,7 +124,7 @@ export function DocumentSwitcher({
               {paper.label || t(m.papers.untitled)}
             </span>
             <span className="shrink-0 text-xs text-muted-foreground">
-              {paperKindLabels[paper.kind][locale]}
+              {paperKindLabels[paper.kind]}
             </span>
             {paper.id === currentId && <Check className="size-3.5" />}
           </DropdownMenuItem>
@@ -416,7 +415,6 @@ function SectionsMenu({ resume }: { resume: Resume }) {
 
 function AddSectionItems({ resume }: { resume: Resume }) {
   const dispatch = useDispatch();
-  const { locale } = useT();
   const used = new Set(resume.sections.map((s) => s.kind));
   const available = sectionOrder.filter(
     (kind) => kind === "custom" || !used.has(kind),
@@ -436,7 +434,7 @@ function AddSectionItems({ resume }: { resume: Resume }) {
           }
         >
           <Plus />
-          {sectionDefaults[kind].heading[locale]}
+          {sectionDefaults[kind].heading}
         </DropdownMenuItem>
       ))}
     </>
@@ -460,25 +458,6 @@ function MoreMenu({ resume }: { resume: Resume }) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel className="text-muted-foreground">
-          {t(m.cv.cvLanguage)}
-        </DropdownMenuLabel>
-        {locales.map((code) => (
-          <DropdownMenuItem
-            key={code}
-            onSelect={() =>
-              dispatch(
-                "resume.rename",
-                { id: resume.id, language: code },
-                { silent: true },
-              )
-            }
-          >
-            <span className="flex-1">{localeNames[code]}</span>
-            {resume.language === code && <Check className="size-3.5" />}
-          </DropdownMenuItem>
-        ))}
-        <DropdownMenuSeparator />
         <DropdownMenuItem
           onSelect={() =>
             dispatch("resume.duplicate", {

@@ -125,12 +125,15 @@ test("removing an answer leaves the bio alone", () => {
   assert.ok(singletonOf(state.pitch, "bio"), "the bio went with the answer");
 });
 
-test("an item carries its own language, not the app's", () => {
-  let state = seedState("vi");
-  state = applyAction(state, "pitch.write", { kind: "bio", body: "Xin chào." }).state;
+test("an item can be written in Vietnamese while the app stays English", () => {
+  let state = seedState();
+  state = applyAction(state, "pitch.write", {
+    kind: "bio",
+    body: "Xin chào.",
+    language: "vi",
+  }).state;
   assert.equal(singletonOf(state.pitch, "bio")!.language, "vi");
 
-  // Interviewing in English while reading the app in Vietnamese.
   state = applyAction(state, "pitch.write", {
     kind: "answer",
     prompt: "Tell me about yourself",
@@ -138,7 +141,7 @@ test("an item carries its own language, not the app's", () => {
     language: "en",
   }).state;
   assert.equal(answersOf(state.pitch)[0].language, "en");
-  assert.equal(state.locale, "vi", "the app's language must not have moved");
+  assert.equal(state.locale, "en");
 });
 
 test("an edit aimed at an item that is gone changes nothing", () => {
@@ -173,7 +176,7 @@ test("WO-39: an answer can start empty, so no placeholder ends up in a saved ans
 test("WO-39: rewriting an item's body leaves its language alone", () => {
   // An English answer refined while the app is in Vietnamese must stay English:
   // it is what the user is about to take into a real interview.
-  let state = seedState("vi");
+  let state = seedState();
   state = applyAction(state, "pitch.write", {
     kind: "answer",
     prompt: "Tell me about yourself",

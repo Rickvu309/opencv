@@ -44,7 +44,7 @@
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
   /* Linear's radius ladder: buttons 8, cards 12, large panels 16, fixed values,
-     không nhân chuỗi, để mỗi bậc là một quyết định chứ không phải hệ quả. */
+     not a multiplied scale, so each step is a decision. */
   --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 8px;

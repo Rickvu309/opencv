@@ -1,4 +1,4 @@
-import type { Locale, Msg } from "@/lib/i18n/locale";
+import type { DocumentLanguage, Msg } from "@/lib/i18n/locale";
 
 /**
  * A document made of paragraphs.
@@ -28,10 +28,10 @@ export type PaperKind = "cover-letter" | "project-write-up";
 
 export const paperKinds: PaperKind[] = ["cover-letter", "project-write-up"];
 
-/** What each kind is called, in both languages. */
+/** What each kind is called. */
 export const paperKindLabels: Record<PaperKind, Msg> = {
-  "cover-letter": { vi: "Thư xin việc", en: "Cover letter" },
-  "project-write-up": { vi: "Bài viết dự án", en: "Project write-up" },
+  "cover-letter": "Cover letter",
+  "project-write-up": "Project write-up",
 };
 
 export type ProseDocument = {
@@ -42,10 +42,10 @@ export type ProseDocument = {
   /** What it is aimed at. A cover letter usually has one; a write-up may not. */
   targetRole?: string;
   /**
-   * The document's own language, not the app's. Someone reading the interface
-   * in Vietnamese still needs an English letter to apply abroad.
+   * The document's own language. A letter for an English employer stays English
+   * even when the writer is Vietnamese.
    */
-  language: Locale;
+  language: DocumentLanguage;
   body: string;
   /** A display string, not a timestamp; no clock skew between server and client. */
   updatedAt: string;

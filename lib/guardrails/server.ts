@@ -39,14 +39,9 @@ export class GuardrailRefusal extends Error {
  * simply run out. The message is theirs to read.
  */
 export class AllowanceReached extends Error {
-  readonly vi: string;
-  readonly en: string;
-
-  constructor(message: { vi: string; en: string }) {
-    super(message.en);
+  constructor(message: string) {
+    super(message);
     this.name = "AllowanceReached";
-    this.vi = message.vi;
-    this.en = message.en;
   }
 }
 

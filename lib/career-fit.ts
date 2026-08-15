@@ -11,7 +11,7 @@
 // missing" is advice. It is also what makes onboarding worth filling in: every
 // field they complete moves a number they can see.
 
-import { matchesMsg, type Locale } from "@/lib/i18n/locale";
+import { matchesMsg } from "@/lib/i18n/locale";
 import { messages } from "@/lib/i18n/messages";
 import type { PathNode, Requirement, StageId } from "@/lib/career-graph";
 
@@ -65,8 +65,8 @@ function evidenceFrom(profile: FitProfile): string {
  * Where the user is on the same axis the map's columns use.
  *
  * 0 is a first-year with nothing yet; 3 is someone graduated and working. The
- * study year is stored as its display string, in whichever language they were
- * reading, so it is matched through `matchesMsg` rather than compared.
+ * study year is stored as its display string. Older accounts may still have
+ * the Vietnamese labels from when the UI was bilingual.
  */
 function seniority(profile: FitProfile): number {
   const { year } = profile.education;
@@ -74,17 +74,27 @@ function seniority(profile: FitProfile): number {
   const experience = profile.experience.length;
 
   let base = 0;
-  if (matchesMsg(o.graduated, year)) base = 2.5;
-  else if (matchesMsg(o.year4, year)) base = 1.5;
-  else if (matchesMsg(o.year3, year)) base = 1;
-  else if (matchesMsg(o.year2, year)) base = 0.5;
-  else if (matchesMsg(o.year1, year)) base = 0;
+  if (yearIs(year, o.graduated, ["Đã tốt nghiệp"])) base = 2.5;
+  else if (yearIs(year, o.year4, ["Năm 4"])) base = 1.5;
+  else if (yearIs(year, o.year3, ["Năm 3"])) base = 1;
+  else if (yearIs(year, o.year2, ["Năm 2"])) base = 0.5;
+  else if (yearIs(year, o.year1, ["Năm 1"])) base = 0;
   // No year given: assume a student partway through rather than a blank slate,
   // which would make every entry role look further away than it is.
   else base = 0.5;
 
   // Real experience moves you along the axis faster than time does.
   return Math.min(3, base + Math.min(experience, 2) * 0.75);
+}
+
+function yearIs(
+  year: string,
+  entry: (typeof messages.onboarding)["year1"],
+  aliases: readonly string[],
+): boolean {
+  if (matchesMsg(entry, year)) return true;
+  const folded = normalise(year);
+  return aliases.some((alias) => normalise(alias) === folded);
 }
 
 /** Where a role sits on that axis. */
@@ -151,11 +161,3 @@ export function rankByFit(
     .sort((a, b) => b.fit.score - a.fit.score);
 }
 
-/** "3 of 5 requirements", for the one line under a score. */
-export function fitDetail(fit: Fit, locale: Locale): string {
-  const total = fit.met.length + fit.missing.length;
-  if (total === 0) return "";
-  return locale === "vi"
-    ? `Đạt ${fit.met.length}/${total} yêu cầu`
-    : `${fit.met.length} of ${total} requirements`;
-}

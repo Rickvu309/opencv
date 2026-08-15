@@ -34,78 +34,48 @@ export type VaultItem = {
   coachPrompt: Msg;
 };
 
-const msg = (vi: string, en: string): Msg => ({ vi, en });
+const msg = (en: string): Msg => en;
 
 export const vaultItems: VaultItem[] = [
   {
     id: "cv",
-    title: msg("CV", "CV"),
+    title: msg("CV"),
     weight: 18,
-    benefit: msg(
-      "Hồ sơ chính của bạn. Dựng được ngay tại đây.",
-      "Your main document. You can build one here.",
-    ),
-    addLabel: msg("Thêm CV", "Add a CV"),
-    coachPrompt: msg(
-      "Review giúp mình CV hiện tại",
-      "Review my current CV",
-    ),
+    benefit: msg("Your main document. You can build one here."),
+    addLabel: msg("Add a CV"),
+    coachPrompt: msg("Review my current CV"),
   },
   {
     id: "portfolio",
-    title: msg("Portfolio dự án", "Portfolio"),
+    title: msg("Portfolio"),
     weight: 12,
-    benefit: msg(
-      "Bằng chứng mạnh nhất khi bạn chưa nhiều kinh nghiệm. Một dự án là đủ.",
-      "Your strongest evidence before a long CV. One finished project is enough.",
-    ),
-    addLabel: msg("Thêm dự án", "Add a project"),
-    coachPrompt: msg(
-      "Góp ý cách kể chuyện dự án trong portfolio",
-      "How should I write up my portfolio projects?",
-    ),
+    benefit: msg("Your strongest evidence before a long CV. One finished project is enough."),
+    addLabel: msg("Add a project"),
+    coachPrompt: msg("How should I write up my portfolio projects?"),
   },
   {
     id: "cover-letter",
-    title: msg("Thư ứng tuyển", "Cover letter"),
+    title: msg("Cover letter"),
     weight: 10,
-    benefit: msg(
-      "Coach viết bản nháp từ CV và mục tiêu của bạn.",
-      "The Coach drafts one from your CV and your goal.",
-    ),
-    addLabel: msg("Nhờ Coach viết", "Ask the Coach to draft"),
-    coachPrompt: msg(
-      "Viết giúp mình bản nháp thư ứng tuyển",
-      "Draft a cover letter for me",
-    ),
+    benefit: msg("The Coach drafts one from your CV and your goal."),
+    addLabel: msg("Ask the Coach to draft"),
+    coachPrompt: msg("Draft a cover letter for me"),
   },
   {
     id: "linkedin",
-    title: msg("LinkedIn", "LinkedIn"),
+    title: msg("LinkedIn"),
     weight: 8,
-    benefit: msg(
-      "Để Coach đối chiếu hồ sơ với tin tuyển dụng thật.",
-      "Lets the Coach check your profile against real job ads.",
-    ),
-    addLabel: msg("Liên kết", "Add the link"),
-    coachPrompt: msg(
-      "Xem giúp mình trang LinkedIn nên sửa gì",
-      "What should I change on my LinkedIn?",
-    ),
+    benefit: msg("Lets the Coach check your profile against real job ads."),
+    addLabel: msg("Add the link"),
+    coachPrompt: msg("What should I change on my LinkedIn?"),
   },
   {
     id: "github",
-    title: msg("GitHub", "GitHub"),
+    title: msg("GitHub"),
     weight: 6,
-    benefit: msg(
-      "Nơi lưu code dự án. Nhà tuyển dụng kỹ tính sẽ tìm nó.",
-      "Where your project code lives. Technical reviewers look for it.",
-    ),
-    addLabel: msg("Liên kết", "Add the link"),
-    coachPrompt: msg(
-      "Repo của mình nên trình bày thế nào?",
-      "How should I present my repos?",
-    ),
+    benefit: msg("Where your project code lives. Technical reviewers look for it."),
+    addLabel: msg("Add the link"),
+    coachPrompt: msg("How should I present my repos?"),
   },
 ];
 

@@ -4,21 +4,23 @@ import assert from "node:assert/strict";
 import { messages } from "@/lib/i18n/messages";
 import { contextDraft, filledContextRows } from "./context-draft";
 
-test("an empty situation opens on the four known fields, in the reader's language", () => {
-  assert.deepEqual(contextDraft([], "vi"), [
-    { label: "Giới tính", value: "" },
-    { label: "Năm sinh", value: "" },
-    { label: "Mức độ chắc chắn về mục tiêu", value: "" },
-    { label: "Địa điểm", value: "" },
+test("an empty situation opens on the four known fields", () => {
+  assert.deepEqual(contextDraft([]), [
+    { label: "Gender", value: "" },
+    { label: "Year of birth", value: "" },
+    { label: "How settled on the goal", value: "" },
+    { label: "Location", value: "" },
   ]);
-  assert.equal(contextDraft([], "en")[3]?.label, "Location");
 });
 
-test("a stored English label is the same row after the interface switches to Vietnamese", () => {
-  const draft = contextDraft([{ label: "Location", value: "Hanoi" }], "vi");
+test("a stored label is kept as written", () => {
+  const draft = contextDraft([{ label: "Location", value: "Hanoi" }]);
   const location = draft.find((row) => row.value === "Hanoi");
   assert.equal(location?.label, "Location");
-  assert.equal(draft.filter((row) => row.label === messages.context.location.vi).length, 0);
+  assert.equal(
+    draft.filter((row) => row.label === messages.context.location).length,
+    1,
+  );
 });
 
 test("custom rows sit after the known fields and empty values are not kept", () => {
@@ -28,7 +30,6 @@ test("custom rows sit after the known fields and empty values are not kept", () 
       { label: "Internship window", value: "Jun–Aug" },
       { label: "Gender", value: "  " },
     ],
-    "en",
   );
   assert.equal(draft.at(-1)?.label, "Internship window");
   assert.deepEqual(filledContextRows(draft), [

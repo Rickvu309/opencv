@@ -8,9 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useCoach } from "@/components/coach/provider";
 import { useAppState, useDispatch, useTouched } from "@/lib/actions/store";
-import { localeNames, locales } from "@/lib/i18n/locale";
-import type { Msg } from "@/lib/i18n/locale";
 import { useT } from "@/lib/i18n/use-t";
+import type { Msg } from "@/lib/i18n/locale";
 import { answersOf, singletonOf, type PitchItem } from "@/lib/pitch/types";
 import { cn } from "@/lib/utils";
 
@@ -74,7 +73,7 @@ function Singleton({
   askPrompt: Msg;
 }) {
   const { pitch } = useAppState();
-  const { t, m, locale } = useT();
+  const { t, m } = useT();
   const dispatch = useDispatch();
   const touched = useTouched();
   const item = singletonOf(pitch, kind);
@@ -112,11 +111,10 @@ function Singleton({
           }}
         />
         <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-          {item ? <LanguagePicker item={item} /> : null}
           <div className="ms-auto flex flex-wrap items-center gap-1">
             <AskCoach
               label={t(m.pitch.askCoachHelp)}
-              prompt={askPrompt[item?.language ?? locale]}
+              prompt={t(askPrompt)}
             />
             {item ? (
               <Button
@@ -236,10 +234,9 @@ function Answer({ answer, flash }: { answer: PitchItem; flash: boolean }) {
       </div>
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-        <LanguagePicker item={answer} />
         <AskCoach
           label={t(m.pitch.askCoachHelp)}
-          prompt={m.pitch.askCoachAnswerPrompt(answer.prompt ?? "")[answer.language]}
+          prompt={t(m.pitch.askCoachAnswerPrompt(answer.prompt ?? ""))}
         />
       </div>
     </div>
@@ -319,29 +316,6 @@ function CommitInput({
       onBlur={() => draft.trim() !== value && onCommit(draft.trim())}
       className="h-8 min-w-0 border-0 bg-transparent px-0 text-base font-medium shadow-none focus-visible:ring-2 focus-visible:ring-ring/50 md:text-sm"
     />
-  );
-}
-
-/** Which language this piece is written in, independent of the interface. */
-function LanguagePicker({ item }: { item: PitchItem }) {
-  const dispatch = useDispatch();
-
-  return (
-    <div className="flex flex-wrap items-center gap-1">
-      {locales.map((code) => (
-        <Button
-          key={code}
-          variant={item.language === code ? "secondary" : "ghost"}
-          size="sm"
-          className={item.language === code ? undefined : "text-muted-foreground"}
-          onClick={() =>
-            dispatch("pitch.update", { id: item.id, language: code }, { silent: true })
-          }
-        >
-          {localeNames[code]}
-        </Button>
-      ))}
-    </div>
   );
 }
 

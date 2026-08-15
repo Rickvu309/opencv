@@ -44,7 +44,7 @@ test("AC-ACCT-001.5: a new account has state from the moment it exists", OPTIONS
 test("a new account starts empty, and not as somebody else", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
     const account = await createAccount("mai", "a good long password", db);
-    const state = await createAccountState(account.id, "vi", db);
+    const state = await createAccountState(account.id, "en", db);
 
     // There was a seeded demo persona here once and every screen read her
     // instead of the person signed in. WO-24 says in as many words not to
@@ -75,7 +75,7 @@ test("AC-ACCT-004.1: state is stored under the account", OPTIONS, async () => {
 test("AC-ACCT-004.3: the same account on another device sees the same work", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
     const account = await createAccount("mai", "a good long password", db);
-    await createAccountState(account.id, "vi", db);
+    await createAccountState(account.id, "en", db);
 
     // The laptop writes.
     const { state } = applyAction(seedState(), "profile.addCourse", {
@@ -181,7 +181,7 @@ test("the state survives a round trip with Vietnamese text intact", OPTIONS, asy
 test("deleting an account takes its state with it", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
     const account = await createAccount("mai", "a good long password", db);
-    await createAccountState(account.id, "vi", db);
+    await createAccountState(account.id, "en", db);
 
     await db.query("delete from accounts where id = $1", [account.id]);
 

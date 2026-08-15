@@ -26,7 +26,6 @@
 import type { AppState } from "@/lib/actions/types";
 import { checkGrounding } from "@/lib/guardrails/grounding";
 import { checkOutput, type TurnToolResult } from "@/lib/guardrails/output";
-import type { Locale } from "@/lib/i18n/locale";
 
 export type EvalDimension =
   | "groundedness"
@@ -53,7 +52,6 @@ export type ScorableTurn = {
   toolResults?: TurnToolResult[];
   state: AppState;
   userSaid?: string;
-  locale: Locale;
 };
 
 /**
@@ -66,13 +64,11 @@ export function scoreTurn(turn: ScorableTurn): TurnScore {
   const output = checkOutput({
     reply: turn.reply,
     toolResults: turn.toolResults,
-    locale: turn.locale,
   });
   const grounding = checkGrounding({
     reply: turn.reply,
     state: turn.state,
     userSaid: turn.userSaid,
-    locale: turn.locale,
   });
 
   const dishonest = output.findings.some(

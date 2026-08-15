@@ -47,7 +47,7 @@ test("only the requirements section becomes requirements", () => {
   // The benefits below it are not requirements, and counting "trợ cấp 5 triệu"
   // as something the user has to meet would make the fit read nonsense.
   const opening = parseOpening(POSTING);
-  const labels = opening!.requirements.map((r) => r.label.vi);
+  const labels = opening!.requirements.map((r) => r.label);
   assert.equal(labels.length, 3);
   assert.ok(labels.some((label) => label.includes("SQL")));
   assert.ok(!labels.some((label) => label.includes("Trợ cấp")));
@@ -85,7 +85,7 @@ test("a met requirement is met because the profile evidences it", () => {
   const opening = parseOpening(POSTING)!;
   const fit = openingFit(fitProfileOf(withSql), opening);
   assert.equal(fit.metCount, 1);
-  assert.ok(fit.met[0].label.vi.includes("SQL"));
+  assert.ok(fit.met[0].label.includes("SQL"));
 });
 
 test("AC-SEARCH-001.1: ranking puts the closest opening first", () => {
@@ -159,7 +159,7 @@ test("a city query hits location, not only the title", () => {
     matchOpening(opening, "việc data ở Hà Nội"),
   );
   assert.ok(hanoi.some((opening) => opening.id === "seed-da-intern"));
-  assert.ok(hanoi.every((opening) => opening.location === "Hà Nội"));
+  assert.ok(hanoi.every((opening) => opening.location === "Hanoi"));
   assert.ok(!hanoi.some((opening) => opening.id === "seed-ba-junior"));
 });
 
@@ -195,7 +195,7 @@ test("a title scope does not read the city field", () => {
   const city = SEED_OPENINGS.filter((opening) =>
     matchOpeningField(opening, "Hà Nội", "city"),
   );
-  assert.ok(city.every((opening) => opening.location === "Hà Nội"));
+  assert.ok(city.every((opening) => opening.location === "Hanoi"));
 });
 
 test("exclude hides an opening that mentions any of the words", () => {

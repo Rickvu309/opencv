@@ -2,9 +2,9 @@
  * What the composer suggests you might type.
  *
  * The suggestions under an empty chat already pick four questions from state. The
- * field itself used to say the same "Hỏi Coach…" on every screen, which taught
+ * field itself used to say the same thing on every screen, which taught
  * nothing. These hints are that pool, plus one line for the page you are on
- * when the dock is open over CV, Search, and the rest.
+ * when the dock is open over Paper, Search, and the rest.
  */
 
 import type { Msg } from "@/lib/i18n/locale";
@@ -49,8 +49,7 @@ export function composerHints(pathname: string, state: AppState): Msg[] {
 }
 
 function hintForPath(pathname: string): Msg | null {
-  if (pathname.startsWith("/cv")) return messages.coach.hintCv;
-  if (pathname.startsWith("/papers")) return messages.coach.hintPapers;
+  if (pathname.startsWith("/paper")) return messages.coach.hintCv;
   if (pathname.startsWith("/pitch")) return messages.coach.hintPitch;
   if (pathname.startsWith("/search")) return messages.coach.hintSearch;
   if (pathname.startsWith("/applications")) return messages.coach.hintApplications;

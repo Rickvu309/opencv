@@ -143,11 +143,11 @@ export function parseOpening(
   // company on the next line or after a dash on the first.
   const first = lines[0] ?? "";
   const dashed = first.split(/\s+[-–—|@]\s+/);
-  const title = (dashed[0] || "Vị trí").slice(0, 120);
+  const title = (dashed[0] || "Position").slice(0, 120);
   const org = (dashed[1] ?? lines[1] ?? "").slice(0, 120);
 
   const requirements: Requirement[] = requirementLines(trimmed).map((line) => ({
-    label: { vi: line, en: line } as Msg,
+    label: line ,
     skills: skillsIn(line),
   }));
 
@@ -164,8 +164,8 @@ export function parseOpening(
   };
 }
 
-const req = (vi: string, en: string, ...skills: string[]): Requirement => ({
-  label: { vi, en },
+const req = (en: string, ...skills: string[]): Requirement => ({
+  label: en,
   skills,
 });
 
@@ -180,64 +180,64 @@ export const SEED_OPENINGS: Opening[] = [
   {
     id: "seed-da-intern",
     title: "Data Analyst Intern",
-    org: "Công ty phân tích dữ liệu",
+    org: "Data analytics firm",
     description:
-      "Thực tập sinh phân tích dữ liệu, hỗ trợ đội marketing dựng báo cáo tuần và làm sạch dữ liệu bán hàng.",
+      "Data analysis intern supporting the marketing team with weekly reports and sales data cleanup.",
     requirements: [
-      req("SQL cơ bản, truy vấn và join", "Basic SQL, queries and joins", "sql"),
-      req("Excel hoặc Google Sheets", "Excel or Google Sheets", "excel"),
-      req("Dựng được một dashboard", "Can build a dashboard", "dashboard"),
-      req("Ham học và chủ động hỏi", "Curious, asks questions"),
+      req("Basic SQL, queries and joins", "sql"),
+      req("Excel or Google Sheets", "excel"),
+      req("Can build a dashboard", "dashboard"),
+      req("Curious, asks questions"),
     ],
-    location: "Hà Nội",
+    location: "Hanoi",
     seeded: true,
     addedAt: 0,
   },
   {
     id: "seed-ba-junior",
     title: "Junior Business Analyst",
-    org: "Công ty phần mềm",
+    org: "Software company",
     description:
-      "Làm việc với đội sản phẩm để làm rõ yêu cầu, viết tài liệu và theo dõi số liệu sau khi phát hành.",
+      "Work with the product team to clarify requirements, write documentation, and track numbers after release.",
     requirements: [
-      req("SQL để tự kiểm tra số liệu", "SQL to check your own numbers", "sql"),
-      req("Excel và trình bày số liệu", "Excel and presenting numbers", "excel"),
-      req("Tiếng Anh đọc hiểu tài liệu", "English for reading documents", "english"),
-      req("Viết tài liệu rõ ràng", "Writes clearly"),
+      req("SQL to check your own numbers", "sql"),
+      req("Excel and presenting numbers", "excel"),
+      req("English for reading documents", "english"),
+      req("Writes clearly"),
     ],
-    location: "TP. Hồ Chí Minh",
+    location: "Ho Chi Minh City",
     seeded: true,
     addedAt: 0,
   },
   {
     id: "seed-mkt-analyst",
     title: "Marketing Analyst",
-    org: "Chuỗi bán lẻ",
+    org: "Retail chain",
     description:
-      "Đo hiệu quả các chiến dịch, dựng báo cáo định kỳ và đề xuất điều chỉnh ngân sách.",
+      "Measure campaign performance, build recurring reports, and recommend budget changes.",
     requirements: [
-      req("Google Analytics", "Google Analytics", "google analytics"),
-      req("Excel nâng cao", "Advanced Excel", "excel"),
-      req("Hiểu chỉ số marketing", "Understands marketing metrics", "marketing"),
-      req("Power BI hoặc Tableau", "Power BI or Tableau", "power bi", "tableau"),
+      req("Google Analytics", "google analytics"),
+      req("Advanced Excel", "excel"),
+      req("Understands marketing metrics", "marketing"),
+      req("Power BI or Tableau", "power bi", "tableau"),
     ],
-    location: "Hà Nội",
+    location: "Hanoi",
     seeded: true,
     addedAt: 0,
   },
   {
     id: "seed-de-junior",
     title: "Junior Data Engineer",
-    org: "Công ty fintech",
+    org: "Fintech company",
     description:
-      "Xây và duy trì pipeline dữ liệu, đảm bảo dữ liệu tới kho đúng giờ và đúng số.",
+      "Build and maintain data pipelines so data reaches the warehouse on time and in the right shape.",
     requirements: [
-      req("Python", "Python", "python"),
-      req("SQL và tối ưu truy vấn", "SQL and query tuning", "sql"),
-      req("Hiểu ETL hoặc Airflow", "Understands ETL or Airflow", "etl"),
-      req("Cẩn thận với dữ liệu", "Careful with data"),
+      req("Python", "python"),
+      req("SQL and query tuning", "sql"),
+      req("Understands ETL or Airflow", "etl"),
+      req("Careful with data"),
     ],
-    location: "Hà Nội",
+    location: "Hanoi",
     seeded: true,
     addedAt: 0,
   },

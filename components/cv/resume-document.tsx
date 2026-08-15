@@ -268,7 +268,7 @@ export function ResumeDocument({
         <p style={{ marginTop: 40, color: "#9ca3af", textAlign: "center" }}>
           {/* The document's own language: this sits inside the page frame,
               where the surrounding text is the CV's. */}
-          {messages.cv.previewEmpty[resume.language]}
+          {messages.cv.previewEmpty}
         </p>
       )}
     </div>

@@ -115,11 +115,10 @@ function CoachThinkingTrigger({ compact }: { compact?: boolean }) {
  */
 function toolLabel(
   call: CoachToolCall,
-  t: (msg: { vi: string; en: string }) => string,
+  t: (msg: string) => string,
   m: typeof import("@/lib/i18n/messages").messages.coach,
-  locale: "vi" | "en",
 ) {
-  if (call.state === "done" && call.summary) return call.summary[locale];
+  if (call.state === "done" && call.summary) return call.summary;
   if (call.state === "running") return t(m.toolRunning);
   if (call.state === "denied") return t(m.toolDenied);
   return t(m.toolFailed);
@@ -162,7 +161,7 @@ function ToolChip({
 }
 
 function CoachToolCalls({ calls }: { calls: CoachToolCall[] }) {
-  const { t, m, locale } = useT();
+  const { t, m } = useT();
   const [expanded, setExpanded] = React.useState(false);
 
   // A call parked on the user renders as nothing here: the approval card is
@@ -187,7 +186,7 @@ function CoachToolCalls({ calls }: { calls: CoachToolCall[] }) {
         <ToolChip
           key={call.id}
           call={call}
-          label={toolLabel(call, t, m.coach, locale)}
+          label={toolLabel(call, t, m.coach)}
         />
       ))}
       {collapseDone ? (
@@ -204,7 +203,7 @@ function CoachToolCalls({ calls }: { calls: CoachToolCall[] }) {
           <ToolChip
             key={call.id}
             call={call}
-            label={toolLabel(call, t, m.coach, locale)}
+            label={toolLabel(call, t, m.coach)}
           />
         ))
       )}
@@ -223,7 +222,7 @@ function CoachToolCalls({ calls }: { calls: CoachToolCall[] }) {
           ) : (
             <TriangleAlert className="size-3.5 shrink-0" />
           )}
-          <span className="min-w-0 flex-1">{toolLabel(call, t, m.coach, locale)}</span>
+          <span className="min-w-0 flex-1">{toolLabel(call, t, m.coach)}</span>
         </div>
       ))}
     </div>
@@ -274,7 +273,7 @@ function QuestionCard({
   /** Opens a fresh conversation, the only way past a spent session. */
   onStartNew: () => void;
 }) {
-  const { t, m, locale } = useT();
+  const { t, m } = useT();
   // A request to delete something is not a question, and must not read like
   // one. eve marks it `tool-approval`; everything the Coach asks in the normal
   // run of a conversation is `question`, and those stay plain prose with
@@ -301,7 +300,7 @@ function QuestionCard({
     isApproval && pendingAction
       ? lookupAction(pendingAction)?.confirm?.({} as never)
       : undefined;
-  const prompt = confirmCopy ? confirmCopy[locale] : question.prompt;
+  const prompt = confirmCopy ? confirmCopy : question.prompt;
 
   return (
     <div

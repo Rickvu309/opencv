@@ -27,10 +27,10 @@ export function build(steps: Step[], from: AppState = seedState()): AppState {
 export function populated(): AppState {
   return build([
     ["profile.setIdentity", { name: "Lê Thu Hà", targetRole: "Data Analyst" }],
-    ["profile.setContext", { label: "Địa điểm", value: "Hà Nội" }],
+    ["profile.setContext", { label: "Location", value: "Hà Nội" }],
     [
       "profile.setEducation",
-      { school: "Đại học Bách khoa", major: "Khoa học dữ liệu", year: "Năm 3", gpa: "3.2/4.0" },
+      { school: "Đại học Bách khoa", major: "Khoa học dữ liệu", year: "Third year", gpa: "3.2/4.0" },
     ],
     ["profile.addCourse", { name: "Google Data Analytics" }],
     [

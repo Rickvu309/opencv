@@ -26,7 +26,6 @@
 import type { AppState } from "@/lib/actions/types";
 import { DEFAULT_CONFIG, type GuardrailConfig } from "@/lib/guardrails/config";
 import { messages } from "@/lib/i18n/messages";
-import type { Locale } from "@/lib/i18n/locale";
 import { paragraphsOf } from "@/lib/papers/types";
 
 export type GroundingFinding = {
@@ -174,13 +173,11 @@ export function checkGrounding({
   reply,
   state,
   userSaid = "",
-  locale,
   config = DEFAULT_CONFIG,
 }: {
   reply: string;
   state: AppState;
   userSaid?: string;
-  locale: Locale;
   config?: GuardrailConfig;
 }): GroundingVerdict {
   if (config.strictness === "off") {
@@ -228,7 +225,7 @@ export function checkGrounding({
   // anything than by having the whole thing disappear.
   return {
     kind: "revise",
-    reply: `${reply.trim()}\n\n${messages.guardrails.notGrounded[locale]}`,
+    reply: `${reply.trim()}\n\n${messages.guardrails.notGrounded}`,
     findings,
   };
 }

@@ -93,10 +93,10 @@ export function CoachProvider({
   // `restore` as well as the key, because the key alone was not enough. The
   // hook reads the stored session in a `useState` initialiser, which runs on
   // the client's *first* render too — the one that has to match what the server
-  // sent. So a returning user hydrated a header saying "Cuộc trò chuyện" over
-  // a server-rendered "Đoạn chat mới", React threw a hydration mismatch and
-  // regenerated the tree. Now the first render restores nothing, exactly like
-  // the server's, and the remount is what brings the conversation back.
+  // sent. A returning user used to hydrate a stored title over a server-rendered
+  // "New chat", React threw a hydration mismatch and regenerated the tree. Now
+  // the first render restores nothing, exactly like the server's, and the remount
+  // is what brings the conversation back.
   // Which conversation is open. `null` means "whichever is newest", which is
   // what a returning visitor wants and what the host resolves at mount.
   //

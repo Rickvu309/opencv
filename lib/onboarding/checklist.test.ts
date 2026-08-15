@@ -8,7 +8,6 @@ import assert from "node:assert/strict";
 
 import { applyAction } from "@/lib/actions/registry";
 import { seedState } from "@/lib/actions/seed";
-import { locales } from "@/lib/i18n/locale";
 import { checklistComplete, checklistSteps } from "@/lib/onboarding/checklist";
 
 const done = (state: Parameters<typeof checklistSteps>[0], talked = false) =>
@@ -77,11 +76,9 @@ test("the list disappears only when every step is done", () => {
   assert.equal(checklistComplete(checklistSteps(state, true)), true);
 });
 
-test("every step reads in both languages and points somewhere", () => {
+test("every step has a label and points somewhere", () => {
   for (const step of checklistSteps(seedState(), false)) {
-    for (const locale of locales) {
-      assert.ok(step.label[locale].trim().length > 0, `${step.id} has no ${locale}`);
-    }
+    assert.ok(step.label.trim().length > 0, `${step.id} has no label`);
     assert.match(step.href, /^\//, `${step.id} has no destination`);
   }
 });

@@ -16,7 +16,6 @@ import { ArrowRight, Check } from "lucide-react";
 
 import { CoachBox } from "@/components/brand/coach-box";
 import { ResumeDrop } from "@/components/onboarding/resume-drop";
-import { LanguageToggle } from "@/components/language-toggle";
 import { knownDirection } from "@/lib/onboarding/known-direction";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -95,7 +94,6 @@ export default function OnboardingPage() {
           </span>
           OpenPath
         </p>
-        <LanguageToggle />
       </header>
 
       <main className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center px-5 pb-12">

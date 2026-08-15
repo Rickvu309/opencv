@@ -359,8 +359,7 @@ test("a tool call in flight is visible", () => {
 test("a successful call reads its confirmation from the envelope", () => {
   const flat = flatten(coachTurn(toolPart("output-available")));
   assert.equal(flat?.tools?.[0].state, "done");
-  assert.equal(flat?.tools?.[0].summary?.vi, "Đã thêm việc “học SQL”");
-  assert.equal(flat?.tools?.[0].summary?.en, "Added “learn SQL”");
+  assert.equal(flat?.tools?.[0].summary, "Added “learn SQL”");
 });
 
 test("a payload the schema refused is a failure, not a success", () => {

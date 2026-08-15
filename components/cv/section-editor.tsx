@@ -43,12 +43,11 @@ export function SectionEditor({
 }) {
   const dispatch = useDispatch();
   const touched = useTouched();
-  const { t, m, locale } = useT();
+  const { t, m } = useT();
   const [open, setOpen] = React.useState(true);
   const prose = isProseKind(section.kind);
-  // The hint is interface copy, so it follows the app's language even when the
-  // CV itself is being written in the other one.
-  const hint = sectionDefaults[section.kind].hint[locale];
+  // The hint is interface copy. The heading is document content.
+  const hint = sectionDefaults[section.kind].hint;
 
   const update = (fields: Record<string, unknown>) =>
     dispatch("resume.updateSection", { id: resumeId, sectionId: section.id, ...fields }, { silent: true });

@@ -6,7 +6,7 @@
 // template can lay it out. The two coexist on purpose: an uploaded PDF is still
 // a real CV, and a built one is not a replacement for it.
 
-import type { Locale, Msg } from "@/lib/i18n/locale";
+import type { DocumentLanguage, Msg } from "@/lib/i18n/locale";
 
 /**
  * What a section is for. The kind decides how it is laid out and what the
@@ -126,7 +126,7 @@ export type Resume = {
    * The language of the *document*, which is not necessarily the language of
    * the app. Section headings and the Coach's rewrites follow this.
    */
-  language: Locale;
+  language: DocumentLanguage;
   header: ResumeHeader;
   sections: ResumeSection[];
   theme: ResumeTheme;
@@ -146,64 +146,41 @@ export type Resume = {
 };
 
 /**
- * Default heading and editor hint per kind, in both languages.
+ * Default heading and editor hint per kind.
  *
- * The heading is *document content*, not interface copy, so it follows the CV's
- * own `language` rather than the app's: someone reading OpenPath in Vietnamese
- * while writing an English CV for an international employer needs "Experience"
- * on the page and Vietnamese around it. The hint is interface copy and follows
- * the app, which is why the two are read with different locales at the call
- * site rather than bundled into one lookup.
+ * The heading is document content and can be edited. The hint is interface copy.
  */
 export const sectionDefaults: Record<
   ResumeSectionKind,
   { heading: Msg; hint: Msg }
 > = {
   summary: {
-    heading: { vi: "Giới thiệu", en: "Summary" },
-    hint: {
-      vi: "Ba câu: bạn là ai, làm được gì, đang tìm gì.",
-      en: "Three sentences: who you are, what you can do, what you want.",
-    },
+    heading: "Summary",
+    hint: "Three sentences: who you are, what you can do, what you want.",
   },
   experience: {
-    heading: { vi: "Kinh nghiệm", en: "Experience" },
-    hint: {
-      vi: "Thực tập, việc làm thêm, câu lạc bộ. Mỗi dòng một kết quả.",
-      en: "Internships, part-time work, clubs. One result per bullet.",
-    },
+    heading: "Experience",
+    hint: "Internships, part-time work, clubs. One result per bullet.",
   },
   education: {
-    heading: { vi: "Học vấn", en: "Education" },
-    hint: {
-      vi: "Trường, chuyên ngành, thời gian.",
-      en: "School, field of study, dates.",
-    },
+    heading: "Education",
+    hint: "School, field of study, dates.",
   },
   skills: {
-    heading: { vi: "Kỹ năng", en: "Skills" },
-    hint: {
-      vi: "Nhóm theo loại: ngôn ngữ, công cụ, kỹ năng mềm.",
-      en: "Group them: languages, tools, ways of working.",
-    },
+    heading: "Skills",
+    hint: "Group them: languages, tools, ways of working.",
   },
   projects: {
-    heading: { vi: "Dự án", en: "Projects" },
-    hint: {
-      vi: "Tên dự án, bạn làm gì, kết quả ra sao.",
-      en: "What it was, what you did, what came of it.",
-    },
+    heading: "Projects",
+    hint: "What it was, what you did, what came of it.",
   },
   certifications: {
-    heading: { vi: "Chứng chỉ", en: "Certificates" },
-    hint: {
-      vi: "Tên chứng chỉ, nơi cấp, năm.",
-      en: "Name, who issued it, year.",
-    },
+    heading: "Certificates",
+    hint: "Name, who issued it, year.",
   },
   custom: {
-    heading: { vi: "Mục mới", en: "New section" },
-    hint: { vi: "Đặt tên cho mục này.", en: "Give this section a name." },
+    heading: "New section",
+    hint: "Give this section a name.",
   },
 };
 

@@ -19,7 +19,6 @@ import {
   sectionHasContent,
   templates,
 } from "@/lib/cv/types";
-import { locales } from "@/lib/i18n/locale";
 import { messages } from "@/lib/i18n/messages";
 import type { AppState } from "@/lib/actions/types";
 
@@ -157,7 +156,7 @@ test("every resume edit restamps the CV, so the card cannot lie", () => {
   const stale = { ...state, resumes: [{ ...state.resumes[0], updatedAt: "3 tuần trước" }] };
 
   const after = applyAction(stale, "resume.rename", { id, label: "CV mới" }).state;
-  assert.equal(after.resumes[0].updatedAt, "Vừa xong");
+  assert.equal(after.resumes[0].updatedAt, "Just now");
 });
 
 test("an edit aimed at a CV that is gone changes nothing", () => {
@@ -299,13 +298,11 @@ test("AC-PAPERS-010.1: no template is named by an abstract style word", () => {
   ];
   const styleWords = /^(cổ điển|hiện đại|gọn|classic|modern|compact)$/i;
   for (const label of labels) {
-    for (const locale of locales) {
-      assert.doesNotMatch(
-        label[locale],
-        styleWords,
-        `"${label[locale]}" names a style, not the situation it fits`,
-      );
-    }
+    assert.doesNotMatch(
+      label,
+      styleWords,
+      `"${label}" names a style, not the situation it fits`,
+    );
   }
 });
 

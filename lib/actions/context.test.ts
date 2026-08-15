@@ -36,7 +36,7 @@ test("context carries the ids the Coach needs to act on", () => {
 });
 
 test("the Coach is told it can build a CV", () => {
-  const ctx = coachContext(seedState(), "/cv");
+  const ctx = coachContext(seedState(), "/paper");
   // The catalog in the tool description is what the model reads to decide; if
   // these fall out of the registry the Coach can describe a CV it cannot make.
   const offered = new Set<string>(ctx.availableActions);
@@ -92,10 +92,8 @@ test("a well-formed envelope applies; a malformed one is rejected before dispatc
     after.profile.education.courses.length,
     state.profile.education.courses.length + 1,
   );
-  // Announceable in both languages: a toast that falls back to the other one
-  // is the language setting failing in the most visible place there is.
-  assert.ok(summary.vi.length > 0, "every applied edit must be announceable in Vietnamese");
-  assert.ok(summary.en.length > 0, "every applied edit must be announceable in English");
+  // Announceable: a silent applied edit would leave the toast empty.
+  assert.ok(summary.length > 0, "every applied edit must be announceable");
 
   // A payload that passed the model but not the schema must throw here rather
   // than half-applying: applyAction parses before it reduces.

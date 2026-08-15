@@ -22,7 +22,6 @@ import {
 } from "@/components/ui/select";
 import { useDispatch } from "@/lib/actions/store";
 import type { Requirement } from "@/lib/career-graph";
-import type { Locale } from "@/lib/i18n/locale";
 import { useT } from "@/lib/i18n/use-t";
 import { skillDisplayName } from "@/lib/search/interpret";
 import type { SearchField } from "@/lib/search/match";
@@ -376,7 +375,7 @@ function ResultRow({
   flash: boolean;
   applied: boolean;
 }) {
-  const { t, m, locale } = useT();
+  const { t, m } = useT();
   const dispatch = useDispatch();
   const meta = [opening.org, opening.location].filter(Boolean).join(" · ");
 
@@ -392,7 +391,7 @@ function ResultRow({
         {meta && (
           <p className="mt-1 text-xs text-muted-foreground">{meta}</p>
         )}
-        <FitWhy fit={fit} locale={locale} />
+        <FitWhy fit={fit} />
       </div>
       <div className="flex shrink-0 items-center gap-1">
         <OpeningActions opening={opening} />
@@ -419,10 +418,8 @@ function ResultRow({
 
 function FitWhy({
   fit,
-  locale,
 }: {
   fit: RankedOpening["fit"];
-  locale: Locale;
 }) {
   const { t, m } = useT();
 
@@ -434,8 +431,8 @@ function FitWhy({
     );
   }
 
-  const have = fit.met[0] ? namedSkill(fit.met[0], locale) : null;
-  const miss = fit.missing[0] ? namedSkill(fit.missing[0], locale) : null;
+  const have = fit.met[0] ? namedSkill(fit.met[0]) : null;
+  const miss = fit.missing[0] ? namedSkill(fit.missing[0]) : null;
 
   return (
     <p className="mt-1 text-pretty text-xs leading-5 text-muted-foreground">
@@ -448,7 +445,7 @@ function FitWhy({
   );
 }
 
-function namedSkill(requirement: Requirement, locale: Locale): string {
+function namedSkill(requirement: Requirement): string {
   const skill = requirement.skills[0];
-  return skill ? skillDisplayName(skill) : requirement.label[locale];
+  return skill ? skillDisplayName(skill) : requirement.label;
 }

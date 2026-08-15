@@ -85,7 +85,7 @@ export function reviveState(value: unknown): AppState | null {
   // Shallow on purpose. A missing top-level key is what a new release causes;
   // a missing key three levels down is what corruption causes, and quietly
   // patching that would hide it.
-  const merged = { ...seedState(), ...(value as Partial<AppState>) };
+  const merged = { ...seedState(), ...(value as Partial<AppState>), locale: "en" };
   return looksLikeState(merged) ? merged : null;
 }
 

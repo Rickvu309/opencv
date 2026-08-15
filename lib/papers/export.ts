@@ -28,7 +28,7 @@ export function fileStem(paper: ProseDocument): string {
       .slice(0, 80) ||
     // The kind, in the document's own language, because the file lands next to
     // other applications and "document.md" tells nobody which one it is.
-    paperKindLabels[paper.kind][paper.language].replace(/\s+/g, "_")
+    paperKindLabels[paper.kind].replace(/\s+/g, "_")
   );
 }
 

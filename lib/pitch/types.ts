@@ -1,4 +1,4 @@
-import type { Locale, Msg } from "@/lib/i18n/locale";
+import type { DocumentLanguage, Msg } from "@/lib/i18n/locale";
 
 /**
  * How the user describes themselves, in words they can reuse.
@@ -36,9 +36,9 @@ export function isSingletonPitchKind(kind: PitchKind): boolean {
 }
 
 export const pitchKindLabels: Record<PitchKind, Msg> = {
-  bio: { vi: "Giới thiệu ngắn", en: "Online bio" },
-  intro: { vi: "Tự giới thiệu", en: "Self-introduction" },
-  answer: { vi: "Câu trả lời phỏng vấn", en: "Interview answer" },
+  bio: "Online bio",
+  intro: "Self-introduction",
+  answer: "Interview answer",
 };
 
 export type PitchItem = {
@@ -54,7 +54,7 @@ export type PitchItem = {
    * The item's own language, not the app's. Someone reading the interface in
    * Vietnamese still interviews in English sometimes.
    */
-  language: Locale;
+  language: DocumentLanguage;
 };
 
 /** The one bio, or the one intro, if it has been written. */

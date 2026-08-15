@@ -21,6 +21,7 @@ import {
 const titleKeys = [
   ["/coach", "coach"],
   ["/profile", "profile"],
+  ["/paper", "cv"],
   ["/cv", "cv"],
   ["/papers", "cv"],
   ["/pitch", "pitch"],

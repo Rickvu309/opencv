@@ -76,10 +76,10 @@ function prepareNav(paperCount: number): NavItem[] {
     // My Paper: CVs and letters in one library. Pitch stays how you present.
     {
       title: messages.nav.cv,
-      href: "/cv",
+      href: "/paper",
       icon: FileText,
       count: badge(paperCount),
-      aliases: ["/papers"],
+      aliases: ["/cv", "/papers"],
     },
     { title: messages.nav.pitch, href: "/pitch", icon: MessageSquareQuote },
   ];

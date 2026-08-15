@@ -32,7 +32,6 @@ test("AC-TRUST-001.2: an invented percentage is caught", () => {
   const verdict = checkGrounding({
     reply: "Bạn đã giúp đội marketing giảm 40% thời gian làm báo cáo.",
     state,
-    locale: "vi",
   });
   assert.equal(verdict.kind, "revise");
   assert.equal(verdict.findings[0].rule, "ungrounded-number");
@@ -46,7 +45,6 @@ test("a number the user supplied in the conversation is grounded", () => {
     reply: "Vậy mình viết là giảm 40% thời gian làm báo cáo nhé.",
     state,
     userSaid: "Đợt đó tụi mình giảm được 40% thời gian làm báo cáo tuần",
-    locale: "vi",
   });
   assert.equal(verdict.kind, "allow");
 });
@@ -55,7 +53,6 @@ test("a number already in the profile is grounded", () => {
   const verdict = checkGrounding({
     reply: "GPA 3.2 của bạn là một điểm mạnh nên đưa lên đầu CV.",
     state,
-    locale: "vi",
   });
   assert.equal(verdict.kind, "allow");
 });
@@ -64,7 +61,6 @@ test("an invented money figure is caught", () => {
   const verdict = checkGrounding({
     reply: "Dự án của bạn tiết kiệm 200 triệu cho công ty.",
     state,
-    locale: "vi",
   });
   assert.equal(verdict.kind, "revise");
 });
@@ -79,7 +75,7 @@ test("ordinary numbers in advice are not treated as results", () => {
     "Mình gợi ý 3 việc: học SQL, làm dashboard, và nhắn 5 người đang làm Data.",
   ]) {
     assert.equal(
-      checkGrounding({ reply, state, locale: "vi" }).kind,
+      checkGrounding({ reply, state }).kind,
       "allow",
       `wrongly flagged: ${reply}`,
     );
@@ -90,7 +86,6 @@ test("AC-TRUST-001.3: an employer the user never had is caught", () => {
   const verdict = checkGrounding({
     reply: "Bạn đã làm ở VNG nên kinh nghiệm đó rất hợp với vị trí này.",
     state,
-    locale: "vi",
   });
   assert.equal(verdict.kind, "revise");
   assert.equal(verdict.findings[0].rule, "ungrounded-claim");
@@ -100,7 +95,6 @@ test("the employer the user did have is not caught", () => {
   const verdict = checkGrounding({
     reply: "Bạn đã thực tập ở Công ty ABC, nên viết rõ kết quả đợt đó.",
     state,
-    locale: "vi",
   });
   assert.equal(verdict.kind, "allow");
 });
@@ -109,7 +103,6 @@ test("an English claim about an experience they do not have is caught", () => {
   const verdict = checkGrounding({
     reply: "Your experience with Kubernetes is worth mentioning here.",
     state,
-    locale: "en",
   });
   assert.equal(verdict.kind, "revise");
   assert.equal(verdict.findings[0].rule, "ungrounded-claim");
@@ -124,7 +117,7 @@ test("advice is not a claim", () => {
     "Nếu bạn từng làm dự án nhóm nào, kể mình nghe để mình viết vào CV.",
   ]) {
     assert.equal(
-      checkGrounding({ reply, state, locale: "vi" }).kind,
+      checkGrounding({ reply, state }).kind,
       "allow",
       `wrongly flagged: ${reply}`,
     );
@@ -135,10 +128,9 @@ test("the correction is appended and names the doubt", () => {
   const verdict = checkGrounding({
     reply: "Bạn đã giảm 40% thời gian xử lý.",
     state,
-    locale: "vi",
   });
   assert.ok(verdict.reply.startsWith("Bạn đã giảm 40%"), "the reply is kept");
-  assert.ok(verdict.reply.includes(messages.guardrails.notGrounded.vi));
+  assert.ok(verdict.reply.includes(messages.guardrails.notGrounded));
 });
 
 test("what the user wrote about themselves counts as fact", () => {
@@ -159,7 +151,6 @@ test("what the user wrote about themselves counts as fact", () => {
   const verdict = checkGrounding({
     reply: "Bạn đã làm ở Tiki, nên nhấn vào phần báo cáo vận hành.",
     state: withPitch,
-    locale: "vi",
   });
   assert.equal(verdict.kind, "allow");
 });
@@ -168,7 +159,6 @@ test("strictness off checks nothing", () => {
   const verdict = checkGrounding({
     reply: "Bạn đã giảm 40% thời gian và làm ở NASA.",
     state,
-    locale: "vi",
     config: { strictness: "off" },
   });
   assert.equal(verdict.kind, "allow");

@@ -16,7 +16,7 @@ OpenPath is a personalised AI career coach. It helps users understand their curr
 
 ## Brand Personality
 
-Grounded, warm, honest. It talks like a good older mentor: encouraging but never flattering, willing to push back on a bad idea with data. Never hype, never gamified, never corporate-HR. Vietnamese-first voice, natural not translated.
+Grounded, warm, honest. It talks like a good older mentor: encouraging but never flattering, willing to push back on a bad idea with data. Never hype, never gamified, never corporate-HR. English voice for now: second person, contractions allowed, no exclamation marks.
 
 ## Anti-references
 

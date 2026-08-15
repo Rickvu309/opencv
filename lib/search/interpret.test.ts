@@ -19,7 +19,7 @@ import { SEED_OPENINGS } from "@/lib/search/types";
 
 test("a city-and-role ask becomes a city filter and a role, not a skill", () => {
   const ask = interpretQuery("Việc data ở Hà Nội", SEED_OPENINGS);
-  assert.equal(ask.city, "Hà Nội");
+  assert.equal(ask.city, "Hanoi");
   assert.equal(ask.role.toLowerCase(), "data");
   assert.deepEqual(ask.criteria, []);
   assert.equal(ask.scope, "all");
@@ -29,7 +29,7 @@ test("a city-and-role ask becomes a city filter and a role, not a skill", () => 
 
 test("a company ask becomes an org filter", () => {
   const ask = interpretQuery("Công ty fintech", SEED_OPENINGS);
-  assert.equal(ask.org, "Công ty fintech");
+  assert.equal(ask.org, "Fintech company");
   assert.equal(ask.role, "");
   assert.deepEqual(ask.criteria, []);
 });
@@ -45,7 +45,7 @@ test("skill words become criteria, not filters", () => {
     "Data intern in Hanoi, Python and SQL",
     SEED_OPENINGS,
   );
-  assert.equal(ask.city, "Hà Nội");
+  assert.equal(ask.city, "Hanoi");
   assert.match(ask.role.toLowerCase(), /data|intern/);
   assert.deepEqual([...ask.criteria].sort(), ["python", "sql"]);
 });
@@ -53,7 +53,7 @@ test("skill words become criteria, not filters", () => {
 test("filters exclude, criteria only rank", () => {
   const ask = interpretQuery("Hà Nội Python", SEED_OPENINGS);
   const matched = SEED_OPENINGS.filter((opening) => matchesAsk(opening, ask));
-  assert.ok(matched.every((opening) => opening.location === "Hà Nội"));
+  assert.ok(matched.every((opening) => opening.location === "Hanoi"));
   assert.ok(
     matched.some((opening) => opening.id === "seed-mkt-analyst"),
     "Marketing Analyst in Hanoi stays in; Python does not exclude it",

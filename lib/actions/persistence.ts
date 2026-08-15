@@ -1,4 +1,4 @@
-import { isLocale, preferredLocale } from "@/lib/i18n/locale";
+import { isLocale } from "@/lib/i18n/locale";
 import { seedState } from "./seed";
 import type { AppState } from "./types";
 
@@ -17,10 +17,9 @@ import type { AppState } from "./types";
  *
  * - **Signed in:** the account's row in Postgres. It follows the person to
  *   another device, which is the entire point, and it is the only copy.
- * - **Signed out:** localStorage, exactly as before. The only thing an
- *   anonymous visitor can change is the language, on the landing page, and
- *   asking them to make an account before the page will remember which
- *   language they read would be an absurd trade.
+ * - **Signed out:** localStorage, exactly as before. The public landing no
+ *   longer changes language; an anonymous visitor's locale is the browser
+ *   guess until they sign in. Onboarding is where they can still switch.
  *
  * There is no syncing between the two. A signed-in session never reads the
  * local copy, so nothing anonymous can leak into an account, and WO-24 is
@@ -100,7 +99,7 @@ function revive(value: unknown): AppState | null {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     return null;
   }
-  const merged = { ...seedState(), ...(value as Partial<AppState>) };
+  const merged = { ...seedState(), ...(value as Partial<AppState>), locale: "en" };
   return looksLikeState(merged) ? merged : null;
 }
 
@@ -116,10 +115,8 @@ export function loadState(fromServer?: AppState | null): AppState {
   if (fromServer) return fromServer;
   if (typeof window === "undefined") return seedState();
 
-  // A first visit gets the browser's language rather than ours. Nothing is
-  // stored yet, so this is a guess, and the language switcher is one click away
-  // in the account menu for when the guess is wrong.
-  const fresh = () => seedState(preferredLocale(window.navigator?.languages));
+  // A first visit gets an empty English seed. Nothing is stored yet.
+  const fresh = () => seedState();
 
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);

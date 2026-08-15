@@ -8,8 +8,7 @@ This version has breaking changes, APIs, conventions, and file structure may all
 
 ### Issue tracker
 
-GitHub Issues on `quanvu309/openpath`, via the `gh` CLI. Sub-issues and native issue
-dependencies are both available and are what `/wayfinder` uses. See `docs/agents/issue-tracker.md`.
+GitHub Issues on `quanvu309/openpath`, via the `gh` CLI. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 

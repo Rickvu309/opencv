@@ -36,12 +36,10 @@ export type Action<S extends z.ZodType = z.ZodType> = {
   input: S;
   apply: (state: AppState, input: z.infer<S>) => AppState;
   /**
-   * One-line confirmation shown after it runs, in both languages.
+   * One-line confirmation shown after it runs.
    *
-   * A pair rather than a string because this is the sentence the user reads in
-   * a toast, and the same sentence the Coach reads back to describe what it
-   * just did. Picking one language at the registry would leave the other half
-   * of the product speaking the wrong one.
+   * The sentence the user reads in a toast, and the same sentence the Coach
+   * reads back to describe what it just did.
    */
   summary: (input: z.infer<S>) => Msg;
   /**
@@ -79,7 +77,7 @@ function defineAction<S extends z.ZodType>(action: Action<S>): Action<S> {
 }
 
 /** Shorthand so a summary stays one readable line. */
-const msg = (vi: string, en: string): Msg => ({ vi, en });
+const msg = (en: string): Msg => en;
 
 
 const docKinds = z.enum([
@@ -117,7 +115,7 @@ function editResume(
   return {
     ...state,
     resumes: state.resumes.map((r) =>
-      r.id === id ? { ...edit(r), updatedAt: "Vừa xong" } : r,
+      r.id === id ? { ...edit(r), updatedAt: "Just now" } : r,
     ),
   };
 }
@@ -139,7 +137,7 @@ function editPaper(
   return {
     ...state,
     papers: state.papers.map((p) =>
-      p.id === id ? { ...edit(p), updatedAt: "Vừa xong" } : p,
+      p.id === id ? { ...edit(p), updatedAt: "Just now" } : p,
     ),
   };
 }
@@ -178,7 +176,7 @@ export const actions = {
       label: z.string().min(1).describe('e.g. "CV, Data Analyst"'),
       purpose: z.string().optional().describe("What this version is tailored for"),
       targetRole: z.string().optional(),
-      language: z.enum(["vi", "en"]).default("vi"),
+      language: z.enum(["vi", "en"]).default("en"),
       url: z.string().optional(),
       fileName: z.string().optional(),
       note: z.string().optional(),
@@ -197,12 +195,12 @@ export const actions = {
             ...state.profile.documents.map((d) =>
               primary && d.kind === doc.kind ? { ...d, isPrimary: false } : d,
             ),
-            { ...doc, id, isPrimary: primary, updatedAt: "Vừa xong" },
+            { ...doc, id, isPrimary: primary, updatedAt: "Just now" },
           ],
         },
       };
     },
-    summary: ({ label }) => msg(`Đã thêm “${label}”`, `Added “${label}”`),
+    summary: ({ label }) => msg(`Added “${label}”`),
   }),
 
   "document.update": defineAction({
@@ -222,11 +220,11 @@ export const actions = {
       profile: {
         ...state.profile,
         documents: state.profile.documents.map((d) =>
-          d.id === id ? { ...d, ...fields, updatedAt: "Vừa xong" } : d,
+          d.id === id ? { ...d, ...fields, updatedAt: "Just now" } : d,
         ),
       },
     }),
-    summary: () => msg("Đã lưu tài liệu", "Document saved"),
+    summary: () => msg("Document saved"),
   }),
 
   "document.setPrimary": defineAction({
@@ -247,12 +245,12 @@ export const actions = {
         },
       };
     },
-    summary: () => msg("Đã đặt làm bản chính", "Set as the primary version"),
+    summary: () => msg("Set as the primary version"),
   }),
 
   "document.remove": defineAction({
     destructive: true,
-    confirm: () => msg("Xoá tài liệu này khỏi hồ sơ?", "Remove this document from your profile?"),
+    confirm: () => msg("Remove this document from your profile?"),
     description: "Delete a stored document version.",
     input: z.object({ id: z.string().min(1) }),
     apply: (state, { id }) => {
@@ -266,7 +264,7 @@ export const actions = {
       }
       return { ...state, profile: { ...state.profile, documents: rest } };
     },
-    summary: () => msg("Đã xoá tài liệu", "Document deleted"),
+    summary: () => msg("Document deleted"),
   }),
 
   "document.sync": defineAction({
@@ -279,11 +277,11 @@ export const actions = {
       profile: {
         ...state.profile,
         documents: state.profile.documents.map((d) =>
-          d.id === id ? { ...d, syncedAt: "Vừa xong" } : d,
+          d.id === id ? { ...d, syncedAt: "Just now" } : d,
         ),
       },
     }),
-    summary: () => msg("Đã đồng bộ", "Synced"),
+    summary: () => msg("Synced"),
   }),
 
   "profile.setIdentity": defineAction({
@@ -303,8 +301,8 @@ export const actions = {
     }),
     summary: ({ targetRole }) =>
       targetRole
-        ? msg(`Đã đổi mục tiêu sang ${targetRole}`, `Now aiming for ${targetRole}`)
-        : msg("Đã cập nhật hồ sơ", "Profile updated"),
+        ? msg(`Now aiming for ${targetRole}`)
+        : msg("Profile updated"),
     touched: () => ["identity"],
   }),
 
@@ -330,7 +328,7 @@ export const actions = {
         },
       };
     },
-    summary: ({ label }) => msg(`Đã cập nhật “${label}”`, `Updated “${label}”`),
+    summary: ({ label }) => msg(`Updated “${label}”`),
     touched: () => ["context"],
   }),
 
@@ -351,7 +349,7 @@ export const actions = {
       },
     }),
     summary: ({ title }) =>
-      msg(`Đã thêm kinh nghiệm “${title}”`, `Added “${title}” to your experience`),
+      msg(`Added “${title}” to your experience`),
     touched: () => ["experience"],
   }),
 
@@ -374,13 +372,13 @@ export const actions = {
         ),
       },
     }),
-    summary: () => msg("Đã lưu kinh nghiệm", "Experience saved"),
+    summary: () => msg("Experience saved"),
     touched: () => ["experience"],
   }),
 
   "profile.removeExperience": defineAction({
     destructive: true,
-    confirm: () => msg("Xoá kinh nghiệm này khỏi hồ sơ?", "Remove this experience from your profile?"),
+    confirm: () => msg("Remove this experience from your profile?"),
     description: "Remove an experience entry by its position in the list.",
     input: z.object({ index: z.number().int().min(0) }),
     apply: (state, { index }) => ({
@@ -390,7 +388,7 @@ export const actions = {
         experience: state.profile.experience.filter((_, i) => i !== index),
       },
     }),
-    summary: () => msg("Đã xoá kinh nghiệm", "Experience deleted"),
+    summary: () => msg("Experience deleted"),
     touched: () => ["experience"],
   }),
 
@@ -409,7 +407,7 @@ export const actions = {
         education: { ...state.profile.education, ...input },
       },
     }),
-    summary: () => msg("Đã lưu học vấn", "Education saved"),
+    summary: () => msg("Education saved"),
     touched: () => ["education"],
   }),
 
@@ -429,13 +427,13 @@ export const actions = {
               },
             },
           },
-    summary: ({ name }) => msg(`Đã thêm “${name}”`, `Added “${name}”`),
+    summary: ({ name }) => msg(`Added “${name}”`),
     touched: () => ["education"],
   }),
 
   "profile.removeCourse": defineAction({
     destructive: true,
-    confirm: () => msg("Xoá khoá học này khỏi hồ sơ?", "Remove this course from your profile?"),
+    confirm: () => msg("Remove this course from your profile?"),
     description: "Remove a certificate or course from the profile.",
     input: z.object({ name: z.string().min(1) }),
     apply: (state, { name }) => ({
@@ -448,24 +446,8 @@ export const actions = {
         },
       },
     }),
-    summary: () => msg("Đã xoá chứng chỉ", "Certificate removed"),
+    summary: () => msg("Certificate removed"),
     touched: () => ["education"],
-  }),
-
-  "settings.setLanguage": defineAction({
-    description:
-      "Switch the whole app, and your own replies, between Vietnamese and " +
-      "English. Use it when the user writes to you in the other language or " +
-      "asks you to switch. Say the rest of your reply in the new language.",
-    input: z.object({ language: z.enum(["vi", "en"]) }),
-    apply: (state, { language }) => ({ ...state, locale: language }),
-    // Confirmed in the language being switched *to*, in both slots: the user
-    // has just asked for that language, so echoing the old one back would be
-    // the first thing the setting failed to do.
-    summary: ({ language }) =>
-      language === "vi"
-        ? msg("Đã chuyển sang tiếng Việt", "Đã chuyển sang tiếng Việt")
-        : msg("Switched to English", "Switched to English"),
   }),
 
   // ── CV builder ──────────────────────────────────────────────────────────
@@ -490,9 +472,8 @@ export const actions = {
         .enum(["vi", "en"])
         .optional()
         .describe(
-          "The CV's own language. Defaults to the app's. Set it when the " +
-            "user is applying abroad and needs an English CV while reading " +
-            "the app in Vietnamese.",
+          "The CV's own language. Defaults to English. Set it when the " +
+            "user needs a Vietnamese CV.",
         ),
     }),
     apply: (state, { label, targetRole, fromProfile, language }) => {
@@ -500,16 +481,14 @@ export const actions = {
         "cv",
         state.resumes.map((r) => r.id),
       );
-      // The document's language defaults to the one the user is reading in,
-      // which is the right guess and the wrong assumption to hard-code.
-      const documentLanguage = language ?? state.locale;
+      const documentLanguage = language ?? "en";
       const resume = fromProfile
         ? resumeFromProfile(state, id, label, documentLanguage)
         : blankResume(id, label, documentLanguage);
       if (targetRole) resume.targetRole = targetRole;
       return { ...state, resumes: [...state.resumes, resume] };
     },
-    summary: ({ label }) => msg(`Đã tạo “${label}”`, `Created “${label}”`),
+    summary: ({ label }) => msg(`Created “${label}”`),
     touched: (_input, after) => {
       const added = after.resumes.at(-1);
       return added ? [added.id] : [];
@@ -538,7 +517,7 @@ export const actions = {
         ...source,
         id: newId,
         label,
-        updatedAt: "Vừa xong",
+        updatedAt: "Just now",
         sections: source.sections.map((section, i) => {
           const sectionId = `${newId}-s-${i + 1}`;
           return {
@@ -554,7 +533,7 @@ export const actions = {
       return { ...state, resumes: [...state.resumes, copy] };
     },
     summary: ({ label }) =>
-      msg(`Đã nhân bản thành “${label}”`, `Duplicated as “${label}”`),
+      msg(`Duplicated as “${label}”`),
     touched: (_input, after) => {
       const added = after.resumes.at(-1);
       return added ? [added.id] : [];
@@ -563,14 +542,14 @@ export const actions = {
 
   "resume.remove": defineAction({
     destructive: true,
-    confirm: () => msg("Xoá hẳn CV này? Không khôi phục lại được.", "Delete this CV for good? It cannot be restored."),
+    confirm: () => msg("Delete this CV for good? It cannot be restored."),
     description: "Delete a CV the user no longer wants.",
     input: z.object({ id: z.string().min(1) }),
     apply: (state, { id }) => ({
       ...state,
       resumes: state.resumes.filter((r) => r.id !== id),
     }),
-    summary: () => msg("Đã xoá CV", "CV deleted"),
+    summary: () => msg("CV deleted"),
   }),
 
   "resume.rename": defineAction({
@@ -584,7 +563,7 @@ export const actions = {
     }),
     apply: (state, { id, ...fields }) =>
       editResume(state, id, (resume) => ({ ...resume, ...fields })),
-    summary: () => msg("Đã lưu CV", "CV saved"),
+    summary: () => msg("CV saved"),
   }),
 
   "resume.setHeader": defineAction({
@@ -608,7 +587,7 @@ export const actions = {
         ...resume,
         header: { ...resume.header, ...fields },
       })),
-    summary: () => msg("Đã cập nhật thông tin liên hệ", "Contact details updated"),
+    summary: () => msg("Contact details updated"),
   }),
 
   "resume.setPhoto": defineAction({
@@ -632,7 +611,7 @@ export const actions = {
         return next;
       }),
     summary: ({ stamp }) =>
-      stamp ? msg("Đã thêm ảnh vào CV", "Photo added") : msg("Đã bỏ ảnh khỏi CV", "Photo removed"),
+      stamp ? msg("Photo added") : msg("Photo removed"),
   }),
 
   "resume.setTheme": defineAction({
@@ -650,7 +629,7 @@ export const actions = {
         ...resume,
         theme: { ...resume.theme, ...fields },
       })),
-    summary: () => msg("Đã đổi giao diện CV", "CV appearance updated"),
+    summary: () => msg("CV appearance updated"),
   }),
 
   "resume.addSection": defineAction({
@@ -680,10 +659,7 @@ export const actions = {
         return { ...resume, sections };
       }),
     summary: ({ kind, heading }) =>
-      msg(
-        `Đã thêm mục “${heading ?? sectionDefaults[kind].heading.vi}”`,
-        `Added the “${heading ?? sectionDefaults[kind].heading.en}” section`,
-      ),
+      msg(`Added the “${heading ?? sectionDefaults[kind].heading}” section`),
   }),
 
   "resume.updateSection": defineAction({
@@ -703,13 +679,13 @@ export const actions = {
         ...section,
         ...fields,
       })),
-    summary: () => msg("Đã lưu mục trong CV", "Section saved"),
+    summary: () => msg("Section saved"),
     touched: ({ sectionId }) => [sectionId],
   }),
 
   "resume.removeSection": defineAction({
     destructive: true,
-    confirm: () => msg("Xoá mục này khỏi CV? Ẩn đi thì giữ được nội dung.", "Delete this CV section? Hiding it keeps the content."),
+    confirm: () => msg("Delete this CV section? Hiding it keeps the content."),
     description:
       "Delete a section and everything in it. Prefer hiding it if the user " +
       "may want it back for another application.",
@@ -722,7 +698,7 @@ export const actions = {
         ...resume,
         sections: resume.sections.filter((s) => s.id !== sectionId),
       })),
-    summary: () => msg("Đã xoá mục khỏi CV", "Section deleted"),
+    summary: () => msg("Section deleted"),
   }),
 
   "resume.moveSection": defineAction({
@@ -740,7 +716,7 @@ export const actions = {
         if (index === -1) return resume;
         return { ...resume, sections: shift(resume.sections, index, by) };
       }),
-    summary: () => msg("Đã đổi thứ tự mục", "Sections reordered"),
+    summary: () => msg("Sections reordered"),
     touched: ({ sectionId }) => [sectionId],
   }),
 
@@ -781,8 +757,8 @@ export const actions = {
       })),
     summary: ({ title }) =>
       title
-        ? msg(`Đã thêm “${title}” vào CV`, `Added “${title}” to your CV`)
-        : msg("Đã thêm một mục vào CV", "Added an entry to your CV"),
+        ? msg(`Added “${title}” to your CV`)
+        : msg("Added an entry to your CV"),
     touched: ({ sectionId }, after) => {
       const section = after.resumes
         .flatMap((r) => r.sections)
@@ -815,13 +791,13 @@ export const actions = {
           e.id === entryId ? { ...e, ...fields } : e,
         ),
       })),
-    summary: () => msg("Đã sửa một mục trong CV", "Entry updated"),
+    summary: () => msg("Entry updated"),
     touched: ({ entryId }) => [entryId],
   }),
 
   "resume.removeEntry": defineAction({
     destructive: true,
-    confirm: () => msg("Xoá dòng này khỏi CV?", "Delete this entry from the CV?"),
+    confirm: () => msg("Delete this entry from the CV?"),
     description: "Remove one entry from a CV section.",
     input: z.object({
       id: z.string().min(1),
@@ -833,7 +809,7 @@ export const actions = {
         ...section,
         entries: section.entries.filter((e) => e.id !== entryId),
       })),
-    summary: () => msg("Đã xoá một mục khỏi CV", "Entry deleted"),
+    summary: () => msg("Entry deleted"),
   }),
 
   "resume.moveEntry": defineAction({
@@ -852,7 +828,7 @@ export const actions = {
         if (index === -1) return section;
         return { ...section, entries: shift(section.entries, index, by) };
       }),
-    summary: () => msg("Đã đổi thứ tự trong CV", "Entries reordered"),
+    summary: () => msg("Entries reordered"),
     touched: ({ entryId }) => [entryId],
   }),
 
@@ -876,9 +852,8 @@ export const actions = {
         .enum(["vi", "en"])
         .optional()
         .describe(
-          "The document's own language. Defaults to the app's. Set it when " +
-            "the user is applying abroad and needs an English letter while " +
-            "reading the app in Vietnamese.",
+          "The document's own language. Defaults to English. Set it when the " +
+            "user needs a Vietnamese letter.",
         ),
     }),
     apply: (state, { kind, label, targetRole, body, language }) => {
@@ -889,16 +864,14 @@ export const actions = {
         ),
         kind,
         label,
-        // The document's language defaults to the one the user is reading in,
-        // which is the right guess and the wrong assumption to hard-code.
-        language: language ?? state.locale,
+        language: language ?? "en",
         body: body ?? "",
-        updatedAt: "Vừa xong",
+        updatedAt: "Just now",
       };
       if (targetRole) paper.targetRole = targetRole;
       return { ...state, papers: [...state.papers, paper] };
     },
-    summary: ({ label }) => msg(`Đã tạo “${label}”`, `Created “${label}”`),
+    summary: ({ label }) => msg(`Created “${label}”`),
     touched: (_input, after) => {
       const added = after.papers.at(-1);
       return added ? [added.id] : [];
@@ -917,7 +890,7 @@ export const actions = {
     }),
     apply: (state, { id, ...fields }) =>
       editPaper(state, id, (paper) => ({ ...paper, ...fields })),
-    summary: () => msg("Đã lưu", "Saved"),
+    summary: () => msg("Saved"),
   }),
 
   "paper.setBody": defineAction({
@@ -931,7 +904,7 @@ export const actions = {
       body: z.string().describe("Paragraphs separated by a blank line"),
     }),
     apply: (state, { id, body }) => editPaper(state, id, (paper) => ({ ...paper, body })),
-    summary: () => msg("Đã viết lại", "Rewritten"),
+    summary: () => msg("Rewritten"),
   }),
 
   "paper.updateParagraph": defineAction({
@@ -954,7 +927,7 @@ export const actions = {
         return { ...paper, body: bodyFrom(paragraphs) };
       }),
     summary: ({ index }) =>
-      msg(`Đã sửa đoạn ${index}`, `Paragraph ${index} rewritten`),
+      msg(`Paragraph ${index} rewritten`),
   }),
 
   "paper.addParagraph": defineAction({
@@ -973,7 +946,7 @@ export const actions = {
         paragraphs.splice(position, 0, text);
         return { ...paper, body: bodyFrom(paragraphs) };
       }),
-    summary: () => msg("Đã thêm một đoạn", "Paragraph added"),
+    summary: () => msg("Paragraph added"),
   }),
 
   "paper.removeParagraph": defineAction({
@@ -981,7 +954,7 @@ export const actions = {
     // sentences the user wrote, and undo lives in a toast that leaves.
     destructive: true,
     confirm: ({ index }) =>
-      msg(`Xoá đoạn ${index}?`, `Delete paragraph ${index}?`),
+      msg(`Delete paragraph ${index}?`),
     description: "Delete one paragraph, counting from 1.",
     input: z.object({
       id: z.string().min(1),
@@ -994,7 +967,7 @@ export const actions = {
         paragraphs.splice(index - 1, 1);
         return { ...paper, body: bodyFrom(paragraphs) };
       }),
-    summary: ({ index }) => msg(`Đã xoá đoạn ${index}`, `Paragraph ${index} deleted`),
+    summary: ({ index }) => msg(`Paragraph ${index} deleted`),
   }),
 
   "paper.moveParagraph": defineAction({
@@ -1010,17 +983,14 @@ export const actions = {
         if (index > paragraphs.length) return paper;
         return { ...paper, body: bodyFrom(shift(paragraphs, index - 1, by)) };
       }),
-    summary: () => msg("Đã đổi thứ tự các đoạn", "Paragraphs reordered"),
+    summary: () => msg("Paragraphs reordered"),
   }),
 
   "paper.remove": defineAction({
     destructive: true,
     confirm: ({ id }) => {
       void id;
-      return msg(
-        "Xoá hẳn văn bản này? Không khôi phục lại được.",
-        "Delete this document for good? It cannot be restored.",
-      );
+      return msg("Delete this document for good? It cannot be restored.");
     },
     description: "Delete a letter or write-up the user no longer wants.",
     input: z.object({ id: z.string().min(1) }),
@@ -1028,7 +998,7 @@ export const actions = {
       ...state,
       papers: state.papers.filter((p) => p.id !== id),
     }),
-    summary: () => msg("Đã xoá văn bản", "Document deleted"),
+    summary: () => msg("Document deleted"),
   }),
 
   /* ── Pitch: the bio, the self-introduction, the answer bank ───────────── */
@@ -1054,7 +1024,7 @@ export const actions = {
       language: z
         .enum(["vi", "en"])
         .optional()
-        .describe("Defaults to the app's. Set it for an interview in the other one."),
+        .describe("Defaults to English. Set it for an interview in Vietnamese."),
     }),
     apply: (state, { kind, body, prompt, language }) => {
       const written: PitchItem = {
@@ -1064,7 +1034,7 @@ export const actions = {
         ),
         kind,
         body,
-        language: language ?? state.locale,
+        language: language ?? "en",
       };
       if (prompt) written.prompt = prompt;
 
@@ -1086,8 +1056,8 @@ export const actions = {
     },
     summary: ({ kind }) =>
       kind === "answer"
-        ? msg("Đã lưu câu trả lời", "Answer saved")
-        : msg("Đã lưu phần giới thiệu", "Saved"),
+        ? msg("Answer saved")
+        : msg("Saved"),
     touched: ({ kind }, after) => {
       const item = isSingletonPitchKind(kind)
         ? singletonOf(after.pitch, kind)
@@ -1113,16 +1083,13 @@ export const actions = {
         item.id === id ? { ...item, ...fields } : item,
       ),
     }),
-    summary: () => msg("Đã lưu", "Saved"),
+    summary: () => msg("Saved"),
   }),
 
   "pitch.remove": defineAction({
     destructive: true,
     confirm: () =>
-      msg(
-        "Xoá phần này? Không khôi phục lại được.",
-        "Delete this? It cannot be restored.",
-      ),
+      msg("Delete this? It cannot be restored."),
     description:
       "Delete a saved bio, self-introduction, or interview answer the user no " +
       "longer wants.",
@@ -1131,7 +1098,7 @@ export const actions = {
       ...state,
       pitch: state.pitch.filter((item) => item.id !== id),
     }),
-    summary: () => msg("Đã xoá", "Deleted"),
+    summary: () => msg("Deleted"),
   }),
 
   /* ── My Search: real postings ─────────────────────────────────────────── */
@@ -1151,7 +1118,7 @@ export const actions = {
       if (!opening) return state;
       return { ...state, openings: [opening, ...state.openings] };
     },
-    summary: () => msg("Đã thêm tin tuyển dụng", "Added the opening"),
+    summary: () => msg("Added the opening"),
     touched: (_input, after) => [after.openings[0]?.id].filter(Boolean) as string[],
   }),
 
@@ -1166,7 +1133,7 @@ export const actions = {
         opening.id === id ? { ...opening, saved: true } : opening,
       ),
     }),
-    summary: () => msg("Đã lưu tin này", "Saved"),
+    summary: () => msg("Saved"),
   }),
 
   "opening.unsave": defineAction({
@@ -1178,13 +1145,13 @@ export const actions = {
         opening.id === id ? { ...opening, saved: false } : opening,
       ),
     }),
-    summary: () => msg("Đã bỏ lưu", "Removed from saved"),
+    summary: () => msg("Removed from saved"),
   }),
 
   "opening.remove": defineAction({
     destructive: true,
     confirm: () =>
-      msg("Xoá tin tuyển dụng này?", "Delete this opening?"),
+      msg("Delete this opening?"),
     description:
       "Delete an opening entirely. Prefer `opening.unsave` when the user " +
       "only wants it off their shortlist.",
@@ -1196,7 +1163,7 @@ export const actions = {
       // what it is an application to, so it goes with it.
       applications: state.applications.filter((app) => app.openingId !== id),
     }),
-    summary: () => msg("Đã xoá tin tuyển dụng", "Opening deleted"),
+    summary: () => msg("Opening deleted"),
   }),
 
   /* ── My Applications ──────────────────────────────────────────────────── */
@@ -1241,7 +1208,7 @@ export const actions = {
         applications: [application, ...state.applications],
       };
     },
-    summary: () => msg("Đã thêm vào danh sách ứng tuyển", "Added to your applications"),
+    summary: () => msg("Added to your applications"),
     touched: (_input, after) => [after.applications[0]?.id].filter(Boolean) as string[],
   }),
 
@@ -1271,7 +1238,7 @@ export const actions = {
           : app,
       ),
     }),
-    summary: () => msg("Đã cập nhật trạng thái", "Status updated"),
+    summary: () => msg("Status updated"),
   }),
 
   "application.setNotes": defineAction({
@@ -1285,7 +1252,7 @@ export const actions = {
         app.id === id ? { ...app, notes, updatedAt: Date.now() } : app,
       ),
     }),
-    summary: () => msg("Đã lưu ghi chú", "Notes saved"),
+    summary: () => msg("Notes saved"),
   }),
 
   "application.setDeadline": defineAction({
@@ -1307,23 +1274,20 @@ export const actions = {
           : app,
       ),
     }),
-    summary: () => msg("Đã đặt hạn nộp", "Deadline set"),
+    summary: () => msg("Deadline set"),
   }),
 
   "application.remove": defineAction({
     destructive: true,
     confirm: () =>
-      msg(
-        "Xoá đơn ứng tuyển này? Ghi chú sẽ mất theo.",
-        "Delete this application? Its notes go too.",
-      ),
+      msg("Delete this application? Its notes go too."),
     description: "Stop tracking an application.",
     input: z.object({ id: z.string().min(1) }),
     apply: (state, { id }) => ({
       ...state,
       applications: state.applications.filter((app) => app.id !== id),
     }),
-    summary: () => msg("Đã xoá đơn ứng tuyển", "Application deleted"),
+    summary: () => msg("Application deleted"),
   }),
 
   /* ── Tailoring, per application ───────────────────────────────────────── */
@@ -1370,7 +1334,7 @@ export const actions = {
       };
     },
     summary: ({ label }) =>
-      msg(`Đã tạo “${label}” cho vị trí này`, `Created “${label}” for this job`),
+      msg(`Created “${label}” for this job`),
   }),
 
   "application.tailorLetter": defineAction({
@@ -1412,7 +1376,7 @@ export const actions = {
       };
     },
     summary: ({ label }) =>
-      msg(`Đã tạo “${label}”`, `Created “${label}”`),
+      msg(`Created “${label}”`),
   }),
 } satisfies Record<string, Action>;
 

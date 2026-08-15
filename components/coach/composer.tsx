@@ -265,14 +265,14 @@ export function Composer({
   autoFocus?: boolean;
   compact?: boolean;
 }) {
-  const { t, m, locale } = useT();
+  const { t, m } = useT();
   const pathname = usePathname();
   const state = useAppState();
   const canSend = thread.draft.trim().length > 0 && !thread.busy;
   const reduced = usePrefersReducedMotion();
   const hints = React.useMemo(
     () => composerHints(pathname, state).map((entry) => t(entry)),
-    [pathname, state, t, locale],
+    [pathname, state, t],
   );
   const hint = useCyclingHint(hints, canSend || thread.busy, reduced);
   const showOverlay = thread.draft.length === 0 && !thread.busy;

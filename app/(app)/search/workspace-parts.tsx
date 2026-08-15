@@ -26,7 +26,7 @@ export type RankedOpening = { opening: Opening; fit: OpeningFit };
 
 export function useSearchWorkspace() {
   const state = useAppState();
-  const { t, m, locale } = useT();
+  const { t, m } = useT();
   const [query, setQuery] = React.useState("");
   const [field, setField] = React.useState<SearchField>("anywhere");
   const [exclude, setExclude] = React.useState("");
@@ -101,7 +101,6 @@ export function useSearchWorkspace() {
     touched,
     narrowed,
     clearSearch,
-    locale,
     t,
     m,
   };

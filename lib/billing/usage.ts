@@ -57,20 +57,15 @@ export async function recordTurn(
 /**
  * What the user is told when the allowance is gone.
  *
- * Bilingual and specific: what ran out, when it comes back, and what to do
- * about it. "Limit reached" on its own leaves somebody guessing whether the
- * product is broken.
+ * Specific: what ran out, when it comes back, and what to do about it.
+ * "Limit reached" on its own leaves somebody guessing whether the product is
+ * broken.
  */
-export function allowanceMessage(plan: Plan): { vi: string; en: string } {
+export function allowanceMessage(plan: Plan): string {
   const back = plan.periodEnd
     ? plan.periodEnd.toISOString().slice(0, 10)
     : null;
-  return {
-    vi: back
-      ? `Bạn dùng hết ${plan.coachAllowance} lượt Coach của kỳ này rồi. Kỳ mới bắt đầu ngày ${back}. Nâng gói thì dùng tiếp được ngay.`
-      : `Bạn dùng hết ${plan.coachAllowance} lượt Coach của gói miễn phí rồi. Nâng gói thì dùng tiếp được ngay.`,
-    en: back
-      ? `You've used all ${plan.coachAllowance} Coach turns this period. It resets on ${back}. Upgrading starts you again now.`
-      : `You've used all ${plan.coachAllowance} Coach turns on the free plan. Upgrading starts you again now.`,
-  };
+  return back
+    ? `You've used all ${plan.coachAllowance} Coach turns this period. It resets on ${back}. Upgrading starts you again now.`
+    : `You've used all ${plan.coachAllowance} Coach turns on the free plan. Upgrading starts you again now.`;
 }

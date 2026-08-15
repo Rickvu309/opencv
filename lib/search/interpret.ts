@@ -8,7 +8,12 @@
  */
 
 import type { Requirement } from "@/lib/career-graph";
-import { foldText, matchField, queryTokens } from "@/lib/search/match";
+import {
+  CITY_ALIASES,
+  foldText,
+  matchField,
+  queryTokens,
+} from "@/lib/search/match";
 import type { OpeningFit } from "@/lib/search/fit";
 import { SKILL_VOCABULARY, type Opening } from "@/lib/search/types";
 
@@ -37,11 +42,6 @@ const SAVED_MARKERS = [
   "saved",
 ];
 const SEEDED_MARKERS = ["tin vi du", "vi du", "examples", "example"];
-
-const CITY_ALIASES: Record<string, string[]> = {
-  "Hà Nội": ["hanoi", "ha noi"],
-  "TP. Hồ Chí Minh": ["hcmc", "tphcm", "ho chi minh", "sai gon", "saigon"],
-};
 
 export function emptyAsk(): SearchAsk {
   return { role: "", city: "", org: "", scope: "all", criteria: [] };
@@ -74,8 +74,8 @@ export function serializeAsk(ask: SearchAsk): string {
   if (ask.role.trim()) parts.push(ask.role.trim());
   if (ask.city.trim()) parts.push(ask.city.trim());
   if (ask.org.trim()) parts.push(ask.org.trim());
-  if (ask.scope === "saved") parts.push("tin đã lưu");
-  if (ask.scope === "seeded") parts.push("tin ví dụ");
+  if (ask.scope === "saved") parts.push("saved");
+  if (ask.scope === "seeded") parts.push("examples");
   for (const skill of ask.criteria) parts.push(skillDisplayName(skill));
   return parts.join(" ");
 }
@@ -315,8 +315,7 @@ function stripMarker(hay: string, marker: string): string {
 function openingHay(opening: Opening): string {
   const location = opening.location ?? "";
   const requirements = opening.requirements.flatMap((requirement) => [
-    requirement.label.vi,
-    requirement.label.en,
+    requirement.label,
     ...requirement.skills,
   ]);
   return foldText(

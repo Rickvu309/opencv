@@ -24,7 +24,6 @@ import {
   type ProseDocument,
 } from "@/lib/papers/types";
 import type { Opening } from "@/lib/search/types";
-import { localeNames, locales } from "@/lib/i18n/locale";
 import { useT } from "@/lib/i18n/use-t";
 import { cn } from "@/lib/utils";
 
@@ -35,13 +34,13 @@ export function PaperSheet({
   paper: ProseDocument;
   opening: Opening | undefined;
 }) {
-  const { t, m, locale } = useT();
+  const { t, m } = useT();
   const dispatch = useDispatch();
   const touched = useTouched();
   const empty = isEmptyPaper(paper);
   const meta = opening
     ? [opening.title, opening.org].filter(Boolean).join(" · ")
-    : paper.targetRole?.trim() || paperKindLabels[paper.kind][locale];
+    : paper.targetRole?.trim() || t(paperKindLabels[paper.kind]);
 
   const ask =
     paper.kind === "cover-letter"
@@ -50,10 +49,7 @@ export function PaperSheet({
         : m.papers.askCoachLetter
       : m.papers.askCoachWriteUp;
 
-  const request = [
-    ask[paper.language],
-    paper.label.trim() && `(${paper.label.trim()})`,
-  ]
+  const request = [t(ask), paper.label.trim() && `(${paper.label.trim()})`]
     .filter(Boolean)
     .join(" ");
 
@@ -75,23 +71,8 @@ export function PaperSheet({
             }
           />
           <p className="mt-1 text-xs text-muted-foreground">{meta}</p>
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+          <div className="mt-3 flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
             <div className="flex items-center gap-1">
-              {locales.map((code) => (
-                <Button
-                  key={code}
-                  variant={paper.language === code ? "secondary" : "ghost"}
-                  size="sm"
-                  className={paper.language === code ? undefined : "text-muted-foreground"}
-                  onClick={() =>
-                    dispatch("paper.rename", { id: paper.id, language: code }, { silent: true })
-                  }
-                >
-                  {localeNames[code]}
-                </Button>
-              ))}
-            </div>
-            <div className="ms-auto flex items-center gap-1">
               <QuietCoachOffer
                 label={t(empty ? m.papers.askCoach : m.papers.askCoachHelp)}
                 prompt={request}

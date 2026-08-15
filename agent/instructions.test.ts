@@ -66,20 +66,20 @@ test("AC-PAPERS-004.3 and 005.3: the no-inventing rules are written down", () =>
   // Asking rather than inventing is the difference between a letter that helps
   // and one that gets found out in the interview. It is a model behaviour, so
   // the only thing to enforce here is that the rule was actually stated.
-  assert.match(instructions, /đừng bịa|không bịa/i);
+  assert.match(instructions, /do not invent|don't invent/i);
   assert.match(
     instructions,
-    /không bịa con số/i,
+    /do not invent a number/i,
     "the rule against inventing a measurable result is missing",
   );
 });
 
 test("AC-PITCH-002.3: the Coach is told to ask for the goal before drafting", () => {
-  assert.match(instructions, /Chưa đặt mục tiêu thì hỏi/i);
+  assert.match(instructions, /If they have not\s+set a goal, ask before you write/i);
 });
 
 test("AC-PITCH-003.4: the Coach is told never to invent an experience", () => {
-  assert.match(instructions, /Không bao giờ dựng ra một trải nghiệm/i);
+  assert.match(instructions, /Never\s+invent an experience/i);
 });
 
 test("the granular edit is preferred over the whole-document rewrite", () => {
@@ -99,18 +99,14 @@ test("the voice rules the whole product shares are still stated", () => {
   // the two the copy catalog also enforces, and an instruction file that lost
   // them would make the Coach the one part of the product with a different
   // voice.
-  assert.match(instructions, /Không dùng dấu chấm than/);
-  assert.match(instructions, /xưng \*\*"mình"\*\*/);
+  assert.match(instructions, /No exclamation marks/);
+  assert.match(instructions, /second person/i);
 });
 
 test("AC-PITCH-004.3 and AC-PAPERS-009.2: a rewrite keeps the item's own language", () => {
-  // The failure this guards: somebody reading the app in Vietnamese has an
-  // English interview answer ready for a foreign employer, asks the Coach to
-  // sharpen it, and gets it back in Vietnamese. The item carries a `language`
-  // and the rewrite has to follow it rather than the conversation.
   assert.match(
     instructions,
-    /Sửa lại một mục đã có thì viết bằng đúng ngôn ngữ của mục đó/i,
+    /write in that item's own `language`/i,
   );
-  assert.match(instructions, /sửa theo `language` của văn bản/i);
+  assert.match(instructions, /follow the document's `language`/i);
 });

@@ -14,7 +14,6 @@ import {
   nextStep,
   type Application,
 } from "@/lib/applications/types";
-import { locales } from "@/lib/i18n/locale";
 import { SEED_OPENINGS } from "@/lib/search/types";
 
 const opening = SEED_OPENINGS[0].id;
@@ -143,20 +142,15 @@ test("a deadline that is not a date is refused", () => {
   );
 });
 
-test("AC-APP-007.1: every status has a next step, in both languages", () => {
+test("AC-APP-007.1: every status has a next step", () => {
   for (const status of [...FORWARD_STATUSES, "rejected" as const]) {
-    for (const locale of locales) {
-      assert.ok(
-        nextStep(status)[locale].trim().length > 10,
-        `${status} has no ${locale} next step`,
-      );
-    }
+    assert.ok(nextStep(status).trim().length > 10, `${status} has no next step`);
   }
 });
 
 test("the next step differs by stage", () => {
   // A tracker that says the same thing at every stage is a decoration.
-  const steps = new Set(FORWARD_STATUSES.map((status) => nextStep(status).vi));
+  const steps = new Set(FORWARD_STATUSES.map((status) => nextStep(status)));
   assert.equal(steps.size, FORWARD_STATUSES.length);
 });
 

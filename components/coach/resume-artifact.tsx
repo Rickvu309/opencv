@@ -80,7 +80,7 @@ export function ResumeArtifact({
   compact?: boolean;
 }) {
   const { resumes } = useAppState();
-  const { t, m, locale } = useT();
+  const { t, m } = useT();
   const resumeId = resolveResumeId(edits, resumes);
   const resume = resumes.find((r) => r.id === resumeId);
 
@@ -129,7 +129,7 @@ export function ResumeArtifact({
           {completeness}%
         </span>
         <Link
-          href={`/cv?resume=${encodeURIComponent(resume.id)}`}
+          href={`/paper?resume=${encodeURIComponent(resume.id)}`}
           aria-label={t(m.coach.openCv)}
           className="flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
         >
@@ -164,7 +164,7 @@ export function ResumeArtifact({
           says what it is and where to go to read it. */}
       <p className="sr-only">
         {resume.label} — {resume.header.name},{" "}
-        {resume.sections.filter((s) => !s.hidden).length} {locale === "vi" ? "mục" : "sections"}
+        {resume.sections.filter((s) => !s.hidden).length} sections
       </p>
     </div>
   );

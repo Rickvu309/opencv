@@ -24,7 +24,7 @@ import {
   type Conversation,
 } from "@/lib/coach/sessions";
 import { useTurnWatchdog } from "@/lib/coach/watchdog";
-import { looksVietnamese, type Msg } from "@/lib/i18n/locale";
+import { type Msg } from "@/lib/i18n/locale";
 import { messages as ui } from "@/lib/i18n/messages";
 import { screenInput } from "@/lib/guardrails/input";
 import { reportInputFindings, reportOutputFindings } from "@/lib/guardrails/client";
@@ -38,7 +38,7 @@ type ApplyActionEnvelope = {
   ok: boolean;
   action: string;
   input: Record<string, unknown>;
-  /** A `{ vi, en }` pair, not a string: the registry's summaries are bilingual. */
+  /** The registry's own confirmation line. Only ever set from the envelope. */
   summary: Msg;
 };
 
@@ -77,7 +77,6 @@ export function useCoachThread({
   const pathname = usePathname();
   const state = useAppState();
   const dispatch = useDispatch();
-  const locale = state.locale;
 
   // Messages produced without the agent: anything `replies.ts` answered while
   // it was unreachable. Interleaved with the agent's own by `after`, not
@@ -111,7 +110,7 @@ export function useCoachThread({
   const answerLocally = React.useCallback(
     (question: string) => {
     setPending(true);
-    const reply = pickReply(question, locale);
+    const reply = pickReply(question);
     replyTimer.current = setTimeout(() => {
       setPending(false);
       idCounter.current += 1;
@@ -126,7 +125,7 @@ export function useCoachThread({
       ]);
       }, 1200);
     },
-    [locale],
+    [],
   );
 
   /**
@@ -165,12 +164,12 @@ export function useCoachThread({
       if (fellBack.current) return;
       fellBack.current = true;
       setOffline(true);
-      toast.error(ui.coach.offlineTitle[locale], {
-        description: ui.coach.offlineBody[locale],
+      toast.error(ui.coach.offlineTitle, {
+        description: ui.coach.offlineBody,
       });
       if (question) answerLocally(question);
     },
-    [answerLocally, locale],
+    [answerLocally],
   );
 
   /**
@@ -280,7 +279,7 @@ export function useCoachThread({
         {
           id: `empty-${idCounter.current}`,
           role: "coach",
-          content: ui.coach.emptyTurn[locale],
+          content: ui.coach.emptyTurn,
           after: snapshot.data.messages.length,
         },
       ]);
@@ -396,13 +395,13 @@ export function useCoachThread({
         return { action: envelope?.action ?? "", ok: Boolean(envelope?.ok) };
       });
 
-    const verdict = checkOutput({ reply: text, toolResults, locale });
+    const verdict = checkOutput({ reply: text, toolResults });
     if (verdict.findings.length > 0) {
       reportOutputFindings(verdict.findings, trace.traceId, verdict.kind !== "allow");
       if (verdict.kind === "revise") {
         // Only the correction is appended. The reply itself stays as the agent
         // rendered it, so nothing the user already read changes under them.
-        sayLocally(ui.guardrails.noActionTaken[locale]);
+        sayLocally(ui.guardrails.noActionTaken);
       }
     }
 
@@ -413,12 +412,11 @@ export function useCoachThread({
       reply: text,
       state,
       userSaid: lastAsked.current ?? "",
-      locale,
     });
     if (grounded.findings.length === 0) return;
     reportOutputFindings(grounded.findings, trace.traceId, grounded.kind === "revise");
-    if (grounded.kind === "revise") sayLocally(ui.guardrails.notGrounded[locale]);
-  }, [agent.data.messages, turnRunning, locale, sayLocally, trace.traceId, state]);
+    if (grounded.kind === "revise") sayLocally(ui.guardrails.notGrounded);
+  }, [agent.data.messages, turnRunning, sayLocally, trace.traceId, state]);
 
   const messages = React.useMemo<CoachMessage[]>(
     () => interleave(local, agent.data.messages),
@@ -464,7 +462,7 @@ export function useCoachThread({
             after: agentCount.current,
           },
         ]);
-        sayLocally(screened.reply[locale]);
+        sayLocally(screened.reply);
         reportInputFindings(screened.findings, trace.traceId);
         return;
       }
@@ -473,7 +471,7 @@ export function useCoachThread({
       // silently altered on its way out is the kind of thing that destroys
       // trust when it is noticed later.
       if (screened.kind === "redact") {
-        sayLocally(ui.guardrails.sensitiveRemoved[locale]);
+        sayLocally(ui.guardrails.sensitiveRemoved);
         reportInputFindings(screened.findings, trace.traceId);
         text = screened.text;
       }
@@ -512,7 +510,7 @@ export function useCoachThread({
           setLocal((prev) => prev.filter((message) => message.id !== localId));
           setOffline(false);
           fellBack.current = false;
-          toast.success(ui.coach.backOnline[locale]);
+          toast.success(ui.coach.backOnline);
           lastAsked.current = text;
           agent.send({ message: text }).catch(() => handleTurnFailure(text));
         });
@@ -523,7 +521,7 @@ export function useCoachThread({
       // would be an unhandled rejection, and a real failure needs the fallback.
       agent.send({ message: text }).catch(() => handleTurnFailure(text));
     },
-    [agent, answerLocally, handleTurnFailure, locale, lock, offline, sayLocally, trace.traceId],
+    [agent, answerLocally, handleTurnFailure, lock, offline, sayLocally, trace.traceId],
   );
 
   /**
@@ -535,48 +533,13 @@ export function useCoachThread({
    */
   const answer = ask;
 
-  /**
-   * Switch the app to Vietnamese when the user turns out to write Vietnamese.
-   *
-   * The starting language is a guess made from `navigator.languages`, and it is
-   * wrong for a large part of this product's actual audience: a Vietnamese
-   * student on an English-language phone gets an English app, writes a whole
-   * question in Vietnamese, and is answered in English. Measured in the running
-   * app; the model was supposed to notice and call `settings.setLanguage`, and
-   * it did not, and even when told outright it answered in Vietnamese while
-   * leaving the interface in English.
-   *
-   * So the app decides, not the model. What the user types is evidence; what
-   * their browser reports is a guess, and evidence wins.
-   *
-   * Once per session, and never in the other direction. A user who undoes this,
-   * or who sets the language by hand afterwards, is not argued with a second
-   * time, and the absence of Vietnamese is never read as a request for English.
-   */
-  const autoSwitched = React.useRef(false);
-
   const send = React.useCallback(
     (raw: string) => {
       const text = raw.trim();
       if (!text || busy) return;
-      if (!autoSwitched.current && locale === "en" && looksVietnamese(text)) {
-        autoSwitched.current = true;
-        // Through the registry like any other change, so it announces itself
-        // and offers undo rather than silently rewriting the interface.
-        dispatch("settings.setLanguage", { language: "vi" });
-        // And into the slice this turn is about to send.
-        //
-        // `stateRef` is refreshed by an effect, which runs after this render —
-        // but `ask` calls `agent.send` on this tick, and `prepareSend` reads
-        // the ref right there. So the turn that *revealed* the user writes
-        // Vietnamese was the one turn told they read English. Observed: the
-        // interface switched, the toast said so, and the Coach answered the
-        // Vietnamese question in English anyway.
-        stateRef.current = { ...stateRef.current, locale: "vi" };
-      }
       ask(text);
     },
-    [ask, busy, dispatch, locale],
+    [ask, busy],
   );
 
   /**

@@ -38,6 +38,5 @@ that can finish a turn.
 ## What is worth keeping
 
 `agent/skills/` is empty: that directory is loaded by eve as the *Coach's*
-skills, and it used to hold the software-factory development skill. The
-Coach's only tool validates a payload and runs no code, so it never needed a
-bash sandbox.
+skills. The Coach's only tool validates a payload and runs no code, so it
+never needed a bash sandbox.

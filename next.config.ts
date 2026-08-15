@@ -3,7 +3,10 @@ import { withEve } from "eve/next";
 
 const nextConfig: NextConfig = {
   async redirects() {
-    return [{ source: "/papers", destination: "/cv", permanent: false }];
+    return [
+      { source: "/cv", destination: "/paper", permanent: false },
+      { source: "/papers", destination: "/paper", permanent: false },
+    ];
   },
 };
 

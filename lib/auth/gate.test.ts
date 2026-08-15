@@ -9,6 +9,7 @@ import { SIGN_IN_PATH, gateFor, safeNext } from "@/lib/auth/gate";
 /** The screens the product is made of. AC-ACCT-005.1 covers all of them. */
 const PRODUCT_SCREENS = [
   "/coach",
+  "/paper",
   "/cv",
   "/papers",
   "/pitch",
@@ -76,9 +77,9 @@ test("with a session, everything is open", () => {
 });
 
 test("the redirect carries where the user was going", () => {
-  const decision = gateFor("/cv", false);
+  const decision = gateFor("/paper", false);
   assert.equal(decision.kind, "redirect");
-  assert.ok(decision.kind === "redirect" && decision.to === `${SIGN_IN_PATH}?next=%2Fcv`);
+  assert.ok(decision.kind === "redirect" && decision.to === `${SIGN_IN_PATH}?next=%2Fpaper`);
 });
 
 test("the return path cannot be pointed at another site", () => {
@@ -93,7 +94,7 @@ test("the return path cannot be pointed at another site", () => {
   // And a loop back to itself is not a destination either.
   assert.equal(safeNext(SIGN_IN_PATH), null);
   // An ordinary path is fine.
-  assert.equal(safeNext("/cv"), "/cv");
+  assert.equal(safeNext("/paper"), "/paper");
 });
 
 test("a path that only looks like an asset is still gated when it is a screen", () => {

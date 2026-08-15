@@ -14,6 +14,34 @@
 
 import type { Opening } from "@/lib/search/types";
 
+/** Canonical city on an opening → other spellings people type. */
+export const CITY_ALIASES: Record<string, string[]> = {
+  Hanoi: ["hanoi", "ha noi", "ha-noi"],
+  "Hà Nội": ["hanoi", "ha noi", "ha-noi"],
+  "Ho Chi Minh City": [
+    "hcmc",
+    "tphcm",
+    "ho chi minh",
+    "sai gon",
+    "saigon",
+    "tp ho chi minh",
+  ],
+  "TP. Hồ Chí Minh": [
+    "hcmc",
+    "tphcm",
+    "ho chi minh",
+    "sai gon",
+    "saigon",
+    "tp ho chi minh",
+  ],
+};
+
+/** Location plus aliases, so "Hà Nội" still hits a row stored as Hanoi. */
+export function locationHay(location: string): string {
+  const aliases = CITY_ALIASES[location] ?? [];
+  return [location, location.replace(/\s+/g, ""), ...aliases].join(" ");
+}
+
 const STOP = new Set([
   "o",
   "tai",
@@ -68,16 +96,14 @@ export function queryTokens(query: string): string[] {
 function openingHaystack(opening: Opening): string {
   const location = opening.location ?? "";
   const requirements = opening.requirements.flatMap((requirement) => [
-    requirement.label.vi,
-    requirement.label.en,
+    requirement.label,
     ...requirement.skills,
   ]);
   return [
     opening.title,
     opening.org,
     opening.description,
-    location,
-    location.replace(/\s+/g, ""),
+    locationHay(location),
     ...requirements,
     opening.saved ? "saved da luu bookmark" : "",
     opening.seeded ? "example vi du seeded" : "",
@@ -114,14 +140,10 @@ function fieldHaystack(opening: Opening, field: SearchField): string {
   if (field === "anywhere") return openingHaystack(opening);
   if (field === "title") return `${opening.title} ${opening.description}`;
   if (field === "org") return opening.org;
-  if (field === "city") {
-    const location = opening.location ?? "";
-    return `${location} ${location.replace(/\s+/g, "")}`;
-  }
+  if (field === "city") return locationHay(opening.location ?? "");
   return opening.requirements
     .flatMap((requirement) => [
-      requirement.label.vi,
-      requirement.label.en,
+      requirement.label,
       ...requirement.skills,
     ])
     .join(" ");

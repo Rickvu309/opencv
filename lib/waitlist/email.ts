@@ -32,11 +32,7 @@ export function checkEmail(raw: string): EmailProblem | null {
 }
 
 /**
- * What to show the person who typed it, in both languages.
- *
- * Returns the pair rather than a string because this module is shared by the
- * client and the server, and the server does not know which language this
- * browser reads. The client resolves it; the server sends a code instead.
+ * What to show the person who typed it.
  */
 export function emailProblemMessage(problem: EmailProblem): Msg {
   switch (problem) {

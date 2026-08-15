@@ -149,7 +149,7 @@ export type ReasoningTriggerProps = ComponentProps<
 };
 
 // Was a `motion`-powered text shimmer, 772KB to make three words pulse. Every
-// caller here passes its own bilingual `getThinkingMessage`, so this is only a
+// caller here passes its own `getThinkingMessage`, so this is only a
 // fallback and has no business pulling an animation engine in behind it.
 const defaultGetThinkingMessage = (isStreaming: boolean, duration?: number) => {
   if (isStreaming || duration === 0) {

@@ -196,8 +196,8 @@ function Sidebar({
           side={side}
         >
           <SheetHeader className="sr-only">
-            <SheetTitle>Thanh bên</SheetTitle>
-            <SheetDescription>Danh sách điều hướng chính của OpenPath.</SheetDescription>
+            <SheetTitle>Sidebar</SheetTitle>
+            <SheetDescription>Main OpenPath navigation.</SheetDescription>
           </SheetHeader>
           <div className="flex h-full w-full flex-col">{children}</div>
         </SheetContent>
@@ -272,7 +272,7 @@ function SidebarTrigger({
       {...props}
     >
       <PanelLeftIcon />
-      <span className="sr-only">Ẩn hoặc hiện thanh bên</span>
+      <span className="sr-only">Show or hide sidebar</span>
     </Button>
   )
 }

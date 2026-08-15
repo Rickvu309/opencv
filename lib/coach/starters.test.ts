@@ -20,9 +20,8 @@ test("there are always exactly six, in a stable order", () => {
     const starters = coachStarters(state);
     assert.equal(starters.length, 6);
     for (const entry of starters) {
-      assert.equal(typeof entry.vi, "string");
-      assert.equal(typeof entry.en, "string");
-      assert.ok(entry.vi.length > 0 && entry.en.length > 0);
+      assert.equal(typeof entry, "string");
+      assert.ok(entry.length > 0);
     }
   }
 });
@@ -54,10 +53,10 @@ test("an empty account asks where to start; one with work asks what comes first"
 test("a named target role is used by name", () => {
   const starters = coachStarters(populated());
   assert.ok(
-    starters[2].vi.includes("Data Analyst"),
-    `expected the role in the chip, got: ${starters[2].vi}`,
+    starters[2].includes("Data Analyst"),
+    `expected the role in the chip, got: ${starters[2]}`,
   );
-  assert.ok(starters[2].en.includes("Data Analyst"));
+  assert.ok(starters[2].includes("Data Analyst"));
 });
 
 test("with no target role, the question is which direction", () => {

@@ -13,15 +13,14 @@ test("the Coach page cycles the starters, nothing extra", () => {
 
 test("an artefact screen leads with a hint for that screen", () => {
   const state = seedState();
-  const hints = composerHints("/cv", state);
+  const hints = composerHints("/paper", state);
   assert.deepEqual(hints[0], messages.coach.hintCv);
   assert.deepEqual(hints.slice(1), coachStarters(state));
 });
 
-test("search, papers, pitch, applications and profile each have their own lead", () => {
+test("search, pitch, applications and profile each have their own lead", () => {
   const state = seedState();
   assert.equal(composerHints("/search", state)[0], messages.coach.hintSearch);
-  assert.equal(composerHints("/papers", state)[0], messages.coach.hintPapers);
   assert.equal(composerHints("/pitch", state)[0], messages.coach.hintPitch);
   assert.equal(
     composerHints("/applications", state)[0],

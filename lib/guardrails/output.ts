@@ -17,7 +17,6 @@
  */
 
 import { messages } from "@/lib/i18n/messages";
-import type { Locale } from "@/lib/i18n/locale";
 import { DEFAULT_CONFIG, type GuardrailConfig } from "@/lib/guardrails/config";
 
 export type OutputFinding = {
@@ -73,22 +72,14 @@ export type TurnToolResult = {
   ok: boolean;
 };
 
-/**
- * Check a finished reply.
- *
- * `locale` decides which language the correction is written in, and it is the
- * reply's language rather than the app's: appending an English sentence to a
- * Vietnamese reply would read as a bug even when the correction is right.
- */
+/** Check a finished reply. */
 export function checkOutput({
   reply,
   toolResults = [],
-  locale,
   config = DEFAULT_CONFIG,
 }: {
   reply: string;
   toolResults?: TurnToolResult[];
-  locale: Locale;
   config?: GuardrailConfig;
 }): OutputVerdict {
   if (config.strictness === "off") {
@@ -148,7 +139,7 @@ export function checkOutput({
   if (claimedFalsely) {
     return {
       kind: "revise",
-      reply: `${reply.trim()}\n\n${messages.guardrails.noActionTaken[locale]}`,
+      reply: `${reply.trim()}\n\n${messages.guardrails.noActionTaken}`,
       findings,
     };
   }
@@ -156,7 +147,7 @@ export function checkOutput({
   if (config.strictness === "strict") {
     return {
       kind: "revise",
-      reply: `${reply.trim()}\n\n${messages.guardrails.outOfScope[locale]}`,
+      reply: `${reply.trim()}\n\n${messages.guardrails.outOfScope}`,
       findings,
     };
   }

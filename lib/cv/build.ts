@@ -1,7 +1,7 @@
 // Making a CV exist: blank, or filled from what the profile already knows.
 
 import type { AppState } from "@/lib/actions/types";
-import { matchesMsg, type Locale } from "@/lib/i18n/locale";
+import { matchesMsg, type DocumentLanguage } from "@/lib/i18n/locale";
 import { messages } from "@/lib/i18n/messages";
 import {
   defaultTheme,
@@ -36,15 +36,13 @@ export function nextId(prefix: string, existing: readonly string[]): string {
 export function emptySection(
   kind: ResumeSectionKind,
   id: string,
-  language: Locale,
+  _language: DocumentLanguage,
   heading?: string,
 ): ResumeSection {
   return {
     id,
     kind,
-    // The document's language, not the app's: an English CV gets "Experience"
-    // even while the interface around it is Vietnamese.
-    heading: heading ?? sectionDefaults[kind].heading[language],
+    heading: heading ?? sectionDefaults[kind].heading,
     ...(isProseKind(kind) ? { body: "" } : {}),
     entries: [],
   };
@@ -69,7 +67,7 @@ export function insertionIndex(
  * asks the user to invent the structure of a CV, which is the part they came
  * here not to have to know.
  */
-export function blankResume(id: string, label: string, language: Locale): Resume {
+export function blankResume(id: string, label: string, language: DocumentLanguage): Resume {
   return {
     id,
     label,
@@ -86,7 +84,7 @@ export function blankResume(id: string, label: string, language: Locale): Resume
       emptySection(kind, `${id}-s-${i + 1}`, language),
     ),
     theme: { ...defaultTheme },
-    updatedAt: "Vừa xong",
+    updatedAt: "Just now",
   };
 }
 
@@ -102,7 +100,7 @@ export function resumeFromProfile(
   state: AppState,
   id: string,
   label: string,
-  language: Locale,
+  language: DocumentLanguage,
 ): Resume {
   const { profile } = state;
   const resume = blankResume(id, label, language);
@@ -117,8 +115,11 @@ export function resumeFromProfile(
     // Matched in either language: the row was labelled in whichever language
     // the user was reading when it was written, which may not be this one.
     location:
-      profile.context.find((r) => matchesMsg(messages.context.location, r.label))
-        ?.value ?? "",
+      profile.context.find(
+        (r) =>
+          matchesMsg(messages.context.location, r.label) ||
+          r.label.trim().toLowerCase() === "địa điểm",
+      )?.value ?? "",
   };
 
   const sections: ResumeSection[] = [];

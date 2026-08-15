@@ -79,8 +79,7 @@ test("the redirect offers careers rather than only saying no", () => {
   assert.equal(verdict.kind, "redirect");
   if (verdict.kind !== "redirect") return;
   assert.equal(verdict.reply, messages.guardrails.outOfScope);
-  assert.match(verdict.reply.vi, /nghề nghiệp/);
-  assert.match(verdict.reply.en, /career/i);
+  assert.match(verdict.reply, /career/i);
 });
 
 test("career questions that mention money or health are not redirected", () => {

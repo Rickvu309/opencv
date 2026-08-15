@@ -13,10 +13,7 @@ import { createAccountState } from "@/lib/state/account-state";
  * created and not signed into. Either the person has an account they are
  * signed into with a place to work, or nothing happened at all.
  *
- * `locale` is what the browser is currently reading. It seeds the plan stage
- * labels, which become the user's text from that moment, so guessing it here
- * and letting them change it is better than defaulting everyone to Vietnamese
- * and making half of them fix it.
+ * `locale` is ignored. New accounts start in English.
  */
 export async function POST(request: Request) {
   if (!process.env.DATABASE_URL) {

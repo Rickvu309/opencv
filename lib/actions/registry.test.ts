@@ -114,16 +114,13 @@ test("every action that asks first has something to ask", () => {
   assert.deepEqual(silent, [], "these delete something without saying what");
 });
 
-test("confirmations are questions, in both languages", () => {
+test("confirmations are questions", () => {
   for (const name of destructiveActionNames) {
     const copy = lookupAction(name)!.confirm!({} as never);
-    for (const locale of ["vi", "en"] as const) {
-      assert.ok(copy[locale]?.length > 0, `${name} has no ${locale} confirmation`);
-      assert.ok(
-        copy[locale].includes("?"),
-        `${name}'s ${locale} confirmation is not a question: ${copy[locale]}`,
-      );
-    }
-    assert.notEqual(copy.vi, copy.en, `${name}'s confirmation was not translated`);
+    assert.ok(copy?.length > 0, `${name} has no confirmation`);
+    assert.ok(
+      copy.includes("?"),
+      `${name}'s confirmation is not a question: ${copy}`,
+    );
   }
 });

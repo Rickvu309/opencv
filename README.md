@@ -6,15 +6,14 @@ you can work through week by week, and builds the CV you send.
 
 Live: [openpath.up.railway.app](https://openpath.up.railway.app)
 
-The interface is Vietnamese or English, switchable anywhere. The code and
-internal docs are English.
+The product UI is English. The code and internal docs are English.
 
 ## Status
 
 Live and working, with the limits of a demo. What that means:
 
 - The Coach is real. An Eve agent runs on Railway beside the app and answers
-  in your language.
+  in English.
 - It can change the app for you. Ask it to add a line to your CV and the line
   appears, with an undo.
 - **Real accounts.** A username and a password, and everything behind the
@@ -26,9 +25,6 @@ Live and working, with the limits of a demo. What that means:
 - **An account starts empty.** There is no seeded persona any more. Onboarding
   is where the profile comes from, and every screen reads the store, so what
   you type is what the app shows you.
-- **Two languages, neither one a translation.** Vietnamese and English are
-  written separately, and the Coach answers in whichever you are reading.
-
 The waiting list is stored in the same Postgres as the accounts.
 
 ## Run it
@@ -90,7 +86,7 @@ lib/actions/
 lib/
   catalog.ts    the app's fixed vocabulary: kinds of thing, and their weights
   cv/           the CV itself: types, building one, and getting it back out
-  i18n/         every word the product says, in both languages
+  i18n/         every word the product says
 ```
 
 The CV is the clearest case for the registry. Fourteen of the forty-one actions
@@ -108,48 +104,30 @@ agent/
   tools/apply_action.ts  the Coach's hands, wired to the registry above
 ```
 
-## Two languages
+## Copy
 
-Every user-facing string is a `{ vi, en }` pair, and the pairs are written
-separately rather than translated. `PRODUCT.md` calls the voice "Vietnamese-first,
-natural not translated", which cuts both ways once English exists: Vietnamese
-bent to fit an English sentence reads like a manual, and English mirroring
-Vietnamese reads like a machine.
-
-`lib/i18n/messages.ts` holds the interface copy. Content that is not interface
-copy keeps its pairs where it lives: role descriptions in `lib/career-graph.ts`,
-document kinds in `lib/catalog.ts`, action confirmations in the registry beside
-the reducers they announce.
-
-The language is part of `AppState`, not a setting beside it, for one reason: the
-Coach has to know. Switching to English and getting a Vietnamese reply is the
-half of the product that talks ignoring you. `settings.setLanguage` is an action
-like any other, so the Coach can switch when you write to it in the other one.
-
-A CV carries its **own** language, separate from the app's. Applying abroad
-means an English CV, and needing to switch the whole interface to write one
-would be the wrong trade.
-
-`npm test` guards the catalog: every leaf has both languages, no English entry
-still carries Vietnamese text, and every one of the 41 actions can announce
-itself in both.
+The product is English. `lib/i18n/messages.ts` holds the interface copy.
+Role descriptions, document kinds, and action confirmations live next to the
+code they describe. A CV can still record its own language for the document.
 
 ## Screens
 
-Eight: a landing page, a three-step onboarding flow, and six app screens
-(Coach, Hồ sơ, CV, Career Map, Kế hoạch, Todo).
+Five artefact screens, then Coach:
+
+- **My Profile** (`/profile`) — who you are. Lives in the account menu.
+- **My Paper** (`/paper`) — CVs and letters in one library. `/papers` redirects here.
+- **My Pitch** (`/pitch`) — bio, self-intro, interview answers.
+- **My Search** (`/search`) — openings ranked against the profile.
+- **My Application** (`/applications`) — the board of applications you are in.
+
+**My Coach** (`/coach`) is the conversation. The dock on every other screen is
+the same conversation, not a second one.
+
+Under those: Discover (landing), onboarding, accounts, Help, Plan and billing.
 
 Onboarding asks the goal first, then where you are starting from, then what
 you already have — and shows a fit score that moves as you answer, because a
 form that gives nothing back until the end is a form nobody finishes.
-
-The Coach is the home screen. Every other screen is an artifact the
-conversation produced or reads from.
-
-`/cv` is My Paper: CVs and letters in one library. A CV is built from the
-profile you already filled in, typed on the page, and exported as PDF (through
-the browser's own print dialog), Markdown, plain text, or JSON. `/papers`
-redirects here.
 
 ## Stack
 
@@ -165,5 +143,3 @@ runner.
   behaves.
 - `docs/database.md`: where the database is, and how to apply the schema.
 - `agent-native.md`: the technical spec for embedding the Coach.
-- `wayfinder/`: the working maps of what is decided and what is still open.
-  `backend/` and `launch/` are complete; the UI/UX effort is archived.

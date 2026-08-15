@@ -6,7 +6,6 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { authProblem } from "@/lib/auth/problems";
-import { locales } from "@/lib/i18n/locale";
 
 /** Every code the auth routes and the account service can answer with. */
 const CODES = [
@@ -23,15 +22,10 @@ const CODES = [
   "offline",
 ];
 
-test("every code the server can send has words in both languages", () => {
+test("every code the server can send has words", () => {
   for (const code of CODES) {
     const { message } = authProblem(code);
-    for (const locale of locales) {
-      assert.ok(
-        message[locale] && message[locale].trim().length > 0,
-        `${code} has nothing to say in ${locale}`,
-      );
-    }
+    assert.ok(message && message.trim().length > 0, `${code} has nothing to say`);
   }
 });
 
@@ -40,7 +34,7 @@ test("a code this client has not been taught still says something useful", () =>
   // form looking like it did nothing at all.
   const { field, message } = authProblem("something-new");
   assert.equal(field, "form");
-  assert.ok(message.vi.length > 0 && message.en.length > 0);
+  assert.ok(message.length > 0);
   assert.deepEqual(authProblem(undefined), authProblem("something-new"));
 });
 
@@ -57,23 +51,20 @@ test("AC-ACCT-002.2: a bad sign-in names neither field", () => {
   // rather than by the words.
   const { field, message } = authProblem("bad-credentials");
   assert.equal(field, "form");
-  for (const locale of locales) {
-    const text = message[locale].toLowerCase();
-    assert.ok(
-      text.includes("mật khẩu") || text.includes("password"),
-      "the message should mention both halves, not one",
-    );
-  }
+  assert.ok(
+    message.toLowerCase().includes("password"),
+    "the message should mention the password, not only the username",
+  );
   assert.notEqual(
-    message.en.toLowerCase().includes("no such user"),
+    message.toLowerCase().includes("no such user"),
     true,
     "the message must not say the account does not exist",
   );
 });
 
 test("the messages differ from each other, so the form is not the same sentence twice", () => {
-  const taken = authProblem("username-taken").message.en;
-  const bad = authProblem("bad-credentials").message.en;
-  const rate = authProblem("rate-limited").message.en;
+  const taken = authProblem("username-taken").message;
+  const bad = authProblem("bad-credentials").message;
+  const rate = authProblem("rate-limited").message;
   assert.equal(new Set([taken, bad, rate]).size, 3);
 });

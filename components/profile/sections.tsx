@@ -101,11 +101,11 @@ export function ContextSection({
   context: Profile["context"];
   onSave: (v: Profile["context"]) => void;
 }) {
-  const { t, m, locale } = useT();
+  const { t, m } = useT();
   const isEmpty = context.length === 0;
   const prepareDraft = React.useCallback(
-    (rows: Profile["context"]) => contextDraft(rows, locale),
-    [locale],
+    (rows: Profile["context"]) => contextDraft(rows),
+    [],
   );
   const e = useEditable({
     value: context,

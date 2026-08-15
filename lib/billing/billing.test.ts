@@ -92,8 +92,7 @@ test("AC-MON-004.2: reaching the allowance refuses, with something to say", opti
 
     // Not a bare "limit reached": what ran out, and what to do.
     const message = allowanceMessage(verdict.plan);
-    assert.match(message.vi, /nâng gói/i);
-    assert.match(message.en, /upgrad/i);
+    assert.match(message, /upgrad/i);
   });
 });
 

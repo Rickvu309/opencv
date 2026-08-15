@@ -17,8 +17,7 @@ import { cn } from "@/lib/utils";
 const destinations = [
   { href: "/coach", label: messages.nav.coach, cat: true },
   { href: "/profile", label: messages.nav.profile },
-  { href: "/cv", label: messages.nav.cv },
-  { href: "/papers", label: messages.nav.papers },
+  { href: "/paper", label: messages.nav.cv },
   { href: "/pitch", label: messages.nav.pitch },
   { href: "/search", label: messages.nav.search },
   { href: "/applications", label: messages.nav.applications },

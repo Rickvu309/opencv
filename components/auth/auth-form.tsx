@@ -28,7 +28,7 @@ import { useT } from "@/lib/i18n/use-t";
  * has none, and the redirect in `proxy.ts` has to send them somewhere.
  */
 export function AuthForm({ mode, next }: { mode: "sign-in" | "sign-up"; next?: string }) {
-  const { t, m, locale } = useT();
+  const { t, m } = useT();
 
   const [username, setUsername] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -51,18 +51,14 @@ export function AuthForm({ mode, next }: { mode: "sign-in" | "sign-up"; next?: s
       const response = await fetch(`/api/auth/${mode}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        // The locale goes with the sign-up so the new account's state is
-        // labelled in the language this person is reading right now. From then
-        // on those labels are their text, not ours.
-        body: JSON.stringify(
-          creating ? { username, password, locale } : { username, password },
-        ),
+        // New accounts start in English. Document language can still be vi.
+        body: JSON.stringify({ username, password }),
       });
       const payload = (await response.json()) as { ok: boolean; code?: string };
 
       if (!response.ok || !payload.ok) {
         const { field, message } = authProblem(payload.code);
-        setProblem({ field, text: message[locale] });
+        setProblem({ field, text: message });
         setBusy(false);
         return;
       }
@@ -73,7 +69,7 @@ export function AuthForm({ mode, next }: { mode: "sign-in" | "sign-up"; next?: s
       window.location.assign(next && next.startsWith("/") ? next : "/onboarding");
     } catch {
       const { message } = authProblem("offline");
-      setProblem({ field: "form", text: message[locale] });
+      setProblem({ field: "form", text: message });
       setBusy(false);
     }
   }

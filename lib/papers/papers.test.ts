@@ -58,21 +58,20 @@ test("an empty document is recognised as empty", () => {
 
 /* ── The actions ────────────────────────────────────────────────────────── */
 
-test("a new document takes the app's language unless told otherwise", () => {
-  const vi = applyAction(seedState("vi"), "paper.create", {
-    kind: "cover-letter",
-    label: "Thư",
-  }).state;
-  assert.equal(vi.papers[0].language, "vi");
-
-  // Applying abroad: an English letter while reading the app in Vietnamese.
-  const en = applyAction(seedState("vi"), "paper.create", {
+test("a new document is English unless told otherwise", () => {
+  const paper = applyAction(seedState(), "paper.create", {
     kind: "cover-letter",
     label: "Letter",
-    language: "en",
   }).state;
-  assert.equal(en.papers[0].language, "en");
-  assert.equal(en.locale, "vi", "the document's language is not the app's");
+  assert.equal(paper.papers[0].language, "en");
+
+  const vi = applyAction(seedState(), "paper.create", {
+    kind: "cover-letter",
+    label: "Thư",
+    language: "vi",
+  }).state;
+  assert.equal(vi.papers[0].language, "vi");
+  assert.equal(vi.locale, "en");
 });
 
 test("documents get their own ids, and a write-up is not a letter", () => {
@@ -168,7 +167,7 @@ test("every edit restamps the document, so the card cannot lie", () => {
     index: 1,
     text: "Kính gửi quý công ty,",
   }).state;
-  assert.equal(after.papers[0].updatedAt, "Vừa xong");
+  assert.equal(after.papers[0].updatedAt, "Just now");
 });
 
 test("renaming changes the label without touching the text", () => {

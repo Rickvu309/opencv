@@ -34,7 +34,6 @@ import {
 } from "@/components/ui/tooltip";
 import type { ProfileDocument } from "@/lib/actions/types";
 import type { VaultItem } from "@/lib/catalog";
-import { localeNames } from "@/lib/i18n/locale";
 import { useT } from "@/lib/i18n/use-t";
 import { cn } from "@/lib/utils";
 
@@ -56,7 +55,7 @@ const emptyDraft: Draft = {
   label: "",
   purpose: "",
   targetRole: "",
-  language: "vi",
+  language: "en",
   url: "",
   fileName: "",
   note: "",
@@ -80,8 +79,8 @@ export function DocumentPanel({
   onSetPrimary: (id: string) => void;
   onSync: (id: string) => void;
 }) {
-  const { t, m, locale } = useT();
-  const title = item.title[locale];
+  const { t, m } = useT();
+  const title = item.title;
   const isLink = LINK_KINDS.has(item.id);
   const isEmpty = documents.length === 0;
   const buildsHere = item.id === "cv" || item.id === "cover-letter";
@@ -95,7 +94,7 @@ export function DocumentPanel({
       ? {
           ...emptyDraft,
           label: `${title}, `,
-          language: locale,
+          language: "en",
           makePrimary: true,
         }
       : emptyDraft,
@@ -109,7 +108,7 @@ export function DocumentPanel({
     setDraft({
       ...emptyDraft,
       label: `${title}, `,
-      language: locale,
+      language: "en",
       makePrimary: documents.length === 0,
     });
     setError(null);
@@ -167,7 +166,7 @@ export function DocumentPanel({
           </div>
           {isEmpty && (
             <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground text-pretty">
-              {item.benefit[locale]}
+              {item.benefit}
             </p>
           )}
         </div>
@@ -205,7 +204,7 @@ export function DocumentPanel({
                 alternative. Other kinds live outside OpenPath. */}
             {item.id === "cv" && (
               <Button asChild size="sm">
-                <Link href="/cv">
+                <Link href="/paper">
                   <Sparkles className="size-3.5" />
                   {t(m.profile.docBuildCv)}
                 </Link>
@@ -213,7 +212,7 @@ export function DocumentPanel({
             )}
             {item.id === "cover-letter" && (
               <Button asChild size="sm">
-                <Link href="/cv">
+                <Link href="/paper">
                   <Sparkles className="size-3.5" />
                   {t(m.profile.docBuildLetter)}
                 </Link>
@@ -229,7 +228,7 @@ export function DocumentPanel({
                 ? t(m.profile.docUploadExisting)
                 : item.id === "cover-letter"
                   ? t(m.profile.docAddFile)
-                  : item.addLabel[locale]}
+                  : item.addLabel}
             </Button>
           </div>
         ) : (
@@ -253,7 +252,7 @@ export function DocumentPanel({
                 everyone regardless of what they had uploaded. The offer to
                 look is honest; the verdict has to come from a real read. */}
             <Button asChild variant="outline" size="sm">
-              <Link href={`/coach?q=${encodeURIComponent(item.coachPrompt[locale])}`}>
+              <Link href={`/coach?q=${encodeURIComponent(item.coachPrompt)}`}>
                 <CoachBox size="sm" />
                 {t(m.profile.docAskCoach)}
               </Link>
@@ -448,7 +447,7 @@ function DocumentForm({
   onSubmit: (e: React.FormEvent) => void;
   onCancel: () => void;
 }) {
-  const { t, m, locale } = useT();
+  const { t, m } = useT();
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) =>
     setDraft((d) => ({ ...d, [k]: v }));
 
@@ -465,7 +464,7 @@ function DocumentForm({
         label={t(m.profile.docFormLabel)}
         autoFocus
         value={draft.label}
-        placeholder={`${item.title[locale]}, Data Analyst`}
+        placeholder={`${item.title}, Data Analyst`}
         invalid={Boolean(error) && !draft.label.trim()}
         hint={t(m.profile.docFormLabelHint)}
         onChange={(v) => set("label", v)}
@@ -487,32 +486,6 @@ function DocumentForm({
           placeholder="Data Analyst"
           onChange={(v) => set("targetRole", v)}
         />
-        <fieldset className="grid gap-1.5">
-          <legend className="mb-1.5 text-sm font-medium">{t(m.profile.docFormLanguage)}</legend>
-          <div className="flex gap-1">
-            {(
-              [
-                ["vi", localeNames.vi],
-                ["en", localeNames.en],
-              ] as const
-            ).map(([code, label]) => (
-              <button
-                key={code}
-                type="button"
-                onClick={() => set("language", code)}
-                aria-pressed={draft.language === code}
-                className={cn(
-                  "h-8 rounded-md border px-3 text-sm transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none",
-                  draft.language === code
-                    ? "border-transparent bg-primary text-primary-foreground"
-                    : "bg-card text-muted-foreground hover:bg-muted/60",
-                )}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </fieldset>
       </div>
 
       {/* The source field differs by kind: links sync, files are uploaded. */}

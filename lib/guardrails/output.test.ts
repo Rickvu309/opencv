@@ -18,7 +18,7 @@ test("AC-TRUST-002.2: a claim with nothing behind it is corrected", () => {
     "I've added that course to your profile.",
     "I updated your CV for you.",
   ]) {
-    const verdict = checkOutput({ reply, toolResults: [], locale: "vi" });
+    const verdict = checkOutput({ reply, toolResults: [] });
     assert.equal(verdict.kind, "revise", `let through: ${reply}`);
   }
 });
@@ -29,7 +29,6 @@ test("AC-TRUST-002.1: the same sentence after a successful action is fine", () =
   const verdict = checkOutput({
     reply: "Mình thêm khoá học đó vào hồ sơ rồi nhé.",
     toolResults: added,
-    locale: "vi",
   });
   assert.equal(verdict.kind, "allow");
   assert.equal(verdict.findings.length, 0);
@@ -39,19 +38,18 @@ test("an action that failed does not count as evidence", () => {
   const verdict = checkOutput({
     reply: "Mình đã cập nhật CV của bạn.",
     toolResults: failed,
-    locale: "vi",
   });
   assert.equal(verdict.kind, "revise");
 });
 
-test("the correction is appended, and in the reply's own language", () => {
-  const vi = checkOutput({ reply: "Mình đã tạo thư xin việc.", locale: "vi" });
-  assert.equal(vi.kind, "revise");
-  assert.match(vi.reply, /Mình đã tạo thư xin việc\./, "the reply is kept");
-  assert.ok(vi.reply.includes(messages.guardrails.noActionTaken.vi));
+test("the correction is appended in English", () => {
+  const claimed = checkOutput({ reply: "Mình đã tạo thư xin việc." });
+  assert.equal(claimed.kind, "revise");
+  assert.match(claimed.reply, /Mình đã tạo thư xin việc\./, "the reply is kept");
+  assert.ok(claimed.reply.includes(messages.guardrails.noActionTaken));
 
-  const en = checkOutput({ reply: "I've created your cover letter.", locale: "en" });
-  assert.ok(en.reply.includes(messages.guardrails.noActionTaken.en));
+  const en = checkOutput({ reply: "I've created your cover letter." });
+  assert.ok(en.reply.includes(messages.guardrails.noActionTaken));
 });
 
 test("an offer to act is not a claim to have acted", () => {
@@ -64,7 +62,7 @@ test("an offer to act is not a claim to have acted", () => {
     "Should I update your CV?",
   ]) {
     assert.equal(
-      checkOutput({ reply, toolResults: [], locale: "vi" }).kind,
+      checkOutput({ reply, toolResults: [] }).kind,
       "allow",
       `wrongly flagged: ${reply}`,
     );
@@ -74,7 +72,7 @@ test("an offer to act is not a claim to have acted", () => {
 test("an ordinary answer with no claim in it passes untouched", () => {
   const reply =
     "Với vị trí data analyst, hai thứ nhà tuyển dụng nhìn đầu tiên là SQL và một dự án thật. Tuần này bạn thử làm một dashboard nhỏ từ dữ liệu bán hàng nhé.";
-  const verdict = checkOutput({ reply, locale: "vi" });
+  const verdict = checkOutput({ reply });
   assert.equal(verdict.kind, "allow");
   assert.equal(verdict.reply, reply);
 });
@@ -86,7 +84,6 @@ test("advice the Coach is not fit to give is recorded even when it is not rewrit
   // concludes it never happens.
   const verdict = checkOutput({
     reply: "Theo luật thì bạn có quyền khởi kiện công ty.",
-    locale: "vi",
   });
   assert.equal(verdict.kind, "allow");
   assert.equal(verdict.findings.length, 1);
@@ -96,7 +93,6 @@ test("advice the Coach is not fit to give is recorded even when it is not rewrit
 test("strict strictness corrects it as well as recording it", () => {
   const verdict = checkOutput({
     reply: "Theo luật thì bạn có quyền khởi kiện công ty.",
-    locale: "vi",
     config: { strictness: "strict" },
   });
   assert.equal(verdict.kind, "revise");
@@ -107,7 +103,7 @@ test("promising an offer or a salary is caught", () => {
     "Với CV này bạn chắc chắn sẽ đậu phỏng vấn.",
     "You'll definitely get the job with this.",
   ]) {
-    const verdict = checkOutput({ reply, locale: "vi" });
+    const verdict = checkOutput({ reply });
     assert.equal(verdict.findings.length, 1, `missed: ${reply}`);
     assert.equal(verdict.findings[0].rule, "over-promise");
   }
@@ -117,7 +113,6 @@ test("an honest estimate is not an over-promise", () => {
   const verdict = checkOutput({
     reply:
       "Với hồ sơ hiện tại, mình nghĩ bạn còn khoảng ba tháng nữa mới đủ sức ứng tuyển vị trí này.",
-    locale: "vi",
   });
   assert.equal(verdict.findings.length, 0);
 });
@@ -126,7 +121,6 @@ test("strictness off checks nothing", () => {
   const verdict = checkOutput({
     reply: "Mình đã cập nhật CV của bạn.",
     toolResults: [],
-    locale: "vi",
     config: { strictness: "off" },
   });
   assert.equal(verdict.kind, "allow");

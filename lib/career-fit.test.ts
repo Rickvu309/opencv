@@ -48,7 +48,7 @@ test("it says which requirements are met and which are not", () => {
     node("intern-da"),
   );
   assert.equal(fit.met.length, 1);
-  assert.equal(fit.met[0].label.en, "SQL joins and aggregates");
+  assert.equal(fit.met[0].label, "SQL joins and aggregates");
   assert.equal(fit.missing.length, 2);
 });
 
@@ -73,7 +73,7 @@ test("experience counts as evidence, not just courses", () => {
     node("data-analyst"),
   );
   assert.ok(
-    fit.met.some((r) => r.label.en === "Telling a story with numbers"),
+    fit.met.some((r) => r.label === "Telling a story with numbers"),
     "a dashboard in the experience detail should evidence storytelling",
   );
 });
@@ -84,7 +84,7 @@ test("requirements no profile could prove are left out of the score", () => {
   const marketing = node("intern-mkt");
   const fit = fitFor(profile({ courses: ["Excel"] }), marketing);
   assert.equal(fit.unprovable.length, 1);
-  assert.equal(fit.unprovable[0].label.en, "Willingness to ask, and to keep at it");
+  assert.equal(fit.unprovable[0].label, "Willingness to ask, and to keep at it");
   // One provable requirement, and it is met, so evidence is complete.
   assert.equal(fit.missing.length, 0);
 });
@@ -139,7 +139,7 @@ test("every requirement carries tokens or is explicitly unprovable", () => {
   for (const n of pathNodes) {
     for (const r of n.requires ?? []) {
       assert.ok(Array.isArray(r.skills), `${n.id} has a requirement with no skills array`);
-      assert.ok(r.label.vi && r.label.en, `${n.id} has a requirement missing a language`);
+      assert.ok(r.label, `${n.id} has a requirement missing a label`);
     }
   }
 });
@@ -152,7 +152,7 @@ test("studying a subject is not the same as having done a project", () => {
   const student = profile({ major: "Phân tích dữ liệu" });
   const fit = fitFor(student, node("intern-da"));
   assert.ok(
-    !fit.met.some((r) => r.label.en === "One analysis project of your own"),
+    !fit.met.some((r) => r.label === "One analysis project of your own"),
     "a degree subject must not count as a personal project",
   );
 });
@@ -161,6 +161,6 @@ test("an actual project does count", () => {
   const withProject = profile({ courses: ["Dự án phân tích doanh thu"] });
   const fit = fitFor(withProject, node("intern-da"));
   assert.ok(
-    fit.met.some((r) => r.label.en === "One analysis project of your own"),
+    fit.met.some((r) => r.label === "One analysis project of your own"),
   );
 });

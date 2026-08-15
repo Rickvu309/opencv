@@ -7,8 +7,7 @@ import { useCoach } from "@/components/coach/provider";
  * A modest offer to sharpen or draft what is already on the page.
  *
  * Trailing text action, same politeness as Pitch: writing is the work; this is
- * help if they want it. Sends through the open thread so the Coach still
- * writes in the artefact's language.
+ * help if they want it. Sends through the open thread.
  */
 export function QuietCoachOffer({
   label,

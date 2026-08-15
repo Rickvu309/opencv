@@ -164,8 +164,8 @@ export function AppStateProvider({
     void saveState(next).then((landed) => {
       if (landed || warnedAboutStorage.current) return;
       warnedAboutStorage.current = true;
-      toast.warning(messages.errors.storageFailedTitle[next.locale], {
-        description: messages.errors.storageFailedBody[next.locale],
+      toast.warning(messages.errors.storageFailedTitle, {
+        description: messages.errors.storageFailedBody,
       });
     });
   }, []);
@@ -187,15 +187,12 @@ export function AppStateProvider({
         clearTimer.current = setTimeout(() => setTouched([]), 1200);
 
         if (!opts?.silent) {
-          // Read from the state *after* the change: `settings.setLanguage`
-          // confirms itself in the language it just switched to.
-          const locale = next.state.locale;
           // Act, then offer the way back. The Coach edits on the user's behalf,
           // so asking permission for every change would make it useless, but a
           // change you cannot reverse is one you have to watch for.
-          toast.success(next.summary[locale], {
+          toast.success(next.summary, {
             action: {
-              label: messages.common.undo[locale],
+              label: messages.common.undo,
               onClick: () => {
                 ref.current = previous;
                 emit();
@@ -218,9 +215,8 @@ export function AppStateProvider({
         // they can act on. The detail belongs in the console, where whoever
         // can fix it will look.
         console.error("dispatch failed", name, error);
-        const locale = previous.locale;
-        toast.error(messages.errors.actionFailedTitle[locale], {
-          description: messages.errors.actionFailedBody[locale],
+        toast.error(messages.errors.actionFailedTitle, {
+          description: messages.errors.actionFailedBody,
         });
       }
     },

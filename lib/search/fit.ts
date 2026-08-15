@@ -62,7 +62,7 @@ export function openingFit(profile: FitProfile, opening: Opening): OpeningFit {
     id: opening.id,
     title: opening.title,
     stage: "entry",
-    summary: { vi: opening.description, en: opening.description },
+    summary: opening.description ,
     requires: opening.requirements,
   });
 

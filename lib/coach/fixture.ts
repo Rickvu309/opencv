@@ -59,7 +59,7 @@ export function reasoning(value: string, streaming = false): EveMessagePart {
 
 type ToolOptions = {
   action?: string;
-  summary?: { vi: string; en: string };
+  summary?: string;
   errorText?: string;
   error?: string;
 };
@@ -101,10 +101,7 @@ export function toolPart(
               ok: true,
               action: options.action ?? "profile.addCourse",
               input: {},
-              summary: options.summary ?? {
-                vi: "Đã thêm việc “học SQL”",
-                en: "Added “learn SQL”",
-              },
+              summary: options.summary ?? "Added “learn SQL”",
             },
       } as EveMessagePart;
     case "output-error":
@@ -253,7 +250,7 @@ export const scenarios: { id: string; label: string; messages: EveMessage[] }[] 
         coachTurn(
           toolPart("output-available", {
             action: "resume.create",
-            summary: { vi: "Đã tạo CV mới", en: "Created a new CV" },
+            summary: "Created a new CV",
           }),
           text("Xong bản đầu rồi. Phần Giới thiệu còn trống, bạn viết ba câu nhé."),
         ),
@@ -278,7 +275,7 @@ export const scenarios: { id: string; label: string; messages: EveMessage[] }[] 
           reasoning("Hồ sơ đã có tên, trường, mục tiêu. Đủ để dựng bản đầu."),
           toolPart("output-available", {
             action: "resume.create",
-            summary: { vi: "Đã tạo CV mới", en: "Created a new CV" },
+            summary: "Created a new CV",
           }),
           text("Mình dựng xong bản đầu rồi. Bạn xem lại phần Giới thiệu nhé."),
         ),
