@@ -8,15 +8,15 @@ This version has breaking changes, APIs, conventions, and file structure may all
 
 ### Issue tracker
 
-GitHub Issues on `quanvu309/openpath`, via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+GitHub Issues on `quanvu309/openpath`, via the `gh` CLI. PRs are not a request surface.
 
 ### Triage labels
 
-The five canonical roles, each label string equal to its name. See `docs/agents/triage-labels.md`.
+`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`.
 
 ### Domain docs
 
-Product language: `CONTEXT.md`. Where a file goes: `docs/map.md`. How to read both: `docs/agents/domain.md`. Locked decisions: `docs/adr/`.
+Product language: `CONTEXT.md`. Where a file goes: `docs/map.md`.
 
 This repo has no `src/` tree. Do not invent one.
 

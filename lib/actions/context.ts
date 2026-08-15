@@ -6,9 +6,9 @@ import type { AppState } from "./types";
  *
  * ## Why this lives here and not in `agent/lib/`
  *
- * `agent-native.md` §6.1 put this seam on the agent side, behind read tools
- * (`get_profile`, `get_plan`, `get_paths`) that read `lib/data.ts`. That was
- * right when the app had one fixed mock, and it is wrong now.
+ * An earlier design put this seam on the agent side, behind read tools
+ * that read a fixed mock. That was right when the app had one seed, and it
+ * is wrong now.
  *
  * The agent runs on the server. The user's state lives in a React store in the
  * browser and is never written anywhere the server can reach. So a server-side

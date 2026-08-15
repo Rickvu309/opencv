@@ -57,7 +57,7 @@ Pitch and Search have no `components/` folder. Do not add empty ones.
 3. [`components/coach/thread.tsx`](../components/coach/thread.tsx) reads that envelope and calls the same `dispatch`.
 4. `dispatch` runs [`applyAction`](../lib/actions/registry.ts), toasts, offers undo, persists.
 
-The store lives in the tab. See [ADR 0001](adr/0001-coach-validates-browser-applies.md).
+The store lives in the tab. A second write path (the tool mutating Postgres, or applying on the server) would fork undo and the account row. So the Coach only validates.
 
 `/coach` and the dock are two layouts of [`useCoach()`](../components/coach/provider.tsx).
 
@@ -74,9 +74,9 @@ Action tables live next to the noun (`lib/paper/actions.ts`, and so on). The reg
 | Application | [`lib/applications/`](../lib/applications/) | [`app/(app)/applications/`](../app/(app)/applications/) | `applications` | `application.*` |
 | Coach | [`lib/coach/`](../lib/coach/) | [`app/(app)/coach/`](../app/(app)/coach/) + dock, [`components/coach/`](../components/coach/) | conversation, not AppState | — |
 
-Profile is in the account menu, not the Prepare rail. Paper is one artefact with types CV, letter, and write-up. Open a paper at `/paper?id=`. There is no `/cv` or `/papers`.
+Profile is in the account menu, not the Prepare rail. `Experience` and `ProfileDocument` live in [`lib/profile/types.ts`](../lib/profile/types.ts); vault kinds stay in [`lib/profile/vault.ts`](../lib/profile/vault.ts). Paper is one artefact with types CV, letter, and write-up. Open a paper at `/paper?id=`. There is no `/cv` or `/papers`.
 
-A paper is a discriminated union. Layout stays inside [`lib/paper/`](../lib/paper/). Callers see `Paper`. See [ADR 0002](adr/0002-paper-is-a-union-of-types.md).
+A paper is a discriminated union. Layout stays inside [`lib/paper/`](../lib/paper/). Callers see `Paper`. Two artefacts (two routes, two store keys, two action families) would make type look like a product.
 
 ## Supporting, not product nouns
 
@@ -84,12 +84,12 @@ A paper is a discriminated union. Layout stays inside [`lib/paper/`](../lib/pape
 
 [`lib/catalogue/fit.ts`](../lib/catalogue/fit.ts) splits the scorer: `matchRequirements` is met / missing / unprovable from `{ requires }`; `fitFor` adds readiness for a catalogue role. Openings never dress up as a `PathNode`.
 
-Also supporting: [`lib/auth/`](../lib/auth/), [`lib/db/`](../lib/db/), [`lib/billing/`](../lib/billing/), [`lib/i18n/`](../lib/i18n/), [`lib/guardrails/`](../lib/guardrails/), [`lib/onboarding/`](../lib/onboarding/). Ids (`nextId`) live in [`lib/ids.ts`](../lib/ids.ts), not on a product noun. Persistence (anonymous localStorage vs signed-in Postgres) is inside [`lib/actions/persistence.ts`](../lib/actions/persistence.ts). Shared id minting is [`lib/ids.ts`](../lib/ids.ts) — Pitch and Application do not import Paper for a counter.
+Also supporting: [`lib/auth/`](../lib/auth/), [`lib/db/`](../lib/db/), [`lib/billing/`](../lib/billing/), [`lib/i18n/`](../lib/i18n/), [`lib/guardrails/`](../lib/guardrails/), [`lib/onboarding/`](../lib/onboarding/). Ids (`nextId`) live in [`lib/ids.ts`](../lib/ids.ts), not on a product noun. Persistence (anonymous localStorage vs signed-in Postgres) is inside [`lib/actions/persistence.ts`](../lib/actions/persistence.ts).
 
 ## Five layouts, not five stores
 
 Each screen invented its own chrome. They all `dispatch` into the same AppState. Do not split the registry to match the folders.
 
-## Working paper, not architecture
+## Docs that stay
 
-[`plans/`](../plans/) is Coach-dock motion notes. Root docs stay: `CONTEXT.md`, `DESIGN.md`, `PRODUCT.md`, `README.md`.
+`CONTEXT.md`, `DESIGN.md`, `PRODUCT.md`, `README.md`. Hosting is [`docs/hosting.md`](hosting.md). The database is [`docs/database.md`](database.md).

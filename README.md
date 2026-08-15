@@ -64,7 +64,7 @@ undo.
 
 The Coach does not write AppState itself. It validates and returns an envelope;
 the browser applies it. `CONTEXT.md` is the glossary. `docs/map.md` is the
-one-page picture. `docs/adr/` is why the surprising bits are that way.
+one-page picture.
 
 ```
 lib/actions/
@@ -129,9 +129,8 @@ runner.
 
 - `CONTEXT.md`: product words (artefacts, Paper vs vault, Coach vs AppState).
 - `docs/map.md`: how a click and a Coach turn both hit `dispatch`.
-- `docs/adr/`: surprising choices (Coach validates; the browser applies).
 - `PRODUCT.md`: who this is for, and the design principles.
 - `DESIGN.md`: the visual system. Colour, type, motion, and how a Coach edit
   behaves.
 - `docs/database.md`: where the database is, and how to apply the schema.
-- `agent-native.md`: the technical spec for embedding the Coach.
+- `docs/hosting.md`: Railway topology (app, agent, Postgres).

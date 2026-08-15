@@ -3,7 +3,7 @@
 //
 // Paper is one artefact with a type. A CV is sections and dated entries. A
 // letter is paragraphs. Callers see `Paper`. CV theme, section defaults, and
-// paragraph helpers live next to the layouts. See ADR 0002.
+// paragraph helpers live next to the layouts.
 
 import type { DocumentLanguage, Msg } from "@/lib/i18n/locale";
 
