@@ -14,6 +14,7 @@ import {
   isLetterPaper,
   isProofPaper,
   paperTypeLabels,
+  paperSearch,
   wordForTemplate,
   type Paper,
 } from "@/lib/paper";
@@ -92,9 +93,10 @@ export function CvArtifact({
           </span>
         )}
         <Link
-          href={`/paper?id=${encodeURIComponent(current.id)}`}
+          href="/paper"
+          search={paperSearch({ id: current.id })}
           aria-label={t(m.coach.openPaper)}
-          className="flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <ExternalLink className="size-3.5" />
         </Link>

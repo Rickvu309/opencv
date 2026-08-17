@@ -29,4 +29,46 @@ export default defineConfig([
       ],
     },
   },
+  {
+    files: [
+      "src/components/**/*.{ts,tsx}",
+      "src/lib/nav.tsx",
+      "src/lib/nav-destination.ts",
+      "src/lib/query/**/*.{ts,tsx}",
+      "src/lib/paper/room.ts",
+      "src/lib/paper/share.ts",
+      "src/lib/paper/cv.ts",
+      "src/lib/paper/use-drive-rows.ts",
+      "src/lib/actions/store.tsx",
+      "src/lib/actions/persistence.ts",
+      "src/routes/_signed-in/**/-*.{ts,tsx}",
+    ],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "pg",
+              message: "pg is Node-only. Use a Door (/api or createServerFn).",
+            },
+          ],
+          patterns: [
+            {
+              group: [
+                "**/client.server",
+                "**/share-store.server",
+                "**/photos.server",
+                "**/file-store.server",
+                "**/account-state.server",
+                "**/*.server",
+              ],
+              message:
+                "Store files (*.server.ts) are Node-only. Use a Door (/api or createServerFn).",
+            },
+          ],
+        },
+      ],
+    },
+  },
 ]);

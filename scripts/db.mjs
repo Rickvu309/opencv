@@ -10,7 +10,7 @@
 
 import pg from "pg";
 
-import { connectionConfig, databaseUrl, schemaName } from "../src/lib/db/client.ts";
+import { connectionConfig, databaseUrl, schemaName } from "../src/lib/db/client.server.ts";
 import { migrateDown, migrateUp, migrationStatus } from "../src/lib/db/migrate.ts";
 
 const command = process.argv[2] ?? "status";

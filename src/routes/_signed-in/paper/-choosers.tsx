@@ -64,7 +64,7 @@ export function CvGallery({
     <div className="flex h-full min-h-0 flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
         <ul
-          className="grid grid-cols-2 gap-4 md:grid-cols-4"
+          className="grid grid-cols-2 gap-px overflow-hidden rounded-xl bg-border md:grid-cols-4"
           onKeyDown={(event) => {
             if (event.key === "ArrowRight") {
               event.preventDefault();
@@ -85,7 +85,7 @@ export function CvGallery({
           }}
         >
           {templates.map((template, index) => (
-            <li key={template}>
+            <li key={template} className="bg-desk">
               <button
                 ref={(node) => {
                   tileRefs.current[index] = node;
@@ -95,7 +95,7 @@ export function CvGallery({
                 onClick={() => pick(template)}
                 onFocus={() => setFocus(index)}
                 className={cn(
-                  "flex w-full flex-col text-start outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+                  "flex w-full flex-col bg-desk p-3 text-start outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50",
                 )}
               >
                 <span
@@ -183,7 +183,6 @@ export function LetterChooser({
     situation: LetterSituation,
     extras: { role?: string; org?: string },
   ) => void;
-  onBack: () => void;
 }) {
   const { t, m } = useT();
 
@@ -202,13 +201,13 @@ export function LetterChooser({
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto p-4">
-      <ul className="grid gap-3 sm:grid-cols-2">
+      <ul className="grid grid-cols-1 gap-px overflow-hidden rounded-xl bg-border sm:grid-cols-2">
         {letterSituations.map((item) => (
-          <li key={item}>
+          <li key={item} className="bg-card">
             <button
               type="button"
               onClick={() => onPick(item, {})}
-              className="flex h-full w-full flex-col rounded-lg border bg-card p-4 text-start outline-none hover:bg-muted/70 focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="flex h-full w-full flex-col p-4 text-start outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
             >
               <span className="text-pretty text-sm font-medium">
                 {labels[item]}

@@ -24,6 +24,8 @@ const titleKeys = [
   ["/pitch", "pitch"],
   ["/search", "search"],
   ["/applications", "applications"],
+  ["/settings", "billing"],
+  ["/help", "support"],
 ] as const;
 
 /**
@@ -89,7 +91,7 @@ function ChatSwitcher() {
         <button
           type="button"
           aria-label={t(m.coach.switchChat)}
-          className="flex h-7 min-w-0 items-center gap-1 rounded-md px-2 text-sm font-medium transition-colors outline-none hover:bg-muted/60 focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none"
+          className="flex h-7 min-w-0 items-center gap-1 rounded-md px-2 text-sm font-medium outline-none hover:bg-muted/60 focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <span className="truncate">{title}</span>
           <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
@@ -107,7 +109,7 @@ export function AppHeader() {
   const title = key ? t(m.nav[key]) : "OpenPath";
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-1.5 border-b bg-background/85 px-4 backdrop-blur-sm">
+    <header className="flex h-14 shrink-0 items-center gap-1.5 border-b bg-background px-4">
       <ReopenButton />
       {onCoach ? (
         <>
@@ -115,7 +117,7 @@ export function AppHeader() {
           <ChatSwitcher />
         </>
       ) : (
-        <h1 className="text-sm font-medium">{title}</h1>
+        <p className="text-sm font-medium">{title}</p>
       )}
     </header>
   );
