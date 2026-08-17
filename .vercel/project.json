@@ -1,0 +1,16 @@
+{
+  "projectId": "prj_dHBB26S0q0fGEt6Hj0WyX5ZeAUms",
+  "orgId": "team_XBQpaYrrTk1bgu7HmyRGr9GO",
+  "projectName": "openpath-app",
+  "settings": {
+    "createdAt": 1785806914490,
+    "framework": "nextjs",
+    "devCommand": null,
+    "installCommand": null,
+    "buildCommand": null,
+    "outputDirectory": null,
+    "rootDirectory": null,
+    "directoryListing": false,
+    "nodeVersion": "24.x"
+  }
+}
