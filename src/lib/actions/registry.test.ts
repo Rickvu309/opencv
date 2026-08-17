@@ -27,6 +27,7 @@ test("a new account starts empty, not as somebody else", () => {
 
   assert.equal(state.profile.identity.name, "");
   assert.equal(state.profile.identity.targetRole, "");
+  assert.equal(state.onboardingCompletedAt, null);
   assert.deepEqual(state.profile.experience, []);
   assert.deepEqual(state.profile.documents, []);
   assert.deepEqual(state.paper, []);

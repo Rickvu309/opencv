@@ -72,6 +72,13 @@ test("the cookie cannot be read by scripts and does not travel cross-site", () =
   assert.equal(options.expires, expires, "the cookie expires with the row");
 });
 
+test("without remember me the cookie has no expiry of its own", () => {
+  const options = cookieOptions();
+  assert.equal(options.expires, undefined);
+  assert.equal(options.httpOnly, true);
+  assert.equal(options.sameSite, "lax");
+});
+
 test("a secret that is too short is refused rather than used", async () => {
   // A short secret makes the signature decorative, and the failure is silent
   // unless something refuses. Checked through the module's own reader so the

@@ -1,9 +1,9 @@
 import { AccountError, createAccount } from "@/lib/auth/accounts";
 import { callerKey, failure, readBody, tooManyAttempts, withSession } from "@/lib/auth/http";
 import { startSession } from "@/lib/auth/sessions";
-import { getPool } from "@/lib/db/client";
+import { getPool } from "@/lib/db/client.server";
 import { isLocale } from "@/lib/i18n/locale";
-import { createAccountState } from "@/lib/state/account-state";
+import { createAccountState } from "@/lib/state/account-state.server";
 
 /**
  * Create an account, give it somewhere to keep its work, and sign in with it.
@@ -31,7 +31,12 @@ export async function POST(request: Request) {
   const client = await getPool().connect();
   try {
     await client.query("begin");
-    const account = await createAccount(body.username, body.password, client);
+    const account = await createAccount(
+      body.email,
+      body.password,
+      client,
+      body.confirmPassword,
+    );
     // AC-ACCT-001.5: the state is associated with the account at the instant
     // the account exists, not on its first write.
     await createAccountState(
@@ -39,10 +44,18 @@ export async function POST(request: Request) {
       isLocale(body.locale) ? body.locale : undefined,
       client,
     );
-    const session = await startSession(account.id, client);
+    const session = await startSession(
+      account.id,
+      client,
+      undefined,
+      body.rememberMe === true,
+    );
     await client.query("commit");
 
-    return withSession({ username: account.username }, session);
+    return withSession(
+      { username: account.username, needsOnboarding: true },
+      session,
+    );
   } catch (error) {
     await client.query("rollback").catch(() => {});
 
@@ -53,8 +66,8 @@ export async function POST(request: Request) {
       return failure(error.code, 400);
     }
     // Never report an account created when it was not. Logged without the
-    // username: a failed write is an operational problem, not a reason to put
-    // somebody's chosen name in a log line.
+    // email: a failed write is an operational problem, not a reason to put
+    // somebody's address in a log line.
     console.error("auth: sign-up failed", error);
     return failure("store-down", 502);
   } finally {

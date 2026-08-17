@@ -15,7 +15,7 @@ import {
   isPhotoMime,
   readPhoto,
   writePhoto,
-} from "@/lib/paper/photos";
+} from "@/lib/paper/photos.server";
 import { templateHasPhoto, templates } from "@/lib/paper/cv";
 import { skipWithoutDatabase, withMigratedSchema } from "@/lib/db/testing";
 
@@ -107,7 +107,7 @@ const PIXEL = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]);
 
 test("a photo round-trips", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     await writePhoto(account.id, "cv-1", PIXEL, "image/jpeg", db);
 
     const stored = await readPhoto(account.id, "cv-1", db);
@@ -119,8 +119,8 @@ test("a photo round-trips", OPTIONS, async () => {
 
 test("AC-PAPERS-004-style isolation: one account cannot read another's photo", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const mai = await createAccount("mai", "a good long password", db);
-    const nam = await createAccount("nam", "another long password", db);
+    const mai = await createAccount("mai@example.com", "a good long password", db);
+    const nam = await createAccount("nam@example.com", "another long password", db);
     await writePhoto(mai.id, "cv-1", PIXEL, "image/jpeg", db);
 
     // Same CV id, different account. This is the request an attacker makes,
@@ -131,7 +131,7 @@ test("AC-PAPERS-004-style isolation: one account cannot read another's photo", O
 
 test("replacing a photo leaves one row, not two", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     await writePhoto(account.id, "cv-1", PIXEL, "image/jpeg", db);
     await writePhoto(account.id, "cv-1", Buffer.from([0x89, 0x50]), "image/png", db);
 
@@ -143,7 +143,7 @@ test("replacing a photo leaves one row, not two", OPTIONS, async () => {
 
 test("two CVs on one account keep separate photos", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     await writePhoto(account.id, "cv-1", PIXEL, "image/jpeg", db);
     await writePhoto(account.id, "cv-2", Buffer.from([0x89, 0x50]), "image/png", db);
 
@@ -154,7 +154,7 @@ test("two CVs on one account keep separate photos", OPTIONS, async () => {
 
 test("deleting is idempotent, and only takes the one asked for", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     await writePhoto(account.id, "cv-1", PIXEL, "image/jpeg", db);
     await writePhoto(account.id, "cv-2", PIXEL, "image/jpeg", db);
 
@@ -168,7 +168,7 @@ test("deleting is idempotent, and only takes the one asked for", OPTIONS, async 
 
 test("deleting an account takes its photos with it", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     await writePhoto(account.id, "cv-1", PIXEL, "image/jpeg", db);
 
     await db.query("delete from accounts where id = $1", [account.id]);

@@ -92,7 +92,7 @@ export function CoachDock() {
             <button
               type="button"
               onClick={() => setOpen(true)}
-              className="min-w-0 truncate rounded-md py-1 pr-1 pl-2 text-xs text-muted-foreground transition-colors duration-[var(--duration-press)] active:translate-y-px outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none"
+              className="min-w-0 truncate rounded-md py-1 pr-1 pl-2 text-xs text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px"
             >
               {lastAsked}
             </button>
@@ -100,7 +100,7 @@ export function CoachDock() {
               type="button"
               onClick={() => setShowLast(false)}
               aria-label={t(m.coach.hideRecent)}
-              className="flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors duration-[var(--duration-press)] active:translate-y-px outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none"
+              className="flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px"
             >
               <X className="size-3" />
             </button>
@@ -111,7 +111,7 @@ export function CoachDock() {
           type="button"
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
-          className="flex h-7 items-center gap-1.5 rounded-md border bg-card px-2 text-xs font-medium shadow-xs transition-colors duration-[var(--duration-press)] active:translate-y-px outline-none hover:bg-muted/70 focus-visible:ring-3 focus-visible:ring-ring/50 md:border-transparent md:bg-transparent md:shadow-none motion-reduce:transition-none"
+          className="flex h-7 items-center gap-1.5 rounded-lg px-2 text-xs font-medium outline-none hover:bg-muted/70 focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px md:bg-transparent"
         >
           <span className="relative size-3.5 shrink-0">
             <CoachBox
@@ -185,7 +185,7 @@ function CoachPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
       aria-hidden={!open}
       inert={!open}
       className={cn(
-        "fixed right-4 bottom-12 z-30 flex w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border bg-card shadow-lg",
+        "fixed right-4 bottom-12 z-30 flex w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl bg-card shadow-lg ring-1 ring-border",
         "h-[min(32rem,calc(100svh-7rem))]",
         // Chip is `right-4 bottom-2.5`; this surface sits just above it.
         "origin-bottom-right",

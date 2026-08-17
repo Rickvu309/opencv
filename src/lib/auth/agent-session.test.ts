@@ -32,7 +32,7 @@ test("the session cookie is found among others, and not confused with them", () 
 
 test("a signed-in user's turn is authorized, as themselves", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     const session = await startSession(account.id, db);
 
     const auth = await userSession(db)(request(signToken(session.token)));
@@ -54,7 +54,7 @@ test("no cookie is refused", OPTIONS, async () => {
 
 test("a cookie we did not sign is refused", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     const session = await startSession(account.id, db);
 
     // The token is real. The signature is not, which is the case the signature
@@ -67,7 +67,7 @@ test("a cookie we did not sign is refused", OPTIONS, async () => {
 
 test("a signed cookie for a session that has ended is refused", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     const session = await startSession(account.id, db);
     const cookie = signToken(session.token);
 
@@ -80,7 +80,7 @@ test("a signed cookie for a session that has ended is refused", OPTIONS, async (
 
 test("an expired session is refused", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     const session = await startSession(account.id, db);
     await db.query("update sessions set expires_at = now() - interval '1 second'");
 
@@ -90,7 +90,7 @@ test("an expired session is refused", OPTIONS, async () => {
 
 test("a missing secret shuts the door rather than opening it", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     const session = await startSession(account.id, db);
     const cookie = signToken(session.token);
 

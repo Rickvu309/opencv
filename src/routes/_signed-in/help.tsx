@@ -62,14 +62,14 @@ function HelpPage() {
     <div className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-8">
       <header>
         <h1 className="text-xl font-semibold tracking-tight">{t(m.support.title)}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t(m.support.lead)}</p>
+        <p className="mt-1 text-sm text-foreground">{t(m.support.lead)}</p>
       </header>
 
-      <dl className="mt-6 space-y-3">
+      <dl className="mt-6 overflow-hidden rounded-xl border bg-card divide-y divide-border">
         {questions.map(([question, answer]) => (
-          <div key={question} className="rounded-xl border bg-card p-4">
+          <div key={question} className="px-4 py-3">
             <dt className="text-sm font-medium">{t(question)}</dt>
-            <dd className="mt-1 text-sm text-muted-foreground">{t(answer)}</dd>
+            <dd className="mt-1 text-sm text-foreground">{t(answer)}</dd>
           </div>
         ))}
       </dl>
@@ -79,9 +79,17 @@ function HelpPage() {
           {t(m.support.reportTitle)}
         </h2>
         {sent ? (
-          <p className="mt-3 rounded-xl border bg-card p-4 text-sm text-muted-foreground">
-            {t(m.support.reportThanks)}
-          </p>
+          <div className="mt-3 overflow-hidden rounded-xl border bg-card px-4 py-3">
+            <p className="text-sm text-foreground">{t(m.support.reportThanks)}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-3"
+              onClick={() => setSent(false)}
+            >
+              {t(m.support.reportAgain)}
+            </Button>
+          </div>
         ) : (
           <div className="mt-3 space-y-2">
             <form.Field name="text">

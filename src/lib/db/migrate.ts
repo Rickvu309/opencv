@@ -4,7 +4,7 @@ import { join } from "node:path";
 
 import type { ClientBase } from "pg";
 
-import { assertSafeSchema, schemaName } from "./client";
+import { assertSafeSchema, schemaName } from "./client.server";
 
 /**
  * Schema changes, in order, applied once each.

@@ -11,15 +11,16 @@ export const Route = createFileRoute("/")({
 
 function Home() {
   return (
-    <div className="flex min-h-svh flex-1 flex-col">
+    <div className="flex min-h-svh flex-col">
       <SkipLink />
-      <div className="mx-auto flex min-h-svh w-full max-w-3xl flex-1 flex-col px-5 sm:px-8 lg:px-12">
-        <LandingHeader />
-        <main id="main-content" className="flex flex-1 flex-col pt-12 sm:pt-16 lg:pt-20">
-          <LandingStory />
-        </main>
-        <LandingFooter />
-      </div>
+      <LandingHeader />
+      <main
+        id="main-content"
+        className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-5 py-10 sm:px-8"
+      >
+        <LandingStory />
+      </main>
+      <LandingFooter />
     </div>
   );
 }

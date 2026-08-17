@@ -5,7 +5,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { checkEmail, normalizeEmail } from "@/lib/waitlist/email";
+import { checkEmail, normalizeEmail } from "@/lib/email";
 
 test("ordinary addresses are accepted", () => {
   for (const email of [

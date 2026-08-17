@@ -34,7 +34,7 @@ function AppLayout() {
           <AppSidebar />
           <SidebarInset
             id="main-content"
-            className="h-svh overflow-hidden md:h-[calc(100svh-3.5rem)] md:border md:peer-data-[variant=inset]:mb-12"
+            className="h-svh overflow-hidden md:h-[calc(100svh-3.5rem)] md:peer-data-[variant=inset]:mb-12"
           >
             <AppHeader />
             <div className="min-h-0 flex-1 overflow-y-auto">

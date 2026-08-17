@@ -4,28 +4,25 @@ import { CoachBox } from "@/components/brand/coach-box";
 import { Button } from "@/components/ui/button";
 import { messages } from "@/lib/i18n/messages";
 
-/**
- * Quiet chrome on the same column as the story. English only on this pass.
- */
+const copy = messages.landing;
+
 export function LandingHeader() {
   return (
-    <header className="pt-4">
-      <div className="flex h-14 items-center gap-3">
+    <header className="border-b border-border">
+      <div className="mx-auto flex h-14 w-full max-w-3xl items-center px-5 sm:px-8">
         <Link
           href="/"
           className="flex items-center gap-2 rounded-lg outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
         >
-          <span className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <CoachBox size="sm" filled />
-          </span>
+          <CoachBox size="sm" />
           <span className="text-sm font-semibold tracking-tight">OpenPath</span>
         </Link>
 
-        <div className="ms-auto flex items-center gap-2">
-          <Button asChild variant="ghost" size="sm">
-            <Link href="/sign-in">{messages.auth.signIn}</Link>
+        <nav className="ms-auto flex items-center" aria-label="Account">
+          <Button asChild variant="ghost" size="sm" className="h-10 px-3 sm:h-8">
+            <Link href="/sign-in">{copy.signIn}</Link>
           </Button>
-        </div>
+        </nav>
       </div>
     </header>
   );

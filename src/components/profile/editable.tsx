@@ -169,7 +169,7 @@ export function EditableSection<T>({
             {meta}
           </div>
           {hint && (
-            <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground text-pretty">
+            <p className="mt-1.5 max-w-2xl text-sm text-pretty text-foreground">
               {hint}
             </p>
           )}
@@ -198,7 +198,7 @@ export function EditableSection<T>({
           <div className="px-6 pt-6 pb-5">
             <div className="max-w-2xl">{children}</div>
           </div>
-          <div className="sticky bottom-0 border-t bg-card/95 px-6 py-3 backdrop-blur-sm">
+          <div className="sticky bottom-0 border-t bg-card px-6 py-3">
             <div className="flex max-w-2xl flex-wrap items-center gap-2">
               <Button type="submit" size="sm">
                 {saveLabel ?? t(m.common.save)}

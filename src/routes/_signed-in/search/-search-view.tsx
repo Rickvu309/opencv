@@ -4,6 +4,7 @@ import * as React from "react";
 import { ChevronDown, Plus, Search as SearchIcon } from "lucide-react";
 import { Link } from "@/lib/nav";
 
+import { EmptyState } from "@/components/layout/empty-state";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -184,7 +185,7 @@ function FilterMenu({
       <DropdownMenuTrigger asChild>
         <Button
           type="button"
-          variant={active ? "secondary" : "outline"}
+          variant={active ? "default" : "outline"}
           size="sm"
           aria-label={active ? `${label}: ${value}` : label}
           className={cn(!active && "text-muted-foreground")}
@@ -231,7 +232,7 @@ function SourceMenu({
       <DropdownMenuTrigger asChild>
         <Button
           type="button"
-          variant={current ? "secondary" : "outline"}
+          variant={current ? "default" : "outline"}
           size="sm"
           aria-label={current ? `${label}: ${current}` : label}
           className={cn(!current && "text-muted-foreground")}
@@ -299,7 +300,20 @@ function Results(props: SearchWorkspaceProps) {
 
       <div className="mt-4 overflow-hidden rounded-xl border bg-card">
         {!props.hasOpenings ? (
-          <EmptyState body={t(m.search.noOpeningsBody)} />
+          <EmptyState
+            title={t(m.search.noOpeningsTitle)}
+            body={t(m.search.noOpeningsBody)}
+            action={
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => props.setComposing(true)}
+              >
+                {t(m.search.noOpeningsAction)}
+              </Button>
+            }
+          />
         ) : props.shown.length === 0 ? (
           <EmptyState
             title={
@@ -336,33 +350,6 @@ function Results(props: SearchWorkspaceProps) {
         )}
       </div>
     </section>
-  );
-}
-
-function EmptyState({
-  title,
-  body,
-  action,
-}: {
-  title?: string;
-  body?: string;
-  action?: React.ReactNode;
-}) {
-  return (
-    <div className="px-4 py-6">
-      {title && <p className="text-sm font-medium">{title}</p>}
-      {body && (
-        <p
-          className={cn(
-            "text-pretty text-sm text-muted-foreground",
-            title && "mt-1",
-          )}
-        >
-          {body}
-        </p>
-      )}
-      {action && <div className="mt-3">{action}</div>}
-    </div>
   );
 }
 

@@ -65,7 +65,7 @@ test("the caps are applied on the way in, not trusted from the client", () => {
 
 test("AC-ACCT-004.3: the same account sees its threads on another device", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     await writeConversations(account.id, [conversation("cv", 2), conversation("visa", 1)], db);
 
     // The phone, reading the same row.
@@ -82,8 +82,8 @@ test("AC-ACCT-004.3: the same account sees its threads on another device", OPTIO
 
 test("AC-ACCT-004.2 and 004.4: one account never sees another's threads", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const mai = await createAccount("mai", "a good long password", db);
-    const nam = await createAccount("nam", "another long password", db);
+    const mai = await createAccount("mai@example.com", "a good long password", db);
+    const nam = await createAccount("nam@example.com", "another long password", db);
 
     await writeConversations(mai.id, [conversation("mai-thread", 1)], db);
     await writeConversations(nam.id, [conversation("nam-thread", 1)], db);
@@ -99,14 +99,14 @@ test("AC-ACCT-004.2 and 004.4: one account never sees another's threads", OPTION
 
 test("an account that has never talked has no threads, not an error", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     assert.deepEqual(await readConversations(account.id, db), []);
   });
 });
 
 test("a write replaces the list rather than appending to it", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     await writeConversations(account.id, [conversation("first", 1)], db);
     await writeConversations(account.id, [conversation("second", 2)], db);
 
@@ -118,7 +118,7 @@ test("a write replaces the list rather than appending to it", OPTIONS, async () 
 
 test("deleting a conversation is a write of the shorter list", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     await writeConversations(account.id, [conversation("a", 2), conversation("b", 1)], db);
     await writeConversations(account.id, [conversation("a", 2)], db);
     assert.deepEqual((await readConversations(account.id, db)).map((c) => c.id), ["a"]);
@@ -127,7 +127,7 @@ test("deleting a conversation is a write of the shorter list", OPTIONS, async ()
 
 test("Vietnamese survives the round trip", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     const entry = { ...conversation("vi", 1), title: "Mình nên học gì tiếp?" };
     await writeConversations(account.id, [entry], db);
     assert.equal((await readConversations(account.id, db))[0].title, "Mình nên học gì tiếp?");
@@ -136,7 +136,7 @@ test("Vietnamese survives the round trip", OPTIONS, async () => {
 
 test("a row that is not a list reads as empty rather than throwing", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     await db.query("insert into conversations (account_id, list) values ($1, $2)", [
       account.id,
       JSON.stringify({ not: "a list" }),
@@ -147,7 +147,7 @@ test("a row that is not a list reads as empty rather than throwing", OPTIONS, as
 
 test("deleting an account takes its threads with it", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     await writeConversations(account.id, [conversation("a", 1)], db);
     await db.query("delete from accounts where id = $1", [account.id]);
 

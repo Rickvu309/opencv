@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 
 import pg from "pg";
 
-import { connectionConfig } from "./client";
+import { connectionConfig } from "./client.server";
 
 /**
  * A real database for a test, and no way for it to touch anything real.

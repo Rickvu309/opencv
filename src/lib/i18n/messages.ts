@@ -102,18 +102,15 @@ export const messages = {
   },
 
   /* ── Landing ────────────────────────────────────────────────────────── */
-  // Discover: who, get more ready, unsure is allowed, two doors.
   landing: {
     audience: m("For students and new graduates"),
-    headline: m("Ready for ambitious work."),
-    headlineNext: m("You don't need to know what that is yet."),
-    subhead: m("We're here so you get more ready. Not sure of a direction is fine."),
-    close: m("Start when you want."),
-    tryIt: m("Start free"),
-    joinWaitlistAsk: m("Not ready for an account?"),
-    joinWaitlist: m("Email me when a place opens"),
-    waitlistLead: m("We'll only use this to email you. Nobody else gets it."),
-    alreadyJoined: m("You're on the list. Start while you wait."),
+    headline: m("A career coach that starts from you."),
+    headlineNext: m("You don't need a plan to begin."),
+    subhead: m("Talk about where you are. The Coach helps you see what fits."),
+    createAccount: m("Create an account"),
+    haveAccount: m("Already have an account?"),
+    signIn: m("Sign in"),
+    footerNote: m("Your work is saved to an account."),
   },
 
   /* ── Onboarding ─────────────────────────────────────────────────────── */
@@ -123,7 +120,7 @@ export const messages = {
     beforeCoach: m("Before you meet the Coach"),
     roleWanted: m("The role you want"),
     cvYours: m("Your CV"),
-    cvLead: m("Upload the file you already have. The Coach reads it."),
+    cvLead: m("Upload the file you already have. It is stored on My Paper, not parsed."),
     cvDrop: m("Drop a CV, or choose a file."),
     cvNone: m("No CV yet. The Coach will build one with you."),
     removeFile: m("Remove file"),
@@ -217,7 +214,7 @@ export const messages = {
     cvFileName: m("CV file name"),
     cvFileNamePlaceholder: m("Your_Name_CV.pdf"),
     targetRole: m("The job you're aiming for"),
-    targetRolePlaceholder: m("e.g. Data Analyst"),
+    targetRolePlaceholder: m("Data Analyst"),
     certainty: m("How settled are you on this direction?"),
     certaintySure: m("Settled"),
     certaintySureNote: m("I've looked into it and I'm going this way."),
@@ -473,6 +470,7 @@ export const messages = {
     signInToKeepFile: m("Sign in to keep the file."),
     filterAll: m("All"),
     noRowsForFilter: m("Nothing of this type yet."),
+    showAllPapers: m("Show all"),
     askCoachList: m("Ask the Coach what to send"),
     askCoachListPrompt: m("What should I send tonight from this list?"),
     duplicate: m("Duplicate"),
@@ -723,6 +721,11 @@ export const messages = {
       handleHint: m("Shown on your personal page."),
       handleSaved: m("Link saved"),
       handleInvalid: m("Use letters, numbers, and hyphens."),
+      moreFromPerson: m("More from this person"),
+      published: m("Published"),
+      fileLabel: m("File"),
+      emptySite: m("This person has not published work yet."),
+      emptySiteAction: m("Go to OpenPath"),
     },
   },
 
@@ -763,7 +766,8 @@ export const messages = {
     emptyProfileBody: m("Add a course or two, or one experience, and I can rank these."),
     emptyProfileAction: m("Fill in your profile"),
     noOpeningsTitle: m("No openings yet"),
-    noOpeningsBody: m("The list is empty. Paste a posting when you have one."),
+    noOpeningsBody: m("The list is empty."),
+    noOpeningsAction: m("Paste a posting"),
     noMatches: (query: string) =>
       m(`Nothing matches “${query}”.`),
     commandPlaceholder: m("Data intern in Hanoi, saved only"),
@@ -855,7 +859,7 @@ export const messages = {
     remove: m("Delete this application"),
     endedHeading: m("Ended"),
     endedCount: (n: number) => m(`${n} closed`),
-    stationEmpty: m("Nothing in this column."),
+    stationEmpty: m("Drop a card here."),
     addOpenings: m("Add openings from Search"),
     fitCount: (met: number, total: number) =>
       m(`Fit ${met}/${total}`),
@@ -883,6 +887,8 @@ export const messages = {
     cancelling: m("Cancelling at the end of this period"),
     pastDue: m("A payment didn't go through"),
     unavailable: m("Payment isn't available right now. Your plan is unchanged."),
+    signInTitle: m("Sign in to manage your plan"),
+    signInBody: m("Plan and billing live on your account."),
     // What the Coach says when the allowance is gone. The other tools keep
     // working, and the sentence says so.
     outOfTurns: m("Out of Coach turns this month"),
@@ -907,11 +913,17 @@ export const messages = {
     reportPlaceholder: m("What were you doing when it went wrong?"),
     reportSend: m("Send"),
     reportThanks: m("Got it. Thank you."),
+    reportAgain: m("Send another"),
     reportFailed: m("That didn't send. Try again shortly."),
     reportTooShort: m("Add a sentence about what you were doing so we can follow."),
     notFoundTitle: m("This page isn't here"),
-    notFoundBody: m("That address doesn't open anything. Go to the Coach, or pick a place in the rail."),
+    notFoundBody: m("That address doesn't open anything. Go to the Coach."),
     notFoundAction: m("Go to the Coach"),
+    notFoundPublicBody: m("That address doesn't open anything. Go to the home page, or create an account."),
+    notFoundPublicAction: m("Go to OpenPath"),
+    errorTitle: m("This page couldn't load"),
+    errorBody: m("Refresh the page, or go to the Coach."),
+    errorAction: m("Go to the Coach"),
   },
 
   /* ── Waiting list ───────────────────────────────────────────────────── */
@@ -948,7 +960,7 @@ export const messages = {
     removeAnswer: m("Delete this one"),
     bioPlaceholder: m("Paste the bio you use, or a few lines about you…"),
     introPlaceholder: m("Write it as if you are speaking to them…"),
-    emptyAnswers: m("None yet. Add the question you dread, then write and tighten."),
+    emptyAnswers: m("None yet."),
     askCoachHelp: m("Ask the Coach to sharpen this"),
     askCoachBioPrompt: m("Sharpen my online bio so it sounds like me and matches my profile."),
     askCoachIntroPrompt: m("Sharpen my self-introduction so it sounds natural, from my profile and goal."),
@@ -969,10 +981,12 @@ export const messages = {
     signInLead: m("Sign in to pick up where you left off."),
     signUpTitle: m("Create an account"),
     signUpLead: m("Create an account and your work is saved."),
-    username: m("Username"),
+    email: m("Email"),
     password: m("Password"),
+    confirmPassword: m("Confirm password"),
     // Said before they type, not after they get it wrong.
     passwordHint: m("At least 8 characters."),
+    rememberMe: m("Remember me"),
     signIn: m("Sign in"),
     signingIn: m("Signing in"),
     signUp: m("Create account"),
@@ -1011,13 +1025,15 @@ export const messages = {
   errors: {
     // The account failures. Each one names what to do, and the one for bad
     // credentials deliberately does not say which field was wrong: telling
-    // somebody the username exists is most of the work of breaking into it.
-    authUsernameRequired: m("Enter a username."),
+    // somebody the email exists is most of the work of breaking into it.
+    authEmailRequired: m("Enter your email."),
+    authEmailShape: m("Enter an email address, for example name@gmail.com."),
+    authEmailTaken: m("That email already has an account. Sign in instead."),
     authPasswordRequired: m("Enter a password."),
-    authUsernameTaken: m("That username is taken. Pick another one."),
-    authUsernameTooLong: m("That username is too long."),
     authPasswordTooShort: m("Use between 8 and 72 characters."),
-    authBadCredentials: m("That username and password don't match."),
+    authConfirmRequired: m("Enter your password again."),
+    authPasswordMismatch: m("Those passwords don't match."),
+    authBadCredentials: m("That email and password don't match."),
     authRateLimited: m("Too many tries. Wait a minute and try again."),
     authStoreDown: m("That didn't go through. Try again shortly."),
     authOffline: m("No connection. Check your network and try again."),

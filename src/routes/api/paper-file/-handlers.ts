@@ -1,6 +1,6 @@
 import { currentAccount } from "@/lib/auth/dal";
 import { failure } from "@/lib/auth/http";
-import { deleteFile, readFile, writeFile } from "@/lib/paper/file-store";
+import { deleteFile, readFile, writeFile } from "@/lib/paper/file-store.server";
 import { MAX_FILE_BYTES, isFileMime, mimeFromName } from "@/lib/paper/files";
 
 function uploadIdOf(request: Request): string | null {

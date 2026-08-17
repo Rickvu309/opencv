@@ -1,6 +1,6 @@
 import type { ClientBase } from "pg";
 
-import { getPool } from "@/lib/db/client";
+import { getPool } from "@/lib/db/client.server";
 import { MAX_CONVERSATIONS, MAX_EVENTS, type Conversation } from "./sessions";
 
 /**

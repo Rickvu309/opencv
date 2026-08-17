@@ -1,6 +1,6 @@
 import type { ClientBase } from "pg";
 
-import { getPool } from "@/lib/db/client";
+import { getPool } from "@/lib/db/client.server";
 
 export const PHOTO_MIMES = ["image/jpeg", "image/png"] as const;
 export type PhotoMime = (typeof PHOTO_MIMES)[number];

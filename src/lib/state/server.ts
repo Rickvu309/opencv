@@ -1,6 +1,6 @@
 import type { AppState } from "@/lib/actions/types";
 import { currentAccount } from "@/lib/auth/dal";
-import { loadAccountState } from "./account-state";
+import { loadAccountState } from "./account-state.server";
 
 export type InitialAppState = {
   state: AppState | null;

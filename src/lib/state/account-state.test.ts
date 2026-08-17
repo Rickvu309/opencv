@@ -15,7 +15,7 @@ import {
   looksLikeState,
   readAccountState,
   writeAccountState,
-} from "@/lib/state/account-state";
+} from "@/lib/state/account-state.server";
 
 const OPTIONS = { skip: skipWithoutDatabase };
 
@@ -31,7 +31,7 @@ test("looksLikeState refuses what is not an AppState", () => {
 
 test("AC-ACCT-001.5: a new account has state from the moment it exists", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     const state = await createAccountState(account.id, "en", db);
 
     assert.equal(state.locale, "en", "the browser's language seeds the account");
@@ -43,7 +43,7 @@ test("AC-ACCT-001.5: a new account has state from the moment it exists", OPTIONS
 
 test("a new account starts empty, and not as somebody else", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     const state = await createAccountState(account.id, "en", db);
 
     // There was a seeded demo persona here once and every screen read her
@@ -59,7 +59,7 @@ test("a new account starts empty, and not as somebody else", OPTIONS, async () =
 
 test("AC-ACCT-004.1: state is stored under the account", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     const { state } = applyAction(seedState(), "profile.addCourse", {
       name: "Ôn SQL",
     });
@@ -73,7 +73,7 @@ test("AC-ACCT-004.1: state is stored under the account", OPTIONS, async () => {
 
 test("AC-ACCT-004.3: the same account on another device sees the same work", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     await createAccountState(account.id, "en", db);
 
     // The laptop writes.
@@ -91,8 +91,8 @@ test("AC-ACCT-004.3: the same account on another device sees the same work", OPT
 
 test("AC-ACCT-004.2 and 004.4: one account never sees another's state", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const mai = await createAccount("mai", "a good long password", db);
-    const nam = await createAccount("nam", "another long password", db);
+    const mai = await createAccount("mai@example.com", "a good long password", db);
+    const nam = await createAccount("nam@example.com", "another long password", db);
 
     const withCourse = (name: string) =>
       applyAction(seedState(), "profile.addCourse", { name }).state;
@@ -113,7 +113,7 @@ test("AC-ACCT-004.2 and 004.4: one account never sees another's state", OPTIONS,
 
 test("a write replaces the row rather than adding one", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
 
     let state = seedState();
     for (const name of ["A", "B", "C"]) {
@@ -132,7 +132,7 @@ test("a write replaces the row rather than adding one", OPTIONS, async () => {
 
 test("an account that has written nothing reads as the seed, not as an error", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     assert.equal(await readAccountState(account.id, db), null, "nothing stored yet");
     assert.deepEqual(await loadAccountState(account.id, db), seedState());
   });
@@ -140,7 +140,7 @@ test("an account that has written nothing reads as the seed, not as an error", O
 
 test("a row of the wrong shape is left alone, never deleted", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     // The browser discarded a blob it could not read, because the cost was a
     // reseed of demo data. This row is somebody's real work: it stays where it
     // is, available for a migration to repair, and the app renders the seed
@@ -164,7 +164,7 @@ test("a row of the wrong shape is left alone, never deleted", OPTIONS, async () 
 
 test("a stored row with resumes and papers is lifted into paper[]", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     const older: Record<string, unknown> = { ...seedState() };
     delete older.paper;
     older.resumes = [
@@ -210,7 +210,7 @@ test("a stored row with resumes and papers is lifted into paper[]", OPTIONS, asy
 
 test("the state survives a round trip with Vietnamese text intact", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     const { state } = applyAction(seedState(), "profile.addCourse", {
       name: "Ôn lại SQL và viết CV tiếng Việt",
     });
@@ -225,7 +225,7 @@ test("the state survives a round trip with Vietnamese text intact", OPTIONS, asy
 
 test("deleting an account takes its state with it", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     await createAccountState(account.id, "en", db);
 
     await db.query("delete from accounts where id = $1", [account.id]);

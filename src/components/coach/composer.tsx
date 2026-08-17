@@ -308,9 +308,9 @@ export function Composer({
         if (canSend) thread.submitDraft();
       }}
       className={cn(
-        "relative border bg-card shadow-sm",
-        "transition-[border-color,box-shadow] duration-[var(--duration-state)] ease-enter",
-        "focus-within:border-ring/50 focus-within:shadow-md focus-within:ring-3 focus-within:ring-ring/30",
+        "relative bg-card ring-1 ring-border",
+        "transition-[box-shadow] duration-[var(--duration-state)] ease-enter",
+        "focus-within:ring-3 focus-within:ring-ring/50",
         "motion-reduce:transition-none",
         // Inside the floating panel (radius 16, padding 8): inner = 16 − 8. Standalone: 16.
         compact ? "rounded-md" : "rounded-xl",

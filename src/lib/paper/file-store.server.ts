@@ -1,6 +1,6 @@
 import type { ClientBase } from "pg";
 
-import { getPool } from "@/lib/db/client";
+import { getPool } from "@/lib/db/client.server";
 import type { FileMime } from "./files";
 
 export type StoredFile = { bytes: Buffer; mime: string; fileName: string; updatedAt: Date };

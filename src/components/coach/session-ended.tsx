@@ -37,7 +37,7 @@ export function CoachSessionEnded({ compact }: { compact?: boolean }) {
       >
         {t(m.coach.sessionEndedTitle)}
       </h1>
-      <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
+      <p className="mt-1.5 text-sm leading-6 text-foreground">
         {t(m.coach.sessionEndedBody)}
       </p>
 

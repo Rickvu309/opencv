@@ -4,6 +4,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
 import { Plus, Trash2 } from "lucide-react";
 
+import { EmptyState } from "@/components/layout/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -34,7 +35,7 @@ function PitchPage() {
         <h1 className="text-xl font-semibold tracking-tight text-pretty">
           {t(m.pitch.title)}
         </h1>
-        <p className="mt-1 text-sm text-pretty text-muted-foreground">{t(m.pitch.lead)}</p>
+        <p className="mt-1 text-sm text-pretty text-foreground">{t(m.pitch.lead)}</p>
       </header>
 
       <div className="@container mt-8">
@@ -180,9 +181,25 @@ function AnswerBank() {
 
       <div className="mt-4 overflow-hidden rounded-xl border bg-card">
         {answers.length === 0 ? (
-          <p className="px-4 py-3 text-sm text-pretty text-muted-foreground">
-            {t(m.pitch.emptyAnswers)}
-          </p>
+          <EmptyState
+            title={t(m.pitch.emptyAnswers)}
+            action={
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  dispatch("pitch.write", {
+                    kind: "answer",
+                    prompt: t(m.pitch.questionPlaceholder),
+                    body: "",
+                  })
+                }
+              >
+                <Plus className="size-3.5" aria-hidden="true" />
+                {t(m.pitch.addAnswer)}
+              </Button>
+            }
+          />
         ) : (
           <div className="divide-y divide-border">
             {answers.map((answer) => (

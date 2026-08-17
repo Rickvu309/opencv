@@ -1,6 +1,6 @@
 import type { ClientBase } from "pg";
 
-import { getPool } from "@/lib/db/client";
+import { getPool } from "@/lib/db/client.server";
 import { accountById, type Account } from "./accounts";
 import { newToken, tokenHash } from "./cookie";
 
@@ -30,15 +30,21 @@ import { newToken, tokenHash } from "./cookie";
 
 export const SESSION_DAYS = 30;
 
+/** How long a session lasts when they did not ask to be remembered. */
+export const SESSION_HOURS_TRANSIENT = 24;
+
 export type Session = {
   /** The value the browser must be given, before signing. */
   token: string;
   accountId: string;
   expiresAt: Date;
+  /** When false, the cookie dies with the browser. */
+  persistent: boolean;
 };
 
-function expiryFrom(now: Date): Date {
-  return new Date(now.getTime() + SESSION_DAYS * 24 * 60 * 60 * 1000);
+function expiryFrom(now: Date, remember: boolean): Date {
+  const hours = remember ? SESSION_DAYS * 24 : SESSION_HOURS_TRANSIENT;
+  return new Date(now.getTime() + hours * 60 * 60 * 1000);
 }
 
 /**
@@ -51,14 +57,15 @@ export async function startSession(
   accountId: string,
   db: Pick<ClientBase, "query"> = getPool(),
   now: Date = new Date(),
+  remember = true,
 ): Promise<Session> {
   const token = newToken();
-  const expiresAt = expiryFrom(now);
+  const expiresAt = expiryFrom(now, remember);
   await db.query(
     "insert into sessions (id, account_id, expires_at) values ($1, $2, $3)",
     [tokenHash(token), accountId, expiresAt],
   );
-  return { token, accountId, expiresAt };
+  return { token, accountId, expiresAt, persistent: remember };
 }
 
 /**

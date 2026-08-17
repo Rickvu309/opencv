@@ -417,7 +417,7 @@ export function CoachGreeting({ compact }: { compact?: boolean }) {
       </span>
       <p
         className={cn(
-          "text-center text-muted-foreground",
+          "text-center text-foreground",
           compact ? "text-sm" : "text-[15px]",
         )}
       >
@@ -614,7 +614,7 @@ export function CoachMessages({
         <button
           type="button"
           onClick={jumpToLatest}
-          className="sticky bottom-2 mx-auto mt-3 flex rounded-full border bg-card px-3 py-1 text-xs text-muted-foreground shadow-xs outline-none hover:bg-muted/70 hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-[var(--duration-state)] motion-safe:ease-enter"
+          className="sticky bottom-2 mx-auto mt-3 flex rounded-lg bg-muted px-3 py-1 text-xs text-foreground outline-none hover:bg-muted/70 focus-visible:ring-3 focus-visible:ring-ring/50 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-[var(--duration-state)] motion-safe:ease-enter"
         >
           {t(m.coach.jumpToLatest)}
         </button>

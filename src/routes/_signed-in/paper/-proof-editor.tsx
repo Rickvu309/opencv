@@ -523,7 +523,7 @@ function ArrangeDraft({ paper, name }: { paper: ProofPaper; name?: string }) {
           );
         })}
       </ul>
-      <div className="bg-[#f3ebe0]">
+      <div className="bg-desk">
         <ProofArticle snapshot={snapshot} />
       </div>
     </div>

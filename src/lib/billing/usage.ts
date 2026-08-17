@@ -12,7 +12,7 @@
 
 import type { ClientBase } from "pg";
 
-import { getPool } from "@/lib/db/client";
+import { getPool } from "@/lib/db/client.server";
 import { planFor, type Plan } from "@/lib/billing/plan";
 
 export type UsageVerdict =

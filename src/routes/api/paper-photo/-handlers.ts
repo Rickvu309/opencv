@@ -6,7 +6,7 @@ import {
   isPhotoMime,
   readPhoto,
   writePhoto,
-} from "@/lib/paper/photos";
+} from "@/lib/paper/photos.server";
 
 /**
  * A CV-type paper's photo: fetch it, replace it, remove it.

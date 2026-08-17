@@ -7,6 +7,7 @@
 import { z } from "zod";
 
 import { applicationActions } from "@/lib/applications/actions";
+import { onboardingActions } from "@/lib/onboarding/actions";
 import { paperActions } from "@/lib/paper/actions";
 import { pitchActions } from "@/lib/pitch/actions";
 import { profileActions } from "@/lib/profile/actions";
@@ -23,6 +24,7 @@ export const actions = {
   ...pitchActions,
   ...searchActions,
   ...applicationActions,
+  ...onboardingActions,
 } satisfies Record<string, Action>;
 
 export type ActionName = keyof typeof actions;

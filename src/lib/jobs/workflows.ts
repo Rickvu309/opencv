@@ -7,7 +7,7 @@
  * vanishes.
  */
 
-import { getPool } from "@/lib/db/client";
+import { getPool } from "@/lib/db/client.server";
 import { detectDrift, rates } from "@/lib/eval/drift";
 import { enqueue } from "@/lib/jobs/queue";
 import type { JobContext, WorkflowRegistry } from "@/lib/jobs/runner";
