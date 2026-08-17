@@ -11,7 +11,7 @@ import { registerHooks } from "node:module";
 import { existsSync } from "node:fs";
 import { pathToFileURL, fileURLToPath } from "node:url";
 
-const root = pathToFileURL(`${import.meta.dirname}/../`).href;
+const root = pathToFileURL(`${import.meta.dirname}/../src/`).href;
 const extensions = [".ts", ".tsx", "/index.ts", "/index.tsx"];
 
 registerHooks({

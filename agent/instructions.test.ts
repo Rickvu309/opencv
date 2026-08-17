@@ -12,7 +12,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { actionNames } from "../lib/actions/registry";
+import { actionNames } from "../src/lib/actions/registry";
 
 const instructions = readFileSync(
   join(import.meta.dirname, "instructions.md"),

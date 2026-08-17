@@ -6,8 +6,6 @@
 # builder, which fails with EXDEV and takes the whole build down after it has
 # otherwise succeeded. That is how this file came to exist.
 .output
-.next
-.vercel
 .eve
 node_modules
 .git

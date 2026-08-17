@@ -1,23 +1,32 @@
 import { defineConfig, globalIgnores } from "eslint/config";
-import nextVitals from "eslint-config-next/core-web-vitals";
-import nextTs from "eslint-config-next/typescript";
+import js from "@eslint/js";
+import tseslint from "typescript-eslint";
+import globals from "globals";
 
-const eslintConfig = defineConfig([
-  ...nextVitals,
-  ...nextTs,
-  // Override default ignores of eslint-config-next.
+export default defineConfig([
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
   globalIgnores([
-    // Default ignores of eslint-config-next:
-    ".next/**",
-    "out/**",
-    "build/**",
-    "next-env.d.ts",
-    // `eve build` snapshots the whole source tree here. It is gitignored, but
-    // ignoring it for git and not for lint means 46k problems from copies of
-    // files that are already being linted in place, and the handful that are
-    // really ours drown in them.
+    ".output/**",
     ".eve/**",
+    ".tanstack/**",
+    "src/routeTree.gen.ts",
+    "routeTree.gen.ts",
+    "node_modules/**",
+    "coverage/**",
   ]),
+  {
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
+    },
+    rules: {
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+      ],
+    },
+  },
 ]);
-
-export default eslintConfig;

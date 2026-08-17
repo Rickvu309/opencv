@@ -1,15 +1,12 @@
 import { eveChannel, defaultEveAuth } from "eve/channels/eve";
-import { localDev, vercelOidc } from "eve/channels/auth";
+import { localDev } from "eve/channels/auth";
 
-import { userSession } from "../../lib/auth/agent-session";
-import { meterTurn, screenInboundTurn } from "../../lib/guardrails/server";
+import { userSession } from "../../src/lib/auth/agent-session";
+import { meterTurn, screenInboundTurn } from "../../src/lib/guardrails/server";
 
 export default eveChannel({
   auth: [
-    // Vercel-to-Vercel callers and the eve TUI against a Vercel deployment.
-    // Inert once the agent moves to Railway; harmless to leave in the walk.
-    vercelOidc(),
-    // `eve dev`, the REPL and `next dev`. Localhost only; ignored in production.
+    // `eve dev` and the REPL. Localhost only; ignored in production.
     localDev(),
     // The signed-in user. This used to be one shared demo account over HTTP
     // Basic, with its password printed on the form; the turn is now authorized

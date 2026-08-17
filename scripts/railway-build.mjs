@@ -4,7 +4,7 @@
  * commands, so the service name decides which build this is.
  *
  * `openpath-agent` is the Coach: `eve build`. Everything else (the web app)
- * is `next build`. A third service must not silently inherit the agent build.
+ * is `vite build`. A third service must not silently inherit the agent build.
  */
 
 import { spawnSync } from "node:child_process";

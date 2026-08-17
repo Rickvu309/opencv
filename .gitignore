@@ -13,12 +13,10 @@
 # testing
 /coverage
 
-# next.js
-/.next/
-/out/
-
 # production
 /build
+/.output
+.tanstack/
 
 # misc
 .DS_Store
@@ -33,12 +31,8 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
-# vercel
-.vercel
-
 # typescript
 *.tsbuildinfo
-next-env.d.ts
 
 # eve build artifacts
 .eve/
@@ -48,4 +42,3 @@ next-env.d.ts
 .env*.local
 
 # The eve agent's server build. Produced by `eve build`, deployed to Railway.
-/.output
