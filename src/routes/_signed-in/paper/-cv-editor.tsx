@@ -1,12 +1,14 @@
 "use client";
 
 import { QuietCoachOffer } from "@/components/coach/quiet-offer";
-import { CvPrintPortal } from "@/components/paper/cv-preview";
+import { cvAccentColor } from "@/components/paper/cv-document";
+import { CvPreview, CvPrintPortal } from "@/components/paper/cv-preview";
 import { Button } from "@/components/ui/button";
 import { useDispatch } from "@/lib/actions/store";
-import type { CvPaper } from "@/lib/paper/types";
+import type { CvAccent, CvPaper } from "@/lib/paper/types";
 import { useT } from "@/lib/i18n/use-t";
-import { CvCanvas } from "./-cv-canvas";
+
+const accents: CvAccent[] = ["ink", "blue", "green", "plum"];
 
 export function CvEditor({
   cv,
@@ -15,11 +17,16 @@ export function CvEditor({
 }: {
   cv: CvPaper;
   fromUpload?: boolean;
-  onBack: () => void;
   onFormat: () => void;
 }) {
   const dispatch = useDispatch();
   const { t, m } = useT();
+  const accentLabel: Record<CvAccent, string> = {
+    ink: t(m.paper.cv.accentInk),
+    blue: t(m.paper.cv.accentBlue),
+    green: t(m.paper.cv.accentGreen),
+    plum: t(m.paper.cv.accentPlum),
+  };
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -31,7 +38,7 @@ export function CvEditor({
                 {t(m.paper.uploadStartHint)}
               </p>
             )}
-            <CvCanvas cv={cv} />
+            <CvPreview cv={cv} edit />
           </div>
           <aside className="hidden w-52 shrink-0 space-y-3 pt-1 md:block">
             <Button
@@ -43,6 +50,32 @@ export function CvEditor({
             >
               {t(m.paper.cv.whereGoing)}
             </Button>
+            <div role="group" aria-label={t(m.paper.cv.accent)} className="space-y-1">
+              {accents.map((accent) => (
+                <Button
+                  key={accent}
+                  type="button"
+                  size="sm"
+                  variant={cv.theme.accent === accent ? "secondary" : "ghost"}
+                  aria-pressed={cv.theme.accent === accent}
+                  className="w-full justify-start gap-2"
+                  onClick={() =>
+                    dispatch(
+                      "paper.setTheme",
+                      { id: cv.id, accent },
+                      { silent: true },
+                    )
+                  }
+                >
+                  <span
+                    aria-hidden
+                    className="size-2.5 rounded-full"
+                    style={{ background: cvAccentColor[accent] }}
+                  />
+                  {accentLabel[accent]}
+                </Button>
+              ))}
+            </div>
             <Button
               type="button"
               size="sm"

@@ -1,13 +1,15 @@
 import { AccountError, verifyCredentials } from "@/lib/auth/accounts";
 import { callerKey, failure, readBody, tooManyAttempts, withSession } from "@/lib/auth/http";
 import { startSession } from "@/lib/auth/sessions";
+import { needsOnboarding } from "@/lib/onboarding/complete";
+import { loadAccountState } from "@/lib/state/account-state.server";
 
 /**
  * Sign in to an existing account.
  *
  * Every rejection answers `bad-credentials` with the same status, whether the
- * username is unknown, the password is wrong, or a field was left empty. Saying
- * which would tell anyone with a form which usernames exist, and that is most
+ * email is unknown, the password is wrong, or a field was left empty. Saying
+ * which would tell anyone with a form which emails exist, and that is most
  * of the work of breaking into one. AC-ACCT-002.2.
  */
 export async function POST(request: Request) {
@@ -24,9 +26,18 @@ export async function POST(request: Request) {
   }
 
   try {
-    const account = await verifyCredentials(body.username, body.password);
-    const session = await startSession(account.id);
-    return withSession({ username: account.username }, session);
+    const account = await verifyCredentials(body.email, body.password);
+    const session = await startSession(
+      account.id,
+      undefined,
+      undefined,
+      body.rememberMe === true,
+    );
+    const state = await loadAccountState(account.id);
+    return withSession(
+      { username: account.username, needsOnboarding: needsOnboarding(state) },
+      session,
+    );
   } catch (error) {
     if (error instanceof AccountError) return failure(error.code, 401);
     console.error("auth: sign-in failed", error);

@@ -132,7 +132,7 @@ export function ProfileBanner() {
     <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border bg-card px-4 py-2.5">
       <p className="min-w-0 flex-1 text-sm">
         <span className="font-medium">{t(m.search.emptyProfileTitle)}. </span>
-        <span className="text-muted-foreground">{t(m.search.emptyProfileBody)}</span>
+        <span className="text-foreground">{t(m.search.emptyProfileBody)}</span>
       </p>
       <Button asChild variant="outline" size="sm" className="shrink-0">
         <Link href="/profile">{t(m.search.emptyProfileAction)}</Link>
@@ -224,10 +224,7 @@ export function OpeningActions({
         variant="ghost"
         size="icon-sm"
         aria-label={t(opening.saved ? m.search.unsave : m.search.save)}
-        className={cn(
-          "transition-colors duration-[var(--duration-press)] ease-[var(--ease-snap)] motion-reduce:transition-none",
-          opening.saved ? undefined : "text-muted-foreground",
-        )}
+        className={cn(opening.saved ? undefined : "text-muted-foreground")}
         onClick={(event) => {
           event.stopPropagation();
           dispatch(opening.saved ? "opening.unsave" : "opening.save", {

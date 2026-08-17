@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import * as React from "react";
-import { createFileRoute, getRouteApi } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 
 import { Composer } from "@/components/coach/composer";
 import { CoachSessionEnded } from "@/components/coach/session-ended";
@@ -13,6 +13,7 @@ import {
   CoachMessages,
 } from "@/components/coach/thread-view";
 import { discloseInner } from "@/components/ui/disclose";
+import { useRouter } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_signed-in/coach")({
@@ -22,15 +23,14 @@ export const Route = createFileRoute("/_signed-in/coach")({
   component: CoachPage,
 });
 
-const coachRoute = getRouteApi("/_signed-in/coach");
-
 function CoachPage() {
   return <CoachChat />;
 }
 
 function CoachChat() {
-  const { q } = coachRoute.useSearch();
+  const { q } = Route.useSearch();
   const asked = q?.trim() || "";
+  const router = useRouter();
 
   // The same conversation the floating panel shows. Opening this page is a
   // change of view, not a new chat.
@@ -52,12 +52,13 @@ function CoachChat() {
   // A question handed over from another screen: answer it on open, but not
   // before the door has been checked. Firing during "checking" would spend a
   // turn that 401s, and firing while "locked" would lose the question behind
-  // the sign-in form.
+  // the sign-in form. Strip `?q=` after so a refresh does not ask it again.
   React.useEffect(() => {
     if (!asked || answeredAsked.current || thread.access !== "open") return;
     answeredAsked.current = true;
     thread.answer(asked);
-  }, [asked, thread]);
+    router.replaceTo("/coach", {});
+  }, [asked, thread, router]);
 
   const isEmpty = thread.messages.length === 0 && !thread.isTyping;
 

@@ -4,6 +4,7 @@ import * as React from "react";
 import { MoreHorizontal, Plus } from "lucide-react";
 
 import { QuietCoachOffer } from "@/components/coach/quiet-offer";
+import { EmptyState } from "@/components/layout/empty-state";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -14,7 +15,7 @@ import {
 import { useAppState, useDispatch } from "@/lib/actions/store";
 import { nextId } from "@/lib/ids";
 import { driveOf, type DriveFilter } from "@/lib/paper/drive";
-import { useDriveRows } from "@/lib/paper/use-drive-rows";
+import { OrderedDriveRows } from "@/lib/paper/use-drive-rows";
 import { wordForTemplate } from "@/lib/paper/cv";
 import { mimeFromName } from "@/lib/paper/files";
 import { sheetTransitionName } from "@/lib/paper/room";
@@ -32,23 +33,30 @@ import { cn } from "@/lib/utils";
 export type { DriveFilter };
 
 const rowFocus =
-  "outline-none hover:bg-transparent focus-visible:ring-3 focus-visible:ring-ring/50";
+  "outline-none hover:bg-foreground/4 focus-visible:ring-3 focus-visible:ring-ring/50";
 
 export function Drive({
   filter,
   onOpen,
   onRequestCreateCv,
+  onShowAll,
   onWillCreate,
+  keepFailed,
+  onKeepFailed,
+  onKept,
 }: {
   filter: DriveFilter;
   onOpen: (id: string, extras?: { fromUpload?: boolean }) => void;
   onRequestCreateCv: () => void;
+  onShowAll?: () => void;
   onWillCreate: (opts?: { fromUpload?: boolean }) => void;
+  keepFailed: Record<string, true>;
+  onKeepFailed: (id: string) => void;
+  onKept: (id: string) => void;
 }) {
   const { paper, uploads } = useAppState();
   const dispatch = useDispatch();
   const { t, m } = useT();
-  const [unsigned, setUnsigned] = React.useState<Record<string, true>>({});
 
   const startCvFromFile = () => {
     const n = paper.filter(isCvPaper).length + 1;
@@ -65,7 +73,6 @@ export function Drive({
   };
 
   const { empty, uploadsOnly, rows, airy } = driveOf(paper, uploads, filter);
-  const ordered = useDriveRows(rows);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -89,75 +96,65 @@ export function Drive({
               </span>
             </button>
             <EmptyUpload
-              onKeepFailed={(id) =>
-                setUnsigned((current) => ({ ...current, [id]: true }))
-              }
-              onKept={(id) =>
-                setUnsigned((current) => {
-                  if (!current[id]) return current;
-                  const next = { ...current };
-                  delete next[id];
-                  return next;
-                })
-              }
+              onKeepFailed={onKeepFailed}
+              onKept={onKept}
               onStarted={startCvFromFile}
             />
           </div>
         ) : (
-          <>
-            <h1 className="sr-only">{t(m.paper.yourDocuments)}</h1>
-            {uploadsOnly && (
-              <p className="mb-4 text-pretty text-sm text-muted-foreground">
-                {t(m.paper.emptyUploadsOnly)}
-              </p>
-            )}
-            {rows.length === 0 ? (
-              <p className="py-6 text-pretty text-sm text-muted-foreground">
-                {t(m.paper.noRowsForFilter)}
-              </p>
-            ) : (
-              <ul className={cn(airy ? "space-y-1" : "space-y-0")}>
-                {ordered.map((row) =>
-                  row.kind === "paper" ? (
-                    <PaperRow
-                      key={row.item.id}
-                      paper={row.item}
-                      airy={airy}
-                      onOpen={() => onOpen(row.item.id)}
-                    />
-                  ) : (
-                    <UploadRow
-                      key={row.item.id}
-                      upload={row.item}
-                      airy={airy}
-                      keepFailed={Boolean(unsigned[row.item.id])}
-                      onKeepFailed={() =>
-                        setUnsigned((current) => ({
-                          ...current,
-                          [row.item.id]: true,
-                        }))
-                      }
-                      onKept={() =>
-                        setUnsigned((current) => {
-                          if (!current[row.item.id]) return current;
-                          const next = { ...current };
-                          delete next[row.item.id];
-                          return next;
-                        })
-                      }
-                      onStartCv={startCvFromFile}
-                    />
-                  ),
+          <OrderedDriveRows rows={rows}>
+            {(ordered) => (
+              <>
+                <h1 className="sr-only">{t(m.paper.yourDocuments)}</h1>
+                {uploadsOnly && (
+                  <p className="mb-4 text-pretty text-sm text-foreground">
+                    {t(m.paper.emptyUploadsOnly)}
+                  </p>
                 )}
-              </ul>
+                {rows.length === 0 ? (
+                  <EmptyState
+                    body={t(m.paper.noRowsForFilter)}
+                    action={
+                      onShowAll ? (
+                        <Button type="button" variant="outline" size="sm" onClick={onShowAll}>
+                          {t(m.paper.showAllPapers)}
+                        </Button>
+                      ) : null
+                    }
+                  />
+                ) : (
+                  <ul className="divide-y divide-border">
+                    {ordered.map((row) =>
+                      row.kind === "paper" ? (
+                        <PaperRow
+                          key={row.item.id}
+                          paper={row.item}
+                          airy={airy}
+                          onOpen={() => onOpen(row.item.id)}
+                        />
+                      ) : (
+                        <UploadRow
+                          key={row.item.id}
+                          upload={row.item}
+                          airy={airy}
+                          keepFailed={Boolean(keepFailed[row.item.id])}
+                          onKeepFailed={() => onKeepFailed(row.item.id)}
+                          onKept={() => onKept(row.item.id)}
+                          onStartCv={startCvFromFile}
+                        />
+                      ),
+                    )}
+                  </ul>
+                )}
+                <div className="mt-8">
+                  <QuietCoachOffer
+                    label={t(m.paper.askCoachList)}
+                    prompt={t(m.paper.askCoachListPrompt)}
+                  />
+                </div>
+              </>
             )}
-            <div className="mt-8">
-              <QuietCoachOffer
-                label={t(m.paper.askCoachList)}
-                prompt={t(m.paper.askCoachListPrompt)}
-              />
-            </div>
-          </>
+          </OrderedDriveRows>
         )}
       </div>
     </div>
@@ -170,12 +167,16 @@ export function DriveBand({
   onRequestCreateCv,
   onRequestCreateLetter,
   onWillCreate,
+  onKeepFailed,
+  onKept,
 }: {
   filter: DriveFilter;
   onFilter: (filter: DriveFilter) => void;
   onRequestCreateCv: () => void;
   onRequestCreateLetter: () => void;
   onWillCreate: (opts?: { fromUpload?: boolean }) => void;
+  onKeepFailed: (id: string) => void;
+  onKept: (id: string) => void;
 }) {
   const { paper, uploads } = useAppState();
   const dispatch = useDispatch();
@@ -211,8 +212,8 @@ export function DriveBand({
             label: t(m.paper.proof.untitled),
           });
         }}
-        onKeepFailed={() => undefined}
-        onKept={() => undefined}
+        onKeepFailed={onKeepFailed}
+        onKept={onKept}
       />
       {showFilter && (
         <div

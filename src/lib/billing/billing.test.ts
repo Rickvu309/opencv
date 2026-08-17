@@ -24,7 +24,7 @@ const password = "correct horse battery staple";
 
 test("an account with no plan reads as free, without being migrated", options, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("payer1", password, db);
+    const account = await createAccount("payer1@example.com", password, db);
     const plan = await planFor(account.id, db);
     assert.equal(plan.tier, "free");
     assert.equal(plan.coachAllowance, ALLOWANCES.free);
@@ -34,7 +34,7 @@ test("an account with no plan reads as free, without being migrated", options, a
 
 test("AC-MON-002.2: subscribing sets the tier and its allowance", options, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("payer2", password, db);
+    const account = await createAccount("payer2@example.com", password, db);
     const plan = await setTier(
       account.id,
       "pro",
@@ -58,7 +58,7 @@ test("an upgrade does not carry the old usage across", options, async () => {
   // Selling somebody a bigger plan and handing them a bill they had already
   // spent would be the worst possible first impression of paying.
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("payer3", password, db);
+    const account = await createAccount("payer3@example.com", password, db);
     await recordTurn(account.id, db);
     await recordTurn(account.id, db);
     const plan = await setTier(account.id, "pro", {}, db);
@@ -68,7 +68,7 @@ test("an upgrade does not carry the old usage across", options, async () => {
 
 test("AC-MON-004.1: turns count against the allowance", options, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("payer4", password, db);
+    const account = await createAccount("payer4@example.com", password, db);
     assert.equal(await recordTurn(account.id, db), 1);
     assert.equal(await recordTurn(account.id, db), 2);
     const verdict = await checkAllowance(account.id, db);
@@ -82,7 +82,7 @@ test("AC-MON-004.1: turns count against the allowance", options, async () => {
 
 test("AC-MON-004.2: reaching the allowance refuses, with something to say", options, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("payer5", password, db);
+    const account = await createAccount("payer5@example.com", password, db);
     for (let i = 0; i < ALLOWANCES.free; i += 1) {
       await recordTurn(account.id, db);
     }
@@ -98,7 +98,7 @@ test("AC-MON-004.2: reaching the allowance refuses, with something to say", opti
 
 test("AC-MON-004.3: a new period resets the count", options, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("payer6", password, db);
+    const account = await createAccount("payer6@example.com", password, db);
     await setTier(account.id, "pro", {}, db);
     await recordTurn(account.id, db);
 
@@ -113,7 +113,7 @@ test("AC-MON-004.3: a new period resets the count", options, async () => {
 
 test("AC-MON-003.2: cancelling keeps the allowance until the period ends", options, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("payer7", password, db);
+    const account = await createAccount("payer7@example.com", password, db);
     await setTier(account.id, "ultra", {}, db);
     const cancelled = await cancel(account.id, db);
 
@@ -134,7 +134,7 @@ test("AC-MON-005.2: a failed payment is not an instant downgrade", options, asyn
   // The provider retries a bounced card. Dropping somebody to free the moment
   // one payment fails would take away a plan they are about to keep paying for.
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("payer8", password, db);
+    const account = await createAccount("payer8@example.com", password, db);
     await setTier(account.id, "pro", {}, db);
     const overdue = await markPastDue(account.id, db);
     assert.equal(overdue.tier, "pro");
@@ -148,7 +148,7 @@ test("AC-MON-005.2: a failed payment is not an instant downgrade", options, asyn
 
 test("cancelling a free plan is a no-op, not an error", options, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("payer9", password, db);
+    const account = await createAccount("payer9@example.com", password, db);
     const plan = await cancel(account.id, db);
     assert.equal(plan.tier, "free");
   });
@@ -156,7 +156,7 @@ test("cancelling a free plan is a no-op, not an error", options, async () => {
 
 test("deleting an account takes its plan with it", options, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("payer10", password, db);
+    const account = await createAccount("payer10@example.com", password, db);
     await setTier(account.id, "pro", {}, db);
     await db.query("delete from accounts where id = $1", [account.id]);
     const { rows } = await db.query("select count(*)::int as n from plans");

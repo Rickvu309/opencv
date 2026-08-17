@@ -170,19 +170,33 @@ export function useAuthSession() {
   return useMutation({
     mutationFn: async (input: {
       mode: "sign-in" | "sign-up";
-      username: string;
+      email: string;
       password: string;
+      confirmPassword?: string;
+      rememberMe?: boolean;
     }) => {
       const response = await fetch(`/api/auth/${input.mode}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          username: input.username,
+          email: input.email,
           password: input.password,
+          rememberMe: input.rememberMe === true,
+          ...(input.mode === "sign-up"
+            ? { confirmPassword: input.confirmPassword }
+            : {}),
         }),
       });
-      const payload = (await response.json()) as { ok: boolean; code?: string };
-      return { ok: response.ok && payload.ok, code: payload.code };
+      const payload = (await response.json()) as {
+        ok: boolean;
+        code?: string;
+        needsOnboarding?: boolean;
+      };
+      return {
+        ok: response.ok && payload.ok,
+        code: payload.code,
+        needsOnboarding: payload.needsOnboarding === true,
+      };
     },
   });
 }

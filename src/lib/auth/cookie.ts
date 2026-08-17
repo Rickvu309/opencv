@@ -113,7 +113,7 @@ export function readToken(
  * conditional only because `localhost` is not served over HTTPS and a secure
  * cookie there is a cookie the browser silently drops.
  */
-export function cookieOptions(expires: Date) {
+export function cookieOptions(expires?: Date) {
   return {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

@@ -3,7 +3,7 @@ import { ImageResponse } from "@vercel/og";
 import { createFileRoute } from "@tanstack/react-router";
 import { createServerOnlyFn } from "@tanstack/react-start";
 
-import { readProofPage } from "@/lib/paper/share";
+import { readProofPage } from "@/lib/paper/share-store.server";
 
 const size = { width: 1200, height: 630 };
 
@@ -21,8 +21,8 @@ const renderOg = createServerOnlyFn(async (slug: string) => {
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          background: "#f6f1e8",
-          color: "#1a1714",
+          background: "oklch(0.958 0 0)",
+          color: "oklch(0.16 0 0)",
           padding: 72,
         }}
       >

@@ -6,7 +6,7 @@ import {
   readProofPage,
   readSite,
   readSiteForAccount,
-} from "./share";
+} from "./share-store.server";
 import { spanFromSnapshot } from "./spans";
 
 export const loadPublicProof = createServerFn({ method: "GET" })

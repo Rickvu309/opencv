@@ -139,7 +139,6 @@ export function Opened({
       <CvEditor
         cv={paper}
         fromUpload={fromUpload}
-        onBack={onBack}
         onFormat={onFormat}
       />
     );
@@ -149,7 +148,6 @@ export function Opened({
       <LetterEditor
         paper={paper}
         opening={openingForPaper(state, paper.id)}
-        onBack={onBack}
         onFormat={onFormat}
       />
     );

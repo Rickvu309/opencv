@@ -56,6 +56,7 @@ test("the repository's own migrations are complete pairs", () => {
       "paper_artefact",
       "paper_files",
       "proof_share",
+      "account_email",
     ],
     "order matters: everything after the first depends on what came before it",
   );
@@ -283,6 +284,28 @@ test("a failed migration leaves no record of itself", { skip: skipWithoutDatabas
 });
 
 /* ── The constraints the schema promises the rest of Phase 1. ───────────── */
+
+test("the database refuses a duplicate email, in any case", { skip: skipWithoutDatabase }, async () => {
+  await withTestSchema(async (client, schema) => {
+    await migrateUp(client, { schema });
+    await client.query(
+      "insert into accounts (username, email, password_hash) values ('mai', 'Mai@example.com', 'x')",
+    );
+
+    await assert.rejects(
+      client.query(
+        "insert into accounts (username, email, password_hash) values ('other', 'Mai@example.com', 'x')",
+      ),
+      /duplicate key/,
+    );
+    await assert.rejects(
+      client.query(
+        "insert into accounts (username, email, password_hash) values ('other', 'mai@example.com', 'x')",
+      ),
+      /duplicate key/,
+    );
+  });
+});
 
 test("the database refuses a duplicate username, in any case", { skip: skipWithoutDatabase }, async () => {
   await withTestSchema(async (client, schema) => {

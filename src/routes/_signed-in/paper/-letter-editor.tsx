@@ -14,7 +14,6 @@ export function LetterEditor({
 }: {
   paper: LetterPaper;
   opening: Opening | undefined;
-  onBack: () => void;
   onFormat: () => void;
 }) {
   const { t, m } = useT();

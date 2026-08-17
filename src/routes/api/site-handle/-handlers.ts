@@ -1,12 +1,8 @@
 import { currentAccount } from "@/lib/auth/dal";
 import { failure, readBody } from "@/lib/auth/http";
-import {
-  defaultHandle,
-  isHandle,
-  readSiteForAccount,
-  writeSite,
-} from "@/lib/paper/share";
-import { readAccountState } from "@/lib/state/account-state";
+import { defaultHandle, isHandle } from "@/lib/paper/share";
+import { readSiteForAccount, writeSite } from "@/lib/paper/share-store.server";
+import { readAccountState } from "@/lib/state/account-state.server";
 
 export async function GET() {
   const account = await currentAccount();

@@ -3,12 +3,13 @@
 import * as React from "react";
 import { useForm } from "@tanstack/react-form";
 import { Link } from "@/lib/nav";
-import { CoachBox } from "@/components/brand/coach-box";
+import { SkipLink } from "@/components/layout/skip-link";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
+import { afterAuthPath } from "@/lib/auth/after-auth";
 import { authProblem, type ProblemField } from "@/lib/auth/problems";
 import { useT } from "@/lib/i18n/use-t";
 import { useAuthSession } from "@/lib/query/satellite";
@@ -17,11 +18,9 @@ import { useAuthSession } from "@/lib/query/satellite";
  * The front door, in both of its two moods.
  *
  * One component for signing in and creating an account, because the two forms
- * are the same two fields and the same submit, and keeping them apart meant
- * keeping two copies of the error handling, the disabled state and the focus
- * order in step. What differs is the endpoint, the words, and one rule: a new
- * account gets its errors beside the field that caused them, and a sign-in
- * never does.
+ * share the email, the password, the submit, and the error handling. What
+ * differs is the endpoint, the words, and one extra field: a new account asks
+ * them to type the password again.
  *
  * ## Why a full page rather than a dialog
  *
@@ -32,18 +31,37 @@ import { useAuthSession } from "@/lib/query/satellite";
 export function AuthForm({ mode, next }: { mode: "sign-in" | "sign-up"; next?: string }) {
   const { t, m } = useT();
   const session = useAuthSession();
+  const creating = mode === "sign-up";
 
   const form = useForm({
-    defaultValues: { username: "", password: "" },
+    defaultValues: { email: "", password: "", confirmPassword: "", rememberMe: true },
     onSubmit: async ({ value }) => {
       if (busy) return;
       setBusy(true);
       setProblem(null);
+
+      if (creating) {
+        if (value.confirmPassword.length === 0) {
+          const { field, message } = authProblem("confirm-required");
+          setProblem({ field, text: message });
+          setBusy(false);
+          return;
+        }
+        if (value.confirmPassword !== value.password) {
+          const { field, message } = authProblem("password-mismatch");
+          setProblem({ field, text: message });
+          setBusy(false);
+          return;
+        }
+      }
+
       try {
         const payload = await session.mutateAsync({
           mode,
-          username: value.username,
+          email: value.email,
           password: value.password,
+          rememberMe: value.rememberMe,
+          ...(creating ? { confirmPassword: value.confirmPassword } : {}),
         });
 
         if (!payload.ok) {
@@ -53,7 +71,9 @@ export function AuthForm({ mode, next }: { mode: "sign-in" | "sign-up"; next?: s
           return;
         }
 
-        window.location.assign(next && next.startsWith("/") ? next : "/onboarding");
+        window.location.assign(
+          afterAuthPath({ next, needsOnboarding: payload.needsOnboarding }),
+        );
       } catch {
         const { message } = authProblem("offline");
         setProblem({ field: "form", text: message });
@@ -65,29 +85,34 @@ export function AuthForm({ mode, next }: { mode: "sign-in" | "sign-up"; next?: s
   const [busy, setBusy] = React.useState(false);
   const [problem, setProblem] = React.useState<{ field: ProblemField; text: string } | null>(null);
 
-  const usernameError = React.useId();
+  const emailError = React.useId();
   const passwordError = React.useId();
+  const confirmError = React.useId();
   const formError = React.useId();
-
-  const creating = mode === "sign-up";
 
   const problemFor = (field: ProblemField) =>
     problem?.field === field ? problem.text : null;
 
   return (
-    <main className="flex min-h-svh flex-col items-center justify-center px-6 py-16">
+    <div className="flex min-h-svh flex-col">
+      <SkipLink />
+      <main
+        id="main-content"
+        className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-5 pt-10 pb-16 sm:px-8"
+      >
       <div className="w-full max-w-sm">
-        <Link href="/" className="flex items-center gap-2.5">
-          <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <CoachBox size="md" filled />
-          </span>
+        <Link
+          href="/"
+          className="flex w-fit items-center gap-2.5 rounded-lg outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          <CoachBox size="md" />
           <span className="text-base font-semibold tracking-tight">OpenPath</span>
         </Link>
 
         <h1 className="mt-8 text-xl font-semibold tracking-tight">
           {t(creating ? m.auth.signUpTitle : m.auth.signInTitle)}
         </h1>
-        <p className="mt-1.5 text-sm text-muted-foreground">
+        <p className="mt-1.5 text-sm text-foreground">
           {t(creating ? m.auth.signUpLead : m.auth.signInLead)}
         </p>
 
@@ -99,18 +124,19 @@ export function AuthForm({ mode, next }: { mode: "sign-in" | "sign-up"; next?: s
           }}
           noValidate
         >
-          <form.Field name="username">
+          <form.Field name="email">
             {(field) => (
               <Field
-                id="username"
-                label={t(m.auth.username)}
-                error={problemFor("username")}
-                errorId={usernameError}
+                id="email"
+                label={t(m.auth.email)}
+                error={problemFor("email")}
+                errorId={emailError}
               >
                 <Input
-                  id="username"
+                  id="email"
                   name={field.name}
-                  autoComplete="username"
+                  type="email"
+                  autoComplete="email"
                   autoCapitalize="none"
                   autoCorrect="off"
                   spellCheck={false}
@@ -119,10 +145,10 @@ export function AuthForm({ mode, next }: { mode: "sign-in" | "sign-up"; next?: s
                     field.handleChange(event.target.value);
                     if (problem) setProblem(null);
                   }}
-                  aria-invalid={problemFor("username") !== null}
-                  aria-describedby={problemFor("username") ? usernameError : undefined}
+                  aria-invalid={problemFor("email") !== null}
+                  aria-describedby={problemFor("email") ? emailError : undefined}
                   autoFocus
-                  className="h-11 text-base sm:h-10 md:text-sm"
+                  className="h-11 text-base md:text-sm"
                 />
               </Field>
             )}
@@ -149,9 +175,55 @@ export function AuthForm({ mode, next }: { mode: "sign-in" | "sign-up"; next?: s
                   }}
                   aria-invalid={problemFor("password") !== null}
                   aria-describedby={problemFor("password") ? passwordError : undefined}
-                  className="h-11 text-base sm:h-10 md:text-sm"
+                  className="h-11 text-base md:text-sm"
                 />
               </Field>
+            )}
+          </form.Field>
+
+          {creating && (
+            <form.Field name="confirmPassword">
+              {(field) => (
+                <Field
+                  id="confirm-password"
+                  label={t(m.auth.confirmPassword)}
+                  error={problemFor("confirm")}
+                  errorId={confirmError}
+                >
+                  <Input
+                    id="confirm-password"
+                    name={field.name}
+                    type="password"
+                    autoComplete="new-password"
+                    value={field.state.value}
+                    onChange={(event) => {
+                      field.handleChange(event.target.value);
+                      if (problem) setProblem(null);
+                    }}
+                    aria-invalid={problemFor("confirm") !== null}
+                    aria-describedby={problemFor("confirm") ? confirmError : undefined}
+                    className="h-11 text-base md:text-sm"
+                  />
+                </Field>
+              )}
+            </form.Field>
+          )}
+
+          <form.Field name="rememberMe">
+            {(field) => (
+              <div className="flex min-h-10 items-center gap-2.5">
+                <input
+                  id="remember-me"
+                  name={field.name}
+                  type="checkbox"
+                  checked={field.state.value}
+                  onChange={(event) => field.handleChange(event.target.checked)}
+                  className="size-4 shrink-0 rounded-sm border border-border accent-primary"
+                />
+                <Label htmlFor="remember-me" className="font-normal text-foreground">
+                  {t(m.auth.rememberMe)}
+                </Label>
+              </div>
             )}
           </form.Field>
 
@@ -163,7 +235,7 @@ export function AuthForm({ mode, next }: { mode: "sign-in" | "sign-up"; next?: s
             </p>
           )}
 
-          <Button type="submit" disabled={busy} className="h-11 w-full sm:h-10">
+          <Button type="submit" disabled={busy} className="h-11 w-full">
             {busy && <Spinner />}
             {t(
               creating
@@ -187,13 +259,12 @@ export function AuthForm({ mode, next }: { mode: "sign-in" | "sign-up"; next?: s
           </Link>
         </p>
 
-        {creating && (
-          <p className="mt-6 rounded-lg border bg-muted/40 px-3 py-2.5 text-xs leading-5 text-muted-foreground">
-            {t(m.auth.forgotNote)}
-          </p>
+        {!creating && (
+          <p className="mt-6 text-sm text-foreground">{t(m.auth.forgotNote)}</p>
         )}
       </div>
-    </main>
+      </main>
+    </div>
   );
 }
 

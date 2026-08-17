@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-router";
 
 import { NotFound } from "@/components/layout/not-found";
+import { RouteError } from "@/components/layout/route-error";
 import { AppStateProvider } from "@/lib/actions/store";
 import { loadAppState } from "@/lib/state/hydrate";
 import appCss from "../styles/globals.css?url";
@@ -30,6 +31,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     links: [{ rel: "stylesheet", href: appCss }],
   }),
   notFoundComponent: NotFound,
+  errorComponent: RouteError,
   component: RootComponent,
 });
 

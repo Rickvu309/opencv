@@ -1,5 +1,6 @@
 import { Link } from "@/lib/nav";
 
+import { messages } from "@/lib/i18n/messages";
 import type { ProofSnapshot, ProofSnapshotNote } from "@/lib/paper/share";
 import { spanFromSnapshot, yearRange, type ProofSpan } from "@/lib/paper/spans";
 
@@ -14,6 +15,7 @@ export function ProofArticle({
   siteHandle?: string;
   otherSpans?: ProofSpan[];
 }) {
+  const copy = messages.paper.proof;
   const self = slug ? spanFromSnapshot(slug, snapshot) : null;
   const range = self ? yearRange([self, ...otherSpans]) : null;
   const line = [snapshot.role, snapshot.dates, snapshot.link]
@@ -21,7 +23,7 @@ export function ProofArticle({
     .join(" · ");
 
   return (
-    <article className="mx-auto max-w-[65ch] px-6 py-10 text-[#1a1714]">
+    <article className="mx-auto max-w-[65ch] px-6 py-10 text-foreground">
       {snapshot.name && siteHandle ? (
         <p className="text-sm">
           <Link href={`/u/${siteHandle}`} className="underline underline-offset-4">
@@ -31,7 +33,7 @@ export function ProofArticle({
       ) : siteHandle ? (
         <p className="text-sm">
           <Link href={`/u/${siteHandle}`} className="underline underline-offset-4">
-            More from this person
+            {copy.moreFromPerson}
           </Link>
         </p>
       ) : snapshot.name ? (
@@ -39,17 +41,17 @@ export function ProofArticle({
       ) : null}
 
       <h1 className="mt-6 text-4xl font-semibold tracking-tight text-pretty">
-        {snapshot.title || "Untitled Proof"}
+        {snapshot.title || copy.untitled}
       </h1>
 
       {line ? (
         <p className="mt-4">
           {siteHandle ? (
             <Link href={`/u/${siteHandle}`} className="block">
-              <span className="text-sm text-[#6b645c]">{line}</span>
+              <span className="text-sm text-muted-foreground">{line}</span>
               {self && range && snapshot.dates ? (
                 <span className="relative mt-2 block h-4" aria-hidden>
-                  <span className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-[#1a1714]/20" />
+                  <span className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-foreground/20" />
                   <HairlineMark span={self} range={range} ink />
                   {otherSpans.map((tick) => (
                     <HairlineMark key={tick.slug} span={tick} range={range} />
@@ -58,7 +60,7 @@ export function ProofArticle({
               ) : null}
             </Link>
           ) : (
-            <span className="text-sm text-[#6b645c]">{line}</span>
+            <span className="text-sm text-muted-foreground">{line}</span>
           )}
         </p>
       ) : null}
@@ -79,12 +81,13 @@ export function ProofArticle({
 }
 
 function ProofMaterial({ note }: { note: ProofSnapshotNote }) {
+  const copy = messages.paper.proof;
   if (note.kind === "photo" && note.url) {
     return (
       <figure>
         <img src={note.url} alt={note.text || note.fileName || ""} className="w-full" />
         {note.text ? (
-          <figcaption className="mt-2 text-sm text-[#6b645c]">{note.text}</figcaption>
+          <figcaption className="mt-2 text-sm text-muted-foreground">{note.text}</figcaption>
         ) : null}
       </figure>
     );
@@ -103,7 +106,7 @@ function ProofMaterial({ note }: { note: ProofSnapshotNote }) {
       <p className="text-lg leading-relaxed">
         {note.url ? (
           <a href={note.url} className="underline underline-offset-4">
-            {note.text || note.fileName || "File"}
+            {note.text || note.fileName || copy.fileLabel}
           </a>
         ) : (
           <span>{note.text || note.fileName}</span>
@@ -142,16 +145,16 @@ function HairlineMark({
         <span
           className={
             ink
-              ? "block size-1.5 -translate-x-1/2 rounded-full bg-[#1a1714]"
-              : "block size-1 -translate-x-1/2 rounded-full bg-[#1a1714]/30"
+              ? "block size-1.5 -translate-x-1/2 rounded-full bg-foreground"
+              : "block size-1 -translate-x-1/2 rounded-full bg-foreground/30"
           }
         />
       ) : (
         <span
           className={
             ink
-              ? "block h-1 rounded-full bg-[#1a1714]"
-              : "block h-px bg-[#1a1714]/30"
+              ? "block h-1 rounded-full bg-foreground"
+              : "block h-px bg-foreground/30"
           }
         />
       )}

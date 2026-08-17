@@ -4,6 +4,7 @@ import * as React from "react";
 import { Sparkles, Trash2 } from "lucide-react";
 import { Link, useRouter } from "@/lib/nav";
 
+import { EmptyState } from "@/components/layout/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +22,7 @@ import {
 } from "@/lib/applications/types";
 import { useT } from "@/lib/i18n/use-t";
 import { nextId } from "@/lib/ids";
-import { paperTypeLabels, cvsOf } from "@/lib/paper";
+import { paperTypeLabels, cvsOf, paperSearch } from "@/lib/paper";
 import {
   fitProfileOf,
   hasProfileFacts,
@@ -100,12 +101,16 @@ export function EmptyApplications() {
   const { t, m } = useT();
 
   return (
-    <div className="rounded-xl border bg-card p-4">
-      <p className="text-sm font-medium">{t(m.applications.emptyTitle)}</p>
-      <p className="mt-1 text-sm text-muted-foreground">{t(m.applications.emptyBody)}</p>
-      <Button asChild variant="outline" size="sm" className="mt-3">
-        <Link href="/search">{t(m.applications.emptyAction)}</Link>
-      </Button>
+    <div className="overflow-hidden rounded-xl border bg-card">
+      <EmptyState
+        title={t(m.applications.emptyTitle)}
+        body={t(m.applications.emptyBody)}
+        action={
+          <Button asChild variant="outline" size="sm">
+            <Link href="/search">{t(m.applications.emptyAction)}</Link>
+          </Button>
+        }
+      />
     </div>
   );
 }
@@ -218,11 +223,10 @@ export function StatusRow({
         return (
           <Button
             key={status}
-            variant={current ? "secondary" : "ghost"}
+            variant={current ? "default" : "ghost"}
             size="sm"
             className={cn(
               compact && "h-7 px-2 text-xs",
-              "transition-colors duration-[var(--duration-press)] ease-[var(--ease-snap)] motion-reduce:transition-none",
               current ? undefined : "text-muted-foreground",
             )}
             disabled={!current && !canTransition(application.status, status)}
@@ -299,7 +303,6 @@ export function Tailoring({
     .map((item) => ({
       id: item.id,
       label: item.label,
-      href: `/paper?id=${encodeURIComponent(item.id)}`,
     }));
 
   const base = cvsOf(state.paper)[0];
@@ -315,7 +318,11 @@ export function Tailoring({
           <ul className="mt-1 space-y-1">
             {tailored.map((document) => (
               <li key={document.id} className="text-xs">
-                <Link href={document.href} className="underline underline-offset-4">
+                <Link
+                  href="/paper"
+                  search={paperSearch({ id: document.id })}
+                  className="underline underline-offset-4"
+                >
                   {document.label}
                 </Link>
               </li>
@@ -339,14 +346,16 @@ export function Tailoring({
                 paperId: base.id,
                 label: `CV · ${label}`,
               });
-              router.push(`/paper?id=${encodeURIComponent(paperId)}`);
+              router.to("/paper", paperSearch({ id: paperId }));
             }}
           >
             {t(m.applications.tailorCv)}
           </Button>
         ) : (
           <Button variant="outline" size="sm" asChild>
-            <Link href="/paper?new=cv">{t(m.applications.tailorNeedsCv)}</Link>
+            <Link href="/paper" search={paperSearch({ creating: "cv" })}>
+              {t(m.applications.tailorNeedsCv)}
+            </Link>
           </Button>
         )}
         <Button
@@ -362,7 +371,7 @@ export function Tailoring({
               label: `${paperTypeLabels.letter} · ${label}`,
               targetRole: opening?.title ?? "",
             });
-            router.push(`/paper?id=${encodeURIComponent(paperId)}`);
+            router.to("/paper", paperSearch({ id: paperId }));
           }}
         >
           {t(m.applications.tailorLetter)}

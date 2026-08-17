@@ -30,7 +30,7 @@ Without `OPENROUTER_API_KEY`, Coach replies fail (503). Auth, Profile, Paper, an
 
 ## What you get
 
-- Real accounts (username + password). No email verify, no social login, no password recovery.
+- Real accounts (email + password). No email verify, no social login, no password recovery.
 - Work stored per account in Postgres. A new account is empty.
 - One write path: a click and a Coach turn both `dispatch`. The Coach returns an envelope; the browser applies it, with undo.
 - Five features (Profile, Paper, Pitch, Search, Application) plus Coach. `/coach` and the dock are the same thread.

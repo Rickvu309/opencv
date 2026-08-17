@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 import { applyAction } from "@/lib/actions/registry";
 import { seedState } from "@/lib/actions/seed";
-import { paperHref, roomMode, shouldTravel } from "./room";
+import { paperHref, paperSearch, roomMode, shouldTravel } from "./room";
 
 test("a deep link is Docs, not a Drive flash", () => {
   assert.equal(
@@ -40,6 +40,12 @@ test("New CV and Format reopen the gallery in the same room", () => {
     }),
     "gallery",
   );
+  assert.deepEqual(paperSearch({ creating: "cv" }), { new: "cv" });
+  assert.deepEqual(paperSearch({ id: "paper-1", format: true }), {
+    id: "paper-1",
+    format: "1",
+  });
+  assert.deepEqual(paperSearch(), {});
   assert.equal(paperHref({ creating: "cv" }), "/paper?new=cv");
   assert.equal(
     paperHref({ id: "paper-1", format: true }),

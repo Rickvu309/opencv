@@ -4,6 +4,7 @@ import * as React from "react";
 import { createPortal } from "react-dom";
 
 import type { CvPaper } from "@/lib/paper/types";
+import { sheetTransitionName } from "@/lib/paper/room";
 import { PAGE_WIDTH, CvDocument } from "./cv-document";
 
 /**
@@ -15,7 +16,13 @@ import { PAGE_WIDTH, CvDocument } from "./cv-document";
  * paint is already at the right size and there is no `setState` in the effect
  * body to cascade a render.
  */
-export function CvPreview({ cv }: { cv: CvPaper }) {
+export function CvPreview({
+  cv,
+  edit,
+}: {
+  cv: CvPaper;
+  edit?: boolean;
+}) {
   const paneRef = React.useRef<HTMLDivElement>(null);
   const pageRef = React.useRef<HTMLDivElement>(null);
   const [scale, setScale] = React.useState(1);
@@ -45,20 +52,26 @@ export function CvPreview({ cv }: { cv: CvPaper }) {
   }, []);
 
   return (
-    <div ref={paneRef} className="w-full">
+    <div ref={paneRef} className="w-full overflow-hidden">
       {/* `transform` does not affect layout, so the scaled page would otherwise
           reserve its full unscaled height and leave a long empty tail below. */}
-      <div style={{ height: pageHeight * scale }}>
+      <div
+        style={{
+          height: pageHeight * scale,
+          width: PAGE_WIDTH * scale,
+        }}
+      >
         <div
           ref={pageRef}
           style={{
             transform: `scale(${scale})`,
             transformOrigin: "top left",
             width: PAGE_WIDTH,
+            viewTransitionName: sheetTransitionName(cv.id),
           }}
           className="shadow-md ring-1 ring-black/10"
         >
-          <CvDocument cv={cv} />
+          <CvDocument cv={cv} edit={edit} />
         </div>
       </div>
     </div>

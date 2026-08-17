@@ -1,15 +1,14 @@
 import { currentAccount } from "@/lib/auth/dal";
 import { failure, readBody } from "@/lib/auth/http";
 import { isProofPaper } from "@/lib/paper/types";
+import { placementForPublish, snapshotOf } from "@/lib/paper/share";
 import {
   deleteProofPage,
-  placementForPublish,
   readSiteForAccount,
-  snapshotOf,
   writeProofPage,
   writeSite,
-} from "@/lib/paper/share";
-import { readAccountState } from "@/lib/state/account-state";
+} from "@/lib/paper/share-store.server";
+import { readAccountState } from "@/lib/state/account-state.server";
 
 export async function POST(request: Request) {
   const account = await currentAccount();

@@ -46,11 +46,6 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import type { Msg } from "@/lib/i18n/locale";
-import { cn } from "@/lib/utils";
-
-/** The active item lifts off the grey rail as a white card. */
-const activeItem =
-  "data-active:bg-card data-active:shadow-xs data-active:ring-1 data-active:ring-border";
 
 // 28px is Linear's density and right for a pointer, but the same rail is the
 // mobile nav, where it becomes a 28px touch target. Taller on touch, unchanged
@@ -123,7 +118,7 @@ function NavRow({ item, active }: { item: NavItem; active: boolean }) {
         asChild
         isActive={active}
         tooltip={title}
-        className={cn(rowSize, activeItem)}
+        className={rowSize}
       >
         <Link href={item.href}>
           <item.icon />
@@ -159,7 +154,7 @@ function NavSection({
                 <NavRow
                   key={item.href}
                   item={item}
-                  active={pathname.startsWith(item.href)}
+                  active={pathname === item.href}
                 />
               ))}
             </SidebarMenu>
@@ -200,7 +195,7 @@ export function AppSidebar() {
       <SidebarHeader className="h-14 justify-center px-2">
         <div className="flex items-center">
           <DropdownMenu>
-            <DropdownMenuTrigger className="flex w-full min-w-0 items-center gap-2 rounded-md px-1.5 py-1 transition-colors outline-none hover:bg-sidebar-accent/70 focus-visible:ring-3 focus-visible:ring-sidebar-ring/50 motion-reduce:transition-none">
+            <DropdownMenuTrigger className="flex w-full min-w-0 items-center gap-2 rounded-md px-1.5 py-1 outline-none hover:bg-sidebar-accent/70 focus-visible:ring-3 focus-visible:ring-sidebar-ring/50">
               <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
                 <Route className="size-3.5" />
               </span>
@@ -270,7 +265,7 @@ export function AppSidebar() {
                   href: "/coach",
                   icon: CoachBox,
                 }}
-                active={pathname.startsWith("/coach")}
+                active={pathname === "/coach"}
               />
             </SidebarMenu>
           </SidebarGroupContent>

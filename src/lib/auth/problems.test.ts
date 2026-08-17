@@ -9,10 +9,13 @@ import { authProblem } from "@/lib/auth/problems";
 
 /** Every code the auth routes and the account service can answer with. */
 const CODES = [
-  "username-required",
+  "email-required",
+  "email-shape",
+  "email-taken",
   "password-required",
-  "username-too-long",
   "password-too-short",
+  "confirm-required",
+  "password-mismatch",
   "username-taken",
   "bad-credentials",
   "rate-limited",
@@ -30,8 +33,6 @@ test("every code the server can send has words", () => {
 });
 
 test("a code this client has not been taught still says something useful", () => {
-  // A newer server, or a proxy inventing its own body. Silence would leave the
-  // form looking like it did nothing at all.
   const { field, message } = authProblem("something-new");
   assert.equal(field, "form");
   assert.ok(message.length > 0);
@@ -39,21 +40,21 @@ test("a code this client has not been taught still says something useful", () =>
 });
 
 test("AC-ACCT-001.3: an empty field error points at that field", () => {
-  assert.equal(authProblem("username-required").field, "username");
+  assert.equal(authProblem("email-required").field, "email");
+  assert.equal(authProblem("email-shape").field, "email");
+  assert.equal(authProblem("email-taken").field, "email");
   assert.equal(authProblem("password-required").field, "password");
-  assert.equal(authProblem("username-taken").field, "username");
   assert.equal(authProblem("password-too-short").field, "password");
+  assert.equal(authProblem("confirm-required").field, "confirm");
+  assert.equal(authProblem("password-mismatch").field, "confirm");
 });
 
 test("AC-ACCT-002.2: a bad sign-in names neither field", () => {
-  // Putting this under the password would say the username was fine, which is
-  // the disclosure the requirement exists to prevent, made by the layout
-  // rather than by the words.
   const { field, message } = authProblem("bad-credentials");
   assert.equal(field, "form");
   assert.ok(
     message.toLowerCase().includes("password"),
-    "the message should mention the password, not only the username",
+    "the message should mention the password, not only the email",
   );
   assert.notEqual(
     message.toLowerCase().includes("no such user"),
@@ -63,8 +64,9 @@ test("AC-ACCT-002.2: a bad sign-in names neither field", () => {
 });
 
 test("the messages differ from each other, so the form is not the same sentence twice", () => {
-  const taken = authProblem("username-taken").message;
+  const taken = authProblem("email-taken").message;
   const bad = authProblem("bad-credentials").message;
   const rate = authProblem("rate-limited").message;
-  assert.equal(new Set([taken, bad, rate]).size, 3);
+  const mismatch = authProblem("password-mismatch").message;
+  assert.equal(new Set([taken, bad, rate, mismatch]).size, 4);
 });

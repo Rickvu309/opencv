@@ -15,11 +15,36 @@ function eveOrigin(): string {
 
 const eve = eveOrigin();
 
+/** Postgres is Node-only. A client import used to crash /paper with Buffer. */
+function noPgInClient() {
+  return {
+    name: "no-pg-in-client",
+    enforce: "pre" as const,
+    resolveId(id: string, importer: string | undefined, options?: { ssr?: boolean }) {
+      if (options?.ssr) return;
+      const bare = id.split("?")[0];
+      if (bare !== "pg" && !bare.startsWith("pg/") && bare !== "postgres-bytea") {
+        return;
+      }
+      throw new Error(
+        `pg cannot be imported in client code${importer ? ` (from ${importer})` : ""}. Use a Door (/api or createServerFn).`,
+      );
+    },
+  };
+}
+
 export default defineConfig({
   server: {
     port: 3000,
   },
+  optimizeDeps: {
+    exclude: ["pg"],
+  },
+  ssr: {
+    external: ["pg"],
+  },
   plugins: [
+    noPgInClient(),
     tsconfigPaths(),
     tailwindcss(),
     tanstackStart({

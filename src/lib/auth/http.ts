@@ -61,7 +61,7 @@ export function withSession(
     cookieHeader(
       SESSION_COOKIE,
       signToken(session.token),
-      cookieOptions(session.expiresAt),
+      cookieOptions(session.persistent ? session.expiresAt : undefined),
     ),
   );
   return response;

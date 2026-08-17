@@ -20,7 +20,6 @@ import {
   Trash2,
 } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -204,7 +203,7 @@ export function DocumentPanel({
           </div>
         ) : (
           <div className="space-y-3">
-            <ul className="space-y-2">
+            <ul className="overflow-hidden rounded-xl border bg-card divide-y divide-border">
               {documents.map((d) => (
                 <DocumentRow
                   key={d.id}
@@ -223,7 +222,7 @@ export function DocumentPanel({
                 everyone regardless of what they had uploaded. The offer to
                 look is honest; the verdict has to come from a real read. */}
             <Button asChild variant="outline" size="sm">
-              <Link href={`/coach?q=${encodeURIComponent(item.coachPrompt)}`}>
+              <Link href="/coach" search={{ q: item.coachPrompt }}>
                 <CoachBox size="sm" />
                 {t(m.profile.docAskCoach)}
               </Link>
@@ -253,12 +252,7 @@ function DocumentRow({
   const { t, m } = useT();
   return (
     // Outer radius 12 with 12px padding, so the inner controls sit at 8.
-    <li
-      className={cn(
-        "group/doc rounded-xl border bg-card p-3 transition-shadow hover:shadow-md motion-reduce:transition-none",
-        doc.isPrimary && "ring-1 ring-foreground/15",
-      )}
-    >
+    <li className="group/doc p-3 hover:bg-foreground/4">
       <div className="flex items-start gap-3">
         <Tooltip>
           <TooltipTrigger asChild>
@@ -271,7 +265,7 @@ function DocumentRow({
                   ? m.profile.docIsPrimary(doc.label)
                   : m.profile.docMakePrimary(doc.label),
               )}
-              className="relative mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md transition-colors outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none"
+              className="relative mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md outline-none hover:bg-foreground/4 focus-visible:ring-3 focus-visible:ring-ring/50"
             >
               {/* Both icons stay mounted and cross-fade: outline is the
                   default state, fill marks active. */}
@@ -305,14 +299,12 @@ function DocumentRow({
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <p className="text-sm font-medium">{doc.label}</p>
             {doc.isPrimary && (
-              <Badge variant="secondary" className="font-normal">
+              <span className="text-xs text-muted-foreground">
                 {t(m.profile.docPrimary)}
-              </Badge>
+              </span>
             )}
             {doc.language === "en" && (
-              <Badge variant="outline" className="font-normal text-muted-foreground">
-                EN
-              </Badge>
+              <span className="text-xs text-muted-foreground">EN</span>
             )}
           </div>
 

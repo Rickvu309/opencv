@@ -31,7 +31,14 @@ import { usePaperPhoto } from "@/lib/query/satellite";
 const MAX_EDGE = 512;
 const QUALITY = 0.85;
 
-export function PhotoField({ cv }: { cv: CvPaper }) {
+export function PhotoField({
+  cv,
+  embed,
+}: {
+  cv: CvPaper;
+  /** Square on the A4, without the desk chrome around it. */
+  embed?: boolean;
+}) {
   const { t, m } = useT();
   const dispatch = useDispatch();
   const photo = usePaperPhoto();
@@ -62,6 +69,57 @@ export function PhotoField({ cv }: { cv: CvPaper }) {
   }
 
   const url = photoUrl(cv);
+  const picker = (
+    <input
+      ref={input}
+      type="file"
+      accept="image/jpeg,image/png"
+      className="hidden"
+      onChange={(event) => {
+        const file = event.target.files?.[0];
+        if (file) void upload(file);
+      }}
+    />
+  );
+
+  if (embed) {
+    return (
+      <div className="inline-flex flex-col items-center gap-1">
+        <button
+          type="button"
+          disabled={busy}
+          aria-label={t(url ? m.paper.cv.photoReplace : m.paper.cv.photoAdd)}
+          onClick={() => input.current?.click()}
+          className="relative size-24 overflow-hidden rounded-[6px] outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
+        >
+          {url ? (
+            <img
+              src={url}
+              alt={t(m.paper.cv.photoAlt)}
+              className="size-full object-cover"
+            />
+          ) : (
+            <span className="flex size-full items-center justify-center border border-dashed border-black/25 text-black/35">
+              {busy ? <Spinner /> : <ImagePlus className="size-5" />}
+            </span>
+          )}
+        </button>
+        {url && (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={t(m.paper.cv.photoRemove)}
+            disabled={busy}
+            onClick={remove}
+            className="text-black/50"
+          >
+            <Trash2 className="size-3.5" />
+          </Button>
+        )}
+        {picker}
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center gap-3">
@@ -107,16 +165,7 @@ export function PhotoField({ cv }: { cv: CvPaper }) {
         </div>
       </div>
 
-      <input
-        ref={input}
-        type="file"
-        accept="image/jpeg,image/png"
-        className="hidden"
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          if (file) void upload(file);
-        }}
-      />
+      {picker}
     </div>
   );
 }

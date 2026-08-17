@@ -36,7 +36,7 @@ If a command fails: it printed the host and schema. Confirm `DATABASE_URL` and t
 
 On Railway the app uses the private host `postgres.railway.internal`. The public TCP proxy is for a laptop only.
 
-TLS on Railway: 1.3, without certificate verification (the proxy presents a self-signed cert). Localhost disables TLS in [`src/lib/db/client.ts`](../src/lib/db/client.ts).
+TLS on Railway: 1.3, without certificate verification (the proxy presents a self-signed cert). Localhost disables TLS in [`src/lib/db/client.server.ts`](../src/lib/db/client.server.ts).
 
 ## Schema
 
@@ -48,7 +48,7 @@ Tests set `DB_SCHEMA` to `test_<random>`, create it, run, drop it. They skip whe
 
 | Table | Holds |
 |---|---|
-| `accounts` | Username and password hash. Unique on `lower(username)`. |
+| `accounts` | Email, derived username, and password hash. Unique on `lower(email)` and `lower(username)`. |
 | `sessions` | Session row. `id` is SHA-256 of the cookie token, not the token. |
 | `app_state` | One JSONB row per account, created on first write. |
 | `conversations` | Coach threads. |

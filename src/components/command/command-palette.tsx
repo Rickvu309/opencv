@@ -69,7 +69,7 @@ export function CommandPalette({
                 }}
                 className={cn(
                   "flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm",
-                  "hover:bg-muted/70 focus-visible:bg-muted/70 focus-visible:outline-none",
+                  "hover:bg-foreground/4 focus-visible:bg-foreground/4 focus-visible:outline-none",
                 )}
               >
                 {"cat" in item ? (

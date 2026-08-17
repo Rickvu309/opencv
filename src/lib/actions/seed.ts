@@ -19,6 +19,7 @@ import type { AppState } from "./types";
 export function seedState(locale: Locale = defaultLocale): AppState {
   return {
     locale,
+    onboardingCompletedAt: null,
     profile: {
       identity: { name: "", targetRole: "" },
       context: [],

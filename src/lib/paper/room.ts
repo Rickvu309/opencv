@@ -7,21 +7,42 @@ export type PaperCreating = "cv" | "letter";
 
 export type RoomMode = "drive" | "gallery" | "letter" | "docs";
 
-export function paperHref(
-  opts: {
-    id?: string;
-    creating?: PaperCreating;
-    format?: boolean;
-    arrange?: boolean;
-    fromUpload?: boolean;
-  } = {},
-): string {
+export type PaperSearch = {
+  id?: string;
+  new?: PaperCreating;
+  format?: "1";
+  arrange?: "1";
+  from?: "upload";
+};
+
+export type PaperHrefOpts = {
+  id?: string;
+  creating?: PaperCreating;
+  format?: boolean;
+  arrange?: boolean;
+  fromUpload?: boolean;
+};
+
+/** The search object Router navigates with. Empty is Drive. */
+export function paperSearch(opts: PaperHrefOpts = {}): PaperSearch {
+  return {
+    ...(opts.id ? { id: opts.id } : {}),
+    ...(opts.creating ? { new: opts.creating } : {}),
+    ...(opts.format ? { format: "1" as const } : {}),
+    ...(opts.arrange ? { arrange: "1" as const } : {}),
+    ...(opts.fromUpload ? { from: "upload" as const } : {}),
+  };
+}
+
+/** Public string for tests and copy-paste. Serializes `paperSearch`. */
+export function paperHref(opts: PaperHrefOpts = {}): string {
+  const search = paperSearch(opts);
   const params = new URLSearchParams();
-  if (opts.id) params.set("id", opts.id);
-  if (opts.creating) params.set("new", opts.creating);
-  if (opts.format) params.set("format", "1");
-  if (opts.arrange) params.set("arrange", "1");
-  if (opts.fromUpload) params.set("from", "upload");
+  if (search.id) params.set("id", search.id);
+  if (search.new) params.set("new", search.new);
+  if (search.format) params.set("format", search.format);
+  if (search.arrange) params.set("arrange", search.arrange);
+  if (search.from) params.set("from", search.from);
   const query = params.toString();
   return query ? `/paper?${query}` : "/paper";
 }

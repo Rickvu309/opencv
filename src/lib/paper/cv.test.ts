@@ -15,6 +15,7 @@ import {
   defaultTheme,
   headerHasContent,
   cvCompleteness,
+  printableSections,
   sectionHasContent,
   starterSectionsFor,
   templates,
@@ -392,6 +393,54 @@ test("adding a section Reveals an empty ghost, not fake content", () => {
   assert.ok(added);
   assert.deepEqual(added.entries, []);
   assert.equal(added.body, undefined);
+});
+
+test("header commit goes through paper.setHeader", () => {
+  let state = applyAction(seedState(), "paper.create", {
+    type: "cv",
+    label: "CV 1",
+    fromProfile: false,
+  }).state;
+  const id = state.paper[0].id;
+  state = applyAction(state, "paper.setHeader", {
+    id,
+    name: "Lê Thu Hà",
+    headline: "Third-year student",
+  }).state;
+  const paper = state.paper[0];
+  assert.ok(isCvPaper(paper));
+  assert.equal(paper.header.name, "Lê Thu Hà");
+  assert.equal(paper.header.headline, "Third-year student");
+  assert.equal(paper.header.email, "");
+});
+
+test("print skips empty and hidden sections", () => {
+  let state = applyAction(seedState(), "paper.create", {
+    type: "cv",
+    label: "CV 1",
+    fromProfile: false,
+  }).state;
+  const blank = state.paper[0];
+  assert.ok(isCvPaper(blank));
+  assert.equal(blank.sections.length, 4);
+  assert.deepEqual(printableSections(blank), []);
+
+  const id = blank.id;
+  const experience = blank.sections.find((section) => section.kind === "experience");
+  assert.ok(experience);
+  state = applyAction(state, "paper.addEntry", {
+    id,
+    sectionId: experience.id,
+    title: "Intern",
+  }).state;
+  state = applyAction(state, "paper.updateSection", {
+    id,
+    sectionId: experience.id,
+    hidden: true,
+  }).state;
+  const after = state.paper[0];
+  assert.ok(isCvPaper(after));
+  assert.equal(printableSections(after).length, 0);
 });
 
 test("AC-PAPERS-010.3: changing the template leaves the content alone", () => {

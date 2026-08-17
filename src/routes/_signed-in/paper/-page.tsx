@@ -8,7 +8,13 @@ import { PaperToolbar } from "@/components/paper/toolbar";
 import { Button } from "@/components/ui/button";
 import { useAppState, useDispatch } from "@/lib/actions/store";
 import { themeForTemplate, wordForTemplate } from "@/lib/paper/cv";
-import { paperHref, roomMode, sheetTransitionName, shouldTravel } from "@/lib/paper/room";
+import {
+  paperSearch,
+  roomMode,
+  sheetTransitionName,
+  shouldTravel,
+  type PaperSearch,
+} from "@/lib/paper/room";
 import {
   isCvPaper,
   isLetterPaper,
@@ -28,10 +34,10 @@ export default function PaperPage() {
 
 function go(
   router: ReturnType<typeof useRouter>,
-  href: string,
+  search: PaperSearch,
   kind: "open" | "back" | "land",
 ) {
-  const run = () => router.replace(href, { scroll: false });
+  const run = () => router.replaceTo("/paper", search, { scroll: false });
   const reduce =
     typeof window !== "undefined" &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -53,6 +59,17 @@ function MyPaperWorkspace() {
   const search = paperRoute.useSearch();
   const { t, m } = useT();
   const [filter, setFilter] = React.useState<DriveFilter>("all");
+  const [keepFailed, setKeepFailed] = React.useState<Record<string, true>>({});
+
+  const onKeepFailed = (id: string) =>
+    setKeepFailed((current) => ({ ...current, [id]: true }));
+  const onKept = (id: string) =>
+    setKeepFailed((current) => {
+      if (!current[id]) return current;
+      const next = { ...current };
+      delete next[id];
+      return next;
+    });
 
   const id = search.id;
   const creating = search.new === "cv" || search.new === "letter" ? search.new : null;
@@ -62,7 +79,7 @@ function MyPaperWorkspace() {
   const opened = id ? (paper.find((item) => item.id === id) ?? null) : null;
   const newest = paper.at(-1);
   const mode = roomMode({
-    id,
+    id: id ?? null,
     creating,
     format,
     openedType: opened?.type ?? null,
@@ -89,18 +106,18 @@ function MyPaperWorkspace() {
     pendingTravel.current = false;
     go(
       router,
-      paperHref({ id: newest.id, fromUpload: upload }),
+      paperSearch({ id: newest.id, fromUpload: upload }),
       travel ? "open" : "land",
     );
   }, [paper, router]);
 
   React.useEffect(() => {
     if (id && !paper.some((item) => item.id === id)) {
-      go(router, paperHref(), "land");
+      go(router, paperSearch(), "land");
     }
   }, [id, paper, router]);
 
-  const goDrive = () => go(router, paperHref(), "back");
+  const goDrive = () => go(router, paperSearch(), "back");
   const onWillCreate = (opts?: { fromUpload?: boolean; travel?: boolean }) => {
     pending.current = true;
     pendingFromUpload.current = Boolean(opts?.fromUpload);
@@ -148,19 +165,21 @@ function MyPaperWorkspace() {
             filter={filter}
             onFilter={setFilter}
             onRequestCreateCv={() =>
-              go(router, paperHref({ creating: "cv" }), "land")
+              go(router, paperSearch({ creating: "cv" }), "land")
             }
             onRequestCreateLetter={() =>
-              go(router, paperHref({ creating: "letter" }), "land")
+              go(router, paperSearch({ creating: "letter" }), "land")
             }
             onWillCreate={onWillCreate}
+            onKeepFailed={onKeepFailed}
+            onKept={onKept}
           />
         ) : null}
         {mode === "gallery" ? (
           <ChooserBand
             title={t(m.paper.galleryTitle)}
             onBack={() =>
-              go(router, opened ? paperHref({ id: opened.id }) : paperHref(), "land")
+              go(router, opened ? paperSearch({ id: opened.id }) : paperSearch(), "land")
             }
           />
         ) : null}
@@ -168,7 +187,7 @@ function MyPaperWorkspace() {
           <ChooserBand
             title={t(m.paper.letterChooserTitle)}
             onBack={() =>
-              go(router, opened ? paperHref({ id: opened.id }) : paperHref(), "land")
+              go(router, opened ? paperSearch({ id: opened.id }) : paperSearch(), "land")
             }
           />
         ) : null}
@@ -178,12 +197,12 @@ function MyPaperWorkspace() {
             arranging={arranging}
             onBack={goDrive}
             onFormat={() =>
-              go(router, paperHref({ id: opened.id, format: true }), "land")
+              go(router, paperSearch({ id: opened.id, format: true }), "land")
             }
             onArrange={() =>
               go(
                 router,
-                paperHref({ id: opened.id, arrange: !arranging }),
+                paperSearch({ id: opened.id, arrange: !arranging }),
                 "land",
               )
             }
@@ -199,7 +218,7 @@ function MyPaperWorkspace() {
             }
             travelName={galleryTravelName || undefined}
             onBack={() =>
-              go(router, opened ? paperHref({ id: opened.id }) : paperHref(), "land")
+              go(router, opened ? paperSearch({ id: opened.id }) : paperSearch(), "land")
             }
             onPick={(template) => {
               if (opened && isCvPaper(opened)) {
@@ -208,7 +227,7 @@ function MyPaperWorkspace() {
                   { id: opened.id, ...themeForTemplate[template] },
                   { silent: true },
                 );
-                go(router, paperHref({ id: opened.id }), "open");
+                go(router, paperSearch({ id: opened.id }), "open");
                 return;
               }
               createCv(template, false);
@@ -217,9 +236,6 @@ function MyPaperWorkspace() {
         ) : null}
         {mode === "letter" ? (
           <LetterChooser
-            onBack={() =>
-              go(router, opened ? paperHref({ id: opened.id }) : paperHref(), "land")
-            }
             onPick={(situation, extras) => {
               if (opened && isLetterPaper(opened)) {
                 dispatch(
@@ -238,7 +254,7 @@ function MyPaperWorkspace() {
                     { silent: true },
                   );
                 }
-                go(router, paperHref({ id: opened.id }), "land");
+                go(router, paperSearch({ id: opened.id }), "land");
                 return;
               }
               createLetter(situation, extras);
@@ -252,12 +268,12 @@ function MyPaperWorkspace() {
             arranging={arranging}
             onBack={goDrive}
             onFormat={() =>
-              go(router, paperHref({ id: opened.id, format: true }), "land")
+              go(router, paperSearch({ id: opened.id, format: true }), "land")
             }
             onArrange={() =>
               go(
                 router,
-                paperHref({ id: opened.id, arrange: !arranging }),
+                paperSearch({ id: opened.id, arrange: !arranging }),
                 "land",
               )
             }
@@ -269,14 +285,18 @@ function MyPaperWorkspace() {
             onOpen={(openId, extras) =>
               go(
                 router,
-                paperHref({ id: openId, fromUpload: extras?.fromUpload }),
+                paperSearch({ id: openId, fromUpload: extras?.fromUpload }),
                 extras?.fromUpload ? "land" : "open",
               )
             }
             onRequestCreateCv={() =>
-              go(router, paperHref({ creating: "cv" }), "land")
+              go(router, paperSearch({ creating: "cv" }), "land")
             }
+            onShowAll={() => setFilter("all")}
             onWillCreate={onWillCreate}
+            keepFailed={keepFailed}
+            onKeepFailed={onKeepFailed}
+            onKept={onKept}
           />
         ) : null}
       </div>

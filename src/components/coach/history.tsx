@@ -24,10 +24,8 @@ import { useT } from "@/lib/i18n/use-t";
 import { cn } from "@/lib/utils";
 import { useCoach } from "./provider";
 
-/** Same density and active lift as `components/layout/app-sidebar.tsx`. */
+/** Same density as `components/layout/app-sidebar.tsx`. */
 const rowSize = "h-10 text-sm md:h-7 md:text-[13px]";
-const activeItem =
-  "data-active:bg-card data-active:shadow-xs data-active:ring-1 data-active:ring-border";
 
 /**
  * Starts a new chat, without throwing the current one away.
@@ -158,7 +156,7 @@ export function ConversationRail() {
             <SidebarMenuItem key={conversation.id}>
               <SidebarMenuButton
                 isActive={current}
-                className={cn(rowSize, activeItem)}
+                className={rowSize}
                 onClick={() => {
                   thread.switchTo(conversation.id);
                   router.push("/coach");

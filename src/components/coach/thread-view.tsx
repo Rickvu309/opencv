@@ -193,7 +193,7 @@ function CoachToolCalls({ calls }: { calls: CoachToolCall[] }) {
         <button
           type="button"
           onClick={() => setExpanded(true)}
-          className="inline-flex items-center gap-1.5 rounded-full border bg-muted/40 px-2.5 py-1 text-xs text-muted-foreground outline-none hover:bg-muted/70 focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-foreground/4 px-2.5 py-1 text-xs text-muted-foreground outline-none hover:bg-foreground/8 focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <Check className="size-3 shrink-0 text-foreground" />
           {t(m.coach.toolChanges(done.length))}
@@ -417,7 +417,7 @@ export function CoachGreeting({ compact }: { compact?: boolean }) {
       </span>
       <p
         className={cn(
-          "text-center text-muted-foreground",
+          "text-center text-foreground",
           compact ? "text-sm" : "text-[15px]",
         )}
       >
@@ -614,7 +614,7 @@ export function CoachMessages({
         <button
           type="button"
           onClick={jumpToLatest}
-          className="sticky bottom-2 mx-auto mt-3 flex rounded-full border bg-card px-3 py-1 text-xs text-muted-foreground shadow-xs outline-none hover:bg-muted/70 hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-[var(--duration-state)] motion-safe:ease-enter"
+          className="sticky bottom-2 mx-auto mt-3 flex rounded-lg bg-foreground/6 px-3 py-1 text-xs text-foreground outline-none hover:bg-foreground/10 focus-visible:ring-3 focus-visible:ring-ring/50 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-[var(--duration-state)] motion-safe:ease-enter"
         >
           {t(m.coach.jumpToLatest)}
         </button>

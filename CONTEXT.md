@@ -79,7 +79,7 @@ agent/
 ## What is true now
 
 - Node 24 (`.nvmrc`). Node 22 cannot strip TypeScript types.
-- Auth is username + password. No email verify, no social, no password recovery.
+- Auth is email + password. Username is a derived handle. No email verify, no social, no password recovery.
 - An account starts empty. No seeded persona. Onboarding writes the profile.
 - Query layer is `pg` and numbered SQL in `src/lib/db/migrations/`. Not Drizzle.
 - No n8n. Jobs: `scripts/cron-once.mjs` and `GET /api/cron`.

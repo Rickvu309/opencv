@@ -223,6 +223,16 @@ export function sectionHasContent(section: CvSection): boolean {
     : section.entries.some((e) => e.title.trim());
 }
 
+/** Sections that belong on the printed page. Hidden and empty stay off it. */
+export function printableSections(paper: CvPaper): CvSection[] {
+  return paper.sections.filter((section) => {
+    if (section.hidden) return false;
+    return isProseKind(section.kind)
+      ? Boolean(section.body?.trim())
+      : section.entries.some((e) => e.title.trim() || e.detail?.trim());
+  });
+}
+
 export function headerHasContent(header: CvHeader): boolean {
   return Boolean(
     header.name.trim() ||

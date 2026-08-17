@@ -4,7 +4,6 @@
 @import "@fontsource/be-vietnam-pro/400.css";
 @import "@fontsource/be-vietnam-pro/500.css";
 @import "@fontsource/be-vietnam-pro/600.css";
-@import "@fontsource/be-vietnam-pro/700.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -50,16 +49,21 @@
   --color-desk: var(--desk);
   --color-sheet: var(--sheet);
   --color-warm: var(--warm);
-  /* Linear's radius ladder: buttons 8, cards 12, large panels 16, fixed values,
-     not a multiplied scale, so each step is a decision. */
+  --color-page: var(--background);
+  --color-canvas: var(--sidebar);
+  --color-panel: var(--card);
+  --color-ink: var(--foreground);
+  --color-fill: var(--secondary);
+  --color-hairline: var(--border);
+  --color-chart-ink: var(--chart-1);
+  --color-chart-haze: var(--chart-2);
+  /* DESIGN.md: inner controls 8, buttons/inputs 12, frame 16, chips 24. */
   --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
   --radius-2xl: 24px;
-  --radius-3xl: 32px;
-  --radius-4xl: 40px;
 }
 
 :root {
@@ -72,10 +76,10 @@
   --primary: oklch(0.2 0 0);
   --primary-foreground: oklch(0.99 0 0);
   --secondary: oklch(0.965 0 0);
-  --secondary-foreground: oklch(0.24 0 0);
+  --secondary-foreground: oklch(0.16 0 0);
   --muted: oklch(0.965 0 0);
   --muted-foreground: oklch(0.505 0 0);
-  --accent: oklch(0.955 0 0);
+  --accent: oklch(0.965 0 0);
   --accent-foreground: oklch(0.2 0 0);
   --destructive: oklch(0.575 0.19 27);
   --border: oklch(0.916 0 0);
@@ -95,10 +99,10 @@
   --chart-4: oklch(0.44 0 0);
   --chart-5: oklch(0.75 0 0);
 
-  --radius: 0.625rem;
+  --radius: 12px;
   /* Three surface layers: the rail recedes, the page sits between, panels come forward. */
   --sidebar: oklch(0.958 0 0);
-  --sidebar-foreground: oklch(0.24 0 0);
+  --sidebar-foreground: oklch(0.16 0 0);
   --sidebar-primary: oklch(0.2 0 0);
   --sidebar-primary-foreground: oklch(0.99 0 0);
   --sidebar-accent: oklch(0.918 0 0);
@@ -125,7 +129,7 @@
   --secondary-foreground: oklch(0.97 0 0);
   --muted: oklch(0.25 0 0);
   --muted-foreground: oklch(0.68 0 0);
-  --accent: oklch(0.27 0 0);
+  --accent: oklch(0.25 0 0);
   --accent-foreground: oklch(0.97 0 0);
   --destructive: oklch(0.7 0.19 22);
 
@@ -143,7 +147,7 @@
   --chart-4: oklch(0.75 0 0);
   --chart-5: oklch(0.45 0 0);
   --sidebar: oklch(0.125 0 0);
-  --sidebar-foreground: oklch(0.9 0 0);
+  --sidebar-foreground: oklch(0.97 0 0);
   --sidebar-primary: oklch(0.97 0 0);
   --sidebar-primary-foreground: oklch(0.16 0 0);
   --sidebar-accent: oklch(0.27 0 0);
@@ -156,12 +160,71 @@
   --warm: oklch(0.78 0.1 55);
 }
 
-/*
- * The bigger the type, the tighter, Linear scales negative tracking with size
- * (-3px at 80px ≈ -0.037em) rather than one value for every heading.
- */
-@utility tracking-display {
+@utility type-display {
+  font-size: 3rem;
+  font-weight: 600;
+  line-height: 1.2;
   letter-spacing: -0.032em;
+
+  @media (width >= 40rem) {
+    font-size: 3.75rem;
+  }
+}
+
+@utility type-display-next {
+  font-size: 1.25rem;
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: -0.025em;
+
+  @media (width >= 40rem) {
+    font-size: 1.5rem;
+  }
+}
+
+@utility type-headline {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.025em;
+}
+
+@utility type-title {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.025em;
+}
+
+@utility type-body {
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+@utility type-chat {
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.75;
+}
+
+@utility type-label {
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+@utility type-metric {
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
+@utility type-rail {
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
 }
 
 
@@ -211,9 +274,7 @@
 }
 
 /*
- * Accordion: height opens on an expo curve (fast out, settling softly) and the
- * content arrives just as the frame finishes, readable immediately rather than
- * after the animation. Closing is decisive, no delay.
+ * Accordion: the clip opens and closes. The inner child keeps its size.
  */
 @keyframes acc-open {
   from {
@@ -233,34 +294,18 @@
   }
 }
 
-@keyframes acc-reveal {
-  from {
-    opacity: 0;
-    transform: translateY(-3px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
 @layer components {
   .acc-panel[data-state="open"] {
     animation: acc-open var(--duration-surface) var(--ease-enter);
   }
 
   .acc-panel[data-state="closed"] {
-    animation: acc-close 180ms var(--ease-exit);
-  }
-
-  .acc-panel[data-state="open"] > * {
-    animation: acc-reveal 260ms 80ms var(--ease-enter) backwards;
+    animation: acc-close var(--duration-state) var(--ease-exit);
   }
 
   @media (prefers-reduced-motion: reduce) {
     .acc-panel[data-state="open"],
-    .acc-panel[data-state="closed"],
-    .acc-panel[data-state="open"] > * {
+    .acc-panel[data-state="closed"] {
       animation: none;
     }
   }
@@ -279,7 +324,7 @@
 }
 
 @utility animate-just-changed {
-  animation: just-changed 1.2s var(--ease-enter);
+  animation: just-changed var(--duration-reveal) var(--ease-enter);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -340,7 +385,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .hero-enter {
-    animation: hero-fade 150ms var(--ease-enter) both;
+    animation: hero-fade var(--duration-press) var(--ease-enter) both;
   }
 }
 
@@ -399,14 +444,14 @@
 
   .box-mark {
     transform-origin: 50% 100%;
-    animation: box-float 3s linear infinite;
+    animation: box-float var(--duration-reveal) linear 1;
   }
 }
 
 /*
  * Coach thinking orb (AICSS S1). 3×3 lattice, wavefront from the centre.
- * Ambient 1.7s cycle — longer than the UI scale on purpose. Linear, with
- * the swell written into the keyframe stops so we do not add a fifth curve.
+ * Loop is the only off-scale duration (1.7s). Linear, with the swell written
+ * into the keyframe stops so we do not add a fifth curve.
  */
 .coach-orb {
   position: relative;
@@ -493,7 +538,7 @@
 
 @layer components {
   .field-error-shake {
-    animation: field-error-shake 400ms var(--ease-snap) both;
+    animation: field-error-shake var(--duration-surface) var(--ease-snap) both;
   }
 }
 
@@ -569,7 +614,7 @@
   body {
     height: auto !important;
     overflow: visible !important;
-    background: #fff !important;
+    background: var(--sheet) !important;
   }
 
   body > *:not([data-print-portal]) {
@@ -600,7 +645,7 @@
   }
 }
 
-/* Rest of the room fades. Named elements (name→title, slab→sheet) morph. */
+/* Paper desk/sheet: fade only. */
 ::view-transition-old(root) {
   animation: vt-fade-out var(--duration-surface) var(--ease-exit) both;
 }

@@ -9,7 +9,7 @@ export function disclose(open: boolean) {
     "grid transition-[grid-template-rows] motion-reduce:transition-none",
     open
       ? "grid-rows-[1fr] duration-[var(--duration-surface)] ease-enter"
-      : "grid-rows-[0fr] duration-[180ms] ease-exit",
+      : "grid-rows-[0fr] duration-[var(--duration-state)] ease-exit",
   );
 }
 

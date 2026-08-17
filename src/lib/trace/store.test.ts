@@ -22,7 +22,7 @@ const options = { skip: skipWithoutDatabase };
 
 test("a trace survives the round trip", options, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("tracer1", "correct horse battery", db);
+    const account = await createAccount("tracer1@example.com", "correct horse battery", db);
     const collector = newCollector({ accountId: account.id });
     collector.span({
       name: "model:deepseek",
@@ -45,7 +45,7 @@ test("a trace survives the round trip", options, async () => {
 test("writing the same trace twice updates it rather than failing", options, async () => {
   // The outcome arrives after the turn, and a retried beacon can arrive twice.
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("tracer2", "correct horse battery", db);
+    const account = await createAccount("tracer2@example.com", "correct horse battery", db);
     const collector = newCollector({ accountId: account.id });
     const trace = collector.finish();
     await recordTrace(trace, db);
@@ -59,7 +59,7 @@ test("writing the same trace twice updates it rather than failing", options, asy
 
 test("undo is recorded against the right trace", options, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("tracer3", "correct horse battery", db);
+    const account = await createAccount("tracer3@example.com", "correct horse battery", db);
     const trace = newCollector({ accountId: account.id }).finish("applied");
     await recordTrace(trace, db);
 
@@ -73,8 +73,8 @@ test("knowing a trace id is not enough to rewrite someone else's record", option
   // The endpoint takes the trace id from the body, so the account has to be
   // part of the where clause and not only part of the intention.
   await withMigratedSchema(async (db) => {
-    const mine = await createAccount("tracer4", "correct horse battery", db);
-    const theirs = await createAccount("tracer5", "correct horse battery", db);
+    const mine = await createAccount("tracer4@example.com", "correct horse battery", db);
+    const theirs = await createAccount("tracer5@example.com", "correct horse battery", db);
     const trace = newCollector({ accountId: mine.id }).finish("applied");
     await recordTrace(trace, db);
 
@@ -86,7 +86,7 @@ test("knowing a trace id is not enough to rewrite someone else's record", option
 
 test("a violation survives the round trip", options, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("tracer6", "correct horse battery", db);
+    const account = await createAccount("tracer6@example.com", "correct horse battery", db);
     const collector = newCollector({ accountId: account.id });
     await recordTrace(collector.finish(), db);
     await recordViolation(
@@ -123,7 +123,7 @@ async function backdate(db: { query: (sql: string) => Promise<unknown> }) {
 
 test("retention drops what has aged out and keeps what has not", options, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("tracer7", "correct horse battery", db);
+    const account = await createAccount("tracer7@example.com", "correct horse battery", db);
     const old = newCollector({ accountId: account.id }).finish();
     await recordTrace(old, db);
     await backdate(db);
@@ -143,8 +143,8 @@ test("retention drops what has aged out and keeps what has not", options, async 
 test("retention only prunes the account it was asked about", options, async () => {
   // One busy account must not sweep away a quiet one's history.
   await withMigratedSchema(async (db) => {
-    const mine = await createAccount("tracer8", "correct horse battery", db);
-    const theirs = await createAccount("tracer9", "correct horse battery", db);
+    const mine = await createAccount("tracer8@example.com", "correct horse battery", db);
+    const theirs = await createAccount("tracer9@example.com", "correct horse battery", db);
     await recordTrace(newCollector({ accountId: mine.id }).finish(), db);
     await recordTrace(newCollector({ accountId: theirs.id }).finish(), db);
     await backdate(db);
@@ -157,8 +157,8 @@ test("retention only prunes the account it was asked about", options, async () =
 
 test("one account never sees another's traces", options, async () => {
   await withMigratedSchema(async (db) => {
-    const mine = await createAccount("tracer10", "correct horse battery", db);
-    const theirs = await createAccount("tracer11", "correct horse battery", db);
+    const mine = await createAccount("tracer10@example.com", "correct horse battery", db);
+    const theirs = await createAccount("tracer11@example.com", "correct horse battery", db);
     await recordTrace(newCollector({ accountId: theirs.id }).finish(), db);
 
     assert.equal((await recentTraces(mine.id, 10, db)).length, 0);
@@ -167,7 +167,7 @@ test("one account never sees another's traces", options, async () => {
 
 test("deleting an account takes its traces with it", options, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("tracer12", "correct horse battery", db);
+    const account = await createAccount("tracer12@example.com", "correct horse battery", db);
     const collector = newCollector({ accountId: account.id });
     await recordTrace(collector.finish(), db);
     await recordViolation(

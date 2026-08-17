@@ -38,7 +38,7 @@ export function HelpButton() {
             variant="ghost"
             size="icon-sm"
             aria-label={t(m.help.label)}
-            className="rounded-full border bg-card text-muted-foreground shadow-xs md:border-transparent md:bg-transparent md:shadow-none"
+            className="rounded-lg text-muted-foreground md:bg-transparent"
           >
             <CircleHelp />
           </Button>

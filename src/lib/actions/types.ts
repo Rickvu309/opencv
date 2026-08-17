@@ -21,6 +21,12 @@ export type AppState = {
    * most, and the Coach can only avoid that if it is told.
    */
   locale: Locale;
+  /**
+   * When first-run setup was finished. Null until they continue past
+   * `/onboarding`, including if they skipped every field. Returning users are
+   * sent to the Coach, not through that screen again.
+   */
+  onboardingCompletedAt: string | null;
   profile: {
     identity: { name: string; targetRole: string };
     /** Label/value rows shown under the profile's context section. */

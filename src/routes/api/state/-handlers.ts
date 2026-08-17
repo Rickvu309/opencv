@@ -1,6 +1,6 @@
 import { currentAccount } from "@/lib/auth/dal";
 import { failure, readBody } from "@/lib/auth/http";
-import { looksLikeState, readAccountState, writeAccountState } from "@/lib/state/account-state";
+import { looksLikeState, readAccountState, writeAccountState } from "@/lib/state/account-state.server";
 
 /**
  * The signed-in account's state: read it, or replace it.

@@ -2,8 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { currentAccount } from "@/lib/auth/dal";
 import { planFor } from "@/lib/billing/plan";
-import { defaultHandle, readSiteForAccount } from "@/lib/paper/share";
-import { readAccountState } from "@/lib/state/account-state";
+import { defaultHandle } from "@/lib/paper/share";
+import { readSiteForAccount } from "@/lib/paper/share-store.server";
+import { readAccountState } from "@/lib/state/account-state.server";
 
 export const loadSettings = createServerFn({ method: "GET" }).handler(
   async () => {

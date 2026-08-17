@@ -8,6 +8,7 @@ import { createAccount } from "@/lib/auth/accounts";
 import { tokenHash } from "@/lib/auth/cookie";
 import {
   SESSION_DAYS,
+  SESSION_HOURS_TRANSIENT,
   endAllSessions,
   endSession,
   readSession,
@@ -20,7 +21,7 @@ const OPTIONS = { skip: skipWithoutDatabase };
 
 test("AC-ACCT-002.1: a session resolves to its account", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     const session = await startSession(account.id, db);
 
     const found = await readSession(session.token, db);
@@ -31,7 +32,7 @@ test("AC-ACCT-002.1: a session resolves to its account", OPTIONS, async () => {
 
 test("AC-ACCT-002.3: the session survives being read again and again", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     const session = await startSession(account.id, db);
 
     // A reload is nothing more than another read with the same cookie. Three
@@ -39,6 +40,7 @@ test("AC-ACCT-002.3: the session survives being read again and again", OPTIONS, 
     for (let i = 0; i < 3; i += 1) {
       assert.equal((await readSession(session.token, db))?.id, account.id);
     }
+    assert.equal(session.persistent, true);
     assert.ok(
       session.expiresAt.getTime() > Date.now() + (SESSION_DAYS - 1) * 86_400_000,
       "the session should last about a month",
@@ -46,9 +48,25 @@ test("AC-ACCT-002.3: the session survives being read again and again", OPTIONS, 
   });
 });
 
+test("without remember me the session dies with the browser", OPTIONS, async () => {
+  await withMigratedSchema(async (db) => {
+    const account = await createAccount("mai@example.com", "a good long password", db);
+    const now = new Date();
+    const session = await startSession(account.id, db, now, false);
+
+    assert.equal(session.persistent, false);
+    const ms = session.expiresAt.getTime() - now.getTime();
+    assert.ok(
+      ms <= SESSION_HOURS_TRANSIENT * 60 * 60 * 1000,
+      "an unchecked box must not last a month",
+    );
+    assert.equal((await readSession(session.token, db))?.id, account.id);
+  });
+});
+
 test("the token is never what the table stores", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     const session = await startSession(account.id, db);
 
     const { rows } = await db.query<{ id: string }>("select id from sessions");
@@ -60,7 +78,7 @@ test("the token is never what the table stores", OPTIONS, async () => {
 
 test("an expired session is refused", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     const session = await startSession(account.id, db);
 
     // Expiry is enforced by the database's clock, not the application's, so a
@@ -72,7 +90,7 @@ test("an expired session is refused", OPTIONS, async () => {
 
 test("AC-ACCT-003.1 and 003.2: sign-out ends the session everywhere", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     const session = await startSession(account.id, db);
 
     await endSession(session.token, db);
@@ -88,7 +106,7 @@ test("AC-ACCT-003.1 and 003.2: sign-out ends the session everywhere", OPTIONS, a
 
 test("signing out twice is not an error", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     const session = await startSession(account.id, db);
     await endSession(session.token, db);
     await endSession(session.token, db);
@@ -98,7 +116,7 @@ test("signing out twice is not an error", OPTIONS, async () => {
 
 test("one device signing out leaves the other signed in", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     const laptop = await startSession(account.id, db);
     const phone = await startSession(account.id, db);
 
@@ -111,7 +129,7 @@ test("one device signing out leaves the other signed in", OPTIONS, async () => {
 
 test("every session on an account can be ended at once", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     const laptop = await startSession(account.id, db);
     const phone = await startSession(account.id, db);
 
@@ -124,8 +142,8 @@ test("every session on an account can be ended at once", OPTIONS, async () => {
 
 test("one account's session never resolves to another account", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const mai = await createAccount("mai", "a good long password", db);
-    const nam = await createAccount("nam", "another long password", db);
+    const mai = await createAccount("mai@example.com", "a good long password", db);
+    const nam = await createAccount("nam@example.com", "another long password", db);
     const maiSession = await startSession(mai.id, db);
     const namSession = await startSession(nam.id, db);
 
@@ -136,7 +154,7 @@ test("one account's session never resolves to another account", OPTIONS, async (
 
 test("a token nobody issued resolves to nobody", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    await createAccount("mai", "a good long password", db);
+    await createAccount("mai@example.com", "a good long password", db);
     assert.equal(await readSession("a token that was never issued", db), null);
     assert.equal(await readSession(null, db), null);
     assert.equal(await readSession("", db), null);
@@ -145,7 +163,7 @@ test("a token nobody issued resolves to nobody", OPTIONS, async () => {
 
 test("deleting an account closes its sessions", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     const session = await startSession(account.id, db);
 
     await db.query("delete from accounts where id = $1", [account.id]);
@@ -155,7 +173,7 @@ test("deleting an account closes its sessions", OPTIONS, async () => {
 
 test("the sweep removes expired rows and leaves live ones", OPTIONS, async () => {
   await withMigratedSchema(async (db) => {
-    const account = await createAccount("mai", "a good long password", db);
+    const account = await createAccount("mai@example.com", "a good long password", db);
     const live = await startSession(account.id, db);
     const dead = await startSession(account.id, db);
     await db.query("update sessions set expires_at = now() - interval '1 day' where id = $1", [

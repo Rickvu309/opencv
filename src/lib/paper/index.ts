@@ -30,5 +30,5 @@ export { photoUrl, visiblePhotoUrl } from "./photo-url";
 export { letterTargets, openingForPaper, type LetterTarget } from "./opening";
 export { cvCompleteness, wordForTemplate, templates, templateHasPhoto } from "./cv";
 export { paragraphsOf, letterScaffold, letterSituationLabels } from "./letter";
-export { paperHref, roomMode, shouldTravel } from "./room";
+export { paperHref, paperSearch, roomMode, shouldTravel } from "./room";
 export { driveOf, type DriveFilter, type DriveRow } from "./drive";

@@ -30,7 +30,7 @@
 
 import type { ClientBase } from "pg";
 
-import { getPool } from "@/lib/db/client";
+import { getPool } from "@/lib/db/client.server";
 
 export type JobStatus = "queued" | "running" | "done" | "failed";
 

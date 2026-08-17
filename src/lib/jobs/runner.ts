@@ -8,7 +8,7 @@
 
 import type { ClientBase } from "pg";
 
-import { getPool } from "@/lib/db/client";
+import { getPool } from "@/lib/db/client.server";
 import { claim, completeStep, fail, finish, type Job } from "@/lib/jobs/queue";
 
 /** What a workflow is handed when it runs. */
