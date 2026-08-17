@@ -1,77 +1,146 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { listApplicationsFn } from "@/features/application/queries";
 import { runCommand } from "@/ui/run-command";
 import { Button } from "@/ui/button";
+import { Band } from "@/ui/band";
+import { Row, RowList } from "@/ui/rows";
 import { EmptyState } from "@/ui/empty-state";
+import { SkeletonRows } from "@/ui/skeleton";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/ui/dropdown-menu";
 
-const columns = ["interested", "applied", "interviewing", "offer", "rejected"] as const;
+const statuses = ["interested", "applied", "interviewing", "offer", "rejected"] as const;
+const statusLabel: Record<(typeof statuses)[number], string> = {
+  interested: "Interested",
+  applied: "Applied",
+  interviewing: "Interviewing",
+  offer: "Offer",
+  rejected: "Rejected",
+};
+
+function allowedStatuses(current: string) {
+  const forward: Record<string, string> = {
+    interested: "applied",
+    applied: "interviewing",
+    interviewing: "offer",
+  };
+  return statuses.filter((s) => {
+    if (s === current) return true;
+    if (s === "rejected") return true;
+    const currentIndex = statuses.indexOf(current as (typeof statuses)[number]);
+    const nextIndex = statuses.indexOf(s);
+    if (nextIndex < currentIndex) return true;
+    return forward[current] === s;
+  });
+}
 
 export function ApplicationsScreen() {
   const q = useQuery({ queryKey: ["applications"], queryFn: () => listApplicationsFn() });
-  if (!q.data) return <p>Loading applications.</p>;
-  if (q.data.length === 0) {
-    return (
-      <EmptyState
-        title="Nothing in motion yet. Save an opening from Search and work it here."
-        action={
-          <Link to="/search">
-            <Button>Go to Search</Button>
-          </Link>
-        }
-      />
-    );
-  }
+  const navigate = useNavigate();
+  const rows = q.data ?? [];
 
   return (
     <div>
-      <h1 className="text-[28px] font-medium">Applications</h1>
-      <div className="mt-6 grid gap-4 md:grid-cols-5">
-        {columns.map((status) => (
-          <section key={status}>
-            <h2 className="text-[14px] font-medium capitalize">{status}</h2>
-            {q.data
-              .filter((a) => a.status === status)
-              .map((a) => (
-                <article key={a.id} className="mt-3 rounded-[var(--radius-card)] border border-border p-3">
-                  <p className="font-medium">{a.role}</p>
-                  <p className="text-[14px] text-muted-foreground">{a.company}</p>
-                  <p className="mt-2 text-[14px]">{a.nextStep}</p>
-                  {a.cv_paper_id ? (
-                    <Link className="mt-2 inline-block text-[14px]" to="/paper/$paperId" params={{ paperId: a.cv_paper_id }}>
-                      Open CV
-                    </Link>
-                  ) : a.master_cv_id ? (
-                    <Button
-                      className="mt-2"
-                      variant="outline"
-                      onClick={() =>
-                        void runCommand("application.tailorCv", {
-                          id: a.id,
-                          paperId: a.master_cv_id,
-                        }).then(() => q.refetch())
-                      }
-                    >
-                      Tailor a copy
-                    </Button>
-                  ) : null}
-                  {status !== "rejected" && status !== "offer" ? (
-                    <Button
-                      className="mt-2"
-                      variant="ghost"
-                      onClick={() => {
-                        const next = { interested: "applied", applied: "interviewing", interviewing: "offer" }[status];
-                        if (next) void runCommand("application.setStatus", { id: a.id, status: next }).then(() => q.refetch());
-                      }}
-                    >
-                      Move forward
-                    </Button>
-                  ) : null}
-                </article>
-              ))}
-          </section>
-        ))}
-      </div>
+      <Band title="Apply" />
+      {q.isPending ? <SkeletonRows /> : null}
+      {!q.isPending && rows.length === 0 ? (
+        <EmptyState
+          kind="first-run"
+          title="Nothing in motion yet. Save an opening from Search and work it here."
+          action={
+            <Button onClick={() => void navigate({ to: "/search" })}>Go to Search</Button>
+          }
+        />
+      ) : null}
+      {!q.isPending &&
+        statuses.map((status) => {
+          const group = rows.filter((a) => a.status === status);
+          if (!group.length) return null;
+          return (
+            <section key={status} className="mt-8">
+              <h2 className="text-[14px] font-medium text-muted-foreground">
+                {statusLabel[status]}
+              </h2>
+              <RowList>
+                {group.map((a) => (
+                  <Row
+                    key={a.id}
+                    label={a.role || "Opening"}
+                    meta={`${a.company}${a.nextStep ? ` · ${a.nextStep}` : ""}`}
+                    menu={
+                      <div className="flex items-center gap-1">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger
+                            aria-label={`Status for ${a.role}`}
+                            className="inline-flex min-h-11 items-center rounded-[var(--radius-control)] px-3 text-[14px] hover:bg-muted"
+                          >
+                            {statusLabel[status]}
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            {allowedStatuses(a.status).map((s) => (
+                              <DropdownMenuItem
+                                key={s}
+                                onSelect={() =>
+                                  void runCommand("application.setStatus", {
+                                    id: a.id,
+                                    status: s,
+                                  }).then(() => q.refetch())
+                                }
+                              >
+                                {statusLabel[s]}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        {a.cv_paper_id || a.master_cv_id ? (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger
+                              aria-label={`Actions for ${a.role}`}
+                              className="flex size-11 items-center justify-center rounded-[var(--radius-control)] text-[14px] hover:bg-muted"
+                            >
+                              ···
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              {a.cv_paper_id ? (
+                                <DropdownMenuItem
+                                  onSelect={() =>
+                                    void navigate({
+                                      to: "/paper/$paperId",
+                                      params: { paperId: a.cv_paper_id! },
+                                    })
+                                  }
+                                >
+                                  Open CV
+                                </DropdownMenuItem>
+                              ) : null}
+                              {a.master_cv_id ? (
+                                <DropdownMenuItem
+                                  onSelect={() =>
+                                    void runCommand("application.tailorCv", {
+                                      id: a.id,
+                                      paperId: a.master_cv_id,
+                                    }).then(() => q.refetch())
+                                  }
+                                >
+                                  Tailor a copy
+                                </DropdownMenuItem>
+                              ) : null}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        ) : null}
+                      </div>
+                    }
+                  />
+                ))}
+              </RowList>
+            </section>
+          );
+        })}
     </div>
   );
 }

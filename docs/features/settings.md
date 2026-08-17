@@ -13,7 +13,7 @@ Settings holds what is about the account rather than the career: email, password
 ## Screens
 
 - Reached from the account control, not the core rail ([flows.md](../flows.md) edge-case nav). Nothing here is in Prepare or Opportunities.
-- `/settings` — sections: account (email, change password), public page (handle, with the personal-page link shown and a copy control), notifications (which events reach email), danger (delete account, typed confirmation). The Coach dock travels here; the Coach still cannot call account commands.
+- `/settings` — sections in order: account (email, password, sign out), public page (handle), notifications, danger last (delete account, confirm overlay naming the noun). The Coach dock travels here; the Coach still cannot call account commands.
 
 ## Data
 
@@ -27,7 +27,7 @@ Reads `users`, `handles`, notification preferences (a JSONB column on `users`) (
 | `account.updatePassword` | no | With current-password check |
 | `share.setHandle` | no | Owned by [share.md](share.md); surfaced here |
 | `account.setNotificationPrefs` | no | Which kinds reach email |
-| `account.remove` | no | Owned by [auth.md](auth.md); typed confirmation |
+| `account.remove` | no | Owned by [auth.md](auth.md); confirm overlay names the account |
 
 Nothing here is agent-callable. The Coach does not touch account administration.
 

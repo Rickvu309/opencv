@@ -4,7 +4,9 @@ import { getPaperFn } from "@/features/paper/queries";
 import { runCommand } from "@/ui/run-command";
 import { Input } from "@/ui/input";
 import { Button } from "@/ui/button";
-import { EmptyState } from "@/ui/empty-state";
+import { Band } from "@/ui/band";
+import { NotFoundState } from "@/ui/empty-state";
+import { SkeletonBlock } from "@/ui/skeleton";
 import type { PaperContent } from "@/features/paper/model";
 
 export function PaperEditorScreen({ paperId }: { paperId: string }) {
@@ -12,17 +14,38 @@ export function PaperEditorScreen({ paperId }: { paperId: string }) {
     queryKey: ["paper", paperId],
     queryFn: () => getPaperFn({ data: { id: paperId } }),
   });
-  if (q.isPending) return <p>Loading this paper.</p>;
+  if (q.isPending) {
+    return (
+      <div>
+        <Band
+          title="Paper"
+          back={
+            <Link to="/paper" className="inline-flex min-h-11 items-center text-[14px] text-muted-foreground">
+              Back
+            </Link>
+          }
+        />
+        <SkeletonBlock className="mx-auto h-[80vh] max-w-[720px]" />
+      </div>
+    );
+  }
   if (!q.data) {
     return (
-      <EmptyState
-        title="That paper is not here. Open Paper to see your list."
-        action={
-          <Link to="/paper" className="text-accent underline">
-            Back to Paper
-          </Link>
-        }
-      />
+      <div>
+        <Band
+          title="Paper"
+          back={
+            <Link to="/paper" className="inline-flex min-h-11 items-center text-[14px] text-muted-foreground">
+              Back
+            </Link>
+          }
+        />
+        <NotFoundState
+          title="That paper is not here. Open Paper to see your list."
+          href="/paper"
+          label="Back to Paper"
+        />
+      </div>
     );
   }
   const paper = q.data;
@@ -34,19 +57,24 @@ export function PaperEditorScreen({ paperId }: { paperId: string }) {
 
   return (
     <div>
-      <Link to="/paper" className="text-[14px] text-muted-foreground">
-        Back
-      </Link>
-      <div className="mt-4 flex items-center justify-between gap-4">
-        <Input
-          defaultValue={paper.title}
-          onBlur={(e) => void runCommand("paper.rename", { id: paperId, title: e.target.value })}
-        />
-        <span className="text-[14px] text-muted-foreground">{paper.typeWord}</span>
-        <Button variant="outline" onClick={() => window.print()}>
-          Export
-        </Button>
-      </div>
+      <Band
+        title={
+          <h1 className="min-w-0 flex-1">
+            <Input
+              aria-label="Title"
+              defaultValue={paper.title}
+              onBlur={(e) => void runCommand("paper.rename", { id: paperId, title: e.target.value })}
+            />
+          </h1>
+        }
+        back={
+          <Link to="/paper" className="inline-flex min-h-11 items-center text-[14px] text-muted-foreground">
+            Back
+          </Link>
+        }
+        meta={paper.typeWord}
+        primary={<Button onClick={() => window.print()}>Export</Button>}
+      />
       <article className="a4 mx-auto mt-8 max-w-[720px] border border-black p-10 print:border-0">
         {paper.kind === "cv" ? (
           <>

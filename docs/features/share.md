@@ -18,7 +18,7 @@ No feed, no follow, no likes. Distribution is the user sending their own link.
 
 ## Screens
 
-- `/p/$slug`, `/u/$handle` — public routes in `_public/`, no app chrome, fast, indexable, honest 404s ("This page isn't published."). OG image route per Proof page.
+- `/p/$slug`, `/u/$handle` — public routes in `_public/`, no app chrome, fast, indexable. A missing slug or handle is an honest not-found with one next step ("Go to OpenPath"). A personal page with no published Proofs says so in one sentence. OG image route per Proof page.
 - Handle management surfaces in Settings; publish and unpublish live in Proof.
 
 ## Data

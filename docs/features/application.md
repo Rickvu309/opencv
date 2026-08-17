@@ -17,7 +17,7 @@ In the rail, Apply sits under **Opportunities** next to Search ([flows.md](../fl
 ## Screens
 
 - Reached from Opportunities in the rail, from Search (save), from a Coach card, or from a deadline notification.
-- `/applications` — the pipeline: rows grouped by status (interested, applied, interviewing, offer, rejected), each card showing role, company, deadline, and its next step. Opening a card shows notes, linked materials ("Open CV" goes to `/paper/$paperId` — nobody edits on a card), and the fit read carried over from Search.
+- `/applications` — the pipeline: one column of rows grouped by status (interested, applied, interviewing, offer, rejected). Status is a dropdown on the row. Tailoring and Open CV live in a row menu so no row has two competing buttons. Each row shows role, company, and its next step. Opening a card is not a second page in this pass — notes and the fit read stay on the row. "Open CV" goes to `/paper/$paperId`. Empty state points to Search.
 - Empty state points to Search.
 
 ## Data

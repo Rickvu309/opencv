@@ -13,7 +13,7 @@ Where Paper produces documents the user sends, Pitch produces language the user 
 ## Screens
 
 - Reached from the Prepare group in the rail, next to Paper ([flows.md](../flows.md)).
-- `/pitch` — bio and intro as two cards, then the answer bank as a list by question. Everything editable in place. The Coach dock travels here.
+- `/pitch` — three labelled sections: bio, intro, answers. One primary per section; drafting is the quiet secondary. An unbuilt Pitch is one door (draft from the profile). A missing goal for intro is an in-place next step, not a browser alert.
 
 ## Data
 

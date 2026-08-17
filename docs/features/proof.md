@@ -17,7 +17,7 @@ The loop (flow 5 in [flows.md](../flows.md)): log → interview → arrange → 
 ## Screens
 
 - `/proof` — the evidence space: proofs as rows (title, role, dates, status), newest activity first.
-- `/proof/$proofId` — the opened Proof: title, optional role, dates, link; the running log newest first (notes, links, photos); a quiet band with two actions: **Arrange**, then **Publish**. No STAR form, no wizard.
+- `/proof/$proofId` — the opened Proof: band with Back, title, and one primary at a time (Arrange until the story has all three parts, then Publish). The band names the missing part. Body: running log newest first; no STAR form, no wizard.
 - Arranged view: the story in three parts — what the project was, what they did, what came of it. All three or it is not a story yet; the band says which part is missing.
 - Published: a designed page at `/p/:slug` (see [share.md](share.md)) — the one expressive surface in the product: photos and type allowed, taste quiet. The four jobs of a published Proof: sound smart (specific and defensible), be human, look considered, feel earned. Never the CV's aesthetics.
 

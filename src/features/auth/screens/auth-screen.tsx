@@ -23,7 +23,7 @@ export function AuthScreen({ mode }: { mode: "sign-in" | "sign-up" }) {
   }
 
   return (
-    <main className="mx-auto max-w-sm px-4 py-16">
+    <main id="main" className="mx-auto max-w-sm px-4 py-16">
       <h1 className="text-[28px] font-medium leading-[1.5]">
         {mode === "sign-up" ? "Create an account" : "Sign in"}
       </h1>

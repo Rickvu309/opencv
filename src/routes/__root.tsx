@@ -18,7 +18,7 @@ export const Route = createRootRoute({
     links: [{ rel: "stylesheet", href: appCss }],
   }),
   notFoundComponent: () => (
-    <main className="p-8">
+    <main id="main" className="p-8">
       <p>That page is not here.</p>
     </main>
   ),

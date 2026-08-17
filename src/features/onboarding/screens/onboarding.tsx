@@ -31,7 +31,7 @@ export function OnboardingScreen() {
   }
 
   return (
-    <main className="mx-auto max-w-lg px-4 py-12">
+    <main id="main" className="mx-auto max-w-lg px-4 py-12">
       <p className="text-muted-foreground">Step {step + 1} of 4</p>
       {step === 0 ? (
         <section className="mt-4">
@@ -40,10 +40,17 @@ export function OnboardingScreen() {
             Target role
           </Label>
           <Input id="goal" value={targetRole} onChange={(e) => setTargetRole(e.target.value)} disabled={unsure} />
-          <label className="mt-3 flex items-center gap-2 text-[14px]">
+          <label className="mt-3 flex min-h-11 items-center gap-2 text-[14px]">
             <input type="checkbox" checked={unsure} onChange={(e) => setUnsure(e.target.checked)} />
             I'm not sure yet
           </label>
+          <p className="mt-4 text-[14px] leading-[1.6] text-muted-foreground">
+            {unsure
+              ? "That stays on your profile as not sure yet."
+              : targetRole
+                ? `This goes on your profile as the goal: ${targetRole}.`
+                : "Your goal will sit on the profile and feed Search."}
+          </p>
         </section>
       ) : null}
       {step === 1 ? (
@@ -63,6 +70,11 @@ export function OnboardingScreen() {
               <Input id="year" value={year} onChange={(e) => setYear(e.target.value)} />
             </div>
           </div>
+          <p className="mt-4 text-[14px] leading-[1.6] text-muted-foreground">
+            {school
+              ? `Education on the profile: ${[school, major, year].filter(Boolean).join(" · ")}.`
+              : "School, major, and year fill the education section."}
+          </p>
         </section>
       ) : null}
       {step === 2 ? (
@@ -79,6 +91,11 @@ export function OnboardingScreen() {
               <Input id="role" value={role} onChange={(e) => setRole(e.target.value)} />
             </div>
           </div>
+          <p className="mt-4 text-[14px] leading-[1.6] text-muted-foreground">
+            {org
+              ? `Experience on the profile: ${role || "Member"} at ${org}.`
+              : "This becomes the first experience row."}
+          </p>
         </section>
       ) : null}
       {step === 3 ? (
@@ -86,6 +103,15 @@ export function OnboardingScreen() {
           <h1 className="text-[28px] font-medium">The Coach works with you</h1>
           <p className="mt-4 leading-[1.6]">
             It can draft and edit in the app. Every change shows up with undo. You stay in control.
+          </p>
+          <p className="mt-4 text-[14px] leading-[1.6] text-muted-foreground">
+            {[
+              unsure ? "Goal: not sure yet" : targetRole ? `Goal: ${targetRole}` : null,
+              school ? `School: ${school}` : null,
+              org ? `${role || "Member"} at ${org}` : null,
+            ]
+              .filter(Boolean)
+              .join(". ") || "You can skip and fill the profile later."}
           </p>
         </section>
       ) : null}

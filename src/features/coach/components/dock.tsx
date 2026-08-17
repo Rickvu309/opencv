@@ -34,7 +34,7 @@ function ThreadBody({
 }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { setThreadId } = useCoachSession();
+  const { setThreadId, pendingIntent, takePendingIntent } = useCoachSession();
   const convos = useQuery({
     queryKey: ["conversations"],
     queryFn: () => listConversationsFn(),
@@ -48,6 +48,12 @@ function ThreadBody({
   const [reply, setReply] = useState("");
   const [lastFailed, setLastFailed] = useState<string | null>(null);
   const offline = convos.data?.offline ?? thread.data?.offline ?? false;
+
+  useEffect(() => {
+    if (!pendingIntent) return;
+    const next = takePendingIntent();
+    if (next) setText(next);
+  }, [pendingIntent, takePendingIntent]);
 
   async function send(message: string) {
     const trimmed = message.trim();

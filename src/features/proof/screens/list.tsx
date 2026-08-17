@@ -1,44 +1,46 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { listProofsFn } from "@/features/proof/queries";
 import { runCommand } from "@/ui/run-command";
 import { Button } from "@/ui/button";
+import { Band } from "@/ui/band";
+import { Row, RowList } from "@/ui/rows";
 import { EmptyState } from "@/ui/empty-state";
+import { SkeletonRows } from "@/ui/skeleton";
 
 export function ProofListScreen() {
   const q = useQuery({ queryKey: ["proofs"], queryFn: () => listProofsFn() });
   const navigate = useNavigate();
-  if (!q.data) return <p>Loading Proofs.</p>;
+
+  async function logSomething() {
+    const r = await runCommand<{ id: string }>("proof.create", { title: "Untitled Proof" });
+    await navigate({ to: "/proof/$proofId", params: { proofId: r.result.id } });
+  }
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <h1 className="text-[28px] font-medium">Proof</h1>
-        <Button
-          onClick={async () => {
-            const r = await runCommand<{ id: string }>("proof.create", { title: "New Proof" });
-            await navigate({ to: "/proof/$proofId", params: { proofId: r.result.id } });
-          }}
-        >
-          New
-        </Button>
-      </div>
-      {q.data.length === 0 ? (
-        <EmptyState title="Log what you're making. A class project, a shift, an assignment, something that failed — it all counts." />
-      ) : (
-        <ul className="mt-8 divide-y divide-border">
+      <Band title="Proof" primary={<Button onClick={() => void logSomething()}>Log something</Button>} />
+      {q.isPending ? <SkeletonRows /> : null}
+      {!q.isPending && (q.data?.length ?? 0) === 0 ? (
+        <EmptyState
+          kind="first-run"
+          title="Log the first thing you're making."
+          basis="A class project, a shift, an assignment, something that failed — it all counts."
+          action={<Button onClick={() => void logSomething()}>Log something</Button>}
+        />
+      ) : null}
+      {!q.isPending && q.data && q.data.length > 0 ? (
+        <RowList>
           {q.data.map((p) => (
-            <li key={p.id} className="py-3">
-              <Link to="/proof/$proofId" params={{ proofId: p.id }}>
-                {p.title}
-              </Link>
-              <span className="ml-3 text-[14px] text-muted-foreground">
-                {p.role} · {p.status}
-              </span>
-            </li>
+            <Row
+              key={p.id}
+              label={p.title}
+              meta={`${p.role || "Logged"} · ${p.status}`}
+              onSelect={() => void navigate({ to: "/proof/$proofId", params: { proofId: p.id } })}
+            />
           ))}
-        </ul>
-      )}
+        </RowList>
+      ) : null}
     </div>
   );
 }

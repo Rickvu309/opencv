@@ -12,7 +12,7 @@ Three jobs woven together: capture enough to make the product useful (goal first
 
 ## Screens
 
-- `/onboarding` — 3–5 steps, each skippable, full keyboard support:
+- `/onboarding` — 3–5 steps, each skippable, full keyboard support. Payback sits in the same frame as the answer (what the profile now holds):
   1. Goal: "What are you aiming for?" — free text, with an explicit honest option: "I'm not sure yet."
   2. Where you are: school, year, major.
   3. What you have: one experience or project, one link if any.

@@ -13,7 +13,7 @@ Facts (education, experience, skills as context rows, links) and context (target
 ## Screens
 
 - Reached from the account control, not the core rail ([flows.md](../flows.md) edge-case nav).
-- `/profile` — sections with inline editing: identity and context, experience, education, facts, links (LinkedIn, GitHub, portfolio). A completeness meter that reflects only what the user actually provided. The Coach dock travels here.
+- `/profile` — band, then identity first. Completeness is a fact inside that section with its basis ("62 of 100, from what you actually provided"), never a hero metric or page subtitle. Then experience, education, facts, links. The Coach dock travels here.
 
 ## Data
 

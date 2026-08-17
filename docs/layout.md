@@ -85,11 +85,11 @@ Regions: band (title), then the pipeline grouped by status (interested / applied
 
 ### Profile — Sectioned editor
 
-Regions: identity first (name, goal), then facts by section, completeness as a fact with its basis inside the first section. Primary: fill the emptiest section; once complete enough, the door to build the first CV. Yields: sections stack. Empty/error: unfilled sections show the payback for filling them, per the onboarding skip contract.
+Regions: identity first (name, goal), then facts by section, completeness as a fact with its basis inside the first section ("N of 100, from what you actually provided"). Primary: fill the emptiest section; once complete enough, the door to build the first CV. Yields: sections stack. Empty/error: unfilled sections show the payback for filling them, per the onboarding skip contract.
 
 ### Settings — Sectioned editor
 
-Regions: account, sessions, danger last. Primary: none global; each section has its own quiet action. Destructive actions sit last and confirm via Overlay. Empty/error: per section, in place.
+Regions: account (email, password, sign out), public page, notifications, danger last. Primary: none global; each section has its own quiet action. Destructive actions sit last and confirm via Overlay. Empty/error: per section, in place.
 
 ### Onboarding — Wizard
 

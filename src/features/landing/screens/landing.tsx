@@ -15,7 +15,7 @@ export function LandingScreen() {
   }
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-16">
+    <main id="main" className="mx-auto max-w-2xl px-4 py-16">
       <p className="text-[14px] text-muted-foreground">OpenPath</p>
       <h1 className="mt-4 text-[36px] font-medium leading-[1.3]">
         An AI career coach that does the work with you
