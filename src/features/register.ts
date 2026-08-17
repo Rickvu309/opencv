@@ -1,0 +1,9 @@
+import "@/features/profile/commands.server";
+import "@/features/paper/commands.server";
+import "@/features/proof/commands.server";
+import "@/features/pitch/commands.server";
+import "@/features/search/commands.server";
+import "@/features/application/commands.server";
+import "@/features/onboarding/commands.server";
+import "@/features/share/commands.server";
+import "@/features/coach/commands.server";
