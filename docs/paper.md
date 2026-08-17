@@ -1,6 +1,6 @@
 # My Paper: locked decisions
 
-Product locks for `/paper`. The codebase map is [`CONTEXT.md`](../CONTEXT.md). Do not start a third Paper grill. Remaining work is code.
+Product locks for `/paper`. Do not start a third Paper grill. The app is being rebuilt from these locks.
 
 ## Lookup (current truth)
 

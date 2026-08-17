@@ -1,6 +1,6 @@
 # Tech stack
 
-The technologies this repo uses. A new feature picks from this table. How a write lands is [`map.md`](map.md). How it is hosted is [`hosting.md`](hosting.md).
+The technologies this product uses. A new feature picks from this table.
 
 | Layer | Choice | Rule |
 |---|---|---|
@@ -19,7 +19,7 @@ The technologies this repo uses. A new feature picks from this table. How a writ
 | Models | Vercel AI SDK (`ai`) | Gateway in `src/lib/ai/`. OpenRouter behind it. |
 | Coach runtime | eve | Vercel agent framework. Process in `agent/`. |
 | Hosting | Railway | Web app, eve process, Postgres. |
-| Version control | GitHub | Push `main` deploys. How: [`hosting.md`](hosting.md). |
+| Version control | GitHub | Push `main` deploys. |
 
 ## Not in the stack
 
