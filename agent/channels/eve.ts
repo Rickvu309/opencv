@@ -1,8 +1,8 @@
 import { eveChannel, defaultEveAuth } from "eve/channels/eve";
 import { localDev } from "eve/channels/auth";
 
-import { userSession } from "../../lib/auth/agent-session";
-import { meterTurn, screenInboundTurn } from "../../lib/guardrails/server";
+import { userSession } from "../../src/lib/auth/agent-session";
+import { meterTurn, screenInboundTurn } from "../../src/lib/guardrails/server";
 
 export default eveChannel({
   auth: [

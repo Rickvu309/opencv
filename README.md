@@ -1,139 +1,40 @@
 # OpenPath
 
-An AI career coach for Vietnamese students and new graduates. It reads your
-profile, shows the roles you can realistically reach, turns the gap into a plan
-you can work through week by week, and builds the CV you send.
+An AI career coach for Vietnamese students and new graduates. English UI. Live at [openpath.up.railway.app](https://openpath.up.railway.app).
 
-Live: [openpath.up.railway.app](https://openpath.up.railway.app)
-
-The product UI is English. The code and internal docs are English.
-
-## Status
-
-Live and working, with the limits of a demo. What that means:
-
-- The Coach is real. An Eve agent runs on Railway beside the app and answers
-  in English.
-- It can change the app for you. Ask it to add a line to your CV and the line
-  appears, with an undo.
-- **Real accounts.** A username and a password, and everything behind the
-  landing page needs one. Auth is deliberately minimal this phase: no email
-  verification, no social login, and **no password recovery**, so a forgotten
-  password is a lost account.
-- **Your work is on the server, under your account.** Sign in on another device
-  and it is there. Postgres on Railway holds it; see `docs/database.md`.
-- **An account starts empty.** There is no seeded persona any more. Onboarding
-  is where the profile comes from, and every screen reads the store, so what
-  you type is what the app shows you.
-The waiting list is stored in the same Postgres as the accounts.
+This repo is TanStack Start, not Next.js. How the tree works: [`CONTEXT.md`](CONTEXT.md).
 
 ## Run it
 
-Node 24 is required, and `.nvmrc` pins it. Earlier versions do not strip
-TypeScript types, so `npm test` fails to load a single file on them.
+Node 24 (`.nvmrc`). Earlier Node cannot strip TypeScript types.
 
 ```bash
-nvm use         # reads .nvmrc
+nvm use
 npm install
-npm run dev     # http://localhost:3000
 ```
 
-Accounts need a database. Put `DATABASE_URL` and `SESSION_SECRET` in
-`.env.local`, then apply the schema. `docs/database.md` has both values and the
-rest of the setup.
+Put `DATABASE_URL` and `SESSION_SECRET` in `.env.local`. Apply the schema, then start the app. Setup: [`docs/database.md`](docs/database.md).
 
 ```bash
-npm run db:migrate   # apply the schema
-npm run db:status    # what is applied, what is pending
+npm run db:migrate
+npm run dev          # http://localhost:3000 (Vite + eve)
 ```
 
-Other commands:
-
 ```bash
-npm run build   # production build
-npm test        # the registry, the CV, the copy catalog, accounts, storage
+npm test
 npm run lint
+npm run build
 ```
 
-## How it fits together
+Without `OPENROUTER_API_KEY`, Coach replies fail (503). Auth, Profile, Paper, and the rest still work.
 
-**Every change goes through one registry.** The UI dispatches when you click.
-The Coach calls the same actions as tools. Both go through
-`lib/actions/store.tsx`, so a Coach edit is indistinguishable from yours, with
-undo.
+## What you get
 
-The Coach does not write AppState itself. It validates and returns an envelope;
-the browser applies it. `CONTEXT.md` is the glossary. `docs/map.md` is the
-one-page picture.
-
-```
-lib/actions/
-  registry.ts    every change the app can make, one definition each
-  store.tsx      the one way state changes; UI and Coach both call it
-  context.ts     what the Coach is allowed to see, sent on every turn
-  persistence.ts where your work is kept between visits
-  types.ts       the shape the Coach is allowed to see and change
-  seed.ts        the state a new account starts from, deliberately empty
-  fixture.ts     a populated account for tests, built by dispatching
-```
-
-The agent is a sibling, not a service you run separately:
-
-```
-agent/
-  agent.ts            the model, and the two settings it needs
-  instructions.md     who the Coach is
-  channels/eve.ts     who is allowed to reach it
-  tools/apply_action.ts  validates; the browser applies the envelope
-```
-
-## Copy
-
-The product is English. `lib/i18n/messages.ts` holds the interface copy.
-Role descriptions, document kinds, and action confirmations live next to the
-code they describe. A CV can still record its own language for the document.
-
-## Screens
-
-Five feature screens, then Coach:
-
-- **My Profile** (`/profile`) — who you are. Lives in the account menu.
-- **My Paper** (`/paper`) — a Drive of papers. CV, cover letter, Proof, and
-  uploaded files. Open one at `/paper?id=`. Published Proofs are `/p/:slug`.
-- **My Pitch** (`/pitch`) — bio, self-intro, interview answers.
-- **My Search** (`/search`) — openings ranked against the profile.
-- **My Application** (`/applications`) — the board of applications you are in.
-
-**My Coach** (`/coach`) is the conversation. The dock on every other screen is
-the same conversation, not a second one.
-
-Each feature has one URL, one AppState field, one action prefix, and a
-folder trio: `app/(app)/<name>`, `lib/<name>`, and `components/<name>` when
-the screen has shared UI. Search stores **openings**; Application stays at
-`/applications`. `lib/actions/` is the write spine — not five stores.
-
-Under those: Discover (landing), onboarding, accounts, Help, Plan and billing.
-
-Onboarding asks the goal first, then where you are starting from, then what
-you already have — and shows a fit score that moves as you answer, because a
-form that gives nothing back until the end is a form nobody finishes.
-
-## Stack
-
-TanStack Start (Vite + Nitro + Router), React 19, TypeScript, Tailwind v4,
-shadcn/ui. Query, Form, Table, and DB are used where they fit; they are not a
-second write path. The app, the Coach and Postgres all run on Railway. Accounts
-add bcrypt for the password hashes and a signed HTTP-only cookie for the
-session. Tests run on Node's built-in runner.
+- Real accounts (username + password). No email verify, no social login, no password recovery.
+- Work stored per account in Postgres. A new account is empty.
+- One write path: a click and a Coach turn both `dispatch`. The Coach returns an envelope; the browser applies it, with undo.
+- Five features (Profile, Paper, Pitch, Search, Application) plus Coach. `/coach` and the dock are the same thread.
 
 ## Docs
 
-- `CONTEXT.md`: product words (features, Paper vs vault, Coach vs AppState).
-- `docs/map.md`: how a click and a Coach turn both hit `dispatch`.
-- `PRODUCT.md`: who this is for, and the design principles.
-- `DESIGN.md`: the visual system. Colour, type, motion, and how a Coach edit
-  behaves.
-- `docs/database.md`: where the database is, and how to apply the schema.
-- `docs/hosting.md`: Railway topology (app, agent, Postgres).
-- `docs/adr/`: locked engineering decisions. `0004-tanstack-start.md` is why the app is Start, not Next.
-- `.scratch/`: local markdown tickets and specs.
+[`docs/README.md`](docs/README.md) is the index. Codebase: [`CONTEXT.md`](CONTEXT.md). Visual system: [`DESIGN.md`](DESIGN.md). Audience: [`PRODUCT.md`](PRODUCT.md).

@@ -1,7 +1,7 @@
 import { defineAgent } from "eve";
 
-import { model, selected } from "../lib/ai/gateway";
-import { SESSION_CEILINGS } from "../lib/ai/router";
+import { model, selected } from "../src/lib/ai/gateway";
+import { SESSION_CEILINGS } from "../src/lib/ai/router";
 
 /**
  * The Coach's model comes from the gateway, not from this file.

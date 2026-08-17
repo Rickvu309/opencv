@@ -9,8 +9,8 @@ export default defineConfig([
   globalIgnores([
     ".output/**",
     ".eve/**",
-    ".next/**",
     ".tanstack/**",
+    "src/routeTree.gen.ts",
     "routeTree.gen.ts",
     "node_modules/**",
     "coverage/**",

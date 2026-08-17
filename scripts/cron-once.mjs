@@ -6,8 +6,8 @@
  * `GET /api/cron`, without an HTTP round trip to ourselves.
  */
 
-import { runDue } from "../lib/jobs/runner.ts";
-import { WORKFLOWS, scheduleDue } from "../lib/jobs/workflows.ts";
+import { runDue } from "../src/lib/jobs/runner.ts";
+import { WORKFLOWS, scheduleDue } from "../src/lib/jobs/workflows.ts";
 
 const PER_RUN = 10;
 

@@ -1,89 +1,101 @@
-# OpenPath
+# Codebase
 
-An AI career coach. Five features besides the Coach: Profile, Paper, Pitch, Search, Application. The Coach edits them through one write path.
+One npm package. TanStack Start in `src/`. The Coach runs as an eve process in `agent/`. Postgres for accounts and AppState. Not Next.js.
 
-## Language
+A click and a Coach turn both call `dispatch` in `src/lib/actions/store.tsx`. The Coach never writes the database. It returns an envelope; the browser applies it. Placement rules: [`docs/map.md`](docs/map.md). Stack: [`docs/stack.md`](docs/stack.md).
 
-### Product
+## Tree
 
-**Feature**:
-One of the five parts of the product: Profile, Paper, Pitch, Search, Application. In code, a module. The Coach and the screens read and write the same ones.
-_Avoid_: artefact, artifact, kit, document (as the grouping noun)
+```
+src/routes/                 file routes (a file is a URL)
+  _signed-in/               sidebar + Coach dock; URLs stay /paper, /coach, …
+  _public/                  /p/:slug (one Proof), /u/:handle (personal link)
+  api/                      server handlers
+src/components/<name>/      UI shared by two routes
+src/components/ui/          primitives
+src/lib/actions/            AppState, registry, store
+src/lib/<noun>/             domain for that noun
+src/styles/globals.css      tokens (see DESIGN.md)
+agent/                      Coach runtime (eve); one tool, apply_action
+scripts/                    dev, db, Railway start
+public/                     URL-only assets
+```
 
-**Coach**:
-One conversation that can change any of the five features on the person's behalf. The full-page view and the dock are the same thread.
-_Avoid_: chatbot, assistant, agent (as a product word)
+How to read a route file: `_` is a pathless layout, `-` is not a URL, `$` is a param. Fat screens are a folder plus `-` files (`src/routes/_signed-in/paper/-drive.tsx` is not `/paper/drive`).
 
-**AppState**:
-Everything the Coach is allowed to see and change. Viewport, popovers, and layout width are not AppState.
-_Avoid_: Redux slice, per-screen store
+## Write path
 
-**applyAction**:
-The one write path. A click and a Coach turn both go through it. The Coach validates and returns an envelope; the browser applies that envelope because the store lives in the tab.
-_Avoid_: the Coach writes the database, the Coach mutates AppState directly
+1. UI calls `dispatch` (`src/lib/actions/store.tsx`).
+2. `agent/tools/apply_action.ts` validates and returns `{ ok, action, input, summary }`.
+3. `src/components/coach/thread.tsx` applies that envelope with the same `dispatch`.
+4. `applyAction` in `src/lib/actions/registry.ts` runs, toasts, offers undo, persists.
 
-### Features
+Action tables live next to the noun (`src/lib/paper/actions.ts`). The registry spreads them. Query and TanStack DB are reads. Writes still `dispatch`.
 
-**Profile**:
-Who the person is: identity, context, experience, education, and vault documents.
-_Avoid_: settings (the account menu holds Profile; settings is plan and billing)
+```
+src/lib/actions/
+  registry.ts     every change, one definition each
+  store.tsx       the one way state changes
+  context.ts      what the Coach may see, sent every turn
+  persistence.ts  AppState on the server
+  types.ts        the shape the Coach may see and change
+  seed.ts         new account: empty
+  fixture.ts      tests: populated by dispatching
+```
 
-**Paper**:
-A document the person takes into an application. Paper is the feature. A paper has a **type**: CV, cover letter, or Proof. The screen is My Paper: Drive, then Docs.
-_Avoid_: Papers (as a product name, rail label, or heading), My Papers, CV (as a screen), letter (as a second feature), write-up (retired; Proof replaced it)
+## Features in this tree
 
-**Drive**:
-The list mode of My Paper: built papers, uploaded files, and the create doors. Type is chosen here, before a paper opens.
-_Avoid_: library (as a screen), Documents, Drive as a rail label or heading
+Five features plus Coach. Each has one URL, one AppState field, one action prefix. Search stores `openings`. Application stays at `/applications`.
 
-**Docs**:
-The opened mode of My Paper: one paper and its chrome. Application and Coach open this. Not the documentation tree.
-_Avoid_: editor, CV screen, Docs as the `docs/` folder
+| Noun | URL | Domain | Screen | AppState | Actions |
+|---|---|---|---|---|---|
+| Profile | `/profile` | `src/lib/profile/` | `routes/_signed-in/profile.tsx`, `components/profile/` | `profile` | `profile.*`, `document.*` |
+| Paper | `/paper`, `/paper?id=` | `src/lib/paper/` | `routes/_signed-in/paper/`, `components/paper/` | `paper`, `uploads` | `paper.*` |
+| Pitch | `/pitch` | `src/lib/pitch/` | `routes/_signed-in/pitch.tsx` | `pitch` | `pitch.*` |
+| Search | `/search` | `src/lib/search/` | `routes/_signed-in/search/` | `openings` | `opening.*` |
+| Application | `/applications` | `src/lib/applications/` | `routes/_signed-in/applications/` | `applications` | `application.*` |
+| Coach | `/coach` + dock | `src/lib/coach/` | `routes/_signed-in/coach.tsx`, `components/coach/` | conversation, not AppState | none |
 
-**CV / Resume**:
-One structured paper type; the word follows the template's audience. Vietnamese employer, internship, academic, service, and one-page templates say CV. Abroad/ATS, technical, and design templates say Resume. Changing the template changes the word.
-_Avoid_: Resume (on a Vietnam-facing paper), CV and Resume (as two separate types)
+Pitch and Search have no `components/` folder. Do not add empty ones. Paper locks (types, Drive, Proof URLs) live in [`docs/paper.md`](docs/paper.md) only.
 
-**Proof**:
-A paper type for work that is not yet a story: a running dump of notes, photos, and links about a project, experiment, or shift. Arrange then Publish puts it on a designed share page; published Proofs collect on one personal link. Its content can be reused on a CV. Never required, never auto-inserted.
-_Avoid_: brag document, journal, wins, evidence locker, write-up
+`src/lib/catalogue/` is shared role archetypes. No Catalogue screen. Ids: `src/lib/ids.ts`.
 
-**Pitch**:
-How the person describes themselves: bio, self-introduction, interview answers. Lines to reuse, not a document they export.
-_Avoid_: paper (Pitch is not a type of Paper)
+Also in the tree: Discover (`/`), onboarding, sign-in / sign-up, Help, Settings (plan and billing), `src/routes/dev/` (chat scenarios, traces).
 
-**Search**:
-Where the person looks at openings ranked against the Profile.
-_Avoid_: jobs board, career map (as the screen)
+## Coach runtime (eve)
 
-**Opening**:
-A real posting this person found, pasted, or saved. It belongs to them.
-_Avoid_: catalogue role, PathNode, job (as the stored thing)
+eve is the process that runs the Coach. It is not a product noun and not a second app the person sees. `/coach` and the dock talk to `/eve/*`; Nitro proxies that to this process.
 
-**Catalogue role**:
-A shared role archetype. The same list for everybody, used to talk about fit. Not an Opening.
-_Avoid_: Opening, job posting
+```
+agent/
+  agent.ts                 defineAgent: model and session limits
+  instructions.md          who the Coach is
+  channels/eve.ts          who may reach it
+  tools/apply_action.ts    validates; the tab applies
+```
 
-**Application**:
-The record of applying to an opening. Status is a verb the person takes.
-_Avoid_: Opening (an application outlives the posting)
+`npm run dev` starts Vite and eve together. Production is a private Railway service (`openpath-agent`). Without `OPENROUTER_API_KEY`, Coach replies 503. The rest of the app still runs. See [`docs/hosting.md`](docs/hosting.md).
 
-### Built, uploaded, vault
+## What is true now
 
-**Built paper**:
-A CV-type, cover-letter-type, or Proof paper written inside OpenPath, with content the Coach can edit.
-_Avoid_: vault document, uploaded file (as if it were the same object)
+- Node 24 (`.nvmrc`). Node 22 cannot strip TypeScript types.
+- Auth is username + password. No email verify, no social, no password recovery.
+- An account starts empty. No seeded persona. Onboarding writes the profile.
+- Query layer is `pg` and numbered SQL in `src/lib/db/migrations/`. Not Drizzle.
+- No n8n. Jobs: `scripts/cron-once.mjs` and `GET /api/cron`.
+- No `@ai-sdk/react`. Coach UI talks to eve.
+- Host is Railway, not Vercel. `@vercel/og` is only `/p/:slug/og`.
 
-**Uploaded file**:
-A CV or cover-letter file the person brought with them, kept as a row in My Paper. Preview and send it; you cannot type in it, and OpenPath does not parse it until extract is real. Starting a built CV from an upload does not turn the file into a paper. It does not count as a built CV.
-_Avoid_: built paper, vault document
+## Docs
 
-**Vault document**:
-A pointer on the Profile to something kept elsewhere: LinkedIn, GitHub, portfolio. Evidence for the Coach, not a paper. CV and cover-letter files are not vault documents; they live in My Paper.
-_Avoid_: Paper, Resume, the CV (as if there were only one)
-
-### What this product is not
-
-**Plan**:
-Not a todo list. “Plan and billing” is the subscription screen.
-_Avoid_: plan (as tasks), todos, weekly plan (as a sixth feature)
+| File | Job |
+|---|---|
+| [`README.md`](README.md) | Run the app |
+| [`docs/README.md`](docs/README.md) | Index |
+| [`docs/map.md`](docs/map.md) | Where a file goes |
+| [`docs/stack.md`](docs/stack.md) | Tech lookup |
+| [`docs/database.md`](docs/database.md) | Migrations |
+| [`docs/hosting.md`](docs/hosting.md) | Railway |
+| [`docs/paper.md`](docs/paper.md) | Paper feature only |
+| [`DESIGN.md`](DESIGN.md) | Visual tokens ([design.md](https://github.com/google-labs-code/design.md) format) |
+| [`PRODUCT.md`](PRODUCT.md) | Who it is for |

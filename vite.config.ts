@@ -23,13 +23,12 @@ export default defineConfig({
     tsconfigPaths(),
     tailwindcss(),
     tanstackStart({
-      srcDirectory: ".",
+      srcDirectory: "src",
       router: {
-        routesDirectory: "app",
+        routesDirectory: "routes",
         generatedRouteTree: "./routeTree.gen.ts",
         quoteStyle: "double",
         semicolons: true,
-        routeFileIgnorePattern: "\\(app\\)",
       },
     }),
     viteReact(),

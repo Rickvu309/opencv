@@ -1,24 +1,32 @@
-# My Paper — locked decisions
+# My Paper: locked decisions
 
-From the batch grill on 15 Aug 2026, plus the redesign grill the same day. Product decisions only: IA, empty-state jobs, copy, what a paper *is*. How My Paper looks and moves lives in [`.scratch/paper-redesign/spec.md`](../.scratch/paper-redesign/spec.md) — that file has its own grilling section.
+Product locks for `/paper`. The codebase map is [`CONTEXT.md`](../CONTEXT.md). Do not start a third Paper grill. Remaining work is code.
 
-The AskQuestion picks were not stored as chat text. This is the locked set. Nouns live in [`CONTEXT.md`](../CONTEXT.md).
+## Lookup (current truth)
 
-You closed further product grilling on 16 Aug 2026: record the answers here and in the spec; do not start a third Paper grill. Remaining work is code ([Complete My Paper](../.scratch/paper-complete/map.md)).
+Round 15 supersedes earlier rows where they conflict.
 
-## What My Paper is
+| Topic | Lock |
+|---|---|
+| Screen | **My Paper** (`/paper`). Not Documents, Papers, or CV. |
+| IA | Drive (list) then Docs (opened paper). Paper-only. |
+| Objects | Built CV / Resume (word follows template), Cover letter, Proof, Uploaded files. |
+| North star | Deadline night: a CV they can send. Proof is never required. |
+| Drive | Flat rows: name, type word, updated. Optional type filter. No folders, no A4 grid. |
+| Write a CV | On the A4. Blocks live on the page. Not a form that paints a preview. |
+| Upload | Starting point. File stays Uploaded. A built CV is a sibling. No parse yet. |
+| Proof | A space. Band: Arrange then Publish. Never dump or Prepare on screen. |
+| Share | `/p/:slug` is one Proof. `/u/:handle` is the personal link (span record). |
+| Applications / Coach | Windows onto the same paper. Open means `/paper?id=`. Nobody types on a card or in a bubble. |
+| Copy | Sentence case, second person, no exclamation marks. |
 
-The screen is **My Paper** (`/paper`). A Drive of things you might send, then a Docs chrome when one is open.
-
-The list holds built **CV** / **Resume** (the word follows the template), **Cover letter**, **Proof**, and **Uploaded** CV and cover-letter files. LinkedIn, GitHub, and portfolio stay on Profile. Profile drops its CV and cover-letter slots.
-
-North star: **deadline night, a CV they can send.** Proof is never required. An uploaded file does not count as ready.
+Empty list: "Start with the CV." Gallery: "Where is this CV going?" Letter: "Who is this letter for?" Empty Proof: "Log what you're making."
 
 ## The grill, in order
 
-Each row is one decision. **You chose** is the answer that locked.
+Historical record. The lookup above is current truth. Each row is one decision. **You chose** is the answer that locked.
 
-### Round 1 — what this work is
+### Round 1: what this work is
 
 | Asked | You chose |
 | --- | --- |
@@ -29,7 +37,7 @@ Each row is one decision. **You chose** is the answer that locked.
 | Primary job in a short, anxious session? | Produce a sendable document. The library is how you pick; opening one means writing. |
 | House pattern for Pitch, Search, Application? | Empties and voice can travel later. Drive-then-Docs IA does not. |
 
-### Round 2 — bar and objects
+### Round 2: bar and objects
 
 | Asked | You chose |
 | --- | --- |
@@ -40,7 +48,7 @@ Each row is one decision. **You chose** is the answer that locked.
 | Do the old 8-line ADRs bind? | Evidence of prior intent only. Contradict them and rewrite after we agree. |
 | CV or Resume? | Hybrid. Not one word for every paper. |
 
-### Round 3 — source of truth
+### Round 3: source of truth
 
 | Asked | You chose |
 | --- | --- |
@@ -48,10 +56,10 @@ Each row is one decision. **You chose** is the answer that locked.
 | Hybrid CV / Resume rule? | Follows the template’s audience (later mapped across eight templates). Never a screen named CV or Resume. |
 | Where do they land on deadline night? | Always the list first (Drive), then different chrome when a paper is open (Docs). Not editor-first. Not a Profile-style split. |
 | Vault file vs built paper? | They share a Drive list. Then refined: uploads sit in My Paper; LinkedIn / GitHub / portfolio stay on Profile. |
-| What Applications and Coach show? | Windows onto the same paper. Open always means `/paper?id=`. You also wanted to edit from those surfaces — clarified next. |
+| What Applications and Coach show? | Windows onto the same paper. Open always means `/paper?id=`. You also wanted to edit from those surfaces (clarified next). |
 | Zero papers, deadline tonight? | One next step: build the CV you’ll send tonight. Letter and Proof are not equal doors. |
 
-### Round 4 — vault, doors, writing surface
+### Round 4: vault, doors, writing surface
 
 | Asked | You chose |
 | --- | --- |
@@ -61,18 +69,18 @@ Each row is one decision. **You chose** is the answer that locked.
 | How is the Drive organized? | Flat rows: name · type word · updated. Optional type filter. No folders, no A4 poster grid. Job grouping lives on Applications. |
 | Opened writing surface? | CV: structured fields + live A4. **Later:** you edit the A4 (round 15). |
 
-### Round 5 — list contents and chrome
+### Round 5: list contents and chrome
 
 | Asked | You chose |
 | --- | --- |
 | What sits in the list? | Built CV / letter / Proof, plus uploaded CV and cover-letter files. Onboarding drop lands here, not on Profile. |
 | Click an upload? | Preview / download. You cannot type in it. OpenPath does not parse it. **Later:** write doors open a built CV (round 15). The file stays preview. |
-| Opened-paper header? | Back, editable title, type label, Export. No CV \| Letter tabs. No in-editor switcher — the list is how you switch. |
+| Opened-paper header? | Back, editable title, type label, Export. No CV \| Letter tabs. No in-editor switcher. The list is how you switch. |
 | Where do create doors live? | Empty list: one button, build tonight’s CV. Populated: New = CV, Cover letter, Proof, Upload. “For this opening” lives only on Application. |
 | Profile CV / letter slots? | Drop them. “Build a CV” on Profile goes away. |
 | Coach as a Paper door? | After a change, a live thumbnail of that paper (any type) with Open. On My Paper, Ask Coach is a quiet offer, not the empty hero. |
 
-### Round 6 — ready, score, name
+### Round 6: ready, score, name
 
 | Asked | You chose |
 | --- | --- |
@@ -82,7 +90,7 @@ Each row is one decision. **You chose** is the answer that locked.
 | Default template / word? | They choose. Creating a CV opens a gallery, not a silent Vietnamese-standard default. |
 | Completeness, Export, delete? | Completeness % only on an open CV and the Coach thumbnail, never on rows. Export is PDF via the print dialog. Duplicate / delete on the row menu; delete also in open chrome. |
 
-### Round 7 — voice and write-up
+### Round 7: voice and write-up
 
 | Asked | You chose |
 | --- | --- |
@@ -92,7 +100,7 @@ Each row is one decision. **You chose** is the answer that locked.
 | Does Drive+Docs travel? | IA stays Paper-only. Voice and empty-state jobs can travel. |
 | Built row vs upload row? | Type word (CV / Resume / Cover letter / Proof) vs **Uploaded**. |
 
-### Round 8 — gallery strategy and the new noun
+### Round 8: gallery strategy and the new noun
 
 | Asked | You chose |
 | --- | --- |
@@ -100,7 +108,7 @@ Each row is one decision. **You chose** is the answer that locked.
 | What is the dump object? | A running log that can become a sendable / shareable thing. Not a private-only brag doc. Not the old write-up letter. |
 | Working name? | You rejected Project / notes / experiments as the signature word. |
 
-### Round 9 — eight situations and Proof
+### Round 9: eight situations and Proof
 
 | Asked | You chose |
 | --- | --- |
@@ -109,7 +117,7 @@ Each row is one decision. **You chose** is the answer that locked.
 | What does Prepare produce? | A designed shareable Proof page (not the black-on-white CV). The dump stays. **Later:** band says **Arrange** then **Publish**. Never Prepare on screen (round 15). |
 | Opened dump chrome? | Title, optional role / dates / link, running notes newest first. No STAR form. |
 
-### Round 10 — gallery and first Proof beat
+### Round 10: gallery and first Proof beat
 
 | Asked | You chose |
 | --- | --- |
@@ -117,7 +125,7 @@ Each row is one decision. **You chose** is the answer that locked.
 | What spreads? | A designed Proof page they send as a link. Not a social network. Photos allowed. |
 | Empty Proof first beat? | Teach what this is, then dump. Example chips, then work with the Coach. |
 
-### Round 11 — site and no-project
+### Round 11: site and no-project
 
 | Asked | You chose |
 | --- | --- |
@@ -125,7 +133,7 @@ Each row is one decision. **You chose** is the answer that locked.
 | They have never done a “side project”? | Empty Proof teaches what already counts: class project, shift, assignment, something that failed. Chip: “I don’t have one yet” suggests from the profile. Never required. Never shame. |
 | Empty opened letter? | Situation first (you asked for letter templates), then the page. |
 
-### Round 12 — letters and the personal link
+### Round 12: letters and the personal link
 
 | Asked | You chose |
 | --- | --- |
@@ -133,21 +141,21 @@ Each row is one decision. **You chose** is the answer that locked.
 | GitHub-like graph on the personal link? | A calendar of days they logged a Proof. **Later:** a **span record** of published work dates, not app days (round 15). No streak, no score, no “keep it green.” |
 | CV vs Resume across eight templates? | Vietnamese employer, internship, academic, service, one page → **CV**. Abroad / ATS, technical, design → **Resume**. |
 
-### Round 13 — four jobs
+### Round 13: four jobs
 
 | Asked | You chose |
 | --- | --- |
 | Sound smart, be funny, look hot, look rich? | Jobs of the Proof and its site only. Never the CV. Smart = specific and defensible. Funny = human voice on a Proof. Hot = considered photos and type. Rich = quiet taste, not luxury cosplay. |
-| Letter situations (first pass)? | Posted job, internship, speculative, scholarship — then you dropped the matching look. |
+| Letter situations (first pass)? | Posted job, internship, speculative, scholarship. Then you dropped the matching look. |
 
-### Round 14 — Proof onto a CV
+### Round 14: Proof onto a CV
 
 | Asked | You chose |
 | --- | --- |
 | How does a Proof get onto a CV? | Arrange then Publish puts the page on the web. “Add to CV” is a separate quiet action. Never auto-inserted. |
 | Letter situations (final)? | Posted job, internship, speculative, scholarship. Then the black-on-white page. No letter skins. |
 
-### Round 15 — redesign (same day)
+### Round 15: redesign (same day)
 
 Visual locks are in the spec grilling section. Product locks that **supersede** earlier rows:
 
@@ -188,7 +196,7 @@ Design tile carries the honest warning: job portals may not parse it. Accent and
 
 **Profile reweight** after CV (18) and cover letter (10) leave the vault: facts 60 (context 18, experience 22, education 12, courses 8) + portfolio 18, LinkedIn 12, GitHub 10 = 100.
 
-**Share:** `/p/[slug]` is one Proof. `/u/[handle]` is the personal link. Handle is name plus a short id, editable in Settings.
+**Share:** `/p/:slug` is one Proof. `/u/:handle` is the personal link. Handle is name plus a short id, editable in Settings.
 
 ## What this is not
 

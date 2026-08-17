@@ -6,7 +6,7 @@ import {
   actions,
   isDestructiveAction,
   lookupAction,
-} from "../../lib/actions/registry";
+} from "../../src/lib/actions/registry";
 
 /**
  * The Coach's hands.
