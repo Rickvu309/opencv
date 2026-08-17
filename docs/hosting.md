@@ -6,13 +6,13 @@ Railway, one project, three services. A commit pushed to `main` is the deploy; t
 
 | Service | Start | Public |
 |---|---|---|
-| `openpath` (web) | `npm start` — applies pending migrations, then serves | yes, https://openpath.up.railway.app |
-| `openpath-agent` (worker) | `npm run worker` — drains the `jobs` queue | no |
+| `web` | `npm start` — applies pending migrations, then serves | yes, the app URL |
+| `worker` | `npm run worker` — drains the `jobs` queue | no |
 | Postgres | managed by Railway | no (private networking) |
 
-Both app services build from the same repo and image (`npm run build`, which typechecks first). They share `scripts/railway-start.mjs`: if `RAILWAY_SERVICE_NAME` contains `worker` or `agent`, it runs the worker, otherwise the web process.
+Both app services build from the same repo and image (`npm run build`, which typechecks first). They differ only in start command, set per service in Railway. If you use a single Railway start command, `scripts/railway-start.mjs` runs the worker when `RAILWAY_SERVICE_NAME` contains `worker`, otherwise it runs the web process.
 
-Production Postgres still holds the previous app's `openpath` schema (`schema_migrations` keyed by `id`). Set `DB_SCHEMA=openpath_app` on web and worker so the new migrations land in a fresh schema.
+This project's Postgres already has an older `openpath` schema. Set `DB_SCHEMA=openpath_app` on `web` and `worker` so new migrations do not collide with it.
 
 ## Environment
 
