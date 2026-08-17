@@ -1,6 +1,6 @@
 # OpenPath
 
-An AI career coach for Vietnamese students and new graduates. English UI. Live at [openpath.up.railway.app](https://openpath.up.railway.app).
+An AI career coach for Vietnamese students and new graduates. English UI. Live at [openpath.up.railway.app](https://openpath.up.railway.app). A push to `main` is the deploy ([`docs/hosting.md`](docs/hosting.md)).
 
 This repo is TanStack Start, not Next.js. How the tree works: [`CONTEXT.md`](CONTEXT.md).
 

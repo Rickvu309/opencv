@@ -112,7 +112,7 @@ export function migrateStateShape<T extends Record<string, unknown>>(
     profile: dropMovedDocuments(raw.profile),
     paper,
     uploads,
-  } as T & { paper: Paper[]; uploads: PaperUpload[] };
+  } as unknown as T & { paper: Paper[]; uploads: PaperUpload[] };
 }
 
 function asCvPaper(value: unknown): CvPaper | null {

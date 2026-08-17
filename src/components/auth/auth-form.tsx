@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useForm } from "@tanstack/react-form";
 import { Link } from "@/lib/nav";
+import { CoachBox } from "@/components/brand/coach-box";
 import { SkipLink } from "@/components/layout/skip-link";
 
 import { Button } from "@/components/ui/button";

@@ -17,6 +17,16 @@
     },
     "types": ["vite/client"]
   },
-  "include": ["**/*.ts", "**/*.tsx", "**/*.mts"],
-  "exclude": ["node_modules", ".output", ".eve"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "agent/**/*.ts", "vite.config.ts"],
+  "exclude": [
+    "node_modules",
+    ".output",
+    ".eve",
+    ".scratch",
+    "app",
+    "components",
+    "lib",
+    "src/**/*.test.ts",
+    "agent/**/*.test.ts"
+  ]
 }

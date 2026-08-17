@@ -468,9 +468,9 @@ export function CoachMessages({
   const { t, m } = useT();
   const last = messages[messages.length - 1];
   const reasoningLive =
-    last?.role === "assistant" && Boolean(last.reasoning?.streaming);
+    last?.role === "coach" && Boolean(last.reasoning?.streaming);
   const composing =
-    last?.role === "assistant" && last.content.trim().length > 0;
+    last?.role === "coach" && last.content.trim().length > 0;
   const rootRef = React.useRef<HTMLDivElement>(null);
   const bottomRef = React.useRef<HTMLDivElement>(null);
   const settled = React.useRef(false);

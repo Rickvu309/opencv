@@ -9,7 +9,7 @@ The codebase map is [`CONTEXT.md`](../CONTEXT.md).
 | Look up the tech | Reference | [`stack.md`](stack.md) |
 | Know where a file goes, or how a write lands | Explanation | [`map.md`](map.md) |
 | Apply or write a migration | How-to | [`database.md`](database.md) |
-| See how Railway runs the app | How-to | [`hosting.md`](hosting.md) |
+| Ship an update, or see how Railway runs | How-to | [`hosting.md`](hosting.md) |
 | Check a locked Paper decision | Reference | [`paper.md`](paper.md) (Paper feature only) |
 | Read a past engineering decision | Explanation | [`adr/`](adr/) |
 

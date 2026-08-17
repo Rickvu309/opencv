@@ -19,6 +19,7 @@ The technologies this repo uses. A new feature picks from this table. How a writ
 | Models | Vercel AI SDK (`ai`) | Gateway in `src/lib/ai/`. OpenRouter behind it. |
 | Coach runtime | eve | Vercel agent framework. Process in `agent/`. |
 | Hosting | Railway | Web app, eve process, Postgres. |
+| Version control | GitHub | Push `main` deploys. How: [`hosting.md`](hosting.md). |
 
 ## Not in the stack
 
