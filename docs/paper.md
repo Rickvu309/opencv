@@ -1,5 +1,7 @@
 # My Paper: locked decisions
 
+> Status: concept reference. This grill captured the product thinking behind Paper and Proof; the rebuild specs are [features/paper.md](features/paper.md) and [features/proof.md](features/proof.md), and where they decide otherwise (Proof is its own domain per [ADR 0005](adr/0005-proof-own-domain.md); opened papers live at `/paper/$paperId`), the specs win.
+
 Product locks for `/paper`. Do not start a third Paper grill. The app is being rebuilt from these locks.
 
 ## Lookup (current truth)
