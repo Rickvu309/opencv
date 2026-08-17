@@ -84,5 +84,31 @@ export async function coachTurn(opts: {
       });
     },
   });
-  return result.toTextStreamResponse();
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(controller) {
+      const send = (payload: unknown) => {
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(payload)}\n\n`));
+      };
+      try {
+        for await (const part of result.fullStream) {
+          if (part.type === "text-delta") {
+            send({ type: "text", text: part.text });
+          } else if (part.type === "tool-result" && part.toolName === "app_open") {
+            send({ type: "open", result: part.output });
+          }
+        }
+        send({ type: "done" });
+        controller.close();
+      } catch (error) {
+        controller.error(error);
+      }
+    },
+  });
+  return new Response(stream, {
+    headers: {
+      "content-type": "text/event-stream; charset=utf-8",
+      "cache-control": "no-cache",
+    },
+  });
 }

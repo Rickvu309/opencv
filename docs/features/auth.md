@@ -4,6 +4,8 @@
 
 **Job:** each user's work is theirs, saved to the server, and there when they return — on any device.
 
+**Layout:** Narrow form at `/sign-in` and `/sign-up` — no rail, no dock. Heading, one sentence, the fields, one primary, a text link to the other mode ([layout.md](../layout.md)).
+
 ## Concept
 
 Email and password, a session cookie, and a gate in front of the signed-in area. No email verification, password reset, social login, or MFA in v1; the module isolates auth so each can be added later without touching features.

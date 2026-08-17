@@ -4,13 +4,16 @@
 
 **Job:** the single store of what is true about the user. A fact is captured once and feeds every document, pitch, and fit read; nothing is ever re-entered.
 
+**Layout:** Sectioned editor at `/profile` — identity first, completeness as a fact with its basis inside the first section, never a hero metric. Primary: fill the emptiest section, then the door to the first CV. The dock must not cover it ([layout.md](../layout.md)).
+
 ## Concept
 
 Facts (education, experience, skills as context rows, links) and context (target role or "not sure yet", location, time available). Not a daily destination — the Coach fills it from conversation, onboarding seeds it, other features read it. The user can see, correct, and remove everything, including anything the Coach recorded.
 
 ## Screens
 
-- `/profile` — sections with inline editing: identity and context, experience, education, facts, links (LinkedIn, GitHub, portfolio). A completeness meter that reflects only what the user actually provided.
+- Reached from the account control, not the core rail ([flows.md](../flows.md) edge-case nav).
+- `/profile` — sections with inline editing: identity and context, experience, education, facts, links (LinkedIn, GitHub, portfolio). A completeness meter that reflects only what the user actually provided. The Coach dock travels here.
 
 ## Data
 

@@ -4,13 +4,16 @@
 
 **Job:** the words the user says and posts about themselves — an online bio, a self-introduction, and prepared interview answers — ready before they freeze in the moment.
 
+**Layout:** Sectioned editor at `/pitch` — primary is the build door while unbuilt; per-section saves are quiet. The dock must not cover it ([layout.md](../layout.md)).
+
 ## Concept
 
 Where Paper produces documents the user sends, Pitch produces language the user speaks and posts. Kept separate so interview and self-presentation help — the thing this audience freezes on most — has its own space. Three kinds: one bio (for LinkedIn and profiles), one self-introduction ("tell me about yourself"), and many answers, each carrying the question it answers.
 
 ## Screens
 
-- `/pitch` — bio and intro as two cards, then the answer bank as a list by question. Everything editable in place.
+- Reached from the Prepare group in the rail, next to Paper ([flows.md](../flows.md)).
+- `/pitch` — bio and intro as two cards, then the answer bank as a list by question. Everything editable in place. The Coach dock travels here.
 
 ## Data
 

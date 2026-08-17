@@ -4,6 +4,8 @@
 
 **Job:** give a user's real work an audience they control: a published Proof page anyone can open, a personal page that quietly proves a span of work, and — later — invitations and vouches on the same rails.
 
+**Layout:** Public canvas at `/p/$slug` and `/u/$handle` — the work is the page; OpenPath chrome is at most a quiet footer. No rail, no dock, no bell ([layout.md](../layout.md)).
+
 ## Concept
 
 Two public surfaces now, one growth mechanism underneath.

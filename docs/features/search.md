@@ -4,13 +4,16 @@
 
 **Job:** a short set of real openings ranked against the user's profile, each with an honest read of what is met and what is missing — so the gap reads as a to-do, not a verdict.
 
+**Layout:** Drive list at `/search`; an opening's detail is in-page state in the same column, not a URL. Primary: the query; on a detail, Save to Apply. The dock must not cover either ([layout.md](../layout.md)).
+
 ## Concept
 
 Focus and honesty over volume. Openings arrive two ways: the user pastes a posting (text or link), or ingestion jobs bring in openings matched to the profile (worker-fed, source adapters added over time). Every opening gets requirement lines extracted and a fit read computed against the profile. Fit is never a bare number: it is met-versus-total with the missing requirements named, and a requirement that no profile could evidence is excluded rather than counted as failed.
 
 ## Screens
 
-- `/search` — the ranked list, best fit first, with text search and simple filters (location, kind). Each row: title, company, fit as "4 of 6". Opening detail: the requirement lines, met and missing marked, the gap named, and two actions — save to Applications, or ask the Coach how to close the gap.
+- Reached from Opportunities in the rail, next to Apply ([flows.md](../flows.md)).
+- `/search` — the ranked list, best fit first, with text search and simple filters (location, kind). Each row: title, company, fit as "4 of 6". Opening detail: the requirement lines, met and missing marked, the gap named, and two actions — save to Apply, or ask the Coach how to close the gap.
 
 ## Data
 
@@ -36,7 +39,7 @@ When the user sends a posting or link, `opening.add` with the text as sent — n
 
 ## Empty states
 
-- Profile too thin to rank: "Fit needs something to read. Add a fact or set a goal first." — with both doors.
+- Profile too thin to rank: "Fit needs something to read. Add a fact or set a goal first." One door: open Profile (both live there).
 - No openings: "Paste a posting you're looking at, and you'll see how you match." Primary action: paste one.
 
 ## Out of scope

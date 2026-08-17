@@ -20,7 +20,8 @@ Every feature is explicitly on one of two tracks, and the tracks are built diffe
 | Share and public pages | Signature | substrate for sharing, invitations, social mechanics |
 | Pitch | Commodity | interview-prep answer bank |
 | Search | Commodity | Teal / Huntr ranked openings list |
-| Application | Commodity | Teal / Huntr status tracker |
+| Application (place: Apply) | Commodity | Teal / Huntr status tracker |
+| Navigation / signed-in shell | Commodity | ChatGPT threads + Linear groups |
 | Onboarding | Commodity | goal-first wizard, activation checklist |
 | Landing, auth, settings, notifications | Commodity | standard SaaS patterns |
 
@@ -30,7 +31,7 @@ The three signature mechanisms:
 2. **Proof, the evidence engine.** Not a document type. A user builds up evidence of work and skills over time with AI support: log work as it happens, let the Coach interview the specifics out (what it was, what they did, what came of it), arrange the log into a story, publish it as a designed page, connect it outward (a CV line, the personal page). Deep design: [mechanisms/proof.md](mechanisms/proof.md); spec: [features/proof.md](features/proof.md).
 3. **Public identity and sharing.** Handle, personal page, per-Proof share pages, and a token-based share model whose capability field reserves room for vouches and invitations. Deep design: [mechanisms/share.md](mechanisms/share.md); spec: [features/share.md](features/share.md).
 
-Proof is its own feature module and domain, beside Paper, not inside it ([ADR 0005](adr/0005-proof-own-domain.md)). Paper stays a clean clone of the resume-builder category; Proof owns the evidence log, publishing, and the sharing graph.
+Proof is its own feature module and domain, beside Paper, not inside it ([ADR 0005](adr/0005-proof-own-domain.md)). In the rail it sits under Paper; that is IA only. Paper stays a clean clone of the resume-builder category; Proof owns the evidence log, publishing, and the sharing graph. Places, groups, and the four navigation channels: [flows.md](flows.md), [features/navigation.md](features/navigation.md).
 
 ## System
 
@@ -92,7 +93,7 @@ Feature-first and screaming: the tree names the product, not the framework.
 src/
   routes/                    thin TanStack file routes; each delegates to a feature screen
     index.tsx  sign-in.tsx  sign-up.tsx  onboarding.tsx
-    _app/                    signed-in shell: sidebar, coach dock, notification bell
+    _app/                    signed-in shell: the four layers of docs/layout.md (main, chrome = rail + bell, dock, overlays)
       coach.tsx  profile.tsx  paper/  proof/  pitch.tsx  search.tsx  applications.tsx  settings.tsx
     _public/                 p.$slug.tsx (published Proof), u.$handle.tsx (personal page)
     api/                     coach stream, files, og images
@@ -163,6 +164,8 @@ Documented as later, not built in v1: monetization, language switcher (English U
 | [data.md](data.md) | Schema, migrations, command log |
 | [ai.md](ai.md) | Gateway, agent, guardrails, traces, evals |
 | [flows.md](flows.md) | Information architecture and core flows |
+| [layout.md](layout.md) | Screen regions, layout types, empty states |
+| [copy.md](copy.md) | Voice, mechanics, lexicon, per-surface copy |
 | [design.md](design.md) | Tokens, voice, accessibility |
 | [hosting.md](hosting.md) | Railway services, env, deploy |
 | [stack.md](stack.md) | Tech lookup |

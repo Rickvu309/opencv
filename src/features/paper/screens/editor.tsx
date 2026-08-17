@@ -4,6 +4,7 @@ import { getPaperFn } from "@/features/paper/queries";
 import { runCommand } from "@/ui/run-command";
 import { Input } from "@/ui/input";
 import { Button } from "@/ui/button";
+import { EmptyState } from "@/ui/empty-state";
 import type { PaperContent } from "@/features/paper/model";
 
 export function PaperEditorScreen({ paperId }: { paperId: string }) {
@@ -11,7 +12,19 @@ export function PaperEditorScreen({ paperId }: { paperId: string }) {
     queryKey: ["paper", paperId],
     queryFn: () => getPaperFn({ data: { id: paperId } }),
   });
-  if (!q.data) return <p>Loading this paper.</p>;
+  if (q.isPending) return <p>Loading this paper.</p>;
+  if (!q.data) {
+    return (
+      <EmptyState
+        title="That paper is not here. Open Paper to see your list."
+        action={
+          <Link to="/paper" className="text-accent underline">
+            Back to Paper
+          </Link>
+        }
+      />
+    );
+  }
   const paper = q.data;
   const content = paper.content as PaperContent;
 

@@ -49,7 +49,7 @@ Features: coach, profile, paper, proof, pitch, search, application, onboarding, 
 
 ## Copy and voice
 
-Mentor voice: second person, sentence case, contractions fine, **no exclamation marks**. Encouraging but never flattering; every claim shows its basis; end screens and errors with one next step. English UI for now. Type words users see: CV, Resume, Cover letter, Proof. Full rules: [docs/design.md](docs/design.md).
+Mentor voice: second person, sentence case, contractions fine, **no exclamation marks**. Encouraging but never flattering; every claim shows its basis; end screens and errors with one next step. English UI for now. Type words users see: CV, Resume, Cover letter, Proof, Apply. Full rules: [docs/copy.md](docs/copy.md); tokens: [docs/design.md](docs/design.md).
 
 ## Commands you will run
 

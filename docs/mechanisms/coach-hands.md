@@ -47,6 +47,8 @@ The persona and turn loop are specified in [ai.md](../ai.md). The mechanism's co
 
 Every feature that sets `agent: true` on a command is inside this mechanism — see the command tables in each [feature spec](../features/). The rule for new features: expose commands, not custom agent code. If the Coach needs a capability, the user gets the button too.
 
+Navigation is a command too. Chat is a channel that can reach every core place ([flows.md](../flows.md) C2): a card the user taps, or `app.open` when they ask to go somewhere. Typed destinations only, logged, `inverse: null`, never unasked. The UI has the same links, so the agent cannot go somewhere the user cannot. Details: [features/navigation.md](../features/navigation.md).
+
 ## Growth roadmap
 
 - **v1** — single commands per turn, confirmations, undo, artifact cards.

@@ -4,13 +4,16 @@
 
 **Job:** deadline night — a user with an application due tonight leaves with a CV they can send.
 
+**Layout:** Drive list at `/paper` (primary: Start a CV), Opened document at `/paper/$paperId` (primary: Export). The dock must not cover either ([layout.md](../layout.md)).
+
 ## Concept
 
-A flat list of documents (Drive), and an opened document you write on directly (Docs). Two kinds: CV/Resume and cover letter. You edit the A4 itself — blocks live on the page; there is no form that paints a preview. Uploads are a starting point: the file stays an uploaded file (preview and download only), and a built CV is created as a sibling; no parsing.
+A flat list of documents (Drive), and an opened document you write on directly (Docs). Two kinds: CV/Resume and cover letter. In the rail, Paper sits under **Prepare** and also holds **Proof** as a child place (IA only; Proof stays its own domain — [ADR 0005](../adr/0005-proof-own-domain.md), [proof.md](proof.md)). You edit the A4 itself — blocks live on the page; there is no form that paints a preview. Uploads are a starting point: the file stays an uploaded file (preview and download only), and a built CV is created as a sibling; no parsing.
 
 ## Screens
 
-- `/paper` — flat rows: name, type word (CV / Resume / Cover letter / Uploaded), updated. Optional type filter. No folders, no thumbnail grid. Row menu: open, duplicate, delete; "Start a CV from this" on uploaded rows.
+- Reached from the Prepare group in the rail, from a Coach card, or from Apply when tailoring a copy ([flows.md](../flows.md)).
+- `/paper` — flat rows: name, type word (CV / Resume / Cover letter / Uploaded), updated. Optional type filter. Proof is a child of this room, not a row in this list. No folders, no thumbnail grid. Row menu: open, duplicate, delete; "Start a CV from this" on uploaded rows. Back from an opened document returns here, not to Chat.
 - `/paper/$paperId` — the opened document: back, editable title, type label, export. The page is the editor. CV: blocks (name, contact, experience, education, skills) edited in place, ghost starters when empty. Letter: situation chooser first (posted job, internship, speculative, scholarship — seeds ghost placeholders, never real content), then the black-on-white page, paragraph by paragraph.
 - Template gallery on CV create: eight situations shown at once (Vietnamese employer, internship/first role, academic/scholarship, part-time/service, one page, abroad/ATS, technical, design/portfolio). The word on the document (CV or Resume) follows the template's audience. Format bar owns accent and density.
 - Export is PDF via the print dialog. Documents are strictly black on white.

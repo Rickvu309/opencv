@@ -4,6 +4,8 @@
 
 **Job:** turn a skeptical, anxious visitor — "is this another career-quiz app?" — into someone who starts, or at least leaves an email.
 
+**Layout:** Public canvas at `/` — no signed-in chrome. The promise, then two doors; primary is start now ([layout.md](../layout.md)).
+
 ## Concept
 
 Lead with the message, not a feature list. The promise: the Coach does real career work with you — builds your CV, finds openings that fit, tells you honestly what is missing — and you stay in control of every word. Who it is for is named plainly: students and new graduates. The voice sells the way the product talks: evidence over hype, no invented claims, no testimonials we do not have, no statistics nobody measured.

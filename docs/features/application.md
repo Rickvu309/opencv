@@ -4,13 +4,20 @@
 
 **Job:** turn a decision to pursue an opening into a managed process with a clear state and a clear next action, through to an outcome.
 
+**Layout:** Drive list at `/applications`, grouped by status; the row is the unit and status is a control on it, not a second page. No global primary. The dock must not cover row actions ([layout.md](../layout.md)).
+
 ## Concept
+
+The place is **Apply** (verb). The feature module stays `application`; the route stays `/applications` until a later rename. The word Applications does not appear in the UI.
 
 An application is a saved opening the user is working. It carries a status, notes, a deadline, and links to the tailored CV and letter made for it. Tailoring always copies from the master in Paper — the original never changes underneath the user. The Coach suggests the next step per application but never moves a status on its own; status changes only when the user says reality changed.
 
+In the rail, Apply sits under **Opportunities** next to Search ([flows.md](../flows.md)). Saving an opening is a C3 hand-off from Search; tailoring is a C3 hand-off into Paper.
+
 ## Screens
 
-- `/applications` — the pipeline: applications grouped by status (interested, applied, interviewing, offer, rejected), each card showing role, company, deadline, and its next step. Opening a card shows notes, linked materials ("Open CV" goes to `/paper/$paperId` — nobody edits on a card), and the fit read carried over from Search.
+- Reached from Opportunities in the rail, from Search (save), from a Coach card, or from a deadline notification.
+- `/applications` — the pipeline: rows grouped by status (interested, applied, interviewing, offer, rejected), each card showing role, company, deadline, and its next step. Opening a card shows notes, linked materials ("Open CV" goes to `/paper/$paperId` — nobody edits on a card), and the fit read carried over from Search.
 - Empty state points to Search.
 
 ## Data

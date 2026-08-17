@@ -4,6 +4,8 @@
 
 **Job:** a first-time user leaves knowing what OpenPath is for, how the Coach works with them, and where to go next — having already set up something real.
 
+**Layout:** Wizard at `/onboarding` — no rail, no dock. One question per step, payback in the same frame. Primary: Continue; Skip always visible ([layout.md](../layout.md)).
+
 ## Concept
 
 Three jobs woven together: capture enough to make the product useful (goal first, then starting facts), teach the app by having the user perform real setup steps, and orient with a short skippable tour (what the Coach does, where materials live, how openings are found). Every answer pays back visibly — the profile fills, a readiness signal moves — so setup feels worth it rather than like a form. It ends in the Coach, primed for the first win.

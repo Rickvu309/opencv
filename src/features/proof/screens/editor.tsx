@@ -5,6 +5,7 @@ import { runCommand } from "@/ui/run-command";
 import { Button } from "@/ui/button";
 import { Textarea } from "@/ui/textarea";
 import { Input } from "@/ui/input";
+import { EmptyState } from "@/ui/empty-state";
 import { useState } from "react";
 
 export function ProofEditorScreen({ proofId }: { proofId: string }) {
@@ -14,7 +15,19 @@ export function ProofEditorScreen({ proofId }: { proofId: string }) {
   });
   const [note, setNote] = useState("");
   const [question, setQuestion] = useState("");
-  if (!q.data) return <p>Loading this Proof.</p>;
+  if (q.isPending) return <p>Loading this Proof.</p>;
+  if (!q.data) {
+    return (
+      <EmptyState
+        title="That Proof is not here. Open Proof to see your list."
+        action={
+          <Link to="/proof" className="text-accent underline">
+            Back to Proof
+          </Link>
+        }
+      />
+    );
+  }
   const proof = q.data;
   const draft = proof.page_draft as { what?: string; did?: string; came?: string } | null;
 
