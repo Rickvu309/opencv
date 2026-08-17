@@ -49,7 +49,7 @@ function PersonalLinkPage() {
                       <li key={span.slug}>
                         <Link
                           href={`/p/${span.slug}`}
-                          className="block px-4 py-3 text-pretty hover:bg-muted"
+                          className="block px-4 py-3 text-pretty hover:bg-foreground/4"
                         >
                           <span className="text-sm text-muted-foreground">
                             {span.dates || copy.published}

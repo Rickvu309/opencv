@@ -95,7 +95,7 @@ export function CvGallery({
                 onClick={() => pick(template)}
                 onFocus={() => setFocus(index)}
                 className={cn(
-                  "flex w-full flex-col bg-desk p-3 text-start outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50",
+                  "flex w-full flex-col p-3 text-start outline-none hover:bg-foreground/4 focus-visible:ring-3 focus-visible:ring-ring/50",
                 )}
               >
                 <span
@@ -207,7 +207,7 @@ export function LetterChooser({
             <button
               type="button"
               onClick={() => onPick(item, {})}
-              className="flex h-full w-full flex-col p-4 text-start outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="flex h-full w-full flex-col p-4 text-start outline-none hover:bg-foreground/4 focus-visible:ring-3 focus-visible:ring-ring/50"
             >
               <span className="text-pretty text-sm font-medium">
                 {labels[item]}

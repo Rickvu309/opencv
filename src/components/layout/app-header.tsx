@@ -91,7 +91,7 @@ function ChatSwitcher() {
         <button
           type="button"
           aria-label={t(m.coach.switchChat)}
-          className="flex h-7 min-w-0 items-center gap-1 rounded-md px-2 text-sm font-medium outline-none hover:bg-muted/60 focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="flex h-7 min-w-0 items-center gap-1 rounded-md px-2 text-sm font-medium outline-none hover:bg-foreground/4 focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <span className="truncate">{title}</span>
           <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />

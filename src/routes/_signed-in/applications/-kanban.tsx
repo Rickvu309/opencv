@@ -263,7 +263,7 @@ export function ApplicationsKanban(props: ApplicationsWorkspaceProps) {
             <button
               type="button"
               onClick={() => setEndedOpen((open) => !open)}
-              className="flex h-10 w-full items-center justify-between px-3 text-start text-xs text-muted-foreground outline-none hover:bg-muted/40 focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring/50"
+              className="flex h-10 w-full items-center justify-between px-3 text-start text-xs text-muted-foreground outline-none hover:bg-foreground/4 focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring/50"
             >
               <span>
                 {t(m.applications.endedHeading)}
@@ -365,9 +365,9 @@ function KanbanCard({
       draggable
       onDragStart={onDragStart}
       className={cn(
-        "px-3 py-2.5 hover:bg-muted/50",
-        flash && "bg-muted",
-        selected && "bg-muted/50",
+        "px-3 py-2.5 hover:bg-foreground/4",
+        flash && "bg-foreground/6",
+        selected && "bg-foreground/6",
         muted && "text-muted-foreground",
       )}
     >

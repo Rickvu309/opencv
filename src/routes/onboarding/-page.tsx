@@ -145,8 +145,8 @@ export default function OnboardingPage() {
               variant="outline"
               className={cn(
                 "mt-3 h-11 w-full justify-start gap-2.5 rounded-lg px-3 text-left font-normal whitespace-normal touch-manipulation",
-                "hover:bg-muted hover:text-foreground",
-                "data-[state=on]:border-foreground data-[state=on]:bg-muted data-[state=on]:font-medium data-[state=on]:text-foreground",
+                "hover:bg-foreground/4 hover:text-foreground",
+                "data-[state=on]:border-foreground data-[state=on]:bg-foreground/4 data-[state=on]:font-medium data-[state=on]:text-foreground",
               )}
             >
               <span

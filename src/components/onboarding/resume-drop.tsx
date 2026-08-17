@@ -35,7 +35,7 @@ export function ResumeDrop({
     <label
       className={cn(
         "flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed px-4 py-6 text-center",
-        name || over ? "border-foreground bg-muted/40" : "hover:bg-muted/50",
+        name || over ? "border-foreground bg-foreground/4" : "hover:bg-foreground/4",
       )}
       onDragOver={(event) => {
         event.preventDefault();

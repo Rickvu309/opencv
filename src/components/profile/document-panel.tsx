@@ -252,7 +252,7 @@ function DocumentRow({
   const { t, m } = useT();
   return (
     // Outer radius 12 with 12px padding, so the inner controls sit at 8.
-    <li className="group/doc p-3 hover:bg-muted/50">
+    <li className="group/doc p-3 hover:bg-foreground/4">
       <div className="flex items-start gap-3">
         <Tooltip>
           <TooltipTrigger asChild>
@@ -265,7 +265,7 @@ function DocumentRow({
                   ? m.profile.docIsPrimary(doc.label)
                   : m.profile.docMakePrimary(doc.label),
               )}
-              className="relative mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="relative mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md outline-none hover:bg-foreground/4 focus-visible:ring-3 focus-visible:ring-ring/50"
             >
               {/* Both icons stay mounted and cross-fade: outline is the
                   default state, fill marks active. */}

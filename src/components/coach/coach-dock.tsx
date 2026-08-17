@@ -111,7 +111,7 @@ export function CoachDock() {
           type="button"
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
-          className="flex h-7 items-center gap-1.5 rounded-lg px-2 text-xs font-medium outline-none hover:bg-muted/70 focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px md:bg-transparent"
+          className="flex h-7 items-center gap-1.5 rounded-lg px-2 text-xs font-medium outline-none hover:bg-foreground/4 focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px md:bg-transparent"
         >
           <span className="relative size-3.5 shrink-0">
             <CoachBox

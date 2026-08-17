@@ -306,8 +306,8 @@ function ProfilePage() {
                           setMobileView("panel");
                         }}
                         className={cn(
-                          "flex w-full items-center gap-2.5 px-4 py-2 text-start transition active:translate-y-px outline-none hover:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset motion-reduce:transition-none",
-                          active && "bg-muted",
+                          "flex w-full items-center gap-2.5 px-4 py-2 text-start outline-none hover:bg-foreground/4 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset active:translate-y-px",
+                          active && "bg-foreground/6",
                           touched.includes(s.id) && "animate-just-changed",
                         )}
                       >

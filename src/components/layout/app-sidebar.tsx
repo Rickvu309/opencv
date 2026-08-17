@@ -46,10 +46,6 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import type { Msg } from "@/lib/i18n/locale";
-import { cn } from "@/lib/utils";
-
-/** The active item lifts off the grey rail as a white card. */
-const activeItem = "data-active:bg-card data-active:ring-1 data-active:ring-border";
 
 // 28px is Linear's density and right for a pointer, but the same rail is the
 // mobile nav, where it becomes a 28px touch target. Taller on touch, unchanged
@@ -122,7 +118,7 @@ function NavRow({ item, active }: { item: NavItem; active: boolean }) {
         asChild
         isActive={active}
         tooltip={title}
-        className={cn(rowSize, activeItem)}
+        className={rowSize}
       >
         <Link href={item.href}>
           <item.icon />
