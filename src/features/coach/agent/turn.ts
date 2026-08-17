@@ -1,6 +1,3 @@
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import path from "node:path";
 import { streamText, tool, type ModelMessage } from "ai";
 import { executeCommand } from "@/core/commands/bus";
 import { agentCommands } from "@/core/commands/define";
@@ -10,11 +7,7 @@ import { loadProfile } from "@/features/profile/load.server";
 import { withClient } from "@/core/db/client.server";
 import { newId } from "@/core/ids";
 import "@/features/register";
-
-const persona = readFileSync(
-  path.join(path.dirname(fileURLToPath(import.meta.url)), "persona.md"),
-  "utf8",
-);
+import persona from "./persona.md?raw";
 
 export async function coachTurn(opts: {
   userId: string;
