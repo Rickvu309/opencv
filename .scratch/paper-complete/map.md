@@ -18,6 +18,7 @@ Product locks: `docs/paper.md`. Visual locks: `.scratch/paper-redesign/spec.md`.
 - 16 Aug 2026: all five tickets implemented. Drive and Docs share one `PaperToolbar`. Gallery and letter chooser are Drive modes. Proof notes gained photo/file/link; Arrange renders the public article; Unpublish exists. Personal link uses `sentenceForSite`.
 - 16 Aug 2026: **One room, pick a paper** tightened. `roomMode` keeps an `id` on Docs (no Drive flash). Travel only on open/back.
 - 16 Aug 2026: **Start and write a CV**. Gallery tile and A4 share `sheetTransitionName`. Upload write door is `fromProfile: false` beside the file. `+` on the A4 Reveals a ghost section.
+- 16 Aug 2026: **Desk vs sheet.** Product chrome uses `desk` / `sheet` / `warm` tokens. Drive rows are a sheet-edge stack (name over type · updated), not a three-column table. Docs dropped the cream canvas. Public Proof pages stay hotter.
 
 ## Fog
 

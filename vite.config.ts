@@ -1,0 +1,43 @@
+import { defineConfig } from "vite";
+import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import viteReact from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
+import { nitro } from "nitro/vite";
+import tsconfigPaths from "vite-tsconfig-paths";
+
+function eveOrigin(): string {
+  const production = process.env.EVE_NEXT_PRODUCTION_ORIGIN?.trim();
+  if (production) return new URL(production).origin;
+  const local = process.env.EVE_DEV_ORIGIN?.trim();
+  if (local) return new URL(local).origin;
+  return "http://127.0.0.1:2000";
+}
+
+const eve = eveOrigin();
+
+export default defineConfig({
+  server: {
+    port: 3000,
+  },
+  plugins: [
+    tsconfigPaths(),
+    tailwindcss(),
+    tanstackStart({
+      srcDirectory: ".",
+      router: {
+        routesDirectory: "app",
+        generatedRouteTree: "./routeTree.gen.ts",
+        quoteStyle: "double",
+        semicolons: true,
+        routeFileIgnorePattern: "\\(app\\)",
+      },
+    }),
+    viteReact(),
+    nitro({
+      routeRules: {
+        "/eve/**": { proxy: `${eve}/eve/**` },
+        "/.well-known/workflow/**": { proxy: `${eve}/.well-known/workflow/**` },
+      },
+    }),
+  ],
+});

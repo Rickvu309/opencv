@@ -184,8 +184,7 @@ export function CvDocument({
           for the print copy too, which is what carries it into the PDF. */}
       {photo && (
         <div style={{ textAlign: centred ? "center" : "left", marginBottom: Math.round(12 * d) }}>
-          {/* eslint-disable-next-line @next/next/no-img-element -- bytes from
-              Postgres behind a session, not an optimisable static asset. */}
+          {/* bytes from Postgres behind a session, not an optimisable static asset. */}
           <img
             src={photo}
             alt=""

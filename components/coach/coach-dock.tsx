@@ -1,8 +1,7 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link, usePathname } from "@/lib/nav";
 import { Maximize2, Minus, PenLine, X } from "lucide-react";
 
 import { CoachBox } from "@/components/brand/coach-box";
@@ -81,7 +80,7 @@ export function CoachDock() {
           // Below md the strip is a real row at the foot of the frame, so the
           // scroll area above it ends where the strip begins and no screen has
           // to invent its own bottom padding to avoid being covered. From md
-          // the frame gains a bottom gutter (layout.tsx) and the strip floats
+          // the frame gains a bottom gutter (the signed-in shell) and the strip floats
           // into it, which is the Linear-style look this started as.
           "z-30 min-w-0 items-center justify-end gap-0.5",
           "md:fixed md:right-4 md:bottom-2.5",

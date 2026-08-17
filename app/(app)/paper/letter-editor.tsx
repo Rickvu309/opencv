@@ -21,7 +21,7 @@ export function LetterEditor({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="min-h-0 flex-1 overflow-y-auto bg-[oklch(0.96_0.008_85)]">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="flex justify-start gap-4 p-4 md:p-6">
           <div className="min-w-0 flex-1">
             <PaperSheet paper={paper} opening={opening} />

@@ -30,7 +30,7 @@ export const SESSION_COOKIE = "openpath_session";
 /**
  * The session cookie's value out of a raw `Cookie` header.
  *
- * For the two places that have a `Request` rather than Next's cookie jar: the
+ * For the two places that have a `Request` rather than Start's cookie helper: the
  * sign-out route and the agent channel. Written once here so neither has to
  * parse a header correctly on its own.
  */

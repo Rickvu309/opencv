@@ -1,24 +1,24 @@
-import { NextResponse } from "next/server";
-
 import { SESSION_COOKIE, cookieOptions, signToken } from "./cookie";
 import type { Session } from "./sessions";
 
 /**
  * The shape the three auth routes share.
  *
- * They answer the way `app/api/waitlist/route.ts` answers: a stable `code`,
- * never a sentence. The server has no way to know whether this browser reads
- * Vietnamese or English, and a server that guesses gets it wrong for exactly
- * the people this product exists to reach. The client turns the code into a
- * `Msg` pair from `lib/i18n/messages.ts`.
+ * They answer the way `app/api/waitlist` answers: a stable `code`, never a
+ * sentence. The server has no way to know whether this browser reads Vietnamese
+ * or English, and a server that guesses gets it wrong for exactly the people
+ * this product exists to reach. The client turns the code into a `Msg` pair
+ * from `lib/i18n/messages.ts`.
  */
 
-export function failure(code: string, status: number): NextResponse {
-  return NextResponse.json({ ok: false, code }, { status });
+export function failure(code: string, status: number): Response {
+  return Response.json({ ok: false, code }, { status });
 }
 
 /** The request's JSON body, or null when it is not JSON at all. */
-export async function readBody(request: Request): Promise<Record<string, unknown> | null> {
+export async function readBody(
+  request: Request,
+): Promise<Record<string, unknown> | null> {
   try {
     const body: unknown = await request.json();
     if (typeof body !== "object" || body === null) return null;
@@ -28,22 +28,51 @@ export async function readBody(request: Request): Promise<Record<string, unknown
   }
 }
 
+function cookieHeader(
+  name: string,
+  value: string,
+  opts: ReturnType<typeof cookieOptions>,
+): string {
+  const parts = [
+    `${name}=${value}`,
+    `Path=${opts.path}`,
+    `SameSite=${opts.sameSite}`,
+  ];
+  if (opts.httpOnly) parts.push("HttpOnly");
+  if (opts.secure) parts.push("Secure");
+  if (opts.expires) parts.push(`Expires=${opts.expires.toUTCString()}`);
+  return parts.join("; ");
+}
+
 /**
  * A success that also opens the door: the session cookie rides on the response.
  *
- * Set here rather than through `cookies()` so that issuing a session and
+ * Set here rather than through a cookie helper so that issuing a session and
  * answering the request are one statement. Two statements is how a route ends
  * up returning success without a cookie.
  */
 export function withSession(
   body: Record<string, unknown>,
   session: Session,
-): NextResponse {
-  const response = NextResponse.json({ ok: true, ...body });
-  response.cookies.set(
-    SESSION_COOKIE,
-    signToken(session.token),
-    cookieOptions(session.expiresAt),
+): Response {
+  const response = Response.json({ ok: true, ...body });
+  response.headers.append(
+    "Set-Cookie",
+    cookieHeader(
+      SESSION_COOKIE,
+      signToken(session.token),
+      cookieOptions(session.expiresAt),
+    ),
+  );
+  return response;
+}
+
+/** Clear the session cookie after the row is already gone. */
+export function clearSession(): Response {
+  const response = Response.json({ ok: true });
+  response.headers.append(
+    "Set-Cookie",
+    `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`,
   );
   return response;
 }
@@ -77,5 +106,7 @@ export function tooManyAttempts(key: string): boolean {
 
 /** Who is asking, as far as the platform will say. */
 export function callerKey(request: Request): string {
-  return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  return (
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown"
+  );
 }

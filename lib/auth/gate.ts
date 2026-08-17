@@ -1,13 +1,13 @@
 /**
  * Which paths need a session, and where someone without one is sent.
  *
- * ## Why this is a pure function and `proxy.ts` is four lines
+ * ## Why this is a pure function and the request middleware is four lines
  *
  * The rule "everything is closed except this list" is the kind of thing that is
  * either exactly right or quietly catastrophic, and the catastrophic version
  * looks identical until somebody reads a URL nobody thought to try. Written as
  * a function of a string it can be asked a hundred questions in a test file.
- * Written inside a Next proxy it can only be asked by running the app.
+ * Written inside request middleware it can only be asked by running the app.
  *
  * ## Why the list is of open paths, not closed ones
  *
@@ -52,7 +52,7 @@ const PUBLIC_PATHS = new Set([
  * - `/eve/` and `/.well-known/workflow/` are the Coach transport. The agent
  *   does its own authentication and WO-26 changes what that means; gating them
  *   here would break the stream without adding a check the agent lacks.
- * - `/_next/` and the rest are the framework's own files.
+ * - `/@` and `/__vite` are Vite's own files. `/_serverFn` is Start.
  */
 const PUBLIC_PREFIXES = [
   "/p/",
@@ -63,9 +63,14 @@ const PUBLIC_PREFIXES = [
   // behind a cron request; it authenticates itself with `CRON_SECRET` and
   // refuses when that is unset, which is a stronger check than this one.
   "/api/cron",
+  // The provider posts here with an HMAC, not a session. Without this prefix
+  // the gate answers 401 before the signature is ever checked.
+  "/api/billing/webhook",
   "/eve/",
   "/.well-known/",
-  "/_next/",
+  "/_serverFn",
+  "/@",
+  "/__vite",
 ];
 
 /** Files, not screens. A dot in the last segment is a good enough test. */
@@ -98,7 +103,7 @@ export function safeNext(target: string | null | undefined): string | null {
  * truth and is asked by the data access layer, next to the data. This decides
  * only whether to bother rendering.
  *
- * `extraPublic` is for the local proxy: `next dev` can preview onboarding
+ * `extraPublic` is for local preview: `npm run dev` can open onboarding
  * without a session. Tests and production omit it, so the screen stays closed.
  */
 export function gateFor(

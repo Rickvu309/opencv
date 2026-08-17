@@ -331,7 +331,6 @@ test("the upload write door starts a blank CV beside the file", () => {
     type: "cv",
     label: "CV 1",
     fromProfile: false,
-    template: "compact",
   }).state;
 
   const cv = state.paper[0];
@@ -339,6 +338,12 @@ test("the upload write door starts a blank CV beside the file", () => {
   assert.equal(state.uploads.length, 1);
   assert.equal(cv.header.name, "", "must not seed the Profile name");
   assert.equal(cv.header.email, "");
+  assert.equal(
+    cv.theme.template,
+    "classic",
+    "the write door skips the gallery; compact is a named situation",
+  );
+  assert.equal(cv.theme.density, "normal");
   assert.deepEqual(
     cv.sections.map((section) => section.kind),
     ["summary", "experience", "education", "skills"],
@@ -360,7 +365,6 @@ test("deleting the built CV leaves the uploaded file", () => {
     type: "cv",
     label: "CV 1",
     fromProfile: false,
-    template: "compact",
   }).state;
   const cvId = state.paper[0]?.id;
   assert.ok(cvId);

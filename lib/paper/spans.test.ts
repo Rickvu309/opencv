@@ -34,6 +34,17 @@ test("the personal link is a sentence, not a day grid", () => {
   assert.equal(sentenceForSite("Hà", []), "Hà has not published work yet.");
 });
 
+test("a note's log day does not place the span", () => {
+  const snapshot: ProofSnapshot = {
+    title: "Shift",
+    notes: [{ text: "Logged", at: "2024-01-01" }],
+    publishedAt: "2026-08-15T10:00:00.000Z",
+  };
+  const span = spanFromSnapshot("shift", snapshot);
+  assert.equal(span.year, 2026);
+  assert.equal(span.tick, true);
+});
+
 test("years with no work do not appear", () => {
   const snapshot: ProofSnapshot = {
     title: "Lab",

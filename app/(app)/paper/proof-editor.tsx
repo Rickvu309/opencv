@@ -14,6 +14,7 @@ import { useAppState, useDispatch } from "@/lib/actions/store";
 import { snapshotOf } from "@/lib/paper/share";
 import { cvsOf, type ProofNoteKind, type ProofPaper } from "@/lib/paper/types";
 import { useT } from "@/lib/i18n/use-t";
+import { usePublishProof, useUnpublishProof } from "@/lib/query/satellite";
 import { EditorMainBar } from "./workspace-parts";
 
 export function ProofEditor({
@@ -32,14 +33,18 @@ export function ProofEditor({
   const state = useAppState();
   const dispatch = useDispatch();
   const { t, m } = useT();
+  const publishProof = usePublishProof();
+  const unpublishProof = useUnpublishProof();
   const [draft, setDraft] = React.useState("");
   const [linkLabel, setLinkLabel] = React.useState("");
   const [linkUrl, setLinkUrl] = React.useState("");
   const [adding, setAdding] = React.useState<ProofNoteKind>("note");
   const [noteError, setNoteError] = React.useState(false);
-  const [busy, setBusy] = React.useState(false);
+  const [skipChips, setSkipChips] = React.useState(false);
+  const busy = publishProof.isPending || unpublishProof.isPending;
   const noteRef = React.useRef<HTMLTextAreaElement>(null);
   const fileRef = React.useRef<HTMLInputElement>(null);
+  const fileKindRef = React.useRef<"photo" | "file">("file");
   const empty = paper.notes.length === 0;
   const master = cvsOf(state.paper)[0];
 
@@ -65,49 +70,32 @@ export function ProofEditor({
   };
 
   const publish = async () => {
-    setBusy(true);
     try {
-      const response = await fetch("/api/proof-share", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ paperId: paper.id }),
-      });
-      if (response.status === 401) {
+      const result = await publishProof.mutateAsync(paper.id);
+      if (result.unauthorized) {
         toast.error(t(m.paper.proof.signInToPublish));
         return;
       }
-      if (!response.ok) throw new Error(String(response.status));
-      const body = (await response.json()) as { slug?: string };
       dispatch("paper.publishProof", {
         id: paper.id,
-        ...(body.slug ? { slug: body.slug } : {}),
+        ...(result.slug ? { slug: result.slug } : {}),
       });
     } catch {
       toast.error(t(m.paper.proof.publishFailed));
-    } finally {
-      setBusy(false);
     }
   };
 
   const unpublish = async () => {
-    setBusy(true);
     try {
-      const response = await fetch("/api/proof-share", {
-        method: "DELETE",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ paperId: paper.id }),
-      });
-      if (response.status === 401) {
+      const result = await unpublishProof.mutateAsync(paper.id);
+      if (result.unauthorized) {
         toast.error(t(m.paper.proof.signInToPublish));
         return;
       }
-      if (!response.ok) throw new Error(String(response.status));
       dispatch("paper.unpublishProof", { id: paper.id });
       toast.success(t(m.paper.proof.unpublished));
     } catch {
       toast.error(t(m.paper.proof.publishFailed));
-    } finally {
-      setBusy(false);
     }
   };
 
@@ -179,19 +167,36 @@ export function ProofEditor({
     });
   };
 
+  const lineClass =
+    "gap-0 min-w-[7rem] flex-1 [&_input]:h-7 [&_input]:border-0 [&_input]:bg-transparent [&_input]:px-0 [&_input]:shadow-none [&_input]:placeholder:text-muted-foreground";
+
+  const pickFile = (kind: "photo" | "file") => {
+    fileKindRef.current = kind;
+    const input = fileRef.current;
+    if (!input) return;
+    input.accept = kind === "photo" ? "image/*" : "";
+    input.setAttribute(
+      "aria-label",
+      kind === "photo" ? t(m.paper.proof.addPhoto) : t(m.paper.proof.addFile),
+    );
+    input.click();
+  };
+
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="min-h-0 flex-1 overflow-y-auto bg-[oklch(0.96_0.008_85)] p-4">
-        <div className="mx-auto max-w-xl space-y-6">
+      <div className="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
+        <div className="mx-auto max-w-xl">
           {arranging ? (
             <ArrangeDraft paper={paper} name={state.profile.identity.name} />
           ) : (
-            <>
-              <div className="grid gap-3 sm:grid-cols-3">
+            <div className="space-y-5">
+              <div className="flex flex-wrap items-end gap-x-2 border-b border-border pb-3">
                 <DraftInput
-                  id="proof-role"
+                  id={`${paper.id}-role`}
                   label={t(m.paper.proof.roleField)}
+                  srLabel
                   value={paper.role ?? ""}
+                  placeholder={t(m.paper.proof.roleField)}
                   onCommit={(role) =>
                     dispatch(
                       "paper.setProofMeta",
@@ -199,11 +204,17 @@ export function ProofEditor({
                       { silent: true },
                     )
                   }
+                  className={lineClass}
                 />
+                <span aria-hidden className="pb-1.5 text-muted-foreground">
+                  ·
+                </span>
                 <DraftInput
-                  id="proof-dates"
+                  id={`${paper.id}-dates`}
                   label={t(m.paper.proof.datesField)}
+                  srLabel
                   value={paper.dates ?? ""}
+                  placeholder={t(m.paper.proof.datesField)}
                   onCommit={(dates) =>
                     dispatch(
                       "paper.setProofMeta",
@@ -211,13 +222,19 @@ export function ProofEditor({
                       { silent: true },
                     )
                   }
+                  className={lineClass}
                 />
+                <span aria-hidden className="pb-1.5 text-muted-foreground">
+                  ·
+                </span>
                 <DraftInput
-                  id="proof-link"
+                  id={`${paper.id}-link`}
                   type="url"
                   autoComplete="url"
                   label={t(m.paper.proof.linkField)}
+                  srLabel
                   value={paper.link ?? ""}
+                  placeholder={t(m.paper.proof.linkField)}
                   onCommit={(link) =>
                     dispatch(
                       "paper.setProofMeta",
@@ -225,15 +242,13 @@ export function ProofEditor({
                       { silent: true },
                     )
                   }
+                  className={lineClass}
                 />
               </div>
 
-              {empty ? (
-                <div className="rounded-xl border bg-card p-4">
-                  <h2 className="text-sm font-semibold">
-                    {t(m.paper.proof.emptyTitle)}
-                  </h2>
-                  <p className="mt-1 text-sm text-muted-foreground">
+              {empty && !skipChips ? (
+                <div>
+                  <p className="text-pretty text-sm text-muted-foreground">
                     {t(m.paper.proof.emptyBody)}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
@@ -256,54 +271,27 @@ export function ProofEditor({
                         {label}
                       </Button>
                     ))}
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setSkipChips(true);
+                        setAdding("note");
+                        noteRef.current?.focus();
+                      }}
+                    >
+                      {t(m.paper.proof.chipNone)}
+                    </Button>
                   </div>
                 </div>
               ) : null}
 
-              <div className="flex flex-wrap gap-1">
-                {(
-                  [
-                    ["note", t(m.paper.proof.addNote)],
-                    ["photo", t(m.paper.proof.addPhoto)],
-                    ["file", t(m.paper.proof.addFile)],
-                    ["link", t(m.paper.proof.addLink)],
-                  ] as const
-                ).map(([kind, label]) => (
-                  <Button
-                    key={kind}
-                    type="button"
-                    size="sm"
-                    variant={adding === kind ? "secondary" : "ghost"}
-                    aria-pressed={adding === kind}
-                    onClick={() => {
-                      setAdding(kind);
-                      if (kind === "photo" || kind === "file") {
-                        fileRef.current?.click();
-                      }
-                    }}
-                  >
-                    {label}
-                  </Button>
-                ))}
-              </div>
-              <input
-                ref={fileRef}
-                type="file"
-                accept={adding === "photo" ? "image/*" : undefined}
-                className="sr-only"
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  event.target.value = "";
-                  if (!file) return;
-                  addFile(file, adding === "photo" ? "photo" : "file");
-                }}
-              />
-
-              {adding === "link" ? (
-                <form
-                  className="space-y-2"
-                  onSubmit={(event) => {
-                    event.preventDefault();
+              <form
+                className="space-y-2"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (adding === "link") {
                     if (!linkUrl.trim()) return;
                     dispatch("paper.addNote", {
                       id: paper.id,
@@ -313,43 +301,47 @@ export function ProofEditor({
                     });
                     setLinkLabel("");
                     setLinkUrl("");
-                  }}
-                >
-                  <DraftInput
-                    id="proof-link-label"
-                    label={t(m.paper.proof.linkLabel)}
-                    value={linkLabel}
-                    onCommit={setLinkLabel}
-                  />
-                  <DraftInput
-                    id="proof-link-url"
-                    type="url"
-                    label={t(m.paper.proof.linkUrl)}
-                    value={linkUrl}
-                    onCommit={setLinkUrl}
-                  />
-                  <Button type="submit" size="sm">
-                    {t(m.paper.proof.addLink)}
-                  </Button>
-                </form>
-              ) : adding === "note" ? (
-                <form
-                  className="space-y-2"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    const text = draft.trim();
-                    if (!text) {
-                      setNoteError(true);
-                      noteRef.current?.focus();
-                      return;
-                    }
-                    dispatch("paper.addNote", { id: paper.id, text });
-                    setDraft("");
-                    setNoteError(false);
-                  }}
-                >
-                  <div className="grid gap-1.5">
-                    <Label htmlFor="proof-note">{t(m.paper.proof.noteLabel)}</Label>
+                    setAdding("note");
+                    return;
+                  }
+                  const text = draft.trim();
+                  if (!text) {
+                    setNoteError(true);
+                    noteRef.current?.focus();
+                    return;
+                  }
+                  dispatch("paper.addNote", { id: paper.id, text });
+                  setDraft("");
+                  setNoteError(false);
+                }}
+              >
+                {adding === "link" ? (
+                  <div className="space-y-1">
+                    <DraftInput
+                      id={`${paper.id}-link-label`}
+                      label={t(m.paper.proof.linkLabel)}
+                      srLabel
+                      value={linkLabel}
+                      placeholder={t(m.paper.proof.linkLabel)}
+                      onCommit={setLinkLabel}
+                      className={lineClass}
+                    />
+                    <DraftInput
+                      id={`${paper.id}-link-url`}
+                      type="url"
+                      label={t(m.paper.proof.linkUrl)}
+                      srLabel
+                      value={linkUrl}
+                      placeholder={t(m.paper.proof.linkUrl)}
+                      onCommit={setLinkUrl}
+                      className={lineClass}
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <Label htmlFor="proof-note" className="sr-only">
+                      {t(m.paper.proof.noteLabel)}
+                    </Label>
                     <Textarea
                       ref={noteRef}
                       id="proof-note"
@@ -361,37 +353,66 @@ export function ProofEditor({
                         setDraft(event.target.value);
                         if (noteError) setNoteError(false);
                       }}
-                      rows={4}
+                      rows={3}
+                      className="min-h-[4.5rem] resize-none border-0 bg-transparent px-0 shadow-none placeholder:text-muted-foreground focus-visible:ring-0"
                     />
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Button type="submit" size="sm">
-                      {t(m.paper.proof.addNote)}
-                    </Button>
-                    {master && !empty && (
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        onClick={addToCv}
-                      >
-                        {t(m.paper.proof.addToCv)}
-                      </Button>
-                    )}
-                  </div>
-                </form>
-              ) : null}
+                )}
+                <div className="flex flex-wrap items-center gap-1">
+                  <Button type="submit" size="sm">
+                    {adding === "link"
+                      ? t(m.paper.proof.addLink)
+                      : t(m.paper.proof.addNote)}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => pickFile("photo")}
+                  >
+                    {t(m.paper.proof.addPhoto)}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => pickFile("file")}
+                  >
+                    {t(m.paper.proof.addFile)}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={adding === "link" ? "secondary" : "ghost"}
+                    aria-pressed={adding === "link"}
+                    onClick={() =>
+                      setAdding((kind) => (kind === "link" ? "note" : "link"))
+                    }
+                  >
+                    {t(m.paper.proof.addLink)}
+                  </Button>
+                </div>
+              </form>
+              <input
+                ref={fileRef}
+                type="file"
+                className="sr-only"
+                aria-label={t(m.paper.proof.addFile)}
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  event.target.value = "";
+                  if (!file) return;
+                  addFile(file, fileKindRef.current);
+                }}
+              />
 
-              <ul className="space-y-3">
+              <ul>
                 {paper.notes.map((note) => (
                   <li
                     key={note.id}
-                    className="rounded-xl border bg-card p-3 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-1 motion-safe:duration-[var(--duration-surface)] motion-safe:ease-[var(--ease-enter)]"
+                    className="border-t border-border py-4 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-1 motion-safe:duration-[var(--duration-surface)] motion-safe:ease-[var(--ease-enter)]"
                   >
-                    <p className="text-xs text-muted-foreground">
-                      {note.kind && note.kind !== "note" ? note.kind : null}
-                    </p>
-                    <p className="whitespace-pre-wrap text-sm">
+                    <p className="whitespace-pre-wrap text-sm text-pretty">
                       {note.text || note.fileName}
                     </p>
                     {note.url ? (
@@ -403,7 +424,9 @@ export function ProofEditor({
                       </a>
                     ) : null}
                     <div className="mt-2 flex items-center justify-between gap-2">
-                      <span className="text-xs text-muted-foreground">{note.at}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {note.at}
+                      </span>
                       <Button
                         type="button"
                         size="sm"
@@ -421,11 +444,22 @@ export function ProofEditor({
                   </li>
                 ))}
               </ul>
+
+              {master && !empty ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={addToCv}
+                >
+                  {t(m.paper.proof.addToCv)}
+                </Button>
+              ) : null}
               <QuietCoachOffer
                 label={t(m.paper.proof.askCoachHelp)}
                 prompt={t(m.paper.letter.askCoachProof)}
               />
-            </>
+            </div>
           )}
         </div>
       </div>

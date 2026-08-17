@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useSearchParams } from "next/navigation";
+import { getRouteApi } from "@tanstack/react-router";
 
 import { Composer } from "@/components/coach/composer";
 import { CoachSessionEnded } from "@/components/coach/session-ended";
@@ -14,17 +14,15 @@ import {
 import { discloseInner } from "@/components/ui/disclose";
 import { cn } from "@/lib/utils";
 
+const coachRoute = getRouteApi("/_app/coach");
+
 export default function CoachPage() {
-  return (
-    <React.Suspense fallback={<div className="h-full" />}>
-      <CoachChat />
-    </React.Suspense>
-  );
+  return <CoachChat />;
 }
 
 function CoachChat() {
-  const params = useSearchParams();
-  const asked = params.get("q")?.trim() || "";
+  const { q } = coachRoute.useSearch();
+  const asked = q?.trim() || "";
 
   // The same conversation the floating panel shows. Opening this page is a
   // change of view, not a new chat.

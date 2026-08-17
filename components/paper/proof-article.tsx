@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/lib/nav";
 
 import type { ProofSnapshot, ProofSnapshotNote } from "@/lib/paper/share";
 import { spanFromSnapshot, yearRange, type ProofSpan } from "@/lib/paper/spans";
@@ -82,7 +82,6 @@ function ProofMaterial({ note }: { note: ProofSnapshotNote }) {
   if (note.kind === "photo" && note.url) {
     return (
       <figure>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={note.url} alt={note.text || note.fileName || ""} className="w-full" />
         {note.text ? (
           <figcaption className="mt-2 text-sm text-[#6b645c]">{note.text}</figcaption>

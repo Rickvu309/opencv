@@ -35,7 +35,7 @@ export function CvCanvas({ cv }: { cv: CvPaper }) {
 
   return (
     <div
-      className="w-full min-h-[36rem] max-w-[794px] bg-white text-black shadow-sm ring-1 ring-black/10"
+      className="w-full min-h-[36rem] max-w-[794px] bg-sheet text-black ring-1 ring-black/10"
       style={{ viewTransitionName: sheetTransitionName(cv.id) }}
     >
       <div className="flex h-full flex-col gap-5 overflow-y-auto px-6 py-7 sm:px-10 sm:py-9">

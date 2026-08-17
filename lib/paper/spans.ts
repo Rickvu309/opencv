@@ -100,7 +100,7 @@ export function parseDates(
     return { year, start: toIndex(year, 0), end: toIndex(year, 11) };
   }
 
-  const parts = text.split(/\s*[–—\-]\s*/);
+  const parts = text.split(/\s*[–—-]\s*/);
   const start = parsePoint(parts[0] ?? "");
   if (!start) return null;
   if (parts.length === 1) {
@@ -136,7 +136,7 @@ function parsePoint(
     if (month == null) return null;
     return { year, at: toIndex(year, month) };
   }
-  const numeric = text.match(/^(\d{1,2})[\/.](\d{4})$/);
+  const numeric = text.match(/^(\d{1,2})[/.](\d{4})$/);
   if (numeric) {
     const month = Math.max(0, Math.min(11, Number(numeric[1]) - 1));
     const year = Number(numeric[2]);

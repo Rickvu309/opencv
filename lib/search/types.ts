@@ -21,7 +21,6 @@
  */
 
 import type { Requirement } from "@/lib/catalogue";
-import type { Msg } from "@/lib/i18n/locale";
 
 export type Opening = {
   id: string;

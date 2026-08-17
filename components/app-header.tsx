@@ -1,9 +1,8 @@
 "use client";
 
-import * as React from "react";
-import { usePathname } from "next/navigation";
 import { ChevronDown, PanelLeft } from "lucide-react";
 
+import { usePathname } from "@/lib/nav";
 import { chatTitle } from "@/lib/coach/messages";
 import { useT } from "@/lib/i18n/use-t";
 import { useCoach } from "@/components/coach/provider";
@@ -113,11 +112,7 @@ export function AppHeader() {
       {onCoach ? (
         <>
           <h1 className="sr-only">{t(m.nav.coach)}</h1>
-          <React.Suspense
-            fallback={<span className="text-sm font-medium">{t(m.nav.coach)}</span>}
-          >
-            <ChatSwitcher />
-          </React.Suspense>
+          <ChatSwitcher />
         </>
       ) : (
         <h1 className="text-sm font-medium">{title}</h1>

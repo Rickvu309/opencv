@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { applyAction } from "@/lib/actions/registry";
 import { seedState } from "@/lib/actions/seed";
 import { wordForTemplate } from "@/lib/paper/cv";
+import { messages } from "@/lib/i18n/messages";
 import { isProofPaper } from "@/lib/paper/types";
 
 test("a new Proof starts with no notes", () => {
@@ -93,10 +94,17 @@ test("a photo, file, or link is still a Proof note", () => {
     kind: "photo",
     fileName: "shift.jpg",
   }).state;
+  state = applyAction(state, "paper.addNote", {
+    id,
+    kind: "file",
+    fileName: "lab.pdf",
+  }).state;
   assert.ok(isProofPaper(state.paper[0]));
-  assert.equal(state.paper[0].notes[0]?.kind, "photo");
-  assert.equal(state.paper[0].notes[1]?.kind, "link");
-  assert.equal(state.paper[0].notes[1]?.url, "https://example.com");
+  assert.equal(state.paper[0].notes[0]?.kind, "file");
+  assert.equal(state.paper[0].notes[0]?.fileName, "lab.pdf");
+  assert.equal(state.paper[0].notes[1]?.kind, "photo");
+  assert.equal(state.paper[0].notes[2]?.kind, "link");
+  assert.equal(state.paper[0].notes[2]?.url, "https://example.com");
 });
 
 test("unpublish clears the URL and leaves the space", () => {
@@ -113,6 +121,21 @@ test("unpublish clears the URL and leaves the space", () => {
   assert.equal(state.paper[0].notes.length, 1);
 });
 
+test("republish stamps a URL again without deleting the space", () => {
+  let state = applyAction(seedState(), "paper.create", {
+    type: "proof",
+    label: "Campus app",
+  }).state;
+  const id = state.paper[0].id;
+  state = applyAction(state, "paper.addNote", { id, text: "Shipped" }).state;
+  state = applyAction(state, "paper.publishProof", { id, slug: "campus-app" }).state;
+  state = applyAction(state, "paper.unpublishProof", { id }).state;
+  state = applyAction(state, "paper.publishProof", { id, slug: "campus-app" }).state;
+  assert.ok(isProofPaper(state.paper[0]));
+  assert.equal(state.paper[0].published?.slug, "campus-app");
+  assert.equal(state.paper[0].notes[0]?.text, "Shipped");
+});
+
 test("deleting an upload leaves the built CV", () => {
   let state = applyAction(seedState(), "paper.addUpload", {
     kind: "cv",
@@ -123,7 +146,6 @@ test("deleting an upload leaves the built CV", () => {
     type: "cv",
     label: "CV 1",
     fromProfile: false,
-    template: "compact",
   }).state;
   const uploadId = state.uploads[0]?.id;
   assert.ok(uploadId);
@@ -138,4 +160,23 @@ test("wordForTemplate follows the audience", () => {
   assert.equal(wordForTemplate("internship"), "CV");
   assert.equal(wordForTemplate("modern"), "Resume");
   assert.equal(wordForTemplate("design"), "Resume");
+});
+
+test("the Proof space and band never say dump or Prepare", () => {
+  const proof = messages.paper.proof;
+  for (const line of [
+    proof.emptyTitle,
+    proof.emptyBody,
+    proof.chipNone,
+    proof.arrange,
+    proof.publish,
+    proof.unpublish,
+    proof.addNote,
+    proof.addPhoto,
+    proof.addFile,
+    proof.addLink,
+  ]) {
+    assert.doesNotMatch(line, /dump/i);
+    assert.doesNotMatch(line, /\bPrepare\b/);
+  }
 });

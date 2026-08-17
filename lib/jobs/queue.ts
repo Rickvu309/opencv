@@ -8,11 +8,10 @@
  *
  * The Workflow SDK's Next integration serves its runtime at
  * `/.well-known/workflow/v1/*`. On this origin that path is already taken: the
- * Coach is an eve agent, eve is built on the same runtime, and `withEve` mounts
- * it there. Adding `withWorkflow` on top would put two runtimes on one path,
- * and the failure mode is not a build error, it is a Coach turn that starts and
- * then hangs forever because the callback found the wrong home. `next.config.ts`
- * already carries a comment warning about exactly that.
+ * Coach is an eve agent, eve is built on the same runtime, and the Vite/Nitro
+ * proxy mounts it there. Adding a second runtime on top would put two servers
+ * on one path, and the failure mode is not a build error, it is a Coach turn
+ * that starts and then hangs forever because the callback found the wrong home.
  *
  * The contracts the blueprint actually asks for are per-step durability,
  * idempotent invocation, scheduled and triggered runs, and isolation from

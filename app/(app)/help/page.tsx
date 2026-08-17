@@ -1,11 +1,13 @@
 "use client";
 
 import * as React from "react";
+import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useT } from "@/lib/i18n/use-t";
+import { useSendSupport } from "@/lib/query/satellite";
 import { cn } from "@/lib/utils";
 
 /**
@@ -18,10 +20,27 @@ import { cn } from "@/lib/utils";
  */
 export default function HelpPage() {
   const { t, m } = useT();
-  const [text, setText] = React.useState("");
+  const report = useSendSupport();
   const [sent, setSent] = React.useState(false);
-  const [busy, setBusy] = React.useState(false);
   const [short, setShort] = React.useState(false);
+  const form = useForm({
+    defaultValues: { text: "" },
+    onSubmit: async ({ value }) => {
+      if (value.text.trim().length < 5) {
+        setShort(true);
+        toast.error(t(m.support.reportTooShort));
+        return;
+      }
+      setShort(false);
+      try {
+        await report.mutateAsync(value.text);
+        setSent(true);
+        form.reset();
+      } catch {
+        toast.error(t(m.support.reportFailed));
+      }
+    },
+  });
 
   const questions = [
     [m.support.q1, m.support.a1],
@@ -30,30 +49,8 @@ export default function HelpPage() {
     [m.support.q4, m.support.a4],
   ] as const;
 
-  const send = async () => {
-    if (text.trim().length < 5) {
-      setShort(true);
-      toast.error(t(m.support.reportTooShort));
-      return;
-    }
-    setShort(false);
-    setBusy(true);
-    try {
-      const response = await fetch("/api/support", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text }),
-      });
-      if (!response.ok) throw new Error("failed");
-      setSent(true);
-      setText("");
-    } catch {
-      // Never a false confirmation: a report that did not land must not look
-      // like one that did, or the user waits for a reply that is not coming.
-      toast.error(t(m.support.reportFailed));
-    } finally {
-      setBusy(false);
-    }
+  const send = () => {
+    void form.handleSubmit();
   };
 
   return (
@@ -82,19 +79,23 @@ export default function HelpPage() {
           </p>
         ) : (
           <div className="mt-3 space-y-2">
-            <Textarea
-              value={text}
-              rows={4}
-              placeholder={t(m.support.reportPlaceholder)}
-              aria-label={t(m.support.reportTitle)}
-              onChange={(event) => {
-                setText(event.target.value);
-                if (short) setShort(false);
-              }}
-              aria-invalid={short || undefined}
-              className={cn("text-sm", short && "field-error-shake")}
-            />
-            <Button size="sm" disabled={busy} onClick={send}>
+            <form.Field name="text">
+              {(field) => (
+                <Textarea
+                  value={field.state.value}
+                  rows={4}
+                  placeholder={t(m.support.reportPlaceholder)}
+                  aria-label={t(m.support.reportTitle)}
+                  onChange={(event) => {
+                    field.handleChange(event.target.value);
+                    if (short) setShort(false);
+                  }}
+                  aria-invalid={short || undefined}
+                  className={cn("text-sm", short && "field-error-shake")}
+                />
+              )}
+            </form.Field>
+            <Button size="sm" disabled={report.isPending} onClick={send}>
               {t(m.support.reportSend)}
             </Button>
           </div>

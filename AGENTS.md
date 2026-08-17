@@ -1,24 +1,9 @@
-<!-- BEGIN:nextjs-agent-rules -->
-# This is NOT the Next.js you know
+# This is TanStack Start, not Next.js
 
-This version has breaking changes, APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
-<!-- END:nextjs-agent-rules -->
-
-## Agent skills
-
-### Issue tracker
-
-Local markdown under `.scratch/<feature>/`. See `docs/agents/issue-tracker.md`.
-
-### Triage labels
-
-`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
-
-### Domain docs
-
-Single-context: product language in `CONTEXT.md`, placement in `docs/map.md`, decisions in `docs/adr/`. See `docs/agents/domain.md`.
-
-This repo has no `src/` tree. Do not invent one.
+Routes live in `app/` at the repo root. There is no `src/` tree — do not invent
+one. Read Start and Router docs under `node_modules/@tanstack/` before writing
+routes. File routes use `createFileRoute`; server-only work goes through
+`createServerFn` or `server.handlers`.
 
 ## Cursor Cloud specific instructions
 
@@ -51,6 +36,5 @@ disables TLS, so no certs are needed. Migrations are already applied; re-run
 The AI Coach (eve agent) calls OpenRouter and needs `OPENROUTER_API_KEY`. It is not set,
 so Coach/agent replies fail (503) — this is expected. Auth, onboarding, Profile, CV,
 Openings, etc. all work without it. To exercise the Coach, add `OPENROUTER_API_KEY` as a
-secret. The eve agent boots automatically beside `next dev` (`npm run dev`); it is not a
+secret. The eve agent boots automatically beside Vite (`npm run dev`); it is not a
 separate service to start.
-

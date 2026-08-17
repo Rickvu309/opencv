@@ -20,7 +20,7 @@ import { getPool } from "@/lib/db/client";
  *
  * ## Why the failures are codes rather than sentences
  *
- * `app/api/waitlist/route.ts` made this argument first: the server cannot know
+ * `app/api/waitlist` made this argument first: the server cannot know
  * whether this browser reads Vietnamese or English, and a server that guesses
  * gets it wrong for exactly the people this product exists for. So every
  * failure here is a stable string, and `lib/i18n/messages.ts` turns it into

@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { getRouteApi } from "@tanstack/react-router";
+import { useRouter } from "@/lib/nav";
 
 import { PaperToolbar } from "@/components/paper/toolbar";
 import { Button } from "@/components/ui/button";
@@ -20,12 +20,10 @@ import { CvGallery, LetterChooser } from "./choosers";
 import { Drive, DriveBand, type DriveFilter } from "./drive";
 import { Opened, OpenedBand } from "./opened";
 
+const paperRoute = getRouteApi("/_app/paper");
+
 export default function PaperPage() {
-  return (
-    <Suspense fallback={null}>
-      <MyPaperWorkspace />
-    </Suspense>
-  );
+  return <MyPaperWorkspace />;
 }
 
 function go(
@@ -52,17 +50,15 @@ function MyPaperWorkspace() {
   const { paper, profile } = useAppState();
   const dispatch = useDispatch();
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const search = paperRoute.useSearch();
   const { t, m } = useT();
   const [filter, setFilter] = React.useState<DriveFilter>("all");
 
-  const id = searchParams.get("id");
-  const creatingParam = searchParams.get("new");
-  const creating =
-    creatingParam === "cv" || creatingParam === "letter" ? creatingParam : null;
-  const format = searchParams.get("format") === "1";
-  const arranging = searchParams.get("arrange") === "1";
-  const fromUpload = searchParams.get("from") === "upload";
+  const id = search.id;
+  const creating = search.new === "cv" || search.new === "letter" ? search.new : null;
+  const format = search.format === "1";
+  const arranging = search.arrange === "1";
+  const fromUpload = search.from === "upload";
   const opened = id ? (paper.find((item) => item.id === id) ?? null) : null;
   const newest = paper.at(-1);
   const mode = roomMode({
@@ -145,7 +141,7 @@ function MyPaperWorkspace() {
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex h-full min-h-0 flex-col bg-desk">
       <PaperToolbar>
         {mode === "drive" ? (
           <DriveBand

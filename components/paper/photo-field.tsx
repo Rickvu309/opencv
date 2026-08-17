@@ -10,6 +10,7 @@ import { useDispatch } from "@/lib/actions/store";
 import { photoUrl } from "@/lib/paper/photo-url";
 import type { CvPaper } from "@/lib/paper/types";
 import { useT } from "@/lib/i18n/use-t";
+import { usePaperPhoto } from "@/lib/query/satellite";
 
 /**
  * Add or replace the photo on a CV.
@@ -33,41 +34,30 @@ const QUALITY = 0.85;
 export function PhotoField({ cv }: { cv: CvPaper }) {
   const { t, m } = useT();
   const dispatch = useDispatch();
+  const photo = usePaperPhoto();
   const input = React.useRef<HTMLInputElement>(null);
-  const [busy, setBusy] = React.useState(false);
+  const busy = photo.isPending;
 
   async function upload(file: File) {
-    setBusy(true);
     try {
       const shrunk = await downscale(file);
-      const response = await fetch(
-        `/api/paper-photo?paperId=${encodeURIComponent(cv.id)}`,
-        { method: "PUT", headers: { "content-type": "image/jpeg" }, body: shrunk },
-      );
-      if (!response.ok) throw new Error(String(response.status));
-      // The stamp is what makes the URL change, so the browser fetches the new
-      // photo instead of showing the one it already has.
+      await photo.mutateAsync({ paperId: cv.id, method: "PUT", body: shrunk });
       dispatch("paper.setPhoto", { id: cv.id, stamp: String(Date.now()) });
     } catch {
       toast.error(t(m.paper.cv.photoFailed));
     } finally {
-      setBusy(false);
       if (input.current) input.current.value = "";
     }
   }
 
   async function remove() {
-    setBusy(true);
     try {
-      await fetch(`/api/paper-photo?paperId=${encodeURIComponent(cv.id)}`, {
-        method: "DELETE",
-      });
+      await photo.mutateAsync({ paperId: cv.id, method: "DELETE" });
     } catch {
       // The row may still be there. Clearing the stamp anyway is right: the
       // user asked for it gone, and a photo with no stamp is never rendered.
     } finally {
       dispatch("paper.setPhoto", { id: cv.id });
-      setBusy(false);
     }
   }
 
@@ -76,9 +66,8 @@ export function PhotoField({ cv }: { cv: CvPaper }) {
   return (
     <div className="flex items-center gap-3">
       {url ? (
-        /* eslint-disable-next-line @next/next/no-img-element --
-           a same-origin route that streams bytes from Postgres behind a
-           session, not a static asset next/image could optimise. */
+        /* a same-origin route that streams bytes from Postgres behind a
+           session, not a static asset. */
         <img
           src={url}
           alt={t(m.paper.cv.photoAlt)}

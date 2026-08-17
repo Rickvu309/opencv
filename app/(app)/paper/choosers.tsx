@@ -100,7 +100,7 @@ export function CvGallery({
               >
                 <span
                   className={cn(
-                    "block w-full bg-white ring-1 ring-foreground/15",
+                    "block w-full bg-sheet ring-1 ring-foreground/15",
                     current === template && "ring-foreground",
                     "hover:ring-foreground",
                   )}
@@ -147,7 +147,7 @@ function TemplateMark({ template }: { template: CvTemplate }) {
   return (
     <span
       aria-hidden
-      className="flex h-full w-full flex-col gap-[6%] bg-white p-[10%] text-black"
+      className="flex h-full w-full flex-col gap-[6%] bg-sheet p-[10%] text-black"
     >
       {template === "design" && (
         <span className="h-[2%] w-full bg-black/70" />

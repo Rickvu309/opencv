@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
+import { useForm } from "@tanstack/react-form";
+import { Link } from "@/lib/nav";
 import { CoachBox } from "@/components/brand/coach-box";
 
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { authProblem, type ProblemField } from "@/lib/auth/problems";
 import { useT } from "@/lib/i18n/use-t";
+import { useAuthSession } from "@/lib/query/satellite";
 
 /**
  * The front door, in both of its two moods.
@@ -25,13 +27,41 @@ import { useT } from "@/lib/i18n/use-t";
  *
  * This is where somebody arrives from a link, from a redirect after their
  * session expired, and from the landing page. All three want a URL. A dialog
- * has none, and the redirect in `proxy.ts` has to send them somewhere.
+ * has none, and the gate in `start.ts` has to send them somewhere.
  */
 export function AuthForm({ mode, next }: { mode: "sign-in" | "sign-up"; next?: string }) {
   const { t, m } = useT();
+  const session = useAuthSession();
 
-  const [username, setUsername] = React.useState("");
-  const [password, setPassword] = React.useState("");
+  const form = useForm({
+    defaultValues: { username: "", password: "" },
+    onSubmit: async ({ value }) => {
+      if (busy) return;
+      setBusy(true);
+      setProblem(null);
+      try {
+        const payload = await session.mutateAsync({
+          mode,
+          username: value.username,
+          password: value.password,
+        });
+
+        if (!payload.ok) {
+          const { field, message } = authProblem(payload.code);
+          setProblem({ field, text: message });
+          setBusy(false);
+          return;
+        }
+
+        window.location.assign(next && next.startsWith("/") ? next : "/onboarding");
+      } catch {
+        const { message } = authProblem("offline");
+        setProblem({ field: "form", text: message });
+        setBusy(false);
+      }
+    },
+  });
+
   const [busy, setBusy] = React.useState(false);
   const [problem, setProblem] = React.useState<{ field: ProblemField; text: string } | null>(null);
 
@@ -40,39 +70,6 @@ export function AuthForm({ mode, next }: { mode: "sign-in" | "sign-up"; next?: s
   const formError = React.useId();
 
   const creating = mode === "sign-up";
-
-  async function submit(event: React.FormEvent) {
-    event.preventDefault();
-    if (busy) return;
-
-    setBusy(true);
-    setProblem(null);
-    try {
-      const response = await fetch(`/api/auth/${mode}`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        // New accounts start in English. Document language can still be vi.
-        body: JSON.stringify({ username, password }),
-      });
-      const payload = (await response.json()) as { ok: boolean; code?: string };
-
-      if (!response.ok || !payload.ok) {
-        const { field, message } = authProblem(payload.code);
-        setProblem({ field, text: message });
-        setBusy(false);
-        return;
-      }
-
-      // A hard navigation rather than a client push: the root layout reads the
-      // account's state on the server, and it has to run again now that there
-      // is an account to read it for.
-      window.location.assign(next && next.startsWith("/") ? next : "/onboarding");
-    } catch {
-      const { message } = authProblem("offline");
-      setProblem({ field: "form", text: message });
-      setBusy(false);
-    }
-  }
 
   const problemFor = (field: ProblemField) =>
     problem?.field === field ? problem.text : null;
@@ -94,56 +91,69 @@ export function AuthForm({ mode, next }: { mode: "sign-in" | "sign-up"; next?: s
           {t(creating ? m.auth.signUpLead : m.auth.signInLead)}
         </p>
 
-        <form className="mt-8 space-y-4" onSubmit={submit} noValidate>
-          <Field
-            id="username"
-            label={t(m.auth.username)}
-            error={problemFor("username")}
-            errorId={usernameError}
-          >
-            <Input
-              id="username"
-              name="username"
-              autoComplete="username"
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-              value={username}
-              onChange={(event) => {
-                setUsername(event.target.value);
-                if (problem) setProblem(null);
-              }}
-              aria-invalid={problemFor("username") !== null}
-              aria-describedby={problemFor("username") ? usernameError : undefined}
-              autoFocus
-              // 16px on mobile: anything smaller makes iOS Safari zoom the page
-              // on focus, which on a first screen reads as the site breaking.
-              className="h-11 text-base sm:h-10 md:text-sm"
-            />
-          </Field>
+        <form
+          className="mt-8 space-y-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void form.handleSubmit();
+          }}
+          noValidate
+        >
+          <form.Field name="username">
+            {(field) => (
+              <Field
+                id="username"
+                label={t(m.auth.username)}
+                error={problemFor("username")}
+                errorId={usernameError}
+              >
+                <Input
+                  id="username"
+                  name={field.name}
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  value={field.state.value}
+                  onChange={(event) => {
+                    field.handleChange(event.target.value);
+                    if (problem) setProblem(null);
+                  }}
+                  aria-invalid={problemFor("username") !== null}
+                  aria-describedby={problemFor("username") ? usernameError : undefined}
+                  autoFocus
+                  className="h-11 text-base sm:h-10 md:text-sm"
+                />
+              </Field>
+            )}
+          </form.Field>
 
-          <Field
-            id="password"
-            label={t(m.auth.password)}
-            error={problemFor("password")}
-            errorId={passwordError}
-            hint={creating ? t(m.auth.passwordHint) : undefined}
-          >
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete={creating ? "new-password" : "current-password"}
-              value={password}
-              onChange={(event) => {
-                setPassword(event.target.value);
-                if (problem) setProblem(null);
-              }}
-              aria-invalid={problemFor("password") !== null}
-              aria-describedby={problemFor("password") ? passwordError : undefined}
-              className="h-11 text-base sm:h-10 md:text-sm"
-            />
-          </Field>
+          <form.Field name="password">
+            {(field) => (
+              <Field
+                id="password"
+                label={t(m.auth.password)}
+                error={problemFor("password")}
+                errorId={passwordError}
+                hint={creating ? t(m.auth.passwordHint) : undefined}
+              >
+                <Input
+                  id="password"
+                  name={field.name}
+                  type="password"
+                  autoComplete={creating ? "new-password" : "current-password"}
+                  value={field.state.value}
+                  onChange={(event) => {
+                    field.handleChange(event.target.value);
+                    if (problem) setProblem(null);
+                  }}
+                  aria-invalid={problemFor("password") !== null}
+                  aria-describedby={problemFor("password") ? passwordError : undefined}
+                  className="h-11 text-base sm:h-10 md:text-sm"
+                />
+              </Field>
+            )}
+          </form.Field>
 
           {/* Above the button, not below it: an error under a submit control is
               the one place a screen reader reaches last and a thumb covers. */}

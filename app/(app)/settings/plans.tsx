@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import { Check } from "lucide-react";
 import { toast } from "sonner";
 
@@ -14,6 +13,7 @@ import {
   type Tier,
 } from "@/lib/billing/tiers";
 import { useT } from "@/lib/i18n/use-t";
+import { useBillingCheckout } from "@/lib/query/satellite";
 import { cn } from "@/lib/utils";
 
 type PlanView = {
@@ -39,31 +39,23 @@ const TIER_LABEL = {
  */
 export function PlansPanel({ plan }: { plan: PlanView }) {
   const { t, m } = useT();
-  const [busy, setBusy] = React.useState(false);
+  const checkout = useBillingCheckout();
+  const busy = checkout.isPending;
 
   const change = async (body: Record<string, unknown>) => {
-    setBusy(true);
     try {
-      const response = await fetch("/api/billing/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const answer = await response.json();
-      if (answer?.checkoutUrl) {
-        window.location.href = answer.checkoutUrl as string;
+      const answer = await checkout.mutateAsync(body);
+      if (answer.checkoutUrl) {
+        window.location.href = answer.checkoutUrl;
         return;
       }
-      if (!response.ok) {
-        // AC-MON-002.3: they stay on the plan they had, and are told so.
+      if (!answer.ok) {
         toast.error(t(m.billing.unavailable));
         return;
       }
       window.location.reload();
     } catch {
       toast.error(t(m.billing.unavailable));
-    } finally {
-      setBusy(false);
     }
   };
 

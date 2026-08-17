@@ -99,7 +99,7 @@ Five feature screens, then Coach:
 
 - **My Profile** (`/profile`) — who you are. Lives in the account menu.
 - **My Paper** (`/paper`) — a Drive of papers. CV, cover letter, Proof, and
-  uploaded files. Open one at `/paper?id=`. Published Proofs are `/p/[slug]`.
+  uploaded files. Open one at `/paper?id=`. Published Proofs are `/p/:slug`.
 - **My Pitch** (`/pitch`) — bio, self-intro, interview answers.
 - **My Search** (`/search`) — openings ranked against the profile.
 - **My Application** (`/applications`) — the board of applications you are in.
@@ -120,10 +120,11 @@ form that gives nothing back until the end is a form nobody finishes.
 
 ## Stack
 
-Next.js 16, React 19, TypeScript, Tailwind v4, shadcn/ui. The app, the Coach
-and Postgres all run on Railway. Accounts add bcrypt for the password hashes
-and a signed HTTP-only cookie for the session. Tests run on Node's built-in
-runner.
+TanStack Start (Vite + Nitro + Router), React 19, TypeScript, Tailwind v4,
+shadcn/ui. Query, Form, Table, and DB are used where they fit; they are not a
+second write path. The app, the Coach and Postgres all run on Railway. Accounts
+add bcrypt for the password hashes and a signed HTTP-only cookie for the
+session. Tests run on Node's built-in runner.
 
 ## Docs
 
@@ -134,5 +135,5 @@ runner.
   behaves.
 - `docs/database.md`: where the database is, and how to apply the schema.
 - `docs/hosting.md`: Railway topology (app, agent, Postgres).
-- `docs/agents/`: issue tracker, triage labels, and how skills read domain docs.
+- `docs/adr/`: locked engineering decisions. `0004-tanstack-start.md` is why the app is Start, not Next.
 - `.scratch/`: local markdown tickets and specs.
