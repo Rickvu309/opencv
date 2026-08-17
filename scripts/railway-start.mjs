@@ -18,6 +18,19 @@ if (service === "openpath-agent") {
   process.exit(result.status ?? 1);
 }
 
+// Pending SQL must land before the web process answers. Sign-in queries
+// `accounts.email` (018); without this, the form loads and every submit is 502.
+const migrate = spawnSync(
+  process.execPath,
+  ["--import", "./scripts/alias-hook.mjs", "scripts/db.mjs", "up"],
+  { stdio: "inherit", env: process.env },
+);
+if (migrate.error) {
+  console.error(migrate.error);
+  process.exit(1);
+}
+if (migrate.status !== 0) process.exit(migrate.status ?? 1);
+
 const app = spawn("npm", ["start"], { stdio: "inherit", env: process.env });
 
 function runCron() {

@@ -40,7 +40,7 @@ Users hit one URL. The Coach agent and Postgres stay private on the same Railway
 
 One `railway.json` cannot name two start commands. [`scripts/railway-build.mjs`](../scripts/railway-build.mjs) and [`scripts/railway-start.mjs`](../scripts/railway-start.mjs) pick the command from `RAILWAY_SERVICE_NAME`. The web `build` typechecks (`tsc --noEmit`) then runs `vite build`.
 
-The web process also runs the job heartbeat: [`scripts/cron-once.mjs`](../scripts/cron-once.mjs) about 20s after boot, then hourly.
+The web process applies pending migrations (`npm run db:migrate`) before it listens, then runs the job heartbeat: [`scripts/cron-once.mjs`](../scripts/cron-once.mjs) about 20s after boot, then hourly. If migrate fails, the deploy fails rather than serving a Sign in form that 502s.
 
 ## Same-origin Coach
 
@@ -60,5 +60,7 @@ Production web start is `node .output/server/index.mjs` via `npm start`.
 The Coach used to ride along on Vercel via `withEve`. A measured turn took 43 seconds. Hobby kills that. Railway can finish a turn, and the app, agent, and Postgres share one project.
 
 If Sign in shows “This page couldn't load”: the last deploy shipped a runtime throw (the `npm run build` typecheck is meant to catch the missing-name case). Check the Railway deploy log, then push a fix to `main`.
+
+If Sign in submits and says it did not go through: the API answered `store-down`. Postgres is up (the waiting list writes). Usually a pending migration was not applied; the web start now migrates before it listens. Check the deploy log for `applied 018_account_email` (or whatever was pending).
 
 If the agent 503s: that is expected without `OPENROUTER_API_KEY`. Auth, Paper, and the rest still work.

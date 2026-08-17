@@ -16,6 +16,8 @@ npm run db:rollback    # undo the most recent migration
 
 They act on whatever `DATABASE_URL` points at, and print the host and schema first. There is no flag to aim them elsewhere.
 
+On Railway the web start runs `npm run db:migrate` before it listens. A push to `main` that adds a numbered SQL file is applied on the next deploy. You still run the commands locally against `.env.local`.
+
 ## Empty database
 
 1. Provision Postgres 13+ (Railway, or local). `gen_random_uuid()` is the only version-sensitive call.
