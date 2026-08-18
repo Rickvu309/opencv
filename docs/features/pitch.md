@@ -4,7 +4,7 @@
 
 **Job:** the words the user says and posts about themselves — an online bio, a self-introduction, and prepared interview answers — ready before they freeze in the moment.
 
-**Layout:** Sectioned editor at `/pitch` — primary is the build door while unbuilt; per-section saves are quiet. The dock must not cover it ([layout.md](../layout.md)).
+**Layout:** Sectioned editor at `/pitch` — primary is the build door while unbuilt; per-section saves are quiet. The dock must not cover it ([layout.md](../design-system/layout.md)).
 
 ## Concept
 

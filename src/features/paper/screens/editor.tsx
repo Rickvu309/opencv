@@ -22,7 +22,7 @@ import { SkeletonBlock } from "@/ui/skeleton";
 
 function BackLink() {
   return (
-    <Link to="/paper" className="inline-flex min-h-11 items-center text-[14px] text-muted-foreground">
+    <Link to="/paper" className="inline-flex min-h-11 items-center text-[13px] text-ink-muted">
       Back
     </Link>
   );
@@ -54,7 +54,7 @@ export function PaperEditorScreen({ paperId }: { paperId: string }) {
         <div data-print-hide className="print:hidden">
           <Band title="Paper" back={<BackLink />} />
         </div>
-        <div className="bg-muted -mx-6 px-6 py-8">
+        <div className="-mx-6 bg-surface-2 px-6 py-8">
           <SkeletonBlock className="mx-auto h-[80vh] max-w-[210mm]" />
         </div>
       </div>
@@ -127,7 +127,7 @@ export function PaperEditorScreen({ paperId }: { paperId: string }) {
 
   return (
     <div>
-      <div data-print-hide className="sticky top-0 z-20 bg-background print:hidden">
+      <div data-print-hide className="sticky top-0 z-[var(--z-sticky)] bg-surface-1 print:hidden">
         <Band
           title={
             <h1 className="min-w-0 flex-1">
@@ -156,7 +156,7 @@ export function PaperEditorScreen({ paperId }: { paperId: string }) {
           />
         ) : null}
         {exportError ? (
-          <p className="pb-3 text-[14px] text-destructive">
+          <p className="pb-3 text-[13px] text-destructive">
             Couldn't export. Try again.
             <Button variant="ghost" className="ml-2" onClick={onExport}>
               Try again
@@ -174,7 +174,7 @@ export function PaperEditorScreen({ paperId }: { paperId: string }) {
           }}
         />
       ) : (
-        <div className="bg-muted -mx-6 px-6 py-8 print:bg-white print:mx-0 print:px-0 print:py-0">
+        <div className="-mx-6 bg-surface-2 px-6 py-8 print:mx-0 print:bg-white print:px-0 print:py-0">
           <PaperPage kind={String(paper.kind)} content={page} onChange={patch} onSave={save} />
         </div>
       )}

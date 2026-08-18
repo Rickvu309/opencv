@@ -4,7 +4,7 @@
 
 **Job:** help a user build up evidence of their work and skills over time, with AI support — so that when someone asks "what have you actually done", the answer exists, is specific, and is theirs.
 
-**Layout:** Drive list at `/proof` (primary: Log something), Opened space at `/proof/$proofId` (primary: Arrange until the story is arranged, then Publish — one primary at a time). The dock must not cover the band ([layout.md](../layout.md)).
+**Layout:** Drive list at `/proof` (primary: Log something), Opened space at `/proof/$proofId` (primary: Arrange until the story is arranged, then Publish — one primary at a time). The dock must not cover the band ([layout.md](../design-system/layout.md)).
 
 ## Concept
 

@@ -12,7 +12,7 @@ function GhostInput(props: InputHTMLAttributes<HTMLInputElement>) {
     <input
       {...props}
       className={cn(
-        "w-full bg-transparent outline-none placeholder:text-muted-foreground",
+        "w-full bg-transparent outline-none placeholder:text-ink-faint",
         props.className,
       )}
     />
@@ -24,7 +24,7 @@ function GhostTextarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
     <textarea
       {...props}
       className={cn(
-        "mt-4 min-h-24 w-full resize-none bg-transparent outline-none placeholder:text-muted-foreground",
+        "mt-4 min-h-24 w-full resize-none bg-transparent outline-none placeholder:text-ink-faint",
         props.className,
       )}
     />
@@ -42,7 +42,7 @@ function PageAction({
     <button
       type="button"
       onClick={onClick}
-      className="mt-2 inline-flex min-h-11 items-center text-[14px] text-muted-foreground hover:text-foreground"
+      className="mt-2 inline-flex min-h-11 items-center text-[13px] text-ink-muted hover:text-ink"
     >
       {children}
     </button>
@@ -288,7 +288,7 @@ export function PaperPage({
               </p>
             ))
           ) : (
-            <p className="mt-1 text-muted-foreground">
+            <p className="mt-1 text-ink-faint">
               A published Proof appears here when you add it.
             </p>
           )}

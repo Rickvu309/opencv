@@ -93,7 +93,7 @@ Feature-first and screaming: the tree names the product, not the framework.
 src/
   routes/                    thin TanStack file routes; each delegates to a feature screen
     index.tsx  sign-in.tsx  sign-up.tsx  onboarding.tsx
-    _app/                    signed-in shell: the four layers of docs/layout.md (main, chrome = rail + bell, dock, overlays)
+    _app/                    signed-in shell: the four layers of docs/design-system/layout.md (main, chrome = rail + bell, dock, overlays)
       coach.tsx  profile.tsx  paper/  proof/  pitch.tsx  search.tsx  applications.tsx  settings.tsx
     _public/                 p.$slug.tsx (published Proof), u.$handle.tsx (personal page)
     api/                     coach stream, files, og images
@@ -164,7 +164,7 @@ Documented as later, not built in v1: monetization, language switcher (English U
 | [data.md](data.md) | Schema, migrations, command log |
 | [ai.md](ai.md) | Gateway, agent, guardrails, traces, evals |
 | [flows.md](flows.md) | Information architecture and core flows |
-| [layout.md](layout.md) | Screen regions, layout types, empty states |
+| [layout.md](design-system/layout.md) | Screen regions, layout types, empty states |
 | [copy.md](copy.md) | Voice, mechanics, lexicon, per-surface copy |
 | [design.md](design.md) | Tokens, voice, accessibility |
 | [hosting.md](hosting.md) | Railway services, env, deploy |

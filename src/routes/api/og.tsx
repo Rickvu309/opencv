@@ -16,7 +16,7 @@ export const Route = createFileRoute("/api/og")({
               style={{
                 fontSize: 48,
                 background: "white",
-                color: "#141413",
+                color: "#212226",
                 width: "100%",
                 height: "100%",
                 display: "flex",

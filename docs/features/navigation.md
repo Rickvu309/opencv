@@ -16,7 +16,7 @@ The shell wraps every signed-in route except `/onboarding`.
 
 ### Regions
 
-Every signed-in screen is four layers — main, chrome (rail plus header bell), dock, overlays — with reading order and yield rules defined in [layout.md](../layout.md). This spec owns the chrome layer; the main column belongs to each place's layout type.
+Every signed-in screen is four layers — main, chrome (rail plus header bell), dock, overlays — with reading order and yield rules defined in [layout.md](../design-system/layout.md). This spec owns the chrome layer; the main column belongs to each place's layout type.
 
 ### Desktop rail, top to bottom
 

@@ -108,7 +108,7 @@ export function PaperListScreen() {
             <Button variant="outline" onClick={() => setGallery("letter")}>
               Start a letter
             </Button>
-            <label className="inline-flex min-h-11 cursor-pointer items-center rounded-[var(--radius-control)] border border-border px-4 text-[14px]">
+            <label className="inline-flex min-h-11 cursor-pointer items-center rounded-[var(--radius-control)] border border-hairline px-4 text-[13px]">
               I already have a file
               <input
                 type="file"
@@ -195,7 +195,7 @@ export function PaperListScreen() {
                 <DropdownMenu>
                   <DropdownMenuTrigger
                     aria-label={`Actions for ${p.label}`}
-                    className="flex size-11 items-center justify-center rounded-[var(--radius-control)] text-[14px] hover:bg-muted"
+                    className="flex size-11 items-center justify-center rounded-[var(--radius-control)] text-[13px] hover:bg-surface-2"
                   >
                     ···
                   </DropdownMenuTrigger>
@@ -242,7 +242,7 @@ export function PaperListScreen() {
                 <DropdownMenu>
                   <DropdownMenuTrigger
                     aria-label={`Actions for ${f.label}`}
-                    className="flex size-11 items-center justify-center rounded-[var(--radius-control)] text-[14px] hover:bg-muted"
+                    className="flex size-11 items-center justify-center rounded-[var(--radius-control)] text-[13px] hover:bg-surface-2"
                   >
                     ···
                   </DropdownMenuTrigger>

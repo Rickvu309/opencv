@@ -29,7 +29,7 @@ export function SettingsScreen() {
       {q.data ? (
         <>
           <Section label="Account">
-            <p className="text-muted-foreground">{q.data.email}</p>
+            <p className="text-ink-muted">{q.data.email}</p>
             <Label htmlFor="email">New email</Label>
             <Input
               id="email"
@@ -90,7 +90,7 @@ export function SettingsScreen() {
           </Section>
 
           <Section label="Notifications">
-            <label className="flex min-h-11 items-center gap-2 text-[14px]">
+            <label className="flex min-h-11 items-center gap-2 text-[13px]">
               <input
                 type="checkbox"
                 defaultChecked={prefs.deadline !== false}
@@ -98,7 +98,7 @@ export function SettingsScreen() {
               />
               Email me before deadlines
             </label>
-            <label className="flex min-h-11 items-center gap-2 text-[14px]">
+            <label className="flex min-h-11 items-center gap-2 text-[13px]">
               <input type="checkbox" defaultChecked={prefs.idle !== false} id="pref-idle" />
               Email me when an application sits idle
             </label>
@@ -116,7 +116,7 @@ export function SettingsScreen() {
           </Section>
 
           <Section label="Delete account">
-            <p className="text-[14px] text-muted-foreground">
+            <p className="text-[13px] text-ink-muted">
               This removes your papers, Proofs, and conversations.
             </p>
             <Button variant="danger" onClick={() => setConfirmDelete(true)}>

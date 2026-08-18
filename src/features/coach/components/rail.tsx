@@ -24,7 +24,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const itemClass =
-  "flex min-h-11 w-full items-center rounded-[var(--radius-control)] px-3 text-left text-[14px] hover:bg-muted";
+  "flex min-h-11 w-full items-center rounded-[var(--radius-control)] px-3 text-left text-[13px] hover:bg-surface-2";
 
 function placeState(pathname: string) {
   const paper = pathname === "/paper" || pathname.startsWith("/paper/");
@@ -115,14 +115,14 @@ export function Rail({ onNavigate }: { onNavigate?: () => void }) {
                   type="button"
                   title={c.title}
                   onClick={() => void openThread(c.id)}
-                  className={cn(itemClass, "min-w-0 flex-1 truncate", active && "bg-muted text-accent")}
+                  className={cn(itemClass, "min-w-0 flex-1 truncate", active && "bg-surface-3 text-accent")}
                 >
                   {c.title}
                 </button>
                 <DropdownMenu>
                   <DropdownMenuTrigger
                     aria-label={`Actions for ${c.title}`}
-                    className="flex size-11 shrink-0 items-center justify-center rounded-[var(--radius-control)] text-[14px] hover:bg-muted"
+                    className="flex size-11 shrink-0 items-center justify-center rounded-[var(--radius-control)] text-[13px] hover:bg-surface-2"
                   >
                     ···
                   </DropdownMenuTrigger>
@@ -150,12 +150,12 @@ export function Rail({ onNavigate }: { onNavigate?: () => void }) {
       </nav>
 
       <nav aria-label="Places" className="mt-4">
-        <p className="px-3 text-[13px] text-muted-foreground">Prepare</p>
+        <p className="px-3 text-[13px] font-[510] text-ink-muted">Prepare</p>
         <div className="mt-1 flex flex-col gap-1">
           <Link
             to="/paper"
             onClick={onNavigate}
-            className={cn(itemClass, places.paper && !places.proof && "bg-muted text-accent", places.proof && "bg-muted")}
+            className={cn(itemClass, places.paper && !places.proof && "bg-surface-3 text-accent", places.proof && "bg-surface-3")}
             activeProps={{ className: "" }}
           >
             Paper
@@ -163,7 +163,7 @@ export function Rail({ onNavigate }: { onNavigate?: () => void }) {
           <Link
             to="/proof"
             onClick={onNavigate}
-            className={cn(itemClass, "pl-6", places.proof && "bg-muted text-accent")}
+            className={cn(itemClass, "pl-6", places.proof && "bg-surface-3 text-accent")}
             activeProps={{ className: "" }}
           >
             Proof
@@ -171,18 +171,18 @@ export function Rail({ onNavigate }: { onNavigate?: () => void }) {
           <Link
             to="/pitch"
             onClick={onNavigate}
-            className={cn(itemClass, places.pitch && "bg-muted text-accent")}
+            className={cn(itemClass, places.pitch && "bg-surface-3 text-accent")}
             activeProps={{ className: "" }}
           >
             Pitch
           </Link>
         </div>
-        <p className="mt-4 px-3 text-[13px] text-muted-foreground">Opportunities</p>
+        <p className="mt-4 px-3 text-[13px] font-[510] text-ink-muted">Opportunities</p>
         <div className="mt-1 flex flex-col gap-1">
           <Link
             to="/search"
             onClick={onNavigate}
-            className={cn(itemClass, places.search && "bg-muted text-accent")}
+            className={cn(itemClass, places.search && "bg-surface-3 text-accent")}
             activeProps={{ className: "" }}
           >
             Search
@@ -190,7 +190,7 @@ export function Rail({ onNavigate }: { onNavigate?: () => void }) {
           <Link
             to="/applications"
             onClick={onNavigate}
-            className={cn(itemClass, places.apply && "bg-muted text-accent")}
+            className={cn(itemClass, places.apply && "bg-surface-3 text-accent")}
             activeProps={{ className: "" }}
           >
             Apply
@@ -265,7 +265,7 @@ export function Rail({ onNavigate }: { onNavigate?: () => void }) {
       <Dialog open={Boolean(removeId)} onOpenChange={(open) => !open && setRemoveId(null)}>
         <DialogContent>
           <DialogTitle>Delete this conversation?</DialogTitle>
-          <DialogDescription className="mt-2 text-[14px] text-muted-foreground">
+          <DialogDescription className="mt-2 text-[13px] text-ink-muted">
             This removes the thread. It cannot be undone.
           </DialogDescription>
           <div className="mt-4 flex justify-end gap-2">

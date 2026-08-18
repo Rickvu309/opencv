@@ -99,7 +99,7 @@ export function SearchScreen() {
           back={
             <button
               type="button"
-              className="inline-flex min-h-11 items-center text-[14px] text-muted-foreground"
+              className="inline-flex min-h-11 items-center text-[13px] text-ink-muted"
               onClick={() => setOpenId(null)}
             >
               Back
@@ -111,7 +111,7 @@ export function SearchScreen() {
           }
         />
         {fit ? (
-          <p className="text-[16px] leading-[1.6]">
+          <p className="text-[15px] leading-[1.6] tabular-nums">
             You meet {fit.met} of {fit.total}
             {fit.gap.length ? `; missing ${fit.gap.join(", ")}` : ""}.
           </p>
@@ -119,7 +119,7 @@ export function SearchScreen() {
         {fit?.items.length ? (
           <ul className="mt-6 space-y-2">
             {fit.items.map((item) => (
-              <li key={item.text} className="text-[16px] leading-[1.6]">
+              <li key={item.text} className="text-[15px] leading-[1.6]">
                 {item.met ? "Met" : "Missing"}: {item.text}
               </li>
             ))}
@@ -195,11 +195,17 @@ export function SearchScreen() {
               key={o.id}
               label={o.title}
               meta={
-                o.fit
-                  ? `${o.company ? `${o.company} · ` : ""}${o.fit.met} of ${o.fit.total}${
-                      o.fit.gap[0] ? `; missing ${o.fit.gap[0]}` : ""
-                    }`
-                  : o.company
+                <span className="flex flex-col items-end gap-0.5 text-right">
+                  <span>
+                    {[o.company, o.location].filter(Boolean).join(" · ")}
+                  </span>
+                  {o.fit ? (
+                    <span className="tabular-nums">
+                      Fit {o.fit.met} of {o.fit.total}
+                      {o.fit.gap[0] ? ` — misses ${o.fit.gap[0]}` : ""}.
+                    </span>
+                  ) : null}
+                </span>
               }
               onSelect={() => setOpenId(o.id)}
             />

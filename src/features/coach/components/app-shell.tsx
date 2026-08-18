@@ -13,17 +13,17 @@ function SignedInChrome() {
   const showDock = pathname !== "/coach";
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-canvas">
       <aside
         data-print-hide
-        className="hidden w-64 shrink-0 border-r border-border print:hidden md:flex md:flex-col"
+        className="hidden w-[var(--size-rail)] shrink-0 border-r border-hairline print:hidden md:flex md:flex-col"
       >
         <Rail />
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
         <header
           data-print-hide
-          className="flex items-center gap-3 border-b border-border px-4 py-2 print:hidden"
+          className="flex items-center gap-3 px-4 py-2 print:hidden"
         >
           <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
             <Button
@@ -46,7 +46,10 @@ function SignedInChrome() {
             <NotificationBell />
           </div>
         </header>
-        <main id="main" className="flex-1 p-6">
+        <main
+          id="main"
+          className="flex-1 rounded-tl-[var(--radius-container)] border-t border-l border-hairline bg-surface-1 p-6"
+        >
           <Outlet />
         </main>
       </div>

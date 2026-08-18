@@ -4,7 +4,7 @@
 
 **Job:** the single store of what is true about the user. A fact is captured once and feeds every document, pitch, and fit read; nothing is ever re-entered.
 
-**Layout:** Sectioned editor at `/profile` — identity first, completeness as a fact with its basis inside the first section, never a hero metric. Primary: fill the emptiest section, then the door to the first CV. The dock must not cover it ([layout.md](../layout.md)).
+**Layout:** Sectioned editor at `/profile` — identity first, completeness as a fact with its basis inside the first section, never a hero metric. Primary: fill the emptiest section, then the door to the first CV. The dock must not cover it ([layout.md](../design-system/layout.md)).
 
 ## Concept
 

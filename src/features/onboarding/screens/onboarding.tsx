@@ -32,19 +32,21 @@ export function OnboardingScreen() {
 
   return (
     <main id="main" className="mx-auto max-w-lg px-4 py-12">
-      <p className="text-muted-foreground">Step {step + 1} of 4</p>
+      <p className="text-ink-muted tabular-nums">Step {step + 1} of 4</p>
       {step === 0 ? (
         <section className="mt-4">
-          <h1 className="text-[28px] font-medium">What are you aiming for?</h1>
+          <h1 className="text-balance text-[24px] font-[590] leading-[1.3] tracking-[-0.017em]">
+            What are you aiming for?
+          </h1>
           <Label className="mt-6" htmlFor="goal">
             Target role
           </Label>
           <Input id="goal" value={targetRole} onChange={(e) => setTargetRole(e.target.value)} disabled={unsure} />
-          <label className="mt-3 flex min-h-11 items-center gap-2 text-[14px]">
+          <label className="mt-3 flex min-h-11 items-center gap-2 text-[13px]">
             <input type="checkbox" checked={unsure} onChange={(e) => setUnsure(e.target.checked)} />
             I'm not sure yet
           </label>
-          <p className="mt-4 text-[14px] leading-[1.6] text-muted-foreground">
+          <p className={`mt-4 text-[13px] leading-[1.5] text-ink-muted ${unsure || targetRole ? "payback-enter" : ""}`}>
             {unsure
               ? "That stays on your profile as not sure yet."
               : targetRole
@@ -55,7 +57,9 @@ export function OnboardingScreen() {
       ) : null}
       {step === 1 ? (
         <section className="mt-4">
-          <h1 className="text-[28px] font-medium">Where are you now?</h1>
+          <h1 className="text-balance text-[24px] font-[590] leading-[1.3] tracking-[-0.017em]">
+            Where are you now?
+          </h1>
           <div className="mt-6 space-y-3">
             <div>
               <Label htmlFor="school">School</Label>
@@ -70,7 +74,7 @@ export function OnboardingScreen() {
               <Input id="year" value={year} onChange={(e) => setYear(e.target.value)} />
             </div>
           </div>
-          <p className="mt-4 text-[14px] leading-[1.6] text-muted-foreground">
+          <p className={`mt-4 text-[13px] leading-[1.5] text-ink-muted ${school ? "payback-enter" : ""}`}>
             {school
               ? `Education on the profile: ${[school, major, year].filter(Boolean).join(" · ")}.`
               : "School, major, and year fill the education section."}
@@ -79,8 +83,10 @@ export function OnboardingScreen() {
       ) : null}
       {step === 2 ? (
         <section className="mt-4">
-          <h1 className="text-[28px] font-medium">What do you already have?</h1>
-          <p className="mt-2 text-muted-foreground">One job, project, or shift is enough.</p>
+          <h1 className="text-balance text-[24px] font-[590] leading-[1.3] tracking-[-0.017em]">
+            What do you already have?
+          </h1>
+          <p className="mt-2 text-[13px] text-ink-muted">One job, project, or shift is enough.</p>
           <div className="mt-6 space-y-3">
             <div>
               <Label htmlFor="org">Organisation</Label>
@@ -91,7 +97,7 @@ export function OnboardingScreen() {
               <Input id="role" value={role} onChange={(e) => setRole(e.target.value)} />
             </div>
           </div>
-          <p className="mt-4 text-[14px] leading-[1.6] text-muted-foreground">
+          <p className={`mt-4 text-[13px] leading-[1.5] text-ink-muted ${org ? "payback-enter" : ""}`}>
             {org
               ? `Experience on the profile: ${role || "Member"} at ${org}.`
               : "This becomes the first experience row."}
@@ -100,11 +106,13 @@ export function OnboardingScreen() {
       ) : null}
       {step === 3 ? (
         <section className="mt-4">
-          <h1 className="text-[28px] font-medium">The Coach works with you</h1>
+          <h1 className="text-balance text-[24px] font-[590] leading-[1.3] tracking-[-0.017em]">
+            The Coach works with you
+          </h1>
           <p className="mt-4 leading-[1.6]">
             It can draft and edit in the app. Every change shows up with undo. You stay in control.
           </p>
-          <p className="mt-4 text-[14px] leading-[1.6] text-muted-foreground">
+          <p className="mt-4 text-[13px] leading-[1.5] text-ink-muted">
             {[
               unsure ? "Goal: not sure yet" : targetRole ? `Goal: ${targetRole}` : null,
               school ? `School: ${school}` : null,

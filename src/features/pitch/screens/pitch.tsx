@@ -65,7 +65,7 @@ export function PitchScreen() {
           </Section>
           <Section label="Intro">
             <Textarea defaultValue={q.data.intro?.body ?? ""} id="intro" />
-            {introNote ? <p className="text-[14px] text-muted-foreground">{introNote}</p> : null}
+            {introNote ? <p className="text-[13px] text-ink-muted">{introNote}</p> : null}
             <div className="flex flex-wrap gap-2">
               <Button
                 onClick={() =>
@@ -93,7 +93,7 @@ export function PitchScreen() {
               </Button>
             </div>
             {introNote ? (
-              <Link to="/profile" className="text-[14px] text-accent underline">
+              <Link to="/profile" className="text-[13px] text-accent underline">
                 Open Profile
               </Link>
             ) : null}
@@ -110,7 +110,7 @@ export function PitchScreen() {
             >
               <input
                 id="answer-prompt"
-                className="min-h-11 w-full rounded-[var(--radius-control)] border border-border px-3"
+                className="min-h-11 w-full rounded-[var(--radius-control)] border border-hairline px-3"
                 placeholder="The question"
                 required
               />
@@ -120,7 +120,7 @@ export function PitchScreen() {
             {q.data.answers.map((a: { id: string; prompt: string; body: string }) => (
               <article key={a.id} className="mt-4">
                 <p className="font-medium">{a.prompt}</p>
-                <p className="text-muted-foreground">{a.body}</p>
+                <p className="text-ink-muted">{a.body}</p>
               </article>
             ))}
           </Section>

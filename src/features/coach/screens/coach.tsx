@@ -7,10 +7,10 @@ import {
 } from "@/features/coach/queries";
 import { useCoachSession } from "@/features/coach/components/session";
 import { CoachComposer } from "@/features/coach/components/composer";
+import { ChatFailed, ChatMessage, StarterChip } from "@/features/coach/components/message";
 import { navigateToOpen } from "@/features/coach/open";
 import { sendCoachTurn } from "@/features/coach/stream";
 import { runCommand } from "@/ui/run-command";
-import { Button } from "@/ui/button";
 import { checklistFn } from "@/features/onboarding/queries";
 
 export function CoachScreen({ threadId }: { threadId?: string }) {
@@ -31,6 +31,7 @@ export function CoachScreen({ threadId }: { threadId?: string }) {
   const [text, setText] = useState("");
   const [reply, setReply] = useState("");
   const [lastFailed, setLastFailed] = useState<string | null>(null);
+  const [working, setWorking] = useState(false);
   const offline = convos.data?.offline ?? false;
   const missingThread = Boolean(active) && thread.isFetched && thread.data === null;
 
@@ -54,21 +55,26 @@ export function CoachScreen({ threadId }: { threadId?: string }) {
     setReply("");
     setLastFailed(null);
     setText("");
+    setWorking(true);
     let acc = "";
-    const result = await sendCoachTurn({
-      conversationId: id,
-      text: trimmed,
-      screen: "/coach",
-      onText: (next) => {
-        acc = next;
-        setReply(next);
-      },
-      onOpen: (open) => {
-        void navigateToOpen(navigate, open);
-      },
-    });
-    if (!result.ok) setLastFailed(trimmed);
-    else if (!acc.trim()) setReply("The Coach said nothing. Try again.");
+    try {
+      const result = await sendCoachTurn({
+        conversationId: id,
+        text: trimmed,
+        screen: "/coach",
+        onText: (next) => {
+          acc = next;
+          setReply(next);
+        },
+        onOpen: (open) => {
+          void navigateToOpen(navigate, open);
+        },
+      });
+      if (!result.ok) setLastFailed(trimmed);
+      else if (!acc.trim()) setReply("The Coach said nothing. Try again.");
+    } finally {
+      setWorking(false);
+    }
     await queryClient.invalidateQueries({ queryKey: ["thread", id] });
     await queryClient.invalidateQueries({ queryKey: ["conversations"] });
   }
@@ -79,7 +85,7 @@ export function CoachScreen({ threadId }: { threadId?: string }) {
   return (
     <section className="mx-auto flex min-h-[70vh] max-w-2xl flex-col">
       {offline ? (
-        <p className="text-muted-foreground">
+        <p className="text-ink-muted">
           The Coach is offline right now. Everything else in the app still works.
         </p>
       ) : null}
@@ -101,39 +107,32 @@ export function CoachScreen({ threadId }: { threadId?: string }) {
       {empty && !missingThread ? (
         <>
           {checklist.data && !checklist.data.dismissed ? (
-            <ul className="text-[14px] text-muted-foreground">
+            <ul className="space-y-1 text-[15px]">
               {checklist.data.items.map((i: { id: string; label: string; done: boolean }) => (
-                <li key={i.id}>
-                  {i.done ? "✓" : "○"} {i.label}
+                <li key={i.id} className="flex min-h-11 items-center justify-between gap-3">
+                  <span>{i.label}</span>
+                  <span className="text-[13px] text-ink-muted">{i.done ? "done" : "to do"}</span>
                 </li>
               ))}
             </ul>
           ) : null}
           <div className="mt-6 flex flex-wrap gap-2">
             {["Where do I start?", "Look at my CV", "What fits my background?"].map((s) => (
-              <Button key={s} variant="ghost" onClick={() => void send(s)}>
-                {s}
-              </Button>
+              <StarterChip key={s} label={s} onPick={() => void send(s)} />
             ))}
           </div>
         </>
       ) : null}
       <div className="mt-6 min-h-48 flex-1 space-y-3">
         {messages.map((m: { id: string; role: string; content: { text?: string }[] }) => (
-          <p key={m.id}>
-            <span className="text-[14px] text-muted-foreground">{m.role}: </span>
-            {Array.isArray(m.content) ? m.content.map((c) => c.text).join(" ") : ""}
-          </p>
+          <ChatMessage
+            key={m.id}
+            role={m.role}
+            text={Array.isArray(m.content) ? m.content.map((c) => c.text).join(" ") : ""}
+          />
         ))}
-        {reply ? <p>{reply}</p> : null}
-        {lastFailed ? (
-          <div>
-            <p className="text-muted-foreground">The Coach didn&apos;t reply. Try again.</p>
-            <Button className="mt-2" variant="outline" onClick={() => void send(lastFailed)}>
-              Retry
-            </Button>
-          </div>
-        ) : null}
+        {reply ? <ChatMessage role="coach" text={reply} /> : null}
+        {lastFailed ? <ChatFailed onRetry={() => void send(lastFailed)} /> : null}
       </div>
       <div className="mt-4">
         <CoachComposer
@@ -141,6 +140,7 @@ export function CoachScreen({ threadId }: { threadId?: string }) {
           onText={setText}
           onSend={() => void send(text)}
           disabled={offline}
+          working={working}
         />
       </div>
     </section>

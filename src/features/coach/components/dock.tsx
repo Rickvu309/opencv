@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { getConversationFn, listConversationsFn } from "@/features/coach/queries";
 import { useCoachSession } from "@/features/coach/components/session";
 import { CoachComposer } from "@/features/coach/components/composer";
+import { ChatFailed, ChatMessage } from "@/features/coach/components/message";
 import { navigateToOpen } from "@/features/coach/open";
 import { sendCoachTurn } from "@/features/coach/stream";
 import { runCommand } from "@/ui/run-command";
@@ -47,6 +48,7 @@ function ThreadBody({
   const [text, setText] = useState("");
   const [reply, setReply] = useState("");
   const [lastFailed, setLastFailed] = useState<string | null>(null);
+  const [working, setWorking] = useState(false);
   const offline = convos.data?.offline ?? thread.data?.offline ?? false;
 
   useEffect(() => {
@@ -70,21 +72,26 @@ function ThreadBody({
     setReply("");
     setLastFailed(null);
     setText("");
+    setWorking(true);
     let acc = "";
-    const result = await sendCoachTurn({
-      conversationId: id,
-      text: trimmed,
-      screen,
-      onText: (next) => {
-        acc = next;
-        setReply(next);
-      },
-      onOpen: (open) => {
-        void navigateToOpen(navigate, open);
-      },
-    });
-    if (!result.ok) setLastFailed(trimmed);
-    else if (!acc.trim()) setReply("The Coach said nothing. Try again.");
+    try {
+      const result = await sendCoachTurn({
+        conversationId: id,
+        text: trimmed,
+        screen,
+        onText: (next) => {
+          acc = next;
+          setReply(next);
+        },
+        onOpen: (open) => {
+          void navigateToOpen(navigate, open);
+        },
+      });
+      if (!result.ok) setLastFailed(trimmed);
+      else if (!acc.trim()) setReply("The Coach said nothing. Try again.");
+    } finally {
+      setWorking(false);
+    }
     await queryClient.invalidateQueries({ queryKey: ["thread", id] });
     await queryClient.invalidateQueries({ queryKey: ["conversations"] });
   }
@@ -94,26 +101,20 @@ function ThreadBody({
   return (
     <div className={cn("flex min-h-0 flex-1 flex-col", compact && "text-[14px]")}>
       {offline ? (
-        <p className="text-muted-foreground">
+        <p className="text-ink-muted">
           The Coach is offline right now. Everything else in the app still works.
         </p>
       ) : null}
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto">
         {messages.map((m: { id: string; role: string; content: { text?: string }[] }) => (
-          <p key={m.id}>
-            <span className="text-[14px] text-muted-foreground">{m.role}: </span>
-            {Array.isArray(m.content) ? m.content.map((c) => c.text).join(" ") : ""}
-          </p>
+          <ChatMessage
+            key={m.id}
+            role={m.role}
+            text={Array.isArray(m.content) ? m.content.map((c) => c.text).join(" ") : ""}
+          />
         ))}
-        {reply ? <p>{reply}</p> : null}
-        {lastFailed ? (
-          <div>
-            <p className="text-muted-foreground">The Coach didn&apos;t reply. Try again.</p>
-            <Button className="mt-2" variant="outline" onClick={() => void send(lastFailed)}>
-              Retry
-            </Button>
-          </div>
-        ) : null}
+        {reply ? <ChatMessage role="coach" text={reply} /> : null}
+        {lastFailed ? <ChatFailed onRetry={() => void send(lastFailed)} /> : null}
       </div>
       <div className="mt-3">
         <CoachComposer
@@ -121,6 +122,7 @@ function ThreadBody({
           onText={setText}
           onSend={() => void send(text)}
           disabled={offline}
+          working={working}
         />
       </div>
     </div>
@@ -141,7 +143,7 @@ export function CoachDock() {
         <button
           type="button"
           data-print-hide
-          className="fixed right-4 bottom-4 z-30 hidden min-h-11 rounded-[var(--radius-control)] border border-border bg-background px-4 text-[14px] shadow-sm print:hidden md:flex md:items-center"
+          className="fixed right-4 bottom-4 z-[var(--z-dock)] hidden min-h-11 rounded-[var(--radius-control)] border border-hairline bg-surface-1 px-4 text-[13px] shadow-[var(--shadow-overlay)] print:hidden md:flex md:items-center"
           onClick={() => setDockOpen(true)}
         >
           Coach
@@ -151,11 +153,11 @@ export function CoachDock() {
     return (
       <aside
         data-print-hide
-        className="fixed right-4 bottom-4 z-30 hidden h-[min(32rem,70vh)] w-80 flex-col rounded-[var(--radius-card)] border border-border bg-background p-4 shadow-sm print:hidden md:flex"
+        className="dock-enter fixed right-4 bottom-4 z-[var(--z-dock)] hidden h-[min(32rem,70vh)] w-[var(--size-dock)] flex-col rounded-[var(--radius-container)] border border-hairline bg-surface-1 p-4 shadow-[var(--shadow-overlay)] print:hidden md:flex"
         aria-label="Coach"
       >
         <div className="mb-3 flex items-center justify-between gap-2">
-          <p className="text-[14px] font-medium">Coach</p>
+          <p className="text-[15px] font-[510] tracking-[-0.012em]">Coach</p>
           <Button variant="ghost" className="min-h-11 px-3" onClick={() => setDockOpen(false)}>
             Close
           </Button>
@@ -171,7 +173,7 @@ export function CoachDock() {
         <button
           type="button"
           data-print-hide
-          className="fixed right-4 bottom-4 z-30 min-h-11 rounded-[var(--radius-control)] border border-border bg-background px-4 text-[14px] shadow-sm print:hidden md:hidden"
+          className="fixed right-4 bottom-4 z-[var(--z-dock)] min-h-11 rounded-[var(--radius-control)] border border-hairline bg-surface-1 px-4 text-[13px] shadow-[var(--shadow-overlay)] print:hidden md:hidden"
           onClick={() => setDockOpen(true)}
         >
           Coach

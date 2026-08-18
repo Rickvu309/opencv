@@ -25,19 +25,20 @@ export function FormatBar({
     <div
       role="toolbar"
       aria-label="Format"
-      className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border py-2"
+      className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-hairline py-2"
     >
       <div className="flex flex-wrap gap-1" role="group" aria-label="Density">
         {(["normal", "tight"] as const).map((density) => (
           <button
             key={density}
             type="button"
+            aria-pressed={content.density === density}
             onClick={() => onDensity(density)}
             className={cn(
-              "inline-flex min-h-11 items-center rounded-[var(--radius-control)] px-3 text-[14px]",
+              "inline-flex min-h-11 items-center rounded-[var(--radius-control)] px-3 text-[13px]",
               content.density === density
-                ? "bg-muted text-accent"
-                : "text-muted-foreground hover:bg-muted",
+                ? "bg-surface-3 text-ink"
+                : "text-ink-muted hover:bg-surface-2",
             )}
           >
             {density === "normal" ? "Normal" : "Tight"}
@@ -55,8 +56,8 @@ export function FormatBar({
                 aria-pressed={shown}
                 onClick={() => onSection(section, shown)}
                 className={cn(
-                  "inline-flex min-h-11 items-center rounded-[var(--radius-control)] px-3 text-[14px]",
-                  shown ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted",
+                  "inline-flex min-h-11 items-center rounded-[var(--radius-control)] px-3 text-[13px]",
+                  shown ? "bg-surface-3 text-ink" : "text-ink-muted hover:bg-surface-2",
                 )}
               >
                 {sectionLabel[section]}
@@ -66,7 +67,7 @@ export function FormatBar({
         </div>
       ) : null}
       {completeness ? (
-        <p className="min-w-0 flex-1 basis-full text-[14px] leading-[1.5] text-muted-foreground sm:basis-auto">
+        <p className="min-w-0 flex-1 basis-full text-[13px] leading-[1.5] text-ink-muted tabular-nums sm:basis-auto">
           {completeness}
         </p>
       ) : null}

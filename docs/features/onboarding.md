@@ -4,7 +4,7 @@
 
 **Job:** a first-time user leaves knowing what OpenPath is for, how the Coach works with them, and where to go next — having already set up something real.
 
-**Layout:** Wizard at `/onboarding` — no rail, no dock. One question per step, payback in the same frame. Primary: Continue; Skip always visible ([layout.md](../layout.md)).
+**Layout:** Wizard at `/onboarding` — no rail, no dock. One question per step, payback in the same frame. Primary: Continue; Skip always visible ([layout.md](../design-system/layout.md)).
 
 ## Concept
 

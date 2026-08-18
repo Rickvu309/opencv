@@ -24,10 +24,10 @@ export function AuthScreen({ mode }: { mode: "sign-in" | "sign-up" }) {
 
   return (
     <main id="main" className="mx-auto max-w-sm px-4 py-16">
-      <h1 className="text-[28px] font-medium leading-[1.5]">
+      <h1 className="text-balance text-[24px] font-[590] leading-[1.3] tracking-[-0.017em]">
         {mode === "sign-up" ? "Create an account" : "Sign in"}
       </h1>
-      <p className="mt-2 text-muted-foreground">
+      <p className="mt-2 text-[13px] text-ink-muted">
         {mode === "sign-up"
           ? "Your work stays with you, on every device."
           : "Welcome back. Your papers and conversations are here."}
@@ -61,7 +61,7 @@ export function AuthScreen({ mode }: { mode: "sign-in" | "sign-up" }) {
           {mode === "sign-up" ? "Create account" : "Sign in"}
         </Button>
       </form>
-      <p className="mt-6 text-muted-foreground">
+      <p className="mt-6 text-[13px] text-ink-muted">
         {mode === "sign-up" ? (
           <>
             Already have an account? <Link to="/sign-in">Sign in</Link>

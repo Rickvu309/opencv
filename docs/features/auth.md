@@ -4,7 +4,7 @@
 
 **Job:** each user's work is theirs, saved to the server, and there when they return — on any device.
 
-**Layout:** Narrow form at `/sign-in` and `/sign-up` — no rail, no dock. Heading, one sentence, the fields, one primary, a text link to the other mode ([layout.md](../layout.md)).
+**Layout:** Narrow form at `/sign-in` and `/sign-up` — no rail, no dock. Heading, one sentence, the fields, one primary, a text link to the other mode ([layout.md](../design-system/layout.md)).
 
 ## Concept
 

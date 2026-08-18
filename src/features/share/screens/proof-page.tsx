@@ -30,13 +30,18 @@ export function ProofPageScreen({ slug }: { slug: string }) {
 
   return (
     <main id="main" className="mx-auto max-w-xl px-4 py-16">
-      <h1 className="text-[28px] font-medium">{c.title}</h1>
-      <p className="text-muted-foreground">{c.role}</p>
-      <section className="mt-8 space-y-4 leading-[1.6]">
+      <h1 className="text-balance text-[24px] font-[590] leading-[1.3] tracking-[-0.017em]">
+        {c.title}
+      </h1>
+      <p className="mt-1 text-[13px] text-ink-muted">{c.role}</p>
+      <section className="mt-8 space-y-4 text-[15px] leading-[1.6]">
         <p>{c.what}</p>
         <p>{c.did}</p>
         <p>{c.came}</p>
       </section>
+      <footer className="mt-16 text-[13px] text-ink-muted">
+        <a href="/">OpenPath</a>
+      </footer>
     </main>
   );
 }

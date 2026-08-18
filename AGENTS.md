@@ -24,9 +24,9 @@ src/routes/                thin file routes; _app/ is the signed-in shell, _publ
 src/features/<name>/       model.ts, commands.server.ts, queries.ts, screens/, components/, *.server.ts, *.test.ts
 src/core/                  db, commands (bus), ai (gateway), auth, notifications, jobs, email, config
 src/ui/                    shadcn primitives, shared layout pieces, no product nouns
-src/styles/globals.css     design tokens (see docs/design.md)
+src/styles/globals.css     design tokens (see docs/design.md and docs/design-system/tokens.md)
 scripts/                   dev, db, worker entry, railway build/start
-docs/                      architecture, data, ai, flows, design, hosting, adr/, features/
+docs/                      architecture, data, ai, flows, design, hosting, adr/, design-system/, features/
 ```
 
 Features: coach, profile, paper, proof, pitch, search, application, onboarding, auth, landing, settings, share.
@@ -49,7 +49,7 @@ Features: coach, profile, paper, proof, pitch, search, application, onboarding, 
 
 ## Copy and voice
 
-Mentor voice: second person, sentence case, contractions fine, **no exclamation marks**. Encouraging but never flattering; every claim shows its basis; end screens and errors with one next step. English UI for now. Type words users see: CV, Resume, Cover letter, Proof, Apply. Full rules: [docs/copy.md](docs/copy.md); tokens: [docs/design.md](docs/design.md).
+Mentor voice: second person, sentence case, contractions fine, **no exclamation marks**. Encouraging but never flattering; every claim shows its basis; end screens and errors with one next step. English UI for now. Type words users see: CV, Resume, Cover letter, Proof, Apply. Full rules: [docs/copy.md](docs/copy.md); tokens: [docs/design.md](docs/design.md); the full visual law (tokens, layout, motion, components): [docs/design-system/](docs/design-system/README.md).
 
 ## Commands you will run
 

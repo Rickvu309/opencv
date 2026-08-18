@@ -4,7 +4,7 @@
 
 **Job:** turn a skeptical, anxious visitor — "is this another career-quiz app?" — into someone who starts, or at least leaves an email.
 
-**Layout:** Public canvas at `/` — no signed-in chrome. The promise, then two doors; primary is start now ([layout.md](../layout.md)).
+**Layout:** Public canvas at `/` — no signed-in chrome. The promise, then two doors; primary is start now ([layout.md](../design-system/layout.md)).
 
 ## Concept
 

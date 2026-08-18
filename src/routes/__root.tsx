@@ -1,11 +1,6 @@
-import {
-  Outlet,
-  createRootRoute,
-  HeadContent,
-  Scripts,
-} from "@tanstack/react-router";
-import { Toaster } from "sonner";
+import { Outlet, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { SkipLink } from "@/ui/shell";
+import { AppToaster } from "@/ui/toaster";
 import appCss from "@/styles/globals.css?url";
 
 export const Route = createRootRoute({
@@ -34,7 +29,7 @@ function Root() {
       <body>
         <SkipLink />
         <Outlet />
-        <Toaster />
+        <AppToaster />
         <Scripts />
       </body>
     </html>

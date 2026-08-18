@@ -19,7 +19,9 @@ export function SituationGallery({
   return (
     <div>
       <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <h2 className="text-[18px] font-medium leading-[1.5]">{heading}</h2>
+        <h2 className="text-balance text-[18px] font-[510] leading-[1.4] tracking-[-0.012em]">
+          {heading}
+        </h2>
         {onCancel ? (
           <Button type="button" variant="ghost" onClick={onCancel}>
             Back to the list
@@ -31,11 +33,13 @@ export function SituationGallery({
           <button
             key={item.id}
             type="button"
-            className="min-h-11 rounded-[var(--radius-card)] border border-border p-4 text-left hover:bg-muted"
+            className="min-h-11 rounded-[var(--radius-container)] border border-hairline p-4 text-left transition-[background-color,transform] duration-[var(--duration-fast)] ease-[var(--ease-out)] hover:bg-surface-2 active:scale-[0.97] active:bg-surface-3"
             onClick={() => onPick(item.id)}
           >
-            <span className="block text-[14px] text-muted-foreground">{item.word}</span>
-            <span className="mt-1 block font-medium leading-[1.5]">{item.label}</span>
+            <span className="block text-[13px] whitespace-nowrap text-ink-muted">{item.word}</span>
+            <span className="mt-1 block text-[15px] font-[510] leading-[1.5] tracking-[-0.012em]">
+              {item.label}
+            </span>
           </button>
         ))}
       </div>

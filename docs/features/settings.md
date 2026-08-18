@@ -4,7 +4,7 @@
 
 **Job:** the quiet administrative room: account, public handle, notifications, sign out, delete.
 
-**Layout:** Sectioned editor at `/settings` — account, public page, notifications, danger last. No global primary; destructive actions confirm via Overlay. The dock must not cover section actions ([layout.md](../layout.md)).
+**Layout:** Sectioned editor at `/settings` — account, public page, notifications, danger last. No global primary; destructive actions confirm via Overlay. The dock must not cover section actions ([layout.md](../design-system/layout.md)).
 
 ## Concept
 

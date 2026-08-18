@@ -1,6 +1,6 @@
 # Layout and hierarchy
 
-Where things sit on each screen, in what order, and what must never compete. This is the logic of space — regions, reading order, one primary action — not pixels, color, or motion; those tokens live in [design.md](design.md). Where you can go and how you move is [flows.md](flows.md); the shell itself is [features/navigation.md](features/navigation.md).
+Where things sit on each screen, in what order, and what must never compete. This is the logic of space — regions, reading order, one primary action — not pixels, color, or motion; those live in [tokens.md](tokens.md) and [motion.md](motion.md). Where you can go and how you move is [flows.md](../flows.md); the shell itself is [features/navigation.md](../features/navigation.md).
 
 The users arrive anxious, in short sessions, on mid-range Android phones. Layout serves that: every screen answers "what do I do next" by position alone, before a word is read.
 
@@ -28,14 +28,15 @@ Rules that hold on every screen:
 - **Main is the artifact.** The dock must not cover the primary action. The drawer covers the map, never the artifact's band.
 - **Order by importance.** The most important content sits at the top and the leading edge. The band (title, primary action) is always first inside `main`.
 - **Group with space, not lines.** The gap between groups is at least twice the gap within a group. Hairlines only in dense lists (Paper rows, the Apply pipeline).
+- **One content inset per group.** Section headings sit outside the group's surface; every text column inside starts on the same vertical line. Padding never drifts per row, and a leading control never pushes its text off the shared edge — the group must read as one composition, not independent blocks.
 - **Controls look interactive.** A row that opens is a row, styled as one; a button has a shape. Never a control styled like adjacent static text.
 - **Empty, loading, error, and not-found occupy the content slot** — the same place the content would sit, under the same band. Never a different page chrome, never a blank screen. Loading is a skeleton in place, not a spinner over nothing.
-- **Break when the content stops fitting**, not at device presets: the rail becomes a drawer, the dock becomes a sheet. No bottom tabs ([flows.md](flows.md) care).
+- **Break when the content stops fitting**, not at device presets: the rail becomes a drawer, the dock becomes a sheet. No bottom tabs ([flows.md](../flows.md) care).
 - **Plan for growth.** Vietnamese strings and names grow and stack tone marks; no fixed-width text containers, rows wrap, the account control never clips "Nguyễn Thị Ngọc Ánh".
 
 ## Layout types
 
-Nine types. Every URL in [flows.md](flows.md) maps to exactly one. A new screen picks a type or extends this list — it does not invent a private layout.
+Nine types. Every URL in [flows.md](../flows.md) maps to exactly one. A new screen picks a type or extends this list — it does not invent a private layout.
 
 1. **Conversation** — `/coach`. The thread is the body; the composer is the primary slot, pinned after the messages. Starters and the activation checklist live in the empty thread, not in the rail. No dock; the page is the conversation.
 2. **Drive list** — `/paper`, `/proof`, `/search`, `/applications`. A band (title, one primary action, optional filter) over a single column of rows. The row is the unit: opening one is the row's whole job, not an in-row editor. The empty state replaces the rows under the same band.
@@ -109,7 +110,7 @@ Dock: same conversation as `/coach`, composer usable, artifact still operable, n
 
 ## Empty states
 
-An empty state is a layout state: it occupies the content slot under the same band, and its words obey [copy.md](copy.md). Feature specs carry the exact copy; this is the law that copy must pass.
+An empty state is a layout state: it occupies the content slot under the same band, and its words obey [copy.md](../copy.md). Feature specs carry the exact copy; this is the law that copy must pass.
 
 Five kinds, never conflated:
 
@@ -117,11 +118,11 @@ Five kinds, never conflated:
 2. **Cleared** — the user emptied it. Do not re-teach; acknowledge and offer the door. No mourning copy.
 3. **Filtered** — content exists but the filter or query hides it. Say the filter is why and offer to clear or widen it. Never show the first-run state here.
 4. **Error** — the load failed. Say what failed in one sentence, one retry. Never dress an error as an empty state.
-5. **Offline or degraded** — the Coach unavailable and similar; the copy specced in [features/coach.md](features/coach.md) is the reference.
+5. **Offline or degraded** — the Coach unavailable and similar; the copy specced in [features/coach.md](../features/coach.md) is the reference.
 
 Anatomy, in fixed order: one sentence of what this place is or why it is empty; an optional basis line, never invented; one primary action. No illustrations, no mascots, no jokes about emptiness — the users are anxious, and the empty state is a calm hand, not a personality moment. Loading is a skeleton, never an empty state shown early.
 
-Coach-aware rule: where the natural next step is a conversation, the one primary action may open the dock with a prefilled intent. Never two equal doors. A quiet secondary is allowed only when it reads as clearly subordinate — Paper's "I already have a file" upload, Proof's "I don't have one yet" chip ([mechanisms/proof.md](mechanisms/proof.md) owns that one).
+Coach-aware rule: where the natural next step is a conversation, the one primary action may open the dock with a prefilled intent. Never two equal doors. A quiet secondary is allowed only when it reads as clearly subordinate — Paper's "I already have a file" upload, Proof's "I don't have one yet" chip ([mechanisms/proof.md](../mechanisms/proof.md) owns that one).
 
 Per-screen empty inventory:
 
@@ -139,4 +140,4 @@ Per-screen empty inventory:
 
 ## Out of scope
 
-Visual craft (radius, shadow, motion — [design.md](design.md)), the channel contract ([flows.md](flows.md)), copy voice ([copy.md](copy.md)), any UI code.
+Visual craft (radius, shadow — [tokens.md](tokens.md)), motion ([motion.md](motion.md)), component anatomy ([components.md](components.md)), the channel contract ([flows.md](../flows.md)), copy voice ([copy.md](../copy.md)), any UI code.

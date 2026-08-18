@@ -4,7 +4,7 @@
 
 **Job:** deadline night — a user with an application due tonight leaves with a CV they can send.
 
-**Layout:** Drive list at `/paper` (primary: Start a CV), Opened document at `/paper/$paperId` (primary: Export). The dock must not cover either ([layout.md](../layout.md)).
+**Layout:** Drive list at `/paper` (primary: Start a CV), Opened document at `/paper/$paperId` (primary: Export). The dock must not cover either ([layout.md](../design-system/layout.md)).
 
 ## Concept
 

@@ -24,8 +24,10 @@ export function ConfirmDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <DialogTitle>{title}</DialogTitle>
-        <DialogDescription className="mt-2 text-[14px] leading-[1.6] text-muted-foreground">
+        <DialogTitle className="text-[18px] font-[510] leading-[1.4] tracking-[-0.012em]">
+          {title}
+        </DialogTitle>
+        <DialogDescription className="mt-2 text-[13px] leading-[1.5] text-ink-secondary">
           {body}
         </DialogDescription>
         <div className="mt-4 flex justify-end gap-2">

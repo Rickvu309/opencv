@@ -16,19 +16,19 @@ export function LandingScreen() {
 
   return (
     <main id="main" className="mx-auto max-w-2xl px-4 py-16">
-      <p className="text-[14px] text-muted-foreground">OpenPath</p>
-      <h1 className="mt-4 text-[36px] font-medium leading-[1.3]">
+      <p className="text-[13px] text-ink-muted">OpenPath</p>
+      <h1 className="text-balance mt-4 text-[32px] font-[590] leading-[1.3] tracking-[-0.022em]">
         An AI career coach that does the work with you
       </h1>
-      <p className="mt-4 text-[18px] leading-[1.6] text-muted-foreground">
+      <p className="mt-4 text-pretty text-[15px] leading-[1.6] text-ink-secondary">
         It builds your CV, finds openings that fit, and tells you honestly what is
         missing. You stay in control of every word, and you can undo anything it does.
       </p>
-      <p className="mt-6 text-muted-foreground">
-        For students and new graduates who cannot afford a mentor. You don't need to
-        know your direction yet. That's the point.
+      <p className="mt-6 text-[15px] text-ink-muted">
+        For students and new graduates who cannot afford a mentor. You don&apos;t need to
+        know your direction yet. That&apos;s the point.
       </p>
-      <ol className="mt-10 space-y-3 text-muted-foreground">
+      <ol className="mt-10 space-y-3 text-[15px] text-ink-muted">
         <li>1. Prepare yourself: profile, CV, proof of work, pitch.</li>
         <li>2. Find what fits, with the gap named.</li>
         <li>3. Go after it, one application at a time.</li>
@@ -37,12 +37,12 @@ export function LandingScreen() {
         <Link to="/sign-up">
           <Button>Start now</Button>
         </Link>
-        <Link to="/sign-in" className="px-4 py-3 text-[14px]">
-          Sign in
+        <Link to="/sign-in">
+          <Button variant="outline">Sign in</Button>
         </Link>
       </div>
       <form className="mt-12 max-w-sm" onSubmit={onWaitlist}>
-        <p className="text-[14px]">Not ready to start. Leave your email.</p>
+        <p className="text-[13px]">Not ready to start. Leave your email.</p>
         <div className="mt-2 flex gap-2">
           <Input
             type="email"
@@ -55,7 +55,7 @@ export function LandingScreen() {
             Join
           </Button>
         </div>
-        {note ? <p className="mt-2 text-muted-foreground">{note}</p> : null}
+        {note ? <p className="mt-2 text-[13px] text-ink-muted">{note}</p> : null}
       </form>
     </main>
   );

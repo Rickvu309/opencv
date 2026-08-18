@@ -4,7 +4,7 @@
 
 **Job:** give a user's real work an audience they control: a published Proof page anyone can open, a personal page that quietly proves a span of work, and — later — invitations and vouches on the same rails.
 
-**Layout:** Public canvas at `/p/$slug` and `/u/$handle` — the work is the page; OpenPath chrome is at most a quiet footer. No rail, no dock, no bell ([layout.md](../layout.md)).
+**Layout:** Public canvas at `/p/$slug` and `/u/$handle` — the work is the page; OpenPath chrome is at most a quiet footer. No rail, no dock, no bell ([layout.md](../design-system/layout.md)).
 
 ## Concept
 
@@ -18,7 +18,7 @@ No feed, no follow, no likes. Distribution is the user sending their own link.
 
 ## Screens
 
-- `/p/$slug`, `/u/$handle` — public routes in `_public/`, no app chrome, fast, indexable. A missing slug or handle is an honest not-found with one next step ("Go to OpenPath"). A personal page with no published Proofs says so in one sentence. OG image route per Proof page.
+- `/p/$slug`, `/u/$handle` — public routes in `_public/`, no app chrome, fast, indexable. A missing slug or handle is an honest not-found with one next step ("Go to OpenPath"). A personal page with no published Proofs says so in one sentence. OpenPath is a quiet footer. OG image route per Proof page.
 - Handle management surfaces in Settings; publish and unpublish live in Proof.
 
 ## Data

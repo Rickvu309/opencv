@@ -18,7 +18,7 @@ export function ProofEditorScreen({ proofId }: { proofId: string }) {
   const [note, setNote] = useState("");
   const [question, setQuestion] = useState("");
   const back = (
-    <Link to="/proof" className="inline-flex min-h-11 items-center text-[14px] text-muted-foreground">
+    <Link to="/proof" className="inline-flex min-h-11 items-center text-[13px] text-ink-muted">
       Back
     </Link>
   );
@@ -101,11 +101,11 @@ export function ProofEditorScreen({ proofId }: { proofId: string }) {
         </Button>
       </form>
       {proof.entries.length === 0 ? (
-        <p className="mt-8 text-muted-foreground">Log the first entry.</p>
+        <p className="mt-8 text-ink-muted">Log the first entry.</p>
       ) : (
         <ol className="mt-8 space-y-4">
           {proof.entries.map((e: { id: string; body: string; created_at: string }) => (
-            <li key={e.id} className="border-l-2 border-border pl-3">
+            <li key={e.id} className="border-l-2 border-hairline pl-3">
               {e.body}
             </li>
           ))}

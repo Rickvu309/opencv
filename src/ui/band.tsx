@@ -22,11 +22,13 @@ export function Band({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           {typeof title === "string" ? (
-            <h1 className="text-[28px] font-medium leading-[1.5]">{title}</h1>
+            <h1 className="text-balance text-[24px] font-[590] leading-[1.3] tracking-[-0.017em]">
+              {title}
+            </h1>
           ) : (
             title
           )}
-          {meta ? <div className="mt-1 text-[14px] text-muted-foreground">{meta}</div> : null}
+          {meta ? <div className="mt-1 text-[13px] text-ink-muted">{meta}</div> : null}
         </div>
         {primary || secondary ? (
           <div className="flex flex-wrap items-center gap-2">
@@ -57,8 +59,10 @@ export function BandFilter({
           type="button"
           onClick={() => onChange(opt.id)}
           className={cn(
-            "inline-flex min-h-11 items-center rounded-[var(--radius-control)] px-3 text-[14px]",
-            value === opt.id ? "bg-muted text-accent" : "text-muted-foreground hover:bg-muted",
+            "inline-flex min-h-11 items-center rounded-[var(--radius-control)] px-3 text-[13px]",
+            value === opt.id
+              ? "bg-surface-3 text-accent"
+              : "text-ink-muted hover:bg-surface-2",
           )}
         >
           {opt.label}

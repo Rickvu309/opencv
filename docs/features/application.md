@@ -4,7 +4,7 @@
 
 **Job:** turn a decision to pursue an opening into a managed process with a clear state and a clear next action, through to an outcome.
 
-**Layout:** Drive list at `/applications`, grouped by status; the row is the unit and status is a control on it, not a second page. No global primary. The dock must not cover row actions ([layout.md](../layout.md)).
+**Layout:** Drive list at `/applications`, grouped by status; the row is the unit and status is a control on it, not a second page. No global primary. The dock must not cover row actions ([layout.md](../design-system/layout.md)).
 
 ## Concept
 
@@ -17,7 +17,7 @@ In the rail, Apply sits under **Opportunities** next to Search ([flows.md](../fl
 ## Screens
 
 - Reached from Opportunities in the rail, from Search (save), from a Coach card, or from a deadline notification.
-- `/applications` — the pipeline: one column of rows grouped by status (interested, applied, interviewing, offer, rejected). Status is a dropdown on the row. Tailoring and Open CV live in a row menu so no row has two competing buttons. Each row shows role, company, and its next step. Opening a card is not a second page in this pass — notes and the fit read stay on the row. "Open CV" goes to `/paper/$paperId`. Empty state points to Search.
+- `/applications` — the pipeline: one column of rows grouped by status (interested, applied, interviewing, offer, rejected) with a count on each heading. Status is a chip with a colour dot and the word, opening a dropdown on the row. Tailoring and Open CV live in a row menu so no row has two competing buttons. Each row shows role, company, and its next step. Opening a card is not a second page in this pass — notes and the fit read stay on the row. "Open CV" goes to `/paper/$paperId`. Empty state points to Search.
 - Empty state points to Search.
 
 ## Data

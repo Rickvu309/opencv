@@ -1,10 +1,14 @@
 export function SkeletonBlock({ className }: { className?: string }) {
-  return <div className={`animate-pulse rounded-[var(--radius-control)] bg-muted ${className ?? "h-11"}`} />;
+  return (
+    <div
+      className={`skeleton-pulse rounded-[var(--radius-control)] bg-surface-2 ${className ?? "h-11"}`}
+    />
+  );
 }
 
 export function SkeletonRows({ count = 4 }: { count?: number }) {
   return (
-    <div className="divide-y divide-border" aria-busy="true" aria-label="Loading">
+    <div className="divide-y divide-hairline" aria-busy="true" aria-label="Loading">
       {Array.from({ length: count }).map((_, i) => (
         <div key={i} className="flex min-h-11 items-center gap-3 py-3">
           <SkeletonBlock className="h-4 w-2/5" />

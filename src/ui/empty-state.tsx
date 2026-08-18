@@ -16,8 +16,8 @@ export function EmptyState({
 }) {
   return (
     <div className="py-12" data-empty-kind={kind}>
-      <p className="text-[18px] leading-[1.6]">{title}</p>
-      {basis ? <p className="mt-2 text-[14px] leading-[1.6] text-muted-foreground">{basis}</p> : null}
+      <p className="text-pretty text-[15px] leading-[1.6] text-ink">{title}</p>
+      {basis ? <p className="mt-2 text-[13px] leading-[1.5] text-ink-muted">{basis}</p> : null}
       {action ? <div className="mt-6">{action}</div> : null}
     </div>
   );

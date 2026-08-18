@@ -30,7 +30,7 @@ export function ProfileScreen() {
             />
           ) : null}
           <Section label="Identity">
-            <p className="text-[14px] leading-[1.6] text-muted-foreground">
+            <p className="text-[13px] leading-[1.5] text-ink-muted tabular-nums">
               {q.data?.completeness} of 100, from what you actually provided.
             </p>
             <div>
@@ -62,7 +62,7 @@ export function ProfileScreen() {
             </Button>
           </Section>
           <Section label="Education">
-            <p className="text-muted-foreground">
+            <p className="text-ink-muted">
               {p.education.school || "Not added yet"} {p.education.major}
             </p>
           </Section>

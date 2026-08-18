@@ -1,6 +1,6 @@
 # Copy
 
-The voice law: every word a user reads passes this file. [design.md](design.md) keeps the one-paragraph summary; [AGENTS.md](../AGENTS.md) points here; feature specs carry the exact per-screen copy, which must pass these rules. Empty-state structure (five kinds, anatomy, one door) is [layout.md](layout.md); this file governs the words inside it.
+The voice law: every word a user reads passes this file. [design.md](design.md) keeps the one-paragraph summary; [AGENTS.md](../AGENTS.md) points here; feature specs carry the exact per-screen copy, which must pass these rules. Empty-state structure (five kinds, anatomy, one door) is [layout.md](design-system/layout.md); this file governs the words inside it.
 
 ## Voice
 
@@ -44,7 +44,7 @@ Vietnamese names render whole: never truncated mid-diacritic, never clipped tone
 - Good: "Couldn't save. Check your connection and try again." · "Use at least 8 characters."
 - Bad: "Error 500" · "Oops! Something went wrong." · "Invalid input."
 
-**Empty states.** Obey the law in [layout.md](layout.md): one sentence of what this place is or why it is empty, optional basis line, one door. Filtered states name the query and the exit: "No results for 'data analyst in Da Nang'. Widen the search."
+**Empty states.** Obey the law in [layout.md](design-system/layout.md): one sentence of what this place is or why it is empty, optional basis line, one door. Filtered states name the query and the exit: "No results for 'data analyst in Da Nang'. Widen the search."
 
 **Confirmations and undo.** State what just happened, with the noun, then the undo. "CV deleted. Undo." Never a celebration, never a checkmark with no words.
 

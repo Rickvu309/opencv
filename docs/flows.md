@@ -2,7 +2,7 @@
 
 The conversation is the product; every other screen is an artifact the conversation produced or reads from. Users arrive anxious, in short sessions, often on mid-range Android phones. Every screen must answer "what do I do next" before they leave it.
 
-This file is the map. It answers four questions, in this order: what is the core nav, what is edge-case nav, how do you move, and what more needs care. Product journeys come after, each arrow named by its channel. The shell itself is specified in [features/navigation.md](features/navigation.md); what sits where on each screen is [layout.md](layout.md).
+This file is the map. It answers four questions, in this order: what is the core nav, what is edge-case nav, how do you move, and what more needs care. Product journeys come after, each arrow named by its channel. The shell itself is specified in [features/navigation.md](features/navigation.md); what sits where on each screen is [layout.md](design-system/layout.md).
 
 ## 1. Core nav
 
@@ -135,7 +135,7 @@ Not places. Rules that break the product if they are vague. The shell details li
 - **Dock.** Travels on every core place except Chat, and on Account. Must not cover the artifact's primary action. Offline Coach is honest in the dock.
 - **Mobile.** Same core and edge logic in a drawer. No bottom tabs. Coach on artifact screens is a sheet.
 - **Gates.** Unsigned to sign-in. Onboarding incomplete to `/onboarding`. Sign-in and onboarding completion land on `/coach`. Public URLs stay public. Gates are the app moving you, not a channel.
-- **Empty and failure.** Every empty screen states what this place is for, in one sentence, and offers exactly one primary next step. Honesty is a feature: offline Coach, a hung turn, an empty reply, a failed export — each is shown plainly with what happened and one next step. No silent failures, no fake progress. The law (five kinds, anatomy, per-screen inventory) is [layout.md](layout.md); exact copy per place in [features/](features/), in the product voice ([copy.md](copy.md)).
+- **Empty and failure.** Every empty screen states what this place is for, in one sentence, and offers exactly one primary next step. Honesty is a feature: offline Coach, a hung turn, an empty reply, a failed export — each is shown plainly with what happened and one next step. No silent failures, no fake progress. The law (five kinds, anatomy, per-screen inventory) is [layout.md](design-system/layout.md); exact copy per place in [features/](features/), in the product voice ([copy.md](copy.md)).
 - **Notifications.** Bell on the signed-in header, not a rail item.
 - **Activation checklist.** On Chat only, dismissible, not in the rail.
 - **Names.** Type CV, Resume, Cover letter, Proof, Apply. Group labels: Prepare, Opportunities. Vietnamese names in the account control must not clip.

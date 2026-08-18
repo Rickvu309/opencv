@@ -15,6 +15,13 @@ import {
 } from "@/ui/dropdown-menu";
 
 const statuses = ["interested", "applied", "interviewing", "offer", "rejected"] as const;
+const statusDot: Record<(typeof statuses)[number], string> = {
+  interested: "bg-status-attention",
+  applied: "bg-status-progress",
+  interviewing: "bg-status-progress",
+  offer: "bg-status-positive",
+  rejected: "bg-ink-muted",
+};
 const statusLabel: Record<(typeof statuses)[number], string> = {
   interested: "Interested",
   applied: "Applied",
@@ -63,8 +70,8 @@ export function ApplicationsScreen() {
           if (!group.length) return null;
           return (
             <section key={status} className="mt-8">
-              <h2 className="text-[14px] font-medium text-muted-foreground">
-                {statusLabel[status]}
+              <h2 className="text-[13px] font-[510] text-ink-muted tabular-nums">
+                {statusLabel[status]} · {group.length}
               </h2>
               <RowList>
                 {group.map((a) => (
@@ -77,8 +84,9 @@ export function ApplicationsScreen() {
                         <DropdownMenu>
                           <DropdownMenuTrigger
                             aria-label={`Status for ${a.role}`}
-                            className="inline-flex min-h-11 items-center rounded-[var(--radius-control)] px-3 text-[14px] hover:bg-muted"
+                            className="inline-flex min-h-11 items-center gap-2 rounded-[var(--radius-pill)] border border-hairline px-3 text-[13px] hover:bg-surface-2"
                           >
+                            <span className={`size-1.5 rounded-full ${statusDot[status]}`} aria-hidden="true" />
                             {statusLabel[status]}
                           </DropdownMenuTrigger>
                           <DropdownMenuContent>
@@ -101,7 +109,7 @@ export function ApplicationsScreen() {
                           <DropdownMenu>
                             <DropdownMenuTrigger
                               aria-label={`Actions for ${a.role}`}
-                              className="flex size-11 items-center justify-center rounded-[var(--radius-control)] text-[14px] hover:bg-muted"
+                              className="flex size-11 items-center justify-center rounded-[var(--radius-control)] text-[13px] hover:bg-surface-2"
                             >
                               ···
                             </DropdownMenuTrigger>

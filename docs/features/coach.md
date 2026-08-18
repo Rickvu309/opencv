@@ -4,7 +4,7 @@
 
 **Job:** answer career questions grounded in the user's real profile, and do the work in the app on request — then always name the one next concrete step.
 
-**Layout:** Conversation on `/coach` — the composer is the primary slot, no dock. The dock itself is an Overlay travelling on every other signed-in screen ([layout.md](../layout.md)).
+**Layout:** Conversation on `/coach` — the composer is the primary slot, no dock. The dock itself is an Overlay travelling on every other signed-in screen ([layout.md](../design-system/layout.md)).
 
 ## Concept
 
@@ -12,7 +12,8 @@ The Coach is the home of the product and its operating layer. It is not a suppor
 
 ## Screens
 
-- `/coach` — the conversation, and where signing in lands. Thread history lives in the rail, not a second list on this page. The open thread is `/coach?thread=<id>`. No dock here; the page is the conversation.
+- `/coach` — the conversation, and where signing in lands. Thread history lives in the rail, not a second list on this page. The open thread is `/coach?thread=<id>`. No dock here; the page is the conversation. The composer is a single bordered surface with the field and send control inside; messages are user blocks vs Coach body text, not role-prefixed paragraphs.
+- The coach dock — the same conversation, travelling on every artifact screen and on Account. Not on `/coach`, landing, auth, onboarding, or public pages.
 - The coach dock — the same conversation, travelling on every artifact screen and on Account. Not on `/coach`, landing, auth, onboarding, or public pages.
 - Cloned patterns: streamed markdown replies, stop and retry, thread history with rename (in the rail), composer with full keyboard support, starter prompts drawn from the user's profile, artifact cards in the thread (a changed CV, a logged Proof) that open the real screen.
 - Trust surfaces: "the Coach updated your CV" confirmations with undo (from `command_log`), an honest offline state when the gateway is unavailable, a stalled-turn state with retry, and a said-nothing state instead of an empty bubble.
