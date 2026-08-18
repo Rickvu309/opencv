@@ -20,14 +20,14 @@ export function Row({
 }) {
   const body = (
     <>
-      <span className="min-w-0 flex-1 text-left leading-[1.6]">{label}</span>
+      <span className="min-w-0 flex-1 basis-48 text-left leading-[1.6]">{label}</span>
       {meta ? (
         <span className="text-[14px] leading-[1.6] text-muted-foreground">{meta}</span>
       ) : null}
     </>
   );
   const rowClass = cn(
-    "flex min-h-11 w-full items-center gap-3 py-3 text-[16px]",
+    "flex min-h-11 w-full flex-wrap items-center gap-x-3 gap-y-1 py-3 text-[16px]",
     (href || onSelect) && "hover:bg-muted",
   );
 

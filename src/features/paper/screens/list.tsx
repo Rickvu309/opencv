@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { listPapersFn } from "@/features/paper/queries";
-import { templates, letterSituations } from "@/features/paper/model";
+import { relativeUpdated } from "@/features/paper/model";
+import { SituationGallery } from "@/features/paper/components/gallery";
 import { runCommand } from "@/ui/run-command";
 import { Button } from "@/ui/button";
 import { Band, BandFilter } from "@/ui/band";
@@ -95,6 +96,7 @@ export function PaperListScreen() {
   const rows = [...paperRows, ...fileRows];
   const empty = papers.length === 0 && files.length === 0;
   const filteredEmpty = !empty && rows.length === 0;
+  const showFilter = !empty && !gallery;
 
   return (
     <div>
@@ -121,68 +123,52 @@ export function PaperListScreen() {
           </>
         }
         filter={
-          <BandFilter
-            value={filter}
-            onChange={(id) => {
-              setGallery(null);
-              setFilter(id as Filter);
-            }}
-            options={[
-              { id: "all", label: "All" },
-              { id: "cv", label: "CV / Resume" },
-              { id: "letter", label: "Letter" },
-              { id: "uploaded", label: "Uploaded" },
-            ]}
-          />
+          showFilter ? (
+            <BandFilter
+              value={filter}
+              onChange={(id) => {
+                setGallery(null);
+                setFilter(id as Filter);
+              }}
+              options={[
+                { id: "all", label: "All" },
+                { id: "cv", label: "CV / Resume" },
+                { id: "letter", label: "Letter" },
+                { id: "uploaded", label: "Uploaded" },
+              ]}
+            />
+          ) : undefined
         }
       />
 
-      {q.isPending ? <SkeletonRows /> : null}
-
-      {gallery === "cv" ? (
-        <div>
-          <h2 className="text-[18px] font-medium">Where is this CV going?</h2>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {templates.map((t) => (
-              <button
-                key={t.id}
-                className="min-h-11 rounded-[var(--radius-card)] border border-border p-4 text-left"
-                onClick={() => void createCv(t.id)}
-              >
-                <span className="font-medium">{t.label}</span>
-                <span className="ml-2 text-muted-foreground">{t.word}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      {gallery === "letter" ? (
-        <div>
-          <h2 className="text-[18px] font-medium">Who is this letter for?</h2>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {letterSituations.map((s) => (
-              <button
-                key={s.id}
-                className="min-h-11 rounded-[var(--radius-card)] border border-border p-4 text-left"
-                onClick={() => void createLetter(s.id)}
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      {!q.isPending && !gallery && empty ? (
+      {gallery ? (
+        <SituationGallery
+          kind={gallery}
+          onPick={(id) => {
+            if (gallery === "cv") void createCv(id);
+            else void createLetter(id);
+          }}
+          onCancel={() => setGallery(null)}
+        />
+      ) : q.isPending ? (
+        <SkeletonRows />
+      ) : q.isError ? (
+        <EmptyState
+          kind="error"
+          title="Couldn't load Paper. Try again."
+          action={
+            <Button variant="outline" onClick={() => void q.refetch()}>
+              Try again
+            </Button>
+          }
+        />
+      ) : empty ? (
         <EmptyState
           kind="first-run"
           title="Start with the CV."
           action={<Button onClick={() => setGallery("cv")}>Start a CV</Button>}
         />
-      ) : null}
-
-      {!q.isPending && !gallery && filteredEmpty ? (
+      ) : filteredEmpty ? (
         <EmptyState
           kind="filtered"
           title="Nothing in this filter."
@@ -192,15 +178,18 @@ export function PaperListScreen() {
             </Button>
           }
         />
-      ) : null}
-
-      {!q.isPending && !gallery && rows.length ? (
+      ) : (
         <RowList>
           {paperRows.map((p) => (
             <Row
               key={p.id}
               label={p.label}
-              meta={p.meta}
+              meta={
+                <span className="flex flex-wrap gap-x-2">
+                  <span>{p.meta}</span>
+                  <span>{relativeUpdated(p.updated)}</span>
+                </span>
+              }
               onSelect={() => void navigate({ to: "/paper/$paperId", params: { paperId: p.id } })}
               menu={
                 <DropdownMenu>
@@ -242,7 +231,12 @@ export function PaperListScreen() {
             <Row
               key={f.id}
               label={f.label}
-              meta={f.meta}
+              meta={
+                <span className="flex flex-wrap gap-x-2">
+                  <span>{f.meta}</span>
+                  <span>{relativeUpdated(f.updated)}</span>
+                </span>
+              }
               href={`/api/files?id=${f.id}`}
               menu={
                 <DropdownMenu>
@@ -268,7 +262,7 @@ export function PaperListScreen() {
             />
           ))}
         </RowList>
-      ) : null}
+      )}
 
       <ConfirmDialog
         open={Boolean(removePaperId)}

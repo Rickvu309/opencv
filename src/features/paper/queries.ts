@@ -18,17 +18,21 @@ export const listPapersFn = createServerFn({ method: "GET" }).handler(async () =
     title: String(p.title),
     kind: String(p.kind),
     template: String(p.template),
-    updated_at: String(p.updated_at),
-    typeWord: typeWord(String(p.kind), String(p.template)),
-  }));
+        updated_at: String(p.updated_at),
+        typeWord: typeWord(String(p.kind), String(p.template)),
+      }));
   const files = (
     await withClient((c) =>
-      c.query<{ id: string; filename: string; created_at: string }>(
+      c.query<{ id: string; filename: string; created_at: Date | string }>(
         `select id, filename, created_at from files where user_id=$1 and purpose='upload' order by created_at desc`,
         [user.id],
       ),
     )
-  ).rows;
+  ).rows.map((f) => ({
+    id: String(f.id),
+    filename: String(f.filename),
+    created_at: String(f.created_at),
+  }));
   return { papers, files };
 });
 

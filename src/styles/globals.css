@@ -58,3 +58,19 @@ body {
   background: #ffffff;
   color: #000000;
 }
+
+@media print {
+  [data-print-hide] {
+    display: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+  }
+
+  .a4 {
+    max-width: none;
+    min-height: auto;
+    margin: 0;
+  }
+}

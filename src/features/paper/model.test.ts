@@ -1,0 +1,57 @@
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
+import {
+  completenessCopy,
+  emptyCv,
+  profileLinesOnPage,
+  relativeUpdated,
+} from "@/features/paper/model";
+import type { Profile } from "@/features/profile/model";
+
+const profile: Profile = {
+  name: "Linh",
+  targetRole: "analyst",
+  location: "Da Nang",
+  timeAvailable: "",
+  summary: "",
+  facts: [{ id: "s1", label: "Skill", value: "SQL" }],
+  experience: [
+    {
+      id: "e1",
+      org: "Cafe",
+      role: "Barista",
+      dateFrom: "",
+      dateTo: "",
+      detail: [],
+    },
+  ],
+  education: { school: "DUT", major: "", year: "", gpa: "", courses: [] },
+  links: [],
+};
+
+describe("paper copy helpers", () => {
+  it("counts profile lines that are on the page", () => {
+    const content = emptyCv();
+    content.name = "Linh";
+    content.experience = [
+      { id: "e1", org: "Cafe", role: "Barista", dates: "", bullets: [""] },
+    ];
+    const { onPage, total } = profileLinesOnPage(profile, content);
+    assert.equal(total, 4);
+    assert.equal(onPage, 2);
+  });
+
+  it("writes completeness as a full sentence", () => {
+    assert.equal(completenessCopy(0, 0), "");
+    assert.equal(completenessCopy(1, 1), "1 of 1 profile line is on this page.");
+    assert.equal(completenessCopy(1, 4), "1 of 4 profile lines is on this page.");
+    assert.equal(completenessCopy(4, 4), "4 of 4 profile lines are on this page.");
+  });
+
+  it("formats updated time in the user's terms", () => {
+    const now = Date.parse("2026-08-18T10:00:00.000Z");
+    assert.equal(relativeUpdated("2026-08-18T09:59:30.000Z", now), "just now");
+    assert.equal(relativeUpdated("2026-08-18T09:00:00.000Z", now), "1 hour ago");
+    assert.equal(relativeUpdated("2026-08-16T10:00:00.000Z", now), "2 days ago");
+  });
+});

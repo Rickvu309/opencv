@@ -39,7 +39,7 @@ Nine types. Every URL in [flows.md](flows.md) maps to exactly one. A new screen 
 
 1. **Conversation** — `/coach`. The thread is the body; the composer is the primary slot, pinned after the messages. Starters and the activation checklist live in the empty thread, not in the rail. No dock; the page is the conversation.
 2. **Drive list** — `/paper`, `/proof`, `/search`, `/applications`. A band (title, one primary action, optional filter) over a single column of rows. The row is the unit: opening one is the row's whole job, not an in-row editor. The empty state replaces the rows under the same band.
-3. **Opened document** — `/paper/$paperId`. Band: Back (to the list, never to Chat), title, type word, Export as primary. The body is the A4 page. No form beside the page; editing happens on the page.
+3. **Opened document** — `/paper/$paperId`. Band: Back (to the list, never to Chat), title, type word, Export as primary. Then a format bar, a muted stage, and the white A4. No form beside the page; editing happens on the page.
 4. **Opened space** — `/proof/$proofId`. Band: Back, title, Arrange and Publish (Publish becomes primary once the story is arranged; until then Arrange is). The body is the log, newest first.
 5. **Sectioned editor** — `/profile`, `/pitch`, `/settings`. One column of labelled sections, edited in place. Completeness or the handle sits inside the first section as a fact with its basis, never as a hero metric.
 6. **Wizard** — `/onboarding`. No rail. One question per step, skip always visible, payback visible in the same frame as the answer lands. Primary is Continue.
@@ -57,11 +57,11 @@ Regions: thread messages, then composer. Primary: the composer. Yields: nothing 
 
 ### Paper list — Drive list
 
-Regions: band (title, Start a CV as primary, type filter: CV / Resume, Letter), then rows (name, type word, updated). Primary: Start a CV. Yields: the filter collapses into the band menu before the primary ever moves. Empty/error: replaces the rows; the one door is Start a CV.
+Regions: band (title, Start a CV as primary, Start a letter and I already have a file as quiet secondaries), type filter (All / CV Resume / Letter / Uploaded, only when there are items), then the content slot. The content slot yields among: loading skeleton, first-run or cleared empty, filtered empty, error, CV gallery, letter chooser, or rows (name, type word, updated). Gallery and letter chooser replace the rows in that slot; they do not overlay and they are not a modal. Primary: Start a CV. Yields: the filter collapses into the band menu before the primary ever moves; row metadata wraps before names truncate. Empty/error: occupies the content slot under the same band; the one door is Start a CV.
 
 ### Opened CV or letter — Opened document
 
-Regions: band (Back to `/paper`, title, type word, Export), then the A4. Primary: Export. Yields: the band stays; the page scrolls. The dock must not cover Export. Empty/error: a failed export reports in place with one retry; the page never blanks.
+Regions: band (Back to `/paper`, title, type word, Export), format bar (density, then section hide; on an open CV, completeness as a fact in this row), muted stage, then the white A4. Primary: Export. Yields: band and format bar stay; the stage and page scroll; the format bar wraps under the band before Export leaves the band. The dock must not cover Export. A letter with no situation uses the content slot for the letter chooser first, then the A4. Empty/error: missing paper is not-found under the same Back band; a failed export reports in place with one retry; the page never blanks. Loading: band plus a page-shaped skeleton on the stage. Print hides rail, dock, band, and format bar.
 
 ### Proof list — Drive list
 

@@ -140,7 +140,8 @@ export function CoachDock() {
       return (
         <button
           type="button"
-          className="fixed right-4 bottom-4 z-30 hidden min-h-11 rounded-[var(--radius-control)] border border-border bg-background px-4 text-[14px] shadow-sm md:flex md:items-center"
+          data-print-hide
+          className="fixed right-4 bottom-4 z-30 hidden min-h-11 rounded-[var(--radius-control)] border border-border bg-background px-4 text-[14px] shadow-sm print:hidden md:flex md:items-center"
           onClick={() => setDockOpen(true)}
         >
           Coach
@@ -149,7 +150,8 @@ export function CoachDock() {
     }
     return (
       <aside
-        className="fixed right-4 bottom-4 z-30 hidden h-[min(32rem,70vh)] w-80 flex-col rounded-[var(--radius-card)] border border-border bg-background p-4 shadow-sm md:flex"
+        data-print-hide
+        className="fixed right-4 bottom-4 z-30 hidden h-[min(32rem,70vh)] w-80 flex-col rounded-[var(--radius-card)] border border-border bg-background p-4 shadow-sm print:hidden md:flex"
         aria-label="Coach"
       >
         <div className="mb-3 flex items-center justify-between gap-2">
@@ -168,14 +170,15 @@ export function CoachDock() {
       {!dockOpen ? (
         <button
           type="button"
-          className="fixed right-4 bottom-4 z-30 min-h-11 rounded-[var(--radius-control)] border border-border bg-background px-4 text-[14px] shadow-sm md:hidden"
+          data-print-hide
+          className="fixed right-4 bottom-4 z-30 min-h-11 rounded-[var(--radius-control)] border border-border bg-background px-4 text-[14px] shadow-sm print:hidden md:hidden"
           onClick={() => setDockOpen(true)}
         >
           Coach
         </button>
       ) : null}
       <Sheet open={dockOpen} onOpenChange={setDockOpen}>
-        <SheetContent side="bottom" className="flex flex-col p-4 md:hidden">
+        <SheetContent side="bottom" className="flex flex-col p-4 print:hidden md:hidden">
           <SheetTitle>Coach</SheetTitle>
           <SheetDescription className="sr-only">
             The same conversation as Chat, beside this screen.
