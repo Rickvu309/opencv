@@ -103,9 +103,9 @@ export function ProofEditorScreen({ proofId }: { proofId: string }) {
       {proof.entries.length === 0 ? (
         <p className="mt-8 text-ink-muted">Log the first entry.</p>
       ) : (
-        <ol className="mt-8 space-y-4">
+        <ol className="mt-8 divide-y divide-hairline">
           {proof.entries.map((e: { id: string; body: string; created_at: string }) => (
-            <li key={e.id} className="border-l-2 border-hairline pl-3">
+            <li key={e.id} className="py-3 text-[15px] leading-[1.6]">
               {e.body}
             </li>
           ))}

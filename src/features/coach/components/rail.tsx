@@ -21,16 +21,33 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/ui/dropdown-menu";
+import { Plus, FileText, BadgeCheck, Mic, Search, Briefcase, CircleUser } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Mark } from "@/ui/mark";
 
 const itemClass =
-  "flex min-h-11 w-full items-center rounded-[var(--radius-control)] px-3 text-left text-[13px] hover:bg-surface-2";
+  "flex min-h-11 w-full items-center gap-2 rounded-[var(--radius-control)] px-3 text-left text-[13px] hover:bg-surface-2";
+
+function PlaceIcon({
+  icon: Icon,
+  active,
+}: {
+  icon: typeof FileText;
+  active?: boolean;
+}) {
+  return (
+    <Icon
+      className={cn("size-4 shrink-0", active ? "text-accent" : "text-ink-muted")}
+      aria-hidden="true"
+    />
+  );
+}
 
 function placeState(pathname: string) {
   const paper = pathname === "/paper" || pathname.startsWith("/paper/");
   const proof = pathname === "/proof" || pathname.startsWith("/proof/");
   return {
-    paper: paper || proof,
+    paper,
     proof,
     pitch: pathname === "/pitch",
     search: pathname === "/search",
@@ -101,7 +118,12 @@ export function Rail({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <div className="flex h-full min-h-0 flex-col p-3">
+      <p className="mb-3 flex items-center gap-2 px-3 text-[13px] font-[510]">
+        <Mark />
+        OpenPath
+      </p>
       <Button variant="outline" className="w-full" onClick={() => void newConversation()}>
+        <Plus className="size-4" aria-hidden="true" />
         New conversation
       </Button>
 
@@ -149,15 +171,16 @@ export function Rail({ onNavigate }: { onNavigate?: () => void }) {
         </ul>
       </nav>
 
-      <nav aria-label="Places" className="mt-4">
+      <nav aria-label="Places" className="mt-4 shrink-0">
         <p className="px-3 text-[13px] font-[510] text-ink-muted">Prepare</p>
         <div className="mt-1 flex flex-col gap-1">
           <Link
             to="/paper"
             onClick={onNavigate}
-            className={cn(itemClass, places.paper && !places.proof && "bg-surface-3 text-accent", places.proof && "bg-surface-3")}
+            className={cn(itemClass, places.paper && "bg-surface-3 text-accent")}
             activeProps={{ className: "" }}
           >
+            <PlaceIcon icon={FileText} active={places.paper} />
             Paper
           </Link>
           <Link
@@ -166,6 +189,7 @@ export function Rail({ onNavigate }: { onNavigate?: () => void }) {
             className={cn(itemClass, "pl-6", places.proof && "bg-surface-3 text-accent")}
             activeProps={{ className: "" }}
           >
+            <PlaceIcon icon={BadgeCheck} active={places.proof} />
             Proof
           </Link>
           <Link
@@ -174,6 +198,7 @@ export function Rail({ onNavigate }: { onNavigate?: () => void }) {
             className={cn(itemClass, places.pitch && "bg-surface-3 text-accent")}
             activeProps={{ className: "" }}
           >
+            <PlaceIcon icon={Mic} active={places.pitch} />
             Pitch
           </Link>
         </div>
@@ -185,6 +210,7 @@ export function Rail({ onNavigate }: { onNavigate?: () => void }) {
             className={cn(itemClass, places.search && "bg-surface-3 text-accent")}
             activeProps={{ className: "" }}
           >
+            <PlaceIcon icon={Search} active={places.search} />
             Search
           </Link>
           <Link
@@ -193,17 +219,19 @@ export function Rail({ onNavigate }: { onNavigate?: () => void }) {
             className={cn(itemClass, places.apply && "bg-surface-3 text-accent")}
             activeProps={{ className: "" }}
           >
+            <PlaceIcon icon={Briefcase} active={places.apply} />
             Apply
           </Link>
         </div>
       </nav>
 
-      <div className="mt-auto pt-4">
+      <div className="mt-auto shrink-0 pt-4">
         <DropdownMenu>
           <DropdownMenuTrigger
             className={cn(itemClass, "overflow-visible leading-[1.6] whitespace-normal break-words")}
             aria-label="Account"
           >
+            <CircleUser className="size-4 shrink-0 text-ink-muted" aria-hidden="true" />
             {accountName}
           </DropdownMenuTrigger>
           <DropdownMenuContent side="top" align="start">

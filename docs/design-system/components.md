@@ -30,8 +30,8 @@ The [interfaces.dev cheat-sheet](https://interfaces.dev/cheat-sheet) baseline, a
 
 ### Rail
 
-**Region:** chrome, left, `--size-rail` wide. Becomes the drawer below 768px.
-**Anatomy:** New conversation (outline button, full width) → thread list (scrolling) → place groups under `ui-label` group labels in `--ink-muted` ("Prepare", "Opportunities") → account control pinned at the bottom. All items `ui` 13px, `--radius-control`, 44px tall, one shared content inset.
+**Region:** chrome, left, `--size-rail` wide. Becomes the drawer below 768px. The rail is viewport-tall (`h-svh`, sticky): threads scroll; places and account stay on screen.
+**Anatomy:** New conversation (outline button, Plus icon, full width) → thread list (scrolling) → place groups under `ui-label` group labels in `--ink-muted` ("Prepare", "Opportunities") → account control pinned at the bottom. Place items are 16px lucide + the word (chrome wayfinding, not Drive rows). All items `ui` 13px, `--radius-control`, 44px tall, one shared content inset. Proof nests 12px under Paper so it reads as a child, not a second icon column.
 **States:** rest transparent on `--canvas`; hover `--surface-2`; active `--surface-3` fill + `--accent` text, never a decorative bar; focus ring.
 **Thread item:** truncating title with `title` attribute for the full value; `···` menu trigger (text, not an icon) revealed as a sibling control; Rename and Delete in its menu.
 **Account control:** the user's name, wrapping — never clipping — "Nguyễn Thị Ngọc Ánh"; opens Profile / Settings / Sign out.
@@ -40,7 +40,7 @@ The [interfaces.dev cheat-sheet](https://interfaces.dev/cheat-sheet) baseline, a
 ### Header
 
 **Region:** chrome, above the main panel.
-**Anatomy:** drawer trigger (Menu, ghost, mobile only) leading; bell trailing. Nothing else — the band inside `main` owns the title.
+**Anatomy:** drawer trigger (Menu lucide icon, ghost, `aria-label="Open menu"`, mobile only) leading; bell trailing. Nothing else — the band inside `main` owns the title.
 
 ### Coach dock
 

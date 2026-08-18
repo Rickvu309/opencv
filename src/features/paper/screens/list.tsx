@@ -108,11 +108,12 @@ export function PaperListScreen() {
             <Button variant="outline" onClick={() => setGallery("letter")}>
               Start a letter
             </Button>
-            <label className="inline-flex min-h-11 cursor-pointer items-center rounded-[var(--radius-control)] border border-hairline px-4 text-[13px]">
+            <label className="relative inline-flex min-h-11 cursor-pointer items-center overflow-hidden rounded-[var(--radius-control)] border border-hairline px-4 text-[13px]">
               I already have a file
               <input
                 type="file"
-                className="sr-only"
+                className="absolute inset-0 cursor-pointer opacity-0"
+                aria-label="I already have a file"
                 accept=".pdf,.doc,.docx,application/pdf"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
@@ -163,11 +164,7 @@ export function PaperListScreen() {
           }
         />
       ) : empty ? (
-        <EmptyState
-          kind="first-run"
-          title="Start with the CV."
-          action={<Button onClick={() => setGallery("cv")}>Start a CV</Button>}
-        />
+        <EmptyState kind="first-run" title="Start with the CV." />
       ) : filteredEmpty ? (
         <EmptyState
           kind="filtered"

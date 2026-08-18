@@ -4,6 +4,7 @@ import { CoachSessionProvider } from "@/features/coach/components/session";
 import { Rail } from "@/features/coach/components/rail";
 import { CoachDock } from "@/features/coach/components/dock";
 import { NotificationBell } from "@/ui/notifications";
+import { Menu } from "lucide-react";
 import { Button } from "@/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/ui/sheet";
 
@@ -16,7 +17,7 @@ function SignedInChrome() {
     <div className="flex min-h-screen bg-canvas">
       <aside
         data-print-hide
-        className="hidden w-[var(--size-rail)] shrink-0 border-r border-hairline print:hidden md:flex md:flex-col"
+        className="sticky top-0 hidden h-svh w-[var(--size-rail)] shrink-0 overflow-hidden border-r border-hairline print:hidden md:flex md:flex-col"
       >
         <Rail />
       </aside>
@@ -29,10 +30,11 @@ function SignedInChrome() {
             <Button
               type="button"
               variant="ghost"
-              className="md:hidden"
+              className="size-11 px-0 md:hidden"
+              aria-label="Open menu"
               onClick={() => setDrawerOpen(true)}
             >
-              Menu
+              <Menu className="size-4" aria-hidden="true" />
             </Button>
             <SheetContent side="left" className="p-0 md:hidden">
               <SheetTitle className="sr-only">Places</SheetTitle>

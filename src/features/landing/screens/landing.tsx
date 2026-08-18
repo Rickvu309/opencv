@@ -1,8 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
-import { Button } from "@/ui/button";
+import { buttonClass, Button } from "@/ui/button";
 import { Input } from "@/ui/input";
 import { joinWaitlistFn } from "@/features/landing/server";
+import { Mark } from "@/ui/mark";
 
 export function LandingScreen() {
   const [email, setEmail] = useState("");
@@ -16,7 +17,10 @@ export function LandingScreen() {
 
   return (
     <main id="main" className="mx-auto max-w-2xl px-4 py-16">
-      <p className="text-[13px] text-ink-muted">OpenPath</p>
+      <p className="flex items-center gap-2 text-[13px] font-[510] text-ink-muted">
+        <Mark />
+        OpenPath
+      </p>
       <h1 className="text-balance mt-4 text-[32px] font-[590] leading-[1.3] tracking-[-0.022em]">
         An AI career coach that does the work with you
       </h1>
@@ -34,11 +38,11 @@ export function LandingScreen() {
         <li>3. Go after it, one application at a time.</li>
       </ol>
       <div className="mt-10 flex flex-wrap gap-3">
-        <Link to="/sign-up">
-          <Button>Start now</Button>
+        <Link to="/sign-up" className={buttonClass()}>
+          Start now
         </Link>
-        <Link to="/sign-in">
-          <Button variant="outline">Sign in</Button>
+        <Link to="/sign-in" className={buttonClass("outline")}>
+          Sign in
         </Link>
       </div>
       <form className="mt-12 max-w-sm" onSubmit={onWaitlist}>

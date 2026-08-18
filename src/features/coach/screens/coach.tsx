@@ -12,6 +12,7 @@ import { navigateToOpen } from "@/features/coach/open";
 import { sendCoachTurn } from "@/features/coach/stream";
 import { runCommand } from "@/ui/run-command";
 import { checklistFn } from "@/features/onboarding/queries";
+import { Row, RowList } from "@/ui/rows";
 
 export function CoachScreen({ threadId }: { threadId?: string }) {
   const navigate = useNavigate();
@@ -107,18 +108,19 @@ export function CoachScreen({ threadId }: { threadId?: string }) {
       {empty && !missingThread ? (
         <>
           {checklist.data && !checklist.data.dismissed ? (
-            <ul className="space-y-1 text-[15px]">
+            <RowList>
               {checklist.data.items.map((i: { id: string; label: string; done: boolean }) => (
-                <li key={i.id} className="flex min-h-11 items-center justify-between gap-3">
-                  <span>{i.label}</span>
-                  <span className="text-[13px] text-ink-muted">{i.done ? "done" : "to do"}</span>
-                </li>
+                <Row
+                  key={i.id}
+                  label={i.label}
+                  meta={i.done ? "done" : "to do"}
+                />
               ))}
-            </ul>
+            </RowList>
           ) : null}
           <div className="mt-6 flex flex-wrap gap-2">
             {["Where do I start?", "Look at my CV", "What fits my background?"].map((s) => (
-              <StarterChip key={s} label={s} onPick={() => void send(s)} />
+              <StarterChip key={s} label={s} onPick={() => setText(s)} />
             ))}
           </div>
         </>

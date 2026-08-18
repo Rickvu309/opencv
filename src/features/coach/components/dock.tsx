@@ -7,6 +7,7 @@ import { CoachComposer } from "@/features/coach/components/composer";
 import { ChatFailed, ChatMessage } from "@/features/coach/components/message";
 import { navigateToOpen } from "@/features/coach/open";
 import { sendCoachTurn } from "@/features/coach/stream";
+import { MessageSquare } from "lucide-react";
 import { runCommand } from "@/ui/run-command";
 import { Button } from "@/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/ui/sheet";
@@ -140,9 +141,10 @@ export function CoachDock() {
         <button
           type="button"
           data-print-hide
-          className="fixed right-4 bottom-4 z-[var(--z-dock)] hidden min-h-11 rounded-[var(--radius-control)] border border-hairline bg-surface-1 px-4 text-[13px] shadow-[var(--shadow-overlay)] print:hidden md:flex md:items-center"
+          className="fixed right-4 bottom-4 z-[var(--z-dock)] hidden min-h-11 items-center gap-2 rounded-[var(--radius-control)] border border-hairline bg-surface-1 px-4 text-[13px] shadow-[var(--shadow-overlay)] print:hidden md:flex md:items-center"
           onClick={() => setDockOpen(true)}
         >
+          <MessageSquare className="size-4" aria-hidden="true" />
           Coach
         </button>
       );
@@ -170,9 +172,10 @@ export function CoachDock() {
         <button
           type="button"
           data-print-hide
-          className="fixed right-4 bottom-4 z-[var(--z-dock)] min-h-11 rounded-[var(--radius-control)] border border-hairline bg-surface-1 px-4 text-[13px] shadow-[var(--shadow-overlay)] print:hidden md:hidden"
+          className="fixed right-4 bottom-4 z-[var(--z-dock)] flex min-h-11 items-center gap-2 rounded-[var(--radius-control)] border border-hairline bg-surface-1 px-4 text-[13px] shadow-[var(--shadow-overlay)] print:hidden md:hidden"
           onClick={() => setDockOpen(true)}
         >
+          <MessageSquare className="size-4" aria-hidden="true" />
           Coach
         </button>
       ) : null}

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Button } from "@/ui/button";
+import { buttonClass } from "@/ui/button";
 
 export type EmptyKind = "first-run" | "cleared" | "filtered" | "error" | "offline";
 
@@ -37,8 +37,8 @@ export function NotFoundState({
       kind="error"
       title={title}
       action={
-        <a href={href}>
-          <Button variant="outline">{label}</Button>
+        <a href={href} className={buttonClass("outline")}>
+          {label}
         </a>
       }
     />

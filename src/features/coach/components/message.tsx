@@ -49,7 +49,7 @@ export function StarterChip({
     <button
       type="button"
       onClick={onPick}
-      className="inline-flex min-h-11 items-center rounded-[var(--radius-pill)] border border-hairline px-3 text-[13px] hover:bg-surface-2"
+      className="inline-flex min-h-11 items-center rounded-[var(--radius-pill)] border border-hairline px-3 text-[13px] transition-[background-color,transform] duration-[var(--duration-fast)] ease-[var(--ease-out)] hover:bg-surface-2 active:scale-[0.97] active:bg-surface-3"
     >
       {label}
     </button>

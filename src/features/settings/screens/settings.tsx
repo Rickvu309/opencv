@@ -30,6 +30,7 @@ export function SettingsScreen() {
         <>
           <Section label="Account">
             <p className="text-ink-muted">{q.data.email}</p>
+            <p className="text-[13px] font-[510]">Change email</p>
             <Label htmlFor="email">New email</Label>
             <Input
               id="email"
@@ -53,6 +54,7 @@ export function SettingsScreen() {
             >
               Change email
             </Button>
+            <p className="pt-2 text-[13px] font-[510]">Change password</p>
             <Label htmlFor="current">Current password</Label>
             <Input id="current" type="password" value={current} onChange={(e) => setCurrent(e.target.value)} />
             <Label htmlFor="next">New password</Label>

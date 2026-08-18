@@ -65,11 +65,17 @@ export function AuthScreen({ mode }: { mode: "sign-in" | "sign-up" }) {
       <p className="mt-6 text-[13px] text-ink-muted">
         {mode === "sign-up" ? (
           <>
-            Already have an account? <Link to="/sign-in">Sign in</Link>
+            Already have an account?{" "}
+            <Link to="/sign-in" className="text-accent underline-offset-2 hover:underline">
+              Sign in
+            </Link>
           </>
         ) : (
           <>
-            New here? <Link to="/sign-up">Create an account</Link>
+            New here?{" "}
+            <Link to="/sign-up" className="text-accent underline-offset-2 hover:underline">
+              Create an account
+            </Link>
           </>
         )}
       </p>

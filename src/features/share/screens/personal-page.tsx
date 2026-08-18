@@ -24,6 +24,9 @@ export function PersonalPageScreen({ handle }: { handle: string }) {
           href="/"
           label="Go to OpenPath"
         />
+        <footer className="mt-16 text-[13px] text-ink-muted">
+          <a href="/">OpenPath</a>
+        </footer>
       </main>
     );
   }

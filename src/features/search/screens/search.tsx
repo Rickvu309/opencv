@@ -3,7 +3,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { listOpeningsFn } from "@/features/search/queries";
 import { useCoachSession } from "@/features/coach/components/session";
 import { runCommand } from "@/ui/run-command";
-import { Button } from "@/ui/button";
+import { Button, buttonClass } from "@/ui/button";
 import { Input } from "@/ui/input";
 import { Textarea } from "@/ui/textarea";
 import { Band } from "@/ui/band";
@@ -67,29 +67,6 @@ export function SearchScreen() {
     await navigate({ to: "/applications" });
   }
 
-  const queryForm = (
-    <form
-      className="flex min-w-0 flex-1 flex-col gap-2 sm:max-w-md"
-      onSubmit={(e) => {
-        e.preventDefault();
-        void pastePosting();
-      }}
-    >
-      <label htmlFor="posting" className="sr-only">
-        Paste a posting
-      </label>
-      <Textarea
-        id="posting"
-        value={raw}
-        onChange={(e) => setRaw(e.target.value)}
-        placeholder="Paste a posting"
-      />
-      <Button type="submit" disabled={!raw.trim()}>
-        Score this posting
-      </Button>
-    </form>
-  );
-
   if (selected) {
     const fit = selected.fit;
     return (
@@ -106,9 +83,7 @@ export function SearchScreen() {
             </button>
           }
           meta={selected.company}
-          primary={
-            <Button onClick={() => void saveToApply(selected.id)}>Save to Apply</Button>
-          }
+          primary={<Button onClick={() => void saveToApply(selected.id)}>Save to Apply</Button>}
         />
         {fit ? (
           <p className="text-[15px] leading-[1.6] tabular-nums">
@@ -145,73 +120,91 @@ export function SearchScreen() {
 
   return (
     <div>
-      <Band
-        title="Search"
-        primary={queryForm}
-        filter={
-          openings.length ? (
-            <Input
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              placeholder="Filter by title or company"
-              aria-label="Filter openings"
-            />
-          ) : null
-        }
-      />
-      {q.isPending ? <SkeletonRows /> : null}
-      {!q.isPending && q.data?.thin ? (
+      <Band title="Search" />
+      {q.data?.thin ? (
         <EmptyState
           kind="first-run"
           title="Fit needs something to read. Add a fact or set a goal first."
           action={
-            <Link to="/profile">
-              <Button>Open Profile</Button>
+            <Link to="/profile" className={buttonClass()}>
+              Open Profile
             </Link>
           }
         />
-      ) : null}
-      {!q.isPending && q.data && !q.data.thin && openings.length === 0 ? (
-        <EmptyState
-          kind="first-run"
-          title="Paste a posting you're looking at, and you'll see how you match."
-        />
-      ) : null}
-      {!q.isPending && q.data && !q.data.thin && openings.length > 0 && visible.length === 0 ? (
-        <EmptyState
-          kind="filtered"
-          title={`Nothing matches “${filter.trim()}”.`}
-          action={
-            <Button variant="outline" onClick={() => setFilter("")}>
-              Clear the filter
-            </Button>
-          }
-        />
-      ) : null}
-      {!q.isPending && q.data && !q.data.thin && visible.length > 0 ? (
-        <RowList>
-          {visible.map((o) => (
-            <Row
-              key={o.id}
-              label={o.title}
-              meta={
-                <span className="flex flex-col items-end gap-0.5 text-right">
-                  <span>
-                    {[o.company, o.location].filter(Boolean).join(" · ")}
-                  </span>
-                  {o.fit ? (
-                    <span className="tabular-nums">
-                      Fit {o.fit.met} of {o.fit.total}
-                      {o.fit.gap[0] ? ` — misses ${o.fit.gap[0]}` : ""}.
-                    </span>
-                  ) : null}
-                </span>
-              }
-              onSelect={() => setOpenId(o.id)}
+      ) : (
+        <>
+          <form
+            className="mb-6 max-w-xl"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void pastePosting();
+            }}
+          >
+            <label htmlFor="posting" className="mb-1 block text-[13px] font-[510]">
+              Paste a posting
+            </label>
+            <Textarea
+              id="posting"
+              value={raw}
+              onChange={(e) => setRaw(e.target.value)}
+              placeholder="Paste the role, requirements, and company."
             />
-          ))}
-        </RowList>
-      ) : null}
+            <Button type="submit" className="mt-2" disabled={!raw.trim()}>
+              Score this posting
+            </Button>
+          </form>
+          {openings.length ? (
+            <div className="mb-4 max-w-xl">
+              <Input
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                placeholder="Filter by title or company"
+                aria-label="Filter openings"
+              />
+            </div>
+          ) : null}
+          {q.isPending ? <SkeletonRows /> : null}
+          {!q.isPending && openings.length === 0 ? (
+            <EmptyState
+              kind="first-run"
+              title="Paste a posting you're looking at, and you'll see how you match."
+            />
+          ) : null}
+          {!q.isPending && openings.length > 0 && visible.length === 0 ? (
+            <EmptyState
+              kind="filtered"
+              title={`Nothing matches “${filter.trim()}”.`}
+              action={
+                <Button variant="outline" onClick={() => setFilter("")}>
+                  Clear the filter
+                </Button>
+              }
+            />
+          ) : null}
+          {!q.isPending && visible.length > 0 ? (
+            <RowList>
+              {visible.map((o) => (
+                <Row
+                  key={o.id}
+                  label={o.title}
+                  meta={
+                    <span className="flex flex-col items-end gap-0.5 text-right">
+                      <span>{[o.company, o.location].filter(Boolean).join(" · ")}</span>
+                      {o.fit ? (
+                        <span className="tabular-nums">
+                          Fit {o.fit.met} of {o.fit.total}
+                          {o.fit.gap[0] ? ` — misses ${o.fit.gap[0]}` : ""}.
+                        </span>
+                      ) : null}
+                    </span>
+                  }
+                  onSelect={() => setOpenId(o.id)}
+                />
+              ))}
+            </RowList>
+          ) : null}
+        </>
+      )}
     </div>
   );
 }
