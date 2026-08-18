@@ -1,4 +1,4 @@
-import { streamText, tool, type ModelMessage } from "ai";
+import { streamText, tool, stepCountIs, type ModelMessage } from "ai";
 import { executeCommand } from "@/core/commands/bus";
 import { agentCommands } from "@/core/commands/define";
 import { provider, roleModels, writeTrace, aiAvailable } from "@/core/ai/gateway";
@@ -68,6 +68,7 @@ export async function coachTurn(opts: {
     system: `${persona}\n\nCurrent screen: ${opts.screen ?? "/coach"}\nProfile snapshot: ${JSON.stringify(profile)}`,
     messages,
     tools,
+    stopWhen: stepCountIs(5),
     onFinish: async ({ text, usage }) => {
       await withClient((c) =>
         c.query(
@@ -95,7 +96,8 @@ export async function coachTurn(opts: {
           if (part.type === "text-delta") {
             send({ type: "text", text: part.text });
           } else if (part.type === "tool-result" && part.toolName === "app_open") {
-            send({ type: "open", result: part.output });
+            const output = part.output as { result?: unknown };
+            send({ type: "open", result: output?.result ?? output });
           }
         }
         send({ type: "done" });

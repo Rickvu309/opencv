@@ -13,7 +13,15 @@ function parseEvent(raw: string): CoachStreamEvent | null {
     const payload = JSON.parse(line.slice(5).trim()) as CoachStreamEvent;
     if (payload.type === "text" && typeof payload.text === "string") return payload;
     if (payload.type === "open") {
-      const parsed = appOpenResultSchema.safeParse(payload.result);
+      const raw = payload.result as unknown;
+      const inner =
+        raw &&
+        typeof raw === "object" &&
+        "result" in raw &&
+        "command" in raw
+          ? (raw as { result: unknown }).result
+          : raw;
+      const parsed = appOpenResultSchema.safeParse(inner);
       if (parsed.success) return { type: "open", result: parsed.data };
       return null;
     }
