@@ -38,6 +38,7 @@ export function AuthScreen({ mode }: { mode: "sign-in" | "sign-up" }) {
           <Input
             id="email"
             type="email"
+            inputMode="email"
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}

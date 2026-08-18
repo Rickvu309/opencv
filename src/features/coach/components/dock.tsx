@@ -10,7 +10,6 @@ import { sendCoachTurn } from "@/features/coach/stream";
 import { runCommand } from "@/ui/run-command";
 import { Button } from "@/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/ui/sheet";
-import { cn } from "@/lib/utils";
 
 function useMdUp() {
   const [up, setUp] = useState(false);
@@ -27,11 +26,9 @@ function useMdUp() {
 function ThreadBody({
   threadId,
   screen,
-  compact,
 }: {
   threadId: string | null;
   screen: string;
-  compact?: boolean;
 }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -99,7 +96,7 @@ function ThreadBody({
   const messages = thread.data?.messages ?? [];
 
   return (
-    <div className={cn("flex min-h-0 flex-1 flex-col", compact && "text-[14px]")}>
+    <div className="flex min-h-0 flex-1 flex-col">
       {offline ? (
         <p className="text-ink-muted">
           The Coach is offline right now. Everything else in the app still works.
@@ -134,7 +131,7 @@ export function CoachDock() {
   const { threadId, dockOpen, setDockOpen } = useCoachSession();
   const mdUp = useMdUp();
   const body = (
-    <ThreadBody threadId={threadId} screen={pathname} compact />
+    <ThreadBody threadId={threadId} screen={pathname} />
   );
 
   if (mdUp) {

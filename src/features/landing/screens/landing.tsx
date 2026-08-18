@@ -44,8 +44,14 @@ export function LandingScreen() {
       <form className="mt-12 max-w-sm" onSubmit={onWaitlist}>
         <p className="text-[13px]">Not ready to start. Leave your email.</p>
         <div className="mt-2 flex gap-2">
+          <label htmlFor="waitlist-email" className="sr-only">
+            Email
+          </label>
           <Input
+            id="waitlist-email"
             type="email"
+            inputMode="email"
+            autoComplete="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}

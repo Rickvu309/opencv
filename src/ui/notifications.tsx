@@ -13,6 +13,7 @@ export function NotificationBell() {
         type="button"
         aria-label={unread ? `Notifications (${unread} unread)` : "Notifications"}
         aria-expanded={open}
+        aria-haspopup="true"
         className="relative flex size-11 items-center justify-center rounded-[var(--radius-control)] text-ink hover:bg-surface-2"
         onClick={() => setOpen((o) => !o)}
       >
@@ -25,8 +26,8 @@ export function NotificationBell() {
       </button>
       {open ? (
         <ul
-          className="absolute right-0 z-[var(--z-overlay)] mt-2 w-72 rounded-[var(--radius-container)] border border-hairline bg-surface-1 p-3 shadow-[var(--shadow-overlay)]"
-          role="status"
+          className="menu-enter absolute right-0 z-[var(--z-overlay)] mt-2 w-72 origin-top-right rounded-[var(--radius-container)] border border-hairline bg-surface-1 p-3 shadow-[var(--shadow-overlay)]"
+          aria-label="Notifications"
         >
           {(q.data ?? []).length === 0 ? (
             <li className="text-[13px] text-ink-muted">No notifications yet.</li>

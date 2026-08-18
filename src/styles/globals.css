@@ -1,6 +1,14 @@
 @import "tailwindcss";
 @import "@fontsource-variable/inter/index.css";
 
+@custom-variant hover {
+  @media (hover: hover) {
+    &:hover {
+      @slot;
+    }
+  }
+}
+
 @theme {
   --font-sans: "Inter Variable", Inter, system-ui, sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
@@ -24,18 +32,10 @@
   --color-status-positive: #4cb782;
   --color-status-attention: #fc7840;
 
-  --color-background: #ffffff;
-  --color-foreground: #212226;
-  --color-muted: #f6f6f6;
-  --color-muted-foreground: #6f737b;
-  --color-border: #e5e5e6;
-  --color-accent-foreground: #ffffff;
-
   --radius-tag: 4px;
   --radius-control: 6px;
   --radius-container: 12px;
   --radius-pill: 9999px;
-  --radius-card: 12px;
 }
 
 :root {
@@ -71,13 +71,6 @@
   --duration-base: 200ms;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
-
-  --background: var(--surface-1);
-  --foreground: var(--ink);
-  --muted: var(--surface-2);
-  --muted-foreground: var(--ink-muted);
-  --border: var(--hairline);
-  --accent-foreground: var(--on-accent);
 }
 
 html {
@@ -89,6 +82,10 @@ html {
   font-feature-settings: "cv01", "ss03";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+#main {
+  scroll-margin-top: 1.5rem;
 }
 
 body {
@@ -171,14 +168,14 @@ body {
   }
 
   .overlay-enter,
-  .payback-enter {
+  .payback-enter,
+  .panel-enter {
     animation: overlay-fade var(--duration-fast) var(--ease-out);
   }
 
-  .panel-enter,
   .dock-enter,
   .menu-enter {
-    animation: overlay-fade var(--duration-fast) var(--ease-out);
+    animation: none;
   }
 
   .sheet-motion {

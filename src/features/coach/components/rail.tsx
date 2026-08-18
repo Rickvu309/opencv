@@ -201,7 +201,7 @@ export function Rail({ onNavigate }: { onNavigate?: () => void }) {
       <div className="mt-auto pt-4">
         <DropdownMenu>
           <DropdownMenuTrigger
-            className={cn(itemClass, "leading-[1.6] break-words")}
+            className={cn(itemClass, "overflow-visible leading-[1.6] whitespace-normal break-words")}
             aria-label="Account"
           >
             {accountName}

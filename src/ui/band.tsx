@@ -22,7 +22,7 @@ export function Band({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           {typeof title === "string" ? (
-            <h1 className="text-balance text-[24px] font-[590] leading-[1.3] tracking-[-0.017em]">
+            <h1 className="text-balance overflow-visible text-[24px] font-[590] leading-[1.3] tracking-[-0.017em]">
               {title}
             </h1>
           ) : (
@@ -64,6 +64,7 @@ export function BandFilter({
               ? "bg-surface-3 text-accent"
               : "text-ink-muted hover:bg-surface-2",
           )}
+          aria-pressed={value === opt.id}
         >
           {opt.label}
         </button>

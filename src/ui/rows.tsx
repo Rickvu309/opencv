@@ -20,7 +20,7 @@ export function Row({
 }) {
   const body = (
     <>
-      <span className="min-w-0 flex-1 basis-48 text-left text-[15px] font-[510] leading-[1.5] tracking-[-0.012em]">
+      <span className="min-w-0 flex-1 basis-48 overflow-visible text-left text-[15px] font-[510] leading-[1.5] tracking-[-0.012em]">
         {label}
       </span>
       {meta ? (

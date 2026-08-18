@@ -34,7 +34,7 @@ export function PersonalPageScreen({ handle }: { handle: string }) {
         {q.data.name || q.data.handle}
       </h1>
       <p className="mt-2 text-pretty text-[15px] text-ink-muted">{q.data.summary}</p>
-      <h2 className="mt-10 text-[18px] font-[510] tracking-[-0.012em]">Work</h2>
+      <h2 className="mt-10 text-[18px] font-[510] leading-[1.4] tracking-[-0.012em]">Work</h2>
       {q.data.proofs.length === 0 ? (
         <EmptyState kind="first-run" title="No published Proof yet." />
       ) : (

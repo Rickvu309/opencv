@@ -27,7 +27,6 @@ The [interfaces.dev cheat-sheet](https://interfaces.dev/cheat-sheet) baseline, a
 
 **Region:** the frame around every signed-in screen ([layout.md](layout.md) layers 2–4).
 **Anatomy:** `--canvas` backdrop; rail on the left; the main column is a `--surface-1` panel with a `--hairline` edge and `--radius-container` top-left corner — the Linear composition where work floats on the shell. Header sits above the panel, quiet.
-**Code today:** everything is flat white with plain borders (`app-shell.tsx`); the canvas/panel split does not exist yet.
 
 ### Rail
 
@@ -37,13 +36,11 @@ The [interfaces.dev cheat-sheet](https://interfaces.dev/cheat-sheet) baseline, a
 **Thread item:** truncating title with `title` attribute for the full value; `···` menu trigger (text, not an icon) revealed as a sibling control; Rename and Delete in its menu.
 **Account control:** the user's name, wrapping — never clipping — "Nguyễn Thị Ngọc Ánh"; opens Profile / Settings / Sign out.
 **Copy hooks:** group labels, New conversation, the menu verbs.
-**Code today:** rail runs 14px items on white; group labels 13px; matches anatomy otherwise. Density drop to 13px and canvas fill come with the token pass.
 
 ### Header
 
 **Region:** chrome, above the main panel.
 **Anatomy:** drawer trigger (Menu, ghost, mobile only) leading; bell trailing. Nothing else — the band inside `main` owns the title.
-**Code today:** the bell is an unstyled text button with a raw popover (`notifications.tsx`); it should be a ghost icon-button (bell icon, `aria-label="Notifications"`, count badge as a `--radius-pill` chip) opening a proper popover with `--shadow-overlay`.
 
 ### Coach dock
 
@@ -67,7 +64,6 @@ An overlay is never a place: no URL, the screen behind stays live.
 **Variants:** primary (accent fill, `--on-accent` text — **one per screen**, the layout's primary slot); outline (`--hairline` border on `--surface-1`); ghost (transparent, `--ink` text); danger (`--destructive` fill, delete only).
 **Anatomy:** `ui` 13px at weight 510, `--radius-control`, 44px min height, 16px horizontal padding.
 **States:** hover — primary to `--accent-hover`, others fill `--surface-2`; pressed — `scale(0.97)` + `--surface-3` on quiet variants; focus ring; disabled opacity 0.5; loading keeps the label and appends "…" (no spinner-only buttons).
-**Code today:** 14px/500 labels, no press scale, no hover on primary. `button.tsx` gets the state model in the code pass.
 
 ### Input, Textarea, Label
 
@@ -82,13 +78,11 @@ An overlay is never a place: no URL, the screen behind stays live.
 **Anatomy:** optional Back (ghost, above); title row — h1 `title-lg` 24/590 with `text-wrap: balance`, optional meta line under it (`ui`, `--ink-muted`, type word lives here); actions trailing — primary then quiet secondaries; optional filter row below.
 **Yield:** actions wrap under the title before the primary ever leaves the band; the filter collapses first ([layout.md](layout.md) owns the order).
 **Copy hooks:** title, meta, action labels.
-**Code today:** title renders 28px/500; drops to 24/590 with tracking in the code pass.
 
 ### BandFilter
 
 **Anatomy:** a row of text pills, `ui` 13px, `--radius-control`, 8px gap y-compressed.
 **States:** rest `--ink-muted`; hover `--surface-2`; active `--surface-3` fill + `--accent` text (never accent fill); focus ring. Filters never animate (high-frequency).
-**Code today:** active state is `--muted` + accent text — same idea, retokened.
 
 ### Row and RowList
 
@@ -97,7 +91,6 @@ An overlay is never a place: no URL, the screen behind stays live.
 **States:** rest flat; hover `--surface-2` (only when the row acts); pressed `--surface-3`; focus ring on the row.
 **Wrap law:** meta wraps under the label before the label truncates; no fixed widths.
 **Copy hooks:** label, meta, menu verbs.
-**Code today:** labels run 16/400; the Linear-density drop to 15/510 + 13 meta comes with the token pass.
 
 ### EmptyState and NotFoundState
 
@@ -130,7 +123,6 @@ An overlay is never a place: no URL, the screen behind stays live.
 Already installed; this block is its contract. `<Toaster />` at the root configured: bottom-center on mobile, bottom-right ≥768px; default duration; swipe-to-dismiss follows position; `richColors` off — toasts stay `--surface-1` on `--hairline` with `--shadow-overlay`, matching the system instead of shouting.
 **Anatomy of the one toast that matters:** "Saved" + an Undo action; undo completion re-toasts "Undone". Toast text is `ui` 13px; it is a `role="status"` live region — streamed Coach replies and undo announce here for screen readers.
 **Law:** toasts confirm; they never ask questions, never stack more than three (Sonner collapses), and never carry destructive actions other than Undo.
-**Code today:** `run-command.ts` toasts "Saved" on every command — correct pattern, keep; position and styling config comes with the code pass.
 
 ### SkipLink
 
@@ -168,14 +160,12 @@ First focusable element on every page; visually hidden until focused, then a `--
 **States:** idle — send disabled at opacity 0.5 while empty; filled — send enabled; **working** (the reference's enhancing state, reused for streaming) — send becomes Stop is out of scope, instead the composer disables and the thread shows the streaming reply; offline — disabled with the offline sentence above.
 **Keys:** Enter sends, Shift+Enter breaks — and the hint is discoverable in the placeholder on first run.
 **Copy hooks:** placeholder, offline sentence.
-**Code today:** `composer.tsx` is a plain textarea with a "Send" button below; the single-surface anatomy and working state come with the code pass.
 
 ### Chat message
 
 **Region:** the thread body of Conversation and the dock.
 **Variants:** user — right-anchored block on `--surface-2`, `--radius-container`, max ~65ch; Coach — plain `body` text on the panel, no bubble (the mentor speaks on the page, not in a balloon); failed — the failure sentence in `--ink-muted` with one Retry (outline) under it; streaming — text appends per [motion.md](motion.md), a static "Coach is replying" line under reduced motion.
 **Law:** no avatars, no role labels once the styling distinguishes roles; timestamps only on hover/long-press, `tabular-nums`.
-**Code today:** `dock.tsx` renders "role: text" paragraphs — the variant styling replaces that wholesale.
 
 ### Starter chip and activation checklist
 
