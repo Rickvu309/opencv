@@ -26,16 +26,16 @@ The [interfaces.dev cheat-sheet](https://interfaces.dev/cheat-sheet) baseline, a
 ### The shell composition
 
 **Region:** the frame around every signed-in screen ([layout.md](layout.md) layers 2–4).
-**Anatomy:** `--canvas` backdrop; rail on the left; the main column is a `--surface-1` panel with a `--hairline` edge and `--radius-container` top-left corner — the Linear composition where work floats on the shell. Header sits above the panel, quiet.
+**Anatomy:** `--canvas` backdrop; rail on the left (on the canvas, no hairline); the main column is a `--surface-1` panel with a `--hairline` edge and `--radius-container` on all corners, inset by 8px so it floats — the Linear composition. Header (bell) sits in the canvas gutter above the panel, quiet.
 
 ### Rail
 
-**Region:** chrome, left, `--size-rail` wide. Becomes the drawer below 768px. The rail is viewport-tall (`h-svh`, sticky): threads scroll; places and account stay on screen.
-**Anatomy:** New conversation (outline button, Plus icon, full width) → thread list (scrolling) → place groups under `ui-label` group labels in `--ink-muted` ("Prepare", "Opportunities") → account control pinned at the bottom. Place items are 16px lucide + the word (chrome wayfinding, not Drive rows). All items `ui` 13px, `--radius-control`, 44px tall, one shared content inset. Proof nests 12px under Paper so it reads as a child, not a second icon column.
-**States:** rest transparent on `--canvas`; hover `--surface-2`; active `--surface-3` fill + `--accent` text, never a decorative bar; focus ring.
-**Thread item:** truncating title with `title` attribute for the full value; `···` menu trigger (text, not an icon) revealed as a sibling control; Rename and Delete in its menu.
+**Region:** chrome, left. Default `--size-rail` (16rem). Becomes the drawer below 768px (drawer stays 16rem). The rail is viewport-tall (`h-svh`, sticky): History scrolls; places and account stay on screen. Desktop width is user-resizable (12–20rem) from the right edge; double-click resets; width persists in `localStorage`.
+**Anatomy:** OpenPath mark → New conversation (accent action: label + plus in a circle, outside the item list) → Coach, History, Prepare, Opportunities (one sliding `--surface-2` pill follows hover/focus/active via `translateY`) → leftover space → account pinned at the bottom. History is content-sized. History and places share one scroll region if they overflow. Desktop trailing-edge splitter as before.
+**States:** rest transparent on `--canvas`; a single highlight pill (`--surface-2`) tracks the hovered or current item — items themselves have no hover fill. Active is `font-[590]` `--ink` (icon too), not accent. Press `scale(0.97)`. Focus ring. New conversation is `--accent` on `--accent-muted` hover.
+**Copy hooks:** group labels, Coach, New conversation, History, the menu verbs.
+**Thread item:** truncating title with `title` attribute for the full value; `···` menu trigger (text, not an icon) revealed via Hoverable as a sibling control; Rename and Delete in its menu. History groups as Today / Yesterday / Earlier once the list is long enough; a search filter sits above the list. While conversations load, history skeleton rows hold the slot.
 **Account control:** the user's name, wrapping — never clipping — "Nguyễn Thị Ngọc Ánh"; opens Profile / Settings / Sign out.
-**Copy hooks:** group labels, New conversation, the menu verbs.
 
 ### Header
 
@@ -75,7 +75,7 @@ An overlay is never a place: no URL, the screen behind stays live.
 ### Band
 
 **Region:** first element inside `main` on every screen that has chrome.
-**Anatomy:** optional Back (ghost, above); title row — h1 `title-lg` 24/590 with `text-wrap: balance`, optional meta line under it (`ui`, `--ink-muted`, type word lives here); actions trailing — primary then quiet secondaries; optional filter row below.
+**Anatomy:** optional Back (ghost, above); title row — h1 `title-lg` 24/590 with `text-wrap: balance`, optional meta line under it (`ui`, `--ink-muted`, type word lives here); actions trailing — primary then quiet ghost secondaries (not a second outline button); optional filter row below.
 **Yield:** actions wrap under the title before the primary ever leaves the band; the filter collapses first ([layout.md](layout.md) owns the order).
 **Copy hooks:** title, meta, action labels.
 
@@ -87,7 +87,7 @@ An overlay is never a place: no URL, the screen behind stays live.
 ### Row and RowList
 
 **Region:** the unit of every Drive list.
-**Anatomy:** hairline-divided list (`--hairline`); each row 44px min: label leading (`title-sm` 15/510), meta trailing (`ui` 13, `--ink-muted`, `tabular-nums` on dates), optional status chip between, optional `···` menu as a sibling control so the row stays one target. Type is a word in the meta, not an icon. One shared content inset for every row in the list.
+**Anatomy:** hairline-divided list (`--hairline`) that bleeds to the panel edges on Drive lists; each row 44px min: label leading (`title-sm` 15/510), meta trailing (`ui` 13, `--ink-muted`, `tabular-nums` on dates), optional status chip between, optional `···` menu as a sibling control so the row stays one target. Type is a word in the meta, not an icon. One shared content inset for every row in the list (matches the band title).
 **States:** rest flat; hover `--surface-2` (only when the row acts); pressed `--surface-3`; focus ring on the row.
 **Wrap law:** meta wraps under the label before the label truncates; no fixed widths.
 **Copy hooks:** label, meta, menu verbs.
@@ -101,7 +101,7 @@ An overlay is never a place: no URL, the screen behind stays live.
 
 ### Skeletons
 
-**Anatomy:** `--surface-2` blocks with `--radius-control`, pulsing per [motion.md](motion.md); `aria-busy` on the group. Variants: block, rows (mirrors Row geometry), section (label + two fields), page (the A4 silhouette on the stage).
+**Anatomy:** `--surface-2` blocks with `--radius-control`, pulsing per [motion.md](motion.md); `aria-busy` on the group. Variants: block, rows (mirrors Row geometry), section (label + two fields), page (the A4 silhouette on the stage), thread (three message-width bars), history (rail thread rows).
 **Law:** a skeleton holds the exact slot of the content it precedes — no reflow when content lands, and it is never shown as an empty state.
 
 ### Dialog and ConfirmDialog
@@ -127,6 +127,69 @@ Already installed; this block is its contract. `<Toaster />` at the root configu
 ### SkipLink
 
 First focusable element on every page; visually hidden until focused, then a `--surface-1` chip at the top-left, z 50. Anchored headings get `scroll-margin-top`.
+
+### Chip
+
+**Region:** status on Apply rows, fit on Search rows, verb chips inside tool cards.
+**Anatomy:** `--radius-pill`, `ui` 13px, 4px gap, optional 6px status dot (`--status-*`) beside the word. Never a colour without the word.
+**Variants:** quiet (`--hairline` border), status (dot + word), code (mono 12px on `--surface-2` for command names and paths).
+**States:** rest; hover `--surface-2` when it is a control; focus ring.
+
+### Tooltip
+
+**Region:** any icon-only control that needs a word.
+**Anatomy:** `--surface-1`, `--hairline`, `--shadow-overlay`, `--radius-control`, `caption` 12px. Delay 200ms. Never the only explanation for a disabled control — disabled uses visible text instead.
+**States:** fade in 120ms; Esc dismisses.
+
+### Collapsible
+
+**Region:** thinking card, tool card, approval card.
+**Anatomy:** trigger row 40px desktop / 44px touch; chevron always reserved on the right so rows never shift; content height is the one tolerated accordion exception in [motion.md](motion.md).
+**States:** open / closed; chevron rotates 150ms; `aria-expanded`.
+
+### Tabs
+
+**Region:** format bar density/section groups; any in-page toggle group.
+**Anatomy:** `role="tablist"` of text pills matching BandFilter. Active `--surface-3` + `--accent` text. Never accent fill. No animation.
+
+### Table
+
+**Region:** Apply pipeline when a status group is a set of columns rather than a chip-on-row.
+**Anatomy:** `@tanstack/react-table` inside a hairline-divided list. Header `ui-label` `--ink-muted`; cells `body` 15px; `tabular-nums` on dates and counts. Status lives in a Chip slot.
+
+### Code and CopyButton
+
+**Region:** markdown code fences in Coach replies; payload view; tool-card command chips.
+**Anatomy:** `--font-mono` 13px on `--surface-2`, `--radius-control`, 12px padding. CopyButton is a Hoverable ghost at the top-right (`aria-label="Copy"`), swaps to "Copied" for 1200ms via `role="status"`.
+
+### Loader
+
+**Region:** in-flight tool cards and pending approvals.
+**Anatomy:** 16px stroke icon, `aria-hidden` when a word already names the state. Never a spinner-only button.
+
+### Card, EmptyMessageCard, EndOfList
+
+**Card:** `--surface-1`, `--hairline`, `--radius-container`, 16px padding. Used for artifact cards in the thread and situation cards.
+**EmptyMessageCard:** one sentence + optional action; same bones as EmptyState, smaller, for in-thread nothing-yet.
+**EndOfList:** a quiet `caption` `--ink-faint` line after a Drive list ("That's all.").
+
+### Switch and Checkbox
+
+**Region:** Settings notification toggles; checklist rows.
+**Anatomy:** native-accessible Radix controls, 44px hit area, label on the on-state. Thumb on `--surface-1`; track `--surface-3` off, `--accent` on.
+
+### Interactive and Hoverable
+
+**Interactive:** one place where variant, prominence, and state (`empty` / `filled` / `selected`) resolve to hover, active, disabled, and focus. Everything clickable (Button, rail item, chips that act) sits on it.
+**Hoverable:** CSS-only reveal. Where hover does not exist (`@media (hover: none)` / `no-hover:`), the revealed state is permanent so row menus stay reachable on phones.
+
+### InfoBlock, Keycap, Truncated, FadingEdge, StickToBottom
+
+**InfoBlock:** quiet callout, `--surface-2` fill, `ui` 13px.
+**Keycap:** `--font-mono` 12px, `--hairline` key, used in composer hints.
+**Truncated:** one-line ellipsis with `title` for the full value.
+**FadingEdge:** mask at the end of a horizontally overflowing chip strip.
+**StickToBottom:** thread viewport sticks to the latest message; a "Latest" ghost control appears when the user scrolls up.
 
 ---
 
@@ -157,15 +220,43 @@ First focusable element on every page; visually hidden until focused, then a `--
 
 **Region:** the primary slot of Conversation; also the dock body's foot. Pattern copied from [AIcss ai-agent-input](https://www.aicss.dev/components/ai-agent-input): one bordered surface containing the field and its controls, not a bare textarea with a button below.
 **Anatomy:** `--surface-1`, `--hairline`, `--radius-container`; auto-growing textarea (`body` 15px, min 1 line, max ~8) with sr-only label and placeholder as invitation; a control row inside the same surface — send trailing (primary, arrow-up icon with `aria-label="Send"`, 40px). Attach and model-switch slots from the reference are omitted: the Coach has no model picker.
-**States:** idle — send disabled at opacity 0.5 while empty; filled — send enabled; **working** (the reference's enhancing state, reused for streaming) — send becomes Stop is out of scope, instead the composer disables and the thread shows the streaming reply; offline — disabled with the offline sentence above.
+**States:** idle — send disabled at opacity 0.5 while empty; filled — send enabled; **working** — send becomes Stop (`aria-label="Stop"`), an interrupt hint ("Stop to send something else") sits under the surface, and a second typed message queues in a bar above the composer and sends itself when the reply finishes; offline — disabled with the offline sentence above.
 **Keys:** Enter sends, Shift+Enter breaks — and the hint is discoverable in the placeholder on first run.
 **Copy hooks:** placeholder, offline sentence.
 
 ### Chat message
 
 **Region:** the thread body of Conversation and the dock.
-**Variants:** user — right-anchored block on `--surface-2`, `--radius-container`, max ~65ch; Coach — plain `body` text on the panel, no bubble (the mentor speaks on the page, not in a balloon); failed — the failure sentence in `--ink-muted` with one Retry (outline) under it; streaming — text appends per [motion.md](motion.md), a static "Coach is replying" line under reduced motion.
+**Variants:** user — right-anchored block on `--surface-2`, `--radius-container`, max ~65ch; Coach — markdown `body` text on the panel (`.md-body`), no bubble; failed — the failure sentence in `--ink-muted` with one Retry (outline) under it; streaming — text appends per [motion.md](motion.md), a static "Coach is replying" line under reduced motion.
+**Action bar:** Hoverable row under a settled Coach message — Copy, Retry. Revealed on hover; always visible on touch.
 **Law:** no avatars, no role labels once the styling distinguishes roles; timestamps only on hover/long-press, `tabular-nums`.
+
+### Thinking card
+
+**Region:** thread, above the streaming reply.
+**Anatomy:** trigger row — pinging dot while streaming, "Thinking" / "Thinking…"; chevron reserved right. Body: capped 12rem scroll, markdown at `ui` `--ink-muted`. Collapsed by default. Empty content renders nothing; a turn with no reasoning degrades to the working composer state only.
+**Reference:** Onyx Craft Thinking Card.
+
+### Tool card and tool group
+
+**Region:** thread, between user message and Coach body.
+**Anatomy:** status icon (loader / check / alert) + verb + optional code chip (command name, path) + badge pinned right + chevron that always reserves space. Failed calls auto-open. `dense` and `nested` variants inside a group.
+**Kinds (from command names):** `paper.*` diff body; `opening.*` search-result body; profile and proof reads a read body; `proof.log` and `profile.*` writes a generic body; `app.open` an artifact card that navigates.
+**Group:** consecutive in-flight tools collapse under one header until they settle.
+**Reference:** Onyx Craft Tool Card / Tool Group.
+
+### Approval card and payload view
+
+**Region:** thread, when a destructive `agent: true` command would otherwise run.
+**Anatomy:** header "Needs you: {verb}"; actions on the row — Do it (primary), Don't ask again in this conversation (outline), Not now (ghost). Body: per-action list plus PayloadView (sanitized JSON, copy). Conflict (already applied) re-reads rather than implying the decision landed. ~800ms settle hold per [motion.md](motion.md).
+**Law:** the decision runs through the command bus so Saved / Undo still apply. The Coach never claims the write until the tool succeeded.
+**Copy hooks:** header, the three verbs, conflict sentence.
+**Reference:** Onyx Craft Approval Card. Mechanism: [coach-hands.md](../mechanisms/coach-hands.md).
+
+### Artifact card
+
+**Region:** thread, after a successful create/update that opened a place.
+**Anatomy:** Card with type word (`ui` `--ink-muted`), title (`title-sm`), one outline "Open {noun}". Cards are windows, never editors.
 
 ### Starter chip and activation checklist
 
@@ -188,7 +279,7 @@ First focusable element on every page; visually hidden until focused, then a `--
 ### Sectioned-editor section
 
 **Region:** the unit of `/profile`, `/pitch`, `/settings`.
-**Anatomy:** heading outside the group surface (`title` 18/510), then the fields on one shared content inset — the Umbra law made flesh; each field row: Label, control, quiet per-field save (state announced in the toast, no per-row Save buttons where blur-save works). Completeness sits inside the first Profile section as a fact with its basis, never a hero metric.
+**Anatomy:** heading outside the group surface (`title` 18/510), then the fields on one shared content inset — the Umbra law made flesh; each field row: Label leading, control trailing at a readable field width (~280px from `sm`, wrapping on small screens), grouped with space not hairlines. Quiet per-section save right-aligned (state announced in the toast, no per-row Save buttons where blur-save works). Completeness sits inside the first Profile section as a fact with its basis, never a hero metric.
 **Danger sections** sit last; their actions are danger buttons confirming via ConfirmDialog.
 **Copy hooks:** section headings, field labels, the completeness sentence.
 

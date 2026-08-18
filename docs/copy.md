@@ -26,7 +26,7 @@ What the voice is not: HR-corporate ("leverage your competencies"), hype ("super
 
 ## Lexicon
 
-Typed exactly, in these casings: **CV**, **Resume**, **Cover letter**, **Proof**, **Apply**, **Uploaded**. Group labels: **Prepare**, **Opportunities**. The assistant is **the Coach**.
+Typed exactly, in these casings: **CV**, **Resume**, **Cover letter**, **Proof**, **Apply**, **Uploaded**. Group labels: **Prepare**, **Opportunities**, **History**. The assistant is **the Coach**; the home place is **Coach**.
 
 Banned words in UI: Applications (the place is Apply), journey, unlock, empower, supercharge, leverage, oops, awesome, amazing. Banned constructions: "Great question", "You've got this", any sentence that promises an outcome the profile cannot support.
 
@@ -36,8 +36,8 @@ Vietnamese names render whole: never truncated mid-diacritic, never clipped tone
 
 **Buttons.** Verb first, naming the specific action. Never "Submit", "OK", or bare "Yes"/"No" on anything consequential. Confirmations repeat the consequence so the dialog is answerable without its body.
 
-- Good: "Start a CV" · "Save to Apply" · "Delete this CV?" answered by "Delete CV" / "Cancel"
-- Bad: "Submit" · "Let's go!" · "Are you sure?" answered by "Yes" / "No"
+- Good: "Start a CV" · "Save to Apply" · "Delete this CV?" answered by "Delete CV" / "Cancel" · "Do it" / "Not now" on an approval card
+- Bad: "Submit" · "Let's go!" · "Are you sure?" answered by "Yes" / "No" · "Approve" / "Reject" on a Coach write
 
 **Errors.** What happened plus one next step, next to where it broke. No codes, no blame, no "oops". Hints phrased positively and shown before the mistake.
 
@@ -54,7 +54,7 @@ Vietnamese names render whole: never truncated mid-diacritic, never clipped tone
 
 **Settings.** Toggles label the on state ("Email me before deadlines"), never the negative. Field labels are visible; placeholders show the format, never do the label's job.
 
-**Coach messages vs UI chrome.** The Coach's first person lives only in the thread and the dock; its persona is [mechanisms/coach-hands.md](mechanisms/coach-hands.md) and `persona.md`. Chrome reports about the Coach in third person and never impersonates it: "The Coach updated your profile. Undo." is chrome; "I've updated your profile" is only ever the Coach speaking, and only after a successful tool result.
+**Coach messages vs UI chrome.** The Coach's first person lives only in the thread and the dock; its persona is [mechanisms/coach-hands.md](mechanisms/coach-hands.md) and `persona.md`. Chrome reports about the Coach in third person and never impersonates it: "The Coach updated your profile. Undo." is chrome; "I've updated your profile" is only ever the Coach speaking, and only after a successful tool result. Approval card verbs: **Do it**, **Don't ask again in this conversation**, **Not now**. Thinking label: **Thinking**. Stop control: **Stop**. Queued bar: **Sends when the Coach finishes.** History groups: **Today**, **Yesterday**, **Earlier**.
 
 ## Basis rule
 

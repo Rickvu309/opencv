@@ -38,7 +38,7 @@ Rules that hold on every screen:
 
 Nine types. Every URL in [flows.md](../flows.md) maps to exactly one. A new screen picks a type or extends this list — it does not invent a private layout.
 
-1. **Conversation** — `/coach`. The thread is the body; the composer is the primary slot, pinned after the messages. Starters and the activation checklist live in the empty thread, not in the rail. No dock; the page is the conversation.
+1. **Conversation** — `/coach`. The thread is the body; the composer is the primary slot. On an empty thread the invite, starters, and composer sit as one centered group (ChatGPT empty). Once there are messages the composer pins after the thread. No dock; the page is the conversation.
 2. **Drive list** — `/paper`, `/proof`, `/search`, `/applications`. A band (title, one primary action, optional filter) over a single column of rows. The row is the unit: opening one is the row's whole job, not an in-row editor. The empty state replaces the rows under the same band.
 3. **Opened document** — `/paper/$paperId`. Band: Back (to the list, never to Chat), title, type word, Export as primary. Then a format bar, a muted stage, and the white A4. No form beside the page; editing happens on the page.
 4. **Opened space** — `/proof/$proofId`. Band: Back, title, Arrange and Publish (Publish becomes primary once the story is arranged; until then Arrange is). The body is the log, newest first.
@@ -52,9 +52,9 @@ Nine types. Every URL in [flows.md](../flows.md) maps to exactly one. A new scre
 
 Each block: type, regions in reading order, the primary slot, what yields when space runs out, and where empty or error sits.
 
-### Chat — Conversation
+### Coach — Conversation
 
-Regions: thread messages, then composer. Primary: the composer. Yields: nothing — the conversation owns the column; the checklist and starters disappear once the thread has messages. Empty/error slot: the empty thread holds starters and the activation checklist; a failed turn is a plain message in the thread with one retry.
+Regions: thread messages, then composer. Primary: the composer. Yields: nothing — the conversation owns the column; the checklist and starters disappear once the thread has messages. Empty/error slot: the empty thread holds a centered invite, starters, the activation checklist, and the composer as one group; a failed turn is a plain message in the thread with one retry.
 
 ### Paper list — Drive list
 
@@ -128,7 +128,7 @@ Per-screen empty inventory:
 
 | Screen | Kind(s) it can show | The one door |
 |---|---|---|
-| Chat (empty thread) | first-run — the one deliberately rich empty state | starters + activation checklist |
+| Coach (empty thread) | first-run — the one deliberately rich empty state | starters + activation checklist |
 | Paper | first-run, cleared, filtered (by type) | Start a CV |
 | Proof | first-run (teaches what counts), cleared | Log something — may open the dock with intent |
 | Search | first-run (no query), filtered (no results), error | run or widen the query |

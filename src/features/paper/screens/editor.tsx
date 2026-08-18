@@ -17,12 +17,12 @@ import { runCommand } from "@/ui/run-command";
 import { Input } from "@/ui/input";
 import { Button } from "@/ui/button";
 import { Band } from "@/ui/band";
-import { NotFoundState } from "@/ui/empty-state";
-import { SkeletonBlock } from "@/ui/skeleton";
+import { NotFoundState, QueryError } from "@/ui/empty-state";
+import { SkeletonPage } from "@/ui/skeleton";
 
 function BackLink() {
   return (
-    <Link to="/paper" className="inline-flex min-h-11 items-center text-[13px] text-ink-muted">
+    <Link to="/paper" className="inline-flex min-h-[var(--size-touch)] items-center text-[13px] text-ink-muted">
       Back
     </Link>
   );
@@ -54,9 +54,17 @@ export function PaperEditorScreen({ paperId }: { paperId: string }) {
         <div data-print-hide className="print:hidden">
           <Band title="Paper" back={<BackLink />} />
         </div>
-        <div className="-mx-6 bg-surface-2 px-6 py-8">
-          <SkeletonBlock className="mx-auto h-[80vh] max-w-[210mm]" />
+        <SkeletonPage />
+      </div>
+    );
+  }
+  if (q.isError) {
+    return (
+      <div>
+        <div data-print-hide className="print:hidden">
+          <Band title="Paper" back={<BackLink />} />
         </div>
+        <QueryError onRetry={() => void q.refetch()} />
       </div>
     );
   }
@@ -174,7 +182,7 @@ export function PaperEditorScreen({ paperId }: { paperId: string }) {
           }}
         />
       ) : (
-        <div className="-mx-6 bg-surface-2 px-6 py-8 print:mx-0 print:bg-white print:px-0 print:py-0">
+        <div className="-mx-5 bg-surface-2 px-5 py-8 print:mx-0 print:bg-white print:px-0 print:py-0">
           <PaperPage kind={String(paper.kind)} content={page} onChange={patch} onSave={save} />
         </div>
       )}

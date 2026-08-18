@@ -8,6 +8,7 @@ import { Button } from "@/ui/button";
 import { Band, BandFilter } from "@/ui/band";
 import { Row, RowList } from "@/ui/rows";
 import { EmptyState } from "@/ui/empty-state";
+import { EndOfList } from "@/ui/card";
 import { SkeletonRows } from "@/ui/skeleton";
 import { ConfirmDialog } from "@/ui/confirm-dialog";
 import {
@@ -105,10 +106,10 @@ export function PaperListScreen() {
         primary={<Button onClick={() => setGallery("cv")}>Start a CV</Button>}
         secondary={
           <>
-            <Button variant="outline" onClick={() => setGallery("letter")}>
+            <Button variant="ghost" onClick={() => setGallery("letter")}>
               Start a letter
             </Button>
-            <label className="relative inline-flex min-h-11 cursor-pointer items-center overflow-hidden rounded-[var(--radius-control)] border border-hairline px-4 text-[13px]">
+            <label className="relative inline-flex min-h-[var(--size-touch)] cursor-pointer items-center overflow-hidden rounded-[var(--radius-control)] px-4 text-[13px] font-[510] hover:bg-surface-2">
               I already have a file
               <input
                 type="file"
@@ -176,7 +177,7 @@ export function PaperListScreen() {
           }
         />
       ) : (
-        <RowList>
+        <RowList bleed>
           {paperRows.map((p) => (
             <Row
               key={p.id}
@@ -260,6 +261,7 @@ export function PaperListScreen() {
           ))}
         </RowList>
       )}
+      {!q.isPending && !q.isError && !empty && !filteredEmpty ? <EndOfList /> : null}
 
       <ConfirmDialog
         open={Boolean(removePaperId)}

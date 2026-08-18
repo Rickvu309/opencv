@@ -1,12 +1,12 @@
 # Navigation
 
-**Track:** Commodity. Chat surface rail cloned from ChatGPT / Claude (new chat, thread history, rename, delete, account at the edge). Destination groups cloned from Linear (short labelled sections, not eight peers). Skin from [design.md](../design.md): accent only on active, 44px targets, no badges or streaks.
+**Track:** Commodity. Chat surface rail cloned from [Beautiful UI Sidebar Nav](https://www.beautifului.dev/) (hover pill, accent new), [Onyx SidebarTab](https://onyx-storybook.vercel.app/), plus [assistant-ui ThreadList](https://www.assistant-ui.com/docs/ui/thread-list) (new, history, rename, delete, date groups). Destination groups cloned from Linear (short labelled sections, not eight peers). Skin from [design.md](../design.md): accent only on the create action and interactive fills, 44px targets, no badges or streaks.
 
 **Job:** in a short anxious session, get back to the conversation or the one artifact they came for, without hunting. The map of places and the four channels that move between them live in [flows.md](../flows.md); this spec is the shell.
 
 ## Concept
 
-The signed-in shell is a rail (or a drawer on a phone), a main column, a header bell, and a Coach dock that travels except on Chat. Groups are labels. Chat is home. Proof lives under Paper in the rail and stays its own domain. The word Applications does not appear; the tracker is **Apply**.
+The signed-in shell is a rail (or a drawer on a phone), a main column, a header bell, and a Coach dock that travels except on Coach. Groups are labels. Coach is home. Proof lives under Paper in the rail and stays its own domain. The word Applications does not appear; the tracker is **Apply**.
 
 There is no `navigation` feature module and no navigation tables. Threads use `conversation.*`. Account uses profile and auth. Movement the Coach initiates uses `app.open`, defined here and listed on [coach.md](coach.md).
 
@@ -20,21 +20,22 @@ Every signed-in screen is four layers — main, chrome (rail plus header bell), 
 
 ### Desktop rail, top to bottom
 
-1. New conversation
-2. Thread list (active thread marked; rename and remove use `conversation.*`)
-3. **Prepare** (label)
+1. New conversation (accent action)
+2. Coach (place — `/coach`, same conversation as the dock)
+3. History (thread list; active thread marked; rename and remove use `conversation.*`. Hidden when empty so it never leaves a blank gap. Groups as Today / Yesterday / Earlier; a search filter sits above the list once it is long enough. Sorted by `last_message_at`.)
+4. **Prepare** (label)
    - Paper, with **Proof** as its child row
    - Pitch
-4. **Opportunities** (label)
+5. **Opportunities** (label)
    - Search
    - Apply
-5. Account control at the bottom edge, as in the ChatGPT reference (name from the profile; opens Profile, Settings, sign out)
+6. Account control at the bottom edge, as in the ChatGPT reference (name from the profile; opens Profile, Settings, sign out)
 
 Only places are rows. CV / Resume and Letter are not rail rows; they are the type filter on `/paper`. Under Paper the rail shows exactly one child row, Proof.
 
-Active state: accent on the current place. Proof marks Paper as parent. `/paper/$paperId` marks Paper. `/applications` marks Apply.
+Active state: accent on the current place. Coach marks `/coach`. Proof marks Paper as parent. `/paper/$paperId` marks Paper. `/applications` marks Apply.
 
-Desktop rail is 16rem wide and stays until 768px, where it becomes the drawer. Dock on desktop is 20rem by at most 32rem, bottom-right, so it never covers the band. On a phone the dock is a bottom sheet at 70vh.
+Desktop rail defaults to 16rem and stays until 768px, where it becomes the drawer. On desktop the trailing edge is a splitter: drag to 12–20rem, arrow keys nudge 8px (Shift 32px), double-click resets to 16rem. The chosen width persists locally. The drawer stays 16rem. Dock on desktop is 20rem by at most 32rem, bottom-right, so it never covers the band. On a phone the dock is a bottom sheet at 70vh.
 
 `/coach`: the conversation owns the main column. No second copy of the thread list. No dock. The active thread is `/coach?thread=<id>`.
 
@@ -42,7 +43,7 @@ Artifact screens (Paper, Proof, Pitch, Search, Apply, Profile, Settings): main c
 
 ### Mobile
 
-ChatGPT pattern, not bottom tabs (tabs would make Coach one of five equals). Full-screen destination; a drawer holds the same rail logic (threads, Prepare, Opportunities, Account). Dock is a sheet on artifact screens. Touch 44px. `prefers-reduced-motion` on drawer and dock.
+ChatGPT pattern, not bottom tabs (tabs would make Coach one of six equals). Full-screen destination; a drawer holds the same rail logic (Coach, New conversation, History, Prepare, Opportunities, Account). Dock is a sheet on artifact screens. Touch 44px. `prefers-reduced-motion` on drawer and dock.
 
 ### Out of the shell
 
@@ -72,7 +73,7 @@ The UI has the same destinations as links, so the agent cannot go somewhere the 
 
 | State | Behaviour |
 |---|---|
-| No threads yet | New conversation is the only thread action; starters live on `/coach` |
+| No threads yet | Coach and New conversation stay; History is hidden; starters live on `/coach` |
 | Long thread title | Truncate; full title on hover or long-press, never wrap the rail |
 | Vietnamese account name | Must not clip stacked tone marks; test with "Nguyễn Thị Ngọc Ánh" |
 | Dock closed | A compact control to reopen; does not cover the artifact's primary action |
@@ -87,8 +88,8 @@ The UI has the same destinations as links, so the agent cannot go somewhere the 
 
 ## Empty state
 
-The rail is never empty once signed in: Chat, Prepare, and Opportunities are always there. An empty thread list still shows New conversation. Empty states inside a place belong to that feature.
+The rail is never empty once signed in: Coach, Prepare, and Opportunities are always there. An empty History still shows Coach and New conversation. Empty states inside a place belong to that feature.
 
 ## Out of scope
 
-Command palette, customizable order, unread badges on nav, gamified streaks, Proof as a root-rail peer, Prepare or Opportunities as screens, putting Profile or Settings in the core rail, the word Applications in the UI, a `navigation` feature module.
+Command palette, customizable order, unread badges on nav, gamified streaks, Proof as a root-rail peer, Prepare or Opportunities as screens, putting Profile or Settings in the core rail, the word Applications in the UI, a `navigation` feature module. Rail *width* is resizable; item order is not.

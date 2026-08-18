@@ -4,6 +4,7 @@ node_modules
 .nitro
 .tanstack
 dist
+storybook-static
 *.local
 .env
 .env.local

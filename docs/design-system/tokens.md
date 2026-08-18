@@ -84,6 +84,7 @@ One variable font. Inter Variable with `font-feature-settings: "cv01", "ss03"` s
 Rules that ride along:
 
 - **Vietnamese floor:** line-height never below 1.3 on headings and 1.5 on body — stacked tone marks (ề, ữ, ộ) must not clip. Test every style with "Nguyễn Thị Ngọc Ánh" and "trường đại học".
+- Root `html` stays 16px so rem and `--size-touch` (44px) sit on the 4px scale; the `body` type role is 15px on `body`, not by shrinking the root.
 - `font-variant-numeric: tabular-nums` on every changing number and every table column: completeness counts, dates, fit scores.
 - `text-wrap: balance` on headings, `text-wrap: pretty` on descriptions, neither in long-form text. Reading measure stays 65–75ch.
 - `overflow-wrap: break-word` wherever links, emails, or IDs can escape; `white-space: nowrap` on chips and type words.
@@ -97,7 +98,9 @@ Rules that ride along:
 | Token | Value | Role |
 |---|---|---|
 | `--size-touch` | 44px | Minimum touch target; 40px acceptable on desktop-only controls, hit areas never overlap |
-| `--size-rail` | 16rem | Rail and drawer width |
+| `--size-rail` | 16rem | Default rail width (drawer stays this). Desktop rail is user-resizable between `--size-rail-min` and `--size-rail-max`. |
+| `--size-rail-min` | 12rem | Narrowest desktop rail |
+| `--size-rail-max` | 20rem | Widest desktop rail |
 | `--size-dock` | 20rem × max 32rem | Desktop dock panel |
 | `--size-page` | 210mm × min 297mm | The A4, non-negotiable |
 | `--measure` | 65–75ch | Reading column cap |
@@ -168,3 +171,25 @@ The implementation checklist. "Renamed" means the old Tailwind alias should move
 | `.a4` block | unchanged | Documents stay outside theming |
 
 Weights need the variable font: 510 and 590 do not exist in static Inter files. Until the swap lands, 500/600 are the acceptable stand-ins and the difference is a known gap, not a choice.
+
+## Opal token bridge
+
+Ported Opal / Craft code must be restyled to the tokens above. Never leave `--text-01` or `bg-background-neutral-00` in OpenPath. Our `@theme` block in `src/styles/globals.css` stays the source of truth.
+
+| Opal token / class | OpenPath token |
+|---|---|
+| `text-01` … `text-05` | `--ink` → `--ink-secondary` → `--ink-muted` → `--ink-faint` |
+| `background-neutral-00` / `01` | `--surface-1` |
+| `background-neutral-02` / `background-tint-02` | `--surface-2` |
+| `background-tint-03` / selected fills | `--surface-3` |
+| `border-01` … `border-05` | `--hairline` |
+| `status-info-*` | `--accent` / `--accent-muted` |
+| `status-success-*` | `--status-positive` |
+| `status-warning-*` | `--status-progress` |
+| `status-error-*` | `--destructive` |
+| `action-danger-*` | `--destructive` |
+| `rounded-08` | `--radius-control` |
+| larger rounding | `--radius-container` |
+| `main-ui-body` / 14px body | `body` 15px / 1.6 |
+| `main-ui-muted` / 12–13px | `ui` 13px |
+| `secondary-body` | `ui` in `--ink-muted` |

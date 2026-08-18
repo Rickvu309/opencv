@@ -11,7 +11,7 @@ Everyday places. Always in the signed-in rail. Groups are labels, not pages.
 ```mermaid
 flowchart TB
   subgraph core [Core rail]
-    Chat[Chat: threads]
+    Coach[Coach: History]
     subgraph prepare [Prepare]
       subgraph paper [Paper]
         CV[CV or Resume]
@@ -29,7 +29,7 @@ flowchart TB
 
 | Place | Kind | URL | Channels |
 |---|---|---|---|
-| Chat | home | `/coach` | C1, C2, C4 |
+| Coach | home | `/coach` | C1, C2, C4 |
 | Prepare | group label | none | C1 only (it is not a page) |
 | Paper | place under Prepare | `/paper`, `/paper/$paperId` | C1, C2, C3, C4 |
 | Proof | child of Paper | `/proof`, `/proof/$proofId` | C1 (via Paper), C2, C3, C4 |
@@ -38,7 +38,7 @@ flowchart TB
 | Search | place under Opportunities | `/search` | C1, C2, C3, C4 |
 | Apply | place under Opportunities | `/applications` | C1, C2, C3, C4 |
 
-- **Chat** (`/coach`): home. New conversation and the thread list. Signing in lands here. No dock on this page; the page is the conversation. Thread history lives only in the rail, not a second list on the page.
+- **Coach** (`/coach`): home. A place row in the rail, New conversation, and History (the thread list). Signing in lands here. No dock on this page; the page is the conversation. Thread history lives only in the rail, not a second list on the page.
 - **Prepare** (label only): things you make and say.
   - **Paper** (`/paper`): **CV / Resume**, **Letter**, **Proof**. Proof is a child of Paper in the rail. It still has `/proof` URLs and its own domain ([ADR 0005](adr/0005-proof-own-domain.md)); it is not a paper type.
   - **Pitch** (`/pitch`): bio, intro, answers.
@@ -50,7 +50,7 @@ Prepare and Opportunities never have their own page. The word Applications does 
 
 ## 2. Edge-case nav
 
-Infrequent, once-per-life, or off the rail. Same app, not in the core list. These must not compete with Chat / Prepare / Opportunities in the rail.
+Infrequent, once-per-life, or off the rail. Same app, not in the core list. These must not compete with Coach / Prepare / Opportunities in the rail.
 
 | Place | Kind | URL | Channels |
 |---|---|---|---|

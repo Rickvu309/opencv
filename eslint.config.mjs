@@ -2,7 +2,7 @@ import js from "@eslint/js";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["node_modules", ".output", "src/routeTree.gen.ts", "app", "lib", "components", "hooks"] },
+  { ignores: ["node_modules", ".output", "src/routeTree.gen.ts", "app", "lib", "components", "hooks", "storybook-static"] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

@@ -57,8 +57,8 @@ Postgres is the only datastore. Everything lives in the `openpath` schema. Relat
 
 | Table | Holds |
 |---|---|
-| `conversations` | `title`, timestamps |
-| `messages` | `conversation_id`, `role` (`user`, `assistant`, `tool`), `content` JSONB (parts), `created_at` |
+| `conversations` | `title`, `last_message_at`, timestamps. History sorts by `last_message_at`. |
+| `messages` | `conversation_id`, `role` (`user`, `assistant`, `tool`), `content` JSONB (parts: text, reasoning, tool-call, tool-result), `created_at` |
 | `command_log` | Every write: `actor` (`user`, `coach`, `system`), `name`, `input` JSONB, `inverse` JSONB (command name + input, null when not undoable), `undone_by` (log id), `conversation_id` (when a Coach turn caused it), `created_at` |
 | `ai_traces` | Per turn or task call: `kind`, `model_role`, token counts, `cost_usd`, `duration_ms`, `tools` JSONB |
 | `guardrail_events` | `kind`, `detail` JSONB, `created_at` |

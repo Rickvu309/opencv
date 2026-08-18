@@ -6,7 +6,7 @@ import { Button } from "@/ui/button";
 import { Textarea } from "@/ui/textarea";
 import { Input } from "@/ui/input";
 import { Band } from "@/ui/band";
-import { NotFoundState } from "@/ui/empty-state";
+import { EmptyState, NotFoundState, QueryError } from "@/ui/empty-state";
 import { SkeletonRows } from "@/ui/skeleton";
 import { useState } from "react";
 
@@ -18,7 +18,7 @@ export function ProofEditorScreen({ proofId }: { proofId: string }) {
   const [note, setNote] = useState("");
   const [question, setQuestion] = useState("");
   const back = (
-    <Link to="/proof" className="inline-flex min-h-11 items-center text-[13px] text-ink-muted">
+    <Link to="/proof" className="inline-flex min-h-[var(--size-touch)] items-center text-[13px] text-ink-muted">
       Back
     </Link>
   );
@@ -27,6 +27,14 @@ export function ProofEditorScreen({ proofId }: { proofId: string }) {
       <div>
         <Band title="Proof" back={back} />
         <SkeletonRows />
+      </div>
+    );
+  }
+  if (q.isError) {
+    return (
+      <div>
+        <Band title="Proof" back={back} />
+        <QueryError onRetry={() => void q.refetch()} />
       </div>
     );
   }
@@ -101,7 +109,7 @@ export function ProofEditorScreen({ proofId }: { proofId: string }) {
         </Button>
       </form>
       {proof.entries.length === 0 ? (
-        <p className="mt-8 text-ink-muted">Log the first entry.</p>
+        <EmptyState kind="first-run" title="Log the first entry." />
       ) : (
         <ol className="mt-8 divide-y divide-hairline">
           {proof.entries.map((e: { id: string; body: string; created_at: string }) => (

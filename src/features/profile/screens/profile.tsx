@@ -3,10 +3,9 @@ import { getProfileFn } from "@/features/profile/queries";
 import { runCommand } from "@/ui/run-command";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
-import { Label } from "@/ui/label";
 import { Band } from "@/ui/band";
-import { Section } from "@/ui/section";
-import { EmptyState } from "@/ui/empty-state";
+import { FieldRow, Section } from "@/ui/section";
+import { EmptyState, QueryError } from "@/ui/empty-state";
 import { SkeletonSection } from "@/ui/skeleton";
 import { useState } from "react";
 
@@ -18,9 +17,10 @@ export function ProfileScreen() {
     p && !p.name && !p.education.school && p.experience.length === 0 && p.facts.length === 0;
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="max-w-xl">
       <Band title="Profile" />
       {q.isPending ? <SkeletonSection /> : null}
+      {q.isError ? <QueryError onRetry={() => void q.refetch()} /> : null}
       {p ? (
         <>
           {empty ? (
@@ -33,33 +33,33 @@ export function ProfileScreen() {
             <p className="text-[13px] leading-[1.5] text-ink-muted tabular-nums">
               {q.data?.completeness} of 100, from what you actually provided.
             </p>
-            <div>
-              <Label htmlFor="name">Name</Label>
+            <FieldRow label="Name" htmlFor="name">
               <Input
                 id="name"
                 value={name ?? p.name}
                 onChange={(e) => setName(e.target.value)}
               />
-            </div>
-            <div>
-              <Label htmlFor="role">Target role</Label>
+            </FieldRow>
+            <FieldRow label="Target role" htmlFor="role">
               <Input
                 id="role"
                 defaultValue={p.targetRole ?? ""}
                 placeholder="Analyst, or leave blank if you're not sure"
               />
+            </FieldRow>
+            <div className="flex justify-end pt-3">
+              <Button
+                onClick={() => {
+                  const role = (document.getElementById("role") as HTMLInputElement).value;
+                  void runCommand("profile.update", {
+                    name: name ?? p.name,
+                    targetRole: role || null,
+                  }).then(() => q.refetch());
+                }}
+              >
+                Save identity
+              </Button>
             </div>
-            <Button
-              onClick={() => {
-                const role = (document.getElementById("role") as HTMLInputElement).value;
-                void runCommand("profile.update", {
-                  name: name ?? p.name,
-                  targetRole: role || null,
-                }).then(() => q.refetch());
-              }}
-            >
-              Save identity
-            </Button>
           </Section>
           <Section label="Education">
             <p className="text-ink-muted">
@@ -67,6 +67,7 @@ export function ProfileScreen() {
             </p>
           </Section>
           <Section label="Experience">
+            <div className="space-y-3">
             {p.experience.map((e) => (
               <p key={e.id}>
                 {e.role} · {e.org}
@@ -84,6 +85,7 @@ export function ProfileScreen() {
             >
               Add experience
             </Button>
+            </div>
           </Section>
         </>
       ) : null}

@@ -1,6 +1,6 @@
 # Coach
 
-**Track:** the chat surface is Commodity, cloned from ChatGPT / Claude conversation patterns. The Coach's hands — operating the product through the command bus — are Signature: deep design in [mechanisms/coach-hands.md](../mechanisms/coach-hands.md) ([ADR 0002](../adr/0002-command-bus.md)).
+**Track:** the chat surface is Commodity, cloned from [Onyx Opal Craft](https://onyx-storybook.vercel.app/) (tool cards, thinking, approval, input bar), [assistant-ui Thread](https://www.assistant-ui.com/docs/ui/thread), and [Beautiful UI](https://www.beautifului.dev/) Chat / Prompt Bar. The Coach's hands — operating the product through the command bus — are Signature: deep design in [mechanisms/coach-hands.md](../mechanisms/coach-hands.md) ([ADR 0002](../adr/0002-command-bus.md), [ADR 0006](../adr/0006-port-opal.md)).
 
 **Job:** answer career questions grounded in the user's real profile, and do the work in the app on request — then always name the one next concrete step.
 
@@ -12,9 +12,9 @@ The Coach is the home of the product and its operating layer. It is not a suppor
 
 ## Screens
 
-- `/coach` — the conversation, and where signing in lands. Thread history lives in the rail, not a second list on this page. The open thread is `/coach?thread=<id>`. No dock here; the page is the conversation. The composer is a single bordered surface with the field and send control inside; messages are user blocks vs Coach body text, not role-prefixed paragraphs.
+- `/coach` — the conversation, and where signing in lands. Reached from the Coach place in the rail. Thread history lives in the rail under History, not a second list on this page. The open thread is `/coach?thread=<id>`. No dock here; the page is the conversation. The composer is a single bordered surface with the field and send control inside; messages are user blocks vs Coach body text, not role-prefixed paragraphs.
 - The coach dock — the same conversation, travelling on every artifact screen and on Account. Not on `/coach`, landing, auth, onboarding, or public pages.
-- Cloned patterns: streamed markdown replies, stop and retry, thread history with rename (in the rail), composer with full keyboard support, starter prompts drawn from the user's profile, artifact cards in the thread (a changed CV, a logged Proof) that open the real screen.
+- Cloned patterns: streamed markdown replies, stop and retry, thinking card, tool cards, artifact cards, approval cards for destructive commands, thread history with rename (in the rail), composer with stop / interrupt hint / queued message, starter prompts drawn from the user's profile.
 - Trust surfaces: "the Coach updated your CV" confirmations with undo (from `command_log`), an honest offline state when the gateway is unavailable, a stalled-turn state with retry, and a said-nothing state instead of an empty bubble.
 
 ## Data
@@ -35,7 +35,7 @@ The Coach's real capabilities are other features' commands with `agent: true`; s
 ## Behaviour rules
 
 - An instruction is consent: "build me a CV" means call the tool, not ask again. "Open my CV" is `app.open`, not a guess. Ask first only when a needed fact would otherwise be guessed. Never navigate unasked; creating an artifact yields a card, not a jump.
-- Destructive commands: the app confirms with the user before the bus runs them; a refusal returns a denied tool result and the Coach says so.
+- Destructive commands: the app confirms in the thread (approval card) before the bus runs them; a refusal returns a denied tool result and the Coach says so. "Don't ask again in this conversation" grants that command name until the conversation ends.
 - After a successful call: one short sentence. The app shows the confirmation and undo; do not recap details.
 - Every substantive reply ends with exactly one concrete next step, or says plainly that there is none.
 - Persona, context builder, tool generation, and the turn loop: [ai.md](../ai.md).

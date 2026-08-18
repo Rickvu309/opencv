@@ -1,5 +1,6 @@
 import { Outlet, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { SkipLink } from "@/ui/shell";
+import { TooltipProvider } from "@/ui/tooltip";
 import { AppToaster } from "@/ui/toaster";
 import appCss from "@/styles/globals.css?url";
 
@@ -28,8 +29,10 @@ function Root() {
       </head>
       <body>
         <SkipLink />
-        <Outlet />
-        <AppToaster />
+        <TooltipProvider>
+          <Outlet />
+          <AppToaster />
+        </TooltipProvider>
         <Scripts />
       </body>
     </html>

@@ -4,15 +4,21 @@ import { listProofsFn } from "@/features/proof/queries";
 import { useCoachSession } from "@/features/coach/components/session";
 import { runCommand } from "@/ui/run-command";
 import { Button } from "@/ui/button";
-import { Band } from "@/ui/band";
+import { Band, BandFilter } from "@/ui/band";
 import { Row, RowList } from "@/ui/rows";
-import { EmptyState } from "@/ui/empty-state";
+import { EmptyState, QueryError } from "@/ui/empty-state";
+import { EndOfList } from "@/ui/card";
 import { SkeletonRows } from "@/ui/skeleton";
+import { useState } from "react";
 
 export function ProofListScreen() {
   const q = useQuery({ queryKey: ["proofs"], queryFn: () => listProofsFn() });
   const navigate = useNavigate();
   const { openDockWithIntent } = useCoachSession();
+  const [filter, setFilter] = useState("all");
+  const items = q.data ?? [];
+  const statuses = [...new Set(items.map((p) => p.status).filter(Boolean))];
+  const visible = filter === "all" ? items : items.filter((p) => p.status === filter);
 
   async function logSomething() {
     const r = await runCommand<{ id: string }>("proof.create", { title: "Untitled Proof" });
@@ -21,9 +27,25 @@ export function ProofListScreen() {
 
   return (
     <div>
-      <Band title="Proof" primary={<Button onClick={() => void logSomething()}>Log something</Button>} />
+      <Band
+        title="Proof"
+        primary={<Button onClick={() => void logSomething()}>Log something</Button>}
+        filter={
+          statuses.length > 1 ? (
+            <BandFilter
+              options={[
+                { id: "all", label: "All" },
+                ...statuses.map((s) => ({ id: s, label: s })),
+              ]}
+              value={filter}
+              onChange={setFilter}
+            />
+          ) : undefined
+        }
+      />
       {q.isPending ? <SkeletonRows /> : null}
-      {!q.isPending && (q.data?.length ?? 0) === 0 ? (
+      {q.isError ? <QueryError onRetry={() => void q.refetch()} /> : null}
+      {!q.isPending && items.length === 0 ? (
         <EmptyState
           kind="first-run"
           title="Log what you're making."
@@ -31,7 +53,7 @@ export function ProofListScreen() {
           action={
             <button
               type="button"
-              className="inline-flex min-h-11 items-center rounded-[var(--radius-pill)] border border-hairline px-3 text-[13px] transition-[background-color,transform] duration-[var(--duration-fast)] ease-[var(--ease-out)] hover:bg-surface-2 active:scale-[0.97] active:bg-surface-3"
+              className="inline-flex min-h-[var(--size-touch)] items-center rounded-[var(--radius-pill)] border border-hairline px-3 text-[13px] transition-[background-color,transform] duration-[var(--duration-fast)] ease-[var(--ease-out)] hover:bg-surface-2 active:scale-[0.97] active:bg-surface-3"
               onClick={() =>
                 openDockWithIntent(
                   "I don't have a Proof yet. What from my profile could count as one?",
@@ -43,9 +65,9 @@ export function ProofListScreen() {
           }
         />
       ) : null}
-      {!q.isPending && q.data && q.data.length > 0 ? (
-        <RowList>
-          {q.data.map((p) => (
+      {!q.isPending && visible.length > 0 ? (
+        <RowList bleed>
+          {visible.map((p) => (
             <Row
               key={p.id}
               label={p.title}
@@ -55,6 +77,18 @@ export function ProofListScreen() {
           ))}
         </RowList>
       ) : null}
+      {!q.isPending && !q.isError && items.length > 0 && visible.length === 0 ? (
+        <EmptyState
+          kind="filtered"
+          title="Nothing in this filter."
+          action={
+            <Button variant="outline" onClick={() => setFilter("all")}>
+              Show all
+            </Button>
+          }
+        />
+      ) : null}
+      {!q.isPending && !q.isError && visible.length > 0 ? <EndOfList /> : null}
     </div>
   );
 }

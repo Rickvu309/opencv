@@ -32,7 +32,7 @@ export function DropdownMenuItem({
   return (
     <DropdownMenuPrimitive.Item
       className={cn(
-        "flex min-h-11 cursor-pointer items-center rounded-[var(--radius-control)] px-3 text-[13px] outline-none data-[highlighted]:bg-surface-2 data-[disabled]:opacity-50",
+        "flex min-h-[var(--size-touch)] cursor-pointer items-center rounded-[var(--radius-control)] px-3 text-[13px] outline-none data-[highlighted]:bg-surface-2 data-[disabled]:opacity-50",
         className,
       )}
       {...props}

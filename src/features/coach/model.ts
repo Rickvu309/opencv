@@ -26,3 +26,21 @@ export const appOpenResultSchema = z.discriminatedUnion("ok", [
 ]);
 
 export type AppOpenResult = z.infer<typeof appOpenResultSchema>;
+
+export const toolCallSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  input: z.unknown().optional(),
+  status: z.enum(["pending", "completed", "failed"]),
+  output: z.unknown().optional(),
+});
+
+export type ToolCallView = z.infer<typeof toolCallSchema>;
+
+export const approvalSchema = z.object({
+  command: z.string(),
+  input: z.unknown(),
+  description: z.string(),
+});
+
+export type ApprovalView = z.infer<typeof approvalSchema>;

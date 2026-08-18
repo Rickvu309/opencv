@@ -6,10 +6,13 @@ The look is **copied from Linear** — the product, not the marketing site. One 
 
 ## Reading order
 
-1. **[tokens.md](tokens.md)** — the named values: color ladders, type, spacing, radius, elevation, z, interaction states. Source of truth for every visual decision. Ends with the migration table from the current `globals.css`.
-2. **[layout.md](layout.md)** — the logic of space: the four layers, nine layout types, per-screen regions, reading order, the empty-states law.
-3. **[motion.md](motion.md)** — when and how things move: two durations, one easing family, the surface inventory, the never list, reduced motion.
-4. **[components.md](components.md)** — the template craft: one block per reusable piece with anatomy, variants, states, internal spacing, and copy hooks. Screens are assembled from these blocks.
+1. **[tokens.md](tokens.md)** — the named values: color ladders, type, spacing, radius, elevation, z, interaction states. Source of truth for every visual decision. Ends with the Opal token bridge and the migration table from the current `globals.css`.
+2. **[clone-sources.md](clone-sources.md)** — where to copy commodity chrome from (Onyx Opal, assistant-ui, Beautiful UI, Open WebUI patterns) before inventing. Port Opal; do not install it.
+3. **[layout.md](layout.md)** — the logic of space: the four layers, nine layout types, per-screen regions, reading order, the empty-states law.
+4. **[motion.md](motion.md)** — when and how things move: two durations, one easing family, the surface inventory, the never list, reduced motion.
+5. **[components.md](components.md)** — the template craft: one block per reusable piece with anatomy, variants, states, internal spacing, and copy hooks. Screens are assembled from these blocks.
+
+The gallery that makes this reviewable is Storybook (`npm run storybook`). Production Storybook is hosted on Vercel from the same git repo; see [hosting.md](../hosting.md). If a surface takes props, it gets a story.
 
 ## The contract
 
@@ -24,7 +27,11 @@ Proven sources this system copies from or leans on. When a block cites one, the 
 
 | Reference | What it is for |
 |---|---|
-| Linear (via Mobbin + measured CSS) | The whole look: token architecture, ladders, weights, density, interaction states |
+| [Onyx Opal Storybook](https://onyx-storybook.vercel.app/) | Primary commodity design system. Port anatomy from [onyx-dot-app/onyx](https://github.com/onyx-dot-app/onyx) (`web/lib/opal`, `craft/*`). MIT except `ee/`. [ADR 0006](../adr/0006-port-opal.md) |
+| [Beautiful UI](https://www.beautifului.dev/) | AI chrome polish: rail, composer, thinking, tool chips, approvals. Map: [clone-sources.md](clone-sources.md) |
+| [assistant-ui](https://github.com/assistant-ui/assistant-ui) | ChatGPT-grade Thread / ThreadList / Composer behaviour. Copy the UX; do not install the runtime. [Docs](https://www.assistant-ui.com/docs/ui/thread) |
+| [Open WebUI](https://github.com/open-webui/open-webui) | Patterns only (history groups, message actions, queued messages). Never copy source. |
+| [Local photo refs](refs/README.md) | Saved jpgs. Open these instead of fetching Mobbin again. |
 | [interfaces.dev/cheat-sheet](https://interfaces.dev/cheat-sheet) | House rules for UI, animation, typography, color naming, and accessibility, adopted wholesale |
 | [umbra.nick.qa/tips/content-alignment](https://umbra.nick.qa/tips/content-alignment) | The one-content-inset law in layout.md |
 | [animations.dev/vocabulary](https://animations.dev/vocabulary) | The names motion.md uses for every pattern |

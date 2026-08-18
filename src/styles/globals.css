@@ -9,6 +9,12 @@
   }
 }
 
+@custom-variant no-hover {
+  @media (hover: none) {
+    @slot;
+  }
+}
+
 @theme {
   --font-sans: "Inter Variable", Inter, system-ui, sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
@@ -61,6 +67,8 @@
   --shadow-overlay: 0 4px 12px rgb(0 0 0 / 0.1);
   --size-touch: 44px;
   --size-rail: 16rem;
+  --size-rail-min: 12rem;
+  --size-rail-max: 20rem;
   --size-dock: 20rem;
   --z-content: 0;
   --z-sticky: 20;
@@ -77,8 +85,7 @@ html {
   background: var(--canvas);
   color: var(--ink);
   font-family: var(--font-sans);
-  font-size: 15px;
-  line-height: 1.6;
+  font-size: 16px;
   font-feature-settings: "cv01", "ss03";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -90,6 +97,9 @@ html {
 
 body {
   min-height: 100vh;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.6;
 }
 
 *:focus-visible {
@@ -183,6 +193,67 @@ body {
     transition-duration: var(--duration-fast);
     transition-timing-function: var(--ease-out);
   }
+}
+
+[data-hover-item] {
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+[data-hover-group]:hover [data-hover-item],
+[data-hover-group]:focus-within [data-hover-item],
+[data-hover-item]:focus-within {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  [data-hover-item] {
+    opacity: 1;
+  }
+}
+
+.md-body {
+  max-width: 65ch;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.md-body :where(p, ul, ol) {
+  margin-block: 0.5em;
+}
+
+.md-body :where(ul) {
+  list-style: disc;
+  padding-inline-start: 1.25em;
+}
+
+.md-body :where(ol) {
+  list-style: decimal;
+  padding-inline-start: 1.25em;
+}
+
+.md-body :where(h1, h2, h3) {
+  font-weight: 590;
+  letter-spacing: -0.012em;
+  margin-block: 0.8em 0.4em;
+}
+
+.md-body :where(a) {
+  color: var(--accent);
+}
+
+.md-body :where(code):not(pre code) {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  background: var(--surface-2);
+  border-radius: var(--radius-tag);
+  padding: 0.1em 0.35em;
+}
+
+.md-body :where(blockquote) {
+  border-inline-start: 2px solid var(--hairline);
+  padding-inline-start: 0.75em;
+  color: var(--ink-secondary);
 }
 
 .a4 {

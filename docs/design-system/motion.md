@@ -28,7 +28,7 @@ Then it must name a purpose: **feedback**, **spatial consistency**, **state indi
 Rules that never bend:
 
 - **`ease-in` never appears on UI.** Built-in weak easings don't either; the two curves above are the palette.
-- **`transform` and `opacity` only.** Never width, height, margin, top, or left (accordion height is the one tolerated exception, and we have no accordion).
+- **`transform` and `opacity` only.** Never width, height, margin, top, or left. Two tolerated exceptions: accordion height on Coach collapsibles (thinking, tool card, approval), and the rail highlight which sets `height` instantly and moves with `translateY` — it does not transition `top` or `height`.
 - **Never `transition: all`** — name the exact properties.
 - **Never `scale(0)`.** Entrances start at `scale(0.97)` + `opacity: 0`; nothing appears from nothing.
 - **Transitions, not keyframes, for anything a user can trigger twice in a second** (toasts, toggles) — transitions retarget mid-flight, keyframes restart.
@@ -55,6 +55,11 @@ Every animated thing in the app. Anything not on this list does not move; adding
 | Skeleton | Pulse | Loading | `opacity` loop | 2s linear alternate | Replaced by content, no exit | Static `--surface-2`, no pulse |
 | Streamed Coach reply | Typewriter (text appends) | Tokens arrive | Text content, no motion styles | — | Stream stops; text stays | Same — appending text is content, not motion; no cursor blink |
 | Undo row restore | Fade in | Undo tapped | `opacity` 0→1 | 120ms `--ease-out` | — | Instant |
+| Rail hover indicator | Follow | Hover, focus, or current place | `transform: translateY`, height set with no transition | 200ms `--ease-out` | Transition retargets; route change snaps | Instant |
+| Thinking ping | Pulse | Reasoning streaming | inner dot static; outer ring `opacity` ping | 1s ease-out | Replaced by settled icon | Hidden; static "Thinking" |
+| Collapsible chevron | Rotate | Open / close | `transform: rotate` | 150ms `--ease-out` | Transition retargets | Instant |
+| Comet edge (in-flight tool / pending approval) | Sweep | Tool running or approval waiting | `opacity` of a hairline accent | 3.6s linear, one loop then settle | Dropped when settled | Static `--hairline` |
+| Approval settle hold | Cross-fade | Decision submitted | `opacity` of success/error edge | 800ms hold then unmount | Interrupted by conflict refetch | Instant |
 | Focus ring | — | Focus | **Never animated** | — | — | — |
 
 ## The never list
@@ -65,11 +70,11 @@ Every animated thing in the app. Anything not on this list does not move; adding
 - Numbers counting up. Completeness reads "42 of 100" instantly, `tabular-nums` and done.
 - Layout shift as content loads — skeletons hold the exact slot.
 - Confetti, progress celebrations, mascot movement, parallax, scroll-driven anything.
-- Autoplaying loops of any kind beyond the skeleton pulse.
+- Autoplaying loops of any kind beyond the skeleton pulse and the thinking ping (both honour reduced motion).
 
 ## Reduced motion
 
-`prefers-reduced-motion: reduce` means fewer and gentler, not broken: transform-based movement (slides, scales) drops to opacity-only or instant, the skeleton stops pulsing and sits at static `--surface-2`, and the typing indicator becomes a static "Coach is replying" line. Feedback that aids comprehension (a toast appearing, a dialog opening) keeps a plain fade.
+`prefers-reduced-motion: reduce` means fewer and gentler, not broken: transform-based movement (slides, scales) drops to opacity-only or instant, the skeleton stops pulsing and sits at static `--surface-2`, the thinking ping is hidden, comet edge is a static hairline, and the typing indicator becomes a static "Coach is replying" line. Feedback that aids comprehension (a toast appearing, a dialog opening) keeps a plain fade.
 
 **Code today:** per-surface gentler variants as specced in the inventory.
 

@@ -9,5 +9,6 @@ Locked choices for the rebuild. Do not reopen one inside a feature ticket; when 
 | [0003](0003-relational-schema.md) | Relational schema; JSONB only for document bodies |
 | [0004](0004-coach-in-process.md) | The Coach agent is an in-process module behind a strict boundary |
 | [0005](0005-proof-own-domain.md) | Proof is its own domain beside Paper; sharing is a growth substrate |
+| [0006](0006-port-opal.md) | Port Onyx Opal into `src/ui/` and Coach; do not install it; Storybook on Vercel |
 
 Format: context in two or three sentences, the decision, what it replaces or rejects, and the consequences. Keep each under a page.

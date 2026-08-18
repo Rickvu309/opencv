@@ -13,6 +13,7 @@ export const Route = createFileRoute("/api/coach")({
           conversationId?: string;
           text: string;
           screen?: string;
+          grants?: string[];
         };
         let conversationId = body.conversationId;
         if (!conversationId) {
@@ -28,6 +29,7 @@ export const Route = createFileRoute("/api/coach")({
           conversationId,
           text: body.text,
           screen: body.screen,
+          grants: body.grants,
         });
       },
     },

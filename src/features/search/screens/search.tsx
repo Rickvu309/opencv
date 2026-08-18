@@ -8,7 +8,9 @@ import { Input } from "@/ui/input";
 import { Textarea } from "@/ui/textarea";
 import { Band } from "@/ui/band";
 import { Row, RowList } from "@/ui/rows";
-import { EmptyState } from "@/ui/empty-state";
+import { EmptyState, QueryError } from "@/ui/empty-state";
+import { Chip } from "@/ui/chip";
+import { EndOfList } from "@/ui/card";
 import { SkeletonRows } from "@/ui/skeleton";
 import { useState } from "react";
 import type { Fit } from "@/features/search/fit";
@@ -76,7 +78,7 @@ export function SearchScreen() {
           back={
             <button
               type="button"
-              className="inline-flex min-h-11 items-center text-[13px] text-ink-muted"
+              className="inline-flex min-h-[var(--size-touch)] items-center text-[13px] text-ink-muted"
               onClick={() => setOpenId(null)}
             >
               Back
@@ -131,10 +133,12 @@ export function SearchScreen() {
             </Link>
           }
         />
+      ) : q.isError ? (
+        <QueryError onRetry={() => void q.refetch()} />
       ) : (
         <>
           <form
-            className="mb-6 max-w-xl"
+            className="mb-5 max-w-xl"
             onSubmit={(e) => {
               e.preventDefault();
               void pastePosting();
@@ -182,26 +186,27 @@ export function SearchScreen() {
             />
           ) : null}
           {!q.isPending && visible.length > 0 ? (
-            <RowList>
-              {visible.map((o) => (
-                <Row
-                  key={o.id}
-                  label={o.title}
-                  meta={
-                    <span className="flex flex-col items-end gap-0.5 text-right">
-                      <span>{[o.company, o.location].filter(Boolean).join(" · ")}</span>
-                      {o.fit ? (
-                        <span className="tabular-nums">
+            <>
+              <RowList bleed>
+                {visible.map((o) => (
+                  <Row
+                    key={o.id}
+                    label={o.title}
+                    chip={
+                      o.fit ? (
+                        <Chip tone="quiet">
                           Fit {o.fit.met} of {o.fit.total}
-                          {o.fit.gap[0] ? ` — misses ${o.fit.gap[0]}` : ""}.
-                        </span>
-                      ) : null}
-                    </span>
-                  }
-                  onSelect={() => setOpenId(o.id)}
-                />
-              ))}
-            </RowList>
+                          {o.fit.gap[0] ? ` — misses ${o.fit.gap[0]}` : ""}
+                        </Chip>
+                      ) : undefined
+                    }
+                    meta={[o.company, o.location].filter(Boolean).join(" · ")}
+                    onSelect={() => setOpenId(o.id)}
+                  />
+                ))}
+              </RowList>
+              <EndOfList />
+            </>
           ) : null}
         </>
       )}

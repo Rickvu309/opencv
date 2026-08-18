@@ -6,7 +6,7 @@ import { Button } from "@/ui/button";
 import { Textarea } from "@/ui/textarea";
 import { Band } from "@/ui/band";
 import { Section } from "@/ui/section";
-import { EmptyState } from "@/ui/empty-state";
+import { EmptyState, QueryError } from "@/ui/empty-state";
 import { SkeletonSection } from "@/ui/skeleton";
 import { useState } from "react";
 
@@ -20,6 +20,7 @@ export function PitchScreen() {
     <div className="mx-auto max-w-2xl">
       <Band title="Pitch" />
       {q.isPending ? <SkeletonSection /> : null}
+      {q.isError ? <QueryError onRetry={() => void q.refetch()} /> : null}
       {q.data ? (
         empty ? (
           <EmptyState
@@ -40,6 +41,7 @@ export function PitchScreen() {
         ) : (
         <>
           <Section label="Bio">
+            <div className="space-y-3">
             <Textarea defaultValue={q.data.bio?.body ?? ""} id="bio" />
             <div className="flex flex-wrap gap-2">
               <Button
@@ -62,8 +64,10 @@ export function PitchScreen() {
                 Draft from profile
               </Button>
             </div>
+            </div>
           </Section>
           <Section label="Intro">
+            <div className="space-y-3">
             <Textarea defaultValue={q.data.intro?.body ?? ""} id="intro" />
             {introNote ? <p className="text-[13px] text-ink-muted">{introNote}</p> : null}
             <div className="flex flex-wrap gap-2">
@@ -97,6 +101,7 @@ export function PitchScreen() {
                 Open Profile
               </Link>
             ) : null}
+            </div>
           </Section>
           <Section label="Answers">
             <form

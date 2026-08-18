@@ -24,8 +24,11 @@ Four beats, always in this order:
 
 **Show.** Three surfaces make the change undeniable:
 - A confirmation toast with undo, the same one a hand-made change gets.
-- An artifact card in the thread — the changed CV, the logged Proof — that opens the real screen. Cards are windows, never editors; nobody types in a bubble.
+- A **tool card** in the thread for every command the Coach called — status icon, verb, optional code chip, expandable body. Failed calls auto-open. Consecutive in-flight tools group.
+- An **artifact card** when the change produced a place the user can open (a CV, a Proof). Cards are windows, never editors; nobody types in a bubble.
 - The ledger: `command_log` rendered as history ("the Coach updated your CV at 21:14"), so a user can audit a week of coaching in one glance.
+
+**Approve.** Destruction is the exception (principle 3). A command with `destructive: true` does not run inside the agent turn. The tool returns a **proposal**; the stream emits `approval`; an approval card names the action and shows the payload. Three verbs, in our voice: **Do it**, **Don't ask again in this conversation**, **Not now**. The decision executes through the same bus, so Saved / Undo still apply. A 409 / already-applied case re-reads rather than implying the tap landed. "Don't ask again" grants that command name for the rest of this conversation only.
 
 **Undo.** One tap executes the logged inverse through the same bus. Undo of a Coach change and undo of a user change are the same machinery, so it always works or honestly says it cannot (`inverse: null` — publishing, external effects).
 
@@ -33,8 +36,10 @@ Four beats, always in this order:
 
 | State | Behaviour |
 |---|---|
-| Tool failed | The Coach says it could not do it, never answers as if it had |
+| Tool failed | The Coach says it could not do it, never answers as if it had. The tool card auto-opens on the error. |
+| Destructive pending | Approval card in the thread; the Coach waits; nothing is written |
 | Destructive refused | The tool returns denied; the Coach acknowledges and does not retry |
+| Destructive already applied | Card re-reads; copy does not claim this tap succeeded |
 | Gateway down | The Coach shows offline; the app keeps working |
 | Turn hangs | Stop waiting, offer retry |
 | Budget exhausted | "You've used today's coaching" — plain, never silent |

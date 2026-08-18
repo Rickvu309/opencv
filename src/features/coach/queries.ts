@@ -8,7 +8,7 @@ export const listConversationsFn = createServerFn({ method: "GET" }).handler(asy
   const user = await requireUser();
   const { rows } = await withClient((c) =>
     c.query(
-      `select id, title, updated_at from conversations where user_id=$1 order by updated_at desc`,
+      `select id, title, last_message_at from conversations where user_id=$1 order by last_message_at desc`,
       [user.id],
     ),
   );

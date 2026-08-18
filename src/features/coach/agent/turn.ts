@@ -9,11 +9,28 @@ import { newId } from "@/core/ids";
 import "@/features/register";
 import persona from "./persona.md?raw";
 
+async function insertMessage(
+  conversationId: string,
+  role: "user" | "assistant" | "tool",
+  content: unknown,
+) {
+  await withClient((c) =>
+    c.query(
+      `insert into messages (id, conversation_id, role, content) values ($1,$2,$3,$4::jsonb)`,
+      [newId(), conversationId, role, JSON.stringify(content)],
+    ),
+  );
+  await withClient((c) =>
+    c.query(`update conversations set last_message_at = now() where id = $1`, [conversationId]),
+  );
+}
+
 export async function coachTurn(opts: {
   userId: string;
   conversationId: string;
   text: string;
   screen?: string;
+  grants?: string[];
 }) {
   const blocked = checkInput(opts.text);
   if (blocked) {
@@ -26,12 +43,7 @@ export async function coachTurn(opts: {
     });
   }
   const profile = await loadProfile(opts.userId);
-  await withClient((c) =>
-    c.query(
-      `insert into messages (id, conversation_id, role, content) values ($1,$2,'user',$3::jsonb)`,
-      [newId(), opts.conversationId, JSON.stringify([{ type: "text", text: opts.text }])],
-    ),
-  );
+  await insertMessage(opts.conversationId, "user", [{ type: "text", text: opts.text }]);
   const history = (
     await withClient((c) =>
       c.query<{ role: string; content: { text?: string }[] }>(
@@ -41,6 +53,7 @@ export async function coachTurn(opts: {
     )
   ).rows;
   const actor = { kind: "coach" as const, userId: opts.userId, conversationId: opts.conversationId };
+  const granted = new Set(opts.grants ?? []);
   const tools = Object.fromEntries(
     agentCommands().map((cmd) => [
       cmd.name.replaceAll(".", "_"),
@@ -48,6 +61,15 @@ export async function coachTurn(opts: {
         description: `${cmd.description} Command: ${cmd.name}`,
         inputSchema: cmd.input,
         execute: async (input) => {
+          if (cmd.destructive && !granted.has(cmd.name)) {
+            return {
+              ok: false,
+              pendingApproval: true,
+              command: cmd.name,
+              input,
+              description: cmd.description,
+            };
+          }
           const result = await executeCommand(cmd.name, input, actor);
           return { ok: true, command: cmd.name, logId: result.id, result: result.result };
         },
@@ -63,6 +85,8 @@ export async function coachTurn(opts: {
     role: m.role === "assistant" ? "assistant" : "user",
     content: Array.isArray(m.content) ? m.content.map((c) => c.text ?? "").join("\n") : String(m.content),
   }));
+  const collected: { type: string; text?: string; name?: string; input?: unknown; output?: unknown }[] =
+    [];
   const result = streamText({
     model: p.chatModel(roleModels.chat),
     system: `${persona}\n\nCurrent screen: ${opts.screen ?? "/coach"}\nProfile snapshot: ${JSON.stringify(profile)}`,
@@ -70,12 +94,11 @@ export async function coachTurn(opts: {
     tools,
     stopWhen: stepCountIs(5),
     onFinish: async ({ text, usage }) => {
-      await withClient((c) =>
-        c.query(
-          `insert into messages (id, conversation_id, role, content) values ($1,$2,'assistant',$3::jsonb)`,
-          [newId(), opts.conversationId, JSON.stringify([{ type: "text", text }])],
-        ),
-      );
+      const parts = [
+        ...collected,
+        { type: "text", text },
+      ];
+      await insertMessage(opts.conversationId, "assistant", parts);
       await writeTrace({
         userId: opts.userId,
         kind: "turn",
@@ -95,9 +118,73 @@ export async function coachTurn(opts: {
         for await (const part of result.fullStream) {
           if (part.type === "text-delta") {
             send({ type: "text", text: part.text });
-          } else if (part.type === "tool-result" && part.toolName === "app_open") {
-            const output = part.output as { result?: unknown };
-            send({ type: "open", result: output?.result ?? output });
+          } else if (part.type === "reasoning-delta") {
+            send({ type: "reasoning", text: part.text });
+            collected.push({ type: "reasoning", text: part.text });
+          } else if (part.type === "tool-call") {
+            const call = {
+              id: part.toolCallId,
+              name: String(part.toolName).replaceAll("_", "."),
+              input: part.input,
+              status: "pending" as const,
+            };
+            collected.push({ type: "tool", name: call.name, input: call.input });
+            send({ type: "tool-call", call });
+          } else if (part.type === "tool-result") {
+            const output = part.output as {
+              ok?: boolean;
+              pendingApproval?: boolean;
+              command?: string;
+              input?: unknown;
+              description?: string;
+              result?: unknown;
+            };
+            const name = String(part.toolName).replaceAll("_", ".");
+            if (output?.pendingApproval) {
+              send({
+                type: "approval",
+                approval: {
+                  command: output.command ?? name,
+                  input: output.input,
+                  description: output.description ?? name,
+                },
+              });
+              send({
+                type: "tool-result",
+                call: {
+                  id: part.toolCallId,
+                  name,
+                  input: output.input,
+                  status: "failed",
+                  output: { pending: true },
+                },
+              });
+            } else {
+              send({
+                type: "tool-result",
+                call: {
+                  id: part.toolCallId,
+                  name,
+                  status: output?.ok === false ? "failed" : "completed",
+                  output: output?.result ?? output,
+                },
+              });
+              if (name === "app.open") {
+                send({ type: "open", result: output?.result ?? output });
+              }
+            }
+          } else if (part.type === "tool-error") {
+            send({
+              type: "tool-result",
+              call: {
+                id: part.toolCallId,
+                name: String(part.toolName).replaceAll("_", "."),
+                status: "failed",
+                output: { error: String(part.error) },
+              },
+            });
+          } else if (part.type === "error") {
+            send({ type: "error", message: "The Coach didn't reply. Try again." });
           }
         }
         send({ type: "done" });

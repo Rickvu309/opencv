@@ -1,0 +1,25 @@
+---
+description: Clone Coach chrome from Opal, assistant-ui, and Beautiful UI; restyle to OpenPath tokens.
+globs: src/features/coach/**/*.{ts,tsx},src/ui/**/*.tsx,src/styles/**/*.css,docs/design-system/**/*.md,.storybook/**/*
+alwaysApply: false
+---
+
+# Clone sources (design faster)
+
+Do not invent chat chrome, thread lists, composers, thinking states, tool cards, or approval cards. Open the source, copy the interaction, restyle to our tokens. Port Opal — do not install `@onyx-ai/opal`.
+
+| Surface | Copy from | Open |
+|---|---|---|
+| Primitives (chip, tooltip, collapsible, tabs, table, code) | [Onyx Opal](https://onyx-storybook.vercel.app/) | Matching story |
+| Tool cards, approval, thinking, input bar interrupt/queue | Opal Craft stories | Tool Cards / Approvals / Thinking Card / Input Bar |
+| Rail, prompt bar polish | [Beautiful UI](https://www.beautifului.dev/) | Sidebar Nav, Prompt Bar, Chat |
+| Thread, thread list, composer, empty welcome, retry, stop | [assistant-ui](https://www.assistant-ui.com/docs/ui/thread) | Thread + [ThreadList](https://www.assistant-ui.com/docs/ui/thread-list) |
+| History grouping, message action bar, queued messages | Open WebUI (patterns only) | Do not copy source |
+
+**Do not install** `@onyx-ai/opal`, `@assistant-ui/react`, or paste Beautiful UI’s demo tokens. Do not copy Open WebUI code. Keep `conversation.*`, the command bus, and `docs/copy.md`.
+
+**Skip:** command palette, unread badges, `/` search, model picker, dictation — [navigation.md](docs/features/navigation.md) out of scope.
+
+If a surface takes props, it gets a story. Screens that fetch stay in the app.
+
+Map and house rules: [docs/design-system/clone-sources.md](docs/design-system/clone-sources.md).
