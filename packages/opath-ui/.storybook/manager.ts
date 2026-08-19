@@ -5,7 +5,7 @@ addons.setConfig({
   theme: create({
     base: "light",
     brandTitle: "Opath (Lab)",
-    brandUrl: "http://localhost:6007",
+    brandUrl: "https://opath-lab.vercel.app",
     brandTarget: "_self",
   }),
 });

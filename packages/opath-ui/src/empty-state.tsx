@@ -18,7 +18,7 @@ export function EmptyState({
     <div className="max-w-xl pt-1 pb-8" data-empty-kind={kind}>
       <p className="text-pretty text-[15px] leading-[1.6] text-ink">{title}</p>
       {basis ? <p className="mt-2 text-[13px] leading-[1.5] text-ink-muted">{basis}</p> : null}
-      {action ? <div className="mt-4">{action}</div> : null}
+      {action ? <div className="mt-6">{action}</div> : null}
     </div>
   );
 }

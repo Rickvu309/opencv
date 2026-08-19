@@ -1,7 +1,24 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 
-function Panel(props: HTMLAttributes<HTMLDivElement> & { color?: string }) {
-  return <div {...props} />;
+function Panel({
+  className,
+  children,
+  color: _color,
+  ...props
+}: HTMLAttributes<HTMLDivElement> & { color?: string }) {
+  return (
+    <div
+      {...props}
+      className={[
+        "flex min-h-48 items-center justify-center rounded-[var(--radius-container)] border border-hairline bg-surface-2 px-4 text-center text-[13px] text-ink-muted",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      {children ?? "This shader preview is not loaded in Lab."}
+    </div>
+  );
 }
 
 export const ColorPanels = Panel;

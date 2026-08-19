@@ -9,7 +9,11 @@ export function SandpackProvider({ children }: { children?: ReactNode }) {
 }
 
 export function SandpackPreview() {
-  return null;
+  return (
+    <p className="rounded-[var(--radius-container)] border border-hairline bg-surface-2 p-4 text-[13px] text-ink-muted">
+      This editor preview is not loaded in Lab.
+    </p>
+  );
 }
 
 export function SandpackCodeEditor() {

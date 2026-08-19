@@ -291,7 +291,7 @@ First focusable element on every page; visually hidden until focused, then a `--
 ### Wizard step
 
 **Region:** `/onboarding`, no rail.
-**Anatomy:** one question (`title-lg`), the answer control, the payback line landing in the same frame (`ui`, `--ink-muted`, appears with the answer — fade in, the one rare-tier animation), then Continue (primary) and Skip (ghost) — Skip always visible, never shamed.
+**Anatomy:** one question (`title-lg`), the answer control, the payback line landing in the same frame (`ui`, `--ink-muted`, appears with the answer — fade in, the one rare-tier animation), a live **On your profile** card that accumulates filled facts, then Continue (primary) and Skip (ghost) — Skip always visible, never shamed. A four-step track (Goal / School / Work / Coach) sits above the question.
 **Copy hooks:** question, payback line, Skip label.
 
 ### Auth card
