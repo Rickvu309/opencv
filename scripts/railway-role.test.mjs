@@ -29,8 +29,15 @@ describe("railway-role", () => {
     });
   });
 
-  it("still accepts storybook-* service names", () => {
-    assert.equal(buildScript("storybook-production"), "build-storybook");
-    assert.equal(buildScript("storybook-lab"), "build-storybook:lab");
+  it("uses the STORYBOOK env var when the service name is not storybook-*", () => {
+    const prev = process.env.STORYBOOK;
+    process.env.STORYBOOK = "lab";
+    try {
+      assert.equal(buildScript("web"), "build-storybook:lab");
+      assert.deepEqual(startTarget("web"), { kind: "storybook", dir: "storybook-static-ui" });
+    } finally {
+      if (prev === undefined) delete process.env.STORYBOOK;
+      else process.env.STORYBOOK = prev;
+    }
   });
 });

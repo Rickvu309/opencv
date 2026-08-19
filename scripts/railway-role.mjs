@@ -4,27 +4,35 @@ export function serviceName(value = process.env.RAILWAY_SERVICE_NAME) {
   return (value ?? "").toLowerCase();
 }
 
-export function isLabStorybook(name = process.env.RAILWAY_SERVICE_NAME) {
+export function storybookKind(
+  name = process.env.RAILWAY_SERVICE_NAME,
+  storybook = process.env.STORYBOOK,
+) {
+  const flag = (storybook ?? "").toLowerCase().trim();
+  if (flag === "lab") return "lab";
+  if (flag === "production") return "production";
   const n = serviceName(name);
-  return n === "opath-lab" || n === "storybook-lab" || (n.includes("storybook") && n.includes("lab"));
-}
-
-export function isProductionStorybook(name = process.env.RAILWAY_SERVICE_NAME) {
-  const n = serviceName(name);
-  if (isLabStorybook(n)) return false;
-  return n === "opath-production" || n === "storybook-production" || n.includes("storybook");
+  if (n === "opath-lab" || n === "storybook-lab" || (n.includes("storybook") && n.includes("lab"))) {
+    return "lab";
+  }
+  if (n === "opath-production" || n === "storybook-production" || n.includes("storybook")) {
+    return "production";
+  }
+  return null;
 }
 
 export function buildScript(name = process.env.RAILWAY_SERVICE_NAME) {
-  if (isLabStorybook(name)) return "build-storybook:lab";
-  if (isProductionStorybook(name)) return "build-storybook";
+  const kind = storybookKind(name);
+  if (kind === "lab") return "build-storybook:lab";
+  if (kind === "production") return "build-storybook";
   return "build";
 }
 
 export function startTarget(name = process.env.RAILWAY_SERVICE_NAME) {
   const n = serviceName(name);
   if (n.includes("worker")) return { kind: "npm", script: "worker" };
-  if (isLabStorybook(n)) return { kind: "storybook", dir: "storybook-static-ui" };
-  if (isProductionStorybook(n)) return { kind: "storybook", dir: "storybook-static" };
+  const gallery = storybookKind(name);
+  if (gallery === "lab") return { kind: "storybook", dir: "storybook-static-ui" };
+  if (gallery === "production") return { kind: "storybook", dir: "storybook-static" };
   return { kind: "npm", script: "start" };
 }

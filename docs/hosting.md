@@ -29,7 +29,7 @@ This project's Postgres already has an older `openpath` schema. Set `DB_SCHEMA=o
 
 Local values live in `.env.local`, never committed. `.env.example` documents the set.
 
-Storybook services must not receive `DATABASE_URL`, `SESSION_SECRET`, or `OPENROUTER_API_KEY`. The gallery is a static build; [`scripts/storybook-serve.mjs`](../scripts/storybook-serve.mjs) only serves files. It keeps `iframe.html` as a real path — do not put `npx serve` in front of it (`serve` redirects `/iframe.html` to `/iframe` and the preview goes blank).
+Storybook services must not receive `DATABASE_URL`, `SESSION_SECRET`, or `OPENROUTER_API_KEY`. Set `STORYBOOK=production` on `opath-production` and `STORYBOOK=lab` on `opath-lab` so Nixpacks build/start do not fall through to the app (Railway does not always inject `RAILWAY_SERVICE_NAME` into the Nixpacks build). The gallery is a static build; [`scripts/storybook-serve.mjs`](../scripts/storybook-serve.mjs) only serves files. It keeps `iframe.html` as a real path — do not put `npx serve` in front of it (`serve` redirects `/iframe.html` to `/iframe` and the preview goes blank).
 
 ## Storybook
 
