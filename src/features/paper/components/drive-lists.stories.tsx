@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Button } from "@/ui/button";
 import { Band, BandFilter } from "@/ui/band";
-import { GroupHeader, Row, RowList } from "@/ui/rows";
+import { GroupHeader, Row, RowList, RowListHeader } from "@/ui/rows";
 import { EmptyState } from "@/ui/empty-state";
 import { EndOfList } from "@/ui/card";
 import { Chip } from "@/ui/chip";
@@ -18,7 +18,11 @@ export const PaperEmpty: Story = {
   render: () => (
     <div>
       <Band title="Paper" primary={<Button>Start a CV</Button>} />
-      <EmptyState kind="first-run" title="Start with the CV." />
+      <EmptyState
+        kind="first-run"
+        title="Start with the CV."
+        action={<Button variant="ghost">Start a CV</Button>}
+      />
     </div>
   ),
 };
@@ -43,8 +47,52 @@ export const PaperRows: Story = {
         }
       />
       <RowList bleed>
-        <Row label="Analyst CV" meta="CV · 2 days ago" onSelect={() => undefined} />
-        <Row label="Cover letter" meta="Letter · Yesterday" onSelect={() => undefined} />
+        <RowListHeader />
+        <Row
+          label="Analyst CV"
+          type="CV"
+          updated="2 days ago"
+          onSelect={() => undefined}
+          menu={
+            <button
+              type="button"
+              className="flex size-11 items-center justify-center rounded-[var(--radius-control)] text-[13px]"
+              aria-label="Actions for Analyst CV"
+            >
+              ···
+            </button>
+          }
+        />
+        <Row
+          label="Cover letter"
+          type="Cover letter"
+          updated="Yesterday"
+          onSelect={() => undefined}
+          menu={
+            <button
+              type="button"
+              className="flex size-11 items-center justify-center rounded-[var(--radius-control)] text-[13px]"
+              aria-label="Actions for Cover letter"
+            >
+              ···
+            </button>
+          }
+        />
+        <Row
+          label="Linh-CV.pdf"
+          type="Uploaded"
+          updated="5 days ago"
+          href="#uploaded"
+          menu={
+            <button
+              type="button"
+              className="flex size-11 items-center justify-center rounded-[var(--radius-control)] text-[13px]"
+              aria-label="Actions for Linh-CV.pdf"
+            >
+              ···
+            </button>
+          }
+        />
       </RowList>
       <EndOfList />
     </div>
