@@ -11,7 +11,7 @@ The look is **black and white**: Linear's surface ladder and type, onyx.app's bl
 3. **[layout.md](layout.md)** — the logic of space: the four layers, nine layout types, per-screen regions, reading order, the empty-states law.
 4. **[motion.md](motion.md)** — when and how things move: two durations, one easing family, the surface inventory, the never list, reduced motion.
 5. **[components.md](components.md)** — the template craft: one block per reusable piece with anatomy, variants, states, internal spacing, and copy hooks. Screens are assembled from these blocks.
-6. **[gallery.md](gallery.md)** — how Production Storybook is organised: Getting Started, Foundations, Core, Components, Layouts, Patterns, Screens. Cloned from [Onyx Opal Storybook](https://onyx-storybook.vercel.app/?path=/docs/getting-started--docs). Lab is the sourced catalog, not a second system.
+6. **[gallery.md](gallery.md)** — how Production Storybook is organised: Getting Started, Foundations, Core, Components, Layouts, Patterns, Screens. Lab is the sourced catalog, not a second system.
 
 The galleries that make this reviewable are two local Storybooks: Opath (Production) at `npm run storybook:production` (port 6006) — Getting Started, Foundations, Core, Components, Layouts, Patterns, Screens, see [gallery.md](gallery.md) — and Opath (Lab) at `npm run storybook:lab` (port 6007). `npm run storybook` starts both. Hosted: Production at https://opath-production.up.railway.app, Lab at https://opath-lab.up.railway.app — see [hosting.md](../hosting.md). If a surface takes props, it gets a story.
 

@@ -1,6 +1,6 @@
 # Production gallery
 
-How Opath (Production) Storybook is organised. This gallery **is** the design system made reviewable, cloned from [Onyx Opal Storybook](https://onyx-storybook.vercel.app/?path=/docs/getting-started--docs) (Getting Started, layered sidebar, autodocs, Controls). Opath (Lab) is a sourced commodity catalog, not a second system.
+How Opath (Production) Storybook is organised. This gallery **is** the design system made reviewable: Getting Started, layered sidebar, autodocs, Controls. Opath (Lab) is a sourced commodity catalog, not a second system.
 
 Local: `npm run storybook:production` (port 6006). Hosted: https://opath-production.up.railway.app. Lab stays on 6007 / https://opath-lab.up.railway.app.
 
@@ -28,7 +28,7 @@ Live values from `src/styles/globals.css` — swatches read `var(--token)`, they
 
 ## Core
 
-Opal's `opal/core`. Most screens should not import these. Button, Row, and Chip already sit on them. Stories show the state matrix (empty, selected, disabled) and the hover reveal.
+Most screens should not import these. Button, Row, and Chip already sit on them. Stories show the state matrix (empty, selected, disabled) and the hover reveal.
 
 ## Components
 
@@ -36,7 +36,7 @@ If a surface takes props, it gets a **co-located** `*.stories.tsx` next to the c
 
 ## Layouts
 
-Opal's Layouts layer. Band is the first element inside `main`. Section is a titled block inside an editor. SkipLink is the first focusable control on every page.
+Band is the first element inside `main`. Section is a titled block inside an editor. SkipLink is the first focusable control on every page.
 
 ## Patterns
 

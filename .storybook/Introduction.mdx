@@ -6,8 +6,6 @@ import { Meta } from "@storybook/addon-docs/blocks";
 
 A living catalog for browsing, testing, and documenting Production UI in isolation. This is the design system made reviewable. Opath (Lab) is a sourced commodity catalog on the other Storybook, not a second system.
 
-The anatomy copies [Onyx Opal Storybook](https://onyx-storybook.vercel.app/?path=/docs/getting-started--docs): Getting Started, then layers, then autodocs. Tokens and copy stay ours.
-
 ---
 
 ## What is this?
@@ -27,7 +25,7 @@ Screens live in the same gallery so you can see the primitives assembled. They c
 
 ### Sidebar
 
-The left sidebar organizes work by layer, same job as Opal's `opal/core` → `opal/components` → Layouts:
+The left sidebar organizes work by layer:
 
 - **Getting Started** — this page
 - **Foundations** — tokens from `src/styles/globals.css` (color, type, space, motion). Swatches read `var(--token)`; they do not hardcode hex
@@ -62,7 +60,7 @@ Hosted Production: [opath-production.up.railway.app](https://opath-production.up
 
 ## Adding a new story
 
-Stories for primitives are **co-located** next to the component, as in Opal:
+Stories for primitives are **co-located** next to the component:
 
 ```
 packages/opath-ui/src/
@@ -109,6 +107,6 @@ export const VariantGrid: Story = {
 - **Default:** the first story is `Default` with `args`, so Controls work
 - **States:** named stories for invalid, disabled, loading — not an `All` junk drawer
 - **Layout:** `parameters: { layout: "fullscreen" }` for Auth, Landing, Onboarding, Share, and for portals that need the viewport
-- **Do not** invent a fifth product chapter. Lab stays on the Lab Storybook
+- **Do not** invent a new chapter. Lab stays on the Lab Storybook
 
 Spec the block in [components.md](../docs/design-system/components.md) in the same PR. Full gallery rules: [gallery.md](../docs/design-system/gallery.md).
