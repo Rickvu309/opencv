@@ -106,7 +106,7 @@ Landing: sticky public nav, then hero (promise, product composer), then waitlist
 
 ### Dock, drawer, bell, confirm — Overlay
 
-Dock: same conversation as `/coach`, composer usable, artifact still operable, never covers the primary action; closed it leaves a compact reopen control at the bottom-right. Desktop dock is 20rem by at most 32rem. Drawer: the whole rail logic, 16rem, from 768px down; focus trapped. Bell: list of notifications, each a door to its subject; empty is one sentence. Confirm: destructive only, names the noun, two buttons.
+Dock: same conversation as `/coach`, composer usable, artifact still operable, never covers the primary action; closed it leaves a compact reopen control at the bottom-right. Leaving `/coach` opens the dock on the same thread; Open Coach in the header returns to `/coach`. Desktop dock is 20rem by at most 32rem. Drawer: the whole rail logic, 16rem, from 768px down; focus trapped. Bell: list of notifications, each a door to its subject; empty is one sentence. Confirm: destructive only, names the noun, two buttons.
 
 ## Empty states
 

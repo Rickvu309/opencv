@@ -14,12 +14,14 @@ export function FormatBar({
   showSections = true,
   onDensity,
   onSection,
+  onAskCoach,
 }: {
   content: PaperContent;
   completeness?: string;
   showSections?: boolean;
   onDensity: (density: "normal" | "tight") => void;
   onSection: (section: CvSection, hidden: boolean) => void;
+  onAskCoach?: () => void;
 }) {
   return (
     <div
@@ -65,6 +67,15 @@ export function FormatBar({
             );
           })}
         </div>
+      ) : null}
+      {onAskCoach ? (
+        <button
+          type="button"
+          onClick={onAskCoach}
+          className="inline-flex min-h-11 items-center text-[13px] text-ink-muted hover:text-ink"
+        >
+          Ask Coach
+        </button>
       ) : null}
       {completeness ? (
         <p className="min-w-0 flex-1 basis-full text-[13px] leading-[1.5] text-ink-muted tabular-nums sm:basis-auto">

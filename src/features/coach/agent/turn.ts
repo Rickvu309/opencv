@@ -1,9 +1,13 @@
 import { streamText, tool, stepCountIs, type ModelMessage } from "ai";
+import { z } from "zod";
 import { executeCommand } from "@/core/commands/bus";
 import { agentCommands } from "@/core/commands/define";
 import { provider, roleModels, writeTrace, aiAvailable, type ModelRole } from "@/core/ai/gateway";
 import { checkInput } from "@/core/ai/guardrails";
 import { loadProfile } from "@/features/profile/load.server";
+import { loadPaper } from "@/features/paper/load.server";
+import { paperIdFromScreen } from "@/features/paper/model";
+import { sharpenBullet } from "@/features/paper/ai.server";
 import { withClient } from "@/core/db/client.server";
 import { newId } from "@/core/ids";
 import "@/features/register";
@@ -32,6 +36,7 @@ export async function coachTurn(opts: {
   screen?: string;
   grants?: string[];
   role?: ModelRole;
+  excerpt?: { text: string; label?: string };
 }) {
   const blocked = checkInput(opts.text);
   if (blocked) {
@@ -44,6 +49,8 @@ export async function coachTurn(opts: {
     });
   }
   const profile = await loadProfile(opts.userId);
+  const openedPaperId = paperIdFromScreen(opts.screen ?? "");
+  const openedPaper = openedPaperId ? await loadPaper(opts.userId, openedPaperId) : null;
   await insertMessage(opts.conversationId, "user", [{ type: "text", text: opts.text }]);
   const history = (
     await withClient((c) =>
@@ -55,8 +62,8 @@ export async function coachTurn(opts: {
   ).rows;
   const actor = { kind: "coach" as const, userId: opts.userId, conversationId: opts.conversationId };
   const granted = new Set(opts.grants ?? []);
-  const tools = Object.fromEntries(
-    agentCommands().map((cmd) => [
+  const tools = Object.fromEntries([
+    ...agentCommands().map((cmd) => [
       cmd.name.replaceAll(".", "_"),
       tool({
         description: `${cmd.description} Command: ${cmd.name}`,
@@ -76,7 +83,19 @@ export async function coachTurn(opts: {
         },
       }),
     ]),
-  );
+    [
+      "paper_sharpenLine",
+      tool({
+        description:
+          "Rewrite one CV bullet as a result line. Returns the rewritten text. Then call paper.updateBlock to write it onto the page. Never invent a number.",
+        inputSchema: z.object({ bullet: z.string() }),
+        execute: async ({ bullet }: { bullet: string }) => {
+          const line = await sharpenBullet(opts.userId, bullet);
+          return { ok: true, line };
+        },
+      }),
+    ],
+  ]);
   const p = provider();
   if (!p) {
     return new Response("The Coach is offline right now.", { status: 503 });
@@ -90,9 +109,15 @@ export async function coachTurn(opts: {
     [];
   const role: ModelRole =
     opts.role === "cheap" || opts.role === "drafting" ? opts.role : "chat";
+  const openedRule = openedPaper
+    ? `\nOpened paper: ${JSON.stringify(openedPaper)}\nWhen an opened paper snapshot is present, edit that paper in place with paper.updateBlock, paper.updateSection, or paper.addProofLine. Pass exactly one content key to paper.updateBlock. Duplicate only when they ask to tailor. Do not invent numbers. Do not rewrite the whole document.`
+    : "";
+  const excerptRule = opts.excerpt?.text
+    ? `\nUser highlighted on this page${opts.excerpt.label ? ` (${opts.excerpt.label})` : ""}: ${opts.excerpt.text}\nThat is the line they mean.`
+    : "";
   const result = streamText({
     model: p.chatModel(roleModels[role]),
-    system: `${persona}\n\nCurrent screen: ${opts.screen ?? "/coach"}\nProfile snapshot: ${JSON.stringify(profile)}`,
+    system: `${persona}\n\nCurrent screen: ${opts.screen ?? "/coach"}\nProfile snapshot: ${JSON.stringify(profile)}${openedRule}${excerptRule}`,
     messages,
     tools,
     stopWhen: stepCountIs(5),

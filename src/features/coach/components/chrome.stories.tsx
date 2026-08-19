@@ -4,6 +4,7 @@ import { ToolCall, ToolCard, ToolGroup } from "./tool-card";
 import { ApprovalCard } from "./approval";
 import { ChatMessage } from "./message";
 import { CoachComposer } from "./composer";
+import { CoachDockPanel, CoachDockPill } from "./dock";
 import { CoachSessionProvider } from "./session";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -158,6 +159,52 @@ export const MessageAndComposer: Story = {
         <ChatMessage role="coach" text="I drafted a CV from your profile. Open it from Paper." />
         <CoachComposer text="" onText={() => {}} onSend={() => {}} />
       </div>
+    </CoachSessionProvider>
+  ),
+};
+
+export const DockPill: Story = {
+  render: () => <CoachDockPill onOpen={() => {}} />,
+};
+
+export const DockEmpty: Story = {
+  render: () => (
+    <CoachSessionProvider>
+      <CoachDockPanel onClose={() => {}} onOpenCoach={() => {}}>
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1" />
+          <div className="shrink-0">
+            <CoachComposer compact text="" onText={() => {}} onSend={() => {}} />
+          </div>
+        </div>
+      </CoachDockPanel>
+    </CoachSessionProvider>
+  ),
+};
+
+export const DockWithMessages: Story = {
+  render: () => (
+    <CoachSessionProvider>
+      <CoachDockPanel onClose={() => {}} onOpenCoach={() => {}}>
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1 space-y-2 overflow-y-auto py-1">
+            <ChatMessage role="user" text="Shorten the experience section." />
+            <ChatMessage
+              role="coach"
+              text="I can tighten that role. Tell me which result to keep."
+            />
+          </div>
+          <div className="shrink-0 pt-2">
+            <CoachComposer
+              compact
+              text=""
+              onText={() => {}}
+              onSend={() => {}}
+              placeholder="Tell me what to change on this page."
+            />
+          </div>
+        </div>
+      </CoachDockPanel>
     </CoachSessionProvider>
   ),
 };

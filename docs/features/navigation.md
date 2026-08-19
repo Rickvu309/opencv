@@ -34,7 +34,7 @@ Desktop rail defaults to 16rem and stays until 768px, where it becomes the drawe
 
 `/coach`: the conversation owns the main column. No second copy of the thread list. No dock. The active thread is `/coach?thread=<id>`.
 
-Artifact screens (Paper, Proof, Pitch, Search, Apply, Profile, Settings): main column is the artifact. Coach dock travels. Bell stays in the header.
+Artifact screens (Paper, Proof, Pitch, Search, Apply, Profile, Settings): main column is the artifact. Coach dock travels. Leaving `/coach` opens the dock on the same thread; Open Coach in the dock header returns to `/coach`. Bell stays in the header.
 
 ### Mobile
 

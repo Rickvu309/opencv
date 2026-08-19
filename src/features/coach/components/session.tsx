@@ -1,8 +1,7 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 const COACH_ROLE_KEY = "openpath.coach-role";
-const pickerRoles = ["cheap", "chat", "drafting"] as const;
-export type CoachPickerRole = (typeof pickerRoles)[number];
+export type CoachPickerRole = "cheap" | "chat" | "drafting";
 
 function readCoachRole(): CoachPickerRole {
   if (typeof window === "undefined") return "chat";
@@ -15,14 +14,20 @@ function readCoachRole(): CoachPickerRole {
   return "chat";
 }
 
+export type CoachExcerpt = { text: string; label?: string };
+
 type CoachSession = {
   threadId: string | null;
   setThreadId: (id: string | null) => void;
   dockOpen: boolean;
   setDockOpen: (open: boolean) => void;
+  openDock: () => void;
   pendingIntent: string | null;
   openDockWithIntent: (text: string) => void;
   takePendingIntent: () => string | null;
+  excerpt: CoachExcerpt | null;
+  addExcerpt: (next: CoachExcerpt) => void;
+  clearExcerpt: () => void;
   coachRole: CoachPickerRole;
   setCoachRole: (role: CoachPickerRole) => void;
 };
@@ -33,6 +38,7 @@ export function CoachSessionProvider({ children }: { children: ReactNode }) {
   const [threadId, setThreadId] = useState<string | null>(null);
   const [dockOpen, setDockOpen] = useState(false);
   const [pendingIntent, setPendingIntent] = useState<string | null>(null);
+  const [excerpt, setExcerpt] = useState<CoachExcerpt | null>(null);
   const [coachRole, setCoachRoleState] = useState<CoachPickerRole>("chat");
 
   useEffect(() => {
@@ -48,12 +54,15 @@ export function CoachSessionProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const openDock = useCallback(() => setDockOpen(true), []);
+
   const value = useMemo(
     () => ({
       threadId,
       setThreadId,
       dockOpen,
       setDockOpen,
+      openDock,
       pendingIntent,
       openDockWithIntent: (text: string) => {
         setPendingIntent(text);
@@ -64,10 +73,16 @@ export function CoachSessionProvider({ children }: { children: ReactNode }) {
         setPendingIntent(null);
         return next;
       },
+      excerpt,
+      addExcerpt: (next: CoachExcerpt) => {
+        setExcerpt(next);
+        setDockOpen(true);
+      },
+      clearExcerpt: () => setExcerpt(null),
       coachRole,
       setCoachRole,
     }),
-    [threadId, dockOpen, pendingIntent, coachRole],
+    [threadId, dockOpen, pendingIntent, excerpt, coachRole, openDock],
   );
   return <CoachSessionContext.Provider value={value}>{children}</CoachSessionContext.Provider>;
 }

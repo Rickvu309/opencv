@@ -1,6 +1,6 @@
 import { Outlet, useRouterState } from "@tanstack/react-router";
-import { useState } from "react";
-import { CoachSessionProvider } from "@/features/coach/components/session";
+import { useEffect, useRef, useState } from "react";
+import { CoachSessionProvider, useCoachSession } from "@/features/coach/components/session";
 import { Rail } from "@/features/coach/components/rail";
 import {
   RailResize,
@@ -19,9 +19,17 @@ function SignedInChrome() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { width: railWidth, setWidth: setRailWidth, commit: commitRailWidth } = useRailWidth();
   const { collapsed, toggle } = useRailCollapsed();
+  const { openDock } = useCoachSession();
+  const prevPath = useRef(pathname);
   const showDock = pathname !== "/coach";
   const isCoach = pathname === "/coach";
   const frameWidth = collapsed ? RAIL_COLLAPSED_WIDTH : railWidth;
+
+  useEffect(() => {
+    const prev = prevPath.current;
+    prevPath.current = pathname;
+    if (prev === "/coach" && pathname !== "/coach") openDock();
+  }, [pathname, openDock]);
 
   return (
     <div className="flex h-svh overflow-hidden bg-canvas">

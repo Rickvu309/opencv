@@ -12,9 +12,9 @@ describe("tool call helpers", () => {
       activeLabel: "Opening",
       label: "Opened",
     });
-    assert.deepEqual(toolCallCopy("proof.log"), {
-      activeLabel: "Logging Proof",
-      label: "Logged Proof",
+    assert.deepEqual(toolCallCopy("paper.sharpenLine"), {
+      activeLabel: "Sharpening a line",
+      label: "Sharpened a line",
     });
   });
 

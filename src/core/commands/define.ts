@@ -29,7 +29,7 @@ const registry = new Map<string, CommandDef>();
 export function defineCommand<TInput, TResult>(
   def: CommandDef<TInput, TResult>,
 ) {
-  if (registry.has(def.name)) {
+  if (registry.has(def.name) && process.env.NODE_ENV !== "development") {
     throw new Error(`command already defined: ${def.name}`);
   }
   registry.set(def.name, def as CommandDef);

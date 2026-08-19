@@ -1,8 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  applyPaperPatch,
   completenessCopy,
   emptyCv,
+  paperBlockPatchSchema,
+  paperIdFromScreen,
   profileLinesOnPage,
   relativeUpdated,
 } from "@/features/paper/model";
@@ -46,6 +49,27 @@ describe("paper copy helpers", () => {
     assert.equal(completenessCopy(1, 1), "1 of 1 profile line is on this page.");
     assert.equal(completenessCopy(1, 4), "1 of 4 profile lines is on this page.");
     assert.equal(completenessCopy(4, 4), "4 of 4 profile lines are on this page.");
+  });
+
+  it("merges one block without touching the others", () => {
+    const content = emptyCv();
+    content.name = "Linh";
+    content.contact = "Da Nang";
+    const next = applyPaperPatch(content, { name: "An" });
+    assert.equal(next.name, "An");
+    assert.equal(next.contact, "Da Nang");
+  });
+
+  it("rejects a patch that is not exactly one block", () => {
+    assert.equal(paperBlockPatchSchema.safeParse({}).success, false);
+    assert.equal(paperBlockPatchSchema.safeParse({ name: "An", contact: "Hue" }).success, false);
+    assert.equal(paperBlockPatchSchema.safeParse({ name: "An" }).success, true);
+  });
+
+  it("reads a paper id from the opened-document screen", () => {
+    assert.equal(paperIdFromScreen("/paper/abc"), "abc");
+    assert.equal(paperIdFromScreen("/paper"), null);
+    assert.equal(paperIdFromScreen("/coach"), null);
   });
 
   it("formats updated time in the user's terms", () => {

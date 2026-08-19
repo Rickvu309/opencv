@@ -30,7 +30,7 @@ const ACTION_COPY: Record<string, { active: string; settled: string }> = {
   setTheme: { active: "Updating", settled: "Updated" },
   tailorCv: { active: "Tailoring a CV", settled: "Tailored a CV" },
   tailorLetter: { active: "Tailoring a letter", settled: "Tailored a letter" },
-  addProofLine: { active: "Adding a Proof line", settled: "Added a Proof line" },
+  sharpenLine: { active: "Sharpening a line", settled: "Sharpened a line" },
   uploadFile: { active: "Uploading a file", settled: "Uploaded a file" },
   removeFile: { active: "Removing a file", settled: "Removed a file" },
   removeEntry: { active: "Removing an entry", settled: "Removed an entry" },

@@ -133,6 +133,11 @@ body {
   transform-origin: bottom right;
 }
 
+.dock-leave {
+  animation: dock-scale-out var(--duration-fast) var(--ease-out) forwards;
+  transform-origin: bottom right;
+}
+
 .menu-enter {
   animation: panel-scale var(--duration-fast) var(--ease-out);
 }
@@ -212,6 +217,17 @@ body {
   }
 }
 
+@keyframes dock-scale-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .skeleton-pulse {
     animation: none;
@@ -224,6 +240,7 @@ body {
   }
 
   .dock-enter,
+  .dock-leave,
   .menu-enter {
     animation: none;
   }

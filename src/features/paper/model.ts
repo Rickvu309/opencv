@@ -52,6 +52,70 @@ export const paperContentSchema = z.object({
 
 export type PaperContent = z.infer<typeof paperContentSchema>;
 
+export const paperBlockKeys = [
+  "name",
+  "contact",
+  "experience",
+  "education",
+  "skills",
+  "proofLines",
+  "paragraphs",
+  "situation",
+] as const;
+export type PaperBlockKey = (typeof paperBlockKeys)[number];
+
+export const paperBlockPatchSchema = z
+  .object({
+    name: z.string().optional(),
+    contact: z.string().optional(),
+    experience: z
+      .array(
+        z.object({
+          id: z.string(),
+          org: z.string(),
+          role: z.string(),
+          dates: z.string(),
+          bullets: z.array(z.string()),
+        }),
+      )
+      .optional(),
+    education: z
+      .array(z.object({ id: z.string(), school: z.string(), line: z.string() }))
+      .optional(),
+    skills: z.array(z.string()).optional(),
+    proofLines: z.array(z.string()).optional(),
+    paragraphs: z.array(z.string()).optional(),
+    situation: z.string().optional(),
+  })
+  .refine((patch) => paperBlockKeys.filter((key) => patch[key] !== undefined).length === 1, {
+    message: "update exactly one block",
+  });
+
+export type PaperBlockPatch = z.infer<typeof paperBlockPatchSchema>;
+
+export function patchKeys(patch: Partial<Pick<PaperContent, PaperBlockKey>>): PaperBlockKey[] {
+  return paperBlockKeys.filter((key) => patch[key] !== undefined);
+}
+
+export function applyPaperPatch(
+  content: PaperContent,
+  patch: Partial<Pick<PaperContent, PaperBlockKey>>,
+): PaperContent {
+  const next: PaperContent = { ...content };
+  for (const key of patchKeys(patch)) {
+    const value = patch[key];
+    if (value !== undefined) {
+      next[key] = value as never;
+    }
+  }
+  return paperContentSchema.parse(next);
+}
+
+export function paperIdFromScreen(screen: string) {
+  const match = screen.match(/^\/paper\/([^/]+)$/);
+  return match?.[1] ?? null;
+}
+
 export function emptyCv(): PaperContent {
   return paperContentSchema.parse({
     experience: [{ id: "e1", org: "", role: "", dates: "", bullets: [""] }],

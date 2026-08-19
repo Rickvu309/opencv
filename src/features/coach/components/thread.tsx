@@ -13,6 +13,7 @@ import { ToolGroup } from "@/features/coach/components/tool-card";
 import { ApprovalCard } from "@/features/coach/components/approval";
 import { navigateToOpen } from "@/features/coach/open";
 import { sendCoachTurn } from "@/features/coach/stream";
+import { paperIdFromScreen } from "@/features/paper/model";
 import { runCommand } from "@/ui/run-command";
 import { Mark } from "@/ui/mark";
 import { Button } from "@/ui/button";
@@ -56,14 +57,17 @@ export function ThreadBody({
   threadId,
   screen,
   welcome = false,
+  compact = false,
 }: {
   threadId: string | null;
   screen: string;
   welcome?: boolean;
+  compact?: boolean;
 }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { setThreadId, pendingIntent, takePendingIntent, coachRole } = useCoachSession();
+  const { setThreadId, pendingIntent, takePendingIntent, coachRole, excerpt, clearExcerpt } =
+    useCoachSession();
   const convos = useQuery({
     queryKey: ["conversations"],
     queryFn: () => listConversationsFn(),
@@ -122,6 +126,7 @@ export function ThreadBody({
     setLastFailed(null);
     setPendingUser(trimmed);
     setText("");
+    clearExcerpt();
     setWorking(true);
     const abort = new AbortController();
     abortRef.current = abort;
@@ -133,6 +138,7 @@ export function ThreadBody({
         screen,
         grants,
         role: coachRole,
+        excerpt: excerpt ?? undefined,
         signal: abort.signal,
         onText: (next) => {
           acc = next;
@@ -147,6 +153,21 @@ export function ThreadBody({
             toolsRef.current = next;
             return next;
           });
+          if (call.status === "completed" && call.name.startsWith("paper.")) {
+            const fromScreen = paperIdFromScreen(screen);
+            const rec =
+              call.input && typeof call.input === "object" && !Array.isArray(call.input)
+                ? (call.input as Record<string, unknown>)
+                : null;
+            const fromInput =
+              typeof rec?.id === "string"
+                ? rec.id
+                : typeof rec?.paperId === "string"
+                  ? rec.paperId
+                  : null;
+            const id = fromScreen ?? fromInput;
+            if (id) void queryClient.invalidateQueries({ queryKey: ["paper", id] });
+          }
         },
         onApproval: (approval) => {
           setApprovals((prev) => [...prev, approval]);
@@ -189,6 +210,7 @@ export function ThreadBody({
     (working && (Boolean(reasoning) || !reply)) ||
     Boolean(reasoning && reasoning !== persistedReasoning);
 
+  const onPaper = Boolean(paperIdFromScreen(screen));
   const composer = (
     <CoachComposer
       text={text}
@@ -198,6 +220,10 @@ export function ThreadBody({
       disabled={offline}
       working={working}
       queued={queued}
+      placeholder={onPaper ? "Tell me what to change on this page." : undefined}
+      excerpt={excerpt}
+      onClearExcerpt={clearExcerpt}
+      compact={compact}
     />
   );
 
@@ -209,7 +235,7 @@ export function ThreadBody({
         </p>
       ) : null}
       {empty ? (
-        welcome ? (
+        welcome && !compact ? (
           <CoachEmpty composer={composer} />
         ) : (
           <>
@@ -220,7 +246,7 @@ export function ThreadBody({
       ) : (
         <>
           <StickToBottom>
-            <div className="space-y-3 py-2">
+            <div className={compact ? "space-y-2 py-1" : "space-y-3 py-2"}>
               {messages.map((m: { id: string; role: string; content: ContentPart[] }) => {
                 const storedReasoning = m.role !== "user" ? reasoningFromParts(m.content) : "";
                 const storedTools = toolsFromParts(m.content, m.id);
@@ -273,7 +299,7 @@ export function ThreadBody({
               {lastFailed ? <ChatFailed onRetry={() => void send(lastFailed)} /> : null}
             </div>
           </StickToBottom>
-          <div className="shrink-0 pt-3">{composer}</div>
+          <div className={compact ? "shrink-0 pt-2" : "shrink-0 pt-3"}>{composer}</div>
         </>
       )}
     </div>

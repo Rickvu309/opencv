@@ -47,7 +47,7 @@ Every animated thing in the app. Anything not on this list does not move; adding
 |---|---|---|---|---|---|---|
 | Drawer (rail on mobile) | Slide in | Menu button | `transform: translateX` | 200ms `--ease-drawer` | Interruptible transition; exits left | Fade only, 120ms |
 | Dock sheet (mobile) | Slide in | Coach button | `transform: translateY(100%)`→0 | 200ms `--ease-drawer` | Interruptible; exits down | Fade only, 120ms |
-| Dock panel (desktop) | Fade + scale in | Coach button | `opacity`, `scale(0.97)`→1, origin bottom-right | 120ms `--ease-out` | Transition; fades out | Instant |
+| Dock panel (desktop) | Fade + scale in / out | Coach pill, leaving `/coach`, Close, Esc | `opacity`, `scale(0.97)`↔1, origin bottom-right | 120ms `--ease-out` | Enter `.dock-enter`; exit `.dock-leave` then unmount; focus returns to the pill | Instant |
 | Dialog / confirm | Fade + scale in | Open | Scrim `opacity`; panel `opacity` + `scale(0.97)`→1 | 200ms `--ease-out` | Esc/scrim close fades out | Opacity only |
 | Dropdown menu | Scale in from trigger | `···` or account | `opacity` + `scale(0.97)`→1, origin at trigger | 120ms `--ease-out` | Closes instantly | Instant |
 | Toast (Sonner) | Slide in + swipe to dismiss | Command ran | Sonner's own transform/opacity | Sonner defaults | Swipe exits the way it points | Sonner honors it natively |

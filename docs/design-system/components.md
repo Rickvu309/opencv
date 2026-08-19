@@ -46,9 +46,9 @@ The [interfaces.dev cheat-sheet](https://interfaces.dev/cheat-sheet) baseline, a
 ### Coach dock
 
 **Region:** layer 3, bottom-right, everywhere except `/coach`. Never covers the artifact's primary action.
-**Variants:** closed pill — a `--surface-1` bordered control reading "Coach", 44px; open panel (desktop) — `--size-dock` bordered `--radius-container` panel with `--shadow-overlay`: header row (title `title-sm`, Close ghost) then the thread body and composer; sheet (mobile) — bottom sheet, same body.
-**States:** the panel fades + scales in per [motion.md](motion.md); offline renders the offline sentence in the body; streaming per the message block.
-**Copy hooks:** the pill label, the offline sentence.
+**Variants:** closed pill — Mark + “Coach”, `--surface-1`, `--hairline`, `--shadow-overlay`, `--radius-control`, 44px, `--ink-muted` until hover; open panel (desktop) — `--size-dock` bordered `--radius-container` panel, 12px inset, `--shadow-overlay`: 40px header (title `title-sm`, Open Coach icon `Maximize2` `aria-label="Open Coach"`, Close ghost) then compact thread and compact composer; sheet (mobile) — bottom sheet 70vh, same compact body, Open Coach in the sheet header.
+**States:** leaving `/coach` opens the panel on the same thread; Open Coach returns to `/coach` (`?thread=` when there is one); Close and Esc collapse to the pill and restore focus; the panel fades + scales in and exits the same way per [motion.md](motion.md); offline renders the offline sentence in the body; streaming per the message block. Compact thread: no empty mark, no email-connect banner, tighter message stack. Compact composer: field + send/stop; speed and dictation live in More; Call yields.
+**Copy hooks:** the pill label, Open Coach, Close, the offline sentence.
 
 ### Drawer and dock sheet
 
@@ -221,7 +221,7 @@ First focusable element on every page; visually hidden until focused, then a `--
 ### Chat composer
 
 **Region:** the primary slot of Conversation; also the dock body's foot. Pattern copied from [AIcss ai-agent-input](https://www.aicss.dev/components/ai-agent-input): one bordered surface containing the field and its controls, not a bare textarea with a button below.
-**Anatomy:** pill bar (`rounded-full`, `--hairline`, 6px vertical pad, 12px left / 6px right). Left cluster: More (`+`) then the field. Right cluster (`gap-2`): Fast / Coach / Careful, dictation, Call (idle) or Send / Stop. All controls 32px, vertically centered. The field is a 32px line box (`leading-6`, 4px pad) so the placeholder sits on the same center as `+` and Fast.
+**Anatomy:** pill bar (`rounded-full`, `--hairline`, 6px vertical pad, 12px left / 6px right). Left cluster: More (`+`) then the field. Right cluster (`gap-2`): Fast / Coach / Careful, dictation, Call (idle) or Send / Stop. All controls 32px, vertically centered. The field is a 32px line box (`leading-6`, 4px pad) so the placeholder sits on the same center as `+` and Fast. Compact (dock): More also holds speed and dictation; Call yields; send stays and is disabled while empty.
 **States:** idle — send disabled at opacity 0.5 while empty; filled — send enabled; **working** — send becomes Stop (`aria-label="Stop"`), an interrupt hint ("Stop to send something else") sits under the surface, and a second typed message queues in a bar above the composer and sends itself when the reply finishes; offline — disabled with the offline sentence above.
 **Keys:** Enter sends, Shift+Enter breaks — and the hint is discoverable in the placeholder on first run.
 **Copy hooks:** placeholder, offline sentence.
@@ -319,7 +319,7 @@ First focusable element on every page; visually hidden until focused, then a `--
 
 ## Lab sourced galleries
 
-Commodity kits catalogued in Opath (Lab) Storybook under `packages/opath-ui/src/lab`. These are review surfaces, not Production primitives. Promote a piece by writing its block here and landing a restyled primitive at the package root. The sidebar is Components vs Templates, not kit names.
+Commodity kits catalogued in Opath (Lab) Storybook under `packages/opath-ui/src/lab`. These are review surfaces, not Production primitives. Lab kit controls (button, input, textarea, label, checkbox, switch, badge, card) restyle to the Production token blocks above so a login or dialog preview matches the app. Promote a piece by writing its block here and landing a restyled primitive at the package root. The sidebar is Components vs Templates, not kit names. Opath (Production) Storybook also shows `Primitives/Gallery` from this package.
 
 | Storybook | What it holds |
 |---|---|

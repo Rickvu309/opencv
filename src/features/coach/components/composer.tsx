@@ -51,6 +51,10 @@ export function CoachComposer({
   disabled,
   working,
   queued,
+  placeholder,
+  excerpt,
+  onClearExcerpt,
+  compact = false,
 }: {
   text: string;
   onText: (value: string) => void;
@@ -59,14 +63,19 @@ export function CoachComposer({
   disabled?: boolean;
   working?: boolean;
   queued?: string | null;
+  placeholder?: string;
+  excerpt?: { text: string; label?: string } | null;
+  onClearExcerpt?: () => void;
+  compact?: boolean;
 }) {
   const { coachRole, setCoachRole } = useCoachSession();
   const ref = useRef<HTMLTextAreaElement>(null);
   const recRef = useRef<SpeechRec | null>(null);
   const [listening, setListening] = useState(false);
   const [promptIndex, setPromptIndex] = useState(0);
-  const idle = !text.trim() || disabled || (working && !onStop);
   const empty = !text.trim();
+  const showRoll = empty && !placeholder && !compact;
+  const idle = !text.trim() || disabled || (working && !onStop);
   const mode = MODES.find((m) => m.id === coachRole) ?? MODES[1]!;
 
   useEffect(() => {
@@ -81,13 +90,13 @@ export function CoachComposer({
   }, []);
 
   useEffect(() => {
-    if (!empty) return;
+    if (!empty || placeholder || compact) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const id = window.setInterval(() => {
       setPromptIndex((i) => (i + 1) % PROMPTS.length);
     }, 3200);
     return () => window.clearInterval(id);
-  }, [empty]);
+  }, [empty, placeholder, compact]);
 
   function toggleDictation() {
     if (listening) {
@@ -117,6 +126,22 @@ export function CoachComposer({
 
   return (
     <div>
+      {excerpt ? (
+        <div className="mb-2 flex items-start gap-2 rounded-[var(--radius-control)] border border-hairline bg-surface-2 px-3 py-2">
+          <p className="min-w-0 flex-1 text-[13px] leading-[1.5] text-ink-muted">
+            {excerpt.label ? <span className="text-ink">{excerpt.label}: </span> : null}
+            {excerpt.text}
+          </p>
+          <button
+            type="button"
+            aria-label="Remove from Coach"
+            className="shrink-0 text-[13px] text-ink-muted hover:text-ink"
+            onClick={onClearExcerpt}
+          >
+            Remove
+          </button>
+        </div>
+      ) : null}
       {queued ? (
         <p className="mb-2 rounded-[var(--radius-control)] bg-surface-2 px-3 py-2 text-[13px] text-ink-muted">
           Sends when the Coach finishes. {queued}
@@ -151,20 +176,43 @@ export function CoachComposer({
               <DropdownMenuItem onSelect={() => onText("Log something as Proof")}>
                 Log Proof
               </DropdownMenuItem>
+              {compact
+                ? MODES.map((m) => (
+                    <DropdownMenuItem
+                      key={m.id}
+                      onSelect={() => setCoachRole(m.id)}
+                      className="gap-2"
+                    >
+                      <m.icon className="size-4 shrink-0 text-ink-muted" aria-hidden="true" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block">{m.label}</span>
+                        <span className="block text-[12px] font-normal text-ink-muted">{m.hint}</span>
+                      </span>
+                      {coachRole === m.id ? (
+                        <Check className="size-4 shrink-0" aria-hidden="true" />
+                      ) : null}
+                    </DropdownMenuItem>
+                  ))
+                : null}
+              {compact ? (
+                <DropdownMenuItem onSelect={() => toggleDictation()}>
+                  {listening ? "Stop dictation" : "Dictation"}
+                </DropdownMenuItem>
+              ) : null}
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <label htmlFor="composer" className="sr-only">
+          <label htmlFor={compact ? "dock-composer" : "composer"} className="sr-only">
             Message
           </label>
           <div className="relative flex min-h-8 min-w-0 flex-1 items-center">
             <textarea
               ref={ref}
-              id="composer"
+              id={compact ? "dock-composer" : "composer"}
               rows={1}
               value={text}
               disabled={disabled}
-              placeholder=""
+              placeholder={placeholder ?? ""}
               className="relative z-10 block min-h-8 w-full resize-none bg-transparent py-1 text-[15px] leading-6 text-ink outline-none focus-visible:!shadow-none"
               onChange={(e) => onText(e.target.value)}
               onKeyDown={(e) => {
@@ -179,7 +227,7 @@ export function CoachComposer({
                 }
               }}
             />
-            {empty ? (
+            {showRoll ? (
               <span
                 aria-hidden="true"
                 className="pointer-events-none absolute inset-0 flex items-center overflow-hidden text-[15px] leading-6 text-ink-muted"
@@ -193,55 +241,60 @@ export function CoachComposer({
         </div>
 
         <div className="ml-3 flex shrink-0 items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              type="button"
-              aria-label="Coach speed"
-              className="flex h-8 items-center gap-1 rounded-full px-2.5 text-[13px] font-[510] text-ink hover:bg-surface-2"
-            >
-              {mode.label}
-              <ChevronDown className="size-3 text-ink-muted" aria-hidden="true" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" side="top" className="min-w-52">
-              {MODES.map((m) => (
-                <DropdownMenuItem
-                  key={m.id}
-                  onSelect={() => setCoachRole(m.id)}
-                  className="gap-2"
+          {compact ? null : (
+            <>
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  type="button"
+                  aria-label="Coach speed"
+                  className="flex h-8 items-center gap-1 rounded-full px-2.5 text-[13px] font-[510] text-ink hover:bg-surface-2"
                 >
-                  <m.icon className="size-4 shrink-0 text-ink-muted" aria-hidden="true" />
-                  <span className="min-w-0 flex-1">
-                    <span className="block">{m.label}</span>
-                    <span className="block text-[12px] font-normal text-ink-muted">{m.hint}</span>
-                  </span>
-                  {coachRole === m.id ? (
-                    <Check className="size-4 shrink-0" aria-hidden="true" />
-                  ) : null}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  {mode.label}
+                  <ChevronDown className="size-3 text-ink-muted" aria-hidden="true" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" side="top" className="min-w-52">
+                  {MODES.map((m) => (
+                    <DropdownMenuItem
+                      key={m.id}
+                      onSelect={() => setCoachRole(m.id)}
+                      className="gap-2"
+                    >
+                      <m.icon className="size-4 shrink-0 text-ink-muted" aria-hidden="true" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block">{m.label}</span>
+                        <span className="block text-[12px] font-normal text-ink-muted">{m.hint}</span>
+                      </span>
+                      {coachRole === m.id ? (
+                        <Check className="size-4 shrink-0" aria-hidden="true" />
+                      ) : null}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
 
-          <button
-            type="button"
-            aria-label={listening ? "Stop dictation" : "Dictation"}
-            aria-pressed={listening}
-            onClick={toggleDictation}
-            className={cn(
-              "flex size-8 items-center justify-center rounded-full transition-[background-color,color] duration-[var(--duration-fast)]",
-              listening
-                ? "bg-accent-muted text-ink"
-                : "text-ink-muted hover:bg-surface-2 hover:text-ink",
-            )}
-          >
-            <Mic className="size-4" aria-hidden="true" />
-          </button>
+              <button
+                type="button"
+                aria-label={listening ? "Stop dictation" : "Dictation"}
+                aria-pressed={listening}
+                onClick={toggleDictation}
+                className={cn(
+                  "flex size-8 items-center justify-center rounded-full transition-[background-color,color] duration-[var(--duration-fast)]",
+                  listening
+                    ? "bg-accent-muted text-ink"
+                    : "text-ink-muted hover:bg-surface-2 hover:text-ink",
+                )}
+              >
+                <Mic className="size-4" aria-hidden="true" />
+              </button>
+            </>
+          )}
 
-          {working || !idle ? (
+          {compact || working || !idle ? (
             <button
               type="submit"
               aria-label={working ? "Stop" : "Send"}
-              className="flex size-8 items-center justify-center rounded-full bg-accent text-on-accent hover:bg-accent-hover enabled:active:scale-[0.97]"
+              disabled={compact && idle && !working}
+              className="flex size-8 items-center justify-center rounded-full bg-accent text-on-accent hover:bg-accent-hover enabled:active:scale-[0.97] disabled:opacity-50"
             >
               {working ? (
                 <Square className="size-3 fill-current" aria-hidden="true" />

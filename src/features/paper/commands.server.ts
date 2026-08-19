@@ -1,7 +1,14 @@
 import { z } from "zod";
 import { defineCommand } from "@/core/commands/define";
 import { newId } from "@/core/ids";
-import { emptyCv, emptyLetter, paperContentSchema } from "@/features/paper/model";
+import {
+  applyPaperPatch,
+  emptyCv,
+  emptyLetter,
+  paperBlockPatchSchema,
+  paperContentSchema,
+  patchKeys,
+} from "@/features/paper/model";
 import { loadProfile } from "@/features/profile/load.server";
 
 defineCommand({
@@ -79,26 +86,64 @@ defineCommand({
   },
 });
 
+const paperUpdateBlockInput = z
+  .object({
+    id: z.string(),
+    name: z.string().optional(),
+    contact: z.string().optional(),
+    experience: z
+      .array(
+        z.object({
+          id: z.string(),
+          org: z.string(),
+          role: z.string(),
+          dates: z.string(),
+          bullets: z.array(z.string()),
+        }),
+      )
+      .optional(),
+    education: z
+      .array(z.object({ id: z.string(), school: z.string(), line: z.string() }))
+      .optional(),
+    skills: z.array(z.string()).optional(),
+    proofLines: z.array(z.string()).optional(),
+    paragraphs: z.array(z.string()).optional(),
+    situation: z.string().optional(),
+  })
+  .refine(
+    (value) => {
+      const { id: _id, ...rest } = value;
+      return paperBlockPatchSchema.safeParse(rest).success;
+    },
+    { message: "update exactly one block" },
+  );
+
 defineCommand({
   name: "paper.updateBlock",
   agent: true,
-  description: "Update one field or block on a paper. Never rewrite the whole document.",
-  input: z.object({
-    id: z.string(),
-    content: paperContentSchema,
-  }),
+  description:
+    "Update exactly one block on a CV or letter. Pass id and one of name, contact, experience, education, skills, proofLines, paragraphs, or situation. Never send the whole document.",
+  input: paperUpdateBlockInput,
   async handler({ actor, input, client }) {
+    const { id, ...rest } = input;
+    const patch = paperBlockPatchSchema.parse(rest);
     const { rows } = await client.query(
       `select content from papers where id=$1 and user_id=$2`,
-      [input.id, actor.userId],
+      [id, actor.userId],
     );
+    const current = paperContentSchema.parse(rows[0]?.content ?? {});
+    const inversePatch: Record<string, unknown> = { id };
+    for (const key of patchKeys(patch)) {
+      inversePatch[key] = current[key];
+    }
+    const next = applyPaperPatch(current, patch);
     await client.query(
       `update papers set content=$3::jsonb, updated_at=now() where id=$1 and user_id=$2`,
-      [input.id, actor.userId, JSON.stringify(input.content)],
+      [id, actor.userId, JSON.stringify(next)],
     );
     return {
       result: { ok: true },
-      inverse: { name: "paper.updateBlock", input: { id: input.id, content: rows[0]?.content } },
+      inverse: { name: "paper.updateBlock", input: inversePatch },
     };
   },
 });

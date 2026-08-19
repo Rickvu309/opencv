@@ -22,7 +22,7 @@ An isolated module ([ADR 0004](adr/0004-coach-in-process.md)) with four parts:
 
 **Persona** (`persona.md`): a mentor a few years ahead. Second person, plain sentences, no exclamation marks, three paragraphs at most. Evidence before advice — every claim rests on the profile or real data, and missing data means asking, not guessing. Always one concrete next step. Honest about distance. Never claims an action without a successful tool call: until a tool returns success, nothing has changed, and saying otherwise is the one unforgivable lie.
 
-**Context builder**: assembles what the model sees each turn — a profile snapshot, counts and recent items from each feature, the screen the user is on, and the conversation so far. The context is built from feature queries, so what the Coach sees is exactly what the user could see. Nothing UI-local (viewport, popovers) ever enters context.
+**Context builder**: assembles what the model sees each turn — a profile snapshot, the screen the user is on, the opened paper when the screen is `/paper/$paperId`, an optional highlighted excerpt from that page, counts and recent items from each feature, and the conversation so far. The context is built from feature queries, so what the Coach sees is exactly what the user could see. Nothing UI-local (viewport, popovers) ever enters context.
 
 **Tools**: generated from the command registry — every command with `agent: true` becomes a tool, its Zod schema and description included, so the Coach's hands and the user's hands are the same hands ([ADR 0002](adr/0002-command-bus.md)). Read tools wrap feature queries. Task AI functions (below) are also exposed as tools where a conversation benefits, like drafting a letter.
 
@@ -37,7 +37,7 @@ Non-conversational functions that call the gateway directly. Owned by the featur
 | Feature | Function |
 |---|---|
 | Search | Extract requirement lines from pasted posting text; score fit against the profile with per-requirement working |
-| Paper | Sharpen a bullet into a result line; draft a cover letter from the profile and an opening |
+| Paper | Sharpen a bullet into a result line (Coach tool `paper.sharpenLine`, then `paper.updateBlock` to write); draft a cover letter from the profile and an opening |
 | Pitch | Draft a bio, intro, or interview answer from the profile |
 | Proof | **The interviewer** (signature): question prompts that pull specifics out of the user about work they actually did — what it was, what they did, what came of it — and the arranger that shapes a log into a publishable story without adding a single fact the user did not give |
 

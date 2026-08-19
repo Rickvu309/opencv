@@ -108,6 +108,7 @@ export async function sendCoachTurn(opts: {
   screen?: string;
   grants?: string[];
   role?: "cheap" | "chat" | "drafting";
+  excerpt?: { text: string; label?: string };
   signal?: AbortSignal;
   onText: (accumulated: string) => void;
   onReasoning?: (accumulated: string) => void;
@@ -125,6 +126,7 @@ export async function sendCoachTurn(opts: {
       screen: opts.screen,
       grants: opts.grants ?? [],
       role: opts.role,
+      excerpt: opts.excerpt,
     }),
     signal: opts.signal,
   });
