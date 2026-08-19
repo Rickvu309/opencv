@@ -4,6 +4,7 @@ import { buttonAttrs, Button } from "@/ui/button";
 import { Input } from "@/ui/input";
 import { Loader } from "@/ui/loader";
 import { Mark } from "@/ui/mark";
+import { demoProof } from "@/features/landing/model";
 import { cn } from "@/lib/utils";
 
 export interface LandingWaitlistProps {
@@ -61,23 +62,7 @@ export function LandingPage({
 
           <LandingComposer onSend={onComposerSend} />
 
-          <nav
-            aria-label="Account"
-            className="mx-auto mt-8 inline-flex rounded-[var(--radius-container)] border border-hairline bg-surface-2 p-1.5"
-          >
-            <a
-              href="/sign-in"
-              className="inline-flex h-10 min-w-28 items-center justify-center rounded-[var(--radius-control)] px-4 text-[13px] font-[510] text-ink-muted hover:bg-surface-3 hover:text-ink"
-            >
-              Sign in
-            </a>
-            <a
-              href="/sign-up"
-              className="inline-flex h-10 min-w-28 items-center justify-center rounded-[var(--radius-control)] bg-accent px-4 text-[13px] font-[510] text-on-accent hover:bg-accent-hover"
-            >
-              Sign up
-            </a>
-          </nav>
+          <DemoProofCard />
         </section>
 
         <section id="waitlist" className="mx-auto w-full max-w-4xl scroll-mt-20 px-4 pb-20">
@@ -103,6 +88,42 @@ export function LandingPage({
         </div>
       </footer>
     </div>
+  );
+}
+
+function DemoProofCard() {
+  const href = `/p/${demoProof.slug}`;
+  const [copied, setCopied] = useState(false);
+
+  async function copyLink() {
+    const url = new URL(href, window.location.origin).href;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1200);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  return (
+    <article className="mx-auto mt-8 flex aspect-[9/16] w-full max-w-[360px] flex-col overflow-hidden rounded-[var(--radius-container)] border border-hairline bg-surface-1 text-left">
+      <div className="flex items-center justify-between gap-3 px-4 pt-4">
+        <time className="text-[13px] text-ink-muted tabular-nums" dateTime="2026-08-08">
+          {demoProof.date}
+        </time>
+        <Button type="button" variant="ghost" size="sm" onClick={() => void copyLink()}>
+          {copied ? "Copied" : "Copy link"}
+        </Button>
+      </div>
+      <a href={href} className="flex min-h-0 flex-1 flex-col gap-4 px-4 pt-6 pb-4">
+        {demoProof.sentences.map((sentence) => (
+          <p key={sentence} className="text-pretty text-[15px] leading-[1.6] text-ink">
+            {sentence}
+          </p>
+        ))}
+      </a>
+    </article>
   );
 }
 

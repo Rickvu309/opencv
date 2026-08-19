@@ -14,9 +14,9 @@ Show the product after one promise. The Coach builds your CV, finds openings tha
 
 - `/` — in order, cloned from onyx.app:
   1. Sticky nav, cloned from onyx.app: mark + OpenPath, Sign in (outline), Start now (primary).
-  2. Hero: who it is for, the promise, the product composer, then Sign in / Sign up in one segmented box (12px shell, 6px pad, 6px inner).
+  2. Hero: who it is for, the promise, the product composer, then a 360px phone-shaped card of the published Proof at `/p/demo` (date, two sentences, Copy link). Header keeps Sign in / Start now.
   3. Waitlist, then footer (mark, year, Sign in, Start now).
-- Primary: Start now (`/sign-up`). Sign in is outline. A "See an example" door waits until a real public example page exists.
+- Primary: Start now (`/sign-up`). Sign in is outline. The card under the composer is the published Proof; the sentences open `/p/demo`.
 - Fast on a mid-range Android phone: CSS grid background only. No animation walls, logo ticker, or video.
 
 ## Copy
@@ -24,7 +24,7 @@ Show the product after one promise. The Coach builds your CV, finds openings tha
 - Headline: "Build your CV and find openings that fit"
 - Who: "For students and new graduates"
 - Composer placeholder: "Write to the Coach"
-- Doors: segmented box under the composer, Sign in / Sign up.
+- Under the composer: the `/p/demo` card. No extra title. Copy link copies the public URL.
 - Waitlist: "Leave your email." / "If you are not starting now, we will write when there is news." Join. Placeholder `you@email.com`. "You're on the list. We'll email you."
 - Waitlist errors: "Enter an email." / "That did not go through. Try again."
 
