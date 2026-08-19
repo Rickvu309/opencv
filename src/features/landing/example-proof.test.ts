@@ -38,5 +38,6 @@ describe("demo Proof card", () => {
     assert.match(src, /demoProof/);
     assert.match(src, /Copy link/);
     assert.match(src, /\/p\/\$\{demoProof\.slug\}|\/p\/demo/);
+    assert.doesNotMatch(src, /aspect-\[9\/16\]/);
   });
 });

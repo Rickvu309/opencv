@@ -107,7 +107,7 @@ function DemoProofCard() {
   }
 
   return (
-    <article className="mx-auto mt-8 flex aspect-[9/16] w-full max-w-[360px] flex-col overflow-hidden rounded-[var(--radius-container)] border border-hairline bg-surface-1 text-left">
+    <article className="mx-auto mt-8 w-full max-w-[360px] rounded-[var(--radius-container)] border border-hairline bg-surface-1 text-left">
       <div className="flex items-center justify-between gap-3 px-4 pt-4">
         <time className="text-[13px] text-ink-muted tabular-nums" dateTime="2026-08-08">
           {demoProof.date}
@@ -116,7 +116,7 @@ function DemoProofCard() {
           {copied ? "Copied" : "Copy link"}
         </Button>
       </div>
-      <a href={href} className="flex min-h-0 flex-1 flex-col gap-4 px-4 pt-6 pb-4">
+      <a href={href} className="flex flex-col gap-4 px-4 pt-6 pb-4">
         {demoProof.sentences.map((sentence) => (
           <p key={sentence} className="text-pretty text-[15px] leading-[1.6] text-ink">
             {sentence}
