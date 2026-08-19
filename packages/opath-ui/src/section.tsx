@@ -4,12 +4,14 @@ import { Label } from "./label";
 export function Section({
   label,
   children,
+  id,
 }: {
   label: string;
   children: ReactNode;
+  id?: string;
 }) {
   return (
-    <section className="mt-8">
+    <section id={id} className="mt-8 scroll-mt-4">
       <h2 className="text-balance text-[18px] font-[510] leading-[1.4] tracking-[-0.012em]">
         {label}
       </h2>

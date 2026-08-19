@@ -13,7 +13,7 @@ Facts (education, experience, skills as context rows, links) and context (target
 ## Screens
 
 - Reached from the account control, not the core rail ([flows.md](../flows.md) edge-case nav).
-- `/profile` — band, then identity first. Completeness is a fact inside that section with its basis ("62 of 100, from what you actually provided"), never a hero metric or page subtitle. Then experience, education, facts, links. The Coach dock travels here.
+- `/profile` — Lab form layout, stacked sections, never columns. Band title **Profile**; the one primary is fill the emptiest section (Add a fact / Add experience / Add education / Add a link). Once name and school or experience are there, **Start a CV** sits as a quiet secondary and becomes the primary when every section has something. Completeness is an InfoBlock inside Identity with its basis ("62 of 100, from what you actually provided"), never a hero metric or page subtitle. Identity is FieldRows (name, target role, location, time available) with a quiet save. Experience and facts are Cards with Edit / Remove; add forms use a label above a full-width field, matching Pitch. Education is FieldRows plus a courses textarea. Links are three FieldRows (LinkedIn, GitHub, Portfolio). Unfilled sections show a payback InfoBlock. Destructive removes confirm. The Coach dock travels here.
 
 ## Data
 
@@ -35,7 +35,7 @@ When the user mentions a fact in conversation, the Coach may record it (`profile
 
 ## Empty state
 
-"This is what everything else is written from. Add what you have — school, one job or project, one link." One primary action: add the first fact.
+"This is what everything else is written from. Add what you have — school, one job or project, one link." The band carries the door: Add a fact. Unfilled sections keep their payback in place.
 
 ## Out of scope
 
