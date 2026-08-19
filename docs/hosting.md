@@ -38,17 +38,28 @@ Local galleries for review. `npm run storybook` starts both.
 | Opath (Production) | `npm run storybook:production` | http://localhost:6006 |
 | Opath (Lab) | `npm run storybook:lab` | http://localhost:6007 |
 
-The hosted Storybook on Vercel is Opath (Production) (`npm run build-storybook`). A second Vercel project is Git-linked to `github.com/quanvu309/openpath`. Config lives in `vercel.json` in this repo so it is reviewable: `buildCommand` is `npm run build-storybook`, `outputDirectory` is `storybook-static`, `framework` is null.
+The hosted galleries are two Vercel projects on the same Git repo (`github.com/quanvu309/openpath`). A push to `main` is Railway plus both Storybooks; they cannot take each other down.
+
+| Project | Host | Build | Output | Ignore command |
+|---|---|---|---|---|
+| `opath-production` | https://opath-production.vercel.app | `npm run build-storybook` | `storybook-static` | [scripts/storybook-ignored-build.sh](../scripts/storybook-ignored-build.sh) |
+| `opath-lab` | https://opath-lab.vercel.app | `npm run build-storybook:lab` | `storybook-static-ui` | [scripts/storybook-ignored-build-lab.sh](../scripts/storybook-ignored-build-lab.sh) |
+
+Config: Production uses root [vercel.json](../vercel.json). Lab uses [vercel.lab.json](../vercel.lab.json) — set the Lab project's Build Command, Output Directory, and Ignored Build Step in the Vercel dashboard to match that file (Vercel only auto-reads `vercel.json` at the repo root).
 
 Storybook uses `.storybook/vite.config.ts` (React, Tailwind v4, path aliases) and never loads the app's `tanstackStart()` / `nitro()` plugins. `.storybook/main.ts` stubs `@tanstack/react-start` and the command client so the gallery stays browser-only.
 
-- Production deploys on every push to `main`.
+- Production deploys on every push to `main` when Production Storybook paths change.
+- Lab deploys on every push to `main` when `packages/opath-ui` or Lab Storybook config changes.
 - Preview URLs on every pull request.
-- Ignored Build Step is `scripts/storybook-ignored-build.sh` (exit 0 skip, exit 1 build). It skips when the commit did not touch `packages/opath-ui`, `src/ui`, `.storybook`, `src/styles`, or `package.json`.
 
 A failed Storybook build cannot affect a Railway app deploy, and the reverse is also true.
 
-Connecting the project is a one-time dashboard step (Import Git Repository → this repo → use `vercel.json`). No `VERCEL_TOKEN` is stored in GitHub.
+Connecting each project is a one-time dashboard step (Import Git Repository → this repo). For Lab, override Build Command / Output Directory / Ignored Build Step to match `vercel.lab.json`. No `VERCEL_TOKEN` is stored in GitHub.
+
+## Cursor Cloud
+
+A Cloud Agent environment must name scripts that exist in this repo. Install is [`scripts/cursor-cloud-install.sh`](../scripts/cursor-cloud-install.sh); start is [`scripts/cursor-cloud-start.sh`](../scripts/cursor-cloud-start.sh). Config: [`.cursor/environment.json`](../.cursor/environment.json).
 
 ## Ship an update
 
@@ -71,6 +82,7 @@ Railway rebuilds both services from that commit. Vercel rebuilds Storybook if th
 | Notifications or search ingestion stall | Worker down | Jobs queue up in Postgres and drain on recovery; check worker deploy logs |
 | Sign-in 500s | Missing `SESSION_SECRET` | Set it; the web service refuses to boot without it rather than issuing unsigned cookies |
 | Storybook 404 / old stories | Vercel ignored the build, or Storybook picked up the app Vite config | Confirm the ignored-build-step paths; Storybook must use `.storybook/vite.config.ts` (no `tanstackStart` / `nitro`) |
+| Cloud Agent install exit 127 | `install`/`start` point at missing `scripts/cursor-cloud-*.sh` | Keep those scripts in git; see [AGENTS.md](../AGENTS.md) Cursor Cloud section |
 
 ## Why this shape
 

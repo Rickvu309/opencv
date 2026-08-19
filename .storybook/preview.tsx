@@ -33,7 +33,17 @@ const preview: Preview = {
     a11y: { test: "todo" },
     options: {
       storySort: {
-        order: ["Primitives", "Coach", "Auth", "Landing"],
+        order: [
+          "Primitives",
+          "Coach",
+          "Auth",
+          "Landing",
+          "Onboarding",
+          "Profile",
+          "Settings",
+          "Drive",
+          "Share",
+        ],
       },
     },
   },

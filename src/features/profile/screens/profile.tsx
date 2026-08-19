@@ -1,94 +1,52 @@
 import { useQuery } from "@tanstack/react-query";
 import { getProfileFn } from "@/features/profile/queries";
 import { runCommand } from "@/ui/run-command";
-import { Button } from "@/ui/button";
-import { Input } from "@/ui/input";
-import { Band } from "@/ui/band";
-import { FieldRow, Section } from "@/ui/section";
-import { EmptyState, QueryError } from "@/ui/empty-state";
-import { SkeletonSection } from "@/ui/skeleton";
+import { ProfileView } from "@/features/profile/components/profile-view";
 import { useState } from "react";
 
 export function ProfileScreen() {
   const q = useQuery({ queryKey: ["profile"], queryFn: () => getProfileFn() });
   const [name, setName] = useState<string | null>(null);
+  const [targetRole, setTargetRole] = useState<string | null>(null);
   const p = q.data?.profile;
   const empty =
     p && !p.name && !p.education.school && p.experience.length === 0 && p.facts.length === 0;
 
   return (
-    <div className="max-w-xl">
-      <Band title="Profile" />
-      {q.isPending ? <SkeletonSection /> : null}
-      {q.isError ? <QueryError onRetry={() => void q.refetch()} /> : null}
-      {p ? (
-        <>
-          {empty ? (
-            <EmptyState
-              kind="first-run"
-              title="This is what everything else is written from. Add what you have — school, one job or project, one link."
-            />
-          ) : null}
-          <Section label="Identity">
-            <p className="text-[13px] leading-[1.5] text-ink-muted tabular-nums">
-              {q.data?.completeness} of 100, from what you actually provided.
-            </p>
-            <FieldRow label="Name" htmlFor="name">
-              <Input
-                id="name"
-                value={name ?? p.name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </FieldRow>
-            <FieldRow label="Target role" htmlFor="role">
-              <Input
-                id="role"
-                defaultValue={p.targetRole ?? ""}
-                placeholder="Analyst, or leave blank if you're not sure"
-              />
-            </FieldRow>
-            <div className="flex justify-end pt-3">
-              <Button
-                onClick={() => {
-                  const role = (document.getElementById("role") as HTMLInputElement).value;
-                  void runCommand("profile.update", {
-                    name: name ?? p.name,
-                    targetRole: role || null,
-                  }).then(() => q.refetch());
-                }}
-              >
-                Save identity
-              </Button>
-            </div>
-          </Section>
-          <Section label="Education">
-            <p className="text-ink-muted">
-              {p.education.school || "Not added yet"} {p.education.major}
-            </p>
-          </Section>
-          <Section label="Experience">
-            <div className="space-y-3">
-            {p.experience.map((e) => (
-              <p key={e.id}>
-                {e.role} · {e.org}
-              </p>
-            ))}
-            <Button
-              variant="outline"
-              onClick={() =>
-                void runCommand("profile.addExperience", {
-                  org: "New organisation",
-                  role: "Role",
-                  detail: [],
-                }).then(() => q.refetch())
-              }
-            >
-              Add experience
-            </Button>
-            </div>
-          </Section>
-        </>
-      ) : null}
-    </div>
+    <ProfileView
+      pending={q.isPending}
+      error={q.isError}
+      onRetry={() => void q.refetch()}
+      empty={Boolean(empty)}
+      data={
+        p
+          ? {
+              completeness: q.data?.completeness ?? 0,
+              name: p.name,
+              targetRole: p.targetRole ?? "",
+              education: { school: p.education.school, major: p.education.major },
+              experience: p.experience.map((e) => ({ id: e.id, role: e.role, org: e.org })),
+            }
+          : undefined
+      }
+      name={name ?? p?.name ?? ""}
+      onName={setName}
+      targetRole={targetRole ?? p?.targetRole ?? ""}
+      onTargetRole={setTargetRole}
+      onSaveIdentity={() => {
+        if (!p) return;
+        void runCommand("profile.update", {
+          name: name ?? p.name,
+          targetRole: (targetRole ?? p.targetRole ?? "") || null,
+        }).then(() => q.refetch());
+      }}
+      onAddExperience={() =>
+        void runCommand("profile.addExperience", {
+          org: "New organisation",
+          role: "Role",
+          detail: [],
+        }).then(() => q.refetch())
+      }
+    />
   );
 }

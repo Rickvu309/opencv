@@ -24,3 +24,23 @@ export const SignUp: Story = {
     onSubmit: async () => ({ ok: true }),
   },
 };
+
+export const SignInError: Story = {
+  args: {
+    mode: "sign-in",
+    onSuccess: () => undefined,
+    onSubmit: async () => ({ ok: false, error: "Email or password is wrong. Try again." }),
+  },
+};
+
+export const SignUpTaken: Story = {
+  args: {
+    mode: "sign-up",
+    onSuccess: () => undefined,
+    onSubmit: async () => ({
+      ok: false,
+      field: "email",
+      error: "That email is already in use. Sign in instead.",
+    }),
+  },
+};

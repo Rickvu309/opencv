@@ -59,7 +59,7 @@ export function BandFilter({
           type="button"
           onClick={() => onChange(opt.id)}
           className={cn(
-            "inline-flex min-h-[var(--size-touch)] items-center rounded-[var(--radius-control)] px-3 text-[13px]",
+            "inline-flex min-h-[var(--size-touch)] items-center rounded-[var(--radius-control)] px-3 text-[13px] md:min-h-10",
             value === opt.id
               ? "bg-surface-3 text-accent"
               : "text-ink-muted hover:bg-surface-2",

@@ -1,7 +1,13 @@
 import type { ReactNode } from "react";
 
 export function Conversation({ children }: { children?: ReactNode }) {
-  return <div className="flex min-h-80 flex-col">{children}</div>;
+  return (
+    <div className="flex min-h-80 flex-col rounded-[var(--radius-container)] border border-hairline bg-surface-1">
+      {children ?? (
+        <p className="p-4 text-[13px] text-ink-muted">This AI preview is not loaded in Lab.</p>
+      )}
+    </div>
+  );
 }
 
 export function ConversationContent({ children }: { children?: ReactNode }) {
