@@ -47,7 +47,7 @@ The hosted galleries are two Vercel projects on the same Git repo (`github.com/q
 
 Config: Production uses root [vercel.json](../vercel.json). Lab uses [vercel.lab.json](../vercel.lab.json) — set the Lab project's Build Command, Output Directory, and Ignored Build Step in the Vercel dashboard to match that file (Vercel only auto-reads `vercel.json` at the repo root).
 
-Storybook uses `.storybook/vite.config.ts` (React, Tailwind v4, path aliases) and never loads the app's `tanstackStart()` / `nitro()` plugins. `.storybook/main.ts` stubs `@tanstack/react-start` and the command client so the gallery stays browser-only.
+Storybook uses `.storybook/vite.config.ts` (React, Tailwind v4, path aliases) and never loads the app's `tanstackStart()` / `nitro()` plugins. `.storybook/main.ts` stubs `@tanstack/react-start`, the command client, auth session/store, and the database client so the gallery stays browser-only.
 
 - Production deploys on every push to `main` when Production Storybook paths change.
 - Lab deploys on every push to `main` when `packages/opath-ui` or Lab Storybook config changes.

@@ -24,6 +24,18 @@ const config: StorybookConfig = {
         replacement: path.join(dir, "stubs/commands-client.ts"),
       },
       {
+        find: "@/core/auth/store",
+        replacement: path.join(dir, "stubs/auth-store.ts"),
+      },
+      {
+        find: "@/core/auth/session",
+        replacement: path.join(dir, "stubs/auth-session.ts"),
+      },
+      {
+        find: "@/core/db/client.server",
+        replacement: path.join(dir, "stubs/db-client.ts"),
+      },
+      {
         find: "@tanstack/react-start/server",
         replacement: path.join(dir, "stubs/react-start.ts"),
       },
@@ -35,12 +47,11 @@ const config: StorybookConfig = {
     if (Array.isArray(config.resolve.alias)) {
       config.resolve.alias = [...aliases, ...config.resolve.alias];
     } else {
-      config.resolve.alias = {
-        ...(config.resolve.alias ?? {}),
-        "@/core/commands/client": aliases[0]!.replacement,
-        "@tanstack/react-start/server": aliases[1]!.replacement,
-        "@tanstack/react-start": aliases[2]!.replacement,
+      const asObject: Record<string, string> = {
+        ...(config.resolve.alias as Record<string, string> | undefined),
       };
+      for (const alias of aliases) asObject[alias.find] = alias.replacement;
+      config.resolve.alias = asObject;
     }
     return config;
   },
