@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { listConversationsFn } from "@/features/coach/queries";
 import { useCoachSession } from "@/features/coach/components/session";
 import { useRailHighlight } from "@/features/coach/components/rail-highlight";
@@ -23,22 +23,24 @@ import {
   DropdownMenuTrigger,
 } from "@/ui/dropdown-menu";
 import {
-  Plus,
   MessageSquare,
   FileText,
-  BadgeCheck,
-  Mic,
+  Share2,
   Search,
   Briefcase,
   CircleUser,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Mark } from "@/ui/mark";
 import { SkeletonHistory } from "@/ui/skeleton";
 import { Truncated } from "@/ui/truncated";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/ui/collapsible";
 
 const itemClass =
-  "relative z-10 flex min-h-[var(--size-touch)] w-full items-center gap-2 rounded-[var(--radius-control)] px-2 text-left text-[13px] font-[510] text-ink-secondary transition-[color,transform] duration-[var(--duration-fast)] ease-[var(--ease-out)] active:scale-[0.97] md:min-h-10";
+  "relative z-10 flex min-h-[var(--size-touch)] w-full items-center gap-2 rounded-[var(--radius-control)] px-2 text-left text-[13px] font-[510] text-ink transition-[color,background-color,transform] duration-[var(--duration-fast)] ease-[var(--ease-out)] hover:bg-surface-3 active:scale-[0.97] md:min-h-10";
 
 function PlaceIcon({
   icon: Icon,
@@ -49,8 +51,8 @@ function PlaceIcon({
 }) {
   return (
     <Icon
-      strokeWidth={1.75}
-      className={cn("size-4 shrink-0", active ? "text-ink" : "text-ink-muted")}
+      strokeWidth={active ? 2 : 1.75}
+      className="size-4 shrink-0"
       aria-hidden="true"
     />
   );
@@ -81,22 +83,81 @@ function groupLabel(iso: string | undefined, now: number) {
   return "Earlier";
 }
 
-function railActiveKey(
-  pathname: string,
-  activeThread: string | null,
-  places: ReturnType<typeof placeState>,
-) {
-  if (pathname === "/coach" && activeThread) return `t:${activeThread}`;
-  if (places.coach) return "coach";
-  if (places.proof) return "proof";
-  if (places.paper) return "paper";
-  if (places.pitch) return "pitch";
-  if (places.search) return "search";
-  if (places.apply) return "apply";
-  return null;
+const RAIL_GROUPS_KEY = "op.rail.groups";
+
+type RailGroups = {
+  history: boolean;
+  prepare: boolean;
+  opportunities: boolean;
+};
+
+const defaultGroups: RailGroups = {
+  history: true,
+  prepare: true,
+  opportunities: true,
+};
+
+function readRailGroups(): RailGroups {
+  if (typeof window === "undefined") return defaultGroups;
+  try {
+    const raw = localStorage.getItem(RAIL_GROUPS_KEY);
+    if (!raw) return defaultGroups;
+    const parsed = JSON.parse(raw) as Partial<RailGroups>;
+    return { ...defaultGroups, ...parsed };
+  } catch {
+    return defaultGroups;
+  }
 }
 
-export function Rail({ onNavigate }: { onNavigate?: () => void }) {
+function RailGroup({
+  label,
+  open,
+  onOpenChange,
+  children,
+  className,
+  collapsed,
+}: {
+  label: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  children: ReactNode;
+  className?: string;
+  collapsed?: boolean;
+}) {
+  if (collapsed) return <div className={className}>{children}</div>;
+  return (
+    <Collapsible
+      open={open}
+      onOpenChange={onOpenChange}
+      className={cn("flex flex-col gap-1", className)}
+    >
+      <CollapsibleTrigger
+        data-rail-history={label === "History" ? true : undefined}
+        className="flex min-h-10 w-full items-center justify-between gap-2 rounded-[var(--radius-control)] px-2 text-left text-[12px] font-[510] text-ink-muted hover:bg-surface-3"
+      >
+        {label}
+        <ChevronRight
+          className={cn(
+            "size-3.5 shrink-0 transition-transform duration-[150ms] ease-[var(--ease-out)] motion-reduce:transition-none",
+            open && "rotate-90",
+          )}
+          aria-hidden="true"
+        />
+      </CollapsibleTrigger>
+      <CollapsibleContent>{children}</CollapsibleContent>
+    </Collapsible>
+  );
+}
+
+export function Rail({
+  onNavigate,
+  collapsed = false,
+  onToggle,
+}: {
+  onNavigate?: () => void;
+  collapsed?: boolean;
+  onToggle?: () => void;
+}) {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const search = useRouterState({ select: (s) => s.location.search });
@@ -118,6 +179,7 @@ export function Rail({ onNavigate }: { onNavigate?: () => void }) {
   const [renameTitle, setRenameTitle] = useState("");
   const [removeId, setRemoveId] = useState<string | null>(null);
   const [historyQuery, setHistoryQuery] = useState("");
+  const [groups, setGroups] = useState<RailGroups>(readRailGroups);
   const threads = (convos.data?.conversations ?? []) as {
     id: string;
     title: string;
@@ -126,24 +188,39 @@ export function Rail({ onNavigate }: { onNavigate?: () => void }) {
   const filtered = historyQuery.trim()
     ? threads.filter((c) => c.title.toLowerCase().includes(historyQuery.trim().toLowerCase()))
     : threads;
-  const activeKey = railActiveKey(pathname, activeThread, places);
   const highlight = useRailHighlight(
-    activeKey,
-    `${pathname}:${activeThread}:${filtered.length}`,
+    `${pathname}:${activeThread}:${filtered.length}:${groups.history}:${groups.prepare}:${groups.opportunities}:${collapsed}`,
   );
+
+  useEffect(() => {
+    localStorage.setItem(RAIL_GROUPS_KEY, JSON.stringify(groups));
+  }, [groups]);
+
+  useEffect(() => {
+    if (places.paper || places.proof || places.pitch) {
+      setGroups((g) => (g.prepare ? g : { ...g, prepare: true }));
+    }
+    if (places.search || places.apply) {
+      setGroups((g) => (g.opportunities ? g : { ...g, opportunities: true }));
+    }
+    if (pathname === "/coach" && activeThread) {
+      setGroups((g) => (g.history ? g : { ...g, history: true }));
+    }
+  }, [
+    pathname,
+    activeThread,
+    places.paper,
+    places.proof,
+    places.pitch,
+    places.search,
+    places.apply,
+  ]);
+
+  const rowClass = (active?: boolean) =>
+    cn(itemClass, active && "font-[590] text-ink", collapsed && "justify-center px-0");
 
   async function closeIfMobile() {
     onNavigate?.();
-  }
-
-  async function newConversation() {
-    const created = await runCommand<{ id: string }>("conversation.start", {
-      title: "New conversation",
-    });
-    await queryClient.invalidateQueries({ queryKey: ["conversations"] });
-    setThreadId(created.result.id);
-    await navigate({ to: "/coach", search: { thread: created.result.id } });
-    await closeIfMobile();
   }
 
   async function openThread(id: string) {
@@ -173,22 +250,6 @@ export function Rail({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <div data-rail className="flex h-full min-h-0 flex-col p-2">
-      <p className="mb-1 flex h-10 items-center gap-2 px-2 text-[13px] font-[510]">
-        <Mark />
-        OpenPath
-      </p>
-      <button
-        type="button"
-        data-rail-new
-        className="mb-1 flex min-h-[var(--size-touch)] w-full items-center gap-2 rounded-[var(--radius-control)] px-2 text-[13px] font-[510] text-accent transition-[background-color,transform] duration-[var(--duration-fast)] ease-[var(--ease-out)] hover:bg-accent-muted active:scale-[0.97] md:min-h-10"
-        onClick={() => void newConversation()}
-      >
-        <span className="min-w-0 flex-1 truncate text-left">New conversation</span>
-        <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent">
-          <Plus className="size-2.5" strokeWidth={3} aria-hidden="true" />
-        </span>
-      </button>
-
       <div
         ref={highlight.navRef}
         data-rail-list
@@ -198,7 +259,7 @@ export function Rail({ onNavigate }: { onNavigate?: () => void }) {
         <span
           aria-hidden
           data-rail-highlight
-          className="pointer-events-none absolute inset-x-0 rounded-[var(--radius-control)] bg-surface-2 motion-reduce:transition-none"
+          className="pointer-events-none absolute inset-x-0 rounded-[var(--radius-control)] bg-surface-3 motion-reduce:transition-none"
           style={{
             transform: highlight.box ? `translateY(${highlight.box.top}px)` : undefined,
             height: highlight.box?.height ?? 0,
@@ -207,34 +268,136 @@ export function Rail({ onNavigate }: { onNavigate?: () => void }) {
               "transform var(--duration-base) var(--ease-out), opacity var(--duration-fast) var(--ease-out)",
           }}
         />
+        <div className="mb-2 flex h-10 min-w-0 items-center gap-2">
+          <Link
+            to="/coach"
+            search={activeThread ? { thread: activeThread } : { thread: undefined }}
+            onClick={onNavigate}
+            title="OpenPath"
+            className={cn(
+              "flex h-10 min-w-0 flex-1 items-center gap-2 overflow-hidden rounded-[var(--radius-control)] px-2 text-[13px] font-[590] text-ink",
+              collapsed && "justify-center px-0",
+            )}
+          >
+            <Mark className="size-5 shrink-0" />
+            {collapsed ? null : <span className="truncate">OpenPath</span>}
+          </Link>
+          {collapsed || !onToggle ? null : (
+            <button
+              type="button"
+              aria-label="Hide navigation"
+              onClick={onToggle}
+              className="relative z-10 flex size-8 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-surface-3"
+            >
+              <ChevronsLeft className="size-4" aria-hidden="true" />
+            </button>
+          )}
+        </div>
         <Link
           ref={highlight.setItemRef("coach")}
           to="/coach"
           search={activeThread ? { thread: activeThread } : { thread: undefined }}
           data-rail-coach
           onClick={onNavigate}
+          title="Coach"
           {...highlight.hoverProps("coach")}
-          className={cn(itemClass, places.coach && "font-[590] text-ink")}
+          className={rowClass(places.coach)}
           activeProps={{ className: "" }}
         >
           <PlaceIcon icon={MessageSquare} active={places.coach} />
-          Coach
+          {collapsed ? null : "Coach"}
         </Link>
 
         <div
           ref={highlight.scrollRef}
-          className="mt-2 flex min-h-0 flex-1 flex-col overflow-y-auto"
+          className="mt-4 flex min-h-0 flex-1 flex-col overflow-y-auto"
         >
+          <nav
+            aria-label="Places"
+            data-rail-places
+            className="flex shrink-0 flex-col gap-4"
+          >
+            <RailGroup
+              label="Prepare"
+              open={groups.prepare}
+              onOpenChange={(open) => setGroups((g) => ({ ...g, prepare: open }))}
+              collapsed={collapsed}
+            >
+            <div className="flex flex-col gap-1">
+              <Link
+                ref={highlight.setItemRef("paper")}
+                to="/paper"
+                onClick={onNavigate}
+                {...highlight.hoverProps("paper")}
+                className={rowClass(places.paper || places.proof)}
+                title="Paper"
+                activeProps={{ className: "" }}
+              >
+                <PlaceIcon icon={FileText} active={places.paper || places.proof} />
+                {collapsed ? null : "Paper"}
+              </Link>
+              <Link
+                ref={highlight.setItemRef("pitch")}
+                to="/pitch"
+                onClick={onNavigate}
+                {...highlight.hoverProps("pitch")}
+                className={rowClass(places.pitch)}
+                title="Pitch"
+                activeProps={{ className: "" }}
+              >
+                <PlaceIcon icon={Share2} active={places.pitch} />
+                {collapsed ? null : "Pitch"}
+              </Link>
+            </div>
+            </RailGroup>
+            <RailGroup
+              label="Opportunities"
+              open={groups.opportunities}
+              onOpenChange={(open) => setGroups((g) => ({ ...g, opportunities: open }))}
+              collapsed={collapsed}
+            >
+            <div className="flex flex-col gap-1">
+              <Link
+                ref={highlight.setItemRef("search")}
+                to="/search"
+                onClick={onNavigate}
+                {...highlight.hoverProps("search")}
+                className={rowClass(places.search)}
+                title="Search"
+                activeProps={{ className: "" }}
+              >
+                <PlaceIcon icon={Search} active={places.search} />
+                {collapsed ? null : "Search"}
+              </Link>
+              <Link
+                ref={highlight.setItemRef("apply")}
+                to="/applications"
+                onClick={onNavigate}
+                {...highlight.hoverProps("apply")}
+                className={rowClass(places.apply)}
+                title="Apply"
+                activeProps={{ className: "" }}
+              >
+                <PlaceIcon icon={Briefcase} active={places.apply} />
+                {collapsed ? null : "Apply"}
+              </Link>
+            </div>
+            </RailGroup>
+          </nav>
+
+          {collapsed ? null : (
           <nav
             aria-label="History"
             data-rail-threads
-            className={threads.length || convos.isPending ? "min-h-0 shrink-0" : "hidden"}
+            className="mt-4 min-h-0 shrink-0"
           >
-            <p data-rail-history className="px-2 pb-1 text-[12px] font-[510] text-ink-muted">
-              History
-            </p>
+            <RailGroup
+              label="History"
+              open={groups.history}
+              onOpenChange={(open) => setGroups((g) => ({ ...g, history: open }))}
+            >
             {threads.length > 6 ? (
-              <div className="px-1 pb-1">
+              <div className="px-2 pb-1">
                 <Input
                   aria-label="Search conversations"
                   placeholder="Search"
@@ -245,7 +408,7 @@ export function Rail({ onNavigate }: { onNavigate?: () => void }) {
               </div>
             ) : null}
             {convos.isPending ? <SkeletonHistory count={4} /> : null}
-            <ul className="flex flex-col gap-px">
+            <ul className="flex flex-col gap-1">
               {(["Today", "Yesterday", "Earlier"] as const).flatMap((label) => {
                 const group = filtered.filter(
                   (c) => groupLabel(c.last_message_at, Date.now()) === label,
@@ -319,89 +482,34 @@ export function Rail({ onNavigate }: { onNavigate?: () => void }) {
                 ];
               })}
             </ul>
+            </RailGroup>
           </nav>
-
-          <nav
-            aria-label="Places"
-            data-rail-places
-            className={cn("shrink-0", threads.length && "mt-3")}
-          >
-            <p className="px-2 pb-1 text-[12px] font-[510] text-ink-muted">Prepare</p>
-            <div className="flex flex-col gap-px">
-              <Link
-                ref={highlight.setItemRef("paper")}
-                to="/paper"
-                onClick={onNavigate}
-                {...highlight.hoverProps("paper")}
-                className={cn(itemClass, places.paper && "font-[590] text-ink")}
-                activeProps={{ className: "" }}
-              >
-                <PlaceIcon icon={FileText} active={places.paper} />
-                Paper
-              </Link>
-              <Link
-                ref={highlight.setItemRef("proof")}
-                to="/proof"
-                onClick={onNavigate}
-                {...highlight.hoverProps("proof")}
-                className={cn(itemClass, "pl-5", places.proof && "font-[590] text-ink")}
-                activeProps={{ className: "" }}
-              >
-                <PlaceIcon icon={BadgeCheck} active={places.proof} />
-                Proof
-              </Link>
-              <Link
-                ref={highlight.setItemRef("pitch")}
-                to="/pitch"
-                onClick={onNavigate}
-                {...highlight.hoverProps("pitch")}
-                className={cn(itemClass, places.pitch && "font-[590] text-ink")}
-                activeProps={{ className: "" }}
-              >
-                <PlaceIcon icon={Mic} active={places.pitch} />
-                Pitch
-              </Link>
-            </div>
-            <p className="mt-3 px-2 pb-1 text-[12px] font-[510] text-ink-muted">Opportunities</p>
-            <div className="flex flex-col gap-px">
-              <Link
-                ref={highlight.setItemRef("search")}
-                to="/search"
-                onClick={onNavigate}
-                {...highlight.hoverProps("search")}
-                className={cn(itemClass, places.search && "font-[590] text-ink")}
-                activeProps={{ className: "" }}
-              >
-                <PlaceIcon icon={Search} active={places.search} />
-                Search
-              </Link>
-              <Link
-                ref={highlight.setItemRef("apply")}
-                to="/applications"
-                onClick={onNavigate}
-                {...highlight.hoverProps("apply")}
-                className={cn(itemClass, places.apply && "font-[590] text-ink")}
-                activeProps={{ className: "" }}
-              >
-                <PlaceIcon icon={Briefcase} active={places.apply} />
-                Apply
-              </Link>
-            </div>
-          </nav>
+          )}
         </div>
       </div>
 
-      <div className="shrink-0 pt-2">
+      <div className="shrink-0 pt-4">
+        {collapsed && onToggle ? (
+          <button
+            type="button"
+            aria-label="Show navigation"
+            onClick={onToggle}
+            className={cn(itemClass, "mb-2 justify-center px-0")}
+          >
+            <ChevronsRight className="size-4 text-ink-muted" aria-hidden="true" />
+          </button>
+        ) : null}
         <DropdownMenu>
           <DropdownMenuTrigger
             className={cn(
               itemClass,
-              "overflow-visible leading-[1.6] whitespace-normal break-words hover:bg-surface-2",
+              "overflow-visible leading-[1.6] whitespace-normal break-words",
+              collapsed && "justify-center px-0",
             )}
             aria-label="Account"
           >
             <CircleUser className="size-4 shrink-0 text-ink-muted" aria-hidden="true" />
-            {accountName}
+            {collapsed ? null : accountName}
           </DropdownMenuTrigger>
           <DropdownMenuContent side="top" align="start">
             <DropdownMenuItem

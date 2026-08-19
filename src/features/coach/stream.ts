@@ -105,8 +105,9 @@ export async function readCoachStream(
 export async function sendCoachTurn(opts: {
   conversationId: string;
   text: string;
-  screen: string;
+  screen?: string;
   grants?: string[];
+  role?: "cheap" | "chat" | "drafting";
   signal?: AbortSignal;
   onText: (accumulated: string) => void;
   onReasoning?: (accumulated: string) => void;
@@ -123,6 +124,7 @@ export async function sendCoachTurn(opts: {
       text: opts.text,
       screen: opts.screen,
       grants: opts.grants ?? [],
+      role: opts.role,
     }),
     signal: opts.signal,
   });

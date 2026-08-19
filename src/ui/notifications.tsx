@@ -14,7 +14,7 @@ export function NotificationBell() {
         aria-label={unread ? `Notifications (${unread} unread)` : "Notifications"}
         aria-expanded={open}
         aria-haspopup="true"
-        className="relative flex size-11 items-center justify-center rounded-[var(--radius-control)] text-ink hover:bg-surface-2"
+        className="relative flex size-11 items-center justify-center rounded-full text-ink hover:bg-surface-2"
         onClick={() => setOpen((o) => !o)}
       >
         <Bell className="size-4" aria-hidden="true" />

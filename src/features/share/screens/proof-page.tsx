@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { getProofPageFn } from "@/features/share/queries";
-import { NotFoundState } from "@/ui/empty-state";
+import { NotFoundState, QueryError } from "@/ui/empty-state";
 import { SkeletonSection } from "@/ui/skeleton";
 
 export function ProofPageScreen({ slug }: { slug: string }) {
@@ -15,6 +15,13 @@ export function ProofPageScreen({ slug }: { slug: string }) {
       </main>
     );
   }
+  if (q.isError) {
+    return (
+      <main id="main" className="mx-auto max-w-xl px-4 py-16">
+        <QueryError onRetry={() => void q.refetch()} />
+      </main>
+    );
+  }
   if (!q.data) {
     return (
       <main id="main" className="mx-auto max-w-xl px-4 py-16">
@@ -23,9 +30,6 @@ export function ProofPageScreen({ slug }: { slug: string }) {
           href="/"
           label="Go to OpenPath"
         />
-        <footer className="mt-16 text-[13px] text-ink-muted">
-          <a href="/">OpenPath</a>
-        </footer>
       </main>
     );
   }
@@ -42,9 +46,6 @@ export function ProofPageScreen({ slug }: { slug: string }) {
         <p>{c.did}</p>
         <p>{c.came}</p>
       </section>
-      <footer className="mt-16 text-[13px] text-ink-muted">
-        <a href="/">OpenPath</a>
-      </footer>
     </main>
   );
 }

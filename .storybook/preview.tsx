@@ -2,8 +2,8 @@ import type { Preview } from "@storybook/react-vite";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import "../src/styles/globals.css";
-import { TooltipProvider } from "../src/ui/tooltip";
-import { AppToaster } from "../src/ui/toaster";
+import { TooltipProvider } from "@/ui/tooltip";
+import { AppToaster } from "@/ui/toaster";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false } },

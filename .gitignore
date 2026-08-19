@@ -5,6 +5,7 @@ node_modules
 .tanstack
 dist
 storybook-static
+storybook-static-ui
 *.local
 .env
 .env.local

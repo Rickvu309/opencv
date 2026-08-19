@@ -38,17 +38,17 @@ The signed-in shell is the Linear composition: `--canvas` chrome around a `--sur
 | `--ink-muted` | `#6f737b` | Metadata, captions, group labels, type words — the last step that passes 4.5:1 on `--surface-1` |
 | `--ink-faint` | `#8a8f98` | Placeholders and disabled text only; below AA, never body copy |
 
-### Accent — one chromatic color, three states
+### Accent — black, three states
 
 | Token | Light value | Role |
 |---|---|---|
-| `--accent` | `#5e6ad2` | Links, the one primary action, active nav text, active toggles |
-| `--accent-hover` | `#828fff` | Hover on accent fills and links; never body text on white |
-| `--accent-muted` | `rgb(94 106 210 / 0.1)` | The quiet fill behind a selected accent item |
+| `--accent` | `#000000` | Links, the one primary action, active nav text, active toggles |
+| `--accent-hover` | `#2e2e2e` | Hover on accent fills and links; never body text on white |
+| `--accent-muted` | `rgb(0 0 0 / 0.08)` | The quiet fill behind a selected accent item |
 | `--on-accent` | `#ffffff` | Text on accent fills |
-| `--focus-ring` | `0 0 0 3px rgb(94 106 210 / 0.3)` | The focus state, everywhere, unaltered |
+| `--focus-ring` | `0 0 0 3px rgb(0 0 0 / 0.25)` | The focus state, everywhere, unaltered |
 
-The accent law, copied from Linear verbatim: the accent appears on links, focus, the primary CTA, and active states — **never as decoration, never a card background, never a section tint**. One accent; a second chromatic accent is a defect.
+The accent law: the accent appears on links, focus, the primary CTA, and active states. Never as decoration, never a card background, never a section tint. One accent. Status hues stay in chips and dots only.
 
 ### Functional colors
 
@@ -72,7 +72,7 @@ One variable font. Inter Variable with `font-feature-settings: "cv01", "ss03"` s
 
 | Role | Size / line / weight / tracking | Used for |
 |---|---|---|
-| `display` | 32px / 1.3 / 590 / −0.022em | Landing promise only |
+| `display` | 32px, fluid to 64px on wide viewports (`clamp(2rem, 1.2rem + 3vw, 4rem)`) / 1.3 / 590 / −0.028em | Landing promise only |
 | `title-lg` | 24px / 1.3 / 590 / −0.017em | The band title (h1), one per screen |
 | `title` | 18px / 1.4 / 510 / −0.012em | Section headings, dialog titles |
 | `title-sm` | 15px / 1.5 / 510 / −0.012em | Row labels, card labels, the dock header |
@@ -114,7 +114,7 @@ Rules that ride along:
 | `--radius-container` | 12px | Cards, dialogs, menus, the dock, the main content panel |
 | `--radius-pill` | 9999px | Status chips, count badges |
 
-No third working radius on one screen. **Concentric rule:** a nested rounded element's radius = outer radius − the inset between them, so corners stay parallel. Documents are the exception to everything: the A4 and letters are sharp black-on-white rectangles (`--surface-1` will not theme them; they keep `#ffffff`/`#000000`), outside app rounding and app theming entirely.
+No third working radius on one screen. **Concentric rule:** when nested rounded edges sit 8px or closer, outer radius = inner radius + padding. (If the inset is larger than 8px, pick each radius on its own.) Documents are the exception to everything: the A4 and letters are sharp black-on-white rectangles (`--surface-1` will not theme them; they keep `#ffffff`/`#000000`), outside app rounding and app theming entirely.
 
 ## Elevation and z
 
@@ -160,7 +160,7 @@ The implementation checklist. "Renamed" means the old Tailwind alias should move
 | `--color-muted: #f5f5f4` | `--surface-2: #f6f6f6` | New `--surface-3: #eeeeef` for pressed/selected |
 | `--color-muted-foreground: #5c5c58` | `--ink-muted: #6f737b` | New `--ink-secondary: #4b4f56`, `--ink-faint: #8a8f98` |
 | `--color-border: #e4e4e1` | `--hairline: #e5e5e6` | |
-| `--color-accent: #1a5e45` (green) | `--accent: #5e6ad2` (indigo) | New `--accent-hover`, `--accent-muted`, `--focus-ring` |
+| `--color-accent: #1a5e45` (green) | `--accent: #000000` (black) | New `--accent-hover`, `--accent-muted`, `--focus-ring` |
 | `--color-accent-foreground` | `--on-accent: #ffffff` | |
 | `--color-destructive: #9f1d1d` | `--destructive: #c52828` | |
 | `--radius-control: 6px` | unchanged | |

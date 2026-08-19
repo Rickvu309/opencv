@@ -13,8 +13,12 @@
     "resolveJsonModule": true,
     "types": ["node", "vite/client"],
     "paths": {
+      "@/ui/run-command": ["./src/ui/run-command.ts"],
+      "@/ui/notifications": ["./src/ui/notifications.tsx"],
+      "@/ui/*": ["./packages/opath-ui/src/*"],
+      "@opath/ui/*": ["./packages/opath-ui/src/*"],
       "@/*": ["./src/*"]
     }
   },
-    "include": ["src", "scripts", "vite.config.ts", "eslint.config.mjs", ".storybook"]
+    "include": ["src", "packages/opath-ui/src", "packages/opath-ui/.storybook", "scripts", "vite.config.ts", "eslint.config.mjs", ".storybook"]
 }

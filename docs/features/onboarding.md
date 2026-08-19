@@ -15,10 +15,10 @@ Three jobs woven together: capture enough to make the product useful (goal first
 - `/onboarding` — 3–5 steps, each skippable, full keyboard support. Payback sits in the same frame as the answer (what the profile now holds):
   1. Goal: "What are you aiming for?" — free text, with an explicit honest option: "I'm not sure yet."
   2. Where you are: school, year, major.
-  3. What you have: one experience or project, one link if any.
+  3. What you have: one experience or project, one link if any (kind + URL).
   4. A short tour beat: the Coach operates the app with you, and you can undo anything it does.
 - Continue writes everything to the profile through profile commands and lands on `/coach` with starter prompts built from the answers.
-- After onboarding, an activation checklist sits quietly on `/coach` until done or dismissed: set a goal, add a fact, build a first CV, try asking the Coach.
+- After onboarding, the empty Coach is mark, composer, and three starters. The old activation checklist is not shown.
 
 ## Data
 

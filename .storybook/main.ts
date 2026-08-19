@@ -10,7 +10,7 @@ const config: StorybookConfig = {
   framework: {
     name: "@storybook/react-vite",
     options: {
-      builder: { viteConfigPath: ".storybook/vite.config.ts" },
+      builder: { viteConfigPath: path.join(dir, "vite.config.ts") },
     },
   },
   viteFinal: async (config) => {
@@ -19,6 +19,10 @@ const config: StorybookConfig = {
       {
         find: "@/core/commands/client",
         replacement: path.join(dir, "stubs/commands-client.ts"),
+      },
+      {
+        find: "@tanstack/react-start/server",
+        replacement: path.join(dir, "stubs/react-start.ts"),
       },
       {
         find: "@tanstack/react-start",
@@ -31,7 +35,8 @@ const config: StorybookConfig = {
       config.resolve.alias = {
         ...(config.resolve.alias ?? {}),
         "@/core/commands/client": aliases[0]!.replacement,
-        "@tanstack/react-start": aliases[1]!.replacement,
+        "@tanstack/react-start/server": aliases[1]!.replacement,
+        "@tanstack/react-start": aliases[2]!.replacement,
       };
     }
     return config;

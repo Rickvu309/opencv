@@ -32,7 +32,7 @@ flowchart TB
 | Coach | home | `/coach` | C1, C2, C4 |
 | Prepare | group label | none | C1 only (it is not a page) |
 | Paper | place under Prepare | `/paper`, `/paper/$paperId` | C1, C2, C3, C4 |
-| Proof | child of Paper | `/proof`, `/proof/$proofId` | C1 (via Paper), C2, C3, C4 |
+| Proof | opened from Paper | `/proof`, `/proof/$proofId` | C2, C3, C4 (C1 marks Paper) |
 | Pitch | place under Prepare | `/pitch` | C1, C2, C4 |
 | Opportunities | group label | none | C1 only (it is not a page) |
 | Search | place under Opportunities | `/search` | C1, C2, C3, C4 |
@@ -40,8 +40,8 @@ flowchart TB
 
 - **Coach** (`/coach`): home. A place row in the rail, New conversation, and History (the thread list). Signing in lands here. No dock on this page; the page is the conversation. Thread history lives only in the rail, not a second list on the page.
 - **Prepare** (label only): things you make and say.
-  - **Paper** (`/paper`): **CV / Resume**, **Letter**, **Proof**. Proof is a child of Paper in the rail. It still has `/proof` URLs and its own domain ([ADR 0005](adr/0005-proof-own-domain.md)); it is not a paper type.
-  - **Pitch** (`/pitch`): bio, intro, answers.
+  - **Paper** (`/paper`): **CV / Resume**, **Letter**. Proof still has `/proof` URLs and its own domain ([ADR 0005](adr/0005-proof-own-domain.md)); it is not a paper type and it is not a rail row. Opened from Paper, a Coach card, or a URL. `/proof` marks Paper.
+  - **Pitch** (`/pitch`): bio, intro, answers. What they share.
 - **Opportunities** (label only): things you pursue.
   - **Search** (`/search`): fit-ranked openings.
   - **Apply** (`/applications`): the tracker. Verb on purpose. Not "Applications." The route stays `/applications` until a later rename.
@@ -137,7 +137,7 @@ Not places. Rules that break the product if they are vague. The shell details li
 - **Gates.** Unsigned to sign-in. Onboarding incomplete to `/onboarding`. Sign-in and onboarding completion land on `/coach`. Public URLs stay public. Gates are the app moving you, not a channel.
 - **Empty and failure.** Every empty screen states what this place is for, in one sentence, and offers exactly one primary next step. Honesty is a feature: offline Coach, a hung turn, an empty reply, a failed export — each is shown plainly with what happened and one next step. No silent failures, no fake progress. The law (five kinds, anatomy, per-screen inventory) is [layout.md](design-system/layout.md); exact copy per place in [features/](features/), in the product voice ([copy.md](copy.md)).
 - **Notifications.** Bell on the signed-in header, not a rail item.
-- **Activation checklist.** On Chat only, dismissible, not in the rail.
+- **Empty Coach.** Mark, composer, three starters. No checklist on the empty thread.
 - **Names.** Type CV, Resume, Cover letter, Proof, Apply. Group labels: Prepare, Opportunities. Vietnamese names in the account control must not clip.
 - **Motion.** Thread clicks are high-frequency: no animation. Drawer and dock sheet are eligible. Tokens and reduced-motion: [design.md](design.md).
 

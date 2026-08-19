@@ -16,7 +16,7 @@ Postgres is the only datastore. Everything lives in the `openpath` schema. Relat
 | Table | Holds |
 |---|---|
 | `users` | `id`, `email` (unique on `lower(email)`), `password_hash`, `onboarding_completed_at`, `notification_prefs` JSONB, `created_at` |
-| `sessions` | `id` = SHA-256 of the cookie token (never the token), `user_id`, `created_at`, `expires_at` |
+| `sessions` | `id` = SHA-256 of the cookie token (never the token), `user_id`, `created_at`, `expires_at` (30 days when remembered, 1 day when not; remembered sessions renew on activity) |
 
 ### Profile
 

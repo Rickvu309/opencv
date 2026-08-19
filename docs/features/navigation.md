@@ -6,7 +6,7 @@
 
 ## Concept
 
-The signed-in shell is a rail (or a drawer on a phone), a main column, a header bell, and a Coach dock that travels except on Coach. Groups are labels. Coach is home. Proof lives under Paper in the rail and stays its own domain. The word Applications does not appear; the tracker is **Apply**.
+The signed-in shell is a rail (or a drawer on a phone), a main column, a header bell, and a Coach dock that travels except on Coach. Groups are labels. Coach is home, named next to the mark. Proof is not a rail row. The word Applications does not appear; the tracker is **Apply**.
 
 There is no `navigation` feature module and no navigation tables. Threads use `conversation.*`. Account uses profile and auth. Movement the Coach initiates uses `app.open`, defined here and listed on [coach.md](coach.md).
 
@@ -20,20 +20,15 @@ Every signed-in screen is four layers — main, chrome (rail plus header bell), 
 
 ### Desktop rail, top to bottom
 
-1. New conversation (accent action)
-2. Coach (place — `/coach`, same conversation as the dock)
-3. History (thread list; active thread marked; rename and remove use `conversation.*`. Hidden when empty so it never leaves a blank gap. Groups as Today / Yesterday / Earlier; a search filter sits above the list once it is long enough. Sorted by `last_message_at`.)
-4. **Prepare** (label)
-   - Paper, with **Proof** as its child row
-   - Pitch
-5. **Opportunities** (label)
-   - Search
-   - Apply
-6. Account control at the bottom edge, as in the ChatGPT reference (name from the profile; opens Profile, Settings, sign out)
+1. Mark + OpenPath and Hide
+2. Coach (icon+label row, same as Paper)
+3. Prepare (Paper, Pitch) and Opportunities (Search, Apply)
+4. History (collapsible, directly under Apply). The label stays even when there are no threads yet; threads appear here after the first send.
+5. Account at the bottom edge
 
-Only places are rows. CV / Resume and Letter are not rail rows; they are the type filter on `/paper`. Under Paper the rail shows exactly one child row, Proof.
+Only places are rows. CV / Resume and Letter are not rail rows; they are the type filter on `/paper`. Proof is not a rail row; it is opened from Paper, a Coach card, or a URL. `/proof` marks Paper.
 
-Active state: accent on the current place. Coach marks `/coach`. Proof marks Paper as parent. `/paper/$paperId` marks Paper. `/applications` marks Apply.
+Active state: ink weight 590 on the current place, same row style as the rest. Coach marks `/coach`. `/paper/$paperId` and `/proof` mark Paper. `/applications` marks Apply.
 
 Desktop rail defaults to 16rem and stays until 768px, where it becomes the drawer. On desktop the trailing edge is a splitter: drag to 12–20rem, arrow keys nudge 8px (Shift 32px), double-click resets to 16rem. The chosen width persists locally. The drawer stays 16rem. Dock on desktop is 20rem by at most 32rem, bottom-right, so it never covers the band. On a phone the dock is a bottom sheet at 70vh.
 
@@ -73,7 +68,7 @@ The UI has the same destinations as links, so the agent cannot go somewhere the 
 
 | State | Behaviour |
 |---|---|
-| No threads yet | Coach and New conversation stay; History is hidden; starters live on `/coach` |
+| No threads yet | Coach stays; History shows the label only; starters live on `/coach` |
 | Long thread title | Truncate; full title on hover or long-press, never wrap the rail |
 | Vietnamese account name | Must not clip stacked tone marks; test with "Nguyễn Thị Ngọc Ánh" |
 | Dock closed | A compact control to reopen; does not cover the artifact's primary action |
@@ -88,7 +83,7 @@ The UI has the same destinations as links, so the agent cannot go somewhere the 
 
 ## Empty state
 
-The rail is never empty once signed in: Coach, Prepare, and Opportunities are always there. An empty History still shows Coach and New conversation. Empty states inside a place belong to that feature.
+The rail is never empty once signed in: Coach, Prepare, Opportunities, and History are always there. Empty states inside a place belong to that feature.
 
 ## Out of scope
 

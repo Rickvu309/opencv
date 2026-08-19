@@ -1,32 +1,94 @@
-import { useState } from "react";
-import { AlertCircle, Check, ChevronDown } from "lucide-react";
+import { useEffect, useState } from "react";
+import { AlertCircle, Check, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Chip } from "@/ui/chip";
-import { Code } from "@/ui/code";
-import { Loader } from "@/ui/loader";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/ui/collapsible";
-import type { ToolCallView } from "@/features/coach/model";
 import { Button } from "@/ui/button";
-import { navigateToOpen } from "@/features/coach/open";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/ui/collapsible";
 import { useNavigate } from "@tanstack/react-router";
-import type { AppOpenResult } from "@/features/coach/model";
+import { navigateToOpen } from "@/features/coach/open";
+import type { AppOpenResult, ToolCallView } from "@/features/coach/model";
+import { payloadText, queryFromInput, toolCallCopy } from "./tool-call";
 
-function verbFor(name: string) {
-  const [noun, action] = name.split(".");
-  if (action === "open") return "Open";
-  if (action === "create" || action === "add") return `Add ${noun}`;
-  if (action === "remove") return `Remove ${noun}`;
-  if (action === "update" || action === "rename") return `Update ${noun}`;
-  if (action === "log") return "Log Proof";
-  return name.replaceAll(".", " ");
+export interface ToolCallProps {
+  label: string;
+  activeLabel: string;
+  query?: string;
+  request?: string;
+  result?: string;
+  running: boolean;
+  failed?: boolean;
+  defaultOpen?: boolean;
+  className?: string;
 }
 
-function StatusIcon({ status }: { status: ToolCallView["status"] }) {
-  if (status === "pending") return <Loader label="Running" />;
-  if (status === "failed") {
-    return <AlertCircle className="size-4 shrink-0 text-destructive" aria-hidden="true" />;
-  }
-  return <Check className="size-4 shrink-0 text-status-positive" aria-hidden="true" />;
+export function ToolCall({
+  label,
+  activeLabel,
+  query = "",
+  request = "",
+  result = "",
+  running,
+  failed = false,
+  defaultOpen = false,
+  className,
+}: ToolCallProps) {
+  const [open, setOpen] = useState(defaultOpen || failed);
+  const hasBody = Boolean(request || result);
+
+  useEffect(() => {
+    if (failed) setOpen(true);
+  }, [failed]);
+
+  return (
+    <Collapsible
+      data-slot="tool-call"
+      open={open}
+      onOpenChange={setOpen}
+      className={cn("group w-full", className)}
+    >
+      <CollapsibleTrigger className="flex min-h-[var(--size-touch)] w-full items-center gap-2 py-1 text-left text-[13px] text-ink-muted transition-[color,transform] duration-[var(--duration-fast)] ease-[var(--ease-out)] hover:text-ink active:scale-[0.97] md:min-h-10">
+        <ChevronRight
+          className="size-3.5 shrink-0 opacity-60 transition-transform duration-[150ms] ease-[var(--ease-out)] group-data-[state=open]:rotate-90 motion-reduce:transition-none"
+          aria-hidden="true"
+        />
+        {running ? (
+          <span className="think-shimmer relative min-w-0 truncate leading-none">{activeLabel}</span>
+        ) : (
+          <span className="min-w-0 truncate">{failed ? activeLabel : label}</span>
+        )}
+        {query ? (
+          <span className="max-w-[40%] shrink-0 truncate rounded-[var(--radius-control)] bg-surface-2 px-2 py-1 font-mono text-[12px] text-ink-secondary">
+            {query}
+          </span>
+        ) : null}
+        <span className="ms-auto flex w-4 shrink-0 items-center justify-end">
+          {running ? null : failed ? (
+            <AlertCircle className="size-3.5 text-destructive" aria-hidden="true" />
+          ) : (
+            <Check className="size-3.5 text-status-positive" aria-hidden="true" />
+          )}
+        </span>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        {hasBody ? (
+          <div className="mt-2 overflow-hidden rounded-[var(--radius-container)] bg-surface-2 text-[13px]">
+            {request ? (
+              <div className="px-3 pt-3 pb-2">
+                <p className="mb-1 font-mono text-[12px] text-ink-faint">Request</p>
+                <p className="font-mono break-words text-ink-muted">{request}</p>
+              </div>
+            ) : null}
+            {request && result ? <div className="mx-3 h-px bg-hairline" /> : null}
+            {result ? (
+              <div className="px-3 pt-2 pb-3">
+                <p className="mb-1 font-mono text-[12px] text-ink-faint">Result</p>
+                <p className="break-words text-ink">{result}</p>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </CollapsibleContent>
+    </Collapsible>
+  );
 }
 
 function OpenArtifact({ result }: { result: AppOpenResult & { ok: true } }) {
@@ -47,121 +109,38 @@ function OpenArtifact({ result }: { result: AppOpenResult & { ok: true } }) {
   );
 }
 
-function asRecord(value: unknown): Record<string, unknown> | null {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  return value as Record<string, unknown>;
-}
-
-function ToolBody({ call }: { call: ToolCallView }) {
-  const data = asRecord(call.output) ?? asRecord(call.input);
-  if (call.name.startsWith("paper.") && data) {
-    const before = typeof data.before === "string" ? data.before : "";
-    const after = typeof data.after === "string" ? data.after : "";
-    if (before || after) {
-      return (
-        <div className="grid gap-2 sm:grid-cols-2">
-          {before ? <Code value={before}>{before}</Code> : null}
-          {after ? <Code value={after}>{after}</Code> : null}
-        </div>
-      );
-    }
-  }
-  if (call.name.startsWith("opening.") && data) {
-    const title = typeof data.title === "string" ? data.title : call.name;
-    const company = typeof data.company === "string" ? data.company : "";
-    return (
-      <p className="text-[13px] leading-[1.5] text-ink">
-        {title}
-        {company ? <span className="text-ink-muted"> · {company}</span> : null}
-      </p>
-    );
-  }
-  if (
-    (call.name.startsWith("profile.") || call.name.startsWith("proof.")) &&
-    (call.name.endsWith(".get") || call.name.endsWith(".read") || call.name.endsWith(".list"))
-  ) {
-    const raw = JSON.stringify(call.output ?? call.input ?? {}, null, 2);
-    return <Code value={raw}>{raw}</Code>;
-  }
-  const raw =
-    typeof call.output === "string"
-      ? call.output
-      : call.output
-        ? JSON.stringify(call.output, null, 2)
-        : call.input
-          ? JSON.stringify(call.input, null, 2)
-          : "";
-  if (!raw) return null;
-  return <Code value={raw}>{raw}</Code>;
-}
-
-interface ToolCardProps {
+export interface ToolCardProps {
   call: ToolCallView;
-  dense?: boolean;
 }
 
-function ToolCard({ call, dense = false }: ToolCardProps) {
-  const failed = call.status === "failed";
-  const [open, setOpen] = useState(failed);
+export function ToolCard({ call }: ToolCardProps) {
   const isOpen = call.name === "app.open";
   const result = call.output as AppOpenResult | undefined;
-
   if (isOpen && result && result.ok && call.status === "completed") {
     return <OpenArtifact result={result} />;
   }
 
+  const { activeLabel, label } = toolCallCopy(call.name);
   return (
-    <Collapsible open={open} onOpenChange={setOpen}>
-      <div
-        className={cn(
-          "rounded-[var(--radius-control)] border border-hairline bg-surface-1",
-          failed && "border-destructive/40",
-          call.status === "pending" && "border-accent/40",
-        )}
-      >
-        <CollapsibleTrigger asChild>
-          <button
-            type="button"
-            className={cn(
-              "flex w-full items-center gap-2 text-left",
-              dense ? "px-3 py-1" : "px-3 py-2",
-              "min-h-10 hover:bg-surface-2",
-            )}
-          >
-            <StatusIcon status={call.status} />
-            <span className="min-w-0 flex-1 truncate text-[13px] text-ink">
-              {verbFor(call.name)}
-            </span>
-            <Chip tone="code">{call.name}</Chip>
-            <ChevronDown
-              className={cn(
-                "size-4 shrink-0 text-ink-muted transition-transform duration-150",
-                !open && "-rotate-90",
-              )}
-              aria-hidden="true"
-            />
-          </button>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <div className="px-3 pb-3">
-            <ToolBody call={call} />
-          </div>
-        </CollapsibleContent>
-      </div>
-    </Collapsible>
+    <ToolCall
+      label={label}
+      activeLabel={activeLabel}
+      query={queryFromInput(call.input)}
+      request={payloadText(call.input)}
+      result={payloadText(call.output)}
+      running={call.status === "pending"}
+      failed={call.status === "failed"}
+    />
   );
 }
 
-function ToolGroup({ calls }: { calls: ToolCallView[] }) {
+export function ToolGroup({ calls }: { calls: ToolCallView[] }) {
   if (calls.length === 0) return null;
-  if (calls.length === 1) return <ToolCard call={calls[0]!} />;
   return (
-    <div className="space-y-1 rounded-[var(--radius-container)] border border-hairline p-1">
+    <div className="flex w-full flex-col gap-1">
       {calls.map((call) => (
-        <ToolCard key={call.id} call={call} dense />
+        <ToolCard key={call.id} call={call} />
       ))}
     </div>
   );
 }
-
-export { ToolCard, ToolGroup };

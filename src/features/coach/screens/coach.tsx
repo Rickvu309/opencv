@@ -21,7 +21,7 @@ export function CoachScreen({ threadId }: { threadId?: string }) {
   }, [threadId, setThreadId]);
 
   return (
-    <section className="mx-auto flex h-full min-h-0 w-full max-w-2xl flex-col">
+    <section className="mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col">
       {missingThread ? (
         <p className="shrink-0">
           That conversation is not here.{" "}

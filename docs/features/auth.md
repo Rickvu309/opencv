@@ -4,7 +4,7 @@
 
 **Job:** each user's work is theirs, saved to the server, and there when they return — on any device.
 
-**Layout:** Narrow form at `/sign-in` and `/sign-up` — no rail, no dock. Heading, one sentence, the fields, one primary, a text link to the other mode ([layout.md](../design-system/layout.md)).
+**Layout:** Narrow form at `/sign-in`. Split card at `/sign-up` (form + mark panel). No rail, no dock.
 
 ## Concept
 
@@ -12,14 +12,16 @@ Email and password, a session cookie, and a gate in front of the signed-in area.
 
 ## Screens
 
-- `/sign-up` — email and password. Taken email: ask to sign in instead. Errors name the field.
-- `/sign-in` — a wrong pair is rejected without revealing which half was wrong. One next step on the error.
+- `/sign-up` — split card: email, then password and confirm password side by side from `sm`. Hint under the pair: "Use at least 8 characters." Mismatched confirm: "Passwords must match." Taken email: ask to sign in instead. Errors name the field. Sign-up always keeps the session for 30 days. No social login.
+- `/sign-in` — a wrong pair is rejected without revealing which half was wrong. One next step on the error. **Keep me signed in** (default on): a 30-day cookie that renews while they use the app. Unchecked: the session lasts until the browser closes.
 - Sign out lives in Settings and the account menu.
 
 ## Mechanics
 
 - Passwords hashed with bcrypt; never recoverable.
-- Session token is random; the `sessions` row stores its SHA-256, never the token. Cookie is httpOnly, secure, sameSite lax. Sessions expire and renew on activity.
+- Session token is random; the `sessions` row stores its SHA-256, never the token. Cookie is httpOnly, secure, sameSite lax.
+- Remembered sessions expire in 30 days and renew on activity once past the halfway mark (`readSession` bumps `expires_at` and refreshes the cookie via `meFn`). Unchecked sign-in sets a browser-session cookie and a 1-day `expires_at`.
+- Expired session rows are deleted by the `session.purge` worker job.
 - Request middleware resolves the session once; every query and command receives the user id from it. Signed-out access to `_app` routes redirects to `/sign-in`; `/`, auth pages, `/p/$slug`, and `/u/$handle` stay public.
 - Auth itself does not run on the command bus — sign-up and sign-in have no authenticated actor yet. They are dedicated server functions in `features/auth/`, the one sanctioned exception, documented here so nobody generalizes from it.
 

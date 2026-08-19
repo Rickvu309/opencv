@@ -18,4 +18,4 @@ The gallery that makes the ported layer reviewable is our own Storybook, hosted 
 
 ## Consequences
 
-New primitives live in `src/ui/` with co-located stories. Coach chrome ports tool cards, thinking, approval, and composer interrupt/queue. Destructive `agent: true` commands return a proposal instead of executing; the decision runs through the existing command bus so undo still works. A failed Storybook build cannot affect an app deploy.
+New primitives live in `packages/opath-ui` with co-located stories ([ADR 0007](0007-opath-ui-in-repo.md)). Coach chrome ports approval and composer interrupt/queue; reasoning panel and tool call are assistant-ui ports in the Coach feature. Destructive `agent: true` commands return a proposal instead of executing; the decision runs through the existing command bus so undo still works. A failed Storybook build cannot affect an app deploy.

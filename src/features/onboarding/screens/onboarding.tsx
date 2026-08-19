@@ -3,7 +3,17 @@ import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
 import { Label } from "@/ui/label";
+import { Checkbox } from "@/ui/checkbox";
+import { Loader } from "@/ui/loader";
 import { completeOnboardingFn } from "@/features/onboarding/queries";
+
+const linkKinds = [
+  { id: "linkedin", label: "LinkedIn" },
+  { id: "github", label: "GitHub" },
+  { id: "portfolio", label: "Portfolio" },
+] as const;
+
+type LinkKind = (typeof linkKinds)[number]["id"];
 
 export function OnboardingScreen() {
   const navigate = useNavigate();
@@ -15,24 +25,39 @@ export function OnboardingScreen() {
   const [year, setYear] = useState("");
   const [org, setOrg] = useState("");
   const [role, setRole] = useState("");
+  const [linkKind, setLinkKind] = useState<LinkKind | "">("");
+  const [linkUrl, setLinkUrl] = useState("");
+  const [pending, setPending] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   async function finish() {
-    await completeOnboardingFn({
-      data: {
-        targetRole: unsure ? null : targetRole || null,
-        school,
-        major,
-        year,
-        org,
-        role,
-      },
-    });
-    await navigate({ to: "/coach" });
+    if (pending) return;
+    setPending(true);
+    setSaveError(null);
+    try {
+      await completeOnboardingFn({
+        data: {
+          targetRole: unsure ? null : targetRole || null,
+          school,
+          major,
+          year,
+          org,
+          role,
+          linkKind: linkKind || (linkUrl ? "portfolio" : undefined),
+          linkUrl,
+        },
+      });
+      await navigate({ to: "/coach" });
+    } catch {
+      setSaveError("Couldn't save. Try again.");
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
     <main id="main" className="mx-auto max-w-lg px-4 py-12">
-      <p className="text-ink-muted tabular-nums">Step {step + 1} of 4</p>
+      <p className="text-[13px] text-ink-muted tabular-nums">{step + 1} of 4</p>
       {step === 0 ? (
         <section className="mt-4">
           <h1 className="text-balance text-[24px] font-[590] leading-[1.3] tracking-[-0.017em]">
@@ -41,10 +66,20 @@ export function OnboardingScreen() {
           <Label className="mt-6" htmlFor="goal">
             Target role
           </Label>
-          <Input id="goal" value={targetRole} onChange={(e) => setTargetRole(e.target.value)} disabled={unsure} />
-          <label className="mt-3 flex min-h-11 items-center gap-2 text-[13px]">
-            <input type="checkbox" checked={unsure} onChange={(e) => setUnsure(e.target.checked)} />
-            I'm not sure yet
+          <Input
+            id="goal"
+            value={targetRole}
+            onChange={(e) => setTargetRole(e.target.value)}
+            disabled={unsure}
+          />
+          <label className="mt-3 flex min-h-[var(--size-touch)] items-center gap-2 text-[13px]">
+            <Checkbox
+              id="unsure"
+              checked={unsure}
+              onCheckedChange={(value) => setUnsure(value === true)}
+              aria-label="I'm not sure yet"
+            />
+            I&apos;m not sure yet
           </label>
           <p className={`mt-4 text-[13px] leading-[1.5] text-ink-muted ${unsure || targetRole ? "payback-enter" : ""}`}>
             {unsure
@@ -96,11 +131,46 @@ export function OnboardingScreen() {
               <Label htmlFor="role">Role</Label>
               <Input id="role" value={role} onChange={(e) => setRole(e.target.value)} />
             </div>
+            <div>
+              <Label htmlFor="link-url">A link, if you have one</Label>
+              <Input
+                id="link-url"
+                type="url"
+                inputMode="url"
+                placeholder="https://"
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+              />
+            </div>
+            {linkUrl ? (
+              <fieldset>
+                <legend className="mb-1 text-[13px] font-[510]">What kind of link</legend>
+                <div className="flex flex-wrap gap-1">
+                  {linkKinds.map((kind) => (
+                    <button
+                      key={kind.id}
+                      type="button"
+                      aria-pressed={linkKind === kind.id}
+                      onClick={() => setLinkKind(kind.id)}
+                      className={
+                        linkKind === kind.id
+                          ? "inline-flex min-h-10 items-center rounded-[var(--radius-control)] bg-surface-3 px-3 text-[13px] text-accent"
+                          : "inline-flex min-h-10 items-center rounded-[var(--radius-control)] px-3 text-[13px] text-ink-muted hover:bg-surface-2"
+                      }
+                    >
+                      {kind.label}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+            ) : null}
           </div>
-          <p className={`mt-4 text-[13px] leading-[1.5] text-ink-muted ${org ? "payback-enter" : ""}`}>
+          <p className={`mt-4 text-[13px] leading-[1.5] text-ink-muted ${org || linkUrl ? "payback-enter" : ""}`}>
             {org
               ? `Experience on the profile: ${role || "Member"} at ${org}.`
-              : "This becomes the first experience row."}
+              : linkUrl
+                ? "The link lands on the profile."
+                : "This becomes the first experience row."}
           </p>
         </section>
       ) : null}
@@ -117,19 +187,31 @@ export function OnboardingScreen() {
               unsure ? "Goal: not sure yet" : targetRole ? `Goal: ${targetRole}` : null,
               school ? `School: ${school}` : null,
               org ? `${role || "Member"} at ${org}` : null,
+              linkUrl ? "A link on the profile" : null,
             ]
               .filter(Boolean)
               .join(". ") || "You can skip and fill the profile later."}
           </p>
         </section>
       ) : null}
+      {saveError ? (
+        <p className="mt-6 text-[13px] text-destructive" role="alert">
+          {saveError}
+        </p>
+      ) : null}
       <div className="mt-10 flex gap-3">
         {step < 3 ? (
-          <Button onClick={() => setStep((s) => s + 1)}>Continue</Button>
+          <Button onClick={() => setStep((s) => s + 1)} disabled={pending}>
+            Continue
+          </Button>
         ) : (
-          <Button onClick={() => void finish()}>Go to the Coach</Button>
+          <Button onClick={() => void finish()} disabled={pending}>
+            {pending ? <Loader label="Saving" /> : null}
+            {saveError ? "Try again" : "Go to the Coach"}
+          </Button>
         )}
-        <Button variant="ghost" onClick={() => void finish()}>
+        <Button variant="ghost" onClick={() => void finish()} disabled={pending}>
+          {pending ? <Loader label="Saving" /> : null}
           Skip
         </Button>
       </div>

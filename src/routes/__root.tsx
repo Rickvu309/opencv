@@ -2,6 +2,7 @@ import { Outlet, createRootRoute, HeadContent, Scripts } from "@tanstack/react-r
 import { SkipLink } from "@/ui/shell";
 import { TooltipProvider } from "@/ui/tooltip";
 import { AppToaster } from "@/ui/toaster";
+import { NotFoundState } from "@/ui/empty-state";
 import appCss from "@/styles/globals.css?url";
 
 export const Route = createRootRoute({
@@ -14,8 +15,12 @@ export const Route = createRootRoute({
     links: [{ rel: "stylesheet", href: appCss }],
   }),
   notFoundComponent: () => (
-    <main id="main" className="p-8">
-      <p>That page is not here.</p>
+    <main id="main" className="mx-auto max-w-xl px-4 py-16">
+      <NotFoundState
+        title="That page is not here. Open OpenPath to start."
+        href="/"
+        label="Go to OpenPath"
+      />
     </main>
   ),
   component: Root,

@@ -1,8 +1,11 @@
 import { newId } from "@/core/ids";
 import { claimJob, failJob, finishJob } from "@/core/jobs/queue";
 import { withClient } from "@/core/db/client.server";
+import { purgeExpiredSessions } from "@/core/auth/store";
 
 const workerId = `w_${newId()}`;
+const PURGE_EVERY_MS = 5 * 60 * 1000;
+let lastPurge = 0;
 
 type Handler = (payload: unknown) => Promise<void>;
 const handlers = new Map<string, Handler>();
@@ -13,6 +16,10 @@ export function registerJob(kind: string, handler: Handler) {
 
 export async function tick() {
   if (handlers.size === 0) registerBuiltins();
+  if (Date.now() - lastPurge >= PURGE_EVERY_MS) {
+    lastPurge = Date.now();
+    await purgeExpiredSessions();
+  }
   const job = await claimJob(workerId);
   if (!job) return false;
   const handler = handlers.get(job.kind);
@@ -36,6 +43,9 @@ export async function serve() {
 }
 
 function registerBuiltins() {
+  registerJob("session.purge", async () => {
+    await purgeExpiredSessions();
+  });
   registerJob("notify.deadline", async (payload) => {
     const p = payload as { userId: string; applicationId: string; role: string };
     await withClient((c) =>

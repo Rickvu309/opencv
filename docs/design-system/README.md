@@ -2,7 +2,7 @@
 
 The visual law of OpenPath, in four files. [design.md](../design.md) stays at the repo root as the standard-format file agents and tools read first; this folder is where the full system lives. Words are not here: every string a user reads passes [copy.md](../copy.md).
 
-The look is **copied from Linear** — the product, not the marketing site. One near-neutral surface ladder, one indigo accent that only ever means "interactive", a single variable font at machined weights, hairline borders instead of shadows, dense calm rows. Light theme only for now; every token carries a semantic, dark-ready name so dark mode is a value swap later, not a rename.
+The look is **black and white**: Linear's surface ladder and type, onyx.app's black primary. One near-neutral surface ladder, one black accent that only ever means "interactive", a single variable font at machined weights, hairline borders instead of shadows, dense calm rows. Light theme only for now; every token carries a semantic, dark-ready name so dark mode is a value swap later, not a rename.
 
 ## Reading order
 
@@ -12,7 +12,18 @@ The look is **copied from Linear** — the product, not the marketing site. One 
 4. **[motion.md](motion.md)** — when and how things move: two durations, one easing family, the surface inventory, the never list, reduced motion.
 5. **[components.md](components.md)** — the template craft: one block per reusable piece with anatomy, variants, states, internal spacing, and copy hooks. Screens are assembled from these blocks.
 
-The gallery that makes this reviewable is Storybook (`npm run storybook`). Production Storybook is hosted on Vercel from the same git repo; see [hosting.md](../hosting.md). If a surface takes props, it gets a story.
+The galleries that make this reviewable are two local Storybooks: Opath (Production) at `npm run storybook:production` (port 6006) and Opath (Lab) at `npm run storybook:lab` (port 6007). `npm run storybook` starts both. The hosted Storybook on Vercel is Production; see [hosting.md](../hosting.md). If a surface takes props, it gets a story.
+
+## Two workstreams, one repo
+
+Do not split a second git remote. Lab lives in [`packages/opath-ui`](../../packages/opath-ui) so Lab and Production can move in parallel ([ADR 0007](../adr/0007-opath-ui-in-repo.md)).
+
+| Workstream | Owns | Leaves alone |
+|---|---|---|
+| Opath (Lab) | `packages/opath-ui/**`, this folder, Lab Storybook | `src/features/**`, `src/core/**`, routes |
+| Opath (Production) | features, core, routes, Coach chrome | primitive internals. Compose `@/ui/*`. Missing primitive: spec it here, land it in the package |
+
+Shared seam: tokens in `src/styles/globals.css`, words in [copy.md](../copy.md).
 
 ## The contract
 
@@ -27,9 +38,10 @@ Proven sources this system copies from or leans on. When a block cites one, the 
 
 | Reference | What it is for |
 |---|---|
+| [onyx.app](https://onyx.app/) | Public landing anatomy (sticky nav, hero composer, compact bar, how-it-works). Clone structure; never copy their copy, stats, or assets. [landing.md](../features/landing.md) |
 | [Onyx Opal Storybook](https://onyx-storybook.vercel.app/) | Primary commodity design system. Port anatomy from [onyx-dot-app/onyx](https://github.com/onyx-dot-app/onyx) (`web/lib/opal`, `craft/*`). MIT except `ee/`. [ADR 0006](../adr/0006-port-opal.md) |
 | [Beautiful UI](https://www.beautifului.dev/) | AI chrome polish: rail, composer, thinking, tool chips, approvals. Map: [clone-sources.md](clone-sources.md) |
-| [assistant-ui](https://github.com/assistant-ui/assistant-ui) | ChatGPT-grade Thread / ThreadList / Composer behaviour. Copy the UX; do not install the runtime. [Docs](https://www.assistant-ui.com/docs/ui/thread) |
+| [assistant-ui](https://github.com/assistant-ui/assistant-ui) | ChatGPT-grade Thread / ThreadList / Composer / reasoning-panel / tool-call behaviour. Copy the UX; do not install the runtime. [Docs](https://www.assistant-ui.com/docs/ui/thread) |
 | [Open WebUI](https://github.com/open-webui/open-webui) | Patterns only (history groups, message actions, queued messages). Never copy source. |
 | [Local photo refs](refs/README.md) | Saved jpgs. Open these instead of fetching Mobbin again. |
 | [interfaces.dev/cheat-sheet](https://interfaces.dev/cheat-sheet) | House rules for UI, animation, typography, color naming, and accessibility, adopted wholesale |

@@ -113,8 +113,9 @@ src/
     auth/                    sessions, hashing, request middleware
     notifications/           event to in-app inbox + email
     jobs/  email/  config/
-  ui/                        shadcn primitives and shared layout pieces
+  ui/                        app-wired helpers (run-command, notification bell)
   styles/globals.css         design tokens
+packages/opath-ui/           Opath (Lab). Opath (Production) imports `@/ui/*`
 docs/                        this pack
 scripts/                     dev, db, worker entry, railway build/start
 ```
@@ -124,6 +125,7 @@ Rules that keep it maintainable for humans and agents:
 - Every feature module has the same internal shape. An agent that has seen one has seen all.
 - Routes contain no logic. Re-designing a screen touches `screens/` and `components/` only; models, commands, and queries are untouched.
 - `core/` never imports from `features/`. Features reach each other only through exported models or commands, never each other's internals.
+- `packages/opath-ui` never imports from `features/` or `core/`. Product screens import `@/ui/<name>`.
 - Every feature has a spec in `docs/features/` and the spec ships in the same PR as the code it describes.
 - No empty folders. `ai.server.ts` exists only where a feature owns AI behaviour.
 

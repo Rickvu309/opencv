@@ -14,6 +14,7 @@ export const Route = createFileRoute("/api/coach")({
           text: string;
           screen?: string;
           grants?: string[];
+          role?: "cheap" | "chat" | "drafting";
         };
         let conversationId = body.conversationId;
         if (!conversationId) {
@@ -30,6 +31,7 @@ export const Route = createFileRoute("/api/coach")({
           text: body.text,
           screen: body.screen,
           grants: body.grants,
+          role: body.role,
         });
       },
     },

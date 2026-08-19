@@ -2,7 +2,12 @@ import { Outlet, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
 import { CoachSessionProvider } from "@/features/coach/components/session";
 import { Rail } from "@/features/coach/components/rail";
-import { RailResize, useRailWidth } from "@/features/coach/components/rail-resize";
+import {
+  RailResize,
+  useRailWidth,
+  useRailCollapsed,
+  RAIL_COLLAPSED_WIDTH,
+} from "@/features/coach/components/rail-resize";
 import { CoachDock } from "@/features/coach/components/dock";
 import { NotificationBell } from "@/ui/notifications";
 import { Menu } from "lucide-react";
@@ -13,9 +18,10 @@ function SignedInChrome() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { width: railWidth, setWidth: setRailWidth, commit: commitRailWidth } = useRailWidth();
+  const { collapsed, toggle } = useRailCollapsed();
   const showDock = pathname !== "/coach";
-
   const isCoach = pathname === "/coach";
+  const frameWidth = collapsed ? RAIL_COLLAPSED_WIDTH : railWidth;
 
   return (
     <div className="flex h-svh overflow-hidden bg-canvas">
@@ -23,14 +29,24 @@ function SignedInChrome() {
         data-print-hide
         data-rail-frame
         className="relative z-[var(--z-sticky)] hidden h-svh shrink-0 print:hidden md:block"
-        style={{ width: railWidth }}
+        style={{ width: frameWidth }}
       >
         <aside className="flex h-full flex-col overflow-hidden">
-          <Rail />
+          <Rail collapsed={collapsed} onToggle={toggle} />
         </aside>
-        <RailResize width={railWidth} onLive={setRailWidth} onCommit={commitRailWidth} />
+        {collapsed ? (
+          <span aria-hidden="true" className="absolute inset-y-0 right-0 w-px bg-hairline" />
+        ) : (
+          <RailResize width={railWidth} onLive={setRailWidth} onCommit={commitRailWidth} />
+        )}
       </div>
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col p-2">
+      <div
+        className={
+          isCoach
+            ? "flex min-h-0 min-w-0 flex-1 flex-col"
+            : "flex min-h-0 min-w-0 flex-1 flex-col p-2"
+        }
+      >
         <header
           data-print-hide
           className="flex h-10 shrink-0 items-center gap-3 px-2 print:hidden"
@@ -61,7 +77,7 @@ function SignedInChrome() {
           id="main"
           className={
             isCoach
-              ? "flex min-h-0 flex-1 flex-col overflow-hidden rounded-[var(--radius-container)] border border-hairline bg-surface-1 px-5 pt-3 pb-4"
+              ? "flex min-h-0 flex-1 flex-col overflow-hidden bg-canvas px-4 pb-6"
               : "min-h-0 flex-1 overflow-y-auto rounded-[var(--radius-container)] border border-hairline bg-surface-1 px-5 py-4"
           }
         >

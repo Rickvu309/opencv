@@ -1,32 +1,41 @@
 # Landing
 
-**Track:** Commodity — single-promise SaaS landing with two doors: start now, or leave an email.
+**Track:** Commodity. Clone [onyx.app](https://onyx.app/) marketing anatomy. Restyle to OpenPath tokens and [copy.md](../copy.md). Two doors: start now, or leave an email.
 
-**Job:** turn a skeptical, anxious visitor — "is this another career-quiz app?" — into someone who starts, or at least leaves an email.
+**Job:** A skeptical visitor decides to start, or leaves an email.
 
-**Layout:** Public canvas at `/` — no signed-in chrome. The promise, then two doors; primary is start now ([layout.md](../design-system/layout.md)).
+**Layout:** Public canvas at `/`. No signed-in chrome. Sticky public nav, then a centered hero with the product composer, then the waitlist, then a quiet footer ([layout.md](../design-system/layout.md)). Reference: [clone-sources.md](../design-system/clone-sources.md).
 
 ## Concept
 
-Lead with the message, not a feature list. The promise: the Coach does real career work with you — builds your CV, finds openings that fit, tells you honestly what is missing — and you stay in control of every word. Who it is for is named plainly: students and new graduates. The voice sells the way the product talks: evidence over hype, no invented claims, no testimonials we do not have, no statistics nobody measured.
+Show the product after one promise. The Coach builds your CV, finds openings that fit, and names what is missing. You can change or undo every word. Who it is for: students and new graduates. No invented claims, testimonials, or statistics.
 
 ## Screens
 
-- `/` — in order: the promise in one headline; the differentiator in one sentence (it operates the app with you, everything undoable); how it works at a glance (prepare yourself → find what fits → go after it, with the Coach alongside); who it is for; the two doors. Primary: start now (`/sign-up`). Secondary: the waitlist form.
-- Fast on a mid-range Android phone: minimal JS, images sized, no animation walls.
+- `/` — in order, cloned from onyx.app:
+  1. Sticky nav, cloned from onyx.app: mark + OpenPath, Sign in (outline), Start now (primary).
+  2. Hero: who it is for, the promise, the product composer, then Sign in / Sign up in one segmented box (12px shell, 6px pad, 6px inner).
+  3. Waitlist, then footer (mark, year, Sign in, Start now).
+- Primary: Start now (`/sign-up`). Sign in is outline. A "See an example" door waits until a real public example page exists.
+- Fast on a mid-range Android phone: CSS grid background only. No animation walls, logo ticker, or video.
+
+## Copy
+
+- Headline: "Build your CV and find openings that fit"
+- Who: "For students and new graduates"
+- Composer placeholder: "Write to the Coach"
+- Doors: segmented box under the composer, Sign in / Sign up.
+- Waitlist: "Leave your email." / "If you are not starting now, we will write when there is news." Join. Placeholder `you@email.com`. "You're on the list. We'll email you."
+- Waitlist errors: "Enter an email." / "That did not go through. Try again."
 
 ## Mechanics
 
-Waitlist submit is a public server function (no session, so not a bus command): valid email lands in `waitlist` and confirms; an email already on the list gets the same confirmation (no enumeration); a store failure says the submission did not complete rather than lying. Validation errors name the fix.
+Waitlist submit is a public server function (no session, so not a bus command). A valid email lands in `waitlist` and confirms. An email already on the list gets the same confirmation. A store failure says the submission did not complete. Validation errors name the fix. The hero composer does not talk to the Coach. It is a door into sign-up.
 
 ## Data
 
 `waitlist` ([data.md](../data.md)).
 
-## Empty-state copy register
-
-"You don't need to know your direction yet. That's the point." — the tone the whole page holds: calm, second person, no exclamation marks.
-
 ## Out of scope
 
-Pricing (no monetization in v1), blog, testimonials, multi-page marketing site, language switcher (English first; the page is written so Vietnamese can slot in later).
+Pricing, blog, testimonials, customer logos, invented win rates, multi-page marketing site, language switcher.

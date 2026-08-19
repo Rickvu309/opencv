@@ -44,8 +44,8 @@ Nine types. Every URL in [flows.md](../flows.md) maps to exactly one. A new scre
 4. **Opened space** — `/proof/$proofId`. Band: Back, title, Arrange and Publish (Publish becomes primary once the story is arranged; until then Arrange is). The body is the log, newest first.
 5. **Sectioned editor** — `/profile`, `/pitch`, `/settings`. One column of labelled sections, edited in place. Completeness or the handle sits inside the first section as a fact with its basis, never as a hero metric.
 6. **Wizard** — `/onboarding`. No rail. One question per step, skip always visible, payback visible in the same frame as the answer lands. Primary is Continue.
-7. **Narrow form** — `/sign-in`, `/sign-up`. No rail. Heading, one sentence, the fields, one primary, a text link to the other mode. Nothing else.
-8. **Public canvas** — `/`, `/p/$slug`, `/u/$handle`. No rail, no dock, no bell. Landing is a promise then two doors. On a Proof page and a personal page the work is the page; OpenPath chrome is at most a quiet footer.
+7. **Narrow form** — `/sign-in`. Heading, the fields, one primary, a text link to the other mode. `/sign-up` is a split card (form + visual panel) on the same public canvas.
+8. **Public canvas** — `/`, `/p/$slug`, `/u/$handle`. No rail, no dock, no bell. Landing is a sticky public nav, a centered hero with the product in it, then how it works. On a Proof page and a personal page the work is the page; OpenPath chrome is at most a quiet footer.
 9. **Overlay** — dock, drawer, bell popover, confirm dialog. Focus trap, Esc and scrim close, focus restores to the opener. An overlay is never a place: it has no URL and the screen behind it stays live in the map.
 
 ## Per-screen instances
@@ -54,7 +54,7 @@ Each block: type, regions in reading order, the primary slot, what yields when s
 
 ### Coach — Conversation
 
-Regions: thread messages, then composer. Primary: the composer. Yields: nothing — the conversation owns the column; the checklist and starters disappear once the thread has messages. Empty/error slot: the empty thread holds a centered invite, starters, the activation checklist, and the composer as one group; a failed turn is a plain message in the thread with one retry.
+Regions: thread messages, then composer. Primary: the composer. Yields: nothing — the conversation owns the column; the checklist and starters disappear once the thread has messages. Empty/error slot: the empty thread holds a centered mark, the composer, and the email connect banner; a failed turn is a plain message in the thread with one retry.
 
 ### Paper list — Drive list
 
@@ -96,13 +96,13 @@ Regions: account (email, password, sign out), public page, notifications, danger
 
 Regions: the question, the answer control, payback in the same frame, then Continue and Skip. Primary: Continue. Yields: nothing collapses — one question per step is already minimal. Empty/error: a failed save keeps the step, states it, one retry.
 
-### Auth — Narrow form
+### Auth — Narrow form / split card
 
-Regions: heading, one sentence, fields, primary, the link to the other mode. Primary: Sign in or Create account. Empty/error: field errors are sentences under the field; a failed submit keeps every value.
+Regions: `/sign-in` is heading, fields, primary, the link to the other mode. `/sign-up` is a `--surface-1` card, form column then a `--surface-2` mark panel from `md`. Primary: Sign in or Create account. Empty/error: field errors are sentences under the field; a failed submit keeps every value.
 
 ### Landing, Proof page, personal page — Public canvas
 
-Landing: promise, then two doors (start, see an example). Proof page: the published work is the whole page; quiet footer. Personal page: the span record, each Proof a door to `/p/$slug`. No signed-in chrome anywhere.
+Landing: sticky public nav, then hero (promise, product composer), then waitlist, then a quiet footer. Anatomy cloned from [onyx.app](https://onyx.app/) ([clone-sources.md](clone-sources.md)). Proof page: the published work is the whole page; quiet footer. Personal page: the span record, each Proof a door to `/p/$slug`. No signed-in chrome anywhere.
 
 ### Dock, drawer, bell, confirm — Overlay
 
@@ -128,7 +128,7 @@ Per-screen empty inventory:
 
 | Screen | Kind(s) it can show | The one door |
 |---|---|---|
-| Coach (empty thread) | first-run — the one deliberately rich empty state | starters + activation checklist |
+| Coach (empty thread) | first-run | mark, composer, starters |
 | Paper | first-run, cleared, filtered (by type) | Start a CV |
 | Proof | first-run (teaches what counts), cleared | Log something — may open the dock with intent |
 | Search | first-run (no query), filtered (no results), error | run or widen the query |

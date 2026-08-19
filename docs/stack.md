@@ -9,7 +9,7 @@ The technologies this product uses. A new feature picks from this table; a new t
 | Framework | TanStack Start | Vite + Nitro. Routes in `src/routes`, thin; screens live in `src/features/*/screens/`. |
 | Routing | TanStack Router | File routes, typed search (`validateSearch` + Zod). |
 | Styling | Tailwind CSS v4 | Tokens in `src/styles/globals.css` ([design.md](design.md)). |
-| Components | shadcn/ui | `src/ui/`, no product nouns. |
+| Components | shadcn/ui in `packages/opath-ui` | Import as `@/ui/<name>`. No product nouns. App-wired helpers stay in `src/ui/`. [ADR 0007](adr/0007-opath-ui-in-repo.md). |
 | Server state | TanStack Query | Reads from `queries.ts`, invalidated on command completion. |
 | Forms | TanStack Form | Real forms: auth, onboarding, settings. |
 | Tables | TanStack Table | Tabular lists. |

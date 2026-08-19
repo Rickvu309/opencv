@@ -8,12 +8,12 @@ OpenPath is a personalised AI career coach for Vietnamese early-career users. Th
 
 ## Rules
 
-1. **Clone the commodity, craft the signature.** Standard surfaces copy their named reference. Coach chrome and shared primitives port [Onyx Opal](https://github.com/onyx-dot-app/onyx) (MIT, not `ee/`) — Storybook at [onyx-storybook.vercel.app](https://onyx-storybook.vercel.app/) — then restyle to our tokens. Thread behaviour copies [assistant-ui](https://www.assistant-ui.com/docs/ui/thread); polish copies [Beautiful UI](https://www.beautifului.dev/). Map: [docs/design-system/clone-sources.md](docs/design-system/clone-sources.md). Do not install `@onyx-ai/opal` or `@assistant-ui/react`. Open WebUI is a pattern reference only. Signature mechanisms (the Coach's hands, Proof, sharing) each have a deep design doc in [docs/mechanisms/](docs/mechanisms/) that outranks feature specs on intent; a new mechanism starts as a new doc there, written before the code. Do not invent on track A; do not cut corners on track B. If a surface takes props, it gets a Storybook story.
+1. **Clone the commodity, craft the signature.** Standard surfaces copy their named reference. The public landing clones [onyx.app](https://onyx.app/) (anatomy, not their copy). Coach chrome and shared primitives port [Onyx Opal](https://github.com/onyx-dot-app/onyx) (MIT, not `ee/`) — Storybook at [onyx-storybook.vercel.app](https://onyx-storybook.vercel.app/) — then restyle to our tokens. Thread behaviour copies [assistant-ui](https://www.assistant-ui.com/docs/ui/thread); the thinking surface copies the [reasoning panel](https://www.assistant-ui.com/elements/reasoning-panel); tool rows copy the [tool call](https://www.assistant-ui.com/elements/tool-call); polish copies [Beautiful UI](https://www.beautifului.dev/). Map: [docs/design-system/clone-sources.md](docs/design-system/clone-sources.md). Do not install `@onyx-ai/opal` or `@assistant-ui/react`. Open WebUI is a pattern reference only. Signature mechanisms (the Coach's hands, Proof, sharing) each have a deep design doc in [docs/mechanisms/](docs/mechanisms/) that outranks feature specs on intent; a new mechanism starts as a new doc there, written before the code. Do not invent on track A; do not cut corners on track B. If a surface takes props, it gets a Storybook story.
 2. **Every write is a command.** No handler, server function, or job writes the database directly. Define a command with `defineCommand` in the feature's `commands.server.ts` and call it through the bus. If it should be Coach-callable, set the `agent` flag and write the description for the model, not for humans.
 3. **Reads are queries.** `queries.ts` per feature exports TanStack `createServerFn` RPCs the client can call. Server-only helpers live in `*.server.ts` and are imported from handlers, never from screens.
 4. **Shapes live in `model.ts`.** Zod first; types derive from schemas. Other features import from `model.ts` or call commands — never a feature's internals.
 5. **Routes contain no logic.** A route file renders a screen from `features/<name>/screens/`. Re-designing UI must never touch models, commands, or queries.
-6. **`core/` has no product nouns** and never imports from `features/`.
+6. **`core/` has no product nouns** and never imports from `features/`. **`packages/opath-ui` has no product nouns** and never imports from `features/` or `core/`.
 7. **Specs ship with code.** Behaviour changes update `docs/features/<name>.md` in the same PR. Decisions that cross features get an ADR.
 8. **Tests exercise the real write path.** Fixtures are built by executing commands, not by inserting rows.
 
@@ -23,7 +23,8 @@ OpenPath is a personalised AI career coach for Vietnamese early-career users. Th
 src/routes/                thin file routes; _app/ is the signed-in shell, _public/ is /p/:slug and /u/:handle
 src/features/<name>/       model.ts, commands.server.ts, queries.ts, screens/, components/, *.server.ts, *.test.ts
 src/core/                  db, commands (bus), ai (gateway), auth, notifications, jobs, email, config
-src/ui/                    shadcn primitives, shared layout pieces, no product nouns
+src/ui/                    app-wired helpers only (run-command, notification bell). Primitives: packages/opath-ui
+packages/opath-ui/         Opath (Lab). Primitives and their stories. No product nouns, no core/ imports
 src/styles/globals.css     design tokens (see docs/design.md and docs/design-system/tokens.md)
 scripts/                   dev, db, worker entry, railway build/start
 docs/                      architecture, data, ai, flows, design, hosting, adr/, design-system/, features/
@@ -37,7 +38,9 @@ Features: coach, profile, paper, proof, pitch, search, application, onboarding, 
 
 **Add a query.** A function or `createServerFn` in the feature's `queries.ts` (client-callable RPC). Server-only reads go in `*.server.ts` and are imported from handlers. Wire the screen with TanStack Query; invalidate it from the commands that change what it reads.
 
-**Add a screen.** Route file in `src/routes/` that renders a screen component. Search params are typed with `validateSearch` and Zod.
+**Add a primitive.** Land it in `packages/opath-ui` with a Storybook story. Spec the block in [docs/design-system/components.md](docs/design-system/components.md) in the same PR. Product screens import `@/ui/<name>`. Do not add `core/` or `features/` imports inside the package.
+
+**Add a screen.** Route file in `src/routes/` that renders a screen component. Search params are typed with `validateSearch` and Zod. Screens compose primitives; they do not edit `packages/opath-ui` unless the gap is a missing primitive.
 
 **Add a migration.** A numbered pair in `src/core/db/migrations/`: `NNN_name.up.sql` and `NNN_name.down.sql`. Never edit an applied migration; the runner checksums them. Update [docs/data.md](docs/data.md).
 
@@ -57,8 +60,12 @@ Mentor voice: second person, sentence case, contractions fine, **no exclamation 
 npm run dev          # web + worker locally
 npm test             # node --test; db tests skip without TEST_DATABASE_URL
 npm run typecheck    # tsc --noEmit
+npm run typecheck:ui # design-system package only
 npm run lint         # eslint
 npm run db:migrate   # apply pending migrations (also db:status, db:rollback)
+npm run storybook            # Opath (Production) :6006 and Opath (Lab) :6007
+npm run storybook:production
+npm run storybook:lab
 ```
 
 Deploy is a push to `main`; Railway rebuilds both services ([docs/hosting.md](docs/hosting.md)).

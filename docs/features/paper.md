@@ -8,7 +8,7 @@
 
 ## Concept
 
-A flat list of documents (Drive), and an opened document you write on directly (Docs). Two kinds: CV/Resume and cover letter. In the rail, Paper sits under **Prepare** and also holds **Proof** as a child place (IA only; Proof stays its own domain — [ADR 0005](../adr/0005-proof-own-domain.md), [proof.md](proof.md)). You edit the A4 itself — blocks live on the page; there is no form that paints a preview. Uploads are a starting point: the file stays an uploaded file (preview and download only), and a built CV is created as a sibling; no parsing.
+A flat list of documents (Drive), and an opened document you write on directly (Docs). Two kinds: CV/Resume and cover letter. In the rail, Paper sits under **Prepare**. Proof stays its own domain and is not a rail row ([ADR 0005](../adr/0005-proof-own-domain.md), [proof.md](proof.md)). You edit the A4 itself — blocks live on the page; there is no form that paints a preview. Uploads are a starting point: the file stays an uploaded file (preview and download only), and a built CV is created as a sibling; no parsing.
 
 ## Screens
 

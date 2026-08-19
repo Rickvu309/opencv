@@ -1,7 +1,7 @@
 ---
 version: alpha
 name: OpenPath
-description: Linear-derived career coach UI. Calm is a functional requirement.
+description: Black and white career coach UI. Calm is a functional requirement.
 colors:
   canvas: "#fbfbfb"
   surface-1: "#ffffff"
@@ -12,8 +12,8 @@ colors:
   ink-secondary: "#4b4f56"
   ink-muted: "#6f737b"
   ink-faint: "#8a8f98"
-  accent: "#5e6ad2"
-  accent-hover: "#828fff"
+  accent: "#000000"
+  accent-hover: "#2e2e2e"
   on-accent: "#ffffff"
   destructive: "#c52828"
   document: "#ffffff"
@@ -57,6 +57,7 @@ typography:
   display:
     fontFamily: "Inter Variable, Inter, system-ui, sans-serif"
     fontSize: 32px
+    fontSizeMax: 64px
     fontWeight: 590
     lineHeight: 1.3
 spacing:
@@ -120,14 +121,14 @@ This product must never look like: career-quiz confetti and gamified badges; ent
 
 ## Colors
 
-A surface ladder plus one indigo accent, copied from Linear. The accent appears only on the primary action, focus, links, and active nav — never as decoration.
+A surface ladder plus one black accent. The accent appears only on the primary action, focus, links, and active nav. Never as decoration.
 
 - **Canvas (`#fbfbfb`):** the shell behind the content panel.
 - **Surface-1 (`#ffffff`):** the content panel, cards, inputs, menus.
 - **Surface-2 / surface-3 (`#f6f6f6` / `#eeeeef`):** hover and pressed/selected fills.
 - **Ink (`#212226`):** body text. Secondary, muted, and faint are the rest of the text ladder.
 - **Hairline (`#e5e5e6`):** 1px borders, the first tool for hierarchy.
-- **Accent (`#5e6ad2`):** indigo for the one primary action, the focus ring, links, and the active rail item.
+- **Accent (`#000000`):** black for the one primary action, the focus ring, links, and the active rail item.
 - **Destructive (`#c52828`):** delete, and nothing else.
 
 Documents (the A4, the letter) are strictly black on white, independent of app theming. Published Proof pages are the one designed, expressive surface — photos and type allowed — and even there, taste is quiet, not luxury cosplay.
@@ -144,13 +145,13 @@ A 4px spacing scale. Screens breathe; generous space is part of calm. Touch targ
 
 Hierarchy — the four layers, the layout type each screen uses, reading order, primary-action slots, and the empty-states law — is defined in [design-system/layout.md](design-system/layout.md). Tokens stay here; structure lives there.
 
-shadcn/ui primitives live in `src/ui/`, themed by these tokens; no product nouns in primitives.
+shadcn/ui primitives live in `packages/opath-ui`, themed by these tokens; no product nouns in primitives. Import them as `@/ui/<name>`.
 
 ## Elevation & Depth
 
 Borders first. Shadows only for genuinely floating layers (menus, dialogs, the dock), named `--shadow-overlay`. No stacked cards. No hero metrics that pretend to float.
 
-Focus is `--focus-ring`: 3px accent at 30% opacity. Interactive states must be distinguishable without color alone.
+Focus is `--focus-ring`: 3px black at 25% opacity. Interactive states must be distinguishable without color alone.
 
 ## Shapes
 

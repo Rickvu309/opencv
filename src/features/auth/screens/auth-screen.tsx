@@ -1,84 +1,20 @@
-import { useState, type FormEvent } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
-import { Button } from "@/ui/button";
-import { Input } from "@/ui/input";
-import { Label } from "@/ui/label";
+import { useNavigate } from "@tanstack/react-router";
+import { AuthForm } from "@/features/auth/screens/auth-form";
 import { signInFn, signUpFn } from "@/features/auth/server";
 
 export function AuthScreen({ mode }: { mode: "sign-in" | "sign-up" }) {
   const navigate = useNavigate();
-  const [error, setError] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
-  async function onSubmit(e: FormEvent) {
-    e.preventDefault();
-    const fn = mode === "sign-up" ? signUpFn : signInFn;
-    const result = await fn({ data: { email, password } });
-    if (!result.ok) {
-      setError(result.error);
-      return;
-    }
-    await navigate({ to: "/coach" });
-  }
-
   return (
-    <main id="main" className="mx-auto max-w-sm px-4 py-16">
-      <h1 className="text-balance text-[24px] font-[590] leading-[1.3] tracking-[-0.017em]">
-        {mode === "sign-up" ? "Create an account" : "Sign in"}
-      </h1>
-      <p className="mt-2 text-[13px] text-ink-muted">
-        {mode === "sign-up"
-          ? "Your work stays with you, on every device."
-          : "Welcome back. Your papers and conversations are here."}
-      </p>
-      <form className="mt-8 space-y-4" onSubmit={onSubmit}>
-        <div>
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            inputMode="email"
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="password">Password</Label>
-          <Input
-            id="password"
-            type="password"
-            autoComplete={mode === "sign-up" ? "new-password" : "current-password"}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={8}
-          />
-        </div>
-        {error ? <p className="text-destructive">{error}</p> : null}
-        <Button type="submit" className="w-full">
-          {mode === "sign-up" ? "Create account" : "Sign in"}
-        </Button>
-      </form>
-      <p className="mt-6 text-[13px] text-ink-muted">
-        {mode === "sign-up" ? (
-          <>
-            Already have an account?{" "}
-            <Link to="/sign-in" className="text-accent underline-offset-2 hover:underline">
-              Sign in
-            </Link>
-          </>
-        ) : (
-          <>
-            New here?{" "}
-            <Link to="/sign-up" className="text-accent underline-offset-2 hover:underline">
-              Create an account
-            </Link>
-          </>
-        )}
-      </p>
-    </main>
+    <AuthForm
+      mode={mode}
+      onSuccess={() => navigate({ to: "/coach" })}
+      onSubmit={async (creds) => {
+        const result =
+          mode === "sign-up"
+            ? await signUpFn({ data: { ...creds, remember: true } })
+            : await signInFn({ data: creds });
+        return result;
+      }}
+    />
   );
 }

@@ -29,21 +29,26 @@ Local values live in `.env.local`, never committed. `.env.example` documents the
 
 Vercel never receives these variables. Storybook is a static build; it has no database, no session, and no AI key.
 
-## Storybook (Vercel)
+## Storybook
 
-A second Vercel project, Git-linked to `github.com/quanvu309/openpath`. Config lives in `vercel.json` in this repo so it is reviewable: `buildCommand` is `npm run build-storybook`, `outputDirectory` is `storybook-static`, `framework` is null.
+Local galleries for review. `npm run storybook` starts both.
+
+| Gallery | Command | URL |
+|---|---|---|
+| Opath (Production) | `npm run storybook:production` | http://localhost:6006 |
+| Opath (Lab) | `npm run storybook:lab` | http://localhost:6007 |
+
+The hosted Storybook on Vercel is Opath (Production) (`npm run build-storybook`). A second Vercel project is Git-linked to `github.com/quanvu309/openpath`. Config lives in `vercel.json` in this repo so it is reviewable: `buildCommand` is `npm run build-storybook`, `outputDirectory` is `storybook-static`, `framework` is null.
 
 Storybook uses `.storybook/vite.config.ts` (React, Tailwind v4, path aliases) and never loads the app's `tanstackStart()` / `nitro()` plugins. `.storybook/main.ts` stubs `@tanstack/react-start` and the command client so the gallery stays browser-only.
 
 - Production deploys on every push to `main`.
 - Preview URLs on every pull request.
-- Ignored Build Step is `scripts/storybook-ignored-build.sh` (exit 0 skip, exit 1 build). It skips when the commit did not touch `src/ui`, `.storybook`, `src/styles`, or `package.json`.
+- Ignored Build Step is `scripts/storybook-ignored-build.sh` (exit 0 skip, exit 1 build). It skips when the commit did not touch `packages/opath-ui`, `src/ui`, `.storybook`, `src/styles`, or `package.json`.
 
 A failed Storybook build cannot affect a Railway app deploy, and the reverse is also true.
 
 Connecting the project is a one-time dashboard step (Import Git Repository → this repo → use `vercel.json`). No `VERCEL_TOKEN` is stored in GitHub.
-
-Local: `npm run storybook` on port 6006.
 
 ## Ship an update
 

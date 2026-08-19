@@ -1,19 +1,64 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { ThinkingCard } from "./thinking";
-import { ToolCard } from "./tool-card";
+import { ReasoningPanel, ThinkingCard } from "./thinking";
+import { ToolCall, ToolCard, ToolGroup } from "./tool-card";
 import { ApprovalCard } from "./approval";
 import { ChatMessage } from "./message";
 import { CoachComposer } from "./composer";
+import { CoachSessionProvider } from "./session";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const meta: Meta = { title: "Coach/Chrome" };
 export default meta;
 type Story = StoryObj;
 
+const demoSteps = [
+  {
+    title: "Reading the request",
+    body: "The user wants drafts restored per thread, so the composer state has to move out of component state.",
+  },
+  {
+    title: "Scope",
+    body: "Find the failing path.",
+  },
+];
+
 export const Thinking: Story = {
   render: () => (
     <div className="w-[28rem]">
-      <ThinkingCard content={"I am checking the profile.\n\nThen I will draft a CV."} isStreaming />
+      <ReasoningPanel streaming steps={demoSteps} />
+    </div>
+  ),
+};
+
+export const ReasoningSettled: Story = {
+  render: () => (
+    <div className="w-[28rem]">
+      <ReasoningPanel
+        streaming={false}
+        defaultOpen
+        restingLabel="Thought for 4s"
+        steps={demoSteps}
+      />
+    </div>
+  ),
+};
+
+export const ReasoningFromText: Story = {
+  render: () => (
+    <div className="w-[28rem]">
+      <ThinkingCard
+        content={"I am checking the profile.\n\nThen I will draft a CV."}
+        isStreaming={false}
+        defaultOpen
+      />
+    </div>
+  ),
+};
+
+export const ReasoningEmpty: Story = {
+  render: () => (
+    <div className="w-[28rem]">
+      <ReasoningPanel streaming />
     </div>
   ),
 };
@@ -21,14 +66,69 @@ export const Thinking: Story = {
 export const Tool: Story = {
   render: () => (
     <div className="w-[28rem]">
+      <ToolCall
+        label="Searched"
+        activeLabel="Searching"
+        query="composer props"
+        request='{"q":"composer"}'
+        result='{"hits":2}'
+        running={false}
+        defaultOpen
+      />
+    </div>
+  ),
+};
+
+export const ToolRunning: Story = {
+  render: () => (
+    <div className="w-[28rem]">
+      <ToolCall
+        label="Searched"
+        activeLabel="Searching the docs"
+        query="draft persistence"
+        request='{"q":"draft persistence"}'
+        running
+        defaultOpen
+      />
+    </div>
+  ),
+};
+
+export const ToolFailed: Story = {
+  render: () => (
+    <div className="w-[28rem]">
       <ToolCard
         call={{
-          id: "1",
+          id: "2",
           name: "paper.create",
-          status: "completed",
+          status: "failed",
           input: { kind: "cv" },
-          output: { id: "p1" },
+          output: { error: "Could not add the paper" },
         }}
+      />
+    </div>
+  ),
+};
+
+export const ToolGroupList: Story = {
+  render: () => (
+    <div className="w-[28rem]">
+      <ToolGroup
+        calls={[
+          {
+            id: "1",
+            name: "profile.read",
+            status: "completed",
+            input: {},
+            output: { name: "Linh" },
+          },
+          {
+            id: "2",
+            name: "paper.create",
+            status: "pending",
+            input: { kind: "cv" },
+          },
+        ]}
       />
     </div>
   ),
@@ -52,10 +152,12 @@ export const Approval: Story = {
 
 export const MessageAndComposer: Story = {
   render: () => (
-    <div className="flex w-[28rem] flex-col gap-3">
-      <ChatMessage role="user" text="Build me a CV." />
-      <ChatMessage role="coach" text="I drafted a CV from your profile. Open it from Paper." />
-      <CoachComposer text="" onText={() => {}} onSend={() => {}} />
-    </div>
+    <CoachSessionProvider>
+      <div className="flex w-[28rem] flex-col gap-3">
+        <ChatMessage role="user" text="Build me a CV." />
+        <ChatMessage role="coach" text="I drafted a CV from your profile. Open it from Paper." />
+        <CoachComposer text="" onText={() => {}} onSend={() => {}} />
+      </div>
+    </CoachSessionProvider>
   ),
 };

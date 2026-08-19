@@ -30,9 +30,10 @@ The [interfaces.dev cheat-sheet](https://interfaces.dev/cheat-sheet) baseline, a
 
 ### Rail
 
-**Region:** chrome, left. Default `--size-rail` (16rem). Becomes the drawer below 768px (drawer stays 16rem). The rail is viewport-tall (`h-svh`, sticky): History scrolls; places and account stay on screen. Desktop width is user-resizable (12–20rem) from the right edge; double-click resets; width persists in `localStorage`.
-**Anatomy:** OpenPath mark → New conversation (accent action: label + plus in a circle, outside the item list) → Coach, History, Prepare, Opportunities (one sliding `--surface-2` pill follows hover/focus/active via `translateY`) → leftover space → account pinned at the bottom. History is content-sized. History and places share one scroll region if they overflow. Desktop trailing-edge splitter as before.
-**States:** rest transparent on `--canvas`; a single highlight pill (`--surface-2`) tracks the hovered or current item — items themselves have no hover fill. Active is `font-[590]` `--ink` (icon too), not accent. Press `scale(0.97)`. Focus ring. New conversation is `--accent` on `--accent-muted` hover.
+**Region:** chrome, left. Default `--size-rail` (16rem). Becomes the drawer below 768px (drawer stays 16rem). Desktop can collapse to an icon rail (52px) like Grok; ChevronsLeft in the header hides it, ChevronsRight above account shows it. The right edge is a 1px `--hairline` that is also the resize handle (hit area 12px, centered on the line). Desktop width is user-resizable between 12–20rem when expanded; double-click resets; width and collapsed state persist in `localStorage`.
+**Anatomy:** Mark + OpenPath and Hide on the header row → Coach as an icon+label row like Paper → collapsible Prepare, Opportunities, then History under Apply → account. Collapsed: icons only, Show above account. History keeps its label when there are no threads.
+**Internal spacing:** shell `p-2` (8). Rows `min-h-10`, `px-2`, icon-label `gap-2` — one leading edge at 16px from the rail. Intra-group `gap-1` (4) including label-to-items. Inter-group `16` (Coach → Prepare, Prepare → Opportunities, Opportunities → History, History → Account). Header to Coach `8`. Hide is `size-8` `rounded-full`.
+**States:** rest transparent on `--canvas`. Coach, Paper, Pitch, Search, and Apply are one row style: `ui` 13/510 `--ink`, matching icon. Hover fills `--surface-3` (the step that reads on canvas); a sliding pill follows the hovered item only. Active is `font-[590]` `--ink` (icon stroke 2), no rest fill. Press `scale(0.97)`. Focus ring.
 **Copy hooks:** group labels, Coach, New conversation, History, the menu verbs.
 **Thread item:** truncating title with `title` attribute for the full value; `···` menu trigger (text, not an icon) revealed via Hoverable as a sibling control; Rename and Delete in its menu. History groups as Today / Yesterday / Earlier once the list is long enough; a search filter sits above the list. While conversations load, history skeleton rows hold the slot.
 **Account control:** the user's name, wrapping — never clipping — "Nguyễn Thị Ngọc Ánh"; opens Profile / Settings / Sign out.
@@ -40,7 +41,7 @@ The [interfaces.dev cheat-sheet](https://interfaces.dev/cheat-sheet) baseline, a
 ### Header
 
 **Region:** chrome, above the main panel.
-**Anatomy:** drawer trigger (Menu lucide icon, ghost, `aria-label="Open menu"`, mobile only) leading; bell trailing. Nothing else — the band inside `main` owns the title.
+**Anatomy:** drawer trigger (Menu lucide icon, ghost, `aria-label="Open menu"`, mobile only) leading; bell trailing. Bell hover is a circle (`rounded-full`), not `--radius-control`. Nothing else — the band inside `main` owns the title.
 
 ### Coach dock
 
@@ -57,12 +58,13 @@ An overlay is never a place: no URL, the screen behind stays live.
 
 ---
 
-## Primitives (`src/ui/`)
+## Primitives (`packages/opath-ui`)
 
 ### Button
 
 **Variants:** primary (accent fill, `--on-accent` text — **one per screen**, the layout's primary slot); outline (`--hairline` border on `--surface-1`); ghost (transparent, `--ink` text); danger (`--destructive` fill, delete only).
-**Anatomy:** `ui` 13px at weight 510, `--radius-control`, 44px min height, 16px horizontal padding.
+**Sizes:** `sm` 40px, `md` 44px (default), `lg` 48px / 15px (marketing CTAs). Links that look like buttons use `buttonAttrs({ variant, size })` so they carry `data-variant` and `data-size`.
+**Anatomy:** `ui` 13px at weight 510 (`lg` is 15px), `--radius-control`, 44px min height on `md`, 16px horizontal padding (`lg` is 20px).
 **States:** hover — primary to `--accent-hover`, others fill `--surface-2`; pressed — `scale(0.97)` + `--surface-3` on quiet variants; focus ring; disabled opacity 0.5; loading keeps the label and appends "…" (no spinner-only buttons).
 
 ### Input, Textarea, Label
@@ -130,7 +132,7 @@ First focusable element on every page; visually hidden until focused, then a `--
 
 ### Chip
 
-**Region:** status on Apply rows, fit on Search rows, verb chips inside tool cards.
+**Region:** status on Apply rows, fit on Search rows.
 **Anatomy:** `--radius-pill`, `ui` 13px, 4px gap, optional 6px status dot (`--status-*`) beside the word. Never a colour without the word.
 **Variants:** quiet (`--hairline` border), status (dot + word), code (mono 12px on `--surface-2` for command names and paths).
 **States:** rest; hover `--surface-2` when it is a control; focus ring.
@@ -143,7 +145,7 @@ First focusable element on every page; visually hidden until focused, then a `--
 
 ### Collapsible
 
-**Region:** thinking card, tool card, approval card.
+**Region:** reasoning panel, tool call, approval card.
 **Anatomy:** trigger row 40px desktop / 44px touch; chevron always reserved on the right so rows never shift; content height is the one tolerated accordion exception in [motion.md](motion.md).
 **States:** open / closed; chevron rotates 150ms; `aria-expanded`.
 
@@ -159,12 +161,12 @@ First focusable element on every page; visually hidden until focused, then a `--
 
 ### Code and CopyButton
 
-**Region:** markdown code fences in Coach replies; payload view; tool-card command chips.
+**Region:** payload view.
 **Anatomy:** `--font-mono` 13px on `--surface-2`, `--radius-control`, 12px padding. CopyButton is a Hoverable ghost at the top-right (`aria-label="Copy"`), swaps to "Copied" for 1200ms via `role="status"`.
 
 ### Loader
 
-**Region:** in-flight tool cards and pending approvals.
+**Region:** pending approvals.
 **Anatomy:** 16px stroke icon, `aria-hidden` when a word already names the state. Never a spinner-only button.
 
 ### Card, EmptyMessageCard, EndOfList
@@ -219,7 +221,7 @@ First focusable element on every page; visually hidden until focused, then a `--
 ### Chat composer
 
 **Region:** the primary slot of Conversation; also the dock body's foot. Pattern copied from [AIcss ai-agent-input](https://www.aicss.dev/components/ai-agent-input): one bordered surface containing the field and its controls, not a bare textarea with a button below.
-**Anatomy:** `--surface-1`, `--hairline`, `--radius-container`; auto-growing textarea (`body` 15px, min 1 line, max ~8) with sr-only label and placeholder as invitation; a control row inside the same surface — send trailing (primary, arrow-up icon with `aria-label="Send"`, 40px). Attach and model-switch slots from the reference are omitted: the Coach has no model picker.
+**Anatomy:** pill bar (`rounded-full`, `--hairline`, 6px vertical pad, 12px left / 6px right). Left cluster: More (`+`) then the field. Right cluster (`gap-2`): Fast / Coach / Careful, dictation, Call (idle) or Send / Stop. All controls 32px, vertically centered. The field is a 32px line box (`leading-6`, 4px pad) so the placeholder sits on the same center as `+` and Fast.
 **States:** idle — send disabled at opacity 0.5 while empty; filled — send enabled; **working** — send becomes Stop (`aria-label="Stop"`), an interrupt hint ("Stop to send something else") sits under the surface, and a second typed message queues in a bar above the composer and sends itself when the reply finishes; offline — disabled with the offline sentence above.
 **Keys:** Enter sends, Shift+Enter breaks — and the hint is discoverable in the placeholder on first run.
 **Copy hooks:** placeholder, offline sentence.
@@ -231,19 +233,22 @@ First focusable element on every page; visually hidden until focused, then a `--
 **Action bar:** Hoverable row under a settled Coach message — Copy, Retry. Revealed on hover; always visible on touch.
 **Law:** no avatars, no role labels once the styling distinguishes roles; timestamps only on hover/long-press, `tabular-nums`.
 
-### Thinking card
+### Reasoning panel
 
-**Region:** thread, above the streaming reply.
-**Anatomy:** trigger row — pinging dot while streaming, "Thinking" / "Thinking…"; chevron reserved right. Body: capped 12rem scroll, markdown at `ui` `--ink-muted`. Collapsed by default. Empty content renders nothing; a turn with no reasoning degrades to the working composer state only.
-**Reference:** Onyx Craft Thinking Card.
+**Region:** thread, above the Coach reply (live while a turn is working; persisted on later loads).
+**Anatomy:** collapsible trigger (40px desktop / 44px touch) — shimmering **Thinking** plus optional elapsed (`tabular-nums`, `4s` / `1m 8s`) while streaming; settled label **Thought for 4s** (or **Thinking** if no timer). Chevron reserved right, rotates 180 when open. Body: `<ol>` of `{ title, body }` steps, 5px dots, last visible step's dot `--accent` and pulses while streaming; settled dots `--ink-faint`. Opens when the first step arrives while streaming; user can collapse. Empty content with no stream renders nothing; a turn with no reasoning degrades to the working composer state only.
+**Law:** do not install `@assistant-ui/react`. Port anatomy; restyle to tokens. No `dark:`, no `bg-blue-500`, no `animate-in`. Full column width in the thread (not `max-w-sm`).
+**Copy hooks:** streaming label, settled label.
+**Reference:** [assistant-ui reasoning panel](https://www.assistant-ui.com/elements/reasoning-panel).
 
-### Tool card and tool group
+### Tool call
 
 **Region:** thread, between user message and Coach body.
-**Anatomy:** status icon (loader / check / alert) + verb + optional code chip (command name, path) + badge pinned right + chevron that always reserves space. Failed calls auto-open. `dense` and `nested` variants inside a group.
-**Kinds (from command names):** `paper.*` diff body; `opening.*` search-result body; profile and proof reads a read body; `proof.log` and `profile.*` writes a generic body; `app.open` an artifact card that navigates.
-**Group:** consecutive in-flight tools collapse under one header until they settle.
-**Reference:** Onyx Craft Tool Card / Tool Group.
+**Anatomy:** collapsible trigger (40px desktop / 44px touch). Left chevron (`ChevronRight`, rotates 90 when open). Shimmering **activeLabel** while running (for example **Adding paper**); settled **label** (**Added paper**); failed keeps the running verb without shimmer so it never claims the write. Optional query chip (`font-mono` 12, `--surface-2`) summarizing the call target. Right slot reserved: empty while running, `--status-positive` check when settled, `--destructive` alert when failed. Body: `--surface-2` `--radius-container` panel with **Request** (mono, `--ink-muted`) and **Result** (`--ink`), hairline between. Full column width (not `max-w-sm`). Failed calls auto-open. `app.open` that succeeded still yields the artifact card, not this row.
+**Group:** consecutive calls stack with 4px gap; no extra card around the stack.
+**Law:** do not install `@assistant-ui/react`. Port anatomy; restyle to tokens. No `dark:`, no `text-emerald-500`, no `animate-in`.
+**Copy hooks:** running verb, settled verb, Request, Result.
+**Reference:** [assistant-ui tool call](https://www.assistant-ui.com/elements/tool-call).
 
 ### Approval card and payload view
 
@@ -261,8 +266,8 @@ First focusable element on every page; visually hidden until focused, then a `--
 ### Starter chip and activation checklist
 
 **Region:** the empty thread only ([features/coach.md](../features/coach.md) owns copy).
-**Starter chip:** a `--hairline` pill (`--radius-pill`, `ui` 13), hover `--surface-2`; tapping fills the composer, never auto-sends.
-**Checklist item:** a Row variant — the step label leading, its state trailing as a word ("done"), `--ink-muted` when complete. No progress bar, no percentages.
+**Starter chip:** a `--hairline` pill (`--radius-pill`, `ui` 13), hover `--surface-2`; tapping fills the composer, never auto-sends. Sits under the empty composer.
+**Checklist item:** unused on Coach empty; progress is still derived from real state if a later surface needs it.
 
 ### Search result row
 
@@ -291,14 +296,22 @@ First focusable element on every page; visually hidden until focused, then a `--
 
 ### Narrow form
 
-**Region:** `/sign-in`, `/sign-up`.
-**Anatomy:** max-w-sm centered column: heading (`title-lg`), one sentence (`ui`, `--ink-muted`), fields stacked 16px, one primary full-width, one text link to the other mode. Nothing else — no social wall, no split screen.
+**Region:** `/sign-in`.
+**Anatomy:** max-w-sm centered column: heading (`title-lg`), fields stacked 16px, one primary full-width, one text link to the other mode. Nothing else — no social wall, no filler sentence under the heading.
 **States:** submit keeps every value on failure; field errors per the Input block.
+
+### Sign-up card
+
+**Region:** `/sign-up`.
+**Anatomy:** centered on `--canvas` (`p-6` / `md:p-10`). `--surface-1` card (`--radius-container`, `--hairline`, no pad). From `md`, two columns: form (`p-6` / `md:p-8`) and a `--surface-2` panel with the landing grid and the mark. Password and confirm sit on one row from `sm`. Hint under the pair: "Use at least 8 characters." No social buttons, no terms line, no filler under the heading.
+**States:** same as Narrow form.
 
 ### Public canvas pieces
 
 **Region:** `/`, `/p/$slug`, `/u/$handle` — no signed-in chrome.
-**Landing:** the promise (`display` 32/590, `text-wrap: balance`), then two doors — start (primary) and see an example (outline). Quiet; the accent appears exactly once.
+**Landing:** cloned from [onyx.app](https://onyx.app/) ([onyx-landing-hero.png](refs/onyx-landing-hero.png)). Sticky nav: mark + OpenPath, Sign in outline (`border-ink`), Start now primary. Hero: who it is for, promise, product composer, then a Sign in / Sign up segmented box (`--radius-container` shell, `p-1.5`, `--radius-control` inner). Waitlist, then footer.
+
+**Landing composer:** [assistant-ui chat-panel](https://www.assistant-ui.com/elements/chat-panel) composer. Do not install `@assistant-ui/react`. One pill bar (`h-10`, `rounded-full`, `--hairline`, `--surface-1`, `ps-4 pe-1.5`). Field plus send (`size-7`, `rounded-full`). Send is accent when the field has text, `--surface-3` when empty. No suggestion chips, attach, `@` sources, `/` commands, model picker, or dictation.
 **Proof page frame:** the published work is the page; OpenPath is at most a quiet `ui` footer. Art direction beyond the frame belongs to [mechanisms/proof.md](../mechanisms/proof.md) — the one expressive surface in the product.
 **Personal page span record:** each Proof a Row-like door to `/p/$slug`, hairline-divided, dates in `tabular-nums`.
 

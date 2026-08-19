@@ -1,17 +1,20 @@
 ---
 description: Clone Coach chrome from Opal, assistant-ui, and Beautiful UI; restyle to OpenPath tokens.
-globs: src/features/coach/**/*.{ts,tsx},src/ui/**/*.tsx,src/styles/**/*.css,docs/design-system/**/*.md,.storybook/**/*
+globs: src/features/coach/**/*.{ts,tsx},src/features/landing/**/*.{ts,tsx},src/ui/**/*.tsx,packages/opath-ui/**/*.{ts,tsx},src/styles/**/*.css,docs/design-system/**/*.md,.storybook/**/*
 alwaysApply: false
 ---
 
 # Clone sources (design faster)
 
-Do not invent chat chrome, thread lists, composers, thinking states, tool cards, or approval cards. Open the source, copy the interaction, restyle to our tokens. Port Opal — do not install `@onyx-ai/opal`.
+Do not invent chat chrome, thread lists, composers, thinking states, tool cards, or approval cards. Open the source, copy the interaction, restyle to our tokens. Port Opal — do not install `@onyx-ai/opal`. Primitives land in `packages/opath-ui`.
 
 | Surface | Copy from | Open |
 |---|---|---|
+| Public landing `/` | [onyx.app](https://onyx.app/) | Sticky nav, hero composer, waitlist bar, how-it-works |
 | Primitives (chip, tooltip, collapsible, tabs, table, code) | [Onyx Opal](https://onyx-storybook.vercel.app/) | Matching story |
-| Tool cards, approval, thinking, input bar interrupt/queue | Opal Craft stories | Tool Cards / Approvals / Thinking Card / Input Bar |
+| Approval, input bar interrupt/queue | Opal Craft stories | Approvals / Input Bar |
+| Reasoning panel | [assistant-ui reasoning panel](https://www.assistant-ui.com/elements/reasoning-panel) | Shimmering Thinking, elapsed, collapsible steps |
+| Tool call | [assistant-ui tool call](https://www.assistant-ui.com/elements/tool-call) | Shimmering verb, query chip, Request / Result |
 | Rail, prompt bar polish | [Beautiful UI](https://www.beautifului.dev/) | Sidebar Nav, Prompt Bar, Chat |
 | Thread, thread list, composer, empty welcome, retry, stop | [assistant-ui](https://www.assistant-ui.com/docs/ui/thread) | Thread + [ThreadList](https://www.assistant-ui.com/docs/ui/thread-list) |
 | History grouping, message action bar, queued messages | Open WebUI (patterns only) | Do not copy source |

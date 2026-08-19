@@ -52,9 +52,9 @@ Vietnamese names render whole: never truncated mid-diacritic, never clipped tone
 
 **Links.** Describe the destination: "See the published page", never "Click here" or a bare "Learn more".
 
-**Settings.** Toggles label the on state ("Email me before deadlines"), never the negative. Field labels are visible; placeholders show the format, never do the label's job.
+**Settings.** Toggles label the on state ("Email me before deadlines", "Keep me signed in"), never the negative. Field labels are visible; placeholders show the format, never do the label's job.
 
-**Coach messages vs UI chrome.** The Coach's first person lives only in the thread and the dock; its persona is [mechanisms/coach-hands.md](mechanisms/coach-hands.md) and `persona.md`. Chrome reports about the Coach in third person and never impersonates it: "The Coach updated your profile. Undo." is chrome; "I've updated your profile" is only ever the Coach speaking, and only after a successful tool result. Approval card verbs: **Do it**, **Don't ask again in this conversation**, **Not now**. Thinking label: **Thinking**. Stop control: **Stop**. Queued bar: **Sends when the Coach finishes.** History groups: **Today**, **Yesterday**, **Earlier**.
+**Coach messages vs UI chrome.** The Coach's first person lives only in the thread and the dock; its persona is [mechanisms/coach-hands.md](mechanisms/coach-hands.md) and `persona.md`. Chrome reports about the Coach in third person and never impersonates it: "The Coach updated your profile. Undo." is chrome; "I've updated your profile" is only ever the Coach speaking, and only after a successful tool result. Approval card verbs: **Do it**, **Don't ask again in this conversation**, **Not now**. Thinking label: **Thinking**. Settled thinking: **Thought for 4s**. Tool running: **Adding paper**. Tool settled: **Added paper**. Tool payload: **Request**, **Result**. Stop control: **Stop**. Queued bar: **Sends when the Coach finishes.** History groups: **Today**, **Yesterday**, **Earlier**.
 
 ## Basis rule
 

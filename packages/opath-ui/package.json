@@ -1,0 +1,10 @@
+{
+  "name": "@opath/ui",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Opath (Lab). Consumed by Opath (Production) in this repo; not published.",
+  "exports": {
+    "./*": "./src/*"
+  }
+}

@@ -4,7 +4,9 @@ import { cn } from "@/lib/utils";
 export const RAIL_WIDTH_MIN = 192;
 export const RAIL_WIDTH_MAX = 320;
 export const RAIL_WIDTH_DEFAULT = 256;
+export const RAIL_COLLAPSED_WIDTH = 52;
 const STORAGE_KEY = "openpath.rail-width";
+const COLLAPSED_KEY = "openpath.rail-collapsed";
 
 function clampWidth(n: number) {
   return Math.min(RAIL_WIDTH_MAX, Math.max(RAIL_WIDTH_MIN, Math.round(n)));
@@ -39,6 +41,32 @@ export function useRailWidth() {
   }, []);
 
   return { width, setWidth: (n: number) => setWidth(clampWidth(n)), commit };
+}
+
+export function useRailCollapsed() {
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    try {
+      setCollapsed(localStorage.getItem(COLLAPSED_KEY) === "1");
+    } catch {
+      /* private mode */
+    }
+  }, []);
+
+  const toggle = useCallback(() => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(COLLAPSED_KEY, next ? "1" : "0");
+      } catch {
+        /* private mode */
+      }
+      return next;
+    });
+  }, []);
+
+  return { collapsed, toggle };
 }
 
 export function RailResize({
@@ -115,7 +143,7 @@ export function RailResize({
       aria-valuemin={RAIL_WIDTH_MIN}
       aria-valuemax={RAIL_WIDTH_MAX}
       aria-valuenow={width}
-      className="group absolute inset-y-0 right-0 z-[var(--z-sticky)] hidden w-2 translate-x-1/2 cursor-col-resize touch-none md:block"
+      className="group absolute inset-y-0 right-0 z-[var(--z-sticky)] hidden w-3 translate-x-1/2 cursor-col-resize touch-none md:block"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={endDrag}
@@ -126,7 +154,7 @@ export function RailResize({
       <span
         aria-hidden="true"
         className={cn(
-          "absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-transparent group-hover:bg-hairline",
+          "absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-hairline group-hover:bg-ink-muted",
           dragging && "bg-accent",
         )}
       />

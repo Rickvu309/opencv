@@ -24,7 +24,7 @@ Four beats, always in this order:
 
 **Show.** Three surfaces make the change undeniable:
 - A confirmation toast with undo, the same one a hand-made change gets.
-- A **tool card** in the thread for every command the Coach called — status icon, verb, optional code chip, expandable body. Failed calls auto-open. Consecutive in-flight tools group.
+- A **tool call** in the thread for every command the Coach called — running verb with shimmer, query chip, settled check, expandable Request / Result. Failed calls auto-open.
 - An **artifact card** when the change produced a place the user can open (a CV, a Proof). Cards are windows, never editors; nobody types in a bubble.
 - The ledger: `command_log` rendered as history ("the Coach updated your CV at 21:14"), so a user can audit a week of coaching in one glance.
 
@@ -36,7 +36,7 @@ Four beats, always in this order:
 
 | State | Behaviour |
 |---|---|
-| Tool failed | The Coach says it could not do it, never answers as if it had. The tool card auto-opens on the error. |
+| Tool failed | The Coach says it could not do it, never answers as if it had. The tool call auto-opens on the error. |
 | Destructive pending | Approval card in the thread; the Coach waits; nothing is written |
 | Destructive refused | The tool returns denied; the Coach acknowledges and does not retry |
 | Destructive already applied | Card re-reads; copy does not claim this tap succeeded |

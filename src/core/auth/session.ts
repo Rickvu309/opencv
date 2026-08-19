@@ -20,14 +20,14 @@ export async function sessionToken() {
   return getCookie?.(SESSION_COOKIE);
 }
 
-export async function setSessionCookie(token: string, expires: Date) {
+export async function setSessionCookie(token: string, expires?: Date) {
   const { setCookie } = await cookies();
   setCookie?.(SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    expires,
+    ...(expires ? { expires } : {}),
   });
 }
 
@@ -37,7 +37,17 @@ export async function clearSessionCookie() {
 }
 
 export async function currentUser() {
-  return readSession(await sessionToken());
+  const token = await sessionToken();
+  const session = await readSession(token);
+  if (session?.renewedExpires && token) {
+    await setSessionCookie(token, session.renewedExpires);
+  }
+  if (!session) return null;
+  return {
+    id: session.id,
+    email: session.email,
+    onboardingCompletedAt: session.onboardingCompletedAt,
+  };
 }
 
 export async function requireUser() {

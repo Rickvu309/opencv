@@ -8,7 +8,7 @@ Copyright (c) 2023-present DanswerAI, Inc.
 
 Source: https://github.com/onyx-dot-app/onyx
 
-Licence: MIT (content outside `ee/` directories). OpenPath ports anatomy and behaviour from `web/lib/opal`, `web/src/refresh-components`, and `web/src/app/craft` into `src/ui/` and Coach components, restyled to OpenPath tokens. We take nothing from `ee/`.
+Licence: MIT (content outside `ee/` directories). OpenPath ports anatomy and behaviour from `web/lib/opal`, `web/src/refresh-components`, and `web/src/app/craft` into `packages/opath-ui` and Coach components, restyled to OpenPath tokens. We take nothing from `ee/`.
 
 ## assistant-ui
 

@@ -1,7 +1,7 @@
 import { streamText, tool, stepCountIs, type ModelMessage } from "ai";
 import { executeCommand } from "@/core/commands/bus";
 import { agentCommands } from "@/core/commands/define";
-import { provider, roleModels, writeTrace, aiAvailable } from "@/core/ai/gateway";
+import { provider, roleModels, writeTrace, aiAvailable, type ModelRole } from "@/core/ai/gateway";
 import { checkInput } from "@/core/ai/guardrails";
 import { loadProfile } from "@/features/profile/load.server";
 import { withClient } from "@/core/db/client.server";
@@ -31,6 +31,7 @@ export async function coachTurn(opts: {
   text: string;
   screen?: string;
   grants?: string[];
+  role?: ModelRole;
 }) {
   const blocked = checkInput(opts.text);
   if (blocked) {
@@ -87,8 +88,10 @@ export async function coachTurn(opts: {
   }));
   const collected: { type: string; text?: string; name?: string; input?: unknown; output?: unknown }[] =
     [];
+  const role: ModelRole =
+    opts.role === "cheap" || opts.role === "drafting" ? opts.role : "chat";
   const result = streamText({
-    model: p.chatModel(roleModels.chat),
+    model: p.chatModel(roleModels[role]),
     system: `${persona}\n\nCurrent screen: ${opts.screen ?? "/coach"}\nProfile snapshot: ${JSON.stringify(profile)}`,
     messages,
     tools,
@@ -102,7 +105,7 @@ export async function coachTurn(opts: {
       await writeTrace({
         userId: opts.userId,
         kind: "turn",
-        role: "chat",
+        role,
         duration: Date.now() - started,
         tokens: { in: usage?.inputTokens ?? 0, out: usage?.outputTokens ?? 0 },
       });

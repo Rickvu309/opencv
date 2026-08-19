@@ -7,15 +7,17 @@ import {
 } from "@/features/coach/queries";
 import { useCoachSession } from "@/features/coach/components/session";
 import { CoachComposer } from "@/features/coach/components/composer";
-import { ChatFailed, ChatMessage, StarterChip } from "@/features/coach/components/message";
-import { ThinkingCard } from "@/features/coach/components/thinking";
+import { ChatFailed, ChatMessage } from "@/features/coach/components/message";
+import { ReasoningPanel } from "@/features/coach/components/thinking";
 import { ToolGroup } from "@/features/coach/components/tool-card";
 import { ApprovalCard } from "@/features/coach/components/approval";
 import { navigateToOpen } from "@/features/coach/open";
 import { sendCoachTurn } from "@/features/coach/stream";
 import { runCommand } from "@/ui/run-command";
-import { checklistFn } from "@/features/onboarding/queries";
-import { Row, RowList } from "@/ui/rows";
+import { Mark } from "@/ui/mark";
+import { Button } from "@/ui/button";
+import { Mail } from "lucide-react";
+import { toast } from "sonner";
 import { StickToBottom } from "@/ui/stick-to-bottom";
 import type { ApprovalView, ToolCallView } from "@/features/coach/model";
 
@@ -24,9 +26,17 @@ type ContentPart = { type?: string; text?: string; name?: string; input?: unknow
 function textFromParts(content: ContentPart[] | undefined) {
   if (!Array.isArray(content)) return "";
   return content
-    .filter((c) => c.type === "text" || c.text)
+    .filter((c) => c.type === "text" || (!c.type && c.text))
     .map((c) => c.text ?? "")
     .join("\n");
+}
+
+function reasoningFromParts(content: ContentPart[] | undefined) {
+  if (!Array.isArray(content)) return "";
+  return content
+    .filter((c) => c.type === "reasoning")
+    .map((c) => c.text ?? "")
+    .join("");
 }
 
 function toolsFromParts(content: ContentPart[] | undefined, idPrefix: string): ToolCallView[] {
@@ -53,7 +63,7 @@ export function ThreadBody({
 }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { setThreadId, pendingIntent, takePendingIntent } = useCoachSession();
+  const { setThreadId, pendingIntent, takePendingIntent, coachRole } = useCoachSession();
   const convos = useQuery({
     queryKey: ["conversations"],
     queryFn: () => listConversationsFn(),
@@ -122,6 +132,7 @@ export function ThreadBody({
         text: trimmed,
         screen,
         grants,
+        role: coachRole,
         signal: abort.signal,
         onText: (next) => {
           acc = next;
@@ -166,6 +177,17 @@ export function ThreadBody({
 
   const messages = thread.data?.messages ?? [];
   const empty = messages.length === 0 && !reply && !pendingUser;
+  let persistedReasoning = "";
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i] as { role: string; content: ContentPart[] };
+    if (m.role !== "user") {
+      persistedReasoning = reasoningFromParts(m.content);
+      break;
+    }
+  }
+  const showLiveReasoning =
+    (working && (Boolean(reasoning) || !reply)) ||
+    Boolean(reasoning && reasoning !== persistedReasoning);
 
   const composer = (
     <CoachComposer
@@ -188,7 +210,7 @@ export function ThreadBody({
       ) : null}
       {empty ? (
         welcome ? (
-          <CoachEmpty composer={composer} onPick={setText} />
+          <CoachEmpty composer={composer} />
         ) : (
           <>
             <div className="min-h-0 flex-1" />
@@ -199,12 +221,15 @@ export function ThreadBody({
         <>
           <StickToBottom>
             <div className="space-y-3 py-2">
-              {messages.map(
-                (m: { id: string; role: string; content: ContentPart[] }) => (
+              {messages.map((m: { id: string; role: string; content: ContentPart[] }) => {
+                const storedReasoning = m.role !== "user" ? reasoningFromParts(m.content) : "";
+                const storedTools = toolsFromParts(m.content, m.id);
+                return (
                   <div key={m.id} className="space-y-2">
-                    {toolsFromParts(m.content, m.id).length ? (
-                      <ToolGroup calls={toolsFromParts(m.content, m.id)} />
+                    {storedReasoning ? (
+                      <ReasoningPanel content={storedReasoning} streaming={false} />
                     ) : null}
+                    {storedTools.length ? <ToolGroup calls={storedTools} /> : null}
                     <ChatMessage
                       role={m.role}
                       text={textFromParts(m.content)}
@@ -218,11 +243,11 @@ export function ThreadBody({
                       }
                     />
                   </div>
-                ),
-              )}
+                );
+              })}
               {pendingUser ? <ChatMessage role="user" text={pendingUser} /> : null}
-              {reasoning || working ? (
-                <ThinkingCard content={reasoning} isStreaming={working && !reply} />
+              {showLiveReasoning ? (
+                <ReasoningPanel content={reasoning} streaming={working && !reply} />
               ) : null}
               {tools.length ? <ToolGroup calls={tools} /> : null}
               {approvals.map((a, i) => (
@@ -255,35 +280,64 @@ export function ThreadBody({
   );
 }
 
-export function CoachEmpty({
-  composer,
-  onPick,
-}: {
-  composer: ReactNode;
-  onPick: (label: string) => void;
-}) {
-  const checklist = useQuery({ queryKey: ["checklist"], queryFn: () => checklistFn() });
+const EMAIL_BANNER_KEY = "openpath.email-connect-dismissed";
+
+function EmailConnectBanner() {
+  const [hidden, setHidden] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    try {
+      setHidden(localStorage.getItem(EMAIL_BANNER_KEY) === "1");
+    } catch {
+      setHidden(false);
+    }
+  }, []);
+
+  if (hidden !== false) return null;
+
+  function dismiss() {
+    try {
+      localStorage.setItem(EMAIL_BANNER_KEY, "1");
+    } catch {
+      /* private mode */
+    }
+    setHidden(true);
+  }
+
+  return (
+    <div className="mt-6 flex w-full flex-col gap-3 rounded-[var(--radius-container)] border border-hairline bg-surface-1 p-3 sm:flex-row sm:items-center">
+      <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-surface-2 text-ink">
+        <Mail className="size-4" aria-hidden="true" />
+      </span>
+      <div className="min-w-0 flex-1 text-left">
+        <p className="text-[15px] font-[510] leading-[1.5]">Connect your email</p>
+        <p className="mt-0.5 text-[13px] leading-[1.5] text-ink-muted">
+          Drafts and follows up on application emails.
+        </p>
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        <Button type="button" variant="ghost" size="sm" onClick={dismiss}>
+          Dismiss
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => toast("Email connect is not available yet.")}
+        >
+          Connect
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+export function CoachEmpty({ composer }: { composer: ReactNode }) {
   return (
     <div data-empty-thread className="flex min-h-0 flex-1 flex-col items-center justify-center">
-      <div className="w-full">
-        <p className="text-balance text-center text-[24px] font-[590] leading-[1.3] tracking-[-0.017em]">
-          Where should we start?
-        </p>
-        {checklist.data && !checklist.data.dismissed ? (
-          <div className="mt-5">
-            <RowList>
-              {checklist.data.items.map((i: { id: string; label: string; done: boolean }) => (
-                <Row key={i.id} label={i.label} meta={i.done ? "done" : "to do"} />
-              ))}
-            </RowList>
-          </div>
-        ) : null}
-        <div className="mt-5 flex flex-wrap justify-center gap-2">
-          {["Where do I start?", "Look at my CV", "What fits my background?"].map((s) => (
-            <StarterChip key={s} label={s} onPick={() => onPick(s)} />
-          ))}
-        </div>
-        <div className="mt-6">{composer}</div>
+      <div className="flex w-full max-w-2xl flex-col items-center">
+        <Mark className="size-10 text-ink" />
+        <div className="mt-8 w-full">{composer}</div>
+        <EmailConnectBanner />
       </div>
     </div>
   );

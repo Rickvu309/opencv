@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "typecheck": "tsc --noEmit",
+    "typecheck:ui": "tsc --noEmit -p packages/opath-ui",
     "generate:routes": "node --input-type=module -e \"import { Generator, getConfig } from '@tanstack/router-generator'; const config = getConfig({ target: 'react', routesDirectory: './src/routes', generatedRouteTree: './src/routeTree.gen.ts', disableLogging: true }, process.cwd()); await new Generator({ config, root: process.cwd() }).run();\"",
     "build": "npm run typecheck && vite build",
     "start": "node --import ./scripts/alias-hook.mjs --env-file-if-exists=.env.local scripts/web-start.mjs",
@@ -15,9 +16,13 @@
     "db:migrate": "node --import ./scripts/alias-hook.mjs --env-file-if-exists=.env.local scripts/db.mjs up",
     "db:rollback": "node --import ./scripts/alias-hook.mjs --env-file-if-exists=.env.local scripts/db.mjs down",
     "db:status": "node --import ./scripts/alias-hook.mjs --env-file-if-exists=.env.local scripts/db.mjs status",
-    "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "storybook": "node scripts/storybook-dev.mjs",
+    "storybook:production": "storybook dev -p 6006 -c .storybook",
+    "storybook:lab": "storybook dev -p 6007 -c packages/opath-ui/.storybook",
+    "build-storybook": "storybook build -c .storybook",
+    "build-storybook:lab": "storybook build -c packages/opath-ui/.storybook -o storybook-static-ui"
   },
+  "workspaces": ["packages/*"],
   "dependencies": {
     "@ai-sdk/openai-compatible": "^3.0.21",
     "@radix-ui/react-checkbox": "^1.3.3",

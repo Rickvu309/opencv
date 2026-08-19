@@ -1,13 +1,13 @@
 import { useLayoutEffect, useRef, useState, type PointerEvent } from "react";
 
-export function useRailHighlight(activeKey: string | null, layoutKey: string) {
+export function useRailHighlight(layoutKey: string) {
   const navRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Record<string, HTMLElement | null>>({});
   const [hovered, setHovered] = useState<string | null>(null);
   const [box, setBox] = useState<{ top: number; height: number } | null>(null);
   const [scrollTick, setScrollTick] = useState(0);
-  const targetKey = hovered ?? activeKey;
+  const targetKey = hovered;
 
   function setItemRef(key: string) {
     return (el: HTMLElement | null) => {

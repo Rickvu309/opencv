@@ -13,6 +13,6 @@ export const joinWaitlistFn = createServerFn({ method: "POST" })
       );
       return { ok: true as const };
     } catch {
-      return { ok: false as const, error: "that did not go through. try again." };
+      return { ok: false as const, error: "That did not go through. Try again." };
     }
   });

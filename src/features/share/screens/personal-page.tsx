@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
 import { getPersonalPageFn } from "@/features/share/queries";
-import { EmptyState, NotFoundState } from "@/ui/empty-state";
+import { EmptyState, NotFoundState, QueryError } from "@/ui/empty-state";
 import { SkeletonSection } from "@/ui/skeleton";
+import { Row, RowList } from "@/ui/rows";
 
 export function PersonalPageScreen({ handle }: { handle: string }) {
   const q = useQuery({
@@ -16,6 +16,13 @@ export function PersonalPageScreen({ handle }: { handle: string }) {
       </main>
     );
   }
+  if (q.isError) {
+    return (
+      <main id="main" className="mx-auto max-w-xl px-4 py-16">
+        <QueryError onRetry={() => void q.refetch()} />
+      </main>
+    );
+  }
   if (!q.data) {
     return (
       <main id="main" className="mx-auto max-w-xl px-4 py-16">
@@ -24,9 +31,6 @@ export function PersonalPageScreen({ handle }: { handle: string }) {
           href="/"
           label="Go to OpenPath"
         />
-        <footer className="mt-16 text-[13px] text-ink-muted">
-          <a href="/">OpenPath</a>
-        </footer>
       </main>
     );
   }
@@ -41,22 +45,19 @@ export function PersonalPageScreen({ handle }: { handle: string }) {
       {q.data.proofs.length === 0 ? (
         <EmptyState kind="first-run" title="No published Proof yet." />
       ) : (
-        <ul className="mt-4 divide-y divide-hairline">
-          {q.data.proofs.map((p) => (
-            <li key={p.slug} className="flex min-h-11 flex-wrap items-baseline justify-between gap-x-3 py-3">
-              <Link to="/p/$slug" params={{ slug: p.slug }} className="text-[15px] font-[510]">
-                {p.title}
-              </Link>
-              <span className="text-[13px] text-ink-muted tabular-nums">
-                {p.role} {p.date_from}–{p.date_to}
-              </span>
-            </li>
-          ))}
-        </ul>
+        <div className="mt-4">
+          <RowList>
+            {q.data.proofs.map((p) => (
+              <Row
+                key={p.slug}
+                href={`/p/${p.slug}`}
+                label={p.title}
+                meta={`${p.role} ${p.date_from}–${p.date_to}`}
+              />
+            ))}
+          </RowList>
+        </div>
       )}
-      <footer className="mt-16 text-[13px] text-ink-muted">
-        <a href="/">OpenPath</a>
-      </footer>
     </main>
   );
 }

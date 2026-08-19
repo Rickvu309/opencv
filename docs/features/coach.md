@@ -1,6 +1,6 @@
 # Coach
 
-**Track:** the chat surface is Commodity, cloned from [Onyx Opal Craft](https://onyx-storybook.vercel.app/) (tool cards, thinking, approval, input bar), [assistant-ui Thread](https://www.assistant-ui.com/docs/ui/thread), and [Beautiful UI](https://www.beautifului.dev/) Chat / Prompt Bar. The Coach's hands — operating the product through the command bus — are Signature: deep design in [mechanisms/coach-hands.md](../mechanisms/coach-hands.md) ([ADR 0002](../adr/0002-command-bus.md), [ADR 0006](../adr/0006-port-opal.md)).
+**Track:** the chat surface is Commodity, cloned from [Onyx Opal Craft](https://onyx-storybook.vercel.app/) (approval, input bar), [assistant-ui Thread](https://www.assistant-ui.com/docs/ui/thread), [reasoning panel](https://www.assistant-ui.com/elements/reasoning-panel), and [tool call](https://www.assistant-ui.com/elements/tool-call), and [Beautiful UI](https://www.beautifului.dev/) Chat / Prompt Bar. The Coach's hands — operating the product through the command bus — are Signature: deep design in [mechanisms/coach-hands.md](../mechanisms/coach-hands.md) ([ADR 0002](../adr/0002-command-bus.md), [ADR 0006](../adr/0006-port-opal.md)).
 
 **Job:** answer career questions grounded in the user's real profile, and do the work in the app on request — then always name the one next concrete step.
 
@@ -14,7 +14,7 @@ The Coach is the home of the product and its operating layer. It is not a suppor
 
 - `/coach` — the conversation, and where signing in lands. Reached from the Coach place in the rail. Thread history lives in the rail under History, not a second list on this page. The open thread is `/coach?thread=<id>`. No dock here; the page is the conversation. The composer is a single bordered surface with the field and send control inside; messages are user blocks vs Coach body text, not role-prefixed paragraphs.
 - The coach dock — the same conversation, travelling on every artifact screen and on Account. Not on `/coach`, landing, auth, onboarding, or public pages.
-- Cloned patterns: streamed markdown replies, stop and retry, thinking card, tool cards, artifact cards, approval cards for destructive commands, thread history with rename (in the rail), composer with stop / interrupt hint / queued message, starter prompts drawn from the user's profile.
+- Cloned patterns: streamed markdown replies, stop and retry, reasoning panel, tool calls, artifact cards, approval cards for destructive commands, thread history with rename (in the rail), composer with stop / interrupt hint / queued message, starter prompts drawn from the user's profile.
 - Trust surfaces: "the Coach updated your CV" confirmations with undo (from `command_log`), an honest offline state when the gateway is unavailable, a stalled-turn state with retry, and a said-nothing state instead of an empty bubble.
 
 ## Data
@@ -42,7 +42,7 @@ The Coach's real capabilities are other features' commands with `agent: true`; s
 
 ## Empty state
 
-A calm thread with three starter prompts built from the profile ("Where do I start", "Look at my CV", "What fits my background"). Never a blank pane.
+A calm empty thread like Grok: mark, the composer, and a connect-email banner. Never a blank pane. The activation checklist is not on this surface.
 
 ## Out of scope
 

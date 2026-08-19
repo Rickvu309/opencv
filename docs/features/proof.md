@@ -10,7 +10,7 @@
 
 Early-career users believe they have nothing to show. Proof teaches them otherwise: a class project, a shift at a café, an assignment, something that failed — all of it counts if the specifics are captured. A Proof is a space, not a document: a running log of what happened, fed as it happens, that the Coach helps shape into a story and publish as a designed page. It is never required and never shamed.
 
-In the rail, Proof is a child of Paper under Prepare — IA only; this domain does not merge with Paper ([ADR 0005](../adr/0005-proof-own-domain.md), [flows.md](../flows.md)). Reached from inside Paper, from a Coach card, or by URL; not a root-rail peer.
+In the rail, Proof is not a row. It is opened from Paper, a Coach card, or a URL. `/proof` marks Paper. The domain stays its own ([ADR 0005](../adr/0005-proof-own-domain.md), [flows.md](../flows.md)).
 
 The loop (flow 5 in [flows.md](../flows.md)): log → interview → arrange → publish → connect outward (personal page, a CV line, a shared link). This loop is the retention engine, and its published pages are the seed of the future sharing and social layer.
 
