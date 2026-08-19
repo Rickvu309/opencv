@@ -44,7 +44,7 @@ export function PaperThumb({
       }}
     >
       <div
-        className="pointer-events-none origin-top-left bg-white"
+        className="pointer-events-none origin-top-left overflow-hidden bg-white"
         style={{
           width: A4_WIDTH_PX,
           transform: `scale(${scale})`,
