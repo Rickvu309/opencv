@@ -1,23 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
 import { getProfileFn } from "@/features/profile/queries";
 import { runCommand } from "@/ui/run-command";
 import {
   emptyProfileDraft,
-  linkKinds,
   ProfileView,
   type ProfileConfirm,
   type ProfileDraft,
   type ProfileLinkKind,
 } from "@/features/profile/components/profile-view";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-function lines(value: string) {
-  return value
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
-}
+const SAVE_MS = 400;
 
 function linkUrl(
   links: { kind: ProfileLinkKind; url: string }[] | undefined,
@@ -26,45 +19,157 @@ function linkUrl(
   return links?.find((link) => link.kind === kind)?.url ?? "";
 }
 
+type Pending =
+  | { type: "identity"; name: string; targetRole: string | null }
+  | { type: "education"; school: string; major: string; year: string }
+  | {
+      type: "experience";
+      id: string;
+      org: string;
+      role: string;
+      dateFrom: string;
+      dateTo: string;
+      detail: string[];
+    }
+  | { type: "link"; kind: ProfileLinkKind; url: string };
+
 export function ProfileScreen() {
   const q = useQuery({ queryKey: ["profile"], queryFn: () => getProfileFn() });
-  const navigate = useNavigate();
   const p = q.data?.profile;
   const [edits, setEdits] = useState<Partial<ProfileDraft>>({});
   const [confirm, setConfirm] = useState<ProfileConfirm>(null);
-
-  function patch(next: Partial<ProfileDraft>) {
-    setEdits((prev) => ({ ...prev, ...next }));
-  }
+  const timers = useRef<Record<string, number>>({});
+  const pending = useRef<Record<string, Pending>>({});
 
   const resolved: ProfileDraft = {
     ...emptyProfileDraft,
     name: p?.name ?? "",
     targetRole: p?.targetRole ?? "",
-    location: p?.location ?? "",
-    timeAvailable: p?.timeAvailable ?? "",
     school: p?.education.school ?? "",
     major: p?.education.major ?? "",
     year: p?.education.year ?? "",
-    gpa: p?.education.gpa ?? "",
-    courses: (p?.education.courses ?? []).join("\n"),
     linkedin: linkUrl(p?.links, "linkedin"),
     github: linkUrl(p?.links, "github"),
     portfolio: linkUrl(p?.links, "portfolio"),
     ...edits,
   };
+  const resolvedRef = useRef(resolved);
+  resolvedRef.current = resolved;
+  const profileRef = useRef(p);
+  profileRef.current = p;
 
-  const empty =
-    p &&
-    !p.name &&
-    !p.education.school &&
-    p.experience.length === 0 &&
-    p.facts.length === 0 &&
-    p.links.length === 0;
+  useEffect(() => {
+    const current = timers.current;
+    return () => {
+      for (const timer of Object.values(current)) window.clearTimeout(timer);
+    };
+  }, []);
 
-  async function refresh() {
+  function schedule(key: string, payload: Pending) {
+    pending.current[key] = payload;
+    if (timers.current[key]) window.clearTimeout(timers.current[key]);
+    timers.current[key] = window.setTimeout(() => {
+      void flush(key);
+    }, SAVE_MS);
+  }
+
+  async function flush(key: string) {
+    if (timers.current[key]) {
+      window.clearTimeout(timers.current[key]);
+      delete timers.current[key];
+    }
+    const payload = pending.current[key];
+    delete pending.current[key];
+    if (payload) await persist(payload);
+  }
+
+  async function persist(payload: Pending) {
+    if (payload.type === "identity") {
+      await runCommand("profile.update", {
+        name: payload.name,
+        targetRole: payload.targetRole,
+      });
+    } else if (payload.type === "education") {
+      const profile = profileRef.current;
+      const blank = !payload.school.trim() && !payload.major.trim() && !payload.year.trim();
+      if (
+        blank &&
+        !profile?.education.school &&
+        !profile?.education.major &&
+        !profile?.education.year
+      ) {
+        return;
+      }
+      await runCommand("profile.setEducation", {
+        school: payload.school,
+        major: payload.major,
+        year: payload.year,
+        gpa: profile?.education.gpa ?? "",
+        courses: profile?.education.courses ?? [],
+      });
+    } else if (payload.type === "experience") {
+      await runCommand("profile.updateExperience", {
+        id: payload.id,
+        org: payload.org,
+        role: payload.role,
+        dateFrom: payload.dateFrom,
+        dateTo: payload.dateTo,
+        detail: payload.detail,
+      });
+    } else {
+      await runCommand("profile.setLink", { kind: payload.kind, url: payload.url });
+    }
     await q.refetch();
-    setEdits({});
+  }
+
+  function experiencePayload(draft: ProfileDraft): Pending | null {
+    if (!draft.editingExperienceId) return null;
+    const prev = profileRef.current?.experience.find((item) => item.id === draft.editingExperienceId);
+    return {
+      type: "experience",
+      id: draft.editingExperienceId,
+      org: draft.expOrg,
+      role: draft.expRole,
+      dateFrom: draft.expFrom,
+      dateTo: draft.expTo,
+      detail: prev?.detail ?? [],
+    };
+  }
+
+  function patch(next: Partial<ProfileDraft>) {
+    const switchingExperience =
+      next.editingExperienceId !== undefined &&
+      next.editingExperienceId !== resolvedRef.current.editingExperienceId;
+    if (switchingExperience) void flush("experience");
+
+    const merged = { ...resolvedRef.current, ...next };
+    setEdits((prev) => ({ ...prev, ...next }));
+
+    if ("name" in next || "targetRole" in next) {
+      schedule("identity", {
+        type: "identity",
+        name: merged.name,
+        targetRole: merged.targetRole.trim() ? merged.targetRole.trim() : null,
+      });
+    }
+    if ("school" in next || "major" in next || "year" in next) {
+      schedule("education", {
+        type: "education",
+        school: merged.school,
+        major: merged.major,
+        year: merged.year,
+      });
+    }
+    if (
+      !switchingExperience &&
+      ("expOrg" in next || "expRole" in next || "expFrom" in next || "expTo" in next)
+    ) {
+      const payload = experiencePayload(merged);
+      if (payload) schedule("experience", payload);
+    }
+    for (const kind of ["linkedin", "github", "portfolio"] as const) {
+      if (kind in next) schedule(kind, { type: "link", kind, url: merged[kind].trim() });
+    }
   }
 
   return (
@@ -72,107 +177,67 @@ export function ProfileScreen() {
       pending={q.isPending}
       error={q.isError}
       onRetry={() => void q.refetch()}
-      empty={Boolean(empty)}
       data={
         p
           ? {
-              completeness: q.data?.completeness ?? 0,
               name: p.name,
               targetRole: p.targetRole ?? "",
-              location: p.location,
-              timeAvailable: p.timeAvailable,
               education: {
                 school: p.education.school,
                 major: p.education.major,
                 year: p.education.year,
-                gpa: p.education.gpa,
-                courses: p.education.courses,
               },
-              experience: p.experience.map((e) => ({
-                id: e.id,
-                org: e.org,
-                role: e.role,
-                dateFrom: e.dateFrom,
-                dateTo: e.dateTo,
-                detail: e.detail,
+              experience: p.experience.map((item) => ({
+                id: item.id,
+                org: item.org,
+                role: item.role,
+                dateFrom: item.dateFrom,
+                dateTo: item.dateTo,
               })),
-              facts: p.facts.map((f) => ({ id: f.id, label: f.label, value: f.value })),
-              links: p.links.map((l) => ({ kind: l.kind, url: l.url })),
+              links: p.links.map((link) => ({ kind: link.kind, url: link.url })),
             }
           : undefined
       }
       draft={resolved}
       onDraft={patch}
-      onSaveIdentity={() => {
-        if (!p) return;
-        void runCommand("profile.update", {
-          name: resolved.name,
-          targetRole: resolved.targetRole || null,
-          location: resolved.location,
-          timeAvailable: resolved.timeAvailable,
-        }).then(() => refresh());
+      onIdentityBlur={() => void flush("identity")}
+      onEducationBlur={() => void flush("education")}
+      onExperienceBlur={() => void flush("experience")}
+      onLinkBlur={(kind) => void flush(kind)}
+      onAddSchool={() => setEdits((prev) => ({ ...prev, addingSchool: true }))}
+      onAddExperience={() => {
+        void (async () => {
+          await flush("experience");
+          const { result } = await runCommand<{ id: string }>("profile.addExperience", {
+            org: "",
+            role: "",
+            dateFrom: "",
+            dateTo: "",
+            detail: [],
+          });
+          await q.refetch();
+          setEdits((prev) => ({
+            ...prev,
+            editingExperienceId: result.id,
+            expOrg: "",
+            expRole: "",
+            expFrom: "",
+            expTo: "",
+          }));
+        })();
       }}
-      onSaveEducation={() =>
-        void runCommand("profile.setEducation", {
-          school: resolved.school,
-          major: resolved.major,
-          year: resolved.year,
-          gpa: resolved.gpa,
-          courses: lines(resolved.courses),
-        }).then(() => refresh())
-      }
-      onSaveExperience={() => {
-        const input = {
-          org: resolved.expOrg,
-          role: resolved.expRole,
-          dateFrom: resolved.expFrom,
-          dateTo: resolved.expTo,
-          detail: lines(resolved.expDetail),
-        };
-        const run = resolved.editingExperienceId
-          ? runCommand("profile.updateExperience", {
-              id: resolved.editingExperienceId,
-              ...input,
-            })
-          : runCommand("profile.addExperience", input);
-        void run.then(() => refresh());
-      }}
-      onSaveFact={() => {
-        const run = resolved.editingFactId
-          ? runCommand("profile.updateFact", {
-              id: resolved.editingFactId,
-              label: resolved.factLabel,
-              value: resolved.factValue,
-            })
-          : runCommand("profile.addFact", {
-              label: resolved.factLabel,
-              value: resolved.factValue,
-            });
-        void run.then(() => refresh());
-      }}
-      onSaveLinks={() => {
-        void Promise.all(
-          linkKinds.map((kind) => {
-            const url = resolved[kind.id].trim();
-            if (url) return runCommand("profile.setLink", { kind: kind.id, url });
-            return Promise.resolve();
-          }),
-        ).then(() => refresh());
-      }}
-      onStartCv={() => void navigate({ to: "/paper" })}
       confirm={confirm}
       onConfirmChange={setConfirm}
       onConfirmRemove={() => {
         if (!confirm) return;
-        const run =
-          confirm.kind === "experience"
-            ? runCommand("profile.removeExperience", { id: confirm.id })
-            : confirm.kind === "fact"
-              ? runCommand("profile.removeFact", { id: confirm.id })
-              : runCommand("profile.removeLink", { kind: confirm.linkKind });
-        void run.then(() => {
+        void runCommand("profile.removeExperience", { id: confirm.id }).then(() => {
           setConfirm(null);
-          return refresh();
+          setEdits((prev) =>
+            prev.editingExperienceId === confirm.id
+              ? { ...prev, editingExperienceId: null }
+              : prev,
+          );
+          return q.refetch();
         });
       }}
     />

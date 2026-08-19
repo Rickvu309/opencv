@@ -1,4 +1,4 @@
-import { Button, buttonClass } from "@/ui/button";
+import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
 import { Textarea } from "@/ui/textarea";
 import { Label } from "@/ui/label";
@@ -51,20 +51,11 @@ export function SearchView({
   return (
     <div>
       <Band title="Search" />
-      {thin ? (
-        <EmptyState
-          kind="first-run"
-          title="Fit needs something to read. Add a fact or set a goal first."
-          action={
-            <a href="/profile" className={buttonClass()}>
-              Open Profile
-            </a>
-          }
-        />
-      ) : error ? (
+      {error ? (
         <QueryError onRetry={() => onRetry?.()} />
       ) : (
         <>
+          {thin ? <InfoBlock className="mb-5 max-w-xl">Set a target role.</InfoBlock> : null}
           <Card className="mb-5 max-w-xl">
             <form
               onSubmit={(e) => {

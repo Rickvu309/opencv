@@ -1,5 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { completeness } from "@/features/profile/model";
 
 export const listOpeningsFn = createServerFn({ method: "GET" }).handler(async () => {
   const { requireUser } = await import("@/core/auth/session");
@@ -7,7 +6,7 @@ export const listOpeningsFn = createServerFn({ method: "GET" }).handler(async ()
   const { loadProfile } = await import("@/features/profile/load.server");
   const user = await requireUser();
   const profile = await loadProfile(user.id);
-  const thin = completeness(profile) < 18;
+  const thin = !profile.targetRole;
   const { rows } = await withClient((c) =>
     c.query(
       `select id, title, company, location, url, requirements, fit, created_at

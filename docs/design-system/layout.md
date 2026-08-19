@@ -86,7 +86,7 @@ Regions: band (title), then the pipeline grouped by status (interested / applied
 
 ### Profile — Sectioned editor
 
-Regions: identity first (name, goal), then facts by section, completeness as a fact with its basis inside the first section ("N of 100, from what you actually provided"). Primary: fill the emptiest section; once complete enough, the door to build the first CV. Yields: sections stack. Empty/error: unfilled sections show the payback for filling them, per the onboarding skip contract.
+Regions: identity (name, target role), school, work, links. Band title Profile; meta "Paper and Coach read this." Primary: none — fields autosave on blur. Yields: sections stack. Empty/error: a short line only when every block is empty; school and work empty are outline Add school / Add experience.
 
 ### Settings — Sectioned editor
 
@@ -134,7 +134,7 @@ Per-screen empty inventory:
 | Search | first-run (no query), filtered (no results), error | run or widen the query |
 | Apply | first-run, cleared | go to Search |
 | Pitch | first-run (unbuilt), thin-section | build from the profile |
-| Profile | unfilled sections (payback shown) | fill the emptiest section |
+| Profile | first-run (all four empty), empty school / work | Add school / Add experience |
 | Bell | empty | none — "No notifications yet." is complete |
 | Thread list (rail) | first-run | New conversation |
 

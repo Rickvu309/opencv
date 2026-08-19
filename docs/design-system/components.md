@@ -299,10 +299,10 @@ First focusable element on every page; visually hidden until focused, then a `--
 ### Sectioned-editor section
 
 **Region:** the unit of `/profile`, `/pitch`, `/settings`.
-**Anatomy:** heading outside the group surface (`title` 18/510), then the fields on one shared content inset — the Umbra law made flesh; each field row: Label leading, control trailing at a readable field width (~280px from `sm`, wrapping on small screens), grouped with space not hairlines. Quiet per-section save right-aligned (state announced in the toast, no per-row Save buttons where blur-save works). Completeness sits inside the first Profile section as a fact with its basis, never a hero metric.
+**Anatomy:** heading outside the group surface (`title` 18/510), then the fields on one shared content inset — the Umbra law made flesh; each field row: Label leading, control trailing at a readable field width (~280px from `sm`, wrapping on small screens), grouped with space not hairlines. Autosave on blur (state announced in the toast); no per-section Save button.
 **Danger sections** sit last; their actions are danger buttons confirming via ConfirmDialog.
-**Copy hooks:** section headings, field labels, the completeness sentence, per-section payback.
-**Lab form:** identity and other short fields use FieldRow; writing surfaces and add forms put the label above a full-width field; repeating entries (experience, facts) sit in Cards with Edit / Remove, matching Pitch answers. Completeness is an InfoBlock inside the first Profile section.
+**Copy hooks:** section headings, field labels.
+**Lab form:** identity and other short fields use FieldRow; writing surfaces and add forms put the label above a full-width field; repeating entries (experience) sit in Cards with Edit / Remove, matching Pitch answers.
 
 ### Wizard step
 

@@ -39,7 +39,7 @@ When the user sends a posting or link, `opening.add` with the text as sent — n
 
 ## Empty states
 
-- Profile too thin to rank: "Fit needs something to read. Add a fact or set a goal first." One door: open Profile (both live there).
+- Profile too thin to rank: "Set a target role." Paste a posting stays available.
 - No openings: "Paste a posting you're looking at, and you'll see how you match." Primary action: paste one.
 
 ## Out of scope
