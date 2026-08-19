@@ -1,25 +1,26 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { StoryFrame } from "../story-frame";
-import { Thinking } from "../beautiful/thinking";
-import { StreamingText } from "../beautiful/streaming-text";
-import { ApprovalCard } from "../beautiful/approval-card";
-import { ToolChips } from "../beautiful/tool-chips";
-import { TaskRows } from "../beautiful/task-rows";
-import { Chat } from "../beautiful/chat";
-import { PromptBar } from "../beautiful/prompt-bar";
-import { RecommendationCard } from "../beautiful/recommendation-card";
-import { ContextCards } from "../beautiful/context-cards";
-import { Search } from "../beautiful/search";
-import { Flowchart } from "../beautiful/flowchart";
-import { InsightCards } from "../beautiful/insight-cards";
-import { CodeBlockBeautiful } from "../beautiful/code-block";
-import { FineTuneCard } from "../beautiful/fine-tune-card";
-import OpenInChatCustomLinkDemo from "../eightstar/examples/open-in-chat-custom-link-demo";
-import OpenInChatCustomProvidersDemo from "../eightstar/examples/open-in-chat-custom-providers-demo";
-import OpenInChatCustomTriggerDemo from "../eightstar/examples/open-in-chat-custom-trigger-demo";
-import OpenInChatDemo from "../eightstar/examples/open-in-chat-demo";
-import OpenInChatHorizontalDemo from "../eightstar/examples/open-in-chat-horizontal-demo";
-import OpenInChatPositioningDemo from "../eightstar/examples/open-in-chat-positioning-demo";
+import { lazy } from "react";
+import { LazyFrame } from "./lazy-frame";
+const Thinking = lazy(() => import("../beautiful/thinking").then((m) => ({ default: m.Thinking })));
+const StreamingText = lazy(() => import("../beautiful/streaming-text").then((m) => ({ default: m.StreamingText })));
+const ApprovalCard = lazy(() => import("../beautiful/approval-card").then((m) => ({ default: m.ApprovalCard })));
+const ToolChips = lazy(() => import("../beautiful/tool-chips").then((m) => ({ default: m.ToolChips })));
+const TaskRows = lazy(() => import("../beautiful/task-rows").then((m) => ({ default: m.TaskRows })));
+const Chat = lazy(() => import("../beautiful/chat").then((m) => ({ default: m.Chat })));
+const PromptBar = lazy(() => import("../beautiful/prompt-bar").then((m) => ({ default: m.PromptBar })));
+const RecommendationCard = lazy(() => import("../beautiful/recommendation-card").then((m) => ({ default: m.RecommendationCard })));
+const ContextCards = lazy(() => import("../beautiful/context-cards").then((m) => ({ default: m.ContextCards })));
+const Search = lazy(() => import("../beautiful/search").then((m) => ({ default: m.Search })));
+const Flowchart = lazy(() => import("../beautiful/flowchart").then((m) => ({ default: m.Flowchart })));
+const InsightCards = lazy(() => import("../beautiful/insight-cards").then((m) => ({ default: m.InsightCards })));
+const CodeBlockBeautiful = lazy(() => import("../beautiful/code-block").then((m) => ({ default: m.CodeBlockBeautiful })));
+const FineTuneCard = lazy(() => import("../beautiful/fine-tune-card").then((m) => ({ default: m.FineTuneCard })));
+const OpenInChatCustomLinkDemo = lazy(() => import("../eightstar/examples/open-in-chat-custom-link-demo").then((m) => ({ default: m.default ?? m.OpenInChatCustomLinkDemo ?? Object.values(m).find((v) => typeof v === "function") })));
+const OpenInChatCustomProvidersDemo = lazy(() => import("../eightstar/examples/open-in-chat-custom-providers-demo").then((m) => ({ default: m.default ?? m.OpenInChatCustomProvidersDemo ?? Object.values(m).find((v) => typeof v === "function") })));
+const OpenInChatCustomTriggerDemo = lazy(() => import("../eightstar/examples/open-in-chat-custom-trigger-demo").then((m) => ({ default: m.default ?? m.OpenInChatCustomTriggerDemo ?? Object.values(m).find((v) => typeof v === "function") })));
+const OpenInChatDemo = lazy(() => import("../eightstar/examples/open-in-chat-demo").then((m) => ({ default: m.default ?? m.OpenInChatDemo ?? Object.values(m).find((v) => typeof v === "function") })));
+const OpenInChatHorizontalDemo = lazy(() => import("../eightstar/examples/open-in-chat-horizontal-demo").then((m) => ({ default: m.default ?? m.OpenInChatHorizontalDemo ?? Object.values(m).find((v) => typeof v === "function") })));
+const OpenInChatPositioningDemo = lazy(() => import("../eightstar/examples/open-in-chat-positioning-demo").then((m) => ({ default: m.default ?? m.OpenInChatPositioningDemo ?? Object.values(m).find((v) => typeof v === "function") })));
 
 const meta = { title: "Lab/Components/Chat" } satisfies Meta;
 export default meta;
@@ -28,179 +29,179 @@ type Story = StoryObj;
 export const BeautifulThinking: Story = {
   name: "Thinking",
   render: () => (
-    <StoryFrame width={480}>
+    <LazyFrame width={480}>
       <Thinking />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeautifulStreamingText: Story = {
   name: "Streaming Text",
   render: () => (
-    <StoryFrame width={520}>
+    <LazyFrame width={520}>
       <StreamingText />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeautifulApprovalCard: Story = {
   name: "Approval Card",
   render: () => (
-    <StoryFrame>
+    <LazyFrame>
       <ApprovalCard />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeautifulToolChips: Story = {
   name: "Tool Chips",
   render: () => (
-    <StoryFrame>
+    <LazyFrame>
       <ToolChips />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeautifulTaskRows: Story = {
   name: "Task Rows",
   render: () => (
-    <StoryFrame width={520}>
+    <LazyFrame width={520}>
       <TaskRows />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeautifulChat: Story = {
   name: "Chat",
   render: () => (
-    <StoryFrame width={480}>
+    <LazyFrame width={480}>
       <Chat />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeautifulPromptBar: Story = {
   name: "Prompt Bar",
   render: () => (
-    <StoryFrame width={480}>
+    <LazyFrame width={480}>
       <PromptBar />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeautifulRecommendationCard: Story = {
   name: "Recommendation Card",
   render: () => (
-    <StoryFrame>
+    <LazyFrame>
       <RecommendationCard />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeautifulContextCards: Story = {
   name: "Context Cards",
   render: () => (
-    <StoryFrame>
+    <LazyFrame>
       <ContextCards />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeautifulSearch: Story = {
   name: "Search",
   render: () => (
-    <StoryFrame>
+    <LazyFrame>
       <Search />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeautifulFlowchart: Story = {
   name: "Flowchart",
   render: () => (
-    <StoryFrame width={520} className="p-3">
+    <LazyFrame width={520} className="p-3">
       <Flowchart />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeautifulInsightCards: Story = {
   name: "Insight Cards",
   render: () => (
-    <StoryFrame>
+    <LazyFrame>
       <InsightCards />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeautifulCodeBlockBeautiful: Story = {
   name: "Code Block",
   render: () => (
-    <StoryFrame width={480}>
+    <LazyFrame width={480}>
       <CodeBlockBeautiful />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeautifulFineTuneCard: Story = {
   name: "Fine-tune Card",
   render: () => (
-    <StoryFrame>
+    <LazyFrame>
       <FineTuneCard />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const EightstarOpenInChatCustomLinkDemo: Story = {
   name: "open in chat custom link",
   render: () => (
-    <StoryFrame width={640}>
+    <LazyFrame width={640}>
       <OpenInChatCustomLinkDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const EightstarOpenInChatCustomProvidersDemo: Story = {
   name: "open in chat custom providers",
   render: () => (
-    <StoryFrame width={640}>
+    <LazyFrame width={640}>
       <OpenInChatCustomProvidersDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const EightstarOpenInChatCustomTriggerDemo: Story = {
   name: "open in chat custom trigger",
   render: () => (
-    <StoryFrame width={640}>
+    <LazyFrame width={640}>
       <OpenInChatCustomTriggerDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const EightstarOpenInChatDemo: Story = {
   name: "open in chat",
   render: () => (
-    <StoryFrame width={640}>
+    <LazyFrame width={640}>
       <OpenInChatDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const EightstarOpenInChatHorizontalDemo: Story = {
   name: "open in chat horizontal",
   render: () => (
-    <StoryFrame width={640}>
+    <LazyFrame width={640}>
       <OpenInChatHorizontalDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const EightstarOpenInChatPositioningDemo: Story = {
   name: "open in chat positioning",
   render: () => (
-    <StoryFrame width={640}>
+    <LazyFrame width={640}>
       <OpenInChatPositioningDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };

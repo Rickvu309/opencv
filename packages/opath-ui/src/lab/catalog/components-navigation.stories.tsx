@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { StoryFrame } from "../story-frame";
-import { AnimatedSidebarPreview } from "../beui/previews/animated-sidebar.preview";
-import { BounceSidebarPreview } from "../beui/previews/bounce-sidebar.preview";
-import { DockPreview } from "../beui/previews/dock.preview";
-import { PreviewRailPreview } from "../beui/previews/preview-rail.preview";
-import { TabsPreview } from "../beui/previews/tabs.preview";
-import { SidebarNav } from "../beautiful/sidebar-nav";
+import { lazy } from "react";
+import { LazyFrame } from "./lazy-frame";
+const AnimatedSidebarPreview = lazy(() => import("../beui/previews/animated-sidebar.preview").then((m) => ({ default: m.AnimatedSidebarPreview })));
+const BounceSidebarPreview = lazy(() => import("../beui/previews/bounce-sidebar.preview").then((m) => ({ default: m.BounceSidebarPreview })));
+const DockPreview = lazy(() => import("../beui/previews/dock.preview").then((m) => ({ default: m.DockPreview })));
+const PreviewRailPreview = lazy(() => import("../beui/previews/preview-rail.preview").then((m) => ({ default: m.PreviewRailPreview })));
+const TabsPreview = lazy(() => import("../beui/previews/tabs.preview").then((m) => ({ default: m.TabsPreview })));
+const SidebarNav = lazy(() => import("../beautiful/sidebar-nav").then((m) => ({ default: m.SidebarNav })));
 
 const meta = { title: "Lab/Components/Navigation" } satisfies Meta;
 export default meta;
@@ -14,53 +15,53 @@ type Story = StoryObj;
 export const BeuiAnimatedSidebar: Story = {
   name: "animated sidebar",
   render: () => (
-    <StoryFrame width={560}>
+    <LazyFrame width={560}>
       <AnimatedSidebarPreview />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeuiBounceSidebar: Story = {
   name: "bounce sidebar",
   render: () => (
-    <StoryFrame width={560}>
+    <LazyFrame width={560}>
       <BounceSidebarPreview />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeuiDock: Story = {
   name: "dock",
   render: () => (
-    <StoryFrame width={560}>
+    <LazyFrame width={560}>
       <DockPreview />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeuiPreviewRail: Story = {
   name: "preview rail",
   render: () => (
-    <StoryFrame width={560}>
+    <LazyFrame width={560}>
       <PreviewRailPreview />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeuiTabs: Story = {
   name: "tabs",
   render: () => (
-    <StoryFrame width={560}>
+    <LazyFrame width={560}>
       <TabsPreview />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeautifulSidebarNav: Story = {
   name: "Sidebar Nav",
   render: () => (
-    <StoryFrame width={280} className="bg-canvas p-3">
+    <LazyFrame width={280} className="bg-canvas p-3">
       <SidebarNav />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };

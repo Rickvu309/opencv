@@ -1,7 +1,7 @@
 "use client";
 
 import "../typography";
-import Image from "react";
+import Image from "next/image";
 
 const Example = () => (
   <div className="size-full overflow-y-auto">

@@ -2,7 +2,7 @@
 
 import { Deck, DeckCards, DeckEmpty, DeckItem } from "../deck";
 import { StarIcon } from "lucide-react";
-import Image from "react";
+import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 

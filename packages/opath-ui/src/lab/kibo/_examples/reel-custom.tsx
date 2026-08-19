@@ -11,7 +11,7 @@ import {
 } from "../reel";
 import { Button } from "@/components/ui/button";
 import { Heart, MessageCircle, Share } from "lucide-react";
-import Image from "react";
+import Image from "next/image";
 
 type CustomReelItem = ReelItem & {
   author: string;

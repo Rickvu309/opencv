@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { XIcon } from "lucide-react";
-import Image from "react";
+import Image from "next/image";
 import { type ChangeEvent, useState } from "react";
 
 const Example = () => {

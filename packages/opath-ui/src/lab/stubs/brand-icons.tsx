@@ -39,3 +39,6 @@ export const VercelLightIcon = (props: SVGProps<SVGSVGElement>) => (
 export const WixBlackIcon = (props: SVGProps<SVGSVGElement>) => (
   <Mark label="Wix" {...props} />
 );
+export const JohnsonAndJohnsonIcon = (props: SVGProps<SVGSVGElement>) => (
+  <Mark label="J&J" {...props} />
+);

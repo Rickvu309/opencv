@@ -1,7 +1,7 @@
 "use client";
 
 import { ImageZoom } from "../image-zoom";
-import Image from "react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 const Example = () => (

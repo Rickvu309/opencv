@@ -7,7 +7,7 @@ import {
   TickerPriceChange,
   TickerSymbol,
 } from "../ticker";
-import Image from "react";
+import Image from "next/image";
 
 const ticker = "GOOG";
 

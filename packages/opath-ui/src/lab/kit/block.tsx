@@ -3,7 +3,7 @@
 import type { SupportedLanguages } from '@pierre/diffs/react';
 import { Fullscreen, Monitor, Smartphone, Tablet } from 'lucide-react';
 import dynamic from 'next/dynamic';
-import Link from 'react';
+import Link from "next/link";
 import { type ReactNode, useRef, useState } from 'react';
 import type { PanelImperativeHandle } from 'react-resizable-panels';
 import { OpenInPlaygroundButton } from '@/components/open-in-playground-button';

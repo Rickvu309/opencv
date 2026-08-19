@@ -1,7 +1,7 @@
 'use client';
 
 import { AlertTriangle, Check, ChevronRight, Eye } from 'lucide-react';
-import Link from 'react';
+import Link from "next/link";
 import { Card, CardContent } from '../../kit/card';
 import { cn } from '../../cn';
 

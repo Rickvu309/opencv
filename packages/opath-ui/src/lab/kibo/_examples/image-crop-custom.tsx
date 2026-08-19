@@ -8,7 +8,7 @@ import {
 } from "../image-crop";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import Image from "react";
+import Image from "next/image";
 import { type ChangeEvent, useState } from "react";
 
 const Example = () => {

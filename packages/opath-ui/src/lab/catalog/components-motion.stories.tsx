@@ -1,42 +1,43 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { StoryFrame } from "../story-frame";
-import { BouncyAccordionPreview } from "../beui/previews/bouncy-accordion.preview";
-import { CylinderCarouselPreview } from "../beui/previews/cylinder-carousel.preview";
-import { MarqueePreview } from "../beui/previews/marquee.preview";
-import { NumberPreview } from "../beui/previews/number.preview";
-import { PullToRefreshPreview } from "../beui/previews/pull-to-refresh.preview";
-import { ShaderBackgroundPreview } from "../beui/previews/shader-background.preview";
-import { SharedLayoutBgPreview } from "../beui/previews/shared-layout-bg.preview";
-import { TextAnimationPreview } from "../beui/previews/text-animation.preview";
-import { ThemeTogglePreview } from "../beui/previews/theme-toggle.preview";
-import { TiltCardPreview } from "../beui/previews/tilt-card.preview";
-import { Accordion as AccordionDemo } from "../transitions/accordion";
-import { AvatarGroupHover as AvatarGroupHoverDemo } from "../transitions/avatar-group-hover";
-import { CardResize as CardResizeDemo } from "../transitions/card-resize";
-import { CardTilt as CardTiltDemo } from "../transitions/card-tilt";
-import { CheckboxCheck as CheckboxCheckDemo } from "../transitions/checkbox-check";
-import { ErrorStateShake as ErrorStateShakeDemo } from "../transitions/error-state-shake";
-import { IconSwap as IconSwapDemo } from "../transitions/icon-swap";
-import { InputClearDissolve as InputClearDissolveDemo } from "../transitions/input-clear-dissolve";
-import { LearnMoreHover as LearnMoreHoverDemo } from "../transitions/learn-more-hover";
-import { LikeButton as LikeButtonDemo } from "../transitions/like-button";
-import { MenuDropdown as MenuDropdownDemo } from "../transitions/menu-dropdown";
-import { Modal as ModalDemo } from "../transitions/modal";
-import { NotificationBadge as NotificationBadgeDemo } from "../transitions/notification-badge";
-import { NumberPopIn as NumberPopInDemo } from "../transitions/number-pop-in";
-import { PageSideBySide as PageSideBySideDemo } from "../transitions/page-side-by-side";
-import { PanelReveal as PanelRevealDemo } from "../transitions/panel-reveal";
-import { PlusMenuMorph as PlusMenuMorphDemo } from "../transitions/plus-menu-morph";
-import { ShimmerText as ShimmerTextDemo } from "../transitions/shimmer-text";
-import { SkeletonReveal as SkeletonRevealDemo } from "../transitions/skeleton-reveal";
-import { SpinningCounter as SpinningCounterDemo } from "../transitions/spinning-counter";
-import { SuccessCheck as SuccessCheckDemo } from "../transitions/success-check";
-import { TabsSliding as TabsSlidingDemo } from "../transitions/tabs-sliding";
-import { TextStatesSwap as TextStatesSwapDemo } from "../transitions/text-states-swap";
-import { TextsReveal as TextsRevealDemo } from "../transitions/texts-reveal";
-import { Toast as ToastDemo } from "../transitions/toast";
-import { Toggle as ToggleDemo } from "../transitions/toggle";
-import { Tooltip as TooltipDemo } from "../transitions/tooltip";
+import { lazy } from "react";
+import { LazyFrame } from "./lazy-frame";
+const BouncyAccordionPreview = lazy(() => import("../beui/previews/bouncy-accordion.preview").then((m) => ({ default: m.BouncyAccordionPreview })));
+const CylinderCarouselPreview = lazy(() => import("../beui/previews/cylinder-carousel.preview").then((m) => ({ default: m.CylinderCarouselPreview })));
+const MarqueePreview = lazy(() => import("../beui/previews/marquee.preview").then((m) => ({ default: m.MarqueePreview })));
+const NumberPreview = lazy(() => import("../beui/previews/number.preview").then((m) => ({ default: m.NumberPreview })));
+const PullToRefreshPreview = lazy(() => import("../beui/previews/pull-to-refresh.preview").then((m) => ({ default: m.PullToRefreshPreview })));
+const ShaderBackgroundPreview = lazy(() => import("../beui/previews/shader-background.preview").then((m) => ({ default: m.ShaderBackgroundPreview })));
+const SharedLayoutBgPreview = lazy(() => import("../beui/previews/shared-layout-bg.preview").then((m) => ({ default: m.SharedLayoutBgPreview })));
+const TextAnimationPreview = lazy(() => import("../beui/previews/text-animation.preview").then((m) => ({ default: m.TextAnimationPreview })));
+const ThemeTogglePreview = lazy(() => import("../beui/previews/theme-toggle.preview").then((m) => ({ default: m.ThemeTogglePreview })));
+const TiltCardPreview = lazy(() => import("../beui/previews/tilt-card.preview").then((m) => ({ default: m.TiltCardPreview })));
+const AccordionDemo = lazy(() => import("../transitions/accordion").then((m) => ({ default: m.Accordion })));
+const AvatarGroupHoverDemo = lazy(() => import("../transitions/avatar-group-hover").then((m) => ({ default: m.AvatarGroupHover })));
+const CardResizeDemo = lazy(() => import("../transitions/card-resize").then((m) => ({ default: m.CardResize })));
+const CardTiltDemo = lazy(() => import("../transitions/card-tilt").then((m) => ({ default: m.CardTilt })));
+const CheckboxCheckDemo = lazy(() => import("../transitions/checkbox-check").then((m) => ({ default: m.CheckboxCheck })));
+const ErrorStateShakeDemo = lazy(() => import("../transitions/error-state-shake").then((m) => ({ default: m.ErrorStateShake })));
+const IconSwapDemo = lazy(() => import("../transitions/icon-swap").then((m) => ({ default: m.IconSwap })));
+const InputClearDissolveDemo = lazy(() => import("../transitions/input-clear-dissolve").then((m) => ({ default: m.InputClearDissolve })));
+const LearnMoreHoverDemo = lazy(() => import("../transitions/learn-more-hover").then((m) => ({ default: m.LearnMoreHover })));
+const LikeButtonDemo = lazy(() => import("../transitions/like-button").then((m) => ({ default: m.LikeButton })));
+const MenuDropdownDemo = lazy(() => import("../transitions/menu-dropdown").then((m) => ({ default: m.MenuDropdown })));
+const ModalDemo = lazy(() => import("../transitions/modal").then((m) => ({ default: m.Modal })));
+const NotificationBadgeDemo = lazy(() => import("../transitions/notification-badge").then((m) => ({ default: m.NotificationBadge })));
+const NumberPopInDemo = lazy(() => import("../transitions/number-pop-in").then((m) => ({ default: m.NumberPopIn })));
+const PageSideBySideDemo = lazy(() => import("../transitions/page-side-by-side").then((m) => ({ default: m.PageSideBySide })));
+const PanelRevealDemo = lazy(() => import("../transitions/panel-reveal").then((m) => ({ default: m.PanelReveal })));
+const PlusMenuMorphDemo = lazy(() => import("../transitions/plus-menu-morph").then((m) => ({ default: m.PlusMenuMorph })));
+const ShimmerTextDemo = lazy(() => import("../transitions/shimmer-text").then((m) => ({ default: m.ShimmerText })));
+const SkeletonRevealDemo = lazy(() => import("../transitions/skeleton-reveal").then((m) => ({ default: m.SkeletonReveal })));
+const SpinningCounterDemo = lazy(() => import("../transitions/spinning-counter").then((m) => ({ default: m.SpinningCounter })));
+const SuccessCheckDemo = lazy(() => import("../transitions/success-check").then((m) => ({ default: m.SuccessCheck })));
+const TabsSlidingDemo = lazy(() => import("../transitions/tabs-sliding").then((m) => ({ default: m.TabsSliding })));
+const TextStatesSwapDemo = lazy(() => import("../transitions/text-states-swap").then((m) => ({ default: m.TextStatesSwap })));
+const TextsRevealDemo = lazy(() => import("../transitions/texts-reveal").then((m) => ({ default: m.TextsReveal })));
+const ToastDemo = lazy(() => import("../transitions/toast").then((m) => ({ default: m.Toast })));
+const ToggleDemo = lazy(() => import("../transitions/toggle").then((m) => ({ default: m.Toggle })));
+const TooltipDemo = lazy(() => import("../transitions/tooltip").then((m) => ({ default: m.Tooltip })));
 
 const meta = { title: "Lab/Components/Motion" } satisfies Meta;
 export default meta;
@@ -45,332 +46,332 @@ type Story = StoryObj;
 export const BeuiBouncyAccordion: Story = {
   name: "bouncy accordion",
   render: () => (
-    <StoryFrame width={560}>
+    <LazyFrame width={560}>
       <BouncyAccordionPreview />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeuiCylinderCarousel: Story = {
   name: "cylinder carousel",
   render: () => (
-    <StoryFrame width={560}>
+    <LazyFrame width={560}>
       <CylinderCarouselPreview />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeuiMarquee: Story = {
   name: "marquee",
   render: () => (
-    <StoryFrame width={560}>
+    <LazyFrame width={560}>
       <MarqueePreview />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeuiNumber: Story = {
   name: "number",
   render: () => (
-    <StoryFrame width={560}>
+    <LazyFrame width={560}>
       <NumberPreview />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeuiPullToRefresh: Story = {
   name: "pull to refresh",
   render: () => (
-    <StoryFrame width={560}>
+    <LazyFrame width={560}>
       <PullToRefreshPreview />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeuiShaderBackground: Story = {
   name: "shader background",
   render: () => (
-    <StoryFrame width={560}>
+    <LazyFrame width={560}>
       <ShaderBackgroundPreview />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeuiSharedLayoutBg: Story = {
   name: "shared layout bg",
   render: () => (
-    <StoryFrame width={560}>
+    <LazyFrame width={560}>
       <SharedLayoutBgPreview />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeuiTextAnimation: Story = {
   name: "text animation",
   render: () => (
-    <StoryFrame width={560}>
+    <LazyFrame width={560}>
       <TextAnimationPreview />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeuiThemeToggle: Story = {
   name: "theme toggle",
   render: () => (
-    <StoryFrame width={560}>
+    <LazyFrame width={560}>
       <ThemeTogglePreview />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeuiTiltCard: Story = {
   name: "tilt card",
   render: () => (
-    <StoryFrame width={560}>
+    <LazyFrame width={560}>
       <TiltCardPreview />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const TransitionAccordion: Story = {
   name: "accordion",
   render: () => (
-    <StoryFrame width={480}>
+    <LazyFrame width={480}>
       <AccordionDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const TransitionAvatarGroupHover: Story = {
   name: "avatar group hover",
   render: () => (
-    <StoryFrame width={480}>
+    <LazyFrame width={480}>
       <AvatarGroupHoverDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const TransitionCardResize: Story = {
   name: "card resize",
   render: () => (
-    <StoryFrame width={480}>
+    <LazyFrame width={480}>
       <CardResizeDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const TransitionCardTilt: Story = {
   name: "card tilt",
   render: () => (
-    <StoryFrame width={480}>
+    <LazyFrame width={480}>
       <CardTiltDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const TransitionCheckboxCheck: Story = {
   name: "checkbox check",
   render: () => (
-    <StoryFrame width={480}>
+    <LazyFrame width={480}>
       <CheckboxCheckDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const TransitionErrorStateShake: Story = {
   name: "error state shake",
   render: () => (
-    <StoryFrame width={480}>
+    <LazyFrame width={480}>
       <ErrorStateShakeDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const TransitionIconSwap: Story = {
   name: "icon swap",
   render: () => (
-    <StoryFrame width={480}>
+    <LazyFrame width={480}>
       <IconSwapDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const TransitionInputClearDissolve: Story = {
   name: "input clear dissolve",
   render: () => (
-    <StoryFrame width={480}>
+    <LazyFrame width={480}>
       <InputClearDissolveDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const TransitionLearnMoreHover: Story = {
   name: "learn more hover",
   render: () => (
-    <StoryFrame width={480}>
+    <LazyFrame width={480}>
       <LearnMoreHoverDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const TransitionLikeButton: Story = {
   name: "like button",
   render: () => (
-    <StoryFrame width={480}>
+    <LazyFrame width={480}>
       <LikeButtonDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const TransitionMenuDropdown: Story = {
   name: "menu dropdown",
   render: () => (
-    <StoryFrame width={480}>
+    <LazyFrame width={480}>
       <MenuDropdownDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const TransitionModal: Story = {
   name: "modal",
   render: () => (
-    <StoryFrame width={480}>
+    <LazyFrame width={480}>
       <ModalDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const TransitionNotificationBadge: Story = {
   name: "notification badge",
   render: () => (
-    <StoryFrame width={480}>
+    <LazyFrame width={480}>
       <NotificationBadgeDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const TransitionNumberPopIn: Story = {
   name: "number pop in",
   render: () => (
-    <StoryFrame width={480}>
+    <LazyFrame width={480}>
       <NumberPopInDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const TransitionPageSideBySide: Story = {
   name: "page side by side",
   render: () => (
-    <StoryFrame width={480}>
+    <LazyFrame width={480}>
       <PageSideBySideDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const TransitionPanelReveal: Story = {
   name: "panel reveal",
   render: () => (
-    <StoryFrame width={480}>
+    <LazyFrame width={480}>
       <PanelRevealDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const TransitionPlusMenuMorph: Story = {
   name: "plus menu morph",
   render: () => (
-    <StoryFrame width={480}>
+    <LazyFrame width={480}>
       <PlusMenuMorphDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const TransitionShimmerText: Story = {
   name: "shimmer text",
   render: () => (
-    <StoryFrame width={480}>
+    <LazyFrame width={480}>
       <ShimmerTextDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const TransitionSkeletonReveal: Story = {
   name: "skeleton reveal",
   render: () => (
-    <StoryFrame width={480}>
+    <LazyFrame width={480}>
       <SkeletonRevealDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const TransitionSpinningCounter: Story = {
   name: "spinning counter",
   render: () => (
-    <StoryFrame width={480}>
+    <LazyFrame width={480}>
       <SpinningCounterDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const TransitionSuccessCheck: Story = {
   name: "success check",
   render: () => (
-    <StoryFrame width={480}>
+    <LazyFrame width={480}>
       <SuccessCheckDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const TransitionTabsSliding: Story = {
   name: "tabs sliding",
   render: () => (
-    <StoryFrame width={480}>
+    <LazyFrame width={480}>
       <TabsSlidingDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const TransitionTextStatesSwap: Story = {
   name: "text states swap",
   render: () => (
-    <StoryFrame width={480}>
+    <LazyFrame width={480}>
       <TextStatesSwapDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const TransitionTextsReveal: Story = {
   name: "texts reveal",
   render: () => (
-    <StoryFrame width={480}>
+    <LazyFrame width={480}>
       <TextsRevealDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const TransitionToast: Story = {
   name: "toast",
   render: () => (
-    <StoryFrame width={480}>
+    <LazyFrame width={480}>
       <ToastDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const TransitionToggle: Story = {
   name: "toggle",
   render: () => (
-    <StoryFrame width={480}>
+    <LazyFrame width={480}>
       <ToggleDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const TransitionTooltip: Story = {
   name: "tooltip",
   render: () => (
-    <StoryFrame width={480}>
+    <LazyFrame width={480}>
       <TooltipDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };

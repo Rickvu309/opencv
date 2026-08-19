@@ -31,6 +31,11 @@ const preview: Preview = {
   parameters: {
     layout: "centered",
     a11y: { test: "todo" },
+    options: {
+      storySort: {
+        order: ["Primitives", "Coach", "Auth", "Landing"],
+      },
+    },
   },
 };
 

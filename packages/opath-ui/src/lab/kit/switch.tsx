@@ -1,28 +1,33 @@
-'use client';
+"use client";
 
-import { Switch as SwitchPrimitive } from '@base-ui/react/switch';
+import { Switch as SwitchPrimitive } from "@base-ui/react/switch";
 
-import { cn } from '../../cn';
+import { cn } from "../../cn";
 
 function Switch({
   className,
-  size = 'default',
+  size = "default",
   ...props
 }: SwitchPrimitive.Root.Props & {
-  size?: 'sm' | 'default';
+  size?: "sm" | "default";
 }) {
   return (
     <SwitchPrimitive.Root
       className={cn(
-        'peer group/switch after:-inset-x-3 after:-inset-y-2 relative inline-flex shrink-0 items-center rounded-full border border-transparent outline-none transition-all after:absolute focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 data-[size=default]:h-[18.4px] data-[size=sm]:h-[14px] data-[size=default]:w-[32px] data-[size=sm]:w-[24px] data-disabled:cursor-not-allowed data-checked:bg-primary data-unchecked:bg-input data-disabled:opacity-50 dark:data-unchecked:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40',
-        className
+        "peer relative inline-flex shrink-0 items-center rounded-[var(--radius-pill)] border border-transparent outline-none transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out)] focus-visible:shadow-[var(--focus-ring)] data-checked:bg-accent data-unchecked:bg-surface-3 data-disabled:cursor-not-allowed data-disabled:opacity-50 data-[size=default]:h-6 data-[size=default]:w-10 data-[size=sm]:h-5 data-[size=sm]:w-8",
+        className,
       )}
       data-size={size}
       data-slot="switch"
       {...props}
     >
       <SwitchPrimitive.Thumb
-        className="pointer-events-none block rounded-full bg-background ring-0 transition-transform group-data-[size=default]/switch:size-4 group-data-[size=sm]/switch:size-3 group-data-[size=default]/switch:data-checked:translate-x-[calc(100%-2px)] group-data-[size=default]/switch:data-unchecked:translate-x-0 group-data-[size=sm]/switch:data-checked:translate-x-[calc(100%-2px)] group-data-[size=sm]/switch:data-unchecked:translate-x-0 dark:data-checked:bg-primary-foreground dark:data-unchecked:bg-foreground"
+        className={cn(
+          "pointer-events-none block rounded-full bg-surface-1 transition-transform duration-[var(--duration-fast)] ease-[var(--ease-out)] data-unchecked:translate-x-0.5",
+          size === "sm"
+            ? "size-4 data-checked:translate-x-3.5"
+            : "size-5 data-checked:translate-x-[18px]",
+        )}
         data-slot="switch-thumb"
       />
     </SwitchPrimitive.Root>

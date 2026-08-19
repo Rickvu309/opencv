@@ -319,7 +319,7 @@ First focusable element on every page; visually hidden until focused, then a `--
 
 ## Lab sourced galleries
 
-Commodity kits catalogued in Opath (Lab) Storybook under `packages/opath-ui/src/lab`. These are review surfaces, not Production primitives. Lab kit controls (button, input, textarea, label, checkbox, switch, badge, card) restyle to the Production token blocks above so a login or dialog preview matches the app. Promote a piece by writing its block here and landing a restyled primitive at the package root. The sidebar is Components vs Templates, not kit names. Opath (Production) Storybook also shows `Primitives/Gallery` from this package.
+Commodity kits catalogued in Opath (Lab) Storybook under `packages/opath-ui/src/lab`. These are review surfaces, not Production primitives. Lab kit controls that have a Production counterpart (button, input, textarea, label, checkbox, switch, badge, card, tabs, dialog, sheet, tooltip, dropdown, table, skeleton, select) restyle to the Production token blocks above so a login or dialog preview matches the app. Leftover shadcn class names map through `lab/tokens.css`, CSS-imported from Lab Storybook preview. Promote a piece by writing its block here and landing a restyled primitive at the package root. The sidebar is Components vs Templates, not kit names. Opath (Production) Storybook also shows `Primitives/Gallery` from this package.
 
 | Storybook | What it holds |
 |---|---|

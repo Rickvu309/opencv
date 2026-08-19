@@ -5,7 +5,10 @@ import type { StorybookConfig } from "@storybook/react-vite";
 const dir = path.dirname(fileURLToPath(import.meta.url));
 
 const config: StorybookConfig = {
-  stories: ["../src/**/*.stories.@(ts|tsx)"],
+  stories: [
+    "../src/**/*.stories.@(ts|tsx)",
+    "../packages/opath-ui/src/primitives.stories.tsx",
+  ],
   addons: ["@storybook/addon-a11y"],
   framework: {
     name: "@storybook/react-vite",

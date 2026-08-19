@@ -11,7 +11,7 @@ function Table({ className, ...props }: React.ComponentProps<'table'>) {
       data-slot="table-container"
     >
       <table
-        className={cn('w-full caption-bottom text-sm', className)}
+        className={cn('w-full caption-bottom text-left text-[15px]', className)}
         data-slot="table"
         {...props}
       />
@@ -22,7 +22,7 @@ function Table({ className, ...props }: React.ComponentProps<'table'>) {
 function TableHeader({ className, ...props }: React.ComponentProps<'thead'>) {
   return (
     <thead
-      className={cn('[&_tr]:border-b', className)}
+        className={cn('[&_tr]:border-b [&_tr]:border-hairline', className)}
       data-slot="table-header"
       {...props}
     />
@@ -43,7 +43,7 @@ function TableFooter({ className, ...props }: React.ComponentProps<'tfoot'>) {
   return (
     <tfoot
       className={cn(
-        'border-t bg-muted/50 font-medium [&>tr]:last:border-b-0',
+        'border-t border-hairline bg-surface-2 font-[510] [&>tr]:last:border-b-0',
         className
       )}
       data-slot="table-footer"
@@ -56,7 +56,7 @@ function TableRow({ className, ...props }: React.ComponentProps<'tr'>) {
   return (
     <tr
       className={cn(
-        'border-b transition-colors hover:bg-muted/50 has-aria-expanded:bg-muted/50 data-[state=selected]:bg-muted',
+        'border-b border-hairline transition-colors hover:bg-surface-2 has-aria-expanded:bg-surface-2 data-[state=selected]:bg-surface-2',
         className
       )}
       data-slot="table-row"
@@ -69,7 +69,7 @@ function TableHead({ className, ...props }: React.ComponentProps<'th'>) {
   return (
     <th
       className={cn(
-        'h-10 whitespace-nowrap px-2 text-left align-middle font-medium text-foreground [&:has([role=checkbox])]:pr-0',
+        'h-10 whitespace-nowrap px-3 py-2 text-left align-middle text-[13px] font-[510] text-ink-muted [&:has([role=checkbox])]:pr-0',
         className
       )}
       data-slot="table-head"
@@ -82,7 +82,7 @@ function TableCell({ className, ...props }: React.ComponentProps<'td'>) {
   return (
     <td
       className={cn(
-        'whitespace-nowrap p-2 align-middle [&:has([role=checkbox])]:pr-0',
+        'whitespace-nowrap px-3 py-2 align-middle text-[15px] leading-[1.5] [&:has([role=checkbox])]:pr-0',
         className
       )}
       data-slot="table-cell"
@@ -97,7 +97,7 @@ function TableCaption({
 }: React.ComponentProps<'caption'>) {
   return (
     <caption
-      className={cn('mt-4 text-muted-foreground text-sm', className)}
+        className={cn('mt-4 text-[13px] text-ink-muted', className)}
       data-slot="table-caption"
       {...props}
     />

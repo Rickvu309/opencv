@@ -1,7 +1,7 @@
 "use client";
 
 import { Comparison, ComparisonHandle, ComparisonItem } from "../comparison";
-import Image from "react";
+import Image from "next/image";
 
 const Example = () => (
   <Comparison className="aspect-video" mode="hover">

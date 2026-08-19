@@ -1,7 +1,7 @@
 'use client';
 
 import { ExternalLink } from 'lucide-react';
-import Link from 'react';
+import Link from "next/link";
 import { PolarAngleAxis, RadialBar, RadialBarChart } from 'recharts';
 import { Card, CardContent } from '../../kit/card';
 import { type ChartConfig, ChartContainer } from '../../kit/chart';

@@ -54,8 +54,8 @@ const hotelRooms = Array.from({ length: 5 })
 const hotelReservations = Array.from({ length: 12 })
   .fill(null)
   .map(() => {
-    const startDate = faker.date.future({ years: 0.3, refDate: new Date() });
-    const endDate = faker.date.future({ years: 0.1, refDate: startDate });
+    const startDate = faker.date.future({ years: 1, refDate: new Date() });
+    const endDate = faker.date.future({ years: 1, refDate: startDate });
     const room = faker.helpers.arrayElement(hotelRooms);
     const guest = faker.helpers.arrayElement(guests);
 
@@ -79,7 +79,7 @@ const exampleMarkers = Array.from({ length: 3 })
   .fill(null)
   .map(() => ({
     id: faker.string.uuid(),
-    date: faker.date.future({ years: 0.2, refDate: new Date() }),
+    date: faker.date.future({ years: 1, refDate: new Date() }),
     label: faker.helpers.arrayElement([
       "Holiday Period",
       "Conference Week",

@@ -1,28 +1,29 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { StoryFrame } from "../story-frame";
-import Example_About from "../kibo/_examples/about";
-import Example_Awards from "../kibo/_examples/awards";
-import Example_Blog from "../kibo/_examples/blog";
-import Example_Blogpost from "../kibo/_examples/blogpost";
-import Example_Careers from "../kibo/_examples/careers";
-import Example_CaseStudies from "../kibo/_examples/case-studies";
-import Example_CaseStudy from "../kibo/_examples/case-study";
-import Example_Changelog from "../kibo/_examples/changelog";
-import Example_Community from "../kibo/_examples/community";
-import Example_Compliance from "../kibo/_examples/compliance";
-import Example_Contact from "../kibo/_examples/contact";
-import Example_Cta from "../kibo/_examples/cta";
-import Example_Download from "../kibo/_examples/download";
-import Example_Experience from "../kibo/_examples/experience";
-import Example_Faq from "../kibo/_examples/faq";
-import Example_FeatureTabs from "../kibo/_examples/feature-tabs";
-import Example_Feature from "../kibo/_examples/feature";
-import Example_Footer from "../kibo/_examples/footer";
-import Example_Hero from "../kibo/_examples/hero";
-import Example_Pricing from "../kibo/_examples/pricing";
-import Example_Stats from "../kibo/_examples/stats";
-import Example_Team from "../kibo/_examples/team";
-import Example_Testimonial from "../kibo/_examples/testimonial";
+import { lazy } from "react";
+import { LazyFrame } from "./lazy-frame";
+const Example_About = lazy(() => import("../kibo/_examples/about").then((m) => ({ default: m.default ?? m.Example_About ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Awards = lazy(() => import("../kibo/_examples/awards").then((m) => ({ default: m.default ?? m.Example_Awards ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Blog = lazy(() => import("../kibo/_examples/blog").then((m) => ({ default: m.default ?? m.Example_Blog ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Blogpost = lazy(() => import("../kibo/_examples/blogpost").then((m) => ({ default: m.default ?? m.Example_Blogpost ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Careers = lazy(() => import("../kibo/_examples/careers").then((m) => ({ default: m.default ?? m.Example_Careers ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_CaseStudies = lazy(() => import("../kibo/_examples/case-studies").then((m) => ({ default: m.default ?? m.Example_CaseStudies ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_CaseStudy = lazy(() => import("../kibo/_examples/case-study").then((m) => ({ default: m.default ?? m.Example_CaseStudy ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Changelog = lazy(() => import("../kibo/_examples/changelog").then((m) => ({ default: m.default ?? m.Example_Changelog ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Community = lazy(() => import("../kibo/_examples/community").then((m) => ({ default: m.default ?? m.Example_Community ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Compliance = lazy(() => import("../kibo/_examples/compliance").then((m) => ({ default: m.default ?? m.Example_Compliance ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Contact = lazy(() => import("../kibo/_examples/contact").then((m) => ({ default: m.default ?? m.Example_Contact ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Cta = lazy(() => import("../kibo/_examples/cta").then((m) => ({ default: m.default ?? m.Example_Cta ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Download = lazy(() => import("../kibo/_examples/download").then((m) => ({ default: m.default ?? m.Example_Download ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Experience = lazy(() => import("../kibo/_examples/experience").then((m) => ({ default: m.default ?? m.Example_Experience ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Faq = lazy(() => import("../kibo/_examples/faq").then((m) => ({ default: m.default ?? m.Example_Faq ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_FeatureTabs = lazy(() => import("../kibo/_examples/feature-tabs").then((m) => ({ default: m.default ?? m.Example_FeatureTabs ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Feature = lazy(() => import("../kibo/_examples/feature").then((m) => ({ default: m.default ?? m.Example_Feature ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Footer = lazy(() => import("../kibo/_examples/footer").then((m) => ({ default: m.default ?? m.Example_Footer ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Hero = lazy(() => import("../kibo/_examples/hero").then((m) => ({ default: m.default ?? m.Example_Hero ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Pricing = lazy(() => import("../kibo/_examples/pricing").then((m) => ({ default: m.default ?? m.Example_Pricing ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Stats = lazy(() => import("../kibo/_examples/stats").then((m) => ({ default: m.default ?? m.Example_Stats ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Team = lazy(() => import("../kibo/_examples/team").then((m) => ({ default: m.default ?? m.Example_Team ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Testimonial = lazy(() => import("../kibo/_examples/testimonial").then((m) => ({ default: m.default ?? m.Example_Testimonial ?? Object.values(m).find((v) => typeof v === "function") })));
 
 const meta = { title: "Lab/Templates/Marketing" } satisfies Meta;
 export default meta;
@@ -31,206 +32,206 @@ type Story = StoryObj;
 export const KiboAbout: Story = {
   name: "about",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_About />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboAwards: Story = {
   name: "awards",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Awards />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboBlog: Story = {
   name: "blog",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Blog />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboBlogpost: Story = {
   name: "blogpost",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Blogpost />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboCareers: Story = {
   name: "careers",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Careers />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboCaseStudies: Story = {
   name: "case studies",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_CaseStudies />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboCaseStudy: Story = {
   name: "case study",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_CaseStudy />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboChangelog: Story = {
   name: "changelog",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Changelog />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboCommunity: Story = {
   name: "community",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Community />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboCompliance: Story = {
   name: "compliance",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Compliance />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboContact: Story = {
   name: "contact",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Contact />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboCta: Story = {
   name: "cta",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Cta />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboDownload: Story = {
   name: "download",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Download />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboExperience: Story = {
   name: "experience",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Experience />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboFaq: Story = {
   name: "faq",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Faq />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboFeatureTabs: Story = {
   name: "feature tabs",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_FeatureTabs />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboFeature: Story = {
   name: "feature",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Feature />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboFooter: Story = {
   name: "footer",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Footer />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboHero: Story = {
   name: "hero",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Hero />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboPricing: Story = {
   name: "pricing",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Pricing />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboStats: Story = {
   name: "stats",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Stats />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboTeam: Story = {
   name: "team",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Team />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboTestimonial: Story = {
   name: "testimonial",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Testimonial />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };

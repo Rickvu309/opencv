@@ -1,6 +1,8 @@
-/* Lab-only shadcn token bridge. Maps commodity class names onto OpenPath
-   roles without renaming --accent (brand black). Sourced galleries import this
-   from Lab Storybook preview; Production does not. */
+/* Lab-only shadcn token bridge. Must be CSS-@imported from Lab preview.css so
+   Tailwind v4 processes @theme (a JS import of this file is a no-op). Maps
+   leftover commodity class names onto OpenPath roles without renaming
+   --accent. Kit controls that exist in Production restyle to those primitives;
+   this file covers the rest. */
 @theme inline {
   --color-background: var(--color-surface-1);
   --color-foreground: var(--color-ink);

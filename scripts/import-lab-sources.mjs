@@ -94,10 +94,6 @@ function rewriteSource(src) {
   return src
     .replaceAll("@repo/shadcn-ui/lib/utils", "@/lib/utils")
     .replaceAll("@repo/shadcn-ui/components/ui/", "@/components/ui/")
-    .replaceAll("from \"next/image\"", "from \"react\"")
-    .replaceAll("from 'next/image'", "from 'react'")
-    .replaceAll("from \"next/link\"", "from \"react\"")
-    .replaceAll("from 'next/link'", "from 'react'")
     .replaceAll("@/hooks/", "@/lab-hooks/")
     .replaceAll(/\bbg-accent\b/g, "bg-surface-2")
     .replaceAll(/\btext-accent-foreground\b/g, "text-ink")

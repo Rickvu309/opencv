@@ -1,49 +1,50 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { StoryFrame } from "../story-frame";
-import { CheckboxPreview } from "../beui/previews/checkbox.preview";
-import { ComboboxPreview } from "../beui/previews/combobox.preview";
-import { InputPreview } from "../beui/previews/input.preview";
-import { RadioPreview } from "../beui/previews/radio.preview";
-import { RangeSliderPreview } from "../beui/previews/range-slider.preview";
-import { SelectPreview } from "../beui/previews/select.preview";
-import { SwitchPreview } from "../beui/previews/switch.preview";
-import { WheelPickerPreview } from "../beui/previews/wheel-picker.preview";
-import Example_CalendarHeadless from "../kibo/_examples/calendar-headless";
-import Example_Calendar from "../kibo/_examples/calendar";
-import Example_ChoiceboxInline from "../kibo/_examples/choicebox-inline";
-import Example_Choicebox from "../kibo/_examples/choicebox";
-import Example_ColorPicker from "../kibo/_examples/color-picker";
-import Example_ComboboxControlled from "../kibo/_examples/combobox-controlled";
-import Example_ComboboxCreateNew from "../kibo/_examples/combobox-create-new";
-import Example_ComboboxFixedWidth from "../kibo/_examples/combobox-fixed-width";
-import Example_Combobox from "../kibo/_examples/combobox";
-import Example_CreditCardAmex from "../kibo/_examples/credit-card-amex";
-import Example_CreditCardApple from "../kibo/_examples/credit-card-apple";
-import Example_CreditCardBack from "../kibo/_examples/credit-card-back";
-import Example_CreditCard from "../kibo/_examples/credit-card";
-import Example_DropzoneAccept from "../kibo/_examples/dropzone-accept";
-import Example_DropzoneCustomEmptyState from "../kibo/_examples/dropzone-custom-empty-state";
-import Example_DropzoneImagePreview from "../kibo/_examples/dropzone-image-preview";
-import Example_DropzoneMinMax from "../kibo/_examples/dropzone-min-max";
-import Example_DropzoneMultiple from "../kibo/_examples/dropzone-multiple";
-import Example_Dropzone from "../kibo/_examples/dropzone";
-import Example_Editor from "../kibo/_examples/editor";
-import Example_Form from "../kibo/_examples/form";
-import Example_ImageCropCircular from "../kibo/_examples/image-crop-circular";
-import Example_ImageCropCustom from "../kibo/_examples/image-crop-custom";
-import Example_ImageCrop from "../kibo/_examples/image-crop";
-import Example_MiniCalendarControlled from "../kibo/_examples/mini-calendar-controlled";
-import Example_MiniCalendarCustom from "../kibo/_examples/mini-calendar-custom";
-import Example_MiniCalendarDays from "../kibo/_examples/mini-calendar-days";
-import Example_MiniCalendar from "../kibo/_examples/mini-calendar";
-import Example_RatingColors from "../kibo/_examples/rating-colors";
-import Example_RatingControlled from "../kibo/_examples/rating-controlled";
-import Example_RatingIcon from "../kibo/_examples/rating-icon";
-import Example_RatingSize from "../kibo/_examples/rating-size";
-import Example_Rating from "../kibo/_examples/rating";
-import Example_TagsCreate from "../kibo/_examples/tags-create";
-import Example_TagsFilter from "../kibo/_examples/tags-filter";
-import Example_Tags from "../kibo/_examples/tags";
+import { lazy } from "react";
+import { LazyFrame } from "./lazy-frame";
+const CheckboxPreview = lazy(() => import("../beui/previews/checkbox.preview").then((m) => ({ default: m.CheckboxPreview })));
+const ComboboxPreview = lazy(() => import("../beui/previews/combobox.preview").then((m) => ({ default: m.ComboboxPreview })));
+const InputPreview = lazy(() => import("../beui/previews/input.preview").then((m) => ({ default: m.InputPreview })));
+const RadioPreview = lazy(() => import("../beui/previews/radio.preview").then((m) => ({ default: m.RadioPreview })));
+const RangeSliderPreview = lazy(() => import("../beui/previews/range-slider.preview").then((m) => ({ default: m.RangeSliderPreview })));
+const SelectPreview = lazy(() => import("../beui/previews/select.preview").then((m) => ({ default: m.SelectPreview })));
+const SwitchPreview = lazy(() => import("../beui/previews/switch.preview").then((m) => ({ default: m.SwitchPreview })));
+const WheelPickerPreview = lazy(() => import("../beui/previews/wheel-picker.preview").then((m) => ({ default: m.WheelPickerPreview })));
+const Example_CalendarHeadless = lazy(() => import("../kibo/_examples/calendar-headless").then((m) => ({ default: m.default ?? m.Example_CalendarHeadless ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Calendar = lazy(() => import("../kibo/_examples/calendar").then((m) => ({ default: m.default ?? m.Example_Calendar ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_ChoiceboxInline = lazy(() => import("../kibo/_examples/choicebox-inline").then((m) => ({ default: m.default ?? m.Example_ChoiceboxInline ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Choicebox = lazy(() => import("../kibo/_examples/choicebox").then((m) => ({ default: m.default ?? m.Example_Choicebox ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_ColorPicker = lazy(() => import("../kibo/_examples/color-picker").then((m) => ({ default: m.default ?? m.Example_ColorPicker ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_ComboboxControlled = lazy(() => import("../kibo/_examples/combobox-controlled").then((m) => ({ default: m.default ?? m.Example_ComboboxControlled ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_ComboboxCreateNew = lazy(() => import("../kibo/_examples/combobox-create-new").then((m) => ({ default: m.default ?? m.Example_ComboboxCreateNew ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_ComboboxFixedWidth = lazy(() => import("../kibo/_examples/combobox-fixed-width").then((m) => ({ default: m.default ?? m.Example_ComboboxFixedWidth ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Combobox = lazy(() => import("../kibo/_examples/combobox").then((m) => ({ default: m.default ?? m.Example_Combobox ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_CreditCardAmex = lazy(() => import("../kibo/_examples/credit-card-amex").then((m) => ({ default: m.default ?? m.Example_CreditCardAmex ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_CreditCardApple = lazy(() => import("../kibo/_examples/credit-card-apple").then((m) => ({ default: m.default ?? m.Example_CreditCardApple ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_CreditCardBack = lazy(() => import("../kibo/_examples/credit-card-back").then((m) => ({ default: m.default ?? m.Example_CreditCardBack ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_CreditCard = lazy(() => import("../kibo/_examples/credit-card").then((m) => ({ default: m.default ?? m.Example_CreditCard ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_DropzoneAccept = lazy(() => import("../kibo/_examples/dropzone-accept").then((m) => ({ default: m.default ?? m.Example_DropzoneAccept ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_DropzoneCustomEmptyState = lazy(() => import("../kibo/_examples/dropzone-custom-empty-state").then((m) => ({ default: m.default ?? m.Example_DropzoneCustomEmptyState ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_DropzoneImagePreview = lazy(() => import("../kibo/_examples/dropzone-image-preview").then((m) => ({ default: m.default ?? m.Example_DropzoneImagePreview ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_DropzoneMinMax = lazy(() => import("../kibo/_examples/dropzone-min-max").then((m) => ({ default: m.default ?? m.Example_DropzoneMinMax ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_DropzoneMultiple = lazy(() => import("../kibo/_examples/dropzone-multiple").then((m) => ({ default: m.default ?? m.Example_DropzoneMultiple ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Dropzone = lazy(() => import("../kibo/_examples/dropzone").then((m) => ({ default: m.default ?? m.Example_Dropzone ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Editor = lazy(() => import("../kibo/_examples/editor").then((m) => ({ default: m.default ?? m.Example_Editor ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Form = lazy(() => import("../kibo/_examples/form").then((m) => ({ default: m.default ?? m.Example_Form ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_ImageCropCircular = lazy(() => import("../kibo/_examples/image-crop-circular").then((m) => ({ default: m.default ?? m.Example_ImageCropCircular ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_ImageCropCustom = lazy(() => import("../kibo/_examples/image-crop-custom").then((m) => ({ default: m.default ?? m.Example_ImageCropCustom ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_ImageCrop = lazy(() => import("../kibo/_examples/image-crop").then((m) => ({ default: m.default ?? m.Example_ImageCrop ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_MiniCalendarControlled = lazy(() => import("../kibo/_examples/mini-calendar-controlled").then((m) => ({ default: m.default ?? m.Example_MiniCalendarControlled ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_MiniCalendarCustom = lazy(() => import("../kibo/_examples/mini-calendar-custom").then((m) => ({ default: m.default ?? m.Example_MiniCalendarCustom ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_MiniCalendarDays = lazy(() => import("../kibo/_examples/mini-calendar-days").then((m) => ({ default: m.default ?? m.Example_MiniCalendarDays ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_MiniCalendar = lazy(() => import("../kibo/_examples/mini-calendar").then((m) => ({ default: m.default ?? m.Example_MiniCalendar ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_RatingColors = lazy(() => import("../kibo/_examples/rating-colors").then((m) => ({ default: m.default ?? m.Example_RatingColors ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_RatingControlled = lazy(() => import("../kibo/_examples/rating-controlled").then((m) => ({ default: m.default ?? m.Example_RatingControlled ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_RatingIcon = lazy(() => import("../kibo/_examples/rating-icon").then((m) => ({ default: m.default ?? m.Example_RatingIcon ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_RatingSize = lazy(() => import("../kibo/_examples/rating-size").then((m) => ({ default: m.default ?? m.Example_RatingSize ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Rating = lazy(() => import("../kibo/_examples/rating").then((m) => ({ default: m.default ?? m.Example_Rating ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_TagsCreate = lazy(() => import("../kibo/_examples/tags-create").then((m) => ({ default: m.default ?? m.Example_TagsCreate ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_TagsFilter = lazy(() => import("../kibo/_examples/tags-filter").then((m) => ({ default: m.default ?? m.Example_TagsFilter ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Tags = lazy(() => import("../kibo/_examples/tags").then((m) => ({ default: m.default ?? m.Example_Tags ?? Object.values(m).find((v) => typeof v === "function") })));
 
 const meta = { title: "Lab/Components/Forms" } satisfies Meta;
 export default meta;
@@ -52,395 +53,395 @@ type Story = StoryObj;
 export const BeuiCheckbox: Story = {
   name: "checkbox",
   render: () => (
-    <StoryFrame width={560}>
+    <LazyFrame width={560}>
       <CheckboxPreview />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeuiCombobox: Story = {
   name: "combobox",
   render: () => (
-    <StoryFrame width={560}>
+    <LazyFrame width={560}>
       <ComboboxPreview />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeuiInput: Story = {
   name: "input",
   render: () => (
-    <StoryFrame width={560}>
+    <LazyFrame width={560}>
       <InputPreview />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeuiRadio: Story = {
   name: "radio",
   render: () => (
-    <StoryFrame width={560}>
+    <LazyFrame width={560}>
       <RadioPreview />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeuiRangeSlider: Story = {
   name: "range slider",
   render: () => (
-    <StoryFrame width={560}>
+    <LazyFrame width={560}>
       <RangeSliderPreview />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeuiSelect: Story = {
   name: "select",
   render: () => (
-    <StoryFrame width={560}>
+    <LazyFrame width={560}>
       <SelectPreview />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeuiSwitch: Story = {
   name: "switch",
   render: () => (
-    <StoryFrame width={560}>
+    <LazyFrame width={560}>
       <SwitchPreview />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeuiWheelPicker: Story = {
   name: "wheel picker",
   render: () => (
-    <StoryFrame width={560}>
+    <LazyFrame width={560}>
       <WheelPickerPreview />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboCalendarHeadless: Story = {
   name: "calendar headless",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_CalendarHeadless />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboCalendar: Story = {
   name: "calendar",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Calendar />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboChoiceboxInline: Story = {
   name: "choicebox inline",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_ChoiceboxInline />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboChoicebox: Story = {
   name: "choicebox",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Choicebox />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboColorPicker: Story = {
   name: "color picker",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_ColorPicker />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboComboboxControlled: Story = {
   name: "combobox controlled",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_ComboboxControlled />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboComboboxCreateNew: Story = {
   name: "combobox create new",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_ComboboxCreateNew />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboComboboxFixedWidth: Story = {
   name: "combobox fixed width",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_ComboboxFixedWidth />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboCombobox: Story = {
   name: "combobox",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Combobox />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboCreditCardAmex: Story = {
   name: "credit card amex",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_CreditCardAmex />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboCreditCardApple: Story = {
   name: "credit card apple",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_CreditCardApple />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboCreditCardBack: Story = {
   name: "credit card back",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_CreditCardBack />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboCreditCard: Story = {
   name: "credit card",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_CreditCard />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboDropzoneAccept: Story = {
   name: "dropzone accept",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_DropzoneAccept />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboDropzoneCustomEmptyState: Story = {
   name: "dropzone custom empty state",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_DropzoneCustomEmptyState />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboDropzoneImagePreview: Story = {
   name: "dropzone image preview",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_DropzoneImagePreview />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboDropzoneMinMax: Story = {
   name: "dropzone min max",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_DropzoneMinMax />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboDropzoneMultiple: Story = {
   name: "dropzone multiple",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_DropzoneMultiple />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboDropzone: Story = {
   name: "dropzone",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Dropzone />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboEditor: Story = {
   name: "editor",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Editor />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboForm: Story = {
   name: "form",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Form />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboImageCropCircular: Story = {
   name: "image crop circular",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_ImageCropCircular />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboImageCropCustom: Story = {
   name: "image crop custom",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_ImageCropCustom />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboImageCrop: Story = {
   name: "image crop",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_ImageCrop />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboMiniCalendarControlled: Story = {
   name: "mini calendar controlled",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_MiniCalendarControlled />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboMiniCalendarCustom: Story = {
   name: "mini calendar custom",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_MiniCalendarCustom />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboMiniCalendarDays: Story = {
   name: "mini calendar days",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_MiniCalendarDays />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboMiniCalendar: Story = {
   name: "mini calendar",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_MiniCalendar />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboRatingColors: Story = {
   name: "rating colors",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_RatingColors />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboRatingControlled: Story = {
   name: "rating controlled",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_RatingControlled />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboRatingIcon: Story = {
   name: "rating icon",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_RatingIcon />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboRatingSize: Story = {
   name: "rating size",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_RatingSize />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboRating: Story = {
   name: "rating",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Rating />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboTagsCreate: Story = {
   name: "tags create",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_TagsCreate />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboTagsFilter: Story = {
   name: "tags filter",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_TagsFilter />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboTags: Story = {
   name: "tags",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Tags />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };

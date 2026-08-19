@@ -33,7 +33,7 @@ import {
   VideoPlayerTimeRange,
   VideoPlayerVolumeRange,
 } from "../video-player";
-import Link from "react";
+import Link from "next/link";
 
 const logos = [
   {

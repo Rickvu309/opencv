@@ -36,7 +36,7 @@ function PopoverContent({
       >
         <PopoverPrimitive.Popup
           className={cn(
-            'data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:fade-in-0 data-open:zoom-in-95 data-closed:fade-out-0 data-closed:zoom-out-95 z-50 flex w-72 origin-(--transform-origin) flex-col gap-2.5 rounded-lg bg-popover p-2.5 text-popover-foreground text-sm shadow-md outline-hidden ring-1 ring-foreground/10 duration-100 data-closed:animate-out data-open:animate-in',
+            'z-[var(--z-overlay)] flex w-72 origin-(--transform-origin) flex-col gap-2.5 rounded-[var(--radius-container)] border border-hairline bg-surface-1 p-3 text-[13px] text-ink shadow-[var(--shadow-overlay)] outline-hidden',
             className
           )}
           data-slot="popover-content"
@@ -73,7 +73,7 @@ function PopoverDescription({
 }: PopoverPrimitive.Description.Props) {
   return (
     <PopoverPrimitive.Description
-      className={cn('text-muted-foreground', className)}
+        className={cn('text-[13px] text-ink-muted', className)}
       data-slot="popover-description"
       {...props}
     />

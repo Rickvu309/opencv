@@ -40,7 +40,7 @@ function DropdownMenuContent({
       >
         <MenuPrimitive.Popup
           className={cn(
-            'data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:fade-in-0 data-open:zoom-in-95 data-closed:fade-out-0 data-closed:zoom-out-95 z-50 max-h-(--available-height) w-(--anchor-width) min-w-32 origin-(--transform-origin) overflow-y-auto overflow-x-hidden rounded-lg bg-popover p-1 text-popover-foreground shadow-md outline-none ring-1 ring-foreground/10 duration-100 data-closed:animate-out data-open:animate-in data-closed:overflow-hidden',
+            'menu-enter z-[var(--z-overlay)] max-h-(--available-height) w-(--anchor-width) min-w-40 origin-(--transform-origin) overflow-y-auto overflow-x-hidden rounded-[var(--radius-container)] border border-hairline bg-surface-1 p-1 text-[13px] text-ink shadow-[var(--shadow-overlay)] outline-none data-closed:overflow-hidden',
             className
           )}
           data-slot="dropdown-menu-content"
@@ -65,7 +65,7 @@ function DropdownMenuLabel({
   return (
     <MenuPrimitive.GroupLabel
       className={cn(
-        'px-1.5 py-1 font-medium text-muted-foreground text-xs data-inset:pl-7',
+        'px-3 py-1 text-[12px] font-[510] text-ink-muted data-inset:pl-7',
         className
       )}
       data-inset={inset}
@@ -87,7 +87,7 @@ function DropdownMenuItem({
   return (
     <MenuPrimitive.Item
       className={cn(
-        "group/dropdown-menu-item relative flex cursor-default select-none items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden focus:bg-surface-2 focus:text-ink not-data-[variant=destructive]:focus:**:text-ink data-disabled:pointer-events-none data-inset:pl-7 data-[variant=destructive]:text-destructive data-disabled:opacity-50 data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 data-[variant=destructive]:*:[svg]:text-destructive",
+        "group/dropdown-menu-item relative flex min-h-[var(--size-touch)] cursor-pointer select-none items-center gap-1.5 rounded-[var(--radius-control)] px-3 text-[13px] outline-none focus:bg-surface-2 focus:text-ink not-data-[variant=destructive]:focus:**:text-ink data-disabled:pointer-events-none data-inset:pl-7 data-[variant=destructive]:text-destructive data-disabled:opacity-50 data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 data-[variant=destructive]:*:[svg]:text-destructive",
         className
       )}
       data-inset={inset}
@@ -139,7 +139,7 @@ function DropdownMenuSubContent({
       align={align}
       alignOffset={alignOffset}
       className={cn(
-        'data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:fade-in-0 data-open:zoom-in-95 data-closed:fade-out-0 data-closed:zoom-out-95 w-auto min-w-[96px] rounded-lg bg-popover p-1 text-popover-foreground shadow-lg ring-1 ring-foreground/10 duration-100 data-closed:animate-out data-open:animate-in',
+        'w-auto min-w-[96px] rounded-[var(--radius-container)] border border-hairline bg-surface-1 p-1 text-[13px] text-ink shadow-[var(--shadow-overlay)]',
         className
       )}
       data-slot="dropdown-menu-sub-content"
@@ -229,7 +229,7 @@ function DropdownMenuSeparator({
 }: MenuPrimitive.Separator.Props) {
   return (
     <MenuPrimitive.Separator
-      className={cn('-mx-1 my-1 h-px bg-border', className)}
+        className={cn('-mx-1 my-1 h-px bg-hairline', className)}
       data-slot="dropdown-menu-separator"
       {...props}
     />
@@ -243,7 +243,7 @@ function DropdownMenuShortcut({
   return (
     <span
       className={cn(
-        'ml-auto text-muted-foreground text-xs tracking-widest group-focus/dropdown-menu-item:text-ink',
+        'ml-auto text-[12px] tracking-widest text-ink-muted group-focus/dropdown-menu-item:text-ink',
         className
       )}
       data-slot="dropdown-menu-shortcut"

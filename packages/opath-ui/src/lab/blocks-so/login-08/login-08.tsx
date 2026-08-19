@@ -1,7 +1,7 @@
 'use client';
 
 import { EyeIcon, EyeOffIcon, Key } from 'lucide-react';
-import Link from 'react';
+import Link from "next/link";
 import { type JSX, type SVGProps, useState } from 'react';
 import { Button } from '../../kit/button';
 import {

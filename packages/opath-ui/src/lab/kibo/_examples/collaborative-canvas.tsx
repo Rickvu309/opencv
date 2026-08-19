@@ -9,7 +9,7 @@ import {
   CursorPointer,
 } from "../cursor";
 import { cn } from "@/lib/utils";
-import Image from "react";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 

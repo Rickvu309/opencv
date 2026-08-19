@@ -1,44 +1,45 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { StoryFrame } from "../story-frame";
-import FlipClockCountdownDemo from "../eightstar/examples/flip-clock-countdown-demo";
-import FlipClockDemo from "../eightstar/examples/flip-clock-demo";
-import FlipClockShowdaysDemo from "../eightstar/examples/flip-clock-showdays-demo";
-import FlipClockSizeDemo from "../eightstar/examples/flip-clock-size-demo";
-import FlipClockVariantsDemo from "../eightstar/examples/flip-clock-variants-demo";
-import MarqueeDemo from "../eightstar/examples/marquee-demo";
-import MarqueeGrayscaleDemo from "../eightstar/examples/marquee-grayscale-demo";
-import MarqueeGreyscaleDemo from "../eightstar/examples/marquee-greyscale-demo";
-import MarqueeReverseDemo from "../eightstar/examples/marquee-reverse-demo";
-import VideoPlayerAutoDemo from "../eightstar/examples/video-player-auto-demo";
-import VideoPlayerDemo from "../eightstar/examples/video-player-demo";
-import VideoPlayerFitDemo from "../eightstar/examples/video-player-fit-demo";
-import VideoPlayerHideCenterControlsDemo from "../eightstar/examples/video-player-hide-center-controls-demo";
-import VideoPlayerMinimalControlsDemo from "../eightstar/examples/video-player-minimal-controls-demo";
-import VideoPlayerRepeatDemo from "../eightstar/examples/video-player-repeat-demo";
-import VideoPlayerSizingDemo from "../eightstar/examples/video-player-sizing-demo";
-import VideoPlayerVisibleControlsDemo from "../eightstar/examples/video-player-visible-controls-demo";
-import Example_Compare from "../kibo/_examples/compare";
-import Example_ComparisonEventHandlers from "../kibo/_examples/comparison-event-handlers";
-import Example_ComparisonHover from "../kibo/_examples/comparison-hover";
-import Example_Comparison from "../kibo/_examples/comparison";
-import Example_DeckControlled from "../kibo/_examples/deck-controlled";
-import Example_DeckProductCards from "../kibo/_examples/deck-product-cards";
-import Example_Deck from "../kibo/_examples/deck";
-import Example_ImageZoomBackground from "../kibo/_examples/image-zoom-background";
-import Example_ImageZoomMargin from "../kibo/_examples/image-zoom-margin";
-import Example_ImageZoom from "../kibo/_examples/image-zoom";
-import Example_MarqueeNoFade from "../kibo/_examples/marquee-no-fade";
-import Example_MarqueeRaw from "../kibo/_examples/marquee-raw";
-import Example_MarqueeSpacing from "../kibo/_examples/marquee-spacing";
-import Example_Marquee from "../kibo/_examples/marquee";
-import Example_ReelCustom from "../kibo/_examples/reel-custom";
-import Example_ReelImages from "../kibo/_examples/reel-images";
-import Example_ReelMinimal from "../kibo/_examples/reel-minimal";
-import Example_Reel from "../kibo/_examples/reel";
-import Example_StoriesAvatars from "../kibo/_examples/stories-avatars";
-import Example_StoriesImages from "../kibo/_examples/stories-images";
-import Example_Stories from "../kibo/_examples/stories";
-import Example_VideoPlayer from "../kibo/_examples/video-player";
+import { lazy } from "react";
+import { LazyFrame } from "./lazy-frame";
+const FlipClockCountdownDemo = lazy(() => import("../eightstar/examples/flip-clock-countdown-demo").then((m) => ({ default: m.default ?? m.FlipClockCountdownDemo ?? Object.values(m).find((v) => typeof v === "function") })));
+const FlipClockDemo = lazy(() => import("../eightstar/examples/flip-clock-demo").then((m) => ({ default: m.default ?? m.FlipClockDemo ?? Object.values(m).find((v) => typeof v === "function") })));
+const FlipClockShowdaysDemo = lazy(() => import("../eightstar/examples/flip-clock-showdays-demo").then((m) => ({ default: m.default ?? m.FlipClockShowdaysDemo ?? Object.values(m).find((v) => typeof v === "function") })));
+const FlipClockSizeDemo = lazy(() => import("../eightstar/examples/flip-clock-size-demo").then((m) => ({ default: m.default ?? m.FlipClockSizeDemo ?? Object.values(m).find((v) => typeof v === "function") })));
+const FlipClockVariantsDemo = lazy(() => import("../eightstar/examples/flip-clock-variants-demo").then((m) => ({ default: m.default ?? m.FlipClockVariantsDemo ?? Object.values(m).find((v) => typeof v === "function") })));
+const MarqueeDemo = lazy(() => import("../eightstar/examples/marquee-demo").then((m) => ({ default: m.default ?? m.MarqueeDemo ?? Object.values(m).find((v) => typeof v === "function") })));
+const MarqueeGrayscaleDemo = lazy(() => import("../eightstar/examples/marquee-grayscale-demo").then((m) => ({ default: m.default ?? m.MarqueeGrayscaleDemo ?? Object.values(m).find((v) => typeof v === "function") })));
+const MarqueeGreyscaleDemo = lazy(() => import("../eightstar/examples/marquee-greyscale-demo").then((m) => ({ default: m.default ?? m.MarqueeGreyscaleDemo ?? Object.values(m).find((v) => typeof v === "function") })));
+const MarqueeReverseDemo = lazy(() => import("../eightstar/examples/marquee-reverse-demo").then((m) => ({ default: m.default ?? m.MarqueeReverseDemo ?? Object.values(m).find((v) => typeof v === "function") })));
+const VideoPlayerAutoDemo = lazy(() => import("../eightstar/examples/video-player-auto-demo").then((m) => ({ default: m.default ?? m.VideoPlayerAutoDemo ?? Object.values(m).find((v) => typeof v === "function") })));
+const VideoPlayerDemo = lazy(() => import("../eightstar/examples/video-player-demo").then((m) => ({ default: m.default ?? m.VideoPlayerDemo ?? Object.values(m).find((v) => typeof v === "function") })));
+const VideoPlayerFitDemo = lazy(() => import("../eightstar/examples/video-player-fit-demo").then((m) => ({ default: m.default ?? m.VideoPlayerFitDemo ?? Object.values(m).find((v) => typeof v === "function") })));
+const VideoPlayerHideCenterControlsDemo = lazy(() => import("../eightstar/examples/video-player-hide-center-controls-demo").then((m) => ({ default: m.default ?? m.VideoPlayerHideCenterControlsDemo ?? Object.values(m).find((v) => typeof v === "function") })));
+const VideoPlayerMinimalControlsDemo = lazy(() => import("../eightstar/examples/video-player-minimal-controls-demo").then((m) => ({ default: m.default ?? m.VideoPlayerMinimalControlsDemo ?? Object.values(m).find((v) => typeof v === "function") })));
+const VideoPlayerRepeatDemo = lazy(() => import("../eightstar/examples/video-player-repeat-demo").then((m) => ({ default: m.default ?? m.VideoPlayerRepeatDemo ?? Object.values(m).find((v) => typeof v === "function") })));
+const VideoPlayerSizingDemo = lazy(() => import("../eightstar/examples/video-player-sizing-demo").then((m) => ({ default: m.default ?? m.VideoPlayerSizingDemo ?? Object.values(m).find((v) => typeof v === "function") })));
+const VideoPlayerVisibleControlsDemo = lazy(() => import("../eightstar/examples/video-player-visible-controls-demo").then((m) => ({ default: m.default ?? m.VideoPlayerVisibleControlsDemo ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Compare = lazy(() => import("../kibo/_examples/compare").then((m) => ({ default: m.default ?? m.Example_Compare ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_ComparisonEventHandlers = lazy(() => import("../kibo/_examples/comparison-event-handlers").then((m) => ({ default: m.default ?? m.Example_ComparisonEventHandlers ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_ComparisonHover = lazy(() => import("../kibo/_examples/comparison-hover").then((m) => ({ default: m.default ?? m.Example_ComparisonHover ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Comparison = lazy(() => import("../kibo/_examples/comparison").then((m) => ({ default: m.default ?? m.Example_Comparison ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_DeckControlled = lazy(() => import("../kibo/_examples/deck-controlled").then((m) => ({ default: m.default ?? m.Example_DeckControlled ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_DeckProductCards = lazy(() => import("../kibo/_examples/deck-product-cards").then((m) => ({ default: m.default ?? m.Example_DeckProductCards ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Deck = lazy(() => import("../kibo/_examples/deck").then((m) => ({ default: m.default ?? m.Example_Deck ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_ImageZoomBackground = lazy(() => import("../kibo/_examples/image-zoom-background").then((m) => ({ default: m.default ?? m.Example_ImageZoomBackground ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_ImageZoomMargin = lazy(() => import("../kibo/_examples/image-zoom-margin").then((m) => ({ default: m.default ?? m.Example_ImageZoomMargin ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_ImageZoom = lazy(() => import("../kibo/_examples/image-zoom").then((m) => ({ default: m.default ?? m.Example_ImageZoom ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_MarqueeNoFade = lazy(() => import("../kibo/_examples/marquee-no-fade").then((m) => ({ default: m.default ?? m.Example_MarqueeNoFade ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_MarqueeRaw = lazy(() => import("../kibo/_examples/marquee-raw").then((m) => ({ default: m.default ?? m.Example_MarqueeRaw ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_MarqueeSpacing = lazy(() => import("../kibo/_examples/marquee-spacing").then((m) => ({ default: m.default ?? m.Example_MarqueeSpacing ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Marquee = lazy(() => import("../kibo/_examples/marquee").then((m) => ({ default: m.default ?? m.Example_Marquee ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_ReelCustom = lazy(() => import("../kibo/_examples/reel-custom").then((m) => ({ default: m.default ?? m.Example_ReelCustom ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_ReelImages = lazy(() => import("../kibo/_examples/reel-images").then((m) => ({ default: m.default ?? m.Example_ReelImages ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_ReelMinimal = lazy(() => import("../kibo/_examples/reel-minimal").then((m) => ({ default: m.default ?? m.Example_ReelMinimal ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Reel = lazy(() => import("../kibo/_examples/reel").then((m) => ({ default: m.default ?? m.Example_Reel ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_StoriesAvatars = lazy(() => import("../kibo/_examples/stories-avatars").then((m) => ({ default: m.default ?? m.Example_StoriesAvatars ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_StoriesImages = lazy(() => import("../kibo/_examples/stories-images").then((m) => ({ default: m.default ?? m.Example_StoriesImages ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Stories = lazy(() => import("../kibo/_examples/stories").then((m) => ({ default: m.default ?? m.Example_Stories ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_VideoPlayer = lazy(() => import("../kibo/_examples/video-player").then((m) => ({ default: m.default ?? m.Example_VideoPlayer ?? Object.values(m).find((v) => typeof v === "function") })));
 
 const meta = { title: "Lab/Components/Media" } satisfies Meta;
 export default meta;
@@ -47,350 +48,350 @@ type Story = StoryObj;
 export const EightstarFlipClockCountdownDemo: Story = {
   name: "flip clock countdown",
   render: () => (
-    <StoryFrame width={640}>
+    <LazyFrame width={640}>
       <FlipClockCountdownDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const EightstarFlipClockDemo: Story = {
   name: "flip clock",
   render: () => (
-    <StoryFrame width={640}>
+    <LazyFrame width={640}>
       <FlipClockDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const EightstarFlipClockShowdaysDemo: Story = {
   name: "flip clock showdays",
   render: () => (
-    <StoryFrame width={640}>
+    <LazyFrame width={640}>
       <FlipClockShowdaysDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const EightstarFlipClockSizeDemo: Story = {
   name: "flip clock size",
   render: () => (
-    <StoryFrame width={640}>
+    <LazyFrame width={640}>
       <FlipClockSizeDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const EightstarFlipClockVariantsDemo: Story = {
   name: "flip clock variants",
   render: () => (
-    <StoryFrame width={640}>
+    <LazyFrame width={640}>
       <FlipClockVariantsDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const EightstarMarqueeDemo: Story = {
   name: "marquee",
   render: () => (
-    <StoryFrame width={640}>
+    <LazyFrame width={640}>
       <MarqueeDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const EightstarMarqueeGrayscaleDemo: Story = {
   name: "marquee grayscale",
   render: () => (
-    <StoryFrame width={640}>
+    <LazyFrame width={640}>
       <MarqueeGrayscaleDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const EightstarMarqueeGreyscaleDemo: Story = {
   name: "marquee greyscale",
   render: () => (
-    <StoryFrame width={640}>
+    <LazyFrame width={640}>
       <MarqueeGreyscaleDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const EightstarMarqueeReverseDemo: Story = {
   name: "marquee reverse",
   render: () => (
-    <StoryFrame width={640}>
+    <LazyFrame width={640}>
       <MarqueeReverseDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const EightstarVideoPlayerAutoDemo: Story = {
   name: "video player auto",
   render: () => (
-    <StoryFrame width={640}>
+    <LazyFrame width={640}>
       <VideoPlayerAutoDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const EightstarVideoPlayerDemo: Story = {
   name: "video player",
   render: () => (
-    <StoryFrame width={640}>
+    <LazyFrame width={640}>
       <VideoPlayerDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const EightstarVideoPlayerFitDemo: Story = {
   name: "video player fit",
   render: () => (
-    <StoryFrame width={640}>
+    <LazyFrame width={640}>
       <VideoPlayerFitDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const EightstarVideoPlayerHideCenterControlsDemo: Story = {
   name: "video player hide center controls",
   render: () => (
-    <StoryFrame width={640}>
+    <LazyFrame width={640}>
       <VideoPlayerHideCenterControlsDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const EightstarVideoPlayerMinimalControlsDemo: Story = {
   name: "video player minimal controls",
   render: () => (
-    <StoryFrame width={640}>
+    <LazyFrame width={640}>
       <VideoPlayerMinimalControlsDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const EightstarVideoPlayerRepeatDemo: Story = {
   name: "video player repeat",
   render: () => (
-    <StoryFrame width={640}>
+    <LazyFrame width={640}>
       <VideoPlayerRepeatDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const EightstarVideoPlayerSizingDemo: Story = {
   name: "video player sizing",
   render: () => (
-    <StoryFrame width={640}>
+    <LazyFrame width={640}>
       <VideoPlayerSizingDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const EightstarVideoPlayerVisibleControlsDemo: Story = {
   name: "video player visible controls",
   render: () => (
-    <StoryFrame width={640}>
+    <LazyFrame width={640}>
       <VideoPlayerVisibleControlsDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboCompare: Story = {
   name: "compare",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Compare />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboComparisonEventHandlers: Story = {
   name: "comparison event handlers",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_ComparisonEventHandlers />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboComparisonHover: Story = {
   name: "comparison hover",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_ComparisonHover />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboComparison: Story = {
   name: "comparison",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Comparison />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboDeckControlled: Story = {
   name: "deck controlled",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_DeckControlled />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboDeckProductCards: Story = {
   name: "deck product cards",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_DeckProductCards />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboDeck: Story = {
   name: "deck",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Deck />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboImageZoomBackground: Story = {
   name: "image zoom background",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_ImageZoomBackground />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboImageZoomMargin: Story = {
   name: "image zoom margin",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_ImageZoomMargin />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboImageZoom: Story = {
   name: "image zoom",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_ImageZoom />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboMarqueeNoFade: Story = {
   name: "marquee no fade",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_MarqueeNoFade />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboMarqueeRaw: Story = {
   name: "marquee raw",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_MarqueeRaw />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboMarqueeSpacing: Story = {
   name: "marquee spacing",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_MarqueeSpacing />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboMarquee: Story = {
   name: "marquee",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Marquee />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboReelCustom: Story = {
   name: "reel custom",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_ReelCustom />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboReelImages: Story = {
   name: "reel images",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_ReelImages />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboReelMinimal: Story = {
   name: "reel minimal",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_ReelMinimal />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboReel: Story = {
   name: "reel",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Reel />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboStoriesAvatars: Story = {
   name: "stories avatars",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_StoriesAvatars />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboStoriesImages: Story = {
   name: "stories images",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_StoriesImages />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboStories: Story = {
   name: "stories",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Stories />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboVideoPlayer: Story = {
   name: "video player",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_VideoPlayer />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };

@@ -18,7 +18,7 @@ import {
   IconTemplate,
   IconX,
 } from '@tabler/icons-react';
-import Image from 'react';
+import Image from "next/image";
 import { useRef, useState } from 'react';
 import { Badge } from '../../kit/badge';
 import { Button } from '../../kit/button';

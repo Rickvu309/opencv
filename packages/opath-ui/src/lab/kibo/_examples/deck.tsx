@@ -1,7 +1,7 @@
 "use client";
 
 import { Deck, DeckCards, DeckEmpty, DeckItem } from "../deck";
-import Image from "react";
+import Image from "next/image";
 
 const images = [
   {

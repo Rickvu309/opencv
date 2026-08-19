@@ -21,8 +21,8 @@ const exampleFeatures = Array.from({ length: 20 })
   .map(() => ({
     id: faker.string.uuid(),
     name: capitalize(faker.company.buzzPhrase()),
-    startAt: faker.date.past({ years: 0.5, refDate: new Date() }),
-    endAt: faker.date.future({ years: 0.5, refDate: new Date() }),
+    startAt: faker.date.past({ years: 1, refDate: new Date() }),
+    endAt: faker.date.future({ years: 1, refDate: new Date() }),
     status: faker.helpers.arrayElement(statuses),
   }));
 

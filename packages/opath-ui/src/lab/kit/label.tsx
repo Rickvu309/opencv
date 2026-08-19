@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import type * as React from 'react';
+import type * as React from "react";
 
-import { cn } from '../../cn';
+import { cn } from "../../cn";
 
-function Label({ className, ...props }: React.ComponentProps<'label'>) {
+function Label({ className, ...props }: React.ComponentProps<"label">) {
   return (
     <label
       className={cn(
-        'flex select-none items-center gap-2 font-medium text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-50 group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50',
-        className
+        "mb-1 block text-[13px] font-[510] text-ink peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
+        className,
       )}
       data-slot="label"
       {...props}

@@ -1,31 +1,32 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { StoryFrame } from "../story-frame";
-import { AnimatedBadgePreview } from "../beui/previews/animated-badge.preview";
-import { AnimatedToastStackPreview } from "../beui/previews/animated-toast-stack.preview";
-import { LoaderPreview } from "../beui/previews/loader.preview";
-import { LoadingState } from "../beautiful/loading-state";
-import ShakeDemo from "../eightstar/examples/shake-demo";
-import StatusIndicatorDemo from "../eightstar/examples/status-indicator-demo";
-import StatusMonitorDemo from "../eightstar/examples/status-monitor-demo";
-import StatusMonitorHoursDemo from "../eightstar/examples/status-monitor-hours-demo";
-import StatusMonitorSparseDemo from "../eightstar/examples/status-monitor-sparse-demo";
-import Example_AnnouncementTagless from "../kibo/_examples/announcement-tagless";
-import Example_AnnouncementThemes from "../kibo/_examples/announcement-themes";
-import Example_Announcement from "../kibo/_examples/announcement";
-import Example_BannerInset from "../kibo/_examples/banner-inset";
-import Example_BannerThemes from "../kibo/_examples/banner-themes";
-import Example_Banner from "../kibo/_examples/banner";
-import Example_CursorColor from "../kibo/_examples/cursor-color";
-import Example_CursorMessage from "../kibo/_examples/cursor-message";
-import Example_CursorNameMessage from "../kibo/_examples/cursor-name-message";
-import Example_CursorName from "../kibo/_examples/cursor-name";
-import Example_CursorOnly from "../kibo/_examples/cursor-only";
-import Example_Cursor from "../kibo/_examples/cursor";
-import Example_SpinnerCustomization from "../kibo/_examples/spinner-customization";
-import Example_SpinnerVariants from "../kibo/_examples/spinner-variants";
-import Example_Spinner from "../kibo/_examples/spinner";
-import Example_StatusCustom from "../kibo/_examples/status-custom";
-import Example_Status from "../kibo/_examples/status";
+import { lazy } from "react";
+import { LazyFrame } from "./lazy-frame";
+const AnimatedBadgePreview = lazy(() => import("../beui/previews/animated-badge.preview").then((m) => ({ default: m.AnimatedBadgePreview })));
+const AnimatedToastStackPreview = lazy(() => import("../beui/previews/animated-toast-stack.preview").then((m) => ({ default: m.AnimatedToastStackPreview })));
+const LoaderPreview = lazy(() => import("../beui/previews/loader.preview").then((m) => ({ default: m.LoaderPreview })));
+const LoadingState = lazy(() => import("../beautiful/loading-state").then((m) => ({ default: m.LoadingState })));
+const ShakeDemo = lazy(() => import("../eightstar/examples/shake-demo").then((m) => ({ default: m.default ?? m.ShakeDemo ?? Object.values(m).find((v) => typeof v === "function") })));
+const StatusIndicatorDemo = lazy(() => import("../eightstar/examples/status-indicator-demo").then((m) => ({ default: m.default ?? m.StatusIndicatorDemo ?? Object.values(m).find((v) => typeof v === "function") })));
+const StatusMonitorDemo = lazy(() => import("../eightstar/examples/status-monitor-demo").then((m) => ({ default: m.default ?? m.StatusMonitorDemo ?? Object.values(m).find((v) => typeof v === "function") })));
+const StatusMonitorHoursDemo = lazy(() => import("../eightstar/examples/status-monitor-hours-demo").then((m) => ({ default: m.default ?? m.StatusMonitorHoursDemo ?? Object.values(m).find((v) => typeof v === "function") })));
+const StatusMonitorSparseDemo = lazy(() => import("../eightstar/examples/status-monitor-sparse-demo").then((m) => ({ default: m.default ?? m.StatusMonitorSparseDemo ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_AnnouncementTagless = lazy(() => import("../kibo/_examples/announcement-tagless").then((m) => ({ default: m.default ?? m.Example_AnnouncementTagless ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_AnnouncementThemes = lazy(() => import("../kibo/_examples/announcement-themes").then((m) => ({ default: m.default ?? m.Example_AnnouncementThemes ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Announcement = lazy(() => import("../kibo/_examples/announcement").then((m) => ({ default: m.default ?? m.Example_Announcement ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_BannerInset = lazy(() => import("../kibo/_examples/banner-inset").then((m) => ({ default: m.default ?? m.Example_BannerInset ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_BannerThemes = lazy(() => import("../kibo/_examples/banner-themes").then((m) => ({ default: m.default ?? m.Example_BannerThemes ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Banner = lazy(() => import("../kibo/_examples/banner").then((m) => ({ default: m.default ?? m.Example_Banner ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_CursorColor = lazy(() => import("../kibo/_examples/cursor-color").then((m) => ({ default: m.default ?? m.Example_CursorColor ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_CursorMessage = lazy(() => import("../kibo/_examples/cursor-message").then((m) => ({ default: m.default ?? m.Example_CursorMessage ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_CursorNameMessage = lazy(() => import("../kibo/_examples/cursor-name-message").then((m) => ({ default: m.default ?? m.Example_CursorNameMessage ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_CursorName = lazy(() => import("../kibo/_examples/cursor-name").then((m) => ({ default: m.default ?? m.Example_CursorName ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_CursorOnly = lazy(() => import("../kibo/_examples/cursor-only").then((m) => ({ default: m.default ?? m.Example_CursorOnly ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Cursor = lazy(() => import("../kibo/_examples/cursor").then((m) => ({ default: m.default ?? m.Example_Cursor ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_SpinnerCustomization = lazy(() => import("../kibo/_examples/spinner-customization").then((m) => ({ default: m.default ?? m.Example_SpinnerCustomization ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_SpinnerVariants = lazy(() => import("../kibo/_examples/spinner-variants").then((m) => ({ default: m.default ?? m.Example_SpinnerVariants ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Spinner = lazy(() => import("../kibo/_examples/spinner").then((m) => ({ default: m.default ?? m.Example_Spinner ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_StatusCustom = lazy(() => import("../kibo/_examples/status-custom").then((m) => ({ default: m.default ?? m.Example_StatusCustom ?? Object.values(m).find((v) => typeof v === "function") })));
+const Example_Status = lazy(() => import("../kibo/_examples/status").then((m) => ({ default: m.default ?? m.Example_Status ?? Object.values(m).find((v) => typeof v === "function") })));
 
 const meta = { title: "Lab/Components/Feedback" } satisfies Meta;
 export default meta;
@@ -34,233 +35,233 @@ type Story = StoryObj;
 export const BeuiAnimatedBadge: Story = {
   name: "animated badge",
   render: () => (
-    <StoryFrame width={560}>
+    <LazyFrame width={560}>
       <AnimatedBadgePreview />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeuiAnimatedToastStack: Story = {
   name: "animated toast stack",
   render: () => (
-    <StoryFrame width={560}>
+    <LazyFrame width={560}>
       <AnimatedToastStackPreview />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeuiLoader: Story = {
   name: "loader",
   render: () => (
-    <StoryFrame width={560}>
+    <LazyFrame width={560}>
       <LoaderPreview />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const BeautifulLoadingState: Story = {
   name: "Loading",
   render: () => (
-    <StoryFrame>
+    <LazyFrame>
       <LoadingState />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const EightstarShakeDemo: Story = {
   name: "shake",
   render: () => (
-    <StoryFrame width={640}>
+    <LazyFrame width={640}>
       <ShakeDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const EightstarStatusIndicatorDemo: Story = {
   name: "status indicator",
   render: () => (
-    <StoryFrame width={640}>
+    <LazyFrame width={640}>
       <StatusIndicatorDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const EightstarStatusMonitorDemo: Story = {
   name: "status monitor",
   render: () => (
-    <StoryFrame width={640}>
+    <LazyFrame width={640}>
       <StatusMonitorDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const EightstarStatusMonitorHoursDemo: Story = {
   name: "status monitor hours",
   render: () => (
-    <StoryFrame width={640}>
+    <LazyFrame width={640}>
       <StatusMonitorHoursDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const EightstarStatusMonitorSparseDemo: Story = {
   name: "status monitor sparse",
   render: () => (
-    <StoryFrame width={640}>
+    <LazyFrame width={640}>
       <StatusMonitorSparseDemo />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboAnnouncementTagless: Story = {
   name: "announcement tagless",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_AnnouncementTagless />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboAnnouncementThemes: Story = {
   name: "announcement themes",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_AnnouncementThemes />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboAnnouncement: Story = {
   name: "announcement",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Announcement />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboBannerInset: Story = {
   name: "banner inset",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_BannerInset />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboBannerThemes: Story = {
   name: "banner themes",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_BannerThemes />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboBanner: Story = {
   name: "banner",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Banner />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboCursorColor: Story = {
   name: "cursor color",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_CursorColor />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboCursorMessage: Story = {
   name: "cursor message",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_CursorMessage />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboCursorNameMessage: Story = {
   name: "cursor name message",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_CursorNameMessage />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboCursorName: Story = {
   name: "cursor name",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_CursorName />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboCursorOnly: Story = {
   name: "cursor only",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_CursorOnly />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboCursor: Story = {
   name: "cursor",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Cursor />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboSpinnerCustomization: Story = {
   name: "spinner customization",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_SpinnerCustomization />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboSpinnerVariants: Story = {
   name: "spinner variants",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_SpinnerVariants />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboSpinner: Story = {
   name: "spinner",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Spinner />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboStatusCustom: Story = {
   name: "status custom",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_StatusCustom />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };
 
 export const KiboStatus: Story = {
   name: "status",
   render: () => (
-    <StoryFrame width={720}>
+    <LazyFrame width={720}>
       <Example_Status />
-    </StoryFrame>
+    </LazyFrame>
   ),
 };

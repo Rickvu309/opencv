@@ -388,7 +388,8 @@ for old in catalog.glob("*.stories.tsx"):
     old.unlink()
 
 header = '''import type {{ Meta, StoryObj }} from "@storybook/react-vite";
-import {{ StoryFrame }} from "../story-frame";
+import {{ lazy }} from "react";
+import {{ LazyFrame }} from "./lazy-frame";
 {imports}
 
 const meta = {{ title: "{title}" }} satisfies Meta;
@@ -396,11 +397,29 @@ export default meta;
 type Story = StoryObj;
 '''
 
+def lazy_import(line: str) -> str:
+    named_alias = re.match(r'import \{ (\w+) as (\w+) \} from "([^"]+)";', line)
+    if named_alias:
+        orig, local, path = named_alias.group(1), named_alias.group(2), named_alias.group(3)
+        return f'const {local} = lazy(() => import("{path}").then((m) => ({{ default: m.{orig} }})));'
+    named = re.match(r'import \{ (\w+) \} from "([^"]+)";', line)
+    if named:
+        ident, path = named.group(1), named.group(2)
+        return f'const {ident} = lazy(() => import("{path}").then((m) => ({{ default: m.{ident} }})));'
+    default = re.match(r'import (\w+) from "([^"]+)";', line)
+    if default:
+        ident, path = default.group(1), default.group(2)
+        return (
+            f'const {ident} = lazy(() => import("{path}").then((m) => '
+            f'({{ default: m.default ?? m.{ident} ?? Object.values(m).find((v) => typeof v === "function") }})));'
+        )
+    return line
+
 for title, filename in FILES.items():
     items = entries.get(title, [])
     if not items:
         continue
-    imports = "\n".join(item["import"] for item in items)
+    imports = "\n".join(lazy_import(item["import"]) for item in items)
     body = [header.format(imports=imports, title=title)]
     for item in items:
         attrs = []
@@ -413,9 +432,9 @@ for title, filename in FILES.items():
             f'''export const {item["export"]}: Story = {{
   name: "{item["name"]}",
   render: () => (
-    <StoryFrame{attr_s}>
+    <LazyFrame{attr_s}>
       {item["jsx"]}
-    </StoryFrame>
+    </LazyFrame>
   ),
 }};
 '''

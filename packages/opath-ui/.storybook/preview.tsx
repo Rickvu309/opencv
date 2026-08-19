@@ -1,16 +1,22 @@
 import type { Preview } from "@storybook/react-vite";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
-import "../../../src/styles/globals.css";
-import "../src/lab/tokens.css";
+import "./preview.css";
 import { TooltipProvider } from "../src/tooltip";
 import { AppToaster } from "../src/toaster";
 
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: false } },
+});
+
 function Decorators({ children }: { children: ReactNode }) {
   return (
-    <TooltipProvider>
-      {children}
-      <AppToaster />
-    </TooltipProvider>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        {children}
+        <AppToaster />
+      </TooltipProvider>
+    </QueryClientProvider>
   );
 }
 
