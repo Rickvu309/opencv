@@ -53,6 +53,7 @@ const idle = {
   onLinkBlur: () => undefined,
   onAddSchool: () => undefined,
   onAddExperience: () => undefined,
+  onExperienceDone: () => undefined,
   confirm: null,
   onConfirmChange: () => undefined,
   onConfirmRemove: () => undefined,

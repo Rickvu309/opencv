@@ -79,6 +79,7 @@ export function ProfileView({
   onLinkBlur,
   onAddSchool,
   onAddExperience,
+  onExperienceDone,
   confirm,
   onConfirmChange,
   onConfirmRemove,
@@ -95,6 +96,7 @@ export function ProfileView({
   onLinkBlur: (kind: ProfileLinkKind) => void;
   onAddSchool: () => void;
   onAddExperience: () => void;
+  onExperienceDone: () => void;
   confirm: ProfileConfirm;
   onConfirmChange: (confirm: ProfileConfirm) => void;
   onConfirmRemove: () => void;
@@ -191,7 +193,14 @@ export function ProfileView({
             <div className="space-y-3">
               {data.experience.map((item) =>
                 draft.editingExperienceId === item.id ? (
-                  <Card key={item.id}>
+                  <Card
+                    key={item.id}
+                    onBlur={(event) => {
+                      if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                        onExperienceDone();
+                      }
+                    }}
+                  >
                     <FieldRow label="Organisation" htmlFor="exp-org">
                       <Input
                         id="exp-org"

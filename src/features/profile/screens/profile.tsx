@@ -226,6 +226,11 @@ export function ProfileScreen() {
           }));
         })();
       }}
+      onExperienceDone={() => {
+        void flush("experience").then(() => {
+          setEdits((prev) => ({ ...prev, editingExperienceId: null }));
+        });
+      }}
       confirm={confirm}
       onConfirmChange={setConfirm}
       onConfirmRemove={() => {
