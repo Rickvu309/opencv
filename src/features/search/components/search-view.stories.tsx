@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { OpeningDetailView, SearchView, type SearchOpening } from "./search-view";
 
 const meta: Meta = {
-  title: "Drive/Search",
+  title: "Screens/Search",
   parameters: { layout: "padded" },
 };
 export default meta;

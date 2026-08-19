@@ -7,7 +7,7 @@ import { EndOfList } from "@/ui/card";
 import { Chip } from "@/ui/chip";
 
 const meta: Meta = {
-  title: "Drive/Lists",
+  title: "Screens/Paper",
   parameters: { layout: "padded" },
 };
 export default meta;

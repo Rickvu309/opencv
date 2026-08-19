@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { PersonalPageView, ProofPageView } from "./public-pages";
 
 const meta: Meta = {
-  title: "Share/Pages",
+  title: "Screens/Share",
   parameters: { layout: "fullscreen" },
 };
 export default meta;

@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { PitchView } from "./pitch-view";
 
 const meta: Meta<typeof PitchView> = {
-  title: "Pitch/Editor",
+  title: "Screens/Pitch",
   component: PitchView,
   parameters: { layout: "padded" },
 };

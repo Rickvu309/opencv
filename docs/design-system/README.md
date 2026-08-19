@@ -1,6 +1,6 @@
 # Design system
 
-The visual law of OpenPath, in four files. [design.md](../design.md) stays at the repo root as the standard-format file agents and tools read first; this folder is where the full system lives. Words are not here: every string a user reads passes [copy.md](../copy.md).
+The visual law of OpenPath. [design.md](../design.md) stays at the repo root as the standard-format file agents and tools read first; this folder is where the full system lives. Words are not here: every string a user reads passes [copy.md](../copy.md).
 
 The look is **black and white**: Linear's surface ladder and type, onyx.app's black primary. One near-neutral surface ladder, one black accent that only ever means "interactive", a single variable font at machined weights, hairline borders instead of shadows, dense calm rows. Light theme only for now; every token carries a semantic, dark-ready name so dark mode is a value swap later, not a rename.
 
@@ -11,8 +11,9 @@ The look is **black and white**: Linear's surface ladder and type, onyx.app's bl
 3. **[layout.md](layout.md)** — the logic of space: the four layers, nine layout types, per-screen regions, reading order, the empty-states law.
 4. **[motion.md](motion.md)** — when and how things move: two durations, one easing family, the surface inventory, the never list, reduced motion.
 5. **[components.md](components.md)** — the template craft: one block per reusable piece with anatomy, variants, states, internal spacing, and copy hooks. Screens are assembled from these blocks.
+6. **[gallery.md](gallery.md)** — how Production Storybook is organised: Foundations, Components, Patterns, Screens. Lab is the sourced catalog, not a second system.
 
-The galleries that make this reviewable are two local Storybooks: Opath (Production) at `npm run storybook:production` (port 6006) and Opath (Lab) at `npm run storybook:lab` (port 6007). `npm run storybook` starts both. Hosted: Production at https://opath-production.up.railway.app, Lab at https://opath-lab.up.railway.app — see [hosting.md](../hosting.md). If a surface takes props, it gets a story.
+The galleries that make this reviewable are two local Storybooks: Opath (Production) at `npm run storybook:production` (port 6006) — Foundations, Components, Patterns, Screens, see [gallery.md](gallery.md) — and Opath (Lab) at `npm run storybook:lab` (port 6007). `npm run storybook` starts both. Hosted: Production at https://opath-production.up.railway.app, Lab at https://opath-lab.up.railway.app — see [hosting.md](../hosting.md). If a surface takes props, it gets a story.
 
 ## Two workstreams, one repo
 

@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { OnboardingWizard, type OnboardingValues } from "./onboarding-wizard";
 
 const meta: Meta<typeof OnboardingWizard> = {
-  title: "Onboarding/Wizard",
+  title: "Screens/Onboarding",
   component: OnboardingWizard,
   parameters: { layout: "fullscreen" },
 };

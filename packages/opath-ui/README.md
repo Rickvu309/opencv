@@ -4,7 +4,7 @@ The design-system package. Opath (Production) consumes it. Same git repo; separa
 
 ## What lives here
 
-Primitives and shared layout pieces: Button, Input, Collapsible, Mark, stories. No product nouns, no `core/` imports, no feature screens.
+Primitives and shared layout pieces: Button, Input, Collapsible, Mark. The Production design-system catalog lives in `src/gallery/`. No product nouns, no `core/` imports, no feature screens.
 
 Coach chrome (reasoning panel, tool call, composer, rail) stays in `src/features/coach/`. That is Production assembly on top of these primitives.
 
@@ -30,4 +30,4 @@ npm run storybook             # both (Production :6006, Lab :6007)
 
 Shared on purpose: `src/styles/globals.css`, `docs/copy.md` (words), `docs/design.md`.
 
-Sourced galleries live in `src/lab`. Storybook shows them as `Lab/Components/*` and `Lab/Templates/*` (not by kit name). They are review surfaces. Kit controls that have a Production counterpart restyle to the same tokens and focus ring as the package root. Production keeps importing `@/ui/button` from the package root. Product auth is Production Storybook `Auth/Screen`, not `Lab/Templates/Auth`.
+Sourced galleries live in `src/lab`. Storybook shows them as `Lab/Components/*` and `Lab/Templates/*` (not by kit name). They are review surfaces. Kit controls that have a Production counterpart restyle to the same tokens and focus ring as the package root. Production Storybook is the design system: Foundations, Components, Patterns in `src/gallery/`, plus Screens from the app. Product auth is Production `Screens/Auth`, not `Lab/Templates/Auth`.

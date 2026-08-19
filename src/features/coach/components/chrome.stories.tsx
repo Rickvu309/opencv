@@ -9,7 +9,7 @@ import { CoachDockPanel, CoachDockPill } from "./dock";
 import { CoachSessionProvider } from "./session";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-const meta: Meta = { title: "Coach/Chrome" };
+const meta: Meta = { title: "Screens/Coach" };
 export default meta;
 type Story = StoryObj;
 

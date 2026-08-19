@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { AuthForm } from "./auth-form";
 
 const meta: Meta<typeof AuthForm> = {
-  title: "Auth/Screen",
+  title: "Screens/Auth",
   component: AuthForm,
   parameters: { layout: "fullscreen" },
 };

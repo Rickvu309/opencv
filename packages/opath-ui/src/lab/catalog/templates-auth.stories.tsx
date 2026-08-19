@@ -17,7 +17,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "Sourced login layouts for review. Product sign-in and sign-up live in Opath (Production) Storybook under Auth/Screen — same card size, not these templates.",
+          "Sourced login layouts for review. Product sign-in and sign-up live in Opath (Production) Storybook under Screens/Auth — same card size, not these templates.",
       },
     },
   },

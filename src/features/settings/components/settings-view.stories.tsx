@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { SettingsView, type SettingsViewData } from "./settings-view";
 
 const meta: Meta<typeof SettingsView> = {
-  title: "Settings/Screen",
+  title: "Screens/Settings",
   component: SettingsView,
   parameters: { layout: "padded" },
 };

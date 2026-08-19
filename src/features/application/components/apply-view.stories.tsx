@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { ApplyView, type ApplyRow } from "./apply-view";
 
 const meta: Meta<typeof ApplyView> = {
-  title: "Drive/Apply",
+  title: "Screens/Apply",
   component: ApplyView,
   parameters: { layout: "padded" },
 };

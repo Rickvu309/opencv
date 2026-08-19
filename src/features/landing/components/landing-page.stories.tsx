@@ -3,7 +3,7 @@ import type { FormEvent } from "react";
 import { LandingPage } from "./landing-page";
 
 const meta: Meta<typeof LandingPage> = {
-  title: "Landing/Page",
+  title: "Screens/Landing",
   component: LandingPage,
   parameters: { layout: "fullscreen" },
 };

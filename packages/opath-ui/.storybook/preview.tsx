@@ -33,7 +33,7 @@ const preview: Preview = {
     a11y: { test: "todo" },
     options: {
       storySort: {
-        order: ["Primitives", "Lab", ["Components", "Templates"]],
+        order: ["Lab", ["Components", "Templates"]],
       },
     },
   },
