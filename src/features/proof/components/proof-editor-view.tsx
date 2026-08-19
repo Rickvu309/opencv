@@ -1,9 +1,7 @@
 import type { ReactNode } from "react";
 import { Button } from "@/ui/button";
 import { Textarea } from "@/ui/textarea";
-import { Label } from "@/ui/label";
 import { Band } from "@/ui/band";
-import { Card } from "@/ui/card";
 import { Section } from "@/ui/section";
 import { NotFoundState, QueryError } from "@/ui/empty-state";
 import { InfoBlock } from "@/ui/info-block";
@@ -77,27 +75,27 @@ export function ProofEditorView({
   return (
     <div className="mx-auto max-w-2xl">
       <Band title="Proof" back={back} meta={meta} primary={primary} />
-      <Card>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            onLog();
-          }}
-        >
-          <Label htmlFor="proof-log">What happened</Label>
-          <Textarea
-            id="proof-log"
-            value={note}
-            onChange={(e) => onNote(e.target.value)}
-            placeholder="A café shift counts. Write it like a text."
-          />
-          <div className="mt-3 flex justify-end">
-            <Button type="submit" disabled={!note.trim()}>
-              Log
-            </Button>
-          </div>
-        </form>
-      </Card>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          onLog();
+        }}
+        className="rounded-[var(--radius-control)] border border-hairline bg-surface-1 focus-within:border-accent focus-within:shadow-[var(--focus-ring)]"
+      >
+        <Textarea
+          id="proof-log"
+          aria-label="Log"
+          value={note}
+          onChange={(e) => onNote(e.target.value)}
+          placeholder="A café shift counts. Write it like a text."
+          className="min-h-36 border-0 bg-transparent focus-visible:border-transparent focus-visible:shadow-none"
+        />
+        <div className="flex justify-end px-2 pb-2">
+          <Button type="submit" size="sm" disabled={!note.trim()}>
+            Log
+          </Button>
+        </div>
+      </form>
       {entries.length > 0 ? (
         <ol className="mt-8 divide-y divide-hairline">
           {entries.map((e) => (
