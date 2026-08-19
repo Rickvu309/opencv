@@ -6,15 +6,20 @@ const dir = path.dirname(fileURLToPath(import.meta.url));
 
 const config: StorybookConfig = {
   stories: [
+    "./*.mdx",
+    "../packages/opath-ui/src/*.stories.@(ts|tsx)",
     "../packages/opath-ui/src/gallery/**/*.stories.@(ts|tsx)",
     "../src/**/*.stories.@(ts|tsx)",
   ],
-  addons: ["@storybook/addon-a11y"],
+  addons: ["@storybook/addon-a11y", "@storybook/addon-docs"],
   framework: {
     name: "@storybook/react-vite",
     options: {
       builder: { viteConfigPath: path.join(dir, "vite.config.ts") },
     },
+  },
+  typescript: {
+    reactDocgen: "react-docgen-typescript",
   },
   viteFinal: async (config) => {
     config.resolve = config.resolve ?? {};

@@ -1,26 +1,42 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
-import { Band, BandFilter } from "../band";
-import { Button } from "../button";
+import { Band, BandFilter } from "./band";
+import { Button } from "./button";
 
-const meta: Meta = {
-  title: "Components/Band",
-  parameters: { layout: "padded" },
+const meta: Meta<typeof Band> = {
+  title: "Layouts/Band",
+  component: Band,
+  tags: ["autodocs"],
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component:
+          "First element inside main on every screen that has chrome. Title is the one h1. Primary then quiet ghost secondaries. Filter row optional.",
+      },
+    },
+  },
+  args: { title: "The list" },
 };
+
 export default meta;
+type Story = StoryObj<typeof Band>;
 
-type Story = StoryObj;
-
-export const TitleAndPrimary: Story = {
-  render: () => (
-    <div className="w-[32rem]">
-      <Band title="The list" primary={<Button>Primary action</Button>} />
-    </div>
-  ),
+export const Default: Story = {
+  args: {
+    primary: <Button>Primary action</Button>,
+  },
+  decorators: [
+    (Story) => (
+      <div className="w-[32rem]">
+        <Story />
+      </div>
+    ),
+  ],
 };
 
 export const WithMetaAndFilter: Story = {
-  render: () => {
+  render: function FilterStory() {
     const [filter, setFilter] = useState("all");
     return (
       <div className="w-[32rem]">

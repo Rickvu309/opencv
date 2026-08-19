@@ -1,0 +1,114 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Getting Started" />
+
+# Opath Storybook
+
+A living catalog for browsing, testing, and documenting Production UI in isolation. This is the design system made reviewable. Opath (Lab) is a sourced commodity catalog on the other Storybook, not a second system.
+
+The anatomy copies [Onyx Opal Storybook](https://onyx-storybook.vercel.app/?path=/docs/getting-started--docs): Getting Started, then layers, then autodocs. Tokens and copy stay ours.
+
+---
+
+## What is this?
+
+Each Production primitive has a dedicated page with:
+
+- **Live demos** you can interact with directly
+- **Controls** to tweak props and see how the component responds
+- **Auto-generated docs** showing the props API
+- **Named states** from [components.md](../docs/design-system/components.md) (rest, invalid, disabled, loading) — not a junk drawer
+
+Screens live in the same gallery so you can see the primitives assembled. They compose `@/ui/*`; they do not restyle them.
+
+---
+
+## Navigating Storybook
+
+### Sidebar
+
+The left sidebar organizes work by layer, same job as Opal's `opal/core` → `opal/components` → Layouts:
+
+- **Getting Started** — this page
+- **Foundations** — tokens from `src/styles/globals.css` (color, type, space, motion). Swatches read `var(--token)`; they do not hardcode hex
+- **Core** — lowest-level primitives (`Interactive`, `Hoverable`). Most screens should not use these directly; prefer Button, Row, Chip
+- **Components** — design system atoms (Button, Chip, Input, overlays, feedback)
+- **Layouts** — structural chrome (`Band`, `Section`, `SkipLink`)
+- **Patterns** — two or more components in the layout they occupy (drive list, sectioned form, suggestions)
+- **Screens** — product views from `src/features/*/`
+
+Click any component to see its stories. Click **Docs** to see the auto-generated props table.
+
+### Controls panel
+
+At the bottom of each story, the **Controls** panel lets you change props in real time. Toggle booleans, pick from enums, type in strings — the preview updates instantly.
+
+Copy in Core, Components, Layouts, and Patterns is generic: Continue, Email, Row label. Product words live under Screens.
+
+---
+
+## Running locally
+
+```bash
+npm run storybook:production   # this gallery on :6006
+npm run storybook:lab          # sourced catalog on :6007
+npm run storybook              # both
+npm run build-storybook        # static build
+```
+
+Hosted Production: [opath-production.up.railway.app](https://opath-production.up.railway.app). Lab: [opath-lab.up.railway.app](https://opath-lab.up.railway.app).
+
+---
+
+## Adding a new story
+
+Stories for primitives are **co-located** next to the component, as in Opal:
+
+```
+packages/opath-ui/src/
+├── button.tsx
+├── button.stories.tsx
+├── interactive.tsx
+└── interactive.stories.tsx
+```
+
+Foundations and Patterns stay under `packages/opath-ui/src/gallery/`. Screens stay next to the view in `src/features/<name>/`.
+
+### Minimal template
+
+```tsx
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { Button } from "./button";
+
+const meta: Meta<typeof Button> = {
+  title: "Components/Button",
+  component: Button,
+  tags: ["autodocs"],
+  args: { children: "Continue" },
+};
+
+export default meta;
+type Story = StoryObj<typeof Button>;
+
+export const Default: Story = {};
+
+export const VariantGrid: Story = {
+  render: () => (
+    <div className="flex flex-wrap gap-2">
+      <Button>Continue</Button>
+      <Button variant="outline">Outline</Button>
+    </div>
+  ),
+};
+```
+
+### Conventions
+
+- **Title format:** `Core/Name`, `Components/Name`, `Layouts/Name`, `Patterns/Name`, or `Screens/Name`
+- **Tags:** `tags: ["autodocs"]` on Core, Components, and Layouts so Docs is generated from props
+- **Default:** the first story is `Default` with `args`, so Controls work
+- **States:** named stories for invalid, disabled, loading — not an `All` junk drawer
+- **Layout:** `parameters: { layout: "fullscreen" }` for Auth, Landing, Onboarding, Share, and for portals that need the viewport
+- **Do not** invent a fifth product chapter. Lab stays on the Lab Storybook
+
+Spec the block in [components.md](../docs/design-system/components.md) in the same PR. Full gallery rules: [gallery.md](../docs/design-system/gallery.md).
