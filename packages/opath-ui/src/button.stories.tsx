@@ -16,7 +16,7 @@ const meta: Meta<typeof Button> = {
       },
     },
   },
-  args: { children: "Continue" },
+  args: { children: "Continue", variant: "primary", size: "md" },
   argTypes: {
     variant: {
       control: "select",
