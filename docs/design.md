@@ -160,7 +160,7 @@ Controls use a 6px radius. Cards, dialogs, and the content panel use 12px. Pills
 ## Components
 
 - **Buttons.** One primary per screen, on accent. Height 44px. Destructive is the red, and only for delete. Press scales to 0.97; do not animate high-frequency clicks.
-- **Rail items.** 44px tall, 13px. Active uses surface-3 fill and accent text, never a decorative bar. Truncate long thread titles; do not wrap the rail.
+- **Rail items.** 44px tall, 13px. Hover fills `--surface-3` with a sliding pill; active is weight 590 `--ink` with a heavier icon stroke, never a rest fill or a decorative bar. Truncate long thread titles; do not wrap the rail.
 - **Inputs.** Visible labels. Placeholder is not a label. Error text is a sentence with a next step.
 - **Lists.** Flat rows. Type as a word (CV, Resume, Cover letter, Proof, Apply), not an icon that has to be learned.
 - **Dock and drawer.** Floating layers: border plus `--shadow-overlay`. Must not cover the artifact's primary action. Esc and the scrim close them.

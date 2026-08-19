@@ -1,6 +1,6 @@
 # Lab sourced galleries
 
-Catalog of commodity primitives ported into Opath (Lab) for review. Production still composes `@/ui/*` primitives at the package root. Nothing here is a product noun; stories use generic copy.
+Catalog of commodity primitives ported into Opath (Lab) for review. Production still composes `@/ui/*` primitives at the package root. Nothing here is a product noun; stories use generic copy. Kit controls that exist at the package root (button, input, textarea, label, checkbox, switch, card, tabs) share those tokens and the same `--focus-ring` focus contract.
 
 Storybook is grouped by **what the surface is**, not by which kit it came from:
 

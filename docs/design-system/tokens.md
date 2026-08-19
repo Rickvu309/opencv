@@ -2,7 +2,7 @@
 
 The named values behind every visual decision. The architecture and most values are copied from Linear's product UI; the structure is theirs, the constraints (Vietnamese text, anxious users, calm as a requirement) are ours. Structure lives in [layout.md](layout.md), motion in [motion.md](motion.md), assembly in [components.md](components.md).
 
-Values here are live in `src/styles/globals.css` and the frontmatter of [design.md](../design.md). The [migration table](#migration-from-the-current-globalscss) records the swap.
+Values here are live in `src/styles/globals.css` and the frontmatter of [design.md](../design.md). The [swap table](#migration-from-the-old-globalscss) records the completed rename from the old aliases.
 
 ## Naming law
 
@@ -139,7 +139,7 @@ Every interactive element has all of these, distinguishable without color alone:
 |---|---|
 | Hover | Fill steps to `--surface-2` (or `--accent-hover` on accent fills). Behind `@media (hover: hover)` — touch must not stick |
 | Pressed | `transform: scale(0.97)` (see [motion.md](motion.md)) and fill to `--surface-3` |
-| Selected / active | `--surface-3` fill; nav adds `--accent` text |
+| Selected / active | Rows and filters fill `--surface-3`; filters and tabs add `--accent` text. Rail active is weight 590 `--ink` with no rest fill. Never accent fill. |
 | Focus | `--focus-ring`, never removed, never restyled per component |
 | Disabled | `opacity: 0.5`, cursor unchanged; paste is never blocked; submit stays enabled until the request starts |
 
@@ -147,13 +147,13 @@ Every interactive element has all of these, distinguishable without color alone:
 
 Type is a word, not an icon: CV, Resume, Cover letter, Proof, Apply are written out. `lucide-react` only for wordless controls already understood everywhere — close, menu, chevron, the send arrow. The `···` row trigger stays text. No decorative icons, no icon+word pairs on rows, and every icon-only control carries an `aria-label`.
 
-## Migration from the current globals.css
+## Migration from the old globals.css
 
-The implementation checklist. "Renamed" means the old Tailwind alias should move to the new semantic name in the same pass.
+Completed swap. Kept so leftover aliases in sourced Lab galleries can still be mapped.
 
-| Today in `globals.css` | Becomes | Note |
+| Was | Became | Note |
 |---|---|---|
-| `--font-sans: "Be Vietnam Pro"…` | `"Inter Variable", Inter, system-ui` | Swap `@fontsource` imports to `@fontsource-variable/inter`; set `font-feature-settings: "cv01", "ss03"` on root |
+| `--font-sans: "Be Vietnam Pro"…` | `"Inter Variable", Inter, system-ui` | Shipped `@fontsource-variable/inter`; `font-feature-settings: "cv01", "ss03"` on root |
 | `html { font-size: 16px }` | 15px body via `body` type role | UI chrome drops to 13px |
 | `--color-background: #ffffff` | `--surface-1: #ffffff`, new `--canvas: #fbfbfb` | Shell gets the canvas/panel split |
 | `--color-foreground: #141413` | `--ink: #212226` | |
@@ -170,7 +170,7 @@ The implementation checklist. "Renamed" means the old Tailwind alias should move
 | — | `--scrim`, z scale variables, status hues, `--size-*` | New |
 | `.a4` block | unchanged | Documents stay outside theming |
 
-Weights need the variable font: 510 and 590 do not exist in static Inter files. Until the swap lands, 500/600 are the acceptable stand-ins and the difference is a known gap, not a choice.
+Weights 510 and 590 require Inter Variable, which is what we ship (`@fontsource-variable/inter`).
 
 ## Opal token bridge
 

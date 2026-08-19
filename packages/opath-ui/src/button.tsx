@@ -3,7 +3,7 @@ import { cn } from "./cn";
 import type { ButtonHTMLAttributes } from "react";
 
 export const buttonStyles = cva(
-  "inline-flex items-center justify-center gap-2 rounded-[var(--radius-control)] text-[13px] font-[510] transition-[background-color,color,transform,opacity] duration-[var(--duration-fast)] ease-[var(--ease-out)] disabled:opacity-50 active:scale-[0.97]",
+  "inline-flex shrink-0 select-none items-center justify-center gap-2 rounded-[var(--radius-control)] text-[13px] font-[510] transition-[background-color,color,transform,opacity] duration-[var(--duration-fast)] ease-[var(--ease-out)] disabled:opacity-50 active:scale-[0.97] focus-visible:shadow-[var(--focus-ring)] [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {

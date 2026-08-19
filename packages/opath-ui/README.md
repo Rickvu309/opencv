@@ -30,4 +30,4 @@ npm run storybook             # both (Production :6006, Lab :6007)
 
 Shared on purpose: `src/styles/globals.css`, `docs/copy.md` (words), `docs/design.md`.
 
-Sourced galleries live in `src/lab`. Storybook shows them as `Lab/Components/*` and `Lab/Templates/*` (not by kit name). They are review surfaces. Production keeps importing `@/ui/button` from the package root.
+Sourced galleries live in `src/lab`. Storybook shows them as `Lab/Components/*` and `Lab/Templates/*` (not by kit name). They are review surfaces. Kit controls that have a Production counterpart restyle to the same tokens and focus ring as the package root. Production keeps importing `@/ui/button` from the package root. Product auth is Production Storybook `Auth/Screen`, not `Lab/Templates/Auth`.

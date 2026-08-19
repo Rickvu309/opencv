@@ -2,6 +2,9 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Button } from "./button";
 import { Chip } from "./chip";
 import { Card, EmptyMessageCard, EndOfList } from "./card";
+import { Input } from "./input";
+import { Label } from "./label";
+import { Textarea } from "./textarea";
 import { Switch } from "./switch";
 import { Checkbox } from "./checkbox";
 import { Code } from "./code";
@@ -33,6 +36,34 @@ export const Buttons: Story = {
       <Button variant="danger">Delete</Button>
       <Button size="sm">Small</Button>
       <Button size="lg">Large</Button>
+    </div>
+  ),
+};
+
+export const Fields: Story = {
+  render: () => (
+    <div className="flex w-[20rem] flex-col gap-4">
+      <div>
+        <Label htmlFor="story-email">Email</Label>
+        <Input id="story-email" type="email" placeholder="you@email.com" />
+      </div>
+      <div>
+        <Label htmlFor="story-email-invalid">Email</Label>
+        <Input
+          id="story-email-invalid"
+          type="email"
+          defaultValue="not-an-email"
+          aria-invalid
+          aria-describedby="story-email-error"
+        />
+        <p id="story-email-error" className="mt-1 text-[13px] text-destructive">
+          Enter an email.
+        </p>
+      </div>
+      <div>
+        <Label htmlFor="story-notes">Notes</Label>
+        <Textarea id="story-notes" placeholder="A few lines" />
+      </div>
     </div>
   ),
 };
@@ -76,8 +107,8 @@ export const Surfaces: Story = {
         <Checkbox aria-label="Done" />
         <Keycap>Enter</Keycap>
       </div>
-      <Interactive>Rail item</Interactive>
-      <Interactive state="selected">Active rail item</Interactive>
+      <Interactive>Row</Interactive>
+      <Interactive state="selected">Selected row</Interactive>
       <EndOfList />
     </div>
   ),

@@ -13,7 +13,7 @@ Email and password, a session cookie, and a gate in front of the signed-in area.
 ## Screens
 
 - `/sign-up` — auth card: email, then password and confirm password side by side from `sm`. Hint under the pair: "Use at least 8 characters." Mismatched confirm: "Passwords must match." Taken email: ask to sign in instead. Errors name the field. Sign-up always keeps the session for 30 days. No social login.
-- `/sign-in` — the same auth card as sign-up (same width and `min-h-[36rem]`). A wrong pair is rejected without revealing which half was wrong. One next step on the error. **Keep me signed in** (default on): a 30-day cookie that renews while they use the app. Unchecked: the session lasts until the browser closes.
+- `/sign-in` — the same auth card as sign-up (same width and `min-h-[36rem]`). A wrong pair is rejected without revealing which half was wrong. One next step on the error. **Keep me signed in** (default on): a 30-day cookie that renews while they use the app. Unchecked: the session lasts until the browser closes. Production Storybook `Auth/Screen` is fullscreen so both modes show this card; Lab `Lab/Templates/Auth` is sourced catalog, not this shell.
 - Sign out lives in Settings and the account menu.
 
 ## Mechanics
