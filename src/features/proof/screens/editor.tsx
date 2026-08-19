@@ -21,18 +21,20 @@ export function ProofEditorScreen({ proofId }: { proofId: string }) {
     </Link>
   );
   const proof = q.data;
-  const draft = (proof?.page_draft as { what?: string; did?: string; came?: string } | null) ?? null;
+  const draft = (proof?.page_draft as { what?: string; did?: string; came?: string; skippedQuestion?: boolean } | null) ?? null;
   const canPublish = Boolean(proof?.entries?.some((entry: { body?: string }) => entry.body?.trim()));
+  const alreadySkipped = Boolean(draft?.skippedQuestion || skipped);
 
   useEffect(() => {
-    if (!proof?.entries?.length || asked.current || skipped || question) return;
+    if (!proof?.entries?.length || asked.current || alreadySkipped || question) return;
+    if (proof.slug || proof.status === "published") return;
     asked.current = true;
     void interviewFn({ data: { id: proofId } })
       .then((next) => {
         if (next) setQuestion(next);
       })
       .catch(() => undefined);
-  }, [proof, proofId, skipped, question]);
+  }, [proof, proofId, alreadySkipped, question]);
 
   return (
     <ProofEditorView

@@ -68,6 +68,10 @@ describe("proof.publish", () => {
       const actor = await userActor();
       const id = await dumpShift(actor);
       await executeCommand("proof.skipQuestion", { id }, actor);
+      const { rows: beforePublish } = await withClient((c) =>
+        c.query<{ n: string }>(`select count(*)::text as n from proof_pages where proof_id=$1`, [id]),
+      );
+      assert.equal(beforePublish[0]?.n, "0");
       const published = await executeCommand<{ ok: boolean; slug: string }>(
         "proof.publish",
         { id },

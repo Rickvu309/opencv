@@ -158,7 +158,10 @@ defineCommand({
   input: z.object({ id: z.string() }),
   async handler({ actor, input, client }) {
     const { rowCount } = await client.query(
-      `update proofs set updated_at=now() where id=$1 and user_id=$2`,
+      `update proofs
+          set page_draft = coalesce(page_draft, '{}'::jsonb) || '{"skippedQuestion": true}'::jsonb,
+              updated_at = now()
+        where id=$1 and user_id=$2`,
       [input.id, actor.userId],
     );
     return { result: { ok: Boolean(rowCount) }, inverse: null };
