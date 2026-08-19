@@ -3,6 +3,7 @@ import { Input } from "@/ui/input";
 import { Band } from "@/ui/band";
 import { FieldRow, Section } from "@/ui/section";
 import { EmptyState } from "@/ui/empty-state";
+import { InfoBlock } from "@/ui/info-block";
 import { QueryError } from "@/ui/empty-state";
 import { SkeletonSection } from "@/ui/skeleton";
 
@@ -53,9 +54,9 @@ export function ProfileView({
             />
           ) : null}
           <Section label="Identity">
-            <p className="text-[13px] leading-[1.5] text-ink-muted tabular-nums">
+            <InfoBlock className="tabular-nums">
               {data.completeness} of 100, from what you actually provided.
-            </p>
+            </InfoBlock>
             <FieldRow label="Name" htmlFor="name">
               <Input id="name" value={name} onChange={(e) => onName(e.target.value)} />
             </FieldRow>

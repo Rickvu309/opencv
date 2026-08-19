@@ -11,6 +11,10 @@ const statusDot: Record<ChipStatus, string> = {
   muted: "bg-ink-muted",
 };
 
+export function chipStatusDotClass(status: ChipStatus) {
+  return statusDot[status];
+}
+
 interface ChipProps extends HTMLAttributes<HTMLSpanElement> {
   tone?: ChipTone;
   status?: ChipStatus;

@@ -42,7 +42,7 @@ The Coach's real capabilities are other features' commands with `agent: true`; s
 
 ## Empty state
 
-A calm empty thread like Grok: mark, the composer, and a connect-email banner. Never a blank pane. The activation checklist is not on this surface.
+A calm empty thread like Grok plus Lab AI suggestion chips: mark, the composer, three starters, and a connect-email banner. Starters fill the composer; they do not send. If the profile has a target role, the first two chips name it. Never a blank pane. The activation checklist is not on this surface.
 
 ## Out of scope
 

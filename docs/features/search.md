@@ -13,7 +13,7 @@ Focus and honesty over volume. Openings arrive two ways: the user pastes a posti
 ## Screens
 
 - Reached from Opportunities in the rail, next to Apply ([flows.md](../flows.md)).
-- `/search` — the ranked list, best fit first, with text search and simple filters (location, kind). Each row: title, company, fit as a sentence ("Fit 4 of 6 — misses Excel."). Opening detail is in-page state in the same column (no detail URL): Back returns to the list; requirement lines, met and missing marked, the gap named; primary is Save to Apply; the Coach door opens the dock with a prefilled intent to close the gap.
+- `/search` — the ranked list, best fit first. Paste a posting in a labelled card (Lab form layout), then filter by title or company. Each row: title, company, fit as a sentence ("Fit 4 of 6 — misses Excel."). Opening detail is in-page state in the same column (no detail URL): Back returns to the list; an InfoBlock names met-versus-total; requirement lines sit under Requirements with Met / Missing chips; primary is Save to Apply; the Coach door opens the dock with a prefilled intent to close the gap.
 
 ## Data
 

@@ -6,6 +6,7 @@ import { SkeletonSection } from "@/ui/skeleton";
 import { Switch } from "@/ui/switch";
 import { QueryError } from "@/ui/empty-state";
 import { ConfirmDialog } from "@/ui/confirm-dialog";
+import { InfoBlock } from "@/ui/info-block";
 
 export type SettingsViewData = {
   email: string;
@@ -169,9 +170,9 @@ export function SettingsView({
           </Section>
 
           <Section label="Delete account">
-            <p className="text-[13px] text-ink-muted">
+            <InfoBlock>
               This removes your papers, Proofs, and conversations.
-            </p>
+            </InfoBlock>
             <div className="flex justify-end pt-3">
               <Button variant="danger" onClick={() => onConfirmDelete(true)}>
                 Delete account

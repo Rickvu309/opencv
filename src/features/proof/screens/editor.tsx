@@ -1,13 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { getProofFn, interviewFn, arrangeFn } from "@/features/proof/queries";
+import { ProofEditorView } from "@/features/proof/components/proof-editor-view";
 import { runCommand } from "@/ui/run-command";
 import { Button } from "@/ui/button";
-import { Textarea } from "@/ui/textarea";
-import { Input } from "@/ui/input";
-import { Band } from "@/ui/band";
-import { EmptyState, NotFoundState, QueryError } from "@/ui/empty-state";
-import { SkeletonRows } from "@/ui/skeleton";
 import { useState } from "react";
 
 export function ProofEditorScreen({ proofId }: { proofId: string }) {
@@ -22,54 +18,37 @@ export function ProofEditorScreen({ proofId }: { proofId: string }) {
       Back
     </Link>
   );
-  if (q.isPending) {
-    return (
-      <div>
-        <Band title="Proof" back={back} />
-        <SkeletonRows />
-      </div>
-    );
-  }
-  if (q.isError) {
-    return (
-      <div>
-        <Band title="Proof" back={back} />
-        <QueryError onRetry={() => void q.refetch()} />
-      </div>
-    );
-  }
-  if (!q.data) {
-    return (
-      <div>
-        <Band title="Proof" back={back} />
-        <NotFoundState
-          title="That Proof is not here. Open Proof to see your list."
-          href="/proof"
-          label="Back to Proof"
-        />
-      </div>
-    );
-  }
   const proof = q.data;
-  const draft = proof.page_draft as { what?: string; did?: string; came?: string } | null;
+  const draft = (proof?.page_draft as { what?: string; did?: string; came?: string } | null) ?? null;
   const arranged = Boolean(draft?.what && draft?.did && draft?.came);
-  const missingPart = !draft?.what ? "what it was" : !draft?.did ? "what you did" : !draft?.came ? "what came of it" : null;
+  const missingPart = !draft?.what
+    ? "what it was"
+    : !draft?.did
+      ? "what you did"
+      : !draft?.came
+        ? "what came of it"
+        : null;
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <Band
-        title={
-          <h1 className="min-w-0 flex-1">
-            <Input
-              aria-label="Title"
-              defaultValue={proof.title}
-              onBlur={(e) => void runCommand("proof.updateMeta", { id: proofId, title: e.target.value })}
-            />
-          </h1>
-        }
-        back={back}
-        meta={missingPart ? `The story still needs ${missingPart}.` : arranged ? "The story is arranged." : undefined}
-        primary={
+    <ProofEditorView
+      pending={q.isPending}
+      error={q.isError}
+      onRetry={() => void q.refetch()}
+      missing={!q.isPending && !q.isError && !proof}
+      title={proof?.title}
+      onTitle={(title) => void runCommand("proof.updateMeta", { id: proofId, title })}
+      back={back}
+      meta={
+        proof
+          ? missingPart
+            ? `The story still needs ${missingPart}.`
+            : arranged
+              ? "The story is arranged."
+              : undefined
+          : undefined
+      }
+      primary={
+        proof ? (
           arranged ? (
             <Button
               onClick={async () => {
@@ -91,58 +70,25 @@ export function ProofEditorScreen({ proofId }: { proofId: string }) {
               Arrange
             </Button>
           )
-        }
-      />
-      <form
-        className="mt-6"
-        onSubmit={(e) => {
-          e.preventDefault();
-          void runCommand("proof.log", { proofId, body: note }).then(() => {
-            setNote("");
-            q.refetch();
-          });
-        }}
-      >
-        <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="What happened" />
-        <Button className="mt-2" type="submit">
-          Log
-        </Button>
-      </form>
-      {proof.entries.length === 0 ? (
-        <EmptyState kind="first-run" title="Log the first entry." />
-      ) : (
-        <ol className="mt-8 divide-y divide-hairline">
-          {proof.entries.map((e: { id: string; body: string; created_at: string }) => (
-            <li key={e.id} className="py-3 text-[15px] leading-[1.6]">
-              {e.body}
-            </li>
-          ))}
-        </ol>
-      )}
-      <div className="mt-10">
-        <Button
-          variant="outline"
-          onClick={async () => {
-            const next = await interviewFn({ data: { id: proofId } });
-            setQuestion(next);
-          }}
-        >
-          Ask the next question
-        </Button>
-      </div>
-      {question ? <p className="mt-4">{question}</p> : null}
-      {draft ? (
-        <section className="mt-8 space-y-3">
-          <p><strong>What it was.</strong> {draft.what}</p>
-          <p><strong>What you did.</strong> {draft.did}</p>
-          <p><strong>What came of it.</strong> {draft.came}</p>
-        </section>
-      ) : null}
-      {proof.slug ? (
-        <p className="mt-6">
-          Live at <Link to="/p/$slug" params={{ slug: proof.slug }}>/p/{proof.slug}</Link>
-        </p>
-      ) : null}
-    </div>
+        ) : undefined
+      }
+      note={note}
+      onNote={setNote}
+      onLog={() => {
+        if (!note.trim()) return;
+        void runCommand("proof.log", { proofId, body: note }).then(() => {
+          setNote("");
+          q.refetch();
+        });
+      }}
+      entries={proof?.entries ?? []}
+      question={question}
+      onAsk={async () => {
+        const next = await interviewFn({ data: { id: proofId } });
+        setQuestion(next);
+      }}
+      draft={draft}
+      slug={proof?.slug ?? null}
+    />
   );
 }

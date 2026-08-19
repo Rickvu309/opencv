@@ -13,7 +13,7 @@ Where Paper produces documents the user sends, Pitch produces language the user 
 ## Screens
 
 - Reached from the Prepare group in the rail, next to Paper ([flows.md](../flows.md)).
-- `/pitch` — three labelled sections: bio, intro, answers. One primary per section; drafting is the quiet secondary. An unbuilt Pitch is one door (draft from the profile). A missing goal for intro is an in-place next step, not a browser alert.
+- `/pitch` — three labelled sections: bio, intro, answers. Lab form layout: label above a full-width field, quiet draft secondary then save as the section primary. An unbuilt Pitch is one door (draft from the profile). A missing goal for intro is an InfoBlock with a next step to Profile, not a browser alert. Saved answers sit in cards (prompt, then the words).
 
 ## Data
 

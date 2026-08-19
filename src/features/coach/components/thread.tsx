@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   getConversationFn,
   listConversationsFn,
@@ -15,11 +15,9 @@ import { navigateToOpen } from "@/features/coach/open";
 import { sendCoachTurn } from "@/features/coach/stream";
 import { paperIdFromScreen } from "@/features/paper/model";
 import { runCommand } from "@/ui/run-command";
-import { Mark } from "@/ui/mark";
-import { Button } from "@/ui/button";
-import { Mail } from "lucide-react";
-import { toast } from "sonner";
 import { StickToBottom } from "@/ui/stick-to-bottom";
+import { getProfileFn } from "@/features/profile/queries";
+import { CoachEmpty, coachStarters } from "@/features/coach/components/empty";
 import type { ApprovalView, ToolCallView } from "@/features/coach/model";
 
 type ContentPart = { type?: string; text?: string; name?: string; input?: unknown; output?: unknown };
@@ -76,6 +74,11 @@ export function ThreadBody({
     queryKey: ["thread", threadId],
     queryFn: () => getConversationFn({ data: { id: threadId! } }),
     enabled: Boolean(threadId),
+  });
+  const profile = useQuery({
+    queryKey: ["profile"],
+    queryFn: () => getProfileFn(),
+    enabled: welcome && !compact,
   });
   const [text, setText] = useState("");
   const [pendingUser, setPendingUser] = useState<string | null>(null);
@@ -236,7 +239,11 @@ export function ThreadBody({
       ) : null}
       {empty ? (
         welcome && !compact ? (
-          <CoachEmpty composer={composer} />
+          <CoachEmpty
+            composer={composer}
+            starters={coachStarters(profile.data?.profile?.targetRole)}
+            onStarter={setText}
+          />
         ) : (
           <>
             <div className="min-h-0 flex-1" />
@@ -302,69 +309,6 @@ export function ThreadBody({
           <div className={compact ? "shrink-0 pt-2" : "shrink-0 pt-3"}>{composer}</div>
         </>
       )}
-    </div>
-  );
-}
-
-const EMAIL_BANNER_KEY = "openpath.email-connect-dismissed";
-
-function EmailConnectBanner() {
-  const [hidden, setHidden] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    try {
-      setHidden(localStorage.getItem(EMAIL_BANNER_KEY) === "1");
-    } catch {
-      setHidden(false);
-    }
-  }, []);
-
-  if (hidden !== false) return null;
-
-  function dismiss() {
-    try {
-      localStorage.setItem(EMAIL_BANNER_KEY, "1");
-    } catch {
-      /* private mode */
-    }
-    setHidden(true);
-  }
-
-  return (
-    <div className="mt-6 flex w-full flex-col gap-3 rounded-[var(--radius-container)] border border-hairline bg-surface-1 p-3 sm:flex-row sm:items-center">
-      <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-surface-2 text-ink">
-        <Mail className="size-4" aria-hidden="true" />
-      </span>
-      <div className="min-w-0 flex-1 text-left">
-        <p className="text-[15px] font-[510] leading-[1.5]">Connect your email</p>
-        <p className="mt-0.5 text-[13px] leading-[1.5] text-ink-muted">
-          Drafts and follows up on application emails.
-        </p>
-      </div>
-      <div className="flex shrink-0 items-center gap-2">
-        <Button type="button" variant="ghost" size="sm" onClick={dismiss}>
-          Dismiss
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          onClick={() => toast("Email connect is not available yet.")}
-        >
-          Connect
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-export function CoachEmpty({ composer }: { composer: ReactNode }) {
-  return (
-    <div data-empty-thread className="flex min-h-0 flex-1 flex-col items-center justify-center">
-      <div className="flex w-full max-w-2xl flex-col items-center">
-        <Mark className="size-10 text-ink" />
-        <div className="mt-8 w-full">{composer}</div>
-        <EmailConnectBanner />
-      </div>
     </div>
   );
 }

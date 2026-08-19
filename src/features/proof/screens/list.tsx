@@ -5,11 +5,23 @@ import { useCoachSession } from "@/features/coach/components/session";
 import { runCommand } from "@/ui/run-command";
 import { Button } from "@/ui/button";
 import { Band, BandFilter } from "@/ui/band";
+import { Chip } from "@/ui/chip";
 import { Row, RowList } from "@/ui/rows";
 import { EmptyState, QueryError } from "@/ui/empty-state";
 import { EndOfList } from "@/ui/card";
 import { SkeletonRows } from "@/ui/skeleton";
 import { useState } from "react";
+
+function proofChipStatus(status: string): "progress" | "positive" | "attention" | "muted" {
+  if (status === "published") return "positive";
+  if (status === "arranged") return "progress";
+  return "muted";
+}
+
+function proofDates(from?: string | null, to?: string | null) {
+  if (!from && !to) return "";
+  return [from, to].filter(Boolean).join("–");
+}
 
 export function ProofListScreen() {
   const q = useQuery({ queryKey: ["proofs"], queryFn: () => listProofsFn() });
@@ -53,7 +65,7 @@ export function ProofListScreen() {
           action={
             <button
               type="button"
-              className="inline-flex min-h-[var(--size-touch)] items-center rounded-[var(--radius-pill)] border border-hairline px-3 text-[13px] transition-[background-color,transform] duration-[var(--duration-fast)] ease-[var(--ease-out)] hover:bg-surface-2 active:scale-[0.97] active:bg-surface-3"
+              className="inline-flex min-h-[var(--size-touch)] items-center rounded-[var(--radius-pill)] border border-hairline px-3 text-[13px] transition-[background-color,transform] duration-[var(--duration-fast)] ease-[var(--ease-out)] hover:bg-surface-2 focus-visible:shadow-[var(--focus-ring)] active:scale-[0.97] active:bg-surface-3"
               onClick={() =>
                 openDockWithIntent(
                   "I don't have a Proof yet. What from my profile could count as one?",
@@ -71,7 +83,14 @@ export function ProofListScreen() {
             <Row
               key={p.id}
               label={p.title}
-              meta={`${p.role || "Logged"} · ${p.status}`}
+              chip={
+                p.status ? (
+                  <Chip tone="status" status={proofChipStatus(p.status)}>
+                    {p.status}
+                  </Chip>
+                ) : undefined
+              }
+              meta={[p.role || "Logged", proofDates(p.date_from, p.date_to)].filter(Boolean).join(" · ")}
               onSelect={() => void navigate({ to: "/proof/$proofId", params: { proofId: p.id } })}
             />
           ))}

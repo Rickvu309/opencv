@@ -6,7 +6,14 @@ export const listProofsFn = createServerFn({ method: "GET" }).handler(async () =
   const { withClient } = await import("@/core/db/client.server");
   const user = await requireUser();
   const { rows } = await withClient((c) =>
-    c.query<{ id: string; title: string; role: string; status: string }>(
+    c.query<{
+      id: string;
+      title: string;
+      role: string;
+      status: string;
+      date_from: string | null;
+      date_to: string | null;
+    }>(
       `select id, title, role, date_from, date_to, status, updated_at from proofs
        where user_id=$1 order by updated_at desc`,
       [user.id],
