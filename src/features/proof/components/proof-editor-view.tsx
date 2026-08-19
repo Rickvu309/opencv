@@ -20,7 +20,6 @@ export function ProofEditorView({
   back,
   meta,
   primary,
-  secondary,
   note,
   onNote,
   onLog,
@@ -37,7 +36,6 @@ export function ProofEditorView({
   back: ReactNode;
   meta?: string;
   primary?: ReactNode;
-  secondary?: ReactNode;
   note: string;
   onNote: (value: string) => void;
   onLog: () => void;
@@ -78,7 +76,7 @@ export function ProofEditorView({
 
   return (
     <div className="mx-auto max-w-2xl">
-      <Band title="Proof" back={back} meta={meta} primary={primary} secondary={secondary} />
+      <Band title="Proof" back={back} meta={meta} primary={primary} />
       <Card>
         <form
           onSubmit={(e) => {

@@ -32,7 +32,6 @@ export const OneQuestion: Story = {
   args: {
     back,
     primary: <Button>Publish</Button>,
-    secondary: <Button variant="outline">Arrange</Button>,
     note: "",
     onNote: () => undefined,
     onLog: () => undefined,

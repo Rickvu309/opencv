@@ -17,7 +17,7 @@ The loop (flow 5 in [flows.md](../flows.md)): log → one question (skip is allo
 ## Screens
 
 - `/proof` — the evidence space: proofs as rows (title, role, dates, status chip), newest activity first.
-- `/proof/$proofId` — the opened Proof: band titled Proof, Back, Publish once they have words. Arrange stays visible as a no-op and does not mint a page. Body: one log box (a café shift counts; no title homework), then the running log; no STAR form, no wizard. After the first log, one specific interview question lands in an InfoBlock with Skip first-class. Do not ghostwrite. Missing “came of it” still publishes.
+- `/proof/$proofId` — the opened Proof: band titled Proof, Back, Publish once they have words. Arrange is later, not a band control, and does not mint a page. Body: one log box (a café shift counts; no title homework), then the running log; no STAR form, no wizard. After the first log, one specific interview question lands in an InfoBlock with Skip first-class. Do not ghostwrite. Missing “came of it” still publishes.
 - Published: a page at `/p/:slug` (see [share.md](share.md)) of their words and the date. Arranged parts render only when present. Copy link is on the public page. Never invent numbers. Never the CV's aesthetics.
 
 ## Data

@@ -56,13 +56,6 @@ export function ProofEditorScreen({ proofId }: { proofId: string }) {
           </Button>
         ) : undefined
       }
-      secondary={
-        proof && canPublish ? (
-          <Button type="button" variant="outline">
-            Arrange
-          </Button>
-        ) : undefined
-      }
       note={note}
       onNote={setNote}
       onLog={() => {
