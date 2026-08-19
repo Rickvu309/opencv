@@ -1,8 +1,29 @@
 import { Hoverable } from "./hoverable";
+import { chipStatusDotClass, type ChipStatus } from "./chip";
 import { createContext, useContext, type ReactNode } from "react";
 import { cn } from "./cn";
 
 const Bleed = createContext(false);
+
+export function GroupHeader({
+  label,
+  count,
+  status,
+}: {
+  label: string;
+  count?: number;
+  status?: ChipStatus;
+}) {
+  return (
+    <h2 className="-mx-5 flex items-center gap-2 bg-surface-2 px-5 py-2 text-[13px] font-[510] text-ink-muted tabular-nums">
+      {status ? (
+        <span className={cn("size-1.5 shrink-0 rounded-full", chipStatusDotClass(status))} aria-hidden="true" />
+      ) : null}
+      <span>{label}</span>
+      {count != null ? <span aria-hidden="true">· {count}</span> : null}
+    </h2>
+  );
+}
 
 export function RowList({
   children,

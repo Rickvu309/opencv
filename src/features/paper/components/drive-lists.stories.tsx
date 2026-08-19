@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Button } from "@/ui/button";
 import { Band, BandFilter } from "@/ui/band";
-import { Row, RowList } from "@/ui/rows";
+import { GroupHeader, Row, RowList } from "@/ui/rows";
 import { EmptyState } from "@/ui/empty-state";
 import { EndOfList } from "@/ui/card";
 import { Chip } from "@/ui/chip";
@@ -117,18 +117,32 @@ export const ApplyRows: Story = {
     <div>
       <Band title="Apply" />
       <section className="mt-4">
-        <h2 className="-mx-5 bg-surface-2 px-5 py-2 text-[13px] font-[510] text-ink-muted tabular-nums">
-          Interested · 1
-        </h2>
+        <GroupHeader label="Interested" count={1} status="attention" />
         <RowList bleed>
           <Row
             label="Business analyst intern"
             chip={<Chip tone="status" status="attention">Interested</Chip>}
-            meta="Vietcombank"
-            onSelect={() => undefined}
+            meta="Vietcombank · Tailor the CV and send it."
           />
         </RowList>
       </section>
+      <EndOfList />
+    </div>
+  ),
+};
+
+export const ProofRows: Story = {
+  render: () => (
+    <div>
+      <Band title="Proof" primary={<Button>Log something</Button>} />
+      <RowList bleed>
+        <Row
+          label="Weekend batch"
+          chip={<Chip tone="status" status="positive">published</Chip>}
+          meta="Intern · 2025–2026"
+          onSelect={() => undefined}
+        />
+      </RowList>
       <EndOfList />
     </div>
   ),

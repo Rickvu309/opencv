@@ -42,6 +42,8 @@ const preview: Preview = {
           "Profile",
           "Settings",
           "Drive",
+          "Pitch",
+          "Proof",
           "Share",
         ],
       },

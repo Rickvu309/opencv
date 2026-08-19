@@ -94,6 +94,13 @@ An overlay is never a place: no URL, the screen behind stays live.
 **Wrap law:** meta wraps under the label before the label truncates; no fixed widths.
 **Copy hooks:** label, meta, menu verbs.
 
+### Group heading
+
+**Region:** Drive lists that group rows (Apply pipeline). Ported from Lab `ListHeader` (Kibo list), restyled.
+**Anatomy:** full-bleed `--surface-2` bar matching RowList bleed (`-mx-5` `px-5`), `ui` 13/510 `--ink-muted`, optional status dot (`--status-*`), label, then `· count` in `tabular-nums`.
+**States:** static — not a control. The rows under it are the targets.
+**Copy hooks:** the group label (Interested, Applied, …).
+
 ### EmptyState and NotFoundState
 
 **Region:** the content slot, under the same band, per the five-kinds law in [layout.md](layout.md).
@@ -156,8 +163,8 @@ First focusable element on every page; visually hidden until focused, then a `--
 
 ### Table
 
-**Region:** Apply pipeline when a status group is a set of columns rather than a chip-on-row.
-**Anatomy:** `@tanstack/react-table` inside a hairline-divided list. Header `ui-label` `--ink-muted`; cells `body` 15px; `tabular-nums` on dates and counts. Status lives in a Chip slot.
+**Region:** dense column sets in Storybook and any future matrix that is not a Drive list.
+**Anatomy:** `@tanstack/react-table` inside a hairline-divided list. Header `ui-label` `--ink-muted`; cells `body` 15px; `tabular-nums` on dates and counts. Status lives in a Chip slot. Apply is **not** this block — Apply is grouped Rows with a Group heading ([application.md](../features/application.md)).
 
 ### Code and CopyButton
 
@@ -225,6 +232,13 @@ First focusable element on every page; visually hidden until focused, then a `--
 **States:** idle — send disabled at opacity 0.5 while empty; filled — send enabled; **working** — send becomes Stop (`aria-label="Stop"`), an interrupt hint ("Stop to send something else") sits under the surface, and a second typed message queues in a bar above the composer and sends itself when the reply finishes; offline — disabled with the offline sentence above.
 **Keys:** Enter sends, Shift+Enter breaks — and the hint is discoverable in the placeholder on first run.
 **Copy hooks:** placeholder, offline sentence.
+
+### Suggestion list
+
+**Region:** empty Coach under the composer. Ported from Lab/Templates/AI suggestion chips, restyled to tokens.
+**Anatomy:** wrapping row of outline pills (`--radius-pill`, `--hairline`, `ui` 13/510, 40px min). Centered under the composer. Clicking fills the composer with the chip's words; it does not send.
+**States:** hover `--surface-2`; press `scale(0.97)`; focus ring. Disappears once the thread has messages.
+**Copy hooks:** three starter labels, optionally named from the profile goal.
 
 ### Chat message
 
@@ -306,7 +320,7 @@ First focusable element on every page; visually hidden until focused, then a `--
 **Landing:** cloned from [onyx.app](https://onyx.app/) ([onyx-landing-hero.png](refs/onyx-landing-hero.png)). Sticky nav: mark + OpenPath, Sign in outline (`border-ink`), Start now primary. Hero: who it is for, promise, product composer, then a Sign in / Sign up segmented box (`--radius-container` shell, `p-1.5`, `--radius-control` inner). Waitlist, then footer.
 
 **Landing composer:** [assistant-ui chat-panel](https://www.assistant-ui.com/elements/chat-panel) composer. Do not install `@assistant-ui/react`. One pill bar (`h-10`, `rounded-full`, `--hairline`, `--surface-1`, `ps-4 pe-1.5`). Field plus send (`size-7`, `rounded-full`). Send is accent when the field has text, `--surface-3` when empty. No suggestion chips, attach, `@` sources, `/` commands, model picker, or dictation.
-**Proof page frame:** the published work is the page; OpenPath is at most a quiet `ui` footer. Art direction beyond the frame belongs to [mechanisms/proof.md](../mechanisms/proof.md) — the one expressive surface in the product.
+**Proof page frame:** the published work is the page; OpenPath is at most a quiet `ui` footer. The three-part story is labelled (What it was / What you did / What came of it) in `ui` `--ink-muted` above each paragraph. Art direction beyond the frame belongs to [mechanisms/proof.md](../mechanisms/proof.md) — the one expressive surface in the product.
 **Personal page span record:** each Proof a Row-like door to `/p/$slug`, hairline-divided, dates in `tabular-nums`.
 
 ---

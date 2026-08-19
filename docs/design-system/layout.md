@@ -54,7 +54,7 @@ Each block: type, regions in reading order, the primary slot, what yields when s
 
 ### Coach — Conversation
 
-Regions: thread messages, then composer. Primary: the composer. Yields: nothing — the conversation owns the column; the checklist and starters disappear once the thread has messages. Empty/error slot: the empty thread holds a centered mark, the composer, and the email connect banner; a failed turn is a plain message in the thread with one retry.
+Regions: thread messages, then composer. Primary: the composer. Yields: nothing — the conversation owns the column; the checklist and starters disappear once the thread has messages. Empty/error slot: the empty thread holds a centered mark, the composer, three starter chips, and the email connect banner; a failed turn is a plain message in the thread with one retry.
 
 ### Paper list — Drive list
 

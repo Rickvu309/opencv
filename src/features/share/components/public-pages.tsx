@@ -120,10 +120,25 @@ export function ProofPageView({
         {content.title}
       </h1>
       <p className="mt-1 text-[13px] text-ink-muted">{content.role}</p>
-      <section className="mt-8 space-y-4 text-[15px] leading-[1.6]">
-        <p>{content.what}</p>
-        <p>{content.did}</p>
-        <p>{content.came}</p>
+      <section className="mt-8 space-y-6 text-[15px] leading-[1.6]">
+        {content.what ? (
+          <div>
+            <h2 className="text-[13px] font-[510] text-ink-muted">What it was</h2>
+            <p className="mt-2">{content.what}</p>
+          </div>
+        ) : null}
+        {content.did ? (
+          <div>
+            <h2 className="text-[13px] font-[510] text-ink-muted">What you did</h2>
+            <p className="mt-2">{content.did}</p>
+          </div>
+        ) : null}
+        {content.came ? (
+          <div>
+            <h2 className="text-[13px] font-[510] text-ink-muted">What came of it</h2>
+            <p className="mt-2">{content.came}</p>
+          </div>
+        ) : null}
       </section>
     </main>
   );

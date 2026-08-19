@@ -33,7 +33,7 @@ export function SituationGallery({
           <button
             key={item.id}
             type="button"
-            className="min-h-11 rounded-[var(--radius-container)] border border-hairline p-4 text-left transition-[background-color,transform] duration-[var(--duration-fast)] ease-[var(--ease-out)] hover:bg-surface-2 active:scale-[0.97] active:bg-surface-3"
+            className="min-h-11 rounded-[var(--radius-container)] border border-hairline p-4 text-left transition-[background-color,transform] duration-[var(--duration-fast)] ease-[var(--ease-out)] hover:bg-surface-2 focus-visible:shadow-[var(--focus-ring)] active:scale-[0.97] active:bg-surface-3"
             onClick={() => onPick(item.id)}
           >
             <span className="block text-[13px] whitespace-nowrap text-ink-muted">{item.word}</span>

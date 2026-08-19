@@ -4,6 +4,7 @@ import { ToolCall, ToolCard, ToolGroup } from "./tool-card";
 import { ApprovalCard } from "./approval";
 import { ChatMessage } from "./message";
 import { CoachComposer } from "./composer";
+import { CoachEmpty, coachStarters } from "./empty";
 import { CoachDockPanel, CoachDockPill } from "./dock";
 import { CoachSessionProvider } from "./session";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -158,6 +159,20 @@ export const MessageAndComposer: Story = {
         <ChatMessage role="user" text="Build me a CV." />
         <ChatMessage role="coach" text="I drafted a CV from your profile. Open it from Paper." />
         <CoachComposer text="" onText={() => {}} onSend={() => {}} />
+      </div>
+    </CoachSessionProvider>
+  ),
+};
+
+export const EmptyThread: Story = {
+  render: () => (
+    <CoachSessionProvider>
+      <div className="flex h-[32rem] w-[40rem] flex-col">
+        <CoachEmpty
+          composer={<CoachComposer text="" onText={() => {}} onSend={() => {}} />}
+          starters={coachStarters("analyst intern")}
+          onStarter={() => undefined}
+        />
       </div>
     </CoachSessionProvider>
   ),

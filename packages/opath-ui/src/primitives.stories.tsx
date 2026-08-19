@@ -8,6 +8,8 @@ import { Code } from "./code";
 import { Loader } from "./loader";
 import { Keycap } from "./keycap";
 import { InfoBlock } from "./info-block";
+import { SuggestionList } from "./suggestion-list";
+import { GroupHeader } from "./rows";
 import { Interactive } from "./interactive";
 import { SkeletonRows, SkeletonHistory, SkeletonPage } from "./skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs";
@@ -59,6 +61,14 @@ export const Surfaces: Story = {
       </Card>
       <EmptyMessageCard title="Nothing in this thread yet." />
       <InfoBlock>The Coach is offline right now. Everything else in the app still works.</InfoBlock>
+      <GroupHeader label="Interested" count={2} status="attention" />
+      <SuggestionList
+        items={[
+          { id: "cv", label: "Start a CV" },
+          { id: "fit", label: "What openings fit" },
+        ]}
+        onPick={() => undefined}
+      />
       <Code value="npm run storybook">npm run storybook</Code>
       <div className="flex items-center gap-3">
         <Loader />

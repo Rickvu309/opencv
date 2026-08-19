@@ -1,27 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { listOpeningsFn } from "@/features/search/queries";
 import { useCoachSession } from "@/features/coach/components/session";
+import { OpeningDetailView, SearchView, type SearchOpening } from "@/features/search/components/search-view";
 import { runCommand } from "@/ui/run-command";
-import { Button, buttonClass } from "@/ui/button";
-import { Input } from "@/ui/input";
-import { Textarea } from "@/ui/textarea";
-import { Band } from "@/ui/band";
-import { Row, RowList } from "@/ui/rows";
-import { EmptyState, QueryError } from "@/ui/empty-state";
-import { Chip } from "@/ui/chip";
-import { EndOfList } from "@/ui/card";
-import { SkeletonRows } from "@/ui/skeleton";
 import { useState } from "react";
 import type { Fit } from "@/features/search/fit";
-
-type Opening = {
-  id: string;
-  title: string;
-  company: string;
-  location?: string;
-  fit: Fit | null;
-};
 
 function asFit(raw: unknown): Fit | null {
   if (!raw || typeof raw !== "object") return null;
@@ -43,7 +27,7 @@ export function SearchScreen() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
 
-  const openings: Opening[] = (q.data?.openings ?? []).map((o) => ({
+  const openings: SearchOpening[] = (q.data?.openings ?? []).map((o) => ({
     id: String(o.id),
     title: String(o.title ?? "Opening"),
     company: String(o.company ?? ""),
@@ -72,144 +56,35 @@ export function SearchScreen() {
   if (selected) {
     const fit = selected.fit;
     return (
-      <div>
-        <Band
-          title={selected.title}
-          back={
-            <button
-              type="button"
-              className="inline-flex min-h-[var(--size-touch)] items-center text-[13px] text-ink-muted"
-              onClick={() => setOpenId(null)}
-            >
-              Back
-            </button>
-          }
-          meta={selected.company}
-          primary={<Button onClick={() => void saveToApply(selected.id)}>Save to Apply</Button>}
-        />
-        {fit ? (
-          <p className="text-[15px] leading-[1.6] tabular-nums">
-            You meet {fit.met} of {fit.total}
-            {fit.gap.length ? `; missing ${fit.gap.join(", ")}` : ""}.
-          </p>
-        ) : null}
-        {fit?.items.length ? (
-          <ul className="mt-6 space-y-2">
-            {fit.items.map((item) => (
-              <li key={item.text} className="text-[15px] leading-[1.6]">
-                {item.met ? "Met" : "Missing"}: {item.text}
-              </li>
-            ))}
-          </ul>
-        ) : null}
-        <div className="mt-8">
-          <Button
-            variant="ghost"
-            onClick={() =>
-              openDockWithIntent(
-                `How do I close the gap for ${selected.title}${selected.company ? ` at ${selected.company}` : ""}?${
-                  fit?.gap.length ? ` I'm missing ${fit.gap.join(", ")}.` : ""
-                }`,
-              )
-            }
-          >
-            Ask the Coach how to close this gap
-          </Button>
-        </div>
-      </div>
+      <OpeningDetailView
+        opening={selected}
+        onBack={() => setOpenId(null)}
+        onSave={() => void saveToApply(selected.id)}
+        onAskCoach={() =>
+          openDockWithIntent(
+            `How do I close the gap for ${selected.title}${selected.company ? ` at ${selected.company}` : ""}?${
+              fit?.gap.length ? ` I'm missing ${fit.gap.join(", ")}.` : ""
+            }`,
+          )
+        }
+      />
     );
   }
 
   return (
-    <div>
-      <Band title="Search" />
-      {q.data?.thin ? (
-        <EmptyState
-          kind="first-run"
-          title="Fit needs something to read. Add a fact or set a goal first."
-          action={
-            <Link to="/profile" className={buttonClass()}>
-              Open Profile
-            </Link>
-          }
-        />
-      ) : q.isError ? (
-        <QueryError onRetry={() => void q.refetch()} />
-      ) : (
-        <>
-          <form
-            className="mb-5 max-w-xl"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void pastePosting();
-            }}
-          >
-            <label htmlFor="posting" className="mb-1 block text-[13px] font-[510]">
-              Paste a posting
-            </label>
-            <Textarea
-              id="posting"
-              value={raw}
-              onChange={(e) => setRaw(e.target.value)}
-              placeholder="Paste the role, requirements, and company."
-            />
-            <Button type="submit" className="mt-2" disabled={!raw.trim()}>
-              Score this posting
-            </Button>
-          </form>
-          {openings.length ? (
-            <div className="mb-4 max-w-xl">
-              <Input
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-                placeholder="Filter by title or company"
-                aria-label="Filter openings"
-              />
-            </div>
-          ) : null}
-          {q.isPending ? <SkeletonRows /> : null}
-          {!q.isPending && openings.length === 0 ? (
-            <EmptyState
-              kind="first-run"
-              title="Paste a posting you're looking at, and you'll see how you match."
-            />
-          ) : null}
-          {!q.isPending && openings.length > 0 && visible.length === 0 ? (
-            <EmptyState
-              kind="filtered"
-              title={`Nothing matches “${filter.trim()}”.`}
-              action={
-                <Button variant="outline" onClick={() => setFilter("")}>
-                  Clear the filter
-                </Button>
-              }
-            />
-          ) : null}
-          {!q.isPending && visible.length > 0 ? (
-            <>
-              <RowList bleed>
-                {visible.map((o) => (
-                  <Row
-                    key={o.id}
-                    label={o.title}
-                    chip={
-                      o.fit ? (
-                        <Chip tone="quiet">
-                          Fit {o.fit.met} of {o.fit.total}
-                          {o.fit.gap[0] ? ` — misses ${o.fit.gap[0]}` : ""}
-                        </Chip>
-                      ) : undefined
-                    }
-                    meta={[o.company, o.location].filter(Boolean).join(" · ")}
-                    onSelect={() => setOpenId(o.id)}
-                  />
-                ))}
-              </RowList>
-              <EndOfList />
-            </>
-          ) : null}
-        </>
-      )}
-    </div>
+    <SearchView
+      pending={q.isPending}
+      error={q.isError}
+      onRetry={() => void q.refetch()}
+      thin={Boolean(q.data?.thin)}
+      openings={openings}
+      visible={visible}
+      filter={filter}
+      onFilter={setFilter}
+      raw={raw}
+      onRaw={setRaw}
+      onPaste={() => void pastePosting()}
+      onSelect={setOpenId}
+    />
   );
 }
