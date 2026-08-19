@@ -11,10 +11,10 @@ One project, five services.
 | `web` | `npm start` — applies pending migrations, then serves | yes, the app URL |
 | `worker` | `npm run worker` — drains the `jobs` queue | no |
 | Postgres | managed by Railway | no (private networking) |
-| `storybook-production` | static files from `storybook-static` | yes |
-| `storybook-lab` | static files from `storybook-static-ui` | yes |
+| `opath-production` | static files from `storybook-static` | yes, https://opath-production.up.railway.app |
+| `opath-lab` | static files from `storybook-static-ui` | yes, https://opath-lab.up.railway.app |
 
-`web` and `worker` build with `npm run build` (typecheck first). [`scripts/railway-build.mjs`](../scripts/railway-build.mjs) and [`scripts/railway-start.mjs`](../scripts/railway-start.mjs) branch on `RAILWAY_SERVICE_NAME`: `worker` in the name runs the queue; `storybook` plus `lab` builds and serves Lab; `storybook` alone builds and serves Production; otherwise the web process.
+`web` and `worker` build with `npm run build` (typecheck first). [`scripts/railway-build.mjs`](../scripts/railway-build.mjs) and [`scripts/railway-start.mjs`](../scripts/railway-start.mjs) branch on `RAILWAY_SERVICE_NAME`: `worker` in the name runs the queue; `opath-lab` builds and serves Lab; `opath-production` builds and serves Production; otherwise the web process.
 
 This project's Postgres already has an older `openpath` schema. Set `DB_SCHEMA=openpath_app` on `web` and `worker` so new migrations do not collide with it.
 
@@ -35,16 +35,16 @@ Storybook services must not receive `DATABASE_URL`, `SESSION_SECRET`, or `OPENRO
 
 Local galleries for review. `npm run storybook` starts both.
 
-| Gallery | Command | Local | Railway service |
+| Gallery | Command | Local | Host |
 |---|---|---|---|
-| Opath (Production) | `npm run storybook:production` | http://localhost:6006 | `storybook-production` |
-| Opath (Lab) | `npm run storybook:lab` | http://localhost:6007 | `storybook-lab` |
+| Opath (Production) | `npm run storybook:production` | http://localhost:6006 | https://opath-production.up.railway.app |
+| Opath (Lab) | `npm run storybook:lab` | http://localhost:6007 | https://opath-lab.up.railway.app |
 
-Hosted URLs are the Railway public domains on those two services (generate with `railway domain --service storybook-production` / `storybook-lab`). A push to `main` rebuilds them with the app.
+Same names as the old Vercel hosts (`opath-production.vercel.app`, `opath-lab.vercel.app`), on Railway’s `up.railway.app` domain. Services are named `opath-production` and `opath-lab`. Generate the public domain with `railway domain --service opath-production` / `opath-lab`. A push to `main` rebuilds them with the app.
 
 Storybook uses `.storybook/vite.config.ts` (React, Tailwind v4, path aliases) and never loads the app's `tanstackStart()` / `nitro()` plugins. `.storybook/main.ts` stubs `@tanstack/react-start`, the command client, auth session/store, and the database client so the gallery stays browser-only.
 
-Creating the two services is a one-time step (`railway add --service storybook-production` and `storybook-lab`, same Git repo as `web`). Do not copy app variables onto them.
+Creating the two services is a one-time step (`railway add --service opath-production` and `opath-lab`, same Git repo as `web`). Do not copy app variables onto them.
 
 Root [`vercel.json`](../vercel.json) and [`vercel.lab.json`](../vercel.lab.json) remain if you still want a Vercel host; Railway is the gallery this project operates.
 
@@ -58,7 +58,7 @@ A Cloud Agent environment must name scripts that exist in this repo. Install is 
 git push origin main
 ```
 
-Railway rebuilds `web`, `worker`, `storybook-production`, and `storybook-lab` from that commit. Watch the Railway deploy logs; the web service prints applied migrations before it listens.
+Railway rebuilds `web`, `worker`, `opath-production`, and `opath-lab` from that commit. Watch the Railway deploy logs; the web service prints applied migrations before it listens.
 
 - A failed migration fails the app deploy — the old version keeps serving rather than a broken one going live.
 - Rollback is redeploying the previous commit from the Railway dashboard (or `git revert` and push). Migrations roll forward; write a new pair rather than editing an applied one ([data.md](data.md)).

@@ -5,7 +5,7 @@ addons.setConfig({
   theme: create({
     base: "light",
     brandTitle: "Opath (Production)",
-    brandUrl: "/",
+    brandUrl: "https://opath-production.up.railway.app",
     brandTarget: "_self",
   }),
 });
