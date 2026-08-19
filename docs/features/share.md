@@ -18,7 +18,7 @@ No feed, no follow, no likes. Distribution is the user sending their own link.
 
 ## Screens
 
-- `/p/$slug`, `/u/$handle` — public routes in `_public/`, no app chrome, fast, indexable. Shared quiet footer: "Made with OpenPath". A missing slug or handle is an honest not-found with one next step ("Go to OpenPath"). A failed fetch is an error with retry, not a not-found. A personal page with no published Proofs says so in one sentence. Work on `/u/$handle` is a hairline-divided row list. A Proof page labels the three-part story (What it was / What you did / What came of it). OG image route per Proof page.
+- `/p/$slug`, `/u/$handle` — public routes in `_public/`, no app chrome, fast, indexable. Shared quiet footer: "Made with OpenPath". A missing slug or handle is an honest not-found with one next step ("Go to OpenPath"). A failed fetch is an error with retry, not a not-found. A personal page with no published Proofs says so in one sentence. Work on `/u/$handle` is a hairline-divided row list. A Proof page shows their words and the date, plus any arranged parts that exist; Copy link copies `/p/:slug`. OG image route per Proof page.
 - Handle management surfaces in Settings; publish and unpublish live in Proof.
 
 ## Data

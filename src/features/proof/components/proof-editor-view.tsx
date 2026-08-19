@@ -1,12 +1,11 @@
 import type { ReactNode } from "react";
 import { Button } from "@/ui/button";
 import { Textarea } from "@/ui/textarea";
-import { Input } from "@/ui/input";
 import { Label } from "@/ui/label";
 import { Band } from "@/ui/band";
 import { Card } from "@/ui/card";
 import { Section } from "@/ui/section";
-import { EmptyState, NotFoundState, QueryError } from "@/ui/empty-state";
+import { NotFoundState, QueryError } from "@/ui/empty-state";
 import { InfoBlock } from "@/ui/info-block";
 import { SkeletonRows } from "@/ui/skeleton";
 
@@ -18,17 +17,16 @@ export function ProofEditorView({
   error,
   onRetry,
   missing,
-  title,
-  onTitle,
   back,
   meta,
   primary,
+  secondary,
   note,
   onNote,
   onLog,
   entries,
   question,
-  onAsk,
+  onSkip,
   draft,
   slug,
 }: {
@@ -36,17 +34,16 @@ export function ProofEditorView({
   error?: boolean;
   onRetry?: () => void;
   missing?: boolean;
-  title?: string;
-  onTitle?: (value: string) => void;
   back: ReactNode;
   meta?: string;
   primary?: ReactNode;
+  secondary?: ReactNode;
   note: string;
   onNote: (value: string) => void;
   onLog: () => void;
   entries: ProofEntry[];
   question: string;
-  onAsk: () => void;
+  onSkip?: () => void;
   draft: ProofDraft;
   slug?: string | null;
 }) {
@@ -81,20 +78,7 @@ export function ProofEditorView({
 
   return (
     <div className="mx-auto max-w-2xl">
-      <Band
-        title={
-          <h1 className="min-w-0 flex-1">
-            <Input
-              aria-label="Title"
-              defaultValue={title}
-              onBlur={(e) => onTitle?.(e.target.value)}
-            />
-          </h1>
-        }
-        back={back}
-        meta={meta}
-        primary={primary}
-      />
+      <Band title="Proof" back={back} meta={meta} primary={primary} secondary={secondary} />
       <Card>
         <form
           onSubmit={(e) => {
@@ -107,7 +91,7 @@ export function ProofEditorView({
             id="proof-log"
             value={note}
             onChange={(e) => onNote(e.target.value)}
-            placeholder="What happened"
+            placeholder="A café shift counts. Write it like a text."
           />
           <div className="mt-3 flex justify-end">
             <Button type="submit" disabled={!note.trim()}>
@@ -116,9 +100,7 @@ export function ProofEditorView({
           </div>
         </form>
       </Card>
-      {entries.length === 0 ? (
-        <EmptyState kind="first-run" title="Log the first entry." />
-      ) : (
+      {entries.length > 0 ? (
         <ol className="mt-8 divide-y divide-hairline">
           {entries.map((e) => (
             <li key={e.id} className="py-3">
@@ -131,13 +113,17 @@ export function ProofEditorView({
             </li>
           ))}
         </ol>
-      )}
-      <div className="mt-10">
-        <Button variant="outline" onClick={onAsk}>
-          Ask the next question
-        </Button>
-      </div>
-      {question ? <InfoBlock className="mt-4">{question}</InfoBlock> : null}
+      ) : null}
+      {question ? (
+        <div className="mt-10">
+          <InfoBlock>{question}</InfoBlock>
+          <div className="mt-3">
+            <Button type="button" variant="outline" onClick={() => onSkip?.()}>
+              Skip
+            </Button>
+          </div>
+        </div>
+      ) : null}
       {draft?.what || draft?.did || draft?.came ? (
         <div className="mt-8 space-y-6">
           {draft.what ? (

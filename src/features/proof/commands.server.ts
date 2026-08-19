@@ -2,6 +2,7 @@ import { z } from "zod";
 import { defineCommand } from "@/core/commands/define";
 import { newId } from "@/core/ids";
 import { slugify } from "@/lib/utils";
+import { buildProofPageContent, proofPageDate } from "@/features/proof/model";
 
 defineCommand({
   name: "proof.create",
@@ -151,9 +152,24 @@ defineCommand({
 });
 
 defineCommand({
+  name: "proof.skipQuestion",
+  agent: true,
+  description: "Skip the one interview question. Publish still works. Do not invent an answer.",
+  input: z.object({ id: z.string() }),
+  async handler({ actor, input, client }) {
+    const { rowCount } = await client.query(
+      `update proofs set updated_at=now() where id=$1 and user_id=$2`,
+      [input.id, actor.userId],
+    );
+    return { result: { ok: Boolean(rowCount) }, inverse: null };
+  },
+});
+
+defineCommand({
   name: "proof.publish",
   agent: true,
-  description: "Publish the arranged story to a public page. Later edits do not change the live page until republished.",
+  description:
+    "Publish the user's own words and date to a public page. Arrange is not required. Do not invent facts or numbers. Later edits do not change the live page until republished.",
   input: z.object({ id: z.string() }),
   async handler({ actor, input, client }) {
     const { rows } = await client.query(
@@ -166,27 +182,33 @@ defineCommand({
           role: string;
           date_from: string;
           date_to: string;
-          page_draft: Record<string, unknown> | null;
+          page_draft: { what?: unknown; did?: unknown; came?: unknown } | null;
         }
       | undefined;
-    if (!proof?.page_draft) return { result: { ok: false, slug: "" }, inverse: null };
-    const slug = `${slugify(proof.title) || "proof"}-${input.id.slice(0, 6)}`;
+    if (!proof) return { result: { ok: false, slug: "" }, inverse: null };
+    const entries = (
+      await client.query<{ body: string; created_at: Date }>(
+        `select body, created_at from proof_entries
+         where proof_id=$1 and body <> ''
+         order by created_at asc`,
+        [input.id],
+      )
+    ).rows;
+    const words = entries.map((entry) => entry.body).join("\n\n").trim();
+    if (!words) return { result: { ok: false, slug: "" }, inverse: null };
+    const content = buildProofPageContent({
+      words,
+      date: proofPageDate({ dateFrom: proof.date_from, dateTo: proof.date_to }, entries),
+      title: proof.title,
+      role: proof.role,
+      draft: proof.page_draft,
+    });
+    const slug = `${slugify(content.title || words) || "proof"}-${input.id.slice(0, 6)}`;
     await client.query(
       `insert into proof_pages (proof_id, user_id, slug, content)
        values ($1,$2,$3,$4::jsonb)
        on conflict (proof_id) do update set slug=$3, content=$4::jsonb, published_at=now()`,
-      [
-        input.id,
-        actor.userId,
-        slug,
-        JSON.stringify({
-          ...proof.page_draft,
-          title: proof.title,
-          role: proof.role,
-          dateFrom: proof.date_from,
-          dateTo: proof.date_to,
-        }),
-      ],
+      [input.id, actor.userId, slug, JSON.stringify(content)],
     );
     await client.query(
       `update proofs set status='published', updated_at=now() where id=$1`,
