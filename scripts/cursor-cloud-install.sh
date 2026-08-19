@@ -24,7 +24,8 @@ if [ ! -f .env.local ]; then
   sed "s/^SESSION_SECRET=.*/SESSION_SECRET=${secret}/" .env.example > .env.local
 fi
 
-if ! command -v docker >/dev/null 2>&1 && ! command -v psql >/dev/null 2>&1; then
-  sudo apt-get update -y
-  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y postgresql postgresql-contrib
-fi
+# Postgres is needed for tests and `npm run dev`, not for `npm run build`.
+# Do not fail the snapshot if apt flakes; start retries.
+# shellcheck disable=SC1091
+. "$(dirname "$0")/cursor-cloud-postgres.sh"
+ensure_postgres_packages || true

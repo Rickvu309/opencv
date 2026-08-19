@@ -29,7 +29,12 @@ wait_for_pg() {
   return 1
 }
 
+# shellcheck disable=SC1091
+. "$(dirname "$0")/cursor-cloud-postgres.sh"
+
 ensure_local_db() {
+  ensure_postgres_packages
+
   local version
   version="$(ls /usr/lib/postgresql 2>/dev/null | sort -V | tail -n 1 || true)"
   if [ -n "$version" ] && command -v pg_ctlcluster >/dev/null 2>&1; then
