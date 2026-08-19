@@ -1,0 +1,15 @@
+import { Button } from "../blocks/button";
+
+export default function ButtonDemo() {
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      <Button withArrow>Start building</Button>
+      <Button variant="secondary" withArrow>
+        View components
+      </Button>
+      <Button variant="outline" disableHoverPop>
+        Default action
+      </Button>
+    </div>
+  );
+}

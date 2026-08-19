@@ -1,6 +1,7 @@
 import type { Preview } from "@storybook/react-vite";
 import type { ReactNode } from "react";
 import "../../../src/styles/globals.css";
+import "../src/lab/tokens.css";
 import { TooltipProvider } from "../src/tooltip";
 import { AppToaster } from "../src/toaster";
 
@@ -24,6 +25,11 @@ const preview: Preview = {
   parameters: {
     layout: "centered",
     a11y: { test: "todo" },
+    options: {
+      storySort: {
+        order: ["Primitives", "Lab", ["Components", "Templates"]],
+      },
+    },
   },
 };
 

@@ -20,5 +20,6 @@
       "@/*": ["./src/*"]
     }
   },
-    "include": ["src", "packages/opath-ui/src", "packages/opath-ui/.storybook", "scripts", "vite.config.ts", "eslint.config.mjs", ".storybook"]
+    "include": ["src", "packages/opath-ui/src", "packages/opath-ui/.storybook", "scripts", "vite.config.ts", "eslint.config.mjs", ".storybook"],
+  "exclude": ["packages/opath-ui/src/lab"]
 }

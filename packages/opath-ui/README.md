@@ -29,3 +29,5 @@ npm run storybook             # both (Production :6006, Lab :6007)
 | Opath (Production) | `src/features/**`, `src/core/**`, `src/routes/**` | primitive internals in this package. Compose them. If a screen needs a new primitive, add the block in `docs/design-system/components.md` and land it here first |
 
 Shared on purpose: `src/styles/globals.css`, `docs/copy.md` (words), `docs/design.md`.
+
+Sourced galleries live in `src/lab`. Storybook shows them as `Lab/Components/*` and `Lab/Templates/*` (not by kit name). They are review surfaces. Production keeps importing `@/ui/button` from the package root.

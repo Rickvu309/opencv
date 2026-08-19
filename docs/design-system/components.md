@@ -317,6 +317,32 @@ First focusable element on every page; visually hidden until focused, then a `--
 
 ---
 
+## Lab sourced galleries
+
+Commodity kits catalogued in Opath (Lab) Storybook under `packages/opath-ui/src/lab`. These are review surfaces, not Production primitives. Promote a piece by writing its block here and landing a restyled primitive at the package root. The sidebar is Components vs Templates, not kit names.
+
+| Storybook | What it holds |
+|---|---|
+| Lab/Components/Actions | Buttons, theme switcher, selection actions |
+| Lab/Components/Forms | Inputs, selects, comboboxes, dropzones, calendars |
+| Lab/Components/Overlays | Modals, drawers, popovers, tooltips, dialog stacks |
+| Lab/Components/Navigation | Tabs, docks, sidebars, rails |
+| Lab/Components/Data | Tables, graphs, badges, trees, JSON |
+| Lab/Components/Feedback | Toasts, loaders, banners, status |
+| Lab/Components/Motion | Transitions.dev recipes and motion primitives |
+| Lab/Components/Media | Video, marquee, comparison, reels |
+| Lab/Components/Chat | Thread chrome: thinking, tools, prompt, cards |
+| Lab/Templates/Auth | Login screens |
+| Lab/Templates/Onboarding | Onboarding flows |
+| Lab/Templates/Dialogs | Full dialog screens |
+| Lab/Templates/Application | Sidebars, stats, uploads, kanban, canvas |
+| Lab/Templates/AI | AI panels and command menus |
+| Lab/Templates/Marketing | Landing sections (hero, footer, FAQ, careers) |
+
+Map: [clone-sources.md](clone-sources.md). Attribution: [NOTICE.md](../../NOTICE.md).
+
+---
+
 ## Adding a block
 
 A new visual pattern starts here: write the block (anatomy, variants, states, spacing, copy hooks, region, reference if it copies one), get it into this file in the same PR as the code, and extend the tokens instead of inventing values. If it moves, it also earns a row in [motion.md](motion.md)'s inventory. Micro-interactions come from [interactionkit.org](https://interactionkit.org/) or the AIcss library as references — adapted to these tokens, never pasted with their own.

@@ -1,0 +1,30 @@
+/* Lab-only shadcn token bridge. Maps commodity class names onto OpenPath
+   roles without renaming --accent (brand black). Sourced galleries import this
+   from Lab Storybook preview; Production does not. */
+@theme inline {
+  --color-background: var(--color-surface-1);
+  --color-foreground: var(--color-ink);
+  --color-card: var(--color-surface-1);
+  --color-card-foreground: var(--color-ink);
+  --color-popover: var(--color-surface-1);
+  --color-popover-foreground: var(--color-ink);
+  --color-primary: var(--color-accent);
+  --color-primary-foreground: var(--color-on-accent);
+  --color-secondary: var(--color-surface-2);
+  --color-secondary-foreground: var(--color-ink);
+  --color-muted: var(--color-surface-2);
+  --color-muted-foreground: var(--color-ink-muted);
+  --color-destructive: var(--color-destructive);
+  --color-border: var(--color-hairline);
+  --color-input: var(--color-hairline);
+  --color-ring: var(--color-ink);
+  --color-chart-1: var(--color-ink);
+  --color-chart-2: var(--color-ink-muted);
+  --color-chart-3: var(--color-ink-secondary);
+  --color-chart-4: var(--color-status-progress);
+  --color-chart-5: var(--color-status-positive);
+  --radius-sm: var(--radius-tag);
+  --radius-md: var(--radius-control);
+  --radius-lg: var(--radius-container);
+  --radius-xl: 16px;
+}

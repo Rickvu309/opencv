@@ -50,3 +50,8 @@ Proven sources this system copies from or leans on. When a block cites one, the 
 | [interactionkit.org](https://interactionkit.org/) | Reference implementations for micro-interactions we adopt |
 | [aicss.dev ai-agent-input](https://www.aicss.dev/components/ai-agent-input) | The Coach composer anatomy and working states |
 | [sonner.emilkowal.ski](https://sonner.emilkowal.ski/) | The toast — already installed; components.md specs its configuration |
+| [transitions.dev](https://transitions.dev/) | Free CSS transition recipes in Lab Storybook |
+| [beUI motion](https://beui.dev/components/motion) | Free animated primitives in Lab Storybook |
+| [8StarLabs UI](https://ui.8starlabs.com/docs/components) | MIT niche components in Lab Storybook |
+| [Kibo UI](https://www.kibo-ui.com/) | MIT composable components and free blocks in Lab Storybook |
+| [blocks.so](https://github.com/ephraimduncan/blocks) | MIT shadcn blocks in Lab Storybook |

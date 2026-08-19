@@ -14,8 +14,21 @@ The gallery that makes the ported layer reviewable is two local Storybooks (`npm
 |---|---|---|
 | [Onyx Opal](https://github.com/onyx-dot-app/onyx) / [Storybook](https://onyx-storybook.vercel.app/) | MIT except `ee/` | Primary. Primitive set, interaction state matrix, AI-app surfaces (approval, input bar). Port anatomy; restyle. Take nothing from `ee/`. |
 | [assistant-ui](https://github.com/assistant-ui/assistant-ui) | MIT | Thread behaviour: auto-scroll, stop, retry, date groups, [reasoning panel](https://www.assistant-ui.com/elements/reasoning-panel), [tool call](https://www.assistant-ui.com/elements/tool-call). Copy UX; do **not** install `@assistant-ui/react`. |
-| [Beautiful UI](https://www.beautifului.dev/) | Copy-paste markup | Visual polish for the same chrome. Do not take the Creamery demo palette, uppercase group labels, or count badges. |
+| [Beautiful UI](https://www.beautifului.dev/) | Copy-paste markup | Visual polish for the same chrome. Do not take the Creamery demo palette, uppercase group labels, or count badges. Lab: `Lab/Components/Chat` and related. |
 | [Open WebUI](https://github.com/open-webui/open-webui) | BSD-3 plus branding clause | Patterns only, never code. Take: history grouping and search, message action bar, code-block copy, queued messages while a reply streams. |
+
+## Lab sourced galleries
+
+Opath (Lab) also catalogs free commodity kits for review in Storybook (`packages/opath-ui/src/lab`). The sidebar is **Components** and **Templates**, not kit names. Production still composes root primitives. Do not republish these collections as a competing kit.
+
+| Storybook | Source | Licence | What we took |
+|---|---|---|---|
+| `Lab/Components/Motion` | [transitions.dev](https://transitions.dev/) | Use in product; do not redistribute as a transitions library | All free recipes. No Pro. |
+| `Lab/Components/*` | [beui.dev/components/motion](https://beui.dev/components/motion) | Free motion category | All motion primitives, restyled. |
+| `Lab/Components/Chat` (and Data, Navigation) | [beautifului.dev](https://www.beautifului.dev/) | Copy-paste markup | All 20 primitives, OpenPath tokens. |
+| `Lab/Components/*` | [ui.8starlabs.com](https://ui.8starlabs.com/docs/components) | MIT | All documented components. |
+| `Lab/Components/*` and `Lab/Templates/*` | [kibo-ui.com](https://www.kibo-ui.com/) | MIT | All free components plus free blocks (collaborative canvas, codebase, roadmap). |
+| `Lab/Templates/*` | [blocks.so](https://github.com/ephraimduncan/blocks) | MIT | All registry blocks. |
 
 ## Onyx Opal — port, do not install
 

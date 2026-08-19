@@ -12,3 +12,4 @@ storybook-static-ui
 .DS_Store
 coverage
 *.log
+.cache

@@ -1,0 +1,116 @@
+/* Lab/Beautiful UI motion. Tokens only. Honour prefers-reduced-motion. */
+
+@keyframes beautiful-pixel-on {
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes beautiful-shimmer-text {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+@keyframes beautiful-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes beautiful-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes beautiful-stream-in {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes beautiful-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.beautiful-pixel {
+  animation: beautiful-pixel-on var(--beautiful-pixel-dur, 650ms) var(--ease-out)
+    var(--beautiful-pixel-delay, 0ms) infinite;
+}
+
+.beautiful-shimmer {
+  background-image: linear-gradient(
+    90deg,
+    var(--ink-faint) 0%,
+    var(--ink-faint) 35%,
+    var(--ink) 50%,
+    var(--ink-faint) 65%,
+    var(--ink-faint) 100%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: beautiful-shimmer-text 1.4s linear infinite;
+}
+
+.beautiful-fade-up {
+  animation: beautiful-fade-up 320ms var(--ease-out) both;
+}
+
+.beautiful-fade-in {
+  animation: beautiful-fade-in var(--duration-base) var(--ease-out) both;
+}
+
+.beautiful-stream-in {
+  animation: beautiful-stream-in 420ms var(--ease-out) both;
+}
+
+.beautiful-spin {
+  animation: beautiful-spin 1s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .beautiful-pixel,
+  .beautiful-shimmer,
+  .beautiful-fade-up,
+  .beautiful-fade-in,
+  .beautiful-stream-in,
+  .beautiful-spin {
+    animation: none;
+  }
+
+  .beautiful-shimmer {
+    background: none;
+    color: var(--ink-muted);
+  }
+
+  .beautiful-fade-up,
+  .beautiful-stream-in {
+    opacity: 1;
+    transform: none;
+  }
+}

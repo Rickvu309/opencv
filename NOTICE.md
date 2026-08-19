@@ -17,3 +17,48 @@ Copyright (c) assistant-ui contributors.
 Source: https://github.com/assistant-ui/assistant-ui
 
 Licence: MIT. OpenPath copies Thread / ThreadList / Composer UX. We do not install `@assistant-ui/react`.
+
+## Transitions.dev
+
+Copyright (c) 2026 Jakub Antalik / Transitions.dev
+
+Source: https://transitions.dev/ and https://github.com/Jakubantalik/transitions.dev
+
+Licence: site terms. Free recipes may be used in unlimited personal and commercial products; the collection is not redistributed as a competing kit. Pro recipes are not included. Ported into `packages/opath-ui/src/lab/transitions`.
+
+## beUI
+
+Source: https://beui.dev/components/motion
+
+Free motion-category primitives, restyled to OpenPath tokens, in `packages/opath-ui/src/lab/beui`.
+
+## Beautiful UI
+
+Source: https://www.beautifului.dev/
+
+Copy-paste markup. Anatomy ported into `packages/opath-ui/src/lab/beautiful`, restyled to OpenPath tokens. Creamery demo palette is not used.
+
+## 8StarLabs UI
+
+Copyright (c) 8StarLabs
+
+Source: https://github.com/8starlabs/ui
+
+Licence: MIT. Ported into `packages/opath-ui/src/lab/eightstar`.
+
+## Kibo UI
+
+Copyright (c) 2023 — Present shadcnblocks
+
+Source: https://github.com/shadcnblocks/kibo
+
+Licence: MIT. Ported into `packages/opath-ui/src/lab/kibo`.
+
+## blocks.so
+
+Copyright (c) 2025 Ephraim Duncan
+
+Source: https://github.com/ephraimduncan/blocks
+
+Licence: MIT. Ported into `packages/opath-ui/src/lab/blocks-so`.
+
