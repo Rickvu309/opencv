@@ -38,7 +38,7 @@ Features: coach, profile, paper, proof, pitch, search, application, onboarding, 
 
 **Add a query.** A function or `createServerFn` in the feature's `queries.ts` (client-callable RPC). Server-only reads go in `*.server.ts` and are imported from handlers. Wire the screen with TanStack Query; invalidate it from the commands that change what it reads.
 
-**Add a primitive.** Land it in `packages/opath-ui` with a Storybook story. Spec the block in [docs/design-system/components.md](docs/design-system/components.md) in the same PR. Product screens import `@/ui/<name>`. Do not add `core/` or `features/` imports inside the package.
+**Add a primitive.** Land it in `packages/opath-ui` with a co-located `*.stories.tsx` (`tags: ["autodocs"]`, a `Default` story). Spec the block in [docs/design-system/components.md](docs/design-system/components.md) in the same PR. Product screens import `@/ui/<name>`. Do not add `core/` or `features/` imports inside the package.
 
 **Add a screen.** Route file in `src/routes/` that renders a screen component. Search params are typed with `validateSearch` and Zod. Screens compose primitives; they do not edit `packages/opath-ui` unless the gap is a missing primitive.
 

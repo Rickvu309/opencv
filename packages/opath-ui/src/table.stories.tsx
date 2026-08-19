@@ -1,17 +1,27 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { createColumnHelper, DataTable } from "../table";
+import { createColumnHelper, DataTable } from "./table";
 
 const helper = createColumnHelper<{ role: string; company: string }>();
 
-const meta: Meta = {
+const meta: Meta<typeof DataTable> = {
   title: "Components/Table",
-  parameters: { layout: "padded" },
+  component: DataTable,
+  tags: ["autodocs"],
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component:
+          "Dense column sets. Drive lists are Rows, not this block. Status lives in a Chip slot.",
+      },
+    },
+  },
 };
+
 export default meta;
+type Story = StoryObj<typeof DataTable>;
 
-type Story = StoryObj;
-
-export const Rest: Story = {
+export const Default: Story = {
   render: () => (
     <div className="w-[32rem]">
       <DataTable

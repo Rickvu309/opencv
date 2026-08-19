@@ -40,7 +40,7 @@ Local galleries for review. `npm run storybook` starts both.
 | Opath (Production) | `npm run storybook:production` | http://localhost:6006 | https://opath-production.up.railway.app |
 | Opath (Lab) | `npm run storybook:lab` | http://localhost:6007 | https://opath-lab.up.railway.app |
 
-Production sidebar is Foundations, Components, Patterns, Screens ([gallery.md](design-system/gallery.md)). Lab is sourced Components and Templates.
+Production sidebar is Getting Started, Foundations, Core, Components, Layouts, Patterns, Screens ([gallery.md](design-system/gallery.md)). Lab is sourced Components and Templates.
 
 Same names as the old Vercel hosts (`opath-production.vercel.app`, `opath-lab.vercel.app`), on Railway’s `up.railway.app` domain. Services are named `opath-production` and `opath-lab`. Generate the public domain with `railway domain --service opath-production` / `opath-lab`. A push to `main` rebuilds them with the app.
 

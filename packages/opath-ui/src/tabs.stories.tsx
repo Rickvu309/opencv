@@ -1,14 +1,24 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs";
 
-const meta: Meta = {
+const meta: Meta<typeof Tabs> = {
   title: "Components/Tabs",
+  component: Tabs,
+  tags: ["autodocs"],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          "In-page toggle group. Active is surface-3 plus accent text. Never accent fill. No animation.",
+      },
+    },
+  },
 };
+
 export default meta;
+type Story = StoryObj<typeof Tabs>;
 
-type Story = StoryObj;
-
-export const Rest: Story = {
+export const Default: Story = {
   render: () => (
     <Tabs defaultValue="one" className="w-[20rem]">
       <TabsList>
