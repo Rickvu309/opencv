@@ -294,17 +294,11 @@ First focusable element on every page; visually hidden until focused, then a `--
 **Anatomy:** one question (`title-lg`), the answer control, the payback line landing in the same frame (`ui`, `--ink-muted`, appears with the answer — fade in, the one rare-tier animation), then Continue (primary) and Skip (ghost) — Skip always visible, never shamed.
 **Copy hooks:** question, payback line, Skip label.
 
-### Narrow form
+### Auth card
 
-**Region:** `/sign-in`.
-**Anatomy:** max-w-sm centered column: heading (`title-lg`), fields stacked 16px, one primary full-width, one text link to the other mode. Nothing else — no social wall, no filler sentence under the heading.
+**Region:** `/sign-in`, `/sign-up`.
+**Anatomy:** centered on `--canvas` (`p-6` / `md:p-10`). `--surface-1` card (`--radius-container`, `--hairline`, no pad). From `md`, two columns: form (`p-6` / `md:p-8`) and a `--surface-2` panel with the landing grid and the mark. Heading (`title-lg`), fields, one primary full-width, one text link to the other mode. Sign-up: password and confirm on one row from `sm`, hint under the pair: "Use at least 8 characters." Sign-in: stacked password, then **Keep me signed in**. No social buttons, no terms line, no filler under the heading.
 **States:** submit keeps every value on failure; field errors per the Input block.
-
-### Sign-up card
-
-**Region:** `/sign-up`.
-**Anatomy:** centered on `--canvas` (`p-6` / `md:p-10`). `--surface-1` card (`--radius-container`, `--hairline`, no pad). From `md`, two columns: form (`p-6` / `md:p-8`) and a `--surface-2` panel with the landing grid and the mark. Password and confirm sit on one row from `sm`. Hint under the pair: "Use at least 8 characters." No social buttons, no terms line, no filler under the heading.
-**States:** same as Narrow form.
 
 ### Public canvas pieces
 

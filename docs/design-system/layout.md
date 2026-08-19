@@ -44,7 +44,7 @@ Nine types. Every URL in [flows.md](../flows.md) maps to exactly one. A new scre
 4. **Opened space** — `/proof/$proofId`. Band: Back, title, Arrange and Publish (Publish becomes primary once the story is arranged; until then Arrange is). The body is the log, newest first.
 5. **Sectioned editor** — `/profile`, `/pitch`, `/settings`. One column of labelled sections, edited in place. Completeness or the handle sits inside the first section as a fact with its basis, never as a hero metric.
 6. **Wizard** — `/onboarding`. No rail. One question per step, skip always visible, payback visible in the same frame as the answer lands. Primary is Continue.
-7. **Narrow form** — `/sign-in`. Heading, the fields, one primary, a text link to the other mode. `/sign-up` is a split card (form + visual panel) on the same public canvas.
+7. **Auth card** — `/sign-in`, `/sign-up`. Centered `--surface-1` card: form column, then a `--surface-2` mark panel from `md`. Heading, the fields, one primary, a text link to the other mode.
 8. **Public canvas** — `/`, `/p/$slug`, `/u/$handle`. No rail, no dock, no bell. Landing is a sticky public nav, a centered hero with the product in it, then how it works. On a Proof page and a personal page the work is the page; OpenPath chrome is at most a quiet footer.
 9. **Overlay** — dock, drawer, bell popover, confirm dialog. Focus trap, Esc and scrim close, focus restores to the opener. An overlay is never a place: it has no URL and the screen behind it stays live in the map.
 
@@ -96,9 +96,9 @@ Regions: account (email, password, sign out), public page, notifications, danger
 
 Regions: the question, the answer control, payback in the same frame, then Continue and Skip. Primary: Continue. Yields: nothing collapses — one question per step is already minimal. Empty/error: a failed save keeps the step, states it, one retry.
 
-### Auth — Narrow form / split card
+### Auth — Auth card
 
-Regions: `/sign-in` is heading, fields, primary, the link to the other mode. `/sign-up` is a `--surface-1` card, form column then a `--surface-2` mark panel from `md`. Primary: Sign in or Create account. Empty/error: field errors are sentences under the field; a failed submit keeps every value.
+Regions: `/sign-in` and `/sign-up` share a `--surface-1` card, form column then a `--surface-2` mark panel from `md`. Heading, fields, primary, the link to the other mode. Primary: Sign in or Create account. Empty/error: field errors are sentences under the field; a failed submit keeps every value.
 
 ### Landing, Proof page, personal page — Public canvas
 

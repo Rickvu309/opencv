@@ -163,89 +163,85 @@ export function AuthForm({
     </p>
   ) : null;
 
-  if (signUp) {
-    return (
-      <main
-        id="main"
-        className="flex min-h-svh flex-col items-center justify-center bg-canvas p-6 md:p-10"
-      >
-        <div className="w-full max-w-sm md:max-w-4xl">
-          <Card className="overflow-hidden p-0">
-            <div className="grid md:grid-cols-2">
-              <form className="flex flex-col gap-6 p-6 md:p-8" onSubmit={(e) => void submit(e)} noValidate>
-                <div className="flex flex-col items-center gap-2 text-center">
-                  <a href="/" className="flex items-center gap-2 text-[13px] font-[510] text-ink">
-                    <Mark className="size-5" />
-                    OpenPath
-                  </a>
-                  <h1 className="text-balance mt-2 text-[24px] font-[590] leading-[1.3] tracking-[-0.017em]">
-                    Create an account
-                  </h1>
-                </div>
-                {emailField}
-                <div className="flex flex-col gap-4">
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    {passwordField}
-                    {confirmField}
-                  </div>
-                  {passwordError ? null : (
-                    <p id="password-hint" className="text-[13px] text-ink-muted">
-                      Use at least 8 characters.
-                    </p>
-                  )}
-                </div>
-                {formErrorLine}
-                {submitButton}
-                <p className="text-center text-[13px] text-ink-muted">
-                  Already have an account?{" "}
-                  <a href="/sign-in" className="text-accent underline-offset-2 hover:underline">
-                    Sign in
-                  </a>
-                </p>
-              </form>
-              <SignUpPanel />
-            </div>
-          </Card>
+  const fields = signUp ? (
+    <>
+      {emailField}
+      <div className="flex flex-col gap-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          {passwordField}
+          {confirmField}
         </div>
-      </main>
-    );
-  }
+        {passwordError ? null : (
+          <p id="password-hint" className="text-[13px] text-ink-muted">
+            Use at least 8 characters.
+          </p>
+        )}
+      </div>
+    </>
+  ) : (
+    <>
+      {emailField}
+      {passwordField}
+      <label className="flex min-h-[var(--size-touch)] items-center gap-2 text-[13px]">
+        <Checkbox
+          id="remember"
+          checked={remember}
+          onCheckedChange={(value) => setRemember(value === true)}
+          aria-label="Keep me signed in"
+        />
+        Keep me signed in
+      </label>
+    </>
+  );
 
   return (
-    <main id="main" className="mx-auto flex min-h-svh max-w-sm flex-col justify-center px-4 py-16">
-      <p className="flex items-center gap-2 text-[13px] font-[510] text-ink-muted">
-        <Mark />
-        OpenPath
-      </p>
-      <h1 className="text-balance mt-6 text-[24px] font-[590] leading-[1.3] tracking-[-0.017em]">
-        Sign in
-      </h1>
-      <form className="mt-8 flex flex-col gap-4" onSubmit={(e) => void submit(e)} noValidate>
-        {emailField}
-        {passwordField}
-        <label className="flex min-h-[var(--size-touch)] items-center gap-2 text-[13px]">
-          <Checkbox
-            id="remember"
-            checked={remember}
-            onCheckedChange={(value) => setRemember(value === true)}
-            aria-label="Keep me signed in"
-          />
-          Keep me signed in
-        </label>
-        {formErrorLine}
-        {submitButton}
-      </form>
-      <p className="mt-6 text-[13px] text-ink-muted">
-        New here?{" "}
-        <a href="/sign-up" className="text-accent underline-offset-2 hover:underline">
-          Create an account
-        </a>
-      </p>
+    <main
+      id="main"
+      className="flex min-h-svh flex-col items-center justify-center bg-canvas p-6 md:p-10"
+    >
+      <div className="w-full max-w-sm md:max-w-4xl">
+        <Card className="overflow-hidden p-0">
+          <div className="grid md:grid-cols-2">
+            <form className="flex flex-col gap-6 p-6 md:p-8" onSubmit={(e) => void submit(e)} noValidate>
+              <div className="flex flex-col items-center gap-2 text-center">
+                <a href="/" className="flex items-center gap-2 text-[13px] font-[510] text-ink">
+                  <Mark className="size-5" />
+                  OpenPath
+                </a>
+                <h1 className="text-balance mt-2 text-[24px] font-[590] leading-[1.3] tracking-[-0.017em]">
+                  {signUp ? "Create an account" : "Sign in"}
+                </h1>
+              </div>
+              {fields}
+              {formErrorLine}
+              {submitButton}
+              <p className="text-center text-[13px] text-ink-muted">
+                {signUp ? (
+                  <>
+                    Already have an account?{" "}
+                    <a href="/sign-in" className="text-accent underline-offset-2 hover:underline">
+                      Sign in
+                    </a>
+                  </>
+                ) : (
+                  <>
+                    New here?{" "}
+                    <a href="/sign-up" className="text-accent underline-offset-2 hover:underline">
+                      Create an account
+                    </a>
+                  </>
+                )}
+              </p>
+            </form>
+            <AuthPanel />
+          </div>
+        </Card>
+      </div>
     </main>
   );
 }
 
-function SignUpPanel() {
+function AuthPanel() {
   return (
     <div
       aria-hidden="true"

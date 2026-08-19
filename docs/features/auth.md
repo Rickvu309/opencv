@@ -4,7 +4,7 @@
 
 **Job:** each user's work is theirs, saved to the server, and there when they return — on any device.
 
-**Layout:** Narrow form at `/sign-in`. Split card at `/sign-up` (form + mark panel). No rail, no dock.
+**Layout:** Auth card at `/sign-in` and `/sign-up` (form + mark panel). No rail, no dock.
 
 ## Concept
 
@@ -12,8 +12,8 @@ Email and password, a session cookie, and a gate in front of the signed-in area.
 
 ## Screens
 
-- `/sign-up` — split card: email, then password and confirm password side by side from `sm`. Hint under the pair: "Use at least 8 characters." Mismatched confirm: "Passwords must match." Taken email: ask to sign in instead. Errors name the field. Sign-up always keeps the session for 30 days. No social login.
-- `/sign-in` — a wrong pair is rejected without revealing which half was wrong. One next step on the error. **Keep me signed in** (default on): a 30-day cookie that renews while they use the app. Unchecked: the session lasts until the browser closes.
+- `/sign-up` — auth card: email, then password and confirm password side by side from `sm`. Hint under the pair: "Use at least 8 characters." Mismatched confirm: "Passwords must match." Taken email: ask to sign in instead. Errors name the field. Sign-up always keeps the session for 30 days. No social login.
+- `/sign-in` — the same auth card. A wrong pair is rejected without revealing which half was wrong. One next step on the error. **Keep me signed in** (default on): a 30-day cookie that renews while they use the app. Unchecked: the session lasts until the browser closes.
 - Sign out lives in Settings and the account menu.
 
 ## Mechanics
