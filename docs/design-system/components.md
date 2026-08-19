@@ -207,10 +207,17 @@ First focusable element on every page; visually hidden until focused, then a `--
 
 ### Situation card
 
-**Region:** the content slot of `/paper` (gallery state) and the opened letter's chooser ([features/paper.md](../features/paper.md)).
+**Region:** the opened letter's chooser ([features/paper.md](../features/paper.md)).
 **Anatomy:** the one card in the commodity app — `--surface-1`, `--hairline`, `--radius-container`, 16px padding; type word first (`ui`, `--ink-muted`), situation label under it (`title-sm` 510). The whole card is the button.
-**States:** hover `--surface-2`; pressed `scale(0.97)`; focus ring. A grid, 2-up from `sm`, 12px gap.
+**States:** rest `--surface-2`; pressed `scale(0.97)`; focus ring. A grid, 2-up from `sm`, 12px gap.
 **Copy hooks:** the heading above the grid ("Where is this CV going?"), the type word, the labels.
+
+### Paper card
+
+**Region:** the unit of `/paper` (Drive grid).
+**Anatomy:** a white A4 in `--surface-2`, 1:√2, overflow hidden, `--radius-container`, `--hairline`. Inside: the real `PaperPage`, `pointer-events: none`, scaled to card width / A4 width. Title + relative time under the card (`caption`, `--ink` / `--ink-muted`). No type word. New CV is the same size with a dashed `--hairline` border and empty content.
+**States:** press `scale(0.97)` on the card. `···` reveals on hover via Hoverable. Menu: Open, Duplicate, Delete.
+**Copy hooks:** New CV, Upload, Delete this document?
 
 ### A4 page
 

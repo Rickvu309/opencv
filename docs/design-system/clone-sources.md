@@ -10,7 +10,11 @@ The gallery that makes the ported layer reviewable is two local Storybooks (`npm
 
 ## Drive lists
 
-`/paper` (and the Drive-list layout type) clones [Google Drive list view](https://mobbin.com/screens/69fe56d5-75d6-497c-8f3c-b05cb146b5be) anatomy: Name / Type / Updated columns, filter pills, hairline rows, hover-reveal `···`. Do not take folders, grid view, file-type glyphs, owner avatars, or a bulk selection toolbar. Type stays a word. Spec: [paper.md](../features/paper.md).
+`/proof`, `/search`, and `/applications` clone [Google Drive list view](https://mobbin.com/screens/69fe56d5-75d6-497c-8f3c-b05cb146b5be) anatomy: hairline rows, hover-reveal `···`. Apply groups rows. Do not take folders, file-type glyphs, owner avatars, or a bulk selection toolbar. Type stays a word on those lists.
+
+## Paper Drive
+
+`/paper` clones [Figma Recents](https://mobbin.com/screens/e200ae69-43dd-4777-a4e3-35244e99b425) and [Flodesk emails](https://mobbin.com/screens/ad5725c3-3042-4a0d-b283-bc2a9278e1a7): the thumbnail is the work. Each card is a tiny A4 (scaled `PaperPage`); title and relative time sit under it. New CV is a dashed empty page the same size. Drop a PDF onto the grid. Do not take Recents / Shared / Teams / Drafts, type tabs, or Name / Type / Date columns. Spec: [paper.md](../features/paper.md).
 
 ## Four sources, one job each
 

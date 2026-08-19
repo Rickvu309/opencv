@@ -1,197 +1,89 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Button } from "@/ui/button";
-import { Band, BandFilter } from "@/ui/band";
-import { GroupHeader, Row, RowList, RowListHeader } from "@/ui/rows";
-import { EmptyState } from "@/ui/empty-state";
-import { EndOfList } from "@/ui/card";
-import { Chip } from "@/ui/chip";
+import { Band } from "@/ui/band";
+import { emptyCv, emptyLetter, paperContentSchema } from "@/features/paper/model";
+import { NewCvCard, PaperDriveCard, PaperDriveGrid } from "@/features/paper/components/thumb";
 
 const meta: Meta = {
-  title: "Drive/Lists",
+  title: "Screens/Paper",
   parameters: { layout: "padded" },
 };
 export default meta;
 
 type Story = StoryObj;
 
+const cvPreview = paperContentSchema.parse({
+  ...emptyCv(),
+  name: "Nguyễn Thị Ngọc Ánh",
+  contact: "Da Nang · anh@example.com",
+  experience: [
+    {
+      id: "e1",
+      org: "Cafe",
+      role: "Barista",
+      dates: "2024 – 2026",
+      bullets: ["Kept the till within 2,000 dong each weekend shift."],
+    },
+  ],
+  education: [{ id: "ed1", school: "DUT", line: "Business, 2026" }],
+  skills: ["SQL"],
+});
+
+const letterPreview = paperContentSchema.parse({
+  ...emptyLetter("posted"),
+  paragraphs: [
+    "I'm writing about the analyst intern role at Vietcombank.",
+    "I ran weekend shifts at a cafe and kept the till within 2,000 dong.",
+    "I can start in June, and this is how to reach me.",
+  ],
+});
+
+function CardMenuStub({ label }: { label: string }) {
+  return (
+    <button
+      type="button"
+      className="flex size-11 items-center justify-center rounded-[var(--radius-control)] text-[13px]"
+      aria-label={`Actions for ${label}`}
+    >
+      ···
+    </button>
+  );
+}
+
 export const PaperEmpty: Story = {
   render: () => (
     <div>
-      <Band title="Paper" primary={<Button>Start a CV</Button>} />
-      <EmptyState
-        kind="first-run"
-        title="Start with the CV."
-        action={<Button variant="ghost">Start a CV</Button>}
-      />
+      <Band title="Paper" primary={<Button>New CV</Button>} secondary={<Button variant="ghost">Upload</Button>} />
+      <PaperDriveGrid>
+        <NewCvCard onSelect={() => undefined} />
+      </PaperDriveGrid>
     </div>
   ),
 };
 
-export const PaperRows: Story = {
+export const PaperGrid: Story = {
   render: () => (
     <div>
-      <Band
-        title="Paper"
-        primary={<Button>Start a CV</Button>}
-        filter={
-          <BandFilter
-            value="all"
-            onChange={() => undefined}
-            options={[
-              { id: "all", label: "All" },
-              { id: "cv", label: "CV / Resume" },
-              { id: "letter", label: "Letter" },
-              { id: "uploaded", label: "Uploaded" },
-            ]}
-          />
-        }
-      />
-      <RowList bleed>
-        <RowListHeader />
-        <Row
-          label="Analyst CV"
-          type="CV"
+      <Band title="Paper" primary={<Button>New CV</Button>} secondary={<Button variant="ghost">Upload</Button>} />
+      <PaperDriveGrid>
+        <NewCvCard onSelect={() => undefined} />
+        <PaperDriveCard
+          kind="cv"
+          content={cvPreview}
+          title="Analyst CV"
           updated="2 days ago"
           onSelect={() => undefined}
-          menu={
-            <button
-              type="button"
-              className="flex size-11 items-center justify-center rounded-[var(--radius-control)] text-[13px]"
-              aria-label="Actions for Analyst CV"
-            >
-              ···
-            </button>
-          }
+          menu={<CardMenuStub label="Analyst CV" />}
         />
-        <Row
-          label="Cover letter"
-          type="Cover letter"
+        <PaperDriveCard
+          kind="letter"
+          content={letterPreview}
+          title="Cover letter"
           updated="Yesterday"
           onSelect={() => undefined}
-          menu={
-            <button
-              type="button"
-              className="flex size-11 items-center justify-center rounded-[var(--radius-control)] text-[13px]"
-              aria-label="Actions for Cover letter"
-            >
-              ···
-            </button>
-          }
+          menu={<CardMenuStub label="Cover letter" />}
         />
-        <Row
-          label="Linh-CV.pdf"
-          type="Uploaded"
-          updated="5 days ago"
-          href="#uploaded"
-          menu={
-            <button
-              type="button"
-              className="flex size-11 items-center justify-center rounded-[var(--radius-control)] text-[13px]"
-              aria-label="Actions for Linh-CV.pdf"
-            >
-              ···
-            </button>
-          }
-        />
-      </RowList>
-      <EndOfList />
-    </div>
-  ),
-};
-
-export const ProofEmpty: Story = {
-  render: () => (
-    <div>
-      <Band title="Proof" primary={<Button>Log something</Button>} />
-      <EmptyState
-        kind="first-run"
-        title="Log what you're making."
-        basis="A class project, a shift, an assignment, something that failed — it all counts."
-      />
-    </div>
-  ),
-};
-
-export const SearchEmpty: Story = {
-  render: () => (
-    <div>
-      <Band title="Search" />
-      <EmptyState
-        kind="first-run"
-        title="Paste a posting you're looking at, and you'll see how you match."
-      />
-    </div>
-  ),
-};
-
-export const SearchRows: Story = {
-  render: () => (
-    <div>
-      <Band title="Search" />
-      <RowList bleed>
-        <Row
-          label="Business analyst intern"
-          chip={<Chip tone="quiet">Fit 4 of 6 — misses SQL</Chip>}
-          meta="Vietcombank · Hà Nội"
-          onSelect={() => undefined}
-        />
-        <Row
-          label="Operations intern"
-          chip={<Chip tone="quiet">Fit 5 of 6</Chip>}
-          meta="Grab · TP.HCM"
-          onSelect={() => undefined}
-        />
-      </RowList>
-      <EndOfList />
-    </div>
-  ),
-};
-
-export const ApplyEmpty: Story = {
-  render: () => (
-    <div>
-      <Band title="Apply" />
-      <EmptyState
-        kind="first-run"
-        title="Nothing in motion yet. Save an opening from Search and work it here."
-        action={<Button>Go to Search</Button>}
-      />
-    </div>
-  ),
-};
-
-export const ApplyRows: Story = {
-  render: () => (
-    <div>
-      <Band title="Apply" />
-      <section className="mt-4">
-        <GroupHeader label="Interested" count={1} status="attention" />
-        <RowList bleed>
-          <Row
-            label="Business analyst intern"
-            chip={<Chip tone="status" status="attention">Interested</Chip>}
-            meta="Vietcombank · Tailor the CV and send it."
-          />
-        </RowList>
-      </section>
-      <EndOfList />
-    </div>
-  ),
-};
-
-export const ProofRows: Story = {
-  render: () => (
-    <div>
-      <Band title="Proof" primary={<Button>Log something</Button>} />
-      <RowList bleed>
-        <Row
-          label="Weekend batch"
-          chip={<Chip tone="status" status="positive">published</Chip>}
-          meta="Intern · 2025–2026"
-          onSelect={() => undefined}
-        />
-      </RowList>
-      <EndOfList />
+      </PaperDriveGrid>
     </div>
   ),
 };

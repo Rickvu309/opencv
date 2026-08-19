@@ -2,7 +2,7 @@
 
 Open the file, then the source URL only if you need a larger crop. Mobbin screens: do not search Mobbin again for those four. Onyx marketing: [onyx.app](https://onyx.app/).
 
-Chat rail is cloned from ChatGPT via [assistant-ui](https://www.assistant-ui.com/docs/ui/thread-list) (anatomy) and [Beautiful UI Sidebar Nav](https://www.beautifului.dev/) (hover pill, accent new). Destination groups stay Linear. Drive lists from Google Drive. Public landing from onyx.app. See [navigation.md](../../features/navigation.md) and [clone-sources.md](../clone-sources.md).
+Chat rail is cloned from ChatGPT via [assistant-ui](https://www.assistant-ui.com/docs/ui/thread-list) (anatomy) and [Beautiful UI Sidebar Nav](https://www.beautifului.dev/) (hover pill, accent new). Destination groups stay Linear. Paper Drive from Figma Recents / Flodesk. Other Drive lists from Google Drive. Public landing from onyx.app. See [navigation.md](../../features/navigation.md) and [clone-sources.md](../clone-sources.md).
 
 | File | Copy this | Source |
 |---|---|---|

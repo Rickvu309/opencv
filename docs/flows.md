@@ -116,7 +116,7 @@ Features hand you to each other at the exact moment the work connects. These are
 | Apply row | the saved opening | re-read what they're applying to |
 | Proof (published) | public `/p/$slug` | view the page they just published |
 | Proof (published) | CV via `paper.addProofLine` | put the Proof on a CV, one quiet action |
-| Paper upload row | new built CV | "Start a CV from this" |
+| Paper Upload | new built CV | drop or Upload creates the CV and opens it |
 | Profile | Paper | build the first CV from the profile (onboarding's first win) |
 | Notification | its subject | deadline nudge opens the Apply row |
 | Personal page `/u/$handle` | `/p/$slug` | visitor reads one Proof from the span record |
@@ -168,12 +168,11 @@ Core Prepare, Paper (CV / Resume or Letter). Enter by C1 or C2.
 flowchart LR
   In["/sign-in"] -->|"gate"| Chat["/coach"]
   Chat -->|"C1"| List["/paper"]
-  List --> Gallery["Template gallery: pick the situation"]
-  Gallery --> Page["Edit on the A4 page"]
+  List --> Page["Edit on the A4 page"]
   Page --> Export["Export PDF"]
 ```
 
-The north star for Paper: a user with a deadline tonight leaves with a CV they can send. The list is how they pick; opening a paper means writing. One primary door on the empty list: start the CV. Back from the opened document returns to `/paper`, not to Chat.
+The north star for Paper: a user with a deadline tonight leaves with a CV they can send. The list is how they pick — a grid of A4 previews. Opening a paper means writing. One primary door: New CV. Back from the opened document returns to `/paper`, not to Chat.
 
 ### Flow 3: apply loop
 

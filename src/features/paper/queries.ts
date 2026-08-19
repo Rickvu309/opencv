@@ -9,7 +9,7 @@ export const listPapersFn = createServerFn({ method: "GET" }).handler(async () =
   const papers = (
     await withClient((c) =>
       c.query(
-        `select id, kind, title, template, updated_at from papers where user_id=$1 order by updated_at desc`,
+        `select id, kind, title, template, content, updated_at from papers where user_id=$1 order by updated_at desc`,
         [user.id],
       ),
     )
@@ -18,22 +18,10 @@ export const listPapersFn = createServerFn({ method: "GET" }).handler(async () =
     title: String(p.title),
     kind: String(p.kind),
     template: String(p.template),
-        updated_at: String(p.updated_at),
-        typeWord: typeWord(String(p.kind), String(p.template)),
-      }));
-  const files = (
-    await withClient((c) =>
-      c.query<{ id: string; filename: string; created_at: Date | string }>(
-        `select id, filename, created_at from files where user_id=$1 and purpose='upload' order by created_at desc`,
-        [user.id],
-      ),
-    )
-  ).rows.map((f) => ({
-    id: String(f.id),
-    filename: String(f.filename),
-    created_at: String(f.created_at),
+    updated_at: String(p.updated_at),
+    content: paperContentSchema.parse(p.content ?? {}),
   }));
-  return { papers, files };
+  return { papers };
 });
 
 export const getPaperFn = createServerFn({ method: "GET" })

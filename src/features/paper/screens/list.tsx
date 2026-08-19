@@ -1,21 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type DragEvent, type ReactNode } from "react";
 import { listPapersFn } from "@/features/paper/queries";
-import {
-  filterPaperListRows,
-  relativeUpdated,
-  sortPaperListRows,
-  type PaperListFilter,
-} from "@/features/paper/model";
-import { SituationGallery } from "@/features/paper/components/gallery";
+import { isPaperUploadFile, relativeUpdated, titleFromFilename } from "@/features/paper/model";
+import { NewCvCard, PaperDriveCard, PaperDriveGrid } from "@/features/paper/components/thumb";
 import { runCommand } from "@/ui/run-command";
 import { Button } from "@/ui/button";
-import { Band, BandFilter } from "@/ui/band";
-import { Row, RowList, RowListHeader } from "@/ui/rows";
+import { Band } from "@/ui/band";
 import { EmptyState } from "@/ui/empty-state";
-import { EndOfList } from "@/ui/card";
-import { SkeletonRows } from "@/ui/skeleton";
+import { SkeletonBlock } from "@/ui/skeleton";
 import { ConfirmDialog } from "@/ui/confirm-dialog";
 import {
   DropdownMenu,
@@ -27,136 +20,107 @@ import {
 export function PaperListScreen() {
   const q = useQuery({ queryKey: ["papers"], queryFn: () => listPapersFn() });
   const navigate = useNavigate();
-  const [gallery, setGallery] = useState<"cv" | "letter" | null>(null);
-  const [filter, setFilter] = useState<PaperListFilter>("all");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [dropOver, setDropOver] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [removePaperId, setRemovePaperId] = useState<string | null>(null);
-  const [removeFileId, setRemoveFileId] = useState<string | null>(null);
 
-  async function createCv(template: string) {
-    const result = await runCommand<{ id: string }>("paper.create", {
-      kind: "cv",
-      template,
-      fromProfile: true,
-    });
-    await navigate({ to: "/paper/$paperId", params: { paperId: result.result.id } });
+  async function createCv() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const result = await runCommand<{ id: string }>("paper.create", {
+        kind: "cv",
+        fromProfile: true,
+      });
+      await navigate({ to: "/paper/$paperId", params: { paperId: result.result.id } });
+    } finally {
+      setBusy(false);
+    }
   }
 
-  async function createLetter(situation: string) {
-    const result = await runCommand<{ id: string }>("paper.create", {
-      kind: "letter",
-      situation,
-      title: "Cover letter",
-    });
-    await navigate({ to: "/paper/$paperId", params: { paperId: result.result.id } });
+  async function openPaper(id: string) {
+    await navigate({ to: "/paper/$paperId", params: { paperId: id } });
   }
 
   async function onUpload(file: File) {
-    const bytesBase64 = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const value = String(reader.result ?? "");
-        resolve(value.split(",")[1] ?? "");
-      };
-      reader.onerror = () => reject(reader.error);
-      reader.readAsDataURL(file);
-    });
-    await runCommand("paper.uploadFile", {
-      filename: file.name,
-      mime: file.type || "application/octet-stream",
-      bytesBase64,
-    });
-    await q.refetch();
+    if (!isPaperUploadFile(file) || busy) return;
+    setBusy(true);
+    try {
+      const bytesBase64 = await readFileAsBase64(file);
+      await runCommand("paper.uploadFile", {
+        filename: file.name,
+        mime: file.type || "application/octet-stream",
+        bytesBase64,
+      });
+      const created = await runCommand<{ id: string }>("paper.create", {
+        kind: "cv",
+        fromProfile: true,
+      });
+      await runCommand("paper.rename", {
+        id: created.result.id,
+        title: titleFromFilename(file.name),
+      });
+      await navigate({ to: "/paper/$paperId", params: { paperId: created.result.id } });
+    } finally {
+      setBusy(false);
+    }
   }
 
-  async function startFromUpload() {
-    const result = await runCommand<{ id: string }>("paper.create", {
-      kind: "cv",
-      fromProfile: true,
-    });
-    await navigate({ to: "/paper/$paperId", params: { paperId: result.result.id } });
+  function onDragOver(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setDropOver(true);
+  }
+
+  function onDragLeave(event: DragEvent<HTMLDivElement>) {
+    if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
+    setDropOver(false);
+  }
+
+  function onDrop(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setDropOver(false);
+    const file = [...event.dataTransfer.files].find(isPaperUploadFile);
+    if (file) void onUpload(file);
   }
 
   const papers = q.data?.papers ?? [];
-  const files = q.data?.files ?? [];
-  const rows = filterPaperListRows(
-    sortPaperListRows([
-      ...papers.map((p) => ({
-        kind: "paper" as const,
-        id: p.id,
-        label: p.title,
-        type: p.typeWord,
-        paperKind: p.kind,
-        updated: p.updated_at,
-      })),
-      ...files.map((f) => ({
-        kind: "file" as const,
-        id: f.id,
-        label: f.filename,
-        type: "Uploaded",
-        updated: f.created_at,
-      })),
-    ]),
-    filter,
-  );
-  const empty = papers.length === 0 && files.length === 0;
-  const filteredEmpty = !empty && rows.length === 0;
-  const showFilter = !empty && !gallery;
 
   return (
     <div>
       <Band
         title="Paper"
-        primary={<Button onClick={() => setGallery("cv")}>Start a CV</Button>}
+        primary={
+          <Button disabled={busy} onClick={() => void createCv()}>
+            New CV
+          </Button>
+        }
         secondary={
           <>
-            <Button variant="ghost" onClick={() => setGallery("letter")}>
-              Start a letter
+            <Button variant="ghost" disabled={busy} onClick={() => fileInputRef.current?.click()}>
+              Upload
             </Button>
-            <label className="relative inline-flex min-h-[var(--size-touch)] cursor-pointer items-center overflow-hidden rounded-[var(--radius-control)] px-4 text-[13px] font-[510] hover:bg-surface-2">
-              I already have a file
-              <input
-                type="file"
-                className="absolute inset-0 cursor-pointer opacity-0"
-                aria-label="I already have a file"
-                accept=".pdf,.doc,.docx,application/pdf"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) void onUpload(file);
-                }}
-              />
-            </label>
-          </>
-        }
-        filter={
-          showFilter ? (
-            <BandFilter
-              value={filter}
-              onChange={(id) => {
-                setGallery(null);
-                setFilter(id as PaperListFilter);
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="sr-only"
+              aria-label="Upload"
+              accept=".pdf,.doc,.docx"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (file) void onUpload(file);
               }}
-              options={[
-                { id: "all", label: "All" },
-                { id: "cv", label: "CV / Resume" },
-                { id: "letter", label: "Letter" },
-                { id: "uploaded", label: "Uploaded" },
-              ]}
             />
-          ) : undefined
+          </>
         }
       />
 
-      {gallery ? (
-        <SituationGallery
-          kind={gallery}
-          onPick={(id) => {
-            if (gallery === "cv") void createCv(id);
-            else void createLetter(id);
-          }}
-          onCancel={() => setGallery(null)}
-        />
-      ) : q.isPending ? (
-        <SkeletonRows columns />
+      {q.isPending ? (
+        <PaperDriveGrid>
+          <GridSkeleton dashed />
+          <GridSkeleton />
+        </PaperDriveGrid>
       ) : q.isError ? (
         <EmptyState
           kind="error"
@@ -167,90 +131,46 @@ export function PaperListScreen() {
             </Button>
           }
         />
-      ) : empty ? (
-        <EmptyState
-          kind="first-run"
-          title="Start with the CV."
-          action={
-            <Button variant="ghost" onClick={() => setGallery("cv")}>
-              Start a CV
-            </Button>
-          }
-        />
-      ) : filteredEmpty ? (
-        <EmptyState
-          kind="filtered"
-          title="Nothing in this filter."
-          action={
-            <Button variant="outline" onClick={() => setFilter("all")}>
-              Show all
-            </Button>
-          }
-        />
       ) : (
-        <RowList bleed>
-          <RowListHeader />
-          {rows.map((row) =>
-            row.kind === "paper" ? (
-              <Row
-                key={row.id}
-                label={row.label}
-                type={row.type}
-                updated={relativeUpdated(row.updated)}
-                onSelect={() => void navigate({ to: "/paper/$paperId", params: { paperId: row.id } })}
-                menu={
-                  <RowMenu label={row.label}>
-                    <DropdownMenuItem
-                      onSelect={() =>
-                        void navigate({ to: "/paper/$paperId", params: { paperId: row.id } })
-                      }
-                    >
-                      Open
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onSelect={() =>
-                        void runCommand<{ id: string }>("paper.duplicate", { id: row.id }).then((r) =>
-                          navigate({ to: "/paper/$paperId", params: { paperId: r.result.id } }),
-                        )
-                      }
-                    >
-                      Duplicate
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="text-destructive"
-                      onSelect={() => setRemovePaperId(row.id)}
-                    >
-                      Delete
-                    </DropdownMenuItem>
-                  </RowMenu>
-                }
-              />
-            ) : (
-              <Row
-                key={row.id}
-                label={row.label}
-                type={row.type}
-                updated={relativeUpdated(row.updated)}
-                href={`/api/files?id=${row.id}`}
-                menu={
-                  <RowMenu label={row.label}>
-                    <DropdownMenuItem onSelect={() => void startFromUpload()}>
-                      Start a CV from this
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="text-destructive"
-                      onSelect={() => setRemoveFileId(row.id)}
-                    >
-                      Delete
-                    </DropdownMenuItem>
-                  </RowMenu>
-                }
-              />
-            ),
-          )}
-        </RowList>
+        <PaperDriveGrid
+          dropOver={dropOver}
+          onDragOver={onDragOver}
+          onDragLeave={onDragLeave}
+          onDrop={onDrop}
+        >
+          <NewCvCard onSelect={() => void createCv()} />
+          {papers.map((paper) => (
+            <PaperDriveCard
+              key={paper.id}
+              kind={paper.kind}
+              content={paper.content}
+              title={paper.title}
+              updated={relativeUpdated(paper.updated_at)}
+              onSelect={() => void openPaper(paper.id)}
+              menu={
+                <CardMenu label={paper.title}>
+                  <DropdownMenuItem onSelect={() => void openPaper(paper.id)}>Open</DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() =>
+                      void runCommand<{ id: string }>("paper.duplicate", { id: paper.id }).then((r) =>
+                        openPaper(r.result.id),
+                      )
+                    }
+                  >
+                    Duplicate
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-destructive"
+                    onSelect={() => setRemovePaperId(paper.id)}
+                  >
+                    Delete
+                  </DropdownMenuItem>
+                </CardMenu>
+              }
+            />
+          ))}
+        </PaperDriveGrid>
       )}
-      {!q.isPending && !q.isError && !empty && !filteredEmpty ? <EndOfList /> : null}
 
       <ConfirmDialog
         open={Boolean(removePaperId)}
@@ -264,23 +184,30 @@ export function PaperListScreen() {
           setRemovePaperId(null);
         }}
       />
-      <ConfirmDialog
-        open={Boolean(removeFileId)}
-        onOpenChange={(open) => !open && setRemoveFileId(null)}
-        title="Delete this file?"
-        body="This removes the upload. It cannot be undone."
-        confirmLabel="Delete file"
-        onConfirm={() => {
-          if (!removeFileId) return;
-          void runCommand("paper.removeFile", { id: removeFileId }).then(() => q.refetch());
-          setRemoveFileId(null);
-        }}
-      />
     </div>
   );
 }
 
-function RowMenu({ label, children }: { label: string; children: ReactNode }) {
+function GridSkeleton({ dashed = false }: { dashed?: boolean }) {
+  return (
+    <div>
+      <div
+        className={
+          dashed
+            ? "w-full overflow-hidden rounded-[var(--radius-container)] border border-dashed border-hairline"
+            : "w-full overflow-hidden rounded-[var(--radius-container)]"
+        }
+        style={{ aspectRatio: "1 / 1.41421356237" }}
+      >
+        <SkeletonBlock className="h-full w-full rounded-[var(--radius-container)]" />
+      </div>
+      <SkeletonBlock className="mt-3 h-3 w-24" />
+      {dashed ? null : <SkeletonBlock className="mt-1 h-3 w-20" />}
+    </div>
+  );
+}
+
+function CardMenu({ label, children }: { label: string; children: ReactNode }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -292,4 +219,16 @@ function RowMenu({ label, children }: { label: string; children: ReactNode }) {
       <DropdownMenuContent>{children}</DropdownMenuContent>
     </DropdownMenu>
   );
+}
+
+function readFileAsBase64(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const value = String(reader.result ?? "");
+      resolve(value.split(",")[1] ?? "");
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
 }

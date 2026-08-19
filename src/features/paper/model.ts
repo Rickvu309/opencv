@@ -202,6 +202,24 @@ export function completenessCopy(onPage: number, total: number) {
   return `${onPage} of ${total} profile ${noun} ${verb} on this page.`;
 }
 
+export function titleFromFilename(filename: string) {
+  const trimmed = filename.trim();
+  const cut = trimmed.replace(/\.[^.]+$/, "");
+  return cut.trim() || trimmed;
+}
+
+export function isPaperUploadFile(file: { name: string; type: string }) {
+  const name = file.name.toLowerCase();
+  return (
+    name.endsWith(".pdf") ||
+    name.endsWith(".doc") ||
+    name.endsWith(".docx") ||
+    file.type === "application/pdf" ||
+    file.type === "application/msword" ||
+    file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  );
+}
+
 export function relativeUpdated(iso: string, now = Date.now()) {
   const then = new Date(iso).getTime();
   if (Number.isNaN(then)) return "";
@@ -223,26 +241,3 @@ export function relativeUpdated(iso: string, now = Date.now()) {
   return `${years} years ago`;
 }
 
-export type PaperListFilter = "all" | "cv" | "letter" | "uploaded";
-
-export type PaperListRow = {
-  kind: "paper" | "file";
-  paperKind?: string;
-  updated: string;
-};
-
-export function sortPaperListRows<T extends { updated: string }>(rows: T[]): T[] {
-  return [...rows].sort((a, b) => b.updated.localeCompare(a.updated));
-}
-
-export function filterPaperListRows<T extends PaperListRow>(
-  rows: T[],
-  filter: PaperListFilter,
-): T[] {
-  return rows.filter((row) => {
-    if (filter === "all") return true;
-    if (filter === "uploaded") return row.kind === "file";
-    if (filter === "letter") return row.kind === "paper" && row.paperKind === "letter";
-    return row.kind === "paper" && row.paperKind !== "letter";
-  });
-}

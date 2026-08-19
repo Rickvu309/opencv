@@ -39,7 +39,7 @@ Rules that hold on every screen:
 Nine types. Every URL in [flows.md](../flows.md) maps to exactly one. A new screen picks a type or extends this list — it does not invent a private layout.
 
 1. **Conversation** — `/coach`. The thread is the body; the composer is the primary slot. On an empty thread the invite, starters, and composer sit as one centered group (ChatGPT empty). Once there are messages the composer pins after the thread. No dock; the page is the conversation.
-2. **Drive list** — `/paper`, `/proof`, `/search`, `/applications`. A band (title, one primary action, optional filter) over a single column of rows. Paper's Drive list is a Name / Type / Updated table. The row is the unit: opening one is the row's whole job, not an in-row editor. The empty state replaces the rows under the same band.
+2. **Drive list** — `/paper`, `/proof`, `/search`, `/applications`. A band (title, one primary action, optional filter) over a body. Paper's Drive is a 2-column grid of A4 thumbnails (1 column on a phone); Proof, Search, and Apply stay a single column of rows. Opening one is the card or row's whole job, not an in-row editor. Paper's empty grid still shows the dashed New CV card.
 3. **Opened document** — `/paper/$paperId`. Band: Back (to the list, never to Chat), title, type word, Export as primary. Then a format bar, a muted stage, and the white A4. No form beside the page; editing happens on the page.
 4. **Opened space** — `/proof/$proofId`. Band: Back, title, Arrange and Publish (Publish becomes primary once the story is arranged; until then Arrange is). The body is the log, newest first.
 5. **Sectioned editor** — `/profile`, `/pitch`, `/settings`. One column of labelled sections, edited in place. Completeness or the handle sits inside the first section as a fact with its basis, never as a hero metric.
@@ -58,7 +58,7 @@ Regions: thread messages, then composer. Primary: the composer. Yields: nothing 
 
 ### Paper list — Drive list
 
-Regions: band (title, Start a CV as primary, Start a letter and I already have a file as quiet secondaries), type filter (All / CV Resume / Letter / Uploaded, only when there are items), then the content slot. The content slot yields among: loading skeleton, first-run or cleared empty, filtered empty, error, CV gallery, letter chooser, or rows with a Name / Type / Updated header from `sm` (mixed newest first). Gallery and letter chooser replace the rows in that slot; they do not overlay and they are not a modal. Primary: Start a CV. Yields: the filter collapses into the band menu before the primary ever moves; type and updated wrap under the name before names truncate. Empty/error: occupies the content slot under the same band; the one door is Start a CV.
+Regions: band (title Paper, New CV as primary, Upload as a ghost secondary), then a 2-column (1 on mobile) grid of A4 cards. The first card is always a dashed empty page labelled New CV, the same size as the others. Each paper card is a white A4 in `--surface-2` (1:√2, overflow hidden) with a scaled `PaperPage` inside; title and relative time sit under it as `caption`. No type word, no type tabs, no Name / Type / Date columns. Drop a `.pdf`/`.doc`/`.docx` on the grid to create a CV. Primary: New CV. Yields: one column on the phone. Empty/error: zero papers still shows the dashed card; a load error replaces the grid. The template gallery does not appear on this screen.
 
 ### Opened CV or letter — Opened document
 
@@ -122,14 +122,14 @@ Five kinds, never conflated:
 
 Anatomy, in fixed order: one sentence of what this place is or why it is empty; an optional basis line, never invented; one primary action. No illustrations, no mascots, no jokes about emptiness — the users are anxious, and the empty state is a calm hand, not a personality moment. Loading is a skeleton, never an empty state shown early.
 
-Coach-aware rule: where the natural next step is a conversation, the one primary action may open the dock with a prefilled intent. Never two equal doors. A quiet secondary is allowed only when it reads as clearly subordinate — Paper's "I already have a file" upload, Proof's "I don't have one yet" chip ([mechanisms/proof.md](../mechanisms/proof.md) owns that one).
+Coach-aware rule: where the natural next step is a conversation, the one primary action may open the dock with a prefilled intent. Never two equal doors. A quiet secondary is allowed only when it reads as clearly subordinate — Paper's "Upload", Proof's "I don't have one yet" chip ([mechanisms/proof.md](../mechanisms/proof.md) owns that one).
 
 Per-screen empty inventory:
 
 | Screen | Kind(s) it can show | The one door |
 |---|---|---|
 | Coach (empty thread) | first-run | mark, composer, starters |
-| Paper | first-run, cleared, filtered (by type) | Start a CV |
+| Paper | error (load failed). Zero papers is the dashed New CV card in the grid, not EmptyState. | New CV |
 | Proof | first-run (teaches what counts), cleared | Log something — may open the dock with intent |
 | Search | first-run (no query), filtered (no results), error | run or widen the query |
 | Apply | first-run, cleared | go to Search |

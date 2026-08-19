@@ -90,16 +90,115 @@ const emptyExperience = {
 };
 const emptyEducation = { id: "ed-empty", school: "", line: "" };
 
-export function PaperPage({
+function PreviewPage({
   kind,
   content,
-  onChange,
-  onCommit,
+  pageClass,
 }: {
   kind: string;
   content: PaperContent;
-  onChange: (next: PaperContent) => void;
-  onCommit: (key: PaperBlockKey, value: PaperContent[PaperBlockKey]) => void;
+  pageClass: string;
+}) {
+  if (kind === "letter") {
+    const paragraphs = content.paragraphs.filter((paragraph) => paragraph.trim());
+    return (
+      <article className={pageClass} aria-hidden>
+        {paragraphs.map((paragraph, i) => (
+          <p key={i} className={cn("whitespace-pre-wrap", i > 0 && "mt-4")}>
+            {paragraph}
+          </p>
+        ))}
+      </article>
+    );
+  }
+
+  const experience = content.experience.filter(
+    (item) =>
+      item.role.trim() ||
+      item.org.trim() ||
+      item.dates.trim() ||
+      item.bullets.some((bullet) => bullet.trim()),
+  );
+  const education = content.education.filter((item) => item.school.trim() || item.line.trim());
+  const skills = content.skills.filter((skill) => skill.trim());
+  const proofLines = content.proofLines.filter((line) => line.trim());
+
+  return (
+    <article className={pageClass} aria-hidden>
+      {content.name.trim() ? (
+        <p className="text-[22px] font-medium leading-[1.3]">{content.name}</p>
+      ) : null}
+      {content.contact.trim() ? <p className="mt-1 text-[14px]">{content.contact}</p> : null}
+
+      {!content.hidden.experience && experience.length ? (
+        <section className="mt-8">
+          <h2 className="text-[13px] font-medium uppercase tracking-wide">Experience</h2>
+          {experience.map((item) => (
+            <div key={item.id} className="mt-3">
+              {item.role.trim() ? <p>{item.role}</p> : null}
+              {item.org.trim() ? <p className="text-[14px]">{item.org}</p> : null}
+              {item.dates.trim() ? <p className="text-[14px]">{item.dates}</p> : null}
+              {item.bullets
+                .filter((bullet) => bullet.trim())
+                .map((bullet, i) => (
+                  <p key={i} className="mt-1 text-[14px]">
+                    {bullet}
+                  </p>
+                ))}
+            </div>
+          ))}
+        </section>
+      ) : null}
+
+      {!content.hidden.education && education.length ? (
+        <section className="mt-8">
+          <h2 className="text-[13px] font-medium uppercase tracking-wide">Education</h2>
+          {education.map((item) => (
+            <div key={item.id} className="mt-3">
+              {item.school.trim() ? <p>{item.school}</p> : null}
+              {item.line.trim() ? <p className="text-[14px]">{item.line}</p> : null}
+            </div>
+          ))}
+        </section>
+      ) : null}
+
+      {!content.hidden.skills && skills.length ? (
+        <section className="mt-8">
+          <h2 className="text-[13px] font-medium uppercase tracking-wide">Skills</h2>
+          {skills.map((skill) => (
+            <p key={skill} className="mt-1 text-[14px]">
+              {skill}
+            </p>
+          ))}
+        </section>
+      ) : null}
+
+      {!content.hidden.proof && proofLines.length ? (
+        <section className="mt-8">
+          <h2 className="text-[13px] font-medium uppercase tracking-wide">Proof</h2>
+          {proofLines.map((line) => (
+            <p key={line} className="mt-1">
+              {line}
+            </p>
+          ))}
+        </section>
+      ) : null}
+    </article>
+  );
+}
+
+export function PaperPage({
+  kind,
+  content,
+  onChange = () => undefined,
+  onCommit = () => undefined,
+  preview = false,
+}: {
+  kind: string;
+  content: PaperContent;
+  onChange?: (next: PaperContent) => void;
+  onCommit?: (key: PaperBlockKey, value: PaperContent[PaperBlockKey]) => void;
+  preview?: boolean;
 }) {
   const focusRef = useRef<string | null>(null);
   const latest = useRef(content);
@@ -117,6 +216,10 @@ export function PaperPage({
     el?.focus();
     focusRef.current = null;
   });
+
+  if (preview) {
+    return <PreviewPage kind={kind} content={content} pageClass={pageClass} />;
+  }
 
   function setBlock<K extends PaperBlockKey>(key: K, value: PaperContent[K], commit = false) {
     const page = { ...latest.current, [key]: value };
