@@ -69,3 +69,13 @@ npm run storybook:lab
 ```
 
 Deploy is a push to `main`; Railway rebuilds both services ([docs/hosting.md](docs/hosting.md)).
+
+## Cursor Cloud
+
+Install and start live in [`.cursor/environment.json`](.cursor/environment.json). They run `scripts/cursor-cloud-install.sh` (Node 24, `npm ci`, `.env.local`) and `scripts/cursor-cloud-start.sh` (Postgres, then `db:migrate`).
+
+- **Node 24 is required.** `.nvmrc` and `engines` pin `24.x`. Some VMs put Node 22 first on `PATH` (including `/exec-daemon/node`). Interactive shells pick 24 via nvm after install aliases it as default. Non-interactive shells: `source "$NVM_DIR/nvm.sh" && nvm use`, or put `$(dirname "$(nvm which 24)")` at the front of `PATH`.
+- **Postgres is Docker Compose when the daemon works**, otherwise the Ubuntu package (`pg_ctlcluster`). Connection strings in `.env.local` match [`.env.example`](.env.example): `postgres://postgres:postgres@localhost:5432/openpath`. Do not start Postgres in `install`; `start` does that each boot. Re-run `npm run db:migrate` if the data directory is recreated.
+- **`.env.local` is gitignored** and is created on first install with a generated `SESSION_SECRET`. `TEST_DATABASE_URL` is set, so `npm test` runs the database suite instead of skipping it.
+- **Coach without `OPENROUTER_API_KEY` is expected offline.** Auth, Profile, Paper, and the rest still work. Add the key as a secret when you want the Coach live.
+
