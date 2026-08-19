@@ -69,3 +69,14 @@ npm run storybook:lab
 ```
 
 Deploy is a push to `main`; Railway rebuilds both services ([docs/hosting.md](docs/hosting.md)).
+
+## Cursor Cloud specific instructions
+
+Cloud Agent bootstrap lives in [`.cursor/environment.json`](.cursor/environment.json):
+
+- `install` runs [`scripts/cursor-cloud-install.sh`](scripts/cursor-cloud-install.sh) — nvm from `.nvmrc`, `npm ci`, Postgres packages. It must terminate. Do not start servers or run tests here.
+- `start` runs [`scripts/cursor-cloud-start.sh`](scripts/cursor-cloud-start.sh) — start Postgres (Docker Compose when Docker is available, otherwise a local cluster), ensure the `openpath` database, then `npm run db:migrate`.
+
+Those scripts must stay in git. Pointing the environment at missing files fails setup with exit 127.
+
+Storybook hosts: Production `https://opath-production.vercel.app`, Lab `https://opath-lab.vercel.app`. Local: Production `:6006`, Lab `:6007`.
