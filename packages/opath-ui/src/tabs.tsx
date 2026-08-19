@@ -16,7 +16,7 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.TabsTriggerProps) {
   return (
     <TabsPrimitive.Trigger
       className={cn(
-        "inline-flex min-h-[var(--size-touch)] items-center rounded-[var(--radius-control)] px-3 text-[13px] text-ink-muted md:min-h-10",
+        "inline-flex min-h-[var(--size-touch)] items-center rounded-[var(--radius-control)] px-3 text-[13px] text-ink-muted focus-visible:shadow-[var(--focus-ring)] md:min-h-10",
         "data-[state=active]:bg-surface-3 data-[state=active]:text-accent",
         "hover:bg-surface-2",
         className,

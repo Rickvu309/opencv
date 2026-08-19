@@ -11,7 +11,17 @@ const Login07 = lazy(() => import("../blocks-so/login-07/login-07").then((m) => 
 const Login08 = lazy(() => import("../blocks-so/login-08/login-08").then((m) => ({ default: m.default ?? m.Login08 ?? Object.values(m).find((v) => typeof v === "function") })));
 const Login09 = lazy(() => import("../blocks-so/login-09/login-09").then((m) => ({ default: m.default ?? m.Login09 ?? Object.values(m).find((v) => typeof v === "function") })));
 
-const meta = { title: "Lab/Templates/Auth" } satisfies Meta;
+const meta = {
+  title: "Lab/Templates/Auth",
+  parameters: {
+    docs: {
+      description: {
+        component:
+          "Sourced login layouts for review. Product sign-in and sign-up live in Opath (Production) Storybook under Auth/Screen — same card size, not these templates.",
+      },
+    },
+  },
+} satisfies Meta;
 export default meta;
 type Story = StoryObj;
 

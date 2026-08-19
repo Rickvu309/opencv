@@ -4,6 +4,7 @@ import { AuthForm } from "./auth-form";
 const meta: Meta<typeof AuthForm> = {
   title: "Auth/Screen",
   component: AuthForm,
+  parameters: { layout: "fullscreen" },
 };
 export default meta;
 

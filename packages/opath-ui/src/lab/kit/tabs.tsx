@@ -72,7 +72,7 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
 function TabsContent({ className, ...props }: TabsPrimitive.Panel.Props) {
   return (
     <TabsPrimitive.Panel
-      className={cn('flex-1 text-sm outline-none', className)}
+      className={cn("flex-1 text-[15px] outline-none", className)}
       data-slot="tabs-content"
       {...props}
     />

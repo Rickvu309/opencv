@@ -1,6 +1,6 @@
 # Components
 
-The template craft. One block per reusable piece; a screen is assembled from these blocks and invents nothing. Each block: **anatomy** (parts and their tokens), **variants**, **states** (rest / hover / focus / active / disabled / loading), **internal spacing**, and **copy hooks** — the slots whose words [copy.md](../copy.md) and the feature specs own. Blocks cite the [layout.md](layout.md) region they may appear in. Where the code diverges today, the block carries a *code today* line; those lines plus the [tokens.md](tokens.md) migration table are the implementation checklist.
+The template craft. One block per reusable piece; a screen is assembled from these blocks and invents nothing. Each block: **anatomy** (parts and their tokens), **variants**, **states** (rest / hover / focus / active / disabled / loading), **internal spacing**, and **copy hooks** — the slots whose words [copy.md](../copy.md) and the feature specs own. Blocks cite the [layout.md](layout.md) region they may appear in. Specs and code stay in the same PR.
 
 ## House rules
 
@@ -186,10 +186,11 @@ First focusable element on every page; visually hidden until focused, then a `--
 
 **Region:** Settings notification toggles; checklist rows.
 **Anatomy:** native-accessible Radix controls, 44px hit area, label on the on-state. Thumb on `--surface-1`; track `--surface-3` off, `--accent` on.
+**States:** rest; focus ring; disabled opacity 0.5; invalid border `--destructive` when `aria-invalid`.
 
 ### Interactive and Hoverable
 
-**Interactive:** one place where variant, prominence, and state (`empty` / `filled` / `selected`) resolve to hover, active, disabled, and focus. Everything clickable (Button, rail item, chips that act) sits on it.
+**Interactive:** shared hover / selected / disabled / focus matrix for list-like picks (rows, chips that act). Selected is `--surface-3` fill + weight 590. Rail items are the Rail block — sliding hover pill, active is weight 590 `--ink` with no rest fill — and do not sit on Interactive.
 **Hoverable:** CSS-only reveal. Where hover does not exist (`@media (hover: none)` / `no-hover:`), the revealed state is permanent so row menus stay reachable on phones.
 
 ### InfoBlock, Keycap, Truncated, FadingEdge, StickToBottom
@@ -340,7 +341,7 @@ Commodity kits catalogued in Opath (Lab) Storybook under `packages/opath-ui/src/
 | Lab/Components/Motion | Transitions.dev recipes and motion primitives |
 | Lab/Components/Media | Video, marquee, comparison, reels |
 | Lab/Components/Chat | Thread chrome: thinking, tools, prompt, cards |
-| Lab/Templates/Auth | Login screens |
+| Lab/Templates/Auth | Sourced login layouts (blocks.so). Product sign-in / sign-up is Production Storybook `Auth/Screen` — same `min-h-[36rem]` card, not these templates. |
 | Lab/Templates/Onboarding | Onboarding flows |
 | Lab/Templates/Dialogs | Full dialog screens |
 | Lab/Templates/Application | Sidebars, stats, uploads, kanban, canvas |
