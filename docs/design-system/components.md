@@ -328,7 +328,7 @@ First focusable element on every page; visually hidden until focused, then a `--
 
 ## Lab sourced galleries
 
-Commodity kits catalogued in Opath (Lab) Storybook under `packages/opath-ui/src/lab`. These are review surfaces, not Production primitives. Lab kit controls that have a Production counterpart (button, input, textarea, label, checkbox, switch, badge, card, tabs, dialog, sheet, tooltip, dropdown, table, skeleton, select) restyle to the Production token blocks above so a login or dialog preview matches the app. Leftover shadcn class names map through `lab/tokens.css`, CSS-imported from Lab Storybook preview. Promote a piece by writing its block here and landing a restyled primitive at the package root. The sidebar is Components vs Templates, not kit names. Opath (Production) Storybook also shows `Primitives/Gallery` from this package.
+Commodity kits catalogued in Opath (Lab) Storybook under `packages/opath-ui/src/lab`. These are review surfaces, not Production primitives. Lab kit controls that have a Production counterpart (button, input, textarea, label, checkbox, switch, badge, card, tabs, dialog, sheet, tooltip, dropdown, table, skeleton, select) restyle to the Production token blocks above so a login or dialog preview matches the app. Leftover shadcn class names map through `lab/tokens.css`, CSS-imported from Lab Storybook preview. Promote a piece by writing its block here and landing a restyled primitive at the package root. The sidebar is Components vs Templates, not kit names. Opath (Production) Storybook also shows Foundations, Components, and Patterns from `packages/opath-ui/src/gallery/` ([gallery.md](gallery.md)).
 
 | Storybook | What it holds |
 |---|---|
@@ -341,7 +341,7 @@ Commodity kits catalogued in Opath (Lab) Storybook under `packages/opath-ui/src/
 | Lab/Components/Motion | Transitions.dev recipes and motion primitives |
 | Lab/Components/Media | Video, marquee, comparison, reels |
 | Lab/Components/Chat | Thread chrome: thinking, tools, prompt, cards |
-| Lab/Templates/Auth | Sourced login layouts (blocks.so). Product sign-in / sign-up is Production Storybook `Auth/Screen` — same `min-h-[36rem]` card, not these templates. |
+| Lab/Templates/Auth | Sourced login layouts (blocks.so). Product sign-in / sign-up is Production Storybook `Screens/Auth` — same `min-h-[36rem]` card, not these templates. |
 | Lab/Templates/Onboarding | Onboarding flows |
 | Lab/Templates/Dialogs | Full dialog screens |
 | Lab/Templates/Application | Sidebars, stats, uploads, kanban, canvas |
@@ -354,4 +354,4 @@ Map: [clone-sources.md](clone-sources.md). Attribution: [NOTICE.md](../../NOTICE
 
 ## Adding a block
 
-A new visual pattern starts here: write the block (anatomy, variants, states, spacing, copy hooks, region, reference if it copies one), get it into this file in the same PR as the code, and extend the tokens instead of inventing values. If it moves, it also earns a row in [motion.md](motion.md)'s inventory. Micro-interactions come from [interactionkit.org](https://interactionkit.org/) or the AIcss library as references — adapted to these tokens, never pasted with their own.
+A new visual pattern starts here: write the block (anatomy, variants, states, spacing, copy hooks, region, reference if it copies one), get it into this file in the same PR as the code, land a `Components/<Name>` story in `packages/opath-ui/src/gallery/`, and extend the tokens instead of inventing values. If it moves, it also earns a row in [motion.md](motion.md)'s inventory. Micro-interactions come from [interactionkit.org](https://interactionkit.org/) or the AIcss library as references — adapted to these tokens, never pasted with their own.

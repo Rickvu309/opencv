@@ -2,7 +2,7 @@
 
 How to design OpenPath UI without inventing. Tokens, copy, and layout still win; these sources supply the commodity interaction. Open the source, name the pieces in [components.md](components.md), implement in OpenPath tokens and [copy.md](../copy.md). Do not invent a third pattern.
 
-The gallery that makes the ported layer reviewable is two local Storybooks (`npm run storybook`: Opath (Production) on 6006, Opath (Lab) on 6007) and the hosted galleries on Railway (Production https://opath-production.up.railway.app, Lab https://opath-lab.up.railway.app) in [hosting.md](../hosting.md). If a surface takes props, it gets a story; if it fetches, it stays in the app.
+The gallery that makes the ported layer reviewable is two local Storybooks (`npm run storybook`: Opath (Production) on 6006 — Foundations / Components / Patterns / Screens, [gallery.md](gallery.md) — Opath (Lab) on 6007) and the hosted galleries on Railway (Production https://opath-production.up.railway.app, Lab https://opath-lab.up.railway.app) in [hosting.md](../hosting.md). If a surface takes props, it gets a story; if it fetches, it stays in the app.
 
 ## Marketing landing
 

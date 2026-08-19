@@ -3,7 +3,7 @@ import { Button } from "@/ui/button";
 import { ProofEditorView } from "./proof-editor-view";
 
 const meta: Meta<typeof ProofEditorView> = {
-  title: "Proof/Editor",
+  title: "Screens/Proof",
   component: ProofEditorView,
   parameters: { layout: "padded" },
 };

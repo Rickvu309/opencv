@@ -6,10 +6,7 @@ import { labAliases } from "./aliases.ts";
 const dir = path.dirname(fileURLToPath(import.meta.url));
 
 const config: StorybookConfig = {
-  stories: [
-    "../src/primitives.stories.tsx",
-    "../src/lab/catalog/**/*.stories.@(ts|tsx)",
-  ],
+  stories: ["../src/lab/catalog/**/*.stories.@(ts|tsx)"],
   addons: ["@storybook/addon-a11y"],
   framework: {
     name: "@storybook/react-vite",

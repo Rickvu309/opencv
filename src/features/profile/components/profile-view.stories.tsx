@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { ProfileView, type ProfileViewData } from "./profile-view";
 
 const meta: Meta<typeof ProfileView> = {
-  title: "Profile/Screen",
+  title: "Screens/Profile",
   component: ProfileView,
   parameters: { layout: "padded" },
 };
