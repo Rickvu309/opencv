@@ -8,7 +8,7 @@ OpenPath clones commodity chat chrome and is missing the primitive layer a matur
 
 Port Opal anatomy and behaviour into `src/ui/` and Coach components. Restyle to OpenPath tokens. Attribute in `NOTICE.md`. Do not add `@onyx-ai/opal` as a dependency.
 
-The gallery that makes the ported layer reviewable is our own Storybook, hosted on Vercel from the same git repo. Railway continues to serve the app and worker. Vercel never touches the database, session secret, or AI key.
+The gallery that makes the ported layer reviewable is our own Storybook, hosted on Railway as `opath-production` (https://opath-production.up.railway.app) and `opath-lab` (https://opath-lab.up.railway.app) from the same git repo. Those services never receive the database, session secret, or AI key.
 
 ## Rejected
 

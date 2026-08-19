@@ -6,7 +6,7 @@ OpenPath is a small team's product with one web app, an AI coach whose turns can
 
 ## Decision
 
-A modular monolith on Railway. One npm package deploys as two services from the same image: `web` (TanStack Start on Nitro, Node 24 — UI, API, Coach streaming) and `worker` (a different entry point that drains a Postgres-backed job queue). Postgres is the only datastore. Push to `main` deploys both; the web process applies pending migrations before it listens.
+A modular monolith on Railway. One npm package deploys as two app services from the same repo: `web` (TanStack Start on Nitro, Node 24 — UI, API, Coach streaming) and `worker` (a different entry point that drains a Postgres-backed job queue). Postgres is the only datastore. Two more services, `opath-production` and `opath-lab`, build and serve the static galleries (https://opath-production.up.railway.app and https://opath-lab.up.railway.app); they share the repo, not the app image's start path or secrets. Push to `main` deploys all of them; the web process applies pending migrations before it listens.
 
 ## Rejected
 
