@@ -20,6 +20,7 @@ const openings: SearchOpening[] = [
       items: [
         { text: "Excel", met: true },
         { text: "SQL", met: false },
+        { text: "Python", met: false },
       ],
       gap: ["SQL", "Python"],
     },
