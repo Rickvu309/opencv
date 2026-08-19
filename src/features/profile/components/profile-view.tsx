@@ -373,7 +373,7 @@ export function ProfileView({
                 id="school"
                 value={draft.school}
                 onChange={(e) => onDraft({ school: e.target.value })}
-                placeholder="NEU"
+                placeholder="The university or school"
               />
             </FieldRow>
             <FieldRow label="Major" htmlFor="major">
@@ -381,7 +381,7 @@ export function ProfileView({
                 id="major"
                 value={draft.major}
                 onChange={(e) => onDraft({ major: e.target.value })}
-                placeholder="Finance"
+                placeholder="What you study"
               />
             </FieldRow>
             <FieldRow label="Year" htmlFor="year">
@@ -589,7 +589,7 @@ function ExperienceForm({
           id="exp-org"
           value={draft.expOrg}
           onChange={(e) => onDraft({ expOrg: e.target.value })}
-          placeholder="Grab"
+          placeholder="The company or a project"
         />
       </div>
       <div>
@@ -598,7 +598,7 @@ function ExperienceForm({
           id="exp-role"
           value={draft.expRole}
           onChange={(e) => onDraft({ expRole: e.target.value })}
-          placeholder="Intern"
+          placeholder="Intern, or a shift you ran"
         />
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
