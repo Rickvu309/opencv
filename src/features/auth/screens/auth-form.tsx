@@ -201,8 +201,8 @@ export function AuthForm({
     >
       <div className="w-full max-w-sm md:max-w-4xl">
         <Card className="overflow-hidden p-0">
-          <div className="grid md:grid-cols-2">
-            <form className="flex flex-col gap-6 p-6 md:p-8" onSubmit={(e) => void submit(e)} noValidate>
+          <div className="grid min-h-[36rem] md:grid-cols-2">
+            <form className="flex flex-col justify-center gap-6 p-6 md:p-8" onSubmit={(e) => void submit(e)} noValidate>
               <div className="flex flex-col items-center gap-2 text-center">
                 <a href="/" className="flex items-center gap-2 text-[13px] font-[510] text-ink">
                   <Mark className="size-5" />
@@ -254,7 +254,7 @@ function AuthPanel() {
           "[mask-image:radial-gradient(ellipse_at_center,black,transparent_72%)]",
         )}
       />
-      <div className="relative flex h-full min-h-80 items-center justify-center text-ink">
+      <div className="relative flex h-full items-center justify-center text-ink">
         <Mark className="size-12" />
       </div>
     </div>
