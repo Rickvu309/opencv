@@ -5,7 +5,7 @@ addons.setConfig({
   theme: create({
     base: "light",
     brandTitle: "Opath (Production)",
-    brandUrl: "https://opath-production.vercel.app",
+    brandUrl: "/",
     brandTarget: "_self",
   }),
 });

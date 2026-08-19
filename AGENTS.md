@@ -79,4 +79,4 @@ Cloud Agent bootstrap lives in [`.cursor/environment.json`](.cursor/environment.
 
 Those scripts must stay in git. Pointing the environment at missing files fails setup with exit 127.
 
-Storybook hosts: Production `https://opath-production.vercel.app`, Lab `https://opath-lab.vercel.app`. Local: Production `:6006`, Lab `:6007`.
+Storybook hosts: Railway services `storybook-production` and `storybook-lab` (public domains in [docs/hosting.md](docs/hosting.md)). Local: Production `:6006`, Lab `:6007`.

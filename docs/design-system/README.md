@@ -12,7 +12,7 @@ The look is **black and white**: Linear's surface ladder and type, onyx.app's bl
 4. **[motion.md](motion.md)** — when and how things move: two durations, one easing family, the surface inventory, the never list, reduced motion.
 5. **[components.md](components.md)** — the template craft: one block per reusable piece with anatomy, variants, states, internal spacing, and copy hooks. Screens are assembled from these blocks.
 
-The galleries that make this reviewable are two local Storybooks: Opath (Production) at `npm run storybook:production` (port 6006) and Opath (Lab) at `npm run storybook:lab` (port 6007). `npm run storybook` starts both. Hosted: Production at https://opath-production.vercel.app, Lab at https://opath-lab.vercel.app — see [hosting.md](../hosting.md). If a surface takes props, it gets a story.
+The galleries that make this reviewable are two local Storybooks: Opath (Production) at `npm run storybook:production` (port 6006) and Opath (Lab) at `npm run storybook:lab` (port 6007). `npm run storybook` starts both. Hosted: Railway services `storybook-production` and `storybook-lab` — see [hosting.md](../hosting.md). If a surface takes props, it gets a story.
 
 ## Two workstreams, one repo
 

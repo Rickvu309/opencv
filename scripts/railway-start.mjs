@@ -1,7 +1,9 @@
 import { spawnSync } from "node:child_process";
+import { startTarget } from "./railway-role.mjs";
 
-const name = process.env.RAILWAY_SERVICE_NAME ?? "";
-const isWorker = name.toLowerCase().includes("worker");
-const script = isWorker ? "worker" : "start";
-const r = spawnSync("npm", ["run", script], { stdio: "inherit" });
+const target = startTarget();
+const r =
+  target.kind === "storybook"
+    ? spawnSync("node", ["scripts/storybook-serve.mjs", target.dir], { stdio: "inherit" })
+    : spawnSync("npm", ["run", target.script], { stdio: "inherit" });
 process.exit(r.status ?? 1);
