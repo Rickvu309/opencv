@@ -7,7 +7,7 @@ const dir = path.dirname(fileURLToPath(import.meta.url));
 
 const config: StorybookConfig = {
   stories: [
-    "../src/primitives.stories.tsx",
+    "../src/*.stories.@(ts|tsx)",
     "../src/lab/catalog/**/*.stories.@(ts|tsx)",
   ],
   addons: ["@storybook/addon-a11y"],

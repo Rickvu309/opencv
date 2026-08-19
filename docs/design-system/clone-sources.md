@@ -8,6 +8,10 @@ The gallery that makes the ported layer reviewable is two local Storybooks (`npm
 
 `/` clones the [onyx.app](https://onyx.app/) marketing shell, not Opal and not Linear's product chrome. Take: sticky translucent nav, centered hero (large promise, product composer in the hero), quiet footer. The composer is the [assistant-ui chat-panel](https://www.assistant-ui.com/elements/chat-panel) bar: pill, field plus send, no suggestion chips. No attach, `@` menus, `/` commands, model picker, dictation, or glimm. Spec: [landing.md](../features/landing.md).
 
+## Drive lists
+
+`/paper` (and the Drive-list layout type) clones [Google Drive list view](https://mobbin.com/screens/69fe56d5-75d6-497c-8f3c-b05cb146b5be) anatomy: Name / Type / Updated columns, filter pills, hairline rows, hover-reveal `···`. Do not take folders, grid view, file-type glyphs, owner avatars, or a bulk selection toolbar. Type stays a word. Spec: [paper.md](../features/paper.md).
+
 ## Four sources, one job each
 
 | Source | Licence | Job |

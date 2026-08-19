@@ -1,12 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import { useState, type ReactNode } from "react";
 import { listPapersFn } from "@/features/paper/queries";
-import { relativeUpdated } from "@/features/paper/model";
+import {
+  filterPaperListRows,
+  relativeUpdated,
+  sortPaperListRows,
+  type PaperListFilter,
+} from "@/features/paper/model";
 import { SituationGallery } from "@/features/paper/components/gallery";
 import { runCommand } from "@/ui/run-command";
 import { Button } from "@/ui/button";
 import { Band, BandFilter } from "@/ui/band";
-import { Row, RowList } from "@/ui/rows";
+import { Row, RowList, RowListHeader } from "@/ui/rows";
 import { EmptyState } from "@/ui/empty-state";
 import { EndOfList } from "@/ui/card";
 import { SkeletonRows } from "@/ui/skeleton";
@@ -17,15 +23,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/ui/dropdown-menu";
-import { useState } from "react";
-
-type Filter = "all" | "cv" | "letter" | "uploaded";
 
 export function PaperListScreen() {
   const q = useQuery({ queryKey: ["papers"], queryFn: () => listPapersFn() });
   const navigate = useNavigate();
   const [gallery, setGallery] = useState<"cv" | "letter" | null>(null);
-  const [filter, setFilter] = useState<Filter>("all");
+  const [filter, setFilter] = useState<PaperListFilter>("all");
   const [removePaperId, setRemovePaperId] = useState<string | null>(null);
   const [removeFileId, setRemoveFileId] = useState<string | null>(null);
 
@@ -75,26 +78,26 @@ export function PaperListScreen() {
 
   const papers = q.data?.papers ?? [];
   const files = q.data?.files ?? [];
-  const paperRows = papers
-    .filter((p) => filter === "all" || (filter === "cv" && p.kind !== "letter") || (filter === "letter" && p.kind === "letter"))
-    .map((p) => ({
-      kind: "paper" as const,
-      id: p.id,
-      label: p.title,
-      meta: p.typeWord,
-      updated: p.updated_at,
-    }));
-  const fileRows =
-    filter === "letter" || filter === "cv"
-      ? []
-      : files.map((f) => ({
-          kind: "file" as const,
-          id: f.id,
-          label: f.filename,
-          meta: "Uploaded",
-          updated: f.created_at,
-        }));
-  const rows = [...paperRows, ...fileRows];
+  const rows = filterPaperListRows(
+    sortPaperListRows([
+      ...papers.map((p) => ({
+        kind: "paper" as const,
+        id: p.id,
+        label: p.title,
+        type: p.typeWord,
+        paperKind: p.kind,
+        updated: p.updated_at,
+      })),
+      ...files.map((f) => ({
+        kind: "file" as const,
+        id: f.id,
+        label: f.filename,
+        type: "Uploaded",
+        updated: f.created_at,
+      })),
+    ]),
+    filter,
+  );
   const empty = papers.length === 0 && files.length === 0;
   const filteredEmpty = !empty && rows.length === 0;
   const showFilter = !empty && !gallery;
@@ -130,7 +133,7 @@ export function PaperListScreen() {
               value={filter}
               onChange={(id) => {
                 setGallery(null);
-                setFilter(id as Filter);
+                setFilter(id as PaperListFilter);
               }}
               options={[
                 { id: "all", label: "All" },
@@ -153,7 +156,7 @@ export function PaperListScreen() {
           onCancel={() => setGallery(null)}
         />
       ) : q.isPending ? (
-        <SkeletonRows />
+        <SkeletonRows columns />
       ) : q.isError ? (
         <EmptyState
           kind="error"
@@ -165,7 +168,15 @@ export function PaperListScreen() {
           }
         />
       ) : empty ? (
-        <EmptyState kind="first-run" title="Start with the CV." />
+        <EmptyState
+          kind="first-run"
+          title="Start with the CV."
+          action={
+            <Button variant="ghost" onClick={() => setGallery("cv")}>
+              Start a CV
+            </Button>
+          }
+        />
       ) : filteredEmpty ? (
         <EmptyState
           kind="filtered"
@@ -178,36 +189,27 @@ export function PaperListScreen() {
         />
       ) : (
         <RowList bleed>
-          {paperRows.map((p) => (
-            <Row
-              key={p.id}
-              label={p.label}
-              meta={
-                <span className="flex flex-wrap gap-x-2">
-                  <span>{p.meta}</span>
-                  <span>{relativeUpdated(p.updated)}</span>
-                </span>
-              }
-              onSelect={() => void navigate({ to: "/paper/$paperId", params: { paperId: p.id } })}
-              menu={
-                <DropdownMenu>
-                  <DropdownMenuTrigger
-                    aria-label={`Actions for ${p.label}`}
-                    className="flex size-11 items-center justify-center rounded-[var(--radius-control)] text-[13px] hover:bg-surface-2"
-                  >
-                    ···
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
+          <RowListHeader />
+          {rows.map((row) =>
+            row.kind === "paper" ? (
+              <Row
+                key={row.id}
+                label={row.label}
+                type={row.type}
+                updated={relativeUpdated(row.updated)}
+                onSelect={() => void navigate({ to: "/paper/$paperId", params: { paperId: row.id } })}
+                menu={
+                  <RowMenu label={row.label}>
                     <DropdownMenuItem
                       onSelect={() =>
-                        void navigate({ to: "/paper/$paperId", params: { paperId: p.id } })
+                        void navigate({ to: "/paper/$paperId", params: { paperId: row.id } })
                       }
                     >
                       Open
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onSelect={() =>
-                        void runCommand<{ id: string }>("paper.duplicate", { id: p.id }).then((r) =>
+                        void runCommand<{ id: string }>("paper.duplicate", { id: row.id }).then((r) =>
                           navigate({ to: "/paper/$paperId", params: { paperId: r.result.id } }),
                         )
                       }
@@ -216,49 +218,36 @@ export function PaperListScreen() {
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       className="text-destructive"
-                      onSelect={() => setRemovePaperId(p.id)}
+                      onSelect={() => setRemovePaperId(row.id)}
                     >
                       Delete
                     </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              }
-            />
-          ))}
-          {fileRows.map((f) => (
-            <Row
-              key={f.id}
-              label={f.label}
-              meta={
-                <span className="flex flex-wrap gap-x-2">
-                  <span>{f.meta}</span>
-                  <span>{relativeUpdated(f.updated)}</span>
-                </span>
-              }
-              href={`/api/files?id=${f.id}`}
-              menu={
-                <DropdownMenu>
-                  <DropdownMenuTrigger
-                    aria-label={`Actions for ${f.label}`}
-                    className="flex size-11 items-center justify-center rounded-[var(--radius-control)] text-[13px] hover:bg-surface-2"
-                  >
-                    ···
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
+                  </RowMenu>
+                }
+              />
+            ) : (
+              <Row
+                key={row.id}
+                label={row.label}
+                type={row.type}
+                updated={relativeUpdated(row.updated)}
+                href={`/api/files?id=${row.id}`}
+                menu={
+                  <RowMenu label={row.label}>
                     <DropdownMenuItem onSelect={() => void startFromUpload()}>
                       Start a CV from this
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       className="text-destructive"
-                      onSelect={() => setRemoveFileId(f.id)}
+                      onSelect={() => setRemoveFileId(row.id)}
                     >
                       Delete
                     </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              }
-            />
-          ))}
+                  </RowMenu>
+                }
+              />
+            ),
+          )}
         </RowList>
       )}
       {!q.isPending && !q.isError && !empty && !filteredEmpty ? <EndOfList /> : null}
@@ -288,5 +277,19 @@ export function PaperListScreen() {
         }}
       />
     </div>
+  );
+}
+
+function RowMenu({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        aria-label={`Actions for ${label}`}
+        className="flex size-11 items-center justify-center rounded-[var(--radius-control)] text-[13px] hover:bg-surface-2"
+      >
+        ···
+      </DropdownMenuTrigger>
+      <DropdownMenuContent>{children}</DropdownMenuContent>
+    </DropdownMenu>
   );
 }

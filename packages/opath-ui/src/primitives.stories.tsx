@@ -119,6 +119,7 @@ export const Skeletons: Story = {
   render: () => (
     <div className="w-[28rem] space-y-6">
       <SkeletonRows count={3} />
+      <SkeletonRows count={3} columns />
       <SkeletonHistory count={4} />
       <SkeletonPage />
     </div>

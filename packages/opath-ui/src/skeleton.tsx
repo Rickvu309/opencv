@@ -6,13 +6,29 @@ export function SkeletonBlock({ className }: { className?: string }) {
   );
 }
 
-export function SkeletonRows({ count = 4 }: { count?: number }) {
+export function SkeletonRows({
+  count = 4,
+  columns = false,
+}: {
+  count?: number;
+  columns?: boolean;
+}) {
   return (
     <div className="divide-y divide-hairline" aria-busy="true" aria-label="Loading">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="flex min-h-[var(--size-touch)] items-center gap-3 py-3">
+        <div
+          key={i}
+          className="flex min-h-[var(--size-touch)] items-center gap-x-4 py-2"
+        >
           <SkeletonBlock className="h-4 w-2/5" />
-          <SkeletonBlock className="ml-auto h-4 w-24" />
+          {columns ? (
+            <>
+              <SkeletonBlock className="hidden h-4 w-28 sm:block" />
+              <SkeletonBlock className="ml-auto h-4 w-28" />
+            </>
+          ) : (
+            <SkeletonBlock className="ml-auto h-4 w-24" />
+          )}
         </div>
       ))}
     </div>

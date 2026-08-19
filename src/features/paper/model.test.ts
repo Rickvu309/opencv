@@ -4,10 +4,12 @@ import {
   applyPaperPatch,
   completenessCopy,
   emptyCv,
+  filterPaperListRows,
   paperBlockPatchSchema,
   paperIdFromScreen,
   profileLinesOnPage,
   relativeUpdated,
+  sortPaperListRows,
 } from "@/features/paper/model";
 import type { Profile } from "@/features/profile/model";
 
@@ -77,5 +79,32 @@ describe("paper copy helpers", () => {
     assert.equal(relativeUpdated("2026-08-18T09:59:30.000Z", now), "just now");
     assert.equal(relativeUpdated("2026-08-18T09:00:00.000Z", now), "1 hour ago");
     assert.equal(relativeUpdated("2026-08-16T10:00:00.000Z", now), "2 days ago");
+  });
+});
+
+describe("paper list rows", () => {
+  const rows = [
+    { kind: "paper" as const, paperKind: "cv", updated: "2026-08-18T10:00:00.000Z" },
+    { kind: "file" as const, updated: "2026-08-19T10:00:00.000Z" },
+    { kind: "paper" as const, paperKind: "letter", updated: "2026-08-17T10:00:00.000Z" },
+  ];
+
+  it("sorts newest first across papers and uploads", () => {
+    const sorted = sortPaperListRows(rows);
+    assert.equal(sorted[0]?.kind, "file");
+    assert.equal(sorted[1]?.paperKind, "cv");
+    assert.equal(sorted[2]?.paperKind, "letter");
+  });
+
+  it("keeps only uploads on the Uploaded filter", () => {
+    const visible = filterPaperListRows(rows, "uploaded");
+    assert.equal(visible.length, 1);
+    assert.equal(visible[0]?.kind, "file");
+  });
+
+  it("keeps only letters on the Letter filter", () => {
+    const visible = filterPaperListRows(rows, "letter");
+    assert.equal(visible.length, 1);
+    assert.equal(visible[0]?.paperKind, "letter");
   });
 });

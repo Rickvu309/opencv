@@ -89,10 +89,10 @@ An overlay is never a place: no URL, the screen behind stays live.
 ### Row and RowList
 
 **Region:** the unit of every Drive list.
-**Anatomy:** hairline-divided list (`--hairline`) that bleeds to the panel edges on Drive lists; each row 44px min: label leading (`title-sm` 15/510), meta trailing (`ui` 13, `--ink-muted`, `tabular-nums` on dates), optional status chip between, optional `···` menu as a sibling control so the row stays one target. Type is a word in the meta, not an icon. One shared content inset for every row in the list (matches the band title).
-**States:** rest flat; hover `--surface-2` (only when the row acts); pressed `--surface-3`; focus ring on the row.
-**Wrap law:** meta wraps under the label before the label truncates; no fixed widths.
-**Copy hooks:** label, meta, menu verbs.
+**Anatomy:** hairline-divided list (`--hairline`) that bleeds to the panel edges on Drive lists; each row 44px min. Label leading (`title-sm` 15/510). Optional Drive columns: type word (`ui` 13, `--ink-muted`, ~7rem from `sm`) then updated (`tabular-nums`, ~7rem). Optional status chip between name and columns. Optional `···` menu as a sibling control so the row stays one target. Type is a word, not an icon. One shared content inset for every row in the list (matches the band title). `RowListHeader` (Name / Type / Updated, `caption` `--ink-faint`) sits as the first row from `sm` and is hidden on the phone.
+**States:** rest flat; hover `--surface-2` on the whole `<li>` (only when the row acts); pressed `--surface-3`; focus ring on the row target. `···` reveals on hover via Hoverable.
+**Wrap law:** on the phone, type and updated wrap under the name before the name truncates; no fixed widths on the name.
+**Copy hooks:** label, type word, updated, menu verbs, header labels.
 
 ### Group heading
 

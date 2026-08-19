@@ -39,7 +39,7 @@ Rules that hold on every screen:
 Nine types. Every URL in [flows.md](../flows.md) maps to exactly one. A new screen picks a type or extends this list — it does not invent a private layout.
 
 1. **Conversation** — `/coach`. The thread is the body; the composer is the primary slot. On an empty thread the invite, starters, and composer sit as one centered group (ChatGPT empty). Once there are messages the composer pins after the thread. No dock; the page is the conversation.
-2. **Drive list** — `/paper`, `/proof`, `/search`, `/applications`. A band (title, one primary action, optional filter) over a single column of rows. The row is the unit: opening one is the row's whole job, not an in-row editor. The empty state replaces the rows under the same band.
+2. **Drive list** — `/paper`, `/proof`, `/search`, `/applications`. A band (title, one primary action, optional filter) over a single column of rows. Paper's Drive list is a Name / Type / Updated table. The row is the unit: opening one is the row's whole job, not an in-row editor. The empty state replaces the rows under the same band.
 3. **Opened document** — `/paper/$paperId`. Band: Back (to the list, never to Chat), title, type word, Export as primary. Then a format bar, a muted stage, and the white A4. No form beside the page; editing happens on the page.
 4. **Opened space** — `/proof/$proofId`. Band: Back, title, Arrange and Publish (Publish becomes primary once the story is arranged; until then Arrange is). The body is the log, newest first.
 5. **Sectioned editor** — `/profile`, `/pitch`, `/settings`. One column of labelled sections, edited in place. Completeness or the handle sits inside the first section as a fact with its basis, never as a hero metric.
@@ -58,7 +58,7 @@ Regions: thread messages, then composer. Primary: the composer. Yields: nothing 
 
 ### Paper list — Drive list
 
-Regions: band (title, Start a CV as primary, Start a letter and I already have a file as quiet secondaries), type filter (All / CV Resume / Letter / Uploaded, only when there are items), then the content slot. The content slot yields among: loading skeleton, first-run or cleared empty, filtered empty, error, CV gallery, letter chooser, or rows (name, type word, updated). Gallery and letter chooser replace the rows in that slot; they do not overlay and they are not a modal. Primary: Start a CV. Yields: the filter collapses into the band menu before the primary ever moves; row metadata wraps before names truncate. Empty/error: occupies the content slot under the same band; the one door is Start a CV.
+Regions: band (title, Start a CV as primary, Start a letter and I already have a file as quiet secondaries), type filter (All / CV Resume / Letter / Uploaded, only when there are items), then the content slot. The content slot yields among: loading skeleton, first-run or cleared empty, filtered empty, error, CV gallery, letter chooser, or rows with a Name / Type / Updated header from `sm` (mixed newest first). Gallery and letter chooser replace the rows in that slot; they do not overlay and they are not a modal. Primary: Start a CV. Yields: the filter collapses into the band menu before the primary ever moves; type and updated wrap under the name before names truncate. Empty/error: occupies the content slot under the same band; the one door is Start a CV.
 
 ### Opened CV or letter — Opened document
 

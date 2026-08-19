@@ -222,3 +222,27 @@ export function relativeUpdated(iso: string, now = Date.now()) {
   if (years === 1) return "1 year ago";
   return `${years} years ago`;
 }
+
+export type PaperListFilter = "all" | "cv" | "letter" | "uploaded";
+
+export type PaperListRow = {
+  kind: "paper" | "file";
+  paperKind?: string;
+  updated: string;
+};
+
+export function sortPaperListRows<T extends { updated: string }>(rows: T[]): T[] {
+  return [...rows].sort((a, b) => b.updated.localeCompare(a.updated));
+}
+
+export function filterPaperListRows<T extends PaperListRow>(
+  rows: T[],
+  filter: PaperListFilter,
+): T[] {
+  return rows.filter((row) => {
+    if (filter === "all") return true;
+    if (filter === "uploaded") return row.kind === "file";
+    if (filter === "letter") return row.kind === "paper" && row.paperKind === "letter";
+    return row.kind === "paper" && row.paperKind !== "letter";
+  });
+}
