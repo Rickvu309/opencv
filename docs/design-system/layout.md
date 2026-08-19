@@ -98,7 +98,7 @@ Regions: the question, the answer control, payback in the same frame, then Conti
 
 ### Auth — Auth card
 
-Regions: `/sign-in` and `/sign-up` share a `--surface-1` card, form column then a `--surface-2` mark panel from `md`. Heading, fields, primary, the link to the other mode. Primary: Sign in or Create account. Empty/error: field errors are sentences under the field; a failed submit keeps every value.
+Regions: `/sign-in` and `/sign-up` share one `--surface-1` card of the same size (`min-h-[36rem]`), form column then a `--surface-2` mark panel from `md`. Heading, fields, primary, the link to the other mode. Primary: Sign in or Create account. Empty/error: field errors are sentences under the field; a failed submit keeps every value.
 
 ### Landing, Proof page, personal page — Public canvas
 
