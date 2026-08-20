@@ -4,7 +4,7 @@
 
 **Job:** help a user build up evidence of their work and skills over time, with AI support — so that when someone asks "what have you actually done", the answer exists, is specific, and is theirs.
 
-**Layout:** Drive list at `/proof` (primary: Log something), Opened space at `/proof/$proofId` (primary: Arrange until the story is arranged, then Publish — one primary at a time). The dock must not cover the band ([layout.md](../design-system/layout.md)).
+**Layout:** Drive list at `/proof` (primary: Log something), Opened space at `/proof/$proofId` (primary: Publish once there are words — Arrange is later and does not mint `/p/:slug`). The dock must not cover the band ([layout.md](../design-system/layout.md)).
 
 ## Concept
 
@@ -12,14 +12,13 @@ Early-career users believe they have nothing to show. Proof teaches them otherwi
 
 In the rail, Proof is not a row. It is opened from Paper, a Coach card, or a URL. `/proof` marks Paper. The domain stays its own ([ADR 0005](../adr/0005-proof-own-domain.md), [flows.md](../flows.md)).
 
-The loop (flow 5 in [flows.md](../flows.md)): log → interview → arrange → publish → connect outward (personal page, a CV line, a shared link). This loop is the retention engine, and its published pages are the seed of the future sharing and social layer.
+The loop (flow 5 in [flows.md](../flows.md)): log → one question (skip is allowed) → publish → copy the `/p/:slug` link. Arrange is later, not the gate. This loop is the retention engine, and its published pages are the seed of the future sharing and social layer.
 
 ## Screens
 
 - `/proof` — the evidence space: proofs as rows (title, role, dates, status chip), newest activity first.
-- `/proof/$proofId` — the opened Proof: band with Back, title, and one primary at a time (Arrange until the story has all three parts, then Publish). The band names the missing part. Body: a labelled log card, then the running log newest first with dates; no STAR form, no wizard. The next interview question lands in an InfoBlock. The arranged story is three labelled sections — what it was, what you did, what came of it.
-- Arranged view: the story in three parts — what the project was, what they did, what came of it. All three or it is not a story yet; the band says which part is missing.
-- Published: a designed page at `/p/:slug` (see [share.md](share.md)) — the one expressive surface in the product: photos and type allowed, taste quiet. The four jobs of a published Proof: sound smart (specific and defensible), be human, look considered, feel earned. Never the CV's aesthetics.
+- `/proof/$proofId` — the opened Proof: band titled Proof, Back, Publish once they have words. Arrange is later, not a band control, and does not mint a page. Body: one log box (a café shift counts; no title homework), then the running log; no STAR form, no wizard. After the first log, one specific interview question lands in an InfoBlock with Skip first-class. Do not ghostwrite. Missing “came of it” still publishes.
+- Published: a page at `/p/:slug` (see [share.md](share.md)) of their words and the date. Arranged parts render only when present. Copy link is on the public page. Never invent numbers. Never the CV's aesthetics.
 
 ## Data
 
@@ -33,8 +32,9 @@ The loop (flow 5 in [flows.md](../flows.md)): log → interview → arrange → 
 | `proof.updateMeta` | yes | Title, role, dates, link |
 | `proof.log` | yes | Add an entry: note, link, or photo |
 | `proof.updateEntry` / `proof.removeEntry` | yes | Edit the log; remove confirms |
-| `proof.arrange` | yes | Save the arranged story draft |
-| `proof.publish` | yes | Snapshot the draft to a page at `/p/:slug`; later edits change nothing until republished |
+| `proof.skipQuestion` | yes | Skip the one interview question; publish still works |
+| `proof.arrange` | yes | Save an arranged draft later. Does not mint `/p/:slug` |
+| `proof.publish` | yes | Snapshot their words and date to `/p/:slug`. Arrange is not required. Later edits change nothing until republished |
 | `proof.unpublish` | yes | Take the page down |
 | `proof.remove` | yes | Destructive: confirm first |
 
@@ -51,7 +51,7 @@ The Coach notices evidence in conversation ("we ran the club fair last week") an
 
 ## Empty state
 
-"Log what you're making." Below it, what already counts: a class project, a shift, an assignment, something that failed. A chip — "I don't have one yet" — asks the Coach to suggest candidates from the profile. Never required, never shame.
+"A café shift counts." Below it, a class project, an assignment, something that failed — write it like a text. A chip — "I don't have one yet" — asks the Coach to suggest candidates from the profile. Never required, never shame.
 
 ## Later, schema-ready
 

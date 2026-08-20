@@ -41,7 +41,7 @@ Postgres is the only datastore. Everything lives in the `openpath` schema. Relat
 |---|---|
 | `proofs` | `title`, `role`, `date_from`, `date_to`, `link`, `status` (`logging`, `published`), `page_draft` JSONB (the arranged story before publishing), timestamps |
 | `proof_entries` | The running log, newest first: `kind` (`note`, `link`, `photo`), `body`, `url`, `file_id`, `created_at` |
-| `proof_pages` | One live published snapshot per proof: `slug` (unique), `content` JSONB (the designed page as published, so edits after publishing change nothing until republished), `published_at` |
+| `proof_pages` | One live published snapshot per proof: `slug` (unique), `content` JSONB (`words`, `date`, and only the arranged parts that exist — missing “came of it” stays missing), `published_at` |
 | `handles` | `user_id`, `handle` (unique; name plus a short id, editable in Settings) |
 | `shares` | `token` (unique), `subject_type`, `subject_id`, `capability` (`view` now; `vouch`, `invite` reserved), `created_by`, `expires_at`, `created_at` |
 

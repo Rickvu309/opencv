@@ -33,7 +33,7 @@ export function ProofListScreen() {
   const visible = filter === "all" ? items : items.filter((p) => p.status === filter);
 
   async function logSomething() {
-    const r = await runCommand<{ id: string }>("proof.create", { title: "Untitled Proof" });
+    const r = await runCommand<{ id: string }>("proof.create", { title: "" });
     await navigate({ to: "/proof/$proofId", params: { proofId: r.result.id } });
   }
 
@@ -60,8 +60,8 @@ export function ProofListScreen() {
       {!q.isPending && items.length === 0 ? (
         <EmptyState
           kind="first-run"
-          title="Log what you're making."
-          basis="A class project, a shift, an assignment, something that failed — it all counts."
+          title="A café shift counts."
+          basis="A class project, an assignment, something that failed — write it like a text."
           action={
             <button
               type="button"
@@ -82,7 +82,7 @@ export function ProofListScreen() {
           {visible.map((p) => (
             <Row
               key={p.id}
-              label={p.title}
+              label={p.title || "Proof"}
               chip={
                 p.status ? (
                   <Chip tone="status" status={proofChipStatus(p.status)}>

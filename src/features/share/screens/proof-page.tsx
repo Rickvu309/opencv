@@ -8,7 +8,15 @@ export function ProofPageScreen({ slug }: { slug: string }) {
     queryFn: () => getProofPageFn({ data: { slug } }),
   });
   const content = q.data?.content as
-    | { title?: string; what?: string; did?: string; came?: string; role?: string }
+    | {
+        words?: string;
+        date?: string;
+        title?: string;
+        what?: string;
+        did?: string;
+        came?: string;
+        role?: string;
+      }
     | undefined;
   return (
     <ProofPageView
@@ -17,6 +25,7 @@ export function ProofPageScreen({ slug }: { slug: string }) {
       onRetry={() => void q.refetch()}
       missing={!q.isPending && !q.isError && !q.data}
       content={content}
+      href={`/p/${slug}`}
     />
   );
 }

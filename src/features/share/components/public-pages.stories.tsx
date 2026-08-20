@@ -51,12 +51,24 @@ export const PersonalMissing: PersonalStory = {
 export const Proof: ProofStory = {
   render: () => (
     <ProofPageView
+      href="/p/saturday-close"
       content={{
-        title: "Shift lead, weekend batch",
-        role: "Intern",
-        what: "The weekend batch slipped when two people called out.",
-        did: "I split the remaining work and wrote a one-page runbook.",
-        came: "The batch finished on time the next weekend.",
+        words: "Saturday close. We ran out of oat milk and I stayed until the last table left.",
+        date: "2026-08-15",
+      }}
+    />
+  ),
+};
+
+export const ProofPartial: ProofStory = {
+  render: () => (
+    <ProofPageView
+      href="/p/saturday-close"
+      content={{
+        words: "Saturday close. We ran out of oat milk and I stayed until the last table left.",
+        date: "2026-08-15",
+        what: "a Saturday close",
+        did: "I stayed until the last table left",
       }}
     />
   ),

@@ -18,41 +18,53 @@ const back = (
 
 export const EmptyLog: Story = {
   args: {
-    title: "Weekend batch",
     back,
-    meta: "The story still needs what it was.",
-    primary: <Button>Arrange</Button>,
     note: "",
     onNote: () => undefined,
     onLog: () => undefined,
     entries: [],
     question: "",
-    onAsk: () => undefined,
     draft: null,
   },
 };
 
-export const Arranged: Story = {
+export const OneQuestion: Story = {
   args: {
-    title: "Weekend batch",
     back,
-    meta: "The story is arranged.",
     primary: <Button>Publish</Button>,
     note: "",
     onNote: () => undefined,
     onLog: () => undefined,
     entries: [
-      { id: "1", body: "Two people called out on Saturday.", created_at: "2026-08-01T10:00:00Z" },
-      { id: "2", body: "I wrote a one-page runbook.", created_at: "2026-08-02T10:00:00Z" },
+      {
+        id: "1",
+        body: "Saturday close. We ran out of oat milk and I stayed until the last table left.",
+        created_at: "2026-08-15T22:00:00Z",
+      },
     ],
-    question: "What changed the next weekend?",
-    onAsk: () => undefined,
-    draft: {
-      what: "The weekend batch slipped when two people called out.",
-      did: "I split the remaining work and wrote a one-page runbook.",
-      came: "The batch finished on time the next weekend.",
-    },
-    slug: "weekend-batch",
+    question: "What did you do with your own hands when the oat milk ran out?",
+    onSkip: () => undefined,
+    draft: null,
+  },
+};
+
+export const Published: Story = {
+  args: {
+    back,
+    primary: <Button>Publish</Button>,
+    note: "",
+    onNote: () => undefined,
+    onLog: () => undefined,
+    entries: [
+      {
+        id: "1",
+        body: "Saturday close. We ran out of oat milk and I stayed until the last table left.",
+        created_at: "2026-08-15T22:00:00Z",
+      },
+    ],
+    question: "",
+    draft: null,
+    slug: "saturday-close-abc123",
   },
 };
 
@@ -65,7 +77,6 @@ export const Missing: Story = {
     onLog: () => undefined,
     entries: [],
     question: "",
-    onAsk: () => undefined,
     draft: null,
   },
 };
