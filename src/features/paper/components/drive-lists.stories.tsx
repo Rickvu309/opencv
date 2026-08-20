@@ -1,10 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Button } from "@/ui/button";
-import { Band, BandFilter } from "@/ui/band";
+import { Band } from "@/ui/band";
 import { GroupHeader, Row, RowList } from "@/ui/rows";
 import { EmptyState } from "@/ui/empty-state";
 import { EndOfList } from "@/ui/card";
 import { Chip } from "@/ui/chip";
+import { emptyCv } from "@/features/paper/model";
+import { DashedA4, PaperCanvasPage } from "@/features/paper/components/page";
 
 const meta: Meta = {
   title: "Screens/Paper",
@@ -15,38 +17,35 @@ export default meta;
 type Story = StoryObj;
 
 export const PaperEmpty: Story = {
+  tags: ["autodocs"],
   render: () => (
     <div>
-      <Band title="Paper" primary={<Button>Start a CV</Button>} />
-      <EmptyState kind="first-run" title="Start with the CV." />
+      <Band title="Paper" />
+      <div className="-mx-5 bg-surface-2 px-5 py-8">
+        <DashedA4 onOpen={() => undefined} />
+      </div>
     </div>
   ),
 };
 
-export const PaperRows: Story = {
+export const PaperWithProof: Story = {
+  tags: ["autodocs"],
   render: () => (
     <div>
-      <Band
-        title="Paper"
-        primary={<Button>Start a CV</Button>}
-        filter={
-          <BandFilter
-            value="all"
-            onChange={() => undefined}
-            options={[
-              { id: "all", label: "All" },
-              { id: "cv", label: "CV / Resume" },
-              { id: "letter", label: "Letter" },
-              { id: "uploaded", label: "Uploaded" },
-            ]}
-          />
-        }
-      />
-      <RowList bleed>
-        <Row label="Analyst CV" meta="CV · 2 days ago" onSelect={() => undefined} />
-        <Row label="Cover letter" meta="Letter · Yesterday" onSelect={() => undefined} />
-      </RowList>
-      <EndOfList />
+      <Band title="Paper" />
+      <div className="-mx-5 bg-surface-2 px-5 py-8">
+        <PaperCanvasPage
+          content={emptyCv()}
+          lines={[
+            {
+              date: "2026-08-20",
+              words:
+                "Saturday close. We ran out of oat milk and I stayed until the last table left.",
+            },
+          ]}
+          onOpen={() => undefined}
+        />
+      </div>
     </div>
   ),
 };

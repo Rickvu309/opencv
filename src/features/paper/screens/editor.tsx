@@ -290,6 +290,7 @@ export function PaperEditorScreen({ paperId }: { paperId: string }) {
           <PaperPage
             kind={String(paper.kind)}
             content={page}
+            publishedLines={paper.publishedLines ?? []}
             onChange={onChange}
             onCommit={onCommit}
           />

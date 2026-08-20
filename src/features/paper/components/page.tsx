@@ -5,7 +5,7 @@ import {
   type KeyboardEvent,
   type TextareaHTMLAttributes,
 } from "react";
-import type { PaperBlockKey, PaperContent } from "@/features/paper/model";
+import type { PaperBlockKey, PaperContent, PublishedProofLine } from "@/features/paper/model";
 import { letterGhostsFor } from "@/features/paper/model";
 import { SelectionMenu } from "@/features/paper/components/selection";
 import { cn } from "@/lib/utils";
@@ -90,14 +90,78 @@ const emptyExperience = {
 };
 const emptyEducation = { id: "ed-empty", school: "", line: "" };
 
+const a4Class = "a4 mx-auto w-full max-w-[210mm] min-h-[297mm]";
+
+export function DashedA4({ onOpen }: { onOpen: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-label="Open a CV"
+      data-paper-page="dashed"
+      onClick={onOpen}
+      className={cn(
+        a4Class,
+        "a4-dashed cursor-pointer focus-visible:shadow-[var(--focus-ring)]",
+      )}
+    />
+  );
+}
+
+function ProofLines({ lines }: { lines: PublishedProofLine[] }) {
+  if (!lines.length) return null;
+  return (
+    <section className="mt-8">
+      {lines.map((line) => (
+        <div key={`${line.date}:${line.words}`} className="mt-3 first:mt-0">
+          {line.date ? (
+            <p className="text-[13px] tabular-nums text-ink-muted">{line.date}</p>
+          ) : null}
+          <p className="mt-1 whitespace-pre-wrap">{line.words}</p>
+        </div>
+      ))}
+    </section>
+  );
+}
+
+export function PaperCanvasPage({
+  content,
+  lines,
+  onOpen,
+}: {
+  content: PaperContent;
+  lines: PublishedProofLine[];
+  onOpen: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label="Open this CV"
+      data-paper-page="cv"
+      onClick={onOpen}
+      className={cn(
+        a4Class,
+        "cursor-pointer px-12 py-12 text-left text-[16px] leading-[1.6] focus-visible:shadow-[var(--focus-ring)]",
+      )}
+    >
+      {content.name ? (
+        <p className="text-[22px] font-medium leading-[1.3]">{content.name}</p>
+      ) : null}
+      {content.contact ? <p className="mt-1 text-[14px]">{content.contact}</p> : null}
+      <ProofLines lines={lines} />
+    </button>
+  );
+}
+
 export function PaperPage({
   kind,
   content,
+  publishedLines = [],
   onChange,
   onCommit,
 }: {
   kind: string;
   content: PaperContent;
+  publishedLines?: PublishedProofLine[];
   onChange: (next: PaperContent) => void;
   onCommit: (key: PaperBlockKey, value: PaperContent[PaperBlockKey]) => void;
 }) {
@@ -106,7 +170,7 @@ export function PaperPage({
   latest.current = content;
   const tight = content.density === "tight";
   const pageClass = cn(
-    "a4 mx-auto w-full max-w-[210mm] min-h-[297mm]",
+    a4Class,
     tight ? "px-8 py-8 text-[14px] leading-[1.4]" : "px-12 py-12 text-[16px] leading-[1.6]",
   );
 
@@ -495,33 +559,8 @@ export function PaperPage({
         </section>
       ) : null}
 
-      {!content.hidden.proof ? (
-        <section className="mt-8">
-          <h2 className="text-[13px] font-medium uppercase tracking-wide">Proof</h2>
-          {content.proofLines.length ? (
-            content.proofLines.map((line, i) => (
-              <GhostInput
-                key={`${i}-${line.slice(0, 12)}`}
-                className="mt-1"
-                value={line}
-                aria-label="Proof line"
-                onChange={(e) => {
-                  setBlock(
-                    "proofLines",
-                    latest.current.proofLines.map((row, idx) =>
-                      idx === i ? e.target.value : row,
-                    ),
-                  );
-                }}
-                onBlur={() => onCommit("proofLines", latest.current.proofLines)}
-              />
-            ))
-          ) : (
-            <p className="mt-1 text-ink-faint">
-              A published Proof appears here when you add it.
-            </p>
-          )}
-        </section>
+      {!content.hidden.proof && publishedLines.length ? (
+        <ProofLines lines={publishedLines} />
       ) : null}
     </article>
   );

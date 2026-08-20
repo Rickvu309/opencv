@@ -57,7 +57,7 @@ The page is the one expressive surface in the product — photos and considered 
 ### Beat 5 — Connect
 
 - The personal page `/u/:handle` gains a row in the span record — published work by role and dates.
-- **Add to CV** (`paper.addProofLine`) is a separate quiet action, never automatic: one line, chosen by the user.
+- A published Proof is already a line on the Paper CV — date and the same words as `/p/:slug`. No Add. Paper does not rewrite the line ([ADR 0008](../adr/0008-published-proof-on-paper-cv.md)).
 - The link goes wherever the user sends it — a Zalo message, a LinkedIn post, an email to a recruiter. Distribution is user-owned.
 
 ### Lifecycle
@@ -84,7 +84,7 @@ The cold-start helper: "I don't have one yet" hands the profile to the Coach, wh
 
 ## Connection points
 
-Coach (capture, interview, arrange — all through commands with undo), Paper (`paper.addProofLine`), Share (pages, handle, span record), Search and Applications (a named gap like "one project" is an invitation to start a Proof — the honest answer to "what would close this gap"). Notifications stay out of Proof in v1; any future logging nudge is opt-in and gentle or it violates principle 5.
+Coach (capture, interview, arrange — all through commands with undo), Paper (a published page is a line on the A4), Share (pages, handle, span record), Search and Applications (a named gap like "one project" is an invitation to start a Proof — the honest answer to "what would close this gap"). Notifications stay out of Proof in v1; any future logging nudge is opt-in and gentle or it violates principle 5.
 
 ## Growth roadmap
 

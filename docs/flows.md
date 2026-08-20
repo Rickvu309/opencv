@@ -40,7 +40,7 @@ flowchart TB
 
 - **Coach** (`/coach`): home. A place row in the rail, New conversation, and History (the thread list). Signing in lands here. No dock on this page; the page is the conversation. Thread history lives only in the rail, not a second list on the page.
 - **Prepare** (label only): things you make and say.
-  - **Paper** (`/paper`): **CV / Resume**, **Letter**. Proof still has `/proof` URLs and its own domain ([ADR 0005](adr/0005-proof-own-domain.md)); it is not a paper type and it is not a rail row. Opened from Paper, a Coach card, or a URL. `/proof` marks Paper.
+  - **Paper** (`/paper`): one A4 CV. Empty is a dashed page. A published Proof is a line on it. Proof still has `/proof` URLs and its own domain ([ADR 0005](adr/0005-proof-own-domain.md), [ADR 0008](adr/0008-published-proof-on-paper-cv.md)); it is not a paper type and it is not a rail row. Opened from Paper, a Coach card, or a URL. `/proof` marks Paper.
   - **Pitch** (`/pitch`): bio, intro, answers. What they share.
 - **Opportunities** (label only): things you pursue.
   - **Search** (`/search`): fit-ranked openings.
@@ -115,8 +115,7 @@ Features hand you to each other at the exact moment the work connects. These are
 | Apply row | Paper (a tailored copy) | tailor CV or letter for this opening |
 | Apply row | the saved opening | re-read what they're applying to |
 | Proof (published) | public `/p/$slug` | view the page they just published |
-| Proof (published) | CV via `paper.addProofLine` | put the Proof on a CV, one quiet action |
-| Paper upload row | new built CV | "Start a CV from this" |
+| Proof (published) | Paper CV | the published words are already a line on the A4 |
 | Profile | Paper | build the first CV from the profile (onboarding's first win) |
 | Notification | its subject | deadline nudge opens the Apply row |
 | Personal page `/u/$handle` | `/p/$slug` | visitor reads one Proof from the span record |

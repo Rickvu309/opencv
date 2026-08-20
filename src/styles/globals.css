@@ -328,6 +328,11 @@ body {
   color: #000000;
 }
 
+.a4-dashed {
+  background: transparent;
+  border: 1px dashed var(--hairline);
+}
+
 @media print {
   [data-print-hide] {
     display: none !important;

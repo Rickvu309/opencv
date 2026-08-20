@@ -3,8 +3,10 @@ import { describe, it } from "node:test";
 import {
   applyPaperPatch,
   completenessCopy,
+  cvLineFromPublishedProof,
   emptyCv,
   paperBlockPatchSchema,
+  paperCanvas,
   paperIdFromScreen,
   profileLinesOnPage,
   relativeUpdated,
@@ -77,5 +79,44 @@ describe("paper copy helpers", () => {
     assert.equal(relativeUpdated("2026-08-18T09:59:30.000Z", now), "just now");
     assert.equal(relativeUpdated("2026-08-18T09:00:00.000Z", now), "1 hour ago");
     assert.equal(relativeUpdated("2026-08-16T10:00:00.000Z", now), "2 days ago");
+  });
+});
+
+const SATURDAY_CLOSE =
+  "Saturday close. We ran out of oat milk and I stayed until the last table left.";
+
+describe("paper canvas", () => {
+  it("empty Paper is a dashed A4", () => {
+    assert.deepEqual(paperCanvas({ published: [] }), { kind: "dashed" });
+  });
+
+  it("puts a published Proof on the A4 in the same words as the public card", () => {
+    const canvas = paperCanvas({
+      published: [
+        {
+          date: "2026-08-20",
+          words: SATURDAY_CLOSE,
+          what: "Led closing at a high-volume cafe",
+          came: "cut wait time by 40%",
+        },
+      ],
+    });
+    assert.equal(canvas.kind, "cv");
+    if (canvas.kind !== "cv") return;
+    assert.deepEqual(canvas.lines, [{ date: "2026-08-20", words: SATURDAY_CLOSE }]);
+    assert.equal(
+      cvLineFromPublishedProof({
+        date: "2026-08-20",
+        words: SATURDAY_CLOSE,
+        came: "cut wait time by 40%",
+      })?.words,
+      SATURDAY_CLOSE,
+    );
+  });
+
+  it("keeps unpublished and skipped dumps off the A4", () => {
+    assert.deepEqual(paperCanvas({ published: [] }), { kind: "dashed" });
+    assert.equal(cvLineFromPublishedProof({ date: "2026-08-20", words: "" }), null);
+    assert.equal(cvLineFromPublishedProof({ date: "2026-08-20", words: "   " }), null);
   });
 });

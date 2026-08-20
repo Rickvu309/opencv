@@ -116,6 +116,41 @@ export function paperIdFromScreen(screen: string) {
   return match?.[1] ?? null;
 }
 
+export type PublishedProofLine = { date: string; words: string };
+
+export function cvLineFromPublishedProof(page: {
+  date?: string | null;
+  words?: string | null;
+  what?: string | null;
+  did?: string | null;
+  came?: string | null;
+}): PublishedProofLine | null {
+  const words = page.words?.trim() ?? "";
+  if (!words) return null;
+  return { date: page.date?.trim() ?? "", words };
+}
+
+export type PaperCanvas =
+  | { kind: "dashed" }
+  | { kind: "cv"; paperId: string | null; lines: PublishedProofLine[] };
+
+export function paperCanvas(input: {
+  cvId?: string | null;
+  published: Array<{
+    date?: string | null;
+    words?: string | null;
+    what?: string | null;
+    did?: string | null;
+    came?: string | null;
+  }>;
+}): PaperCanvas {
+  const lines = input.published
+    .map(cvLineFromPublishedProof)
+    .filter((line): line is PublishedProofLine => line !== null);
+  if (!input.cvId && lines.length === 0) return { kind: "dashed" };
+  return { kind: "cv", paperId: input.cvId ?? null, lines };
+}
+
 export function emptyCv(): PaperContent {
   return paperContentSchema.parse({
     experience: [{ id: "e1", org: "", role: "", dates: "", bullets: [""] }],
