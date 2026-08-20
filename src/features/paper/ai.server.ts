@@ -1,7 +1,12 @@
 import { complete } from "@/core/ai/gateway";
+import { keepPublishedProofWords } from "@/features/paper/model";
+import { loadPublishedProofLines } from "@/features/paper/load.server";
 import { loadProfile } from "@/features/profile/load.server";
 
 export async function sharpenBullet(userId: string, bullet: string) {
+  const published = await loadPublishedProofLines(userId);
+  const kept = keepPublishedProofWords(bullet, published);
+  if (kept !== null) return kept;
   const profile = await loadProfile(userId);
   const facts = JSON.stringify(profile);
   const ai = await complete({

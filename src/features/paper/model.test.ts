@@ -5,6 +5,10 @@ import {
   completenessCopy,
   cvLineFromPublishedProof,
   emptyCv,
+  excerptEditRule,
+  keepPublishedProofWords,
+  openedCvPage,
+  openedPaperEditRule,
   paperBlockPatchSchema,
   paperCanvas,
   paperIdFromScreen,
@@ -118,5 +122,70 @@ describe("paper canvas", () => {
     assert.deepEqual(paperCanvas({ published: [] }), { kind: "dashed" });
     assert.equal(cvLineFromPublishedProof({ date: "2026-08-20", words: "" }), null);
     assert.equal(cvLineFromPublishedProof({ date: "2026-08-20", words: "   " }), null);
+  });
+});
+
+const GHOSTS = [
+  "Your name",
+  "Email · phone · city",
+  "A result, with a number if you have one",
+];
+
+describe("opened CV page", () => {
+  it("does not invent name, contact, or empty-section heads", () => {
+    const content = emptyCv();
+    assert.equal(content.name, "");
+    assert.equal(content.contact, "");
+    assert.deepEqual(content.experience, []);
+    assert.deepEqual(content.education, []);
+    assert.deepEqual(content.skills, []);
+    const page = openedCvPage(content);
+    assert.equal(page.name, null);
+    assert.equal(page.contact, null);
+    assert.equal(page.showExperienceHeading, false);
+    assert.equal(page.showEducationHeading, false);
+    assert.equal(page.showSkillsHeading, false);
+    assert.deepEqual(page.experience, []);
+    assert.deepEqual(page.education, []);
+    assert.deepEqual(page.skills, []);
+    const dump = JSON.stringify(page);
+    for (const ghost of GHOSTS) {
+      assert.equal(dump.includes(ghost), false, ghost);
+    }
+  });
+
+  it("shows a section head only after a typed row", () => {
+    const content = emptyCv();
+    content.experience = [
+      { id: "e1", org: "Cafe", role: "Barista", dates: "", bullets: [SATURDAY_CLOSE] },
+    ];
+    const page = openedCvPage(content);
+    assert.equal(page.showExperienceHeading, true);
+    assert.equal(page.showEducationHeading, false);
+    assert.equal(page.experience[0]?.bullets[0], SATURDAY_CLOSE);
+  });
+});
+
+describe("Ask Coach on an opened CV", () => {
+  const published = [{ date: "2026-08-20", words: SATURDAY_CLOSE }];
+
+  it("leaves the Saturday-close Proof line unchanged", () => {
+    assert.equal(keepPublishedProofWords(SATURDAY_CLOSE, published), SATURDAY_CLOSE);
+    assert.equal(
+      keepPublishedProofWords(`  ${SATURDAY_CLOSE}  `, published),
+      SATURDAY_CLOSE,
+    );
+    assert.equal(keepPublishedProofWords("cut wait time by 40%", published), null);
+  });
+
+  it("forbids ghostwriting a published Proof line", () => {
+    const rule = openedPaperEditRule(published);
+    assert.match(rule, /read-only/);
+    assert.match(rule, /Do not rewrite/);
+    assert.match(rule, new RegExp(SATURDAY_CLOSE.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    assert.equal(rule.includes("cut wait time by 40%"), false);
+    const excerpt = excerptEditRule({ text: SATURDAY_CLOSE }, published);
+    assert.match(excerpt, /Leave those words as they are/);
+    assert.equal(excerpt.includes("STAR"), true);
   });
 });
