@@ -26,6 +26,9 @@ describe("opened editor source", () => {
     assert.equal(src.includes('aria-label="Dates"'), false);
     assert.equal(src.includes("Barista"), false);
     assert.equal(src.includes("Highlands"), false);
+    assert.equal(src.includes("Add a result"), false);
+    assert.equal(src.includes("Remove this result"), false);
+    assert.equal(src.includes("Remove this role"), false);
   });
 
   it("keeps the Saturday-close line as published words", () => {
@@ -39,6 +42,7 @@ describe("opened editor source", () => {
     assert.equal(stories.includes("Highlands"), false);
     assert.equal(stories.includes("Add a school"), false);
     assert.equal(stories.includes("Add a skill"), false);
+    assert.equal(stories.includes("CoachSessionProvider"), true);
     assert.equal(src.includes("cut wait time by 40%"), false);
   });
 });

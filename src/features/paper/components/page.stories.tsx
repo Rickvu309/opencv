@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { CoachSessionProvider } from "@/features/coach/components/session";
 import { emptyCv } from "@/features/paper/model";
 import { PaperPage } from "@/features/paper/components/page";
 
@@ -9,6 +10,13 @@ const meta: Meta = {
   title: "Screens/Paper/Page",
   tags: ["autodocs"],
   parameters: { layout: "padded" },
+  decorators: [
+    (Story) => (
+      <CoachSessionProvider>
+        <Story />
+      </CoachSessionProvider>
+    ),
+  ],
 };
 export default meta;
 
