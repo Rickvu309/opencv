@@ -1,7 +1,7 @@
 export type AfterSignInProof = { id: string; hasLog?: boolean };
 
 export type AfterSignInDestination =
-  | { to: "/paper" }
+  | { to: "/proof" }
   | { to: "/proof/$proofId"; params: { proofId: string } };
 
 export function proofListShowsEndOfList(proofs: readonly AfterSignInProof[]) {
@@ -22,6 +22,6 @@ export async function afterSignInHome(input: {
   proofs: readonly AfterSignInProof[];
   createDump: () => Promise<string>;
 }): Promise<AfterSignInDestination> {
-  if (proofListShowsEndOfList(input.proofs)) return { to: "/paper" };
+  if (proofListShowsEndOfList(input.proofs)) return { to: "/proof" };
   return openDump(input);
 }
