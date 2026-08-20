@@ -40,7 +40,7 @@ flowchart TB
 
 - **Coach** (`/coach`): home. A place row in the rail, New conversation, and History (the thread list). Signing in lands here. No dock on this page; the page is the conversation. Thread history lives only in the rail, not a second list on the page.
 - **Prepare** (label only): things you make and say.
-  - **Paper** (`/paper`): **CV / Resume**, **Letter**. Proof still has `/proof` URLs and its own domain ([ADR 0005](adr/0005-proof-own-domain.md)); it is not a paper type and it is not a rail row. Opened from Paper, a Coach card, or a URL. `/proof` marks Paper.
+  - **Paper** (`/paper`): one A4 CV. Empty is a dashed page. A published Proof is a line on it. Proof still has `/proof` URLs and its own domain ([ADR 0005](adr/0005-proof-own-domain.md), [ADR 0008](adr/0008-published-proof-on-paper-cv.md)); it is not a paper type and it is not a rail row. Opened from Paper, a Coach card, or a URL. `/proof` marks Paper.
   - **Pitch** (`/pitch`): bio, intro, answers. What they share.
 - **Opportunities** (label only): things you pursue.
   - **Search** (`/search`): fit-ranked openings.
@@ -115,8 +115,7 @@ Features hand you to each other at the exact moment the work connects. These are
 | Apply row | Paper (a tailored copy) | tailor CV or letter for this opening |
 | Apply row | the saved opening | re-read what they're applying to |
 | Proof (published) | public `/p/$slug` | view the page they just published |
-| Proof (published) | CV via `paper.addProofLine` | put the Proof on a CV, one quiet action |
-| Paper upload row | new built CV | "Start a CV from this" |
+| Proof (published) | Paper CV | the published words are already a line on the A4 |
 | Profile | Paper | build the first CV from the profile (onboarding's first win) |
 | Notification | its subject | deadline nudge opens the Apply row |
 | Personal page `/u/$handle` | `/p/$slug` | visitor reads one Proof from the span record |
@@ -167,13 +166,12 @@ Core Prepare, Paper (CV / Resume or Letter). Enter by C1 or C2.
 ```mermaid
 flowchart LR
   In["/sign-in"] -->|"gate"| Chat["/coach"]
-  Chat -->|"C1"| List["/paper"]
-  List --> Gallery["Template gallery: pick the situation"]
-  Gallery --> Page["Edit on the A4 page"]
+  Chat -->|"C1"| Canvas["/paper: one A4"]
+  Canvas --> Page["Edit on the A4 page"]
   Page --> Export["Export PDF"]
 ```
 
-The north star for Paper: a user with a deadline tonight leaves with a CV they can send. The list is how they pick; opening a paper means writing. One primary door on the empty list: start the CV. Back from the opened document returns to `/paper`, not to Chat.
+The north star for Paper: a user with a deadline tonight leaves with a CV they can send. `/paper` is one A4. Empty is a hairline-dashed page; a published Proof is already a line on it. Click opens `/paper/$paperId`. Back from the opened document returns to `/paper`, not to Chat.
 
 ### Flow 3: apply loop
 

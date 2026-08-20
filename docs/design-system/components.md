@@ -81,6 +81,14 @@ An overlay is never a place: no URL, the screen behind stays live.
 **Yield:** actions wrap under the title before the primary ever leaves the band; the filter collapses first ([layout.md](layout.md) owns the order).
 **Copy hooks:** title, meta, action labels.
 
+### Page canvas
+
+**Region:** the content slot of layout type 10 ([layout.md](layout.md)). Chrome (the band) sits above the desk, never on the page.
+**Anatomy:** `--desk` stage (`#f0f2f5`, cool gray, not `--surface-2`). One A4 object: `#ffffff` / `#000000`, 210×297mm, sharp corners, `--shadow-page`. Empty: the same white sheet with a hairline-dashed edge and no label. Filled: children on that sheet. Not a nested `--surface-1` card. Not a transparent ghost whose fill matches the stage.
+**States:** rest is the object on the desk; hover does not recolor the sheet; focus `--focus-ring` stacked on `--shadow-page`; the page is the hit target (44px is free — the sheet is the page).
+**Copy hooks:** `label` (aria on the control), the children (feature-owned: date + their words).
+**Steal:** [TopCV](https://www.topcv.vn/) template-preview stage only. Do not steal their sidebar, green, photo, template grid, name-as-hero, section heads, or bullets.
+
 ### BandFilter
 
 **Anatomy:** a row of text pills, `ui` 13px, `--radius-control`, 8px gap y-compressed.

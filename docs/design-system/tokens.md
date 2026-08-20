@@ -24,6 +24,7 @@ Depth comes from stepping backgrounds and hairlines. Each step has a job; there 
 | `--surface-1` | `#ffffff` | The content panel, cards, inputs, menus — where work happens |
 | `--surface-2` | `#f6f6f6` | Hover fill, group-header bands, skeleton blocks |
 | `--surface-3` | `#eeeeef` | Pressed fill, selected rows, active nav items |
+| `--desk` | `#f0f2f5` | Page canvas stage — a cool gray desk under one A4. Not `--surface-2`: that fill made an empty page a ghost |
 | `--hairline` | `#e5e5e6` | 1px borders — the first tool for separation, everywhere |
 | `--scrim` | `rgb(0 0 0 / 0.4)` | Behind modals and sheets, nothing else |
 
@@ -114,11 +115,11 @@ Rules that ride along:
 | `--radius-container` | 12px | Cards, dialogs, menus, the dock, the main content panel |
 | `--radius-pill` | 9999px | Status chips, count badges |
 
-No third working radius on one screen. **Concentric rule:** when nested rounded edges sit 8px or closer, outer radius = inner radius + padding. (If the inset is larger than 8px, pick each radius on its own.) Documents are the exception to everything: the A4 and letters are sharp black-on-white rectangles (`--surface-1` will not theme them; they keep `#ffffff`/`#000000`), outside app rounding and app theming entirely.
+No third working radius on one screen. **Concentric rule:** when nested rounded edges sit 8px or closer, outer radius = inner radius + padding. (If the inset is larger than 8px, pick each radius on its own.) Documents are the exception to everything: the A4 and letters are sharp black-on-white rectangles (`#ffffff`/`#000000`), outside app rounding and app theming entirely. On the page canvas they sit on `--desk` as objects, with `--shadow-page` — a soft offset shadow, not a halo. That is the one static shadow the system allows: the page is paper on a desk, not a card. Empty is the same white sheet with a hairline-dashed edge; never a transparent fill that matches the stage.
 
 ## Elevation and z
 
-Border-first, shadows almost invisible. A static element never has a drop shadow; separation is `--hairline`. Images get a 1px inset outline at 8% black (8% white in dark) so photos never bleed into the surface.
+Border-first, shadows almost invisible. Chrome and cards never have a drop shadow; separation is `--hairline`. The A4 on the page canvas is the exception: it is paper on a desk, so it uses `--shadow-page`. Images get a 1px inset outline at 8% black (8% white in dark) so photos never bleed into the surface.
 
 | Level | Treatment | z | Used by |
 |---|---|---|---|
@@ -128,7 +129,8 @@ Border-first, shadows almost invisible. A static element never has a drop shadow
 | 3 | `--scrim` + `--shadow-overlay` | 40 | Drawer, sheets, dialogs, menus |
 | 4 | — | 50 | Skip link |
 
-- `--shadow-overlay`: `0 4px 12px rgb(0 0 0 / 0.1)` — the one shadow, only for genuinely floating layers (menus, dialogs, the dock).
+- `--shadow-overlay`: `0 4px 12px rgb(0 0 0 / 0.1)` — the one shadow for genuinely floating layers (menus, dialogs, the dock).
+- `--shadow-page`: `0 8px 24px rgb(15 23 42 / 0.08), 0 1px 3px rgb(15 23 42 / 0.06)` — the A4 on the desk. Not for cards, rows, or chrome.
 - The z scale is closed: content 0, sticky 20, dock 30, overlays 40, skip link 50. The dock can never beat a dialog.
 
 ## Interaction states

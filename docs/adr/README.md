@@ -11,5 +11,6 @@ Locked choices for the rebuild. Do not reopen one inside a feature ticket; when 
 | [0005](0005-proof-own-domain.md) | Proof is its own domain beside Paper; sharing is a growth substrate |
 | [0006](0006-port-opal.md) | Port Onyx Opal into `src/ui/` and Coach; do not install it; Storybook on Vercel |
 | [0007](0007-opath-ui-in-repo.md) | Opath (Lab) is `packages/opath-ui` in this repo; not a second git remote |
+| [0008](0008-published-proof-on-paper-cv.md) | A published Proof is a line on the Paper CV; no Add |
 
 Format: context in two or three sentences, the decision, what it replaces or rejects, and the consequences. Keep each under a page.

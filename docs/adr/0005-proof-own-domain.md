@@ -6,7 +6,7 @@ Paper (CV and cover letter) is a commodity we clone from the resume-builder cate
 
 ## Decision
 
-Proof is its own feature module and domain (`src/features/proof/`, tables `proofs`, `proof_entries`, `proof_pages`), beside Paper, not a paper type. Sharing is a separate substrate (`src/features/share/`, tables `handles`, `shares`) that Proof publishes through: per-Proof pages at `/p/:slug`, the personal page at `/u/:handle`, and a `shares` table whose capability field (`view` now; `vouch`, `invite` reserved) is the extension point for future mechanics. The two domains connect through commands: `paper.addProofLine` puts a published Proof onto a CV as a quiet, explicit action — never automatically.
+Proof is its own feature module and domain (`src/features/proof/`, tables `proofs`, `proof_entries`, `proof_pages`), beside Paper, not a paper type. Sharing is a separate substrate (`src/features/share/`, tables `handles`, `shares`) that Proof publishes through: per-Proof pages at `/p/:slug`, the personal page at `/u/:handle`, and a `shares` table whose capability field (`view` now; `vouch`, `invite` reserved) is the extension point for future mechanics. The two domains connect through the published snapshot: Paper reads `proof_pages` and puts those words on the A4. `paper.addProofLine` is not the user path. Superseded on the connection by [ADR 0008](0008-published-proof-on-paper-cv.md); Proof remains its own domain.
 
 ## Rejected
 

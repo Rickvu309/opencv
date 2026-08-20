@@ -36,17 +36,18 @@ Rules that hold on every screen:
 
 ## Layout types
 
-Nine types. Every URL in [flows.md](../flows.md) maps to exactly one. A new screen picks a type or extends this list — it does not invent a private layout.
+Ten types. Every URL in [flows.md](../flows.md) maps to exactly one. A new screen picks a type or extends this list — it does not invent a private layout.
 
 1. **Conversation** — `/coach`. The thread is the body; the composer is the primary slot. On an empty thread the invite, starters, and composer sit as one centered group (ChatGPT empty). Once there are messages the composer pins after the thread. No dock; the page is the conversation.
-2. **Drive list** — `/paper`, `/proof`, `/search`, `/applications`. A band (title, one primary action, optional filter) over a single column of rows. The row is the unit: opening one is the row's whole job, not an in-row editor. The empty state replaces the rows under the same band.
-3. **Opened document** — `/paper/$paperId`. Band: Back (to the list, never to Chat), title, type word, Export as primary. Then a format bar, a muted stage, and the white A4. No form beside the page; editing happens on the page.
+2. **Drive list** — `/proof`, `/search`, `/applications`. A band (title, one primary action, optional filter) over a single column of rows. The row is the unit: opening one is the row's whole job, not an in-row editor. The empty state replaces the rows under the same band.
+3. **Opened document** — `/paper/$paperId`. Band: Back (to the canvas, never to Chat), title, type word, Export as primary. Then a format bar, a muted stage, and the white A4. No form beside the page; editing happens on the page.
 4. **Opened space** — `/proof/$proofId`. Band: Back, title, Arrange and Publish (Publish becomes primary once the story is arranged; until then Arrange is). The body is the log, newest first.
 5. **Sectioned editor** — `/profile`, `/pitch`, `/settings`. One column of labelled sections, edited in place. Completeness or the handle sits inside the first section as a fact with its basis, never as a hero metric.
 6. **Wizard** — `/onboarding`. No rail. One question per step, skip always visible, payback visible in the same frame as the answer lands. Primary is Continue.
 7. **Auth card** — `/sign-in`, `/sign-up`. Centered `--surface-1` card: form column, then a `--surface-2` mark panel from `md`. Heading, the fields, one primary, a text link to the other mode.
 8. **Public canvas** — `/`, `/p/$slug`, `/u/$handle`. No rail, no dock, no bell. Landing is a sticky public nav, a centered hero with the product in it, then how it works. On a Proof page and a personal page the work is the page; OpenPath chrome is at most a quiet footer.
 9. **Overlay** — dock, drawer, bell popover, confirm dialog. Focus trap, Esc and scrim close, focus restores to the opener. An overlay is never a place: it has no URL and the screen behind it stays live in the map.
+10. **Page canvas** — `/paper`. Band title only. Cool gray desk (`--desk`), one white A4 as an object. Empty is a hairline-dashed sheet on that desk, not a transparent ghost. A published Proof is already a line on the white A4. Click opens `/paper/$paperId`.
 
 ## Per-screen instances
 
@@ -56,9 +57,9 @@ Each block: type, regions in reading order, the primary slot, what yields when s
 
 Regions: thread messages, then composer. Primary: the composer. Yields: nothing — the conversation owns the column; the checklist and starters disappear once the thread has messages. Empty/error slot: the empty thread holds a centered mark, the composer, three starter chips, and the email connect banner; a failed turn is a plain message in the thread with one retry.
 
-### Paper list — Drive list
+### Paper — Page canvas
 
-Regions: band (title, Start a CV as primary, Start a letter and I already have a file as quiet secondaries), type filter (All / CV Resume / Letter / Uploaded, only when there are items), then the content slot. The content slot yields among: loading skeleton, first-run or cleared empty, filtered empty, error, CV gallery, letter chooser, or rows (name, type word, updated). Gallery and letter chooser replace the rows in that slot; they do not overlay and they are not a modal. Primary: Start a CV. Yields: the filter collapses into the band menu before the primary ever moves; row metadata wraps before names truncate. Empty/error: occupies the content slot under the same band; the one door is Start a CV.
+Regions: band (title **Paper** only), then a cool gray desk with one A4 as an object. No type filter. No primary in the band. No Row list. No nested sheet. Empty is a white hairline-dashed A4 on that desk, same proportion as the opened page, with no label; click opens a CV. A published Proof puts date and their words on the white A4 in the same type as `/p/:slug`. Primary: the page itself. Yields: the stage and page scroll; the band holds. Empty/error: dashed page, or error in the content slot with retry. Loading: the dashed A4 on the desk, not skeleton rows.
 
 ### Opened CV or letter — Opened document
 
@@ -129,7 +130,7 @@ Per-screen empty inventory:
 | Screen | Kind(s) it can show | The one door |
 |---|---|---|
 | Coach (empty thread) | first-run | mark, composer, starters |
-| Paper | first-run, cleared, filtered (by type) | Start a CV |
+| Paper | dashed A4 (no published Proof) | click the page |
 | Proof | first-run (teaches what counts), cleared | Log something — may open the dock with intent |
 | Search | first-run (no query), filtered (no results), error | run or widen the query |
 | Apply | first-run, cleared | go to Search |

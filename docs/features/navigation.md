@@ -26,7 +26,7 @@ Every signed-in screen is four layers — main, chrome (rail plus header bell), 
 4. History (collapsible, directly under Apply). The label stays even when there are no threads yet; threads appear here after the first send.
 5. Account at the bottom edge
 
-Only places are rows. CV / Resume and Letter are not rail rows; they are the type filter on `/paper`. Proof is not a rail row; it is opened from Paper, a Coach card, or a URL. `/proof` marks Paper.
+Only places are rows. CV / Resume and Letter are not rail rows. Proof is not a rail row; it is opened from Paper, a Coach card, or a URL. `/proof` marks Paper.
 
 Active state: ink weight 590 on the current place, same row style as the rest. Coach marks `/coach`. `/paper/$paperId` and `/proof` mark Paper. `/applications` marks Apply.
 

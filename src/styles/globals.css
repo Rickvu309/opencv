@@ -23,6 +23,7 @@
   --color-surface-1: #ffffff;
   --color-surface-2: #f6f6f6;
   --color-surface-3: #eeeeef;
+  --color-desk: #f0f2f5;
   --color-hairline: #e5e5e6;
   --color-scrim: rgb(0 0 0 / 0.4);
   --color-ink: #212226;
@@ -49,6 +50,7 @@
   --surface-1: #ffffff;
   --surface-2: #f6f6f6;
   --surface-3: #eeeeef;
+  --desk: #f0f2f5;
   --hairline: #e5e5e6;
   --scrim: rgb(0 0 0 / 0.4);
   --ink: #212226;
@@ -65,6 +67,7 @@
   --status-attention: #fc7840;
   --focus-ring: 0 0 0 3px rgb(0 0 0 / 0.25);
   --shadow-overlay: 0 4px 12px rgb(0 0 0 / 0.1);
+  --shadow-page: 0 8px 24px rgb(15 23 42 / 0.08), 0 1px 3px rgb(15 23 42 / 0.06);
   --size-touch: 44px;
   --size-rail: 16rem;
   --size-rail-min: 12rem;

@@ -7,6 +7,7 @@ colors:
   surface-1: "#ffffff"
   surface-2: "#f6f6f6"
   surface-3: "#eeeeef"
+  desk: "#f0f2f5"
   hairline: "#e5e5e6"
   ink: "#212226"
   ink-secondary: "#4b4f56"
