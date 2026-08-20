@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { DUMP_PLACEHOLDER } from "@/features/proof/model";
 import { Button } from "@/ui/button";
 import { Textarea } from "@/ui/textarea";
 import { Band } from "@/ui/band";
@@ -87,7 +88,7 @@ export function ProofEditorView({
           aria-label="Log"
           value={note}
           onChange={(e) => onNote(e.target.value)}
-          placeholder="A café shift counts. Write it like a text."
+          placeholder={DUMP_PLACEHOLDER}
           className="min-h-36 border-0 bg-transparent focus-visible:border-transparent focus-visible:shadow-none"
         />
         <div className="flex justify-end px-2 pb-2">
