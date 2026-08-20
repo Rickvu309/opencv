@@ -168,19 +168,42 @@ export function isTypedEducation(row: PaperContent["education"][number]) {
   return Boolean(row.school.trim() || row.line.trim());
 }
 
+export function isTypedSkill(skill: string) {
+  return Boolean(skill.trim());
+}
+
 export function openedCvPage(content: PaperContent) {
+  const experience = content.hidden.experience
+    ? []
+    : content.experience.filter(isTypedExperience);
+  const education = content.hidden.education
+    ? []
+    : content.education.filter(isTypedEducation);
+  const skills = content.hidden.skills ? [] : content.skills.filter(isTypedSkill);
   return {
     name: content.name.trim() || null,
     contact: content.contact.trim() || null,
-    showExperienceHeading:
-      !content.hidden.experience && content.experience.some(isTypedExperience),
-    experience: content.hidden.experience ? [] : content.experience,
-    showEducationHeading:
-      !content.hidden.education && content.education.some(isTypedEducation),
-    education: content.hidden.education ? [] : content.education,
-    showSkillsHeading: !content.hidden.skills && content.skills.some((skill) => skill.trim()),
-    skills: content.hidden.skills ? [] : content.skills,
+    showExperienceHeading: experience.length > 0,
+    experience,
+    showEducationHeading: education.length > 0,
+    education,
+    showSkillsHeading: skills.length > 0,
+    skills,
   };
+}
+
+export function openedCvActions(content: PaperContent) {
+  const page = openedCvPage(content);
+  const actions: string[] = [];
+  if (!content.hidden.experience) actions.push("Add a role");
+  if (!content.hidden.education) actions.push("Add a school");
+  if (!content.hidden.skills) actions.push("Add a skill");
+  if (page.experience.length) {
+    actions.push("Add a result", "Remove this role");
+  }
+  if (page.education.length) actions.push("Remove this school");
+  if (page.skills.length) actions.push("Remove this skill");
+  return actions;
 }
 
 export function keepPublishedProofWords(

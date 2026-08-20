@@ -34,6 +34,27 @@ export const Default: Story = {
   ),
 };
 
+export const LeftoverEmptyCv: Story = {
+  name: "Leftover emptyCv rows stay off",
+  render: () => {
+    const leftover = emptyCv();
+    leftover.experience = [{ id: "e1", org: "", role: "", dates: "", bullets: [""] }];
+    leftover.education = [{ id: "ed1", school: "", line: "" }];
+    leftover.skills = [""];
+    return (
+      <div className="bg-desk px-5 py-8">
+        <PaperPage
+          kind="cv"
+          content={leftover}
+          publishedLines={[{ date: "2026-08-20", words: SATURDAY_CLOSE }]}
+          onChange={() => undefined}
+          onCommit={() => undefined}
+        />
+      </div>
+    );
+  },
+};
+
 export const TypedRows: Story = {
   render: () => {
     const content = emptyCv();

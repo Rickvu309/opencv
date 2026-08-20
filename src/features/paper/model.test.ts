@@ -7,6 +7,7 @@ import {
   emptyCv,
   excerptEditRule,
   keepPublishedProofWords,
+  openedCvActions,
   openedCvPage,
   openedPaperEditRule,
   paperBlockPatchSchema,
@@ -163,6 +164,32 @@ describe("opened CV page", () => {
     assert.equal(page.showExperienceHeading, true);
     assert.equal(page.showEducationHeading, false);
     assert.equal(page.experience[0]?.bullets[0], SATURDAY_CLOSE);
+  });
+
+  it("keeps leftover emptyCv rows and their remove/result actions off", () => {
+    const leftover = emptyCv();
+    leftover.experience = [{ id: "e1", org: "", role: "", dates: "", bullets: [""] }];
+    leftover.education = [{ id: "ed1", school: "", line: "" }];
+    leftover.skills = [""];
+    const page = openedCvPage(leftover);
+    assert.deepEqual(page.experience, []);
+    assert.deepEqual(page.education, []);
+    assert.deepEqual(page.skills, []);
+    assert.equal(page.showExperienceHeading, false);
+    assert.deepEqual(openedCvActions(leftover), ["Add a role", "Add a school", "Add a skill"]);
+  });
+
+  it("offers remove and add-a-result only after a typed row", () => {
+    const content = emptyCv();
+    content.experience = [
+      { id: "e1", org: "Cafe", role: "Barista", dates: "", bullets: [SATURDAY_CLOSE] },
+    ];
+    const actions = openedCvActions(content);
+    assert.equal(actions.includes("Add a role"), true);
+    assert.equal(actions.includes("Add a result"), true);
+    assert.equal(actions.includes("Remove this role"), true);
+    assert.equal(actions.includes("Remove this school"), false);
+    assert.equal(actions.includes("Remove this skill"), false);
   });
 });
 

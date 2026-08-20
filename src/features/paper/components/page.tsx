@@ -1,12 +1,19 @@
 import {
   useEffect,
   useRef,
+  useState,
   type InputHTMLAttributes,
   type KeyboardEvent,
   type TextareaHTMLAttributes,
 } from "react";
 import type { PaperBlockKey, PaperContent, PublishedProofLine } from "@/features/paper/model";
-import { letterGhostsFor, openedCvPage } from "@/features/paper/model";
+import {
+  isTypedEducation,
+  isTypedExperience,
+  isTypedSkill,
+  letterGhostsFor,
+  openedCvPage,
+} from "@/features/paper/model";
 import { SelectionMenu } from "@/features/paper/components/selection";
 import { cn } from "@/lib/utils";
 
@@ -136,6 +143,11 @@ export function PaperPage({
   const focusRef = useRef<string | null>(null);
   const latest = useRef(content);
   latest.current = content;
+  const [drafts, setDrafts] = useState({
+    experience: [] as PaperContent["experience"],
+    education: [] as PaperContent["education"],
+    skills: [] as string[],
+  });
   const tight = content.density === "tight";
   const pageClass = cn(
     a4Class,
@@ -182,9 +194,9 @@ export function PaperPage({
   }
 
   const view = openedCvPage(content);
-  const experience = view.experience;
-  const education = view.education;
-  const skills = view.skills;
+  const experience = [...view.experience, ...drafts.experience];
+  const education = [...view.education, ...drafts.education];
+  const skills = [...view.skills.map((skill) => ({ skill, typed: true as const })), ...drafts.skills.map((skill) => ({ skill, typed: false as const }))];
 
   function enterOrBackspace(
     e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -203,6 +215,38 @@ export function PaperPage({
       e.preventDefault();
       opts.remove();
     }
+  }
+
+  function writeExperience(nextRow: PaperContent["experience"][number], commit = false) {
+    if (isTypedExperience(nextRow) || latest.current.experience.some((row) => row.id === nextRow.id)) {
+      const inContent = latest.current.experience.some((row) => row.id === nextRow.id);
+      const next = inContent
+        ? latest.current.experience.map((row) => (row.id === nextRow.id ? nextRow : row))
+        : [...latest.current.experience, nextRow];
+      setDrafts((d) => ({ ...d, experience: d.experience.filter((row) => row.id !== nextRow.id) }));
+      setBlock("experience", next, commit);
+      return;
+    }
+    setDrafts((d) => ({
+      ...d,
+      experience: d.experience.map((row) => (row.id === nextRow.id ? nextRow : row)),
+    }));
+  }
+
+  function writeEducation(nextRow: PaperContent["education"][number], commit = false) {
+    if (isTypedEducation(nextRow) || latest.current.education.some((row) => row.id === nextRow.id)) {
+      const inContent = latest.current.education.some((row) => row.id === nextRow.id);
+      const next = inContent
+        ? latest.current.education.map((row) => (row.id === nextRow.id ? nextRow : row))
+        : [...latest.current.education, nextRow];
+      setDrafts((d) => ({ ...d, education: d.education.filter((row) => row.id !== nextRow.id) }));
+      setBlock("education", next, commit);
+      return;
+    }
+    setDrafts((d) => ({
+      ...d,
+      education: d.education.map((row) => (row.id === nextRow.id ? nextRow : row)),
+    }));
   }
 
   return (
@@ -240,50 +284,32 @@ export function PaperPage({
           {view.showExperienceHeading ? (
             <h2 className="text-[13px] font-medium uppercase tracking-wide">Experience</h2>
           ) : null}
-          {experience.map((item, i) => (
+          {experience.map((item) => {
+            const typed = isTypedExperience(item);
+            return (
             <div key={item.id} className="mt-3">
               <GhostInput
                 value={item.role}
                 aria-label="Role"
-                onChange={(e) => {
-                  setBlock(
-                    "experience",
-                    latest.current.experience.map((row, idx) =>
-                      idx === i ? { ...row, role: e.target.value } : row,
-                    ),
-                  );
-                }}
+                onChange={(e) => writeExperience({ ...item, role: e.target.value })}
                 onBlur={() => onCommit("experience", latest.current.experience)}
               />
               <GhostInput
                 className="text-[14px]"
                 value={item.org}
                 aria-label="Organisation"
-                onChange={(e) => {
-                  setBlock(
-                    "experience",
-                    latest.current.experience.map((row, idx) =>
-                      idx === i ? { ...row, org: e.target.value } : row,
-                    ),
-                  );
-                }}
+                onChange={(e) => writeExperience({ ...item, org: e.target.value })}
                 onBlur={() => onCommit("experience", latest.current.experience)}
               />
               <GhostInput
                 className="text-[14px]"
                 value={item.dates}
                 aria-label="Dates"
-                onChange={(e) => {
-                  setBlock(
-                    "experience",
-                    latest.current.experience.map((row, idx) =>
-                      idx === i ? { ...row, dates: e.target.value } : row,
-                    ),
-                  );
-                }}
+                onChange={(e) => writeExperience({ ...item, dates: e.target.value })}
                 onBlur={() => onCommit("experience", latest.current.experience)}
               />
-              {item.bullets.map((bullet, bi) => {
+              {typed
+                ? item.bullets.map((bullet, bi) => {
                 const focusId = `${item.id}-b${bi}`;
                 return (
                   <div key={bi} className="mt-1">
@@ -292,19 +318,14 @@ export function PaperPage({
                       className="text-[14px]"
                       value={bullet}
                       aria-label="Result"
-                      onChange={(e) => {
-                        const next = latest.current.experience.map((row, idx) =>
-                          idx === i
-                            ? {
-                                ...row,
-                                bullets: row.bullets.map((b, bidx) =>
-                                  bidx === bi ? e.target.value : b,
-                                ),
-                              }
-                            : row,
-                        );
-                        setBlock("experience", next);
-                      }}
+                      onChange={(e) =>
+                        writeExperience({
+                          ...item,
+                          bullets: item.bullets.map((b, bidx) =>
+                            bidx === bi ? e.target.value : b,
+                          ),
+                        })
+                      }
                       onBlur={() => onCommit("experience", latest.current.experience)}
                       onKeyDown={(e) =>
                         enterOrBackspace(e, {
@@ -315,22 +336,16 @@ export function PaperPage({
                               "",
                               ...item.bullets.slice(bi + 1),
                             ];
-                            const next = latest.current.experience.map((row, idx) =>
-                              idx === i ? { ...row, bullets: nextBullets } : row,
-                            );
                             focusRef.current = `${item.id}-b${bi + 1}`;
-                            setBlock("experience", next, true);
+                            writeExperience({ ...item, bullets: nextBullets }, true);
                           },
                           remove:
                             item.bullets.length > 1
                               ? () => {
                                   const nextBullets = item.bullets.filter((_, idx) => idx !== bi);
-                                  const next = latest.current.experience.map((row, idx) =>
-                                    idx === i ? { ...row, bullets: nextBullets } : row,
-                                  );
                                   const prev = Math.max(0, bi - 1);
                                   focusRef.current = `${item.id}-b${prev}`;
-                                  setBlock("experience", next, true);
+                                  writeExperience({ ...item, bullets: nextBullets }, true);
                                 }
                               : undefined,
                         })
@@ -339,11 +354,10 @@ export function PaperPage({
                     {item.bullets.length > 1 ? (
                       <PageAction
                         onClick={() => {
-                          const nextBullets = item.bullets.filter((_, idx) => idx !== bi);
-                          const next = latest.current.experience.map((row, idx) =>
-                            idx === i ? { ...row, bullets: nextBullets } : row,
+                          writeExperience(
+                            { ...item, bullets: item.bullets.filter((_, idx) => idx !== bi) },
+                            true,
                           );
-                          setBlock("experience", next, true);
                         }}
                       >
                         Remove this result
@@ -351,35 +365,38 @@ export function PaperPage({
                     ) : null}
                   </div>
                 );
-              })}
-              <PageAction
-                onClick={() => {
-                  const next = latest.current.experience.map((row, idx) =>
-                    idx === i ? { ...row, bullets: [...row.bullets, ""] } : row,
-                  );
-                  const nextBullets = next[i]?.bullets ?? [];
-                  focusRef.current = `${item.id}-b${nextBullets.length - 1}`;
-                  setBlock("experience", next, true);
-                }}
-              >
-                Add a result
-              </PageAction>
-              <PageAction
-                onClick={() => {
-                  setBlock(
-                    "experience",
-                    latest.current.experience.filter((_, idx) => idx !== i),
-                    true,
-                  );
-                }}
-              >
-                Remove this role
-              </PageAction>
+              })
+                : null}
+              {typed ? (
+                <PageAction
+                  onClick={() => {
+                    const nextBullets = [...item.bullets, ""];
+                    focusRef.current = `${item.id}-b${nextBullets.length - 1}`;
+                    writeExperience({ ...item, bullets: nextBullets }, true);
+                  }}
+                >
+                  Add a result
+                </PageAction>
+              ) : null}
+              {typed ? (
+                <PageAction
+                  onClick={() => {
+                    setBlock(
+                      "experience",
+                      latest.current.experience.filter((row) => row.id !== item.id),
+                      true,
+                    );
+                  }}
+                >
+                  Remove this role
+                </PageAction>
+              ) : null}
             </div>
-          ))}
+            );
+          })}
           <PageAction
             onClick={() => {
-              setBlock("experience", [...latest.current.experience, blankRole()], true);
+              setDrafts((d) => ({ ...d, experience: [...d.experience, blankRole()] }));
             }}
           >
             Add a role
@@ -392,52 +409,43 @@ export function PaperPage({
           {view.showEducationHeading ? (
             <h2 className="text-[13px] font-medium uppercase tracking-wide">Education</h2>
           ) : null}
-          {education.map((item, i) => (
+          {education.map((item) => {
+            const typed = isTypedEducation(item);
+            return (
             <div key={item.id} className="mt-3">
               <GhostInput
                 value={item.school}
                 aria-label="School"
-                onChange={(e) => {
-                  setBlock(
-                    "education",
-                    latest.current.education.map((row, idx) =>
-                      idx === i ? { ...row, school: e.target.value } : row,
-                    ),
-                  );
-                }}
+                onChange={(e) => writeEducation({ ...item, school: e.target.value })}
                 onBlur={() => onCommit("education", latest.current.education)}
               />
               <GhostInput
                 className="text-[14px]"
                 value={item.line}
                 aria-label="Education"
-                onChange={(e) => {
-                  setBlock(
-                    "education",
-                    latest.current.education.map((row, idx) =>
-                      idx === i ? { ...row, line: e.target.value } : row,
-                    ),
-                  );
-                }}
+                onChange={(e) => writeEducation({ ...item, line: e.target.value })}
                 onBlur={() => onCommit("education", latest.current.education)}
               />
-              <PageAction
-                onClick={() => {
-                  setBlock(
-                    "education",
-                    latest.current.education.filter((_, idx) => idx !== i),
-                    true,
-                  );
-                }}
-              >
-                Remove this school
-              </PageAction>
+              {typed ? (
+                <PageAction
+                  onClick={() => {
+                    setBlock(
+                      "education",
+                      latest.current.education.filter((row) => row.id !== item.id),
+                      true,
+                    );
+                  }}
+                >
+                  Remove this school
+                </PageAction>
+              ) : null}
             </div>
-          ))}
+            );
+          })}
           <PageAction
-            onClick={() =>
-              setBlock("education", [...latest.current.education, blankSchool()], true)
-            }
+            onClick={() => {
+              setDrafts((d) => ({ ...d, education: [...d.education, blankSchool()] }));
+            }}
           >
             Add a school
           </PageAction>
@@ -449,57 +457,80 @@ export function PaperPage({
           {view.showSkillsHeading ? (
             <h2 className="text-[13px] font-medium uppercase tracking-wide">Skills</h2>
           ) : null}
-          {skills.map((skill, i) => {
+          {skills.map((row, i) => {
             const focusId = `skill-${i}`;
             return (
               <div key={i} className="mt-1">
                 <GhostInput
                   data-focus-id={focusId}
                   className="text-[14px]"
-                  value={skill}
+                  value={row.skill}
                   aria-label="Skill"
                   onChange={(e) => {
-                    setBlock(
-                      "skills",
-                      latest.current.skills.map((s, idx) => (idx === i ? e.target.value : s)),
-                    );
+                    const value = e.target.value;
+                    if (row.typed) {
+                      const typed = latest.current.skills.filter(isTypedSkill);
+                      const idx = typed.findIndex((s) => s === row.skill);
+                      setBlock(
+                        "skills",
+                        typed.map((s, sidx) => (sidx === idx ? value : s)),
+                      );
+                      return;
+                    }
+                    const draftIdx = i - view.skills.length;
+                    if (isTypedSkill(value)) {
+                      setBlock("skills", [...latest.current.skills.filter(isTypedSkill), value]);
+                      setDrafts((d) => ({
+                        ...d,
+                        skills: d.skills.filter((_, idx) => idx !== draftIdx),
+                      }));
+                      return;
+                    }
+                    setDrafts((d) => ({
+                      ...d,
+                      skills: d.skills.map((s, idx) => (idx === draftIdx ? value : s)),
+                    }));
                   }}
                   onBlur={() => onCommit("skills", latest.current.skills)}
                   onKeyDown={(e) =>
                     enterOrBackspace(e, {
-                      empty: !skill,
-                      add: () => {
-                        const next = [...skills.slice(0, i + 1), "", ...skills.slice(i + 1)];
-                        focusRef.current = `skill-${i + 1}`;
-                        setBlock("skills", next, true);
-                      },
-                      remove: () => {
-                        const next = skills.filter((_, idx) => idx !== i);
-                        focusRef.current = `skill-${Math.max(0, i - 1)}`;
-                        setBlock("skills", next, true);
-                      },
+                      empty: !row.skill,
+                      add: row.typed
+                        ? () => {
+                            setDrafts((d) => ({ ...d, skills: [...d.skills, ""] }));
+                          }
+                        : () => undefined,
+                      remove: row.typed
+                        ? () => {
+                            setBlock(
+                              "skills",
+                              latest.current.skills.filter((s) => s !== row.skill),
+                              true,
+                            );
+                          }
+                        : undefined,
                     })
                   }
                 />
-                <PageAction
-                  onClick={() => {
-                    setBlock(
-                      "skills",
-                      latest.current.skills.filter((_, idx) => idx !== i),
-                      true,
-                    );
-                  }}
-                >
-                  Remove this skill
-                </PageAction>
+                {row.typed ? (
+                  <PageAction
+                    onClick={() => {
+                      setBlock(
+                        "skills",
+                        latest.current.skills.filter((s) => s !== row.skill),
+                        true,
+                      );
+                    }}
+                  >
+                    Remove this skill
+                  </PageAction>
+                ) : null}
               </div>
             );
           })}
           <PageAction
             onClick={() => {
-              const next = [...latest.current.skills, ""];
-              focusRef.current = `skill-${next.length - 1}`;
-              setBlock("skills", next, true);
+              setDrafts((d) => ({ ...d, skills: [...d.skills, ""] }));
             }}
           >
             Add a skill
