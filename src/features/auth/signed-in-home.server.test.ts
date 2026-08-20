@@ -34,14 +34,41 @@ describe("loadSignedInHome", () => {
     });
   });
 
-  it("opens the list when proofs already exist and does not mint another", async (t) => {
+  it("reopens an empty proof without minting another", async (t) => {
     if (!testDatabaseUrl()) {
       t.skip("TEST_DATABASE_URL is not set");
       return;
     }
     await withTestSchema(async () => {
       const id = await userId();
-      await executeCommand("proof.create", { title: "Saturday close" }, { kind: "user", userId: id });
+      const created = await executeCommand<{ id: string }>(
+        "proof.create",
+        { title: "" },
+        { kind: "user", userId: id },
+      );
+      const dest = await loadSignedInHome(id, true);
+      assert.deepEqual(dest, { to: "/proof/$proofId", params: { proofId: created.result.id } });
+      assert.equal(await proofCount(id), 1);
+    });
+  });
+
+  it("opens the list when logs already exist and does not mint another", async (t) => {
+    if (!testDatabaseUrl()) {
+      t.skip("TEST_DATABASE_URL is not set");
+      return;
+    }
+    await withTestSchema(async () => {
+      const id = await userId();
+      const created = await executeCommand<{ id: string }>(
+        "proof.create",
+        { title: "" },
+        { kind: "user", userId: id },
+      );
+      await executeCommand(
+        "proof.log",
+        { proofId: created.result.id, body: "Saturday close." },
+        { kind: "user", userId: id },
+      );
       const dest = await loadSignedInHome(id, true);
       assert.deepEqual(dest, { to: "/proof" });
       assert.equal(await proofCount(id), 1);
@@ -57,6 +84,19 @@ describe("loadSignedInHome", () => {
       const id = await userId();
       const dest = await loadSignedInHome(id, false);
       assert.deepEqual(dest, { to: "/onboarding" });
+      assert.equal(await proofCount(id), 0);
+    });
+  });
+
+  it("does not mint from a read-only peek", async (t) => {
+    if (!testDatabaseUrl()) {
+      t.skip("TEST_DATABASE_URL is not set");
+      return;
+    }
+    await withTestSchema(async () => {
+      const id = await userId();
+      const dest = await loadSignedInHome(id, true, { mint: false });
+      assert.deepEqual(dest, { to: "/proof" });
       assert.equal(await proofCount(id), 0);
     });
   });

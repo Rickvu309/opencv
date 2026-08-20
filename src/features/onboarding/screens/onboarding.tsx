@@ -46,10 +46,14 @@ export function OnboardingScreen() {
           linkUrl: values.linkUrl,
         },
       });
-      const dest = await signedInHomeFn();
-      await navigate(dest);
     } catch {
       patch({ pending: false, saveError: "Couldn't save. Try again." });
+      return;
+    }
+    try {
+      await navigate(await signedInHomeFn());
+    } catch {
+      await navigate({ to: "/proof" });
     }
   }
 

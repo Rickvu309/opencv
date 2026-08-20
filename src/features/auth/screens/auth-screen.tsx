@@ -8,8 +8,11 @@ export function AuthScreen({ mode }: { mode: "sign-in" | "sign-up" }) {
     <AuthForm
       mode={mode}
       onSuccess={async () => {
-        const dest = await signedInHomeFn();
-        await navigate(dest);
+        try {
+          await navigate(await signedInHomeFn());
+        } catch {
+          await navigate({ to: "/proof" });
+        }
       }}
       onSubmit={async (creds) => {
         const result =

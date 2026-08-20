@@ -18,7 +18,7 @@ Three jobs woven together: capture enough to make the product useful (goal first
   3. What you have: one experience or project, one link if any (kind + URL).
   4. A short tour beat: the Coach operates the app with you, and you can undo anything it does.
 - Continue writes everything to the profile through profile commands and lands on the dump box if they have no proofs, or `/proof` if they already have logs. The wizard is unchanged.
-- After onboarding, the empty Coach is mark, composer, and three starters. The old activation checklist is not shown.
+- After onboarding, Coach stays in the rail. The old activation checklist is not shown.
 
 ## Data
 

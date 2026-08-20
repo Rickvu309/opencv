@@ -56,7 +56,7 @@ Infrequent, once-per-life, or off the rail. Same app, not in the core list. Thes
 |---|---|---|---|
 | Land | public | `/` | C4 |
 | Auth | public | `/sign-in`, `/sign-up` | C4 |
-| Onboarding | signed in, once | `/onboarding` | C4; completing it is a gate to Chat |
+| Onboarding | signed in, once | `/onboarding` | C4; completing it is a gate to dump |
 | Account: Profile | control | `/profile` | C1 (account control), C2, C4 |
 | Account: Settings | control | `/settings` | C1 (account control), C4 |
 | Public Proof | visitor | `/p/$slug` | C3, C4 |

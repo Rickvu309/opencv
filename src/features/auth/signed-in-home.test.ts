@@ -4,16 +4,25 @@ import { afterAuthHome, resolveSignedInHome } from "@/features/auth/signed-in-ho
 
 describe("afterAuthHome", () => {
   it("sends incomplete onboarding to the wizard", () => {
-    assert.equal(afterAuthHome({ onboardingCompleted: false, proofIds: [] }), "onboarding");
+    assert.equal(afterAuthHome({ onboardingCompleted: false, proofs: [] }), "onboarding");
   });
 
-  it("sends a signed-in empty account to dump, not Coach", () => {
-    assert.equal(afterAuthHome({ onboardingCompleted: true, proofIds: [] }), "dump");
-    assert.notEqual(afterAuthHome({ onboardingCompleted: true, proofIds: [] }), "coach");
+  it("sends a signed-in empty account to dump", () => {
+    assert.equal(afterAuthHome({ onboardingCompleted: true, proofs: [] }), "dump");
   });
 
-  it("sends an account with proofs to the list", () => {
-    assert.equal(afterAuthHome({ onboardingCompleted: true, proofIds: ["p1"] }), "list");
+  it("sends an empty untitled proof to dump, not the list", () => {
+    assert.equal(
+      afterAuthHome({ onboardingCompleted: true, proofs: [{ id: "p1", hasLog: false }] }),
+      "dump",
+    );
+  });
+
+  it("sends an account with logs to the list", () => {
+    assert.equal(
+      afterAuthHome({ onboardingCompleted: true, proofs: [{ id: "p1", hasLog: true }] }),
+      "list",
+    );
   });
 });
 
@@ -22,7 +31,7 @@ describe("resolveSignedInHome", () => {
     let created = 0;
     const dest = await resolveSignedInHome({
       onboardingCompleted: false,
-      proofIds: [],
+      proofs: [],
       createDump: async () => {
         created += 1;
         return "should-not-create";
@@ -36,7 +45,7 @@ describe("resolveSignedInHome", () => {
     let created = 0;
     const dest = await resolveSignedInHome({
       onboardingCompleted: true,
-      proofIds: [],
+      proofs: [],
       createDump: async () => {
         created += 1;
         return "proof_dump";
@@ -46,17 +55,39 @@ describe("resolveSignedInHome", () => {
     assert.deepEqual(dest, { to: "/proof/$proofId", params: { proofId: "proof_dump" } });
   });
 
-  it("opens the proof list when logs already exist", async () => {
+  it("reopens an existing empty proof without minting another", async () => {
     let created = 0;
     const dest = await resolveSignedInHome({
       onboardingCompleted: true,
-      proofIds: ["p1"],
+      proofs: [{ id: "already", hasLog: false }],
       createDump: async () => {
         created += 1;
         return "extra";
       },
     });
     assert.equal(created, 0);
+    assert.deepEqual(dest, { to: "/proof/$proofId", params: { proofId: "already" } });
+  });
+
+  it("opens the proof list when logs already exist", async () => {
+    let created = 0;
+    const dest = await resolveSignedInHome({
+      onboardingCompleted: true,
+      proofs: [{ id: "p1", hasLog: true }],
+      createDump: async () => {
+        created += 1;
+        return "extra";
+      },
+    });
+    assert.equal(created, 0);
+    assert.deepEqual(dest, { to: "/proof" });
+  });
+
+  it("falls back to the list when dump cannot be minted", async () => {
+    const dest = await resolveSignedInHome({
+      onboardingCompleted: true,
+      proofs: [],
+    });
     assert.deepEqual(dest, { to: "/proof" });
   });
 });
