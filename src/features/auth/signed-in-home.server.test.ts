@@ -42,7 +42,7 @@ describe("loadAfterSignInHome", () => {
     });
   });
 
-  it("opens the list only when a proof has a log", async (t) => {
+  it("opens Paper when a proof has a real log", async (t) => {
     if (!testDatabaseUrl()) {
       t.skip("TEST_DATABASE_URL is not set");
       return;
@@ -60,7 +60,8 @@ describe("loadAfterSignInHome", () => {
         { kind: "user", userId: id },
       );
       const dest = await loadAfterSignInHome(id);
-      assert.deepEqual(dest, { to: "/proof" });
+      assert.deepEqual(dest, { to: "/paper" });
+      assert.notEqual(dest.to, "/proof");
     });
   });
 });

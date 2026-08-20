@@ -33,7 +33,7 @@ describe("afterSignInHome", () => {
     assert.deepEqual(dest, { to: "/proof/$proofId", params: { proofId: "already" } });
   });
 
-  it("opens the proof list only when a proof has a log", async () => {
+  it("opens Paper when a proof has a real log", async () => {
     let created = 0;
     const dest = await afterSignInHome({
       proofs: [{ id: "p1", hasLog: true }],
@@ -43,7 +43,8 @@ describe("afterSignInHome", () => {
       },
     });
     assert.equal(created, 0);
-    assert.deepEqual(dest, { to: "/proof" });
+    assert.deepEqual(dest, { to: "/paper" });
+    assert.notEqual(dest.to, "/proof");
   });
 });
 
