@@ -8,7 +8,7 @@
 
 ## Concept
 
-Three jobs woven together: capture enough to make the product useful (goal first, then starting facts), teach the app by having the user perform real setup steps, and orient with a short skippable tour (what the Coach does, where materials live, how openings are found). Every answer pays back visibly — the profile fills, a readiness signal moves — so setup feels worth it rather than like a form. It ends in the Coach, primed for the first win.
+Three jobs woven together: capture enough to make the product useful (goal first, then starting facts), teach the app by having the user perform real setup steps, and orient with a short skippable tour (what the Coach does, where materials live, how openings are found). Every answer pays back visibly — the profile fills, a readiness signal moves — so setup feels worth it rather than like a form. Skip and finish land on dump if they have no proofs.
 
 ## Screens
 
@@ -33,7 +33,7 @@ No tables of its own. Writes through `profile.*` commands; `users.onboarding_com
 
 ## Empty-state stance
 
-Onboarding is the reason other screens are never truly empty: the profile is seeded, the Coach has starters. A user who skipped everything still lands in a Coach that knows what to ask first.
+Onboarding is the reason other screens are never truly empty: the profile is seeded. A user who skipped everything lands on the dump box.
 
 ## Out of scope
 
