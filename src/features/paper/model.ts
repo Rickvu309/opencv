@@ -152,11 +152,86 @@ export function paperCanvas(input: {
 }
 
 export function emptyCv(): PaperContent {
-  return paperContentSchema.parse({
-    experience: [{ id: "e1", org: "", role: "", dates: "", bullets: [""] }],
-    education: [{ id: "ed1", school: "", line: "" }],
-    skills: [""],
-  });
+  return paperContentSchema.parse({});
+}
+
+export function isTypedExperience(row: PaperContent["experience"][number]) {
+  return Boolean(
+    row.role.trim() ||
+      row.org.trim() ||
+      row.dates.trim() ||
+      row.bullets.some((bullet) => bullet.trim()),
+  );
+}
+
+export function isTypedEducation(row: PaperContent["education"][number]) {
+  return Boolean(row.school.trim() || row.line.trim());
+}
+
+export function isTypedSkill(skill: string) {
+  return Boolean(skill.trim());
+}
+
+export function openedCvPage(content: PaperContent) {
+  const experience = content.hidden.experience
+    ? []
+    : content.experience.filter(isTypedExperience);
+  const education = content.hidden.education
+    ? []
+    : content.education.filter(isTypedEducation);
+  const skills = content.hidden.skills ? [] : content.skills.filter(isTypedSkill);
+  return {
+    name: content.name.trim() || null,
+    contact: content.contact.trim() || null,
+    showExperienceHeading: experience.length > 0,
+    experience,
+    showEducationHeading: education.length > 0,
+    education,
+    showSkillsHeading: skills.length > 0,
+    skills,
+  };
+}
+
+export function openedCvActions(content: PaperContent) {
+  const page = openedCvPage(content);
+  const actions: string[] = [];
+  if (!content.hidden.experience) actions.push("Add a role");
+  if (!content.hidden.education) actions.push("Add a school");
+  if (!content.hidden.skills) actions.push("Add a skill");
+  if (page.experience.length) {
+    actions.push("Add a result", "Remove this role");
+  }
+  if (page.education.length) actions.push("Remove this school");
+  if (page.skills.length) actions.push("Remove this skill");
+  return actions;
+}
+
+export function keepPublishedProofWords(
+  bullet: string,
+  published: PublishedProofLine[],
+): string | null {
+  const match = published.find((line) => line.words.trim() === bullet.trim());
+  return match ? match.words : null;
+}
+
+export function openedPaperEditRule(published: PublishedProofLine[]) {
+  const words = published.map((line) => line.words).filter((line) => line.trim());
+  const base =
+    "When an opened paper snapshot is present, edit that paper in place with paper.updateBlock or paper.updateSection. Pass exactly one content key to paper.updateBlock. Duplicate only when they ask to tailor. Do not invent numbers. Do not rewrite the whole document.";
+  if (!words.length) return base;
+  return `${base} Published Proof lines on this page are read-only. They are already the same words as /p/:slug: ${JSON.stringify(words)}. Do not rewrite, STAR, ghostwrite, or invent a number for those lines. Do not call paper.sharpenLine, paper.updateBlock, or paper.addProofLine on them. Ask Coach cannot ghostwrite a published Proof line.`;
+}
+
+export function excerptEditRule(
+  excerpt: { text: string; label?: string },
+  published: PublishedProofLine[],
+) {
+  const where = excerpt.label ? ` (${excerpt.label})` : "";
+  const base = `User highlighted on this page${where}: ${excerpt.text}\nThat is the line they mean.`;
+  if (keepPublishedProofWords(excerpt.text, published)) {
+    return `${base}\nThat excerpt is a published Proof line. Leave those words as they are. Do not rewrite, STAR, or invent a number.`;
+  }
+  return base;
 }
 
 export function emptyLetter(situation: string): PaperContent {

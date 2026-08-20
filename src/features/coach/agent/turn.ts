@@ -5,8 +5,8 @@ import { agentCommands } from "@/core/commands/define";
 import { provider, roleModels, writeTrace, aiAvailable, type ModelRole } from "@/core/ai/gateway";
 import { checkInput } from "@/core/ai/guardrails";
 import { loadProfile } from "@/features/profile/load.server";
-import { loadPaper } from "@/features/paper/load.server";
-import { paperIdFromScreen } from "@/features/paper/model";
+import { loadPaper, loadPublishedProofLines } from "@/features/paper/load.server";
+import { excerptEditRule, openedPaperEditRule, paperIdFromScreen } from "@/features/paper/model";
 import { sharpenBullet } from "@/features/paper/ai.server";
 import { withClient } from "@/core/db/client.server";
 import { newId } from "@/core/ids";
@@ -51,6 +51,7 @@ export async function coachTurn(opts: {
   const profile = await loadProfile(opts.userId);
   const openedPaperId = paperIdFromScreen(opts.screen ?? "");
   const openedPaper = openedPaperId ? await loadPaper(opts.userId, openedPaperId) : null;
+  const publishedLines = openedPaperId ? await loadPublishedProofLines(opts.userId) : [];
   await insertMessage(opts.conversationId, "user", [{ type: "text", text: opts.text }]);
   const history = (
     await withClient((c) =>
@@ -87,7 +88,7 @@ export async function coachTurn(opts: {
       "paper_sharpenLine",
       tool({
         description:
-          "Rewrite one CV bullet as a result line. Returns the rewritten text. Then call paper.updateBlock to write it onto the page. Never invent a number.",
+          "Rewrite one CV bullet as a result line. Returns the rewritten text. Then call paper.updateBlock to write it onto the page. Never invent a number. Never rewrite a published Proof line — return those words unchanged.",
         inputSchema: z.object({ bullet: z.string() }),
         execute: async ({ bullet }: { bullet: string }) => {
           const line = await sharpenBullet(opts.userId, bullet);
@@ -110,10 +111,10 @@ export async function coachTurn(opts: {
   const role: ModelRole =
     opts.role === "cheap" || opts.role === "drafting" ? opts.role : "chat";
   const openedRule = openedPaper
-    ? `\nOpened paper: ${JSON.stringify(openedPaper)}\nWhen an opened paper snapshot is present, edit that paper in place with paper.updateBlock, paper.updateSection, or paper.addProofLine. Pass exactly one content key to paper.updateBlock. Duplicate only when they ask to tailor. Do not invent numbers. Do not rewrite the whole document.`
+    ? `\nOpened paper: ${JSON.stringify(openedPaper)}\n${openedPaperEditRule(publishedLines)}`
     : "";
   const excerptRule = opts.excerpt?.text
-    ? `\nUser highlighted on this page${opts.excerpt.label ? ` (${opts.excerpt.label})` : ""}: ${opts.excerpt.text}\nThat is the line they mean.`
+    ? `\n${excerptEditRule(opts.excerpt, publishedLines)}`
     : "";
   const result = streamText({
     model: p.chatModel(roleModels[role]),

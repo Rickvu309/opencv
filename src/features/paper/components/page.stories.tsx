@@ -2,6 +2,9 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { emptyCv } from "@/features/paper/model";
 import { PaperPage } from "@/features/paper/components/page";
 
+const SATURDAY_CLOSE =
+  "Saturday close. We ran out of oat milk and I stayed until the last table left.";
+
 const meta: Meta = {
   title: "Screens/Paper/Page",
   tags: ["autodocs"],
@@ -12,6 +15,7 @@ export default meta;
 type Story = StoryObj;
 
 export const Default: Story = {
+  name: "Café-shift line only",
   render: () => (
     <div className="bg-desk px-5 py-8">
       <PaperPage
@@ -20,8 +24,7 @@ export const Default: Story = {
         publishedLines={[
           {
             date: "2026-08-20",
-            words:
-              "Saturday close. We ran out of oat milk and I stayed until the last table left.",
+            words: SATURDAY_CLOSE,
           },
         ]}
         onChange={() => undefined}
@@ -29,4 +32,47 @@ export const Default: Story = {
       />
     </div>
   ),
+};
+
+export const LeftoverEmptyCv: Story = {
+  name: "Leftover emptyCv rows stay off",
+  render: () => {
+    const leftover = emptyCv();
+    leftover.experience = [{ id: "e1", org: "", role: "", dates: "", bullets: [""] }];
+    leftover.education = [{ id: "ed1", school: "", line: "" }];
+    leftover.skills = [""];
+    return (
+      <div className="bg-desk px-5 py-8">
+        <PaperPage
+          kind="cv"
+          content={leftover}
+          publishedLines={[{ date: "2026-08-20", words: SATURDAY_CLOSE }]}
+          onChange={() => undefined}
+          onCommit={() => undefined}
+        />
+      </div>
+    );
+  },
+};
+
+export const TypedRows: Story = {
+  render: () => {
+    const content = emptyCv();
+    content.name = "Linh";
+    content.contact = "Da Nang";
+    content.experience = [
+      { id: "e1", org: "Cafe", role: "Barista", dates: "2025", bullets: [SATURDAY_CLOSE] },
+    ];
+    return (
+      <div className="bg-desk px-5 py-8">
+        <PaperPage
+          kind="cv"
+          content={content}
+          publishedLines={[{ date: "2026-08-20", words: SATURDAY_CLOSE }]}
+          onChange={() => undefined}
+          onCommit={() => undefined}
+        />
+      </div>
+    );
+  },
 };
