@@ -59,7 +59,7 @@ Regions: thread messages, then composer. Primary: the composer. Yields: nothing 
 
 ### Paper — Page canvas
 
-Regions: band (title **Paper** only), then a muted stage with one A4. No type filter. No primary in the band. Empty is a hairline-dashed A4 with no label; click opens a CV. A published Proof puts date and their words on the white A4. Primary: the page itself. Yields: the stage and page scroll; the band holds. Empty/error: dashed page, or error in the content slot with retry.
+Regions: band (title **Paper** only), then a muted stage with one A4. No type filter. No primary in the band. No Row list. No nested sheet. Empty is a hairline-dashed A4, same proportion as the opened page, with no label; click opens a CV. A published Proof puts date and their words on the white A4 in the same type as `/p/:slug`. Primary: the page itself. Yields: the stage and page scroll; the band holds. Empty/error: dashed page, or error in the content slot with retry. Loading: the dashed A4, not skeleton rows.
 
 ### Opened CV or letter — Opened document
 
