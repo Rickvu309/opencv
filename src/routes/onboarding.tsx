@@ -6,7 +6,7 @@ export const Route = createFileRoute("/onboarding")({
   beforeLoad: async () => {
     const user = await meFn();
     if (!user) throw redirect({ to: "/sign-in" });
-    if (user.onboardingCompletedAt) throw redirect({ to: "/proof" });
+    if (user.onboardingCompletedAt) throw redirect({ to: "/coach" });
   },
   component: OnboardingScreen,
 });

@@ -74,8 +74,7 @@ The UI has the same destinations as links, so the agent cannot go somewhere the 
 | Dock closed | A compact control to reopen; does not cover the artifact's primary action |
 | Dock open | Same conversation as `/coach`; composer usable; artifact still operable |
 | Drawer open | Same items as the desktop rail; focus trap; Esc and the scrim close it |
-| Onboarding | No rail. Completing it lands on the dump box if they have no proofs, otherwise `/proof` |
-| Sign-in (onboarding done) | Zero proofs open the dump editor; otherwise `/proof` |
+| Onboarding | No rail. Completing it lands on `/coach` |
 | Unsigned hitting a signed-in URL | Redirect to `/sign-in` |
 | Onboarding incomplete | Redirect to `/onboarding` except that route itself |
 | Missing or foreign id | Honest not-found, one next step (back to the list). Never a blank screen |

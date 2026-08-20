@@ -49,13 +49,6 @@ export const signInFn = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
-export const signedInHomeFn = createServerFn({ method: "POST" }).handler(async () => {
-  const { requireUser } = await import("@/core/auth/session");
-  const { loadSignedInHome } = await import("@/features/auth/signed-in-home.server");
-  const user = await requireUser();
-  return loadSignedInHome(user.id, Boolean(user.onboardingCompletedAt));
-});
-
 export const signOutFn = createServerFn({ method: "POST" }).handler(async () => {
   const store = await import("@/core/auth/store");
   const session = await import("@/core/auth/session");

@@ -38,7 +38,7 @@ flowchart TB
 | Search | place under Opportunities | `/search` | C1, C2, C3, C4 |
 | Apply | place under Opportunities | `/applications` | C1, C2, C3, C4 |
 
-- **Coach** (`/coach`): home in the rail. A place row, New conversation, and History (the thread list). Signing in does not land here: empty accounts open the dump box; accounts with logs open `/proof`. No dock on this page; the page is the conversation. Thread history lives only in the rail, not a second list on the page.
+- **Coach** (`/coach`): home. A place row in the rail, New conversation, and History (the thread list). Signing in lands here. No dock on this page; the page is the conversation. Thread history lives only in the rail, not a second list on the page.
 - **Prepare** (label only): things you make and say.
   - **Paper** (`/paper`): **CV / Resume**, **Letter**. Proof still has `/proof` URLs and its own domain ([ADR 0005](adr/0005-proof-own-domain.md)); it is not a paper type and it is not a rail row. Opened from Paper, a Coach card, or a URL. `/proof` marks Paper.
   - **Pitch** (`/pitch`): bio, intro, answers. What they share.
@@ -56,7 +56,7 @@ Infrequent, once-per-life, or off the rail. Same app, not in the core list. Thes
 |---|---|---|---|
 | Land | public | `/` | C4 |
 | Auth | public | `/sign-in`, `/sign-up` | C4 |
-| Onboarding | signed in, once | `/onboarding` | C4; completing it is a gate to dump |
+| Onboarding | signed in, once | `/onboarding` | C4; completing it is a gate to Chat |
 | Account: Profile | control | `/profile` | C1 (account control), C2, C4 |
 | Account: Settings | control | `/settings` | C1 (account control), C4 |
 | Public Proof | visitor | `/p/$slug` | C3, C4 |
@@ -64,7 +64,7 @@ Infrequent, once-per-life, or off the rail. Same app, not in the core list. Thes
 
 - **Land** (`/`): one promise, start now, waitlist. No rail.
 - **Auth** (`/sign-up`, `/sign-in`, sign out). No rail until signed in. Sign out is on Account.
-- **Onboarding** (`/onboarding`): 3–5 skippable steps, no rail, ends on the dump box (or `/proof` if logs already exist). Returning users never see it.
+- **Onboarding** (`/onboarding`): 3–5 skippable steps, no rail, ends on Chat. Returning users never see it.
 - **Account**: Profile and Settings from the account control, not a core-rail peer.
 - **Public share** (`/p/$slug`, `/u/$handle`): visitor. No rail, no dock.
 - **Coach cards** open core places via C2, not a new destination. The rail still marks the parent (Prepare / Paper for `/proof/$proofId`).
@@ -73,7 +73,7 @@ Infrequent, once-per-life, or off the rail. Same app, not in the core list. Thes
 
 Places are one axis. The other axis is the **channel** that moves you between them. A channel names movement **between places only**: steps inside a screen (a wizard step, picking a template, exporting, publishing) are not navigation and carry no channel. A new cross-feature hand-off must be added to the C3 table so this stays the single inventory.
 
-There is a fifth kind of movement that is not a channel: **gates**. Unsigned to sign-in, onboarding incomplete to `/onboarding`, sign-in and onboarding completion landing on dump (zero proofs) or `/proof` (logs already exist) — the app moves you without your asking. Gates are listed under care, not here; in journey diagrams they are labelled `gate`.
+There is a fifth kind of movement that is not a channel: **gates**. Unsigned to sign-in, onboarding incomplete to `/onboarding`, sign-in and onboarding completion landing on `/coach` — the app moves you without your asking. Gates are listed under care, not here; in journey diagrams they are labelled `gate`.
 
 ```mermaid
 flowchart LR
@@ -134,7 +134,7 @@ Not places. Rules that break the product if they are vague. The shell details li
 - **Back.** Opened CV, letter, or Proof returns to its list, not to Chat.
 - **Dock.** Travels on every core place except Chat, and on Account. Must not cover the artifact's primary action. Offline Coach is honest in the dock.
 - **Mobile.** Same core and edge logic in a drawer. No bottom tabs. Coach on artifact screens is a sheet.
-- **Gates.** Unsigned to sign-in. Onboarding incomplete to `/onboarding`. Sign-in and onboarding completion land on the dump box when they have no proofs, or `/proof` when they already have logs. Public URLs stay public. Gates are the app moving you, not a channel.
+- **Gates.** Unsigned to sign-in. Onboarding incomplete to `/onboarding`. Sign-in and onboarding completion land on `/coach`. Public URLs stay public. Gates are the app moving you, not a channel.
 - **Empty and failure.** Every empty screen states what this place is for, in one sentence, and offers exactly one primary next step. Honesty is a feature: offline Coach, a hung turn, an empty reply, a failed export — each is shown plainly with what happened and one next step. No silent failures, no fake progress. The law (five kinds, anatomy, per-screen inventory) is [layout.md](design-system/layout.md); exact copy per place in [features/](features/), in the product voice ([copy.md](copy.md)).
 - **Notifications.** Bell on the signed-in header, not a rail item.
 - **Empty Coach.** Mark, composer, three starters. No checklist on the empty thread.
@@ -147,17 +147,18 @@ Each journey maps onto the places. An arrow carries a channel (C1–C4) only whe
 
 ### Flow 1: first run
 
-Edge (land, auth, onboarding) to the dump box. Gates carry the user through; the first screen after the wizard is dump when they have nothing logged.
+Edge (land, auth, onboarding) to core Chat. Gates carry the user through; C2 delivers the first win.
 
 ```mermaid
 flowchart LR
   Landing["/  one promise"] -->|"C3"| SignUp["/sign-up"]
   SignUp -->|"gate"| Goal["Onboarding: goal first, 'not sure yet' is valid"]
   Goal --> Facts["A few facts, visible payback"]
-  Facts -->|"gate"| Dump["/proof/$id dump box"]
+  Facts -->|"gate"| Coach["/coach with starter prompts"]
+  Coach -->|"C2"| Win["First win: Coach builds an artifact, with undo"]
 ```
 
-Onboarding is 3–5 short steps, always skippable, and pays back visibly as answers land (the profile fills, a readiness signal moves). It seeds the profile; returning users never see it again. An empty account's first signed-in screen after the wizard is the dump box. Coach stays in the rail.
+Onboarding is 3–5 short steps, always skippable, and pays back visibly as answers land (the profile fills, a readiness signal moves). It seeds the profile; returning users never see it again. The first Coach session must produce one real artifact — usually a first CV from the profile via C3 Profile to Paper — or the differentiator never lands.
 
 ### Flow 2: deadline night
 
@@ -165,8 +166,8 @@ Core Prepare, Paper (CV / Resume or Letter). Enter by C1 or C2.
 
 ```mermaid
 flowchart LR
-  In["/sign-in"] -->|"gate"| Home["dump or /proof"]
-  Home -->|"C1"| List["/paper"]
+  In["/sign-in"] -->|"gate"| Chat["/coach"]
+  Chat -->|"C1"| List["/paper"]
   List --> Gallery["Template gallery: pick the situation"]
   Gallery --> Page["Edit on the A4 page"]
   Page --> Export["Export PDF"]
