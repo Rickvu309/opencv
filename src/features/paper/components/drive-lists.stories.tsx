@@ -1,12 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Button } from "@/ui/button";
 import { Band } from "@/ui/band";
+import { PageCanvas } from "@/ui/page-canvas";
 import { GroupHeader, Row, RowList } from "@/ui/rows";
 import { EmptyState } from "@/ui/empty-state";
 import { EndOfList } from "@/ui/card";
 import { Chip } from "@/ui/chip";
-import { emptyCv } from "@/features/paper/model";
-import { DashedA4, PaperCanvasPage } from "@/features/paper/components/page";
+import { ProofLines } from "@/features/paper/components/page";
 
 const meta: Meta = {
   title: "Screens/Paper",
@@ -21,8 +21,8 @@ export const PaperEmpty: Story = {
   render: () => (
     <div>
       <Band title="Paper" />
-      <div className="-mx-5 bg-surface-2 px-5 py-8">
-        <DashedA4 onOpen={() => undefined} />
+      <div className="-mx-5">
+        <PageCanvas empty label="Open a CV" onOpen={() => undefined} />
       </div>
     </div>
   ),
@@ -33,18 +33,18 @@ export const PaperWithProof: Story = {
   render: () => (
     <div>
       <Band title="Paper" />
-      <div className="-mx-5 bg-surface-2 px-5 py-8">
-        <PaperCanvasPage
-          content={emptyCv()}
-          lines={[
-            {
-              date: "2026-08-20",
-              words:
-                "Saturday close. We ran out of oat milk and I stayed until the last table left.",
-            },
-          ]}
-          onOpen={() => undefined}
-        />
+      <div className="-mx-5">
+        <PageCanvas label="Open this CV" onOpen={() => undefined}>
+          <ProofLines
+            lines={[
+              {
+                date: "2026-08-20",
+                words:
+                  "Saturday close. We ran out of oat milk and I stayed until the last table left.",
+              },
+            ]}
+          />
+        </PageCanvas>
       </div>
     </div>
   ),

@@ -100,22 +100,7 @@ function formatProofDate(value: string) {
   return date.toLocaleDateString();
 }
 
-export function DashedA4({ onOpen }: { onOpen: () => void }) {
-  return (
-    <button
-      type="button"
-      aria-label="Open a CV"
-      data-paper-page="dashed"
-      onClick={onOpen}
-      className={cn(
-        a4Class,
-        "a4-dashed appearance-none cursor-pointer p-0 focus-visible:shadow-[var(--focus-ring)]",
-      )}
-    />
-  );
-}
-
-function ProofLines({
+export function ProofLines({
   lines,
   className,
 }: {
@@ -134,38 +119,6 @@ function ProofLines({
         </div>
       ))}
     </div>
-  );
-}
-
-export function PaperCanvasPage({
-  content,
-  lines,
-  onOpen,
-}: {
-  content: PaperContent;
-  lines: PublishedProofLine[];
-  onOpen: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      aria-label="Open this CV"
-      data-paper-page="cv"
-      onClick={onOpen}
-      className={cn(
-        a4Class,
-        "appearance-none cursor-pointer px-12 py-12 text-left focus-visible:shadow-[var(--focus-ring)]",
-      )}
-    >
-      {content.name ? (
-        <p className="text-[22px] font-medium leading-[1.3]">{content.name}</p>
-      ) : null}
-      {content.contact ? <p className="mt-1 text-[14px]">{content.contact}</p> : null}
-      <ProofLines
-        lines={lines}
-        className={content.name || content.contact ? "mt-8" : undefined}
-      />
-    </button>
   );
 }
 

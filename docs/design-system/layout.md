@@ -47,7 +47,7 @@ Ten types. Every URL in [flows.md](../flows.md) maps to exactly one. A new scree
 7. **Auth card** — `/sign-in`, `/sign-up`. Centered `--surface-1` card: form column, then a `--surface-2` mark panel from `md`. Heading, the fields, one primary, a text link to the other mode.
 8. **Public canvas** — `/`, `/p/$slug`, `/u/$handle`. No rail, no dock, no bell. Landing is a sticky public nav, a centered hero with the product in it, then how it works. On a Proof page and a personal page the work is the page; OpenPath chrome is at most a quiet footer.
 9. **Overlay** — dock, drawer, bell popover, confirm dialog. Focus trap, Esc and scrim close, focus restores to the opener. An overlay is never a place: it has no URL and the screen behind it stays live in the map.
-10. **Page canvas** — `/paper`. Band title only. Muted stage, one A4. Empty is a hairline-dashed page with no label; a published Proof is already a line on the white A4. Click opens `/paper/$paperId`.
+10. **Page canvas** — `/paper`. Band title only. Cool gray desk (`--desk`), one white A4 as an object. Empty is a hairline-dashed sheet on that desk, not a transparent ghost. A published Proof is already a line on the white A4. Click opens `/paper/$paperId`.
 
 ## Per-screen instances
 
@@ -59,7 +59,7 @@ Regions: thread messages, then composer. Primary: the composer. Yields: nothing 
 
 ### Paper — Page canvas
 
-Regions: band (title **Paper** only), then a muted stage with one A4. No type filter. No primary in the band. No Row list. No nested sheet. Empty is a hairline-dashed A4, same proportion as the opened page, with no label; click opens a CV. A published Proof puts date and their words on the white A4 in the same type as `/p/:slug`. Primary: the page itself. Yields: the stage and page scroll; the band holds. Empty/error: dashed page, or error in the content slot with retry. Loading: the dashed A4, not skeleton rows.
+Regions: band (title **Paper** only), then a cool gray desk with one A4 as an object. No type filter. No primary in the band. No Row list. No nested sheet. Empty is a white hairline-dashed A4 on that desk, same proportion as the opened page, with no label; click opens a CV. A published Proof puts date and their words on the white A4 in the same type as `/p/:slug`. Primary: the page itself. Yields: the stage and page scroll; the band holds. Empty/error: dashed page, or error in the content slot with retry. Loading: the dashed A4 on the desk, not skeleton rows.
 
 ### Opened CV or letter — Opened document
 

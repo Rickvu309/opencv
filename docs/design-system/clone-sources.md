@@ -69,6 +69,10 @@ Copy anatomy, not the runtime:
 
 Keep `conversation.*`, the command bus, and the dock.
 
+## Page canvas
+
+`/paper` stage steals the [TopCV](https://www.topcv.vn/) template-preview desk: cool gray, one white A4 as an object, soft offset shadow, chrome beside the page never on it. Do not steal their sidebar, green, photo, template grid, name-as-hero, section heads, or bullets. Empty is our dashed white sheet on that desk, not a transparent ghost. Resume.io form-beside-the-page and scores stay killed.
+
 ## Beautiful UI
 
 | Their primitive | Our surface |

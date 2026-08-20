@@ -15,6 +15,7 @@ const surfaces: [string, string][] = [
   ["--surface-1", "Panel, cards, inputs, menus"],
   ["--surface-2", "Hover fill, group headers, skeletons"],
   ["--surface-3", "Pressed fill, selected rows"],
+  ["--desk", "Page canvas stage — cool gray desk under the A4"],
   ["--hairline", "1px borders"],
 ];
 

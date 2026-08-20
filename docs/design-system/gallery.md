@@ -16,7 +16,7 @@ Seven chapters, in this order. A new story picks a chapter; it does not invent a
 | **Foundations** | Tokens made visible: color, type, space, motion | Components, screens |
 | **Core** | `Interactive`, `Hoverable` — the matrix every pick sits on | Buttons, rows, screens |
 | **Components** | One entry per primitive in `packages/opath-ui`. `Default` plus named states. Autodocs for the props API | Product nouns, fetched data |
-| **Layouts** | Structural chrome: Band, Section, SkipLink | A whole product screen |
+| **Layouts** | Structural chrome: Band, Page canvas, Section, SkipLink | A whole product screen |
 | **Patterns** | Blocks assembled: drive list, sectioned form, suggestion chips | A whole product screen |
 | **Screens** | Feature views from `src/features/*/`. The conversation's artifacts | Primitive internals |
 
@@ -36,7 +36,7 @@ If a surface takes props, it gets a **co-located** `*.stories.tsx` next to the c
 
 ## Layouts
 
-Band is the first element inside `main`. Section is a titled block inside an editor. SkipLink is the first focusable control on every page.
+Band is the first element inside `main`. Page canvas is the desk and one A4. Section is a titled block inside an editor. SkipLink is the first focusable control on every page.
 
 ## Patterns
 
