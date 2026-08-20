@@ -17,7 +17,7 @@ Three jobs woven together: capture enough to make the product useful (goal first
   2. Where you are: school, year, major.
   3. What you have: one experience or project, one link if any (kind + URL).
   4. A short tour beat: the Coach operates the app with you, and you can undo anything it does.
-- Continue writes everything to the profile through profile commands. Skip and finish use the same after-sign-in home as auth: zero proofs open the dump editor, proofs already exist open `/proof`. Never `/coach`.
+- Continue writes everything to the profile through profile commands. Skip and finish use the same after-sign-in home as auth: no log entries open the dump editor, logs already exist open `/proof`. Never `/coach`.
 - After onboarding, the empty Coach is mark, composer, and three starters. The old activation checklist is not shown.
 
 ## Data

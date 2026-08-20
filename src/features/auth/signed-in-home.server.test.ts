@@ -25,14 +25,40 @@ describe("loadAfterSignInHome", () => {
     });
   });
 
-  it("opens the list when proofs already exist", async (t) => {
+  it("reopens an empty proof minted before Skip, not the list", async (t) => {
     if (!testDatabaseUrl()) {
       t.skip("TEST_DATABASE_URL is not set");
       return;
     }
     await withTestSchema(async () => {
       const id = await userId();
-      await executeCommand("proof.create", { title: "" }, { kind: "user", userId: id });
+      const created = await executeCommand<{ id: string }>(
+        "proof.create",
+        { title: "" },
+        { kind: "user", userId: id },
+      );
+      const dest = await loadAfterSignInHome(id);
+      assert.deepEqual(dest, { to: "/proof/$proofId", params: { proofId: created.result.id } });
+    });
+  });
+
+  it("opens the list only when a proof has a log", async (t) => {
+    if (!testDatabaseUrl()) {
+      t.skip("TEST_DATABASE_URL is not set");
+      return;
+    }
+    await withTestSchema(async () => {
+      const id = await userId();
+      const created = await executeCommand<{ id: string }>(
+        "proof.create",
+        { title: "" },
+        { kind: "user", userId: id },
+      );
+      await executeCommand(
+        "proof.log",
+        { proofId: created.result.id, body: "Saturday close." },
+        { kind: "user", userId: id },
+      );
       const dest = await loadAfterSignInHome(id);
       assert.deepEqual(dest, { to: "/proof" });
     });
