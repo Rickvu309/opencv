@@ -55,14 +55,11 @@ export const LeftoverEmptyCv: Story = {
   },
 };
 
-export const TypedRows: Story = {
+export const TypedJobName: Story = {
+  name: "Café line under the job they typed",
   render: () => {
     const content = emptyCv();
-    content.name = "Linh";
-    content.contact = "Da Nang";
-    content.experience = [
-      { id: "e1", org: "Cafe", role: "Barista", dates: "2025", bullets: [SATURDAY_CLOSE] },
-    ];
+    content.experience = [{ id: "r1", org: "", role: "Closer", dates: "", bullets: [] }];
     return (
       <div className="bg-desk px-5 py-8">
         <PaperPage

@@ -155,14 +155,15 @@ describe("opened CV page", () => {
     }
   });
 
-  it("shows a section head only after a typed row", () => {
+  it("never paints Experience, Education, or Skills heads", () => {
     const content = emptyCv();
     content.experience = [
-      { id: "e1", org: "Cafe", role: "Barista", dates: "", bullets: [SATURDAY_CLOSE] },
+      { id: "e1", org: "", role: "Closer", dates: "", bullets: [SATURDAY_CLOSE] },
     ];
     const page = openedCvPage(content);
-    assert.equal(page.showExperienceHeading, true);
+    assert.equal(page.showExperienceHeading, false);
     assert.equal(page.showEducationHeading, false);
+    assert.equal(page.showSkillsHeading, false);
     assert.equal(page.experience[0]?.bullets[0], SATURDAY_CLOSE);
   });
 
@@ -176,7 +177,9 @@ describe("opened CV page", () => {
     assert.deepEqual(page.education, []);
     assert.deepEqual(page.skills, []);
     assert.equal(page.showExperienceHeading, false);
-    assert.deepEqual(openedCvActions(leftover), ["Add a role", "Add a school", "Add a skill"]);
+    assert.deepEqual(openedCvActions(leftover), ["Add a role"]);
+    assert.equal(openedCvActions(leftover).includes("Add a school"), false);
+    assert.equal(openedCvActions(leftover).includes("Add a skill"), false);
   });
 
   it("offers remove and add-a-result only after a typed row", () => {
@@ -188,8 +191,31 @@ describe("opened CV page", () => {
     assert.equal(actions.includes("Add a role"), true);
     assert.equal(actions.includes("Add a result"), true);
     assert.equal(actions.includes("Remove this role"), true);
+    assert.equal(actions.includes("Add a school"), false);
+    assert.equal(actions.includes("Add a skill"), false);
     assert.equal(actions.includes("Remove this school"), false);
     assert.equal(actions.includes("Remove this skill"), false);
+  });
+
+  it("puts the Saturday-close line under the role they typed", () => {
+    const published = [{ date: "2026-08-20", words: SATURDAY_CLOSE }];
+    const empty = openedCvPage(emptyCv(), published);
+    assert.equal(empty.proofUnderRoleId, null);
+    assert.deepEqual(empty.proofLines, published);
+    assert.deepEqual(openedCvActions(emptyCv()), ["Add a role"]);
+    assert.equal(empty.proofLines[0]?.words, SATURDAY_CLOSE);
+
+    const content = emptyCv();
+    content.experience = [{ id: "r1", org: "", role: "Closer", dates: "", bullets: [] }];
+    const page = openedCvPage(content, published);
+    assert.equal(page.proofUnderRoleId, "r1");
+    assert.deepEqual(page.proofLines, published);
+    assert.equal(page.proofLines[0]?.words, SATURDAY_CLOSE);
+    assert.equal(page.showExperienceHeading, false);
+    const dump = JSON.stringify(page);
+    assert.equal(dump.includes("Barista"), false);
+    assert.equal(dump.includes("Highlands"), false);
+    assert.equal(dump.includes("cut wait time by 40%"), false);
   });
 });
 

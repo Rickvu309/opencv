@@ -15,6 +15,19 @@ describe("opened editor source", () => {
     assert.equal(src.includes("A result, with a number if you have one"), false);
   });
 
+  it("does not ship leftover CV form chrome", () => {
+    assert.equal(src.includes("Add a school"), false);
+    assert.equal(src.includes("Add a skill"), false);
+    assert.equal(src.includes(">Experience<"), false);
+    assert.equal(src.includes(">Education<"), false);
+    assert.equal(src.includes(">Skills<"), false);
+    assert.equal(src.includes('aria-label="Role"'), false);
+    assert.equal(src.includes('aria-label="Organisation"'), false);
+    assert.equal(src.includes('aria-label="Dates"'), false);
+    assert.equal(src.includes("Barista"), false);
+    assert.equal(src.includes("Highlands"), false);
+  });
+
   it("keeps the Saturday-close line as published words", () => {
     const stories = readFileSync(
       fileURLToPath(new URL("./components/page.stories.tsx", import.meta.url)),
@@ -22,6 +35,10 @@ describe("opened editor source", () => {
     );
     assert.equal(stories.includes(SATURDAY_CLOSE), true);
     assert.equal(stories.includes("cut wait time by 40%"), false);
+    assert.equal(stories.includes("Barista"), false);
+    assert.equal(stories.includes("Highlands"), false);
+    assert.equal(stories.includes("Add a school"), false);
+    assert.equal(stories.includes("Add a skill"), false);
     assert.equal(src.includes("cut wait time by 40%"), false);
   });
 });
