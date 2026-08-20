@@ -6,7 +6,7 @@ ADR 0005 kept Proof beside Paper and connected them with `paper.addProofLine` â€
 
 ## Decision
 
-`/paper` is one A4. Empty is a hairline-dashed page; click opens a CV. A published Proof appears on that A4 as date plus the same words as `/p/:slug`. No Add. Paper does not rewrite, ghostwrite, or invent a number. Unpublished, skipped, and empty untitled Proofs stay off the page.
+`/paper` is one A4. Empty is a hairline-dashed page, same proportion as `PaperPage`, no label; click opens a CV. A published Proof appears on that A4 as date plus the same words as `/p/:slug`, in that card's type â€” not a more professional rewrite. No Add. Paper does not rewrite, ghostwrite, or invent a number. Unpublished, skipped, and empty untitled Proofs stay off the page. Home routing is unchanged. Letter is a second A4 later.
 
 ## Rejected
 

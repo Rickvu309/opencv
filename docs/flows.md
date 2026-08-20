@@ -166,13 +166,12 @@ Core Prepare, Paper (CV / Resume or Letter). Enter by C1 or C2.
 ```mermaid
 flowchart LR
   In["/sign-in"] -->|"gate"| Chat["/coach"]
-  Chat -->|"C1"| List["/paper"]
-  List --> Gallery["Template gallery: pick the situation"]
-  Gallery --> Page["Edit on the A4 page"]
+  Chat -->|"C1"| Canvas["/paper: one A4"]
+  Canvas --> Page["Edit on the A4 page"]
   Page --> Export["Export PDF"]
 ```
 
-The north star for Paper: a user with a deadline tonight leaves with a CV they can send. The list is how they pick; opening a paper means writing. One primary door on the empty list: start the CV. Back from the opened document returns to `/paper`, not to Chat.
+The north star for Paper: a user with a deadline tonight leaves with a CV they can send. `/paper` is one A4. Empty is a hairline-dashed page; a published Proof is already a line on it. Click opens `/paper/$paperId`. Back from the opened document returns to `/paper`, not to Chat.
 
 ### Flow 3: apply loop
 

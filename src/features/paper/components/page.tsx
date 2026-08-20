@@ -92,6 +92,14 @@ const emptyEducation = { id: "ed-empty", school: "", line: "" };
 
 const a4Class = "a4 mx-auto w-full max-w-[210mm] min-h-[297mm]";
 
+function formatProofDate(value: string) {
+  const iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  if (!iso) return value;
+  const date = new Date(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]));
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString();
+}
+
 export function DashedA4({ onOpen }: { onOpen: () => void }) {
   return (
     <button
@@ -101,25 +109,31 @@ export function DashedA4({ onOpen }: { onOpen: () => void }) {
       onClick={onOpen}
       className={cn(
         a4Class,
-        "a4-dashed cursor-pointer focus-visible:shadow-[var(--focus-ring)]",
+        "a4-dashed appearance-none cursor-pointer p-0 focus-visible:shadow-[var(--focus-ring)]",
       )}
     />
   );
 }
 
-function ProofLines({ lines }: { lines: PublishedProofLine[] }) {
+function ProofLines({
+  lines,
+  className,
+}: {
+  lines: PublishedProofLine[];
+  className?: string;
+}) {
   if (!lines.length) return null;
   return (
-    <section className="mt-8">
-      {lines.map((line) => (
-        <div key={`${line.date}:${line.words}`} className="mt-3 first:mt-0">
+    <div className={className}>
+      {lines.map((line, i) => (
+        <div key={`${line.date}:${line.words}`} className={i === 0 ? undefined : "mt-8"}>
           {line.date ? (
-            <p className="text-[13px] tabular-nums text-ink-muted">{line.date}</p>
+            <p className="text-[13px] text-ink-muted tabular-nums">{formatProofDate(line.date)}</p>
           ) : null}
-          <p className="mt-1 whitespace-pre-wrap">{line.words}</p>
+          <p className="mt-3 whitespace-pre-wrap text-[15px] font-[510] leading-[1.6]">{line.words}</p>
         </div>
       ))}
-    </section>
+    </div>
   );
 }
 
@@ -140,14 +154,17 @@ export function PaperCanvasPage({
       onClick={onOpen}
       className={cn(
         a4Class,
-        "cursor-pointer px-12 py-12 text-left text-[16px] leading-[1.6] focus-visible:shadow-[var(--focus-ring)]",
+        "appearance-none cursor-pointer px-12 py-12 text-left focus-visible:shadow-[var(--focus-ring)]",
       )}
     >
       {content.name ? (
         <p className="text-[22px] font-medium leading-[1.3]">{content.name}</p>
       ) : null}
       {content.contact ? <p className="mt-1 text-[14px]">{content.contact}</p> : null}
-      <ProofLines lines={lines} />
+      <ProofLines
+        lines={lines}
+        className={content.name || content.contact ? "mt-8" : undefined}
+      />
     </button>
   );
 }
@@ -560,7 +577,7 @@ export function PaperPage({
       ) : null}
 
       {!content.hidden.proof && publishedLines.length ? (
-        <ProofLines lines={publishedLines} />
+        <ProofLines lines={publishedLines} className="mt-8" />
       ) : null}
     </article>
   );
