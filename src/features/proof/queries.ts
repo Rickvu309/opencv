@@ -13,9 +13,16 @@ export const listProofsFn = createServerFn({ method: "GET" }).handler(async () =
       status: string;
       date_from: string | null;
       date_to: string | null;
+      has_log: boolean;
     }>(
-      `select id, title, role, date_from, date_to, status, updated_at from proofs
-       where user_id=$1 order by updated_at desc`,
+      `select p.id, p.title, p.role, p.date_from, p.date_to, p.status, p.updated_at,
+              exists(
+                select 1 from proof_entries e
+                where e.proof_id = p.id and e.body <> ''
+              ) as has_log
+         from proofs p
+        where p.user_id=$1
+        order by p.updated_at desc`,
       [user.id],
     ),
   );
