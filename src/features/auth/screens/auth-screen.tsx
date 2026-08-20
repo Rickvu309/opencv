@@ -1,13 +1,15 @@
 import { useNavigate } from "@tanstack/react-router";
 import { AuthForm } from "@/features/auth/screens/auth-form";
-import { signInFn, signUpFn } from "@/features/auth/server";
+import { signInFn, signUpFn, signedInHomeFn } from "@/features/auth/server";
 
 export function AuthScreen({ mode }: { mode: "sign-in" | "sign-up" }) {
   const navigate = useNavigate();
   return (
     <AuthForm
       mode={mode}
-      onSuccess={() => navigate({ to: "/coach" })}
+      onSuccess={async () => {
+        await navigate(await signedInHomeFn());
+      }}
       onSubmit={async (creds) => {
         const result =
           mode === "sign-up"

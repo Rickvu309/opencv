@@ -16,8 +16,8 @@ The loop (flow 5 in [flows.md](../flows.md)): log → one question (skip is allo
 
 ## Screens
 
-- `/proof` — the evidence space: proofs as rows (title, role, dates, status chip), newest activity first.
-- `/proof/$proofId` — the opened Proof: band titled Proof, Back, Publish once they have words. Arrange is later, not a band control, and does not mint a page. Body: one log box (a café shift counts; no title homework), then the running log; no STAR form, no wizard. After the first log, one specific interview question lands in an InfoBlock with Skip first-class. Do not ghostwrite. Missing “came of it” still publishes.
+- `/proof` — the evidence space: proofs as rows (title, role, dates, status chip), newest activity first. Hitting `/proof` with no real log opens the dump editor (reuse an empty untitled, create only if none). Log something reuses an empty untitled and does not mint a second. EndOfList / "That's all." only after a real log. Never an empty list.
+- `/proof/$proofId` — the opened Proof: band titled Proof, Back, Publish once they have words. Arrange is later, not a band control, and does not mint a page. Body: one log box whose ghost is the café invite plus one Saturday-close example (oat milk, last table) — not a blank page, not a template picker. Then the running log; no STAR form, no wizard. After the first log, one specific interview question lands in an InfoBlock with Skip first-class. Do not ghostwrite. Missing “came of it” still publishes.
 - Published: a page at `/p/:slug` (see [share.md](share.md)) of their words and the date. Arranged parts render only when present. Copy link is on the public page. Never invent numbers. Never the CV's aesthetics.
 
 ## Data
@@ -51,7 +51,7 @@ The Coach notices evidence in conversation ("we ran the club fair last week") an
 
 ## Empty state
 
-"A café shift counts." Below it, a class project, an assignment, something that failed — write it like a text. A chip — "I don't have one yet" — asks the Coach to suggest candidates from the profile. Never required, never shame.
+No empty list. No real log opens the dump box (café invite plus one Saturday-close ghost). "That's all." only after a real log.
 
 ## Later, schema-ready
 

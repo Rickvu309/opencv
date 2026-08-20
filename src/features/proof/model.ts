@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+export const DUMP_PLACEHOLDER =
+  "A café shift counts. Write it like a text.\n\nSaturday close. We ran out of oat milk and I stayed until the last table left.";
+
 export const proofPageContentSchema = z.object({
   words: z.string(),
   date: z.string(),

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { signedInHomeFn } from "@/features/auth/server";
 import { completeOnboardingFn } from "@/features/onboarding/queries";
 import {
   OnboardingWizard,
@@ -45,7 +46,7 @@ export function OnboardingScreen() {
           linkUrl: values.linkUrl,
         },
       });
-      await navigate({ to: "/coach" });
+      await navigate(await signedInHomeFn());
     } catch {
       patch({ pending: false, saveError: "Couldn't save. Try again." });
     }
