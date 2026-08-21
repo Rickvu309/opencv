@@ -24,8 +24,29 @@ future build needs a specific major.
 2. Leave **Root Directory** as the repository root. `vercel.json` points the
    build at `apps/web` — setting the root directory to `apps/web` would make
    Vercel look for `apps/web/vercel.json` instead and lose these settings.
-3. Deploy. No environment variables are needed yet; the web app talks to no API
-   until QVE-85 wires `VITE_API_URL`.
+3. Deploy.
+
+## Reaching the API
+
+The web app reads the API base URL from `VITE_API_URL`. Vite bakes it into the
+bundle at build time, so it is a build input, not a runtime setting: changing it
+in Vercel only takes effect on the next deployment. When it is unset the app
+falls back to `http://localhost:3001` (see `apps/web/src/lib/api.ts`), which is
+what local `pnpm dev` wants.
+
+| Vercel environment | `VITE_API_URL`                               |
+| ------------------ | -------------------------------------------- |
+| Production         | `https://api-production-0876.up.railway.app` |
+| Preview            | `https://api-staging-f689.up.railway.app`    |
+| Development        | `http://localhost:3001`                      |
+
+Previews point at the Railway `staging` environment, which has its own Postgres,
+so branch work never touches production data. The API decides which origins may
+call it — see `WEB_ORIGINS` in [railway.md](railway.md). Both sides have to
+agree: a new web origin needs adding there, or the browser blocks the response.
+
+The home page renders the result of `GET /health` against that base URL, so any
+deployment shows whether its API is reachable without opening devtools.
 
 ## Previews
 
