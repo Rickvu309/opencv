@@ -3,7 +3,7 @@ import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { describe, expect, it } from "vitest"
 
-import { app } from "./app.js"
+import { createApp } from "./app.js"
 
 const apiRoot = fileURLToPath(new URL("..", import.meta.url))
 const repoRoot = path.resolve(apiRoot, "../..")
@@ -15,7 +15,7 @@ type RailwayConfig = {
 
 describe("railway.json (api service)", () => {
   const config: RailwayConfig = JSON.parse(
-    readFileSync(path.join(repoRoot, "railway.json"), "utf8"),
+    readFileSync(path.join(repoRoot, "railway.json"), "utf8")
   )
 
   it("builds and starts the api workspace package", () => {
@@ -26,7 +26,7 @@ describe("railway.json (api service)", () => {
   it("healthchecks the route the API actually serves", async () => {
     expect(config.deploy.healthcheckPath).toBe("/health")
 
-    const res = await app.request("/health")
+    const res = await createApp({ webOrigins: [] }).request("/health")
     expect(res.status).toBe(200)
   })
 

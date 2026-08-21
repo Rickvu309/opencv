@@ -7,10 +7,10 @@ on Vercel — never deploy them to Railway.
 
 Project `openpath` (linked to this repo):
 
-| Environment | Services |
-| --- | --- |
+| Environment  | Services                                               |
+| ------------ | ------------------------------------------------------ |
 | `production` | `api` (from `quanvu309/openpath` @ `main`), `Postgres` |
-| `staging` | `api`, `Postgres` (own instance, empty data) |
+| `staging`    | `api`, `Postgres` (own instance, empty data)           |
 
 - The `api` service builds from the repo root; its build/start commands,
   healthcheck path, and watch patterns are defined in `/railway.json` at the
@@ -19,8 +19,26 @@ Project `openpath` (linked to this repo):
 - `DATABASE_URL` is set on `api` as the shared reference
   `${{Postgres.DATABASE_URL}}` in **both** environments, so each environment
   resolves to its own Postgres. No credentials live in git.
-- Public API domain: service domain under `*.up.railway.app` (see the
-  QVE-84 Linear ticket for the exact production URL).
+- Public API domains: `api-production-0876.up.railway.app` (production) and
+  `api-staging-f689.up.railway.app` (staging).
+
+## Cross-host access (CORS)
+
+The web app runs on Vercel, so every call to the API is cross-origin. `api`
+reads `WEB_ORIGINS` — a comma-separated allowlist — and echoes back only origins
+that match. An entry may contain one `*`, which matches a single DNS label, so
+`https://openpath-*-rickvudev.vercel.app` covers Vercel's per-deployment preview
+subdomains without opening the API to every host under `vercel.app`.
+
+| Environment  | `WEB_ORIGINS`                                                   |
+| ------------ | --------------------------------------------------------------- |
+| `production` | `https://openpath-lovat.vercel.app`                             |
+| `staging`    | `https://openpath-*-rickvudev.vercel.app,http://localhost:5173` |
+
+Production stays pinned to the production alias. A production deployment opened
+through its per-deployment URL rather than the alias is therefore blocked by
+CORS — use the alias. Unset `WEB_ORIGINS` means local-only
+(`http://localhost:5173`), which is what `pnpm dev` needs.
 
 ## Local commands
 

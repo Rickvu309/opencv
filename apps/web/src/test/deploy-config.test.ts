@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { readFileSync } from "node:fs"
+import { readdirSync, readFileSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { describe, expect, it } from "vitest"
@@ -16,5 +16,29 @@ describe("vercel.json", () => {
     const vite = await resolveConfig({ root: webRoot }, "build")
 
     expect(path.relative(repoRoot, vite.build.outDir)).toBe(outputDirectory)
+  })
+})
+
+describe(".env.example", () => {
+  it("documents every VITE_ variable the web app reads", () => {
+    const envExample = readFileSync(path.join(repoRoot, ".env.example"), "utf8")
+    const documented = new Set(envExample.match(/VITE_[A-Z0-9_]+/g) ?? [])
+
+    const srcDir = path.join(webRoot, "src")
+    const used = new Set(
+      readdirSync(srcDir, { recursive: true, encoding: "utf8" })
+        .filter((file) => /\.tsx?$/.test(file))
+        .flatMap(
+          (file) =>
+            readFileSync(path.join(srcDir, file), "utf8").match(
+              /import\.meta\.env\.(VITE_[A-Z0-9_]+)/g
+            ) ?? []
+        )
+    )
+
+    for (const reference of used) {
+      expect(documented).toContain(reference.replace("import.meta.env.", ""))
+    }
+    expect(used.size).toBeGreaterThan(0)
   })
 })
