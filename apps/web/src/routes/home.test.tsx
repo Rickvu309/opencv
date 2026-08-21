@@ -1,7 +1,7 @@
 import { createElement, type ReactNode } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { render, screen } from "@testing-library/react"
+import { cleanup, render, screen } from "@testing-library/react"
 
 import { HomePage } from "./home.tsx"
 
@@ -16,6 +16,7 @@ function renderHome() {
 }
 
 afterEach(() => {
+  cleanup()
   vi.unstubAllGlobals()
 })
 
@@ -29,6 +30,16 @@ describe("HomePage", () => {
     expect(
       screen.getByRole("heading", { level: 1, name: "OpenPath" })
     ).toBeInTheDocument()
+  })
+
+  it("renders absorbed kit button and input", () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(Response.json({ ok: true }))
+    )
+    renderHome()
+    expect(screen.getByRole("button", { name: "Continue" })).toBeInTheDocument()
+    expect(screen.getByLabelText("Email")).toBeInTheDocument()
   })
 
   it("reports the API as reachable once the live health endpoint answers", async () => {
