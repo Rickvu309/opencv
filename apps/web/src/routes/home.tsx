@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 import { Button } from "@workspace/ui/components/button"
+import { Input } from "@workspace/ui/components/input"
 import { brandName } from "@workspace/ui/lib/brand"
 import { cn } from "@workspace/ui/lib/utils"
 
@@ -35,9 +36,19 @@ export function HomePage() {
         Personalised AI career coaching. Local scaffold is up.
       </p>
       <ApiHealth />
-      <Button type="button" variant="outline">
-        Continue
-      </Button>
+      <div className="flex w-full max-w-md flex-col gap-2">
+        <label htmlFor="kit-email" className="text-sm font-medium">
+          Email
+        </label>
+        <Input
+          id="kit-email"
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          placeholder="you@email.com"
+        />
+      </div>
+      <Button type="button">Continue</Button>
     </main>
   )
 }
