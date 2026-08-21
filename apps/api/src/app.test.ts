@@ -57,6 +57,7 @@ describe("CORS", () => {
     for (const origin of [
       "https://openpath-build-rickvudev.vercel.app.attacker.example.com",
       "https://openpath-build.attacker-rickvudev.vercel.app",
+      "https://openpath--rickvudev.vercel.app",
     ]) {
       const res = await api.request("/health", { headers: { Origin: origin } })
       expect(res.headers.get("access-control-allow-origin")).toBeNull()

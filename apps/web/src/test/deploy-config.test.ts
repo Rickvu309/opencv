@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { globSync, readFileSync } from "node:fs"
+import { readdirSync, readFileSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { describe, expect, it } from "vitest"
@@ -26,12 +26,14 @@ describe(".env.example", () => {
 
     const srcDir = path.join(webRoot, "src")
     const used = new Set(
-      globSync("**/*.{ts,tsx}", { cwd: srcDir }).flatMap(
-        (file) =>
-          readFileSync(path.join(srcDir, file), "utf8").match(
-            /import\.meta\.env\.(VITE_[A-Z0-9_]+)/g
-          ) ?? []
-      )
+      readdirSync(srcDir, { recursive: true, encoding: "utf8" })
+        .filter((file) => /\.tsx?$/.test(file))
+        .flatMap(
+          (file) =>
+            readFileSync(path.join(srcDir, file), "utf8").match(
+              /import\.meta\.env\.(VITE_[A-Z0-9_]+)/g
+            ) ?? []
+        )
     )
 
     for (const reference of used) {

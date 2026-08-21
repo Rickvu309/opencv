@@ -18,7 +18,7 @@ function matchesOrigin(pattern: string, origin: string) {
 
   const middle = origin.slice(prefix.length, origin.length - suffix.length)
   return (
-    origin.length >= prefix.length + suffix.length &&
+    origin.length > prefix.length + suffix.length &&
     origin.startsWith(prefix) &&
     origin.endsWith(suffix) &&
     !middle.includes(".")

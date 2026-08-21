@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { Button } from "@workspace/ui/components/button"
 import { brandName } from "@workspace/ui/lib/brand"
+import { cn } from "@workspace/ui/lib/utils"
 
 import { apiBaseUrl, fetchHealth } from "@/lib/api.ts"
 
@@ -11,24 +12,15 @@ function ApiHealth() {
     retry: false,
   })
 
-  const label = health.isPending
-    ? "Checking the API"
+  const { label, dot } = health.isPending
+    ? { label: "Checking the API", dot: "bg-current opacity-40" }
     : health.data?.ok
-      ? "API reachable"
-      : "API unreachable"
+      ? { label: "API reachable", dot: "bg-emerald-500" }
+      : { label: "API unreachable", dot: "bg-destructive" }
 
   return (
     <p className="flex items-center gap-2 text-sm text-muted-foreground">
-      <span
-        aria-hidden="true"
-        className={
-          health.isPending
-            ? "size-2 rounded-full bg-current opacity-40"
-            : health.data?.ok
-              ? "size-2 rounded-full bg-emerald-500"
-              : "size-2 rounded-full bg-destructive"
-        }
-      />
+      <span aria-hidden="true" className={cn("size-2 rounded-full", dot)} />
       <span>{label}</span>
       <span className="font-mono text-xs opacity-70">{apiBaseUrl}</span>
     </p>

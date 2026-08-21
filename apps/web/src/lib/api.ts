@@ -4,7 +4,7 @@
  * falls back to the dev server port in `.env.example`.
  */
 export const apiBaseUrl =
-  import.meta.env.VITE_API_URL ?? "http://localhost:3001"
+  import.meta.env.VITE_API_URL || "http://localhost:3001"
 
 export async function fetchHealth(): Promise<{ ok: boolean }> {
   const res = await fetch(new URL("/health", apiBaseUrl))
