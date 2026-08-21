@@ -7,10 +7,10 @@ describe("webOriginsFromEnv", () => {
     expect(
       webOriginsFromEnv({
         WEB_ORIGINS:
-          " https://openpath-lovat.vercel.app , https://openpath-*-rickvudev.vercel.app ,, ",
+          " https://openpath-app.vercel.app , https://openpath-*-rickvudev.vercel.app ,, ",
       })
     ).toEqual([
-      "https://openpath-lovat.vercel.app",
+      "https://openpath-app.vercel.app",
       "https://openpath-*-rickvudev.vercel.app",
     ])
   })
