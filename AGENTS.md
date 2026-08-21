@@ -22,4 +22,4 @@ Single-context (`CONTEXT.md` + `docs/adr/` at repo root). See `docs/agents/domai
 
 ### Design system
 
-UI kit: absorb-when-possible, shadcn-style `packages/ui`, Storybook catalog. Run `pnpm dlx shadcn@latest add <name> -c apps/web`. Import through `@workspace/ui/components/<name>` and `@workspace/ui/globals.css`. See `docs/adr/0002-design-system.md`.
+UI kit: absorb-when-possible, shadcn-style `packages/ui`, Storybook catalog. Run `pnpm dlx shadcn@latest add <name> -c apps/web`. Import through `@workspace/ui/components/<name>` and `@workspace/ui/globals.css`. Colocate `*.stories.tsx` next to each absorbed primitive and import the component from its source file. Local catalog: `pnpm storybook`. See `docs/adr/0002-design-system.md`.
