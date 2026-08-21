@@ -19,4 +19,13 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  {
+    // shadcn components co-export their cva variants alongside the component
+    // (see docs/adr/0002-design-system.md). Fast Refresh never applies here —
+    // this package is consumed as source by apps/web.
+    files: ['src/components/**/*.tsx'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
 ])
