@@ -110,3 +110,6 @@ pnpm build-storybook
 3. Deploy. Production URL is the public catalog; post it on QVE-87 / QVE-81
    when it first goes live.
 
+Production catalog: https://openpath-storybook.vercel.app
+(`main` and the current Storybook project both serve this alias).
+

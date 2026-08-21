@@ -30,6 +30,6 @@ Copy `.env.example` to `.env` (or `.env.local`) and fill in values as features n
 
 `apps/web` deploys to Vercel: `main` → production, every other branch → a preview URL. Build settings live in `vercel.json`.
 
-The owned UI kit catalog is Storybook in `packages/ui`. It deploys to its own Vercel project from `main` (Root Directory `packages/ui`, settings in `packages/ui/vercel.json`). See `docs/deploy.md`.
+The owned UI kit catalog is Storybook in `packages/ui`. It deploys to its own Vercel project from `main` (Root Directory `packages/ui`, settings in `packages/ui/vercel.json`). Live catalog: https://openpath-storybook.vercel.app. See `docs/deploy.md`.
 
 Domain and product docs: `CONTEXT.md`, `PRODUCT.md`, `AGENTS.md`, `docs/adr/`.
