@@ -1,0 +1,15 @@
+{
+  "name": "OpenPath",
+  "install": "pnpm install --frozen-lockfile",
+  "terminals": [
+    {
+      "name": "dev",
+      "command": "pnpm dev",
+      "description": "Runs the web (Vite, http://localhost:5173) and api (Hono, http://localhost:3001) dev servers via turbo."
+    }
+  ],
+  "ports": [
+    { "name": "web", "port": 5173 },
+    { "name": "api", "port": 3001 }
+  ]
+}
