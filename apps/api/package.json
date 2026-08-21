@@ -17,9 +17,13 @@
     "hono": "^4.12.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10",
     "@types/node": "^24",
+    "eslint": "^10",
+    "globals": "^17",
     "tsx": "^4.21.0",
     "typescript": "~6",
+    "typescript-eslint": "^8",
     "vitest": "^3.2.4"
   }
 }

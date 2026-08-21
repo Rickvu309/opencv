@@ -30,15 +30,27 @@ importers:
         specifier: ^4.12.0
         version: 4.13.3
     devDependencies:
+      '@eslint/js':
+        specifier: ^10
+        version: 10.0.1(eslint@10.4.0(jiti@2.7.0))
       '@types/node':
         specifier: ^24
         version: 24.12.4
+      eslint:
+        specifier: ^10
+        version: 10.4.0(jiti@2.7.0)
+      globals:
+        specifier: ^17
+        version: 17.6.0
       tsx:
         specifier: ^4.21.0
         version: 4.23.12
       typescript:
         specifier: ~6
         version: 6.0.3
+      typescript-eslint:
+        specifier: ^8
+        version: 8.60.0(eslint@10.4.0(jiti@2.7.0))(typescript@6.0.3)
       vitest:
         specifier: ^3.2.4
         version: 3.2.7(@types/node@24.12.4)(jiti@2.7.0)(jsdom@27.4.0)(lightningcss@1.32.0)(tsx@4.23.12)
