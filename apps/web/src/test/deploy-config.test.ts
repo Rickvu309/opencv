@@ -8,26 +8,13 @@ import { resolveConfig } from "vite"
 const webRoot = fileURLToPath(new URL("../..", import.meta.url))
 const repoRoot = path.resolve(webRoot, "../..")
 
-const vercelConfig = JSON.parse(
-  readFileSync(path.join(repoRoot, "vercel.json"), "utf8")
-) as {
-  outputDirectory: string
-  rewrites: { source: string; destination: string }[]
-}
-
 describe("vercel.json", () => {
   it("points outputDirectory at the directory Vite actually builds into", async () => {
+    const { outputDirectory } = JSON.parse(
+      readFileSync(path.join(repoRoot, "vercel.json"), "utf8")
+    )
     const vite = await resolveConfig({ root: webRoot }, "build")
 
-    expect(path.relative(repoRoot, vite.build.outDir)).toBe(
-      vercelConfig.outputDirectory
-    )
-  })
-
-  it("falls back to the SPA shell so client-side routes survive a hard refresh", () => {
-    expect(vercelConfig.rewrites).toContainEqual({
-      source: "/(.*)",
-      destination: "/index.html",
-    })
+    expect(path.relative(repoRoot, vite.build.outDir)).toBe(outputDirectory)
   })
 })

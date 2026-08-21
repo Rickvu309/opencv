@@ -1,18 +1,22 @@
 # Deploying the web app to Vercel
 
 `main` deploys to production; every other branch gets a preview URL. The build
-settings live in `vercel.json` at the repo root, not in the Vercel dashboard —
-`vercel.json` takes precedence, so the dashboard fields can stay untouched.
+settings live in `vercel.json` at the repo root rather than in the Vercel
+dashboard — `vercel.json` wins over the dashboard's build fields, so those can
+stay untouched. Root Directory and Ignored Build Step are dashboard-only and are
+covered under setup below.
 
-| Field             | Value                            | Why                                                                                                                                                                                                               |
-| ----------------- | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `installCommand`  | `pnpm install --frozen-lockfile` | Fails the build when `pnpm-lock.yaml` drifts from `package.json` instead of silently resolving something new.                                                                                                     |
-| `buildCommand`    | `pnpm turbo build --filter=web`  | Builds only the web app and its workspace dependencies. `apps/api` is not part of this deployment.                                                                                                                |
-| `outputDirectory` | `apps/web/dist`                  | Where Vite writes the build. Guarded by `apps/web/src/test/deploy-config.test.ts`.                                                                                                                                |
-| `rewrites`        | `/(.*)` → `/index.html`          | TanStack Router routes client-side. Without this, a hard refresh on any route but `/` returns 404. Vercel checks the filesystem before applying rewrites, so hashed assets under `/assets/` still serve as files. |
+| Field             | Value                            | Why                                                                                                                                                                                                                  |
+| ----------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `installCommand`  | `pnpm install --frozen-lockfile` | Fails the build when `pnpm-lock.yaml` drifts from `package.json` instead of silently resolving something new.                                                                                                        |
+| `buildCommand`    | `pnpm turbo build --filter=web`  | Builds only the web app and its workspace dependencies. `apps/api` is not part of this deployment.                                                                                                                   |
+| `outputDirectory` | `apps/web/dist`                  | Where Vite writes the build. `apps/web/src/test/deploy-config.test.ts` compares it against Vite's resolved `build.outDir`, so `pnpm test` catches drift — nothing checks it at deploy time.                          |
+| `rewrites`        | `/(.*)` → `/index.html`          | TanStack Router routes client-side. Without this, a hard refresh on any route but `/` returns 404. Vercel checks the filesystem before applying rewrites, so the hashed files under `/assets/` still serve as files. |
 
-pnpm and Node versions come from `packageManager` and `engines.node` in the root
-`package.json`.
+pnpm comes from `packageManager` in the root `package.json`. Node comes from
+`engines.node`, which is the open range `>=20` — Vercel resolves that to its
+newest supported major, so the version can move under us. Pin it there if a
+future build needs a specific major.
 
 ## One-time setup
 
@@ -37,7 +41,12 @@ with the full log. Both failure modes exit non-zero and stop the deploy:
 - a type error (`tsc -b` runs before `vite build`)
 - a lockfile mismatch (`--frozen-lockfile`)
 
-Reproduce a Vercel build locally with the exact same commands:
+Lint and tests are **not** part of the deploy. `pnpm turbo build --filter=web`
+only compiles, so a branch with failing tests still produces a green preview.
+Run `pnpm test` and `pnpm typecheck` yourself, or add CI, before trusting a
+preview as reviewed.
+
+Reproduce a Vercel build locally with the same commands:
 
 ```bash
 pnpm install --frozen-lockfile
@@ -45,5 +54,6 @@ pnpm turbo build --filter=web
 pnpm --filter web preview   # serve apps/web/dist
 ```
 
-`vite preview` does not apply `vercel.json` rewrites, so deep-link behaviour is
-only observable on a real deployment.
+`vite preview` does its own SPA fallback, so deep links work locally whether or
+not the `rewrites` entry is present. Local success does not verify the Vercel
+rewrite — that is only observable on a real deployment.

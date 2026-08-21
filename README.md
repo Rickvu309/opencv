@@ -16,11 +16,11 @@ Copy `.env.example` to `.env` (or `.env.local`) and fill in values as features n
 
 ## Useful scripts
 
-| Script           | Purpose                |
-| ---------------- | ---------------------- |
-| `pnpm dev`       | Run web + api          |
-| `pnpm build`     | Production builds      |
-| `pnpm test`      | Workspace tests        |
+| Script | Purpose |
+| --- | --- |
+| `pnpm dev` | Run web + api |
+| `pnpm build` | Production builds |
+| `pnpm test` | Workspace tests |
 | `pnpm typecheck` | Typecheck all packages |
 
 ## Deployment
