@@ -173,15 +173,19 @@ function RouteNavLink({
 function SearchNavItem({
   item,
   collapsed,
+  onSearch,
 }: {
   item: ActionNavItem
   collapsed: boolean
+  onSearch: () => void
 }) {
   const Icon = item.icon
   const button = (
     <button
       type="button"
       aria-label={item.label}
+      aria-haspopup="dialog"
+      onClick={onSearch}
       className={navItemClassName(false, collapsed)}
     >
       <Icon className="size-4 shrink-0 text-foreground/70" />
@@ -196,7 +200,7 @@ function SearchNavItem({
   return <CollapsedTip label={item.label}>{button}</CollapsedTip>
 }
 
-export function AppSidebar() {
+export function AppSidebar({ onSearch }: { onSearch: () => void }) {
   const [open, setOpen] = useState(true)
   const { newChat } = useThreadStore()
 
@@ -245,7 +249,12 @@ export function AppSidebar() {
         <nav aria-label="Surfaces" className="flex flex-col gap-0.5 px-1.5">
           {PRIMARY_NAV.map((item) =>
             item.kind === "action" ? (
-              <SearchNavItem key={item.id} item={item} collapsed={!open} />
+              <SearchNavItem
+                key={item.id}
+                item={item}
+                collapsed={!open}
+                onSearch={onSearch}
+              />
             ) : (
               <RouteNavLink
                 key={item.id}
