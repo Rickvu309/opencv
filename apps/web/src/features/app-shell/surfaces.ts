@@ -16,6 +16,19 @@ export const SURFACE_PATHS = {
   settings: "/app/settings",
 } as const satisfies Record<SurfaceId, string>
 
+export const SETTINGS_TABS = ["general", "apps", "account"] as const
+export type SettingsTab = (typeof SETTINGS_TABS)[number]
+
+export function validateSettingsSearch(search: Record<string, unknown>): {
+  tab?: SettingsTab
+} {
+  const tab = search.tab
+  if (tab === "general" || tab === "apps" || tab === "account") {
+    return { tab }
+  }
+  return {}
+}
+
 export const SURFACE_COPY: Record<SurfaceId, { title: string; body: string }> =
   {
     home: {

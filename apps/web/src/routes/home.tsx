@@ -1,5 +1,5 @@
-import { CraftStub } from "@/features/app-shell/craft-stub.tsx"
+import { HomeDashboard } from "@/features/home/home-dashboard.tsx"
 
 export function HomePage() {
-  return <CraftStub surface="home" />
+  return <HomeDashboard />
 }
