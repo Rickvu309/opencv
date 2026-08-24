@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { existsSync, readFileSync } from "node:fs"
+import { existsSync, readdirSync, readFileSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { describe, expect, it } from "vitest"
@@ -54,12 +54,12 @@ describe("UI package kit surface", () => {
   })
 
   it("absorbed button and input via the kit path", () => {
-    expect(existsSync(path.join(repoRoot, "packages/ui/src/components/button.tsx"))).toBe(
-      true
-    )
-    expect(existsSync(path.join(repoRoot, "packages/ui/src/components/input.tsx"))).toBe(
-      true
-    )
+    expect(
+      existsSync(path.join(repoRoot, "packages/ui/src/components/button.tsx"))
+    ).toBe(true)
+    expect(
+      existsSync(path.join(repoRoot, "packages/ui/src/components/input.tsx"))
+    ).toBe(true)
     expect(read("packages/ui/src/components/button.tsx")).toMatch(
       /bg-primary|data-slot=["']button["']/
     )
@@ -75,9 +75,14 @@ describe("web consumes the kit through package exports", () => {
     expect(main).toMatch(/@workspace\/ui\/globals\.css/)
   })
 
-  it("renders kit button and input on the public shell", () => {
-    const home = read("apps/web/src/routes/home.tsx")
-    expect(home).toMatch(/from ["']@workspace\/ui\/components\/button["']/)
-    expect(home).toMatch(/from ["']@workspace\/ui\/components\/input["']/)
+  it("does not import frozen prototype modules", () => {
+    const srcDir = path.join(repoRoot, "apps/web/src")
+    const files = readdirSync(srcDir, { recursive: true, encoding: "utf8" })
+      .filter((file) => /\.tsx?$/.test(file))
+      .map((file) => path.join(srcDir, file))
+
+    for (const file of files) {
+      expect(readFileSync(file, "utf8")).not.toMatch(/@\/prototype\//)
+    }
   })
 })

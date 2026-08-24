@@ -53,8 +53,9 @@ so branch work never touches production data. The API decides which origins may
 call it — see `WEB_ORIGINS` in [railway.md](railway.md). Both sides have to
 agree: a new web origin needs adding there, or the browser blocks the response.
 
-The home page renders the result of `GET /health` against that base URL, so any
-deployment shows whether its API is reachable without opening devtools.
+`apps/web` calls `GET /health` through `fetchHealth` in `apps/web/src/lib/api.ts`.
+The Spec 3 app shell no longer shows that check on the landing page — hit the
+API host directly to confirm reachability.
 
 ## Previews
 
