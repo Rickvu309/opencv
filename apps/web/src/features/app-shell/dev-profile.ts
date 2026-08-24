@@ -3,7 +3,7 @@
  * "Eric Nguyen" demo persona (PRODUCT.md open question 4).
  */
 export const DEFAULT_DEV_PROFILE_NAME = "Alex Tran"
-export const DEFAULT_DEV_PROFILE_EMAIL = "you@openpath.app"
+const DEFAULT_DEV_PROFILE_EMAIL = "you@openpath.app"
 
 export type DevProfile = {
   name: string

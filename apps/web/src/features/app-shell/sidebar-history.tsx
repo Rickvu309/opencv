@@ -71,10 +71,13 @@ export function SidebarHistory({ collapsed, onNavigate }: Props) {
                 key={thread.id}
                 type="button"
                 onClick={() => handleOpen(thread.id)}
+                aria-current={
+                  activeThreadId === thread.id ? "true" : undefined
+                }
                 className={cn(
                   FOCUS_RING,
                   "w-full truncate rounded-md px-2.5 py-1.5 text-left text-sm",
-                  activeThreadId === thread.id && onHome
+                  activeThreadId === thread.id
                     ? "bg-muted font-medium text-foreground"
                     : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
                 )}

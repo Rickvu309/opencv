@@ -283,7 +283,7 @@ describe("search modal", () => {
 
     await openSearch()
     fireEvent.click(
-      screen.getByRole("button", { name: "Create new private chat" })
+      screen.getByRole("button", { name: "Start a new Thread" })
     )
     await expectHomeIdle()
     expect(
@@ -300,6 +300,10 @@ describe("search modal", () => {
     await openSearch()
 
     const dialog = screen.getByRole("dialog", { name: "Search" })
+    expect(within(dialog).getByText("Recent")).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "Resize" })
+    ).not.toBeInTheDocument()
     expect(
       within(dialog).getByRole("button", { name: /CV vs internship first/ })
     ).toBeInTheDocument()
@@ -338,7 +342,7 @@ describe("search modal", () => {
     fireEvent.click(
       within(dialog).getByRole("button", { name: /CV vs internship first/ })
     )
-    fireEvent.click(within(dialog).getByRole("button", { name: "Open chat" }))
+    fireEvent.click(within(dialog).getByRole("button", { name: "Open Thread" }))
 
     expect(
       await screen.findByRole("log", { name: "Thread" })
@@ -349,7 +353,7 @@ describe("search modal", () => {
 
     await openSearch()
     fireEvent.click(
-      screen.getByRole("button", { name: "Create new private chat" })
+      screen.getByRole("button", { name: "Start a new Thread" })
     )
     await expectHomeIdle()
     expect(screen.queryByRole("log", { name: "Thread" })).not.toBeInTheDocument()
