@@ -85,6 +85,11 @@ describe("app shell layout", () => {
     cleanup()
     renderApp(SURFACE_PATHS.settings)
     await expectStub("settings")
+    expect(screen.getByRole("tab", { name: "General" })).toBeInTheDocument()
+    expect(
+      screen.getByRole("tab", { name: "Connected apps" })
+    ).toBeInTheDocument()
+    expect(screen.getByRole("tab", { name: "Account" })).toBeInTheDocument()
   })
 
   it("navigates Home → Paper → Home and keeps titles in the main pane", async () => {
@@ -140,6 +145,9 @@ describe("app shell layout", () => {
 
     fireEvent.click(profile)
     await expectStub("settings")
+    expect(screen.getByRole("tab", { name: "General" })).toHaveAttribute(
+      "data-active"
+    )
     expect(
       screen.getByRole("link", { name: /profile and settings/i })
     ).toHaveAttribute("aria-current", "page")
@@ -168,6 +176,48 @@ describe("app shell layout", () => {
     expect(screen.getByRole("link", { name: "Paper" })).toHaveTextContent(
       "Paper"
     )
+  })
+})
+
+describe("settings workspace", () => {
+  it("opens the Connected apps catalog from Home without OAuth", async () => {
+    renderApp(SURFACE_PATHS.home)
+    await expectHomeIdle()
+
+    fireEvent.click(screen.getByRole("link", { name: "Connect apps" }))
+
+    expect(
+      await screen.findByRole("heading", { level: 2, name: "Connected apps" })
+    ).toBeInTheDocument()
+    expect(screen.getByRole("tab", { name: "Connected apps" })).toHaveAttribute(
+      "data-active"
+    )
+    expect(screen.getByRole("heading", { name: "Gmail" })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Outlook" })).toBeInTheDocument()
+    expect(
+      screen.getByRole("heading", { name: "Google Calendar" })
+    ).toBeInTheDocument()
+    expect(screen.getAllByRole("button", { name: /Connect/ })).toHaveLength(3)
+    for (const button of screen.getAllByRole("button", { name: /Connect/ })) {
+      expect(button).toBeDisabled()
+    }
+  })
+
+  it("shows a placeholder Account tab with sign out disabled", async () => {
+    renderApp(`${SURFACE_PATHS.settings}?tab=account`)
+
+    expect(
+      await screen.findByRole("heading", { level: 2, name: "Account" })
+    ).toBeInTheDocument()
+    expect(screen.getAllByText(DEFAULT_DEV_PROFILE_NAME).length).toBeGreaterThan(
+      0
+    )
+    expect(screen.getByText("you@openpath.app")).toBeInTheDocument()
+    expect(screen.queryByText(/Eric Nguyen/i)).not.toBeInTheDocument()
+
+    const signOut = screen.getByRole("button", { name: "Sign out" })
+    expect(signOut).toBeDisabled()
+    expect(screen.getByText("Coming soon")).toBeInTheDocument()
   })
 })
 

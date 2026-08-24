@@ -3,15 +3,18 @@
  * "Eric Nguyen" demo persona (PRODUCT.md open question 4).
  */
 export const DEFAULT_DEV_PROFILE_NAME = "Alex Tran"
+export const DEFAULT_DEV_PROFILE_EMAIL = "you@openpath.app"
 
 export type DevProfile = {
   name: string
+  email: string
   avatarSrc: string
 }
 
 export function getDevProfile(): DevProfile {
   return {
     name: import.meta.env.VITE_DEV_PROFILE_NAME || DEFAULT_DEV_PROFILE_NAME,
+    email: import.meta.env.VITE_DEV_PROFILE_EMAIL || DEFAULT_DEV_PROFILE_EMAIL,
     avatarSrc: import.meta.env.VITE_DEV_PROFILE_AVATAR || "",
   }
 }

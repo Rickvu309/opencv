@@ -131,5 +131,9 @@ describe("Home idle", () => {
       expect(router.state.location.pathname).toBe(SURFACE_PATHS.settings)
       expect(router.state.location.search).toMatchObject({ tab: "apps" })
     })
+    expect(screen.getByRole("tab", { name: "Connected apps" })).toHaveAttribute(
+      "data-active"
+    )
+    expect(screen.getByRole("heading", { name: "Gmail" })).toBeInTheDocument()
   })
 })
