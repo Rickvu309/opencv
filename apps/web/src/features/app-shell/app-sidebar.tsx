@@ -198,7 +198,7 @@ export function AppSidebar() {
     <TooltipProvider>
       <aside
         className={cn(
-          "flex shrink-0 flex-col overflow-hidden border-r border-border/60 bg-background py-2 transition-[width] duration-200 ease-in-out",
+          "flex h-full shrink-0 flex-col overflow-hidden border-r border-border/60 bg-background py-2 transition-[width] duration-200 ease-in-out",
           open ? "w-[15rem]" : "w-14"
         )}
       >
