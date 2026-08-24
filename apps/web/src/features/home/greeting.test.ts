@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest"
 
-import { PLACEHOLDER_USER_NAME } from "@/features/app-shell/placeholder-user.ts"
+import { DEFAULT_DEV_PROFILE_NAME } from "@/features/app-shell/dev-profile.ts"
 import { greetingPhrase, homeGreeting } from "@/features/home/greeting.ts"
 
 describe("home greeting", () => {
   it("uses Good morning before noon", () => {
     expect(greetingPhrase(new Date("2026-08-24T08:00:00"))).toBe("Good morning")
-    expect(homeGreeting("Lan", new Date("2026-08-24T08:00:00"))).toBe(
-      "Good morning, Lan"
-    )
+    expect(
+      homeGreeting(DEFAULT_DEV_PROFILE_NAME, new Date("2026-08-24T08:00:00"))
+    ).toBe(`Good morning, ${DEFAULT_DEV_PROFILE_NAME}`)
   })
 
   it("uses Good afternoon from noon until 17:00", () => {
@@ -26,9 +26,11 @@ describe("home greeting", () => {
   })
 
   it("shows the placeholder User name, not the demo persona", () => {
-    expect(PLACEHOLDER_USER_NAME).not.toMatch(/Eric/i)
+    expect(DEFAULT_DEV_PROFILE_NAME).not.toMatch(/Eric/i)
     expect(homeGreeting()).toMatch(
-      new RegExp(`^Good (morning|afternoon|evening), ${PLACEHOLDER_USER_NAME}$`)
+      new RegExp(
+        `^Good (morning|afternoon|evening), ${DEFAULT_DEV_PROFILE_NAME}$`
+      )
     )
   })
 })

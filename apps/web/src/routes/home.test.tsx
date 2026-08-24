@@ -10,7 +10,7 @@ import {
   within,
 } from "@testing-library/react"
 
-import { PLACEHOLDER_USER_NAME } from "@/features/app-shell/placeholder-user.ts"
+import { DEFAULT_DEV_PROFILE_NAME } from "@/features/app-shell/dev-profile.ts"
 import { SURFACE_COPY, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { SUGGESTION_POOLS } from "@/features/home/suggestions.ts"
 import { createAppRouter } from "@/router.tsx"
@@ -31,7 +31,7 @@ async function expectHomeIdle() {
     await screen.findByRole("heading", {
       level: 1,
       name: new RegExp(
-        `^Good (morning|afternoon|evening), ${PLACEHOLDER_USER_NAME}$`
+        `^Good (morning|afternoon|evening), ${DEFAULT_DEV_PROFILE_NAME}$`
       ),
     })
   ).toBeInTheDocument()

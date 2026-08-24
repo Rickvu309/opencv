@@ -1,6 +1,6 @@
 import { useState } from "react"
 
-import { PLACEHOLDER_USER_NAME } from "@/features/app-shell/placeholder-user.ts"
+import { getDevProfile } from "@/features/app-shell/dev-profile.ts"
 import { Composer } from "@/features/home/composer.tsx"
 import { ConnectedApps } from "@/features/home/connected-apps.tsx"
 import { homeGreeting } from "@/features/home/greeting.ts"
@@ -22,7 +22,7 @@ export function HomeDashboard() {
           <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-5">
             <header className="w-full text-center">
               <h1 className="font-[ui-serif,Georgia,Cambria,serif] text-3xl font-normal tracking-tight sm:text-4xl">
-                {homeGreeting(PLACEHOLDER_USER_NAME)}
+                {homeGreeting(getDevProfile().name)}
               </h1>
             </header>
 

@@ -1,4 +1,4 @@
-import { PLACEHOLDER_USER_NAME } from "@/features/app-shell/placeholder-user.ts"
+import { getDevProfile } from "@/features/app-shell/dev-profile.ts"
 
 export type GreetingPhrase = "Good morning" | "Good afternoon" | "Good evening"
 
@@ -10,7 +10,7 @@ export function greetingPhrase(now: Date = new Date()): GreetingPhrase {
 }
 
 export function homeGreeting(
-  name: string = PLACEHOLDER_USER_NAME,
+  name: string = getDevProfile().name,
   now: Date = new Date()
 ) {
   return `${greetingPhrase(now)}, ${name}`

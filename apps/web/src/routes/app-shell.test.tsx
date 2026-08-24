@@ -9,7 +9,7 @@ import {
   waitFor,
 } from "@testing-library/react"
 
-import { PLACEHOLDER_USER_NAME } from "@/features/app-shell/placeholder-user.ts"
+import { DEFAULT_DEV_PROFILE_NAME } from "@/features/app-shell/dev-profile.ts"
 import { SURFACE_COPY, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { createAppRouter } from "@/router.tsx"
 
@@ -37,7 +37,7 @@ async function expectHomeIdle() {
     await screen.findByRole("heading", {
       level: 1,
       name: new RegExp(
-        `^Good (morning|afternoon|evening), ${PLACEHOLDER_USER_NAME}$`
+        `^Good (morning|afternoon|evening), ${DEFAULT_DEV_PROFILE_NAME}$`
       ),
     })
   ).toBeInTheDocument()
@@ -101,5 +101,68 @@ describe("app shell layout", () => {
     expect(
       screen.queryByRole("heading", { level: 1, name: "Paper" })
     ).not.toBeInTheDocument()
+  })
+
+  it("highlights the active surface and shows an Apply activity badge", async () => {
+    renderApp(SURFACE_PATHS.paper)
+    await expectStub("paper")
+
+    expect(screen.getByRole("link", { name: "Paper" })).toHaveAttribute(
+      "aria-current",
+      "page"
+    )
+    expect(screen.getByRole("link", { name: "Home" })).not.toHaveAttribute(
+      "aria-current"
+    )
+
+    const apply = screen.getByRole("link", { name: "Apply" })
+    expect(apply.querySelector("[data-slot='badge']")).not.toBeNull()
+    expect(screen.getByRole("button", { name: "Search" })).toBeInTheDocument()
+  })
+
+  it("opens Settings from the profile footer, not a demo persona", async () => {
+    renderApp(SURFACE_PATHS.home)
+    await expectHomeIdle()
+
+    const profile = screen.getByRole("link", {
+      name: /profile and settings/i,
+    })
+    expect(profile).toHaveTextContent(/Alex Tran/)
+    expect(profile).not.toHaveTextContent(/Eric Nguyen/)
+
+    expect(
+      screen.queryByRole("link", { name: "Settings" })
+    ).not.toBeInTheDocument()
+
+    fireEvent.click(profile)
+    await expectStub("settings")
+    expect(
+      screen.getByRole("link", { name: /profile and settings/i })
+    ).toHaveAttribute("aria-current", "page")
+  })
+
+  it("keeps nav usable after the sidebar collapses", async () => {
+    renderApp(SURFACE_PATHS.home)
+    await expectHomeIdle()
+
+    fireEvent.click(screen.getByRole("button", { name: "Collapse sidebar" }))
+    expect(
+      screen.getByRole("button", { name: "Expand sidebar" })
+    ).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("link", { name: "Paper" }))
+    await expectStub("paper")
+    expect(screen.getByRole("link", { name: "Paper" })).toHaveAttribute(
+      "aria-current",
+      "page"
+    )
+
+    fireEvent.click(screen.getByRole("button", { name: "Expand sidebar" }))
+    expect(
+      screen.getByRole("button", { name: "Collapse sidebar" })
+    ).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Paper" })).toHaveTextContent(
+      "Paper"
+    )
   })
 })
