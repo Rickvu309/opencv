@@ -1,5 +1,5 @@
-import { CraftStub } from "@/features/app-shell/craft-stub.tsx"
+import { PaperWorkspace } from "@/features/paper/paper-workspace.tsx"
 
 export function PaperPage() {
-  return <CraftStub surface="paper" />
+  return <PaperWorkspace />
 }

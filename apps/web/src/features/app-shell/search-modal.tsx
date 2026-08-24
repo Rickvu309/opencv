@@ -5,21 +5,14 @@ import {
   DialogTitle,
 } from "@workspace/ui/components/dialog"
 import { cn } from "@workspace/ui/lib/utils"
-import {
-  Briefcase,
-  FileText,
-  Globe,
-  Maximize2,
-  Search,
-  SquarePen,
-} from "lucide-react"
+import { Briefcase, FileText, Globe, Search, SquarePen } from "lucide-react"
 
 import { OpenPathLogo } from "@/features/app-shell/app-logo.tsx"
 import { FOCUS_RING } from "@/features/app-shell/focus-ring.ts"
 import type { SurfaceId } from "@/features/app-shell/surfaces.ts"
 import type { HomeThread } from "@/features/home/threads.ts"
 
-export type SearchThread = {
+type SearchThread = {
   id: string
   title: string
   when: string
@@ -56,7 +49,7 @@ const ACTIONS: {
   icon: typeof SquarePen
   run: "chat" | Exclude<SurfaceId, "home" | "settings">
 }[] = [
-  { id: "a1", label: "Create new private chat", icon: SquarePen, run: "chat" },
+  { id: "a1", label: "Start a new Thread", icon: SquarePen, run: "chat" },
   { id: "a2", label: "Open Paper", icon: FileText, run: "paper" },
   { id: "a3", label: "Open Apply", icon: Briefcase, run: "apply" },
   { id: "a4", label: "Open Pitch", icon: Globe, run: "pitch" },
@@ -258,7 +251,7 @@ export function SearchModal({
 
               <div className="mt-4 px-3 pb-3">
                 <p className="mb-1.5 px-1 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
-                  Today
+                  Recent
                 </p>
                 <div className="space-y-0.5">
                   {recents.map((t) => {
@@ -320,7 +313,7 @@ export function SearchModal({
                   </div>
                   <p className="rounded-xl border border-border bg-background p-4 text-sm leading-relaxed text-muted-foreground">
                     {selected.preview ??
-                      "Open this chat to continue with Coach."}
+                      "Open this Thread to continue with Coach."}
                   </p>
                   <button
                     type="button"
@@ -330,7 +323,7 @@ export function SearchModal({
                     )}
                     onClick={() => openThread(selected.id)}
                   >
-                    Open chat
+                    Open Thread
                   </button>
                 </div>
               ) : (
@@ -341,15 +334,6 @@ export function SearchModal({
             </div>
           </div>
         </div>
-
-        <button
-          type="button"
-          className="absolute bottom-2 left-2 rounded p-1 text-muted-foreground/50 hover:text-muted-foreground max-sm:hidden"
-          aria-label="Resize"
-          tabIndex={-1}
-        >
-          <Maximize2 className="size-3.5" />
-        </button>
       </DialogContent>
     </Dialog>
   )

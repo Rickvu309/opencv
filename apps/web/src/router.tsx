@@ -65,7 +65,7 @@ const settingsRoute = createRoute({
   component: SettingsPage,
 })
 
-export const routeTree = rootRoute.addChildren([
+const routeTree = rootRoute.addChildren([
   indexRoute,
   appLayoutRoute.addChildren([
     homeRoute,

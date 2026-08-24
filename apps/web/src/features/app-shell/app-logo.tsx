@@ -6,7 +6,7 @@ type MarkProps = {
 }
 
 /** Icon only: open C arc with center dot */
-export function OpenPathMark({ className }: MarkProps) {
+function OpenPathMark({ className }: MarkProps) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"

@@ -132,7 +132,7 @@ describe("Home chat mode and History", () => {
       SEED_THREADS[0]!.messages[1]!.text
     )
 
-    fireEvent.click(screen.getByRole("button", { name: "New chat" }))
+    fireEvent.click(screen.getByRole("button", { name: "New Thread" }))
     await expectHomeIdle()
     expect(
       screen.queryByRole("log", { name: "Thread" })
@@ -160,6 +160,9 @@ describe("Home chat mode and History", () => {
         name: SURFACE_COPY.paper.title,
       })
     ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "Should I finish my CV first?" })
+    ).toHaveAttribute("aria-current", "true")
 
     fireEvent.click(
       screen.getByRole("button", { name: "Should I finish my CV first?" })

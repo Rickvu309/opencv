@@ -1,13 +1,5 @@
 export type SurfaceId = "home" | "paper" | "apply" | "pitch" | "settings"
 
-export const SURFACES: { id: SurfaceId; label: string }[] = [
-  { id: "home", label: "Home" },
-  { id: "paper", label: "Paper" },
-  { id: "apply", label: "Apply" },
-  { id: "pitch", label: "Pitch" },
-  { id: "settings", label: "Settings" },
-]
-
 export const SURFACE_PATHS = {
   home: "/app",
   paper: "/app/paper",
@@ -16,7 +8,7 @@ export const SURFACE_PATHS = {
   settings: "/app/settings",
 } as const satisfies Record<SurfaceId, string>
 
-export const SETTINGS_TABS = ["general", "apps", "account"] as const
+const SETTINGS_TABS = ["general", "apps", "account"] as const
 export type SettingsTab = (typeof SETTINGS_TABS)[number]
 
 export const SETTINGS_TAB_ITEMS: { id: SettingsTab; label: string }[] = [

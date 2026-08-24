@@ -7,7 +7,7 @@ const CATALOG: { id: BrandId; description: string }[] = [
   {
     id: "gmail",
     description:
-      "Pull recruiter replies and application confirmations into Apply. Match threads to roles automatically.",
+      "Pull recruiter replies and application confirmations into Apply. Match mail to Opportunities automatically.",
   },
   {
     id: "outlook",
