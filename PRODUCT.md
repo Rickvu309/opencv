@@ -1,5 +1,7 @@
 # Product
 
+This PRD describes the product the app-shell prototype validated (`prototype/app-shell`, frozen 2026-08-24). The prototype is the UX reference; this file records what it decided and what it left open. Vocabulary: `CONTEXT.md`.
+
 ## Users
 
 Vietnamese early-career users: university students (roughly year 3–4) and new graduates with under ~5 years of experience. They are unsure of direction, easily swayed by trends, and often cannot afford or access a human mentor. They use OpenPath in short, anxious sessions — between classes, late at night before a deadline — asking questions they'd hesitate to ask a professor.
@@ -10,22 +12,52 @@ Secondary (later): companies hiring early-career talent who want better-fit cand
 
 ## Purpose
 
-OpenPath is a personalised AI career Coach. It helps Users see their Profile clearly, build Paper, prepare Pitch, and save/analyse Opportunities they bring in — with the Coach able to act through Commands, not only advise.
+OpenPath is a personalised AI career Coach inside a working product. The User lives in one shell: Home is the Coach; Paper, Apply, and Pitch are the craft surfaces where career evidence gets made, used, and shown. The Coach helps build all three by acting through Commands, not only advising.
 
 Success: a User who decides from evidence about themselves and the market (not trend-chasing), and who comes back weekly.
 
-## Near-term scope
+## The product (validated by prototype)
 
-**In**
-- **Paper** — full CV build/edit; smooth and easy (primary craft surface).
-- **Opportunity** — save (form or paste; best-effort URL fetch) and analyse (fit + next actions). No Search.
-- **Pitch** — personal branding kit: LinkedIn-oriented and other social profile copy, plus social post **drafts** only (no publishing).
-- **Coach** — helps write/edit Paper and Pitch and analyse Opportunities by acting through Commands where allowed.
+### Shell
+Grok-style layout (ADR-0004): collapsible left sidebar — Home, Search, Paper, Apply, Pitch, History (recent Threads), profile → Settings — and a main pane the active surface fills. Search is a ⌘K modal with quick actions and Thread lookup.
 
-**Out for now**
-- Search / job-board discovery.
-- Publishing or scheduling posts to social networks.
+### Home — the Coach
+Idle: time-of-day greeting, suggestion chips, multi-line composer, connect-apps row. Sending switches Home into a chat Thread; History resumes old Threads; new chat returns to idle.
+
+### Paper — evidence and documents
+Drive-style workspace of CVs, Letters, and Proofs with status (draft/ready/published) and links to Apply. CV editor: five templates (classic internship, product & design, project-led, campus, with-photo), A4 pagination, section editing. Proof editor: chain or timeline of context → action → outcome steps with photos. An AI-chat side panel assists editing.
+
+### Apply — pursuit tracking
+Kanban of Opportunity cards across Stages (Inbox, Prep, Sent, Live, Closed) with drag-and-drop, a calendar of Tracks (interviews, deadlines, follow-ups), per-card Fit score and notes, and a job-detail view.
+
+### Pitch — the shareable portfolio
+Read.cv-style page: about, achievements, experience, work, GitHub heatmap, Instagram-style story highlights, bento moments, gallery, contact. Edit mode hides/shows blocks; publish produces a copyable link.
+
+### Settings
+Tabs: General, Connected apps (catalog stub — Gmail, Outlook, Google Calendar), Account (placeholder until auth).
+
+### Notifications
+Bell popover inbox on Home (Apply and Paper events). Prototype-validated; ships after the shell.
+
+## Productionization order
+
+The prototype is throwaway code; production rebuilds it spec by spec. Spec 3 = shell + stub surfaces; then data/Commands foundation; then Paper, Apply, Pitch (see `docs/specs/spec-3-app-shell.md`, Route to real product).
+
+## Out of scope
+
+- Search / job-board discovery (Users bring Opportunities in themselves).
+- Publishing or scheduling social posts. Pitch publishes a portfolio link only.
+- Real OAuth for Connected apps.
 - Company/recruiter product.
+- i18n / Vietnamese copy (English first).
+
+## Open questions (created by the prototype, not settled)
+
+1. **Naked Fit score.** Cards show a bare 0–100 number. Principle 1 says claims show their basis; anti-references warn against career-quiz astrology. Production Fit must either show its evidence or not ship as a number.
+2. **Live GitHub APIs.** Pitch calls `api.github.com` and a third-party contributions API (`jogruber.de`) client-side. Dependency, rate limits, and privacy are undecided.
+3. **Paper storage format.** Prototype serializes docs as `cv:v1:` / `proof:v1:` prefixed JSON strings in a `content` field. Placeholder, not a schema decision — the data spec decides the real model.
+4. **Seed persona.** "Eric Nguyen" and all seed cards/threads are demo data; production shows a placeholder User until auth, never the demo persona.
+5. **Pitch post drafts.** The pre-prototype "social post drafts" idea is out of the definition; whether it returns as a later Pitch phase is unresolved.
 
 ## Personality
 
