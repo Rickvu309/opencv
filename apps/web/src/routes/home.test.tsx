@@ -77,11 +77,18 @@ describe("Home idle", () => {
     expect(composer).toHaveValue("Help me plan the week")
 
     fireEvent.keyDown(composer, { key: "Enter", shiftKey: false })
-    expect(composer).toHaveValue("")
-
-    fireEvent.change(composer, { target: { value: "Line one\nLine two" } })
-    fireEvent.keyDown(composer, { key: "Enter", shiftKey: false })
-    expect(composer).toHaveValue("")
+    expect(screen.getByRole("textbox", { name: "Message" })).toHaveValue("")
+    expect(
+      screen.getByRole("status", { name: "Coach is working" })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("heading", {
+        level: 1,
+        name: new RegExp(
+          `^Good (morning|afternoon|evening), ${DEFAULT_DEV_PROFILE_NAME}$`
+        ),
+      })
+    ).not.toBeInTheDocument()
   })
 
   it("opens stub attach and upload items from the + menu", async () => {
