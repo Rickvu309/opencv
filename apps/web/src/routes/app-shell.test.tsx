@@ -10,6 +10,7 @@ import {
 } from "@testing-library/react"
 
 import { DEFAULT_DEV_PROFILE_NAME } from "@/features/app-shell/dev-profile.ts"
+import { SEED_THREADS } from "@/features/app-shell/seed-threads.ts"
 import { SURFACE_COPY, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { createAppRouter } from "@/router.tsx"
 
@@ -166,3 +167,112 @@ describe("app shell layout", () => {
     )
   })
 })
+
+async function openSearch() {
+  fireEvent.click(screen.getByRole("button", { name: "Search" }))
+  expect(
+    await screen.findByRole("dialog", { name: "Search" })
+  ).toBeInTheDocument()
+}
+
+describe("search modal", () => {
+  it("opens from the sidebar and closes on Escape", async () => {
+    renderApp(SURFACE_PATHS.home)
+    await expectHomeIdle()
+    await openSearch()
+
+    fireEvent.keyDown(document, { key: "Escape" })
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("dialog", { name: "Search" })
+      ).not.toBeInTheDocument()
+    })
+  })
+
+  it("opens from Ctrl+K and from Meta+K", async () => {
+    renderApp(SURFACE_PATHS.home)
+    await expectHomeIdle()
+
+    fireEvent.keyDown(window, { key: "k", ctrlKey: true })
+    expect(
+      await screen.findByRole("dialog", { name: "Search" })
+    ).toBeInTheDocument()
+
+    fireEvent.keyDown(document, { key: "Escape" })
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("dialog", { name: "Search" })
+      ).not.toBeInTheDocument()
+    })
+
+    fireEvent.keyDown(window, { key: "k", metaKey: true })
+    expect(
+      await screen.findByRole("dialog", { name: "Search" })
+    ).toBeInTheDocument()
+  })
+
+  it("jumps surfaces and starts a new chat", async () => {
+    const { router } = renderApp(SURFACE_PATHS.home)
+    await expectHomeIdle()
+    await openSearch()
+
+    fireEvent.change(screen.getByRole("textbox", { name: "Search" }), {
+      target: { value: "paper" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Open Paper" }))
+    await expectStub("paper")
+    expect(
+      screen.queryByRole("dialog", { name: "Search" })
+    ).not.toBeInTheDocument()
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(SURFACE_PATHS.paper)
+    })
+
+    await openSearch()
+    fireEvent.click(
+      screen.getByRole("button", { name: "Create new private chat" })
+    )
+    await expectHomeIdle()
+    expect(
+      screen.queryByRole("dialog", { name: "Search" })
+    ).not.toBeInTheDocument()
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(SURFACE_PATHS.home)
+    })
+  })
+
+  it("filters seed Thread titles", async () => {
+    renderApp(SURFACE_PATHS.home)
+    await expectHomeIdle()
+    await openSearch()
+
+    expect(
+      screen.getByRole("button", { name: /CV vs internship first/ })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: /Checkout study/ })
+    ).toBeInTheDocument()
+
+    fireEvent.change(screen.getByRole("textbox", { name: "Search" }), {
+      target: { value: "checkout" },
+    })
+
+    expect(
+      screen.getByRole("button", { name: /Checkout study/ })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: /CV vs internship first/ })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: /Is this role a fit/ })
+    ).not.toBeInTheDocument()
+
+    const other = SEED_THREADS.find((t) => !/checkout/i.test(t.title))
+    expect(other).toBeTruthy()
+    fireEvent.change(screen.getByRole("textbox", { name: "Search" }), {
+      target: { value: "zzzz-no-thread" },
+    })
+    expect(screen.getByText("No conversations")).toBeInTheDocument()
+  })
+})
+
