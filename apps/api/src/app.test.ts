@@ -12,19 +12,19 @@ describe("GET /health", () => {
 
 describe("CORS", () => {
   it("lets the configured web origin read the health response", async () => {
-    const api = createApp({ webOrigins: ["https://openpath-lovat.vercel.app"] })
+    const api = createApp({ webOrigins: ["https://openpath-app.vercel.app"] })
 
     const res = await api.request("/health", {
-      headers: { Origin: "https://openpath-lovat.vercel.app" },
+      headers: { Origin: "https://openpath-app.vercel.app" },
     })
 
     expect(res.headers.get("access-control-allow-origin")).toBe(
-      "https://openpath-lovat.vercel.app"
+      "https://openpath-app.vercel.app"
     )
   })
 
   it("does not let an unlisted origin read the health response", async () => {
-    const api = createApp({ webOrigins: ["https://openpath-lovat.vercel.app"] })
+    const api = createApp({ webOrigins: ["https://openpath-app.vercel.app"] })
 
     const res = await api.request("/health", {
       headers: { Origin: "https://attacker.example.com" },
@@ -65,19 +65,19 @@ describe("CORS", () => {
   })
 
   it("answers the browser preflight for a configured origin", async () => {
-    const api = createApp({ webOrigins: ["https://openpath-lovat.vercel.app"] })
+    const api = createApp({ webOrigins: ["https://openpath-app.vercel.app"] })
 
     const res = await api.request("/health", {
       method: "OPTIONS",
       headers: {
-        Origin: "https://openpath-lovat.vercel.app",
+        Origin: "https://openpath-app.vercel.app",
         "Access-Control-Request-Method": "GET",
       },
     })
 
     expect(res.status).toBe(204)
     expect(res.headers.get("access-control-allow-origin")).toBe(
-      "https://openpath-lovat.vercel.app"
+      "https://openpath-app.vercel.app"
     )
   })
 })

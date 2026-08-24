@@ -32,13 +32,15 @@ subdomains without opening the API to every host under `vercel.app`.
 
 | Environment  | `WEB_ORIGINS`                                                   |
 | ------------ | --------------------------------------------------------------- |
-| `production` | `https://openpath-lovat.vercel.app`                             |
+| `production` | `https://openpath-app.vercel.app`                               |
 | `staging`    | `https://openpath-*-rickvudev.vercel.app,http://localhost:5173` |
 
-Production stays pinned to the production alias. A production deployment opened
-through its per-deployment URL rather than the alias is therefore blocked by
-CORS — use the alias. Unset `WEB_ORIGINS` means local-only
-(`http://localhost:5173`), which is what `pnpm dev` needs.
+Production stays pinned to the production alias. The previous auto alias
+`https://openpath-lovat.vercel.app` 308-redirects to that URL, so the browser
+calls `/health` from the new origin. A production deployment opened through
+its per-deployment URL rather than the alias is therefore blocked by CORS —
+use the alias. Unset `WEB_ORIGINS` means local-only (`http://localhost:5173`),
+which is what `pnpm dev` needs.
 
 ## Local commands
 

@@ -6,6 +6,14 @@ dashboard — `vercel.json` wins over the dashboard's build fields, so those can
 stay untouched. Root Directory and Ignored Build Step are dashboard-only and are
 covered under setup below.
 
+Production web: https://openpath-app.vercel.app
+
+That hostname is a project domain on the existing `openpath` Vercel web
+project (not a second app). The previous auto alias
+`https://openpath-lovat.vercel.app` 308-redirects there. Team aliases
+(`openpath-rickvudev.vercel.app`, `openpath-git-main-rickvudev.vercel.app`)
+still serve the same production deployment without redirecting.
+
 | Field             | Value                            | Why                                                                                                                                                                                                                  |
 | ----------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `installCommand`  | `pnpm install --frozen-lockfile` | Fails the build when `pnpm-lock.yaml` drifts from `package.json` instead of silently resolving something new.                                                                                                        |
