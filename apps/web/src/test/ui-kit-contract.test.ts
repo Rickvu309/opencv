@@ -60,11 +60,19 @@ describe("UI package kit surface", () => {
     expect(
       existsSync(path.join(repoRoot, "packages/ui/src/components/input.tsx"))
     ).toBe(true)
+    expect(
+      existsSync(
+        path.join(repoRoot, "packages/ui/src/components/dropdown-menu.tsx")
+      )
+    ).toBe(true)
     expect(read("packages/ui/src/components/button.tsx")).toMatch(
       /bg-primary|data-slot=["']button["']/
     )
     expect(read("packages/ui/src/components/input.tsx")).toMatch(
       /data-slot=["']input["']/
+    )
+    expect(read("packages/ui/src/components/dropdown-menu.tsx")).toMatch(
+      /data-slot=["']dropdown-menu["']/
     )
   })
 })
