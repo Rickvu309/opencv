@@ -1,4 +1,4 @@
-import { useState, type ComponentType, type ReactElement } from "react"
+import type { ComponentType, ReactElement } from "react"
 import { Link } from "@tanstack/react-router"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
@@ -20,6 +20,7 @@ import {
 } from "lucide-react"
 
 import { OpenPathLogo } from "@/features/app-shell/app-logo.tsx"
+import { FOCUS_RING } from "@/features/app-shell/focus-ring.ts"
 import { NavProfile } from "@/features/app-shell/nav-profile.tsx"
 import { SidebarHistory } from "@/features/app-shell/sidebar-history.tsx"
 import { SURFACE_PATHS, type SurfaceId } from "@/features/app-shell/surfaces.ts"
@@ -76,6 +77,7 @@ const PRIMARY_NAV: Array<RouteNavItem | ActionNavItem> = [
 
 function navItemClassName(active: boolean, collapsed: boolean) {
   return cn(
+    FOCUS_RING,
     "relative flex h-8 w-full items-center rounded-lg text-sm transition-colors",
     collapsed ? "justify-center px-0" : "gap-2 px-2",
     active
@@ -200,15 +202,30 @@ function SearchNavItem({
   return <CollapsedTip label={item.label}>{button}</CollapsedTip>
 }
 
-export function AppSidebar({ onSearch }: { onSearch: () => void }) {
-  const [open, setOpen] = useState(true)
+type Props = {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSearch: () => void
+  onNavigate?: () => void
+}
+
+export function AppSidebar({
+  open,
+  onOpenChange,
+  onSearch,
+  onNavigate,
+}: Props) {
   const { newChat } = useThreadStore()
+  const collapsed = !open
 
   return (
     <TooltipProvider>
       <aside
+        aria-label="App"
+        data-expanded={open ? "true" : "false"}
         className={cn(
           "flex h-full shrink-0 flex-col overflow-hidden border-r border-border/60 bg-background py-2 transition-[width] duration-200 ease-in-out",
+          "max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-40",
           open ? "w-[15rem]" : "w-14"
         )}
       >
@@ -227,7 +244,8 @@ export function AppSidebar({ onSearch }: { onSearch: () => void }) {
                 variant="ghost"
                 aria-label="Collapse sidebar"
                 aria-expanded={true}
-                onClick={() => setOpen(false)}
+                aria-controls="app-sidebar-nav"
+                onClick={() => onOpenChange(false)}
               >
                 <PanelLeftClose />
               </Button>
@@ -239,36 +257,44 @@ export function AppSidebar({ onSearch }: { onSearch: () => void }) {
               variant="ghost"
               aria-label="Expand sidebar"
               aria-expanded={false}
-              onClick={() => setOpen(true)}
+              aria-controls="app-sidebar-nav"
+              onClick={() => onOpenChange(true)}
             >
               <PanelLeftOpen />
             </Button>
           )}
         </div>
 
-        <nav aria-label="Surfaces" className="flex flex-col gap-0.5 px-1.5">
+        <nav
+          id="app-sidebar-nav"
+          aria-label="Surfaces"
+          className="flex flex-col gap-0.5 px-1.5"
+        >
           {PRIMARY_NAV.map((item) =>
             item.kind === "action" ? (
               <SearchNavItem
                 key={item.id}
                 item={item}
-                collapsed={!open}
+                collapsed={collapsed}
                 onSearch={onSearch}
               />
             ) : (
               <RouteNavLink
                 key={item.id}
                 item={item}
-                collapsed={!open}
-                onClick={item.id === "home" ? newChat : undefined}
+                collapsed={collapsed}
+                onClick={() => {
+                  if (item.id === "home") newChat()
+                  onNavigate?.()
+                }}
               />
             )
           )}
         </nav>
 
-        <SidebarHistory collapsed={!open} />
+        <SidebarHistory collapsed={collapsed} onNavigate={onNavigate} />
 
-        <NavProfile collapsed={!open} />
+        <NavProfile collapsed={collapsed} onNavigate={onNavigate} />
       </aside>
     </TooltipProvider>
   )

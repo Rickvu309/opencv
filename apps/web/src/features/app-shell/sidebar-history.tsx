@@ -3,15 +3,17 @@ import { useNavigate, useRouterState } from "@tanstack/react-router"
 import { cn } from "@workspace/ui/lib/utils"
 import { ChevronDown } from "lucide-react"
 
+import { FOCUS_RING } from "@/features/app-shell/focus-ring.ts"
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { useThreadStore } from "@/features/home/use-thread-store.ts"
 import { HISTORY_PREVIEW_COUNT } from "@/features/home/threads.ts"
 
 type Props = {
   collapsed: boolean
+  onNavigate?: () => void
 }
 
-export function SidebarHistory({ collapsed }: Props) {
+export function SidebarHistory({ collapsed, onNavigate }: Props) {
   const { threads, activeThreadId, openThread } = useThreadStore()
   const navigate = useNavigate()
   const pathname = useRouterState({
@@ -27,6 +29,7 @@ export function SidebarHistory({ collapsed }: Props) {
     if (!onHome) {
       void navigate({ to: SURFACE_PATHS.home })
     }
+    onNavigate?.()
   }
 
   return (
@@ -36,11 +39,15 @@ export function SidebarHistory({ collapsed }: Props) {
         collapsed ? "pointer-events-none opacity-0" : "opacity-100"
       )}
       aria-hidden={collapsed}
+      inert={collapsed || undefined}
     >
       <div className="flex min-h-0 flex-1 flex-col">
         <button
           type="button"
-          className="flex w-full items-center gap-1 px-2 py-1 text-xs font-medium text-muted-foreground"
+          className={cn(
+            FOCUS_RING,
+            "flex w-full items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground"
+          )}
           aria-expanded={historyOpen}
           aria-controls="sidebar-history-list"
           onClick={() => setHistoryOpen((open) => !open)}
@@ -65,6 +72,7 @@ export function SidebarHistory({ collapsed }: Props) {
                 type="button"
                 onClick={() => handleOpen(thread.id)}
                 className={cn(
+                  FOCUS_RING,
                   "w-full truncate rounded-md px-2.5 py-1.5 text-left text-sm",
                   activeThreadId === thread.id && onHome
                     ? "bg-muted font-medium text-foreground"
@@ -79,7 +87,10 @@ export function SidebarHistory({ collapsed }: Props) {
                 type="button"
                 onClick={() => setShowAll((value) => !value)}
                 aria-expanded={showAll}
-                className="w-full px-3 py-2 text-left text-xs font-medium text-muted-foreground hover:text-foreground"
+                className={cn(
+                  FOCUS_RING,
+                  "w-full rounded-md px-3 py-2 text-left text-xs font-medium text-muted-foreground hover:text-foreground"
+                )}
               >
                 {showAll ? "Show less" : "See all"}
               </button>

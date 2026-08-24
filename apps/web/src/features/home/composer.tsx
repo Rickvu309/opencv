@@ -20,6 +20,7 @@ import {
 } from "@workspace/ui/components/dropdown-menu"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { FOCUS_RING } from "@/features/app-shell/focus-ring.ts"
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 
 const LINE_HEIGHT_PX = 24
@@ -80,7 +81,10 @@ export function Composer({
     <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
       <DropdownMenuTrigger
         aria-label={menuOpen ? "Close menu" : "Add"}
-        className="flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground"
+        className={cn(
+          FOCUS_RING,
+          "flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground"
+        )}
       >
         {menuOpen ? <X className="size-4" /> : <Plus className="size-4" />}
       </DropdownMenuTrigger>
@@ -110,7 +114,10 @@ export function Composer({
     <button
       type="button"
       aria-label="Voice input"
-      className="flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground"
+      className={cn(
+        FOCUS_RING,
+        "flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground"
+      )}
     >
       <Mic className="size-4" />
     </button>

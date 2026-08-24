@@ -8,6 +8,7 @@ import {
 
 import { AppsCatalog } from "@/features/app-shell/apps-catalog.tsx"
 import { getDevProfile } from "@/features/app-shell/dev-profile.ts"
+import { useMediaQuery } from "@/features/app-shell/use-media-query.ts"
 import {
   SETTINGS_TAB_ITEMS,
   SURFACE_COPY,
@@ -26,10 +27,11 @@ export function SettingsWorkspace({
 }: SettingsWorkspaceProps) {
   const copy = SURFACE_COPY.settings
   const profile = getDevProfile()
+  const isDesktop = useMediaQuery("(min-width: 768px)", true)
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="border-b border-border bg-background px-6 py-4">
+      <div className="border-b border-border bg-background px-4 py-4 sm:px-6">
         <h1 className="text-lg font-semibold tracking-tight">{copy.title}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{copy.body}</p>
       </div>
@@ -39,7 +41,7 @@ export function SettingsWorkspace({
         onValueChange={(value) => {
           if (isSettingsTab(value)) onTabChange?.(value)
         }}
-        orientation="vertical"
+        orientation={isDesktop ? "vertical" : "horizontal"}
         className="min-h-0 flex-1 gap-0 max-md:flex-col"
       >
         <TabsList

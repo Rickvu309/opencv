@@ -3,6 +3,7 @@ import { ChevronRight } from "lucide-react"
 
 import { cn } from "@workspace/ui/lib/utils"
 
+import { FOCUS_RING } from "@/features/app-shell/focus-ring.ts"
 import { BrandIcon } from "@/features/app-shell/brand-icon.tsx"
 import { type BrandId } from "@/features/app-shell/brands.ts"
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
@@ -28,7 +29,10 @@ export function ConnectedApps({ className }: Props) {
       <Link
         to={SURFACE_PATHS.settings}
         search={{ tab: "apps" }}
-        className="inline-flex items-center gap-0.5 transition-colors hover:text-foreground"
+        className={cn(
+          FOCUS_RING,
+          "inline-flex items-center gap-0.5 rounded-sm transition-colors hover:text-foreground"
+        )}
       >
         Connect apps
         <ChevronRight className="size-3.5" aria-hidden />
