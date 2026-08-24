@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-router"
 
 import { AppShellLayout } from "@/features/app-shell/app-shell-layout.tsx"
+import { validateSettingsSearch } from "@/features/app-shell/surfaces.ts"
 import { ApplyPage } from "@/routes/apply.tsx"
 import { HomePage } from "@/routes/home.tsx"
 import { PaperPage } from "@/routes/paper.tsx"
@@ -60,6 +61,7 @@ const pitchRoute = createRoute({
 const settingsRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/settings",
+  validateSearch: validateSettingsSearch,
   component: SettingsPage,
 })
 

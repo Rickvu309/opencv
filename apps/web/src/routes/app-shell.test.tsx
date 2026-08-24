@@ -9,6 +9,7 @@ import {
   waitFor,
 } from "@testing-library/react"
 
+import { DEFAULT_DEV_PROFILE_NAME } from "@/features/app-shell/dev-profile.ts"
 import { SURFACE_COPY, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { createAppRouter } from "@/router.tsx"
 
@@ -23,12 +24,23 @@ function renderApp(initialEntry = "/") {
   }
 }
 
-async function expectStub(surface: keyof typeof SURFACE_COPY) {
+async function expectStub(surface: Exclude<keyof typeof SURFACE_COPY, "home">) {
   const copy = SURFACE_COPY[surface]
   expect(
     await screen.findByRole("heading", { level: 1, name: copy.title })
   ).toBeInTheDocument()
   expect(screen.getByText(copy.body)).toBeInTheDocument()
+}
+
+async function expectHomeIdle() {
+  expect(
+    await screen.findByRole("heading", {
+      level: 1,
+      name: new RegExp(
+        `^Good (morning|afternoon|evening), ${DEFAULT_DEV_PROFILE_NAME}$`
+      ),
+    })
+  ).toBeInTheDocument()
 }
 
 beforeEach(() => {
@@ -43,7 +55,7 @@ afterEach(() => {
 describe("app shell layout", () => {
   it("defaults the app root to Home", async () => {
     const { router } = renderApp("/")
-    await expectStub("home")
+    await expectHomeIdle()
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(SURFACE_PATHS.home)
     })
@@ -51,7 +63,7 @@ describe("app shell layout", () => {
 
   it("opens Home at /app", async () => {
     renderApp("/app")
-    await expectStub("home")
+    await expectHomeIdle()
   })
 
   it("opens each surface at a stable URL", async () => {
@@ -71,18 +83,21 @@ describe("app shell layout", () => {
     await expectStub("settings")
   })
 
-  it("navigates Home → Paper → Home and keeps stub titles in the main pane", async () => {
+  it("navigates Home → Paper → Home and keeps titles in the main pane", async () => {
     renderApp(SURFACE_PATHS.home)
-    await expectStub("home")
+    await expectHomeIdle()
 
     fireEvent.click(screen.getByRole("link", { name: "Paper" }))
     await expectStub("paper")
     expect(
-      screen.queryByRole("heading", { level: 1, name: "Home" })
+      screen.queryByRole("heading", {
+        level: 1,
+        name: /Good (morning|afternoon|evening)/,
+      })
     ).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole("link", { name: "Home" }))
-    await expectStub("home")
+    await expectHomeIdle()
     expect(
       screen.queryByRole("heading", { level: 1, name: "Paper" })
     ).not.toBeInTheDocument()
@@ -107,7 +122,7 @@ describe("app shell layout", () => {
 
   it("opens Settings from the profile footer, not a demo persona", async () => {
     renderApp(SURFACE_PATHS.home)
-    await expectStub("home")
+    await expectHomeIdle()
 
     const profile = screen.getByRole("link", {
       name: /profile and settings/i,
@@ -115,7 +130,9 @@ describe("app shell layout", () => {
     expect(profile).toHaveTextContent(/Alex Tran/)
     expect(profile).not.toHaveTextContent(/Eric Nguyen/)
 
-    expect(screen.queryByRole("link", { name: "Settings" })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("link", { name: "Settings" })
+    ).not.toBeInTheDocument()
 
     fireEvent.click(profile)
     await expectStub("settings")
@@ -126,7 +143,7 @@ describe("app shell layout", () => {
 
   it("keeps nav usable after the sidebar collapses", async () => {
     renderApp(SURFACE_PATHS.home)
-    await expectStub("home")
+    await expectHomeIdle()
 
     fireEvent.click(screen.getByRole("button", { name: "Collapse sidebar" }))
     expect(
