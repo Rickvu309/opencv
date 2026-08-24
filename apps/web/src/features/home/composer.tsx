@@ -151,6 +151,13 @@ export function Composer({
     />
   )
 
+  const trailingActions = (
+    <div className="flex shrink-0 items-center gap-0.5">
+      {micButton}
+      {sendButton}
+    </div>
+  )
+
   return (
     <div className="relative w-full">
       <div
@@ -161,24 +168,15 @@ export function Composer({
             : "flex min-h-[3.25rem] items-center gap-1 rounded-full px-2.5 py-2"
         )}
       >
+        {expanded ? null : addButton}
+        {textarea}
         {expanded ? (
-          <>
-            {textarea}
-            <div className="mt-1 flex items-center justify-between gap-2">
-              <div className="flex min-w-0 items-center gap-1">{addButton}</div>
-              <div className="flex shrink-0 items-center gap-0.5">
-                {micButton}
-                {sendButton}
-              </div>
-            </div>
-          </>
+          <div className="mt-1 flex w-full items-center justify-between gap-2">
+            <div className="flex min-w-0 items-center gap-1">{addButton}</div>
+            {trailingActions}
+          </div>
         ) : (
-          <>
-            {addButton}
-            {textarea}
-            {micButton}
-            {sendButton}
-          </>
+          trailingActions
         )}
       </div>
     </div>

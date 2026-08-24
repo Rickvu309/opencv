@@ -78,6 +78,10 @@ describe("Home idle", () => {
 
     fireEvent.keyDown(composer, { key: "Enter", shiftKey: false })
     expect(composer).toHaveValue("")
+
+    fireEvent.change(composer, { target: { value: "Line one\nLine two" } })
+    fireEvent.keyDown(composer, { key: "Enter", shiftKey: false })
+    expect(composer).toHaveValue("")
   })
 
   it("opens stub attach and upload items from the + menu", async () => {
