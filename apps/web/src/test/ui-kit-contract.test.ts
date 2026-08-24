@@ -53,7 +53,7 @@ describe("UI package kit surface", () => {
     expect(css).toMatch(/@source\s+["'][^"']+\*\.\{ts,tsx\}["']/)
   })
 
-  it("absorbed button, input, avatar, badge, tooltip, dropdown-menu, and dialog via the kit path", () => {
+  it("absorbed button, input, avatar, badge, tooltip, dropdown-menu, dialog, and tabs via the kit path", () => {
     const kitSignals = {
       button: /data-slot=["']button["']/,
       input: /data-slot=["']input["']/,
@@ -62,6 +62,7 @@ describe("UI package kit surface", () => {
       tooltip: /data-slot=["']tooltip/,
       "dropdown-menu": /data-slot=["']dropdown-menu["']/,
       dialog: /data-slot=["']dialog["']/,
+      tabs: /data-slot=["']tabs["']/,
     } as const
 
     for (const [name, signal] of Object.entries(kitSignals)) {

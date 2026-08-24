@@ -19,14 +19,20 @@ export const SURFACE_PATHS = {
 export const SETTINGS_TABS = ["general", "apps", "account"] as const
 export type SettingsTab = (typeof SETTINGS_TABS)[number]
 
+export const SETTINGS_TAB_ITEMS: { id: SettingsTab; label: string }[] = [
+  { id: "general", label: "General" },
+  { id: "apps", label: "Connected apps" },
+  { id: "account", label: "Account" },
+]
+
+export function isSettingsTab(value: unknown): value is SettingsTab {
+  return SETTINGS_TABS.some((tab) => tab === value)
+}
+
 export function validateSettingsSearch(search: Record<string, unknown>): {
   tab?: SettingsTab
 } {
-  const tab = search.tab
-  if (tab === "general" || tab === "apps" || tab === "account") {
-    return { tab }
-  }
-  return {}
+  return isSettingsTab(search.tab) ? { tab: search.tab } : {}
 }
 
 export const SURFACE_COPY: Record<SurfaceId, { title: string; body: string }> =
