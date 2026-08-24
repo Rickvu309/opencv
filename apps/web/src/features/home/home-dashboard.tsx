@@ -1,18 +1,45 @@
 import { useState } from "react"
 
 import { getDevProfile } from "@/features/app-shell/dev-profile.ts"
+import { ChatThread } from "@/features/home/chat-thread.tsx"
+import { ChatTopBar } from "@/features/home/chat-top-bar.tsx"
 import { Composer } from "@/features/home/composer.tsx"
 import { ConnectedApps } from "@/features/home/connected-apps.tsx"
 import { homeGreeting } from "@/features/home/greeting.ts"
 import { HomeSuggestions } from "@/features/home/home-suggestions.tsx"
+import { useThreadStore } from "@/features/home/thread-store.tsx"
 
 export function HomeDashboard() {
+  const { messages, thinking, send, newChat } = useThreadStore()
   const [draft, setDraft] = useState("")
+  const started = messages.length > 0 || thinking
 
   function handleSend() {
-    // Sending / chat mode is QVE-93. Accept the draft so Enter is observable.
-    if (!draft.trim()) return
-    setDraft("")
+    const text = draft.trim()
+    if (!text) return
+    if (send(text)) setDraft("")
+  }
+
+  if (started) {
+    return (
+      <div className="flex h-full min-h-0 flex-1 flex-col">
+        <ChatTopBar onNewChat={newChat} />
+        <div className="min-h-0 flex-1 overflow-auto">
+          <ChatThread messages={messages} thinking={thinking} />
+        </div>
+        <div className="shrink-0 bg-background px-4 pt-2 pb-4 sm:px-6">
+          <div className="mx-auto w-full max-w-3xl">
+            <Composer
+              draft={draft}
+              setDraft={setDraft}
+              onSend={handleSend}
+              placeholder="Ask anything"
+              menuPlacement="above"
+            />
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
