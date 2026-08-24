@@ -50,7 +50,7 @@ export function ChatThread({ messages, thinking }: Props) {
       role="log"
       aria-label="Thread"
       aria-live="polite"
-      className="mx-auto w-full max-w-3xl space-y-8 px-6 py-8"
+      className="mx-auto w-full max-w-3xl space-y-8 px-4 py-6 sm:px-6 sm:py-8"
     >
       {messages.map((item) =>
         item.role === "user" ? (

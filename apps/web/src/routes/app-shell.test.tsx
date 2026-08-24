@@ -354,6 +354,97 @@ describe("search modal", () => {
     await expectHomeIdle()
     expect(screen.queryByRole("log", { name: "Thread" })).not.toBeInTheDocument()
   })
+
+  it("activates a filtered action with Enter", async () => {
+    const { router } = renderApp(SURFACE_PATHS.home)
+    await expectHomeIdle()
+    await openSearch()
+
+    const input = screen.getByRole("textbox", { name: "Search" })
+    fireEvent.change(input, { target: { value: "paper" } })
+    fireEvent.keyDown(input, { key: "Enter" })
+
+    await expectStub("paper")
+    expect(
+      screen.queryByRole("dialog", { name: "Search" })
+    ).not.toBeInTheDocument()
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(SURFACE_PATHS.paper)
+    })
+  })
+
+  it("toggles closed when ⌘K is pressed again", async () => {
+    renderApp(SURFACE_PATHS.home)
+    await expectHomeIdle()
+
+    fireEvent.keyDown(window, { key: "k", metaKey: true })
+    expect(
+      await screen.findByRole("dialog", { name: "Search" })
+    ).toBeInTheDocument()
+
+    fireEvent.keyDown(window, { key: "k", metaKey: true })
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("dialog", { name: "Search" })
+      ).not.toBeInTheDocument()
+    })
+  })
+})
+
+describe("shell polish and a11y", () => {
+  it("exposes landmarks, a skip link, and keeps History out of the tab order when collapsed", async () => {
+    renderApp(SURFACE_PATHS.home)
+    await expectHomeIdle()
+
+    expect(screen.getByRole("link", { name: "Skip to main content" })).toHaveAttribute(
+      "href",
+      "#app-main"
+    )
+    expect(document.getElementById("app-main")).not.toBeNull()
+    expect(screen.getByRole("complementary", { name: "App" })).toBeInTheDocument()
+    expect(screen.getByRole("navigation", { name: "Surfaces" })).toBeInTheDocument()
+    expect(screen.getByRole("navigation", { name: "History" })).toBeInTheDocument()
+    expect(screen.getByRole("main")).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: "Collapse sidebar" }))
+
+    expect(
+      screen.queryByRole("navigation", { name: "History" })
+    ).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "History" })).not.toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Paper" })).toBeInTheDocument()
+    expect(
+      screen.getByRole("link", { name: /profile and settings/i }).closest(".mt-auto")
+    ).not.toBeNull()
+  })
+
+  it("lets Settings tabs take focus and activate from the keyboard", async () => {
+    renderApp(SURFACE_PATHS.settings)
+    await expectStub("settings")
+
+    const general = screen.getByRole("tab", { name: "General" })
+    const apps = screen.getByRole("tab", { name: "Connected apps" })
+    const account = screen.getByRole("tab", { name: "Account" })
+
+    general.focus()
+    expect(general).toHaveFocus()
+    expect(general).toHaveAttribute("aria-selected", "true")
+
+    apps.focus()
+    expect(apps).toHaveFocus()
+    fireEvent.click(apps)
+    expect(apps).toHaveAttribute("aria-selected", "true")
+    expect(
+      await screen.findByRole("heading", { level: 2, name: "Connected apps" })
+    ).toBeInTheDocument()
+
+    account.focus()
+    fireEvent.click(account)
+    expect(account).toHaveAttribute("aria-selected", "true")
+    expect(
+      await screen.findByRole("heading", { level: 2, name: "Account" })
+    ).toBeInTheDocument()
+  })
 })
 
 

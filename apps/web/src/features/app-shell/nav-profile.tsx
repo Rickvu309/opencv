@@ -15,22 +15,21 @@ import {
   getDevProfile,
   profileInitials,
 } from "@/features/app-shell/dev-profile.ts"
+import { FOCUS_RING } from "@/features/app-shell/focus-ring.ts"
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 
 type Props = {
   collapsed?: boolean
+  onNavigate?: () => void
 }
 
-export function NavProfile({ collapsed }: Props) {
+export function NavProfile({ collapsed, onNavigate }: Props) {
   const profile = getDevProfile()
   const initials = profileInitials(profile.name)
   const ariaLabel = `${profile.name}, profile and settings`
 
   const avatar = (
-    <Avatar
-      size="sm"
-      className="size-7 rounded-md after:rounded-md"
-    >
+    <Avatar size="sm" className="size-7 rounded-md after:rounded-md">
       {profile.avatarSrc ? (
         <AvatarImage src={profile.avatarSrc} alt="" />
       ) : null}
@@ -43,10 +42,13 @@ export function NavProfile({ collapsed }: Props) {
   const linkClassName = ({ isActive }: { isActive: boolean }) =>
     collapsed
       ? cn(
-          "mx-1.5 flex h-8 w-[calc(100%-0.75rem)] items-center justify-center rounded-lg transition-colors hover:bg-muted/70",
-          isActive && "bg-muted ring-2 ring-ring ring-offset-1 ring-offset-background"
+          FOCUS_RING,
+          "flex h-8 w-full items-center justify-center rounded-lg transition-colors hover:bg-muted/70",
+          isActive &&
+            "bg-muted ring-2 ring-ring ring-offset-1 ring-offset-background"
         )
       : cn(
+          FOCUS_RING,
           "flex w-full items-center gap-2 rounded-md px-1.5 py-1.5 text-left transition-colors hover:bg-muted/70",
           isActive && "bg-muted"
         )
@@ -56,6 +58,7 @@ export function NavProfile({ collapsed }: Props) {
       to={SURFACE_PATHS.settings}
       activeOptions={{ exact: true }}
       aria-label={ariaLabel}
+      onClick={onNavigate}
       activeProps={{ className: linkClassName({ isActive: true }) }}
       inactiveProps={{ className: linkClassName({ isActive: false }) }}
     >
@@ -71,14 +74,16 @@ export function NavProfile({ collapsed }: Props) {
     </Link>
   )
 
-  if (collapsed) {
-    return (
-      <Tooltip>
-        <TooltipTrigger render={link} />
-        <TooltipContent side="right">{profile.name}</TooltipContent>
-      </Tooltip>
-    )
-  }
-
-  return <div className="mt-auto shrink-0 px-1.5 pt-1 pb-0.5">{link}</div>
+  return (
+    <div className="mt-auto shrink-0 px-1.5 pt-1 pb-0.5">
+      {collapsed ? (
+        <Tooltip>
+          <TooltipTrigger render={link} />
+          <TooltipContent side="right">{profile.name}</TooltipContent>
+        </Tooltip>
+      ) : (
+        link
+      )}
+    </div>
+  )
 }

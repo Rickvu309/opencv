@@ -14,6 +14,7 @@ import {
 
 import { cn } from "@workspace/ui/lib/utils"
 
+import { FOCUS_RING } from "@/features/app-shell/focus-ring.ts"
 import { SUGGESTION_POOLS } from "@/features/home/suggestions.ts"
 
 const ICONS: Record<string, LucideIcon> = {
@@ -73,7 +74,10 @@ export function HomeSuggestions({ onSelect, className }: Props) {
         <button
           type="button"
           onClick={moreIdeas}
-          className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-dashed border-border bg-background px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+          className={cn(
+            FOCUS_RING,
+            "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-dashed border-border bg-background px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+          )}
         >
           <RefreshCw className={cn("size-3.5", spinning && "animate-spin")} />
           More ideas
@@ -85,7 +89,10 @@ export function HomeSuggestions({ onSelect, className }: Props) {
               key={`${poolIndex}-${item.id}`}
               type="button"
               onClick={() => onSelect(item.prompt)}
-              className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-border bg-background px-3 text-xs font-medium whitespace-nowrap transition-colors hover:bg-muted/50"
+              className={cn(
+                FOCUS_RING,
+                "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-border bg-background px-3 text-xs font-medium whitespace-nowrap transition-colors hover:bg-muted/50"
+              )}
             >
               <Icon className="size-3.5 shrink-0 text-muted-foreground" />
               {item.label}
