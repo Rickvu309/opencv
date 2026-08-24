@@ -4,7 +4,7 @@ import { cn } from "@workspace/ui/lib/utils"
 import { ChevronDown } from "lucide-react"
 
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
-import { useThreadStore } from "@/features/home/thread-store.tsx"
+import { useThreadStore } from "@/features/home/use-thread-store.ts"
 import { HISTORY_PREVIEW_COUNT } from "@/features/home/threads.ts"
 
 type Props = {

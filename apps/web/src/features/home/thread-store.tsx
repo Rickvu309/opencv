@@ -1,7 +1,5 @@
 import {
-  createContext,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -9,6 +7,7 @@ import {
   type ReactNode,
 } from "react"
 
+import { ThreadStoreContext } from "@/features/home/thread-store-context.ts"
 import {
   COACH_THINKING_MS,
   STUB_COACH_REPLY,
@@ -17,20 +16,7 @@ import {
   titleFrom,
   writePersistedThreads,
   type HomeMessage,
-  type HomeThread,
 } from "@/features/home/threads.ts"
-
-export type ThreadStoreValue = {
-  threads: HomeThread[]
-  activeThreadId: string | null
-  messages: HomeMessage[]
-  thinking: boolean
-  send: (text: string) => boolean
-  openThread: (id: string) => void
-  newChat: () => void
-}
-
-const ThreadStoreContext = createContext<ThreadStoreValue | null>(null)
 
 function newMessageId() {
   return `m-${crypto.randomUUID()}`
@@ -46,9 +32,6 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
   const [messages, setMessages] = useState(initial.messages)
   const [thinking, setThinking] = useState(false)
   const replyTimer = useRef<number | null>(null)
-  const threadsRef = useRef(threads)
-
-  threadsRef.current = threads
 
   const cancelThinking = useCallback(() => {
     if (replyTimer.current != null) {
@@ -78,13 +61,13 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
 
   const openThread = useCallback(
     (id: string) => {
-      const thread = threadsRef.current.find((item) => item.id === id)
+      const thread = threads.find((item) => item.id === id)
       if (!thread) return
       cancelThinking()
       setActiveThreadId(id)
       setMessages(thread.messages)
     },
-    [cancelThinking]
+    [cancelThinking, threads]
   )
 
   const send = useCallback(
@@ -158,12 +141,4 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
       {children}
     </ThreadStoreContext.Provider>
   )
-}
-
-export function useThreadStore() {
-  const value = useContext(ThreadStoreContext)
-  if (!value) {
-    throw new Error("useThreadStore must be used within ThreadStoreProvider")
-  }
-  return value
 }

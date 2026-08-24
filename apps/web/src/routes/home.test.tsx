@@ -77,7 +77,7 @@ describe("Home idle", () => {
     expect(composer).toHaveValue("Help me plan the week")
 
     fireEvent.keyDown(composer, { key: "Enter", shiftKey: false })
-    expect(composer).toHaveValue("")
+    expect(screen.getByRole("textbox", { name: "Message" })).toHaveValue("")
     expect(
       screen.getByRole("status", { name: "Coach is working" })
     ).toBeInTheDocument()

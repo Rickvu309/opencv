@@ -7,7 +7,7 @@ import { Composer } from "@/features/home/composer.tsx"
 import { ConnectedApps } from "@/features/home/connected-apps.tsx"
 import { homeGreeting } from "@/features/home/greeting.ts"
 import { HomeSuggestions } from "@/features/home/home-suggestions.tsx"
-import { useThreadStore } from "@/features/home/thread-store.tsx"
+import { useThreadStore } from "@/features/home/use-thread-store.ts"
 
 export function HomeDashboard() {
   const { messages, thinking, send, newChat } = useThreadStore()
