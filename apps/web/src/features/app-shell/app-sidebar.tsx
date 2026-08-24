@@ -21,7 +21,9 @@ import {
 
 import { OpenPathLogo } from "@/features/app-shell/app-logo.tsx"
 import { NavProfile } from "@/features/app-shell/nav-profile.tsx"
+import { SidebarHistory } from "@/features/app-shell/sidebar-history.tsx"
 import { SURFACE_PATHS, type SurfaceId } from "@/features/app-shell/surfaces.ts"
+import { useThreadStore } from "@/features/home/use-thread-store.ts"
 
 type RouteNavItem = {
   kind: "route"
@@ -131,9 +133,11 @@ function CollapsedTip({
 function RouteNavLink({
   item,
   collapsed,
+  onClick,
 }: {
   item: RouteNavItem
   collapsed: boolean
+  onClick?: () => void
 }) {
   const Icon = item.icon
   const inner = (
@@ -147,6 +151,7 @@ function RouteNavLink({
   const link = (
     <Link
       to={item.to}
+      onClick={onClick}
       activeOptions={{ exact: true }}
       activeProps={{
         className: navItemClassName(true, collapsed),
@@ -197,6 +202,7 @@ function SearchNavItem({
 
 export function AppSidebar({ onSearch }: { onSearch: () => void }) {
   const [open, setOpen] = useState(true)
+  const { newChat } = useThreadStore()
 
   return (
     <TooltipProvider>
@@ -250,13 +256,17 @@ export function AppSidebar({ onSearch }: { onSearch: () => void }) {
                 onSearch={onSearch}
               />
             ) : (
-              <RouteNavLink key={item.id} item={item} collapsed={!open} />
+              <RouteNavLink
+                key={item.id}
+                item={item}
+                collapsed={!open}
+                onClick={item.id === "home" ? newChat : undefined}
+              />
             )
           )}
         </nav>
 
-        {/* History lands in QVE-93; keep the profile pinned to the footer. */}
-        <div className="min-h-0 flex-1" />
+        <SidebarHistory collapsed={!open} />
 
         <NavProfile collapsed={!open} />
       </aside>
