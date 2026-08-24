@@ -74,7 +74,7 @@ export function NavProfile({ collapsed }: Props) {
   if (collapsed) {
     return (
       <Tooltip>
-        <TooltipTrigger nativeButton={false} render={link} />
+        <TooltipTrigger render={link} />
         <TooltipContent side="right">{profile.name}</TooltipContent>
       </Tooltip>
     )

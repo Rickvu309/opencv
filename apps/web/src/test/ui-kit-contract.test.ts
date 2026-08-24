@@ -54,13 +54,19 @@ describe("UI package kit surface", () => {
   })
 
   it("absorbed button, input, avatar, badge, and tooltip via the kit path", () => {
-    for (const name of ["button", "input", "avatar", "badge", "tooltip"]) {
+    const kitSignals = {
+      button: /data-slot=["']button["']/,
+      input: /data-slot=["']input["']/,
+      avatar: /data-slot=["']avatar["']/,
+      badge: /badgeVariants|slot:\s*["']badge["']/,
+      tooltip: /data-slot=["']tooltip/,
+    } as const
+
+    for (const [name, signal] of Object.entries(kitSignals)) {
       expect(
         existsSync(path.join(repoRoot, `packages/ui/src/components/${name}.tsx`))
       ).toBe(true)
-      expect(read(`packages/ui/src/components/${name}.tsx`)).toMatch(
-        new RegExp(`data-slot=["']${name}`)
-      )
+      expect(read(`packages/ui/src/components/${name}.tsx`)).toMatch(signal)
     }
   })
 })

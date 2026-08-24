@@ -115,16 +115,14 @@ function NavLabel({
 
 function CollapsedTip({
   label,
-  nativeButton = false,
   children,
 }: {
   label: string
-  nativeButton?: boolean
   children: ReactElement
 }) {
   return (
     <Tooltip>
-      <TooltipTrigger nativeButton={nativeButton} render={children} />
+      <TooltipTrigger render={children} />
       <TooltipContent side="right">{label}</TooltipContent>
     </Tooltip>
   )
@@ -190,11 +188,7 @@ function SearchNavItem({
     return button
   }
 
-  return (
-    <CollapsedTip label={item.label} nativeButton>
-      {button}
-    </CollapsedTip>
-  )
+  return <CollapsedTip label={item.label}>{button}</CollapsedTip>
 }
 
 export function AppSidebar() {
