@@ -53,19 +53,15 @@ describe("UI package kit surface", () => {
     expect(css).toMatch(/@source\s+["'][^"']+\*\.\{ts,tsx\}["']/)
   })
 
-  it("absorbed button and input via the kit path", () => {
-    expect(
-      existsSync(path.join(repoRoot, "packages/ui/src/components/button.tsx"))
-    ).toBe(true)
-    expect(
-      existsSync(path.join(repoRoot, "packages/ui/src/components/input.tsx"))
-    ).toBe(true)
-    expect(read("packages/ui/src/components/button.tsx")).toMatch(
-      /bg-primary|data-slot=["']button["']/
-    )
-    expect(read("packages/ui/src/components/input.tsx")).toMatch(
-      /data-slot=["']input["']/
-    )
+  it("absorbed button, input, avatar, badge, and tooltip via the kit path", () => {
+    for (const name of ["button", "input", "avatar", "badge", "tooltip"]) {
+      expect(
+        existsSync(path.join(repoRoot, `packages/ui/src/components/${name}.tsx`))
+      ).toBe(true)
+      expect(read(`packages/ui/src/components/${name}.tsx`)).toMatch(
+        new RegExp(`data-slot=["']${name}`)
+      )
+    }
   })
 })
 
