@@ -3,12 +3,16 @@ import type { ThreadListItem } from "@workspace/domain"
 
 import type { HomeMessage } from "@/features/home/threads.ts"
 
+export type TurnPhase = "idle" | "waiting" | "streaming"
+
 export type ThreadStoreValue = {
   threads: ThreadListItem[]
   activeThreadId: string | null
   messages: HomeMessage[]
-  thinking: boolean
+  phase: TurnPhase
   send: (text: string) => boolean
+  stop: () => void
+  retry: () => boolean
   openThread: (id: string) => void
   newThread: () => void
 }

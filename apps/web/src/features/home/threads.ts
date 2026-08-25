@@ -1,4 +1,8 @@
+import type { ThreadMessageStatus } from "@workspace/domain"
+
 export const HISTORY_PREVIEW_COUNT = 4
+
+export const STREAMING_COACH_ID = "local-coach"
 
 export type MessageRole = "coach" | "user"
 
@@ -7,6 +11,9 @@ export type HomeMessage = {
   role: MessageRole
   text: string
   workedMs?: number
+  status?: ThreadMessageStatus
+  failed?: boolean
+  error?: string
 }
 
 export function titleFrom(text: string) {
@@ -16,27 +23,19 @@ export function titleFrom(text: string) {
 }
 
 export function toHomeMessages(
-  messages: ReadonlyArray<{ id: string; role: MessageRole; text: string }>,
-  lastCoachWorkedMs?: number
+  messages: ReadonlyArray<{
+    id: string
+    role: MessageRole
+    text: string
+    workedMs?: number
+    status?: ThreadMessageStatus
+  }>
 ): HomeMessage[] {
-  const lastCoach = [...messages]
-    .reverse()
-    .find((message) => message.role === "coach")
-
-  return messages.map((message) => {
-    if (lastCoachWorkedMs != null && lastCoach && message.id === lastCoach.id) {
-      return {
-        id: message.id,
-        role: message.role,
-        text: message.text,
-        workedMs: lastCoachWorkedMs,
-      }
-    }
-
-    return {
-      id: message.id,
-      role: message.role,
-      text: message.text,
-    }
-  })
+  return messages.map((message) => ({
+    id: message.id,
+    role: message.role,
+    text: message.text,
+    ...(message.workedMs != null ? { workedMs: message.workedMs } : {}),
+    ...(message.status ? { status: message.status } : {}),
+  }))
 }

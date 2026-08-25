@@ -49,14 +49,15 @@ async function readErrorEnvelope(res: Response) {
 }
 
 /**
- * Authed fetch against the API. Always sends cookies (`credentials: include`)
- * and maps the `{ ok: false, error }` envelope to `ApiError`. A 401
- * invalidates the Better Auth session and sends the User to sign-in.
+ * Authed request against the API. Always sends cookies
+ * (`credentials: include`) and maps the `{ ok: false, error }` envelope to
+ * `ApiError`. A 401 invalidates the Better Auth session and sends the User
+ * to sign-in.
  */
-export async function apiFetch<T>(
+export async function apiRequest(
   path: string,
   init?: RequestInit
-): Promise<T> {
+): Promise<Response> {
   const headers = new Headers(init?.headers)
   if (init?.body != null && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json")
@@ -81,9 +82,33 @@ export async function apiFetch<T>(
     throw new ApiError(res.status, code, message)
   }
 
+  return res
+}
+
+/**
+ * Authed fetch against the API. Shared URL, credentials, and error handling
+ * with `apiStream`.
+ */
+export async function apiFetch<T>(
+  path: string,
+  init?: RequestInit
+): Promise<T> {
+  const res = await apiRequest(path, init)
+
   if (res.status === 204) {
     return undefined as T
   }
 
   return (await res.json()) as T
+}
+
+/**
+ * Authed streaming request. Same URL, credentials, and error envelope as
+ * `apiFetch`; the caller reads `response.body` (SSE).
+ */
+export async function apiStream(
+  path: string,
+  init?: RequestInit
+): Promise<Response> {
+  return apiRequest(path, init)
 }

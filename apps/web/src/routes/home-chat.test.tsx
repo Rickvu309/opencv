@@ -12,7 +12,11 @@ import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
 import { HISTORY_PREVIEW_COUNT } from "@/features/home/threads.ts"
 import { FIXTURE_THREADS } from "@/test/thread-fixtures.ts"
-import { getMockThreads } from "@/test/threads-api-mock.ts"
+import {
+  DEFAULT_COACH_STREAM_REPLY,
+  getMockThreads,
+  scriptCoachStream,
+} from "@/test/threads-api-mock.ts"
 import { renderApp } from "@/test/render-app.tsx"
 
 const idleHeading = new RegExp(
@@ -67,7 +71,11 @@ afterEach(() => {
 })
 
 describe("Home Thread mode and History", () => {
-  it("sends into Thread mode with a thinking state, then keeps the user message", async () => {
+  it("streams a reply progressively and drops working status at first text", async () => {
+    const stream = scriptCoachStream({
+      gated: true,
+      texts: ["Hello", " world"],
+    })
     renderApp()
     await expectHomeIdle()
 
@@ -76,18 +84,92 @@ describe("Home Thread mode and History", () => {
     expect(
       screen.getByRole("status", { name: "Coach is working" })
     ).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Stop" })).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "Send" })
+    ).not.toBeInTheDocument()
     expect(screen.getByRole("log", { name: "Thread" })).toHaveTextContent(
       "Help me plan the week"
     )
-    expect(screen.getByRole("textbox", { name: "Message" })).toBeInTheDocument()
     expect(
       screen.queryByRole("heading", { name: idleHeading })
     ).not.toBeInTheDocument()
 
-    await expectSendSettled("Help me plan the week")
+    stream.release(2)
+    expect(await screen.findByText("Hello")).toBeInTheDocument()
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("status", { name: "Coach is working" })
+      ).not.toBeInTheDocument()
+    })
+    expect(screen.queryByText("Hello world")).not.toBeInTheDocument()
+
+    stream.releaseAll()
+    expect(await screen.findByText("Hello world")).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Send" })).toBeInTheDocument()
+    })
+    expect(screen.getByText("Worked for 1s")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Copy" })).toBeInTheDocument()
+  })
+
+  it("stops mid-stream, keeps what ran, and accepts a new send", async () => {
+    const stream = scriptCoachStream({
+      gated: true,
+      texts: ["Partial reply", " should not appear"],
+    })
+    renderApp()
+    await expectHomeIdle()
+
+    await sendMessage("Stop me")
+    stream.release(2)
+    expect(await screen.findByText("Partial reply")).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: "Stop" }))
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Send" })).toBeInTheDocument()
+    })
+    expect(screen.getByText("Partial reply")).toBeInTheDocument()
+    expect(screen.queryByText(/should not appear/)).not.toBeInTheDocument()
+
+    scriptCoachStream({ texts: ["Next reply"] })
+    await sendMessage("Try again")
+    expect(await screen.findByText("Next reply")).toBeInTheDocument()
+    expect(screen.getByText("Partial reply")).toBeInTheDocument()
+    expect(screen.getByText("Try again")).toBeInTheDocument()
+  })
+
+  it("shows a failed bubble with Retry after a send error, then recovers", async () => {
+    scriptCoachStream({
+      httpError: {
+        status: 503,
+        code: "COACH_UNAVAILABLE",
+        message: "The Coach is unavailable right now",
+      },
+    })
+    renderApp()
+    await expectHomeIdle()
+
+    await sendMessage("Are you there?")
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "The Coach is unavailable right now. Try again in a moment."
+    )
+    expect(screen.getByText("Are you there?")).toBeInTheDocument()
     expect(
-      screen.queryByRole("button", { name: "Copy" })
-    ).not.toBeInTheDocument()
+      screen
+        .getByRole("log", { name: "Thread" })
+        .querySelector("[data-failed='true']")
+    ).not.toBeNull()
+
+    scriptCoachStream()
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }))
+    expect(
+      await screen.findByText(DEFAULT_COACH_STREAM_REPLY)
+    ).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+    })
+    expect(screen.getAllByText("Are you there?").length).toBe(1)
   })
 
   it("lists server Threads, restores one, and returns to idle on new Thread", async () => {

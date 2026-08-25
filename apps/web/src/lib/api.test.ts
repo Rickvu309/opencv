@@ -6,6 +6,7 @@ import {
   ApiError,
   apiBaseUrl,
   apiFetch,
+  apiStream,
   fetchHealth,
   resetUnauthorizedHandler,
   setUnauthorizedHandler,
@@ -114,5 +115,82 @@ describe("apiFetch", () => {
     })
     expect(onUnauthorized).toHaveBeenCalledTimes(1)
     expect(authMockState.data).toBeNull()
+  })
+})
+
+describe("apiStream", () => {
+  it("sends credentials and returns the streaming body", async () => {
+    const body = 'event: message-start\ndata: {"threadId":"t1"}\n\n'
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(body, {
+        status: 200,
+        headers: { "Content-Type": "text/event-stream" },
+      })
+    )
+    vi.stubGlobal("fetch", fetchMock)
+
+    const res = await apiStream("/api/threads/t1/coach", {
+      method: "POST",
+      body: JSON.stringify({ text: "Hello" }),
+    })
+
+    expect(await res.text()).toBe(body)
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
+      `${apiBaseUrl}/api/threads/t1/coach`
+    )
+    expect(init.credentials).toBe("include")
+    expect(init.method).toBe("POST")
+  })
+
+  it("maps a pre-stream error envelope to ApiError", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        Response.json(
+          {
+            ok: false,
+            error: {
+              code: "COACH_UNAVAILABLE",
+              message: "The Coach is unavailable right now",
+            },
+          },
+          { status: 503 }
+        )
+      )
+    )
+
+    const error = await apiStream("/api/threads/t1/coach", {
+      method: "POST",
+      body: JSON.stringify({ text: "Hello" }),
+    }).catch((err) => err)
+
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error).toMatchObject({
+      status: 503,
+      code: "COACH_UNAVAILABLE",
+    })
+  })
+
+  it("invalidates the session on 401", async () => {
+    const onUnauthorized = vi.fn()
+    setUnauthorizedHandler(onUnauthorized)
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        Response.json(
+          {
+            ok: false,
+            error: { code: "UNAUTHORIZED", message: "Authentication required" },
+          },
+          { status: 401 }
+        )
+      )
+    )
+
+    await expect(
+      apiStream("/api/threads/t1/coach", { method: "POST" })
+    ).rejects.toMatchObject({ status: 401, code: "UNAUTHORIZED" })
+    expect(onUnauthorized).toHaveBeenCalledTimes(1)
   })
 })
