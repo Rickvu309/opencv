@@ -130,17 +130,17 @@ describe("Home idle", () => {
       name: /upload a file/i,
     })
     const recent = within(menu).getByRole("menuitem", { name: /^recent/i })
-    expect(upload).toBeDisabled()
-    expect(recent).toBeDisabled()
+    expect(upload).toHaveAttribute("aria-disabled", "true")
+    expect(recent).toHaveAttribute("aria-disabled", "true")
     expect(upload).toHaveTextContent("Coming soon")
     expect(recent).toHaveTextContent("Coming soon")
 
     expect(
       within(menu).getByRole("menuitem", { name: "Attach from Paper" })
-    ).toBeEnabled()
+    ).not.toHaveAttribute("aria-disabled", "true")
     expect(
       within(menu).getByRole("menuitem", { name: "Add connector" })
-    ).toBeEnabled()
+    ).not.toHaveAttribute("aria-disabled", "true")
   })
 
   it("opens Settings on the Connected apps tab from the connect row", async () => {
