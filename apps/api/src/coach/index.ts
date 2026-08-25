@@ -21,3 +21,12 @@ export {
   countCoachTurnsToday,
   startOfUtcDay,
 } from "./usage.js"
+export { coachRuntimeFromConfig } from "./bind.js"
+export { createOpenRouterCoachRuntime } from "./runtime.js"
+export {
+  assembleSystemPrompt,
+  flattenMessage,
+  personaSystemPrompt,
+  summarizeWorkspace,
+  windowHistory,
+} from "./prompt.js"

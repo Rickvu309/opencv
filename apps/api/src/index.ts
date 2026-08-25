@@ -3,7 +3,7 @@ import { drizzle } from "drizzle-orm/node-postgres"
 import { Pool } from "pg"
 
 import { createApp } from "./app.js"
-import { createDemoCoachRuntime } from "./coach/fake.js"
+import { coachRuntimeFromConfig } from "./coach/bind.js"
 import {
   authUrlFromEnv,
   coachDailyTurnLimitFromEnv,
@@ -22,18 +22,22 @@ const pool = databaseUrl
   ? new Pool({ connectionString: databaseUrl })
   : undefined
 const db = pool ? drizzle(pool, { schema }) : undefined
-const coach =
-  coachRuntimeModeFromEnv(process.env) === "fake"
-    ? createDemoCoachRuntime()
-    : undefined
+const openRouterApiKey = openRouterApiKeyFromEnv(process.env)
+const coachModel = coachModelFromEnv(process.env)
+const coach = coachRuntimeFromConfig({
+  db,
+  openRouterApiKey,
+  coachModel,
+  runtimeMode: coachRuntimeModeFromEnv(process.env),
+})
 
 const app = createApp({
   webOrigins: webOriginsFromEnv(process.env),
   databaseUrl,
   sessionSecret: sessionSecretFromEnv(process.env),
   authUrl: authUrlFromEnv(process.env),
-  openRouterApiKey: openRouterApiKeyFromEnv(process.env),
-  coachModel: coachModelFromEnv(process.env),
+  openRouterApiKey,
+  coachModel,
   coachDailyTurnLimit: coachDailyTurnLimitFromEnv(process.env),
   db,
   coach,

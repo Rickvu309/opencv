@@ -2,7 +2,12 @@ import {
   appendCoachPart,
   COACH_SSE_EVENTS,
   COACH_SSE_HEARTBEAT_MS,
+  COACH_HISTORY_CHAR_BUDGET,
+  COACH_HISTORY_MESSAGE_CAP,
+  COACH_STEP_CAP,
+  COACH_WORKSPACE_LIST_CAP,
   DEFAULT_COACH_DAILY_TURN_LIMIT,
+  DEFAULT_COACH_MAX_OUTPUT_TOKENS,
   DEFAULT_COACH_MODEL,
   ERROR_CODES,
   coachLimitReachedEnvelope,
@@ -41,6 +46,11 @@ describe("coach domain exports", () => {
     expect(DEFAULT_COACH_MODEL).toBe("anthropic/claude-sonnet-4.5")
     expect(DEFAULT_COACH_DAILY_TURN_LIMIT).toBe(50)
     expect(COACH_SSE_HEARTBEAT_MS).toBe(15_000)
+    expect(COACH_STEP_CAP).toBe(8)
+    expect(DEFAULT_COACH_MAX_OUTPUT_TOKENS).toBe(4096)
+    expect(COACH_HISTORY_MESSAGE_CAP).toBe(40)
+    expect(COACH_HISTORY_CHAR_BUDGET).toBe(16_000)
+    expect(COACH_WORKSPACE_LIST_CAP).toBe(8)
     expect(Object.values(COACH_SSE_EVENTS)).toEqual([
       "message-start",
       "text-delta",

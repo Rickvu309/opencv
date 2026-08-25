@@ -5,6 +5,11 @@ import type { ThreadMessage, ThreadMessagePart } from "./threads.js"
 export const DEFAULT_COACH_MODEL = "anthropic/claude-sonnet-4.5"
 export const DEFAULT_COACH_DAILY_TURN_LIMIT = 50
 export const COACH_SSE_HEARTBEAT_MS = 15_000
+export const COACH_STEP_CAP = 8
+export const DEFAULT_COACH_MAX_OUTPUT_TOKENS = 4096
+export const COACH_HISTORY_MESSAGE_CAP = 40
+export const COACH_HISTORY_CHAR_BUDGET = 16_000
+export const COACH_WORKSPACE_LIST_CAP = 8
 
 export const COACH_SSE_EVENTS = {
   messageStart: "message-start",
