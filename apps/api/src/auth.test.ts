@@ -1,7 +1,7 @@
 import { PGlite } from "@electric-sql/pglite"
 import { drizzle } from "drizzle-orm/pglite"
 import { migrate } from "drizzle-orm/pglite/migrator"
-import { afterEach, describe, expect, it } from "vitest"
+import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { createApp } from "./app.js"
 import { cookieAttributesForAuthUrl } from "./auth.js"
@@ -27,20 +27,14 @@ function sessionSetCookie(res: Response) {
   )
 }
 
-async function createAuthedApp(authUrl = "https://api.example.com") {
-  const client = new PGlite()
-  const db = drizzle({ client, schema })
-  await migrate(db, { migrationsFolder })
-
-  const app = createApp({
+function createAuthedApp(db: ReturnType<typeof drizzle>, authUrl: string) {
+  return createApp({
     webOrigins: [webOrigin],
     sessionSecret,
     authUrl,
     db,
     rateLimitEnabled: false,
   })
-
-  return { app, client }
 }
 
 describe("cookieAttributesForAuthUrl", () => {
@@ -62,18 +56,23 @@ describe("cookieAttributesForAuthUrl", () => {
 })
 
 describe("auth cookie round-trip", () => {
-  let client: PGlite | undefined
+  let client: PGlite
+  let app: ReturnType<typeof createApp>
+  let localApp: ReturnType<typeof createApp>
 
-  afterEach(async () => {
-    await client?.close()
-    client = undefined
+  beforeAll(async () => {
+    client = new PGlite()
+    const db = drizzle({ client, schema })
+    await migrate(db, { migrationsFolder })
+    app = createAuthedApp(db, "https://api.example.com")
+    localApp = createAuthedApp(db, "http://localhost:3001")
+  }, 60_000)
+
+  afterAll(async () => {
+    await client.close()
   })
 
   it("signs up, sets a cookie, and reads the authed session", async () => {
-    const created = await createAuthedApp()
-    client = created.client
-    const { app } = created
-
     const signUp = await app.request("/api/auth/sign-up/email", {
       method: "POST",
       headers: {
@@ -111,13 +110,10 @@ describe("auth cookie round-trip", () => {
     expect(body.session).toEqual(
       expect.objectContaining({ token: expect.any(String) })
     )
-  }, 60_000)
+  })
 
   it("returns a 401 envelope on a bare session read", async () => {
-    const created = await createAuthedApp()
-    client = created.client
-
-    const res = await created.app.request("/api/session")
+    const res = await app.request("/api/session")
 
     expect(res.status).toBe(401)
     await expect(res.json()).resolves.toEqual({
@@ -127,12 +123,9 @@ describe("auth cookie round-trip", () => {
         message: "Authentication required",
       },
     })
-  }, 60_000)
+  })
 
   it("signs in, reads the session, then signs out", async () => {
-    const created = await createAuthedApp()
-    client = created.client
-    const { app } = created
     const credentials = {
       name: "Lan",
       email: "lan@example.com",
@@ -186,13 +179,9 @@ describe("auth cookie round-trip", () => {
         user: expect.objectContaining({ email: credentials.email }),
       })
     )
-  }, 60_000)
+  })
 
   it("rejects a cookie-authenticated request from an untrusted origin", async () => {
-    const created = await createAuthedApp()
-    client = created.client
-    const { app } = created
-
     const signUp = await app.request("/api/auth/sign-up/email", {
       method: "POST",
       headers: {
@@ -217,13 +206,10 @@ describe("auth cookie round-trip", () => {
 
     expect(res.status).toBe(403)
     expect(res.headers.get("access-control-allow-origin")).toBeNull()
-  }, 60_000)
+  })
 
   it("uses default cookie attributes when AUTH_URL is local http", async () => {
-    const created = await createAuthedApp("http://localhost:3001")
-    client = created.client
-
-    const signUp = await created.app.request("/api/auth/sign-up/email", {
+    const signUp = await localApp.request("/api/auth/sign-up/email", {
       method: "POST",
       headers: {
         Origin: webOrigin,
@@ -240,5 +226,5 @@ describe("auth cookie round-trip", () => {
     const setCookie = sessionSetCookie(signUp)
     expect(setCookie).not.toMatch(/samesite=none/i)
     expect(setCookie).not.toMatch(/;\s*secure/i)
-  }, 60_000)
+  })
 })
