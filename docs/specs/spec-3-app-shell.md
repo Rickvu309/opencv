@@ -67,7 +67,7 @@ The prototype proved more than Spec 3 ships. Nothing is orphaned — each area l
 |------|-------|-----------|------------------------------|
 | **3 — App shell** (this spec) | Shell, Home Coach (stub replies), Search, History (client state), Settings tabs, stub surfaces | — | see reference index below |
 | **3.5 — Data + Commands foundation** | Postgres schema for Paper docs / Apply cards / Threads, Command registry per ADR-0003, API endpoints. Settles the `cv:v1:`/`proof:v1:` storage question (PRODUCT.md open q. 3) | 3 | `paper-data.ts`, `paper-cv-types.ts`, `paper-proof-types.ts`, `apply-types.ts`, `pitch-types.ts` (as draft domain shapes, not schemas) |
-| **4 — Paper** | Drive view, CV editor (5 templates, A4), Letter, Proof editor, AI-chat panel; moves the CV/A4 CSS from `globals.css` into production | 3, 3.5 | `paper-workspace`, `paper-editor*`, `paper-cv-*`, `paper-proof-*`, `paper-ai-chat`, `paper-markdown` |
+| **4 — Paper** | Drive view, CV editor (5 templates, A4), Letter, Proof editor, AI-chat panel; bring prototype CV/A4 CSS (`.cv-*`, `.paper-editor-canvas`, `.bg-stripes`) into production — those utilities live on the prototype only, not in production `globals.css` | 3, 3.5 | `paper-workspace`, `paper-editor*`, `paper-cv-*`, `paper-proof-*`, `paper-ai-chat`, `paper-markdown` |
 | **5 — Apply** | Kanban + Stages, drag-and-drop, calendar of Tracks, job detail, Fit (must resolve PRODUCT.md open q. 1 first) | 3, 3.5 | `apply-workspace`, `apply-calendar`, `apply-dnd`, `apply-job-detail` |
 | **6 — Pitch** | Portfolio blocks, stories, edit/publish, gallery; GitHub heatmap only after PRODUCT.md open q. 2 is decided | 3, 3.5 | `pitch-workspace`, `pitch-showcase`, `pitch-stories`, `pitch-github-*`, `pitch-edit-toolbar` |
 | **Auth (unnumbered)** | Better Auth vs Clerk, gated app, real Account tab | 3 | research note 2026-08-21 |
@@ -199,11 +199,11 @@ Seed demo Threads acceptable for demo/dev; client state only. No server persiste
 
 ### 7. Design system and UI kit — the porting rule
 
-`packages/ui` currently holds only `button`, `input`, `card`; the prototype otherwise uses raw Tailwind + `lucide-react` and 156 lines of prototype-only utilities in `packages/ui/src/styles/globals.css`.
+`packages/ui` now holds the shipped shell kit: `button`, `input`, `avatar`, `badge`, `tooltip`, `dropdown-menu`, `dialog`, `tabs`. There is **no `card`** — absorb it when a later ticket needs it (ADR-0002). The prototype otherwise used raw Tailwind + `lucide-react`.
 
-**Decision:** per ADR-0002, absorb the shadcn components a ticket needs **as part of that ticket** (`pnpm dlx shadcn@latest add <name> -c apps/web`), rather than one big kit-first ticket. Expected for the shell: `dialog` (Search), `tabs` (Settings), `avatar`, `badge`, `tooltip`, `dropdown-menu` (+ `scroll-area` if needed). Structural layout may stay raw Tailwind matching the prototype.
+Production `packages/ui/src/styles/globals.css` is the shadcn/Tailwind theme scaffold (tokens, `@theme`, light/dark). The prototype's 156-line Paper CV/A4 utilities (`.cv-*`, `.paper-editor-canvas`, `.bg-stripes`) were **not** ported and are **not** in production CSS. They stay on the prototype branch and land with Spec 4.
 
-The CV/A4/paper-editor utilities in `globals.css` (`.cv-*`, `.paper-editor-canvas`, `.bg-stripes`) are **Paper-specific** — they move to production with Spec 4, not the shell. Do not port them in Spec 3.
+**Decision:** per ADR-0002, absorb the shadcn components a ticket needs **as part of that ticket** (`pnpm dlx shadcn@latest add <name> -c apps/web`), rather than one big kit-first ticket. The shell already absorbed `dialog` (Search), `tabs` (Settings), `avatar`, `badge`, `tooltip`, `dropdown-menu`. Structural layout may stay raw Tailwind matching the prototype.
 
 Match prototype spacing, typography, and interaction — sidebar width, nav density, composer shape, Home greeting style should be recognizably the same product (compare against the live preview).
 
@@ -221,7 +221,7 @@ Test **observable behavior** at the highest stable seam: routes and navigation �
 
 ### Prior art
 
-- `apps/web/src/routes/home.test.tsx` (covers the marketing home this shell replaces — update or retire it in ticket 1)
+- `apps/web/src/routes/home.test.tsx` (covers Home idle — Coach greeting, suggestion chips, composer, + menu, Connect apps)
 - `apps/api/src/app.test.ts` (unchanged; `/health` only)
 
 ### Manual acceptance (prototype parity)
@@ -269,7 +269,7 @@ Paths relative to `apps/web/src/prototype/app-shell/` on `prototype/app-shell` (
 
 | Order | Ticket | Blocked by |
 |-------|--------|------------|
-| 1 | App layout route + surface routing (+ retire/replace `home.test.tsx`) | — |
+| 1 | App layout route + surface routing (`home.test.tsx` now covers Home idle, not the old marketing home) | — |
 | 2 | Sidebar + nav + collapse | 1 |
 | 3 | Home idle (greeting, suggestions, composer) | 1 |
 | 4 | Home chat mode + History (client state) | 3 |
