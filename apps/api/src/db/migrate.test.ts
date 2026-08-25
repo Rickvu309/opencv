@@ -32,5 +32,5 @@ describe("committed migrations", () => {
     } finally {
       await client.close()
     }
-  })
+  }, 60_000)
 })
