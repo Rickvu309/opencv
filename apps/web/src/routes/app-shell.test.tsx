@@ -58,12 +58,27 @@ function renderApp(initialEntry = "/") {
   }
 }
 
-async function expectStub(surface: Exclude<keyof typeof SURFACE_COPY, "home">) {
+async function expectStub(
+  surface: Exclude<keyof typeof SURFACE_COPY, "home" | "paper" | "apply" | "pitch">
+) {
   const copy = SURFACE_COPY[surface]
   expect(
     await screen.findByRole("heading", { level: 1, name: copy.title })
   ).toBeInTheDocument()
   expect(screen.getByText(copy.body)).toBeInTheDocument()
+}
+
+async function expectPitch() {
+  expect(
+    await screen.findByRole("heading", {
+      level: 1,
+      name: DEFAULT_DEV_PROFILE_NAME,
+    })
+  ).toBeInTheDocument()
+  expect(screen.getByRole("button", { name: "Edit profile" })).toBeInTheDocument()
+  expect(screen.getByRole("heading", { name: "About" })).toBeInTheDocument()
+  expect(screen.queryByText(SURFACE_COPY.pitch.body)).not.toBeInTheDocument()
+  expect(screen.queryByText(/Eric Nguyen/i)).not.toBeInTheDocument()
 }
 
 async function expectApplyLive() {
@@ -123,7 +138,7 @@ describe("app shell layout", () => {
 
     cleanup()
     renderApp(SURFACE_PATHS.pitch)
-    await expectStub("pitch")
+    await expectPitch()
 
     cleanup()
     renderApp(SURFACE_PATHS.settings)
