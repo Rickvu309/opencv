@@ -40,6 +40,8 @@ describe("committed migrations", () => {
       expect(tables.rows.map((row) => row.table_name)).toEqual([
         "account",
         "session",
+        "thread_messages",
+        "threads",
         "user",
         "verification",
       ])

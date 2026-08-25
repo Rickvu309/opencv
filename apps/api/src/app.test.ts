@@ -1,3 +1,4 @@
+import { THREAD_COMMANDS } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
 
 import { createApp } from "./app.js"
@@ -114,5 +115,30 @@ describe("CORS", () => {
       headers: { Origin: "https://attacker.example.com" },
     })
     expect(refused.headers.get("access-control-allow-origin")).toBeNull()
+  })
+})
+
+describe("commands without auth", () => {
+  it("returns AUTH_UNAVAILABLE when the app has no database", async () => {
+    const api = createApp({ webOrigins: [] })
+
+    const command = await api.request(
+      `/api/commands/${THREAD_COMMANDS.create}`,
+      {
+        method: "POST",
+        body: "{}",
+      }
+    )
+    expect(command.status).toBe(503)
+    await expect(command.json()).resolves.toEqual({
+      ok: false,
+      error: {
+        code: "AUTH_UNAVAILABLE",
+        message: "Authentication is not configured",
+      },
+    })
+
+    const list = await api.request("/api/threads")
+    expect(list.status).toBe(503)
   })
 })

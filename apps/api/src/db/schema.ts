@@ -5,6 +5,7 @@ import {
   text,
   timestamp,
   uniqueIndex,
+  uuid,
 } from "drizzle-orm/pg-core"
 
 /** App tables live in this schema (ADR-0006). */
@@ -89,3 +90,40 @@ export const authSchema = {
   account,
   verification,
 }
+
+/** App-generated UUIDv7; server owns timestamps (ADR-0006). */
+export const threads = openpathApp.table(
+  "threads",
+  {
+    id: uuid("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    createdAt: timestamptz("created_at").notNull().defaultNow(),
+    updatedAt: timestamptz("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("threads_user_id_updated_at_idx").on(table.userId, table.updatedAt),
+  ]
+)
+
+/** Append-only; rows are removed only when the Thread is deleted. */
+export const threadMessages = openpathApp.table(
+  "thread_messages",
+  {
+    id: uuid("id").primaryKey(),
+    threadId: uuid("thread_id")
+      .notNull()
+      .references(() => threads.id, { onDelete: "cascade" }),
+    role: text("role").$type<"user" | "coach">().notNull(),
+    text: text("text").notNull(),
+    createdAt: timestamptz("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("thread_messages_thread_id_created_at_idx").on(
+      table.threadId,
+      table.createdAt
+    ),
+  ]
+)

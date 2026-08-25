@@ -2,11 +2,11 @@ import { Hono } from "hono"
 import { cors } from "hono/cors"
 
 import { createAuth, type AuthDatabase } from "./auth.js"
-import {
-  authUnavailableEnvelope,
-  unauthorizedEnvelope,
-} from "./envelope.js"
+import { commandRegistry } from "./commands/index.js"
+import { createCommandRoutes } from "./commands/http.js"
+import { authUnavailableEnvelope, unauthorizedEnvelope } from "./envelope.js"
 import { isAllowedOrigin } from "./origin.js"
+import { createThreadReadRoutes } from "./threads/http.js"
 
 export type AppConfig = {
   /** Origins the browser may call this API from. */
@@ -35,8 +35,7 @@ export function createApp({
   app.use(
     "/*",
     cors({
-      origin: (origin) =>
-        isAllowedOrigin(webOrigins, origin) ? origin : null,
+      origin: (origin) => (isAllowedOrigin(webOrigins, origin) ? origin : null),
       credentials: true,
       allowHeaders: ["Content-Type", "Authorization"],
     })
@@ -73,6 +72,12 @@ export function createApp({
     app.all("/api/auth/*", (c) => c.json(authUnavailableEnvelope(), 503))
     app.get("/api/session", (c) => c.json(authUnavailableEnvelope(), 503))
   }
+
+  app.route(
+    "/api/commands",
+    createCommandRoutes({ auth, db, registry: commandRegistry })
+  )
+  app.route("/api/threads", createThreadReadRoutes({ auth, db }))
 
   return app
 }
