@@ -1,5 +1,7 @@
 # Thread list lives at the shell; no Home port until server Threads
 
+**Status.** Superseded on schedule (QVE-120, 2026-08-25). Server Threads shipped; History and Search now consume the thin `ThreadListPort` (`{ id, title }` plus `activeThreadId` / `openThread` / `newThread`) owned by Home. Conversation internals (`messages`, `send`, `thinking`) stay in the Home store. The shell still mounts `ThreadStoreProvider` so History survives surface changes.
+
 History and Search are shell chrome. They must see Threads on every surface, so Thread list state is mounted on the shell — not behind a Home-only port. Supersede when Spec 3.5 or the Coach spec introduces server Threads (and then extract a thin list port against that model).
 
 **Decision.** Keep the current mount: `AppShellLayout` wraps `ThreadStoreProvider`. Treat History and Search as shell concerns. Do not lift a Thread-list port into `features/home` (or invent `features/coach`) while Threads are still a client stub.
