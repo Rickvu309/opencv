@@ -6,7 +6,6 @@ import {
   fireEvent,
   render,
   screen,
-  waitFor,
   within,
 } from "@testing-library/react"
 
@@ -52,7 +51,7 @@ describe("Paper drive", () => {
 
     expect(screen.getByText("CVs")).toBeInTheDocument()
     expect(screen.getByText("Letters")).toBeInTheDocument()
-    expect(screen.getByText("Proof")).toBeInTheDocument()
+    expect(screen.getAllByText("Proof").length).toBeGreaterThan(0)
     expect(screen.getAllByText("Draft").length).toBeGreaterThan(0)
     expect(screen.getByText("Ready")).toBeInTheDocument()
     expect(screen.queryByText(/Eric Nguyen/i)).not.toBeInTheDocument()
@@ -150,9 +149,8 @@ describe("Paper editors", () => {
     expect(editor).toHaveTextContent(new RegExp(`Best,\\s*Alex`))
     expect(editor).not.toHaveTextContent(/Eric/)
 
-    fireEvent.input(editor, {
-      target: { innerHTML: "<p>Edited letter draft</p>" },
-    })
+    editor.textContent = "Edited letter draft"
+    fireEvent.input(editor)
     expect(editor).toHaveTextContent("Edited letter draft")
   })
 

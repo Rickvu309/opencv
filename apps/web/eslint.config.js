@@ -19,4 +19,12 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  {
+    files: ['src/features/paper/**/*.{ts,tsx}'],
+    rules: {
+      // Prototype-port reset, debounce, and dropdown mount flags.
+      'react-hooks/set-state-in-effect': 'off',
+      'react-refresh/only-export-components': 'off',
+    },
+  },
 ])

@@ -20,8 +20,8 @@ export function EditableField({
   multiline,
   "aria-label": ariaLabel,
 }: FieldProps) {
-  const ref = useRef<HTMLSpanElement & HTMLDivElement>(null)
-  const Tag = multiline ? "div" : "span"
+  const ref = useRef<HTMLSpanElement>(null)
+  const Tag = "span"
 
   useEffect(() => {
     const el = ref.current
@@ -39,6 +39,7 @@ export function EditableField({
       onInput={(e) => onChange(e.currentTarget.textContent ?? "")}
       className={cn(
         "outline-none empty:before:text-muted-foreground/50 empty:before:content-[attr(data-placeholder)] focus:rounded-sm focus:bg-muted/80 focus:ring-1 focus:ring-ring/40",
+        multiline && "block",
         className
       )}
       data-placeholder="Add text…"

@@ -111,7 +111,7 @@ export function parseCvContent(content: string): CvData {
       return DEFAULT_CV_DATA
     }
   }
-  return migrateMarkdownCv(content)
+  return migrateMarkdownCv()
 }
 
 export function serializeCvContent(data: CvData): string {
@@ -193,6 +193,6 @@ export function defaultCvData(profile: DevProfile = getDevProfile()): CvData {
 
 export const DEFAULT_CV_DATA: CvData = defaultCvData()
 
-function migrateMarkdownCv(_content: string): CvData {
+function migrateMarkdownCv(): CvData {
   return { ...DEFAULT_CV_DATA }
 }

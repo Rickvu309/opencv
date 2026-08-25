@@ -93,6 +93,9 @@ export function PaperEditor({
     setLetterWords(countWords(doc.content))
     setDirty(false)
     setSaving(false)
+    // Reset on document switch only — autosave writes `doc.content` and must
+    // not wipe in-progress letter edits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- see above
   }, [doc.id, isCv, isProof])
 
   useEffect(() => {
@@ -192,7 +195,7 @@ export function PaperEditor({
     handleCvChange(next)
   }
 
-  function handleCvTailor(_roleId: string) {
+  function handleCvTailor() {
     handleCvChange({
       ...cvData,
       summary: `${cvData.summary} (Tailored for target role — review bullets and Proof links.)`,
@@ -451,15 +454,16 @@ export function PaperEditor({
                       </button>
                     </div>
                   </div>
-                  <div
-                    ref={editorRef}
-                    contentEditable
-                    suppressContentEditableWarning
-                    onInput={handleRichInput}
-                    className="paper-editor-canvas min-h-[70vh] px-10 py-10 text-[15px] leading-8 outline-none sm:px-14 sm:py-12"
-                    aria-label="Document content"
-                    spellCheck
-                  />
+                <div
+                  ref={editorRef}
+                  contentEditable
+                  role="textbox"
+                  suppressContentEditableWarning
+                  onInput={handleRichInput}
+                  className="paper-editor-canvas min-h-[70vh] px-10 py-10 text-[15px] leading-8 outline-none sm:px-14 sm:py-12"
+                  aria-label="Document content"
+                  spellCheck
+                />
                 </article>
               )
             ) : null}
@@ -470,8 +474,8 @@ export function PaperEditor({
   )
 }
 
-function countWords(text: string) {
-  return text.trim().split(/\s+/).filter(Boolean).length
+function countWords(text: string | undefined) {
+  return (text ?? "").trim().split(/\s+/).filter(Boolean).length
 }
 
 function StatusPill({ status }: { status: DocStatus }) {

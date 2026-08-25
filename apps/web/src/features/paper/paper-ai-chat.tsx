@@ -42,7 +42,7 @@ const GREETING: Record<ToolbarVariant, string> = {
   full: "I can talk through this document, but I can't edit it yet. I haven't run any Commands.",
 }
 
-function stubReply(_variant: ToolbarVariant, _prompt: string): string {
+function stubReply() {
   return STUB_PAPER_COACH_REPLY
 }
 
@@ -133,7 +133,7 @@ export function AiAssistChat({ variant, contextLabel, prominent }: Props) {
     window.setTimeout(() => {
       setMessages((prev) => [
         ...prev,
-        { role: "coach", text: stubReply(variant, t) },
+        { role: "coach", text: stubReply() },
       ])
       setThinking(false)
     }, PAPER_COACH_THINKING_MS)
