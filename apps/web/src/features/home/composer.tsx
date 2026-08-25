@@ -18,6 +18,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@workspace/ui/components/tooltip"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { FOCUS_RING } from "@/features/app-shell/focus-ring.ts"
@@ -27,8 +33,8 @@ const LINE_HEIGHT_PX = 24
 const MAX_LINES = 8
 
 const DOCK_MENU = [
-  { id: "upload", label: "Upload a file", icon: Upload },
-  { id: "recent", label: "Recent", icon: Clock },
+  { id: "upload", label: "Upload a file", icon: Upload, comingSoon: true },
+  { id: "recent", label: "Recent", icon: Clock, comingSoon: true },
   { id: "attach", label: "Attach from Paper", icon: Paperclip },
   { id: "connector", label: "Add connector", icon: Plug },
 ] as const
@@ -96,13 +102,22 @@ export function Composer({
       >
         {DOCK_MENU.map((item) => {
           const Icon = item.icon
+          const comingSoon = "comingSoon" in item && item.comingSoon
           return (
             <DropdownMenuItem
               key={item.id}
-              onClick={() => handleMenuAction(item.id)}
+              disabled={comingSoon}
+              onClick={
+                comingSoon ? undefined : () => handleMenuAction(item.id)
+              }
             >
               <Icon className="size-4 shrink-0 text-muted-foreground" />
               {item.label}
+              {comingSoon ? (
+                <span className="ml-auto text-muted-foreground">
+                  · Coming soon
+                </span>
+              ) : null}
             </DropdownMenuItem>
           )
         })}
@@ -111,16 +126,30 @@ export function Composer({
   )
 
   const micButton = (
-    <button
-      type="button"
-      aria-label="Voice input"
-      className={cn(
-        FOCUS_RING,
-        "flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground"
-      )}
-    >
-      <Mic className="size-4" />
-    </button>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <span className="inline-flex">
+              <button
+                type="button"
+                disabled
+                aria-disabled="true"
+                aria-label="Voice input — coming soon"
+                className={cn(
+                  FOCUS_RING,
+                  "flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground",
+                  "disabled:pointer-events-none disabled:opacity-50"
+                )}
+              >
+                <Mic className="size-4" />
+              </button>
+            </span>
+          }
+        />
+        <TooltipContent>Coming soon</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   )
 
   const sendButton = (

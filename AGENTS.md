@@ -15,10 +15,12 @@ Single-context (`CONTEXT.md` + `docs/adr/` at repo root). See `docs/agents/domai
 ### Git
 
 - `main` is the only long-lived branch; keep it mergeable.
-- One Linear ticket → one branch `<type>/<issue-id>-<slug>` (`feat` / `fix` / `chore`) from updated `main`.
+- One Linear ticket → one branch (any name) from updated `main` → one PR that references the QVE id.
+- CI green and a review verdict before a human squash-merges.
+- `ready-for-human` tickets are decisions; implementation agents never pick them up.
 - Parallel frontier work: one git worktree per ticket.
 - Blocked tickets start only after their blockers are on `main`.
-- Commit on the current branch; a human merges, pushes, and removes the branch/worktree.
+- Commit on the current branch; a human squash-merges, then removes the branch/worktree.
 
 ### Design system
 
