@@ -1,5 +1,5 @@
-import { CraftStub } from "@/features/app-shell/craft-stub.tsx"
+import { ApplyWorkspace } from "@/features/apply/apply-workspace.tsx"
 
 export function ApplyPage() {
-  return <CraftStub surface="apply" />
+  return <ApplyWorkspace />
 }
