@@ -16,7 +16,7 @@ type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
   threads: SearchThread[]
-  onNewChat: () => void
+  onNewThread: () => void
   onOpenThread: (id: string) => void
   onSurface: (id: SurfaceId) => void
 }
@@ -25,9 +25,9 @@ const ACTIONS: {
   id: string
   label: string
   icon: typeof SquarePen
-  run: "chat" | Exclude<SurfaceId, "home" | "settings">
+  run: "thread" | Exclude<SurfaceId, "home" | "settings">
 }[] = [
-  { id: "a1", label: "Start a new Thread", icon: SquarePen, run: "chat" },
+  { id: "a1", label: "Start a new Thread", icon: SquarePen, run: "thread" },
   { id: "a2", label: "Open Paper", icon: FileText, run: "paper" },
   { id: "a3", label: "Open Apply", icon: Briefcase, run: "apply" },
   { id: "a4", label: "Open Pitch", icon: Globe, run: "pitch" },
@@ -43,7 +43,7 @@ export function SearchModal({
   open,
   onOpenChange,
   threads,
-  onNewChat,
+  onNewThread,
   onOpenThread,
   onSurface,
 }: Props) {
@@ -117,7 +117,7 @@ export function SearchModal({
 
   function runAction(run: (typeof ACTIONS)[number]["run"]) {
     onOpenChange(false)
-    if (run === "chat") onNewChat()
+    if (run === "thread") onNewThread()
     else onSurface(run)
   }
 

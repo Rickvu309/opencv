@@ -327,7 +327,7 @@ describe("search modal", () => {
     ).toBeInTheDocument()
   })
 
-  it("jumps surfaces and starts a new chat", async () => {
+  it("jumps surfaces and starts a new Thread", async () => {
     const { router } = renderApp(SURFACE_PATHS.home)
     await expectHomeIdle()
     await openSearch()
@@ -396,7 +396,7 @@ describe("search modal", () => {
     expect(within(dialog).getByText("No conversations")).toBeInTheDocument()
   })
 
-  it("opens a History Thread from Search and returns to idle on new chat", async () => {
+  it("opens a History Thread from Search and returns to idle on new Thread", async () => {
     renderApp(SURFACE_PATHS.paper)
     await expectStub("paper")
     await openSearch()

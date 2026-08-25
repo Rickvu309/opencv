@@ -63,8 +63,8 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe("Home chat mode and History", () => {
-  it("sends into chat mode with a thinking state, then an honest stub reply", async () => {
+describe("Home Thread mode and History", () => {
+  it("sends into Thread mode with a thinking state, then an honest stub reply", async () => {
     renderApp()
     await expectHomeIdle()
 
@@ -95,7 +95,7 @@ describe("Home chat mode and History", () => {
     expect(screen.getByRole("button", { name: "Regenerate" })).toBeDisabled()
   })
 
-  it("lists seed Threads, restores one, and returns to idle on new chat", async () => {
+  it("lists seed Threads, restores one, and returns to idle on new Thread", async () => {
     renderApp()
     await expectHomeIdle()
 
