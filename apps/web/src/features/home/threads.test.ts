@@ -1,4 +1,3 @@
-import { STUB_COACH_REPLY } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
 
 import { titleFrom, toHomeMessages } from "@/features/home/threads.ts"
@@ -7,16 +6,6 @@ describe("titleFrom", () => {
   it("keeps short text and trims long titles", () => {
     expect(titleFrom("  Help me plan the week  ")).toBe("Help me plan the week")
     expect(titleFrom("x".repeat(40))).toBe(`${"x".repeat(36)}…`)
-  })
-})
-
-describe("stub Coach reply", () => {
-  it("does not claim a Paper, Apply, or Command action", () => {
-    expect(STUB_COACH_REPLY).toMatch(/haven't edited Paper or Apply/i)
-    expect(STUB_COACH_REPLY).toMatch(/haven't run any Commands/i)
-    expect(STUB_COACH_REPLY).not.toMatch(
-      /\bI (have|'ve|just) (edited|updated|ran)\b/i
-    )
   })
 })
 

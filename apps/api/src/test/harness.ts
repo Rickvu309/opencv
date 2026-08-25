@@ -1,3 +1,4 @@
+import type { CoachRuntime } from "@workspace/domain"
 import { PGlite } from "@electric-sql/pglite"
 import { drizzle } from "drizzle-orm/pglite"
 import { migrate } from "drizzle-orm/pglite/migrator"
@@ -25,13 +26,25 @@ export async function createMigratedTestDb() {
   return { client, db }
 }
 
-export function createTestApp(db: ReturnType<typeof drizzle>) {
+export function createTestApp(
+  db: ReturnType<typeof drizzle>,
+  options?: {
+    coach?: CoachRuntime
+    coachModel?: string
+    coachDailyTurnLimit?: number
+    coachSseHeartbeatMs?: number
+  }
+) {
   return createApp({
     webOrigins: [testWebOrigin],
     sessionSecret: testSessionSecret,
     authUrl: testAuthUrl,
     db,
     rateLimitEnabled: false,
+    coach: options?.coach,
+    coachModel: options?.coachModel,
+    coachDailyTurnLimit: options?.coachDailyTurnLimit,
+    coachSseHeartbeatMs: options?.coachSseHeartbeatMs,
   })
 }
 

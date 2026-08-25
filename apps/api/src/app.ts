@@ -3,6 +3,7 @@ import { Hono } from "hono"
 import { cors } from "hono/cors"
 
 import { createAuth, type AuthDatabase } from "./auth.js"
+import { createCoachRoutes } from "./coach/http.js"
 import { commandRegistry } from "./commands/index.js"
 import { createCommandRoutes } from "./commands/http.js"
 import { authUnavailableEnvelope, unauthorizedEnvelope } from "./envelope.js"
@@ -25,8 +26,8 @@ export type AppConfig = {
   db?: AuthDatabase
   rateLimitEnabled?: boolean
   /**
-   * Optional Coach runtime (ADR-0007). Unused until the coach route lands.
-   * The factory never constructs one from env.
+   * Optional Coach runtime (ADR-0007). Injected like `db` — the factory
+   * never constructs one from env. Missing runtime → 503 on the coach route.
    */
   coach?: CoachRuntime
   /** From `openRouterApiKeyFromEnv`. Unused until the OpenRouter runtime lands. */
@@ -35,6 +36,8 @@ export type AppConfig = {
   coachModel?: string
   /** From `coachDailyTurnLimitFromEnv`. */
   coachDailyTurnLimit?: number
+  /** Test override; production uses `COACH_SSE_HEARTBEAT_MS` (15s). */
+  coachSseHeartbeatMs?: number
 }
 
 export function createApp({
@@ -43,6 +46,10 @@ export function createApp({
   authUrl,
   db,
   rateLimitEnabled,
+  coach,
+  coachModel,
+  coachDailyTurnLimit,
+  coachSseHeartbeatMs,
 }: AppConfig) {
   const app = new Hono()
 
@@ -92,6 +99,18 @@ export function createApp({
     createCommandRoutes({ auth, db, registry: commandRegistry })
   )
   app.route("/api/threads", createThreadReadRoutes({ auth, db }))
+  app.route(
+    "/api/threads",
+    createCoachRoutes({
+      auth,
+      db,
+      registry: commandRegistry,
+      coach,
+      coachModel,
+      coachDailyTurnLimit,
+      coachSseHeartbeatMs,
+    })
+  )
   app.route("/api/paper", createPaperReadRoutes({ auth, db }))
   app.route("/api/apply", createApplyReadRoutes({ auth, db }))
 

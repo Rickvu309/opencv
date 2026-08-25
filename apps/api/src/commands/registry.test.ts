@@ -1,7 +1,6 @@
 import {
   DEFAULT_THREAD_TITLE,
   ERROR_CODES,
-  STUB_COACH_REPLY,
   THREAD_COMMANDS,
 } from "@workspace/domain"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
@@ -195,7 +194,7 @@ describe("command registry", () => {
     })
   })
 
-  it("appends the user message and the honest stub Coach reply", async () => {
+  it("appends only the user message — the Coach reply is the stream", async () => {
     const created = await commandRegistry.execute({
       name: THREAD_COMMANDS.create,
       input: { title: "Chat" },
@@ -218,11 +217,6 @@ describe("command registry", () => {
         role: "user",
         text: "Should I finish my CV?",
       }),
-      expect.objectContaining({
-        role: "coach",
-        text: STUB_COACH_REPLY,
-      }),
     ])
-    expect(STUB_COACH_REPLY).toMatch(/haven't run any Commands/i)
   })
 })

@@ -121,12 +121,16 @@ describe("thread detail optional coach fields", () => {
     })
     expect(posted.status).toBe(200)
     const postedBody = (await posted.json()) as { ok: true; data: ThreadDetail }
-    expect(postedBody.data.messages).toHaveLength(2)
-    for (const message of postedBody.data.messages) {
-      expect(message).not.toHaveProperty("parts")
-      expect(message).not.toHaveProperty("status")
-      expect(message).not.toHaveProperty("workedMs")
-    }
+    expect(postedBody.data.messages).toHaveLength(1)
+    expect(postedBody.data.messages[0]).toEqual(
+      expect.objectContaining({
+        role: "user",
+        text: "Should I finish my CV first?",
+      })
+    )
+    expect(postedBody.data.messages[0]).not.toHaveProperty("parts")
+    expect(postedBody.data.messages[0]).not.toHaveProperty("status")
+    expect(postedBody.data.messages[0]).not.toHaveProperty("workedMs")
 
     const parts: ThreadMessagePart[] = [
       { type: "text", text: "I moved the card. " },

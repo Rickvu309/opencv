@@ -1,6 +1,5 @@
 import {
   ERROR_CODES,
-  STUB_COACH_REPLY,
   THREAD_COMMANDS,
   type ThreadDetail,
   type ThreadListItem,
@@ -125,10 +124,6 @@ describe("threads API", () => {
         role: "user",
         text: "Should I finish my CV first?",
       }),
-      expect.objectContaining({
-        role: "coach",
-        text: STUB_COACH_REPLY,
-      }),
     ])
 
     const second = await postCommand(app, cookieA, THREAD_COMMANDS.create, {
@@ -161,9 +156,9 @@ describe("threads API", () => {
     })
     expect(detailRes.status).toBe(200)
     const detail = await json<{ ok: true; data: ThreadDetail }>(detailRes)
-    expect(detail.data.messages).toHaveLength(4)
-    expect(detail.data.messages[3]).toEqual(
-      expect.objectContaining({ role: "coach", text: STUB_COACH_REPLY })
+    expect(detail.data.messages).toHaveLength(2)
+    expect(detail.data.messages[1]).toEqual(
+      expect.objectContaining({ role: "user", text: "Still thinking." })
     )
 
     const renamedRes = await postCommand(app, cookieA, THREAD_COMMANDS.rename, {

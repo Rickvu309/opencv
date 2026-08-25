@@ -1,6 +1,5 @@
 import {
   DEFAULT_THREAD_TITLE,
-  STUB_COACH_REPLY,
   THREAD_COMMANDS,
   threadsCreateInputSchema,
   threadsDeleteInputSchema,
@@ -123,7 +122,6 @@ export const postMessageCommand = defineCommand({
     await getOwnedThread(ctx.db, ctx.actor.userId, input.threadId)
 
     const now = new Date()
-    const replyAt = new Date(now.getTime() + 1)
     const userMessage = {
       id: createId(now.getTime()),
       threadId: input.threadId,
@@ -131,16 +129,9 @@ export const postMessageCommand = defineCommand({
       text: input.text,
       createdAt: now,
     }
-    const coachMessage = {
-      id: createId(replyAt.getTime()),
-      threadId: input.threadId,
-      role: "coach" as const,
-      text: STUB_COACH_REPLY,
-      createdAt: replyAt,
-    }
 
     await ctx.db.transaction(async (tx: AppDatabase) => {
-      await tx.insert(threadMessages).values([userMessage, coachMessage])
+      await tx.insert(threadMessages).values(userMessage)
       await tx
         .update(threads)
         .set({ updatedAt: now })
