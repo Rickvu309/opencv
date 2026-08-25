@@ -25,12 +25,20 @@ function AppShellChrome() {
   const navigate = useNavigate()
   const { threads, newChat, openThread } = useThreadStore()
   const isDesktop = useMediaQuery(DESKTOP_MEDIA_QUERY, true)
-  const [sidebarOpen, setSidebarOpen] = useState(isDesktop)
+  const [sidebar, setSidebar] = useState({
+    alignedTo: isDesktop,
+    open: isDesktop,
+  })
   const [searchOpen, setSearchOpen] = useState(false)
 
-  useEffect(() => {
-    setSidebarOpen(isDesktop)
-  }, [isDesktop])
+  if (sidebar.alignedTo !== isDesktop) {
+    setSidebar({ alignedTo: isDesktop, open: isDesktop })
+  }
+
+  const sidebarOpen = sidebar.open
+  function setSidebarOpen(open: boolean) {
+    setSidebar((current) => ({ ...current, open }))
+  }
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {

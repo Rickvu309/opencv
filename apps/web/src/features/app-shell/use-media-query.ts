@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useCallback, useSyncExternalStore } from "react"
 
 export const DESKTOP_MEDIA_QUERY = "(min-width: 768px)"
 
@@ -10,22 +10,21 @@ export function readMediaQuery(query: string, defaultValue: boolean) {
 }
 
 export function useMediaQuery(query: string, defaultValue: boolean) {
-  const [matches, setMatches] = useState(() =>
-    readMediaQuery(query, defaultValue)
+  const subscribe = useCallback(
+    (onStoreChange: () => void) => {
+      if (typeof window.matchMedia !== "function") {
+        return () => {}
+      }
+      const media = window.matchMedia(query)
+      media.addEventListener("change", onStoreChange)
+      return () => media.removeEventListener("change", onStoreChange)
+    },
+    [query]
   )
 
-  useEffect(() => {
-    if (typeof window.matchMedia !== "function") {
-      return
-    }
-
-    const media = window.matchMedia(query)
-    setMatches(media.matches)
-
-    const onChange = () => setMatches(media.matches)
-    media.addEventListener("change", onChange)
-    return () => media.removeEventListener("change", onChange)
-  }, [query])
-
-  return matches
+  return useSyncExternalStore(
+    subscribe,
+    () => readMediaQuery(query, defaultValue),
+    () => defaultValue
+  )
 }
