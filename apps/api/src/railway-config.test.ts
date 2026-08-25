@@ -10,7 +10,11 @@ const repoRoot = path.resolve(apiRoot, "../..")
 
 type RailwayConfig = {
   build: { buildCommand?: string; watchPatterns?: string[] }
-  deploy: { startCommand?: string; healthcheckPath?: string }
+  deploy: {
+    startCommand?: string
+    preDeployCommand?: string | string[]
+    healthcheckPath?: string
+  }
 }
 
 describe("railway.json (api service)", () => {
@@ -18,12 +22,18 @@ describe("railway.json (api service)", () => {
     readFileSync(path.join(repoRoot, "railway.json"), "utf8")
   )
 
-  it("builds and starts the api workspace package", () => {
-    expect(config.build.buildCommand).toContain("--filter api run build")
+  it("builds workspace dependencies and starts the api package", () => {
+    expect(config.build.buildCommand).toContain("--filter api...")
     expect(config.deploy.startCommand).toContain("--filter api run start")
   })
 
-  it("healthchecks the route the API actually serves", async () => {
+  it("applies committed migrations before each rollout", () => {
+    const preDeploy = config.deploy.preDeployCommand
+    const command = Array.isArray(preDeploy) ? preDeploy.join(" ") : preDeploy
+    expect(command).toContain("run migrate")
+  })
+
+  it("healthchecks the route the API actually serves with no db injected", async () => {
     expect(config.deploy.healthcheckPath).toBe("/health")
 
     const res = await createApp({ webOrigins: [] }).request("/health")

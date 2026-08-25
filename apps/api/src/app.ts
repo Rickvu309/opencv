@@ -4,6 +4,11 @@ import { cors } from "hono/cors"
 export type AppConfig = {
   /** Origins the browser may call this API from. */
   webOrigins: string[]
+  /**
+   * Optional Postgres URL from `databaseUrlFromEnv`. Health never uses it;
+   * constructing the app without this value must still serve `GET /health`.
+   */
+  databaseUrl?: string
 }
 
 /**

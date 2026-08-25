@@ -8,6 +8,23 @@ describe("GET /health", () => {
     expect(res.status).toBe(200)
     await expect(res.json()).resolves.toEqual({ ok: true })
   })
+
+  it("serves 200 when constructed with no database, even if DATABASE_URL is set", async () => {
+    const previous = process.env.DATABASE_URL
+    process.env.DATABASE_URL = "postgresql://example.invalid/openpath"
+
+    try {
+      const res = await createApp({ webOrigins: [] }).request("/health")
+      expect(res.status).toBe(200)
+      await expect(res.json()).resolves.toEqual({ ok: true })
+    } finally {
+      if (previous === undefined) {
+        delete process.env.DATABASE_URL
+      } else {
+        process.env.DATABASE_URL = previous
+      }
+    }
+  })
 })
 
 describe("CORS", () => {

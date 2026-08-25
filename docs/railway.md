@@ -12,10 +12,15 @@ Project `openpath` (linked to this repo):
 | `production` | `api` (from `quanvu309/openpath` @ `main`), `Postgres` |
 | `staging`    | `api`, `Postgres` (own instance, empty data)           |
 
-- The `api` service builds from the repo root; its build/start commands,
-  healthcheck path, and watch patterns are defined in `/railway.json` at the
-  repo root (the single source of truth — the live service settings match it).
-- Health: `GET /health` (also Railway's deployment healthcheck path).
+- The `api` service builds from the repo root; its build/start/pre-deploy
+  commands, healthcheck path, and watch patterns are defined in `/railway.json`
+  at the repo root (the single source of truth — the live service settings
+  match it). `buildCommand` uses `--filter api...` so workspace dependencies
+  compile with the api. `preDeployCommand` runs the compiled migrate script
+  (`pnpm --filter api run migrate`) before each rollout; a migration failure
+  aborts the deploy.
+- Health: `GET /health` (also Railway's deployment healthcheck path). The
+  route never touches Postgres, so it serves 200 with no `DATABASE_URL`.
 - `DATABASE_URL` is set on `api` as the shared reference
   `${{Postgres.DATABASE_URL}}` in **both** environments, so each environment
   resolves to its own Postgres. No credentials live in git.
