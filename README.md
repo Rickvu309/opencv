@@ -21,6 +21,13 @@ migrations from scratch; Railway `preDeploy` applies them per environment
 (`docs/railway.md`). New accounts get a starter workspace on signup. To seed
 an existing empty dev/staging user: `pnpm --filter api run db:seed`.
 
+Before merging Coach persona or prompt changes, run the manual eval harness
+(`pnpm --filter api eval`). It seeds golden scenarios on a fresh test database,
+calls the real OpenRouter runtime, scores honesty checks plus a cheap LLM judge,
+and prints a markdown report. It is not part of `pnpm test` or GitHub Actions —
+fake-runtime tests keep CI at zero tokens. The script refuses to start without
+`OPENROUTER_API_KEY`.
+
 ## Useful scripts
 
 | Script | Purpose |
@@ -28,6 +35,7 @@ an existing empty dev/staging user: `pnpm --filter api run db:seed`.
 | `pnpm dev` | Run web + api |
 | `pnpm build` | Production builds |
 | `pnpm test` | Workspace tests |
+| `pnpm --filter api eval` | Manual Coach eval harness (needs `OPENROUTER_API_KEY`; never CI) |
 | `pnpm typecheck` | Typecheck all packages |
 | `pnpm storybook` | UI kit catalog (http://localhost:6006) |
 | `pnpm build-storybook` | Static Storybook output (`packages/ui/storybook-static`) |

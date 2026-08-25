@@ -57,4 +57,15 @@ Eight tickets under one parent: COACH-1 tool surface, COACH-2 data/config ground
 - [ ] Turn cap returns a plain-language 429 at the limit; usage rows record model/tokens/cost/latency per turn
 - [ ] Missing API key degrades to 503 on the coach route only; `/health` untouched; CI green including migration gate
 - [ ] Eval harness runs on demand and reports; it is not wired into CI
+
+## Eval harness
+
+Persona quality is measured on demand, never in CI. Before merging persona or
+prompt changes, run `pnpm --filter api eval` with `OPENROUTER_API_KEY` set. The
+script refuses without the key. Each golden scenario gets a fresh test
+database, the real OpenRouter runtime, deterministic honesty checks (no
+exclamation marks, no claimed action without a matching successful receipt,
+exactly one next step, valid tool calls), then a cheap LLM judge with
+rationale. Output is a markdown report on stdout. `pnpm test` and GitHub
+Actions keep using the fake runtime so CI burns zero tokens.
 - [ ] ADR-0007 committed; deploy docs updated; follow-up tickets filed
