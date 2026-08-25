@@ -57,6 +57,7 @@ async function positionBefore(
 
 export const createApplyCardCommand = defineCommand({
   name: APPLY_COMMANDS.createCard,
+  description: "Create a new Apply card in the pipeline.",
   input: applyCreateCardInputSchema,
   coachAllowed: true,
   destructive: false,
@@ -99,6 +100,8 @@ export const createApplyCardCommand = defineCommand({
 
 export const updateApplyCardCommand = defineCommand({
   name: APPLY_COMMANDS.updateCard,
+  description:
+    "Update an Apply card's title, company, note, job URL, or Track. Fit is not writable.",
   input: applyUpdateCardInputSchema,
   coachAllowed: true,
   destructive: false,
@@ -138,6 +141,8 @@ export const updateApplyCardCommand = defineCommand({
 
 export const moveApplyCardCommand = defineCommand({
   name: APPLY_COMMANDS.moveCard,
+  description:
+    "Move an Apply card to a Stage and position. Omit beforeCardId to place it at the end of the Stage.",
   input: applyMoveCardInputSchema,
   coachAllowed: true,
   destructive: false,
@@ -188,6 +193,7 @@ export const moveApplyCardCommand = defineCommand({
 
 export const toggleApplyStarCommand = defineCommand({
   name: APPLY_COMMANDS.toggleStar,
+  description: "Star or unstar an Apply card.",
   input: applyToggleStarInputSchema,
   coachAllowed: true,
   destructive: false,
@@ -220,6 +226,8 @@ export const toggleApplyStarCommand = defineCommand({
 
 export const deleteApplyCardCommand = defineCommand({
   name: APPLY_COMMANDS.deleteCard,
+  description:
+    "Permanently delete an Apply card. The Coach cannot run this.",
   input: applyDeleteCardInputSchema,
   coachAllowed: false,
   destructive: true,

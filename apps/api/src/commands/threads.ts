@@ -27,6 +27,7 @@ function ownedThread(threadId: string, userId: string) {
 
 export const createThreadCommand = defineCommand({
   name: THREAD_COMMANDS.create,
+  description: "Create a new Thread in the user's History.",
   input: threadsCreateInputSchema,
   coachAllowed: true,
   destructive: false,
@@ -52,6 +53,7 @@ export const createThreadCommand = defineCommand({
 
 export const renameThreadCommand = defineCommand({
   name: THREAD_COMMANDS.rename,
+  description: "Rename a Thread.",
   input: threadsRenameInputSchema,
   coachAllowed: true,
   destructive: false,
@@ -83,6 +85,8 @@ export const renameThreadCommand = defineCommand({
 
 export const deleteThreadCommand = defineCommand({
   name: THREAD_COMMANDS.delete,
+  description:
+    "Permanently delete a Thread and its messages. The Coach cannot run this.",
   input: threadsDeleteInputSchema,
   coachAllowed: false,
   destructive: true,
@@ -106,6 +110,8 @@ export const deleteThreadCommand = defineCommand({
 
 export const postMessageCommand = defineCommand({
   name: THREAD_COMMANDS.postMessage,
+  description:
+    "Post a user message to a Thread. The Coach must not call this — the stream is its reply.",
   input: threadsPostMessageInputSchema,
   coachAllowed: true,
   destructive: false,
