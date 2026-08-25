@@ -12,8 +12,37 @@ import {
 
 import { DEFAULT_DEV_PROFILE_NAME } from "@/features/app-shell/dev-profile.ts"
 import { SURFACE_COPY, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { DESKTOP_MEDIA_QUERY } from "@/features/app-shell/use-media-query.ts"
 import { SEED_THREADS } from "@/features/home/threads.ts"
 import { createAppRouter } from "@/router.tsx"
+
+const sidebarOpenOnRender = vi.hoisted(() => ({ values: [] as boolean[] }))
+
+vi.mock("@/features/app-shell/app-sidebar.tsx", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("@/features/app-shell/app-sidebar.tsx")>()
+
+  return {
+    ...actual,
+    AppSidebar: (props: Parameters<typeof actual.AppSidebar>[0]) => {
+      sidebarOpenOnRender.values.push(props.open)
+      return actual.AppSidebar(props)
+    },
+  }
+})
+
+function stubDesktopViewport(isDesktop: boolean) {
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: query === DESKTOP_MEDIA_QUERY ? isDesktop : true,
+    media: query,
+    onchange: null,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    addListener: () => {},
+    removeListener: () => {},
+    dispatchEvent: () => false,
+  }))
+}
 
 function renderApp(initialEntry = "/") {
   const router = createAppRouter({
@@ -47,6 +76,7 @@ async function expectHomeIdle() {
 
 beforeEach(() => {
   sessionStorage.clear()
+  sidebarOpenOnRender.values = []
   vi.stubGlobal("scrollTo", vi.fn())
 })
 
@@ -151,6 +181,39 @@ describe("app shell layout", () => {
     expect(
       screen.getByRole("link", { name: /profile and settings/i })
     ).toHaveAttribute("aria-current", "page")
+  })
+
+  it("starts collapsed on first paint at a narrow viewport", async () => {
+    stubDesktopViewport(false)
+    renderApp(SURFACE_PATHS.home)
+    await expectHomeIdle()
+
+    expect(sidebarOpenOnRender.values[0]).toBe(false)
+    expect(screen.getByRole("complementary", { name: "App" })).toHaveAttribute(
+      "data-expanded",
+      "false"
+    )
+    expect(
+      screen.getByRole("button", { name: "Expand sidebar" })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "Close sidebar" })
+    ).not.toBeInTheDocument()
+  })
+
+  it("starts expanded on first paint at a desktop viewport", async () => {
+    stubDesktopViewport(true)
+    renderApp(SURFACE_PATHS.home)
+    await expectHomeIdle()
+
+    expect(sidebarOpenOnRender.values[0]).toBe(true)
+    expect(screen.getByRole("complementary", { name: "App" })).toHaveAttribute(
+      "data-expanded",
+      "true"
+    )
+    expect(
+      screen.getByRole("button", { name: "Collapse sidebar" })
+    ).toBeInTheDocument()
   })
 
   it("keeps nav usable after the sidebar collapses", async () => {
