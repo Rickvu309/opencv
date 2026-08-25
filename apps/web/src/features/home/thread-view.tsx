@@ -44,7 +44,7 @@ type Props = {
   thinking?: boolean
 }
 
-export function ChatThread({ messages, thinking }: Props) {
+export function ThreadView({ messages, thinking }: Props) {
   return (
     <div
       role="log"

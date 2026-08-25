@@ -1,8 +1,8 @@
 import { useState } from "react"
 
 import { getDevProfile } from "@/features/app-shell/dev-profile.ts"
-import { ChatThread } from "@/features/home/chat-thread.tsx"
-import { ChatTopBar } from "@/features/home/chat-top-bar.tsx"
+import { ThreadTopBar } from "@/features/home/thread-top-bar.tsx"
+import { ThreadView } from "@/features/home/thread-view.tsx"
 import { Composer } from "@/features/home/composer.tsx"
 import { ConnectedApps } from "@/features/home/connected-apps.tsx"
 import { homeGreeting } from "@/features/home/greeting.ts"
@@ -23,9 +23,9 @@ export function HomeDashboard() {
   if (started) {
     return (
       <div className="flex h-full min-h-0 flex-1 flex-col">
-        <ChatTopBar onNewChat={newChat} />
+        <ThreadTopBar onNewThread={newChat} />
         <div className="min-h-0 flex-1 overflow-auto">
-          <ChatThread messages={messages} thinking={thinking} />
+          <ThreadView messages={messages} thinking={thinking} />
         </div>
         <div className="shrink-0 bg-background px-4 pt-2 pb-4 sm:px-6">
           <div className="mx-auto w-full max-w-3xl">

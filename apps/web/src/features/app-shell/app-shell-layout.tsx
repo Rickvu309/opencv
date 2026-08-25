@@ -55,7 +55,7 @@ function AppShellChrome() {
     if (!isDesktop) setSidebarOpen(false)
   }
 
-  function handleNewChat() {
+  function handleNewThread() {
     newChat()
     void navigate({ to: SURFACE_PATHS.home })
   }
@@ -105,7 +105,7 @@ function AppShellChrome() {
         open={searchOpen}
         onOpenChange={setSearchOpen}
         threads={searchThreadsFromHome(threads)}
-        onNewChat={handleNewChat}
+        onNewThread={handleNewThread}
         onOpenThread={handleOpenThread}
         onSurface={goSurface}
       />
