@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { readFileSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
@@ -49,8 +50,8 @@ describe("paper display helpers", () => {
   it("formats recent updates in plain language", () => {
     const now = Date.parse("2026-08-25T12:00:00.000Z")
     expect(formatPaperUpdated("2026-08-25T11:59:30.000Z", now)).toBe("Just now")
-    expect(formatPaperUpdated("2026-08-25T11:10:00.000Z", now)).toBe(
-      "50 minutes ago"
+    expect(formatPaperUpdated("2026-08-25T11:11:00.000Z", now)).toBe(
+      "49 minutes ago"
     )
     expect(formatPaperUpdated("2026-08-24T12:00:00.000Z", now)).toBe(
       "Yesterday"

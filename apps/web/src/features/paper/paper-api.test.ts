@@ -1,5 +1,5 @@
 import { PAPER_COMMANDS, type PaperDoc } from "@workspace/domain"
-import { afterEach, describe, expect, it, vi } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 
 import { apiBaseUrl } from "@/lib/api-url.ts"
 
@@ -9,10 +9,6 @@ import {
   updatePaperContent,
   upsertPaperDoc,
 } from "./paper-api.ts"
-
-afterEach(() => {
-  vi.unstubAllGlobals()
-})
 
 function envelope<T>(data: T) {
   return Response.json({ ok: true, data })

@@ -32,13 +32,9 @@ function isoNow() {
 }
 
 function pathOf(input: RequestInfo | URL) {
-  const raw =
-    typeof input === "string"
-      ? input
-      : input instanceof URL
-        ? input.href
-        : input.url
-  return new URL(raw, apiBaseUrl).pathname
+  if (typeof input === "string") return new URL(input, apiBaseUrl).pathname
+  if (input instanceof URL) return input.pathname
+  return new URL(input.url, apiBaseUrl).pathname
 }
 
 function jsonOk<T>(data: T, status = 200) {
