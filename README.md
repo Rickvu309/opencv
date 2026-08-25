@@ -15,6 +15,12 @@ pnpm dev
 
 Copy `.env.example` to `.env` (or `.env.local`) and fill in values as features need them.
 
+API schema changes: edit `apps/api/src/db/schema.ts`, generate SQL with
+`pnpm --filter api run db:generate`, commit `apps/api/drizzle/`. CI applies
+migrations from scratch; Railway `preDeploy` applies them per environment
+(`docs/railway.md`). New accounts get a starter workspace on signup. To seed
+an existing empty dev/staging user: `pnpm --filter api run db:seed`.
+
 ## Useful scripts
 
 | Script | Purpose |

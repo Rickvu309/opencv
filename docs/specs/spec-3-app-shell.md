@@ -61,22 +61,20 @@ Deliver the **app shell** in production that:
 
 ## Route to real product
 
-The prototype proved more than Spec 3 ships. Nothing is orphaned — each area lands in a named later spec, in blocking order:
+The prototype proved more than Spec 3 shipped. Numbering below matches the live specs (`docs/specs/spec-4-auth-and-data.md`). Nothing is orphaned.
 
-| Spec | Scope | Blocked by | Prototype reference modules |
-|------|-------|-----------|------------------------------|
-| **3 — App shell** (this spec) | Shell, Home Coach (stub replies), Search, History (client state), Settings tabs, stub surfaces | — | see reference index below |
-| **3.5 — Data + Commands foundation** | Postgres schema for Paper docs / Apply cards / Threads, Command registry per ADR-0003, API endpoints. Settles the `cv:v1:`/`proof:v1:` storage question (PRODUCT.md open q. 3) | 3 | `paper-data.ts`, `paper-cv-types.ts`, `paper-proof-types.ts`, `apply-types.ts`, `pitch-types.ts` (as draft domain shapes, not schemas) |
-| **4 — Paper** | Drive view, CV editor (5 templates, A4), Letter, Proof editor, AI-chat panel; bring prototype CV/A4 CSS (`.cv-*`, `.paper-editor-canvas`, `.bg-stripes`) into production — those utilities live on the prototype only, not in production `globals.css` | 3, 3.5 | `paper-workspace`, `paper-editor*`, `paper-cv-*`, `paper-proof-*`, `paper-ai-chat`, `paper-markdown` |
-| **5 — Apply** | Kanban + Stages, drag-and-drop, calendar of Tracks, job detail, Fit (must resolve PRODUCT.md open q. 1 first) | 3, 3.5 | `apply-workspace`, `apply-calendar`, `apply-dnd`, `apply-job-detail` |
-| **6 — Pitch** | Portfolio blocks, stories, edit/publish, gallery; GitHub heatmap only after PRODUCT.md open q. 2 is decided | 3, 3.5 | `pitch-workspace`, `pitch-showcase`, `pitch-stories`, `pitch-github-*`, `pitch-edit-toolbar` |
-| **Auth (unnumbered)** | Better Auth vs Clerk, gated app, real Account tab | 3 | research note 2026-08-21 |
-| **Coach (unnumbered)** | Real LLM, streaming, server Threads, Commands wired to surfaces | 3.5 | `chat-thread`, `composer` |
-| **Later** | Notification inbox (`notification-inbox`), Connected apps OAuth (`apps-catalog`, `connected-apps`), voice input | shell + auth | — |
+| Spec | Scope | Status |
+|------|-------|--------|
+| **3 — App shell** (this spec) | Shell, Home Coach (stub replies), Search, History, Settings tabs, stub surfaces | Done |
+| **3.9 — Craft surfaces client-side** | Paper / Apply / Pitch ported from the frozen prototype (QVE-110–113) | Done |
+| **4 — Auth + Data** | Accounts, Postgres, Command registry, server Threads, Paper + Apply persistence, signup starter | Done |
+| **Coach (unnumbered)** | Real LLM, streaming, Commands wired as tools from the same registry | After 4 |
+| **Pitch persistence** | One jsonb document per user (same shape as Paper content) | After 4, unblocked |
+| **Later** | Email provider + verification, sibling custom domains, OAuth, notification inbox, Connected apps, voice input | — |
 
-Ticket writers for Spec 4+ start from this table plus `PRODUCT.md`.
+Ticket writers start from this table plus `PRODUCT.md` and ADR-0006.
 
-**Sequencing note (2026-08):** Craft surfaces shipped client-side first — see [Craft surfaces live on production](https://linear.app/quanvm/issue/QVE-110/craft-surfaces-live-on-production) (QVE-110–113). Spec 3.5 then wires those live UIs to the server. This supersedes the earlier “Specs 4–6 blocked by 3.5” ordering.
+**Sequencing note (2026-08):** Craft surfaces shipped client-side first (QVE-110–113), then Spec 4 persisted Paper / Apply / Threads and gated the app. This supersedes the earlier “Specs 4–6 blocked by 3.5” ordering and the old Paper/Apply/Pitch spec numbers.
 
 ---
 

@@ -166,7 +166,10 @@ describe("paper API", () => {
     })
     expect(listRes.status).toBe(200)
     const list = await json<{ ok: true; data: PaperDoc[] }>(listRes)
-    expect(list.data).toHaveLength(3)
+    expect(list.data.length).toBeGreaterThanOrEqual(3)
+    expect(createdIds.every((id) => list.data.some((doc) => doc.id === id))).toBe(
+      true
+    )
     expect(list.data.every((doc) => typeof doc.content === "object")).toBe(true)
     expect(JSON.stringify(list.data)).not.toMatch(/cv:v1:|proof:v1:/)
 

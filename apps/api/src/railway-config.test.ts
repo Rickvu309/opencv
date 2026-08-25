@@ -31,6 +31,15 @@ describe("railway.json (api service)", () => {
     const preDeploy = config.deploy.preDeployCommand
     const command = Array.isArray(preDeploy) ? preDeploy.join(" ") : preDeploy
     expect(command).toContain("run migrate")
+    expect(command).not.toContain("run seed")
+
+    const railwayDocs = readFileSync(path.join(repoRoot, "docs/railway.md"), "utf8")
+    const deployDocs = readFileSync(path.join(repoRoot, "docs/deploy.md"), "utf8")
+    expect(railwayDocs).toMatch(/Migration pipeline/)
+    expect(railwayDocs).toMatch(/preDeployCommand/)
+    expect(railwayDocs).toMatch(/run seed/)
+    expect(deployDocs).toMatch(/preDeployCommand/)
+    expect(deployDocs).toMatch(/migrate/)
   })
 
   it("healthchecks the route the API actually serves with no db injected", async () => {

@@ -41,7 +41,7 @@ Bell popover inbox on Home (Apply and Paper events). Prototype-validated; ships 
 
 ## Productionization order
 
-The prototype is throwaway code; production rebuilds it spec by spec. Spec 3 = shell + stub surfaces; then data/Commands foundation; then Paper, Apply, Pitch (see `docs/specs/spec-3-app-shell.md`, Route to real product).
+The prototype is throwaway code; production rebuilds it spec by spec. Spec 3 = shell + stub surfaces; Spec 4 = auth + durable Paper / Apply / Threads. Pitch persistence and the real Coach follow (see `docs/specs/spec-3-app-shell.md`, Route to real product).
 
 ## Out of scope
 
@@ -56,7 +56,7 @@ The prototype is throwaway code; production rebuilds it spec by spec. Spec 3 = s
 1. **Naked Fit score.** Cards show a bare 0–100 number. Principle 1 says claims show their basis; anti-references warn against career-quiz astrology. Production Fit must either show its evidence or not ship as a number.
 2. **Live GitHub APIs.** Pitch calls `api.github.com` and a third-party contributions API (`jogruber.de`) client-side. Dependency, rate limits, and privacy are undecided.
 3. **Paper storage format.** Settled in ADR-0006: `paper_docs` stores `content_kind` + `content jsonb` + `content_version`. The prototype's `cv:v1:` / `proof:v1:` prefixed strings are retired.
-4. **Seed persona.** "Eric Nguyen" and all seed cards/threads are demo data; production shows a placeholder User until auth, never the demo persona.
+4. **Seed persona.** Settled for real accounts (Spec 4): signup writes a neutral starter workspace (sample CV, a few Apply cards, one Thread) in the product voice. "Eric Nguyen" is demo data only and must not appear. Pitch still uses a placeholder author until Pitch persistence lands.
 5. **Pitch post drafts.** The pre-prototype "social post drafts" idea is out of the definition; whether it returns as a later Pitch phase is unresolved.
 
 ## Personality
