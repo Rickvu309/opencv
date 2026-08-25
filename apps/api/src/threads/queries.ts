@@ -3,6 +3,8 @@ import {
   type ThreadDetail,
   type ThreadListItem,
   type ThreadMessage,
+  type ThreadMessagePart,
+  type ThreadMessageStatus,
 } from "@workspace/domain"
 import { desc, eq } from "drizzle-orm"
 
@@ -32,13 +34,28 @@ export function toThreadMessage(row: {
   role: "user" | "coach"
   text: string
   createdAt: Date
+  parts?: ThreadMessagePart[] | null
+  status?: ThreadMessageStatus | null
+  workedMs?: number | null
 }): ThreadMessage {
-  return {
+  const message: ThreadMessage = {
     id: row.id,
     role: row.role,
     text: row.text,
     createdAt: iso(row.createdAt),
   }
+
+  if (row.parts != null) {
+    message.parts = row.parts
+  }
+  if (row.status != null) {
+    message.status = row.status
+  }
+  if (row.workedMs != null) {
+    message.workedMs = row.workedMs
+  }
+
+  return message
 }
 
 export async function listThreadsForUser(

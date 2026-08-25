@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-import { THREAD_COMMANDS } from "./commands.js"
+import { reversalDescriptorSchema, THREAD_COMMANDS } from "./commands.js"
 
 export { THREAD_COMMANDS }
 
@@ -64,6 +64,44 @@ export type ThreadsPostMessageInput = z.infer<
 
 export type MessageRole = z.infer<typeof messageRoleSchema>
 
+export const threadMessageStatusSchema = z.enum(["final", "error", "aborted"])
+
+export const threadTextPartSchema = z
+  .object({
+    type: z.literal("text"),
+    text: z.string(),
+  })
+  .strict()
+
+export const threadToolPartSchema = z
+  .object({
+    type: z.literal("tool"),
+    name: z.string(),
+    summary: z.string(),
+    ok: z.boolean(),
+    reversal: reversalDescriptorSchema.optional(),
+    toolCallId: z.string().optional(),
+  })
+  .strict()
+
+export const threadMessagePartSchema = z.discriminatedUnion("type", [
+  threadTextPartSchema,
+  threadToolPartSchema,
+])
+
+export type ThreadMessageStatus = z.infer<typeof threadMessageStatusSchema>
+export type ThreadTextPart = z.infer<typeof threadTextPartSchema>
+export type ThreadToolPart = z.infer<typeof threadToolPartSchema>
+export type ThreadMessagePart = z.infer<typeof threadMessagePartSchema>
+
+/** Concatenate text parts in order. `text` on the row stays this value. */
+export function textFromParts(parts: readonly ThreadMessagePart[]): string {
+  return parts
+    .filter((part): part is ThreadTextPart => part.type === "text")
+    .map((part) => part.text)
+    .join("")
+}
+
 export type ThreadListItem = {
   id: string
   title: string
@@ -76,6 +114,9 @@ export type ThreadMessage = {
   role: MessageRole
   text: string
   createdAt: string
+  parts?: ThreadMessagePart[]
+  status?: ThreadMessageStatus
+  workedMs?: number
 }
 
 export type ThreadDetail = ThreadListItem & {

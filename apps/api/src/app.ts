@@ -1,3 +1,4 @@
+import type { CoachRuntime } from "@workspace/domain"
 import { Hono } from "hono"
 import { cors } from "hono/cors"
 
@@ -23,6 +24,17 @@ export type AppConfig = {
   /** Injected Drizzle instance. Tests pass pglite; production passes `pg`. */
   db?: AuthDatabase
   rateLimitEnabled?: boolean
+  /**
+   * Optional Coach runtime (ADR-0007). Unused until the coach route lands.
+   * The factory never constructs one from env.
+   */
+  coach?: CoachRuntime
+  /** From `openRouterApiKeyFromEnv`. Unused until the OpenRouter runtime lands. */
+  openRouterApiKey?: string
+  /** From `coachModelFromEnv`. */
+  coachModel?: string
+  /** From `coachDailyTurnLimitFromEnv`. */
+  coachDailyTurnLimit?: number
 }
 
 export function createApp({

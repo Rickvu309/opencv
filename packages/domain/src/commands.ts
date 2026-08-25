@@ -1,3 +1,5 @@
+import { z } from "zod"
+
 export const THREAD_COMMANDS = {
   create: "threads.create",
   rename: "threads.rename",
@@ -47,8 +49,10 @@ export const COACH_READ_TOOLS = {
 export type CoachReadToolName =
   (typeof COACH_READ_TOOLS)[keyof typeof COACH_READ_TOOLS]
 
-export type ReversalDescriptor = {
-  possible: boolean
-  description: string
-  command?: string
-}
+export const reversalDescriptorSchema = z.object({
+  possible: z.boolean(),
+  description: z.string(),
+  command: z.string().optional(),
+})
+
+export type ReversalDescriptor = z.infer<typeof reversalDescriptorSchema>

@@ -1,6 +1,7 @@
 export * from "./actor.js"
 export * from "./apply.js"
 export * from "./apply-position.js"
+export * from "./coach.js"
 export * from "./commands.js"
 export * from "./envelope.js"
 export * from "./paper.js"
