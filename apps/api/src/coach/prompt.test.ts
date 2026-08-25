@@ -142,9 +142,9 @@ describe("windowHistory", () => {
 
   it("drops oldest messages first when the character budget is exceeded", () => {
     const messages = [
-      userMessage("AAAA".repeat(20), "1"),
-      coachMessage("BBBB".repeat(20), undefined, "2"),
-      userMessage("CCCC".repeat(20), "3"),
+      userMessage("A".repeat(40), "1"),
+      coachMessage("B".repeat(40), undefined, "2"),
+      userMessage("C".repeat(40), "3"),
     ]
     const windowed = windowHistory(messages, { charBudget: 90 })
     expect(windowed.map((message) => message.content[0])).toEqual(["B", "C"])
