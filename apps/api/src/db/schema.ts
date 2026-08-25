@@ -1,9 +1,16 @@
+import type {
+  CoachUsageRating,
+  MessageRole,
+  ThreadMessagePart,
+  ThreadMessageStatus,
+} from "@workspace/domain"
 import {
   boolean,
   date,
   index,
   integer,
   jsonb,
+  numeric,
   pgSchema,
   text,
   timestamp,
@@ -119,8 +126,11 @@ export const threadMessages = openpathApp.table(
     threadId: uuid("thread_id")
       .notNull()
       .references(() => threads.id, { onDelete: "cascade" }),
-    role: text("role").$type<"user" | "coach">().notNull(),
+    role: text("role").$type<MessageRole>().notNull(),
     text: text("text").notNull(),
+    parts: jsonb("parts").$type<ThreadMessagePart[]>(),
+    status: text("status").$type<ThreadMessageStatus>(),
+    workedMs: integer("worked_ms"),
     createdAt: timestamptz("created_at").notNull().defaultNow(),
   },
   (table) => [
@@ -199,5 +209,39 @@ export const applyCards = openpathApp.table(
       table.userId,
       table.trackDate
     ),
+  ]
+)
+
+/**
+ * One row per Coach turn. Rate-limit counter and thumbs sink (ADR-0007).
+ * Thread/message FKs set-null so deleting a Thread does not refund the daily cap.
+ */
+export const coachUsage = openpathApp.table(
+  "coach_usage",
+  {
+    id: uuid("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    threadId: uuid("thread_id").references(() => threads.id, {
+      onDelete: "set null",
+    }),
+    messageId: uuid("message_id").references(() => threadMessages.id, {
+      onDelete: "set null",
+    }),
+    model: text("model").notNull(),
+    tokens: integer("tokens"),
+    costEstimate: numeric("cost_estimate"),
+    latencyMs: integer("latency_ms"),
+    finishReason: text("finish_reason"),
+    rating: text("rating").$type<CoachUsageRating>(),
+    createdAt: timestamptz("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("coach_usage_user_id_created_at_idx").on(
+      table.userId,
+      table.createdAt
+    ),
+    uniqueIndex("coach_usage_message_id_uidx").on(table.messageId),
   ]
 )

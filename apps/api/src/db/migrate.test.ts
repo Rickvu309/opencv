@@ -11,6 +11,7 @@ import { migrationsFolder } from "./paths.js"
 const migratedTables = [
   "account",
   "apply_cards",
+  "coach_usage",
   "paper_docs",
   "session",
   "thread_messages",
@@ -53,6 +54,37 @@ describe("committed migrations", () => {
       expect(result.rows).toEqual([{ schema_name: "openpath_app" }])
 
       expect(await tableNames(db)).toEqual(migratedTables)
+
+      const messageColumns = await db.execute<{ column_name: string }>(sql`
+        select column_name
+        from information_schema.columns
+        where table_schema = 'openpath_app'
+          and table_name = 'thread_messages'
+        order by column_name
+      `)
+      expect(messageColumns.rows.map((row) => row.column_name)).toEqual([
+        "created_at",
+        "id",
+        "parts",
+        "role",
+        "status",
+        "text",
+        "thread_id",
+        "worked_ms",
+      ])
+
+      const usageIndexes = await db.execute<{ indexname: string }>(sql`
+        select indexname
+        from pg_indexes
+        where schemaname = 'openpath_app'
+          and tablename = 'coach_usage'
+        order by indexname
+      `)
+      expect(usageIndexes.rows.map((row) => row.indexname)).toEqual([
+        "coach_usage_message_id_uidx",
+        "coach_usage_pkey",
+        "coach_usage_user_id_created_at_idx",
+      ])
     } finally {
       await client.close()
     }

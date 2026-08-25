@@ -1,3 +1,8 @@
+import {
+  DEFAULT_COACH_DAILY_TURN_LIMIT,
+  DEFAULT_COACH_MODEL,
+} from "@workspace/domain"
+
 const localWebOrigin = "http://localhost:5173"
 
 /**
@@ -46,4 +51,41 @@ export function sessionSecretFromEnv(
 export function authUrlFromEnv(env: NodeJS.ProcessEnv): string {
   const configured = env.AUTH_URL?.trim()
   return configured ? configured : localAuthUrl
+}
+
+/**
+ * OpenRouter key. Unset/blank means the Coach runtime cannot be constructed —
+ * the app still boots; the coach route will 503 once it exists.
+ */
+export function openRouterApiKeyFromEnv(
+  env: NodeJS.ProcessEnv
+): string | undefined {
+  const configured = env.OPENROUTER_API_KEY?.trim()
+  return configured ? configured : undefined
+}
+
+/**
+ * OpenRouter model id. Unset/blank falls back to Claude Sonnet 4.5 (ADR-0007).
+ */
+export function coachModelFromEnv(env: NodeJS.ProcessEnv): string {
+  const configured = env.COACH_MODEL?.trim()
+  return configured ? configured : DEFAULT_COACH_MODEL
+}
+
+/**
+ * Per-user daily Coach turn cap. Unset, blank, or non-positive integers fall
+ * back to 50 (ADR-0007).
+ */
+export function coachDailyTurnLimitFromEnv(env: NodeJS.ProcessEnv): number {
+  const raw = env.COACH_DAILY_TURN_LIMIT?.trim()
+  if (!raw) {
+    return DEFAULT_COACH_DAILY_TURN_LIMIT
+  }
+
+  const parsed = Number(raw)
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    return DEFAULT_COACH_DAILY_TURN_LIMIT
+  }
+
+  return parsed
 }

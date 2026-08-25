@@ -6,6 +6,8 @@ export const ERROR_CODES = {
   FORBIDDEN: "FORBIDDEN",
   NOT_FOUND: "NOT_FOUND",
   COACH_NOT_ALLOWED: "COACH_NOT_ALLOWED",
+  COACH_UNAVAILABLE: "COACH_UNAVAILABLE",
+  COACH_LIMIT_REACHED: "COACH_LIMIT_REACHED",
 } as const
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES]
@@ -44,11 +46,26 @@ export function authUnavailableEnvelope() {
   )
 }
 
+export function coachUnavailableEnvelope() {
+  return errorEnvelope(
+    ERROR_CODES.COACH_UNAVAILABLE,
+    "The Coach is unavailable right now"
+  )
+}
+
+export function coachLimitReachedEnvelope() {
+  return errorEnvelope(
+    ERROR_CODES.COACH_LIMIT_REACHED,
+    "You've reached today's Coach turn limit"
+  )
+}
+
 export function httpStatusForError(code: string): number {
   switch (code) {
     case ERROR_CODES.UNAUTHORIZED:
       return 401
     case ERROR_CODES.AUTH_UNAVAILABLE:
+    case ERROR_CODES.COACH_UNAVAILABLE:
       return 503
     case ERROR_CODES.VALIDATION_ERROR:
       return 400
@@ -58,6 +75,8 @@ export function httpStatusForError(code: string): number {
     case ERROR_CODES.UNKNOWN_COMMAND:
     case ERROR_CODES.NOT_FOUND:
       return 404
+    case ERROR_CODES.COACH_LIMIT_REACHED:
+      return 429
     default:
       return 400
   }

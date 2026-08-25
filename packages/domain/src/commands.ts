@@ -1,3 +1,5 @@
+import { z } from "zod"
+
 export const THREAD_COMMANDS = {
   create: "threads.create",
   rename: "threads.rename",
@@ -31,8 +33,10 @@ export const APPLY_COMMANDS = {
 export type ApplyCommandName =
   (typeof APPLY_COMMANDS)[keyof typeof APPLY_COMMANDS]
 
-export type ReversalDescriptor = {
-  possible: boolean
-  description: string
-  command?: string
-}
+export const reversalDescriptorSchema = z.object({
+  possible: z.boolean(),
+  description: z.string(),
+  command: z.string().optional(),
+})
+
+export type ReversalDescriptor = z.infer<typeof reversalDescriptorSchema>
