@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest"
 
-import { databaseUrlFromEnv, webOriginsFromEnv } from "./config.js"
+import {
+  authUrlFromEnv,
+  databaseUrlFromEnv,
+  sessionSecretFromEnv,
+  webOriginsFromEnv,
+} from "./config.js"
 
 describe("webOriginsFromEnv", () => {
   it("reads a comma-separated WEB_ORIGINS list, ignoring blanks and padding", () => {
@@ -32,5 +37,31 @@ describe("databaseUrlFromEnv", () => {
   it("returns undefined when DATABASE_URL is unset or blank", () => {
     expect(databaseUrlFromEnv({})).toBeUndefined()
     expect(databaseUrlFromEnv({ DATABASE_URL: "   " })).toBeUndefined()
+  })
+})
+
+describe("sessionSecretFromEnv", () => {
+  it("reads SESSION_SECRET, ignoring padding", () => {
+    expect(sessionSecretFromEnv({ SESSION_SECRET: "  super-secret-value  " })).toBe(
+      "super-secret-value"
+    )
+  })
+
+  it("returns undefined when SESSION_SECRET is unset or blank", () => {
+    expect(sessionSecretFromEnv({})).toBeUndefined()
+    expect(sessionSecretFromEnv({ SESSION_SECRET: "   " })).toBeUndefined()
+  })
+})
+
+describe("authUrlFromEnv", () => {
+  it("reads AUTH_URL, ignoring padding", () => {
+    expect(authUrlFromEnv({ AUTH_URL: "  https://api.example.com  " })).toBe(
+      "https://api.example.com"
+    )
+  })
+
+  it("falls back to the local api when AUTH_URL is unset or blank", () => {
+    expect(authUrlFromEnv({})).toBe("http://localhost:3001")
+    expect(authUrlFromEnv({ AUTH_URL: "   " })).toBe("http://localhost:3001")
   })
 })

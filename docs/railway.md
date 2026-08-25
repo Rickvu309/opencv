@@ -24,6 +24,11 @@ Project `openpath` (linked to this repo):
 - `DATABASE_URL` is set on `api` as the shared reference
   `${{Postgres.DATABASE_URL}}` in **both** environments, so each environment
   resolves to its own Postgres. No credentials live in git.
+- `SESSION_SECRET` and `AUTH_URL` are set on `api` in **both** environments
+  (distinct secrets). `AUTH_URL` is the public API origin — staging
+  `https://api-staging-f689.up.railway.app`, production
+  `https://api-production-0876.up.railway.app` — and selects cookie attributes
+  (`SameSite=None; Secure` when https).
 - Public API domains: `api-production-0876.up.railway.app` (production) and
   `api-staging-f689.up.railway.app` (staging).
 

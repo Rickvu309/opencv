@@ -29,6 +29,20 @@ describe("committed migrations", () => {
       `)
 
       expect(result.rows).toEqual([{ schema_name: "openpath_app" }])
+
+      const tables = await db.execute<{ table_name: string }>(sql`
+        select table_name
+        from information_schema.tables
+        where table_schema = 'openpath_app'
+        order by table_name
+      `)
+
+      expect(tables.rows.map((row) => row.table_name)).toEqual([
+        "account",
+        "session",
+        "user",
+        "verification",
+      ])
     } finally {
       await client.close()
     }

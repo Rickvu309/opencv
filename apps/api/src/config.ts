@@ -24,3 +24,26 @@ export function databaseUrlFromEnv(env: NodeJS.ProcessEnv): string | undefined {
   const configured = env.DATABASE_URL?.trim()
   return configured ? configured : undefined
 }
+
+const localAuthUrl = "http://localhost:3001"
+
+/**
+ * Better Auth secret. Required to mount `/api/auth/*`. Unset/blank means auth
+ * is not configured — `GET /health` must still serve 200.
+ */
+export function sessionSecretFromEnv(
+  env: NodeJS.ProcessEnv
+): string | undefined {
+  const configured = env.SESSION_SECRET?.trim()
+  return configured ? configured : undefined
+}
+
+/**
+ * Public URL of this API, used as Better Auth `baseURL` and to choose cookie
+ * attributes (https → SameSite=None; Secure). Falls back to the local api
+ * when unset, matching `WEB_ORIGINS`.
+ */
+export function authUrlFromEnv(env: NodeJS.ProcessEnv): string {
+  const configured = env.AUTH_URL?.trim()
+  return configured ? configured : localAuthUrl
+}

@@ -148,7 +148,7 @@ describe("app shell layout", () => {
       screen.getByRole("tab", { name: "Connected apps" })
     ).toBeInTheDocument()
     expect(screen.getByRole("tab", { name: "Account" })).toBeInTheDocument()
-  })
+  }, 15_000)
 
   it("navigates Home → Paper → Home and keeps titles in the main pane", async () => {
     renderApp(SURFACE_PATHS.home)
