@@ -1,0 +1,578 @@
+/**
+ * Read.cv-inspired vertical showcase — timeline sections for achievements.
+ */
+import type { ReactNode } from "react"
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@workspace/ui/components/avatar"
+import { cn } from "@workspace/ui/lib/utils"
+import {
+  Code2,
+  ExternalLink,
+  File,
+  FileSpreadsheet,
+  FileText,
+  ImagePlus,
+  Link2,
+  Mail,
+  PenTool,
+  Share2,
+} from "lucide-react"
+
+import { profileInitials } from "@/features/app-shell/dev-profile.ts"
+import { PitchGithubHeatmap } from "@/features/pitch/pitch-github-heatmap.tsx"
+import {
+  getMockGithubProfile,
+  MOCK_GITHUB_CONTRIBUTIONS,
+} from "@/features/pitch/pitch-github-mock.ts"
+import {
+  paperDocPitchMeta,
+  PITCH_WORK_DOCS,
+  type PitchAchievement,
+  type PitchExperience,
+  type PitchFile,
+  type PitchGalleryItem,
+  type PitchLink,
+  type PitchProfile,
+} from "@/features/pitch/pitch-types.ts"
+
+function SectionShell({
+  title,
+  editing,
+  onHide,
+  children,
+}: {
+  title: string
+  editing?: boolean
+  onHide?: () => void
+  children: ReactNode
+}) {
+  return (
+    <section className="group relative">
+      {editing ? (
+        <div className="absolute -top-1 right-0 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+          <span className="rounded-md border border-border bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground shadow-sm">
+            {title}
+          </span>
+          {onHide ? (
+            <button
+              type="button"
+              onClick={onHide}
+              className="rounded-md border border-border bg-background px-1.5 py-0.5 text-[10px] hover:bg-muted"
+            >
+              Hide
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+      <h2 className="mb-5 text-[11px] font-medium tracking-widest text-muted-foreground uppercase">
+        {title}
+      </h2>
+      {children}
+    </section>
+  )
+}
+
+function TimelineRow({
+  when,
+  children,
+}: {
+  when: string
+  children: ReactNode
+}) {
+  return (
+    <div className="grid grid-cols-[3.25rem_1fr] gap-x-4 gap-y-1 sm:grid-cols-[4.5rem_1fr]">
+      <p className="pt-0.5 text-sm tabular-nums text-muted-foreground">{when}</p>
+      <div>{children}</div>
+    </div>
+  )
+}
+
+function PitchAvatar({
+  src,
+  name,
+  className,
+}: {
+  src: string
+  name: string
+  className?: string
+}) {
+  return (
+    <Avatar className={cn("size-16 sm:size-[4.5rem]", className)}>
+      {src ? <AvatarImage src={src} alt="" /> : null}
+      <AvatarFallback className="text-lg font-medium">
+        {profileInitials(name)}
+      </AvatarFallback>
+    </Avatar>
+  )
+}
+
+export function PitchProfileHeader({
+  profile,
+  editing,
+  onStatusChange,
+}: {
+  profile: PitchProfile
+  editing?: boolean
+  onStatusChange?: (status: string) => void
+}) {
+  return (
+    <header className="mb-10">
+      <div className="flex items-start gap-4">
+        <PitchAvatar src={profile.avatar} name={profile.name} />
+        <div className="min-w-0 pt-0.5">
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-[1.65rem]">
+            {profile.name}
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {profile.headline}
+          </p>
+          <p className="mt-0.5 text-sm text-muted-foreground/80">
+            {profile.location}
+          </p>
+          <p className="mt-1 font-mono text-xs text-muted-foreground/70">
+            {profile.slug}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-5 rounded-xl border border-border/80 bg-muted/25 px-4 py-3">
+        {editing ? (
+          <input
+            value={profile.status}
+            onChange={(e) => onStatusChange?.(e.target.value)}
+            className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            placeholder="Status — what you're open to"
+          />
+        ) : (
+          <p className="flex items-start gap-2 text-sm leading-relaxed">
+            <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-emerald-500" />
+            {profile.status}
+          </p>
+        )}
+      </div>
+    </header>
+  )
+}
+
+export function AboutSection({
+  text,
+  editing,
+  onHide,
+  onChange,
+}: {
+  text: string
+  editing?: boolean
+  onHide?: () => void
+  onChange?: (text: string) => void
+}) {
+  return (
+    <SectionShell title="About" editing={editing} onHide={onHide}>
+      {editing ? (
+        <textarea
+          value={text}
+          onChange={(e) => onChange?.(e.target.value)}
+          rows={6}
+          className="w-full resize-none rounded-xl border border-border bg-background px-3 py-2.5 text-[15px] leading-relaxed outline-none focus:ring-2 focus:ring-ring/20"
+        />
+      ) : (
+        <div className="space-y-3 text-[15px] leading-relaxed text-muted-foreground">
+          {text.split("\n\n").map((para, i) => (
+            <p key={i}>{para}</p>
+          ))}
+        </div>
+      )}
+    </SectionShell>
+  )
+}
+
+export function AchievementsSection({
+  items,
+  editing,
+  onHide,
+}: {
+  items: PitchAchievement[]
+  editing?: boolean
+  onHide?: () => void
+}) {
+  return (
+    <SectionShell title="Achievements" editing={editing} onHide={onHide}>
+      <ul className="space-y-10">
+        {items.map((item) => (
+          <li key={item.id}>
+            <TimelineRow when={item.year}>
+              <div>
+                <p className="font-medium leading-snug">
+                  {item.title}
+                  <span className="font-normal text-muted-foreground">
+                    {" "}
+                    · {item.context}
+                  </span>
+                </p>
+                {item.tag ? (
+                  <span className="mt-1.5 inline-block rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                    {item.tag}
+                  </span>
+                ) : null}
+                <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">
+                  {item.description}
+                </p>
+                {item.link ? (
+                  <a
+                    href={item.link}
+                    onClick={(e) => e.preventDefault()}
+                    className="mt-3 flex items-center gap-3 rounded-xl border border-border bg-muted/20 p-3 transition-colors hover:border-foreground/15 hover:bg-muted/35"
+                  >
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-background text-[10px] font-bold shadow-sm">
+                      PDF
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-medium">
+                        {item.linkLabel ?? item.title}
+                      </span>
+                      <span className="block truncate text-xs text-muted-foreground">
+                        Case study · Proof chain
+                      </span>
+                    </span>
+                  </a>
+                ) : null}
+              </div>
+            </TimelineRow>
+          </li>
+        ))}
+      </ul>
+      {editing ? (
+        <button
+          type="button"
+          className="mt-6 text-xs font-medium text-muted-foreground hover:text-foreground"
+        >
+          + Add achievement
+        </button>
+      ) : null}
+    </SectionShell>
+  )
+}
+
+export function ExperienceSection({
+  items,
+  editing,
+  onHide,
+}: {
+  items: PitchExperience[]
+  editing?: boolean
+  onHide?: () => void
+}) {
+  return (
+    <SectionShell title="Experience" editing={editing} onHide={onHide}>
+      <ul className="space-y-8">
+        {items.map((item) => (
+          <li key={item.id}>
+            <TimelineRow when={item.period}>
+              <div>
+                <p className="font-medium leading-snug">
+                  {item.title}
+                  <span className="font-normal text-muted-foreground">
+                    {" "}
+                    at {item.org}
+                  </span>
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  {item.summary}
+                </p>
+              </div>
+            </TimelineRow>
+          </li>
+        ))}
+      </ul>
+    </SectionShell>
+  )
+}
+
+export function WorkSection({
+  files,
+  editing,
+  onHide,
+}: {
+  files: PitchFile[]
+  editing?: boolean
+  onHide?: () => void
+}) {
+  const docs = PITCH_WORK_DOCS.filter((d) => d.type !== "letter").slice(0, 3)
+
+  return (
+    <SectionShell title="Work & documents" editing={editing} onHide={onHide}>
+      <div className="space-y-3">
+        {docs.map((doc) => {
+          const meta = paperDocPitchMeta(doc)
+          return (
+            <button
+              key={doc.id}
+              type="button"
+              className="flex w-full items-center gap-3 rounded-xl border border-border/70 bg-muted/15 p-3 text-left transition-colors hover:border-border hover:bg-muted/30"
+            >
+              <div
+                className={cn(
+                  "flex size-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br text-[10px] font-bold",
+                  meta.gradient
+                )}
+              >
+                {meta.badge}
+              </div>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-medium">
+                  {doc.name}
+                </span>
+                <span className="block text-xs text-muted-foreground">
+                  {doc.updated} · {doc.status}
+                </span>
+              </span>
+              <ExternalLink className="size-3.5 shrink-0 text-muted-foreground/40" />
+            </button>
+          )
+        })}
+      </div>
+
+      <ul className="mt-4 flex flex-wrap gap-2 border-t border-border/60 pt-4">
+        {files.map((file) => (
+          <li key={file.id}>
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 rounded-lg border border-border/60 bg-background px-3 py-2 text-left text-xs transition-colors hover:bg-muted/40"
+            >
+              <FileKindIcon kind={file.kind} />
+              <span>
+                <span className="block font-medium">{file.name}</span>
+                <span className="text-[10px] text-muted-foreground">
+                  {file.meta}
+                </span>
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </SectionShell>
+  )
+}
+
+function FileKindIcon({ kind }: { kind: PitchFile["kind"] }) {
+  const cls = "size-3.5 shrink-0 text-muted-foreground"
+  switch (kind) {
+    case "pdf":
+      return <FileText className={cls} />
+    case "fig":
+      return <PenTool className={cls} />
+    case "sheet":
+      return <FileSpreadsheet className={cls} />
+    default:
+      return <File className={cls} />
+  }
+}
+
+export function GithubSection({
+  profile,
+  editing,
+  onHide,
+}: {
+  profile: PitchProfile
+  editing?: boolean
+  onHide?: () => void
+}) {
+  const mock = getMockGithubProfile()
+
+  return (
+    <SectionShell title="GitHub" editing={editing} onHide={onHide}>
+      <div className="min-w-0 overflow-hidden rounded-xl border border-border/70 bg-muted/15 p-4">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <PitchAvatar
+              src={profile.avatar}
+              name={profile.name}
+              className="size-8 sm:size-8"
+            />
+            <div className="min-w-0">
+              <a
+                href={mock.profileUrl}
+                onClick={(e) => e.preventDefault()}
+                className="block truncate font-mono text-sm font-medium hover:underline"
+              >
+                @{mock.username}
+              </a>
+              <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700">
+                <span className="size-1.5 rounded-full bg-emerald-500" />
+                Connected · mock integration
+              </span>
+            </div>
+          </div>
+          <ExternalLink className="size-3.5 shrink-0 text-muted-foreground/40" />
+        </div>
+
+        <p className="mt-3 text-xs text-muted-foreground">
+          <span className="font-semibold text-foreground tabular-nums">
+            {mock.totalLastYear}
+          </span>{" "}
+          contributions in the last year on GitHub
+        </p>
+
+        <PitchGithubHeatmap
+          contributions={MOCK_GITHUB_CONTRIBUTIONS}
+          className="mt-3"
+        />
+
+        <dl className="mt-4 grid grid-cols-4 gap-2 border-t border-border/50 pt-3 text-center">
+          <div>
+            <dt className="text-[9px] text-muted-foreground uppercase">
+              Streak
+            </dt>
+            <dd className="text-sm font-semibold tabular-nums">
+              {mock.streak}d
+            </dd>
+          </div>
+          <div>
+            <dt className="text-[9px] text-muted-foreground uppercase">
+              Repos
+            </dt>
+            <dd className="text-sm font-semibold tabular-nums">
+              {mock.publicRepos}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-[9px] text-muted-foreground uppercase">
+              Since
+            </dt>
+            <dd className="text-sm font-semibold tabular-nums">
+              {mock.memberSince}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-[9px] text-muted-foreground uppercase">Top</dt>
+            <dd className="truncate text-sm font-semibold">
+              {mock.topLanguage}
+            </dd>
+          </div>
+        </dl>
+      </div>
+      {editing ? (
+        <p className="mt-2 text-[10px] text-muted-foreground">
+          Live GitHub data waits on a product decision. This heatmap is mock
+          data for @{mock.username}.
+        </p>
+      ) : null}
+    </SectionShell>
+  )
+}
+
+export function ContactSection({
+  links,
+  editing,
+  onHide,
+}: {
+  links: PitchLink[]
+  editing?: boolean
+  onHide?: () => void
+}) {
+  const email = links.find((l) => l.icon === "mail")
+
+  return (
+    <SectionShell title="Contact" editing={editing} onHide={onHide}>
+      {email ? (
+        <a
+          href={email.href}
+          onClick={(e) => e.preventDefault()}
+          className="mb-4 flex flex-col rounded-xl border border-border bg-muted/20 px-4 py-3 transition-colors hover:border-foreground/15"
+        >
+          <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+            Email
+          </span>
+          <span className="mt-1 text-base font-semibold">
+            {email.href.replace("mailto:", "")}
+          </span>
+        </a>
+      ) : null}
+      <ul className="space-y-1">
+        {links
+          .filter((l) => l.icon !== "mail")
+          .map((link) => (
+            <li key={link.id}>
+              <a
+                href={link.href}
+                onClick={(e) => e.preventDefault()}
+                className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm transition-colors hover:bg-muted/50"
+              >
+                <LinkIcon kind={link.icon} />
+                <span className="font-medium">{link.label}</span>
+                <ExternalLink className="ml-auto size-3 text-muted-foreground/40" />
+              </a>
+            </li>
+          ))}
+      </ul>
+    </SectionShell>
+  )
+}
+
+export function GallerySection({
+  items,
+  editing,
+  onHide,
+}: {
+  items: PitchGalleryItem[]
+  editing?: boolean
+  onHide?: () => void
+}) {
+  return (
+    <SectionShell title="Gallery" editing={editing} onHide={onHide}>
+      <div className="grid grid-cols-3 gap-2">
+        {items.map((item) => (
+          <div
+            key={item.id}
+            className={cn(
+              "flex aspect-[4/3] items-end rounded-xl p-2 outline outline-1 outline-black/[0.04]",
+              galleryTone(item.tone)
+            )}
+          >
+            <span className="text-[10px] font-medium text-foreground/70">
+              {item.caption}
+            </span>
+          </div>
+        ))}
+        {editing ? (
+          <button
+            type="button"
+            className="flex aspect-[4/3] flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border text-muted-foreground hover:bg-muted/30"
+          >
+            <ImagePlus className="size-4" />
+            <span className="text-[10px]">Upload</span>
+          </button>
+        ) : null}
+      </div>
+    </SectionShell>
+  )
+}
+
+function galleryTone(tone: PitchGalleryItem["tone"]) {
+  switch (tone) {
+    case "warm":
+      return "bg-gradient-to-br from-amber-100 to-orange-50"
+    case "cool":
+      return "bg-gradient-to-br from-sky-100 to-indigo-50"
+    default:
+      return "bg-gradient-to-br from-muted to-muted/40"
+  }
+}
+
+function LinkIcon({ kind }: { kind: PitchLink["icon"] }) {
+  const cls = "size-4 text-muted-foreground"
+  switch (kind) {
+    case "github":
+      return <Code2 className={cls} />
+    case "linkedin":
+      return <Share2 className={cls} />
+    case "mail":
+      return <Mail className={cls} />
+    default:
+      return <Link2 className={cls} />
+  }
+}
+
+export { PitchAvatar }

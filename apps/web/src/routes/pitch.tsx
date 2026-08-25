@@ -1,5 +1,5 @@
-import { CraftStub } from "@/features/app-shell/craft-stub.tsx"
+import { PitchWorkspace } from "@/features/pitch/pitch-workspace.tsx"
 
 export function PitchPage() {
-  return <CraftStub surface="pitch" />
+  return <PitchWorkspace />
 }
