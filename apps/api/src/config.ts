@@ -1,3 +1,5 @@
+const QVE_103_DELIBERATE_LINT_ERROR = true
+
 const localWebOrigin = "http://localhost:5173"
 
 /**
