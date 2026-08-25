@@ -71,10 +71,11 @@ with the full log. Both failure modes exit non-zero and stop the deploy:
 - a type error (`tsc -b` runs before `vite build`)
 - a lockfile mismatch (`--frozen-lockfile`)
 
-Lint and tests are **not** part of the deploy. `pnpm turbo build --filter=web`
+Lint and tests are **not** part of the Vercel deploy. `pnpm turbo build --filter=web`
 only compiles, so a branch with failing tests still produces a green preview.
-Run `pnpm test` and `pnpm typecheck` yourself, or add CI, before trusting a
-preview as reviewed.
+GitHub Actions (`.github/workflows/ci.yml`) runs `lint`, `typecheck`, `test`,
+and `build` on every pull request and every push to `main` — that check is
+what to trust before merging, not the preview deploy.
 
 Reproduce a Vercel build locally with the same commands:
 
