@@ -58,6 +58,7 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
     queryKey: threadQueryKeys.detail(activeThreadId ?? ""),
     queryFn: () => getThread(activeThreadId!),
     enabled: Boolean(activeThreadId) && phase === "idle",
+    staleTime: Infinity,
   })
 
   const messages = useMemo(() => {
@@ -98,37 +99,91 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
     abortRef.current?.abort()
   }, [])
 
-  const hydrateThread = useCallback(
-    async (threadId: string, fallback?: ThreadMessage) => {
-      try {
-        const detail = await getThread(threadId)
-        queryClient.setQueryData(threadQueryKeys.detail(threadId), detail)
-        queryClient.setQueryData(
-          threadQueryKeys.list(),
-          (prev: ThreadListItem[] | undefined) =>
-            upsertThreadListItem(prev ?? [], toListItem(detail))
-        )
-      } catch {
-        if (!fallback) return
-        queryClient.setQueryData(
-          threadQueryKeys.detail(threadId),
-          (prev: ThreadDetail | undefined) => {
-            if (!prev) return prev
-            const already = prev.messages.some((item) => item.id === fallback.id)
-            return {
-              ...prev,
-              updatedAt: fallback.createdAt,
-              messages: already
-                ? prev.messages.map((item) =>
-                    item.id === fallback.id ? fallback : item
-                  )
-                : [...prev.messages, fallback],
-            }
-          }
-        )
-      }
+  const writeDetail = useCallback(
+    (threadId: string, detail: ThreadDetail) => {
+      queryClient.setQueryData(threadQueryKeys.detail(threadId), detail)
+      queryClient.setQueryData(
+        threadQueryKeys.list(),
+        (prev: ThreadListItem[] | undefined) =>
+          upsertThreadListItem(prev ?? [], toListItem(detail))
+      )
     },
     [queryClient]
+  )
+
+  const hydrateThread = useCallback(
+    async (
+      threadId: string,
+      fallback?: ThreadMessage
+    ): Promise<ThreadDetail | undefined> => {
+      try {
+        const detail = await getThread(threadId)
+        writeDetail(threadId, detail)
+        return detail
+      } catch {
+        if (!fallback) return undefined
+        const prev = queryClient.getQueryData<ThreadDetail>(
+          threadQueryKeys.detail(threadId)
+        )
+        if (!prev) return undefined
+        const already = prev.messages.some((item) => item.id === fallback.id)
+        const next: ThreadDetail = {
+          ...prev,
+          updatedAt: fallback.createdAt,
+          messages: already
+            ? prev.messages.map((item) =>
+                item.id === fallback.id ? fallback : item
+              )
+            : [...prev.messages, fallback],
+        }
+        writeDetail(threadId, next)
+        return next
+      }
+    },
+    [queryClient, writeDetail]
+  )
+
+  const keepStreamedCoach = useCallback(
+    (threadId: string, user: HomeMessage, coachText: string): void => {
+      const now = new Date().toISOString()
+      const prev = queryClient.getQueryData<ThreadDetail>(
+        threadQueryKeys.detail(threadId)
+      )
+      const hasText = prev?.messages.some(
+        (message) => message.role === "coach" && message.text === coachText
+      )
+      if (hasText && prev) return
+
+      const userRow: ThreadMessage = {
+        id: user.id,
+        role: "user",
+        text: user.text,
+        createdAt: now,
+      }
+      const coachRow: ThreadMessage = {
+        id: crypto.randomUUID(),
+        role: "coach",
+        text: coachText,
+        createdAt: now,
+        status: "aborted",
+      }
+
+      const messages = prev?.messages ?? []
+      const hasUser = messages.some(
+        (message) => message.role === "user" && message.text === user.text
+      )
+      writeDetail(threadId, {
+        id: threadId,
+        title: prev?.title ?? titleFrom(user.text),
+        createdAt: prev?.createdAt ?? now,
+        updatedAt: now,
+        messages: [
+          ...(hasUser ? messages : [...messages, userRow]),
+          ...(hasText ? [] : [coachRow]),
+        ],
+      })
+    },
+    [queryClient, writeDetail]
   )
 
   const send = useCallback(
@@ -251,19 +306,14 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
             await hydrateThread(threadId)
             if (generation !== sendGeneration.current) return
             if (streamedText) {
-              const detail = queryClient.getQueryData<ThreadDetail>(
-                threadQueryKeys.detail(threadId)
-              )
-              const hasCoach = detail?.messages.some(
-                (message) => message.role === "coach" && message.text
-              )
-              if (!hasCoach) {
-                paint(streamedText)
-                setPhase("idle")
-                return
-              }
+              keepStreamedCoach(threadId, userMessage, streamedText)
             }
-            setOptimisticMessages(null)
+            const detail = queryClient.getQueryData<ThreadDetail>(
+              threadQueryKeys.detail(threadId)
+            )
+            setOptimisticMessages(
+              detail ? toHomeMessages(detail.messages) : null
+            )
             setPhase("idle")
             return
           }
@@ -289,18 +339,15 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
             if (threadId) {
               await hydrateThread(threadId)
               if (generation !== sendGeneration.current) return
-            }
-            if (streamedText) {
-              const detail = threadId
-                ? queryClient.getQueryData<ThreadDetail>(
-                    threadQueryKeys.detail(threadId)
-                  )
-                : undefined
-              const hasCoach = detail?.messages.some(
-                (message) => message.role === "coach" && message.text
+              if (streamedText) {
+                keepStreamedCoach(threadId, userMessage, streamedText)
+              }
+              const detail = queryClient.getQueryData<ThreadDetail>(
+                threadQueryKeys.detail(threadId)
               )
-              if (!hasCoach) paint(streamedText)
-              else setOptimisticMessages(null)
+              setOptimisticMessages(
+                detail ? toHomeMessages(detail.messages) : null
+              )
             } else {
               setOptimisticMessages(null)
             }
@@ -328,6 +375,7 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
       activeThreadId,
       detailQuery.data,
       hydrateThread,
+      keepStreamedCoach,
       optimisticMessages,
       phase,
       queryClient,

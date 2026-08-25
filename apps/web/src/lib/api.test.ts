@@ -47,9 +47,9 @@ describe("fetchHealth", () => {
 
 describe("apiFetch", () => {
   it("sends credentials and returns JSON", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      Response.json({ ok: true, threads: [] })
-    )
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(Response.json({ ok: true, threads: [] }))
     vi.stubGlobal("fetch", fetchMock)
 
     await expect(apiFetch("/api/threads")).resolves.toEqual({

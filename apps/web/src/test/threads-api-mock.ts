@@ -190,6 +190,13 @@ function coachStreamResponse(thread: ThreadDetail, signal?: AbortSignal) {
       let sentText = ""
       let started = false
       let aborted = false
+      let persisted = false
+
+      const persistOnce = (status: ThreadMessageStatus) => {
+        if (persisted) return undefined
+        persisted = true
+        return persistCoach(thread, sentText, status)
+      }
 
       const emit = async (event: string, data: unknown) => {
         await waitForPermit(signal)
@@ -200,7 +207,28 @@ function coachStreamResponse(thread: ThreadDetail, signal?: AbortSignal) {
         }
         controller.enqueue(encoder.encode(formatSse(event, data)))
         gate.emitted += 1
+        if (
+          event === COACH_SSE_EVENTS.textDelta &&
+          data &&
+          typeof data === "object" &&
+          "text" in data &&
+          typeof data.text === "string"
+        ) {
+          sentText += data.text
+        }
       }
+
+      const onAbort = () => {
+        aborted = true
+        persistOnce("aborted")
+        try {
+          controller.close()
+        } catch {
+          // already closed
+        }
+      }
+      signal?.addEventListener("abort", onAbort, { once: true })
+      if (signal?.aborted) onAbort()
 
       try {
         await emit(COACH_SSE_EVENTS.messageStart, { threadId: thread.id })
@@ -210,7 +238,6 @@ function coachStreamResponse(thread: ThreadDetail, signal?: AbortSignal) {
         for (const text of texts) {
           await emit(COACH_SSE_EVENTS.textDelta, { text })
           if (aborted) break
-          sentText += text
         }
 
         if (!aborted && streamError) {
@@ -218,13 +245,13 @@ function coachStreamResponse(thread: ThreadDetail, signal?: AbortSignal) {
         }
 
         if (aborted || signal?.aborted) {
-          persistCoach(thread, sentText, "aborted")
+          persistOnce("aborted")
           return
         }
 
         const status: ThreadMessageStatus = streamError ? "error" : "final"
-        const message = persistCoach(thread, sentText, status)
-        if (!omitEnd) {
+        const message = persistOnce(status)
+        if (message && !omitEnd) {
           await emit(COACH_SSE_EVENTS.messageEnd, {
             message,
             usage: {
@@ -238,9 +265,14 @@ function coachStreamResponse(thread: ThreadDetail, signal?: AbortSignal) {
         if (!(error instanceof Error && error.name === "AbortError")) {
           throw error
         }
-        if (started) persistCoach(thread, sentText, "aborted")
+        if (started) persistOnce("aborted")
       } finally {
-        controller.close()
+        signal?.removeEventListener("abort", onAbort)
+        try {
+          controller.close()
+        } catch {
+          // already closed
+        }
       }
     },
   })

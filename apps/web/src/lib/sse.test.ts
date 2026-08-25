@@ -16,9 +16,7 @@ describe("parseSseBlock", () => {
   })
 
   it("joins multi-line data fields", () => {
-    expect(
-      parseSseBlock('event: error\ndata: {"message":"a"}\n')
-    ).toEqual({
+    expect(parseSseBlock('event: error\ndata: {"message":"a"}\n')).toEqual({
       event: "error",
       data: { message: "a" },
     })
@@ -52,9 +50,7 @@ describe("readSseStream", () => {
     const encoder = new TextEncoder()
     const stream = new ReadableStream<Uint8Array>({
       start(controller) {
-        controller.enqueue(
-          encoder.encode('event: text-delta\ndata: {"text":"')
-        )
+        controller.enqueue(encoder.encode('event: text-delta\ndata: {"text":"'))
         controller.enqueue(encoder.encode('Hel"}\n\nevent: text-delta\n'))
         controller.enqueue(encoder.encode('data: {"text":"lo"}\n\n'))
         controller.close()
@@ -81,11 +77,10 @@ describe("readSseStream", () => {
     })
 
     await expect(async () => {
-      for await (const _event of readSseStream(stream, {
+      const iterator = readSseStream(stream, {
         signal: controller.signal,
-      })) {
-        // drain
-      }
+      })
+      await iterator.next()
     }).rejects.toMatchObject({ name: "AbortError" })
   })
 })

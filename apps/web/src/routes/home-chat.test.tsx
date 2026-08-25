@@ -151,15 +151,12 @@ describe("Home Thread mode and History", () => {
     await expectHomeIdle()
 
     await sendMessage("Are you there?")
+    const thread = await screen.findByRole("log", { name: "Thread" })
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "The Coach is unavailable right now. Try again in a moment."
     )
-    expect(screen.getByText("Are you there?")).toBeInTheDocument()
-    expect(
-      screen
-        .getByRole("log", { name: "Thread" })
-        .querySelector("[data-failed='true']")
-    ).not.toBeNull()
+    expect(within(thread).getByText("Are you there?")).toBeInTheDocument()
+    expect(thread.querySelector("[data-failed='true']")).not.toBeNull()
 
     scriptCoachStream()
     fireEvent.click(screen.getByRole("button", { name: "Retry" }))
@@ -169,7 +166,11 @@ describe("Home Thread mode and History", () => {
     await waitFor(() => {
       expect(screen.queryByRole("alert")).not.toBeInTheDocument()
     })
-    expect(screen.getAllByText("Are you there?").length).toBe(1)
+    expect(
+      within(screen.getByRole("log", { name: "Thread" })).getAllByText(
+        "Are you there?"
+      )
+    ).toHaveLength(1)
   })
 
   it("lists server Threads, restores one, and returns to idle on new Thread", async () => {

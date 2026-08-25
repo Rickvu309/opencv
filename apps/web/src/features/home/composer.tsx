@@ -112,9 +112,7 @@ export function Composer({
             <DropdownMenuItem
               key={item.id}
               disabled={comingSoon}
-              onClick={
-                comingSoon ? undefined : () => handleMenuAction(item.id)
-              }
+              onClick={comingSoon ? undefined : () => handleMenuAction(item.id)}
             >
               <Icon className="size-4 shrink-0 text-muted-foreground" />
               {item.label}

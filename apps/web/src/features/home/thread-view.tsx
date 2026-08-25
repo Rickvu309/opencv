@@ -10,7 +10,10 @@ import {
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { STREAMING_COACH_ID, type HomeMessage } from "@/features/home/threads.ts"
+import {
+  STREAMING_COACH_ID,
+  type HomeMessage,
+} from "@/features/home/threads.ts"
 
 const MESSAGE_ACTIONS = [
   { label: "Copy", icon: Copy },
