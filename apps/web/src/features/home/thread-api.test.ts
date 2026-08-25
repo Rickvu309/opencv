@@ -12,6 +12,7 @@ import {
   getThread,
   listThreads,
   postThreadMessage,
+  rateCoachMessage,
   streamCoachTurn,
   toListItem,
   upsertThreadListItem,
@@ -186,6 +187,26 @@ describe("thread API client", () => {
         message: expect.objectContaining({ text: "Hello", workedMs: 1100 }),
       })
     )
+  })
+
+  it("records a rating through POST /api/threads/:id/messages/:messageId/feedback", async () => {
+    const threadId = "11111111-1111-4111-8111-111111111111"
+    const messageId = "22222222-2222-4222-8222-222222222222"
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(envelope({ messageId, rating: "up" }))
+    vi.stubGlobal("fetch", fetchMock)
+
+    await expect(rateCoachMessage(threadId, messageId, "up")).resolves.toEqual({
+      messageId,
+      rating: "up",
+    })
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
+      `${apiBaseUrl}/api/threads/${threadId}/messages/${messageId}/feedback`
+    )
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(init.method).toBe("POST")
+    expect(init.body).toBe(JSON.stringify({ rating: "up" }))
   })
 })
 

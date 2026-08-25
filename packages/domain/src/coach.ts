@@ -1,3 +1,5 @@
+import { z } from "zod"
+
 import type { CommandEnvelope } from "./envelope.js"
 import type { ReversalDescriptor } from "./commands.js"
 import type { ThreadMessage, ThreadMessagePart } from "./threads.js"
@@ -24,7 +26,16 @@ export type CoachSseEvent =
   (typeof COACH_SSE_EVENTS)[keyof typeof COACH_SSE_EVENTS]
 
 export const coachUsageRatingSchemaValues = ["up", "down"] as const
-export type CoachUsageRating = (typeof coachUsageRatingSchemaValues)[number]
+export const coachUsageRatingSchema = z.enum(coachUsageRatingSchemaValues)
+export type CoachUsageRating = z.infer<typeof coachUsageRatingSchema>
+
+export const coachFeedbackInputSchema = z
+  .object({
+    rating: coachUsageRatingSchema,
+  })
+  .strict()
+
+export type CoachFeedbackInput = z.infer<typeof coachFeedbackInputSchema>
 
 export type CoachTurnUsage = {
   model: string

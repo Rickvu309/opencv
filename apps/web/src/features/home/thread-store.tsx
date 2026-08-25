@@ -1,9 +1,13 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useCallback, useMemo, useRef, useState, type ReactNode } from "react"
-import type {
-  ThreadDetail,
-  ThreadListItem,
-  ThreadMessage,
+import {
+  appendCoachPart,
+  textFromParts,
+  type CoachUsageRating,
+  type ThreadDetail,
+  type ThreadListItem,
+  type ThreadMessage,
+  type ThreadMessagePart,
 } from "@workspace/domain"
 
 import { coachSendErrorMessage } from "@/features/home/coach-error.ts"
@@ -11,6 +15,7 @@ import {
   createThread,
   getThread,
   listThreads,
+  rateCoachMessage,
   streamCoachTurn,
   threadQueryKeys,
   toListItem,
@@ -144,8 +149,9 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
   )
 
   const keepStreamedCoach = useCallback(
-    (threadId: string, user: HomeMessage, coachText: string): void => {
+    (threadId: string, user: HomeMessage, parts: ThreadMessagePart[]): void => {
       const now = new Date().toISOString()
+      const coachText = textFromParts(parts)
       const prev = queryClient.getQueryData<ThreadDetail>(
         threadQueryKeys.detail(threadId)
       )
@@ -166,6 +172,7 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
         text: coachText,
         createdAt: now,
         status: "aborted",
+        parts,
       }
 
       const messages = prev?.messages ?? []
@@ -220,16 +227,17 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
       setOptimisticMessages([...baseline, userMessage])
       setPhase("waiting")
 
-      const paint = (coachText: string) => {
+      const paint = (parts: ThreadMessagePart[]) => {
         setOptimisticMessages([
           ...baseline,
           userMessage,
-          ...(coachText
+          ...(parts.length > 0
             ? [
                 {
                   id: STREAMING_COACH_ID,
                   role: "coach" as const,
-                  text: coachText,
+                  text: textFromParts(parts),
+                  parts,
                 },
               ]
             : []),
@@ -237,7 +245,7 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
       }
 
       void (async () => {
-        let streamedText = ""
+        let streamedParts: ThreadMessagePart[] = []
         let ended: ThreadMessage | undefined
         let streamError: string | undefined
         let threadId = activeThreadId
@@ -261,9 +269,21 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
             {
               onTextDelta({ text: delta }) {
                 if (generation !== sendGeneration.current) return
-                streamedText += delta
+                streamedParts = appendCoachPart(streamedParts, {
+                  type: "text-delta",
+                  text: delta,
+                })
                 setPhase("streaming")
-                paint(streamedText)
+                paint(streamedParts)
+              },
+              onToolResult(data) {
+                if (generation !== sendGeneration.current) return
+                streamedParts = appendCoachPart(streamedParts, {
+                  type: "tool-result",
+                  ...data,
+                })
+                setPhase("streaming")
+                paint(streamedParts)
               },
               onMessageEnd({ message }) {
                 ended = message
@@ -305,8 +325,8 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
           if (controller.signal.aborted) {
             await hydrateThread(threadId)
             if (generation !== sendGeneration.current) return
-            if (streamedText) {
-              keepStreamedCoach(threadId, userMessage, streamedText)
+            if (streamedParts.length > 0) {
+              keepStreamedCoach(threadId, userMessage, streamedParts)
             }
             const detail = queryClient.getQueryData<ThreadDetail>(
               threadQueryKeys.detail(threadId)
@@ -339,8 +359,8 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
             if (threadId) {
               await hydrateThread(threadId)
               if (generation !== sendGeneration.current) return
-              if (streamedText) {
-                keepStreamedCoach(threadId, userMessage, streamedText)
+              if (streamedParts.length > 0) {
+                keepStreamedCoach(threadId, userMessage, streamedParts)
               }
               const detail = queryClient.getQueryData<ThreadDetail>(
                 threadQueryKeys.detail(threadId)
@@ -388,6 +408,38 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
     return send(sendError.text, true)
   }, [phase, send, sendError])
 
+  const rate = useCallback(
+    (messageId: string, rating: CoachUsageRating) => {
+      const threadId = activeThreadId
+      if (!threadId) return
+
+      setOptimisticMessages((prev) =>
+        prev
+          ? prev.map((message) =>
+              message.id === messageId ? { ...message, rating } : message
+            )
+          : prev
+      )
+      queryClient.setQueryData(
+        threadQueryKeys.detail(threadId),
+        (prev: ThreadDetail | undefined) =>
+          prev
+            ? {
+                ...prev,
+                messages: prev.messages.map((message) =>
+                  message.id === messageId ? { ...message, rating } : message
+                ),
+              }
+            : prev
+      )
+
+      void rateCoachMessage(threadId, messageId, rating).catch(() => {
+        // Keep the optimistic pressed state; a later hydrate is truthful.
+      })
+    },
+    [activeThreadId, queryClient]
+  )
+
   const value = useMemo(
     () => ({
       threads,
@@ -397,6 +449,7 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
       send,
       stop,
       retry,
+      rate,
       openThread,
       newThread,
     }),
@@ -408,6 +461,7 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
       send,
       stop,
       retry,
+      rate,
       openThread,
       newThread,
     ]

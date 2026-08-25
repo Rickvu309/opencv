@@ -1,5 +1,6 @@
 import { z } from "zod"
 
+import type { CoachUsageRating } from "./coach.js"
 import { reversalDescriptorSchema, THREAD_COMMANDS } from "./commands.js"
 
 export { THREAD_COMMANDS }
@@ -12,6 +13,8 @@ export const THREAD_MESSAGE_MAX = 8000
 export const messageRoleSchema = z.enum(["user", "coach"])
 
 export const threadIdSchema = z.string().uuid()
+
+export const threadMessageIdSchema = z.string().uuid()
 
 export const threadTitleSchema = z
   .string()
@@ -113,6 +116,8 @@ export type ThreadMessage = {
   parts?: ThreadMessagePart[]
   status?: ThreadMessageStatus
   workedMs?: number
+  /** Present when a `coach_usage` row exists for this message. */
+  rating?: CoachUsageRating | null
 }
 
 export type ThreadDetail = ThreadListItem & {

@@ -110,7 +110,136 @@ describe("Home Thread mode and History", () => {
       expect(screen.getByRole("button", { name: "Send" })).toBeInTheDocument()
     })
     expect(screen.getByText("Worked for 1s")).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Copy" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Copy" })).toBeEnabled()
+    expect(screen.getByRole("button", { name: "Good response" })).toBeEnabled()
+    expect(screen.getByRole("button", { name: "Regenerate" })).toBeDisabled()
+  })
+
+  it("renders a Command receipt with outcome and reversal, including after reload", async () => {
+    scriptCoachStream({
+      parts: [
+        { kind: "text", text: "Moved it." },
+        {
+          kind: "tool",
+          name: "apply_moveCard",
+          summary: "Moved 'Backend Intern' to Prep",
+          ok: true,
+          reversal: {
+            possible: true,
+            description:
+              "Undo by moving the card back to its previous Stage and order.",
+          },
+        },
+      ],
+    })
+    const first = renderApp()
+    await expectHomeIdle()
+    await sendMessage("Move the intern card to Prep")
+    expect(
+      await screen.findByText("Ran apply.moveCard — Moved 'Backend Intern' to Prep")
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("status", { name: "Command succeeded" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        "Reversible — Undo by moving the card back to its previous Stage and order."
+      )
+    ).toBeInTheDocument()
+    first.unmount()
+
+    renderApp()
+    await expectHomeIdle()
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Move the intern card to Prep" })
+    )
+    expect(
+      await screen.findByText("Ran apply.moveCard — Moved 'Backend Intern' to Prep")
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        "Reversible — Undo by moving the card back to its previous Stage and order."
+      )
+    ).toBeInTheDocument()
+  })
+
+  it("renders a failed Command receipt plainly", async () => {
+    scriptCoachStream({
+      parts: [
+        {
+          kind: "tool",
+          name: "apply_moveCard",
+          summary: "Apply card not found",
+          ok: false,
+        },
+      ],
+    })
+    renderApp()
+    await expectHomeIdle()
+    await sendMessage("Move a missing card")
+    expect(
+      await screen.findByText("Ran apply.moveCard — Apply card not found")
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("status", { name: "Command failed" })
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/Reversible —/)).not.toBeInTheDocument()
+  })
+
+  it("renders markdown in coach replies and leaves user bubbles as plain text", async () => {
+    scriptCoachStream({
+      texts: ["Try this:\n\n- **star** the card\n- open `Prep`"],
+    })
+    renderApp()
+    await expectHomeIdle()
+    await sendMessage("Show me **markdown** please")
+
+    const thread = await screen.findByRole("log", { name: "Thread" })
+    expect(await screen.findByText("star")).toBeInTheDocument()
+    expect(thread.querySelector("strong")?.textContent).toBe("star")
+    expect(thread.querySelector("code")?.textContent).toBe("Prep")
+    expect(screen.getByRole("list")).toBeInTheDocument()
+    expect(within(thread).getByText("Show me **markdown** please").tagName).toBe(
+      "DIV"
+    )
+    expect(within(thread).getByText("Show me **markdown** please").closest("strong")).toBeNull()
+  })
+
+  it("copies reply text and records a thumbs rating with pressed state", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    vi.stubGlobal("navigator", {
+      ...navigator,
+      clipboard: { writeText },
+    })
+    renderApp()
+    await expectHomeIdle()
+    await sendMessage("Should I finish my CV first?")
+    await expectSendSettled("Should I finish my CV first?")
+
+    fireEvent.click(screen.getByRole("button", { name: "Copy" }))
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(DEFAULT_COACH_STREAM_REPLY)
+    })
+
+    const good = screen.getByRole("button", { name: "Good response" })
+    expect(good).toHaveAttribute("aria-pressed", "false")
+    fireEvent.click(good)
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: "Good response" })
+      ).toHaveAttribute("aria-pressed", "true")
+    })
+    expect(
+      getMockThreads()
+        .flatMap((thread) => thread.messages)
+        .some((message) => message.role === "coach" && message.rating === "up")
+    ).toBe(true)
+    expect(screen.getByRole("button", { name: "Bad response" })).toHaveAttribute(
+      "aria-pressed",
+      "false"
+    )
+    expect(screen.getByRole("button", { name: "Regenerate" })).toBeDisabled()
+    expect(screen.getByRole("button", { name: "Copy link" })).toBeDisabled()
   })
 
   it("stops mid-stream, keeps what ran, and accepts a new send", async () => {

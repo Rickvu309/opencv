@@ -10,6 +10,7 @@ import {
   DEFAULT_COACH_MAX_OUTPUT_TOKENS,
   DEFAULT_COACH_MODEL,
   ERROR_CODES,
+  coachFeedbackInputSchema,
   coachLimitReachedEnvelope,
   coachUnavailableEnvelope,
   httpStatusForError,
@@ -95,6 +96,19 @@ describe("coach domain exports", () => {
       },
     }
     expect(typeof runtime.streamTurn).toBe("function")
+  })
+
+  it("accepts only up or down on the feedback payload", () => {
+    expect(coachFeedbackInputSchema.parse({ rating: "up" })).toEqual({
+      rating: "up",
+    })
+    expect(coachFeedbackInputSchema.parse({ rating: "down" })).toEqual({
+      rating: "down",
+    })
+    expect(coachFeedbackInputSchema.safeParse({ rating: "meh" }).success).toBe(
+      false
+    )
+    expect(coachFeedbackInputSchema.safeParse({}).success).toBe(false)
   })
 
   it("merges text deltas and records tool receipts in order", () => {

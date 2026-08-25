@@ -310,6 +310,7 @@ describe("coach route scripted fake", () => {
         role: "coach",
         text: "I looked at Apply. Prep the starred one next.",
         status: "final",
+        rating: null,
         parts: [
           { type: "text", text: "I looked at Apply. " },
           {
@@ -532,6 +533,148 @@ describe("coach route scripted fake", () => {
     } finally {
       await close()
     }
+  })
+})
+
+describe("coach feedback", () => {
+  let client: Awaited<ReturnType<typeof createMigratedTestDb>>["client"]
+  let db: Awaited<ReturnType<typeof createMigratedTestDb>>["db"]
+  let cookieA: string
+  let cookieB: string
+
+  beforeAll(async () => {
+    const migrated = await createMigratedTestDb()
+    client = migrated.client
+    db = migrated.db
+    const app = createTestApp(db, { coach: createDemoCoachRuntime() })
+    cookieA = (await signUp(app, userA)).cookie
+    cookieB = (await signUp(app, userB)).cookie
+  }, 60_000)
+
+  afterAll(async () => {
+    await client.close()
+  })
+
+  async function finishTurn(title: string) {
+    const app = createTestApp(db, { coach: createDemoCoachRuntime() })
+    const threadId = await createThread(app, cookieA, title)
+    const res = await postCoach(app, cookieA, threadId, "Rate this")
+    const events = parseSseEvents(await res.text())
+    const ended = events.find((event) => event.event === COACH_SSE_EVENTS.messageEnd)
+      ?.data as { message: ThreadMessage }
+    return { app, threadId, messageId: ended.message.id }
+  }
+
+  it("records a rating on the usage row and returns it on reload", async () => {
+    const { app, threadId, messageId } = await finishTurn("Feedback")
+
+    const posted = await app.request(
+      `/api/threads/${threadId}/messages/${messageId}/feedback`,
+      {
+        method: "POST",
+        headers: authHeaders(cookieA),
+        body: JSON.stringify({ rating: "up" }),
+      }
+    )
+    expect(posted.status).toBe(200)
+    await expect(posted.json()).resolves.toEqual({
+      ok: true,
+      data: { messageId, rating: "up" },
+    })
+
+    const usageRows = await db
+      .select()
+      .from(coachUsage)
+      .where(eq(coachUsage.messageId, messageId))
+    expect(usageRows[0]?.rating).toBe("up")
+
+    const detail = await json<{ ok: true; data: ThreadDetail }>(
+      await app.request(`/api/threads/${threadId}`, {
+        headers: authHeaders(cookieA),
+      })
+    )
+    const coach = detail.data.messages.find((message) => message.id === messageId)
+    expect(coach?.rating).toBe("up")
+
+    const changed = await app.request(
+      `/api/threads/${threadId}/messages/${messageId}/feedback`,
+      {
+        method: "POST",
+        headers: authHeaders(cookieA),
+        body: JSON.stringify({ rating: "down" }),
+      }
+    )
+    expect(changed.status).toBe(200)
+    const reloaded = await json<{ ok: true; data: ThreadDetail }>(
+      await app.request(`/api/threads/${threadId}`, {
+        headers: authHeaders(cookieA),
+      })
+    )
+    expect(
+      reloaded.data.messages.find((message) => message.id === messageId)?.rating
+    ).toBe("down")
+  })
+
+  it("rejects invalid ratings, missing turns, and other users", async () => {
+    const { app, threadId, messageId } = await finishTurn("Feedback guards")
+
+    const invalid = await app.request(
+      `/api/threads/${threadId}/messages/${messageId}/feedback`,
+      {
+        method: "POST",
+        headers: authHeaders(cookieA),
+        body: JSON.stringify({ rating: "meh" }),
+      }
+    )
+    expect(invalid.status).toBe(400)
+
+    const missing = await app.request(
+      `/api/threads/${threadId}/messages/11111111-1111-4111-8111-111111111111/feedback`,
+      {
+        method: "POST",
+        headers: authHeaders(cookieA),
+        body: JSON.stringify({ rating: "up" }),
+      }
+    )
+    expect(missing.status).toBe(404)
+
+    const stolen = await app.request(
+      `/api/threads/${threadId}/messages/${messageId}/feedback`,
+      {
+        method: "POST",
+        headers: authHeaders(cookieB),
+        body: JSON.stringify({ rating: "up" }),
+      }
+    )
+    expect(stolen.status).toBe(403)
+
+    const unauthed = await app.request(
+      `/api/threads/${threadId}/messages/${messageId}/feedback`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rating: "up" }),
+      }
+    )
+    expect(unauthed.status).toBe(401)
+  })
+
+  it("does not require a Coach runtime to record feedback", async () => {
+    const seeded = await finishTurn("No runtime")
+    const app = createTestApp(db)
+    const posted = await app.request(
+      `/api/threads/${seeded.threadId}/messages/${seeded.messageId}/feedback`,
+      {
+        method: "POST",
+        headers: authHeaders(cookieA),
+        body: JSON.stringify({ rating: "down" }),
+      }
+    )
+    expect(posted.status).toBe(200)
+    await expect(posted.json()).resolves.toEqual({
+      ok: true,
+      data: { messageId: seeded.messageId, rating: "down" },
+    })
   })
 })
 

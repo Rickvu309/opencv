@@ -1,33 +1,146 @@
+import { useState } from "react"
 import {
+  Check,
   Copy,
   Link2,
   MoreHorizontal,
   RefreshCw,
   ThumbsDown,
   ThumbsUp,
+  X,
 } from "lucide-react"
+import type { CoachUsageRating, ThreadToolPart } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { CoachMarkdown } from "@/features/home/coach-markdown.tsx"
+import { receiptHeadline } from "@/features/home/coach-receipt.ts"
 import {
   STREAMING_COACH_ID,
   type HomeMessage,
 } from "@/features/home/threads.ts"
 
-const MESSAGE_ACTIONS = [
-  { label: "Copy", icon: Copy },
+const DISABLED_ACTIONS = [
   { label: "Copy link", icon: Link2 },
-  { label: "Good response", icon: ThumbsUp },
-  { label: "Bad response", icon: ThumbsDown },
   { label: "Regenerate", icon: RefreshCw },
   { label: "More", icon: MoreHorizontal },
 ] as const
 
-function MessageActions() {
+function CoachReceipt({ part }: { part: ThreadToolPart }) {
+  const Icon = part.ok ? Check : X
+  return (
+    <div
+      role="status"
+      aria-label={part.ok ? "Command succeeded" : "Command failed"}
+      className="space-y-0.5 text-xs text-muted-foreground"
+    >
+      <p className="flex items-start gap-1.5">
+        <Icon
+          className={cn(
+            "mt-0.5 size-3 shrink-0",
+            part.ok ? "text-emerald-600" : "text-destructive"
+          )}
+          aria-hidden
+        />
+        <span>{receiptHeadline(part)}</span>
+      </p>
+      {part.ok && part.reversal?.possible ? (
+        <p className="pl-5">Reversible — {part.reversal.description}</p>
+      ) : null}
+    </div>
+  )
+}
+
+function CoachBody({ message }: { message: HomeMessage }) {
+  if (message.parts && message.parts.length > 0) {
+    return (
+      <div className="space-y-2">
+        {message.parts.map((part, index) =>
+          part.type === "text" ? (
+            <CoachMarkdown key={`text-${index}`} text={part.text} />
+          ) : (
+            <CoachReceipt
+              key={part.toolCallId ?? `tool-${index}`}
+              part={part}
+            />
+          )
+        )}
+      </div>
+    )
+  }
+
+  return <CoachMarkdown text={message.text} />
+}
+
+function MessageActions({
+  text,
+  rating,
+  rateable,
+  onRate,
+}: {
+  text: string
+  rating?: CoachUsageRating | null
+  rateable: boolean
+  onRate?: (rating: CoachUsageRating) => void
+}) {
+  const [copied, setCopied] = useState(false)
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+    } catch {
+      setCopied(false)
+    }
+  }
+
   return (
     <div className="flex items-center gap-0.5">
-      {MESSAGE_ACTIONS.map((action) => {
+      <button
+        type="button"
+        aria-label="Copy"
+        aria-pressed={copied || undefined}
+        onClick={() => void copy()}
+        className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+      >
+        <Copy className="size-3.5" />
+      </button>
+      <button
+        type="button"
+        aria-label="Good response"
+        aria-pressed={rating === "up"}
+        disabled={!rateable}
+        onClick={() => onRate?.("up")}
+        className={cn(
+          "flex size-7 items-center justify-center rounded-md",
+          rateable
+            ? "text-muted-foreground hover:bg-muted hover:text-foreground"
+            : "text-muted-foreground opacity-40",
+          rating === "up" && "text-foreground"
+        )}
+      >
+        <ThumbsUp className={cn("size-3.5", rating === "up" && "fill-current")} />
+      </button>
+      <button
+        type="button"
+        aria-label="Bad response"
+        aria-pressed={rating === "down"}
+        disabled={!rateable}
+        onClick={() => onRate?.("down")}
+        className={cn(
+          "flex size-7 items-center justify-center rounded-md",
+          rateable
+            ? "text-muted-foreground hover:bg-muted hover:text-foreground"
+            : "text-muted-foreground opacity-40",
+          rating === "down" && "text-foreground"
+        )}
+      >
+        <ThumbsDown
+          className={cn("size-3.5", rating === "down" && "fill-current")}
+        />
+      </button>
+      {DISABLED_ACTIONS.map((action) => {
         const Icon = action.icon
         return (
           <button
@@ -49,9 +162,10 @@ type Props = {
   messages: HomeMessage[]
   waiting?: boolean
   onRetry?: () => void
+  onRate?: (messageId: string, rating: CoachUsageRating) => void
 }
 
-export function ThreadView({ messages, waiting, onRetry }: Props) {
+export function ThreadView({ messages, waiting, onRetry, onRate }: Props) {
   return (
     <div
       role="log"
@@ -101,10 +215,17 @@ export function ThreadView({ messages, waiting, onRetry }: Props) {
                 Worked for {Math.max(1, Math.round(item.workedMs / 1000))}s
               </p>
             ) : null}
-            <p className="text-sm leading-relaxed whitespace-pre-wrap">
-              {item.text}
-            </p>
-            {item.id !== STREAMING_COACH_ID ? <MessageActions /> : null}
+            <CoachBody message={item} />
+            {item.id !== STREAMING_COACH_ID ? (
+              <MessageActions
+                text={item.text}
+                rating={item.rating}
+                rateable={item.rating !== undefined}
+                onRate={
+                  onRate ? (rating) => onRate(item.id, rating) : undefined
+                }
+              />
+            ) : null}
           </div>
         )
       )}

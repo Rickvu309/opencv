@@ -1,12 +1,14 @@
 import {
   COACH_SSE_EVENTS,
   THREAD_COMMANDS,
+  type CoachFeedbackInput,
   type CoachSseErrorData,
   type CoachSseMessageEndData,
   type CoachSseMessageStartData,
   type CoachSseTextDeltaData,
   type CoachSseToolCallData,
   type CoachSseToolResultData,
+  type CoachUsageRating,
   type ThreadDetail,
   type ThreadListItem,
   type ThreadsCreateInput,
@@ -69,6 +71,20 @@ export type CoachStreamHandlers = {
   onToolResult?: (data: CoachSseToolResultData) => void
   onMessageEnd?: (data: CoachSseMessageEndData) => void
   onError?: (data: CoachSseErrorData) => void
+}
+
+export async function rateCoachMessage(
+  threadId: string,
+  messageId: string,
+  rating: CoachUsageRating
+): Promise<{ messageId: string; rating: CoachUsageRating }> {
+  const body = await apiFetch<
+    SuccessBody<{ messageId: string; rating: CoachUsageRating }>
+  >(`/api/threads/${threadId}/messages/${messageId}/feedback`, {
+    method: "POST",
+    body: JSON.stringify({ rating } satisfies CoachFeedbackInput),
+  })
+  return unwrapData(body)
 }
 
 export async function streamCoachTurn(

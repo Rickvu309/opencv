@@ -1,6 +1,7 @@
 import { and, count, eq, gte } from "drizzle-orm"
+import { ERROR_CODES, type CoachUsageRating } from "@workspace/domain"
 
-import type { AppDatabase } from "../commands/registry.js"
+import { CommandError, type AppDatabase } from "../commands/registry.js"
 import { coachUsage } from "../db/schema.js"
 
 export function startOfUtcDay(now = new Date()): Date {
@@ -28,4 +29,36 @@ export async function countCoachTurnsToday(
   now = new Date()
 ): Promise<number> {
   return countCoachTurnsSince(db, userId, startOfUtcDay(now))
+}
+
+export type CoachFeedbackResult = {
+  messageId: string
+  rating: CoachUsageRating
+}
+
+export async function rateCoachTurn(
+  db: AppDatabase,
+  userId: string,
+  threadId: string,
+  messageId: string,
+  rating: CoachUsageRating
+): Promise<CoachFeedbackResult> {
+  const [row] = await db
+    .select({
+      id: coachUsage.id,
+      threadId: coachUsage.threadId,
+    })
+    .from(coachUsage)
+    .where(
+      and(eq(coachUsage.userId, userId), eq(coachUsage.messageId, messageId))
+    )
+    .limit(1)
+
+  if (!row || row.threadId !== threadId) {
+    throw new CommandError(ERROR_CODES.NOT_FOUND, "Coach turn not found")
+  }
+
+  await db.update(coachUsage).set({ rating }).where(eq(coachUsage.id, row.id))
+
+  return { messageId, rating }
 }
