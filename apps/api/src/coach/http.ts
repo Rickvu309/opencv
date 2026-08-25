@@ -13,7 +13,7 @@ import {
   textFromParts,
   THREAD_COMMANDS,
   threadIdSchema,
-  threadMessageTextSchema,
+  threadsPostMessageInputSchema,
   unauthorizedEnvelope,
   type CoachRuntime,
   type CoachSseErrorData,
@@ -29,7 +29,6 @@ import {
 import { eq } from "drizzle-orm"
 import { Hono } from "hono"
 import { streamSSE, type SSEStreamingApi } from "hono/streaming"
-import { z } from "zod"
 
 import type { Auth } from "../auth.js"
 import {
@@ -43,12 +42,6 @@ import { createId } from "../id.js"
 import { readSession } from "../session.js"
 import { getOwnedThread, toThreadMessage } from "../threads/queries.js"
 import { countCoachTurnsToday } from "./usage.js"
-
-const coachPostBodySchema = z
-  .object({
-    text: threadMessageTextSchema,
-  })
-  .strict()
 
 export type CoachRouteOptions = {
   auth?: Auth
@@ -109,10 +102,12 @@ export function createCoachRoutes({
       )
     }
 
-    const parsed = coachPostBodySchema.safeParse(body)
+    const parsed = threadsPostMessageInputSchema.safeParse({
+      threadId,
+      ...(typeof body === "object" && body && !Array.isArray(body) ? body : {}),
+    })
     if (!parsed.success) {
-      const message =
-        parsed.error.issues[0]?.message ?? "Invalid command input"
+      const message = parsed.error.issues[0]?.message ?? "Invalid command input"
       return jsonWithStatus(
         c,
         errorEnvelope(ERROR_CODES.VALIDATION_ERROR, message),
@@ -242,7 +237,11 @@ async function runCoachTurn({
         } satisfies CoachSseErrorData)
         break
       }
-      if (part.type !== "text-delta" && part.type !== "tool-call" && part.type !== "tool-result") {
+      if (
+        part.type !== "text-delta" &&
+        part.type !== "tool-call" &&
+        part.type !== "tool-result"
+      ) {
         continue
       }
       await writeEvent(stream, part.type, sseDataForPart(part))
@@ -385,7 +384,7 @@ async function persistCoachTurn({
     createdAt: now,
   }
 
-  await db.transaction(async (tx) => {
+  await db.transaction(async (tx: AppDatabase) => {
     await tx.insert(threadMessages).values(row)
     await tx
       .update(threads)

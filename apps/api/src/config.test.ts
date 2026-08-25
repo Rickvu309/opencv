@@ -136,7 +136,9 @@ describe("coachRuntimeModeFromEnv", () => {
   it("reads the scripted fake mode and ignores anything else", () => {
     expect(coachRuntimeModeFromEnv({ COACH_RUNTIME: "  fake  " })).toBe("fake")
     expect(coachRuntimeModeFromEnv({})).toBeUndefined()
-    expect(coachRuntimeModeFromEnv({ COACH_RUNTIME: "openrouter" })).toBeUndefined()
+    expect(
+      coachRuntimeModeFromEnv({ COACH_RUNTIME: "openrouter" })
+    ).toBeUndefined()
     expect(coachRuntimeModeFromEnv({ COACH_RUNTIME: "   " })).toBeUndefined()
   })
 })

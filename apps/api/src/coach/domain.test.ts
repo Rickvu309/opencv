@@ -134,8 +134,6 @@ describe("coach domain exports", () => {
       },
       { type: "text", text: "That's the one next step." },
     ])
-    expect(textFromParts(afterMore)).toBe(
-      "Moved it. That's the one next step."
-    )
+    expect(textFromParts(afterMore)).toBe("Moved it. That's the one next step.")
   })
 })

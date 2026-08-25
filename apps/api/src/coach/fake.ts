@@ -61,8 +61,16 @@ export function createThrowingCoachRuntime(
   error: Error = new Error("runtime failed")
 ): CoachRuntime {
   return {
-    async *streamTurn() {
-      throw error
+    streamTurn() {
+      return {
+        [Symbol.asyncIterator]() {
+          return {
+            next() {
+              return Promise.reject(error)
+            },
+          }
+        },
+      }
     },
   }
 }

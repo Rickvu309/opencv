@@ -85,7 +85,9 @@ describe("Home Thread mode and History", () => {
     ).not.toBeInTheDocument()
 
     await expectSendSettled("Help me plan the week")
-    expect(screen.queryByRole("button", { name: "Copy" })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "Copy" })
+    ).not.toBeInTheDocument()
   })
 
   it("lists server Threads, restores one, and returns to idle on new Thread", async () => {
