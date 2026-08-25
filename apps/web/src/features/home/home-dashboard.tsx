@@ -12,9 +12,10 @@ import { useThreadStore } from "@/features/home/use-thread-store.ts"
 export function HomeDashboard() {
   const { data } = authClient.useSession()
   const name = data?.user.name?.trim() || "there"
-  const { messages, thinking, send, newChat } = useThreadStore()
+  const { messages, thinking, send, newThread, activeThreadId } =
+    useThreadStore()
   const [draft, setDraft] = useState("")
-  const started = messages.length > 0 || thinking
+  const started = messages.length > 0 || thinking || activeThreadId != null
 
   function handleSend() {
     const text = draft.trim()
@@ -25,7 +26,7 @@ export function HomeDashboard() {
   if (started) {
     return (
       <div className="flex h-full min-h-0 flex-1 flex-col">
-        <ThreadTopBar onNewThread={newChat} />
+        <ThreadTopBar onNewThread={newThread} />
         <div className="min-h-0 flex-1 overflow-auto">
           <ThreadView messages={messages} thinking={thinking} />
         </div>

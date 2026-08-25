@@ -15,6 +15,7 @@
   "dependencies": {
     "@tanstack/react-query": "^5.102.3",
     "@tanstack/react-router": "^1.163.3",
+    "@workspace/domain": "workspace:*",
     "@workspace/ui": "workspace:*",
     "better-auth": "^1.7.1",
     "lucide-react": "^1.33.0",

@@ -5,8 +5,12 @@ import "@testing-library/jest-dom/vitest"
 import { resetUnauthorizedHandler } from "@/lib/api.ts"
 
 import { resetMockSession } from "./auth-client-mock.ts"
+import { resetThreadApiMock } from "./threads-api-mock.ts"
 
-vi.mock("@/lib/auth-client.ts", async () => await import("./auth-client-mock.ts"))
+vi.mock(
+  "@/lib/auth-client.ts",
+  async () => await import("./auth-client-mock.ts")
+)
 
 if (
   typeof document !== "undefined" &&
@@ -50,6 +54,7 @@ if (typeof window !== "undefined" && typeof window.matchMedia !== "function") {
 beforeEach(() => {
   resetMockSession()
   resetUnauthorizedHandler()
+  resetThreadApiMock()
 })
 
 afterEach(() => {

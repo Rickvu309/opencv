@@ -10,11 +10,9 @@ import {
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
-import {
-  HISTORY_PREVIEW_COUNT,
-  SEED_THREADS,
-  STUB_COACH_REPLY,
-} from "@/features/home/threads.ts"
+import { HISTORY_PREVIEW_COUNT } from "@/features/home/threads.ts"
+import { FIXTURE_THREADS, STUB_COACH_REPLY } from "@/test/thread-fixtures.ts"
+import { getMockThreads } from "@/test/threads-api-mock.ts"
 import { renderApp } from "@/test/render-app.tsx"
 
 const idleHeading = new RegExp(
@@ -25,6 +23,16 @@ async function expectHomeIdle() {
   expect(
     await screen.findByRole("heading", { level: 1, name: idleHeading })
   ).toBeInTheDocument()
+}
+
+async function expectHistoryTitles() {
+  const history = await screen.findByRole("navigation", { name: "History" })
+  for (const thread of FIXTURE_THREADS.slice(0, HISTORY_PREVIEW_COUNT)) {
+    expect(
+      await within(history).findByRole("button", { name: thread.title })
+    ).toBeInTheDocument()
+  }
+  return history
 }
 
 async function sendMessage(text: string) {
@@ -39,14 +47,17 @@ async function expectStubReply() {
   ).toBeInTheDocument()
 }
 
+async function expectThreadText(text: string) {
+  expect(await screen.findByRole("log", { name: "Thread" })).toBeInTheDocument()
+  expect(await screen.findByText(text)).toBeInTheDocument()
+}
+
 beforeEach(() => {
-  sessionStorage.clear()
   vi.stubGlobal("scrollTo", vi.fn())
 })
 
 afterEach(() => {
   cleanup()
-  sessionStorage.clear()
   vi.unstubAllGlobals()
 })
 
@@ -82,41 +93,39 @@ describe("Home Thread mode and History", () => {
     expect(screen.getByRole("button", { name: "Regenerate" })).toBeDisabled()
   })
 
-  it("lists seed Threads, restores one, and returns to idle on new Thread", async () => {
+  it("lists server Threads, restores one, and returns to idle on new Thread", async () => {
     renderApp()
     await expectHomeIdle()
 
-    const history = screen.getByRole("navigation", { name: "History" })
-    for (const thread of SEED_THREADS.slice(0, HISTORY_PREVIEW_COUNT)) {
-      expect(
-        within(history).getByRole("button", { name: thread.title })
-      ).toBeInTheDocument()
-    }
+    const history = await expectHistoryTitles()
     expect(
       within(history).queryByRole("button", {
-        name: SEED_THREADS[HISTORY_PREVIEW_COUNT]!.title,
+        name: FIXTURE_THREADS[HISTORY_PREVIEW_COUNT]!.title,
       })
     ).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole("button", { name: "See all" }))
     expect(
       within(history).getByRole("button", {
-        name: SEED_THREADS[HISTORY_PREVIEW_COUNT]!.title,
+        name: FIXTURE_THREADS[HISTORY_PREVIEW_COUNT]!.title,
       })
     ).toBeInTheDocument()
 
     fireEvent.click(
-      within(history).getByRole("button", { name: SEED_THREADS[0]!.title })
+      within(history).getByRole("button", { name: FIXTURE_THREADS[0]!.title })
     )
 
     expect(
+      await screen.findByRole("log", { name: "Thread" })
+    ).toBeInTheDocument()
+    expect(
       screen.queryByRole("heading", { name: idleHeading })
     ).not.toBeInTheDocument()
+    expect(
+      await screen.findByText(FIXTURE_THREADS[0]!.messages[0]!.text)
+    ).toBeInTheDocument()
     expect(screen.getByRole("log", { name: "Thread" })).toHaveTextContent(
-      SEED_THREADS[0]!.messages[0]!.text
-    )
-    expect(screen.getByRole("log", { name: "Thread" })).toHaveTextContent(
-      SEED_THREADS[0]!.messages[1]!.text
+      FIXTURE_THREADS[0]!.messages[1]!.text
     )
 
     fireEvent.click(screen.getByRole("button", { name: "New Thread" }))
@@ -135,7 +144,7 @@ describe("Home Thread mode and History", () => {
 
     const history = screen.getByRole("navigation", { name: "History" })
     expect(
-      within(history).getByRole("button", {
+      await within(history).findByRole("button", {
         name: "Should I finish my CV first?",
       })
     ).toBeInTheDocument()
@@ -161,13 +170,12 @@ describe("Home Thread mode and History", () => {
   it("returns to idle Home from the Home nav item", async () => {
     renderApp()
     await expectHomeIdle()
+    await expectHistoryTitles()
 
     fireEvent.click(
-      screen.getByRole("button", { name: SEED_THREADS[1]!.title })
+      screen.getByRole("button", { name: FIXTURE_THREADS[1]!.title })
     )
-    expect(screen.getByRole("log", { name: "Thread" })).toHaveTextContent(
-      SEED_THREADS[1]!.messages[0]!.text
-    )
+    await expectThreadText(FIXTURE_THREADS[1]!.messages[0]!.text)
 
     fireEvent.click(screen.getByRole("link", { name: "Home" }))
     await expectHomeIdle()
@@ -176,6 +184,7 @@ describe("Home Thread mode and History", () => {
   it("collapses and expands the History section", async () => {
     renderApp()
     await expectHomeIdle()
+    await expectHistoryTitles()
 
     fireEvent.click(screen.getByRole("button", { name: "History" }))
     expect(
@@ -188,17 +197,30 @@ describe("Home Thread mode and History", () => {
     ).toBeInTheDocument()
   })
 
-  it("restores the active Thread from sessionStorage", async () => {
+  it("keeps server Threads after remount and reopens them from History", async () => {
     const first = renderApp()
     await expectHomeIdle()
     await sendMessage("Keep this Thread")
     await expectStubReply()
+    expect(
+      getMockThreads().some((thread) => thread.title === "Keep this Thread")
+    ).toBe(true)
     first.unmount()
 
     renderApp()
+    await expectHomeIdle()
+    const history = await screen.findByRole("navigation", { name: "History" })
     expect(
-      await screen.findByRole("log", { name: "Thread" })
-    ).toHaveTextContent("Keep this Thread")
+      await within(history).findByRole("button", { name: "Keep this Thread" })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("heading", { name: idleHeading })
+    ).toBeInTheDocument()
+
+    fireEvent.click(
+      within(history).getByRole("button", { name: "Keep this Thread" })
+    )
+    await expectThreadText("Keep this Thread")
     expect(screen.getByText(STUB_COACH_REPLY)).toBeInTheDocument()
     expect(
       screen.queryByRole("heading", { name: idleHeading })

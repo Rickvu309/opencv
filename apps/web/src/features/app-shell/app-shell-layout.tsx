@@ -4,14 +4,14 @@ import { Outlet, useNavigate } from "@tanstack/react-router"
 import { AppSidebar } from "@/features/app-shell/app-sidebar.tsx"
 import { FOCUS_RING } from "@/features/app-shell/focus-ring.ts"
 import { SearchModal } from "@/features/app-shell/search-modal.tsx"
-import { searchThreadsFromHome } from "@/features/app-shell/search-threads.ts"
+import { searchThreadsFromList } from "@/features/app-shell/search-threads.ts"
 import { SURFACE_PATHS, type SurfaceId } from "@/features/app-shell/surfaces.ts"
 import {
   DESKTOP_MEDIA_QUERY,
   useMediaQuery,
 } from "@/features/app-shell/use-media-query.ts"
 import { ThreadStoreProvider } from "@/features/home/thread-store.tsx"
-import { useThreadStore } from "@/features/home/use-thread-store.ts"
+import { useThreadList } from "@/features/home/use-thread-list.ts"
 
 export function AppShellLayout() {
   return (
@@ -23,7 +23,7 @@ export function AppShellLayout() {
 
 function AppShellChrome() {
   const navigate = useNavigate()
-  const { threads, newChat, openThread } = useThreadStore()
+  const { threads, newThread, openThread } = useThreadList()
   const isDesktop = useMediaQuery(DESKTOP_MEDIA_QUERY, true)
   const [sidebar, setSidebar] = useState({
     alignedTo: isDesktop,
@@ -56,7 +56,7 @@ function AppShellChrome() {
   }
 
   function handleNewThread() {
-    newChat()
+    newThread()
     void navigate({ to: SURFACE_PATHS.home })
   }
 
@@ -104,7 +104,7 @@ function AppShellChrome() {
       <SearchModal
         open={searchOpen}
         onOpenChange={setSearchOpen}
-        threads={searchThreadsFromHome(threads)}
+        threads={searchThreadsFromList(threads)}
         onNewThread={handleNewThread}
         onOpenThread={handleOpenThread}
         onSurface={goSurface}

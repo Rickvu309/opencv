@@ -1,4 +1,4 @@
-import type { HomeThread } from "@/features/home/threads.ts"
+import type { ThreadListItem } from "@/features/home/thread-list-port.ts"
 
 export type SearchThread = {
   id: string
@@ -7,17 +7,12 @@ export type SearchThread = {
   preview?: string
 }
 
-export function searchThreadsFromHome(threads: HomeThread[]): SearchThread[] {
-  return threads.map((thread, index) => {
-    const preview = [...thread.messages]
-      .reverse()
-      .find((message) => message.role === "coach")?.text
-
-    return {
-      id: thread.id,
-      title: thread.title,
-      when: index === 0 ? "Today" : index === 1 ? "Yesterday" : "Earlier",
-      preview,
-    }
-  })
+export function searchThreadsFromList(
+  threads: ThreadListItem[]
+): SearchThread[] {
+  return threads.map((thread, index) => ({
+    id: thread.id,
+    title: thread.title,
+    when: index === 0 ? "Today" : index === 1 ? "Yesterday" : "Earlier",
+  }))
 }

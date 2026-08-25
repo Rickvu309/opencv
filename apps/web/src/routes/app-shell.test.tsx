@@ -11,7 +11,7 @@ import { SURFACE_COPY, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
 import { DESKTOP_MEDIA_QUERY } from "@/features/app-shell/use-media-query.ts"
-import { SEED_THREADS } from "@/features/home/threads.ts"
+import { FIXTURE_THREADS } from "@/test/thread-fixtures.ts"
 import {
   TEST_SESSION,
   TEST_SESSION_USER,
@@ -50,7 +50,10 @@ function stubDesktopViewport(isDesktop: boolean) {
 }
 
 async function expectStub(
-  surface: Exclude<keyof typeof SURFACE_COPY, "home" | "paper" | "apply" | "pitch">
+  surface: Exclude<
+    keyof typeof SURFACE_COPY,
+    "home" | "paper" | "apply" | "pitch"
+  >
 ) {
   const copy = SURFACE_COPY[surface]
   expect(
@@ -66,7 +69,9 @@ async function expectPitch() {
       name: SAMPLE_AUTHOR_NAME,
     })
   ).toBeInTheDocument()
-  expect(screen.getByRole("button", { name: "Edit profile" })).toBeInTheDocument()
+  expect(
+    screen.getByRole("button", { name: "Edit profile" })
+  ).toBeInTheDocument()
   expect(screen.getByRole("heading", { name: "About" })).toBeInTheDocument()
   expect(screen.queryByText(SURFACE_COPY.pitch.body)).not.toBeInTheDocument()
   expect(screen.queryByText(/Eric Nguyen/i)).not.toBeInTheDocument()
@@ -395,7 +400,7 @@ describe("search modal", () => {
     })
   })
 
-  it("filters seed Thread titles", async () => {
+  it("filters Thread titles from the list port", async () => {
     renderApp(SURFACE_PATHS.home)
     await expectHomeIdle()
     await openSearch()
@@ -406,7 +411,9 @@ describe("search modal", () => {
       screen.queryByRole("button", { name: "Resize" })
     ).not.toBeInTheDocument()
     expect(
-      within(dialog).getByRole("button", { name: /CV vs internship first/ })
+      await within(dialog).findByRole("button", {
+        name: /CV vs internship first/,
+      })
     ).toBeInTheDocument()
     expect(
       within(dialog).getByRole("button", { name: /Checkout study/ })
@@ -426,7 +433,7 @@ describe("search modal", () => {
       within(dialog).queryByRole("button", { name: /Is this role a fit/ })
     ).not.toBeInTheDocument()
 
-    const other = SEED_THREADS.find((t) => !/checkout/i.test(t.title))
+    const other = FIXTURE_THREADS.find((t) => !/checkout/i.test(t.title))
     expect(other).toBeTruthy()
     fireEvent.change(within(dialog).getByRole("textbox", { name: "Search" }), {
       target: { value: "zzzz-no-thread" },
@@ -441,13 +448,18 @@ describe("search modal", () => {
 
     const dialog = screen.getByRole("dialog", { name: "Search" })
     fireEvent.click(
-      within(dialog).getByRole("button", { name: /CV vs internship first/ })
+      await within(dialog).findByRole("button", {
+        name: /CV vs internship first/,
+      })
     )
     fireEvent.click(within(dialog).getByRole("button", { name: "Open Thread" }))
 
     expect(
       await screen.findByRole("log", { name: "Thread" })
-    ).toHaveTextContent(SEED_THREADS[0]!.messages[0]!.text)
+    ).toBeInTheDocument()
+    expect(
+      await screen.findByText(FIXTURE_THREADS[0]!.messages[0]!.text)
+    ).toBeInTheDocument()
     expect(
       screen.queryByRole("dialog", { name: "Search" })
     ).not.toBeInTheDocument()
@@ -470,11 +482,14 @@ describe("search modal", () => {
     expect(
       screen.getByText("Select a conversation to preview")
     ).toBeInTheDocument()
+    expect(
+      await screen.findByRole("button", { name: /CV vs internship first/ })
+    ).toBeInTheDocument()
 
     fireEvent.keyDown(input, { key: "ArrowDown" })
     expect(input).toHaveAttribute(
       "aria-activedescendant",
-      `search-item-${SEED_THREADS[0]!.id}`
+      `search-item-${FIXTURE_THREADS[0]!.id}`
     )
     expect(
       screen.getByRole("button", { name: "Open Thread" })
@@ -487,7 +502,7 @@ describe("search modal", () => {
     ).toBeInTheDocument()
 
     fireEvent.change(input, { target: { value: "checkout" } })
-    const checkout = SEED_THREADS.find((thread) =>
+    const checkout = FIXTURE_THREADS.find((thread) =>
       /checkout/i.test(thread.title)
     )
     expect(checkout).toBeTruthy()
