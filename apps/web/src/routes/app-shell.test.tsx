@@ -12,6 +12,7 @@ import {
 
 import { DEFAULT_DEV_PROFILE_NAME } from "@/features/app-shell/dev-profile.ts"
 import { SURFACE_COPY, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { expectPaperDrive } from "@/test/paper-drive.ts"
 import { DESKTOP_MEDIA_QUERY } from "@/features/app-shell/use-media-query.ts"
 import { SEED_THREADS } from "@/features/home/threads.ts"
 import { createAppRouter } from "@/router.tsx"
@@ -20,7 +21,9 @@ const sidebarOpenOnRender = vi.hoisted(() => ({ values: [] as boolean[] }))
 
 vi.mock("@/features/app-shell/app-sidebar.tsx", async (importOriginal) => {
   const actual =
-    await importOriginal<typeof import("@/features/app-shell/app-sidebar.tsx")>()
+    await importOriginal<
+      typeof import("@/features/app-shell/app-sidebar.tsx")
+    >()
 
   return {
     ...actual,
@@ -102,7 +105,7 @@ describe("app shell layout", () => {
 
   it("opens each surface at a stable URL", async () => {
     renderApp(SURFACE_PATHS.paper)
-    await expectStub("paper")
+    await expectPaperDrive()
 
     cleanup()
     renderApp(SURFACE_PATHS.apply)
@@ -127,7 +130,7 @@ describe("app shell layout", () => {
     await expectHomeIdle()
 
     fireEvent.click(screen.getByRole("link", { name: "Paper" }))
-    await expectStub("paper")
+    await expectPaperDrive()
     expect(
       screen.queryByRole("heading", {
         level: 1,
@@ -144,7 +147,7 @@ describe("app shell layout", () => {
 
   it("highlights the active surface and shows an Apply activity badge", async () => {
     renderApp(SURFACE_PATHS.paper)
-    await expectStub("paper")
+    await expectPaperDrive()
 
     expect(screen.getByRole("link", { name: "Paper" })).toHaveAttribute(
       "aria-current",
@@ -226,7 +229,7 @@ describe("app shell layout", () => {
     ).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole("link", { name: "Paper" }))
-    await expectStub("paper")
+    await expectPaperDrive()
     expect(screen.getByRole("link", { name: "Paper" })).toHaveAttribute(
       "aria-current",
       "page"
@@ -272,9 +275,9 @@ describe("settings workspace", () => {
     expect(
       await screen.findByRole("heading", { level: 2, name: "Account" })
     ).toBeInTheDocument()
-    expect(screen.getAllByText(DEFAULT_DEV_PROFILE_NAME).length).toBeGreaterThan(
-      0
-    )
+    expect(
+      screen.getAllByText(DEFAULT_DEV_PROFILE_NAME).length
+    ).toBeGreaterThan(0)
     expect(screen.getByText("you@openpath.app")).toBeInTheDocument()
     expect(screen.queryByText(/Eric Nguyen/i)).not.toBeInTheDocument()
 
@@ -336,7 +339,7 @@ describe("search modal", () => {
       target: { value: "paper" },
     })
     fireEvent.click(screen.getByRole("button", { name: "Open Paper" }))
-    await expectStub("paper")
+    await expectPaperDrive()
     expect(
       screen.queryByRole("dialog", { name: "Search" })
     ).not.toBeInTheDocument()
@@ -345,9 +348,7 @@ describe("search modal", () => {
     })
 
     await openSearch()
-    fireEvent.click(
-      screen.getByRole("button", { name: "Start a new Thread" })
-    )
+    fireEvent.click(screen.getByRole("button", { name: "Start a new Thread" }))
     await expectHomeIdle()
     expect(
       screen.queryByRole("dialog", { name: "Search" })
@@ -398,7 +399,7 @@ describe("search modal", () => {
 
   it("opens a History Thread from Search and returns to idle on new Thread", async () => {
     renderApp(SURFACE_PATHS.paper)
-    await expectStub("paper")
+    await expectPaperDrive()
     await openSearch()
 
     const dialog = screen.getByRole("dialog", { name: "Search" })
@@ -415,11 +416,11 @@ describe("search modal", () => {
     ).not.toBeInTheDocument()
 
     await openSearch()
-    fireEvent.click(
-      screen.getByRole("button", { name: "Start a new Thread" })
-    )
+    fireEvent.click(screen.getByRole("button", { name: "Start a new Thread" }))
     await expectHomeIdle()
-    expect(screen.queryByRole("log", { name: "Thread" })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("log", { name: "Thread" })
+    ).not.toBeInTheDocument()
   })
 
   it("moves keyboard highlight with arrows and keeps the Thread preview sticky", async () => {
@@ -474,7 +475,7 @@ describe("search modal", () => {
     fireEvent.change(input, { target: { value: "paper" } })
     fireEvent.keyDown(input, { key: "Enter" })
 
-    await expectStub("paper")
+    await expectPaperDrive()
     expect(
       screen.queryByRole("dialog", { name: "Search" })
     ).not.toBeInTheDocument()
@@ -506,14 +507,19 @@ describe("shell polish and a11y", () => {
     renderApp(SURFACE_PATHS.home)
     await expectHomeIdle()
 
-    expect(screen.getByRole("link", { name: "Skip to main content" })).toHaveAttribute(
-      "href",
-      "#app-main"
-    )
+    expect(
+      screen.getByRole("link", { name: "Skip to main content" })
+    ).toHaveAttribute("href", "#app-main")
     expect(document.getElementById("app-main")).not.toBeNull()
-    expect(screen.getByRole("complementary", { name: "App" })).toBeInTheDocument()
-    expect(screen.getByRole("navigation", { name: "Surfaces" })).toBeInTheDocument()
-    expect(screen.getByRole("navigation", { name: "History" })).toBeInTheDocument()
+    expect(
+      screen.getByRole("complementary", { name: "App" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("navigation", { name: "Surfaces" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("navigation", { name: "History" })
+    ).toBeInTheDocument()
     expect(screen.getByRole("main")).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole("button", { name: "Collapse sidebar" }))
@@ -521,10 +527,14 @@ describe("shell polish and a11y", () => {
     expect(
       screen.queryByRole("navigation", { name: "History" })
     ).not.toBeInTheDocument()
-    expect(screen.queryByRole("button", { name: "History" })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "History" })
+    ).not.toBeInTheDocument()
     expect(screen.getByRole("link", { name: "Paper" })).toBeInTheDocument()
     expect(
-      screen.getByRole("link", { name: /profile and settings/i }).closest(".mt-auto")
+      screen
+        .getByRole("link", { name: /profile and settings/i })
+        .closest(".mt-auto")
     ).not.toBeNull()
   })
 
@@ -556,5 +566,3 @@ describe("shell polish and a11y", () => {
     ).toBeInTheDocument()
   })
 })
-
-

@@ -1,0 +1,501 @@
+import { useEffect, useRef, useState } from "react"
+import { Button } from "@workspace/ui/components/button"
+import { cn } from "@workspace/ui/lib/utils"
+import {
+  ChevronDown,
+  FileText,
+  Globe,
+  MoreHorizontal,
+  Share2,
+} from "lucide-react"
+
+import { getDevProfile } from "@/features/app-shell/dev-profile.ts"
+
+import { CvDocument } from "./paper-cv-document.tsx"
+import { CvA4Canvas } from "./paper-cv-a4.tsx"
+import { applyCvTemplate } from "./paper-cv-template-picker.tsx"
+import {
+  parseCvContent,
+  serializeCvContent,
+  type CvData,
+  type CvTemplateId,
+} from "./paper-cv-types.ts"
+import {
+  TYPE_LABEL,
+  profileFirstName,
+  type DocStatus,
+  type PaperDoc,
+} from "./paper-data.ts"
+import { PaperEditorSidebar } from "./paper-editor-sidebar.tsx"
+import {
+  PaperEditorToolbar,
+  type CvInsertId,
+  type LetterInsertId,
+  type ProofInsertId,
+} from "./paper-editor-toolbar.tsx"
+import { paperContentToHtml, paperHtmlToContent } from "./paper-markdown.ts"
+import { ProofDocument } from "./paper-proof-document.tsx"
+import {
+  newProofStep,
+  parseProofContent,
+  serializeProofContent,
+  type ProofData,
+  type ProofStepType,
+} from "./paper-proof-types.ts"
+
+type Props = {
+  doc: PaperDoc
+  docs: PaperDoc[]
+  onBack: () => void
+  onSelectDoc: (id: string) => void
+  onChange: (doc: PaperDoc) => void
+}
+
+export function PaperEditor({
+  doc,
+  docs,
+  onBack,
+  onSelectDoc,
+  onChange,
+}: Props) {
+  const isCv = doc.type === "cv"
+  const isProof = doc.type === "proof"
+  const isLetter = doc.type === "letter"
+  const editorRef = useRef<HTMLDivElement>(null)
+  const proofPhotoRef = useRef<HTMLInputElement>(null)
+  const cvPhotoRef = useRef<HTMLInputElement>(null)
+  const [dirty, setDirty] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [letterWords, setLetterWords] = useState(0)
+  const [cvData, setCvData] = useState<CvData>(() =>
+    parseCvContent(doc.content)
+  )
+  const [proofData, setProofData] = useState<ProofData>(() =>
+    parseProofContent(doc.content)
+  )
+
+  useEffect(() => {
+    if (isCv) {
+      setCvData(parseCvContent(doc.content))
+      setDirty(false)
+      setSaving(false)
+      return
+    }
+    if (isProof) {
+      setProofData(parseProofContent(doc.content))
+      setDirty(false)
+      setSaving(false)
+      return
+    }
+    const el = editorRef.current
+    if (!el) return
+    el.innerHTML = paperContentToHtml(doc.content)
+    setLetterWords(countWords(doc.content))
+    setDirty(false)
+    setSaving(false)
+  }, [doc.id, isCv, isProof])
+
+  useEffect(() => {
+    if (!dirty) return
+
+    setSaving(true)
+    const timer = window.setTimeout(() => {
+      if (isCv) {
+        onChange({
+          ...doc,
+          content: serializeCvContent(cvData),
+          updated: "Just now",
+        })
+      } else if (isProof) {
+        onChange({
+          ...doc,
+          content: serializeProofContent(proofData),
+          updated: "Just now",
+        })
+      } else {
+        const el = editorRef.current
+        if (!el) return
+        onChange({
+          ...doc,
+          content: paperHtmlToContent(el),
+          updated: "Just now",
+        })
+      }
+      setDirty(false)
+      setSaving(false)
+    }, 700)
+
+    return () => window.clearTimeout(timer)
+  }, [dirty, doc, onChange, isCv, isProof, cvData, proofData])
+
+  function handleRichInput() {
+    const el = editorRef.current
+    if (el) setLetterWords(countWords(el.innerText))
+    setDirty(true)
+  }
+
+  function insertInEditor(text: string) {
+    const el = editorRef.current
+    if (!el) return
+    el.focus()
+    document.execCommand("insertText", false, text)
+    handleRichInput()
+  }
+
+  function handleCvInsert(id: CvInsertId) {
+    if (id === "photo") {
+      cvPhotoRef.current?.click()
+      return
+    }
+    const next = { ...cvData }
+    switch (id) {
+      case "experience":
+        next.experience = [
+          ...next.experience,
+          {
+            role: "Role title",
+            company: "Company",
+            period: "2024 – Present",
+            bullets: ["One concrete outcome with a number…"],
+          },
+        ]
+        break
+      case "education":
+        next.education = [
+          ...next.education,
+          {
+            school: "School name",
+            degree: "Degree · major",
+            period: "2022 – 2026",
+          },
+        ]
+        break
+      case "skill":
+        next.skills = [
+          ...next.skills,
+          { label: "Skills", items: ["Add skill"] },
+        ]
+        break
+      case "project":
+        next.projects = [
+          ...(next.projects ?? []),
+          {
+            name: "Project name",
+            detail: "What you shipped and what changed.",
+          },
+        ]
+        break
+      case "section":
+        next.summary = `${next.summary}\n\nVolunteering / awards — add a short line here.`
+        break
+    }
+    handleCvChange(next)
+  }
+
+  function handleCvTailor(_roleId: string) {
+    handleCvChange({
+      ...cvData,
+      summary: `${cvData.summary} (Tailored for target role — review bullets and Proof links.)`,
+    })
+  }
+
+  function handleLetterInsert(id: LetterInsertId) {
+    const blocks: Record<LetterInsertId, string> = {
+      salutation: "Dear hiring team,\n\n",
+      paragraph: "\n\nI am writing to apply for…\n\n",
+      signoff: `\n\nBest,\n${profileFirstName(getDevProfile())}\n`,
+      ps: "\n\nP.S. Happy to share my checkout card Proof if helpful.\n",
+    }
+    insertInEditor(blocks[id])
+  }
+
+  function handleProofInsert(id: ProofInsertId) {
+    if (id === "photo") {
+      proofPhotoRef.current?.click()
+      return
+    }
+    handleProofChange({
+      ...proofData,
+      steps: [...proofData.steps, newProofStep(id as ProofStepType)],
+    })
+  }
+
+  function handleProofPhoto(file: File) {
+    const photo = {
+      id: `photo-${Date.now()}`,
+      url: URL.createObjectURL(file),
+      caption: file.name.replace(/\.[^.]+$/, ""),
+    }
+    if (proofData.steps.length === 0) {
+      handleProofChange({
+        ...proofData,
+        steps: [{ ...newProofStep("note"), photos: [photo] }],
+      })
+      return
+    }
+    const lastIndex = proofData.steps.length - 1
+    const steps = proofData.steps.map((s, i) =>
+      i === lastIndex ? { ...s, photos: [...s.photos, photo] } : s
+    )
+    handleProofChange({ ...proofData, steps })
+  }
+
+  function handleCvPhoto(file: File) {
+    handleCvChange({
+      ...cvData,
+      photoUrl: URL.createObjectURL(file),
+      templateId: "photo",
+    })
+  }
+
+  function handleCvChange(next: CvData) {
+    setCvData(next)
+    setDirty(true)
+  }
+
+  function handleProofChange(next: ProofData) {
+    setProofData(next)
+    setDirty(true)
+  }
+
+  function handleTemplateChange(templateId: CvTemplateId) {
+    handleCvChange(applyCvTemplate(cvData, templateId))
+  }
+
+  function handleSave() {
+    if (isCv) {
+      onChange({
+        ...doc,
+        content: serializeCvContent(cvData),
+        updated: "Just now",
+      })
+    } else if (isProof) {
+      onChange({
+        ...doc,
+        content: serializeProofContent(proofData),
+        updated: "Just now",
+      })
+    } else {
+      const el = editorRef.current
+      if (!el) return
+      onChange({
+        ...doc,
+        content: paperHtmlToContent(el),
+        updated: "Just now",
+      })
+    }
+    setDirty(false)
+    setSaving(false)
+  }
+
+  const maxWidth = isProof
+    ? "max-w-[58rem]"
+    : isCv
+      ? "max-w-[calc(210mm+3rem)]"
+      : "max-w-[46rem]"
+
+  return (
+    <div
+      className="flex h-full min-h-0 bg-[#F3F4F6]"
+      role="region"
+      aria-label={`Editing ${doc.name}`}
+    >
+      <PaperEditorSidebar
+        docs={docs}
+        activeId={doc.id}
+        onSelect={onSelectDoc}
+        onBack={onBack}
+      />
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="flex shrink-0 items-center gap-3 border-b border-border bg-background px-5 py-3">
+          <FileText className="size-4 shrink-0 text-muted-foreground" />
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-sm font-semibold">{doc.name}</h1>
+            <p className="text-xs text-muted-foreground">
+              {TYPE_LABEL[doc.type]}
+              {doc.applyLink ? ` · ${doc.applyLink}` : ""}
+              {" · "}Updated {doc.updated}
+            </p>
+          </div>
+
+          <Button
+            type="button"
+            size="icon-sm"
+            variant="ghost"
+            aria-label="More"
+          >
+            <MoreHorizontal className="size-4" />
+          </Button>
+
+          <StatusPill status={doc.status} />
+
+          <Button type="button" size="sm" variant="outline">
+            <Share2 className="size-3.5" />
+            Share
+          </Button>
+
+          <Button
+            type="button"
+            size="sm"
+            disabled={!dirty && !saving}
+            onClick={handleSave}
+          >
+            {saving ? "Saving…" : dirty ? "Save changes" : "Saved"}
+          </Button>
+        </header>
+
+        <div className="min-h-0 flex-1 overflow-auto px-4 py-8 sm:px-8">
+          <div
+            className={cn(
+              "mx-auto flex w-full flex-col items-center",
+              maxWidth
+            )}
+          >
+            {isCv ? (
+              <>
+                <input
+                  ref={cvPhotoRef}
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) handleCvPhoto(file)
+                    e.target.value = ""
+                  }}
+                />
+                <PaperEditorToolbar
+                  variant="cv"
+                  className="sticky top-0 z-10 mb-4 w-full backdrop-blur-sm supports-[backdrop-filter]:bg-background/90"
+                  contextLabel={doc.name}
+                  cvTemplateId={cvData.templateId}
+                  onCvTemplateChange={handleTemplateChange}
+                  onCvInsert={handleCvInsert}
+                  onCvTailor={handleCvTailor}
+                />
+                <CvA4Canvas>
+                  <CvDocument data={cvData} onChange={handleCvChange} />
+                </CvA4Canvas>
+              </>
+            ) : isProof ? (
+              <>
+                <input
+                  ref={proofPhotoRef}
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) handleProofPhoto(file)
+                    e.target.value = ""
+                  }}
+                />
+                <PaperEditorToolbar
+                  variant="proof"
+                  className="mb-5 w-full"
+                  contextLabel={doc.name}
+                  proofViewMode={proofData.viewMode}
+                  onProofViewModeChange={(mode) =>
+                    handleProofChange({ ...proofData, viewMode: mode })
+                  }
+                  onProofInsert={handleProofInsert}
+                />
+              </>
+            ) : (
+              <PaperEditorToolbar
+                variant={isLetter ? "letter" : "full"}
+                className="mb-5 w-full"
+                contextLabel={doc.name}
+                onLetterInsert={isLetter ? handleLetterInsert : undefined}
+                letterWordCount={isLetter ? letterWords : undefined}
+              />
+            )}
+
+            {!isCv ? (
+              isProof ? (
+                <div className="w-full overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+                  <ProofDocument
+                    data={proofData}
+                    onChange={handleProofChange}
+                  />
+                </div>
+              ) : (
+                <article
+                  className={cn(
+                    "w-full overflow-hidden rounded-xl border bg-card shadow-sm",
+                    doc.status === "draft"
+                      ? "border-border ring-1 ring-ring/20"
+                      : "border-border/80"
+                  )}
+                >
+                  <div className="flex items-center justify-between border-b border-border/60 px-5 py-3">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <FileText className="size-3.5 shrink-0 text-muted-foreground" />
+                      <span className="truncate text-xs font-medium text-muted-foreground">
+                        {doc.name}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {doc.status === "draft" ? (
+                        <span className="rounded-md bg-muted px-2 py-0.5 text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
+                          Draft
+                        </span>
+                      ) : null}
+                      <button
+                        type="button"
+                        aria-label="More"
+                        className="text-muted-foreground hover:text-foreground"
+                      >
+                        <MoreHorizontal className="size-4" />
+                      </button>
+                    </div>
+                  </div>
+                  <div
+                    ref={editorRef}
+                    contentEditable
+                    suppressContentEditableWarning
+                    onInput={handleRichInput}
+                    className="paper-editor-canvas min-h-[70vh] px-10 py-10 text-[15px] leading-8 outline-none sm:px-14 sm:py-12"
+                    aria-label="Document content"
+                    spellCheck
+                  />
+                </article>
+              )
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function countWords(text: string) {
+  return text.trim().split(/\s+/).filter(Boolean).length
+}
+
+function StatusPill({ status }: { status: DocStatus }) {
+  const label =
+    status === "published"
+      ? "Published"
+      : status === "ready"
+        ? "Ready"
+        : "Draft"
+
+  return (
+    <button
+      type="button"
+      className={cn(
+        "inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium",
+        status === "published" && "border-border bg-muted text-foreground",
+        status === "ready" &&
+          "border-border bg-secondary text-secondary-foreground",
+        status === "draft" && "border-border bg-muted/40 text-muted-foreground"
+      )}
+    >
+      {status === "published" ? <Globe className="size-3.5" /> : null}
+      {label}
+      <ChevronDown className="size-3 opacity-60" />
+    </button>
+  )
+}
