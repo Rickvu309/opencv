@@ -1,24 +1,19 @@
-import { z } from "zod"
-
 import type {
   EvalTranscript,
   GoldenScenario,
   JudgeVerdict,
+  PersonaRubricScores,
 } from "./types.js"
 
 export const DEFAULT_EVAL_JUDGE_MODEL = "openai/gpt-4o-mini"
 
-const judgeVerdictSchema = z.object({
-  scores: z.object({
-    evidenceOverEncouragement: z.number().min(1).max(5),
-    oneNextStep: z.number().min(1).max(5),
-    calmVoice: z.number().min(1).max(5),
-    honestAboutDistance: z.number().min(1).max(5),
-    actionHonesty: z.number().min(1).max(5),
-  }),
-  overall: z.number().min(1).max(5),
-  rationale: z.string().min(1),
-})
+const SCORE_KEYS = [
+  "evidenceOverEncouragement",
+  "oneNextStep",
+  "calmVoice",
+  "honestAboutDistance",
+  "actionHonesty",
+] as const
 
 export function judgeModelFromEnv(env: NodeJS.ProcessEnv): string {
   const configured = env.COACH_EVAL_JUDGE_MODEL?.trim()
@@ -106,9 +101,31 @@ export async function judgeTranscript(
     throw new Error("Judge returned no content")
   }
 
-  const parsed = judgeVerdictSchema.safeParse(JSON.parse(content))
-  if (!parsed.success) {
-    throw new Error(`Judge JSON failed schema: ${parsed.error.message}`)
+  return parseJudgeVerdict(JSON.parse(content))
+}
+
+export function parseJudgeVerdict(value: unknown): JudgeVerdict {
+  if (!value || typeof value !== "object") {
+    throw new Error("Judge JSON failed schema: expected an object")
   }
-  return parsed.data
+  const row = value as Record<string, unknown>
+  const rawScores = row.scores
+  if (!rawScores || typeof rawScores !== "object") {
+    throw new Error("Judge JSON failed schema: scores")
+  }
+  const scores = {} as PersonaRubricScores
+  for (const key of SCORE_KEYS) {
+    const score = (rawScores as Record<string, unknown>)[key]
+    if (typeof score !== "number" || score < 1 || score > 5) {
+      throw new Error(`Judge JSON failed schema: ${key}`)
+    }
+    scores[key] = score
+  }
+  if (typeof row.overall !== "number" || row.overall < 1 || row.overall > 5) {
+    throw new Error("Judge JSON failed schema: overall")
+  }
+  if (typeof row.rationale !== "string" || row.rationale.trim().length === 0) {
+    throw new Error("Judge JSON failed schema: rationale")
+  }
+  return { scores, overall: row.overall, rationale: row.rationale }
 }

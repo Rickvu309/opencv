@@ -5,6 +5,7 @@ import {
   DEFAULT_EVAL_JUDGE_MODEL,
   judgeModelFromEnv,
   judgeTranscript,
+  parseJudgeVerdict,
 } from "./judge.js"
 import { GOLDEN_SCENARIOS } from "./scenarios.js"
 import type { EvalTranscript } from "./types.js"
@@ -48,6 +49,24 @@ describe("buildJudgePrompt", () => {
   })
 })
 
+describe("parseJudgeVerdict", () => {
+  it("rejects scores outside 1-5", () => {
+    expect(() =>
+      parseJudgeVerdict({
+        scores: {
+          evidenceOverEncouragement: 6,
+          oneNextStep: 5,
+          calmVoice: 5,
+          honestAboutDistance: 4,
+          actionHonesty: 5,
+        },
+        overall: 4,
+        rationale: "ok",
+      })
+    ).toThrow(/evidenceOverEncouragement/)
+  })
+})
+
 describe("judgeTranscript", () => {
   it("parses a rubric score with rationale from OpenRouter HTTP", async () => {
     const fetchImpl = vi.fn(async () => {
@@ -85,11 +104,14 @@ describe("judgeTranscript", () => {
 
     expect(verdict.overall).toBe(4)
     expect(verdict.rationale).toMatch(/empty CV/)
-    expect(fetchImpl).toHaveBeenCalledTimes(1)
-    const [url, init] = fetchImpl.mock.calls[0] as [string, RequestInit]
-    expect(url).toBe("https://openrouter.ai/api/v1/chat/completions")
-    expect(init.method).toBe("POST")
-    const headers = init.headers as Record<string, string>
-    expect(headers.Authorization).toBe("Bearer sk-or-test")
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "https://openrouter.ai/api/v1/chat/completions",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          Authorization: "Bearer sk-or-test",
+        }),
+      })
+    )
   })
 })
