@@ -32,7 +32,7 @@ Spec 3 work spans **two git contexts**. Do not mix them.
 
 1. **Port, don't symlink** — copy patterns from prototype into production modules on `main` (`apps/web/src/routes/`, `apps/web/src/features/app-shell/`, or similar). Do not import from `@/prototype/…` in production routes.
 2. **Prototype branch stays frozen** — reference only.
-3. **Tickets branch from `main`** — per `AGENTS.md`: one Linear ticket → one branch `feat/qve-XX-slug` from updated `main`; optional worktree per ticket.
+3. **Tickets branch from `main`** — per `AGENTS.md`: one Linear ticket → one branch (any name) → one PR that references the QVE id; optional worktree per ticket. CI green and a review verdict before a human squash-merges.
 4. **Agents read reference files from the prototype worktree, the branch on GitHub, or the live preview** — they are not on `main`.
 
 ---
@@ -75,6 +75,8 @@ The prototype proved more than Spec 3 ships. Nothing is orphaned — each area l
 | **Later** | Notification inbox (`notification-inbox`), Connected apps OAuth (`apps-catalog`, `connected-apps`), voice input | shell + auth | — |
 
 Ticket writers for Spec 4+ start from this table plus `PRODUCT.md`.
+
+**Sequencing note (2026-08):** Craft surfaces shipped client-side first — see [Craft surfaces live on production](https://linear.app/quanvm/issue/QVE-110/craft-surfaces-live-on-production) (QVE-110–113). Spec 3.5 then wires those live UIs to the server. This supersedes the earlier “Specs 4–6 blocked by 3.5” ordering.
 
 ---
 
@@ -278,7 +280,7 @@ Paths relative to `apps/web/src/prototype/app-shell/` on `prototype/app-shell` (
 | 7 | Settings shell (tabs stub) | 1 |
 | 8 | Polish: responsive, a11y, prototype parity checklist | 2–7 |
 
-Each ticket: **implement on `main`** (feat branch); **reference** the prototype worktree/preview; description must name both paths and the needed UI-kit absorptions (Decision 7).
+Each ticket: **implement from `main`** (any branch name, one PR referencing the QVE id); **reference** the prototype worktree/preview; description must name both paths and the needed UI-kit absorptions (Decision 7).
 
 ### Definition of done (Spec 3)
 

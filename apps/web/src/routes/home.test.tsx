@@ -99,10 +99,10 @@ describe("Home idle", () => {
 
     const menu = await screen.findByRole("menu")
     expect(
-      within(menu).getByRole("menuitem", { name: "Upload a file" })
+      within(menu).getByRole("menuitem", { name: /upload a file/i })
     ).toBeInTheDocument()
     expect(
-      within(menu).getByRole("menuitem", { name: "Recent" })
+      within(menu).getByRole("menuitem", { name: /recent/i })
     ).toBeInTheDocument()
     expect(
       within(menu).getByRole("menuitem", { name: "Attach from Paper" })
@@ -113,6 +113,34 @@ describe("Home idle", () => {
     expect(
       within(menu).queryByRole("menuitem", { name: /project/i })
     ).not.toBeInTheDocument()
+  })
+
+  it("disables coming-soon composer affordances", async () => {
+    renderApp()
+    await expectHomeIdle()
+
+    const mic = screen.getByRole("button", { name: "Voice input — coming soon" })
+    expect(mic).toBeDisabled()
+    expect(mic).toHaveAttribute("aria-disabled", "true")
+
+    fireEvent.click(screen.getByRole("button", { name: "Add" }))
+    const menu = await screen.findByRole("menu")
+
+    const upload = within(menu).getByRole("menuitem", {
+      name: /upload a file/i,
+    })
+    const recent = within(menu).getByRole("menuitem", { name: /^recent/i })
+    expect(upload).toHaveAttribute("aria-disabled", "true")
+    expect(recent).toHaveAttribute("aria-disabled", "true")
+    expect(upload).toHaveTextContent("Coming soon")
+    expect(recent).toHaveTextContent("Coming soon")
+
+    expect(
+      within(menu).getByRole("menuitem", { name: "Attach from Paper" })
+    ).not.toHaveAttribute("aria-disabled", "true")
+    expect(
+      within(menu).getByRole("menuitem", { name: "Add connector" })
+    ).not.toHaveAttribute("aria-disabled", "true")
   })
 
   it("opens Settings on the Connected apps tab from the connect row", async () => {
