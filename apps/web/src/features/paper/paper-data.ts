@@ -10,10 +10,7 @@ import {
   type PaperDocStatus,
 } from "@workspace/domain"
 
-import {
-  SAMPLE_AUTHOR,
-  type SampleAuthor,
-} from "@/features/seed/sample-author.ts"
+import { SAMPLE_AUTHOR } from "@/features/seed/sample-author.ts"
 
 import type { CvData } from "./paper-cv-types.ts"
 import type { ProofData } from "./paper-proof-types.ts"
@@ -24,7 +21,7 @@ export type { PaperDoc }
 
 export const TYPE_LABEL = PAPER_KIND_LABEL
 
-export function profileFirstName(profile: SampleAuthor = SAMPLE_AUTHOR) {
+export function profileFirstName(profile: { name: string } = SAMPLE_AUTHOR) {
   return profile.name.trim().split(/\s+/).filter(Boolean)[0] ?? profile.name
 }
 

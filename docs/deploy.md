@@ -57,6 +57,12 @@ agree: a new web origin needs adding there, or the browser blocks the response.
 The Spec 3 app shell no longer shows that check on the landing page — hit the
 API host directly to confirm reachability.
 
+Vercel never applies Postgres migrations. The API on Railway runs
+`pnpm --filter api run migrate` as `preDeployCommand` before each api
+rollout (pglite from-scratch in CI; staging and production each have their
+own Postgres). See [railway.md](railway.md#migration-pipeline). New accounts
+are seeded by the API signup hook, not by the web build.
+
 ## Previews
 
 Pushing any branch to GitHub creates a preview deployment. The URL appears on

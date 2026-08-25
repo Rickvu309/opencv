@@ -1,6 +1,6 @@
 # Spec 4 — Auth + Data Foundation
 
-**Status:** Ready for ticket breakdown
+**Status:** Done (QVE-115 / QVE-116–123)
 **Related:** ADR-0006 (data foundation decisions), ADR-0003 (Coach Commands), ADR-0005 (Thread-store seam — its extraction trigger fires here), research note `docs/research/2026-08-21-spec3-auth-and-app-shell.md` (auth comparison; Better Auth recommendation adopted)
 
 ## Problem Statement
@@ -25,8 +25,8 @@ The API serves a health check and nothing else, while Postgres sits provisioned 
 | Spec | Scope | Status |
 |------|-------|--------|
 | 3 — App shell | Shell, Home Coach (stub), Search, History, Settings, stub surfaces | Done |
-| 3.9 — Craft surfaces client-side | Paper/Apply/Pitch ported from the frozen prototype, client state (QVE-110–113) | In flight |
-| **4 — Auth + Data (this spec)** | Accounts, Postgres, Command registry, server Threads, Paper + Apply persistence | This spec |
+| 3.9 — Craft surfaces client-side | Paper/Apply/Pitch ported from the frozen prototype, client state (QVE-110–113) | Done |
+| **4 — Auth + Data (this spec)** | Accounts, Postgres, Command registry, server Threads, Paper + Apply persistence, signup starter | Done |
 | Coach (unnumbered) | Real LLM, streaming, Commands wired as tools from the same registry | After 4 |
 | Pitch persistence | One jsonb doc per user | After 4, unblocked |
 | Later | Email provider + verification, sibling custom domains, OAuth, notification inbox, Connected apps | — |
@@ -60,13 +60,21 @@ Eight tickets under one parent, blocking edges as listed; each lands green and d
 
 ## Definition of done
 
-- [ ] Sign-up → sign-in → sign-out round-trip works on production (Vercel ↔ Railway, cross-origin cookies)
-- [ ] Signed-out visitors can reach only sign-in/sign-up; every surface route redirects
-- [ ] Threads, Paper docs, and Apply cards persist across reload, sign-out/sign-in, and devices
-- [ ] All mutations flow through `POST /api/commands/:name`; no other write path exists
-- [ ] `GET /health` serves 200 with no database configured (invariant test)
-- [ ] Migrations apply from scratch in CI (pglite) and via Railway preDeploy on both environments
-- [ ] `fit` appears in no API response and no UI
-- [ ] New account shows neutral starter content; demo persona appears nowhere
-- [ ] Dev-profile placeholder (`VITE_DEV_PROFILE_*`, `dev-profile.ts`) deleted
-- [ ] ADR-0005 marked superseded by the shipped `ThreadListPort`; ADR-0006 committed; docs synced
+- [x] Sign-up → sign-in → sign-out round-trip works on production (Vercel ↔ Railway, cross-origin cookies)
+- [x] Signed-out visitors can reach only sign-in/sign-up; every surface route redirects
+- [x] Threads, Paper docs, and Apply cards persist across reload, sign-out/sign-in, and devices
+- [x] All mutations flow through `POST /api/commands/:name`; no other write path exists
+- [x] `GET /health` serves 200 with no database configured (invariant test)
+- [x] Migrations apply from scratch in CI (pglite) and via Railway preDeploy on both environments
+- [x] `fit` appears in no API response and no UI
+- [x] New account shows neutral starter content; demo persona appears nowhere
+- [x] Dev-profile placeholder (`VITE_DEV_PROFILE_*`, `dev-profile.ts`) deleted
+- [x] ADR-0005 marked superseded by the shipped `ThreadListPort`; ADR-0006 committed; docs synced
+
+## Follow-ups filed (QVE-123)
+
+Work this spec deliberately deferred, now ticketed:
+
+- [QVE-132](https://linear.app/quanvm/issue/QVE-132) — Email provider (Resend) + production verification flip
+- [QVE-133](https://linear.app/quanvm/issue/QVE-133) — Sibling custom domains for Safari cross-site-cookie caveat
+- [QVE-134](https://linear.app/quanvm/issue/QVE-134) — Pitch persistence: one jsonb document per user

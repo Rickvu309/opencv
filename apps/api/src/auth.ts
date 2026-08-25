@@ -3,6 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle"
 
 import { authSchema } from "./db/schema.js"
 import { isAllowedOrigin } from "./origin.js"
+import { seedStarterWorkspace } from "./starter/workspace.js"
 
 export type AuthDatabase = Parameters<typeof drizzleAdapter>[0]
 
@@ -72,6 +73,15 @@ export function createAuth({
     },
     rateLimit: { enabled: rateLimitEnabled },
     telemetry: { enabled: false },
+    databaseHooks: {
+      user: {
+        create: {
+          after: async (user) => {
+            await seedStarterWorkspace(db, user.id)
+          },
+        },
+      },
+    },
   })
 }
 

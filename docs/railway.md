@@ -18,7 +18,7 @@ Project `openpath` (linked to this repo):
   match it). `buildCommand` uses `--filter api...` so workspace dependencies
   compile with the api. `preDeployCommand` runs the compiled migrate script
   (`pnpm --filter api run migrate`) before each rollout; a migration failure
-  aborts the deploy.
+  aborts the deploy. See [Migration pipeline](#migration-pipeline).
 - Health: `GET /health` (also Railway's deployment healthcheck path). The
   route never touches Postgres, so it serves 200 with no `DATABASE_URL`.
 - `DATABASE_URL` is set on `api` as the shared reference
@@ -51,6 +51,46 @@ calls `/health` from the new origin. A production deployment opened through
 its per-deployment URL rather than the alias is therefore blocked by CORS —
 use the alias. Unset `WEB_ORIGINS` means local-only (`http://localhost:5173`),
 which is what `pnpm dev` needs.
+
+## Migration pipeline
+
+Schema changes are reviewable SQL, applied automatically, and never touched by
+`GET /health` (ADR-0006).
+
+1. Edit TypeScript tables in `apps/api/src/db/schema.ts` (`pgSchema("openpath_app")`).
+2. Generate SQL: `pnpm --filter api run db:generate`. Commit the files under
+   `apps/api/drizzle/`.
+3. CI applies those migrations from scratch on pglite
+   (`apps/api/src/db/migrate.test.ts`) on every PR and every push to `main`.
+4. Railway `preDeployCommand` runs the compiled script
+   (`pnpm --filter api run migrate` → `apps/api/dist/migrate.js`) against that
+   environment's Postgres (`DATABASE_URL=${{Postgres.DATABASE_URL}}`). Staging
+   and production each have their own instance.
+5. A failed migrate exits non-zero and aborts the rollout. The previous
+   deployment keeps serving. `GET /health` still serves 200 with no database.
+
+Do **not** put the seed script on `preDeployCommand`. Signup already writes the
+starter workspace for new accounts.
+
+## Dev / staging seed
+
+`pnpm --filter api run seed` (or `pnpm --filter api run db:seed` via tsx)
+writes the same starter workspace the signup hook creates: one sample CV, a
+few Apply cards across Stages, one welcome Thread. Requires `DATABASE_URL` and
+`SEED_EMAIL`. If that account does not exist, also set `SEED_PASSWORD`,
+`SESSION_SECRET`, and `AUTH_URL`.
+
+```bash
+# local (after migrate)
+SEED_EMAIL=dev@openpath.app SEED_PASSWORD='correct-horse-battery' \
+  SEED_NAME=Dev pnpm --filter api run db:seed
+
+# staging, against that environment's Postgres
+railway run -e staging --service api -- pnpm --filter api run seed
+```
+
+Idempotent: an account that already has Paper, Apply, or Threads is skipped.
+Do not point this at production unless you intend to seed one empty account.
 
 ## Local commands
 

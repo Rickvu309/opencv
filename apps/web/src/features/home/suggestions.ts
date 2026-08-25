@@ -7,8 +7,8 @@ export type Suggestion = {
 }
 
 /**
- * Chip prompts for Vietnamese early-career Users. Generic — never the
- * Eric Nguyen demo persona (PRODUCT.md open q. 4).
+ * Chip prompts for Vietnamese early-career Users. Generic — never a
+ * named demo persona (PRODUCT.md open q. 4).
  */
 export const SUGGESTION_POOLS: Suggestion[][] = [
   [
