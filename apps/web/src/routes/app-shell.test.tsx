@@ -422,6 +422,49 @@ describe("search modal", () => {
     expect(screen.queryByRole("log", { name: "Thread" })).not.toBeInTheDocument()
   })
 
+  it("moves keyboard highlight with arrows and keeps the Thread preview sticky", async () => {
+    renderApp(SURFACE_PATHS.home)
+    await expectHomeIdle()
+    await openSearch()
+
+    const input = screen.getByRole("textbox", { name: "Search" })
+    expect(input).toHaveAttribute("aria-activedescendant", "search-item-a1")
+    expect(
+      screen.getByText("Select a conversation to preview")
+    ).toBeInTheDocument()
+
+    fireEvent.keyDown(input, { key: "ArrowDown" })
+    expect(input).toHaveAttribute(
+      "aria-activedescendant",
+      `search-item-${SEED_THREADS[0]!.id}`
+    )
+    expect(
+      screen.getByRole("button", { name: "Open Thread" })
+    ).toBeInTheDocument()
+
+    fireEvent.keyDown(input, { key: "ArrowUp" })
+    expect(input).toHaveAttribute("aria-activedescendant", "search-item-a1")
+    expect(
+      screen.getByRole("button", { name: "Open Thread" })
+    ).toBeInTheDocument()
+
+    fireEvent.change(input, { target: { value: "checkout" } })
+    const checkout = SEED_THREADS.find((thread) =>
+      /checkout/i.test(thread.title)
+    )
+    expect(checkout).toBeTruthy()
+    expect(input).toHaveAttribute(
+      "aria-activedescendant",
+      `search-item-${checkout!.id}`
+    )
+    expect(
+      screen.getByRole("button", { name: /Checkout study/ })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "Open Thread" })
+    ).toBeInTheDocument()
+  })
+
   it("activates a filtered action with Enter", async () => {
     const { router } = renderApp(SURFACE_PATHS.home)
     await expectHomeIdle()
