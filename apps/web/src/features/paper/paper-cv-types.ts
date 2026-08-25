@@ -1,60 +1,18 @@
+import type { CvDocument, CvTemplateId } from "@workspace/domain"
 import {
   SAMPLE_AUTHOR,
   type SampleAuthor,
 } from "@/features/seed/sample-author.ts"
 
-export type CvTemplateId =
-  | "internship"
-  | "product"
-  | "service"
-  | "academic"
-  | "photo"
-
-export type CvContact = {
-  email: string
-  phone: string
-  location: string
-  linkedin?: string
-}
-
-export type CvEducation = {
-  school: string
-  degree: string
-  period: string
-  detail?: string
-}
-
-export type CvExperience = {
-  role: string
-  company: string
-  period: string
-  location?: string
-  bullets: string[]
-}
-
-export type CvSkillGroup = {
-  label: string
-  items: string[]
-}
-
-export type CvProject = {
-  name: string
-  detail: string
-}
-
-export type CvData = {
-  templateId: CvTemplateId
-  name: string
-  headline: string
-  contact: CvContact
-  summary: string
-  experience: CvExperience[]
-  education: CvEducation[]
-  skills: CvSkillGroup[]
-  projects?: CvProject[]
-  languages?: string[]
-  photoUrl?: string
-}
+export type {
+  CvContact,
+  CvEducation,
+  CvExperience,
+  CvProject,
+  CvSkillGroup,
+  CvTemplateId,
+} from "@workspace/domain"
+export type CvData = CvDocument
 
 export type CvTemplateMeta = {
   id: CvTemplateId
@@ -96,27 +54,6 @@ export const CV_TEMPLATES: CvTemplateMeta[] = [
     description: "Passport-size headshot beside your name and contact details.",
   },
 ]
-
-const CV_PREFIX = "cv:v1:"
-
-export function isCvContent(content: string): boolean {
-  return content.startsWith(CV_PREFIX)
-}
-
-export function parseCvContent(content: string): CvData {
-  if (isCvContent(content)) {
-    try {
-      return JSON.parse(content.slice(CV_PREFIX.length)) as CvData
-    } catch {
-      return DEFAULT_CV_DATA
-    }
-  }
-  return migrateMarkdownCv()
-}
-
-export function serializeCvContent(data: CvData): string {
-  return `${CV_PREFIX}${JSON.stringify(data)}`
-}
 
 export function defaultCvData(profile: SampleAuthor = SAMPLE_AUTHOR): CvData {
   return {
@@ -192,7 +129,3 @@ export function defaultCvData(profile: SampleAuthor = SAMPLE_AUTHOR): CvData {
 }
 
 export const DEFAULT_CV_DATA: CvData = defaultCvData()
-
-function migrateMarkdownCv(): CvData {
-  return { ...DEFAULT_CV_DATA }
-}

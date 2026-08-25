@@ -1,6 +1,8 @@
 import {
   boolean,
   index,
+  integer,
+  jsonb,
   pgSchema,
   text,
   timestamp,
@@ -124,6 +126,35 @@ export const threadMessages = openpathApp.table(
     index("thread_messages_thread_id_created_at_idx").on(
       table.threadId,
       table.createdAt
+    ),
+  ]
+)
+
+/** Paper docs: kind + jsonb content + version (ADR-0006 / PRODUCT.md q3). */
+export const paperDocs = openpathApp.table(
+  "paper_docs",
+  {
+    id: uuid("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    contentKind: text("content_kind")
+      .$type<"cv" | "letter" | "proof">()
+      .notNull(),
+    content: jsonb("content").$type<Record<string, unknown>>().notNull(),
+    contentVersion: integer("content_version").notNull(),
+    status: text("status")
+      .$type<"draft" | "ready" | "published">()
+      .notNull()
+      .default("draft"),
+    createdAt: timestamptz("created_at").notNull().defaultNow(),
+    updatedAt: timestamptz("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("paper_docs_user_id_updated_at_idx").on(
+      table.userId,
+      table.updatedAt
     ),
   ]
 )

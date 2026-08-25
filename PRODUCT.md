@@ -55,7 +55,7 @@ The prototype is throwaway code; production rebuilds it spec by spec. Spec 3 = s
 
 1. **Naked Fit score.** Cards show a bare 0–100 number. Principle 1 says claims show their basis; anti-references warn against career-quiz astrology. Production Fit must either show its evidence or not ship as a number.
 2. **Live GitHub APIs.** Pitch calls `api.github.com` and a third-party contributions API (`jogruber.de`) client-side. Dependency, rate limits, and privacy are undecided.
-3. **Paper storage format.** Prototype serializes docs as `cv:v1:` / `proof:v1:` prefixed JSON strings in a `content` field. Placeholder, not a schema decision — the data spec decides the real model.
+3. **Paper storage format.** Settled in ADR-0006: `paper_docs` stores `content_kind` + `content jsonb` + `content_version`. The prototype's `cv:v1:` / `proof:v1:` prefixed strings are retired.
 4. **Seed persona.** "Eric Nguyen" and all seed cards/threads are demo data; production shows a placeholder User until auth, never the demo persona.
 5. **Pitch post drafts.** The pre-prototype "social post drafts" idea is out of the definition; whether it returns as a later Pitch phase is unresolved.
 

@@ -1,56 +1,20 @@
-export type ProofViewMode = "chain" | "timeline"
+import type { ProofDocument, ProofStep, ProofStepType } from "@workspace/domain"
 
-export type ProofStepType = "context" | "action" | "outcome" | "note"
+export type {
+  ProofPhoto,
+  ProofStep,
+  ProofStepType,
+  ProofViewMode,
+} from "@workspace/domain"
+export type { ProofDocument as ProofData } from "@workspace/domain"
 
-export type ProofPhoto = {
-  id: string
-  url: string
-  caption?: string
-}
-
-export type ProofStep = {
-  id: string
-  type: ProofStepType
-  title: string
-  body: string
-  time?: string
-  date?: string
-  photos: ProofPhoto[]
-}
-
-export type ProofData = {
-  viewMode: ProofViewMode
-  title: string
-  subtitle?: string
-  steps: ProofStep[]
-}
-
-const PROOF_PREFIX = "proof:v1:"
+type ProofData = ProofDocument
 
 export const PROOF_STEP_LABEL: Record<ProofStepType, string> = {
   context: "Context",
   action: "What I did",
   outcome: "Outcome",
   note: "Note",
-}
-
-export function isProofContent(content: string): boolean {
-  return content.startsWith(PROOF_PREFIX)
-}
-
-export function parseProofContent(content: string): ProofData {
-  if (isProofContent(content)) {
-    try {
-      return JSON.parse(content.slice(PROOF_PREFIX.length)) as ProofData
-    } catch {
-      return DEFAULT_CHECKOUT_PROOF
-    }
-  }
-  return migrateMarkdownProof(content)
-}
-
-export function serializeProofContent(data: ProofData): string {
-  return `${PROOF_PREFIX}${JSON.stringify(data)}`
 }
 
 export const DEFAULT_CHECKOUT_PROOF: ProofData = {
@@ -160,22 +124,6 @@ export const DEFAULT_ONBOARDING_PROOF: ProofData = {
 
 /** @deprecated Use DEFAULT_ONBOARDING_PROOF */
 export const DEFAULT_CAMPUS_PROOF = DEFAULT_ONBOARDING_PROOF
-
-function migrateMarkdownProof(content: string): ProofData {
-  const data = {
-    ...DEFAULT_CHECKOUT_PROOF,
-    steps: [...DEFAULT_CHECKOUT_PROOF.steps],
-  }
-  const sections = content.split(/\*\*(.+?)\*\*/).filter(Boolean)
-  for (let i = 0; i < sections.length; i += 2) {
-    const label = sections[i]?.trim().toLowerCase()
-    const body = sections[i + 1]?.trim()
-    if (!label || !body) continue
-    const step = data.steps.find((s) => s.title.toLowerCase() === label)
-    if (step) step.body = body
-  }
-  return data
-}
 
 export function newProofStep(type: ProofStepType = "note"): ProofStep {
   return {

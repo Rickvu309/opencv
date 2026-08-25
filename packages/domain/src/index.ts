@@ -1,4 +1,6 @@
 export * from "./actor.js"
 export * from "./commands.js"
 export * from "./envelope.js"
+export * from "./paper.js"
+export * from "./paper-codecs.js"
 export * from "./threads.js"

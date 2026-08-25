@@ -66,7 +66,7 @@ export function PaperEditorSidebar({
                   {doc.name}
                 </span>
                 <span className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                  {TYPE_LABEL[doc.type]}
+                  {TYPE_LABEL[doc.kind]}
                   {doc.status === "draft" ? (
                     <span className="rounded bg-muted px-1 py-px text-[10px] font-medium uppercase">
                       Draft

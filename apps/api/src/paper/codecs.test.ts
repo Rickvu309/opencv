@@ -1,0 +1,73 @@
+import {
+  LEGACY_CV_PREFIX,
+  LEGACY_PROOF_PREFIX,
+  decodePaperContent,
+  emptyCvDocument,
+  emptyLetterDocument,
+  emptyProofDocument,
+  importLegacyPaperContent,
+} from "@workspace/domain"
+import { describe, expect, it } from "vitest"
+
+describe("paper codecs", () => {
+  it("accepts empty documents for each kind", () => {
+    expect(decodePaperContent("cv", 1, emptyCvDocument())).toEqual({
+      ok: true,
+      data: emptyCvDocument(),
+    })
+    expect(decodePaperContent("letter", 1, emptyLetterDocument())).toEqual({
+      ok: true,
+      data: emptyLetterDocument(),
+    })
+    expect(decodePaperContent("proof", 1, emptyProofDocument())).toEqual({
+      ok: true,
+      data: emptyProofDocument(),
+    })
+  })
+
+  it("rejects malformed content with a message the envelope can surface", () => {
+    const letter = decodePaperContent("letter", 1, { markdown: 12 })
+    expect(letter.ok).toBe(false)
+    if (letter.ok) throw new Error("expected failure")
+    expect(letter.message.length).toBeGreaterThan(0)
+
+    const cv = decodePaperContent("cv", 1, { name: "nope" })
+    expect(cv.ok).toBe(false)
+
+    const prefixed = decodePaperContent("cv", 1, `${LEGACY_CV_PREFIX}{}`)
+    expect(prefixed.ok).toBe(false)
+
+    const version = decodePaperContent("letter", 2, { markdown: "" })
+    expect(version).toEqual({
+      ok: false,
+      message: "Unsupported content version",
+    })
+  })
+
+  it("imports legacy prefixed strings one-way into jsonb documents", () => {
+    const cv = importLegacyPaperContent(
+      `${LEGACY_CV_PREFIX}${JSON.stringify(emptyCvDocument())}`
+    )
+    expect(cv).toEqual({
+      kind: "cv",
+      contentVersion: 1,
+      content: emptyCvDocument(),
+    })
+
+    const proof = importLegacyPaperContent(
+      `${LEGACY_PROOF_PREFIX}${JSON.stringify(emptyProofDocument())}`
+    )
+    expect(proof).toEqual({
+      kind: "proof",
+      contentVersion: 1,
+      content: emptyProofDocument(),
+    })
+
+    const letter = importLegacyPaperContent("Dear hiring team,")
+    expect(letter).toEqual({
+      kind: "letter",
+      contentVersion: 1,
+      content: { markdown: "Dear hiring team," },
+    })
+  })
+})

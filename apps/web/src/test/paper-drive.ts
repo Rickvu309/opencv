@@ -8,7 +8,7 @@ export async function expectPaperDrive() {
   expect(
     screen.getByRole("textbox", { name: "Search documents" })
   ).toBeInTheDocument()
-  expect(screen.getByText("PM track CV")).toBeInTheDocument()
+  expect(await screen.findByText("PM track CV")).toBeInTheDocument()
   expect(screen.getByText("Cover: Associate PM intern")).toBeInTheDocument()
   expect(screen.getByText("Checkout card resize study")).toBeInTheDocument()
 }

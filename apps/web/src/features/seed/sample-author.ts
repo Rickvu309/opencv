@@ -1,6 +1,6 @@
 /**
- * Neutral sample author for client-side Paper / Pitch seed until persistence
- * lands. Not identity — Settings → Account reads the session.
+ * Neutral sample author for Pitch seed and Paper fixture copy. Not identity —
+ * Settings → Account reads the session. Paper persistence lives on the server.
  */
 export type SampleAuthor = {
   name: string
