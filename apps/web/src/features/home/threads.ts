@@ -1,5 +1,3 @@
-export { STUB_COACH_REPLY } from "@workspace/domain"
-
 export const HISTORY_PREVIEW_COUNT = 4
 
 export type MessageRole = "coach" | "user"

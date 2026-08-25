@@ -89,3 +89,15 @@ export function coachDailyTurnLimitFromEnv(env: NodeJS.ProcessEnv): number {
 
   return parsed
 }
+
+/**
+ * Optional scripted runtime for local/dev (`curl -N` against the protocol).
+ * Unset/anything other than `fake` leaves the Coach uninjected — the route
+ * 503s until the OpenRouter runtime lands.
+ */
+export function coachRuntimeModeFromEnv(
+  env: NodeJS.ProcessEnv
+): "fake" | undefined {
+  const configured = env.COACH_RUNTIME?.trim()
+  return configured === "fake" ? "fake" : undefined
+}

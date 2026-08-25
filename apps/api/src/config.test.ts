@@ -9,6 +9,7 @@ import {
   authUrlFromEnv,
   coachDailyTurnLimitFromEnv,
   coachModelFromEnv,
+  coachRuntimeModeFromEnv,
   databaseUrlFromEnv,
   openRouterApiKeyFromEnv,
   sessionSecretFromEnv,
@@ -128,5 +129,16 @@ describe("coachDailyTurnLimitFromEnv", () => {
       DEFAULT_COACH_DAILY_TURN_LIMIT
     )
     expect(DEFAULT_COACH_DAILY_TURN_LIMIT).toBe(50)
+  })
+})
+
+describe("coachRuntimeModeFromEnv", () => {
+  it("reads the scripted fake mode and ignores anything else", () => {
+    expect(coachRuntimeModeFromEnv({ COACH_RUNTIME: "  fake  " })).toBe("fake")
+    expect(coachRuntimeModeFromEnv({})).toBeUndefined()
+    expect(
+      coachRuntimeModeFromEnv({ COACH_RUNTIME: "openrouter" })
+    ).toBeUndefined()
+    expect(coachRuntimeModeFromEnv({ COACH_RUNTIME: "   " })).toBeUndefined()
   })
 })

@@ -1,6 +1,5 @@
 import {
   DEFAULT_THREAD_TITLE,
-  STUB_COACH_REPLY,
   THREAD_COMMANDS,
   type ThreadDetail,
   type ThreadListItem,
@@ -124,21 +123,12 @@ export async function threadApiFetch(
       return jsonError(404, "NOT_FOUND", "Thread not found")
     }
     const now = isoNow()
-    const replyAt = new Date(Date.now() + 1).toISOString()
-    thread.messages.push(
-      {
-        id: crypto.randomUUID(),
-        role: "user",
-        text: body.text ?? "",
-        createdAt: now,
-      },
-      {
-        id: crypto.randomUUID(),
-        role: "coach",
-        text: STUB_COACH_REPLY,
-        createdAt: replyAt,
-      }
-    )
+    thread.messages.push({
+      id: crypto.randomUUID(),
+      role: "user",
+      text: body.text ?? "",
+      createdAt: now,
+    })
     thread.updatedAt = now
     return jsonOk(thread)
   }

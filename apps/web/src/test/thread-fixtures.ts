@@ -1,4 +1,4 @@
-import { STUB_COACH_REPLY, type ThreadDetail } from "@workspace/domain"
+import type { ThreadDetail } from "@workspace/domain"
 
 function iso(day: number) {
   return `2026-08-${String(day).padStart(2, "0")}T12:00:00.000Z`
@@ -121,5 +121,3 @@ export const FIXTURE_THREADS: ThreadDetail[] = [
     ],
   },
 ]
-
-export { STUB_COACH_REPLY }

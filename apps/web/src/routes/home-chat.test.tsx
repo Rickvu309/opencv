@@ -11,7 +11,7 @@ import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
 import { HISTORY_PREVIEW_COUNT } from "@/features/home/threads.ts"
-import { FIXTURE_THREADS, STUB_COACH_REPLY } from "@/test/thread-fixtures.ts"
+import { FIXTURE_THREADS } from "@/test/thread-fixtures.ts"
 import { getMockThreads } from "@/test/threads-api-mock.ts"
 import { renderApp } from "@/test/render-app.tsx"
 
@@ -41,10 +41,15 @@ async function sendMessage(text: string) {
   fireEvent.click(screen.getByRole("button", { name: "Send" }))
 }
 
-async function expectStubReply() {
-  expect(
-    await screen.findByText(STUB_COACH_REPLY, {}, { timeout: 2000 })
-  ).toBeInTheDocument()
+async function expectSendSettled(text: string) {
+  expect(await screen.findByRole("log", { name: "Thread" })).toHaveTextContent(
+    text
+  )
+  await waitFor(() => {
+    expect(
+      screen.queryByRole("status", { name: "Coach is working" })
+    ).not.toBeInTheDocument()
+  })
 }
 
 async function expectThreadText(text: string) {
@@ -62,7 +67,7 @@ afterEach(() => {
 })
 
 describe("Home Thread mode and History", () => {
-  it("sends into Thread mode with a thinking state, then an honest stub reply", async () => {
+  it("sends into Thread mode with a thinking state, then keeps the user message", async () => {
     renderApp()
     await expectHomeIdle()
 
@@ -79,18 +84,10 @@ describe("Home Thread mode and History", () => {
       screen.queryByRole("heading", { name: idleHeading })
     ).not.toBeInTheDocument()
 
-    await expectStubReply()
+    await expectSendSettled("Help me plan the week")
     expect(
-      screen.queryByRole("status", { name: "Coach is working" })
+      screen.queryByRole("button", { name: "Copy" })
     ).not.toBeInTheDocument()
-    expect(screen.getByText(STUB_COACH_REPLY)).toHaveTextContent(
-      /haven't edited Paper or Apply/i
-    )
-    expect(screen.getByText(STUB_COACH_REPLY)).toHaveTextContent(
-      /haven't run any Commands/i
-    )
-    expect(screen.getByRole("button", { name: "Copy" })).toBeDisabled()
-    expect(screen.getByRole("button", { name: "Regenerate" })).toBeDisabled()
   })
 
   it("lists server Threads, restores one, and returns to idle on new Thread", async () => {
@@ -140,7 +137,7 @@ describe("Home Thread mode and History", () => {
     await expectHomeIdle()
 
     await sendMessage("Should I finish my CV first?")
-    await expectStubReply()
+    await expectSendSettled("Should I finish my CV first?")
 
     const history = screen.getByRole("navigation", { name: "History" })
     expect(
@@ -164,7 +161,6 @@ describe("Home Thread mode and History", () => {
     expect(screen.getByRole("log", { name: "Thread" })).toHaveTextContent(
       "Should I finish my CV first?"
     )
-    expect(screen.getByText(STUB_COACH_REPLY)).toBeInTheDocument()
   })
 
   it("returns to idle Home from the Home nav item", async () => {
@@ -201,7 +197,7 @@ describe("Home Thread mode and History", () => {
     const first = renderApp()
     await expectHomeIdle()
     await sendMessage("Keep this Thread")
-    await expectStubReply()
+    await expectSendSettled("Keep this Thread")
     expect(
       getMockThreads().some((thread) => thread.title === "Keep this Thread")
     ).toBe(true)
@@ -221,7 +217,6 @@ describe("Home Thread mode and History", () => {
       within(history).getByRole("button", { name: "Keep this Thread" })
     )
     await expectThreadText("Keep this Thread")
-    expect(screen.getByText(STUB_COACH_REPLY)).toBeInTheDocument()
     expect(
       screen.queryByRole("heading", { name: idleHeading })
     ).not.toBeInTheDocument()

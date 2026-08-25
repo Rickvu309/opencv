@@ -1,13 +1,17 @@
 import {
+  appendCoachPart,
   COACH_SSE_EVENTS,
+  COACH_SSE_HEARTBEAT_MS,
   DEFAULT_COACH_DAILY_TURN_LIMIT,
   DEFAULT_COACH_MODEL,
   ERROR_CODES,
   coachLimitReachedEnvelope,
   coachUnavailableEnvelope,
   httpStatusForError,
+  textFromParts,
   type CoachRuntime,
   type CoachStreamPart,
+  type ThreadMessagePart,
 } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
 
@@ -36,6 +40,7 @@ describe("coach domain exports", () => {
   it("exports the runtime port, stream-part tags, and SSE event names", () => {
     expect(DEFAULT_COACH_MODEL).toBe("anthropic/claude-sonnet-4.5")
     expect(DEFAULT_COACH_DAILY_TURN_LIMIT).toBe(50)
+    expect(COACH_SSE_HEARTBEAT_MS).toBe(15_000)
     expect(Object.values(COACH_SSE_EVENTS)).toEqual([
       "message-start",
       "text-delta",
@@ -80,5 +85,55 @@ describe("coach domain exports", () => {
       },
     }
     expect(typeof runtime.streamTurn).toBe("function")
+  })
+
+  it("merges text deltas and records tool receipts in order", () => {
+    const parts: ThreadMessagePart[] = []
+    const afterText = appendCoachPart(parts, {
+      type: "text-delta",
+      text: "Moved it. ",
+    })
+    const afterCall = appendCoachPart(afterText, {
+      type: "tool-call",
+      toolCallId: "t1",
+      name: "apply_moveCard",
+      input: {},
+    })
+    const afterResult = appendCoachPart(afterCall, {
+      type: "tool-result",
+      toolCallId: "t1",
+      name: "apply_moveCard",
+      summary: "Moved 'Backend Intern' to Prep",
+      ok: true,
+      reversal: {
+        possible: true,
+        description: "Undo by moving the card back.",
+        command: "apply.moveCard",
+      },
+      result: { ok: true, data: { id: "c1" } },
+    })
+    const afterMore = appendCoachPart(afterResult, {
+      type: "text-delta",
+      text: "That's the one next step.",
+    })
+
+    expect(afterCall).toEqual(afterText)
+    expect(afterMore).toEqual([
+      { type: "text", text: "Moved it. " },
+      {
+        type: "tool",
+        name: "apply_moveCard",
+        summary: "Moved 'Backend Intern' to Prep",
+        ok: true,
+        reversal: {
+          possible: true,
+          description: "Undo by moving the card back.",
+          command: "apply.moveCard",
+        },
+        toolCallId: "t1",
+      },
+      { type: "text", text: "That's the one next step." },
+    ])
+    expect(textFromParts(afterMore)).toBe("Moved it. That's the one next step.")
   })
 })

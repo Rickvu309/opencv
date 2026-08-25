@@ -4,10 +4,6 @@ import { reversalDescriptorSchema, THREAD_COMMANDS } from "./commands.js"
 
 export { THREAD_COMMANDS }
 
-/** Honest stub until the Coach spec wires a real model (ADR-0003). */
-export const STUB_COACH_REPLY =
-  "I hear you. I haven't edited Paper or Apply, and I haven't run any Commands. I'm a stub Coach until those exist — we can keep talking here, or you can open those surfaces yourself."
-
 export const DEFAULT_THREAD_TITLE = "New Thread"
 
 export const THREAD_TITLE_MAX = 200

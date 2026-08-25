@@ -10,7 +10,6 @@ import {
 import { SURFACE_COPY, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 import { SUGGESTION_POOLS } from "@/features/home/suggestions.ts"
-import { STUB_COACH_REPLY } from "@/test/thread-fixtures.ts"
 import { renderApp } from "@/test/render-app.tsx"
 
 async function expectHomeIdle() {
@@ -76,7 +75,14 @@ describe("Home idle", () => {
         ),
       })
     ).not.toBeInTheDocument()
-    expect(await screen.findByText(STUB_COACH_REPLY)).toBeInTheDocument()
+    expect(
+      await screen.findByRole("log", { name: "Thread" })
+    ).toHaveTextContent("Help me plan the week")
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("status", { name: "Coach is working" })
+      ).not.toBeInTheDocument()
+    })
   })
 
   it("opens stub attach and upload items from the + menu", async () => {
