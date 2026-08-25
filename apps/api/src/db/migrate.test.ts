@@ -8,6 +8,28 @@ import { describe, expect, it } from "vitest"
 
 import { migrationsFolder } from "./paths.js"
 
+const migratedTables = [
+  "account",
+  "apply_cards",
+  "paper_docs",
+  "session",
+  "thread_messages",
+  "threads",
+  "user",
+  "verification",
+]
+
+async function tableNames(db: ReturnType<typeof drizzle>) {
+  const tables = await db.execute<{ table_name: string }>(sql`
+    select table_name
+    from information_schema.tables
+    where table_schema = 'openpath_app'
+    order by table_name
+  `)
+
+  return tables.rows.map((row) => row.table_name)
+}
+
 describe("committed migrations", () => {
   it("apply from scratch on pglite and create openpath_app", async () => {
     const journal = JSON.parse(
@@ -30,23 +52,28 @@ describe("committed migrations", () => {
 
       expect(result.rows).toEqual([{ schema_name: "openpath_app" }])
 
-      const tables = await db.execute<{ table_name: string }>(sql`
-        select table_name
-        from information_schema.tables
-        where table_schema = 'openpath_app'
-        order by table_name
-      `)
+      expect(await tableNames(db)).toEqual(migratedTables)
+    } finally {
+      await client.close()
+    }
+  }, 60_000)
 
-      expect(tables.rows.map((row) => row.table_name)).toEqual([
-        "account",
-        "apply_cards",
-        "paper_docs",
-        "session",
-        "thread_messages",
-        "threads",
-        "user",
-        "verification",
-      ])
+  it("apply onto a database that already has openpath_app", async () => {
+    const client = new PGlite()
+    try {
+      const db = drizzle({ client })
+      // Production's openpath_app predates these migrations and holds unrelated
+      // tables, so 0000 must no-op instead of failing the whole rollout.
+      await db.execute(sql`create schema "openpath_app"`)
+      await db.execute(
+        sql`create table "openpath_app"."legacy_waitlist" ("id" text)`
+      )
+
+      await migrate(db, { migrationsFolder })
+
+      expect(await tableNames(db)).toEqual(
+        [...migratedTables, "legacy_waitlist"].sort()
+      )
     } finally {
       await client.close()
     }

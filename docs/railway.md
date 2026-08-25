@@ -59,7 +59,9 @@ Schema changes are reviewable SQL, applied automatically, and never touched by
 
 1. Edit TypeScript tables in `apps/api/src/db/schema.ts` (`pgSchema("openpath_app")`).
 2. Generate SQL: `pnpm --filter api run db:generate`. Commit the files under
-   `apps/api/drizzle/`.
+   `apps/api/drizzle/`. One exception: migration 0000 is hand-edited to
+   `CREATE SCHEMA IF NOT EXISTS` and must stay that way — see
+   [Production's pre-existing `openpath_app`](#productions-pre-existing-openpath_app-qve-135).
 3. CI applies those migrations from scratch on pglite
    (`apps/api/src/db/migrate.test.ts`) on every PR and every push to `main`.
 4. Railway `preDeployCommand` runs the compiled script
@@ -71,6 +73,27 @@ Schema changes are reviewable SQL, applied automatically, and never touched by
 
 Do **not** put the seed script on `preDeployCommand`. Signup already writes the
 starter workspace for new accounts.
+
+### Production's pre-existing `openpath_app` (QVE-135)
+
+Production Postgres is not an empty instance. Its `openpath_app` schema predates
+these migrations and still holds 26 tables from the pre-QVE-84 legacy app
+(`users`, `profiles`, `conversations`, `openings`, `waitlist`, ...), plus a set
+of stray Better Auth tables in `public`. None of those names collide with the
+Spec 4 tables, and `drizzle.__drizzle_migrations` was empty, so the committed
+migrations apply alongside the legacy tables.
+
+Because that schema already existed, migration 0000 is
+`CREATE SCHEMA IF NOT EXISTS` — a bare `CREATE SCHEMA` aborted every production
+rollout from 2026-08-25 21:31 UTC+7 onward (Postgres `42P06`), which is why
+production served a pre-Spec 4 build while staging was correct. Keep 0000
+idempotent; `apps/api/src/db/migrate.test.ts` covers it.
+
+The legacy tables and the stray `public` Better Auth tables are dead weight and
+still carry old rows. Dropping them is deliberate destructive work that needs
+its own ticket and a backup — do not fold it into a deploy. Until then, a new
+migration that names a legacy object would abort the rollout the same way, so
+check `openpath_app` for the name first.
 
 ## Dev / staging seed
 
