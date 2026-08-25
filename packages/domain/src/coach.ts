@@ -82,7 +82,6 @@ export type CoachTurnInput = {
   userId: string
   threadId: string
   history: ThreadMessage[]
-  signal?: AbortSignal
 }
 
 /** Injected via `AppConfig.coach` like `db` (ADR-0007). */
