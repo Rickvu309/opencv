@@ -7,6 +7,7 @@ import {
   Paperclip,
   Plug,
   Plus,
+  Square,
   Upload,
   X,
 } from "lucide-react"
@@ -45,6 +46,8 @@ type Props = {
   draft: string
   setDraft: (value: string) => void
   onSend: () => void
+  onStop?: () => void
+  turnActive?: boolean
   placeholder?: string
   menuPlacement?: "below" | "above"
 }
@@ -53,6 +56,8 @@ export function Composer({
   draft,
   setDraft,
   onSend,
+  onStop,
+  turnActive = false,
   placeholder = "How can I help you today?",
   menuPlacement = "below",
 }: Props) {
@@ -107,9 +112,7 @@ export function Composer({
             <DropdownMenuItem
               key={item.id}
               disabled={comingSoon}
-              onClick={
-                comingSoon ? undefined : () => handleMenuAction(item.id)
-              }
+              onClick={comingSoon ? undefined : () => handleMenuAction(item.id)}
             >
               <Icon className="size-4 shrink-0 text-muted-foreground" />
               {item.label}
@@ -166,6 +169,19 @@ export function Composer({
     </Button>
   )
 
+  const stopButton = (
+    <Button
+      type="button"
+      variant="secondary"
+      size="icon"
+      onClick={onStop}
+      aria-label="Stop"
+      className="rounded-full"
+    >
+      <Square className="size-3 fill-current" />
+    </Button>
+  )
+
   const textarea = (
     <textarea
       ref={textareaRef}
@@ -174,7 +190,7 @@ export function Composer({
       onKeyDown={(e) => {
         if (e.key === "Enter" && !e.shiftKey) {
           e.preventDefault()
-          onSend()
+          if (!turnActive) onSend()
         }
       }}
       placeholder={placeholder}
@@ -190,7 +206,7 @@ export function Composer({
   const trailingActions = (
     <div className="flex shrink-0 items-center gap-0.5">
       {micButton}
-      {sendButton}
+      {turnActive ? stopButton : sendButton}
     </div>
   )
 

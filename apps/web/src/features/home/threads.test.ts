@@ -10,23 +10,33 @@ describe("titleFrom", () => {
 })
 
 describe("toHomeMessages", () => {
-  it("copies server messages and attaches thinking time to the last Coach reply", () => {
-    const mapped = toHomeMessages(
-      [
-        { id: "u1", role: "user", text: "Hello" },
-        { id: "c1", role: "coach", text: "Hi" },
-        { id: "u2", role: "user", text: "Again" },
-        { id: "c2", role: "coach", text: "Still here" },
-      ],
-      1400
-    )
+  it("copies server messages including worked time from the Coach row", () => {
+    const mapped = toHomeMessages([
+      { id: "u1", role: "user", text: "Hello" },
+      { id: "c1", role: "coach", text: "Hi", workedMs: 800, status: "final" },
+      { id: "u2", role: "user", text: "Again" },
+      {
+        id: "c2",
+        role: "coach",
+        text: "Still here",
+        workedMs: 1400,
+        status: "final",
+      },
+    ])
 
-    expect(mapped[1]).toEqual({ id: "c1", role: "coach", text: "Hi" })
+    expect(mapped[1]).toEqual({
+      id: "c1",
+      role: "coach",
+      text: "Hi",
+      workedMs: 800,
+      status: "final",
+    })
     expect(mapped[3]).toEqual({
       id: "c2",
       role: "coach",
       text: "Still here",
       workedMs: 1400,
+      status: "final",
     })
   })
 })

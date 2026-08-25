@@ -1,4 +1,5 @@
 import {
+  COACH_SSE_EVENTS,
   THREAD_COMMANDS,
   type ThreadDetail,
   type ThreadListItem,
@@ -11,6 +12,7 @@ import {
   getThread,
   listThreads,
   postThreadMessage,
+  streamCoachTurn,
   toListItem,
   upsertThreadListItem,
 } from "@/features/home/thread-api.ts"
@@ -130,6 +132,58 @@ describe("thread API client", () => {
       JSON.stringify({
         threadId: detail.id,
         text: "Help me plan the week",
+      })
+    )
+  })
+
+  it("streams a Coach turn from POST /api/threads/:id/coach", async () => {
+    const threadId = "11111111-1111-4111-8111-111111111111"
+    const body = [
+      `event: ${COACH_SSE_EVENTS.messageStart}`,
+      `data: ${JSON.stringify({ threadId })}`,
+      "",
+      `event: ${COACH_SSE_EVENTS.textDelta}`,
+      `data: ${JSON.stringify({ text: "Hello" })}`,
+      "",
+      `event: ${COACH_SSE_EVENTS.messageEnd}`,
+      `data: ${JSON.stringify({
+        message: {
+          id: "c1",
+          role: "coach",
+          text: "Hello",
+          createdAt: "2026-08-25T00:00:01.000Z",
+          workedMs: 1100,
+          status: "final",
+        },
+        usage: { model: "mock" },
+      })}`,
+      "",
+    ].join("\n")
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(body, {
+        status: 200,
+        headers: { "Content-Type": "text/event-stream" },
+      })
+    )
+    vi.stubGlobal("fetch", fetchMock)
+
+    const onTextDelta = vi.fn()
+    const onMessageEnd = vi.fn()
+    await streamCoachTurn(threadId, "Help me plan the week", {
+      onTextDelta,
+      onMessageEnd,
+    })
+
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
+      `${apiBaseUrl}/api/threads/${threadId}/coach`
+    )
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(init.method).toBe("POST")
+    expect(init.body).toBe(JSON.stringify({ text: "Help me plan the week" }))
+    expect(onTextDelta).toHaveBeenCalledWith({ text: "Hello" })
+    expect(onMessageEnd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.objectContaining({ text: "Hello", workedMs: 1100 }),
       })
     )
   })

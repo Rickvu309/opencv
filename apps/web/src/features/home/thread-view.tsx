@@ -7,7 +7,13 @@ import {
   ThumbsUp,
 } from "lucide-react"
 
-import type { HomeMessage } from "@/features/home/threads.ts"
+import { Button } from "@workspace/ui/components/button"
+import { cn } from "@workspace/ui/lib/utils"
+
+import {
+  STREAMING_COACH_ID,
+  type HomeMessage,
+} from "@/features/home/threads.ts"
 
 const MESSAGE_ACTIONS = [
   { label: "Copy", icon: Copy },
@@ -41,10 +47,11 @@ function MessageActions() {
 
 type Props = {
   messages: HomeMessage[]
-  thinking?: boolean
+  waiting?: boolean
+  onRetry?: () => void
 }
 
-export function ThreadView({ messages, thinking }: Props) {
+export function ThreadView({ messages, waiting, onRetry }: Props) {
   return (
     <div
       role="log"
@@ -55,8 +62,36 @@ export function ThreadView({ messages, thinking }: Props) {
       {messages.map((item) =>
         item.role === "user" ? (
           <div key={item.id} className="flex justify-end">
-            <div className="max-w-[min(85%,28rem)] rounded-2xl bg-muted px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap">
-              {item.text}
+            <div className="max-w-[min(85%,28rem)] space-y-2">
+              <div
+                aria-invalid={item.failed || undefined}
+                data-failed={item.failed ? "true" : undefined}
+                className={cn(
+                  "rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap",
+                  item.failed
+                    ? "border border-destructive/40 bg-destructive/5"
+                    : "bg-muted"
+                )}
+              >
+                {item.text}
+              </div>
+              {item.failed && item.error ? (
+                <div className="space-y-2 text-right">
+                  <p role="alert" className="text-sm text-destructive">
+                    {item.error}
+                  </p>
+                  {onRetry ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={onRetry}
+                    >
+                      Retry
+                    </Button>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           </div>
         ) : (
@@ -69,12 +104,12 @@ export function ThreadView({ messages, thinking }: Props) {
             <p className="text-sm leading-relaxed whitespace-pre-wrap">
               {item.text}
             </p>
-            <MessageActions />
+            {item.id !== STREAMING_COACH_ID ? <MessageActions /> : null}
           </div>
         )
       )}
 
-      {thinking ? (
+      {waiting ? (
         <div role="status" aria-label="Coach is working" className="space-y-2">
           <p className="inline-flex items-center gap-0.5 text-xs text-muted-foreground">
             Working
