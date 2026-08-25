@@ -1,7 +1,7 @@
 import {
-  getDevProfile,
-  type DevProfile,
-} from "@/features/app-shell/dev-profile.ts"
+  SAMPLE_AUTHOR,
+  type SampleAuthor,
+} from "@/features/seed/sample-author.ts"
 
 import { defaultCvData, serializeCvContent } from "./paper-cv-types.ts"
 import {
@@ -29,11 +29,11 @@ export const TYPE_LABEL: Record<DocType, string> = {
   proof: "Proof",
 }
 
-export function profileFirstName(profile: DevProfile) {
+export function profileFirstName(profile: SampleAuthor) {
   return profile.name.trim().split(/\s+/).filter(Boolean)[0] ?? profile.name
 }
 
-function seedLetter(profile: DevProfile, body: string) {
+function seedLetter(profile: SampleAuthor, body: string) {
   const firstName = profileFirstName(profile)
   return `${body}
 
@@ -42,7 +42,7 @@ ${firstName}`
 }
 
 export function seedPaperDocs(
-  profile: DevProfile = getDevProfile()
+  profile: SampleAuthor = SAMPLE_AUTHOR
 ): PaperDoc[] {
   return [
     {

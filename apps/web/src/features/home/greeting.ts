@@ -1,5 +1,3 @@
-import { getDevProfile } from "@/features/app-shell/dev-profile.ts"
-
 export type GreetingPhrase = "Good morning" | "Good afternoon" | "Good evening"
 
 export function greetingPhrase(now: Date = new Date()): GreetingPhrase {
@@ -9,9 +7,6 @@ export function greetingPhrase(now: Date = new Date()): GreetingPhrase {
   return "Good evening"
 }
 
-export function homeGreeting(
-  name: string = getDevProfile().name,
-  now: Date = new Date()
-) {
+export function homeGreeting(name: string, now: Date = new Date()) {
   return `${greetingPhrase(now)}, ${name}`
 }

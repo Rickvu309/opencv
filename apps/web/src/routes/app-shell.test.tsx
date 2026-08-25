@@ -1,21 +1,23 @@
-import { createElement } from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { RouterProvider, createMemoryHistory } from "@tanstack/react-router"
 import {
   cleanup,
   fireEvent,
-  render,
   screen,
   waitFor,
   within,
 } from "@testing-library/react"
 
-import { DEFAULT_DEV_PROFILE_NAME } from "@/features/app-shell/dev-profile.ts"
 import { SURFACE_COPY, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
 import { DESKTOP_MEDIA_QUERY } from "@/features/app-shell/use-media-query.ts"
 import { SEED_THREADS } from "@/features/home/threads.ts"
-import { createAppRouter } from "@/router.tsx"
+import {
+  TEST_SESSION,
+  TEST_SESSION_USER,
+  setMockSession,
+} from "@/test/auth-client-mock.ts"
+import { renderApp } from "@/test/render-app.tsx"
 
 const sidebarOpenOnRender = vi.hoisted(() => ({ values: [] as boolean[] }))
 
@@ -47,17 +49,6 @@ function stubDesktopViewport(isDesktop: boolean) {
   }))
 }
 
-function renderApp(initialEntry = "/") {
-  const router = createAppRouter({
-    history: createMemoryHistory({ initialEntries: [initialEntry] }),
-  })
-
-  return {
-    router,
-    ...render(createElement(RouterProvider, { router })),
-  }
-}
-
 async function expectStub(
   surface: Exclude<keyof typeof SURFACE_COPY, "home" | "paper" | "apply" | "pitch">
 ) {
@@ -72,7 +63,7 @@ async function expectPitch() {
   expect(
     await screen.findByRole("heading", {
       level: 1,
-      name: DEFAULT_DEV_PROFILE_NAME,
+      name: SAMPLE_AUTHOR_NAME,
     })
   ).toBeInTheDocument()
   expect(screen.getByRole("button", { name: "Edit profile" })).toBeInTheDocument()
@@ -96,7 +87,7 @@ async function expectHomeIdle() {
     await screen.findByRole("heading", {
       level: 1,
       name: new RegExp(
-        `^Good (morning|afternoon|evening), ${DEFAULT_DEV_PROFILE_NAME}$`
+        `^Good (morning|afternoon|evening), ${SAMPLE_AUTHOR_NAME}$`
       ),
     })
   ).toBeInTheDocument()
@@ -294,21 +285,42 @@ describe("settings workspace", () => {
     }
   })
 
-  it("shows a placeholder Account tab with sign out disabled", async () => {
+  it("shows the session identity and signs out to sign-in", async () => {
+    const { router } = renderApp(`${SURFACE_PATHS.settings}?tab=account`)
+
+    expect(
+      await screen.findByRole("heading", { level: 2, name: "Account" })
+    ).toBeInTheDocument()
+    expect(screen.getAllByText(SAMPLE_AUTHOR_NAME).length).toBeGreaterThan(0)
+    expect(screen.getByText("you@openpath.app")).toBeInTheDocument()
+    expect(screen.queryByText(/Eric Nguyen/i)).not.toBeInTheDocument()
+    expect(screen.queryByText("Coming soon")).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: "Sign out" }))
+    expect(
+      await screen.findByRole("heading", { name: "Welcome back" })
+    ).toBeInTheDocument()
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/sign-in")
+    })
+  })
+
+  it("shows the signed-in User, not a build-time placeholder", async () => {
+    setMockSession({
+      user: {
+        ...TEST_SESSION_USER,
+        name: "Minh Le",
+        email: "minh@example.com",
+      },
+      session: TEST_SESSION,
+    })
     renderApp(`${SURFACE_PATHS.settings}?tab=account`)
 
     expect(
       await screen.findByRole("heading", { level: 2, name: "Account" })
     ).toBeInTheDocument()
-    expect(
-      screen.getAllByText(DEFAULT_DEV_PROFILE_NAME).length
-    ).toBeGreaterThan(0)
-    expect(screen.getByText("you@openpath.app")).toBeInTheDocument()
-    expect(screen.queryByText(/Eric Nguyen/i)).not.toBeInTheDocument()
-
-    const signOut = screen.getByRole("button", { name: "Sign out" })
-    expect(signOut).toBeDisabled()
-    expect(screen.getByText("Coming soon")).toBeInTheDocument()
+    expect(screen.getAllByText("Minh Le").length).toBeGreaterThan(0)
+    expect(screen.getByText("minh@example.com")).toBeInTheDocument()
   })
 })
 

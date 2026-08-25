@@ -2,7 +2,7 @@ import { createElement } from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 
-import { DEFAULT_DEV_PROFILE_NAME } from "@/features/app-shell/dev-profile.ts"
+import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 import { SURFACE_COPY } from "@/features/app-shell/surfaces.ts"
 import { getMockGithubUsername } from "@/features/pitch/pitch-github-mock.ts"
 import { PitchWorkspace } from "@/features/pitch/pitch-workspace.tsx"
@@ -30,7 +30,7 @@ describe("Pitch workspace", () => {
     const profile = getPitchProfile()
 
     expect(
-      screen.getByRole("heading", { level: 1, name: DEFAULT_DEV_PROFILE_NAME })
+      screen.getByRole("heading", { level: 1, name: SAMPLE_AUTHOR_NAME })
     ).toBeInTheDocument()
     expect(screen.getByText(profile.headline)).toBeInTheDocument()
     expect(screen.getByText(profile.slug)).toBeInTheDocument()
@@ -104,7 +104,7 @@ describe("Pitch workspace", () => {
       screen.queryByRole("dialog", { name: "Work story viewer" })
     ).not.toBeInTheDocument()
     expect(
-      screen.getByRole("heading", { level: 1, name: DEFAULT_DEV_PROFILE_NAME })
+      screen.getByRole("heading", { level: 1, name: SAMPLE_AUTHOR_NAME })
     ).toBeInTheDocument()
     expect(fetchMock).not.toHaveBeenCalled()
   })

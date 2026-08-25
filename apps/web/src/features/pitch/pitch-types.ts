@@ -1,4 +1,7 @@
-import { getDevProfile, type DevProfile } from "@/features/app-shell/dev-profile.ts"
+import {
+  SAMPLE_AUTHOR,
+  type SampleAuthor,
+} from "@/features/seed/sample-author.ts"
 
 export type PitchBlockKind =
   | "about"
@@ -127,17 +130,17 @@ export function pitchHandle(name: string) {
     .replace(/^-+|-+$/g, "")
 }
 
-export function createPitchProfile(dev: DevProfile): PitchProfile {
-  const handle = pitchHandle(dev.name) || "you"
+export function createPitchProfile(author: SampleAuthor): PitchProfile {
+  const handle = pitchHandle(author.name) || "you"
 
   return {
-    name: dev.name,
-    legalName: dev.name,
+    name: author.name,
+    legalName: author.name,
     headline: "Aspiring product manager · UIT Information Systems",
     location: "HCMC · open to intern roles",
     slug: `openpath.app/u/${handle}`,
     status: "Open to associate PM & product intern roles · Summer 2026",
-    avatar: dev.avatarSrc,
+    avatar: author.avatarSrc,
     published: true,
     about: `I learn product by shipping small experiments — checkout UX studies, onboarding teardowns, and club-led discovery sprints.
 
@@ -150,7 +153,7 @@ I'm looking for a team that values evidence over slide decks. CV and case studie
 }
 
 export function getPitchProfile() {
-  return createPitchProfile(getDevProfile())
+  return createPitchProfile(SAMPLE_AUTHOR)
 }
 
 /** Vertical showcase order (Read.cv-style scan path). */
@@ -387,7 +390,7 @@ export function getPitchLinks(profile: PitchProfile): PitchLink[] {
     {
       id: "l3",
       label: "Email",
-      href: `mailto:${getDevProfile().email}`,
+      href: `mailto:${SAMPLE_AUTHOR.email}`,
       icon: "mail",
     },
   ]

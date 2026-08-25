@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { DEFAULT_DEV_PROFILE_NAME } from "@/features/app-shell/dev-profile.ts"
+import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 
 import {
   defaultCvData,
@@ -11,13 +11,13 @@ import { seedPaperDocs } from "./paper-data.ts"
 import { parseProofContent } from "./paper-proof-types.ts"
 
 describe("Paper seed documents", () => {
-  it("belong to the dev profile, not the demo persona", () => {
+  it("belong to the sample author, not the demo persona", () => {
     const docs = seedPaperDocs()
     const serialized = JSON.stringify(docs)
 
     expect(serialized).not.toMatch(/Eric Nguyen/i)
     expect(serialized).not.toMatch(/\bEric\b/)
-    expect(serialized).toContain(DEFAULT_DEV_PROFILE_NAME)
+    expect(serialized).toContain(SAMPLE_AUTHOR_NAME)
     expect(serialized).toContain("you@openpath.app")
   })
 
@@ -33,7 +33,7 @@ describe("Paper seed documents", () => {
     ])
     expect(docs.some((doc) => doc.status === "draft")).toBe(true)
     expect(docs.some((doc) => doc.status === "ready")).toBe(true)
-    expect(parseCvContent(docs[0]!.content).name).toBe(DEFAULT_DEV_PROFILE_NAME)
+    expect(parseCvContent(docs[0]!.content).name).toBe(SAMPLE_AUTHOR_NAME)
     expect(parseProofContent(docs[2]!.content).title).toMatch(/card resize/i)
   })
 

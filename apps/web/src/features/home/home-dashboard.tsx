@@ -1,7 +1,7 @@
 import { useState } from "react"
 
-import { getDevProfile } from "@/features/app-shell/dev-profile.ts"
 import { ThreadTopBar } from "@/features/home/thread-top-bar.tsx"
+import { authClient } from "@/lib/auth-client.ts"
 import { ThreadView } from "@/features/home/thread-view.tsx"
 import { Composer } from "@/features/home/composer.tsx"
 import { ConnectedApps } from "@/features/home/connected-apps.tsx"
@@ -10,6 +10,8 @@ import { HomeSuggestions } from "@/features/home/home-suggestions.tsx"
 import { useThreadStore } from "@/features/home/use-thread-store.ts"
 
 export function HomeDashboard() {
+  const { data } = authClient.useSession()
+  const name = data?.user.name?.trim() || "there"
   const { messages, thinking, send, newChat } = useThreadStore()
   const [draft, setDraft] = useState("")
   const started = messages.length > 0 || thinking
@@ -49,7 +51,7 @@ export function HomeDashboard() {
           <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-5">
             <header className="w-full text-center">
               <h1 className="font-[ui-serif,Georgia,Cambria,serif] text-3xl font-normal tracking-tight sm:text-4xl">
-                {homeGreeting(getDevProfile().name)}
+                {homeGreeting(name)}
               </h1>
             </header>
 

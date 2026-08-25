@@ -21,7 +21,7 @@ import {
   Share2,
 } from "lucide-react"
 
-import { profileInitials } from "@/features/app-shell/dev-profile.ts"
+import { profileInitials } from "@/features/app-shell/profile-display.ts"
 import { PitchGithubHeatmap } from "@/features/pitch/pitch-github-heatmap.tsx"
 import {
   getMockGithubProfile,

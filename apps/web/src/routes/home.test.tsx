@@ -1,37 +1,23 @@
-import { createElement } from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { RouterProvider, createMemoryHistory } from "@tanstack/react-router"
 import {
   cleanup,
   fireEvent,
-  render,
   screen,
   waitFor,
   within,
 } from "@testing-library/react"
 
-import { DEFAULT_DEV_PROFILE_NAME } from "@/features/app-shell/dev-profile.ts"
 import { SURFACE_COPY, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 import { SUGGESTION_POOLS } from "@/features/home/suggestions.ts"
-import { createAppRouter } from "@/router.tsx"
-
-function renderApp(initialEntry = SURFACE_PATHS.home) {
-  const router = createAppRouter({
-    history: createMemoryHistory({ initialEntries: [initialEntry] }),
-  })
-
-  return {
-    router,
-    ...render(createElement(RouterProvider, { router })),
-  }
-}
+import { renderApp } from "@/test/render-app.tsx"
 
 async function expectHomeIdle() {
   expect(
     await screen.findByRole("heading", {
       level: 1,
       name: new RegExp(
-        `^Good (morning|afternoon|evening), ${DEFAULT_DEV_PROFILE_NAME}$`
+        `^Good (morning|afternoon|evening), ${SAMPLE_AUTHOR_NAME}$`
       ),
     })
   ).toBeInTheDocument()
@@ -85,7 +71,7 @@ describe("Home idle", () => {
       screen.queryByRole("heading", {
         level: 1,
         name: new RegExp(
-          `^Good (morning|afternoon|evening), ${DEFAULT_DEV_PROFILE_NAME}$`
+          `^Good (morning|afternoon|evening), ${SAMPLE_AUTHOR_NAME}$`
         ),
       })
     ).not.toBeInTheDocument()
