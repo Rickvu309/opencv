@@ -85,13 +85,15 @@ export function PaperWorkspace() {
                 aria-label="Search documents"
               />
             </div>
-            <Button type="button" size="sm" variant="outline">
+            <Button type="button" size="sm" variant="outline" disabled>
               <Filter className="size-3.5" />
               Filter
+              <span className="text-muted-foreground"> · Coming soon</span>
             </Button>
-            <Button type="button" size="sm">
+            <Button type="button" size="sm" disabled>
               <Plus className="size-3.5" />
               New
+              <span className="text-muted-foreground"> · Coming soon</span>
             </Button>
           </div>
 
@@ -137,8 +139,10 @@ export function PaperWorkspace() {
                     <td className="px-4 py-3">
                       <button
                         type="button"
-                        className="text-muted-foreground hover:text-foreground"
-                        aria-label="Row menu"
+                        disabled
+                        title="Coming soon"
+                        className="text-muted-foreground disabled:opacity-50"
+                        aria-label="Row menu — coming soon"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <MoreHorizontal className="size-4" />

@@ -105,9 +105,16 @@ export function ApplyWorkspace() {
           />
         </div>
 
-        <Button type="button" size="sm" variant="outline" className="h-8">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="h-8"
+          disabled
+        >
           <Filter className="size-3.5" />
           Filter
+          <span className="text-muted-foreground"> · Coming soon</span>
         </Button>
 
         <div className="flex rounded-lg border border-border p-0.5">
@@ -141,9 +148,10 @@ export function ApplyWorkspace() {
           </button>
         </div>
 
-        <Button type="button" size="sm" className="h-8">
+        <Button type="button" size="sm" className="h-8" disabled>
           <Plus className="size-3.5" />
           Add job
+          <span className="text-muted-foreground"> · Coming soon</span>
         </Button>
       </header>
 
@@ -184,8 +192,10 @@ export function ApplyWorkspace() {
                       </span>
                       <button
                         type="button"
-                        className="ml-auto text-muted-foreground hover:text-foreground"
-                        aria-label={`${stage.label} column menu`}
+                        disabled
+                        title="Coming soon"
+                        className="ml-auto text-muted-foreground disabled:opacity-50"
+                        aria-label={`${stage.label} column menu — coming soon`}
                       >
                         <MoreHorizontal className="size-4" />
                       </button>

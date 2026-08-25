@@ -211,4 +211,27 @@ describe("Apply workspace", () => {
     expect(screen.queryByText("Associate PM intern")).not.toBeInTheDocument()
     expect(screen.queryByText("Business analyst intern")).not.toBeInTheDocument()
   })
+
+  it("marks unfinished chrome as coming soon instead of silent no-ops", async () => {
+    renderApply()
+    await expectApplyLive()
+
+    const filter = screen.getByRole("button", { name: /filter/i })
+    const add = screen.getByRole("button", { name: /add job/i })
+    expect(filter).toBeDisabled()
+    expect(add).toBeDisabled()
+    expect(filter).toHaveTextContent("Coming soon")
+    expect(add).toHaveTextContent("Coming soon")
+    expect(
+      screen.getByRole("button", { name: "Inbox column menu — coming soon" })
+    ).toBeDisabled()
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Associate PM intern/ })
+    )
+    const linkPaper = await screen.findByRole("button", {
+      name: "Link Paper docs — coming soon",
+    })
+    expect(linkPaper).toBeDisabled()
+  })
 })

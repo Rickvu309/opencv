@@ -75,7 +75,10 @@ export function JobDetailPanel({
             <ExternalLink className="size-3.5" />
           </ToolbarIconButton>
         ) : null}
-        <ToolbarIconButton label="Link Paper docs" onClick={() => undefined}>
+        <ToolbarIconButton
+          label="Link Paper docs — coming soon"
+          disabled
+        >
           <Link2 className="size-3.5" />
         </ToolbarIconButton>
         <ToolbarIconButton
@@ -239,21 +242,26 @@ function ToolbarIconButton({
   children,
   active,
   className,
+  disabled,
 }: {
   label: string
-  onClick: () => void
+  onClick?: () => void
   children: ReactNode
   active?: boolean
   className?: string
+  disabled?: boolean
 }) {
   return (
     <button
       type="button"
       aria-label={label}
       onClick={onClick}
+      disabled={disabled}
+      title={disabled ? "Coming soon" : undefined}
       className={cn(
         "flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
         active && "bg-muted text-foreground",
+        disabled && "pointer-events-none opacity-50",
         className
       )}
     >

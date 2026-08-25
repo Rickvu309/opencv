@@ -72,6 +72,21 @@ describe("Paper drive", () => {
     ).not.toBeInTheDocument()
   })
 
+  it("marks unfinished drive chrome as coming soon instead of silent no-ops", async () => {
+    renderPaper()
+    await expectPaperDrive()
+
+    const filter = screen.getByRole("button", { name: /filter/i })
+    const create = screen.getByRole("button", { name: /^new/i })
+    expect(filter).toBeDisabled()
+    expect(create).toBeDisabled()
+    expect(filter).toHaveTextContent("Coming soon")
+    expect(create).toHaveTextContent("Coming soon")
+    expect(
+      screen.getAllByRole("button", { name: "Row menu — coming soon" })[0]
+    ).toBeDisabled()
+  })
+
   it("opens a document and returns to the drive", async () => {
     renderPaper()
     await expectPaperDrive()
