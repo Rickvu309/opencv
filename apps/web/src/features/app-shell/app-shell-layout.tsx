@@ -8,7 +8,10 @@ import {
   searchThreadsFromHome,
 } from "@/features/app-shell/search-modal.tsx"
 import { SURFACE_PATHS, type SurfaceId } from "@/features/app-shell/surfaces.ts"
-import { useMediaQuery } from "@/features/app-shell/use-media-query.ts"
+import {
+  DESKTOP_MEDIA_QUERY,
+  useMediaQuery,
+} from "@/features/app-shell/use-media-query.ts"
 import { ThreadStoreProvider } from "@/features/home/thread-store.tsx"
 import { useThreadStore } from "@/features/home/use-thread-store.ts"
 
@@ -23,8 +26,8 @@ export function AppShellLayout() {
 function AppShellChrome() {
   const navigate = useNavigate()
   const { threads, newChat, openThread } = useThreadStore()
-  const isDesktop = useMediaQuery("(min-width: 768px)", true)
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const isDesktop = useMediaQuery(DESKTOP_MEDIA_QUERY, true)
+  const [sidebarOpen, setSidebarOpen] = useState(isDesktop)
   const [searchOpen, setSearchOpen] = useState(false)
 
   useEffect(() => {

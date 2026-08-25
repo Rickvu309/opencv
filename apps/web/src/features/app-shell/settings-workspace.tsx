@@ -8,7 +8,10 @@ import {
 
 import { AppsCatalog } from "@/features/app-shell/apps-catalog.tsx"
 import { getDevProfile } from "@/features/app-shell/dev-profile.ts"
-import { useMediaQuery } from "@/features/app-shell/use-media-query.ts"
+import {
+  DESKTOP_MEDIA_QUERY,
+  useMediaQuery,
+} from "@/features/app-shell/use-media-query.ts"
 import {
   SETTINGS_TAB_ITEMS,
   SURFACE_COPY,
@@ -27,7 +30,7 @@ export function SettingsWorkspace({
 }: SettingsWorkspaceProps) {
   const copy = SURFACE_COPY.settings
   const profile = getDevProfile()
-  const isDesktop = useMediaQuery("(min-width: 768px)", true)
+  const isDesktop = useMediaQuery(DESKTOP_MEDIA_QUERY, true)
 
   return (
     <div className="flex h-full min-h-0 flex-col">
