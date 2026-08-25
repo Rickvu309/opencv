@@ -1,10 +1,16 @@
 import {
+  appendCoachPart,
   COACH_SSE_EVENTS,
+  textFromParts,
   DEFAULT_THREAD_TITLE,
   THREAD_COMMANDS,
+  type CoachUsageRating,
+  type CommandEnvelope,
+  type ReversalDescriptor,
   type ThreadDetail,
   type ThreadListItem,
   type ThreadMessage,
+  type ThreadMessagePart,
   type ThreadMessageStatus,
 } from "@workspace/domain"
 import { vi } from "vitest"
@@ -22,10 +28,22 @@ export const DEFAULT_COACH_STREAM_REPLY = DEFAULT_COACH_STREAM_TEXTS.join("")
 
 export const DEFAULT_COACH_WORKED_MS = 1100
 
+export type CoachScriptPart =
+  | { kind: "text"; text: string }
+  | {
+      kind: "tool"
+      name: string
+      summary: string
+      ok: boolean
+      reversal?: ReversalDescriptor
+      result?: CommandEnvelope
+    }
+
 export type CoachStreamScript = {
   gated?: boolean
   delayMs?: number
   texts?: readonly string[]
+  parts?: readonly CoachScriptPart[]
   httpError?: { status: number; code: string; message: string }
   networkError?: boolean
   streamError?: string
@@ -120,11 +138,12 @@ function formatSse(event: string, data: unknown) {
 
 function persistCoach(
   thread: ThreadDetail,
-  text: string,
+  parts: ThreadMessagePart[],
   status: ThreadMessageStatus,
   workedMs = script.workedMs ?? DEFAULT_COACH_WORKED_MS
 ): ThreadMessage {
   const now = isoNow()
+  const text = textFromParts(parts)
   const message: ThreadMessage = {
     id: crypto.randomUUID(),
     role: "coach",
@@ -132,10 +151,20 @@ function persistCoach(
     createdAt: now,
     status,
     workedMs,
+    parts,
+    rating: null,
   }
   thread.messages.push(message)
   thread.updatedAt = now
   return message
+}
+
+function scriptedParts(): CoachScriptPart[] {
+  if (script.parts) return [...script.parts]
+  return (script.texts ?? DEFAULT_COACH_STREAM_TEXTS).map((text) => ({
+    kind: "text" as const,
+    text,
+  }))
 }
 
 async function waitForPermit(signal?: AbortSignal) {
@@ -179,7 +208,7 @@ async function waitDelay(ms: number, signal?: AbortSignal) {
 
 function coachStreamResponse(thread: ThreadDetail, signal?: AbortSignal) {
   const encoder = new TextEncoder()
-  const texts = script.texts ?? DEFAULT_COACH_STREAM_TEXTS
+  const partsToEmit = scriptedParts()
   const streamError = script.streamError
   const omitEnd = script.omitEnd === true
   const delayMs = script.delayMs ?? 0
@@ -187,7 +216,7 @@ function coachStreamResponse(thread: ThreadDetail, signal?: AbortSignal) {
 
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
-      let sentText = ""
+      let streamedParts: ThreadMessagePart[] = []
       let started = false
       let aborted = false
       let persisted = false
@@ -195,7 +224,7 @@ function coachStreamResponse(thread: ThreadDetail, signal?: AbortSignal) {
       const persistOnce = (status: ThreadMessageStatus) => {
         if (persisted) return undefined
         persisted = true
-        return persistCoach(thread, sentText, status)
+        return persistCoach(thread, streamedParts, status)
       }
 
       const emit = async (event: string, data: unknown) => {
@@ -207,15 +236,6 @@ function coachStreamResponse(thread: ThreadDetail, signal?: AbortSignal) {
         }
         controller.enqueue(encoder.encode(formatSse(event, data)))
         gate.emitted += 1
-        if (
-          event === COACH_SSE_EVENTS.textDelta &&
-          data &&
-          typeof data === "object" &&
-          "text" in data &&
-          typeof data.text === "string"
-        ) {
-          sentText += data.text
-        }
       }
 
       const onAbort = () => {
@@ -235,8 +255,50 @@ function coachStreamResponse(thread: ThreadDetail, signal?: AbortSignal) {
         if (aborted) return
         started = true
 
-        for (const text of texts) {
-          await emit(COACH_SSE_EVENTS.textDelta, { text })
+        for (const part of partsToEmit) {
+          if (part.kind === "text") {
+            streamedParts = appendCoachPart(streamedParts, {
+              type: "text-delta",
+              text: part.text,
+            })
+            await emit(COACH_SSE_EVENTS.textDelta, { text: part.text })
+          } else {
+            const toolCallId = crypto.randomUUID()
+            const result = part.result ?? {
+              ok: part.ok,
+              ...(part.ok
+                ? { data: {} }
+                : {
+                    error: {
+                      code: "NOT_FOUND",
+                      message: part.summary,
+                    },
+                  }),
+            }
+            await emit(COACH_SSE_EVENTS.toolCall, {
+              toolCallId,
+              name: part.name,
+              input: {},
+            })
+            if (aborted) break
+            streamedParts = appendCoachPart(streamedParts, {
+              type: "tool-result",
+              toolCallId,
+              name: part.name,
+              summary: part.summary,
+              ok: part.ok,
+              ...(part.reversal ? { reversal: part.reversal } : {}),
+              result,
+            })
+            await emit(COACH_SSE_EVENTS.toolResult, {
+              toolCallId,
+              name: part.name,
+              summary: part.summary,
+              ok: part.ok,
+              ...(part.reversal ? { reversal: part.reversal } : {}),
+              result,
+            })
+          }
           if (aborted) break
         }
 
@@ -362,6 +424,22 @@ export async function threadApiFetch(
     })
     thread.updatedAt = now
     return coachStreamResponse(thread, init?.signal ?? undefined)
+  }
+
+  const feedback =
+    /^\/api\/threads\/([^/]+)\/messages\/([^/]+)\/feedback$/.exec(path)
+  if (method === "POST" && feedback) {
+    const thread = store.threads.find((item) => item.id === feedback[1])
+    const message = thread?.messages.find((item) => item.id === feedback[2])
+    if (!thread || !message || message.role !== "coach") {
+      return jsonError(404, "NOT_FOUND", "Coach turn not found")
+    }
+    const body = (await readBody(init)) as { rating?: CoachUsageRating }
+    if (body.rating !== "up" && body.rating !== "down") {
+      return jsonError(400, "VALIDATION_ERROR", "Invalid rating")
+    }
+    message.rating = body.rating
+    return jsonOk({ messageId: message.id, rating: body.rating })
   }
 
   const detail = /^\/api\/threads\/([^/]+)$/.exec(path)

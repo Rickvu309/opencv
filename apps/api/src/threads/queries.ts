@@ -1,5 +1,6 @@
 import {
   ERROR_CODES,
+  type CoachUsageRating,
   type ThreadDetail,
   type ThreadListItem,
   type ThreadMessage,
@@ -9,7 +10,7 @@ import {
 import { desc, eq } from "drizzle-orm"
 
 import { CommandError, type AppDatabase } from "../commands/registry.js"
-import { threadMessages, threads } from "../db/schema.js"
+import { coachUsage, threadMessages, threads } from "../db/schema.js"
 
 function iso(value: Date) {
   return value.toISOString()
@@ -37,6 +38,7 @@ export function toThreadMessage(row: {
   parts?: ThreadMessagePart[] | null
   status?: ThreadMessageStatus | null
   workedMs?: number | null
+  rating?: CoachUsageRating | null
 }): ThreadMessage {
   const message: ThreadMessage = {
     id: row.id,
@@ -53,6 +55,9 @@ export function toThreadMessage(row: {
   }
   if (row.workedMs != null) {
     message.workedMs = row.workedMs
+  }
+  if (row.rating !== undefined) {
+    message.rating = row.rating
   }
 
   return message
@@ -107,8 +112,28 @@ export async function getThreadDetail(
     .where(eq(threadMessages.threadId, thread.id))
     .orderBy(threadMessages.createdAt, threadMessages.id)
 
+  const usageRows = await db
+    .select({
+      messageId: coachUsage.messageId,
+      rating: coachUsage.rating,
+    })
+    .from(coachUsage)
+    .where(eq(coachUsage.threadId, thread.id))
+
+  const ratings = new Map<string, CoachUsageRating | null>()
+  for (const row of usageRows) {
+    if (row.messageId) {
+      ratings.set(row.messageId, row.rating ?? null)
+    }
+  }
+
   return {
     ...toThreadListItem(thread),
-    messages: messages.map(toThreadMessage),
+    messages: messages.map((row: (typeof messages)[number]) =>
+      toThreadMessage({
+        ...row,
+        rating: ratings.has(row.id) ? (ratings.get(row.id) ?? null) : undefined,
+      })
+    ),
   }
 }

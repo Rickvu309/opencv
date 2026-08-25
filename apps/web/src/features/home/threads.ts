@@ -1,4 +1,8 @@
-import type { ThreadMessageStatus } from "@workspace/domain"
+import type {
+  CoachUsageRating,
+  ThreadMessagePart,
+  ThreadMessageStatus,
+} from "@workspace/domain"
 
 export const HISTORY_PREVIEW_COUNT = 4
 
@@ -12,6 +16,8 @@ export type HomeMessage = {
   text: string
   workedMs?: number
   status?: ThreadMessageStatus
+  parts?: ThreadMessagePart[]
+  rating?: CoachUsageRating | null
   failed?: boolean
   error?: string
 }
@@ -29,6 +35,8 @@ export function toHomeMessages(
     text: string
     workedMs?: number
     status?: ThreadMessageStatus
+    parts?: ThreadMessagePart[]
+    rating?: CoachUsageRating | null
   }>
 ): HomeMessage[] {
   return messages.map((message) => ({
@@ -37,5 +45,7 @@ export function toHomeMessages(
     text: message.text,
     ...(message.workedMs != null ? { workedMs: message.workedMs } : {}),
     ...(message.status ? { status: message.status } : {}),
+    ...(message.parts ? { parts: message.parts } : {}),
+    ...(message.rating !== undefined ? { rating: message.rating } : {}),
   }))
 }

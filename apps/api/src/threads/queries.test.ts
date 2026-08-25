@@ -81,6 +81,33 @@ describe("toThreadMessage", () => {
       workedMs: 1400,
     })
   })
+
+  it("includes a null rating when a usage row exists and omits it otherwise", () => {
+    expect(
+      toThreadMessage({
+        id: "m3",
+        role: "coach",
+        text: "Done.",
+        createdAt: new Date("2026-08-25T00:00:02.000Z"),
+        rating: null,
+      })
+    ).toEqual({
+      id: "m3",
+      role: "coach",
+      text: "Done.",
+      createdAt: "2026-08-25T00:00:02.000Z",
+      rating: null,
+    })
+    expect(
+      toThreadMessage({
+        id: "m4",
+        role: "coach",
+        text: "Done.",
+        createdAt: new Date("2026-08-25T00:00:03.000Z"),
+        rating: "up",
+      }).rating
+    ).toBe("up")
+  })
 })
 
 describe("thread detail optional coach fields", () => {

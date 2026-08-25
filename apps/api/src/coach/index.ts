@@ -19,6 +19,7 @@ export { createCoachRoutes } from "./http.js"
 export {
   countCoachTurnsSince,
   countCoachTurnsToday,
+  rateCoachTurn,
   startOfUtcDay,
 } from "./usage.js"
 export { coachRuntimeFromConfig } from "./bind.js"

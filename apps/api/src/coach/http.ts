@@ -3,6 +3,7 @@ import {
   authUnavailableEnvelope,
   COACH_SSE_EVENTS,
   COACH_SSE_HEARTBEAT_MS,
+  coachFeedbackInputSchema,
   coachLimitReachedEnvelope,
   coachUnavailableEnvelope,
   DEFAULT_COACH_DAILY_TURN_LIMIT,
@@ -10,9 +11,11 @@ import {
   ERROR_CODES,
   errorEnvelope,
   httpStatusForError,
+  successEnvelope,
   textFromParts,
   THREAD_COMMANDS,
   threadIdSchema,
+  threadMessageIdSchema,
   threadsPostMessageInputSchema,
   unauthorizedEnvelope,
   type CoachRuntime,
@@ -41,7 +44,7 @@ import { jsonWithStatus } from "../http-json.js"
 import { createId } from "../id.js"
 import { readSession } from "../session.js"
 import { getOwnedThread, toThreadMessage } from "../threads/queries.js"
-import { countCoachTurnsToday } from "./usage.js"
+import { countCoachTurnsToday, rateCoachTurn } from "./usage.js"
 
 export type CoachRouteOptions = {
   auth?: Auth
@@ -164,6 +167,74 @@ export function createCoachRoutes({
         signal: c.req.raw.signal,
       })
     })
+  })
+
+  routes.post("/:id/messages/:messageId/feedback", async (c) => {
+    if (!auth || !db) {
+      return c.json(authUnavailableEnvelope(), 503)
+    }
+
+    const session = await readSession(auth, c)
+    if (!session) {
+      return c.json(unauthorizedEnvelope(), 401)
+    }
+
+    const threadIdParsed = threadIdSchema.safeParse(c.req.param("id"))
+    const messageIdParsed = threadMessageIdSchema.safeParse(
+      c.req.param("messageId")
+    )
+    if (!threadIdParsed.success || !messageIdParsed.success) {
+      return jsonWithStatus(
+        c,
+        errorEnvelope(ERROR_CODES.VALIDATION_ERROR, "Invalid id"),
+        httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
+      )
+    }
+
+    let body: unknown
+    try {
+      const text = await c.req.text()
+      body = text.trim() === "" ? {} : JSON.parse(text)
+    } catch {
+      return jsonWithStatus(
+        c,
+        errorEnvelope(
+          ERROR_CODES.VALIDATION_ERROR,
+          "Request body must be JSON"
+        ),
+        httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
+      )
+    }
+
+    const parsed = coachFeedbackInputSchema.safeParse(body)
+    if (!parsed.success) {
+      return jsonWithStatus(
+        c,
+        errorEnvelope(ERROR_CODES.VALIDATION_ERROR, "Invalid rating"),
+        httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
+      )
+    }
+
+    try {
+      await getOwnedThread(db, session.user.id, threadIdParsed.data)
+      const result = await rateCoachTurn(
+        db,
+        session.user.id,
+        threadIdParsed.data,
+        messageIdParsed.data,
+        parsed.data.rating
+      )
+      return c.json(successEnvelope(result))
+    } catch (error) {
+      if (error instanceof CommandError) {
+        return jsonWithStatus(
+          c,
+          errorEnvelope(error.code, error.message),
+          error.status
+        )
+      }
+      throw error
+    }
   })
 
   return routes
@@ -403,7 +474,7 @@ async function persistCoachTurn({
     })
   })
 
-  return toThreadMessage(row)
+  return toThreadMessage({ ...row, rating: null })
 }
 
 function isDisconnected(stream: SSEStreamingApi, signal?: AbortSignal) {
