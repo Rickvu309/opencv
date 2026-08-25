@@ -123,6 +123,25 @@ describe("coach tool surface", () => {
     )
   })
 
+  it("executes a mutation through the registry with a coach actor", async () => {
+    const tools = assembleCoachTools({ db, userId: ownerId })
+
+    const created = expectOk<ThreadListItem>(
+      await tools.threads_create.execute({ title: "Tool-built Thread" })
+    )
+    expect(created.title).toBe("Tool-built Thread")
+
+    const renamed = expectOk<ThreadListItem>(
+      await tools.threads_rename.execute({
+        threadId: created.id,
+        title: "Tool-renamed Thread",
+      })
+    )
+    expect(renamed).toEqual(
+      expect.objectContaining({ id: created.id, title: "Tool-renamed Thread" })
+    )
+  })
+
   it("returns error envelopes on bad tool input rather than throwing", async () => {
     const tools = assembleCoachTools({ db, userId: ownerId })
 
