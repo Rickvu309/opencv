@@ -96,5 +96,23 @@ describe("CORS", () => {
     expect(res.headers.get("access-control-allow-origin")).toBe(
       "https://openpath-app.vercel.app"
     )
+    expect(res.headers.get("access-control-allow-credentials")).toBe("true")
+  })
+
+  it("echoes credentials on an allowed origin and still refuses an unlisted one", async () => {
+    const api = createApp({ webOrigins: ["https://openpath-app.vercel.app"] })
+
+    const allowed = await api.request("/health", {
+      headers: { Origin: "https://openpath-app.vercel.app" },
+    })
+    expect(allowed.headers.get("access-control-allow-origin")).toBe(
+      "https://openpath-app.vercel.app"
+    )
+    expect(allowed.headers.get("access-control-allow-credentials")).toBe("true")
+
+    const refused = await api.request("/health", {
+      headers: { Origin: "https://attacker.example.com" },
+    })
+    expect(refused.headers.get("access-control-allow-origin")).toBeNull()
   })
 })
