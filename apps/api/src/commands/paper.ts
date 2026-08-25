@@ -41,6 +41,7 @@ function requireContent(
 
 export const createPaperDocCommand = defineCommand({
   name: PAPER_COMMANDS.createDoc,
+  description: "Create a new Paper document: a CV, Letter, or Proof.",
   input: paperCreateDocInputSchema,
   coachAllowed: true,
   destructive: false,
@@ -76,6 +77,8 @@ export const createPaperDocCommand = defineCommand({
 
 export const updatePaperContentCommand = defineCommand({
   name: PAPER_COMMANDS.updateContent,
+  description:
+    "Replace the full content of a Paper document. Send the complete document for the current content version.",
   input: paperUpdateContentInputSchema,
   coachAllowed: true,
   destructive: false,
@@ -117,6 +120,7 @@ export const updatePaperContentCommand = defineCommand({
 
 export const renamePaperDocCommand = defineCommand({
   name: PAPER_COMMANDS.renameDoc,
+  description: "Rename a Paper document.",
   input: paperRenameDocInputSchema,
   coachAllowed: true,
   destructive: false,
@@ -148,6 +152,8 @@ export const renamePaperDocCommand = defineCommand({
 
 export const setPaperStatusCommand = defineCommand({
   name: PAPER_COMMANDS.setStatus,
+  description:
+    "Set a Paper document's status to draft, ready, or published.",
   input: paperSetStatusInputSchema,
   coachAllowed: true,
   destructive: false,
@@ -179,6 +185,8 @@ export const setPaperStatusCommand = defineCommand({
 
 export const linkPaperApplyCardCommand = defineCommand({
   name: PAPER_COMMANDS.linkApplyCard,
+  description:
+    "Link a Paper document to an Apply card, or unlink it by passing null.",
   input: paperLinkApplyCardInputSchema,
   coachAllowed: true,
   destructive: false,
@@ -214,6 +222,8 @@ export const linkPaperApplyCardCommand = defineCommand({
 
 export const deletePaperDocCommand = defineCommand({
   name: PAPER_COMMANDS.deleteDoc,
+  description:
+    "Permanently delete a Paper document. The Coach cannot run this.",
   input: paperDeleteDocInputSchema,
   coachAllowed: false,
   destructive: true,

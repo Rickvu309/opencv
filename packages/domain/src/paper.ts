@@ -78,6 +78,14 @@ export const paperLinkApplyCardInputSchema = z
   })
   .strict()
 
+export const paperListDocsInputSchema = z.object({}).strict()
+
+export const paperGetDocInputSchema = z
+  .object({
+    docId: paperDocIdSchema,
+  })
+  .strict()
+
 export type PaperContentKind = z.infer<typeof paperContentKindSchema>
 export type PaperDocStatus = z.infer<typeof paperDocStatusSchema>
 export type PaperCreateDocInput = z.infer<typeof paperCreateDocInputSchema>
@@ -90,6 +98,8 @@ export type PaperDeleteDocInput = z.infer<typeof paperDeleteDocInputSchema>
 export type PaperLinkApplyCardInput = z.infer<
   typeof paperLinkApplyCardInputSchema
 >
+export type PaperListDocsInput = z.infer<typeof paperListDocsInputSchema>
+export type PaperGetDocInput = z.infer<typeof paperGetDocInputSchema>
 
 export type PaperDocDeleted = {
   id: string
