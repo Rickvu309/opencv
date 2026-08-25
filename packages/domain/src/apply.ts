@@ -110,6 +110,8 @@ export const applyDeleteCardInputSchema = z
   })
   .strict()
 
+export const applyListCardsInputSchema = z.object({}).strict()
+
 export type ApplyStage = z.infer<typeof applyStageSchema>
 export type ApplyTrackKind = z.infer<typeof applyTrackKindSchema>
 export type ApplyCreateCardInput = z.infer<typeof applyCreateCardInputSchema>
@@ -117,6 +119,7 @@ export type ApplyUpdateCardInput = z.infer<typeof applyUpdateCardInputSchema>
 export type ApplyMoveCardInput = z.infer<typeof applyMoveCardInputSchema>
 export type ApplyToggleStarInput = z.infer<typeof applyToggleStarInputSchema>
 export type ApplyDeleteCardInput = z.infer<typeof applyDeleteCardInputSchema>
+export type ApplyListCardsInput = z.infer<typeof applyListCardsInputSchema>
 
 export type ApplyCardDeleted = {
   id: string

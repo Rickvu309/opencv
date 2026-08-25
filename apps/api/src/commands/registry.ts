@@ -28,6 +28,8 @@ type InputSchema<TInput> = {
 
 export type CommandDefinition<TInput, TOutput> = {
   name: string
+  /** Human description for the Coach tool surface (ADR-0007). */
+  description: string
   input: InputSchema<TInput>
   coachAllowed: boolean
   destructive: boolean
