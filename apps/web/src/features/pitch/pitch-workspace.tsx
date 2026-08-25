@@ -88,7 +88,7 @@ export function PitchWorkspace() {
     try {
       await navigator.clipboard.writeText(`https://${profile.slug}`)
     } catch {
-      /* clipboard blocked */
+      return
     }
     setCopied(true)
     window.setTimeout(() => setCopied(false), 2000)

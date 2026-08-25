@@ -1,6 +1,6 @@
 import { createElement } from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 
 import { DEFAULT_DEV_PROFILE_NAME } from "@/features/app-shell/dev-profile.ts"
 import { SURFACE_COPY } from "@/features/app-shell/surfaces.ts"
@@ -107,5 +107,38 @@ describe("Pitch workspace", () => {
       screen.getByRole("heading", { level: 1, name: DEFAULT_DEV_PROFILE_NAME })
     ).toBeInTheDocument()
     expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it("only claims Copy link succeeded when the clipboard write works", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    vi.stubGlobal("navigator", {
+      ...navigator,
+      clipboard: { writeText },
+    })
+
+    renderPitch()
+    fireEvent.click(screen.getByRole("button", { name: "Copy link" }))
+
+    expect(await screen.findByRole("button", { name: "Copied" })).toBeInTheDocument()
+    expect(writeText).toHaveBeenCalledWith(
+      `https://${getPitchProfile().slug}`
+    )
+  })
+
+  it("does not show Copied when the clipboard write fails", async () => {
+    const writeText = vi.fn().mockRejectedValue(new Error("blocked"))
+    vi.stubGlobal("navigator", {
+      ...navigator,
+      clipboard: { writeText },
+    })
+
+    renderPitch()
+    fireEvent.click(screen.getByRole("button", { name: "Copy link" }))
+
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalled()
+    })
+    expect(screen.getByRole("button", { name: "Copy link" })).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Copied" })).not.toBeInTheDocument()
   })
 })
