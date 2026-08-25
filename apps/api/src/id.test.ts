@@ -15,4 +15,10 @@ describe("createId", () => {
     const later = createId(1_700_000_000_100)
     expect(earlier < later).toBe(true)
   })
+
+  it("keeps same-millisecond ids ordered by call sequence", () => {
+    const first = createId(1_700_000_001_000)
+    const second = createId(1_700_000_001_000)
+    expect(first < second).toBe(true)
+  })
 })

@@ -117,19 +117,20 @@ export const postMessageCommand = defineCommand({
     await getOwnedThread(ctx.db, ctx.actor.userId, input.threadId)
 
     const now = new Date()
+    const replyAt = new Date(now.getTime() + 1)
     const userMessage = {
-      id: createId(),
+      id: createId(now.getTime()),
       threadId: input.threadId,
       role: "user" as const,
       text: input.text,
       createdAt: now,
     }
     const coachMessage = {
-      id: createId(),
+      id: createId(replyAt.getTime()),
       threadId: input.threadId,
       role: "coach" as const,
       text: STUB_COACH_REPLY,
-      createdAt: now,
+      createdAt: replyAt,
     }
 
     await ctx.db.transaction(async (tx: AppDatabase) => {
