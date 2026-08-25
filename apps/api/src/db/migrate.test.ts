@@ -39,6 +39,7 @@ describe("committed migrations", () => {
 
       expect(tables.rows.map((row) => row.table_name)).toEqual([
         "account",
+        "apply_cards",
         "paper_docs",
         "session",
         "thread_messages",

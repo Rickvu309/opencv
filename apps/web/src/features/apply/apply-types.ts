@@ -1,21 +1,12 @@
-export type StageId = "inbox" | "prep" | "sent" | "live" | "closed"
+import type {
+  ApplyCard,
+  ApplyStage,
+  ApplyTrackKind,
+} from "@workspace/domain"
 
-export type TrackKind = "interview" | "deadline" | "followup" | "applied"
-
-export type ApplyCard = {
-  id: string
-  title: string
-  company: string
-  companyShort: string
-  fit: number
-  note: string
-  stage: StageId
-  starred?: boolean
-  updated: string
-  jobUrl?: string
-  trackDate: string
-  trackKind: TrackKind
-}
+export type { ApplyCard }
+export type StageId = ApplyStage
+export type TrackKind = ApplyTrackKind
 
 export const STAGES: { id: StageId; label: string; dot: string }[] = [
   { id: "inbox", label: "Inbox", dot: "bg-muted-foreground/40" },
@@ -27,76 +18,63 @@ export const STAGES: { id: StageId; label: string; dot: string }[] = [
 
 export const APPLY_DRAG_TYPE = "application/x-openpath-apply-card"
 
-/**
- * Seed Apply cards for the placeholder User (dev profile).
- * Never the "Eric Nguyen" demo persona (PRODUCT.md open question 4).
- * `fit` stays on the shape for when PRODUCT.md open q. 1 is decided;
- * the workspace does not render the number.
- */
-export const SEED_CARDS: ApplyCard[] = [
-  {
-    id: "1",
-    title: "Associate PM intern",
-    company: "Local startup",
-    companyShort: "LS",
-    fit: 68,
-    note: "JD wants discovery notes + 1 shipped experiment.",
-    stage: "inbox",
-    starred: true,
-    updated: "Updated today",
-    jobUrl: "https://jobs.example.com/associate-pm-intern",
-    trackDate: "2026-08-26",
-    trackKind: "followup",
-  },
-  {
-    id: "2",
-    title: "Product intern",
-    company: "Fintech scale-up",
-    companyShort: "FS",
-    fit: 74,
-    note: "Interview Thu, prep onboarding Proof.",
-    stage: "inbox",
-    updated: "Updated today",
-    trackDate: "2026-08-26",
-    trackKind: "interview",
-  },
-  {
-    id: "3",
-    title: "Business analyst intern",
-    company: "Regional bank",
-    companyShort: "RB",
-    fit: 61,
-    note: "Emphasize SQL + flow mapping.",
-    stage: "prep",
-    updated: "Updated yesterday",
-    trackDate: "2026-08-15",
-    trackKind: "followup",
-  },
-  {
-    id: "4",
-    title: "Product analyst intern",
-    company: "E-commerce co.",
-    companyShort: "EC",
-    fit: 79,
-    note: "Checkout Proof is a strong hook.",
-    stage: "sent",
-    updated: "Updated Mon",
-    trackDate: "2026-08-20",
-    trackKind: "applied",
-  },
-  {
-    id: "5",
-    title: "UX research intern",
-    company: "Agency",
-    companyShort: "AG",
-    fit: 48,
-    note: "Passed, need more research samples.",
-    stage: "closed",
-    updated: "Updated last week",
-    trackDate: "2026-08-10",
-    trackKind: "applied",
-  },
-]
+const STAGE_ORDER: Record<StageId, number> = {
+  inbox: 0,
+  prep: 1,
+  sent: 2,
+  live: 3,
+  closed: 4,
+}
+
+export function sortApplyCards(cards: ApplyCard[]): ApplyCard[] {
+  return [...cards].sort((a, b) => {
+    const stage = STAGE_ORDER[a.stage] - STAGE_ORDER[b.stage]
+    if (stage !== 0) return stage
+    if (a.position !== b.position) return a.position < b.position ? -1 : 1
+    return a.id < b.id ? -1 : a.id > b.id ? 1 : 0
+  })
+}
+
+export function companyShort(company: string) {
+  const words = company.trim().split(/\s+/).filter(Boolean)
+  if (words.length === 0) return "?"
+  if (words.length === 1) return words[0]!.slice(0, 2).toUpperCase()
+  return `${words[0]![0]}${words[1]![0]}`.toUpperCase()
+}
+
+export function formatApplyUpdated(iso: string, now = Date.now()): string {
+  const then = Date.parse(iso)
+  if (Number.isNaN(then)) return iso
+
+  const deltaMs = now - then
+  if (deltaMs < 45_000) return "Updated just now"
+  if (deltaMs < 50 * 60_000) {
+    const minutes = Math.max(1, Math.round(deltaMs / 60_000))
+    return minutes === 1 ? "Updated 1 minute ago" : `Updated ${minutes} minutes ago`
+  }
+
+  const today = new Date(now)
+  const date = new Date(then)
+  const startOfToday = Date.UTC(
+    today.getUTCFullYear(),
+    today.getUTCMonth(),
+    today.getUTCDate()
+  )
+  const startOfThen = Date.UTC(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate()
+  )
+  const dayDiff = Math.round((startOfToday - startOfThen) / 86_400_000)
+  if (dayDiff === 0) return "Updated today"
+  if (dayDiff === 1) return "Updated yesterday"
+
+  return `Updated ${date.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  })}`
+}
 
 export function formatTrackDate(iso: string) {
   const d = new Date(`${iso}T12:00:00`)

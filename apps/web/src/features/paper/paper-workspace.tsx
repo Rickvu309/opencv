@@ -27,6 +27,8 @@ import type {
 } from "@workspace/domain"
 import { Filter, MoreHorizontal, Plus, Search } from "lucide-react"
 
+import { useApplyCards } from "@/features/apply/use-apply-cards.ts"
+
 import { TYPE_LABEL, formatPaperUpdated, paperSummary } from "./paper-data.ts"
 import { PaperEditor } from "./paper-editor.tsx"
 import { usePaperDocs } from "./use-paper-docs.ts"
@@ -43,11 +45,13 @@ function statusLabel(status: PaperDocStatus) {
 
 export function PaperWorkspace() {
   const paper = usePaperDocs()
+  const apply = useApplyCards()
   const [query, setQuery] = useState("")
   const [openDocId, setOpenDocId] = useState<string | null>(null)
   const [renameTarget, setRenameTarget] = useState<PaperDoc | null>(null)
   const [renameValue, setRenameValue] = useState("")
   const [deleteTarget, setDeleteTarget] = useState<PaperDoc | null>(null)
+  const [linkTarget, setLinkTarget] = useState<PaperDoc | null>(null)
 
   const openDoc = openDocId
     ? (paper.docs.find((doc) => doc.id === openDocId) ?? null)
@@ -170,6 +174,68 @@ export function PaperWorkspace() {
               onClick={() => void confirmDelete()}
             >
               Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(linkTarget)}
+        onOpenChange={(open) => {
+          if (!open) setLinkTarget(null)
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Link to Apply</DialogTitle>
+            <DialogDescription>
+              Connect this document to an Opportunity card, or remove the link.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-1">
+            {apply.cards.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No Apply cards yet.
+              </p>
+            ) : (
+              apply.cards.map((card) => (
+                <Button
+                  key={card.id}
+                  type="button"
+                  variant={
+                    linkTarget?.applyCardId === card.id ? "secondary" : "ghost"
+                  }
+                  className="justify-start"
+                  onClick={() => {
+                    if (!linkTarget) return
+                    paper.linkApplyCard(linkTarget.id, card.id)
+                    setLinkTarget(null)
+                  }}
+                >
+                  {card.company} · {card.title}
+                </Button>
+              ))
+            )}
+          </div>
+          <DialogFooter>
+            {linkTarget?.applyCardId ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  paper.linkApplyCard(linkTarget.id, null)
+                  setLinkTarget(null)
+                }}
+              >
+                Unlink
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setLinkTarget(null)}
+            >
+              Cancel
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -312,12 +378,16 @@ export function PaperWorkspace() {
                       <td className="px-4 py-3 text-muted-foreground">
                         {formatPaperUpdated(doc.updatedAt)}
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground">—</td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {apply.cards.find((card) => card.id === doc.applyCardId)
+                          ?.company ?? "—"}
+                      </td>
                       <td className="px-4 py-3">
                         <RowMenu
                           doc={doc}
                           onRename={() => openRename(doc)}
                           onStatus={(status) => paper.setStatus(doc.id, status)}
+                          onLink={() => setLinkTarget(doc)}
                           onDelete={() => setDeleteTarget(doc)}
                         />
                       </td>
@@ -338,11 +408,13 @@ function RowMenu({
   doc,
   onRename,
   onStatus,
+  onLink,
   onDelete,
 }: {
   doc: PaperDoc
   onRename: () => void
   onStatus: (status: PaperDocStatus) => void
+  onLink: () => void
   onDelete: () => void
 }) {
   return (
@@ -366,6 +438,14 @@ function RowMenu({
           }}
         >
           Rename
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={(e) => {
+            e.stopPropagation()
+            onLink()
+          }}
+        >
+          {doc.applyCardId ? "Change Apply link" : "Link to Apply"}
         </DropdownMenuItem>
         {STATUSES.map((status) => (
           <DropdownMenuItem

@@ -15,6 +15,7 @@ export function toPaperDoc(row: {
   status: "draft" | "ready" | "published"
   content: unknown
   contentVersion: number
+  applyCardId: string | null
   createdAt: Date
   updatedAt: Date
 }): PaperDoc {
@@ -25,6 +26,7 @@ export function toPaperDoc(row: {
     status: row.status,
     content: row.content,
     contentVersion: row.contentVersion,
+    applyCardId: row.applyCardId,
     createdAt: iso(row.createdAt),
     updatedAt: iso(row.updatedAt),
   }

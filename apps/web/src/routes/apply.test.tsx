@@ -3,12 +3,19 @@ import {
   cleanup,
   fireEvent,
   screen,
+  waitFor,
   within,
 } from "@testing-library/react"
 
-import { APPLY_DRAG_TYPE, SEED_CARDS } from "@/features/apply/apply-types.ts"
+import { APPLY_DRAG_TYPE } from "@/features/apply/apply-types.ts"
 import { SURFACE_COPY, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { sampleApplyCards } from "@/test/apply-fixtures.ts"
 import { renderApp } from "@/test/render-app.tsx"
+
+const SAMPLE_CARDS = sampleApplyCards()
+const ANALYST_ID = SAMPLE_CARDS.find(
+  (card) => card.title === "Business analyst intern"
+)!.id
 
 function renderApply() {
   return renderApp(SURFACE_PATHS.apply)
@@ -20,7 +27,7 @@ async function expectApplyLive() {
   ).toBeInTheDocument()
   expect(screen.getByRole("button", { name: "Board" })).toBeInTheDocument()
   expect(screen.getByRole("button", { name: "Calendar" })).toBeInTheDocument()
-  expect(screen.getByText("Inbox")).toBeInTheDocument()
+  expect(await screen.findByText("Inbox")).toBeInTheDocument()
   expect(screen.getByText("Prep")).toBeInTheDocument()
   expect(screen.getByText("Sent")).toBeInTheDocument()
   expect(screen.getByText("Live")).toBeInTheDocument()
@@ -70,16 +77,23 @@ function dragCardToStage(cardName: string, stageId: string) {
   return dataTransfer
 }
 
+function dragCardOntoCard(sourceName: string, targetName: string) {
+  const source = screen.getByRole("button", { name: new RegExp(sourceName) })
+  const target = screen.getByRole("button", { name: new RegExp(targetName) })
+  const dataTransfer = createDataTransfer()
+  fireEvent.dragStart(source, { dataTransfer })
+  fireEvent.drag(source, { dataTransfer })
+  fireEvent.dragOver(target, { dataTransfer })
+  fireEvent.drop(target, { dataTransfer })
+  fireEvent.dragEnd(source, { dataTransfer })
+}
+
 function expectNoVisibleFitScore() {
   expect(screen.queryByText(/Fit score/i)).not.toBeInTheDocument()
   expect(screen.queryByText("/ 100")).not.toBeInTheDocument()
   expect(screen.queryByLabelText(/fit/i)).not.toBeInTheDocument()
   expect(screen.queryByRole("spinbutton")).not.toBeInTheDocument()
-  for (const card of SEED_CARDS) {
-    expect(
-      screen.queryByDisplayValue(String(card.fit))
-    ).not.toBeInTheDocument()
-  }
+  expect(document.body.textContent).not.toMatch(/\b(48|61|68|74|79)\b/)
 }
 
 beforeEach(() => {
@@ -92,7 +106,7 @@ afterEach(() => {
 })
 
 describe("Apply workspace", () => {
-  it("renders Stages and seed cards instead of the stub", async () => {
+  it("renders Stages and server cards instead of the stub", async () => {
     renderApply()
     await expectApplyLive()
     expect(
@@ -120,17 +134,34 @@ describe("Apply workspace", () => {
     await expectApplyLive()
 
     const dataTransfer = dragCardToStage("Business analyst intern", "sent")
-    expect(dataTransfer.getData(APPLY_DRAG_TYPE)).toBe("3")
+    expect(dataTransfer.getData(APPLY_DRAG_TYPE)).toBe(ANALYST_ID)
 
-    expect(
-      within(stageColumn("sent")).getByText("Business analyst intern")
-    ).toBeInTheDocument()
+    await waitFor(() => {
+      expect(
+        within(stageColumn("sent")).getByText("Business analyst intern")
+      ).toBeInTheDocument()
+    })
     expect(
       within(stageColumn("prep")).queryByText("Business analyst intern")
     ).not.toBeInTheDocument()
     expect(
       within(stageColumn("sent")).getByText("Product analyst intern")
     ).toBeInTheDocument()
+  })
+
+  it("reorders a card within a Stage", async () => {
+    renderApply()
+    await expectApplyLive()
+
+    dragCardOntoCard("Product intern", "Associate PM intern")
+
+    await waitFor(() => {
+      const titles = [
+        ...stageColumn("inbox").querySelectorAll("[data-card-id]"),
+      ].map((node) => node.getAttribute("aria-label"))
+      expect(titles[0]).toMatch(/Product intern/)
+      expect(titles[1]).toMatch(/Associate PM intern/)
+    })
   })
 
   it("opens job detail from a card without showing Fit", async () => {
@@ -202,16 +233,16 @@ describe("Apply workspace", () => {
     expect(screen.queryByText("Business analyst intern")).not.toBeInTheDocument()
   })
 
-  it("marks unfinished chrome as coming soon instead of silent no-ops", async () => {
+  it("marks unfinished chrome as coming soon and enables Add job", async () => {
     renderApply()
     await expectApplyLive()
 
     const filter = screen.getByRole("button", { name: /filter/i })
     const add = screen.getByRole("button", { name: /add job/i })
     expect(filter).toBeDisabled()
-    expect(add).toBeDisabled()
+    expect(add).toBeEnabled()
     expect(filter).toHaveTextContent("Coming soon")
-    expect(add).toHaveTextContent("Coming soon")
+    expect(add).not.toHaveTextContent("Coming soon")
     expect(
       screen.getByRole("button", { name: "Inbox column menu — coming soon" })
     ).toBeDisabled()
@@ -219,9 +250,49 @@ describe("Apply workspace", () => {
     fireEvent.click(
       screen.getByRole("button", { name: /Associate PM intern/ })
     )
-    const linkPaper = await screen.findByRole("button", {
-      name: "Link Paper docs — coming soon",
+    expect(
+      await screen.findByRole("button", { name: "Link Paper docs" })
+    ).toBeEnabled()
+  })
+
+  it("creates a job and links a Paper doc from job detail", async () => {
+    renderApply()
+    await expectApplyLive()
+
+    fireEvent.click(screen.getByRole("button", { name: /add job/i }))
+    const panel = await screen.findByRole("complementary", {
+      name: "Job detail",
     })
-    expect(linkPaper).toBeDisabled()
+    expect(within(panel).getByDisplayValue("Untitled role")).toBeInTheDocument()
+
+    fireEvent.click(within(panel).getByRole("button", { name: "Link Paper docs" }))
+    const menu = await screen.findByRole("menu", { name: "Link Paper docs" })
+    fireEvent.click(within(menu).getByRole("menuitemcheckbox", { name: /PM track CV/ }))
+    expect(
+      await within(menu).findByRole("menuitemcheckbox", { name: /PM track CV/ })
+    ).toHaveAttribute("aria-checked", "true")
+  })
+
+  it("rolls a failed move back and shows the real error message", async () => {
+    const { failNextApplyCommand } = await import("@/test/apply-api-mock.ts")
+    const { APPLY_COMMANDS } = await import("@workspace/domain")
+    failNextApplyCommand(APPLY_COMMANDS.moveCard, "Column is locked")
+
+    renderApply()
+    await expectApplyLive()
+
+    dragCardToStage("Business analyst intern", "sent")
+
+    expect(
+      await screen.findByRole("alert", {}, { timeout: 2000 })
+    ).toHaveTextContent("Column is locked")
+    await waitFor(() => {
+      expect(
+        within(stageColumn("prep")).getByText("Business analyst intern")
+      ).toBeInTheDocument()
+    })
+    expect(
+      within(stageColumn("sent")).queryByText("Business analyst intern")
+    ).not.toBeInTheDocument()
   })
 })

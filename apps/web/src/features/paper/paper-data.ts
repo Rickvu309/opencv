@@ -109,8 +109,11 @@ export function paperSummary(docs: PaperDoc[]) {
     { label: "Proof", value: String(proofs.length), hint: statusHint(proofs) },
     {
       label: "Linked to Apply",
-      value: "0",
-      hint: "Apply link lands later",
+      value: String(docs.filter((doc) => doc.applyCardId).length),
+      hint:
+        docs.filter((doc) => doc.applyCardId).length === 0
+          ? "None yet"
+          : "Linked to an Opportunity",
     },
   ]
 }

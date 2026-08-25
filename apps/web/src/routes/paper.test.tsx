@@ -63,6 +63,29 @@ describe("Paper drive", () => {
     ).not.toBeInTheDocument()
   })
 
+  it("shows and changes the Apply card link", async () => {
+    renderPaper()
+    await expectPaperDrive()
+
+    expect(screen.getByText("Local startup")).toBeInTheDocument()
+    expect(screen.getByText("Fintech scale-up")).toBeInTheDocument()
+    expect(screen.getByText("Linked to Apply")).toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Document actions for Cover: Associate PM intern",
+      })
+    )
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Change Apply link" }))
+    const dialog = await screen.findByRole("dialog", { name: "Link to Apply" })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Unlink" }))
+
+    await waitFor(() => {
+      expect(screen.queryByText("Local startup")).not.toBeInTheDocument()
+    })
+    expect(screen.getByText("Fintech scale-up")).toBeInTheDocument()
+  })
+
   it("marks filter as coming soon and keeps New enabled", async () => {
     renderPaper()
     await expectPaperDrive()

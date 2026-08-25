@@ -42,16 +42,19 @@ describe("Apply seam", () => {
     expect(sidebar).toMatch(/badge: true/)
   })
 
-  it("keeps Fit on the card shape but out of the job-detail UI", () => {
+  it("keeps Fit out of the card DTO and every rendered Apply surface", () => {
     const types = read("src/features/apply/apply-types.ts")
     const detail = read("src/features/apply/apply-job-detail.tsx")
     const workspace = read("src/features/apply/apply-workspace.tsx")
     const calendar = read("src/features/apply/apply-calendar.tsx")
+    const api = read("src/features/apply/apply-api.ts")
 
-    expect(types).toMatch(/fit: number/)
+    expect(types).not.toMatch(/fit:/)
+    expect(api).not.toMatch(/fit/)
     expect(detail).not.toMatch(/Fit score/)
     expect(detail).not.toMatch(/\/ 100/)
     expect(workspace).not.toMatch(/card\.fit/)
+    expect(workspace).not.toMatch(/Fit score/)
     expect(calendar).not.toMatch(/card\.fit/)
   })
 })
