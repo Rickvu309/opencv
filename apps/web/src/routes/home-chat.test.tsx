@@ -11,7 +11,8 @@ import {
 } from "@testing-library/react"
 
 import { DEFAULT_DEV_PROFILE_NAME } from "@/features/app-shell/dev-profile.ts"
-import { SURFACE_COPY, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { expectPaperDrive } from "@/test/paper-drive.ts"
 import {
   HISTORY_PREVIEW_COUNT,
   SEED_THREADS,
@@ -154,12 +155,7 @@ describe("Home Thread mode and History", () => {
     ).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole("link", { name: "Paper" }))
-    expect(
-      await screen.findByRole("heading", {
-        level: 1,
-        name: SURFACE_COPY.paper.title,
-      })
-    ).toBeInTheDocument()
+    await expectPaperDrive()
     expect(
       screen.getByRole("button", { name: "Should I finish my CV first?" })
     ).toHaveAttribute("aria-current", "true")
