@@ -5,8 +5,8 @@ import { ChevronDown } from "lucide-react"
 
 import { FOCUS_RING } from "@/features/app-shell/focus-ring.ts"
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
-import { useThreadStore } from "@/features/home/use-thread-store.ts"
 import { HISTORY_PREVIEW_COUNT } from "@/features/home/threads.ts"
+import { useThreadList } from "@/features/home/use-thread-list.ts"
 
 type Props = {
   collapsed: boolean
@@ -14,7 +14,7 @@ type Props = {
 }
 
 export function SidebarHistory({ collapsed, onNavigate }: Props) {
-  const { threads, activeThreadId, openThread } = useThreadStore()
+  const { threads, activeThreadId, openThread } = useThreadList()
   const navigate = useNavigate()
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
@@ -71,9 +71,7 @@ export function SidebarHistory({ collapsed, onNavigate }: Props) {
                 key={thread.id}
                 type="button"
                 onClick={() => handleOpen(thread.id)}
-                aria-current={
-                  activeThreadId === thread.id ? "true" : undefined
-                }
+                aria-current={activeThreadId === thread.id ? "true" : undefined}
                 className={cn(
                   FOCUS_RING,
                   "w-full truncate rounded-md px-2.5 py-1.5 text-left text-sm",

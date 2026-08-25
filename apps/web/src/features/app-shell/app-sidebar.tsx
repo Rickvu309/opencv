@@ -24,7 +24,7 @@ import { FOCUS_RING } from "@/features/app-shell/focus-ring.ts"
 import { NavProfile } from "@/features/app-shell/nav-profile.tsx"
 import { SidebarHistory } from "@/features/app-shell/sidebar-history.tsx"
 import { SURFACE_PATHS, type SurfaceId } from "@/features/app-shell/surfaces.ts"
-import { useThreadStore } from "@/features/home/use-thread-store.ts"
+import { useThreadList } from "@/features/home/use-thread-list.ts"
 
 type RouteNavItem = {
   kind: "route"
@@ -215,7 +215,7 @@ export function AppSidebar({
   onSearch,
   onNavigate,
 }: Props) {
-  const { newChat } = useThreadStore()
+  const { newThread } = useThreadList()
   const collapsed = !open
 
   return (
@@ -284,7 +284,7 @@ export function AppSidebar({
                 item={item}
                 collapsed={collapsed}
                 onClick={() => {
-                  if (item.id === "home") newChat()
+                  if (item.id === "home") newThread()
                   onNavigate?.()
                 }}
               />

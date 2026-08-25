@@ -1,73 +1,69 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useCallback, useMemo, useRef, useState, type ReactNode } from "react"
+import type { ThreadListItem } from "@workspace/domain"
 
+import {
+  createThread,
+  getThread,
+  listThreads,
+  postThreadMessage,
+  threadQueryKeys,
+  toListItem,
+  upsertThreadListItem,
+} from "@/features/home/thread-api.ts"
 import { ThreadStoreContext } from "@/features/home/thread-store-context.ts"
 import {
-  COACH_THINKING_MS,
-  STUB_COACH_REPLY,
-  emptyThreadState,
-  readPersistedThreads,
   titleFrom,
-  writePersistedThreads,
+  toHomeMessages,
   type HomeMessage,
 } from "@/features/home/threads.ts"
 
-function newMessageId() {
-  return `m-${crypto.randomUUID()}`
-}
+const EMPTY_THREADS: ThreadListItem[] = []
 
 export function ThreadStoreProvider({ children }: { children: ReactNode }) {
-  const initial = useMemo(
-    () => readPersistedThreads() ?? emptyThreadState(),
-    []
-  )
-  const [threads, setThreads] = useState(initial.threads)
-  const [activeThreadId, setActiveThreadId] = useState(initial.activeThreadId)
-  const [messages, setMessages] = useState(initial.messages)
+  const queryClient = useQueryClient()
+  const [activeThreadId, setActiveThreadId] = useState<string | null>(null)
+  const [optimisticMessages, setOptimisticMessages] = useState<
+    HomeMessage[] | null
+  >(null)
   const [thinking, setThinking] = useState(false)
-  const replyTimer = useRef<number | null>(null)
+  const sendGeneration = useRef(0)
 
-  const cancelThinking = useCallback(() => {
-    if (replyTimer.current != null) {
-      window.clearTimeout(replyTimer.current)
-      replyTimer.current = null
-    }
+  const listQuery = useQuery({
+    queryKey: threadQueryKeys.list(),
+    queryFn: listThreads,
+  })
+  const threads = listQuery.data ?? EMPTY_THREADS
+
+  const detailQuery = useQuery({
+    queryKey: threadQueryKeys.detail(activeThreadId ?? ""),
+    queryFn: () => getThread(activeThreadId!),
+    enabled: Boolean(activeThreadId) && !thinking,
+  })
+
+  const messages = useMemo(() => {
+    if (optimisticMessages) return optimisticMessages
+    if (detailQuery.data) return toHomeMessages(detailQuery.data.messages)
+    return []
+  }, [detailQuery.data, optimisticMessages])
+
+  const cancelInFlight = useCallback(() => {
+    sendGeneration.current += 1
     setThinking(false)
+    setOptimisticMessages(null)
   }, [])
 
-  useEffect(() => {
-    return () => {
-      if (replyTimer.current != null) {
-        window.clearTimeout(replyTimer.current)
-      }
-    }
-  }, [])
-
-  useEffect(() => {
-    writePersistedThreads({ threads, activeThreadId, messages })
-  }, [threads, activeThreadId, messages])
-
-  const newChat = useCallback(() => {
-    cancelThinking()
+  const newThread = useCallback(() => {
+    cancelInFlight()
     setActiveThreadId(null)
-    setMessages([])
-  }, [cancelThinking])
+  }, [cancelInFlight])
 
   const openThread = useCallback(
     (id: string) => {
-      const thread = threads.find((item) => item.id === id)
-      if (!thread) return
-      cancelThinking()
+      cancelInFlight()
       setActiveThreadId(id)
-      setMessages(thread.messages)
     },
-    [cancelThinking, threads]
+    [cancelInFlight]
   )
 
   const send = useCallback(
@@ -75,52 +71,66 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
       const trimmed = text.trim()
       if (!trimmed || thinking) return false
 
-      const userMsg: HomeMessage = {
-        id: newMessageId(),
+      const generation = ++sendGeneration.current
+      const startedAt = Date.now()
+      const optimistic: HomeMessage = {
+        id: `local-${crypto.randomUUID()}`,
         role: "user",
         text: trimmed,
       }
-      const nextUserOnly = [...messages, userMsg]
-      const startedAt = Date.now()
-      const currentThreadId = activeThreadId
+      const baseline =
+        optimisticMessages ??
+        (detailQuery.data ? toHomeMessages(detailQuery.data.messages) : [])
 
-      setMessages(nextUserOnly)
+      setOptimisticMessages([...baseline, optimistic])
       setThinking(true)
 
-      replyTimer.current = window.setTimeout(() => {
-        const reply: HomeMessage = {
-          id: newMessageId(),
-          role: "coach",
-          text: STUB_COACH_REPLY,
-          workedMs: Date.now() - startedAt,
-        }
-        const nextMessages = [...nextUserOnly, reply]
-
-        if (currentThreadId) {
-          setThreads((prev) =>
-            prev.map((thread) =>
-              thread.id === currentThreadId
-                ? { ...thread, messages: nextMessages }
-                : thread
+      void (async () => {
+        try {
+          let threadId = activeThreadId
+          if (!threadId) {
+            const created = await createThread({ title: titleFrom(trimmed) })
+            queryClient.setQueryData(
+              threadQueryKeys.list(),
+              (prev: ThreadListItem[] | undefined) =>
+                upsertThreadListItem(prev ?? [], created)
             )
-          )
-        } else {
-          const id = `c-${Date.now()}`
-          setThreads((prev) => [
-            { id, title: titleFrom(trimmed), messages: nextMessages },
-            ...prev,
-          ])
-          setActiveThreadId(id)
-        }
+            if (generation !== sendGeneration.current) return
+            threadId = created.id
+            setActiveThreadId(threadId)
+          }
 
-        setMessages(nextMessages)
-        setThinking(false)
-        replyTimer.current = null
-      }, COACH_THINKING_MS)
+          const detail = await postThreadMessage({
+            threadId,
+            text: trimmed,
+          })
+          queryClient.setQueryData(threadQueryKeys.detail(threadId), detail)
+          queryClient.setQueryData(
+            threadQueryKeys.list(),
+            (prev: ThreadListItem[] | undefined) =>
+              upsertThreadListItem(prev ?? [], toListItem(detail))
+          )
+          if (generation !== sendGeneration.current) return
+
+          setOptimisticMessages(
+            toHomeMessages(detail.messages, Date.now() - startedAt)
+          )
+        } finally {
+          if (generation === sendGeneration.current) {
+            setThinking(false)
+          }
+        }
+      })()
 
       return true
     },
-    [activeThreadId, messages, thinking]
+    [
+      activeThreadId,
+      detailQuery.data,
+      optimisticMessages,
+      queryClient,
+      thinking,
+    ]
   )
 
   const value = useMemo(
@@ -131,9 +141,9 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
       thinking,
       send,
       openThread,
-      newChat,
+      newThread,
     }),
-    [threads, activeThreadId, messages, thinking, send, openThread, newChat]
+    [threads, activeThreadId, messages, thinking, send, openThread, newThread]
   )
 
   return (

@@ -5,8 +5,10 @@ import { render } from "@testing-library/react"
 
 import { createQueryClient } from "@/lib/query-client.ts"
 import { createAppRouter } from "@/router.tsx"
+import { installThreadApiMock } from "@/test/threads-api-mock.ts"
 
 export function renderApp(initialEntry = "/") {
+  installThreadApiMock()
   const queryClient = createQueryClient()
   const router = createAppRouter({
     history: createMemoryHistory({ initialEntries: [initialEntry] }),

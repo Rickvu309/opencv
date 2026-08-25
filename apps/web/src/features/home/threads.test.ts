@@ -1,18 +1,7 @@
-import { afterEach, describe, expect, it } from "vitest"
+import { STUB_COACH_REPLY } from "@workspace/domain"
+import { describe, expect, it } from "vitest"
 
-import {
-  SEED_THREADS,
-  STUB_COACH_REPLY,
-  THREAD_STORAGE_KEY,
-  emptyThreadState,
-  readPersistedThreads,
-  titleFrom,
-  writePersistedThreads,
-} from "@/features/home/threads.ts"
-
-afterEach(() => {
-  sessionStorage.clear()
-})
+import { titleFrom, toHomeMessages } from "@/features/home/threads.ts"
 
 describe("titleFrom", () => {
   it("keeps short text and trims long titles", () => {
@@ -31,21 +20,24 @@ describe("stub Coach reply", () => {
   })
 })
 
-describe("thread persistence", () => {
-  it("round-trips sessionStorage and rejects junk", () => {
-    const state = {
-      ...emptyThreadState(),
-      activeThreadId: SEED_THREADS[0]!.id,
-      messages: SEED_THREADS[0]!.messages,
-    }
+describe("toHomeMessages", () => {
+  it("copies server messages and attaches thinking time to the last Coach reply", () => {
+    const mapped = toHomeMessages(
+      [
+        { id: "u1", role: "user", text: "Hello" },
+        { id: "c1", role: "coach", text: "Hi" },
+        { id: "u2", role: "user", text: "Again" },
+        { id: "c2", role: "coach", text: "Still here" },
+      ],
+      1400
+    )
 
-    writePersistedThreads(state)
-    expect(readPersistedThreads()).toEqual(state)
-
-    sessionStorage.setItem(THREAD_STORAGE_KEY, "{not-json")
-    expect(readPersistedThreads()).toBeNull()
-
-    sessionStorage.setItem(THREAD_STORAGE_KEY, JSON.stringify({ threads: [] }))
-    expect(readPersistedThreads()).toBeNull()
+    expect(mapped[1]).toEqual({ id: "c1", role: "coach", text: "Hi" })
+    expect(mapped[3]).toEqual({
+      id: "c2",
+      role: "coach",
+      text: "Still here",
+      workedMs: 1400,
+    })
   })
 })
