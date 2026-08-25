@@ -52,7 +52,7 @@ function SectionShell({
   return (
     <section className="group relative">
       {editing ? (
-        <div className="absolute -top-1 right-0 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+        <div className="absolute -top-1 right-0 flex gap-1">
           <span className="rounded-md border border-border bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground shadow-sm">
             {title}
           </span>
