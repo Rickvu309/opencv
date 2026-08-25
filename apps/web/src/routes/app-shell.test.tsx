@@ -66,6 +66,16 @@ async function expectStub(surface: Exclude<keyof typeof SURFACE_COPY, "home">) {
   expect(screen.getByText(copy.body)).toBeInTheDocument()
 }
 
+async function expectApplyLive() {
+  expect(
+    await screen.findByRole("heading", { level: 1, name: "Apply" })
+  ).toBeInTheDocument()
+  expect(screen.getByRole("button", { name: "Board" })).toBeInTheDocument()
+  expect(screen.getByRole("button", { name: "Calendar" })).toBeInTheDocument()
+  expect(screen.getByText("Inbox")).toBeInTheDocument()
+  expect(screen.queryByText(SURFACE_COPY.apply.body)).not.toBeInTheDocument()
+}
+
 async function expectHomeIdle() {
   expect(
     await screen.findByRole("heading", {
@@ -109,7 +119,7 @@ describe("app shell layout", () => {
 
     cleanup()
     renderApp(SURFACE_PATHS.apply)
-    await expectStub("apply")
+    await expectApplyLive()
 
     cleanup()
     renderApp(SURFACE_PATHS.pitch)
