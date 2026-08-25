@@ -143,6 +143,7 @@ export async function paperApiFetch(
       status: "draft",
       content,
       contentVersion: PAPER_CONTENT_VERSION,
+      applyCardId: null,
       createdAt: now,
       updatedAt: now,
     }
@@ -198,6 +199,21 @@ export async function paperApiFetch(
     const doc = store.docs.find((item) => item.id === body.docId)
     if (!doc) return jsonError(404, "NOT_FOUND", "Paper doc not found")
     if (body.status) doc.status = body.status
+    doc.updatedAt = isoNow()
+    return jsonOk(doc)
+  }
+
+  if (
+    method === "POST" &&
+    path === `/api/commands/${PAPER_COMMANDS.linkApplyCard}`
+  ) {
+    const body = (await readBody(init)) as {
+      docId?: string
+      applyCardId?: string | null
+    }
+    const doc = store.docs.find((item) => item.id === body.docId)
+    if (!doc) return jsonError(404, "NOT_FOUND", "Paper doc not found")
+    doc.applyCardId = body.applyCardId ?? null
     doc.updatedAt = isoNow()
     return jsonOk(doc)
   }

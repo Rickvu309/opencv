@@ -1,12 +1,13 @@
 /**
  * Apply: kanban + calendar for tracking Opportunities.
  * Do not import shell chrome — the route mounts this into `<Outlet />`.
- * Fit stays on the card shape but is not shown (PRODUCT.md open q. 1).
+ * Fit is stored on the server and never rendered (PRODUCT.md open q. 1).
  */
 import { useMemo, useRef, useState } from "react"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { cn } from "@workspace/ui/lib/utils"
+import type { ApplyStage } from "@workspace/domain"
 import {
   CalendarDays,
   Filter,
@@ -26,59 +27,58 @@ import {
 } from "@/features/apply/apply-dnd.ts"
 import { JobDetailPanel } from "@/features/apply/apply-job-detail.tsx"
 import {
+  companyShort,
   formatTrackDate,
-  SEED_CARDS,
   STAGES,
   trackKindLabel,
   type ApplyCard,
   type StageId,
 } from "@/features/apply/apply-types.ts"
+import { useApplyCards } from "@/features/apply/use-apply-cards.ts"
+import { usePaperDocs } from "@/features/paper/use-paper-docs.ts"
 
 export function ApplyWorkspace() {
+  const apply = useApplyCards()
+  const paper = usePaperDocs()
   const [view, setView] = useState<"board" | "calendar">("board")
-  const [cards, setCards] = useState(SEED_CARDS)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [query, setQuery] = useState("")
   const [dragOverStage, setDragOverStage] = useState<StageId | null>(null)
+  const [dragOverCardId, setDragOverCardId] = useState<string | null>(null)
   const dragMovedRef = useRef(false)
 
-  const selected = cards.find((c) => c.id === selectedId)
+  const selected = apply.cards.find((c) => c.id === selectedId)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return cards
-    return cards.filter(
+    if (!q) return apply.cards
+    return apply.cards.filter(
       (c) =>
         c.title.toLowerCase().includes(q) ||
         c.company.toLowerCase().includes(q)
     )
-  }, [cards, query])
+  }, [apply.cards, query])
 
-  function patchCard(id: string, patch: Partial<ApplyCard>) {
-    setCards((prev) =>
-      prev.map((c) =>
-        c.id === id ? { ...c, ...patch, updated: "Updated just now" } : c
-      )
-    )
-  }
+  function move(id: string, stage: StageId, beforeCardId?: string | null) {
+    const card = apply.cards.find((item) => item.id === id)
+    if (!card) return
+    if (beforeCardId === id) return
 
-  function move(id: string, stage: StageId) {
-    patchCard(id, { stage })
+    const column = apply.cards.filter((item) => item.stage === stage)
+    const currentIndex = column.findIndex((item) => item.id === id)
+    const currentNext = currentIndex === -1 ? undefined : column[currentIndex + 1]
+    if (
+      card.stage === stage &&
+      (currentNext?.id ?? null) === (beforeCardId ?? null)
+    ) {
+      return
+    }
+
+    apply.moveCard(id, stage, beforeCardId)
   }
 
   function moveDate(id: string, trackDate: string) {
-    patchCard(id, { trackDate })
-  }
-
-  function toggleStar(id: string) {
-    const card = cards.find((c) => c.id === id)
-    if (!card) return
-    patchCard(id, { starred: !card.starred })
-  }
-
-  function removeCard(id: string) {
-    setCards((prev) => prev.filter((c) => c.id !== id))
-    setSelectedId((current) => (current === id ? null : current))
+    apply.updateCard({ cardId: id, trackDate })
   }
 
   function selectCard(id: string) {
@@ -88,6 +88,20 @@ export function ApplyWorkspace() {
     }
     setSelectedId((current) => (current === id ? null : id))
   }
+
+  async function addJob() {
+    const created = await apply.createCard()
+    setSelectedId(created.id)
+  }
+
+  const errorBanner = apply.error ? (
+    <div
+      role="alert"
+      className="border-b border-destructive/30 bg-destructive/10 px-5 py-2 text-sm text-destructive"
+    >
+      {apply.error}
+    </div>
+  ) : null
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[#FAFAFA]">
@@ -148,15 +162,26 @@ export function ApplyWorkspace() {
           </button>
         </div>
 
-        <Button type="button" size="sm" className="h-8" disabled>
+        <Button
+          type="button"
+          size="sm"
+          className="h-8"
+          onClick={() => void addJob()}
+          disabled={apply.creating}
+        >
           <Plus className="size-3.5" />
           Add job
-          <span className="text-muted-foreground"> · Coming soon</span>
         </Button>
       </header>
 
+      {errorBanner}
+
       <div className="flex min-h-0 flex-1">
-        {view === "board" ? (
+        {apply.isLoading ? (
+          <p className="px-4 py-8 text-sm text-muted-foreground">
+            Loading Apply…
+          </p>
+        ) : view === "board" ? (
           <div className="min-w-0 flex-1 overflow-x-auto p-4">
             <div className="flex h-full min-h-[28rem] gap-3">
               {STAGES.map((stage) => {
@@ -180,8 +205,9 @@ export function ApplyWorkspace() {
                     onDrop={(e) => {
                       e.preventDefault()
                       const id = readCardDragId(e)
-                      if (id) move(id, stage.id)
+                      if (id) move(id, stage.id, null)
                       setDragOverStage(null)
+                      setDragOverCardId(null)
                     }}
                   >
                     <div className="flex items-center gap-2 px-3 py-2.5">
@@ -206,6 +232,7 @@ export function ApplyWorkspace() {
                           key={card.id}
                           card={card}
                           active={card.id === selectedId}
+                          insertBefore={dragOverCardId === card.id}
                           onSelect={() => selectCard(card.id)}
                           onDragStart={() => {
                             dragMovedRef.current = false
@@ -213,6 +240,13 @@ export function ApplyWorkspace() {
                           onDrag={() => {
                             dragMovedRef.current = true
                           }}
+                          onDragOver={() => setDragOverCardId(card.id)}
+                          onDragLeave={() =>
+                            setDragOverCardId((id) =>
+                              id === card.id ? null : id
+                            )
+                          }
+                          onDrop={(id) => move(id, stage.id, card.id)}
                         />
                       ))}
                       {col.length === 0 ? (
@@ -239,11 +273,22 @@ export function ApplyWorkspace() {
         {selected ? (
           <JobDetailPanel
             card={selected}
+            revertKey={apply.revertKey}
+            paperDocs={paper.docs}
             onClose={() => setSelectedId(null)}
-            onPatch={(patch) => patchCard(selected.id, patch)}
-            onMove={(stage) => move(selected.id, stage)}
-            onToggleStar={() => toggleStar(selected.id)}
-            onRemove={() => removeCard(selected.id)}
+            onPatch={(patch) =>
+              apply.updateCard({ cardId: selected.id, ...patch })
+            }
+            onMove={(stage: ApplyStage) => move(selected.id, stage, null)}
+            onToggleStar={() => apply.toggleStar(selected.id)}
+            onRemove={async () => {
+              const id = selected.id
+              setSelectedId(null)
+              await apply.deleteCard(id)
+            }}
+            onLinkPaper={(docId, applyCardId) =>
+              paper.linkApplyCard(docId, applyCardId)
+            }
           />
         ) : null}
       </div>
@@ -254,21 +299,30 @@ export function ApplyWorkspace() {
 function BoardJobCard({
   card,
   active,
+  insertBefore,
   onSelect,
   onDragStart,
   onDrag,
+  onDragOver,
+  onDragLeave,
+  onDrop,
 }: {
   card: ApplyCard
   active: boolean
+  insertBefore: boolean
   onSelect: () => void
   onDragStart: () => void
   onDrag: () => void
+  onDragOver: () => void
+  onDragLeave: () => void
+  onDrop: (id: string) => void
 }) {
   return (
     <div
       role="button"
       tabIndex={0}
       draggable
+      data-card-id={card.id}
       aria-label={`${card.title} at ${card.company}`}
       onDragStart={(e) => {
         onDragStart()
@@ -276,6 +330,18 @@ function BoardJobCard({
       }}
       onDrag={onDrag}
       onDragEnd={onDrag}
+      onDragOver={(e) => {
+        allowCardDrop(e)
+        e.stopPropagation()
+        onDragOver()
+      }}
+      onDragLeave={onDragLeave}
+      onDrop={(e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        const id = readCardDragId(e)
+        if (id) onDrop(id)
+      }}
       onClick={onSelect}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -287,7 +353,8 @@ function BoardJobCard({
         "group cursor-grab rounded-xl border bg-card p-3 text-left shadow-[0_1px_2px_oklch(0_0_0/0.04)] transition-[border-color,box-shadow,opacity] duration-150 active:cursor-grabbing",
         active
           ? "border-foreground/20 ring-1 ring-ring/30"
-          : "border-border hover:border-foreground/15 hover:shadow-[0_2px_8px_oklch(0_0_0/0.05)]"
+          : "border-border hover:border-foreground/15 hover:shadow-[0_2px_8px_oklch(0_0_0/0.05)]",
+        insertBefore && "ring-2 ring-ring/40"
       )}
     >
       <div className="flex items-start gap-1.5">
@@ -304,7 +371,7 @@ function BoardJobCard({
       </div>
       <div className="mt-2 flex items-center gap-2 pl-5">
         <span className="flex size-5 items-center justify-center rounded bg-muted text-[9px] font-bold tracking-tight text-muted-foreground">
-          {card.companyShort}
+          {companyShort(card.company)}
         </span>
         <span className="truncate text-xs text-muted-foreground">
           {card.company}

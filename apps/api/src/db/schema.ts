@@ -1,5 +1,6 @@
 import {
   boolean,
+  date,
   index,
   integer,
   jsonb,
@@ -148,6 +149,9 @@ export const paperDocs = openpathApp.table(
       .$type<"draft" | "ready" | "published">()
       .notNull()
       .default("draft"),
+    applyCardId: uuid("apply_card_id").references(() => applyCards.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamptz("created_at").notNull().defaultNow(),
     updatedAt: timestamptz("updated_at").notNull().defaultNow(),
   },
@@ -155,6 +159,45 @@ export const paperDocs = openpathApp.table(
     index("paper_docs_user_id_updated_at_idx").on(
       table.userId,
       table.updatedAt
+    ),
+    index("paper_docs_apply_card_id_idx").on(table.applyCardId),
+  ]
+)
+
+/** Apply cards: Stage + fractional position; `fit` is stored, never in DTOs. */
+export const applyCards = openpathApp.table(
+  "apply_cards",
+  {
+    id: uuid("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    company: text("company").notNull(),
+    note: text("note").notNull().default(""),
+    stage: text("stage")
+      .$type<"inbox" | "prep" | "sent" | "live" | "closed">()
+      .notNull(),
+    position: text("position").notNull(),
+    starred: boolean("starred").notNull().default(false),
+    jobUrl: text("job_url"),
+    trackDate: date("track_date", { mode: "string" }).notNull(),
+    trackKind: text("track_kind")
+      .$type<"interview" | "deadline" | "followup" | "applied">()
+      .notNull(),
+    fit: integer("fit").notNull().default(0),
+    createdAt: timestamptz("created_at").notNull().defaultNow(),
+    updatedAt: timestamptz("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("apply_cards_user_id_stage_position_idx").on(
+      table.userId,
+      table.stage,
+      table.position
+    ),
+    index("apply_cards_user_id_track_date_idx").on(
+      table.userId,
+      table.trackDate
     ),
   ]
 )

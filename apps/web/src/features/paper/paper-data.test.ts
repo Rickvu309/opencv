@@ -70,6 +70,11 @@ describe("paper display helpers", () => {
       value: "2",
       hint: "All drafts",
     })
+    expect(summary[3]).toEqual({
+      label: "Linked to Apply",
+      value: "2",
+      hint: "Linked to an Opportunity",
+    })
   })
 })
 

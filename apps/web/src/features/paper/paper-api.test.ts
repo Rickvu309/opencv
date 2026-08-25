@@ -21,6 +21,7 @@ const doc: PaperDoc = {
   status: "draft",
   content: { markdown: "nope" },
   contentVersion: 1,
+  applyCardId: null,
   createdAt: "2026-08-25T00:00:00.000Z",
   updatedAt: "2026-08-25T00:00:00.000Z",
 }

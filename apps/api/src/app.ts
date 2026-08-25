@@ -6,6 +6,7 @@ import { commandRegistry } from "./commands/index.js"
 import { createCommandRoutes } from "./commands/http.js"
 import { authUnavailableEnvelope, unauthorizedEnvelope } from "./envelope.js"
 import { isAllowedOrigin } from "./origin.js"
+import { createApplyReadRoutes } from "./apply/http.js"
 import { createPaperReadRoutes } from "./paper/http.js"
 import { createThreadReadRoutes } from "./threads/http.js"
 
@@ -80,6 +81,7 @@ export function createApp({
   )
   app.route("/api/threads", createThreadReadRoutes({ auth, db }))
   app.route("/api/paper", createPaperReadRoutes({ auth, db }))
+  app.route("/api/apply", createApplyReadRoutes({ auth, db }))
 
   return app
 }

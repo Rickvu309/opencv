@@ -11,6 +11,7 @@ import { ApiError } from "@/lib/api-error.ts"
 import {
   createPaperDoc,
   deletePaperDoc,
+  linkPaperApplyCard,
   listPaperDocs,
   paperQueryKeys,
   renamePaperDoc,
@@ -161,6 +162,38 @@ export function usePaperDocs() {
     },
   })
 
+  const linkMutation = useMutation({
+    mutationFn: (input: { docId: string; applyCardId: string | null }) =>
+      linkPaperApplyCard(input),
+    onMutate: async ({ docId, applyCardId }) => {
+      setError(null)
+      await queryClient.cancelQueries({ queryKey: paperQueryKeys.list() })
+      const previous = queryClient.getQueryData<PaperDoc[]>(
+        paperQueryKeys.list()
+      )
+      queryClient.setQueryData(
+        paperQueryKeys.list(),
+        (prev: PaperDoc[] | undefined) =>
+          (prev ?? []).map((doc) =>
+            doc.id === docId
+              ? { ...doc, applyCardId, updatedAt: new Date().toISOString() }
+              : doc
+          )
+      )
+      return { previous }
+    },
+    onError: (err, _input, ctx) => {
+      rollback(ctx?.previous)
+      setError(errorMessage(err))
+    },
+    onSuccess: (next) => {
+      queryClient.setQueryData(
+        paperQueryKeys.list(),
+        (prev: PaperDoc[] | undefined) => upsertPaperDoc(prev ?? [], next)
+      )
+    },
+  })
+
   const deleteMutation = useMutation({
     mutationFn: (docId: string) => deletePaperDoc({ docId }),
     onMutate: async (docId) => {
@@ -200,5 +233,8 @@ export function usePaperDocs() {
       statusMutation.mutate({ docId, status })
     },
     deleteDoc: (docId: string) => deleteMutation.mutateAsync(docId),
+    linkApplyCard: (docId: string, applyCardId: string | null) => {
+      linkMutation.mutate({ docId, applyCardId })
+    },
   }
 }

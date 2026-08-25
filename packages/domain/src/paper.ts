@@ -71,6 +71,13 @@ export const paperDeleteDocInputSchema = z
   })
   .strict()
 
+export const paperLinkApplyCardInputSchema = z
+  .object({
+    docId: paperDocIdSchema,
+    applyCardId: z.string().uuid().nullable(),
+  })
+  .strict()
+
 export type PaperContentKind = z.infer<typeof paperContentKindSchema>
 export type PaperDocStatus = z.infer<typeof paperDocStatusSchema>
 export type PaperCreateDocInput = z.infer<typeof paperCreateDocInputSchema>
@@ -80,6 +87,9 @@ export type PaperUpdateContentInput = z.infer<
 export type PaperRenameDocInput = z.infer<typeof paperRenameDocInputSchema>
 export type PaperSetStatusInput = z.infer<typeof paperSetStatusInputSchema>
 export type PaperDeleteDocInput = z.infer<typeof paperDeleteDocInputSchema>
+export type PaperLinkApplyCardInput = z.infer<
+  typeof paperLinkApplyCardInputSchema
+>
 
 export type PaperDocDeleted = {
   id: string
@@ -92,6 +102,7 @@ export type PaperDoc = {
   status: PaperDocStatus
   content: unknown
   contentVersion: number
+  applyCardId: string | null
   createdAt: string
   updatedAt: string
 }

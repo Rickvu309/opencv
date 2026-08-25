@@ -49,6 +49,10 @@ describe("paper command flags", () => {
       coachAllowed: true,
       destructive: false,
     })
+    expect(byName[PAPER_COMMANDS.linkApplyCard]).toMatchObject({
+      coachAllowed: true,
+      destructive: false,
+    })
     expect(byName[PAPER_COMMANDS.deleteDoc]).toMatchObject({
       coachAllowed: false,
       destructive: true,

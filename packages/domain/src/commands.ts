@@ -14,10 +14,22 @@ export const PAPER_COMMANDS = {
   renameDoc: "paper.renameDoc",
   setStatus: "paper.setStatus",
   deleteDoc: "paper.deleteDoc",
+  linkApplyCard: "paper.linkApplyCard",
 } as const
 
 export type PaperCommandName =
   (typeof PAPER_COMMANDS)[keyof typeof PAPER_COMMANDS]
+
+export const APPLY_COMMANDS = {
+  createCard: "apply.createCard",
+  updateCard: "apply.updateCard",
+  moveCard: "apply.moveCard",
+  toggleStar: "apply.toggleStar",
+  deleteCard: "apply.deleteCard",
+} as const
+
+export type ApplyCommandName =
+  (typeof APPLY_COMMANDS)[keyof typeof APPLY_COMMANDS]
 
 export type ReversalDescriptor = {
   possible: boolean

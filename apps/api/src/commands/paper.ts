@@ -7,6 +7,7 @@ import {
   emptyPaperDocument,
   paperCreateDocInputSchema,
   paperDeleteDocInputSchema,
+  paperLinkApplyCardInputSchema,
   paperRenameDocInputSchema,
   paperSetStatusInputSchema,
   paperUpdateContentInputSchema,
@@ -18,6 +19,7 @@ import { and, eq } from "drizzle-orm"
 
 import { paperDocs } from "../db/schema.js"
 import { createId } from "../id.js"
+import { getOwnedApplyCard } from "../apply/queries.js"
 import { getOwnedPaperDoc, toPaperDoc } from "../paper/queries.js"
 import { CommandError, defineCommand } from "./registry.js"
 
@@ -62,6 +64,7 @@ export const createPaperDocCommand = defineCommand({
       content: content as Record<string, unknown>,
       contentVersion: PAPER_CONTENT_VERSION,
       status: "draft" as const,
+      applyCardId: null,
       createdAt: now,
       updatedAt: now,
     }
@@ -174,6 +177,41 @@ export const setPaperStatusCommand = defineCommand({
   },
 })
 
+export const linkPaperApplyCardCommand = defineCommand({
+  name: PAPER_COMMANDS.linkApplyCard,
+  input: paperLinkApplyCardInputSchema,
+  coachAllowed: true,
+  destructive: false,
+  reversal: {
+    possible: true,
+    command: PAPER_COMMANDS.linkApplyCard,
+    description: "Undo by linking the previous Apply card, or unlinking.",
+  },
+  async handler(ctx, input): Promise<PaperDoc> {
+    const existing = await getOwnedPaperDoc(
+      ctx.db,
+      ctx.actor.userId,
+      input.docId
+    )
+
+    if (input.applyCardId) {
+      await getOwnedApplyCard(ctx.db, ctx.actor.userId, input.applyCardId)
+    }
+
+    const updatedAt = new Date()
+    await ctx.db
+      .update(paperDocs)
+      .set({ applyCardId: input.applyCardId, updatedAt })
+      .where(ownedDoc(existing.id, ctx.actor.userId))
+
+    return toPaperDoc({
+      ...existing,
+      applyCardId: input.applyCardId,
+      updatedAt,
+    })
+  },
+})
+
 export const deletePaperDocCommand = defineCommand({
   name: PAPER_COMMANDS.deleteDoc,
   input: paperDeleteDocInputSchema,
@@ -202,5 +240,6 @@ export const paperCommands = [
   updatePaperContentCommand,
   renamePaperDocCommand,
   setPaperStatusCommand,
+  linkPaperApplyCardCommand,
   deletePaperDocCommand,
 ]

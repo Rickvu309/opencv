@@ -73,6 +73,13 @@ export function deletePaperDoc(input: {
   return runCommand<{ id: string }>(PAPER_COMMANDS.deleteDoc, input)
 }
 
+export function linkPaperApplyCard(input: {
+  docId: string
+  applyCardId: string | null
+}): Promise<PaperDoc> {
+  return runCommand<PaperDoc>(PAPER_COMMANDS.linkApplyCard, input)
+}
+
 export function upsertPaperDoc(docs: PaperDoc[], next: PaperDoc): PaperDoc[] {
   return [next, ...docs.filter((doc) => doc.id !== next.id)]
 }

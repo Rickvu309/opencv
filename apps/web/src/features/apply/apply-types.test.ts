@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  companyShort,
   formatTrackDate,
-  SEED_CARDS,
   STAGES,
   trackKindLabel,
 } from "@/features/apply/apply-types.ts"
 import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
+import { sampleApplyCards } from "@/test/apply-fixtures.ts"
 
 describe("Apply helpers", () => {
   it("formats Track dates and kinds", () => {
@@ -17,7 +18,7 @@ describe("Apply helpers", () => {
     expect(trackKindLabel("applied")).toBe("Applied")
   })
 
-  it("keeps Fit on the seed shape without a demo persona", () => {
+  it("derives company initials without a demo persona or Fit", () => {
     expect(STAGES.map((stage) => stage.id)).toEqual([
       "inbox",
       "prep",
@@ -25,9 +26,12 @@ describe("Apply helpers", () => {
       "live",
       "closed",
     ])
-    expect(SEED_CARDS.length).toBeGreaterThan(0)
-    expect(SEED_CARDS.every((card) => typeof card.fit === "number")).toBe(true)
-    expect(JSON.stringify(SEED_CARDS)).not.toMatch(/Eric Nguyen/i)
+    expect(companyShort("Local startup")).toBe("LS")
+    expect(companyShort("Agency")).toBe("AG")
+    const cards = sampleApplyCards()
+    expect(cards.length).toBeGreaterThan(0)
+    expect(JSON.stringify(cards)).not.toMatch(/"fit"/)
+    expect(JSON.stringify(cards)).not.toMatch(/Eric Nguyen/i)
     expect(SAMPLE_AUTHOR_NAME).not.toMatch(/Eric/i)
   })
 })
