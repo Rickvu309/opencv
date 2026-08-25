@@ -257,11 +257,12 @@ function coachStreamResponse(thread: ThreadDetail, signal?: AbortSignal) {
 
         for (const part of partsToEmit) {
           if (part.kind === "text") {
+            await emit(COACH_SSE_EVENTS.textDelta, { text: part.text })
+            if (aborted) break
             streamedParts = appendCoachPart(streamedParts, {
               type: "text-delta",
               text: part.text,
             })
-            await emit(COACH_SSE_EVENTS.textDelta, { text: part.text })
           } else {
             const toolCallId = crypto.randomUUID()
             const result = part.result ?? {
@@ -281,8 +282,7 @@ function coachStreamResponse(thread: ThreadDetail, signal?: AbortSignal) {
               input: {},
             })
             if (aborted) break
-            streamedParts = appendCoachPart(streamedParts, {
-              type: "tool-result",
+            await emit(COACH_SSE_EVENTS.toolResult, {
               toolCallId,
               name: part.name,
               summary: part.summary,
@@ -290,7 +290,9 @@ function coachStreamResponse(thread: ThreadDetail, signal?: AbortSignal) {
               ...(part.reversal ? { reversal: part.reversal } : {}),
               result,
             })
-            await emit(COACH_SSE_EVENTS.toolResult, {
+            if (aborted) break
+            streamedParts = appendCoachPart(streamedParts, {
+              type: "tool-result",
               toolCallId,
               name: part.name,
               summary: part.summary,
