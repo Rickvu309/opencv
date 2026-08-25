@@ -9,30 +9,8 @@ import { Briefcase, FileText, Globe, Search, SquarePen } from "lucide-react"
 
 import { OpenPathLogo } from "@/features/app-shell/app-logo.tsx"
 import { FOCUS_RING } from "@/features/app-shell/focus-ring.ts"
+import type { SearchThread } from "@/features/app-shell/search-threads.ts"
 import type { SurfaceId } from "@/features/app-shell/surfaces.ts"
-import type { HomeThread } from "@/features/home/threads.ts"
-
-type SearchThread = {
-  id: string
-  title: string
-  when: string
-  preview?: string
-}
-
-export function searchThreadsFromHome(threads: HomeThread[]): SearchThread[] {
-  return threads.map((thread, index) => {
-    const preview = [...thread.messages]
-      .reverse()
-      .find((message) => message.role === "coach")?.text
-
-    return {
-      id: thread.id,
-      title: thread.title,
-      when: index === 0 ? "Today" : index === 1 ? "Yesterday" : "Earlier",
-      preview,
-    }
-  })
-}
 
 type Props = {
   open: boolean
@@ -55,6 +33,8 @@ const ACTIONS: {
   { id: "a4", label: "Open Pitch", icon: Globe, run: "pitch" },
 ]
 
+const RESET_LIST_KEY = "\0false"
+
 type ListItem =
   | { kind: "action"; id: string; run: (typeof ACTIONS)[number]["run"] }
   | { kind: "thread"; id: string }
@@ -68,22 +48,33 @@ export function SearchModal({
   onSurface,
 }: Props) {
   const [query, setQuery] = useState("")
-  const [selectedId, setSelectedId] = useState<string | null>(null)
   const [showAllActions, setShowAllActions] = useState(false)
-  const [activeIndex, setActiveIndex] = useState(0)
+  const [highlight, setHighlight] = useState({
+    listKey: RESET_LIST_KEY,
+    index: 0,
+  })
+  const [stickyThreadId, setStickyThreadId] = useState<string | null>(null)
+  const [wasOpen, setWasOpen] = useState(open)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  if (open !== wasOpen) {
+    setWasOpen(open)
+    if (open) {
+      setQuery("")
+      setShowAllActions(false)
+      setHighlight({ listKey: RESET_LIST_KEY, index: 0 })
+      setStickyThreadId(null)
+    }
+  }
 
   useEffect(() => {
     if (!open) return
-    setQuery("")
-    setSelectedId(null)
-    setShowAllActions(false)
-    setActiveIndex(0)
     const t = window.setTimeout(() => inputRef.current?.focus(), 20)
     return () => window.clearTimeout(t)
   }, [open])
 
   const q = query.trim().toLowerCase()
+  const listKey = `${q}\0${showAllActions}`
   const actions = useMemo(() => {
     const list = showAllActions ? ACTIONS : ACTIONS.slice(0, 1)
     if (!q) return list
@@ -107,18 +98,22 @@ export function SearchModal({
     [actions, recents]
   )
 
-  useEffect(() => {
-    setActiveIndex(0)
-  }, [q, showAllActions])
-
-  useEffect(() => {
-    const item = items[activeIndex]
-    if (item?.kind === "thread") {
-      setSelectedId(item.id)
-    }
-  }, [activeIndex, items])
-
+  const activeIndex =
+    highlight.listKey === listKey ? highlight.index : 0
+  const activeItem = items[activeIndex]
+  const selectedId =
+    activeItem?.kind === "thread" ? activeItem.id : stickyThreadId
   const selected = threads.find((t) => t.id === selectedId) ?? null
+
+  function setActiveIndex(updater: number | ((current: number) => number)) {
+    const current = highlight.listKey === listKey ? highlight.index : 0
+    const index = typeof updater === "function" ? updater(current) : updater
+    setHighlight({ listKey, index })
+    const item = items[index]
+    if (item?.kind === "thread") {
+      setStickyThreadId(item.id)
+    }
+  }
 
   function runAction(run: (typeof ACTIONS)[number]["run"]) {
     onOpenChange(false)
@@ -264,7 +259,6 @@ export function SearchModal({
                         id={`search-item-${t.id}`}
                         type="button"
                         onClick={() => {
-                          setSelectedId(t.id)
                           const index = items.findIndex(
                             (item) => item.kind === "thread" && item.id === t.id
                           )

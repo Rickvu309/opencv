@@ -3,10 +3,8 @@ import { Outlet, useNavigate } from "@tanstack/react-router"
 
 import { AppSidebar } from "@/features/app-shell/app-sidebar.tsx"
 import { FOCUS_RING } from "@/features/app-shell/focus-ring.ts"
-import {
-  SearchModal,
-  searchThreadsFromHome,
-} from "@/features/app-shell/search-modal.tsx"
+import { SearchModal } from "@/features/app-shell/search-modal.tsx"
+import { searchThreadsFromHome } from "@/features/app-shell/search-threads.ts"
 import { SURFACE_PATHS, type SurfaceId } from "@/features/app-shell/surfaces.ts"
 import { useMediaQuery } from "@/features/app-shell/use-media-query.ts"
 import { ThreadStoreProvider } from "@/features/home/thread-store.tsx"
