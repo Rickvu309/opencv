@@ -30,7 +30,10 @@ export type AppConfig = {
    * never constructs one from env. Missing runtime → 503 on the coach route.
    */
   coach?: CoachRuntime
-  /** From `openRouterApiKeyFromEnv`. Unused until the OpenRouter runtime lands. */
+  /**
+   * From `openRouterApiKeyFromEnv`. The factory never constructs a runtime;
+   * `index.ts` wires OpenRouter via `coachRuntimeFromConfig` when this is set.
+   */
   openRouterApiKey?: string
   /** From `coachModelFromEnv`. */
   coachModel?: string

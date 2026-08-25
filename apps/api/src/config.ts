@@ -55,7 +55,7 @@ export function authUrlFromEnv(env: NodeJS.ProcessEnv): string {
 
 /**
  * OpenRouter key. Unset/blank means the Coach runtime cannot be constructed —
- * the app still boots; the coach route will 503 once it exists.
+ * the app still boots; the coach route serves 503 `COACH_UNAVAILABLE`.
  */
 export function openRouterApiKeyFromEnv(
   env: NodeJS.ProcessEnv
@@ -92,8 +92,8 @@ export function coachDailyTurnLimitFromEnv(env: NodeJS.ProcessEnv): number {
 
 /**
  * Optional scripted runtime for local/dev (`curl -N` against the protocol).
- * Unset/anything other than `fake` leaves the Coach uninjected — the route
- * 503s until the OpenRouter runtime lands.
+ * `fake` wins over a present API key. Unset/anything else uses OpenRouter
+ * when `OPENROUTER_API_KEY` is set, otherwise the coach route 503s.
  */
 export function coachRuntimeModeFromEnv(
   env: NodeJS.ProcessEnv
