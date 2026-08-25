@@ -1,38 +1,24 @@
-import { createElement } from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { RouterProvider, createMemoryHistory } from "@tanstack/react-router"
 import {
   cleanup,
   fireEvent,
-  render,
   screen,
   waitFor,
   within,
 } from "@testing-library/react"
 
-import { DEFAULT_DEV_PROFILE_NAME } from "@/features/app-shell/dev-profile.ts"
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
 import {
   HISTORY_PREVIEW_COUNT,
   SEED_THREADS,
   STUB_COACH_REPLY,
 } from "@/features/home/threads.ts"
-import { createAppRouter } from "@/router.tsx"
-
-function renderApp(initialEntry = SURFACE_PATHS.home) {
-  const router = createAppRouter({
-    history: createMemoryHistory({ initialEntries: [initialEntry] }),
-  })
-
-  return {
-    router,
-    ...render(createElement(RouterProvider, { router })),
-  }
-}
+import { renderApp } from "@/test/render-app.tsx"
 
 const idleHeading = new RegExp(
-  `^Good (morning|afternoon|evening), ${DEFAULT_DEV_PROFILE_NAME}$`
+  `^Good (morning|afternoon|evening), ${SAMPLE_AUTHOR_NAME}$`
 )
 
 async function expectHomeIdle() {

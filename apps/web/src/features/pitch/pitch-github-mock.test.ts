@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { DEFAULT_DEV_PROFILE_NAME } from "@/features/app-shell/dev-profile.ts"
+import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 import {
   buildMockContributions,
   getMockGithubProfile,
@@ -23,7 +23,7 @@ describe("pitch GitHub mock", () => {
 
   it("uses the placeholder User handle, not the demo persona", () => {
     const mock = getMockGithubProfile()
-    const handle = pitchHandle(DEFAULT_DEV_PROFILE_NAME)
+    const handle = pitchHandle(SAMPLE_AUTHOR_NAME)
 
     expect(mock.username).toBe(`${handle}-uit`)
     expect(mock.username).not.toMatch(/eric/i)

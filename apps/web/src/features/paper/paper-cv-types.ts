@@ -1,7 +1,7 @@
 import {
-  getDevProfile,
-  type DevProfile,
-} from "@/features/app-shell/dev-profile.ts"
+  SAMPLE_AUTHOR,
+  type SampleAuthor,
+} from "@/features/seed/sample-author.ts"
 
 export type CvTemplateId =
   | "internship"
@@ -118,7 +118,7 @@ export function serializeCvContent(data: CvData): string {
   return `${CV_PREFIX}${JSON.stringify(data)}`
 }
 
-export function defaultCvData(profile: DevProfile = getDevProfile()): CvData {
+export function defaultCvData(profile: SampleAuthor = SAMPLE_AUTHOR): CvData {
   return {
     templateId: "product",
     name: profile.name,

@@ -87,7 +87,8 @@ describe("Pitch mock GitHub boundary", () => {
     const types = read("src/features/pitch/pitch-types.ts")
     const mock = read("src/features/pitch/pitch-github-mock.ts")
 
-    expect(types).toMatch(/getDevProfile/)
+    expect(types).toMatch(/SAMPLE_AUTHOR/)
+    expect(types).not.toMatch(/getDevProfile/)
     expect(types).not.toMatch(/Eric Nguyen/)
     expect(types).not.toMatch(/eric-nguyen/)
     expect(mock).not.toMatch(/Eric Nguyen/)

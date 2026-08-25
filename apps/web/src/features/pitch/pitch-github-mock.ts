@@ -2,7 +2,7 @@
  * Fictional GitHub integration data for the placeholder User.
  * No live API calls — realistic shape for a student PM who ships side projects.
  */
-import { getDevProfile } from "@/features/app-shell/dev-profile.ts"
+import { SAMPLE_AUTHOR } from "@/features/seed/sample-author.ts"
 import { pitchHandle, type GithubContribution } from "@/features/pitch/pitch-types.ts"
 
 function pad(n: number) {
@@ -22,17 +22,16 @@ function levelFromCount(count: number): 0 | 1 | 2 | 3 | 4 {
 }
 
 export function getMockGithubUsername() {
-  const handle = pitchHandle(getDevProfile().name) || "you"
+  const handle = pitchHandle(SAMPLE_AUTHOR.name) || "you"
   return `${handle}-uit`
 }
 
 export function getMockGithubProfile() {
-  const profile = getDevProfile()
   const username = getMockGithubUsername()
 
   return {
     username,
-    avatarUrl: profile.avatarSrc,
+    avatarUrl: SAMPLE_AUTHOR.avatarSrc,
     profileUrl: `https://github.com/${username}`,
     publicRepos: 14,
     followers: 28,

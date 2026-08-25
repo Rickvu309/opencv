@@ -1,29 +1,19 @@
-import { createElement } from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { RouterProvider, createMemoryHistory } from "@tanstack/react-router"
 import {
   cleanup,
   fireEvent,
-  render,
   screen,
   within,
 } from "@testing-library/react"
 
-import { DEFAULT_DEV_PROFILE_NAME } from "@/features/app-shell/dev-profile.ts"
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 import { STUB_PAPER_COACH_REPLY } from "@/features/paper/paper-ai-chat.tsx"
-import { createAppRouter } from "@/router.tsx"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
+import { renderApp } from "@/test/render-app.tsx"
 
 function renderPaper() {
-  const router = createAppRouter({
-    history: createMemoryHistory({ initialEntries: [SURFACE_PATHS.paper] }),
-  })
-
-  return {
-    router,
-    ...render(createElement(RouterProvider, { router })),
-  }
+  return renderApp(SURFACE_PATHS.paper)
 }
 
 async function openDoc(name: string) {
@@ -112,7 +102,7 @@ describe("Paper editors", () => {
 
     expect(screen.getByText("Profile")).toBeInTheDocument()
     expect(
-      screen.getAllByText(DEFAULT_DEV_PROFILE_NAME).length
+      screen.getAllByText(SAMPLE_AUTHOR_NAME).length
     ).toBeGreaterThan(0)
     expect(screen.getByRole("textbox", { name: "Summary" })).toBeInTheDocument()
 

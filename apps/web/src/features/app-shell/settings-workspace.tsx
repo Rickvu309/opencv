@@ -1,3 +1,5 @@
+import { useState } from "react"
+import { useNavigate } from "@tanstack/react-router"
 import { Button } from "@workspace/ui/components/button"
 import {
   Tabs,
@@ -7,7 +9,7 @@ import {
 } from "@workspace/ui/components/tabs"
 
 import { AppsCatalog } from "@/features/app-shell/apps-catalog.tsx"
-import { getDevProfile } from "@/features/app-shell/dev-profile.ts"
+import { authClient } from "@/lib/auth-client.ts"
 import {
   DESKTOP_MEDIA_QUERY,
   useMediaQuery,
@@ -29,8 +31,18 @@ export function SettingsWorkspace({
   onTabChange,
 }: SettingsWorkspaceProps) {
   const copy = SURFACE_COPY.settings
-  const profile = getDevProfile()
+  const { data } = authClient.useSession()
+  const navigate = useNavigate()
+  const [signingOut, setSigningOut] = useState(false)
   const isDesktop = useMediaQuery(DESKTOP_MEDIA_QUERY, true)
+  const name = data?.user.name?.trim() || "Account"
+  const email = data?.user.email ?? ""
+
+  async function handleSignOut() {
+    setSigningOut(true)
+    await authClient.signOut()
+    await navigate({ to: "/sign-in" })
+  }
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -91,24 +103,25 @@ export function SettingsWorkspace({
             <section className="max-w-lg space-y-4">
               <h2 className="text-sm font-semibold">Account</h2>
               <div className="rounded-lg border border-border bg-background p-4">
-                <p className="text-sm font-medium">{profile.name}</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {profile.email}
-                </p>
+                <p className="text-sm font-medium">{name}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{email}</p>
               </div>
               <div className="rounded-lg border border-border bg-background p-4">
                 <p className="text-sm font-medium">Sign out</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Coming soon
+                  Sign out on this device. Your work stays on this account.
                 </p>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   className="mt-3"
-                  disabled
+                  disabled={signingOut}
+                  onClick={() => {
+                    void handleSignOut()
+                  }}
                 >
-                  Sign out
+                  {signingOut ? "Signing out…" : "Sign out"}
                 </Button>
               </div>
             </section>

@@ -15,6 +15,10 @@ import { HomePage } from "@/routes/home.tsx"
 import { PaperPage } from "@/routes/paper.tsx"
 import { PitchPage } from "@/routes/pitch.tsx"
 import { SettingsPage } from "@/routes/settings.tsx"
+import { SignInPage } from "@/routes/sign-in.tsx"
+import { SignUpPage } from "@/routes/sign-up.tsx"
+import { authClient } from "@/lib/auth-client.ts"
+import { validateAuthSearch } from "@/lib/auth-redirect.ts"
 
 const rootRoute = createRootRoute({
   component: () => <Outlet />,
@@ -28,9 +32,45 @@ const indexRoute = createRoute({
   },
 })
 
+const signInRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/sign-in",
+  validateSearch: validateAuthSearch,
+  beforeLoad: async ({ search }) => {
+    const { data } = await authClient.getSession()
+    if (data) {
+      throw redirect({ href: search.redirect ?? "/app" })
+    }
+  },
+  component: SignInPage,
+})
+
+const signUpRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/sign-up",
+  validateSearch: validateAuthSearch,
+  beforeLoad: async () => {
+    const { data } = await authClient.getSession()
+    if (data) {
+      throw redirect({ href: "/app" })
+    }
+  },
+  component: SignUpPage,
+})
+
 const appLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/app",
+  beforeLoad: async ({ location }) => {
+    const { data } = await authClient.getSession()
+    if (!data) {
+      throw redirect({
+        to: "/sign-in",
+        search: { redirect: `${location.pathname}${location.searchStr}` },
+      })
+    }
+    return { session: data }
+  },
   component: AppShellLayout,
 })
 
@@ -67,6 +107,8 @@ const settingsRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
+  signInRoute,
+  signUpRoute,
   appLayoutRoute.addChildren([
     homeRoute,
     paperRoute,

@@ -1,9 +1,19 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { apiBaseUrl, fetchHealth } from "./api.ts"
+import { authMockState } from "@/test/auth-client-mock.ts"
+
+import {
+  ApiError,
+  apiBaseUrl,
+  apiFetch,
+  fetchHealth,
+  resetUnauthorizedHandler,
+  setUnauthorizedHandler,
+} from "./api.ts"
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  resetUnauthorizedHandler()
 })
 
 describe("fetchHealth", () => {
@@ -31,5 +41,78 @@ describe("fetchHealth", () => {
     )
 
     await expect(fetchHealth()).rejects.toThrow("Health check failed with 502")
+  })
+})
+
+describe("apiFetch", () => {
+  it("sends credentials and returns JSON", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      Response.json({ ok: true, threads: [] })
+    )
+    vi.stubGlobal("fetch", fetchMock)
+
+    await expect(apiFetch("/api/threads")).resolves.toEqual({
+      ok: true,
+      threads: [],
+    })
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
+      `${apiBaseUrl}/api/threads`
+    )
+    expect(init.credentials).toBe("include")
+  })
+
+  it("maps the error envelope to a typed ApiError", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        Response.json(
+          {
+            ok: false,
+            error: { code: "NOT_FOUND", message: "Thread missing" },
+          },
+          { status: 404 }
+        )
+      )
+    )
+
+    const error = await apiFetch("/api/threads/missing").catch((err) => err)
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error).toMatchObject({
+      status: 404,
+      code: "NOT_FOUND",
+      message: "Thread missing",
+    })
+  })
+
+  it("invalidates the session and runs the unauthorized handler", async () => {
+    const onUnauthorized = vi.fn(() => {
+      authMockState.data = null
+    })
+    setUnauthorizedHandler(onUnauthorized)
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        Response.json(
+          {
+            ok: false,
+            error: {
+              code: "UNAUTHORIZED",
+              message: "Authentication required",
+            },
+          },
+          { status: 401 }
+        )
+      )
+    )
+
+    await expect(apiFetch("/api/session")).rejects.toMatchObject({
+      status: 401,
+      code: "UNAUTHORIZED",
+    })
+    expect(onUnauthorized).toHaveBeenCalledTimes(1)
+    expect(authMockState.data).toBeNull()
   })
 })

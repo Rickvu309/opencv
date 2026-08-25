@@ -9,7 +9,7 @@ import {
   Share2,
 } from "lucide-react"
 
-import { getDevProfile } from "@/features/app-shell/dev-profile.ts"
+import { SAMPLE_AUTHOR } from "@/features/seed/sample-author.ts"
 
 import { CvDocument } from "./paper-cv-document.tsx"
 import { CvA4Canvas } from "./paper-cv-a4.tsx"
@@ -206,7 +206,7 @@ export function PaperEditor({
     const blocks: Record<LetterInsertId, string> = {
       salutation: "Dear hiring team,\n\n",
       paragraph: "\n\nI am writing to apply for…\n\n",
-      signoff: `\n\nBest,\n${profileFirstName(getDevProfile())}\n`,
+      signoff: `\n\nBest,\n${profileFirstName(SAMPLE_AUTHOR)}\n`,
       ps: "\n\nP.S. Happy to share my checkout card Proof if helpful.\n",
     }
     insertInEditor(blocks[id])

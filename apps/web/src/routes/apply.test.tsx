@@ -1,27 +1,17 @@
-import { createElement } from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { RouterProvider, createMemoryHistory } from "@tanstack/react-router"
 import {
   cleanup,
   fireEvent,
-  render,
   screen,
   within,
 } from "@testing-library/react"
 
 import { APPLY_DRAG_TYPE, SEED_CARDS } from "@/features/apply/apply-types.ts"
 import { SURFACE_COPY, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
-import { createAppRouter } from "@/router.tsx"
+import { renderApp } from "@/test/render-app.tsx"
 
 function renderApply() {
-  const router = createAppRouter({
-    history: createMemoryHistory({ initialEntries: [SURFACE_PATHS.apply] }),
-  })
-
-  return {
-    router,
-    ...render(createElement(RouterProvider, { router })),
-  }
+  return renderApp(SURFACE_PATHS.apply)
 }
 
 async function expectApplyLive() {

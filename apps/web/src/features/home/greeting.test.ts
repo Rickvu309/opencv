@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest"
 
-import { DEFAULT_DEV_PROFILE_NAME } from "@/features/app-shell/dev-profile.ts"
+import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 import { greetingPhrase, homeGreeting } from "@/features/home/greeting.ts"
 
 describe("home greeting", () => {
   it("uses Good morning before noon", () => {
     expect(greetingPhrase(new Date("2026-08-24T08:00:00"))).toBe("Good morning")
     expect(
-      homeGreeting(DEFAULT_DEV_PROFILE_NAME, new Date("2026-08-24T08:00:00"))
-    ).toBe(`Good morning, ${DEFAULT_DEV_PROFILE_NAME}`)
+      homeGreeting(SAMPLE_AUTHOR_NAME, new Date("2026-08-24T08:00:00"))
+    ).toBe(`Good morning, ${SAMPLE_AUTHOR_NAME}`)
   })
 
   it("uses Good afternoon from noon until 17:00", () => {
@@ -25,11 +25,11 @@ describe("home greeting", () => {
     expect(greetingPhrase(new Date("2026-08-24T22:00:00"))).toBe("Good evening")
   })
 
-  it("shows the placeholder User name, not the demo persona", () => {
-    expect(DEFAULT_DEV_PROFILE_NAME).not.toMatch(/Eric/i)
-    expect(homeGreeting()).toMatch(
+  it("greets the given name, not the demo persona", () => {
+    expect(SAMPLE_AUTHOR_NAME).not.toMatch(/Eric/i)
+    expect(homeGreeting(SAMPLE_AUTHOR_NAME)).toMatch(
       new RegExp(
-        `^Good (morning|afternoon|evening), ${DEFAULT_DEV_PROFILE_NAME}$`
+        `^Good (morning|afternoon|evening), ${SAMPLE_AUTHOR_NAME}$`
       )
     )
   })

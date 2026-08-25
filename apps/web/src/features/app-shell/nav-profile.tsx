@@ -11,12 +11,10 @@ import {
 } from "@workspace/ui/components/tooltip"
 import { cn } from "@workspace/ui/lib/utils"
 
-import {
-  getDevProfile,
-  profileInitials,
-} from "@/features/app-shell/dev-profile.ts"
+import { profileInitials } from "@/features/app-shell/profile-display.ts"
 import { FOCUS_RING } from "@/features/app-shell/focus-ring.ts"
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { authClient } from "@/lib/auth-client.ts"
 
 type Props = {
   collapsed?: boolean
@@ -24,14 +22,15 @@ type Props = {
 }
 
 export function NavProfile({ collapsed, onNavigate }: Props) {
-  const profile = getDevProfile()
-  const initials = profileInitials(profile.name)
-  const ariaLabel = `${profile.name}, profile and settings`
+  const { data } = authClient.useSession()
+  const name = data?.user.name?.trim() || "Account"
+  const initials = profileInitials(name)
+  const ariaLabel = `${name}, profile and settings`
 
   const avatar = (
     <Avatar size="sm" className="size-7 rounded-md after:rounded-md">
-      {profile.avatarSrc ? (
-        <AvatarImage src={profile.avatarSrc} alt="" />
+      {data?.user.image ? (
+        <AvatarImage src={data.user.image} alt="" />
       ) : null}
       <AvatarFallback className="rounded-md text-[11px] font-medium">
         {initials}
@@ -69,7 +68,7 @@ export function NavProfile({ collapsed, onNavigate }: Props) {
           collapsed && "sr-only"
         )}
       >
-        {profile.name}
+        {name}
       </span>
     </Link>
   )
@@ -79,7 +78,7 @@ export function NavProfile({ collapsed, onNavigate }: Props) {
       {collapsed ? (
         <Tooltip>
           <TooltipTrigger render={link} />
-          <TooltipContent side="right">{profile.name}</TooltipContent>
+          <TooltipContent side="right">{name}</TooltipContent>
         </Tooltip>
       ) : (
         link
