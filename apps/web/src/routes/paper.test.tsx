@@ -3,6 +3,7 @@ import {
   cleanup,
   fireEvent,
   screen,
+  waitFor,
   within,
 } from "@testing-library/react"
 
@@ -62,19 +63,91 @@ describe("Paper drive", () => {
     ).not.toBeInTheDocument()
   })
 
-  it("marks unfinished drive chrome as coming soon instead of silent no-ops", async () => {
+  it("marks filter as coming soon and keeps New enabled", async () => {
     renderPaper()
     await expectPaperDrive()
 
     const filter = screen.getByRole("button", { name: /filter/i })
-    const create = screen.getByRole("button", { name: /^new/i })
     expect(filter).toBeDisabled()
-    expect(create).toBeDisabled()
     expect(filter).toHaveTextContent("Coming soon")
-    expect(create).toHaveTextContent("Coming soon")
+    expect(screen.getByRole("button", { name: "New document" })).toBeEnabled()
+  })
+
+  it("creates, renames, changes status, and deletes a document", async () => {
+    renderPaper()
+    await expectPaperDrive()
+
+    fireEvent.click(screen.getByRole("button", { name: "New document" }))
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Letter" }))
+
     expect(
-      screen.getAllByRole("button", { name: "Row menu — coming soon" })[0]
-    ).toBeDisabled()
+      await screen.findByRole("region", { name: "Editing Untitled Letter" })
+    ).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: /all documents/i }))
+    await expectPaperDrive()
+    expect(screen.getByText("Untitled Letter")).toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Document actions for Untitled Letter",
+      })
+    )
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Rename" }))
+    const nameInput = await screen.findByRole("textbox", {
+      name: "Document name",
+    })
+    fireEvent.change(nameInput, { target: { value: "Cover: intern" } })
+    fireEvent.click(screen.getByRole("button", { name: "Save" }))
+    expect(await screen.findByText("Cover: intern")).toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Document actions for Cover: intern" })
+    )
+    fireEvent.click(
+      await screen.findByRole("menuitem", { name: "Mark as Ready" })
+    )
+    await waitFor(() => {
+      expect(
+        screen
+          .getByRole("button", { name: "Document actions for Cover: intern" })
+          .closest("tr")
+      ).toHaveTextContent("Ready")
+    })
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Document actions for Cover: intern" })
+    )
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Delete" }))
+    fireEvent.click(await screen.findByRole("button", { name: "Delete" }))
+    expect(screen.queryByText("Cover: intern")).not.toBeInTheDocument()
+    await expectPaperDrive()
+  })
+
+  it("rolls content edits back and shows the real error message", async () => {
+    const { failNextPaperCommand } = await import("@/test/paper-api-mock.ts")
+    const { PAPER_COMMANDS } = await import("@workspace/domain")
+    failNextPaperCommand(
+      PAPER_COMMANDS.updateContent,
+      "Headline must be a string"
+    )
+
+    renderPaper()
+    await expectPaperDrive()
+    await openDoc("PM track CV")
+
+    const summary = screen.getByRole("textbox", { name: "Summary" })
+    summary.textContent = "Edited summary that should roll back"
+    fireEvent.input(summary)
+
+    expect(
+      await screen.findByRole("alert", {}, { timeout: 2000 })
+    ).toHaveTextContent("Headline must be a string")
+    await waitFor(() => {
+      expect(summary).not.toHaveTextContent(
+        "Edited summary that should roll back"
+      )
+    })
   })
 
   it("opens a document and returns to the drive", async () => {
@@ -101,9 +174,7 @@ describe("Paper editors", () => {
     await openDoc("PM track CV")
 
     expect(screen.getByText("Profile")).toBeInTheDocument()
-    expect(
-      screen.getAllByText(SAMPLE_AUTHOR_NAME).length
-    ).toBeGreaterThan(0)
+    expect(screen.getAllByText(SAMPLE_AUTHOR_NAME).length).toBeGreaterThan(0)
     expect(screen.getByRole("textbox", { name: "Summary" })).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole("button", { name: /Product & design/ }))

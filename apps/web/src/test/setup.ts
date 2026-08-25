@@ -5,6 +5,7 @@ import "@testing-library/jest-dom/vitest"
 import { resetUnauthorizedHandler } from "@/lib/api.ts"
 
 import { resetMockSession } from "./auth-client-mock.ts"
+import { resetPaperApiMock } from "./paper-api-mock.ts"
 import { resetThreadApiMock } from "./threads-api-mock.ts"
 
 vi.mock(
@@ -55,6 +56,7 @@ beforeEach(() => {
   resetMockSession()
   resetUnauthorizedHandler()
   resetThreadApiMock()
+  resetPaperApiMock()
 })
 
 afterEach(() => {

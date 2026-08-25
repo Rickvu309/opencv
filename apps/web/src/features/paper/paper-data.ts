@@ -1,116 +1,116 @@
 import {
+  PAPER_KIND_LABEL,
+  emptyCvDocument,
+  emptyProofDocument,
+  isCvDocument,
+  isLetterDocument,
+  isProofDocument,
+  type PaperContentKind,
+  type PaperDoc,
+  type PaperDocStatus,
+} from "@workspace/domain"
+
+import {
   SAMPLE_AUTHOR,
   type SampleAuthor,
 } from "@/features/seed/sample-author.ts"
 
-import { defaultCvData, serializeCvContent } from "./paper-cv-types.ts"
-import {
-  DEFAULT_CHECKOUT_PROOF,
-  DEFAULT_ONBOARDING_PROOF,
-  serializeProofContent,
-} from "./paper-proof-types.ts"
+import type { CvData } from "./paper-cv-types.ts"
+import type { ProofData } from "./paper-proof-types.ts"
 
-export type DocType = "cv" | "letter" | "proof"
-export type DocStatus = "draft" | "ready" | "published"
+export type DocType = PaperContentKind
+export type DocStatus = PaperDocStatus
+export type { PaperDoc }
 
-export type PaperDoc = {
-  id: string
-  name: string
-  type: DocType
-  status: DocStatus
-  updated: string
-  applyLink?: string
-  content: string
-}
+export const TYPE_LABEL = PAPER_KIND_LABEL
 
-export const TYPE_LABEL: Record<DocType, string> = {
-  cv: "CV",
-  letter: "Letter",
-  proof: "Proof",
-}
-
-export function profileFirstName(profile: SampleAuthor) {
+export function profileFirstName(profile: SampleAuthor = SAMPLE_AUTHOR) {
   return profile.name.trim().split(/\s+/).filter(Boolean)[0] ?? profile.name
 }
 
-function seedLetter(profile: SampleAuthor, body: string) {
-  const firstName = profileFirstName(profile)
-  return `${body}
-
-Best,
-${firstName}`
+export function cvContentOf(doc: PaperDoc): CvData {
+  if (doc.kind === "cv" && isCvDocument(doc.content)) return doc.content
+  return emptyCvDocument()
 }
 
-export function seedPaperDocs(
-  profile: SampleAuthor = SAMPLE_AUTHOR
-): PaperDoc[] {
+export function proofContentOf(doc: PaperDoc): ProofData {
+  if (doc.kind === "proof" && isProofDocument(doc.content)) return doc.content
+  return emptyProofDocument()
+}
+
+export function letterMarkdownOf(doc: PaperDoc): string {
+  if (doc.kind === "letter" && isLetterDocument(doc.content)) {
+    return doc.content.markdown
+  }
+  return ""
+}
+
+export function formatPaperUpdated(iso: string, now = Date.now()): string {
+  const then = Date.parse(iso)
+  if (Number.isNaN(then)) return iso
+
+  const deltaMs = now - then
+  if (deltaMs < 45_000) return "Just now"
+  if (deltaMs < 50 * 60_000) {
+    const minutes = Math.max(1, Math.round(deltaMs / 60_000))
+    return minutes === 1 ? "1 minute ago" : `${minutes} minutes ago`
+  }
+
+  const today = new Date(now)
+  const date = new Date(then)
+  const startOfToday = Date.UTC(
+    today.getUTCFullYear(),
+    today.getUTCMonth(),
+    today.getUTCDate()
+  )
+  const startOfThen = Date.UTC(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate()
+  )
+  const dayDiff = Math.round((startOfToday - startOfThen) / 86_400_000)
+  if (dayDiff === 0) return "Today"
+  if (dayDiff === 1) return "Yesterday"
+
+  return date.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  })
+}
+
+function statusHint(docs: PaperDoc[]): string {
+  if (docs.length === 0) return "None yet"
+  const drafts = docs.filter((doc) => doc.status === "draft").length
+  const ready = docs.filter((doc) => doc.status === "ready").length
+  if (drafts === docs.length) {
+    return docs.length === 1 ? "1 draft" : "All drafts"
+  }
+  if (ready === docs.length) {
+    return docs.length === 1 ? "1 ready" : "All ready"
+  }
+  const parts = []
+  if (drafts) parts.push(`${drafts} draft${drafts === 1 ? "" : "s"}`)
+  if (ready) parts.push(`${ready} ready`)
+  return parts.join(" · ") || "Mixed"
+}
+
+export function paperSummary(docs: PaperDoc[]) {
+  const cvs = docs.filter((doc) => doc.kind === "cv")
+  const letters = docs.filter((doc) => doc.kind === "letter")
+  const proofs = docs.filter((doc) => doc.kind === "proof")
   return [
+    { label: "CVs", value: String(cvs.length), hint: statusHint(cvs) },
     {
-      id: "d1",
-      name: "PM track CV",
-      type: "cv",
-      status: "draft",
-      updated: "Today",
-      content: serializeCvContent(defaultCvData(profile)),
+      label: "Letters",
+      value: String(letters.length),
+      hint: statusHint(letters),
     },
+    { label: "Proof", value: String(proofs.length), hint: statusHint(proofs) },
     {
-      id: "d2",
-      name: "Cover: Associate PM intern",
-      type: "letter",
-      status: "draft",
-      updated: "Yesterday",
-      applyLink: "Local startup",
-      content: seedLetter(
-        profile,
-        `Dear hiring team,
-
-I am applying for the associate product manager intern role at Local startup. I am in my final year at UIT studying Information Systems and spend most of my free time on small product experiments—not coursework summaries.
-
-Last month I ran a checkout card resize study on a major e-commerce app. I tested two layouts with 12 users and documented an 18% lift in add-to-cart taps. I linked that work as a Proof card on my CV.
-
-I would welcome a short conversation about where I can help your team this summer.`
-      ),
-    },
-    {
-      id: "d3",
-      name: "Checkout card resize study",
-      type: "proof",
-      status: "ready",
-      updated: "3 days ago",
-      content: serializeProofContent(DEFAULT_CHECKOUT_PROOF),
-    },
-    {
-      id: "d4",
-      name: "Wallet onboarding audit",
-      type: "proof",
-      status: "draft",
-      updated: "Last week",
-      content: serializeProofContent(DEFAULT_ONBOARDING_PROOF),
-    },
-    {
-      id: "d5",
-      name: "Cover: Product intern",
-      type: "letter",
-      status: "draft",
-      updated: "Last week",
-      applyLink: "Fintech scale-up",
-      content: seedLetter(
-        profile,
-        `Dear Fintech scale-up team,
-
-I am interested in the product intern role. I have been tearing down mobile wallet onboarding flows for a side project and prototyping a shorter KYC path with classmates.
-
-I would like to learn how your team validates experiments in production and how interns contribute to discovery work.
-
-Thank you for considering my application.`
-      ),
+      label: "Linked to Apply",
+      value: "0",
+      hint: "Apply link lands later",
     },
   ]
 }
-
-export const PAPER_SUMMARY = [
-  { label: "CVs", value: "1", hint: "1 draft" },
-  { label: "Letters", value: "2", hint: "All drafts" },
-  { label: "Proof", value: "2", hint: "1 ready" },
-  { label: "Linked to Apply", value: "2", hint: "Roles tied" },
-]

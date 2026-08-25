@@ -1,3 +1,4 @@
+import { paperCommands } from "./paper.js"
 import { createRegistry, type RegisteredCommand } from "./registry.js"
 import { threadCommands } from "./threads.js"
 
@@ -10,6 +11,7 @@ export type {
   RegisteredCommand,
 } from "./registry.js"
 
-export const commandRegistry = createRegistry(
-  threadCommands as RegisteredCommand[]
-)
+export const commandRegistry = createRegistry([
+  ...threadCommands,
+  ...paperCommands,
+] as RegisteredCommand[])

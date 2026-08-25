@@ -5,10 +5,19 @@ import { render } from "@testing-library/react"
 
 import { createQueryClient } from "@/lib/query-client.ts"
 import { createAppRouter } from "@/router.tsx"
-import { installThreadApiMock } from "@/test/threads-api-mock.ts"
+import { paperApiFetch } from "@/test/paper-api-mock.ts"
+import { threadApiFetch } from "@/test/threads-api-mock.ts"
+import { vi } from "vitest"
 
 export function renderApp(initialEntry = "/") {
-  installThreadApiMock()
+  vi.stubGlobal(
+    "fetch",
+    async (input: RequestInfo | URL, init?: RequestInit) => {
+      const paper = await paperApiFetch(input, init)
+      if (paper) return paper
+      return threadApiFetch(input, init)
+    }
+  )
   const queryClient = createQueryClient()
   const router = createAppRouter({
     history: createMemoryHistory({ initialEntries: [initialEntry] }),

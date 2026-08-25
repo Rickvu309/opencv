@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from "react"
 import { Button } from "@workspace/ui/components/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu"
 import { cn } from "@workspace/ui/lib/utils"
+import type { PaperDocStatus } from "@workspace/domain"
 import {
   ChevronDown,
   FileText,
@@ -14,16 +21,14 @@ import { SAMPLE_AUTHOR } from "@/features/seed/sample-author.ts"
 import { CvDocument } from "./paper-cv-document.tsx"
 import { CvA4Canvas } from "./paper-cv-a4.tsx"
 import { applyCvTemplate } from "./paper-cv-template-picker.tsx"
-import {
-  parseCvContent,
-  serializeCvContent,
-  type CvData,
-  type CvTemplateId,
-} from "./paper-cv-types.ts"
+import { type CvData, type CvTemplateId } from "./paper-cv-types.ts"
 import {
   TYPE_LABEL,
+  cvContentOf,
+  formatPaperUpdated,
+  letterMarkdownOf,
   profileFirstName,
-  type DocStatus,
+  proofContentOf,
   type PaperDoc,
 } from "./paper-data.ts"
 import { PaperEditorSidebar } from "./paper-editor-sidebar.tsx"
@@ -37,8 +42,6 @@ import { paperContentToHtml, paperHtmlToContent } from "./paper-markdown.ts"
 import { ProofDocument } from "./paper-proof-document.tsx"
 import {
   newProofStep,
-  parseProofContent,
-  serializeProofContent,
   type ProofData,
   type ProofStepType,
 } from "./paper-proof-types.ts"
@@ -46,57 +49,66 @@ import {
 type Props = {
   doc: PaperDoc
   docs: PaperDoc[]
+  revertKey: number
   onBack: () => void
   onSelectDoc: (id: string) => void
   onChange: (doc: PaperDoc) => void
+  onRename: (name: string) => void
+  onStatusChange: (status: PaperDocStatus) => void
+  onDelete: () => void
 }
 
 export function PaperEditor({
   doc,
   docs,
+  revertKey,
   onBack,
   onSelectDoc,
   onChange,
+  onRename,
+  onStatusChange,
+  onDelete,
 }: Props) {
-  const isCv = doc.type === "cv"
-  const isProof = doc.type === "proof"
-  const isLetter = doc.type === "letter"
+  const isCv = doc.kind === "cv"
+  const isProof = doc.kind === "proof"
+  const isLetter = doc.kind === "letter"
   const editorRef = useRef<HTMLDivElement>(null)
   const proofPhotoRef = useRef<HTMLInputElement>(null)
   const cvPhotoRef = useRef<HTMLInputElement>(null)
   const [dirty, setDirty] = useState(false)
   const [saving, setSaving] = useState(false)
   const [letterWords, setLetterWords] = useState(0)
-  const [cvData, setCvData] = useState<CvData>(() =>
-    parseCvContent(doc.content)
-  )
+  const [title, setTitle] = useState(doc.name)
+  const [cvData, setCvData] = useState<CvData>(() => cvContentOf(doc))
   const [proofData, setProofData] = useState<ProofData>(() =>
-    parseProofContent(doc.content)
+    proofContentOf(doc)
   )
 
   useEffect(() => {
+    setTitle(doc.name)
     if (isCv) {
-      setCvData(parseCvContent(doc.content))
+      setCvData(cvContentOf(doc))
       setDirty(false)
       setSaving(false)
       return
     }
     if (isProof) {
-      setProofData(parseProofContent(doc.content))
+      setProofData(proofContentOf(doc))
       setDirty(false)
       setSaving(false)
       return
     }
     const el = editorRef.current
     if (!el) return
-    el.innerHTML = paperContentToHtml(doc.content)
-    setLetterWords(countWords(doc.content))
+    const markdown = letterMarkdownOf(doc)
+    el.innerHTML = paperContentToHtml(markdown)
+    setLetterWords(countWords(markdown))
     setDirty(false)
     setSaving(false)
-    // Reset on document switch only — autosave writes `doc.content` and must
-    // not wipe in-progress letter edits.
+    // Reset on document switch or optimistic rollback — autosave writes
+    // `doc.content` and must not wipe in-progress letter edits.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- see above
-  }, [doc.id, isCv, isProof])
+  }, [doc.id, isCv, isProof, revertKey])
 
   useEffect(() => {
     if (!dirty) return
@@ -106,22 +118,19 @@ export function PaperEditor({
       if (isCv) {
         onChange({
           ...doc,
-          content: serializeCvContent(cvData),
-          updated: "Just now",
+          content: cvData,
         })
       } else if (isProof) {
         onChange({
           ...doc,
-          content: serializeProofContent(proofData),
-          updated: "Just now",
+          content: proofData,
         })
       } else {
         const el = editorRef.current
         if (!el) return
         onChange({
           ...doc,
-          content: paperHtmlToContent(el),
-          updated: "Just now",
+          content: { markdown: paperHtmlToContent(el) },
         })
       }
       setDirty(false)
@@ -269,22 +278,19 @@ export function PaperEditor({
     if (isCv) {
       onChange({
         ...doc,
-        content: serializeCvContent(cvData),
-        updated: "Just now",
+        content: cvData,
       })
     } else if (isProof) {
       onChange({
         ...doc,
-        content: serializeProofContent(proofData),
-        updated: "Just now",
+        content: proofData,
       })
     } else {
       const el = editorRef.current
       if (!el) return
       onChange({
         ...doc,
-        content: paperHtmlToContent(el),
-        updated: "Just now",
+        content: { markdown: paperHtmlToContent(el) },
       })
     }
     setDirty(false)
@@ -314,24 +320,41 @@ export function PaperEditor({
         <header className="flex shrink-0 items-center gap-3 border-b border-border bg-background px-5 py-3">
           <FileText className="size-4 shrink-0 text-muted-foreground" />
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-sm font-semibold">{doc.name}</h1>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onBlur={() => {
+                const name = title.trim()
+                if (name && name !== doc.name) onRename(name)
+                else setTitle(doc.name)
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") (e.target as HTMLInputElement).blur()
+              }}
+              className="w-full truncate border-0 bg-transparent text-sm font-semibold outline-none"
+              aria-label="Document name"
+            />
             <p className="text-xs text-muted-foreground">
-              {TYPE_LABEL[doc.type]}
-              {doc.applyLink ? ` · ${doc.applyLink}` : ""}
-              {" · "}Updated {doc.updated}
+              {TYPE_LABEL[doc.kind]}
+              {" · "}Updated {formatPaperUpdated(doc.updatedAt)}
             </p>
           </div>
 
-          <Button
-            type="button"
-            size="icon-sm"
-            variant="ghost"
-            aria-label="More"
-          >
-            <MoreHorizontal className="size-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={<Button type="button" size="icon-sm" variant="ghost" />}
+              aria-label="More"
+            >
+              <MoreHorizontal className="size-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem variant="destructive" onClick={onDelete}>
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-          <StatusPill status={doc.status} />
+          <StatusPill status={doc.status} onChange={onStatusChange} />
 
           <Button type="button" size="sm" variant="outline">
             <Share2 className="size-3.5" />
@@ -454,16 +477,16 @@ export function PaperEditor({
                       </button>
                     </div>
                   </div>
-                <div
-                  ref={editorRef}
-                  contentEditable
-                  role="textbox"
-                  suppressContentEditableWarning
-                  onInput={handleRichInput}
-                  className="paper-editor-canvas min-h-[70vh] px-10 py-10 text-[15px] leading-8 outline-none sm:px-14 sm:py-12"
-                  aria-label="Document content"
-                  spellCheck
-                />
+                  <div
+                    ref={editorRef}
+                    contentEditable
+                    role="textbox"
+                    suppressContentEditableWarning
+                    onInput={handleRichInput}
+                    className="paper-editor-canvas min-h-[70vh] px-10 py-10 text-[15px] leading-8 outline-none sm:px-14 sm:py-12"
+                    aria-label="Document content"
+                    spellCheck
+                  />
                 </article>
               )
             ) : null}
@@ -478,7 +501,13 @@ function countWords(text: string | undefined) {
   return (text ?? "").trim().split(/\s+/).filter(Boolean).length
 }
 
-function StatusPill({ status }: { status: DocStatus }) {
+function StatusPill({
+  status,
+  onChange,
+}: {
+  status: PaperDocStatus
+  onChange: (status: PaperDocStatus) => void
+}) {
   const label =
     status === "published"
       ? "Published"
@@ -487,19 +516,33 @@ function StatusPill({ status }: { status: DocStatus }) {
         : "Draft"
 
   return (
-    <button
-      type="button"
-      className={cn(
-        "inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium",
-        status === "published" && "border-border bg-muted text-foreground",
-        status === "ready" &&
-          "border-border bg-secondary text-secondary-foreground",
-        status === "draft" && "border-border bg-muted/40 text-muted-foreground"
-      )}
-    >
-      {status === "published" ? <Globe className="size-3.5" /> : null}
-      {label}
-      <ChevronDown className="size-3 opacity-60" />
-    </button>
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        className={cn(
+          "inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium",
+          status === "published" && "border-border bg-muted text-foreground",
+          status === "ready" &&
+            "border-border bg-secondary text-secondary-foreground",
+          status === "draft" &&
+            "border-border bg-muted/40 text-muted-foreground"
+        )}
+        aria-label="Document status"
+      >
+        {status === "published" ? <Globe className="size-3.5" /> : null}
+        {label}
+        <ChevronDown className="size-3 opacity-60" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => onChange("draft")}>
+          Draft
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onChange("ready")}>
+          Ready
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onChange("published")}>
+          Published
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

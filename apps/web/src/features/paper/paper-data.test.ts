@@ -1,30 +1,35 @@
+import { readFileSync } from "node:fs"
+import path from "node:path"
+import { fileURLToPath } from "node:url"
 import { describe, expect, it } from "vitest"
 
 import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
+import { defaultCvData } from "./paper-cv-types.ts"
+import { formatPaperUpdated, paperSummary } from "./paper-data.ts"
+import { samplePaperDocs } from "@/test/paper-fixtures.ts"
 
-import {
-  defaultCvData,
-  parseCvContent,
-  serializeCvContent,
-} from "./paper-cv-types.ts"
-import { seedPaperDocs } from "./paper-data.ts"
-import { parseProofContent } from "./paper-proof-types.ts"
+const paperRoot = fileURLToPath(new URL(".", import.meta.url))
 
-describe("Paper seed documents", () => {
+function readFeature(rel: string) {
+  return readFileSync(path.join(paperRoot, rel), "utf8")
+}
+
+describe("Paper fixtures", () => {
   it("belong to the sample author, not the demo persona", () => {
-    const docs = seedPaperDocs()
+    const docs = samplePaperDocs()
     const serialized = JSON.stringify(docs)
 
     expect(serialized).not.toMatch(/Eric Nguyen/i)
     expect(serialized).not.toMatch(/\bEric\b/)
     expect(serialized).toContain(SAMPLE_AUTHOR_NAME)
     expect(serialized).toContain("you@openpath.app")
+    expect(serialized).not.toMatch(/cv:v1:|proof:v1:/)
   })
 
-  it("includes a CV, Letters, and Proofs with status", () => {
-    const docs = seedPaperDocs()
+  it("includes a CV, Letters, and Proofs with jsonb content", () => {
+    const docs = samplePaperDocs()
 
-    expect(docs.map((doc) => doc.type).sort()).toEqual([
+    expect(docs.map((doc) => doc.kind).sort()).toEqual([
       "cv",
       "letter",
       "letter",
@@ -33,29 +38,52 @@ describe("Paper seed documents", () => {
     ])
     expect(docs.some((doc) => doc.status === "draft")).toBe(true)
     expect(docs.some((doc) => doc.status === "ready")).toBe(true)
-    expect(parseCvContent(docs[0]!.content).name).toBe(SAMPLE_AUTHOR_NAME)
-    expect(parseProofContent(docs[2]!.content).title).toMatch(/card resize/i)
-  })
-
-  it("uses a supplied profile for seed authorship", () => {
-    const docs = seedPaperDocs({
-      name: "Minh Le",
-      email: "minh@openpath.app",
-      avatarSrc: "",
-    })
-    const serialized = JSON.stringify(docs)
-
-    expect(serialized).toContain("Minh Le")
-    expect(serialized).toContain("minh@openpath.app")
-    expect(docs[1]!.content).toContain("Best,\nMinh")
-    expect(serialized).not.toMatch(/Eric/i)
+    expect(docs[0]!.content).toEqual(defaultCvData())
+    expect(docs[2]!.content).toEqual(
+      expect.objectContaining({ title: expect.stringMatching(/card resize/i) })
+    )
   })
 })
 
-describe("CV content encoding", () => {
-  it("round-trips structured CV data", () => {
-    const data = defaultCvData()
-    const parsed = parseCvContent(serializeCvContent(data))
-    expect(parsed).toEqual(data)
+describe("paper display helpers", () => {
+  it("formats recent updates in plain language", () => {
+    const now = Date.parse("2026-08-25T12:00:00.000Z")
+    expect(formatPaperUpdated("2026-08-25T11:59:30.000Z", now)).toBe("Just now")
+    expect(formatPaperUpdated("2026-08-25T11:10:00.000Z", now)).toBe(
+      "50 minutes ago"
+    )
+    expect(formatPaperUpdated("2026-08-24T12:00:00.000Z", now)).toBe(
+      "Yesterday"
+    )
+  })
+
+  it("summarizes counts from live docs", () => {
+    const summary = paperSummary(samplePaperDocs())
+    expect(summary[0]).toEqual({
+      label: "CVs",
+      value: "1",
+      hint: "1 draft",
+    })
+    expect(summary[1]).toEqual({
+      label: "Letters",
+      value: "2",
+      hint: "All drafts",
+    })
+  })
+})
+
+describe("prefixed-string retirement", () => {
+  it("keeps production Paper modules free of cv:v1 / proof:v1 content", () => {
+    const sources = [
+      "paper-data.ts",
+      "paper-cv-types.ts",
+      "paper-proof-types.ts",
+      "paper-editor.tsx",
+      "paper-workspace.tsx",
+      "paper-api.ts",
+    ]
+    for (const file of sources) {
+      expect(readFeature(file)).not.toMatch(/cv:v1:|proof:v1:/)
+    }
   })
 })
