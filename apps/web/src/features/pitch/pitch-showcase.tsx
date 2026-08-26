@@ -10,7 +10,6 @@ import {
 import { cn } from "@workspace/ui/lib/utils"
 import {
   Code2,
-  ExternalLink,
   File,
   FileSpreadsheet,
   FileText,
@@ -220,11 +219,7 @@ export function AchievementsSection({
                   {item.description}
                 </p>
                 {item.link ? (
-                  <a
-                    href={item.link}
-                    onClick={(e) => e.preventDefault()}
-                    className="mt-3 flex items-center gap-3 rounded-xl border border-border bg-muted/20 p-3 transition-colors hover:border-foreground/15 hover:bg-muted/35"
-                  >
+                  <div className="mt-3 flex items-center gap-3 rounded-xl border border-border bg-muted/20 p-3">
                     <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-background text-[10px] font-bold shadow-sm">
                       PDF
                     </span>
@@ -236,7 +231,7 @@ export function AchievementsSection({
                         Case study · Proof chain
                       </span>
                     </span>
-                  </a>
+                  </div>
                 ) : null}
               </div>
             </TimelineRow>
@@ -246,9 +241,10 @@ export function AchievementsSection({
       {editing ? (
         <button
           type="button"
-          className="mt-6 text-xs font-medium text-muted-foreground hover:text-foreground"
+          disabled
+          className="mt-6 text-xs font-medium text-muted-foreground disabled:opacity-50"
         >
-          + Add achievement
+          + Add achievement · Coming soon
         </button>
       ) : null}
     </SectionShell>
@@ -307,10 +303,9 @@ export function WorkSection({
         {docs.map((doc) => {
           const meta = paperDocPitchMeta(doc)
           return (
-            <button
+            <div
               key={doc.id}
-              type="button"
-              className="flex w-full items-center gap-3 rounded-xl border border-border/70 bg-muted/15 p-3 text-left transition-colors hover:border-border hover:bg-muted/30"
+              className="flex w-full items-center gap-3 rounded-xl border border-border/70 bg-muted/15 p-3 text-left"
             >
               <div
                 className={cn(
@@ -328,8 +323,7 @@ export function WorkSection({
                   {doc.updated} · {doc.status}
                 </span>
               </span>
-              <ExternalLink className="size-3.5 shrink-0 text-muted-foreground/40" />
-            </button>
+            </div>
           )
         })}
       </div>
@@ -337,10 +331,7 @@ export function WorkSection({
       <ul className="mt-4 flex flex-wrap gap-2 border-t border-border/60 pt-4">
         {files.map((file) => (
           <li key={file.id}>
-            <button
-              type="button"
-              className="inline-flex items-center gap-2 rounded-lg border border-border/60 bg-background px-3 py-2 text-left text-xs transition-colors hover:bg-muted/40"
-            >
+            <div className="inline-flex items-center gap-2 rounded-lg border border-border/60 bg-background px-3 py-2 text-left text-xs">
               <FileKindIcon kind={file.kind} />
               <span>
                 <span className="block font-medium">{file.name}</span>
@@ -348,7 +339,7 @@ export function WorkSection({
                   {file.meta}
                 </span>
               </span>
-            </button>
+            </div>
           </li>
         ))}
       </ul>
@@ -392,20 +383,15 @@ export function GithubSection({
               className="size-8 sm:size-8"
             />
             <div className="min-w-0">
-              <a
-                href={mock.profileUrl}
-                onClick={(e) => e.preventDefault()}
-                className="block truncate font-mono text-sm font-medium hover:underline"
-              >
+              <p className="block truncate font-mono text-sm font-medium">
                 @{mock.username}
-              </a>
+              </p>
               <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700">
                 <span className="size-1.5 rounded-full bg-emerald-500" />
                 Connected · mock integration
               </span>
             </div>
           </div>
-          <ExternalLink className="size-3.5 shrink-0 text-muted-foreground/40" />
         </div>
 
         <p className="mt-3 text-xs text-muted-foreground">
@@ -477,33 +463,24 @@ export function ContactSection({
   return (
     <SectionShell title="Contact" editing={editing} onHide={onHide}>
       {email ? (
-        <a
-          href={email.href}
-          onClick={(e) => e.preventDefault()}
-          className="mb-4 flex flex-col rounded-xl border border-border bg-muted/20 px-4 py-3 transition-colors hover:border-foreground/15"
-        >
+        <div className="mb-4 flex flex-col rounded-xl border border-border bg-muted/20 px-4 py-3">
           <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
             Email
           </span>
           <span className="mt-1 text-base font-semibold">
             {email.href.replace("mailto:", "")}
           </span>
-        </a>
+        </div>
       ) : null}
       <ul className="space-y-1">
         {links
           .filter((l) => l.icon !== "mail")
           .map((link) => (
             <li key={link.id}>
-              <a
-                href={link.href}
-                onClick={(e) => e.preventDefault()}
-                className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm transition-colors hover:bg-muted/50"
-              >
+              <div className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm">
                 <LinkIcon kind={link.icon} />
                 <span className="font-medium">{link.label}</span>
-                <ExternalLink className="ml-auto size-3 text-muted-foreground/40" />
-              </a>
+              </div>
             </li>
           ))}
       </ul>
@@ -539,10 +516,11 @@ export function GallerySection({
         {editing ? (
           <button
             type="button"
-            className="flex aspect-[4/3] flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border text-muted-foreground hover:bg-muted/30"
+            disabled
+            className="flex aspect-[4/3] flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border text-muted-foreground disabled:opacity-50"
           >
             <ImagePlus className="size-4" />
-            <span className="text-[10px]">Upload</span>
+            <span className="text-[10px]">Upload · Coming soon</span>
           </button>
         ) : null}
       </div>

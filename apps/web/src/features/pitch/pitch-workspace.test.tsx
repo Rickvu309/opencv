@@ -2,7 +2,10 @@ import { createElement } from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 
-import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
+import {
+  SAMPLE_AUTHOR,
+  SAMPLE_AUTHOR_NAME,
+} from "@/features/seed/sample-author.ts"
 import { SURFACE_COPY } from "@/features/app-shell/surfaces.ts"
 import { getMockGithubUsername } from "@/features/pitch/pitch-github-mock.ts"
 import { PitchWorkspace } from "@/features/pitch/pitch-workspace.tsx"
@@ -66,6 +69,18 @@ describe("Pitch workspace", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Edit profile" }))
     expect(screen.getByText("Editing Pitch")).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: /add achievement/i })
+    ).toBeDisabled()
+    expect(
+      screen.getByRole("button", { name: /add achievement/i })
+    ).toHaveTextContent("Coming soon")
+    expect(
+      screen.getByRole("button", { name: "New highlight — coming soon" })
+    ).toBeDisabled()
+    expect(
+      screen.getByRole("button", { name: /add card/i })
+    ).toBeDisabled()
 
     const about = screen.getByRole("heading", { name: "About" }).closest("section")
     expect(about).not.toBeNull()
@@ -123,6 +138,24 @@ describe("Pitch workspace", () => {
     expect(writeText).toHaveBeenCalledWith(
       `https://${getPitchProfile().slug}`
     )
+  })
+
+  it("does not present showcase or contact rows as links that go nowhere", () => {
+    renderPitch()
+
+    expect(screen.getByText("Read case study")).toBeInTheDocument()
+    expect(screen.getByText("Case study · Proof chain")).toBeInTheDocument()
+    expect(
+      screen.getAllByText(`@${getMockGithubUsername()}`).length
+    ).toBeGreaterThan(0)
+    expect(screen.getByText(SAMPLE_AUTHOR.email)).toBeInTheDocument()
+    expect(screen.getByText("LinkedIn")).toBeInTheDocument()
+
+    expect(screen.queryByRole("link")).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: /read case study/i })
+    ).not.toBeInTheDocument()
+    expect(document.querySelector("a[href]")).toBeNull()
   })
 
   it("does not show Copied when the clipboard write fails", async () => {

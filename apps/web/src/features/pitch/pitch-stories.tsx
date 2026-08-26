@@ -103,12 +103,14 @@ export function StoryHighlightsRow({
         {editing ? (
           <button
             type="button"
-            className="flex w-[4.5rem] shrink-0 flex-col items-center gap-1.5"
+            disabled
+            aria-label="New highlight — coming soon"
+            className="flex w-[4.5rem] shrink-0 flex-col items-center gap-1.5 disabled:opacity-50"
           >
             <span className="flex size-[4.25rem] items-center justify-center rounded-full border border-dashed border-border bg-muted/30">
               <Plus className="size-5 text-muted-foreground" />
             </span>
-            <span className="text-[11px] text-muted-foreground">New</span>
+            <span className="text-[11px] text-muted-foreground">Coming soon</span>
           </button>
         ) : null}
       </div>
@@ -477,10 +479,11 @@ export function MomentsBentoSection({
         {editing ? (
           <button
             type="button"
-            className="flex min-h-[7rem] flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-border text-muted-foreground hover:bg-muted/30"
+            disabled
+            className="flex min-h-[7rem] flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-border text-muted-foreground disabled:opacity-50"
           >
             <Plus className="size-4" />
-            <span className="text-[10px]">Add card</span>
+            <span className="text-[10px]">Add card · Coming soon</span>
           </button>
         ) : null}
       </div>
@@ -550,10 +553,7 @@ function BentoCard({
       ) : card.kind === "link" ? (
         <>
           <p className="font-mono text-sm font-semibold">{card.title}</p>
-          <p className="text-xs opacity-70">
-            {card.meta ?? card.body}
-            <span className="ml-1">↗</span>
-          </p>
+          <p className="text-xs opacity-70">{card.meta ?? card.body}</p>
         </>
       ) : (
         <>
