@@ -41,7 +41,7 @@ Bell popover inbox on Home (Apply and Paper events). Prototype-validated; ships 
 
 ## Productionization order
 
-The prototype is throwaway code; production rebuilds it spec by spec. Spec 3 = shell + stub surfaces; Spec 4 = auth + durable Paper / Apply / Threads; Spec 5 = the real Coach (streaming, Commands as tools); Spec 6 = design system; Spec 7 = Coach experience (one dock, Thread continuity, visible editing, calm motion). Pitch persistence remains a follow-up (see `docs/specs/spec-3-app-shell.md`, Route to real product). Product language is English (ADR-0008 / QVE-150).
+The prototype is throwaway code; production rebuilds it spec by spec. Spec 3 = shell + stub surfaces; Spec 4 = auth + durable Paper / Apply / Threads; Spec 5 = the real Coach (streaming, Commands as tools); Spec 6 = design system; Spec 7 = Coach experience (one dock, Thread continuity, visible editing, calm motion); Spec 8 = Paper Coach shell (hideable docs panel, floating Coach, must-edit CV, assistant-ui — `docs/specs/spec-8-paper-coach-shell.md`). Pitch persistence remains a follow-up (see `docs/specs/spec-3-app-shell.md`, Route to real product). Product language is English (ADR-0008 / QVE-150).
 
 ## Out of scope
 

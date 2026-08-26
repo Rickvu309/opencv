@@ -1,6 +1,7 @@
 # Spec 7 — The Coach experience
 
 **Status:** Done (QVE-168 / QVE-169, QVE-172, QVE-170, QVE-173, QVE-174)
+**Superseded (Paper layout only):** [Spec 8](spec-8-paper-coach-shell.md) replaces the in-pane `CoachThreadPanel` split with a floating `CoachFloat`; `useCoachTurn`, `CoachDock`, continuity, receipts, and motion carry over unchanged.
 **Related:** Spec 5 (`docs/specs/spec-5-coach.md`), ADR-0007 (runtime), ADR-0009 (modes + dock chrome), ADR-0010 (motion tokens), PRODUCT.md (persona)
 
 ## Problem Statement
