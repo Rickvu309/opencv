@@ -17,13 +17,22 @@ describe("coach deploy docs", () => {
     for (const name of [
       "OPENROUTER_API_KEY",
       "COACH_MODEL",
+      "COACH_MODEL_FREE",
+      "COACH_MODEL_LIGHT",
+      "COACH_MODEL_MAX",
       "COACH_DAILY_TURN_LIMIT",
+      "COACH_DAILY_TURN_LIMIT_FREE",
+      "COACH_DAILY_TURN_LIMIT_LIGHT",
+      "COACH_DAILY_TURN_LIMIT_MAX",
     ]) {
       expect(envExample).toContain(name)
       expect(railway).toContain(name)
     }
 
-    expect(envExample).toContain("anthropic/claude-sonnet-4.5")
+    expect(envExample).toContain("stealth/ox-alpha")
+    expect(envExample).toContain("deepseek/deepseek-chat-v3.1")
+    expect(envExample).toContain("anthropic/claude-opus-4")
+    expect(envExample).toContain("anthropic/claude-fable-5")
     expect(envExample).toContain("COACH_DAILY_TURN_LIMIT=50")
     expect(railway).toContain("COACH_UNAVAILABLE")
     expect(railway).toContain("GET /health")

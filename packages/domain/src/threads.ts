@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-import type { CoachUsageRating } from "./coach.js"
+import { coachModeSchema, type CoachUsageRating } from "./coach.js"
 import { reversalDescriptorSchema, THREAD_COMMANDS } from "./commands.js"
 
 export { THREAD_COMMANDS }
@@ -60,6 +60,15 @@ export type ThreadsDeleteInput = z.infer<typeof threadsDeleteInputSchema>
 export type ThreadsPostMessageInput = z.infer<
   typeof threadsPostMessageInputSchema
 >
+
+export const coachTurnRequestSchema = z
+  .object({
+    text: threadMessageTextSchema,
+    mode: coachModeSchema.optional(),
+  })
+  .strict()
+
+export type CoachTurnRequest = z.infer<typeof coachTurnRequestSchema>
 
 export type MessageRole = z.infer<typeof messageRoleSchema>
 

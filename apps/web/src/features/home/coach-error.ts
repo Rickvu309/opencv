@@ -8,7 +8,7 @@ export function coachSendErrorMessage(error: unknown): string {
       case ERROR_CODES.COACH_UNAVAILABLE:
         return "The Coach is unavailable right now. Try again in a moment."
       case ERROR_CODES.COACH_LIMIT_REACHED:
-        return "You've reached today's Coach limit. Come back tomorrow."
+        return "You've reached today's limit for this Coach mode. Try another mode, or come back tomorrow."
       default:
         return error.message || "Something went wrong sending that. Try again."
     }

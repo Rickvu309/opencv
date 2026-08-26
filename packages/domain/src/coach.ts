@@ -4,8 +4,140 @@ import type { CommandEnvelope } from "./envelope.js"
 import type { ReversalDescriptor } from "./commands.js"
 import type { ThreadMessage, ThreadMessagePart } from "./threads.js"
 
+export const coachModeSchema = z.enum(["free", "light", "max"])
+export type CoachMode = z.infer<typeof coachModeSchema>
+export const COACH_MODES = coachModeSchema.options
+export const DEFAULT_COACH_MODE: CoachMode = "free"
+
+/** @deprecated Single-model fallback for legacy paths. New turns resolve via mode. */
 export const DEFAULT_COACH_MODEL = "anthropic/claude-sonnet-4.5"
+export const DEFAULT_COACH_MODEL_FREE = "stealth/ox-alpha"
+export const DEFAULT_COACH_MODEL_LIGHT = "deepseek/deepseek-chat-v3.1"
+export const DEFAULT_COACH_MODEL_MAX = "anthropic/claude-opus-4"
+
+export const DEFAULT_COACH_MODELS = {
+  free: DEFAULT_COACH_MODEL_FREE,
+  light: DEFAULT_COACH_MODEL_LIGHT,
+  max: DEFAULT_COACH_MODEL_MAX,
+} as const satisfies Record<CoachMode, string>
+
 export const DEFAULT_COACH_DAILY_TURN_LIMIT = 50
+export const DEFAULT_COACH_DAILY_TURN_LIMIT_FREE = 50
+export const DEFAULT_COACH_DAILY_TURN_LIMIT_LIGHT = 30
+export const DEFAULT_COACH_DAILY_TURN_LIMIT_MAX = 10
+
+export const DEFAULT_COACH_DAILY_TURN_LIMITS = {
+  free: DEFAULT_COACH_DAILY_TURN_LIMIT_FREE,
+  light: DEFAULT_COACH_DAILY_TURN_LIMIT_LIGHT,
+  max: DEFAULT_COACH_DAILY_TURN_LIMIT_MAX,
+} as const satisfies Record<CoachMode, number>
+
+export type CoachModelEnv = {
+  COACH_MODEL_FREE?: string
+  COACH_MODEL_LIGHT?: string
+  COACH_MODEL_MAX?: string
+  /** @deprecated Used only when mode is unset in legacy paths. */
+  COACH_MODEL?: string
+}
+
+export type CoachDailyTurnLimitEnv = {
+  COACH_DAILY_TURN_LIMIT_FREE?: string
+  COACH_DAILY_TURN_LIMIT_LIGHT?: string
+  COACH_DAILY_TURN_LIMIT_MAX?: string
+  COACH_DAILY_TURN_LIMIT?: string
+}
+
+function trimmedEnv(value: string | undefined) {
+  const trimmed = value?.trim()
+  return trimmed ? trimmed : undefined
+}
+
+function positiveIntEnv(value: string | undefined) {
+  const raw = trimmedEnv(value)
+  if (!raw) return undefined
+  const parsed = Number(raw)
+  if (!Number.isInteger(parsed) || parsed < 1) return undefined
+  return parsed
+}
+
+/**
+ * Resolve the OpenRouter model id for a Coach mode. New turns always pass a
+ * mode. `COACH_MODEL` is a deprecated fallback only when mode is unset.
+ */
+export function resolveCoachModel(
+  mode: CoachMode | undefined,
+  env: CoachModelEnv = {}
+): string {
+  if (!mode) {
+    return trimmedEnv(env.COACH_MODEL) ?? DEFAULT_COACH_MODEL
+  }
+
+  const override = {
+    free: env.COACH_MODEL_FREE,
+    light: env.COACH_MODEL_LIGHT,
+    max: env.COACH_MODEL_MAX,
+  }[mode]
+
+  return trimmedEnv(override) ?? DEFAULT_COACH_MODELS[mode]
+}
+
+/**
+ * Per-mode daily turn cap. Mode-specific env wins, then the legacy global
+ * `COACH_DAILY_TURN_LIMIT`, then the mode default (50 / 30 / 10).
+ */
+export function resolveCoachDailyTurnLimit(
+  mode: CoachMode,
+  env: CoachDailyTurnLimitEnv = {}
+): number {
+  const override = {
+    free: env.COACH_DAILY_TURN_LIMIT_FREE,
+    light: env.COACH_DAILY_TURN_LIMIT_LIGHT,
+    max: env.COACH_DAILY_TURN_LIMIT_MAX,
+  }[mode]
+
+  return (
+    positiveIntEnv(override) ??
+    positiveIntEnv(env.COACH_DAILY_TURN_LIMIT) ??
+    DEFAULT_COACH_DAILY_TURN_LIMITS[mode]
+  )
+}
+
+export function coachProviderErrorMessage(
+  error: unknown,
+  mode: CoachMode = DEFAULT_COACH_MODE
+): string {
+  const text = error instanceof Error ? error.message : String(error ?? "")
+  const status =
+    error &&
+    typeof error === "object" &&
+    "statusCode" in error &&
+    typeof (error as { statusCode: unknown }).statusCode === "number"
+      ? (error as { statusCode: number }).statusCode
+      : error &&
+          typeof error === "object" &&
+          "status" in error &&
+          typeof (error as { status: unknown }).status === "number"
+        ? (error as { status: number }).status
+        : undefined
+  const isQuota =
+    status === 402 ||
+    status === 429 ||
+    /\b402\b/.test(text) ||
+    /\b429\b/.test(text) ||
+    /payment required/i.test(text) ||
+    /too many requests/i.test(text) ||
+    /rate[- ]?limit/i.test(text)
+
+  if (isQuota && mode === "free") {
+    return "The free Coach is out of quota or rate-limited right now. Try Light mode, or try again later."
+  }
+  if (isQuota) {
+    return "The Coach hit a provider limit. Try again in a moment, or switch modes."
+  }
+  if (error instanceof Error && error.message) return error.message
+  if (typeof error === "string" && error.length > 0) return error
+  return "The Coach could not finish"
+}
 export const COACH_SSE_HEARTBEAT_MS = 15_000
 export const COACH_STEP_CAP = 8
 export const DEFAULT_COACH_MAX_OUTPUT_TOKENS = 4096
@@ -39,6 +171,7 @@ export type CoachFeedbackInput = z.infer<typeof coachFeedbackInputSchema>
 
 export type CoachTurnUsage = {
   model: string
+  mode?: CoachMode
   tokens?: number
   costEstimate?: string
   latencyMs?: number
@@ -131,6 +264,8 @@ export type CoachTurnInput = {
   userId: string
   threadId: string
   history: ThreadMessage[]
+  model?: string
+  mode?: CoachMode
 }
 
 /** Injected via `AppConfig.coach` like `db` (ADR-0007). */

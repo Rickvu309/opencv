@@ -1,4 +1,5 @@
 import type {
+  CoachMode,
   CoachUsageRating,
   MessageRole,
   ThreadMessagePart,
@@ -31,6 +32,7 @@ export const user = openpathApp.table("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").notNull().default(false),
   image: text("image"),
+  coachMode: text("coach_mode").$type<CoachMode>().notNull().default("free"),
   createdAt: timestamptz("created_at").notNull().defaultNow(),
   updatedAt: timestamptz("updated_at").notNull().defaultNow(),
 })
@@ -230,6 +232,7 @@ export const coachUsage = openpathApp.table(
       onDelete: "set null",
     }),
     model: text("model").notNull(),
+    mode: text("mode").$type<CoachMode>().notNull().default("free"),
     tokens: integer("tokens"),
     costEstimate: numeric("cost_estimate"),
     latencyMs: integer("latency_ms"),

@@ -1,8 +1,10 @@
 import { createOpenRouter } from "@openrouter/ai-sdk-provider"
 import {
   COACH_STEP_CAP,
+  coachProviderErrorMessage,
   DEFAULT_COACH_MAX_OUTPUT_TOKENS,
   DEFAULT_COACH_MODEL,
+  DEFAULT_COACH_MODE,
   type CoachRuntime,
   type CoachTurnInput,
 } from "@workspace/domain"
@@ -59,6 +61,7 @@ export function createOpenRouterCoachRuntime({
     async *streamTurn(input: CoachTurnInput) {
       const startedAt = Date.now()
       const abort = new AbortController()
+      const turnModel = input.model ?? model
       const snapshot = await loadWorkspaceSnapshot(db, input.userId)
       const tools = toAiSdkTools(
         assembleCoachTools({ db, userId: input.userId, registry })
@@ -67,7 +70,7 @@ export function createOpenRouterCoachRuntime({
 
       try {
         const result = streamText({
-          model: openrouter(model, { usage: { include: true } }),
+          model: openrouter(turnModel, { usage: { include: true } }),
           system: assembleSystemPrompt(snapshot),
           messages,
           tools,
@@ -77,9 +80,9 @@ export function createOpenRouterCoachRuntime({
         })
 
         yield* partsFromModelStream(
-          normalizeFullStream(result.fullStream),
+          normalizeFullStream(result.fullStream, input.mode),
           {
-            model,
+            model: turnModel,
             startedAt,
             reversalFor: (name) => reversalForTool(name, registry),
           }
@@ -113,7 +116,8 @@ function toAiSdkTools(surface: CoachToolSurface): ToolSet {
 }
 
 async function* normalizeFullStream(
-  fullStream: AsyncIterable<{ type: string } & Record<string, unknown>>
+  fullStream: AsyncIterable<{ type: string } & Record<string, unknown>>,
+  mode = DEFAULT_COACH_MODE
 ): AsyncGenerator<ModelStreamEvent> {
   let pendingCost: number | undefined
 
@@ -178,7 +182,10 @@ async function* normalizeFullStream(
         }
         return
       case "error":
-        yield { type: "error", message: errorMessage(part.error) }
+        yield {
+          type: "error",
+          message: coachProviderErrorMessage(part.error, mode),
+        }
         return
       case "abort":
         yield { type: "abort" }
@@ -227,8 +234,3 @@ function costFromUnknown(metadata: unknown): number | undefined {
   return typeof cost === "number" && Number.isFinite(cost) ? cost : undefined
 }
 
-function errorMessage(error: unknown) {
-  if (error instanceof Error) return error.message
-  if (typeof error === "string") return error
-  return "The Coach could not finish"
-}

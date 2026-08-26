@@ -5,8 +5,11 @@ import { serve } from "@hono/node-server"
 import type { ServerType } from "@hono/node-server"
 import {
   COACH_SSE_EVENTS,
-  DEFAULT_COACH_MODEL,
+  DEFAULT_COACH_MODEL_FREE,
+  DEFAULT_COACH_MODEL_LIGHT,
+  DEFAULT_COACH_MODEL_MAX,
   ERROR_CODES,
+  PROFILE_COMMANDS,
   THREAD_COMMANDS,
   type ThreadDetail,
   type ThreadListItem,
@@ -101,12 +104,13 @@ async function postCoach(
   cookie: string,
   threadId: string,
   text: string,
-  init?: RequestInit
+  init?: RequestInit,
+  mode?: "free" | "light" | "max"
 ) {
   return app.request(`/api/threads/${threadId}/coach`, {
     method: "POST",
     headers: authHeaders(cookie),
-    body: JSON.stringify({ text }),
+    body: JSON.stringify(mode ? { text, mode } : { text }),
     ...init,
   })
 }
@@ -331,7 +335,7 @@ describe("coach route scripted fake", () => {
     expect(ended.message.workedMs).toBeGreaterThanOrEqual(0)
     expect(ended.usage).toEqual(
       expect.objectContaining({
-        model: DEFAULT_COACH_MODEL,
+        model: DEFAULT_COACH_MODEL_FREE,
         tokens: 42,
         finishReason: "stop",
       })
@@ -359,7 +363,8 @@ describe("coach route scripted fake", () => {
       expect.objectContaining({
         threadId,
         messageId: ended.message.id,
-        model: DEFAULT_COACH_MODEL,
+        model: DEFAULT_COACH_MODEL_FREE,
+        mode: "free",
         tokens: 42,
         finishReason: "stop",
       })
@@ -418,7 +423,7 @@ describe("coach route scripted fake", () => {
         yield {
           type: "finish",
           finishReason: "stop",
-          usage: { model: DEFAULT_COACH_MODEL },
+          usage: { model: DEFAULT_COACH_MODEL_FREE },
         }
       }),
       coachSseHeartbeatMs: 15,
@@ -723,4 +728,121 @@ describe("coach route curl -N", () => {
     ])
     expect(DEMO_COACH_SCRIPT.map((part) => part.type)).toContain("finish")
   }, 20_000)
+})
+
+describe("coach route modes", () => {
+  let client: Awaited<ReturnType<typeof createMigratedTestDb>>["client"]
+  let db: Awaited<ReturnType<typeof createMigratedTestDb>>["db"]
+  let cookie: string
+
+  beforeAll(async () => {
+    const migrated = await createMigratedTestDb()
+    client = migrated.client
+    db = migrated.db
+    const app = createTestApp(db, { coach: createDemoCoachRuntime() })
+    cookie = (await signUp(app, {
+      name: "Mode",
+      email: "mode-coach-route@example.com",
+      password: "correct-horse-battery",
+    })).cookie
+  }, 60_000)
+
+  afterAll(async () => {
+    await client.close()
+  })
+
+  it("rejects an invalid mode before calling the runtime", async () => {
+    const app = createTestApp(db, { coach: createDemoCoachRuntime() })
+    const threadId = await createThread(app, cookie, "Invalid mode")
+    const res = await app.request(`/api/threads/${threadId}/coach`, {
+      method: "POST",
+      headers: authHeaders(cookie),
+      body: JSON.stringify({ text: "Hello", mode: "ultra" }),
+    })
+    expect(res.status).toBe(400)
+    await expect(res.json()).resolves.toEqual({
+      ok: false,
+      error: {
+        code: ERROR_CODES.VALIDATION_ERROR,
+        message: expect.stringMatching(/invalid/i),
+      },
+    })
+  })
+
+  it("records the resolved model and mode for Free, Light, and Max", async () => {
+    const app = createTestApp(db, { coach: createDemoCoachRuntime() })
+    const expected = {
+      free: DEFAULT_COACH_MODEL_FREE,
+      light: DEFAULT_COACH_MODEL_LIGHT,
+      max: DEFAULT_COACH_MODEL_MAX,
+    } as const
+
+    for (const mode of ["free", "light", "max"] as const) {
+      const threadId = await createThread(app, cookie, `Mode ${mode}`)
+      const res = await postCoach(app, cookie, threadId, `hi ${mode}`, undefined, mode)
+      expect(res.status).toBe(200)
+      await res.text()
+
+      const usageRows = await db
+        .select()
+        .from(coachUsage)
+        .where(eq(coachUsage.threadId, threadId))
+      expect(usageRows).toHaveLength(1)
+      expect(usageRows[0]).toEqual(
+        expect.objectContaining({
+          mode,
+          model: expected[mode],
+        })
+      )
+    }
+  })
+
+  it("uses the saved preference when the request omits mode", async () => {
+    const app = createTestApp(db, { coach: createDemoCoachRuntime() })
+    const set = await postCommand(app, cookie, PROFILE_COMMANDS.setCoachMode, {
+      mode: "max",
+    })
+    expect(set.status).toBe(200)
+
+    const threadId = await createThread(app, cookie, "Saved mode")
+    const res = await postCoach(app, cookie, threadId, "use saved")
+    expect(res.status).toBe(200)
+    await res.text()
+
+    const usageRows = await db
+      .select()
+      .from(coachUsage)
+      .where(eq(coachUsage.threadId, threadId))
+    expect(usageRows[0]).toEqual(
+      expect.objectContaining({
+        mode: "max",
+        model: DEFAULT_COACH_MODEL_MAX,
+      })
+    )
+  })
+
+  it("enforces a per-mode daily turn cap", async () => {
+    const app = createTestApp(db, {
+      coach: createDemoCoachRuntime(),
+      coachDailyTurnLimits: { max: 1 },
+    })
+    const capped = (
+      await signUp(app, {
+        name: "Capped",
+        email: "mode-cap-coach-route@example.com",
+        password: "correct-horse-battery",
+      })
+    ).cookie
+    const threadId = await createThread(app, capped, "Mode cap")
+    const first = await postCoach(app, capped, threadId, "first max", undefined, "max")
+    expect(first.status).toBe(200)
+    await first.text()
+
+    const second = await postCoach(app, capped, threadId, "second max", undefined, "max")
+    expect(second.status).toBe(429)
+
+    const light = await postCoach(app, capped, threadId, "still light", undefined, "light")
+    expect(light.status).toBe(200)
+    await light.text()
+  })
 })

@@ -15,7 +15,9 @@ describe("coachSendErrorMessage", () => {
       coachSendErrorMessage(
         new ApiError(429, ERROR_CODES.COACH_LIMIT_REACHED, "raw")
       )
-    ).toBe("You've reached today's Coach limit. Come back tomorrow.")
+    ).toBe(
+      "You've reached today's limit for this Coach mode. Try another mode, or come back tomorrow."
+    )
   })
 
   it("maps a network failure", () => {

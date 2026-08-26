@@ -5,6 +5,7 @@ import {
   ERROR_CODES,
   PAPER_COMMANDS,
   PAPER_CONTENT_VERSION,
+  PROFILE_COMMANDS,
   THREAD_COMMANDS,
   emptyLetterDocument,
   type ApplyCard,
@@ -212,6 +213,7 @@ describe("coach tool surface", () => {
       id: ownerId,
       name: "Minh",
       email: "coach-tools@example.com",
+      coachMode: "free",
     })
     expect(profile).not.toHaveProperty("token")
     expect(profile).not.toHaveProperty("password")
@@ -243,16 +245,21 @@ describe("coach-actor command sweep", () => {
     await client.close()
   })
 
-  it("treats destructive and coach-forbidden as the same set", () => {
+  it("treats destructive Commands as coach-forbidden; User-only prefs may also be", () => {
     const commands = commandRegistry.list()
     expect(commands.length).toBeGreaterThan(0)
 
     for (const command of commands) {
-      expect(
-        command.destructive,
-        `${command.name} must be destructive iff the Coach is forbidden`
-      ).toBe(!command.coachAllowed)
+      if (command.destructive) {
+        expect(command.coachAllowed, command.name).toBe(false)
+      }
     }
+    expect(
+      commands.find((command) => command.name === PROFILE_COMMANDS.setCoachMode)
+    ).toMatchObject({
+      coachAllowed: false,
+      destructive: false,
+    })
 
     const mutationTools = commands.filter(isCoachMutationCommand)
     expect(mutationTools).toHaveLength(11)
@@ -323,6 +330,8 @@ describe("coach-actor command sweep", () => {
           return { cardId: card.id }
         case APPLY_COMMANDS.deleteCard:
           return { cardId: card.id }
+        case PROFILE_COMMANDS.setCoachMode:
+          return { mode: "light" }
         default:
           throw new Error(`missing sweep input for ${name}`)
       }
@@ -335,6 +344,7 @@ describe("coach-actor command sweep", () => {
     expect(forbidden.map((command) => command.name).sort()).toEqual([
       APPLY_COMMANDS.deleteCard,
       PAPER_COMMANDS.deleteDoc,
+      PROFILE_COMMANDS.setCoachMode,
       THREAD_COMMANDS.delete,
     ])
 

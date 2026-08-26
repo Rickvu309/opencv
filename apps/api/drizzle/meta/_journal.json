@@ -43,6 +43,13 @@
       "when": 1787683540338,
       "tag": "0005_coach_message_parts_and_usage",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1787712052612,
+      "tag": "0006_coach_modes",
+      "breakpoints": true
     }
   ]
 }

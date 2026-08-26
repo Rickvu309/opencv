@@ -1,5 +1,9 @@
 import { and, count, eq, gte } from "drizzle-orm"
-import { ERROR_CODES, type CoachUsageRating } from "@workspace/domain"
+import {
+  ERROR_CODES,
+  type CoachMode,
+  type CoachUsageRating,
+} from "@workspace/domain"
 
 import { CommandError, type AppDatabase } from "../commands/registry.js"
 import { coachUsage } from "../db/schema.js"
@@ -13,12 +17,19 @@ export function startOfUtcDay(now = new Date()): Date {
 export async function countCoachTurnsSince(
   db: AppDatabase,
   userId: string,
-  since: Date
+  since: Date,
+  mode?: CoachMode
 ): Promise<number> {
   const [row] = await db
     .select({ value: count() })
     .from(coachUsage)
-    .where(and(eq(coachUsage.userId, userId), gte(coachUsage.createdAt, since)))
+    .where(
+      and(
+        eq(coachUsage.userId, userId),
+        gte(coachUsage.createdAt, since),
+        ...(mode ? [eq(coachUsage.mode, mode)] : [])
+      )
+    )
 
   return row?.value ?? 0
 }
@@ -26,9 +37,10 @@ export async function countCoachTurnsSince(
 export async function countCoachTurnsToday(
   db: AppDatabase,
   userId: string,
-  now = new Date()
+  now = new Date(),
+  mode?: CoachMode
 ): Promise<number> {
-  return countCoachTurnsSince(db, userId, startOfUtcDay(now))
+  return countCoachTurnsSince(db, userId, startOfUtcDay(now), mode)
 }
 
 export type CoachFeedbackResult = {

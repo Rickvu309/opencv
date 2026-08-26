@@ -45,8 +45,14 @@ Paper, Apply, and Threads reads are untouched. That is the graceful posture
 | Variable | Required | Default | Notes |
 | -------- | -------- | ------- | ----- |
 | `OPENROUTER_API_KEY` | Yes, for a live Coach | — | Set on **staging and production**. stdin so the value never hits shell history. |
-| `COACH_MODEL` | No | `anthropic/claude-sonnet-4.5` | OpenRouter model id (ADR-0007). |
-| `COACH_DAILY_TURN_LIMIT` | No | `50` | Per-User daily turn cap. Non-positive values fall back to 50. |
+| `COACH_MODEL` | No | `anthropic/claude-sonnet-4.5` | **Deprecated** single-model fallback when a turn has no mode (ADR-0007). New turns resolve via mode. |
+| `COACH_MODEL_FREE` | No | `stealth/ox-alpha` | Free mode OpenRouter id (ADR-0009). OX Alpha is a preview. |
+| `COACH_MODEL_LIGHT` | No | `deepseek/deepseek-chat-v3.1` | Light mode OpenRouter id. |
+| `COACH_MODEL_MAX` | No | `anthropic/claude-opus-4` | Max mode. For Fable: `anthropic/claude-fable-5` or `~anthropic/claude-fable-latest`. |
+| `COACH_DAILY_TURN_LIMIT` | No | `50` | Legacy global daily cap. Used when a mode-specific cap is unset. Non-positive values fall back to 50. |
+| `COACH_DAILY_TURN_LIMIT_FREE` | No | `50` | Free-mode daily turn cap. |
+| `COACH_DAILY_TURN_LIMIT_LIGHT` | No | `30` | Light-mode daily turn cap. |
+| `COACH_DAILY_TURN_LIMIT_MAX` | No | `10` | Max-mode daily turn cap. |
 | `COACH_RUNTIME` | No | unset (OpenRouter when the key is present) | `fake` injects the scripted runtime for `curl -N` protocol checks. **Never on production.** |
 
 ```bash

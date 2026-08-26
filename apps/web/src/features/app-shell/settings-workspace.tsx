@@ -9,6 +9,8 @@ import {
 } from "@workspace/ui/components/tabs"
 
 import { AppsCatalog } from "@/features/app-shell/apps-catalog.tsx"
+import { CoachModeSelector } from "@/features/home/coach-mode-selector.tsx"
+import { useCoachMode } from "@/features/home/use-coach-mode.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import {
   DESKTOP_MEDIA_QUERY,
@@ -32,6 +34,7 @@ export function SettingsWorkspace({
 }: SettingsWorkspaceProps) {
   const copy = SURFACE_COPY.settings
   const { data } = authClient.useSession()
+  const { mode, setMode } = useCoachMode()
   const navigate = useNavigate()
   const [signingOut, setSigningOut] = useState(false)
   const isDesktop = useMediaQuery(DESKTOP_MEDIA_QUERY, true)
@@ -79,6 +82,14 @@ export function SettingsWorkspace({
           <TabsContent value="general">
             <section className="max-w-lg space-y-4">
               <h2 className="text-sm font-semibold">General</h2>
+              <div className="rounded-lg border border-border bg-background p-4">
+                <p className="text-sm font-medium">Coach mode</p>
+                <p className="mt-1 mb-3 text-xs text-muted-foreground">
+                  Free stays first. Light and Max trade a smaller daily cap for
+                  stronger models.
+                </p>
+                <CoachModeSelector mode={mode} onModeChange={setMode} />
+              </div>
               <div className="rounded-lg border border-border bg-background p-4">
                 <p className="text-sm font-medium">Language</p>
                 <p className="mt-1 text-xs text-muted-foreground">English</p>

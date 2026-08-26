@@ -73,7 +73,7 @@ export const coachReadTools = [
   defineReadTool({
     name: COACH_READ_TOOLS.profileGet,
     description:
-      "Get the signed-in user's profile (name, email, image). Same fields as GET /api/session user.",
+      "Get the signed-in user's profile (name, email, image, Coach mode). Same payload as GET /api/profile.",
     input: profileGetInputSchema,
     run: ({ db, userId }) => getProfileForUser(db, userId),
   }),

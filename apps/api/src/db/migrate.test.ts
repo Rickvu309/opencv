@@ -85,6 +85,26 @@ describe("committed migrations", () => {
         "coach_usage_pkey",
         "coach_usage_user_id_created_at_idx",
       ])
+
+      const userColumns = await db.execute<{ column_name: string }>(sql`
+        select column_name
+        from information_schema.columns
+        where table_schema = 'openpath_app'
+          and table_name = 'user'
+        order by column_name
+      `)
+      expect(userColumns.rows.map((row) => row.column_name)).toContain(
+        "coach_mode"
+      )
+
+      const usageColumns = await db.execute<{ column_name: string }>(sql`
+        select column_name
+        from information_schema.columns
+        where table_schema = 'openpath_app'
+          and table_name = 'coach_usage'
+        order by column_name
+      `)
+      expect(usageColumns.rows.map((row) => row.column_name)).toContain("mode")
     } finally {
       await client.close()
     }

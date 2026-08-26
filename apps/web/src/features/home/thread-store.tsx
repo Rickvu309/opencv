@@ -11,6 +11,7 @@ import {
 } from "@workspace/domain"
 
 import { coachSendErrorMessage } from "@/features/home/coach-error.ts"
+import { useCoachMode } from "@/features/home/use-coach-mode.ts"
 import {
   createThread,
   getThread,
@@ -52,6 +53,7 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
   const [sendError, setSendError] = useState<SendError | null>(null)
   const sendGeneration = useRef(0)
   const abortRef = useRef<AbortController | null>(null)
+  const { mode } = useCoachMode()
 
   const listQuery = useQuery({
     queryKey: threadQueryKeys.list(),
@@ -292,7 +294,8 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
                 streamError = message
               },
             },
-            controller.signal
+            controller.signal,
+            mode
           )
 
           if (generation !== sendGeneration.current) return
@@ -400,6 +403,7 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
       phase,
       queryClient,
       sendError,
+      mode,
     ]
   )
 
