@@ -5,6 +5,11 @@
  */
 import { useMemo, useRef, useState } from "react"
 import { Button } from "@workspace/ui/components/button"
+import { ButtonGroup } from "@workspace/ui/components/button-group"
+import {
+  Empty,
+  EmptyDescription,
+} from "@workspace/ui/components/empty-state"
 import { Input } from "@workspace/ui/components/input"
 import { cn } from "@workspace/ui/lib/utils"
 import type { ApplyStage } from "@workspace/domain"
@@ -19,6 +24,10 @@ import {
   Star,
 } from "lucide-react"
 
+import { ComingSoon } from "@/components/coming-soon.tsx"
+import { comingSoonLabel } from "@/components/coming-soon-label.ts"
+import { ErrorBanner } from "@/components/error-banner.tsx"
+import { WorkspaceHeader } from "@/components/workspace-header.tsx"
 import { ApplyCalendar } from "@/features/apply/apply-calendar.tsx"
 import {
   allowCardDrop,
@@ -97,18 +106,12 @@ export function ApplyWorkspace() {
   }
 
   const errorBanner = apply.error ? (
-    <div
-      role="alert"
-      className="border-b border-destructive/30 bg-destructive/10 px-5 py-2 text-sm text-destructive"
-    >
-      {apply.error}
-    </div>
+    <ErrorBanner>{apply.error}</ErrorBanner>
   ) : null
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[#FAFAFA]">
-      <header className="flex shrink-0 flex-wrap items-center gap-2 border-b border-border bg-background px-4 py-2.5 sm:px-5">
-        <h1 className="text-sm font-semibold tracking-tight">Apply</h1>
+    <div className="flex h-full min-h-0 flex-col bg-sidebar">
+      <WorkspaceHeader title="Apply">
 
         <div className="relative min-w-[12rem] flex-1 sm:max-w-xs">
           <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -130,39 +133,44 @@ export function ApplyWorkspace() {
         >
           <Filter className="size-3.5" />
           Filter
-          <span className="text-muted-foreground"> · Coming soon</span>
+          <ComingSoon />
         </Button>
 
-        <div className="flex rounded-lg border border-border p-0.5">
-          <button
+        <ButtonGroup
+          aria-label="Apply view"
+          className="rounded-lg border border-border p-0.5"
+        >
+          <Button
             type="button"
+            size="xs"
+            variant="ghost"
             onClick={() => setView("board")}
             aria-pressed={view === "board"}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+            className={
               view === "board"
                 ? "bg-muted text-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            )}
+                : "text-muted-foreground"
+            }
           >
             <LayoutGrid className="size-3.5" />
             Board
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            size="xs"
+            variant="ghost"
             onClick={() => setView("calendar")}
             aria-pressed={view === "calendar"}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+            className={
               view === "calendar"
                 ? "bg-muted text-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            )}
+                : "text-muted-foreground"
+            }
           >
             <CalendarDays className="size-3.5" />
             Calendar
-          </button>
-        </div>
+          </Button>
+        </ButtonGroup>
 
         <Button
           type="button"
@@ -174,7 +182,7 @@ export function ApplyWorkspace() {
           <Plus className="size-3.5" />
           Add job
         </Button>
-      </header>
+      </WorkspaceHeader>
 
       {errorBanner}
 
@@ -218,15 +226,18 @@ export function ApplyWorkspace() {
                       <span className="text-xs text-muted-foreground">
                         {col.length}
                       </span>
-                      <button
+                      <Button
                         type="button"
+                        size="icon-sm"
+                        variant="ghost"
                         disabled
                         title="Coming soon"
-                        className="ml-auto text-muted-foreground disabled:opacity-50"
-                        aria-label={`${stage.label} column menu — coming soon`}
+                        className="ml-auto"
+                        aria-label={comingSoonLabel(`${stage.label} column menu`)}
                       >
                         <MoreHorizontal className="size-4" />
-                      </button>
+                        <ComingSoon silent />
+                      </Button>
                     </div>
                     <div className="flex flex-1 flex-col gap-2 overflow-auto px-2 pb-3">
                       {col.map((card) => (
@@ -252,9 +263,11 @@ export function ApplyWorkspace() {
                         />
                       ))}
                       {col.length === 0 ? (
-                        <div className="rounded-xl border border-dashed border-border px-3 py-8 text-center text-xs text-muted-foreground">
-                          Drop a job here
-                        </div>
+                        <Empty className="rounded-xl border border-dashed border-border px-3 py-8">
+                          <EmptyDescription className="text-xs">
+                            Drop a job here
+                          </EmptyDescription>
+                        </Empty>
                       ) : null}
                     </div>
                   </div>
@@ -385,14 +398,14 @@ function BoardJobCard({
         ) : null}
       </div>
       <div className="mt-2 flex items-center gap-2 pl-5">
-        <span className="flex size-5 items-center justify-center rounded bg-muted text-[9px] font-bold tracking-tight text-muted-foreground">
+        <span className="flex size-5 items-center justify-center rounded bg-muted text-3xs font-bold tracking-tight text-muted-foreground">
           {companyShort(card.company)}
         </span>
         <span className="truncate text-xs text-muted-foreground">
           {card.company}
         </span>
       </div>
-      <div className="mt-2.5 flex items-center justify-between gap-2 pl-5 text-[11px] text-muted-foreground">
+      <div className="mt-2.5 flex items-center justify-between gap-2 pl-5 text-micro text-muted-foreground">
         <span className="inline-flex items-center gap-1 tabular-nums">
           <CalendarDays className="size-3 shrink-0 opacity-70" />
           {formatTrackDate(card.trackDate)}

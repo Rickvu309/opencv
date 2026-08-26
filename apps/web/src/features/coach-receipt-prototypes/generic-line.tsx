@@ -20,7 +20,7 @@ export function GenericReceiptLine({ part }: { part: ThreadToolPart }) {
         <Icon
           className={cn(
             "mt-0.5 size-3 shrink-0",
-            part.ok ? "text-emerald-600" : "text-destructive"
+            part.ok ? "text-success" : "text-destructive"
           )}
           aria-hidden
         />

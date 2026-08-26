@@ -1,5 +1,10 @@
+/**
+ * CV print-paper templates. Arbitrary pixel sizes and the product-sidebar
+ * hex stay here on purpose — print layout is a documented ADR-0008 exception.
+ */
 import type { ReactNode } from "react"
 import { useEffect, useRef } from "react"
+import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 import { ImagePlus, User } from "lucide-react"
 
@@ -291,6 +296,7 @@ function CvPhoto({
 
   return (
     <>
+      {/* Documented exception: native file input — kit Input cannot host a hidden file picker. */}
       <input
         ref={inputRef}
         type="file"
@@ -302,11 +308,12 @@ function CvPhoto({
           e.target.value = ""
         }}
       />
-      <button
+      <Button
         type="button"
+        variant="ghost"
         onClick={() => inputRef.current?.click()}
         aria-label={url ? "Change profile photo" : "Add profile photo"}
-        className="group cv-template-photo-slot relative shrink-0 overflow-hidden rounded-md border border-foreground/15 bg-muted/30 transition-colors hover:border-foreground/30 hover:bg-muted/50"
+        className="group cv-template-photo-slot relative h-auto shrink-0 overflow-hidden rounded-md border border-foreground/15 bg-muted/30 p-0 hover:border-foreground/30 hover:bg-muted/50"
       >
         {url ? (
           <img src={url} alt="" className="size-full object-cover" />
@@ -316,10 +323,10 @@ function CvPhoto({
             <ImagePlus className="size-3.5 opacity-60" />
           </span>
         )}
-        <span className="absolute inset-x-0 bottom-0 bg-foreground/70 px-1 py-0.5 text-[8px] font-medium text-background opacity-0 transition-opacity group-hover:opacity-100">
+        <span className="absolute inset-x-0 bottom-0 bg-foreground/70 px-1 py-0.5 text-3xs font-medium text-background opacity-0 transition-opacity group-hover:opacity-100">
           {url ? "Change" : "Add photo"}
         </span>
-      </button>
+      </Button>
     </>
   )
 }

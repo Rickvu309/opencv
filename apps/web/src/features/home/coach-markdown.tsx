@@ -32,13 +32,13 @@ function renderBlock(block: CoachMarkdownBlock, index: number) {
   switch (block.type) {
     case "p":
       return (
-        <p key={index} className="text-sm leading-relaxed">
+        <p key={index} className="prose-kit">
           {renderInline(block.children)}
         </p>
       )
     case "ul":
       return (
-        <ul key={index} className="list-disc space-y-1 pl-5 text-sm leading-relaxed">
+        <ul key={index} className="prose-kit list-disc space-y-1 pl-5">
           {block.items.map((item, itemIndex) => (
             <li key={itemIndex}>{renderInline(item)}</li>
           ))}
@@ -48,7 +48,7 @@ function renderBlock(block: CoachMarkdownBlock, index: number) {
       return (
         <ol
           key={index}
-          className="list-decimal space-y-1 pl-5 text-sm leading-relaxed"
+          className="prose-kit list-decimal space-y-1 pl-5"
         >
           {block.items.map((item, itemIndex) => (
             <li key={itemIndex}>{renderInline(item)}</li>

@@ -2,7 +2,8 @@ import { useEffect, useState } from "react"
 import { Outlet, useNavigate } from "@tanstack/react-router"
 
 import { AppSidebar } from "@/features/app-shell/app-sidebar.tsx"
-import { FOCUS_RING } from "@/features/app-shell/focus-ring.ts"
+import { Button } from "@workspace/ui/components/button"
+import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
 import { SearchModal } from "@/features/app-shell/search-modal.tsx"
 import { searchThreadsFromList } from "@/features/app-shell/search-threads.ts"
 import { SURFACE_PATHS, type SurfaceId } from "@/features/app-shell/surfaces.ts"
@@ -78,9 +79,10 @@ function AppShellChrome() {
         Skip to main content
       </a>
       {!isDesktop && sidebarOpen ? (
-        <button
+        <Button
           type="button"
-          className="fixed inset-0 z-30 bg-black/30 md:hidden"
+          variant="ghost"
+          className="fixed inset-0 z-30 size-auto rounded-none bg-black/30 hover:bg-black/30 md:hidden"
           aria-label="Close sidebar"
           onClick={() => setSidebarOpen(false)}
         />

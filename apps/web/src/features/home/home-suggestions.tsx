@@ -12,9 +12,9 @@ import {
   type LucideIcon,
 } from "lucide-react"
 
+import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { FOCUS_RING } from "@/features/app-shell/focus-ring.ts"
 import { SUGGESTION_POOLS } from "@/features/home/suggestions.ts"
 
 const ICONS: Record<string, LucideIcon> = {
@@ -71,32 +71,30 @@ export function HomeSuggestions({ onSelect, className }: Props) {
         aria-hidden
       />
       <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="sm"
           onClick={moreIdeas}
-          className={cn(
-            FOCUS_RING,
-            "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-dashed border-border bg-background px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
-          )}
+          className="h-8 shrink-0 rounded-full border-dashed text-muted-foreground"
         >
           <RefreshCw className={cn("size-3.5", spinning && "animate-spin")} />
           More ideas
-        </button>
+        </Button>
         {ideas.map((item) => {
           const Icon = ICONS[item.id] ?? Sparkles
           return (
-            <button
+            <Button
               key={`${poolIndex}-${item.id}`}
               type="button"
+              variant="outline"
+              size="sm"
               onClick={() => onSelect(item.prompt)}
-              className={cn(
-                FOCUS_RING,
-                "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-border bg-background px-3 text-xs font-medium whitespace-nowrap transition-colors hover:bg-muted/50"
-              )}
+              className="h-8 shrink-0 rounded-full"
             >
               <Icon className="size-3.5 shrink-0 text-muted-foreground" />
               {item.label}
-            </button>
+            </Button>
           )
         })}
       </div>

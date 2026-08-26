@@ -3,6 +3,7 @@
  */
 import { useMemo, useState, type MutableRefObject } from "react"
 import { Button } from "@workspace/ui/components/button"
+import { ButtonGroup } from "@workspace/ui/components/button-group"
 import { cn } from "@workspace/ui/lib/utils"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
@@ -183,32 +184,39 @@ export function ApplyCalendar({
               <ChevronRight className="size-4" />
             </Button>
           </div>
-          <div className="flex rounded-lg border border-border p-0.5">
-            <button
+          <ButtonGroup
+            aria-label="Calendar range"
+            className="rounded-lg border border-border p-0.5"
+          >
+            <Button
               type="button"
+              size="xs"
+              variant="ghost"
               onClick={() => setView("week")}
-              className={cn(
-                "rounded-md px-3 py-1 text-xs font-medium transition-colors",
+              aria-pressed={view === "week"}
+              className={
                 view === "week"
                   ? "bg-muted text-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
+                  : "text-muted-foreground"
+              }
             >
               Week
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              size="xs"
+              variant="ghost"
               onClick={() => setView("month")}
-              className={cn(
-                "rounded-md px-3 py-1 text-xs font-medium transition-colors",
+              aria-pressed={view === "month"}
+              className={
                 view === "month"
                   ? "bg-muted text-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
+                  : "text-muted-foreground"
+              }
             >
               Month
-            </button>
-          </div>
+            </Button>
+          </ButtonGroup>
         </div>
       </div>
 
@@ -217,7 +225,7 @@ export function ApplyCalendar({
           {WEEKDAYS.map((d) => (
             <div
               key={d}
-              className="border-r border-border px-2 py-2 text-center text-[11px] font-medium tracking-wide text-muted-foreground uppercase last:border-r-0"
+              className="border-r border-border px-2 py-2 text-center text-micro font-medium tracking-wide text-muted-foreground uppercase last:border-r-0"
             >
               {d}
             </div>
@@ -263,13 +271,14 @@ export function ApplyCalendar({
                   setDragOverDate(null)
                 }}
               >
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
                   onClick={() => setFocusDate(cell.date)}
-                  className="mb-1 w-full rounded px-1 text-left text-xs tabular-nums text-muted-foreground hover:text-foreground"
+                  className="mb-1 h-auto w-full justify-start rounded px-1 py-0 text-left text-xs tabular-nums text-muted-foreground hover:bg-transparent hover:text-foreground"
                 >
                   {cell.day}
-                </button>
+                </Button>
                 <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-hidden">
                   {visible.map((card) => (
                     <CalendarJobChip
@@ -287,7 +296,7 @@ export function ApplyCalendar({
                     />
                   ))}
                   {overflow > 0 ? (
-                    <span className="px-1 text-[10px] text-muted-foreground">
+                    <span className="px-1 text-2xs text-muted-foreground">
                       +{overflow} more
                     </span>
                   ) : null}
@@ -317,8 +326,9 @@ function CalendarJobChip({
   onDrag: () => void
 }) {
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
       draggable
       onDragStart={(e) => {
         e.stopPropagation()
@@ -338,18 +348,20 @@ function CalendarJobChip({
         onSelect()
       }}
       className={cn(
-        "w-full cursor-grab rounded-md px-1.5 py-1 text-left text-[11px] leading-tight transition-[box-shadow,opacity] active:cursor-grabbing",
+        "h-auto w-full cursor-grab justify-start rounded-md px-1.5 py-1 text-left text-micro leading-tight hover:bg-transparent active:cursor-grabbing",
         kindChipClass(card.trackKind),
         active && "ring-1 ring-ring/40"
       )}
     >
-      <span className="block truncate font-medium">{card.title}</span>
-      {expanded ? (
-        <span className="mt-0.5 block truncate text-[10px] opacity-80">
-          {card.company} · {trackKindLabel(card.trackKind)}
-        </span>
-      ) : null}
-    </button>
+      <span className="min-w-0">
+        <span className="block truncate font-medium">{card.title}</span>
+        {expanded ? (
+          <span className="mt-0.5 block truncate text-2xs opacity-80">
+            {card.company} · {trackKindLabel(card.trackKind)}
+          </span>
+        ) : null}
+      </span>
+    </Button>
   )
 }
 

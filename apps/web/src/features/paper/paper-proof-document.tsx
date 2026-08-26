@@ -1,5 +1,7 @@
 import { useRef, useState } from "react"
 import { Button } from "@workspace/ui/components/button"
+import { Input } from "@workspace/ui/components/input"
+import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
 import {
   ChevronDown,
@@ -80,10 +82,10 @@ export function ProofDocument({ data, onChange }: Props) {
     <div className="flex min-h-[70vh] flex-col">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 px-5 py-3">
         <div>
-          <input
+          <Input
             value={data.title}
             onChange={(e) => patch("title", e.target.value)}
-            className="bg-transparent text-sm font-semibold outline-none"
+            className="h-auto border-0 bg-transparent px-0 text-sm font-semibold shadow-none focus-visible:border-0 focus-visible:ring-0 md:text-sm"
             aria-label="Proof title"
           />
           {data.subtitle ? (
@@ -155,14 +157,16 @@ function ProofChainView({
                 />
               </div>
             ) : (
-              <button
+              <Button
                 type="button"
+                size="icon"
+                variant="outline"
                 onClick={() => onAddStep?.("note")}
-                className="ml-2 flex size-9 shrink-0 items-center justify-center rounded-xl border border-dashed border-border/80 bg-card text-muted-foreground shadow-[0_1px_2px_oklch(0_0_0/0.04)] transition-[color,border-color,box-shadow,transform] duration-150 hover:border-foreground/20 hover:text-foreground hover:shadow-[0_2px_8px_oklch(0_0_0/0.06)] active:scale-[0.96]"
+                className="ml-2 size-9 shrink-0 rounded-xl border-dashed text-muted-foreground shadow-xs"
                 aria-label="Add step"
               >
                 <Plus className="size-4" strokeWidth={1.75} />
-              </button>
+              </Button>
             )}
           </div>
         ))}
@@ -192,35 +196,37 @@ function ChainNode({
     <div className={cn("w-[17rem] shrink-0", STEP_CARD)}>
       <div className="flex items-start justify-between gap-2 px-3.5 pt-3.5 pb-2.5">
         <div className="min-w-0">
-          <p className="text-[10px] font-medium tracking-[0.12em] text-muted-foreground uppercase">
+          <p className="text-2xs font-medium tracking-[0.12em] text-muted-foreground uppercase">
             {PROOF_STEP_LABEL[step.type]}
           </p>
-          <p className="mt-0.5 text-[11px] text-muted-foreground/60 tabular-nums">
+          <p className="mt-0.5 text-micro text-muted-foreground/60 tabular-nums">
             Step {String(index + 1).padStart(2, "0")}
           </p>
         </div>
-        <button
+        <Button
           type="button"
+          size="icon-sm"
+          variant="ghost"
           onClick={onRemove}
-          className="flex size-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground opacity-0 transition-[opacity,color,background-color,transform] duration-150 group-hover:opacity-100 hover:bg-muted hover:text-foreground active:scale-[0.96]"
+          className="text-muted-foreground opacity-0 group-hover:opacity-100"
           aria-label="Remove step"
         >
           <X className="size-3.5" strokeWidth={1.75} />
-        </button>
+        </Button>
       </div>
 
       <div className="px-3.5 pb-3.5">
-        <input
+        <Input
           value={step.title}
           onChange={(e) => onPatch({ title: e.target.value })}
-          className="mb-2 w-full bg-transparent text-sm leading-snug font-semibold outline-none"
+          className="mb-2 h-auto w-full border-0 bg-transparent px-0 text-sm leading-snug font-semibold shadow-none focus-visible:border-0 focus-visible:ring-0 md:text-sm"
           aria-label={`Step ${index + 1} title`}
         />
-        <textarea
+        <Textarea
           value={step.body}
           onChange={(e) => onPatch({ body: e.target.value })}
           rows={4}
-          className="w-full resize-none bg-transparent text-xs leading-relaxed text-foreground/80 outline-none"
+          className="min-h-0 w-full resize-none border-0 bg-transparent px-0 py-0 text-xs leading-relaxed text-foreground/80 shadow-none focus-visible:border-0 focus-visible:ring-0"
           aria-label={`Step ${index + 1} body`}
         />
 
@@ -230,6 +236,7 @@ function ChainNode({
           onRemove={onRemovePhoto}
           compact
         />
+        {/* Documented exception: native file input — kit Input cannot host a hidden file picker. */}
         <input
           ref={fileRef}
           type="file"
@@ -350,7 +357,7 @@ function TimelineRow({
 
   return (
     <div className="relative flex gap-4 pb-6">
-      <p className="w-12 shrink-0 pt-1 text-right text-[11px] text-muted-foreground tabular-nums">
+      <p className="w-12 shrink-0 pt-1 text-right text-micro text-muted-foreground tabular-nums">
         {step.time ?? "—"}
       </p>
 
@@ -363,10 +370,11 @@ function TimelineRow({
 
       <div className="min-w-0 flex-1">
         <div className="flex items-start gap-2">
-          <button
+          <Button
             type="button"
+            variant="ghost"
             onClick={onToggle}
-            className="flex min-w-0 flex-1 items-center gap-1 text-left"
+            className="h-auto min-w-0 flex-1 justify-start gap-1 px-0 py-0 text-left hover:bg-transparent"
           >
             {isCollapsed ? (
               <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />
@@ -374,27 +382,29 @@ function TimelineRow({
               <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
             )}
             <span className="truncate text-sm font-medium">{step.title}</span>
-            <span className="shrink-0 rounded-md border border-border bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-secondary-foreground uppercase">
+            <span className="shrink-0 rounded-md border border-border bg-secondary px-1.5 py-0.5 text-2xs font-medium text-secondary-foreground uppercase">
               {step.type}
             </span>
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-sm"
             onClick={onRemove}
             className="shrink-0 text-muted-foreground hover:text-destructive"
             aria-label="Delete step"
           >
             <Trash2 className="size-3.5" />
-          </button>
+          </Button>
         </div>
 
         {!isCollapsed ? (
           <div className="mt-2 rounded-lg border border-border bg-card p-3 shadow-sm">
-            <textarea
+            <Textarea
               value={step.body}
               onChange={(e) => onPatch({ body: e.target.value })}
               rows={3}
-              className="w-full resize-none bg-transparent text-sm leading-relaxed outline-none"
+              className="min-h-0 w-full resize-none border-0 bg-transparent px-0 py-0 text-sm leading-relaxed shadow-none focus-visible:border-0 focus-visible:ring-0"
               aria-label="Step body"
             />
             <PhotoStrip
@@ -402,6 +412,7 @@ function TimelineRow({
               onAdd={() => fileRef.current?.click()}
               onRemove={onRemovePhoto}
             />
+            {/* Documented exception: native file input — kit Input cannot host a hidden file picker. */}
             <input
               ref={fileRef}
               type="file"
@@ -448,27 +459,30 @@ function PhotoStrip({
               compact ? "size-14" : "h-20 w-28"
             )}
           />
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-xs"
             onClick={() => onRemove(photo.id)}
-            className="absolute top-0.5 right-0.5 flex size-5 items-center justify-center rounded bg-black/50 text-white opacity-0 transition-opacity group-hover:opacity-100"
+            className="absolute top-0.5 right-0.5 size-5 rounded bg-black/50 text-white opacity-0 hover:bg-black/60 hover:text-white group-hover:opacity-100"
             aria-label="Remove photo"
           >
             <X className="size-3" />
-          </button>
+          </Button>
         </div>
       ))}
-      <button
+      <Button
         type="button"
+        variant="outline"
         onClick={onAdd}
         className={cn(
-          "flex items-center justify-center rounded-lg border border-dashed border-border/80 bg-card text-muted-foreground shadow-[0_1px_2px_oklch(0_0_0/0.04)] transition-[color,border-color,box-shadow,transform] duration-150 hover:border-foreground/20 hover:text-foreground active:scale-[0.96]",
+          "flex items-center justify-center rounded-lg border-dashed border-border/80 bg-card text-muted-foreground shadow-[0_1px_2px_oklch(0_0_0/0.04)] hover:border-foreground/20 hover:text-foreground",
           compact ? "size-14 rounded-md" : "h-20 w-28"
         )}
         aria-label="Add photo"
       >
         <ImagePlus className="size-4" />
-      </button>
+      </Button>
     </div>
   )
 }

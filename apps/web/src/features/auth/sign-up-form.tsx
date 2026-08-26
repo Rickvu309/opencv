@@ -2,7 +2,9 @@ import { useState, type FormEvent } from "react"
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
+import { Label } from "@workspace/ui/components/label"
 
+import { ErrorBanner } from "@/components/error-banner.tsx"
 import { authClient } from "@/lib/auth-client.ts"
 import { redirectFromSearch } from "@/lib/auth-redirect.ts"
 
@@ -43,9 +45,7 @@ export function SignUpForm() {
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
       <div className="space-y-1.5">
-        <label htmlFor="sign-up-name" className="text-sm font-medium">
-          Name
-        </label>
+        <Label htmlFor="sign-up-name">Name</Label>
         <Input
           id="sign-up-name"
           type="text"
@@ -57,9 +57,7 @@ export function SignUpForm() {
         />
       </div>
       <div className="space-y-1.5">
-        <label htmlFor="sign-up-email" className="text-sm font-medium">
-          Email
-        </label>
+        <Label htmlFor="sign-up-email">Email</Label>
         <Input
           id="sign-up-email"
           type="email"
@@ -71,9 +69,7 @@ export function SignUpForm() {
         />
       </div>
       <div className="space-y-1.5">
-        <label htmlFor="sign-up-password" className="text-sm font-medium">
-          Password
-        </label>
+        <Label htmlFor="sign-up-password">Password</Label>
         <Input
           id="sign-up-password"
           type="password"
@@ -85,11 +81,7 @@ export function SignUpForm() {
           onChange={(event) => setPassword(event.currentTarget.value)}
         />
       </div>
-      {error ? (
-        <p role="alert" className="text-sm text-destructive">
-          {error}
-        </p>
-      ) : null}
+      {error ? <ErrorBanner variant="inline">{error}</ErrorBanner> : null}
       <Button type="submit" className="w-full" disabled={pending}>
         {pending ? "Creating account…" : "Create account"}
       </Button>
