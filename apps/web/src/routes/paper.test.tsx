@@ -8,6 +8,7 @@ import {
 } from "@testing-library/react"
 
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { DESKTOP_MEDIA_QUERY } from "@/features/app-shell/use-media-query.ts"
 import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
 import {
@@ -29,12 +30,35 @@ async function openDoc(name: string) {
   return editor
 }
 
-function messageCoach(container: HTMLElement) {
+function coachDialog() {
+  return screen.getByRole("dialog", { name: "Coach" })
+}
+
+async function openCoach() {
+  fireEvent.click(screen.getByRole("button", { name: "Coach" }))
+  return screen.findByRole("dialog", { name: "Coach" })
+}
+
+function messageCoach(container: HTMLElement = coachDialog()) {
   return within(container).getByRole("textbox", { name: "Message Coach" })
+}
+
+function stubDesktopViewport(isDesktop: boolean) {
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: query === DESKTOP_MEDIA_QUERY ? isDesktop : true,
+    media: query,
+    onchange: null,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    addListener: () => {},
+    removeListener: () => {},
+    dispatchEvent: () => false,
+  }))
 }
 
 beforeEach(() => {
   sessionStorage.clear()
+  localStorage.clear()
   vi.stubGlobal("scrollTo", vi.fn())
 })
 
@@ -300,25 +324,138 @@ describe("Paper editors", () => {
   it("uses the shared Coach dock — no AI assist popover or mode picker", async () => {
     renderPaper()
     await expectPaperDrive()
-    const editor = await openDoc("PM track CV")
+    await openDoc("PM track CV")
 
     expect(
       screen.queryByRole("button", { name: /AI assist/ })
     ).not.toBeInTheDocument()
     expect(screen.queryByRole("dialog", { name: "AI assist" })).not.toBeInTheDocument()
-    expect(messageCoach(editor)).toBeInTheDocument()
+    expect(screen.queryByRole("dialog", { name: "Coach" })).not.toBeInTheDocument()
+
+    const dialog = await openCoach()
+    expect(messageCoach(dialog)).toBeInTheDocument()
     expect(
-      within(editor).queryByRole("button", { name: "Coach mode" })
+      within(dialog).queryByRole("button", { name: "Coach mode" })
     ).not.toBeInTheDocument()
     expect(
-      within(editor).queryByRole("radiogroup", { name: "Coach mode" })
+      within(dialog).queryByRole("radiogroup", { name: "Coach mode" })
     ).not.toBeInTheDocument()
     expect(
-      within(editor).getByRole("button", {
+      within(dialog).getByRole("button", {
         name: "Sharpen my checkout project bullet",
       })
     ).toBeInTheDocument()
-    expect(within(editor).queryByRole("log", { name: "Thread" })).not.toBeInTheDocument()
+    expect(within(dialog).queryByRole("log", { name: "Thread" })).not.toBeInTheDocument()
+  })
+
+  it("opens the Coach float without shrinking the canvas scroll area", async () => {
+    renderPaper()
+    await expectPaperDrive()
+    const editor = await openDoc("PM track CV")
+    const canvas = editor.querySelector("[data-paper-canvas]")
+    expect(canvas).toBeInstanceOf(HTMLElement)
+    Object.defineProperty(canvas, "clientHeight", {
+      configurable: true,
+      value: 640,
+    })
+    expect((canvas as HTMLElement).clientHeight).toBe(640)
+
+    const dialog = await openCoach()
+    expect((canvas as HTMLElement).clientHeight).toBe(640)
+    expect(canvas).toHaveClass("flex-1")
+    expect(dialog.className).toMatch(/fixed/)
+    expect(editor.contains(dialog)).toBe(false)
+  })
+
+  it("cycles pill, open, minimize, and close and persists the float state", async () => {
+    renderPaper()
+    await expectPaperDrive()
+    await openDoc("PM track CV")
+
+    expect(screen.getByRole("button", { name: "Coach" })).toBeInTheDocument()
+    expect(localStorage.getItem("openpath:paper:coach-float")).toBe("closed")
+
+    const dialog = await openCoach()
+    expect(localStorage.getItem("openpath:paper:coach-float")).toBe("open")
+    expect(messageCoach(dialog)).toBeInTheDocument()
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Minimize" }))
+    expect(localStorage.getItem("openpath:paper:coach-float")).toBe("minimized")
+    expect(screen.getByRole("dialog", { name: "Coach" })).toHaveAttribute(
+      "data-coach-float-state",
+      "minimized"
+    )
+    expect(
+      screen.queryByRole("textbox", { name: "Message Coach" })
+    ).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: "Restore" }))
+    expect(localStorage.getItem("openpath:paper:coach-float")).toBe("open")
+    expect(messageCoach()).toBeInTheDocument()
+
+    fireEvent.click(within(coachDialog()).getByRole("button", { name: "Close" }))
+    expect(screen.queryByRole("dialog", { name: "Coach" })).not.toBeInTheDocument()
+    expect(localStorage.getItem("openpath:paper:coach-float")).toBe("closed")
+    expect(screen.getByRole("button", { name: "Coach" })).toBeInTheDocument()
+
+    cleanup()
+    renderPaper()
+    await expectPaperDrive()
+    await openDoc("PM track CV")
+    expect(screen.getByRole("button", { name: "Coach" })).toBeInTheDocument()
+    expect(screen.queryByRole("dialog", { name: "Coach" })).not.toBeInTheDocument()
+
+    localStorage.setItem("openpath:paper:coach-float", "minimized")
+    cleanup()
+    renderPaper()
+    await expectPaperDrive()
+    await openDoc("PM track CV")
+    expect(await screen.findByRole("dialog", { name: "Coach" })).toHaveAttribute(
+      "data-coach-float-state",
+      "minimized"
+    )
+  })
+
+  it("closes the float on Escape and returns focus to the pill", async () => {
+    renderPaper()
+    await expectPaperDrive()
+    await openDoc("PM track CV")
+
+    const pill = screen.getByRole("button", { name: "Coach" })
+    pill.focus()
+    fireEvent.click(pill)
+    const dialog = await screen.findByRole("dialog", { name: "Coach" })
+    fireEvent.keyDown(dialog, { key: "Escape" })
+
+    expect(screen.queryByRole("dialog", { name: "Coach" })).not.toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Coach" })).toHaveFocus()
+    })
+  })
+
+  it("opens a mobile sheet with a backdrop and focus trap", async () => {
+    stubDesktopViewport(false)
+    renderPaper()
+    await expectPaperDrive()
+    await openDoc("PM track CV")
+    const dialog = await openCoach()
+
+    expect(document.querySelector("[data-coach-float-backdrop]")).toBeInTheDocument()
+    expect(dialog).toHaveAttribute("aria-modal", "true")
+
+    const focusable = [
+      ...dialog.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      ),
+    ]
+    expect(focusable.length).toBeGreaterThan(1)
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+    last?.focus()
+    fireEvent.keyDown(dialog, { key: "Tab" })
+    expect(first).toHaveFocus()
+    fireEvent.keyDown(dialog, { key: "Tab", shiftKey: true })
+    expect(last).toHaveFocus()
   })
 
   it("streams the shared Coach with a receipt, stop, retry, thumbs, and copy", async () => {
@@ -344,44 +481,45 @@ describe("Paper editors", () => {
     })
     renderPaper()
     await expectPaperDrive()
-    const panel = await openDoc("PM track CV")
+    const editor = await openDoc("PM track CV")
+    const dialog = await openCoach()
 
-    expect(panel).not.toHaveTextContent(/can't edit it yet/i)
-    expect(panel).not.toHaveTextContent(/haven't edited this document/i)
-    expect(panel).not.toHaveTextContent(/lives on Home/i)
+    expect(editor).not.toHaveTextContent(/can't edit it yet/i)
+    expect(editor).not.toHaveTextContent(/haven't edited this document/i)
+    expect(editor).not.toHaveTextContent(/lives on Home/i)
     expect(
-      within(panel).queryByRole("radiogroup", { name: "Coach mode" })
+      within(dialog).queryByRole("radiogroup", { name: "Coach mode" })
     ).not.toBeInTheDocument()
     expect(
-      within(panel).queryByRole("button", { name: "Coach mode" })
+      within(dialog).queryByRole("button", { name: "Coach mode" })
     ).not.toBeInTheDocument()
 
-    fireEvent.change(messageCoach(panel), {
+    fireEvent.change(messageCoach(dialog), {
       target: { value: "Sharpen the checkout bullet" },
     })
-    fireEvent.click(within(panel).getByRole("button", { name: "Send" }))
+    fireEvent.click(within(dialog).getByRole("button", { name: "Send" }))
 
     expect(
-      await within(panel).findByText("I read PM track CV.")
+      await within(dialog).findByText("I read PM track CV.")
     ).toBeInTheDocument()
     expect(
-      within(panel).getByRole("log", { name: "Thread" })
+      within(dialog).getByRole("log", { name: "Thread" })
     ).toBeInTheDocument()
     expect(
-      within(panel).queryByRole("button", {
+      within(dialog).queryByRole("button", {
         name: "Sharpen my checkout project bullet",
       })
     ).not.toBeInTheDocument()
     expect(
-      within(panel).getByText("Updated PM track CV")
+      within(dialog).getByText("Updated PM track CV")
     ).toBeInTheDocument()
     expect(
-      within(panel).getByRole("status", { name: "Command succeeded" })
+      within(dialog).getByRole("status", { name: "Command succeeded" })
     ).toBeInTheDocument()
     expect(
-      within(panel).getByText("Reversible — Undo by editing the document again.")
+      within(dialog).getByText("Reversible — Undo by editing the document again.")
     ).toBeInTheDocument()
-    const thread = within(panel).getByRole("log", { name: "Thread" })
+    const thread = within(dialog).getByRole("log", { name: "Thread" })
     await waitFor(() => {
       expect(within(thread).getByRole("button", { name: "Undo" })).toBeEnabled()
     })
@@ -402,14 +540,14 @@ describe("Paper editors", () => {
       )
     ).toBe(false)
 
-    fireEvent.click(within(panel).getByRole("button", { name: "Copy" }))
+    fireEvent.click(within(dialog).getByRole("button", { name: "Copy" }))
     await waitFor(() => {
       expect(writeText).toHaveBeenCalled()
     })
-    fireEvent.click(within(panel).getByRole("button", { name: "Good response" }))
+    fireEvent.click(within(dialog).getByRole("button", { name: "Good response" }))
     await waitFor(() => {
       expect(
-        within(panel).getByRole("button", { name: "Good response" })
+        within(dialog).getByRole("button", { name: "Good response" })
       ).toHaveAttribute("aria-pressed", "true")
     })
   })
@@ -421,27 +559,28 @@ describe("Paper editors", () => {
     })
     renderPaper()
     await expectPaperDrive()
-    const panel = await openDoc("PM track CV")
+    await openDoc("PM track CV")
+    const dialog = await openCoach()
 
-    fireEvent.change(messageCoach(panel), {
+    fireEvent.change(messageCoach(dialog), {
       target: { value: "Stop me" },
     })
-    fireEvent.click(within(panel).getByRole("button", { name: "Send" }))
-    const working = within(panel).getByRole("status", { name: "Coach is working" })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Send" }))
+    const working = within(dialog).getByRole("status", { name: "Coach is working" })
     expect(working).toHaveTextContent("Working…")
     expect(
       working.querySelector("[data-slot='coach-working-bar']")
     ).toBeInTheDocument()
     expect(working.querySelector(".animate-pulse")).not.toBeInTheDocument()
     stream.release(2)
-    expect(await within(panel).findByText("Partial from Paper")).toBeInTheDocument()
+    expect(await within(dialog).findByText("Partial from Paper")).toBeInTheDocument()
 
-    fireEvent.click(within(panel).getByRole("button", { name: "Stop" }))
+    fireEvent.click(within(dialog).getByRole("button", { name: "Stop" }))
     await waitFor(() => {
-      expect(within(panel).getByRole("button", { name: "Send" })).toBeInTheDocument()
+      expect(within(dialog).getByRole("button", { name: "Send" })).toBeInTheDocument()
     })
-    expect(within(panel).getByText("Partial from Paper")).toBeInTheDocument()
-    expect(within(panel).queryByText(/should not appear/)).not.toBeInTheDocument()
+    expect(within(dialog).getByText("Partial from Paper")).toBeInTheDocument()
+    expect(within(dialog).queryByText(/should not appear/)).not.toBeInTheDocument()
 
     scriptCoachStream({
       httpError: {
@@ -450,21 +589,21 @@ describe("Paper editors", () => {
         message: "The Coach is unavailable right now",
       },
     })
-    fireEvent.change(messageCoach(panel), {
+    fireEvent.change(messageCoach(dialog), {
       target: { value: "Are you there?" },
     })
-    fireEvent.click(within(panel).getByRole("button", { name: "Send" }))
-    expect(await within(panel).findByRole("alert")).toHaveTextContent(
+    fireEvent.click(within(dialog).getByRole("button", { name: "Send" }))
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(
       "The Coach is unavailable right now. Try again in a moment."
     )
 
     scriptCoachStream({ texts: [DEFAULT_COACH_STREAM_REPLY] })
-    fireEvent.click(within(panel).getByRole("button", { name: "Retry" }))
+    fireEvent.click(within(dialog).getByRole("button", { name: "Retry" }))
     expect(
-      await within(panel).findByText(DEFAULT_COACH_STREAM_REPLY)
+      await within(dialog).findByText(DEFAULT_COACH_STREAM_REPLY)
     ).toBeInTheDocument()
     await waitFor(() => {
-      expect(within(panel).queryByRole("alert")).not.toBeInTheDocument()
+      expect(within(dialog).queryByRole("alert")).not.toBeInTheDocument()
     })
   })
 
@@ -472,14 +611,15 @@ describe("Paper editors", () => {
     scriptCoachStream({ texts: ["I read PM track CV."] })
     const first = renderPaper()
     await expectPaperDrive()
-    const firstPanel = await openDoc("PM track CV")
+    await openDoc("PM track CV")
+    const firstDialog = await openCoach()
 
-    fireEvent.change(messageCoach(firstPanel), {
+    fireEvent.change(messageCoach(firstDialog), {
       target: { value: "Remember this CV" },
     })
-    fireEvent.click(within(firstPanel).getByRole("button", { name: "Send" }))
+    fireEvent.click(within(firstDialog).getByRole("button", { name: "Send" }))
     expect(
-      await within(firstPanel).findByText("I read PM track CV.")
+      await within(firstDialog).findByText("I read PM track CV.")
     ).toBeInTheDocument()
 
     const grounded = getMockThreads().find(
@@ -498,13 +638,14 @@ describe("Paper editors", () => {
       selector: "span.font-medium",
     })
     fireEvent.click(driveName.closest("tr") ?? driveName)
-    const secondPanel = await screen.findByRole("region", {
+    await screen.findByRole("region", {
       name: "Editing PM track CV",
     })
+    const secondDialog = await screen.findByRole("dialog", { name: "Coach" })
     expect(
-      await within(secondPanel).findByText("Remember this CV")
+      await within(secondDialog).findByText("Remember this CV")
     ).toBeInTheDocument()
-    expect(within(secondPanel).getByText("I read PM track CV.")).toBeInTheDocument()
+    expect(within(secondDialog).getByText("I read PM track CV.")).toBeInTheDocument()
     expect(
       Object.keys(sessionStorage).some((key) =>
         key.includes("paper-coach-thread")
@@ -516,14 +657,15 @@ describe("Paper editors", () => {
     scriptCoachStream({ texts: ["I read PM track CV."] })
     const { router } = renderPaper()
     await expectPaperDrive()
-    const editor = await openDoc("PM track CV")
+    await openDoc("PM track CV")
+    const dialog = await openCoach()
 
-    fireEvent.change(messageCoach(editor), {
+    fireEvent.change(messageCoach(dialog), {
       target: { value: "Sharpen the checkout bullet" },
     })
-    fireEvent.click(within(editor).getByRole("button", { name: "Send" }))
+    fireEvent.click(within(dialog).getByRole("button", { name: "Send" }))
     expect(
-      await within(editor).findByText("I read PM track CV.")
+      await within(dialog).findByText("I read PM track CV.")
     ).toBeInTheDocument()
 
     const history = screen.getByRole("navigation", { name: "History" })
@@ -544,14 +686,15 @@ describe("Paper editors", () => {
     scriptCoachStream({ texts: ["I will rewrite that line."] })
     renderPaper()
     await expectPaperDrive()
-    const panel = await openDoc("Cover: Associate PM intern")
+    const editor = await openDoc("Cover: Associate PM intern")
+    const dialog = await openCoach()
 
-    const rewrite = within(panel).getByRole("button", {
+    const rewrite = within(dialog).getByRole("button", {
       name: "Rewrite selection",
     })
     expect(rewrite).toBeDisabled()
 
-    const canvas = within(panel).getByRole("textbox", {
+    const canvas = within(editor).getByRole("textbox", {
       name: "Document content",
     })
     const range = document.createRange()
@@ -566,7 +709,7 @@ describe("Paper editors", () => {
     })
     fireEvent.click(rewrite)
     expect(
-      await within(panel).findByText("I will rewrite that line.")
+      await within(dialog).findByText("I will rewrite that line.")
     ).toBeInTheDocument()
     const request = getLastCoachRequest()
     expect(request?.text).toBe("Rewrite selection")
@@ -595,8 +738,9 @@ describe("Paper editors", () => {
     })
     renderPaper()
     await expectPaperDrive()
-    const panel = await openDoc("PM track CV")
-    const summary = within(panel).getByRole("textbox", { name: "Summary" })
+    const editor = await openDoc("PM track CV")
+    const dialog = await openCoach()
+    const summary = within(editor).getByRole("textbox", { name: "Summary" })
     expect(summary).not.toHaveTextContent(
       "Coach rewrote the summary for APM internships."
     )
@@ -608,21 +752,21 @@ describe("Paper editors", () => {
       updatedAt: "2026-08-26T12:00:00.000Z",
     })
 
-    fireEvent.change(messageCoach(panel), {
+    fireEvent.change(messageCoach(dialog), {
       target: { value: "Rewrite the summary" },
     })
-    fireEvent.click(within(panel).getByRole("button", { name: "Send" }))
+    fireEvent.click(within(dialog).getByRole("button", { name: "Send" }))
     expect(
-      await within(panel).findByText("I updated the summary.")
+      await within(dialog).findByText("I updated the summary.")
     ).toBeInTheDocument()
     await waitFor(() => {
       expect(
-        within(panel).getByRole("textbox", { name: "Summary" })
+        within(editor).getByRole("textbox", { name: "Summary" })
       ).toHaveTextContent("Coach rewrote the summary for APM internships.")
     })
     await waitFor(() => {
       expect(
-        within(panel).getByRole("textbox", { name: "Summary" })
+        within(editor).getByRole("textbox", { name: "Summary" })
       ).toHaveClass("paper-coach-changed")
     })
   })

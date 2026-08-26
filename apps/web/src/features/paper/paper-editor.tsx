@@ -36,7 +36,7 @@ import {
   proofContentOf,
   type PaperDoc,
 } from "./paper-data.ts"
-import { CoachThreadPanel } from "./coach-thread-panel.tsx"
+import { CoachFloat } from "./coach-float.tsx"
 import { readPaperSelection } from "./paper-selection.ts"
 import { PaperEditorSidebar } from "./paper-editor-sidebar.tsx"
 import {
@@ -486,6 +486,7 @@ export function PaperEditor({
 
         <div
           ref={canvasRef}
+          data-paper-canvas
           className="min-h-0 flex-1 overflow-auto px-4 py-8 sm:px-8"
         >
           <div
@@ -611,7 +612,7 @@ export function PaperEditor({
           </div>
         </div>
 
-        <CoachThreadPanel
+        <CoachFloat
           key={doc.id}
           docId={doc.id}
           docName={doc.name}
