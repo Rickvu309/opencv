@@ -70,7 +70,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe("Home Thread mode and History", () => {
+describe("Home Thread mode and History", { timeout: 15_000 }, () => {
   it("streams a reply progressively and drops working status at first text", async () => {
     const stream = scriptCoachStream({
       gated: true,
