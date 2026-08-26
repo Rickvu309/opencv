@@ -16,6 +16,7 @@ import {
   Share2,
 } from "lucide-react"
 
+import { WorkspaceHeader } from "@/components/workspace-header.tsx"
 import { authClient } from "@/lib/auth-client.ts"
 
 import { CvDocument } from "./paper-cv-document.tsx"
@@ -308,7 +309,7 @@ export function PaperEditor({
 
   return (
     <div
-      className="flex h-full min-h-0 bg-[#F3F4F6]"
+      className="flex h-full min-h-0 bg-muted"
       role="region"
       aria-label={`Editing ${doc.name}`}
     >
@@ -320,28 +321,32 @@ export function PaperEditor({
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex shrink-0 items-center gap-3 border-b border-border bg-background px-5 py-3">
-          <FileText className="size-4 shrink-0 text-muted-foreground" />
-          <div className="min-w-0 flex-1">
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              onBlur={() => {
-                const name = title.trim()
-                if (name && name !== doc.name) onRename(name)
-                else setTitle(doc.name)
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") (e.target as HTMLInputElement).blur()
-              }}
-              className="w-full truncate border-0 bg-transparent text-sm font-semibold outline-none"
-              aria-label="Document name"
-            />
-            <p className="text-xs text-muted-foreground">
-              {TYPE_LABEL[doc.kind]}
-              {" · "}Updated {formatPaperUpdated(doc.updatedAt)}
-            </p>
-          </div>
+        <WorkspaceHeader
+          className="items-center gap-3 px-5 py-3"
+          icon={<FileText className="size-4 shrink-0 text-muted-foreground" />}
+          title={
+            <div className="min-w-0 flex-1">
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                onBlur={() => {
+                  const name = title.trim()
+                  if (name && name !== doc.name) onRename(name)
+                  else setTitle(doc.name)
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") (e.target as HTMLInputElement).blur()
+                }}
+                className="w-full truncate border-0 bg-transparent text-sm font-semibold outline-none"
+                aria-label="Document name"
+              />
+              <p className="text-xs text-muted-foreground">
+                {TYPE_LABEL[doc.kind]}
+                {" · "}Updated {formatPaperUpdated(doc.updatedAt)}
+              </p>
+            </div>
+          }
+        >
 
           <DropdownMenu>
             <DropdownMenuTrigger
@@ -372,7 +377,7 @@ export function PaperEditor({
           >
             {saving ? "Saving…" : dirty ? "Save changes" : "Saved"}
           </Button>
-        </header>
+        </WorkspaceHeader>
 
         <div className="min-h-0 flex-1 overflow-auto px-4 py-8 sm:px-8">
           <div

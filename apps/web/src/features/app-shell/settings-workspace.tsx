@@ -8,6 +8,7 @@ import {
   TabsTrigger,
 } from "@workspace/ui/components/tabs"
 
+import { WorkspaceHeader } from "@/components/workspace-header.tsx"
 import { AppsCatalog } from "@/features/app-shell/apps-catalog.tsx"
 import { CoachModeSelector } from "@/features/home/coach-mode-selector.tsx"
 import { useCoachMode } from "@/features/home/use-coach-mode.ts"
@@ -49,10 +50,7 @@ export function SettingsWorkspace({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="border-b border-border bg-background px-4 py-4 sm:px-6">
-        <h1 className="text-lg font-semibold tracking-tight">{copy.title}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{copy.body}</p>
-      </div>
+      <WorkspaceHeader title={copy.title} description={copy.body} />
 
       <Tabs
         value={tab}

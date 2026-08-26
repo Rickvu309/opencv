@@ -3,6 +3,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 
+import { ErrorBanner } from "@/components/error-banner.tsx"
 import { authClient } from "@/lib/auth-client.ts"
 import { redirectFromSearch } from "@/lib/auth-redirect.ts"
 
@@ -69,11 +70,7 @@ export function SignInForm() {
           onChange={(event) => setPassword(event.currentTarget.value)}
         />
       </div>
-      {error ? (
-        <p role="alert" className="text-sm text-destructive">
-          {error}
-        </p>
-      ) : null}
+      {error ? <ErrorBanner variant="inline">{error}</ErrorBanner> : null}
       <Button type="submit" className="w-full" disabled={pending}>
         {pending ? "Signing in…" : "Sign in"}
       </Button>

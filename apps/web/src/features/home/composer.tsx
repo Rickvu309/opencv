@@ -27,6 +27,7 @@ import {
 } from "@workspace/ui/components/tooltip"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { ComingSoon } from "@/components/coming-soon.tsx"
 import { FOCUS_RING } from "@/features/app-shell/focus-ring.ts"
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { CoachModeSelector } from "@/features/home/coach-mode-selector.tsx"
@@ -121,11 +122,7 @@ export function Composer({
             >
               <Icon className="size-4 shrink-0 text-muted-foreground" />
               {item.label}
-              {comingSoon ? (
-                <span className="ml-auto text-muted-foreground">
-                  · Coming soon
-                </span>
-              ) : null}
+              {comingSoon ? <ComingSoon /> : null}
             </DropdownMenuItem>
           )
         })}
@@ -151,6 +148,7 @@ export function Composer({
                 )}
               >
                 <Mic className="size-4" />
+                <ComingSoon silent />
               </button>
             </span>
           }

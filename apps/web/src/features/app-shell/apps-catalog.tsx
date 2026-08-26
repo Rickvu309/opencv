@@ -1,5 +1,6 @@
 import { Button } from "@workspace/ui/components/button"
 
+import { ComingSoon } from "@/components/coming-soon.tsx"
 import { BrandIcon } from "@/features/app-shell/brand-icon.tsx"
 import { brandLabel, type BrandId } from "@/features/app-shell/brands.ts"
 
@@ -43,7 +44,7 @@ export function AppsCatalog() {
           <div className="mt-4">
             <Button type="button" size="sm" disabled>
               Connect
-              <span className="text-muted-foreground"> · Coming soon</span>
+              <ComingSoon />
             </Button>
           </div>
         </article>

@@ -14,6 +14,8 @@ import type { CoachUsageRating, ThreadToolPart } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { ComingSoon } from "@/components/coming-soon.tsx"
+import { ErrorBanner } from "@/components/error-banner.tsx"
 import { CoachMarkdown } from "@/features/home/coach-markdown.tsx"
 import {
   receiptHeadline,
@@ -99,9 +101,9 @@ function CoachReceipt({
         </div>
       ) : null}
       {undoError ? (
-        <p role="alert" className="pl-5 text-destructive">
+        <ErrorBanner variant="inline" className="pl-5">
           {undoError}
-        </p>
+        </ErrorBanner>
       ) : null}
     </div>
   )
@@ -238,6 +240,7 @@ function MessageActions({
             className="flex size-7 items-center justify-center rounded-md text-muted-foreground opacity-40"
           >
             <Icon className="size-3.5" />
+            <ComingSoon silent />
           </button>
         )
       })}
@@ -296,9 +299,7 @@ export function ThreadView({
               </div>
               {item.failed && item.error ? (
                 <div className="space-y-2 text-right">
-                  <p role="alert" className="text-sm text-destructive">
-                    {item.error}
-                  </p>
+                  <ErrorBanner variant="inline">{item.error}</ErrorBanner>
                   {onRetry ? (
                     <Button
                       type="button"
@@ -353,9 +354,7 @@ export function ThreadView({
 
       {error ? (
         <div className="space-y-2">
-          <p role="alert" className="text-sm text-destructive">
-            {error}
-          </p>
+          <ErrorBanner variant="inline">{error}</ErrorBanner>
           {onRetry ? (
             <Button type="button" variant="outline" size="sm" onClick={onRetry}>
               Retry

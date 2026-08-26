@@ -19,6 +19,9 @@ import {
   Star,
 } from "lucide-react"
 
+import { ComingSoon, comingSoonLabel } from "@/components/coming-soon.tsx"
+import { ErrorBanner } from "@/components/error-banner.tsx"
+import { WorkspaceHeader } from "@/components/workspace-header.tsx"
 import { ApplyCalendar } from "@/features/apply/apply-calendar.tsx"
 import {
   allowCardDrop,
@@ -97,18 +100,12 @@ export function ApplyWorkspace() {
   }
 
   const errorBanner = apply.error ? (
-    <div
-      role="alert"
-      className="border-b border-destructive/30 bg-destructive/10 px-5 py-2 text-sm text-destructive"
-    >
-      {apply.error}
-    </div>
+    <ErrorBanner>{apply.error}</ErrorBanner>
   ) : null
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[#FAFAFA]">
-      <header className="flex shrink-0 flex-wrap items-center gap-2 border-b border-border bg-background px-4 py-2.5 sm:px-5">
-        <h1 className="text-sm font-semibold tracking-tight">Apply</h1>
+    <div className="flex h-full min-h-0 flex-col bg-sidebar">
+      <WorkspaceHeader title="Apply">
 
         <div className="relative min-w-[12rem] flex-1 sm:max-w-xs">
           <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -130,7 +127,7 @@ export function ApplyWorkspace() {
         >
           <Filter className="size-3.5" />
           Filter
-          <span className="text-muted-foreground"> · Coming soon</span>
+          <ComingSoon />
         </Button>
 
         <div className="flex rounded-lg border border-border p-0.5">
@@ -174,7 +171,7 @@ export function ApplyWorkspace() {
           <Plus className="size-3.5" />
           Add job
         </Button>
-      </header>
+      </WorkspaceHeader>
 
       {errorBanner}
 
@@ -218,15 +215,18 @@ export function ApplyWorkspace() {
                       <span className="text-xs text-muted-foreground">
                         {col.length}
                       </span>
-                      <button
+                      <Button
                         type="button"
+                        size="icon-sm"
+                        variant="ghost"
                         disabled
                         title="Coming soon"
-                        className="ml-auto text-muted-foreground disabled:opacity-50"
-                        aria-label={`${stage.label} column menu — coming soon`}
+                        className="ml-auto"
+                        aria-label={comingSoonLabel(`${stage.label} column menu`)}
                       >
                         <MoreHorizontal className="size-4" />
-                      </button>
+                        <ComingSoon silent />
+                      </Button>
                     </div>
                     <div className="flex flex-1 flex-col gap-2 overflow-auto px-2 pb-3">
                       {col.map((card) => (

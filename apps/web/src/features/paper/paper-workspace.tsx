@@ -27,6 +27,8 @@ import type {
 } from "@workspace/domain"
 import { Filter, MoreHorizontal, Plus, Search } from "lucide-react"
 
+import { ComingSoon } from "@/components/coming-soon.tsx"
+import { ErrorBanner } from "@/components/error-banner.tsx"
 import { useApplyCards } from "@/features/apply/use-apply-cards.ts"
 import { DestructiveCommandDialog } from "@/features/commands/destructive-command-dialog.tsx"
 
@@ -100,12 +102,7 @@ export function PaperWorkspace() {
   }
 
   const errorBanner = paper.error ? (
-    <div
-      role="alert"
-      className="border-b border-destructive/30 bg-destructive/10 px-5 py-2 text-sm text-destructive"
-    >
-      {paper.error}
-    </div>
+    <ErrorBanner>{paper.error}</ErrorBanner>
   ) : null
 
   const dialogs = (
@@ -248,7 +245,7 @@ export function PaperWorkspace() {
 
   return (
     <div
-      className="flex h-full min-h-0 flex-col bg-[#FAFAFA]"
+      className="flex h-full min-h-0 flex-col bg-sidebar"
       role="region"
       aria-label="Paper"
     >
@@ -284,7 +281,7 @@ export function PaperWorkspace() {
             <Button type="button" size="sm" variant="outline" disabled>
               <Filter className="size-3.5" />
               Filter
-              <span className="text-muted-foreground"> · Coming soon</span>
+              <ComingSoon />
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger
