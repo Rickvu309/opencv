@@ -29,6 +29,9 @@ describe("Coach motion tokens and reduced-motion", () => {
     expect(css).toMatch(
       /prefers-reduced-motion: reduce[\s\S]*\.coach-float-card[\s\S]*transition:\s*none/
     )
+    expect(css).toMatch(
+      /prefers-reduced-motion: reduce[\s\S]*\[data-slot="aui-thread-viewport"\][\s\S]*animation:\s*none/
+    )
   })
 
   it("keeps the S7.4 Paper highlight static under reduced-motion", () => {

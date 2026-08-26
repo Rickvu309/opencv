@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
+import { AssistantRuntimeProvider } from "@assistant-ui/react"
 import type { CoachSelection } from "@workspace/domain"
 import { Maximize2, Minus, X } from "lucide-react"
 
@@ -9,13 +10,13 @@ import { useMediaQuery } from "@workspace/ui/hooks/use-media-query"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { DESKTOP_MEDIA_QUERY } from "@/features/app-shell/use-media-query.ts"
-import { CoachDock } from "@/features/coach/coach-dock.tsx"
+import { useCoachExternalRuntime } from "@/features/coach/coach-runtime.ts"
+import { CoachThread } from "@/features/coach/coach-thread.tsx"
 import { useCoachTurn } from "@/features/coach/use-coach-turn.ts"
 import {
   getThreadByFocusDoc,
   threadQueryKeys,
 } from "@/features/home/thread-api.ts"
-import { ThreadView } from "@/features/home/thread-view.tsx"
 
 import type { ToolbarVariant } from "./paper-editor-toolbar.tsx"
 
@@ -92,11 +93,9 @@ function focusableIn(root: HTMLElement) {
 }
 
 export function CoachFloat({ docId, docName, variant, selection }: Props) {
-  const listRef = useRef<HTMLDivElement>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
   const returnFocusRef = useRef(false)
   const [createdThreadId, setCreatedThreadId] = useState<string | null>(null)
-  const [draft, setDraft] = useState("")
   const [floatState, setFloatState] = useState<CoachFloatState>(readFloatState)
   const isDesktop = useMediaQuery(DESKTOP_MEDIA_QUERY, true)
 
@@ -116,20 +115,26 @@ export function CoachFloat({ docId, docName, variant, selection }: Props) {
       focusDocId: docId,
     })
 
+  const sendWithSelection = useCallback(
+    (text: string) => send(text, { selection: selection ?? undefined }),
+    [send, selection]
+  )
+  const runtime = useCoachExternalRuntime({
+    messages,
+    phase,
+    send: sendWithSelection,
+    stop,
+    regenerate,
+    rate,
+  })
+
   const turnActive = phase !== "idle"
-  const showTranscript = messages.length > 0 || turnActive || Boolean(error)
   const headerTitle = focusedThreadQuery.data?.title ?? docName
   const mobileSheet = !isDesktop && floatState === "open"
 
   useEffect(() => {
     writeFloatState(floatState)
   }, [floatState])
-
-  useEffect(() => {
-    const el = listRef.current
-    if (!el) return
-    el.scrollTop = el.scrollHeight
-  }, [messages, phase, error])
 
   useEffect(() => {
     if (floatState !== "closed" || !returnFocusRef.current) return
@@ -191,10 +196,10 @@ export function CoachFloat({ docId, docName, variant, selection }: Props) {
     first?.focus()
   }, [mobileSheet])
 
-  function submit(text?: string) {
-    const next = (text ?? draft).trim()
+  function submit(text: string) {
+    const next = text.trim()
     if (!next || turnActive) return
-    if (send(next, { selection: selection ?? undefined })) setDraft("")
+    sendWithSelection(next)
   }
 
   function open() {
@@ -253,51 +258,39 @@ export function CoachFloat({ docId, docName, variant, selection }: Props) {
       </div>
       {floatState === "open" ? (
         <div className="flex min-h-0 flex-1 flex-col gap-2 px-3 pt-2 pb-3">
-          {showTranscript ? (
-            <div ref={listRef} className="min-h-0 flex-1 overflow-auto">
-              <ThreadView
-                compact
-                messages={messages}
-                waiting={phase === "waiting"}
-                error={error}
-                onRetry={retry}
-                onRate={rate}
-                onRegenerate={phase === "idle" ? regenerate : undefined}
-                onUndo={phase === "idle" ? undo : undefined}
-              />
-            </div>
-          ) : (
-            <div className="flex flex-wrap gap-1">
-              {QUICK_PROMPTS[variant].map((chip) => {
-                const needsSelection = chip === REWRITE_SELECTION
-                const disabled =
-                  turnActive || (needsSelection && !selection?.text)
-                return (
-                  <Button
-                    key={chip}
-                    type="button"
-                    variant="outline"
-                    size="xs"
-                    onClick={() => submit(chip)}
-                    disabled={disabled}
-                    className="h-auto rounded-full px-2 py-0.5 text-2xs text-muted-foreground"
-                  >
-                    {chip}
-                  </Button>
-                )
-              })}
-            </div>
-          )}
-          <CoachDock
-            draft={draft}
-            setDraft={setDraft}
-            onSend={() => submit()}
-            onStop={stop}
-            turnActive={turnActive}
-            placeholder="Ask about this document…"
-            menuPlacement="above"
-            showModePicker={false}
-          />
+          <AssistantRuntimeProvider runtime={runtime}>
+            <CoachThread
+              waiting={phase === "waiting"}
+              error={error}
+              onRetry={retry}
+              onRate={rate}
+              onRegenerate={phase === "idle" ? regenerate : undefined}
+              onUndo={phase === "idle" ? undo : undefined}
+              placeholder="Ask about this document…"
+              empty={
+                <div className="flex flex-wrap gap-1">
+                  {QUICK_PROMPTS[variant].map((chip) => {
+                    const needsSelection = chip === REWRITE_SELECTION
+                    const disabled =
+                      turnActive || (needsSelection && !selection?.text)
+                    return (
+                      <Button
+                        key={chip}
+                        type="button"
+                        variant="outline"
+                        size="xs"
+                        onClick={() => submit(chip)}
+                        disabled={disabled}
+                        className="h-auto rounded-full px-2 py-0.5 text-2xs text-muted-foreground"
+                      >
+                        {chip}
+                      </Button>
+                    )
+                  })}
+                </div>
+              }
+            />
+          </AssistantRuntimeProvider>
         </div>
       ) : null}
     </>

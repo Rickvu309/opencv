@@ -13,6 +13,7 @@
     "test": "vitest run --config vitest.config.ts"
   },
   "dependencies": {
+    "@assistant-ui/react": "0.15.16",
     "@tanstack/react-query": "^5.102.3",
     "@tanstack/react-router": "^1.163.3",
     "@workspace/domain": "workspace:*",

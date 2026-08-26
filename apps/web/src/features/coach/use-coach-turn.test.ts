@@ -35,8 +35,9 @@ describe("shared Coach turn hook", () => {
 
     const panel = read("features/paper/coach-float.tsx")
     expect(panel).toMatch(/useCoachTurn/)
-    expect(panel).toMatch(/CoachDock/)
-    expect(panel).toMatch(/showModePicker=\{false\}/)
+    expect(panel).toMatch(/useCoachExternalRuntime/)
+    expect(panel).toMatch(/CoachThread/)
+    expect(panel).not.toMatch(/ThreadView/)
     expect(panel).not.toMatch(/sessionStorage/)
     expect(panel).not.toMatch(/Sparkles/)
     expect(panel).not.toMatch(/AI assist/)
