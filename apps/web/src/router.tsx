@@ -11,6 +11,7 @@ import {
 import { AppShellLayout } from "@/features/app-shell/app-shell-layout.tsx"
 import { validateSettingsSearch } from "@/features/app-shell/surfaces.ts"
 import { ApplyPage } from "@/routes/apply.tsx"
+import { CoachReceiptPrototypesPage } from "@/routes/coach-receipt-prototypes.tsx"
 import { HomePage } from "@/routes/home.tsx"
 import { PaperPage } from "@/routes/paper.tsx"
 import { PitchPage } from "@/routes/pitch.tsx"
@@ -105,10 +106,17 @@ const settingsRoute = createRoute({
   component: SettingsPage,
 })
 
+const coachReceiptPrototypesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/prototype/coach-receipts",
+  component: CoachReceiptPrototypesPage,
+})
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   signInRoute,
   signUpRoute,
+  coachReceiptPrototypesRoute,
   appLayoutRoute.addChildren([
     homeRoute,
     paperRoute,
