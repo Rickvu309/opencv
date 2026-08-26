@@ -1,11 +1,13 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { cn } from "@workspace/ui/lib/utils"
-import { ArrowUp, ChevronDown, Sparkles, X } from "lucide-react"
+import { ArrowUp, ChevronDown, Sparkles, Square, X } from "lucide-react"
+
+import { ThreadView } from "@/features/home/thread-view.tsx"
+
+import { usePaperCoach } from "./use-paper-coach.ts"
 
 export type ToolbarVariant = "full" | "cv" | "proof" | "letter"
-
-type Message = { role: "user" | "coach"; text: string }
 
 const QUICK_PROMPTS: Record<ToolbarVariant, string[]> = {
   cv: [
@@ -28,31 +30,28 @@ const QUICK_PROMPTS: Record<ToolbarVariant, string[]> = {
   full: ["Rewrite selection", "Fix spelling", "Make it shorter"],
 }
 
-export const PAPER_COACH_THINKING_MS = 700
-
-export const STUB_PAPER_COACH_REPLY =
-  "I haven't edited this document or run any Commands. The Coach that can act lives on Home — ask there if you want work done. Here I can only talk through the document."
-
-const GREETING: Record<ToolbarVariant, string> = {
-  cv: "I can talk through this CV, but I can't edit it yet. I haven't run any Commands. Ask on Home if you want me to act.",
+const EMPTY_HINT: Record<ToolbarVariant, string> = {
+  cv: "Ask about this CV. I can read it and run Commands — the same Coach as Home.",
   proof:
-    "I can talk through this Proof, but I can't edit it yet. I haven't run any Commands. Ask on Home if you want me to act.",
+    "Ask about this Proof. I can read it and run Commands — the same Coach as Home.",
   letter:
-    "I can talk through this Letter, but I can't edit it yet. I haven't run any Commands. Ask on Home if you want me to act.",
-  full: "I can talk through this document, but I can't edit it yet. I haven't run any Commands. Ask on Home if you want me to act.",
-}
-
-function stubReply() {
-  return STUB_PAPER_COACH_REPLY
+    "Ask about this Letter. I can read it and run Commands — the same Coach as Home.",
+  full: "Ask about this document. I can read it and run Commands — the same Coach as Home.",
 }
 
 type Props = {
   variant: ToolbarVariant
+  docId: string
   contextLabel?: string
   prominent?: boolean
 }
 
-export function AiAssistChat({ variant, contextLabel, prominent }: Props) {
+export function AiAssistChat({
+  variant,
+  docId,
+  contextLabel,
+  prominent,
+}: Props) {
   const rootRef = useRef<HTMLDivElement>(null)
   const anchorRef = useRef<HTMLButtonElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
@@ -60,16 +59,13 @@ export function AiAssistChat({ variant, contextLabel, prominent }: Props) {
   const [pos, setPos] = useState({ top: 0, left: 0 })
   const [mounted, setMounted] = useState(false)
   const [draft, setDraft] = useState("")
-  const [thinking, setThinking] = useState(false)
-  const [messages, setMessages] = useState<Message[]>([
-    { role: "coach", text: GREETING[variant] },
-  ])
+  const { messages, phase, error, send, stop, retry, regenerate, rate } =
+    usePaperCoach(docId, contextLabel ?? "Paper")
+  const turnActive = phase !== "idle"
 
   useEffect(() => {
-    setMessages([{ role: "coach", text: GREETING[variant] }])
     setDraft("")
-    setThinking(false)
-  }, [variant, contextLabel])
+  }, [variant, docId])
 
   useLayoutEffect(() => {
     if (!open) {
@@ -122,22 +118,15 @@ export function AiAssistChat({ variant, contextLabel, prominent }: Props) {
     const el = listRef.current
     if (!el) return
     el.scrollTop = el.scrollHeight
-  }, [messages, thinking, open])
+  }, [messages, phase, open, error])
 
-  function send(text?: string) {
+  function submit(text?: string) {
     const t = (text ?? draft).trim()
-    if (!t || thinking) return
-    setDraft("")
-    setMessages((prev) => [...prev, { role: "user", text: t }])
-    setThinking(true)
-    window.setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        { role: "coach", text: stubReply() },
-      ])
-      setThinking(false)
-    }, PAPER_COACH_THINKING_MS)
+    if (!t || turnActive) return
+    if (send(t)) setDraft("")
   }
+
+  const empty = messages.length === 0 && !turnActive && !error
 
   const panel =
     open && typeof document !== "undefined"
@@ -174,26 +163,23 @@ export function AiAssistChat({ variant, contextLabel, prominent }: Props) {
 
             <div
               ref={listRef}
-              className="max-h-64 min-h-[12rem] flex-1 space-y-3 overflow-auto px-3 py-3"
+              className="max-h-80 min-h-[12rem] flex-1 overflow-auto px-3 py-3"
             >
-              {messages.map((m, i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    "max-w-[92%] rounded-xl px-3 py-2 text-xs leading-relaxed",
-                    m.role === "coach"
-                      ? "bg-muted text-foreground"
-                      : "ml-auto bg-primary text-primary-foreground"
-                  )}
-                >
-                  {m.text}
-                </div>
-              ))}
-              {thinking ? (
-                <div className="max-w-[92%] rounded-xl bg-muted px-3 py-2 text-xs text-muted-foreground">
-                  Working…
-                </div>
-              ) : null}
+              {empty ? (
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  {EMPTY_HINT[variant]}
+                </p>
+              ) : (
+                <ThreadView
+                  compact
+                  messages={messages}
+                  waiting={phase === "waiting"}
+                  error={error}
+                  onRetry={retry}
+                  onRate={rate}
+                  onRegenerate={phase === "idle" ? regenerate : undefined}
+                />
+              )}
             </div>
 
             <div className="border-t border-border px-3 py-2">
@@ -202,8 +188,9 @@ export function AiAssistChat({ variant, contextLabel, prominent }: Props) {
                   <button
                     key={chip}
                     type="button"
-                    onClick={() => send(chip)}
-                    className="rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    onClick={() => submit(chip)}
+                    disabled={turnActive}
+                    className="rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
                   >
                     {chip}
                   </button>
@@ -216,7 +203,7 @@ export function AiAssistChat({ variant, contextLabel, prominent }: Props) {
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault()
-                      send()
+                      if (!turnActive) submit()
                     }
                   }}
                   placeholder="Ask about this document…"
@@ -224,20 +211,31 @@ export function AiAssistChat({ variant, contextLabel, prominent }: Props) {
                   className="max-h-20 min-h-6 flex-1 resize-none bg-transparent py-0.5 text-xs leading-5 outline-none placeholder:text-muted-foreground"
                   aria-label="Message AI assist"
                 />
-                <button
-                  type="button"
-                  onClick={() => send()}
-                  disabled={!draft.trim() || thinking}
-                  aria-label="Send"
-                  className={cn(
-                    "flex size-7 shrink-0 items-center justify-center rounded-full transition-colors",
-                    draft.trim() && !thinking
-                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                      : "bg-muted text-muted-foreground"
-                  )}
-                >
-                  <ArrowUp className="size-3.5" />
-                </button>
+                {turnActive ? (
+                  <button
+                    type="button"
+                    onClick={stop}
+                    aria-label="Stop"
+                    className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-foreground hover:bg-muted/80"
+                  >
+                    <Square className="size-3 fill-current" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => submit()}
+                    disabled={!draft.trim()}
+                    aria-label="Send"
+                    className={cn(
+                      "flex size-7 shrink-0 items-center justify-center rounded-full transition-colors",
+                      draft.trim()
+                        ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                        : "bg-muted text-muted-foreground"
+                    )}
+                  >
+                    <ArrowUp className="size-3.5" />
+                  </button>
+                )}
               </div>
             </div>
           </div>,

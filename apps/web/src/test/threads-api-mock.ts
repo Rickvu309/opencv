@@ -59,6 +59,14 @@ export type CoachStreamControl = {
   emitted: () => number
 }
 
+type LastCoachRequest = {
+  threadId: string
+  text?: string
+  mode?: string
+  regenerate?: boolean
+  focusDocId?: string
+}
+
 type Store = {
   threads: ThreadDetail[]
 }
@@ -76,6 +84,7 @@ const store: Store = {
 
 let script: CoachStreamScript = {}
 let gate: GateState = openGate()
+let lastCoachRequest: LastCoachRequest | null = null
 
 function openGate(): GateState {
   return {
@@ -375,6 +384,11 @@ export function resetThreadApiMock() {
   store.threads = cloneThreads(FIXTURE_THREADS)
   script = {}
   gate = openGate()
+  lastCoachRequest = null
+}
+
+export function getLastCoachRequest() {
+  return lastCoachRequest
 }
 
 export function scriptCoachStream(
@@ -433,18 +447,41 @@ export async function threadApiFetch(
       return jsonError(error.status, error.code, error.message)
     }
 
-    const body = (await readBody(init)) as { text?: string }
+    const body = (await readBody(init)) as {
+      text?: string
+      mode?: string
+      regenerate?: boolean
+      focusDocId?: string
+    }
+    lastCoachRequest = {
+      threadId: coach[1]!,
+      ...(body.text != null ? { text: body.text } : {}),
+      ...(body.mode != null ? { mode: body.mode } : {}),
+      ...(body.regenerate ? { regenerate: true } : {}),
+      ...(body.focusDocId ? { focusDocId: body.focusDocId } : {}),
+    }
     const thread = store.threads.find((item) => item.id === coach[1])
     if (!thread) {
       return jsonError(404, "NOT_FOUND", "Thread not found")
     }
     const now = isoNow()
-    thread.messages.push({
-      id: crypto.randomUUID(),
-      role: "user",
-      text: body.text ?? "",
-      createdAt: now,
-    })
+    if (body.regenerate) {
+      const last = thread.messages[thread.messages.length - 1]
+      if (!last || last.role !== "coach") {
+        return jsonError(
+          400,
+          "VALIDATION_ERROR",
+          "Only the latest Coach turn can be regenerated"
+        )
+      }
+    } else {
+      thread.messages.push({
+        id: crypto.randomUUID(),
+        role: "user",
+        text: body.text ?? "",
+        createdAt: now,
+      })
+    }
     thread.updatedAt = now
     return coachStreamResponse(thread, init?.signal ?? undefined)
   }

@@ -77,6 +77,30 @@ describe("checkClaimedActions", () => {
     ).toBe(true)
   })
 
+  it("does not treat a future offer or 'that's the gap' as a completed claim", () => {
+    expect(
+      checkClaimedActions(
+        transcript({
+          text: "One next step: say the word and I'll set up your pipeline properly.",
+        })
+      ).pass
+    ).toBe(true)
+    expect(
+      checkClaimedActions(
+        transcript({
+          text: "Since it's your starred pick, one next step: open your Internship CV — that's the gap this role will screen for first.",
+        })
+      ).pass
+    ).toBe(true)
+    expect(
+      checkClaimedActions(
+        transcript({
+          text: "I can see you've starred the Staff Product Manager role at Google.",
+        })
+      ).pass
+    ).toBe(true)
+  })
+
   it("fails when the claim is a move but only a read succeeded", () => {
     expect(
       checkClaimedActions(

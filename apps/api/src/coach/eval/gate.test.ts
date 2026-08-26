@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest"
 
-import { requireOpenRouterApiKey, scenariosToRun } from "./gate.js"
+import {
+  coachEvalModesFromEnv,
+  requireOpenRouterApiKey,
+  scenariosToRun,
+} from "./gate.js"
 import { GOLDEN_SCENARIOS } from "./scenarios.js"
 
 describe("requireOpenRouterApiKey", () => {
@@ -17,6 +21,24 @@ describe("requireOpenRouterApiKey", () => {
     expect(
       requireOpenRouterApiKey({ OPENROUTER_API_KEY: "  sk-or-eval  " })
     ).toBe("sk-or-eval")
+  })
+})
+
+describe("coachEvalModesFromEnv", () => {
+  it("defaults to free and accepts a single mode, all, or rejects junk", () => {
+    expect(coachEvalModesFromEnv({})).toEqual(["free"])
+    expect(coachEvalModesFromEnv({ COACH_EVAL_MODE: "  light  " })).toEqual([
+      "light",
+    ])
+    expect(coachEvalModesFromEnv({ COACH_EVAL_MODE: "max" })).toEqual(["max"])
+    expect(coachEvalModesFromEnv({ COACH_EVAL_MODE: "all" })).toEqual([
+      "free",
+      "light",
+      "max",
+    ])
+    expect(() => coachEvalModesFromEnv({ COACH_EVAL_MODE: "ultra" })).toThrow(
+      /Unknown COACH_EVAL_MODE/
+    )
   })
 })
 

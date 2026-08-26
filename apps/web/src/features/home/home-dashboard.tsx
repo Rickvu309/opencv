@@ -12,8 +12,18 @@ import { useThreadStore } from "@/features/home/use-thread-store.ts"
 export function HomeDashboard() {
   const { data } = authClient.useSession()
   const name = data?.user.name?.trim() || "there"
-  const { messages, phase, send, stop, retry, rate, newThread, activeThreadId } =
-    useThreadStore()
+  const {
+    messages,
+    phase,
+    error,
+    send,
+    stop,
+    retry,
+    regenerate,
+    rate,
+    newThread,
+    activeThreadId,
+  } = useThreadStore()
   const [draft, setDraft] = useState("")
   const turnActive = phase !== "idle"
   const started = messages.length > 0 || turnActive || activeThreadId != null
@@ -32,8 +42,10 @@ export function HomeDashboard() {
           <ThreadView
             messages={messages}
             waiting={phase === "waiting"}
+            error={error}
             onRetry={retry}
             onRate={rate}
+            onRegenerate={phase === "idle" ? regenerate : undefined}
           />
         </div>
         <div className="shrink-0 bg-background px-4 pt-2 pb-4 sm:px-6">

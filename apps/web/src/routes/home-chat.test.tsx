@@ -112,7 +112,7 @@ describe("Home Thread mode and History", () => {
     expect(screen.getByText("Worked for 1s")).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Copy" })).toBeEnabled()
     expect(screen.getByRole("button", { name: "Good response" })).toBeEnabled()
-    expect(screen.getByRole("button", { name: "Regenerate" })).toBeDisabled()
+    expect(screen.getByRole("button", { name: "Regenerate" })).toBeEnabled()
   })
 
   it("renders a Command receipt with outcome and reversal, including after reload", async () => {
@@ -238,8 +238,120 @@ describe("Home Thread mode and History", () => {
       "aria-pressed",
       "false"
     )
-    expect(screen.getByRole("button", { name: "Regenerate" })).toBeDisabled()
+    expect(screen.getByRole("button", { name: "Regenerate" })).toBeEnabled()
     expect(screen.getByRole("button", { name: "Copy link" })).toBeDisabled()
+  })
+
+  it("regenerates the latest Coach turn as a new row and keeps the prior one", async () => {
+    scriptCoachStream({ texts: ["First answer"] })
+    renderApp()
+    await expectHomeIdle()
+    await sendMessage("Help me plan the week")
+    expect(await screen.findByText("First answer")).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Send" })).toBeInTheDocument()
+    })
+
+    scriptCoachStream({ texts: ["Second answer"] })
+    fireEvent.click(screen.getByRole("button", { name: "Regenerate" }))
+    expect(await screen.findByText("Second answer")).toBeInTheDocument()
+
+    const thread = screen.getByRole("log", { name: "Thread" })
+    expect(within(thread).getByText("First answer")).toBeInTheDocument()
+    expect(within(thread).getByText("Second answer")).toBeInTheDocument()
+    expect(within(thread).getAllByText("Help me plan the week")).toHaveLength(1)
+
+    const regenerates = screen.getAllByRole("button", { name: "Regenerate" })
+    expect(regenerates).toHaveLength(2)
+    expect(regenerates[0]).toBeDisabled()
+    expect(regenerates[1]).toBeEnabled()
+  })
+
+  it("keeps prior Command receipts when regenerating", async () => {
+    scriptCoachStream({
+      parts: [
+        { kind: "text", text: "Moved it." },
+        {
+          kind: "tool",
+          name: "apply_moveCard",
+          summary: "Moved 'Backend Intern' to Prep",
+          ok: true,
+          reversal: {
+            possible: true,
+            description:
+              "Undo by moving the card back to its previous Stage and order.",
+          },
+        },
+      ],
+    })
+    renderApp()
+    await expectHomeIdle()
+    await sendMessage("Move the intern card to Prep")
+    expect(
+      await screen.findByText("Ran apply.moveCard — Moved 'Backend Intern' to Prep")
+    ).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Send" })).toBeInTheDocument()
+    })
+
+    scriptCoachStream({ texts: ["Here is another way to look at it."] })
+    fireEvent.click(screen.getByRole("button", { name: "Regenerate" }))
+    expect(
+      await screen.findByText("Here is another way to look at it.")
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText("Ran apply.moveCard — Moved 'Backend Intern' to Prep")
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        "Reversible — Undo by moving the card back to its previous Stage and order."
+      )
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText(/reversed|undone|undo the previous/i)
+    ).not.toBeInTheDocument()
+  })
+
+  it("shows a Retry alert when regenerate hits the daily cap", async () => {
+    scriptCoachStream({ texts: ["First answer"] })
+    renderApp()
+    await expectHomeIdle()
+    await sendMessage("Cap me")
+    expect(await screen.findByText("First answer")).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Send" })).toBeInTheDocument()
+    })
+
+    scriptCoachStream({
+      httpError: {
+        status: 429,
+        code: "COACH_LIMIT_REACHED",
+        message: "You've reached today's Coach turn limit",
+      },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Regenerate" }))
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "You've reached today's limit for this Coach mode"
+    )
+    expect(screen.getByText("First answer")).toBeInTheDocument()
+    expect(
+      within(screen.getByRole("log", { name: "Thread" })).getAllByText("Cap me")
+    ).toHaveLength(1)
+    expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument()
+  })
+
+  it("enables Regenerate only on the latest Coach message in a restored Thread", async () => {
+    renderApp()
+    await expectHomeIdle()
+    fireEvent.click(
+      await screen.findByRole("button", { name: FIXTURE_THREADS[0]!.title })
+    )
+    await expectThreadText(FIXTURE_THREADS[0]!.messages[0]!.text)
+
+    const regenerates = screen.getAllByRole("button", { name: "Regenerate" })
+    expect(regenerates).toHaveLength(2)
+    expect(regenerates[0]).toBeDisabled()
+    expect(regenerates[1]).toBeEnabled()
   })
 
   it("stops mid-stream, keeps what ran, and accepts a new send", async () => {

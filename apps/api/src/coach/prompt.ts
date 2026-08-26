@@ -4,6 +4,7 @@ import {
   COACH_WORKSPACE_LIST_CAP,
   PAPER_KIND_LABEL,
   type ApplyCard,
+  type CoachFocusDoc,
   type PaperDoc,
   type ThreadMessage,
   type UserProfile,
@@ -26,6 +27,7 @@ export type WorkspaceSnapshot = {
   profileName: string | null
   paper: WorkspacePaperItem[]
   apply: WorkspaceApplyItem[]
+  focusDoc?: CoachFocusDoc
 }
 
 export type WindowedMessage = {
@@ -67,6 +69,8 @@ export function personaSystemPrompt(): string {
     "- A compact workspace snapshot is below. Use read tools for ids, content, and anything not listed.",
     "- You act through tools. Reads do not change state. Mutations run the same Commands the User can run.",
     "- Read before you advise when the snapshot is not enough. Act when the User asked for an outcome you can do.",
+    "- Never invent ids. List or read first, then use the real UUID from the tool result.",
+    "- Do not mutate Apply or Paper unless the User asked for that change.",
   ].join("\n")
 }
 
@@ -90,7 +94,7 @@ export function summarizeWorkspace(
     listCap
   )
 
-  return [
+  const lines = [
     "Workspace snapshot (counts and a short list; use tools for detail):",
     `Profile: ${snapshot.profileName ?? "unknown"}`,
     `Paper: ${countLabel(snapshot.paper.length, "document")}`,
@@ -99,14 +103,54 @@ export function summarizeWorkspace(
       snapshot.apply.length > 0 ? ` (${starred} starred)` : ""
     }`,
     ...applyLines,
-  ].join("\n")
+  ]
+
+  if (snapshot.focusDoc) {
+    const doc = snapshot.focusDoc
+    lines.push(
+      `Open Paper document: ${doc.name} · ${PAPER_KIND_LABEL[doc.kind]} · ${STATUS_LABEL[doc.status]} (id: ${doc.id}). Read it with paper_getDoc before advising on its content. To change it, run a Paper Command — never claim a silent rewrite.`
+    )
+  }
+
+  return lines.join("\n")
+}
+
+export function historyForRegenerate(messages: readonly ThreadMessage[]): {
+  history: ThreadMessage[]
+  priorCoach: ThreadMessage | undefined
+} {
+  const last = messages[messages.length - 1]
+  if (last?.role === "coach") {
+    return { history: messages.slice(0, -1), priorCoach: last }
+  }
+  return { history: [...messages], priorCoach: undefined }
+}
+
+export function regenerateInstruction(priorCoach?: ThreadMessage): string {
+  const lines = [
+    "The User asked you to regenerate your last reply. Write a fresh answer to their latest message.",
+    "Commands already run in this Thread remain facts. Do not claim they were reversed or undone.",
+  ]
+  const receipts =
+    priorCoach?.parts?.filter((part) => part.type === "tool") ?? []
+  if (receipts.length > 0) {
+    lines.push("Receipts from the previous turn:")
+    for (const part of receipts) {
+      const flag = part.ok ? "ok" : "fail"
+      lines.push(`- [${part.name} ${flag}] ${part.summary}`)
+    }
+  }
+  return lines.join("\n")
 }
 
 export function assembleSystemPrompt(
   snapshot: WorkspaceSnapshot,
-  listCap = COACH_WORKSPACE_LIST_CAP
+  listCap = COACH_WORKSPACE_LIST_CAP,
+  options?: { regenerateFrom?: ThreadMessage }
 ): string {
-  return `${personaSystemPrompt()}\n\n${summarizeWorkspace(snapshot, listCap)}`
+  const base = `${personaSystemPrompt()}\n\n${summarizeWorkspace(snapshot, listCap)}`
+  if (!options) return base
+  return `${base}\n\n${regenerateInstruction(options.regenerateFrom)}`
 }
 
 export function flattenMessage(message: ThreadMessage): string {
@@ -162,6 +206,7 @@ export function snapshotFromLists(input: {
   profile?: UserProfile | null
   paper: PaperDoc[]
   apply: ApplyCard[]
+  focusDoc?: CoachFocusDoc
 }): WorkspaceSnapshot {
   return {
     profileName: input.profile?.name ?? null,
@@ -176,6 +221,7 @@ export function snapshotFromLists(input: {
       stage: card.stage,
       starred: card.starred,
     })),
+    ...(input.focusDoc ? { focusDoc: input.focusDoc } : {}),
   }
 }
 

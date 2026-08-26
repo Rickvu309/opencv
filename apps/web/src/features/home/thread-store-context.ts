@@ -10,9 +10,11 @@ export type ThreadStoreValue = {
   activeThreadId: string | null
   messages: HomeMessage[]
   phase: TurnPhase
+  error: string | null
   send: (text: string) => boolean
   stop: () => void
   retry: () => boolean
+  regenerate: () => boolean
   rate: (messageId: string, rating: CoachUsageRating) => void
   openThread: (id: string) => void
   newThread: () => void

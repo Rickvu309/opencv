@@ -88,16 +88,19 @@ export async function rateCoachMessage(
   return unwrapData(body)
 }
 
-export async function streamCoachTurn(
+type CoachStreamBody =
+  | { text: string; mode?: CoachMode; focusDocId?: string }
+  | { regenerate: true; mode?: CoachMode; focusDocId?: string }
+
+async function consumeCoachStream(
   threadId: string,
-  text: string,
+  body: CoachStreamBody,
   handlers: CoachStreamHandlers,
-  signal?: AbortSignal,
-  mode?: CoachMode
+  signal?: AbortSignal
 ): Promise<void> {
   const res = await apiStream(`/api/threads/${threadId}/coach`, {
     method: "POST",
-    body: JSON.stringify(mode ? { text, mode } : { text }),
+    body: JSON.stringify(body),
     signal,
   })
 
@@ -129,6 +132,45 @@ export async function streamCoachTurn(
         break
     }
   }
+}
+
+export async function streamCoachTurn(
+  threadId: string,
+  text: string,
+  handlers: CoachStreamHandlers,
+  signal?: AbortSignal,
+  mode?: CoachMode,
+  focusDocId?: string
+): Promise<void> {
+  await consumeCoachStream(
+    threadId,
+    {
+      text,
+      ...(mode ? { mode } : {}),
+      ...(focusDocId ? { focusDocId } : {}),
+    },
+    handlers,
+    signal
+  )
+}
+
+export async function streamCoachRegenerate(
+  threadId: string,
+  handlers: CoachStreamHandlers,
+  signal?: AbortSignal,
+  mode?: CoachMode,
+  focusDocId?: string
+): Promise<void> {
+  await consumeCoachStream(
+    threadId,
+    {
+      regenerate: true,
+      ...(mode ? { mode } : {}),
+      ...(focusDocId ? { focusDocId } : {}),
+    },
+    handlers,
+    signal
+  )
 }
 
 export function upsertThreadListItem(

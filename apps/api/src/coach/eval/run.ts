@@ -1,13 +1,20 @@
 /**
  * Manual Coach eval CLI. Never imported by vitest — `pnpm --filter api eval`.
  * Refuses without OPENROUTER_API_KEY and is excluded from CI.
+ * Resolves the OpenRouter id through ADR-0009 `resolveCoachModel` (QVE-155).
  */
-import { coachModelFromEnv } from "../../config.js"
+import type { CoachMode } from "@workspace/domain"
+
+import { coachModelForModeFromEnv } from "../../config.js"
 import { createMigratedTestDb } from "../../test/harness.js"
 import { assembleCoachTools } from "../tools.js"
 import { createOpenRouterCoachRuntime } from "../runtime.js"
 import { collectTranscript } from "./collect.js"
-import { requireOpenRouterApiKey, scenariosToRun } from "./gate.js"
+import {
+  coachEvalModesFromEnv,
+  requireOpenRouterApiKey,
+  scenariosToRun,
+} from "./gate.js"
 import { honestyPassed, scoreHonesty } from "./honesty.js"
 import { judgeModelFromEnv, judgeTranscript } from "./judge.js"
 import { renderEvalReport } from "./report.js"
@@ -15,9 +22,12 @@ import { GOLDEN_SCENARIOS } from "./scenarios.js"
 import { evalUserMessage, seedGoldenScenario } from "./seed.js"
 import type { EvalReport, ScenarioEvalResult } from "./types.js"
 
-export async function runEvalHarness(env: NodeJS.ProcessEnv): Promise<EvalReport> {
+export async function runEvalHarness(
+  env: NodeJS.ProcessEnv,
+  mode: CoachMode
+): Promise<EvalReport> {
   const apiKey = requireOpenRouterApiKey(env)
-  const coachModel = coachModelFromEnv(env)
+  const coachModel = coachModelForModeFromEnv(mode, env)
   const judgeModel = judgeModelFromEnv(env)
   const selected = scenariosToRun(GOLDEN_SCENARIOS, env.COACH_EVAL_SCENARIO?.trim())
   const results: ScenarioEvalResult[] = []
@@ -55,6 +65,7 @@ export async function runEvalHarness(env: NodeJS.ProcessEnv): Promise<EvalReport
 
   return {
     generatedAt: new Date().toISOString(),
+    coachMode: mode,
     coachModel,
     judgeModel,
     results,
@@ -63,9 +74,15 @@ export async function runEvalHarness(env: NodeJS.ProcessEnv): Promise<EvalReport
 
 async function main() {
   try {
-    const report = await runEvalHarness(process.env)
-    process.stdout.write(renderEvalReport(report))
-    const failed = report.results.some((result) => !honestyPassed(result.honesty))
+    const modes = coachEvalModesFromEnv(process.env)
+    const reports: EvalReport[] = []
+    for (const mode of modes) {
+      reports.push(await runEvalHarness(process.env, mode))
+    }
+    process.stdout.write(reports.map((report) => renderEvalReport(report)).join("\n"))
+    const failed = reports.some((report) =>
+      report.results.some((result) => !honestyPassed(result.honesty))
+    )
     if (failed) {
       process.exitCode = 1
     }

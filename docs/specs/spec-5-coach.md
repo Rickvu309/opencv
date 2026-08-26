@@ -16,7 +16,7 @@ The product's differentiator does not exist yet. Home says the Coach can't act �
 5. **The User stays in control.** A Stop button ends a turn; failed sends surface an error with Retry; reversal notes on receipts say how to undo; a daily turn cap bounds cost.
 6. **We can tell if it's good.** Thumbs on coach messages feed a usage table; a manual eval harness (golden scenarios, honesty checks, LLM judge) gates persona changes without burning CI tokens.
 
-**Not in this spec:** the Paper AI panel (stays a stub with honest copy pointing Home; unification is a follow-up), Regenerate, destructive-command confirmation flow, one-click undo, Vietnamese-first Coach / i18n (settled English-first in ADR-0008 / QVE-150), the in-app feedback channel (next spec — thumbs data lands where it will read). Multi-model routing (Free / Light / Max) landed in [QVE-155](https://linear.app/quanvm/issue/QVE-155) / ADR-0009.
+**Not in this spec:** destructive-command confirmation flow, one-click undo, Vietnamese-first Coach / i18n (settled English-first in ADR-0008 / QVE-150), the in-app feedback channel (next spec — thumbs data lands where it will read). Multi-model routing (Free / Light / Max) landed in [QVE-155](https://linear.app/quanvm/issue/QVE-155) / ADR-0009. Regenerating the latest Coach turn landed in [QVE-147](https://linear.app/quanvm/issue/QVE-147). Paper AI-panel unification landed in [QVE-146](https://linear.app/quanvm/issue/QVE-146).
 
 ## User Stories
 
@@ -53,7 +53,7 @@ Eight tickets under one parent: COACH-1 tool surface, COACH-2 data/config ground
 - [ ] The Coach reads workspace state and cites it; a request like "move my starred card to Prep" produces the move plus a truthful receipt — waits on the same key
 - [x] Every Coach action flows through `registry.execute` with a coach actor; the coach-actor test sweep covers the full surface
 - [x] Stop works; aborted turns persist executed-tool receipts with `aborted` status
-- [x] Failed sends show an inline error with Retry; the Home stub reply string is gone (Paper panel stays a stub that points Home — QVE-146)
+- [x] Failed sends show an inline error with Retry; the Home stub reply string is gone. Paper panel unification landed in [QVE-146](https://linear.app/quanvm/issue/QVE-146).
 - [x] Copy and thumbs work on coach messages; ratings land in `coach_usage`
 - [x] Turn cap returns a plain-language 429 at the limit; usage rows record model/tokens/cost/latency per turn
 - [x] Missing API key degrades to 503 on the coach route only; `/health` untouched on staging and production (probed 2026-08-26); CI green including migration gate
@@ -64,22 +64,24 @@ Eight tickets under one parent: COACH-1 tool surface, COACH-2 data/config ground
 
 Persona quality is measured on demand, never in CI. Before merging persona or
 prompt changes, run `pnpm --filter api eval` with `OPENROUTER_API_KEY` set. The
-script refuses without the key. Each golden scenario gets a fresh test
-database, the real OpenRouter runtime, deterministic honesty checks (no
-exclamation marks, no claimed action without a matching successful receipt,
-exactly one next step, valid tool calls), then a cheap LLM judge with
-rationale. Output is a markdown report on stdout. `pnpm test` and GitHub
-Actions keep using the fake runtime so CI burns zero tokens.
+script refuses without the key. `COACH_EVAL_MODE=free|light|max|all` selects
+which ADR-0009 default (or `COACH_MODEL_*` override) to score; unset is
+`free`. Each golden scenario gets a fresh test database, the real OpenRouter
+runtime, deterministic honesty checks (no exclamation marks, no claimed
+action without a matching successful receipt, exactly one next step, valid
+tool calls), then a cheap LLM judge with rationale. Output is a markdown
+report on stdout. `pnpm test` and GitHub Actions keep using the fake runtime
+so CI burns zero tokens.
 
 ## Follow-ups filed (QVE-144)
 
 Work this spec deliberately deferred, now ticketed:
 
-- [QVE-146](https://linear.app/quanvm/issue/QVE-146) — Paper AI panel unification
+- [QVE-146](https://linear.app/quanvm/issue/QVE-146) — Paper AI panel unification (landed)
 - [QVE-147](https://linear.app/quanvm/issue/QVE-147) — Coach message Regenerate
 - [QVE-148](https://linear.app/quanvm/issue/QVE-148) — Destructive Command confirm flow
 - [QVE-149](https://linear.app/quanvm/issue/QVE-149) — One-click reversal from Coach receipts
 - [QVE-150](https://linear.app/quanvm/issue/QVE-150) — Vietnamese Coach + product copy (`ready-for-human`)
-- [QVE-151](https://linear.app/quanvm/issue/QVE-151) — Coach prompt iteration + cheap-model fallback
+- [QVE-151](https://linear.app/quanvm/issue/QVE-151) — Coach eval + tune Free/Light/Max after mode routing
 - [QVE-152](https://linear.app/quanvm/issue/QVE-152) — Per-command Coach UX prototypes
 - [QVE-153](https://linear.app/quanvm/issue/QVE-153) — Auto Thread titles from the first turn

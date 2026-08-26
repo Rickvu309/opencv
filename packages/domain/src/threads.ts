@@ -2,6 +2,7 @@ import { z } from "zod"
 
 import { coachModeSchema, type CoachUsageRating } from "./coach.js"
 import { reversalDescriptorSchema, THREAD_COMMANDS } from "./commands.js"
+import { paperDocIdSchema } from "./paper.js"
 
 export { THREAD_COMMANDS }
 
@@ -63,10 +64,23 @@ export type ThreadsPostMessageInput = z.infer<
 
 export const coachTurnRequestSchema = z
   .object({
-    text: threadMessageTextSchema,
+    text: threadMessageTextSchema.optional(),
     mode: coachModeSchema.optional(),
+    regenerate: z.literal(true).optional(),
+    /** Open Paper doc when the turn is sent from the editor AI panel. */
+    focusDocId: paperDocIdSchema.optional(),
   })
   .strict()
+  .superRefine((value, ctx) => {
+    if (value.regenerate) return
+    if (value.text == null) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["text"],
+        message: "Message text is required",
+      })
+    }
+  })
 
 export type CoachTurnRequest = z.infer<typeof coachTurnRequestSchema>
 

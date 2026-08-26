@@ -260,12 +260,23 @@ export type CoachSseErrorData = {
   message: string
 }
 
+export type CoachFocusDoc = {
+  id: string
+  name: string
+  kind: "cv" | "letter" | "proof"
+  status: "draft" | "ready" | "published"
+}
+
 export type CoachTurnInput = {
   userId: string
   threadId: string
   history: ThreadMessage[]
   model?: string
   mode?: CoachMode
+  /** Fresh turn answering the latest User message; prior coach row stays in history. */
+  regenerate?: boolean
+  /** Open Paper document when the User is sending from the editor AI panel. */
+  focusDoc?: CoachFocusDoc
 }
 
 export type CoachTitleInput = {

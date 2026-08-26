@@ -9,7 +9,9 @@ import { describe, expect, it } from "vitest"
 import {
   assembleSystemPrompt,
   flattenMessage,
+  historyForRegenerate,
   personaSystemPrompt,
+  regenerateInstruction,
   summarizeWorkspace,
   windowHistory,
   type WorkspaceSnapshot,
@@ -66,6 +68,8 @@ describe("personaSystemPrompt", () => {
     expect(persona).toMatch(/exactly one next step/)
     expect(persona).toMatch(/honest about distance/i)
     expect(persona).toMatch(/Never claim an action succeeded/)
+    expect(persona).toMatch(/Never invent ids/)
+    expect(persona).toMatch(/Do not mutate Apply or Paper unless the User asked/)
   })
 })
 
@@ -123,6 +127,69 @@ describe("assembleSystemPrompt", () => {
     expect(prompt.startsWith(personaSystemPrompt())).toBe(true)
     expect(prompt).toContain(summarizeWorkspace(sampleSnapshot))
     expect(prompt).not.toMatch(/!/)
+  })
+
+  it("appends a regenerate instruction that keeps prior receipts as facts", () => {
+    const prior = coachMessage("Moved it.", [
+      { type: "text", text: "Moved it." },
+      {
+        type: "tool",
+        name: "apply_moveCard",
+        summary: "Moved Associate PM intern to Prep",
+        ok: true,
+      },
+    ])
+    const prompt = assembleSystemPrompt(sampleSnapshot, undefined, {
+      regenerateFrom: prior,
+    })
+    expect(prompt).toContain(regenerateInstruction(prior))
+    expect(prompt).toContain("Do not claim they were reversed or undone")
+    expect(prompt).toContain(
+      "[apply_moveCard ok] Moved Associate PM intern to Prep"
+    )
+    expect(prompt).not.toMatch(/!/)
+  })
+
+  it("names the open Paper document and forbids a silent rewrite", () => {
+    const snapshot: WorkspaceSnapshot = {
+      ...sampleSnapshot,
+      focusDoc: {
+        id: "11111111-1111-7111-8111-111111111111",
+        name: "PM track CV",
+        kind: "cv",
+        status: "draft",
+      },
+    }
+    const summary = summarizeWorkspace(snapshot)
+    expect(summary).toContain(
+      "Open Paper document: PM track CV · CV · draft (id: 11111111-1111-7111-8111-111111111111)"
+    )
+    expect(summary).toMatch(/paper_getDoc/)
+    expect(summary).toMatch(/never claim a silent rewrite/)
+    expect(summary).not.toMatch(/!/)
+    expect(assembleSystemPrompt(snapshot)).toContain(summary)
+  })
+})
+
+describe("historyForRegenerate", () => {
+  it("drops the latest Coach turn so the model answers the last User message again", () => {
+    const user = userMessage("Move the starred card")
+    const coach = coachMessage("Moved it.", [
+      {
+        type: "tool",
+        name: "apply_moveCard",
+        summary: "Moved Associate PM intern to Prep",
+        ok: true,
+      },
+    ])
+    expect(historyForRegenerate([user, coach])).toEqual({
+      history: [user],
+      priorCoach: coach,
+    })
+    expect(historyForRegenerate([user])).toEqual({
+      history: [user],
+      priorCoach: undefined,
+    })
   })
 })
 
