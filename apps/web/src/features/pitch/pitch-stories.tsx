@@ -7,6 +7,8 @@ import { useMediaQuery } from "@workspace/ui/hooks/use-media-query"
 import { cn } from "@workspace/ui/lib/utils"
 import { ChevronLeft, ChevronRight, Pause, Play, Plus, X } from "lucide-react"
 
+import { ComingSoon } from "@/components/coming-soon.tsx"
+import { comingSoonLabel } from "@/components/coming-soon-label.ts"
 import { PitchAvatar } from "@/features/pitch/pitch-showcase.tsx"
 import {
   findHighlight,
@@ -95,8 +97,10 @@ export function StoryHighlightsRow({
         {editing ? (
           <Button
             type="button"
+            disabled
             variant="ghost"
-            className="h-auto w-[4.5rem] shrink-0 flex-col items-center gap-1.5 px-0 py-0 hover:bg-transparent"
+            aria-label={comingSoonLabel("New highlight")}
+            className="h-auto w-[4.5rem] shrink-0 flex-col items-center gap-1.5 px-0 py-0"
           >
             <span className="flex size-[4.25rem] items-center justify-center rounded-full border border-dashed border-border bg-muted/30">
               <Plus className="size-5 text-muted-foreground" />
@@ -104,6 +108,7 @@ export function StoryHighlightsRow({
             <span className="text-micro font-normal text-muted-foreground">
               New
             </span>
+            <ComingSoon silent />
           </Button>
         ) : null}
       </div>
@@ -488,11 +493,13 @@ export function MomentsBentoSection({
         {editing ? (
           <Button
             type="button"
+            disabled
             variant="ghost"
-            className="flex min-h-[7rem] h-auto flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-border text-muted-foreground hover:bg-muted/30"
+            className="flex min-h-[7rem] h-auto flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-border text-muted-foreground"
           >
             <Plus className="size-4" />
             <span className="text-2xs">Add card</span>
+            <ComingSoon />
           </Button>
         ) : null}
       </div>
@@ -562,10 +569,7 @@ function BentoCard({
       ) : card.kind === "link" ? (
         <>
           <p className="font-mono text-sm font-semibold">{card.title}</p>
-          <p className="text-xs opacity-70">
-            {card.meta ?? card.body}
-            <span className="ml-1">↗</span>
-          </p>
+          <p className="text-xs opacity-70">{card.meta ?? card.body}</p>
         </>
       ) : (
         <>
