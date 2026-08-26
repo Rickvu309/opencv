@@ -19,8 +19,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 import {
@@ -93,24 +91,14 @@ function CoachModeDropdown({
         sideOffset={8}
         className="w-auto min-w-28"
       >
-        <DropdownMenuRadioGroup
-          value={mode}
-          onValueChange={(value) => {
-            if (
-              value === "free" ||
-              value === "light" ||
-              value === "max"
-            ) {
-              onModeChange(value)
-            }
-          }}
-        >
-          {COACH_MODE_OPTIONS.map((option) => (
-            <DropdownMenuRadioItem key={option.id} value={option.id}>
-              {option.label}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
+        {COACH_MODE_OPTIONS.map((option) => (
+          <DropdownMenuItem
+            key={option.id}
+            onClick={() => onModeChange(option.id)}
+          >
+            {option.label}
+          </DropdownMenuItem>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   )

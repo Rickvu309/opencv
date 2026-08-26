@@ -23,13 +23,20 @@ afterEach(() => {
 })
 
 async function openModeMenu() {
-  fireEvent.click(await screen.findByRole("button", { name: "Coach mode" }))
+  const trigger = await screen.findByRole("button", { name: "Coach mode" })
+  await waitFor(() => {
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument()
+  })
+  fireEvent.click(trigger)
   return screen.findByRole("menu")
 }
 
 async function chooseMode(label: "Free" | "Light" | "Max") {
   const menu = await openModeMenu()
-  fireEvent.click(within(menu).getByRole("menuitemradio", { name: label }))
+  fireEvent.click(within(menu).getByRole("menuitem", { name: label }))
+  await waitFor(() => {
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument()
+  })
 }
 
 describe("coach mode copy", () => {
@@ -55,13 +62,13 @@ describe("Home dock mode dropdown", () => {
 
     const menu = await openModeMenu()
     expect(
-      within(menu).getByRole("menuitemradio", { name: "Free" })
+      within(menu).getByRole("menuitem", { name: "Free" })
     ).toBeInTheDocument()
     expect(
-      within(menu).getByRole("menuitemradio", { name: "Light" })
+      within(menu).getByRole("menuitem", { name: "Light" })
     ).toBeInTheDocument()
     expect(
-      within(menu).getByRole("menuitemradio", { name: "Max" })
+      within(menu).getByRole("menuitem", { name: "Max" })
     ).toBeInTheDocument()
   })
 
@@ -94,9 +101,11 @@ describe("Home dock mode dropdown", () => {
     first.unmount()
 
     renderApp(SURFACE_PATHS.home)
-    expect(
-      await screen.findByRole("button", { name: "Coach mode" })
-    ).toHaveTextContent("Light")
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Coach mode" })).toHaveTextContent(
+        "Light"
+      )
+    })
     expect(
       screen.queryByRole("radiogroup", { name: "Coach mode" })
     ).not.toBeInTheDocument()
