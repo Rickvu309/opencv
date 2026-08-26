@@ -18,12 +18,12 @@ import { CoachMarkdown } from "@/features/home/coach-markdown.tsx"
 import { receiptHeadline } from "@/features/home/coach-receipt.ts"
 import {
   STREAMING_COACH_ID,
+  latestCoachMessageId,
   type HomeMessage,
 } from "@/features/home/threads.ts"
 
 const DISABLED_ACTIONS = [
   { label: "Copy link", icon: Link2 },
-  { label: "Regenerate", icon: RefreshCw },
   { label: "More", icon: MoreHorizontal },
 ] as const
 
@@ -77,12 +77,16 @@ function MessageActions({
   text,
   rating,
   rateable,
+  canRegenerate,
   onRate,
+  onRegenerate,
 }: {
   text: string
   rating?: CoachUsageRating | null
   rateable: boolean
+  canRegenerate: boolean
   onRate?: (rating: CoachUsageRating) => void
+  onRegenerate?: () => void
 }) {
   const [copied, setCopied] = useState(false)
 
@@ -140,6 +144,20 @@ function MessageActions({
           className={cn("size-3.5", rating === "down" && "fill-current")}
         />
       </button>
+      <button
+        type="button"
+        aria-label="Regenerate"
+        disabled={!canRegenerate}
+        onClick={() => onRegenerate?.()}
+        className={cn(
+          "flex size-7 items-center justify-center rounded-md",
+          canRegenerate
+            ? "text-muted-foreground hover:bg-muted hover:text-foreground"
+            : "text-muted-foreground opacity-40"
+        )}
+      >
+        <RefreshCw className="size-3.5" />
+      </button>
       {DISABLED_ACTIONS.map((action) => {
         const Icon = action.icon
         return (
@@ -161,11 +179,21 @@ function MessageActions({
 type Props = {
   messages: HomeMessage[]
   waiting?: boolean
+  error?: string | null
   onRetry?: () => void
   onRate?: (messageId: string, rating: CoachUsageRating) => void
+  onRegenerate?: () => void
 }
 
-export function ThreadView({ messages, waiting, onRetry, onRate }: Props) {
+export function ThreadView({
+  messages,
+  waiting,
+  error,
+  onRetry,
+  onRate,
+  onRegenerate,
+}: Props) {
+  const latestCoachId = latestCoachMessageId(messages)
   return (
     <div
       role="log"
@@ -221,14 +249,31 @@ export function ThreadView({ messages, waiting, onRetry, onRate }: Props) {
                 text={item.text}
                 rating={item.rating}
                 rateable={item.rating !== undefined}
+                canRegenerate={
+                  !waiting && Boolean(onRegenerate) && item.id === latestCoachId
+                }
                 onRate={
                   onRate ? (rating) => onRate(item.id, rating) : undefined
                 }
+                onRegenerate={onRegenerate}
               />
             ) : null}
           </div>
         )
       )}
+
+      {error ? (
+        <div className="space-y-2">
+          <p role="alert" className="text-sm text-destructive">
+            {error}
+          </p>
+          {onRetry ? (
+            <Button type="button" variant="outline" size="sm" onClick={onRetry}>
+              Retry
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
 
       {waiting ? (
         <div role="status" aria-label="Coach is working" className="space-y-2">

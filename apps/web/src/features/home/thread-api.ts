@@ -88,16 +88,15 @@ export async function rateCoachMessage(
   return unwrapData(body)
 }
 
-export async function streamCoachTurn(
+async function consumeCoachStream(
   threadId: string,
-  text: string,
+  body: { text: string; mode?: CoachMode } | { regenerate: true; mode?: CoachMode },
   handlers: CoachStreamHandlers,
-  signal?: AbortSignal,
-  mode?: CoachMode
+  signal?: AbortSignal
 ): Promise<void> {
   const res = await apiStream(`/api/threads/${threadId}/coach`, {
     method: "POST",
-    body: JSON.stringify(mode ? { text, mode } : { text }),
+    body: JSON.stringify(body),
     signal,
   })
 
@@ -129,6 +128,35 @@ export async function streamCoachTurn(
         break
     }
   }
+}
+
+export async function streamCoachTurn(
+  threadId: string,
+  text: string,
+  handlers: CoachStreamHandlers,
+  signal?: AbortSignal,
+  mode?: CoachMode
+): Promise<void> {
+  await consumeCoachStream(
+    threadId,
+    mode ? { text, mode } : { text },
+    handlers,
+    signal
+  )
+}
+
+export async function streamCoachRegenerate(
+  threadId: string,
+  handlers: CoachStreamHandlers,
+  signal?: AbortSignal,
+  mode?: CoachMode
+): Promise<void> {
+  await consumeCoachStream(
+    threadId,
+    mode ? { regenerate: true, mode } : { regenerate: true },
+    handlers,
+    signal
+  )
 }
 
 export function upsertThreadListItem(

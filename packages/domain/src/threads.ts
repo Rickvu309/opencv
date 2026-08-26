@@ -63,10 +63,21 @@ export type ThreadsPostMessageInput = z.infer<
 
 export const coachTurnRequestSchema = z
   .object({
-    text: threadMessageTextSchema,
+    text: threadMessageTextSchema.optional(),
     mode: coachModeSchema.optional(),
+    regenerate: z.literal(true).optional(),
   })
   .strict()
+  .superRefine((value, ctx) => {
+    if (value.regenerate) return
+    if (value.text == null) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["text"],
+        message: "Message text is required",
+      })
+    }
+  })
 
 export type CoachTurnRequest = z.infer<typeof coachTurnRequestSchema>
 

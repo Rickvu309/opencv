@@ -27,7 +27,9 @@ export { createOpenRouterCoachRuntime } from "./runtime.js"
 export {
   assembleSystemPrompt,
   flattenMessage,
+  historyForRegenerate,
   personaSystemPrompt,
+  regenerateInstruction,
   summarizeWorkspace,
   windowHistory,
 } from "./prompt.js"

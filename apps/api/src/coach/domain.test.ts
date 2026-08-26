@@ -20,6 +20,7 @@ import {
   resolveCoachModel,
   ERROR_CODES,
   coachFeedbackInputSchema,
+  coachTurnRequestSchema,
   coachLimitReachedEnvelope,
   coachUnavailableEnvelope,
   httpStatusForError,
@@ -109,6 +110,29 @@ describe("coach domain exports", () => {
       },
     }
     expect(typeof runtime.streamTurn).toBe("function")
+  })
+
+  it("accepts a send body or a regenerate flag, but not an empty turn", () => {
+    expect(coachTurnRequestSchema.parse({ text: "Hello" })).toEqual({
+      text: "Hello",
+    })
+    expect(coachTurnRequestSchema.parse({ text: "Hello", mode: "light" })).toEqual({
+      text: "Hello",
+      mode: "light",
+    })
+    expect(coachTurnRequestSchema.parse({ regenerate: true })).toEqual({
+      regenerate: true,
+    })
+    expect(
+      coachTurnRequestSchema.parse({ regenerate: true, mode: "max" })
+    ).toEqual({ regenerate: true, mode: "max" })
+    expect(coachTurnRequestSchema.safeParse({}).success).toBe(false)
+    expect(coachTurnRequestSchema.safeParse({ regenerate: false }).success).toBe(
+      false
+    )
+    expect(coachTurnRequestSchema.safeParse({ mode: "free" }).success).toBe(
+      false
+    )
   })
 
   it("accepts only up or down on the feedback payload", () => {
