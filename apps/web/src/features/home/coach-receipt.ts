@@ -1,11 +1,17 @@
-import type { ThreadToolPart } from "@workspace/domain"
+import {
+  humanizeCommandFailCopy,
+  type ThreadToolPart,
+} from "@workspace/domain"
 
 export function commandNameFromTool(name: string) {
   return name.includes(".") ? name : name.replace("_", ".")
 }
 
 export function receiptHeadline(part: ThreadToolPart) {
-  return `Ran ${commandNameFromTool(part.name)} — ${part.summary}`
+  const summary = part.ok
+    ? part.summary
+    : humanizeCommandFailCopy(part.summary)
+  return `Ran ${commandNameFromTool(part.name)} — ${summary}`
 }
 
 export function receiptReversalNote(part: ThreadToolPart) {

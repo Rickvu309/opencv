@@ -64,9 +64,9 @@ function CoachReceipt({
     <div
       role="status"
       aria-label={part.ok ? "Command succeeded" : "Command failed"}
-      className="space-y-0.5 text-xs text-muted-foreground"
+      className="min-w-0 max-w-full space-y-0.5 text-xs text-muted-foreground"
     >
-      <p className="flex items-start gap-1.5">
+      <p className="flex min-w-0 items-start gap-1.5">
         <Icon
           className={cn(
             "mt-0.5 size-3 shrink-0",
@@ -74,9 +74,15 @@ function CoachReceipt({
           )}
           aria-hidden
         />
-        <span>{receiptHeadline(part)}</span>
+        <span className="min-w-0 flex-1 break-words [overflow-wrap:anywhere]">
+          {receiptHeadline(part)}
+        </span>
       </p>
-      {note ? <p className="pl-5">{note}</p> : null}
+      {note ? (
+        <p className="min-w-0 pl-5 break-words [overflow-wrap:anywhere]">
+          {note}
+        </p>
+      ) : null}
       {canUndo ? (
         <div className="pl-5 pt-0.5">
           <Button
@@ -112,7 +118,7 @@ function CoachBody({
 }) {
   if (message.parts && message.parts.length > 0) {
     return (
-      <div className="space-y-2">
+      <div className="min-w-0 space-y-2">
         {message.parts.map((part, index) =>
           part.type === "text" ? (
             <CoachMarkdown key={`text-${index}`} text={part.text} />
