@@ -1,4 +1,4 @@
-/* Paper / Proof / CV / A4 / print — app-level, not kit (ADR-0008). */
+/* Paper / Proof / CV / A4 / print — app-level, not kit (ADR-0010). */
 @reference "@workspace/ui/globals.css";
 
 :root {

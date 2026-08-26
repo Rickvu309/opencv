@@ -51,13 +51,13 @@ const RAW_INTERACTIVE_RE = /<(button|input|textarea|select)\b/g
  * classes. Each path MUST have a `//` reason on the previous line — adding
  * a path without that comment fails this file's own contract.
  *
- * The two documented exceptions (ADR-0008):
+ * The two documented exceptions (ADR-0010):
  * 1. CV print paper — hex may live in the template file below.
  * 2. Tokenized GitHub heatmap ramp — hex lives in the kit stylesheet, not
  *    app code, so it does not appear here.
  */
 const VOCABULARY_ALLOWLIST = [
-  // CV print paper — documented ADR-0008 exception (print layout; paper is white).
+  // CV print paper — documented ADR-0010 exception (print layout; paper is white).
   "features/paper/paper-cv-document.tsx",
 ] as const
 
