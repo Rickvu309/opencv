@@ -41,7 +41,7 @@ Bell popover inbox on Home (Apply and Paper events). Prototype-validated; ships 
 
 ## Productionization order
 
-The prototype is throwaway code; production rebuilds it spec by spec. Spec 3 = shell + stub surfaces; Spec 4 = auth + durable Paper / Apply / Threads. Pitch persistence and the real Coach follow (see `docs/specs/spec-3-app-shell.md`, Route to real product).
+The prototype is throwaway code; production rebuilds it spec by spec. Spec 3 = shell + stub surfaces; Spec 4 = auth + durable Paper / Apply / Threads; Spec 5 = the real Coach (streaming, Commands as tools). Pitch persistence and Vietnamese copy remain follow-ups (see `docs/specs/spec-3-app-shell.md`, Route to real product).
 
 ## Out of scope
 

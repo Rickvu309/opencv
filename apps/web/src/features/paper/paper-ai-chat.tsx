@@ -31,15 +31,15 @@ const QUICK_PROMPTS: Record<ToolbarVariant, string[]> = {
 export const PAPER_COACH_THINKING_MS = 700
 
 export const STUB_PAPER_COACH_REPLY =
-  "I haven't edited this document or run any Commands. I'm a stub Coach until those exist — I can talk through the work, but you'll need to make the changes yourself."
+  "I haven't edited this document or run any Commands. The Coach that can act lives on Home — ask there if you want work done. Here I can only talk through the document."
 
 const GREETING: Record<ToolbarVariant, string> = {
-  cv: "I can talk through this CV, but I can't edit it yet. I haven't run any Commands.",
+  cv: "I can talk through this CV, but I can't edit it yet. I haven't run any Commands. Ask on Home if you want me to act.",
   proof:
-    "I can talk through this Proof, but I can't edit it yet. I haven't run any Commands.",
+    "I can talk through this Proof, but I can't edit it yet. I haven't run any Commands. Ask on Home if you want me to act.",
   letter:
-    "I can talk through this Letter, but I can't edit it yet. I haven't run any Commands.",
-  full: "I can talk through this document, but I can't edit it yet. I haven't run any Commands.",
+    "I can talk through this Letter, but I can't edit it yet. I haven't run any Commands. Ask on Home if you want me to act.",
+  full: "I can talk through this document, but I can't edit it yet. I haven't run any Commands. Ask on Home if you want me to act.",
 }
 
 function stubReply() {

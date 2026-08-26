@@ -57,6 +57,13 @@ agree: a new web origin needs adding there, or the browser blocks the response.
 The Spec 3 app shell no longer shows that check on the landing page — hit the
 API host directly to confirm reachability.
 
+The Coach runtime lives on Railway, not Vercel. Vercel only needs
+`VITE_API_URL` pointing at the right API; `OPENROUTER_API_KEY`,
+`COACH_MODEL`, and `COACH_DAILY_TURN_LIMIT` are api-service variables. See
+[Coach](railway.md#coach). When the key is absent the web app still loads —
+Home send fails with the existing Retry error (`COACH_UNAVAILABLE` / 503)
+and `/health` stays 200.
+
 Vercel never applies Postgres migrations. The API on Railway runs
 `pnpm --filter api run migrate` as `preDeployCommand` before each api
 rollout (pglite from-scratch in CI; staging and production each have their

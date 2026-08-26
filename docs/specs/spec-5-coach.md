@@ -1,6 +1,6 @@
 # Spec 5 — The Coach
 
-**Status:** Ready for ticket breakdown
+**Status:** Done (QVE-136 / QVE-137–144) — production OpenRouter key is the remaining owner step (commands on QVE-144)
 **Related:** ADR-0007 (coach runtime decisions), ADR-0003 (Coach Commands — the constitution this spec implements), ADR-0006 (the registry and data it runs on), PRODUCT.md (persona and principles)
 
 ## Problem Statement
@@ -48,15 +48,16 @@ Eight tickets under one parent: COACH-1 tool surface, COACH-2 data/config ground
 
 ## Definition of done
 
-- [ ] Sending a message on production streams a real Coach reply, token by token, in the persona voice
-- [ ] The Coach reads workspace state and cites it; a request like "move my starred card to Prep" produces the move plus a truthful receipt
-- [ ] Every Coach action flows through `registry.execute` with a coach actor; the coach-actor test sweep covers the full surface
-- [ ] Stop works; aborted turns persist executed-tool receipts with `aborted` status
-- [ ] Failed sends show an inline error with Retry; the stub reply string no longer exists anywhere
-- [ ] Copy and thumbs work on coach messages; ratings land in `coach_usage`
-- [ ] Turn cap returns a plain-language 429 at the limit; usage rows record model/tokens/cost/latency per turn
-- [ ] Missing API key degrades to 503 on the coach route only; `/health` untouched; CI green including migration gate
-- [ ] Eval harness runs on demand and reports; it is not wired into CI
+- [ ] Sending a message on production streams a real Coach reply, token by token, in the persona voice — waits on `OPENROUTER_API_KEY` (commands on QVE-144)
+- [ ] The Coach reads workspace state and cites it; a request like "move my starred card to Prep" produces the move plus a truthful receipt — waits on the same key
+- [x] Every Coach action flows through `registry.execute` with a coach actor; the coach-actor test sweep covers the full surface
+- [x] Stop works; aborted turns persist executed-tool receipts with `aborted` status
+- [x] Failed sends show an inline error with Retry; the Home stub reply string is gone (Paper panel stays a stub that points Home — QVE-146)
+- [x] Copy and thumbs work on coach messages; ratings land in `coach_usage`
+- [x] Turn cap returns a plain-language 429 at the limit; usage rows record model/tokens/cost/latency per turn
+- [x] Missing API key degrades to 503 on the coach route only; `/health` untouched on staging and production (probed 2026-08-26); CI green including migration gate
+- [x] Eval harness runs on demand and reports; it is not wired into CI
+- [x] ADR-0007 committed; deploy docs updated; follow-up tickets filed
 
 ## Eval harness
 
@@ -68,4 +69,16 @@ exclamation marks, no claimed action without a matching successful receipt,
 exactly one next step, valid tool calls), then a cheap LLM judge with
 rationale. Output is a markdown report on stdout. `pnpm test` and GitHub
 Actions keep using the fake runtime so CI burns zero tokens.
-- [ ] ADR-0007 committed; deploy docs updated; follow-up tickets filed
+
+## Follow-ups filed (QVE-144)
+
+Work this spec deliberately deferred, now ticketed:
+
+- [QVE-146](https://linear.app/quanvm/issue/QVE-146) — Paper AI panel unification
+- [QVE-147](https://linear.app/quanvm/issue/QVE-147) — Coach message Regenerate
+- [QVE-148](https://linear.app/quanvm/issue/QVE-148) — Destructive Command confirm flow
+- [QVE-149](https://linear.app/quanvm/issue/QVE-149) — One-click reversal from Coach receipts
+- [QVE-150](https://linear.app/quanvm/issue/QVE-150) — Vietnamese Coach + product copy (`ready-for-human`)
+- [QVE-151](https://linear.app/quanvm/issue/QVE-151) — Coach prompt iteration + cheap-model fallback
+- [QVE-152](https://linear.app/quanvm/issue/QVE-152) — Per-command Coach UX prototypes
+- [QVE-153](https://linear.app/quanvm/issue/QVE-153) — Auto Thread titles from the first turn
