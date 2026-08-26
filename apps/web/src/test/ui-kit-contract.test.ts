@@ -53,7 +53,70 @@ describe("UI package kit surface", () => {
     expect(css).toMatch(/@source\s+["'][^"']+\*\.\{ts,tsx\}["']/)
   })
 
-  it("absorbed button, input, avatar, badge, tooltip, dropdown-menu, dialog, and tabs via the kit path", () => {
+  it("ships ADR-0008 tokens for type, status, chart, pitch, motion, shadow, and z-index", () => {
+    const css = read("packages/ui/src/styles/globals.css")
+    const tokens = [
+      "--font-heading:",
+      "--text-micro:",
+      "--text-page-title:",
+      "--text-section-title:",
+      "--text-body:",
+      "--text-label:",
+      "--success:",
+      "--success-foreground:",
+      "--warning:",
+      "--warning-foreground:",
+      "--info:",
+      "--info-foreground:",
+      "--pitch-tone-warm:",
+      "--pitch-tone-cool:",
+      "--pitch-tone-neutral:",
+      "--pitch-tone-emerald:",
+      "--pitch-tone-dark:",
+      "--duration-fast:",
+      "--duration-base:",
+      "--duration-slow:",
+      "--ease-standard:",
+      "--shadow-sm:",
+      "--z-index-dropdown:",
+      "--z-index-modal:",
+      "prefers-reduced-motion",
+    ]
+    for (const token of tokens) {
+      expect(css, token).toContain(token)
+    }
+    expect(css).toMatch(/ui-serif,\s*Georgia/)
+    expect(css).not.toMatch(/--sidebar-primary:\s*oklch\(0\.488 0\.243 264/)
+  })
+
+  it("keeps Paper / CV / print CSS out of the kit stylesheet", () => {
+    const kit = read("packages/ui/src/styles/globals.css")
+    const paper = read("apps/web/src/styles/paper.css")
+    expect(kit).not.toMatch(/\.paper-editor-canvas/)
+    expect(kit).not.toMatch(/\.cv-a4-page/)
+    expect(kit).not.toMatch(/\.proof-step-card/)
+    expect(paper).toMatch(/--cv-page-height:\s*1123px/)
+    expect(paper).toMatch(/\.paper-editor-canvas/)
+    expect(paper).toMatch(/\.cv-a4-page/)
+    expect(read("apps/web/src/main.tsx")).toMatch(/styles\/paper\.css/)
+  })
+
+  it("exports the focus ring and media-query hook from the kit", () => {
+    expect(read("packages/ui/src/lib/focus-ring.ts")).toMatch(
+      /export const FOCUS_RING/
+    )
+    expect(read("packages/ui/src/hooks/use-media-query.ts")).toMatch(
+      /export function useMediaQuery/
+    )
+    expect(read("apps/web/src/features/app-shell/focus-ring.ts")).toMatch(
+      /@workspace\/ui\/lib\/focus-ring/
+    )
+    expect(read("apps/web/src/features/app-shell/use-media-query.ts")).toMatch(
+      /@workspace\/ui\/hooks\/use-media-query/
+    )
+  })
+
+  it("absorbed kit primitives via the kit path", () => {
     const kitSignals = {
       button: /data-slot=["']button["']/,
       input: /data-slot=["']input["']/,
@@ -63,6 +126,17 @@ describe("UI package kit surface", () => {
       "dropdown-menu": /data-slot=["']dropdown-menu["']/,
       dialog: /data-slot=["']dialog["']/,
       tabs: /data-slot=["']tabs["']/,
+      card: /data-slot=["']card["']/,
+      label: /data-slot=["']label["']/,
+      textarea: /data-slot=["']textarea["']/,
+      select: /data-slot=["']select/,
+      separator: /data-slot=["']separator["']/,
+      popover: /data-slot=["']popover["']/,
+      skeleton: /data-slot=["']skeleton["']/,
+      spinner: /data-slot=["']spinner["']/,
+      "empty-state": /data-slot=["']empty["']/,
+      kbd: /data-slot=["']kbd["']/,
+      "button-group": /data-slot=["']button-group["']/,
     } as const
 
     for (const [name, signal] of Object.entries(kitSignals)) {
@@ -80,6 +154,12 @@ describe("web consumes the kit through package exports", () => {
   it("imports the shared stylesheet from the UI package", () => {
     const main = read("apps/web/src/main.tsx")
     expect(main).toMatch(/@workspace\/ui\/globals\.css/)
+  })
+
+  it("does not expose a dark-mode d hotkey", () => {
+    const provider = read("apps/web/src/components/theme-provider.tsx")
+    expect(provider).not.toMatch(/event\.key\.toLowerCase\(\) !== ["']d["']/)
+    expect(provider).not.toMatch(/keydown/)
   })
 
   it("does not import frozen prototype modules", () => {

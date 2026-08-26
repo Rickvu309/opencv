@@ -10,10 +10,12 @@ const preview: Preview = {
         date: /Date$/i,
       },
     },
+    a11y: {
+      test: "todo",
+    },
     backgrounds: {
       options: {
         light: { name: "light", value: "var(--background)" },
-        dark: { name: "dark", value: "oklch(0.145 0 0)" },
       },
     },
   },
