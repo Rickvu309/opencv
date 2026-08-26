@@ -78,7 +78,7 @@ const PRIMARY_NAV: Array<RouteNavItem | ActionNavItem> = [
 function navItemClassName(active: boolean, collapsed: boolean) {
   return cn(
     FOCUS_RING,
-    "relative flex h-8 w-full items-center rounded-lg text-sm transition-colors",
+    "relative flex h-8 w-full items-center rounded-lg border border-transparent text-sm transition-colors",
     collapsed ? "justify-center px-0" : "justify-start gap-2 px-2 text-left",
     active
       ? "bg-muted font-medium text-foreground"
