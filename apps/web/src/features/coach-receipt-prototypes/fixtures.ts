@@ -240,6 +240,20 @@ export function genericToolPart(
   }
 }
 
+const STAGE_SUMMARY: Record<ApplyStage, string> = {
+  inbox: "Inbox",
+  prep: "Prep",
+  sent: "Sent",
+  live: "Live",
+  closed: "Closed",
+}
+
+export function moveCardSummary(
+  fixture: Pick<MoveCardFixture, "title" | "company" | "to">
+) {
+  return `Moved ${fixture.title} at ${fixture.company} to ${STAGE_SUMMARY[fixture.to]}`
+}
+
 export function countChangedLines(hunks: readonly DiffHunk[]) {
   return hunks.reduce(
     (count, hunk) =>

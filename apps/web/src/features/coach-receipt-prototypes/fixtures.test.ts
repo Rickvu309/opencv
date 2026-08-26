@@ -8,6 +8,7 @@ import {
   CREATE_DOC_FIXTURES,
   genericToolPart,
   MOVE_CARD_FIXTURE,
+  moveCardSummary,
   UPDATE_CONTENT_FIXTURES,
 } from "./fixtures.ts"
 
@@ -42,5 +43,12 @@ describe("coach receipt prototype fixtures", () => {
         genericToolPart("paper.createDoc", CREATE_DOC_FIXTURES.cv.summary, true)
       )
     ).toBe("Ran paper.createDoc — Created CV Untitled CV")
+    expect(
+      moveCardSummary({
+        title: MOVE_CARD_FIXTURE.title,
+        company: MOVE_CARD_FIXTURE.company,
+        to: "sent",
+      })
+    ).toBe("Moved Associate PM intern at Local startup to Sent")
   })
 })

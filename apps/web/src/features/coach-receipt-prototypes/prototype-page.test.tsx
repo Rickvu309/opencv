@@ -86,6 +86,11 @@ describe("Coach receipt prototypes", () => {
         "Moved Associate PM intern at Local startup from Inbox to Sent"
       )
     ).toBeInTheDocument()
+    expect(
+      within(pane).getByText(
+        "Ran apply.moveCard — Moved Associate PM intern at Local startup to Sent"
+      )
+    ).toBeInTheDocument()
 
     fireEvent.click(within(pane).getByRole("button", { name: "Replay move" }))
     expect(

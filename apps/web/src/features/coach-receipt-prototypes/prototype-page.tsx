@@ -19,6 +19,7 @@ import {
   FAILURE_SUMMARIES,
   genericToolPart,
   MOVE_CARD_FIXTURE,
+  moveCardSummary,
   UPDATE_CONTENT_FIXTURES,
   type UpdateContentKind,
 } from "@/features/coach-receipt-prototypes/fixtures.ts"
@@ -333,7 +334,9 @@ export function CoachReceiptPrototypePage() {
               <GenericReceiptLine
                 part={genericToolPart(
                   "apply.moveCard",
-                  moveOk ? moveFixture.summary : FAILURE_SUMMARIES.moveCard,
+                  moveOk
+                    ? moveCardSummary(moveFixture)
+                    : FAILURE_SUMMARIES.moveCard,
                   moveOk,
                   moveOk ? moveFixture.reversal : undefined
                 )}
