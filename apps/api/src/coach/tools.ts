@@ -3,6 +3,7 @@ import {
   ERROR_CODES,
   errorEnvelope,
   type CommandEnvelope,
+  type ReversalDescriptor,
 } from "@workspace/domain"
 
 import { commandRegistry } from "../commands/index.js"
@@ -13,10 +14,15 @@ import type {
 } from "../commands/registry.js"
 import { coachReadTools, executeCoachRead } from "./reads.js"
 
+/** Command envelope plus an optional hydrated reversal for translate.ts. */
+export type CoachToolOutput = CommandEnvelope & {
+  reversal?: ReversalDescriptor
+}
+
 export type CoachTool = {
   description: string
   inputSchema: RegisteredCommand["input"]
-  execute: (input: unknown) => Promise<CommandEnvelope>
+  execute: (input: unknown) => Promise<CoachToolOutput>
 }
 
 export type CoachToolSurface = Record<string, CoachTool>
@@ -61,7 +67,7 @@ export async function executeCoachMutation({
   db: AppDatabase
   userId: string
   registry: CommandRegistry
-}): Promise<CommandEnvelope> {
+}): Promise<CoachToolOutput> {
   if (command.destructive) {
     return errorEnvelope(
       ERROR_CODES.COACH_NOT_ALLOWED,
