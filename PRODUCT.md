@@ -25,7 +25,7 @@ Grok-style layout (ADR-0004): collapsible left sidebar — Home, Search, Paper, 
 Idle: time-of-day greeting, suggestion chips, multi-line composer, connect-apps row. Sending switches Home into a chat Thread; History resumes old Threads; new chat returns to idle.
 
 ### Paper — evidence and documents
-Drive-style workspace of CVs, Letters, and Proofs with status (draft/ready/published) and links to Apply. CV editor: five templates (classic internship, product & design, project-led, campus, with-photo), A4 pagination, section editing. Proof editor: chain or timeline of context → action → outcome steps with photos. An AI-chat side panel assists editing.
+Drive-style workspace of CVs, Letters, and Proofs with status (draft/ready/published) and links to Apply. CV editor: five templates (classic internship, product & design, project-led, campus, with-photo), A4 pagination, section editing. Proof editor: chain or timeline of context → action → outcome steps with photos. The same Coach dock as Home sits under the document; talk about a doc is a Thread you can continue on Home (Spec 7).
 
 ### Apply — pursuit tracking
 Kanban of Opportunity cards across Stages (Inbox, Prep, Sent, Live, Closed) with drag-and-drop, a calendar of Tracks (interviews, deadlines, follow-ups), per-card Fit score and notes, and a job-detail view.
@@ -41,7 +41,7 @@ Bell popover inbox on Home (Apply and Paper events). Prototype-validated; ships 
 
 ## Productionization order
 
-The prototype is throwaway code; production rebuilds it spec by spec. Spec 3 = shell + stub surfaces; Spec 4 = auth + durable Paper / Apply / Threads; Spec 5 = the real Coach (streaming, Commands as tools). Pitch persistence remains a follow-up (see `docs/specs/spec-3-app-shell.md`, Route to real product). Product language is English (ADR-0008 / QVE-150).
+The prototype is throwaway code; production rebuilds it spec by spec. Spec 3 = shell + stub surfaces; Spec 4 = auth + durable Paper / Apply / Threads; Spec 5 = the real Coach (streaming, Commands as tools); Spec 6 = design system; Spec 7 = Coach experience (one dock, Thread continuity, visible editing, calm motion). Pitch persistence remains a follow-up (see `docs/specs/spec-3-app-shell.md`, Route to real product). Product language is English (ADR-0008 / QVE-150).
 
 ## Out of scope
 

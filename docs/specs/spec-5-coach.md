@@ -77,7 +77,7 @@ so CI burns zero tokens.
 
 Work this spec deliberately deferred, now ticketed:
 
-- [QVE-146](https://linear.app/quanvm/issue/QVE-146) — Paper AI panel unification (landed)
+- [QVE-146](https://linear.app/quanvm/issue/QVE-146) — Paper AI panel unification (landed; Spec 7 / [QVE-168](https://linear.app/quanvm/issue/QVE-168) graduated this into the shared Coach dock)
 - [QVE-147](https://linear.app/quanvm/issue/QVE-147) — Coach message Regenerate
 - [QVE-148](https://linear.app/quanvm/issue/QVE-148) — Destructive Command confirm flow (User confirm live; Coach stays excluded by the temporary `!destructive` filter)
 - [QVE-149](https://linear.app/quanvm/issue/QVE-149) — One-click reversal from Coach receipts
