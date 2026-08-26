@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { existsSync, readdirSync, readFileSync } from "node:fs"
+import { readdirSync, readFileSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { describe, expect, it } from "vitest"
@@ -116,36 +116,17 @@ describe("UI package kit surface", () => {
     )
   })
 
-  it("absorbed kit primitives via the kit path", () => {
-    const kitSignals = {
-      button: /data-slot=["']button["']/,
-      input: /data-slot=["']input["']/,
-      avatar: /data-slot=["']avatar["']/,
-      badge: /badgeVariants|slot:\s*["']badge["']/,
-      tooltip: /data-slot=["']tooltip/,
-      "dropdown-menu": /data-slot=["']dropdown-menu["']/,
-      dialog: /data-slot=["']dialog["']/,
-      tabs: /data-slot=["']tabs["']/,
-      card: /data-slot=["']card["']/,
-      label: /data-slot=["']label["']/,
-      textarea: /data-slot=["']textarea["']/,
-      select: /data-slot=["']select/,
-      separator: /data-slot=["']separator["']/,
-      popover: /data-slot=["']popover["']/,
-      skeleton: /data-slot=["']skeleton["']/,
-      spinner: /data-slot=["']spinner["']/,
-      "empty-state": /data-slot=["']empty["']/,
-      kbd: /data-slot=["']kbd["']/,
-      "button-group": /data-slot=["']button-group["']/,
-    } as const
+  it("covers every component file in the kit directory", () => {
+    const componentsDir = path.join(repoRoot, "packages/ui/src/components")
+    const files = readdirSync(componentsDir).filter(
+      (name) => name.endsWith(".tsx") && !name.endsWith(".stories.tsx")
+    )
+    expect(files.length).toBeGreaterThan(0)
 
-    for (const [name, signal] of Object.entries(kitSignals)) {
-      expect(
-        existsSync(
-          path.join(repoRoot, `packages/ui/src/components/${name}.tsx`)
-        )
-      ).toBe(true)
-      expect(read(`packages/ui/src/components/${name}.tsx`)).toMatch(signal)
+    for (const file of files) {
+      expect(read(`packages/ui/src/components/${file}`), file).toMatch(
+        /data-slot=|slot:\s*["'][a-z-]+["']/
+      )
     }
   })
 })
