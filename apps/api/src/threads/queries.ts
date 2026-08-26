@@ -100,6 +100,27 @@ export async function getOwnedThread(
   return row
 }
 
+export async function getOwnedThreadMessage(
+  db: AppDatabase,
+  userId: string,
+  threadId: string,
+  messageId: string
+) {
+  await getOwnedThread(db, userId, threadId)
+
+  const [row] = await db
+    .select()
+    .from(threadMessages)
+    .where(eq(threadMessages.id, messageId))
+    .limit(1)
+
+  if (!row || row.threadId !== threadId) {
+    throw new CommandError(ERROR_CODES.NOT_FOUND, "Message not found")
+  }
+
+  return row
+}
+
 export async function getThreadDetail(
   db: AppDatabase,
   userId: string,

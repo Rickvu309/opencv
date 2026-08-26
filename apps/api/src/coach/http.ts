@@ -4,6 +4,7 @@ import {
   COACH_SSE_EVENTS,
   COACH_SSE_HEARTBEAT_MS,
   coachFeedbackInputSchema,
+  coachReverseRequestSchema,
   coachLimitReachedEnvelope,
   coachTurnRequestSchema,
   coachUnavailableEnvelope,
@@ -50,6 +51,7 @@ import { readSession } from "../session.js"
 import { getOwnedPaperDoc } from "../paper/queries.js"
 import { getCoachModeForUser } from "../profile/queries.js"
 import { getOwnedThread, getThreadDetail, toThreadMessage } from "../threads/queries.js"
+import { reverseCoachReceipt } from "./reverse.js"
 import { maybeAutoTitleThread } from "./title.js"
 import { countCoachTurnsToday, rateCoachTurn } from "./usage.js"
 
@@ -301,6 +303,74 @@ export function createCoachRoutes({
         messageIdParsed.data,
         parsed.data.rating
       )
+      return c.json(successEnvelope(result))
+    } catch (error) {
+      if (error instanceof CommandError) {
+        return jsonWithStatus(
+          c,
+          errorEnvelope(error.code, error.message),
+          error.status
+        )
+      }
+      throw error
+    }
+  })
+
+  routes.post("/:id/messages/:messageId/reverse", async (c) => {
+    if (!auth || !db) {
+      return c.json(authUnavailableEnvelope(), 503)
+    }
+
+    const session = await readSession(auth, c)
+    if (!session) {
+      return c.json(unauthorizedEnvelope(), 401)
+    }
+
+    const threadIdParsed = threadIdSchema.safeParse(c.req.param("id"))
+    const messageIdParsed = threadMessageIdSchema.safeParse(
+      c.req.param("messageId")
+    )
+    if (!threadIdParsed.success || !messageIdParsed.success) {
+      return jsonWithStatus(
+        c,
+        errorEnvelope(ERROR_CODES.VALIDATION_ERROR, "Invalid id"),
+        httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
+      )
+    }
+
+    let body: unknown
+    try {
+      const text = await c.req.text()
+      body = text.trim() === "" ? {} : JSON.parse(text)
+    } catch {
+      return jsonWithStatus(
+        c,
+        errorEnvelope(
+          ERROR_CODES.VALIDATION_ERROR,
+          "Request body must be JSON"
+        ),
+        httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
+      )
+    }
+
+    const parsed = coachReverseRequestSchema.safeParse(body)
+    if (!parsed.success) {
+      return jsonWithStatus(
+        c,
+        errorEnvelope(ERROR_CODES.VALIDATION_ERROR, "Invalid reversal"),
+        httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
+      )
+    }
+
+    try {
+      const result = await reverseCoachReceipt({
+        db,
+        registry,
+        userId: session.user.id,
+        threadId: threadIdParsed.data,
+        messageId: messageIdParsed.data,
+        toolCallId: parsed.data.toolCallId,
+      })
       return c.json(successEnvelope(result))
     } catch (error) {
       if (error instanceof CommandError) {

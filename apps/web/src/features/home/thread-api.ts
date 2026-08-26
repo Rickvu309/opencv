@@ -9,6 +9,7 @@ import {
   type CoachSseTextDeltaData,
   type CoachSseToolCallData,
   type CoachSseToolResultData,
+  type CoachReverseResult,
   type CoachUsageRating,
   type ThreadDeleted,
   type ThreadDetail,
@@ -80,6 +81,21 @@ export type CoachStreamHandlers = {
   onToolResult?: (data: CoachSseToolResultData) => void
   onMessageEnd?: (data: CoachSseMessageEndData) => void
   onError?: (data: CoachSseErrorData) => void
+}
+
+export async function reverseCoachReceipt(
+  threadId: string,
+  messageId: string,
+  toolCallId: string
+): Promise<CoachReverseResult> {
+  const body = await apiFetch<SuccessBody<CoachReverseResult>>(
+    `/api/threads/${threadId}/messages/${messageId}/reverse`,
+    {
+      method: "POST",
+      body: JSON.stringify({ toolCallId }),
+    }
+  )
+  return unwrapData(body)
 }
 
 export async function rateCoachMessage(

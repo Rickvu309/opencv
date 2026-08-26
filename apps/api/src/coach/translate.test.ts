@@ -100,6 +100,54 @@ describe("partsFromModelStream", () => {
     }
   })
 
+  it("prefers a hydrated reversal on the tool envelope", async () => {
+    const parts = await collect([
+      {
+        type: "tool-result",
+        toolCallId: "call_3",
+        name: "apply_createCard",
+        output: {
+          ok: true,
+          data: {
+            id: "card-1",
+            title: "Intern",
+            company: "Acme",
+            stage: "inbox",
+          },
+          reversal: {
+            possible: true,
+            command: "apply.deleteCard",
+            description: "Undo by deleting the Apply card.",
+            input: { cardId: "card-1" },
+          },
+        },
+      },
+      { type: "finish", finishReason: "stop", usage: {} },
+    ])
+    expect(parts[0]).toEqual({
+      type: "tool-result",
+      toolCallId: "call_3",
+      name: "apply_createCard",
+      summary: "Created Intern at Acme",
+      ok: true,
+      reversal: {
+        possible: true,
+        command: "apply.deleteCard",
+        description: "Undo by deleting the Apply card.",
+        input: { cardId: "card-1" },
+      },
+      result: {
+        ok: true,
+        data: {
+          id: "card-1",
+          title: "Intern",
+          company: "Acme",
+          stage: "inbox",
+        },
+      },
+    })
+  })
+
   it("does not attach a reversal when the tool failed", async () => {
     const parts = await collect([
       {

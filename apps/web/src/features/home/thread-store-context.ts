@@ -16,6 +16,7 @@ export type ThreadStoreValue = {
   retry: () => boolean
   regenerate: () => boolean
   rate: (messageId: string, rating: CoachUsageRating) => void
+  undo: (messageId: string, toolCallId: string) => Promise<void>
   openThread: (id: string) => void
   newThread: () => void
   deleteThread: (id: string) => Promise<void>

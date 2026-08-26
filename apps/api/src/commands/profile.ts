@@ -4,7 +4,7 @@ import {
   type UserProfile,
 } from "@workspace/domain"
 
-import { setCoachModeForUser } from "../profile/queries.js"
+import { getCoachModeForUser, setCoachModeForUser } from "../profile/queries.js"
 import { defineCommand } from "./registry.js"
 
 export const setCoachModeCommand = defineCommand({
@@ -17,6 +17,12 @@ export const setCoachModeCommand = defineCommand({
     possible: true,
     command: PROFILE_COMMANDS.setCoachMode,
     description: "Undo by choosing the previous Coach mode.",
+  },
+  captureForReversal(ctx) {
+    return getCoachModeForUser(ctx.db, ctx.actor.userId)
+  },
+  reversalInput({ captured }) {
+    return { mode: captured }
   },
   async handler(ctx, input): Promise<UserProfile> {
     return setCoachModeForUser(ctx.db, ctx.actor.userId, input.mode)

@@ -66,6 +66,9 @@ export const createApplyCardCommand = defineCommand({
     command: APPLY_COMMANDS.deleteCard,
     description: "Undo by deleting the Apply card.",
   },
+  reversalInput({ output }: { output: ApplyCard }) {
+    return { cardId: output.id }
+  },
   async handler(ctx, input): Promise<ApplyCard> {
     const stage = input.stage ?? "inbox"
     const now = new Date()
@@ -110,6 +113,21 @@ export const updateApplyCardCommand = defineCommand({
     command: APPLY_COMMANDS.updateCard,
     description: "Undo by writing the previous card fields back.",
   },
+  captureForReversal(ctx, input) {
+    return getOwnedApplyCard(ctx.db, ctx.actor.userId, input.cardId)
+  },
+  reversalInput({ captured }) {
+    const card = captured as Awaited<ReturnType<typeof getOwnedApplyCard>>
+    return {
+      cardId: card.id,
+      title: card.title,
+      company: card.company,
+      note: card.note,
+      jobUrl: card.jobUrl,
+      trackDate: card.trackDate,
+      trackKind: card.trackKind,
+    }
+  },
   async handler(ctx, input): Promise<ApplyCard> {
     const existing = await getOwnedApplyCard(
       ctx.db,
@@ -150,6 +168,28 @@ export const moveApplyCardCommand = defineCommand({
     possible: true,
     command: APPLY_COMMANDS.moveCard,
     description: "Undo by moving the card back to its previous Stage and order.",
+  },
+  async captureForReversal(ctx, input) {
+    const existing = await getOwnedApplyCard(
+      ctx.db,
+      ctx.actor.userId,
+      input.cardId
+    )
+    const neighbors = await listStageNeighbors(
+      ctx.db,
+      ctx.actor.userId,
+      existing.stage
+    )
+    const index = neighbors.findIndex((row) => row.id === existing.id)
+    const after = index >= 0 ? neighbors[index + 1] : undefined
+    return {
+      cardId: existing.id,
+      stage: existing.stage,
+      beforeCardId: after?.id ?? null,
+    }
+  },
+  reversalInput({ captured }) {
+    return captured
   },
   async handler(ctx, input): Promise<ApplyCard> {
     if (input.beforeCardId === input.cardId) {
@@ -201,6 +241,9 @@ export const toggleApplyStarCommand = defineCommand({
     possible: true,
     command: APPLY_COMMANDS.toggleStar,
     description: "Undo by toggling the star again.",
+  },
+  reversalInput({ input }) {
+    return { cardId: input.cardId }
   },
   async handler(ctx, input): Promise<ApplyCard> {
     const existing = await getOwnedApplyCard(

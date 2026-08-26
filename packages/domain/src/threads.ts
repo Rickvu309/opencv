@@ -84,6 +84,14 @@ export const coachTurnRequestSchema = z
 
 export type CoachTurnRequest = z.infer<typeof coachTurnRequestSchema>
 
+export const coachReverseRequestSchema = z
+  .object({
+    toolCallId: z.string().min(1),
+  })
+  .strict()
+
+export type CoachReverseRequest = z.infer<typeof coachReverseRequestSchema>
+
 export type MessageRole = z.infer<typeof messageRoleSchema>
 
 export const threadMessageStatusSchema = z.enum(["final", "error", "aborted"])
@@ -103,6 +111,8 @@ export const threadToolPartSchema = z
     ok: z.boolean(),
     reversal: reversalDescriptorSchema.optional(),
     toolCallId: z.string().optional(),
+    /** Set after a successful one-click undo of this receipt. */
+    undone: z.boolean().optional(),
   })
   .strict()
 
@@ -149,4 +159,21 @@ export type ThreadDetail = ThreadListItem & {
 
 export type ThreadDeleted = {
   id: string
+}
+
+export type CoachReverseResult = {
+  thread: ThreadDetail
+  receipt: ThreadToolPart
+}
+
+/** Whether a persisted receipt can run its reversal Command. */
+export function canReverseReceipt(part: ThreadToolPart): boolean {
+  return (
+    part.ok &&
+    part.reversal?.possible === true &&
+    part.undone !== true &&
+    typeof part.reversal.command === "string" &&
+    part.reversal.command.length > 0 &&
+    part.reversal.input !== undefined
+  )
 }

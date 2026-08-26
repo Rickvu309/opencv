@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest"
 import {
   commandNameFromTool,
   receiptHeadline,
+  receiptReversalNote,
+  receiptShowsUndo,
 } from "@/features/home/coach-receipt.ts"
 
 describe("receiptHeadline", () => {
@@ -28,5 +30,79 @@ describe("receiptHeadline", () => {
         ok: false,
       })
     ).toBe("Ran apply.moveCard — Apply card not found")
+  })
+})
+
+describe("receipt reversal helpers", () => {
+  it("shows a one-click undo only when the receipt is reversible", () => {
+    expect(
+      receiptShowsUndo({
+        type: "tool",
+        name: "apply_moveCard",
+        summary: "Moved it",
+        ok: true,
+        toolCallId: "call_1",
+        reversal: {
+          possible: true,
+          description: "Undo by moving the card back.",
+          command: "apply.moveCard",
+          input: { cardId: "c1", stage: "inbox" },
+        },
+      })
+    ).toBe(true)
+    expect(
+      receiptShowsUndo({
+        type: "tool",
+        name: "apply_listCards",
+        summary: "Listed cards",
+        ok: true,
+        toolCallId: "call_2",
+        reversal: {
+          possible: false,
+          description: "This read does not change anything.",
+        },
+      })
+    ).toBe(false)
+    expect(
+      receiptShowsUndo({
+        type: "tool",
+        name: "apply_moveCard",
+        summary: "Moved it",
+        ok: true,
+        toolCallId: "call_3",
+        undone: true,
+        reversal: {
+          possible: true,
+          description: "Undo by moving the card back.",
+        },
+      })
+    ).toBe(false)
+  })
+
+  it("keeps irreversible receipts as read-only notes", () => {
+    expect(
+      receiptReversalNote({
+        type: "tool",
+        name: "apply_listCards",
+        summary: "Listed cards",
+        ok: true,
+        reversal: {
+          possible: false,
+          description: "This read does not change anything.",
+        },
+      })
+    ).toBe("This read does not change anything.")
+    expect(
+      receiptReversalNote({
+        type: "tool",
+        name: "apply_moveCard",
+        summary: "Moved it",
+        ok: true,
+        reversal: {
+          possible: true,
+          description: "Undo by moving the card back.",
+        },
+      })
+    ).toBe("Reversible — Undo by moving the card back.")
   })
 })

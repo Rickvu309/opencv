@@ -44,6 +44,11 @@ export function reversalForTool(
 
 export function envelopeFromToolOutput(output: unknown): CommandEnvelope {
   if (output && typeof output === "object" && "ok" in output) {
+    if ("reversal" in output) {
+      const envelope = { ...(output as Record<string, unknown>) }
+      delete envelope.reversal
+      return envelope as CommandEnvelope
+    }
     return output as CommandEnvelope
   }
   return errorEnvelope(
