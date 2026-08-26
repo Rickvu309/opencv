@@ -13,6 +13,7 @@ import {
 } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
+import { Textarea } from "@workspace/ui/components/textarea"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,7 +29,6 @@ import {
 import { cn } from "@workspace/ui/lib/utils"
 
 import { ComingSoon } from "@/components/coming-soon.tsx"
-import { FOCUS_RING } from "@/features/app-shell/focus-ring.ts"
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { CoachModeSelector } from "@/features/home/coach-mode-selector.tsx"
 import { useCoachMode } from "@/features/home/use-coach-mode.ts"
@@ -97,11 +97,15 @@ export function Composer({
   const addButton = (
     <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
       <DropdownMenuTrigger
+        render={
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="rounded-full text-muted-foreground"
+          />
+        }
         aria-label={menuOpen ? "Close menu" : "Add"}
-        className={cn(
-          FOCUS_RING,
-          "flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground"
-        )}
       >
         {menuOpen ? <X className="size-4" /> : <Plus className="size-4" />}
       </DropdownMenuTrigger>
@@ -136,20 +140,18 @@ export function Composer({
         <TooltipTrigger
           render={
             <span className="inline-flex">
-              <button
+              <Button
                 type="button"
+                size="icon"
+                variant="ghost"
                 disabled
                 aria-disabled="true"
                 aria-label="Voice input — coming soon"
-                className={cn(
-                  FOCUS_RING,
-                  "flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground",
-                  "disabled:pointer-events-none disabled:opacity-50"
-                )}
+                className="rounded-full text-muted-foreground"
               >
                 <Mic className="size-4" />
                 <ComingSoon silent />
-              </button>
+              </Button>
             </span>
           }
         />
@@ -186,7 +188,7 @@ export function Composer({
   )
 
   const textarea = (
-    <textarea
+    <Textarea
       ref={textareaRef}
       value={draft}
       onChange={(e) => setDraft(e.target.value)}
@@ -199,8 +201,9 @@ export function Composer({
       placeholder={placeholder}
       rows={1}
       className={cn(
-        "min-w-0 resize-none overflow-y-auto bg-transparent text-[15px] leading-6 outline-none placeholder:text-muted-foreground",
-        expanded ? "max-h-48 w-full px-0.5" : "max-h-6 min-h-6 flex-1 py-0"
+        "min-h-0 min-w-0 resize-none overflow-y-auto border-0 bg-transparent px-0 py-0 shadow-none focus-visible:border-0 focus-visible:ring-0 md:text-base",
+        "text-base leading-6",
+        expanded ? "max-h-48 w-full px-0.5" : "max-h-6 min-h-6 flex-1 field-sizing-fixed"
       )}
       aria-label="Message"
     />

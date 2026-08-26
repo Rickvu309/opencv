@@ -33,7 +33,12 @@ export function WorkspaceHeader({
         className
       )}
     >
-      <div className={cn("flex min-w-0 items-center gap-2", page && "w-full")}>
+      <div
+        className={cn(
+          "flex min-w-0 items-center gap-2",
+          page ? "w-full" : "min-w-0 flex-1"
+        )}
+      >
         {icon}
         {typeof title === "string" ? (
           <h1

@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react"
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
+import { Label } from "@workspace/ui/components/label"
 
 import { ErrorBanner } from "@/components/error-banner.tsx"
 import { authClient } from "@/lib/auth-client.ts"
@@ -42,9 +43,7 @@ export function SignInForm() {
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
       <div className="space-y-1.5">
-        <label htmlFor="sign-in-email" className="text-sm font-medium">
-          Email
-        </label>
+        <Label htmlFor="sign-in-email">Email</Label>
         <Input
           id="sign-in-email"
           type="email"
@@ -56,9 +55,7 @@ export function SignInForm() {
         />
       </div>
       <div className="space-y-1.5">
-        <label htmlFor="sign-in-password" className="text-sm font-medium">
-          Password
-        </label>
+        <Label htmlFor="sign-in-password">Password</Label>
         <Input
           id="sign-in-password"
           type="password"

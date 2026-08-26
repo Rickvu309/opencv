@@ -12,7 +12,7 @@ import {
 import { cn } from "@workspace/ui/lib/utils"
 
 import { profileInitials } from "@/features/app-shell/profile-display.ts"
-import { FOCUS_RING } from "@/features/app-shell/focus-ring.ts"
+import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { authClient } from "@/lib/auth-client.ts"
 
@@ -32,7 +32,7 @@ export function NavProfile({ collapsed, onNavigate }: Props) {
       {data?.user.image ? (
         <AvatarImage src={data.user.image} alt="" />
       ) : null}
-      <AvatarFallback className="rounded-md text-[11px] font-medium">
+      <AvatarFallback className="rounded-md text-micro font-medium">
         {initials}
       </AvatarFallback>
     </Avatar>
@@ -64,7 +64,7 @@ export function NavProfile({ collapsed, onNavigate }: Props) {
       {avatar}
       <span
         className={cn(
-          "min-w-0 truncate text-[13px] font-medium",
+          "min-w-0 truncate text-sm font-medium",
           collapsed && "sr-only"
         )}
       >

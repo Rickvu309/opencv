@@ -72,7 +72,7 @@ function CoachReceipt({
         <Icon
           className={cn(
             "mt-0.5 size-3 shrink-0",
-            part.ok ? "text-emerald-600" : "text-destructive"
+            part.ok ? "text-success" : "text-destructive"
           )}
           aria-hidden
         />
@@ -172,76 +172,75 @@ function MessageActions({
 
   return (
     <div className="flex items-center gap-0.5">
-      <button
+      <Button
         type="button"
+        size="icon-sm"
+        variant="ghost"
         aria-label="Copy"
         aria-pressed={copied || undefined}
         onClick={() => void copy()}
-        className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+        className="text-muted-foreground"
       >
         <Copy className="size-3.5" />
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
+        size="icon-sm"
+        variant="ghost"
         aria-label="Good response"
         aria-pressed={rating === "up"}
         disabled={!rateable}
         onClick={() => onRate?.("up")}
         className={cn(
-          "flex size-7 items-center justify-center rounded-md",
-          rateable
-            ? "text-muted-foreground hover:bg-muted hover:text-foreground"
-            : "text-muted-foreground opacity-40",
+          "text-muted-foreground",
           rating === "up" && "text-foreground"
         )}
       >
         <ThumbsUp className={cn("size-3.5", rating === "up" && "fill-current")} />
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
+        size="icon-sm"
+        variant="ghost"
         aria-label="Bad response"
         aria-pressed={rating === "down"}
         disabled={!rateable}
         onClick={() => onRate?.("down")}
         className={cn(
-          "flex size-7 items-center justify-center rounded-md",
-          rateable
-            ? "text-muted-foreground hover:bg-muted hover:text-foreground"
-            : "text-muted-foreground opacity-40",
+          "text-muted-foreground",
           rating === "down" && "text-foreground"
         )}
       >
         <ThumbsDown
           className={cn("size-3.5", rating === "down" && "fill-current")}
         />
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
+        size="icon-sm"
+        variant="ghost"
         aria-label="Regenerate"
         disabled={!canRegenerate}
         onClick={() => onRegenerate?.()}
-        className={cn(
-          "flex size-7 items-center justify-center rounded-md",
-          canRegenerate
-            ? "text-muted-foreground hover:bg-muted hover:text-foreground"
-            : "text-muted-foreground opacity-40"
-        )}
+        className="text-muted-foreground"
       >
         <RefreshCw className="size-3.5" />
-      </button>
+      </Button>
       {DISABLED_ACTIONS.map((action) => {
         const Icon = action.icon
         return (
-          <button
+          <Button
             key={action.label}
             type="button"
+            size="icon-sm"
+            variant="ghost"
             disabled
             aria-label={action.label}
-            className="flex size-7 items-center justify-center rounded-md text-muted-foreground opacity-40"
+            className="text-muted-foreground"
           >
             <Icon className="size-3.5" />
             <ComingSoon silent />
-          </button>
+          </Button>
         )
       })}
     </div>
