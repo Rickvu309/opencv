@@ -22,6 +22,7 @@ import {
   receiptReversalNote,
   receiptShowsUndo,
 } from "@/features/home/coach-receipt.ts"
+import { RichReceiptBody } from "@/features/home/rich-receipts.tsx"
 import {
   STREAMING_COACH_ID,
   latestCoachMessageId,
@@ -80,6 +81,11 @@ function CoachReceipt({
           {receiptHeadline(part)}
         </span>
       </p>
+      {part.ok && part.detail ? (
+        <div className="min-w-0 pl-5">
+          <RichReceiptBody detail={part.detail} />
+        </div>
+      ) : null}
       {note ? (
         <p className="min-w-0 pl-5 break-words [overflow-wrap:anywhere]">
           {note}

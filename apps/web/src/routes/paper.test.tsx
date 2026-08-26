@@ -373,9 +373,7 @@ describe("Paper editors", () => {
       })
     ).not.toBeInTheDocument()
     expect(
-      within(panel).getByText(
-        "Ran paper.updateContent — Updated PM track CV"
-      )
+      within(panel).getByText("Updated PM track CV")
     ).toBeInTheDocument()
     expect(
       within(panel).getByRole("status", { name: "Command succeeded" })
@@ -534,5 +532,154 @@ describe("Paper editors", () => {
     const thread = await screen.findByRole("log", { name: "Thread" })
     expect(thread).toHaveTextContent("Sharpen the checkout bullet")
     expect(thread).toHaveTextContent("I read PM track CV.")
+  })
+
+  it("disables Rewrite selection until the User selects text, then sends it", async () => {
+    scriptCoachStream({ texts: ["I will rewrite that line."] })
+    renderPaper()
+    await expectPaperDrive()
+    const panel = await openDoc("Cover: Associate PM intern")
+
+    const rewrite = within(panel).getByRole("button", {
+      name: "Rewrite selection",
+    })
+    expect(rewrite).toBeDisabled()
+
+    const canvas = within(panel).getByRole("textbox", {
+      name: "Document content",
+    })
+    const range = document.createRange()
+    range.selectNodeContents(canvas)
+    const sel = window.getSelection()
+    sel?.removeAllRanges()
+    sel?.addRange(range)
+    document.dispatchEvent(new Event("selectionchange"))
+
+    await waitFor(() => {
+      expect(rewrite).toBeEnabled()
+    })
+    fireEvent.click(rewrite)
+    expect(
+      await within(panel).findByText("I will rewrite that line.")
+    ).toBeInTheDocument()
+    const request = getLastCoachRequest()
+    expect(request?.text).toBe("Rewrite selection")
+    expect(request?.selection?.text?.length).toBeGreaterThan(0)
+    expect(request?.selection?.sectionId).toBe("letter")
+  })
+
+  it("reloads the open canvas when Coach updates the doc", async () => {
+    const { defaultCvData } = await import("@/features/paper/paper-cv-types.ts")
+    const { SAMPLE_AUTHOR } = await import("@/features/seed/sample-author.ts")
+    const { patchMockPaperDoc } = await import("@/test/paper-api-mock.ts")
+    scriptCoachStream({
+      parts: [
+        { kind: "text", text: "I updated the summary." },
+        {
+          kind: "tool",
+          name: "paper_updateContent",
+          summary: "Updated content of PM track CV",
+          ok: true,
+          reversal: {
+            possible: true,
+            description: "Undo by writing the previous content back.",
+          },
+        },
+      ],
+    })
+    renderPaper()
+    await expectPaperDrive()
+    const panel = await openDoc("PM track CV")
+    const summary = within(panel).getByRole("textbox", { name: "Summary" })
+    expect(summary).not.toHaveTextContent(
+      "Coach rewrote the summary for APM internships."
+    )
+
+    const next = defaultCvData(SAMPLE_AUTHOR)
+    next.summary = "Coach rewrote the summary for APM internships."
+    patchMockPaperDoc("11111111-1111-7111-8111-111111111111", {
+      content: next,
+      updatedAt: "2026-08-26T12:00:00.000Z",
+    })
+
+    fireEvent.change(messageCoach(panel), {
+      target: { value: "Rewrite the summary" },
+    })
+    fireEvent.click(within(panel).getByRole("button", { name: "Send" }))
+    expect(
+      await within(panel).findByText("I updated the summary.")
+    ).toBeInTheDocument()
+    await waitFor(() => {
+      expect(
+        within(panel).getByRole("textbox", { name: "Summary" })
+      ).toHaveTextContent("Coach rewrote the summary for APM internships.")
+    })
+  })
+
+  it("asks Keep mine or Use Coach's version when the canvas is dirty", async () => {
+    const { paperQueryKeys } = await import("@/features/paper/paper-api.ts")
+    const { queryClient } = renderPaper()
+    await expectPaperDrive()
+    const panel = await openDoc("PM track CV")
+    const summary = within(panel).getByRole("textbox", { name: "Summary" })
+    summary.textContent = "My local edit that should stay"
+    fireEvent.input(summary)
+
+    const docs = queryClient.getQueryData(paperQueryKeys.list()) as Array<{
+      id: string
+      updatedAt: string
+      content: { summary?: string }
+    }>
+    queryClient.setQueryData(
+      paperQueryKeys.list(),
+      docs.map((doc) =>
+        doc.id === "11111111-1111-7111-8111-111111111111"
+          ? {
+              ...doc,
+              updatedAt: "2026-08-26T15:00:00.000Z",
+              content: { ...doc.content, summary: "Coach version of the summary" },
+            }
+          : doc
+      )
+    )
+
+    expect(
+      await within(panel).findByRole("alert")
+    ).toHaveTextContent("Coach updated this document")
+    expect(summary).toHaveTextContent("My local edit that should stay")
+
+    fireEvent.click(within(panel).getByRole("button", { name: "Keep mine" }))
+    expect(within(panel).queryByRole("alert")).not.toBeInTheDocument()
+    expect(summary).toHaveTextContent("My local edit that should stay")
+
+    summary.textContent = "Another local edit"
+    fireEvent.input(summary)
+    queryClient.setQueryData(
+      paperQueryKeys.list(),
+      docs.map((doc) =>
+        doc.id === "11111111-1111-7111-8111-111111111111"
+          ? {
+              ...doc,
+              updatedAt: "2026-08-26T16:00:00.000Z",
+              content: {
+                ...doc.content,
+                summary: "Coach version of the summary",
+              },
+            }
+          : doc
+      )
+    )
+    expect(
+      await within(panel).findByRole("alert")
+    ).toHaveTextContent("Coach updated this document")
+    fireEvent.click(
+      within(panel).getByRole("button", { name: "Use Coach's version" })
+    )
+    await waitFor(() => {
+      expect(
+        within(panel).getByRole("textbox", { name: "Summary" })
+      ).toHaveTextContent("Coach version of the summary")
+    })
+    expect(within(panel).queryByRole("alert")).not.toBeInTheDocument()
   })
 })

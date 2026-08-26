@@ -4,7 +4,11 @@ import {
   errorEnvelope,
   humanizeCommandFailCopy,
   PAPER_KIND_LABEL,
+  coachReceiptDetailSchema,
+  diffPaperContent,
+  isApplyStage,
   type ApplyCard,
+  type CoachReceiptDetail,
   type CommandEnvelope,
   type PaperDoc,
   type ReversalDescriptor,
@@ -174,4 +178,71 @@ function stageLabel(stage: string) {
 
 function countLabel(count: number, noun: string) {
   return `${count} ${noun}${count === 1 ? "" : "s"}`
+}
+
+export function receiptDetailForTool(
+  name: string,
+  result: CommandEnvelope,
+  reversal?: ReversalDescriptor
+): CoachReceiptDetail | undefined {
+  if (!result.ok) return undefined
+
+  if (name === "paper_updateContent") {
+    const doc = asPaperDoc(result.data)
+    const previous = reversalContent(reversal)
+    if (!doc || previous === undefined) return undefined
+    const hunks = diffPaperContent(doc.kind, previous, doc.content)
+    if (hunks.length === 0) return undefined
+    return parseDetail({
+      type: "paper.updateContent",
+      docKind: doc.kind,
+      docName: doc.name,
+      hunks,
+    })
+  }
+
+  if (name === "apply_moveCard") {
+    const card = asApplyCard(result.data)
+    const from = reversalStage(reversal)
+    if (!card || !from || !isApplyStage(card.stage) || from === card.stage) {
+      return undefined
+    }
+    return parseDetail({
+      type: "apply.moveCard",
+      title: card.title,
+      company: card.company,
+      from,
+      to: card.stage,
+    })
+  }
+
+  if (name === "paper_createDoc") {
+    const doc = asPaperDoc(result.data)
+    if (!doc) return undefined
+    return parseDetail({
+      type: "paper.createDoc",
+      docKind: doc.kind,
+      name: doc.name,
+      status: doc.status,
+    })
+  }
+
+  return undefined
+}
+
+function parseDetail(value: unknown): CoachReceiptDetail | undefined {
+  const parsed = coachReceiptDetailSchema.safeParse(value)
+  return parsed.success ? parsed.data : undefined
+}
+
+function reversalContent(reversal?: ReversalDescriptor): unknown {
+  if (!reversal?.input || typeof reversal.input !== "object") return undefined
+  const input = reversal.input as { content?: unknown }
+  return input.content
+}
+
+function reversalStage(reversal?: ReversalDescriptor) {
+  if (!reversal?.input || typeof reversal.input !== "object") return undefined
+  const stage = (reversal.input as { stage?: unknown }).stage
+  return isApplyStage(stage) ? stage : undefined
 }

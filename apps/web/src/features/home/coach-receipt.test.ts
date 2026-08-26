@@ -2,26 +2,41 @@ import { describe, expect, it } from "vitest"
 
 import {
   commandNameFromTool,
+  namedReceiptHeadline,
   receiptHeadline,
   receiptReversalNote,
   receiptShowsUndo,
 } from "@/features/home/coach-receipt.ts"
 
 describe("receiptHeadline", () => {
-  it("uses the dotted Command name and the truthful summary", () => {
+  it("uses a named headline for graduated receipts and drops Ran", () => {
     expect(commandNameFromTool("apply_moveCard")).toBe("apply.moveCard")
-    expect(commandNameFromTool("apply.moveCard")).toBe("apply.moveCard")
     expect(
       receiptHeadline({
         type: "tool",
         name: "apply_moveCard",
-        summary: "Moved 'Backend Intern' to Prep",
+        summary: "Moved Associate PM intern at Local startup to Prep",
+        ok: true,
+        detail: {
+          type: "apply.moveCard",
+          title: "Associate PM intern",
+          company: "Local startup",
+          from: "inbox",
+          to: "prep",
+        },
+      })
+    ).toBe("Moved Associate PM intern at Local startup from Inbox to Prep")
+    expect(
+      receiptHeadline({
+        type: "tool",
+        name: "apply_listCards",
+        summary: "Listed 2 Apply cards",
         ok: true,
       })
-    ).toBe("Ran apply.moveCard — Moved 'Backend Intern' to Prep")
+    ).toBe("Listed 2 Apply cards")
   })
 
-  it("keeps failure summaries plain", () => {
+  it("keeps failure summaries as one plain line", () => {
     expect(
       receiptHeadline({
         type: "tool",
@@ -29,7 +44,7 @@ describe("receiptHeadline", () => {
         summary: "Apply card not found",
         ok: false,
       })
-    ).toBe("Ran apply.moveCard — Apply card not found")
+    ).toBe("Apply card not found")
   })
 
   it("rewrites a Zod dump into a short fail sentence", () => {
@@ -40,10 +55,29 @@ describe("receiptHeadline", () => {
         'Invalid input for tool apply_moveCard: Type validation failed: Value: {"cardId":"00000000-0000-0000-0000-000000000002"}. Error message: [{"code":"invalid_format","pattern":"/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}$/","message":"Invalid UUID"}]',
       ok: false,
     })
-    expect(headline).toBe("Ran apply.moveCard — That card id isn't valid")
+    expect(headline).toBe("That card id isn't valid")
     expect(headline).not.toMatch(
       /Invalid input|Type validation|Invalid UUID|\{|\/\^/
     )
+  })
+
+  it("names the three graduated Commands", () => {
+    expect(
+      namedReceiptHeadline({
+        type: "paper.updateContent",
+        docKind: "cv",
+        docName: "PM track CV",
+        hunks: [],
+      })
+    ).toBe("Updated CV PM track CV")
+    expect(
+      namedReceiptHeadline({
+        type: "paper.createDoc",
+        docKind: "letter",
+        name: "Untitled Letter",
+        status: "draft",
+      })
+    ).toBe("Created Letter Untitled Letter")
   })
 })
 

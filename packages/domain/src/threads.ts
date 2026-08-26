@@ -1,8 +1,13 @@
 import { z } from "zod"
 
+import { applyStageSchema } from "./apply.js"
 import { coachModeSchema, type CoachUsageRating } from "./coach.js"
 import { reversalDescriptorSchema, THREAD_COMMANDS } from "./commands.js"
-import { paperDocIdSchema } from "./paper.js"
+import {
+  paperContentKindSchema,
+  paperDocIdSchema,
+  paperDocStatusSchema,
+} from "./paper.js"
 
 export { THREAD_COMMANDS }
 
@@ -64,6 +69,27 @@ export type ThreadsPostMessageInput = z.infer<
   typeof threadsPostMessageInputSchema
 >
 
+export const COACH_SELECTION_TEXT_MAX = 2000
+export const COACH_SELECTION_SECTION_ID_MAX = 80
+
+export const coachSelectionSchema = z
+  .object({
+    text: z
+      .string()
+      .trim()
+      .min(1, "Selection text is required")
+      .max(COACH_SELECTION_TEXT_MAX, "Selection is too long"),
+    sectionId: z
+      .string()
+      .trim()
+      .min(1)
+      .max(COACH_SELECTION_SECTION_ID_MAX)
+      .optional(),
+  })
+  .strict()
+
+export type CoachSelection = z.infer<typeof coachSelectionSchema>
+
 export const coachTurnRequestSchema = z
   .object({
     text: threadMessageTextSchema.optional(),
@@ -71,6 +97,8 @@ export const coachTurnRequestSchema = z
     regenerate: z.literal(true).optional(),
     /** Open Paper doc when the turn is sent from the editor AI panel. */
     focusDocId: paperDocIdSchema.optional(),
+    /** Highlighted Paper text when the User sends from the editor. */
+    selection: coachSelectionSchema.optional(),
   })
   .strict()
   .superRefine((value, ctx) => {
@@ -85,6 +113,51 @@ export const coachTurnRequestSchema = z
   })
 
 export type CoachTurnRequest = z.infer<typeof coachTurnRequestSchema>
+
+const receiptDiffLineSchema = z
+  .object({
+    kind: z.enum(["eq", "del", "add"]),
+    text: z.string(),
+  })
+  .strict()
+
+const receiptDiffHunkSchema = z
+  .object({
+    section: z.string(),
+    sectionId: z.string(),
+    lines: z.array(receiptDiffLineSchema),
+  })
+  .strict()
+
+export const coachReceiptDetailSchema = z.discriminatedUnion("type", [
+  z
+    .object({
+      type: z.literal("paper.updateContent"),
+      docKind: paperContentKindSchema,
+      docName: z.string(),
+      hunks: z.array(receiptDiffHunkSchema),
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("apply.moveCard"),
+      title: z.string(),
+      company: z.string(),
+      from: applyStageSchema,
+      to: applyStageSchema,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("paper.createDoc"),
+      docKind: paperContentKindSchema,
+      name: z.string(),
+      status: paperDocStatusSchema,
+    })
+    .strict(),
+])
+
+export type CoachReceiptDetail = z.infer<typeof coachReceiptDetailSchema>
 
 export const coachReverseRequestSchema = z
   .object({
@@ -115,6 +188,8 @@ export const threadToolPartSchema = z
     toolCallId: z.string().optional(),
     /** Set after a successful one-click undo of this receipt. */
     undone: z.boolean().optional(),
+    /** Per-command scan payload for the three rich receipts. */
+    detail: coachReceiptDetailSchema.optional(),
   })
   .strict()
 

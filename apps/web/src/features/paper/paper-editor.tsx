@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
+import { useMediaQuery } from "@workspace/ui/hooks/use-media-query"
+import type { CoachSelection } from "@workspace/domain"
+import { changedSectionIds, diffPaperContent } from "@workspace/domain"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,6 +37,7 @@ import {
   type PaperDoc,
 } from "./paper-data.ts"
 import { CoachThreadPanel } from "./coach-thread-panel.tsx"
+import { readPaperSelection } from "./paper-selection.ts"
 import { PaperEditorSidebar } from "./paper-editor-sidebar.tsx"
 import {
   PaperEditorToolbar,
@@ -77,8 +81,14 @@ export function PaperEditor({
   const isProof = doc.kind === "proof"
   const isLetter = doc.kind === "letter"
   const editorRef = useRef<HTMLDivElement>(null)
+  const canvasRef = useRef<HTMLDivElement>(null)
   const proofPhotoRef = useRef<HTMLInputElement>(null)
   const cvPhotoRef = useRef<HTMLInputElement>(null)
+  const loadedUpdatedAtRef = useRef(doc.updatedAt)
+  const loadedContentRef = useRef(doc.content)
+  const lastDocIdRef = useRef("")
+  const lastRevertKeyRef = useRef(revertKey)
+  const dirtyRef = useRef(false)
   const [dirty, setDirty] = useState(false)
   const [saving, setSaving] = useState(false)
   const [letterWords, setLetterWords] = useState(0)
@@ -87,35 +97,97 @@ export function PaperEditor({
   const [proofData, setProofData] = useState<ProofData>(() =>
     proofContentOf(doc)
   )
+  const [conflict, setConflict] = useState(false)
+  const [changedSections, setChangedSections] = useState<string[]>([])
+  const [selection, setSelection] = useState<CoachSelection | null>(null)
+  const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)", false)
+  dirtyRef.current = dirty
 
-  useEffect(() => {
-    setTitle(doc.name)
-    if (isCv) {
-      setCvData(cvContentOf(doc))
-      setDirty(false)
-      setSaving(false)
-      return
+  function applyServerDoc(next: PaperDoc, highlight = false) {
+    const previous = loadedContentRef.current
+    setTitle(next.name)
+    if (next.kind === "cv") {
+      setCvData(cvContentOf(next))
+    } else if (next.kind === "proof") {
+      setProofData(proofContentOf(next))
+    } else {
+      const el = editorRef.current
+      if (el) {
+        const markdown = letterMarkdownOf(next)
+        el.innerHTML = paperContentToHtml(markdown)
+        setLetterWords(countWords(markdown))
+      }
     }
-    if (isProof) {
-      setProofData(proofContentOf(doc))
-      setDirty(false)
-      setSaving(false)
-      return
-    }
-    const el = editorRef.current
-    if (!el) return
-    const markdown = letterMarkdownOf(doc)
-    el.innerHTML = paperContentToHtml(markdown)
-    setLetterWords(countWords(markdown))
     setDirty(false)
     setSaving(false)
-    // Reset on document switch or optimistic rollback — autosave writes
-    // `doc.content` and must not wipe in-progress letter edits.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- see above
-  }, [doc.id, isCv, isProof, revertKey])
+    setConflict(false)
+    loadedUpdatedAtRef.current = next.updatedAt
+    loadedContentRef.current = next.content
+    if (highlight) {
+      setChangedSections(changedSectionIds(diffPaperContent(next.kind, previous, next.content)))
+    } else {
+      setChangedSections([])
+    }
+  }
 
   useEffect(() => {
-    if (!dirty) return
+    const switched = doc.id !== lastDocIdRef.current
+    const reverted = revertKey !== lastRevertKeyRef.current
+    lastDocIdRef.current = doc.id
+    lastRevertKeyRef.current = revertKey
+    // Reset on document switch or optimistic rollback — autosave writes
+    // `doc.content` and must not wipe in-progress letter edits.
+    if (switched || reverted) {
+      applyServerDoc(doc)
+      return
+    }
+    if (doc.updatedAt === loadedUpdatedAtRef.current) return
+    if (dirtyRef.current) {
+      setConflict(true)
+      return
+    }
+    applyServerDoc(doc, true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- see above
+  }, [doc.id, doc.updatedAt, isCv, isProof, revertKey])
+
+  useEffect(() => {
+    const root = canvasRef.current
+    if (!root || changedSections.length === 0) return
+    const els = changedSections
+      .map((id) =>
+        root.querySelector<HTMLElement>(
+          `[data-paper-section="${CSS.escape(id)}"]`
+        )
+      )
+      .filter((el): el is HTMLElement => Boolean(el))
+    for (const el of els) el.classList.add("paper-coach-changed")
+    const first = els[0]
+    if (typeof first?.scrollIntoView === "function") {
+      first.scrollIntoView({
+        block: "center",
+        behavior: reduceMotion ? "auto" : "smooth",
+      })
+    }
+    const timer = window.setTimeout(() => {
+      for (const el of els) el.classList.remove("paper-coach-changed")
+      setChangedSections([])
+    }, 1200)
+    return () => {
+      window.clearTimeout(timer)
+      for (const el of els) el.classList.remove("paper-coach-changed")
+    }
+  }, [changedSections, reduceMotion])
+
+  useEffect(() => {
+    function onSelection() {
+      setSelection(readPaperSelection(canvasRef.current))
+    }
+    document.addEventListener("selectionchange", onSelection)
+    return () => document.removeEventListener("selectionchange", onSelection)
+  }, [])
+
+  useEffect(() => {
+    if (!dirty || conflict) return
 
     setSaving(true)
     const timer = window.setTimeout(() => {
@@ -142,7 +214,7 @@ export function PaperEditor({
     }, 700)
 
     return () => window.clearTimeout(timer)
-  }, [dirty, doc, onChange, isCv, isProof, cvData, proofData])
+  }, [conflict, dirty, doc, onChange, isCv, isProof, cvData, proofData])
 
   function handleRichInput() {
     const el = editorRef.current
@@ -381,7 +453,41 @@ export function PaperEditor({
           </Button>
         </WorkspaceHeader>
 
-        <div className="min-h-0 flex-1 overflow-auto px-4 py-8 sm:px-8">
+        {conflict ? (
+          <div
+            role="alert"
+            className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-muted/60 px-5 py-2 text-sm"
+          >
+            <p>
+              Coach updated this document while you have unsaved edits.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  loadedUpdatedAtRef.current = doc.updatedAt
+                  setConflict(false)
+                }}
+              >
+                Keep mine
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => applyServerDoc(doc, true)}
+              >
+                Use Coach&apos;s version
+              </Button>
+            </div>
+          </div>
+        ) : null}
+
+        <div
+          ref={canvasRef}
+          className="min-h-0 flex-1 overflow-auto px-4 py-8 sm:px-8"
+        >
           <div
             className={cn(
               "mx-auto flex w-full flex-col items-center",
@@ -494,6 +600,7 @@ export function PaperEditor({
                     role="textbox"
                     suppressContentEditableWarning
                     onInput={handleRichInput}
+                    data-paper-section="letter"
                     className="paper-editor-canvas prose-kit min-h-[70vh] px-10 py-10 outline-none sm:px-14 sm:py-12"
                     aria-label="Document content"
                     spellCheck
@@ -508,6 +615,7 @@ export function PaperEditor({
           key={doc.id}
           docId={doc.id}
           docName={doc.name}
+          selection={selection}
           variant={
             isCv ? "cv" : isProof ? "proof" : isLetter ? "letter" : "full"
           }

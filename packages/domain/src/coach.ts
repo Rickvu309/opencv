@@ -2,6 +2,7 @@ import { z } from "zod"
 
 import type { CommandEnvelope } from "./envelope.js"
 import type { ReversalDescriptor } from "./commands.js"
+import type { CoachReceiptDetail, CoachSelection } from "./threads.js"
 import type { ThreadMessage, ThreadMessagePart } from "./threads.js"
 
 export const coachModeSchema = z.enum(["free", "light", "max"])
@@ -207,6 +208,7 @@ export type CoachToolResultPart = {
   ok: boolean
   reversal?: ReversalDescriptor
   result: CommandEnvelope
+  detail?: CoachReceiptDetail
 }
 
 export type CoachFinishPart = {
@@ -249,6 +251,7 @@ export type CoachSseToolResultData = {
   ok: boolean
   reversal?: ReversalDescriptor
   result: CommandEnvelope
+  detail?: CoachReceiptDetail
 }
 
 export type CoachSseMessageEndData = {
@@ -277,6 +280,8 @@ export type CoachTurnInput = {
   regenerate?: boolean
   /** Open Paper document when the User is sending from the editor AI panel. */
   focusDoc?: CoachFocusDoc
+  /** Highlighted Paper text when the User sends from the editor. */
+  selection?: CoachSelection
 }
 
 export type CoachTitleInput = {
@@ -322,6 +327,7 @@ export function appendCoachPart(
           summary: part.summary,
           ok: part.ok,
           ...(part.reversal ? { reversal: part.reversal } : {}),
+          ...(part.detail ? { detail: part.detail } : {}),
           toolCallId: part.toolCallId,
         },
       ]

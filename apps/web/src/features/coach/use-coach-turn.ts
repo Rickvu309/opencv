@@ -4,6 +4,7 @@ import {
   appendCoachPart,
   DEFAULT_THREAD_TITLE,
   textFromParts,
+  type CoachSelection,
   type CoachUsageRating,
   type ThreadDetail,
   type ThreadListItem,
@@ -39,6 +40,12 @@ type SendError = {
   userMessageId: string
   text: string
   local: boolean
+  selection?: CoachSelection
+}
+
+export type CoachSendOptions = {
+  retrying?: boolean
+  selection?: CoachSelection
 }
 
 export type UseCoachTurnOptions = {
@@ -260,7 +267,11 @@ export function useCoachTurn({
   }, [])
 
   const send = useCallback(
-    (text: string, retrying = false) => {
+    (text: string, options: boolean | CoachSendOptions = {}) => {
+      const retrying =
+        typeof options === "boolean" ? options : options.retrying === true
+      const selection =
+        typeof options === "boolean" ? undefined : options.selection
       const trimmed = text.trim()
       if (!trimmed || phase !== "idle") return false
 
@@ -352,7 +363,8 @@ export function useCoachTurn({
             },
             controller.signal,
             mode,
-            focusDocId
+            focusDocId,
+            selection
           )
 
           if (generation !== sendGeneration.current) return
@@ -373,6 +385,7 @@ export function useCoachTurn({
                 userMessageId: lastUser?.id ?? userMessage.id,
                 text: trimmed,
                 local: false,
+                selection,
               })
               setOptimisticMessages(null)
               setPhase("idle")
@@ -405,6 +418,7 @@ export function useCoachTurn({
               userMessageId: userMessage.id,
               text: trimmed,
               local: false,
+              selection,
             })
             setPhase("idle")
             return
@@ -441,6 +455,7 @@ export function useCoachTurn({
             userMessageId: userMessage.id,
             text: trimmed,
             local: true,
+            selection,
           })
           setPhase("idle")
         } finally {
@@ -638,7 +653,10 @@ export function useCoachTurn({
     if (phase !== "idle") return false
     if (regenerateError) return regenerate()
     if (!sendError) return false
-    return send(sendError.text, true)
+    return send(sendError.text, {
+      retrying: true,
+      selection: sendError.selection,
+    })
   }, [phase, regenerate, regenerateError, send, sendError])
 
   const rate = useCallback(

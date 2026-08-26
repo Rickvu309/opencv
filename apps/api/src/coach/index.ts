@@ -31,6 +31,7 @@ export {
   historyForRegenerate,
   personaSystemPrompt,
   regenerateInstruction,
+  selectionInstruction,
   summarizeWorkspace,
   windowHistory,
 } from "./prompt.js"

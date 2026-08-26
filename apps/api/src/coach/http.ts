@@ -27,6 +27,7 @@ import {
   type CoachSseMessageEndData,
   type CoachSseMessageStartData,
   type CoachFocusDoc,
+  type CoachSelection,
   type CoachStreamPart,
   type CoachTurnUsage,
   type ThreadDetail,
@@ -241,6 +242,7 @@ export function createCoachRoutes({
         mode,
         regenerate: parsed.data.regenerate === true,
         focusDoc,
+        selection: parsed.data.selection,
         heartbeatMs,
         signal: c.req.raw.signal,
       })
@@ -398,6 +400,7 @@ type RunCoachTurnOptions = {
   mode: CoachMode
   regenerate?: boolean
   focusDoc?: CoachFocusDoc
+  selection?: CoachSelection
   heartbeatMs: number
   signal?: AbortSignal
 }
@@ -414,6 +417,7 @@ async function runCoachTurn({
   mode,
   regenerate,
   focusDoc,
+  selection,
   heartbeatMs,
   signal,
 }: RunCoachTurnOptions) {
@@ -442,6 +446,7 @@ async function runCoachTurn({
         mode,
         regenerate,
         focusDoc,
+        selection,
       }),
       aborted.promise,
       () => isDisconnected(stream, signal)
@@ -592,6 +597,7 @@ function sseDataForPart(part: CoachStreamPart): unknown {
         summary: part.summary,
         ok: part.ok,
         ...(part.reversal ? { reversal: part.reversal } : {}),
+        ...(part.detail ? { detail: part.detail } : {}),
         result: part.result,
       }
     default:

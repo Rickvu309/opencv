@@ -96,9 +96,12 @@ export function createOpenRouterCoachRuntime({
           system: assembleSystemPrompt(
             snapshot,
             undefined,
-            input.regenerate
-              ? { regenerateFrom: prepared.priorCoach }
-              : undefined
+            {
+              ...(input.regenerate
+                ? { regenerateFrom: prepared.priorCoach }
+                : {}),
+              ...(input.selection ? { selection: input.selection } : {}),
+            }
           ),
           messages,
           tools,

@@ -1148,6 +1148,36 @@ describe("coach route paper focus", () => {
     })
   })
 
+  it("passes Paper selection into the shared runtime", async () => {
+    const seen: CoachTurnInput[] = []
+    const app = createTestApp(db, {
+      coach: createScriptedCoachRuntime(async function* (input) {
+        seen.push(input)
+        yield { type: "text-delta", text: "I will rewrite that line." }
+        yield {
+          type: "finish",
+          finishReason: "stop",
+          usage: { model: "mock" },
+        }
+      }),
+    })
+    const threadId = await createThread(app, cookieA, "Selection")
+    const res = await app.request(`/api/threads/${threadId}/coach`, {
+      method: "POST",
+      headers: authHeaders(cookieA),
+      body: JSON.stringify({
+        text: "Rewrite selection",
+        selection: { text: "old summary", sectionId: "summary" },
+      }),
+    })
+    expect(res.status).toBe(200)
+    await res.text()
+    expect(seen[0]?.selection).toEqual({
+      text: "old summary",
+      sectionId: "summary",
+    })
+  })
+
   it("rejects an invalid focusDocId before calling the runtime", async () => {
     const app = createTestApp(db, { coach: createDemoCoachRuntime() })
     const threadId = await createThread(app, cookieA, "Bad focus")

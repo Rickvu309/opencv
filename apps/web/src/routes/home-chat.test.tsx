@@ -137,7 +137,7 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
     await sendMessage("Move the intern card to Prep")
     await expectSendSettled("Move the intern card to Prep")
     expect(
-      await screen.findByText("Ran apply.moveCard — Moved 'Backend Intern' to Prep")
+      await screen.findByText("Moved 'Backend Intern' to Prep")
     ).toBeInTheDocument()
     expect(
       screen.getByRole("status", { name: "Command succeeded" })
@@ -156,7 +156,7 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
       await screen.findByRole("button", { name: "Move the intern card to Prep" })
     )
     expect(
-      await screen.findByText("Ran apply.moveCard — Moved 'Backend Intern' to Prep")
+      await screen.findByText("Moved 'Backend Intern' to Prep")
     ).toBeInTheDocument()
     expect(
       screen.getByText(
@@ -166,6 +166,91 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "Undo" })).toBeEnabled()
     })
+  })
+
+  it("renders the three rich receipt types in the Thread", async () => {
+    scriptCoachStream({
+      parts: [
+        { kind: "text", text: "I made those changes." },
+        {
+          kind: "tool",
+          name: "paper_updateContent",
+          summary: "Updated content of PM track CV",
+          ok: true,
+          reversal: {
+            possible: true,
+            description: "Undo by writing the previous content back.",
+          },
+          detail: {
+            type: "paper.updateContent",
+            docKind: "cv",
+            docName: "PM track CV",
+            hunks: [
+              {
+                section: "Summary",
+                sectionId: "summary",
+                lines: [
+                  { kind: "del", text: "Old summary" },
+                  { kind: "add", text: "New summary" },
+                ],
+              },
+            ],
+          },
+        },
+        {
+          kind: "tool",
+          name: "apply_moveCard",
+          summary: "Moved Associate PM intern at Local startup to Prep",
+          ok: true,
+          reversal: {
+            possible: true,
+            description: "Undo by moving the card back.",
+            command: "apply.moveCard",
+            input: { cardId: "c1", stage: "inbox" },
+          },
+          detail: {
+            type: "apply.moveCard",
+            title: "Associate PM intern",
+            company: "Local startup",
+            from: "inbox",
+            to: "prep",
+          },
+        },
+        {
+          kind: "tool",
+          name: "paper_createDoc",
+          summary: "Created CV Untitled CV",
+          ok: true,
+          reversal: {
+            possible: true,
+            description: "Undo by deleting the Paper doc.",
+          },
+          detail: {
+            type: "paper.createDoc",
+            docKind: "cv",
+            name: "Untitled CV",
+            status: "draft",
+          },
+        },
+      ],
+    })
+    renderApp()
+    await expectHomeIdle()
+    await sendMessage("Update my CV, move the card, and start a new CV")
+    await expectSendSettled("Update my CV, move the card, and start a new CV")
+
+    expect(screen.getByText("Updated CV PM track CV")).toBeInTheDocument()
+    expect(screen.getByText("New summary")).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        "Moved Associate PM intern at Local startup from Inbox to Prep"
+      )
+    ).toBeInTheDocument()
+    expect(screen.getByLabelText("Inbox to Prep")).toBeInTheDocument()
+    expect(screen.getByText("Created CV Untitled CV")).toBeInTheDocument()
+    expect(screen.getByText("Draft")).toBeInTheDocument()
+    expect(screen.queryByText(/Ran paper\.|Ran apply\./)).not.toBeInTheDocument()
+    expect(screen.getAllByRole("button", { name: "Undo" })).toHaveLength(3)
   })
 
   it("undoes a reversible receipt and appends a truthful new receipt", async () => {
@@ -198,7 +283,7 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Undo" }))
     expect(
-      await screen.findByText("Ran apply.moveCard — Undid the previous action")
+      await screen.findByText("Undid the previous action")
     ).toBeInTheDocument()
     expect(
       screen.queryByRole("button", { name: "Undo" })
@@ -237,7 +322,7 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Undo" }))
     expect(
-      await screen.findByText("Ran apply.moveCard — Apply card not found")
+      await screen.findByText("Apply card not found")
     ).toBeInTheDocument()
     expect(screen.getByRole("status", { name: "Command failed" })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Undo" })).toBeEnabled()
@@ -262,7 +347,7 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
     await expectHomeIdle()
     await sendMessage("What cards do I have?")
     expect(
-      await screen.findByText("Ran apply.listCards — Listed 2 Apply cards")
+      await screen.findByText("Listed 2 Apply cards")
     ).toBeInTheDocument()
     expect(
       screen.getByText("This read does not change anything.")
@@ -286,7 +371,7 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
     await expectHomeIdle()
     await sendMessage("Move a missing card")
     expect(
-      await screen.findByText("Ran apply.moveCard — Apply card not found")
+      await screen.findByText("Apply card not found")
     ).toBeInTheDocument()
     expect(
       screen.getByRole("status", { name: "Command failed" })
@@ -311,7 +396,7 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
     await sendMessage("Move card 00000000-0000-0000-0000-000000000002 to Prep")
 
     const receipt = await screen.findByRole("status", { name: "Command failed" })
-    expect(receipt).toHaveTextContent("Ran apply.moveCard — That card id isn't valid")
+    expect(receipt).toHaveTextContent("That card id isn't valid")
     expect(receipt).not.toHaveTextContent(/Invalid input for tool|Type validation failed|Invalid UUID/)
     expect(receipt.textContent ?? "").not.toContain("{")
     expect(receipt.textContent ?? "").not.toContain("[")
@@ -423,7 +508,7 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
     await expectHomeIdle()
     await sendMessage("Move the intern card to Prep")
     expect(
-      await screen.findByText("Ran apply.moveCard — Moved 'Backend Intern' to Prep")
+      await screen.findByText("Moved 'Backend Intern' to Prep")
     ).toBeInTheDocument()
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "Send" })).toBeInTheDocument()
@@ -435,7 +520,7 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
       await screen.findByText("Here is another way to look at it.")
     ).toBeInTheDocument()
     expect(
-      screen.getByText("Ran apply.moveCard — Moved 'Backend Intern' to Prep")
+      screen.getByText("Moved 'Backend Intern' to Prep")
     ).toBeInTheDocument()
     expect(
       screen.getByText(

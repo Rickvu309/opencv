@@ -169,6 +169,16 @@ describe("assembleSystemPrompt", () => {
     expect(summary).not.toMatch(/!/)
     expect(assembleSystemPrompt(snapshot)).toContain(summary)
   })
+
+  it("asks the Coach to prefer the User's selection when one is present", () => {
+    const prompt = assembleSystemPrompt(sampleSnapshot, undefined, {
+      selection: { text: "Ran weekly problem interviews", sectionId: "summary" },
+    })
+    expect(prompt).toContain('in section "summary"')
+    expect(prompt).toContain("Ran weekly problem interviews")
+    expect(prompt).toContain("Prefer editing that selection")
+    expect(prompt).not.toMatch(/!/)
+  })
 })
 
 describe("historyForRegenerate", () => {
