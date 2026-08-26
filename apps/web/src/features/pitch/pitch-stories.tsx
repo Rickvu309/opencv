@@ -281,15 +281,12 @@ function StoryFrame({
   onNext: () => void
 }) {
   const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)", false)
-  const [paused, setPaused] = useState(reduceMotion)
+  const [userPaused, setUserPaused] = useState(false)
+  const paused = reduceMotion || userPaused
   const [progress, setProgress] = useState(0)
 
   useEffect(() => {
-    if (reduceMotion) setPaused(true)
-  }, [reduceMotion])
-
-  useEffect(() => {
-    if (paused || reduceMotion) return
+    if (paused) return
     const start = performance.now()
     let frame = 0
     function tick(now: number) {
@@ -300,10 +297,11 @@ function StoryFrame({
     }
     frame = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(frame)
-  }, [paused, reduceMotion, slideDuration, onNext])
+  }, [paused, slideDuration, onNext])
 
   function onTogglePause() {
-    setPaused((p) => !p)
+    if (reduceMotion) return
+    setUserPaused((p) => !p)
   }
   return (
     <div className="relative flex h-full flex-col overflow-hidden rounded-2xl bg-foreground shadow-2xl ring-1 ring-white/10">

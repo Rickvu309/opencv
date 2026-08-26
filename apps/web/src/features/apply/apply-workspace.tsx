@@ -24,7 +24,8 @@ import {
   Star,
 } from "lucide-react"
 
-import { ComingSoon, comingSoonLabel } from "@/components/coming-soon.tsx"
+import { ComingSoon } from "@/components/coming-soon.tsx"
+import { comingSoonLabel } from "@/components/coming-soon-label.ts"
 import { ErrorBanner } from "@/components/error-banner.tsx"
 import { WorkspaceHeader } from "@/components/workspace-header.tsx"
 import { ApplyCalendar } from "@/features/apply/apply-calendar.tsx"

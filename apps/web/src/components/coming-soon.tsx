@@ -11,7 +11,3 @@ export function ComingSoon({ silent = false }: { silent?: boolean }) {
   }
   return <span className="text-muted-foreground"> · Coming soon</span>
 }
-
-export function comingSoonLabel(name: string) {
-  return `${name} — coming soon`
-}
