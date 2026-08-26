@@ -148,6 +148,30 @@ describe("partsFromModelStream", () => {
     })
   })
 
+  it("humanizes a tool-error Zod dump into a short fail sentence", async () => {
+    const parts = await collect([
+      {
+        type: "tool-error",
+        toolCallId: "call_bad",
+        name: "apply_moveCard",
+        error: new Error(
+          'Invalid input for tool apply_moveCard: Type validation failed: Value: {"cardId":"00000000-0000-0000-0000-000000000002"}. Error message: [{"code":"invalid_format","pattern":"/^[0-9a-fA-F]{8}$/"}]'
+        ),
+      },
+      { type: "finish", finishReason: "stop", usage: {} },
+    ])
+    expect(parts[0]).toMatchObject({
+      type: "tool-result",
+      toolCallId: "call_bad",
+      name: "apply_moveCard",
+      summary: "That card id isn't valid",
+      ok: false,
+    })
+    if (parts[0]?.type === "tool-result") {
+      expect(parts[0].summary).not.toMatch(/Invalid input|Type validation|\{/)
+    }
+  })
+
   it("does not attach a reversal when the tool failed", async () => {
     const parts = await collect([
       {

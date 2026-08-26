@@ -14,9 +14,9 @@ export function GenericReceiptLine({ part }: { part: ThreadToolPart }) {
       aria-label={
         part.ok ? "Generic receipt succeeded" : "Generic receipt failed"
       }
-      className="space-y-0.5 text-xs text-muted-foreground"
+      className="min-w-0 max-w-full space-y-0.5 text-xs text-muted-foreground"
     >
-      <p className="flex items-start gap-1.5">
+      <p className="flex min-w-0 items-start gap-1.5">
         <Icon
           className={cn(
             "mt-0.5 size-3 shrink-0",
@@ -24,7 +24,9 @@ export function GenericReceiptLine({ part }: { part: ThreadToolPart }) {
           )}
           aria-hidden
         />
-        <span>{receiptHeadline(part)}</span>
+        <span className="min-w-0 flex-1 break-words [overflow-wrap:anywhere]">
+          {receiptHeadline(part)}
+        </span>
       </p>
       {part.ok && part.reversal?.possible ? (
         <p className="pl-5">Reversible — {part.reversal.description}</p>

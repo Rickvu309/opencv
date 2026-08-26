@@ -2,6 +2,7 @@ import {
   COACH_READ_TOOLS,
   ERROR_CODES,
   errorEnvelope,
+  humanizeCommandFailCopy,
   PAPER_KIND_LABEL,
   type ApplyCard,
   type CommandEnvelope,
@@ -61,7 +62,7 @@ export function summarizeToolResult(
   name: string,
   result: CommandEnvelope
 ): string {
-  if (!result.ok) return result.error.message
+  if (!result.ok) return humanizeCommandFailCopy(result.error.message)
 
   switch (name) {
     case "apply_listCards":

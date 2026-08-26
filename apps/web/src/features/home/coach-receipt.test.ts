@@ -31,6 +31,20 @@ describe("receiptHeadline", () => {
       })
     ).toBe("Ran apply.moveCard — Apply card not found")
   })
+
+  it("rewrites a Zod dump into a short fail sentence", () => {
+    const headline = receiptHeadline({
+      type: "tool",
+      name: "apply_moveCard",
+      summary:
+        'Invalid input for tool apply_moveCard: Type validation failed: Value: {"cardId":"00000000-0000-0000-0000-000000000002"}. Error message: [{"code":"invalid_format","pattern":"/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}$/","message":"Invalid UUID"}]',
+      ok: false,
+    })
+    expect(headline).toBe("Ran apply.moveCard — That card id isn't valid")
+    expect(headline).not.toMatch(
+      /Invalid input|Type validation|Invalid UUID|\{|\/\^/
+    )
+  })
 })
 
 describe("receipt reversal helpers", () => {

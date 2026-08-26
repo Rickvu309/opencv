@@ -294,6 +294,33 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
     expect(screen.queryByText(/Reversible —/)).not.toBeInTheDocument()
   })
 
+  it("humanizes a failed apply.moveCard Zod dump and keeps it in the column", async () => {
+    scriptCoachStream({
+      parts: [
+        {
+          kind: "tool",
+          name: "apply_moveCard",
+          summary:
+            'Invalid input for tool apply_moveCard: Type validation failed: Value: {"cardId":"00000000-0000-0000-0000-000000000002"}. Error message: [{"code":"invalid_format","pattern":"/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}$/","message":"Invalid UUID"}]',
+          ok: false,
+        },
+      ],
+    })
+    renderApp()
+    await expectHomeIdle()
+    await sendMessage("Move card 00000000-0000-0000-0000-000000000002 to Prep")
+
+    const receipt = await screen.findByRole("status", { name: "Command failed" })
+    expect(receipt).toHaveTextContent("Ran apply.moveCard — That card id isn't valid")
+    expect(receipt).not.toHaveTextContent(/Invalid input for tool|Type validation failed|Invalid UUID/)
+    expect(receipt.textContent ?? "").not.toContain("{")
+    expect(receipt.textContent ?? "").not.toContain("[")
+    expect(receipt.textContent).not.toMatch(/\/\^|\\d\{/)
+    expect(receipt.className).toMatch(/min-w-0/)
+    expect(receipt.querySelector("span")?.className).toMatch(/break-words/)
+    expect(screen.queryByText(/Reversible —/)).not.toBeInTheDocument()
+  })
+
   it("renders markdown in coach replies and leaves user bubbles as plain text", async () => {
     scriptCoachStream({
       texts: ["Try this:\n\n- **star** the card\n- open `Prep`"],
