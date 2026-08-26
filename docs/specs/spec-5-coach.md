@@ -16,7 +16,7 @@ The product's differentiator does not exist yet. Home says the Coach can't act �
 5. **The User stays in control.** A Stop button ends a turn; failed sends surface an error with Retry; reversal notes on receipts say how to undo; a daily turn cap bounds cost.
 6. **We can tell if it's good.** Thumbs on coach messages feed a usage table; a manual eval harness (golden scenarios, honesty checks, LLM judge) gates persona changes without burning CI tokens.
 
-**Not in this spec:** the Paper AI panel (stays a stub with honest copy pointing Home; unification is a follow-up), destructive-command confirmation flow, one-click undo, Vietnamese-first Coach / i18n (settled English-first in ADR-0008 / QVE-150), the in-app feedback channel (next spec — thumbs data lands where it will read). Multi-model routing (Free / Light / Max) landed in [QVE-155](https://linear.app/quanvm/issue/QVE-155) / ADR-0009. Regenerating the latest Coach turn landed in [QVE-147](https://linear.app/quanvm/issue/QVE-147).
+**Not in this spec:** one-click undo, Vietnamese-first Coach / i18n (settled English-first in ADR-0008 / QVE-150), the in-app feedback channel (next spec — thumbs data lands where it will read). Multi-model routing (Free / Light / Max) landed in [QVE-155](https://linear.app/quanvm/issue/QVE-155) / ADR-0009. Regenerating the latest Coach turn landed in [QVE-147](https://linear.app/quanvm/issue/QVE-147). Paper AI-panel unification landed in [QVE-146](https://linear.app/quanvm/issue/QVE-146). User-fired destructive confirm landed in [QVE-148](https://linear.app/quanvm/issue/QVE-148); Coach-paused destructive tool calls stay out (temporary `!destructive` filter).
 
 ## User Stories
 
@@ -53,7 +53,7 @@ Eight tickets under one parent: COACH-1 tool surface, COACH-2 data/config ground
 - [ ] The Coach reads workspace state and cites it; a request like "move my starred card to Prep" produces the move plus a truthful receipt — waits on the same key
 - [x] Every Coach action flows through `registry.execute` with a coach actor; the coach-actor test sweep covers the full surface
 - [x] Stop works; aborted turns persist executed-tool receipts with `aborted` status
-- [x] Failed sends show an inline error with Retry; the Home stub reply string is gone (Paper panel stays a stub that points Home — QVE-146)
+- [x] Failed sends show an inline error with Retry; the Home stub reply string is gone. Paper panel unification landed in [QVE-146](https://linear.app/quanvm/issue/QVE-146).
 - [x] Copy and thumbs work on coach messages; ratings land in `coach_usage`
 - [x] Turn cap returns a plain-language 429 at the limit; usage rows record model/tokens/cost/latency per turn
 - [x] Missing API key degrades to 503 on the coach route only; `/health` untouched on staging and production (probed 2026-08-26); CI green including migration gate
@@ -77,7 +77,7 @@ so CI burns zero tokens.
 
 Work this spec deliberately deferred, now ticketed:
 
-- [QVE-146](https://linear.app/quanvm/issue/QVE-146) — Paper AI panel unification
+- [QVE-146](https://linear.app/quanvm/issue/QVE-146) — Paper AI panel unification (landed)
 - [QVE-147](https://linear.app/quanvm/issue/QVE-147) — Coach message Regenerate
 - [QVE-148](https://linear.app/quanvm/issue/QVE-148) — Destructive Command confirm flow (User confirm live; Coach stays excluded by the temporary `!destructive` filter)
 - [QVE-149](https://linear.app/quanvm/issue/QVE-149) — One-click reversal from Coach receipts

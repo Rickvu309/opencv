@@ -4,6 +4,7 @@ import {
   COACH_WORKSPACE_LIST_CAP,
   PAPER_KIND_LABEL,
   type ApplyCard,
+  type CoachFocusDoc,
   type PaperDoc,
   type ThreadMessage,
   type UserProfile,
@@ -26,6 +27,7 @@ export type WorkspaceSnapshot = {
   profileName: string | null
   paper: WorkspacePaperItem[]
   apply: WorkspaceApplyItem[]
+  focusDoc?: CoachFocusDoc
 }
 
 export type WindowedMessage = {
@@ -92,7 +94,7 @@ export function summarizeWorkspace(
     listCap
   )
 
-  return [
+  const lines = [
     "Workspace snapshot (counts and a short list; use tools for detail):",
     `Profile: ${snapshot.profileName ?? "unknown"}`,
     `Paper: ${countLabel(snapshot.paper.length, "document")}`,
@@ -101,7 +103,16 @@ export function summarizeWorkspace(
       snapshot.apply.length > 0 ? ` (${starred} starred)` : ""
     }`,
     ...applyLines,
-  ].join("\n")
+  ]
+
+  if (snapshot.focusDoc) {
+    const doc = snapshot.focusDoc
+    lines.push(
+      `Open Paper document: ${doc.name} · ${PAPER_KIND_LABEL[doc.kind]} · ${STATUS_LABEL[doc.status]} (id: ${doc.id}). Read it with paper_getDoc before advising on its content. To change it, run a Paper Command — never claim a silent rewrite.`
+    )
+  }
+
+  return lines.join("\n")
 }
 
 export function historyForRegenerate(messages: readonly ThreadMessage[]): {
@@ -195,6 +206,7 @@ export function snapshotFromLists(input: {
   profile?: UserProfile | null
   paper: PaperDoc[]
   apply: ApplyCard[]
+  focusDoc?: CoachFocusDoc
 }): WorkspaceSnapshot {
   return {
     profileName: input.profile?.name ?? null,
@@ -209,6 +221,7 @@ export function snapshotFromLists(input: {
       stage: card.stage,
       starred: card.starred,
     })),
+    ...(input.focusDoc ? { focusDoc: input.focusDoc } : {}),
   }
 }
 

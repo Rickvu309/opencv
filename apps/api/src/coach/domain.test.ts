@@ -133,6 +133,21 @@ describe("coach domain exports", () => {
     expect(coachTurnRequestSchema.safeParse({ mode: "free" }).success).toBe(
       false
     )
+    expect(
+      coachTurnRequestSchema.parse({
+        text: "Hello",
+        focusDocId: "11111111-1111-7111-8111-111111111111",
+      })
+    ).toEqual({
+      text: "Hello",
+      focusDocId: "11111111-1111-7111-8111-111111111111",
+    })
+    expect(
+      coachTurnRequestSchema.safeParse({
+        text: "Hello",
+        focusDocId: "not-a-uuid",
+      }).success
+    ).toBe(false)
   })
 
   it("accepts only up or down on the feedback payload", () => {

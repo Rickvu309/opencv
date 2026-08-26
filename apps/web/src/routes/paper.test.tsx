@@ -9,8 +9,13 @@ import {
 
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
-import { STUB_PAPER_COACH_REPLY } from "@/features/paper/paper-ai-chat.tsx"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
+import {
+  DEFAULT_COACH_STREAM_REPLY,
+  getLastCoachRequest,
+  getMockThreads,
+  scriptCoachStream,
+} from "@/test/threads-api-mock.ts"
 import { renderApp } from "@/test/render-app.tsx"
 
 function renderPaper() {
@@ -288,32 +293,125 @@ describe("Paper editors", () => {
     ).toBeInTheDocument()
   })
 
-  it("keeps the AI panel as an honest stub Coach", async () => {
+  it("streams the shared Coach with a receipt, stop, retry, thumbs, and copy", async () => {
+    scriptCoachStream({
+      parts: [
+        { kind: "text", text: "I read PM track CV." },
+        {
+          kind: "tool",
+          name: "paper_updateContent",
+          summary: "Updated PM track CV",
+          ok: true,
+          reversal: {
+            possible: true,
+            description: "Undo by editing the document again.",
+          },
+        },
+      ],
+    })
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    vi.stubGlobal("navigator", {
+      ...navigator,
+      clipboard: { writeText },
+    })
     renderPaper()
     await expectPaperDrive()
     await openDoc("PM track CV")
 
     fireEvent.click(screen.getByRole("button", { name: /AI assist/ }))
     const panel = await screen.findByRole("dialog", { name: "AI assist" })
-    expect(panel).toHaveTextContent(/can't edit it yet/i)
-    expect(panel).toHaveTextContent(/haven't run any Commands/i)
+    expect(panel).toHaveTextContent(/same Coach as Home/i)
+    expect(panel).not.toHaveTextContent(/can't edit it yet/i)
+    expect(panel).not.toHaveTextContent(/haven't edited this document/i)
+    expect(panel).not.toHaveTextContent(/lives on Home/i)
+    expect(
+      within(panel).queryByRole("radiogroup", { name: "Coach mode" })
+    ).not.toBeInTheDocument()
 
     const composer = within(panel).getByRole("textbox", {
       name: "Message AI assist",
     })
-    fireEvent.change(composer, { target: { value: "Rewrite my summary" } })
+    fireEvent.change(composer, { target: { value: "Sharpen the checkout bullet" } })
     fireEvent.click(within(panel).getByRole("button", { name: "Send" }))
 
-    expect(await within(panel).findByText("Working…")).toBeInTheDocument()
     expect(
-      await within(panel).findByText(
-        STUB_PAPER_COACH_REPLY,
-        {},
-        { timeout: 2000 }
+      await within(panel).findByText("I read PM track CV.")
+    ).toBeInTheDocument()
+    expect(
+      within(panel).getByText(
+        "Ran paper.updateContent — Updated PM track CV"
       )
     ).toBeInTheDocument()
-    expect(panel).not.toHaveTextContent(
-      /I (have|'ve|just) (edited|updated|rewrote)/i
+    expect(
+      within(panel).getByRole("status", { name: "Command succeeded" })
+    ).toBeInTheDocument()
+    expect(getLastCoachRequest()?.focusDocId).toBe(
+      "11111111-1111-7111-8111-111111111111"
     )
+    expect(getLastCoachRequest()?.text).toBe("Sharpen the checkout bullet")
+    expect(
+      getMockThreads().some((thread) => thread.title === "PM track CV")
+    ).toBe(true)
+
+    fireEvent.click(within(panel).getByRole("button", { name: "Copy" }))
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalled()
+    })
+    fireEvent.click(within(panel).getByRole("button", { name: "Good response" }))
+    await waitFor(() => {
+      expect(
+        within(panel).getByRole("button", { name: "Good response" })
+      ).toHaveAttribute("aria-pressed", "true")
+    })
+  })
+
+  it("stops a Paper Coach turn and retries a failed send", async () => {
+    const stream = scriptCoachStream({
+      gated: true,
+      texts: ["Partial from Paper", " should not appear"],
+    })
+    renderPaper()
+    await expectPaperDrive()
+    await openDoc("PM track CV")
+
+    fireEvent.click(screen.getByRole("button", { name: /AI assist/ }))
+    const panel = await screen.findByRole("dialog", { name: "AI assist" })
+    fireEvent.change(within(panel).getByRole("textbox", { name: "Message AI assist" }), {
+      target: { value: "Stop me" },
+    })
+    fireEvent.click(within(panel).getByRole("button", { name: "Send" }))
+    stream.release(2)
+    expect(await within(panel).findByText("Partial from Paper")).toBeInTheDocument()
+
+    fireEvent.click(within(panel).getByRole("button", { name: "Stop" }))
+    await waitFor(() => {
+      expect(within(panel).getByRole("button", { name: "Send" })).toBeInTheDocument()
+    })
+    expect(within(panel).getByText("Partial from Paper")).toBeInTheDocument()
+    expect(within(panel).queryByText(/should not appear/)).not.toBeInTheDocument()
+
+    scriptCoachStream({
+      httpError: {
+        status: 503,
+        code: "COACH_UNAVAILABLE",
+        message: "The Coach is unavailable right now",
+      },
+    })
+    fireEvent.change(within(panel).getByRole("textbox", { name: "Message AI assist" }), {
+      target: { value: "Are you there?" },
+    })
+    fireEvent.click(within(panel).getByRole("button", { name: "Send" }))
+    expect(await within(panel).findByRole("alert")).toHaveTextContent(
+      "The Coach is unavailable right now. Try again in a moment."
+    )
+
+    scriptCoachStream({ texts: [DEFAULT_COACH_STREAM_REPLY] })
+    fireEvent.click(within(panel).getByRole("button", { name: "Retry" }))
+    expect(
+      await within(panel).findByText(DEFAULT_COACH_STREAM_REPLY)
+    ).toBeInTheDocument()
+    await waitFor(() => {
+      expect(within(panel).queryByRole("alert")).not.toBeInTheDocument()
+    })
   })
 })
