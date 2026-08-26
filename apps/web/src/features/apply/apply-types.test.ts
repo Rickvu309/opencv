@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import {
   companyShort,
   formatTrackDate,
+  localIsoDate,
   STAGES,
   trackKindLabel,
 } from "@/features/apply/apply-types.ts"
@@ -10,6 +11,10 @@ import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 import { sampleApplyCards } from "@/test/apply-fixtures.ts"
 
 describe("Apply helpers", () => {
+  it("formats local calendar dates from the browser clock", () => {
+    expect(localIsoDate(new Date(2026, 7, 26, 12))).toBe("2026-08-26")
+  })
+
   it("formats Track dates and kinds", () => {
     expect(formatTrackDate("2026-08-26")).toBe("Aug 26")
     expect(trackKindLabel("interview")).toBe("Interview")

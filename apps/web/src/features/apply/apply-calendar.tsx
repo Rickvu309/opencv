@@ -13,14 +13,13 @@ import {
   setCardDragData,
 } from "@/features/apply/apply-dnd.ts"
 import {
+  localIsoDate,
   trackKindLabel,
   type ApplyCard,
   type TrackKind,
 } from "@/features/apply/apply-types.ts"
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const
-
-const PROTOTYPE_TODAY = "2026-08-24"
 
 function pad(n: number) {
   return String(n).padStart(2, "0")
@@ -59,11 +58,12 @@ export function ApplyCalendar({
   onMoveDate,
   dragMovedRef,
 }: Props) {
-  const today = new Date(2026, 7, 24)
+  const today = new Date()
+  const todayIso = localIsoDate(today)
   const [year, setYear] = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth())
   const [view, setView] = useState<"month" | "week">("month")
-  const [focusDate, setFocusDate] = useState("2026-08-26")
+  const [focusDate, setFocusDate] = useState(todayIso)
   const [dragOverDate, setDragOverDate] = useState<string | null>(null)
 
   const cardsByDate = useMemo(() => {
@@ -240,7 +240,7 @@ export function ApplyCalendar({
           {cells.map((cell) => {
             const dayCards = cardsByDate.get(cell.date) ?? []
             const isFocused = cell.date === focusDate
-            const isToday = cell.date === PROTOTYPE_TODAY
+            const isToday = cell.date === todayIso
             const isDropTarget = dragOverDate === cell.date
             const visible = dayCards.slice(0, view === "week" ? 8 : 3)
             const overflow = dayCards.length - visible.length
@@ -249,12 +249,13 @@ export function ApplyCalendar({
               <div
                 key={cell.date}
                 data-track-date={cell.date}
+                data-today={isToday ? "true" : undefined}
                 className={cn(
                   "flex min-h-24 flex-col border-r border-b border-border p-1.5 last:border-r-0 transition-colors",
                   !cell.inMonth && "bg-muted/20 text-muted-foreground",
                   cell.inMonth && "bg-background",
                   isFocused && "bg-muted/40",
-                  isToday && !isFocused && "ring-1 ring-inset ring-foreground/10",
+                  isToday && "ring-1 ring-inset ring-foreground/10",
                   isDropTarget && "bg-muted/60 ring-2 ring-inset ring-ring/30"
                 )}
                 onDragOver={(e) => {
@@ -274,8 +275,14 @@ export function ApplyCalendar({
                 <Button
                   type="button"
                   variant="ghost"
+                  aria-current={isToday ? "date" : undefined}
                   onClick={() => setFocusDate(cell.date)}
-                  className="mb-1 h-auto w-full justify-start rounded px-1 py-0 text-left text-xs tabular-nums text-muted-foreground hover:bg-transparent hover:text-foreground"
+                  className={cn(
+                    "mb-1 h-auto w-full justify-start rounded px-1 py-0 text-left text-xs tabular-nums hover:bg-transparent hover:text-foreground",
+                    isToday
+                      ? "font-semibold text-foreground"
+                      : "text-muted-foreground"
+                  )}
                 >
                   {cell.day}
                 </Button>

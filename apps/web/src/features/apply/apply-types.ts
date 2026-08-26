@@ -76,6 +76,15 @@ export function formatApplyUpdated(iso: string, now = Date.now()): string {
   })}`
 }
 
+function pad(n: number) {
+  return String(n).padStart(2, "0")
+}
+
+/** Browser-local calendar date, same clock Home's greeting uses. */
+export function localIsoDate(now = new Date()) {
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+}
+
 export function formatTrackDate(iso: string) {
   const d = new Date(`${iso}T12:00:00`)
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" })
