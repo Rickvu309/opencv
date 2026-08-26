@@ -397,6 +397,7 @@ export function PaperEditor({
                 <PaperEditorToolbar
                   variant="cv"
                   className="sticky top-0 z-10 mb-4 w-full backdrop-blur-sm supports-[backdrop-filter]:bg-background/90"
+                  docId={doc.id}
                   contextLabel={doc.name}
                   cvTemplateId={cvData.templateId}
                   onCvTemplateChange={handleTemplateChange}
@@ -423,6 +424,7 @@ export function PaperEditor({
                 <PaperEditorToolbar
                   variant="proof"
                   className="mb-5 w-full"
+                  docId={doc.id}
                   contextLabel={doc.name}
                   proofViewMode={proofData.viewMode}
                   onProofViewModeChange={(mode) =>
@@ -435,6 +437,7 @@ export function PaperEditor({
               <PaperEditorToolbar
                 variant={isLetter ? "letter" : "full"}
                 className="mb-5 w-full"
+                docId={doc.id}
                 contextLabel={doc.name}
                 onLetterInsert={isLetter ? handleLetterInsert : undefined}
                 letterWordCount={isLetter ? letterWords : undefined}

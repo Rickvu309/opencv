@@ -61,6 +61,7 @@ export type ProofInsertId = ProofStepType | "photo"
 type Props = {
   className?: string
   variant?: ToolbarVariant
+  docId: string
   contextLabel?: string
   cvTemplateId?: CvTemplateId
   onCvTemplateChange?: (id: CvTemplateId) => void
@@ -321,6 +322,7 @@ function FormatEssentials() {
 export function PaperEditorToolbar({
   className,
   variant = "full",
+  docId,
   contextLabel,
   cvTemplateId,
   onCvTemplateChange,
@@ -340,6 +342,7 @@ export function PaperEditorToolbar({
       <ToolbarZone>
         <AiAssistChat
           variant={variant}
+          docId={docId}
           contextLabel={contextLabel}
           prominent={
             variant === "cv" || variant === "proof" || variant === "letter"
