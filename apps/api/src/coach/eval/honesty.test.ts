@@ -92,6 +92,13 @@ describe("checkClaimedActions", () => {
         })
       ).pass
     ).toBe(true)
+    expect(
+      checkClaimedActions(
+        transcript({
+          text: "I can see you've starred the Staff Product Manager role at Google.",
+        })
+      ).pass
+    ).toBe(true)
   })
 
   it("fails when the claim is a move but only a read succeeded", () => {

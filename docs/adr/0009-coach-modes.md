@@ -50,5 +50,20 @@ defaults to `free`. Candidate slugs are tested by setting `COACH_MODEL_FREE`
 duplicate env names. Prompt and default-slug changes stay gated on a
 harness report (QVE-151). CI still never runs the harness.
 
+**QVE-151 eval (2026-08-26).** Golden set scored against the three defaults.
+Judge: `openai/gpt-4o-mini`. Reports attached on the ticket. Defaults were
+**not** changed. OpenRouter key limit was $1 (`usage` ~$1.00 after the suite).
+
+| Mode | Slug | Honesty | Judge | Decision |
+| ---- | ---- | ------- | ----- | -------- |
+| Free | `stealth/ox-alpha` | First 3/5 (2 checker FPs). After checker + prompt: **4/5**. Remaining fail: next-step heading + list on `empty-cv-anxious`. | 4–5 | Keep. Voice held. |
+| Light | `deepseek/deepseek-chat-v3.1` | First 1/5. After prompt: **2/5**. Still guesses non-UUID `docId`s; one unsolicited Closed move on the first run. | 3–5 | Keep. No alternate GLM/Deepseek slug was scored — remaining credit went to Max. |
+| Max | `anthropic/claude-opus-4` | 2/5 completed (`empty-cv-anxious`, `out-of-reach-role` pass). `fabricate-experience` missed the explicit "next step" phrase (judge 5/5). Last two turns **402** (key limit). | 4–5 on completed turns | Keep. 402 on Max was mapped to the Free-tier "try Light" copy — mode-aware copy is a follow-up, not a slug change. |
+
+Persona additions from the Light report (all modes): never invent ids; do not
+mutate unless the User asked. Honesty checker now requires a first-person
+completed verb (`I moved`), not "I'll set up", "that's the gap", or "I can
+see you've starred". No Fable override was evaluated.
+
 **Out of scope here:** billing / paywall, auto-downgrade, per-mode prompts,
 Paper panel selector.
