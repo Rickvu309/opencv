@@ -6,6 +6,7 @@ import { FileText, Search } from "lucide-react"
 import { TYPE_LABEL, type PaperDoc } from "./paper-data.ts"
 
 type Props = {
+  id?: string
   docs: PaperDoc[]
   activeId: string
   onSelect: (id: string) => void
@@ -13,13 +14,18 @@ type Props = {
 }
 
 export function PaperEditorSidebar({
+  id,
   docs,
   activeId,
   onSelect,
   onBack,
 }: Props) {
   return (
-    <aside className="flex w-60 shrink-0 flex-col border-r border-border bg-background">
+    <aside
+      id={id}
+      aria-label="Documents"
+      className="flex w-60 shrink-0 flex-col border-r border-border bg-background"
+    >
       <div className="border-b border-border px-4 py-3">
         <Button
           type="button"

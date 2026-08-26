@@ -35,12 +35,14 @@ function messageCoach(container: HTMLElement) {
 
 beforeEach(() => {
   sessionStorage.clear()
+  localStorage.clear()
   vi.stubGlobal("scrollTo", vi.fn())
 })
 
 afterEach(() => {
   cleanup()
   sessionStorage.clear()
+  localStorage.clear()
   vi.unstubAllGlobals()
 })
 
@@ -746,5 +748,114 @@ describe("Paper editors", () => {
       ).toHaveTextContent("Coach version of the summary")
     })
     expect(within(panel).queryByRole("alert")).not.toBeInTheDocument()
+  })
+})
+
+describe("Paper documents panel", () => {
+  it("hides and shows the sidebar so the canvas can use full width", async () => {
+    renderPaper()
+    await expectPaperDrive()
+    const editor = await openDoc("PM track CV")
+
+    const header = editor.querySelector("header")
+    expect(header).not.toBeNull()
+    const toggle = within(header as HTMLElement).getByRole("button", {
+      name: "Documents",
+    })
+    expect(toggle).toHaveAttribute("aria-expanded", "true")
+    expect(toggle).toHaveAttribute("aria-controls", "paper-docs-panel")
+    expect(toggle.textContent?.trim()).toBe("")
+
+    const sidebar = screen.getByRole("complementary", { name: "Documents" })
+    expect(sidebar).toHaveAttribute("id", "paper-docs-panel")
+    expect(sidebar).toHaveClass("w-60")
+    expect(editor.children).toHaveLength(2)
+
+    const docRow = within(sidebar).getByRole("button", { name: /PM track CV/ })
+    expect(docRow).toHaveClass("justify-start")
+    expect(docRow).toHaveClass("text-left")
+    expect(docRow).not.toHaveClass("justify-center")
+
+    fireEvent.click(toggle)
+    expect(toggle).toHaveAttribute("aria-expanded", "false")
+    expect(
+      screen.queryByRole("complementary", { name: "Documents" })
+    ).not.toBeInTheDocument()
+    expect(editor.querySelector(".w-60")).toBeNull()
+    expect(editor.children).toHaveLength(1)
+    expect(editor.firstElementChild).toHaveClass("flex-1")
+    expect(localStorage.getItem("openpath:paper:docs-panel")).toBe("collapsed")
+
+    fireEvent.click(toggle)
+    expect(toggle).toHaveAttribute("aria-expanded", "true")
+    expect(
+      screen.getByRole("complementary", { name: "Documents" })
+    ).toBeInTheDocument()
+    expect(editor.children).toHaveLength(2)
+    expect(localStorage.getItem("openpath:paper:docs-panel")).toBe("expanded")
+  })
+
+  it("restores a saved collapsed preference after remount", async () => {
+    localStorage.setItem("openpath:paper:docs-panel", "collapsed")
+    const first = renderPaper()
+    await expectPaperDrive()
+    const firstEditor = await openDoc("PM track CV")
+
+    expect(
+      screen.queryByRole("complementary", { name: "Documents" })
+    ).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Documents" })).toHaveAttribute(
+      "aria-expanded",
+      "false"
+    )
+    expect(firstEditor.children).toHaveLength(1)
+    expect(firstEditor.firstElementChild).toHaveClass("flex-1")
+
+    first.unmount()
+    cleanup()
+
+    renderPaper()
+    await expectPaperDrive()
+    const secondEditor = await openDoc("PM track CV")
+    expect(
+      screen.queryByRole("complementary", { name: "Documents" })
+    ).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Documents" })).toHaveAttribute(
+      "aria-expanded",
+      "false"
+    )
+    expect(secondEditor.children).toHaveLength(1)
+    expect(localStorage.getItem("openpath:paper:docs-panel")).toBe("collapsed")
+  })
+
+  it("defaults expanded on first visit and ignores invalid storage", async () => {
+    localStorage.setItem("openpath:paper:docs-panel", "hidden")
+    renderPaper()
+    await expectPaperDrive()
+    await openDoc("PM track CV")
+
+    expect(
+      screen.getByRole("complementary", { name: "Documents" })
+    ).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Documents" })).toHaveAttribute(
+      "aria-expanded",
+      "true"
+    )
+  })
+
+  it("leaves the drive view without a documents panel or toggle", async () => {
+    renderPaper()
+    await expectPaperDrive()
+
+    expect(
+      screen.queryByRole("button", { name: "Documents" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("complementary", { name: "Documents" })
+    ).not.toBeInTheDocument()
+    expect(screen.getByRole("region", { name: "Paper" })).toBeInTheDocument()
+    expect(
+      screen.getByRole("textbox", { name: "Search documents" })
+    ).toBeInTheDocument()
   })
 })
