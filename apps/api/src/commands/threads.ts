@@ -13,6 +13,7 @@ import { and, eq } from "drizzle-orm"
 
 import { threadMessages, threads } from "../db/schema.js"
 import { createId } from "../id.js"
+import { getOwnedPaperDoc } from "../paper/queries.js"
 import {
   getOwnedThread,
   getThreadDetail,
@@ -39,11 +40,18 @@ export const createThreadCommand = defineCommand({
     return { threadId: output.id }
   },
   async handler(ctx, input): Promise<ThreadListItem> {
+    let focusDocId: string | null = null
+    if (input.focusDocId) {
+      await getOwnedPaperDoc(ctx.db, ctx.actor.userId, input.focusDocId)
+      focusDocId = input.focusDocId
+    }
+
     const now = new Date()
     const row = {
       id: createId(),
       userId: ctx.actor.userId,
       title: input.title ?? DEFAULT_THREAD_TITLE,
+      focusDocId,
       createdAt: now,
       updatedAt: now,
     }

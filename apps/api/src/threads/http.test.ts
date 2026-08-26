@@ -1,5 +1,6 @@
 import {
   ERROR_CODES,
+  PAPER_COMMANDS,
   THREAD_COMMANDS,
   type ThreadDetail,
   type ThreadListItem,
@@ -107,6 +108,7 @@ describe("threads API", () => {
       data: expect.objectContaining({
         id: expect.stringMatching(/^[0-9a-f-]{36}$/),
         title: "CV vs internship first",
+        focusDocId: null,
       }),
     })
     const threadId = created.data.id
@@ -243,5 +245,163 @@ describe("threads API", () => {
     expect(bad.status).toBe(400)
     const body = await json<{ ok: false; error: { code: string } }>(bad)
     expect(body.error.code).toBe(ERROR_CODES.VALIDATION_ERROR)
+  })
+
+  it("persists an owned focusDocId on create and rejects a foreign doc", async () => {
+    const docRes = await postCommand(app, cookieA, PAPER_COMMANDS.createDoc, {
+      kind: "cv",
+      name: "PM track CV",
+    })
+    expect(docRes.status).toBe(200)
+    const doc = await json<{ ok: true; data: { id: string } }>(docRes)
+    const foreignRes = await postCommand(
+      app,
+      cookieB,
+      PAPER_COMMANDS.createDoc,
+      { kind: "cv", name: "Lan CV" }
+    )
+    expect(foreignRes.status).toBe(200)
+    const foreign = await json<{ ok: true; data: { id: string } }>(foreignRes)
+
+    const createdRes = await postCommand(app, cookieA, THREAD_COMMANDS.create, {
+      title: "PM track CV",
+      focusDocId: doc.data.id,
+    })
+    expect(createdRes.status).toBe(200)
+    const created = await json<{ ok: true; data: ThreadListItem }>(createdRes)
+    expect(created.data.focusDocId).toBe(doc.data.id)
+
+    const detailRes = await app.request(`/api/threads/${created.data.id}`, {
+      headers: authHeaders(cookieA),
+    })
+    expect(detailRes.status).toBe(200)
+    const detail = await json<{ ok: true; data: ThreadDetail }>(detailRes)
+    expect(detail.data.focusDocId).toBe(doc.data.id)
+
+    const listRes = await app.request("/api/threads", {
+      headers: authHeaders(cookieA),
+    })
+    const list = await json<{ ok: true; data: ThreadListItem[] }>(listRes)
+    expect(
+      list.data.find((thread) => thread.id === created.data.id)?.focusDocId
+    ).toBe(doc.data.id)
+
+    const foreignCreate = await postCommand(
+      app,
+      cookieA,
+      THREAD_COMMANDS.create,
+      { title: "Stolen focus", focusDocId: foreign.data.id }
+    )
+    expect(foreignCreate.status).toBe(403)
+    await expect(foreignCreate.json()).resolves.toEqual({
+      ok: false,
+      error: {
+        code: ERROR_CODES.FORBIDDEN,
+        message: "You cannot access this Paper doc",
+      },
+    })
+
+    const missingCreate = await postCommand(
+      app,
+      cookieA,
+      THREAD_COMMANDS.create,
+      {
+        title: "Missing focus",
+        focusDocId: "11111111-1111-4111-8111-111111111111",
+      }
+    )
+    expect(missingCreate.status).toBe(404)
+  })
+
+  it("returns the latest Thread for GET /api/threads?focusDocId", async () => {
+    const docRes = await postCommand(app, cookieA, PAPER_COMMANDS.createDoc, {
+      kind: "cv",
+      name: "Focus lookup CV",
+    })
+    const doc = await json<{ ok: true; data: { id: string } }>(docRes)
+
+    const emptyRes = await app.request(
+      `/api/threads?focusDocId=${doc.data.id}`,
+      { headers: authHeaders(cookieA) }
+    )
+    expect(emptyRes.status).toBe(200)
+    await expect(emptyRes.json()).resolves.toEqual({ ok: true, data: null })
+
+    const firstRes = await postCommand(app, cookieA, THREAD_COMMANDS.create, {
+      title: "Older focus",
+      focusDocId: doc.data.id,
+    })
+    const first = await json<{ ok: true; data: ThreadListItem }>(firstRes)
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    const secondRes = await postCommand(app, cookieA, THREAD_COMMANDS.create, {
+      title: "Newer focus",
+      focusDocId: doc.data.id,
+    })
+    const second = await json<{ ok: true; data: ThreadListItem }>(secondRes)
+
+    const foundRes = await app.request(
+      `/api/threads?focusDocId=${doc.data.id}`,
+      { headers: authHeaders(cookieA) }
+    )
+    expect(foundRes.status).toBe(200)
+    const found = await json<{ ok: true; data: ThreadListItem | null }>(
+      foundRes
+    )
+    expect(found.data).toEqual(
+      expect.objectContaining({
+        id: second.data.id,
+        title: "Newer focus",
+        focusDocId: doc.data.id,
+      })
+    )
+    expect(found.data?.id).not.toBe(first.data.id)
+
+    const otherUser = await app.request(
+      `/api/threads?focusDocId=${doc.data.id}`,
+      { headers: authHeaders(cookieB) }
+    )
+    await expect(otherUser.json()).resolves.toEqual({ ok: true, data: null })
+
+    const invalid = await app.request("/api/threads?focusDocId=not-a-uuid", {
+      headers: authHeaders(cookieA),
+    })
+    expect(invalid.status).toBe(400)
+    await expect(invalid.json()).resolves.toEqual({
+      ok: false,
+      error: {
+        code: ERROR_CODES.VALIDATION_ERROR,
+        message: "Invalid focusDocId",
+      },
+    })
+  })
+
+  it("clears focusDocId when the Paper doc is deleted", async () => {
+    const docRes = await postCommand(app, cookieA, PAPER_COMMANDS.createDoc, {
+      kind: "cv",
+      name: "Soon gone",
+    })
+    const doc = await json<{ ok: true; data: { id: string } }>(docRes)
+    const createdRes = await postCommand(app, cookieA, THREAD_COMMANDS.create, {
+      title: "Grounded then cleared",
+      focusDocId: doc.data.id,
+    })
+    const created = await json<{ ok: true; data: ThreadListItem }>(createdRes)
+
+    const deleted = await postCommand(app, cookieA, PAPER_COMMANDS.deleteDoc, {
+      docId: doc.data.id,
+    })
+    expect(deleted.status).toBe(200)
+
+    const detailRes = await app.request(`/api/threads/${created.data.id}`, {
+      headers: authHeaders(cookieA),
+    })
+    const detail = await json<{ ok: true; data: ThreadDetail }>(detailRes)
+    expect(detail.data.focusDocId).toBeNull()
+
+    const lookup = await app.request(
+      `/api/threads?focusDocId=${doc.data.id}`,
+      { headers: authHeaders(cookieA) }
+    )
+    await expect(lookup.json()).resolves.toEqual({ ok: true, data: null })
   })
 })

@@ -105,6 +105,40 @@ describe("committed migrations", () => {
         order by column_name
       `)
       expect(usageColumns.rows.map((row) => row.column_name)).toContain("mode")
+
+      const threadColumns = await db.execute<{ column_name: string }>(sql`
+        select column_name
+        from information_schema.columns
+        where table_schema = 'openpath_app'
+          and table_name = 'threads'
+        order by column_name
+      `)
+      expect(threadColumns.rows.map((row) => row.column_name)).toContain(
+        "focus_doc_id"
+      )
+
+      const threadIndexes = await db.execute<{ indexname: string }>(sql`
+        select indexname
+        from pg_indexes
+        where schemaname = 'openpath_app'
+          and tablename = 'threads'
+        order by indexname
+      `)
+      expect(threadIndexes.rows.map((row) => row.indexname)).toContain(
+        "threads_user_id_focus_doc_id_idx"
+      )
+
+      const focusFk = await db.execute<{ delete_rule: string }>(sql`
+        select rc.delete_rule
+        from information_schema.referential_constraints rc
+        join information_schema.table_constraints tc
+          on tc.constraint_name = rc.constraint_name
+         and tc.constraint_schema = rc.constraint_schema
+        where tc.table_schema = 'openpath_app'
+          and tc.table_name = 'threads'
+          and rc.constraint_name = 'threads_focus_doc_id_paper_docs_id_fk'
+      `)
+      expect(focusFk.rows).toEqual([{ delete_rule: "SET NULL" }])
     } finally {
       await client.close()
     }

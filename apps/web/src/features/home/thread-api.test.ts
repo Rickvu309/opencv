@@ -11,6 +11,7 @@ import {
   createThread,
   deleteThread,
   getThread,
+  getThreadByFocusDoc,
   listThreads,
   postThreadMessage,
   rateCoachMessage,
@@ -37,6 +38,7 @@ describe("thread API client", () => {
         title: "Plan the week",
         createdAt: "2026-08-25T00:00:00.000Z",
         updatedAt: "2026-08-25T00:00:00.000Z",
+        focusDocId: null,
       },
     ]
     const fetchMock = vi.fn().mockResolvedValue(envelope(threads))
@@ -56,6 +58,7 @@ describe("thread API client", () => {
       title: "Plan the week",
       createdAt: "2026-08-25T00:00:00.000Z",
       updatedAt: "2026-08-25T00:00:00.000Z",
+      focusDocId: null,
       messages: [
         {
           id: "m1",
@@ -80,6 +83,7 @@ describe("thread API client", () => {
       title: "Help me plan the week",
       createdAt: "2026-08-25T00:00:00.000Z",
       updatedAt: "2026-08-25T00:00:00.000Z",
+      focusDocId: null,
     }
     const fetchMock = vi.fn().mockResolvedValue(envelope(created))
     vi.stubGlobal("fetch", fetchMock)
@@ -94,6 +98,54 @@ describe("thread API client", () => {
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
     expect(init.method).toBe("POST")
     expect(init.body).toBe(JSON.stringify({ title: "Help me plan the week" }))
+  })
+
+  it("creates a Paper-grounded Thread with focusDocId", async () => {
+    const focusDocId = "11111111-1111-7111-8111-111111111111"
+    const created: ThreadListItem = {
+      id: "11111111-1111-4111-8111-111111111111",
+      title: "PM track CV",
+      createdAt: "2026-08-25T00:00:00.000Z",
+      updatedAt: "2026-08-25T00:00:00.000Z",
+      focusDocId,
+    }
+    const fetchMock = vi.fn().mockResolvedValue(envelope(created))
+    vi.stubGlobal("fetch", fetchMock)
+
+    await expect(
+      createThread({ title: "PM track CV", focusDocId })
+    ).resolves.toEqual(created)
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(init.body).toBe(
+      JSON.stringify({ title: "PM track CV", focusDocId })
+    )
+  })
+
+  it("reads the latest Thread for a focusDocId", async () => {
+    const focusDocId = "11111111-1111-7111-8111-111111111111"
+    const thread: ThreadListItem = {
+      id: "11111111-1111-4111-8111-111111111111",
+      title: "PM track CV",
+      createdAt: "2026-08-25T00:00:00.000Z",
+      updatedAt: "2026-08-25T00:00:00.000Z",
+      focusDocId,
+    }
+    const fetchMock = vi.fn().mockResolvedValue(envelope(thread))
+    vi.stubGlobal("fetch", fetchMock)
+
+    await expect(getThreadByFocusDoc(focusDocId)).resolves.toEqual(thread)
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
+      `${apiBaseUrl}/api/threads?focusDocId=${focusDocId}`
+    )
+  })
+
+  it("returns null when no Thread is grounded on the doc", async () => {
+    const focusDocId = "11111111-1111-7111-8111-111111111111"
+    const fetchMock = vi.fn().mockResolvedValue(envelope(null))
+    vi.stubGlobal("fetch", fetchMock)
+
+    await expect(getThreadByFocusDoc(focusDocId)).resolves.toBeNull()
   })
 
   it("deletes a Thread through the Command registry", async () => {
@@ -119,6 +171,7 @@ describe("thread API client", () => {
       title: "Help me plan the week",
       createdAt: "2026-08-25T00:00:00.000Z",
       updatedAt: "2026-08-25T00:00:00.000Z",
+      focusDocId: null,
       messages: [
         {
           id: "m1",
@@ -341,6 +394,7 @@ describe("thread API client", () => {
       title: "Plan",
       createdAt: "2026-08-25T00:00:00.000Z",
       updatedAt: "2026-08-25T00:00:01.000Z",
+      focusDocId: null,
       messages: [],
     }
     const fetchMock = vi.fn().mockResolvedValue(envelope({ thread, receipt }))
@@ -365,12 +419,14 @@ describe("thread list helpers", () => {
       title: "Older",
       createdAt: "2026-08-24T00:00:00.000Z",
       updatedAt: "2026-08-24T00:00:00.000Z",
+      focusDocId: null,
     }
     const newer: ThreadListItem = {
       id: "b",
       title: "Newer",
       createdAt: "2026-08-25T00:00:00.000Z",
       updatedAt: "2026-08-25T00:00:00.000Z",
+      focusDocId: null,
     }
 
     expect(
@@ -389,6 +445,7 @@ describe("thread list helpers", () => {
       title: "Plan",
       createdAt: "2026-08-25T00:00:00.000Z",
       updatedAt: "2026-08-25T00:00:00.000Z",
+      focusDocId: null,
       messages: [
         {
           id: "m1",
@@ -404,6 +461,7 @@ describe("thread list helpers", () => {
       title: "Plan",
       createdAt: "2026-08-25T00:00:00.000Z",
       updatedAt: "2026-08-25T00:00:00.000Z",
+      focusDocId: null,
     })
   })
 })

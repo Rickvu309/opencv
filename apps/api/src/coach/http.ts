@@ -132,8 +132,9 @@ export function createCoachRoutes({
       )
     }
 
+    let thread
     try {
-      await getOwnedThread(db, session.user.id, threadId)
+      thread = await getOwnedThread(db, session.user.id, threadId)
     } catch (error) {
       if (error instanceof CommandError) {
         return jsonWithStatus(
@@ -145,14 +146,12 @@ export function createCoachRoutes({
       throw error
     }
 
+    const focusDocId = parsed.data.focusDocId ?? thread.focusDocId ?? undefined
+
     let focusDoc: CoachFocusDoc | undefined
-    if (parsed.data.focusDocId) {
+    if (focusDocId) {
       try {
-        const row = await getOwnedPaperDoc(
-          db,
-          session.user.id,
-          parsed.data.focusDocId
-        )
+        const row = await getOwnedPaperDoc(db, session.user.id, focusDocId)
         focusDoc = {
           id: row.id,
           name: row.name,

@@ -32,6 +32,8 @@ export const threadMessageTextSchema = z
 export const threadsCreateInputSchema = z
   .object({
     title: threadTitleSchema.optional(),
+    /** Open Paper doc this Thread is grounded on, when created from Paper. */
+    focusDocId: paperDocIdSchema.optional(),
   })
   .strict()
 
@@ -139,6 +141,8 @@ export type ThreadListItem = {
   title: string
   createdAt: string
   updatedAt: string
+  /** Persisted Paper grounding; null for Home-only Threads. */
+  focusDocId: string | null
 }
 
 export type ThreadMessage = {

@@ -223,6 +223,7 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
         title: prev?.title ?? (user ? titleFrom(user.text) : DEFAULT_THREAD_TITLE),
         createdAt: prev?.createdAt ?? now,
         updatedAt: now,
+        focusDocId: prev?.focusDocId ?? null,
         messages: [
           ...(hasUser || !userRow ? messages : [...messages, userRow]),
           ...(hasText ? [] : [coachRow]),

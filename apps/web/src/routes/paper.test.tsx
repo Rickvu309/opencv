@@ -356,8 +356,17 @@ describe("Paper editors", () => {
     )
     expect(getLastCoachRequest()?.text).toBe("Sharpen the checkout bullet")
     expect(
-      getMockThreads().some((thread) => thread.title === "PM track CV")
+      getMockThreads().some(
+        (thread) =>
+          thread.title === "PM track CV" &&
+          thread.focusDocId === "11111111-1111-7111-8111-111111111111"
+      )
     ).toBe(true)
+    expect(
+      Object.keys(sessionStorage).some((key) =>
+        key.includes("paper-coach-thread")
+      )
+    ).toBe(false)
 
     fireEvent.click(within(panel).getByRole("button", { name: "Copy" }))
     await waitFor(() => {
@@ -419,5 +428,54 @@ describe("Paper editors", () => {
     await waitFor(() => {
       expect(within(panel).queryByRole("alert")).not.toBeInTheDocument()
     })
+  })
+
+  it("rebinds the Paper Coach Thread from GET after remount", async () => {
+    scriptCoachStream({ texts: ["I read PM track CV."] })
+    const first = renderPaper()
+    await expectPaperDrive()
+    await openDoc("PM track CV")
+
+    fireEvent.click(screen.getByRole("button", { name: /AI assist/ }))
+    const firstPanel = await screen.findByRole("dialog", { name: "AI assist" })
+    fireEvent.change(
+      within(firstPanel).getByRole("textbox", { name: "Message AI assist" }),
+      { target: { value: "Remember this CV" } }
+    )
+    fireEvent.click(within(firstPanel).getByRole("button", { name: "Send" }))
+    expect(
+      await within(firstPanel).findByText("I read PM track CV.")
+    ).toBeInTheDocument()
+
+    const grounded = getMockThreads().find(
+      (thread) => thread.focusDocId === "11111111-1111-7111-8111-111111111111"
+    )
+    expect(grounded?.messages.some((message) => message.text === "Remember this CV")).toBe(
+      true
+    )
+
+    first.unmount()
+    cleanup()
+
+    renderPaper()
+    await expectPaperDrive()
+    const driveName = await screen.findByText("PM track CV", {
+      selector: "span.font-medium",
+    })
+    fireEvent.click(driveName.closest("tr") ?? driveName)
+    expect(
+      await screen.findByRole("region", { name: "Editing PM track CV" })
+    ).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: /AI assist/ }))
+    const secondPanel = await screen.findByRole("dialog", { name: "AI assist" })
+    expect(
+      await within(secondPanel).findByText("Remember this CV")
+    ).toBeInTheDocument()
+    expect(within(secondPanel).getByText("I read PM track CV.")).toBeInTheDocument()
+    expect(
+      Object.keys(sessionStorage).some((key) =>
+        key.includes("paper-coach-thread")
+      )
+    ).toBe(false)
   })
 })

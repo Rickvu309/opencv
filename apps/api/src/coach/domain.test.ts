@@ -21,6 +21,7 @@ import {
   ERROR_CODES,
   coachFeedbackInputSchema,
   coachTurnRequestSchema,
+  threadsCreateInputSchema,
   coachLimitReachedEnvelope,
   coachUnavailableEnvelope,
   httpStatusForError,
@@ -149,6 +150,24 @@ describe("coach domain exports", () => {
     expect(
       coachTurnRequestSchema.safeParse({
         text: "Hello",
+        focusDocId: "not-a-uuid",
+      }).success
+    ).toBe(false)
+  })
+
+  it("accepts an optional owned-doc focusDocId on threads.create", () => {
+    expect(threadsCreateInputSchema.parse({})).toEqual({})
+    expect(
+      threadsCreateInputSchema.parse({
+        title: "PM track CV",
+        focusDocId: "11111111-1111-7111-8111-111111111111",
+      })
+    ).toEqual({
+      title: "PM track CV",
+      focusDocId: "11111111-1111-7111-8111-111111111111",
+    })
+    expect(
+      threadsCreateInputSchema.safeParse({
         focusDocId: "not-a-uuid",
       }).success
     ).toBe(false)

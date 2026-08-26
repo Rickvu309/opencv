@@ -105,14 +105,18 @@ function isoNow() {
   return new Date().toISOString()
 }
 
-function pathOf(input: RequestInfo | URL) {
+function urlOf(input: RequestInfo | URL) {
   const raw =
     typeof input === "string"
       ? input
       : input instanceof URL
         ? input.href
         : input.url
-  return new URL(raw, apiBaseUrl).pathname
+  return new URL(raw, apiBaseUrl)
+}
+
+function pathOf(input: RequestInfo | URL) {
+  return urlOf(input).pathname
 }
 
 function jsonOk<T>(data: T, status = 200) {
@@ -130,11 +134,12 @@ function listItems(): ThreadListItem[] {
       if (byUpdated !== 0) return byUpdated
       return b.id.localeCompare(a.id)
     })
-    .map(({ id, title, createdAt, updatedAt }) => ({
+    .map(({ id, title, createdAt, updatedAt, focusDocId }) => ({
       id,
       title,
       createdAt,
       updatedAt,
+      focusDocId,
     }))
 }
 
@@ -434,6 +439,11 @@ export async function threadApiFetch(
   const method = (init?.method ?? "GET").toUpperCase()
 
   if (method === "GET" && path === "/api/threads") {
+    const focusDocId = urlOf(input).searchParams.get("focusDocId")
+    if (focusDocId) {
+      const match = listItems().find((thread) => thread.focusDocId === focusDocId)
+      return jsonOk(match ?? null)
+    }
     return jsonOk(listItems())
   }
 
@@ -573,13 +583,17 @@ export async function threadApiFetch(
   }
 
   if (method === "POST" && path === `/api/commands/${THREAD_COMMANDS.create}`) {
-    const body = (await readBody(init)) as { title?: string }
+    const body = (await readBody(init)) as {
+      title?: string
+      focusDocId?: string
+    }
     const now = isoNow()
     const created: ThreadDetail = {
       id: crypto.randomUUID(),
       title: body.title?.trim() || DEFAULT_THREAD_TITLE,
       createdAt: now,
       updatedAt: now,
+      focusDocId: body.focusDocId ?? null,
       messages: [],
     }
     store.threads.unshift(created)
@@ -588,6 +602,7 @@ export async function threadApiFetch(
       title: created.title,
       createdAt: created.createdAt,
       updatedAt: created.updatedAt,
+      focusDocId: created.focusDocId,
     })
   }
 

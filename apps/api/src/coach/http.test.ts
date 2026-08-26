@@ -1194,6 +1194,45 @@ describe("coach route paper focus", () => {
     })
     expect(other.status).toBe(403)
   })
+
+  it("grounds from the Thread focus_doc_id when the body omits focusDocId", async () => {
+    const seen: CoachTurnInput[] = []
+    const app = createTestApp(db, {
+      coach: createScriptedCoachRuntime(async function* (input) {
+        seen.push(input)
+        yield { type: "text-delta", text: "I still have the CV." }
+        yield {
+          type: "finish",
+          finishReason: "stop",
+          usage: { model: "mock" },
+        }
+      }),
+    })
+    const doc = await createPaperDoc(app, cookieA, "Persisted CV")
+    const created = await postCommand(app, cookieA, THREAD_COMMANDS.create, {
+      title: "Persisted CV",
+      focusDocId: doc.id,
+    })
+    expect(created.status).toBe(200)
+    const threadId = (await json<{ ok: true; data: ThreadListItem }>(created))
+      .data.id
+
+    const res = await app.request(`/api/threads/${threadId}/coach`, {
+      method: "POST",
+      headers: authHeaders(cookieA),
+      body: JSON.stringify({ text: "What should I cut?" }),
+    })
+    expect(res.status).toBe(200)
+    await res.text()
+
+    expect(seen).toHaveLength(1)
+    expect(seen[0]?.focusDoc).toEqual({
+      id: doc.id,
+      name: "Persisted CV",
+      kind: "cv",
+      status: "draft",
+    })
+  })
 })
 
 describe("coach auto Thread titles", () => {
