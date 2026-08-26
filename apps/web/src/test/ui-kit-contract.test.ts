@@ -99,6 +99,7 @@ describe("UI package kit surface", () => {
     expect(paper).toMatch(/\.paper-editor-canvas/)
     expect(paper).toMatch(/\.cv-a4-page/)
     expect(read("apps/web/src/main.tsx")).toMatch(/styles\/paper\.css/)
+    expect(read("apps/web/src/main.tsx")).toMatch(/styles\/coach\.css/)
   })
 
   it("exports the focus ring and media-query hook from the kit", () => {

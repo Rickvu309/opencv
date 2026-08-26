@@ -1,0 +1,110 @@
+/* Coach motion — Spec 7 / QVE-174. Tokens from ADR-0010. */
+@reference "@workspace/ui/globals.css";
+
+@layer utilities {
+  .coach-working-bar {
+    position: relative;
+    height: 2px;
+    width: 8rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: color-mix(in oklch, var(--muted-foreground) 18%, transparent);
+  }
+
+  .coach-working-bar::after {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    width: 40%;
+    background: var(--muted-foreground);
+    animation: coach-working-indeterminate 1.2s var(--ease-standard) infinite;
+  }
+
+  @keyframes coach-working-indeterminate {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(280%);
+    }
+  }
+
+  .coach-text-enter {
+    animation: coach-text-fade var(--duration-base) var(--ease-standard) both;
+  }
+
+  @keyframes coach-text-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .coach-receipt-enter {
+    animation: coach-receipt-enter var(--duration-base) var(--ease-standard) both;
+  }
+
+  @keyframes coach-receipt-enter {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .coach-receipt-collapse {
+    display: grid;
+    grid-template-rows: 1fr;
+    animation: coach-receipt-collapse var(--duration-slow) var(--ease-standard)
+      forwards;
+  }
+
+  .coach-receipt-collapse > .coach-receipt-collapse-inner {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  @keyframes coach-receipt-collapse {
+    to {
+      grid-template-rows: 0fr;
+      opacity: 0;
+    }
+  }
+
+  .coach-undone-flash {
+    animation: coach-undone-flash var(--duration-slow) var(--ease-standard) both;
+  }
+
+  @keyframes coach-undone-flash {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .coach-working-bar::after {
+      animation: none;
+      width: 100%;
+      opacity: 0.45;
+    }
+
+    .coach-text-enter,
+    .coach-receipt-enter,
+    .coach-receipt-collapse,
+    .coach-undone-flash {
+      animation: none;
+    }
+
+    .coach-receipt-collapse {
+      opacity: 0.55;
+    }
+  }
+}
