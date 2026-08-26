@@ -30,7 +30,9 @@ next send. The Paper AI panel is out of scope (QVE-146).
 **Per-turn routing, no restart.** `POST /api/threads/:id/coach` accepts
 optional `mode`. If omitted, the saved preference is used. The resolved
 OpenRouter id is passed into the runtime for that turn only. `coach_usage`
-records `mode` plus the actual `model` id.
+records `mode` plus the actual `model` id. Regenerating the latest Coach
+turn (`regenerate: true`, QVE-147) is a new streamed row on this same
+route — current mode, same cap, prior row and receipts stay.
 
 **Per-mode daily caps** (env-overridable; fall back to `COACH_DAILY_TURN_LIMIT`
 when the mode-specific var is unset, then to these defaults): Free 50, Light

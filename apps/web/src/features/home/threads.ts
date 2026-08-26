@@ -28,6 +28,18 @@ export function titleFrom(text: string) {
   return `${clean.slice(0, 36)}…`
 }
 
+export function latestCoachMessageId(
+  messages: readonly HomeMessage[]
+): string | null {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index]
+    if (message?.role === "coach" && message.id !== STREAMING_COACH_ID) {
+      return message.id
+    }
+  }
+  return null
+}
+
 export function toHomeMessages(
   messages: ReadonlyArray<{
     id: string

@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useCallback, useMemo, useRef, useState, type ReactNode } from "react"
 import {
   appendCoachPart,
+  DEFAULT_THREAD_TITLE,
   textFromParts,
   type CoachUsageRating,
   type ThreadDetail,
@@ -17,6 +18,7 @@ import {
   getThread,
   listThreads,
   rateCoachMessage,
+  streamCoachRegenerate,
   streamCoachTurn,
   threadQueryKeys,
   toListItem,
@@ -51,6 +53,7 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
   >(null)
   const [phase, setPhase] = useState<TurnPhase>("idle")
   const [sendError, setSendError] = useState<SendError | null>(null)
+  const [regenerateError, setRegenerateError] = useState<string | null>(null)
   const sendGeneration = useRef(0)
   const abortRef = useRef<AbortController | null>(null)
   const { mode } = useCoachMode()
@@ -80,6 +83,8 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
     )
   }, [detailQuery.data, optimisticMessages, sendError])
 
+  const actionError = sendError ? null : regenerateError
+
   const cancelInFlight = useCallback(() => {
     abortRef.current?.abort()
     abortRef.current = null
@@ -87,6 +92,7 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
     setPhase("idle")
     setOptimisticMessages(null)
     setSendError(null)
+    setRegenerateError(null)
   }, [])
 
   const newThread = useCallback(() => {
@@ -151,7 +157,11 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
   )
 
   const keepStreamedCoach = useCallback(
-    (threadId: string, user: HomeMessage, parts: ThreadMessagePart[]): void => {
+    (
+      threadId: string,
+      user: HomeMessage | undefined,
+      parts: ThreadMessagePart[]
+    ): void => {
       const now = new Date().toISOString()
       const coachText = textFromParts(parts)
       const prev = queryClient.getQueryData<ThreadDetail>(
@@ -162,12 +172,14 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
       )
       if (hasText && prev) return
 
-      const userRow: ThreadMessage = {
-        id: user.id,
-        role: "user",
-        text: user.text,
-        createdAt: now,
-      }
+      const userRow: ThreadMessage | undefined = user
+        ? {
+            id: user.id,
+            role: "user",
+            text: user.text,
+            createdAt: now,
+          }
+        : undefined
       const coachRow: ThreadMessage = {
         id: crypto.randomUUID(),
         role: "coach",
@@ -178,16 +190,18 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
       }
 
       const messages = prev?.messages ?? []
-      const hasUser = messages.some(
-        (message) => message.role === "user" && message.text === user.text
-      )
+      const hasUser = user
+        ? messages.some(
+            (message) => message.role === "user" && message.text === user.text
+          )
+        : true
       writeDetail(threadId, {
         id: threadId,
-        title: prev?.title ?? titleFrom(user.text),
+        title: prev?.title ?? (user ? titleFrom(user.text) : DEFAULT_THREAD_TITLE),
         createdAt: prev?.createdAt ?? now,
         updatedAt: now,
         messages: [
-          ...(hasUser ? messages : [...messages, userRow]),
+          ...(hasUser || !userRow ? messages : [...messages, userRow]),
           ...(hasText ? [] : [coachRow]),
         ],
       })
@@ -226,6 +240,7 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
       }
 
       setSendError(null)
+      setRegenerateError(null)
       setOptimisticMessages([...baseline, userMessage])
       setPhase("waiting")
 
@@ -407,10 +422,174 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
     ]
   )
 
+  const regenerate = useCallback(() => {
+    if (phase !== "idle") return false
+    const threadId = activeThreadId
+    if (!threadId) return false
+
+    const current =
+      optimisticMessages ??
+      (detailQuery.data ? toHomeMessages(detailQuery.data.messages) : [])
+    const baseline = current.filter(
+      (message) => message.id !== STREAMING_COACH_ID
+    )
+    const lastCoach = [...baseline]
+      .reverse()
+      .find((message) => message.role === "coach")
+    if (!lastCoach) return false
+    const lastUser = [...baseline]
+      .reverse()
+      .find((message) => message.role === "user")
+
+    const generation = ++sendGeneration.current
+    const controller = new AbortController()
+    abortRef.current = controller
+
+    setSendError(null)
+    setRegenerateError(null)
+    setOptimisticMessages(baseline)
+    setPhase("waiting")
+
+    const paint = (parts: ThreadMessagePart[]) => {
+      setOptimisticMessages([
+        ...baseline,
+        ...(parts.length > 0
+          ? [
+              {
+                id: STREAMING_COACH_ID,
+                role: "coach" as const,
+                text: textFromParts(parts),
+                parts,
+              },
+            ]
+          : []),
+      ])
+    }
+
+    void (async () => {
+      let streamedParts: ThreadMessagePart[] = []
+      let ended: ThreadMessage | undefined
+      let streamError: string | undefined
+
+      try {
+        await streamCoachRegenerate(
+          threadId,
+          {
+            onTextDelta({ text: delta }) {
+              if (generation !== sendGeneration.current) return
+              streamedParts = appendCoachPart(streamedParts, {
+                type: "text-delta",
+                text: delta,
+              })
+              setPhase("streaming")
+              paint(streamedParts)
+            },
+            onToolResult(data) {
+              if (generation !== sendGeneration.current) return
+              streamedParts = appendCoachPart(streamedParts, {
+                type: "tool-result",
+                ...data,
+              })
+              setPhase("streaming")
+              paint(streamedParts)
+            },
+            onMessageEnd({ message }) {
+              ended = message
+            },
+            onError({ message }) {
+              streamError = message
+            },
+          },
+          controller.signal,
+          mode
+        )
+
+        if (generation !== sendGeneration.current) return
+
+        if (ended) {
+          await hydrateThread(threadId, ended)
+          if (generation !== sendGeneration.current) return
+          if (streamError) {
+            setRegenerateError(streamError)
+          }
+          setOptimisticMessages(null)
+          setPhase("idle")
+          return
+        }
+
+        if (controller.signal.aborted) {
+          await hydrateThread(threadId)
+          if (generation !== sendGeneration.current) return
+          if (streamedParts.length > 0) {
+            keepStreamedCoach(threadId, lastUser, streamedParts)
+          }
+          const detail = queryClient.getQueryData<ThreadDetail>(
+            threadQueryKeys.detail(threadId)
+          )
+          setOptimisticMessages(
+            detail ? toHomeMessages(detail.messages) : null
+          )
+          setPhase("idle")
+          return
+        }
+
+        if (streamError) {
+          setRegenerateError(streamError)
+          setOptimisticMessages(null)
+          setPhase("idle")
+          return
+        }
+
+        await hydrateThread(threadId)
+        if (generation !== sendGeneration.current) return
+        setOptimisticMessages(null)
+        setPhase("idle")
+      } catch (error) {
+        if (generation !== sendGeneration.current) return
+        if (isAbortError(error) || controller.signal.aborted) {
+          await hydrateThread(threadId)
+          if (generation !== sendGeneration.current) return
+          if (streamedParts.length > 0) {
+            keepStreamedCoach(threadId, lastUser, streamedParts)
+          }
+          const detail = queryClient.getQueryData<ThreadDetail>(
+            threadQueryKeys.detail(threadId)
+          )
+          setOptimisticMessages(
+            detail ? toHomeMessages(detail.messages) : null
+          )
+          setPhase("idle")
+          return
+        }
+
+        setRegenerateError(coachSendErrorMessage(error))
+        setOptimisticMessages(null)
+        setPhase("idle")
+      } finally {
+        if (generation === sendGeneration.current) {
+          abortRef.current = null
+        }
+      }
+    })()
+
+    return true
+  }, [
+    activeThreadId,
+    detailQuery.data,
+    hydrateThread,
+    keepStreamedCoach,
+    optimisticMessages,
+    phase,
+    queryClient,
+    mode,
+  ])
+
   const retry = useCallback(() => {
-    if (!sendError || phase !== "idle") return false
+    if (phase !== "idle") return false
+    if (regenerateError) return regenerate()
+    if (!sendError) return false
     return send(sendError.text, true)
-  }, [phase, send, sendError])
+  }, [phase, regenerate, regenerateError, send, sendError])
 
   const rate = useCallback(
     (messageId: string, rating: CoachUsageRating) => {
@@ -450,9 +629,11 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
       activeThreadId,
       messages,
       phase,
+      error: actionError,
       send,
       stop,
       retry,
+      regenerate,
       rate,
       openThread,
       newThread,
@@ -462,9 +643,11 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
       activeThreadId,
       messages,
       phase,
+      actionError,
       send,
       stop,
       retry,
+      regenerate,
       rate,
       openThread,
       newThread,

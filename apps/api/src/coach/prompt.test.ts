@@ -9,7 +9,9 @@ import { describe, expect, it } from "vitest"
 import {
   assembleSystemPrompt,
   flattenMessage,
+  historyForRegenerate,
   personaSystemPrompt,
+  regenerateInstruction,
   summarizeWorkspace,
   windowHistory,
   type WorkspaceSnapshot,
@@ -125,6 +127,49 @@ describe("assembleSystemPrompt", () => {
     expect(prompt.startsWith(personaSystemPrompt())).toBe(true)
     expect(prompt).toContain(summarizeWorkspace(sampleSnapshot))
     expect(prompt).not.toMatch(/!/)
+  })
+
+  it("appends a regenerate instruction that keeps prior receipts as facts", () => {
+    const prior = coachMessage("Moved it.", [
+      { type: "text", text: "Moved it." },
+      {
+        type: "tool",
+        name: "apply_moveCard",
+        summary: "Moved Associate PM intern to Prep",
+        ok: true,
+      },
+    ])
+    const prompt = assembleSystemPrompt(sampleSnapshot, undefined, {
+      regenerateFrom: prior,
+    })
+    expect(prompt).toContain(regenerateInstruction(prior))
+    expect(prompt).toContain("Do not claim they were reversed or undone")
+    expect(prompt).toContain(
+      "[apply_moveCard ok] Moved Associate PM intern to Prep"
+    )
+    expect(prompt).not.toMatch(/!/)
+  })
+})
+
+describe("historyForRegenerate", () => {
+  it("drops the latest Coach turn so the model answers the last User message again", () => {
+    const user = userMessage("Move the starred card")
+    const coach = coachMessage("Moved it.", [
+      {
+        type: "tool",
+        name: "apply_moveCard",
+        summary: "Moved Associate PM intern to Prep",
+        ok: true,
+      },
+    ])
+    expect(historyForRegenerate([user, coach])).toEqual({
+      history: [user],
+      priorCoach: coach,
+    })
+    expect(historyForRegenerate([user])).toEqual({
+      history: [user],
+      priorCoach: undefined,
+    })
   })
 })
 

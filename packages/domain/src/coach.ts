@@ -266,6 +266,8 @@ export type CoachTurnInput = {
   history: ThreadMessage[]
   model?: string
   mode?: CoachMode
+  /** Fresh turn answering the latest User message; prior coach row stays in history. */
+  regenerate?: boolean
 }
 
 /** Injected via `AppConfig.coach` like `db` (ADR-0007). */

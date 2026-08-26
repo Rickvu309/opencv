@@ -47,7 +47,7 @@ import { jsonWithStatus } from "../http-json.js"
 import { createId } from "../id.js"
 import { readSession } from "../session.js"
 import { getCoachModeForUser } from "../profile/queries.js"
-import { getOwnedThread, toThreadMessage } from "../threads/queries.js"
+import { getOwnedThread, getThreadDetail, toThreadMessage } from "../threads/queries.js"
 import { countCoachTurnsToday, rateCoachTurn } from "./usage.js"
 
 export type CoachRouteOptions = {
@@ -157,17 +157,42 @@ export function createCoachRoutes({
       return c.json(coachLimitReachedEnvelope(), 429)
     }
 
-    const posted = await registry.execute({
-      name: THREAD_COMMANDS.postMessage,
-      input: { threadId, text: parsed.data.text },
-      actor: { type: "user", userId: session.user.id },
-      db,
-    })
-    if (!posted.body.ok) {
-      return jsonWithStatus(c, posted.body, posted.status)
+    let history: ThreadMessage[]
+    if (parsed.data.regenerate) {
+      const detail = await getThreadDetail(db, session.user.id, threadId)
+      const last = detail.messages[detail.messages.length - 1]
+      if (!last || last.role !== "coach") {
+        return jsonWithStatus(
+          c,
+          errorEnvelope(
+            ERROR_CODES.VALIDATION_ERROR,
+            "Only the latest Coach turn can be regenerated"
+          ),
+          httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
+        )
+      }
+      history = detail.messages
+    } else {
+      const text = parsed.data.text
+      if (!text) {
+        return jsonWithStatus(
+          c,
+          errorEnvelope(ERROR_CODES.VALIDATION_ERROR, "Message text is required"),
+          httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
+        )
+      }
+      const posted = await registry.execute({
+        name: THREAD_COMMANDS.postMessage,
+        input: { threadId, text },
+        actor: { type: "user", userId: session.user.id },
+        db,
+      })
+      if (!posted.body.ok) {
+        return jsonWithStatus(c, posted.body, posted.status)
+      }
+      history = (posted.body.data as ThreadDetail).messages
     }
 
-    const history = (posted.body.data as ThreadDetail).messages
     const heartbeatMs = coachSseHeartbeatMs ?? COACH_SSE_HEARTBEAT_MS
 
     c.header("X-Accel-Buffering", "no")
@@ -183,6 +208,7 @@ export function createCoachRoutes({
         history,
         model,
         mode,
+        regenerate: parsed.data.regenerate === true,
         heartbeatMs,
         signal: c.req.raw.signal,
       })
@@ -269,6 +295,7 @@ type RunCoachTurnOptions = {
   history: ThreadMessage[]
   model: string
   mode: CoachMode
+  regenerate?: boolean
   heartbeatMs: number
   signal?: AbortSignal
 }
@@ -282,6 +309,7 @@ async function runCoachTurn({
   history,
   model,
   mode,
+  regenerate,
   heartbeatMs,
   signal,
 }: RunCoachTurnOptions) {
@@ -302,7 +330,7 @@ async function runCoachTurn({
     await writeEvent(stream, COACH_SSE_EVENTS.messageStart, start)
 
     for await (const part of takeUntilAbort(
-      coach.streamTurn({ userId, threadId, history, model, mode }),
+      coach.streamTurn({ userId, threadId, history, model, mode, regenerate }),
       aborted.promise,
       () => isDisconnected(stream, signal)
     )) {

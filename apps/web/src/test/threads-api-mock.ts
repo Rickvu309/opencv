@@ -412,18 +412,32 @@ export async function threadApiFetch(
       return jsonError(error.status, error.code, error.message)
     }
 
-    const body = (await readBody(init)) as { text?: string }
+    const body = (await readBody(init)) as {
+      text?: string
+      regenerate?: boolean
+    }
     const thread = store.threads.find((item) => item.id === coach[1])
     if (!thread) {
       return jsonError(404, "NOT_FOUND", "Thread not found")
     }
     const now = isoNow()
-    thread.messages.push({
-      id: crypto.randomUUID(),
-      role: "user",
-      text: body.text ?? "",
-      createdAt: now,
-    })
+    if (body.regenerate) {
+      const last = thread.messages[thread.messages.length - 1]
+      if (!last || last.role !== "coach") {
+        return jsonError(
+          400,
+          "VALIDATION_ERROR",
+          "Only the latest Coach turn can be regenerated"
+        )
+      }
+    } else {
+      thread.messages.push({
+        id: crypto.randomUUID(),
+        role: "user",
+        text: body.text ?? "",
+        createdAt: now,
+      })
+    }
     thread.updatedAt = now
     return coachStreamResponse(thread, init?.signal ?? undefined)
   }

@@ -20,6 +20,7 @@ import { listPaperDocsForUser } from "../paper/queries.js"
 import { getProfileForUser } from "../profile/queries.js"
 import {
   assembleSystemPrompt,
+  historyForRegenerate,
   snapshotFromLists,
   windowHistory,
 } from "./prompt.js"
@@ -66,12 +67,21 @@ export function createOpenRouterCoachRuntime({
       const tools = toAiSdkTools(
         assembleCoachTools({ db, userId: input.userId, registry })
       )
-      const messages = windowHistory(input.history)
+      const prepared = input.regenerate
+        ? historyForRegenerate(input.history)
+        : { history: input.history, priorCoach: undefined }
+      const messages = windowHistory(prepared.history)
 
       try {
         const result = streamText({
           model: openrouter(turnModel, { usage: { include: true } }),
-          system: assembleSystemPrompt(snapshot),
+          system: assembleSystemPrompt(
+            snapshot,
+            undefined,
+            input.regenerate
+              ? { regenerateFrom: prepared.priorCoach }
+              : undefined
+          ),
           messages,
           tools,
           stopWhen: stepCountIs(COACH_STEP_CAP),

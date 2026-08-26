@@ -104,11 +104,42 @@ export function summarizeWorkspace(
   ].join("\n")
 }
 
+export function historyForRegenerate(messages: readonly ThreadMessage[]): {
+  history: ThreadMessage[]
+  priorCoach: ThreadMessage | undefined
+} {
+  const last = messages[messages.length - 1]
+  if (last?.role === "coach") {
+    return { history: messages.slice(0, -1), priorCoach: last }
+  }
+  return { history: [...messages], priorCoach: undefined }
+}
+
+export function regenerateInstruction(priorCoach?: ThreadMessage): string {
+  const lines = [
+    "The User asked you to regenerate your last reply. Write a fresh answer to their latest message.",
+    "Commands already run in this Thread remain facts. Do not claim they were reversed or undone.",
+  ]
+  const receipts =
+    priorCoach?.parts?.filter((part) => part.type === "tool") ?? []
+  if (receipts.length > 0) {
+    lines.push("Receipts from the previous turn:")
+    for (const part of receipts) {
+      const flag = part.ok ? "ok" : "fail"
+      lines.push(`- [${part.name} ${flag}] ${part.summary}`)
+    }
+  }
+  return lines.join("\n")
+}
+
 export function assembleSystemPrompt(
   snapshot: WorkspaceSnapshot,
-  listCap = COACH_WORKSPACE_LIST_CAP
+  listCap = COACH_WORKSPACE_LIST_CAP,
+  options?: { regenerateFrom?: ThreadMessage }
 ): string {
-  return `${personaSystemPrompt()}\n\n${summarizeWorkspace(snapshot, listCap)}`
+  const base = `${personaSystemPrompt()}\n\n${summarizeWorkspace(snapshot, listCap)}`
+  if (!options) return base
+  return `${base}\n\n${regenerateInstruction(options.regenerateFrom)}`
 }
 
 export function flattenMessage(message: ThreadMessage): string {

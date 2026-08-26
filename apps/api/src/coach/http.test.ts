@@ -11,6 +11,7 @@ import {
   ERROR_CODES,
   PROFILE_COMMANDS,
   THREAD_COMMANDS,
+  type CoachTurnInput,
   type ThreadDetail,
   type ThreadListItem,
   type ThreadMessage,
@@ -844,5 +845,218 @@ describe("coach route modes", () => {
     const light = await postCoach(app, capped, threadId, "still light", undefined, "light")
     expect(light.status).toBe(200)
     await light.text()
+  })
+})
+
+describe("coach regenerate", () => {
+  let client: Awaited<ReturnType<typeof createMigratedTestDb>>["client"]
+  let db: Awaited<ReturnType<typeof createMigratedTestDb>>["db"]
+  let cookie: string
+
+  beforeAll(async () => {
+    const migrated = await createMigratedTestDb()
+    client = migrated.client
+    db = migrated.db
+    const app = createTestApp(db, { coach: createDemoCoachRuntime() })
+    cookie = (
+      await signUp(app, {
+        name: "Regen",
+        email: "regen-coach-route@example.com",
+        password: "correct-horse-battery",
+      })
+    ).cookie
+  }, 60_000)
+
+  afterAll(async () => {
+    await client.close()
+  })
+
+  async function postRegenerate(
+    app: ReturnType<typeof createTestApp>,
+    threadId: string,
+    mode?: "free" | "light" | "max"
+  ) {
+    return app.request(`/api/threads/${threadId}/coach`, {
+      method: "POST",
+      headers: authHeaders(cookie),
+      body: JSON.stringify(mode ? { regenerate: true, mode } : { regenerate: true }),
+    })
+  }
+
+  it("rejects regenerate when the Thread has no Coach turn", async () => {
+    const app = createTestApp(db, { coach: createDemoCoachRuntime() })
+    const threadId = await createThread(app, cookie, "Empty regen")
+    const res = await postRegenerate(app, threadId)
+    expect(res.status).toBe(400)
+    await expect(res.json()).resolves.toEqual({
+      ok: false,
+      error: {
+        code: ERROR_CODES.VALIDATION_ERROR,
+        message: "Only the latest Coach turn can be regenerated",
+      },
+    })
+  })
+
+  it("streams a new coach row, keeps the prior turn, and records usage", async () => {
+    const seen: CoachTurnInput[] = []
+    const app = createTestApp(db, {
+      coach: createScriptedCoachRuntime(async function* (input) {
+        seen.push(input)
+        const text = input.regenerate ? "Trying again." : "First answer."
+        yield { type: "text-delta", text }
+        yield {
+          type: "finish",
+          finishReason: "stop",
+          usage: { model: "mock", tokens: 11 },
+        }
+      }),
+    })
+    const threadId = await createThread(app, cookie, "Regen happy")
+
+    const first = await postCoach(app, cookie, threadId, "Help me plan")
+    expect(first.status).toBe(200)
+    await first.text()
+
+    const second = await postRegenerate(app, threadId, "light")
+    expect(second.status).toBe(200)
+    const events = parseSseEvents(await second.text())
+    expect(events.map((event) => event.event)).toEqual([
+      COACH_SSE_EVENTS.messageStart,
+      COACH_SSE_EVENTS.textDelta,
+      COACH_SSE_EVENTS.messageEnd,
+    ])
+    const ended = events[2]?.data as { message: ThreadMessage }
+    expect(ended.message).toEqual(
+      expect.objectContaining({
+        role: "coach",
+        text: "Trying again.",
+        status: "final",
+      })
+    )
+
+    expect(seen).toHaveLength(2)
+    expect(seen[1]?.regenerate).toBe(true)
+    expect(seen[1]?.mode).toBe("light")
+    expect(seen[1]?.history.map((message) => message.role)).toEqual([
+      "user",
+      "coach",
+    ])
+    expect(seen[1]?.history[0]?.text).toBe("Help me plan")
+    expect(seen[1]?.history[1]?.text).toBe("First answer.")
+
+    const detail = await json<{ ok: true; data: ThreadDetail }>(
+      await app.request(`/api/threads/${threadId}`, {
+        headers: authHeaders(cookie),
+      })
+    )
+    expect(detail.data.messages.map((message) => message.text)).toEqual([
+      "Help me plan",
+      "First answer.",
+      "Trying again.",
+    ])
+    expect(detail.data.messages[1]?.id).not.toBe(detail.data.messages[2]?.id)
+
+    const usageRows = await db
+      .select()
+      .from(coachUsage)
+      .where(eq(coachUsage.threadId, threadId))
+    expect(usageRows).toHaveLength(2)
+    expect(usageRows.map((row) => row.mode).sort()).toEqual(["free", "light"])
+    expect(
+      usageRows.find((row) => row.messageId === ended.message.id)
+    ).toEqual(
+      expect.objectContaining({
+        mode: "light",
+        model: DEFAULT_COACH_MODEL_LIGHT,
+      })
+    )
+  })
+
+  it("keeps prior tool receipts and counts regenerate toward the mode cap", async () => {
+    const app = createTestApp(db, {
+      coach: createScriptedCoachRuntime(async function* (input) {
+        if (!input.regenerate) {
+          yield { type: "text-delta", text: "Moved it." }
+          yield {
+            type: "tool-call",
+            toolCallId: "t1",
+            name: "apply_moveCard",
+            input: {},
+          }
+          yield {
+            type: "tool-result",
+            toolCallId: "t1",
+            name: "apply_moveCard",
+            summary: "Moved 'Backend Intern' to Prep",
+            ok: true,
+            reversal: {
+              possible: true,
+              description: "Undo by moving the card back.",
+              command: "apply.moveCard",
+            },
+            result: { ok: true, data: { id: "c1" } },
+          }
+        } else {
+          yield { type: "text-delta", text: "Here is another way to look at it." }
+        }
+        yield {
+          type: "finish",
+          finishReason: "stop",
+          usage: { model: "mock" },
+        }
+      }),
+      coachDailyTurnLimits: { max: 2 },
+    })
+    const threadId = await createThread(app, cookie, "Regen receipts")
+
+    const first = await postCoach(app, cookie, threadId, "Move it", undefined, "max")
+    expect(first.status).toBe(200)
+    await first.text()
+
+    const second = await postRegenerate(app, threadId, "max")
+    expect(second.status).toBe(200)
+    await second.text()
+
+    const third = await postRegenerate(app, threadId, "max")
+    expect(third.status).toBe(429)
+    await expect(third.json()).resolves.toEqual({
+      ok: false,
+      error: {
+        code: ERROR_CODES.COACH_LIMIT_REACHED,
+        message: "You've reached today's Coach turn limit",
+      },
+    })
+
+    const detail = await json<{ ok: true; data: ThreadDetail }>(
+      await app.request(`/api/threads/${threadId}`, {
+        headers: authHeaders(cookie),
+      })
+    )
+    expect(detail.data.messages).toHaveLength(3)
+    expect(detail.data.messages[1]).toEqual(
+      expect.objectContaining({
+        role: "coach",
+        text: "Moved it.",
+        parts: [
+          { type: "text", text: "Moved it." },
+          {
+            type: "tool",
+            name: "apply_moveCard",
+            summary: "Moved 'Backend Intern' to Prep",
+            ok: true,
+            reversal: {
+              possible: true,
+              description: "Undo by moving the card back.",
+              command: "apply.moveCard",
+            },
+            toolCallId: "t1",
+          },
+        ],
+      })
+    )
+    expect(detail.data.messages[2]?.text).toBe(
+      "Here is another way to look at it."
+    )
+    expect(detail.data.messages[2]?.text).not.toMatch(/revers/i)
   })
 })

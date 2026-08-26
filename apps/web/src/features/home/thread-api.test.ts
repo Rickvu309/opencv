@@ -13,6 +13,7 @@ import {
   listThreads,
   postThreadMessage,
   rateCoachMessage,
+  streamCoachRegenerate,
   streamCoachTurn,
   toListItem,
   upsertThreadListItem,
@@ -195,6 +196,46 @@ describe("thread API client", () => {
         message: expect.objectContaining({ text: "Hello", workedMs: 1100 }),
       })
     )
+  })
+
+  it("streams a regenerate turn without posting user text", async () => {
+    const threadId = "11111111-1111-4111-8111-111111111111"
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        [
+          `event: ${COACH_SSE_EVENTS.messageStart}`,
+          `data: ${JSON.stringify({ threadId })}`,
+          "",
+          `event: ${COACH_SSE_EVENTS.textDelta}`,
+          `data: ${JSON.stringify({ text: "Again" })}`,
+          "",
+          `event: ${COACH_SSE_EVENTS.messageEnd}`,
+          `data: ${JSON.stringify({
+            message: {
+              id: "c2",
+              role: "coach",
+              text: "Again",
+              createdAt: "2026-08-25T00:00:02.000Z",
+              status: "final",
+            },
+            usage: { model: "mock", mode: "max" },
+          })}`,
+          "",
+        ].join("\n"),
+        {
+          status: 200,
+          headers: { "Content-Type": "text/event-stream" },
+        }
+      )
+    )
+    vi.stubGlobal("fetch", fetchMock)
+
+    const onTextDelta = vi.fn()
+    await streamCoachRegenerate(threadId, { onTextDelta }, undefined, "max")
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(init.body).toBe(JSON.stringify({ regenerate: true, mode: "max" }))
+    expect(onTextDelta).toHaveBeenCalledWith({ text: "Again" })
   })
 
   it("records a rating through POST /api/threads/:id/messages/:messageId/feedback", async () => {
