@@ -16,5 +16,8 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
+    // Home/Paper RTL suites mount the full app. On contended CI the first
+    // tests in a file can exceed Vitest's 5s default before the stream settles.
+    testTimeout: 15_000,
   },
 })

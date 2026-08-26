@@ -135,6 +135,7 @@ describe("Home Thread mode and History", () => {
     const first = renderApp()
     await expectHomeIdle()
     await sendMessage("Move the intern card to Prep")
+    await expectSendSettled("Move the intern card to Prep")
     expect(
       await screen.findByText("Ran apply.moveCard — Moved 'Backend Intern' to Prep")
     ).toBeInTheDocument()
@@ -162,7 +163,9 @@ describe("Home Thread mode and History", () => {
         "Reversible — Undo by moving the card back to its previous Stage and order."
       )
     ).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Undo" })).toBeEnabled()
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Undo" })).toBeEnabled()
+    })
   })
 
   it("undoes a reversible receipt and appends a truthful new receipt", async () => {
