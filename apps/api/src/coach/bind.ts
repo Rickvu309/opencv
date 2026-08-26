@@ -1,5 +1,6 @@
 import {
   DEFAULT_COACH_MODEL,
+  resolveCoachModel,
   type CoachRuntime,
 } from "@workspace/domain"
 
@@ -11,6 +12,8 @@ export type CoachRuntimeConfig = {
   db?: AppDatabase
   openRouterApiKey?: string
   coachModel?: string
+  /** Light-tier id for first-turn titles. Defaults to `resolveCoachModel("light")`. */
+  titleModel?: string
   runtimeMode?: "fake"
 }
 
@@ -22,6 +25,7 @@ export function coachRuntimeFromConfig({
   db,
   openRouterApiKey,
   coachModel,
+  titleModel,
   runtimeMode,
 }: CoachRuntimeConfig): CoachRuntime | undefined {
   if (runtimeMode === "fake") {
@@ -33,6 +37,7 @@ export function coachRuntimeFromConfig({
   return createOpenRouterCoachRuntime({
     apiKey: openRouterApiKey,
     model: coachModel ?? DEFAULT_COACH_MODEL,
+    titleModel: titleModel ?? resolveCoachModel("light"),
     db,
   })
 }

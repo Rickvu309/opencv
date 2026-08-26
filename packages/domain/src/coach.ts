@@ -268,9 +268,19 @@ export type CoachTurnInput = {
   mode?: CoachMode
 }
 
+export type CoachTitleInput = {
+  userText: string
+  coachText: string
+}
+
 /** Injected via `AppConfig.coach` like `db` (ADR-0007). */
 export type CoachRuntime = {
   streamTurn(input: CoachTurnInput): AsyncIterable<CoachStreamPart>
+  /**
+   * Optional Light-tier title for the first turn. Missing or throwing
+   * implementations fall back to the deterministic summarizer.
+   */
+  generateTitle?(input: CoachTitleInput): Promise<string>
 }
 
 /**

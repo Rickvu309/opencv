@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest"
 
-import { titleFrom, toHomeMessages } from "@/features/home/threads.ts"
+import { titleFrom } from "@workspace/domain"
+
+import { toHomeMessages } from "@/features/home/threads.ts"
 
 describe("titleFrom", () => {
   it("keeps short text and trims long titles", () => {

@@ -2,6 +2,7 @@ import {
   DEFAULT_COACH_MODEL,
   type CoachRuntime,
   type CoachStreamPart,
+  type CoachTitleInput,
   type CoachTurnInput,
 } from "@workspace/domain"
 
@@ -75,6 +76,13 @@ async function* overlayTurnModel(
 
 export function createDemoCoachRuntime(): CoachRuntime {
   return createScriptedCoachRuntime(DEMO_COACH_SCRIPT)
+}
+
+export function withTitleGenerator(
+  runtime: CoachRuntime,
+  generateTitle: (input: CoachTitleInput) => Promise<string>
+): CoachRuntime {
+  return { ...runtime, generateTitle }
 }
 
 export function createThrowingCoachRuntime(

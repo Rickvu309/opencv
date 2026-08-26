@@ -5,10 +5,12 @@ import {
   DEFAULT_COACH_MAX_OUTPUT_TOKENS,
   DEFAULT_COACH_MODEL,
   DEFAULT_COACH_MODE,
+  resolveCoachModel,
   type CoachRuntime,
+  type CoachTitleInput,
   type CoachTurnInput,
 } from "@workspace/domain"
-import { stepCountIs, streamText, tool, type ToolSet } from "ai"
+import { generateText, stepCountIs, streamText, tool, type ToolSet } from "ai"
 
 import { listApplyCardsForUser } from "../apply/queries.js"
 import {
@@ -29,11 +31,14 @@ import {
   type ModelStreamEvent,
   type ModelUsage,
 } from "./translate.js"
+import { THREAD_TITLE_SYSTEM_PROMPT, threadTitleUserPrompt } from "./title.js"
 import { assembleCoachTools, type CoachToolSurface } from "./tools.js"
 
 export type OpenRouterCoachRuntimeOptions = {
   apiKey: string
   model?: string
+  /** Light-tier model for first-turn History titles (QVE-153 / ADR-0009). */
+  titleModel?: string
   db: AppDatabase
   registry?: CommandRegistry
   maxOutputTokens?: number
@@ -46,6 +51,7 @@ export type OpenRouterCoachRuntimeOptions = {
 export function createOpenRouterCoachRuntime({
   apiKey,
   model = DEFAULT_COACH_MODEL,
+  titleModel = resolveCoachModel("light"),
   db,
   registry = commandRegistry,
   maxOutputTokens = DEFAULT_COACH_MAX_OUTPUT_TOKENS,
@@ -58,6 +64,15 @@ export function createOpenRouterCoachRuntime({
   })
 
   return {
+    async generateTitle({ userText, coachText }: CoachTitleInput) {
+      const result = await generateText({
+        model: openrouter(titleModel),
+        system: THREAD_TITLE_SYSTEM_PROMPT,
+        prompt: threadTitleUserPrompt(userText, coachText),
+        maxOutputTokens: 64,
+      })
+      return result.text
+    },
     async *streamTurn(input: CoachTurnInput) {
       const startedAt = Date.now()
       const abort = new AbortController()

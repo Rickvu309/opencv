@@ -107,8 +107,12 @@ describe("coach domain exports", () => {
       async *streamTurn() {
         yield { type: "text-delta", text: "ok" }
       },
+      async generateTitle() {
+        return "Plan the week"
+      },
     }
     expect(typeof runtime.streamTurn).toBe("function")
+    expect(typeof runtime.generateTitle).toBe("function")
   })
 
   it("accepts only up or down on the feedback payload", () => {

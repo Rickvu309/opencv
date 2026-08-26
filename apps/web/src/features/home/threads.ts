@@ -1,8 +1,11 @@
-import type {
-  CoachUsageRating,
-  ThreadMessagePart,
-  ThreadMessageStatus,
+import {
+  titleFrom,
+  type CoachUsageRating,
+  type ThreadMessagePart,
+  type ThreadMessageStatus,
 } from "@workspace/domain"
+
+export { titleFrom }
 
 export const HISTORY_PREVIEW_COUNT = 4
 
@@ -20,12 +23,6 @@ export type HomeMessage = {
   rating?: CoachUsageRating | null
   failed?: boolean
   error?: string
-}
-
-export function titleFrom(text: string) {
-  const clean = text.replace(/\s+/g, " ").trim()
-  if (clean.length <= 36) return clean
-  return `${clean.slice(0, 36)}…`
 }
 
 export function toHomeMessages(
