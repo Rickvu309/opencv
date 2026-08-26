@@ -118,6 +118,13 @@
       transition: none;
     }
 
+    [data-slot="aui-thread-viewport"],
+    [data-slot="aui-message-root"],
+    [data-slot="aui-composer-root"] {
+      animation: none;
+      transition: none;
+    }
+
     .coach-receipt-collapse {
       opacity: 0.55;
     }
