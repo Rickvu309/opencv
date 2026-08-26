@@ -1,6 +1,6 @@
 /**
  * CV print-paper templates. Arbitrary pixel sizes and the product-sidebar
- * hex stay here on purpose — print layout is a documented ADR-0008 exception.
+ * hex stay here on purpose — print layout is a documented ADR-0010 exception.
  */
 import type { ReactNode } from "react"
 import { useEffect, useRef } from "react"

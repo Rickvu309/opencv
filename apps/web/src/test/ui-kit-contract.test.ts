@@ -53,7 +53,7 @@ describe("UI package kit surface", () => {
     expect(css).toMatch(/@source\s+["'][^"']+\*\.\{ts,tsx\}["']/)
   })
 
-  it("ships ADR-0008 tokens for type, status, chart, pitch, motion, shadow, and z-index", () => {
+  it("ships ADR-0010 tokens for type, status, chart, pitch, motion, shadow, and z-index", () => {
     const css = read("packages/ui/src/styles/globals.css")
     const tokens = [
       "--font-heading:",

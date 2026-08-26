@@ -1,7 +1,7 @@
 # Spec 6 — Design system
 
 **Status:** Done (QVE-156 / QVE-157–159)
-**Related:** ADR-0008 (tokens + governance), ADR-0002 (absorb rule + token vocabulary), audit `docs/research/2026-08-26-design-system-audit.md`
+**Related:** ADR-0010 (tokens + governance), ADR-0002 (absorb rule + token vocabulary), audit `docs/research/2026-08-26-design-system-audit.md`
 
 ## Problem Statement
 
@@ -17,7 +17,7 @@ Three moves, in order:
 2. **Migrate everything** — one ordered sweep replacing hand-rolled buttons, inputs, popovers, panels, empty states, focus rings, tone maps, and pixel sizes with the kit vocabulary, feature by feature.
 3. **Lock the vocabulary** — tests that forbid raw hex and palette classes outside two documented exceptions, contract tests that scale automatically, and ADR-0002 updated so every future agent inherits the rules.
 
-Identity decisions locked (ADR-0008): monochrome stays, status hues arrive, dark mode parks (light-only; the secret hotkey goes).
+Identity decisions locked (ADR-0010): monochrome stays, status hues arrive, dark mode parks (light-only; the secret hotkey goes).
 
 ## User Stories
 
@@ -39,7 +39,7 @@ Three tickets under one parent (owner's sizing call; DS-2's size is an accepted 
 
 ## Definition of done
 
-- [x] All ADR-0008 tokens exist and are documented in Storybook Foundations pages
+- [x] All ADR-0010 tokens exist and are documented in Storybook Foundations pages
 - [x] Kit ships the eleven new components, each with a story (auto-enforced)
 - [x] Storybook builds in CI; a broken story fails the PR
 - [x] Zero raw `<button>`/`<input>`/`<textarea>`/`<select>` in app features outside documented exceptions; one focus treatment everywhere
