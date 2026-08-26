@@ -35,4 +35,4 @@ Strong but thin foundation, drifting at the consumption edge. The color problem 
 
 ## Resolution
 
-Spec 6 (`docs/specs/spec-6-design-system.md`) addresses this in three tickets: kit (tokens + components + Storybook/CI), migration sweep, guardrail lock. Decisions in ADR-0008.
+**Resolved 2026-08-26** by Spec 6: DS-1 ([QVE-157](https://linear.app/quanvm/issue/QVE-157)) shipped the tokens, components, hygiene, and Storybook/CI; DS-2 ([QVE-158](https://linear.app/quanvm/issue/QVE-158)) migrated consumption; DS-3 ([QVE-159](https://linear.app/quanvm/issue/QVE-159)) locked the vocabulary. Decisions in ADR-0008; agent-facing rule in ADR-0002. Deferred follow-ups: dark-mode revival, brand-accent exploration, Figma sync, spacing-rhythm tokens.

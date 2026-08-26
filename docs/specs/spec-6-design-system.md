@@ -1,7 +1,7 @@
 # Spec 6 — Design system
 
-**Status:** Ready for ticket breakdown
-**Related:** ADR-0008 (tokens + governance), ADR-0002 (absorb rule — extended, not replaced), audit `docs/research/2026-08-26-design-system-audit.md`
+**Status:** Done (QVE-156 / QVE-157–159)
+**Related:** ADR-0008 (tokens + governance), ADR-0002 (absorb rule + token vocabulary), audit `docs/research/2026-08-26-design-system-audit.md`
 
 ## Problem Statement
 
@@ -39,13 +39,22 @@ Three tickets under one parent (owner's sizing call; DS-2's size is an accepted 
 
 ## Definition of done
 
-- [ ] All ADR-0008 tokens exist and are documented in Storybook Foundations pages
-- [ ] Kit ships the eleven new components, each with a story (auto-enforced)
-- [ ] Storybook builds in CI; a broken story fails the PR
-- [ ] Zero raw `<button>`/`<input>`/`<textarea>`/`<select>` in app features outside documented exceptions; one focus treatment everywhere
-- [ ] Zero raw hex / named palette classes outside the two documented exceptions — enforced by a test
-- [ ] One Pitch tone table; Apply stage dots visually distinct; no arbitrary `text-[Npx]` outside the scale
-- [ ] No Paper CSS in the kit stylesheet; A4 height has one source
-- [ ] Reduced motion respected; story viewer pauses
-- [ ] Dark-mode hotkey removed; light-only recorded; revival ticket filed
-- [ ] ADR-0002 updated with the vocabulary rule; audit note marked resolved
+- [x] All ADR-0008 tokens exist and are documented in Storybook Foundations pages
+- [x] Kit ships the eleven new components, each with a story (auto-enforced)
+- [x] Storybook builds in CI; a broken story fails the PR
+- [x] Zero raw `<button>`/`<input>`/`<textarea>`/`<select>` in app features outside documented exceptions; one focus treatment everywhere
+- [x] Zero raw hex / named palette classes outside the two documented exceptions — enforced by a test
+- [x] One Pitch tone table; Apply stage dots visually distinct; no arbitrary `text-[Npx]` outside the scale (CV print paper remains the documented exception)
+- [x] No Paper CSS in the kit stylesheet; A4 height has one source
+- [x] Reduced motion respected; story viewer pauses
+- [x] Dark-mode hotkey removed; light-only recorded; revival ticket filed
+- [x] ADR-0002 updated with the vocabulary rule; audit note marked resolved
+
+## Follow-ups filed (QVE-159)
+
+Work this spec deliberately deferred, now ticketed:
+
+- [QVE-164](https://linear.app/quanvm/issue/QVE-164) — Dark-mode revival (parked until Users ask)
+- [QVE-165](https://linear.app/quanvm/issue/QVE-165) — Brand-accent exploration (monochrome stays until decided)
+- [QVE-166](https://linear.app/quanvm/issue/QVE-166) — Figma sync for the owned kit
+- [QVE-167](https://linear.app/quanvm/issue/QVE-167) — Spacing-rhythm tokens beyond stock Tailwind
