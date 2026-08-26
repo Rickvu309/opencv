@@ -28,7 +28,7 @@ function DiffView({ hunks }: { hunks: readonly DiffHunk[] }) {
                 key={`${hunk.section}-${index}`}
                 className={cn(
                   "flex gap-2 px-2 py-1",
-                  line.kind === "add" && "bg-emerald-50 text-emerald-900",
+                  line.kind === "add" && "bg-success/10 text-success",
                   line.kind === "del" && "bg-destructive/10 text-destructive",
                   line.kind === "eq" && "text-muted-foreground"
                 )}

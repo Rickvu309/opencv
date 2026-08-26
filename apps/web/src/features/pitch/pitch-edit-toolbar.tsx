@@ -1,4 +1,9 @@
 import { Button } from "@workspace/ui/components/button"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@workspace/ui/components/popover"
 import { cn } from "@workspace/ui/lib/utils"
 import { Eye, EyeOff, Globe, Pencil, Plus, X } from "lucide-react"
 
@@ -11,7 +16,7 @@ import {
 type Props = {
   published: boolean
   addOpen: boolean
-  onToggleAdd: () => void
+  onAddOpenChange: (open: boolean) => void
   onAddBlock: (kind: PitchBlockKind) => void
   onPublish: () => void
   onUnpublish: () => void
@@ -21,7 +26,7 @@ type Props = {
 export function PitchEditToolbar({
   published,
   addOpen,
-  onToggleAdd,
+  onAddOpenChange,
   onAddBlock,
   onPublish,
   onUnpublish,
@@ -37,38 +42,40 @@ export function PitchEditToolbar({
           <span className="text-xs font-medium">Editing Pitch</span>
         </div>
 
-        <div className="relative">
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="h-8"
-            onClick={onToggleAdd}
+        <Popover open={addOpen} onOpenChange={onAddOpenChange}>
+          <PopoverTrigger
+            render={
+              <Button type="button" size="sm" variant="outline" className="h-8" />
+            }
           >
             <Plus className="size-3.5" />
             Add section
-          </Button>
-          {addOpen ? (
-            <div className="absolute bottom-full left-0 z-50 mb-2 w-56 rounded-xl border border-border bg-popover p-1 shadow-xl">
-              {(Object.keys(BLOCK_LABELS) as PitchBlockKind[]).map((kind) => (
-                <button
-                  key={kind}
-                  type="button"
-                  aria-label={BLOCK_LABELS[kind]}
-                  onClick={() => onAddBlock(kind)}
-                  className="flex w-full flex-col rounded-lg px-2.5 py-2 text-left hover:bg-muted"
-                >
-                  <span className="text-xs font-medium">
-                    {BLOCK_LABELS[kind]}
-                  </span>
-                  <span className="mt-0.5 text-[10px] leading-snug text-muted-foreground">
-                    {BLOCK_PURPOSE[kind]}
-                  </span>
-                </button>
-              ))}
-            </div>
-          ) : null}
-        </div>
+          </PopoverTrigger>
+          <PopoverContent
+            align="start"
+            side="top"
+            sideOffset={8}
+            className="w-56 gap-0 p-1"
+          >
+            {(Object.keys(BLOCK_LABELS) as PitchBlockKind[]).map((kind) => (
+              <Button
+                key={kind}
+                type="button"
+                variant="ghost"
+                aria-label={BLOCK_LABELS[kind]}
+                onClick={() => onAddBlock(kind)}
+                className="h-auto w-full flex-col items-start rounded-lg px-2.5 py-2 text-left"
+              >
+                <span className="text-xs font-medium">
+                  {BLOCK_LABELS[kind]}
+                </span>
+                <span className="mt-0.5 text-2xs leading-snug font-normal text-muted-foreground">
+                  {BLOCK_PURPOSE[kind]}
+                </span>
+              </Button>
+            ))}
+          </PopoverContent>
+        </Popover>
 
         <div className="mx-1 hidden h-6 w-px bg-border sm:block" />
 
@@ -96,7 +103,7 @@ export function PitchEditToolbar({
           variant={published ? "outline" : "secondary"}
           className={cn(
             "ml-auto h-8",
-            published && "border-emerald-200 text-emerald-800"
+            published && "border-success/30 text-success"
           )}
           onClick={onDone}
         >

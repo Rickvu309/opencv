@@ -7,6 +7,9 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@workspace/ui/components/avatar"
+import { Button } from "@workspace/ui/components/button"
+import { Input } from "@workspace/ui/components/input"
+import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
 import {
   Code2,
@@ -20,6 +23,7 @@ import {
   Share2,
 } from "lucide-react"
 
+import { ComingSoon } from "@/components/coming-soon.tsx"
 import { profileInitials } from "@/features/app-shell/profile-display.ts"
 import { PitchGithubHeatmap } from "@/features/pitch/pitch-github-heatmap.tsx"
 import {
@@ -28,6 +32,7 @@ import {
 } from "@/features/pitch/pitch-github-mock.ts"
 import {
   paperDocPitchMeta,
+  pitchToneClass,
   PITCH_WORK_DOCS,
   type PitchAchievement,
   type PitchExperience,
@@ -52,21 +57,23 @@ function SectionShell({
     <section className="group relative">
       {editing ? (
         <div className="absolute -top-1 right-0 flex gap-1">
-          <span className="rounded-md border border-border bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground shadow-sm">
+          <span className="rounded-md border border-border bg-background px-1.5 py-0.5 text-2xs text-muted-foreground shadow-sm">
             {title}
           </span>
           {onHide ? (
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="xs"
               onClick={onHide}
-              className="rounded-md border border-border bg-background px-1.5 py-0.5 text-[10px] hover:bg-muted"
+              className="h-auto px-1.5 py-0.5 text-2xs"
             >
               Hide
-            </button>
+            </Button>
           ) : null}
         </div>
       ) : null}
-      <h2 className="mb-5 text-[11px] font-medium tracking-widest text-muted-foreground uppercase">
+      <h2 className="mb-5 text-micro font-medium tracking-widest text-muted-foreground uppercase">
         {title}
       </h2>
       {children}
@@ -122,7 +129,7 @@ export function PitchProfileHeader({
       <div className="flex items-start gap-4">
         <PitchAvatar src={profile.avatar} name={profile.name} />
         <div className="min-w-0 pt-0.5">
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-[1.65rem]">
+          <h1 className="font-heading text-page-title font-semibold tracking-tight">
             {profile.name}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -139,15 +146,15 @@ export function PitchProfileHeader({
 
       <div className="mt-5 rounded-xl border border-border/80 bg-muted/25 px-4 py-3">
         {editing ? (
-          <input
+          <Input
             value={profile.status}
             onChange={(e) => onStatusChange?.(e.target.value)}
-            className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            className="h-auto w-full border-0 bg-transparent px-0 py-0 shadow-none focus-visible:border-0 focus-visible:ring-0"
             placeholder="Status — what you're open to"
           />
         ) : (
           <p className="flex items-start gap-2 text-sm leading-relaxed">
-            <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-emerald-500" />
+            <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-success" />
             {profile.status}
           </p>
         )}
@@ -170,14 +177,14 @@ export function AboutSection({
   return (
     <SectionShell title="About" editing={editing} onHide={onHide}>
       {editing ? (
-        <textarea
+        <Textarea
           value={text}
           onChange={(e) => onChange?.(e.target.value)}
           rows={6}
-          className="w-full resize-none rounded-xl border border-border bg-background px-3 py-2.5 text-[15px] leading-relaxed outline-none focus:ring-2 focus:ring-ring/20"
+          className="min-h-0 resize-none rounded-xl text-body leading-relaxed"
         />
       ) : (
-        <div className="space-y-3 text-[15px] leading-relaxed text-muted-foreground">
+        <div className="space-y-3 text-body leading-relaxed text-muted-foreground">
           {text.split("\n\n").map((para, i) => (
             <p key={i}>{para}</p>
           ))}
@@ -211,7 +218,7 @@ export function AchievementsSection({
                   </span>
                 </p>
                 {item.tag ? (
-                  <span className="mt-1.5 inline-block rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                  <span className="mt-1.5 inline-block rounded-full bg-muted px-2 py-0.5 text-2xs font-medium text-muted-foreground">
                     {item.tag}
                   </span>
                 ) : null}
@@ -220,7 +227,7 @@ export function AchievementsSection({
                 </p>
                 {item.link ? (
                   <div className="mt-3 flex items-center gap-3 rounded-xl border border-border bg-muted/20 p-3">
-                    <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-background text-[10px] font-bold shadow-sm">
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-background text-2xs font-bold shadow-sm">
                       PDF
                     </span>
                     <span className="min-w-0">
@@ -239,13 +246,15 @@ export function AchievementsSection({
         ))}
       </ul>
       {editing ? (
-        <button
+        <Button
           type="button"
           disabled
-          className="mt-6 text-xs font-medium text-muted-foreground disabled:opacity-50"
+          variant="ghost"
+          className="mt-6 h-auto px-0 text-xs font-medium text-muted-foreground"
         >
-          + Add achievement · Coming soon
-        </button>
+          + Add achievement
+          <ComingSoon />
+        </Button>
       ) : null}
     </SectionShell>
   )
@@ -309,7 +318,7 @@ export function WorkSection({
             >
               <div
                 className={cn(
-                  "flex size-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br text-[10px] font-bold",
+                  "flex size-10 shrink-0 items-center justify-center rounded-lg text-2xs font-bold",
                   meta.gradient
                 )}
               >
@@ -319,7 +328,7 @@ export function WorkSection({
                 <span className="block truncate text-sm font-medium">
                   {doc.name}
                 </span>
-                <span className="block text-xs text-muted-foreground">
+                <span className="block text-xs font-normal text-muted-foreground">
                   {doc.updated} · {doc.status}
                 </span>
               </span>
@@ -335,7 +344,7 @@ export function WorkSection({
               <FileKindIcon kind={file.kind} />
               <span>
                 <span className="block font-medium">{file.name}</span>
-                <span className="text-[10px] text-muted-foreground">
+                <span className="text-2xs font-normal text-muted-foreground">
                   {file.meta}
                 </span>
               </span>
@@ -386,8 +395,8 @@ export function GithubSection({
               <p className="block truncate font-mono text-sm font-medium">
                 @{mock.username}
               </p>
-              <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700">
-                <span className="size-1.5 rounded-full bg-emerald-500" />
+              <span className="inline-flex items-center gap-1 text-2xs text-success">
+                <span className="size-1.5 rounded-full bg-success" />
                 Connected · mock integration
               </span>
             </div>
@@ -408,7 +417,7 @@ export function GithubSection({
 
         <dl className="mt-4 grid grid-cols-4 gap-2 border-t border-border/50 pt-3 text-center">
           <div>
-            <dt className="text-[9px] text-muted-foreground uppercase">
+            <dt className="text-3xs text-muted-foreground uppercase">
               Streak
             </dt>
             <dd className="text-sm font-semibold tabular-nums">
@@ -416,7 +425,7 @@ export function GithubSection({
             </dd>
           </div>
           <div>
-            <dt className="text-[9px] text-muted-foreground uppercase">
+            <dt className="text-3xs text-muted-foreground uppercase">
               Repos
             </dt>
             <dd className="text-sm font-semibold tabular-nums">
@@ -424,7 +433,7 @@ export function GithubSection({
             </dd>
           </div>
           <div>
-            <dt className="text-[9px] text-muted-foreground uppercase">
+            <dt className="text-3xs text-muted-foreground uppercase">
               Since
             </dt>
             <dd className="text-sm font-semibold tabular-nums">
@@ -432,7 +441,7 @@ export function GithubSection({
             </dd>
           </div>
           <div>
-            <dt className="text-[9px] text-muted-foreground uppercase">Top</dt>
+            <dt className="text-3xs text-muted-foreground uppercase">Top</dt>
             <dd className="truncate text-sm font-semibold">
               {mock.topLanguage}
             </dd>
@@ -440,7 +449,7 @@ export function GithubSection({
         </dl>
       </div>
       {editing ? (
-        <p className="mt-2 text-[10px] text-muted-foreground">
+        <p className="mt-2 text-2xs text-muted-foreground">
           Live GitHub data waits on a product decision. This heatmap is mock
           data for @{mock.username}.
         </p>
@@ -464,7 +473,7 @@ export function ContactSection({
     <SectionShell title="Contact" editing={editing} onHide={onHide}>
       {email ? (
         <div className="mb-4 flex flex-col rounded-xl border border-border bg-muted/20 px-4 py-3">
-          <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+          <span className="text-2xs font-medium tracking-wide text-muted-foreground uppercase">
             Email
           </span>
           <span className="mt-1 text-base font-semibold">
@@ -505,38 +514,29 @@ export function GallerySection({
             key={item.id}
             className={cn(
               "flex aspect-[4/3] items-end rounded-xl p-2 outline outline-1 outline-black/[0.04]",
-              galleryTone(item.tone)
+              pitchToneClass(item.tone)
             )}
           >
-            <span className="text-[10px] font-medium text-foreground/70">
+            <span className="text-2xs font-medium text-foreground/70">
               {item.caption}
             </span>
           </div>
         ))}
         {editing ? (
-          <button
+          <Button
             type="button"
             disabled
-            className="flex aspect-[4/3] flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border text-muted-foreground disabled:opacity-50"
+            variant="ghost"
+            className="flex aspect-[4/3] h-auto flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border text-muted-foreground"
           >
             <ImagePlus className="size-4" />
-            <span className="text-[10px]">Upload · Coming soon</span>
-          </button>
+            <span className="text-2xs">Upload</span>
+            <ComingSoon />
+          </Button>
         ) : null}
       </div>
     </SectionShell>
   )
-}
-
-function galleryTone(tone: PitchGalleryItem["tone"]) {
-  switch (tone) {
-    case "warm":
-      return "bg-gradient-to-br from-amber-100 to-orange-50"
-    case "cool":
-      return "bg-gradient-to-br from-sky-100 to-indigo-50"
-    default:
-      return "bg-gradient-to-br from-muted to-muted/40"
-  }
 }
 
 function LinkIcon({ kind }: { kind: PitchLink["icon"] }) {

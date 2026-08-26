@@ -17,7 +17,9 @@ describe("eval harness is manual-only", () => {
     expect(apiPkg.scripts.test).not.toMatch(/eval/)
 
     const ci = readFileSync(join(repoRoot, ".github/workflows/ci.yml"), "utf8")
-    expect(ci).toContain("pnpm turbo run lint typecheck test build")
+    expect(ci).toMatch(/pnpm turbo run lint typecheck build/)
+    expect(ci).toMatch(/pnpm turbo run test/)
+    expect(ci).toMatch(/build-storybook/)
     expect(ci).not.toMatch(/filter api eval|run eval/)
 
     const vitest = readFileSync(

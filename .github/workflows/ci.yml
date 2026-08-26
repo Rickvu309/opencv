@@ -8,9 +8,9 @@ on:
 
 jobs:
   ci:
-    name: lint, typecheck, test, build
+    name: lint, typecheck, test, build, storybook
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,5 +27,8 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
-      - name: lint, typecheck, test, build
-        run: pnpm turbo run lint typecheck test build
+      - name: lint, typecheck, build, storybook
+        run: pnpm turbo run lint typecheck build build-storybook
+
+      - name: test
+        run: pnpm turbo run test

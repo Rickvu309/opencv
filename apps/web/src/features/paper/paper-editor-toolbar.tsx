@@ -154,7 +154,12 @@ function handleOverflowAction(id: string) {
       runEditorCommand("strikeThrough")
       break
     case "highlight":
-      runEditorCommand("hiliteColor", "#f4f4f5")
+      runEditorCommand(
+        "hiliteColor",
+        getComputedStyle(document.documentElement)
+          .getPropertyValue("--muted")
+          .trim()
+      )
       break
     case "align-left":
       runEditorCommand("justifyLeft")

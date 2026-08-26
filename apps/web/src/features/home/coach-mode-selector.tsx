@@ -1,4 +1,5 @@
 import { Badge } from "@workspace/ui/components/badge"
+import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 import type { CoachMode } from "@workspace/domain"
 
@@ -26,7 +27,7 @@ export function CoachModeSelector({
   return (
     <div className={cn("space-y-1.5", compact && "space-y-1")}>
       {showPill ? (
-        <Badge variant="outline" className="text-[11px] font-medium">
+        <Badge variant="outline" className="text-micro font-medium">
           {coachModeLabel(mode)}
         </Badge>
       ) : null}
@@ -39,27 +40,29 @@ export function CoachModeSelector({
           {COACH_MODE_OPTIONS.map((option) => {
             const selected = option.id === mode
             return (
-              <button
+              <Button
                 key={option.id}
                 type="button"
+                variant="ghost"
+                size="xs"
                 role="radio"
                 aria-checked={selected}
                 onClick={() => onModeChange(option.id)}
                 className={cn(
-                  "rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
+                  "rounded-full px-2.5",
                   selected
                     ? "bg-background text-foreground shadow-sm ring-1 ring-border/80"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 {option.label}
-              </button>
+              </Button>
             )
           })}
         </div>
       </div>
       {showHelper ? (
-        <p className="text-[11px] leading-4 text-muted-foreground">
+        <p className="text-micro leading-4 text-muted-foreground">
           {coachModeHelper(mode)}
           {mode === "free" ? (
             <>

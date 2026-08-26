@@ -1,0 +1,148 @@
+/* Paper / Proof / CV / A4 / print — app-level, not kit (ADR-0008). */
+@reference "@workspace/ui/globals.css";
+
+:root {
+  /* One source for A4 page height; TS reads this variable. */
+  --cv-page-height: 1123px;
+  --cv-padding-x: 15mm;
+  --cv-padding-y: 14mm;
+}
+
+@layer utilities {
+  /* Shared prose treatment — Coach markdown and the Paper editor canvas. */
+  .prose-kit {
+    @apply text-body leading-relaxed;
+  }
+
+  .paper-editor-canvas h2 {
+    @apply mt-8 mb-3 text-xl font-semibold tracking-tight text-foreground first:mt-0;
+  }
+
+  .paper-editor-canvas p {
+    @apply mb-4 text-body leading-8 text-foreground/90;
+  }
+
+  .paper-editor-canvas ul {
+    @apply mb-4 list-disc space-y-1.5 pl-5 text-body leading-7 text-foreground/90;
+  }
+
+  .paper-editor-canvas li {
+    @apply pl-0.5;
+  }
+
+  .paper-editor-canvas strong {
+    @apply font-semibold text-foreground;
+  }
+
+  .cv-a4-page {
+    box-shadow:
+      0 1px 2px oklch(0 0 0 / 0.06),
+      0 8px 24px oklch(0 0 0 / 0.05);
+  }
+
+  .cv-a4-content {
+    min-height: var(--cv-page-height);
+  }
+
+  .cv-template-root {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: var(--cv-page-height);
+    padding: var(--cv-padding-y) var(--cv-padding-x);
+    font-size: 10.5pt;
+    line-height: 1.45;
+  }
+
+  .cv-template-root--product {
+    display: flex;
+    min-height: var(--cv-page-height);
+    padding: 0;
+  }
+
+  .cv-template-product-sidebar {
+    width: 32%;
+    flex-shrink: 0;
+    align-self: stretch;
+    padding: var(--cv-padding-y) 11mm;
+    box-sizing: border-box;
+  }
+
+  .cv-template-product-main {
+    flex: 1;
+    min-width: 0;
+    padding: var(--cv-padding-y) var(--cv-padding-x);
+    box-sizing: border-box;
+  }
+
+  .cv-template-photo-slot {
+    width: 24mm;
+    height: 32mm;
+  }
+
+  .proof-chain-canvas {
+    background-color: color-mix(in oklch, var(--muted) 55%, var(--background));
+    background-image: radial-gradient(
+      circle,
+      color-mix(in oklch, var(--border) 90%, transparent) 1px,
+      transparent 1px
+    );
+    background-size: 20px 20px;
+  }
+
+  .proof-step-card {
+    border-radius: var(--radius-xl);
+    border: 1px solid color-mix(in oklch, var(--border) 85%, transparent);
+    background: var(--card);
+    box-shadow:
+      0 1px 2px oklch(0 0 0 / 0.04),
+      0 4px 14px oklch(0 0 0 / 0.03);
+    transition:
+      box-shadow 0.2s ease,
+      border-color 0.2s ease;
+  }
+
+  .proof-step-card:hover {
+    border-color: color-mix(in oklch, var(--border) 100%, transparent);
+    box-shadow:
+      0 2px 4px oklch(0 0 0 / 0.05),
+      0 10px 24px oklch(0 0 0 / 0.06);
+  }
+
+  .proof-step-marker {
+    @apply border-2 border-background;
+  }
+
+  .proof-step-marker--context {
+    background: var(--chart-3);
+  }
+
+  .proof-step-marker--action {
+    background: var(--chart-2);
+  }
+
+  .proof-step-marker--outcome {
+    background: var(--foreground);
+  }
+
+  .proof-step-marker--note {
+    background: color-mix(in oklch, var(--muted-foreground) 45%, var(--muted));
+  }
+
+  .proof-photo {
+    outline: 1px solid oklch(0 0 0 / 0.08);
+    outline-offset: -1px;
+  }
+
+  @media print {
+    .cv-a4-page {
+      box-shadow: none;
+      border: none;
+    }
+
+    .cv-template-root section,
+    .cv-template-product-main section,
+    .cv-template-product-sidebar > div {
+      break-inside: avoid;
+    }
+  }
+}

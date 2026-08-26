@@ -2,9 +2,13 @@
  * Instagram-style story highlights + fullscreen viewer.
  */
 import { useCallback, useEffect, useState, type ImgHTMLAttributes } from "react"
+import { Button } from "@workspace/ui/components/button"
+import { useMediaQuery } from "@workspace/ui/hooks/use-media-query"
 import { cn } from "@workspace/ui/lib/utils"
 import { ChevronLeft, ChevronRight, Pause, Play, Plus, X } from "lucide-react"
 
+import { ComingSoon } from "@/components/coming-soon.tsx"
+import { comingSoonLabel } from "@/components/coming-soon-label.ts"
 import { PitchAvatar } from "@/features/pitch/pitch-showcase.tsx"
 import {
   findHighlight,
@@ -14,24 +18,13 @@ import {
   prevSlideIndex,
   type StoryViewerState,
 } from "@/features/pitch/pitch-story-utils.ts"
-import type {
-  PitchBentoCard,
-  PitchProfile,
-  PitchStoryHighlight,
-  PitchStorySlide,
+import {
+  pitchToneClass,
+  type PitchBentoCard,
+  type PitchProfile,
+  type PitchStoryHighlight,
+  type PitchStorySlide,
 } from "@/features/pitch/pitch-types.ts"
-
-const TONE_BG: Record<string, string> = {
-  warm: "bg-gradient-to-br from-amber-200 via-orange-100 to-rose-100",
-  cool: "bg-gradient-to-br from-sky-200 via-indigo-100 to-violet-100",
-  neutral: "bg-gradient-to-br from-stone-200 via-stone-100 to-zinc-50",
-  emerald: "bg-gradient-to-br from-emerald-200 via-teal-100 to-cyan-50",
-  dark: "bg-gradient-to-br from-zinc-800 via-zinc-900 to-black",
-}
-
-function toneClass(tone?: string) {
-  return TONE_BG[tone ?? "neutral"] ?? TONE_BG.neutral
-}
 
 function StoryPhoto({
   src,
@@ -63,17 +56,18 @@ export function StoryHighlightsRow({
     <div className="mb-10 -mx-1 overflow-x-auto px-1 pb-1">
       <div className="flex gap-4">
         {highlights.map((h) => (
-          <button
+          <Button
             key={h.id}
             type="button"
+            variant="ghost"
             aria-label={`${h.label} highlight`}
             onClick={() => onOpen(h.id)}
-            className="flex w-[4.5rem] shrink-0 flex-col items-center gap-1.5"
+            className="h-auto w-[4.5rem] shrink-0 flex-col items-center gap-1.5 px-0 py-0 hover:bg-transparent"
           >
             <span
               className={cn(
                 "flex size-[4.25rem] items-center justify-center overflow-hidden rounded-full p-[2px]",
-                "bg-gradient-to-tr from-amber-400 via-rose-400 to-violet-500"
+                "bg-gradient-to-tr from-chart-1 via-chart-3 to-chart-5"
               )}
             >
               {h.coverImage ? (
@@ -87,34 +81,38 @@ export function StoryHighlightsRow({
               ) : (
                 <span
                   className={cn(
-                    "flex size-full items-center justify-center rounded-full border-2 border-background text-[10px] font-bold tracking-tight text-foreground/70",
-                    toneClass(h.coverTone)
+                    "flex size-full items-center justify-center rounded-full border-2 border-background text-2xs font-bold tracking-tight text-foreground/70",
+                    pitchToneClass(h.coverTone)
                   )}
                 >
                   {h.label.slice(0, 2).toUpperCase()}
                 </span>
               )}
             </span>
-            <span className="max-w-full truncate text-[11px] text-muted-foreground">
+            <span className="max-w-full truncate text-micro font-normal text-muted-foreground">
               {h.label}
             </span>
-          </button>
+          </Button>
         ))}
         {editing ? (
-          <button
+          <Button
             type="button"
             disabled
-            aria-label="New highlight — coming soon"
-            className="flex w-[4.5rem] shrink-0 flex-col items-center gap-1.5 disabled:opacity-50"
+            variant="ghost"
+            aria-label={comingSoonLabel("New highlight")}
+            className="h-auto w-[4.5rem] shrink-0 flex-col items-center gap-1.5 px-0 py-0"
           >
             <span className="flex size-[4.25rem] items-center justify-center rounded-full border border-dashed border-border bg-muted/30">
               <Plus className="size-5 text-muted-foreground" />
             </span>
-            <span className="text-[11px] text-muted-foreground">Coming soon</span>
-          </button>
+            <span className="text-micro font-normal text-muted-foreground">
+              New
+            </span>
+            <ComingSoon silent />
+          </Button>
         ) : null}
       </div>
-      <p className="mt-3 text-center text-[10px] text-muted-foreground/80">
+      <p className="mt-3 text-center text-2xs text-muted-foreground/80">
         Tap a highlight to watch work moments · like Instagram Stories
       </p>
     </div>
@@ -192,14 +190,17 @@ export function PitchStoryViewer({
       aria-modal
       aria-label="Work story viewer"
     >
-      <button
+      {/* Documented exception: photographic overlays on the story viewer — black/white sit on photos, not product chrome. */}
+      <Button
         type="button"
+        variant="ghost"
+        size="icon"
         onClick={onClose}
-        className="absolute top-4 right-4 z-10 flex size-9 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+        className="absolute top-4 right-4 z-10 size-9 rounded-full bg-white/10 text-white hover:bg-white/20 hover:text-white"
         aria-label="Close"
       >
         <X className="size-5" />
-      </button>
+      </Button>
 
       {prevPreview ? (
         <div
@@ -218,22 +219,26 @@ export function PitchStoryViewer({
         </div>
       ) : null}
 
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="icon"
         onClick={goPrev}
-        className="absolute left-3 z-10 hidden size-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 sm:flex"
+        className="absolute left-3 z-10 hidden size-9 rounded-full bg-white/10 text-white hover:bg-white/20 hover:text-white sm:flex"
         aria-label="Previous"
       >
         <ChevronLeft className="size-5" />
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
+        variant="ghost"
+        size="icon"
         onClick={goNext}
-        className="absolute right-3 z-10 hidden size-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 sm:flex"
+        className="absolute right-3 z-10 hidden size-9 rounded-full bg-white/10 text-white hover:bg-white/20 hover:text-white sm:flex"
         aria-label="Next"
       >
         <ChevronRight className="size-5" />
-      </button>
+      </Button>
 
       <div className="relative mx-4 flex h-[min(85vh,720px)] w-full max-w-[min(100%,380px)] flex-col">
         <StoryFrame
@@ -247,15 +252,17 @@ export function PitchStoryViewer({
         />
       </div>
 
-      <button
+      <Button
         type="button"
-        className="absolute inset-y-0 left-0 z-[5] w-1/3 sm:hidden"
+        variant="ghost"
+        className="absolute inset-y-0 left-0 z-[5] h-auto w-1/3 rounded-none bg-transparent hover:bg-transparent sm:hidden"
         aria-label="Previous slide"
         onClick={goPrev}
       />
-      <button
+      <Button
         type="button"
-        className="absolute inset-y-0 right-0 z-[5] w-1/3 sm:hidden"
+        variant="ghost"
+        className="absolute inset-y-0 right-0 z-[5] h-auto w-1/3 rounded-none bg-transparent hover:bg-transparent sm:hidden"
         aria-label="Next slide"
         onClick={goNext}
       />
@@ -278,7 +285,9 @@ function StoryFrame({
   slideDuration: number
   onNext: () => void
 }) {
-  const [paused, setPaused] = useState(false)
+  const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)", false)
+  const [userPaused, setUserPaused] = useState(false)
+  const paused = reduceMotion || userPaused
   const [progress, setProgress] = useState(0)
 
   useEffect(() => {
@@ -296,10 +305,11 @@ function StoryFrame({
   }, [paused, slideDuration, onNext])
 
   function onTogglePause() {
-    setPaused((p) => !p)
+    if (reduceMotion) return
+    setUserPaused((p) => !p)
   }
   return (
-    <div className="relative flex h-full flex-col overflow-hidden rounded-2xl bg-zinc-900 shadow-2xl ring-1 ring-white/10">
+    <div className="relative flex h-full flex-col overflow-hidden rounded-2xl bg-foreground shadow-2xl ring-1 ring-white/10">
       <div className="absolute top-0 right-0 left-0 z-20 flex gap-1 px-3 pt-3">
         {highlight.slides.map((s, i) => (
           <div
@@ -331,12 +341,14 @@ function StoryFrame({
           <p className="truncate text-sm font-semibold text-white">
             {profile.name}
           </p>
-          <p className="truncate text-[11px] text-white/60">{highlight.label}</p>
+          <p className="truncate text-micro text-white/60">{highlight.label}</p>
         </div>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon-sm"
           onClick={onTogglePause}
-          className="flex size-8 items-center justify-center rounded-full text-white/80 hover:bg-white/10"
+          className="rounded-full text-white/80 hover:bg-white/10 hover:text-white"
           aria-label={paused ? "Play" : "Pause"}
         >
           {paused ? (
@@ -344,7 +356,7 @@ function StoryFrame({
           ) : (
             <Pause className="size-4" />
           )}
-        </button>
+        </Button>
       </div>
 
       <div className="relative min-h-0 flex-1">
@@ -370,7 +382,7 @@ function StoryFrame({
             <div
               className={cn(
                 "absolute inset-0 scale-110 blur-2xl opacity-60",
-                toneClass(slide.tone)
+                pitchToneClass(slide.tone)
               )}
               aria-hidden
             />
@@ -378,7 +390,7 @@ function StoryFrame({
               <div
                 className={cn(
                   "flex aspect-[4/5] w-full max-w-[240px] flex-col items-center justify-center rounded-xl p-6 shadow-lg ring-1 ring-black/10",
-                  toneClass(slide.tone)
+                  pitchToneClass(slide.tone)
                 )}
               >
                 <p className="text-center text-lg font-semibold tracking-tight text-foreground/90">
@@ -422,7 +434,7 @@ function StoryFramePreview({ highlight }: { highlight: PitchStoryHighlight }) {
     )
   }
   return (
-    <div className={cn("h-full w-full", toneClass(slide.tone))}>
+    <div className={cn("h-full w-full", pitchToneClass(slide.tone))}>
       <div className="flex h-full items-center justify-center p-4 text-center text-xs font-medium opacity-70">
         {highlight.label}
       </div>
@@ -445,22 +457,24 @@ export function MomentsBentoSection({
     <section className="group relative">
       {editing ? (
         <div className="absolute -top-1 right-0 flex gap-1">
-          <span className="rounded-md border border-border bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground shadow-sm">
+          <span className="rounded-md border border-border bg-background px-1.5 py-0.5 text-2xs text-muted-foreground shadow-sm">
             Moments
           </span>
           {onHide ? (
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="xs"
               onClick={onHide}
-              className="rounded-md border border-border bg-background px-1.5 py-0.5 text-[10px] hover:bg-muted"
+              className="h-auto px-1.5 py-0.5 text-2xs"
             >
               Hide
-            </button>
+            </Button>
           ) : null}
         </div>
       ) : null}
 
-      <h2 className="mb-4 text-[11px] font-medium tracking-widest text-muted-foreground uppercase">
+      <h2 className="mb-4 text-micro font-medium tracking-widest text-muted-foreground uppercase">
         Moments
       </h2>
 
@@ -477,14 +491,16 @@ export function MomentsBentoSection({
           />
         ))}
         {editing ? (
-          <button
+          <Button
             type="button"
             disabled
-            className="flex min-h-[7rem] flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-border text-muted-foreground disabled:opacity-50"
+            variant="ghost"
+            className="flex min-h-[7rem] h-auto flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-border text-muted-foreground"
           >
             <Plus className="size-4" />
-            <span className="text-[10px]">Add card · Coming soon</span>
-          </button>
+            <span className="text-2xs">Add card</span>
+            <ComingSoon />
+          </Button>
         ) : null}
       </div>
     </section>
@@ -514,7 +530,7 @@ function BentoCard({
       className={cn(
         "relative flex h-full min-h-[7rem] flex-col justify-end overflow-hidden rounded-2xl shadow-[0_2px_12px_oklch(0_0_0/0.06)] ring-1 ring-black/[0.04] transition-transform active:scale-[0.98]",
         !isPhotoCard && "justify-between p-4",
-        !isPhotoCard && toneClass(card.tone),
+        !isPhotoCard && pitchToneClass(card.tone),
         !isPhotoCard &&
           (card.tone === "dark" ? "text-white" : "text-foreground"),
         onOpenStory && "cursor-pointer hover:shadow-md"
@@ -546,7 +562,7 @@ function BentoCard({
           <div>
             <p className="text-sm font-medium">{card.body}</p>
             {card.meta ? (
-              <p className="mt-0.5 text-[10px] opacity-70">{card.meta}</p>
+              <p className="mt-0.5 text-2xs opacity-70">{card.meta}</p>
             ) : null}
           </div>
         </>
@@ -568,9 +584,14 @@ function BentoCard({
 
   if (onOpenStory) {
     return (
-      <button type="button" onClick={onOpenStory} className={cn("text-left", span)}>
+      <Button
+        type="button"
+        variant="ghost"
+        onClick={onOpenStory}
+        className={cn("h-auto p-0 text-left hover:bg-transparent", span)}
+      >
         {inner}
-      </button>
+      </Button>
     )
   }
 

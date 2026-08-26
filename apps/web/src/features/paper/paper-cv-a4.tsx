@@ -1,8 +1,23 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react"
 import { cn } from "@workspace/ui/lib/utils"
 
-/** A4 height at 96 CSS dpi (297mm) */
-export const A4_HEIGHT_PX = 1123
+const A4_HEIGHT_FALLBACK_PX = 1123
+
+/** Fallback when `--cv-page-height` is unavailable (SSR / tests). */
+export const A4_HEIGHT_PX = A4_HEIGHT_FALLBACK_PX
+
+/** Reads the A4 page height from the CSS variable (single source). */
+export function readA4HeightPx(target?: Element | null): number {
+  const node =
+    target ??
+    (typeof document === "undefined" ? null : document.documentElement)
+  if (!node) return A4_HEIGHT_FALLBACK_PX
+  const raw = getComputedStyle(node).getPropertyValue("--cv-page-height")
+  const parsed = Number.parseFloat(raw)
+  return Number.isFinite(parsed) && parsed > 0
+    ? parsed
+    : A4_HEIGHT_FALLBACK_PX
+}
 
 type Props = {
   children: ReactNode
@@ -12,15 +27,18 @@ type Props = {
 export function CvA4Canvas({ children, className }: Props) {
   const contentRef = useRef<HTMLDivElement>(null)
   const [pageCount, setPageCount] = useState(1)
+  const [pageHeight, setPageHeight] = useState(A4_HEIGHT_FALLBACK_PX)
 
   useLayoutEffect(() => {
     const el = contentRef.current
     if (!el) return
     const node: HTMLDivElement = el
+    const page = node.closest(".cv-a4-page")
 
     function measure() {
-      const height = node.scrollHeight
-      setPageCount(Math.max(1, Math.ceil(height / A4_HEIGHT_PX)))
+      const heightPx = readA4HeightPx(page ?? document.documentElement)
+      setPageHeight(heightPx)
+      setPageCount(Math.max(1, Math.ceil(node.scrollHeight / heightPx)))
     }
 
     measure()
@@ -29,7 +47,7 @@ export function CvA4Canvas({ children, className }: Props) {
     return () => observer.disconnect()
   }, [children])
 
-  const totalHeight = pageCount * A4_HEIGHT_PX
+  const totalHeight = pageCount * pageHeight
 
   return (
     <div
@@ -43,10 +61,8 @@ export function CvA4Canvas({ children, className }: Props) {
         style={{
           width: "210mm",
           maxWidth: "100%",
-          minHeight: A4_HEIGHT_PX,
+          minHeight: pageHeight,
           height: totalHeight,
-          // Keep CSS variables in sync with measured page height
-          ["--cv-page-height" as string]: `${A4_HEIGHT_PX}px`,
         }}
       >
         <div ref={contentRef} className="cv-a4-content">
@@ -58,7 +74,7 @@ export function CvA4Canvas({ children, className }: Props) {
               <div
                 key={index}
                 className="pointer-events-none absolute inset-x-[15mm] border-t border-dashed border-border"
-                style={{ top: (index + 1) * A4_HEIGHT_PX }}
+                style={{ top: (index + 1) * pageHeight }}
                 aria-hidden
               />
             ))

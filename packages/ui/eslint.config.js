@@ -23,7 +23,7 @@ export default defineConfig([
     // shadcn components co-export their cva variants alongside the component
     // (see docs/adr/0002-design-system.md). Fast Refresh never applies here —
     // this package is consumed as source by apps/web.
-    files: ['src/components/**/*.tsx', '**/*.stories.tsx'],
+    files: ['src/components/**/*.tsx', 'src/hooks/**/*.ts', '**/*.stories.tsx'],
     rules: {
       'react-refresh/only-export-components': 'off',
     },

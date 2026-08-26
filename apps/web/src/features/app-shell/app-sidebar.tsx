@@ -20,7 +20,7 @@ import {
 } from "lucide-react"
 
 import { OpenPathLogo } from "@/features/app-shell/app-logo.tsx"
-import { FOCUS_RING } from "@/features/app-shell/focus-ring.ts"
+import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
 import { NavProfile } from "@/features/app-shell/nav-profile.tsx"
 import { SidebarHistory } from "@/features/app-shell/sidebar-history.tsx"
 import { SURFACE_PATHS, type SurfaceId } from "@/features/app-shell/surfaces.ts"
@@ -91,7 +91,7 @@ function ActivityBadge({ collapsed }: { collapsed: boolean }) {
     <Badge
       aria-hidden
       className={cn(
-        "size-1.5 border-0 bg-sky-500 p-0",
+        "size-1.5 border-0 bg-info p-0",
         collapsed ? "absolute top-1.5 right-1.5" : "ml-auto"
       )}
     />
@@ -183,8 +183,9 @@ function SearchNavItem({
 }) {
   const Icon = item.icon
   const button = (
-    <button
+    <Button
       type="button"
+      variant="ghost"
       aria-label={item.label}
       aria-haspopup="dialog"
       onClick={onSearch}
@@ -192,7 +193,7 @@ function SearchNavItem({
     >
       <Icon className="size-4 shrink-0 text-foreground/70" />
       <NavLabel collapsed={collapsed}>{item.label}</NavLabel>
-    </button>
+    </Button>
   )
 
   if (!collapsed) {

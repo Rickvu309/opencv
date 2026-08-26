@@ -1,3 +1,1 @@
-/** Shared keyboard focus ring for raw buttons/links outside the UI kit. */
-export const FOCUS_RING =
-  "outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+export { FOCUS_RING } from "@workspace/ui/lib/focus-ring"

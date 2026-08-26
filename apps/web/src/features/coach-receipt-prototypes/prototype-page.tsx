@@ -194,7 +194,7 @@ export function CoachReceiptPrototypePage() {
             <Badge variant="secondary">Prototype</Badge>
           </div>
           <div>
-            <h1 className="font-[ui-serif,Georgia,Cambria,serif] text-2xl font-normal tracking-tight">
+            <h1 className="font-heading text-section-title font-normal tracking-tight">
               Per-command Coach receipts
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">

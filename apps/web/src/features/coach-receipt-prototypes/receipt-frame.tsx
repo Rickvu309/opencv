@@ -25,7 +25,7 @@ export function ReceiptFrame({
         <Icon
           className={cn(
             "mt-0.5 size-3 shrink-0",
-            ok ? "text-emerald-600" : "text-destructive"
+            ok ? "text-success" : "text-destructive"
           )}
           aria-hidden
         />

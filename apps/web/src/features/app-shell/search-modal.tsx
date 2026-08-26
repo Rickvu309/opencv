@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react"
+import { Button } from "@workspace/ui/components/button"
 import {
   Dialog,
   DialogContent,
   DialogTitle,
 } from "@workspace/ui/components/dialog"
+import { Input } from "@workspace/ui/components/input"
 import { cn } from "@workspace/ui/lib/utils"
 import { Briefcase, FileText, Globe, Search, SquarePen } from "lucide-react"
 
 import { OpenPathLogo } from "@/features/app-shell/app-logo.tsx"
-import { FOCUS_RING } from "@/features/app-shell/focus-ring.ts"
 import type { SearchThread } from "@/features/app-shell/search-threads.ts"
 import type { SurfaceId } from "@/features/app-shell/surfaces.ts"
 
@@ -151,7 +152,7 @@ export function SearchModal({
         <DialogTitle className="sr-only">Search</DialogTitle>
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <div className="flex items-center gap-2 border-b border-border px-4 py-3">
-            <input
+            <Input
               ref={inputRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -168,7 +169,7 @@ export function SearchModal({
                 }
               }}
               placeholder="Search…"
-              className="min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-muted-foreground"
+              className="h-auto min-w-0 flex-1 border-0 bg-transparent px-0 text-base shadow-none focus-visible:border-0 focus-visible:ring-0 md:text-base"
               aria-label="Search"
               aria-controls="search-results"
               aria-activedescendant={
@@ -187,20 +188,19 @@ export function SearchModal({
             >
               <div className="px-3 pt-3">
                 <div className="mb-1.5 flex items-center justify-between px-1">
-                  <span className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+                  <span className="text-micro font-medium tracking-wide text-muted-foreground uppercase">
                     Actions
                   </span>
                   {!q ? (
-                    <button
+                    <Button
                       type="button"
-                      className={cn(
-                        FOCUS_RING,
-                        "rounded-md text-[11px] font-medium text-muted-foreground hover:text-foreground"
-                      )}
+                      variant="ghost"
+                      size="xs"
+                      className="text-micro text-muted-foreground"
                       onClick={() => setShowAllActions((v) => !v)}
                     >
                       {showAllActions ? "Show less" : "Show all"}
-                    </button>
+                    </Button>
                   ) : null}
                 </div>
                 <div className="space-y-0.5">
@@ -210,10 +210,11 @@ export function SearchModal({
                       items[activeIndex]?.kind === "action" &&
                       items[activeIndex].id === a.id
                     return (
-                      <button
+                      <Button
                         key={a.id}
                         id={`search-item-${a.id}`}
                         type="button"
+                        variant="ghost"
                         onClick={() => runAction(a.run)}
                         onMouseEnter={() =>
                           setActiveIndex(
@@ -224,8 +225,7 @@ export function SearchModal({
                           )
                         }
                         className={cn(
-                          FOCUS_RING,
-                          "flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm",
+                          "h-auto w-full justify-start gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm",
                           highlighted
                             ? "bg-muted font-medium"
                             : "bg-muted/70 hover:bg-muted"
@@ -233,7 +233,7 @@ export function SearchModal({
                       >
                         <Icon className="size-4 shrink-0 text-muted-foreground" />
                         <span className="truncate font-medium">{a.label}</span>
-                      </button>
+                      </Button>
                     )
                   })}
                   {actions.length === 0 ? (
@@ -245,7 +245,7 @@ export function SearchModal({
               </div>
 
               <div className="mt-4 px-3 pb-3">
-                <p className="mb-1.5 px-1 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+                <p className="mb-1.5 px-1 text-micro font-medium tracking-wide text-muted-foreground uppercase">
                   Recent
                 </p>
                 <div className="space-y-0.5">
@@ -254,10 +254,11 @@ export function SearchModal({
                       items[activeIndex]?.kind === "thread" &&
                       items[activeIndex].id === t.id
                     return (
-                      <button
+                      <Button
                         key={t.id}
                         id={`search-item-${t.id}`}
                         type="button"
+                        variant="ghost"
                         onClick={() => {
                           const index = items.findIndex(
                             (item) => item.kind === "thread" && item.id === t.id
@@ -266,8 +267,7 @@ export function SearchModal({
                         }}
                         onDoubleClick={() => openThread(t.id)}
                         className={cn(
-                          FOCUS_RING,
-                          "flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm transition-colors",
+                          "h-auto w-full justify-start gap-2 rounded-xl px-3 py-2.5 text-left text-sm",
                           highlighted || selectedId === t.id
                             ? "bg-muted font-medium"
                             : "hover:bg-muted/60"
@@ -276,10 +276,10 @@ export function SearchModal({
                         <span className="min-w-0 flex-1 truncate">
                           {t.title}
                         </span>
-                        <span className="shrink-0 text-[11px] text-muted-foreground">
+                        <span className="shrink-0 text-micro text-muted-foreground">
                           {t.when}
                         </span>
-                      </button>
+                      </Button>
                     )
                   })}
                   {recents.length === 0 ? (
@@ -309,16 +309,13 @@ export function SearchModal({
                     {selected.preview ??
                       "Open this Thread to continue with Coach."}
                   </p>
-                  <button
+                  <Button
                     type="button"
-                    className={cn(
-                      FOCUS_RING,
-                      "mt-4 w-full rounded-xl bg-foreground py-2.5 text-sm font-medium text-background"
-                    )}
+                    className="mt-4 h-auto w-full rounded-xl py-2.5"
                     onClick={() => openThread(selected.id)}
                   >
                     Open Thread
-                  </button>
+                  </Button>
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">

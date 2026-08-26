@@ -1,9 +1,8 @@
 import { useState } from "react"
 import { useNavigate, useRouterState } from "@tanstack/react-router"
+import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 import { ChevronDown, Trash2 } from "lucide-react"
-
-import { FOCUS_RING } from "@/features/app-shell/focus-ring.ts"
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { DestructiveCommandDialog } from "@/features/commands/destructive-command-dialog.tsx"
 import { HISTORY_PREVIEW_COUNT } from "@/features/home/threads.ts"
@@ -47,12 +46,10 @@ export function SidebarHistory({ collapsed, onNavigate }: Props) {
       inert={collapsed || undefined}
     >
       <div className="flex min-h-0 flex-1 flex-col">
-        <button
+        <Button
           type="button"
-          className={cn(
-            FOCUS_RING,
-            "flex w-full items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground"
-          )}
+          variant="ghost"
+          className="h-auto w-full justify-start gap-1 px-2 py-1 text-xs font-medium text-muted-foreground"
           aria-expanded={historyOpen}
           aria-controls="sidebar-history-list"
           onClick={() => setHistoryOpen((open) => !open)}
@@ -64,7 +61,7 @@ export function SidebarHistory({ collapsed, onNavigate }: Props) {
               !historyOpen && "-rotate-90"
             )}
           />
-        </button>
+        </Button>
         {historyOpen ? (
           <nav
             id="sidebar-history-list"
@@ -76,47 +73,44 @@ export function SidebarHistory({ collapsed, onNavigate }: Props) {
                 key={thread.id}
                 className="group flex items-center rounded-md"
               >
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
                   onClick={() => handleOpen(thread.id)}
                   aria-current={
                     activeThreadId === thread.id ? "true" : undefined
                   }
                   className={cn(
-                    FOCUS_RING,
-                    "min-w-0 flex-1 truncate rounded-md px-2.5 py-1.5 text-left text-sm",
+                    "h-auto min-w-0 flex-1 justify-start truncate px-2.5 py-1.5 text-left text-sm",
                     activeThreadId === thread.id
                       ? "bg-muted font-medium text-foreground"
                       : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
                   )}
                 >
                   {thread.title}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  size="icon-sm"
+                  variant="ghost"
                   aria-label="Delete Thread"
                   onClick={() => setDeleteTarget(thread)}
-                  className={cn(
-                    FOCUS_RING,
-                    "flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 hover:bg-muted hover:text-foreground group-focus-within:opacity-100 group-hover:opacity-100"
-                  )}
+                  className="text-muted-foreground opacity-0 group-focus-within:opacity-100 group-hover:opacity-100"
                 >
                   <Trash2 className="size-3.5" />
-                </button>
+                </Button>
               </div>
             ))}
             {threads.length > HISTORY_PREVIEW_COUNT ? (
-              <button
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={() => setShowAll((value) => !value)}
                 aria-expanded={showAll}
-                className={cn(
-                  FOCUS_RING,
-                  "w-full rounded-md px-3 py-2 text-left text-xs font-medium text-muted-foreground hover:text-foreground"
-                )}
+                className="h-auto w-full justify-start px-3 py-2 text-left text-xs font-medium text-muted-foreground"
               >
                 {showAll ? "Show less" : "See all"}
-              </button>
+              </Button>
             ) : null}
           </nav>
         ) : null}

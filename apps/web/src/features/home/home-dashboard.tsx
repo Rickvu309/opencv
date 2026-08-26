@@ -88,7 +88,7 @@ export function HomeDashboard() {
         <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col justify-center px-4 py-5 sm:px-6">
           <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-5">
             <header className="w-full text-center">
-              <h1 className="font-[ui-serif,Georgia,Cambria,serif] text-3xl font-normal tracking-tight sm:text-4xl">
+              <h1 className="font-heading text-page-title font-normal tracking-tight sm:text-4xl">
                 {homeGreeting(name)}
               </h1>
             </header>

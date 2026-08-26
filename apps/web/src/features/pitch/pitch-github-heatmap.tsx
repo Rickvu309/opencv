@@ -6,13 +6,13 @@ import { cn } from "@workspace/ui/lib/utils"
 
 import type { GithubContribution } from "@/features/pitch/pitch-types.ts"
 
-/** GitHub's light-theme contribution colors */
+/** Documented exception: GitHub heatmap ramp — tokenized as its own variables. */
 const LEVEL_CLASS = [
-  "bg-[#ebedf0]",
-  "bg-[#9be9a8]",
-  "bg-[#40c463]",
-  "bg-[#30a14e]",
-  "bg-[#216e39]",
+  "bg-github-heatmap-0",
+  "bg-github-heatmap-1",
+  "bg-github-heatmap-2",
+  "bg-github-heatmap-3",
+  "bg-github-heatmap-4",
 ] as const
 
 const MONTHS = [
@@ -156,7 +156,7 @@ export function PitchGithubHeatmap({ contributions, className }: Props) {
           return (
             <div
               key={weekIndex}
-              className="shrink-0 overflow-hidden text-[9px] leading-none text-muted-foreground"
+              className="shrink-0 overflow-hidden text-3xs leading-none text-muted-foreground"
               style={{ width: cellPx, height: 10 }}
             >
               {month ? month.label : ""}
@@ -167,7 +167,7 @@ export function PitchGithubHeatmap({ contributions, className }: Props) {
 
       <div className="flex" style={{ gap: 4 }}>
         <div
-          className="flex shrink-0 flex-col justify-between py-0.5 text-[9px] leading-none text-muted-foreground"
+          className="flex shrink-0 flex-col justify-between py-0.5 text-3xs leading-none text-muted-foreground"
           style={{ width: WEEKDAY_COL_WIDTH, height: rowHeight }}
         >
           {WEEKDAY_LABELS.map((label, i) => (
@@ -223,7 +223,7 @@ export function PitchGithubHeatmap({ contributions, className }: Props) {
     return (
       <div
         className={cn(
-          "flex h-20 items-center justify-center rounded-lg border border-dashed border-border text-[11px] text-muted-foreground",
+          "flex h-20 items-center justify-center rounded-lg border border-dashed border-border text-micro text-muted-foreground",
           className
         )}
       >
