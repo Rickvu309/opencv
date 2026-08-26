@@ -80,7 +80,8 @@ describe("summarizeToolResult", () => {
       expect(summary).not.toMatch(/Invalid input for tool/i)
       expect(summary).not.toMatch(/Type validation failed/i)
       expect(summary).not.toMatch(/invalid_format|Invalid UUID/i)
-      expect(summary).not.toMatch(/[{}\[\]]/)
+      expect(summary).not.toContain("{")
+      expect(summary).not.toContain("[")
       expect(summary).not.toMatch(/\/\^|\\d\{/)
     }
   })
