@@ -153,6 +153,21 @@ describe("coach domain exports", () => {
         focusDocId: "not-a-uuid",
       }).success
     ).toBe(false)
+    expect(
+      coachTurnRequestSchema.parse({
+        text: "Rewrite this",
+        selection: { text: "old bullet", sectionId: "summary" },
+      })
+    ).toEqual({
+      text: "Rewrite this",
+      selection: { text: "old bullet", sectionId: "summary" },
+    })
+    expect(
+      coachTurnRequestSchema.safeParse({
+        text: "Hello",
+        selection: { text: "" },
+      }).success
+    ).toBe(false)
   })
 
   it("accepts an optional owned-doc focusDocId on threads.create", () => {

@@ -73,6 +73,14 @@ export function getMockPaperDocs() {
   return store.docs
 }
 
+export function patchMockPaperDoc(id: string, patch: Partial<PaperDoc>) {
+  const doc = store.docs.find((item) => item.id === id)
+  if (!doc) return null
+  Object.assign(doc, patch)
+  if (!patch.updatedAt) doc.updatedAt = isoNow()
+  return doc
+}
+
 export function handlesPaperRequest(input: RequestInfo | URL) {
   const path = pathOf(input)
   return path.startsWith("/api/paper") || path.includes("/api/commands/paper.")

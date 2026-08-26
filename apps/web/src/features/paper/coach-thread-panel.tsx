@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 import { useCallback, useEffect, useRef, useState } from "react"
+import type { CoachSelection } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
 
@@ -13,34 +14,45 @@ import {
 
 import type { ToolbarVariant } from "./paper-editor-toolbar.tsx"
 
+const REWRITE_SELECTION = "Rewrite selection"
+
 const QUICK_PROMPTS: Record<ToolbarVariant, string[]> = {
   cv: [
+    REWRITE_SELECTION,
     "Sharpen my checkout project bullet",
     "Add a metric to outcome",
     "Tailor for associate PM intern",
     "What should I cut?",
   ],
   proof: [
+    REWRITE_SELECTION,
     "Turn this note into an outcome",
     "What screenshot should I add?",
     "Link this to my CV",
   ],
   letter: [
+    REWRITE_SELECTION,
     "Make opening stronger",
     "Tie in my checkout Proof",
     "Shorten to half page",
     "Fix tone — less stiff",
   ],
-  full: ["Rewrite selection", "Fix spelling", "Make it shorter"],
+  full: [REWRITE_SELECTION, "Fix spelling", "Make it shorter"],
 }
 
 type Props = {
   docId: string
   docName: string
   variant: ToolbarVariant
+  selection?: CoachSelection | null
 }
 
-export function CoachThreadPanel({ docId, docName, variant }: Props) {
+export function CoachThreadPanel({
+  docId,
+  docName,
+  variant,
+  selection,
+}: Props) {
   const listRef = useRef<HTMLDivElement>(null)
   const [createdThreadId, setCreatedThreadId] = useState<string | null>(null)
   const [draft, setDraft] = useState("")
@@ -73,7 +85,7 @@ export function CoachThreadPanel({ docId, docName, variant }: Props) {
   function submit(text?: string) {
     const next = (text ?? draft).trim()
     if (!next || turnActive) return
-    if (send(next)) setDraft("")
+    if (send(next, { selection: selection ?? undefined })) setDraft("")
   }
 
   return (
@@ -97,19 +109,24 @@ export function CoachThreadPanel({ docId, docName, variant }: Props) {
           </div>
         ) : (
           <div className="flex flex-wrap gap-1">
-            {QUICK_PROMPTS[variant].map((chip) => (
-              <Button
-                key={chip}
-                type="button"
-                variant="outline"
-                size="xs"
-                onClick={() => submit(chip)}
-                disabled={turnActive}
-                className="h-auto rounded-full px-2 py-0.5 text-2xs text-muted-foreground"
-              >
-                {chip}
-              </Button>
-            ))}
+            {QUICK_PROMPTS[variant].map((chip) => {
+              const needsSelection = chip === REWRITE_SELECTION
+              const disabled =
+                turnActive || (needsSelection && !selection?.text)
+              return (
+                <Button
+                  key={chip}
+                  type="button"
+                  variant="outline"
+                  size="xs"
+                  onClick={() => submit(chip)}
+                  disabled={disabled}
+                  className="h-auto rounded-full px-2 py-0.5 text-2xs text-muted-foreground"
+                >
+                  {chip}
+                </Button>
+              )
+            })}
           </div>
         )}
         <CoachDock

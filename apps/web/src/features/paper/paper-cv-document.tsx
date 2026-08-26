@@ -41,6 +41,7 @@ export function EditableField({
       suppressContentEditableWarning
       role="textbox"
       aria-label={ariaLabel}
+      data-paper-section={ariaLabel.toLowerCase().replace(/[^a-z0-9]+/g, "-")}
       onInput={(e) => onChange(e.currentTarget.textContent ?? "")}
       className={cn(
         "outline-none empty:before:text-muted-foreground/50 empty:before:content-[attr(data-placeholder)] focus:rounded-sm focus:bg-muted/80 focus:ring-1 focus:ring-ring/40",
@@ -182,7 +183,7 @@ function ExperienceBlock({
   dark?: boolean
 }) {
   return (
-    <div className="mb-3 last:mb-0">
+    <div className="mb-3 last:mb-0" data-paper-section={`experience-${index}`}>
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
         <p className={cn("text-sm font-semibold", dark && "text-white")}>
           <EditableField

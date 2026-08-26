@@ -7,6 +7,8 @@ import {
   DEFAULT_THREAD_TITLE,
   THREAD_COMMANDS,
   type CoachUsageRating,
+  type CoachReceiptDetail,
+  type CoachSelection,
   type CommandEnvelope,
   type ReversalDescriptor,
   type ThreadDetail,
@@ -39,6 +41,7 @@ export type CoachScriptPart =
       ok: boolean
       reversal?: ReversalDescriptor
       result?: CommandEnvelope
+      detail?: CoachReceiptDetail
     }
 
 export type CoachStreamScript = {
@@ -67,6 +70,7 @@ type LastCoachRequest = {
   mode?: string
   regenerate?: boolean
   focusDocId?: string
+  selection?: CoachSelection
 }
 
 type Store = {
@@ -325,6 +329,7 @@ function coachStreamResponse(thread: ThreadDetail, signal?: AbortSignal) {
               summary: part.summary,
               ok: part.ok,
               ...(part.reversal ? { reversal: part.reversal } : {}),
+              ...(part.detail ? { detail: part.detail } : {}),
               result,
             })
             if (aborted) break
@@ -335,6 +340,7 @@ function coachStreamResponse(thread: ThreadDetail, signal?: AbortSignal) {
               summary: part.summary,
               ok: part.ok,
               ...(part.reversal ? { reversal: part.reversal } : {}),
+              ...(part.detail ? { detail: part.detail } : {}),
               result,
             })
           }
@@ -464,6 +470,7 @@ export async function threadApiFetch(
       mode?: string
       regenerate?: boolean
       focusDocId?: string
+      selection?: CoachSelection
     }
     lastCoachRequest = {
       threadId: coach[1]!,
@@ -471,6 +478,7 @@ export async function threadApiFetch(
       ...(body.mode != null ? { mode: body.mode } : {}),
       ...(body.regenerate ? { regenerate: true } : {}),
       ...(body.focusDocId ? { focusDocId: body.focusDocId } : {}),
+      ...(body.selection ? { selection: body.selection } : {}),
     }
     const thread = store.threads.find((item) => item.id === coach[1])
     if (!thread) {

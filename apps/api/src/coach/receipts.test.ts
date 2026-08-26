@@ -9,6 +9,7 @@ import { describe, expect, it } from "vitest"
 import { commandRegistry } from "../commands/index.js"
 import {
   envelopeFromToolOutput,
+  receiptDetailForTool,
   reversalForTool,
   summarizeToolResult,
 } from "./receipts.js"
@@ -118,6 +119,159 @@ describe("reversalForTool", () => {
       possible: false,
       description: "This read does not change anything.",
     })
+  })
+})
+
+describe("receiptDetailForTool", () => {
+  it("builds rich payloads for the three graduated Commands", () => {
+    expect(
+      receiptDetailForTool(
+        "paper_updateContent",
+        {
+          ok: true,
+          data: {
+            name: "PM track CV",
+            kind: "cv",
+            status: "draft",
+            content: {
+              templateId: "internship",
+              name: "Minh",
+              headline: "APM intern",
+              contact: { email: "", phone: "", location: "" },
+              summary: "After",
+              experience: [],
+              education: [],
+              skills: [],
+            },
+          },
+        },
+        {
+          possible: true,
+          description: "Undo",
+          input: {
+            content: {
+              templateId: "internship",
+              name: "Minh",
+              headline: "APM intern",
+              contact: { email: "", phone: "", location: "" },
+              summary: "Before",
+              experience: [],
+              education: [],
+              skills: [],
+            },
+          },
+        }
+      )
+    ).toEqual({
+      type: "paper.updateContent",
+      docKind: "cv",
+      docName: "PM track CV",
+      hunks: [
+        {
+          section: "Summary",
+          sectionId: "summary",
+          lines: [
+            { kind: "del", text: "Before" },
+            { kind: "add", text: "After" },
+          ],
+        },
+      ],
+    })
+
+    expect(
+      receiptDetailForTool(
+        "apply_moveCard",
+        {
+          ok: true,
+          data: {
+            title: "Associate PM intern",
+            company: "Local startup",
+            stage: "prep",
+          },
+        },
+        { possible: true, description: "Undo", input: { stage: "inbox" } }
+      )
+    ).toEqual({
+      type: "apply.moveCard",
+      title: "Associate PM intern",
+      company: "Local startup",
+      from: "inbox",
+      to: "prep",
+    })
+
+    expect(
+      receiptDetailForTool("paper_createDoc", {
+        ok: true,
+        data: { name: "Untitled CV", kind: "cv", status: "draft" },
+      })
+    ).toEqual({
+      type: "paper.createDoc",
+      docKind: "cv",
+      name: "Untitled CV",
+      status: "draft",
+    })
+  })
+
+  it("stays generic for same-Stage moves, empty diffs, and failures", () => {
+    expect(
+      receiptDetailForTool(
+        "apply_moveCard",
+        {
+          ok: true,
+          data: {
+            title: "Associate PM intern",
+            company: "Local startup",
+            stage: "prep",
+          },
+        },
+        { possible: true, description: "Undo", input: { stage: "prep" } }
+      )
+    ).toBeUndefined()
+    expect(
+      receiptDetailForTool(
+        "paper_updateContent",
+        {
+          ok: true,
+          data: {
+            name: "PM track CV",
+            kind: "cv",
+            status: "draft",
+            content: {
+              templateId: "internship",
+              name: "",
+              headline: "",
+              contact: { email: "", phone: "", location: "" },
+              summary: "Same",
+              experience: [],
+              education: [],
+              skills: [],
+            },
+          },
+        },
+        {
+          possible: true,
+          description: "Undo",
+          input: {
+            content: {
+              templateId: "internship",
+              name: "",
+              headline: "",
+              contact: { email: "", phone: "", location: "" },
+              summary: "Same",
+              experience: [],
+              education: [],
+              skills: [],
+            },
+          },
+        }
+      )
+    ).toBeUndefined()
+    expect(
+      receiptDetailForTool("paper_createDoc", {
+        ok: false,
+        error: { code: ERROR_CODES.VALIDATION_ERROR, message: "Name is required" },
+      })
+    ).toBeUndefined()
   })
 })
 

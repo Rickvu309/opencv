@@ -87,6 +87,7 @@ export function ProofDocument({ data, onChange }: Props) {
             onChange={(e) => patch("title", e.target.value)}
             className="h-auto border-0 bg-transparent px-0 text-sm font-semibold shadow-none focus-visible:border-0 focus-visible:ring-0 md:text-sm"
             aria-label="Proof title"
+            data-paper-section="proof-title"
           />
           {data.subtitle ? (
             <p className="text-xs text-muted-foreground">{data.subtitle}</p>
@@ -193,7 +194,10 @@ function ChainNode({
   const fileRef = useRef<HTMLInputElement>(null)
 
   return (
-    <div className={cn("w-[17rem] shrink-0", STEP_CARD)}>
+    <div
+      className={cn("w-[17rem] shrink-0", STEP_CARD)}
+      data-paper-section={`proof-step-${step.id}`}
+    >
       <div className="flex items-start justify-between gap-2 px-3.5 pt-3.5 pb-2.5">
         <div className="min-w-0">
           <p className="text-2xs font-medium tracking-[0.12em] text-muted-foreground uppercase">
@@ -356,7 +360,10 @@ function TimelineRow({
   const fileRef = useRef<HTMLInputElement>(null)
 
   return (
-    <div className="relative flex gap-4 pb-6">
+    <div
+      className="relative flex gap-4 pb-6"
+      data-paper-section={`proof-step-${step.id}`}
+    >
       <p className="w-12 shrink-0 pt-1 text-right text-micro text-muted-foreground tabular-nums">
         {step.time ?? "—"}
       </p>

@@ -7,7 +7,11 @@ import {
   type ReversalDescriptor,
 } from "@workspace/domain"
 
-import { envelopeFromToolOutput, summarizeToolResult } from "./receipts.js"
+import {
+  envelopeFromToolOutput,
+  receiptDetailForTool,
+  summarizeToolResult,
+} from "./receipts.js"
 
 export type ModelUsage = {
   inputTokens?: number
@@ -108,6 +112,9 @@ function toolResultPart(
   const reversal = result.ok
     ? (reversalFromOutput(output) ?? options.reversalFor(name))
     : undefined
+  const detail = result.ok
+    ? receiptDetailForTool(name, result, reversal)
+    : undefined
   return {
     type: "tool-result",
     toolCallId,
@@ -115,6 +122,7 @@ function toolResultPart(
     summary: summarizeToolResult(name, result),
     ok: result.ok,
     ...(reversal ? { reversal } : {}),
+    ...(detail ? { detail } : {}),
     result,
   }
 }

@@ -3,6 +3,7 @@ import {
   THREAD_COMMANDS,
   type CoachFeedbackInput,
   type CoachMode,
+  type CoachSelection,
   type CoachSseErrorData,
   type CoachSseMessageEndData,
   type CoachSseMessageStartData,
@@ -125,7 +126,12 @@ export async function rateCoachMessage(
 }
 
 type CoachStreamBody =
-  | { text: string; mode?: CoachMode; focusDocId?: string }
+  | {
+      text: string
+      mode?: CoachMode
+      focusDocId?: string
+      selection?: CoachSelection
+    }
   | { regenerate: true; mode?: CoachMode; focusDocId?: string }
 
 async function consumeCoachStream(
@@ -176,7 +182,8 @@ export async function streamCoachTurn(
   handlers: CoachStreamHandlers,
   signal?: AbortSignal,
   mode?: CoachMode,
-  focusDocId?: string
+  focusDocId?: string,
+  selection?: CoachSelection
 ): Promise<void> {
   await consumeCoachStream(
     threadId,
@@ -184,6 +191,7 @@ export async function streamCoachTurn(
       text,
       ...(mode ? { mode } : {}),
       ...(focusDocId ? { focusDocId } : {}),
+      ...(selection ? { selection } : {}),
     },
     handlers,
     signal

@@ -5,6 +5,7 @@ import {
   PAPER_KIND_LABEL,
   type ApplyCard,
   type CoachFocusDoc,
+  type CoachSelection,
   type PaperDoc,
   type ThreadMessage,
   type UserProfile,
@@ -71,6 +72,7 @@ export function personaSystemPrompt(): string {
     "- Read before you advise when the snapshot is not enough. Act when the User asked for an outcome you can do.",
     "- Never invent ids. List or read first, then use the real UUID from the tool result.",
     "- Do not mutate Apply or Paper unless the User asked for that change.",
+    "- When the User selected text, prefer editing that selection. Do not rewrite the rest of the document unless they asked.",
   ].join("\n")
 }
 
@@ -143,14 +145,29 @@ export function regenerateInstruction(priorCoach?: ThreadMessage): string {
   return lines.join("\n")
 }
 
+export function selectionInstruction(selection?: CoachSelection): string | null {
+  if (!selection?.text) return null
+  const where = selection.sectionId
+    ? ` in section "${selection.sectionId}"`
+    : ""
+  return [
+    `The User has selected text${where} in the open Paper document. Prefer editing that selection rather than rewriting the whole document.`,
+    `Selection:\n"""\n${selection.text}\n"""`,
+  ].join("\n")
+}
+
 export function assembleSystemPrompt(
   snapshot: WorkspaceSnapshot,
   listCap = COACH_WORKSPACE_LIST_CAP,
-  options?: { regenerateFrom?: ThreadMessage }
+  options?: { regenerateFrom?: ThreadMessage; selection?: CoachSelection }
 ): string {
-  const base = `${personaSystemPrompt()}\n\n${summarizeWorkspace(snapshot, listCap)}`
-  if (!options) return base
-  return `${base}\n\n${regenerateInstruction(options.regenerateFrom)}`
+  const parts = [personaSystemPrompt(), summarizeWorkspace(snapshot, listCap)]
+  const selected = selectionInstruction(options?.selection)
+  if (selected) parts.push(selected)
+  if (options?.regenerateFrom) {
+    parts.push(regenerateInstruction(options.regenerateFrom))
+  }
+  return parts.join("\n\n")
 }
 
 export function flattenMessage(message: ThreadMessage): string {

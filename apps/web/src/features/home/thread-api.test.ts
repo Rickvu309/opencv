@@ -319,6 +319,57 @@ describe("thread API client", () => {
     )
   })
 
+  it("includes selection on a Paper-scoped coach turn", async () => {
+    const threadId = "11111111-1111-4111-8111-111111111111"
+    const focusDocId = "11111111-1111-7111-8111-111111111111"
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        [
+          `event: ${COACH_SSE_EVENTS.messageStart}`,
+          `data: ${JSON.stringify({ threadId })}`,
+          "",
+          `event: ${COACH_SSE_EVENTS.messageEnd}`,
+          `data: ${JSON.stringify({
+            message: {
+              id: "c1",
+              role: "coach",
+              text: "",
+              createdAt: "2026-08-25T00:00:01.000Z",
+              status: "final",
+            },
+            usage: { model: "mock" },
+          })}`,
+          "",
+        ].join("\n"),
+        {
+          status: 200,
+          headers: { "Content-Type": "text/event-stream" },
+        }
+      )
+    )
+    vi.stubGlobal("fetch", fetchMock)
+
+    await streamCoachTurn(
+      threadId,
+      "Rewrite selection",
+      {},
+      undefined,
+      "free",
+      focusDocId,
+      { text: "old bullet", sectionId: "summary" }
+    )
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(init.body).toBe(
+      JSON.stringify({
+        text: "Rewrite selection",
+        mode: "free",
+        focusDocId,
+        selection: { text: "old bullet", sectionId: "summary" },
+      })
+    )
+  })
+
   it("streams a regenerate turn without posting user text", async () => {
     const threadId = "11111111-1111-4111-8111-111111111111"
     const fetchMock = vi.fn().mockResolvedValue(
