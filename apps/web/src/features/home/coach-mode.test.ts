@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react"
 
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
@@ -6,8 +6,13 @@ import { coachModeHelper, coachModeLabel } from "@/features/home/coach-mode.ts"
 import { renderApp } from "@/test/render-app.tsx"
 import { getMockCoachMode } from "@/test/profile-api-mock.ts"
 
+beforeEach(() => {
+  vi.stubGlobal("scrollTo", vi.fn())
+})
+
 afterEach(() => {
   cleanup()
+  vi.unstubAllGlobals()
 })
 
 describe("coach mode copy", () => {
@@ -57,7 +62,10 @@ describe("Settings coach mode", () => {
     renderApp(SURFACE_PATHS.settings)
 
     expect(
-      await screen.findByRole("heading", { name: "Coach mode" })
+      await screen.findByRole("heading", { level: 1, name: "Settings" })
+    ).toBeInTheDocument()
+    expect(
+      await screen.findByRole("radiogroup", { name: "Coach mode" })
     ).toBeInTheDocument()
     fireEvent.click(screen.getByRole("radio", { name: "Max" }))
     await waitFor(() => {

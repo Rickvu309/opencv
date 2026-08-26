@@ -217,7 +217,7 @@ export function Composer({
 
   return (
     <div className="relative w-full space-y-2">
-      <div>
+      <div
         className={cn(
           "border border-border/80 bg-background shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-[border-radius,padding] duration-200 ease-out focus-within:border-border focus-within:shadow-[0_2px_8px_rgba(0,0,0,0.06)]",
           expanded
