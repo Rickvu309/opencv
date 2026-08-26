@@ -51,7 +51,10 @@ export type ScenarioExpectation = {
 }
 
 export type SeedPaperDoc = {
+  /** Stable id so a scenario can name this doc as `focusDocId`. */
+  id?: string
   name: string
+  kind?: "cv" | "letter" | "proof"
   content: Record<string, unknown>
 }
 
@@ -77,6 +80,8 @@ export type GoldenScenario = {
   userMessage: string
   seed: ScenarioSeed
   expect: ScenarioExpectation
+  /** Seeded Paper doc id to ground the turn as the open focus document. */
+  focusDocId?: string
   /** Extra judge instructions for this scenario. */
   judgeFocus: string
 }

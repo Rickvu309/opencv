@@ -747,4 +747,117 @@ describe("Paper editors", () => {
     })
     expect(within(panel).queryByRole("alert")).not.toBeInTheDocument()
   })
+
+  it("applies a Coach paper.updateContent receipt to the open CV without paste", async () => {
+    const { defaultCvData } = await import("@/features/paper/paper-cv-types.ts")
+    const { SAMPLE_AUTHOR } = await import("@/features/seed/sample-author.ts")
+    const { patchMockPaperDoc } = await import("@/test/paper-api-mock.ts")
+    const next = defaultCvData(SAMPLE_AUTHOR)
+    next.summary =
+      "I ship small product experiments and back them with user notes."
+    scriptCoachStream({
+      parts: [
+        { kind: "text", text: "I shortened the summary to one sentence." },
+        {
+          kind: "tool",
+          name: "paper_updateContent",
+          summary: "Updated content of PM track CV",
+          ok: true,
+          reversal: {
+            possible: true,
+            description: "Undo by writing the previous content back.",
+          },
+          detail: {
+            type: "paper.updateContent",
+            docKind: "cv",
+            docName: "PM track CV",
+            hunks: [
+              {
+                section: "Summary",
+                sectionId: "summary",
+                lines: [
+                  {
+                    kind: "del",
+                    text: "Year-4 Information Systems student targeting associate product manager roles.",
+                  },
+                  { kind: "add", text: next.summary },
+                ],
+              },
+            ],
+          },
+        },
+      ],
+    })
+    renderPaper()
+    await expectPaperDrive()
+    const panel = await openDoc("PM track CV")
+    expect(
+      within(panel).getByRole("textbox", { name: "Summary" })
+    ).not.toHaveTextContent(next.summary)
+
+    patchMockPaperDoc("11111111-1111-7111-8111-111111111111", {
+      content: next,
+      updatedAt: "2026-08-26T18:00:00.000Z",
+    })
+
+    fireEvent.change(messageCoach(panel), {
+      target: { value: "Make my summary one sentence" },
+    })
+    fireEvent.click(within(panel).getByRole("button", { name: "Send" }))
+
+    expect(
+      await within(panel).findByText("I shortened the summary to one sentence.")
+    ).toBeInTheDocument()
+    expect(within(panel).getByText("Updated CV PM track CV")).toBeInTheDocument()
+    expect(
+      within(panel).getByRole("status", { name: "Command succeeded" })
+    ).toBeInTheDocument()
+    await waitFor(() => {
+      expect(
+        within(panel).getByRole("textbox", { name: "Summary" })
+      ).toHaveTextContent(next.summary)
+    })
+    expect(panel).not.toHaveTextContent(/paste/i)
+  })
+
+  it("states a failed paper.updateContent in one plain line with no paste advice", async () => {
+    scriptCoachStream({
+      parts: [
+        {
+          kind: "text",
+          text: "Couldn't update PM track CV. Try sending the rewrite again.",
+        },
+        {
+          kind: "tool",
+          name: "paper_updateContent",
+          summary: "Paper doc not found",
+          ok: false,
+        },
+      ],
+    })
+    renderPaper()
+    await expectPaperDrive()
+    const panel = await openDoc("PM track CV")
+    const before = within(panel).getByRole("textbox", {
+      name: "Summary",
+    }).textContent
+
+    fireEvent.change(messageCoach(panel), {
+      target: { value: "Make my summary one sentence" },
+    })
+    fireEvent.click(within(panel).getByRole("button", { name: "Send" }))
+
+    expect(
+      await within(panel).findByText(
+        "Couldn't update PM track CV. Try sending the rewrite again."
+      )
+    ).toBeInTheDocument()
+    expect(
+      within(panel).getByRole("status", { name: "Command failed" })
+    ).toHaveTextContent("Paper doc not found")
+    expect(panel).not.toHaveTextContent(/paste/i)
+    expect(within(panel).getByRole("textbox", { name: "Summary" })).toHaveTextContent(
+      before ?? ""
+    )
+  })
 })

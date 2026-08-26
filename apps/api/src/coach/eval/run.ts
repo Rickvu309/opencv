@@ -19,7 +19,7 @@ import { honestyPassed, scoreHonesty } from "./honesty.js"
 import { judgeModelFromEnv, judgeTranscript } from "./judge.js"
 import { renderEvalReport } from "./report.js"
 import { GOLDEN_SCENARIOS } from "./scenarios.js"
-import { evalUserMessage, seedGoldenScenario } from "./seed.js"
+import { evalTurnInput, seedGoldenScenario } from "./seed.js"
 import type { EvalReport, ScenarioEvalResult } from "./types.js"
 
 export async function runEvalHarness(
@@ -41,11 +41,10 @@ export async function runEvalHarness(
         model: coachModel,
         db,
       })
-      const transcript = await collectTranscript(runtime, {
-        userId: seeded.userId,
-        threadId: seeded.threadId,
-        history: [evalUserMessage(scenario.userMessage)],
-      })
+      const transcript = await collectTranscript(
+        runtime,
+        evalTurnInput(seeded, scenario)
+      )
       const tools = assembleCoachTools({ db, userId: seeded.userId })
       const honesty = scoreHonesty(transcript, tools, scenario.expect)
 
