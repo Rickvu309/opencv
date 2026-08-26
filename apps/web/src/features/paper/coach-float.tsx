@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
-import { useCallback, useEffect, useId, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import type { CoachSelection } from "@workspace/domain"
 import { Maximize2, Minus, X } from "lucide-react"
@@ -95,7 +95,6 @@ export function CoachFloat({ docId, docName, variant, selection }: Props) {
   const listRef = useRef<HTMLDivElement>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
   const returnFocusRef = useRef(false)
-  const titleId = useId()
   const [createdThreadId, setCreatedThreadId] = useState<string | null>(null)
   const [draft, setDraft] = useState("")
   const [floatState, setFloatState] = useState<CoachFloatState>(readFloatState)
@@ -218,10 +217,7 @@ export function CoachFloat({ docId, docName, variant, selection }: Props) {
   const chrome = (
     <>
       <div className="flex items-center gap-2 border-b border-border px-3 py-2">
-        <p
-          id={titleId}
-          className="min-w-0 flex-1 truncate text-sm font-medium"
-        >
+        <p className="min-w-0 flex-1 truncate text-sm font-medium">
           {headerTitle}
         </p>
         {floatState === "minimized" ? (
@@ -336,7 +332,6 @@ export function CoachFloat({ docId, docName, variant, selection }: Props) {
           role="dialog"
           aria-label="Coach"
           aria-modal={mobileSheet || undefined}
-          aria-labelledby={titleId}
           tabIndex={-1}
           data-coach-float-state={floatState}
           className={cn(
