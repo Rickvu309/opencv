@@ -81,9 +81,12 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
 
     await sendMessage("Help me plan the week")
 
+    const working = screen.getByRole("status", { name: "Coach is working" })
+    expect(working).toHaveTextContent("Working…")
     expect(
-      screen.getByRole("status", { name: "Coach is working" })
+      working.querySelector("[data-slot='coach-working-bar']")
     ).toBeInTheDocument()
+    expect(working.querySelector(".animate-pulse")).not.toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Stop" })).toBeInTheDocument()
     expect(
       screen.queryByRole("button", { name: "Send" })
@@ -285,6 +288,10 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
     expect(
       await screen.findByText("Undid the previous action")
     ).toBeInTheDocument()
+    expect(screen.getByText("Undone")).toBeInTheDocument()
+    expect(
+      screen.getAllByRole("status", { name: "Command succeeded" })[0]
+    ).toHaveAttribute("data-coach-receipt-collapse", "true")
     expect(
       screen.queryByRole("button", { name: "Undo" })
     ).not.toBeInTheDocument()

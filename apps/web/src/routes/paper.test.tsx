@@ -427,6 +427,12 @@ describe("Paper editors", () => {
       target: { value: "Stop me" },
     })
     fireEvent.click(within(panel).getByRole("button", { name: "Send" }))
+    const working = within(panel).getByRole("status", { name: "Coach is working" })
+    expect(working).toHaveTextContent("Working…")
+    expect(
+      working.querySelector("[data-slot='coach-working-bar']")
+    ).toBeInTheDocument()
+    expect(working.querySelector(".animate-pulse")).not.toBeInTheDocument()
     stream.release(2)
     expect(await within(panel).findByText("Partial from Paper")).toBeInTheDocument()
 
@@ -614,6 +620,65 @@ describe("Paper editors", () => {
         within(panel).getByRole("textbox", { name: "Summary" })
       ).toHaveTextContent("Coach rewrote the summary for APM internships.")
     })
+    await waitFor(() => {
+      expect(
+        within(panel).getByRole("textbox", { name: "Summary" })
+      ).toHaveClass("paper-coach-changed")
+    })
+  })
+
+  it("scrolls Coach edits instantly when the User prefers reduced motion", async () => {
+    const { paperQueryKeys } = await import("@/features/paper/paper-api.ts")
+    const scrollIntoView = vi.fn()
+    const originalScroll = HTMLElement.prototype.scrollIntoView
+    HTMLElement.prototype.scrollIntoView = scrollIntoView
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: query.includes("prefers-reduced-motion"),
+      media: query,
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    }))
+
+    try {
+      const { queryClient } = renderPaper()
+      await expectPaperDrive()
+      const panel = await openDoc("PM track CV")
+      const docs = queryClient.getQueryData(paperQueryKeys.list()) as Array<{
+        id: string
+        updatedAt: string
+        content: { summary?: string }
+      }>
+      queryClient.setQueryData(
+        paperQueryKeys.list(),
+        docs.map((doc) =>
+          doc.id === "11111111-1111-7111-8111-111111111111"
+            ? {
+                ...doc,
+                updatedAt: "2026-08-26T15:00:00.000Z",
+                content: {
+                  ...doc.content,
+                  summary: "Coach version of the summary",
+                },
+              }
+            : doc
+        )
+      )
+
+      await waitFor(() => {
+        expect(
+          within(panel).getByRole("textbox", { name: "Summary" })
+        ).toHaveClass("paper-coach-changed")
+      })
+      expect(scrollIntoView).toHaveBeenCalledWith(
+        expect.objectContaining({ behavior: "auto" })
+      )
+    } finally {
+      HTMLElement.prototype.scrollIntoView = originalScroll
+    }
   })
 
   it("asks Keep mine or Use Coach's version when the canvas is dirty", async () => {

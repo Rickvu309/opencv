@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   Check,
   Copy,
@@ -16,6 +16,11 @@ import { cn } from "@workspace/ui/lib/utils"
 
 import { ComingSoon } from "@/components/coming-soon.tsx"
 import { ErrorBanner } from "@/components/error-banner.tsx"
+import {
+  CoachWorking,
+  RECEIPT_ENTER_STAGGER_MS,
+  UNDO_FLASH_MS,
+} from "@/features/coach/coach-working.tsx"
 import { CoachMarkdown } from "@/features/home/coach-markdown.tsx"
 import {
   receiptHeadline,
@@ -38,15 +43,22 @@ function CoachReceipt({
   part,
   canUndo,
   onUndo,
+  enter,
+  enterDelayMs,
+  announceUndone,
 }: {
   part: ThreadToolPart
   canUndo: boolean
   onUndo?: () => Promise<void>
+  enter?: boolean
+  enterDelayMs?: number
+  announceUndone?: boolean
 }) {
   const Icon = part.ok ? Check : X
   const note = receiptReversalNote(part)
   const [pending, setPending] = useState(false)
   const [undoError, setUndoError] = useState<string | null>(null)
+  const collapsed = part.undone === true
 
   async function undo() {
     if (!onUndo || pending) return
@@ -67,50 +79,76 @@ function CoachReceipt({
     <div
       role="status"
       aria-label={part.ok ? "Command succeeded" : "Command failed"}
-      className="min-w-0 max-w-full space-y-0.5 text-xs text-muted-foreground"
+      data-coach-receipt-enter={enter || undefined}
+      data-coach-receipt-collapse={collapsed || undefined}
+      className={cn(
+        "min-w-0 max-w-full text-xs text-muted-foreground",
+        enter && "coach-receipt-enter",
+        collapsed && "coach-receipt-collapse"
+      )}
+      style={
+        enter && enterDelayMs
+          ? { animationDelay: `${enterDelayMs}ms` }
+          : undefined
+      }
     >
-      <p className="flex min-w-0 items-start gap-1.5">
-        <Icon
-          className={cn(
-            "mt-0.5 size-3 shrink-0",
-            part.ok ? "text-success" : "text-destructive"
-          )}
-          aria-hidden
-        />
-        <span className="min-w-0 flex-1 break-words [overflow-wrap:anywhere]">
-          {receiptHeadline(part)}
-        </span>
-      </p>
-      {part.ok && part.detail ? (
-        <div className="min-w-0 pl-5">
-          <RichReceiptBody detail={part.detail} />
-        </div>
-      ) : null}
-      {note ? (
-        <p className="min-w-0 pl-5 break-words [overflow-wrap:anywhere]">
-          {note}
+      <div
+        className={cn(
+          "min-w-0 space-y-0.5",
+          collapsed && "coach-receipt-collapse-inner"
+        )}
+      >
+        <p className="flex min-w-0 items-start gap-1.5">
+          <Icon
+            className={cn(
+              "mt-0.5 size-3 shrink-0",
+              part.ok ? "text-success" : "text-destructive"
+            )}
+            aria-hidden
+          />
+          <span className="min-w-0 flex-1 break-words [overflow-wrap:anywhere]">
+            {receiptHeadline(part)}
+          </span>
         </p>
-      ) : null}
-      {canUndo ? (
-        <div className="pl-5 pt-0.5">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-6 px-2 text-xs"
-            aria-label="Undo"
-            disabled={pending}
-            onClick={() => void undo()}
+        {announceUndone ? (
+          <p
+            className="coach-undone-flash pl-5 text-xs text-muted-foreground"
+            data-slot="coach-undone"
           >
-            {pending ? "Undoing…" : "Undo"}
-          </Button>
-        </div>
-      ) : null}
-      {undoError ? (
-        <ErrorBanner variant="inline" className="pl-5">
-          {undoError}
-        </ErrorBanner>
-      ) : null}
+            Undone
+          </p>
+        ) : null}
+        {part.ok && part.detail && !collapsed ? (
+          <div className="min-w-0 pl-5">
+            <RichReceiptBody detail={part.detail} />
+          </div>
+        ) : null}
+        {note && !collapsed ? (
+          <p className="min-w-0 pl-5 break-words [overflow-wrap:anywhere]">
+            {note}
+          </p>
+        ) : null}
+        {canUndo ? (
+          <div className="pl-5 pt-0.5">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-6 px-2 text-xs"
+              aria-label="Undo"
+              disabled={pending}
+              onClick={() => void undo()}
+            >
+              {pending ? "Undoing…" : "Undo"}
+            </Button>
+          </div>
+        ) : null}
+        {undoError ? (
+          <ErrorBanner variant="inline" className="pl-5">
+            {undoError}
+          </ErrorBanner>
+        ) : null}
+      </div>
     </div>
   )
 }
@@ -119,30 +157,56 @@ function CoachBody({
   message,
   canUndo,
   onUndo,
+  animateEnter,
 }: {
   message: HomeMessage
   canUndo: boolean
   onUndo?: (toolCallId: string) => Promise<void>
+  animateEnter?: boolean
 }) {
+  const [undoneFlash, setUndoneFlash] = useState(false)
+
+  useEffect(() => {
+    if (!undoneFlash) return
+    const timer = window.setTimeout(() => setUndoneFlash(false), UNDO_FLASH_MS)
+    return () => window.clearTimeout(timer)
+  }, [undoneFlash])
+
   if (message.parts && message.parts.length > 0) {
+    const lastToolIndex = message.parts.reduce(
+      (last, part, index) => (part.type === "tool" ? index : last),
+      -1
+    )
     return (
       <div className="min-w-0 space-y-2">
-        {message.parts.map((part, index) =>
-          part.type === "text" ? (
-            <CoachMarkdown key={`text-${index}`} text={part.text} />
-          ) : (
+        {message.parts.map((part, index) => {
+          if (part.type === "text") {
+            return <CoachMarkdown key={`text-${index}`} text={part.text} />
+          }
+          const stagger = message.parts!.slice(0, index).filter(
+            (item) => item.type === "tool"
+          ).length
+          return (
             <CoachReceipt
               key={part.toolCallId ?? `tool-${index}`}
               part={part}
               canUndo={canUndo && receiptShowsUndo(part)}
+              enter={animateEnter && !part.undone}
+              enterDelayMs={
+                animateEnter ? stagger * RECEIPT_ENTER_STAGGER_MS : undefined
+              }
+              announceUndone={undoneFlash && index === lastToolIndex}
               onUndo={
                 part.toolCallId && onUndo
-                  ? () => onUndo(part.toolCallId!)
+                  ? async () => {
+                      await onUndo(part.toolCallId!)
+                      setUndoneFlash(true)
+                    }
                   : undefined
               }
             />
           )
-        )}
+        })}
       </div>
     )
   }
@@ -320,7 +384,16 @@ export function ThreadView({
             </div>
           </div>
         ) : (
-          <div key={item.id} className="space-y-2">
+          <div
+            key={item.id}
+            className={cn(
+              "space-y-2",
+              item.id === STREAMING_COACH_ID && "coach-text-enter"
+            )}
+            data-coach-text-enter={
+              item.id === STREAMING_COACH_ID ? "true" : undefined
+            }
+          >
             {item.workedMs ? (
               <p className="text-xs text-muted-foreground">
                 Worked for {Math.max(1, Math.round(item.workedMs / 1000))}s
@@ -328,6 +401,7 @@ export function ThreadView({
             ) : null}
             <CoachBody
               message={item}
+              animateEnter={item.id === STREAMING_COACH_ID}
               canUndo={
                 !waiting &&
                 item.id !== STREAMING_COACH_ID &&
@@ -368,18 +442,7 @@ export function ThreadView({
         </div>
       ) : null}
 
-      {waiting ? (
-        <div role="status" aria-label="Coach is working" className="space-y-2">
-          <p className="inline-flex items-center gap-0.5 text-xs text-muted-foreground">
-            Working
-            <span className="inline-flex gap-0.5" aria-hidden>
-              <span className="animate-pulse">.</span>
-              <span className="animate-pulse [animation-delay:150ms]">.</span>
-              <span className="animate-pulse [animation-delay:300ms]">.</span>
-            </span>
-          </p>
-        </div>
-      ) : null}
+      {waiting ? <CoachWorking /> : null}
     </div>
   )
 }
