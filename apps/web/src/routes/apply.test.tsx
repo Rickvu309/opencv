@@ -7,8 +7,7 @@ import {
   within,
 } from "@testing-library/react"
 
-import { localIsoDate } from "@/features/apply/apply-calendar.tsx"
-import { APPLY_DRAG_TYPE } from "@/features/apply/apply-types.ts"
+import { APPLY_DRAG_TYPE, localIsoDate } from "@/features/apply/apply-types.ts"
 import { SURFACE_COPY, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { sampleApplyCards } from "@/test/apply-fixtures.ts"
 import { renderApp } from "@/test/render-app.tsx"

@@ -13,6 +13,7 @@ import {
   setCardDragData,
 } from "@/features/apply/apply-dnd.ts"
 import {
+  localIsoDate,
   trackKindLabel,
   type ApplyCard,
   type TrackKind,
@@ -26,11 +27,6 @@ function pad(n: number) {
 
 function toIso(y: number, m: number, d: number) {
   return `${y}-${pad(m + 1)}-${pad(d)}`
-}
-
-/** Browser-local calendar date, same clock Home's greeting uses. */
-export function localIsoDate(now = new Date()) {
-  return toIso(now.getFullYear(), now.getMonth(), now.getDate())
 }
 
 function startOfMonth(year: number, month: number) {
