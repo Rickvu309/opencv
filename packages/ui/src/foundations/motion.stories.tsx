@@ -76,7 +76,7 @@ export const DurationsAndEasing: Story = {
         <h2 className="text-section-title">Press</h2>
         <button
           type="button"
-          className="w-fit rounded-lg bg-primary px-3 py-1.5 text-sm text-primary-foreground transition-transform duration-fast ease-standard active:translate-y-px"
+          className="w-fit rounded-lg bg-primary px-3 py-1.5 text-sm text-primary-foreground transition-transform duration-100 ease-standard active:translate-y-px"
         >
           Press me
         </button>
