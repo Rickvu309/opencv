@@ -25,8 +25,8 @@ mode is unset on a legacy path.
 `GET /api/profile` and `profile_get` expose it. `profile.setCoachMode` is
 User-only (`coachAllowed: false`). Home's CoachDock uses a compact mode
 dropdown; Settings → General keeps the three-way pill. A change is
-optimistic and applies to the next send. The Paper AI panel inherits the
-saved mode and has no selector (QVE-146).
+optimistic and applies to the next send. Paper's Coach dock inherits the
+saved mode and has no selector (QVE-170).
 
 **Per-turn routing, no restart.** `POST /api/threads/:id/coach` accepts
 optional `mode`. If omitted, the saved preference is used. The resolved

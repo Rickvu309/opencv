@@ -33,6 +33,7 @@ import {
   proofContentOf,
   type PaperDoc,
 } from "./paper-data.ts"
+import { CoachThreadPanel } from "./coach-thread-panel.tsx"
 import { PaperEditorSidebar } from "./paper-editor-sidebar.tsx"
 import {
   PaperEditorToolbar,
@@ -404,8 +405,6 @@ export function PaperEditor({
                 <PaperEditorToolbar
                   variant="cv"
                   className="sticky top-0 z-10 mb-4 w-full backdrop-blur-sm supports-[backdrop-filter]:bg-background/90"
-                  docId={doc.id}
-                  contextLabel={doc.name}
                   cvTemplateId={cvData.templateId}
                   onCvTemplateChange={handleTemplateChange}
                   onCvInsert={handleCvInsert}
@@ -432,8 +431,6 @@ export function PaperEditor({
                 <PaperEditorToolbar
                   variant="proof"
                   className="mb-5 w-full"
-                  docId={doc.id}
-                  contextLabel={doc.name}
                   proofViewMode={proofData.viewMode}
                   onProofViewModeChange={(mode) =>
                     handleProofChange({ ...proofData, viewMode: mode })
@@ -445,8 +442,6 @@ export function PaperEditor({
               <PaperEditorToolbar
                 variant={isLetter ? "letter" : "full"}
                 className="mb-5 w-full"
-                docId={doc.id}
-                contextLabel={doc.name}
                 onLetterInsert={isLetter ? handleLetterInsert : undefined}
                 letterWordCount={isLetter ? letterWords : undefined}
               />
@@ -508,6 +503,15 @@ export function PaperEditor({
             ) : null}
           </div>
         </div>
+
+        <CoachThreadPanel
+          key={doc.id}
+          docId={doc.id}
+          docName={doc.name}
+          variant={
+            isCv ? "cv" : isProof ? "proof" : isLetter ? "letter" : "full"
+          }
+        />
       </div>
     </div>
   )

@@ -58,6 +58,7 @@ type Props = {
   turnActive?: boolean
   placeholder?: string
   menuPlacement?: "below" | "above"
+  showModePicker?: boolean
 }
 
 function CoachModeDropdown({
@@ -112,6 +113,7 @@ export function CoachDock({
   turnActive = false,
   placeholder = "How can I help you today?",
   menuPlacement = "below",
+  showModePicker = true,
 }: Props) {
   const navigate = useNavigate()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -191,7 +193,7 @@ export function CoachDock({
 
   const leadingActions = (
     <div className="flex shrink-0 items-center gap-0.5">
-      {modeDropdown}
+      {showModePicker ? modeDropdown : null}
       {addButton}
     </div>
   )
@@ -267,7 +269,7 @@ export function CoachDock({
         "text-base leading-6",
         expanded ? "max-h-48 w-full px-0.5" : "max-h-6 min-h-6 flex-1 field-sizing-fixed"
       )}
-      aria-label="Message"
+      aria-label="Message Coach"
     />
   )
 
