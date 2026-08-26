@@ -24,9 +24,13 @@ function renderPaper() {
 
 async function openDoc(name: string) {
   fireEvent.click(await screen.findByText(name))
-  expect(
-    await screen.findByRole("region", { name: `Editing ${name}` })
-  ).toBeInTheDocument()
+  const editor = await screen.findByRole("region", { name: `Editing ${name}` })
+  expect(editor).toBeInTheDocument()
+  return editor
+}
+
+function messageCoach(container: HTMLElement) {
+  return within(container).getByRole("textbox", { name: "Message Coach" })
 }
 
 beforeEach(() => {
@@ -293,6 +297,30 @@ describe("Paper editors", () => {
     ).toBeInTheDocument()
   })
 
+  it("uses the shared Coach dock — no AI assist popover or mode picker", async () => {
+    renderPaper()
+    await expectPaperDrive()
+    const editor = await openDoc("PM track CV")
+
+    expect(
+      screen.queryByRole("button", { name: /AI assist/ })
+    ).not.toBeInTheDocument()
+    expect(screen.queryByRole("dialog", { name: "AI assist" })).not.toBeInTheDocument()
+    expect(messageCoach(editor)).toBeInTheDocument()
+    expect(
+      within(editor).queryByRole("button", { name: "Coach mode" })
+    ).not.toBeInTheDocument()
+    expect(
+      within(editor).queryByRole("radiogroup", { name: "Coach mode" })
+    ).not.toBeInTheDocument()
+    expect(
+      within(editor).getByRole("button", {
+        name: "Sharpen my checkout project bullet",
+      })
+    ).toBeInTheDocument()
+    expect(within(editor).queryByRole("log", { name: "Thread" })).not.toBeInTheDocument()
+  })
+
   it("streams the shared Coach with a receipt, stop, retry, thumbs, and copy", async () => {
     scriptCoachStream({
       parts: [
@@ -316,27 +344,34 @@ describe("Paper editors", () => {
     })
     renderPaper()
     await expectPaperDrive()
-    await openDoc("PM track CV")
+    const panel = await openDoc("PM track CV")
 
-    fireEvent.click(screen.getByRole("button", { name: /AI assist/ }))
-    const panel = await screen.findByRole("dialog", { name: "AI assist" })
-    expect(panel).toHaveTextContent(/same Coach as Home/i)
     expect(panel).not.toHaveTextContent(/can't edit it yet/i)
     expect(panel).not.toHaveTextContent(/haven't edited this document/i)
     expect(panel).not.toHaveTextContent(/lives on Home/i)
     expect(
       within(panel).queryByRole("radiogroup", { name: "Coach mode" })
     ).not.toBeInTheDocument()
+    expect(
+      within(panel).queryByRole("button", { name: "Coach mode" })
+    ).not.toBeInTheDocument()
 
-    const composer = within(panel).getByRole("textbox", {
-      name: "Message AI assist",
+    fireEvent.change(messageCoach(panel), {
+      target: { value: "Sharpen the checkout bullet" },
     })
-    fireEvent.change(composer, { target: { value: "Sharpen the checkout bullet" } })
     fireEvent.click(within(panel).getByRole("button", { name: "Send" }))
 
     expect(
       await within(panel).findByText("I read PM track CV.")
     ).toBeInTheDocument()
+    expect(
+      within(panel).getByRole("log", { name: "Thread" })
+    ).toBeInTheDocument()
+    expect(
+      within(panel).queryByRole("button", {
+        name: "Sharpen my checkout project bullet",
+      })
+    ).not.toBeInTheDocument()
     expect(
       within(panel).getByText(
         "Ran paper.updateContent — Updated PM track CV"
@@ -348,8 +383,9 @@ describe("Paper editors", () => {
     expect(
       within(panel).getByText("Reversible — Undo by editing the document again.")
     ).toBeInTheDocument()
+    const thread = within(panel).getByRole("log", { name: "Thread" })
     await waitFor(() => {
-      expect(within(panel).getByRole("button", { name: "Undo" })).toBeEnabled()
+      expect(within(thread).getByRole("button", { name: "Undo" })).toBeEnabled()
     })
     expect(getLastCoachRequest()?.focusDocId).toBe(
       "11111111-1111-7111-8111-111111111111"
@@ -387,11 +423,9 @@ describe("Paper editors", () => {
     })
     renderPaper()
     await expectPaperDrive()
-    await openDoc("PM track CV")
+    const panel = await openDoc("PM track CV")
 
-    fireEvent.click(screen.getByRole("button", { name: /AI assist/ }))
-    const panel = await screen.findByRole("dialog", { name: "AI assist" })
-    fireEvent.change(within(panel).getByRole("textbox", { name: "Message AI assist" }), {
+    fireEvent.change(messageCoach(panel), {
       target: { value: "Stop me" },
     })
     fireEvent.click(within(panel).getByRole("button", { name: "Send" }))
@@ -412,7 +446,7 @@ describe("Paper editors", () => {
         message: "The Coach is unavailable right now",
       },
     })
-    fireEvent.change(within(panel).getByRole("textbox", { name: "Message AI assist" }), {
+    fireEvent.change(messageCoach(panel), {
       target: { value: "Are you there?" },
     })
     fireEvent.click(within(panel).getByRole("button", { name: "Send" }))
@@ -434,14 +468,11 @@ describe("Paper editors", () => {
     scriptCoachStream({ texts: ["I read PM track CV."] })
     const first = renderPaper()
     await expectPaperDrive()
-    await openDoc("PM track CV")
+    const firstPanel = await openDoc("PM track CV")
 
-    fireEvent.click(screen.getByRole("button", { name: /AI assist/ }))
-    const firstPanel = await screen.findByRole("dialog", { name: "AI assist" })
-    fireEvent.change(
-      within(firstPanel).getByRole("textbox", { name: "Message AI assist" }),
-      { target: { value: "Remember this CV" } }
-    )
+    fireEvent.change(messageCoach(firstPanel), {
+      target: { value: "Remember this CV" },
+    })
     fireEvent.click(within(firstPanel).getByRole("button", { name: "Send" }))
     expect(
       await within(firstPanel).findByText("I read PM track CV.")
@@ -463,11 +494,9 @@ describe("Paper editors", () => {
       selector: "span.font-medium",
     })
     fireEvent.click(driveName.closest("tr") ?? driveName)
-    expect(
-      await screen.findByRole("region", { name: "Editing PM track CV" })
-    ).toBeInTheDocument()
-    fireEvent.click(screen.getByRole("button", { name: /AI assist/ }))
-    const secondPanel = await screen.findByRole("dialog", { name: "AI assist" })
+    const secondPanel = await screen.findByRole("region", {
+      name: "Editing PM track CV",
+    })
     expect(
       await within(secondPanel).findByText("Remember this CV")
     ).toBeInTheDocument()
@@ -477,5 +506,33 @@ describe("Paper editors", () => {
         key.includes("paper-coach-thread")
       )
     ).toBe(false)
+  })
+
+  it("shows the Paper Thread in History and continues it on Home", async () => {
+    scriptCoachStream({ texts: ["I read PM track CV."] })
+    const { router } = renderPaper()
+    await expectPaperDrive()
+    const editor = await openDoc("PM track CV")
+
+    fireEvent.change(messageCoach(editor), {
+      target: { value: "Sharpen the checkout bullet" },
+    })
+    fireEvent.click(within(editor).getByRole("button", { name: "Send" }))
+    expect(
+      await within(editor).findByText("I read PM track CV.")
+    ).toBeInTheDocument()
+
+    const history = screen.getByRole("navigation", { name: "History" })
+    expect(
+      await within(history).findByRole("button", { name: "PM track CV" })
+    ).toBeInTheDocument()
+
+    fireEvent.click(within(history).getByRole("button", { name: "PM track CV" }))
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(SURFACE_PATHS.home)
+    })
+    const thread = await screen.findByRole("log", { name: "Thread" })
+    expect(thread).toHaveTextContent("Sharpen the checkout bullet")
+    expect(thread).toHaveTextContent("I read PM track CV.")
   })
 })

@@ -21,7 +21,7 @@ async function expectHomeIdle() {
       ),
     })
   ).toBeInTheDocument()
-  expect(screen.getByRole("textbox", { name: "Message" })).toBeInTheDocument()
+  expect(screen.getByRole("textbox", { name: "Message Coach" })).toBeInTheDocument()
 }
 
 beforeEach(() => {
@@ -47,7 +47,7 @@ describe("Home idle", () => {
     const chip = SUGGESTION_POOLS[0]![0]!
     fireEvent.click(screen.getByRole("button", { name: chip.label }))
 
-    expect(screen.getByRole("textbox", { name: "Message" })).toHaveValue(
+    expect(screen.getByRole("textbox", { name: "Message Coach" })).toHaveValue(
       chip.prompt
     )
   })
@@ -56,14 +56,14 @@ describe("Home idle", () => {
     renderApp()
     await expectHomeIdle()
 
-    const composer = screen.getByRole("textbox", { name: "Message" })
+    const composer = screen.getByRole("textbox", { name: "Message Coach" })
     fireEvent.change(composer, { target: { value: "Help me plan the week" } })
 
     fireEvent.keyDown(composer, { key: "Enter", shiftKey: true })
     expect(composer).toHaveValue("Help me plan the week")
 
     fireEvent.keyDown(composer, { key: "Enter", shiftKey: false })
-    expect(screen.getByRole("textbox", { name: "Message" })).toHaveValue("")
+    expect(screen.getByRole("textbox", { name: "Message Coach" })).toHaveValue("")
     expect(
       screen.getByRole("status", { name: "Coach is working" })
     ).toBeInTheDocument()

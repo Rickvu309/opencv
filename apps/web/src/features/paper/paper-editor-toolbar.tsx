@@ -28,7 +28,6 @@ import {
   Wand2,
 } from "lucide-react"
 
-import { AiAssistChat, type ToolbarVariant } from "./paper-ai-chat.tsx"
 import { CvTemplateDropdown } from "./paper-cv-template-picker.tsx"
 import type { CvTemplateId } from "./paper-cv-types.ts"
 import type { ProofStepType, ProofViewMode } from "./paper-proof-types.ts"
@@ -46,7 +45,7 @@ import {
   ToolbarZone,
 } from "./paper-toolbar-parts.tsx"
 
-export type { ToolbarVariant }
+export type ToolbarVariant = "full" | "cv" | "proof" | "letter"
 
 export type CvInsertId =
   | "experience"
@@ -61,8 +60,6 @@ export type ProofInsertId = ProofStepType | "photo"
 type Props = {
   className?: string
   variant?: ToolbarVariant
-  docId: string
-  contextLabel?: string
   cvTemplateId?: CvTemplateId
   onCvTemplateChange?: (id: CvTemplateId) => void
   onCvInsert?: (id: CvInsertId) => void
@@ -327,8 +324,6 @@ function FormatEssentials() {
 export function PaperEditorToolbar({
   className,
   variant = "full",
-  docId,
-  contextLabel,
   cvTemplateId,
   onCvTemplateChange,
   onCvInsert,
@@ -344,147 +339,127 @@ export function PaperEditorToolbar({
 
   return (
     <ToolbarRoot className={className}>
-      <ToolbarZone>
-        <AiAssistChat
-          variant={variant}
-          docId={docId}
-          contextLabel={contextLabel}
-          prominent={
-            variant === "cv" || variant === "proof" || variant === "letter"
-          }
-        />
-      </ToolbarZone>
-
       {variant === "cv" && cvTemplateId && onCvTemplateChange ? (
-        <>
-          <ToolbarDivider />
-          <ToolbarZone>
-            <CvTemplateDropdown
-              value={cvTemplateId}
-              onChange={onCvTemplateChange}
-            />
-            <ToolbarMenu
-              label="Insert"
-              icon={<Plus className="size-3.5" />}
-              items={CV_INSERT_ITEMS.map((item) => ({ ...item }))}
-              onSelect={(id) => onCvInsert?.(id as CvInsertId)}
-            />
-            <ToolbarMenu
-              label="Tailor for role"
-              shortLabel="Tailor"
-              icon={<Target className="size-3.5" />}
-              items={TAILOR_ROLES.map((r) => ({
-                id: r.id,
-                label: r.label,
-                hint: r.hint,
-              }))}
-              onSelect={(id) => onCvTailor?.(id)}
-            />
-          </ToolbarZone>
-        </>
+        <ToolbarZone>
+          <CvTemplateDropdown
+            value={cvTemplateId}
+            onChange={onCvTemplateChange}
+          />
+          <ToolbarMenu
+            label="Insert"
+            icon={<Plus className="size-3.5" />}
+            items={CV_INSERT_ITEMS.map((item) => ({ ...item }))}
+            onSelect={(id) => onCvInsert?.(id as CvInsertId)}
+          />
+          <ToolbarMenu
+            label="Tailor for role"
+            shortLabel="Tailor"
+            icon={<Target className="size-3.5" />}
+            items={TAILOR_ROLES.map((r) => ({
+              id: r.id,
+              label: r.label,
+              hint: r.hint,
+            }))}
+            onSelect={(id) => onCvTailor?.(id)}
+          />
+        </ToolbarZone>
       ) : null}
 
       {variant === "letter" ? (
-        <>
-          <ToolbarDivider />
-          <ToolbarZone>
-            <ToolbarMenu
-              label="Insert"
-              icon={<Plus className="size-3.5" />}
-              items={[
-                {
-                  id: "salutation",
-                  label: "Salutation",
-                  hint: "Dear hiring team,",
-                },
-                {
-                  id: "paragraph",
-                  label: "Paragraph",
-                  hint: "Body text block",
-                },
-                { id: "signoff", label: "Sign-off", hint: "Best, your name" },
-                { id: "ps", label: "P.S.", hint: "Short postscript" },
-              ]}
-              onSelect={(id) => onLetterInsert?.(id as LetterInsertId)}
-            />
-            <ToolbarMenu
-              label="Adjust tone"
-              shortLabel="Tone"
-              icon={<Wand2 className="size-3.5" />}
-              items={[
-                { id: "formal", label: "More formal" },
-                { id: "warm", label: "Warmer" },
-                { id: "shorter", label: "Shorter" },
-                { id: "confident", label: "More confident" },
-              ]}
-              onSelect={() => undefined}
-            />
-            {letterWordCount != null ? (
-              <ToolbarMeta>{letterWordCount} words</ToolbarMeta>
-            ) : null}
-          </ToolbarZone>
-        </>
+        <ToolbarZone>
+          <ToolbarMenu
+            label="Insert"
+            icon={<Plus className="size-3.5" />}
+            items={[
+              {
+                id: "salutation",
+                label: "Salutation",
+                hint: "Dear hiring team,",
+              },
+              {
+                id: "paragraph",
+                label: "Paragraph",
+                hint: "Body text block",
+              },
+              { id: "signoff", label: "Sign-off", hint: "Best, your name" },
+              { id: "ps", label: "P.S.", hint: "Short postscript" },
+            ]}
+            onSelect={(id) => onLetterInsert?.(id as LetterInsertId)}
+          />
+          <ToolbarMenu
+            label="Adjust tone"
+            shortLabel="Tone"
+            icon={<Wand2 className="size-3.5" />}
+            items={[
+              { id: "formal", label: "More formal" },
+              { id: "warm", label: "Warmer" },
+              { id: "shorter", label: "Shorter" },
+              { id: "confident", label: "More confident" },
+            ]}
+            onSelect={() => undefined}
+          />
+          {letterWordCount != null ? (
+            <ToolbarMeta>{letterWordCount} words</ToolbarMeta>
+          ) : null}
+        </ToolbarZone>
       ) : null}
 
       {variant === "proof" ? (
-        <>
-          <ToolbarDivider />
-          <ToolbarZone>
-            {proofViewMode && onProofViewModeChange ? (
-              <ToolbarToggle
-                ariaLabel="Proof view"
-                value={proofViewMode}
-                onChange={(id) => onProofViewModeChange(id as ProofViewMode)}
-                options={[
-                  {
-                    id: "chain",
-                    label: "Chain",
-                    icon: <GitBranch className="size-3.5" />,
-                  },
-                  {
-                    id: "timeline",
-                    label: "Timeline",
-                    icon: <ListTree className="size-3.5" />,
-                  },
-                ]}
-              />
-            ) : null}
-            <ToolbarMenu
-              label="Add step"
-              icon={<Plus className="size-3.5" />}
-              items={[
+        <ToolbarZone>
+          {proofViewMode && onProofViewModeChange ? (
+            <ToolbarToggle
+              ariaLabel="Proof view"
+              value={proofViewMode}
+              onChange={(id) => onProofViewModeChange(id as ProofViewMode)}
+              options={[
                 {
-                  id: "context",
-                  label: "Context",
-                  hint: "The situation you were in",
+                  id: "chain",
+                  label: "Chain",
+                  icon: <GitBranch className="size-3.5" />,
                 },
-                { id: "action", label: "Action", hint: "What you did" },
-                { id: "outcome", label: "Outcome", hint: "The result" },
-                { id: "note", label: "Note", hint: "Extra detail" },
                 {
-                  id: "photo",
-                  label: "Photo",
-                  hint: "Attach to the last step",
-                  icon: <ImagePlus className="size-3.5" />,
+                  id: "timeline",
+                  label: "Timeline",
+                  icon: <ListTree className="size-3.5" />,
                 },
               ]}
-              onSelect={(id) => onProofInsert?.(id as ProofInsertId)}
             />
-            <ToolbarButton
-              label="Link to CV"
-              onClick={() => onProofInsert?.("note")}
-              className="!w-auto gap-1.5 px-2.5 text-xs font-medium"
-            >
-              <Link2 className="size-3.5" />
-              <span className="hidden sm:inline">Link to CV</span>
-            </ToolbarButton>
-          </ToolbarZone>
-        </>
+          ) : null}
+          <ToolbarMenu
+            label="Add step"
+            icon={<Plus className="size-3.5" />}
+            items={[
+              {
+                id: "context",
+                label: "Context",
+                hint: "The situation you were in",
+              },
+              { id: "action", label: "Action", hint: "What you did" },
+              { id: "outcome", label: "Outcome", hint: "The result" },
+              { id: "note", label: "Note", hint: "Extra detail" },
+              {
+                id: "photo",
+                label: "Photo",
+                hint: "Attach to the last step",
+                icon: <ImagePlus className="size-3.5" />,
+              },
+            ]}
+            onSelect={(id) => onProofInsert?.(id as ProofInsertId)}
+          />
+          <ToolbarButton
+            label="Link to CV"
+            onClick={() => onProofInsert?.("note")}
+            className="!w-auto gap-1.5 px-2.5 text-xs font-medium"
+          >
+            <Link2 className="size-3.5" />
+            <span className="hidden sm:inline">Link to CV</span>
+          </ToolbarButton>
+        </ToolbarZone>
       ) : null}
 
       {showFormat ? (
         <>
-          <ToolbarDivider />
+          {variant === "cv" || variant === "letter" ? <ToolbarDivider /> : null}
           <ToolbarZone>
             <FormatEssentials />
           </ToolbarZone>

@@ -110,7 +110,7 @@ describe("Home dock mode dropdown", () => {
       screen.queryByRole("radiogroup", { name: "Coach mode" })
     ).not.toBeInTheDocument()
 
-    const composer = screen.getByRole("textbox", { name: "Message" })
+    const composer = screen.getByRole("textbox", { name: "Message Coach" })
     fireEvent.change(composer, { target: { value: "Help me plan the week" } })
     fireEvent.click(screen.getByRole("button", { name: "Send" }))
 

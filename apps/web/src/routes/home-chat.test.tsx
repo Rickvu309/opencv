@@ -40,7 +40,7 @@ async function expectHistoryTitles() {
 }
 
 async function sendMessage(text: string) {
-  const composer = await screen.findByRole("textbox", { name: "Message" })
+  const composer = await screen.findByRole("textbox", { name: "Message Coach" })
   fireEvent.change(composer, { target: { value: text } })
   fireEvent.click(screen.getByRole("button", { name: "Send" }))
 }
