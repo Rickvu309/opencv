@@ -31,6 +31,53 @@ Project `openpath` (linked to this repo):
   (`SameSite=None; Secure` when https).
 - Public API domains: `api-production-0876.up.railway.app` (production) and
   `api-staging-f689.up.railway.app` (staging).
+- Coach runtime vars live on `api` in **both** environments — see
+  [Coach](#coach). Without `OPENROUTER_API_KEY` the process still boots.
+
+## Coach
+
+The Coach runtime is constructed only when `OPENROUTER_API_KEY` is set on the
+`api` service. Missing or blank key: the app boots, `GET /health` stays 200,
+and `POST /api/threads/:id/coach` returns 503 `COACH_UNAVAILABLE`. Auth,
+Paper, Apply, and Threads reads are untouched. That is the graceful posture
+— do not fail the deploy or the healthcheck for a missing key.
+
+| Variable | Required | Default | Notes |
+| -------- | -------- | ------- | ----- |
+| `OPENROUTER_API_KEY` | Yes, for a live Coach | — | Set on **staging and production**. stdin so the value never hits shell history. |
+| `COACH_MODEL` | No | `anthropic/claude-sonnet-4.5` | OpenRouter model id (ADR-0007). |
+| `COACH_DAILY_TURN_LIMIT` | No | `50` | Per-User daily turn cap. Non-positive values fall back to 50. |
+| `COACH_RUNTIME` | No | unset (OpenRouter when the key is present) | `fake` injects the scripted runtime for `curl -N` protocol checks. **Never on production.** |
+
+```bash
+# both environments; paste the key via stdin
+printf '%s' "$OPENROUTER_API_KEY" | railway variable set OPENROUTER_API_KEY --stdin \
+  --project openpath --environment staging --service api
+printf '%s' "$OPENROUTER_API_KEY" | railway variable set OPENROUTER_API_KEY --stdin \
+  --project openpath --environment production --service api
+```
+
+Setting a variable redeploys `api`. After both rollouts are SUCCESS:
+
+```bash
+COACH_SMOKE_API=https://api-staging-f689.up.railway.app \
+  pnpm --filter api smoke
+
+COACH_SMOKE_API=https://api-production-0876.up.railway.app \
+  COACH_SMOKE_MODE=production \
+  pnpm --filter api smoke
+```
+
+Staging smoke (mode `staging` or `auto` once the key is live) checks that a
+long streamed turn survives the Railway proxy: `message-start` flushes
+immediately, `X-Accel-Buffering: no`, no gzip on the route, 15s heartbeats
+when the turn lasts that long, and abort persists `status=aborted`.
+Production mode then asks for advice that cites workspace state and a
+Command (`apply.moveCard`) and looks for the receipt.
+
+A legacy backup of deleted Railway services (outside the repo, at
+`~/.openpath-backups/`) still holds an older `OPENROUTER_API_KEY` if this
+machine has it.
 
 ## Cross-host access (CORS)
 
@@ -130,4 +177,5 @@ The old layout (`web`, `worker`, `opath-lab`, `opath-production`, plus forked
 `qve-*` environments) was removed on 2026-08-21. It never matched ADR-0001 —
 do **not** recreate web/worker/Storybook services on Railway. A backup of the
 deleted services' environment variables was kept outside the repo at
-`~/.openpath-backups/` (it contains an `OPENROUTER_API_KEY`).
+`~/.openpath-backups/` (it contains an `OPENROUTER_API_KEY` useful for the
+[Coach](#coach) vars if this machine has the backup).

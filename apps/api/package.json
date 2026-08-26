@@ -14,6 +14,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "eval": "tsx src/coach/eval/run.ts",
+    "smoke": "tsx src/coach/smoke.ts",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\""
   },

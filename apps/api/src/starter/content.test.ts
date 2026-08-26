@@ -58,6 +58,8 @@ describe("starter content", () => {
     expect(thread.title).toBe(STARTER_THREAD_TITLE)
     expect(thread.coachText).toContain("I haven't edited Paper or Apply")
     expect(thread.coachText).toContain("haven't run any Commands")
+    expect(thread.coachText).toContain("seeded for you")
+    expect(thread.coachText).not.toMatch(/stub Coach/)
     expect(thread.coachText).not.toMatch(/!/)
     expect(thread.coachText).not.toMatch(PERSONA)
   })

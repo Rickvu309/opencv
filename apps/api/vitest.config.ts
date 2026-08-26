@@ -5,8 +5,9 @@ export default defineConfig({
     exclude: [
       "**/node_modules/**",
       "**/dist/**",
-      // Manual eval CLI — never vitest, never CI. Unit tests in this folder stay included.
+      // Manual eval CLI and live Railway smoke — never vitest, never CI.
       "src/coach/eval/run.ts",
+      "src/coach/smoke.ts",
     ],
   },
 })

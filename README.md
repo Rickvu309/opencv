@@ -36,6 +36,7 @@ fake-runtime tests keep CI at zero tokens. The script refuses to start without
 | `pnpm build` | Production builds |
 | `pnpm test` | Workspace tests |
 | `pnpm --filter api eval` | Manual Coach eval harness (needs `OPENROUTER_API_KEY`; never CI) |
+| `pnpm --filter api smoke` | Live Coach smoke against Railway (`COACH_SMOKE_API`; never CI) |
 | `pnpm typecheck` | Typecheck all packages |
 | `pnpm storybook` | UI kit catalog (http://localhost:6006) |
 | `pnpm build-storybook` | Static Storybook output (`packages/ui/storybook-static`) |

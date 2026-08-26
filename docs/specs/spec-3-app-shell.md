@@ -68,7 +68,7 @@ The prototype proved more than Spec 3 shipped. Numbering below matches the live 
 | **3 — App shell** (this spec) | Shell, Home Coach (stub replies), Search, History, Settings tabs, stub surfaces | Done |
 | **3.9 — Craft surfaces client-side** | Paper / Apply / Pitch ported from the frozen prototype (QVE-110–113) | Done |
 | **4 — Auth + Data** | Accounts, Postgres, Command registry, server Threads, Paper + Apply persistence, signup starter | Done |
-| **Coach (unnumbered)** | Real LLM, streaming, Commands wired as tools from the same registry | After 4 |
+| **5 — The Coach** | Real LLM, streaming, Commands wired as tools from the same registry | Done (QVE-136 / QVE-137–144); `OPENROUTER_API_KEY` on Railway is the remaining owner step |
 | **Pitch persistence** | One jsonb document per user (same shape as Paper content) | After 4, unblocked |
 | **Later** | Email provider + verification, sibling custom domains, OAuth, notification inbox, Connected apps, voice input | — |
 
