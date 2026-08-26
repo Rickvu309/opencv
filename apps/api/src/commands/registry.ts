@@ -105,6 +105,16 @@ export function createRegistry(commands: RegisteredCommand[]) {
         }
       }
 
+      if (actor.type === "coach" && command.destructive) {
+        return {
+          status: httpStatusForError(ERROR_CODES.COACH_NOT_ALLOWED),
+          body: errorEnvelope(
+            ERROR_CODES.COACH_NOT_ALLOWED,
+            "This Command cannot be run by the Coach"
+          ),
+        }
+      }
+
       if (actor.type === "coach" && !command.coachAllowed) {
         return {
           status: httpStatusForError(ERROR_CODES.COACH_NOT_ALLOWED),

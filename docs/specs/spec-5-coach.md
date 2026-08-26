@@ -79,7 +79,7 @@ Work this spec deliberately deferred, now ticketed:
 
 - [QVE-146](https://linear.app/quanvm/issue/QVE-146) — Paper AI panel unification
 - [QVE-147](https://linear.app/quanvm/issue/QVE-147) — Coach message Regenerate
-- [QVE-148](https://linear.app/quanvm/issue/QVE-148) — Destructive Command confirm flow
+- [QVE-148](https://linear.app/quanvm/issue/QVE-148) — Destructive Command confirm flow (User confirm live; Coach stays excluded by the temporary `!destructive` filter)
 - [QVE-149](https://linear.app/quanvm/issue/QVE-149) — One-click reversal from Coach receipts
 - [QVE-150](https://linear.app/quanvm/issue/QVE-150) — Vietnamese Coach + product copy (`ready-for-human`)
 - [QVE-151](https://linear.app/quanvm/issue/QVE-151) — Coach eval + tune Free/Light/Max after mode routing

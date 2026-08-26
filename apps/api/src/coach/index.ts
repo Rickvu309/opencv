@@ -1,6 +1,7 @@
 export {
   assembleCoachTools,
   commandToToolName,
+  executeCoachMutation,
   isCoachMutationCommand,
 } from "./tools.js"
 export type {

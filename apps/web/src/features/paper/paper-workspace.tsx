@@ -28,6 +28,7 @@ import type {
 import { Filter, MoreHorizontal, Plus, Search } from "lucide-react"
 
 import { useApplyCards } from "@/features/apply/use-apply-cards.ts"
+import { DestructiveCommandDialog } from "@/features/commands/destructive-command-dialog.tsx"
 
 import { TYPE_LABEL, formatPaperUpdated, paperSummary } from "./paper-data.ts"
 import { PaperEditor } from "./paper-editor.tsx"
@@ -145,39 +146,15 @@ export function PaperWorkspace() {
         </DialogContent>
       </Dialog>
 
-      <Dialog
+      <DestructiveCommandDialog
         open={Boolean(deleteTarget)}
+        title="Delete document"
+        name={deleteTarget?.name ?? null}
         onOpenChange={(open) => {
           if (!open) setDeleteTarget(null)
         }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete document</DialogTitle>
-            <DialogDescription>
-              {deleteTarget
-                ? `Delete “${deleteTarget.name}”? This cannot be undone.`
-                : "This cannot be undone."}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setDeleteTarget(null)}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={() => void confirmDelete()}
-            >
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        onConfirm={() => void confirmDelete()}
+      />
 
       <Dialog
         open={Boolean(linkTarget)}

@@ -18,6 +18,7 @@ export type ThreadStoreValue = {
   rate: (messageId: string, rating: CoachUsageRating) => void
   openThread: (id: string) => void
   newThread: () => void
+  deleteThread: (id: string) => Promise<void>
 }
 
 export const ThreadStoreContext = createContext<ThreadStoreValue | null>(null)

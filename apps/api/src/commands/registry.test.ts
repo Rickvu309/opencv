@@ -8,7 +8,11 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest"
 import { user as userTable } from "../db/schema.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { commandRegistry } from "./index.js"
-import type { CommandExecution } from "./registry.js"
+import {
+  createRegistry,
+  defineCommand,
+  type CommandExecution,
+} from "./registry.js"
 import { threadCommands } from "./threads.js"
 
 function successData<T>(result: CommandExecution): T {
@@ -134,6 +138,45 @@ describe("command registry", () => {
       db,
     })
 
+    expect(result.status).toBe(403)
+    expect(result.body).toEqual({
+      ok: false,
+      error: {
+        code: ERROR_CODES.COACH_NOT_ALLOWED,
+        message: "This Command cannot be run by the Coach",
+      },
+    })
+  })
+
+  it("blocks the Coach from a destructive Command even when coachAllowed", async () => {
+    let ran = false
+    const registry = createRegistry([
+      defineCommand({
+        name: "test.explode",
+        description: "A destructive Command that claims to allow the Coach.",
+        input: {
+          safeParse(input: unknown) {
+            return { success: true as const, data: input }
+          },
+        },
+        coachAllowed: true,
+        destructive: true,
+        reversal: { possible: false, description: "Gone." },
+        async handler() {
+          ran = true
+          return { id: "nope" }
+        },
+      }),
+    ])
+
+    const result = await registry.execute({
+      name: "test.explode",
+      input: {},
+      actor: coachActor(ownerId),
+      db,
+    })
+
+    expect(ran).toBe(false)
     expect(result.status).toBe(403)
     expect(result.body).toEqual({
       ok: false,
