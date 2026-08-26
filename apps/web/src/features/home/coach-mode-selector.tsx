@@ -25,12 +25,12 @@ export function CoachModeSelector({
 }: CoachModeSelectorProps) {
   return (
     <div className={cn("space-y-1.5", compact && "space-y-1")}>
+      {showPill ? (
+        <Badge variant="outline" className="text-[11px] font-medium">
+          {coachModeLabel(mode)}
+        </Badge>
+      ) : null}
       <div className="flex flex-wrap items-center gap-2">
-        {showPill ? (
-          <Badge variant="outline" className="text-[11px] font-medium">
-            {coachModeLabel(mode)}
-          </Badge>
-        ) : null}
         <div
           role="radiogroup"
           aria-label="Coach mode"
@@ -48,7 +48,7 @@ export function CoachModeSelector({
                 className={cn(
                   "rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
                   selected
-                    ? "bg-background text-foreground shadow-sm"
+                    ? "bg-background text-foreground shadow-sm ring-1 ring-border/80"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
