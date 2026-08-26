@@ -180,6 +180,7 @@ type Props = {
   messages: HomeMessage[]
   waiting?: boolean
   error?: string | null
+  compact?: boolean
   onRetry?: () => void
   onRate?: (messageId: string, rating: CoachUsageRating) => void
   onRegenerate?: () => void
@@ -189,6 +190,7 @@ export function ThreadView({
   messages,
   waiting,
   error,
+  compact,
   onRetry,
   onRate,
   onRegenerate,
@@ -199,7 +201,11 @@ export function ThreadView({
       role="log"
       aria-label="Thread"
       aria-live="polite"
-      className="mx-auto w-full max-w-3xl space-y-8 px-4 py-6 sm:px-6 sm:py-8"
+      className={cn(
+        compact
+          ? "w-full space-y-4 px-0 py-0"
+          : "mx-auto w-full max-w-3xl space-y-8 px-4 py-6 sm:px-6 sm:py-8"
+      )}
     >
       {messages.map((item) =>
         item.role === "user" ? (

@@ -10,6 +10,7 @@ import {
   DEFAULT_COACH_MODEL_MAX,
   ERROR_CODES,
   PROFILE_COMMANDS,
+  PAPER_COMMANDS,
   THREAD_COMMANDS,
   type CoachTurnInput,
   type ThreadDetail,
@@ -1058,5 +1059,135 @@ describe("coach regenerate", () => {
       "Here is another way to look at it."
     )
     expect(detail.data.messages[2]?.text).not.toMatch(/revers/i)
+  })
+})
+
+describe("coach route paper focus", () => {
+  let client: Awaited<ReturnType<typeof createMigratedTestDb>>["client"]
+  let db: Awaited<ReturnType<typeof createMigratedTestDb>>["db"]
+  let cookieA: string
+  let cookieB: string
+
+  beforeAll(async () => {
+    const migrated = await createMigratedTestDb()
+    client = migrated.client
+    db = migrated.db
+    const app = createTestApp(db, { coach: createDemoCoachRuntime() })
+    cookieA = (
+      await signUp(app, {
+        name: "FocusA",
+        email: "focus-a-coach-route@example.com",
+        password: "correct-horse-battery",
+      })
+    ).cookie
+    cookieB = (
+      await signUp(app, {
+        name: "FocusB",
+        email: "focus-b-coach-route@example.com",
+        password: "correct-horse-battery",
+      })
+    ).cookie
+  }, 60_000)
+
+  afterAll(async () => {
+    await client.close()
+  })
+
+  async function createPaperDoc(
+    app: ReturnType<typeof createTestApp>,
+    cookie: string,
+    name: string
+  ) {
+    const res = await postCommand(app, cookie, PAPER_COMMANDS.createDoc, {
+      kind: "cv",
+      name,
+    })
+    expect(res.status).toBe(200)
+    const body = await json<{ ok: true; data: { id: string; name: string } }>(
+      res
+    )
+    return body.data
+  }
+
+  it("passes the owned open Paper doc into the shared runtime", async () => {
+    const seen: CoachTurnInput[] = []
+    const app = createTestApp(db, {
+      coach: createScriptedCoachRuntime(async function* (input) {
+        seen.push(input)
+        yield { type: "text-delta", text: "I read the open CV." }
+        yield {
+          type: "finish",
+          finishReason: "stop",
+          usage: { model: "mock" },
+        }
+      }),
+    })
+    const doc = await createPaperDoc(app, cookieA, "PM track CV")
+    const threadId = await createThread(app, cookieA, "Paper focus")
+    const res = await app.request(`/api/threads/${threadId}/coach`, {
+      method: "POST",
+      headers: authHeaders(cookieA),
+      body: JSON.stringify({
+        text: "Sharpen the checkout bullet",
+        focusDocId: doc.id,
+      }),
+    })
+    expect(res.status).toBe(200)
+    await res.text()
+
+    expect(seen).toHaveLength(1)
+    expect(seen[0]?.focusDoc).toEqual({
+      id: doc.id,
+      name: "PM track CV",
+      kind: "cv",
+      status: "draft",
+    })
+  })
+
+  it("rejects an invalid focusDocId before calling the runtime", async () => {
+    const app = createTestApp(db, { coach: createDemoCoachRuntime() })
+    const threadId = await createThread(app, cookieA, "Bad focus")
+    const res = await app.request(`/api/threads/${threadId}/coach`, {
+      method: "POST",
+      headers: authHeaders(cookieA),
+      body: JSON.stringify({
+        text: "Hello",
+        focusDocId: "not-a-uuid",
+      }),
+    })
+    expect(res.status).toBe(400)
+    await expect(res.json()).resolves.toEqual({
+      ok: false,
+      error: {
+        code: ERROR_CODES.VALIDATION_ERROR,
+        message: expect.any(String),
+      },
+    })
+  })
+
+  it("rejects a missing or foreign Paper doc", async () => {
+    const app = createTestApp(db, { coach: createDemoCoachRuntime() })
+    const foreign = await createPaperDoc(app, cookieB, "Lan CV")
+    const threadId = await createThread(app, cookieA, "Foreign focus")
+
+    const missing = await app.request(`/api/threads/${threadId}/coach`, {
+      method: "POST",
+      headers: authHeaders(cookieA),
+      body: JSON.stringify({
+        text: "Hello",
+        focusDocId: "11111111-1111-4111-8111-111111111111",
+      }),
+    })
+    expect(missing.status).toBe(404)
+
+    const other = await app.request(`/api/threads/${threadId}/coach`, {
+      method: "POST",
+      headers: authHeaders(cookieA),
+      body: JSON.stringify({
+        text: "Hello",
+        focusDocId: foreign.id,
+      }),
+    })
+    expect(other.status).toBe(403)
   })
 })
