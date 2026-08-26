@@ -34,6 +34,9 @@ describe("Storybook catalog", () => {
     )
     expect(ui.scripts.storybook).toMatch(/storybook dev/)
     expect(ui.scripts["build-storybook"]).toMatch(/storybook build/)
+
+    const ci = read(".github/workflows/ci.yml")
+    expect(ci).toMatch(/build-storybook/)
   })
 
   it("gives every absorbed primitive a colocated story that imports the source file", () => {
@@ -62,6 +65,19 @@ describe("Storybook catalog", () => {
     expect(main).toMatch(/reactDocgen:\s*["']react-docgen["']/)
     expect(main).toMatch(/check:\s*false/)
     expect(main).toMatch(/@storybook\/react-vite/)
+    expect(main).toMatch(/@storybook\/addon-a11y/)
+    expect(preview).toMatch(/a11y:/)
+    expect(preview).not.toMatch(/dark:\s*\{\s*name:\s*["']dark["']/)
+  })
+
+  it("documents Foundations token pages", () => {
+    const foundations = path.join(uiRoot, "src/foundations")
+    for (const page of ["color", "type", "radius", "motion", "icons"]) {
+      expect(
+        existsSync(path.join(foundations, `${page}.stories.tsx`)),
+        `missing foundations/${page}.stories.tsx`
+      ).toBe(true)
+    }
   })
 })
 
