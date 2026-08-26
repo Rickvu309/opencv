@@ -121,20 +121,21 @@ export function SidebarHistory({ collapsed, onNavigate }: Props) {
           </nav>
         ) : null}
       </div>
-      <DestructiveCommandDialog
-        open={Boolean(deleteTarget)}
-        title="Delete Thread"
-        name={deleteTarget?.title ?? null}
-        onOpenChange={(open) => {
-          if (!open) setDeleteTarget(null)
-        }}
-        onConfirm={() => {
-          if (!deleteTarget) return
-          const id = deleteTarget.id
-          setDeleteTarget(null)
-          deleteThread(id)
-        }}
-      />
+      {deleteTarget ? (
+        <DestructiveCommandDialog
+          open
+          title="Delete Thread"
+          name={deleteTarget.title}
+          onOpenChange={(open) => {
+            if (!open) setDeleteTarget(null)
+          }}
+          onConfirm={() => {
+            const id = deleteTarget.id
+            setDeleteTarget(null)
+            deleteThread(id)
+          }}
+        />
+      ) : null}
     </div>
   )
 }

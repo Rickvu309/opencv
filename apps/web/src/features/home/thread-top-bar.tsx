@@ -35,13 +35,15 @@ export function ThreadTopBar({
         <SquarePen className="size-4" />
         New Thread
       </Button>
-      <DestructiveCommandDialog
-        open={confirmOpen}
-        title="Delete Thread"
-        name={threadTitle ?? null}
-        onOpenChange={setConfirmOpen}
-        onConfirm={() => onDeleteThread?.()}
-      />
+      {confirmOpen ? (
+        <DestructiveCommandDialog
+          open
+          title="Delete Thread"
+          name={threadTitle ?? null}
+          onOpenChange={setConfirmOpen}
+          onConfirm={() => onDeleteThread?.()}
+        />
+      ) : null}
     </header>
   )
 }

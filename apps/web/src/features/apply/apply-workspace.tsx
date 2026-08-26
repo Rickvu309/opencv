@@ -291,25 +291,22 @@ export function ApplyWorkspace() {
         ) : null}
       </div>
 
-      <DestructiveCommandDialog
-        open={Boolean(deleteTarget)}
-        title="Delete job"
-        name={
-          deleteTarget
-            ? `${deleteTarget.title} at ${deleteTarget.company}`
-            : null
-        }
-        onOpenChange={(open) => {
-          if (!open) setDeleteTarget(null)
-        }}
-        onConfirm={() => {
-          if (!deleteTarget) return
-          const id = deleteTarget.id
-          setDeleteTarget(null)
-          if (selectedId === id) setSelectedId(null)
-          void apply.deleteCard(id)
-        }}
-      />
+      {deleteTarget ? (
+        <DestructiveCommandDialog
+          open
+          title="Delete job"
+          name={`${deleteTarget.title} at ${deleteTarget.company}`}
+          onOpenChange={(open) => {
+            if (!open) setDeleteTarget(null)
+          }}
+          onConfirm={() => {
+            const id = deleteTarget.id
+            setDeleteTarget(null)
+            if (selectedId === id) setSelectedId(null)
+            void apply.deleteCard(id)
+          }}
+        />
+      ) : null}
     </div>
   )
 }

@@ -146,15 +146,17 @@ export function PaperWorkspace() {
         </DialogContent>
       </Dialog>
 
-      <DestructiveCommandDialog
-        open={Boolean(deleteTarget)}
-        title="Delete document"
-        name={deleteTarget?.name ?? null}
-        onOpenChange={(open) => {
-          if (!open) setDeleteTarget(null)
-        }}
-        onConfirm={() => void confirmDelete()}
-      />
+      {deleteTarget ? (
+        <DestructiveCommandDialog
+          open
+          title="Delete document"
+          name={deleteTarget.name}
+          onOpenChange={(open) => {
+            if (!open) setDeleteTarget(null)
+          }}
+          onConfirm={() => void confirmDelete()}
+        />
+      ) : null}
 
       <Dialog
         open={Boolean(linkTarget)}
