@@ -12,6 +12,7 @@ import {
   createRegistry,
   defineCommand,
   type CommandExecution,
+  type RegisteredCommand,
 } from "./registry.js"
 import { threadCommands } from "./threads.js"
 
@@ -166,7 +167,7 @@ describe("command registry", () => {
           ran = true
           return { id: "nope" }
         },
-      }),
+      }) as RegisteredCommand,
     ])
 
     const result = await registry.execute({
