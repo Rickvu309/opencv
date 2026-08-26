@@ -149,6 +149,26 @@ describe("assembleSystemPrompt", () => {
     )
     expect(prompt).not.toMatch(/!/)
   })
+
+  it("names the open Paper document and forbids a silent rewrite", () => {
+    const snapshot: WorkspaceSnapshot = {
+      ...sampleSnapshot,
+      focusDoc: {
+        id: "11111111-1111-7111-8111-111111111111",
+        name: "PM track CV",
+        kind: "cv",
+        status: "draft",
+      },
+    }
+    const summary = summarizeWorkspace(snapshot)
+    expect(summary).toContain(
+      "Open Paper document: PM track CV · CV · draft (id: 11111111-1111-7111-8111-111111111111)"
+    )
+    expect(summary).toMatch(/paper_getDoc/)
+    expect(summary).toMatch(/never claim a silent rewrite/)
+    expect(summary).not.toMatch(/!/)
+    expect(assembleSystemPrompt(snapshot)).toContain(summary)
+  })
 })
 
 describe("historyForRegenerate", () => {

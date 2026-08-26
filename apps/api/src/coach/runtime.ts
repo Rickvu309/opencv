@@ -63,7 +63,10 @@ export function createOpenRouterCoachRuntime({
       const startedAt = Date.now()
       const abort = new AbortController()
       const turnModel = input.model ?? model
-      const snapshot = await loadWorkspaceSnapshot(db, input.userId)
+      const snapshot = {
+        ...(await loadWorkspaceSnapshot(db, input.userId)),
+        ...(input.focusDoc ? { focusDoc: input.focusDoc } : {}),
+      }
       const tools = toAiSdkTools(
         assembleCoachTools({ db, userId: input.userId, registry })
       )

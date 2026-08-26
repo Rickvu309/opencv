@@ -59,6 +59,14 @@ export type CoachStreamControl = {
   emitted: () => number
 }
 
+type LastCoachRequest = {
+  threadId: string
+  text?: string
+  mode?: string
+  regenerate?: boolean
+  focusDocId?: string
+}
+
 type Store = {
   threads: ThreadDetail[]
 }
@@ -76,6 +84,7 @@ const store: Store = {
 
 let script: CoachStreamScript = {}
 let gate: GateState = openGate()
+let lastCoachRequest: LastCoachRequest | null = null
 
 function openGate(): GateState {
   return {
@@ -356,6 +365,11 @@ export function resetThreadApiMock() {
   store.threads = cloneThreads(FIXTURE_THREADS)
   script = {}
   gate = openGate()
+  lastCoachRequest = null
+}
+
+export function getLastCoachRequest() {
+  return lastCoachRequest
 }
 
 export function scriptCoachStream(
@@ -416,7 +430,16 @@ export async function threadApiFetch(
 
     const body = (await readBody(init)) as {
       text?: string
+      mode?: string
       regenerate?: boolean
+      focusDocId?: string
+    }
+    lastCoachRequest = {
+      threadId: coach[1]!,
+      ...(body.text != null ? { text: body.text } : {}),
+      ...(body.mode != null ? { mode: body.mode } : {}),
+      ...(body.regenerate ? { regenerate: true } : {}),
+      ...(body.focusDocId ? { focusDocId: body.focusDocId } : {}),
     }
     const thread = store.threads.find((item) => item.id === coach[1])
     if (!thread) {

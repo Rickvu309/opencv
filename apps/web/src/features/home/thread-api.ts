@@ -104,9 +104,13 @@ export async function rateCoachMessage(
   return unwrapData(body)
 }
 
+type CoachStreamBody =
+  | { text: string; mode?: CoachMode; focusDocId?: string }
+  | { regenerate: true; mode?: CoachMode; focusDocId?: string }
+
 async function consumeCoachStream(
   threadId: string,
-  body: { text: string; mode?: CoachMode } | { regenerate: true; mode?: CoachMode },
+  body: CoachStreamBody,
   handlers: CoachStreamHandlers,
   signal?: AbortSignal
 ): Promise<void> {
@@ -151,11 +155,16 @@ export async function streamCoachTurn(
   text: string,
   handlers: CoachStreamHandlers,
   signal?: AbortSignal,
-  mode?: CoachMode
+  mode?: CoachMode,
+  focusDocId?: string
 ): Promise<void> {
   await consumeCoachStream(
     threadId,
-    mode ? { text, mode } : { text },
+    {
+      text,
+      ...(mode ? { mode } : {}),
+      ...(focusDocId ? { focusDocId } : {}),
+    },
     handlers,
     signal
   )
@@ -165,11 +174,16 @@ export async function streamCoachRegenerate(
   threadId: string,
   handlers: CoachStreamHandlers,
   signal?: AbortSignal,
-  mode?: CoachMode
+  mode?: CoachMode,
+  focusDocId?: string
 ): Promise<void> {
   await consumeCoachStream(
     threadId,
-    mode ? { regenerate: true, mode } : { regenerate: true },
+    {
+      regenerate: true,
+      ...(mode ? { mode } : {}),
+      ...(focusDocId ? { focusDocId } : {}),
+    },
     handlers,
     signal
   )

@@ -26,6 +26,7 @@ import {
   type CoachSseErrorData,
   type CoachSseMessageEndData,
   type CoachSseMessageStartData,
+  type CoachFocusDoc,
   type CoachStreamPart,
   type CoachTurnUsage,
   type ThreadDetail,
@@ -47,6 +48,7 @@ import { coachUsage, threadMessages, threads } from "../db/schema.js"
 import { jsonWithStatus } from "../http-json.js"
 import { createId } from "../id.js"
 import { readSession } from "../session.js"
+import { getOwnedPaperDoc } from "../paper/queries.js"
 import { getCoachModeForUser } from "../profile/queries.js"
 import { getOwnedThread, getThreadDetail, toThreadMessage } from "../threads/queries.js"
 import { reverseCoachReceipt } from "./reverse.js"
@@ -142,6 +144,32 @@ export function createCoachRoutes({
       throw error
     }
 
+    let focusDoc: CoachFocusDoc | undefined
+    if (parsed.data.focusDocId) {
+      try {
+        const row = await getOwnedPaperDoc(
+          db,
+          session.user.id,
+          parsed.data.focusDocId
+        )
+        focusDoc = {
+          id: row.id,
+          name: row.name,
+          kind: row.contentKind,
+          status: row.status,
+        }
+      } catch (error) {
+        if (error instanceof CommandError) {
+          return jsonWithStatus(
+            c,
+            errorEnvelope(error.code, error.message),
+            error.status
+          )
+        }
+        throw error
+      }
+    }
+
     const mode =
       parsed.data.mode ??
       (await getCoachModeForUser(db, session.user.id).catch(
@@ -211,6 +239,7 @@ export function createCoachRoutes({
         model,
         mode,
         regenerate: parsed.data.regenerate === true,
+        focusDoc,
         heartbeatMs,
         signal: c.req.raw.signal,
       })
@@ -366,6 +395,7 @@ type RunCoachTurnOptions = {
   model: string
   mode: CoachMode
   regenerate?: boolean
+  focusDoc?: CoachFocusDoc
   heartbeatMs: number
   signal?: AbortSignal
 }
@@ -380,6 +410,7 @@ async function runCoachTurn({
   model,
   mode,
   regenerate,
+  focusDoc,
   heartbeatMs,
   signal,
 }: RunCoachTurnOptions) {
@@ -400,7 +431,15 @@ async function runCoachTurn({
     await writeEvent(stream, COACH_SSE_EVENTS.messageStart, start)
 
     for await (const part of takeUntilAbort(
-      coach.streamTurn({ userId, threadId, history, model, mode, regenerate }),
+      coach.streamTurn({
+        userId,
+        threadId,
+        history,
+        model,
+        mode,
+        regenerate,
+        focusDoc,
+      }),
       aborted.promise,
       () => isDisconnected(stream, signal)
     )) {
