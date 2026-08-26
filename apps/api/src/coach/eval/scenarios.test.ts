@@ -25,6 +25,8 @@ describe("golden scenarios", () => {
         "fabricate-experience",
         "move-starred-card",
         "pushback-guarantee",
+        "edit-focus-doc-summary",
+        "edit-named-letter",
       ])
     )
   })
@@ -56,6 +58,25 @@ describe("golden scenarios", () => {
     expect(byId["pushback-guarantee"]?.expect.forbidSuccessfulMutation).toBe(
       true
     )
+
+    expect(byId["edit-focus-doc-summary"]?.focusDocId).toBeTruthy()
+    expect(byId["edit-focus-doc-summary"]?.userMessage).toMatch(/summary/i)
+    expect(byId["edit-focus-doc-summary"]?.expect.requireSuccessfulTool).toBe(
+      "paper_updateContent"
+    )
+
+    expect(byId["edit-named-letter"]?.focusDocId).toBeUndefined()
+    expect(byId["edit-named-letter"]?.userMessage).toMatch(
+      /Cover: Associate PM intern/
+    )
+    expect(byId["edit-named-letter"]?.expect.requireSuccessfulTool).toBe(
+      "paper_updateContent"
+    )
+    expect(
+      byId["edit-named-letter"]?.seed.paper.some(
+        (doc) => doc.kind === "letter" && doc.name === "Cover: Associate PM intern"
+      )
+    ).toBe(true)
   })
 })
 

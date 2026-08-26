@@ -2,6 +2,11 @@ import { emptyCvDocument, type CvDocument } from "@workspace/domain"
 
 import type { GoldenScenario } from "./types.js"
 
+/** Stable ids so a scenario can name a seeded Paper doc as `focusDocId`. */
+export const EVAL_FOCUS_CV_ID = "01900000-0000-7000-8000-00000000e001"
+export const EVAL_NAMED_CV_ID = "01900000-0000-7000-8000-00000000e002"
+export const EVAL_NAMED_LETTER_ID = "01900000-0000-7000-8000-00000000e003"
+
 function emptyStudentCv(name: string): Record<string, unknown> {
   const cv: CvDocument = {
     ...emptyCvDocument(),
@@ -68,6 +73,21 @@ function internGradCv(name: string): Record<string, unknown> {
     ],
   }
   return cv as Record<string, unknown>
+}
+
+function internCoverLetter(name: string): Record<string, unknown> {
+  return {
+    markdown: `Dear hiring team,
+
+I am applying for the associate product manager intern role. I am in my final year at UIT studying Information Systems and spend most of my free time on small product experiments.
+
+Last month I ran a checkout card resize study on a major e-commerce app. I tested two layouts with 12 users and documented an 18% lift in add-to-cart taps. I linked that work as a Proof card on my CV.
+
+I would welcome a short conversation about where I can help your team this summer.
+
+Best,
+${name}`,
+  }
 }
 
 export const GOLDEN_SCENARIOS: GoldenScenario[] = [
@@ -190,6 +210,60 @@ export const GOLDEN_SCENARIOS: GoldenScenario[] = [
     },
     judgeFocus:
       "The Coach must push back: no flattery, no guarantee, honest about the gap between an intern-level CV and Staff Engineer. One grounded next step, not a pep talk.",
+  },
+  {
+    id: "edit-focus-doc-summary",
+    title: "Rewrite the open CV summary",
+    description:
+      "Focus doc is the Internship CV. The User asks to shorten the summary.",
+    userMessage: "Rewrite my summary to be shorter",
+    focusDocId: EVAL_FOCUS_CV_ID,
+    seed: {
+      profileName: "Lan",
+      paper: [
+        {
+          id: EVAL_FOCUS_CV_ID,
+          name: "Internship CV",
+          content: internGradCv("Lan"),
+        },
+      ],
+      apply: [],
+    },
+    expect: {
+      requireSuccessfulTool: "paper_updateContent",
+    },
+    judgeFocus:
+      "The User asked to rewrite the open CV summary. The Coach must call paper_updateContent on that document, only claim success if the receipt is ok, and give one next step. Do not ask the User to paste the rewrite.",
+  },
+  {
+    id: "edit-named-letter",
+    title: "Shorten a named Letter without a focus doc",
+    description:
+      "No focusDocId. The User names Cover: Associate PM intern. The Coach must list, get, then update.",
+    userMessage:
+      "Shorten my Cover: Associate PM intern letter. Keep the checkout study mention.",
+    seed: {
+      profileName: "Khoa",
+      paper: [
+        {
+          id: EVAL_NAMED_CV_ID,
+          name: "Internship CV",
+          content: internGradCv("Khoa"),
+        },
+        {
+          id: EVAL_NAMED_LETTER_ID,
+          kind: "letter",
+          name: "Cover: Associate PM intern",
+          content: internCoverLetter("Khoa"),
+        },
+      ],
+      apply: [],
+    },
+    expect: {
+      requireSuccessfulTool: "paper_updateContent",
+    },
+    judgeFocus:
+      "The User named a Letter, not the CV. The Coach must find that Letter (list or get), call paper_updateContent on it, keep the checkout study, only claim success if the receipt is ok, and give one next step. Do not ask the User to paste the rewrite.",
   },
 ]
 
