@@ -2,12 +2,7 @@ import { useMemo, useState, type ReactNode } from "react"
 
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@workspace/ui/components/tabs"
+import { Tabs, TabsList, TabsTrigger } from "@workspace/ui/components/tabs"
 import type { ApplyStage, PaperContentKind } from "@workspace/domain"
 import { PAPER_KIND_LABEL } from "@workspace/domain"
 

@@ -58,14 +58,6 @@ export function MoveCardReceipt({
   onOpen?: () => void
 }) {
   const [replay, setReplay] = useState(0)
-  const [shown, setShown] = useState<ApplyStage>(fixture.from)
-
-  useEffect(() => {
-    setShown(fixture.from)
-    const timer = window.setTimeout(() => setShown(fixture.to), 80)
-    return () => window.clearTimeout(timer)
-  }, [fixture.from, fixture.to, replay])
-
   const fromLabel = stageLabel(fixture.from)
   const toLabel = stageLabel(fixture.to)
   const sameStage = fixture.from === fixture.to
@@ -83,45 +75,10 @@ export function MoveCardReceipt({
       reversal={ok ? fixture.reversal : undefined}
     >
       <div className="ml-5 space-y-2">
-        <div
-          className="grid grid-cols-5 gap-1"
-          aria-label={`Board Stages, card now in ${stageLabel(shown)}`}
-        >
-          {STAGES.map((stage) => {
-            const here = shown === stage.id
-            const involved =
-              stage.id === fixture.from || stage.id === fixture.to
-            return (
-              <div key={stage.id} className="min-w-0">
-                <div className="mb-1 flex items-center gap-1">
-                  <span className={cn("size-1.5 rounded-full", stage.dot)} />
-                  <span
-                    className={cn(
-                      "truncate text-[10px]",
-                      involved
-                        ? "font-medium text-foreground"
-                        : "text-muted-foreground"
-                    )}
-                  >
-                    {stage.label}
-                  </span>
-                </div>
-                <div
-                  className={cn(
-                    "flex min-h-16 items-start justify-center rounded-lg border border-dashed px-0.5 py-1",
-                    here ? "border-foreground/20 bg-muted/50" : "border-border"
-                  )}
-                >
-                  {here ? (
-                    <div className="origin-top scale-[0.92] transition-all duration-300">
-                      <MiniCard fixture={fixture} />
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-            )
-          })}
-        </div>
+        <MoveBoard
+          key={`${fixture.from}-${fixture.to}-${replay}`}
+          fixture={fixture}
+        />
         <div className="flex flex-wrap gap-1.5">
           <Button
             type="button"
@@ -139,5 +96,55 @@ export function MoveCardReceipt({
         </div>
       </div>
     </ReceiptFrame>
+  )
+}
+
+function MoveBoard({ fixture }: { fixture: MoveCardFixture }) {
+  const [shown, setShown] = useState<ApplyStage>(fixture.from)
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setShown(fixture.to), 80)
+    return () => window.clearTimeout(timer)
+  }, [fixture.to])
+
+  return (
+    <div
+      className="grid grid-cols-5 gap-1"
+      aria-label={`Board Stages, card now in ${stageLabel(shown)}`}
+    >
+      {STAGES.map((stage) => {
+        const here = shown === stage.id
+        const involved = stage.id === fixture.from || stage.id === fixture.to
+        return (
+          <div key={stage.id} className="min-w-0">
+            <div className="mb-1 flex items-center gap-1">
+              <span className={cn("size-1.5 rounded-full", stage.dot)} />
+              <span
+                className={cn(
+                  "truncate text-[10px]",
+                  involved
+                    ? "font-medium text-foreground"
+                    : "text-muted-foreground"
+                )}
+              >
+                {stage.label}
+              </span>
+            </div>
+            <div
+              className={cn(
+                "flex min-h-16 items-start justify-center rounded-lg border border-dashed px-0.5 py-1",
+                here ? "border-foreground/20 bg-muted/50" : "border-border"
+              )}
+            >
+              {here ? (
+                <div className="origin-top scale-[0.92] transition-all duration-300">
+                  <MiniCard fixture={fixture} />
+                </div>
+              ) : null}
+            </div>
+          </div>
+        )
+      })}
+    </div>
   )
 }
