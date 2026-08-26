@@ -1,6 +1,7 @@
 import {
   ERROR_CODES,
   errorEnvelope,
+  reversalDescriptorSchema,
   type CoachStreamPart,
   type CommandEnvelope,
   type ReversalDescriptor,
@@ -104,7 +105,9 @@ function toolResultPart(
   options: TranslateStreamOptions
 ): CoachStreamPart {
   const result = envelopeFromToolOutput(output)
-  const reversal = result.ok ? options.reversalFor(name) : undefined
+  const reversal = result.ok
+    ? (reversalFromOutput(output) ?? options.reversalFor(name))
+    : undefined
   return {
     type: "tool-result",
     toolCallId,
@@ -133,6 +136,16 @@ function finishPart(
       finishReason,
     },
   }
+}
+
+function reversalFromOutput(output: unknown): ReversalDescriptor | undefined {
+  if (!output || typeof output !== "object" || !("reversal" in output)) {
+    return undefined
+  }
+  const parsed = reversalDescriptorSchema.safeParse(
+    (output as { reversal: unknown }).reversal
+  )
+  return parsed.success ? parsed.data : undefined
 }
 
 function errorFromUnknown(error: unknown): CommandEnvelope {

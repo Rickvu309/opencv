@@ -50,6 +50,9 @@ export const createPaperDocCommand = defineCommand({
     command: PAPER_COMMANDS.deleteDoc,
     description: "Undo by deleting the Paper doc.",
   },
+  reversalInput({ output }: { output: PaperDoc }) {
+    return { docId: output.id }
+  },
   async handler(ctx, input): Promise<PaperDoc> {
     const content =
       input.content === undefined
@@ -86,6 +89,17 @@ export const updatePaperContentCommand = defineCommand({
     possible: true,
     command: PAPER_COMMANDS.updateContent,
     description: "Undo by writing the previous content back.",
+  },
+  captureForReversal(ctx, input) {
+    return getOwnedPaperDoc(ctx.db, ctx.actor.userId, input.docId)
+  },
+  reversalInput({ captured }) {
+    const doc = captured as Awaited<ReturnType<typeof getOwnedPaperDoc>>
+    return {
+      docId: doc.id,
+      content: doc.content,
+      contentVersion: doc.contentVersion,
+    }
   },
   async handler(ctx, input): Promise<PaperDoc> {
     const existing = await getOwnedPaperDoc(
@@ -129,6 +143,13 @@ export const renamePaperDocCommand = defineCommand({
     command: PAPER_COMMANDS.renameDoc,
     description: "Undo by renaming the Paper doc back to its previous name.",
   },
+  captureForReversal(ctx, input) {
+    return getOwnedPaperDoc(ctx.db, ctx.actor.userId, input.docId)
+  },
+  reversalInput({ input, captured }) {
+    const doc = captured as Awaited<ReturnType<typeof getOwnedPaperDoc>>
+    return { docId: input.docId, name: doc.name }
+  },
   async handler(ctx, input): Promise<PaperDoc> {
     const existing = await getOwnedPaperDoc(
       ctx.db,
@@ -162,6 +183,13 @@ export const setPaperStatusCommand = defineCommand({
     command: PAPER_COMMANDS.setStatus,
     description: "Undo by setting the previous status.",
   },
+  captureForReversal(ctx, input) {
+    return getOwnedPaperDoc(ctx.db, ctx.actor.userId, input.docId)
+  },
+  reversalInput({ input, captured }) {
+    const doc = captured as Awaited<ReturnType<typeof getOwnedPaperDoc>>
+    return { docId: input.docId, status: doc.status }
+  },
   async handler(ctx, input): Promise<PaperDoc> {
     const existing = await getOwnedPaperDoc(
       ctx.db,
@@ -194,6 +222,13 @@ export const linkPaperApplyCardCommand = defineCommand({
     possible: true,
     command: PAPER_COMMANDS.linkApplyCard,
     description: "Undo by linking the previous Apply card, or unlinking.",
+  },
+  captureForReversal(ctx, input) {
+    return getOwnedPaperDoc(ctx.db, ctx.actor.userId, input.docId)
+  },
+  reversalInput({ input, captured }) {
+    const doc = captured as Awaited<ReturnType<typeof getOwnedPaperDoc>>
+    return { docId: input.docId, applyCardId: doc.applyCardId }
   },
   async handler(ctx, input): Promise<PaperDoc> {
     const existing = await getOwnedPaperDoc(

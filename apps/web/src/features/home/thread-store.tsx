@@ -11,13 +11,17 @@ import {
   type ThreadMessagePart,
 } from "@workspace/domain"
 
+import { applyQueryKeys } from "@/features/apply/apply-api.ts"
 import { coachSendErrorMessage } from "@/features/home/coach-error.ts"
+import { profileQueryKeys } from "@/features/home/profile-api.ts"
 import { useCoachMode } from "@/features/home/use-coach-mode.ts"
+import { paperQueryKeys } from "@/features/paper/paper-api.ts"
 import {
   createThread,
   getThread,
   listThreads,
   rateCoachMessage,
+  reverseCoachReceipt,
   streamCoachRegenerate,
   streamCoachTurn,
   threadQueryKeys,
@@ -623,6 +627,21 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
     [activeThreadId, queryClient]
   )
 
+  const undo = useCallback(
+    async (messageId: string, toolCallId: string) => {
+      const threadId = activeThreadId
+      if (!threadId || phase !== "idle") return
+
+      const result = await reverseCoachReceipt(threadId, messageId, toolCallId)
+      writeDetail(threadId, result.thread)
+      setOptimisticMessages(null)
+      void queryClient.invalidateQueries({ queryKey: applyQueryKeys.all })
+      void queryClient.invalidateQueries({ queryKey: paperQueryKeys.all })
+      void queryClient.invalidateQueries({ queryKey: profileQueryKeys.current() })
+    },
+    [activeThreadId, phase, queryClient, writeDetail]
+  )
+
   const value = useMemo(
     () => ({
       threads,
@@ -635,6 +654,7 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
       retry,
       regenerate,
       rate,
+      undo,
       openThread,
       newThread,
     }),
@@ -649,6 +669,7 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
       retry,
       regenerate,
       rate,
+      undo,
       openThread,
       newThread,
     ]

@@ -13,6 +13,7 @@ import {
   listThreads,
   postThreadMessage,
   rateCoachMessage,
+  reverseCoachReceipt,
   streamCoachRegenerate,
   streamCoachTurn,
   toListItem,
@@ -256,6 +257,37 @@ describe("thread API client", () => {
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
     expect(init.method).toBe("POST")
     expect(init.body).toBe(JSON.stringify({ rating: "up" }))
+  })
+
+  it("reverses a receipt through POST /api/threads/:id/messages/:messageId/reverse", async () => {
+    const threadId = "11111111-1111-4111-8111-111111111111"
+    const messageId = "22222222-2222-4222-8222-222222222222"
+    const receipt = {
+      type: "tool" as const,
+      name: "apply_deleteCard",
+      summary: "Deleted the card",
+      ok: true,
+      toolCallId: "undo-1",
+    }
+    const thread = {
+      id: threadId,
+      title: "Plan",
+      createdAt: "2026-08-25T00:00:00.000Z",
+      updatedAt: "2026-08-25T00:00:01.000Z",
+      messages: [],
+    }
+    const fetchMock = vi.fn().mockResolvedValue(envelope({ thread, receipt }))
+    vi.stubGlobal("fetch", fetchMock)
+
+    await expect(
+      reverseCoachReceipt(threadId, messageId, "call_1")
+    ).resolves.toEqual({ thread, receipt })
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
+      `${apiBaseUrl}/api/threads/${threadId}/messages/${messageId}/reverse`
+    )
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(init.method).toBe("POST")
+    expect(init.body).toBe(JSON.stringify({ toolCallId: "call_1" }))
   })
 })
 

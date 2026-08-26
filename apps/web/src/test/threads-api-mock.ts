@@ -49,6 +49,8 @@ export type CoachStreamScript = {
   streamError?: string
   omitEnd?: boolean
   workedMs?: number
+  undoFail?: { summary: string }
+  undoError?: { status: number; code: string; message: string }
 }
 
 export type CoachStreamControl = {
@@ -440,6 +442,65 @@ export async function threadApiFetch(
     }
     thread.updatedAt = now
     return coachStreamResponse(thread, init?.signal ?? undefined)
+  }
+
+  const reverse =
+    /^\/api\/threads\/([^/]+)\/messages\/([^/]+)\/reverse$/.exec(path)
+  if (method === "POST" && reverse) {
+    if (script.undoError) {
+      const error = script.undoError
+      script.undoError = undefined
+      return jsonError(error.status, error.code, error.message)
+    }
+
+    const thread = store.threads.find((item) => item.id === reverse[1])
+    const message = thread?.messages.find((item) => item.id === reverse[2])
+    if (!thread || !message || message.role !== "coach") {
+      return jsonError(404, "NOT_FOUND", "Message not found")
+    }
+    const body = (await readBody(init)) as { toolCallId?: string }
+    const parts = message.parts ?? []
+    const index = parts.findIndex(
+      (part) => part.type === "tool" && part.toolCallId === body.toolCallId
+    )
+    const part = index >= 0 ? parts[index] : undefined
+    if (!part || part.type !== "tool" || !part.ok || !part.reversal?.possible) {
+      return jsonError(400, "VALIDATION_ERROR", "This receipt cannot be undone")
+    }
+    if (part.undone) {
+      return jsonError(400, "VALIDATION_ERROR", "This action was already undone")
+    }
+
+    const commandName = part.reversal.command ?? part.name
+    const toolName = commandName.includes(".")
+      ? commandName.replace(".", "_")
+      : commandName
+    const receipt = script.undoFail
+      ? {
+          type: "tool" as const,
+          name: toolName,
+          summary: script.undoFail.summary,
+          ok: false,
+          toolCallId: crypto.randomUUID(),
+        }
+      : {
+          type: "tool" as const,
+          name: toolName,
+          summary: "Undid the previous action",
+          ok: true,
+          toolCallId: crypto.randomUUID(),
+        }
+    script.undoFail = undefined
+
+    const nextParts = parts.map((item, itemIndex) =>
+      itemIndex === index && item.type === "tool" && receipt.ok
+        ? { ...item, undone: true }
+        : item
+    )
+    nextParts.push(receipt)
+    message.parts = nextParts
+    thread.updatedAt = isoNow()
+    return jsonOk({ thread, receipt })
   }
 
   const feedback =

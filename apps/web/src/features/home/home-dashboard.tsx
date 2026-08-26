@@ -21,6 +21,7 @@ export function HomeDashboard() {
     retry,
     regenerate,
     rate,
+    undo,
     newThread,
     activeThreadId,
   } = useThreadStore()
@@ -46,6 +47,7 @@ export function HomeDashboard() {
             onRetry={retry}
             onRate={rate}
             onRegenerate={phase === "idle" ? regenerate : undefined}
+            onUndo={phase === "idle" ? undo : undefined}
           />
         </div>
         <div className="shrink-0 bg-background px-4 pt-2 pb-4 sm:px-6">

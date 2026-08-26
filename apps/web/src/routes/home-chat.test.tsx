@@ -146,6 +146,7 @@ describe("Home Thread mode and History", () => {
         "Reversible — Undo by moving the card back to its previous Stage and order."
       )
     ).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Undo" })).toBeEnabled()
     first.unmount()
 
     renderApp()
@@ -161,6 +162,110 @@ describe("Home Thread mode and History", () => {
         "Reversible — Undo by moving the card back to its previous Stage and order."
       )
     ).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Undo" })).toBeEnabled()
+  })
+
+  it("undoes a reversible receipt and appends a truthful new receipt", async () => {
+    scriptCoachStream({
+      parts: [
+        { kind: "text", text: "Moved it." },
+        {
+          kind: "tool",
+          name: "apply_moveCard",
+          summary: "Moved 'Backend Intern' to Prep",
+          ok: true,
+          reversal: {
+            possible: true,
+            command: "apply.moveCard",
+            description:
+              "Undo by moving the card back to its previous Stage and order.",
+            input: {
+              cardId: "11111111-1111-4111-8111-111111111111",
+              stage: "inbox",
+              beforeCardId: null,
+            },
+          },
+        },
+      ],
+    })
+    renderApp()
+    await expectHomeIdle()
+    await sendMessage("Move the intern card to Prep")
+    await expectSendSettled("Move the intern card to Prep")
+
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }))
+    expect(
+      await screen.findByText("Ran apply.moveCard — Undid the previous action")
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "Undo" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getAllByRole("status", { name: "Command succeeded" })
+    ).toHaveLength(2)
+  })
+
+  it("states a failed undo plainly and keeps the original undo", async () => {
+    scriptCoachStream({
+      undoFail: { summary: "Apply card not found" },
+      parts: [
+        {
+          kind: "tool",
+          name: "apply_moveCard",
+          summary: "Moved 'Backend Intern' to Prep",
+          ok: true,
+          reversal: {
+            possible: true,
+            command: "apply.moveCard",
+            description:
+              "Undo by moving the card back to its previous Stage and order.",
+            input: {
+              cardId: "11111111-1111-4111-8111-111111111111",
+              stage: "inbox",
+            },
+          },
+        },
+      ],
+    })
+    renderApp()
+    await expectHomeIdle()
+    await sendMessage("Move a card that later vanished")
+    await expectSendSettled("Move a card that later vanished")
+
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }))
+    expect(
+      await screen.findByText("Ran apply.moveCard — Apply card not found")
+    ).toBeInTheDocument()
+    expect(screen.getByRole("status", { name: "Command failed" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Undo" })).toBeEnabled()
+  })
+
+  it("keeps irreversible receipts as read-only notes", async () => {
+    scriptCoachStream({
+      parts: [
+        {
+          kind: "tool",
+          name: "apply_listCards",
+          summary: "Listed 2 Apply cards",
+          ok: true,
+          reversal: {
+            possible: false,
+            description: "This read does not change anything.",
+          },
+        },
+      ],
+    })
+    renderApp()
+    await expectHomeIdle()
+    await sendMessage("What cards do I have?")
+    expect(
+      await screen.findByText("Ran apply.listCards — Listed 2 Apply cards")
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText("This read does not change anything.")
+    ).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Undo" })).not.toBeInTheDocument()
+    expect(screen.queryByText(/Reversible —/)).not.toBeInTheDocument()
   })
 
   it("renders a failed Command receipt plainly", async () => {

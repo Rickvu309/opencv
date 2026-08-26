@@ -58,6 +58,9 @@ function mutationToolsFromRegistry(
           actor: { type: "coach", userId },
           db,
         })
+        if (result.body.ok && result.reversal) {
+          return { ...result.body, reversal: result.reversal }
+        }
         return result.body
       },
     }

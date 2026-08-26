@@ -34,6 +34,17 @@ export type CommandDefinition<TInput, TOutput> = {
   coachAllowed: boolean
   destructive: boolean
   reversal: ReversalDescriptor
+  /** Capture pre-mutation state used to plan a one-click undo. */
+  captureForReversal?: (
+    ctx: CommandContext,
+    input: TInput
+  ) => Promise<unknown>
+  /** Build `reversal.input` after a successful handler. */
+  reversalInput?: (args: {
+    input: TInput
+    output: TOutput
+    captured: unknown
+  }) => unknown
   handler: (ctx: CommandContext, input: TInput) => Promise<TOutput>
 }
 
@@ -42,6 +53,7 @@ export type RegisteredCommand = CommandDefinition<unknown, unknown>
 export type CommandExecution = {
   status: number
   body: CommandEnvelope
+  reversal?: ReversalDescriptor
 }
 
 export class CommandError extends Error {
@@ -115,9 +127,29 @@ export function createRegistry(commands: RegisteredCommand[]) {
         }
       }
 
+      const ctx = { db, actor }
+      let captured: unknown
+      if (command.captureForReversal) {
+        try {
+          captured = await command.captureForReversal(ctx, parsed.data)
+        } catch (error) {
+          if (error instanceof CommandError) {
+            return {
+              status: error.status,
+              body: errorEnvelope(error.code, error.message),
+            }
+          }
+          throw error
+        }
+      }
+
       try {
-        const data = await command.handler({ db, actor }, parsed.data)
-        return { status: 200, body: successEnvelope(data) }
+        const data = await command.handler(ctx, parsed.data)
+        return {
+          status: 200,
+          body: successEnvelope(data),
+          reversal: planReversal(command, parsed.data, data, captured),
+        }
       } catch (error) {
         if (error instanceof CommandError) {
           return {
@@ -132,3 +164,17 @@ export function createRegistry(commands: RegisteredCommand[]) {
 }
 
 export type CommandRegistry = ReturnType<typeof createRegistry>
+
+function planReversal(
+  command: RegisteredCommand,
+  input: unknown,
+  output: unknown,
+  captured: unknown
+): ReversalDescriptor {
+  const base = command.reversal
+  if (!base.possible || !command.reversalInput) return base
+  return {
+    ...base,
+    input: command.reversalInput({ input, output, captured }),
+  }
+}

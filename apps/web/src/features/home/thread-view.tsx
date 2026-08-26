@@ -15,7 +15,11 @@ import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { CoachMarkdown } from "@/features/home/coach-markdown.tsx"
-import { receiptHeadline } from "@/features/home/coach-receipt.ts"
+import {
+  receiptHeadline,
+  receiptReversalNote,
+  receiptShowsUndo,
+} from "@/features/home/coach-receipt.ts"
 import {
   STREAMING_COACH_ID,
   latestCoachMessageId,
@@ -27,8 +31,35 @@ const DISABLED_ACTIONS = [
   { label: "More", icon: MoreHorizontal },
 ] as const
 
-function CoachReceipt({ part }: { part: ThreadToolPart }) {
+function CoachReceipt({
+  part,
+  canUndo,
+  onUndo,
+}: {
+  part: ThreadToolPart
+  canUndo: boolean
+  onUndo?: () => Promise<void>
+}) {
   const Icon = part.ok ? Check : X
+  const note = receiptReversalNote(part)
+  const [pending, setPending] = useState(false)
+  const [undoError, setUndoError] = useState<string | null>(null)
+
+  async function undo() {
+    if (!onUndo || pending) return
+    setPending(true)
+    setUndoError(null)
+    try {
+      await onUndo()
+    } catch (error) {
+      setUndoError(
+        error instanceof Error ? error.message : "Couldn't undo this action"
+      )
+    } finally {
+      setPending(false)
+    }
+  }
+
   return (
     <div
       role="status"
@@ -45,14 +76,40 @@ function CoachReceipt({ part }: { part: ThreadToolPart }) {
         />
         <span>{receiptHeadline(part)}</span>
       </p>
-      {part.ok && part.reversal?.possible ? (
-        <p className="pl-5">Reversible — {part.reversal.description}</p>
+      {note ? <p className="pl-5">{note}</p> : null}
+      {canUndo ? (
+        <div className="pl-5 pt-0.5">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-6 px-2 text-xs"
+            aria-label="Undo"
+            disabled={pending}
+            onClick={() => void undo()}
+          >
+            {pending ? "Undoing…" : "Undo"}
+          </Button>
+        </div>
+      ) : null}
+      {undoError ? (
+        <p role="alert" className="pl-5 text-destructive">
+          {undoError}
+        </p>
       ) : null}
     </div>
   )
 }
 
-function CoachBody({ message }: { message: HomeMessage }) {
+function CoachBody({
+  message,
+  canUndo,
+  onUndo,
+}: {
+  message: HomeMessage
+  canUndo: boolean
+  onUndo?: (toolCallId: string) => Promise<void>
+}) {
   if (message.parts && message.parts.length > 0) {
     return (
       <div className="space-y-2">
@@ -63,6 +120,12 @@ function CoachBody({ message }: { message: HomeMessage }) {
             <CoachReceipt
               key={part.toolCallId ?? `tool-${index}`}
               part={part}
+              canUndo={canUndo && receiptShowsUndo(part)}
+              onUndo={
+                part.toolCallId && onUndo
+                  ? () => onUndo(part.toolCallId!)
+                  : undefined
+              }
             />
           )
         )}
@@ -183,6 +246,7 @@ type Props = {
   onRetry?: () => void
   onRate?: (messageId: string, rating: CoachUsageRating) => void
   onRegenerate?: () => void
+  onUndo?: (messageId: string, toolCallId: string) => Promise<void>
 }
 
 export function ThreadView({
@@ -192,6 +256,7 @@ export function ThreadView({
   onRetry,
   onRate,
   onRegenerate,
+  onUndo,
 }: Props) {
   const latestCoachId = latestCoachMessageId(messages)
   return (
@@ -243,7 +308,19 @@ export function ThreadView({
                 Worked for {Math.max(1, Math.round(item.workedMs / 1000))}s
               </p>
             ) : null}
-            <CoachBody message={item} />
+            <CoachBody
+              message={item}
+              canUndo={
+                !waiting &&
+                item.id !== STREAMING_COACH_ID &&
+                Boolean(onUndo)
+              }
+              onUndo={
+                onUndo
+                  ? (toolCallId) => onUndo(item.id, toolCallId)
+                  : undefined
+              }
+            />
             {item.id !== STREAMING_COACH_ID ? (
               <MessageActions
                 text={item.text}

@@ -35,6 +35,9 @@ export const createThreadCommand = defineCommand({
     command: THREAD_COMMANDS.delete,
     description: "Undo by deleting the Thread.",
   },
+  reversalInput({ output }: { output: ThreadListItem }) {
+    return { threadId: output.id }
+  },
   async handler(ctx, input): Promise<ThreadListItem> {
     const now = new Date()
     const row = {
@@ -60,6 +63,13 @@ export const renameThreadCommand = defineCommand({
     possible: true,
     command: THREAD_COMMANDS.rename,
     description: "Undo by renaming the Thread back to its previous title.",
+  },
+  captureForReversal(ctx, input) {
+    return getOwnedThread(ctx.db, ctx.actor.userId, input.threadId)
+  },
+  reversalInput({ input, captured }) {
+    const thread = captured as Awaited<ReturnType<typeof getOwnedThread>>
+    return { threadId: input.threadId, title: thread.title }
   },
   async handler(ctx, input): Promise<ThreadListItem> {
     const existing = await getOwnedThread(
