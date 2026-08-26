@@ -8,6 +8,7 @@ export type ThreadListPort = {
   activeThreadId: string | null
   openThread: (id: string) => void
   newThread: () => void
+  deleteThread: (id: string) => void
 }
 
 export function toThreadListItems(

@@ -148,7 +148,18 @@ describe("Paper drive", () => {
     )
     fireEvent.click(await screen.findByRole("menuitem", { name: "Delete" }))
     const confirm = await screen.findByRole("dialog", { name: "Delete document" })
-    fireEvent.click(within(confirm).getByRole("button", { name: "Delete" }))
+    fireEvent.click(within(confirm).getByRole("button", { name: "Cancel" }))
+    expect(screen.queryByRole("dialog", { name: "Delete document" })).not.toBeInTheDocument()
+    expect(screen.getByText("Cover: intern")).toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Document actions for Cover: intern" })
+    )
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Delete" }))
+    const confirmAgain = await screen.findByRole("dialog", {
+      name: "Delete document",
+    })
+    fireEvent.click(within(confirmAgain).getByRole("button", { name: "Delete" }))
     await waitFor(() => {
       expect(screen.queryByText("Cover: intern")).not.toBeInTheDocument()
     })

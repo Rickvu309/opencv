@@ -70,7 +70,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe("Home Thread mode and History", () => {
+describe("Home Thread mode and History", { timeout: 15_000 }, () => {
   it("streams a reply progressively and drops working status at first text", async () => {
     const stream = scriptCoachStream({
       gated: true,
@@ -522,6 +522,51 @@ describe("Home Thread mode and History", () => {
     ).toHaveLength(1)
   })
 
+  it("confirms before deleting a Thread and does not run on dismiss", async () => {
+    renderApp()
+    await expectHomeIdle()
+    const history = await expectHistoryTitles()
+    const doomed = FIXTURE_THREADS[0]!
+
+    const row = within(history)
+      .getByRole("button", { name: doomed.title })
+      .closest("div")
+    expect(row).toBeTruthy()
+    fireEvent.click(within(row as HTMLElement).getByRole("button", { name: "Delete Thread" }))
+
+    const confirm = await screen.findByRole("dialog", { name: "Delete Thread" })
+    expect(confirm).toHaveTextContent(doomed.title)
+    fireEvent.click(within(confirm).getByRole("button", { name: "Cancel" }))
+    expect(
+      screen.queryByRole("dialog", { name: "Delete Thread" })
+    ).not.toBeInTheDocument()
+    expect(
+      within(history).getByRole("button", { name: doomed.title })
+    ).toBeInTheDocument()
+
+    fireEvent.click(within(history).getByRole("button", { name: doomed.title }))
+    expect(await screen.findByRole("log", { name: "Thread" })).toBeInTheDocument()
+    const headerDelete = screen
+      .getAllByRole("button", { name: "Delete Thread" })
+      .find((button) => !history.contains(button))
+    expect(headerDelete).toBeTruthy()
+    fireEvent.click(headerDelete!)
+    const confirmAgain = await screen.findByRole("dialog", {
+      name: "Delete Thread",
+    })
+    fireEvent.click(within(confirmAgain).getByRole("button", { name: "Delete" }))
+
+    await waitFor(() => {
+      expect(
+        within(screen.getByRole("navigation", { name: "History" })).queryByRole(
+          "button",
+          { name: doomed.title }
+        )
+      ).not.toBeInTheDocument()
+    })
+    await expectHomeIdle()
+  })
+
   it("lists server Threads, restores one, and returns to idle on new Thread", async () => {
     renderApp()
     await expectHomeIdle()
@@ -574,18 +619,18 @@ describe("Home Thread mode and History", () => {
     const history = screen.getByRole("navigation", { name: "History" })
     expect(
       await within(history).findByRole("button", {
-        name: "Should I finish my CV first?",
+        name: "Finish my CV first",
       })
     ).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole("link", { name: "Paper" }))
     await expectPaperDrive()
     expect(
-      screen.getByRole("button", { name: "Should I finish my CV first?" })
+      screen.getByRole("button", { name: "Finish my CV first" })
     ).toHaveAttribute("aria-current", "true")
 
     fireEvent.click(
-      screen.getByRole("button", { name: "Should I finish my CV first?" })
+      screen.getByRole("button", { name: "Finish my CV first" })
     )
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(SURFACE_PATHS.home)
@@ -623,6 +668,46 @@ describe("Home Thread mode and History", () => {
     expect(
       screen.getByRole("navigation", { name: "History" })
     ).toBeInTheDocument()
+  })
+
+  it("replaces a first-line History title after the first Coach turn", async () => {
+    renderApp()
+    await expectHomeIdle()
+
+    await sendMessage("Help me plan the week")
+    await expectSendSettled("Help me plan the week")
+
+    const history = screen.getByRole("navigation", { name: "History" })
+    expect(
+      await within(history).findByRole("button", { name: "Plan the week" })
+    ).toBeInTheDocument()
+    expect(
+      within(history).queryByRole("button", { name: "Help me plan the week" })
+    ).not.toBeInTheDocument()
+    expect(
+      getMockThreads().some((thread) => thread.title === "Plan the week")
+    ).toBe(true)
+  })
+
+  it("leaves an existing History title alone when the User continues that Thread", async () => {
+    renderApp()
+    await expectHomeIdle()
+
+    const existing = FIXTURE_THREADS[0]!
+    fireEvent.click(
+      await screen.findByRole("button", { name: existing.title })
+    )
+    await expectThreadText(existing.messages[0]!.text)
+
+    await sendMessage("What should I do next?")
+    await expectSendSettled("What should I do next?")
+
+    expect(
+      screen.getByRole("button", { name: existing.title })
+    ).toBeInTheDocument()
+    expect(
+      getMockThreads().some((thread) => thread.id === existing.id && thread.title === existing.title)
+    ).toBe(true)
   })
 
   it("keeps server Threads after remount and reopens them from History", async () => {

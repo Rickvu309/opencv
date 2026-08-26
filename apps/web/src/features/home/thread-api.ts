@@ -11,9 +11,11 @@ import {
   type CoachSseToolResultData,
   type CoachReverseResult,
   type CoachUsageRating,
+  type ThreadDeleted,
   type ThreadDetail,
   type ThreadListItem,
   type ThreadsCreateInput,
+  type ThreadsDeleteInput,
   type ThreadsPostMessageInput,
 } from "@workspace/domain"
 
@@ -64,6 +66,12 @@ export function postThreadMessage(
   input: ThreadsPostMessageInput
 ): Promise<ThreadDetail> {
   return runCommand<ThreadDetail>(THREAD_COMMANDS.postMessage, input)
+}
+
+export function deleteThread(
+  input: ThreadsDeleteInput
+): Promise<ThreadDeleted> {
+  return runCommand<ThreadDeleted>(THREAD_COMMANDS.delete, input)
 }
 
 export type CoachStreamHandlers = {

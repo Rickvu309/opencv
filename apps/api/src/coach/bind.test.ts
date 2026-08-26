@@ -35,6 +35,7 @@ describe("coachRuntimeFromConfig", () => {
     })
     expect(runtime).toBeDefined()
     expect(typeof runtime?.streamTurn).toBe("function")
+    expect(typeof runtime?.generateTitle).toBe("function")
   })
 })
 

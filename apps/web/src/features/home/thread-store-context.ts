@@ -19,6 +19,7 @@ export type ThreadStoreValue = {
   undo: (messageId: string, toolCallId: string) => Promise<void>
   openThread: (id: string) => void
   newThread: () => void
+  deleteThread: (id: string) => Promise<void>
 }
 
 export const ThreadStoreContext = createContext<ThreadStoreValue | null>(null)

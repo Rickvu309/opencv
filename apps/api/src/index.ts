@@ -44,6 +44,7 @@ const coach = coachRuntimeFromConfig({
   db,
   openRouterApiKey,
   coachModel,
+  titleModel: coachModels.light,
   runtimeMode: coachRuntimeModeFromEnv(process.env),
 })
 

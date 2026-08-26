@@ -8,10 +8,13 @@ import {
   DEFAULT_COACH_MODEL_FREE,
   DEFAULT_COACH_MODEL_LIGHT,
   DEFAULT_COACH_MODEL_MAX,
+  DEFAULT_THREAD_TITLE,
   ERROR_CODES,
   PROFILE_COMMANDS,
   PAPER_COMMANDS,
   THREAD_COMMANDS,
+  deterministicThreadTitle,
+  titleFrom,
   type CoachTurnInput,
   type ThreadDetail,
   type ThreadListItem,
@@ -34,6 +37,7 @@ import {
   createScriptedCoachRuntime,
   createThrowingCoachRuntime,
   DEMO_COACH_SCRIPT,
+  withTitleGenerator,
 } from "./fake.js"
 
 const execFileAsync = promisify(execFile)
@@ -1189,5 +1193,136 @@ describe("coach route paper focus", () => {
       }),
     })
     expect(other.status).toBe(403)
+  })
+})
+
+describe("coach auto Thread titles", () => {
+  let client: Awaited<ReturnType<typeof createMigratedTestDb>>["client"]
+  let db: Awaited<ReturnType<typeof createMigratedTestDb>>["db"]
+  let cookie: string
+
+  beforeAll(async () => {
+    const migrated = await createMigratedTestDb()
+    client = migrated.client
+    db = migrated.db
+    const app = createTestApp(db, { coach: createDemoCoachRuntime() })
+    cookie = (
+      await signUp(app, {
+        name: "Title",
+        email: "title-coach-route@example.com",
+        password: "correct-horse-battery",
+      })
+    ).cookie
+  }, 60_000)
+
+  afterAll(async () => {
+    await client.close()
+  })
+
+  async function loadThread(
+    app: ReturnType<typeof createTestApp>,
+    threadId: string
+  ) {
+    return json<{ ok: true; data: ThreadDetail }>(
+      await app.request(`/api/threads/${threadId}`, {
+        headers: authHeaders(cookie),
+      })
+    )
+  }
+
+  async function createUntitledThread(app: ReturnType<typeof createTestApp>) {
+    const res = await postCommand(app, cookie, THREAD_COMMANDS.create, {})
+    expect(res.status).toBe(200)
+    const body = await json<{ ok: true; data: ThreadListItem }>(res)
+    expect(body.data.title).toBe(DEFAULT_THREAD_TITLE)
+    return body.data.id
+  }
+
+  it("sets a short title after the first completed turn on a default Thread", async () => {
+    const app = createTestApp(db, { coach: createDemoCoachRuntime() })
+    const threadId = await createUntitledThread(app)
+    const userText = "Should I finish my CV first?"
+    const res = await postCoach(app, cookie, threadId, userText)
+    expect(res.status).toBe(200)
+    await res.text()
+
+    const detail = await loadThread(app, threadId)
+    expect(detail.data.title).toBe(
+      deterministicThreadTitle({
+        userText,
+        coachText: "I looked at Apply. Prep the starred one next.",
+      })
+    )
+    expect(detail.data.title).not.toMatch(/!/)
+    expect(detail.data.title).not.toBe(DEFAULT_THREAD_TITLE)
+  })
+
+  it("replaces a first-line title and leaves a User-renamed title alone", async () => {
+    const app = createTestApp(db, { coach: createDemoCoachRuntime() })
+    const userText = "Help me plan the week"
+    const firstLineId = await createThread(app, cookie, titleFrom(userText))
+    const renamedId = await createThread(app, cookie, "Keep this name")
+
+    await (await postCoach(app, cookie, firstLineId, userText)).text()
+    await (await postCoach(app, cookie, renamedId, userText)).text()
+
+    expect((await loadThread(app, firstLineId)).data.title).toBe("Plan the week")
+    expect((await loadThread(app, renamedId)).data.title).toBe("Keep this name")
+  })
+
+  it("does not retitle later turns", async () => {
+    const app = createTestApp(db, { coach: createDemoCoachRuntime() })
+    const threadId = await createUntitledThread(app)
+    await (await postCoach(app, cookie, threadId, "Help me plan the week")).text()
+    const afterFirst = (await loadThread(app, threadId)).data.title
+    expect(afterFirst).toBe("Plan the week")
+
+    await (await postCoach(app, cookie, threadId, "What about Paper next?")).text()
+    expect((await loadThread(app, threadId)).data.title).toBe(afterFirst)
+  })
+
+  it("uses the Light-tier generator when present and stays up if it fails", async () => {
+    const titled = withTitleGenerator(createDemoCoachRuntime(), async () => {
+      return "Weekly plan from Apply"
+    })
+    const app = createTestApp(db, { coach: titled })
+    const threadId = await createUntitledThread(app)
+    const res = await postCoach(app, cookie, threadId, "Help me plan the week")
+    expect(res.status).toBe(200)
+    await res.text()
+    expect((await loadThread(app, threadId)).data.title).toBe(
+      "Weekly plan from Apply"
+    )
+
+    const exploding = withTitleGenerator(createDemoCoachRuntime(), async () => {
+      throw new Error("light model down")
+    })
+    const fallbackApp = createTestApp(db, { coach: exploding })
+    const fallbackId = await createUntitledThread(fallbackApp)
+    const fallbackRes = await postCoach(
+      fallbackApp,
+      cookie,
+      fallbackId,
+      "Help me plan the week"
+    )
+    expect(fallbackRes.status).toBe(200)
+    const events = parseSseEvents(await fallbackRes.text())
+    expect(events.map((event) => event.event)).toContain(
+      COACH_SSE_EVENTS.messageEnd
+    )
+    expect((await loadThread(fallbackApp, fallbackId)).data.title).toBe(
+      "Plan the week"
+    )
+  })
+
+  it("does not title an error turn", async () => {
+    const app = createTestApp(db, {
+      coach: createThrowingCoachRuntime(new Error("model exploded")),
+    })
+    const threadId = await createUntitledThread(app)
+    const res = await postCoach(app, cookie, threadId, "Still send this")
+    expect(res.status).toBe(200)
+    await res.text()
+    expect((await loadThread(app, threadId)).data.title).toBe(DEFAULT_THREAD_TITLE)
   })
 })

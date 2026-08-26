@@ -18,6 +18,7 @@ import { useCoachMode } from "@/features/home/use-coach-mode.ts"
 import { paperQueryKeys } from "@/features/paper/paper-api.ts"
 import {
   createThread,
+  deleteThread as deleteThreadRequest,
   getThread,
   listThreads,
   rateCoachMessage,
@@ -103,6 +104,24 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
     cancelInFlight()
     setActiveThreadId(null)
   }, [cancelInFlight])
+
+  const deleteThread = useCallback(
+    async (id: string) => {
+      await deleteThreadRequest({ threadId: id })
+      queryClient.setQueryData(
+        threadQueryKeys.list(),
+        (prev: ThreadListItem[] | undefined) =>
+          (prev ?? []).filter((thread) => thread.id !== id)
+      )
+      queryClient.removeQueries({ queryKey: threadQueryKeys.detail(id) })
+      if (activeThreadId === id) {
+        cancelInFlight()
+        setActiveThreadId(null)
+        setOptimisticMessages(null)
+      }
+    },
+    [activeThreadId, cancelInFlight, queryClient]
+  )
 
   const openThread = useCallback(
     (id: string) => {
@@ -657,6 +676,7 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
       undo,
       openThread,
       newThread,
+      deleteThread,
     }),
     [
       threads,
@@ -672,6 +692,7 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
       undo,
       openThread,
       newThread,
+      deleteThread,
     ]
   )
 

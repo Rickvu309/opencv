@@ -35,6 +35,7 @@ import {
   type StageId,
 } from "@/features/apply/apply-types.ts"
 import { useApplyCards } from "@/features/apply/use-apply-cards.ts"
+import { DestructiveCommandDialog } from "@/features/commands/destructive-command-dialog.tsx"
 import { usePaperDocs } from "@/features/paper/use-paper-docs.ts"
 
 export function ApplyWorkspace() {
@@ -45,6 +46,7 @@ export function ApplyWorkspace() {
   const [query, setQuery] = useState("")
   const [dragOverStage, setDragOverStage] = useState<StageId | null>(null)
   const [dragOverCardId, setDragOverCardId] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<ApplyCard | null>(null)
   const dragMovedRef = useRef(false)
 
   const selected = apply.cards.find((c) => c.id === selectedId)
@@ -281,17 +283,30 @@ export function ApplyWorkspace() {
             }
             onMove={(stage: ApplyStage) => move(selected.id, stage, null)}
             onToggleStar={() => apply.toggleStar(selected.id)}
-            onRemove={async () => {
-              const id = selected.id
-              setSelectedId(null)
-              await apply.deleteCard(id)
-            }}
+            onRemove={() => setDeleteTarget(selected)}
             onLinkPaper={(docId, applyCardId) =>
               paper.linkApplyCard(docId, applyCardId)
             }
           />
         ) : null}
       </div>
+
+      {deleteTarget ? (
+        <DestructiveCommandDialog
+          open
+          title="Delete job"
+          name={`${deleteTarget.title} at ${deleteTarget.company}`}
+          onOpenChange={(open) => {
+            if (!open) setDeleteTarget(null)
+          }}
+          onConfirm={() => {
+            const id = deleteTarget.id
+            setDeleteTarget(null)
+            if (selectedId === id) setSelectedId(null)
+            void apply.deleteCard(id)
+          }}
+        />
+      ) : null}
     </div>
   )
 }

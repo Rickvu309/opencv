@@ -1,6 +1,8 @@
 import {
   appendCoachPart,
   COACH_SSE_EVENTS,
+  deterministicThreadTitle,
+  shouldAutoTitleThread,
   textFromParts,
   DEFAULT_THREAD_TITLE,
   THREAD_COMMANDS,
@@ -167,7 +169,26 @@ function persistCoach(
   }
   thread.messages.push(message)
   thread.updatedAt = now
+  maybeAutoTitle(thread, status, text)
   return message
+}
+
+function maybeAutoTitle(
+  thread: ThreadDetail,
+  status: ThreadMessageStatus,
+  coachText: string
+) {
+  const prior = thread.messages.slice(0, -1)
+  const eligible = shouldAutoTitleThread({
+    currentTitle: thread.title,
+    messages: prior,
+    status,
+  })
+  if (!eligible) return
+  thread.title = deterministicThreadTitle({
+    userText: eligible.userText,
+    coachText,
+  })
 }
 
 function scriptedParts(): CoachScriptPart[] {
@@ -568,6 +589,16 @@ export async function threadApiFetch(
       createdAt: created.createdAt,
       updatedAt: created.updatedAt,
     })
+  }
+
+  if (method === "POST" && path === `/api/commands/${THREAD_COMMANDS.delete}`) {
+    const body = (await readBody(init)) as { threadId?: string }
+    const index = store.threads.findIndex((item) => item.id === body.threadId)
+    if (index === -1) {
+      return jsonError(404, "NOT_FOUND", "Thread not found")
+    }
+    const [removed] = store.threads.splice(index, 1)
+    return jsonOk({ id: removed!.id })
   }
 
   if (

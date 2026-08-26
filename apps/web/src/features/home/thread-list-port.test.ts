@@ -48,6 +48,7 @@ describe("ThreadListPort", () => {
 
     expect(Object.keys(result.current).sort()).toEqual([
       "activeThreadId",
+      "deleteThread",
       "newThread",
       "openThread",
       "threads",
