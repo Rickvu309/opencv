@@ -79,7 +79,7 @@ function navItemClassName(active: boolean, collapsed: boolean) {
   return cn(
     FOCUS_RING,
     "relative flex h-8 w-full items-center rounded-lg text-sm transition-colors",
-    collapsed ? "justify-center px-0" : "gap-2 px-2",
+    collapsed ? "justify-center px-0" : "justify-start gap-2 px-2 text-left",
     active
       ? "bg-muted font-medium text-foreground"
       : "text-foreground/80 hover:bg-muted/70"
