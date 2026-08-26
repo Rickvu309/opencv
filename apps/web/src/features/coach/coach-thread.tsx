@@ -383,6 +383,63 @@ function UserMessage() {
   )
 }
 
+function CoachBoundBody({ message }: { message: HomeMessage }) {
+  const { waiting, onUndo } = useThreadActions()
+  const streaming = message.id === STREAMING_COACH_ID
+  const [undoneFlash, setUndoneFlash] = useState(false)
+
+  useEffect(() => {
+    if (!undoneFlash) return
+    const timer = window.setTimeout(() => setUndoneFlash(false), UNDO_FLASH_MS)
+    return () => window.clearTimeout(timer)
+  }, [undoneFlash])
+
+  if (!message.parts?.length) {
+    if (streaming || !message.text) return <CoachWorking />
+    return <CoachMarkdown text={message.text} />
+  }
+
+  const lastToolIndex = message.parts.reduce(
+    (last, part, index) => (part.type === "tool" ? index : last),
+    -1
+  )
+
+  return (
+    <div className="min-w-0 space-y-2">
+      {message.parts.map((part, index) => {
+        if (part.type === "text") {
+          return <CoachMarkdown key={`text-${index}`} text={part.text} />
+        }
+        const stagger = message.parts!.slice(0, index).filter(
+          (item) => item.type === "tool"
+        ).length
+        return (
+          <CoachReceipt
+            key={part.toolCallId ?? `tool-${index}`}
+            part={part}
+            canUndo={
+              !waiting && !streaming && Boolean(onUndo) && receiptShowsUndo(part)
+            }
+            enter={streaming && !part.undone}
+            enterDelayMs={
+              streaming ? stagger * RECEIPT_ENTER_STAGGER_MS : undefined
+            }
+            announceUndone={undoneFlash && index === lastToolIndex}
+            onUndo={
+              part.toolCallId && onUndo
+                ? async () => {
+                    await onUndo(message.id, part.toolCallId!)
+                    setUndoneFlash(true)
+                  }
+                : undefined
+            }
+          />
+        )
+      })}
+    </div>
+  )
+}
+
 function AssistantMessage() {
   const message = useBoundHomeMessage()
   const streaming = message?.id === STREAMING_COACH_ID
@@ -397,17 +454,21 @@ function AssistantMessage() {
           Worked for {Math.max(1, Math.round(message.workedMs / 1000))}s
         </p>
       ) : null}
-      <MessagePrimitive.Parts
-        components={{
-          Text: ({ text }) => <CoachMarkdown text={text} />,
-          Empty: () => <CoachWorking />,
-          data: {
-            by_name: {
-              [RECEIPT_PART_NAME]: ReceiptPart,
+      {message ? (
+        <CoachBoundBody message={message} />
+      ) : (
+        <MessagePrimitive.Parts
+          components={{
+            Text: ({ text }) => <CoachMarkdown text={text} />,
+            Empty: () => <CoachWorking />,
+            data: {
+              by_name: {
+                [RECEIPT_PART_NAME]: ReceiptPart,
+              },
             },
-          },
-        }}
-      />
+          }}
+        />
+      )}
       {message && message.id !== STREAMING_COACH_ID ? (
         <MessageActions message={message} />
       ) : null}

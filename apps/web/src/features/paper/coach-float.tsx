@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { memo, useCallback, useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { AssistantRuntimeProvider } from "@assistant-ui/react"
 import type { CoachSelection } from "@workspace/domain"
@@ -92,7 +92,12 @@ function focusableIn(root: HTMLElement) {
   )
 }
 
-export function CoachFloat({ docId, docName, variant, selection }: Props) {
+export const CoachFloat = memo(function CoachFloat({
+  docId,
+  docName,
+  variant,
+  selection,
+}: Props) {
   const dialogRef = useRef<HTMLDivElement>(null)
   const returnFocusRef = useRef(false)
   const [createdThreadId, setCreatedThreadId] = useState<string | null>(null)
@@ -349,4 +354,4 @@ export function CoachFloat({ docId, docName, variant, selection }: Props) {
     )
 
   return createPortal(ui, document.body)
-}
+})
