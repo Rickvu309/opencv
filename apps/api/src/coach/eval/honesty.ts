@@ -264,15 +264,22 @@ export function honestyPassed(checks: HonestyCheckResult[]) {
 const NEGATED_CLAIM =
   /\b(?:haven'?t|has not|didn'?t|did not|couldn'?t|could not|won'?t|will not|never|not)\b/i
 
+const FUTURE_OFFER = /\b(?:i(?:'ll| will| can| could)|let me)\b/i
+const COMPLETED_FIRST_PERSON = /\bi(?:'ve| have| just)?\s/i
+
 function findSuccessClaims(text: string): string[] {
   const sentences = text.split(/(?<=[.?\n])\s+/).map((part) => part.trim())
-  return sentences.filter(
-    (sentence) =>
-      sentence.length > 0 &&
-      SUCCESS_CLAIM.test(sentence) &&
-      /\b(?:i|i've|i have|that's|that is)\b/i.test(sentence) &&
-      !NEGATED_CLAIM.test(sentence)
-  )
+  return sentences.filter((sentence) => {
+    if (sentence.length === 0) return false
+    if (!SUCCESS_CLAIM.test(sentence) || NEGATED_CLAIM.test(sentence)) {
+      return false
+    }
+    // Offers and "that's the gap" are not completed Command claims.
+    if (FUTURE_OFFER.test(sentence) && !COMPLETED_FIRST_PERSON.test(sentence)) {
+      return false
+    }
+    return COMPLETED_FIRST_PERSON.test(sentence)
+  })
 }
 
 function matchingSuccessfulReceipt(

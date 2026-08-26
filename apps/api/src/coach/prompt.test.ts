@@ -66,6 +66,8 @@ describe("personaSystemPrompt", () => {
     expect(persona).toMatch(/exactly one next step/)
     expect(persona).toMatch(/honest about distance/i)
     expect(persona).toMatch(/Never claim an action succeeded/)
+    expect(persona).toMatch(/Never invent ids/)
+    expect(persona).toMatch(/Do not mutate Apply or Paper unless the User asked/)
   })
 })
 
