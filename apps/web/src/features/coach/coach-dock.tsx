@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { useNavigate } from "@tanstack/react-router"
 import {
   ArrowUp,
+  ChevronDown,
   Clock,
   Mic,
   Paperclip,
@@ -18,6 +19,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 import {
@@ -27,10 +30,14 @@ import {
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip"
 import { cn } from "@workspace/ui/lib/utils"
+import type { CoachMode } from "@workspace/domain"
 
 import { ComingSoon } from "@/components/coming-soon.tsx"
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
-import { CoachModeSelector } from "@/features/home/coach-mode-selector.tsx"
+import {
+  COACH_MODE_OPTIONS,
+  coachModeLabel,
+} from "@/features/home/coach-mode.ts"
 import { useCoachMode } from "@/features/home/use-coach-mode.ts"
 
 const LINE_HEIGHT_PX = 24
@@ -53,10 +60,63 @@ type Props = {
   turnActive?: boolean
   placeholder?: string
   menuPlacement?: "below" | "above"
-  showModePill?: boolean
 }
 
-export function Composer({
+function CoachModeDropdown({
+  mode,
+  onModeChange,
+  menuPlacement,
+}: {
+  mode: CoachMode
+  onModeChange: (mode: CoachMode) => void
+  menuPlacement: "below" | "above"
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            type="button"
+            size="xs"
+            variant="ghost"
+            className="rounded-full px-2 text-muted-foreground"
+          />
+        }
+        aria-label="Coach mode"
+      >
+        {coachModeLabel(mode)}
+        <ChevronDown className="size-3 opacity-60" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        side={menuPlacement === "above" ? "top" : "bottom"}
+        align="start"
+        sideOffset={8}
+        className="w-auto min-w-28"
+      >
+        <DropdownMenuRadioGroup
+          value={mode}
+          onValueChange={(value) => {
+            if (
+              value === "free" ||
+              value === "light" ||
+              value === "max"
+            ) {
+              onModeChange(value)
+            }
+          }}
+        >
+          {COACH_MODE_OPTIONS.map((option) => (
+            <DropdownMenuRadioItem key={option.id} value={option.id}>
+              {option.label}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+export function CoachDock({
   draft,
   setDraft,
   onSend,
@@ -64,7 +124,6 @@ export function Composer({
   turnActive = false,
   placeholder = "How can I help you today?",
   menuPlacement = "below",
-  showModePill = false,
 }: Props) {
   const navigate = useNavigate()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -93,6 +152,14 @@ export function Composer({
       void navigate({ to: SURFACE_PATHS.paper })
     }
   }
+
+  const modeDropdown = (
+    <CoachModeDropdown
+      mode={mode}
+      onModeChange={setMode}
+      menuPlacement={menuPlacement}
+    />
+  )
 
   const addButton = (
     <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
@@ -132,6 +199,13 @@ export function Composer({
         })}
       </DropdownMenuContent>
     </DropdownMenu>
+  )
+
+  const leadingActions = (
+    <div className="flex shrink-0 items-center gap-0.5">
+      {modeDropdown}
+      {addButton}
+    </div>
   )
 
   const micButton = (
@@ -217,7 +291,7 @@ export function Composer({
   )
 
   return (
-    <div className="relative w-full space-y-2">
+    <div className="relative w-full">
       <div
         className={cn(
           "border border-border/80 bg-background shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-[border-radius,padding] duration-200 ease-out focus-within:border-border focus-within:shadow-[0_2px_8px_rgba(0,0,0,0.06)]",
@@ -226,23 +300,17 @@ export function Composer({
             : "flex min-h-[3.25rem] items-center gap-1 rounded-full px-2.5 py-2"
         )}
       >
-        {expanded ? null : addButton}
+        {expanded ? null : leadingActions}
         {textarea}
         {expanded ? (
           <div className="mt-1 flex w-full items-center justify-between gap-2">
-            <div className="flex min-w-0 items-center gap-1">{addButton}</div>
+            {leadingActions}
             {trailingActions}
           </div>
         ) : (
           trailingActions
         )}
       </div>
-      <CoachModeSelector
-        mode={mode}
-        onModeChange={setMode}
-        showPill={showModePill}
-        compact
-      />
     </div>
   )
 }

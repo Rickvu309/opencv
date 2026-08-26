@@ -3,7 +3,7 @@ import { useState } from "react"
 import { ThreadTopBar } from "@/features/home/thread-top-bar.tsx"
 import { authClient } from "@/lib/auth-client.ts"
 import { ThreadView } from "@/features/home/thread-view.tsx"
-import { Composer } from "@/features/home/composer.tsx"
+import { CoachDock } from "@/features/coach/coach-dock.tsx"
 import { ConnectedApps } from "@/features/home/connected-apps.tsx"
 import { homeGreeting } from "@/features/home/greeting.ts"
 import { HomeSuggestions } from "@/features/home/home-suggestions.tsx"
@@ -66,7 +66,7 @@ export function HomeDashboard() {
         </div>
         <div className="shrink-0 bg-background px-4 pt-2 pb-4 sm:px-6">
           <div className="mx-auto w-full max-w-3xl">
-            <Composer
+            <CoachDock
               draft={draft}
               setDraft={setDraft}
               onSend={handleSend}
@@ -74,7 +74,6 @@ export function HomeDashboard() {
               turnActive={turnActive}
               placeholder="Ask anything"
               menuPlacement="above"
-              showModePill
             />
           </div>
         </div>
@@ -95,7 +94,7 @@ export function HomeDashboard() {
 
             <div className="w-full space-y-2 overflow-visible">
               <HomeSuggestions onSelect={setDraft} />
-              <Composer
+              <CoachDock
                 draft={draft}
                 setDraft={setDraft}
                 onSend={handleSend}
