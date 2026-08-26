@@ -162,10 +162,12 @@ export function PaperEditor({
       .filter((el): el is HTMLElement => Boolean(el))
     for (const el of els) el.classList.add("paper-coach-changed")
     const first = els[0]
-    first?.scrollIntoView({
-      block: "center",
-      behavior: reduceMotion ? "auto" : "smooth",
-    })
+    if (typeof first?.scrollIntoView === "function") {
+      first.scrollIntoView({
+        block: "center",
+        behavior: reduceMotion ? "auto" : "smooth",
+      })
+    }
     const timer = window.setTimeout(() => {
       for (const el of els) el.classList.remove("paper-coach-changed")
       setChangedSections([])
@@ -212,7 +214,7 @@ export function PaperEditor({
     }, 700)
 
     return () => window.clearTimeout(timer)
-  }, [dirty, doc, onChange, isCv, isProof, cvData, proofData])
+  }, [conflict, dirty, doc, onChange, isCv, isProof, cvData, proofData])
 
   function handleRichInput() {
     const el = editorRef.current
