@@ -23,10 +23,11 @@ an existing empty dev/staging user: `pnpm --filter api run db:seed`.
 
 Before merging Coach persona or prompt changes, run the manual eval harness
 (`pnpm --filter api eval`). It seeds golden scenarios on a fresh test database,
-calls the real OpenRouter runtime, scores honesty checks plus a cheap LLM judge,
-and prints a markdown report. It is not part of `pnpm test` or GitHub Actions —
-fake-runtime tests keep CI at zero tokens. The script refuses to start without
-`OPENROUTER_API_KEY`.
+calls the real OpenRouter runtime for the selected Coach mode (ADR-0009 map),
+scores honesty checks plus a cheap LLM judge, and prints a markdown report.
+`COACH_EVAL_MODE=free|light|max|all` picks the mode (default `free`). It is
+not part of `pnpm test` or GitHub Actions — fake-runtime tests keep CI at
+zero tokens. The script refuses to start without `OPENROUTER_API_KEY`.
 
 ## Useful scripts
 

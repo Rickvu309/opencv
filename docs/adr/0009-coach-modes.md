@@ -42,5 +42,28 @@ plain-language stream error that suggests Light.
 not change with the model. A cheap model that fails a tool call still must
 not fake Command success.
 
+**Eval harness consumes this map.** `pnpm --filter api eval` resolves the
+OpenRouter id through `resolveCoachModel` (same env overrides as production).
+`COACH_EVAL_MODE=free|light|max|all` selects which modes to score; unset
+defaults to `free`. Candidate slugs are tested by setting `COACH_MODEL_FREE`
+/ `_LIGHT` / `_MAX` for that run — do not add a second routing layer or
+duplicate env names. Prompt and default-slug changes stay gated on a
+harness report (QVE-151). CI still never runs the harness.
+
+**QVE-151 eval (2026-08-26).** Golden set scored against the three defaults.
+Judge: `openai/gpt-4o-mini`. Reports attached on the ticket. Defaults were
+**not** changed. Key limit raised to $2 for the Max rerun (`usage` ~$1.93).
+
+| Mode | Slug | Honesty | Judge | Decision |
+| ---- | ---- | ------- | ----- | -------- |
+| Free | `stealth/ox-alpha` | First 3/5 (2 checker FPs). After checker + prompt: **4/5**. Remaining fail: next-step heading + list on `empty-cv-anxious`. | 4–5 | Keep. Voice held. |
+| Light | `deepseek/deepseek-chat-v3.1` | After prompt: **2/5**. Guesses non-UUID `docId`s. | 3–5 | Keep. Candidate `z-ai/glm-4.5` scored **3/5** (valid UUIDs; two "no next step" fails) at ~$0.30 vs Deepseek ~$0.01 — not a default swap. |
+| Max | `anthropic/claude-opus-4` | Rerun after $2 limit: **5/5**. | 4–5 | Keep. First run died on 402 mid-suite. |
+
+Persona additions from the Light report (all modes): never invent ids; do not
+mutate unless the User asked. Honesty checker now requires a first-person
+completed verb (`I moved`), not "I'll set up", "that's the gap", or "I can
+see you've starred". No Fable override was evaluated.
+
 **Out of scope here:** billing / paywall, auto-downgrade, per-mode prompts,
-Paper panel selector, eval-harness consumption of the mode map (QVE-151).
+Paper panel selector.

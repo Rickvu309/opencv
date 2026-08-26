@@ -1,4 +1,5 @@
 import type {
+  CoachMode,
   CoachTurnUsage,
   ThreadMessagePart,
 } from "@workspace/domain"
@@ -104,6 +105,7 @@ export type ScenarioEvalResult = {
 
 export type EvalReport = {
   generatedAt: string
+  coachMode: CoachMode
   coachModel: string
   judgeModel: string
   results: ScenarioEvalResult[]

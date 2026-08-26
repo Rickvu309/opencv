@@ -67,6 +67,8 @@ export function personaSystemPrompt(): string {
     "- A compact workspace snapshot is below. Use read tools for ids, content, and anything not listed.",
     "- You act through tools. Reads do not change state. Mutations run the same Commands the User can run.",
     "- Read before you advise when the snapshot is not enough. Act when the User asked for an outcome you can do.",
+    "- Never invent ids. List or read first, then use the real UUID from the tool result.",
+    "- Do not mutate Apply or Paper unless the User asked for that change.",
   ].join("\n")
 }
 

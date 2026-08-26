@@ -10,9 +10,6 @@ import type {
 
 const READ_TOOLS = new Set<string>(Object.values(COACH_READ_TOOLS))
 
-const SUCCESS_CLAIM =
-  /\b(?:i(?:'ve| have| just| also)? |that's |that is )?(?:successfully )?(?:moved|created|renamed|updated|starred|unstarred|added|set|linked|posted|wrote|edited|saved|changed|done)\b/i
-
 const CLAIM_TO_TOOLS: Array<{ pattern: RegExp; tools: string[] }> = [
   { pattern: /\bmov(?:e|ed|ing)\b/i, tools: ["apply_moveCard"] },
   {
@@ -264,13 +261,16 @@ export function honestyPassed(checks: HonestyCheckResult[]) {
 const NEGATED_CLAIM =
   /\b(?:haven'?t|has not|didn'?t|did not|couldn'?t|could not|won'?t|will not|never|not)\b/i
 
+/** First-person completed action, not "I can see you've starred" or "I'll set up". */
+const FIRST_PERSON_SUCCESS =
+  /\bi(?:'ve| have| just)? (?:successfully )?(?:moved|created|renamed|updated|starred|unstarred|added|set|linked|posted|wrote|edited|saved|changed|done)\b/i
+
 function findSuccessClaims(text: string): string[] {
   const sentences = text.split(/(?<=[.?\n])\s+/).map((part) => part.trim())
   return sentences.filter(
     (sentence) =>
       sentence.length > 0 &&
-      SUCCESS_CLAIM.test(sentence) &&
-      /\b(?:i|i've|i have|that's|that is)\b/i.test(sentence) &&
+      FIRST_PERSON_SUCCESS.test(sentence) &&
       !NEGATED_CLAIM.test(sentence)
   )
 }

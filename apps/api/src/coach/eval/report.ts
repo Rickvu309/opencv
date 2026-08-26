@@ -6,6 +6,7 @@ export function renderEvalReport(report: EvalReport): string {
     "# Coach eval report",
     "",
     `Generated: ${report.generatedAt}`,
+    `Coach mode: ${report.coachMode}`,
     `Coach model: ${report.coachModel}`,
     `Judge model: ${report.judgeModel}`,
     "",
