@@ -7,6 +7,7 @@ import {
   within,
 } from "@testing-library/react"
 
+import { localIsoDate } from "@/features/apply/apply-calendar.tsx"
 import { APPLY_DRAG_TYPE } from "@/features/apply/apply-types.ts"
 import { SURFACE_COPY, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { sampleApplyCards } from "@/test/apply-fixtures.ts"
@@ -102,6 +103,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup()
+  vi.useRealTimers()
   vi.unstubAllGlobals()
 })
 
@@ -193,14 +195,29 @@ describe("Apply workspace", () => {
   })
 
   it("renders the calendar of Tracks", async () => {
+    const now = new Date(2026, 7, 26, 12)
+    vi.useFakeTimers({ toFake: ["Date"] })
+    vi.setSystemTime(now)
+
     renderApply()
     await expectApplyLive()
 
     fireEvent.click(screen.getByRole("button", { name: "Calendar" }))
 
-    expect(screen.getByText("August 2026")).toBeInTheDocument()
+    const monthTitle = `${now.toLocaleString("en-US", { month: "long" })} ${now.getFullYear()}`
+    expect(screen.getByText(monthTitle)).toBeInTheDocument()
     expect(screen.getByText(/jobs with a track date/)).toBeInTheDocument()
     expect(screen.getByText("Sun")).toBeInTheDocument()
+
+    const todayIso = localIsoDate(now)
+    const todayCell = document.querySelector(`[data-track-date="${todayIso}"]`)
+    expect(todayCell).toHaveAttribute("data-today", "true")
+    expect(
+      within(todayCell as HTMLElement).getByRole("button", {
+        name: String(now.getDate()),
+      })
+    ).toHaveAttribute("aria-current", "date")
+
     expect(
       screen.getByRole("button", { name: "Associate PM intern" })
     ).toBeInTheDocument()
