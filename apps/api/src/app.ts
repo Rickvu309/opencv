@@ -40,9 +40,9 @@ export type AppConfig = {
   coachModel?: string
   /** From `coachDailyTurnLimitFromEnv` — global fallback when a mode cap is unset. */
   coachDailyTurnLimit?: number
-  /** Per-mode OpenRouter model ids (ADR-0008). */
+  /** Per-mode OpenRouter model ids (ADR-0009). */
   coachModels?: Partial<Record<CoachMode, string>>
-  /** Per-mode daily turn caps (ADR-0008). */
+  /** Per-mode daily turn caps (ADR-0009). */
   coachDailyTurnLimits?: Partial<Record<CoachMode, number>>
   /** Test override; production uses `COACH_SSE_HEARTBEAT_MS` (15s). */
   coachSseHeartbeatMs?: number

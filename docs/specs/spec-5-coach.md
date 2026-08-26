@@ -1,7 +1,7 @@
 # Spec 5 — The Coach
 
 **Status:** Done (QVE-136 / QVE-137–144) — production OpenRouter key is the remaining owner step (commands on QVE-144)
-**Related:** ADR-0007 (coach runtime decisions), ADR-0003 (Coach Commands — the constitution this spec implements), ADR-0006 (the registry and data it runs on), PRODUCT.md (persona and principles)
+**Related:** ADR-0007 (coach runtime decisions), ADR-0003 (Coach Commands — the constitution this spec implements), ADR-0006 (the registry and data it runs on), ADR-0008 (English product language), ADR-0009 (Coach modes), PRODUCT.md (persona and principles)
 
 ## Problem Statement
 
@@ -16,7 +16,7 @@ The product's differentiator does not exist yet. Home says the Coach can't act �
 5. **The User stays in control.** A Stop button ends a turn; failed sends surface an error with Retry; reversal notes on receipts say how to undo; a daily turn cap bounds cost.
 6. **We can tell if it's good.** Thumbs on coach messages feed a usage table; a manual eval harness (golden scenarios, honesty checks, LLM judge) gates persona changes without burning CI tokens.
 
-**Not in this spec:** the Paper AI panel (stays a stub with honest copy pointing Home; unification is a follow-up), Regenerate, destructive-command confirmation flow, one-click undo, Vietnamese, the in-app feedback channel (next spec — thumbs data lands where it will read). Multi-model routing (Free / Light / Max) landed in [QVE-155](https://linear.app/quanvm/issue/QVE-155) / ADR-0008.
+**Not in this spec:** the Paper AI panel (stays a stub with honest copy pointing Home; unification is a follow-up), Regenerate, destructive-command confirmation flow, one-click undo, Vietnamese-first Coach / i18n (settled English-first in ADR-0008 / QVE-150), the in-app feedback channel (next spec — thumbs data lands where it will read). Multi-model routing (Free / Light / Max) landed in [QVE-155](https://linear.app/quanvm/issue/QVE-155) / ADR-0009.
 
 ## User Stories
 
@@ -39,8 +39,9 @@ Technical decisions live in **ADR-0007**. Product decisions locked here:
 
 - **Full command surface from v1** — all coach-allowed, non-destructive Commands are tools with a standard generic receipt pattern; per-command UX (CV diff previews) is prototyped later.
 - **Auto-execution without confirmation** is ADR-0003-compliant for this surface (every exposed tool is reversible; deletes are structurally excluded). The confirm flow is designed-for but not built.
-- **Default Coach mode is Free** (`stealth/ox-alpha`); Light and Max are User-selectable (ADR-0008). Quality of tool use and voice still outranks per-turn cost on Max.
+- **Default Coach mode is Free** (`stealth/ox-alpha`); Light and Max are User-selectable (ADR-0009). Quality of tool use and voice still outranks per-turn cost on Max.
 - **Daily turn caps** are per mode (Free 50 / Light 30 / Max 10, env-overridable).
+- **English product language** is ADR-0008 / QVE-150: chrome and persona stay English; no locale toggle; incidental Vietnamese replies if the User writes Vietnamese.
 
 ## Ticket breakdown (tracer bullets)
 

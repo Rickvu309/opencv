@@ -74,7 +74,7 @@ export function coachModelFromEnv(env: NodeJS.ProcessEnv): string {
   return resolveCoachModel(undefined, env)
 }
 
-/** OpenRouter model id for a User-selected Coach mode (ADR-0008). */
+/** OpenRouter model id for a User-selected Coach mode (ADR-0009). */
 export function coachModelForModeFromEnv(
   mode: CoachMode,
   env: NodeJS.ProcessEnv
@@ -100,7 +100,7 @@ export function coachDailyTurnLimitFromEnv(env: NodeJS.ProcessEnv): number {
   return parsed
 }
 
-/** Per-mode daily turn cap (ADR-0008). */
+/** Per-mode daily turn cap (ADR-0009). */
 export function coachDailyTurnLimitForModeFromEnv(
   mode: CoachMode,
   env: NodeJS.ProcessEnv

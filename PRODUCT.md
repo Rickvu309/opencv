@@ -41,7 +41,7 @@ Bell popover inbox on Home (Apply and Paper events). Prototype-validated; ships 
 
 ## Productionization order
 
-The prototype is throwaway code; production rebuilds it spec by spec. Spec 3 = shell + stub surfaces; Spec 4 = auth + durable Paper / Apply / Threads; Spec 5 = the real Coach (streaming, Commands as tools). Pitch persistence and Vietnamese copy remain follow-ups (see `docs/specs/spec-3-app-shell.md`, Route to real product).
+The prototype is throwaway code; production rebuilds it spec by spec. Spec 3 = shell + stub surfaces; Spec 4 = auth + durable Paper / Apply / Threads; Spec 5 = the real Coach (streaming, Commands as tools). Pitch persistence remains a follow-up (see `docs/specs/spec-3-app-shell.md`, Route to real product). Product language is English (ADR-0008 / QVE-150).
 
 ## Out of scope
 
@@ -49,7 +49,7 @@ The prototype is throwaway code; production rebuilds it spec by spec. Spec 3 = s
 - Publishing or scheduling social posts. Pitch publishes a portfolio link only.
 - Real OAuth for Connected apps.
 - Company/recruiter product.
-- i18n / Vietnamese copy (English first).
+- i18n / Vietnamese-first copy (ADR-0008 / QVE-150). English is the product language (Coach + chrome + starter content + receipts). No locale default or toggle. If a User writes in Vietnamese, the Coach may still answer as a model capability — that is not a configured feature.
 
 ## Open questions (created by the prototype, not settled)
 
@@ -61,7 +61,7 @@ The prototype is throwaway code; production rebuilds it spec by spec. Spec 3 = s
 
 ## Personality
 
-Grounded, warm, honest — like a good older mentor: encouraging but not flattering; willing to push back with evidence. No hype, no gamified badges, no corporate-HR voice. English for now: second person, contractions OK, no exclamation marks.
+Grounded, warm, honest — like a good older mentor: encouraging but not flattering; willing to push back with evidence. No hype, no gamified badges, no corporate-HR voice. English (ADR-0008): second person, contractions OK, no exclamation marks. If a User writes in Vietnamese, the Coach may reply without a locale setting.
 
 ## Principles
 
