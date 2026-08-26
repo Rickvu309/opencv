@@ -9,16 +9,21 @@
 }
 
 @layer utilities {
+  /* Shared prose treatment — Coach markdown and the Paper editor canvas. */
+  .prose-kit {
+    @apply text-body leading-relaxed;
+  }
+
   .paper-editor-canvas h2 {
     @apply mt-8 mb-3 text-xl font-semibold tracking-tight text-foreground first:mt-0;
   }
 
   .paper-editor-canvas p {
-    @apply mb-4 text-[15px] leading-8 text-foreground/90;
+    @apply mb-4 text-body leading-8 text-foreground/90;
   }
 
   .paper-editor-canvas ul {
-    @apply mb-4 list-disc space-y-1.5 pl-5 text-[15px] leading-7 text-foreground/90;
+    @apply mb-4 list-disc space-y-1.5 pl-5 text-body leading-7 text-foreground/90;
   }
 
   .paper-editor-canvas li {

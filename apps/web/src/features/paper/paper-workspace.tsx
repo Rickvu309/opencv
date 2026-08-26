@@ -18,6 +18,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
+import {
+  Empty,
+  EmptyDescription,
+} from "@workspace/ui/components/empty-state"
 import { Input } from "@workspace/ui/components/input"
 import { cn } from "@workspace/ui/lib/utils"
 import type {
@@ -270,11 +274,11 @@ export function PaperWorkspace() {
           <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3">
             <div className="relative min-w-[12rem] flex-1">
               <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
-              <input
+              <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search documents…"
-                className="h-8 w-full rounded-lg border border-border bg-background pr-2 pl-8 text-sm outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30"
+                className="pl-8"
                 aria-label="Search documents"
               />
             </div>
@@ -313,11 +317,13 @@ export function PaperWorkspace() {
                 Loading documents…
               </p>
             ) : filtered.length === 0 ? (
-              <p className="px-4 py-8 text-sm text-muted-foreground">
-                {query.trim()
-                  ? "No documents match that search."
-                  : "No documents yet. Create a CV, Letter, or Proof to start."}
-              </p>
+              <Empty className="py-8">
+                <EmptyDescription>
+                  {query.trim()
+                    ? "No documents match that search."
+                    : "No documents yet. Create a CV, Letter, or Proof to start."}
+                </EmptyDescription>
+              </Empty>
             ) : (
               <table className="w-full min-w-[48rem] text-left text-sm">
                 <thead>

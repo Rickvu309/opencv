@@ -1,3 +1,5 @@
+import { Button } from "@workspace/ui/components/button"
+import { Input } from "@workspace/ui/components/input"
 import { cn } from "@workspace/ui/lib/utils"
 import { FileText, Search } from "lucide-react"
 
@@ -19,22 +21,24 @@ export function PaperEditorSidebar({
   return (
     <aside className="flex w-60 shrink-0 flex-col border-r border-border bg-background">
       <div className="border-b border-border px-4 py-3">
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={onBack}
-          className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+          className="h-auto px-0 text-xs font-medium text-muted-foreground"
         >
           ← All documents
-        </button>
+        </Button>
         <p className="mt-2 text-sm font-semibold">Documents</p>
       </div>
 
       <div className="border-b border-border px-3 py-2">
         <div className="relative">
           <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
-          <input
+          <Input
             placeholder="Search…"
-            className="h-8 w-full rounded-lg border border-border bg-background pr-2 pl-8 text-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30"
+            className="h-8 pl-8 text-xs"
             aria-label="Search documents"
           />
         </div>
@@ -44,12 +48,13 @@ export function PaperEditorSidebar({
         {docs.map((doc) => {
           const active = doc.id === activeId
           return (
-            <button
+            <Button
               key={doc.id}
               type="button"
+              variant="ghost"
               onClick={() => onSelect(doc.id)}
               className={cn(
-                "mb-0.5 flex w-full items-start gap-2 rounded-lg px-2.5 py-2 text-left transition-colors",
+                "mb-0.5 h-auto w-full items-start justify-start gap-2 px-2.5 py-2 text-left",
                 active
                   ? "border-foreground/15 bg-muted font-medium text-foreground"
                   : "border-transparent hover:bg-muted/50"
@@ -65,16 +70,16 @@ export function PaperEditorSidebar({
                 <span className="block truncate text-sm font-medium">
                   {doc.name}
                 </span>
-                <span className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <span className="mt-0.5 flex items-center gap-1.5 text-micro text-muted-foreground">
                   {TYPE_LABEL[doc.kind]}
                   {doc.status === "draft" ? (
-                    <span className="rounded bg-muted px-1 py-px text-[10px] font-medium uppercase">
+                    <span className="rounded bg-muted px-1 py-px text-2xs font-medium uppercase">
                       Draft
                     </span>
                   ) : null}
                 </span>
               </span>
-            </button>
+            </Button>
           )
         })}
       </div>

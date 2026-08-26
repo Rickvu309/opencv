@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { Button } from "@workspace/ui/components/button"
+import { Input } from "@workspace/ui/components/input"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -326,7 +327,7 @@ export function PaperEditor({
           icon={<FileText className="size-4 shrink-0 text-muted-foreground" />}
           title={
             <div className="min-w-0 flex-1">
-              <input
+              <Input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 onBlur={() => {
@@ -337,7 +338,7 @@ export function PaperEditor({
                 onKeyDown={(e) => {
                   if (e.key === "Enter") (e.target as HTMLInputElement).blur()
                 }}
-                className="w-full truncate border-0 bg-transparent text-sm font-semibold outline-none"
+                className="h-auto w-full truncate border-0 bg-transparent px-0 text-sm font-semibold shadow-none focus-visible:border-0 focus-visible:ring-0 md:text-sm"
                 aria-label="Document name"
               />
               <p className="text-xs text-muted-foreground">
@@ -388,6 +389,7 @@ export function PaperEditor({
           >
             {isCv ? (
               <>
+                {/* Documented exception: native file input — kit Input cannot host a hidden file picker. */}
                 <input
                   ref={cvPhotoRef}
                   type="file"
@@ -415,6 +417,7 @@ export function PaperEditor({
               </>
             ) : isProof ? (
               <>
+                {/* Documented exception: native file input — kit Input cannot host a hidden file picker. */}
                 <input
                   ref={proofPhotoRef}
                   type="file"
@@ -475,17 +478,19 @@ export function PaperEditor({
                     </div>
                     <div className="flex items-center gap-2">
                       {doc.status === "draft" ? (
-                        <span className="rounded-md bg-muted px-2 py-0.5 text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
+                        <span className="rounded-md bg-muted px-2 py-0.5 text-2xs font-semibold tracking-wide text-muted-foreground uppercase">
                           Draft
                         </span>
                       ) : null}
-                      <button
+                      <Button
                         type="button"
+                        size="icon-sm"
+                        variant="ghost"
                         aria-label="More"
-                        className="text-muted-foreground hover:text-foreground"
+                        className="text-muted-foreground"
                       >
                         <MoreHorizontal className="size-4" />
-                      </button>
+                      </Button>
                     </div>
                   </div>
                   <div
@@ -494,7 +499,7 @@ export function PaperEditor({
                     role="textbox"
                     suppressContentEditableWarning
                     onInput={handleRichInput}
-                    className="paper-editor-canvas min-h-[70vh] px-10 py-10 text-[15px] leading-8 outline-none sm:px-14 sm:py-12"
+                    className="paper-editor-canvas prose-kit min-h-[70vh] px-10 py-10 outline-none sm:px-14 sm:py-12"
                     aria-label="Document content"
                     spellCheck
                   />
