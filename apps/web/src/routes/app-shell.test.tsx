@@ -183,6 +183,45 @@ describe("app shell layout", () => {
     expect(screen.getByRole("button", { name: "Search" })).toBeInTheDocument()
   })
 
+  it("left-aligns expanded Search with the other nav rows", async () => {
+    stubDesktopViewport(true)
+    renderApp(SURFACE_PATHS.home)
+    await expectHomeIdle()
+
+    const sidebar = screen.getByRole("complementary", { name: "App" })
+    expect(sidebar).toHaveAttribute("data-expanded", "true")
+
+    const search = within(sidebar).getByRole("button", { name: "Search" })
+    const home = within(sidebar).getByRole("link", { name: "Home" })
+    const paper = within(sidebar).getByRole("link", { name: "Paper" })
+
+    expect(search).toHaveClass("justify-start")
+    expect(search).toHaveClass("text-left")
+    expect(search).not.toHaveClass("justify-center")
+    expect(search).not.toHaveClass("text-center")
+    expect(home).toHaveClass("justify-start")
+    expect(paper).toHaveClass("justify-start")
+
+    fireEvent.click(search)
+    expect(
+      await screen.findByRole("dialog", { name: "Search" })
+    ).toBeInTheDocument()
+    fireEvent.keyDown(document, { key: "Escape" })
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("dialog", { name: "Search" })
+      ).not.toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByRole("button", { name: "Collapse sidebar" }))
+    expect(sidebar).toHaveAttribute("data-expanded", "false")
+    const collapsedSearch = within(sidebar).getByRole("button", {
+      name: "Search",
+    })
+    expect(collapsedSearch).toHaveClass("justify-center")
+    expect(collapsedSearch).not.toHaveClass("justify-start")
+  })
+
   it("opens Settings from the profile footer, not a demo persona", async () => {
     renderApp(SURFACE_PATHS.home)
     await expectHomeIdle()
