@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest"
 
+import { titleFrom } from "@workspace/domain"
+
 import {
   STREAMING_COACH_ID,
   latestCoachMessageId,
-  titleFrom,
   toHomeMessages,
 } from "@/features/home/threads.ts"
 

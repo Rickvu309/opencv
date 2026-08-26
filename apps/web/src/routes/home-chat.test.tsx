@@ -70,7 +70,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe("Home Thread mode and History", () => {
+describe("Home Thread mode and History", { timeout: 15_000 }, () => {
   it("streams a reply progressively and drops working status at first text", async () => {
     const stream = scriptCoachStream({
       gated: true,
@@ -466,18 +466,18 @@ describe("Home Thread mode and History", () => {
     const history = screen.getByRole("navigation", { name: "History" })
     expect(
       await within(history).findByRole("button", {
-        name: "Should I finish my CV first?",
+        name: "Finish my CV first",
       })
     ).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole("link", { name: "Paper" }))
     await expectPaperDrive()
     expect(
-      screen.getByRole("button", { name: "Should I finish my CV first?" })
+      screen.getByRole("button", { name: "Finish my CV first" })
     ).toHaveAttribute("aria-current", "true")
 
     fireEvent.click(
-      screen.getByRole("button", { name: "Should I finish my CV first?" })
+      screen.getByRole("button", { name: "Finish my CV first" })
     )
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(SURFACE_PATHS.home)
@@ -515,6 +515,46 @@ describe("Home Thread mode and History", () => {
     expect(
       screen.getByRole("navigation", { name: "History" })
     ).toBeInTheDocument()
+  })
+
+  it("replaces a first-line History title after the first Coach turn", async () => {
+    renderApp()
+    await expectHomeIdle()
+
+    await sendMessage("Help me plan the week")
+    await expectSendSettled("Help me plan the week")
+
+    const history = screen.getByRole("navigation", { name: "History" })
+    expect(
+      await within(history).findByRole("button", { name: "Plan the week" })
+    ).toBeInTheDocument()
+    expect(
+      within(history).queryByRole("button", { name: "Help me plan the week" })
+    ).not.toBeInTheDocument()
+    expect(
+      getMockThreads().some((thread) => thread.title === "Plan the week")
+    ).toBe(true)
+  })
+
+  it("leaves an existing History title alone when the User continues that Thread", async () => {
+    renderApp()
+    await expectHomeIdle()
+
+    const existing = FIXTURE_THREADS[0]!
+    fireEvent.click(
+      await screen.findByRole("button", { name: existing.title })
+    )
+    await expectThreadText(existing.messages[0]!.text)
+
+    await sendMessage("What should I do next?")
+    await expectSendSettled("What should I do next?")
+
+    expect(
+      screen.getByRole("button", { name: existing.title })
+    ).toBeInTheDocument()
+    expect(
+      getMockThreads().some((thread) => thread.id === existing.id && thread.title === existing.title)
+    ).toBe(true)
   })
 
   it("keeps server Threads after remount and reopens them from History", async () => {

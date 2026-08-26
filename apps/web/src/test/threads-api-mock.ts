@@ -1,6 +1,8 @@
 import {
   appendCoachPart,
   COACH_SSE_EVENTS,
+  deterministicThreadTitle,
+  shouldAutoTitleThread,
   textFromParts,
   DEFAULT_THREAD_TITLE,
   THREAD_COMMANDS,
@@ -165,7 +167,26 @@ function persistCoach(
   }
   thread.messages.push(message)
   thread.updatedAt = now
+  maybeAutoTitle(thread, status, text)
   return message
+}
+
+function maybeAutoTitle(
+  thread: ThreadDetail,
+  status: ThreadMessageStatus,
+  coachText: string
+) {
+  const prior = thread.messages.slice(0, -1)
+  const eligible = shouldAutoTitleThread({
+    currentTitle: thread.title,
+    messages: prior,
+    status,
+  })
+  if (!eligible) return
+  thread.title = deterministicThreadTitle({
+    userText: eligible.userText,
+    coachText,
+  })
 }
 
 function scriptedParts(): CoachScriptPart[] {

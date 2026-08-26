@@ -50,6 +50,7 @@ import { readSession } from "../session.js"
 import { getOwnedPaperDoc } from "../paper/queries.js"
 import { getCoachModeForUser } from "../profile/queries.js"
 import { getOwnedThread, getThreadDetail, toThreadMessage } from "../threads/queries.js"
+import { maybeAutoTitleThread } from "./title.js"
 import { countCoachTurnsToday, rateCoachTurn } from "./usage.js"
 
 export type CoachRouteOptions = {
@@ -231,6 +232,7 @@ export function createCoachRoutes({
         stream,
         coach,
         db,
+        registry,
         userId: session.user.id,
         threadId,
         history,
@@ -319,6 +321,7 @@ type RunCoachTurnOptions = {
   stream: SSEStreamingApi
   coach: CoachRuntime
   db: AppDatabase
+  registry: CommandRegistry
   userId: string
   threadId: string
   history: ThreadMessage[]
@@ -334,6 +337,7 @@ async function runCoachTurn({
   stream,
   coach,
   db,
+  registry,
   userId,
   threadId,
   history,
@@ -447,6 +451,17 @@ async function runCoachTurn({
       workedMs,
       usage,
       mode,
+    })
+
+    await maybeAutoTitleThread({
+      db,
+      registry,
+      coach,
+      userId,
+      threadId,
+      history,
+      coachText: textFromParts(parts),
+      status,
     })
 
     if (!isDisconnected(stream, signal)) {
