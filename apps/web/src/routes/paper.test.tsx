@@ -334,6 +334,12 @@ describe("Paper editors", () => {
     expect(
       within(panel).getByRole("status", { name: "Command succeeded" })
     ).toBeInTheDocument()
+    expect(
+      within(panel).getByText("Reversible — Undo by editing the document again.")
+    ).toBeInTheDocument()
+    await waitFor(() => {
+      expect(within(panel).getByRole("button", { name: "Undo" })).toBeEnabled()
+    })
     expect(getLastCoachRequest()?.focusDocId).toBe(
       "11111111-1111-7111-8111-111111111111"
     )

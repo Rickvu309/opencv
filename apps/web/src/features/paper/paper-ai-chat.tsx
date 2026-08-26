@@ -59,7 +59,7 @@ export function AiAssistChat({
   const [pos, setPos] = useState({ top: 0, left: 0 })
   const [mounted, setMounted] = useState(false)
   const [draft, setDraft] = useState("")
-  const { messages, phase, error, send, stop, retry, regenerate, rate } =
+  const { messages, phase, error, send, stop, retry, regenerate, rate, undo } =
     usePaperCoach(docId, contextLabel ?? "Paper")
   const turnActive = phase !== "idle"
 
@@ -178,6 +178,7 @@ export function AiAssistChat({
                   onRetry={retry}
                   onRate={rate}
                   onRegenerate={phase === "idle" ? regenerate : undefined}
+                  onUndo={phase === "idle" ? undo : undefined}
                 />
               )}
             </div>

@@ -16,6 +16,7 @@ import {
   createThread,
   getThread,
   rateCoachMessage,
+  reverseCoachReceipt,
   streamCoachRegenerate,
   streamCoachTurn,
   threadQueryKeys,
@@ -630,6 +631,19 @@ export function usePaperCoach(docId: string, docName: string) {
     [queryClient, threadId]
   )
 
+  const undo = useCallback(
+    async (messageId: string, toolCallId: string) => {
+      const id = threadId
+      if (!id || phase !== "idle") return
+
+      const result = await reverseCoachReceipt(id, messageId, toolCallId)
+      writeDetail(id, result.thread)
+      setOptimisticMessages(null)
+      void queryClient.invalidateQueries({ queryKey: paperQueryKeys.all })
+    },
+    [phase, queryClient, threadId, writeDetail]
+  )
+
   return {
     messages,
     phase,
@@ -639,5 +653,6 @@ export function usePaperCoach(docId: string, docName: string) {
     retry,
     regenerate,
     rate,
+    undo,
   }
 }
