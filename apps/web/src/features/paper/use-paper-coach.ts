@@ -185,7 +185,7 @@ export function usePaperCoach(docId: string, docName: string) {
         ],
       })
     },
-    [docName, queryClient, writeDetail]
+    [docId, docName, queryClient, writeDetail]
   )
 
   const rememberPaperTools = useCallback(

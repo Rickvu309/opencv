@@ -459,7 +459,13 @@ describe("Paper editors", () => {
 
     renderPaper()
     await expectPaperDrive()
-    await openDoc("PM track CV")
+    const driveName = await screen.findByText("PM track CV", {
+      selector: "span.font-medium",
+    })
+    fireEvent.click(driveName.closest("tr") ?? driveName)
+    expect(
+      await screen.findByRole("region", { name: "Editing PM track CV" })
+    ).toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: /AI assist/ }))
     const secondPanel = await screen.findByRole("dialog", { name: "AI assist" })
     expect(
