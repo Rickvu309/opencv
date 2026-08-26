@@ -34,6 +34,7 @@ describe("coach deploy docs", () => {
     expect(envExample).toContain("anthropic/claude-opus-4")
     expect(envExample).toContain("anthropic/claude-fable-5")
     expect(envExample).toContain("COACH_DAILY_TURN_LIMIT=50")
+    expect(envExample).toContain("COACH_EVAL_MODE")
     expect(railway).toContain("COACH_UNAVAILABLE")
     expect(railway).toContain("GET /health")
     expect(deploy).toContain("COACH_UNAVAILABLE")

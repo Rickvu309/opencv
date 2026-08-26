@@ -64,12 +64,14 @@ Eight tickets under one parent: COACH-1 tool surface, COACH-2 data/config ground
 
 Persona quality is measured on demand, never in CI. Before merging persona or
 prompt changes, run `pnpm --filter api eval` with `OPENROUTER_API_KEY` set. The
-script refuses without the key. Each golden scenario gets a fresh test
-database, the real OpenRouter runtime, deterministic honesty checks (no
-exclamation marks, no claimed action without a matching successful receipt,
-exactly one next step, valid tool calls), then a cheap LLM judge with
-rationale. Output is a markdown report on stdout. `pnpm test` and GitHub
-Actions keep using the fake runtime so CI burns zero tokens.
+script refuses without the key. `COACH_EVAL_MODE=free|light|max|all` selects
+which ADR-0009 default (or `COACH_MODEL_*` override) to score; unset is
+`free`. Each golden scenario gets a fresh test database, the real OpenRouter
+runtime, deterministic honesty checks (no exclamation marks, no claimed
+action without a matching successful receipt, exactly one next step, valid
+tool calls), then a cheap LLM judge with rationale. Output is a markdown
+report on stdout. `pnpm test` and GitHub Actions keep using the fake runtime
+so CI burns zero tokens.
 
 ## Follow-ups filed (QVE-144)
 
@@ -80,6 +82,6 @@ Work this spec deliberately deferred, now ticketed:
 - [QVE-148](https://linear.app/quanvm/issue/QVE-148) — Destructive Command confirm flow
 - [QVE-149](https://linear.app/quanvm/issue/QVE-149) — One-click reversal from Coach receipts
 - [QVE-150](https://linear.app/quanvm/issue/QVE-150) — Vietnamese Coach + product copy (`ready-for-human`)
-- [QVE-151](https://linear.app/quanvm/issue/QVE-151) — Coach prompt iteration + cheap-model fallback
+- [QVE-151](https://linear.app/quanvm/issue/QVE-151) — Coach eval + tune Free/Light/Max after mode routing
 - [QVE-152](https://linear.app/quanvm/issue/QVE-152) — Per-command Coach UX prototypes
 - [QVE-153](https://linear.app/quanvm/issue/QVE-153) — Auto Thread titles from the first turn

@@ -27,6 +27,7 @@ describe("eval harness is manual-only", () => {
     expect(vitest).toMatch(/src\/coach\/eval\/run\.ts/)
 
     const runner = readFileSync(join(evalDir, "run.ts"), "utf8")
+    expect(runner).toContain("coachModelForModeFromEnv")
     expect(runner).not.toMatch(
       /from\s+["'](ai|@openrouter\/ai-sdk-provider)["']/
     )

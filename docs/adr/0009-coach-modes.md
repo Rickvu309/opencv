@@ -42,5 +42,13 @@ plain-language stream error that suggests Light.
 not change with the model. A cheap model that fails a tool call still must
 not fake Command success.
 
+**Eval harness consumes this map.** `pnpm --filter api eval` resolves the
+OpenRouter id through `resolveCoachModel` (same env overrides as production).
+`COACH_EVAL_MODE=free|light|max|all` selects which modes to score; unset
+defaults to `free`. Candidate slugs are tested by setting `COACH_MODEL_FREE`
+/ `_LIGHT` / `_MAX` for that run — do not add a second routing layer or
+duplicate env names. Prompt and default-slug changes stay gated on a
+harness report (QVE-151). CI still never runs the harness.
+
 **Out of scope here:** billing / paywall, auto-downgrade, per-mode prompts,
-Paper panel selector, eval-harness consumption of the mode map (QVE-151).
+Paper panel selector.

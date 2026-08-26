@@ -1,3 +1,10 @@
+import {
+  COACH_MODES,
+  DEFAULT_COACH_MODE,
+  coachModeSchema,
+  type CoachMode,
+} from "@workspace/domain"
+
 import { openRouterApiKeyFromEnv } from "../../config.js"
 
 import { scenarioById } from "./scenarios.js"
@@ -11,6 +18,24 @@ export function requireOpenRouterApiKey(env: NodeJS.ProcessEnv): string {
     )
   }
   return key
+}
+
+/**
+ * Modes the harness should score. Uses ADR-0009 `resolveCoachModel` — no
+ * second routing layer. Unset defaults to `free`. `all` runs Free, Light,
+ * and Max in that order.
+ */
+export function coachEvalModesFromEnv(env: NodeJS.ProcessEnv): CoachMode[] {
+  const raw = env.COACH_EVAL_MODE?.trim()
+  if (!raw) return [DEFAULT_COACH_MODE]
+  if (raw === "all") return [...COACH_MODES]
+  const parsed = coachModeSchema.safeParse(raw)
+  if (!parsed.success) {
+    throw new Error(
+      `Unknown COACH_EVAL_MODE "${raw}". Use free, light, max, or all.`
+    )
+  }
+  return [parsed.data]
 }
 
 export function scenariosToRun(

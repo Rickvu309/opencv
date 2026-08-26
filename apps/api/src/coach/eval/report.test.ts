@@ -9,7 +9,8 @@ describe("renderEvalReport", () => {
     const scenario = GOLDEN_SCENARIOS[0]!
     const report: EvalReport = {
       generatedAt: "2026-08-25T00:00:00.000Z",
-      coachModel: "anthropic/claude-sonnet-4.5",
+      coachMode: "free",
+      coachModel: "stealth/ox-alpha",
       judgeModel: "openai/gpt-4o-mini",
       results: [
         {
@@ -51,6 +52,8 @@ describe("renderEvalReport", () => {
 
     const markdown = renderEvalReport(report)
     expect(markdown).toMatch(/^# Coach eval report/m)
+    expect(markdown).toContain("Coach mode: free")
+    expect(markdown).toContain("Coach model: stealth/ox-alpha")
     expect(markdown).toContain("| empty-cv-anxious | fail (1) | 4/5 |")
     expect(markdown).toContain("[pass] No exclamation marks")
     expect(markdown).toContain("[fail] Exactly one next step present")
