@@ -1,9 +1,25 @@
-import { useEffect, useRef, useState, type ReactNode } from "react"
+import { useState, type ReactNode } from "react"
+import { Button } from "@workspace/ui/components/button"
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu"
+import { Input } from "@workspace/ui/components/input"
+import { Label } from "@workspace/ui/components/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/select"
+import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
 import type { PaperDoc } from "@workspace/domain"
 import {
-  Check,
-  ChevronDown,
   ExternalLink,
   Link2,
   Star,
@@ -42,6 +58,9 @@ const TRACK_KINDS: TrackKind[] = [
   "followup",
   "applied",
 ]
+
+const FIELD_LABEL =
+  "mb-1 text-2xs font-medium tracking-wide text-muted-foreground uppercase"
 
 export function JobDetailPanel({
   card,
@@ -120,35 +139,43 @@ export function JobDetailPanel({
         />
 
         <div className="grid grid-cols-2 gap-3">
-          <label className="block">
-            <span className="mb-1 block text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+          <div className="block">
+            <Label htmlFor={`track-date-${card.id}`} className={FIELD_LABEL}>
               Track date
-            </span>
-            <input
+            </Label>
+            <Input
+              id={`track-date-${card.id}`}
               type="date"
               value={card.trackDate}
               onChange={(e) => onPatch({ trackDate: e.target.value })}
-              className="w-full rounded-lg border border-border bg-background px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-ring/40"
             />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+          </div>
+          <div className="block">
+            <Label htmlFor={`event-type-${card.id}`} className={FIELD_LABEL}>
               Event type
-            </span>
-            <select
+            </Label>
+            <Select
               value={card.trackKind}
-              onChange={(e) =>
-                onPatch({ trackKind: e.target.value as TrackKind })
-              }
-              className="w-full rounded-lg border border-border bg-background px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-ring/40"
+              onValueChange={(kind) => {
+                if (kind) onPatch({ trackKind: kind as TrackKind })
+              }}
             >
-              {TRACK_KINDS.map((kind) => (
-                <option key={kind} value={kind}>
-                  {trackKindLabel(kind)}
-                </option>
-              ))}
-            </select>
-          </label>
+              <SelectTrigger
+                id={`event-type-${card.id}`}
+                className="w-full"
+                aria-label="Event type"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TRACK_KINDS.map((kind) => (
+                  <SelectItem key={kind} value={kind}>
+                    {trackKindLabel(kind)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <JobDetailNote
@@ -157,7 +184,7 @@ export function JobDetailPanel({
           onCommit={(next) => onPatch({ note: next })}
         />
 
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-micro text-muted-foreground">
           {formatApplyUpdated(card.updatedAt)}
         </p>
       </div>
@@ -195,28 +222,29 @@ function JobDetailFields({
 
   return (
     <div className="space-y-3">
-      <label className="block">
-        <span className="mb-1 block text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+      <div className="block">
+        <Label htmlFor={`job-title-${card.id}`} className={FIELD_LABEL}>
           Job title
-        </span>
-        <input
+        </Label>
+        <Input
+          id={`job-title-${card.id}`}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           onBlur={commitTitle}
-          className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm font-semibold outline-none focus:ring-1 focus:ring-ring/40"
+          className="font-semibold"
         />
-      </label>
-      <label className="block">
-        <span className="mb-1 block text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+      </div>
+      <div className="block">
+        <Label htmlFor={`company-${card.id}`} className={FIELD_LABEL}>
           Company
-        </span>
-        <input
+        </Label>
+        <Input
+          id={`company-${card.id}`}
           value={company}
           onChange={(e) => setCompany(e.target.value)}
           onBlur={commitCompany}
-          className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-ring/40"
         />
-      </label>
+      </div>
     </div>
   )
 }
@@ -231,21 +259,22 @@ function JobDetailNote({
   const [value, setValue] = useState(note)
 
   return (
-    <label className="block">
-      <span className="mb-1 block text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+    <div className="block">
+      <Label htmlFor="job-notes" className={FIELD_LABEL}>
         Notes
-      </span>
-      <textarea
+      </Label>
+      <Textarea
+        id="job-notes"
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onBlur={() => {
           if (value !== note) onCommit(value)
         }}
         rows={5}
-        className="w-full resize-none rounded-lg border border-border bg-background px-2.5 py-2 text-sm leading-relaxed outline-none focus:ring-1 focus:ring-ring/40"
+        className="min-h-0 resize-none leading-relaxed"
         placeholder="What to prep, who you talked to, next step…"
       />
-    </label>
+    </div>
   )
 }
 
@@ -262,64 +291,52 @@ function PaperLinkMenu({
   docs: PaperDoc[]
   onLink: (docId: string, applyCardId: string | null) => void
 }) {
-  const rootRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    function onPointerDown(e: MouseEvent) {
-      if (!rootRef.current?.contains(e.target as Node)) onOpenChange(false)
-    }
-    document.addEventListener("mousedown", onPointerDown)
-    return () => document.removeEventListener("mousedown", onPointerDown)
-  }, [open, onOpenChange])
-
   return (
-    <div ref={rootRef} className="relative">
-      <ToolbarIconButton
-        label="Link Paper docs"
-        onClick={() => onOpenChange(!open)}
-        active={open || docs.some((doc) => doc.applyCardId === cardId)}
+    <DropdownMenu open={open} onOpenChange={onOpenChange}>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Link Paper docs"
+            className={cn(
+              "text-muted-foreground",
+              (open || docs.some((doc) => doc.applyCardId === cardId)) &&
+                "bg-muted text-foreground"
+            )}
+          />
+        }
       >
         <Link2 className="size-3.5" />
-      </ToolbarIconButton>
-      {open ? (
-        <div
-          role="menu"
-          aria-label="Link Paper docs"
-          className="absolute top-full left-0 z-20 mt-1 max-h-64 w-64 overflow-auto rounded-lg border border-border bg-popover p-1 shadow-lg"
-        >
-          {docs.length === 0 ? (
-            <p className="px-2 py-3 text-xs text-muted-foreground">
-              No Paper docs yet.
-            </p>
-          ) : (
-            docs.map((doc) => {
-              const linkedHere = doc.applyCardId === cardId
-              return (
-                <button
-                  key={doc.id}
-                  type="button"
-                  role="menuitemcheckbox"
-                  aria-checked={linkedHere}
-                  onClick={() =>
-                    onLink(doc.id, linkedHere ? null : cardId)
-                  }
-                  className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors hover:bg-muted"
-                >
-                  <Check
-                    className={cn(
-                      "size-3 shrink-0",
-                      linkedHere ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                  <span className="min-w-0 flex-1 truncate">{doc.name}</span>
-                </button>
-              )
-            })
-          )}
-        </div>
-      ) : null}
-    </div>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="start"
+        aria-label="Link Paper docs"
+        className="max-h-64 w-64"
+      >
+        {docs.length === 0 ? (
+          <p className="px-2 py-3 text-xs text-muted-foreground">
+            No Paper docs yet.
+          </p>
+        ) : (
+          docs.map((doc) => {
+            const linkedHere = doc.applyCardId === cardId
+            return (
+              <DropdownMenuCheckboxItem
+                key={doc.id}
+                checked={linkedHere}
+                onCheckedChange={() =>
+                  onLink(doc.id, linkedHere ? null : cardId)
+                }
+              >
+                <span className="min-w-0 flex-1 truncate">{doc.name}</span>
+              </DropdownMenuCheckboxItem>
+            )
+          })
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 
@@ -332,57 +349,34 @@ function StageMenu({
   label: string
   onChange: (stage: StageId) => void
 }) {
-  const rootRef = useRef<HTMLDivElement>(null)
-  const [open, setOpen] = useState(false)
-
-  useEffect(() => {
-    if (!open) return
-    function onPointerDown(e: MouseEvent) {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener("mousedown", onPointerDown)
-    return () => document.removeEventListener("mousedown", onPointerDown)
-  }, [open])
-
   return (
-    <div ref={rootRef} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        aria-haspopup="menu"
-        aria-label={`Stage: ${label}`}
-        className="inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            aria-label={`Stage: ${label}`}
+            className="h-8 text-xs font-medium text-muted-foreground"
+          />
+        }
       >
         {label}
-        <ChevronDown className="size-3 opacity-60" />
-      </button>
-      {open ? (
-        <div
-          role="menu"
-          className="absolute top-full left-0 z-20 mt-1 min-w-[8.5rem] rounded-lg border border-border bg-popover p-1 shadow-lg"
-        >
-          {STAGES.map((stage) => (
-            <button
-              key={stage.id}
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                onChange(stage.id)
-                setOpen(false)
-              }}
-              className={cn(
-                "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors hover:bg-muted",
-                value === stage.id && "bg-muted font-medium"
-              )}
-            >
-              <span className={cn("size-1.5 rounded-full", stage.dot)} />
-              {stage.label}
-            </button>
-          ))}
-        </div>
-      ) : null}
-    </div>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="min-w-[8.5rem]">
+        {STAGES.map((stage) => (
+          <DropdownMenuItem
+            key={stage.id}
+            onClick={() => onChange(stage.id)}
+            className={cn(value === stage.id && "bg-muted font-medium")}
+          >
+            <span className={cn("size-1.5 rounded-full", stage.dot)} />
+            {stage.label}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 
@@ -396,26 +390,27 @@ function ToolbarIconButton({
 }: {
   label: string
   onClick?: () => void
-  children: ReactNode
+  children?: ReactNode
   active?: boolean
   className?: string
   disabled?: boolean
 }) {
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      size="icon-sm"
       aria-label={label}
       onClick={onClick}
       disabled={disabled}
       title={disabled ? "Coming soon" : undefined}
       className={cn(
-        "flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+        "text-muted-foreground",
         active && "bg-muted text-foreground",
-        disabled && "pointer-events-none opacity-50",
         className
       )}
     >
       {children}
-    </button>
+    </Button>
   )
 }

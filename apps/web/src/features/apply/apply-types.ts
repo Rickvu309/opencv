@@ -9,11 +9,11 @@ export type StageId = ApplyStage
 export type TrackKind = ApplyTrackKind
 
 export const STAGES: { id: StageId; label: string; dot: string }[] = [
-  { id: "inbox", label: "Inbox", dot: "bg-muted-foreground/40" },
-  { id: "prep", label: "Prep", dot: "bg-chart-3" },
-  { id: "sent", label: "Sent", dot: "bg-chart-2" },
-  { id: "live", label: "Live", dot: "bg-foreground/70" },
-  { id: "closed", label: "Closed", dot: "bg-muted-foreground/25" },
+  { id: "inbox", label: "Inbox", dot: "bg-chart-1" },
+  { id: "prep", label: "Prep", dot: "bg-chart-2" },
+  { id: "sent", label: "Sent", dot: "bg-chart-3" },
+  { id: "live", label: "Live", dot: "bg-chart-4" },
+  { id: "closed", label: "Closed", dot: "bg-chart-5" },
 ]
 
 export const APPLY_DRAG_TYPE = "application/x-openpath-apply-card"

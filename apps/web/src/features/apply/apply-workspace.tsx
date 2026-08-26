@@ -5,6 +5,11 @@
  */
 import { useMemo, useRef, useState } from "react"
 import { Button } from "@workspace/ui/components/button"
+import { ButtonGroup } from "@workspace/ui/components/button-group"
+import {
+  Empty,
+  EmptyDescription,
+} from "@workspace/ui/components/empty-state"
 import { Input } from "@workspace/ui/components/input"
 import { cn } from "@workspace/ui/lib/utils"
 import type { ApplyStage } from "@workspace/domain"
@@ -130,36 +135,41 @@ export function ApplyWorkspace() {
           <ComingSoon />
         </Button>
 
-        <div className="flex rounded-lg border border-border p-0.5">
-          <button
+        <ButtonGroup
+          aria-label="Apply view"
+          className="rounded-lg border border-border p-0.5"
+        >
+          <Button
             type="button"
+            size="xs"
+            variant="ghost"
             onClick={() => setView("board")}
             aria-pressed={view === "board"}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+            className={
               view === "board"
                 ? "bg-muted text-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            )}
+                : "text-muted-foreground"
+            }
           >
             <LayoutGrid className="size-3.5" />
             Board
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            size="xs"
+            variant="ghost"
             onClick={() => setView("calendar")}
             aria-pressed={view === "calendar"}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+            className={
               view === "calendar"
                 ? "bg-muted text-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            )}
+                : "text-muted-foreground"
+            }
           >
             <CalendarDays className="size-3.5" />
             Calendar
-          </button>
-        </div>
+          </Button>
+        </ButtonGroup>
 
         <Button
           type="button"
@@ -252,9 +262,11 @@ export function ApplyWorkspace() {
                         />
                       ))}
                       {col.length === 0 ? (
-                        <div className="rounded-xl border border-dashed border-border px-3 py-8 text-center text-xs text-muted-foreground">
-                          Drop a job here
-                        </div>
+                        <Empty className="rounded-xl border border-dashed border-border px-3 py-8">
+                          <EmptyDescription className="text-xs">
+                            Drop a job here
+                          </EmptyDescription>
+                        </Empty>
                       ) : null}
                     </div>
                   </div>
@@ -385,14 +397,14 @@ function BoardJobCard({
         ) : null}
       </div>
       <div className="mt-2 flex items-center gap-2 pl-5">
-        <span className="flex size-5 items-center justify-center rounded bg-muted text-[9px] font-bold tracking-tight text-muted-foreground">
+        <span className="flex size-5 items-center justify-center rounded bg-muted text-3xs font-bold tracking-tight text-muted-foreground">
           {companyShort(card.company)}
         </span>
         <span className="truncate text-xs text-muted-foreground">
           {card.company}
         </span>
       </div>
-      <div className="mt-2.5 flex items-center justify-between gap-2 pl-5 text-[11px] text-muted-foreground">
+      <div className="mt-2.5 flex items-center justify-between gap-2 pl-5 text-micro text-muted-foreground">
         <span className="inline-flex items-center gap-1 tabular-nums">
           <CalendarDays className="size-3 shrink-0 opacity-70" />
           {formatTrackDate(card.trackDate)}
