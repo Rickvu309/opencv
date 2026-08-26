@@ -16,4 +16,4 @@ The Coach becomes a real LLM agent. These are the load-bearing choices; supersed
 
 **Runtime port.** `CoachRuntime.streamTurn(...): AsyncIterable<CoachStreamPart>` is injected via `AppConfig.coach?` like `db` — the route owns auth, limits, persistence, and SSE translation, so fake-runtime tests exercise the real protocol and CI burns zero tokens. The eval harness (golden scenarios, deterministic honesty checks, cheap LLM judge) is a manual script, never CI: `pnpm --filter api eval` before merging persona or prompt changes.
 
-**Out of scope here:** Paper AI-panel unification, Regenerate, destructive-command confirm flow (the tool builder's `!destructive` filter is where it will slot in), one-click reversal from receipts, Vietnamese, multi-model routing.
+**Out of scope here:** Paper AI-panel unification, Regenerate, destructive-command confirm flow (the tool builder's `!destructive` filter is where it will slot in), one-click reversal from receipts, Vietnamese-first prompt / i18n (ADR-0008), multi-model routing.

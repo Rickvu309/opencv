@@ -240,7 +240,7 @@ Everything below **exists in the prototype** and is productionized by a later sp
 - **Coach spec:** real LLM, streaming, server Threads, Commands (ADR-0003).
 - **Later:** notification inbox, Connected apps OAuth, voice input, project tag in composer, file upload / RAG.
 
-Not in the prototype and still out: Search/job-board discovery, social post publishing, i18n, merging the prototype branch wholesale.
+Not in the prototype and still out: Search/job-board discovery, social post publishing, i18n (ADR-0008), merging the prototype branch wholesale.
 
 ---
 
