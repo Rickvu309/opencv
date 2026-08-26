@@ -112,11 +112,18 @@ export const threads = openpathApp.table(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     title: text("title").notNull(),
+    focusDocId: uuid("focus_doc_id").references(() => paperDocs.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamptz("created_at").notNull().defaultNow(),
     updatedAt: timestamptz("updated_at").notNull().defaultNow(),
   },
   (table) => [
     index("threads_user_id_updated_at_idx").on(table.userId, table.updatedAt),
+    index("threads_user_id_focus_doc_id_idx").on(
+      table.userId,
+      table.focusDocId
+    ),
   ]
 )
 

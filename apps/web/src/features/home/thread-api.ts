@@ -27,6 +27,8 @@ export const threadQueryKeys = {
   all: ["threads"] as const,
   list: () => ["threads", "list"] as const,
   detail: (id: string) => ["threads", "detail", id] as const,
+  byFocusDoc: (focusDocId: string) =>
+    ["threads", "focusDoc", focusDocId] as const,
 }
 
 type SuccessBody<T> = {
@@ -53,6 +55,16 @@ export async function listThreads(): Promise<ThreadListItem[]> {
 
 export async function getThread(id: string): Promise<ThreadDetail> {
   const body = await apiFetch<SuccessBody<ThreadDetail>>(`/api/threads/${id}`)
+  return unwrapData(body)
+}
+
+export async function getThreadByFocusDoc(
+  focusDocId: string
+): Promise<ThreadListItem | null> {
+  const params = new URLSearchParams({ focusDocId })
+  const body = await apiFetch<SuccessBody<ThreadListItem | null>>(
+    `/api/threads?${params.toString()}`
+  )
   return unwrapData(body)
 }
 
@@ -210,5 +222,6 @@ export function toListItem(detail: ThreadDetail): ThreadListItem {
     title: detail.title,
     createdAt: detail.createdAt,
     updatedAt: detail.updatedAt,
+    focusDocId: detail.focusDocId,
   }
 }

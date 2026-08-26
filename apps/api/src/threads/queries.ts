@@ -7,7 +7,7 @@ import {
   type ThreadMessagePart,
   type ThreadMessageStatus,
 } from "@workspace/domain"
-import { desc, eq } from "drizzle-orm"
+import { and, desc, eq } from "drizzle-orm"
 
 import { CommandError, type AppDatabase } from "../commands/registry.js"
 import { coachUsage, threadMessages, threads } from "../db/schema.js"
@@ -21,12 +21,14 @@ export function toThreadListItem(row: {
   title: string
   createdAt: Date
   updatedAt: Date
+  focusDocId?: string | null
 }): ThreadListItem {
   return {
     id: row.id,
     title: row.title,
     createdAt: iso(row.createdAt),
     updatedAt: iso(row.updatedAt),
+    focusDocId: row.focusDocId ?? null,
   }
 }
 
@@ -74,6 +76,21 @@ export async function listThreadsForUser(
     .orderBy(desc(threads.updatedAt), desc(threads.id))
 
   return rows.map(toThreadListItem)
+}
+
+export async function getLatestThreadForFocusDoc(
+  db: AppDatabase,
+  userId: string,
+  focusDocId: string
+): Promise<ThreadListItem | null> {
+  const [row] = await db
+    .select()
+    .from(threads)
+    .where(and(eq(threads.userId, userId), eq(threads.focusDocId, focusDocId)))
+    .orderBy(desc(threads.updatedAt), desc(threads.id))
+    .limit(1)
+
+  return row ? toThreadListItem(row) : null
 }
 
 export async function getOwnedThread(

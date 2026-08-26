@@ -19,6 +19,7 @@ export const FIXTURE_THREADS: ThreadDetail[] = [
     title: "CV vs internship first",
     createdAt: iso(20),
     updatedAt: iso(25),
+    focusDocId: null,
     messages: [
       message(
         "11111111-1111-4111-8111-111111111101",
@@ -45,6 +46,7 @@ export const FIXTURE_THREADS: ThreadDetail[] = [
     title: "Checkout study → Proof",
     createdAt: iso(19),
     updatedAt: iso(24),
+    focusDocId: null,
     messages: [
       message(
         "22222222-2222-4222-8222-222222222201",
@@ -65,6 +67,7 @@ export const FIXTURE_THREADS: ThreadDetail[] = [
     title: "Is this role a fit?",
     createdAt: iso(18),
     updatedAt: iso(23),
+    focusDocId: null,
     messages: [
       message(
         "33333333-3333-4333-8333-333333333301",
@@ -85,6 +88,7 @@ export const FIXTURE_THREADS: ThreadDetail[] = [
     title: "What should I do this week?",
     createdAt: iso(17),
     updatedAt: iso(22),
+    focusDocId: null,
     messages: [
       message(
         "44444444-4444-4444-8444-444444444401",
@@ -105,6 +109,7 @@ export const FIXTURE_THREADS: ThreadDetail[] = [
     title: "Talking about my internship",
     createdAt: iso(16),
     updatedAt: iso(21),
+    focusDocId: null,
     messages: [
       message(
         "55555555-5555-4555-8555-555555555501",

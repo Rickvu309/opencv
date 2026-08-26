@@ -15,6 +15,7 @@ import { useCoachMode } from "@/features/home/use-coach-mode.ts"
 import {
   createThread,
   getThread,
+  getThreadByFocusDoc,
   rateCoachMessage,
   reverseCoachReceipt,
   streamCoachRegenerate,
@@ -40,25 +41,9 @@ type SendError = {
   local: boolean
 }
 
-export function paperCoachThreadStorageKey(docId: string) {
-  return `openpath:paper-coach-thread:${docId}`
-}
-
-export function readPaperCoachThreadId(docId: string): string | null {
-  if (typeof sessionStorage === "undefined") return null
-  return sessionStorage.getItem(paperCoachThreadStorageKey(docId))
-}
-
-export function writePaperCoachThreadId(docId: string, threadId: string) {
-  if (typeof sessionStorage === "undefined") return
-  sessionStorage.setItem(paperCoachThreadStorageKey(docId), threadId)
-}
-
 export function usePaperCoach(docId: string, docName: string) {
   const queryClient = useQueryClient()
-  const [threadId, setThreadId] = useState<string | null>(() =>
-    readPaperCoachThreadId(docId)
-  )
+  const [createdThreadId, setCreatedThreadId] = useState<string | null>(null)
   const [optimisticMessages, setOptimisticMessages] = useState<
     HomeMessage[] | null
   >(null)
@@ -73,12 +58,20 @@ export function usePaperCoach(docId: string, docName: string) {
     abortRef.current?.abort()
     abortRef.current = null
     sendGeneration.current += 1
-    setThreadId(readPaperCoachThreadId(docId))
+    setCreatedThreadId(null)
     setOptimisticMessages(null)
     setSendError(null)
     setRegenerateError(null)
     setPhase("idle")
   }, [docId])
+
+  const focusedThreadQuery = useQuery({
+    queryKey: threadQueryKeys.byFocusDoc(docId),
+    queryFn: () => getThreadByFocusDoc(docId),
+    staleTime: Infinity,
+  })
+
+  const threadId = createdThreadId ?? focusedThreadQuery.data?.id ?? null
 
   const detailQuery = useQuery({
     queryKey: threadQueryKeys.detail(threadId ?? ""),
@@ -185,6 +178,7 @@ export function usePaperCoach(docId: string, docName: string) {
         title: prev?.title ?? docName,
         createdAt: prev?.createdAt ?? now,
         updatedAt: now,
+        focusDocId: prev?.focusDocId ?? docId,
         messages: [
           ...(hasUser || !userRow ? existing : [...existing, userRow]),
           ...(hasText ? [] : [coachRow]),
@@ -267,16 +261,38 @@ export function usePaperCoach(docId: string, docName: string) {
 
         try {
           if (!id) {
-            const created = await createThread({ title: docName })
-            queryClient.setQueryData(
-              threadQueryKeys.list(),
-              (prev: ThreadListItem[] | undefined) =>
-                upsertThreadListItem(prev ?? [], created)
-            )
+            const existing = await getThreadByFocusDoc(docId)
             if (generation !== sendGeneration.current) return
-            id = created.id
-            writePaperCoachThreadId(docId, id)
-            setThreadId(id)
+            if (existing) {
+              queryClient.setQueryData(
+                threadQueryKeys.byFocusDoc(docId),
+                existing
+              )
+              queryClient.setQueryData(
+                threadQueryKeys.list(),
+                (prev: ThreadListItem[] | undefined) =>
+                  upsertThreadListItem(prev ?? [], existing)
+              )
+              id = existing.id
+              setCreatedThreadId(id)
+            } else {
+              const created = await createThread({
+                title: docName,
+                focusDocId: docId,
+              })
+              queryClient.setQueryData(
+                threadQueryKeys.list(),
+                (prev: ThreadListItem[] | undefined) =>
+                  upsertThreadListItem(prev ?? [], created)
+              )
+              queryClient.setQueryData(
+                threadQueryKeys.byFocusDoc(docId),
+                created
+              )
+              if (generation !== sendGeneration.current) return
+              id = created.id
+              setCreatedThreadId(id)
+            }
           }
 
           await streamCoachTurn(

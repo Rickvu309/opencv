@@ -1,11 +1,16 @@
 import { describe, expect, it } from "vitest"
+import { readFileSync } from "node:fs"
+import path from "node:path"
+import { fileURLToPath } from "node:url"
 
-import { paperCoachThreadStorageKey } from "./use-paper-coach.ts"
+const here = path.dirname(fileURLToPath(import.meta.url))
 
-describe("Paper Coach thread key", () => {
-  it("scopes the Paper Thread to the open document", () => {
-    expect(
-      paperCoachThreadStorageKey("11111111-1111-7111-8111-111111111111")
-    ).toBe("openpath:paper-coach-thread:11111111-1111-7111-8111-111111111111")
+describe("Paper Coach thread binding", () => {
+  it("does not keep a sessionStorage doc-to-thread map", () => {
+    const src = readFileSync(path.join(here, "use-paper-coach.ts"), "utf8")
+    expect(src).not.toMatch(/sessionStorage/)
+    expect(src).not.toMatch(/paperCoachThreadStorageKey/)
+    expect(src).toMatch(/getThreadByFocusDoc/)
+    expect(src).toMatch(/focusDocId: docId/)
   })
 })
