@@ -414,6 +414,51 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
     ).toHaveLength(1)
   })
 
+  it("confirms before deleting a Thread and does not run on dismiss", async () => {
+    renderApp()
+    await expectHomeIdle()
+    const history = await expectHistoryTitles()
+    const doomed = FIXTURE_THREADS[0]!
+
+    const row = within(history)
+      .getByRole("button", { name: doomed.title })
+      .closest("div")
+    expect(row).toBeTruthy()
+    fireEvent.click(within(row as HTMLElement).getByRole("button", { name: "Delete Thread" }))
+
+    const confirm = await screen.findByRole("dialog", { name: "Delete Thread" })
+    expect(confirm).toHaveTextContent(doomed.title)
+    fireEvent.click(within(confirm).getByRole("button", { name: "Cancel" }))
+    expect(
+      screen.queryByRole("dialog", { name: "Delete Thread" })
+    ).not.toBeInTheDocument()
+    expect(
+      within(history).getByRole("button", { name: doomed.title })
+    ).toBeInTheDocument()
+
+    fireEvent.click(within(history).getByRole("button", { name: doomed.title }))
+    expect(await screen.findByRole("log", { name: "Thread" })).toBeInTheDocument()
+    const headerDelete = screen
+      .getAllByRole("button", { name: "Delete Thread" })
+      .find((button) => !history.contains(button))
+    expect(headerDelete).toBeTruthy()
+    fireEvent.click(headerDelete!)
+    const confirmAgain = await screen.findByRole("dialog", {
+      name: "Delete Thread",
+    })
+    fireEvent.click(within(confirmAgain).getByRole("button", { name: "Delete" }))
+
+    await waitFor(() => {
+      expect(
+        within(screen.getByRole("navigation", { name: "History" })).queryByRole(
+          "button",
+          { name: doomed.title }
+        )
+      ).not.toBeInTheDocument()
+    })
+    await expectHomeIdle()
+  })
+
   it("lists server Threads, restores one, and returns to idle on new Thread", async () => {
     renderApp()
     await expectHomeIdle()

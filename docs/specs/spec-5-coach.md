@@ -16,7 +16,7 @@ The product's differentiator does not exist yet. Home says the Coach can't act �
 5. **The User stays in control.** A Stop button ends a turn; failed sends surface an error with Retry; reversal notes on receipts say how to undo; a daily turn cap bounds cost.
 6. **We can tell if it's good.** Thumbs on coach messages feed a usage table; a manual eval harness (golden scenarios, honesty checks, LLM judge) gates persona changes without burning CI tokens.
 
-**Not in this spec:** destructive-command confirmation flow, one-click undo, Vietnamese-first Coach / i18n (settled English-first in ADR-0008 / QVE-150), the in-app feedback channel (next spec — thumbs data lands where it will read). Multi-model routing (Free / Light / Max) landed in [QVE-155](https://linear.app/quanvm/issue/QVE-155) / ADR-0009. Regenerating the latest Coach turn landed in [QVE-147](https://linear.app/quanvm/issue/QVE-147). Paper AI-panel unification landed in [QVE-146](https://linear.app/quanvm/issue/QVE-146).
+**Not in this spec:** one-click undo, Vietnamese-first Coach / i18n (settled English-first in ADR-0008 / QVE-150), the in-app feedback channel (next spec — thumbs data lands where it will read). Multi-model routing (Free / Light / Max) landed in [QVE-155](https://linear.app/quanvm/issue/QVE-155) / ADR-0009. Regenerating the latest Coach turn landed in [QVE-147](https://linear.app/quanvm/issue/QVE-147). Paper AI-panel unification landed in [QVE-146](https://linear.app/quanvm/issue/QVE-146). User-fired destructive confirm landed in [QVE-148](https://linear.app/quanvm/issue/QVE-148); Coach-paused destructive tool calls stay out (temporary `!destructive` filter).
 
 ## User Stories
 
@@ -79,7 +79,7 @@ Work this spec deliberately deferred, now ticketed:
 
 - [QVE-146](https://linear.app/quanvm/issue/QVE-146) — Paper AI panel unification (landed)
 - [QVE-147](https://linear.app/quanvm/issue/QVE-147) — Coach message Regenerate
-- [QVE-148](https://linear.app/quanvm/issue/QVE-148) — Destructive Command confirm flow
+- [QVE-148](https://linear.app/quanvm/issue/QVE-148) — Destructive Command confirm flow (User confirm live; Coach stays excluded by the temporary `!destructive` filter)
 - [QVE-149](https://linear.app/quanvm/issue/QVE-149) — One-click reversal from Coach receipts
 - [QVE-150](https://linear.app/quanvm/issue/QVE-150) — Vietnamese Coach + product copy (`ready-for-human`)
 - [QVE-151](https://linear.app/quanvm/issue/QVE-151) — Coach eval + tune Free/Light/Max after mode routing

@@ -7,7 +7,8 @@ import {
 import { useThreadStore } from "@/features/home/use-thread-store.ts"
 
 export function useThreadList(): ThreadListPort {
-  const { threads, activeThreadId, openThread, newThread } = useThreadStore()
+  const { threads, activeThreadId, openThread, newThread, deleteThread } =
+    useThreadStore()
 
   return useMemo(
     () => ({
@@ -15,7 +16,10 @@ export function useThreadList(): ThreadListPort {
       activeThreadId,
       openThread,
       newThread,
+      deleteThread: (id: string) => {
+        void deleteThread(id)
+      },
     }),
-    [threads, activeThreadId, openThread, newThread]
+    [threads, activeThreadId, openThread, newThread, deleteThread]
   )
 }

@@ -1,5 +1,7 @@
 import {
   COACH_VOICE_COMMAND,
+  ERROR_CODES,
+  errorEnvelope,
   type CommandEnvelope,
 } from "@workspace/domain"
 
@@ -30,12 +32,50 @@ export function commandToToolName(commandName: string) {
   return commandName.replaceAll(".", "_")
 }
 
+/**
+ * Mutation Commands the Coach may auto-run.
+ *
+ * Temporary (QVE-148 / ADR-0007): `!destructive` stays until a Coach tool
+ * call can pause for User confirmation instead of executing. User-fired
+ * deletes already confirm in the UI. Do not remove this filter without
+ * that confirm path — `executeCoachMutation` also refuses destructive
+ * Commands so a leaked tool still cannot run them.
+ */
 export function isCoachMutationCommand(command: RegisteredCommand) {
   return (
     command.coachAllowed &&
     !command.destructive &&
     command.name !== COACH_VOICE_COMMAND
   )
+}
+
+export async function executeCoachMutation({
+  command,
+  input,
+  db,
+  userId,
+  registry,
+}: {
+  command: RegisteredCommand
+  input: unknown
+  db: AppDatabase
+  userId: string
+  registry: CommandRegistry
+}): Promise<CommandEnvelope> {
+  if (command.destructive) {
+    return errorEnvelope(
+      ERROR_CODES.COACH_NOT_ALLOWED,
+      "This Command cannot be run by the Coach"
+    )
+  }
+
+  const result = await registry.execute({
+    name: command.name,
+    input,
+    actor: { type: "coach", userId },
+    db,
+  })
+  return result.body
 }
 
 function mutationToolsFromRegistry(
@@ -51,15 +91,14 @@ function mutationToolsFromRegistry(
     tools[commandToToolName(command.name)] = {
       description: command.description,
       inputSchema: command.input,
-      execute: async (input) => {
-        const result = await registry.execute({
-          name: command.name,
+      execute: (input) =>
+        executeCoachMutation({
+          command,
           input,
-          actor: { type: "coach", userId },
           db,
-        })
-        return result.body
-      },
+          userId,
+          registry,
+        }),
     }
   }
 

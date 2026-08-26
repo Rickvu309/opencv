@@ -22,8 +22,12 @@ export function HomeDashboard() {
     regenerate,
     rate,
     newThread,
+    deleteThread,
     activeThreadId,
+    threads,
   } = useThreadStore()
+  const activeTitle =
+    threads.find((thread) => thread.id === activeThreadId)?.title ?? null
   const [draft, setDraft] = useState("")
   const turnActive = phase !== "idle"
   const started = messages.length > 0 || turnActive || activeThreadId != null
@@ -37,7 +41,17 @@ export function HomeDashboard() {
   if (started) {
     return (
       <div className="flex h-full min-h-0 flex-1 flex-col">
-        <ThreadTopBar onNewThread={newThread} />
+        <ThreadTopBar
+          onNewThread={newThread}
+          threadTitle={activeTitle}
+          onDeleteThread={
+            activeThreadId
+              ? () => {
+                  void deleteThread(activeThreadId)
+                }
+              : undefined
+          }
+        />
         <div className="min-h-0 flex-1 overflow-auto">
           <ThreadView
             messages={messages}

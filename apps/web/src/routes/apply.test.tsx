@@ -255,6 +255,40 @@ describe("Apply workspace", () => {
     ).toBeEnabled()
   })
 
+  it("confirms before deleting a job and does not run on dismiss", async () => {
+    renderApply()
+    await expectApplyLive()
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Associate PM intern/ })
+    )
+    const panel = await screen.findByRole("complementary", {
+      name: "Job detail",
+    })
+    fireEvent.click(within(panel).getByRole("button", { name: "Delete job" }))
+
+    const confirm = await screen.findByRole("dialog", { name: "Delete job" })
+    expect(confirm).toHaveTextContent("Associate PM intern at Local startup")
+    fireEvent.click(within(confirm).getByRole("button", { name: "Cancel" }))
+    expect(screen.queryByRole("dialog", { name: "Delete job" })).not.toBeInTheDocument()
+    expect(screen.getByText("Associate PM intern")).toBeInTheDocument()
+    expect(
+      screen.getByRole("complementary", { name: "Job detail" })
+    ).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete job" }))
+    const confirmAgain = await screen.findByRole("dialog", { name: "Delete job" })
+    fireEvent.click(within(confirmAgain).getByRole("button", { name: "Delete" }))
+
+    await waitFor(() => {
+      expect(screen.queryByText("Associate PM intern")).not.toBeInTheDocument()
+    })
+    expect(
+      screen.queryByRole("complementary", { name: "Job detail" })
+    ).not.toBeInTheDocument()
+    expect(screen.getByText("Product intern")).toBeInTheDocument()
+  })
+
   it("creates a job and links a Paper doc from job detail", async () => {
     renderApply()
     await expectApplyLive()

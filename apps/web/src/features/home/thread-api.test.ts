@@ -9,6 +9,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { apiBaseUrl } from "@/lib/api-url.ts"
 import {
   createThread,
+  deleteThread,
   getThread,
   listThreads,
   postThreadMessage,
@@ -92,6 +93,23 @@ describe("thread API client", () => {
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
     expect(init.method).toBe("POST")
     expect(init.body).toBe(JSON.stringify({ title: "Help me plan the week" }))
+  })
+
+  it("deletes a Thread through the Command registry", async () => {
+    const deleted = { id: "11111111-1111-4111-8111-111111111111" }
+    const fetchMock = vi.fn().mockResolvedValue(envelope(deleted))
+    vi.stubGlobal("fetch", fetchMock)
+
+    await expect(deleteThread({ threadId: deleted.id })).resolves.toEqual(
+      deleted
+    )
+
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
+      `${apiBaseUrl}/api/commands/${THREAD_COMMANDS.delete}`
+    )
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(init.method).toBe("POST")
+    expect(init.body).toBe(JSON.stringify({ threadId: deleted.id }))
   })
 
   it("posts a message through the Command registry", async () => {
