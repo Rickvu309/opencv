@@ -14,13 +14,11 @@ import {
   type DataMessagePart,
 } from "@assistant-ui/react"
 import {
-  ArrowUp,
   Check,
   Copy,
   Link2,
   MoreHorizontal,
   RefreshCw,
-  Square,
   ThumbsDown,
   ThumbsUp,
   X,
@@ -41,10 +39,8 @@ import {
 import { RichReceiptBody } from "@/features/home/rich-receipts.tsx"
 import { STREAMING_COACH_ID, type HomeMessage } from "@/features/home/threads.ts"
 
-import {
-  originalHomeMessage,
-  RECEIPT_PART_NAME,
-} from "./coach-runtime.ts"
+import { RECEIPT_PART_NAME } from "./coach-runtime.ts"
+import { CoachDock } from "./coach-dock.tsx"
 import {
   CoachWorking,
   RECEIPT_ENTER_STAGGER_MS,
@@ -57,8 +53,13 @@ const DISABLED_ACTIONS = [
 ] as const
 
 type CoachThreadActions = {
+  messages: readonly HomeMessage[]
   waiting: boolean
   error: string | null
+  turnActive: boolean
+  placeholder: string
+  send: (text: string) => boolean
+  stop: () => void
   onRetry?: () => void
   onRate?: (messageId: string, rating: CoachUsageRating) => void
   onRegenerate?: () => void
@@ -73,6 +74,12 @@ function useThreadActions() {
     throw new Error("CoachThread actions are missing")
   }
   return actions
+}
+
+function useBoundHomeMessage() {
+  const { messages } = useThreadActions()
+  const id = useAuiState((state) => state.optional.message?.id)
+  return messages.find((message) => message.id === id)
 }
 
 function CoachReceipt({
@@ -191,7 +198,7 @@ function CoachReceipt({
 
 function ReceiptPart({ data }: DataMessagePart<ThreadToolPart>) {
   const { waiting, onUndo } = useThreadActions()
-  const message = useAuiState((state) => originalHomeMessage(state.message))
+  const message = useBoundHomeMessage()
   const [undoneFlash, setUndoneFlash] = useState(false)
 
   useEffect(() => {
@@ -200,16 +207,18 @@ function ReceiptPart({ data }: DataMessagePart<ThreadToolPart>) {
     return () => window.clearTimeout(timer)
   }, [undoneFlash])
 
-  if (!message) return null
-
-  const stagger = (message.parts ?? []).filter((part) => part.type === "tool")
+  const stagger = (message?.parts ?? []).filter((part) => part.type === "tool")
     .findIndex((part) => part === data || part.toolCallId === data.toolCallId)
-  const lastTool = [...(message.parts ?? [])]
+  const lastTool = [...(message?.parts ?? [])]
     .reverse()
     .find((part) => part.type === "tool")
-  const streaming = message.id === STREAMING_COACH_ID
+  const streaming = message?.id === STREAMING_COACH_ID
   const canUndo =
-    !waiting && !streaming && Boolean(onUndo) && receiptShowsUndo(data)
+    Boolean(message) &&
+    !waiting &&
+    !streaming &&
+    Boolean(onUndo) &&
+    receiptShowsUndo(data)
 
   return (
     <CoachReceipt
@@ -225,7 +234,7 @@ function ReceiptPart({ data }: DataMessagePart<ThreadToolPart>) {
         undoneFlash && lastTool?.toolCallId === data.toolCallId
       }
       onUndo={
-        data.toolCallId && onUndo
+        message && data.toolCallId && onUndo
           ? async () => {
               await onUndo(message.id, data.toolCallId!)
               setUndoneFlash(true)
@@ -236,16 +245,11 @@ function ReceiptPart({ data }: DataMessagePart<ThreadToolPart>) {
   )
 }
 
-function MessageActions({
-  message,
-}: {
-  message: HomeMessage
-}) {
+function MessageActions({ message }: { message: HomeMessage }) {
   const { waiting, onRate, onRegenerate } = useThreadActions()
-  const isLast = useAuiState((state) => {
-    const last = state.thread.messages.at(-1)
-    return last?.id === message.id
-  })
+  const isLast = useAuiState(
+    (state) => state.optional.message?.isLast === true
+  )
   const [copied, setCopied] = useState(false)
   const rateable = message.rating !== undefined
   const canRegenerate = !waiting && Boolean(onRegenerate) && isLast
@@ -343,18 +347,17 @@ function MessageActions({
 
 function UserMessage() {
   const { onRetry } = useThreadActions()
-  const message = useAuiState((state) => originalHomeMessage(state.message))
-  if (!message) return null
+  const message = useBoundHomeMessage()
 
   return (
     <MessagePrimitive.Root className="flex justify-end">
       <div className="max-w-[min(85%,28rem)] space-y-2">
         <div
-          aria-invalid={message.failed || undefined}
-          data-failed={message.failed ? "true" : undefined}
+          aria-invalid={message?.failed || undefined}
+          data-failed={message?.failed ? "true" : undefined}
           className={cn(
             "rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap",
-            message.failed
+            message?.failed
               ? "border border-destructive/40 bg-destructive/5"
               : "bg-muted"
           )}
@@ -365,7 +368,7 @@ function UserMessage() {
             }}
           />
         </div>
-        {message.failed && message.error ? (
+        {message?.failed && message.error ? (
           <div className="space-y-2 text-right">
             <ErrorBanner variant="inline">{message.error}</ErrorBanner>
             {onRetry ? (
@@ -381,7 +384,7 @@ function UserMessage() {
 }
 
 function AssistantMessage() {
-  const message = useAuiState((state) => originalHomeMessage(state.message))
+  const message = useBoundHomeMessage()
   const streaming = message?.id === STREAMING_COACH_ID
 
   return (
@@ -412,73 +415,45 @@ function AssistantMessage() {
   )
 }
 
-function CoachComposer({ placeholder }: { placeholder: string }) {
-  const canSend = useAuiState(
-    (state) => state.composer.text.trim().length > 0
-  )
-  const running = useAuiState((state) => state.thread.isRunning)
+function CoachComposer() {
+  const { placeholder, send, stop, turnActive } = useThreadActions()
+  const [draft, setDraft] = useState("")
 
   return (
     <ComposerPrimitive.Root className="relative w-full">
-      <div className="flex min-h-[3.25rem] items-center gap-1 rounded-full border border-border/80 bg-background px-2.5 py-2 shadow-sm focus-within:border-border">
-        <ComposerPrimitive.Input
-          placeholder={placeholder}
-          aria-label="Message Coach"
-          cancelOnEscape={false}
-          addAttachmentOnPaste={false}
-          className="min-h-6 min-w-0 flex-1 resize-none border-0 bg-transparent px-0 py-0 text-base leading-6 shadow-none outline-none focus-visible:ring-0"
-          rows={1}
-        />
-        {running ? (
-          <ComposerPrimitive.Cancel
-            aria-label="Stop"
-            className="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-transparent bg-secondary text-secondary-foreground"
-          >
-            <Square className="size-3 fill-current" />
-          </ComposerPrimitive.Cancel>
-        ) : (
-          <ComposerPrimitive.Send
-            aria-label="Send"
-            disabled={!canSend}
-            className={cn(
-              "inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-transparent",
-              canSend
-                ? "bg-primary text-primary-foreground"
-                : "bg-secondary text-secondary-foreground opacity-50"
-            )}
-          >
-            <ArrowUp className="size-4" />
-          </ComposerPrimitive.Send>
-        )}
-      </div>
+      <CoachDock
+        draft={draft}
+        setDraft={setDraft}
+        onSend={() => {
+          if (send(draft)) setDraft("")
+        }}
+        onStop={stop}
+        turnActive={turnActive}
+        placeholder={placeholder}
+        menuPlacement="above"
+        showModePicker={false}
+      />
     </ComposerPrimitive.Root>
   )
 }
 
 type Props = {
+  messages: readonly HomeMessage[]
   empty?: ReactNode
   waiting?: boolean
+  turnActive?: boolean
   error?: string | null
   placeholder?: string
+  send: (text: string) => boolean
+  stop: () => void
   onRetry?: () => void
   onRate?: (messageId: string, rating: CoachUsageRating) => void
   onRegenerate?: () => void
   onUndo?: (messageId: string, toolCallId: string) => Promise<void>
 }
 
-function ThreadChrome({
-  empty,
-  waiting,
-  error,
-  placeholder,
-  onRetry,
-}: {
-  empty?: ReactNode
-  waiting: boolean
-  error: string | null
-  placeholder: string
-  onRetry?: () => void
-}) {
+function ThreadChrome({ empty }: { empty?: ReactNode }) {
+  const { error, onRetry } = useThreadActions()
   const isEmpty = useAuiState((state) => state.thread.isEmpty)
 
   return (
@@ -488,42 +463,40 @@ function ThreadChrome({
       aria-live={isEmpty ? undefined : "polite"}
       className="flex min-h-0 flex-1 flex-col"
     >
-        <ThreadPrimitive.Viewport className="min-h-0 flex-1 overflow-auto">
-          <AuiIf condition={(state) => state.thread.isEmpty}>{empty}</AuiIf>
-          <ThreadPrimitive.Messages>
-            {({ message }) =>
-              message.role === "user" ? <UserMessage /> : <AssistantMessage />
-            }
-          </ThreadPrimitive.Messages>
-          {error ? (
-            <div className="space-y-2">
-              <ErrorBanner variant="inline">{error}</ErrorBanner>
-              {onRetry ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={onRetry}
-                >
-                  Retry
-                </Button>
-              ) : null}
-            </div>
-          ) : null}
-          {waiting ? <CoachWorking /> : null}
-        </ThreadPrimitive.Viewport>
-        <ThreadPrimitive.ViewportFooter>
-          <CoachComposer placeholder={placeholder} />
-        </ThreadPrimitive.ViewportFooter>
-      </ThreadPrimitive.Root>
+      <ThreadPrimitive.Viewport className="min-h-0 flex-1 overflow-auto">
+        <AuiIf condition={(state) => state.thread.isEmpty}>{empty}</AuiIf>
+        <ThreadPrimitive.Messages>
+          {({ message }) =>
+            message.role === "user" ? <UserMessage /> : <AssistantMessage />
+          }
+        </ThreadPrimitive.Messages>
+        {error ? (
+          <div className="space-y-2">
+            <ErrorBanner variant="inline">{error}</ErrorBanner>
+            {onRetry ? (
+              <Button type="button" variant="outline" size="sm" onClick={onRetry}>
+                Retry
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
+      </ThreadPrimitive.Viewport>
+      <ThreadPrimitive.ViewportFooter>
+        <CoachComposer />
+      </ThreadPrimitive.ViewportFooter>
+    </ThreadPrimitive.Root>
   )
 }
 
 export function CoachThread({
+  messages,
   empty,
   waiting = false,
+  turnActive = false,
   error = null,
   placeholder = "Ask about this document…",
+  send,
+  stop,
   onRetry,
   onRate,
   onRegenerate,
@@ -531,15 +504,21 @@ export function CoachThread({
 }: Props) {
   return (
     <CoachThreadActionsContext.Provider
-      value={{ waiting, error, onRetry, onRate, onRegenerate, onUndo }}
+      value={{
+        messages,
+        waiting,
+        error,
+        turnActive,
+        placeholder,
+        send,
+        stop,
+        onRetry,
+        onRate,
+        onRegenerate,
+        onUndo,
+      }}
     >
-      <ThreadChrome
-        empty={empty}
-        waiting={waiting}
-        error={error}
-        placeholder={placeholder}
-        onRetry={onRetry}
-      />
+      <ThreadChrome empty={empty} />
     </CoachThreadActionsContext.Provider>
   )
 }

@@ -944,17 +944,18 @@ describe("Paper editors", () => {
       updatedAt: "2026-08-26T18:00:00.000Z",
     })
 
-    fireEvent.change(messageCoach(panel), {
+    const dialog = await openCoach()
+    fireEvent.change(messageCoach(dialog), {
       target: { value: "Make my summary one sentence" },
     })
-    fireEvent.click(within(panel).getByRole("button", { name: "Send" }))
+    fireEvent.click(within(dialog).getByRole("button", { name: "Send" }))
 
     expect(
-      await within(panel).findByText("I shortened the summary to one sentence.")
+      await within(dialog).findByText("I shortened the summary to one sentence.")
     ).toBeInTheDocument()
-    expect(within(panel).getByText("Updated CV PM track CV")).toBeInTheDocument()
+    expect(within(dialog).getByText("Updated CV PM track CV")).toBeInTheDocument()
     expect(
-      within(panel).getByRole("status", { name: "Command succeeded" })
+      within(dialog).getByRole("status", { name: "Command succeeded" })
     ).toBeInTheDocument()
     await waitFor(() => {
       expect(
@@ -986,20 +987,21 @@ describe("Paper editors", () => {
       name: "Summary",
     }).textContent
 
-    fireEvent.change(messageCoach(panel), {
+    const dialog = await openCoach()
+    fireEvent.change(messageCoach(dialog), {
       target: { value: "Make my summary one sentence" },
     })
-    fireEvent.click(within(panel).getByRole("button", { name: "Send" }))
+    fireEvent.click(within(dialog).getByRole("button", { name: "Send" }))
 
     expect(
-      await within(panel).findByText(
+      await within(dialog).findByText(
         "Couldn't update PM track CV. Try sending the rewrite again."
       )
     ).toBeInTheDocument()
     expect(
-      within(panel).getByRole("status", { name: "Command failed" })
+      within(dialog).getByRole("status", { name: "Command failed" })
     ).toHaveTextContent("Paper doc not found")
-    expect(panel).not.toHaveTextContent(/paste/i)
+    expect(dialog).not.toHaveTextContent(/paste/i)
     expect(within(panel).getByRole("textbox", { name: "Summary" })).toHaveTextContent(
       before ?? ""
     )

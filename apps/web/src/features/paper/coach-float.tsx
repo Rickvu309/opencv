@@ -260,8 +260,12 @@ export function CoachFloat({ docId, docName, variant, selection }: Props) {
         <div className="flex min-h-0 flex-1 flex-col gap-2 px-3 pt-2 pb-3">
           <AssistantRuntimeProvider runtime={runtime}>
             <CoachThread
+              messages={messages}
               waiting={phase === "waiting"}
+              turnActive={turnActive}
               error={error}
+              send={sendWithSelection}
+              stop={stop}
               onRetry={retry}
               onRate={rate}
               onRegenerate={phase === "idle" ? regenerate : undefined}

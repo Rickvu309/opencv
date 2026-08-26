@@ -52,14 +52,18 @@ export function toAssistantUiMessage(message: HomeMessage): ThreadMessageLike {
     id: message.id,
     role,
     content,
-    status:
-      message.id === STREAMING_COACH_ID
-        ? { type: "running" }
-        : message.failed
-          ? { type: "incomplete", reason: "error", error: message.error }
-          : { type: "complete", reason: "stop" },
+    ...(role === "assistant"
+      ? {
+          status:
+            message.id === STREAMING_COACH_ID
+              ? { type: "running" as const }
+              : { type: "complete" as const, reason: "stop" as const },
+        }
+      : {}),
     metadata: {
-      ...(submittedFeedback ? { submittedFeedback } : {}),
+      ...(role === "assistant" && submittedFeedback
+        ? { submittedFeedback }
+        : {}),
       custom: {
         workedMs: message.workedMs,
         failed: message.failed,

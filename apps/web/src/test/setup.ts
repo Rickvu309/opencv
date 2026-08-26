@@ -23,6 +23,13 @@ if (
 }
 
 if (
+  typeof Element !== "undefined" &&
+  typeof Element.prototype.scrollTo !== "function"
+) {
+  Element.prototype.scrollTo = function scrollTo() {}
+}
+
+if (
   typeof window !== "undefined" &&
   typeof window.ResizeObserver !== "function"
 ) {

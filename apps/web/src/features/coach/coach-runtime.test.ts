@@ -77,9 +77,9 @@ describe("assistant-ui ExternalStoreRuntime spike", () => {
       error: "The Coach is unavailable right now",
     })
     expect(failed.role).toBe("user")
-    expect(failed.status).toEqual({
-      type: "incomplete",
-      reason: "error",
+    expect(failed.status).toBeUndefined()
+    expect(failed.metadata?.custom).toMatchObject({
+      failed: true,
       error: "The Coach is unavailable right now",
     })
   })
