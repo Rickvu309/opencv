@@ -8,11 +8,7 @@ import {
   DialogTitle,
 } from "@workspace/ui/components/dialog"
 
-export function destructiveConfirmDescription(name: string | null) {
-  return name
-    ? `Delete “${name}”? This cannot be undone.`
-    : "This cannot be undone."
-}
+import { destructiveConfirmDescription } from "@/features/commands/destructive-confirm-copy.ts"
 
 type Props = {
   open: boolean

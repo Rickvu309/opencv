@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { destructiveConfirmDescription } from "@/features/commands/destructive-command-dialog.tsx"
+import { destructiveConfirmDescription } from "@/features/commands/destructive-confirm-copy.ts"
 
 describe("destructive confirm copy", () => {
   it("names the target and says the Command cannot be undone", () => {
