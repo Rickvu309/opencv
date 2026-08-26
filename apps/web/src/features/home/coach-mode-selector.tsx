@@ -1,4 +1,3 @@
-import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 import type { CoachMode } from "@workspace/domain"
@@ -6,31 +5,21 @@ import type { CoachMode } from "@workspace/domain"
 import {
   COACH_MODE_OPTIONS,
   coachModeHelper,
-  coachModeLabel,
 } from "@/features/home/coach-mode.ts"
 
 type CoachModeSelectorProps = {
   mode: CoachMode
   onModeChange: (mode: CoachMode) => void
   showHelper?: boolean
-  showPill?: boolean
-  compact?: boolean
 }
 
 export function CoachModeSelector({
   mode,
   onModeChange,
   showHelper = true,
-  showPill = false,
-  compact = false,
 }: CoachModeSelectorProps) {
   return (
-    <div className={cn("space-y-1.5", compact && "space-y-1")}>
-      {showPill ? (
-        <Badge variant="outline" className="text-micro font-medium">
-          {coachModeLabel(mode)}
-        </Badge>
-      ) : null}
+    <div className="space-y-1.5">
       <div className="flex flex-wrap items-center gap-2">
         <div
           role="radiogroup"
