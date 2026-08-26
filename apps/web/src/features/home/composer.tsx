@@ -29,6 +29,8 @@ import { cn } from "@workspace/ui/lib/utils"
 
 import { FOCUS_RING } from "@/features/app-shell/focus-ring.ts"
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { CoachModeSelector } from "@/features/home/coach-mode-selector.tsx"
+import { useCoachMode } from "@/features/home/use-coach-mode.ts"
 
 const LINE_HEIGHT_PX = 24
 const MAX_LINES = 8
@@ -50,6 +52,7 @@ type Props = {
   turnActive?: boolean
   placeholder?: string
   menuPlacement?: "below" | "above"
+  showModePill?: boolean
 }
 
 export function Composer({
@@ -60,11 +63,13 @@ export function Composer({
   turnActive = false,
   placeholder = "How can I help you today?",
   menuPlacement = "below",
+  showModePill = false,
 }: Props) {
   const navigate = useNavigate()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [expanded, setExpanded] = useState(false)
+  const { mode, setMode } = useCoachMode()
   const canSend = draft.trim().length > 0
 
   useEffect(() => {
@@ -211,8 +216,8 @@ export function Composer({
   )
 
   return (
-    <div className="relative w-full">
-      <div
+    <div className="relative w-full space-y-2">
+      <div>
         className={cn(
           "border border-border/80 bg-background shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-[border-radius,padding] duration-200 ease-out focus-within:border-border focus-within:shadow-[0_2px_8px_rgba(0,0,0,0.06)]",
           expanded
@@ -231,6 +236,12 @@ export function Composer({
           trailingActions
         )}
       </div>
+      <CoachModeSelector
+        mode={mode}
+        onModeChange={setMode}
+        showPill={showModePill}
+        compact
+      />
     </div>
   )
 }

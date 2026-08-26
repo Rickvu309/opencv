@@ -5,19 +5,22 @@ import {
   COACH_SSE_HEARTBEAT_MS,
   coachFeedbackInputSchema,
   coachLimitReachedEnvelope,
+  coachTurnRequestSchema,
   coachUnavailableEnvelope,
   DEFAULT_COACH_DAILY_TURN_LIMIT,
-  DEFAULT_COACH_MODEL,
+  DEFAULT_COACH_DAILY_TURN_LIMITS,
+  DEFAULT_COACH_MODE,
   ERROR_CODES,
   errorEnvelope,
   httpStatusForError,
+  resolveCoachModel,
   successEnvelope,
   textFromParts,
   THREAD_COMMANDS,
   threadIdSchema,
   threadMessageIdSchema,
-  threadsPostMessageInputSchema,
   unauthorizedEnvelope,
+  type CoachMode,
   type CoachRuntime,
   type CoachSseErrorData,
   type CoachSseMessageEndData,
@@ -43,6 +46,7 @@ import { coachUsage, threadMessages, threads } from "../db/schema.js"
 import { jsonWithStatus } from "../http-json.js"
 import { createId } from "../id.js"
 import { readSession } from "../session.js"
+import { getCoachModeForUser } from "../profile/queries.js"
 import { getOwnedThread, toThreadMessage } from "../threads/queries.js"
 import { countCoachTurnsToday, rateCoachTurn } from "./usage.js"
 
@@ -51,8 +55,12 @@ export type CoachRouteOptions = {
   db?: AppDatabase
   registry: CommandRegistry
   coach?: CoachRuntime
+  /** @deprecated Legacy single-model fallback when a turn has no resolved mode. */
   coachModel?: string
+  /** Legacy global cap; used when a mode-specific limit is unset. */
   coachDailyTurnLimit?: number
+  coachModels?: Partial<Record<CoachMode, string>>
+  coachDailyTurnLimits?: Partial<Record<CoachMode, number>>
   coachSseHeartbeatMs?: number
 }
 
@@ -63,6 +71,8 @@ export function createCoachRoutes({
   coach,
   coachModel,
   coachDailyTurnLimit,
+  coachModels,
+  coachDailyTurnLimits,
   coachSseHeartbeatMs,
 }: CoachRouteOptions) {
   const routes = new Hono()
@@ -105,10 +115,9 @@ export function createCoachRoutes({
       )
     }
 
-    const parsed = threadsPostMessageInputSchema.safeParse({
-      threadId,
-      ...(typeof body === "object" && body && !Array.isArray(body) ? body : {}),
-    })
+    const parsed = coachTurnRequestSchema.safeParse(
+      typeof body === "object" && body && !Array.isArray(body) ? body : {}
+    )
     if (!parsed.success) {
       const message = parsed.error.issues[0]?.message ?? "Invalid command input"
       return jsonWithStatus(
@@ -131,8 +140,19 @@ export function createCoachRoutes({
       throw error
     }
 
-    const limit = coachDailyTurnLimit ?? DEFAULT_COACH_DAILY_TURN_LIMIT
-    const used = await countCoachTurnsToday(db, session.user.id)
+    const mode =
+      parsed.data.mode ??
+      (await getCoachModeForUser(db, session.user.id).catch(
+        () => DEFAULT_COACH_MODE
+      ))
+    const model =
+      coachModels?.[mode] ?? resolveCoachModel(mode) ?? coachModel ?? ""
+    const limit =
+      coachDailyTurnLimits?.[mode] ??
+      coachDailyTurnLimit ??
+      DEFAULT_COACH_DAILY_TURN_LIMITS[mode] ??
+      DEFAULT_COACH_DAILY_TURN_LIMIT
+    const used = await countCoachTurnsToday(db, session.user.id, new Date(), mode)
     if (used >= limit) {
       return c.json(coachLimitReachedEnvelope(), 429)
     }
@@ -148,7 +168,6 @@ export function createCoachRoutes({
     }
 
     const history = (posted.body.data as ThreadDetail).messages
-    const model = coachModel ?? DEFAULT_COACH_MODEL
     const heartbeatMs = coachSseHeartbeatMs ?? COACH_SSE_HEARTBEAT_MS
 
     c.header("X-Accel-Buffering", "no")
@@ -163,6 +182,7 @@ export function createCoachRoutes({
         threadId,
         history,
         model,
+        mode,
         heartbeatMs,
         signal: c.req.raw.signal,
       })
@@ -248,6 +268,7 @@ type RunCoachTurnOptions = {
   threadId: string
   history: ThreadMessage[]
   model: string
+  mode: CoachMode
   heartbeatMs: number
   signal?: AbortSignal
 }
@@ -260,13 +281,14 @@ async function runCoachTurn({
   threadId,
   history,
   model,
+  mode,
   heartbeatMs,
   signal,
 }: RunCoachTurnOptions) {
   const startedAt = Date.now()
   let parts: ThreadMessagePart[] = []
   let status: ThreadMessageStatus = "final"
-  let usage: CoachTurnUsage = { model }
+  let usage: CoachTurnUsage = { model, mode }
   let persisted: ThreadMessage | undefined
 
   const heartbeat = setInterval(() => {
@@ -280,7 +302,7 @@ async function runCoachTurn({
     await writeEvent(stream, COACH_SSE_EVENTS.messageStart, start)
 
     for await (const part of takeUntilAbort(
-      coach.streamTurn({ userId, threadId, history }),
+      coach.streamTurn({ userId, threadId, history, model, mode }),
       aborted.promise,
       () => isDisconnected(stream, signal)
     )) {
@@ -344,6 +366,7 @@ async function runCoachTurn({
     usage = {
       ...usage,
       model: usage.model || model,
+      mode,
       latencyMs: usage.latencyMs ?? workedMs,
       finishReason: usage.finishReason ?? status,
     }
@@ -356,6 +379,7 @@ async function runCoachTurn({
       status,
       workedMs,
       usage,
+      mode,
     })
 
     if (!isDisconnected(stream, signal)) {
@@ -386,6 +410,7 @@ function applyStreamPart(
   if (part.type === "finish") {
     next.usage = {
       model: part.usage.model || state.model,
+      mode: part.usage.mode ?? state.usage.mode,
       tokens: part.usage.tokens,
       costEstimate: part.usage.costEstimate,
       latencyMs: part.usage.latencyMs,
@@ -431,6 +456,7 @@ async function persistCoachTurn({
   status,
   workedMs,
   usage,
+  mode,
 }: {
   db: AppDatabase
   userId: string
@@ -439,6 +465,7 @@ async function persistCoachTurn({
   status: ThreadMessageStatus
   workedMs: number
   usage: CoachTurnUsage
+  mode: CoachMode
 }): Promise<ThreadMessage> {
   const now = new Date()
   const messageId = createId(now.getTime())
@@ -467,6 +494,7 @@ async function persistCoachTurn({
       threadId,
       messageId,
       model: usage.model,
+      mode,
       tokens: usage.tokens,
       costEstimate: usage.costEstimate,
       latencyMs: usage.latencyMs,

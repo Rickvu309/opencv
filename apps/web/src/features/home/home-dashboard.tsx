@@ -46,6 +46,7 @@ export function HomeDashboard() {
               turnActive={turnActive}
               placeholder="Ask anything"
               menuPlacement="above"
+              showModePill
             />
           </div>
         </div>

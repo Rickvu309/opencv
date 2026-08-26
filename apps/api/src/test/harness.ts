@@ -1,4 +1,4 @@
-import type { CoachRuntime } from "@workspace/domain"
+import type { CoachMode, CoachRuntime } from "@workspace/domain"
 import { PGlite } from "@electric-sql/pglite"
 import { drizzle } from "drizzle-orm/pglite"
 import { migrate } from "drizzle-orm/pglite/migrator"
@@ -32,6 +32,8 @@ export function createTestApp(
     coach?: CoachRuntime
     coachModel?: string
     coachDailyTurnLimit?: number
+    coachModels?: Partial<Record<CoachMode, string>>
+    coachDailyTurnLimits?: Partial<Record<CoachMode, number>>
     coachSseHeartbeatMs?: number
   }
 ) {
@@ -44,6 +46,8 @@ export function createTestApp(
     coach: options?.coach,
     coachModel: options?.coachModel,
     coachDailyTurnLimit: options?.coachDailyTurnLimit,
+    coachModels: options?.coachModels,
+    coachDailyTurnLimits: options?.coachDailyTurnLimits,
     coachSseHeartbeatMs: options?.coachSseHeartbeatMs,
   })
 }

@@ -2,6 +2,7 @@ import {
   COACH_SSE_EVENTS,
   THREAD_COMMANDS,
   type CoachFeedbackInput,
+  type CoachMode,
   type CoachSseErrorData,
   type CoachSseMessageEndData,
   type CoachSseMessageStartData,
@@ -91,11 +92,12 @@ export async function streamCoachTurn(
   threadId: string,
   text: string,
   handlers: CoachStreamHandlers,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  mode?: CoachMode
 ): Promise<void> {
   const res = await apiStream(`/api/threads/${threadId}/coach`, {
     method: "POST",
-    body: JSON.stringify({ text }),
+    body: JSON.stringify(mode ? { text, mode } : { text }),
     signal,
   })
 

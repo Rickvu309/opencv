@@ -3,11 +3,16 @@ import { describe, expect, it } from "vitest"
 import {
   DEFAULT_COACH_DAILY_TURN_LIMIT,
   DEFAULT_COACH_MODEL,
+  DEFAULT_COACH_MODEL_FREE,
+  DEFAULT_COACH_MODEL_LIGHT,
+  DEFAULT_COACH_MODEL_MAX,
 } from "@workspace/domain"
 
 import {
   authUrlFromEnv,
+  coachDailyTurnLimitForModeFromEnv,
   coachDailyTurnLimitFromEnv,
+  coachModelForModeFromEnv,
   coachModelFromEnv,
   coachRuntimeModeFromEnv,
   databaseUrlFromEnv,
@@ -104,6 +109,19 @@ describe("coachModelFromEnv", () => {
   })
 })
 
+describe("coachModelForModeFromEnv", () => {
+  it("reads the per-mode vars and falls back to the mode defaults", () => {
+    expect(coachModelForModeFromEnv("free", {})).toBe(DEFAULT_COACH_MODEL_FREE)
+    expect(coachModelForModeFromEnv("light", {})).toBe(DEFAULT_COACH_MODEL_LIGHT)
+    expect(coachModelForModeFromEnv("max", {})).toBe(DEFAULT_COACH_MODEL_MAX)
+    expect(
+      coachModelForModeFromEnv("max", {
+        COACH_MODEL_MAX: "  anthropic/claude-fable-5  ",
+      })
+    ).toBe("anthropic/claude-fable-5")
+  })
+})
+
 describe("coachDailyTurnLimitFromEnv", () => {
   it("reads a positive integer COACH_DAILY_TURN_LIMIT, ignoring padding", () => {
     expect(
@@ -129,6 +147,23 @@ describe("coachDailyTurnLimitFromEnv", () => {
       DEFAULT_COACH_DAILY_TURN_LIMIT
     )
     expect(DEFAULT_COACH_DAILY_TURN_LIMIT).toBe(50)
+  })
+})
+
+describe("coachDailyTurnLimitForModeFromEnv", () => {
+  it("reads per-mode caps and falls back to the global then the mode default", () => {
+    expect(coachDailyTurnLimitForModeFromEnv("light", {})).toBe(30)
+    expect(
+      coachDailyTurnLimitForModeFromEnv("light", {
+        COACH_DAILY_TURN_LIMIT: "12",
+      })
+    ).toBe(12)
+    expect(
+      coachDailyTurnLimitForModeFromEnv("max", {
+        COACH_DAILY_TURN_LIMIT: "12",
+        COACH_DAILY_TURN_LIMIT_MAX: "4",
+      })
+    ).toBe(4)
   })
 })
 

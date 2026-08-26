@@ -33,6 +33,13 @@ export const APPLY_COMMANDS = {
 export type ApplyCommandName =
   (typeof APPLY_COMMANDS)[keyof typeof APPLY_COMMANDS]
 
+export const PROFILE_COMMANDS = {
+  setCoachMode: "profile.setCoachMode",
+} as const
+
+export type ProfileCommandName =
+  (typeof PROFILE_COMMANDS)[keyof typeof PROFILE_COMMANDS]
+
 /**
  * Coach-allowed but excluded from the tool surface (ADR-0007): the stream
  * is the Coach's voice, and this Command means the User posted a message.

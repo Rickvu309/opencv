@@ -46,10 +46,30 @@ export function createScriptedCoachRuntime(
   return {
     streamTurn(input) {
       if (typeof script === "function") {
-        return script(input)
+        return overlayTurnModel(script(input), input)
       }
-      return replay(script)
+      return overlayTurnModel(replay(script), input)
     },
+  }
+}
+
+async function* overlayTurnModel(
+  parts: AsyncIterable<CoachStreamPart>,
+  input: CoachTurnInput
+): AsyncGenerator<CoachStreamPart> {
+  for await (const part of parts) {
+    if (part.type === "finish" && input.model) {
+      yield {
+        ...part,
+        usage: {
+          ...part.usage,
+          model: input.model,
+          mode: input.mode ?? part.usage.mode,
+        },
+      }
+      continue
+    }
+    yield part
   }
 }
 

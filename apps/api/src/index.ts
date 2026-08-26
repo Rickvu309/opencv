@@ -5,8 +5,15 @@ import { Pool } from "pg"
 import { createApp } from "./app.js"
 import { coachRuntimeFromConfig } from "./coach/bind.js"
 import {
+  COACH_MODES,
+  type CoachMode,
+} from "@workspace/domain"
+
+import {
   authUrlFromEnv,
+  coachDailyTurnLimitForModeFromEnv,
   coachDailyTurnLimitFromEnv,
+  coachModelForModeFromEnv,
   coachModelFromEnv,
   coachRuntimeModeFromEnv,
   databaseUrlFromEnv,
@@ -24,6 +31,15 @@ const pool = databaseUrl
 const db = pool ? drizzle(pool, { schema }) : undefined
 const openRouterApiKey = openRouterApiKeyFromEnv(process.env)
 const coachModel = coachModelFromEnv(process.env)
+const coachModels = Object.fromEntries(
+  COACH_MODES.map((mode) => [mode, coachModelForModeFromEnv(mode, process.env)])
+) as Record<CoachMode, string>
+const coachDailyTurnLimits = Object.fromEntries(
+  COACH_MODES.map((mode) => [
+    mode,
+    coachDailyTurnLimitForModeFromEnv(mode, process.env),
+  ])
+) as Record<CoachMode, number>
 const coach = coachRuntimeFromConfig({
   db,
   openRouterApiKey,
@@ -38,7 +54,9 @@ const app = createApp({
   authUrl: authUrlFromEnv(process.env),
   openRouterApiKey,
   coachModel,
+  coachModels,
   coachDailyTurnLimit: coachDailyTurnLimitFromEnv(process.env),
+  coachDailyTurnLimits,
   db,
   coach,
 })

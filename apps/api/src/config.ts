@@ -1,6 +1,8 @@
 import {
   DEFAULT_COACH_DAILY_TURN_LIMIT,
-  DEFAULT_COACH_MODEL,
+  resolveCoachDailyTurnLimit,
+  resolveCoachModel,
+  type CoachMode,
 } from "@workspace/domain"
 
 const localWebOrigin = "http://localhost:5173"
@@ -65,16 +67,24 @@ export function openRouterApiKeyFromEnv(
 }
 
 /**
- * OpenRouter model id. Unset/blank falls back to Claude Sonnet 4.5 (ADR-0007).
+ * @deprecated Legacy single-model fallback when a turn has no mode.
+ * New turns resolve via `resolveCoachModel(mode, env)`.
  */
 export function coachModelFromEnv(env: NodeJS.ProcessEnv): string {
-  const configured = env.COACH_MODEL?.trim()
-  return configured ? configured : DEFAULT_COACH_MODEL
+  return resolveCoachModel(undefined, env)
+}
+
+/** OpenRouter model id for a User-selected Coach mode (ADR-0008). */
+export function coachModelForModeFromEnv(
+  mode: CoachMode,
+  env: NodeJS.ProcessEnv
+): string {
+  return resolveCoachModel(mode, env)
 }
 
 /**
- * Per-user daily Coach turn cap. Unset, blank, or non-positive integers fall
- * back to 50 (ADR-0007).
+ * Legacy global daily Coach turn cap. Unset, blank, or non-positive integers
+ * fall back to 50 (ADR-0007). New turns use `coachDailyTurnLimitForModeFromEnv`.
  */
 export function coachDailyTurnLimitFromEnv(env: NodeJS.ProcessEnv): number {
   const raw = env.COACH_DAILY_TURN_LIMIT?.trim()
@@ -88,6 +98,14 @@ export function coachDailyTurnLimitFromEnv(env: NodeJS.ProcessEnv): number {
   }
 
   return parsed
+}
+
+/** Per-mode daily turn cap (ADR-0008). */
+export function coachDailyTurnLimitForModeFromEnv(
+  mode: CoachMode,
+  env: NodeJS.ProcessEnv
+): number {
+  return resolveCoachDailyTurnLimit(mode, env)
 }
 
 /**

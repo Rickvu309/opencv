@@ -170,17 +170,25 @@ describe("thread API client", () => {
 
     const onTextDelta = vi.fn()
     const onMessageEnd = vi.fn()
-    await streamCoachTurn(threadId, "Help me plan the week", {
-      onTextDelta,
-      onMessageEnd,
-    })
+    await streamCoachTurn(
+      threadId,
+      "Help me plan the week",
+      {
+        onTextDelta,
+        onMessageEnd,
+      },
+      undefined,
+      "light"
+    )
 
     expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
       `${apiBaseUrl}/api/threads/${threadId}/coach`
     )
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
     expect(init.method).toBe("POST")
-    expect(init.body).toBe(JSON.stringify({ text: "Help me plan the week" }))
+    expect(init.body).toBe(
+      JSON.stringify({ text: "Help me plan the week", mode: "light" })
+    )
     expect(onTextDelta).toHaveBeenCalledWith({ text: "Hello" })
     expect(onMessageEnd).toHaveBeenCalledWith(
       expect.objectContaining({

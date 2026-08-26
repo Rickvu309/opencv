@@ -1,4 +1,4 @@
-import type { CoachRuntime } from "@workspace/domain"
+import type { CoachMode, CoachRuntime } from "@workspace/domain"
 import { Hono } from "hono"
 import { cors } from "hono/cors"
 
@@ -10,6 +10,7 @@ import { authUnavailableEnvelope, unauthorizedEnvelope } from "./envelope.js"
 import { isAllowedOrigin } from "./origin.js"
 import { createApplyReadRoutes } from "./apply/http.js"
 import { createPaperReadRoutes } from "./paper/http.js"
+import { createProfileReadRoutes } from "./profile/http.js"
 import { createThreadReadRoutes } from "./threads/http.js"
 
 export type AppConfig = {
@@ -35,10 +36,14 @@ export type AppConfig = {
    * `index.ts` wires OpenRouter via `coachRuntimeFromConfig` when this is set.
    */
   openRouterApiKey?: string
-  /** From `coachModelFromEnv`. */
+  /** @deprecated From `coachModelFromEnv`. New turns resolve via mode. */
   coachModel?: string
-  /** From `coachDailyTurnLimitFromEnv`. */
+  /** From `coachDailyTurnLimitFromEnv` — global fallback when a mode cap is unset. */
   coachDailyTurnLimit?: number
+  /** Per-mode OpenRouter model ids (ADR-0008). */
+  coachModels?: Partial<Record<CoachMode, string>>
+  /** Per-mode daily turn caps (ADR-0008). */
+  coachDailyTurnLimits?: Partial<Record<CoachMode, number>>
   /** Test override; production uses `COACH_SSE_HEARTBEAT_MS` (15s). */
   coachSseHeartbeatMs?: number
 }
@@ -52,6 +57,8 @@ export function createApp({
   coach,
   coachModel,
   coachDailyTurnLimit,
+  coachModels,
+  coachDailyTurnLimits,
   coachSseHeartbeatMs,
 }: AppConfig) {
   const app = new Hono()
@@ -111,11 +118,14 @@ export function createApp({
       coach,
       coachModel,
       coachDailyTurnLimit,
+      coachModels,
+      coachDailyTurnLimits,
       coachSseHeartbeatMs,
     })
   )
   app.route("/api/paper", createPaperReadRoutes({ auth, db }))
   app.route("/api/apply", createApplyReadRoutes({ auth, db }))
+  app.route("/api/profile", createProfileReadRoutes({ auth, db }))
 
   return app
 }
