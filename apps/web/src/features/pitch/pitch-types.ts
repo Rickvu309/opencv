@@ -38,17 +38,34 @@ export type PitchExperience = {
   summary: string
 }
 
+export type PitchTone = "warm" | "cool" | "neutral" | "emerald" | "dark"
+
+export const PITCH_TONE_CLASS: Record<PitchTone, string> = {
+  warm: "[background-image:var(--pitch-tone-warm)]",
+  cool: "[background-image:var(--pitch-tone-cool)]",
+  neutral: "[background-image:var(--pitch-tone-neutral)]",
+  emerald: "[background-image:var(--pitch-tone-emerald)]",
+  dark: "[background-image:var(--pitch-tone-dark)]",
+} as const
+
+export function pitchToneClass(tone?: PitchTone | string) {
+  if (tone && tone in PITCH_TONE_CLASS) {
+    return PITCH_TONE_CLASS[tone as PitchTone]
+  }
+  return PITCH_TONE_CLASS.neutral
+}
+
 export type PitchGalleryItem = {
   id: string
   caption: string
-  tone: "warm" | "cool" | "neutral"
+  tone: PitchTone
 }
 
 export type PitchStorySlide = {
   id: string
   caption: string
   detail?: string
-  tone: "warm" | "cool" | "neutral" | "emerald"
+  tone: PitchTone
   durationMs?: number
   /** Achievement / work photo (local assets) */
   image?: string
@@ -57,7 +74,7 @@ export type PitchStorySlide = {
 export type PitchStoryHighlight = {
   id: string
   label: string
-  coverTone: "warm" | "cool" | "neutral" | "emerald"
+  coverTone: PitchTone
   coverImage?: string
   slides: PitchStorySlide[]
 }
@@ -68,7 +85,7 @@ export type PitchBentoCard = {
   title: string
   body?: string
   meta?: string
-  tone?: "warm" | "cool" | "neutral" | "dark" | "emerald"
+  tone?: PitchTone
   span?: "tall" | "wide" | "normal"
   storyHighlightId?: string
   image?: string
@@ -445,10 +462,10 @@ export const BLOCK_PURPOSE: Record<PitchBlockKind, string> = {
 }
 
 export function paperDocPitchMeta(doc: Pick<PitchWorkDoc, "type">) {
-  const typeColors = {
-    cv: "from-sky-100 to-sky-50",
-    letter: "from-muted to-muted/50",
-    proof: "from-emerald-100 to-emerald-50",
+  const typeColors: Record<PitchWorkDoc["type"], string> = {
+    cv: pitchToneClass("cool"),
+    letter: pitchToneClass("neutral"),
+    proof: pitchToneClass("emerald"),
   }
   return {
     gradient: typeColors[doc.type],

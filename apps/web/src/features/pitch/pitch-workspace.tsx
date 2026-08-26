@@ -117,12 +117,12 @@ export function PitchWorkspace() {
 
         <div className="ml-auto flex items-center gap-2">
           {profile.published ? (
-            <span className="hidden items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-800 sm:inline-flex">
-              <span className="size-1.5 rounded-full bg-emerald-500" />
+            <span className="hidden items-center gap-1.5 rounded-full bg-success/10 px-2.5 py-1 text-micro font-medium text-success sm:inline-flex">
+              <span className="size-1.5 rounded-full bg-success" />
               Published
             </span>
           ) : (
-            <span className="hidden items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-900 sm:inline-flex">
+            <span className="hidden items-center gap-1.5 rounded-full bg-warning/15 px-2.5 py-1 text-micro font-medium text-warning-foreground sm:inline-flex">
               <EyeOff className="size-3" />
               Draft
             </span>
@@ -159,7 +159,7 @@ export function PitchWorkspace() {
           )}
         >
           {!profile.published ? (
-            <div className="mb-6 flex items-center gap-2 rounded-xl border border-amber-200/80 bg-amber-50/80 px-4 py-3 text-sm text-amber-950">
+            <div className="mb-6 flex items-center gap-2 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning-foreground">
               <EyeOff className="size-4 shrink-0 opacity-70" />
               <span>
                 This page is <strong>unpublished</strong> — only you can see it.
@@ -203,7 +203,7 @@ export function PitchWorkspace() {
         <PitchEditToolbar
           published={profile.published}
           addOpen={addOpen}
-          onToggleAdd={() => setAddOpen((o) => !o)}
+          onAddOpenChange={setAddOpen}
           onAddBlock={addBlock}
           onPublish={publish}
           onUnpublish={unpublish}
