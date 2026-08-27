@@ -25,7 +25,7 @@ export type ModelStreamEvent =
   | { type: "tool-call"; toolCallId: string; name: string; input: unknown }
   | { type: "tool-result"; toolCallId: string; name: string; output: unknown }
   | { type: "tool-error"; toolCallId: string; name: string; error: unknown }
-  | { type: "finish"; finishReason: string; usage: ModelUsage }
+  | { type: "finish"; finishReason: string; usage: ModelUsage; model?: string }
   | { type: "error"; message: string }
   | { type: "abort" }
 
@@ -90,7 +90,7 @@ export async function* partsFromModelStream(
         )
         break
       case "finish":
-        yield finishPart(event.finishReason, event.usage, options)
+        yield finishPart(event.finishReason, event.usage, options, event.model)
         return
       case "error":
         yield { type: "error", message: event.message }
@@ -130,14 +130,15 @@ function toolResultPart(
 function finishPart(
   finishReason: string,
   usage: ModelUsage,
-  options: TranslateStreamOptions
+  options: TranslateStreamOptions,
+  resolvedModel?: string
 ): CoachStreamPart {
   const latencyMs = Math.max(0, Date.now() - options.startedAt)
   return {
     type: "finish",
     finishReason,
     usage: {
-      model: options.model,
+      model: resolvedModel || options.model,
       tokens: tokensFromUsage(usage),
       costEstimate: estimateCostUsd(usage),
       latencyMs,

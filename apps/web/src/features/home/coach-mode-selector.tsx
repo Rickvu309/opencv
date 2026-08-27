@@ -57,7 +57,7 @@ export function CoachModeSelector({
             <>
               {" "}
               <a
-                href="https://openrouter.ai/stealth/ox-alpha"
+                href="https://openrouter.ai/openrouter/free"
                 target="_blank"
                 rel="noreferrer"
                 className="underline underline-offset-2"
