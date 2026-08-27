@@ -8,7 +8,7 @@ export const COACH_MODE_OPTIONS = [
     id: "free" as const,
     label: "Free",
     helper:
-      "Zero-cost coaching on OX Alpha, a preview that may change. Daily turns are capped.",
+      "Zero-cost coaching on OpenRouter's free models. The model can change between turns. Daily turns are capped.",
   },
   {
     id: "light" as const,

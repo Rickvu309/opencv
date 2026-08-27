@@ -39,7 +39,7 @@ Technical decisions live in **ADR-0007**. Product decisions locked here:
 
 - **Full command surface from v1** — all coach-allowed, non-destructive Commands are tools with a standard generic receipt pattern; per-command UX (CV diff previews) is prototyped later.
 - **Auto-execution without confirmation** is ADR-0003-compliant for this surface (every exposed tool is reversible; deletes are structurally excluded). The confirm flow is designed-for but not built.
-- **Default Coach mode is Free** (`stealth/ox-alpha`); Light and Max are User-selectable (ADR-0009). Quality of tool use and voice still outranks per-turn cost on Max.
+- **Default Coach mode is Free** (`openrouter/free`); Light and Max are User-selectable (ADR-0009). Quality of tool use and voice still outranks per-turn cost on Max.
 - **Daily turn caps** are per mode (Free 50 / Light 30 / Max 10, env-overridable).
 - **English product language** is ADR-0008 / QVE-150: chrome and persona stay English; no locale toggle; incidental Vietnamese replies if the User writes Vietnamese.
 

@@ -29,7 +29,10 @@ describe("coach deploy docs", () => {
       expect(railway).toContain(name)
     }
 
-    expect(envExample).toContain("stealth/ox-alpha")
+    expect(envExample).toContain("openrouter/free")
+    expect(envExample).not.toContain("stealth/ox-alpha")
+    expect(railway).toContain("openrouter/free")
+    expect(railway).not.toContain("stealth/ox-alpha")
     expect(envExample).toContain("deepseek/deepseek-chat-v3.1")
     expect(envExample).toContain("anthropic/claude-opus-4")
     expect(envExample).toContain("anthropic/claude-fable-5")

@@ -46,7 +46,7 @@ Paper, Apply, and Threads reads are untouched. That is the graceful posture
 | -------- | -------- | ------- | ----- |
 | `OPENROUTER_API_KEY` | Yes, for a live Coach | — | Set on **staging and production**. stdin so the value never hits shell history. |
 | `COACH_MODEL` | No | `anthropic/claude-sonnet-4.5` | **Deprecated** single-model fallback when a turn has no mode (ADR-0007). New turns resolve via mode. |
-| `COACH_MODEL_FREE` | No | `stealth/ox-alpha` | Free mode OpenRouter id (ADR-0009). OX Alpha is a preview. |
+| `COACH_MODEL_FREE` | No | `openrouter/free` | Free mode OpenRouter id (ADR-0009). Free Models Router; the answering model can change between turns. |
 | `COACH_MODEL_LIGHT` | No | `deepseek/deepseek-chat-v3.1` | Light mode OpenRouter id. |
 | `COACH_MODEL_MAX` | No | `anthropic/claude-opus-4` | Max mode. For Fable: `anthropic/claude-fable-5` or `~anthropic/claude-fable-latest`. |
 | `COACH_DAILY_TURN_LIMIT` | No | `50` | Legacy global daily cap. Used when a mode-specific cap is unset. Non-positive values fall back to 50. |

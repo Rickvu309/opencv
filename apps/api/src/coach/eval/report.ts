@@ -12,8 +12,8 @@ export function renderEvalReport(report: EvalReport): string {
     "",
     "## Summary",
     "",
-    "| Scenario | Honesty | Judge |",
-    "| --- | --- | --- |",
+    "| Scenario | Resolved model | Honesty | Judge |",
+    "| --- | --- | --- | --- |",
     ...report.results.map((result) => summaryRow(result)),
     "",
   ]
@@ -45,7 +45,8 @@ function summaryRow(result: ScenarioEvalResult) {
     : result.judgeError
       ? "error"
       : "—"
-  return `| ${result.scenario.id} | ${honesty} | ${judge} |`
+  const resolved = result.transcript.usage?.model
+  return `| ${result.scenario.id} | ${resolved ? `\`${resolved}\`` : "—"} | ${honesty} | ${judge} |`
 }
 
 function renderScenario(result: ScenarioEvalResult): string[] {
@@ -56,6 +57,9 @@ function renderScenario(result: ScenarioEvalResult): string[] {
     "",
     `**User:** ${result.scenario.userMessage}`,
     "",
+    ...(result.transcript.usage?.model
+      ? [`**Resolved model:** \`${result.transcript.usage.model}\``, ""]
+      : []),
     "### Transcript",
     "",
     result.transcript.text || "_(empty Coach text)_",

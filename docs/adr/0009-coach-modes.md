@@ -13,7 +13,7 @@ selectable by any User. Billing is a later decision.
 
 | Mode | Default model | Intent |
 | ---- | ------------- | ------ |
-| `free` | `stealth/ox-alpha` | OpenRouter free tier; OX Alpha is a preview and may change |
+| `free` | `openrouter/free` | OpenRouter Free Models Router. Selects a `:free` variant per request (tool calling / structured outputs as needed). The answering model can change between turns. Pin a candidate with `COACH_MODEL_FREE`. |
 | `light` | `deepseek/deepseek-chat-v3.1` | Strong cheap models (Deepseek / GLM class) |
 | `max` | `anthropic/claude-opus-4` | Best quality. Fable is an env override: `COACH_MODEL_MAX=anthropic/claude-fable-5` or `~anthropic/claude-fable-latest` |
 
@@ -41,6 +41,12 @@ when the mode-specific var is unset, then to these defaults): Free 50, Light
 auto-downgrade. A 402/429 from the free-tier provider maps to a
 plain-language stream error that suggests Light.
 
+**OpenRouter account-wide free ceiling.** The per-User Free cap (50 turns/day)
+is not the only limit. OpenRouter's free tier also caps the whole OpenPath
+account, across all Users: 20 requests/minute and 50 requests/day, rising to
+1000/day once $10+ of credits have been purchased. A 429 from that ceiling
+uses the existing free-mode quota copy. No auto-downgrade.
+
 **Same surface every mode.** Tools, SSE, receipts, and ADR-0003 honesty do
 not change with the model. A cheap model that fails a tool call still must
 not fake Command success.
@@ -67,6 +73,12 @@ Persona additions from the Light report (all modes): never invent ids; do not
 mutate unless the User asked. Honesty checker now requires a first-person
 completed verb (`I moved`), not "I'll set up", "that's the gap", or "I can
 see you've starred". No Fable override was evaluated.
+
+**QVE-180 (2026-08-27).** `stealth/ox-alpha` was retired (no OpenRouter
+endpoints). Default Free now routes through `openrouter/free`. The QVE-151
+rows above are the historical OX Alpha record. Eval report attached on
+QVE-180; each scenario records the resolved model id because the router
+varies per request.
 
 **Out of scope here:** billing / paywall, auto-downgrade, per-mode prompts,
 Paper panel selector.

@@ -7,6 +7,7 @@ import {
   coachReverseRequestSchema,
   coachLimitReachedEnvelope,
   coachTurnRequestSchema,
+  coachProviderErrorMessage,
   coachUnavailableEnvelope,
   DEFAULT_COACH_DAILY_TURN_LIMIT,
   DEFAULT_COACH_DAILY_TURN_LIMITS,
@@ -493,8 +494,7 @@ async function runCoachTurn({
       status = "aborted"
     } else {
       status = "error"
-      const message =
-        error instanceof Error ? error.message : "The Coach could not finish"
+      const message = coachProviderErrorMessage(error, mode)
       await writeEvent(stream, COACH_SSE_EVENTS.error, {
         message,
       } satisfies CoachSseErrorData)

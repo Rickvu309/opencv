@@ -197,6 +197,29 @@ describe("partsFromModelStream", () => {
       },
     })
   })
+
+  it("prefers the resolved model id from finish over the requested slug", async () => {
+    const parts = await collect([
+      { type: "text-delta", text: "Done." },
+      {
+        type: "finish",
+        finishReason: "stop",
+        model: "z-ai/glm-5.2:free",
+        usage: { totalTokens: 12 },
+      },
+    ])
+    expect(parts[1]).toEqual({
+      type: "finish",
+      finishReason: "stop",
+      usage: {
+        model: "z-ai/glm-5.2:free",
+        tokens: 12,
+        costEstimate: expect.any(String),
+        latencyMs: expect.any(Number),
+        finishReason: "stop",
+      },
+    })
+  })
 })
 
 describe("usage helpers", () => {
