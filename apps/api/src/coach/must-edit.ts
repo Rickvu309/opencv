@@ -240,8 +240,56 @@ function clip(text: string, cap = LINE_CAP): string {
   return `${trimmed.slice(0, cap - 1).trimEnd()}…`
 }
 
+const EXPERIENCE_OR_BULLET = /\bexperience\b|\bbullet\b/i
+
 const REWRITE_STOP =
   /^(?:rewrite|rewrote|rewriting|shorten|shortened|shortening|tailor|tailored|tailoring|sharpen|sharpened|sharpening|edit|edited|editing|fix|fixing|make|update|apply|the|this|that|my|a|an|for|to|of|on|in|and|or|be|it|please|can|you|bullet|bullets|section|document|doc|open|named|one|sentence|experience|summary|opening|proof|letter|resume|cover|internship)$/i
+
+export function namesExperienceOrBullet(userText: string): boolean {
+  return EXPERIENCE_OR_BULLET.test(userText)
+}
+
+/** Role labels already on the CV — used when an Experience ask cannot target a bullet. */
+export function describeExperienceRoles(doc: CoachFocusDoc): string[] {
+  const decoded = decodePaperContent(doc.kind, doc.contentVersion, doc.content)
+  if (!decoded.ok || !isCvDocument(decoded.data)) return []
+  return decoded.data.experience.map((role) =>
+    role.location
+      ? `${role.role} · ${role.company} · ${role.location}`
+      : `${role.role} · ${role.company}`
+  )
+}
+
+export function mustEditMissCopy(
+  doc: CoachFocusDoc | undefined,
+  userText: string
+): { receipt: string; nextStep: string } {
+  if (doc && namesExperienceOrBullet(userText)) {
+    const roles = describeExperienceRoles(doc)
+    if (roles.length > 0) {
+      return {
+        receipt: "Could not match a bullet in Experience.",
+        nextStep: `Could not match a bullet in Experience. Next step: name ${formatRoleList(roles)}.`,
+      }
+    }
+    return {
+      receipt: "Could not match a bullet in Experience.",
+      nextStep:
+        "Could not match a bullet in Experience. Next step: add a role or name a section that is already on the CV.",
+    }
+  }
+  return {
+    receipt: "Could not apply the rewrite to the open document.",
+    nextStep:
+      "Could not update the open document. Next step: name the section or bullet to change.",
+  }
+}
+
+function formatRoleList(roles: string[]): string {
+  if (roles.length === 1) return roles[0] ?? ""
+  if (roles.length === 2) return `${roles[0]} or ${roles[1]}`
+  return `${roles.slice(0, -1).join(", ")}, or ${roles[roles.length - 1]}`
+}
 
 type LocatedRewrite =
   | { kind: "cv-summary"; original: string }
@@ -339,12 +387,11 @@ function locateRewrite(
     }
 
     const wantsSummary = /\bsummary\b/i.test(userText)
-    const wantsExperience = /\bexperience\b|\bbullet\b/i.test(userText)
+    const wantsExperience = namesExperienceOrBullet(userText)
     const tokens = significantTokens(userText)
 
     if (wantsExperience) {
-      const hit = bestExperienceBullet(content, tokens)
-      if (hit) return hit
+      return bestExperienceBullet(content, tokens)
     }
     if (wantsSummary) {
       return { kind: "cv-summary", original: content.summary }

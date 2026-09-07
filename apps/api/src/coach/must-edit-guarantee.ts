@@ -9,6 +9,7 @@ import {
   applyRewriteToFocusContent,
   findFocusRewriteOriginal,
   localRewriteText,
+  mustEditMissCopy,
   mustEditStillNeedsUpdate,
 } from "./must-edit.js"
 import type { ModelStreamEvent } from "./translate.js"
@@ -80,6 +81,7 @@ async function* completeMustEdit(
     : null
 
   if (!doc || !original) {
+    const miss = mustEditMissCopy(doc, options.userText)
     yield {
       type: "tool-call",
       toolCallId,
@@ -96,15 +98,12 @@ async function* completeMustEdit(
       type: "tool-result",
       toolCallId,
       name: MUST_EDIT_TOOLS.updateContent,
-      output: errorEnvelope(
-        ERROR_CODES.VALIDATION_ERROR,
-        "Could not apply the rewrite to the open document."
-      ),
+      output: errorEnvelope(ERROR_CODES.VALIDATION_ERROR, miss.receipt),
     }
     if (!sawText) {
       yield {
         type: "text-delta",
-        text: "Could not update the open document. Next step: name the section or bullet to change.",
+        text: miss.nextStep,
       }
     }
     return
@@ -135,19 +134,17 @@ async function* completeMustEdit(
   }
 
   if (!content) {
+    const miss = mustEditMissCopy(doc, options.userText)
     yield {
       type: "tool-result",
       toolCallId,
       name: MUST_EDIT_TOOLS.updateContent,
-      output: errorEnvelope(
-        ERROR_CODES.VALIDATION_ERROR,
-        "Could not apply the rewrite to the open document."
-      ),
+      output: errorEnvelope(ERROR_CODES.VALIDATION_ERROR, miss.receipt),
     }
     if (!sawText) {
       yield {
         type: "text-delta",
-        text: "Could not update the open document. Next step: name the section or bullet to change.",
+        text: miss.nextStep,
       }
     }
     return

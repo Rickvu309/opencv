@@ -146,6 +146,78 @@ describe("guaranteeMustEditStream", () => {
     }
   })
 
+  it("does not rewrite Summary when Experience is named but no bullet scores", async () => {
+    const executeUpdate = vi.fn()
+    const focusDoc = sampleFocusDoc()
+    const summary = starterCvDocument().summary
+    const events = await collect(
+      [
+        {
+          type: "tool-call",
+          toolCallId: "read-1",
+          name: "paper_getDoc",
+          input: { docId: focusDoc.id },
+        },
+        {
+          type: "tool-result",
+          toolCallId: "read-1",
+          name: "paper_getDoc",
+          output: { ok: true, data: { name: focusDoc.name } },
+        },
+        { type: "finish", finishReason: "stop", usage: {} },
+      ],
+      {
+        userText: "Rewrite the Experience section to be more executive",
+        hasFocusDoc: true,
+        focusDoc,
+        executeUpdate,
+        toolCallId: "must-edit-miss-1",
+      }
+    )
+
+    expect(executeUpdate).not.toHaveBeenCalled()
+    expect(events.map((event) => event.type)).toEqual([
+      "tool-call",
+      "tool-result",
+      "tool-call",
+      "tool-result",
+      "text-delta",
+      "finish",
+    ])
+    expect(events[2]).toMatchObject({
+      type: "tool-call",
+      name: "paper_updateContent",
+      toolCallId: "must-edit-miss-1",
+      input: {
+        docId: focusDoc.id,
+        contentVersion: focusDoc.contentVersion,
+        content: focusDoc.content,
+      },
+    })
+    const updateInput = (
+      events[2] as { input: { content: { summary: string } } }
+    ).input
+    expect(updateInput.content.summary).toBe(summary)
+    expect(events[3]).toMatchObject({
+      type: "tool-result",
+      name: "paper_updateContent",
+      output: {
+        ok: false,
+        error: {
+          message: "Could not match a bullet in Experience.",
+        },
+      },
+    })
+    expect(events[4]).toMatchObject({
+      type: "text-delta",
+      text: expect.stringMatching(
+        /Could not match a bullet in Experience\. Next step: name .*Product discovery lead.*Checkout UX/
+      ),
+    })
+    expect((events[4] as { text: string }).text).not.toMatch(/paste|apply\?/)
+    expect((events[4] as { text: string }).text).not.toMatch(/!/)
+  })
+
   it("leaves a successful model update alone", async () => {
     const executeUpdate = vi.fn()
     const events = await collect(

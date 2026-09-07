@@ -7,11 +7,13 @@ import { describe, expect, it } from "vitest"
 
 import {
   applyRewriteToFocusContent,
+  describeExperienceRoles,
   describeFocusDoc,
   findFocusRewriteOriginal,
   isPaperEditAsk,
   latestUserText,
   localRewriteText,
+  mustEditMissCopy,
   mustEditPrepareStep,
   mustEditStillNeedsUpdate,
   mustEditToolChoice,
@@ -255,6 +257,12 @@ describe("focus-doc rewrite targeting", () => {
   const ask =
     "Rewrite the Experience checkout bullet for a product internship"
 
+  it("still targets Summary when the ask names Summary", () => {
+    expect(findFocusRewriteOriginal(doc, "Rewrite my summary")).toBe(
+      starterCvDocument().summary
+    )
+  })
+
   it("finds the checkout Experience bullet and applies a rewrite", () => {
     const original = findFocusRewriteOriginal(doc, ask)
     expect(original).toBe(starterCvDocument().experience[1]?.bullets[0])
@@ -285,6 +293,65 @@ describe("focus-doc rewrite targeting", () => {
     expect(
       isPaperEditAsk("Can you fix my interview nerves?", true)
     ).toBe(false)
+  })
+
+  it("does not target Summary when Experience is named but no bullet scores", () => {
+    const starterSummary = starterCvDocument().summary
+    for (const userText of [
+      "Rewrite the Experience section",
+      "Rewrite the Experience section to be more executive",
+      "Rewrite this bullet to be more executive",
+    ]) {
+      expect(isPaperEditAsk(userText, true)).toBe(true)
+      expect(findFocusRewriteOriginal(doc, userText)).toBeNull()
+      expect(
+        applyRewriteToFocusContent(doc, userText, "Should not land")
+      ).toBeNull()
+    }
+
+    const ticketExampleDoc = toCoachFocusDoc({
+      id: "11111111-1111-7111-8111-111111111111",
+      name: "Sample internship CV",
+      contentKind: "cv",
+      status: "draft",
+      content: {
+        ...starterCvDocument(),
+        experience: [
+          {
+            role: "Product discovery lead",
+            company: "Campus product club",
+            period: "2024 – Present",
+            location: "Volunteer",
+            bullets: ["Ran weekly problem interviews with 8 classmates."],
+          },
+        ],
+      },
+      contentVersion: PAPER_CONTENT_VERSION,
+    })
+    expect(
+      findFocusRewriteOriginal(
+        ticketExampleDoc,
+        "Rewrite the Experience section to be clearer"
+      )
+    ).toBeNull()
+    expect(
+      applyRewriteToFocusContent(
+        ticketExampleDoc,
+        "Rewrite the Experience section to be clearer",
+        "Should not land"
+      )
+    ).toBeNull()
+
+    const miss = mustEditMissCopy(doc, "Rewrite the Experience section")
+    expect(miss.receipt).toBe("Could not match a bullet in Experience.")
+    expect(miss.nextStep).toMatch(/Product discovery lead/)
+    expect(miss.nextStep).toMatch(/Checkout UX/)
+    expect(miss.nextStep).not.toMatch(/!/)
+    expect(miss.nextStep).not.toMatch(new RegExp(starterSummary.slice(0, 24)))
+    expect(describeExperienceRoles(doc)).toEqual([
+      "Product discovery lead · Campus product club · Volunteer",
+      "Side project · Checkout UX · Personal · Remote",
+    ])
   })
 })
 
