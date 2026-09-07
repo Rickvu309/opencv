@@ -14,6 +14,7 @@ import {
   latestUserText,
   localRewriteText,
   mustEditMissCopy,
+  mustEditNoRewriteCopy,
   mustEditPrepareStep,
   mustEditStillNeedsUpdate,
   mustEditToolChoice,
@@ -267,11 +268,10 @@ describe("focus-doc rewrite targeting", () => {
     const original = findFocusRewriteOriginal(doc, ask)
     expect(original).toBe(starterCvDocument().experience[1]?.bullets[0])
 
-    const next = localRewriteText(original ?? "", ask)
-    expect(next).not.toBe(original)
-    expect(next).toMatch(/product internship/i)
-    expect(next).not.toMatch(/!/)
+    expect(localRewriteText(original ?? "", ask)).toBeNull()
 
+    const next =
+      "Audited product card density on a top e-commerce app; proposed tighter cards and a clearer CTA."
     const content = applyRewriteToFocusContent(doc, ask, next)
     expect(content).toBeTruthy()
     const bullets =
@@ -286,6 +286,8 @@ describe("focus-doc rewrite targeting", () => {
         : undefined
     expect(bullets?.[0]).toBe(next)
     expect(bullets?.[0]).not.toBe(starterCvDocument().experience[1]?.bullets[0])
+    expect(bullets?.[0]).not.toMatch(/product internship/i)
+    expect(bullets?.[0]).not.toMatch(/Rewritten to match the ask/)
   })
 
   it("does not invent a rewrite plan for advice asks", () => {
@@ -352,6 +354,36 @@ describe("focus-doc rewrite targeting", () => {
       "Product discovery lead · Campus product club · Volunteer",
       "Side project · Checkout UX · Personal · Remote",
     ])
+  })
+})
+
+describe("localRewriteText", () => {
+  it("does not invent scout or canned rewrite copy", () => {
+    const original = starterCvDocument().experience[1]?.bullets[0] ?? ""
+    expect(
+      localRewriteText(
+        original,
+        "Rewrite the Experience checkout bullet for a product internship"
+      )
+    ).toBeNull()
+    expect(localRewriteText(original, "Tailor for associate PM intern")).toBeNull()
+    expect(localRewriteText(original, "Rewrite this bullet")).toBeNull()
+    expect(mustEditNoRewriteCopy()).toEqual({
+      receipt: "Could not rewrite the line.",
+      nextStep:
+        "Could not rewrite the line. Next step: try sending the ask again.",
+    })
+  })
+
+  it("shortens when that is the ask", () => {
+    const summary = starterCvDocument().summary
+    const next = localRewriteText(summary, "Make my summary one sentence")
+    expect(next).toBeTruthy()
+    expect(next).not.toBe(summary)
+    expect(next?.length).toBeLessThan(summary.length)
+    expect(next).not.toMatch(/Rewritten to match the ask/)
+    expect(next).not.toMatch(/framed for a product internship/)
+    expect(next).not.toMatch(/!/)
   })
 })
 

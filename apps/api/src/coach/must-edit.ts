@@ -285,6 +285,15 @@ export function mustEditMissCopy(
   }
 }
 
+/** Model produced no real rewrite — do not invent scout or canned CV copy. */
+export function mustEditNoRewriteCopy(): { receipt: string; nextStep: string } {
+  return {
+    receipt: "Could not rewrite the line.",
+    nextStep:
+      "Could not rewrite the line. Next step: try sending the ask again.",
+  }
+}
+
 function formatRoleList(roles: string[]): string {
   if (roles.length === 1) return roles[0] ?? ""
   if (roles.length === 2) return `${roles[0]} or ${roles[1]}`
@@ -348,18 +357,32 @@ export function applyRewriteToFocusContent(
   return null
 }
 
-/** Last-resort rewrite so Free can still attempt paper_updateContent. */
-export function localRewriteText(original: string, userText: string): string {
+/**
+ * Generic last-resort rewrite only. Scout / preview-smoke phrases are not
+ * a production strategy — return null so the guarantee can emit a failed receipt.
+ */
+export function localRewriteText(
+  original: string,
+  userText: string
+): string | null {
   const trimmed = original.replace(/\s+/g, " ").trim()
+  if (!trimmed) return null
   if (/shorten|shorter|one sentence/i.test(userText)) {
     const first = trimmed.split(/(?<=\.)\s+/)[0] ?? trimmed
     if (first.length > 0 && first !== trimmed) return first
     if (trimmed.length > 140) return `${trimmed.slice(0, 139).trimEnd()}.`
   }
-  if (/product internship|product intern|associate pm/i.test(userText)) {
-    return `${trimmed.replace(/\.$/, "")} — framed for a product internship with the same evidence.`
-  }
-  return `${trimmed.replace(/\.$/, "")} Rewritten to match the ask.`
+  return null
+}
+
+export function isRealRewrite(
+  original: string,
+  replacement: string | null | undefined
+): replacement is string {
+  if (typeof replacement !== "string") return false
+  const next = replacement.replace(/\s+/g, " ").trim()
+  const prev = original.replace(/\s+/g, " ").trim()
+  return next.length > 0 && next !== prev
 }
 
 function locateRewrite(

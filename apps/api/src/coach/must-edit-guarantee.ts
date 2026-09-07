@@ -8,8 +8,10 @@ import {
   MUST_EDIT_TOOLS,
   applyRewriteToFocusContent,
   findFocusRewriteOriginal,
+  isRealRewrite,
   localRewriteText,
   mustEditMissCopy,
+  mustEditNoRewriteCopy,
   mustEditStillNeedsUpdate,
 } from "./must-edit.js"
 import type { ModelStreamEvent } from "./translate.js"
@@ -27,7 +29,7 @@ export type MustEditGuaranteeOptions = {
   rewriteText?: (
     original: string,
     userText: string
-  ) => string | Promise<string>
+  ) => string | null | Promise<string | null>
   toolCallId?: string
 }
 
@@ -114,6 +116,33 @@ async function* completeMustEdit(
       ? options.rewriteText(original, options.userText)
       : localRewriteText(original, options.userText)
   )
+  if (!isRealRewrite(original, replacement)) {
+    const miss = mustEditNoRewriteCopy()
+    yield {
+      type: "tool-call",
+      toolCallId,
+      name: MUST_EDIT_TOOLS.updateContent,
+      input: {
+        docId: doc.id,
+        contentVersion: doc.contentVersion,
+        content: doc.content,
+      },
+    }
+    yield {
+      type: "tool-result",
+      toolCallId,
+      name: MUST_EDIT_TOOLS.updateContent,
+      output: errorEnvelope(ERROR_CODES.VALIDATION_ERROR, miss.receipt),
+    }
+    if (!sawText) {
+      yield {
+        type: "text-delta",
+        text: miss.nextStep,
+      }
+    }
+    return
+  }
+
   const content = applyRewriteToFocusContent(
     doc,
     options.userText,
