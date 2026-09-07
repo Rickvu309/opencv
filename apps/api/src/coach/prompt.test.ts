@@ -221,6 +221,11 @@ describe("assembleSystemPrompt", () => {
       latestUserText: "How do I prepare for interviews?",
     })
     expect(advice).not.toMatch(/This User message is an edit ask/)
+
+    const paperAdvice = assembleSystemPrompt(snapshot, undefined, {
+      latestUserText: "How do I edit my summary?",
+    })
+    expect(paperAdvice).not.toMatch(/This User message is an edit ask/)
   })
 
   it("asks the Coach to prefer the User's selection when one is present", () => {

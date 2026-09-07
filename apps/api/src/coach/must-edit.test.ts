@@ -24,7 +24,12 @@ describe("isPaperEditAsk", () => {
     expect(isPaperEditAsk("Make my summary one sentence", true)).toBe(true)
     expect(isPaperEditAsk("Tailor for associate PM intern", true)).toBe(true)
     expect(isPaperEditAsk("Fix spelling", true)).toBe(true)
+    expect(isPaperEditAsk("Fix spelling on the doc", true)).toBe(true)
     expect(isPaperEditAsk("Make it shorter", true)).toBe(true)
+    expect(isPaperEditAsk("Edit my summary", true)).toBe(true)
+    expect(isPaperEditAsk("Can you rewrite my summary?", true)).toBe(true)
+    expect(isPaperEditAsk("Can you edit my summary?", true)).toBe(true)
+    expect(isPaperEditAsk("Can you fix this?", true)).toBe(true)
   })
 
   it("requires a Paper noun when there is no focus doc", () => {
@@ -40,6 +45,16 @@ describe("isPaperEditAsk", () => {
     expect(isPaperEditAsk("What should I cut?", true)).toBe(false)
     expect(isPaperEditAsk("How do I prepare for interviews?")).toBe(false)
     expect(isPaperEditAsk("Move my starred card to Prep")).toBe(false)
+  })
+
+  it("does not treat edit/fix advice as a Paper edit ask when a focus doc is open", () => {
+    expect(isPaperEditAsk("How do I edit my summary?", true)).toBe(false)
+    expect(isPaperEditAsk("What should I edit?", true)).toBe(false)
+    expect(isPaperEditAsk("Should I edit the Experience section?", true)).toBe(
+      false
+    )
+    expect(isPaperEditAsk("Can you fix my interview nerves?", true)).toBe(false)
+    expect(isPaperEditAsk("How do I rewrite my summary?", true)).toBe(false)
   })
 })
 
@@ -92,6 +107,23 @@ describe("mustEditToolChoice", () => {
         calledTools: [],
       })
     ).toBeUndefined()
+  })
+
+  it("does not force paper_updateContent on focus-doc advice that mentions edit/fix", () => {
+    for (const userText of [
+      "How do I edit my summary?",
+      "What should I edit?",
+      "Should I edit the Experience section?",
+      "Can you fix my interview nerves?",
+    ]) {
+      expect(
+        mustEditToolChoice({
+          userText,
+          hasFocusDoc: true,
+          calledTools: [],
+        })
+      ).toBeUndefined()
+    }
   })
 })
 

@@ -24,20 +24,49 @@ export type MustEditToolChoice = {
 const EDIT_VERB =
   /\b(?:rewrite|rewrote|rewriting|shorten|shortened|shortening|tailor|tailored|tailoring|sharpen|sharpened|sharpening|edit|edited|editing|fix(?:ing)?(?:\s+(?:the|this|my|tone|spelling|typo))?|make\s+(?:my|the|this)\s+(?:summary|bullet|opening|cv|letter|proof)|make\b.{0,48}(?:shorter|stronger|better|tighter|less)|add\s+a\s+metric|update\s+(?:the|this|my)\s+(?:summary|bullet|cv|letter|proof|opening)|apply\s+(?:this|the|that)\s+(?:rewrite|edit|change))\b/i
 
+const STRONG_EDIT_VERB =
+  /\b(?:rewrite|rewrote|rewriting|shorten|shortened|shortening|tailor|tailored|tailoring|sharpen|sharpened|sharpening|make\s+(?:my|the|this)\s+(?:summary|bullet|opening|cv|letter|proof)|make\b.{0,48}(?:shorter|stronger|better|tighter|less)|add\s+a\s+metric|update\s+(?:the|this|my)\s+(?:summary|bullet|cv|letter|proof|opening)|apply\s+(?:this|the|that)\s+(?:rewrite|edit|change))\b/i
+
 const PAPER_NOUN =
   /\b(?:cv|letter|proof|document|summary|bullet|resume|cover|experience|opening|tone|spelling)\b/i
+
+const PAPER_OR_DEIXIS =
+  /\b(?:cv|letter|proof|document|summary|bullet|resume|cover|experience|opening|tone|spelling|this|that)\b/i
+
+const ADVICE_INTERROGATIVE =
+  /^(?:how\b|what\b|why\b|do\s+i\b|is\s+(?:it|that)\b)|(?:^|\b)should\s+i\b/i
+
+const POLITE_QUESTION = /^(?:can|could|would|will)\s+you\b/i
 
 const LINE_CAP = 160
 
 /**
  * An edit/rewrite ask on the open Paper doc, or a named Paper artifact.
+ * How-to / should-I advice is not that ask — even when a focus doc is open.
  * Home advice without a Paper noun stays out — that is not must-edit.
  */
 export function isPaperEditAsk(text: string, hasFocusDoc = false): boolean {
   const trimmed = text.trim()
   if (!trimmed || !EDIT_VERB.test(trimmed)) return false
+  if (isAdviceInterrogative(trimmed)) return false
+  if (isWeakQuestionWithoutPaper(trimmed)) return false
   if (hasFocusDoc) return true
   return PAPER_NOUN.test(trimmed)
+}
+
+function isAdviceInterrogative(text: string): boolean {
+  return ADVICE_INTERROGATIVE.test(text)
+}
+
+function isQuestion(text: string): boolean {
+  return text.endsWith("?") || POLITE_QUESTION.test(text)
+}
+
+/** "Can you fix my interview nerves?" — edit/fix in a question, no Paper target. */
+function isWeakQuestionWithoutPaper(text: string): boolean {
+  if (!isQuestion(text)) return false
+  if (STRONG_EDIT_VERB.test(text)) return false
+  return !PAPER_OR_DEIXIS.test(text)
 }
 
 export function latestUserText(
