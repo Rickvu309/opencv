@@ -190,7 +190,7 @@ async function loadWorkspaceSnapshot(db: AppDatabase, userId: string) {
   return snapshotFromLists({ profile, paper, apply })
 }
 
-function withMustEditRepair(
+export function withMustEditRepair(
   surface: CoachToolSurface,
   focusDoc?: CoachTurnInput["focusDoc"]
 ): CoachToolSurface {
@@ -209,12 +209,23 @@ function withMustEditRepair(
   }
 }
 
+/**
+ * Convert a Coach tool input into the Schema object streamText later reuses.
+ * Accessing `.jsonSchema` is the live path (`prepareToolsAndToolChoice`).
+ * A `{ safeParse }` stub has no `~standard`, so `asSchema` calls `schema()`
+ * and throws "schema is not a function" (QVE-196).
+ */
+export function jsonSchemaForCoachInput(schema: unknown) {
+  return asSchema(schema as never).jsonSchema
+}
+
 export function toAiSdkTools(surface: CoachToolSurface): ToolSet {
   const tools: ToolSet = {}
   for (const [name, coachTool] of Object.entries(surface)) {
-    const inputSchema = coachTool.inputSchema as never
-    // AI SDK calls `schema()` when `~standard` is missing (QVE-196).
-    asSchema(inputSchema)
+    const inputSchema = asSchema(coachTool.inputSchema as never)
+    // Force conversion now and pass the Schema object into tool(), so
+    // streamText never sees a raw stub (QVE-196).
+    void inputSchema.jsonSchema
     tools[name] = tool({
       description: coachTool.description,
       inputSchema,

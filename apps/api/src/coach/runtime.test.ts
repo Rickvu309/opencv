@@ -2,7 +2,11 @@ import { DEFAULT_COACH_MODE, successEnvelope } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
 
 import { paperUpdateContentCoachInputSchema } from "./must-edit-repair.js"
-import { normalizeFullStream, toAiSdkTools } from "./runtime.js"
+import {
+  jsonSchemaForCoachInput,
+  normalizeFullStream,
+  toAiSdkTools,
+} from "./runtime.js"
 
 async function* replay(
   parts: Array<{ type: string } & Record<string, unknown>>
@@ -110,19 +114,22 @@ describe("normalizeFullStream", () => {
 })
 
 describe("toAiSdkTools", () => {
-  it("wraps the loose paper_updateContent schema without schema-is-not-a-function", () => {
-    expect(() =>
-      toAiSdkTools({
-        paper_updateContent: {
-          description: "Update Paper document content",
-          inputSchema: paperUpdateContentCoachInputSchema,
-          execute: async () => successEnvelope({ id: "doc" }),
-        },
-      })
-    ).not.toThrow()
+  it("converts paper_updateContent the way streamText does (asSchema.jsonSchema)", async () => {
+    const tools = toAiSdkTools({
+      paper_updateContent: {
+        description: "Update Paper document content",
+        inputSchema: paperUpdateContentCoachInputSchema,
+        execute: async () => successEnvelope({ id: "doc" }),
+      },
+    })
+    const json = await Promise.resolve(
+      jsonSchemaForCoachInput(tools.paper_updateContent?.inputSchema)
+    )
+    expect(json).toMatchObject({ type: "object" })
+    expect(json).not.toEqual(expect.any(Function))
   })
 
-  it("rejects a { safeParse } stub the way streamText would", () => {
+  it("never calls asSchema on a { safeParse } stub for paper_updateContent", async () => {
     const stub = {
       safeParse(input: unknown) {
         return input && typeof input === "object"
@@ -133,6 +140,9 @@ describe("toAiSdkTools", () => {
             }
       },
     }
+    expect(() => jsonSchemaForCoachInput(stub)).toThrow(
+      /schema is not a function/
+    )
     expect(() =>
       toAiSdkTools({
         paper_updateContent: {

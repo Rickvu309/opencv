@@ -28,6 +28,11 @@ import { getProfileForUser } from "../profile/queries.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { repairPaperUpdateInput } from "./must-edit-repair.js"
 import {
+  jsonSchemaForCoachInput,
+  toAiSdkTools,
+  withMustEditRepair,
+} from "./runtime.js"
+import {
   assembleCoachTools,
   commandToToolName,
   executeCoachMutation,
@@ -300,6 +305,22 @@ describe("coach tool surface", () => {
       markdown: "Rewritten for a product internship.",
     })
     expect(applied.contentVersion).toBe(PAPER_CONTENT_VERSION)
+  })
+
+  it("converts every assembled tool, including repaired paper_updateContent, to JSON Schema", async () => {
+    const surface = withMustEditRepair(
+      assembleCoachTools({ db, userId: ownerId })
+    )
+    const tools = toAiSdkTools(surface)
+    expect(Object.keys(tools).sort()).toEqual([...EXPECTED_COACH_TOOLS])
+
+    for (const [name, tool] of Object.entries(tools)) {
+      const json = await Promise.resolve(
+        jsonSchemaForCoachInput(tool.inputSchema)
+      )
+      expect(json, name).toMatchObject({ type: "object" })
+      expect(typeof json, name).not.toBe("function")
+    }
   })
 })
 
