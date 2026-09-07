@@ -47,13 +47,12 @@ export function previewCoachSelectionText(
 export function collapsePaperSelection(root?: HTMLElement | null) {
   const active = document.activeElement
   if (
-    active instanceof HTMLInputElement ||
-    active instanceof HTMLTextAreaElement
+    (active instanceof HTMLInputElement ||
+      active instanceof HTMLTextAreaElement) &&
+    (!root || root.contains(active))
   ) {
-    if (root && !root.contains(active)) return
     const pos = active.selectionEnd ?? 0
     active.setSelectionRange(pos, pos)
-    return
   }
 
   const sel = window.getSelection()

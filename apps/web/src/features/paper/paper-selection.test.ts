@@ -79,6 +79,7 @@ describe("collapsePaperSelection", () => {
   it("collapses a canvas highlight and leaves a composer outside the root alone", () => {
     const root = document.createElement("div")
     const field = document.createElement("div")
+    field.contentEditable = "true"
     field.textContent = "Year-4 Information Systems student"
     root.append(field)
     const composer = document.createElement("textarea")
@@ -97,11 +98,6 @@ describe("collapsePaperSelection", () => {
     collapsePaperSelection(root)
     expect(composer.selectionStart).toBe(0)
     expect(composer.selectionEnd).toBe(7)
-
-    field.focus()
-    sel?.removeAllRanges()
-    sel?.addRange(range)
-    collapsePaperSelection(root)
     expect(window.getSelection()?.isCollapsed ?? true).toBe(true)
   })
 })
