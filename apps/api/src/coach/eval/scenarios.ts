@@ -233,7 +233,7 @@ export const GOLDEN_SCENARIOS: GoldenScenario[] = [
       requireSuccessfulTool: "paper_updateContent",
     },
     judgeFocus:
-      "The User asked to rewrite the open CV summary. The Coach must call paper_updateContent on that document, only claim success if the receipt is ok, and give one next step. Do not ask the User to paste the rewrite.",
+      "The User asked to rewrite the open CV summary. The Coach must call paper_updateContent on that document, only claim success if the receipt is ok, and give one next step. Do not ask the User to paste the rewrite, and do not ask whether to apply.",
   },
   {
     id: "edit-named-letter",
@@ -263,7 +263,7 @@ export const GOLDEN_SCENARIOS: GoldenScenario[] = [
       requireSuccessfulTool: "paper_updateContent",
     },
     judgeFocus:
-      "The User named a Letter, not the CV. The Coach must find that Letter (list or get), call paper_updateContent on it, keep the checkout study, only claim success if the receipt is ok, and give one next step. Do not ask the User to paste the rewrite.",
+      "The User named a Letter, not the CV. The Coach must find that Letter (list or get), call paper_updateContent on it, keep the checkout study, only claim success if the receipt is ok, and give one next step. Do not ask the User to paste the rewrite, and do not ask whether to apply.",
   },
 ]
 

@@ -21,6 +21,11 @@ import {
 import { listPaperDocsForUser } from "../paper/queries.js"
 import { getProfileForUser } from "../profile/queries.js"
 import {
+  latestUserText,
+  mustEditToolChoice,
+  toolNamesFromSteps,
+} from "./must-edit.js"
+import {
   assembleSystemPrompt,
   historyForRegenerate,
   snapshotFromLists,
@@ -89,6 +94,8 @@ export function createOpenRouterCoachRuntime({
         ? historyForRegenerate(input.history)
         : { history: input.history, priorCoach: undefined }
       const messages = windowHistory(prepared.history)
+      const userText = latestUserText(messages)
+      const hasFocusDoc = Boolean(input.focusDoc)
 
       try {
         const result = streamText({
@@ -101,6 +108,7 @@ export function createOpenRouterCoachRuntime({
                 ? { regenerateFrom: prepared.priorCoach }
                 : {}),
               ...(input.selection ? { selection: input.selection } : {}),
+              ...(userText ? { latestUserText: userText } : {}),
             }
           ),
           messages,
@@ -108,6 +116,14 @@ export function createOpenRouterCoachRuntime({
           stopWhen: stepCountIs(COACH_STEP_CAP),
           maxOutputTokens,
           abortSignal: abort.signal,
+          prepareStep({ steps }) {
+            const choice = mustEditToolChoice({
+              userText,
+              hasFocusDoc,
+              calledTools: toolNamesFromSteps(steps),
+            })
+            return choice ? { toolChoice: choice } : {}
+          },
         })
 
         yield* partsFromModelStream(

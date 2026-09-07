@@ -65,6 +65,8 @@ describe("seedGoldenScenario", () => {
       name: "Internship CV",
       kind: "cv",
       status: "draft",
+      content: paper[0]?.content,
+      contentVersion: paper[0]?.contentVersion,
     })
     expect(evalTurnInput(seeded, scenario).focusDoc).toEqual(seeded.focusDoc)
   })

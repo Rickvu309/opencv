@@ -947,9 +947,17 @@ describe("Paper editors", () => {
 
     const dialog = await openCoach()
     fireEvent.change(messageCoach(dialog), {
-      target: { value: "Make my summary one sentence" },
+      target: { value: "Rewrite the Experience checkout bullet for a product internship" },
     })
     fireEvent.click(within(dialog).getByRole("button", { name: "Send" }))
+
+    expect(getLastCoachRequest()?.focusDocId).toBe(
+      "11111111-1111-7111-8111-111111111111"
+    )
+    expect(getLastCoachRequest()?.selection).toBeUndefined()
+    expect(getLastCoachRequest()?.text).toBe(
+      "Rewrite the Experience checkout bullet for a product internship"
+    )
 
     expect(
       await within(dialog).findByText("I shortened the summary to one sentence.")
