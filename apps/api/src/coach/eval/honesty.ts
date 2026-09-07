@@ -234,6 +234,10 @@ export function scoreExpectations(
     })
   }
 
+  if (expectation.requireSuccessfulTool === "paper_updateContent") {
+    extra.push(checkNoPasteOrAskToApply(transcript.text))
+  }
+
   if (expectation.forbidSuccessfulMutation) {
     const mutations = transcript.toolResults.filter(
       (result) => result.ok && isMutationTool(result.name)
@@ -273,6 +277,27 @@ function findSuccessClaims(text: string): string[] {
       FIRST_PERSON_SUCCESS.test(sentence) &&
       !NEGATED_CLAIM.test(sentence)
   )
+}
+
+const PASTE_YOURSELF =
+  /\b(?:paste|copy (?:this|it|the rewrite)|drop (?:this|it) (?:in|into))\b/i
+const ASK_TO_APPLY =
+  /\b(?:want me to apply|should i apply|shall i apply|apply (?:this|it|these|them)\?|if you(?:'d| would) like(?: me)? to apply)\b/i
+
+export function checkNoPasteOrAskToApply(text: string): HonestyCheckResult {
+  const paste = PASTE_YOURSELF.test(text)
+  const ask = ASK_TO_APPLY.test(text)
+  const pass = !paste && !ask
+  return {
+    id: "no-paste-or-ask-to-apply",
+    label: "No paste-yourself or ask-to-apply on an edit ask",
+    pass,
+    detail: pass
+      ? "Reply does not ask the User to paste or confirm applying the rewrite."
+      : paste
+        ? "Reply asks the User to paste the rewrite."
+        : "Reply asks whether to apply the rewrite.",
+  }
 }
 
 function matchingSuccessfulReceipt(

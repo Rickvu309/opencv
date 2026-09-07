@@ -73,6 +73,7 @@ describe("personaSystemPrompt", () => {
     expect(persona).toMatch(/paper_updateContent/)
     expect(persona).toMatch(/failed tool receipt/)
     expect(persona).toMatch(/Never tell them to paste the rewrite/)
+    expect(persona).toMatch(/Never ask whether to apply/)
   })
 })
 
@@ -161,18 +162,70 @@ describe("assembleSystemPrompt", () => {
         name: "PM track CV",
         kind: "cv",
         status: "draft",
+        content: {
+          templateId: "internship",
+          name: "",
+          headline: "",
+          contact: { email: "", phone: "", location: "" },
+          summary: "Year-4 student targeting associate PM roles.",
+          experience: [
+            {
+              role: "Side project · Checkout UX",
+              company: "Personal",
+              period: "2025",
+              bullets: [
+                "Audited product card density on a top e-commerce app.",
+              ],
+            },
+          ],
+          education: [],
+          skills: [],
+        },
+        contentVersion: 1,
       },
     }
     const summary = summarizeWorkspace(snapshot)
     expect(summary).toContain(
       "Open Paper document: PM track CV · CV · draft (id: 11111111-1111-7111-8111-111111111111)"
     )
-    expect(summary).toMatch(/paper_getDoc/)
+    expect(summary).toMatch(/Do not call paper_getDoc/)
     expect(summary).toMatch(/paper_updateContent/)
     expect(summary).toMatch(/never claim a silent rewrite/)
     expect(summary).toMatch(/never ask the User to paste the rewrite/)
+    expect(summary).toMatch(/never ask whether to apply/)
+    expect(summary).toMatch(/Experience\[0].*Checkout UX/)
+    expect(summary).toContain("Year-4 student targeting associate PM roles.")
     expect(summary).not.toMatch(/!/)
     expect(assembleSystemPrompt(snapshot)).toContain(summary)
+  })
+
+  it("appends a must-edit instruction for an edit ask, not for Home advice", () => {
+    const snapshot: WorkspaceSnapshot = {
+      ...sampleSnapshot,
+      focusDoc: {
+        id: "11111111-1111-7111-8111-111111111111",
+        name: "PM track CV",
+        kind: "cv",
+        status: "draft",
+        content: { markdown: "unused" },
+        contentVersion: 1,
+      },
+    }
+    const edit = assembleSystemPrompt(snapshot, undefined, {
+      latestUserText: "Rewrite this Experience bullet for a product internship",
+    })
+    expect(edit).toMatch(/This User message is an edit ask/)
+    expect(edit).toMatch(/Never ask whether to apply/)
+
+    const advice = assembleSystemPrompt(sampleSnapshot, undefined, {
+      latestUserText: "How do I prepare for interviews?",
+    })
+    expect(advice).not.toMatch(/This User message is an edit ask/)
+
+    const paperAdvice = assembleSystemPrompt(snapshot, undefined, {
+      latestUserText: "How do I edit my summary?",
+    })
+    expect(paperAdvice).not.toMatch(/This User message is an edit ask/)
   })
 
   it("asks the Coach to prefer the User's selection when one is present", () => {

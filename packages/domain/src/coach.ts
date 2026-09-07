@@ -280,6 +280,9 @@ export type CoachFocusDoc = {
   name: string
   kind: "cv" | "letter" | "proof"
   status: "draft" | "ready" | "published"
+  /** Current body so an edit ask can call paper_updateContent without a prior get. */
+  content: unknown
+  contentVersion: number
 }
 
 export type CoachTurnInput = {
