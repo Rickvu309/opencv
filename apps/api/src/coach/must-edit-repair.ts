@@ -8,8 +8,6 @@ import {
   type PaperContentKind,
 } from "@workspace/domain"
 
-export const UNSUPPORTED_CONTENT_VERSION_COPY = "Unsupported content version"
-
 export const MUST_EDIT_APPLY_FAILED_COPY = "Could not apply the rewrite."
 
 export type RepairedPaperUpdateInput = {
