@@ -42,6 +42,10 @@ describe("isPaperEditAsk", () => {
     expect(isPaperEditAsk("Fix spelling on the doc", true)).toBe(true)
     expect(isPaperEditAsk("Make it shorter", true)).toBe(true)
     expect(isPaperEditAsk("Edit my summary", true)).toBe(true)
+    expect(
+      isPaperEditAsk("Rewrite the Education section to be clearer", true)
+    ).toBe(true)
+    expect(isPaperEditAsk("Sharpen my Skills section", true)).toBe(true)
     expect(isPaperEditAsk("Can you rewrite my summary?", true)).toBe(true)
     expect(isPaperEditAsk("Can you edit my summary?", true)).toBe(true)
     expect(isPaperEditAsk("Can you fix this?", true)).toBe(true)
@@ -72,6 +76,12 @@ describe("isPaperEditAsk", () => {
     expect(isPaperEditAsk("How do I edit my summary?", true)).toBe(false)
     expect(isPaperEditAsk("What should I edit?", true)).toBe(false)
     expect(isPaperEditAsk("Should I edit the Experience section?", true)).toBe(
+      false
+    )
+    expect(isPaperEditAsk("Should I edit the Education section?", true)).toBe(
+      false
+    )
+    expect(isPaperEditAsk("How do I sharpen my Skills section?", true)).toBe(
       false
     )
     expect(isPaperEditAsk("Can you fix my interview nerves?", true)).toBe(false)
@@ -135,6 +145,8 @@ describe("mustEditToolChoice", () => {
       "How do I edit my summary?",
       "What should I edit?",
       "Should I edit the Experience section?",
+      "Should I edit the Education section?",
+      "How do I sharpen my Skills section?",
       "Can you fix my interview nerves?",
     ]) {
       expect(
@@ -179,6 +191,8 @@ describe("mustEditPrepareStep", () => {
     for (const userText of [
       "How do I edit my summary?",
       "Can you fix my interview nerves?",
+      "Should I edit the Education section?",
+      "How do I sharpen my Skills section?",
     ]) {
       expect(
         mustEditPrepareStep({
@@ -245,6 +259,8 @@ describe("describeFocusDoc", () => {
     expect(described).toContain(`contentVersion: ${PAPER_CONTENT_VERSION}`)
     expect(described).toMatch(/Experience\[1].*Checkout UX/)
     expect(described).toMatch(/Audited product card density/)
+    expect(described).toMatch(/Education\[0].*Information Systems/)
+    expect(described).toMatch(/Skills\[0].*Product/)
     expect(described).not.toMatch(/café|cafe/i)
     expect(described).toContain(JSON.stringify(doc.content))
     expect(described).toMatch(/never ask whether to apply/)
@@ -371,6 +387,42 @@ describe("focus-doc rewrite targeting", () => {
       )
     ).toBe(true)
     expect(isExperienceNamedMiss(doc, "Rewrite my summary")).toBe(false)
+  })
+
+  it("does not target Summary when Education or Skills is named", () => {
+    const starterSummary = starterCvDocument().summary
+    for (const userText of [
+      "Rewrite the Education section to be clearer",
+      "Sharpen my Skills section",
+      "Rewrite the Projects section",
+    ]) {
+      expect(isPaperEditAsk(userText, true)).toBe(true)
+      expect(findFocusRewriteOriginal(doc, userText)).toBeNull()
+      expect(
+        applyRewriteToFocusContent(doc, userText, "Should not land")
+      ).toBeNull()
+    }
+
+    const educationMiss = mustEditMissCopy(
+      doc,
+      "Rewrite the Education section to be clearer"
+    )
+    expect(educationMiss.receipt).toBe("Could not rewrite Education.")
+    expect(educationMiss.nextStep).toMatch(/Information Systems/)
+    expect(educationMiss.nextStep).toMatch(/UIT/)
+    expect(educationMiss.nextStep).not.toMatch(/!/)
+    expect(educationMiss.nextStep).not.toMatch(
+      new RegExp(starterSummary.slice(0, 24))
+    )
+
+    const skillsMiss = mustEditMissCopy(doc, "Sharpen my Skills section")
+    expect(skillsMiss.receipt).toBe("Could not rewrite Skills.")
+    expect(skillsMiss.nextStep).toMatch(/Product/)
+    expect(skillsMiss.nextStep).toMatch(/Tools/)
+    expect(skillsMiss.nextStep).not.toMatch(/!/)
+    expect(skillsMiss.nextStep).not.toMatch(
+      new RegExp(starterSummary.slice(0, 24))
+    )
   })
 })
 

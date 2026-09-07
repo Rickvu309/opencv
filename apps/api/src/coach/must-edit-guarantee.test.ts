@@ -189,6 +189,8 @@ describe("guaranteeMustEditStream", () => {
     for (const userText of [
       "How do I edit my summary?",
       "Can you fix my interview nerves?",
+      "Should I edit the Education section?",
+      "How do I sharpen my Skills section?",
     ]) {
       executeUpdate.mockClear()
       const events = await collect(
@@ -295,6 +297,92 @@ describe("guaranteeMustEditStream", () => {
     })
     expect((events[4] as { text: string }).text).not.toMatch(/paste|apply\?/)
     expect((events[4] as { text: string }).text).not.toMatch(/!/)
+  })
+
+  it("does not rewrite Summary when Education or Skills is named", async () => {
+    const executeUpdate = vi.fn()
+    const focusDoc = sampleFocusDoc()
+    const summary = starterCvDocument().summary
+
+    for (const [userText, receipt, nextStep] of [
+      [
+        "Rewrite the Education section to be clearer",
+        "Could not rewrite Education.",
+        /Could not rewrite Education\. Next step: name .*Information Systems/,
+      ],
+      [
+        "Sharpen my Skills section",
+        "Could not rewrite Skills.",
+        /Could not rewrite Skills\. Next step: name .*Product/,
+      ],
+    ] as const) {
+      executeUpdate.mockClear()
+      const events = await collect(
+        [
+          {
+            type: "tool-call",
+            toolCallId: "read-1",
+            name: "paper_getDoc",
+            input: { docId: focusDoc.id },
+          },
+          {
+            type: "tool-result",
+            toolCallId: "read-1",
+            name: "paper_getDoc",
+            output: { ok: true, data: { name: focusDoc.name } },
+          },
+          { type: "finish", finishReason: "stop", usage: {} },
+        ],
+        {
+          userText,
+          hasFocusDoc: true,
+          focusDoc,
+          executeUpdate,
+          rewriteText: () => "Should not land on Summary",
+          toolCallId: "must-edit-other-1",
+        }
+      )
+
+      expect(executeUpdate).not.toHaveBeenCalled()
+      expect(events.map((event) => event.type)).toEqual([
+        "tool-call",
+        "tool-result",
+        "tool-call",
+        "tool-result",
+        "text-delta",
+        "finish",
+      ])
+      expect(events[2]).toMatchObject({
+        type: "tool-call",
+        name: "paper_updateContent",
+        toolCallId: "must-edit-other-1",
+        input: {
+          docId: focusDoc.id,
+          contentVersion: focusDoc.contentVersion,
+          content: focusDoc.content,
+        },
+      })
+      const updateInput = (
+        events[2] as { input: { content: { summary: string } } }
+      ).input
+      expect(updateInput.content.summary).toBe(summary)
+      expect(events[3]).toMatchObject({
+        type: "tool-result",
+        name: "paper_updateContent",
+        output: {
+          ok: false,
+          error: {
+            message: receipt,
+          },
+        },
+      })
+      expect(events[4]).toMatchObject({
+        type: "text-delta",
+        text: expect.stringMatching(nextStep),
+      })
+      expect((events[4] as { text: string }).text).not.toMatch(/paste|apply\?/)
+      expect((events[4] as { text: string }).text).not.toMatch(/!/)
+    }
   })
 
   it("maps a dumped paper_updateContent Experience miss to a failed receipt and role next-step", async () => {

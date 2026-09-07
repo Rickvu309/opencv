@@ -219,6 +219,28 @@ function outlinePaperContent(content: unknown): string[] {
         lines.push(`  - ${clip(bullet)}`)
       }
     })
+    content.education.forEach((row, index) => {
+      lines.push(
+        `- Education[${index}] ${row.degree} · ${row.school}${
+          row.period ? ` · ${row.period}` : ""
+        }`
+      )
+      if (row.detail) lines.push(`  - ${clip(row.detail)}`)
+    })
+    content.skills.forEach((group, index) => {
+      lines.push(
+        `- Skills[${index}] ${group.label}: ${clip(group.items.join(", "))}`
+      )
+    })
+    content.projects?.forEach((project, index) => {
+      lines.push(`- Projects[${index}] ${project.name}: ${clip(project.detail)}`)
+    })
+    if (content.headline) {
+      lines.push(`- Headline: ${clip(content.headline)}`)
+    }
+    if (content.languages && content.languages.length > 0) {
+      lines.push(`- Languages: ${clip(content.languages.join(", "))}`)
+    }
     return lines
   }
   if (isLetterDocument(content)) {
@@ -243,11 +265,32 @@ function clip(text: string, cap = LINE_CAP): string {
 
 const EXPERIENCE_OR_BULLET = /\bexperience\b|\bbullet\b/i
 
+const OTHER_CV_SECTIONS = [
+  { name: "Education", pattern: /\beducation\b/i },
+  { name: "Skills", pattern: /\bskills\b/i },
+  { name: "Projects", pattern: /\bprojects\b/i },
+  { name: "Headline", pattern: /\bheadline\b/i },
+  { name: "Contact", pattern: /\bcontact\b/i },
+  { name: "Languages", pattern: /\blanguages\b/i },
+] as const
+
+type OtherCvSectionName = (typeof OTHER_CV_SECTIONS)[number]["name"]
+
 const REWRITE_STOP =
-  /^(?:rewrite|rewrote|rewriting|shorten|shortened|shortening|tailor|tailored|tailoring|sharpen|sharpened|sharpening|edit|edited|editing|fix|fixing|make|update|apply|the|this|that|my|a|an|for|to|of|on|in|and|or|be|it|please|can|you|bullet|bullets|section|document|doc|open|named|one|sentence|experience|summary|opening|proof|letter|resume|cover|internship)$/i
+  /^(?:rewrite|rewrote|rewriting|shorten|shortened|shortening|tailor|tailored|tailoring|sharpen|sharpened|sharpening|edit|edited|editing|fix|fixing|make|update|apply|the|this|that|my|a|an|for|to|of|on|in|and|or|be|it|please|can|you|bullet|bullets|section|document|doc|open|named|one|sentence|experience|summary|opening|proof|letter|resume|cover|internship|education|skill|skills|project|projects|headline|contact|language|languages)$/i
 
 export function namesExperienceOrBullet(userText: string): boolean {
   return EXPERIENCE_OR_BULLET.test(userText)
+}
+
+/** A real CV section that is not Summary or Experience — do not fall through to Summary. */
+export function namedOtherCvSection(
+  userText: string
+): OtherCvSectionName | null {
+  for (const section of OTHER_CV_SECTIONS) {
+    if (section.pattern.test(userText)) return section.name
+  }
+  return null
 }
 
 /** Role labels already on the CV — used when an Experience ask cannot target a bullet. */
@@ -385,6 +428,37 @@ export function isExperienceNamedMiss(
   return findFocusRewriteOriginal(doc, userText, selectionText) === null
 }
 
+function describeNamedSection(
+  doc: CoachFocusDoc,
+  section: OtherCvSectionName
+): string[] {
+  const decoded = decodePaperContent(doc.kind, doc.contentVersion, doc.content)
+  if (!decoded.ok || !isCvDocument(decoded.data)) return []
+  const content = decoded.data
+  switch (section) {
+    case "Education":
+      return content.education.map((row) =>
+        row.degree ? `${row.degree} · ${row.school}` : row.school
+      )
+    case "Skills":
+      return content.skills.map((group) => group.label)
+    case "Projects":
+      return (content.projects ?? []).map((project) => project.name)
+    case "Headline":
+      return content.headline ? [content.headline] : []
+    case "Contact": {
+      const contact = [
+        content.contact.location,
+        content.contact.email,
+        content.contact.phone,
+      ].filter((value) => value.length > 0)
+      return contact
+    }
+    case "Languages":
+      return content.languages ?? []
+  }
+}
+
 export function mustEditMissCopy(
   doc: CoachFocusDoc | undefined,
   userText: string
@@ -401,6 +475,20 @@ export function mustEditMissCopy(
       receipt: "Could not match a bullet in Experience.",
       nextStep:
         "Could not match a bullet in Experience. Next step: add a role or name a section that is already on the CV.",
+    }
+  }
+  const other = namedOtherCvSection(userText)
+  if (doc && other) {
+    const items = describeNamedSection(doc, other)
+    if (items.length > 0) {
+      return {
+        receipt: `Could not rewrite ${other}.`,
+        nextStep: `Could not rewrite ${other}. Next step: name ${formatRoleList(items)}.`,
+      }
+    }
+    return {
+      receipt: `Could not rewrite ${other}.`,
+      nextStep: `Could not rewrite ${other}. Next step: add ${other.toLowerCase()} or name a section that is already on the CV.`,
     }
   }
   return {
@@ -607,6 +695,9 @@ function locateRewrite(
     }
     if (wantsSummary) {
       return { kind: "cv-summary", original: content.summary }
+    }
+    if (namedOtherCvSection(userText)) {
+      return null
     }
     const hit = bestExperienceBullet(content, tokens)
     if (hit) return hit
