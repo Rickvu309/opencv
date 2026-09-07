@@ -1,6 +1,8 @@
 import {
+  ERROR_CODES,
   INVALID_COMMAND_INPUT_COPY,
   PAPER_CONTENT_VERSION,
+  errorEnvelope,
   starterCvDocument,
   successEnvelope,
 } from "@workspace/domain"
@@ -293,6 +295,131 @@ describe("guaranteeMustEditStream", () => {
     })
     expect((events[4] as { text: string }).text).not.toMatch(/paste|apply\?/)
     expect((events[4] as { text: string }).text).not.toMatch(/!/)
+  })
+
+  it("maps a dumped paper_updateContent Experience miss to a failed receipt and role next-step", async () => {
+    const executeUpdate = vi.fn()
+    const focusDoc = sampleFocusDoc()
+    const summary = starterCvDocument().summary
+    const dump = [
+      "paper_updateContent",
+      JSON.stringify({
+        docId: focusDoc.id,
+        contentVersion: focusDoc.contentVersion,
+        content: focusDoc.content,
+      }),
+    ].join(" ")
+    const events = await collect(
+      [
+        { type: "text-delta", text: dump },
+        {
+          type: "text-delta",
+          text: " Could not match a bullet in Experience.",
+        },
+        { type: "finish", finishReason: "stop", usage: {} },
+      ],
+      {
+        userText: "Rewrite the Experience section to be more executive",
+        hasFocusDoc: true,
+        focusDoc,
+        executeUpdate,
+        toolCallId: "must-edit-dump-1",
+      }
+    )
+
+    expect(executeUpdate).not.toHaveBeenCalled()
+    const text = events
+      .filter((event): event is { type: "text-delta"; text: string } =>
+        event.type === "text-delta"
+      )
+      .map((event) => event.text)
+      .join("")
+    expect(text).not.toMatch(/paper[_]?updateContent/i)
+    expect(text).not.toContain("{")
+    expect(text).not.toContain(focusDoc.id)
+    expect(text).toMatch(/Product discovery lead/)
+    expect(text).toMatch(/Checkout UX/)
+    expect(text).toMatch(/Next step:/)
+    expect(text).not.toMatch(new RegExp(summary.slice(0, 24)))
+    expect(events.some((event) => event.type === "tool-call")).toBe(true)
+    expect(events.some((event) => event.type === "tool-result")).toBe(true)
+    const update = events.find(
+      (event) =>
+        event.type === "tool-call" && event.name === "paper_updateContent"
+    ) as { input: { content: { summary: string } } } | undefined
+    expect(update?.input.content.summary).toBe(summary)
+    const result = events.find((event) => event.type === "tool-result")
+    expect(result).toMatchObject({
+      type: "tool-result",
+      name: "paper_updateContent",
+      output: {
+        ok: false,
+        error: { message: "Could not match a bullet in Experience." },
+      },
+    })
+  })
+
+  it("keeps a failed model paper_updateContent and adds a role next-step after dump text", async () => {
+    const executeUpdate = vi.fn()
+    const focusDoc = sampleFocusDoc()
+    const summary = starterCvDocument().summary
+    const events = await collect(
+      [
+        {
+          type: "tool-call",
+          toolCallId: "model-1",
+          name: "paper_updateContent",
+          input: {
+            docId: focusDoc.id,
+            contentVersion: focusDoc.contentVersion,
+            content: focusDoc.content,
+          },
+        },
+        {
+          type: "tool-result",
+          toolCallId: "model-1",
+          name: "paper_updateContent",
+          output: errorEnvelope(
+            ERROR_CODES.VALIDATION_ERROR,
+            "Could not match a bullet in Experience."
+          ),
+        },
+        {
+          type: "text-delta",
+          text: `paper_updateContent ${JSON.stringify({
+            docId: focusDoc.id,
+            content: focusDoc.content,
+          })}`,
+        },
+        { type: "finish", finishReason: "stop", usage: {} },
+      ],
+      {
+        userText: "Rewrite the Experience section to be more executive",
+        hasFocusDoc: true,
+        focusDoc,
+        executeUpdate,
+      }
+    )
+
+    expect(executeUpdate).not.toHaveBeenCalled()
+    expect(
+      events.filter(
+        (event) =>
+          event.type === "tool-call" && event.name === "paper_updateContent"
+      )
+    ).toHaveLength(1)
+    const text = events
+      .filter((event): event is { type: "text-delta"; text: string } =>
+        event.type === "text-delta"
+      )
+      .map((event) => event.text)
+      .join("")
+    expect(text).not.toMatch(/paper[_]?updateContent/i)
+    expect(text).not.toContain("{")
+    expect(text).toMatch(/Product discovery lead/)
+    expect(text).toMatch(/Checkout UX/)
+    expect(text).toMatch(/Next step:/)
+    expect(text).not.toMatch(new RegExp(summary.slice(0, 24)))
   })
 
   it("leaves a successful model update alone", async () => {

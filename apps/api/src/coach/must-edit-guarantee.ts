@@ -15,12 +15,15 @@ import {
   MUST_EDIT_TOOLS,
   applyRewriteToFocusContent,
   findFocusRewriteOriginal,
+  isExperienceNamedMiss,
   isPaperEditAsk,
   isRealRewrite,
   localRewriteText,
   mustEditMissCopy,
   mustEditNoRewriteCopy,
   mustEditStillNeedsUpdate,
+  stripToolDumpText,
+  textNamesExperienceRole,
 } from "./must-edit.js"
 import type { ModelStreamEvent } from "./translate.js"
 
@@ -52,15 +55,17 @@ type ToolErrorEvent = Extract<ModelStreamEvent, { type: "tool-error" }>
  * Failed version / invalid-input receipts are held: retry once with a
  * repaired contentVersion + sanitized body, or emit one honest failure.
  * A later successful Updated CV receipt never follows those error flashes.
+ * Edit-ask text is held until the end so raw tool dumps never reach the Thread.
  */
 export async function* guaranteeMustEditStream(
   events: AsyncIterable<ModelStreamEvent>,
   options: MustEditGuaranteeOptions
 ): AsyncGenerator<ModelStreamEvent> {
   const calledTools: string[] = []
-  let sawText = false
-  let finish: Extract<ModelStreamEvent, { type: "finish" }> | undefined
   const isMustEdit = isPaperEditAsk(options.userText, options.hasFocusDoc)
+  let textBuffer = ""
+  let sawPassThroughText = false
+  let finish: Extract<ModelStreamEvent, { type: "finish" }> | undefined
   let updateSucceeded = false
   let heldRecoverable = false
   let pendingCall: ToolCallEvent | undefined
@@ -68,7 +73,13 @@ export async function* guaranteeMustEditStream(
 
   for await (const event of events) {
     if (event.type === "tool-call") calledTools.push(event.name)
-    if (event.type === "text-delta" && event.text.length > 0) sawText = true
+    if (event.type === "text-delta") {
+      if (isMustEdit) {
+        textBuffer += event.text
+        continue
+      }
+      if (event.text.length > 0) sawPassThroughText = true
+    }
     if (event.type === "finish") {
       finish = event
       continue
@@ -126,6 +137,16 @@ export async function* guaranteeMustEditStream(
 
   if (pendingCall) yield pendingCall
 
+  const cleanText = stripToolDumpText(textBuffer)
+  const experienceMiss = isExperienceNamedMiss(
+    options.focusDoc,
+    options.userText,
+    options.selectionText
+  )
+  const rolesNamed = textNamesExperienceRole(cleanText, options.focusDoc)
+  const usefulText = cleanText.length > 0 && (!experienceMiss || rolesNamed)
+  const sawText = usefulText || sawPassThroughText
+
   if (
     !updateSucceeded &&
     mustEditStillNeedsUpdate({
@@ -135,16 +156,30 @@ export async function* guaranteeMustEditStream(
     })
   ) {
     yield* completeMustEdit(options, sawText)
+    if (usefulText) {
+      yield { type: "text-delta", text: cleanText }
+    }
   } else if (!updateSucceeded && heldRecoverable) {
     const retried = await retryRepairedUpdate(lastFailedInput, options)
     if (retried) {
       yield retried.call
       yield retried.result
+      if (cleanText.length > 0) {
+        yield { type: "text-delta", text: cleanText }
+      }
     } else {
       yield* completeMustEdit(options, sawText, {
         alreadyAttempted: true,
       })
+      if (usefulText) {
+        yield { type: "text-delta", text: cleanText }
+      }
     }
+  } else if (experienceMiss && !updateSucceeded && !rolesNamed) {
+    const miss = mustEditMissCopy(options.focusDoc, options.userText)
+    yield { type: "text-delta", text: miss.nextStep }
+  } else if (cleanText.length > 0) {
+    yield { type: "text-delta", text: cleanText }
   }
 
   if (finish) yield finish

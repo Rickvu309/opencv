@@ -12,7 +12,9 @@ import {
   extractMustEditReplacement,
   findFocusRewriteOriginal,
   freeMustEditLinePrompt,
+  isExperienceNamedMiss,
   isPaperEditAsk,
+  isToolDumpText,
   latestUserText,
   localRewriteText,
   mustEditMissCopy,
@@ -22,6 +24,8 @@ import {
   mustEditToolChoice,
   mustEditTurnInstruction,
   shouldUseFreeTextMustEdit,
+  stripToolDumpText,
+  textNamesExperienceRole,
   toolNamesFromSteps,
   toCoachFocusDoc,
 } from "./must-edit.js"
@@ -347,7 +351,10 @@ describe("focus-doc rewrite targeting", () => {
       )
     ).toBeNull()
 
-    const miss = mustEditMissCopy(doc, "Rewrite the Experience section")
+    const miss = mustEditMissCopy(
+      doc,
+      "Rewrite the Experience section to be more executive"
+    )
     expect(miss.receipt).toBe("Could not match a bullet in Experience.")
     expect(miss.nextStep).toMatch(/Product discovery lead/)
     expect(miss.nextStep).toMatch(/Checkout UX/)
@@ -357,6 +364,61 @@ describe("focus-doc rewrite targeting", () => {
       "Product discovery lead · Campus product club · Volunteer",
       "Side project · Checkout UX · Personal · Remote",
     ])
+    expect(
+      isExperienceNamedMiss(
+        doc,
+        "Rewrite the Experience section to be more executive"
+      )
+    ).toBe(true)
+    expect(isExperienceNamedMiss(doc, "Rewrite my summary")).toBe(false)
+  })
+})
+
+describe("tool-dump text", () => {
+  const doc = toCoachFocusDoc({
+    id: "11111111-1111-7111-8111-111111111111",
+    name: "Sample internship CV",
+    contentKind: "cv",
+    status: "draft",
+    content: starterCvDocument(),
+    contentVersion: PAPER_CONTENT_VERSION,
+  })
+  const dump = [
+    "paper_updateContent",
+    JSON.stringify({
+      docId: doc.id,
+      contentVersion: PAPER_CONTENT_VERSION,
+      content: starterCvDocument(),
+    }),
+  ].join("\n")
+
+  it("strips raw paper_updateContent / tool JSON and keeps a failed receipt line", () => {
+    expect(isToolDumpText(dump)).toBe(true)
+    expect(isToolDumpText("paperupdateContent")).toBe(true)
+    expect(stripToolDumpText(dump)).toBe("")
+    expect(
+      stripToolDumpText(`${dump}\nCould not match a bullet in Experience.`)
+    ).toBe("Could not match a bullet in Experience.")
+    expect(
+      stripToolDumpText(
+        JSON.stringify({
+          ok: false,
+          error: { message: "Could not match a bullet in Experience." },
+        })
+      )
+    ).toBe("")
+    expect(isToolDumpText("Could not match a bullet in Experience.")).toBe(
+      false
+    )
+    expect(
+      textNamesExperienceRole(
+        "Next step: name Product discovery lead or Checkout UX.",
+        doc
+      )
+    ).toBe(true)
+    expect(
+      textNamesExperienceRole("Could not match a bullet in Experience.", doc)
+    ).toBe(false)
   })
 })
 
