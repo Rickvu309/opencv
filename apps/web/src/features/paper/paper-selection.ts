@@ -20,6 +20,51 @@ function capSelection(text: string, sectionId?: string): CoachSelection {
   return next
 }
 
+const SELECTION_PREVIEW_MAX = 96
+
+/** Keep the last non-empty CoachSelection when the caret leaves the editor. */
+export function retainCoachSelection(
+  previous: CoachSelection | null,
+  next: CoachSelection | null
+): CoachSelection | null {
+  return next ?? previous
+}
+
+/** Short quoted span for the float preview. */
+export function previewCoachSelectionText(
+  text: string,
+  max = SELECTION_PREVIEW_MAX
+): string {
+  const compact = text.replace(/\s+/g, " ").trim()
+  if (compact.length <= max) return compact
+  return `${compact.slice(0, Math.max(1, max - 1))}…`
+}
+
+/**
+ * Collapse a highlight that still lives inside the Paper canvas.
+ * Leaves the Coach composer (outside `root`) alone.
+ */
+export function collapsePaperSelection(root?: HTMLElement | null) {
+  const active = document.activeElement
+  if (
+    active instanceof HTMLInputElement ||
+    active instanceof HTMLTextAreaElement
+  ) {
+    if (root && !root.contains(active)) return
+    const pos = active.selectionEnd ?? 0
+    active.setSelectionRange(pos, pos)
+    return
+  }
+
+  const sel = window.getSelection()
+  if (!sel || sel.rangeCount === 0) return
+  const node = sel.anchorNode
+  const el = node instanceof Element ? node : node?.parentElement
+  if (!el) return
+  if (root && !root.contains(el)) return
+  sel.removeAllRanges()
+}
+
 /** Current Paper selection, if the caret is inside the editor. */
 export function readPaperSelection(
   root?: HTMLElement | null

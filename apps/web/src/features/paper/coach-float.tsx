@@ -18,6 +18,7 @@ import {
   threadQueryKeys,
 } from "@/features/home/thread-api.ts"
 
+import { previewCoachSelectionText } from "./paper-selection.ts"
 import type { ToolbarVariant } from "./paper-editor-toolbar.tsx"
 
 export const COACH_FLOAT_STORAGE_KEY = "openpath:paper:coach-float"
@@ -64,6 +65,7 @@ type Props = {
   docName: string
   variant: ToolbarVariant
   selection?: CoachSelection | null
+  onClearSelection?: () => void
 }
 
 function readFloatState(): CoachFloatState {
@@ -97,6 +99,7 @@ export const CoachFloat = memo(function CoachFloat({
   docName,
   variant,
   selection,
+  onClearSelection,
 }: Props) {
   const dialogRef = useRef<HTMLDivElement>(null)
   const returnFocusRef = useRef(false)
@@ -263,6 +266,29 @@ export const CoachFloat = memo(function CoachFloat({
       </div>
       {floatState === "open" ? (
         <div className="flex min-h-0 flex-1 flex-col gap-2 px-3 pt-2 pb-3">
+          {selection?.text ? (
+            <div
+              data-coach-selection-preview
+              role="status"
+              aria-label="Selected text"
+              className="flex items-start gap-1 rounded-lg bg-muted/70 px-2 py-1.5 text-2xs text-muted-foreground"
+            >
+              <p className="min-w-0 flex-1 text-pretty">
+                “{previewCoachSelectionText(selection.text)}”
+              </p>
+              {onClearSelection ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  aria-label="Clear selection"
+                  onClick={onClearSelection}
+                >
+                  <X />
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
           <AssistantRuntimeProvider runtime={runtime}>
             <CoachThread
               messages={messages}
