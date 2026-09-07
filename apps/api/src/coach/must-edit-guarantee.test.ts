@@ -1,4 +1,5 @@
 import {
+  INVALID_COMMAND_INPUT_COPY,
   PAPER_CONTENT_VERSION,
   starterCvDocument,
   successEnvelope,
@@ -6,6 +7,7 @@ import {
 import { describe, expect, it, vi } from "vitest"
 
 import { guaranteeMustEditStream } from "./must-edit-guarantee.js"
+import { MUST_EDIT_APPLY_FAILED_COPY } from "./must-edit-repair.js"
 import { toCoachFocusDoc } from "./must-edit.js"
 import type { ModelStreamEvent } from "./translate.js"
 
@@ -320,5 +322,269 @@ describe("guaranteeMustEditStream", () => {
     )
     expect(executeUpdate).not.toHaveBeenCalled()
     expect(events).toHaveLength(3)
+  })
+
+  it("drops version/invalid-input flashes when a later update succeeds", async () => {
+    const executeUpdate = vi.fn()
+    const content = structuredClone(starterCvDocument())
+    const next =
+      "Audited product card density; proposed tighter cards and a clearer CTA."
+    const bullets = content.experience[1]?.bullets
+    if (bullets) bullets[0] = next
+
+    const events = await collect(
+      [
+        {
+          type: "tool-call",
+          toolCallId: "bad-version",
+          name: "paper_updateContent",
+          input: {
+            docId: "11111111-1111-7111-8111-111111111111",
+            contentVersion: 2,
+            content,
+          },
+        },
+        {
+          type: "tool-result",
+          toolCallId: "bad-version",
+          name: "paper_updateContent",
+          output: {
+            ok: false,
+            error: {
+              code: "VALIDATION_ERROR",
+              message: "Unsupported content version",
+            },
+          },
+        },
+        {
+          type: "tool-call",
+          toolCallId: "bad-input",
+          name: "paper_updateContent",
+          input: { docId: "11111111-1111-7111-8111-111111111111" },
+        },
+        {
+          type: "tool-error",
+          toolCallId: "bad-input",
+          name: "paper_updateContent",
+          error:
+            'Invalid input for tool paper_updateContent: Type validation failed: [{"code":"invalid_type"}]',
+        },
+        {
+          type: "tool-call",
+          toolCallId: "ok-1",
+          name: "paper_updateContent",
+          input: {
+            docId: "11111111-1111-7111-8111-111111111111",
+            contentVersion: PAPER_CONTENT_VERSION,
+            content,
+          },
+        },
+        {
+          type: "tool-result",
+          toolCallId: "ok-1",
+          name: "paper_updateContent",
+          output: successEnvelope({
+            id: "11111111-1111-7111-8111-111111111111",
+            name: "Sample internship CV",
+          }),
+        },
+        { type: "finish", finishReason: "stop", usage: {} },
+      ],
+      {
+        userText: rewriteAsk,
+        hasFocusDoc: true,
+        focusDoc: sampleFocusDoc(),
+        executeUpdate,
+      }
+    )
+
+    expect(executeUpdate).not.toHaveBeenCalled()
+    expect(events.map((event) => event.type)).toEqual([
+      "tool-call",
+      "tool-result",
+      "finish",
+    ])
+    expect(events[0]).toMatchObject({
+      type: "tool-call",
+      toolCallId: "ok-1",
+      name: "paper_updateContent",
+    })
+    expect(events[1]).toMatchObject({
+      type: "tool-result",
+      toolCallId: "ok-1",
+    })
+    const dumped = JSON.stringify(events)
+    expect(dumped).not.toMatch(/Unsupported content version/)
+    expect(dumped).not.toMatch(/The input wasn't valid/)
+    expect(dumped).not.toMatch(/paste|apply\?/)
+  })
+
+  it("retries a stale contentVersion once and emits only the successful receipt", async () => {
+    const content = structuredClone(starterCvDocument())
+    const next =
+      "Audited product card density; proposed tighter cards and a clearer CTA."
+    const bullets = content.experience[1]?.bullets
+    if (bullets) bullets[0] = next
+
+    const executeUpdate = vi.fn(async (input) => {
+      expect(input.contentVersion).toBe(PAPER_CONTENT_VERSION)
+      expect(input.docId).toBe("11111111-1111-7111-8111-111111111111")
+      expect(
+        (input.content as { experience: { bullets: string[] }[] }).experience[1]
+          ?.bullets[0]
+      ).toBe(next)
+      return successEnvelope({
+        id: input.docId,
+        name: "Sample internship CV",
+      })
+    })
+
+    const events = await collect(
+      [
+        {
+          type: "tool-call",
+          toolCallId: "stale-1",
+          name: "paper_updateContent",
+          input: {
+            docId: "11111111-1111-7111-8111-111111111111",
+            contentVersion: 2,
+            content,
+          },
+        },
+        {
+          type: "tool-result",
+          toolCallId: "stale-1",
+          name: "paper_updateContent",
+          output: {
+            ok: false,
+            error: {
+              code: "VALIDATION_ERROR",
+              message: "Unsupported content version",
+            },
+          },
+        },
+        {
+          type: "tool-call",
+          toolCallId: "stale-2",
+          name: "paper_updateContent",
+          input: {
+            docId: "11111111-1111-7111-8111-111111111111",
+            contentVersion: "1",
+            content: {
+              id: "11111111-1111-7111-8111-111111111111",
+              name: "Sample internship CV",
+              kind: "cv",
+              contentVersion: 2,
+              content,
+            },
+          },
+        },
+        {
+          type: "tool-error",
+          toolCallId: "stale-2",
+          name: "paper_updateContent",
+          error: INVALID_COMMAND_INPUT_COPY,
+        },
+        { type: "finish", finishReason: "stop", usage: {} },
+      ],
+      {
+        userText: rewriteAsk,
+        hasFocusDoc: true,
+        focusDoc: sampleFocusDoc(),
+        executeUpdate,
+        toolCallId: "must-edit-retry-1",
+      }
+    )
+
+    expect(executeUpdate).toHaveBeenCalledOnce()
+    expect(events.map((event) => event.type)).toEqual([
+      "tool-call",
+      "tool-result",
+      "finish",
+    ])
+    expect(events[0]).toMatchObject({
+      type: "tool-call",
+      name: "paper_updateContent",
+      toolCallId: "must-edit-retry-1",
+      input: {
+        docId: "11111111-1111-7111-8111-111111111111",
+        contentVersion: PAPER_CONTENT_VERSION,
+      },
+    })
+    expect(events[1]).toMatchObject({
+      type: "tool-result",
+      name: "paper_updateContent",
+      output: { ok: true },
+    })
+    const dumped = JSON.stringify(events)
+    expect(dumped).not.toMatch(/Unsupported content version/)
+    expect(dumped).not.toMatch(/The input wasn't valid/)
+    expect(dumped).not.toMatch(/paste|apply\?/)
+  })
+
+  it("emits one honest failure when a version conflict cannot be repaired", async () => {
+    const executeUpdate = vi.fn()
+    const events = await collect(
+      [
+        {
+          type: "tool-call",
+          toolCallId: "junk-1",
+          name: "paper_updateContent",
+          input: { docId: "11111111-1111-7111-8111-111111111111" },
+        },
+        {
+          type: "tool-result",
+          toolCallId: "junk-1",
+          name: "paper_updateContent",
+          output: {
+            ok: false,
+            error: {
+              code: "VALIDATION_ERROR",
+              message: "Unsupported content version",
+            },
+          },
+        },
+        {
+          type: "tool-call",
+          toolCallId: "junk-2",
+          name: "paper_updateContent",
+          input: { contentVersion: 2, content: { markdown: 4 } },
+        },
+        {
+          type: "tool-error",
+          toolCallId: "junk-2",
+          name: "paper_updateContent",
+          error: INVALID_COMMAND_INPUT_COPY,
+        },
+        { type: "finish", finishReason: "stop", usage: {} },
+      ],
+      {
+        userText: rewriteAsk,
+        hasFocusDoc: true,
+        focusDoc: sampleFocusDoc(),
+        executeUpdate,
+        toolCallId: "must-edit-fail-1",
+      }
+    )
+
+    expect(executeUpdate).not.toHaveBeenCalled()
+    const results = events.filter((event) => event.type === "tool-result")
+    expect(results).toHaveLength(1)
+    expect(results[0]).toMatchObject({
+      type: "tool-result",
+      output: {
+        ok: false,
+        error: { message: MUST_EDIT_APPLY_FAILED_COPY },
+      },
+    })
+    const dumped = JSON.stringify(events)
+    expect(dumped).not.toMatch(/Unsupported content version/)
+    expect(dumped).not.toMatch(/The input wasn't valid/)
+    expect(dumped).not.toMatch(/paste|apply\?/)
+    expect(events.some((event) => event.type === "text-delta")).toBe(true)
+    expect(
+      (events.find((event) => event.type === "text-delta") as { text: string })
+        .text
+    ).toMatch(/try sending the rewrite again/)
   })
 })
