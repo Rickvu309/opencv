@@ -24,6 +24,10 @@ import { listPaperDocsForUser } from "../paper/queries.js"
 import { getProfileForUser } from "../profile/queries.js"
 import { guaranteeMustEditStream } from "./must-edit-guarantee.js"
 import {
+  paperUpdateContentCoachInputSchema,
+  repairPaperUpdateInput,
+} from "./must-edit-repair.js"
+import {
   MUST_EDIT_TOOLS,
   latestUserText,
   mustEditPrepareStep,
@@ -91,11 +95,14 @@ export function createOpenRouterCoachRuntime({
         ...(await loadWorkspaceSnapshot(db, input.userId)),
         ...(input.focusDoc ? { focusDoc: input.focusDoc } : {}),
       }
-      const coachTools = assembleCoachTools({
-        db,
-        userId: input.userId,
-        registry,
-      })
+      const coachTools = withMustEditRepair(
+        assembleCoachTools({
+          db,
+          userId: input.userId,
+          registry,
+        }),
+        input.focusDoc
+      )
       const tools = toAiSdkTools(coachTools)
       const prepared = input.regenerate
         ? historyForRegenerate(input.history)
@@ -181,6 +188,25 @@ async function loadWorkspaceSnapshot(db: AppDatabase, userId: string) {
     listApplyCardsForUser(db, userId).catch(() => []),
   ])
   return snapshotFromLists({ profile, paper, apply })
+}
+
+function withMustEditRepair(
+  surface: CoachToolSurface,
+  focusDoc?: CoachTurnInput["focusDoc"]
+): CoachToolSurface {
+  const update = surface[MUST_EDIT_TOOLS.updateContent]
+  if (!update) return surface
+  return {
+    ...surface,
+    [MUST_EDIT_TOOLS.updateContent]: {
+      description: update.description,
+      inputSchema: paperUpdateContentCoachInputSchema,
+      execute: async (input) => {
+        const repaired = repairPaperUpdateInput(input, focusDoc)
+        return update.execute(repaired ?? input)
+      },
+    },
+  }
 }
 
 function toAiSdkTools(surface: CoachToolSurface): ToolSet {

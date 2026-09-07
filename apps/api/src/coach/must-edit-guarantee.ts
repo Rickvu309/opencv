@@ -5,9 +5,17 @@ import {
 } from "@workspace/domain"
 
 import {
+  isRecoverableUpdateFailure,
+  isSuccessfulToolOutput,
+  MUST_EDIT_APPLY_FAILED_COPY,
+  repairPaperUpdateInput,
+  toolFailureMessage,
+} from "./must-edit-repair.js"
+import {
   MUST_EDIT_TOOLS,
   applyRewriteToFocusContent,
   findFocusRewriteOriginal,
+  isPaperEditAsk,
   isRealRewrite,
   localRewriteText,
   mustEditMissCopy,
@@ -33,9 +41,17 @@ export type MustEditGuaranteeOptions = {
   toolCallId?: string
 }
 
+type ToolCallEvent = Extract<ModelStreamEvent, { type: "tool-call" }>
+type ToolResultEvent = Extract<ModelStreamEvent, { type: "tool-result" }>
+type ToolErrorEvent = Extract<ModelStreamEvent, { type: "tool-error" }>
+
 /**
  * After the model loop, an edit ask that only read (or spoke) still has to
  * attempt paper_updateContent. Advice turns never enter this path.
+ *
+ * Failed version / invalid-input receipts are held: retry once with a
+ * repaired contentVersion + sanitized body, or emit one honest failure.
+ * A later successful Updated CV receipt never follows those error flashes.
  */
 export async function* guaranteeMustEditStream(
   events: AsyncIterable<ModelStreamEvent>,
@@ -44,6 +60,11 @@ export async function* guaranteeMustEditStream(
   const calledTools: string[] = []
   let sawText = false
   let finish: Extract<ModelStreamEvent, { type: "finish" }> | undefined
+  const isMustEdit = isPaperEditAsk(options.userText, options.hasFocusDoc)
+  let updateSucceeded = false
+  let heldRecoverable = false
+  let pendingCall: ToolCallEvent | undefined
+  let lastFailedInput: unknown
 
   for await (const event of events) {
     if (event.type === "tool-call") calledTools.push(event.name)
@@ -56,10 +77,57 @@ export async function* guaranteeMustEditStream(
       yield event
       return
     }
+
+    if (
+      isMustEdit &&
+      event.type === "tool-call" &&
+      event.name === MUST_EDIT_TOOLS.updateContent
+    ) {
+      if (pendingCall) yield pendingCall
+      pendingCall = event
+      continue
+    }
+
+    if (
+      isMustEdit &&
+      pendingCall &&
+      (event.type === "tool-result" || event.type === "tool-error") &&
+      event.toolCallId === pendingCall.toolCallId
+    ) {
+      const settled = classifyUpdateAttempt(
+        pendingCall,
+        event,
+        updateSucceeded
+      )
+      pendingCall = undefined
+      if (settled.kind === "success") {
+        updateSucceeded = true
+        heldRecoverable = false
+        yield settled.call
+        yield settled.result
+        continue
+      }
+      if (settled.kind === "held") {
+        heldRecoverable = true
+        lastFailedInput = settled.input
+        continue
+      }
+      yield settled.call
+      yield settled.result
+      continue
+    }
+
+    if (pendingCall) {
+      yield pendingCall
+      pendingCall = undefined
+    }
     yield event
   }
 
+  if (pendingCall) yield pendingCall
+
   if (
+    !updateSucceeded &&
     mustEditStillNeedsUpdate({
       userText: options.userText,
       hasFocusDoc: options.hasFocusDoc,
@@ -67,14 +135,83 @@ export async function* guaranteeMustEditStream(
     })
   ) {
     yield* completeMustEdit(options, sawText)
+  } else if (!updateSucceeded && heldRecoverable) {
+    const retried = await retryRepairedUpdate(lastFailedInput, options)
+    if (retried) {
+      yield retried.call
+      yield retried.result
+    } else {
+      yield* completeMustEdit(options, sawText, {
+        alreadyAttempted: true,
+      })
+    }
   }
 
   if (finish) yield finish
 }
 
+function classifyUpdateAttempt(
+  call: ToolCallEvent,
+  event: ToolResultEvent | ToolErrorEvent,
+  alreadySucceeded: boolean
+):
+  | { kind: "success"; call: ToolCallEvent; result: ToolResultEvent }
+  | { kind: "held"; input: unknown }
+  | {
+      kind: "emit"
+      call: ToolCallEvent
+      result: ToolResultEvent | ToolErrorEvent
+    } {
+  if (event.type === "tool-result" && isSuccessfulToolOutput(event.output)) {
+    return { kind: "success", call, result: event }
+  }
+
+  const message =
+    event.type === "tool-error"
+      ? toolFailureMessage(event.error)
+      : toolFailureMessage(event.output)
+
+  if (!isRecoverableUpdateFailure(message) || alreadySucceeded) {
+    return { kind: "emit", call, result: event }
+  }
+
+  return { kind: "held", input: call.input }
+}
+
+async function retryRepairedUpdate(
+  input: unknown,
+  options: MustEditGuaranteeOptions
+): Promise<{ call: ToolCallEvent; result: ToolResultEvent } | null> {
+  const repaired = repairPaperUpdateInput(input, options.focusDoc)
+  if (!repaired) return null
+
+  try {
+    const output = await options.executeUpdate(repaired)
+    if (!isSuccessfulToolOutput(output)) return null
+    const toolCallId = options.toolCallId ?? `must-edit-${Date.now()}`
+    return {
+      call: {
+        type: "tool-call",
+        toolCallId,
+        name: MUST_EDIT_TOOLS.updateContent,
+        input: repaired,
+      },
+      result: {
+        type: "tool-result",
+        toolCallId,
+        name: MUST_EDIT_TOOLS.updateContent,
+        output,
+      },
+    }
+  } catch {
+    return null
+  }
+}
+
 async function* completeMustEdit(
   options: MustEditGuaranteeOptions,
-  sawText: boolean
+  sawText: boolean,
+  extras?: { alreadyAttempted?: boolean }
 ): AsyncGenerator<ModelStreamEvent> {
   const toolCallId = options.toolCallId ?? `must-edit-${Date.now()}`
   const doc = options.focusDoc
@@ -83,7 +220,12 @@ async function* completeMustEdit(
     : null
 
   if (!doc || !original) {
-    const miss = mustEditMissCopy(doc, options.userText)
+    const miss = extras?.alreadyAttempted
+      ? {
+          receipt: MUST_EDIT_APPLY_FAILED_COPY,
+          nextStep: applyFailedNextStep(doc),
+        }
+      : mustEditMissCopy(doc, options.userText)
     yield {
       type: "tool-call",
       toolCallId,
@@ -117,7 +259,12 @@ async function* completeMustEdit(
       : localRewriteText(original, options.userText)
   )
   if (!isRealRewrite(original, replacement)) {
-    const miss = mustEditNoRewriteCopy()
+    const miss = extras?.alreadyAttempted
+      ? {
+          receipt: MUST_EDIT_APPLY_FAILED_COPY,
+          nextStep: applyFailedNextStep(doc),
+        }
+      : mustEditNoRewriteCopy()
     yield {
       type: "tool-call",
       toolCallId,
@@ -163,7 +310,12 @@ async function* completeMustEdit(
   }
 
   if (!content) {
-    const miss = mustEditMissCopy(doc, options.userText)
+    const miss = extras?.alreadyAttempted
+      ? {
+          receipt: MUST_EDIT_APPLY_FAILED_COPY,
+          nextStep: applyFailedNextStep(doc),
+        }
+      : mustEditMissCopy(doc, options.userText)
     yield {
       type: "tool-result",
       toolCallId,
@@ -207,4 +359,11 @@ async function* completeMustEdit(
       }
     }
   }
+}
+
+function applyFailedNextStep(doc?: CoachFocusDoc): string {
+  if (!doc) {
+    return "Could not apply the rewrite. Next step: try sending the ask again."
+  }
+  return `Could not update ${doc.name}. Next step: try sending the rewrite again.`
 }
