@@ -1,7 +1,8 @@
-import { DEFAULT_COACH_MODE } from "@workspace/domain"
+import { DEFAULT_COACH_MODE, successEnvelope } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
 
-import { normalizeFullStream } from "./runtime.js"
+import { paperUpdateContentCoachInputSchema } from "./must-edit-repair.js"
+import { normalizeFullStream, toAiSdkTools } from "./runtime.js"
 
 async function* replay(
   parts: Array<{ type: string } & Record<string, unknown>>
@@ -105,5 +106,41 @@ describe("normalizeFullStream", () => {
         cost: undefined,
       },
     })
+  })
+})
+
+describe("toAiSdkTools", () => {
+  it("wraps the loose paper_updateContent schema without schema-is-not-a-function", () => {
+    expect(() =>
+      toAiSdkTools({
+        paper_updateContent: {
+          description: "Update Paper document content",
+          inputSchema: paperUpdateContentCoachInputSchema,
+          execute: async () => successEnvelope({ id: "doc" }),
+        },
+      })
+    ).not.toThrow()
+  })
+
+  it("rejects a { safeParse } stub the way streamText would", () => {
+    const stub = {
+      safeParse(input: unknown) {
+        return input && typeof input === "object"
+          ? { success: true as const, data: input }
+          : {
+              success: false as const,
+              error: { issues: [{ message: "Invalid command input" }] },
+            }
+      },
+    }
+    expect(() =>
+      toAiSdkTools({
+        paper_updateContent: {
+          description: "Update Paper document content",
+          inputSchema: stub,
+          execute: async () => successEnvelope({ id: "doc" }),
+        },
+      })
+    ).toThrow(/schema is not a function/)
   })
 })

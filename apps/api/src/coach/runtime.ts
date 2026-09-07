@@ -12,7 +12,7 @@ import {
   type CoachTitleInput,
   type CoachTurnInput,
 } from "@workspace/domain"
-import { generateText, stepCountIs, streamText, tool, type ToolSet } from "ai"
+import { asSchema, generateText, stepCountIs, streamText, tool, type ToolSet } from "ai"
 
 import { listApplyCardsForUser } from "../apply/queries.js"
 import {
@@ -209,12 +209,15 @@ function withMustEditRepair(
   }
 }
 
-function toAiSdkTools(surface: CoachToolSurface): ToolSet {
+export function toAiSdkTools(surface: CoachToolSurface): ToolSet {
   const tools: ToolSet = {}
   for (const [name, coachTool] of Object.entries(surface)) {
+    const inputSchema = coachTool.inputSchema as never
+    // AI SDK calls `schema()` when `~standard` is missing (QVE-196).
+    asSchema(inputSchema)
     tools[name] = tool({
       description: coachTool.description,
-      inputSchema: coachTool.inputSchema as never,
+      inputSchema,
       execute: async (input) => coachTool.execute(input),
     })
   }
