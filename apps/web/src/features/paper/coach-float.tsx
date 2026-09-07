@@ -51,6 +51,40 @@ const QUICK_PROMPTS: Record<ToolbarVariant, string[]> = {
   full: [REWRITE_SELECTION, "Fix spelling", "Make it shorter"],
 }
 
+function QuickPromptChips({
+  chips,
+  turnActive,
+  hasSelection,
+  onSubmit,
+}: {
+  chips: readonly string[]
+  turnActive: boolean
+  hasSelection: boolean
+  onSubmit: (text: string) => void
+}) {
+  return (
+    <div className="flex flex-wrap gap-1">
+      {chips.map((chip) => {
+        const needsSelection = chip === REWRITE_SELECTION
+        const disabled = turnActive || (needsSelection && !hasSelection)
+        return (
+          <Button
+            key={chip}
+            type="button"
+            variant="outline"
+            size="xs"
+            onClick={() => onSubmit(chip)}
+            disabled={disabled}
+            className="h-auto rounded-full px-2 py-0.5 text-2xs text-muted-foreground"
+          >
+            {chip}
+          </Button>
+        )
+      })}
+    </div>
+  )
+}
+
 const FOCUSABLE_SELECTOR = [
   "a[href]",
   "button:not([disabled])",
@@ -303,26 +337,22 @@ export const CoachFloat = memo(function CoachFloat({
               onUndo={phase === "idle" ? undo : undefined}
               placeholder="Ask about this document…"
               empty={
-                <div className="flex flex-wrap gap-1">
-                  {QUICK_PROMPTS[variant].map((chip) => {
-                    const needsSelection = chip === REWRITE_SELECTION
-                    const disabled =
-                      turnActive || (needsSelection && !selection?.text)
-                    return (
-                      <Button
-                        key={chip}
-                        type="button"
-                        variant="outline"
-                        size="xs"
-                        onClick={() => submit(chip)}
-                        disabled={disabled}
-                        className="h-auto rounded-full px-2 py-0.5 text-2xs text-muted-foreground"
-                      >
-                        {chip}
-                      </Button>
-                    )
-                  })}
-                </div>
+                <QuickPromptChips
+                  chips={QUICK_PROMPTS[variant]}
+                  turnActive={turnActive}
+                  hasSelection={Boolean(selection?.text)}
+                  onSubmit={submit}
+                />
+              }
+              beforeComposer={
+                messages.length > 0 && selection?.text ? (
+                  <QuickPromptChips
+                    chips={[REWRITE_SELECTION]}
+                    turnActive={turnActive}
+                    hasSelection
+                    onSubmit={submit}
+                  />
+                ) : null
               }
             />
           </AssistantRuntimeProvider>

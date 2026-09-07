@@ -766,6 +766,98 @@ describe("Paper editors", () => {
     expect(request?.selection?.text).toBe(bulletText)
   })
 
+  it("keeps Rewrite selection available after a Coach turn when a selection is held", async () => {
+    scriptCoachStream({ texts: ["I sharpened the checkout bullet."] })
+    renderPaper()
+    await expectPaperDrive()
+    const editor = await openDoc("PM track CV")
+    const dialog = await openCoach()
+
+    fireEvent.change(messageCoach(dialog), {
+      target: { value: "Sharpen the checkout bullet" },
+    })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Send" }))
+    expect(
+      await within(dialog).findByText("I sharpened the checkout bullet.")
+    ).toBeInTheDocument()
+    expect(
+      within(dialog).queryByRole("button", { name: "Rewrite selection" })
+    ).not.toBeInTheDocument()
+
+    const bullet = within(editor).getAllByRole("textbox", {
+      name: "Bullet point",
+    })[0]
+    const bulletText = bullet!.textContent ?? ""
+    selectNodeContents(bullet!)
+
+    const composer = messageCoach(dialog)
+    composer.focus()
+    collapseWindowSelection()
+
+    const preview = await within(dialog).findByRole("status", {
+      name: "Selected text",
+    })
+    expect(preview).toHaveTextContent(bulletText.slice(0, 24))
+
+    scriptCoachStream({ texts: ["I rewrote that bullet."] })
+    const rewrite = within(dialog).getByRole("button", {
+      name: "Rewrite selection",
+    })
+    expect(rewrite).toBeEnabled()
+    fireEvent.click(rewrite)
+    expect(
+      await within(dialog).findByText("I rewrote that bullet.")
+    ).toBeInTheDocument()
+    const request = getLastCoachRequest()
+    expect(request?.text).toBe("Rewrite selection")
+    expect(request?.selection?.text).toBe(bulletText)
+  })
+
+  it("drops a held selection after a Coach turn so the next send omits it", async () => {
+    scriptCoachStream({ texts: ["I read the CV."] })
+    renderPaper()
+    await expectPaperDrive()
+    const editor = await openDoc("PM track CV")
+    const dialog = await openCoach()
+
+    fireEvent.change(messageCoach(dialog), {
+      target: { value: "Read this CV" },
+    })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Send" }))
+    expect(await within(dialog).findByText("I read the CV.")).toBeInTheDocument()
+
+    const bullet = within(editor).getAllByRole("textbox", {
+      name: "Bullet point",
+    })[0]
+    selectNodeContents(bullet!)
+
+    messageCoach(dialog).focus()
+    collapseWindowSelection()
+
+    expect(
+      await within(dialog).findByRole("status", { name: "Selected text" })
+    ).toBeInTheDocument()
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Clear selection" })
+    )
+    expect(
+      within(dialog).queryByRole("status", { name: "Selected text" })
+    ).not.toBeInTheDocument()
+    expect(
+      within(dialog).queryByRole("button", { name: "Rewrite selection" })
+    ).not.toBeInTheDocument()
+
+    scriptCoachStream({ texts: ["What should I rewrite?"] })
+    fireEvent.change(messageCoach(dialog), {
+      target: { value: "Rewrite the selected café experience" },
+    })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Send" }))
+    expect(
+      await within(dialog).findByText("What should I rewrite?")
+    ).toBeInTheDocument()
+    expect(getLastCoachRequest()?.selection).toBeUndefined()
+  })
+
   it("drops the held selection when the float preview is dismissed", async () => {
     scriptCoachStream({ texts: ["What should I rewrite?"] })
     renderPaper()
