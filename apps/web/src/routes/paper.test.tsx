@@ -43,6 +43,20 @@ function messageCoach(container: HTMLElement = coachDialog()) {
   return within(container).getByRole("textbox", { name: "Message Coach" })
 }
 
+function selectNodeContents(el: HTMLElement) {
+  const range = document.createRange()
+  range.selectNodeContents(el)
+  const sel = window.getSelection()
+  sel?.removeAllRanges()
+  sel?.addRange(range)
+  document.dispatchEvent(new Event("selectionchange"))
+}
+
+function collapseWindowSelection() {
+  window.getSelection()?.removeAllRanges()
+  document.dispatchEvent(new Event("selectionchange"))
+}
+
 function stubDesktopViewport(isDesktop: boolean) {
   vi.stubGlobal("matchMedia", (query: string) => ({
     matches: query === DESKTOP_MEDIA_QUERY ? isDesktop : true,
@@ -698,16 +712,14 @@ describe("Paper editors", () => {
     const canvas = within(editor).getByRole("textbox", {
       name: "Document content",
     })
-    const range = document.createRange()
-    range.selectNodeContents(canvas)
-    const sel = window.getSelection()
-    sel?.removeAllRanges()
-    sel?.addRange(range)
-    document.dispatchEvent(new Event("selectionchange"))
+    selectNodeContents(canvas)
 
     await waitFor(() => {
       expect(rewrite).toBeEnabled()
     })
+    expect(
+      within(dialog).getByRole("status", { name: "Selected text" })
+    ).toBeInTheDocument()
     fireEvent.click(rewrite)
     expect(
       await within(dialog).findByText("I will rewrite that line.")
@@ -716,6 +728,79 @@ describe("Paper editors", () => {
     expect(request?.text).toBe("Rewrite selection")
     expect(request?.selection?.text?.length).toBeGreaterThan(0)
     expect(request?.selection?.sectionId).toBe("letter")
+  })
+
+  it("keeps a CV selection after the float composer is focused", async () => {
+    scriptCoachStream({ texts: ["I rewrote that bullet."] })
+    renderPaper()
+    await expectPaperDrive()
+    const editor = await openDoc("PM track CV")
+    const bullet = within(editor).getAllByRole("textbox", {
+      name: "Bullet point",
+    })[0]
+    expect(bullet).toBeTruthy()
+    const bulletText = bullet!.textContent ?? ""
+    expect(bulletText.length).toBeGreaterThan(0)
+    selectNodeContents(bullet!)
+
+    const dialog = await openCoach()
+    const composer = messageCoach(dialog)
+    composer.focus()
+    collapseWindowSelection()
+
+    const preview = await within(dialog).findByRole("status", {
+      name: "Selected text",
+    })
+    expect(preview).toHaveTextContent(bulletText.slice(0, 24))
+
+    const rewrite = within(dialog).getByRole("button", {
+      name: "Rewrite selection",
+    })
+    expect(rewrite).toBeEnabled()
+    fireEvent.click(rewrite)
+    expect(
+      await within(dialog).findByText("I rewrote that bullet.")
+    ).toBeInTheDocument()
+    const request = getLastCoachRequest()
+    expect(request?.text).toBe("Rewrite selection")
+    expect(request?.selection?.text).toBe(bulletText)
+  })
+
+  it("drops the held selection when the float preview is dismissed", async () => {
+    scriptCoachStream({ texts: ["What should I rewrite?"] })
+    renderPaper()
+    await expectPaperDrive()
+    const editor = await openDoc("PM track CV")
+    const bullet = within(editor).getAllByRole("textbox", {
+      name: "Bullet point",
+    })[0]
+    selectNodeContents(bullet!)
+
+    const dialog = await openCoach()
+    messageCoach(dialog).focus()
+    collapseWindowSelection()
+
+    expect(
+      await within(dialog).findByRole("status", { name: "Selected text" })
+    ).toBeInTheDocument()
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Clear selection" })
+    )
+    expect(
+      within(dialog).queryByRole("status", { name: "Selected text" })
+    ).not.toBeInTheDocument()
+    expect(
+      within(dialog).getByRole("button", { name: "Rewrite selection" })
+    ).toBeDisabled()
+
+    fireEvent.change(messageCoach(dialog), {
+      target: { value: "Rewrite the selected café experience" },
+    })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Send" }))
+    expect(
+      await within(dialog).findByText("What should I rewrite?")
+    ).toBeInTheDocument()
+    expect(getLastCoachRequest()?.selection).toBeUndefined()
   })
 
   it("reloads the open canvas when Coach updates the doc", async () => {
