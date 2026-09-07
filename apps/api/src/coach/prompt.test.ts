@@ -188,7 +188,7 @@ describe("assembleSystemPrompt", () => {
     expect(summary).toContain(
       "Open Paper document: PM track CV · CV · draft (id: 11111111-1111-7111-8111-111111111111)"
     )
-    expect(summary).toMatch(/paper_getDoc/)
+    expect(summary).toMatch(/Do not call paper_getDoc/)
     expect(summary).toMatch(/paper_updateContent/)
     expect(summary).toMatch(/never claim a silent rewrite/)
     expect(summary).toMatch(/never ask the User to paste the rewrite/)

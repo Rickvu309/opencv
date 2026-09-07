@@ -5,6 +5,8 @@ import {
   DEFAULT_COACH_MAX_OUTPUT_TOKENS,
   DEFAULT_COACH_MODEL,
   DEFAULT_COACH_MODE,
+  ERROR_CODES,
+  errorEnvelope,
   resolveCoachModel,
   type CoachRuntime,
   type CoachTitleInput,
@@ -20,9 +22,11 @@ import {
 } from "../commands/index.js"
 import { listPaperDocsForUser } from "../paper/queries.js"
 import { getProfileForUser } from "../profile/queries.js"
+import { guaranteeMustEditStream } from "./must-edit-guarantee.js"
 import {
+  MUST_EDIT_TOOLS,
   latestUserText,
-  mustEditToolChoice,
+  mustEditPrepareStep,
   toolNamesFromSteps,
 } from "./must-edit.js"
 import {
@@ -87,14 +91,24 @@ export function createOpenRouterCoachRuntime({
         ...(await loadWorkspaceSnapshot(db, input.userId)),
         ...(input.focusDoc ? { focusDoc: input.focusDoc } : {}),
       }
-      const tools = toAiSdkTools(
-        assembleCoachTools({ db, userId: input.userId, registry })
-      )
+      const coachTools = assembleCoachTools({
+        db,
+        userId: input.userId,
+        registry,
+      })
+      const tools = toAiSdkTools(coachTools)
       const prepared = input.regenerate
         ? historyForRegenerate(input.history)
         : { history: input.history, priorCoach: undefined }
       const messages = windowHistory(prepared.history)
-      const userText = latestUserText(messages)
+      const userText =
+        latestUserText(messages) ||
+        latestUserText(
+          prepared.history.map((message) => ({
+            role: message.role === "user" ? "user" : "assistant",
+            content: message.text,
+          }))
+        )
       const hasFocusDoc = Boolean(input.focusDoc)
 
       try {
@@ -117,17 +131,36 @@ export function createOpenRouterCoachRuntime({
           maxOutputTokens,
           abortSignal: abort.signal,
           prepareStep({ steps }) {
-            const choice = mustEditToolChoice({
+            return mustEditPrepareStep({
               userText,
               hasFocusDoc,
               calledTools: toolNamesFromSteps(steps),
             })
-            return choice ? { toolChoice: choice } : {}
           },
         })
 
         yield* partsFromModelStream(
-          normalizeFullStream(result.fullStream, input.mode),
+          guaranteeMustEditStream(
+            normalizeFullStream(result.fullStream, input.mode),
+            {
+              userText,
+              hasFocusDoc,
+              focusDoc: input.focusDoc,
+              selectionText: input.selection?.text,
+              executeUpdate: (updateInput) => {
+                const update = coachTools[MUST_EDIT_TOOLS.updateContent]
+                if (!update) {
+                  return Promise.resolve(
+                    errorEnvelope(
+                      ERROR_CODES.VALIDATION_ERROR,
+                      "paper_updateContent is unavailable"
+                    )
+                  )
+                }
+                return update.execute(updateInput)
+              },
+            }
+          ),
           {
             model: turnModel,
             startedAt,

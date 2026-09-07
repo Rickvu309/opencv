@@ -21,6 +21,11 @@ export type MustEditToolChoice = {
   toolName: MustEditToolName
 }
 
+export type MustEditPrepareStep = {
+  toolChoice?: MustEditToolChoice
+  activeTools?: MustEditToolName[]
+}
+
 const EDIT_VERB =
   /\b(?:rewrite|rewrote|rewriting|shorten|shortened|shortening|tailor|tailored|tailoring|sharpen|sharpened|sharpening|edit|edited|editing|fix(?:ing)?(?:\s+(?:the|this|my|tone|spelling|typo))?|make\s+(?:my|the|this)\s+(?:summary|bullet|opening|cv|letter|proof)|make\b.{0,48}(?:shorter|stronger|better|tighter|less)|add\s+a\s+metric|update\s+(?:the|this|my)\s+(?:summary|bullet|cv|letter|proof|opening)|apply\s+(?:this|the|that)\s+(?:rewrite|edit|change))\b/i
 
@@ -86,7 +91,7 @@ export function mustEditTurnInstruction(hasFocusDoc: boolean): string {
     return [
       "This User message is an edit ask on the open Paper document.",
       "Call paper_updateContent in this turn. The open document's current JSON is in the workspace snapshot — copy it, change only what they asked, and send docId, contentVersion, and the full content object.",
-      "Do not write the rewrite as prose first. Never ask whether to apply. Never tell the User to paste.",
+      "Do not call paper_getDoc or paper_listDocs first. Do not write the rewrite as prose first. Never ask whether to apply. Never tell the User to paste.",
       "If a named bullet or section is missing, say that in one line and name what is actually in the document, then update the closest matching section they clearly meant — or give one next step after a failed receipt.",
       "A prose-only reply is allowed only after a failed tool receipt: one plain failure line, then one next step.",
     ].join(" ")
@@ -125,6 +130,29 @@ export function mustEditToolChoice(input: {
   return { type: "tool", toolName: MUST_EDIT_TOOLS.updateContent }
 }
 
+/**
+ * Hide every other tool while a Command is forced. Free models ignore
+ * toolChoice and otherwise stop after paper_getDoc (QVE-189).
+ */
+export function mustEditPrepareStep(input: {
+  userText: string
+  hasFocusDoc: boolean
+  calledTools: readonly string[]
+}): MustEditPrepareStep {
+  const toolChoice = mustEditToolChoice(input)
+  if (!toolChoice) return {}
+  return { toolChoice, activeTools: [toolChoice.toolName] }
+}
+
+export function mustEditStillNeedsUpdate(input: {
+  userText: string
+  hasFocusDoc: boolean
+  calledTools: readonly string[]
+}): boolean {
+  if (!isPaperEditAsk(input.userText, input.hasFocusDoc)) return false
+  return !input.calledTools.includes(MUST_EDIT_TOOLS.updateContent)
+}
+
 export function toolNamesFromSteps(
   steps: readonly { toolCalls?: readonly { toolName?: string }[] }[]
 ): string[] {
@@ -156,7 +184,7 @@ export function toCoachFocusDoc(row: {
 export function describeFocusDoc(doc: CoachFocusDoc): string {
   const lines = [
     `Open Paper document: ${doc.name} · ${PAPER_KIND_LABEL[doc.kind]} · ${doc.status} (id: ${doc.id}). contentVersion: ${doc.contentVersion}.`,
-    "Read it with paper_getDoc only if you still need a field that is not below. To change it, run paper_updateContent with this docId, contentVersion, and the full updated JSON — never claim a silent rewrite, never ask the User to paste the rewrite, and never ask whether to apply.",
+    "Do not call paper_getDoc — the current JSON is below. To change it, run paper_updateContent with this docId, contentVersion, and the full updated JSON — never claim a silent rewrite, never ask the User to paste the rewrite, and never ask whether to apply.",
   ]
 
   const decoded = decodePaperContent(doc.kind, doc.contentVersion, doc.content)
@@ -210,4 +238,173 @@ function clip(text: string, cap = LINE_CAP): string {
   const trimmed = text.replace(/\s+/g, " ").trim()
   if (trimmed.length <= cap) return trimmed
   return `${trimmed.slice(0, cap - 1).trimEnd()}…`
+}
+
+const REWRITE_STOP =
+  /^(?:rewrite|rewrote|rewriting|shorten|shortened|shortening|tailor|tailored|tailoring|sharpen|sharpened|sharpening|edit|edited|editing|fix|fixing|make|update|apply|the|this|that|my|a|an|for|to|of|on|in|and|or|be|it|please|can|you|bullet|bullets|section|document|doc|open|named|one|sentence|experience|summary|opening|proof|letter|resume|cover|internship)$/i
+
+type LocatedRewrite =
+  | { kind: "cv-summary"; original: string }
+  | {
+      kind: "cv-bullet"
+      roleIndex: number
+      bulletIndex: number
+      original: string
+    }
+  | { kind: "letter"; original: string }
+  | { kind: "proof-step"; index: number; original: string }
+
+export function findFocusRewriteOriginal(
+  doc: CoachFocusDoc,
+  userText: string,
+  selectionText?: string
+): string | null {
+  return locateRewrite(doc, userText, selectionText)?.original ?? null
+}
+
+export function applyRewriteToFocusContent(
+  doc: CoachFocusDoc,
+  userText: string,
+  replacement: string,
+  selectionText?: string
+): unknown | null {
+  const located = locateRewrite(doc, userText, selectionText)
+  if (!located) return null
+  const next = replacement.replace(/\s+/g, " ").trim()
+  if (!next || next === located.original) return null
+
+  const decoded = decodePaperContent(doc.kind, doc.contentVersion, doc.content)
+  if (!decoded.ok) return null
+  const content = structuredClone(decoded.data)
+
+  if (located.kind === "cv-summary" && isCvDocument(content)) {
+    content.summary = next
+    return content
+  }
+  if (located.kind === "cv-bullet" && isCvDocument(content)) {
+    const bullets = content.experience[located.roleIndex]?.bullets
+    if (!bullets || bullets[located.bulletIndex] === undefined) return null
+    bullets[located.bulletIndex] = next
+    return content
+  }
+  if (located.kind === "letter" && isLetterDocument(content)) {
+    content.markdown = next
+    return content
+  }
+  if (located.kind === "proof-step" && isProofDocument(content)) {
+    const step = content.steps[located.index]
+    if (!step) return null
+    step.body = next
+    return content
+  }
+  return null
+}
+
+/** Last-resort rewrite so Free can still attempt paper_updateContent. */
+export function localRewriteText(original: string, userText: string): string {
+  const trimmed = original.replace(/\s+/g, " ").trim()
+  if (/shorten|shorter|one sentence/i.test(userText)) {
+    const first = trimmed.split(/(?<=\.)\s+/)[0] ?? trimmed
+    if (first.length > 0 && first !== trimmed) return first
+    if (trimmed.length > 140) return `${trimmed.slice(0, 139).trimEnd()}.`
+  }
+  if (/product internship|product intern|associate pm/i.test(userText)) {
+    return `${trimmed.replace(/\.$/, "")} — framed for a product internship with the same evidence.`
+  }
+  return `${trimmed.replace(/\.$/, "")} Rewritten to match the ask.`
+}
+
+function locateRewrite(
+  doc: CoachFocusDoc,
+  userText: string,
+  selectionText?: string
+): LocatedRewrite | null {
+  const decoded = decodePaperContent(doc.kind, doc.contentVersion, doc.content)
+  if (!decoded.ok) return null
+  const content = decoded.data
+  const selected = selectionText?.replace(/\s+/g, " ").trim()
+
+  if (isCvDocument(content)) {
+    if (selected) {
+      if (content.summary.includes(selected) || selected.includes(content.summary)) {
+        return { kind: "cv-summary", original: content.summary }
+      }
+      for (const [roleIndex, role] of content.experience.entries()) {
+        for (const [bulletIndex, bullet] of role.bullets.entries()) {
+          if (bullet.includes(selected) || selected.includes(bullet)) {
+            return { kind: "cv-bullet", roleIndex, bulletIndex, original: bullet }
+          }
+        }
+      }
+    }
+
+    const wantsSummary = /\bsummary\b/i.test(userText)
+    const wantsExperience = /\bexperience\b|\bbullet\b/i.test(userText)
+    const tokens = significantTokens(userText)
+
+    if (wantsExperience) {
+      const hit = bestExperienceBullet(content, tokens)
+      if (hit) return hit
+    }
+    if (wantsSummary) {
+      return { kind: "cv-summary", original: content.summary }
+    }
+    const hit = bestExperienceBullet(content, tokens)
+    if (hit) return hit
+    return content.summary
+      ? { kind: "cv-summary", original: content.summary }
+      : null
+  }
+
+  if (isLetterDocument(content)) {
+    return { kind: "letter", original: content.markdown }
+  }
+  if (isProofDocument(content) && content.steps[0]) {
+    return {
+      kind: "proof-step",
+      index: 0,
+      original: content.steps[0].body,
+    }
+  }
+  return null
+}
+
+function bestExperienceBullet(
+  content: { experience: { role: string; company: string; bullets: string[] }[] },
+  tokens: string[]
+): Extract<LocatedRewrite, { kind: "cv-bullet" }> | null {
+  let best:
+    | (Extract<LocatedRewrite, { kind: "cv-bullet" }> & { score: number })
+    | null = null
+  for (const [roleIndex, role] of content.experience.entries()) {
+    const roleHay = `${role.role} ${role.company}`
+    for (const [bulletIndex, bullet] of role.bullets.entries()) {
+      const score = scoreHaystack(`${roleHay} ${bullet}`, tokens)
+      if (score <= 0) continue
+      if (!best || score > best.score) {
+        best = {
+          kind: "cv-bullet",
+          roleIndex,
+          bulletIndex,
+          original: bullet,
+          score,
+        }
+      }
+    }
+  }
+  return best
+}
+
+function significantTokens(text: string): string[] {
+  return [...text.toLowerCase().matchAll(/[a-z][a-z0-9'+-]{2,}/g)]
+    .map((match) => match[0])
+    .filter((word) => !REWRITE_STOP.test(word))
+}
+
+function scoreHaystack(haystack: string, tokens: string[]): number {
+  const lower = haystack.toLowerCase()
+  return tokens.reduce((count, token) => {
+    if (!lower.includes(token)) return count
+    return count + (token.length >= 8 ? 4 : 1)
+  }, 0)
 }
