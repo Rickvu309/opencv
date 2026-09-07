@@ -9,7 +9,9 @@ import {
   applyRewriteToFocusContent,
   describeExperienceRoles,
   describeFocusDoc,
+  extractMustEditReplacement,
   findFocusRewriteOriginal,
+  freeMustEditLinePrompt,
   isPaperEditAsk,
   latestUserText,
   localRewriteText,
@@ -19,6 +21,7 @@ import {
   mustEditStillNeedsUpdate,
   mustEditToolChoice,
   mustEditTurnInstruction,
+  shouldUseFreeTextMustEdit,
   toolNamesFromSteps,
   toCoachFocusDoc,
 } from "./must-edit.js"
@@ -425,5 +428,92 @@ describe("toCoachFocusDoc", () => {
       content,
       contentVersion: 1,
     })
+  })
+})
+
+describe("shouldUseFreeTextMustEdit", () => {
+  const rewrite =
+    "Rewrite the Experience checkout bullet for a product internship"
+
+  it("is only the Free Paper focus-doc edit path", () => {
+    expect(
+      shouldUseFreeTextMustEdit({
+        mode: "free",
+        userText: rewrite,
+        hasFocusDoc: true,
+      })
+    ).toBe(true)
+    expect(
+      shouldUseFreeTextMustEdit({
+        mode: "light",
+        userText: rewrite,
+        hasFocusDoc: true,
+      })
+    ).toBe(false)
+    expect(
+      shouldUseFreeTextMustEdit({
+        mode: "max",
+        userText: rewrite,
+        hasFocusDoc: true,
+      })
+    ).toBe(false)
+    expect(
+      shouldUseFreeTextMustEdit({
+        mode: "free",
+        userText: "How do I edit my summary?",
+        hasFocusDoc: true,
+      })
+    ).toBe(false)
+    expect(
+      shouldUseFreeTextMustEdit({
+        mode: "free",
+        userText: rewrite,
+        hasFocusDoc: false,
+      })
+    ).toBe(false)
+  })
+})
+
+describe("extractMustEditReplacement", () => {
+  const original =
+    "Audited product card density on a top e-commerce app; proposed tighter card height and clearer CTA hierarchy."
+  const next =
+    "Audited product card density; proposed tighter cards and a clearer CTA."
+
+  it("accepts a plain rewritten line", () => {
+    expect(extractMustEditReplacement(next, original)).toBe(next)
+    expect(
+      extractMustEditReplacement(`"${next}"`, original)
+    ).toBe(next)
+    expect(
+      extractMustEditReplacement(`Here is the rewritten line: ${next}`, original)
+    ).toBe(next)
+  })
+
+  it("rejects paste, ask-to-apply, unchanged, and dumps", () => {
+    expect(
+      extractMustEditReplacement("Paste this into Experience.", original)
+    ).toBeNull()
+    expect(
+      extractMustEditReplacement("Should I apply this rewrite?", original)
+    ).toBeNull()
+    expect(extractMustEditReplacement(original, original)).toBeNull()
+    expect(extractMustEditReplacement("", original)).toBeNull()
+    expect(extractMustEditReplacement("x".repeat(401), original)).toBeNull()
+  })
+})
+
+describe("freeMustEditLinePrompt", () => {
+  it("asks for one line and bans paste / ask-to-apply", () => {
+    const prompt = freeMustEditLinePrompt({
+      original: "Audited product card density on a top e-commerce app.",
+      userText: "Rewrite the Experience checkout bullet for a product internship",
+      docName: "Sample internship CV",
+    })
+    expect(prompt).toMatch(/only the rewritten line/)
+    expect(prompt).toMatch(/never tell the User to paste/i)
+    expect(prompt).toMatch(/never ask whether to apply/i)
+    expect(prompt).not.toMatch(/paper_updateContent/)
+    expect(prompt).not.toMatch(/!/)
   })
 })

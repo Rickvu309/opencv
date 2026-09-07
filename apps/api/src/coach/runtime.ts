@@ -22,6 +22,7 @@ import {
 } from "../commands/index.js"
 import { listPaperDocsForUser } from "../paper/queries.js"
 import { getProfileForUser } from "../profile/queries.js"
+import { runFreeTextMustEdit } from "./free-must-edit.js"
 import { guaranteeMustEditStream } from "./must-edit-guarantee.js"
 import {
   paperUpdateContentCoachInputSchema,
@@ -29,8 +30,10 @@ import {
 } from "./must-edit-repair.js"
 import {
   MUST_EDIT_TOOLS,
+  freeMustEditLinePrompt,
   latestUserText,
   mustEditPrepareStep,
+  shouldUseFreeTextMustEdit,
   toolNamesFromSteps,
 } from "./must-edit.js"
 import {
@@ -117,8 +120,79 @@ export function createOpenRouterCoachRuntime({
           }))
         )
       const hasFocusDoc = Boolean(input.focusDoc)
+      const executeUpdate = (updateInput: {
+        docId: string
+        content: unknown
+        contentVersion: number
+      }) => {
+        const update = coachTools[MUST_EDIT_TOOLS.updateContent]
+        if (!update) {
+          return Promise.resolve(
+            errorEnvelope(
+              ERROR_CODES.VALIDATION_ERROR,
+              "paper_updateContent is unavailable"
+            )
+          )
+        }
+        return update.execute(updateInput)
+      }
+
+      const mode = input.mode ?? DEFAULT_COACH_MODE
 
       try {
+        if (
+          shouldUseFreeTextMustEdit({
+            mode,
+            userText,
+            hasFocusDoc,
+          }) &&
+          input.focusDoc
+        ) {
+          const focusDoc = input.focusDoc
+          yield* partsFromModelStream(
+            runFreeTextMustEdit({
+              userText,
+              hasFocusDoc,
+              focusDoc,
+              selectionText: input.selection?.text,
+              executeUpdate,
+              generateLine: async ({ original }) => {
+                const result = streamText({
+                  model: openrouter(turnModel, { usage: { include: true } }),
+                  system: freeMustEditLinePrompt({
+                    original,
+                    userText,
+                    docName: focusDoc.name,
+                  }),
+                  prompt: userText,
+                  maxOutputTokens: 256,
+                  abortSignal: abort.signal,
+                })
+                let text = ""
+                let finish:
+                  | Extract<ModelStreamEvent, { type: "finish" }>
+                  | undefined
+                for await (const event of normalizeFullStream(
+                  result.fullStream,
+                  mode
+                )) {
+                  if (event.type === "text-delta") text += event.text
+                  if (event.type === "error") return { error: event.message }
+                  if (event.type === "abort") return { abort: true as const }
+                  if (event.type === "finish") finish = event
+                }
+                return { text, ...(finish ? { finish } : {}) }
+              },
+            }),
+            {
+              model: turnModel,
+              startedAt,
+              reversalFor: (name) => reversalForTool(name, registry),
+            }
+          )
+          return
+        }
+
         const result = streamText({
           model: openrouter(turnModel, { usage: { include: true } }),
           system: assembleSystemPrompt(
@@ -148,24 +222,13 @@ export function createOpenRouterCoachRuntime({
 
         yield* partsFromModelStream(
           guaranteeMustEditStream(
-            normalizeFullStream(result.fullStream, input.mode),
+            normalizeFullStream(result.fullStream, mode),
             {
               userText,
               hasFocusDoc,
               focusDoc: input.focusDoc,
               selectionText: input.selection?.text,
-              executeUpdate: (updateInput) => {
-                const update = coachTools[MUST_EDIT_TOOLS.updateContent]
-                if (!update) {
-                  return Promise.resolve(
-                    errorEnvelope(
-                      ERROR_CODES.VALIDATION_ERROR,
-                      "paper_updateContent is unavailable"
-                    )
-                  )
-                }
-                return update.execute(updateInput)
-              },
+              executeUpdate,
             }
           ),
           {
