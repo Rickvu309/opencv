@@ -38,8 +38,13 @@ describe("Coach motion tokens and reduced-motion", () => {
     const css = read("styles/paper.css")
     expect(css).toContain("paper-coach-changed")
     expect(css).toContain("--duration-slow")
+    expect(css).toContain("[data-coach-float-nudge]")
+    expect(css).toContain("min(26rem, 42vw)")
     expect(css).toMatch(
       /prefers-reduced-motion: reduce[\s\S]*\.paper-coach-changed[\s\S]*animation:\s*none/
+    )
+    expect(css).toMatch(
+      /prefers-reduced-motion: reduce[\s\S]*\[data-paper-canvas\][\s\S]*transition:\s*none/
     )
   })
 })

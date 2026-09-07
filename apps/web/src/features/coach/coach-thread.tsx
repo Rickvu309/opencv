@@ -531,7 +531,10 @@ function ThreadChrome({
       aria-live={isEmpty ? undefined : "polite"}
       className="flex min-h-0 flex-1 flex-col"
     >
-      <ThreadPrimitive.Viewport className="min-h-0 flex-1 overflow-auto">
+      <ThreadPrimitive.Viewport
+        data-coach-thread-viewport
+        className="min-h-0 flex-1 overflow-auto"
+      >
         <AuiIf condition={(state) => state.thread.isEmpty}>{empty}</AuiIf>
         <ThreadPrimitive.Messages>
           {({ message }) =>
