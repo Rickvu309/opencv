@@ -153,5 +153,25 @@ describe("recoverable update failures", () => {
         extra: true,
       }).success
     ).toBe(true)
+    expect(paperUpdateContentCoachInputSchema.safeParse("nope").success).toBe(
+      false
+    )
+  })
+
+  it("is a Zod 4 / Standard Schema so AI SDK does not call it as a function", () => {
+    expect("_zod" in paperUpdateContentCoachInputSchema).toBe(true)
+    expect("~standard" in paperUpdateContentCoachInputSchema).toBe(true)
+
+    const stub = {
+      safeParse(input: unknown) {
+        return input && typeof input === "object"
+          ? { success: true as const, data: input }
+          : {
+              success: false as const,
+              error: { issues: [{ message: "Invalid command input" }] },
+            }
+      },
+    }
+    expect("~standard" in stub).toBe(false)
   })
 })

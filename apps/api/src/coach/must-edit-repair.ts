@@ -7,6 +7,7 @@ import {
   type CoachFocusDoc,
   type PaperContentKind,
 } from "@workspace/domain"
+import { z } from "zod"
 
 export const MUST_EDIT_APPLY_FAILED_COPY = "Could not apply the rewrite."
 
@@ -20,18 +21,18 @@ export type RepairedPaperUpdateInput = {
  * Provider-facing schema for paper_updateContent. Free models send string
  * versions, omit fields, or wrap the getDoc DTO — the Command schema stays
  * strict; repair runs before execute.
+ *
+ * Must be a real Zod / Standard Schema (`~standard`). AI SDK `asSchema`
+ * otherwise calls `schema()` and throws "schema is not a function", which
+ * hangs the Free must-edit turn (QVE-196).
  */
-export const paperUpdateContentCoachInputSchema = {
-  safeParse(input: unknown) {
-    if (!isPlainObject(input)) {
-      return {
-        success: false as const,
-        error: { issues: [{ message: "Invalid command input" }] },
-      }
-    }
-    return { success: true as const, data: input }
-  },
-}
+export const paperUpdateContentCoachInputSchema = z
+  .object({
+    docId: z.unknown().optional(),
+    contentVersion: z.unknown().optional(),
+    content: z.unknown().optional(),
+  })
+  .passthrough()
 
 export function isRecoverableUpdateFailure(message: string): boolean {
   const text = message.replace(/\s+/g, " ").trim()
