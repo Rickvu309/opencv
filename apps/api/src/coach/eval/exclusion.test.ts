@@ -30,6 +30,7 @@ describe("eval harness is manual-only", () => {
 
     const runner = readFileSync(join(evalDir, "run.ts"), "utf8")
     expect(runner).toContain("coachModelForModeFromEnv")
+    expect(runner).toContain("evalTurnInput")
     expect(runner).not.toMatch(
       /from\s+["'](ai|@openrouter\/ai-sdk-provider)["']/
     )

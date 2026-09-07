@@ -12,7 +12,7 @@ export const DEFAULT_COACH_MODE: CoachMode = "free"
 
 /** @deprecated Single-model fallback for legacy paths. New turns resolve via mode. */
 export const DEFAULT_COACH_MODEL = "anthropic/claude-sonnet-4.5"
-export const DEFAULT_COACH_MODEL_FREE = "stealth/ox-alpha"
+export const DEFAULT_COACH_MODEL_FREE = "openrouter/free"
 export const DEFAULT_COACH_MODEL_LIGHT = "deepseek/deepseek-chat-v3.1"
 export const DEFAULT_COACH_MODEL_MAX = "anthropic/claude-opus-4"
 
@@ -135,6 +135,18 @@ export function coachProviderErrorMessage(
   if (isQuota) {
     return "The Coach hit a provider limit. Try again in a moment, or switch modes."
   }
+
+  const isUnroutable =
+    status === 404 ||
+    /no endpoints/i.test(text) ||
+    /not a valid model/i.test(text)
+  if (isUnroutable && mode === "free") {
+    return "The free Coach model isn't available right now. Try Light mode."
+  }
+  if (isUnroutable) {
+    return "The Coach model isn't available. Try another mode, or try again later."
+  }
+
   if (error instanceof Error && error.message) return error.message
   if (typeof error === "string" && error.length > 0) return error
   return "The Coach could not finish"

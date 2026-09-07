@@ -44,7 +44,8 @@ describe("coach mode copy", () => {
     expect(coachModeLabel("free")).toBe("Free")
     expect(coachModeLabel("light")).toBe("Light")
     expect(coachModeLabel("max")).toBe("Max")
-    expect(coachModeHelper("free")).toMatch(/preview/)
+    expect(coachModeHelper("free")).toMatch(/free models/)
+    expect(coachModeHelper("free")).toMatch(/change between turns/)
     expect(coachModeHelper("free")).not.toMatch(/unlimited/i)
     expect(coachModeHelper("max")).not.toMatch(/unlimited/i)
   })
@@ -140,7 +141,7 @@ describe("Settings coach mode", () => {
     expect(screen.getByText(/Free stays first/)).toBeInTheDocument()
     expect(screen.getByRole("link", { name: "OpenRouter listing" })).toHaveAttribute(
       "href",
-      "https://openrouter.ai/stealth/ox-alpha"
+      "https://openrouter.ai/openrouter/free"
     )
     fireEvent.click(screen.getByRole("radio", { name: "Max" }))
     await waitFor(() => {

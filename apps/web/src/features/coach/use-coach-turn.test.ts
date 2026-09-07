@@ -18,6 +18,9 @@ describe("shared Coach turn hook", () => {
     expect(existsSync(path.join(webSrc, "features/paper/paper-ai-chat.tsx"))).toBe(
       false
     )
+    expect(
+      existsSync(path.join(webSrc, "features/paper/coach-thread-panel.tsx"))
+    ).toBe(false)
 
     const hook = read("features/coach/use-coach-turn.ts")
     expect(hook).toMatch(/export function useCoachTurn/)
@@ -30,10 +33,15 @@ describe("shared Coach turn hook", () => {
     expect(store).toMatch(/useCoachTurn/)
     expect(store).not.toMatch(/streamCoachTurn/)
 
-    const panel = read("features/paper/coach-thread-panel.tsx")
+    const panel = read("features/paper/coach-float.tsx")
     expect(panel).toMatch(/useCoachTurn/)
-    expect(panel).toMatch(/CoachDock/)
-    expect(panel).toMatch(/showModePicker=\{false\}/)
+    expect(panel).toMatch(/useCoachExternalRuntime/)
+    expect(panel).toMatch(/CoachThread/)
+    expect(panel).not.toMatch(/ThreadView/)
+    expect(read("features/coach/coach-thread.tsx")).toMatch(/CoachDock/)
+    expect(read("features/coach/coach-thread.tsx")).toMatch(
+      /showModePicker=\{false\}/
+    )
     expect(panel).not.toMatch(/sessionStorage/)
     expect(panel).not.toMatch(/Sparkles/)
     expect(panel).not.toMatch(/AI assist/)

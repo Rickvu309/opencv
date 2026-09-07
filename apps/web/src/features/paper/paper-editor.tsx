@@ -17,6 +17,8 @@ import {
   FileText,
   Globe,
   MoreHorizontal,
+  PanelLeftClose,
+  PanelLeftOpen,
   Share2,
 } from "lucide-react"
 
@@ -36,7 +38,7 @@ import {
   proofContentOf,
   type PaperDoc,
 } from "./paper-data.ts"
-import { CoachThreadPanel } from "./coach-thread-panel.tsx"
+import { CoachFloat } from "./coach-float.tsx"
 import { readPaperSelection } from "./paper-selection.ts"
 import { PaperEditorSidebar } from "./paper-editor-sidebar.tsx"
 import {
@@ -52,6 +54,29 @@ import {
   type ProofData,
   type ProofStepType,
 } from "./paper-proof-types.ts"
+
+const DOCS_PANEL_KEY = "openpath:paper:docs-panel"
+const DOCS_PANEL_ID = "paper-docs-panel"
+
+type DocsPanelState = "expanded" | "collapsed"
+
+function readDocsPanel(): DocsPanelState {
+  try {
+    const value = window.localStorage.getItem(DOCS_PANEL_KEY)
+    if (value === "expanded" || value === "collapsed") return value
+  } catch {
+    // Private mode / blocked storage — first visit is expanded.
+  }
+  return "expanded"
+}
+
+function writeDocsPanel(value: DocsPanelState) {
+  try {
+    window.localStorage.setItem(DOCS_PANEL_KEY, value)
+  } catch {
+    // Private mode / blocked storage — preference is session-only.
+  }
+}
 
 type Props = {
   doc: PaperDoc
@@ -100,8 +125,16 @@ export function PaperEditor({
   const [conflict, setConflict] = useState(false)
   const [changedSections, setChangedSections] = useState<string[]>([])
   const [selection, setSelection] = useState<CoachSelection | null>(null)
+  const [docsPanel, setDocsPanel] = useState<DocsPanelState>(readDocsPanel)
   const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)", false)
   dirtyRef.current = dirty
+  const docsExpanded = docsPanel === "expanded"
+
+  function toggleDocsPanel() {
+    const next: DocsPanelState = docsExpanded ? "collapsed" : "expanded"
+    setDocsPanel(next)
+    writeDocsPanel(next)
+  }
 
   function applyServerDoc(next: PaperDoc, highlight = false) {
     const previous = loadedContentRef.current
@@ -387,12 +420,15 @@ export function PaperEditor({
       role="region"
       aria-label={`Editing ${doc.name}`}
     >
-      <PaperEditorSidebar
-        docs={docs}
-        activeId={doc.id}
-        onSelect={onSelectDoc}
-        onBack={onBack}
-      />
+      {docsExpanded ? (
+        <PaperEditorSidebar
+          id={DOCS_PANEL_ID}
+          docs={docs}
+          activeId={doc.id}
+          onSelect={onSelectDoc}
+          onBack={onBack}
+        />
+      ) : null}
 
       <div className="flex min-w-0 flex-1 flex-col">
         <WorkspaceHeader
@@ -421,6 +457,21 @@ export function PaperEditor({
             </div>
           }
         >
+          <Button
+            type="button"
+            size="icon-sm"
+            variant="ghost"
+            aria-label="Documents"
+            aria-expanded={docsExpanded}
+            aria-controls={DOCS_PANEL_ID}
+            onClick={toggleDocsPanel}
+          >
+            {docsExpanded ? (
+              <PanelLeftClose className="size-4" />
+            ) : (
+              <PanelLeftOpen className="size-4" />
+            )}
+          </Button>
 
           <DropdownMenu>
             <DropdownMenuTrigger
@@ -486,6 +537,7 @@ export function PaperEditor({
 
         <div
           ref={canvasRef}
+          data-paper-canvas
           className="min-h-0 flex-1 overflow-auto px-4 py-8 sm:px-8"
         >
           <div
@@ -611,7 +663,7 @@ export function PaperEditor({
           </div>
         </div>
 
-        <CoachThreadPanel
+        <CoachFloat
           key={doc.id}
           docId={doc.id}
           docName={doc.name}

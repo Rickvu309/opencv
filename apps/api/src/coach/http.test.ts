@@ -421,6 +421,32 @@ describe("coach route scripted fake", () => {
     expect(usageRows[0]?.finishReason).toBe("error")
   })
 
+  it("rewrites a dead-model throw into Light-mode copy on Free", async () => {
+    const app = createTestApp(db, {
+      coach: createThrowingCoachRuntime(
+        new Error("No endpoints found for retired/dead-model.")
+      ),
+    })
+    const threadId = await createThread(app, cookie, "Dead model")
+
+    const res = await postCoach(
+      app,
+      cookie,
+      threadId,
+      "Still send this",
+      undefined,
+      "free"
+    )
+    expect(res.status).toBe(200)
+    const events = parseSseEvents(await res.text())
+    expect(events[1]?.data).toEqual({
+      message: "The free Coach model isn't available right now. Try Light mode.",
+    })
+    expect(JSON.stringify(events[1]?.data)).not.toMatch(
+      /No endpoints|retired\/dead-model/
+    )
+  })
+
   it("writes a heartbeat comment while the runtime is working", async () => {
     const app = createTestApp(db, {
       coach: createScriptedCoachRuntime(async function* () {
@@ -801,6 +827,38 @@ describe("coach route modes", () => {
         })
       )
     }
+  })
+
+  it("records the free model that answered, not the router slug", async () => {
+    const app = createTestApp(db, {
+      coach: {
+        async *streamTurn() {
+          yield { type: "text-delta" as const, text: "Prep the starred card." }
+          yield {
+            type: "finish" as const,
+            finishReason: "stop",
+            usage: { model: "z-ai/glm-5.2:free", tokens: 18 },
+          }
+        },
+      },
+    })
+    const threadId = await createThread(app, cookie, "Resolved free model")
+    const res = await postCoach(app, cookie, threadId, "plan my week", undefined, "free")
+    expect(res.status).toBe(200)
+    await res.text()
+
+    const usageRows = await db
+      .select()
+      .from(coachUsage)
+      .where(eq(coachUsage.threadId, threadId))
+    expect(usageRows).toHaveLength(1)
+    expect(usageRows[0]).toEqual(
+      expect.objectContaining({
+        mode: "free",
+        model: "z-ai/glm-5.2:free",
+      })
+    )
+    expect(usageRows[0]?.model).not.toBe(DEFAULT_COACH_MODEL_FREE)
   })
 
   it("uses the saved preference when the request omits mode", async () => {

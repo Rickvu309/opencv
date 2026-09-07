@@ -10,7 +10,7 @@ describe("renderEvalReport", () => {
     const report: EvalReport = {
       generatedAt: "2026-08-25T00:00:00.000Z",
       coachMode: "free",
-      coachModel: "stealth/ox-alpha",
+      coachModel: "openrouter/free",
       judgeModel: "openai/gpt-4o-mini",
       results: [
         {
@@ -20,6 +20,7 @@ describe("renderEvalReport", () => {
             parts: [],
             toolCalls: [],
             toolResults: [],
+            usage: { model: "z-ai/glm-5.2:free", tokens: 80 },
           },
           honesty: [
             {
@@ -53,8 +54,11 @@ describe("renderEvalReport", () => {
     const markdown = renderEvalReport(report)
     expect(markdown).toMatch(/^# Coach eval report/m)
     expect(markdown).toContain("Coach mode: free")
-    expect(markdown).toContain("Coach model: stealth/ox-alpha")
-    expect(markdown).toContain("| empty-cv-anxious | fail (1) | 4/5 |")
+    expect(markdown).toContain("Coach model: openrouter/free")
+    expect(markdown).toContain("**Resolved model:** `z-ai/glm-5.2:free`")
+    expect(markdown).toContain(
+      "| empty-cv-anxious | `z-ai/glm-5.2:free` | fail (1) | 4/5 |"
+    )
     expect(markdown).toContain("[pass] No exclamation marks")
     expect(markdown).toContain("[fail] Exactly one next step present")
     expect(markdown).toContain("Overall: 4/5")

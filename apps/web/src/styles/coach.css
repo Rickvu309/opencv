@@ -80,6 +80,16 @@
     animation: coach-undone-flash var(--duration-slow) var(--ease-standard) both;
   }
 
+  .coach-float-card {
+    transition:
+      opacity var(--duration-base) var(--ease-standard),
+      transform var(--duration-base) var(--ease-standard);
+  }
+
+  .coach-float-backdrop {
+    transition: opacity var(--duration-base) var(--ease-standard);
+  }
+
   @keyframes coach-undone-flash {
     from {
       opacity: 0;
@@ -101,6 +111,18 @@
     .coach-receipt-collapse,
     .coach-undone-flash {
       animation: none;
+    }
+
+    .coach-float-card,
+    .coach-float-backdrop {
+      transition: none;
+    }
+
+    [data-slot="aui-thread-viewport"],
+    [data-slot="aui-message-root"],
+    [data-slot="aui-composer-root"] {
+      animation: none;
+      transition: none;
     }
 
     .coach-receipt-collapse {

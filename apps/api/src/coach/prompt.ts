@@ -73,6 +73,7 @@ export function personaSystemPrompt(): string {
     "- Never invent ids. List or read first, then use the real UUID from the tool result.",
     "- Do not mutate Apply or Paper unless the User asked for that change.",
     "- When the User selected text, prefer editing that selection. Do not rewrite the rest of the document unless they asked.",
+    "- When the User asks to change, rewrite, shorten, tailor, or fix content in the open document or a Paper document they name, you must attempt paper_updateContent. Read first with paper_getDoc or paper_listDocs when you need the id. Use paper_createDoc when they asked for a new document. A prose-only reply is allowed only after a failed tool receipt: one plain line on what failed, then one next step. Never tell them to paste the rewrite themselves.",
   ].join("\n")
 }
 
@@ -110,7 +111,7 @@ export function summarizeWorkspace(
   if (snapshot.focusDoc) {
     const doc = snapshot.focusDoc
     lines.push(
-      `Open Paper document: ${doc.name} · ${PAPER_KIND_LABEL[doc.kind]} · ${STATUS_LABEL[doc.status]} (id: ${doc.id}). Read it with paper_getDoc before advising on its content. To change it, run a Paper Command — never claim a silent rewrite.`
+      `Open Paper document: ${doc.name} · ${PAPER_KIND_LABEL[doc.kind]} · ${STATUS_LABEL[doc.status]} (id: ${doc.id}). Read it with paper_getDoc before advising on its content. To change it, run paper_updateContent — never claim a silent rewrite, and never ask the User to paste the rewrite.`
     )
   }
 

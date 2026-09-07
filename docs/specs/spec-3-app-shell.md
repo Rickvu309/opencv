@@ -71,7 +71,7 @@ The prototype proved more than Spec 3 shipped. Numbering below matches the live 
 | **5 — The Coach** | Real LLM, streaming, Commands wired as tools from the same registry | Done (QVE-136 / QVE-137–144); `OPENROUTER_API_KEY` on Railway is the remaining owner step |
 | **6 — Design system** | Tokens, kit consumption, vocabulary lock | Done (QVE-156 / QVE-157–159) |
 | **7 — Coach experience** | One dock, Thread `focus_doc_id`, visible editing, calm motion | Done (QVE-168 / QVE-169, 172, 170, 173, 174) |
-| **8 — Paper Coach shell** | Hideable docs panel, floating `CoachFloat`, must-edit CV, assistant-ui — `docs/specs/spec-8-paper-coach-shell.md` | Ready ([QVE-175](https://linear.app/quanvm/issue/QVE-175)) |
+| **8 — Paper Coach shell** | Hideable docs panel, floating `CoachFloat`, must-edit CV, assistant-ui | Done (QVE-175 / QVE-176–179) |
 | **Pitch persistence** | One jsonb document per user (same shape as Paper content) | After 8, unblocked |
 | **Later** | Email provider + verification, sibling custom domains, OAuth, notification inbox, Connected apps, voice input | — |
 

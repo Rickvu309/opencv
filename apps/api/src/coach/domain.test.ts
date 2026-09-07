@@ -58,7 +58,7 @@ describe("coach domain exports", () => {
     expect(DEFAULT_COACH_MODEL).toBe("anthropic/claude-sonnet-4.5")
     expect(DEFAULT_COACH_MODE).toBe("free")
     expect(DEFAULT_COACH_DAILY_TURN_LIMIT).toBe(50)
-    expect(DEFAULT_COACH_MODEL_FREE).toBe("stealth/ox-alpha")
+    expect(DEFAULT_COACH_MODEL_FREE).toBe("openrouter/free")
     expect(DEFAULT_COACH_MODEL_LIGHT).toBe("deepseek/deepseek-chat-v3.1")
     expect(DEFAULT_COACH_MODEL_MAX).toBe("anthropic/claude-opus-4")
     expect(COACH_SSE_HEARTBEAT_MS).toBe(15_000)
@@ -261,11 +261,11 @@ describe("resolveCoachModel", () => {
 
   it("honors per-mode env overrides and ignores blank values", () => {
     const env = {
-      COACH_MODEL_FREE: "  stealth/custom-free  ",
+      COACH_MODEL_FREE: "  z-ai/glm-5.2:free  ",
       COACH_MODEL_LIGHT: "deepseek/deepseek-chat",
       COACH_MODEL_MAX: "anthropic/claude-fable-5",
     }
-    expect(resolveCoachModel("free", env)).toBe("stealth/custom-free")
+    expect(resolveCoachModel("free", env)).toBe("z-ai/glm-5.2:free")
     expect(resolveCoachModel("light", env)).toBe("deepseek/deepseek-chat")
     expect(resolveCoachModel("max", env)).toBe("anthropic/claude-fable-5")
     expect(
@@ -326,5 +326,32 @@ describe("coachProviderErrorMessage", () => {
     expect(coachProviderErrorMessage({ status: 429 }, "max")).toMatch(
       /switch modes/
     )
+  })
+
+  it("names Light on a dead or unroutable Free model, never the raw provider string", () => {
+    expect(coachProviderErrorMessage({ statusCode: 404 }, "free")).toBe(
+      "The free Coach model isn't available right now. Try Light mode."
+    )
+    expect(
+      coachProviderErrorMessage(
+        new Error("No endpoints found for retired/dead-model."),
+        "free"
+      )
+    ).toBe("The free Coach model isn't available right now. Try Light mode.")
+    expect(
+      coachProviderErrorMessage(
+        new Error("retired/dead-model is not a valid model ID"),
+        "free"
+      )
+    ).toMatch(/Try Light mode/)
+    expect(
+      coachProviderErrorMessage({ status: 404 }, "light")
+    ).toMatch(/Try another mode/)
+    expect(
+      coachProviderErrorMessage(
+        new Error("No endpoints found for retired/dead-model."),
+        "free"
+      )
+    ).not.toMatch(/retired\/dead-model|No endpoints/)
   })
 })

@@ -70,6 +70,9 @@ describe("personaSystemPrompt", () => {
     expect(persona).toMatch(/Never claim an action succeeded/)
     expect(persona).toMatch(/Never invent ids/)
     expect(persona).toMatch(/Do not mutate Apply or Paper unless the User asked/)
+    expect(persona).toMatch(/paper_updateContent/)
+    expect(persona).toMatch(/failed tool receipt/)
+    expect(persona).toMatch(/Never tell them to paste the rewrite/)
   })
 })
 
@@ -165,7 +168,9 @@ describe("assembleSystemPrompt", () => {
       "Open Paper document: PM track CV · CV · draft (id: 11111111-1111-7111-8111-111111111111)"
     )
     expect(summary).toMatch(/paper_getDoc/)
+    expect(summary).toMatch(/paper_updateContent/)
     expect(summary).toMatch(/never claim a silent rewrite/)
+    expect(summary).toMatch(/never ask the User to paste the rewrite/)
     expect(summary).not.toMatch(/!/)
     expect(assembleSystemPrompt(snapshot)).toContain(summary)
   })

@@ -20,9 +20,17 @@ describe("Coach motion tokens and reduced-motion", () => {
     expect(css).toContain(".coach-text-enter")
     expect(css).toContain(".coach-receipt-enter")
     expect(css).toContain(".coach-receipt-collapse")
+    expect(css).toContain(".coach-float-card")
+    expect(css).toContain(".coach-float-backdrop")
     expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)/)
     expect(css).toMatch(
       /prefers-reduced-motion: reduce[\s\S]*\.coach-receipt-enter[\s\S]*animation:\s*none/
+    )
+    expect(css).toMatch(
+      /prefers-reduced-motion: reduce[\s\S]*\.coach-float-card[\s\S]*transition:\s*none/
+    )
+    expect(css).toMatch(
+      /prefers-reduced-motion: reduce[\s\S]*\[data-slot="aui-thread-viewport"\][\s\S]*animation:\s*none/
     )
   })
 

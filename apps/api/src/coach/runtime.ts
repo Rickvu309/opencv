@@ -146,11 +146,12 @@ function toAiSdkTools(surface: CoachToolSurface): ToolSet {
   return tools
 }
 
-async function* normalizeFullStream(
+export async function* normalizeFullStream(
   fullStream: AsyncIterable<{ type: string } & Record<string, unknown>>,
   mode = DEFAULT_COACH_MODE
 ): AsyncGenerator<ModelStreamEvent> {
   let pendingCost: number | undefined
+  let pendingModelId: string | undefined
 
   for await (const part of fullStream) {
     switch (part.type) {
@@ -203,6 +204,7 @@ async function* normalizeFullStream(
           costFromUnknown(part.providerMetadata) ??
           costFromUsage(part.usage) ??
           pendingCost
+        pendingModelId = modelIdFromResponse(part.response) ?? pendingModelId
         break
       case "finish":
         yield {
@@ -210,6 +212,7 @@ async function* normalizeFullStream(
           finishReason:
             typeof part.finishReason === "string" ? part.finishReason : "stop",
           usage: usageFromUnknown(part.totalUsage, pendingCost),
+          ...(pendingModelId ? { model: pendingModelId } : {}),
         }
         return
       case "error":
@@ -225,6 +228,14 @@ async function* normalizeFullStream(
         break
     }
   }
+}
+
+function modelIdFromResponse(response: unknown): string | undefined {
+  if (!response || typeof response !== "object") return undefined
+  const modelId = (response as { modelId?: unknown }).modelId
+  if (typeof modelId !== "string") return undefined
+  const trimmed = modelId.trim()
+  return trimmed.length > 0 ? trimmed : undefined
 }
 
 function usageFromUnknown(

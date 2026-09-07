@@ -8,7 +8,7 @@ OpenPath's primary UI shape is a Grok-style shell: a collapsible left sidebar (H
 
 **Surfaces are stable.** `SurfaceId = home | paper | apply | pitch | settings`. New top-level surfaces are a deliberate ADR-level change, not a nav tweak.
 
-**Craft surfaces swap in place.** Paper, Apply, Pitch, and Settings render in the main pane under stable URLs; later specs replace stub content in place without re-litigating layout.
+**Craft surfaces swap in place.** Paper, Apply, Pitch, and Settings render in the main pane under stable URLs; later specs replace stub content in place without re-litigating layout. A craft surface may host a dismissible floating Coach overlay; the single-main-pane rule is otherwise intact.
 
 **Out of scope here:** auth and route protection, notification inbox placement, mobile-native layout.
 
