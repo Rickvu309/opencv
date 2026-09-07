@@ -501,6 +501,7 @@ function CoachComposer() {
 type Props = {
   messages: readonly HomeMessage[]
   empty?: ReactNode
+  beforeComposer?: ReactNode
   waiting?: boolean
   turnActive?: boolean
   error?: string | null
@@ -513,7 +514,13 @@ type Props = {
   onUndo?: (messageId: string, toolCallId: string) => Promise<void>
 }
 
-function ThreadChrome({ empty }: { empty?: ReactNode }) {
+function ThreadChrome({
+  empty,
+  beforeComposer,
+}: {
+  empty?: ReactNode
+  beforeComposer?: ReactNode
+}) {
   const { error, onRetry } = useThreadActions()
   const isEmpty = useAuiState((state) => state.thread.isEmpty)
 
@@ -542,7 +549,8 @@ function ThreadChrome({ empty }: { empty?: ReactNode }) {
           </div>
         ) : null}
       </ThreadPrimitive.Viewport>
-      <ThreadPrimitive.ViewportFooter>
+      <ThreadPrimitive.ViewportFooter className="flex flex-col gap-2">
+        {beforeComposer}
         <CoachComposer />
       </ThreadPrimitive.ViewportFooter>
     </ThreadPrimitive.Root>
@@ -552,6 +560,7 @@ function ThreadChrome({ empty }: { empty?: ReactNode }) {
 export function CoachThread({
   messages,
   empty,
+  beforeComposer,
   waiting = false,
   turnActive = false,
   error = null,
@@ -579,7 +588,7 @@ export function CoachThread({
         onUndo,
       }}
     >
-      <ThreadChrome empty={empty} />
+      <ThreadChrome empty={empty} beforeComposer={beforeComposer} />
     </CoachThreadActionsContext.Provider>
   )
 }
