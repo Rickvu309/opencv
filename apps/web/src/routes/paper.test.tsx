@@ -343,7 +343,7 @@ describe("Paper editors", () => {
 
       field.focus()
       expect(field).toHaveFocus()
-      fireEvent.blur(field)
+      field.blur()
       expect(field).not.toHaveFocus()
     }
 
