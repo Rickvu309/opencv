@@ -60,6 +60,36 @@ const QUICK_PROMPTS: Record<ToolbarVariant, string[]> = {
   full: [REWRITE_SELECTION, "Fix spelling", "Make it shorter"],
 }
 
+function SoftScopeChip({
+  docName,
+  onRemove,
+}: {
+  docName: string
+  onRemove: () => void
+}) {
+  return (
+    <div
+      data-coach-soft-scope
+      role="status"
+      aria-label="In context"
+      className="flex min-w-0"
+    >
+      <div className="inline-flex max-w-full items-center gap-0.5 rounded-full bg-muted/70 py-0.5 pr-0.5 pl-2 text-2xs text-muted-foreground">
+        <span className="min-w-0 truncate">{docName.trim() || "This CV"}</span>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-xs"
+          aria-label="Remove from context"
+          onClick={onRemove}
+        >
+          <X />
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 function QuickPromptChips({
   chips,
   turnActive,
@@ -164,6 +194,7 @@ export const CoachFloat = memo(function CoachFloat({
   const restoreThreadScrollRef = useRef(false)
   const [createdThreadId, setCreatedThreadId] = useState<string | null>(null)
   const [floatState, setFloatState] = useState<CoachFloatState>(readFloatState)
+  const [softScope, setSoftScope] = useState(true)
   const isDesktop = useMediaQuery(DESKTOP_MEDIA_QUERY, true)
 
   const captureThreadScroll = useCallback(() => {
@@ -190,7 +221,7 @@ export const CoachFloat = memo(function CoachFloat({
       threadId,
       setThreadId: setCreatedThreadId,
       titleForCreate,
-      focusDocId: docId,
+      focusDocId: softScope ? docId : null,
     })
 
   const sendWithSelection = useCallback(
@@ -418,13 +449,23 @@ export const CoachFloat = memo(function CoachFloat({
                 />
               }
               beforeComposer={
-                messages.length > 0 && selection?.text ? (
-                  <QuickPromptChips
-                    chips={[REWRITE_SELECTION]}
-                    turnActive={turnActive}
-                    hasSelection
-                    onSubmit={submit}
-                  />
+                softScope || (messages.length > 0 && selection?.text) ? (
+                  <>
+                    {softScope ? (
+                      <SoftScopeChip
+                        docName={docName}
+                        onRemove={() => setSoftScope(false)}
+                      />
+                    ) : null}
+                    {messages.length > 0 && selection?.text ? (
+                      <QuickPromptChips
+                        chips={[REWRITE_SELECTION]}
+                        turnActive={turnActive}
+                        hasSelection
+                        onSubmit={submit}
+                      />
+                    ) : null}
+                  </>
                 ) : null
               }
             />

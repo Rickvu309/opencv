@@ -52,7 +52,7 @@ export type UseCoachTurnOptions = {
   threadId: string | null
   setThreadId: (id: string) => void
   titleForCreate: (text: string) => string
-  focusDocId?: string
+  focusDocId?: string | null
   onAfterUndo?: () => void
 }
 

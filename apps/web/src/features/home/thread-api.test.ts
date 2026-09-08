@@ -319,6 +319,54 @@ describe("thread API client", () => {
     )
   })
 
+  it("sends focusDocId null when Paper soft-scope was cleared", async () => {
+    const threadId = "11111111-1111-4111-8111-111111111111"
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        [
+          `event: ${COACH_SSE_EVENTS.messageStart}`,
+          `data: ${JSON.stringify({ threadId })}`,
+          "",
+          `event: ${COACH_SSE_EVENTS.messageEnd}`,
+          `data: ${JSON.stringify({
+            message: {
+              id: "c1",
+              role: "coach",
+              text: "",
+              createdAt: "2026-08-25T00:00:01.000Z",
+              status: "final",
+            },
+            usage: { model: "mock" },
+          })}`,
+          "",
+        ].join("\n"),
+        {
+          status: 200,
+          headers: { "Content-Type": "text/event-stream" },
+        }
+      )
+    )
+    vi.stubGlobal("fetch", fetchMock)
+
+    await streamCoachTurn(
+      threadId,
+      "What should I cut?",
+      {},
+      undefined,
+      "free",
+      null
+    )
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(init.body).toBe(
+      JSON.stringify({
+        text: "What should I cut?",
+        mode: "free",
+        focusDocId: null,
+      })
+    )
+  })
+
   it("includes selection on a Paper-scoped coach turn", async () => {
     const threadId = "11111111-1111-4111-8111-111111111111"
     const focusDocId = "11111111-1111-7111-8111-111111111111"

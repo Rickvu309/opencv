@@ -129,10 +129,10 @@ type CoachStreamBody =
   | {
       text: string
       mode?: CoachMode
-      focusDocId?: string
+      focusDocId?: string | null
       selection?: CoachSelection
     }
-  | { regenerate: true; mode?: CoachMode; focusDocId?: string }
+  | { regenerate: true; mode?: CoachMode; focusDocId?: string | null }
 
 async function consumeCoachStream(
   threadId: string,
@@ -182,7 +182,7 @@ export async function streamCoachTurn(
   handlers: CoachStreamHandlers,
   signal?: AbortSignal,
   mode?: CoachMode,
-  focusDocId?: string,
+  focusDocId?: string | null,
   selection?: CoachSelection
 ): Promise<void> {
   await consumeCoachStream(
@@ -190,7 +190,7 @@ export async function streamCoachTurn(
     {
       text,
       ...(mode ? { mode } : {}),
-      ...(focusDocId ? { focusDocId } : {}),
+      ...(focusDocId !== undefined ? { focusDocId } : {}),
       ...(selection ? { selection } : {}),
     },
     handlers,
@@ -203,14 +203,14 @@ export async function streamCoachRegenerate(
   handlers: CoachStreamHandlers,
   signal?: AbortSignal,
   mode?: CoachMode,
-  focusDocId?: string
+  focusDocId?: string | null
 ): Promise<void> {
   await consumeCoachStream(
     threadId,
     {
       regenerate: true,
       ...(mode ? { mode } : {}),
-      ...(focusDocId ? { focusDocId } : {}),
+      ...(focusDocId !== undefined ? { focusDocId } : {}),
     },
     handlers,
     signal
