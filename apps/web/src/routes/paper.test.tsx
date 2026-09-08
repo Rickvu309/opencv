@@ -266,6 +266,17 @@ describe("Paper editors", () => {
     expect(screen.getAllByText(SAMPLE_AUTHOR_NAME).length).toBeGreaterThan(0)
     expect(screen.getByRole("textbox", { name: "Summary" })).toBeInTheDocument()
 
+    const cvTools = screen.getByRole("toolbar", { name: "CV tools" })
+    expect(within(cvTools).getByRole("button", { name: "Insert" })).toBeInTheDocument()
+    expect(within(cvTools).getByRole("button", { name: "Export" })).toBeInTheDocument()
+    expect(within(cvTools).queryByRole("button", { name: "Bold" })).not.toBeInTheDocument()
+    expect(within(cvTools).queryByRole("button", { name: "Italic" })).not.toBeInTheDocument()
+    expect(
+      within(cvTools).queryByRole("button", { name: "Bullet list" })
+    ).not.toBeInTheDocument()
+    expect(document.querySelector("[data-cv-type='page-title']")).not.toBeNull()
+    expect(document.querySelector("[data-cv-type='body']")).not.toBeNull()
+
     fireEvent.click(screen.getByRole("button", { name: /Product & design/ }))
     const templates = await screen.findByRole("listbox", {
       name: "CV templates",
