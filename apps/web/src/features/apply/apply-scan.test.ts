@@ -3,6 +3,7 @@ import {
   APPLY_SCAN_EMPTY,
   APPLY_SCAN_NOT_FOUND,
   applyScanFieldGrounded,
+  extractApplyFieldsFromLabeledText,
   extractApplyFieldsFromMarkup,
   formatApplyScanReceipt,
   groundApplyScanResult,
@@ -10,6 +11,13 @@ import {
   parseApplyScanModelText,
   postingTextFromHtml,
 } from "@workspace/domain"
+
+const CAFE_JD = [
+  "Job Title: Café Barista Lead",
+  "Company: Highlands Coffee",
+  "Location: District 1, Ho Chi Minh City",
+  "We need a café lead who owns the morning rush and trains new baristas.",
+].join("\n")
 
 describe("apply scan helpers", () => {
   it("requires a posting URL or JD text", () => {
@@ -59,7 +67,29 @@ describe("apply scan helpers", () => {
       })
     ).toEqual({ title: null, company: null, note: null })
     expect(applyScanFieldGrounded(source, "intern")).toBe(true)
+    expect(applyScanFieldGrounded(CAFE_JD, "Cafe Barista Lead")).toBe(true)
     expect(APPLY_SCAN_NOT_FOUND).toMatch(/title or company/)
+  })
+
+  it("reads labeled title and company from a café paste", () => {
+    expect(extractApplyFieldsFromLabeledText(CAFE_JD)).toEqual({
+      title: "Café Barista Lead",
+      company: "Highlands Coffee",
+      note: "District 1, Ho Chi Minh City",
+    })
+    expect(
+      extractApplyFieldsFromLabeledText("Come work with us. Nice people.")
+    ).toEqual({ title: null, company: null, note: null })
+    expect(
+      groundApplyScanResult(
+        CAFE_JD,
+        extractApplyFieldsFromLabeledText(`${CAFE_JD} `)
+      )
+    ).toEqual({
+      title: "Café Barista Lead",
+      company: "Highlands Coffee",
+      note: "District 1, Ho Chi Minh City",
+    })
   })
 
   it("parses model JSON fail-closed and reads JobPosting markup", () => {
