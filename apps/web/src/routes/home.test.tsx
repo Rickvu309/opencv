@@ -298,6 +298,41 @@ describe("Home first-café checklist", () => {
     expect(
       screen.getByRole("link", { name: "Make Pitch yours" })
     ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("link", { name: "Open the sample CV, done" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("link", { name: "Make Pitch yours, done" })
+    ).not.toBeInTheDocument()
+  })
+
+  it("completes Pitch only after a real visit to /app/pitch", async () => {
+    const { router } = renderApp()
+    await expectHomeIdle()
+
+    fireEvent.click(screen.getByRole("link", { name: "Make Pitch yours" }))
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(SURFACE_PATHS.pitch)
+    })
+
+    fireEvent.click(screen.getByRole("link", { name: "Home" }))
+    await expectHomeIdle()
+
+    expect(
+      screen.getByRole("link", { name: "Make Pitch yours, done" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("link", { name: "Open the sample CV" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("link", { name: "Triage one Apply card" })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("link", { name: "Open the sample CV, done" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("link", { name: "Triage one Apply card, done" })
+    ).not.toBeInTheDocument()
   })
 
   it("opens one seeded Apply card with a Prep next action and keeps the board", async () => {

@@ -49,6 +49,16 @@ describe("first-café checklist", () => {
     )
     expect(firstCafeItemForVisit(SURFACE_PATHS.settings)).toBeNull()
     expect(firstCafeItemForVisit(SURFACE_PATHS.home)).toBeNull()
+    expect(firstCafeItemForVisit("/app")).toBeNull()
+    expect(firstCafeItemForVisit(`${SURFACE_PATHS.apply}/`)).toBeNull()
+  })
+
+  it("maps each surface visit to exactly one checklist item", () => {
+    expect(firstCafeItemForVisit(SURFACE_PATHS.apply)).toBe("apply")
+    expect(firstCafeItemForVisit(SURFACE_PATHS.apply)).not.toBe("sample-cv")
+    expect(firstCafeItemForVisit(SURFACE_PATHS.apply)).not.toBe("pitch")
+    expect(firstCafeItemForVisit(SURFACE_PATHS.paper)).not.toBe("apply")
+    expect(firstCafeItemForVisit(SURFACE_PATHS.pitch)).not.toBe("apply")
   })
 
   it("parses storage without inventing extra items", () => {
@@ -137,12 +147,36 @@ describe("first-café checklist", () => {
         userId: "user_fresh",
         status: "idle",
         resolvedPathname: SURFACE_PATHS.apply,
+        historyPathname: SURFACE_PATHS.apply,
         resolvedSearch: {},
       })
     ).toEqual({
       pathname: SURFACE_PATHS.apply,
       search: {},
     })
+  })
+
+  it("ignores Paper and Pitch store flashes while history stays on Apply", () => {
+    expect(
+      firstCafeVisitToRecord({
+        userId: "user_fresh",
+        status: "idle",
+        pathname: SURFACE_PATHS.paper,
+        resolvedPathname: SURFACE_PATHS.paper,
+        historyPathname: SURFACE_PATHS.apply,
+        resolvedSearch: {},
+      })
+    ).toBeNull()
+    expect(
+      firstCafeVisitToRecord({
+        userId: "user_fresh",
+        status: "idle",
+        pathname: SURFACE_PATHS.pitch,
+        resolvedPathname: SURFACE_PATHS.pitch,
+        historyPathname: SURFACE_PATHS.apply,
+        resolvedSearch: {},
+      })
+    ).toBeNull()
   })
 
   it("records only the Paper sample after that visit, not Apply", () => {
@@ -160,5 +194,25 @@ describe("first-café checklist", () => {
 
     const afterHomeAgain = recordFirstCafeVisit(userId, SURFACE_PATHS.home)
     expect(afterHomeAgain.completed).toEqual(["sample-cv"])
+  })
+
+  it("records Apply alone without completing Sample CV or Pitch", () => {
+    const userId = "user_apply_only"
+    const afterApply = recordFirstCafeVisit(userId, SURFACE_PATHS.apply, {
+      open: APPLY_OPEN_GUIDE,
+    })
+    expect(afterApply.completed).toEqual(["apply"])
+    expect(readFirstCafeState(userId).completed).toEqual(["apply"])
+    expect(afterApply.completed).not.toContain("sample-cv")
+    expect(afterApply.completed).not.toContain("pitch")
+  })
+
+  it("records Pitch alone without completing Sample CV or Apply", () => {
+    const userId = "user_pitch_only"
+    const afterPitch = recordFirstCafeVisit(userId, SURFACE_PATHS.pitch)
+    expect(afterPitch.completed).toEqual(["pitch"])
+    expect(readFirstCafeState(userId).completed).toEqual(["pitch"])
+    expect(afterPitch.completed).not.toContain("sample-cv")
+    expect(afterPitch.completed).not.toContain("apply")
   })
 })
