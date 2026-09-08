@@ -53,10 +53,8 @@ export const applyJobUrlSchema = z
 
 const HAS_URL_SCHEME = /^[a-zA-Z][a-zA-Z0-9+.-]*:/
 
-export const APPLY_JOB_URL_INVALID =
-  "That posting link isn't a valid web URL."
-export const APPLY_JOB_URL_BLOCKED =
-  "The browser blocked opening this posting."
+export const APPLY_JOB_URL_INVALID = "That posting link isn't a valid web URL."
+export const APPLY_JOB_URL_BLOCKED = "The browser blocked opening this posting."
 
 /** Prefix https:// when a café-student paste has no scheme. */
 export function normalizeApplyJobUrl(raw: string): string {
@@ -71,21 +69,18 @@ export function openableApplyJobUrl(
   if (raw == null) return null
   const trimmed = raw.trim()
   if (!trimmed || trimmed.length > APPLY_JOB_URL_MAX) return null
-  try {
-    const url = new URL(normalizeApplyJobUrl(trimmed))
-    if (url.protocol !== "http:" && url.protocol !== "https:") return null
-    if (!url.hostname) return null
-    return url.href
-  } catch {
-    return null
-  }
+  const candidate = normalizeApplyJobUrl(trimmed)
+  if (candidate.length > APPLY_JOB_URL_MAX) return null
+  if (!/^https?:\/\//i.test(candidate)) return null
+  if (/\s/.test(candidate)) return null
+  const host = candidate.replace(/^https?:\/\//i, "").split(/[/?#]/)[0] ?? ""
+  if (!host) return null
+  return candidate
 }
 
 export function parseApplyJobUrlInput(
   raw: string
-):
-  | { ok: true; jobUrl: string | null }
-  | { ok: false; message: string } {
+): { ok: true; jobUrl: string | null } | { ok: false; message: string } {
   const trimmed = raw.trim()
   if (!trimmed) return { ok: true, jobUrl: null }
   if (trimmed.length > APPLY_JOB_URL_MAX) {

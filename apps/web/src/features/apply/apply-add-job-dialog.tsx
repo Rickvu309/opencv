@@ -21,12 +21,7 @@ type Props = {
   onAdd: (jobUrl: string | null) => Promise<void>
 }
 
-export function AddJobDialog({
-  open,
-  creating,
-  onOpenChange,
-  onAdd,
-}: Props) {
+export function AddJobDialog({ open, creating, onOpenChange, onAdd }: Props) {
   const [jobUrl, setJobUrl] = useState("")
   const [error, setError] = useState<string | null>(null)
 
@@ -58,8 +53,8 @@ export function AddJobDialog({
         <DialogHeader>
           <DialogTitle>Add job</DialogTitle>
           <DialogDescription>
-            Paste a posting link if you have one. Leave it blank for an
-            untitled role.
+            Paste a posting link if you have one. Leave it blank for an untitled
+            role.
           </DialogDescription>
         </DialogHeader>
         <div className="block">
@@ -87,9 +82,7 @@ export function AddJobDialog({
             aria-invalid={Boolean(error)}
           />
         </div>
-        {error ? (
-          <ErrorBanner variant="inline">{error}</ErrorBanner>
-        ) : null}
+        {error ? <ErrorBanner variant="inline">{error}</ErrorBanner> : null}
         <DialogFooter>
           <Button
             type="button"

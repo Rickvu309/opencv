@@ -125,7 +125,9 @@ describe("Apply workspace", () => {
     expect(
       within(stageColumn("closed")).getByText("UX research intern")
     ).toBeInTheDocument()
-    expect(within(stageColumn("live")).getByText("Drop a job here")).toBeInTheDocument()
+    expect(
+      within(stageColumn("live")).getByText("Drop a job here")
+    ).toBeInTheDocument()
     expect(screen.queryByText(/Eric Nguyen/i)).not.toBeInTheDocument()
     expectNoVisibleFitScore()
   })
@@ -169,14 +171,14 @@ describe("Apply workspace", () => {
     renderApply()
     await expectApplyLive()
 
-    fireEvent.click(
-      screen.getByRole("button", { name: /Associate PM intern/ })
-    )
+    fireEvent.click(screen.getByRole("button", { name: /Associate PM intern/ }))
 
     const panel = await screen.findByRole("complementary", {
       name: "Job detail",
     })
-    expect(within(panel).getByDisplayValue("Associate PM intern")).toBeInTheDocument()
+    expect(
+      within(panel).getByDisplayValue("Associate PM intern")
+    ).toBeInTheDocument()
     expect(within(panel).getByDisplayValue("Local startup")).toBeInTheDocument()
     expect(within(panel).getByText("Notes")).toBeInTheDocument()
     expect(
@@ -246,7 +248,9 @@ describe("Apply workspace", () => {
 
     expect(screen.getByText("Product intern")).toBeInTheDocument()
     expect(screen.queryByText("Associate PM intern")).not.toBeInTheDocument()
-    expect(screen.queryByText("Business analyst intern")).not.toBeInTheDocument()
+    expect(
+      screen.queryByText("Business analyst intern")
+    ).not.toBeInTheDocument()
   })
 
   it("marks unfinished chrome as coming soon and enables Add job", async () => {
@@ -263,9 +267,7 @@ describe("Apply workspace", () => {
       screen.getByRole("button", { name: "Inbox column menu — coming soon" })
     ).toBeDisabled()
 
-    fireEvent.click(
-      screen.getByRole("button", { name: /Associate PM intern/ })
-    )
+    fireEvent.click(screen.getByRole("button", { name: /Associate PM intern/ }))
     expect(
       await screen.findByRole("button", { name: "Link Paper docs" })
     ).toBeEnabled()
@@ -275,9 +277,7 @@ describe("Apply workspace", () => {
     renderApply()
     await expectApplyLive()
 
-    fireEvent.click(
-      screen.getByRole("button", { name: /Associate PM intern/ })
-    )
+    fireEvent.click(screen.getByRole("button", { name: /Associate PM intern/ }))
     const panel = await screen.findByRole("complementary", {
       name: "Job detail",
     })
@@ -286,15 +286,21 @@ describe("Apply workspace", () => {
     const confirm = await screen.findByRole("dialog", { name: "Delete job" })
     expect(confirm).toHaveTextContent("Associate PM intern at Local startup")
     fireEvent.click(within(confirm).getByRole("button", { name: "Cancel" }))
-    expect(screen.queryByRole("dialog", { name: "Delete job" })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("dialog", { name: "Delete job" })
+    ).not.toBeInTheDocument()
     expect(screen.getByText("Associate PM intern")).toBeInTheDocument()
     expect(
       screen.getByRole("complementary", { name: "Job detail" })
     ).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole("button", { name: "Delete job" }))
-    const confirmAgain = await screen.findByRole("dialog", { name: "Delete job" })
-    fireEvent.click(within(confirmAgain).getByRole("button", { name: "Delete" }))
+    const confirmAgain = await screen.findByRole("dialog", {
+      name: "Delete job",
+    })
+    fireEvent.click(
+      within(confirmAgain).getByRole("button", { name: "Delete" })
+    )
 
     await waitFor(() => {
       expect(screen.queryByText("Associate PM intern")).not.toBeInTheDocument()
@@ -330,9 +336,13 @@ describe("Apply workspace", () => {
       within(panel).queryByRole("button", { name: "Open job posting" })
     ).not.toBeInTheDocument()
 
-    fireEvent.click(within(panel).getByRole("button", { name: "Link Paper docs" }))
+    fireEvent.click(
+      within(panel).getByRole("button", { name: "Link Paper docs" })
+    )
     const menu = await screen.findByRole("menu", { name: "Link Paper docs" })
-    fireEvent.click(within(menu).getByRole("menuitemcheckbox", { name: /PM track CV/ }))
+    fireEvent.click(
+      within(menu).getByRole("menuitemcheckbox", { name: /PM track CV/ })
+    )
     expect(
       await within(menu).findByRole("menuitemcheckbox", { name: /PM track CV/ })
     ).toHaveAttribute("aria-checked", "true")
@@ -354,7 +364,9 @@ describe("Apply workspace", () => {
       within(panel).getByDisplayValue("https://careers.example.com/pm-intern")
     ).toBeInTheDocument()
 
-    fireEvent.click(within(panel).getByRole("button", { name: "Open job posting" }))
+    fireEvent.click(
+      within(panel).getByRole("button", { name: "Open job posting" })
+    )
     expect(open).toHaveBeenCalledWith(
       "https://careers.example.com/pm-intern",
       "_blank",
@@ -378,18 +390,21 @@ describe("Apply workspace", () => {
   })
 
   it("honest-fails when the browser blocks opening the posting", async () => {
-    vi.stubGlobal("open", vi.fn(() => null))
+    vi.stubGlobal(
+      "open",
+      vi.fn(() => null)
+    )
 
     renderApply()
     await expectApplyLive()
 
-    fireEvent.click(
-      screen.getByRole("button", { name: /Associate PM intern/ })
-    )
+    fireEvent.click(screen.getByRole("button", { name: /Associate PM intern/ }))
     const panel = await screen.findByRole("complementary", {
       name: "Job detail",
     })
-    fireEvent.click(within(panel).getByRole("button", { name: "Open job posting" }))
+    fireEvent.click(
+      within(panel).getByRole("button", { name: "Open job posting" })
+    )
     expect(within(panel).getByRole("alert")).toHaveTextContent(
       "The browser blocked opening this posting."
     )

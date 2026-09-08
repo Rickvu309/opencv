@@ -6,10 +6,7 @@
 import { useMemo, useRef, useState } from "react"
 import { Button } from "@workspace/ui/components/button"
 import { ButtonGroup } from "@workspace/ui/components/button-group"
-import {
-  Empty,
-  EmptyDescription,
-} from "@workspace/ui/components/empty-state"
+import { Empty, EmptyDescription } from "@workspace/ui/components/empty-state"
 import { Input } from "@workspace/ui/components/input"
 import { cn } from "@workspace/ui/lib/utils"
 import type { ApplyStage } from "@workspace/domain"
@@ -67,8 +64,7 @@ export function ApplyWorkspace() {
     if (!q) return apply.cards
     return apply.cards.filter(
       (c) =>
-        c.title.toLowerCase().includes(q) ||
-        c.company.toLowerCase().includes(q)
+        c.title.toLowerCase().includes(q) || c.company.toLowerCase().includes(q)
     )
   }, [apply.cards, query])
 
@@ -79,7 +75,8 @@ export function ApplyWorkspace() {
 
     const column = apply.cards.filter((item) => item.stage === stage)
     const currentIndex = column.findIndex((item) => item.id === id)
-    const currentNext = currentIndex === -1 ? undefined : column[currentIndex + 1]
+    const currentNext =
+      currentIndex === -1 ? undefined : column[currentIndex + 1]
     if (
       card.stage === stage &&
       (currentNext?.id ?? null) === (beforeCardId ?? null)
@@ -103,9 +100,7 @@ export function ApplyWorkspace() {
   }
 
   async function addJob(jobUrl: string | null) {
-    const created = await apply.createCard(
-      jobUrl ? { jobUrl } : {}
-    )
+    const created = await apply.createCard(jobUrl ? { jobUrl } : {})
     setAddOpen(false)
     setSelectedId(created.id)
   }
@@ -117,7 +112,6 @@ export function ApplyWorkspace() {
   return (
     <div className="flex h-full min-h-0 flex-col bg-sidebar">
       <WorkspaceHeader title="Apply">
-
         <div className="relative min-w-[12rem] flex-1 sm:max-w-xs">
           <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -238,7 +232,9 @@ export function ApplyWorkspace() {
                         disabled
                         title="Coming soon"
                         className="ml-auto"
-                        aria-label={comingSoonLabel(`${stage.label} column menu`)}
+                        aria-label={comingSoonLabel(
+                          `${stage.label} column menu`
+                        )}
                       >
                         <MoreHorizontal className="size-4" />
                         <ComingSoon silent />
@@ -402,7 +398,7 @@ function BoardJobCard({
           className="mt-0.5 size-3.5 shrink-0 text-muted-foreground/40"
           aria-hidden
         />
-        <p className="min-w-0 flex-1 text-sm font-semibold leading-snug">
+        <p className="min-w-0 flex-1 text-sm leading-snug font-semibold">
           {card.title}
         </p>
         {card.starred ? (

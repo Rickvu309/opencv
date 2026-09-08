@@ -25,13 +25,7 @@ import {
 } from "@workspace/ui/components/select"
 import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
-import {
-  ExternalLink,
-  Link2,
-  Star,
-  Trash2,
-  X,
-} from "lucide-react"
+import { ExternalLink, Link2, Star, Trash2, X } from "lucide-react"
 
 import { ErrorBanner } from "@/components/error-banner.tsx"
 import {
@@ -125,10 +119,7 @@ export function JobDetailPanel({
         <div className="mx-0.5 h-5 w-px bg-border" aria-hidden />
 
         {card.jobUrl ? (
-          <ToolbarIconButton
-            label="Open job posting"
-            onClick={openPosting}
-          >
+          <ToolbarIconButton label="Open job posting" onClick={openPosting}>
             <ExternalLink className="size-3.5" />
           </ToolbarIconButton>
         ) : null}
