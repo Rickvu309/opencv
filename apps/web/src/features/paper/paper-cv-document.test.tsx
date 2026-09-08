@@ -175,6 +175,36 @@ describe("on-canvas Experience and Skills edits (QVE-207)", () => {
     )
   })
 
+  it("keeps internship skill add and rename after remount", () => {
+    let latest = applyCvTemplate(defaultCvData(), "internship")
+    function Harness() {
+      const [data, setData] = useState(latest)
+      return createElement(CvDocument, {
+        data,
+        onChange: (next: typeof data) => {
+          latest = next
+          setData(next)
+        },
+      })
+    }
+
+    const first = render(createElement(Harness))
+    fireEvent.click(screen.getAllByRole("button", { name: "Add skill" })[0]!)
+    const added = screen.getAllByRole("textbox", { name: "Skill" }).at(-1)!
+    added.textContent = "QVE207SkillMarker"
+    fireEvent.input(added)
+    expect(latest.skills.flatMap((group) => group.items)).toContain(
+      "QVE207SkillMarker"
+    )
+    first.unmount()
+    cleanup()
+
+    render(
+      createElement(CvDocument, { data: latest, onChange: () => {} })
+    )
+    expect(screen.getByText("QVE207SkillMarker")).toBeInTheDocument()
+  })
+
   it("edits Skills as chips — rename, add, and remove", () => {
     renderCv("product")
     const chips = screen.getAllByRole("textbox", { name: "Skill" })

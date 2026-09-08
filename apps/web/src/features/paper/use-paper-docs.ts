@@ -223,9 +223,12 @@ export function usePaperDocs() {
     dismissError: () => setError(null),
     createDoc: (kind: PaperContentKind) => createMutation.mutateAsync(kind),
     creating: createMutation.isPending,
-    updateContent: (doc: PaperDoc) => {
-      updateMutation.mutate(doc)
-    },
+    updateContent: useCallback(
+      (doc: PaperDoc) => {
+        updateMutation.mutate(doc)
+      },
+      [updateMutation]
+    ),
     renameDoc: (docId: string, name: string) => {
       renameMutation.mutate({ docId, name })
     },
