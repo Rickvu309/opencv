@@ -85,6 +85,7 @@ export function EditableField({
       ref={ref}
       contentEditable
       suppressContentEditableWarning
+      tabIndex={0}
       role="textbox"
       aria-label={ariaLabel}
       data-paper-section={

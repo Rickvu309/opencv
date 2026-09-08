@@ -261,7 +261,8 @@ describe("paper café density CSS (QVE-208)", () => {
     expect(paperCss).toMatch(/\[data-paper-editor\] > header/)
 
     const start = paperCss.indexOf("QVE-208")
-    const cafe = paperCss.slice(start)
+    const end = paperCss.indexOf("@keyframes paper-coach-highlight")
+    const cafe = paperCss.slice(start, end)
     expect(cafe).toContain("max-width: 100%")
     expect(cafe).toContain("min-height: 2.75rem")
     expect(cafe).toContain("min-width: 2.75rem")

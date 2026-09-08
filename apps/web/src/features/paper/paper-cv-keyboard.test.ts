@@ -17,6 +17,7 @@ function field(label: string) {
   el.setAttribute("aria-label", label)
   el.setAttribute("data-paper-canvas-field", "")
   el.contentEditable = "true"
+  el.tabIndex = 0
   el.textContent = label
   return el
 }
