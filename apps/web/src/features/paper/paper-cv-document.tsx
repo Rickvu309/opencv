@@ -113,19 +113,24 @@ type Props = {
 }
 
 export function CvDocument({ data, onChange }: Props) {
+  const dataRef = useRef(data)
+  dataRef.current = data
+
   function patch<K extends keyof CvData>(key: K, value: CvData[K]) {
-    onChange({ ...data, [key]: value })
+    const next = { ...dataRef.current, [key]: value }
+    dataRef.current = next
+    onChange(next)
   }
 
   function patchExperience(index: number, next: Partial<CvExperience>) {
-    const experience = data.experience.map((item, i) =>
+    const experience = dataRef.current.experience.map((item, i) =>
       i === index ? { ...item, ...next } : item
     )
     patch("experience", experience)
   }
 
   function patchEducation(index: number, next: Partial<CvEducation>) {
-    const education = data.education.map((item, i) =>
+    const education = dataRef.current.education.map((item, i) =>
       i === index ? { ...item, ...next } : item
     )
     patch("education", education)
@@ -135,8 +140,14 @@ export function CvDocument({ data, onChange }: Props) {
     patch("experience", experience)
   }
 
-  function setSkills(skills: CvSkillGroup[]) {
-    patch("skills", skills)
+  function setSkills(
+    skills:
+      | CvSkillGroup[]
+      | ((current: CvSkillGroup[]) => CvSkillGroup[])
+  ) {
+    const next =
+      typeof skills === "function" ? skills(dataRef.current.skills) : skills
+    patch("skills", next)
   }
 
   const templateProps: TemplateProps = {
@@ -171,7 +182,9 @@ type PatchProps = {
 
 type TemplateProps = PatchProps & {
   setExperience: (experience: CvExperience[]) => void
-  setSkills: (skills: CvSkillGroup[]) => void
+  setSkills: (
+    skills: CvSkillGroup[] | ((current: CvSkillGroup[]) => CvSkillGroup[])
+  ) => void
 }
 
 function ContactLine({
@@ -452,7 +465,9 @@ function SkillChips({
   dark = false,
 }: {
   groups: CvSkillGroup[]
-  onChange: (groups: CvSkillGroup[]) => void
+  onChange: (
+    groups: CvSkillGroup[] | ((current: CvSkillGroup[]) => CvSkillGroup[])
+  ) => void
   variant?: "tag" | "pill" | "dashed" | "sidebar"
   grouped?: boolean
   dark?: boolean
@@ -485,7 +500,9 @@ function SkillChips({
             variant === "sidebar" && "text-white/85"
           )}
           onChange={(value) =>
-            onChange(renameSkillItem(groups, groupIndex, itemIndex, value))
+            onChange((current) =>
+              renameSkillItem(current, groupIndex, itemIndex, value)
+            )
           }
         />
         <Button
@@ -495,7 +512,9 @@ function SkillChips({
           aria-label="Remove skill"
           tabIndex={-1}
           onClick={() =>
-            onChange(removeSkillItem(groups, groupIndex, itemIndex))
+            onChange((current) =>
+              removeSkillItem(current, groupIndex, itemIndex)
+            )
           }
           className={cn(
             PAPER_CANVAS_AFFORDANCE_CLASS,
@@ -515,7 +534,9 @@ function SkillChips({
       <CanvasAffordance
         label="Add skill"
         dark={dark}
-        onClick={() => onChange(addSkillItem(groups, groupIndex))}
+        onClick={() =>
+          onChange((current) => addSkillItem(current, groupIndex))
+        }
       >
         <Plus className="size-3" />
         Add skill
@@ -540,7 +561,7 @@ function SkillChips({
                 value={group.label}
                 className={dark ? "text-white/45" : undefined}
                 onChange={(label) =>
-                  onChange(renameSkillGroup(groups, gi, label))
+                  onChange((current) => renameSkillGroup(current, gi, label))
                 }
               />
             </CvType>

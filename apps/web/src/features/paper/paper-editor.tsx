@@ -138,6 +138,18 @@ export function PaperEditor({
   const [proofData, setProofData] = useState<ProofData>(() =>
     proofContentOf(doc)
   )
+  const cvDataRef = useRef(cvData)
+  const proofDataRef = useRef(proofData)
+  const docRef = useRef(doc)
+  const onChangeRef = useRef(onChange)
+  const isCvRef = useRef(isCv)
+  const isProofRef = useRef(isProof)
+  cvDataRef.current = cvData
+  proofDataRef.current = proofData
+  docRef.current = doc
+  onChangeRef.current = onChange
+  isCvRef.current = isCv
+  isProofRef.current = isProof
   const [conflict, setConflict] = useState(false)
   const [sectionFocus, setSectionFocus] = useState<{
     ids: string[]
@@ -271,35 +283,57 @@ export function PaperEditor({
     collapsePaperSelection(canvasRef.current)
   }, [])
 
+  function persistOpenDoc() {
+    const current = docRef.current
+    if (isCvRef.current) {
+      const content = cvDataRef.current
+      loadedContentRef.current = content
+      onChangeRef.current({
+        ...current,
+        content,
+      })
+      return
+    }
+    if (isProofRef.current) {
+      const content = proofDataRef.current
+      loadedContentRef.current = content
+      onChangeRef.current({
+        ...current,
+        content,
+      })
+      return
+    }
+    const el = editorRef.current
+    if (!el) return
+    const content = { markdown: paperHtmlToContent(el) }
+    loadedContentRef.current = content
+    onChangeRef.current({
+      ...current,
+      content,
+    })
+  }
+
   useEffect(() => {
     if (!dirty || conflict) return
 
     setSaving(true)
     const timer = window.setTimeout(() => {
-      if (isCv) {
-        onChange({
-          ...doc,
-          content: cvData,
-        })
-      } else if (isProof) {
-        onChange({
-          ...doc,
-          content: proofData,
-        })
-      } else {
-        const el = editorRef.current
-        if (!el) return
-        onChange({
-          ...doc,
-          content: { markdown: paperHtmlToContent(el) },
-        })
-      }
+      persistOpenDoc()
       setDirty(false)
       setSaving(false)
     }, 700)
 
     return () => window.clearTimeout(timer)
-  }, [conflict, dirty, doc, onChange, isCv, isProof, cvData, proofData])
+  }, [conflict, dirty, isCv, isProof, cvData, proofData])
+
+  useEffect(() => {
+    return () => {
+      if (!dirtyRef.current) return
+      persistOpenDoc()
+    }
+    // Flush the latest CV/Proof/Letter snapshot when leaving Paper (Home).
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- unmount only
+  }, [])
 
   function handleRichInput() {
     const el = editorRef.current
@@ -400,11 +434,13 @@ export function PaperEditor({
   }
 
   function handleCvChange(next: CvData) {
+    cvDataRef.current = next
     setCvData(next)
     setDirty(true)
   }
 
   function handleProofChange(next: ProofData) {
+    proofDataRef.current = next
     setProofData(next)
     setDirty(true)
   }
@@ -414,24 +450,7 @@ export function PaperEditor({
   }
 
   function handleSave() {
-    if (isCv) {
-      onChange({
-        ...doc,
-        content: cvData,
-      })
-    } else if (isProof) {
-      onChange({
-        ...doc,
-        content: proofData,
-      })
-    } else {
-      const el = editorRef.current
-      if (!el) return
-      onChange({
-        ...doc,
-        content: { markdown: paperHtmlToContent(el) },
-      })
-    }
+    persistOpenDoc()
     setDirty(false)
     setSaving(false)
   }
