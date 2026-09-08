@@ -10,12 +10,15 @@ import {
   PAPER_CANVAS_AFFORDANCE_CLASS,
   PAPER_CANVAS_BLOCK_CLASS,
   PAPER_CANVAS_FIELD_CLASS,
+  PAPER_CANVAS_NEXT_STEP_CLASS,
 } from "./paper-cv-document.tsx"
+import { BLANK_EDUCATION, EMPTY_SECTION_CTA } from "./paper-cv-edits.ts"
 import { applyCvTemplate } from "./paper-cv-template-picker.tsx"
 import {
   CV_TEMPLATES,
   CV_TYPE_ROLES,
   defaultCvData,
+  type CvData,
   type CvTemplateId,
 } from "./paper-cv-types.ts"
 
@@ -28,14 +31,18 @@ const paperCss = readFileSync(
   "utf8"
 )
 
-function renderCv(templateId: CvTemplateId) {
+function renderCv(templateId: CvTemplateId, seed?: CvData) {
   function Harness() {
     const [data, setData] = useState(() =>
-      applyCvTemplate(defaultCvData(), templateId)
+      applyCvTemplate(seed ?? defaultCvData(), templateId)
     )
     return createElement(CvDocument, { data, onChange: setData })
   }
   return render(createElement(Harness))
+}
+
+function emptySections(data: CvData = defaultCvData()): CvData {
+  return { ...data, experience: [], education: [], skills: [] }
 }
 
 describe("CV print-paper type rhythm", () => {
@@ -298,5 +305,115 @@ describe("paper café density CSS (QVE-208)", () => {
     expect(cafe).toContain("min-width: 2.75rem")
     expect(cafe).not.toMatch(/transform:\s*scale/)
     expect(cafe).not.toMatch(/var\(--info\)/)
+  })
+})
+
+describe("empty section next-step CTAs (QVE-209)", () => {
+  it("shows one quiet CTA per empty Experience, Education, and Skills", () => {
+    renderCv("product", emptySections())
+
+    expect(
+      screen.getByRole("button", { name: EMPTY_SECTION_CTA.experience })
+    ).toHaveClass(PAPER_CANVAS_NEXT_STEP_CLASS)
+    expect(
+      screen.getByRole("button", { name: EMPTY_SECTION_CTA.education })
+    ).toHaveClass(PAPER_CANVAS_NEXT_STEP_CLASS)
+    expect(
+      screen.getByRole("button", { name: EMPTY_SECTION_CTA.skills })
+    ).toHaveClass(PAPER_CANVAS_NEXT_STEP_CLASS)
+
+    expect(screen.getAllByRole("button", { name: /Add first / })).toHaveLength(3)
+    expect(document.querySelector("[data-slot='empty']")).toBeNull()
+    expect(screen.queryByText(/get started/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/no experience/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Add text/)).not.toBeInTheDocument()
+  })
+
+  it("inserts a usable row from each empty-section CTA", () => {
+    renderCv("internship", emptySections())
+
+    fireEvent.click(
+      screen.getByRole("button", { name: EMPTY_SECTION_CTA.experience })
+    )
+    expect(screen.getByRole("textbox", { name: "Role" })).toHaveTextContent(
+      "Role title"
+    )
+    expect(screen.getByRole("textbox", { name: "Company" })).toHaveTextContent(
+      "Company"
+    )
+    expect(
+      screen.queryByRole("button", { name: EMPTY_SECTION_CTA.experience })
+    ).not.toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getByRole("button", { name: EMPTY_SECTION_CTA.education })
+    )
+    expect(screen.getByRole("textbox", { name: "School" })).toHaveTextContent(
+      BLANK_EDUCATION.school
+    )
+    expect(
+      screen.queryByRole("button", { name: EMPTY_SECTION_CTA.education })
+    ).not.toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getByRole("button", { name: EMPTY_SECTION_CTA.skills })
+    )
+    expect(screen.getByRole("textbox", { name: "Skill" })).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: EMPTY_SECTION_CTA.skills })
+    ).not.toBeInTheDocument()
+  })
+
+  it("keeps sparse sections calm — one next step, no marketing wall", () => {
+    renderCv("product")
+
+    expect(
+      screen.queryByRole("button", { name: EMPTY_SECTION_CTA.experience })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: EMPTY_SECTION_CTA.education })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: EMPTY_SECTION_CTA.skills })
+    ).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /Add first / })).not.toBeInTheDocument()
+    expect(document.querySelector("[data-slot='empty']")).toBeNull()
+    expect(document.querySelectorAll("[data-paper-section-cta]")).toHaveLength(0)
+    expect(screen.getAllByRole("button", { name: "Add skill" }).length).toBeLessThan(
+      6
+    )
+  })
+
+  it("shows the empty CTA on every template, not only internship", () => {
+    for (const template of CV_TEMPLATES) {
+      cleanup()
+      renderCv(template.id, emptySections())
+      expect(
+        screen.getByRole("button", { name: EMPTY_SECTION_CTA.experience }),
+        `${template.name} missing experience CTA`
+      ).toBeInTheDocument()
+      expect(
+        screen.getByRole("button", { name: EMPTY_SECTION_CTA.education }),
+        `${template.name} missing education CTA`
+      ).toBeInTheDocument()
+      expect(
+        screen.getByRole("button", { name: EMPTY_SECTION_CTA.skills }),
+        `${template.name} missing skills CTA`
+      ).toBeInTheDocument()
+    }
+  })
+})
+
+describe("empty section next-step CSS (QVE-209)", () => {
+  it("stays visible and quiet — not hover-hidden or Coach pills", () => {
+    expect(paperCss).toMatch(/\.paper-canvas-next-step/)
+    const start = paperCss.indexOf(".paper-canvas-next-step {")
+    const end = paperCss.indexOf("QVE-186")
+    const chrome = paperCss.slice(start, end).replace(/\/\*[\s\S]*?\*\//g, "")
+    expect(chrome).toContain("opacity: 1")
+    expect(chrome).not.toMatch(/opacity:\s*0/)
+    expect(chrome).not.toMatch(/var\(--info\)/)
+    expect(chrome).not.toMatch(/rounded-full/)
+    expect(chrome).not.toMatch(/bg-muted\/70/)
   })
 })

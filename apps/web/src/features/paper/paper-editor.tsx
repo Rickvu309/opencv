@@ -30,9 +30,9 @@ import { CvDocument } from "./paper-cv-document.tsx"
 import { CvA4Canvas } from "./paper-cv-a4.tsx"
 import { applyCvTemplate } from "./paper-cv-template-picker.tsx"
 import {
+  addEducation,
   addExperienceRole,
   addSkillGroup,
-  BLANK_EDUCATION,
   BLANK_PROJECT,
 } from "./paper-cv-edits.ts"
 import { type CvData, type CvTemplateId } from "./paper-cv-types.ts"
@@ -361,7 +361,7 @@ export function PaperEditor({
         next.experience = addExperienceRole(next.experience)
         break
       case "education":
-        next.education = [...next.education, BLANK_EDUCATION]
+        next.education = addEducation(next.education)
         break
       case "skill":
         next.skills = addSkillGroup(next.skills)

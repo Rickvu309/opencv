@@ -1,5 +1,12 @@
 import type { CvEducation, CvExperience, CvProject, CvSkillGroup } from "./paper-cv-types.ts"
 
+/** Quiet next-step copy for empty Experience / Education / Skills (QVE-209). */
+export const EMPTY_SECTION_CTA = {
+  experience: "Add first role",
+  education: "Add first school",
+  skills: "Add first skill",
+} as const
+
 /** Blank row shared by toolbar Insert and on-canvas add (QVE-207 / QVE-209). */
 export const BLANK_EXPERIENCE: CvExperience = {
   role: "Role title",
@@ -75,6 +82,20 @@ export function removeExperienceBullet(
       ? { ...item, bullets: item.bullets.filter((_, bi) => bi !== bulletIndex) }
       : item
   )
+}
+
+export function addEducation(
+  education: CvEducation[],
+  school: CvEducation = BLANK_EDUCATION
+): CvEducation[] {
+  return [...education, { ...school }]
+}
+
+export function removeEducation(
+  education: CvEducation[],
+  index: number
+): CvEducation[] {
+  return education.filter((_, i) => i !== index)
 }
 
 export function addSkillGroup(

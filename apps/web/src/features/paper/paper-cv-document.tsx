@@ -3,6 +3,7 @@
  * names, print-scaled). The product-sidebar hex stays here on purpose —
  * print layout is a documented ADR-0010 exception. Focus/selection chrome
  * is QVE-206 (`paper-canvas-field` in paper.css). Café Tab/Esc is QVE-208.
+ * Empty-section next steps are QVE-209 (`paper-canvas-next-step`).
  */
 import type { ElementType, KeyboardEvent, ReactNode } from "react"
 import { useEffect, useRef } from "react"
@@ -11,11 +12,15 @@ import { cn } from "@workspace/ui/lib/utils"
 import { Copy, ImagePlus, Plus, User, X } from "lucide-react"
 
 import {
+  addEducation,
   addExperienceBullet,
+  addExperienceRole,
+  addSkillItem,
   duplicateExperienceRole,
+  EMPTY_SECTION_CTA,
+  removeEducation,
   removeExperienceBullet,
   removeExperienceRole,
-  addSkillItem,
   removeSkillItem,
   renameSkillGroup,
   renameSkillItem,
@@ -53,6 +58,8 @@ export const PAPER_CANVAS_FIELD_CLASS = "paper-canvas-field"
 /** QVE-207: hover/focus-within block for quiet add/remove chrome. */
 export const PAPER_CANVAS_BLOCK_CLASS = "paper-canvas-block"
 export const PAPER_CANVAS_AFFORDANCE_CLASS = "paper-canvas-affordance"
+/** QVE-209: always-visible next step on an empty section (not hover-hidden). */
+export const PAPER_CANVAS_NEXT_STEP_CLASS = "paper-canvas-next-step"
 
 type FieldProps = {
   value: string
@@ -142,6 +149,10 @@ export function CvDocument({ data, onChange }: Props) {
     patch("experience", experience)
   }
 
+  function setEducation(education: CvEducation[]) {
+    patch("education", education)
+  }
+
   function setSkills(
     skills:
       | CvSkillGroup[]
@@ -158,6 +169,7 @@ export function CvDocument({ data, onChange }: Props) {
     patchExperience,
     patchEducation,
     setExperience,
+    setEducation,
     setSkills,
   }
 
@@ -184,6 +196,7 @@ type PatchProps = {
 
 type TemplateProps = PatchProps & {
   setExperience: (experience: CvExperience[]) => void
+  setEducation: (education: CvEducation[]) => void
   setSkills: (
     skills: CvSkillGroup[] | ((current: CvSkillGroup[]) => CvSkillGroup[])
   ) => void
@@ -257,6 +270,71 @@ function CanvasAffordance({
       {children}
     </Button>
   )
+}
+
+function SectionNextStep({
+  label,
+  onClick,
+  dark,
+}: {
+  label: string
+  onClick: () => void
+  dark?: boolean
+}) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="xs"
+      aria-label={label}
+      data-paper-section-cta=""
+      onClick={onClick}
+      className={cn(
+        PAPER_CANVAS_NEXT_STEP_CLASS,
+        "h-6 gap-1 px-1.5 text-2xs font-medium",
+        dark
+          ? "text-white/65 hover:bg-white/10 hover:text-white"
+          : "text-muted-foreground"
+      )}
+    >
+      <Plus className="size-3" />
+      {label}
+    </Button>
+  )
+}
+
+function ExperienceList({
+  experience,
+  setExperience,
+  patchExperience,
+  dark,
+}: {
+  experience: CvExperience[]
+  setExperience: (experience: CvExperience[]) => void
+  patchExperience: (index: number, next: Partial<CvExperience>) => void
+  dark?: boolean
+}) {
+  if (experience.length === 0) {
+    return (
+      <SectionNextStep
+        label={EMPTY_SECTION_CTA.experience}
+        dark={dark}
+        onClick={() => setExperience(addExperienceRole(experience))}
+      />
+    )
+  }
+
+  return experience.map((item, i) => (
+    <ExperienceBlock
+      key={i}
+      item={item}
+      index={i}
+      experience={experience}
+      setExperience={setExperience}
+      patchExperience={patchExperience}
+      dark={dark}
+    />
+  ))
 }
 
 function ExperienceBlock({
@@ -409,15 +487,19 @@ function ExperienceBlock({
 function EducationBlock({
   item,
   index,
+  education,
+  setEducation,
   patchEducation,
 }: {
   item: CvEducation
   index: number
+  education: CvEducation[]
+  setEducation: (education: CvEducation[]) => void
   patchEducation: (index: number, next: Partial<CvEducation>) => void
 }) {
   return (
     <div
-      className="mb-3 last:mb-0"
+      className={cn(PAPER_CANVAS_BLOCK_CLASS, "mb-3 last:mb-0")}
       data-paper-section={`education-${index}`}
     >
       <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -455,7 +537,63 @@ function EducationBlock({
           />
         </CvType>
       ) : null}
+      <CanvasAffordance
+        label="Remove school"
+        onClick={() => setEducation(removeEducation(education, index))}
+      >
+        <X className="size-3" />
+        Remove
+      </CanvasAffordance>
     </div>
+  )
+}
+
+function EducationList({
+  education,
+  setEducation,
+  patchEducation,
+}: {
+  education: CvEducation[]
+  setEducation: (education: CvEducation[]) => void
+  patchEducation: (index: number, next: Partial<CvEducation>) => void
+}) {
+  if (education.length === 0) {
+    return (
+      <SectionNextStep
+        label={EMPTY_SECTION_CTA.education}
+        onClick={() => setEducation(addEducation(education))}
+      />
+    )
+  }
+
+  return education.map((item, i) => (
+    <EducationBlock
+      key={i}
+      item={item}
+      index={i}
+      education={education}
+      setEducation={setEducation}
+      patchEducation={patchEducation}
+    />
+  ))
+}
+
+function EducationEmptyCta({
+  education,
+  setEducation,
+  dark,
+}: {
+  education: CvEducation[]
+  setEducation: (education: CvEducation[]) => void
+  dark?: boolean
+}) {
+  if (education.length > 0) return null
+  return (
+    <SectionNextStep
+      label={EMPTY_SECTION_CTA.education}
+      dark={dark}
+      onClick={() => setEducation(addEducation(education))}
+    />
   )
 }
 
@@ -546,6 +684,18 @@ function SkillChips({
     )
   }
 
+  if (groups.length === 0) {
+    return (
+      <div data-paper-section="skills">
+        <SectionNextStep
+          label={EMPTY_SECTION_CTA.skills}
+          dark={dark}
+          onClick={() => onChange((current) => addSkillItem(current))}
+        />
+      </div>
+    )
+  }
+
   if (grouped) {
     return (
       <div data-paper-section="skills" className="space-y-3">
@@ -573,7 +723,6 @@ function SkillChips({
             </div>
           </div>
         ))}
-        {groups.length === 0 ? addButton() : null}
       </div>
     )
   }
@@ -666,6 +815,7 @@ function InternshipCv({
   patchExperience,
   patchEducation,
   setExperience,
+  setEducation,
   setSkills,
 }: TemplateProps) {
   return (
@@ -709,28 +859,20 @@ function InternshipCv({
 
       <section className="mt-5">
         <SectionTitle>Experience</SectionTitle>
-        {data.experience.map((item, i) => (
-          <ExperienceBlock
-            key={i}
-            item={item}
-            index={i}
-            experience={data.experience}
-            setExperience={setExperience}
-            patchExperience={patchExperience}
-          />
-        ))}
+        <ExperienceList
+          experience={data.experience}
+          setExperience={setExperience}
+          patchExperience={patchExperience}
+        />
       </section>
 
       <section className="mt-5">
         <SectionTitle>Education</SectionTitle>
-        {data.education.map((item, i) => (
-          <EducationBlock
-            key={i}
-            item={item}
-            index={i}
-            patchEducation={patchEducation}
-          />
-        ))}
+        <EducationList
+          education={data.education}
+          setEducation={setEducation}
+          patchEducation={patchEducation}
+        />
       </section>
 
       <section className="mt-5">
@@ -747,6 +889,7 @@ function PhotoCv({
   patchExperience,
   patchEducation,
   setExperience,
+  setEducation,
   setSkills,
 }: TemplateProps) {
   return (
@@ -796,28 +939,20 @@ function PhotoCv({
 
       <section className="mb-5">
         <SectionTitle>Experience</SectionTitle>
-        {data.experience.map((item, i) => (
-          <ExperienceBlock
-            key={i}
-            item={item}
-            index={i}
-            experience={data.experience}
-            setExperience={setExperience}
-            patchExperience={patchExperience}
-          />
-        ))}
+        <ExperienceList
+          experience={data.experience}
+          setExperience={setExperience}
+          patchExperience={patchExperience}
+        />
       </section>
 
       <section className="mb-5">
         <SectionTitle>Education</SectionTitle>
-        {data.education.map((item, i) => (
-          <EducationBlock
-            key={i}
-            item={item}
-            index={i}
-            patchEducation={patchEducation}
-          />
-        ))}
+        <EducationList
+          education={data.education}
+          setEducation={setEducation}
+          patchEducation={patchEducation}
+        />
       </section>
 
       <section>
@@ -834,6 +969,7 @@ function ProductCv({
   patchExperience,
   patchEducation,
   setExperience,
+  setEducation,
   setSkills,
 }: TemplateProps) {
   return (
@@ -909,7 +1045,7 @@ function ProductCv({
             <div
               key={i}
               data-paper-section={`education-${i}`}
-              className="mb-3 text-white/80"
+              className={cn(PAPER_CANVAS_BLOCK_CLASS, "mb-3 text-white/80")}
             >
               <CvType role="label" className="text-white">
                 <EditableField
@@ -935,8 +1071,23 @@ function ProductCv({
                   onChange={(period) => patchEducation(i, { period })}
                 />
               </CvType>
+              <CanvasAffordance
+                label="Remove school"
+                dark
+                onClick={() =>
+                  setEducation(removeEducation(data.education, i))
+                }
+              >
+                <X className="size-3" />
+                Remove
+              </CanvasAffordance>
             </div>
           ))}
+          <EducationEmptyCta
+            education={data.education}
+            setEducation={setEducation}
+            dark
+          />
         </div>
       </aside>
 
@@ -955,16 +1106,11 @@ function ProductCv({
 
         <section className="mt-6">
           <SectionTitle>Experience</SectionTitle>
-          {data.experience.map((item, i) => (
-            <ExperienceBlock
-              key={i}
-              item={item}
-              index={i}
-              experience={data.experience}
-              setExperience={setExperience}
-              patchExperience={patchExperience}
-            />
-          ))}
+          <ExperienceList
+            experience={data.experience}
+            setExperience={setExperience}
+            patchExperience={patchExperience}
+          />
         </section>
 
         {data.projects?.length ? (
@@ -1010,6 +1156,7 @@ function ServiceCv({
   patchExperience,
   patchEducation,
   setExperience,
+  setEducation,
   setSkills,
 }: TemplateProps) {
   return (
@@ -1041,16 +1188,11 @@ function ServiceCv({
 
       <section className="rounded-lg border border-foreground/10 bg-muted/20 p-4">
         <SectionTitle>Work experience</SectionTitle>
-        {data.experience.map((item, i) => (
-          <ExperienceBlock
-            key={i}
-            item={item}
-            index={i}
-            experience={data.experience}
-            setExperience={setExperience}
-            patchExperience={patchExperience}
-          />
-        ))}
+        <ExperienceList
+          experience={data.experience}
+          setExperience={setExperience}
+          patchExperience={patchExperience}
+        />
       </section>
 
       <section className="mt-5">
@@ -1072,7 +1214,7 @@ function ServiceCv({
             <div
               key={i}
               data-paper-section={`education-${i}`}
-              className="mb-2"
+              className={cn(PAPER_CANVAS_BLOCK_CLASS, "mb-2")}
             >
               <CvType role="label">
                 <EditableField
@@ -1095,8 +1237,21 @@ function ServiceCv({
                   onChange={(period) => patchEducation(i, { period })}
                 />
               </CvType>
+              <CanvasAffordance
+                label="Remove school"
+                onClick={() =>
+                  setEducation(removeEducation(data.education, i))
+                }
+              >
+                <X className="size-3" />
+                Remove
+              </CanvasAffordance>
             </div>
           ))}
+          <EducationEmptyCta
+            education={data.education}
+            setEducation={setEducation}
+          />
         </section>
         <section>
           <SectionTitle>Skills</SectionTitle>
@@ -1117,6 +1272,7 @@ function AcademicCv({
   patchExperience,
   patchEducation,
   setExperience,
+  setEducation,
   setSkills,
 }: TemplateProps) {
   return (
@@ -1154,7 +1310,7 @@ function AcademicCv({
           <div
             key={i}
             data-paper-section={`education-${i}`}
-            className="mb-3 flex gap-4"
+            className={cn(PAPER_CANVAS_BLOCK_CLASS, "mb-3 flex gap-4")}
           >
             <CvType
               role="micro"
@@ -1190,9 +1346,22 @@ function AcademicCv({
                   />
                 </CvType>
               ) : null}
+              <CanvasAffordance
+                label="Remove school"
+                onClick={() =>
+                  setEducation(removeEducation(data.education, i))
+                }
+              >
+                <X className="size-3" />
+                Remove
+              </CanvasAffordance>
             </div>
           </div>
         ))}
+        <EducationEmptyCta
+          education={data.education}
+          setEducation={setEducation}
+        />
       </section>
 
       {data.projects?.length ? (
@@ -1236,16 +1405,11 @@ function AcademicCv({
 
       <section className="mb-5">
         <SectionTitle>Experience</SectionTitle>
-        {data.experience.map((item, i) => (
-          <ExperienceBlock
-            key={i}
-            item={item}
-            index={i}
-            experience={data.experience}
-            setExperience={setExperience}
-            patchExperience={patchExperience}
-          />
-        ))}
+        <ExperienceList
+          experience={data.experience}
+          setExperience={setExperience}
+          patchExperience={patchExperience}
+        />
       </section>
 
       <section>

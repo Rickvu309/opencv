@@ -216,6 +216,14 @@
     opacity: 1;
   }
 
+  /*
+   * QVE-209: always-visible next-step on empty Experience/Education/Skills.
+   * Same ghost language as QVE-207, never hover-hidden (Principle 2).
+   */
+  .paper-canvas-next-step {
+    opacity: 1;
+  }
+
   /* QVE-186: when CoachFloat is open on desktop, clear the A4 column. */
   [data-paper-canvas] {
     transition: padding-right var(--duration-base) var(--ease-standard);
@@ -326,7 +334,8 @@
       box-shadow: none;
     }
 
-    .paper-canvas-affordance {
+    .paper-canvas-affordance,
+    .paper-canvas-next-step {
       display: none;
     }
 
