@@ -588,6 +588,7 @@ function BentoCard({
         type="button"
         variant="ghost"
         onClick={onOpenStory}
+        aria-label={`${card.title} story`}
         className={cn("h-auto p-0 text-left hover:bg-transparent", span)}
       >
         {inner}

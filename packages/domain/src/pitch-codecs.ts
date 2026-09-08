@@ -200,6 +200,28 @@ export function emptyPitchDocument(): PitchDocument {
   }
 }
 
+/**
+ * Story chips must advertise the highlight they open. Persisted starter copy
+ * used a fake personal label on the Checkout reel — rewrite that at decode
+ * so existing Pitch docs stay honest without a content-version bump.
+ */
+export function alignStoryChipIdentity(doc: PitchDocument): PitchDocument {
+  const highlights = new Map(doc.storyHighlights.map((h) => [h.id, h]))
+  let changed = false
+  const bento = doc.bento.map((card) => {
+    if (!card.storyHighlightId) return card
+    const highlight = highlights.get(card.storyHighlightId)
+    if (!highlight || card.title === highlight.label) return card
+    changed = true
+    return {
+      ...card,
+      title: highlight.label,
+      body: highlight.slides[0]?.caption ?? card.body,
+    }
+  })
+  return changed ? { ...doc, bento } : doc
+}
+
 function firstIssueMessage(error: z.ZodError): string {
   return error.issues[0]?.message ?? "Invalid content"
 }
@@ -221,7 +243,7 @@ export function decodePitchContent(
     return { ok: false, message: firstIssueMessage(parsed.error) }
   }
 
-  return { ok: true, data: parsed.data }
+  return { ok: true, data: alignStoryChipIdentity(parsed.data) }
 }
 
 export function isPitchDocument(value: unknown): value is PitchDocument {

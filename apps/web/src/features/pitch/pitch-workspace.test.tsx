@@ -13,7 +13,11 @@ import { getMockGithubUsername } from "@/features/pitch/pitch-github-mock.ts"
 import { PitchWorkspace } from "@/features/pitch/pitch-workspace.tsx"
 import { BLOCK_LABELS, pitchHandle } from "@/features/pitch/pitch-types.ts"
 import { createQueryClient } from "@/lib/query-client.ts"
-import { pitchApiFetch, setMockPitchDoc } from "@/test/pitch-api-mock.ts"
+import {
+  pitchApiFetch,
+  resetPitchApiMock,
+  setMockPitchDoc,
+} from "@/test/pitch-api-mock.ts"
 
 function installPitchFetch() {
   vi.stubGlobal("fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -45,6 +49,7 @@ async function loadedPitch() {
 
 afterEach(() => {
   cleanup()
+  resetPitchApiMock()
   vi.unstubAllGlobals()
 })
 
@@ -135,6 +140,7 @@ describe("Pitch workspace", () => {
     fireEvent.click(screen.getByRole("button", { name: "Checkout highlight" }))
     const viewer = screen.getByRole("dialog", { name: "Work story viewer" })
     expect(viewer).toBeInTheDocument()
+    expect(within(viewer).getByText("Checkout")).toBeInTheDocument()
     expect(within(viewer).getByText("Hallway test setup")).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole("button", { name: "Close" }))
@@ -144,6 +150,74 @@ describe("Pitch workspace", () => {
     expect(
       screen.getByRole("heading", { level: 1, name: SAMPLE_AUTHOR_NAME })
     ).toBeInTheDocument()
+  })
+
+  it("opens a story whose title matches each visible highlight chip", async () => {
+    await loadedPitch()
+    const highlights = starterPitchDocument().storyHighlights
+    expect(highlights.length).toBeGreaterThan(0)
+
+    for (const highlight of highlights) {
+      fireEvent.click(
+        screen.getByRole("button", { name: `${highlight.label} highlight` })
+      )
+      const viewer = screen.getByRole("dialog", { name: "Work story viewer" })
+      expect(within(viewer).getByText(highlight.label)).toBeInTheDocument()
+      expect(
+        within(viewer).getByText(highlight.slides[0]!.caption)
+      ).toBeInTheDocument()
+      fireEvent.click(screen.getByRole("button", { name: "Close" }))
+      expect(
+        screen.queryByRole("dialog", { name: "Work story viewer" })
+      ).not.toBeInTheDocument()
+    }
+
+    expect(screen.queryByText(/sacred space/i)).not.toBeInTheDocument()
+  })
+
+  it("opens the Checkout reel from the Moments story card, not a sacred-space label", async () => {
+    await loadedPitch()
+
+    fireEvent.click(screen.getByRole("button", { name: "Checkout story" }))
+    const viewer = screen.getByRole("dialog", { name: "Work story viewer" })
+    expect(within(viewer).getByText("Checkout")).toBeInTheDocument()
+    expect(within(viewer).getByText("Hallway test setup")).toBeInTheDocument()
+    expect(within(viewer).queryByText(/sacred space/i)).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: /sacred space/i })
+    ).not.toBeInTheDocument()
+  })
+
+  it("repairs a persisted sacred-space chip so it opens Checkout", async () => {
+    const starter = starterPitchDocument()
+    setMockPitchDoc({
+      id: "55555555-5555-7555-8555-555555555556",
+      kind: "pitch",
+      content: {
+        ...starter,
+        bento: starter.bento.map((card) =>
+          card.storyHighlightId === "sh-checkout"
+            ? {
+                ...card,
+                title: "my sacred space",
+                body: "Hallway test · late night Figma",
+              }
+            : card
+        ),
+      },
+      contentVersion: 1,
+      createdAt: "2026-08-25T00:00:00.000Z",
+      updatedAt: "2026-08-25T00:00:00.000Z",
+    })
+
+    await loadedPitch()
+    expect(
+      screen.queryByRole("button", { name: /sacred space/i })
+    ).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "Checkout story" }))
+    const viewer = screen.getByRole("dialog", { name: "Work story viewer" })
+    expect(within(viewer).getByText("Checkout")).toBeInTheDocument()
+    expect(within(viewer).getByText("Hallway test setup")).toBeInTheDocument()
   })
 
   it("only claims Copy link succeeded when the clipboard write works", async () => {
