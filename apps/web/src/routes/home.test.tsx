@@ -12,6 +12,7 @@ import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 import { AIM_OPTIONS } from "@/features/home/aim-prompt.ts"
 import { SUGGESTION_POOLS } from "@/features/home/suggestions.ts"
 import { STARTER_PITCH_HEADLINE, starterPitchDocument } from "@workspace/domain"
+import { writeFirstCafeState } from "@/features/home/first-cafe-checklist.ts"
 import { getMockPitchDoc, setMockPitchDoc } from "@/test/pitch-api-mock.ts"
 import { renderApp } from "@/test/render-app.tsx"
 
@@ -27,6 +28,14 @@ async function expectHomeIdle() {
   expect(
     screen.getByRole("textbox", { name: "Message Coach" })
   ).toBeInTheDocument()
+}
+
+function firstCafeList() {
+  return screen.getByRole("region", { name: "Four small things" })
+}
+
+function firstCafeNudge() {
+  return screen.getByRole("region", { name: "One next thing" })
 }
 
 beforeEach(() => {
@@ -207,6 +216,9 @@ describe("Home first-café checklist", () => {
     expect(apply).toHaveAttribute("href", `${SURFACE_PATHS.apply}?open=guide`)
     expect(email).toHaveAttribute("href", `${SURFACE_PATHS.settings}?tab=apps`)
 
+    expect(
+      screen.queryByRole("region", { name: "One next thing" })
+    ).not.toBeInTheDocument()
     expect(screen.queryByRole("progressbar")).not.toBeInTheDocument()
     expect(
       screen.queryByRole("button", { name: /next step|continue|skip tour/i })
@@ -234,6 +246,10 @@ describe("Home first-café checklist", () => {
     expect(
       screen.queryByRole("heading", { name: "Four small things" })
     ).not.toBeInTheDocument()
+    expect(firstCafeNudge()).toBeInTheDocument()
+    expect(
+      within(firstCafeNudge()).getByRole("link", { name: "Make Pitch yours" })
+    ).toHaveAttribute("href", SURFACE_PATHS.pitch)
   })
 
   it("auto-completes an item after the User visits the linked surface", async () => {
@@ -249,20 +265,21 @@ describe("Home first-café checklist", () => {
     fireEvent.click(screen.getByRole("link", { name: "Home" }))
     await expectHomeIdle()
 
+    const list = firstCafeList()
     expect(
-      screen.getByRole("link", { name: "Open the sample CV, done" })
+      within(list).getByRole("link", { name: "Open the sample CV, done" })
     ).toBeInTheDocument()
     expect(
-      screen.getByRole("link", { name: "Make Pitch yours" })
+      within(list).getByRole("link", { name: "Make Pitch yours" })
     ).toBeInTheDocument()
     expect(
-      screen.getByRole("link", { name: "Triage one Apply card" })
+      within(list).getByRole("link", { name: "Triage one Apply card" })
     ).toBeInTheDocument()
     expect(
-      screen.getByRole("link", { name: "Connect email, optional" })
+      within(list).getByRole("link", { name: "Connect email, optional" })
     ).toBeInTheDocument()
     expect(
-      screen.queryByRole("link", { name: "Triage one Apply card, done" })
+      within(list).queryByRole("link", { name: "Triage one Apply card, done" })
     ).not.toBeInTheDocument()
     expect(
       screen.queryByRole("button", { name: /next step|continue/i })
@@ -289,20 +306,21 @@ describe("Home first-café checklist", () => {
     fireEvent.click(screen.getByRole("link", { name: "Home" }))
     await expectHomeIdle()
 
+    const list = firstCafeList()
     expect(
-      screen.getByRole("link", { name: "Triage one Apply card, done" })
+      within(list).getByRole("link", { name: "Triage one Apply card, done" })
     ).toBeInTheDocument()
     expect(
-      screen.getByRole("link", { name: "Open the sample CV" })
+      within(list).getByRole("link", { name: "Open the sample CV" })
     ).toBeInTheDocument()
     expect(
-      screen.getByRole("link", { name: "Make Pitch yours" })
+      within(list).getByRole("link", { name: "Make Pitch yours" })
     ).toBeInTheDocument()
     expect(
-      screen.queryByRole("link", { name: "Open the sample CV, done" })
+      within(list).queryByRole("link", { name: "Open the sample CV, done" })
     ).not.toBeInTheDocument()
     expect(
-      screen.queryByRole("link", { name: "Make Pitch yours, done" })
+      within(list).queryByRole("link", { name: "Make Pitch yours, done" })
     ).not.toBeInTheDocument()
   })
 
@@ -318,20 +336,21 @@ describe("Home first-café checklist", () => {
     fireEvent.click(screen.getByRole("link", { name: "Home" }))
     await expectHomeIdle()
 
+    const list = firstCafeList()
     expect(
-      screen.getByRole("link", { name: "Make Pitch yours, done" })
+      within(list).getByRole("link", { name: "Make Pitch yours, done" })
     ).toBeInTheDocument()
     expect(
-      screen.getByRole("link", { name: "Open the sample CV" })
+      within(list).getByRole("link", { name: "Open the sample CV" })
     ).toBeInTheDocument()
     expect(
-      screen.getByRole("link", { name: "Triage one Apply card" })
+      within(list).getByRole("link", { name: "Triage one Apply card" })
     ).toBeInTheDocument()
     expect(
-      screen.queryByRole("link", { name: "Open the sample CV, done" })
+      within(list).queryByRole("link", { name: "Open the sample CV, done" })
     ).not.toBeInTheDocument()
     expect(
-      screen.queryByRole("link", { name: "Triage one Apply card, done" })
+      within(list).queryByRole("link", { name: "Triage one Apply card, done" })
     ).not.toBeInTheDocument()
   })
 
@@ -397,6 +416,129 @@ describe("Home first-café checklist", () => {
         await screen.findByRole("complementary", { name: "Job detail" })
       ).getByRole("combobox", { name: "Next step" })
     ).toHaveTextContent("Follow-up")
+  })
+})
+
+describe("Home first-café next nudge", () => {
+  it("shows one Pitch nudge after the sample CV win and stays skippable", async () => {
+    const { router } = renderApp()
+    await expectHomeIdle()
+
+    fireEvent.click(screen.getByRole("link", { name: "Open the sample CV" }))
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(SURFACE_PATHS.paper)
+    })
+
+    fireEvent.click(screen.getByRole("link", { name: "Home" }))
+    await expectHomeIdle()
+
+    const nudge = firstCafeNudge()
+    expect(
+      within(nudge).getByText("Skip whenever. This is not a tour.")
+    ).toBeInTheDocument()
+    const next = within(nudge).getByRole("link", { name: "Make Pitch yours" })
+    expect(next).toHaveAttribute("href", SURFACE_PATHS.pitch)
+    expect(
+      within(nudge).queryByRole("link", { name: "Triage one Apply card" })
+    ).not.toBeInTheDocument()
+    expect(
+      within(nudge).queryByRole("link", { name: "Connect email, optional" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: /next step|continue|skip tour/i })
+    ).not.toBeInTheDocument()
+
+    const list = firstCafeList()
+    expect(
+      within(list).getByRole("link", { name: "Open the sample CV, done" })
+    ).toBeInTheDocument()
+    expect(
+      within(list).queryByRole("link", { name: "Make Pitch yours, done" })
+    ).not.toBeInTheDocument()
+
+    fireEvent.click(within(nudge).getByRole("button", { name: "Skip" }))
+    expect(
+      screen.queryByRole("region", { name: "One next thing" })
+    ).not.toBeInTheDocument()
+    expect(firstCafeList()).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("link", { name: "Paper" }))
+    await screen.findByRole("region", { name: "Paper" })
+    fireEvent.click(screen.getByRole("link", { name: "Home" }))
+    await expectHomeIdle()
+
+    expect(
+      screen.queryByRole("region", { name: "One next thing" })
+    ).not.toBeInTheDocument()
+    expect(
+      within(firstCafeList()).getByRole("link", {
+        name: "Open the sample CV, done",
+      })
+    ).toBeInTheDocument()
+    expect(
+      within(firstCafeList()).queryByRole("link", {
+        name: "Make Pitch yours, done",
+      })
+    ).not.toBeInTheDocument()
+  })
+
+  it("after Apply only, nudges the sample CV without checking Sample or Pitch", async () => {
+    const { router } = renderApp()
+    await expectHomeIdle()
+
+    fireEvent.click(screen.getByRole("link", { name: "Triage one Apply card" }))
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(SURFACE_PATHS.apply)
+    })
+
+    fireEvent.click(screen.getByRole("link", { name: "Home" }))
+    await expectHomeIdle()
+
+    const nudge = firstCafeNudge()
+    expect(
+      within(nudge).getByRole("link", { name: "Open the sample CV" })
+    ).toHaveAttribute("href", `${SURFACE_PATHS.paper}?open=sample`)
+    expect(within(nudge).getAllByRole("link")).toHaveLength(1)
+
+    const list = firstCafeList()
+    expect(
+      within(list).getByRole("link", { name: "Triage one Apply card, done" })
+    ).toBeInTheDocument()
+    expect(
+      within(list).queryByRole("link", { name: "Open the sample CV, done" })
+    ).not.toBeInTheDocument()
+    expect(
+      within(list).queryByRole("link", { name: "Make Pitch yours, done" })
+    ).not.toBeInTheDocument()
+  })
+
+  it("treats Pitch clear as a win without checking Pitch on the list", async () => {
+    writeFirstCafeState("user_test", {
+      dismissed: false,
+      completed: [],
+      nudgeSkipped: false,
+      wins: ["pitch"],
+    })
+
+    renderApp()
+    await expectHomeIdle()
+
+    const nudge = firstCafeNudge()
+    expect(
+      within(nudge).getByRole("link", { name: "Open the sample CV" })
+    ).toHaveAttribute("href", `${SURFACE_PATHS.paper}?open=sample`)
+    expect(within(nudge).getAllByRole("link")).toHaveLength(1)
+
+    const list = firstCafeList()
+    expect(
+      within(list).getByRole("link", { name: "Make Pitch yours" })
+    ).toBeInTheDocument()
+    expect(
+      within(list).queryByRole("link", { name: "Make Pitch yours, done" })
+    ).not.toBeInTheDocument()
+    expect(
+      within(list).queryByRole("link", { name: "Open the sample CV, done" })
+    ).not.toBeInTheDocument()
   })
 })
 

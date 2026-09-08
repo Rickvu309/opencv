@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react"
+import {
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react"
 
 import { SEARCH_PATH, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { SIGN_UP_COPY } from "@/features/auth/sign-up-copy.ts"
@@ -192,20 +198,21 @@ describe("auth flows", () => {
       })
     ).toBeInTheDocument()
 
+    const list = screen.getByRole("region", { name: "Four small things" })
     expect(
-      screen.getByRole("link", { name: "Open the sample CV, done" })
+      within(list).getByRole("link", { name: "Open the sample CV, done" })
     ).toBeInTheDocument()
     expect(
-      screen.getByRole("link", { name: "Make Pitch yours" })
+      within(list).getByRole("link", { name: "Make Pitch yours" })
     ).toBeInTheDocument()
     expect(
-      screen.getByRole("link", { name: "Triage one Apply card" })
+      within(list).getByRole("link", { name: "Triage one Apply card" })
     ).toBeInTheDocument()
     expect(
-      screen.getByRole("link", { name: "Connect email, optional" })
+      within(list).getByRole("link", { name: "Connect email, optional" })
     ).toBeInTheDocument()
     expect(
-      screen.queryByRole("link", { name: "Triage one Apply card, done" })
+      within(list).queryByRole("link", { name: "Triage one Apply card, done" })
     ).not.toBeInTheDocument()
   })
 
@@ -255,23 +262,24 @@ describe("auth flows", () => {
       })
     ).toBeInTheDocument()
 
+    const list = screen.getByRole("region", { name: "Four small things" })
     expect(
-      screen.getByRole("link", { name: "Triage one Apply card, done" })
+      within(list).getByRole("link", { name: "Triage one Apply card, done" })
     ).toBeInTheDocument()
     expect(
-      screen.getByRole("link", { name: "Open the sample CV" })
+      within(list).getByRole("link", { name: "Open the sample CV" })
     ).toBeInTheDocument()
     expect(
-      screen.getByRole("link", { name: "Make Pitch yours" })
+      within(list).getByRole("link", { name: "Make Pitch yours" })
     ).toBeInTheDocument()
     expect(
-      screen.getByRole("link", { name: "Connect email, optional" })
+      within(list).getByRole("link", { name: "Connect email, optional" })
     ).toBeInTheDocument()
     expect(
-      screen.queryByRole("link", { name: "Open the sample CV, done" })
+      within(list).queryByRole("link", { name: "Open the sample CV, done" })
     ).not.toBeInTheDocument()
     expect(
-      screen.queryByRole("link", { name: "Make Pitch yours, done" })
+      within(list).queryByRole("link", { name: "Make Pitch yours, done" })
     ).not.toBeInTheDocument()
   })
 
