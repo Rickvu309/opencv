@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import {
   decodePitchContent,
   emptyPitchDocument,
+  preservePitchMoments,
   type PitchDoc,
   type PitchDocument,
 } from "@workspace/domain"
@@ -84,10 +85,13 @@ export function usePitch() {
   const persist = useCallback(
     (patch: (current: PitchDocument) => PitchDocument) => {
       writeChain.current = writeChain.current.then(async () => {
-        const current = contentFromDoc(
-          queryClient.getQueryData<PitchDoc | null>(pitchQueryKeys.current())
+        const stored = queryClient.getQueryData<PitchDoc | null>(
+          pitchQueryKeys.current()
         )
-        await mutation.mutateAsync(patch(current)).catch(() => undefined)
+        const current = contentFromDoc(stored)
+        await mutation
+          .mutateAsync(preservePitchMoments(current, patch(current)))
+          .catch(() => undefined)
       })
     },
     [mutation, queryClient]

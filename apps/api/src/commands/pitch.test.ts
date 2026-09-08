@@ -104,7 +104,7 @@ describe("pitch commands", () => {
     expect(first.kind).toBe("pitch")
     expect(first.contentVersion).toBe(1)
 
-    const next = { ...emptyPitchDocument(), about: "Edited about." }
+    const next = { ...starterPitchDocument(), about: "Edited about." }
     const updated = await commandRegistry.execute({
       name: PITCH_COMMANDS.update,
       input: { content: next, contentVersion: 1 },
