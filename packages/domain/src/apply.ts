@@ -116,11 +116,8 @@ export function applyJobSourceHost(
 ): string | null {
   const href = openableApplyJobUrl(raw)
   if (!href) return null
-  try {
-    return new URL(href).hostname.replace(/^www\./i, "")
-  } catch {
-    return null
-  }
+  const host = applyJobUrlHost(href)
+  return host ? host.replace(/^www\./i, "") : null
 }
 
 /** http(s) posting URL we can honestly open, or null. */
