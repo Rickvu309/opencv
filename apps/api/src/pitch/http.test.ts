@@ -2,8 +2,12 @@ import {
   ERROR_CODES,
   PITCH_COMMANDS,
   emptyPitchDocument,
+  starterPitchDocument,
   type PitchDoc,
 } from "@workspace/domain"
+import { eq } from "drizzle-orm"
+
+import { pitchDocs } from "../db/schema.js"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import {
@@ -43,6 +47,7 @@ async function json<T>(res: Response): Promise<T> {
 
 describe("pitch API", () => {
   let client: Awaited<ReturnType<typeof createMigratedTestDb>>["client"]
+  let db: Awaited<ReturnType<typeof createMigratedTestDb>>["db"]
   let app: ReturnType<typeof createTestApp>
   let cookieA: string
   let cookieB: string
@@ -50,6 +55,7 @@ describe("pitch API", () => {
   beforeAll(async () => {
     const migrated = await createMigratedTestDb()
     client = migrated.client
+    db = migrated.db
     app = createTestApp(migrated.db)
     cookieA = (await signUp(app, userA)).cookie
     cookieB = (await signUp(app, userB)).cookie
@@ -127,6 +133,55 @@ describe("pitch API", () => {
     const otherDoc = await json<{ ok: true; data: PitchDoc }>(other)
     expect(otherDoc.data.id).not.toBe(seeded.data.id)
     expect(otherDoc.data.content).not.toEqual(next)
+  })
+
+  it("repairs persisted sacred-space and leftover persona copy on GET", async () => {
+    const first = await app.request("/api/pitch", {
+      headers: authHeaders(cookieA),
+    })
+    const seeded = await json<{ ok: true; data: PitchDoc }>(first)
+    const starter = starterPitchDocument()
+    const leftover = {
+      ...starter,
+      github: { username: "alex-tran-uit", connected: true },
+      bento: starter.bento.map((card) => {
+        if (card.id === "b1") return { ...card, title: "Alex Tran" }
+        if (card.id === "b4") {
+          return {
+            ...card,
+            title: "my sacred space",
+            body: "Hallway test · late night Figma",
+            storyHighlightId: "sh-checkout",
+          }
+        }
+        return card
+      }),
+    }
+
+    await db
+      .update(pitchDocs)
+      .set({ content: leftover })
+      .where(eq(pitchDocs.id, seeded.data.id))
+
+    const repairedRes = await app.request("/api/pitch", {
+      headers: authHeaders(cookieA),
+    })
+    expect(repairedRes.status).toBe(200)
+    const repaired = await json<{ ok: true; data: PitchDoc }>(repairedRes)
+    const content = repaired.data.content as ReturnType<
+      typeof starterPitchDocument
+    >
+    expect(content.bento.find((card) => card.id === "b4")).toMatchObject({
+      title: "Checkout",
+      body: "Hallway test setup",
+      storyHighlightId: "sh-checkout",
+    })
+    expect(content.bento.find((card) => card.id === "b1")?.title).toBe(
+      "Your name"
+    )
+    expect(content.github.username).toBe("")
+    expect(JSON.stringify(content)).not.toMatch(/sacred space/i)
+    expect(JSON.stringify(content)).not.toMatch(/Alex Tran/i)
   })
 
   it("rejects malformed content", async () => {

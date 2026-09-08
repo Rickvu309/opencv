@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import {
   decodePitchContent,
   emptyPitchDocument,
@@ -15,6 +15,10 @@ function contentFromDoc(doc: PitchDoc | null | undefined): PitchDocument {
   if (!doc) return emptyPitchDocument()
   const decoded = decodePitchContent(doc.kind, doc.contentVersion, doc.content)
   return decoded.ok ? decoded.data : emptyPitchDocument()
+}
+
+function pitchContentEquals(left: unknown, right: PitchDocument) {
+  return JSON.stringify(left) === JSON.stringify(right)
 }
 
 function errorMessage(error: unknown) {
@@ -88,6 +92,14 @@ export function usePitch() {
     },
     [mutation, queryClient]
   )
+
+  useEffect(() => {
+    const doc = query.data
+    if (!doc || query.isPending || mutation.isPending) return
+    const decoded = decodePitchContent(doc.kind, doc.contentVersion, doc.content)
+    if (!decoded.ok || pitchContentEquals(doc.content, decoded.data)) return
+    persist(() => decoded.data)
+  }, [mutation.isPending, persist, query.data, query.isPending])
 
   return {
     doc: query.data,

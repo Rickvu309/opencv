@@ -8,6 +8,11 @@ import {
   SAMPLE_AUTHOR,
   SAMPLE_AUTHOR_NAME,
 } from "@/features/seed/sample-author.ts"
+import {
+  setMockSession,
+  TEST_SESSION,
+  TEST_SESSION_USER,
+} from "@/test/auth-client-mock.ts"
 import { SURFACE_COPY } from "@/features/app-shell/surfaces.ts"
 import { getMockGithubUsername } from "@/features/pitch/pitch-github-mock.ts"
 import { PitchWorkspace } from "@/features/pitch/pitch-workspace.tsx"
@@ -214,10 +219,66 @@ describe("Pitch workspace", () => {
     expect(
       screen.queryByRole("button", { name: /sacred space/i })
     ).not.toBeInTheDocument()
-    fireEvent.click(screen.getByRole("button", { name: "Checkout story" }))
+    const momentsCard = screen.getByRole("button", { name: "Checkout story" })
+    expect(momentsCard).toHaveTextContent("Checkout")
+    expect(momentsCard).toHaveTextContent("Hallway test setup")
+    fireEvent.click(momentsCard)
     const viewer = screen.getByRole("dialog", { name: "Work story viewer" })
     expect(within(viewer).getByText("Checkout")).toBeInTheDocument()
     expect(within(viewer).getByText("Hallway test setup")).toBeInTheDocument()
+  })
+
+  it("shows the session User on Moments and the viewer, not leftover Alex Tran", async () => {
+    setMockSession({
+      user: {
+        ...TEST_SESSION_USER,
+        name: "Scout Tester",
+        email: "scout@example.com",
+      },
+      session: TEST_SESSION,
+    })
+    const starter = starterPitchDocument()
+    setMockPitchDoc({
+      id: "55555555-5555-7555-8555-555555555557",
+      kind: "pitch",
+      content: {
+        ...starter,
+        github: { username: "alex-tran-uit", connected: true },
+        bento: starter.bento.map((card) => {
+          if (card.id === "b1") return { ...card, title: "Alex Tran" }
+          if (card.storyHighlightId === "sh-checkout") {
+            return {
+              ...card,
+              title: "my sacred space",
+              body: "Hallway test · late night Figma",
+              storyHighlightId: undefined,
+            }
+          }
+          if (card.id === "b5") return { ...card, title: "@alex-tran-uit" }
+          return card
+        }),
+      },
+      contentVersion: 1,
+      createdAt: "2026-08-25T00:00:00.000Z",
+      updatedAt: "2026-08-25T00:00:00.000Z",
+    })
+
+    renderPitch()
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Scout Tester" })
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/Alex Tran/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/alex-tran/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/sacred space/i)).not.toBeInTheDocument()
+
+    const momentsCard = screen.getByRole("button", { name: "Checkout story" })
+    expect(momentsCard).toHaveTextContent("Checkout")
+    expect(momentsCard).toHaveTextContent("Hallway test setup")
+    fireEvent.click(momentsCard)
+    const viewer = screen.getByRole("dialog", { name: "Work story viewer" })
+    expect(within(viewer).getByText("Scout Tester")).toBeInTheDocument()
+    expect(within(viewer).getByText("Checkout")).toBeInTheDocument()
+    expect(within(viewer).queryByText(/Alex Tran/i)).not.toBeInTheDocument()
   })
 
   it("only claims Copy link succeeded when the clipboard write works", async () => {

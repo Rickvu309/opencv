@@ -14,13 +14,18 @@ export type {
   PitchWorkDoc,
 } from "@workspace/domain"
 
-import type {
-  PitchBentoCard,
-  PitchBlockKind,
-  PitchDocument,
-  PitchLink,
-  PitchTone,
-  PitchWorkDoc,
+import {
+  alignStoryChipIdentity,
+  emptyPitchDocument,
+  isLeftoverPitchGithubUsername,
+  isLeftoverPitchPersonaName,
+  type PitchBentoCard,
+  type PitchBlockKind,
+  type PitchDocument,
+  type PitchLink,
+  type PitchStoryHighlight,
+  type PitchTone,
+  type PitchWorkDoc,
 } from "@workspace/domain"
 
 export type PitchProfile = {
@@ -73,7 +78,11 @@ export function pitchProfileFromIdentity(
   content: PitchDocument
 ): PitchProfile {
   const handle = pitchHandle(identity.name) || "you"
-  const githubUsername = content.github.username || `${handle}-uit`
+  const storedUsername = content.github.username
+  const githubUsername =
+    storedUsername && !isLeftoverPitchGithubUsername(storedUsername)
+      ? storedUsername
+      : `${handle}-uit`
 
   return {
     name: identity.name,
@@ -95,13 +104,26 @@ export function pitchProfileFromIdentity(
 export function overlayPitchBento(
   cards: PitchBentoCard[],
   identity: PitchIdentity,
-  githubUsername: string
+  githubUsername: string,
+  highlights: PitchStoryHighlight[] = []
 ): PitchBentoCard[] {
-  return cards.map((card) => {
-    if (card.kind === "visual" && card.title === "Your name") {
+  const aligned = alignStoryChipIdentity({
+    ...emptyPitchDocument(),
+    bento: cards,
+    storyHighlights: highlights,
+  }).bento
+
+  return aligned.map((card) => {
+    if (
+      card.kind === "visual" &&
+      (card.title === "Your name" || isLeftoverPitchPersonaName(card.title))
+    ) {
       return { ...card, title: identity.name }
     }
-    if (card.kind === "link" && card.title === "@github") {
+    if (
+      card.kind === "link" &&
+      (card.title === "@github" || isLeftoverPitchGithubUsername(card.title))
+    ) {
       return { ...card, title: `@${githubUsername}` }
     }
     return card
