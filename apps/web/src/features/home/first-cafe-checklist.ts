@@ -119,6 +119,32 @@ export function firstCafeItemForVisit(
   return null
 }
 
+export type FirstCafeRouterVisit = {
+  userId: string | undefined
+  status: "pending" | "idle"
+  pathname?: string
+  resolvedPathname: string | undefined
+  resolvedSearch?: Record<string, unknown>
+}
+
+/**
+ * Only a settled leaf counts. Pending / unresolved locations (signup
+ * bootstrap, soft nav, route flicker) must not complete a checklist item.
+ */
+export function firstCafeVisitToRecord(
+  visit: FirstCafeRouterVisit
+): { pathname: string; search: Record<string, unknown> } | null {
+  if (!visit.userId) return null
+  if (visit.status !== "idle") return null
+  if (!visit.resolvedPathname) return null
+  if (visit.pathname != null && visit.pathname !== visit.resolvedPathname) {
+    return null
+  }
+  const search = visit.resolvedSearch ?? {}
+  if (!firstCafeItemForVisit(visit.resolvedPathname, search)) return null
+  return { pathname: visit.resolvedPathname, search }
+}
+
 export function readFirstCafeState(userId: string): FirstCafeState {
   try {
     return parseFirstCafeState(
