@@ -88,6 +88,7 @@ export function ToolbarButton({
   onClick,
   children,
   active,
+  disabled,
   className,
 }: {
   label: string
@@ -95,6 +96,7 @@ export function ToolbarButton({
   onClick?: () => void
   children: ReactNode
   active?: boolean
+  disabled?: boolean
   className?: string
 }) {
   return (
@@ -103,6 +105,7 @@ export function ToolbarButton({
       size="icon-sm"
       variant="ghost"
       aria-label={label}
+      disabled={disabled}
       onMouseDown={(e) => {
         if (onMouseDown) {
           keepEditorFocus(e)

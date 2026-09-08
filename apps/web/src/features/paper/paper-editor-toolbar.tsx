@@ -63,6 +63,10 @@ type Props = {
   onCvTemplateChange?: (id: CvTemplateId) => void
   onCvInsert?: (id: CvInsertId) => void
   onCvTailor?: (role: string) => void
+  canUndo?: boolean
+  canRedo?: boolean
+  onUndo?: () => void
+  onRedo?: () => void
   onLetterInsert?: (id: LetterInsertId) => void
   proofViewMode?: ProofViewMode
   onProofViewModeChange?: (mode: ProofViewMode) => void
@@ -300,6 +304,10 @@ export function PaperEditorToolbar({
   onCvTemplateChange,
   onCvInsert,
   onCvTailor,
+  canUndo = false,
+  canRedo = false,
+  onUndo,
+  onRedo,
   onLetterInsert,
   proofViewMode,
   onProofViewModeChange,
@@ -309,6 +317,7 @@ export function PaperEditorToolbar({
   const rich = variant === "letter" || variant === "full"
   // CV fields are structured React state — execCommand Bold/Italic/lists
   // are dead theater. Letter/full stay rich-text. QVE-205.
+  // CV Undo/Redo are honest history (QVE-210), not execCommand.
   const showFormat = rich
   const toolbarLabel =
     variant === "cv"
@@ -323,6 +332,21 @@ export function PaperEditorToolbar({
     <ToolbarRoot className={className} aria-label={toolbarLabel}>
       {variant === "cv" && cvTemplateId && onCvTemplateChange ? (
         <ToolbarZone>
+          <ToolbarButton
+            label="Undo"
+            disabled={!canUndo}
+            onMouseDown={() => onUndo?.()}
+          >
+            <Undo2 className="size-3.5" />
+          </ToolbarButton>
+          <ToolbarButton
+            label="Redo"
+            disabled={!canRedo}
+            onMouseDown={() => onRedo?.()}
+          >
+            <Redo2 className="size-3.5" />
+          </ToolbarButton>
+          <ToolbarDivider />
           <CvTemplateDropdown
             value={cvTemplateId}
             onChange={onCvTemplateChange}

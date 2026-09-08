@@ -108,6 +108,31 @@ describe("EditableField canvas chrome (QVE-206)", () => {
     fireEvent.keyDown(field, { key: "Escape" })
     expect(field).not.toHaveFocus()
   })
+
+  it("resyncs a focused field when history revision bumps (QVE-210)", () => {
+    const view = render(
+      createElement(EditableField, {
+        "aria-label": "Summary",
+        value: "Café rewrite",
+        historyRevision: 0,
+        onChange: () => {},
+      })
+    )
+    const field = screen.getByRole("textbox", { name: "Summary" })
+    field.focus()
+    expect(field).toHaveFocus()
+    field.textContent = "Café rewrite"
+    view.rerender(
+      createElement(EditableField, {
+        "aria-label": "Summary",
+        value: "A short summary",
+        historyRevision: 1,
+        onChange: () => {},
+      })
+    )
+    expect(field).toHaveTextContent("A short summary")
+    expect(field).toHaveFocus()
+  })
 })
 
 describe("EditableField café keyboard (QVE-208)", () => {

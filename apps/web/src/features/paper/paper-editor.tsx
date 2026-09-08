@@ -35,6 +35,18 @@ import {
   addSkillGroup,
   BLANK_PROJECT,
 } from "./paper-cv-edits.ts"
+import {
+  absorbCvServerSnapshot,
+  canRedoCv,
+  canUndoCv,
+  createCvHistory,
+  isPaperRedoShortcut,
+  isPaperUndoShortcut,
+  pushCvChange,
+  redoCv,
+  shouldIgnoreCvHistoryShortcut,
+  undoCv,
+} from "./paper-cv-history.ts"
 import { type CvData, type CvTemplateId } from "./paper-cv-types.ts"
 import {
   TYPE_LABEL,
@@ -134,10 +146,14 @@ export function PaperEditor({
   const [saving, setSaving] = useState(false)
   const [letterWords, setLetterWords] = useState(0)
   const [title, setTitle] = useState(doc.name)
-  const [cvData, setCvData] = useState<CvData>(() => cvContentOf(doc))
+  const [cvHistory, setCvHistory] = useState(() =>
+    createCvHistory(cvContentOf(doc))
+  )
+  const cvData = cvHistory.present
   const [proofData, setProofData] = useState<ProofData>(() =>
     proofContentOf(doc)
   )
+  const cvHistoryRef = useRef(cvHistory)
   const cvDataRef = useRef(cvData)
   const proofDataRef = useRef(proofData)
   const docRef = useRef(doc)
@@ -157,6 +173,7 @@ export function PaperEditor({
   const docsExpanded = isDesktop ? docsPanel === "expanded" : phoneDocsOpen
 
   useEffect(() => {
+    cvHistoryRef.current = cvHistory
     cvDataRef.current = cvData
     proofDataRef.current = proofData
     docRef.current = doc
@@ -180,7 +197,13 @@ export function PaperEditor({
     const previous = loadedContentRef.current
     setTitle(next.name)
     if (next.kind === "cv") {
-      setCvData(cvContentOf(next))
+      const nextHistory = absorbCvServerSnapshot(
+        cvHistoryRef.current,
+        cvContentOf(next)
+      )
+      cvHistoryRef.current = nextHistory
+      cvDataRef.current = nextHistory.present
+      setCvHistory(nextHistory)
     } else if (next.kind === "proof") {
       setProofData(proofContentOf(next))
     } else {
@@ -336,6 +359,26 @@ export function PaperEditor({
     }
   }, [])
 
+  useEffect(() => {
+    if (!isCv) return
+    function onKeyDown(event: KeyboardEvent) {
+      if (shouldIgnoreCvHistoryShortcut(event.target)) return
+      if (isPaperUndoShortcut(event)) {
+        event.preventDefault()
+        event.stopPropagation()
+        applyCvUndo()
+        return
+      }
+      if (isPaperRedoShortcut(event)) {
+        event.preventDefault()
+        event.stopPropagation()
+        applyCvRedo()
+      }
+    }
+    document.addEventListener("keydown", onKeyDown, true)
+    return () => document.removeEventListener("keydown", onKeyDown, true)
+  }, [isCv])
+
   function handleRichInput() {
     const el = editorRef.current
     if (el) setLetterWords(countWords(el.innerText))
@@ -435,8 +478,28 @@ export function PaperEditor({
   }
 
   function handleCvChange(next: CvData) {
-    cvDataRef.current = next
-    setCvData(next)
+    const nextHistory = pushCvChange(cvHistoryRef.current, next)
+    cvHistoryRef.current = nextHistory
+    cvDataRef.current = nextHistory.present
+    setCvHistory(nextHistory)
+    setDirty(true)
+  }
+
+  function applyCvUndo() {
+    const nextHistory = undoCv(cvHistoryRef.current)
+    if (!nextHistory) return
+    cvHistoryRef.current = nextHistory
+    cvDataRef.current = nextHistory.present
+    setCvHistory(nextHistory)
+    setDirty(true)
+  }
+
+  function applyCvRedo() {
+    const nextHistory = redoCv(cvHistoryRef.current)
+    if (!nextHistory) return
+    cvHistoryRef.current = nextHistory
+    cvDataRef.current = nextHistory.present
+    setCvHistory(nextHistory)
     setDirty(true)
   }
 
@@ -619,9 +682,17 @@ export function PaperEditor({
                   onCvTemplateChange={handleTemplateChange}
                   onCvInsert={handleCvInsert}
                   onCvTailor={handleCvTailor}
+                  canUndo={canUndoCv(cvHistory)}
+                  canRedo={canRedoCv(cvHistory)}
+                  onUndo={applyCvUndo}
+                  onRedo={applyCvRedo}
                 />
                 <CvA4Canvas>
-                  <CvDocument data={cvData} onChange={handleCvChange} />
+                  <CvDocument
+                    data={cvData}
+                    onChange={handleCvChange}
+                    historyRevision={cvHistory.revision}
+                  />
                 </CvA4Canvas>
               </>
             ) : isProof ? (
