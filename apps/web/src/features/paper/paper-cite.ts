@@ -164,7 +164,7 @@ export function paperCiteSpansFromCv(data: CvData): PaperCiteSpan[] {
     spans.push({
       sectionId: `experience-${index}`,
       label: clipLabel(roleLabel),
-      text: [item.role, item.company, item.period, item.location, ...item.bullets]
+      text: [item.role, item.company, item.period, item.location]
         .filter(Boolean)
         .join(" "),
       specificity: "role",
@@ -322,8 +322,18 @@ function pickBest(
   })
   const best = ranked[0]
   if (!best || best.score < MIN_SCORE) return null
-  const close = ranked.filter((row) => best.score - row.score <= 0.18)
-  const specific = close.sort(
+  if (best.span.specificity === "role") {
+    const child = ranked.find(
+      (row) =>
+        row.span.specificity === "bullet" &&
+        row.span.sectionId.startsWith(`${best.span.sectionId}-bullet-`) &&
+        row.score >= MIN_SCORE &&
+        best.score - row.score <= 0.5
+    )
+    if (child) return child.span
+  }
+  const close = ranked.filter((row) => best.score - row.score <= 0.2)
+  const specific = [...close].sort(
     (left, right) =>
       SPECIFICITY_RANK[right.span.specificity] -
       SPECIFICITY_RANK[left.span.specificity]

@@ -43,6 +43,15 @@ describe("citeFromCoachReply", () => {
     })
   })
 
+  it("cites the Experience role when only the project name is mentioned", () => {
+    const cite = citeFromCoachReply({
+      ask: "Found the checkout UX section?",
+      reply: "Found the checkout UX project. One next step is to name the company.",
+      spans,
+    })
+    expect(cite?.sectionId).toBe("experience-1")
+  })
+
   it("cites Summary when advice stays on that section", () => {
     const cite = citeFromCoachReply({
       ask: "Is my summary too long?",
