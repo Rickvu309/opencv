@@ -188,6 +188,10 @@ describe("Apply workspace", () => {
     ).toBeInTheDocument()
     expectNoVisibleFitScore()
     expect(screen.queryByText(/Eric Nguyen/i)).not.toBeInTheDocument()
+    expect(
+      within(panel).queryByRole("button", { name: "Open job posting" })
+    ).not.toBeInTheDocument()
+    expect(within(panel).queryByDisplayValue(/example\.com/i)).toBeNull()
 
     fireEvent.click(screen.getByRole("button", { name: "Close panel" }))
     expect(
@@ -398,7 +402,7 @@ describe("Apply workspace", () => {
     renderApply()
     await expectApplyLive()
 
-    fireEvent.click(screen.getByRole("button", { name: /Associate PM intern/ }))
+    await addJobFromDialog("linkedin.com/jobs/view/123")
     const panel = await screen.findByRole("complementary", {
       name: "Job detail",
     })
@@ -408,6 +412,24 @@ describe("Apply workspace", () => {
     expect(within(panel).getByRole("alert")).toHaveTextContent(
       "The browser blocked opening this posting."
     )
+  })
+
+  it("does not open leftover seeded jobs.example.com", async () => {
+    const open = vi.fn(() => ({ closed: false }))
+    vi.stubGlobal("open", open)
+
+    renderApply()
+    await expectApplyLive()
+
+    fireEvent.click(screen.getByRole("button", { name: /Associate PM intern/ }))
+    const panel = await screen.findByRole("complementary", {
+      name: "Job detail",
+    })
+    expect(
+      within(panel).queryByRole("button", { name: "Open job posting" })
+    ).not.toBeInTheDocument()
+    expect(within(panel).queryByDisplayValue(/jobs\.example\.com/i)).toBeNull()
+    expect(open).not.toHaveBeenCalled()
   })
 
   it("rolls a failed move back and shows the real error message", async () => {

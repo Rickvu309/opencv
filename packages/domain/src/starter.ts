@@ -117,6 +117,7 @@ export type StarterApplyCardDraft = {
 /**
  * A few Apply cards across Stages so the board demos itself.
  * Notes are second-person product voice; companies are generic.
+ * No posting URL — jobs.example.com NXDOMAINs and looks like a real JD (QVE-217).
  */
 export function starterApplyCards(): StarterApplyCardDraft[] {
   return [
@@ -126,7 +127,7 @@ export function starterApplyCards(): StarterApplyCardDraft[] {
       note: "JD wants discovery notes and one shipped experiment. Starred so it stays on top.",
       stage: "inbox",
       starred: true,
-      jobUrl: "https://jobs.example.com/associate-pm-intern",
+      jobUrl: null,
       trackKind: "followup",
       trackOffsetDays: 1,
     },

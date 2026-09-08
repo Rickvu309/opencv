@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest"
 import {
   APPLY_JOB_URL_INVALID,
+  isDemoApplyJobUrl,
   openableApplyJobUrl,
   parseApplyJobUrlInput,
+  publicApplyJobUrl,
 } from "@workspace/domain"
 
 describe("apply job URL helpers", () => {
@@ -20,12 +22,31 @@ describe("apply job URL helpers", () => {
   })
 
   it("keeps an http(s) posting URL", () => {
+    expect(parseApplyJobUrlInput("https://linkedin.com/jobs/view/123")).toEqual(
+      {
+        ok: true,
+        jobUrl: "https://linkedin.com/jobs/view/123",
+      }
+    )
+  })
+
+  it("does not open the leftover seeded jobs.example.com host", () => {
     expect(
-      parseApplyJobUrlInput("https://jobs.example.com/associate-pm-intern")
-    ).toEqual({
-      ok: true,
-      jobUrl: "https://jobs.example.com/associate-pm-intern",
+      isDemoApplyJobUrl("https://jobs.example.com/associate-pm-intern")
+    ).toBe(true)
+    expect(
+      publicApplyJobUrl("https://jobs.example.com/associate-pm-intern")
+    ).toBeNull()
+    expect(
+      openableApplyJobUrl("https://jobs.example.com/associate-pm-intern")
+    ).toBeNull()
+    expect(parseApplyJobUrlInput("https://jobs.example.com/foo")).toEqual({
+      ok: false,
+      message: APPLY_JOB_URL_INVALID,
     })
+    expect(publicApplyJobUrl("https://linkedin.com/jobs/view/123")).toBe(
+      "https://linkedin.com/jobs/view/123"
+    )
   })
 
   it("honest-fails javascript and other non-web schemes", () => {
