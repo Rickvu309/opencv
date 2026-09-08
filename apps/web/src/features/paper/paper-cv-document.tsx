@@ -2,7 +2,7 @@
  * CV print-paper templates. Shared type roles live in paper.css (ADR-0010
  * names, print-scaled). The product-sidebar hex stays here on purpose —
  * print layout is a documented ADR-0010 exception. Focus/selection chrome
- * is QVE-206 — leave EditableField focus classes alone.
+ * is QVE-206 (`paper-canvas-field` in paper.css).
  */
 import type { ElementType, ReactNode } from "react"
 import { useEffect, useRef } from "react"
@@ -35,6 +35,9 @@ function CvType({
     </Tag>
   )
 }
+
+/** QVE-206: structured canvas field hook — chrome lives in `paper.css`. */
+export const PAPER_CANVAS_FIELD_CLASS = "paper-canvas-field"
 
 type FieldProps = {
   value: string
@@ -72,9 +75,15 @@ export function EditableField({
       data-paper-section={
         sectionId ?? ariaLabel.toLowerCase().replace(/[^a-z0-9]+/g, "-")
       }
+      data-paper-canvas-field=""
       onInput={(e) => onChange(e.currentTarget.textContent ?? "")}
+      onKeyDown={(event) => {
+        if (event.key !== "Escape" || event.nativeEvent.isComposing) return
+        event.currentTarget.blur()
+      }}
       className={cn(
-        "outline-none empty:before:text-muted-foreground/50 empty:before:content-[attr(data-placeholder)] focus:rounded-sm focus:bg-muted/80 focus:ring-1 focus:ring-ring/40",
+        PAPER_CANVAS_FIELD_CLASS,
+        "empty:before:text-muted-foreground/50 empty:before:content-[attr(data-placeholder)]",
         multiline && "block",
         className
       )}

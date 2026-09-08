@@ -174,6 +174,29 @@
     animation: paper-coach-highlight var(--duration-slow) var(--ease-standard);
   }
 
+  /*
+   * QVE-206: quiet paper-edit chrome on structured canvas fields.
+   * Kit ring + soft muted wash — not a bordered form field, not Coach
+   * chip pills (rounded-full bg-muted/70), not cite-jump (--info).
+   */
+  .paper-canvas-field {
+    outline: none;
+    border-radius: var(--radius-sm);
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
+  }
+
+  .paper-canvas-field:focus {
+    background-color: color-mix(in oklch, var(--muted) 30%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent);
+  }
+
+  .paper-canvas-field::selection {
+    background-color: color-mix(in oklch, currentColor 16%, transparent);
+    color: inherit;
+  }
+
   /* QVE-186: when CoachFloat is open on desktop, clear the A4 column. */
   [data-paper-canvas] {
     transition: padding-right var(--duration-base) var(--ease-standard);
@@ -198,6 +221,10 @@
       box-shadow: inset 0 0 0 2px var(--info);
     }
 
+    .paper-canvas-field {
+      transition: none;
+    }
+
     [data-paper-canvas] {
       transition: none;
     }
@@ -207,6 +234,11 @@
     .cv-a4-page {
       box-shadow: none;
       border: none;
+    }
+
+    .paper-canvas-field:focus {
+      background-color: transparent;
+      box-shadow: none;
     }
 
     .cv-template-root section,
