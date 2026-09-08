@@ -61,7 +61,12 @@ export function PitchWorkspace() {
   const profile = pitchProfileFromIdentity(identity, content)
   const editing = mode === "edit"
   const visible = content.blocks.filter((b) => !b.hidden)
-  const bento = overlayPitchBento(content.bento, identity, profile.github.username)
+  const bento = overlayPitchBento(
+    content.bento,
+    identity,
+    profile.github.username,
+    content.storyHighlights
+  )
   const links = overlayPitchLinks(content.links, identity, profile.github.username)
 
   function hideBlock(id: string) {

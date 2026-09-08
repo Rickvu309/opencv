@@ -200,26 +200,118 @@ export function emptyPitchDocument(): PitchDocument {
   }
 }
 
+/** Demo names that used to be baked into Pitch. Never identity. */
+export const LEFTOVER_PITCH_PERSONA_NAMES = ["Alex Tran", "Eric Nguyen"] as const
+
+/** Moments card titles from the pre-honest starter. */
+export const LEFTOVER_STORY_CHIP_TITLES = ["my sacred space"] as const
+
+/** Moments card bodies from the pre-honest starter. */
+export const LEFTOVER_STORY_CHIP_BODIES = [
+  "Hallway test · late night Figma",
+] as const
+
+const LEFTOVER_GITHUB_HANDLE = /^(alex-tran|eric-nguyen)(-uit)?$/i
+
+function normalizeCompare(value: string) {
+  return value.trim().toLowerCase()
+}
+
+export function isLeftoverPitchPersonaName(value: string) {
+  const normalized = normalizeCompare(value)
+  return LEFTOVER_PITCH_PERSONA_NAMES.some(
+    (name) => normalizeCompare(name) === normalized
+  )
+}
+
+export function isLeftoverPitchGithubUsername(value: string) {
+  return LEFTOVER_GITHUB_HANDLE.test(value.replace(/^@/, "").trim())
+}
+
+export function isLeftoverStoryChipTitle(value: string) {
+  const normalized = normalizeCompare(value)
+  return LEFTOVER_STORY_CHIP_TITLES.some(
+    (title) => normalizeCompare(title) === normalized
+  )
+}
+
+export function isLeftoverStoryChipBody(value: string | undefined) {
+  if (!value) return false
+  const normalized = normalizeCompare(value)
+  return LEFTOVER_STORY_CHIP_BODIES.some(
+    (body) => normalizeCompare(body) === normalized
+  )
+}
+
+function checkoutOrFirstHighlight(doc: PitchDocument) {
+  return (
+    doc.storyHighlights.find((highlight) => highlight.id === "sh-checkout") ??
+    doc.storyHighlights[0]
+  )
+}
+
 /**
  * Story chips must advertise the highlight they open. Persisted starter copy
  * used a fake personal label on the Checkout reel — rewrite that at decode
  * so existing Pitch docs stay honest without a content-version bump.
+ *
+ * Also rewrites leftover demo-persona placeholders so session overlay can
+ * stamp the real User (QVE-134 / QVE-215).
  */
 export function alignStoryChipIdentity(doc: PitchDocument): PitchDocument {
   const highlights = new Map(doc.storyHighlights.map((h) => [h.id, h]))
+  const fallbackHighlight = checkoutOrFirstHighlight(doc)
   let changed = false
+
   const bento = doc.bento.map((card) => {
-    if (!card.storyHighlightId) return card
-    const highlight = highlights.get(card.storyHighlightId)
-    if (!highlight || card.title === highlight.label) return card
+    const leftoverStory =
+      isLeftoverStoryChipTitle(card.title) || isLeftoverStoryChipBody(card.body)
+    const highlight =
+      (card.storyHighlightId
+        ? highlights.get(card.storyHighlightId)
+        : undefined) ?? (leftoverStory ? fallbackHighlight : undefined)
+
+    if (!highlight) {
+      if (card.kind === "visual" && isLeftoverPitchPersonaName(card.title)) {
+        changed = true
+        return { ...card, title: "Your name" }
+      }
+      if (card.kind === "link" && isLeftoverPitchGithubUsername(card.title)) {
+        changed = true
+        return { ...card, title: "@github" }
+      }
+      return card
+    }
+
+    const caption = highlight.slides[0]?.caption
+    const titleMismatch = card.title !== highlight.label
+    const bodyMismatch = caption != null && card.body !== caption
+    const needsHighlightId = leftoverStory && !card.storyHighlightId
+
+    if (!titleMismatch && !bodyMismatch && !needsHighlightId) {
+      return card
+    }
+
     changed = true
     return {
       ...card,
+      storyHighlightId: card.storyHighlightId ?? highlight.id,
       title: highlight.label,
-      body: highlight.slides[0]?.caption ?? card.body,
+      body: caption ?? card.body,
     }
   })
-  return changed ? { ...doc, bento } : doc
+
+  let next: PitchDocument = changed ? { ...doc, bento } : doc
+
+  if (isLeftoverPitchGithubUsername(next.github.username)) {
+    next = {
+      ...next,
+      github: { ...next.github, username: "" },
+    }
+    changed = true
+  }
+
+  return changed ? next : doc
 }
 
 function firstIssueMessage(error: z.ZodError): string {

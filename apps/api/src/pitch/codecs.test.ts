@@ -46,16 +46,24 @@ describe("pitch codecs", () => {
 
     const persisted = {
       ...starter,
-      bento: starter.bento.map((card) =>
-        card.id === "b4"
-          ? {
-              ...card,
-              title: "my sacred space",
-              body: "Hallway test · late night Figma",
-              storyHighlightId: "sh-checkout",
-            }
-          : card
-      ),
+      github: { username: "alex-tran-uit", connected: true },
+      bento: starter.bento.map((card) => {
+        if (card.id === "b1") {
+          return { ...card, title: "Alex Tran" }
+        }
+        if (card.id === "b4") {
+          return {
+            ...card,
+            title: "my sacred space",
+            body: "Hallway test · late night Figma",
+            storyHighlightId: "sh-checkout",
+          }
+        }
+        if (card.id === "b5") {
+          return { ...card, title: "@alex-tran-uit" }
+        }
+        return card
+      }),
     }
 
     const decoded = decodePitchContent("pitch", 1, persisted)
@@ -67,8 +75,42 @@ describe("pitch codecs", () => {
       body: "Hallway test setup",
       storyHighlightId: "sh-checkout",
     })
+    expect(decoded.data.bento.find((card) => card.id === "b1")?.title).toBe(
+      "Your name"
+    )
+    expect(decoded.data.bento.find((card) => card.id === "b5")?.title).toBe(
+      "@github"
+    )
+    expect(decoded.data.github.username).toBe("")
     expect(JSON.stringify(decoded.data)).not.toMatch(/sacred space/i)
+    expect(JSON.stringify(decoded.data)).not.toMatch(/Alex Tran/i)
     expect(alignStoryChipIdentity(decoded.data)).toBe(decoded.data)
+  })
+
+  it("repairs a leftover sacred-space Moments card even without a highlight id", () => {
+    const starter = starterPitchDocument()
+    const persisted = {
+      ...starter,
+      bento: starter.bento.map((card) =>
+        card.id === "b4"
+          ? {
+              ...card,
+              title: "my sacred space",
+              body: "Hallway test · late night Figma",
+              storyHighlightId: undefined,
+            }
+          : card
+      ),
+    }
+
+    const decoded = decodePitchContent("pitch", 1, persisted)
+    expect(decoded.ok).toBe(true)
+    if (!decoded.ok) throw new Error("expected success")
+    expect(decoded.data.bento.find((card) => card.id === "b4")).toMatchObject({
+      title: "Checkout",
+      body: "Hallway test setup",
+      storyHighlightId: "sh-checkout",
+    })
   })
 
   it("still accepts a persisted achievement that only has a dead link", () => {

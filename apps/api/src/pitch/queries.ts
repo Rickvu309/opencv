@@ -1,4 +1,8 @@
-import { ERROR_CODES, type PitchDoc } from "@workspace/domain"
+import {
+  ERROR_CODES,
+  decodePitchContent,
+  type PitchDoc,
+} from "@workspace/domain"
 import { eq } from "drizzle-orm"
 
 import { CommandError, type AppDatabase } from "../commands/registry.js"
@@ -16,10 +20,15 @@ export function toPitchDoc(row: {
   createdAt: Date
   updatedAt: Date
 }): PitchDoc {
+  const decoded = decodePitchContent(
+    row.contentKind,
+    row.contentVersion,
+    row.content
+  )
   return {
     id: row.id,
     kind: row.contentKind,
-    content: row.content,
+    content: decoded.ok ? decoded.data : row.content,
     contentVersion: row.contentVersion,
     createdAt: iso(row.createdAt),
     updatedAt: iso(row.updatedAt),
