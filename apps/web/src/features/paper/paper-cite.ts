@@ -281,6 +281,46 @@ function selectionHint(
   return live?.text ? live : undefined
 }
 
+function citeFromProse(
+  ask: string | undefined,
+  reply: string,
+  spans: readonly PaperCiteSpan[]
+): PaperCite | null {
+  const query = `${ask ?? ""}\n${reply}`
+  const queryTokens = uniqueTokens(query)
+  if (queryTokens.length === 0) return null
+  const df = documentFrequency(spans)
+  const scored = spans.map((span) => ({
+    span,
+    score: scoreSpan(span, queryTokens, df),
+  }))
+  const best = pickBest(scored)
+  if (!best) return null
+  return { sectionId: best.sectionId, label: best.label }
+}
+
+function citeFromSelection(
+  chips: readonly CoachContextChip[] | undefined,
+  live: CoachSelection | null | undefined,
+  spans: readonly PaperCiteSpan[]
+): PaperCite | null {
+  const selection = selectionHint(chips, live)
+  if (!selection?.text) return null
+  const byId = selection.sectionId
+    ? spans.find((span) => span.sectionId === selection.sectionId)
+    : undefined
+  const byText = spans.find((span) => textOverlaps(span.text, selection.text))
+  const match =
+    byId ??
+    spans.find(
+      (span) =>
+        span.specificity === "bullet" && textOverlaps(span.text, selection.text)
+    ) ??
+    byText
+  if (!match) return null
+  return { sectionId: match.sectionId, label: match.label }
+}
+
 function scoreSpan(
   span: PaperCiteSpan,
   queryTokens: readonly string[],
@@ -364,34 +404,10 @@ export function citeFromCoachReply(input: {
     if (span) return { sectionId: span.sectionId, label: span.label }
   }
 
-  const selection = selectionHint(input.chips, input.selection)
-  if (selection?.text) {
-    const byId = selection.sectionId
-      ? spans.find((span) => span.sectionId === selection.sectionId)
-      : undefined
-    const byText = spans.find((span) => textOverlaps(span.text, selection.text))
-    const match =
-      byId ??
-      spans.find(
-        (span) =>
-          span.specificity === "bullet" && textOverlaps(span.text, selection.text)
-      ) ??
-      byText
-    if (match) return { sectionId: match.sectionId, label: match.label }
-  }
-
-  const query = `${input.ask ?? ""}\n${input.reply}`
-  const queryTokens = uniqueTokens(query)
-  if (queryTokens.length === 0) return null
-
-  const df = documentFrequency(spans)
-  const scored = spans.map((span) => ({
-    span,
-    score: scoreSpan(span, queryTokens, df),
-  }))
-  const best = pickBest(scored)
-  if (!best) return null
-  return { sectionId: best.sectionId, label: best.label }
+  return (
+    citeFromProse(input.ask, input.reply, spans) ??
+    citeFromSelection(input.chips, input.selection, spans)
+  )
 }
 
 export function citeForCoachMessage(

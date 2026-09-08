@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest"
 
 import type { HomeMessage } from "@/features/home/threads.ts"
 
-import { addSelectionChip } from "./coach-context-chips.ts"
+import {
+  addSelectionChip,
+  toggleContextChipPin,
+} from "./coach-context-chips.ts"
 import {
   citeForCoachMessage,
   citeFromCoachReply,
@@ -77,6 +80,28 @@ describe("citeFromCoachReply", () => {
       chips,
     })
     expect(cite?.sectionId).toBe("experience-0-bullet-0")
+  })
+
+  it("lets named prose beat a pinned selection chip on a different bullet", () => {
+    const stale = DEFAULT_CV_DATA.experience[0]?.bullets[0] ?? ""
+    const chips = toggleContextChipPin(
+      addSelectionChip(
+        [],
+        { text: stale, sectionId: "experience-0-bullet-0" },
+        "sel-1"
+      ),
+      "sel-1"
+    )
+    expect(chips[0]?.pinned).toBe(true)
+    const cite = citeFromCoachReply({
+      ask: "What should I change about the checkout UX bullet?",
+      reply:
+        "The checkout UX hallway study is thin. Tighten the add-to-cart line so a recruiter can see the 18% lift.",
+      spans,
+      chips,
+    })
+    expect(cite?.sectionId).toBe("experience-1-bullet-1")
+    expect(cite?.sectionId).not.toBe("experience-0-bullet-0")
   })
 
   it("uses a live selection when chips are empty", () => {
