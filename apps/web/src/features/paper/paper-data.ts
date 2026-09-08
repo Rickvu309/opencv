@@ -79,22 +79,35 @@ export function formatPaperUpdated(iso: string, now = Date.now()): string {
 
 export const SAMPLE_CV_LABEL = "Sample · replace anytime"
 
+/** One-sentence value for the Linked to Apply empty tile. */
+export const PAPER_LINKED_EMPTY_HINT =
+  "So Apply knows which CV goes with a job."
+
+export const PAPER_ATTACH_SAMPLE_CTA = "Attach Sample CV to a live job"
+export const PAPER_ATTACH_CV_CTA = "Attach CV to a live job"
+
 export const PAPER_LIST_EMPTY_CTA = {
   letter: "Start letter",
   proof: "Add proof",
-  linked: "Link to a job",
+  linked: PAPER_ATTACH_SAMPLE_CTA,
 } as const
 
 export function isSampleCv(doc: PaperDoc) {
   return doc.kind === "cv" && doc.name === STARTER_CV_NAME
 }
 
-export function sampleCvOf(docs: PaperDoc[]) {
+export function sampleCvOf(docs: readonly PaperDoc[]) {
   return docs.find(isSampleCv)
 }
 
-export function paperDocToLink(docs: PaperDoc[]) {
+export function paperDocToLink(docs: readonly PaperDoc[]) {
   return sampleCvOf(docs) ?? docs.find((doc) => doc.kind === "cv") ?? docs[0]
+}
+
+export function paperLinkedEmptyCta(docs: readonly PaperDoc[]): string | null {
+  const doc = paperDocToLink(docs)
+  if (!doc) return null
+  return isSampleCv(doc) ? PAPER_ATTACH_SAMPLE_CTA : PAPER_ATTACH_CV_CTA
 }
 
 export type PaperSummaryId = "cvs" | "letters" | "proof" | "linked"
@@ -156,8 +169,11 @@ export function paperSummary(docs: PaperDoc[]): PaperSummaryItem[] {
       id: "linked",
       label: "Linked to Apply",
       value: String(linked.length),
-      hint: linked.length === 0 ? "" : "Linked to an Opportunity",
-      cta: linked.length === 0 ? PAPER_LIST_EMPTY_CTA.linked : null,
+      hint:
+        linked.length === 0
+          ? PAPER_LINKED_EMPTY_HINT
+          : "Linked to an Opportunity",
+      cta: linked.length === 0 ? paperLinkedEmptyCta(docs) : null,
     },
   ]
 }

@@ -266,6 +266,9 @@ describe("Apply workspace", () => {
       within(panel).getByDisplayValue("Associate PM intern")
     ).toBeInTheDocument()
     expect(within(panel).getByDisplayValue("Local startup")).toBeInTheDocument()
+    expect(
+      await within(panel).findByRole("region", { name: "Linked Paper" })
+    ).toHaveTextContent("Cover: Associate PM intern")
     expect(within(panel).getByText("Notes")).toBeInTheDocument()
     expect(
       within(panel).getByDisplayValue(
@@ -450,6 +453,9 @@ describe("Apply workspace", () => {
     expect(
       await within(menu).findByRole("menuitemcheckbox", { name: /PM track CV/ })
     ).toHaveAttribute("aria-checked", "true")
+    expect(
+      await within(panel).findByRole("region", { name: "Linked Paper" })
+    ).toHaveTextContent("PM track CV")
   })
 
   it("adds a job with a posting URL and opens it from the drawer", async () => {

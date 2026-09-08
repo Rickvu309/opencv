@@ -17,12 +17,16 @@ import {
   isCvDocument,
   PAPER_CONTENT_VERSION,
   STARTER_CV_NAME,
+  STARTER_GUIDED_APPLY_COMPANY,
+  STARTER_GUIDED_APPLY_TITLE,
   starterCvDocument,
 } from "@workspace/domain"
 
 import { PAPER_CANVAS_FIELD_CLASS } from "@/features/paper/paper-cv-document.tsx"
 import { EMPTY_SECTION_CTA } from "@/features/paper/paper-cv-edits.ts"
 import {
+  PAPER_ATTACH_SAMPLE_CTA,
+  PAPER_LINKED_EMPTY_HINT,
   PAPER_LIST_EMPTY_CTA,
   SAMPLE_CV_LABEL,
 } from "@/features/paper/paper-data.ts"
@@ -210,9 +214,13 @@ describe("Paper drive", () => {
     expect(
       within(proof).getByRole("button", { name: PAPER_LIST_EMPTY_CTA.proof })
     ).toBeInTheDocument()
+    expect(within(linked).getByText(PAPER_LINKED_EMPTY_HINT)).toBeInTheDocument()
     expect(
-      within(linked).getByRole("button", { name: PAPER_LIST_EMPTY_CTA.linked })
+      within(linked).getByRole("button", { name: PAPER_ATTACH_SAMPLE_CTA })
     ).toBeInTheDocument()
+    expect(
+      within(linked).queryByRole("button", { name: "Link to a job" })
+    ).not.toBeInTheDocument()
 
     expect(screen.queryByText("None yet")).not.toBeInTheDocument()
     expect(screen.queryByText(/unlock your|get started|welcome to your/i)).not.toBeInTheDocument()
@@ -244,12 +252,24 @@ describe("Paper drive", () => {
     expect(await screen.findByRole("region", { name: "Paper" })).toBeInTheDocument()
 
     fireEvent.click(
-      screen.getByRole("button", { name: PAPER_LIST_EMPTY_CTA.linked })
+      screen.getByRole("button", { name: PAPER_ATTACH_SAMPLE_CTA })
     )
     expect(
-      await screen.findByRole("dialog", { name: "Link to Apply" })
-    ).toBeInTheDocument()
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }))
+      screen.queryByRole("dialog", { name: "Link to Apply" })
+    ).not.toBeInTheDocument()
+    const linkedAfter = await screen.findByRole("region", {
+      name: "Linked to Apply",
+    })
+    await waitFor(() => {
+      expect(
+        within(linkedAfter).queryByText(PAPER_LINKED_EMPTY_HINT)
+      ).not.toBeInTheDocument()
+    })
+    expect(within(linkedAfter).getByText("1")).toBeInTheDocument()
+    expect(screen.getByText(STARTER_GUIDED_APPLY_COMPANY)).toBeInTheDocument()
+    expect(
+      within(linkedAfter).queryByRole("button", { name: PAPER_ATTACH_SAMPLE_CTA })
+    ).not.toBeInTheDocument()
 
     fireEvent.click(
       screen.getByRole("button", {
@@ -263,6 +283,55 @@ describe("Paper drive", () => {
       expect(screen.queryByText(STARTER_CV_NAME)).not.toBeInTheDocument()
     })
     expect(screen.queryByText(SAMPLE_CV_LABEL)).not.toBeInTheDocument()
+  })
+
+  it("attaches the sample CV from Paper and shows the link on Apply", async () => {
+    stubDesktopViewport(true)
+    seedStarterPaperDrive()
+    renderPaper()
+
+    expect(await screen.findByRole("region", { name: "Paper" })).toBeInTheDocument()
+    expect(await screen.findByText(STARTER_CV_NAME)).toBeInTheDocument()
+    const linked = screen.getByRole("region", { name: "Linked to Apply" })
+    expect(within(linked).getByText(PAPER_LINKED_EMPTY_HINT)).toBeInTheDocument()
+    fireEvent.click(
+      await within(linked).findByRole("button", { name: PAPER_ATTACH_SAMPLE_CTA })
+    )
+
+    await waitFor(() => {
+      expect(
+        getMockPaperDocs().find((doc) => doc.name === STARTER_CV_NAME)
+          ?.applyCardId
+      ).toBe("01900000-0000-7000-8000-000000000001")
+    })
+    expect(
+      screen.queryByRole("dialog", { name: "Link to Apply" })
+    ).not.toBeInTheDocument()
+    expect(screen.getByText(STARTER_GUIDED_APPLY_COMPANY)).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("link", { name: /^Apply/ }))
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Apply" })
+    ).toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: `${STARTER_GUIDED_APPLY_TITLE} at ${STARTER_GUIDED_APPLY_COMPANY}`,
+      })
+    )
+    const panel = await screen.findByRole("complementary", {
+      name: "Job detail",
+    })
+    const paperLink = within(panel).getByRole("region", { name: "Linked Paper" })
+    expect(within(paperLink).getByText(STARTER_CV_NAME)).toBeInTheDocument()
+
+    fireEvent.click(
+      within(panel).getByRole("button", { name: "Link Paper docs" })
+    )
+    const menu = await screen.findByRole("menu", { name: "Link Paper docs" })
+    expect(
+      within(menu).getByRole("menuitemcheckbox", { name: STARTER_CV_NAME })
+    ).toHaveAttribute("aria-checked", "true")
   })
 
   it("shows and changes the Apply card link", async () => {

@@ -14,11 +14,15 @@ import {
 import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 import { defaultCvData } from "./paper-cv-types.ts"
 import {
+  PAPER_ATTACH_CV_CTA,
+  PAPER_ATTACH_SAMPLE_CTA,
+  PAPER_LINKED_EMPTY_HINT,
   PAPER_LIST_EMPTY_CTA,
   SAMPLE_CV_LABEL,
   formatPaperUpdated,
   isSampleCv,
   paperDocToLink,
+  paperLinkedEmptyCta,
   paperSummary,
 } from "./paper-data.ts"
 import { samplePaperDocs } from "@/test/paper-fixtures.ts"
@@ -128,16 +132,34 @@ describe("paper display helpers", () => {
       id: "linked",
       label: "Linked to Apply",
       value: "0",
-      hint: "",
-      cta: PAPER_LIST_EMPTY_CTA.linked,
+      hint: PAPER_LINKED_EMPTY_HINT,
+      cta: PAPER_ATTACH_SAMPLE_CTA,
     })
+    expect(paperLinkedEmptyCta([sample])).toBe(PAPER_ATTACH_SAMPLE_CTA)
     expect(summary.map((item) => item.hint).join(" ")).not.toMatch(/None yet/)
     expect(PAPER_LIST_EMPTY_CTA).toEqual({
       letter: "Start letter",
       proof: "Add proof",
-      linked: "Link to a job",
+      linked: PAPER_ATTACH_SAMPLE_CTA,
     })
+    expect(PAPER_ATTACH_SAMPLE_CTA).toBe("Attach Sample CV to a live job")
+    expect(PAPER_LINKED_EMPTY_HINT).toMatch(/Apply knows which CV/)
     expect(SAMPLE_CV_LABEL).toBe("Sample · replace anytime")
+  })
+
+  it("offers an attach CTA for the first CV when the sample is gone", () => {
+    const own: PaperDoc = {
+      ...starterSampleCv(),
+      id: "77777777-7777-7777-8777-777777777777",
+      name: "My internship CV",
+    }
+    expect(paperLinkedEmptyCta([own])).toBe(PAPER_ATTACH_CV_CTA)
+    expect(paperSummary([own])[3]).toMatchObject({
+      id: "linked",
+      value: "0",
+      hint: PAPER_LINKED_EMPTY_HINT,
+      cta: PAPER_ATTACH_CV_CTA,
+    })
   })
 
   it("keeps the sample row honest when other CVs exist", () => {

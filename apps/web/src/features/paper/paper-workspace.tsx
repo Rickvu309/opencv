@@ -37,12 +37,12 @@ import { ErrorBanner } from "@/components/error-banner.tsx"
 import { useApplyCards } from "@/features/apply/use-apply-cards.ts"
 import { DestructiveCommandDialog } from "@/features/commands/destructive-command-dialog.tsx"
 
+import { paperAttachPair } from "./paper-apply-attach.ts"
 import {
   SAMPLE_CV_LABEL,
   TYPE_LABEL,
   formatPaperUpdated,
   isSampleCv,
-  paperDocToLink,
   paperSummary,
   type PaperSummaryId,
 } from "./paper-data.ts"
@@ -116,8 +116,8 @@ export function PaperWorkspace({
       return
     }
     if (id === "linked") {
-      const target = paperDocToLink(paper.docs)
-      if (target) setLinkTarget(target)
+      const pair = paperAttachPair(paper.docs, apply.cards)
+      if (pair) paper.linkApplyCard(pair.doc.id, pair.card.id)
     }
   }
 
