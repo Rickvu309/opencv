@@ -28,6 +28,12 @@ import { authClient } from "@/lib/auth-client.ts"
 import { CvDocument } from "./paper-cv-document.tsx"
 import { CvA4Canvas } from "./paper-cv-a4.tsx"
 import { applyCvTemplate } from "./paper-cv-template-picker.tsx"
+import {
+  addExperienceRole,
+  addSkillGroup,
+  BLANK_EDUCATION,
+  BLANK_PROJECT,
+} from "./paper-cv-edits.ts"
 import { type CvData, type CvTemplateId } from "./paper-cv-types.ts"
 import {
   TYPE_LABEL,
@@ -310,40 +316,16 @@ export function PaperEditor({
     const next = { ...cvData }
     switch (id) {
       case "experience":
-        next.experience = [
-          ...next.experience,
-          {
-            role: "Role title",
-            company: "Company",
-            period: "2024 – Present",
-            bullets: ["One concrete outcome with a number…"],
-          },
-        ]
+        next.experience = addExperienceRole(next.experience)
         break
       case "education":
-        next.education = [
-          ...next.education,
-          {
-            school: "School name",
-            degree: "Degree · major",
-            period: "2022 – 2026",
-          },
-        ]
+        next.education = [...next.education, BLANK_EDUCATION]
         break
       case "skill":
-        next.skills = [
-          ...next.skills,
-          { label: "Skills", items: ["Add skill"] },
-        ]
+        next.skills = addSkillGroup(next.skills)
         break
       case "project":
-        next.projects = [
-          ...(next.projects ?? []),
-          {
-            name: "Project name",
-            detail: "What you shipped and what changed.",
-          },
-        ]
+        next.projects = [...(next.projects ?? []), BLANK_PROJECT]
         break
       case "section":
         next.summary = `${next.summary}\n\nVolunteering / awards — add a short line here.`

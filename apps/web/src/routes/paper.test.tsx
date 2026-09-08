@@ -13,8 +13,11 @@ import {
   COACH_FLOAT_DESKTOP_OPEN_HEIGHT_CLASS,
   COACH_FLOAT_NUDGE_ATTR,
 } from "@/features/paper/coach-float.tsx"
+import { isCvDocument } from "@workspace/domain"
+
 import { PAPER_CANVAS_FIELD_CLASS } from "@/features/paper/paper-cv-document.tsx"
 import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
+import { getMockPaperDocs } from "@/test/paper-api-mock.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
 import {
   DEFAULT_COACH_STREAM_REPLY,
@@ -381,6 +384,50 @@ describe("Paper editors", () => {
     expect(softScope.className + (softScope.firstElementChild?.className ?? "")).toMatch(
       /bg-muted\/70/
     )
+  })
+
+  it("mutates Experience and Skills on the Sample CV and persists after refresh", async () => {
+    stubDesktopViewport(true)
+    const first = renderPaper()
+    await expectPaperDrive()
+    const editor = await openDoc("PM track CV")
+
+    const bulletsBefore = within(editor).getAllByRole("textbox", {
+      name: "Bullet point",
+    })
+    fireEvent.click(
+      within(editor).getAllByRole("button", { name: "Add bullet" })[0]!
+    )
+    expect(
+      within(editor).getAllByRole("textbox", { name: "Bullet point" })
+    ).toHaveLength(bulletsBefore.length + 1)
+
+    const skill = within(editor).getAllByRole("textbox", { name: "Skill" })[0]!
+    skill.textContent = "Café interviews"
+    fireEvent.input(skill)
+    expect(skill).toHaveTextContent("Café interviews")
+
+    await waitFor(
+      () => {
+        const cv = getMockPaperDocs().find((doc) => doc.name === "PM track CV")
+        expect(cv && isCvDocument(cv.content)).toBe(true)
+        if (!cv || !isCvDocument(cv.content)) return
+        expect(cv.content.experience[0]?.bullets).toHaveLength(3)
+        expect(cv.content.skills[0]?.items[0]).toBe("Café interviews")
+      },
+      { timeout: 2000 }
+    )
+    expect(screen.getByRole("button", { name: "Saved" })).toBeInTheDocument()
+
+    first.unmount()
+    renderPaper()
+    await expectPaperDrive()
+    const again = await openDoc("PM track CV")
+    expect(
+      within(again).getAllByRole("textbox", { name: "Bullet point" })
+    ).toHaveLength(bulletsBefore.length + 1)
+    expect(within(again).getByText("Café interviews")).toBeInTheDocument()
+    expect(again.querySelector("[data-coach-soft-scope]")).toBeNull()
   })
 
   it("opens and edits a Letter", async () => {

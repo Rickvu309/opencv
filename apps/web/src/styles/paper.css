@@ -197,6 +197,25 @@
     color: inherit;
   }
 
+  /*
+   * QVE-207: quiet on-canvas add/remove chrome. Revealed on hover or
+   * focus-within — kit ghost buttons, not Coach pills or cite-jump.
+   */
+  .paper-canvas-block {
+    position: relative;
+  }
+
+  .paper-canvas-affordance {
+    opacity: 0;
+    transition: opacity var(--duration-fast) var(--ease-standard);
+  }
+
+  .paper-canvas-block:hover .paper-canvas-affordance,
+  .paper-canvas-block:focus-within .paper-canvas-affordance,
+  .paper-canvas-affordance:focus-visible {
+    opacity: 1;
+  }
+
   /* QVE-186: when CoachFloat is open on desktop, clear the A4 column. */
   [data-paper-canvas] {
     transition: padding-right var(--duration-base) var(--ease-standard);
@@ -221,7 +240,8 @@
       box-shadow: inset 0 0 0 2px var(--info);
     }
 
-    .paper-canvas-field {
+    .paper-canvas-field,
+    .paper-canvas-affordance {
       transition: none;
     }
 
@@ -239,6 +259,10 @@
     .paper-canvas-field:focus {
       background-color: transparent;
       box-shadow: none;
+    }
+
+    .paper-canvas-affordance {
+      display: none;
     }
 
     .cv-template-root section,
