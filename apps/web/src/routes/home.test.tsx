@@ -246,7 +246,46 @@ describe("Home first-café checklist", () => {
       screen.getByRole("link", { name: "Make Pitch yours" })
     ).toBeInTheDocument()
     expect(
+      screen.getByRole("link", { name: "Triage one Apply card" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("link", { name: "Connect email, optional" })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("link", { name: "Triage one Apply card, done" })
+    ).not.toBeInTheDocument()
+    expect(
       screen.queryByRole("button", { name: /next step|continue/i })
     ).not.toBeInTheDocument()
+  })
+
+  it("completes Apply only after a real visit to /app/apply", async () => {
+    const { router } = renderApp()
+    await expectHomeIdle()
+
+    expect(
+      screen.getByRole("link", { name: "Triage one Apply card" })
+    ).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("link", { name: "Triage one Apply card" }))
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(SURFACE_PATHS.apply)
+    })
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Apply" })
+    ).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("link", { name: "Home" }))
+    await expectHomeIdle()
+
+    expect(
+      screen.getByRole("link", { name: "Triage one Apply card, done" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("link", { name: "Open the sample CV" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("link", { name: "Make Pitch yours" })
+    ).toBeInTheDocument()
   })
 })
