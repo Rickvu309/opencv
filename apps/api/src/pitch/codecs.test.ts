@@ -229,7 +229,8 @@ describe("pitch codecs", () => {
 
   it("relabels a leftover UIT/PM headline as Demo content", () => {
     const starter = starterPitchDocument()
-    const { demo: _demo, ...rest } = starter
+    const { demo, ...rest } = starter
+    expect(demo).toBe(true)
     const legacy = {
       ...rest,
       headline: LEGACY_FAKE_PITCH_HEADLINE,
