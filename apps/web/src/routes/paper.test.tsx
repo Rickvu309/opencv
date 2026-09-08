@@ -291,10 +291,11 @@ describe("Paper drive", () => {
     renderPaper()
 
     expect(await screen.findByRole("region", { name: "Paper" })).toBeInTheDocument()
+    expect(await screen.findByText(STARTER_CV_NAME)).toBeInTheDocument()
     const linked = screen.getByRole("region", { name: "Linked to Apply" })
     expect(within(linked).getByText(PAPER_LINKED_EMPTY_HINT)).toBeInTheDocument()
     fireEvent.click(
-      within(linked).getByRole("button", { name: PAPER_ATTACH_SAMPLE_CTA })
+      await within(linked).findByRole("button", { name: PAPER_ATTACH_SAMPLE_CTA })
     )
 
     await waitFor(() => {

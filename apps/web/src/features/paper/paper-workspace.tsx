@@ -43,7 +43,6 @@ import {
   TYPE_LABEL,
   formatPaperUpdated,
   isSampleCv,
-  paperDocToLink,
   paperSummary,
   type PaperSummaryId,
 } from "./paper-data.ts"
@@ -118,12 +117,7 @@ export function PaperWorkspace({
     }
     if (id === "linked") {
       const pair = paperAttachPair(paper.docs, apply.cards)
-      if (pair) {
-        paper.linkApplyCard(pair.doc.id, pair.card.id)
-        return
-      }
-      const target = paperDocToLink(paper.docs)
-      if (target) setLinkTarget(target)
+      if (pair) paper.linkApplyCard(pair.doc.id, pair.card.id)
     }
   }
 
