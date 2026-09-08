@@ -72,10 +72,14 @@ describe("pitch codecs", () => {
       about: "I ship small checkout studies.",
     }
     expect(isDemoPitchDocument(owned)).toBe(false)
-    expect(decodePitchContent("pitch", 1, owned)).toEqual({
-      ok: true,
-      data: owned,
-    })
+
+    const decoded = decodePitchContent("pitch", 1, owned)
+    expect(decoded.ok).toBe(true)
+    if (!decoded.ok) throw new Error("expected success")
+    expect(decoded.data.demo).not.toBe(true)
+    expect(isDemoPitchDocument(decoded.data)).toBe(false)
+    expect(decoded.data.headline).toBe("Design intern · night shift")
+    expect(decoded.data.about).toBe("I ship small checkout studies.")
   })
 
   it("rejects malformed content with a message the envelope can surface", () => {
