@@ -23,7 +23,9 @@ import {
   mustEditStillNeedsUpdate,
   mustEditToolChoice,
   mustEditTurnInstruction,
+  sanitizeMustEditLine,
   shouldUseFreeTextMustEdit,
+  stripMustEditThinking,
   stripToolDumpText,
   textNamesExperienceRole,
   toolNamesFromSteps,
@@ -311,6 +313,50 @@ describe("focus-doc rewrite targeting", () => {
     expect(bullets?.[0]).not.toBe(starterCvDocument().experience[1]?.bullets[0])
     expect(bullets?.[0]).not.toMatch(/product internship/i)
     expect(bullets?.[0]).not.toMatch(/Rewritten to match the ask/)
+  })
+
+  it("does not land thinking or a partial Experience dump as the checkout bullet", () => {
+    const original = starterCvDocument().experience[1]?.bullets[0]
+    expect(original).toBeTruthy()
+
+    expect(
+      applyRewriteToFocusContent(doc, ask, "a thinking process:")
+    ).toBeNull()
+    expect(
+      applyRewriteToFocusContent(
+        doc,
+        ask,
+        [
+          "a thinking process:",
+          "The user wants a checkout rewrite.",
+          'Experience[1] Side project · Checkout UX',
+          "- Audited product card density",
+        ].join("\n")
+      )
+    ).toBeNull()
+
+    const next =
+      "Audited checkout density; proposed tighter cards that lifted add-to-cart 18%."
+    const leak = [
+      "a thinking process:",
+      "I need to rewrite the checkout bullet with measurable outcomes.",
+      "",
+      next,
+    ].join("\n")
+    const content = applyRewriteToFocusContent(doc, ask, leak)
+    const bullets =
+      content && typeof content === "object" && "experience" in content
+        ? (
+            content as {
+              experience: { role: string; bullets: string[] }[]
+            }
+          ).experience
+        : undefined
+    expect(bullets?.[1]?.bullets[0]).toBe(next)
+    expect(bullets?.[1]?.bullets[0]).not.toMatch(/thinking process/i)
+    expect(bullets?.[1]?.bullets).toHaveLength(2)
+    expect(bullets?.[0]?.role).toBe("Product discovery lead")
+    expect(bullets?.[1]?.role).toBe("Side project · Checkout UX")
   })
 
   it("does not invent a rewrite plan for advice asks", () => {
@@ -615,6 +661,53 @@ describe("extractMustEditReplacement", () => {
     expect(extractMustEditReplacement("", original)).toBeNull()
     expect(extractMustEditReplacement("x".repeat(401), original)).toBeNull()
   })
+
+  it("strips thinking / meta and keeps the rewritten line", () => {
+    expect(stripMustEditThinking("a thinking process:")).toBe("")
+    expect(sanitizeMustEditLine("a thinking process:")).toBeNull()
+    expect(
+      extractMustEditReplacement(
+        [
+          "a thinking process:",
+          "The user wants a checkout rewrite with measurable outcomes.",
+          "",
+          next,
+        ].join("\n"),
+        original
+      )
+    ).toBe(next)
+    expect(
+      extractMustEditReplacement(
+        `<think>plan the rewrite</think>\n${next}`,
+        original
+      )
+    ).toBe(next)
+    expect(
+      extractMustEditReplacement(
+        `a thinking process: ${next}`,
+        original
+      )
+    ).toBe(next)
+    expect(extractMustEditReplacement("a thinking process:", original)).toBeNull()
+    expect(
+      extractMustEditReplacement(
+        [
+          "a thinking process:",
+          "I need to rewrite Experience.",
+          "Experience[1] Side project · Checkout UX",
+          "- Audited product card density",
+          "- Tested two layouts",
+        ].join("\n"),
+        original
+      )
+    ).toBeNull()
+    expect(
+      extractMustEditReplacement(
+        "Led a design thinking workshop; cut checkout drop-off 18%.",
+        original
+      )
+    ).toBe("Led a design thinking workshop; cut checkout drop-off 18%.")
+  })
 })
 
 describe("freeMustEditLinePrompt", () => {
@@ -625,6 +718,7 @@ describe("freeMustEditLinePrompt", () => {
       docName: "Sample internship CV",
     })
     expect(prompt).toMatch(/only the rewritten line/)
+    expect(prompt).toMatch(/no thinking/)
     expect(prompt).toMatch(/never tell the User to paste/i)
     expect(prompt).toMatch(/never ask whether to apply/i)
     expect(prompt).not.toMatch(/paper_updateContent/)

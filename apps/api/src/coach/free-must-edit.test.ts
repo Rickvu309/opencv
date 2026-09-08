@@ -138,6 +138,81 @@ describe("runFreeTextMustEdit", () => {
     ])
   })
 
+  it("applies a clean checkout bullet when the model leaks thinking", async () => {
+    const executeUpdate = vi.fn(async (input) => {
+      const experience = (
+        input.content as { experience: { role: string; bullets: string[] }[] }
+      ).experience
+      expect(experience[1]?.bullets[0]).toBe(nextLine)
+      expect(experience[1]?.bullets[0]).not.toMatch(/thinking process/i)
+      expect(experience[1]?.bullets).toHaveLength(2)
+      expect(experience[0]?.role).toBe("Product discovery lead")
+      expect(experience[1]?.role).toBe("Side project · Checkout UX")
+      return successEnvelope({
+        id: input.docId,
+        name: "Sample internship CV",
+      })
+    })
+
+    const events = await collect(
+      runFreeTextMustEdit({
+        userText: rewriteAsk,
+        hasFocusDoc: true,
+        focusDoc: sampleFocusDoc(),
+        executeUpdate,
+        generateLine: async () => ({
+          text: [
+            "a thinking process:",
+            "The user wants one Experience checkout bullet with measurable outcomes.",
+            "I need to rewrite only that line.",
+            "",
+            nextLine,
+          ].join("\n"),
+        }),
+        toolCallId: "free-must-edit-thinking",
+      })
+    )
+
+    expect(executeUpdate).toHaveBeenCalledOnce()
+    expect(events[0]).toMatchObject({
+      type: "tool-call",
+      name: "paper_updateContent",
+    })
+    expect(events[1]).toMatchObject({
+      type: "tool-result",
+      output: { ok: true },
+    })
+    expect((events[2] as { text: string }).text).toMatch(
+      /Updated Sample internship CV/
+    )
+    expect((events[2] as { text: string }).text).not.toMatch(/paste|apply\?/)
+  })
+
+  it("fails closed when the model only streams thinking", async () => {
+    const executeUpdate = vi.fn()
+    const events = await collect(
+      runFreeTextMustEdit({
+        userText: rewriteAsk,
+        hasFocusDoc: true,
+        focusDoc: sampleFocusDoc(),
+        executeUpdate,
+        generateLine: async () => ({
+          text: "a thinking process:\nI need to rewrite the checkout bullet.",
+        }),
+        toolCallId: "free-must-edit-thinking-only",
+      })
+    )
+
+    expect(executeUpdate).not.toHaveBeenCalled()
+    expect(events[1]).toMatchObject({
+      type: "tool-result",
+      output: {
+        ok: false,
+        error: { message: "Could not rewrite the line." },
+      },
+    })
+  })
+
   it("fails closed when the model asks the User to paste", async () => {
     const executeUpdate = vi.fn()
     const events = await collect(

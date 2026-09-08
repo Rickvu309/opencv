@@ -52,7 +52,9 @@ uses the existing free-mode quota copy. No auto-downgrade.
 Models Router onto the tool-calling pool; those endpoints 429 under café/Scout
 load and the turn died with the quota wall before `paper.updateContent`. Free
 must-edit now asks for one rewritten line (no tools) and the runtime applies
-the Command locally. Light/Max and Free advice still use the tool loop. The
+the Command locally. Thinking / meta / chain-of-thought lines are stripped
+before apply so a leaked `a thinking process:` cannot become an Experience
+bullet (QVE-198). Light/Max and Free advice still use the tool loop. The
 402/429 copy stays for a real provider ceiling on that smaller request. Do
 not invent scout rewrite copy if the line is empty or unchanged. Do not raise
 the per-User Free cap to paper over an OpenRouter ceiling.
