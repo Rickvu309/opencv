@@ -8,6 +8,7 @@ import {
   listApplyCards,
   moveApplyCard,
   optimisticMoveCard,
+  scanApplyJob,
 } from "./apply-api.ts"
 
 function envelope<T>(data: T) {
@@ -56,6 +57,26 @@ describe("apply API client", () => {
     expect(String(fetchMock.mock.calls[1]?.[0])).toBe(
       `${apiBaseUrl}/api/commands/${APPLY_COMMANDS.moveCard}`
     )
+  })
+
+  it("scans a posting through POST /api/apply/scan", async () => {
+    const scan = {
+      title: "Associate PM intern",
+      company: "Local startup",
+      note: "Hanoi",
+    }
+    const fetchMock = vi.fn().mockResolvedValue(envelope(scan))
+    vi.stubGlobal("fetch", fetchMock)
+
+    await expect(
+      scanApplyJob({
+        jdText: "Local startup is hiring an Associate PM intern in Hanoi.",
+      })
+    ).resolves.toEqual(scan)
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
+      `${apiBaseUrl}/api/apply/scan`
+    )
+    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({ method: "POST" })
   })
 })
 

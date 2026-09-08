@@ -1,5 +1,6 @@
 import {
   DEFAULT_COACH_MODEL,
+  type ApplyScanExtractInput,
   type CoachRuntime,
   type CoachStreamPart,
   type CoachTitleInput,
@@ -83,6 +84,13 @@ export function withTitleGenerator(
   generateTitle: (input: CoachTitleInput) => Promise<string>
 ): CoachRuntime {
   return { ...runtime, generateTitle }
+}
+
+export function withScanJobPosting(
+  runtime: CoachRuntime,
+  scanJobPosting: (input: ApplyScanExtractInput) => Promise<string>
+): CoachRuntime {
+  return { ...runtime, scanJobPosting }
 }
 
 export function createThrowingCoachRuntime(

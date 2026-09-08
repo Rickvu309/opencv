@@ -174,3 +174,79 @@ describe("Home idle", () => {
     expect(screen.getByRole("heading", { name: "Gmail" })).toBeInTheDocument()
   })
 })
+
+describe("Home first-café checklist", () => {
+  it("shows at most four dismissible first moves with real deep-links", async () => {
+    renderApp()
+    await expectHomeIdle()
+
+    expect(
+      screen.getByRole("heading", { name: "Four small things" })
+    ).toBeInTheDocument()
+    expect(screen.getByText("Skip whenever. This is not a tour.")).toBeInTheDocument()
+
+    const sampleCv = screen.getByRole("link", { name: "Open the sample CV" })
+    const pitch = screen.getByRole("link", { name: "Make Pitch yours" })
+    const apply = screen.getByRole("link", { name: "Triage one Apply card" })
+    const email = screen.getByRole("link", { name: "Connect email, optional" })
+
+    expect(sampleCv).toHaveAttribute("href", `${SURFACE_PATHS.paper}?open=sample`)
+    expect(pitch).toHaveAttribute("href", SURFACE_PATHS.pitch)
+    expect(apply).toHaveAttribute("href", SURFACE_PATHS.apply)
+    expect(email).toHaveAttribute("href", `${SURFACE_PATHS.settings}?tab=apps`)
+
+    expect(
+      screen.queryByRole("progressbar")
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: /next step|continue|skip tour/i })
+    ).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: "Hide this" }))
+    expect(
+      screen.queryByRole("heading", { name: "Four small things" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("link", { name: "Open the sample CV" })
+    ).not.toBeInTheDocument()
+  })
+
+  it("keeps the list hidden after dismiss and remount", async () => {
+    renderApp()
+    await expectHomeIdle()
+
+    fireEvent.click(screen.getByRole("button", { name: "Hide this" }))
+    fireEvent.click(screen.getByRole("link", { name: "Paper" }))
+    await screen.findByRole("region", { name: "Paper" })
+    fireEvent.click(screen.getByRole("link", { name: "Home" }))
+    await expectHomeIdle()
+
+    expect(
+      screen.queryByRole("heading", { name: "Four small things" })
+    ).not.toBeInTheDocument()
+  })
+
+  it("auto-completes an item after the User visits the linked surface", async () => {
+    const { router } = renderApp()
+    await expectHomeIdle()
+
+    fireEvent.click(screen.getByRole("link", { name: "Open the sample CV" }))
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(SURFACE_PATHS.paper)
+      expect(router.state.location.search).toMatchObject({ open: "sample" })
+    })
+
+    fireEvent.click(screen.getByRole("link", { name: "Home" }))
+    await expectHomeIdle()
+
+    expect(
+      screen.getByRole("link", { name: "Open the sample CV, done" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("link", { name: "Make Pitch yours" })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: /next step|continue/i })
+    ).not.toBeInTheDocument()
+  })
+})

@@ -304,6 +304,10 @@ export type CoachTitleInput = {
   coachText: string
 }
 
+export type ApplyScanExtractInput = {
+  postingText: string
+}
+
 /** Injected via `AppConfig.coach` like `db` (ADR-0007). */
 export type CoachRuntime = {
   streamTurn(input: CoachTurnInput): AsyncIterable<CoachStreamPart>
@@ -312,6 +316,12 @@ export type CoachRuntime = {
    * implementations fall back to the deterministic summarizer.
    */
   generateTitle?(input: CoachTitleInput): Promise<string>
+  /**
+   * Optional Free-tier JSON extract of title/company/note from posting
+   * text (QVE-218). Missing implementations fail scan honestly unless
+   * the posting already carries structured JobPosting markup.
+   */
+  scanJobPosting?(input: ApplyScanExtractInput): Promise<string>
 }
 
 /**

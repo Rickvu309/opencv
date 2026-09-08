@@ -73,8 +73,13 @@ function sampleSkillItems() {
 
 async function goHomeThenPaper() {
   fireEvent.click(screen.getByRole("link", { name: "Home" }))
-  expect(await screen.findByRole("link", { name: "Paper" })).toBeInTheDocument()
-  fireEvent.click(screen.getByRole("link", { name: "Paper" }))
+  expect(
+    await screen.findByRole("heading", {
+      level: 1,
+      name: /^Good (morning|afternoon|evening),/,
+    })
+  ).toBeInTheDocument()
+  fireEvent.click(screen.getByRole("link", { name: /^Paper$/ }))
   await expectPaperDrive()
 }
 
@@ -156,6 +161,20 @@ describe("Paper drive", () => {
     fireEvent.change(search, { target: { value: "zzzz-no-doc" } })
     expect(
       screen.queryByText("Cover: Associate PM intern")
+    ).not.toBeInTheDocument()
+  })
+
+  it("opens the sample CV from the Home first-café deep-link", async () => {
+    seedSampleInternshipCv()
+    renderApp(`${SURFACE_PATHS.paper}?open=sample`)
+
+    expect(
+      await screen.findByRole("region", {
+        name: `Editing ${STARTER_CV_NAME}`,
+      })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "New document" })
     ).not.toBeInTheDocument()
   })
 
