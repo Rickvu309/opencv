@@ -13,6 +13,7 @@ import {
   COACH_FLOAT_DESKTOP_OPEN_HEIGHT_CLASS,
   COACH_FLOAT_NUDGE_ATTR,
 } from "@/features/paper/coach-float.tsx"
+import { PAPER_CANVAS_FIELD_CLASS } from "@/features/paper/paper-cv-document.tsx"
 import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
 import {
@@ -312,6 +313,74 @@ describe("Paper editors", () => {
     expect(
       await screen.findByRole("button", { name: /profile photo/i })
     ).toBeInTheDocument()
+  })
+
+  it("shows quiet canvas focus chrome on Summary and Experience bullets", async () => {
+    stubDesktopViewport(true)
+    renderPaper()
+    await expectPaperDrive()
+    const editor = await openDoc("PM track CV")
+
+    const summary = within(editor).getByRole("textbox", { name: "Summary" })
+    const bullet = within(editor).getAllByRole("textbox", {
+      name: "Bullet point",
+    })[0]
+    expect(bullet).toBeTruthy()
+
+    for (const field of [summary, bullet!]) {
+      expect(field).toHaveClass(PAPER_CANVAS_FIELD_CLASS)
+      expect(field).toHaveAttribute("data-paper-canvas-field")
+      expect(field.className).not.toMatch(/bg-muted\/80/)
+      expect(field.className).not.toMatch(/border-input/)
+      expect(field.className).not.toMatch(/rounded-full/)
+
+      fireEvent.click(field)
+      field.focus()
+      expect(field).toHaveFocus()
+
+      fireEvent.keyDown(field, { key: "Escape" })
+      expect(field).not.toHaveFocus()
+
+      field.focus()
+      expect(field).toHaveFocus()
+      field.blur()
+      expect(field).not.toHaveFocus()
+    }
+
+    expect(editor.querySelector("[data-coach-soft-scope]")).toBeNull()
+    expect(editor.querySelector("[data-coach-context-chip]")).toBeNull()
+    expect(editor.querySelector("[data-coach-selection-preview]")).toBeNull()
+  })
+
+  it("keeps canvas field selection chrome distinct from CoachFloat chips", async () => {
+    stubDesktopViewport(true)
+    renderPaper()
+    await expectPaperDrive()
+    const editor = await openDoc("PM track CV")
+    const dialog = await openCoach()
+    const bullet = within(editor).getAllByRole("textbox", {
+      name: "Bullet point",
+    })[0]!
+
+    expect(bullet).toHaveClass(PAPER_CANVAS_FIELD_CLASS)
+    expect(bullet.className).not.toMatch(/bg-muted\/70/)
+    expect(bullet.className).not.toMatch(/rounded-full/)
+
+    selectNodeContents(bullet)
+    messageCoach(dialog).focus()
+
+    const preview = await within(dialog).findByRole("status", {
+      name: "Selected text",
+    })
+    expect(preview).toHaveAttribute("data-coach-selection-preview")
+    expect(preview.className).toMatch(/rounded-lg/)
+    expect(preview.className).toMatch(/bg-muted\/70/)
+
+    const softScope = within(dialog).getByRole("status", { name: "In context" })
+    expect(softScope.querySelector(".rounded-full")).not.toBeNull()
+    expect(softScope.className + (softScope.firstElementChild?.className ?? "")).toMatch(
+      /bg-muted\/70/
+    )
   })
 
   it("opens and edits a Letter", async () => {
