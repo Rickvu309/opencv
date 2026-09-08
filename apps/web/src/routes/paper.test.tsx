@@ -480,6 +480,193 @@ describe("Paper editors", () => {
     expect(getLastCoachRequest()?.focusDocId).toBeUndefined()
   })
 
+  it("adds a durable selection chip that survives Clear and can be removed", async () => {
+    scriptCoachStream({ texts: ["I read that bullet."] })
+    renderPaper()
+    await expectPaperDrive()
+    const editor = await openDoc("PM track CV")
+    const dialog = await openCoach()
+    const bullet = within(editor).getAllByRole("textbox", {
+      name: "Bullet point",
+    })[0]
+    const bulletText = bullet!.textContent ?? ""
+    selectNodeContents(bullet!)
+    messageCoach(dialog).focus()
+    collapseWindowSelection()
+
+    const preview = await within(dialog).findByRole("status", {
+      name: "Selected text",
+    })
+    fireEvent.click(
+      within(preview).getByRole("button", { name: "Add to context" })
+    )
+    const chip = within(dialog).getByRole("status", {
+      name: "Selection in context",
+    })
+    expect(chip).toHaveTextContent(bulletText.slice(0, 24))
+    expect(chip).toHaveAttribute("data-coach-context-chip")
+    expect(chip).toHaveAttribute("data-kind", "selection")
+    expect(chip).toHaveAttribute("data-pinned", "false")
+    expect(
+      within(preview).getByRole("button", { name: "Add to context" })
+    ).toBeDisabled()
+    expect(within(preview).getByRole("button", { name: "Add to context" })).toHaveTextContent(
+      "Added"
+    )
+    expect(dialog).not.toHaveTextContent(/knowledge.?base/i)
+    expect(dialog).not.toHaveTextContent(/sources library/i)
+
+    fireEvent.click(
+      within(preview).getByRole("button", { name: "Clear selection" })
+    )
+    expect(
+      within(dialog).queryByRole("status", { name: "Selected text" })
+    ).not.toBeInTheDocument()
+    expect(
+      within(dialog).getByRole("status", { name: "Selection in context" })
+    ).toBeInTheDocument()
+
+    fireEvent.change(messageCoach(dialog), {
+      target: { value: "What is weak about this bullet?" },
+    })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Send" }))
+    expect(
+      await within(dialog).findByText("I read that bullet.")
+    ).toBeInTheDocument()
+    expect(getLastCoachRequest()?.selection?.text).toBe(bulletText)
+    expect(
+      within(dialog).queryByRole("status", { name: "Selection in context" })
+    ).not.toBeInTheDocument()
+
+    scriptCoachStream({ texts: ["Say more?"] })
+    fireEvent.change(messageCoach(dialog), {
+      target: { value: "And the next line?" },
+    })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Send" }))
+    expect(await within(dialog).findByText("Say more?")).toBeInTheDocument()
+    expect(getLastCoachRequest()?.selection).toBeUndefined()
+  })
+
+  it("pins a selection chip so it stays across turns until unpin", async () => {
+    scriptCoachStream({ texts: ["Pinned, first turn."] })
+    renderPaper()
+    await expectPaperDrive()
+    const editor = await openDoc("PM track CV")
+    const dialog = await openCoach()
+    const bullet = within(editor).getAllByRole("textbox", {
+      name: "Bullet point",
+    })[0]
+    const bulletText = bullet!.textContent ?? ""
+    selectNodeContents(bullet!)
+    messageCoach(dialog).focus()
+    collapseWindowSelection()
+
+    fireEvent.click(
+      within(
+        await within(dialog).findByRole("status", { name: "Selected text" })
+      ).getByRole("button", { name: "Add to context" })
+    )
+    const chip = within(dialog).getByRole("status", {
+      name: "Selection in context",
+    })
+    fireEvent.click(within(chip).getByRole("button", { name: "Pin in context" }))
+    expect(chip).toHaveAttribute("data-pinned", "true")
+    expect(within(chip).getByRole("button", { name: "Unpin" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    )
+
+    fireEvent.change(messageCoach(dialog), {
+      target: { value: "Keep this bullet in mind" },
+    })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Send" }))
+    expect(
+      await within(dialog).findByText("Pinned, first turn.")
+    ).toBeInTheDocument()
+    expect(getLastCoachRequest()?.selection?.text).toBe(bulletText)
+    const sticky = within(dialog).getByRole("status", {
+      name: "Selection in context",
+    })
+    expect(sticky).toHaveAttribute("data-pinned", "true")
+
+    scriptCoachStream({ texts: ["Pinned, second turn."] })
+    fireEvent.change(messageCoach(dialog), {
+      target: { value: "Still that bullet?" },
+    })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Send" }))
+    expect(
+      await within(dialog).findByText("Pinned, second turn.")
+    ).toBeInTheDocument()
+    expect(getLastCoachRequest()?.selection?.text).toBe(bulletText)
+
+    const leftover = within(dialog).getByRole("status", {
+      name: "Selection in context",
+    })
+    fireEvent.click(within(leftover).getByRole("button", { name: "Unpin" }))
+    expect(leftover).toHaveAttribute("data-pinned", "false")
+    fireEvent.click(
+      within(leftover).getByRole("button", { name: "Remove from context" })
+    )
+    expect(
+      within(dialog).queryByRole("status", { name: "Selection in context" })
+    ).not.toBeInTheDocument()
+  })
+
+  it("attaches the open Paper doc as a visible chip that can coexist with soft-scope", async () => {
+    scriptCoachStream({ texts: ["I have the CV attached."] })
+    const { router } = renderPaper()
+    await expectPaperDrive()
+    await openDoc("PM track CV")
+    const dialog = await openCoach()
+
+    expect(
+      within(dialog).getByRole("status", { name: "In context" })
+    ).toHaveTextContent("PM track CV")
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Add" }))
+    fireEvent.click(
+      await screen.findByRole("menuitem", { name: "Attach from Paper" })
+    )
+    expect(router.state.location.pathname).toBe(SURFACE_PATHS.paper)
+    const attached = within(dialog).getByRole("status", {
+      name: "Attached from Paper",
+    })
+    expect(attached).toHaveTextContent("PM track CV")
+    expect(attached).toHaveAttribute("data-kind", "doc")
+    expect(dialog.querySelector("[data-coach-soft-scope]")).toBeTruthy()
+    expect(dialog).not.toHaveTextContent(/knowledge.?base/i)
+    expect(dialog).not.toHaveTextContent(/add sources/i)
+    expect(
+      within(dialog).queryByRole("complementary", { name: /sources/i })
+    ).not.toBeInTheDocument()
+
+    fireEvent.click(
+      within(
+        within(dialog).getByRole("status", { name: "In context" })
+      ).getByRole("button", { name: "Remove from context" })
+    )
+    expect(
+      within(dialog).queryByRole("status", { name: "In context" })
+    ).not.toBeInTheDocument()
+    expect(
+      within(dialog).getByRole("status", { name: "Attached from Paper" })
+    ).toBeInTheDocument()
+
+    fireEvent.change(messageCoach(dialog), {
+      target: { value: "Read the attached CV" },
+    })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Send" }))
+    expect(
+      await within(dialog).findByText("I have the CV attached.")
+    ).toBeInTheDocument()
+    expect(getLastCoachRequest()?.focusDocId).toBe(
+      "11111111-1111-7111-8111-111111111111"
+    )
+    expect(
+      within(dialog).queryByRole("status", { name: "Attached from Paper" })
+    ).not.toBeInTheDocument()
+  })
+
   it("closes the float on Escape and returns focus to the pill", async () => {
     renderPaper()
     await expectPaperDrive()

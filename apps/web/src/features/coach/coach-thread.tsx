@@ -64,6 +64,7 @@ type CoachThreadActions = {
   onRate?: (messageId: string, rating: CoachUsageRating) => void
   onRegenerate?: () => void
   onUndo?: (messageId: string, toolCallId: string) => Promise<void>
+  onAttachFromPaper?: () => void
 }
 
 const CoachThreadActionsContext = createContext<CoachThreadActions | null>(null)
@@ -477,7 +478,8 @@ function AssistantMessage() {
 }
 
 function CoachComposer() {
-  const { placeholder, send, stop, turnActive } = useThreadActions()
+  const { placeholder, send, stop, turnActive, onAttachFromPaper } =
+    useThreadActions()
   const [draft, setDraft] = useState("")
 
   return (
@@ -493,6 +495,7 @@ function CoachComposer() {
         placeholder={placeholder}
         menuPlacement="above"
         showModePicker={false}
+        onAttachFromPaper={onAttachFromPaper}
       />
     </ComposerPrimitive.Root>
   )
@@ -512,6 +515,7 @@ type Props = {
   onRate?: (messageId: string, rating: CoachUsageRating) => void
   onRegenerate?: () => void
   onUndo?: (messageId: string, toolCallId: string) => Promise<void>
+  onAttachFromPaper?: () => void
 }
 
 function ThreadChrome({
@@ -574,6 +578,7 @@ export function CoachThread({
   onRate,
   onRegenerate,
   onUndo,
+  onAttachFromPaper,
 }: Props) {
   return (
     <CoachThreadActionsContext.Provider
@@ -589,6 +594,7 @@ export function CoachThread({
         onRate,
         onRegenerate,
         onUndo,
+        onAttachFromPaper,
       }}
     >
       <ThreadChrome empty={empty} beforeComposer={beforeComposer} />

@@ -59,6 +59,8 @@ type Props = {
   placeholder?: string
   menuPlacement?: "below" | "above"
   showModePicker?: boolean
+  /** Paper CoachFloat: attach the open doc. Home still routes to Paper. */
+  onAttachFromPaper?: () => void
 }
 
 function CoachModeDropdown({
@@ -114,6 +116,7 @@ export function CoachDock({
   placeholder = "How can I help you today?",
   menuPlacement = "below",
   showModePicker = true,
+  onAttachFromPaper,
 }: Props) {
   const navigate = useNavigate()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -139,6 +142,10 @@ export function CoachDock({
       void navigate({ to: SURFACE_PATHS.settings, search: { tab: "apps" } })
     }
     if (id === "attach") {
+      if (onAttachFromPaper) {
+        onAttachFromPaper()
+        return
+      }
       void navigate({ to: SURFACE_PATHS.paper })
     }
   }

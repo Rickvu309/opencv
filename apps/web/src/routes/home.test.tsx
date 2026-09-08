@@ -109,6 +109,19 @@ describe("Home idle", () => {
     ).not.toBeInTheDocument()
   })
 
+  it("routes Attach from Paper to the Paper drive", async () => {
+    const { router } = renderApp()
+    await expectHomeIdle()
+
+    fireEvent.click(screen.getByRole("button", { name: "Add" }))
+    fireEvent.click(
+      await screen.findByRole("menuitem", { name: "Attach from Paper" })
+    )
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(SURFACE_PATHS.paper)
+    })
+  })
+
   it("disables coming-soon composer affordances", async () => {
     renderApp()
     await expectHomeIdle()
