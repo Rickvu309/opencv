@@ -47,9 +47,20 @@ account, across all Users: 20 requests/minute and 50 requests/day, rising to
 1000/day once $10+ of credits have been purchased. A 429 from that ceiling
 uses the existing free-mode quota copy. No auto-downgrade.
 
-**Same surface every mode.** Tools, SSE, receipts, and ADR-0003 honesty do
-not change with the model. A cheap model that fails a tool call still must
-not fake Command success.
+**QVE-197 (2026-09-07).** After QVE-196, Free Paper must-edit actually reached
+`openrouter/free` with tools and forced `tool_choice`. That filters the Free
+Models Router onto the tool-calling pool; those endpoints 429 under café/Scout
+load and the turn died with the quota wall before `paper.updateContent`. Free
+must-edit now asks for one rewritten line (no tools) and the runtime applies
+the Command locally. Light/Max and Free advice still use the tool loop. The
+402/429 copy stays for a real provider ceiling on that smaller request. Do
+not invent scout rewrite copy if the line is empty or unchanged. Do not raise
+the per-User Free cap to paper over an OpenRouter ceiling.
+
+**Same surface every mode.** SSE, receipts, and ADR-0003 honesty do not
+change with the model. A cheap model that fails a tool call still must not
+fake Command success. Free Paper must-edit is the recorded exception: text
+rewrite plus a local Command, not a tool-calling request (QVE-197).
 
 **Eval harness consumes this map.** `pnpm --filter api eval` resolves the
 OpenRouter id through `resolveCoachModel` (same env overrides as production).

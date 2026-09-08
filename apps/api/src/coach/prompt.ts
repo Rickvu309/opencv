@@ -11,6 +11,12 @@ import {
   type UserProfile,
 } from "@workspace/domain"
 
+import {
+  describeFocusDoc,
+  isPaperEditAsk,
+  mustEditTurnInstruction,
+} from "./must-edit.js"
+
 export type WorkspacePaperItem = {
   name: string
   kind: PaperDoc["kind"]
@@ -71,9 +77,9 @@ export function personaSystemPrompt(): string {
     "- You act through tools. Reads do not change state. Mutations run the same Commands the User can run.",
     "- Read before you advise when the snapshot is not enough. Act when the User asked for an outcome you can do.",
     "- Never invent ids. List or read first, then use the real UUID from the tool result.",
-    "- Do not mutate Apply or Paper unless the User asked for that change.",
-    "- When the User selected text, prefer editing that selection. Do not rewrite the rest of the document unless they asked.",
-    "- When the User asks to change, rewrite, shorten, tailor, or fix content in the open document or a Paper document they name, you must attempt paper_updateContent. Read first with paper_getDoc or paper_listDocs when you need the id. Use paper_createDoc when they asked for a new document. A prose-only reply is allowed only after a failed tool receipt: one plain line on what failed, then one next step. Never tell them to paste the rewrite themselves.",
+    "- Do not mutate Apply or Paper unless the User asked for that change. Asking to change, rewrite, shorten, tailor, sharpen, or fix content is that ask — run the Command in the same turn.",
+    "- When the User selected text, prefer editing that selection. Do not rewrite the rest of the document unless they asked. When there is no selection, use the named section or the open document outline.",
+    "- When the User asks to change, rewrite, shorten, tailor, sharpen, or fix content in the open document or a Paper document they name, you must attempt paper_updateContent. If the open document JSON is already in this prompt, call paper_updateContent immediately — do not call paper_getDoc first. Read with paper_listDocs or paper_getDoc only when you still need an id. Use paper_createDoc when they asked for a new document. A prose-only reply is allowed only after a failed tool receipt: one plain line on what failed, then one next step. Never tell them to paste the rewrite themselves. Never ask whether to apply.",
   ].join("\n")
 }
 
@@ -109,10 +115,7 @@ export function summarizeWorkspace(
   ]
 
   if (snapshot.focusDoc) {
-    const doc = snapshot.focusDoc
-    lines.push(
-      `Open Paper document: ${doc.name} · ${PAPER_KIND_LABEL[doc.kind]} · ${STATUS_LABEL[doc.status]} (id: ${doc.id}). Read it with paper_getDoc before advising on its content. To change it, run paper_updateContent — never claim a silent rewrite, and never ask the User to paste the rewrite.`
-    )
+    lines.push(describeFocusDoc(snapshot.focusDoc))
   }
 
   return lines.join("\n")
@@ -160,13 +163,21 @@ export function selectionInstruction(selection?: CoachSelection): string | null 
 export function assembleSystemPrompt(
   snapshot: WorkspaceSnapshot,
   listCap = COACH_WORKSPACE_LIST_CAP,
-  options?: { regenerateFrom?: ThreadMessage; selection?: CoachSelection }
+  options?: {
+    regenerateFrom?: ThreadMessage
+    selection?: CoachSelection
+    latestUserText?: string
+  }
 ): string {
   const parts = [personaSystemPrompt(), summarizeWorkspace(snapshot, listCap)]
   const selected = selectionInstruction(options?.selection)
   if (selected) parts.push(selected)
   if (options?.regenerateFrom) {
     parts.push(regenerateInstruction(options.regenerateFrom))
+  }
+  const userText = options?.latestUserText?.trim() ?? ""
+  if (userText && isPaperEditAsk(userText, Boolean(snapshot.focusDoc))) {
+    parts.push(mustEditTurnInstruction(Boolean(snapshot.focusDoc)))
   }
   return parts.join("\n\n")
 }

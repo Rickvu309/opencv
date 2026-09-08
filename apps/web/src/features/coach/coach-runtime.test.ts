@@ -106,5 +106,6 @@ describe("assistant-ui ExternalStoreRuntime spike", () => {
     expect(float).not.toMatch(/ThreadView/)
     expect(float).not.toMatch(/AI assist/)
     expect(float).not.toMatch(/Sparkles/)
+    expect(float).not.toMatch(/draggable|onDrag|resize-/)
   })
 })

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { useMediaQuery } from "@workspace/ui/hooks/use-media-query"
@@ -39,7 +39,11 @@ import {
   type PaperDoc,
 } from "./paper-data.ts"
 import { CoachFloat } from "./coach-float.tsx"
-import { readPaperSelection } from "./paper-selection.ts"
+import {
+  collapsePaperSelection,
+  readPaperSelection,
+  retainCoachSelection,
+} from "./paper-selection.ts"
 import { PaperEditorSidebar } from "./paper-editor-sidebar.tsx"
 import {
   PaperEditorToolbar,
@@ -172,6 +176,7 @@ export function PaperEditor({
     // `doc.content` and must not wipe in-progress letter edits.
     if (switched || reverted) {
       applyServerDoc(doc)
+      setSelection(null)
       return
     }
     if (doc.updatedAt === loadedUpdatedAtRef.current) return
@@ -213,10 +218,17 @@ export function PaperEditor({
 
   useEffect(() => {
     function onSelection() {
-      setSelection(readPaperSelection(canvasRef.current))
+      setSelection((prev) =>
+        retainCoachSelection(prev, readPaperSelection(canvasRef.current))
+      )
     }
     document.addEventListener("selectionchange", onSelection)
     return () => document.removeEventListener("selectionchange", onSelection)
+  }, [])
+
+  const clearCoachSelection = useCallback(() => {
+    setSelection(null)
+    collapsePaperSelection(canvasRef.current)
   }, [])
 
   useEffect(() => {
@@ -668,6 +680,7 @@ export function PaperEditor({
           docId={doc.id}
           docName={doc.name}
           selection={selection}
+          onClearSelection={clearCoachSelection}
           variant={
             isCv ? "cv" : isProof ? "proof" : isLetter ? "letter" : "full"
           }

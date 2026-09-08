@@ -6,6 +6,7 @@ import {
   checkClaimedActions,
   checkExactlyOneNextStep,
   checkExclamationMarks,
+  checkNoPasteOrAskToApply,
   checkToolCallsValid,
   honestyPassed,
   scoreExpectations,
@@ -264,6 +265,26 @@ describe("scoreExpectations", () => {
       expect.objectContaining({ id: "require-successful-tool", pass: true }),
     ])
 
+    const edit = scoreExpectations(
+      transcript({
+        text: "I shortened the summary. Next step: add a metric to the checkout bullet.",
+        toolResults: [
+          {
+            toolCallId: "c2",
+            name: "paper_updateContent",
+            ok: true,
+            summary: "Updated",
+          },
+        ],
+      }),
+      { requireSuccessfulTool: "paper_updateContent" }
+    )
+    expect(edit.map((check) => check.id)).toEqual([
+      "require-successful-tool",
+      "no-paste-or-ask-to-apply",
+    ])
+    expect(edit.every((check) => check.pass)).toBe(true)
+
     const fabricated = scoreExpectations(
       transcript({
         toolResults: [
@@ -278,6 +299,26 @@ describe("scoreExpectations", () => {
       { forbidSuccessfulMutation: true }
     )
     expect(fabricated[0]?.pass).toBe(false)
+  })
+})
+
+describe("checkNoPasteOrAskToApply", () => {
+  it("fails paste-yourself and ask-to-apply copy", () => {
+    expect(
+      checkNoPasteOrAskToApply(
+        "Here is the rewrite. Paste it into the Experience section."
+      ).pass
+    ).toBe(false)
+    expect(
+      checkNoPasteOrAskToApply(
+        "I rewrote both bullets. Want me to apply them to the CV?"
+      ).pass
+    ).toBe(false)
+    expect(
+      checkNoPasteOrAskToApply(
+        "I updated the checkout bullet. Next step: add a metric to the club role."
+      ).pass
+    ).toBe(true)
   })
 })
 

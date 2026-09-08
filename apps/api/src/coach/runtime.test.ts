@@ -1,7 +1,12 @@
-import { DEFAULT_COACH_MODE } from "@workspace/domain"
+import { DEFAULT_COACH_MODE, successEnvelope } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
 
-import { normalizeFullStream } from "./runtime.js"
+import { paperUpdateContentCoachInputSchema } from "./must-edit-repair.js"
+import {
+  jsonSchemaForCoachInput,
+  normalizeFullStream,
+  toAiSdkTools,
+} from "./runtime.js"
 
 async function* replay(
   parts: Array<{ type: string } & Record<string, unknown>>
@@ -105,5 +110,47 @@ describe("normalizeFullStream", () => {
         cost: undefined,
       },
     })
+  })
+})
+
+describe("toAiSdkTools", () => {
+  it("converts paper_updateContent the way streamText does (asSchema.jsonSchema)", async () => {
+    const tools = toAiSdkTools({
+      paper_updateContent: {
+        description: "Update Paper document content",
+        inputSchema: paperUpdateContentCoachInputSchema,
+        execute: async () => successEnvelope({ id: "doc" }),
+      },
+    })
+    const json = await Promise.resolve(
+      jsonSchemaForCoachInput(tools.paper_updateContent?.inputSchema)
+    )
+    expect(json).toMatchObject({ type: "object" })
+    expect(json).not.toEqual(expect.any(Function))
+  })
+
+  it("never calls asSchema on a { safeParse } stub for paper_updateContent", async () => {
+    const stub = {
+      safeParse(input: unknown) {
+        return input && typeof input === "object"
+          ? { success: true as const, data: input }
+          : {
+              success: false as const,
+              error: { issues: [{ message: "Invalid command input" }] },
+            }
+      },
+    }
+    expect(() => jsonSchemaForCoachInput(stub)).toThrow(
+      /schema is not a function/
+    )
+    expect(() =>
+      toAiSdkTools({
+        paper_updateContent: {
+          description: "Update Paper document content",
+          inputSchema: stub,
+          execute: async () => successEnvelope({ id: "doc" }),
+        },
+      })
+    ).toThrow(/schema is not a function/)
   })
 })

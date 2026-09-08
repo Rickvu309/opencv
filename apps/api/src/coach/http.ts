@@ -51,6 +51,7 @@ import { jsonWithStatus } from "../http-json.js"
 import { createId } from "../id.js"
 import { readSession } from "../session.js"
 import { getOwnedPaperDoc } from "../paper/queries.js"
+import { toCoachFocusDoc } from "./must-edit.js"
 import { getCoachModeForUser } from "../profile/queries.js"
 import { getOwnedThread, getThreadDetail, toThreadMessage } from "../threads/queries.js"
 import { reverseCoachReceipt } from "./reverse.js"
@@ -154,12 +155,7 @@ export function createCoachRoutes({
     if (focusDocId) {
       try {
         const row = await getOwnedPaperDoc(db, session.user.id, focusDocId)
-        focusDoc = {
-          id: row.id,
-          name: row.name,
-          kind: row.contentKind,
-          status: row.status,
-        }
+        focusDoc = toCoachFocusDoc(row)
       } catch (error) {
         if (error instanceof CommandError) {
           return jsonWithStatus(

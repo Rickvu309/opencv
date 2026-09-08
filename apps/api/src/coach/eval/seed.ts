@@ -15,6 +15,7 @@ import type { AppDatabase } from "../../commands/registry.js"
 import { paperDocs, user as userTable } from "../../db/schema.js"
 import { createId } from "../../id.js"
 import { getOwnedPaperDoc } from "../../paper/queries.js"
+import { toCoachFocusDoc } from "../must-edit.js"
 import type { GoldenScenario, SeedPaperDoc } from "./types.js"
 
 export type SeededScenario = {
@@ -151,10 +152,5 @@ async function focusDocFromSeed(
   focusDocId: string
 ): Promise<CoachFocusDoc> {
   const row = await getOwnedPaperDoc(db, userId, focusDocId)
-  return {
-    id: row.id,
-    name: row.name,
-    kind: row.contentKind,
-    status: row.status,
-  }
+  return toCoachFocusDoc(row)
 }

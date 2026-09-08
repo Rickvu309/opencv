@@ -12,7 +12,9 @@ import {
   ERROR_CODES,
   PROFILE_COMMANDS,
   PAPER_COMMANDS,
+  PAPER_CONTENT_VERSION,
   THREAD_COMMANDS,
+  emptyCvDocument,
   deterministicThreadTitle,
   titleFrom,
   type CoachTurnInput,
@@ -1203,6 +1205,8 @@ describe("coach route paper focus", () => {
       name: "PM track CV",
       kind: "cv",
       status: "draft",
+      content: emptyCvDocument(),
+      contentVersion: PAPER_CONTENT_VERSION,
     })
   })
 
@@ -1319,6 +1323,8 @@ describe("coach route paper focus", () => {
       name: "Persisted CV",
       kind: "cv",
       status: "draft",
+      content: emptyCvDocument(),
+      contentVersion: PAPER_CONTENT_VERSION,
     })
   })
 })

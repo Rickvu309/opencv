@@ -26,6 +26,12 @@ import { listApplyCardsForUser } from "../apply/queries.js"
 import { getPaperDocDetail, listPaperDocsForUser } from "../paper/queries.js"
 import { getProfileForUser } from "../profile/queries.js"
 import { createMigratedTestDb } from "../test/harness.js"
+import { repairPaperUpdateInput } from "./must-edit-repair.js"
+import {
+  jsonSchemaForCoachInput,
+  toAiSdkTools,
+  withMustEditRepair,
+} from "./runtime.js"
 import {
   assembleCoachTools,
   commandToToolName,
@@ -256,6 +262,65 @@ describe("coach tool surface", () => {
     expect(await getPaperDocDetail(db, ownerId, created.id)).toEqual(
       expect.objectContaining({ id: created.id, name: "Keep this letter" })
     )
+  })
+
+  it("rejects a bumped contentVersion until repair rewrites it to the supported schema", async () => {
+    const created = successData<PaperDoc>(
+      await commandRegistry.execute({
+        name: PAPER_COMMANDS.createDoc,
+        input: { kind: "letter", name: "Repair letter" },
+        actor: coachActor(ownerId),
+        db,
+      })
+    )
+    const tools = assembleCoachTools({ db, userId: ownerId })
+    const stale = {
+      docId: created.id,
+      contentVersion: 2,
+      content: { markdown: "Rewritten for a product internship." },
+    }
+
+    await expect(tools.paper_updateContent.execute(stale)).resolves.toEqual({
+      ok: false,
+      error: expect.objectContaining({
+        code: ERROR_CODES.VALIDATION_ERROR,
+        message: "Unsupported content version",
+      }),
+    })
+
+    const repaired = repairPaperUpdateInput(stale, {
+      id: created.id,
+      name: created.name,
+      kind: "letter",
+      status: created.status,
+      content: created.content,
+      contentVersion: created.contentVersion,
+    })
+    expect(repaired?.contentVersion).toBe(PAPER_CONTENT_VERSION)
+
+    const applied = expectOk<PaperDoc>(
+      await tools.paper_updateContent.execute(repaired)
+    )
+    expect(applied.content).toEqual({
+      markdown: "Rewritten for a product internship.",
+    })
+    expect(applied.contentVersion).toBe(PAPER_CONTENT_VERSION)
+  })
+
+  it("converts every assembled tool, including repaired paper_updateContent, to JSON Schema", async () => {
+    const surface = withMustEditRepair(
+      assembleCoachTools({ db, userId: ownerId })
+    )
+    const tools = toAiSdkTools(surface)
+    expect(Object.keys(tools).sort()).toEqual([...EXPECTED_COACH_TOOLS])
+
+    for (const [name, tool] of Object.entries(tools)) {
+      const json = await Promise.resolve(
+        jsonSchemaForCoachInput(tool.inputSchema)
+      )
+      expect(json, name).toMatchObject({ type: "object" })
+      expect(typeof json, name).not.toBe("function")
+    }
   })
 })
 

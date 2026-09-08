@@ -81,7 +81,7 @@ export const createPaperDocCommand = defineCommand({
 export const updatePaperContentCommand = defineCommand({
   name: PAPER_COMMANDS.updateContent,
   description:
-    "Replace the full content of a Paper document. Send the complete document for the current content version. When the User selected text, prefer rewriting that selection and keep the rest of the document unchanged.",
+    "Replace the full content of a Paper document. Send the complete document JSON for the current contentVersion — copy the object from paper_getDoc or the open-document JSON in the prompt, then change only the asked fields. Calling this Command applies the edit; do not ask the User to confirm or paste. When the User selected text, prefer rewriting that selection and keep the rest of the document unchanged.",
   input: paperUpdateContentInputSchema,
   coachAllowed: true,
   destructive: false,

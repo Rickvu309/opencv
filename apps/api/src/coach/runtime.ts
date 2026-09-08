@@ -5,12 +5,14 @@ import {
   DEFAULT_COACH_MAX_OUTPUT_TOKENS,
   DEFAULT_COACH_MODEL,
   DEFAULT_COACH_MODE,
+  ERROR_CODES,
+  errorEnvelope,
   resolveCoachModel,
   type CoachRuntime,
   type CoachTitleInput,
   type CoachTurnInput,
 } from "@workspace/domain"
-import { generateText, stepCountIs, streamText, tool, type ToolSet } from "ai"
+import { asSchema, generateText, stepCountIs, streamText, tool, type ToolSet } from "ai"
 
 import { listApplyCardsForUser } from "../apply/queries.js"
 import {
@@ -20,6 +22,20 @@ import {
 } from "../commands/index.js"
 import { listPaperDocsForUser } from "../paper/queries.js"
 import { getProfileForUser } from "../profile/queries.js"
+import { runFreeTextMustEdit } from "./free-must-edit.js"
+import { guaranteeMustEditStream } from "./must-edit-guarantee.js"
+import {
+  paperUpdateContentCoachInputSchema,
+  repairPaperUpdateInput,
+} from "./must-edit-repair.js"
+import {
+  MUST_EDIT_TOOLS,
+  freeMustEditLinePrompt,
+  latestUserText,
+  mustEditPrepareStep,
+  shouldUseFreeTextMustEdit,
+  toolNamesFromSteps,
+} from "./must-edit.js"
 import {
   assembleSystemPrompt,
   historyForRegenerate,
@@ -82,15 +98,101 @@ export function createOpenRouterCoachRuntime({
         ...(await loadWorkspaceSnapshot(db, input.userId)),
         ...(input.focusDoc ? { focusDoc: input.focusDoc } : {}),
       }
-      const tools = toAiSdkTools(
-        assembleCoachTools({ db, userId: input.userId, registry })
+      const coachTools = withMustEditRepair(
+        assembleCoachTools({
+          db,
+          userId: input.userId,
+          registry,
+        }),
+        input.focusDoc
       )
+      const tools = toAiSdkTools(coachTools)
       const prepared = input.regenerate
         ? historyForRegenerate(input.history)
         : { history: input.history, priorCoach: undefined }
       const messages = windowHistory(prepared.history)
+      const userText =
+        latestUserText(messages) ||
+        latestUserText(
+          prepared.history.map((message) => ({
+            role: message.role === "user" ? "user" : "assistant",
+            content: message.text,
+          }))
+        )
+      const hasFocusDoc = Boolean(input.focusDoc)
+      const executeUpdate = (updateInput: {
+        docId: string
+        content: unknown
+        contentVersion: number
+      }) => {
+        const update = coachTools[MUST_EDIT_TOOLS.updateContent]
+        if (!update) {
+          return Promise.resolve(
+            errorEnvelope(
+              ERROR_CODES.VALIDATION_ERROR,
+              "paper_updateContent is unavailable"
+            )
+          )
+        }
+        return update.execute(updateInput)
+      }
+
+      const mode = input.mode ?? DEFAULT_COACH_MODE
 
       try {
+        if (
+          shouldUseFreeTextMustEdit({
+            mode,
+            userText,
+            hasFocusDoc,
+          }) &&
+          input.focusDoc
+        ) {
+          const focusDoc = input.focusDoc
+          yield* partsFromModelStream(
+            runFreeTextMustEdit({
+              userText,
+              hasFocusDoc,
+              focusDoc,
+              selectionText: input.selection?.text,
+              executeUpdate,
+              generateLine: async ({ original }) => {
+                const result = streamText({
+                  model: openrouter(turnModel, { usage: { include: true } }),
+                  system: freeMustEditLinePrompt({
+                    original,
+                    userText,
+                    docName: focusDoc.name,
+                  }),
+                  prompt: userText,
+                  maxOutputTokens: 256,
+                  abortSignal: abort.signal,
+                })
+                let text = ""
+                let finish:
+                  | Extract<ModelStreamEvent, { type: "finish" }>
+                  | undefined
+                for await (const event of normalizeFullStream(
+                  result.fullStream,
+                  mode
+                )) {
+                  if (event.type === "text-delta") text += event.text
+                  if (event.type === "error") return { error: event.message }
+                  if (event.type === "abort") return { abort: true as const }
+                  if (event.type === "finish") finish = event
+                }
+                return { text, ...(finish ? { finish } : {}) }
+              },
+            }),
+            {
+              model: turnModel,
+              startedAt,
+              reversalFor: (name) => reversalForTool(name, registry),
+            }
+          )
+          return
+        }
+
         const result = streamText({
           model: openrouter(turnModel, { usage: { include: true } }),
           system: assembleSystemPrompt(
@@ -101,6 +203,7 @@ export function createOpenRouterCoachRuntime({
                 ? { regenerateFrom: prepared.priorCoach }
                 : {}),
               ...(input.selection ? { selection: input.selection } : {}),
+              ...(userText ? { latestUserText: userText } : {}),
             }
           ),
           messages,
@@ -108,10 +211,26 @@ export function createOpenRouterCoachRuntime({
           stopWhen: stepCountIs(COACH_STEP_CAP),
           maxOutputTokens,
           abortSignal: abort.signal,
+          prepareStep({ steps }) {
+            return mustEditPrepareStep({
+              userText,
+              hasFocusDoc,
+              calledTools: toolNamesFromSteps(steps),
+            })
+          },
         })
 
         yield* partsFromModelStream(
-          normalizeFullStream(result.fullStream, input.mode),
+          guaranteeMustEditStream(
+            normalizeFullStream(result.fullStream, mode),
+            {
+              userText,
+              hasFocusDoc,
+              focusDoc: input.focusDoc,
+              selectionText: input.selection?.text,
+              executeUpdate,
+            }
+          ),
           {
             model: turnModel,
             startedAt,
@@ -134,12 +253,45 @@ async function loadWorkspaceSnapshot(db: AppDatabase, userId: string) {
   return snapshotFromLists({ profile, paper, apply })
 }
 
-function toAiSdkTools(surface: CoachToolSurface): ToolSet {
+export function withMustEditRepair(
+  surface: CoachToolSurface,
+  focusDoc?: CoachTurnInput["focusDoc"]
+): CoachToolSurface {
+  const update = surface[MUST_EDIT_TOOLS.updateContent]
+  if (!update) return surface
+  return {
+    ...surface,
+    [MUST_EDIT_TOOLS.updateContent]: {
+      description: update.description,
+      inputSchema: paperUpdateContentCoachInputSchema,
+      execute: async (input) => {
+        const repaired = repairPaperUpdateInput(input, focusDoc)
+        return update.execute(repaired ?? input)
+      },
+    },
+  }
+}
+
+/**
+ * Convert a Coach tool input into the Schema object streamText later reuses.
+ * Accessing `.jsonSchema` is the live path (`prepareToolsAndToolChoice`).
+ * A `{ safeParse }` stub has no `~standard`, so `asSchema` calls `schema()`
+ * and throws "schema is not a function" (QVE-196).
+ */
+export function jsonSchemaForCoachInput(schema: unknown) {
+  return asSchema(schema as never).jsonSchema
+}
+
+export function toAiSdkTools(surface: CoachToolSurface): ToolSet {
   const tools: ToolSet = {}
   for (const [name, coachTool] of Object.entries(surface)) {
+    const inputSchema = asSchema(coachTool.inputSchema as never)
+    // Force conversion now and pass the Schema object into tool(), so
+    // streamText never sees a raw stub (QVE-196).
+    void inputSchema.jsonSchema
     tools[name] = tool({
       description: coachTool.description,
-      inputSchema: coachTool.inputSchema as never,
+      inputSchema,
       execute: async (input) => coachTool.execute(input),
     })
   }

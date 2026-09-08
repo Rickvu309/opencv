@@ -9,6 +9,10 @@ import {
 
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { DESKTOP_MEDIA_QUERY } from "@/features/app-shell/use-media-query.ts"
+import {
+  COACH_FLOAT_DESKTOP_OPEN_HEIGHT_CLASS,
+  COACH_FLOAT_NUDGE_ATTR,
+} from "@/features/paper/coach-float.tsx"
 import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
 import {
@@ -41,6 +45,20 @@ async function openCoach() {
 
 function messageCoach(container: HTMLElement = coachDialog()) {
   return within(container).getByRole("textbox", { name: "Message Coach" })
+}
+
+function selectNodeContents(el: HTMLElement) {
+  const range = document.createRange()
+  range.selectNodeContents(el)
+  const sel = window.getSelection()
+  sel?.removeAllRanges()
+  sel?.addRange(range)
+  document.dispatchEvent(new Event("selectionchange"))
+}
+
+function collapseWindowSelection() {
+  window.getSelection()?.removeAllRanges()
+  document.dispatchEvent(new Event("selectionchange"))
 }
 
 function stubDesktopViewport(isDesktop: boolean) {
@@ -459,6 +477,101 @@ describe("Paper editors", () => {
     expect(last).toHaveFocus()
   })
 
+  it("auto-minimizes on canvas focus so the CV stays editable, then restores the Thread", async () => {
+    scriptCoachStream({ texts: ["Keep the checkout metric."] })
+    renderPaper()
+    await expectPaperDrive()
+    const editor = await openDoc("PM track CV")
+    const dialog = await openCoach()
+
+    expect(dialog.className).toContain(COACH_FLOAT_DESKTOP_OPEN_HEIGHT_CLASS)
+    expect(dialog.className).not.toMatch(/70vh/)
+    expect(dialog).not.toHaveAttribute("draggable")
+    expect(dialog.querySelector("[data-coach-float-resize]")).toBeNull()
+    expect(dialog.className).not.toMatch(/resize-/)
+
+    const canvas = editor.querySelector("[data-paper-canvas]")
+    expect(canvas).toBeInstanceOf(HTMLElement)
+    expect(canvas).toHaveAttribute(COACH_FLOAT_NUDGE_ATTR)
+
+    fireEvent.change(messageCoach(dialog), {
+      target: { value: "Sharpen the checkout bullet" },
+    })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Send" }))
+    expect(
+      await within(dialog).findByText("Keep the checkout metric.")
+    ).toBeInTheDocument()
+
+    const thread = dialog.querySelector("[data-coach-float-thread]")
+    const viewport = dialog.querySelector("[data-coach-thread-viewport]")
+    expect(thread).toBeInstanceOf(HTMLElement)
+    expect(viewport).toBeInstanceOf(HTMLElement)
+    if (viewport instanceof HTMLElement) viewport.scrollTop = 48
+    const rememberedScroll =
+      viewport instanceof HTMLElement ? viewport.scrollTop : 0
+
+    const summary = within(editor).getByRole("textbox", { name: "Summary" })
+    fireEvent.pointerDown(summary)
+    fireEvent.focusIn(summary)
+
+    const minimized = screen.getByRole("dialog", { name: "Coach" })
+    expect(minimized).toHaveAttribute("data-coach-float-state", "minimized")
+    expect(localStorage.getItem("openpath:paper:coach-float")).toBe("minimized")
+    expect(canvas).not.toHaveAttribute(COACH_FLOAT_NUDGE_ATTR)
+    expect(
+      screen.queryByRole("textbox", { name: "Message Coach" })
+    ).not.toBeInTheDocument()
+    expect(minimized.querySelector("[data-coach-float-thread]")).toBe(thread)
+
+    summary.textContent = "Edited while Coach is tucked away."
+    fireEvent.input(summary)
+    expect(summary).toHaveTextContent("Edited while Coach is tucked away.")
+
+    fireEvent.click(screen.getByRole("button", { name: "Restore" }))
+    const restored = screen.getByRole("dialog", { name: "Coach" })
+    expect(restored).toHaveAttribute("data-coach-float-state", "open")
+    expect(canvas).toHaveAttribute(COACH_FLOAT_NUDGE_ATTR)
+    expect(restored.querySelector("[data-coach-float-thread]")).toBe(thread)
+    expect(
+      within(restored).getByText("Keep the checkout metric.")
+    ).toBeInTheDocument()
+    expect(
+      within(restored).getByText("Sharpen the checkout bullet")
+    ).toBeInTheDocument()
+    if (rememberedScroll > 0) {
+      expect(restored.querySelector("[data-coach-thread-viewport]")).toHaveProperty(
+        "scrollTop",
+        rememberedScroll
+      )
+    }
+
+    fireEvent.keyDown(restored, { key: "Escape" })
+    expect(screen.queryByRole("dialog", { name: "Coach" })).not.toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Coach" })).toHaveFocus()
+    })
+  })
+
+  it("does not auto-minimize the mobile sheet on canvas focus", async () => {
+    stubDesktopViewport(false)
+    renderPaper()
+    await expectPaperDrive()
+    const editor = await openDoc("PM track CV")
+    await openCoach()
+
+    const summary = within(editor).getByRole("textbox", { name: "Summary" })
+    fireEvent.pointerDown(summary)
+    fireEvent.focusIn(summary)
+
+    expect(screen.getByRole("dialog", { name: "Coach" })).toHaveAttribute(
+      "data-coach-float-state",
+      "open"
+    )
+    expect(editor.querySelector("[data-paper-canvas]")).not.toHaveAttribute(
+      COACH_FLOAT_NUDGE_ATTR
+    )
+  })
+
   it("streams the shared Coach with a receipt, stop, retry, thumbs, and copy", async () => {
     scriptCoachStream({
       parts: [
@@ -698,16 +811,14 @@ describe("Paper editors", () => {
     const canvas = within(editor).getByRole("textbox", {
       name: "Document content",
     })
-    const range = document.createRange()
-    range.selectNodeContents(canvas)
-    const sel = window.getSelection()
-    sel?.removeAllRanges()
-    sel?.addRange(range)
-    document.dispatchEvent(new Event("selectionchange"))
+    selectNodeContents(canvas)
 
     await waitFor(() => {
       expect(rewrite).toBeEnabled()
     })
+    expect(
+      within(dialog).getByRole("status", { name: "Selected text" })
+    ).toBeInTheDocument()
     fireEvent.click(rewrite)
     expect(
       await within(dialog).findByText("I will rewrite that line.")
@@ -716,6 +827,171 @@ describe("Paper editors", () => {
     expect(request?.text).toBe("Rewrite selection")
     expect(request?.selection?.text?.length).toBeGreaterThan(0)
     expect(request?.selection?.sectionId).toBe("letter")
+  })
+
+  it("keeps a CV selection after the float composer is focused", async () => {
+    scriptCoachStream({ texts: ["I rewrote that bullet."] })
+    renderPaper()
+    await expectPaperDrive()
+    const editor = await openDoc("PM track CV")
+    const bullet = within(editor).getAllByRole("textbox", {
+      name: "Bullet point",
+    })[0]
+    expect(bullet).toBeTruthy()
+    const bulletText = bullet!.textContent ?? ""
+    expect(bulletText.length).toBeGreaterThan(0)
+    selectNodeContents(bullet!)
+
+    const dialog = await openCoach()
+    const composer = messageCoach(dialog)
+    composer.focus()
+    collapseWindowSelection()
+
+    const preview = await within(dialog).findByRole("status", {
+      name: "Selected text",
+    })
+    expect(preview).toHaveTextContent(bulletText.slice(0, 24))
+
+    const rewrite = within(dialog).getByRole("button", {
+      name: "Rewrite selection",
+    })
+    expect(rewrite).toBeEnabled()
+    fireEvent.click(rewrite)
+    expect(
+      await within(dialog).findByText("I rewrote that bullet.")
+    ).toBeInTheDocument()
+    const request = getLastCoachRequest()
+    expect(request?.text).toBe("Rewrite selection")
+    expect(request?.selection?.text).toBe(bulletText)
+  })
+
+  it("keeps Rewrite selection available after a Coach turn when a selection is held", async () => {
+    scriptCoachStream({ texts: ["I sharpened the checkout bullet."] })
+    renderPaper()
+    await expectPaperDrive()
+    const editor = await openDoc("PM track CV")
+    const dialog = await openCoach()
+
+    fireEvent.change(messageCoach(dialog), {
+      target: { value: "Sharpen the checkout bullet" },
+    })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Send" }))
+    expect(
+      await within(dialog).findByText("I sharpened the checkout bullet.")
+    ).toBeInTheDocument()
+    expect(
+      within(dialog).queryByRole("button", { name: "Rewrite selection" })
+    ).not.toBeInTheDocument()
+
+    const bullet = within(editor).getAllByRole("textbox", {
+      name: "Bullet point",
+    })[0]
+    const bulletText = bullet!.textContent ?? ""
+    selectNodeContents(bullet!)
+
+    const composer = messageCoach(dialog)
+    composer.focus()
+    collapseWindowSelection()
+
+    const preview = await within(dialog).findByRole("status", {
+      name: "Selected text",
+    })
+    expect(preview).toHaveTextContent(bulletText.slice(0, 24))
+
+    scriptCoachStream({ texts: ["I rewrote that bullet."] })
+    const rewrite = within(dialog).getByRole("button", {
+      name: "Rewrite selection",
+    })
+    expect(rewrite).toBeEnabled()
+    fireEvent.click(rewrite)
+    expect(
+      await within(dialog).findByText("I rewrote that bullet.")
+    ).toBeInTheDocument()
+    const request = getLastCoachRequest()
+    expect(request?.text).toBe("Rewrite selection")
+    expect(request?.selection?.text).toBe(bulletText)
+  })
+
+  it("drops a held selection after a Coach turn so the next send omits it", async () => {
+    scriptCoachStream({ texts: ["I read the CV."] })
+    renderPaper()
+    await expectPaperDrive()
+    const editor = await openDoc("PM track CV")
+    const dialog = await openCoach()
+
+    fireEvent.change(messageCoach(dialog), {
+      target: { value: "Read this CV" },
+    })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Send" }))
+    expect(await within(dialog).findByText("I read the CV.")).toBeInTheDocument()
+
+    const bullet = within(editor).getAllByRole("textbox", {
+      name: "Bullet point",
+    })[0]
+    selectNodeContents(bullet!)
+
+    messageCoach(dialog).focus()
+    collapseWindowSelection()
+
+    expect(
+      await within(dialog).findByRole("status", { name: "Selected text" })
+    ).toBeInTheDocument()
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Clear selection" })
+    )
+    expect(
+      within(dialog).queryByRole("status", { name: "Selected text" })
+    ).not.toBeInTheDocument()
+    expect(
+      within(dialog).queryByRole("button", { name: "Rewrite selection" })
+    ).not.toBeInTheDocument()
+
+    scriptCoachStream({ texts: ["What should I rewrite?"] })
+    fireEvent.change(messageCoach(dialog), {
+      target: { value: "Rewrite the selected café experience" },
+    })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Send" }))
+    expect(
+      await within(dialog).findByText("What should I rewrite?")
+    ).toBeInTheDocument()
+    expect(getLastCoachRequest()?.selection).toBeUndefined()
+  })
+
+  it("drops the held selection when the float preview is dismissed", async () => {
+    scriptCoachStream({ texts: ["What should I rewrite?"] })
+    renderPaper()
+    await expectPaperDrive()
+    const editor = await openDoc("PM track CV")
+    const bullet = within(editor).getAllByRole("textbox", {
+      name: "Bullet point",
+    })[0]
+    selectNodeContents(bullet!)
+
+    const dialog = await openCoach()
+    messageCoach(dialog).focus()
+    collapseWindowSelection()
+
+    expect(
+      await within(dialog).findByRole("status", { name: "Selected text" })
+    ).toBeInTheDocument()
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Clear selection" })
+    )
+    expect(
+      within(dialog).queryByRole("status", { name: "Selected text" })
+    ).not.toBeInTheDocument()
+    expect(
+      within(dialog).getByRole("button", { name: "Rewrite selection" })
+    ).toBeDisabled()
+
+    fireEvent.change(messageCoach(dialog), {
+      target: { value: "Rewrite the selected café experience" },
+    })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Send" }))
+    expect(
+      await within(dialog).findByText("What should I rewrite?")
+    ).toBeInTheDocument()
+    expect(getLastCoachRequest()?.selection).toBeUndefined()
   })
 
   it("reloads the open canvas when Coach updates the doc", async () => {
@@ -947,13 +1223,20 @@ describe("Paper editors", () => {
 
     const dialog = await openCoach()
     fireEvent.change(messageCoach(dialog), {
-      target: { value: "Make my summary one sentence" },
+      target: { value: "Rewrite the Experience checkout bullet for a product internship" },
     })
     fireEvent.click(within(dialog).getByRole("button", { name: "Send" }))
 
     expect(
       await within(dialog).findByText("I shortened the summary to one sentence.")
     ).toBeInTheDocument()
+    expect(getLastCoachRequest()?.focusDocId).toBe(
+      "11111111-1111-7111-8111-111111111111"
+    )
+    expect(getLastCoachRequest()?.selection).toBeUndefined()
+    expect(getLastCoachRequest()?.text).toBe(
+      "Rewrite the Experience checkout bullet for a product internship"
+    )
     expect(within(dialog).getByText("Updated CV PM track CV")).toBeInTheDocument()
     expect(
       within(dialog).getByRole("status", { name: "Command succeeded" })
