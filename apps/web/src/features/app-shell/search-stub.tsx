@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router"
+import { useNavigate } from "@tanstack/react-router"
 import { Button } from "@workspace/ui/components/button"
 
 import { WorkspaceHeader } from "@/components/workspace-header.tsx"
@@ -8,6 +8,8 @@ import {
 } from "@/features/app-shell/surfaces.ts"
 
 export function SearchStub() {
+  const navigate = useNavigate()
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       <WorkspaceHeader
@@ -19,7 +21,12 @@ export function SearchStub() {
           {SEARCH_STUB_COPY.detail}
         </p>
         <div>
-          <Button render={<Link to={SURFACE_PATHS.apply} />}>
+          <Button
+            type="button"
+            onClick={() => {
+              void navigate({ to: SURFACE_PATHS.apply })
+            }}
+          >
             {SEARCH_STUB_COPY.cta}
           </Button>
         </div>

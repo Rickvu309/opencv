@@ -212,7 +212,7 @@ describe("app shell layout", () => {
       expect(router.state.location.pathname).toBe(SEARCH_PATH)
     })
 
-    fireEvent.click(screen.getByRole("link", { name: SEARCH_STUB_COPY.cta }))
+    fireEvent.click(screen.getByRole("button", { name: SEARCH_STUB_COPY.cta }))
     await expectApplyLive()
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(SURFACE_PATHS.apply)
