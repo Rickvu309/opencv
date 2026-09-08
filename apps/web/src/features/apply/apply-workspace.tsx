@@ -35,6 +35,7 @@ import {
   readCardDragId,
   setCardDragData,
 } from "@/features/apply/apply-dnd.ts"
+import { pickGuidedApplyCard } from "@/features/apply/apply-guide.ts"
 import { JobDetailPanel } from "@/features/apply/apply-job-detail.tsx"
 import {
   companyShort,
@@ -48,11 +49,12 @@ import { useApplyCards } from "@/features/apply/use-apply-cards.ts"
 import { DestructiveCommandDialog } from "@/features/commands/destructive-command-dialog.tsx"
 import { usePaperDocs } from "@/features/paper/use-paper-docs.ts"
 
-export function ApplyWorkspace() {
+export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
   const apply = useApplyCards()
   const paper = usePaperDocs()
   const [view, setView] = useState<"board" | "calendar">("board")
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [pickedId, setPickedId] = useState<string | null>(null)
+  const [selectionTouched, setSelectionTouched] = useState(false)
   const [query, setQuery] = useState("")
   const [dragOverStage, setDragOverStage] = useState<StageId | null>(null)
   const [dragOverCardId, setDragOverCardId] = useState<string | null>(null)
@@ -60,7 +62,21 @@ export function ApplyWorkspace() {
   const [addOpen, setAddOpen] = useState(false)
   const dragMovedRef = useRef(false)
 
+  const guidedCard = apply.isLoading ? null : pickGuidedApplyCard(apply.cards)
+  const selectedId = selectionTouched
+    ? pickedId
+    : openGuide
+      ? (guidedCard?.id ?? null)
+      : null
   const selected = apply.cards.find((c) => c.id === selectedId)
+  const guided = Boolean(
+    openGuide && selectedId && guidedCard && selectedId === guidedCard.id
+  )
+
+  function chooseCard(id: string | null) {
+    setSelectionTouched(true)
+    setPickedId(id)
+  }
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -99,7 +115,7 @@ export function ApplyWorkspace() {
       dragMovedRef.current = false
       return
     }
-    setSelectedId((current) => (current === id ? null : id))
+    chooseCard(selectedId === id ? null : id)
   }
 
   async function addJob(draft: AddJobDraft) {
@@ -110,7 +126,7 @@ export function ApplyWorkspace() {
       ...(draft.note ? { note: draft.note } : {}),
     })
     setAddOpen(false)
-    setSelectedId(created.id)
+    chooseCard(created.id)
   }
 
   const errorBanner = apply.error ? (
@@ -288,7 +304,7 @@ export function ApplyWorkspace() {
           <ApplyCalendar
             cards={filtered}
             selectedId={selectedId}
-            onSelect={setSelectedId}
+            onSelect={chooseCard}
             onMoveDate={moveDate}
             dragMovedRef={dragMovedRef}
           />
@@ -297,9 +313,10 @@ export function ApplyWorkspace() {
         {selected ? (
           <JobDetailPanel
             card={selected}
+            guided={guided}
             revertKey={apply.revertKey}
             paperDocs={paper.docs}
-            onClose={() => setSelectedId(null)}
+            onClose={() => chooseCard(null)}
             onPatch={(patch) =>
               apply.updateCard({ cardId: selected.id, ...patch })
             }
@@ -331,7 +348,7 @@ export function ApplyWorkspace() {
           onConfirm={() => {
             const id = deleteTarget.id
             setDeleteTarget(null)
-            if (selectedId === id) setSelectedId(null)
+            if (selectedId === id) chooseCard(null)
             void apply.deleteCard(id)
           }}
         />

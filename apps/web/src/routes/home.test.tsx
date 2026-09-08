@@ -21,7 +21,9 @@ async function expectHomeIdle() {
       ),
     })
   ).toBeInTheDocument()
-  expect(screen.getByRole("textbox", { name: "Message Coach" })).toBeInTheDocument()
+  expect(
+    screen.getByRole("textbox", { name: "Message Coach" })
+  ).toBeInTheDocument()
 }
 
 beforeEach(() => {
@@ -63,7 +65,9 @@ describe("Home idle", () => {
     expect(composer).toHaveValue("Help me plan the week")
 
     fireEvent.keyDown(composer, { key: "Enter", shiftKey: false })
-    expect(screen.getByRole("textbox", { name: "Message Coach" })).toHaveValue("")
+    expect(screen.getByRole("textbox", { name: "Message Coach" })).toHaveValue(
+      ""
+    )
     expect(
       screen.getByRole("status", { name: "Coach is working" })
     ).toBeInTheDocument()
@@ -183,21 +187,24 @@ describe("Home first-café checklist", () => {
     expect(
       screen.getByRole("heading", { name: "Four small things" })
     ).toBeInTheDocument()
-    expect(screen.getByText("Skip whenever. This is not a tour.")).toBeInTheDocument()
+    expect(
+      screen.getByText("Skip whenever. This is not a tour.")
+    ).toBeInTheDocument()
 
     const sampleCv = screen.getByRole("link", { name: "Open the sample CV" })
     const pitch = screen.getByRole("link", { name: "Make Pitch yours" })
     const apply = screen.getByRole("link", { name: "Triage one Apply card" })
     const email = screen.getByRole("link", { name: "Connect email, optional" })
 
-    expect(sampleCv).toHaveAttribute("href", `${SURFACE_PATHS.paper}?open=sample`)
+    expect(sampleCv).toHaveAttribute(
+      "href",
+      `${SURFACE_PATHS.paper}?open=sample`
+    )
     expect(pitch).toHaveAttribute("href", SURFACE_PATHS.pitch)
-    expect(apply).toHaveAttribute("href", SURFACE_PATHS.apply)
+    expect(apply).toHaveAttribute("href", `${SURFACE_PATHS.apply}?open=guide`)
     expect(email).toHaveAttribute("href", `${SURFACE_PATHS.settings}?tab=apps`)
 
-    expect(
-      screen.queryByRole("progressbar")
-    ).not.toBeInTheDocument()
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument()
     expect(
       screen.queryByRole("button", { name: /next step|continue|skip tour/i })
     ).not.toBeInTheDocument()
@@ -270,6 +277,7 @@ describe("Home first-café checklist", () => {
     fireEvent.click(screen.getByRole("link", { name: "Triage one Apply card" }))
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(SURFACE_PATHS.apply)
+      expect(router.state.location.search).toMatchObject({ open: "guide" })
     })
     expect(
       await screen.findByRole("heading", { level: 1, name: "Apply" })
@@ -287,5 +295,69 @@ describe("Home first-café checklist", () => {
     expect(
       screen.getByRole("link", { name: "Make Pitch yours" })
     ).toBeInTheDocument()
+  })
+
+  it("opens one seeded Apply card with a Prep next action and keeps the board", async () => {
+    const { router } = renderApp()
+    await expectHomeIdle()
+
+    fireEvent.click(screen.getByRole("link", { name: "Triage one Apply card" }))
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(SURFACE_PATHS.apply)
+      expect(router.state.location.search).toMatchObject({ open: "guide" })
+    })
+
+    const panel = await screen.findByRole("complementary", {
+      name: "Job detail",
+    })
+    expect(
+      within(panel).getByDisplayValue("Associate PM intern")
+    ).toBeInTheDocument()
+    expect(
+      within(panel).getByRole("button", { name: "Move to Prep" })
+    ).toBeInTheDocument()
+    expect(
+      within(panel).getByRole("combobox", { name: "Next step" })
+    ).toHaveTextContent("Follow-up")
+
+    expect(screen.getByText("Product intern")).toBeInTheDocument()
+    expect(screen.getByText("Business analyst intern")).toBeInTheDocument()
+    expect(screen.getByText("Product analyst intern")).toBeInTheDocument()
+    expect(screen.getByText("UX research intern")).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: /skip tour|continue tour/i })
+    ).not.toBeInTheDocument()
+
+    fireEvent.click(within(panel).getByRole("button", { name: "Move to Prep" }))
+    await waitFor(() => {
+      expect(
+        within(
+          document.querySelector('[data-stage="prep"]') as HTMLElement
+        ).getByText("Associate PM intern")
+      ).toBeInTheDocument()
+    })
+    expect(
+      within(
+        document.querySelector('[data-stage="inbox"]') as HTMLElement
+      ).queryByText("Associate PM intern")
+    ).not.toBeInTheDocument()
+    expect(
+      within(
+        document.querySelector('[data-stage="inbox"]') as HTMLElement
+      ).getByText("Product intern")
+    ).toBeInTheDocument()
+    expect(
+      within(
+        document.querySelector('[data-stage="prep"]') as HTMLElement
+      ).getByText("Business analyst intern")
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "Move to Prep" })
+    ).not.toBeInTheDocument()
+    expect(
+      within(
+        await screen.findByRole("complementary", { name: "Job detail" })
+      ).getByRole("combobox", { name: "Next step" })
+    ).toHaveTextContent("Follow-up")
   })
 })

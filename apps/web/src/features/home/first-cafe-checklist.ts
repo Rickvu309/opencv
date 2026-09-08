@@ -1,4 +1,5 @@
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { APPLY_OPEN_GUIDE } from "@/features/apply/apply-search.ts"
 
 export const FIRST_CAFE_ITEM_IDS = [
   "sample-cv",
@@ -33,6 +34,7 @@ export const FIRST_CAFE_CHECKLIST_ITEMS: readonly FirstCafeItem[] = [
     id: "apply",
     label: "Triage one Apply card",
     to: SURFACE_PATHS.apply,
+    search: { open: APPLY_OPEN_GUIDE },
   },
   {
     id: "email",

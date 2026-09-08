@@ -2,6 +2,8 @@ import {
   PAPER_CONTENT_VERSION,
   PITCH_CONTENT_VERSION,
   STARTER_CV_NAME,
+  STARTER_GUIDED_APPLY_COMPANY,
+  STARTER_GUIDED_APPLY_TITLE,
   STARTER_PITCH_HEADLINE,
   STARTER_THREAD_COACH_TEXT,
   STARTER_THREAD_TITLE,
@@ -55,7 +57,9 @@ describe("starter content", () => {
     expect(decoded.ok).toBe(true)
     expect(starterPitchDocument().demo).toBe(true)
     expect(starterPitchDocument().headline).toBe(STARTER_PITCH_HEADLINE)
-    expect(starterPitchDocument().headline).not.toMatch(/aspiring product manager/i)
+    expect(starterPitchDocument().headline).not.toMatch(
+      /aspiring product manager/i
+    )
     expect(JSON.stringify(starterPitchDocument())).not.toMatch(PERSONA)
     expect(JSON.stringify(starterPitchDocument())).not.toMatch(/you@openpath/)
     expect(JSON.stringify(starterPitchDocument())).not.toMatch(/sacred space/i)
@@ -83,6 +87,13 @@ describe("starter content", () => {
       "sent",
       "closed",
     ])
+    expect(cards[0]).toMatchObject({
+      title: STARTER_GUIDED_APPLY_TITLE,
+      company: STARTER_GUIDED_APPLY_COMPANY,
+      stage: "inbox",
+      starred: true,
+      trackKind: "followup",
+    })
     expect(cards.some((card) => card.starred)).toBe(true)
     expect(JSON.stringify(cards)).not.toMatch(/"fit"/)
     expect(JSON.stringify(cards)).not.toMatch(PERSONA)
@@ -98,7 +109,9 @@ describe("starter content", () => {
   it("opens with an honest Coach Thread in the product voice", () => {
     const thread = starterThread()
     expect(thread.title).toBe(STARTER_THREAD_TITLE)
-    expect(thread.coachText).toContain("I haven't edited Paper, Apply, or Pitch")
+    expect(thread.coachText).toContain(
+      "I haven't edited Paper, Apply, or Pitch"
+    )
     expect(thread.coachText).toContain("haven't run any Commands")
     expect(thread.coachText).toContain("seeded for you")
     expect(thread.coachText).toContain("Demo content")

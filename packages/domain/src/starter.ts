@@ -1,8 +1,5 @@
 import type { ApplyStage, ApplyTrackKind } from "./apply.js"
-import {
-  decodePaperContent,
-  type CvDocument,
-} from "./paper-codecs.js"
+import { decodePaperContent, type CvDocument } from "./paper-codecs.js"
 import { PAPER_CONTENT_VERSION } from "./paper.js"
 import {
   decodePitchContent,
@@ -14,6 +11,10 @@ import { PITCH_CONTENT_KIND, PITCH_CONTENT_VERSION } from "./pitch.js"
 
 /** Drive name for the sample CV created at signup. Wipeable. */
 export const STARTER_CV_NAME = "Sample internship CV"
+
+/** Seeded Inbox card Home pokes for the first Apply win (QVE-226). */
+export const STARTER_GUIDED_APPLY_TITLE = "Associate PM intern"
+export const STARTER_GUIDED_APPLY_COMPANY = "Local startup"
 
 /** History title for the Coach Thread created at signup. Wipeable. */
 export const STARTER_THREAD_TITLE = "Welcome to OpenPath"
@@ -123,8 +124,8 @@ export type StarterApplyCardDraft = {
 export function starterApplyCards(): StarterApplyCardDraft[] {
   return [
     {
-      title: "Associate PM intern",
-      company: "Local startup",
+      title: STARTER_GUIDED_APPLY_TITLE,
+      company: STARTER_GUIDED_APPLY_COMPANY,
       note: "JD wants discovery notes and one shipped experiment. Starred so it stays on top.",
       stage: "inbox",
       starred: true,
@@ -233,7 +234,8 @@ I learn product by shipping small experiments — checkout UX studies, onboardin
         period: "2023 – 2024",
         title: "Information Systems",
         org: "University of Information Technology",
-        summary: "GPA 3.4 · focus on systems analysis, SQL, and product electives.",
+        summary:
+          "GPA 3.4 · focus on systems analysis, SQL, and product electives.",
       },
     ],
     storyHighlights: [

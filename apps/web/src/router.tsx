@@ -10,6 +10,7 @@ import {
 
 import { AppShellLayout } from "@/features/app-shell/app-shell-layout.tsx"
 import { validateSettingsSearch } from "@/features/app-shell/surfaces.ts"
+import { validateApplySearch } from "@/features/apply/apply-search.ts"
 import { validatePaperSearch } from "@/features/paper/paper-search.ts"
 import { ApplyPage } from "@/routes/apply.tsx"
 import { HomePage } from "@/routes/home.tsx"
@@ -98,6 +99,7 @@ const searchRoute = createRoute({
 const applyRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/apply",
+  validateSearch: validateApplySearch,
   component: ApplyPage,
 })
 
