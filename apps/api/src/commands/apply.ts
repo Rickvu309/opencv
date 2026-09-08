@@ -9,6 +9,7 @@ import {
   applyToggleStarInputSchema,
   applyUpdateCardInputSchema,
   generateKeyBetween,
+  publicApplyJobUrl,
   type ApplyCard,
   type ApplyCardDeleted,
   type ApplyStage,
@@ -88,7 +89,7 @@ export const createApplyCardCommand = defineCommand({
       stage,
       position,
       starred: input.starred ?? false,
-      jobUrl: input.jobUrl ?? null,
+      jobUrl: publicApplyJobUrl(input.jobUrl ?? null),
       trackDate: input.trackDate ?? todayIsoDate(now),
       trackKind: input.trackKind ?? "followup",
       fit: 0,
@@ -139,7 +140,10 @@ export const updateApplyCardCommand = defineCommand({
       title: input.title ?? existing.title,
       company: input.company ?? existing.company,
       note: input.note ?? existing.note,
-      jobUrl: input.jobUrl !== undefined ? input.jobUrl : existing.jobUrl,
+      jobUrl:
+        input.jobUrl !== undefined
+          ? publicApplyJobUrl(input.jobUrl)
+          : publicApplyJobUrl(existing.jobUrl),
       trackDate: input.trackDate ?? existing.trackDate,
       trackKind: input.trackKind ?? existing.trackKind,
       updatedAt,

@@ -4,6 +4,7 @@ import {
   APPLY_JOB_URL_INVALID,
   openableApplyJobUrl,
   parseApplyJobUrlInput,
+  publicApplyJobUrl,
   type PaperDoc,
 } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
@@ -80,9 +81,10 @@ export function JobDetailPanel({
   const stageLabel = STAGES.find((s) => s.id === card.stage)?.label ?? "Inbox"
   const [linkOpen, setLinkOpen] = useState(false)
   const [openError, setOpenError] = useState<string | null>(null)
+  const postingUrl = publicApplyJobUrl(card.jobUrl)
 
   function openPosting() {
-    const href = openableApplyJobUrl(card.jobUrl)
+    const href = openableApplyJobUrl(postingUrl)
     if (!href) {
       setOpenError(APPLY_JOB_URL_INVALID)
       return
@@ -118,7 +120,7 @@ export function JobDetailPanel({
 
         <div className="mx-0.5 h-5 w-px bg-border" aria-hidden />
 
-        {card.jobUrl ? (
+        {postingUrl ? (
           <ToolbarIconButton label="Open job posting" onClick={openPosting}>
             <ExternalLink className="size-3.5" />
           </ToolbarIconButton>
@@ -221,7 +223,7 @@ function JobDetailFields({
 }) {
   const [title, setTitle] = useState(card.title)
   const [company, setCompany] = useState(card.company)
-  const [jobUrl, setJobUrl] = useState(card.jobUrl ?? "")
+  const [jobUrl, setJobUrl] = useState(publicApplyJobUrl(card.jobUrl) ?? "")
   const [jobUrlError, setJobUrlError] = useState<string | null>(null)
 
   function commitTitle() {

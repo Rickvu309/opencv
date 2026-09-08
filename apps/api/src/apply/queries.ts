@@ -1,4 +1,8 @@
-import { ERROR_CODES, type ApplyCard } from "@workspace/domain"
+import {
+  ERROR_CODES,
+  publicApplyJobUrl,
+  type ApplyCard,
+} from "@workspace/domain"
 import { and, asc, eq } from "drizzle-orm"
 
 import { CommandError, type AppDatabase } from "../commands/registry.js"
@@ -30,7 +34,7 @@ export function toApplyCard(row: {
     stage: row.stage,
     position: row.position,
     starred: row.starred,
-    jobUrl: row.jobUrl,
+    jobUrl: publicApplyJobUrl(row.jobUrl),
     trackDate: row.trackDate,
     trackKind: row.trackKind,
     createdAt: iso(row.createdAt),

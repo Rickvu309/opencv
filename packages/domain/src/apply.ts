@@ -56,10 +56,40 @@ const HAS_URL_SCHEME = /^[a-zA-Z][a-zA-Z0-9+.-]*:/
 export const APPLY_JOB_URL_INVALID = "That posting link isn't a valid web URL."
 export const APPLY_JOB_URL_BLOCKED = "The browser blocked opening this posting."
 
+/**
+ * Fake job-board host used by older Apply seeds. It NXDOMAINs.
+ * Do not open it, persist it, or show Open job posting for it (QVE-217).
+ */
+export const DEMO_APPLY_JOB_HOST = "jobs.example.com"
+
 /** Prefix https:// when a café-student paste has no scheme. */
 export function normalizeApplyJobUrl(raw: string): string {
   const trimmed = raw.trim()
   return HAS_URL_SCHEME.test(trimmed) ? trimmed : `https://${trimmed}`
+}
+
+function applyJobUrlHost(candidate: string): string | null {
+  const host = candidate.replace(/^https?:\/\//i, "").split(/[/?#]/)[0] ?? ""
+  return host ? host.toLowerCase() : null
+}
+
+/** Older starter cards stored this dead host. Not a real posting. */
+export function isDemoApplyJobUrl(raw: string | null | undefined): boolean {
+  if (raw == null) return false
+  const trimmed = raw.trim()
+  if (!trimmed) return false
+  const host = applyJobUrlHost(normalizeApplyJobUrl(trimmed))
+  return host === DEMO_APPLY_JOB_HOST
+}
+
+/** Stored URL the product may show or open — never the demo seed host. */
+export function publicApplyJobUrl(
+  raw: string | null | undefined
+): string | null {
+  if (raw == null) return null
+  const trimmed = raw.trim()
+  if (!trimmed || isDemoApplyJobUrl(trimmed)) return null
+  return trimmed
 }
 
 /** http(s) posting URL we can honestly open, or null. */
@@ -73,8 +103,8 @@ export function openableApplyJobUrl(
   if (candidate.length > APPLY_JOB_URL_MAX) return null
   if (!/^https?:\/\//i.test(candidate)) return null
   if (/\s/.test(candidate)) return null
-  const host = candidate.replace(/^https?:\/\//i, "").split(/[/?#]/)[0] ?? ""
-  if (!host) return null
+  const host = applyJobUrlHost(candidate)
+  if (!host || host === DEMO_APPLY_JOB_HOST) return null
   return candidate
 }
 

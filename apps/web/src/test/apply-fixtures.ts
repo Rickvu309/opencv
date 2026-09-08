@@ -4,7 +4,11 @@ function iso(daysAgo: number) {
   return new Date(Date.UTC(2026, 7, 25 - daysAgo, 12, 0, 0)).toISOString()
 }
 
-/** Neutral sample cards for the Apply API mock — never the demo persona. */
+/**
+ * Neutral sample cards for the Apply API mock — never the demo persona.
+ * Associate PM intern keeps a leftover jobs.example.com URL so UI tests
+ * prove Open job posting is hidden (QVE-217). New production seeds are null.
+ */
 export function sampleApplyCards(): ApplyCard[] {
   return [
     {
