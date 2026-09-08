@@ -38,12 +38,18 @@ describe("shared Coach turn hook", () => {
     expect(panel).toMatch(/useCoachExternalRuntime/)
     expect(panel).toMatch(/CoachThread/)
     expect(panel).toMatch(/data-coach-soft-scope/)
+    expect(panel).toMatch(/data-coach-context-chip/)
+    expect(panel).toMatch(/Add to context/)
+    expect(panel).toMatch(/Pin in context/)
+    expect(panel).toMatch(/Attached from Paper/)
     expect(panel).toMatch(/Remove from context/)
     expect(panel).not.toMatch(/ThreadView/)
     expect(read("features/coach/coach-thread.tsx")).toMatch(/CoachDock/)
     expect(read("features/coach/coach-thread.tsx")).toMatch(
       /showModePicker=\{false\}/
     )
+    expect(read("features/coach/coach-thread.tsx")).toMatch(/onAttachFromPaper/)
+    expect(read("features/coach/coach-dock.tsx")).toMatch(/onAttachFromPaper/)
     expect(panel).not.toMatch(/sessionStorage/)
     expect(panel).not.toMatch(/Sparkles/)
     expect(panel).not.toMatch(/AI assist/)

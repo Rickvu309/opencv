@@ -10,12 +10,13 @@ import {
 import { createPortal } from "react-dom"
 import { AssistantRuntimeProvider } from "@assistant-ui/react"
 import type { CoachSelection } from "@workspace/domain"
-import { Maximize2, Minus, X } from "lucide-react"
+import { Maximize2, Minus, Pin, X } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
 import { useMediaQuery } from "@workspace/ui/hooks/use-media-query"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { ErrorBanner } from "@/components/error-banner.tsx"
 import { DESKTOP_MEDIA_QUERY } from "@/features/app-shell/use-media-query.ts"
 import { useCoachExternalRuntime } from "@/features/coach/coach-runtime.ts"
 import { CoachThread } from "@/features/coach/coach-thread.tsx"
@@ -25,6 +26,18 @@ import {
   threadQueryKeys,
 } from "@/features/home/thread-api.ts"
 
+import {
+  ATTACH_FROM_PAPER_FAIL,
+  addDocChip,
+  addSelectionChip,
+  consumeUnpinnedContextChips,
+  focusDocIdForTurn,
+  hasMatchingSelectionChip,
+  removeContextChip,
+  selectionForTurn,
+  toggleContextChipPin,
+  type CoachContextChip,
+} from "./coach-context-chips.ts"
 import { previewCoachSelectionText } from "./paper-selection.ts"
 import type { ToolbarVariant } from "./paper-editor-toolbar.tsx"
 
@@ -76,6 +89,53 @@ function SoftScopeChip({
     >
       <div className="inline-flex max-w-full items-center gap-0.5 rounded-full bg-muted/70 py-0.5 pr-0.5 pl-2 text-2xs text-muted-foreground">
         <span className="min-w-0 truncate">{docName.trim() || "This CV"}</span>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-xs"
+          aria-label="Remove from context"
+          onClick={onRemove}
+        >
+          <X />
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+function DurableContextChip({
+  chip,
+  onPin,
+  onRemove,
+}: {
+  chip: CoachContextChip
+  onPin: () => void
+  onRemove: () => void
+}) {
+  const isDoc = chip.kind === "doc"
+  return (
+    <div
+      data-coach-context-chip
+      data-kind={chip.kind}
+      data-pinned={chip.pinned ? "true" : "false"}
+      role="status"
+      aria-label={isDoc ? "Attached from Paper" : "Selection in context"}
+      className="flex min-w-0"
+    >
+      <div className="inline-flex max-w-full items-center gap-0.5 rounded-full bg-muted/70 py-0.5 pr-0.5 pl-2 text-2xs text-muted-foreground">
+        <span className="min-w-0 truncate">
+          {isDoc ? chip.label : `“${chip.label}”`}
+        </span>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-xs"
+          aria-label={chip.pinned ? "Unpin" : "Pin in context"}
+          aria-pressed={chip.pinned}
+          onClick={onPin}
+        >
+          <Pin className={chip.pinned ? "fill-current" : undefined} />
+        </Button>
         <Button
           type="button"
           variant="ghost"
@@ -195,7 +255,10 @@ export const CoachFloat = memo(function CoachFloat({
   const [createdThreadId, setCreatedThreadId] = useState<string | null>(null)
   const [floatState, setFloatState] = useState<CoachFloatState>(readFloatState)
   const [softScope, setSoftScope] = useState(true)
+  const [contextChips, setContextChips] = useState<CoachContextChip[]>([])
+  const [attachError, setAttachError] = useState<string | null>(null)
   const isDesktop = useMediaQuery(DESKTOP_MEDIA_QUERY, true)
+  const focusDocId = focusDocIdForTurn(softScope, contextChips, docId)
 
   const captureThreadScroll = useCallback(() => {
     const viewport = threadViewportIn(dialogRef.current)
@@ -221,13 +284,36 @@ export const CoachFloat = memo(function CoachFloat({
       threadId,
       setThreadId: setCreatedThreadId,
       titleForCreate,
-      focusDocId: softScope ? docId : null,
+      focusDocId,
     })
 
   const sendWithSelection = useCallback(
-    (text: string) => send(text, { selection: selection ?? undefined }),
-    [send, selection]
+    (text: string) => {
+      const sent = send(text, {
+        selection: selectionForTurn(contextChips, selection),
+      })
+      if (sent) setContextChips(consumeUnpinnedContextChips)
+      return sent
+    },
+    [contextChips, selection, send]
   )
+
+  const addSelectionToContext = useCallback(() => {
+    if (!selection?.text) return
+    setContextChips((prev) => addSelectionChip(prev, selection))
+  }, [selection])
+
+  const attachFromPaper = useCallback(() => {
+    if (!docId.trim()) {
+      setAttachError(ATTACH_FROM_PAPER_FAIL)
+      return
+    }
+    setAttachError(null)
+    setContextChips((prev) => {
+      const result = addDocChip(prev, docId, docName)
+      return result.ok ? result.chips : prev
+    })
+  }, [docId, docName])
   const runtime = useCoachExternalRuntime({
     messages,
     phase,
@@ -414,6 +500,19 @@ export const CoachFloat = memo(function CoachFloat({
               <p className="min-w-0 flex-1 text-pretty">
                 “{previewCoachSelectionText(selection.text)}”
               </p>
+              <Button
+                type="button"
+                variant="ghost"
+                size="xs"
+                aria-label="Add to context"
+                disabled={hasMatchingSelectionChip(contextChips, selection)}
+                onClick={addSelectionToContext}
+                className="h-auto shrink-0 rounded-full px-2 py-0.5 text-2xs"
+              >
+                {hasMatchingSelectionChip(contextChips, selection)
+                  ? "Added"
+                  : "Add to context"}
+              </Button>
               {onClearSelection ? (
                 <Button
                   type="button"
@@ -439,6 +538,7 @@ export const CoachFloat = memo(function CoachFloat({
               onRate={rate}
               onRegenerate={phase === "idle" ? regenerate : undefined}
               onUndo={phase === "idle" ? undo : undefined}
+              onAttachFromPaper={attachFromPaper}
               placeholder="Ask about this document…"
               empty={
                 <QuickPromptChips
@@ -449,13 +549,42 @@ export const CoachFloat = memo(function CoachFloat({
                 />
               }
               beforeComposer={
-                softScope || (messages.length > 0 && selection?.text) ? (
+                softScope ||
+                contextChips.length > 0 ||
+                attachError ||
+                (messages.length > 0 && selection?.text) ? (
                   <>
-                    {softScope ? (
-                      <SoftScopeChip
-                        docName={docName}
-                        onRemove={() => setSoftScope(false)}
-                      />
+                    {softScope || contextChips.length > 0 ? (
+                      <div
+                        data-coach-context-chips
+                        className="flex flex-wrap gap-1"
+                      >
+                        {softScope ? (
+                          <SoftScopeChip
+                            docName={docName}
+                            onRemove={() => setSoftScope(false)}
+                          />
+                        ) : null}
+                        {contextChips.map((chip) => (
+                          <DurableContextChip
+                            key={chip.id}
+                            chip={chip}
+                            onPin={() =>
+                              setContextChips((prev) =>
+                                toggleContextChipPin(prev, chip.id)
+                              )
+                            }
+                            onRemove={() =>
+                              setContextChips((prev) =>
+                                removeContextChip(prev, chip.id)
+                              )
+                            }
+                          />
+                        ))}
+                      </div>
+                    ) : null}
+                    {attachError ? (
+                      <ErrorBanner variant="inline">{attachError}</ErrorBanner>
                     ) : null}
                     {messages.length > 0 && selection?.text ? (
                       <QuickPromptChips
