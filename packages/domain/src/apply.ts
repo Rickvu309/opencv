@@ -110,6 +110,16 @@ export function publicApplyJobUrl(
   return trimmed
 }
 
+/** Quiet host for Source — empty when there is no openable posting. */
+export function applyJobSourceHost(
+  raw: string | null | undefined
+): string | null {
+  const href = openableApplyJobUrl(raw)
+  if (!href) return null
+  const host = applyJobUrlHost(href)
+  return host ? host.replace(/^www\./i, "") : null
+}
+
 /** http(s) posting URL we can honestly open, or null. */
 export function openableApplyJobUrl(
   raw: string | null | undefined

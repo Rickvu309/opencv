@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
   APPLY_JOB_URL_INVALID,
+  applyJobSourceHost,
   isDemoApplyJobUrl,
   openableApplyJobUrl,
   parseApplyJobUrlInput,
@@ -47,6 +48,20 @@ describe("apply job URL helpers", () => {
     expect(publicApplyJobUrl("https://linkedin.com/jobs/view/123")).toBe(
       "https://linkedin.com/jobs/view/123"
     )
+  })
+
+  it("names Source by host when a posting URL is openable", () => {
+    expect(applyJobSourceHost("https://www.linkedin.com/jobs/view/123")).toBe(
+      "linkedin.com"
+    )
+    expect(applyJobSourceHost("careers.example.com/pm-intern")).toBe(
+      "careers.example.com"
+    )
+    expect(applyJobSourceHost(null)).toBeNull()
+    expect(applyJobSourceHost("")).toBeNull()
+    expect(
+      applyJobSourceHost("https://jobs.example.com/associate-pm-intern")
+    ).toBeNull()
   })
 
   it("honest-fails javascript and other non-web schemes", () => {
