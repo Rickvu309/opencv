@@ -73,8 +73,13 @@ function sampleSkillItems() {
 
 async function goHomeThenPaper() {
   fireEvent.click(screen.getByRole("link", { name: "Home" }))
-  expect(await screen.findByRole("link", { name: "Paper" })).toBeInTheDocument()
-  fireEvent.click(screen.getByRole("link", { name: "Paper" }))
+  expect(
+    await screen.findByRole("heading", {
+      level: 1,
+      name: /^Good (morning|afternoon|evening),/,
+    })
+  ).toBeInTheDocument()
+  fireEvent.click(screen.getByRole("link", { name: /^Paper$/ }))
   await expectPaperDrive()
 }
 

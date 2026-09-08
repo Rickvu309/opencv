@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 
 import {
   EMPTY_FIRST_CAFE_STATE,
@@ -6,33 +6,24 @@ import {
   dismissFirstCafeChecklist,
   readFirstCafeState,
   writeFirstCafeState,
-  type FirstCafeState,
 } from "@/features/home/first-cafe-checklist.ts"
 import { authClient } from "@/lib/auth-client.ts"
 
 export function useFirstCafeChecklist() {
   const { data } = authClient.useSession()
   const userId = data?.user.id
-  const [state, setState] = useState<FirstCafeState>(EMPTY_FIRST_CAFE_STATE)
-
-  useEffect(() => {
-    if (!userId) {
-      setState(EMPTY_FIRST_CAFE_STATE)
-      return
-    }
-    setState(readFirstCafeState(userId))
-  }, [userId])
+  const stored = userId ? readFirstCafeState(userId) : EMPTY_FIRST_CAFE_STATE
+  const [sessionDismissed, setSessionDismissed] = useState(false)
 
   function dismiss() {
     if (!userId) return
-    const next = dismissFirstCafeChecklist(state)
-    writeFirstCafeState(userId, next)
-    setState(next)
+    writeFirstCafeState(userId, dismissFirstCafeChecklist(stored))
+    setSessionDismissed(true)
   }
 
   return {
-    visible: Boolean(userId) && !state.dismissed,
-    completed: state.completed,
+    visible: Boolean(userId) && !stored.dismissed && !sessionDismissed,
+    completed: stored.completed,
     items: FIRST_CAFE_CHECKLIST_ITEMS,
     dismiss,
   }
