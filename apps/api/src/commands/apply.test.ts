@@ -8,6 +8,7 @@ import {
 import { eq } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
+import { listApplyCardsForUser } from "../apply/queries.js"
 import { applyCards, paperDocs, user as userTable } from "../db/schema.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { applyCommands } from "./apply.js"
@@ -151,6 +152,35 @@ describe("apply commands", () => {
       })
     )
     expect(cleared.jobUrl).toBeNull()
+  })
+
+  it("drops leftover jobs.example.com posting URLs", async () => {
+    const created = successData<ApplyCard>(
+      await commandRegistry.execute({
+        name: APPLY_COMMANDS.createCard,
+        input: {
+          title: "Leftover seed",
+          jobUrl: "https://jobs.example.com/associate-pm-intern",
+        },
+        actor: userActor(ownerId),
+        db,
+      })
+    )
+    expect(created.jobUrl).toBeNull()
+
+    const [written] = await db
+      .select()
+      .from(applyCards)
+      .where(eq(applyCards.id, created.id))
+    expect(written?.jobUrl).toBeNull()
+
+    await db
+      .update(applyCards)
+      .set({ jobUrl: "https://jobs.example.com/associate-pm-intern" })
+      .where(eq(applyCards.id, created.id))
+
+    const listed = await listApplyCardsForUser(db, ownerId)
+    expect(listed.find((card) => card.id === created.id)?.jobUrl).toBeNull()
   })
 
   it("moves a card between and within a Stage using one-row fractional keys", async () => {
