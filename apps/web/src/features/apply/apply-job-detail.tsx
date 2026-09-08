@@ -35,6 +35,7 @@ import {
   GUIDED_APPLY_PREP_ACTION,
   guidedApplyNextAction,
 } from "@/features/apply/apply-guide.ts"
+import { paperDocsLinkedToCard } from "@/features/paper/paper-apply-attach.ts"
 import {
   APPLY_JOB_DATE_LABEL,
   APPLY_JOB_NEXT_STEP_LABEL,
@@ -96,6 +97,7 @@ export function JobDetailPanel({
 }: Props) {
   const stageLabel = STAGES.find((s) => s.id === card.stage)?.label ?? "Inbox"
   const guidedAction = guided ? guidedApplyNextAction(card) : null
+  const linkedPaper = paperDocsLinkedToCard(paperDocs, card.id)
   const [linkOpen, setLinkOpen] = useState(false)
   const [openError, setOpenError] = useState<string | null>(null)
   const postingUrl = publicApplyJobUrl(card.jobUrl)
@@ -181,6 +183,19 @@ export function JobDetailPanel({
           >
             {GUIDED_APPLY_PREP_ACTION}
           </Button>
+        ) : null}
+
+        {linkedPaper.length > 0 ? (
+          <div role="region" aria-label="Linked Paper">
+            <p className={FIELD_LABEL}>Paper</p>
+            <ul className="grid gap-1">
+              {linkedPaper.map((doc) => (
+                <li key={doc.id} className="text-sm">
+                  {doc.name}
+                </li>
+              ))}
+            </ul>
+          </div>
         ) : null}
 
         <JobDetailFields
