@@ -408,6 +408,19 @@ describe("Home optional aim prompt", () => {
     ).toBeInTheDocument()
   })
 
+  it("lets I'm not sure yet skip without touching Pitch", async () => {
+    renderApp()
+    await expectHomeIdle()
+
+    fireEvent.click(screen.getByRole("button", { name: "I'm not sure yet" }))
+    expect(
+      screen.queryByRole("heading", { name: "What are you aiming for?" })
+    ).not.toBeInTheDocument()
+    expect(getMockPitchDoc()?.content).toMatchObject({
+      headline: STARTER_PITCH_HEADLINE,
+    })
+  })
+
   it("soft-feeds Pitch headline from one aim without forcing a custom line", async () => {
     const { router } = renderApp()
     await expectHomeIdle()
