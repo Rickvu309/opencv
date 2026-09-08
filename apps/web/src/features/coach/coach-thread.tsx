@@ -65,6 +65,7 @@ type CoachThreadActions = {
   onRegenerate?: () => void
   onUndo?: (messageId: string, toolCallId: string) => Promise<void>
   onAttachFromPaper?: () => void
+  messageCite?: (message: HomeMessage) => ReactNode
 }
 
 const CoachThreadActionsContext = createContext<CoachThreadActions | null>(null)
@@ -442,6 +443,7 @@ function CoachBoundBody({ message }: { message: HomeMessage }) {
 }
 
 function AssistantMessage() {
+  const { messageCite } = useThreadActions()
   const message = useBoundHomeMessage()
   const streaming = message?.id === STREAMING_COACH_ID
 
@@ -470,6 +472,9 @@ function AssistantMessage() {
           }}
         />
       )}
+      {message && message.id !== STREAMING_COACH_ID
+        ? messageCite?.(message)
+        : null}
       {message && message.id !== STREAMING_COACH_ID ? (
         <MessageActions message={message} />
       ) : null}
@@ -516,6 +521,7 @@ type Props = {
   onRegenerate?: () => void
   onUndo?: (messageId: string, toolCallId: string) => Promise<void>
   onAttachFromPaper?: () => void
+  messageCite?: (message: HomeMessage) => ReactNode
 }
 
 function ThreadChrome({
@@ -579,6 +585,7 @@ export function CoachThread({
   onRegenerate,
   onUndo,
   onAttachFromPaper,
+  messageCite,
 }: Props) {
   return (
     <CoachThreadActionsContext.Provider
@@ -595,6 +602,7 @@ export function CoachThread({
         onRegenerate,
         onUndo,
         onAttachFromPaper,
+        messageCite,
       }}
     >
       <ThreadChrome empty={empty} beforeComposer={beforeComposer} />

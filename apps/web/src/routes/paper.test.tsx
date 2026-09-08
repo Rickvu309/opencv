@@ -667,6 +667,137 @@ describe("Paper editors", () => {
     ).not.toBeInTheDocument()
   })
 
+  it("offers one cite that scrolls and highlights the matching Experience bullet", async () => {
+    const scrollIntoView = vi.fn()
+    const originalScroll = HTMLElement.prototype.scrollIntoView
+    HTMLElement.prototype.scrollIntoView = scrollIntoView
+    scriptCoachStream({
+      texts: [
+        "The checkout UX hallway study is thin. Tighten the add-to-cart line so a recruiter can see the 18% lift.",
+      ],
+    })
+    try {
+      renderPaper()
+      await expectPaperDrive()
+      const editor = await openDoc("PM track CV")
+      const dialog = await openCoach()
+
+      expect(
+        within(dialog).getByRole("status", { name: "In context" })
+      ).toHaveTextContent("PM track CV")
+
+      fireEvent.change(messageCoach(dialog), {
+        target: {
+          value: "What should I change about the checkout UX bullet?",
+        },
+      })
+      fireEvent.click(within(dialog).getByRole("button", { name: "Send" }))
+      expect(
+        await within(dialog).findByText(
+          "The checkout UX hallway study is thin. Tighten the add-to-cart line so a recruiter can see the 18% lift."
+        )
+      ).toBeInTheDocument()
+
+      const cite = within(dialog).getByRole("button", {
+        name: /Show on Paper:.*Checkout UX/,
+      })
+      expect(cite).toHaveAttribute("data-coach-cite", "experience-1-bullet-1")
+      expect(
+        within(dialog).getAllByRole("button", { name: /Show on Paper/ })
+      ).toHaveLength(1)
+      expect(dialog).not.toHaveTextContent(/provenance/i)
+      expect(dialog).not.toHaveTextContent(/sources rail/i)
+      expect(
+        within(dialog).queryByRole("complementary", { name: /sources/i })
+      ).not.toBeInTheDocument()
+
+      fireEvent.click(cite)
+      const bullet = editor.querySelector(
+        '[data-paper-section="experience-1-bullet-1"]'
+      )
+      expect(bullet).toHaveClass("paper-coach-changed")
+      expect(scrollIntoView).toHaveBeenCalledWith(
+        expect.objectContaining({ block: "center" })
+      )
+      expect(
+        within(dialog).getByRole("status", { name: "In context" })
+      ).toBeInTheDocument()
+    } finally {
+      HTMLElement.prototype.scrollIntoView = originalScroll
+    }
+  })
+
+  it("cites a durable selection chip when the reply is generic", async () => {
+    scriptCoachStream({ texts: ["I read that bullet."] })
+    renderPaper()
+    await expectPaperDrive()
+    const editor = await openDoc("PM track CV")
+    const dialog = await openCoach()
+    const bullet = within(editor).getAllByRole("textbox", {
+      name: "Bullet point",
+    })[0]
+    const bulletText = bullet!.textContent ?? ""
+    selectNodeContents(bullet!)
+    messageCoach(dialog).focus()
+    collapseWindowSelection()
+
+    fireEvent.click(
+      within(
+        await within(dialog).findByRole("status", { name: "Selected text" })
+      ).getByRole("button", { name: "Add to context" })
+    )
+    expect(
+      within(dialog).getByRole("status", { name: "Selection in context" })
+    ).toBeInTheDocument()
+
+    fireEvent.change(messageCoach(dialog), {
+      target: { value: "What is weak about this bullet?" },
+    })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Send" }))
+    expect(
+      await within(dialog).findByText("I read that bullet.")
+    ).toBeInTheDocument()
+
+    const cite = within(dialog).getByRole("button", { name: /Show on Paper/ })
+    expect(cite).toHaveAttribute(
+      "data-coach-cite",
+      expect.stringMatching(/^experience-0-bullet-0$/)
+    )
+    expect(getLastCoachRequest()?.selection?.text).toBe(bulletText)
+    expect(
+      within(dialog).getByRole("status", { name: "In context" })
+    ).toBeInTheDocument()
+  })
+
+  it("does not invent a cite or sources rail for generic advice", async () => {
+    scriptCoachStream({
+      texts: [
+        "Write one Proof with a concrete outcome. That is the next step.",
+      ],
+    })
+    renderPaper()
+    await expectPaperDrive()
+    await openDoc("PM track CV")
+    const dialog = await openCoach()
+    fireEvent.change(messageCoach(dialog), {
+      target: { value: "What should I do this week?" },
+    })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Send" }))
+    expect(
+      await within(dialog).findByText(
+        "Write one Proof with a concrete outcome. That is the next step."
+      )
+    ).toBeInTheDocument()
+    expect(
+      within(dialog).queryByRole("button", { name: /Show on Paper/ })
+    ).not.toBeInTheDocument()
+    expect(dialog.querySelector("[data-coach-cite]")).toBeNull()
+    expect(dialog).not.toHaveTextContent(/provenance/i)
+    expect(
+      within(dialog).queryByRole("complementary", { name: /sources/i })
+    ).not.toBeInTheDocument()
+  })
+
   it("closes the float on Escape and returns focus to the pill", async () => {
     renderPaper()
     await expectPaperDrive()
