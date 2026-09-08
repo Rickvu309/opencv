@@ -5,7 +5,11 @@
 import { useState } from "react"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
-import type { PitchBlockKind, PitchDocument } from "@workspace/domain"
+import type {
+  PitchBlockKind,
+  PitchDocument,
+  ProofDocument,
+} from "@workspace/domain"
 import { Check, Copy, EyeOff, Globe, Pencil } from "lucide-react"
 
 import { ErrorBanner } from "@/components/error-banner.tsx"
@@ -26,6 +30,7 @@ import {
   PitchStoryViewer,
   StoryHighlightsRow,
 } from "@/features/pitch/pitch-stories.tsx"
+import { PitchProofViewer } from "@/features/pitch/pitch-proof-viewer.tsx"
 import type { StoryViewerState } from "@/features/pitch/pitch-story-utils.ts"
 import {
   overlayPitchBento,
@@ -45,6 +50,7 @@ export function PitchWorkspace() {
   const [copied, setCopied] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
   const [storyView, setStoryView] = useState<StoryViewerState>(null)
+  const [proofView, setProofView] = useState<ProofDocument | null>(null)
 
   const identity: PitchIdentity = {
     name: session?.user.name?.trim() || "You",
@@ -216,6 +222,7 @@ export function PitchWorkspace() {
                   pitch.persist((current) => ({ ...current, about }))
                 }
                 onOpenStory={openStory}
+                onOpenProof={setProofView}
               />
             ))}
           </div>
@@ -245,6 +252,11 @@ export function PitchWorkspace() {
         onClose={() => setStoryView(null)}
         onChange={setStoryView}
       />
+
+      <PitchProofViewer
+        proof={proofView}
+        onClose={() => setProofView(null)}
+      />
     </div>
   )
 }
@@ -259,6 +271,7 @@ function PitchSection({
   onHide,
   onAboutChange,
   onOpenStory,
+  onOpenProof,
 }: {
   block: PitchBlock
   profile: PitchProfile
@@ -269,6 +282,7 @@ function PitchSection({
   onHide: () => void
   onAboutChange: (text: string) => void
   onOpenStory: (highlightId: string) => void
+  onOpenProof: (proof: ProofDocument) => void
 }) {
   switch (block.kind) {
     case "moments":
@@ -295,6 +309,7 @@ function PitchSection({
           items={content.achievements}
           editing={editing}
           onHide={onHide}
+          onOpenProof={onOpenProof}
         />
       )
     case "experience":

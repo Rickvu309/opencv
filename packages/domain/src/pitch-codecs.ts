@@ -30,6 +30,8 @@ export const pitchAchievementSchema = z
     description: z.string(),
     link: z.string().optional(),
     linkLabel: z.string().optional(),
+    /** Key of a real Proof shown on Pitch — never a dead href. */
+    proofId: z.string().optional(),
     tag: z.string().optional(),
   })
   .strict()

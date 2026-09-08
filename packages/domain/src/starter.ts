@@ -193,8 +193,7 @@ I'm looking for a team that values evidence over slide decks. CV and case studie
         context: "Side project",
         description:
           "Ran a 12-person hallway test on two mobile checkout layouts. Shorter card + sticky CTA lifted add-to-cart taps by 18%. Documented as a Proof chain.",
-        link: "#",
-        linkLabel: "Read case study",
+        proofId: "checkout",
         tag: "UX research",
       },
       {
