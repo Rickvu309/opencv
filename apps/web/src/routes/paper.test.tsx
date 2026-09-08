@@ -470,6 +470,67 @@ describe("Paper editors", () => {
     expect(again.querySelector("[data-coach-soft-scope]")).toBeNull()
   })
 
+  it("undoes and redoes Experience + Summary after autosave on desktop", async () => {
+    stubDesktopViewport(true)
+    const exec = vi.spyOn(document, "execCommand")
+    renderPaper()
+    await expectPaperDrive()
+    const editor = await openDoc("PM track CV")
+    const toolbar = within(editor).getByRole("toolbar", { name: "CV tools" })
+
+    const summary = within(editor).getByRole("textbox", { name: "Summary" })
+    const priorSummary = summary.textContent ?? ""
+    expect(priorSummary.length).toBeGreaterThan(0)
+    summary.textContent = "Café rewrite of the summary"
+    fireEvent.input(summary)
+
+    const role = within(editor).getAllByRole("textbox", { name: "Role" })[0]!
+    const priorRole = role.textContent ?? ""
+    expect(priorRole.length).toBeGreaterThan(0)
+    role.textContent = "Café barista lead"
+    fireEvent.input(role)
+
+    await waitFor(
+      () => {
+        expect(screen.getByRole("button", { name: "Saved" })).toBeInTheDocument()
+        const cv = getMockPaperDocs().find((doc) => doc.name === "PM track CV")
+        expect(cv && isCvDocument(cv.content)).toBe(true)
+        if (!cv || !isCvDocument(cv.content)) return
+        expect(cv.content.summary).toBe("Café rewrite of the summary")
+        expect(cv.content.experience[0]?.role).toBe("Café barista lead")
+      },
+      { timeout: 2000 }
+    )
+
+    const undo = within(toolbar).getByRole("button", { name: "Undo" })
+    const redo = within(toolbar).getByRole("button", { name: "Redo" })
+    expect(undo).toBeEnabled()
+    expect(redo).toBeDisabled()
+
+    fireEvent.mouseDown(undo)
+    expect(role).toHaveTextContent(priorRole)
+    expect(summary).toHaveTextContent("Café rewrite of the summary")
+
+    fireEvent.mouseDown(undo)
+    expect(summary).toHaveTextContent(priorSummary)
+    expect(role).toHaveTextContent(priorRole)
+    expect(redo).toBeEnabled()
+
+    fireEvent.mouseDown(redo)
+    expect(summary).toHaveTextContent("Café rewrite of the summary")
+    fireEvent.mouseDown(redo)
+    expect(role).toHaveTextContent("Café barista lead")
+
+    fireEvent.keyDown(role, { key: "z", metaKey: true })
+    expect(role).toHaveTextContent(priorRole)
+    fireEvent.keyDown(role, { key: "z", metaKey: true, shiftKey: true })
+    expect(role).toHaveTextContent("Café barista lead")
+
+    expect(exec).not.toHaveBeenCalledWith("undo", expect.anything(), expect.anything())
+    expect(exec).not.toHaveBeenCalledWith("redo", expect.anything(), expect.anything())
+    exec.mockRestore()
+  })
+
   it("tabs between CV fields and Esc blurs on desktop without trapping", async () => {
     stubDesktopViewport(true)
     renderPaper()

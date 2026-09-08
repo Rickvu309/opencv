@@ -12,7 +12,7 @@ afterEach(() => {
 const FORMAT_THEATER = ["Bold", "Italic", "Bullet list", "Numbered list"] as const
 
 describe("PaperEditorToolbar", () => {
-  it("keeps the CV strip to Insert, Template, and Export — no format theater", () => {
+  it("keeps the CV strip to Undo/Redo, Insert, Template, and Export — no format theater", () => {
     render(
       createElement(PaperEditorToolbar, {
         variant: "cv",
@@ -23,6 +23,8 @@ describe("PaperEditorToolbar", () => {
     )
 
     const toolbar = screen.getByRole("toolbar", { name: "CV tools" })
+    expect(within(toolbar).getByRole("button", { name: "Undo" })).toBeDisabled()
+    expect(within(toolbar).getByRole("button", { name: "Redo" })).toBeDisabled()
     expect(within(toolbar).getByRole("button", { name: "Insert" })).toBeInTheDocument()
     expect(within(toolbar).getByRole("button", { name: "Export" })).toBeInTheDocument()
     expect(
@@ -41,8 +43,34 @@ describe("PaperEditorToolbar", () => {
     render(createElement(PaperEditorToolbar, { variant: "letter" }))
 
     const toolbar = screen.getByRole("toolbar", { name: "Letter tools" })
+    expect(within(toolbar).getByRole("button", { name: "Undo" })).toBeInTheDocument()
+    expect(within(toolbar).getByRole("button", { name: "Redo" })).toBeInTheDocument()
     expect(within(toolbar).getByRole("button", { name: "Bold" })).toBeInTheDocument()
     expect(within(toolbar).getByRole("button", { name: "Insert" })).toBeInTheDocument()
     expect(within(toolbar).getByRole("button", { name: "Export" })).toBeInTheDocument()
+  })
+
+  it("enables CV Undo/Redo from structured history, not format theater", () => {
+    const undos: string[] = []
+    render(
+      createElement(PaperEditorToolbar, {
+        variant: "cv",
+        cvTemplateId: "product",
+        onCvTemplateChange: () => undefined,
+        onCvInsert: () => undefined,
+        canUndo: true,
+        canRedo: true,
+        onUndo: () => undos.push("undo"),
+        onRedo: () => undos.push("redo"),
+      })
+    )
+    const toolbar = screen.getByRole("toolbar", { name: "CV tools" })
+    const undo = within(toolbar).getByRole("button", { name: "Undo" })
+    const redo = within(toolbar).getByRole("button", { name: "Redo" })
+    expect(undo).toBeEnabled()
+    expect(redo).toBeEnabled()
+    undo.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }))
+    redo.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }))
+    expect(undos).toEqual(["undo", "redo"])
   })
 })

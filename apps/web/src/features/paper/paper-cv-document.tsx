@@ -4,9 +4,10 @@
  * print layout is a documented ADR-0010 exception. Focus/selection chrome
  * is QVE-206 (`paper-canvas-field` in paper.css). Café Tab/Esc is QVE-208.
  * Empty-section next steps are QVE-209 (`paper-canvas-next-step`).
+ * Honest undo/redo of structured fields is QVE-210.
  */
 import type { ElementType, KeyboardEvent, ReactNode } from "react"
-import { useEffect, useRef } from "react"
+import { createContext, useContext, useEffect, useRef } from "react"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 import { Copy, ImagePlus, Plus, User, X } from "lucide-react"
@@ -61,12 +62,15 @@ export const PAPER_CANVAS_AFFORDANCE_CLASS = "paper-canvas-affordance"
 /** QVE-209: always-visible next step on an empty section (not hover-hidden). */
 export const PAPER_CANVAS_NEXT_STEP_CLASS = "paper-canvas-next-step"
 
+const CvHistoryRevisionContext = createContext(0)
+
 type FieldProps = {
   value: string
   onChange: (value: string) => void
   className?: string
   multiline?: boolean
   sectionId?: string
+  historyRevision?: number
   "aria-label": string
 }
 
@@ -76,16 +80,23 @@ export function EditableField({
   className,
   multiline,
   sectionId,
+  historyRevision,
   "aria-label": ariaLabel,
 }: FieldProps) {
   const ref = useRef<HTMLSpanElement>(null)
   const Tag = "span"
+  const contextRevision = useContext(CvHistoryRevisionContext)
+  const revision = historyRevision ?? contextRevision
+  const lastRevision = useRef(revision)
 
   useEffect(() => {
     const el = ref.current
-    if (!el || document.activeElement === el) return
+    if (!el) return
+    const fromHistory = revision !== lastRevision.current
+    lastRevision.current = revision
+    if (!fromHistory && document.activeElement === el) return
     if (el.textContent !== value) el.textContent = value
-  }, [value])
+  }, [value, revision])
 
   return (
     <Tag
@@ -117,13 +128,14 @@ export function EditableField({
 type Props = {
   data: CvData
   onChange: (data: CvData) => void
+  historyRevision?: number
 }
 
-export function CvDocument({ data, onChange }: Props) {
+export function CvDocument({ data, onChange, historyRevision = 0 }: Props) {
   const dataRef = useRef(data)
   useEffect(() => {
     dataRef.current = data
-  }, [data])
+  }, [data, historyRevision])
 
   function patch<K extends keyof CvData>(key: K, value: CvData[K]) {
     const next = { ...dataRef.current, [key]: value }
@@ -173,18 +185,29 @@ export function CvDocument({ data, onChange }: Props) {
     setSkills,
   }
 
+  let tree
   switch (data.templateId) {
     case "product":
-      return <ProductCv {...templateProps} />
+      tree = <ProductCv {...templateProps} />
+      break
     case "service":
-      return <ServiceCv {...templateProps} />
+      tree = <ServiceCv {...templateProps} />
+      break
     case "academic":
-      return <AcademicCv {...templateProps} />
+      tree = <AcademicCv {...templateProps} />
+      break
     case "photo":
-      return <PhotoCv {...templateProps} />
+      tree = <PhotoCv {...templateProps} />
+      break
     default:
-      return <InternshipCv {...templateProps} />
+      tree = <InternshipCv {...templateProps} />
   }
+
+  return (
+    <CvHistoryRevisionContext.Provider value={historyRevision}>
+      {tree}
+    </CvHistoryRevisionContext.Provider>
+  )
 }
 
 type PatchProps = {
