@@ -15,6 +15,7 @@ type FieldProps = {
   onChange: (value: string) => void
   className?: string
   multiline?: boolean
+  sectionId?: string
   "aria-label": string
 }
 
@@ -23,6 +24,7 @@ export function EditableField({
   onChange,
   className,
   multiline,
+  sectionId,
   "aria-label": ariaLabel,
 }: FieldProps) {
   const ref = useRef<HTMLSpanElement>(null)
@@ -41,7 +43,9 @@ export function EditableField({
       suppressContentEditableWarning
       role="textbox"
       aria-label={ariaLabel}
-      data-paper-section={ariaLabel.toLowerCase().replace(/[^a-z0-9]+/g, "-")}
+      data-paper-section={
+        sectionId ?? ariaLabel.toLowerCase().replace(/[^a-z0-9]+/g, "-")
+      }
       onInput={(e) => onChange(e.currentTarget.textContent ?? "")}
       className={cn(
         "outline-none empty:before:text-muted-foreground/50 empty:before:content-[attr(data-placeholder)] focus:rounded-sm focus:bg-muted/80 focus:ring-1 focus:ring-ring/40",
@@ -240,7 +244,11 @@ function ExperienceBlock({
         )}
       >
         {item.bullets.map((bullet, bi) => (
-          <li key={bi} className="flex gap-2 text-[13px] leading-relaxed">
+          <li
+            key={bi}
+            data-paper-section={`experience-${index}-bullet-${bi}`}
+            className="flex gap-2 text-[13px] leading-relaxed"
+          >
             <span
               className={cn(
                 "mt-2 size-1 shrink-0 rounded-full",
@@ -249,6 +257,7 @@ function ExperienceBlock({
             />
             <EditableField
               aria-label="Bullet point"
+              sectionId={`experience-${index}-bullet-${bi}`}
               value={bullet}
               multiline
               className="flex-1"
@@ -344,6 +353,7 @@ function InternshipCv({
         <h1 className="text-[22px] leading-tight font-semibold tracking-tight">
           <EditableField
             aria-label="Full name"
+            sectionId="name"
             value={data.name}
             onChange={(name) => patch("name", name)}
           />
@@ -390,7 +400,11 @@ function InternshipCv({
       <section className="mt-5">
         <SectionTitle>Education</SectionTitle>
         {data.education.map((item, i) => (
-          <div key={i} className="mb-3 last:mb-0">
+          <div
+            key={i}
+            data-paper-section={`education-${i}`}
+            className="mb-3 last:mb-0"
+          >
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <p className="text-sm font-semibold">
                 <EditableField
@@ -429,7 +443,7 @@ function InternshipCv({
 
       <section className="mt-5">
         <SectionTitle>Skills</SectionTitle>
-        <div className="flex flex-wrap gap-1.5">
+        <div data-paper-section="skills" className="flex flex-wrap gap-1.5">
           {data.skills
             .flatMap((g) => g.items)
             .map((skill, i) => (
@@ -463,6 +477,7 @@ function PhotoCv({
           <h1 className="text-[22px] leading-tight font-semibold tracking-tight">
             <EditableField
               aria-label="Full name"
+              sectionId="name"
               value={data.name}
               onChange={(name) => patch("name", name)}
             />
@@ -510,7 +525,11 @@ function PhotoCv({
       <section className="mb-5">
         <SectionTitle>Education</SectionTitle>
         {data.education.map((item, i) => (
-          <div key={i} className="mb-3 last:mb-0">
+          <div
+            key={i}
+            data-paper-section={`education-${i}`}
+            className="mb-3 last:mb-0"
+          >
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <p className="text-sm font-semibold">
                 <EditableField
@@ -549,7 +568,7 @@ function PhotoCv({
 
       <section>
         <SectionTitle>Skills</SectionTitle>
-        <div className="flex flex-wrap gap-1.5">
+        <div data-paper-section="skills" className="flex flex-wrap gap-1.5">
           {data.skills
             .flatMap((g) => g.items)
             .map((skill, i) => (
@@ -578,6 +597,7 @@ function ProductCv({
         <h1 className="text-lg leading-tight font-semibold">
           <EditableField
             aria-label="Full name"
+            sectionId="name"
             value={data.name}
             className="text-white"
             onChange={(name) => patch("name", name)}
@@ -627,7 +647,7 @@ function ProductCv({
 
         <div className="mt-6">
           <SectionTitle dark>Skills</SectionTitle>
-          <div className="space-y-3">
+          <div data-paper-section="skills" className="space-y-3">
             {data.skills.map((group, gi) => (
               <div key={gi}>
                 <p className="mb-1.5 text-[10px] font-semibold tracking-wide text-white/45 uppercase">
@@ -651,7 +671,11 @@ function ProductCv({
         <div className="mt-6">
           <SectionTitle dark>Education</SectionTitle>
           {data.education.map((item, i) => (
-            <div key={i} className="mb-3 text-xs text-white/80">
+            <div
+              key={i}
+              data-paper-section={`education-${i}`}
+              className="mb-3 text-xs text-white/80"
+            >
               <p className="font-semibold text-white">
                 <EditableField
                   aria-label="School"
@@ -709,7 +733,7 @@ function ProductCv({
           <section className="mt-6">
             <SectionTitle>Selected work</SectionTitle>
             {data.projects.map((project, i) => (
-              <div key={i} className="mb-3">
+              <div key={i} data-paper-section={`project-${i}`} className="mb-3">
                 <p className="text-sm font-semibold">
                   <EditableField
                     aria-label="Project name"
@@ -754,6 +778,7 @@ function ServiceCv({
         <h1 className="text-[26px] leading-tight font-bold tracking-tight uppercase">
           <EditableField
             aria-label="Full name"
+            sectionId="name"
             value={data.name}
             onChange={(name) => patch("name", name)}
           />
@@ -801,7 +826,11 @@ function ServiceCv({
         <section>
           <SectionTitle>Education</SectionTitle>
           {data.education.map((item, i) => (
-            <div key={i} className="mb-2 text-sm">
+            <div
+              key={i}
+              data-paper-section={`education-${i}`}
+              className="mb-2 text-sm"
+            >
               <p className="font-semibold">{item.school}</p>
               <p className="text-muted-foreground">{item.degree}</p>
               <p className="text-xs text-muted-foreground">{item.period}</p>
@@ -810,7 +839,7 @@ function ServiceCv({
         </section>
         <section>
           <SectionTitle>Skills</SectionTitle>
-          <div className="flex flex-wrap gap-1.5">
+          <div data-paper-section="skills" className="flex flex-wrap gap-1.5">
             {data.skills
               .flatMap((g) => g.items)
               .map((skill, i) => (
@@ -841,6 +870,7 @@ function AcademicCv({
           <h1 className="text-2xl font-semibold">
             <EditableField
               aria-label="Full name"
+              sectionId="name"
               value={data.name}
               onChange={(name) => patch("name", name)}
             />
@@ -865,7 +895,11 @@ function AcademicCv({
       <section className="mb-5">
         <SectionTitle>Education</SectionTitle>
         {data.education.map((item, i) => (
-          <div key={i} className="mb-3 flex gap-4">
+          <div
+            key={i}
+            data-paper-section={`education-${i}`}
+            className="mb-3 flex gap-4"
+          >
             <p className="w-24 shrink-0 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
               <EditableField
                 aria-label="Period"
@@ -905,6 +939,7 @@ function AcademicCv({
             {data.projects.map((project, i) => (
               <div
                 key={i}
+                data-paper-section={`project-${i}`}
                 className="rounded-lg border border-border bg-muted/20 p-3"
               >
                 <p className="text-sm font-semibold">{project.name}</p>
@@ -931,7 +966,7 @@ function AcademicCv({
 
       <section>
         <SectionTitle>Skills & languages</SectionTitle>
-        <div className="flex flex-wrap gap-2">
+        <div data-paper-section="skills" className="flex flex-wrap gap-2">
           {data.skills
             .flatMap((g) => g.items)
             .map((skill, i) => (

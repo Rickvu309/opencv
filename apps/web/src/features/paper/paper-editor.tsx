@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { useMediaQuery } from "@workspace/ui/hooks/use-media-query"
@@ -39,6 +39,11 @@ import {
   type PaperDoc,
 } from "./paper-data.ts"
 import { CoachFloat } from "./coach-float.tsx"
+import {
+  paperCiteSpansFromCv,
+  paperCiteSpansFromLetter,
+  paperCiteSpansFromProof,
+} from "./paper-cite.ts"
 import {
   collapsePaperSelection,
   readPaperSelection,
@@ -127,7 +132,10 @@ export function PaperEditor({
     proofContentOf(doc)
   )
   const [conflict, setConflict] = useState(false)
-  const [changedSections, setChangedSections] = useState<string[]>([])
+  const [sectionFocus, setSectionFocus] = useState<{
+    ids: string[]
+    nonce: number
+  }>({ ids: [], nonce: 0 })
   const [selection, setSelection] = useState<CoachSelection | null>(null)
   const [docsPanel, setDocsPanel] = useState<DocsPanelState>(readDocsPanel)
   const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)", false)
@@ -161,10 +169,16 @@ export function PaperEditor({
     loadedUpdatedAtRef.current = next.updatedAt
     loadedContentRef.current = next.content
     if (highlight) {
-      setChangedSections(changedSectionIds(diffPaperContent(next.kind, previous, next.content)))
+      focusPaperSections(
+        changedSectionIds(diffPaperContent(next.kind, previous, next.content))
+      )
     } else {
-      setChangedSections([])
+      setSectionFocus({ ids: [], nonce: 0 })
     }
+  }
+
+  function focusPaperSections(ids: string[]) {
+    setSectionFocus((prev) => ({ ids, nonce: prev.nonce + 1 }))
   }
 
   useEffect(() => {
@@ -190,8 +204,8 @@ export function PaperEditor({
 
   useEffect(() => {
     const root = canvasRef.current
-    if (!root || changedSections.length === 0) return
-    const els = changedSections
+    if (!root || sectionFocus.ids.length === 0) return
+    const els = sectionFocus.ids
       .map((id) =>
         root.querySelector<HTMLElement>(
           `[data-paper-section="${CSS.escape(id)}"]`
@@ -208,13 +222,15 @@ export function PaperEditor({
     }
     const timer = window.setTimeout(() => {
       for (const el of els) el.classList.remove("paper-coach-changed")
-      setChangedSections([])
+      setSectionFocus((prev) =>
+        prev.nonce === sectionFocus.nonce ? { ids: [], nonce: prev.nonce } : prev
+      )
     }, 1200)
     return () => {
       window.clearTimeout(timer)
       for (const el of els) el.classList.remove("paper-coach-changed")
     }
-  }, [changedSections, reduceMotion])
+  }, [sectionFocus, reduceMotion])
 
   useEffect(() => {
     function onSelection() {
@@ -225,6 +241,17 @@ export function PaperEditor({
     document.addEventListener("selectionchange", onSelection)
     return () => document.removeEventListener("selectionchange", onSelection)
   }, [])
+
+  const highlightPaperCite = useCallback((sectionId: string) => {
+    setSectionFocus((prev) => ({ ids: [sectionId], nonce: prev.nonce + 1 }))
+  }, [])
+
+  const citeSpans = useMemo(() => {
+    if (isCv) return paperCiteSpansFromCv(cvData)
+    if (isProof) return paperCiteSpansFromProof(proofData)
+    if (isLetter) return paperCiteSpansFromLetter(letterMarkdownOf(doc))
+    return []
+  }, [cvData, doc, isCv, isLetter, isProof, proofData])
 
   const clearCoachSelection = useCallback(() => {
     setSelection(null)
@@ -681,6 +708,8 @@ export function PaperEditor({
           docName={doc.name}
           selection={selection}
           onClearSelection={clearCoachSelection}
+          citeSpans={citeSpans}
+          onCitePaper={highlightPaperCite}
           variant={
             isCv ? "cv" : isProof ? "proof" : isLetter ? "letter" : "full"
           }

@@ -38,6 +38,13 @@ import {
   toggleContextChipPin,
   type CoachContextChip,
 } from "./coach-context-chips.ts"
+import { PaperCiteControl } from "./paper-cite-control.tsx"
+import {
+  rememberCoachCites,
+  type PaperCite,
+  type PaperCiteSpan,
+  type StoredCoachCites,
+} from "./paper-cite.ts"
 import { previewCoachSelectionText } from "./paper-selection.ts"
 import type { ToolbarVariant } from "./paper-editor-toolbar.tsx"
 
@@ -199,6 +206,8 @@ type Props = {
   variant: ToolbarVariant
   selection?: CoachSelection | null
   onClearSelection?: () => void
+  citeSpans?: readonly PaperCiteSpan[]
+  onCitePaper?: (sectionId: string) => void
 }
 
 function readFloatState(): CoachFloatState {
@@ -247,6 +256,8 @@ export const CoachFloat = memo(function CoachFloat({
   variant,
   selection,
   onClearSelection,
+  citeSpans = [],
+  onCitePaper,
 }: Props) {
   const dialogRef = useRef<HTMLDivElement>(null)
   const returnFocusRef = useRef(false)
@@ -287,15 +298,51 @@ export const CoachFloat = memo(function CoachFloat({
       focusDocId,
     })
 
+  const lastTurnRef = useRef<{
+    selection?: CoachSelection
+    chips: CoachContextChip[]
+  } | null>(null)
+  const [citesByMessageId, setCitesByMessageId] = useState<StoredCoachCites>(
+    {}
+  )
+
   const sendWithSelection = useCallback(
     (text: string) => {
+      const turnSelection = selectionForTurn(contextChips, selection)
+      lastTurnRef.current = {
+        selection: turnSelection,
+        chips: contextChips,
+      }
       const sent = send(text, {
-        selection: selectionForTurn(contextChips, selection),
+        selection: turnSelection,
       })
       if (sent) setContextChips(consumeUnpinnedContextChips)
       return sent
     },
     [contextChips, selection, send]
+  )
+
+  useEffect(() => {
+    setCitesByMessageId((prev) =>
+      rememberCoachCites(prev, messages, citeSpans, lastTurnRef.current)
+    )
+  }, [citeSpans, messages])
+
+  const citePaper = useCallback(
+    (cite: PaperCite) => {
+      onCitePaper?.(cite.sectionId)
+      if (!isDesktop && floatState === "open") applyMinimized()
+    },
+    [applyMinimized, floatState, isDesktop, onCitePaper]
+  )
+
+  const messageCite = useCallback(
+    (message: (typeof messages)[number]) => {
+      const cite = citesByMessageId[message.id]
+      if (!cite || !onCitePaper) return null
+      return <PaperCiteControl cite={cite} onCite={citePaper} />
+    },
+    [citePaper, citesByMessageId, onCitePaper]
   )
 
   const addSelectionToContext = useCallback(() => {
@@ -539,6 +586,7 @@ export const CoachFloat = memo(function CoachFloat({
               onRegenerate={phase === "idle" ? regenerate : undefined}
               onUndo={phase === "idle" ? undo : undefined}
               onAttachFromPaper={attachFromPaper}
+              messageCite={onCitePaper ? messageCite : undefined}
               placeholder="Ask about this document…"
               empty={
                 <QuickPromptChips
