@@ -42,8 +42,8 @@ describe("CV print-paper type rhythm", () => {
       const name = screen.getByRole("textbox", { name: "Full name" })
       expect(name.closest("[data-cv-type='page-title']")).not.toBeNull()
 
-      const summary = screen.getByRole("textbox", { name: "Summary" })
-      expect(summary.closest("[data-cv-type='body']")).not.toBeNull()
+      const headline = screen.getByRole("textbox", { name: "Headline" })
+      expect(headline.closest("[data-cv-type='body']")).not.toBeNull()
     }
   })
 })
