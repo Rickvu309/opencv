@@ -108,17 +108,20 @@ export function dismissFirstCafeChecklist(
   return { ...state, dismissed: true }
 }
 
+/**
+ * Exact leaf path only — never a parent `/app` prefix, never more than
+ * one item. Visiting Apply must not complete Sample CV or Pitch.
+ */
 export function firstCafeItemForVisit(
   pathname: string,
   search: Record<string, unknown> = {}
 ): FirstCafeItemId | null {
-  if (pathname === SURFACE_PATHS.paper) return "sample-cv"
-  if (pathname === SURFACE_PATHS.pitch) return "pitch"
-  if (pathname === SURFACE_PATHS.apply) return "apply"
-  if (pathname === SURFACE_PATHS.settings && search.tab === "apps") {
-    return "email"
-  }
-  return null
+  const matches = FIRST_CAFE_CHECKLIST_ITEMS.filter((item) => {
+    if (item.to !== pathname) return false
+    if (item.id === "email") return search.tab === "apps"
+    return true
+  })
+  return matches.length === 1 ? (matches[0]?.id ?? null) : null
 }
 
 export type FirstCafeRouterVisit = {
@@ -126,12 +129,15 @@ export type FirstCafeRouterVisit = {
   status: "pending" | "idle"
   pathname?: string
   resolvedPathname: string | undefined
+  /** Committed history URL. Store flashes from sibling Links must not count. */
+  historyPathname?: string
   resolvedSearch?: Record<string, unknown>
 }
 
 /**
- * Only a settled leaf counts. Pending / unresolved locations (signup
- * bootstrap, soft nav, route flicker) must not complete a checklist item.
+ * Only a settled leaf that matches the committed history URL counts.
+ * Pending / unresolved locations (signup bootstrap, soft nav) and
+ * router-store flashes to sibling surfaces must not complete an item.
  */
 export function firstCafeVisitToRecord(
   visit: FirstCafeRouterVisit
@@ -140,6 +146,12 @@ export function firstCafeVisitToRecord(
   if (visit.status !== "idle") return null
   if (!visit.resolvedPathname) return null
   if (visit.pathname != null && visit.pathname !== visit.resolvedPathname) {
+    return null
+  }
+  if (
+    visit.historyPathname != null &&
+    visit.historyPathname !== visit.resolvedPathname
+  ) {
     return null
   }
   const search = visit.resolvedSearch ?? {}

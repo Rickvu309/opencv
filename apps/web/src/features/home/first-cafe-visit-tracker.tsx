@@ -1,5 +1,5 @@
 import { useEffect } from "react"
-import { useRouterState } from "@tanstack/react-router"
+import { useRouter, useRouterState } from "@tanstack/react-router"
 
 import {
   firstCafeVisitToRecord,
@@ -10,6 +10,7 @@ import { authClient } from "@/lib/auth-client.ts"
 export function FirstCafeVisitTracker() {
   const { data } = authClient.useSession()
   const userId = data?.user.id
+  const router = useRouter()
   const status = useRouterState({
     select: (state): "pending" | "idle" => state.status,
   })
@@ -24,6 +25,7 @@ export function FirstCafeVisitTracker() {
       (state.resolvedLocation?.search as { tab?: string } | undefined)?.tab ===
       "apps",
   })
+  const historyPathname = router.history.location.pathname
 
   useEffect(() => {
     const visit = firstCafeVisitToRecord({
@@ -31,11 +33,12 @@ export function FirstCafeVisitTracker() {
       status,
       pathname,
       resolvedPathname,
+      historyPathname,
       resolvedSearch: onAppsTab ? { tab: "apps" } : {},
     })
     if (!userId || !visit) return
     recordFirstCafeVisit(userId, visit.pathname, visit.search)
-  }, [userId, status, pathname, resolvedPathname, onAppsTab])
+  }, [userId, status, pathname, resolvedPathname, historyPathname, onAppsTab])
 
   return null
 }
