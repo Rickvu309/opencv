@@ -4,9 +4,23 @@ import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { describe, expect, it } from "vitest"
 
+import {
+  PAPER_CONTENT_VERSION,
+  STARTER_CV_NAME,
+  starterCvDocument,
+  type PaperDoc,
+} from "@workspace/domain"
+
 import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 import { defaultCvData } from "./paper-cv-types.ts"
-import { formatPaperUpdated, paperSummary } from "./paper-data.ts"
+import {
+  PAPER_LIST_EMPTY_CTA,
+  SAMPLE_CV_LABEL,
+  formatPaperUpdated,
+  isSampleCv,
+  paperDocToLink,
+  paperSummary,
+} from "./paper-data.ts"
 import { samplePaperDocs } from "@/test/paper-fixtures.ts"
 
 const paperRoot = fileURLToPath(new URL(".", import.meta.url))
@@ -61,22 +75,103 @@ describe("paper display helpers", () => {
   it("summarizes counts from live docs", () => {
     const summary = paperSummary(samplePaperDocs())
     expect(summary[0]).toEqual({
+      id: "cvs",
       label: "CVs",
       value: "1",
       hint: "1 draft",
+      cta: null,
     })
     expect(summary[1]).toEqual({
+      id: "letters",
       label: "Letters",
       value: "2",
       hint: "All drafts",
+      cta: null,
     })
     expect(summary[3]).toEqual({
+      id: "linked",
       label: "Linked to Apply",
       value: "2",
       hint: "Linked to an Opportunity",
+      cta: null,
+    })
+  })
+
+  it("labels a lone sample CV and offers one empty-list CTA each", () => {
+    const sample = starterSampleCv()
+    const summary = paperSummary([sample])
+
+    expect(isSampleCv(sample)).toBe(true)
+    expect(paperDocToLink([sample])).toBe(sample)
+    expect(summary[0]).toEqual({
+      id: "cvs",
+      label: "CVs",
+      value: "1",
+      hint: SAMPLE_CV_LABEL,
+      cta: null,
+    })
+    expect(summary[1]).toEqual({
+      id: "letters",
+      label: "Letters",
+      value: "0",
+      hint: "",
+      cta: PAPER_LIST_EMPTY_CTA.letter,
+    })
+    expect(summary[2]).toEqual({
+      id: "proof",
+      label: "Proof",
+      value: "0",
+      hint: "",
+      cta: PAPER_LIST_EMPTY_CTA.proof,
+    })
+    expect(summary[3]).toEqual({
+      id: "linked",
+      label: "Linked to Apply",
+      value: "0",
+      hint: "",
+      cta: PAPER_LIST_EMPTY_CTA.linked,
+    })
+    expect(summary.map((item) => item.hint).join(" ")).not.toMatch(/None yet/)
+    expect(PAPER_LIST_EMPTY_CTA).toEqual({
+      letter: "Start letter",
+      proof: "Add proof",
+      linked: "Link to a job",
+    })
+    expect(SAMPLE_CV_LABEL).toBe("Sample · replace anytime")
+  })
+
+  it("keeps the sample row honest when other CVs exist", () => {
+    const sample = starterSampleCv()
+    const own: PaperDoc = {
+      ...sample,
+      id: "77777777-7777-7777-8777-777777777777",
+      name: "My internship CV",
+    }
+    const summary = paperSummary([sample, own])
+
+    expect(isSampleCv(own)).toBe(false)
+    expect(summary[0]).toMatchObject({
+      id: "cvs",
+      value: "2",
+      hint: "All drafts",
+      cta: null,
     })
   })
 })
+
+function starterSampleCv(): PaperDoc {
+  return {
+    id: "66666666-6666-7666-8666-666666666666",
+    name: STARTER_CV_NAME,
+    kind: "cv",
+    status: "draft",
+    content: starterCvDocument(),
+    contentVersion: PAPER_CONTENT_VERSION,
+    applyCardId: null,
+    createdAt: "2026-08-25T12:00:00.000Z",
+    updatedAt: "2026-08-25T12:00:00.000Z",
+  }
+}
 
 describe("prefixed-string retirement", () => {
   it("keeps production Paper modules free of cv:v1 / proof:v1 content", () => {

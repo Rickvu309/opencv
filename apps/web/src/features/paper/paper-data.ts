@@ -1,5 +1,6 @@
 import {
   PAPER_KIND_LABEL,
+  STARTER_CV_NAME,
   emptyCvDocument,
   emptyProofDocument,
   isCvDocument,
@@ -76,6 +77,36 @@ export function formatPaperUpdated(iso: string, now = Date.now()): string {
   })
 }
 
+export const SAMPLE_CV_LABEL = "Sample · replace anytime"
+
+export const PAPER_LIST_EMPTY_CTA = {
+  letter: "Start letter",
+  proof: "Add proof",
+  linked: "Link to a job",
+} as const
+
+export function isSampleCv(doc: PaperDoc) {
+  return doc.kind === "cv" && doc.name === STARTER_CV_NAME
+}
+
+export function sampleCvOf(docs: PaperDoc[]) {
+  return docs.find(isSampleCv)
+}
+
+export function paperDocToLink(docs: PaperDoc[]) {
+  return sampleCvOf(docs) ?? docs.find((doc) => doc.kind === "cv") ?? docs[0]
+}
+
+export type PaperSummaryId = "cvs" | "letters" | "proof" | "linked"
+
+export type PaperSummaryItem = {
+  id: PaperSummaryId
+  label: string
+  value: string
+  hint: string
+  cta: string | null
+}
+
 function statusHint(docs: PaperDoc[]): string {
   if (docs.length === 0) return "None yet"
   const drafts = docs.filter((doc) => doc.status === "draft").length
@@ -92,25 +123,41 @@ function statusHint(docs: PaperDoc[]): string {
   return parts.join(" · ") || "Mixed"
 }
 
-export function paperSummary(docs: PaperDoc[]) {
+export function paperSummary(docs: PaperDoc[]): PaperSummaryItem[] {
   const cvs = docs.filter((doc) => doc.kind === "cv")
   const letters = docs.filter((doc) => doc.kind === "letter")
   const proofs = docs.filter((doc) => doc.kind === "proof")
+  const linked = docs.filter((doc) => doc.applyCardId)
+  const onlySampleCv = cvs.length === 1 && cvs[0] !== undefined && isSampleCv(cvs[0])
+
   return [
-    { label: "CVs", value: String(cvs.length), hint: statusHint(cvs) },
     {
+      id: "cvs",
+      label: "CVs",
+      value: String(cvs.length),
+      hint: onlySampleCv ? SAMPLE_CV_LABEL : statusHint(cvs),
+      cta: null,
+    },
+    {
+      id: "letters",
       label: "Letters",
       value: String(letters.length),
-      hint: statusHint(letters),
+      hint: letters.length === 0 ? "" : statusHint(letters),
+      cta: letters.length === 0 ? PAPER_LIST_EMPTY_CTA.letter : null,
     },
-    { label: "Proof", value: String(proofs.length), hint: statusHint(proofs) },
     {
+      id: "proof",
+      label: "Proof",
+      value: String(proofs.length),
+      hint: proofs.length === 0 ? "" : statusHint(proofs),
+      cta: proofs.length === 0 ? PAPER_LIST_EMPTY_CTA.proof : null,
+    },
+    {
+      id: "linked",
       label: "Linked to Apply",
-      value: String(docs.filter((doc) => doc.applyCardId).length),
-      hint:
-        docs.filter((doc) => doc.applyCardId).length === 0
-          ? "None yet"
-          : "Linked to an Opportunity",
+      value: String(linked.length),
+      hint: linked.length === 0 ? "" : "Linked to an Opportunity",
+      cta: linked.length === 0 ? PAPER_LIST_EMPTY_CTA.linked : null,
     },
   ]
 }
