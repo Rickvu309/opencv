@@ -360,19 +360,30 @@ describe("Apply workspace", () => {
     ).not.toBeInTheDocument()
   })
 
-  it("marks unfinished chrome as coming soon and enables Add job", async () => {
+  it("fits all five Stages on one glanceable board without Coming-soon chrome", async () => {
     renderApply()
     await expectApplyLive()
 
-    const filter = screen.getByRole("button", { name: /filter/i })
-    const add = screen.getByRole("button", { name: /add job/i })
-    expect(filter).toBeDisabled()
-    expect(add).toBeEnabled()
-    expect(filter).toHaveTextContent("Coming soon")
-    expect(add).not.toHaveTextContent("Coming soon")
+    const board = document.querySelector("[data-apply-board]")
+    expect(board).toBeTruthy()
+    expect(board).toHaveClass("grid-cols-5")
+    expect(board?.className ?? "").not.toMatch(/overflow-x-auto/)
+    for (const id of ["inbox", "prep", "sent", "live", "closed"] as const) {
+      const column = stageColumn(id)
+      expect(column.className).not.toMatch(/w-64/)
+      expect(column.className).not.toMatch(/shrink-0/)
+    }
+
     expect(
-      screen.getByRole("button", { name: "Inbox column menu — coming soon" })
-    ).toBeDisabled()
+      screen.queryByRole("button", { name: /filter/i })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: /column menu/i })
+    ).not.toBeInTheDocument()
+    expect(screen.queryByText("Coming soon")).not.toBeInTheDocument()
+    const addJob = screen.getByRole("button", { name: /add job/i })
+    expect(addJob).toBeEnabled()
+    expect(addJob).not.toHaveTextContent("Coming soon")
 
     fireEvent.click(screen.getByRole("button", { name: /Associate PM intern/ }))
     expect(

@@ -57,4 +57,17 @@ describe("Apply seam", () => {
     expect(workspace).not.toMatch(/Fit score/)
     expect(calendar).not.toMatch(/card\.fit/)
   })
+
+  it("glances five Stages on a café laptop and defers dead Coming-soon chrome", () => {
+    const workspace = read("src/features/apply/apply-workspace.tsx")
+
+    expect(workspace).toMatch(/data-apply-board/)
+    expect(workspace).toMatch(/grid-cols-5/)
+    expect(workspace).not.toMatch(/w-64 shrink-0/)
+    expect(workspace).not.toMatch(/overflow-x-auto/)
+    expect(workspace).not.toMatch(/\bFilter\b/)
+    expect(workspace).not.toMatch(/MoreHorizontal/)
+    expect(workspace).not.toMatch(/ComingSoon/)
+    expect(workspace).not.toMatch(/comingSoonLabel/)
+  })
 })
