@@ -1,4 +1,11 @@
 import { useState, type ReactNode } from "react"
+import {
+  APPLY_JOB_URL_BLOCKED,
+  APPLY_JOB_URL_INVALID,
+  openableApplyJobUrl,
+  parseApplyJobUrlInput,
+  type PaperDoc,
+} from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
 import {
   DropdownMenu,
@@ -18,15 +25,9 @@ import {
 } from "@workspace/ui/components/select"
 import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
-import type { PaperDoc } from "@workspace/domain"
-import {
-  ExternalLink,
-  Link2,
-  Star,
-  Trash2,
-  X,
-} from "lucide-react"
+import { ExternalLink, Link2, Star, Trash2, X } from "lucide-react"
 
+import { ErrorBanner } from "@/components/error-banner.tsx"
 import {
   formatApplyUpdated,
   STAGES,
@@ -43,7 +44,10 @@ type Props = {
   onClose: () => void
   onPatch: (
     patch: Partial<
-      Pick<ApplyCard, "title" | "company" | "note" | "trackDate" | "trackKind">
+      Pick<
+        ApplyCard,
+        "title" | "company" | "note" | "jobUrl" | "trackDate" | "trackKind"
+      >
     >
   ) => void
   onMove: (stage: StageId) => void
@@ -75,6 +79,21 @@ export function JobDetailPanel({
 }: Props) {
   const stageLabel = STAGES.find((s) => s.id === card.stage)?.label ?? "Inbox"
   const [linkOpen, setLinkOpen] = useState(false)
+  const [openError, setOpenError] = useState<string | null>(null)
+
+  function openPosting() {
+    const href = openableApplyJobUrl(card.jobUrl)
+    if (!href) {
+      setOpenError(APPLY_JOB_URL_INVALID)
+      return
+    }
+    const opened = window.open(href, "_blank", "noopener,noreferrer")
+    if (!opened) {
+      setOpenError(APPLY_JOB_URL_BLOCKED)
+      return
+    }
+    setOpenError(null)
+  }
 
   return (
     <aside
@@ -100,10 +119,7 @@ export function JobDetailPanel({
         <div className="mx-0.5 h-5 w-px bg-border" aria-hidden />
 
         {card.jobUrl ? (
-          <ToolbarIconButton
-            label="Open job posting"
-            onClick={() => window.open(card.jobUrl ?? undefined, "_blank")}
-          >
+          <ToolbarIconButton label="Open job posting" onClick={openPosting}>
             <ExternalLink className="size-3.5" />
           </ToolbarIconButton>
         ) : null}
@@ -132,6 +148,10 @@ export function JobDetailPanel({
       </div>
 
       <div className="flex flex-1 flex-col gap-4 overflow-auto p-4">
+        {openError ? (
+          <ErrorBanner variant="inline">{openError}</ErrorBanner>
+        ) : null}
+
         <JobDetailFields
           key={`${card.id}:${revertKey}`}
           card={card}
@@ -201,6 +221,8 @@ function JobDetailFields({
 }) {
   const [title, setTitle] = useState(card.title)
   const [company, setCompany] = useState(card.company)
+  const [jobUrl, setJobUrl] = useState(card.jobUrl ?? "")
+  const [jobUrlError, setJobUrlError] = useState<string | null>(null)
 
   function commitTitle() {
     const next = title.trim()
@@ -218,6 +240,20 @@ function JobDetailFields({
       return
     }
     onPatch({ company: next })
+  }
+
+  function commitJobUrl() {
+    const parsed = parseApplyJobUrlInput(jobUrl)
+    if (!parsed.ok) {
+      setJobUrlError(parsed.message)
+      setJobUrl(card.jobUrl ?? "")
+      return
+    }
+    setJobUrlError(null)
+    setJobUrl(parsed.jobUrl ?? "")
+    if (parsed.jobUrl !== (card.jobUrl ?? null)) {
+      onPatch({ jobUrl: parsed.jobUrl })
+    }
   }
 
   return (
@@ -244,6 +280,30 @@ function JobDetailFields({
           onChange={(e) => setCompany(e.target.value)}
           onBlur={commitCompany}
         />
+      </div>
+      <div className="block">
+        <Label htmlFor={`job-url-${card.id}`} className={FIELD_LABEL}>
+          Job posting URL
+        </Label>
+        <Input
+          id={`job-url-${card.id}`}
+          type="text"
+          inputMode="url"
+          autoComplete="url"
+          value={jobUrl}
+          onChange={(e) => {
+            setJobUrl(e.target.value)
+            if (jobUrlError) setJobUrlError(null)
+          }}
+          onBlur={commitJobUrl}
+          placeholder="Paste a posting link"
+          aria-invalid={Boolean(jobUrlError)}
+        />
+        {jobUrlError ? (
+          <ErrorBanner variant="inline" className="mt-1">
+            {jobUrlError}
+          </ErrorBanner>
+        ) : null}
       </div>
     </div>
   )
