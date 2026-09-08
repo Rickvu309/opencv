@@ -102,7 +102,7 @@ export function usePitch() {
     if (!doc || query.isPending || mutation.isPending) return
     const decoded = decodePitchContent(doc.kind, doc.contentVersion, doc.content)
     if (!decoded.ok || pitchContentEquals(doc.content, decoded.data)) return
-    persist(() => decoded.data)
+    persist((current) => current)
   }, [mutation.isPending, persist, query.data, query.isPending])
 
   return {

@@ -109,7 +109,9 @@ describe("Pitch workspace", () => {
     await loadedPitch()
 
     fireEvent.click(screen.getByRole("button", { name: "Clear demo" }))
-    expect(await screen.findByText("Your Pitch is empty")).toBeInTheDocument()
+    expect(
+      await screen.findByText("Your Pitch is empty")
+    ).toBeInTheDocument()
     expect(
       screen.getByText(
         /Write a line about what you want next, or leave it quiet/
