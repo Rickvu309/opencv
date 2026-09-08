@@ -136,7 +136,8 @@ describe("Pitch workspace", () => {
 
   it("still offers Clear demo when sample About is present without the demo flag", async () => {
     const starter = starterPitchDocument()
-    const { demo: _demo, ...rest } = starter
+    const { demo, ...rest } = starter
+    expect(demo).toBe(true)
     setMockPitchDoc({
       id: "55555555-5555-7555-8555-555555555560",
       kind: "pitch",
