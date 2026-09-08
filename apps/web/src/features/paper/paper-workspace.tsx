@@ -37,7 +37,15 @@ import { ErrorBanner } from "@/components/error-banner.tsx"
 import { useApplyCards } from "@/features/apply/use-apply-cards.ts"
 import { DestructiveCommandDialog } from "@/features/commands/destructive-command-dialog.tsx"
 
-import { TYPE_LABEL, formatPaperUpdated, paperSummary } from "./paper-data.ts"
+import {
+  SAMPLE_CV_LABEL,
+  TYPE_LABEL,
+  formatPaperUpdated,
+  isSampleCv,
+  paperDocToLink,
+  paperSummary,
+  type PaperSummaryId,
+} from "./paper-data.ts"
 import { PaperEditor } from "./paper-editor.tsx"
 import { usePaperDocs } from "./use-paper-docs.ts"
 
@@ -96,6 +104,21 @@ export function PaperWorkspace({
   async function handleCreate(kind: PaperContentKind) {
     const created = await paper.createDoc(kind)
     setOpenDocId(created.id)
+  }
+
+  function handleSummaryCta(id: PaperSummaryId) {
+    if (id === "letters") {
+      void handleCreate("letter")
+      return
+    }
+    if (id === "proof") {
+      void handleCreate("proof")
+      return
+    }
+    if (id === "linked") {
+      const target = paperDocToLink(paper.docs)
+      if (target) setLinkTarget(target)
+    }
   }
 
   function openRename(doc: PaperDoc) {
@@ -167,7 +190,7 @@ export function PaperWorkspace({
       {deleteTarget ? (
         <DestructiveCommandDialog
           open
-          title="Delete document"
+          title={isSampleCv(deleteTarget) ? "Clear sample" : "Delete document"}
           name={deleteTarget.name}
           onOpenChange={(open) => {
             if (!open) setDeleteTarget(null)
@@ -275,14 +298,29 @@ export function PaperWorkspace({
         <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {summary.map((item) => (
             <div
-              key={item.label}
+              key={item.id}
+              role="region"
+              aria-label={item.label}
               className="rounded-lg border border-border bg-background p-4 shadow-sm"
             >
               <p className="text-sm text-muted-foreground">{item.label}</p>
               <p className="mt-2 text-2xl font-bold tracking-tight tabular-nums">
                 {item.value}
               </p>
-              <p className="mt-1 text-xs text-muted-foreground">{item.hint}</p>
+              {item.hint ? (
+                <p className="mt-1 text-xs text-muted-foreground">{item.hint}</p>
+              ) : null}
+              {item.cta && !paper.isLoading ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="xs"
+                  className="mt-2 h-6 px-1.5 text-xs font-medium text-muted-foreground"
+                  onClick={() => handleSummaryCta(item.id)}
+                >
+                  {item.cta}
+                </Button>
+              ) : null}
             </div>
           ))}
         </div>
@@ -365,7 +403,14 @@ export function PaperWorkspace({
                           <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
                             {doc.name.slice(0, 2).toUpperCase()}
                           </span>
-                          <span className="font-medium">{doc.name}</span>
+                          <span className="min-w-0">
+                            <span className="block font-medium">{doc.name}</span>
+                            {isSampleCv(doc) ? (
+                              <span className="mt-0.5 block text-xs text-muted-foreground">
+                                {SAMPLE_CV_LABEL}
+                              </span>
+                            ) : null}
+                          </span>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
@@ -465,7 +510,7 @@ function RowMenu({
             onDelete()
           }}
         >
-          Delete
+          {isSampleCv(doc) ? "Clear sample" : "Delete"}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
