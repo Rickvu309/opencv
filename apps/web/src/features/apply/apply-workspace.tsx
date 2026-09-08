@@ -3,7 +3,7 @@
  * Do not import shell chrome — the route mounts this into `<Outlet />`.
  * Fit is stored on the server and never rendered (PRODUCT.md open q. 1).
  */
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import { Button } from "@workspace/ui/components/button"
 import { ButtonGroup } from "@workspace/ui/components/button-group"
 import { Empty, EmptyDescription } from "@workspace/ui/components/empty-state"
@@ -53,8 +53,8 @@ export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
   const apply = useApplyCards()
   const paper = usePaperDocs()
   const [view, setView] = useState<"board" | "calendar">("board")
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [openedGuide, setOpenedGuide] = useState(false)
+  const [pickedId, setPickedId] = useState<string | null>(null)
+  const [selectionTouched, setSelectionTouched] = useState(false)
   const [query, setQuery] = useState("")
   const [dragOverStage, setDragOverStage] = useState<StageId | null>(null)
   const [dragOverCardId, setDragOverCardId] = useState<string | null>(null)
@@ -62,18 +62,21 @@ export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
   const [addOpen, setAddOpen] = useState(false)
   const dragMovedRef = useRef(false)
 
+  const guidedCard = apply.isLoading ? null : pickGuidedApplyCard(apply.cards)
+  const selectedId = selectionTouched
+    ? pickedId
+    : openGuide
+      ? (guidedCard?.id ?? null)
+      : null
   const selected = apply.cards.find((c) => c.id === selectedId)
-  const guidedCard = pickGuidedApplyCard(apply.cards)
   const guided = Boolean(
     openGuide && selectedId && guidedCard && selectedId === guidedCard.id
   )
 
-  useEffect(() => {
-    if (!openGuide || openedGuide || apply.isLoading) return
-    const card = pickGuidedApplyCard(apply.cards)
-    if (card) setSelectedId(card.id)
-    setOpenedGuide(true)
-  }, [openGuide, openedGuide, apply.cards, apply.isLoading])
+  function chooseCard(id: string | null) {
+    setSelectionTouched(true)
+    setPickedId(id)
+  }
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -112,7 +115,7 @@ export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
       dragMovedRef.current = false
       return
     }
-    setSelectedId((current) => (current === id ? null : id))
+    chooseCard(selectedId === id ? null : id)
   }
 
   async function addJob(draft: AddJobDraft) {
@@ -123,7 +126,7 @@ export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
       ...(draft.note ? { note: draft.note } : {}),
     })
     setAddOpen(false)
-    setSelectedId(created.id)
+    chooseCard(created.id)
   }
 
   const errorBanner = apply.error ? (
@@ -301,7 +304,7 @@ export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
           <ApplyCalendar
             cards={filtered}
             selectedId={selectedId}
-            onSelect={setSelectedId}
+            onSelect={chooseCard}
             onMoveDate={moveDate}
             dragMovedRef={dragMovedRef}
           />
@@ -313,7 +316,7 @@ export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
             guided={guided}
             revertKey={apply.revertKey}
             paperDocs={paper.docs}
-            onClose={() => setSelectedId(null)}
+            onClose={() => chooseCard(null)}
             onPatch={(patch) =>
               apply.updateCard({ cardId: selected.id, ...patch })
             }
@@ -345,7 +348,7 @@ export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
           onConfirm={() => {
             const id = deleteTarget.id
             setDeleteTarget(null)
-            if (selectedId === id) setSelectedId(null)
+            if (selectedId === id) chooseCard(null)
             void apply.deleteCard(id)
           }}
         />

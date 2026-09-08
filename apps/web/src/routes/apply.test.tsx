@@ -28,12 +28,12 @@ async function expectApplyLive() {
   ).toBeInTheDocument()
   expect(screen.getByRole("button", { name: "Board" })).toBeInTheDocument()
   expect(screen.getByRole("button", { name: "Calendar" })).toBeInTheDocument()
-  expect(await screen.findByText("Inbox")).toBeInTheDocument()
-  expect(screen.getByText("Prep")).toBeInTheDocument()
-  expect(screen.getByText("Sent")).toBeInTheDocument()
-  expect(screen.getByText("Live")).toBeInTheDocument()
-  expect(screen.getByText("Closed")).toBeInTheDocument()
-  expect(screen.getByText("Associate PM intern")).toBeInTheDocument()
+  expect(await screen.findByText("Associate PM intern")).toBeInTheDocument()
+  expect(stageColumn("inbox")).toBeTruthy()
+  expect(stageColumn("prep")).toBeTruthy()
+  expect(stageColumn("sent")).toBeTruthy()
+  expect(stageColumn("live")).toBeTruthy()
+  expect(stageColumn("closed")).toBeTruthy()
   expect(screen.queryByText(SURFACE_COPY.apply.body)).not.toBeInTheDocument()
 }
 
