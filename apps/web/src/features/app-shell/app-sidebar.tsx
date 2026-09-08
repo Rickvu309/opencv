@@ -23,26 +23,25 @@ import { OpenPathLogo } from "@/features/app-shell/app-logo.tsx"
 import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
 import { NavProfile } from "@/features/app-shell/nav-profile.tsx"
 import { SidebarHistory } from "@/features/app-shell/sidebar-history.tsx"
-import { SURFACE_PATHS, type SurfaceId } from "@/features/app-shell/surfaces.ts"
+import {
+  SEARCH_PATH,
+  SURFACE_PATHS,
+  type SurfaceId,
+} from "@/features/app-shell/surfaces.ts"
 import { useThreadList } from "@/features/home/use-thread-list.ts"
 
 type RouteNavItem = {
   kind: "route"
-  id: Exclude<SurfaceId, "settings">
+  id: Exclude<SurfaceId, "settings"> | "search"
   label: string
   icon: ComponentType<{ className?: string }>
-  to: (typeof SURFACE_PATHS)[Exclude<SurfaceId, "settings">]
+  to:
+    | (typeof SURFACE_PATHS)[Exclude<SurfaceId, "settings">]
+    | typeof SEARCH_PATH
   badge?: boolean
 }
 
-type ActionNavItem = {
-  kind: "action"
-  id: "search"
-  label: string
-  icon: ComponentType<{ className?: string }>
-}
-
-const PRIMARY_NAV: Array<RouteNavItem | ActionNavItem> = [
+const PRIMARY_NAV: RouteNavItem[] = [
   {
     kind: "route",
     id: "home",
@@ -50,7 +49,13 @@ const PRIMARY_NAV: Array<RouteNavItem | ActionNavItem> = [
     icon: Home,
     to: SURFACE_PATHS.home,
   },
-  { kind: "action", id: "search", label: "Search", icon: Search },
+  {
+    kind: "route",
+    id: "search",
+    label: "Search",
+    icon: Search,
+    to: SEARCH_PATH,
+  },
   {
     kind: "route",
     id: "paper",
@@ -172,48 +177,15 @@ function RouteNavLink({
   return <CollapsedTip label={item.label}>{link}</CollapsedTip>
 }
 
-function SearchNavItem({
-  item,
-  collapsed,
-  onSearch,
-}: {
-  item: ActionNavItem
-  collapsed: boolean
-  onSearch: () => void
-}) {
-  const Icon = item.icon
-  const button = (
-    <Button
-      type="button"
-      variant="ghost"
-      aria-label={item.label}
-      aria-haspopup="dialog"
-      onClick={onSearch}
-      className={navItemClassName(false, collapsed)}
-    >
-      <Icon className="size-4 shrink-0 text-foreground/70" />
-      <NavLabel collapsed={collapsed}>{item.label}</NavLabel>
-    </Button>
-  )
-
-  if (!collapsed) {
-    return button
-  }
-
-  return <CollapsedTip label={item.label}>{button}</CollapsedTip>
-}
-
 type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSearch: () => void
   onNavigate?: () => void
 }
 
 export function AppSidebar({
   open,
   onOpenChange,
-  onSearch,
   onNavigate,
 }: Props) {
   const { newThread } = useThreadList()
@@ -271,26 +243,17 @@ export function AppSidebar({
           aria-label="Surfaces"
           className="flex flex-col gap-0.5 px-1.5"
         >
-          {PRIMARY_NAV.map((item) =>
-            item.kind === "action" ? (
-              <SearchNavItem
-                key={item.id}
-                item={item}
-                collapsed={collapsed}
-                onSearch={onSearch}
-              />
-            ) : (
-              <RouteNavLink
-                key={item.id}
-                item={item}
-                collapsed={collapsed}
-                onClick={() => {
-                  if (item.id === "home") newThread()
-                  onNavigate?.()
-                }}
-              />
-            )
-          )}
+          {PRIMARY_NAV.map((item) => (
+            <RouteNavLink
+              key={item.id}
+              item={item}
+              collapsed={collapsed}
+              onClick={() => {
+                if (item.id === "home") newThread()
+                onNavigate?.()
+              }}
+            />
+          ))}
         </nav>
 
         <SidebarHistory collapsed={collapsed} onNavigate={onNavigate} />

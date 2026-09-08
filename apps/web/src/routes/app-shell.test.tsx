@@ -7,7 +7,12 @@ import {
   within,
 } from "@testing-library/react"
 
-import { SURFACE_COPY, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import {
+  SEARCH_PATH,
+  SEARCH_STUB_COPY,
+  SURFACE_COPY,
+  SURFACE_PATHS,
+} from "@/features/app-shell/surfaces.ts"
 import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
 import { DESKTOP_MEDIA_QUERY } from "@/features/app-shell/use-media-query.ts"
@@ -180,7 +185,38 @@ describe("app shell layout", () => {
 
     const apply = screen.getByRole("link", { name: "Apply" })
     expect(apply.querySelector("[data-slot='badge']")).not.toBeNull()
-    expect(screen.getByRole("button", { name: "Search" })).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Search" })).toBeInTheDocument()
+  })
+
+  it("opens the Search stub instead of a 404", async () => {
+    const { router } = renderApp(SURFACE_PATHS.home)
+    await expectHomeIdle()
+
+    fireEvent.click(screen.getByRole("link", { name: "Search" }))
+    expect(
+      await screen.findByRole("heading", {
+        level: 1,
+        name: SEARCH_STUB_COPY.title,
+      })
+    ).toBeInTheDocument()
+    expect(screen.getByText(SEARCH_STUB_COPY.body)).toBeInTheDocument()
+    expect(screen.getByText(SEARCH_STUB_COPY.detail)).toBeInTheDocument()
+    expect(
+      screen.queryByRole("heading", { name: "Not Found" })
+    ).not.toBeInTheDocument()
+    expect(screen.queryByText("Not Found")).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("dialog", { name: "Search" })
+    ).not.toBeInTheDocument()
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(SEARCH_PATH)
+    })
+
+    fireEvent.click(screen.getByRole("button", { name: SEARCH_STUB_COPY.cta }))
+    await expectApplyLive()
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(SURFACE_PATHS.apply)
+    })
   })
 
   it("left-aligns expanded Search with the other nav rows", async () => {
@@ -191,7 +227,7 @@ describe("app shell layout", () => {
     const sidebar = screen.getByRole("complementary", { name: "App" })
     expect(sidebar).toHaveAttribute("data-expanded", "true")
 
-    const search = within(sidebar).getByRole("button", { name: "Search" })
+    const search = within(sidebar).getByRole("link", { name: "Search" })
     const home = within(sidebar).getByRole("link", { name: "Home" })
     const paper = within(sidebar).getByRole("link", { name: "Paper" })
 
@@ -204,18 +240,16 @@ describe("app shell layout", () => {
 
     fireEvent.click(search)
     expect(
-      await screen.findByRole("dialog", { name: "Search" })
+      await screen.findByRole("heading", {
+        level: 1,
+        name: SEARCH_STUB_COPY.title,
+      })
     ).toBeInTheDocument()
-    fireEvent.keyDown(document, { key: "Escape" })
-    await waitFor(() => {
-      expect(
-        screen.queryByRole("dialog", { name: "Search" })
-      ).not.toBeInTheDocument()
-    })
+    expect(search).toHaveAttribute("aria-current", "page")
 
     fireEvent.click(screen.getByRole("button", { name: "Collapse sidebar" }))
     expect(sidebar).toHaveAttribute("data-expanded", "false")
-    const collapsedSearch = within(sidebar).getByRole("button", {
+    const collapsedSearch = within(sidebar).getByRole("link", {
       name: "Search",
     })
     expect(collapsedSearch).toHaveClass("justify-center")
@@ -369,14 +403,14 @@ describe("settings workspace", () => {
 })
 
 async function openSearch() {
-  fireEvent.click(screen.getByRole("button", { name: "Search" }))
+  fireEvent.keyDown(window, { key: "k", metaKey: true })
   expect(
     await screen.findByRole("dialog", { name: "Search" })
   ).toBeInTheDocument()
 }
 
 describe("search modal", () => {
-  it("opens from the sidebar and closes on Escape", async () => {
+  it("opens from ⌘K and closes on Escape", async () => {
     renderApp(SURFACE_PATHS.home)
     await expectHomeIdle()
     await openSearch()

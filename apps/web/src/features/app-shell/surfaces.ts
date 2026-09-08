@@ -8,6 +8,17 @@ export const SURFACE_PATHS = {
   settings: "/app/settings",
 } as const satisfies Record<SurfaceId, string>
 
+/** Soft stub — job Search is out of scope (CONTEXT.md). Not a SurfaceId. */
+export const SEARCH_PATH = "/app/search"
+
+export const SEARCH_STUB_COPY = {
+  title: "Search",
+  body: "We don't list jobs yet.",
+  detail:
+    "Bring an Opportunity into Apply yourself — paste a posting or add the role. ⌘K still finds your Threads and surfaces.",
+  cta: "Go to Apply",
+} as const
+
 const SETTINGS_TABS = ["general", "apps", "account"] as const
 export type SettingsTab = (typeof SETTINGS_TABS)[number]
 
