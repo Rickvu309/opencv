@@ -653,7 +653,7 @@ const THINKING_PREFIX =
  * on Paper via paper.updateContent (QVE-198).
  */
 export function stripMustEditThinking(text: string): string {
-  let next = text.replace(/\r\n/g, "\n").replace(THINKING_BLOCK, "\n")
+  const next = text.replace(/\r\n/g, "\n").replace(THINKING_BLOCK, "\n")
   const kept: string[] = []
   for (const line of next.split("\n")) {
     const trimmed = line.trim()
