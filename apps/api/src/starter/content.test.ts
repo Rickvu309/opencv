@@ -55,6 +55,21 @@ describe("starter content", () => {
     expect(starterPitchDocument().headline).toMatch(/product manager/i)
     expect(JSON.stringify(starterPitchDocument())).not.toMatch(PERSONA)
     expect(JSON.stringify(starterPitchDocument())).not.toMatch(/you@openpath/)
+    expect(JSON.stringify(starterPitchDocument())).not.toMatch(/sacred space/i)
+  })
+
+  it("keeps Pitch story chips honest about the highlight they open", () => {
+    const pitch = starterPitchDocument()
+    const storyCards = pitch.bento.filter((card) => card.storyHighlightId)
+    expect(storyCards.length).toBeGreaterThan(0)
+    for (const card of storyCards) {
+      const highlight = pitch.storyHighlights.find(
+        (h) => h.id === card.storyHighlightId
+      )
+      expect(highlight, card.title).toBeDefined()
+      expect(card.title).toBe(highlight!.label)
+      expect(card.body).toBe(highlight!.slides[0]?.caption)
+    }
   })
 
   it("spreads Apply cards across Stages without fit or a persona", () => {

@@ -1,4 +1,5 @@
 import {
+  alignStoryChipIdentity,
   decodePitchContent,
   emptyPitchDocument,
   starterPitchDocument,
@@ -36,6 +37,38 @@ describe("pitch codecs", () => {
       ok: false,
       message: "Unsupported content version",
     })
+  })
+
+  it("rewrites a persisted story chip so its label matches the opened highlight", () => {
+    const starter = starterPitchDocument()
+    const checkout = starter.storyHighlights.find((h) => h.id === "sh-checkout")
+    expect(checkout?.label).toBe("Checkout")
+
+    const persisted = {
+      ...starter,
+      bento: starter.bento.map((card) =>
+        card.id === "b4"
+          ? {
+              ...card,
+              title: "my sacred space",
+              body: "Hallway test · late night Figma",
+              storyHighlightId: "sh-checkout",
+            }
+          : card
+      ),
+    }
+
+    const decoded = decodePitchContent("pitch", 1, persisted)
+    expect(decoded.ok).toBe(true)
+    if (!decoded.ok) throw new Error("expected success")
+    const story = decoded.data.bento.find((card) => card.id === "b4")
+    expect(story).toMatchObject({
+      title: "Checkout",
+      body: "Hallway test setup",
+      storyHighlightId: "sh-checkout",
+    })
+    expect(JSON.stringify(decoded.data)).not.toMatch(/sacred space/i)
+    expect(alignStoryChipIdentity(decoded.data)).toBe(decoded.data)
   })
 
   it("still accepts a persisted achievement that only has a dead link", () => {

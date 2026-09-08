@@ -344,8 +344,8 @@ I'm looking for a team that values evidence over slide decks. CV and case studie
       {
         id: "b4",
         kind: "story",
-        title: "my sacred space",
-        body: "Hallway test · late night Figma",
+        title: "Checkout",
+        body: "Hallway test setup",
         tone: "cool",
         span: "tall",
         storyHighlightId: "sh-checkout",
