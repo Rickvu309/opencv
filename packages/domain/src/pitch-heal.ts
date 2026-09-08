@@ -17,6 +17,15 @@ export function pitchHasSurvivingBody(doc: PitchDocument): boolean {
   )
 }
 
+/** Cleared or never-filled Pitch — ghost page, not a sample persona. */
+export function isGhostPitchDocument(doc: PitchDocument): boolean {
+  return (
+    !pitchHasSurvivingBody(doc) &&
+    doc.storyHighlights.length === 0 &&
+    doc.bento.length === 0
+  )
+}
+
 /**
  * QVE-221: starter Moments cannot be emptied in the UI (add chip/card is
  * coming soon). Empty arrays on a Pitch that still has body are a wipe —
@@ -41,13 +50,15 @@ export function restoreWipedStarterMoments(doc: PitchDocument): PitchDocument {
 
 /**
  * Persist guard: leftover-persona heal must not write empty Moments arrays
- * over a document that still had them.
+ * over a document that still had them. A full clear (no surviving body) is
+ * intentional — Demo content → empty Pitch — and must stay empty.
  */
 export function preservePitchMoments(
   previous: PitchDocument | undefined,
   next: PitchDocument
 ): PitchDocument {
   if (!previous) return next
+  if (!pitchHasSurvivingBody(next)) return next
   const storyHighlights =
     next.storyHighlights.length === 0 && previous.storyHighlights.length > 0
       ? previous.storyHighlights

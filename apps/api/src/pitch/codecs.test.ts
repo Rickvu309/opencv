@@ -3,7 +3,10 @@ import {
   decodePitchContent,
   emptyPitchDocument,
   healPitchDocument,
+  isDemoPitchDocument,
+  LEGACY_FAKE_PITCH_HEADLINE,
   preservePitchMoments,
+  STARTER_PITCH_HEADLINE,
   starterPitchDocument,
 } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
@@ -41,6 +44,9 @@ describe("pitch codecs", () => {
     })
     expect(starterPitchDocument().achievements[0]?.proofId).toBe("checkout")
     expect(starterPitchDocument().achievements[0]?.link).toBeUndefined()
+    expect(starterPitchDocument().demo).toBe(true)
+    expect(isDemoPitchDocument(starterPitchDocument())).toBe(true)
+    expect(isDemoPitchDocument(emptyPitchDocument())).toBe(false)
   })
 
   it("rejects malformed content with a message the envelope can surface", () => {
@@ -219,6 +225,29 @@ describe("pitch codecs", () => {
     expect(JSON.stringify(decoded.data)).not.toMatch(/sacred space/i)
     expect(JSON.stringify(decoded.data)).not.toMatch(/Alex Tran/i)
     expect(healPitchDocument(decoded.data)).toEqual(decoded.data)
+  })
+
+  it("relabels a leftover UIT/PM headline as Demo content", () => {
+    const starter = starterPitchDocument()
+    const { demo: _demo, ...rest } = starter
+    const legacy = {
+      ...rest,
+      headline: LEGACY_FAKE_PITCH_HEADLINE,
+    }
+
+    const decoded = decodePitchContent("pitch", 1, legacy)
+    expect(decoded.ok).toBe(true)
+    if (!decoded.ok) throw new Error("expected success")
+    expect(decoded.data.demo).toBe(true)
+    expect(decoded.data.headline).toBe(STARTER_PITCH_HEADLINE)
+    expect(isDemoPitchDocument(decoded.data)).toBe(true)
+    expect(JSON.stringify(decoded.data)).not.toMatch(/Aspiring product manager/i)
+  })
+
+  it("allows a full clear so Demo content can become an empty Pitch", () => {
+    expect(preservePitchMoments(starterPitchDocument(), emptyPitchDocument())).toEqual(
+      emptyPitchDocument()
+    )
   })
 
   it("keeps the empty schema default empty and still accepts extra leftover keys", () => {
