@@ -16,7 +16,11 @@ import {
 } from "@workspace/domain"
 import { and, eq } from "drizzle-orm"
 
-import { getOwnedApplyCard, listStageNeighbors, toApplyCard } from "../apply/queries.js"
+import {
+  getOwnedApplyCard,
+  listStageNeighbors,
+  toApplyCard,
+} from "../apply/queries.js"
 import { applyCards } from "../db/schema.js"
 import { createId } from "../id.js"
 import { CommandError, defineCommand } from "./registry.js"
@@ -73,12 +77,7 @@ export const createApplyCardCommand = defineCommand({
   async handler(ctx, input): Promise<ApplyCard> {
     const stage = input.stage ?? "inbox"
     const now = new Date()
-    const position = await positionBefore(
-      ctx.db,
-      ctx.actor.userId,
-      stage,
-      null
-    )
+    const position = await positionBefore(ctx.db, ctx.actor.userId, stage, null)
 
     const row = {
       id: createId(),
@@ -171,7 +170,8 @@ export const moveApplyCardCommand = defineCommand({
   reversal: {
     possible: true,
     command: APPLY_COMMANDS.moveCard,
-    description: "Undo by moving the card back to its previous Stage and order.",
+    description:
+      "Undo by moving the card back to its previous Stage and order.",
   },
   async captureForReversal(ctx, input) {
     const existing = await getOwnedApplyCard(
@@ -273,8 +273,7 @@ export const toggleApplyStarCommand = defineCommand({
 
 export const deleteApplyCardCommand = defineCommand({
   name: APPLY_COMMANDS.deleteCard,
-  description:
-    "Permanently delete an Apply card. The Coach cannot run this.",
+  description: "Permanently delete an Apply card. The Coach cannot run this.",
   input: applyDeleteCardInputSchema,
   coachAllowed: false,
   destructive: true,

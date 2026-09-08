@@ -50,7 +50,11 @@ export async function listApplyCardsForUser(
     .select()
     .from(applyCards)
     .where(eq(applyCards.userId, userId))
-    .orderBy(asc(applyCards.stage), asc(applyCards.position), asc(applyCards.id))
+    .orderBy(
+      asc(applyCards.stage),
+      asc(applyCards.position),
+      asc(applyCards.id)
+    )
 
   return rows.map(toApplyCard)
 }
@@ -99,12 +103,8 @@ export async function listStageNeighbors(
   const rows: ApplyCardRow[] = await db
     .select()
     .from(applyCards)
-    .where(
-      and(eq(applyCards.userId, userId), eq(applyCards.stage, stage))
-    )
+    .where(and(eq(applyCards.userId, userId), eq(applyCards.stage, stage)))
     .orderBy(asc(applyCards.position), asc(applyCards.id))
 
-  return excludeCardId
-    ? rows.filter((row) => row.id !== excludeCardId)
-    : rows
+  return excludeCardId ? rows.filter((row) => row.id !== excludeCardId) : rows
 }

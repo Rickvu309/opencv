@@ -22,12 +22,12 @@ describe("apply job URL helpers", () => {
   })
 
   it("keeps an http(s) posting URL", () => {
-    expect(
-      parseApplyJobUrlInput("https://linkedin.com/jobs/view/123")
-    ).toEqual({
-      ok: true,
-      jobUrl: "https://linkedin.com/jobs/view/123",
-    })
+    expect(parseApplyJobUrlInput("https://linkedin.com/jobs/view/123")).toEqual(
+      {
+        ok: true,
+        jobUrl: "https://linkedin.com/jobs/view/123",
+      }
+    )
   })
 
   it("does not open the leftover seeded jobs.example.com host", () => {

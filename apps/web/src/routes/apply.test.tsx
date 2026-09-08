@@ -421,9 +421,7 @@ describe("Apply workspace", () => {
     renderApply()
     await expectApplyLive()
 
-    fireEvent.click(
-      screen.getByRole("button", { name: /Associate PM intern/ })
-    )
+    fireEvent.click(screen.getByRole("button", { name: /Associate PM intern/ }))
     const panel = await screen.findByRole("complementary", {
       name: "Job detail",
     })
