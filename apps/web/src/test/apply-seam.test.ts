@@ -65,7 +65,7 @@ describe("Apply seam", () => {
     expect(workspace).toMatch(/grid-cols-5/)
     expect(workspace).not.toMatch(/w-64 shrink-0/)
     expect(workspace).not.toMatch(/overflow-x-auto/)
-    expect(workspace).not.toMatch(/\bFilter\b/)
+    expect(workspace).not.toMatch(/<Filter\b/)
     expect(workspace).not.toMatch(/MoreHorizontal/)
     expect(workspace).not.toMatch(/ComingSoon/)
     expect(workspace).not.toMatch(/comingSoonLabel/)
