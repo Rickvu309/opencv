@@ -6,6 +6,7 @@ import {
   isDemoPitchDocument,
   LEGACY_FAKE_PITCH_HEADLINE,
   preservePitchMoments,
+  STARTER_PITCH_ABOUT_LEAD,
   STARTER_PITCH_HEADLINE,
   starterPitchDocument,
 } from "@workspace/domain"
@@ -45,8 +46,36 @@ describe("pitch codecs", () => {
     expect(starterPitchDocument().achievements[0]?.proofId).toBe("checkout")
     expect(starterPitchDocument().achievements[0]?.link).toBeUndefined()
     expect(starterPitchDocument().demo).toBe(true)
+    expect(starterPitchDocument().about).toContain(STARTER_PITCH_ABOUT_LEAD)
     expect(isDemoPitchDocument(starterPitchDocument())).toBe(true)
     expect(isDemoPitchDocument(emptyPitchDocument())).toBe(false)
+  })
+
+  it("treats unlabeled sample About as Demo content so Clear demo can show", () => {
+    const starter = starterPitchDocument()
+    const { demo: _demo, ...rest } = starter
+    expect(_demo).toBe(true)
+    expect(isDemoPitchDocument(rest)).toBe(true)
+
+    const decoded = decodePitchContent("pitch", 1, rest)
+    expect(decoded.ok).toBe(true)
+    if (!decoded.ok) throw new Error("expected success")
+    expect(decoded.data.demo).toBe(true)
+    expect(isDemoPitchDocument(decoded.data)).toBe(true)
+    expect(decoded.data.about).toContain(STARTER_PITCH_ABOUT_LEAD)
+  })
+
+  it("does not stamp Demo content on a User-owned Pitch without sample About", () => {
+    const owned = {
+      ...emptyPitchDocument(),
+      headline: "Design intern · night shift",
+      about: "I ship small checkout studies.",
+    }
+    expect(isDemoPitchDocument(owned)).toBe(false)
+    expect(decodePitchContent("pitch", 1, owned)).toEqual({
+      ok: true,
+      data: owned,
+    })
   })
 
   it("rejects malformed content with a message the envelope can surface", () => {

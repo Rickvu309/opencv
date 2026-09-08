@@ -4,6 +4,7 @@ import {
   STARTER_CV_NAME,
   STARTER_GUIDED_APPLY_COMPANY,
   STARTER_GUIDED_APPLY_TITLE,
+  STARTER_PITCH_ABOUT_LEAD,
   STARTER_PITCH_HEADLINE,
   STARTER_THREAD_COACH_TEXT,
   STARTER_THREAD_TITLE,
@@ -57,6 +58,7 @@ describe("starter content", () => {
     expect(decoded.ok).toBe(true)
     expect(starterPitchDocument().demo).toBe(true)
     expect(starterPitchDocument().headline).toBe(STARTER_PITCH_HEADLINE)
+    expect(starterPitchDocument().about).toContain(STARTER_PITCH_ABOUT_LEAD)
     expect(starterPitchDocument().headline).not.toMatch(
       /aspiring product manager/i
     )
