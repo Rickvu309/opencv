@@ -2,10 +2,14 @@ import { describe, expect, it } from "vitest"
 
 import { defaultCvData } from "./paper-cv-types.ts"
 import {
+  addEducation,
   addExperienceBullet,
   addExperienceRole,
   addSkillItem,
+  BLANK_EDUCATION,
   duplicateExperienceRole,
+  EMPTY_SECTION_CTA,
+  removeEducation,
   removeExperienceBullet,
   removeExperienceRole,
   removeSkillItem,
@@ -41,6 +45,24 @@ describe("experience row primitives (QVE-207)", () => {
     const next = addExperienceRole(sample.experience)
     expect(next).toHaveLength(3)
     expect(next[2]?.role).toBe("Role title")
+  })
+})
+
+describe("education row primitives (QVE-209)", () => {
+  it("appends a blank school and can remove it", () => {
+    const next = addEducation(sample.education)
+    expect(next).toHaveLength(2)
+    expect(next[1]).toEqual(BLANK_EDUCATION)
+    expect(next[1]).not.toBe(BLANK_EDUCATION)
+    expect(removeEducation(next, 1)).toEqual(sample.education)
+  })
+})
+
+describe("empty section CTA copy (QVE-209)", () => {
+  it("names one quiet next step per section", () => {
+    expect(EMPTY_SECTION_CTA.experience).toBe("Add first role")
+    expect(EMPTY_SECTION_CTA.education).toBe("Add first school")
+    expect(EMPTY_SECTION_CTA.skills).toBe("Add first skill")
   })
 })
 

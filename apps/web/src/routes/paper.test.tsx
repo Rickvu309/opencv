@@ -21,6 +21,7 @@ import {
 } from "@workspace/domain"
 
 import { PAPER_CANVAS_FIELD_CLASS } from "@/features/paper/paper-cv-document.tsx"
+import { EMPTY_SECTION_CTA } from "@/features/paper/paper-cv-edits.ts"
 import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 import { getMockPaperDocs } from "@/test/paper-api-mock.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
@@ -654,6 +655,54 @@ describe("Paper editors", () => {
     const reloaded = await openDoc(STARTER_CV_NAME)
     expect(within(reloaded).getByText("QVE207ReloadMarker")).toBeInTheDocument()
     expect(within(reloaded).getByText("QVE207ReloadRename")).toBeInTheDocument()
+  })
+
+  it("shows one next-step CTA after clearing a section and inserts a usable row", async () => {
+    stubDesktopViewport(true)
+    renderPaper()
+    await expectPaperDrive()
+    const editor = await openDoc("PM track CV")
+
+    while (within(editor).queryAllByRole("textbox", { name: "Role" }).length > 0) {
+      fireEvent.click(within(editor).getAllByRole("button", { name: "Remove role" })[0]!)
+    }
+
+    const addRole = within(editor).getByRole("button", {
+      name: EMPTY_SECTION_CTA.experience,
+    })
+    expect(addRole).toHaveClass("paper-canvas-next-step")
+    expect(
+      within(editor).queryByRole("button", { name: EMPTY_SECTION_CTA.education })
+    ).not.toBeInTheDocument()
+    expect(editor.querySelector("[data-slot='empty']")).toBeNull()
+    expect(within(editor).queryByText(/get started/i)).not.toBeInTheDocument()
+
+    fireEvent.click(addRole)
+    expect(within(editor).getByRole("textbox", { name: "Role" })).toHaveTextContent(
+      "Role title"
+    )
+    expect(
+      within(editor).queryByRole("button", { name: EMPTY_SECTION_CTA.experience })
+    ).not.toBeInTheDocument()
+
+    while (within(editor).queryAllByRole("textbox", { name: "Skill" }).length > 0) {
+      fireEvent.click(within(editor).getAllByRole("button", { name: "Remove skill" })[0]!)
+    }
+    fireEvent.click(
+      within(editor).getByRole("button", { name: EMPTY_SECTION_CTA.skills })
+    )
+    expect(
+      within(editor).getAllByRole("textbox", { name: "Skill" }).length
+    ).toBeGreaterThan(0)
+
+    fireEvent.click(within(editor).getByRole("button", { name: "Remove school" }))
+    fireEvent.click(
+      within(editor).getByRole("button", { name: EMPTY_SECTION_CTA.education })
+    )
+    expect(within(editor).getByRole("textbox", { name: "School" })).toHaveTextContent(
+      "School name"
+    )
+    expect(editor.querySelector("[data-slot='empty']")).toBeNull()
   })
 
   it("opens and edits a Letter", async () => {
