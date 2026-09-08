@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react"
 
 import { SEARCH_PATH, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
-import { SIGN_UP_COPY } from "@/routes/sign-up.tsx"
+import { SIGN_UP_COPY } from "@/features/auth/sign-up-copy.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import { setMockSession } from "@/test/auth-client-mock.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
