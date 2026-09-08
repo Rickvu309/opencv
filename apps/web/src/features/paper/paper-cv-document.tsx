@@ -133,14 +133,9 @@ type Props = {
 
 export function CvDocument({ data, onChange, historyRevision = 0 }: Props) {
   const dataRef = useRef(data)
-  const lastHistoryRevision = useRef(historyRevision)
-  if (lastHistoryRevision.current !== historyRevision) {
-    lastHistoryRevision.current = historyRevision
-    dataRef.current = data
-  }
   useEffect(() => {
     dataRef.current = data
-  }, [data])
+  }, [data, historyRevision])
 
   function patch<K extends keyof CvData>(key: K, value: CvData[K]) {
     const next = { ...dataRef.current, [key]: value }
