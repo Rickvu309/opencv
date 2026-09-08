@@ -12,6 +12,7 @@ import {
   selectionForTurn,
   toggleContextChipPin,
 } from "./coach-context-chips.ts"
+import { previewCoachSelectionText } from "./paper-selection.ts"
 
 const DOC_ID = "11111111-1111-7111-8111-111111111111"
 const BULLET = {
@@ -27,7 +28,7 @@ describe("addSelectionChip", () => {
         id: "sel-1",
         kind: "selection",
         pinned: false,
-        label: BULLET.text,
+        label: previewCoachSelectionText(BULLET.text),
         selection: BULLET,
       },
     ])
