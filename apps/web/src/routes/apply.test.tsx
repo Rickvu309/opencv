@@ -7,6 +7,7 @@ import {
   within,
 } from "@testing-library/react"
 
+import { APPLY_OPEN_GUIDE } from "@/features/apply/apply-search.ts"
 import { APPLY_DRAG_TYPE, localIsoDate } from "@/features/apply/apply-types.ts"
 import { SURFACE_COPY, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { sampleApplyCards } from "@/test/apply-fixtures.ts"
@@ -167,6 +168,91 @@ describe("Apply workspace", () => {
     })
   })
 
+  it("does not auto-open a card without the guided deep-link", async () => {
+    renderApply()
+    await expectApplyLive()
+    expect(
+      screen.queryByRole("complementary", { name: "Job detail" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "Move to Prep" })
+    ).not.toBeInTheDocument()
+    expect(
+      within(stageColumn("inbox")).getByText("Associate PM intern")
+    ).toBeInTheDocument()
+    expect(
+      within(stageColumn("inbox")).getByText("Product intern")
+    ).toBeInTheDocument()
+  })
+
+  it("opens one seeded card from the Home guided deep-link without emptying the board", async () => {
+    renderApp(`${SURFACE_PATHS.apply}?open=${APPLY_OPEN_GUIDE}`)
+    await expectApplyLive()
+
+    const panel = await screen.findByRole("complementary", {
+      name: "Job detail",
+    })
+    expect(
+      within(panel).getByDisplayValue("Associate PM intern")
+    ).toBeInTheDocument()
+    expect(within(panel).getByDisplayValue("Local startup")).toBeInTheDocument()
+    expect(
+      within(panel).getByRole("button", { name: "Move to Prep" })
+    ).toBeInTheDocument()
+    expect(
+      within(panel).getByRole("combobox", { name: "Next step" })
+    ).toHaveTextContent("Follow-up")
+
+    expect(
+      within(stageColumn("inbox")).getByText("Product intern")
+    ).toBeInTheDocument()
+    expect(
+      within(stageColumn("prep")).getByText("Business analyst intern")
+    ).toBeInTheDocument()
+    expect(
+      within(stageColumn("sent")).getByText("Product analyst intern")
+    ).toBeInTheDocument()
+    expect(
+      within(stageColumn("closed")).getByText("UX research intern")
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: /skip tour|continue tour/i })
+    ).not.toBeInTheDocument()
+  })
+
+  it("moves the guided inbox card to Prep and keeps the other cards", async () => {
+    renderApp(`${SURFACE_PATHS.apply}?open=${APPLY_OPEN_GUIDE}`)
+    await expectApplyLive()
+
+    const panel = await screen.findByRole("complementary", {
+      name: "Job detail",
+    })
+    fireEvent.click(within(panel).getByRole("button", { name: "Move to Prep" }))
+
+    await waitFor(() => {
+      expect(
+        within(stageColumn("prep")).getByText("Associate PM intern")
+      ).toBeInTheDocument()
+    })
+    expect(
+      within(stageColumn("inbox")).queryByText("Associate PM intern")
+    ).not.toBeInTheDocument()
+    expect(
+      within(stageColumn("inbox")).getByText("Product intern")
+    ).toBeInTheDocument()
+    expect(
+      within(stageColumn("prep")).getByText("Business analyst intern")
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "Move to Prep" })
+    ).not.toBeInTheDocument()
+    expect(
+      within(
+        await screen.findByRole("complementary", { name: "Job detail" })
+      ).getByRole("combobox", { name: "Next step" })
+    ).toHaveTextContent("Follow-up")
+  })
+
   it("opens job detail from a card without showing Fit", async () => {
     renderApply()
     await expectApplyLive()
@@ -187,8 +273,12 @@ describe("Apply workspace", () => {
       )
     ).toBeInTheDocument()
     expect(within(panel).getByRole("region", { name: "Source" })).toBeTruthy()
-    expect(within(panel).getByRole("region", { name: "Next step" })).toBeTruthy()
-    expect(within(panel).getByRole("textbox", { name: "Source" })).toBeInTheDocument()
+    expect(
+      within(panel).getByRole("region", { name: "Next step" })
+    ).toBeTruthy()
+    expect(
+      within(panel).getByRole("textbox", { name: "Source" })
+    ).toBeInTheDocument()
     expect(
       within(panel).getByRole("combobox", { name: "Next step" })
     ).toBeInTheDocument()
@@ -419,8 +509,12 @@ describe("Apply workspace", () => {
       name: "Next step",
     })
     expect(sourceField).toHaveValue("")
-    expect(within(source).getByPlaceholderText("Paste a posting link")).toBeInTheDocument()
-    expect(within(source).queryByText(/stay organized/i)).not.toBeInTheDocument()
+    expect(
+      within(source).getByPlaceholderText("Paste a posting link")
+    ).toBeInTheDocument()
+    expect(
+      within(source).queryByText(/stay organized/i)
+    ).not.toBeInTheDocument()
     expect(within(source).queryByText(/never miss/i)).not.toBeInTheDocument()
     expect(within(source).queryByText(/add a source/i)).not.toBeInTheDocument()
     expect(source.querySelector("[data-slot='empty']")).toBeNull()
@@ -455,9 +549,9 @@ describe("Apply workspace", () => {
     const reopened = await screen.findByRole("complementary", {
       name: "Job detail",
     })
-    expect(within(reopened).getByRole("textbox", { name: "Source" })).toHaveValue(
-      "https://careers.example.com/cafe-role"
-    )
+    expect(
+      within(reopened).getByRole("textbox", { name: "Source" })
+    ).toHaveValue("https://careers.example.com/cafe-role")
     expect(within(reopened).getByLabelText("Date")).toHaveValue("2026-09-20")
     expect(
       within(reopened).getByRole("combobox", { name: "Next step" })
@@ -517,7 +611,9 @@ describe("Apply workspace", () => {
     })
     fireEvent.click(within(dialog).getByRole("button", { name: "Scan" }))
     expect(
-      await within(dialog).findByText("Filled Associate PM intern at Local startup.")
+      await within(dialog).findByText(
+        "Filled Associate PM intern at Local startup."
+      )
     ).toBeInTheDocument()
 
     fireEvent.click(within(dialog).getByRole("button", { name: "Add job" }))

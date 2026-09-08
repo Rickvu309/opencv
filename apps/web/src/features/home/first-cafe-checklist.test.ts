@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { APPLY_OPEN_GUIDE } from "@/features/apply/apply-search.ts"
 
 import {
   FIRST_CAFE_CHECKLIST_ITEMS,
@@ -28,7 +29,10 @@ describe("first-café checklist", () => {
       search: { open: "sample" },
     })
     expect(FIRST_CAFE_CHECKLIST_ITEMS[1]?.to).toBe(SURFACE_PATHS.pitch)
-    expect(FIRST_CAFE_CHECKLIST_ITEMS[2]?.to).toBe(SURFACE_PATHS.apply)
+    expect(FIRST_CAFE_CHECKLIST_ITEMS[2]).toMatchObject({
+      to: SURFACE_PATHS.apply,
+      search: { open: APPLY_OPEN_GUIDE },
+    })
     expect(FIRST_CAFE_CHECKLIST_ITEMS[3]).toMatchObject({
       to: SURFACE_PATHS.settings,
       search: { tab: "apps" },

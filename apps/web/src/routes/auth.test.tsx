@@ -53,7 +53,9 @@ describe("session guard", () => {
       await screen.findByRole("heading", { name: SIGN_UP_COPY.title })
     ).toBeInTheDocument()
     expect(screen.getByText(SIGN_UP_COPY.body)).toBeInTheDocument()
-    expect(screen.queryByText(/Threads, Paper, and Apply/)).not.toBeInTheDocument()
+    expect(
+      screen.queryByText(/Threads, Paper, and Apply/)
+    ).not.toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Create account" })).toBeTruthy()
   })
 })
@@ -130,7 +132,7 @@ describe("auth flows", () => {
     ).toHaveAttribute("href", SURFACE_PATHS.pitch)
     expect(
       screen.getByRole("link", { name: "Triage one Apply card" })
-    ).toHaveAttribute("href", SURFACE_PATHS.apply)
+    ).toHaveAttribute("href", `${SURFACE_PATHS.apply}?open=guide`)
     expect(
       screen.getByRole("link", { name: "Connect email, optional" })
     ).toHaveAttribute("href", `${SURFACE_PATHS.settings}?tab=apps`)

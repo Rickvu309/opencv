@@ -32,6 +32,10 @@ import { ExternalLink, Link2, Star, Trash2, X } from "lucide-react"
 import { ErrorBanner } from "@/components/error-banner.tsx"
 import { scanApplyJob } from "@/features/apply/apply-api.ts"
 import {
+  GUIDED_APPLY_PREP_ACTION,
+  guidedApplyNextAction,
+} from "@/features/apply/apply-guide.ts"
+import {
   APPLY_JOB_DATE_LABEL,
   APPLY_JOB_NEXT_STEP_LABEL,
   APPLY_JOB_NOTES_PLACEHOLDER,
@@ -50,6 +54,7 @@ import {
 
 type Props = {
   card: ApplyCard
+  guided?: boolean
   revertKey: number
   paperDocs: PaperDoc[]
   onClose: () => void
@@ -79,6 +84,7 @@ const FIELD_LABEL =
 
 export function JobDetailPanel({
   card,
+  guided = false,
   revertKey,
   paperDocs,
   onClose,
@@ -89,6 +95,7 @@ export function JobDetailPanel({
   onLinkPaper,
 }: Props) {
   const stageLabel = STAGES.find((s) => s.id === card.stage)?.label ?? "Inbox"
+  const guidedAction = guided ? guidedApplyNextAction(card) : null
   const [linkOpen, setLinkOpen] = useState(false)
   const [openError, setOpenError] = useState<string | null>(null)
   const postingUrl = publicApplyJobUrl(card.jobUrl)
@@ -162,6 +169,18 @@ export function JobDetailPanel({
       <div className="flex flex-1 flex-col gap-4 overflow-auto p-4">
         {openError ? (
           <ErrorBanner variant="inline">{openError}</ErrorBanner>
+        ) : null}
+
+        {guidedAction?.kind === "stage" ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-8 self-start"
+            onClick={() => onMove(guidedAction.stage)}
+          >
+            {GUIDED_APPLY_PREP_ACTION}
+          </Button>
         ) : null}
 
         <JobDetailFields
@@ -291,7 +310,10 @@ function JobDetailFields({
         </div>
       </div>
 
-      <section aria-labelledby={`source-heading-${card.id}`} className="space-y-2">
+      <section
+        aria-labelledby={`source-heading-${card.id}`}
+        className="space-y-2"
+      >
         <h2 id={`source-heading-${card.id}`} className={FIELD_LABEL}>
           {APPLY_JOB_SOURCE_LABEL}
         </h2>
@@ -314,7 +336,9 @@ function JobDetailFields({
             aria-invalid={Boolean(jobUrlError)}
           />
           {sourceHost ? (
-            <p className="mt-1 text-micro text-muted-foreground">{sourceHost}</p>
+            <p className="mt-1 text-micro text-muted-foreground">
+              {sourceHost}
+            </p>
           ) : null}
           {jobUrlError ? (
             <ErrorBanner variant="inline" className="mt-1">

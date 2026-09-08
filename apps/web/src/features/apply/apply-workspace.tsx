@@ -3,7 +3,7 @@
  * Do not import shell chrome — the route mounts this into `<Outlet />`.
  * Fit is stored on the server and never rendered (PRODUCT.md open q. 1).
  */
-import { useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Button } from "@workspace/ui/components/button"
 import { ButtonGroup } from "@workspace/ui/components/button-group"
 import { Empty, EmptyDescription } from "@workspace/ui/components/empty-state"
@@ -35,6 +35,7 @@ import {
   readCardDragId,
   setCardDragData,
 } from "@/features/apply/apply-dnd.ts"
+import { pickGuidedApplyCard } from "@/features/apply/apply-guide.ts"
 import { JobDetailPanel } from "@/features/apply/apply-job-detail.tsx"
 import {
   companyShort,
@@ -48,11 +49,12 @@ import { useApplyCards } from "@/features/apply/use-apply-cards.ts"
 import { DestructiveCommandDialog } from "@/features/commands/destructive-command-dialog.tsx"
 import { usePaperDocs } from "@/features/paper/use-paper-docs.ts"
 
-export function ApplyWorkspace() {
+export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
   const apply = useApplyCards()
   const paper = usePaperDocs()
   const [view, setView] = useState<"board" | "calendar">("board")
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [openedGuide, setOpenedGuide] = useState(false)
   const [query, setQuery] = useState("")
   const [dragOverStage, setDragOverStage] = useState<StageId | null>(null)
   const [dragOverCardId, setDragOverCardId] = useState<string | null>(null)
@@ -61,6 +63,17 @@ export function ApplyWorkspace() {
   const dragMovedRef = useRef(false)
 
   const selected = apply.cards.find((c) => c.id === selectedId)
+  const guidedCard = pickGuidedApplyCard(apply.cards)
+  const guided = Boolean(
+    openGuide && selectedId && guidedCard && selectedId === guidedCard.id
+  )
+
+  useEffect(() => {
+    if (!openGuide || openedGuide || apply.isLoading) return
+    const card = pickGuidedApplyCard(apply.cards)
+    if (card) setSelectedId(card.id)
+    setOpenedGuide(true)
+  }, [openGuide, openedGuide, apply.cards, apply.isLoading])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -297,6 +310,7 @@ export function ApplyWorkspace() {
         {selected ? (
           <JobDetailPanel
             card={selected}
+            guided={guided}
             revertKey={apply.revertKey}
             paperDocs={paper.docs}
             onClose={() => setSelectedId(null)}
