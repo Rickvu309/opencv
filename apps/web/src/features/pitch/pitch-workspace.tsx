@@ -52,6 +52,7 @@ import {
   type PitchIdentity,
   type PitchProfile,
 } from "@/features/pitch/pitch-types.ts"
+import { recordFirstCafeWin } from "@/features/home/first-cafe-checklist.ts"
 import { usePitch } from "@/features/pitch/use-pitch.ts"
 import { authClient } from "@/lib/auth-client.ts"
 
@@ -122,6 +123,8 @@ export function PitchWorkspace() {
   }
 
   function clearDemo() {
+    const userId = session?.user.id
+    if (userId) recordFirstCafeWin(userId, "pitch")
     pitch.persist(() => emptyPitchDocument())
     setMode("preview")
   }

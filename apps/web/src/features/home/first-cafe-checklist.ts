@@ -47,17 +47,28 @@ export const FIRST_CAFE_CHECKLIST_ITEMS: readonly FirstCafeItem[] = [
 
 export const FIRST_CAFE_STORAGE_PREFIX = "openpath:home:first-cafe-checklist"
 
+/** Craft-surface wins the quiet next nudge may follow. Email is optional. */
+export const FIRST_CAFE_WIN_IDS = ["sample-cv", "pitch", "apply"] as const
+
+export type FirstCafeWinId = (typeof FIRST_CAFE_WIN_IDS)[number]
+
 export type FirstCafeState = {
   dismissed: boolean
   completed: FirstCafeItemId[]
+  nudgeSkipped: boolean
+  /** Real surface wins that must not write checklist checks (e.g. Pitch clear). */
+  wins: FirstCafeWinId[]
 }
 
 export const EMPTY_FIRST_CAFE_STATE: FirstCafeState = {
   dismissed: false,
   completed: [],
+  nudgeSkipped: false,
+  wins: [],
 }
 
 const ITEM_ID_SET = new Set<string>(FIRST_CAFE_ITEM_IDS)
+const WIN_ID_SET = new Set<string>(FIRST_CAFE_WIN_IDS)
 
 export function firstCafeStorageKey(userId: string) {
   return `${FIRST_CAFE_STORAGE_PREFIX}:${userId}`
@@ -65,18 +76,20 @@ export function firstCafeStorageKey(userId: string) {
 
 export function parseFirstCafeState(raw: string | null): FirstCafeState {
   if (!raw) {
-    return { dismissed: false, completed: [] }
+    return { ...EMPTY_FIRST_CAFE_STATE }
   }
 
   try {
     const parsed: unknown = JSON.parse(raw)
     if (!parsed || typeof parsed !== "object") {
-      return { dismissed: false, completed: [] }
+      return { ...EMPTY_FIRST_CAFE_STATE }
     }
 
     const record = parsed as {
       dismissed?: unknown
       completed?: unknown
+      nudgeSkipped?: unknown
+      wins?: unknown
     }
 
     return {
@@ -87,9 +100,16 @@ export function parseFirstCafeState(raw: string | null): FirstCafeState {
               typeof id === "string" && ITEM_ID_SET.has(id)
           )
         : [],
+      nudgeSkipped: record.nudgeSkipped === true,
+      wins: Array.isArray(record.wins)
+        ? record.wins.filter(
+            (id): id is FirstCafeWinId =>
+              typeof id === "string" && WIN_ID_SET.has(id)
+          )
+        : [],
     }
   } catch {
-    return { dismissed: false, completed: [] }
+    return { ...EMPTY_FIRST_CAFE_STATE }
   }
 }
 
@@ -106,6 +126,42 @@ export function dismissFirstCafeChecklist(
 ): FirstCafeState {
   if (state.dismissed) return state
   return { ...state, dismissed: true }
+}
+
+export function skipFirstCafeNudge(state: FirstCafeState): FirstCafeState {
+  if (state.nudgeSkipped) return state
+  return { ...state, nudgeSkipped: true }
+}
+
+export function noteFirstCafeWin(
+  state: FirstCafeState,
+  id: FirstCafeWinId
+): FirstCafeState {
+  if (state.wins.includes(id)) return state
+  return { ...state, wins: [...state.wins, id] }
+}
+
+export function nextFirstCafeNudge(input: {
+  completed: readonly FirstCafeItemId[]
+  nudgeSkipped: boolean
+  extraWins?: readonly FirstCafeWinId[]
+}): FirstCafeItem | null {
+  if (input.nudgeSkipped) return null
+
+  const wins = new Set<FirstCafeWinId>()
+  for (const id of input.completed) {
+    if (WIN_ID_SET.has(id)) wins.add(id as FirstCafeWinId)
+  }
+  for (const id of input.extraWins ?? []) {
+    wins.add(id)
+  }
+  if (wins.size === 0) return null
+
+  return (
+    FIRST_CAFE_CHECKLIST_ITEMS.find(
+      (item) => WIN_ID_SET.has(item.id) && !wins.has(item.id as FirstCafeWinId)
+    ) ?? null
+  )
 }
 
 /**
@@ -165,7 +221,7 @@ export function readFirstCafeState(userId: string): FirstCafeState {
       window.localStorage.getItem(firstCafeStorageKey(userId))
     )
   } catch {
-    return { dismissed: false, completed: [] }
+    return { ...EMPTY_FIRST_CAFE_STATE }
   }
 }
 
@@ -189,6 +245,18 @@ export function recordFirstCafeVisit(
   const id = firstCafeItemForVisit(pathname, search)
   if (!id) return current
   const next = completeFirstCafeItem(current, id)
+  if (next === current) return current
+  writeFirstCafeState(userId, next)
+  return next
+}
+
+/** Records a real surface win without checking a checklist item. */
+export function recordFirstCafeWin(
+  userId: string,
+  id: FirstCafeWinId
+): FirstCafeState {
+  const current = readFirstCafeState(userId)
+  const next = noteFirstCafeWin(current, id)
   if (next === current) return current
   writeFirstCafeState(userId, next)
   return next

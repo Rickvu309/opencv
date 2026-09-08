@@ -16,6 +16,7 @@ export function FirstCafeChecklist() {
 
   return (
     <section
+      role="region"
       aria-labelledby="first-cafe-heading"
       className="w-full max-w-md rounded-xl border border-border/70 bg-background px-4 py-3 text-left"
     >

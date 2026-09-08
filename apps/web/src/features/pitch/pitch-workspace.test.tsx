@@ -21,6 +21,7 @@ import {
 } from "@/test/auth-client-mock.ts"
 import { SURFACE_COPY } from "@/features/app-shell/surfaces.ts"
 import { getMockGithubUsername } from "@/features/pitch/pitch-github-mock.ts"
+import { readFirstCafeState } from "@/features/home/first-cafe-checklist.ts"
 import { PitchWorkspace } from "@/features/pitch/pitch-workspace.tsx"
 import { BLOCK_LABELS, pitchHandle } from "@/features/pitch/pitch-types.ts"
 import { createQueryClient } from "@/lib/query-client.ts"
@@ -176,6 +177,8 @@ describe("Pitch workspace", () => {
       screen.getByRole("heading", { level: 1, name: SAMPLE_AUTHOR_NAME })
     ).toBeInTheDocument()
     expect(getMockPitchDoc()?.content).toEqual(emptyPitchDocument())
+    expect(readFirstCafeState(TEST_SESSION_USER.id).wins).toEqual(["pitch"])
+    expect(readFirstCafeState(TEST_SESSION_USER.id).completed).toEqual([])
 
     fireEvent.click(screen.getByRole("button", { name: "Start your Pitch" }))
     expect(screen.getByText("Editing Pitch")).toBeInTheDocument()

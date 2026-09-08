@@ -7,6 +7,7 @@ import { CoachDock } from "@/features/coach/coach-dock.tsx"
 import { ConnectedApps } from "@/features/home/connected-apps.tsx"
 import { AimPrompt } from "@/features/home/aim-prompt.tsx"
 import { FirstCafeChecklist } from "@/features/home/first-cafe-checklist.tsx"
+import { FirstCafeNudge } from "@/features/home/first-cafe-nudge.tsx"
 import { homeGreeting } from "@/features/home/greeting.ts"
 import { HomeSuggestions } from "@/features/home/home-suggestions.tsx"
 import { useThreadStore } from "@/features/home/use-thread-store.ts"
@@ -95,6 +96,7 @@ export function HomeDashboard() {
             </header>
 
             <AimPrompt />
+            <FirstCafeNudge />
             <FirstCafeChecklist />
 
             <div className="w-full space-y-2 overflow-visible">
