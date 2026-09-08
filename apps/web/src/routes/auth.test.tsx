@@ -209,6 +209,72 @@ describe("auth flows", () => {
     ).not.toBeInTheDocument()
   })
 
+  it("after signup, visiting Apply only completes that item", async () => {
+    setMockSession(null)
+    const { router } = renderApp("/sign-up")
+
+    expect(
+      await screen.findByRole("heading", { name: SIGN_UP_COPY.title })
+    ).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText("Name"), {
+      target: { value: "Lan Nguyen" },
+    })
+    fireEvent.change(screen.getByLabelText("Email"), {
+      target: { value: "lan@example.com" },
+    })
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "correct-horse" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Create account" }))
+
+    expect(
+      await screen.findByRole("heading", { name: "Four small things" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("link", { name: "Open the sample CV" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("link", { name: "Make Pitch yours" })
+    ).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("link", { name: "Triage one Apply card" }))
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(SURFACE_PATHS.apply)
+      expect(router.state.location.search).toMatchObject({ open: "guide" })
+    })
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Apply" })
+    ).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("link", { name: "Home" }))
+    expect(
+      await screen.findByRole("heading", {
+        level: 1,
+        name: /^Good (morning|afternoon|evening), Lan Nguyen$/,
+      })
+    ).toBeInTheDocument()
+
+    expect(
+      screen.getByRole("link", { name: "Triage one Apply card, done" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("link", { name: "Open the sample CV" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("link", { name: "Make Pitch yours" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("link", { name: "Connect email, optional" })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("link", { name: "Open the sample CV, done" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("link", { name: "Make Pitch yours, done" })
+    ).not.toBeInTheDocument()
+  })
+
   it("shows a form error when sign-in is refused", async () => {
     setMockSession(null)
     vi.mocked(authClient.signIn.email).mockResolvedValueOnce({
