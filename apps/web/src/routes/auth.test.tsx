@@ -9,6 +9,7 @@ import {
 
 import { SEARCH_PATH, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { SIGN_UP_COPY } from "@/features/auth/sign-up-copy.ts"
+import { readFirstCafeState } from "@/features/home/first-cafe-checklist.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import { setMockSession } from "@/test/auth-client-mock.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
@@ -281,6 +282,7 @@ describe("auth flows", () => {
     expect(
       within(list).queryByRole("link", { name: "Make Pitch yours, done" })
     ).not.toBeInTheDocument()
+    expect(readFirstCafeState("user_test").completed).toEqual(["apply"])
   })
 
   it("shows a form error when sign-in is refused", async () => {

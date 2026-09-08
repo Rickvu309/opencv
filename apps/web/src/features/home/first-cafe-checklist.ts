@@ -166,7 +166,8 @@ export function nextFirstCafeNudge(input: {
 
 /**
  * Exact leaf path only — never a parent `/app` prefix, never more than
- * one item. Visiting Apply must not complete Sample CV or Pitch.
+ * one item. This maps a real surface URL to its item; it is not a visit
+ * signal by itself. Visiting Apply must not complete Sample CV or Pitch.
  */
 export function firstCafeItemForVisit(
   pathname: string,
@@ -178,41 +179,6 @@ export function firstCafeItemForVisit(
     return true
   })
   return matches.length === 1 ? (matches[0]?.id ?? null) : null
-}
-
-export type FirstCafeRouterVisit = {
-  userId: string | undefined
-  status: "pending" | "idle"
-  pathname?: string
-  resolvedPathname: string | undefined
-  /** Committed history URL. Store flashes from sibling Links must not count. */
-  historyPathname?: string
-  resolvedSearch?: Record<string, unknown>
-}
-
-/**
- * Only a settled leaf that matches the committed history URL counts.
- * Pending / unresolved locations (signup bootstrap, soft nav) and
- * router-store flashes to sibling surfaces must not complete an item.
- */
-export function firstCafeVisitToRecord(
-  visit: FirstCafeRouterVisit
-): { pathname: string; search: Record<string, unknown> } | null {
-  if (!visit.userId) return null
-  if (visit.status !== "idle") return null
-  if (!visit.resolvedPathname) return null
-  if (visit.pathname != null && visit.pathname !== visit.resolvedPathname) {
-    return null
-  }
-  if (
-    visit.historyPathname != null &&
-    visit.historyPathname !== visit.resolvedPathname
-  ) {
-    return null
-  }
-  const search = visit.resolvedSearch ?? {}
-  if (!firstCafeItemForVisit(visit.resolvedPathname, search)) return null
-  return { pathname: visit.resolvedPathname, search }
 }
 
 export function readFirstCafeState(userId: string): FirstCafeState {
@@ -236,18 +202,26 @@ export function writeFirstCafeState(userId: string, state: FirstCafeState) {
   }
 }
 
+/** Completes one item from the mounted surface page — never from a path flash. */
+export function recordFirstCafeItem(
+  userId: string,
+  id: FirstCafeItemId
+): FirstCafeState {
+  const current = readFirstCafeState(userId)
+  const next = completeFirstCafeItem(current, id)
+  if (next === current) return current
+  writeFirstCafeState(userId, next)
+  return next
+}
+
 export function recordFirstCafeVisit(
   userId: string,
   pathname: string,
   search: Record<string, unknown> = {}
 ): FirstCafeState {
-  const current = readFirstCafeState(userId)
   const id = firstCafeItemForVisit(pathname, search)
-  if (!id) return current
-  const next = completeFirstCafeItem(current, id)
-  if (next === current) return current
-  writeFirstCafeState(userId, next)
-  return next
+  if (!id) return readFirstCafeState(userId)
+  return recordFirstCafeItem(userId, id)
 }
 
 /** Records a real surface win without checking a checklist item. */

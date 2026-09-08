@@ -12,7 +12,10 @@ import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 import { AIM_OPTIONS } from "@/features/home/aim-prompt.ts"
 import { SUGGESTION_POOLS } from "@/features/home/suggestions.ts"
 import { STARTER_PITCH_HEADLINE, starterPitchDocument } from "@workspace/domain"
-import { writeFirstCafeState } from "@/features/home/first-cafe-checklist.ts"
+import {
+  readFirstCafeState,
+  writeFirstCafeState,
+} from "@/features/home/first-cafe-checklist.ts"
 import { getMockPitchDoc, setMockPitchDoc } from "@/test/pitch-api-mock.ts"
 import { renderApp } from "@/test/render-app.tsx"
 
@@ -322,6 +325,47 @@ describe("Home first-café checklist", () => {
     expect(
       within(list).queryByRole("link", { name: "Make Pitch yours, done" })
     ).not.toBeInTheDocument()
+    expect(readFirstCafeState("user_test").completed).toEqual(["apply"])
+  })
+
+  it("does not complete Sample or Pitch when sibling nav preloads on Apply", async () => {
+    const { router } = renderApp()
+    await expectHomeIdle()
+
+    fireEvent.click(screen.getByRole("link", { name: "Triage one Apply card" }))
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(SURFACE_PATHS.apply)
+    })
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Apply" })
+    ).toBeInTheDocument()
+    expect(screen.queryByRole("region", { name: "Paper" })).not.toBeInTheDocument()
+
+    fireEvent.mouseEnter(screen.getByRole("link", { name: "Paper" }))
+    fireEvent.focus(screen.getByRole("link", { name: "Paper" }))
+    fireEvent.mouseEnter(screen.getByRole("link", { name: "Pitch" }))
+    fireEvent.focus(screen.getByRole("link", { name: "Pitch" }))
+
+    expect(router.state.location.pathname).toBe(SURFACE_PATHS.apply)
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Apply" })
+    ).toBeInTheDocument()
+    expect(screen.queryByRole("region", { name: "Paper" })).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("link", { name: "Home" }))
+    await expectHomeIdle()
+
+    const list = firstCafeList()
+    expect(
+      within(list).getByRole("link", { name: "Triage one Apply card, done" })
+    ).toBeInTheDocument()
+    expect(
+      within(list).queryByRole("link", { name: "Open the sample CV, done" })
+    ).not.toBeInTheDocument()
+    expect(
+      within(list).queryByRole("link", { name: "Make Pitch yours, done" })
+    ).not.toBeInTheDocument()
+    expect(readFirstCafeState("user_test").completed).toEqual(["apply"])
   })
 
   it("completes Pitch only after a real visit to /app/pitch", async () => {

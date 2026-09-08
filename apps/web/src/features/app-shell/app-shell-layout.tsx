@@ -11,14 +11,12 @@ import {
   DESKTOP_MEDIA_QUERY,
   useMediaQuery,
 } from "@/features/app-shell/use-media-query.ts"
-import { FirstCafeVisitTracker } from "@/features/home/first-cafe-visit-tracker.tsx"
 import { ThreadStoreProvider } from "@/features/home/thread-store.tsx"
 import { useThreadList } from "@/features/home/use-thread-list.ts"
 
 export function AppShellLayout() {
   return (
     <ThreadStoreProvider>
-      <FirstCafeVisitTracker />
       <AppShellChrome />
     </ThreadStoreProvider>
   )
