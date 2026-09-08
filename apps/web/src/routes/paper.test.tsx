@@ -407,14 +407,17 @@ describe("Paper editors", () => {
     fireEvent.input(skill)
     expect(skill).toHaveTextContent("Café interviews")
 
-    fireEvent.click(screen.getByRole("button", { name: "Save changes" }))
-    await waitFor(() => {
-      const cv = getMockPaperDocs().find((doc) => doc.name === "PM track CV")
-      expect(cv && isCvDocument(cv.content)).toBe(true)
-      if (!cv || !isCvDocument(cv.content)) return
-      expect(cv.content.experience[0]?.bullets).toHaveLength(3)
-      expect(cv.content.skills[0]?.items[0]).toBe("Café interviews")
-    })
+    await waitFor(
+      () => {
+        const cv = getMockPaperDocs().find((doc) => doc.name === "PM track CV")
+        expect(cv && isCvDocument(cv.content)).toBe(true)
+        if (!cv || !isCvDocument(cv.content)) return
+        expect(cv.content.experience[0]?.bullets).toHaveLength(3)
+        expect(cv.content.skills[0]?.items[0]).toBe("Café interviews")
+      },
+      { timeout: 2000 }
+    )
+    expect(screen.getByRole("button", { name: "Saved" })).toBeInTheDocument()
 
     first.unmount()
     renderPaper()
