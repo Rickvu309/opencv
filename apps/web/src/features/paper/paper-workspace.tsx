@@ -1,7 +1,7 @@
 /**
  * Paper drive + document editor. Mounts through the Paper route seam.
  */
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Button } from "@workspace/ui/components/button"
 import {
   Dialog,
@@ -24,10 +24,11 @@ import {
 } from "@workspace/ui/components/empty-state"
 import { Input } from "@workspace/ui/components/input"
 import { cn } from "@workspace/ui/lib/utils"
-import type {
-  PaperContentKind,
-  PaperDoc,
-  PaperDocStatus,
+import {
+  STARTER_CV_NAME,
+  type PaperContentKind,
+  type PaperDoc,
+  type PaperDocStatus,
 } from "@workspace/domain"
 import { Filter, MoreHorizontal, Plus, Search } from "lucide-react"
 
@@ -50,11 +51,16 @@ function statusLabel(status: PaperDocStatus) {
       : "Draft"
 }
 
-export function PaperWorkspace() {
+export function PaperWorkspace({
+  openSample = false,
+}: {
+  openSample?: boolean
+}) {
   const paper = usePaperDocs()
   const apply = useApplyCards()
   const [query, setQuery] = useState("")
   const [openDocId, setOpenDocId] = useState<string | null>(null)
+  const [openedSample, setOpenedSample] = useState(false)
   const [renameTarget, setRenameTarget] = useState<PaperDoc | null>(null)
   const [renameValue, setRenameValue] = useState("")
   const [deleteTarget, setDeleteTarget] = useState<PaperDoc | null>(null)
@@ -63,6 +69,17 @@ export function PaperWorkspace() {
   const openDoc = openDocId
     ? (paper.docs.find((doc) => doc.id === openDocId) ?? null)
     : null
+
+  useEffect(() => {
+    if (!openSample || openedSample || paper.isLoading) return
+    const sample = paper.docs.find((doc) => doc.name === STARTER_CV_NAME)
+    if (!sample) {
+      setOpenedSample(true)
+      return
+    }
+    setOpenDocId(sample.id)
+    setOpenedSample(true)
+  }, [openSample, openedSample, paper.docs, paper.isLoading])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()

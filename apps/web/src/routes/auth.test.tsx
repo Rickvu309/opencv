@@ -115,6 +115,21 @@ describe("auth flows", () => {
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(SURFACE_PATHS.home)
     })
+    expect(
+      screen.getByRole("heading", { name: "Four small things" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("link", { name: "Open the sample CV" })
+    ).toHaveAttribute("href", `${SURFACE_PATHS.paper}?open=sample`)
+    expect(
+      screen.getByRole("link", { name: "Make Pitch yours" })
+    ).toHaveAttribute("href", SURFACE_PATHS.pitch)
+    expect(
+      screen.getByRole("link", { name: "Triage one Apply card" })
+    ).toHaveAttribute("href", SURFACE_PATHS.apply)
+    expect(
+      screen.getByRole("link", { name: "Connect email, optional" })
+    ).toHaveAttribute("href", `${SURFACE_PATHS.settings}?tab=apps`)
   })
 
   it("shows a form error when sign-in is refused", async () => {

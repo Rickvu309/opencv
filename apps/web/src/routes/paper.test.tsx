@@ -159,6 +159,20 @@ describe("Paper drive", () => {
     ).not.toBeInTheDocument()
   })
 
+  it("opens the sample CV from the Home first-café deep-link", async () => {
+    seedSampleInternshipCv()
+    renderApp(`${SURFACE_PATHS.paper}?open=sample`)
+
+    expect(
+      await screen.findByRole("region", {
+        name: `Editing ${STARTER_CV_NAME}`,
+      })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "New document" })
+    ).not.toBeInTheDocument()
+  })
+
   it("shows and changes the Apply card link", async () => {
     renderPaper()
     await expectPaperDrive()

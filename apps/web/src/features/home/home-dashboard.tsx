@@ -5,6 +5,7 @@ import { authClient } from "@/lib/auth-client.ts"
 import { ThreadView } from "@/features/home/thread-view.tsx"
 import { CoachDock } from "@/features/coach/coach-dock.tsx"
 import { ConnectedApps } from "@/features/home/connected-apps.tsx"
+import { FirstCafeChecklist } from "@/features/home/first-cafe-checklist.tsx"
 import { homeGreeting } from "@/features/home/greeting.ts"
 import { HomeSuggestions } from "@/features/home/home-suggestions.tsx"
 import { useThreadStore } from "@/features/home/use-thread-store.ts"
@@ -91,6 +92,8 @@ export function HomeDashboard() {
                 {homeGreeting(name)}
               </h1>
             </header>
+
+            <FirstCafeChecklist />
 
             <div className="w-full space-y-2 overflow-visible">
               <HomeSuggestions onSelect={setDraft} />
