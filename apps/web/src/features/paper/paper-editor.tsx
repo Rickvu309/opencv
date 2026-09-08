@@ -23,6 +23,7 @@ import {
 } from "lucide-react"
 
 import { WorkspaceHeader } from "@/components/workspace-header.tsx"
+import { DESKTOP_MEDIA_QUERY } from "@/features/app-shell/use-media-query.ts"
 import { authClient } from "@/lib/auth-client.ts"
 
 import { CvDocument } from "./paper-cv-document.tsx"
@@ -144,11 +145,17 @@ export function PaperEditor({
   }>({ ids: [], nonce: 0 })
   const [selection, setSelection] = useState<CoachSelection | null>(null)
   const [docsPanel, setDocsPanel] = useState<DocsPanelState>(readDocsPanel)
+  const [phoneDocsOpen, setPhoneDocsOpen] = useState(false)
   const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)", false)
+  const isDesktop = useMediaQuery(DESKTOP_MEDIA_QUERY, true)
   dirtyRef.current = dirty
-  const docsExpanded = docsPanel === "expanded"
+  const docsExpanded = isDesktop ? docsPanel === "expanded" : phoneDocsOpen
 
   function toggleDocsPanel() {
+    if (!isDesktop) {
+      setPhoneDocsOpen((open) => !open)
+      return
+    }
     const next: DocsPanelState = docsExpanded ? "collapsed" : "expanded"
     setDocsPanel(next)
     writeDocsPanel(next)
@@ -437,7 +444,7 @@ export function PaperEditor({
 
   return (
     <div
-      className="flex h-full min-h-0 bg-muted"
+      className="relative flex h-full min-h-0 bg-muted"
       role="region"
       aria-label={`Editing ${doc.name}`}
     >
@@ -448,10 +455,14 @@ export function PaperEditor({
           activeId={doc.id}
           onSelect={onSelectDoc}
           onBack={onBack}
+          overlay={!isDesktop}
         />
       ) : null}
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div
+        data-paper-editor=""
+        className="flex min-w-0 flex-1 flex-col"
+      >
         <WorkspaceHeader
           className="items-center gap-3 px-5 py-3"
           icon={<FileText className="size-4 shrink-0 text-muted-foreground" />}
@@ -471,7 +482,7 @@ export function PaperEditor({
                 className="h-auto w-full truncate border-0 bg-transparent px-0 text-sm font-semibold shadow-none focus-visible:border-0 focus-visible:ring-0 md:text-sm"
                 aria-label="Document name"
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="paper-editor-chrome-meta text-xs text-muted-foreground">
                 {TYPE_LABEL[doc.kind]}
                 {" · "}Updated {formatPaperUpdated(doc.updatedAt)}
               </p>
@@ -512,7 +523,7 @@ export function PaperEditor({
 
           <Button type="button" size="sm" variant="outline">
             <Share2 className="size-3.5" />
-            Share
+            <span className="max-md:hidden">Share</span>
           </Button>
 
           <Button
@@ -559,7 +570,7 @@ export function PaperEditor({
         <div
           ref={canvasRef}
           data-paper-canvas
-          className="min-h-0 flex-1 overflow-auto px-4 py-8 sm:px-8"
+          className="paper-editor-canvas-scroll min-h-0 flex-1 overflow-auto px-4 py-8 sm:px-8"
         >
           <div
             className={cn(

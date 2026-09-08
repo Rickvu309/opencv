@@ -103,6 +103,29 @@ describe("EditableField canvas chrome (QVE-206)", () => {
   })
 })
 
+describe("EditableField café keyboard (QVE-208)", () => {
+  it("Tabs between structured fields and Esc blurs without trapping", () => {
+    renderCv("internship")
+    const name = screen.getByRole("textbox", { name: "Full name" })
+    const headline = screen.getByRole("textbox", { name: "Headline" })
+    const contacts = screen.getAllByRole("textbox", { name: "Contact detail" })
+
+    name.focus()
+    fireEvent.keyDown(name, { key: "Tab" })
+    expect(headline).toHaveFocus()
+
+    fireEvent.keyDown(headline, { key: "Tab" })
+    expect(contacts[0]).toHaveFocus()
+
+    fireEvent.keyDown(contacts[0]!, { key: "Tab", shiftKey: true })
+    expect(headline).toHaveFocus()
+
+    fireEvent.keyDown(headline, { key: "Escape" })
+    expect(headline).not.toHaveFocus()
+    expect(document.activeElement === headline).toBe(false)
+  })
+})
+
 describe("paper canvas field CSS (QVE-206)", () => {
   it("uses kit ring + muted wash, not cite-jump info or Coach pills", () => {
     expect(paperCss).toMatch(/\.paper-canvas-field:focus/)
@@ -227,5 +250,22 @@ describe("paper canvas affordance CSS (QVE-207)", () => {
     expect(chrome).not.toMatch(/var\(--info\)/)
     expect(chrome).not.toMatch(/rounded-full/)
     expect(chrome).not.toMatch(/bg-muted\/70/)
+  })
+})
+
+describe("paper café density CSS (QVE-208)", () => {
+  it("fits A4 to width and enlarges tap targets under the phone breakpoint", () => {
+    expect(paperCss).toMatch(/@media \(max-width:\s*767px\)/)
+    expect(paperCss).toMatch(/min-height:\s*2\.75rem/)
+    expect(paperCss).toMatch(/\[data-paper-toolbar\]/)
+    expect(paperCss).toMatch(/\[data-paper-editor\] > header/)
+
+    const start = paperCss.indexOf("QVE-208")
+    const cafe = paperCss.slice(start)
+    expect(cafe).toContain("max-width: 100%")
+    expect(cafe).toContain("min-height: 2.75rem")
+    expect(cafe).toContain("min-width: 2.75rem")
+    expect(cafe).not.toMatch(/transform:\s*scale/)
+    expect(cafe).not.toMatch(/var\(--info\)/)
   })
 })

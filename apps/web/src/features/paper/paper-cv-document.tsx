@@ -2,9 +2,9 @@
  * CV print-paper templates. Shared type roles live in paper.css (ADR-0010
  * names, print-scaled). The product-sidebar hex stays here on purpose —
  * print layout is a documented ADR-0010 exception. Focus/selection chrome
- * is QVE-206 (`paper-canvas-field` in paper.css).
+ * is QVE-206 (`paper-canvas-field` in paper.css). Café Tab/Esc is QVE-208.
  */
-import type { ElementType, ReactNode } from "react"
+import type { ElementType, KeyboardEvent, ReactNode } from "react"
 import { useEffect, useRef } from "react"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
@@ -20,6 +20,7 @@ import {
   renameSkillGroup,
   renameSkillItem,
 } from "./paper-cv-edits.ts"
+import { handleCanvasFieldKeyDown } from "./paper-cv-keyboard.ts"
 import {
   cvTypeClass,
   type CvData,
@@ -91,9 +92,8 @@ export function EditableField({
       }
       data-paper-canvas-field=""
       onInput={(e) => onChange(e.currentTarget.textContent ?? "")}
-      onKeyDown={(event) => {
-        if (event.key !== "Escape" || event.nativeEvent.isComposing) return
-        event.currentTarget.blur()
+      onKeyDown={(event: KeyboardEvent<HTMLSpanElement>) => {
+        handleCanvasFieldKeyDown(event)
       }}
       className={cn(
         PAPER_CANVAS_FIELD_CLASS,
@@ -228,6 +228,7 @@ function CanvasAffordance({
       variant="ghost"
       size="xs"
       aria-label={label}
+      tabIndex={-1}
       onClick={onClick}
       className={cn(
         PAPER_CANVAS_AFFORDANCE_CLASS,
@@ -491,6 +492,7 @@ function SkillChips({
           variant="ghost"
           size="icon-xs"
           aria-label="Remove skill"
+          tabIndex={-1}
           onClick={() =>
             onChange(removeSkillItem(groups, groupIndex, itemIndex))
           }

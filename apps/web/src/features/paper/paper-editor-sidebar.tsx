@@ -11,6 +11,7 @@ type Props = {
   activeId: string
   onSelect: (id: string) => void
   onBack: () => void
+  overlay?: boolean
 }
 
 export function PaperEditorSidebar({
@@ -19,12 +20,17 @@ export function PaperEditorSidebar({
   activeId,
   onSelect,
   onBack,
+  overlay = false,
 }: Props) {
   return (
     <aside
       id={id}
       aria-label="Documents"
-      className="flex w-60 shrink-0 flex-col border-r border-border bg-background"
+      data-paper-docs-overlay={overlay ? "" : undefined}
+      className={cn(
+        "flex w-60 shrink-0 flex-col border-r border-border bg-background",
+        overlay && "absolute inset-y-0 left-0 z-10 shadow-sm"
+      )}
     >
       <div className="border-b border-border px-4 py-3">
         <Button
