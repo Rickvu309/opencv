@@ -8,13 +8,24 @@ import type { ElementType, ReactNode } from "react"
 import { useEffect, useRef } from "react"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
-import { ImagePlus, User } from "lucide-react"
+import { Copy, ImagePlus, Plus, User, X } from "lucide-react"
 
+import {
+  addExperienceBullet,
+  duplicateExperienceRole,
+  removeExperienceBullet,
+  removeExperienceRole,
+  addSkillItem,
+  removeSkillItem,
+  renameSkillGroup,
+  renameSkillItem,
+} from "./paper-cv-edits.ts"
 import {
   cvTypeClass,
   type CvData,
   type CvEducation,
   type CvExperience,
+  type CvSkillGroup,
   type CvTypeRole,
 } from "./paper-cv-types.ts"
 
@@ -38,6 +49,9 @@ function CvType({
 
 /** QVE-206: structured canvas field hook — chrome lives in `paper.css`. */
 export const PAPER_CANVAS_FIELD_CLASS = "paper-canvas-field"
+/** QVE-207: hover/focus-within block for quiet add/remove chrome. */
+export const PAPER_CANVAS_BLOCK_CLASS = "paper-canvas-block"
+export const PAPER_CANVAS_AFFORDANCE_CLASS = "paper-canvas-affordance"
 
 type FieldProps = {
   value: string
@@ -116,67 +130,54 @@ export function CvDocument({ data, onChange }: Props) {
     patch("education", education)
   }
 
+  function setExperience(experience: CvExperience[]) {
+    patch("experience", experience)
+  }
+
+  function setSkills(skills: CvSkillGroup[]) {
+    patch("skills", skills)
+  }
+
+  const templateProps: TemplateProps = {
+    data,
+    patch,
+    patchExperience,
+    patchEducation,
+    setExperience,
+    setSkills,
+  }
+
   switch (data.templateId) {
     case "product":
-      return (
-        <ProductCv
-          data={data}
-          patch={patch}
-          patchExperience={patchExperience}
-          patchEducation={patchEducation}
-        />
-      )
+      return <ProductCv {...templateProps} />
     case "service":
-      return (
-        <ServiceCv
-          data={data}
-          patch={patch}
-          patchExperience={patchExperience}
-          patchEducation={patchEducation}
-        />
-      )
+      return <ServiceCv {...templateProps} />
     case "academic":
-      return (
-        <AcademicCv
-          data={data}
-          patch={patch}
-          patchExperience={patchExperience}
-          patchEducation={patchEducation}
-        />
-      )
+      return <AcademicCv {...templateProps} />
     case "photo":
-      return (
-        <PhotoCv
-          data={data}
-          patch={patch}
-          patchExperience={patchExperience}
-          patchEducation={patchEducation}
-        />
-      )
+      return <PhotoCv {...templateProps} />
     default:
-      return (
-        <InternshipCv
-          data={data}
-          patch={patch}
-          patchExperience={patchExperience}
-          patchEducation={patchEducation}
-        />
-      )
+      return <InternshipCv {...templateProps} />
   }
 }
 
-type TemplateProps = {
+type PatchProps = {
   data: CvData
   patch: <K extends keyof CvData>(key: K, value: CvData[K]) => void
   patchExperience: (index: number, next: Partial<CvExperience>) => void
   patchEducation: (index: number, next: Partial<CvEducation>) => void
 }
 
+type TemplateProps = PatchProps & {
+  setExperience: (experience: CvExperience[]) => void
+  setSkills: (skills: CvSkillGroup[]) => void
+}
+
 function ContactLine({
   data,
   patch,
   className,
-}: TemplateProps & { className?: string }) {
+}: PatchProps & { className?: string }) {
   const { contact } = data
   const parts = [
     contact.email,
@@ -210,19 +211,57 @@ function ContactLine({
   )
 }
 
+function CanvasAffordance({
+  label,
+  onClick,
+  dark,
+  children,
+}: {
+  label: string
+  onClick: () => void
+  dark?: boolean
+  children: ReactNode
+}) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="xs"
+      aria-label={label}
+      onClick={onClick}
+      className={cn(
+        PAPER_CANVAS_AFFORDANCE_CLASS,
+        "h-6 gap-1 px-1.5 text-2xs font-medium",
+        dark
+          ? "text-white/65 hover:bg-white/10 hover:text-white"
+          : "text-muted-foreground"
+      )}
+    >
+      {children}
+    </Button>
+  )
+}
+
 function ExperienceBlock({
   item,
   index,
+  experience,
+  setExperience,
   patchExperience,
   dark,
 }: {
   item: CvExperience
   index: number
+  experience: CvExperience[]
+  setExperience: (experience: CvExperience[]) => void
   patchExperience: (index: number, next: Partial<CvExperience>) => void
   dark?: boolean
 }) {
   return (
-    <div className="mb-3 last:mb-0" data-paper-section={`experience-${index}`}>
+    <div
+      className={cn(PAPER_CANVAS_BLOCK_CLASS, "mb-3 last:mb-0")}
+      data-paper-section={`experience-${index}`}
+    >
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
         <CvType role="label" className={cn(dark && "text-white")}>
           <EditableField
@@ -274,6 +313,26 @@ function ExperienceBlock({
           />
         </CvType>
       ) : null}
+      <div className="mt-1 flex flex-wrap gap-0.5">
+        <CanvasAffordance
+          label="Duplicate role"
+          dark={dark}
+          onClick={() =>
+            setExperience(duplicateExperienceRole(experience, index))
+          }
+        >
+          <Copy className="size-3" />
+          Duplicate
+        </CanvasAffordance>
+        <CanvasAffordance
+          label="Remove role"
+          dark={dark}
+          onClick={() => setExperience(removeExperienceRole(experience, index))}
+        >
+          <X className="size-3" />
+          Remove
+        </CanvasAffordance>
+      </div>
       <ul
         className={cn(
           "mt-2 space-y-1.5",
@@ -292,7 +351,7 @@ function ExperienceBlock({
                 dark ? "bg-white/50" : "bg-foreground/40"
               )}
             />
-            <CvType role="body" as="span" className="flex-1">
+            <CvType role="body" as="span" className="min-w-0 flex-1">
               <EditableField
                 aria-label="Bullet point"
                 sectionId={`experience-${index}-bullet-${bi}`}
@@ -306,9 +365,26 @@ function ExperienceBlock({
                 }}
               />
             </CvType>
+            <CanvasAffordance
+              label="Remove bullet"
+              dark={dark}
+              onClick={() =>
+                setExperience(removeExperienceBullet(experience, index, bi))
+              }
+            >
+              <X className="size-3" />
+            </CanvasAffordance>
           </li>
         ))}
       </ul>
+      <CanvasAffordance
+        label="Add bullet"
+        dark={dark}
+        onClick={() => setExperience(addExperienceBullet(experience, index))}
+      >
+        <Plus className="size-3" />
+        Add a line
+      </CanvasAffordance>
     </div>
   )
 }
@@ -367,31 +443,124 @@ function EducationBlock({
 }
 
 function SkillChips({
-  items,
+  groups,
+  onChange,
   variant = "tag",
+  grouped = false,
+  dark = false,
 }: {
-  items: string[]
-  variant?: "tag" | "pill" | "dashed"
+  groups: CvSkillGroup[]
+  onChange: (groups: CvSkillGroup[]) => void
+  variant?: "tag" | "pill" | "dashed" | "sidebar"
+  grouped?: boolean
+  dark?: boolean
 }) {
-  return (
-    <div data-paper-section="skills" className="flex flex-wrap gap-1.5">
-      {items.map((skill, i) => (
-        <CvType
-          key={i}
-          role="micro"
-          as="span"
+  const chipClass = (variant: "tag" | "pill" | "dashed" | "sidebar") =>
+    cn(
+      "inline-flex max-w-full items-center gap-0.5 px-2 py-0.5 font-medium",
+      variant === "tag" && "rounded-md border border-border bg-muted/40",
+      variant === "pill" &&
+        "rounded-full bg-foreground px-2.5 text-background",
+      variant === "dashed" && "rounded border border-dashed border-border",
+      variant === "sidebar" && "rounded bg-white/10 px-1.5 text-white/85"
+    )
+
+  function renderChip(groupIndex: number, itemIndex: number, skill: string) {
+    return (
+      <CvType
+        key={`${groupIndex}-${itemIndex}`}
+        role="micro"
+        as="span"
+        className={chipClass(variant)}
+      >
+        <EditableField
+          aria-label="Skill"
+          sectionId="skills"
+          value={skill}
           className={cn(
-            "px-2 py-0.5 font-medium",
-            variant === "tag" &&
-              "rounded-md border border-border bg-muted/40",
-            variant === "pill" &&
-              "rounded-full bg-foreground px-2.5 text-background",
-            variant === "dashed" && "rounded border border-dashed border-border"
+            "min-w-[1ch]",
+            variant === "pill" && "text-background",
+            variant === "sidebar" && "text-white/85"
+          )}
+          onChange={(value) =>
+            onChange(renameSkillItem(groups, groupIndex, itemIndex, value))
+          }
+        />
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-xs"
+          aria-label="Remove skill"
+          onClick={() =>
+            onChange(removeSkillItem(groups, groupIndex, itemIndex))
+          }
+          className={cn(
+            PAPER_CANVAS_AFFORDANCE_CLASS,
+            "size-4 text-current hover:bg-transparent",
+            variant === "pill" && "text-background/80",
+            variant === "sidebar" && "text-white/70 hover:text-white"
           )}
         >
-          {skill}
-        </CvType>
-      ))}
+          <X className="size-2.5" />
+        </Button>
+      </CvType>
+    )
+  }
+
+  function addButton(groupIndex?: number) {
+    return (
+      <CanvasAffordance
+        label="Add skill"
+        dark={dark}
+        onClick={() => onChange(addSkillItem(groups, groupIndex))}
+      >
+        <Plus className="size-3" />
+        Add skill
+      </CanvasAffordance>
+    )
+  }
+
+  if (grouped) {
+    return (
+      <div data-paper-section="skills" className="space-y-3">
+        {groups.map((group, gi) => (
+          <div key={gi} className={PAPER_CANVAS_BLOCK_CLASS}>
+            <CvType
+              role="micro"
+              className={cn(
+                "mb-1.5 font-semibold tracking-wide uppercase",
+                dark ? "text-white/45" : "text-muted-foreground"
+              )}
+            >
+              <EditableField
+                aria-label="Skill group"
+                value={group.label}
+                className={dark ? "text-white/45" : undefined}
+                onChange={(label) =>
+                  onChange(renameSkillGroup(groups, gi, label))
+                }
+              />
+            </CvType>
+            <div className="flex flex-wrap items-center gap-1">
+              {group.items.map((item, ii) => renderChip(gi, ii, item))}
+              {addButton(gi)}
+            </div>
+          </div>
+        ))}
+        {groups.length === 0 ? addButton() : null}
+      </div>
+    )
+  }
+
+  return (
+    <div
+      data-paper-section="skills"
+      className={cn(PAPER_CANVAS_BLOCK_CLASS, "flex flex-wrap items-center gap-1.5")}
+    >
+      {groups.flatMap((group, gi) =>
+        group.items.map((item, ii) => renderChip(gi, ii, item))
+      )}
+      {addButton()}
     </div>
   )
 }
@@ -470,6 +639,8 @@ function InternshipCv({
   patch,
   patchExperience,
   patchEducation,
+  setExperience,
+  setSkills,
 }: TemplateProps) {
   return (
     <div className="cv-template-root cv-template-internship">
@@ -517,6 +688,8 @@ function InternshipCv({
             key={i}
             item={item}
             index={i}
+            experience={data.experience}
+            setExperience={setExperience}
             patchExperience={patchExperience}
           />
         ))}
@@ -536,7 +709,7 @@ function InternshipCv({
 
       <section className="mt-5">
         <SectionTitle>Skills</SectionTitle>
-        <SkillChips items={data.skills.flatMap((g) => g.items)} />
+        <SkillChips groups={data.skills} onChange={setSkills} />
       </section>
     </div>
   )
@@ -547,6 +720,8 @@ function PhotoCv({
   patch,
   patchExperience,
   patchEducation,
+  setExperience,
+  setSkills,
 }: TemplateProps) {
   return (
     <div className="cv-template-root cv-template-photo">
@@ -600,6 +775,8 @@ function PhotoCv({
             key={i}
             item={item}
             index={i}
+            experience={data.experience}
+            setExperience={setExperience}
             patchExperience={patchExperience}
           />
         ))}
@@ -619,7 +796,7 @@ function PhotoCv({
 
       <section>
         <SectionTitle>Skills</SectionTitle>
-        <SkillChips items={data.skills.flatMap((g) => g.items)} />
+        <SkillChips groups={data.skills} onChange={setSkills} />
       </section>
     </div>
   )
@@ -630,6 +807,8 @@ function ProductCv({
   patch,
   patchExperience,
   patchEducation,
+  setExperience,
+  setSkills,
 }: TemplateProps) {
   return (
     <div className="cv-template-root cv-template-root--product cv-template-product">
@@ -689,30 +868,13 @@ function ProductCv({
 
         <div className="mt-6">
           <SectionTitle dark>Skills</SectionTitle>
-          <div data-paper-section="skills" className="space-y-3">
-            {data.skills.map((group, gi) => (
-              <div key={gi}>
-                <CvType
-                  role="micro"
-                  className="mb-1.5 font-semibold tracking-wide text-white/45 uppercase"
-                >
-                  {group.label}
-                </CvType>
-                <div className="flex flex-wrap gap-1">
-                  {group.items.map((item, ii) => (
-                    <CvType
-                      key={ii}
-                      role="micro"
-                      as="span"
-                      className="rounded bg-white/10 px-1.5 py-0.5 text-white/85"
-                    >
-                      {item}
-                    </CvType>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
+          <SkillChips
+            groups={data.skills}
+            onChange={setSkills}
+            variant="sidebar"
+            grouped
+            dark
+          />
         </div>
 
         <div className="mt-6">
@@ -772,6 +934,8 @@ function ProductCv({
               key={i}
               item={item}
               index={i}
+              experience={data.experience}
+              setExperience={setExperience}
               patchExperience={patchExperience}
             />
           ))}
@@ -819,6 +983,8 @@ function ServiceCv({
   patch,
   patchExperience,
   patchEducation,
+  setExperience,
+  setSkills,
 }: TemplateProps) {
   return (
     <div className="cv-template-root cv-template-service">
@@ -854,6 +1020,8 @@ function ServiceCv({
             key={i}
             item={item}
             index={i}
+            experience={data.experience}
+            setExperience={setExperience}
             patchExperience={patchExperience}
           />
         ))}
@@ -880,12 +1048,26 @@ function ServiceCv({
               data-paper-section={`education-${i}`}
               className="mb-2"
             >
-              <CvType role="label">{item.school}</CvType>
+              <CvType role="label">
+                <EditableField
+                  aria-label="School"
+                  value={item.school}
+                  onChange={(school) => patchEducation(i, { school })}
+                />
+              </CvType>
               <CvType role="body" className="text-muted-foreground">
-                {item.degree}
+                <EditableField
+                  aria-label="Degree"
+                  value={item.degree}
+                  onChange={(degree) => patchEducation(i, { degree })}
+                />
               </CvType>
               <CvType role="micro" className="text-muted-foreground">
-                {item.period}
+                <EditableField
+                  aria-label="Period"
+                  value={item.period}
+                  onChange={(period) => patchEducation(i, { period })}
+                />
               </CvType>
             </div>
           ))}
@@ -893,7 +1075,8 @@ function ServiceCv({
         <section>
           <SectionTitle>Skills</SectionTitle>
           <SkillChips
-            items={data.skills.flatMap((g) => g.items)}
+            groups={data.skills}
+            onChange={setSkills}
             variant="pill"
           />
         </section>
@@ -907,6 +1090,8 @@ function AcademicCv({
   patch,
   patchExperience,
   patchEducation,
+  setExperience,
+  setSkills,
 }: TemplateProps) {
   return (
     <div className="cv-template-root cv-template-academic">
@@ -972,7 +1157,11 @@ function AcademicCv({
               </CvType>
               {item.detail ? (
                 <CvType role="micro" className="mt-1 text-muted-foreground">
-                  {item.detail}
+                  <EditableField
+                    aria-label="Education detail"
+                    value={item.detail}
+                    onChange={(detail) => patchEducation(i, { detail })}
+                  />
                 </CvType>
               ) : null}
             </div>
@@ -990,9 +1179,28 @@ function AcademicCv({
                 data-paper-section={`project-${i}`}
                 className="rounded-lg border border-border bg-muted/20 p-3"
               >
-                <CvType role="label">{project.name}</CvType>
+                <CvType role="label">
+                  <EditableField
+                    aria-label="Project name"
+                    value={project.name}
+                    onChange={(name) => {
+                      const projects = [...(data.projects ?? [])]
+                      projects[i] = { ...project, name }
+                      patch("projects", projects)
+                    }}
+                  />
+                </CvType>
                 <CvType role="body" className="mt-1 text-muted-foreground">
-                  {project.detail}
+                  <EditableField
+                    aria-label="Project detail"
+                    value={project.detail}
+                    multiline
+                    onChange={(detail) => {
+                      const projects = [...(data.projects ?? [])]
+                      projects[i] = { ...project, detail }
+                      patch("projects", projects)
+                    }}
+                  />
                 </CvType>
               </div>
             ))}
@@ -1007,6 +1215,8 @@ function AcademicCv({
             key={i}
             item={item}
             index={i}
+            experience={data.experience}
+            setExperience={setExperience}
             patchExperience={patchExperience}
           />
         ))}
@@ -1015,7 +1225,8 @@ function AcademicCv({
       <section>
         <SectionTitle>Skills & languages</SectionTitle>
         <SkillChips
-          items={data.skills.flatMap((g) => g.items)}
+          groups={data.skills}
+          onChange={setSkills}
           variant="dashed"
         />
       </section>

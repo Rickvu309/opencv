@@ -7,6 +7,8 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import {
   CvDocument,
   EditableField,
+  PAPER_CANVAS_AFFORDANCE_CLASS,
+  PAPER_CANVAS_BLOCK_CLASS,
   PAPER_CANVAS_FIELD_CLASS,
 } from "./paper-cv-document.tsx"
 import { applyCvTemplate } from "./paper-cv-template-picker.tsx"
@@ -115,6 +117,113 @@ describe("paper canvas field CSS (QVE-206)", () => {
     expect(chrome).toContain(".paper-canvas-field:focus")
     expect(chrome).toContain("var(--muted)")
     expect(chrome).toContain("var(--ring)")
+    expect(chrome).not.toMatch(/var\(--info\)/)
+    expect(chrome).not.toMatch(/rounded-full/)
+    expect(chrome).not.toMatch(/bg-muted\/70/)
+  })
+})
+
+describe("on-canvas Experience and Skills edits (QVE-207)", () => {
+  it("adds and deletes bullets and duplicates or removes a role", () => {
+    renderCv("product")
+    const bulletsBefore = screen.getAllByRole("textbox", {
+      name: "Bullet point",
+    })
+    const rolesBefore = screen.getAllByRole("textbox", { name: "Role" })
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Add bullet" })[0]!)
+    expect(
+      screen.getAllByRole("textbox", { name: "Bullet point" })
+    ).toHaveLength(bulletsBefore.length + 1)
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Remove bullet" })[0]!)
+    expect(
+      screen.getAllByRole("textbox", { name: "Bullet point" })
+    ).toHaveLength(bulletsBefore.length)
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Duplicate role" })[0]!)
+    expect(screen.getAllByRole("textbox", { name: "Role" })).toHaveLength(
+      rolesBefore.length + 1
+    )
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Remove role" })[0]!)
+    expect(screen.getAllByRole("textbox", { name: "Role" })).toHaveLength(
+      rolesBefore.length
+    )
+  })
+
+  it("edits Skills as chips — rename, add, and remove", () => {
+    renderCv("product")
+    const chips = screen.getAllByRole("textbox", { name: "Skill" })
+    expect(chips.length).toBeGreaterThan(1)
+
+    const first = chips[0]!
+    first.textContent = "Café interviews"
+    fireEvent.input(first)
+    expect(first).toHaveTextContent("Café interviews")
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Add skill" })[0]!)
+    expect(screen.getAllByRole("textbox", { name: "Skill" })).toHaveLength(
+      chips.length + 1
+    )
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Remove skill" })[0]!)
+    expect(screen.getAllByRole("textbox", { name: "Skill" })).toHaveLength(
+      chips.length
+    )
+    expect(screen.queryByText("Café interviews")).not.toBeInTheDocument()
+  })
+
+  it("makes Service education and Academic projects editable", () => {
+    renderCv("service")
+    const school = screen.getByRole("textbox", { name: "School" })
+    school.textContent = "Campus café lab"
+    fireEvent.input(school)
+    expect(school).toHaveTextContent("Campus café lab")
+    expect(screen.getByRole("textbox", { name: "Degree" })).toBeInTheDocument()
+    expect(screen.getAllByRole("textbox", { name: "Skill" }).length).toBeGreaterThan(
+      0
+    )
+
+    cleanup()
+    renderCv("academic")
+    const project = screen.getAllByRole("textbox", { name: "Project name" })[0]!
+    project.textContent = "Hackathon booth"
+    fireEvent.input(project)
+    expect(project).toHaveTextContent("Hackathon booth")
+    expect(
+      screen.getByRole("textbox", { name: "Education detail" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getAllByRole("textbox", { name: "Project detail" }).length
+    ).toBeGreaterThan(0)
+  })
+
+  it("keeps hover affordances on the canvas, not only in a toolbar", () => {
+    renderCv("internship")
+    const block = document.querySelector("[data-paper-section='experience-0']")
+    expect(block).toHaveClass(PAPER_CANVAS_BLOCK_CLASS)
+    expect(
+      screen.getAllByRole("button", { name: "Add bullet" })[0]
+    ).toHaveClass(PAPER_CANVAS_AFFORDANCE_CLASS)
+    expect(
+      screen.getAllByRole("button", { name: "Duplicate role" })[0]
+    ).toHaveClass(PAPER_CANVAS_AFFORDANCE_CLASS)
+    expect(screen.queryByRole("toolbar")).not.toBeInTheDocument()
+  })
+})
+
+describe("paper canvas affordance CSS (QVE-207)", () => {
+  it("reveals kit hover chrome, not Coach pills or cite-jump", () => {
+    expect(paperCss).toMatch(/\.paper-canvas-block:hover/)
+    expect(paperCss).toMatch(/\.paper-canvas-affordance:focus-visible/)
+    expect(paperCss).toMatch(/display:\s*none/)
+
+    const start = paperCss.indexOf(".paper-canvas-block {")
+    const end = paperCss.indexOf("QVE-186")
+    const chrome = paperCss.slice(start, end).replace(/\/\*[\s\S]*?\*\//g, "")
+    expect(chrome).toContain(".paper-canvas-affordance")
+    expect(chrome).toContain("var(--duration-fast)")
     expect(chrome).not.toMatch(/var\(--info\)/)
     expect(chrome).not.toMatch(/rounded-full/)
     expect(chrome).not.toMatch(/bg-muted\/70/)
