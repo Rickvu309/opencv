@@ -305,15 +305,30 @@ describe("Apply workspace", () => {
     expect(screen.getByText("Product intern")).toBeInTheDocument()
   })
 
+  async function addJobFromDialog(jobUrl?: string) {
+    fireEvent.click(screen.getByRole("button", { name: "Add job" }))
+    const dialog = await screen.findByRole("dialog", { name: "Add job" })
+    if (jobUrl !== undefined) {
+      fireEvent.change(within(dialog).getByLabelText("Job posting URL"), {
+        target: { value: jobUrl },
+      })
+    }
+    fireEvent.click(within(dialog).getByRole("button", { name: "Add job" }))
+    return dialog
+  }
+
   it("creates a job and links a Paper doc from job detail", async () => {
     renderApply()
     await expectApplyLive()
 
-    fireEvent.click(screen.getByRole("button", { name: /add job/i }))
+    await addJobFromDialog()
     const panel = await screen.findByRole("complementary", {
       name: "Job detail",
     })
     expect(within(panel).getByDisplayValue("Untitled role")).toBeInTheDocument()
+    expect(
+      within(panel).queryByRole("button", { name: "Open job posting" })
+    ).not.toBeInTheDocument()
 
     fireEvent.click(within(panel).getByRole("button", { name: "Link Paper docs" }))
     const menu = await screen.findByRole("menu", { name: "Link Paper docs" })
@@ -321,6 +336,63 @@ describe("Apply workspace", () => {
     expect(
       await within(menu).findByRole("menuitemcheckbox", { name: /PM track CV/ })
     ).toHaveAttribute("aria-checked", "true")
+  })
+
+  it("adds a job with a posting URL and opens it from the drawer", async () => {
+    const open = vi.fn(() => ({ closed: false }))
+    vi.stubGlobal("open", open)
+
+    renderApply()
+    await expectApplyLive()
+
+    await addJobFromDialog("careers.example.com/pm-intern")
+    const panel = await screen.findByRole("complementary", {
+      name: "Job detail",
+    })
+    expect(within(panel).getByDisplayValue("Untitled role")).toBeInTheDocument()
+    expect(
+      within(panel).getByDisplayValue("https://careers.example.com/pm-intern")
+    ).toBeInTheDocument()
+
+    fireEvent.click(within(panel).getByRole("button", { name: "Open job posting" }))
+    expect(open).toHaveBeenCalledWith(
+      "https://careers.example.com/pm-intern",
+      "_blank",
+      "noopener,noreferrer"
+    )
+  })
+
+  it("keeps Add job open when the posting URL is not a web URL", async () => {
+    renderApply()
+    await expectApplyLive()
+
+    await addJobFromDialog("javascript:alert(1)")
+    const dialog = await screen.findByRole("dialog", { name: "Add job" })
+    expect(within(dialog).getByRole("alert")).toHaveTextContent(
+      "That posting link isn't a valid web URL."
+    )
+    expect(
+      screen.queryByRole("complementary", { name: "Job detail" })
+    ).not.toBeInTheDocument()
+    expect(screen.queryByText("Untitled role")).not.toBeInTheDocument()
+  })
+
+  it("honest-fails when the browser blocks opening the posting", async () => {
+    vi.stubGlobal("open", vi.fn(() => null))
+
+    renderApply()
+    await expectApplyLive()
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Associate PM intern/ })
+    )
+    const panel = await screen.findByRole("complementary", {
+      name: "Job detail",
+    })
+    fireEvent.click(within(panel).getByRole("button", { name: "Open job posting" }))
+    expect(within(panel).getByRole("alert")).toHaveTextContent(
+      "The browser blocked opening this posting."
+    )
   })
 
   it("rolls a failed move back and shows the real error message", async () => {

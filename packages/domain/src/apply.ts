@@ -51,6 +51,51 @@ export const applyJobUrlSchema = z
   .max(APPLY_JOB_URL_MAX, "Job URL is too long")
   .nullable()
 
+const HAS_URL_SCHEME = /^[a-zA-Z][a-zA-Z0-9+.-]*:/
+
+export const APPLY_JOB_URL_INVALID =
+  "That posting link isn't a valid web URL."
+export const APPLY_JOB_URL_BLOCKED =
+  "The browser blocked opening this posting."
+
+/** Prefix https:// when a café-student paste has no scheme. */
+export function normalizeApplyJobUrl(raw: string): string {
+  const trimmed = raw.trim()
+  return HAS_URL_SCHEME.test(trimmed) ? trimmed : `https://${trimmed}`
+}
+
+/** http(s) posting URL we can honestly open, or null. */
+export function openableApplyJobUrl(
+  raw: string | null | undefined
+): string | null {
+  if (raw == null) return null
+  const trimmed = raw.trim()
+  if (!trimmed || trimmed.length > APPLY_JOB_URL_MAX) return null
+  try {
+    const url = new URL(normalizeApplyJobUrl(trimmed))
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null
+    if (!url.hostname) return null
+    return url.href
+  } catch {
+    return null
+  }
+}
+
+export function parseApplyJobUrlInput(
+  raw: string
+):
+  | { ok: true; jobUrl: string | null }
+  | { ok: false; message: string } {
+  const trimmed = raw.trim()
+  if (!trimmed) return { ok: true, jobUrl: null }
+  if (trimmed.length > APPLY_JOB_URL_MAX) {
+    return { ok: false, message: "Job URL is too long" }
+  }
+  const jobUrl = openableApplyJobUrl(trimmed)
+  if (!jobUrl) return { ok: false, message: APPLY_JOB_URL_INVALID }
+  return { ok: true, jobUrl }
+}
+
 export const applyTrackDateSchema = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Track date must be YYYY-MM-DD")

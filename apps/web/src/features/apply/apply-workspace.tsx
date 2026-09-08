@@ -28,6 +28,7 @@ import { ComingSoon } from "@/components/coming-soon.tsx"
 import { comingSoonLabel } from "@/components/coming-soon-label.ts"
 import { ErrorBanner } from "@/components/error-banner.tsx"
 import { WorkspaceHeader } from "@/components/workspace-header.tsx"
+import { AddJobDialog } from "@/features/apply/apply-add-job-dialog.tsx"
 import { ApplyCalendar } from "@/features/apply/apply-calendar.tsx"
 import {
   allowCardDrop,
@@ -56,6 +57,7 @@ export function ApplyWorkspace() {
   const [dragOverStage, setDragOverStage] = useState<StageId | null>(null)
   const [dragOverCardId, setDragOverCardId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ApplyCard | null>(null)
+  const [addOpen, setAddOpen] = useState(false)
   const dragMovedRef = useRef(false)
 
   const selected = apply.cards.find((c) => c.id === selectedId)
@@ -100,8 +102,11 @@ export function ApplyWorkspace() {
     setSelectedId((current) => (current === id ? null : id))
   }
 
-  async function addJob() {
-    const created = await apply.createCard()
+  async function addJob(jobUrl: string | null) {
+    const created = await apply.createCard(
+      jobUrl ? { jobUrl } : {}
+    )
+    setAddOpen(false)
     setSelectedId(created.id)
   }
 
@@ -176,7 +181,7 @@ export function ApplyWorkspace() {
           type="button"
           size="sm"
           className="h-8"
-          onClick={() => void addJob()}
+          onClick={() => setAddOpen(true)}
           disabled={apply.creating}
         >
           <Plus className="size-3.5" />
@@ -303,6 +308,13 @@ export function ApplyWorkspace() {
           />
         ) : null}
       </div>
+
+      <AddJobDialog
+        open={addOpen}
+        creating={apply.creating}
+        onOpenChange={setAddOpen}
+        onAdd={addJob}
+      />
 
       {deleteTarget ? (
         <DestructiveCommandDialog
