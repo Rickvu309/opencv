@@ -5,6 +5,7 @@ import { authClient } from "@/lib/auth-client.ts"
 import { ThreadView } from "@/features/home/thread-view.tsx"
 import { CoachDock } from "@/features/coach/coach-dock.tsx"
 import { ConnectedApps } from "@/features/home/connected-apps.tsx"
+import { AimPrompt } from "@/features/home/aim-prompt.tsx"
 import { FirstCafeChecklist } from "@/features/home/first-cafe-checklist.tsx"
 import { homeGreeting } from "@/features/home/greeting.ts"
 import { HomeSuggestions } from "@/features/home/home-suggestions.tsx"
@@ -93,6 +94,7 @@ export function HomeDashboard() {
               </h1>
             </header>
 
+            <AimPrompt />
             <FirstCafeChecklist />
 
             <div className="w-full space-y-2 overflow-visible">

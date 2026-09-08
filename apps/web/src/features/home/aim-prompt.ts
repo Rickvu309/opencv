@@ -1,0 +1,123 @@
+import {
+  LEGACY_FAKE_PITCH_HEADLINE,
+  STARTER_PITCH_HEADLINE,
+  type PitchDocument,
+} from "@workspace/domain"
+
+export const AIM_PROMPT_STORAGE_PREFIX = "openpath:home:aim-prompt"
+
+export const AIM_OPTIONS = [
+  {
+    id: "summer-intern",
+    label: "A summer internship",
+    headline: "Looking for a summer internship",
+  },
+  {
+    id: "product-intern",
+    label: "A product intern role",
+    headline: "Aiming for a product intern role",
+  },
+  {
+    id: "first-job",
+    label: "A first full-time job",
+    headline: "Looking for a first full-time role",
+  },
+] as const
+
+export type AimId = (typeof AIM_OPTIONS)[number]["id"]
+
+export type AimPromptState = {
+  resolved: boolean
+  aimId: AimId | null
+}
+
+export const EMPTY_AIM_PROMPT_STATE: AimPromptState = {
+  resolved: false,
+  aimId: null,
+}
+
+const AIM_ID_SET = new Set<string>(AIM_OPTIONS.map((option) => option.id))
+
+export function aimPromptStorageKey(userId: string) {
+  return `${AIM_PROMPT_STORAGE_PREFIX}:${userId}`
+}
+
+export function parseAimPromptState(raw: string | null): AimPromptState {
+  if (!raw) return { resolved: false, aimId: null }
+
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (!parsed || typeof parsed !== "object") {
+      return { resolved: false, aimId: null }
+    }
+
+    const record = parsed as {
+      resolved?: unknown
+      aimId?: unknown
+    }
+    const aimId =
+      typeof record.aimId === "string" && AIM_ID_SET.has(record.aimId)
+        ? (record.aimId as AimId)
+        : null
+
+    return {
+      resolved: record.resolved === true,
+      aimId,
+    }
+  } catch {
+    return { resolved: false, aimId: null }
+  }
+}
+
+export function resolveAimPrompt(
+  state: AimPromptState,
+  aimId: AimId | null
+): AimPromptState {
+  if (state.resolved && state.aimId === aimId) return state
+  return { resolved: true, aimId }
+}
+
+export function headlineForAim(id: AimId) {
+  const option = AIM_OPTIONS.find((item) => item.id === id)
+  return option?.headline ?? ""
+}
+
+export function isSoftFeedablePitchHeadline(headline: string) {
+  const trimmed = headline.trim()
+  return (
+    trimmed === "" ||
+    trimmed === STARTER_PITCH_HEADLINE ||
+    trimmed === LEGACY_FAKE_PITCH_HEADLINE
+  )
+}
+
+export function applyAimToPitchHeadline(
+  doc: PitchDocument,
+  aimId: AimId
+): PitchDocument | null {
+  if (!isSoftFeedablePitchHeadline(doc.headline)) return null
+  const headline = headlineForAim(aimId)
+  if (!headline || doc.headline === headline) return null
+  return { ...doc, headline }
+}
+
+export function readAimPromptState(userId: string): AimPromptState {
+  try {
+    return parseAimPromptState(
+      window.localStorage.getItem(aimPromptStorageKey(userId))
+    )
+  } catch {
+    return { resolved: false, aimId: null }
+  }
+}
+
+export function writeAimPromptState(userId: string, state: AimPromptState) {
+  try {
+    window.localStorage.setItem(
+      aimPromptStorageKey(userId),
+      JSON.stringify(state)
+    )
+  } catch {
+    // Private mode / blocked storage — keep the session copy only.
+  }
+}

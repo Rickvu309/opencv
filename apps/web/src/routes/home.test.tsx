@@ -9,7 +9,10 @@ import {
 
 import { SURFACE_COPY, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
+import { AIM_OPTIONS } from "@/features/home/aim-prompt.ts"
 import { SUGGESTION_POOLS } from "@/features/home/suggestions.ts"
+import { STARTER_PITCH_HEADLINE, starterPitchDocument } from "@workspace/domain"
+import { getMockPitchDoc, setMockPitchDoc } from "@/test/pitch-api-mock.ts"
 import { renderApp } from "@/test/render-app.tsx"
 
 async function expectHomeIdle() {
@@ -359,5 +362,119 @@ describe("Home first-café checklist", () => {
         await screen.findByRole("complementary", { name: "Job detail" })
       ).getByRole("combobox", { name: "Next step" })
     ).toHaveTextContent("Follow-up")
+  })
+})
+
+describe("Home optional aim prompt", () => {
+  it("asks once on idle Home and Skip always dismisses it", async () => {
+    const { router } = renderApp()
+    await expectHomeIdle()
+
+    expect(
+      screen.getByRole("heading", { name: "What are you aiming for?" })
+    ).toBeInTheDocument()
+    expect(screen.getByText("Optional. Skip whenever.")).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "I'm not sure yet" })
+    ).toBeInTheDocument()
+    for (const option of AIM_OPTIONS) {
+      expect(
+        screen.getByRole("button", { name: option.label })
+      ).toBeInTheDocument()
+    }
+    expect(
+      screen.queryByRole("button", { name: /next step|continue|skip tour/i })
+    ).not.toBeInTheDocument()
+    expect(router.state.location.pathname).toBe(SURFACE_PATHS.home)
+
+    fireEvent.click(screen.getByRole("button", { name: "Skip" }))
+    expect(
+      screen.queryByRole("heading", { name: "What are you aiming for?" })
+    ).not.toBeInTheDocument()
+    expect(getMockPitchDoc()?.content).toMatchObject({
+      headline: STARTER_PITCH_HEADLINE,
+    })
+
+    fireEvent.click(screen.getByRole("link", { name: "Paper" }))
+    await screen.findByRole("region", { name: "Paper" })
+    fireEvent.click(screen.getByRole("link", { name: "Home" }))
+    await expectHomeIdle()
+
+    expect(
+      screen.queryByRole("heading", { name: "What are you aiming for?" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole("heading", { name: "Four small things" })
+    ).toBeInTheDocument()
+  })
+
+  it("soft-feeds Pitch headline from one aim without forcing a custom line", async () => {
+    const { router } = renderApp()
+    await expectHomeIdle()
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "A product intern role" })
+    )
+    expect(
+      screen.queryByRole("heading", { name: "What are you aiming for?" })
+    ).not.toBeInTheDocument()
+
+    await waitFor(() => {
+      expect(getMockPitchDoc()?.content).toMatchObject({
+        headline: "Aiming for a product intern role",
+      })
+    })
+
+    fireEvent.click(screen.getByRole("link", { name: "Pitch" }))
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(SURFACE_PATHS.pitch)
+    })
+    expect(
+      await screen.findByText("Aiming for a product intern role")
+    ).toBeInTheDocument()
+    expect(screen.queryByText(STARTER_PITCH_HEADLINE)).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("heading", { name: /step \d|goal|school/i })
+    ).not.toBeInTheDocument()
+  })
+
+  it("does not overwrite a Pitch headline the User already wrote", async () => {
+    const current = getMockPitchDoc()
+    if (!current) throw new Error("expected starter Pitch")
+    setMockPitchDoc({
+      ...current,
+      content: {
+        ...starterPitchDocument(),
+        headline: "Design intern · night shift",
+        demo: false,
+      },
+    })
+
+    renderApp()
+    await expectHomeIdle()
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "A first full-time job" })
+    )
+    expect(
+      screen.queryByRole("heading", { name: "What are you aiming for?" })
+    ).not.toBeInTheDocument()
+
+    await waitFor(() => {
+      expect(getMockPitchDoc()?.content).toMatchObject({
+        headline: "Design intern · night shift",
+      })
+    })
+  })
+
+  it("does not reboot into an /onboarding multi-step flow", async () => {
+    renderApp("/onboarding")
+    expect(screen.queryByText(/step 1 of/i)).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("heading", { name: /what's your school|pick a goal/i })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: /next step|continue|skip tour/i })
+    ).not.toBeInTheDocument()
   })
 })

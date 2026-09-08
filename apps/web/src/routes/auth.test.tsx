@@ -142,6 +142,14 @@ describe("auth flows", () => {
     expect(
       screen.queryByRole("link", { name: /done$/ })
     ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole("heading", { name: "What are you aiming for?" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "I'm not sure yet" })
+    ).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Skip" })).toBeInTheDocument()
+    expect(screen.queryByText(/step 1 of/i)).not.toBeInTheDocument()
   })
 
   it("after signup, opening only the sample CV completes just that item", async () => {
