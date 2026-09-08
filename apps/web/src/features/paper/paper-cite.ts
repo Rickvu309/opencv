@@ -2,6 +2,7 @@ import type { CoachSelection, ThreadMessagePart } from "@workspace/domain"
 
 import {
   STREAMING_COACH_ID,
+  latestCoachMessageId,
   type HomeMessage,
 } from "@/features/home/threads.ts"
 
@@ -429,4 +430,59 @@ export function citeForCoachMessage(
     selection: extras?.selection,
     hunks: paperCiteHunksFromParts(message.parts),
   })
+}
+
+export type StoredCoachCites = Record<string, PaperCite>
+
+export type CoachCiteTurnExtras = {
+  chips?: readonly CoachContextChip[]
+  selection?: CoachSelection | null
+}
+
+/** Chip/selection extras apply only while this row is the latest Coach reply. */
+export function extrasForCiteTurn(
+  messageId: string,
+  latestCoachId: string | null,
+  lastTurn?: CoachCiteTurnExtras | null
+): CoachCiteTurnExtras | undefined {
+  if (!lastTurn || messageId !== latestCoachId) return undefined
+  return lastTurn
+}
+
+/**
+ * Store a resolved cite the first time a Coach row lands. Later turns must
+ * not re-derive chip grounding for older rows.
+ */
+export function rememberCoachCite(
+  stored: StoredCoachCites,
+  message: HomeMessage,
+  messages: readonly HomeMessage[],
+  spans: readonly PaperCiteSpan[],
+  extras?: CoachCiteTurnExtras
+): StoredCoachCites {
+  if (stored[message.id]) return stored
+  const cite = citeForCoachMessage(message, messages, spans, extras)
+  if (!cite) return stored
+  return { ...stored, [message.id]: cite }
+}
+
+export function rememberCoachCites(
+  stored: StoredCoachCites,
+  messages: readonly HomeMessage[],
+  spans: readonly PaperCiteSpan[],
+  lastTurn?: CoachCiteTurnExtras | null
+): StoredCoachCites {
+  const latestCoachId = latestCoachMessageId(messages)
+  let next = stored
+  for (const message of messages) {
+    if (message.role !== "coach") continue
+    next = rememberCoachCite(
+      next,
+      message,
+      messages,
+      spans,
+      extrasForCiteTurn(message.id, latestCoachId, lastTurn)
+    )
+  }
+  return next
 }

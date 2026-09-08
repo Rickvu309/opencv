@@ -9,11 +9,13 @@ import {
 import {
   citeForCoachMessage,
   citeFromCoachReply,
+  extrasForCiteTurn,
   paperCiteHunksFromParts,
   paperCiteSpansFromCv,
   paperCiteSpansFromLetter,
   paperCiteSpansFromProof,
   previousUserText,
+  rememberCoachCites,
 } from "./paper-cite.ts"
 import { DEFAULT_CV_DATA } from "./paper-cv-types.ts"
 import { DEFAULT_CHECKOUT_PROOF } from "./paper-proof-types.ts"
@@ -191,6 +193,37 @@ describe("cite helpers", () => {
         },
       ])
     ).toEqual([{ sectionId: "summary", section: "Summary" }])
+  })
+
+  it("keeps a chip-grounded cite after a later Coach turn", () => {
+    const bullet = DEFAULT_CV_DATA.experience[0]?.bullets[0] ?? ""
+    const chips = toggleContextChipPin(
+      addSelectionChip(
+        [],
+        { text: bullet, sectionId: "experience-0-bullet-0" },
+        "sel-1"
+      ),
+      "sel-1"
+    )
+    const first: HomeMessage[] = [
+      { id: "u1", role: "user", text: "What is weak about this bullet?" },
+      { id: "c1", role: "coach", text: "I read that bullet." },
+    ]
+    const stored = rememberCoachCites({}, first, spans, {
+      chips,
+      selection: chips[0]?.selection,
+    })
+    expect(stored.c1?.sectionId).toBe("experience-0-bullet-0")
+
+    const second: HomeMessage[] = [
+      ...first,
+      { id: "u2", role: "user", text: "And the next line?" },
+      { id: "c2", role: "coach", text: "Say more?" },
+    ]
+    expect(extrasForCiteTurn("c1", "c2", { chips })).toBeUndefined()
+    const after = rememberCoachCites(stored, second, spans, null)
+    expect(after.c1?.sectionId).toBe("experience-0-bullet-0")
+    expect(after.c2).toBeUndefined()
   })
 
   it("indexes letter and proof spans without a sources rail", () => {

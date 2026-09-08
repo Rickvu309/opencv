@@ -40,9 +40,10 @@ import {
 } from "./coach-context-chips.ts"
 import { PaperCiteControl } from "./paper-cite-control.tsx"
 import {
-  citeForCoachMessage,
+  rememberCoachCites,
   type PaperCite,
   type PaperCiteSpan,
+  type StoredCoachCites,
 } from "./paper-cite.ts"
 import { previewCoachSelectionText } from "./paper-selection.ts"
 import type { ToolbarVariant } from "./paper-editor-toolbar.tsx"
@@ -301,6 +302,9 @@ export const CoachFloat = memo(function CoachFloat({
     selection?: CoachSelection
     chips: CoachContextChip[]
   } | null>(null)
+  const [citesByMessageId, setCitesByMessageId] = useState<StoredCoachCites>(
+    {}
+  )
 
   const sendWithSelection = useCallback(
     (text: string) => {
@@ -318,6 +322,12 @@ export const CoachFloat = memo(function CoachFloat({
     [contextChips, selection, send]
   )
 
+  useEffect(() => {
+    setCitesByMessageId((prev) =>
+      rememberCoachCites(prev, messages, citeSpans, lastTurnRef.current)
+    )
+  }, [citeSpans, messages])
+
   const citePaper = useCallback(
     (cite: PaperCite) => {
       onCitePaper?.(cite.sectionId)
@@ -328,18 +338,11 @@ export const CoachFloat = memo(function CoachFloat({
 
   const messageCite = useCallback(
     (message: (typeof messages)[number]) => {
-      const latestCoachId = [...messages]
-        .reverse()
-        .find((row) => row.role === "coach")?.id
-      const turn = message.id === latestCoachId ? lastTurnRef.current : null
-      const cite = citeForCoachMessage(message, messages, citeSpans, {
-        chips: turn?.chips,
-        selection: turn?.selection,
-      })
+      const cite = citesByMessageId[message.id]
       if (!cite || !onCitePaper) return null
       return <PaperCiteControl cite={cite} onCite={citePaper} />
     },
-    [citePaper, citeSpans, messages, onCitePaper]
+    [citePaper, citesByMessageId, onCitePaper]
   )
 
   const addSelectionToContext = useCallback(() => {

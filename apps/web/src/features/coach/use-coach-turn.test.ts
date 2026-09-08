@@ -44,6 +44,7 @@ describe("shared Coach turn hook", () => {
     expect(panel).toMatch(/Attached from Paper/)
     expect(panel).toMatch(/Remove from context/)
     expect(panel).toMatch(/PaperCiteControl/)
+    expect(panel).toMatch(/rememberCoachCites/)
     expect(panel).not.toMatch(/provenance/)
     expect(panel).not.toMatch(/sources rail/)
     const cite = read("features/paper/paper-cite-control.tsx")

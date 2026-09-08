@@ -769,6 +769,60 @@ describe("Paper editors", () => {
     ).toBeInTheDocument()
   })
 
+  it("keeps a chip-grounded cite after the next Coach turn", async () => {
+    scriptCoachStream({ texts: ["I read that bullet."] })
+    renderPaper()
+    await expectPaperDrive()
+    const editor = await openDoc("PM track CV")
+    const dialog = await openCoach()
+    const bullet = within(editor).getAllByRole("textbox", {
+      name: "Bullet point",
+    })[0]
+    selectNodeContents(bullet!)
+    messageCoach(dialog).focus()
+    collapseWindowSelection()
+
+    fireEvent.click(
+      within(
+        await within(dialog).findByRole("status", { name: "Selected text" })
+      ).getByRole("button", { name: "Add to context" })
+    )
+    const chip = within(dialog).getByRole("status", {
+      name: "Selection in context",
+    })
+    fireEvent.click(within(chip).getByRole("button", { name: "Pin in context" }))
+    expect(chip).toHaveAttribute("data-pinned", "true")
+
+    fireEvent.change(messageCoach(dialog), {
+      target: { value: "What is weak about this bullet?" },
+    })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Send" }))
+    expect(
+      await within(dialog).findByText("I read that bullet.")
+    ).toBeInTheDocument()
+    expect(
+      within(dialog).getByRole("button", { name: /Show on Paper/ })
+    ).toHaveAttribute("data-coach-cite", "experience-0-bullet-0")
+
+    scriptCoachStream({ texts: ["Say more?"] })
+    fireEvent.change(messageCoach(dialog), {
+      target: { value: "And the next line?" },
+    })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Send" }))
+    expect(await within(dialog).findByText("Say more?")).toBeInTheDocument()
+    expect(within(dialog).getByText("I read that bullet.")).toBeInTheDocument()
+
+    const cites = within(dialog).getAllByRole("button", {
+      name: /Show on Paper/,
+    })
+    expect(
+      cites.some((button) => button.getAttribute("data-coach-cite") === "experience-0-bullet-0")
+    ).toBe(true)
+    expect(
+      within(dialog).getByRole("status", { name: "Selection in context" })
+    ).toHaveAttribute("data-pinned", "true")
+  })
+
   it("does not invent a cite or sources rail for generic advice", async () => {
     scriptCoachStream({
       texts: [
