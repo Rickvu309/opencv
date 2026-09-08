@@ -10,6 +10,7 @@ import {
 
 import { AppShellLayout } from "@/features/app-shell/app-shell-layout.tsx"
 import { validateSettingsSearch } from "@/features/app-shell/surfaces.ts"
+import { validatePaperSearch } from "@/features/paper/paper-search.ts"
 import { ApplyPage } from "@/routes/apply.tsx"
 import { HomePage } from "@/routes/home.tsx"
 import { PaperPage } from "@/routes/paper.tsx"
@@ -84,6 +85,7 @@ const homeRoute = createRoute({
 const paperRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/paper",
+  validateSearch: validatePaperSearch,
   component: PaperPage,
 })
 
