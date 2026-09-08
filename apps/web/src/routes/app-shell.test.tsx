@@ -402,6 +402,36 @@ describe("settings workspace", () => {
     expect(screen.getAllByText("Minh Le").length).toBeGreaterThan(0)
     expect(screen.getByText("minh@example.com")).toBeInTheDocument()
   })
+
+  it("keeps Settings Account as the session User after Clear demo", async () => {
+    setMockSession({
+      user: {
+        ...TEST_SESSION_USER,
+        name: "Minh Le",
+        email: "minh@example.com",
+      },
+      session: TEST_SESSION,
+    })
+    renderApp(SURFACE_PATHS.pitch)
+
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Minh Le" })
+    ).toBeInTheDocument()
+    expect(screen.getByText("Demo content")).toBeInTheDocument()
+    fireEvent.click(screen.getAllByRole("button", { name: "Clear demo" })[0]!)
+    expect(await screen.findByText("Your Pitch is empty")).toBeInTheDocument()
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("link", { name: /profile and settings/i }))
+    fireEvent.click(await screen.findByRole("tab", { name: "Account" }))
+    expect(
+      await screen.findByRole("heading", { level: 2, name: "Account" })
+    ).toBeInTheDocument()
+    expect(screen.getAllByText("Minh Le").length).toBeGreaterThan(0)
+    expect(screen.getByText("minh@example.com")).toBeInTheDocument()
+    expect(screen.queryByText(/Eric Nguyen/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Aspiring product manager/i)).not.toBeInTheDocument()
+  })
 })
 
 async function openSearch() {

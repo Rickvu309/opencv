@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import {
   emptyPitchDocument,
+  STARTER_PITCH_ABOUT_LEAD,
   STARTER_PITCH_HEADLINE,
   starterPitchDocument,
   type PitchDocument,
@@ -51,6 +52,14 @@ function renderPitch() {
   return render(createElement(PitchWorkspace), { wrapper })
 }
 
+function clearDemoButtons() {
+  return screen.getAllByRole("button", { name: "Clear demo" })
+}
+
+function clickClearDemo() {
+  fireEvent.click(clearDemoButtons()[0]!)
+}
+
 async function loadedPitch() {
   renderPitch()
   expect(
@@ -76,7 +85,8 @@ describe("Pitch workspace", () => {
     expect(
       screen.getByText("This page is a sample, not your story.")
     ).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Clear demo" })).toBeInTheDocument()
+    expect(clearDemoButtons().length).toBeGreaterThanOrEqual(1)
+    expect(screen.queryByText("Editing Pitch")).not.toBeInTheDocument()
     expect(screen.queryByText(/Aspiring product manager/i)).not.toBeInTheDocument()
     expect(
       screen.getByText(`openpath.app/u/${pitchHandle(SAMPLE_AUTHOR_NAME)}`)
@@ -105,10 +115,49 @@ describe("Pitch workspace", () => {
     expect(screen.queryByText(SURFACE_COPY.pitch.body)).not.toBeInTheDocument()
   })
 
+  it("keeps Clear demo on page chrome, not inside Edit menus", async () => {
+    await loadedPitch()
+
+    const chrome = screen.getAllByRole("banner")[0]
+    expect(chrome).toBeTruthy()
+    expect(
+      within(chrome as HTMLElement).getByRole("button", { name: "Clear demo" })
+    ).toBeInTheDocument()
+
+    const demoBar = screen.getByRole("status")
+    expect(within(demoBar).getByText("Demo content")).toBeInTheDocument()
+    expect(within(demoBar).getByRole("button", { name: "Clear demo" })).toBeInTheDocument()
+    expect(demoBar.closest(".overflow-auto")).toBeNull()
+    expect(screen.queryByText("Editing Pitch")).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("dialog", { name: /clear|wipe|reset|confirm/i })
+    ).not.toBeInTheDocument()
+  })
+
+  it("still offers Clear demo when sample About is present without the demo flag", async () => {
+    const starter = starterPitchDocument()
+    const { demo, ...rest } = starter
+    expect(demo).toBe(true)
+    setMockPitchDoc({
+      id: "55555555-5555-7555-8555-555555555560",
+      kind: "pitch",
+      content: rest,
+      contentVersion: 1,
+      createdAt: "2026-08-25T00:00:00.000Z",
+      updatedAt: "2026-08-25T00:00:00.000Z",
+    })
+
+    await loadedPitch()
+    expect(screen.getByText(STARTER_PITCH_ABOUT_LEAD)).toBeInTheDocument()
+    expect(clearDemoButtons().length).toBeGreaterThanOrEqual(1)
+    expect(screen.getByText("Demo content")).toBeInTheDocument()
+  })
+
   it("clears Demo content into an empty Pitch the User can make theirs", async () => {
     await loadedPitch()
 
-    fireEvent.click(screen.getByRole("button", { name: "Clear demo" }))
+    clickClearDemo()
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
     expect(
       await screen.findByText("Your Pitch is empty")
     ).toBeInTheDocument()
