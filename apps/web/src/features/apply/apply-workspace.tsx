@@ -2,6 +2,9 @@
  * Apply: kanban + calendar for tracking Opportunities.
  * Do not import shell chrome — the route mounts this into `<Outlet />`.
  * Fit is stored on the server and never rendered (PRODUCT.md open q. 1).
+ * Board columns are fluid (QVE-235) so Inbox → Closed glances on a
+ * typical laptop without horizontal hunting. Filter / column-menu
+ * Coming-soon chrome is deferred until those actions exist.
  */
 import { useMemo, useRef, useState } from "react"
 import { Button } from "@workspace/ui/components/button"
@@ -12,17 +15,13 @@ import { cn } from "@workspace/ui/lib/utils"
 import type { ApplyStage } from "@workspace/domain"
 import {
   CalendarDays,
-  Filter,
   GripVertical,
   LayoutGrid,
-  MoreHorizontal,
   Plus,
   Search,
   Star,
 } from "lucide-react"
 
-import { ComingSoon } from "@/components/coming-soon.tsx"
-import { comingSoonLabel } from "@/components/coming-soon-label.ts"
 import { ErrorBanner } from "@/components/error-banner.tsx"
 import { WorkspaceHeader } from "@/components/workspace-header.tsx"
 import {
@@ -147,18 +146,6 @@ export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
           />
         </div>
 
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className="h-8"
-          disabled
-        >
-          <Filter className="size-3.5" />
-          Filter
-          <ComingSoon />
-        </Button>
-
         <ButtonGroup
           aria-label="Apply view"
           className="rounded-lg border border-border p-0.5"
@@ -215,8 +202,11 @@ export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
             Loading Apply…
           </p>
         ) : view === "board" ? (
-          <div className="min-w-0 flex-1 overflow-x-auto p-4">
-            <div className="flex h-full min-h-[28rem] gap-3">
+          <div className="min-w-0 flex-1 overflow-hidden p-3">
+            <div
+              data-apply-board
+              className="grid h-full min-h-[28rem] grid-cols-5 gap-2"
+            >
               {STAGES.map((stage) => {
                 const col = filtered.filter((c) => c.stage === stage.id)
                 const isDropTarget = dragOverStage === stage.id
@@ -225,7 +215,7 @@ export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
                     key={stage.id}
                     data-stage={stage.id}
                     className={cn(
-                      "flex w-64 shrink-0 flex-col rounded-xl bg-background transition-colors",
+                      "flex min-w-0 flex-col rounded-xl bg-background transition-colors",
                       isDropTarget && "ring-2 ring-ring/30"
                     )}
                     onDragOver={(e) => {
@@ -243,26 +233,19 @@ export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
                       setDragOverCardId(null)
                     }}
                   >
-                    <div className="flex items-center gap-2 px-3 py-2.5">
-                      <span className={cn("size-2 rounded-full", stage.dot)} />
-                      <span className="text-sm font-medium">{stage.label}</span>
-                      <span className="text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2 px-2.5 py-2">
+                      <span
+                        className={cn(
+                          "size-2 shrink-0 rounded-full",
+                          stage.dot
+                        )}
+                      />
+                      <span className="min-w-0 truncate text-sm font-medium">
+                        {stage.label}
+                      </span>
+                      <span className="text-xs text-muted-foreground tabular-nums">
                         {col.length}
                       </span>
-                      <Button
-                        type="button"
-                        size="icon-sm"
-                        variant="ghost"
-                        disabled
-                        title="Coming soon"
-                        className="ml-auto"
-                        aria-label={comingSoonLabel(
-                          `${stage.label} column menu`
-                        )}
-                      >
-                        <MoreHorizontal className="size-4" />
-                        <ComingSoon silent />
-                      </Button>
                     </div>
                     <div className="flex flex-1 flex-col gap-2 overflow-auto px-2 pb-3">
                       {col.map((card) => (

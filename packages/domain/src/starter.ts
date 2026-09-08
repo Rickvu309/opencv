@@ -4,6 +4,7 @@ import { PAPER_CONTENT_VERSION } from "./paper.js"
 import {
   decodePitchContent,
   DEFAULT_PITCH_BLOCKS,
+  STARTER_PITCH_ABOUT_LEAD,
   STARTER_PITCH_HEADLINE,
   type PitchDocument,
 } from "./pitch-codecs.js"
@@ -180,7 +181,7 @@ export function starterPitchDocument(): PitchDocument {
     headline: STARTER_PITCH_HEADLINE,
     location: "HCMC · open to intern roles",
     status: "Sample — open to intern roles · Summer 2026",
-    about: `This is sample copy. Clear the demo when you want the page to be yours.
+    about: `${STARTER_PITCH_ABOUT_LEAD}
 
 I learn product by shipping small experiments — checkout UX studies, onboarding teardowns, and club-led discovery sprints. Looking for a team that values evidence over slide decks.`,
     published: false,

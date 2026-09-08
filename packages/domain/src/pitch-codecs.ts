@@ -213,6 +213,10 @@ export const LEGACY_FAKE_PITCH_HEADLINE =
 /** Honest starter headline. Sample, not the User. */
 export const STARTER_PITCH_HEADLINE = "Sample Pitch · replace with your story"
 
+/** Lead sentence of the signup About block — the live-walk hint to clear. */
+export const STARTER_PITCH_ABOUT_LEAD =
+  "This is sample copy. Clear the demo when you want the page to be yours."
+
 /** Demo names that used to be baked into Pitch. Never identity. */
 export const LEFTOVER_PITCH_PERSONA_NAMES = ["Alex Tran", "Eric Nguyen"] as const
 
@@ -241,23 +245,34 @@ export function isLegacyFakePitchHeadline(headline: string) {
   return headline.trim() === LEGACY_FAKE_PITCH_HEADLINE
 }
 
-/** Signup sample (or a leftover fake-me headline) — never a real identity. */
+export function isStarterPitchAbout(about: string) {
+  return about.includes(STARTER_PITCH_ABOUT_LEAD)
+}
+
+/** Signup sample (or leftover / unlabeled sample copy) — never a real identity. */
 export function isDemoPitchDocument(doc: PitchDocument) {
-  return doc.demo === true || isLegacyFakePitchHeadline(doc.headline)
+  return (
+    doc.demo === true ||
+    isLegacyFakePitchHeadline(doc.headline) ||
+    isStarterPitchAbout(doc.about)
+  )
 }
 
 /**
- * Stamp Demo content on leftover fake-me seeds and rewrite the UIT/PM
- * headline so a fresh or persisted starter never claims real identity.
+ * Stamp Demo content on leftover fake-me seeds and unlabeled sample About
+ * so a fresh or persisted starter always offers Clear demo.
  */
 export function markDemoPitch(doc: PitchDocument): PitchDocument {
   const legacy = isLegacyFakePitchHeadline(doc.headline)
-  if (!legacy && doc.demo === true) return doc
-  if (!legacy) return doc
+  const needsDemo =
+    legacy || isStarterPitchAbout(doc.about) || doc.demo === true
+  if (!needsDemo) return doc
+  const headline = legacy ? STARTER_PITCH_HEADLINE : doc.headline
+  if (doc.demo === true && headline === doc.headline) return doc
   return {
     ...doc,
     demo: true,
-    headline: STARTER_PITCH_HEADLINE,
+    headline,
   }
 }
 

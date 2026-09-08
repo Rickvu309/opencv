@@ -23,6 +23,18 @@ describe("Apply helpers", () => {
     expect(trackKindLabel("applied")).toBe("Applied")
   })
 
+  it("fits five fluid Stages on a 1280 laptop; fixed 16rem columns do not", () => {
+    const viewport = 1280
+    const sidebar = 15 * 16
+    const stages = STAGES.length
+    const available = viewport - sidebar
+    const fixedNeeded = stages * 16 * 16 + 32 + 12 * (stages - 1)
+    const fluidChrome = 24 + 8 * (stages - 1)
+    expect(stages).toBe(5)
+    expect(fixedNeeded).toBeGreaterThan(available)
+    expect(fluidChrome).toBeLessThan(available)
+  })
+
   it("derives company initials without a demo persona or Fit", () => {
     expect(STAGES.map((stage) => stage.id)).toEqual([
       "inbox",

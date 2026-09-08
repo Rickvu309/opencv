@@ -160,6 +160,18 @@ export function PitchWorkspace() {
           </Button>
         ) : null}
 
+        {isDemoPitchDocument(content) ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            className="h-8"
+            onClick={clearDemo}
+          >
+            Clear demo
+          </Button>
+        ) : null}
+
         <div className="ml-auto flex items-center gap-2">
           {profile.published ? (
             <span className="hidden items-center gap-1.5 rounded-full bg-success/10 px-2.5 py-1 text-micro font-medium text-success sm:inline-flex">
@@ -198,6 +210,29 @@ export function PitchWorkspace() {
 
       {pitch.error ? <ErrorBanner>{pitch.error}</ErrorBanner> : null}
 
+      {isDemoPitchDocument(content) ? (
+        <div
+          role="status"
+          className="flex shrink-0 flex-col gap-3 border-b border-border bg-muted/40 px-4 py-3 sm:flex-row sm:items-center sm:px-5"
+        >
+          <div className="min-w-0 flex-1">
+            <Badge variant="secondary">Demo content</Badge>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              This page is a sample, not your story.
+            </p>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            className="h-8 shrink-0"
+            onClick={clearDemo}
+          >
+            Clear demo
+          </Button>
+        </div>
+      ) : null}
+
       <div className="min-h-0 flex-1 overflow-auto">
         {pitch.isLoading ? (
           <p className="px-5 py-8 text-sm text-muted-foreground">Loading Pitch…</p>
@@ -215,43 +250,6 @@ export function PitchWorkspace() {
                 This page is <strong>unpublished</strong> — only you can see it.
                 Hit Publish when you&apos;re ready to share.
               </span>
-            </div>
-          ) : null}
-
-          {isDemoPitchDocument(content) ? (
-            <div
-              role="status"
-              className="mb-6 flex flex-col gap-3 rounded-xl border border-border bg-muted/40 px-4 py-3 sm:flex-row sm:items-center"
-            >
-              <div className="min-w-0 flex-1">
-                <Badge variant="secondary">Demo content</Badge>
-                <p className="mt-1.5 text-sm text-muted-foreground">
-                  This page is a sample, not your story.
-                </p>
-              </div>
-              <div className="flex shrink-0 items-center gap-2">
-                {!editing ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="h-8"
-                    onClick={() => setMode("edit")}
-                  >
-                    <Pencil className="size-3.5" />
-                    Edit
-                  </Button>
-                ) : null}
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="h-8"
-                  onClick={clearDemo}
-                >
-                  Clear demo
-                </Button>
-              </div>
             </div>
           ) : null}
 
