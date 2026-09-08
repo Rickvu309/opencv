@@ -11,17 +11,18 @@ export function FirstCafeVisitTracker() {
   const { data } = authClient.useSession()
   const userId = data?.user.id
   const status = useRouterState({
-    select: (state) => state.status,
+    select: (state): "pending" | "idle" => state.status,
   })
   const pathname = useRouterState({
-    select: (state) => state.location.pathname,
+    select: (state): string => state.location.pathname,
   })
   const resolvedPathname = useRouterState({
-    select: (state) => state.resolvedLocation?.pathname,
+    select: (state): string | undefined => state.resolvedLocation?.pathname,
   })
-  const resolvedTab = useRouterState({
-    select: (state) =>
-      (state.resolvedLocation?.search as { tab?: unknown } | undefined)?.tab,
+  const onAppsTab = useRouterState({
+    select: (state): boolean =>
+      (state.resolvedLocation?.search as { tab?: string } | undefined)?.tab ===
+      "apps",
   })
 
   useEffect(() => {
@@ -30,11 +31,11 @@ export function FirstCafeVisitTracker() {
       status,
       pathname,
       resolvedPathname,
-      resolvedSearch: resolvedTab === "apps" ? { tab: "apps" } : {},
+      resolvedSearch: onAppsTab ? { tab: "apps" } : {},
     })
     if (!userId || !visit) return
     recordFirstCafeVisit(userId, visit.pathname, visit.search)
-  }, [userId, status, pathname, resolvedPathname, resolvedTab])
+  }, [userId, status, pathname, resolvedPathname, onAppsTab])
 
   return null
 }
