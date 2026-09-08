@@ -3,12 +3,24 @@
  * Do not import shell chrome — the route mounts this into `<Outlet />`.
  */
 import { useState } from "react"
+import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@workspace/ui/components/empty-state"
 import { cn } from "@workspace/ui/lib/utils"
-import type {
-  PitchBlockKind,
-  PitchDocument,
-  ProofDocument,
+import {
+  emptyPitchDocument,
+  isDemoPitchDocument,
+  isGhostPitchDocument,
+  type PitchBlockKind,
+  type PitchDocument,
+  type ProofDocument,
 } from "@workspace/domain"
 import { Check, Copy, EyeOff, Globe, Pencil } from "lucide-react"
 
@@ -109,6 +121,11 @@ export function PitchWorkspace() {
     pitch.persist((current) => ({ ...current, published: false }))
   }
 
+  function clearDemo() {
+    pitch.persist(() => emptyPitchDocument())
+    setMode("preview")
+  }
+
   async function copyLink() {
     if (!profile.published) return
     try {
@@ -198,6 +215,43 @@ export function PitchWorkspace() {
             </div>
           ) : null}
 
+          {isDemoPitchDocument(content) ? (
+            <div
+              role="status"
+              className="mb-6 flex flex-col gap-3 rounded-xl border border-border bg-muted/40 px-4 py-3 sm:flex-row sm:items-center"
+            >
+              <div className="min-w-0 flex-1">
+                <Badge variant="secondary">Demo content</Badge>
+                <p className="mt-1.5 text-sm text-muted-foreground">
+                  This page is a sample, not your story.
+                </p>
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                {!editing ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-8"
+                    onClick={() => setMode("edit")}
+                  >
+                    <Pencil className="size-3.5" />
+                    Edit
+                  </Button>
+                ) : null}
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-8"
+                  onClick={clearDemo}
+                >
+                  Clear demo
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
           <PitchProfileHeader
             profile={profile}
             editing={editing}
@@ -206,31 +260,58 @@ export function PitchWorkspace() {
             }
           />
 
-          <StoryHighlightsRow
-            highlights={content.storyHighlights}
-            editing={editing}
-            onOpen={openStory}
-          />
-
-          <div className="space-y-14">
-            {visible.map((block) => (
-              <PitchSection
-                key={block.id}
-                block={block}
-                profile={profile}
+          {isGhostPitchDocument(content) && !editing ? (
+            <Empty className="mt-2 border border-dashed border-border">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <Globe className="size-4" />
+                </EmptyMedia>
+                <EmptyTitle>Your Pitch is empty</EmptyTitle>
+                <EmptyDescription>
+                  Write a line about what you want next, or leave it quiet until
+                  you have something to show.
+                </EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => setMode("edit")}
+                >
+                  <Pencil className="size-3.5" />
+                  Start your Pitch
+                </Button>
+              </EmptyContent>
+            </Empty>
+          ) : (
+            <>
+              <StoryHighlightsRow
+                highlights={content.storyHighlights}
                 editing={editing}
-                content={content}
-                bento={bento}
-                links={links}
-                onHide={() => hideBlock(block.id)}
-                onAboutChange={(about) =>
-                  pitch.persist((current) => ({ ...current, about }))
-                }
-                onOpenStory={openStory}
-                onOpenProof={setProofView}
+                onOpen={openStory}
               />
-            ))}
-          </div>
+
+              <div className="space-y-14">
+                {visible.map((block) => (
+                  <PitchSection
+                    key={block.id}
+                    block={block}
+                    profile={profile}
+                    editing={editing}
+                    content={content}
+                    bento={bento}
+                    links={links}
+                    onHide={() => hideBlock(block.id)}
+                    onAboutChange={(about) =>
+                      pitch.persist((current) => ({ ...current, about }))
+                    }
+                    onOpenStory={openStory}
+                    onOpenProof={setProofView}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </div>
         )}
       </div>

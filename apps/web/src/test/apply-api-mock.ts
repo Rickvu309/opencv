@@ -4,6 +4,7 @@ import {
   DEFAULT_APPLY_COMPANY,
   DEFAULT_APPLY_TITLE,
   applyScanHasIdentity,
+  extractApplyFieldsFromLabeledText,
   generateKeyBetween,
   groundApplyScanResult,
   parseApplyScanInput,
@@ -156,15 +157,18 @@ export async function applyApiFetch(
     if (!source) {
       return jsonError(400, "VALIDATION_ERROR", APPLY_SCAN_NOT_FOUND)
     }
-    const extracted: ApplyScanResult = parsed.jdText
-      ? {
-          title: source.includes("Associate PM intern")
-            ? "Associate PM intern"
-            : null,
-          company: source.includes("Local startup") ? "Local startup" : null,
-          note: source.includes("Hanoi") ? "Hanoi" : null,
-        }
-      : { title: "PM intern", company: "Example", note: null }
+    const labeled = extractApplyFieldsFromLabeledText(source)
+    const extracted: ApplyScanResult = applyScanHasIdentity(labeled)
+      ? labeled
+      : parsed.jdText
+        ? {
+            title: source.includes("Associate PM intern")
+              ? "Associate PM intern"
+              : null,
+            company: source.includes("Local startup") ? "Local startup" : null,
+            note: source.includes("Hanoi") ? "Hanoi" : null,
+          }
+        : { title: "PM intern", company: "Example", note: null }
     const grounded = groundApplyScanResult(source, extracted)
     if (!applyScanHasIdentity(grounded)) {
       return jsonError(400, "VALIDATION_ERROR", APPLY_SCAN_NOT_FOUND)

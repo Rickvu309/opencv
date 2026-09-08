@@ -283,9 +283,14 @@ export function parseApplyScanInput(raw: {
   return { ok: true, jobUrl: parsedUrl.jobUrl, jdText }
 }
 
-/** Collapse case and whitespace so a café paste still grounds. */
+/** Collapse case, whitespace, and diacritics so a café paste still grounds. */
 export function foldApplyScanText(raw: string): string {
-  return raw.toLowerCase().replace(/\s+/g, " ").trim()
+  return raw
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim()
 }
 
 export function applyScanFieldGrounded(
@@ -429,6 +434,45 @@ function jobPostingFromNode(node: unknown): ApplyScanResult {
     if (typeof name === "string") company = emptyApplyScanField(name)
   }
   return { title, company, note: null }
+}
+
+const LABELED_FIELD_PATTERNS: {
+  key: keyof ApplyScanResult
+  pattern: RegExp
+}[] = [
+  {
+    key: "title",
+    pattern: /^(?:job\s+title|title|role|position)\s*[:\-–—]\s*(.+)$/iu,
+  },
+  {
+    key: "company",
+    pattern:
+      /^(?:company(?:\s+name)?|employer|organisation|organization)\s*[:\-–—]\s*(.+)$/iu,
+  },
+  {
+    key: "note",
+    pattern: /^(?:location|deadline|apply\s+by)\s*[:\-–—]\s*(.+)$/iu,
+  },
+]
+
+/**
+ * Honest labeled extract — only `Label: value` lines already in the post.
+ * Used so a clear café paste does not depend on a flaky Free model (QVE-232).
+ */
+export function extractApplyFieldsFromLabeledText(
+  text: string
+): ApplyScanResult {
+  const result: ApplyScanResult = { title: null, company: null, note: null }
+  for (const line of text.split(/\r?\n/)) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+    for (const { key, pattern } of LABELED_FIELD_PATTERNS) {
+      if (result[key]) continue
+      const value = emptyApplyScanField(trimmed.match(pattern)?.[1])
+      if (value) result[key] = value
+    }
+  }
+  return result
 }
 
 /** Honest structured extract — only JobPosting JSON-LD already in the post. */

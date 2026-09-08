@@ -571,6 +571,39 @@ describe("Apply workspace", () => {
     ).toBeEnabled()
   })
 
+  it("scans the same labeled JD twice without a false Couldn't find", async () => {
+    renderApply()
+    await expectApplyLive()
+
+    fireEvent.click(screen.getByRole("button", { name: "Add job" }))
+    const dialog = await screen.findByRole("dialog", { name: "Add job" })
+    const jd = within(dialog).getByLabelText("Job text")
+    const cafeJd = [
+      "Job Title: Café Barista Lead",
+      "Company: Highlands Coffee",
+      "Location: District 1, Ho Chi Minh City",
+      "We need a café lead who owns the morning rush and trains new baristas.",
+    ].join("\n")
+
+    fireEvent.change(jd, { target: { value: cafeJd } })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Scan" }))
+    expect(
+      await within(dialog).findByText(
+        "Filled Café Barista Lead at Highlands Coffee."
+      )
+    ).toBeInTheDocument()
+
+    fireEvent.change(jd, { target: { value: `${cafeJd} ` } })
+    fireEvent.change(jd, { target: { value: cafeJd } })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Scan" }))
+    expect(
+      await within(dialog).findByText(
+        "Filled Café Barista Lead at Highlands Coffee."
+      )
+    ).toBeInTheDocument()
+    expect(within(dialog).queryByRole("alert")).not.toBeInTheDocument()
+  })
+
   it("honest-fails scan when the post has no title or company", async () => {
     renderApply()
     await expectApplyLive()

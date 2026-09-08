@@ -343,6 +343,52 @@ describe("POST /api/apply/scan", () => {
   })
 })
 
+describe("POST /api/apply/scan labeled JD twice (QVE-232)", () => {
+  it("fills the same labeled JD twice when the model is empty", async () => {
+    const migrated = await createMigratedTestDb()
+    try {
+      const localApp = createTestApp(migrated.db, {
+        coach: withScanJobPosting(createDemoCoachRuntime(), async () => "{}"),
+      })
+      const { cookie } = await signUp(localApp, {
+        name: "Mai",
+        email: "mai-apply-scan-labeled@example.com",
+        password: "correct-horse-battery",
+      })
+      const jdText = [
+        "Job Title: Café Barista Lead",
+        "Company: Highlands Coffee",
+        "Location: District 1, Ho Chi Minh City",
+        "We need a café lead who owns the morning rush and trains new baristas.",
+      ].join("\n")
+
+      const first = await localApp.request("/api/apply/scan", {
+        method: "POST",
+        headers: authHeaders(cookie),
+        body: JSON.stringify({ jdText }),
+      })
+      const second = await localApp.request("/api/apply/scan", {
+        method: "POST",
+        headers: authHeaders(cookie),
+        body: JSON.stringify({ jdText: `${jdText} ` }),
+      })
+
+      expect(first.status).toBe(200)
+      expect(second.status).toBe(200)
+      const firstBody = await json<{ ok: true; data: ApplyScanResult }>(first)
+      const secondBody = await json<{ ok: true; data: ApplyScanResult }>(second)
+      expect(firstBody.data).toEqual({
+        title: "Café Barista Lead",
+        company: "Highlands Coffee",
+        note: "District 1, Ho Chi Minh City",
+      })
+      expect(secondBody.data).toEqual(firstBody.data)
+    } finally {
+      await migrated.client.close()
+    }
+  })
+})
+
 describe("POST /api/apply/scan without a scan runtime", () => {
   it("honest-fails instead of inventing fields", async () => {
     const migrated = await createMigratedTestDb()

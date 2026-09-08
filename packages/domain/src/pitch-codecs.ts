@@ -149,6 +149,8 @@ const pitchDocumentV1Shape = {
   files: z.array(pitchFileSchema),
   links: z.array(pitchLinkSchema),
   workDocs: z.array(pitchWorkDocSchema),
+  /** Signup sample — never a real identity. Omitted on a User-owned Pitch. */
+  demo: z.boolean().optional(),
 }
 
 export const pitchDocumentV1Schema = z.object(pitchDocumentV1Shape).strict()
@@ -204,6 +206,13 @@ export function emptyPitchDocument(): PitchDocument {
   }
 }
 
+/** Pre-QVE-225 starter headline that read as a real UIT/PM identity. */
+export const LEGACY_FAKE_PITCH_HEADLINE =
+  "Aspiring product manager · UIT Information Systems"
+
+/** Honest starter headline. Sample, not the User. */
+export const STARTER_PITCH_HEADLINE = "Sample Pitch · replace with your story"
+
 /** Demo names that used to be baked into Pitch. Never identity. */
 export const LEFTOVER_PITCH_PERSONA_NAMES = ["Alex Tran", "Eric Nguyen"] as const
 
@@ -226,6 +235,30 @@ export function isLeftoverPitchPersonaName(value: string) {
   return LEFTOVER_PITCH_PERSONA_NAMES.some(
     (name) => normalizeCompare(name) === normalized
   )
+}
+
+export function isLegacyFakePitchHeadline(headline: string) {
+  return headline.trim() === LEGACY_FAKE_PITCH_HEADLINE
+}
+
+/** Signup sample (or a leftover fake-me headline) — never a real identity. */
+export function isDemoPitchDocument(doc: PitchDocument) {
+  return doc.demo === true || isLegacyFakePitchHeadline(doc.headline)
+}
+
+/**
+ * Stamp Demo content on leftover fake-me seeds and rewrite the UIT/PM
+ * headline so a fresh or persisted starter never claims real identity.
+ */
+export function markDemoPitch(doc: PitchDocument): PitchDocument {
+  const legacy = isLegacyFakePitchHeadline(doc.headline)
+  if (!legacy && doc.demo === true) return doc
+  if (!legacy) return doc
+  return {
+    ...doc,
+    demo: true,
+    headline: STARTER_PITCH_HEADLINE,
+  }
 }
 
 export function isLeftoverPitchGithubUsername(value: string) {
@@ -349,7 +382,7 @@ export function decodePitchContent(
 
 /** Decode-time repair: restore wiped Moments, then rewrite leftover personas. */
 export function healPitchDocument(doc: PitchDocument): PitchDocument {
-  return alignStoryChipIdentity(restoreWipedStarterMoments(doc))
+  return markDemoPitch(alignStoryChipIdentity(restoreWipedStarterMoments(doc)))
 }
 
 export function isPitchDocument(value: unknown): value is PitchDocument {
