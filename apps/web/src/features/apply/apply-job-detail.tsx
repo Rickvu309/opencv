@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react"
 import {
   APPLY_JOB_URL_BLOCKED,
   APPLY_JOB_URL_INVALID,
+  applyJobSourceHost,
   openableApplyJobUrl,
   parseApplyJobUrlInput,
   publicApplyJobUrl,
@@ -30,6 +31,13 @@ import { ExternalLink, Link2, Star, Trash2, X } from "lucide-react"
 
 import { ErrorBanner } from "@/components/error-banner.tsx"
 import { scanApplyJob } from "@/features/apply/apply-api.ts"
+import {
+  APPLY_JOB_DATE_LABEL,
+  APPLY_JOB_NEXT_STEP_LABEL,
+  APPLY_JOB_NOTES_PLACEHOLDER,
+  APPLY_JOB_SOURCE_LABEL,
+  APPLY_JOB_SOURCE_PLACEHOLDER,
+} from "@/features/apply/apply-job-structure.ts"
 import { ApiError } from "@/lib/api-error.ts"
 import {
   formatApplyUpdated,
@@ -162,46 +170,6 @@ export function JobDetailPanel({
           onPatch={onPatch}
         />
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="block">
-            <Label htmlFor={`track-date-${card.id}`} className={FIELD_LABEL}>
-              Track date
-            </Label>
-            <Input
-              id={`track-date-${card.id}`}
-              type="date"
-              value={card.trackDate}
-              onChange={(e) => onPatch({ trackDate: e.target.value })}
-            />
-          </div>
-          <div className="block">
-            <Label htmlFor={`event-type-${card.id}`} className={FIELD_LABEL}>
-              Event type
-            </Label>
-            <Select
-              value={card.trackKind}
-              onValueChange={(kind) => {
-                if (kind) onPatch({ trackKind: kind as TrackKind })
-              }}
-            >
-              <SelectTrigger
-                id={`event-type-${card.id}`}
-                className="w-full"
-                aria-label="Event type"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {TRACK_KINDS.map((kind) => (
-                  <SelectItem key={kind} value={kind}>
-                    {trackKindLabel(kind)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
         <JobDetailNote
           key={`${card.id}:note:${revertKey}:${card.note}`}
           note={card.note}
@@ -293,73 +261,147 @@ function JobDetailFields({
     }
   }
 
+  const sourceHost = applyJobSourceHost(jobUrl)
+
   return (
-    <div className="space-y-3">
-      <div className="block">
-        <Label htmlFor={`job-title-${card.id}`} className={FIELD_LABEL}>
-          Job title
-        </Label>
-        <Input
-          id={`job-title-${card.id}`}
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          onBlur={commitTitle}
-          className="font-semibold"
-        />
+    <div className="space-y-5">
+      <div className="space-y-3">
+        <div className="block">
+          <Label htmlFor={`job-title-${card.id}`} className={FIELD_LABEL}>
+            Job title
+          </Label>
+          <Input
+            id={`job-title-${card.id}`}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            onBlur={commitTitle}
+            className="font-semibold"
+          />
+        </div>
+        <div className="block">
+          <Label htmlFor={`company-${card.id}`} className={FIELD_LABEL}>
+            Company
+          </Label>
+          <Input
+            id={`company-${card.id}`}
+            value={company}
+            onChange={(e) => setCompany(e.target.value)}
+            onBlur={commitCompany}
+          />
+        </div>
       </div>
-      <div className="block">
-        <Label htmlFor={`company-${card.id}`} className={FIELD_LABEL}>
-          Company
-        </Label>
-        <Input
-          id={`company-${card.id}`}
-          value={company}
-          onChange={(e) => setCompany(e.target.value)}
-          onBlur={commitCompany}
-        />
-      </div>
-      <div className="block">
-        <Label htmlFor={`job-url-${card.id}`} className={FIELD_LABEL}>
-          Job posting URL
-        </Label>
-        <Input
-          id={`job-url-${card.id}`}
-          type="text"
-          inputMode="url"
-          autoComplete="url"
-          value={jobUrl}
-          onChange={(e) => {
-            setJobUrl(e.target.value)
-            if (jobUrlError) setJobUrlError(null)
-          }}
-          onBlur={commitJobUrl}
-          placeholder="Paste a posting link"
-          aria-invalid={Boolean(jobUrlError)}
-        />
-        {jobUrlError ? (
-          <ErrorBanner variant="inline" className="mt-1">
-            {jobUrlError}
-          </ErrorBanner>
-        ) : null}
-        {postingUrl ? (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="mt-2 h-8"
-            disabled={scanning}
-            onClick={() => void scanPosting()}
-          >
-            {scanning ? "Scanning…" : "Scan posting"}
-          </Button>
-        ) : null}
-        {scanError ? (
-          <ErrorBanner variant="inline" className="mt-2">
-            {scanError}
-          </ErrorBanner>
-        ) : null}
-      </div>
+
+      <section aria-labelledby={`source-heading-${card.id}`} className="space-y-2">
+        <h2 id={`source-heading-${card.id}`} className={FIELD_LABEL}>
+          {APPLY_JOB_SOURCE_LABEL}
+        </h2>
+        <div className="block">
+          <Label htmlFor={`job-url-${card.id}`} className="sr-only">
+            {APPLY_JOB_SOURCE_LABEL}
+          </Label>
+          <Input
+            id={`job-url-${card.id}`}
+            type="text"
+            inputMode="url"
+            autoComplete="url"
+            value={jobUrl}
+            onChange={(e) => {
+              setJobUrl(e.target.value)
+              if (jobUrlError) setJobUrlError(null)
+            }}
+            onBlur={commitJobUrl}
+            placeholder={APPLY_JOB_SOURCE_PLACEHOLDER}
+            aria-invalid={Boolean(jobUrlError)}
+          />
+          {sourceHost ? (
+            <p className="mt-1 text-micro text-muted-foreground">{sourceHost}</p>
+          ) : null}
+          {jobUrlError ? (
+            <ErrorBanner variant="inline" className="mt-1">
+              {jobUrlError}
+            </ErrorBanner>
+          ) : null}
+          {postingUrl ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="mt-2 h-8"
+              disabled={scanning}
+              onClick={() => void scanPosting()}
+            >
+              {scanning ? "Scanning…" : "Scan posting"}
+            </Button>
+          ) : null}
+          {scanError ? (
+            <ErrorBanner variant="inline" className="mt-2">
+              {scanError}
+            </ErrorBanner>
+          ) : null}
+        </div>
+      </section>
+
+      <JobDetailNextStep card={card} onPatch={onPatch} />
     </div>
+  )
+}
+
+function JobDetailNextStep({
+  card,
+  onPatch,
+}: {
+  card: ApplyCard
+  onPatch: Props["onPatch"]
+}) {
+  return (
+    <section
+      aria-labelledby={`next-step-heading-${card.id}`}
+      className="space-y-2"
+    >
+      <h2 id={`next-step-heading-${card.id}`} className={FIELD_LABEL}>
+        {APPLY_JOB_NEXT_STEP_LABEL}
+      </h2>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="block">
+          <Label htmlFor={`event-type-${card.id}`} className="sr-only">
+            {APPLY_JOB_NEXT_STEP_LABEL}
+          </Label>
+          <Select
+            value={card.trackKind}
+            onValueChange={(kind) => {
+              if (kind) onPatch({ trackKind: kind as TrackKind })
+            }}
+          >
+            <SelectTrigger
+              id={`event-type-${card.id}`}
+              className="w-full"
+              aria-label={APPLY_JOB_NEXT_STEP_LABEL}
+            >
+              <SelectValue>{trackKindLabel(card.trackKind)}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {TRACK_KINDS.map((kind) => (
+                <SelectItem key={kind} value={kind}>
+                  {trackKindLabel(kind)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="block">
+          <Label htmlFor={`track-date-${card.id}`} className="sr-only">
+            {APPLY_JOB_DATE_LABEL}
+          </Label>
+          <Input
+            id={`track-date-${card.id}`}
+            type="date"
+            value={card.trackDate}
+            onChange={(e) => onPatch({ trackDate: e.target.value })}
+            aria-label={APPLY_JOB_DATE_LABEL}
+          />
+        </div>
+      </div>
+    </section>
   )
 }
 
@@ -386,7 +428,7 @@ function JobDetailNote({
         }}
         rows={5}
         className="min-h-0 resize-none leading-relaxed"
-        placeholder="What to prep, who you talked to, next step…"
+        placeholder={APPLY_JOB_NOTES_PLACEHOLDER}
       />
     </div>
   )

@@ -186,6 +186,16 @@ describe("Apply workspace", () => {
         "JD wants discovery notes + 1 shipped experiment."
       )
     ).toBeInTheDocument()
+    expect(within(panel).getByRole("region", { name: "Source" })).toBeTruthy()
+    expect(within(panel).getByRole("region", { name: "Next step" })).toBeTruthy()
+    expect(within(panel).getByRole("textbox", { name: "Source" })).toBeInTheDocument()
+    expect(
+      within(panel).getByRole("combobox", { name: "Next step" })
+    ).toBeInTheDocument()
+    expect(within(panel).getByLabelText("Date")).toHaveValue("2026-08-26")
+    expect(within(panel).queryByText("Event type")).not.toBeInTheDocument()
+    expect(within(panel).queryByText("Track date")).not.toBeInTheDocument()
+    expect(within(panel).queryByText("Job posting URL")).not.toBeInTheDocument()
     expectNoVisibleFitScore()
     expect(screen.queryByText(/Eric Nguyen/i)).not.toBeInTheDocument()
     expect(
@@ -391,6 +401,67 @@ describe("Apply workspace", () => {
       screen.queryByRole("complementary", { name: "Job detail" })
     ).not.toBeInTheDocument()
     expect(screen.queryByText("Untitled role")).not.toBeInTheDocument()
+  })
+
+  it("keeps an empty Source calm and saves source plus next step", async () => {
+    renderApply()
+    await expectApplyLive()
+
+    await addJobFromDialog()
+    const panel = await screen.findByRole("complementary", {
+      name: "Job detail",
+    })
+    const source = within(panel).getByRole("region", { name: "Source" })
+    const nextStep = within(panel).getByRole("region", { name: "Next step" })
+
+    const sourceField = within(source).getByRole("textbox", { name: "Source" })
+    const nextStepKind = within(nextStep).getByRole("combobox", {
+      name: "Next step",
+    })
+    expect(sourceField).toHaveValue("")
+    expect(within(source).getByPlaceholderText("Paste a posting link")).toBeInTheDocument()
+    expect(within(source).queryByText(/stay organized/i)).not.toBeInTheDocument()
+    expect(within(source).queryByText(/never miss/i)).not.toBeInTheDocument()
+    expect(within(source).queryByText(/add a source/i)).not.toBeInTheDocument()
+    expect(source.querySelector("[data-slot='empty']")).toBeNull()
+    expect(nextStepKind).toHaveTextContent("Follow-up")
+    expect(within(nextStep).getByLabelText("Date")).toBeInTheDocument()
+
+    fireEvent.change(sourceField, {
+      target: { value: "careers.example.com/cafe-role" },
+    })
+    fireEvent.blur(sourceField)
+    await waitFor(() => {
+      expect(
+        within(panel).getByRole("textbox", { name: "Source" })
+      ).toHaveValue("https://careers.example.com/cafe-role")
+    })
+    expect(within(panel).getByText("careers.example.com")).toBeInTheDocument()
+    expect(
+      within(panel).getByRole("button", { name: "Open job posting" })
+    ).toBeInTheDocument()
+
+    fireEvent.change(within(panel).getByLabelText("Date"), {
+      target: { value: "2026-09-20" },
+    })
+    await waitFor(() => {
+      expect(within(panel).getByLabelText("Date")).toHaveValue("2026-09-20")
+    })
+
+    fireEvent.click(within(panel).getByRole("button", { name: "Close panel" }))
+    fireEvent.click(
+      screen.getByRole("button", { name: /Untitled role at Company/ })
+    )
+    const reopened = await screen.findByRole("complementary", {
+      name: "Job detail",
+    })
+    expect(within(reopened).getByRole("textbox", { name: "Source" })).toHaveValue(
+      "https://careers.example.com/cafe-role"
+    )
+    expect(within(reopened).getByLabelText("Date")).toHaveValue("2026-09-20")
+    expect(
+      within(reopened).getByRole("combobox", { name: "Next step" })
+    ).toHaveTextContent("Follow-up")
   })
 
   it("honest-fails when the browser blocks opening the posting", async () => {
