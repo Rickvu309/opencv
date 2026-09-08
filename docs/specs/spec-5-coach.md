@@ -1,6 +1,6 @@
 # Spec 5 — The Coach
 
-**Status:** Done (QVE-136 / QVE-137–144) — production OpenRouter key is the remaining owner step (commands on QVE-144)
+**Status:** Done (QVE-136 / QVE-137–144) — `OPENROUTER_API_KEY` is live on staging and production; both smokes green 2026-08-26
 **Related:** ADR-0007 (coach runtime decisions), ADR-0003 (Coach Commands — the constitution this spec implements), ADR-0006 (the registry and data it runs on), ADR-0008 (English product language), ADR-0009 (Coach modes), PRODUCT.md (persona and principles)
 
 ## Problem Statement
@@ -49,8 +49,8 @@ Eight tickets under one parent: COACH-1 tool surface, COACH-2 data/config ground
 
 ## Definition of done
 
-- [ ] Sending a message on production streams a real Coach reply, token by token, in the persona voice — waits on `OPENROUTER_API_KEY` (commands on QVE-144)
-- [ ] The Coach reads workspace state and cites it; a request like "move my starred card to Prep" produces the move plus a truthful receipt — waits on the same key
+- [x] Sending a message on production streams a real Coach reply, token by token, in the persona voice; production smoke flushes `message-start` in 0ms and the turn is not a late burst
+- [x] The Coach reads workspace state and cites it; "move my starred card to Prep" runs `apply.moveCard` and the card lands in Prep with a reversible receipt
 - [x] Every Coach action flows through `registry.execute` with a coach actor; the coach-actor test sweep covers the full surface
 - [x] Stop works; aborted turns persist executed-tool receipts with `aborted` status
 - [x] Failed sends show an inline error with Retry; the Home stub reply string is gone. Paper panel unification landed in [QVE-146](https://linear.app/quanvm/issue/QVE-146).
