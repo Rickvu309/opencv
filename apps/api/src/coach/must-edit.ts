@@ -5,6 +5,7 @@ import {
   isLetterDocument,
   isProofDocument,
   type CoachFocusDoc,
+  type CoachMode,
 } from "@workspace/domain"
 
 export const MUST_EDIT_TOOLS = {
@@ -383,6 +384,70 @@ export function isRealRewrite(
   const next = replacement.replace(/\s+/g, " ").trim()
   const prev = original.replace(/\s+/g, " ").trim()
   return next.length > 0 && next !== prev
+}
+
+/**
+ * Free Paper must-edit after QVE-196: do not send tools / tool_choice to
+ * `openrouter/free`. That request shape filters the Free Models Router onto
+ * the tool-calling pool, which 429s under café/Scout load and dies as a
+ * quota wall before paper_updateContent (QVE-197).
+ */
+export function shouldUseFreeTextMustEdit(input: {
+  mode?: CoachMode
+  userText: string
+  hasFocusDoc: boolean
+}): boolean {
+  return (
+    input.mode === "free" &&
+    input.hasFocusDoc &&
+    isPaperEditAsk(input.userText, true)
+  )
+}
+
+/** One-line rewrite prompt — no tools, no full CV JSON, no next-step speech. */
+export function freeMustEditLinePrompt(input: {
+  original: string
+  userText: string
+  docName: string
+}): string {
+  return [
+    "You are rewriting one line on a Paper document for an early-career User.",
+    "Reply with only the rewritten line. No quotes, no preamble, no next step, no markdown.",
+    "Never tell the User to paste. Never ask whether to apply.",
+    "Do not invent scout or canned CV copy. Change only the line they asked about.",
+    `Document: ${input.docName}`,
+    `Ask: ${input.userText}`,
+    `Current line:\n${input.original}`,
+  ].join("\n")
+}
+
+const PASTE_OR_ASK =
+  /\bpaste\b|\bapply\??$|\bshould i apply\b|\bwant me to apply\b/i
+
+/**
+ * Turn a Free-model one-line reply into a Command replacement.
+ * Empty, unchanged, paste/ask-to-apply, or a document dump fail closed.
+ */
+export function extractMustEditReplacement(
+  modelText: string,
+  original: string
+): string | null {
+  let text = modelText.replace(/\r\n/g, "\n").trim()
+  if (!text) return null
+
+  const firstBlock = text.split(/\n\s*\n/)[0] ?? text
+  text = firstBlock.replace(/\s+/g, " ").trim()
+  text = text.replace(/^["'`]+|["'`]+$/g, "").trim()
+  text = text.replace(/^\*\*(.+)\*\*$/s, "$1").trim()
+  text = text.replace(
+    /^(?:here(?:'s| is)(?: the)?(?: rewritten)?(?: line| bullet)?[:\s]*)/i,
+    ""
+  ).trim()
+
+  if (!text || PASTE_OR_ASK.test(text)) return null
+  if (text.length > 400) return null
+  if (!isRealRewrite(original, text)) return null
+  return text
 }
 
 function locateRewrite(
