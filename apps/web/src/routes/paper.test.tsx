@@ -430,6 +430,80 @@ describe("Paper editors", () => {
     expect(again.querySelector("[data-coach-soft-scope]")).toBeNull()
   })
 
+  it("tabs between CV fields and Esc blurs on desktop without trapping", async () => {
+    stubDesktopViewport(true)
+    renderPaper()
+    await expectPaperDrive()
+    const editor = await openDoc("PM track CV")
+
+    const name = within(editor).getByRole("textbox", { name: "Full name" })
+    const headline = within(editor).getByRole("textbox", { name: "Headline" })
+    name.focus()
+    fireEvent.keyDown(name, { key: "Tab" })
+    expect(headline).toHaveFocus()
+
+    fireEvent.keyDown(headline, { key: "Tab", shiftKey: true })
+    expect(name).toHaveFocus()
+
+    fireEvent.keyDown(name, { key: "Escape" })
+    expect(name).not.toHaveFocus()
+    expect(editor.contains(document.activeElement)).toBe(false)
+
+    const dialog = await openCoach()
+    expect(dialog).not.toHaveAttribute("draggable")
+    expect(dialog.querySelector("[data-coach-float-resize]")).toBeNull()
+  })
+
+  it("fits A4 to a phone width with slim chrome and a usable edit", async () => {
+    stubDesktopViewport(false)
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      value: 390,
+    })
+    renderPaper()
+    await expectPaperDrive()
+    const editor = await openDoc("PM track CV")
+
+    expect(
+      screen.queryByRole("complementary", { name: "Documents" })
+    ).not.toBeInTheDocument()
+
+    const fit = editor.querySelector("[data-paper-a4-fit='width']")
+    expect(fit).toBeInstanceOf(HTMLElement)
+    const page = editor.querySelector(".cv-a4-page")
+    expect(page).toBeInstanceOf(HTMLElement)
+    expect((page as HTMLElement).style.maxWidth).toBe("100%")
+    expect((page as HTMLElement).style.width).toBe("210mm")
+
+    const canvas = editor.querySelector("[data-paper-canvas]")
+    expect(canvas).toHaveClass("paper-editor-canvas-scroll")
+    expect(editor.querySelector("[data-paper-editor]")).not.toBeNull()
+
+    const toolbar = within(editor).getByRole("toolbar", { name: "CV tools" })
+    expect(toolbar.className).toMatch(/sticky/)
+    expect(toolbar).toHaveAttribute("data-paper-toolbar")
+
+    const summary = within(editor).getByRole("textbox", { name: "Summary" })
+    expect(summary).toHaveClass(PAPER_CANVAS_FIELD_CLASS)
+    summary.textContent = "Café rewrite on a phone"
+    fireEvent.input(summary)
+    expect(summary).toHaveTextContent("Café rewrite on a phone")
+
+    fireEvent.keyDown(summary, { key: "Escape" })
+    expect(summary).not.toHaveFocus()
+
+    const name = within(editor).getByRole("textbox", { name: "Full name" })
+    const headline = within(editor).getByRole("textbox", { name: "Headline" })
+    name.focus()
+    fireEvent.keyDown(name, { key: "Tab" })
+    expect(headline).toHaveFocus()
+
+    expect(screen.getByRole("button", { name: "Coach" })).toBeInTheDocument()
+    expect(
+      document.querySelector("[data-coach-float-resize]")
+    ).toBeNull()
+  })
+
   it("opens and edits a Letter", async () => {
     renderPaper()
     await expectPaperDrive()

@@ -225,6 +225,71 @@
     padding-right: min(26rem, 42vw);
   }
 
+  /*
+   * QVE-208: café / phone density. Fit-width A4 (no transform — that
+   * would shrink tap targets), larger fields, slim sticky chrome that
+   * yields the page the way Spec 8 CoachFloat yields height.
+   */
+  .cv-a4-fit {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  @media (max-width: 767px) {
+    .cv-a4-page,
+    .cv-template-root {
+      --cv-padding-x: 8mm;
+      --cv-padding-y: 10mm;
+    }
+
+    [data-paper-editor] > header {
+      gap: 0.375rem;
+      padding: 0.375rem 0.75rem;
+    }
+
+    [data-paper-editor] > header .paper-editor-chrome-meta {
+      display: none;
+    }
+
+    [data-paper-canvas] {
+      padding: 0.5rem 0.5rem 4.5rem;
+    }
+
+    .cv-a4-fit {
+      padding: 0.5rem 0;
+    }
+
+    [data-paper-toolbar] {
+      min-height: 2.75rem;
+      padding-block: 0.25rem;
+    }
+
+    .paper-canvas-field {
+      display: inline-block;
+      box-sizing: border-box;
+      min-height: 2.75rem;
+      padding-block: 0.5rem;
+    }
+
+    .paper-canvas-affordance {
+      min-height: 2.75rem;
+      min-width: 2.75rem;
+    }
+
+    .cv-template-root--product {
+      flex-direction: column;
+    }
+
+    .cv-template-product-sidebar {
+      width: 100%;
+    }
+
+    .cv-template-service > .grid,
+    .cv-template-academic .grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
   @keyframes paper-coach-highlight {
     from {
       background-color: color-mix(in oklch, var(--info) 22%, transparent);
