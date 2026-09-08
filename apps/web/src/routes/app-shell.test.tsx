@@ -372,6 +372,8 @@ describe("settings workspace", () => {
     expect(screen.getAllByText(SAMPLE_AUTHOR_NAME).length).toBeGreaterThan(0)
     expect(screen.getByText("you@openpath.app")).toBeInTheDocument()
     expect(screen.queryByText(/Eric Nguyen/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Aspiring product manager/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Sample Pitch/i)).not.toBeInTheDocument()
     expect(screen.queryByText("Coming soon")).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole("button", { name: "Sign out" }))

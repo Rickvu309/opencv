@@ -2,6 +2,7 @@ import {
   PAPER_CONTENT_VERSION,
   PITCH_CONTENT_VERSION,
   STARTER_CV_NAME,
+  STARTER_PITCH_HEADLINE,
   STARTER_THREAD_COACH_TEXT,
   STARTER_THREAD_TITLE,
   decodePaperContent,
@@ -52,7 +53,9 @@ describe("starter content", () => {
       starterPitchContent()
     )
     expect(decoded.ok).toBe(true)
-    expect(starterPitchDocument().headline).toMatch(/product manager/i)
+    expect(starterPitchDocument().demo).toBe(true)
+    expect(starterPitchDocument().headline).toBe(STARTER_PITCH_HEADLINE)
+    expect(starterPitchDocument().headline).not.toMatch(/aspiring product manager/i)
     expect(JSON.stringify(starterPitchDocument())).not.toMatch(PERSONA)
     expect(JSON.stringify(starterPitchDocument())).not.toMatch(/you@openpath/)
     expect(JSON.stringify(starterPitchDocument())).not.toMatch(/sacred space/i)
@@ -98,6 +101,8 @@ describe("starter content", () => {
     expect(thread.coachText).toContain("I haven't edited Paper, Apply, or Pitch")
     expect(thread.coachText).toContain("haven't run any Commands")
     expect(thread.coachText).toContain("seeded for you")
+    expect(thread.coachText).toContain("Demo content")
+    expect(thread.coachText).toContain("clear the demo")
     expect(thread.coachText).not.toMatch(/stub Coach/)
     expect(thread.coachText).not.toMatch(/!/)
     expect(thread.coachText).not.toMatch(PERSONA)
