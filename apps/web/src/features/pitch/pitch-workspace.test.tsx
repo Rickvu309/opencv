@@ -1,6 +1,8 @@
-import { createElement } from "react"
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { createElement, type ReactNode } from "react"
+import { QueryClientProvider } from "@tanstack/react-query"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
+import { starterPitchDocument } from "@workspace/domain"
 
 import {
   SAMPLE_AUTHOR,
@@ -9,34 +11,53 @@ import {
 import { SURFACE_COPY } from "@/features/app-shell/surfaces.ts"
 import { getMockGithubUsername } from "@/features/pitch/pitch-github-mock.ts"
 import { PitchWorkspace } from "@/features/pitch/pitch-workspace.tsx"
-import { BLOCK_LABELS, getPitchProfile } from "@/features/pitch/pitch-types.ts"
+import { BLOCK_LABELS, pitchHandle } from "@/features/pitch/pitch-types.ts"
+import { createQueryClient } from "@/lib/query-client.ts"
+import { pitchApiFetch } from "@/test/pitch-api-mock.ts"
 
-const fetchMock = vi.fn()
+function installPitchFetch() {
+  vi.stubGlobal("fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
+    const res = await pitchApiFetch(input, init)
+    if (res) return res
+    throw new Error(`unexpected fetch: ${String(input)}`)
+  })
+}
 
-beforeEach(() => {
-  fetchMock.mockReset()
-  vi.stubGlobal("fetch", fetchMock)
-})
+function wrapper({ children }: { children: ReactNode }) {
+  return createElement(
+    QueryClientProvider,
+    { client: createQueryClient() },
+    children
+  )
+}
+
+function renderPitch() {
+  installPitchFetch()
+  return render(createElement(PitchWorkspace), { wrapper })
+}
+
+async function loadedPitch() {
+  renderPitch()
+  expect(
+    await screen.findByRole("heading", { level: 1, name: SAMPLE_AUTHOR_NAME })
+  ).toBeInTheDocument()
+}
 
 afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
 })
 
-function renderPitch() {
-  return render(createElement(PitchWorkspace))
-}
-
 describe("Pitch workspace", () => {
-  it("renders the placeholder User portfolio with mock GitHub activity", () => {
-    renderPitch()
-    const profile = getPitchProfile()
+  it("renders the session User portfolio with mock GitHub activity", async () => {
+    await loadedPitch()
+    const starter = starterPitchDocument()
+    const github = getMockGithubUsername(SAMPLE_AUTHOR_NAME)
 
+    expect(screen.getByText(starter.headline)).toBeInTheDocument()
     expect(
-      screen.getByRole("heading", { level: 1, name: SAMPLE_AUTHOR_NAME })
+      screen.getByText(`openpath.app/u/${pitchHandle(SAMPLE_AUTHOR_NAME)}`)
     ).toBeInTheDocument()
-    expect(screen.getByText(profile.headline)).toBeInTheDocument()
-    expect(screen.getByText(profile.slug)).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Moments" })).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "About" })).toBeInTheDocument()
     expect(
@@ -50,9 +71,7 @@ describe("Pitch workspace", () => {
     ).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "GitHub" })).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Contact" })).toBeInTheDocument()
-    expect(
-      screen.getAllByText(`@${getMockGithubUsername()}`).length
-    ).toBeGreaterThan(0)
+    expect(screen.getAllByText(`@${github}`).length).toBeGreaterThan(0)
     expect(screen.getByText("Connected · mock integration")).toBeInTheDocument()
     expect(screen.getAllByTitle(/contribution/i).length).toBeGreaterThan(50)
     expect(
@@ -61,11 +80,10 @@ describe("Pitch workspace", () => {
     expect(screen.queryByText(/Eric Nguyen/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/eric-nguyen/i)).not.toBeInTheDocument()
     expect(screen.queryByText(SURFACE_COPY.pitch.body)).not.toBeInTheDocument()
-    expect(fetchMock).not.toHaveBeenCalled()
   })
 
-  it("lets the User edit, hide, and restore showcase blocks", () => {
-    renderPitch()
+  it("lets the User edit, hide, and restore showcase blocks", async () => {
+    await loadedPitch()
 
     fireEvent.click(screen.getByRole("button", { name: "Edit profile" }))
     expect(screen.getByText("Editing Pitch")).toBeInTheDocument()
@@ -85,29 +103,34 @@ describe("Pitch workspace", () => {
     const about = screen.getByRole("heading", { name: "About" }).closest("section")
     expect(about).not.toBeNull()
     fireEvent.click(within(about as HTMLElement).getByRole("button", { name: "Hide" }))
-    expect(
-      screen.queryByRole("heading", { name: "About" })
-    ).not.toBeInTheDocument()
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("heading", { name: "About" })
+      ).not.toBeInTheDocument()
+    })
 
     fireEvent.click(screen.getByRole("button", { name: "Add section" }))
     fireEvent.click(screen.getByRole("button", { name: BLOCK_LABELS.about }))
-    expect(screen.getByRole("heading", { name: "About" })).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: "About" })).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole("button", { name: "Add section" }))
     fireEvent.click(screen.getByRole("button", { name: BLOCK_LABELS.gallery }))
-    expect(screen.getByRole("heading", { name: "Gallery" })).toBeInTheDocument()
+    expect(
+      await screen.findByRole("heading", { name: "Gallery" })
+    ).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole("button", { name: "Unpublish" }))
     expect(screen.getByText(/unpublished/i)).toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "Publish" }))
-    fireEvent.click(screen.getByRole("button", { name: "Preview" }))
+    expect(await screen.findByRole("button", { name: "Preview" })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "Unpublish" }))
+    fireEvent.click(await screen.findByRole("button", { name: "Publish" }))
+    fireEvent.click(await screen.findByRole("button", { name: "Preview" }))
     expect(screen.queryByText("Editing Pitch")).not.toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Edit profile" })).toBeInTheDocument()
-    expect(fetchMock).not.toHaveBeenCalled()
   })
 
-  it("opens and closes a story highlight without leaving the page", () => {
-    renderPitch()
+  it("opens and closes a story highlight without leaving the page", async () => {
+    await loadedPitch()
 
     fireEvent.click(screen.getByRole("button", { name: "Checkout highlight" }))
     const viewer = screen.getByRole("dialog", { name: "Work story viewer" })
@@ -121,7 +144,6 @@ describe("Pitch workspace", () => {
     expect(
       screen.getByRole("heading", { level: 1, name: SAMPLE_AUTHOR_NAME })
     ).toBeInTheDocument()
-    expect(fetchMock).not.toHaveBeenCalled()
   })
 
   it("only claims Copy link succeeded when the clipboard write works", async () => {
@@ -131,23 +153,25 @@ describe("Pitch workspace", () => {
       clipboard: { writeText },
     })
 
-    renderPitch()
-    fireEvent.click(screen.getByRole("button", { name: "Copy link" }))
+    await loadedPitch()
+    fireEvent.click(screen.getByRole("button", { name: "Edit profile" }))
+    fireEvent.click(screen.getByRole("button", { name: "Publish" }))
+    fireEvent.click(await screen.findByRole("button", { name: "Preview" }))
+    fireEvent.click(await screen.findByRole("button", { name: "Copy link" }))
 
     expect(await screen.findByRole("button", { name: "Copied" })).toBeInTheDocument()
     expect(writeText).toHaveBeenCalledWith(
-      `https://${getPitchProfile().slug}`
+      `https://openpath.app/u/${pitchHandle(SAMPLE_AUTHOR_NAME)}`
     )
   })
 
-  it("does not present showcase or contact rows as links that go nowhere", () => {
-    renderPitch()
+  it("does not present showcase or contact rows as links that go nowhere", async () => {
+    await loadedPitch()
+    const github = getMockGithubUsername(SAMPLE_AUTHOR_NAME)
 
     expect(screen.getByText("Read case study")).toBeInTheDocument()
     expect(screen.getByText("Case study · Proof chain")).toBeInTheDocument()
-    expect(
-      screen.getAllByText(`@${getMockGithubUsername()}`).length
-    ).toBeGreaterThan(0)
+    expect(screen.getAllByText(`@${github}`).length).toBeGreaterThan(0)
     expect(screen.getByText(SAMPLE_AUTHOR.email)).toBeInTheDocument()
     expect(screen.getByText("LinkedIn")).toBeInTheDocument()
 
@@ -165,13 +189,32 @@ describe("Pitch workspace", () => {
       clipboard: { writeText },
     })
 
-    renderPitch()
-    fireEvent.click(screen.getByRole("button", { name: "Copy link" }))
+    await loadedPitch()
+    fireEvent.click(screen.getByRole("button", { name: "Edit profile" }))
+    fireEvent.click(screen.getByRole("button", { name: "Publish" }))
+    fireEvent.click(await screen.findByRole("button", { name: "Preview" }))
+    fireEvent.click(await screen.findByRole("button", { name: "Copy link" }))
 
     await waitFor(() => {
       expect(writeText).toHaveBeenCalled()
     })
     expect(screen.getByRole("button", { name: "Copy link" })).toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Copied" })).not.toBeInTheDocument()
+  })
+
+  it("persists hide and about edits through the Command door", async () => {
+    await loadedPitch()
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit profile" }))
+    const about = screen.getByRole("heading", { name: "About" }).closest("section")
+    fireEvent.click(within(about as HTMLElement).getByRole("button", { name: "Hide" }))
+    await waitFor(() => {
+      expect(screen.queryByRole("heading", { name: "About" })).not.toBeInTheDocument()
+    })
+
+    cleanup()
+    await loadedPitch()
+    expect(screen.queryByRole("heading", { name: "About" })).not.toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Achievements" })).toBeInTheDocument()
   })
 })

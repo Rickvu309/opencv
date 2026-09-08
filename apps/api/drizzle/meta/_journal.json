@@ -57,6 +57,13 @@
       "when": 1787742085095,
       "tag": "0007_thread_focus_doc",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1788854539561,
+      "tag": "0008_pitch_docs",
+      "breakpoints": true
     }
   ]
 }

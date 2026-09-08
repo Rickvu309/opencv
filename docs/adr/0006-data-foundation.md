@@ -12,6 +12,6 @@ Spec 4 makes state real: email+password auth and per-User persistence for Thread
 
 **Row identity and ordering.** App tables use app-generated UUIDv7 (time-ordered, safe for future optimistic client generation); Better Auth keeps its own text ids, so `user_id` is `text`. Server owns `created_at`/`updated_at timestamptz`; clients derive display strings. Apply kanban in-stage order is a fractional-index `position text` column — a move writes one row.
 
-**Access and first-run.** The whole app is behind sign-in; only the sign-in/sign-up screens and `GET /health` are public. New accounts are seeded with neutral starter content (sample CV, a few Apply cards, one starter Thread) — never the demo persona. The same payload is what `pnpm --filter api run seed` writes for an empty dev/staging account. Pitch persistence is deferred; when it lands it is one jsonb document per user, same shape as Paper content.
+**Access and first-run.** The whole app is behind sign-in; only the sign-in/sign-up screens and `GET /health` are public. New accounts are seeded with neutral starter content (sample CV, a few Apply cards, one starter Thread, one Pitch document) — never the demo persona. The same payload is what `pnpm --filter api run seed` writes for an empty dev/staging account. Pitch is one jsonb document per user (`pitch_docs`), same shape as Paper content (`content_kind` + `content jsonb` + `content_version`).
 
-**Out of scope here:** real Coach LLM (uses this registry when it arrives), OAuth/passkeys, email provider, Pitch persistence, offline/local-first sync.
+**Out of scope here:** real Coach LLM (uses this registry when it arrives), OAuth/passkeys, email provider, offline/local-first sync.

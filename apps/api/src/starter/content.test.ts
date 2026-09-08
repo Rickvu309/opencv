@@ -1,13 +1,17 @@
 import {
   PAPER_CONTENT_VERSION,
+  PITCH_CONTENT_VERSION,
   STARTER_CV_NAME,
   STARTER_THREAD_COACH_TEXT,
   STARTER_THREAD_TITLE,
   decodePaperContent,
+  decodePitchContent,
   isoDateFromOffset,
   starterApplyCards,
   starterCvContent,
   starterCvDocument,
+  starterPitchContent,
+  starterPitchDocument,
   starterThread,
 } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
@@ -20,6 +24,7 @@ function flattenStarterCopy() {
     STARTER_THREAD_TITLE,
     STARTER_THREAD_COACH_TEXT,
     JSON.stringify(starterCvDocument()),
+    JSON.stringify(starterPitchDocument()),
     JSON.stringify(starterApplyCards()),
     starterThread().coachText,
   ].join("\n")
@@ -40,6 +45,18 @@ describe("starter content", () => {
     expect(flattenStarterCopy()).not.toMatch(/!/)
   })
 
+  it("is a valid Pitch codec payload and never a named persona", () => {
+    const decoded = decodePitchContent(
+      "pitch",
+      PITCH_CONTENT_VERSION,
+      starterPitchContent()
+    )
+    expect(decoded.ok).toBe(true)
+    expect(starterPitchDocument().headline).toMatch(/product manager/i)
+    expect(JSON.stringify(starterPitchDocument())).not.toMatch(PERSONA)
+    expect(JSON.stringify(starterPitchDocument())).not.toMatch(/you@openpath/)
+  })
+
   it("spreads Apply cards across Stages without fit or a persona", () => {
     const cards = starterApplyCards()
     expect(cards.map((card) => card.stage)).toEqual([
@@ -56,7 +73,7 @@ describe("starter content", () => {
   it("opens with an honest Coach Thread in the product voice", () => {
     const thread = starterThread()
     expect(thread.title).toBe(STARTER_THREAD_TITLE)
-    expect(thread.coachText).toContain("I haven't edited Paper or Apply")
+    expect(thread.coachText).toContain("I haven't edited Paper, Apply, or Pitch")
     expect(thread.coachText).toContain("haven't run any Commands")
     expect(thread.coachText).toContain("seeded for you")
     expect(thread.coachText).not.toMatch(/stub Coach/)

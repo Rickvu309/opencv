@@ -1,9 +1,14 @@
 /**
- * Fictional GitHub integration data for the placeholder User.
- * No live API calls — realistic shape for a student PM who ships side projects.
+ * Fictional GitHub integration data. No live API calls — PRODUCT.md q.2
+ * stays open. Handle comes from the session User, never a demo persona.
  */
-import { SAMPLE_AUTHOR } from "@/features/seed/sample-author.ts"
-import { pitchHandle, type GithubContribution } from "@/features/pitch/pitch-types.ts"
+import { pitchHandle } from "@/features/pitch/pitch-types.ts"
+
+export type GithubContribution = {
+  date: string
+  count: number
+  level: 0 | 1 | 2 | 3 | 4
+}
 
 function pad(n: number) {
   return String(n).padStart(2, "0")
@@ -21,17 +26,17 @@ function levelFromCount(count: number): 0 | 1 | 2 | 3 | 4 {
   return 4
 }
 
-export function getMockGithubUsername() {
-  const handle = pitchHandle(SAMPLE_AUTHOR.name) || "you"
+export function getMockGithubUsername(name: string) {
+  const handle = pitchHandle(name) || "you"
   return `${handle}-uit`
 }
 
-export function getMockGithubProfile() {
-  const username = getMockGithubUsername()
+export function getMockGithubProfile(name: string, avatarUrl = "") {
+  const username = getMockGithubUsername(name)
 
   return {
     username,
-    avatarUrl: SAMPLE_AUTHOR.avatarSrc,
+    avatarUrl,
     profileUrl: `https://github.com/${username}`,
     publicRepos: 14,
     followers: 28,

@@ -1,9 +1,12 @@
 import {
   PAPER_CONTENT_VERSION,
+  PITCH_CONTENT_KIND,
+  PITCH_CONTENT_VERSION,
   generateKeyBetween,
   isoDateFromOffset,
   starterApplyCards,
   starterCvContent,
+  starterPitchContent,
   starterThread,
   STARTER_CV_NAME,
 } from "@workspace/domain"
@@ -12,6 +15,7 @@ import { eq } from "drizzle-orm"
 import {
   applyCards,
   paperDocs,
+  pitchDocs,
   threadMessages,
   threads,
 } from "../db/schema.js"
@@ -23,6 +27,7 @@ export type StarterWorkspaceSeed = {
   paperDocId: string | null
   applyCardIds: string[]
   threadId: string | null
+  pitchDocId: string | null
 }
 
 const skipped: StarterWorkspaceSeed = {
@@ -30,6 +35,7 @@ const skipped: StarterWorkspaceSeed = {
   paperDocId: null,
   applyCardIds: [],
   threadId: null,
+  pitchDocId: null,
 }
 
 /**
@@ -42,25 +48,36 @@ export async function seedStarterWorkspace(
   now = new Date()
 ): Promise<StarterWorkspaceSeed> {
   return db.transaction(async (tx: AppDatabase) => {
-    const [existingPaper, existingApply, existingThread] = await Promise.all([
-      tx
-        .select({ id: paperDocs.id })
-        .from(paperDocs)
-        .where(eq(paperDocs.userId, userId))
-        .limit(1),
-      tx
-        .select({ id: applyCards.id })
-        .from(applyCards)
-        .where(eq(applyCards.userId, userId))
-        .limit(1),
-      tx
-        .select({ id: threads.id })
-        .from(threads)
-        .where(eq(threads.userId, userId))
-        .limit(1),
-    ])
+    const [existingPaper, existingApply, existingThread, existingPitch] =
+      await Promise.all([
+        tx
+          .select({ id: paperDocs.id })
+          .from(paperDocs)
+          .where(eq(paperDocs.userId, userId))
+          .limit(1),
+        tx
+          .select({ id: applyCards.id })
+          .from(applyCards)
+          .where(eq(applyCards.userId, userId))
+          .limit(1),
+        tx
+          .select({ id: threads.id })
+          .from(threads)
+          .where(eq(threads.userId, userId))
+          .limit(1),
+        tx
+          .select({ id: pitchDocs.id })
+          .from(pitchDocs)
+          .where(eq(pitchDocs.userId, userId))
+          .limit(1),
+      ])
 
-    if (existingPaper[0] || existingApply[0] || existingThread[0]) {
+    if (
+      existingPaper[0] ||
+      existingApply[0] ||
+      existingThread[0] ||
+      existingPitch[0]
+    ) {
       return skipped
     }
 
@@ -123,11 +140,24 @@ export async function seedStarterWorkspace(
       createdAt: coachAt,
     })
 
+    const pitchAt = new Date(coachAt.getTime() + 1)
+    const pitchId = createId(pitchAt.getTime())
+    await tx.insert(pitchDocs).values({
+      id: pitchId,
+      userId,
+      contentKind: PITCH_CONTENT_KIND,
+      content: starterPitchContent(),
+      contentVersion: PITCH_CONTENT_VERSION,
+      createdAt: pitchAt,
+      updatedAt: pitchAt,
+    })
+
     return {
       created: true,
       paperDocId: paperId,
       applyCardIds: applyRows.map((row) => row.id),
       threadId,
+      pitchDocId: pitchId,
     }
   })
 }

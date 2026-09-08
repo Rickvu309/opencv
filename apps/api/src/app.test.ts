@@ -168,5 +168,8 @@ describe("commands without auth", () => {
 
     const paper = await api.request("/api/paper")
     expect(paper.status).toBe(503)
+
+    const pitch = await api.request("/api/pitch")
+    expect(pitch.status).toBe(503)
   })
 })

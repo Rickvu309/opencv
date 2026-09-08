@@ -18,7 +18,7 @@ The API serves a health check and nothing else, while Postgres sits provisioned 
 5. **Thread seam extracted.** Server Threads trigger ADR-0005: History and Search consume a thin `ThreadListPort`; conversation internals stay in Home.
 6. **Starter content.** New accounts are seeded with a neutral sample workspace (a CV, a few Apply cards, a starter Thread) so the product demos itself — never the demo persona.
 
-**Not in this spec:** real Coach LLM (the stub reply moves server-side unchanged), OAuth/passkeys, email verification provider (links are logged; Resend is a follow-up), Pitch persistence (stays client-side seed), Fit score visibility (column exists, hidden from DTOs — PRODUCT.md q1 still open), custom domains.
+**Not in this spec:** real Coach LLM (the stub reply moves server-side unchanged), OAuth/passkeys, email verification provider (links are logged; Resend is a follow-up), Fit score visibility (column exists, hidden from DTOs — PRODUCT.md q1 still open), custom domains. Pitch persistence landed in QVE-134.
 
 ## Route to real product (updates the Spec 3 table)
 
@@ -28,7 +28,7 @@ The API serves a health check and nothing else, while Postgres sits provisioned 
 | 3.9 — Craft surfaces client-side | Paper/Apply/Pitch ported from the frozen prototype, client state (QVE-110–113) | Done |
 | **4 — Auth + Data (this spec)** | Accounts, Postgres, Command registry, server Threads, Paper + Apply persistence, signup starter | Done |
 | **5 — The Coach** | Real LLM, streaming, Commands wired as tools from the same registry | Done (QVE-136 / QVE-137–144); `OPENROUTER_API_KEY` on Railway is the remaining owner step |
-| Pitch persistence | One jsonb doc per user | After 4, unblocked |
+| Pitch persistence | One jsonb doc per user | Done (QVE-134) |
 | Later | Email provider + verification, sibling custom domains, OAuth, notification inbox, Connected apps | — |
 
 ## User Stories
@@ -77,4 +77,4 @@ Work this spec deliberately deferred, now ticketed:
 
 - [QVE-132](https://linear.app/quanvm/issue/QVE-132) — Email provider (Resend) + production verification flip
 - [QVE-133](https://linear.app/quanvm/issue/QVE-133) — Sibling custom domains for Safari cross-site-cookie caveat
-- [QVE-134](https://linear.app/quanvm/issue/QVE-134) — Pitch persistence: one jsonb document per user
+- [QVE-134](https://linear.app/quanvm/issue/QVE-134) — Pitch persistence: one jsonb document per user (done)

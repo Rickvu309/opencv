@@ -83,14 +83,20 @@ describe("Pitch mock GitHub boundary", () => {
     expect(read("src/routes/pitch.tsx")).not.toMatch(/pitch-github-api/)
   })
 
-  it("seeds the placeholder User, not the demo persona", () => {
-    const types = read("src/features/pitch/pitch-types.ts")
+  it("does not seed a named persona on the production Pitch surface", () => {
     const mock = read("src/features/pitch/pitch-github-mock.ts")
 
-    expect(types).toMatch(/SAMPLE_AUTHOR/)
-    expect(types).not.toMatch(/getDevProfile/)
-    expect(types).not.toMatch(/Eric Nguyen/)
-    expect(types).not.toMatch(/eric-nguyen/)
+    for (const file of pitchSources()) {
+      expect(file.source, file.name).not.toMatch(/SAMPLE_AUTHOR/)
+      expect(file.source, file.name).not.toMatch(/getDevProfile/)
+      expect(file.source, file.name).not.toMatch(/Eric Nguyen/)
+      expect(file.source, file.name).not.toMatch(/eric-nguyen/)
+      expect(file.source, file.name).not.toMatch(/Alex Tran/)
+      expect(file.source, file.name).not.toMatch(
+        /PITCH_ACHIEVEMENTS|PITCH_EXPERIENCE|PITCH_STORY_HIGHLIGHTS|PITCH_GALLERY|PITCH_WORK_DOCS/
+      )
+    }
+
     expect(mock).not.toMatch(/Eric Nguyen/)
     expect(mock).not.toMatch(/eric-nguyen/)
   })

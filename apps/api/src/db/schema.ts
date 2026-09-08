@@ -222,6 +222,30 @@ export const applyCards = openpathApp.table(
 )
 
 /**
+ * One Pitch document per User (ADR-0006): kind + jsonb + version.
+ * Unique on user_id — there is never a second Pitch row.
+ */
+export const pitchDocs = openpathApp.table(
+  "pitch_docs",
+  {
+    id: uuid("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    contentKind: text("content_kind")
+      .$type<"pitch">()
+      .notNull(),
+    content: jsonb("content").$type<Record<string, unknown>>().notNull(),
+    contentVersion: integer("content_version").notNull(),
+    createdAt: timestamptz("created_at").notNull().defaultNow(),
+    updatedAt: timestamptz("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("pitch_docs_user_id_uidx").on(table.userId),
+  ]
+)
+
+/**
  * One row per Coach turn. Rate-limit counter and thumbs sink (ADR-0007).
  * Thread/message FKs set-null so deleting a Thread does not refund the daily cap.
  */
