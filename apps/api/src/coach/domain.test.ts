@@ -148,6 +148,15 @@ describe("coach domain exports", () => {
       focusDocId: "11111111-1111-7111-8111-111111111111",
     })
     expect(
+      coachTurnRequestSchema.parse({
+        text: "Hello",
+        focusDocId: null,
+      })
+    ).toEqual({
+      text: "Hello",
+      focusDocId: null,
+    })
+    expect(
       coachTurnRequestSchema.safeParse({
         text: "Hello",
         focusDocId: "not-a-uuid",

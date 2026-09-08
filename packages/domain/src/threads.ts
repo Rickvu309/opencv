@@ -95,8 +95,11 @@ export const coachTurnRequestSchema = z
     text: threadMessageTextSchema.optional(),
     mode: coachModeSchema.optional(),
     regenerate: z.literal(true).optional(),
-    /** Open Paper doc when the turn is sent from the editor AI panel. */
-    focusDocId: paperDocIdSchema.optional(),
+    /**
+     * Open Paper doc when the turn is sent from the editor AI panel.
+     * `null` clears soft-scope for this turn (do not ground from the Thread).
+     */
+    focusDocId: paperDocIdSchema.nullish(),
     /** Highlighted Paper text when the User sends from the editor. */
     selection: coachSelectionSchema.optional(),
   })

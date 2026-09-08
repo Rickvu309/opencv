@@ -435,6 +435,51 @@ describe("Paper editors", () => {
     )
   })
 
+  it("shows a removable soft-scope chip for the open Paper CV", async () => {
+    scriptCoachStream({ texts: ["I can still help without the CV."] })
+    renderPaper()
+    await expectPaperDrive()
+    await openDoc("PM track CV")
+    const dialog = await openCoach()
+
+    const chip = within(dialog).getByRole("status", { name: "In context" })
+    expect(chip).toHaveTextContent("PM track CV")
+    expect(dialog.querySelector("[data-coach-soft-scope]")).toBe(chip)
+    expect(dialog).not.toHaveTextContent(/knowledge.?base/i)
+    expect(dialog).not.toHaveTextContent(/add sources/i)
+    expect(
+      within(dialog).queryByRole("button", { name: /sources library/i })
+    ).not.toBeInTheDocument()
+    expect(
+      within(dialog).queryByRole("complementary", { name: /sources/i })
+    ).not.toBeInTheDocument()
+
+    fireEvent.click(
+      within(chip).getByRole("button", { name: "Remove from context" })
+    )
+    expect(
+      within(dialog).queryByRole("status", { name: "In context" })
+    ).not.toBeInTheDocument()
+    expect(dialog.querySelector("[data-coach-soft-scope]")).toBeNull()
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Minimize" }))
+    fireEvent.click(screen.getByRole("button", { name: "Restore" }))
+    const restored = coachDialog()
+    expect(
+      within(restored).queryByRole("status", { name: "In context" })
+    ).not.toBeInTheDocument()
+
+    fireEvent.change(messageCoach(restored), {
+      target: { value: "What should I cut?" },
+    })
+    fireEvent.click(within(restored).getByRole("button", { name: "Send" }))
+    expect(
+      await within(restored).findByText("I can still help without the CV.")
+    ).toBeInTheDocument()
+    expect(getLastCoachRequest()?.text).toBe("What should I cut?")
+    expect(getLastCoachRequest()?.focusDocId).toBeUndefined()
+  })
+
   it("closes the float on Escape and returns focus to the pill", async () => {
     renderPaper()
     await expectPaperDrive()

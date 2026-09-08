@@ -149,7 +149,10 @@ export function createCoachRoutes({
       throw error
     }
 
-    const focusDocId = parsed.data.focusDocId ?? thread.focusDocId ?? undefined
+    const focusDocId =
+      parsed.data.focusDocId === null
+        ? undefined
+        : (parsed.data.focusDocId ?? thread.focusDocId ?? undefined)
 
     let focusDoc: CoachFocusDoc | undefined
     if (focusDocId) {
