@@ -49,9 +49,11 @@ import {
 } from "./paper-cv-history.ts"
 import { type CvData, type CvTemplateId } from "./paper-cv-types.ts"
 import {
+  SAMPLE_CV_LABEL,
   TYPE_LABEL,
   cvContentOf,
   formatPaperUpdated,
+  isSampleCv,
   letterMarkdownOf,
   profileFirstName,
   proofContentOf,
@@ -567,6 +569,7 @@ export function PaperEditor({
               />
               <p className="paper-editor-chrome-meta text-xs text-muted-foreground">
                 {TYPE_LABEL[doc.kind]}
+                {isSampleCv(doc) ? ` · ${SAMPLE_CV_LABEL}` : null}
                 {" · "}Updated {formatPaperUpdated(doc.updatedAt)}
               </p>
             </div>
@@ -597,7 +600,7 @@ export function PaperEditor({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem variant="destructive" onClick={onDelete}>
-                Delete
+                {isSampleCv(doc) ? "Clear sample" : "Delete"}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

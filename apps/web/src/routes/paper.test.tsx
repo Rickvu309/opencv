@@ -22,6 +22,10 @@ import {
 
 import { PAPER_CANVAS_FIELD_CLASS } from "@/features/paper/paper-cv-document.tsx"
 import { EMPTY_SECTION_CTA } from "@/features/paper/paper-cv-edits.ts"
+import {
+  PAPER_LIST_EMPTY_CTA,
+  SAMPLE_CV_LABEL,
+} from "@/features/paper/paper-data.ts"
 import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 import { getMockPaperDocs } from "@/test/paper-api-mock.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
@@ -44,18 +48,27 @@ async function openDoc(name: string) {
   return editor
 }
 
-function seedSampleInternshipCv() {
-  getMockPaperDocs().unshift({
+function starterSampleCvDoc() {
+  return {
     id: "66666666-6666-7666-8666-666666666666",
     name: STARTER_CV_NAME,
-    kind: "cv",
-    status: "draft",
+    kind: "cv" as const,
+    status: "draft" as const,
     content: starterCvDocument(),
     contentVersion: PAPER_CONTENT_VERSION,
     applyCardId: null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-  })
+  }
+}
+
+function seedSampleInternshipCv() {
+  getMockPaperDocs().unshift(starterSampleCvDoc())
+}
+
+function seedStarterPaperDrive() {
+  const docs = getMockPaperDocs()
+  docs.splice(0, docs.length, starterSampleCvDoc())
 }
 
 function sampleInternshipCv() {
@@ -173,9 +186,83 @@ describe("Paper drive", () => {
         name: `Editing ${STARTER_CV_NAME}`,
       })
     ).toBeInTheDocument()
+    expect(screen.getByText(new RegExp(SAMPLE_CV_LABEL))).toBeInTheDocument()
     expect(
       screen.queryByRole("button", { name: "New document" })
     ).not.toBeInTheDocument()
+  })
+
+  it("labels the sample CV and offers quiet empty-list CTAs on desktop", async () => {
+    stubDesktopViewport(true)
+    seedStarterPaperDrive()
+    renderPaper()
+
+    expect(await screen.findByRole("region", { name: "Paper" })).toBeInTheDocument()
+    expect(await screen.findByText(STARTER_CV_NAME)).toBeInTheDocument()
+    expect(screen.getAllByText(SAMPLE_CV_LABEL).length).toBeGreaterThanOrEqual(1)
+
+    const letters = screen.getByRole("region", { name: "Letters" })
+    const proof = screen.getByRole("region", { name: "Proof" })
+    const linked = screen.getByRole("region", { name: "Linked to Apply" })
+    expect(
+      within(letters).getByRole("button", { name: PAPER_LIST_EMPTY_CTA.letter })
+    ).toBeInTheDocument()
+    expect(
+      within(proof).getByRole("button", { name: PAPER_LIST_EMPTY_CTA.proof })
+    ).toBeInTheDocument()
+    expect(
+      within(linked).getByRole("button", { name: PAPER_LIST_EMPTY_CTA.linked })
+    ).toBeInTheDocument()
+
+    expect(screen.queryByText("None yet")).not.toBeInTheDocument()
+    expect(screen.queryByText(/unlock your|get started|welcome to your/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/no letters yet/i)).not.toBeInTheDocument()
+    expect(document.querySelector("[data-slot='empty-title']")).toBeNull()
+    expect(document.querySelector("[data-slot='empty-icon']")).toBeNull()
+
+    fireEvent.click(
+      screen.getByRole("button", { name: PAPER_LIST_EMPTY_CTA.letter })
+    )
+    expect(
+      await screen.findByRole("region", { name: "Editing Untitled Letter" })
+    ).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: /all documents/i }))
+    expect(await screen.findByRole("region", { name: "Paper" })).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: PAPER_LIST_EMPTY_CTA.letter })
+    ).not.toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getByRole("button", { name: PAPER_LIST_EMPTY_CTA.proof })
+    )
+    expect(
+      await screen.findByRole("region", { name: "Editing Untitled Proof" })
+    ).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: /all documents/i }))
+    expect(await screen.findByRole("region", { name: "Paper" })).toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getByRole("button", { name: PAPER_LIST_EMPTY_CTA.linked })
+    )
+    expect(
+      await screen.findByRole("dialog", { name: "Link to Apply" })
+    ).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }))
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: `Document actions for ${STARTER_CV_NAME}`,
+      })
+    )
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Clear sample" }))
+    const confirm = await screen.findByRole("dialog", { name: "Clear sample" })
+    fireEvent.click(within(confirm).getByRole("button", { name: "Delete" }))
+    await waitFor(() => {
+      expect(screen.queryByText(STARTER_CV_NAME)).not.toBeInTheDocument()
+    })
+    expect(screen.queryByText(SAMPLE_CV_LABEL)).not.toBeInTheDocument()
   })
 
   it("shows and changes the Apply card link", async () => {
