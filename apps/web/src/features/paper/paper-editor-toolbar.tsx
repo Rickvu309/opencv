@@ -14,7 +14,6 @@ import {
   List,
   ListOrdered,
   ListTree,
-  Minus,
   Plus,
   Printer,
   Redo2,
@@ -170,12 +169,6 @@ function handleOverflowAction(id: string) {
     case "clear-format":
       runEditorCommand("removeFormat")
       break
-    case "text-smaller":
-      runEditorCommand("fontSize", "2")
-      break
-    case "text-larger":
-      runEditorCommand("fontSize", "4")
-      break
     case "pdf":
     case "docx":
     case "copy":
@@ -186,10 +179,7 @@ function handleOverflowAction(id: string) {
   }
 }
 
-function formatOverflowSections(
-  rich: boolean,
-  includeTextSize: boolean
-): MenuSection[] {
+function formatOverflowSections(rich: boolean): MenuSection[] {
   const sections: MenuSection[] = [
     {
       label: "Block style",
@@ -243,24 +233,6 @@ function formatOverflowSections(
           id: "align-right",
           label: "Align right",
           icon: <AlignRight className="size-3.5" />,
-        },
-      ],
-    })
-  }
-
-  if (includeTextSize) {
-    sections.push({
-      label: "Text size",
-      items: [
-        {
-          id: "text-smaller",
-          label: "Decrease size",
-          icon: <Minus className="size-3.5" />,
-        },
-        {
-          id: "text-larger",
-          label: "Increase size",
-          icon: <Plus className="size-3.5" />,
         },
       ],
     })
@@ -335,10 +307,20 @@ export function PaperEditorToolbar({
   letterWordCount,
 }: Props) {
   const rich = variant === "letter" || variant === "full"
-  const showFormat = variant !== "proof"
+  // CV fields are structured React state — execCommand Bold/Italic/lists
+  // are dead theater. Letter/full stay rich-text. QVE-205.
+  const showFormat = rich
+  const toolbarLabel =
+    variant === "cv"
+      ? "CV tools"
+      : variant === "letter"
+        ? "Letter tools"
+        : variant === "proof"
+          ? "Proof tools"
+          : "Document tools"
 
   return (
-    <ToolbarRoot className={className}>
+    <ToolbarRoot className={className} aria-label={toolbarLabel}>
       {variant === "cv" && cvTemplateId && onCvTemplateChange ? (
         <ToolbarZone>
           <CvTemplateDropdown
@@ -459,13 +441,13 @@ export function PaperEditorToolbar({
 
       {showFormat ? (
         <>
-          {variant === "cv" || variant === "letter" ? <ToolbarDivider /> : null}
+          {variant === "letter" ? <ToolbarDivider /> : null}
           <ToolbarZone>
             <FormatEssentials />
           </ToolbarZone>
           <ToolbarZone>
             <ToolbarOverflowMenu
-              sections={formatOverflowSections(rich, variant === "cv")}
+              sections={formatOverflowSections(rich)}
               onSelect={handleOverflowAction}
             />
           </ToolbarZone>

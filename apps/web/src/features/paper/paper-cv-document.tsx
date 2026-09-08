@@ -1,14 +1,40 @@
 /**
- * CV print-paper templates. Arbitrary pixel sizes and the product-sidebar
- * hex stay here on purpose — print layout is a documented ADR-0010 exception.
+ * CV print-paper templates. Shared type roles live in paper.css (ADR-0010
+ * names, print-scaled). The product-sidebar hex stays here on purpose —
+ * print layout is a documented ADR-0010 exception. Focus/selection chrome
+ * is QVE-206 — leave EditableField focus classes alone.
  */
-import type { ReactNode } from "react"
+import type { ElementType, ReactNode } from "react"
 import { useEffect, useRef } from "react"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 import { ImagePlus, User } from "lucide-react"
 
-import type { CvData, CvEducation, CvExperience } from "./paper-cv-types.ts"
+import {
+  cvTypeClass,
+  type CvData,
+  type CvEducation,
+  type CvExperience,
+  type CvTypeRole,
+} from "./paper-cv-types.ts"
+
+function CvType({
+  role,
+  as: Tag = "p",
+  className,
+  children,
+}: {
+  role: CvTypeRole
+  as?: ElementType
+  className?: string
+  children: ReactNode
+}) {
+  return (
+    <Tag data-cv-type={role} className={cn(cvTypeClass(role), className)}>
+      {children}
+    </Tag>
+  )
+}
 
 type FieldProps = {
   value: string
@@ -151,7 +177,7 @@ function ContactLine({
   ].filter(Boolean)
 
   return (
-    <p className={cn("text-[11px] leading-relaxed", className)}>
+    <CvType role="micro" className={cn("leading-relaxed", className)}>
       {parts.map((part, i) => (
         <span key={i}>
           {i > 0 ? <span className="mx-1.5 text-border">|</span> : null}
@@ -171,7 +197,7 @@ function ContactLine({
           />
         </span>
       ))}
-    </p>
+    </CvType>
   )
 }
 
@@ -189,7 +215,7 @@ function ExperienceBlock({
   return (
     <div className="mb-3 last:mb-0" data-paper-section={`experience-${index}`}>
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
-        <p className={cn("text-sm font-semibold", dark && "text-white")}>
+        <CvType role="label" className={cn(dark && "text-white")}>
           <EditableField
             aria-label="Role"
             value={item.role}
@@ -209,10 +235,11 @@ function ExperienceBlock({
             value={item.company}
             onChange={(company) => patchExperience(index, { company })}
           />
-        </p>
-        <p
+        </CvType>
+        <CvType
+          role="micro"
           className={cn(
-            "shrink-0 text-[11px] font-medium tracking-wide uppercase",
+            "shrink-0 font-medium tracking-wide uppercase",
             dark ? "text-white/50" : "text-muted-foreground"
           )}
         >
@@ -221,12 +248,13 @@ function ExperienceBlock({
             value={item.period}
             onChange={(period) => patchExperience(index, { period })}
           />
-        </p>
+        </CvType>
       </div>
       {item.location ? (
-        <p
+        <CvType
+          role="micro"
           className={cn(
-            "mt-0.5 text-xs",
+            "mt-0.5",
             dark ? "text-white/50" : "text-muted-foreground"
           )}
         >
@@ -235,7 +263,7 @@ function ExperienceBlock({
             value={item.location}
             onChange={(location) => patchExperience(index, { location })}
           />
-        </p>
+        </CvType>
       ) : null}
       <ul
         className={cn(
@@ -247,7 +275,7 @@ function ExperienceBlock({
           <li
             key={bi}
             data-paper-section={`experience-${index}-bullet-${bi}`}
-            className="flex gap-2 text-[13px] leading-relaxed"
+            className="flex gap-2"
           >
             <span
               className={cn(
@@ -255,21 +283,106 @@ function ExperienceBlock({
                 dark ? "bg-white/50" : "bg-foreground/40"
               )}
             />
-            <EditableField
-              aria-label="Bullet point"
-              sectionId={`experience-${index}-bullet-${bi}`}
-              value={bullet}
-              multiline
-              className="flex-1"
-              onChange={(value) => {
-                const bullets = [...item.bullets]
-                bullets[bi] = value
-                patchExperience(index, { bullets })
-              }}
-            />
+            <CvType role="body" as="span" className="flex-1">
+              <EditableField
+                aria-label="Bullet point"
+                sectionId={`experience-${index}-bullet-${bi}`}
+                value={bullet}
+                multiline
+                className="flex-1"
+                onChange={(value) => {
+                  const bullets = [...item.bullets]
+                  bullets[bi] = value
+                  patchExperience(index, { bullets })
+                }}
+              />
+            </CvType>
           </li>
         ))}
       </ul>
+    </div>
+  )
+}
+
+function EducationBlock({
+  item,
+  index,
+  patchEducation,
+}: {
+  item: CvEducation
+  index: number
+  patchEducation: (index: number, next: Partial<CvEducation>) => void
+}) {
+  return (
+    <div
+      className="mb-3 last:mb-0"
+      data-paper-section={`education-${index}`}
+    >
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <CvType role="label">
+          <EditableField
+            aria-label="School"
+            value={item.school}
+            onChange={(school) => patchEducation(index, { school })}
+          />
+        </CvType>
+        <CvType
+          role="micro"
+          className="font-medium tracking-wide text-muted-foreground uppercase"
+        >
+          <EditableField
+            aria-label="Period"
+            value={item.period}
+            onChange={(period) => patchEducation(index, { period })}
+          />
+        </CvType>
+      </div>
+      <CvType role="body" className="text-muted-foreground">
+        <EditableField
+          aria-label="Degree"
+          value={item.degree}
+          onChange={(degree) => patchEducation(index, { degree })}
+        />
+      </CvType>
+      {item.detail ? (
+        <CvType role="micro" className="mt-1 text-muted-foreground">
+          <EditableField
+            aria-label="Education detail"
+            value={item.detail}
+            onChange={(detail) => patchEducation(index, { detail })}
+          />
+        </CvType>
+      ) : null}
+    </div>
+  )
+}
+
+function SkillChips({
+  items,
+  variant = "tag",
+}: {
+  items: string[]
+  variant?: "tag" | "pill" | "dashed"
+}) {
+  return (
+    <div data-paper-section="skills" className="flex flex-wrap gap-1.5">
+      {items.map((skill, i) => (
+        <CvType
+          key={i}
+          role="micro"
+          as="span"
+          className={cn(
+            "px-2 py-0.5 font-medium",
+            variant === "tag" &&
+              "rounded-md border border-border bg-muted/40",
+            variant === "pill" &&
+              "rounded-full bg-foreground px-2.5 text-background",
+            variant === "dashed" && "rounded border border-dashed border-border"
+          )}
+        >
+          {skill}
+        </CvType>
+      ))}
     </div>
   )
 }
@@ -282,16 +395,18 @@ function SectionTitle({
   dark?: boolean
 }) {
   return (
-    <h3
+    <CvType
+      role="section-title"
+      as="h3"
       className={cn(
-        "mb-2 border-b pb-1 text-[10px] font-bold tracking-[0.14em] uppercase",
+        "mb-2 border-b pb-1",
         dark
           ? "border-white/20 text-white/70"
           : "border-foreground/15 text-foreground/55"
       )}
     >
       {children}
-    </h3>
+    </CvType>
   )
 }
 
@@ -350,21 +465,21 @@ function InternshipCv({
   return (
     <div className="cv-template-root cv-template-internship">
       <header className="border-b border-foreground/10 pb-4 text-center">
-        <h1 className="text-[22px] leading-tight font-semibold tracking-tight">
+        <CvType role="page-title" as="h1">
           <EditableField
             aria-label="Full name"
             sectionId="name"
             value={data.name}
             onChange={(name) => patch("name", name)}
           />
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        </CvType>
+        <CvType role="body" className="mt-1 text-muted-foreground">
           <EditableField
             aria-label="Headline"
             value={data.headline}
             onChange={(headline) => patch("headline", headline)}
           />
-        </p>
+        </CvType>
         <ContactLine
           data={data}
           patch={patch}
@@ -376,13 +491,14 @@ function InternshipCv({
 
       <section className="mt-5">
         <SectionTitle>Summary</SectionTitle>
-        <EditableField
-          aria-label="Summary"
-          value={data.summary}
-          multiline
-          className="text-[13px] leading-relaxed text-foreground/90"
-          onChange={(summary) => patch("summary", summary)}
-        />
+        <CvType role="body" as="div" className="text-foreground/90">
+          <EditableField
+            aria-label="Summary"
+            value={data.summary}
+            multiline
+            onChange={(summary) => patch("summary", summary)}
+          />
+        </CvType>
       </section>
 
       <section className="mt-5">
@@ -400,61 +516,18 @@ function InternshipCv({
       <section className="mt-5">
         <SectionTitle>Education</SectionTitle>
         {data.education.map((item, i) => (
-          <div
+          <EducationBlock
             key={i}
-            data-paper-section={`education-${i}`}
-            className="mb-3 last:mb-0"
-          >
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <p className="text-sm font-semibold">
-                <EditableField
-                  aria-label="School"
-                  value={item.school}
-                  onChange={(school) => patchEducation(i, { school })}
-                />
-              </p>
-              <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
-                <EditableField
-                  aria-label="Period"
-                  value={item.period}
-                  onChange={(period) => patchEducation(i, { period })}
-                />
-              </p>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              <EditableField
-                aria-label="Degree"
-                value={item.degree}
-                onChange={(degree) => patchEducation(i, { degree })}
-              />
-            </p>
-            {item.detail ? (
-              <p className="mt-1 text-xs text-muted-foreground">
-                <EditableField
-                  aria-label="Education detail"
-                  value={item.detail}
-                  onChange={(detail) => patchEducation(i, { detail })}
-                />
-              </p>
-            ) : null}
-          </div>
+            item={item}
+            index={i}
+            patchEducation={patchEducation}
+          />
         ))}
       </section>
 
       <section className="mt-5">
         <SectionTitle>Skills</SectionTitle>
-        <div data-paper-section="skills" className="flex flex-wrap gap-1.5">
-          {data.skills
-            .flatMap((g) => g.items)
-            .map((skill, i) => (
-              <span
-                key={i}
-                className="rounded-md border border-border bg-muted/40 px-2 py-0.5 text-xs font-medium"
-              >
-                {skill}
-              </span>
-            ))}
-        </div>
+        <SkillChips items={data.skills.flatMap((g) => g.items)} />
       </section>
     </div>
   )
@@ -474,21 +547,21 @@ function PhotoCv({
           onChange={(photoUrl) => patch("photoUrl", photoUrl)}
         />
         <div className="min-w-0 flex-1">
-          <h1 className="text-[22px] leading-tight font-semibold tracking-tight">
+          <CvType role="page-title" as="h1">
             <EditableField
               aria-label="Full name"
               sectionId="name"
               value={data.name}
               onChange={(name) => patch("name", name)}
             />
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          </CvType>
+          <CvType role="body" className="mt-1 text-muted-foreground">
             <EditableField
               aria-label="Headline"
               value={data.headline}
               onChange={(headline) => patch("headline", headline)}
             />
-          </p>
+          </CvType>
           <ContactLine
             data={data}
             patch={patch}
@@ -501,13 +574,14 @@ function PhotoCv({
 
       <section className="mb-5">
         <SectionTitle>Summary</SectionTitle>
-        <EditableField
-          aria-label="Summary"
-          value={data.summary}
-          multiline
-          className="text-[13px] leading-relaxed text-foreground/90"
-          onChange={(summary) => patch("summary", summary)}
-        />
+        <CvType role="body" as="div" className="text-foreground/90">
+          <EditableField
+            aria-label="Summary"
+            value={data.summary}
+            multiline
+            onChange={(summary) => patch("summary", summary)}
+          />
+        </CvType>
       </section>
 
       <section className="mb-5">
@@ -525,61 +599,18 @@ function PhotoCv({
       <section className="mb-5">
         <SectionTitle>Education</SectionTitle>
         {data.education.map((item, i) => (
-          <div
+          <EducationBlock
             key={i}
-            data-paper-section={`education-${i}`}
-            className="mb-3 last:mb-0"
-          >
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <p className="text-sm font-semibold">
-                <EditableField
-                  aria-label="School"
-                  value={item.school}
-                  onChange={(school) => patchEducation(i, { school })}
-                />
-              </p>
-              <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
-                <EditableField
-                  aria-label="Period"
-                  value={item.period}
-                  onChange={(period) => patchEducation(i, { period })}
-                />
-              </p>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              <EditableField
-                aria-label="Degree"
-                value={item.degree}
-                onChange={(degree) => patchEducation(i, { degree })}
-              />
-            </p>
-            {item.detail ? (
-              <p className="mt-1 text-xs text-muted-foreground">
-                <EditableField
-                  aria-label="Education detail"
-                  value={item.detail}
-                  onChange={(detail) => patchEducation(i, { detail })}
-                />
-              </p>
-            ) : null}
-          </div>
+            item={item}
+            index={i}
+            patchEducation={patchEducation}
+          />
         ))}
       </section>
 
       <section>
         <SectionTitle>Skills</SectionTitle>
-        <div data-paper-section="skills" className="flex flex-wrap gap-1.5">
-          {data.skills
-            .flatMap((g) => g.items)
-            .map((skill, i) => (
-              <span
-                key={i}
-                className="rounded-md border border-border bg-muted/40 px-2 py-0.5 text-xs font-medium"
-              >
-                {skill}
-              </span>
-            ))}
-        </div>
+        <SkillChips items={data.skills.flatMap((g) => g.items)} />
       </section>
     </div>
   )
@@ -594,7 +625,7 @@ function ProductCv({
   return (
     <div className="cv-template-root cv-template-root--product cv-template-product">
       <aside className="cv-template-product-sidebar bg-[#1e293b] text-white">
-        <h1 className="text-lg leading-tight font-semibold">
+        <CvType role="page-title" as="h1">
           <EditableField
             aria-label="Full name"
             sectionId="name"
@@ -602,47 +633,49 @@ function ProductCv({
             className="text-white"
             onChange={(name) => patch("name", name)}
           />
-        </h1>
-        <p className="mt-2 text-sm text-white/70">
+        </CvType>
+        <CvType role="body" className="mt-2 text-white/70">
           <EditableField
             aria-label="Headline"
             value={data.headline}
             className="text-white/70"
             onChange={(headline) => patch("headline", headline)}
           />
-        </p>
+        </CvType>
 
-        <div className="mt-6 space-y-1.5 text-xs text-white/75">
-          <EditableField
-            aria-label="Email"
-            value={data.contact.email}
-            className="block text-white/75"
-            onChange={(email) => patch("contact", { ...data.contact, email })}
-          />
-          <EditableField
-            aria-label="Phone"
-            value={data.contact.phone}
-            className="block text-white/75"
-            onChange={(phone) => patch("contact", { ...data.contact, phone })}
-          />
-          <EditableField
-            aria-label="Location"
-            value={data.contact.location}
-            className="block text-white/75"
-            onChange={(location) =>
-              patch("contact", { ...data.contact, location })
-            }
-          />
-          {data.contact.linkedin ? (
+        <div className="mt-6 space-y-1.5 text-white/75">
+          <CvType role="micro" as="div">
             <EditableField
-              aria-label="LinkedIn"
-              value={data.contact.linkedin}
+              aria-label="Email"
+              value={data.contact.email}
               className="block text-white/75"
-              onChange={(linkedin) =>
-                patch("contact", { ...data.contact, linkedin })
+              onChange={(email) => patch("contact", { ...data.contact, email })}
+            />
+            <EditableField
+              aria-label="Phone"
+              value={data.contact.phone}
+              className="block text-white/75"
+              onChange={(phone) => patch("contact", { ...data.contact, phone })}
+            />
+            <EditableField
+              aria-label="Location"
+              value={data.contact.location}
+              className="block text-white/75"
+              onChange={(location) =>
+                patch("contact", { ...data.contact, location })
               }
             />
-          ) : null}
+            {data.contact.linkedin ? (
+              <EditableField
+                aria-label="LinkedIn"
+                value={data.contact.linkedin}
+                className="block text-white/75"
+                onChange={(linkedin) =>
+                  patch("contact", { ...data.contact, linkedin })
+                }
+              />
+            ) : null}
+          </CvType>
         </div>
 
         <div className="mt-6">
@@ -650,17 +683,22 @@ function ProductCv({
           <div data-paper-section="skills" className="space-y-3">
             {data.skills.map((group, gi) => (
               <div key={gi}>
-                <p className="mb-1.5 text-[10px] font-semibold tracking-wide text-white/45 uppercase">
+                <CvType
+                  role="micro"
+                  className="mb-1.5 font-semibold tracking-wide text-white/45 uppercase"
+                >
                   {group.label}
-                </p>
+                </CvType>
                 <div className="flex flex-wrap gap-1">
                   {group.items.map((item, ii) => (
-                    <span
+                    <CvType
                       key={ii}
-                      className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] text-white/85"
+                      role="micro"
+                      as="span"
+                      className="rounded bg-white/10 px-1.5 py-0.5 text-white/85"
                     >
                       {item}
-                    </span>
+                    </CvType>
                   ))}
                 </div>
               </div>
@@ -674,32 +712,32 @@ function ProductCv({
             <div
               key={i}
               data-paper-section={`education-${i}`}
-              className="mb-3 text-xs text-white/80"
+              className="mb-3 text-white/80"
             >
-              <p className="font-semibold text-white">
+              <CvType role="label" className="text-white">
                 <EditableField
                   aria-label="School"
                   value={item.school}
                   className="text-white"
                   onChange={(school) => patchEducation(i, { school })}
                 />
-              </p>
-              <p className="text-white/60">
+              </CvType>
+              <CvType role="body" className="text-white/60">
                 <EditableField
                   aria-label="Degree"
                   value={item.degree}
                   className="text-white/60"
                   onChange={(degree) => patchEducation(i, { degree })}
                 />
-              </p>
-              <p className="text-[10px] text-white/45">
+              </CvType>
+              <CvType role="micro" className="text-white/45">
                 <EditableField
                   aria-label="Period"
                   value={item.period}
                   className="text-white/45"
                   onChange={(period) => patchEducation(i, { period })}
                 />
-              </p>
+              </CvType>
             </div>
           ))}
         </div>
@@ -708,13 +746,14 @@ function ProductCv({
       <main className="cv-template-product-main">
         <section>
           <SectionTitle>Profile</SectionTitle>
-          <EditableField
-            aria-label="Summary"
-            value={data.summary}
-            multiline
-            className="text-[13px] leading-relaxed text-foreground/90"
-            onChange={(summary) => patch("summary", summary)}
-          />
+          <CvType role="body" as="div" className="text-foreground/90">
+            <EditableField
+              aria-label="Summary"
+              value={data.summary}
+              multiline
+              onChange={(summary) => patch("summary", summary)}
+            />
+          </CvType>
         </section>
 
         <section className="mt-6">
@@ -734,7 +773,7 @@ function ProductCv({
             <SectionTitle>Selected work</SectionTitle>
             {data.projects.map((project, i) => (
               <div key={i} data-paper-section={`project-${i}`} className="mb-3">
-                <p className="text-sm font-semibold">
+                <CvType role="label">
                   <EditableField
                     aria-label="Project name"
                     value={project.name}
@@ -744,8 +783,8 @@ function ProductCv({
                       patch("projects", projects)
                     }}
                   />
-                </p>
-                <p className="mt-0.5 text-[13px] text-muted-foreground">
+                </CvType>
+                <CvType role="body" className="mt-0.5 text-muted-foreground">
                   <EditableField
                     aria-label="Project detail"
                     value={project.detail}
@@ -756,7 +795,7 @@ function ProductCv({
                       patch("projects", projects)
                     }}
                   />
-                </p>
+                </CvType>
               </div>
             ))}
           </section>
@@ -775,21 +814,21 @@ function ServiceCv({
   return (
     <div className="cv-template-root cv-template-service">
       <header className="mb-5">
-        <h1 className="text-[26px] leading-tight font-bold tracking-tight uppercase">
+        <CvType role="page-title" as="h1">
           <EditableField
             aria-label="Full name"
             sectionId="name"
             value={data.name}
             onChange={(name) => patch("name", name)}
           />
-        </h1>
-        <p className="mt-1 text-base font-medium text-foreground/70">
+        </CvType>
+        <CvType role="body" className="mt-1 text-foreground/70">
           <EditableField
             aria-label="Headline"
             value={data.headline}
             onChange={(headline) => patch("headline", headline)}
           />
-        </p>
+        </CvType>
         <ContactLine
           data={data}
           patch={patch}
@@ -813,13 +852,14 @@ function ServiceCv({
 
       <section className="mt-5">
         <SectionTitle>About</SectionTitle>
-        <EditableField
-          aria-label="Summary"
-          value={data.summary}
-          multiline
-          className="text-[13px] leading-relaxed"
-          onChange={(summary) => patch("summary", summary)}
-        />
+        <CvType role="body" as="div">
+          <EditableField
+            aria-label="Summary"
+            value={data.summary}
+            multiline
+            onChange={(summary) => patch("summary", summary)}
+          />
+        </CvType>
       </section>
 
       <div className="mt-5 grid grid-cols-2 gap-5">
@@ -829,28 +869,24 @@ function ServiceCv({
             <div
               key={i}
               data-paper-section={`education-${i}`}
-              className="mb-2 text-sm"
+              className="mb-2"
             >
-              <p className="font-semibold">{item.school}</p>
-              <p className="text-muted-foreground">{item.degree}</p>
-              <p className="text-xs text-muted-foreground">{item.period}</p>
+              <CvType role="label">{item.school}</CvType>
+              <CvType role="body" className="text-muted-foreground">
+                {item.degree}
+              </CvType>
+              <CvType role="micro" className="text-muted-foreground">
+                {item.period}
+              </CvType>
             </div>
           ))}
         </section>
         <section>
           <SectionTitle>Skills</SectionTitle>
-          <div data-paper-section="skills" className="flex flex-wrap gap-1.5">
-            {data.skills
-              .flatMap((g) => g.items)
-              .map((skill, i) => (
-                <span
-                  key={i}
-                  className="rounded-full bg-foreground px-2.5 py-0.5 text-[11px] font-medium text-background"
-                >
-                  {skill}
-                </span>
-              ))}
-          </div>
+          <SkillChips
+            items={data.skills.flatMap((g) => g.items)}
+            variant="pill"
+          />
         </section>
       </div>
     </div>
@@ -867,21 +903,21 @@ function AcademicCv({
     <div className="cv-template-root cv-template-academic">
       <header className="mb-5 flex flex-wrap items-end justify-between gap-3 border-b-2 border-foreground pb-3">
         <div>
-          <h1 className="text-2xl font-semibold">
+          <CvType role="page-title" as="h1">
             <EditableField
               aria-label="Full name"
               sectionId="name"
               value={data.name}
               onChange={(name) => patch("name", name)}
             />
-          </h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">
+          </CvType>
+          <CvType role="body" className="mt-0.5 text-muted-foreground">
             <EditableField
               aria-label="Headline"
               value={data.headline}
               onChange={(headline) => patch("headline", headline)}
             />
-          </p>
+          </CvType>
         </div>
         <ContactLine
           data={data}
@@ -900,32 +936,35 @@ function AcademicCv({
             data-paper-section={`education-${i}`}
             className="mb-3 flex gap-4"
           >
-            <p className="w-24 shrink-0 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+            <CvType
+              role="micro"
+              className="w-24 shrink-0 font-medium tracking-wide text-muted-foreground uppercase"
+            >
               <EditableField
                 aria-label="Period"
                 value={item.period}
                 onChange={(period) => patchEducation(i, { period })}
               />
-            </p>
+            </CvType>
             <div>
-              <p className="text-sm font-semibold">
+              <CvType role="label">
                 <EditableField
                   aria-label="School"
                   value={item.school}
                   onChange={(school) => patchEducation(i, { school })}
                 />
-              </p>
-              <p className="text-sm text-muted-foreground">
+              </CvType>
+              <CvType role="body" className="text-muted-foreground">
                 <EditableField
                   aria-label="Degree"
                   value={item.degree}
                   onChange={(degree) => patchEducation(i, { degree })}
                 />
-              </p>
+              </CvType>
               {item.detail ? (
-                <p className="mt-1 text-xs text-muted-foreground">
+                <CvType role="micro" className="mt-1 text-muted-foreground">
                   {item.detail}
-                </p>
+                </CvType>
               ) : null}
             </div>
           </div>
@@ -942,10 +981,10 @@ function AcademicCv({
                 data-paper-section={`project-${i}`}
                 className="rounded-lg border border-border bg-muted/20 p-3"
               >
-                <p className="text-sm font-semibold">{project.name}</p>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                <CvType role="label">{project.name}</CvType>
+                <CvType role="body" className="mt-1 text-muted-foreground">
                   {project.detail}
-                </p>
+                </CvType>
               </div>
             ))}
           </div>
@@ -966,18 +1005,10 @@ function AcademicCv({
 
       <section>
         <SectionTitle>Skills & languages</SectionTitle>
-        <div data-paper-section="skills" className="flex flex-wrap gap-2">
-          {data.skills
-            .flatMap((g) => g.items)
-            .map((skill, i) => (
-              <span
-                key={i}
-                className="rounded border border-dashed border-border px-2 py-0.5 text-xs"
-              >
-                {skill}
-              </span>
-            ))}
-        </div>
+        <SkillChips
+          items={data.skills.flatMap((g) => g.items)}
+          variant="dashed"
+        />
       </section>
     </div>
   )

@@ -21,6 +21,21 @@ export type CvTemplateMeta = {
   description: string
 }
 
+/** ADR-0010 type roles, print-scaled on CV paper (ADR-0010 exception). */
+export const CV_TYPE_ROLES = [
+  "page-title",
+  "section-title",
+  "body",
+  "label",
+  "micro",
+] as const
+
+export type CvTypeRole = (typeof CV_TYPE_ROLES)[number]
+
+export function cvTypeClass(role: CvTypeRole) {
+  return `cv-type-${role}` as const
+}
+
 export const CV_TEMPLATES: CvTemplateMeta[] = [
   {
     id: "internship",

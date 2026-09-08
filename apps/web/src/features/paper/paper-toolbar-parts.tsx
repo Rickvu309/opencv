@@ -1,4 +1,4 @@
-import type { MouseEvent, ReactNode } from "react"
+import type { ComponentProps, MouseEvent, ReactNode } from "react"
 
 import { Button } from "@workspace/ui/components/button"
 import { ButtonGroup } from "@workspace/ui/components/button-group"
@@ -16,17 +16,21 @@ import { ChevronDown, MoreHorizontal } from "lucide-react"
 export function ToolbarRoot({
   children,
   className,
+  ...rest
 }: {
   children: ReactNode
   className?: string
-}) {
+} & ComponentProps<"div">) {
   return (
     <div
+      role="toolbar"
+      data-paper-toolbar
       className={cn(
         "flex min-h-11 items-center gap-1 overflow-x-auto rounded-lg border border-border bg-background px-2 py-1.5 shadow-sm",
         "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
         className
       )}
+      {...rest}
     >
       {children}
     </div>
