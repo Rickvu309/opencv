@@ -6,6 +6,7 @@ import {
   isSettingsTab,
   type SettingsTab,
 } from "@/features/app-shell/surfaces.ts"
+import { useFirstCafeSurfaceVisit } from "@/features/home/use-first-cafe-surface-visit.ts"
 
 export function SettingsPage() {
   const search = useRouterState({
@@ -13,6 +14,7 @@ export function SettingsPage() {
   })
   const navigate = useNavigate()
   const tab: SettingsTab = isSettingsTab(search.tab) ? search.tab : "general"
+  useFirstCafeSurfaceVisit(tab === "apps" ? "email" : null)
 
   return (
     <SettingsWorkspace

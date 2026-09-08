@@ -9,10 +9,10 @@ import {
   dismissFirstCafeChecklist,
   firstCafeItemForVisit,
   firstCafeStorageKey,
-  firstCafeVisitToRecord,
   nextFirstCafeNudge,
   parseFirstCafeState,
   readFirstCafeState,
+  recordFirstCafeItem,
   recordFirstCafeVisit,
   recordFirstCafeWin,
   skipFirstCafeNudge,
@@ -111,86 +111,17 @@ describe("first-café checklist", () => {
     expect(dismissFirstCafeChecklist(hidden)).toBe(hidden)
   })
 
-  it("ignores pending or unresolved Apply flickers during signup bootstrap", () => {
-    expect(
-      firstCafeVisitToRecord({
-        userId: "user_fresh",
-        status: "pending",
-        resolvedPathname: SURFACE_PATHS.home,
-        resolvedSearch: {},
-      })
-    ).toBeNull()
-    expect(
-      firstCafeVisitToRecord({
-        userId: "user_fresh",
-        status: "idle",
-        resolvedPathname: undefined,
-        resolvedSearch: {},
-      })
-    ).toBeNull()
-    expect(
-      firstCafeVisitToRecord({
-        userId: "user_fresh",
-        status: "idle",
-        resolvedPathname: SURFACE_PATHS.home,
-        resolvedSearch: {},
-      })
-    ).toBeNull()
-    expect(
-      firstCafeVisitToRecord({
-        userId: undefined,
-        status: "idle",
-        resolvedPathname: SURFACE_PATHS.apply,
-        resolvedSearch: {},
-      })
-    ).toBeNull()
-    expect(
-      firstCafeVisitToRecord({
-        userId: "user_fresh",
-        status: "idle",
-        pathname: SURFACE_PATHS.apply,
-        resolvedPathname: SURFACE_PATHS.home,
-        resolvedSearch: {},
-      })
-    ).toBeNull()
-  })
+  it("records only the mounted surface item when sibling paths flash", () => {
+    const userId = "user_apply_flash"
+    const afterApply = recordFirstCafeItem(userId, "apply")
+    expect(afterApply.completed).toEqual(["apply"])
+    expect(readFirstCafeState(userId).completed).toEqual(["apply"])
+    expect(afterApply.completed).not.toContain("sample-cv")
+    expect(afterApply.completed).not.toContain("pitch")
 
-  it("records Apply only after a settled visit to /app/apply", () => {
-    expect(
-      firstCafeVisitToRecord({
-        userId: "user_fresh",
-        status: "idle",
-        resolvedPathname: SURFACE_PATHS.apply,
-        historyPathname: SURFACE_PATHS.apply,
-        resolvedSearch: {},
-      })
-    ).toEqual({
-      pathname: SURFACE_PATHS.apply,
-      search: {},
-    })
-  })
-
-  it("ignores Paper and Pitch store flashes while history stays on Apply", () => {
-    expect(
-      firstCafeVisitToRecord({
-        userId: "user_fresh",
-        status: "idle",
-        pathname: SURFACE_PATHS.paper,
-        resolvedPathname: SURFACE_PATHS.paper,
-        historyPathname: SURFACE_PATHS.apply,
-        resolvedSearch: {},
-      })
-    ).toBeNull()
-    expect(
-      firstCafeVisitToRecord({
-        userId: "user_fresh",
-        status: "idle",
-        pathname: SURFACE_PATHS.pitch,
-        resolvedPathname: SURFACE_PATHS.pitch,
-        historyPathname: SURFACE_PATHS.apply,
-        resolvedSearch: {},
-      })
-    ).toBeNull()
+    expect(firstCafeItemForVisit(SURFACE_PATHS.paper)).toBe("sample-cv")
+    expect(firstCafeItemForVisit(SURFACE_PATHS.pitch)).toBe("pitch")
+    expect(readFirstCafeState(userId).completed).toEqual(["apply"])
   })
 
   it("records only the Paper sample after that visit, not Apply", () => {
