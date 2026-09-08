@@ -114,7 +114,9 @@ type Props = {
 
 export function CvDocument({ data, onChange }: Props) {
   const dataRef = useRef(data)
-  dataRef.current = data
+  useEffect(() => {
+    dataRef.current = data
+  }, [data])
 
   function patch<K extends keyof CvData>(key: K, value: CvData[K]) {
     const next = { ...dataRef.current, [key]: value }

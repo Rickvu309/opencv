@@ -144,12 +144,6 @@ export function PaperEditor({
   const onChangeRef = useRef(onChange)
   const isCvRef = useRef(isCv)
   const isProofRef = useRef(isProof)
-  cvDataRef.current = cvData
-  proofDataRef.current = proofData
-  docRef.current = doc
-  onChangeRef.current = onChange
-  isCvRef.current = isCv
-  isProofRef.current = isProof
   const [conflict, setConflict] = useState(false)
   const [sectionFocus, setSectionFocus] = useState<{
     ids: string[]
@@ -160,8 +154,17 @@ export function PaperEditor({
   const [phoneDocsOpen, setPhoneDocsOpen] = useState(false)
   const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)", false)
   const isDesktop = useMediaQuery(DESKTOP_MEDIA_QUERY, true)
-  dirtyRef.current = dirty
   const docsExpanded = isDesktop ? docsPanel === "expanded" : phoneDocsOpen
+
+  useEffect(() => {
+    cvDataRef.current = cvData
+    proofDataRef.current = proofData
+    docRef.current = doc
+    onChangeRef.current = onChange
+    isCvRef.current = isCv
+    isProofRef.current = isProof
+    dirtyRef.current = dirty
+  })
 
   function toggleDocsPanel() {
     if (!isDesktop) {
@@ -331,8 +334,6 @@ export function PaperEditor({
       if (!dirtyRef.current) return
       persistOpenDoc()
     }
-    // Flush the latest CV/Proof/Letter snapshot when leaving Paper (Home).
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- unmount only
   }, [])
 
   function handleRichInput() {
