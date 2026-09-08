@@ -4,6 +4,7 @@ import {
   STARTER_THREAD_TITLE,
   type ApplyCard,
   type PaperDoc,
+  type PitchDoc,
   type ThreadDetail,
   type ThreadListItem,
 } from "@workspace/domain"
@@ -47,7 +48,7 @@ describe("seedStarterWorkspace", () => {
     await client.close()
   })
 
-  it("writes one CV, cards across Stages, and one Coach Thread", async () => {
+  it("writes one CV, cards across Stages, one Coach Thread, and one Pitch", async () => {
     const now = new Date("2026-08-25T12:00:00.000Z")
     const first = await seedStarterWorkspace(db, "starter-user", now)
 
@@ -55,6 +56,7 @@ describe("seedStarterWorkspace", () => {
     expect(first.paperDocId).toMatch(/^[0-9a-f-]{36}$/)
     expect(first.applyCardIds).toHaveLength(4)
     expect(first.threadId).toMatch(/^[0-9a-f-]{36}$/)
+    expect(first.pitchDocId).toMatch(/^[0-9a-f-]{36}$/)
 
     const second = await seedStarterWorkspace(db, "starter-user", now)
     expect(second).toEqual({
@@ -62,6 +64,7 @@ describe("seedStarterWorkspace", () => {
       paperDocId: null,
       applyCardIds: [],
       threadId: null,
+      pitchDocId: null,
     })
   })
 })
@@ -127,6 +130,13 @@ describe("signup seeds the starter workspace", () => {
     expect(detail.data.messages[0]!.role).toBe("coach")
     expect(detail.data.messages[0]!.text).toContain("haven't run any Commands")
     expect(detail.data.messages[0]!.text).not.toMatch(PERSONA)
+
+    const pitchRes = await app.request("/api/pitch", { headers })
+    expect(pitchRes.status).toBe(200)
+    const pitch = (await pitchRes.json()) as { ok: true; data: PitchDoc }
+    expect(pitch.data.kind).toBe("pitch")
+    expect(pitch.data.contentVersion).toBe(1)
+    expect(JSON.stringify(pitch.data)).not.toMatch(PERSONA)
   })
 
   it("lets the User wipe the sample CV through the command door", async () => {

@@ -40,6 +40,13 @@ export const PROFILE_COMMANDS = {
 export type ProfileCommandName =
   (typeof PROFILE_COMMANDS)[keyof typeof PROFILE_COMMANDS]
 
+export const PITCH_COMMANDS = {
+  update: "pitch.update",
+} as const
+
+export type PitchCommandName =
+  (typeof PITCH_COMMANDS)[keyof typeof PITCH_COMMANDS]
+
 /**
  * Coach-allowed but excluded from the tool surface (ADR-0007): the stream
  * is the Coach's voice, and this Command means the User posted a message.

@@ -21,8 +21,8 @@ describe("pitch GitHub mock", () => {
     expect(days.some((day) => day.count > 0)).toBe(true)
   })
 
-  it("uses the placeholder User handle, not the demo persona", () => {
-    const mock = getMockGithubProfile()
+  it("uses the session User handle, not the demo persona", () => {
+    const mock = getMockGithubProfile(SAMPLE_AUTHOR_NAME)
     const handle = pitchHandle(SAMPLE_AUTHOR_NAME)
 
     expect(mock.username).toBe(`${handle}-uit`)

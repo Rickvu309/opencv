@@ -13,6 +13,7 @@ const migratedTables = [
   "apply_cards",
   "coach_usage",
   "paper_docs",
+  "pitch_docs",
   "session",
   "thread_messages",
   "threads",
@@ -139,6 +140,35 @@ describe("committed migrations", () => {
           and rc.constraint_name = 'threads_focus_doc_id_paper_docs_id_fk'
       `)
       expect(focusFk.rows).toEqual([{ delete_rule: "SET NULL" }])
+
+      const pitchColumns = await db.execute<{ column_name: string }>(sql`
+        select column_name
+        from information_schema.columns
+        where table_schema = 'openpath_app'
+          and table_name = 'pitch_docs'
+        order by column_name
+      `)
+      expect(pitchColumns.rows.map((row) => row.column_name)).toEqual([
+        "content",
+        "content_kind",
+        "content_version",
+        "created_at",
+        "id",
+        "updated_at",
+        "user_id",
+      ])
+
+      const pitchIndexes = await db.execute<{ indexname: string }>(sql`
+        select indexname
+        from pg_indexes
+        where schemaname = 'openpath_app'
+          and tablename = 'pitch_docs'
+        order by indexname
+      `)
+      expect(pitchIndexes.rows.map((row) => row.indexname)).toEqual([
+        "pitch_docs_pkey",
+        "pitch_docs_user_id_uidx",
+      ])
     } finally {
       await client.close()
     }

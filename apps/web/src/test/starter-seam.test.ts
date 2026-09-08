@@ -14,11 +14,12 @@ function productionSourceFiles(dir: string) {
 }
 
 describe("production seed removal", () => {
-  it("keeps Paper, Apply, and Home free of client-side seed arrays", () => {
+  it("keeps Paper, Apply, Home, and Pitch free of client-side seed arrays", () => {
     const surfaces = [
       path.join(srcDir, "features/paper"),
       path.join(srcDir, "features/apply"),
       path.join(srcDir, "features/home"),
+      path.join(srcDir, "features/pitch"),
     ]
 
     for (const dir of surfaces) {
@@ -31,7 +32,7 @@ describe("production seed removal", () => {
     }
   })
 
-  it("does not load a client seed module on Paper or Apply", () => {
+  it("does not load a client seed module on Paper, Apply, or Pitch", () => {
     const paper = readFileSync(
       path.join(srcDir, "features/paper/paper-workspace.tsx"),
       "utf8"
@@ -40,8 +41,13 @@ describe("production seed removal", () => {
       path.join(srcDir, "features/apply/apply-workspace.tsx"),
       "utf8"
     )
+    const pitch = readFileSync(
+      path.join(srcDir, "features/pitch/pitch-workspace.tsx"),
+      "utf8"
+    )
 
     expect(paper).not.toMatch(/features\/seed/)
     expect(apply).not.toMatch(/features\/seed/)
+    expect(pitch).not.toMatch(/features\/seed/)
   })
 })

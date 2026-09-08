@@ -1,6 +1,6 @@
 /**
- * Neutral sample author for Pitch seed and Paper fixture copy. Not identity —
- * Settings → Account reads the session. Paper persistence lives on the server.
+ * Test / Paper-fixture author only. Not identity — Settings → Account and
+ * Pitch display read the session User. Pitch persistence lives on the server.
  */
 export type SampleAuthor = {
   name: string

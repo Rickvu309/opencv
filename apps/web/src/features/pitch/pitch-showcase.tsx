@@ -33,13 +33,13 @@ import {
 import {
   paperDocPitchMeta,
   pitchToneClass,
-  PITCH_WORK_DOCS,
   type PitchAchievement,
   type PitchExperience,
   type PitchFile,
   type PitchGalleryItem,
   type PitchLink,
   type PitchProfile,
+  type PitchWorkDoc,
 } from "@/features/pitch/pitch-types.ts"
 
 function SectionShell({
@@ -297,14 +297,16 @@ export function ExperienceSection({
 
 export function WorkSection({
   files,
+  workDocs,
   editing,
   onHide,
 }: {
   files: PitchFile[]
+  workDocs: PitchWorkDoc[]
   editing?: boolean
   onHide?: () => void
 }) {
-  const docs = PITCH_WORK_DOCS.filter((d) => d.type !== "letter").slice(0, 3)
+  const docs = workDocs.filter((d) => d.type !== "letter").slice(0, 3)
 
   return (
     <SectionShell title="Work & documents" editing={editing} onHide={onHide}>
@@ -379,7 +381,7 @@ export function GithubSection({
   editing?: boolean
   onHide?: () => void
 }) {
-  const mock = getMockGithubProfile()
+  const mock = getMockGithubProfile(profile.name, profile.avatar)
 
   return (
     <SectionShell title="GitHub" editing={editing} onHide={onHide}>

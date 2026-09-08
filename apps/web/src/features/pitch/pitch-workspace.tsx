@@ -5,8 +5,10 @@
 import { useState } from "react"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
+import type { PitchBlockKind, PitchDocument } from "@workspace/domain"
 import { Check, Copy, EyeOff, Globe, Pencil } from "lucide-react"
 
+import { ErrorBanner } from "@/components/error-banner.tsx"
 import { WorkspaceHeader } from "@/components/workspace-header.tsx"
 import { PitchEditToolbar } from "@/features/pitch/pitch-edit-toolbar.tsx"
 import {
@@ -26,49 +28,61 @@ import {
 } from "@/features/pitch/pitch-stories.tsx"
 import type { StoryViewerState } from "@/features/pitch/pitch-story-utils.ts"
 import {
-  getPitchBento,
-  getPitchFiles,
-  getPitchLinks,
-  getPitchProfile,
-  PITCH_ACHIEVEMENTS,
-  PITCH_BLOCKS,
-  PITCH_EXPERIENCE,
-  PITCH_GALLERY,
-  PITCH_STORY_HIGHLIGHTS,
+  overlayPitchBento,
+  overlayPitchLinks,
+  pitchProfileFromIdentity,
   type PitchBlock,
-  type PitchBlockKind,
+  type PitchIdentity,
   type PitchProfile,
 } from "@/features/pitch/pitch-types.ts"
+import { usePitch } from "@/features/pitch/use-pitch.ts"
+import { authClient } from "@/lib/auth-client.ts"
 
 export function PitchWorkspace() {
+  const { data: session } = authClient.useSession()
+  const pitch = usePitch()
   const [mode, setMode] = useState<"preview" | "edit">("preview")
-  const [blocks, setBlocks] = useState(PITCH_BLOCKS)
-  const [profile, setProfile] = useState(getPitchProfile)
   const [copied, setCopied] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
   const [storyView, setStoryView] = useState<StoryViewerState>(null)
 
+  const identity: PitchIdentity = {
+    name: session?.user.name?.trim() || "You",
+    email: session?.user.email ?? "",
+    image: session?.user.image,
+  }
+  const content = pitch.content
+  const profile = pitchProfileFromIdentity(identity, content)
   const editing = mode === "edit"
-  const visible = blocks.filter((b) => !b.hidden)
-  const bento = getPitchBento(profile)
-  const files = getPitchFiles(profile)
-  const links = getPitchLinks(profile)
+  const visible = content.blocks.filter((b) => !b.hidden)
+  const bento = overlayPitchBento(content.bento, identity, profile.github.username)
+  const links = overlayPitchLinks(content.links, identity, profile.github.username)
 
   function hideBlock(id: string) {
-    setBlocks((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, hidden: true } : b))
-    )
+    pitch.persist((current) => ({
+      ...current,
+      blocks: current.blocks.map((b) =>
+        b.id === id ? { ...b, hidden: true } : b
+      ),
+    }))
   }
 
   function addBlock(kind: PitchBlockKind) {
-    const exists = blocks.some((b) => b.kind === kind && !b.hidden)
-    if (exists) {
-      setBlocks((prev) =>
-        prev.map((b) => (b.kind === kind ? { ...b, hidden: false } : b))
-      )
-    } else {
-      setBlocks((prev) => [...prev, { id: `b-${kind}-${Date.now()}`, kind }])
-    }
+    pitch.persist((current) => {
+      const exists = current.blocks.some((b) => b.kind === kind && !b.hidden)
+      if (exists) {
+        return {
+          ...current,
+          blocks: current.blocks.map((b) =>
+            b.kind === kind ? { ...b, hidden: false } : b
+          ),
+        }
+      }
+      return {
+        ...current,
+        blocks: [...current.blocks, { id: `b-${kind}-${Date.now()}`, kind }],
+      }
+    })
     setAddOpen(false)
   }
 
@@ -77,11 +91,11 @@ export function PitchWorkspace() {
   }
 
   function publish() {
-    setProfile((p) => ({ ...p, published: true }))
+    pitch.persist((current) => ({ ...current, published: true }))
   }
 
   function unpublish() {
-    setProfile((p) => ({ ...p, published: false }))
+    pitch.persist((current) => ({ ...current, published: false }))
   }
 
   async function copyLink() {
@@ -151,7 +165,12 @@ export function PitchWorkspace() {
         </div>
       </WorkspaceHeader>
 
+      {pitch.error ? <ErrorBanner>{pitch.error}</ErrorBanner> : null}
+
       <div className="min-h-0 flex-1 overflow-auto">
+        {pitch.isLoading ? (
+          <p className="px-5 py-8 text-sm text-muted-foreground">Loading Pitch…</p>
+        ) : (
         <div
           className={cn(
             "mx-auto max-w-2xl px-4 py-8 sm:px-6",
@@ -171,11 +190,13 @@ export function PitchWorkspace() {
           <PitchProfileHeader
             profile={profile}
             editing={editing}
-            onStatusChange={(status) => setProfile((p) => ({ ...p, status }))}
+            onStatusChange={(status) =>
+              pitch.persist((current) => ({ ...current, status }))
+            }
           />
 
           <StoryHighlightsRow
-            highlights={PITCH_STORY_HIGHLIGHTS}
+            highlights={content.storyHighlights}
             editing={editing}
             onOpen={openStory}
           />
@@ -187,16 +208,19 @@ export function PitchWorkspace() {
                 block={block}
                 profile={profile}
                 editing={editing}
+                content={content}
                 bento={bento}
-                files={files}
                 links={links}
                 onHide={() => hideBlock(block.id)}
-                onAboutChange={(about) => setProfile((p) => ({ ...p, about }))}
+                onAboutChange={(about) =>
+                  pitch.persist((current) => ({ ...current, about }))
+                }
                 onOpenStory={openStory}
               />
             ))}
           </div>
         </div>
+        )}
       </div>
 
       {editing ? (
@@ -215,7 +239,7 @@ export function PitchWorkspace() {
       ) : null}
 
       <PitchStoryViewer
-        highlights={PITCH_STORY_HIGHLIGHTS}
+        highlights={content.storyHighlights}
         profile={profile}
         state={storyView}
         onClose={() => setStoryView(null)}
@@ -229,8 +253,8 @@ function PitchSection({
   block,
   profile,
   editing,
+  content,
   bento,
-  files,
   links,
   onHide,
   onAboutChange,
@@ -239,9 +263,9 @@ function PitchSection({
   block: PitchBlock
   profile: PitchProfile
   editing: boolean
-  bento: ReturnType<typeof getPitchBento>
-  files: ReturnType<typeof getPitchFiles>
-  links: ReturnType<typeof getPitchLinks>
+  content: PitchDocument
+  bento: ReturnType<typeof overlayPitchBento>
+  links: ReturnType<typeof overlayPitchLinks>
   onHide: () => void
   onAboutChange: (text: string) => void
   onOpenStory: (highlightId: string) => void
@@ -268,7 +292,7 @@ function PitchSection({
     case "achievements":
       return (
         <AchievementsSection
-          items={PITCH_ACHIEVEMENTS}
+          items={content.achievements}
           editing={editing}
           onHide={onHide}
         />
@@ -276,13 +300,20 @@ function PitchSection({
     case "experience":
       return (
         <ExperienceSection
-          items={PITCH_EXPERIENCE}
+          items={content.experience}
           editing={editing}
           onHide={onHide}
         />
       )
     case "work":
-      return <WorkSection files={files} editing={editing} onHide={onHide} />
+      return (
+        <WorkSection
+          files={content.files}
+          workDocs={content.workDocs}
+          editing={editing}
+          onHide={onHide}
+        />
+      )
     case "github":
       return (
         <GithubSection profile={profile} editing={editing} onHide={onHide} />
@@ -292,7 +323,7 @@ function PitchSection({
     case "gallery":
       return (
         <GallerySection
-          items={PITCH_GALLERY}
+          items={content.gallery}
           editing={editing}
           onHide={onHide}
         />

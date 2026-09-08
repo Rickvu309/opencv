@@ -10,6 +10,7 @@ import { authUnavailableEnvelope, unauthorizedEnvelope } from "./envelope.js"
 import { isAllowedOrigin } from "./origin.js"
 import { createApplyReadRoutes } from "./apply/http.js"
 import { createPaperReadRoutes } from "./paper/http.js"
+import { createPitchReadRoutes } from "./pitch/http.js"
 import { createProfileReadRoutes } from "./profile/http.js"
 import { createThreadReadRoutes } from "./threads/http.js"
 
@@ -126,6 +127,7 @@ export function createApp({
   app.route("/api/paper", createPaperReadRoutes({ auth, db }))
   app.route("/api/apply", createApplyReadRoutes({ auth, db }))
   app.route("/api/profile", createProfileReadRoutes({ auth, db }))
+  app.route("/api/pitch", createPitchReadRoutes({ auth, db }))
 
   return app
 }

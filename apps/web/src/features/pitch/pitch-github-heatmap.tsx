@@ -4,7 +4,7 @@
 import { useLayoutEffect, useMemo, useRef, useState } from "react"
 import { cn } from "@workspace/ui/lib/utils"
 
-import type { GithubContribution } from "@/features/pitch/pitch-types.ts"
+import type { GithubContribution } from "@/features/pitch/pitch-github-mock.ts"
 
 /** Documented exception: GitHub heatmap ramp — tokenized as its own variables. */
 const LEVEL_CLASS = [

@@ -7,6 +7,7 @@ import { resetUnauthorizedHandler } from "@/lib/api.ts"
 import { resetMockSession } from "./auth-client-mock.ts"
 import { resetApplyApiMock } from "./apply-api-mock.ts"
 import { resetPaperApiMock } from "./paper-api-mock.ts"
+import { resetPitchApiMock } from "./pitch-api-mock.ts"
 import { resetProfileApiMock } from "./profile-api-mock.ts"
 import { resetThreadApiMock } from "./threads-api-mock.ts"
 
@@ -66,6 +67,7 @@ beforeEach(() => {
   resetUnauthorizedHandler()
   resetThreadApiMock()
   resetPaperApiMock()
+  resetPitchApiMock()
   resetApplyApiMock()
   resetProfileApiMock()
 })

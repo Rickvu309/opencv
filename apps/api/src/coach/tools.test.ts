@@ -5,9 +5,11 @@ import {
   ERROR_CODES,
   PAPER_COMMANDS,
   PAPER_CONTENT_VERSION,
+  PITCH_COMMANDS,
   PROFILE_COMMANDS,
   THREAD_COMMANDS,
   emptyLetterDocument,
+  emptyPitchDocument,
   type ApplyCard,
   type CommandEnvelope,
   type PaperDoc,
@@ -52,6 +54,7 @@ const EXPECTED_COACH_TOOLS = [
   "paper_renameDoc",
   "paper_setStatus",
   "paper_updateContent",
+  "pitch_update",
   "profile_get",
   "threads_create",
   "threads_rename",
@@ -98,12 +101,12 @@ describe("coach tool surface", () => {
     await client.close()
   })
 
-  it("assembles the exact 11-mutation + read surface", () => {
+  it("assembles the exact 12-mutation + read surface", () => {
     const tools = assembleCoachTools({ db, userId: ownerId })
     const names = Object.keys(tools).sort()
 
     expect(names).toEqual([...EXPECTED_COACH_TOOLS])
-    expect(names).toHaveLength(15)
+    expect(names).toHaveLength(16)
 
     expect(names).not.toContain(commandToToolName(COACH_VOICE_COMMAND))
     expect(names).not.toContain(commandToToolName(THREAD_COMMANDS.postMessage))
@@ -384,7 +387,7 @@ describe("coach-actor command sweep", () => {
     })
 
     const mutationTools = commands.filter(isCoachMutationCommand)
-    expect(mutationTools).toHaveLength(11)
+    expect(mutationTools).toHaveLength(12)
     expect(
       mutationTools.map((command) => command.name)
     ).not.toContain(COACH_VOICE_COMMAND)
@@ -454,6 +457,11 @@ describe("coach-actor command sweep", () => {
           return { cardId: card.id }
         case PROFILE_COMMANDS.setCoachMode:
           return { mode: "light" }
+        case PITCH_COMMANDS.update:
+          return {
+            content: emptyPitchDocument(),
+            contentVersion: 1,
+          }
         default:
           throw new Error(`missing sweep input for ${name}`)
       }
@@ -462,7 +470,7 @@ describe("coach-actor command sweep", () => {
     const allowed = commandRegistry.list().filter((command) => command.coachAllowed)
     const forbidden = commandRegistry.list().filter((command) => !command.coachAllowed)
 
-    expect(allowed.length).toBe(12)
+    expect(allowed.length).toBe(13)
     expect(forbidden.map((command) => command.name).sort()).toEqual([
       APPLY_COMMANDS.deleteCard,
       PAPER_COMMANDS.deleteDoc,
