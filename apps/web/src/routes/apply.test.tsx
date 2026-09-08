@@ -432,6 +432,92 @@ describe("Apply workspace", () => {
     expect(open).not.toHaveBeenCalled()
   })
 
+  it("scans pasted JD and opens an editable drawer", async () => {
+    renderApply()
+    await expectApplyLive()
+
+    fireEvent.click(screen.getByRole("button", { name: "Add job" }))
+    const dialog = await screen.findByRole("dialog", { name: "Add job" })
+    fireEvent.change(within(dialog).getByLabelText("Job text"), {
+      target: {
+        value:
+          "Local startup is hiring an Associate PM intern in Hanoi. Apply by 12 September.",
+      },
+    })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Scan" }))
+    expect(
+      await within(dialog).findByText("Filled Associate PM intern at Local startup.")
+    ).toBeInTheDocument()
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Add job" }))
+    const panel = await screen.findByRole("complementary", {
+      name: "Job detail",
+    })
+    expect(
+      within(panel).getByDisplayValue("Associate PM intern")
+    ).toBeInTheDocument()
+    expect(within(panel).getByDisplayValue("Local startup")).toBeInTheDocument()
+    expect(within(panel).getByDisplayValue("Hanoi")).toBeInTheDocument()
+
+    fireEvent.change(within(panel).getByLabelText("Job title"), {
+      target: { value: "Associate PM intern (edited)" },
+    })
+    fireEvent.blur(within(panel).getByLabelText("Job title"))
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", {
+          name: /Associate PM intern \(edited\) at Local startup/,
+        })
+      ).toBeInTheDocument()
+    })
+  })
+
+  it("scans a posting URL and autofills the drawer", async () => {
+    renderApply()
+    await expectApplyLive()
+
+    fireEvent.click(screen.getByRole("button", { name: "Add job" }))
+    const dialog = await screen.findByRole("dialog", { name: "Add job" })
+    fireEvent.change(within(dialog).getByLabelText("Job posting URL"), {
+      target: { value: "careers.example.com/pm-intern" },
+    })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Scan" }))
+    expect(
+      await within(dialog).findByText("Filled PM intern at Example.")
+    ).toBeInTheDocument()
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Add job" }))
+    const panel = await screen.findByRole("complementary", {
+      name: "Job detail",
+    })
+    expect(within(panel).getByDisplayValue("PM intern")).toBeInTheDocument()
+    expect(within(panel).getByDisplayValue("Example")).toBeInTheDocument()
+    expect(
+      within(panel).getByDisplayValue("https://careers.example.com/pm-intern")
+    ).toBeInTheDocument()
+    expect(
+      within(panel).getByRole("button", { name: "Scan posting" })
+    ).toBeEnabled()
+  })
+
+  it("honest-fails scan when the post has no title or company", async () => {
+    renderApply()
+    await expectApplyLive()
+
+    fireEvent.click(screen.getByRole("button", { name: "Add job" }))
+    const dialog = await screen.findByRole("dialog", { name: "Add job" })
+    fireEvent.change(within(dialog).getByLabelText("Job text"), {
+      target: { value: "Come work with us. Nice people." },
+    })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Scan" }))
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+      "Couldn't find a title or company in that post."
+    )
+    expect(
+      screen.queryByRole("complementary", { name: "Job detail" })
+    ).not.toBeInTheDocument()
+  })
+
   it("rolls a failed move back and shows the real error message", async () => {
     const { failNextApplyCommand } = await import("@/test/apply-api-mock.ts")
     const { APPLY_COMMANDS } = await import("@workspace/domain")

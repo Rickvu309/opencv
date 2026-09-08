@@ -1,12 +1,19 @@
 import {
   APPLY_COMMANDS,
+  APPLY_SCAN_NOT_FOUND,
+  APPLY_SCAN_UNAVAILABLE,
   ERROR_CODES,
   PAPER_COMMANDS,
   type ApplyCard,
+  type ApplyScanResult,
   type PaperDoc,
 } from "@workspace/domain"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
+import {
+  createDemoCoachRuntime,
+  withScanJobPosting,
+} from "../coach/fake.js"
 import {
   authHeaders,
   createMigratedTestDb,
@@ -238,5 +245,131 @@ describe("apply API", () => {
       cardId,
     })
     expect(mutateB.status).toBe(403)
+  })
+})
+
+describe("POST /api/apply/scan", () => {
+  let client: Awaited<ReturnType<typeof createMigratedTestDb>>["client"]
+  let cookie: string
+  let app: ReturnType<typeof createTestApp>
+
+  beforeAll(async () => {
+    const migrated = await createMigratedTestDb()
+    client = migrated.client
+    app = createTestApp(migrated.db, {
+      coach: withScanJobPosting(createDemoCoachRuntime(), async ({ postingText }) =>
+        JSON.stringify({
+          title: postingText.includes("Associate PM intern")
+            ? "Associate PM intern"
+            : null,
+          company: postingText.includes("Local startup")
+            ? "Local startup"
+            : null,
+          note: postingText.includes("Hanoi") ? "Hanoi" : null,
+        })
+      ),
+      fetchJobPosting: async () => ({
+        ok: true,
+        text: "<p>Local startup is hiring an Associate PM intern in Hanoi.</p>",
+      }),
+    })
+    cookie = (await signUp(app, userA)).cookie
+  }, 60_000)
+
+  afterAll(async () => {
+    await client.close()
+  })
+
+  it("requires a session", async () => {
+    const res = await app.request("/api/apply/scan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jdText: "Role at Company" }),
+    })
+    expect(res.status).toBe(401)
+  })
+
+  it("scans pasted JD and does not write an Apply card", async () => {
+    const before = await json<{ ok: true; data: ApplyCard[] }>(
+      await app.request("/api/apply", { headers: authHeaders(cookie) })
+    )
+    const res = await app.request("/api/apply/scan", {
+      method: "POST",
+      headers: authHeaders(cookie),
+      body: JSON.stringify({
+        jdText: "Local startup is hiring an Associate PM intern in Hanoi.",
+      }),
+    })
+    expect(res.status).toBe(200)
+    const body = await json<{ ok: true; data: ApplyScanResult }>(res)
+    expect(body.data).toEqual({
+      title: "Associate PM intern",
+      company: "Local startup",
+      note: "Hanoi",
+    })
+
+    const after = await json<{ ok: true; data: ApplyCard[] }>(
+      await app.request("/api/apply", { headers: authHeaders(cookie) })
+    )
+    expect(after.data).toHaveLength(before.data.length)
+  })
+
+  it("scans a posting URL through the injected fetch", async () => {
+    const res = await app.request("/api/apply/scan", {
+      method: "POST",
+      headers: authHeaders(cookie),
+      body: JSON.stringify({ jobUrl: "https://careers.example.com/pm-intern" }),
+    })
+    expect(res.status).toBe(200)
+    const body = await json<{ ok: true; data: ApplyScanResult }>(res)
+    expect(body.data.title).toBe("Associate PM intern")
+    expect(body.data.company).toBe("Local startup")
+  })
+
+  it("honest-fails when the post has no title or company", async () => {
+    const res = await app.request("/api/apply/scan", {
+      method: "POST",
+      headers: authHeaders(cookie),
+      body: JSON.stringify({ jdText: "Come work with us. Nice people." }),
+    })
+    expect(res.status).toBe(400)
+    await expect(res.json()).resolves.toEqual({
+      ok: false,
+      error: {
+        code: ERROR_CODES.VALIDATION_ERROR,
+        message: APPLY_SCAN_NOT_FOUND,
+      },
+    })
+  })
+})
+
+describe("POST /api/apply/scan without a scan runtime", () => {
+  it("honest-fails instead of inventing fields", async () => {
+    const migrated = await createMigratedTestDb()
+    try {
+      const localApp = createTestApp(migrated.db)
+      const { cookie } = await signUp(localApp, {
+        name: "Mai",
+        email: "mai-apply-scan@example.com",
+        password: "correct-horse-battery",
+      })
+      const res = await localApp.request("/api/apply/scan", {
+        method: "POST",
+        headers: authHeaders(cookie),
+        body: JSON.stringify({
+          jdText: "Local startup is hiring an Associate PM intern.",
+        }),
+      })
+      expect(res.status).toBe(503)
+      await expect(res.json()).resolves.toEqual({
+        ok: false,
+        error: {
+          code: ERROR_CODES.COACH_UNAVAILABLE,
+          message: APPLY_SCAN_UNAVAILABLE,
+        },
+      })
+    } finally {
+      await migrated.client.close()
+    }
   })
 })

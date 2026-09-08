@@ -9,6 +9,7 @@ import { createCommandRoutes } from "./commands/http.js"
 import { authUnavailableEnvelope, unauthorizedEnvelope } from "./envelope.js"
 import { isAllowedOrigin } from "./origin.js"
 import { createApplyReadRoutes } from "./apply/http.js"
+import type { FetchJobPosting } from "./apply/fetch-posting.js"
 import { createPaperReadRoutes } from "./paper/http.js"
 import { createPitchReadRoutes } from "./pitch/http.js"
 import { createProfileReadRoutes } from "./profile/http.js"
@@ -47,6 +48,8 @@ export type AppConfig = {
   coachDailyTurnLimits?: Partial<Record<CoachMode, number>>
   /** Test override; production uses `COACH_SSE_HEARTBEAT_MS` (15s). */
   coachSseHeartbeatMs?: number
+  /** Test override for Apply URL scan fetch (QVE-218). */
+  fetchJobPosting?: FetchJobPosting
 }
 
 export function createApp({
@@ -61,6 +64,7 @@ export function createApp({
   coachModels,
   coachDailyTurnLimits,
   coachSseHeartbeatMs,
+  fetchJobPosting,
 }: AppConfig) {
   const app = new Hono()
 
@@ -125,7 +129,10 @@ export function createApp({
     })
   )
   app.route("/api/paper", createPaperReadRoutes({ auth, db }))
-  app.route("/api/apply", createApplyReadRoutes({ auth, db }))
+  app.route(
+    "/api/apply",
+    createApplyReadRoutes({ auth, db, coach, fetchJobPosting })
+  )
   app.route("/api/profile", createProfileReadRoutes({ auth, db }))
   app.route("/api/pitch", createPitchReadRoutes({ auth, db }))
 
