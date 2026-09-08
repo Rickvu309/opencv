@@ -29,6 +29,8 @@ import { cn } from "@workspace/ui/lib/utils"
 import { ExternalLink, Link2, Star, Trash2, X } from "lucide-react"
 
 import { ErrorBanner } from "@/components/error-banner.tsx"
+import { scanApplyJob } from "@/features/apply/apply-api.ts"
+import { ApiError } from "@/lib/api-error.ts"
 import {
   formatApplyUpdated,
   STAGES,
@@ -155,7 +157,7 @@ export function JobDetailPanel({
         ) : null}
 
         <JobDetailFields
-          key={`${card.id}:${revertKey}`}
+          key={`${card.id}:${revertKey}:${card.title}:${card.company}:${card.jobUrl}`}
           card={card}
           onPatch={onPatch}
         />
@@ -201,7 +203,7 @@ export function JobDetailPanel({
         </div>
 
         <JobDetailNote
-          key={`${card.id}:note:${revertKey}`}
+          key={`${card.id}:note:${revertKey}:${card.note}`}
           note={card.note}
           onCommit={(next) => onPatch({ note: next })}
         />
@@ -225,6 +227,9 @@ function JobDetailFields({
   const [company, setCompany] = useState(card.company)
   const [jobUrl, setJobUrl] = useState(publicApplyJobUrl(card.jobUrl) ?? "")
   const [jobUrlError, setJobUrlError] = useState<string | null>(null)
+  const [scanning, setScanning] = useState(false)
+  const [scanError, setScanError] = useState<string | null>(null)
+  const postingUrl = openableApplyJobUrl(jobUrl)
 
   function commitTitle() {
     const next = title.trim()
@@ -255,6 +260,36 @@ function JobDetailFields({
     setJobUrl(parsed.jobUrl ?? "")
     if (parsed.jobUrl !== (card.jobUrl ?? null)) {
       onPatch({ jobUrl: parsed.jobUrl })
+    }
+  }
+
+  async function scanPosting() {
+    const href = openableApplyJobUrl(jobUrl)
+    if (!href) {
+      setScanError(APPLY_JOB_URL_INVALID)
+      return
+    }
+    setScanning(true)
+    setScanError(null)
+    try {
+      const result = await scanApplyJob({ jobUrl: href })
+      const patch: Parameters<Props["onPatch"]>[0] = {}
+      if (result.title) patch.title = result.title
+      if (result.company) patch.company = result.company
+      if (result.note && !card.note.trim()) patch.note = result.note
+      if (result.title) setTitle(result.title)
+      if (result.company) setCompany(result.company)
+      if (Object.keys(patch).length > 0) onPatch(patch)
+    } catch (error) {
+      setScanError(
+        error instanceof ApiError
+          ? error.message
+          : error instanceof Error
+            ? error.message
+            : "Couldn't scan that post."
+      )
+    } finally {
+      setScanning(false)
     }
   }
 
@@ -304,6 +339,23 @@ function JobDetailFields({
         {jobUrlError ? (
           <ErrorBanner variant="inline" className="mt-1">
             {jobUrlError}
+          </ErrorBanner>
+        ) : null}
+        {postingUrl ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-2 h-8"
+            disabled={scanning}
+            onClick={() => void scanPosting()}
+          >
+            {scanning ? "Scanning…" : "Scan posting"}
+          </Button>
+        ) : null}
+        {scanError ? (
+          <ErrorBanner variant="inline" className="mt-2">
+            {scanError}
           </ErrorBanner>
         ) : null}
       </div>

@@ -1,5 +1,6 @@
 import { createOpenRouter } from "@openrouter/ai-sdk-provider"
 import {
+  APPLY_SCAN_SYSTEM_PROMPT,
   COACH_STEP_CAP,
   coachProviderErrorMessage,
   DEFAULT_COACH_MAX_OUTPUT_TOKENS,
@@ -8,6 +9,7 @@ import {
   ERROR_CODES,
   errorEnvelope,
   resolveCoachModel,
+  type ApplyScanExtractInput,
   type CoachRuntime,
   type CoachTitleInput,
   type CoachTurnInput,
@@ -87,6 +89,15 @@ export function createOpenRouterCoachRuntime({
         system: THREAD_TITLE_SYSTEM_PROMPT,
         prompt: threadTitleUserPrompt(userText, coachText),
         maxOutputTokens: 64,
+      })
+      return result.text
+    },
+    async scanJobPosting({ postingText }: ApplyScanExtractInput) {
+      const result = await generateText({
+        model: openrouter(resolveCoachModel("free")),
+        system: APPLY_SCAN_SYSTEM_PROMPT,
+        prompt: postingText,
+        maxOutputTokens: 200,
       })
       return result.text
     },

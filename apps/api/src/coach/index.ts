@@ -15,6 +15,8 @@ export {
   createScriptedCoachRuntime,
   createThrowingCoachRuntime,
   DEMO_COACH_SCRIPT,
+  withScanJobPosting,
+  withTitleGenerator,
 } from "./fake.js"
 export { createCoachRoutes } from "./http.js"
 export {

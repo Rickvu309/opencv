@@ -25,7 +25,10 @@ import { ComingSoon } from "@/components/coming-soon.tsx"
 import { comingSoonLabel } from "@/components/coming-soon-label.ts"
 import { ErrorBanner } from "@/components/error-banner.tsx"
 import { WorkspaceHeader } from "@/components/workspace-header.tsx"
-import { AddJobDialog } from "@/features/apply/apply-add-job-dialog.tsx"
+import {
+  AddJobDialog,
+  type AddJobDraft,
+} from "@/features/apply/apply-add-job-dialog.tsx"
 import { ApplyCalendar } from "@/features/apply/apply-calendar.tsx"
 import {
   allowCardDrop,
@@ -99,8 +102,13 @@ export function ApplyWorkspace() {
     setSelectedId((current) => (current === id ? null : id))
   }
 
-  async function addJob(jobUrl: string | null) {
-    const created = await apply.createCard(jobUrl ? { jobUrl } : {})
+  async function addJob(draft: AddJobDraft) {
+    const created = await apply.createCard({
+      ...(draft.jobUrl ? { jobUrl: draft.jobUrl } : {}),
+      ...(draft.title ? { title: draft.title } : {}),
+      ...(draft.company ? { company: draft.company } : {}),
+      ...(draft.note ? { note: draft.note } : {}),
+    })
     setAddOpen(false)
     setSelectedId(created.id)
   }
