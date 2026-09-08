@@ -124,6 +124,33 @@ describe("apply commands", () => {
       .from(applyCards)
       .where(eq(applyCards.id, card.id))
     expect(row?.fit).toBe(0)
+    expect(card.jobUrl).toBeNull()
+  })
+
+  it("stores a job posting URL on create and can clear it", async () => {
+    const created = successData<ApplyCard>(
+      await commandRegistry.execute({
+        name: APPLY_COMMANDS.createCard,
+        input: {
+          title: "Untitled role",
+          jobUrl: "https://careers.example.com/pm-intern",
+        },
+        actor: userActor(ownerId),
+        db,
+      })
+    )
+    expect(created.jobUrl).toBe("https://careers.example.com/pm-intern")
+    expectNoFit(created)
+
+    const cleared = successData<ApplyCard>(
+      await commandRegistry.execute({
+        name: APPLY_COMMANDS.updateCard,
+        input: { cardId: created.id, jobUrl: null },
+        actor: userActor(ownerId),
+        db,
+      })
+    )
+    expect(cleared.jobUrl).toBeNull()
   })
 
   it("moves a card between and within a Stage using one-row fractional keys", async () => {

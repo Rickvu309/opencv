@@ -1,6 +1,7 @@
 import { z } from "zod"
 
 import { PITCH_CONTENT_KIND, PITCH_CONTENT_VERSION } from "./pitch.js"
+import { restoreWipedStarterMoments } from "./pitch-heal.js"
 
 export const pitchBlockKindSchema = z.enum([
   "about",
@@ -132,25 +133,28 @@ export const pitchGithubSchema = z
   })
   .strict()
 
-export const pitchDocumentV1Schema = z
-  .object({
-    headline: z.string(),
-    location: z.string(),
-    status: z.string(),
-    about: z.string(),
-    published: z.boolean(),
-    github: pitchGithubSchema,
-    blocks: z.array(pitchBlockSchema),
-    achievements: z.array(pitchAchievementSchema),
-    experience: z.array(pitchExperienceSchema),
-    storyHighlights: z.array(pitchStoryHighlightSchema),
-    bento: z.array(pitchBentoCardSchema),
-    gallery: z.array(pitchGalleryItemSchema),
-    files: z.array(pitchFileSchema),
-    links: z.array(pitchLinkSchema),
-    workDocs: z.array(pitchWorkDocSchema),
-  })
-  .strict()
+const pitchDocumentV1Shape = {
+  headline: z.string(),
+  location: z.string(),
+  status: z.string(),
+  about: z.string(),
+  published: z.boolean(),
+  github: pitchGithubSchema,
+  blocks: z.array(pitchBlockSchema),
+  achievements: z.array(pitchAchievementSchema),
+  experience: z.array(pitchExperienceSchema),
+  storyHighlights: z.array(pitchStoryHighlightSchema),
+  bento: z.array(pitchBentoCardSchema),
+  gallery: z.array(pitchGalleryItemSchema),
+  files: z.array(pitchFileSchema),
+  links: z.array(pitchLinkSchema),
+  workDocs: z.array(pitchWorkDocSchema),
+}
+
+export const pitchDocumentV1Schema = z.object(pitchDocumentV1Shape).strict()
+
+/** Extra keys from older client seeds must not fail decode (QVE-221 wipe). */
+const pitchDocumentV1LooseSchema = z.object(pitchDocumentV1Shape)
 
 export type PitchBlockKind = z.infer<typeof pitchBlockKindSchema>
 export type PitchBlock = z.infer<typeof pitchBlockSchema>
@@ -331,11 +335,21 @@ export function decodePitchContent(
   }
 
   const parsed = pitchDocumentV1Schema.safeParse(content)
-  if (!parsed.success) {
+  if (parsed.success) {
+    return { ok: true, data: healPitchDocument(parsed.data) }
+  }
+
+  const loose = pitchDocumentV1LooseSchema.safeParse(content)
+  if (!loose.success) {
     return { ok: false, message: firstIssueMessage(parsed.error) }
   }
 
-  return { ok: true, data: alignStoryChipIdentity(parsed.data) }
+  return { ok: true, data: healPitchDocument(loose.data) }
+}
+
+/** Decode-time repair: restore wiped Moments, then rewrite leftover personas. */
+export function healPitchDocument(doc: PitchDocument): PitchDocument {
+  return alignStoryChipIdentity(restoreWipedStarterMoments(doc))
 }
 
 export function isPitchDocument(value: unknown): value is PitchDocument {
