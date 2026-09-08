@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react"
 
-import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { SEARCH_PATH, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { SIGN_UP_COPY } from "@/features/auth/sign-up-copy.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import { setMockSession } from "@/test/auth-client-mock.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
@@ -20,7 +21,7 @@ describe("session guard", () => {
   it("sends a signed-out visitor from every surface to sign-in", async () => {
     setMockSession(null)
 
-    for (const path of Object.values(SURFACE_PATHS)) {
+    for (const path of [...Object.values(SURFACE_PATHS), SEARCH_PATH]) {
       cleanup()
       const { router } = renderApp(path)
 
@@ -31,7 +32,7 @@ describe("session guard", () => {
         screen.getByRole("button", { name: "Sign in" })
       ).toBeInTheDocument()
       expect(
-        screen.queryByRole("heading", { name: "Start here" })
+        screen.queryByRole("heading", { name: SIGN_UP_COPY.title })
       ).not.toBeInTheDocument()
       await waitFor(() => {
         expect(router.state.location.pathname).toBe("/sign-in")
@@ -49,8 +50,10 @@ describe("session guard", () => {
 
     fireEvent.click(screen.getByRole("link", { name: "Create an account" }))
     expect(
-      await screen.findByRole("heading", { name: "Start here" })
+      await screen.findByRole("heading", { name: SIGN_UP_COPY.title })
     ).toBeInTheDocument()
+    expect(screen.getByText(SIGN_UP_COPY.body)).toBeInTheDocument()
+    expect(screen.queryByText(/Threads, Paper, and Apply/)).not.toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Create account" })).toBeTruthy()
   })
 })
@@ -87,8 +90,9 @@ describe("auth flows", () => {
     const { router } = renderApp("/sign-up")
 
     expect(
-      await screen.findByRole("heading", { name: "Start here" })
+      await screen.findByRole("heading", { name: SIGN_UP_COPY.title })
     ).toBeInTheDocument()
+    expect(screen.getByText(SIGN_UP_COPY.body)).toBeInTheDocument()
 
     fireEvent.change(screen.getByLabelText("Name"), {
       target: { value: "Lan Nguyen" },

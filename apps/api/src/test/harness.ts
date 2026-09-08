@@ -1,4 +1,6 @@
 import type { CoachMode, CoachRuntime } from "@workspace/domain"
+
+import type { FetchJobPosting } from "../apply/fetch-posting.js"
 import { PGlite } from "@electric-sql/pglite"
 import { drizzle } from "drizzle-orm/pglite"
 import { migrate } from "drizzle-orm/pglite/migrator"
@@ -35,6 +37,7 @@ export function createTestApp(
     coachModels?: Partial<Record<CoachMode, string>>
     coachDailyTurnLimits?: Partial<Record<CoachMode, number>>
     coachSseHeartbeatMs?: number
+    fetchJobPosting?: FetchJobPosting
   }
 ) {
   return createApp({
@@ -49,6 +52,7 @@ export function createTestApp(
     coachModels: options?.coachModels,
     coachDailyTurnLimits: options?.coachDailyTurnLimits,
     coachSseHeartbeatMs: options?.coachSseHeartbeatMs,
+    fetchJobPosting: options?.fetchJobPosting,
   })
 }
 

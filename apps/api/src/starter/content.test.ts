@@ -85,6 +85,13 @@ describe("starter content", () => {
     expect(JSON.stringify(cards)).not.toMatch(PERSONA)
   })
 
+  it("does not seed a posting URL that NXDOMAINs", () => {
+    const cards = starterApplyCards()
+    expect(cards.every((card) => card.jobUrl === null)).toBe(true)
+    expect(JSON.stringify(cards)).not.toMatch(/example\.com/i)
+    expect(JSON.stringify(cards)).not.toMatch(/jobs\.example/i)
+  })
+
   it("opens with an honest Coach Thread in the product voice", () => {
     const thread = starterThread()
     expect(thread.title).toBe(STARTER_THREAD_TITLE)

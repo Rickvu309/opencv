@@ -15,6 +15,7 @@ import { ApplyPage } from "@/routes/apply.tsx"
 import { HomePage } from "@/routes/home.tsx"
 import { PaperPage } from "@/routes/paper.tsx"
 import { PitchPage } from "@/routes/pitch.tsx"
+import { SearchPage } from "@/routes/search.tsx"
 import { SettingsPage } from "@/routes/settings.tsx"
 import { SignInPage } from "@/routes/sign-in.tsx"
 import { SignUpPage } from "@/routes/sign-up.tsx"
@@ -88,6 +89,12 @@ const paperRoute = createRoute({
   component: PaperPage,
 })
 
+const searchRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/search",
+  component: SearchPage,
+})
+
 const applyRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/apply",
@@ -113,6 +120,7 @@ const routeTree = rootRoute.addChildren([
   signUpRoute,
   appLayoutRoute.addChildren([
     homeRoute,
+    searchRoute,
     paperRoute,
     applyRoute,
     pitchRoute,

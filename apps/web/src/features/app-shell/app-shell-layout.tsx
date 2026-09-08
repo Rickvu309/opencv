@@ -92,10 +92,6 @@ function AppShellChrome() {
       <AppSidebar
         open={sidebarOpen}
         onOpenChange={setSidebarOpen}
-        onSearch={() => {
-          setSearchOpen(true)
-          closeSidebarIfNarrow()
-        }}
         onNavigate={closeSidebarIfNarrow}
       />
       <main

@@ -3,6 +3,8 @@ import {
   generateKeyBetween,
   type ApplyCard,
   type ApplyCreateCardInput,
+  type ApplyScanInput,
+  type ApplyScanResult,
   type ApplyStage,
   type ApplyUpdateCardInput,
 } from "@workspace/domain"
@@ -65,6 +67,13 @@ export function deleteApplyCard(input: {
   cardId: string
 }): Promise<{ id: string }> {
   return runCommand<{ id: string }>(APPLY_COMMANDS.deleteCard, input)
+}
+
+export function scanApplyJob(input: ApplyScanInput): Promise<ApplyScanResult> {
+  return apiFetch<SuccessBody<ApplyScanResult>>("/api/apply/scan", {
+    method: "POST",
+    body: JSON.stringify(input),
+  }).then(unwrapData)
 }
 
 export function upsertApplyCard(

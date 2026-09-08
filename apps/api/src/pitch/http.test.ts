@@ -111,7 +111,7 @@ describe("pitch API", () => {
     expect(seeded.data.kind).toBe("pitch")
     expect(seeded.data.contentVersion).toBe(1)
 
-    const next = { ...emptyPitchDocument(), about: "Minh's about.", published: true }
+    const next = { ...starterPitchDocument(), about: "Minh's about.", published: true }
     const updatedRes = await postCommand(app, cookieA, PITCH_COMMANDS.update, {
       content: next,
       contentVersion: 1,
@@ -180,6 +180,51 @@ describe("pitch API", () => {
       "Your name"
     )
     expect(content.github.username).toBe("")
+    expect(JSON.stringify(content)).not.toMatch(/sacred space/i)
+    expect(JSON.stringify(content)).not.toMatch(/Alex Tran/i)
+    expect(content.storyHighlights.length).toBeGreaterThan(0)
+    expect(content.bento.length).toBeGreaterThan(0)
+  })
+
+  it("restores wiped starter Moments on GET without dropping hide-persist", async () => {
+    const first = await app.request("/api/pitch", {
+      headers: authHeaders(cookieA),
+    })
+    const seeded = await json<{ ok: true; data: PitchDoc }>(first)
+    const starter = starterPitchDocument()
+    const wiped = {
+      ...starter,
+      status: "QVE134-persist-marker-1532",
+      storyHighlights: [],
+      bento: [],
+      blocks: starter.blocks.map((block) =>
+        block.kind === "moments" ? { ...block, hidden: true } : block
+      ),
+    }
+
+    await db
+      .update(pitchDocs)
+      .set({ content: wiped })
+      .where(eq(pitchDocs.id, seeded.data.id))
+
+    const restoredRes = await app.request("/api/pitch", {
+      headers: authHeaders(cookieA),
+    })
+    expect(restoredRes.status).toBe(200)
+    const restored = await json<{ ok: true; data: PitchDoc }>(restoredRes)
+    const content = restored.data.content as ReturnType<
+      typeof starterPitchDocument
+    >
+    expect(content.storyHighlights.length).toBeGreaterThan(0)
+    expect(content.bento.length).toBeGreaterThan(0)
+    expect(content.bento.find((card) => card.id === "b4")).toMatchObject({
+      title: "Checkout",
+      body: "Hallway test setup",
+    })
+    expect(content.blocks.find((block) => block.kind === "moments")?.hidden).toBe(
+      true
+    )
+    expect(content.status).toBe("QVE134-persist-marker-1532")
     expect(JSON.stringify(content)).not.toMatch(/sacred space/i)
     expect(JSON.stringify(content)).not.toMatch(/Alex Tran/i)
   })

@@ -1,9 +1,14 @@
 import {
   APPLY_COMMANDS,
+  APPLY_SCAN_NOT_FOUND,
   DEFAULT_APPLY_COMPANY,
   DEFAULT_APPLY_TITLE,
+  applyScanHasIdentity,
   generateKeyBetween,
+  groundApplyScanResult,
+  parseApplyScanInput,
   type ApplyCard,
+  type ApplyScanResult,
   type ApplyStage,
   type ApplyTrackKind,
 } from "@workspace/domain"
@@ -16,11 +21,13 @@ import { getMockPaperDocs } from "./paper-api-mock.ts"
 type Store = {
   cards: ApplyCard[]
   failNext: { command: string; message: string } | null
+  failNextScan: string | null
 }
 
 const store: Store = {
   cards: sampleApplyCards(),
   failNext: null,
+  failNextScan: null,
 }
 
 function cloneCards(cards: ApplyCard[]): ApplyCard[] {
@@ -85,6 +92,11 @@ function positionBefore(stage: ApplyStage, beforeCardId?: string | null, exclude
 export function resetApplyApiMock() {
   store.cards = cloneCards(sampleApplyCards())
   store.failNext = null
+  store.failNextScan = null
+}
+
+export function failNextApplyScan(message: string) {
+  store.failNextScan = message
 }
 
 export function failNextApplyCommand(command: string, message: string) {
@@ -117,6 +129,47 @@ export async function applyApiFetch(
     const failure = store.failNext
     store.failNext = null
     return jsonError(400, "VALIDATION_ERROR", failure.message)
+  }
+
+  if (method === "POST" && path === "/api/apply/scan") {
+    if (store.failNextScan) {
+      const message = store.failNextScan
+      store.failNextScan = null
+      return jsonError(400, "VALIDATION_ERROR", message)
+    }
+    const body = (await readBody(init)) as {
+      jobUrl?: string | null
+      jdText?: string
+    }
+    const parsed = parseApplyScanInput({
+      jobUrl: body.jobUrl ?? "",
+      jdText: body.jdText ?? "",
+    })
+    if (!parsed.ok) {
+      return jsonError(400, "VALIDATION_ERROR", parsed.message)
+    }
+    const source =
+      parsed.jdText ??
+      (parsed.jobUrl?.includes("careers.example.com/pm-intern")
+        ? "Example is hiring a PM intern."
+        : "")
+    if (!source) {
+      return jsonError(400, "VALIDATION_ERROR", APPLY_SCAN_NOT_FOUND)
+    }
+    const extracted: ApplyScanResult = parsed.jdText
+      ? {
+          title: source.includes("Associate PM intern")
+            ? "Associate PM intern"
+            : null,
+          company: source.includes("Local startup") ? "Local startup" : null,
+          note: source.includes("Hanoi") ? "Hanoi" : null,
+        }
+      : { title: "PM intern", company: "Example", note: null }
+    const grounded = groundApplyScanResult(source, extracted)
+    if (!applyScanHasIdentity(grounded)) {
+      return jsonError(400, "VALIDATION_ERROR", APPLY_SCAN_NOT_FOUND)
+    }
+    return jsonOk(grounded)
   }
 
   if (method === "GET" && path === "/api/apply") {

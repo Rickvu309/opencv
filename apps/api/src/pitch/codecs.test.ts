@@ -2,9 +2,32 @@ import {
   alignStoryChipIdentity,
   decodePitchContent,
   emptyPitchDocument,
+  healPitchDocument,
+  preservePitchMoments,
   starterPitchDocument,
 } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
+
+function leftoverPersonaPitch() {
+  const starter = starterPitchDocument()
+  return {
+    ...starter,
+    github: { username: "alex-tran-uit", connected: true },
+    bento: starter.bento.map((card) => {
+      if (card.id === "b1") return { ...card, title: "Alex Tran" }
+      if (card.id === "b4") {
+        return {
+          ...card,
+          title: "my sacred space",
+          body: "Hallway test · late night Figma",
+          storyHighlightId: "sh-checkout",
+        }
+      }
+      if (card.id === "b5") return { ...card, title: "@alex-tran-uit" }
+      return card
+    }),
+  }
+}
 
 describe("pitch codecs", () => {
   it("accepts an empty document and the starter payload", () => {
@@ -130,5 +153,91 @@ describe("pitch codecs", () => {
     if (!decoded.ok) throw new Error("expected success")
     expect(decoded.data.achievements[0]?.link).toBe("#")
     expect(decoded.data.achievements[0]?.proofId).toBeUndefined()
+  })
+
+  it("does not write empty Moments arrays when heal repairs leftover personas", () => {
+    const leftover = leftoverPersonaPitch()
+    const decoded = decodePitchContent("pitch", 1, leftover)
+    expect(decoded.ok).toBe(true)
+    if (!decoded.ok) throw new Error("expected success")
+
+    expect(decoded.data.storyHighlights.length).toBe(
+      leftover.storyHighlights.length
+    )
+    expect(decoded.data.bento.length).toBe(leftover.bento.length)
+    expect(decoded.data.storyHighlights.length).toBeGreaterThan(0)
+    expect(decoded.data.bento.length).toBeGreaterThan(0)
+    expect(decoded.data.bento.find((card) => card.id === "b4")).toMatchObject({
+      title: "Checkout",
+      body: "Hallway test setup",
+      storyHighlightId: "sh-checkout",
+    })
+    expect(JSON.stringify(decoded.data)).not.toMatch(/sacred space/i)
+    expect(JSON.stringify(decoded.data)).not.toMatch(/Alex Tran/i)
+
+    const persisted = preservePitchMoments(leftover, decoded.data)
+    expect(persisted.storyHighlights).toEqual(decoded.data.storyHighlights)
+    expect(persisted.bento).toEqual(decoded.data.bento)
+    expect(
+      preservePitchMoments(leftover, {
+        ...decoded.data,
+        storyHighlights: [],
+        bento: [],
+      })
+    ).toMatchObject({
+      storyHighlights: leftover.storyHighlights,
+      bento: leftover.bento,
+    })
+  })
+
+  it("restores starter Moments after a wipe so GET/heal is smokeable", () => {
+    const starter = starterPitchDocument()
+    const wiped = {
+      ...starter,
+      status: "QVE134-persist-marker-1532",
+      storyHighlights: [],
+      bento: [],
+      blocks: starter.blocks.map((block) =>
+        block.kind === "moments" ? { ...block, hidden: true } : block
+      ),
+    }
+
+    const decoded = decodePitchContent("pitch", 1, wiped)
+    expect(decoded.ok).toBe(true)
+    if (!decoded.ok) throw new Error("expected success")
+    expect(decoded.data.storyHighlights.length).toBeGreaterThan(0)
+    expect(decoded.data.bento.length).toBeGreaterThan(0)
+    expect(decoded.data.storyHighlights).toEqual(starter.storyHighlights)
+    expect(decoded.data.bento.find((card) => card.id === "b4")).toMatchObject({
+      title: "Checkout",
+      body: "Hallway test setup",
+      storyHighlightId: "sh-checkout",
+    })
+    expect(decoded.data.blocks.find((block) => block.kind === "moments")).toEqual(
+      { id: "b-moments", kind: "moments", hidden: true }
+    )
+    expect(JSON.stringify(decoded.data)).not.toMatch(/sacred space/i)
+    expect(JSON.stringify(decoded.data)).not.toMatch(/Alex Tran/i)
+    expect(healPitchDocument(decoded.data)).toEqual(decoded.data)
+  })
+
+  it("keeps the empty schema default empty and still accepts extra leftover keys", () => {
+    expect(decodePitchContent("pitch", 1, emptyPitchDocument())).toEqual({
+      ok: true,
+      data: emptyPitchDocument(),
+    })
+
+    const leftover = {
+      ...leftoverPersonaPitch(),
+      legacySeed: true,
+    }
+    const decoded = decodePitchContent("pitch", 1, leftover)
+    expect(decoded.ok).toBe(true)
+    if (!decoded.ok) throw new Error("expected success")
+    expect(decoded.data.storyHighlights.length).toBeGreaterThan(0)
+    expect(decoded.data.bento.length).toBeGreaterThan(0)
+    expect(JSON.stringify(decoded.data)).not.toMatch(/sacred space/i)
+    expect(JSON.stringify(decoded.data)).not.toMatch(/Alex Tran/i)
+    expect(decoded.data).not.toHaveProperty("legacySeed")
   })
 })
