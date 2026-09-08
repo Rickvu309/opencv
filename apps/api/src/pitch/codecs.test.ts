@@ -15,6 +15,8 @@ describe("pitch codecs", () => {
       ok: true,
       data: starterPitchDocument(),
     })
+    expect(starterPitchDocument().achievements[0]?.proofId).toBe("checkout")
+    expect(starterPitchDocument().achievements[0]?.link).toBeUndefined()
   })
 
   it("rejects malformed content with a message the envelope can surface", () => {
@@ -34,5 +36,24 @@ describe("pitch codecs", () => {
       ok: false,
       message: "Unsupported content version",
     })
+  })
+
+  it("still accepts a persisted achievement that only has a dead link", () => {
+    const starter = starterPitchDocument()
+    const decoded = decodePitchContent("pitch", 1, {
+      ...starter,
+      achievements: [
+        {
+          ...starter.achievements[0],
+          proofId: undefined,
+          link: "#",
+          linkLabel: "Read case study",
+        },
+      ],
+    })
+    expect(decoded.ok).toBe(true)
+    if (!decoded.ok) throw new Error("expected success")
+    expect(decoded.data.achievements[0]?.link).toBe("#")
+    expect(decoded.data.achievements[0]?.proofId).toBeUndefined()
   })
 })

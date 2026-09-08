@@ -13,7 +13,7 @@ import { getMockGithubUsername } from "@/features/pitch/pitch-github-mock.ts"
 import { PitchWorkspace } from "@/features/pitch/pitch-workspace.tsx"
 import { BLOCK_LABELS, pitchHandle } from "@/features/pitch/pitch-types.ts"
 import { createQueryClient } from "@/lib/query-client.ts"
-import { pitchApiFetch } from "@/test/pitch-api-mock.ts"
+import { pitchApiFetch, setMockPitchDoc } from "@/test/pitch-api-mock.ts"
 
 function installPitchFetch() {
   vi.stubGlobal("fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -165,12 +165,75 @@ describe("Pitch workspace", () => {
     )
   })
 
+  it("opens the checkout Proof from Achievements and closes it", async () => {
+    await loadedPitch()
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Open Proof: Product card resize study" })
+    )
+    const viewer = screen.getByRole("dialog", {
+      name: "Product card resize study",
+    })
+    expect(viewer).toBeInTheDocument()
+    expect(within(viewer).getByText("E-commerce checkout · Side project")).toBeInTheDocument()
+    expect(within(viewer).getByText("What I did")).toBeInTheDocument()
+    expect(
+      within(viewer).getByText(/12-person hallway test/i)
+    ).toBeInTheDocument()
+
+    fireEvent.click(within(viewer).getByRole("button", { name: "Close" }))
+    expect(
+      screen.queryByRole("dialog", { name: "Product card resize study" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole("heading", { level: 1, name: SAMPLE_AUTHOR_NAME })
+    ).toBeInTheDocument()
+  })
+
+  it("opens the checkout Proof from a persisted dead-link achievement", async () => {
+    const starter = starterPitchDocument()
+    const [checkout, ...rest] = starter.achievements
+    setMockPitchDoc({
+      id: "55555555-5555-7555-8555-555555555555",
+      kind: "pitch",
+      content: {
+        ...starter,
+        achievements: [
+          {
+            id: checkout!.id,
+            year: checkout!.year,
+            title: checkout!.title,
+            context: checkout!.context,
+            description: checkout!.description,
+            tag: checkout!.tag,
+            link: "#",
+            linkLabel: "Read case study",
+          },
+          ...rest,
+        ],
+      },
+      contentVersion: 1,
+      createdAt: "2026-08-25T00:00:00.000Z",
+      updatedAt: "2026-08-25T00:00:00.000Z",
+    })
+
+    await loadedPitch()
+    fireEvent.click(
+      screen.getByRole("button", { name: "Open Proof: Product card resize study" })
+    )
+    expect(
+      screen.getByRole("dialog", { name: "Product card resize study" })
+    ).toBeInTheDocument()
+  })
+
   it("does not present showcase or contact rows as links that go nowhere", async () => {
     await loadedPitch()
     const github = getMockGithubUsername(SAMPLE_AUTHOR_NAME)
 
-    expect(screen.getByText("Read case study")).toBeInTheDocument()
-    expect(screen.getByText("Case study · Proof chain")).toBeInTheDocument()
+    expect(screen.getByText("Open Proof")).toBeInTheDocument()
+    expect(screen.getByText("Proof chain")).toBeInTheDocument()
+    expect(screen.queryByText("Read case study")).not.toBeInTheDocument()
+    expect(screen.queryByText("Case study · Proof chain")).not.toBeInTheDocument()
     expect(screen.getAllByText(`@${github}`).length).toBeGreaterThan(0)
     expect(screen.getByText(SAMPLE_AUTHOR.email)).toBeInTheDocument()
     expect(screen.getByText("LinkedIn")).toBeInTheDocument()
@@ -180,6 +243,9 @@ describe("Pitch workspace", () => {
       screen.queryByRole("button", { name: /read case study/i })
     ).not.toBeInTheDocument()
     expect(document.querySelector("a[href]")).toBeNull()
+    expect(
+      screen.getAllByRole("button", { name: /open proof/i })
+    ).toHaveLength(1)
   })
 
   it("does not show Copied when the clipboard write fails", async () => {

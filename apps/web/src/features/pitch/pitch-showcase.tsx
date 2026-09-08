@@ -23,9 +23,12 @@ import {
   Share2,
 } from "lucide-react"
 
+import type { ProofDocument } from "@workspace/domain"
+
 import { ComingSoon } from "@/components/coming-soon.tsx"
 import { profileInitials } from "@/features/app-shell/profile-display.ts"
 import { PitchGithubHeatmap } from "@/features/pitch/pitch-github-heatmap.tsx"
+import { resolveAchievementProof } from "@/features/pitch/pitch-proof.ts"
 import {
   getMockGithubProfile,
   MOCK_GITHUB_CONTRIBUTIONS,
@@ -198,52 +201,70 @@ export function AchievementsSection({
   items,
   editing,
   onHide,
+  onOpenProof,
 }: {
   items: PitchAchievement[]
   editing?: boolean
   onHide?: () => void
+  onOpenProof?: (proof: ProofDocument) => void
 }) {
+  const proofMeta = paperDocPitchMeta({ type: "proof" })
+
   return (
     <SectionShell title="Achievements" editing={editing} onHide={onHide}>
       <ul className="space-y-10">
-        {items.map((item) => (
-          <li key={item.id}>
-            <TimelineRow when={item.year}>
-              <div>
-                <p className="font-medium leading-snug">
-                  {item.title}
-                  <span className="font-normal text-muted-foreground">
-                    {" "}
-                    · {item.context}
-                  </span>
-                </p>
-                {item.tag ? (
-                  <span className="mt-1.5 inline-block rounded-full bg-muted px-2 py-0.5 text-2xs font-medium text-muted-foreground">
-                    {item.tag}
-                  </span>
-                ) : null}
-                <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">
-                  {item.description}
-                </p>
-                {item.link ? (
-                  <div className="mt-3 flex items-center gap-3 rounded-xl border border-border bg-muted/20 p-3">
-                    <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-background text-2xs font-bold shadow-sm">
-                      PDF
+        {items.map((item) => {
+          const proof = onOpenProof ? resolveAchievementProof(item) : null
+          return (
+            <li key={item.id}>
+              <TimelineRow when={item.year}>
+                <div>
+                  <p className="font-medium leading-snug">
+                    {item.title}
+                    <span className="font-normal text-muted-foreground">
+                      {" "}
+                      · {item.context}
                     </span>
-                    <span className="min-w-0">
-                      <span className="block text-sm font-medium">
-                        {item.linkLabel ?? item.title}
-                      </span>
-                      <span className="block truncate text-xs text-muted-foreground">
-                        Case study · Proof chain
-                      </span>
+                  </p>
+                  {item.tag ? (
+                    <span className="mt-1.5 inline-block rounded-full bg-muted px-2 py-0.5 text-2xs font-medium text-muted-foreground">
+                      {item.tag}
                     </span>
-                  </div>
-                ) : null}
-              </div>
-            </TimelineRow>
-          </li>
-        ))}
+                  ) : null}
+                  <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">
+                    {item.description}
+                  </p>
+                  {proof && onOpenProof ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => onOpenProof(proof)}
+                      aria-label={`Open Proof: ${proof.title}`}
+                      className="mt-3 h-auto w-full justify-start gap-3 whitespace-normal rounded-xl p-3 text-left font-normal"
+                    >
+                      <span
+                        className={cn(
+                          "flex size-10 shrink-0 items-center justify-center rounded-lg text-2xs font-bold",
+                          proofMeta.gradient
+                        )}
+                      >
+                        {proofMeta.badge}
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-sm font-medium">
+                          Open Proof
+                        </span>
+                        <span className="block truncate text-xs text-muted-foreground">
+                          Proof chain
+                        </span>
+                      </span>
+                    </Button>
+                  ) : null}
+                </div>
+              </TimelineRow>
+            </li>
+          )
+        })}
       </ul>
       {editing ? (
         <Button
