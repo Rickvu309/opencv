@@ -21,6 +21,13 @@ const JD = [
   "Ship one discovery note this month. Apply by 12 September.",
 ].join(" ")
 
+const CAFE_JD = [
+  "Job Title: Café Barista Lead",
+  "Company: Highlands Coffee",
+  "Location: District 1, Ho Chi Minh City",
+  "We need a café lead who owns the morning rush and trains new baristas.",
+].join("\n")
+
 function scanRuntime(text: string) {
   return withScanJobPosting(createDemoCoachRuntime(), async () => text)
 }
@@ -173,6 +180,82 @@ describe("scanApplyPosting", () => {
       ok: false,
       code: ERROR_CODES.VALIDATION_ERROR,
       message: APPLY_SCAN_EMPTY,
+    })
+  })
+
+  it("fills the same labeled JD twice when the model flakes on the second scan", async () => {
+    let calls = 0
+    const coach = withScanJobPosting(createDemoCoachRuntime(), async () => {
+      calls += 1
+      if (calls === 1) {
+        return JSON.stringify({
+          title: "Café Barista Lead",
+          company: "Highlands Coffee",
+          note: "District 1, Ho Chi Minh City",
+        })
+      }
+      return JSON.stringify({ title: null, company: null, note: null })
+    })
+    const fetchJobPosting = async () => {
+      throw new Error("should not fetch when JD is pasted")
+    }
+
+    const first = await scanApplyPosting({
+      input: { jdText: CAFE_JD },
+      coach,
+      fetchJobPosting,
+    })
+    const second = await scanApplyPosting({
+      input: { jdText: `${CAFE_JD} ` },
+      coach,
+      fetchJobPosting,
+    })
+
+    expect(first).toMatchObject({
+      ok: true,
+      data: {
+        title: "Café Barista Lead",
+        company: "Highlands Coffee",
+      },
+    })
+    expect(second).toMatchObject({
+      ok: true,
+      data: {
+        title: "Café Barista Lead",
+        company: "Highlands Coffee",
+      },
+    })
+    expect(calls).toBe(2)
+  })
+
+  it("reads labeled title and company when the model returns empty", async () => {
+    const result = await scanApplyPosting({
+      input: { jdText: CAFE_JD },
+      coach: scanRuntime("{}"),
+      fetchJobPosting: async () => {
+        throw new Error("should not fetch when JD is pasted")
+      },
+    })
+    expect(result).toEqual({
+      ok: true,
+      data: {
+        title: "Café Barista Lead",
+        company: "Highlands Coffee",
+        note: "District 1, Ho Chi Minh City",
+      },
+    })
+  })
+
+  it("honest-fails garbage JD that has no labeled title or company", async () => {
+    const result = await scanApplyPosting({
+      input: { jdText: "Come work with us. Nice people." },
+      coach: scanRuntime("{}"),
+      fetchJobPosting: async () => ({ ok: true, text: JD }),
+    })
+    expect(result).toEqual({
+      ok: false,
+      code: ERROR_CODES.VALIDATION_ERROR,
+      message: APPLY_SCAN_NOT_FOUND,
     })
   })
 })

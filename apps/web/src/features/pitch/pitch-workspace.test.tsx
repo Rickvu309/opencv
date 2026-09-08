@@ -2,7 +2,12 @@ import { createElement, type ReactNode } from "react"
 import { QueryClientProvider } from "@tanstack/react-query"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
-import { starterPitchDocument, type PitchDocument } from "@workspace/domain"
+import {
+  emptyPitchDocument,
+  STARTER_PITCH_HEADLINE,
+  starterPitchDocument,
+  type PitchDocument,
+} from "@workspace/domain"
 
 import {
   SAMPLE_AUTHOR,
@@ -66,6 +71,13 @@ describe("Pitch workspace", () => {
     const github = getMockGithubUsername(SAMPLE_AUTHOR_NAME)
 
     expect(screen.getByText(starter.headline)).toBeInTheDocument()
+    expect(starter.headline).toBe(STARTER_PITCH_HEADLINE)
+    expect(screen.getByText("Demo content")).toBeInTheDocument()
+    expect(
+      screen.getByText("This page is a sample, not your story.")
+    ).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Clear demo" })).toBeInTheDocument()
+    expect(screen.queryByText(/Aspiring product manager/i)).not.toBeInTheDocument()
     expect(
       screen.getByText(`openpath.app/u/${pitchHandle(SAMPLE_AUTHOR_NAME)}`)
     ).toBeInTheDocument()
@@ -91,6 +103,33 @@ describe("Pitch workspace", () => {
     expect(screen.queryByText(/Eric Nguyen/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/eric-nguyen/i)).not.toBeInTheDocument()
     expect(screen.queryByText(SURFACE_COPY.pitch.body)).not.toBeInTheDocument()
+  })
+
+  it("clears Demo content into an empty Pitch the User can make theirs", async () => {
+    await loadedPitch()
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear demo" }))
+    expect(
+      await screen.findByText("Your Pitch is empty")
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        /Write a line about what you want next, or leave it quiet/
+      )
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "Start your Pitch" })
+    ).toBeInTheDocument()
+    expect(screen.queryByText("Demo content")).not.toBeInTheDocument()
+    expect(screen.queryByText(STARTER_PITCH_HEADLINE)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Aspiring product manager/i)).not.toBeInTheDocument()
+    expect(
+      screen.getByRole("heading", { level: 1, name: SAMPLE_AUTHOR_NAME })
+    ).toBeInTheDocument()
+    expect(getMockPitchDoc()?.content).toEqual(emptyPitchDocument())
+
+    fireEvent.click(screen.getByRole("button", { name: "Start your Pitch" }))
+    expect(screen.getByText("Editing Pitch")).toBeInTheDocument()
   })
 
   it("lets the User edit, hide, and restore showcase blocks", async () => {

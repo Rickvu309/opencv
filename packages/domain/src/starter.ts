@@ -7,6 +7,7 @@ import { PAPER_CONTENT_VERSION } from "./paper.js"
 import {
   decodePitchContent,
   DEFAULT_PITCH_BLOCKS,
+  STARTER_PITCH_HEADLINE,
   type PitchDocument,
 } from "./pitch-codecs.js"
 import { PITCH_CONTENT_KIND, PITCH_CONTENT_VERSION } from "./pitch.js"
@@ -171,16 +172,18 @@ export function starterApplyCards(): StarterApplyCardDraft[] {
 /**
  * Neutral Pitch page — product voice, never a named persona.
  * Identity (name, email, avatar) is overlaid from the session User.
+ * `demo: true` so the page is labeled Demo content, not a fake UIT/PM self.
  */
 export function starterPitchDocument(): PitchDocument {
   return {
-    headline: "Aspiring product manager · UIT Information Systems",
+    headline: STARTER_PITCH_HEADLINE,
     location: "HCMC · open to intern roles",
-    status: "Open to associate PM & product intern roles · Summer 2026",
-    about: `I learn product by shipping small experiments — checkout UX studies, onboarding teardowns, and club-led discovery sprints.
+    status: "Sample — open to intern roles · Summer 2026",
+    about: `This is sample copy. Clear the demo when you want the page to be yours.
 
-I'm looking for a team that values evidence over slide decks. CV and case studies are below.`,
+I learn product by shipping small experiments — checkout UX studies, onboarding teardowns, and club-led discovery sprints. Looking for a team that values evidence over slide decks.`,
     published: false,
+    demo: true,
     github: {
       username: "",
       connected: true,
@@ -321,7 +324,7 @@ I'm looking for a team that values evidence over slide decks. CV and case studie
         id: "b1",
         kind: "visual",
         title: "Your name",
-        body: "PM track · UIT",
+        body: "Sample · campus club",
         tone: "warm",
         span: "normal",
         image: "/pitch/stories/team-meeting.jpg",
@@ -441,7 +444,7 @@ export function starterPitchContent(): Record<string, unknown> {
 }
 
 export const STARTER_THREAD_COACH_TEXT =
-  "Paper has one sample CV you can replace. Apply has a few example cards across Stages so the board isn't empty. Pitch has a sample page you can replace. Delete any of it when you are ready — none of it is a real person.\n\nI haven't edited Paper, Apply, or Pitch, and I haven't run any Commands — this workspace was seeded for you. Ask here when you want a next step, or open those surfaces yourself."
+  "Paper has one sample CV you can replace. Apply has a few example cards across Stages so the board isn't empty. Pitch has a sample page labeled Demo content — edit it or clear the demo when you want it to be yours. Delete any of it when you are ready — none of it is a real person.\n\nI haven't edited Paper, Apply, or Pitch, and I haven't run any Commands — this workspace was seeded for you. Ask here when you want a next step, or open those surfaces yourself."
 
 export function starterThread() {
   return {

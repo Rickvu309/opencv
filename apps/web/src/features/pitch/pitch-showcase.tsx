@@ -147,21 +147,23 @@ export function PitchProfileHeader({
         </div>
       </div>
 
-      <div className="mt-5 rounded-xl border border-border/80 bg-muted/25 px-4 py-3">
-        {editing ? (
-          <Input
-            value={profile.status}
-            onChange={(e) => onStatusChange?.(e.target.value)}
-            className="h-auto w-full border-0 bg-transparent px-0 py-0 shadow-none focus-visible:border-0 focus-visible:ring-0"
-            placeholder="Status — what you're open to"
-          />
-        ) : (
-          <p className="flex items-start gap-2 text-sm leading-relaxed">
-            <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-success" />
-            {profile.status}
-          </p>
-        )}
-      </div>
+      {editing || profile.status.trim() ? (
+        <div className="mt-5 rounded-xl border border-border/80 bg-muted/25 px-4 py-3">
+          {editing ? (
+            <Input
+              value={profile.status}
+              onChange={(e) => onStatusChange?.(e.target.value)}
+              className="h-auto w-full border-0 bg-transparent px-0 py-0 shadow-none focus-visible:border-0 focus-visible:ring-0"
+              placeholder="Status — what you're open to"
+            />
+          ) : (
+            <p className="flex items-start gap-2 text-sm leading-relaxed">
+              <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-success" />
+              {profile.status}
+            </p>
+          )}
+        </div>
+      ) : null}
     </header>
   )
 }

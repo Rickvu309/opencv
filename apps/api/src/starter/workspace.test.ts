@@ -138,6 +138,11 @@ describe("signup seeds the starter workspace", () => {
     const pitch = (await pitchRes.json()) as { ok: true; data: PitchDoc }
     expect(pitch.data.kind).toBe("pitch")
     expect(pitch.data.contentVersion).toBe(1)
+    expect(pitch.data.content).toMatchObject({
+      demo: true,
+      headline: "Sample Pitch · replace with your story",
+    })
+    expect(JSON.stringify(pitch.data)).not.toMatch(/Aspiring product manager/i)
     expect(JSON.stringify(pitch.data)).not.toMatch(PERSONA)
   })
 

@@ -7,7 +7,11 @@ import {
   completeFirstCafeItem,
   dismissFirstCafeChecklist,
   firstCafeItemForVisit,
+  firstCafeStorageKey,
+  firstCafeVisitToRecord,
   parseFirstCafeState,
+  readFirstCafeState,
+  recordFirstCafeVisit,
 } from "./first-cafe-checklist.ts"
 
 describe("first-café checklist", () => {
@@ -77,5 +81,80 @@ describe("first-café checklist", () => {
       completed: ["sample-cv"],
     })
     expect(dismissFirstCafeChecklist(hidden)).toBe(hidden)
+  })
+
+  it("ignores pending or unresolved Apply flickers during signup bootstrap", () => {
+    expect(
+      firstCafeVisitToRecord({
+        userId: "user_fresh",
+        status: "pending",
+        resolvedPathname: SURFACE_PATHS.home,
+        resolvedSearch: {},
+      })
+    ).toBeNull()
+    expect(
+      firstCafeVisitToRecord({
+        userId: "user_fresh",
+        status: "idle",
+        resolvedPathname: undefined,
+        resolvedSearch: {},
+      })
+    ).toBeNull()
+    expect(
+      firstCafeVisitToRecord({
+        userId: "user_fresh",
+        status: "idle",
+        resolvedPathname: SURFACE_PATHS.home,
+        resolvedSearch: {},
+      })
+    ).toBeNull()
+    expect(
+      firstCafeVisitToRecord({
+        userId: undefined,
+        status: "idle",
+        resolvedPathname: SURFACE_PATHS.apply,
+        resolvedSearch: {},
+      })
+    ).toBeNull()
+    expect(
+      firstCafeVisitToRecord({
+        userId: "user_fresh",
+        status: "idle",
+        pathname: SURFACE_PATHS.apply,
+        resolvedPathname: SURFACE_PATHS.home,
+        resolvedSearch: {},
+      })
+    ).toBeNull()
+  })
+
+  it("records Apply only after a settled visit to /app/apply", () => {
+    expect(
+      firstCafeVisitToRecord({
+        userId: "user_fresh",
+        status: "idle",
+        resolvedPathname: SURFACE_PATHS.apply,
+        resolvedSearch: {},
+      })
+    ).toEqual({
+      pathname: SURFACE_PATHS.apply,
+      search: {},
+    })
+  })
+
+  it("records only the Paper sample after that visit, not Apply", () => {
+    const userId = "user_fresh"
+    expect(firstCafeStorageKey(userId)).toContain(userId)
+
+    const afterHome = recordFirstCafeVisit(userId, SURFACE_PATHS.home)
+    expect(afterHome.completed).toEqual([])
+
+    const afterPaper = recordFirstCafeVisit(userId, SURFACE_PATHS.paper, {
+      open: "sample",
+    })
+    expect(afterPaper.completed).toEqual(["sample-cv"])
+    expect(readFirstCafeState(userId).completed).toEqual(["sample-cv"])
+
+    const afterHomeAgain = recordFirstCafeVisit(userId, SURFACE_PATHS.home)
+    expect(afterHomeAgain.completed).toEqual(["sample-cv"])
   })
 })
