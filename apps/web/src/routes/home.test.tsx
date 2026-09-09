@@ -616,6 +616,30 @@ describe("Home optional aim prompt", () => {
       headline: STARTER_PITCH_HEADLINE,
     })
 
+    const nudge = firstCafeNudge()
+    expect(
+      within(nudge).getByText("Skip whenever. This is not a tour.")
+    ).toBeInTheDocument()
+    expect(
+      within(nudge).getByRole("link", { name: "Open the sample CV" })
+    ).toHaveAttribute("href", `${SURFACE_PATHS.paper}?open=sample`)
+    expect(within(nudge).getAllByRole("link")).toHaveLength(1)
+    expect(
+      screen.queryByRole("button", { name: /next step|continue|skip tour/i })
+    ).not.toBeInTheDocument()
+
+    const list = firstCafeList()
+    expect(
+      within(list).getByRole("link", { name: "Open the sample CV" })
+    ).toBeInTheDocument()
+    expect(
+      within(list).queryByRole("link", { name: "Open the sample CV, done" })
+    ).not.toBeInTheDocument()
+    expect(
+      within(list).queryByRole("link", { name: "Make Pitch yours, done" })
+    ).not.toBeInTheDocument()
+    expect(readFirstCafeState("user_test").completed).toEqual([])
+
     fireEvent.click(screen.getByRole("link", { name: "Paper" }))
     await screen.findByRole("region", { name: "Paper" })
     fireEvent.click(screen.getByRole("link", { name: "Home" }))
@@ -627,6 +651,80 @@ describe("Home optional aim prompt", () => {
     expect(
       screen.getByRole("heading", { name: "Four small things" })
     ).toBeInTheDocument()
+    expect(firstCafeNudge()).toBeInTheDocument()
+  })
+
+  it("after Skip aim, the first nudge is dismissible and checks nothing", async () => {
+    renderApp()
+    await expectHomeIdle()
+
+    fireEvent.click(screen.getByRole("button", { name: "Skip" }))
+    const nudge = firstCafeNudge()
+    expect(
+      within(nudge).getByText("Skip whenever. This is not a tour.")
+    ).toBeInTheDocument()
+
+    fireEvent.click(within(nudge).getByRole("button", { name: "Skip" }))
+    expect(
+      screen.queryByRole("region", { name: "One next thing" })
+    ).not.toBeInTheDocument()
+    expect(firstCafeList()).toBeInTheDocument()
+    expect(
+      within(firstCafeList()).queryByRole("link", {
+        name: "Open the sample CV, done",
+      })
+    ).not.toBeInTheDocument()
+    expect(
+      within(firstCafeList()).queryByRole("link", {
+        name: "Make Pitch yours, done",
+      })
+    ).not.toBeInTheDocument()
+    expect(readFirstCafeState("user_test").completed).toEqual([])
+    expect(readFirstCafeState("user_test").nudgeSkipped).toBe(true)
+
+    fireEvent.click(screen.getByRole("link", { name: "Paper" }))
+    await screen.findByRole("region", { name: "Paper" })
+    fireEvent.click(screen.getByRole("link", { name: "Home" }))
+    await expectHomeIdle()
+
+    expect(
+      screen.queryByRole("region", { name: "One next thing" })
+    ).not.toBeInTheDocument()
+    expect(firstCafeList()).toBeInTheDocument()
+  })
+
+  it("after Skip aim then Apply only, does not check Sample or Pitch", async () => {
+    const { router } = renderApp()
+    await expectHomeIdle()
+
+    fireEvent.click(screen.getByRole("button", { name: "Skip" }))
+    expect(firstCafeNudge()).toBeInTheDocument()
+    expect(readFirstCafeState("user_test").completed).toEqual([])
+
+    fireEvent.click(screen.getByRole("link", { name: "Triage one Apply card" }))
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(SURFACE_PATHS.apply)
+    })
+
+    fireEvent.click(screen.getByRole("link", { name: "Home" }))
+    await expectHomeIdle()
+
+    expect(readFirstCafeState("user_test").completed).toEqual(["apply"])
+    const list = firstCafeList()
+    expect(
+      within(list).getByRole("link", { name: "Triage one Apply card, done" })
+    ).toBeInTheDocument()
+    expect(
+      within(list).queryByRole("link", { name: "Open the sample CV, done" })
+    ).not.toBeInTheDocument()
+    expect(
+      within(list).queryByRole("link", { name: "Make Pitch yours, done" })
+    ).not.toBeInTheDocument()
+
+    const nudge = firstCafeNudge()
+    expect(
+      within(nudge).getByRole("link", { name: "Open the sample CV" })
+    ).toHaveAttribute("href", `${SURFACE_PATHS.paper}?open=sample`)
   })
 
   it("lets I'm not sure yet skip without touching Pitch", async () => {
@@ -640,6 +738,10 @@ describe("Home optional aim prompt", () => {
     expect(getMockPitchDoc()?.content).toMatchObject({
       headline: STARTER_PITCH_HEADLINE,
     })
+    expect(
+      within(firstCafeNudge()).getByRole("link", { name: "Open the sample CV" })
+    ).toBeInTheDocument()
+    expect(readFirstCafeState("user_test").completed).toEqual([])
   })
 
   it("soft-feeds Pitch headline from one aim without forcing a custom line", async () => {
@@ -652,6 +754,10 @@ describe("Home optional aim prompt", () => {
     expect(
       screen.queryByRole("heading", { name: "What are you aiming for?" })
     ).not.toBeInTheDocument()
+    expect(
+      within(firstCafeNudge()).getByRole("link", { name: "Open the sample CV" })
+    ).toBeInTheDocument()
+    expect(readFirstCafeState("user_test").completed).toEqual([])
 
     await waitFor(() => {
       expect(getMockPitchDoc()?.content).toMatchObject({

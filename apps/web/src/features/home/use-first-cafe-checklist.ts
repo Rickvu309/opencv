@@ -1,6 +1,10 @@
 import { useState } from "react"
 
 import {
+  EMPTY_AIM_PROMPT_STATE,
+  readAimPromptState,
+} from "@/features/home/aim-prompt.ts"
+import {
   EMPTY_FIRST_CAFE_STATE,
   FIRST_CAFE_CHECKLIST_ITEMS,
   dismissFirstCafeChecklist,
@@ -11,10 +15,12 @@ import {
 } from "@/features/home/first-cafe-checklist.ts"
 import { authClient } from "@/lib/auth-client.ts"
 
-export function useFirstCafeChecklist() {
+export function useFirstCafeChecklist(opts?: { aimResolved?: boolean }) {
   const { data } = authClient.useSession()
   const userId = data?.user.id
   const stored = userId ? readFirstCafeState(userId) : EMPTY_FIRST_CAFE_STATE
+  const storedAim = userId ? readAimPromptState(userId) : EMPTY_AIM_PROMPT_STATE
+  const aimResolved = opts?.aimResolved ?? storedAim.resolved
   const [sessionDismissed, setSessionDismissed] = useState(false)
   const [sessionNudgeSkipped, setSessionNudgeSkipped] = useState(false)
 
@@ -30,11 +36,15 @@ export function useFirstCafeChecklist() {
     setSessionNudgeSkipped(true)
   }
 
-  const nudge = nextFirstCafeNudge({
-    completed: stored.completed,
-    nudgeSkipped: stored.nudgeSkipped || sessionNudgeSkipped,
-    extraWins: stored.wins,
-  })
+  const nudge =
+    userId == null
+      ? null
+      : nextFirstCafeNudge({
+          completed: stored.completed,
+          nudgeSkipped: stored.nudgeSkipped || sessionNudgeSkipped,
+          extraWins: stored.wins,
+          aimResolved,
+        })
 
   return {
     visible: Boolean(userId) && !stored.dismissed && !sessionDismissed,

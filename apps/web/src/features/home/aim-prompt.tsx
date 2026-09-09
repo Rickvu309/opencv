@@ -1,10 +1,18 @@
 import { Button } from "@workspace/ui/components/button"
 
-import { useAimPrompt } from "@/features/home/use-aim-prompt.ts"
+import { AIM_OPTIONS, type AimId } from "@/features/home/aim-prompt.ts"
 
-export function AimPrompt() {
-  const { visible, options, skip, choose } = useAimPrompt()
-
+export function AimPrompt({
+  visible,
+  options,
+  onSkip,
+  onChoose,
+}: {
+  visible: boolean
+  options: typeof AIM_OPTIONS
+  onSkip: () => void
+  onChoose: (id: AimId) => void
+}) {
   if (!visible) return null
 
   return (
@@ -29,7 +37,7 @@ export function AimPrompt() {
           variant="ghost"
           size="sm"
           className="h-7 shrink-0 px-2 text-xs text-muted-foreground"
-          onClick={skip}
+          onClick={onSkip}
         >
           Skip
         </Button>
@@ -43,7 +51,7 @@ export function AimPrompt() {
             variant="outline"
             size="sm"
             className="h-8 rounded-full"
-            onClick={() => choose(option.id)}
+            onClick={() => onChoose(option.id)}
           >
             {option.label}
           </Button>
@@ -53,7 +61,7 @@ export function AimPrompt() {
           variant="ghost"
           size="sm"
           className="h-8 rounded-full text-muted-foreground"
-          onClick={skip}
+          onClick={onSkip}
         >
           I'm not sure yet
         </Button>

@@ -175,6 +175,34 @@ describe("first-café next nudge", () => {
     ).toBeNull()
   })
 
+  it("after aim is resolved, points at the first craft surface before any win", () => {
+    const coldStart = nextFirstCafeNudge({
+      completed: [],
+      nudgeSkipped: false,
+      aimResolved: true,
+    })
+    expect(coldStart).toMatchObject({
+      id: "sample-cv",
+      label: "Open the sample CV",
+      to: SURFACE_PATHS.paper,
+      search: { open: "sample" },
+    })
+    expect(
+      nextFirstCafeNudge({
+        completed: ["email"],
+        nudgeSkipped: false,
+        aimResolved: true,
+      })
+    ).toMatchObject({ id: "sample-cv" })
+    expect(
+      nextFirstCafeNudge({
+        completed: [],
+        nudgeSkipped: true,
+        aimResolved: true,
+      })
+    ).toBeNull()
+  })
+
   it("points at the next existing Paper / Pitch / Apply path after one win", () => {
     const afterSample = nextFirstCafeNudge({
       completed: ["sample-cv"],

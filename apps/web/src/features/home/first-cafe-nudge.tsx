@@ -6,8 +6,12 @@ import { cn } from "@workspace/ui/lib/utils"
 
 import { useFirstCafeChecklist } from "@/features/home/use-first-cafe-checklist.ts"
 
-export function FirstCafeNudge() {
-  const { nudge, skipNudge } = useFirstCafeChecklist()
+export function FirstCafeNudge({
+  aimResolved = false,
+}: {
+  aimResolved?: boolean
+}) {
+  const { nudge, skipNudge } = useFirstCafeChecklist({ aimResolved })
 
   if (!nudge) return null
 
