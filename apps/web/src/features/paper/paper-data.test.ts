@@ -18,9 +18,13 @@ import {
   PAPER_ATTACH_SAMPLE_CTA,
   PAPER_LINKED_EMPTY_HINT,
   PAPER_LIST_EMPTY_CTA,
+  OWNED_CV_NAME,
   SAMPLE_CV_LABEL,
+  SAMPLE_CV_MAKE_MINE,
   formatPaperUpdated,
   isSampleCv,
+  isStarterCvPersonName,
+  ownedCvName,
   paperDocToLink,
   paperLinkedEmptyCta,
   paperSummary,
@@ -145,6 +149,16 @@ describe("paper display helpers", () => {
     expect(PAPER_ATTACH_SAMPLE_CTA).toBe("Attach Sample CV to a live job")
     expect(PAPER_LINKED_EMPTY_HINT).toMatch(/Apply knows which CV/)
     expect(SAMPLE_CV_LABEL).toBe("Sample · replace anytime")
+    expect(SAMPLE_CV_MAKE_MINE).toBe("Make mine")
+  })
+
+  it("names a claimed sample CV after the person on the page, then the User", () => {
+    expect(isStarterCvPersonName("Your name")).toBe(true)
+    expect(ownedCvName("Alex Tran")).toBe("Alex's CV")
+    expect(ownedCvName("Alex Tran", "Your name")).toBe("Alex's CV")
+    expect(ownedCvName("Alex Tran", "Linh Nguyen")).toBe("Linh's CV")
+    expect(ownedCvName(undefined, "  ")).toBe(OWNED_CV_NAME)
+    expect(ownedCvName("  ")).toBe(OWNED_CV_NAME)
   })
 
   it("offers an attach CTA for the first CV when the sample is gone", () => {

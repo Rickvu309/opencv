@@ -30,8 +30,11 @@ import {
   PAPER_LINKED_EMPTY_HINT,
   PAPER_LIST_EMPTY_CTA,
   SAMPLE_CV_LABEL,
+  SAMPLE_CV_MAKE_MINE,
+  ownedCvName,
 } from "@/features/paper/paper-data.ts"
 import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
+import { TEST_SESSION_USER } from "@/test/auth-client-mock.ts"
 import { getMockPaperDocs } from "@/test/paper-api-mock.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
 import {
@@ -53,9 +56,15 @@ async function openDoc(name: string) {
   return editor
 }
 
+const SEEDED_SAMPLE_CV_ID = "66666666-6666-7666-8666-666666666666"
+
+function ownedSampleCvName() {
+  return ownedCvName(TEST_SESSION_USER.name)
+}
+
 function starterSampleCvDoc() {
   return {
-    id: "66666666-6666-7666-8666-666666666666",
+    id: SEEDED_SAMPLE_CV_ID,
     name: STARTER_CV_NAME,
     kind: "cv" as const,
     status: "draft" as const,
@@ -77,7 +86,9 @@ function seedStarterPaperDrive() {
 }
 
 function sampleInternshipCv() {
-  const cv = getMockPaperDocs().find((doc) => doc.name === STARTER_CV_NAME)
+  const cv =
+    getMockPaperDocs().find((doc) => doc.id === SEEDED_SAMPLE_CV_ID) ??
+    getMockPaperDocs().find((doc) => doc.name === STARTER_CV_NAME)
   expect(cv && isCvDocument(cv.content)).toBe(true)
   if (!cv || !isCvDocument(cv.content)) {
     throw new Error("Sample internship CV is missing")
@@ -193,6 +204,9 @@ describe("Paper drive", () => {
     ).toBeInTheDocument()
     expect(screen.getByText(new RegExp(SAMPLE_CV_LABEL))).toBeInTheDocument()
     expect(
+      screen.getByRole("button", { name: SAMPLE_CV_MAKE_MINE })
+    ).toBeInTheDocument()
+    expect(
       screen.queryByRole("button", { name: "New document" })
     ).not.toBeInTheDocument()
   })
@@ -284,6 +298,93 @@ describe("Paper drive", () => {
       expect(screen.queryByText(STARTER_CV_NAME)).not.toBeInTheDocument()
     })
     expect(screen.queryByText(SAMPLE_CV_LABEL)).not.toBeInTheDocument()
+  })
+
+  it("makes the sample CV theirs from the drive without a wipe wizard", async () => {
+    stubDesktopViewport(true)
+    seedStarterPaperDrive()
+    renderPaper()
+
+    expect(await screen.findByText(STARTER_CV_NAME)).toBeInTheDocument()
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: `Document actions for ${STARTER_CV_NAME}`,
+      })
+    )
+    fireEvent.click(
+      await screen.findByRole("menuitem", { name: SAMPLE_CV_MAKE_MINE })
+    )
+
+    expect(
+      await screen.findByText(ownedSampleCvName())
+    ).toBeInTheDocument()
+    expect(screen.queryByText(STARTER_CV_NAME)).not.toBeInTheDocument()
+    expect(screen.queryByText(SAMPLE_CV_LABEL)).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("dialog", { name: /clear|wipe|reset|confirm/i })
+    ).not.toBeInTheDocument()
+    expect(sampleInternshipCv().name).toBe(ownedSampleCvName())
+    expect(sampleInternshipCv().content).toEqual(starterCvDocument())
+  })
+
+  it("makes the sample CV theirs from editor chrome after a real edit", async () => {
+    stubDesktopViewport(true)
+    seedStarterPaperDrive()
+    renderPaper()
+    const editor = await openDoc(STARTER_CV_NAME)
+
+    expect(
+      screen.getByRole("button", { name: SAMPLE_CV_MAKE_MINE })
+    ).toBeInTheDocument()
+    expect(within(editor).getByText(new RegExp(SAMPLE_CV_LABEL))).toBeInTheDocument()
+
+    const name = within(editor).getByRole("textbox", { name: "Full name" })
+    name.textContent = "Linh Nguyen"
+    fireEvent.input(name)
+
+    await waitFor(() => {
+      expect(sampleInternshipCv().content.name).toBe("Linh Nguyen")
+      expect(sampleInternshipCv().name).toBe(ownedCvName(TEST_SESSION_USER.name, "Linh Nguyen"))
+    })
+    expect(screen.queryByText(SAMPLE_CV_LABEL)).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: SAMPLE_CV_MAKE_MINE })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("dialog", { name: /clear|wipe|reset|confirm/i })
+    ).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: /all documents/i }))
+    expect(await screen.findByRole("region", { name: "Paper" })).toBeInTheDocument()
+    expect(screen.getByText("Linh's CV")).toBeInTheDocument()
+    expect(screen.queryByText(STARTER_CV_NAME)).not.toBeInTheDocument()
+    expect(screen.queryByText(SAMPLE_CV_LABEL)).not.toBeInTheDocument()
+  })
+
+  it("claims the sample CV with Make mine and keeps edits across reload", async () => {
+    stubDesktopViewport(true)
+    seedStarterPaperDrive()
+    const first = renderPaper()
+    const editor = await openDoc(STARTER_CV_NAME)
+
+    const summary = within(editor).getByRole("textbox", { name: "Summary" })
+    summary.textContent = "Café rewrite I want to keep"
+    fireEvent.input(summary)
+    fireEvent.click(screen.getByRole("button", { name: SAMPLE_CV_MAKE_MINE }))
+
+    await waitFor(() => {
+      expect(sampleInternshipCv().name).toBe(ownedSampleCvName())
+      expect(sampleInternshipCv().content.summary).toBe("Café rewrite I want to keep")
+    })
+
+    first.unmount()
+    cleanup()
+    renderPaper()
+    await expectPaperDrive()
+    expect(screen.queryByText(STARTER_CV_NAME)).not.toBeInTheDocument()
+    expect(screen.queryByText(SAMPLE_CV_LABEL)).not.toBeInTheDocument()
+    const reloaded = await openDoc(ownedSampleCvName())
+    expect(within(reloaded).getByText("Café rewrite I want to keep")).toBeInTheDocument()
+    expect(screen.queryByText(SAMPLE_CV_LABEL)).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: SAMPLE_CV_MAKE_MINE })).not.toBeInTheDocument()
   })
 
   it("attaches the sample CV from Paper and shows the link on Apply", async () => {
@@ -818,9 +919,12 @@ describe("Paper editors", () => {
       expect(
         sampleInternshipCv().content.experience[0]?.bullets
       ).toContain(experienceMarker)
+      expect(sampleInternshipCv().name).toBe(ownedSampleCvName())
     })
+    expect(screen.queryByText(STARTER_CV_NAME)).not.toBeInTheDocument()
+    expect(screen.queryByText(SAMPLE_CV_LABEL)).not.toBeInTheDocument()
 
-    const again = await openDoc(STARTER_CV_NAME)
+    const again = await openDoc(ownedSampleCvName())
     expect(within(again).getByText("QVE207SkillMarker")).toBeInTheDocument()
     expect(within(again).getByText(experienceMarker)).toBeInTheDocument()
     expect(
@@ -841,7 +945,7 @@ describe("Paper editors", () => {
       expect(sampleSkillItems()).not.toContain("QVE207SkillMarker")
     })
 
-    const afterRename = await openDoc(STARTER_CV_NAME)
+    const afterRename = await openDoc(ownedSampleCvName())
     expect(within(afterRename).getByText(renamed)).toBeInTheDocument()
     fireEvent.click(
       within(afterRename).getAllByRole("button", { name: "Remove skill" }).at(-1)!
@@ -852,7 +956,7 @@ describe("Paper editors", () => {
       expect(sampleSkillItems()).not.toContain(renamed)
     })
 
-    const afterRemove = await openDoc(STARTER_CV_NAME)
+    const afterRemove = await openDoc(ownedSampleCvName())
     expect(within(afterRemove).queryByText(renamed)).not.toBeInTheDocument()
     expect(within(afterRemove).getByText(experienceMarker)).toBeInTheDocument()
   })
@@ -882,14 +986,18 @@ describe("Paper editors", () => {
     await waitFor(() => {
       expect(sampleSkillItems()).toContain("QVE207ReloadMarker")
       expect(sampleSkillItems()).toContain("QVE207ReloadRename")
+      expect(sampleInternshipCv().name).toBe(ownedSampleCvName())
     })
     expect(screen.getByRole("button", { name: "Saved" })).toBeInTheDocument()
+    expect(screen.queryByText(SAMPLE_CV_LABEL)).not.toBeInTheDocument()
 
     first.unmount()
     cleanup()
     renderPaper()
     await expectPaperDrive()
-    const reloaded = await openDoc(STARTER_CV_NAME)
+    expect(screen.queryByText(STARTER_CV_NAME)).not.toBeInTheDocument()
+    expect(screen.queryByText(SAMPLE_CV_LABEL)).not.toBeInTheDocument()
+    const reloaded = await openDoc(ownedSampleCvName())
     expect(within(reloaded).getByText("QVE207ReloadMarker")).toBeInTheDocument()
     expect(within(reloaded).getByText("QVE207ReloadRename")).toBeInTheDocument()
   })

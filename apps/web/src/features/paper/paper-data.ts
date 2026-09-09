@@ -1,6 +1,7 @@
 import {
   PAPER_KIND_LABEL,
   STARTER_CV_NAME,
+  STARTER_CV_PERSON_NAME,
   emptyCvDocument,
   emptyProofDocument,
   isCvDocument,
@@ -78,6 +79,8 @@ export function formatPaperUpdated(iso: string, now = Date.now()): string {
 }
 
 export const SAMPLE_CV_LABEL = "Sample · replace anytime"
+export const SAMPLE_CV_MAKE_MINE = "Make mine"
+export const OWNED_CV_NAME = "My internship CV"
 
 /** One-sentence value for the Linked to Apply empty tile. */
 export const PAPER_LINKED_EMPTY_HINT =
@@ -94,6 +97,26 @@ export const PAPER_LIST_EMPTY_CTA = {
 
 export function isSampleCv(doc: PaperDoc) {
   return doc.kind === "cv" && doc.name === STARTER_CV_NAME
+}
+
+export function isStarterCvPersonName(name: string) {
+  return name.trim().toLowerCase() === STARTER_CV_PERSON_NAME.toLowerCase()
+}
+
+/** Drive title after the User claims the sample CV. */
+export function ownedCvName(
+  userName?: string | null,
+  personName?: string | null
+) {
+  const person = personName?.trim() ?? ""
+  if (person && !isStarterCvPersonName(person)) {
+    return `${profileFirstName({ name: person })}'s CV`
+  }
+  const user = userName?.trim() ?? ""
+  if (user) {
+    return `${profileFirstName({ name: user })}'s CV`
+  }
+  return OWNED_CV_NAME
 }
 
 export function sampleCvOf(docs: readonly PaperDoc[]) {

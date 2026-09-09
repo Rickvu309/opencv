@@ -2,6 +2,7 @@ import {
   PAPER_CONTENT_VERSION,
   PITCH_CONTENT_VERSION,
   STARTER_CV_NAME,
+  STARTER_CV_PERSON_NAME,
   STARTER_GUIDED_APPLY_COMPANY,
   STARTER_GUIDED_APPLY_TITLE,
   STARTER_PITCH_ABOUT_LEAD,
@@ -42,7 +43,8 @@ describe("starter content", () => {
       starterCvContent()
     )
     expect(decoded.ok).toBe(true)
-    expect(starterCvDocument().name).toBe("Your name")
+    expect(starterCvDocument().name).toBe(STARTER_CV_PERSON_NAME)
+    expect(STARTER_CV_PERSON_NAME).toBe("Your name")
     expect(STARTER_CV_NAME).toBe("Sample internship CV")
     expect(flattenStarterCopy()).not.toMatch(PERSONA)
     expect(flattenStarterCopy()).not.toMatch(/cv:v1:|proof:v1:/)

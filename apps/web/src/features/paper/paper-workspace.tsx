@@ -36,13 +36,17 @@ import { ComingSoon } from "@/components/coming-soon.tsx"
 import { ErrorBanner } from "@/components/error-banner.tsx"
 import { useApplyCards } from "@/features/apply/use-apply-cards.ts"
 import { DestructiveCommandDialog } from "@/features/commands/destructive-command-dialog.tsx"
+import { authClient } from "@/lib/auth-client.ts"
 
 import { paperAttachPair } from "./paper-apply-attach.ts"
 import {
   SAMPLE_CV_LABEL,
+  SAMPLE_CV_MAKE_MINE,
   TYPE_LABEL,
+  cvContentOf,
   formatPaperUpdated,
   isSampleCv,
+  ownedCvName,
   paperSummary,
   type PaperSummaryId,
 } from "./paper-data.ts"
@@ -66,6 +70,7 @@ export function PaperWorkspace({
 }) {
   const paper = usePaperDocs()
   const apply = useApplyCards()
+  const { data: session } = authClient.useSession()
   const [query, setQuery] = useState("")
   const [openDocId, setOpenDocId] = useState<string | null>(null)
   const [openedSample, setOpenedSample] = useState(false)
@@ -119,6 +124,14 @@ export function PaperWorkspace({
       const pair = paperAttachPair(paper.docs, apply.cards)
       if (pair) paper.linkApplyCard(pair.doc.id, pair.card.id)
     }
+  }
+
+  function makeMine(doc: PaperDoc) {
+    if (!isSampleCv(doc)) return
+    paper.renameDoc(
+      doc.id,
+      ownedCvName(session?.user.name, cvContentOf(doc).name)
+    )
   }
 
   function openRename(doc: PaperDoc) {
@@ -429,6 +442,7 @@ export function PaperWorkspace({
                       <td className="px-4 py-3">
                         <RowMenu
                           doc={doc}
+                          onMakeMine={() => makeMine(doc)}
                           onRename={() => openRename(doc)}
                           onStatus={(status) => paper.setStatus(doc.id, status)}
                           onLink={() => setLinkTarget(doc)}
@@ -450,12 +464,14 @@ export function PaperWorkspace({
 
 function RowMenu({
   doc,
+  onMakeMine,
   onRename,
   onStatus,
   onLink,
   onDelete,
 }: {
   doc: PaperDoc
+  onMakeMine: () => void
   onRename: () => void
   onStatus: (status: PaperDocStatus) => void
   onLink: () => void
@@ -475,6 +491,16 @@ function RowMenu({
         className="min-w-44"
         onClick={(e) => e.stopPropagation()}
       >
+        {isSampleCv(doc) ? (
+          <DropdownMenuItem
+            onClick={(e) => {
+              e.stopPropagation()
+              onMakeMine()
+            }}
+          >
+            {SAMPLE_CV_MAKE_MINE}
+          </DropdownMenuItem>
+        ) : null}
         <DropdownMenuItem
           onClick={(e) => {
             e.stopPropagation()
