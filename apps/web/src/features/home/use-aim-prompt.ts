@@ -52,8 +52,11 @@ export function useAimPrompt() {
     }
   }
 
+  const resolved = Boolean(userId) && (stored.resolved || sessionResolved)
+
   return {
-    visible: Boolean(userId) && !stored.resolved && !sessionResolved,
+    visible: Boolean(userId) && !resolved,
+    resolved,
     options: AIM_OPTIONS,
     skip() {
       resolve(null)

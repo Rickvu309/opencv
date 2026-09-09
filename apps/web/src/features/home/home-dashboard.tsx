@@ -10,11 +10,13 @@ import { FirstCafeChecklist } from "@/features/home/first-cafe-checklist.tsx"
 import { FirstCafeNudge } from "@/features/home/first-cafe-nudge.tsx"
 import { homeGreeting } from "@/features/home/greeting.ts"
 import { HomeSuggestions } from "@/features/home/home-suggestions.tsx"
+import { useAimPrompt } from "@/features/home/use-aim-prompt.ts"
 import { useThreadStore } from "@/features/home/use-thread-store.ts"
 
 export function HomeDashboard() {
   const { data } = authClient.useSession()
   const name = data?.user.name?.trim() || "there"
+  const aim = useAimPrompt()
   const {
     messages,
     phase,
@@ -95,8 +97,13 @@ export function HomeDashboard() {
               </h1>
             </header>
 
-            <AimPrompt />
-            <FirstCafeNudge />
+            <AimPrompt
+              visible={aim.visible}
+              options={aim.options}
+              onSkip={aim.skip}
+              onChoose={aim.choose}
+            />
+            <FirstCafeNudge aimResolved={aim.resolved} />
             <FirstCafeChecklist />
 
             <div className="w-full space-y-2 overflow-visible">

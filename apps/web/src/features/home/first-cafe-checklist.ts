@@ -145,6 +145,8 @@ export function nextFirstCafeNudge(input: {
   completed: readonly FirstCafeItemId[]
   nudgeSkipped: boolean
   extraWins?: readonly FirstCafeWinId[]
+  /** Skip / dismiss aim with no win yet — first craft surface (QVE-242). */
+  aimResolved?: boolean
 }): FirstCafeItem | null {
   if (input.nudgeSkipped) return null
 
@@ -155,7 +157,7 @@ export function nextFirstCafeNudge(input: {
   for (const id of input.extraWins ?? []) {
     wins.add(id)
   }
-  if (wins.size === 0) return null
+  if (wins.size === 0 && !input.aimResolved) return null
 
   return (
     FIRST_CAFE_CHECKLIST_ITEMS.find(
