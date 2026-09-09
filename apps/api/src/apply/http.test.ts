@@ -124,6 +124,7 @@ describe("apply API", () => {
     expect(createdRes.status).toBe(200)
     const created = await json<{ ok: true; data: ApplyCard }>(createdRes)
     expect(created.data.title).toBe("Associate PM intern")
+    expect(created.data.demo).toBe(false)
     expectNoFit(created)
 
     const movedRes = await postCommand(app, cookieA, APPLY_COMMANDS.moveCard, {

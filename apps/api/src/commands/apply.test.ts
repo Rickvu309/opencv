@@ -115,6 +115,7 @@ describe("apply commands", () => {
       company: "Fintech scale-up",
       stage: "inbox",
       starred: false,
+      demo: false,
       trackKind: "followup",
     })
     expect(card.position.length).toBeGreaterThan(0)
@@ -126,6 +127,22 @@ describe("apply commands", () => {
       .where(eq(applyCards.id, card.id))
     expect(row?.fit).toBe(0)
     expect(card.jobUrl).toBeNull()
+    expect(card.demo).toBe(false)
+  })
+
+  it("does not stamp Demo on a User-created card that reuses a starter title", async () => {
+    const created = successData<ApplyCard>(
+      await commandRegistry.execute({
+        name: APPLY_COMMANDS.createCard,
+        input: {
+          title: "Associate PM intern",
+          company: "Local startup",
+        },
+        actor: userActor(ownerId),
+        db,
+      })
+    )
+    expect(created.demo).toBe(false)
   })
 
   it("stores a job posting URL on create and can clear it", async () => {

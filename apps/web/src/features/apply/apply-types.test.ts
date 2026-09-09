@@ -47,6 +47,15 @@ describe("Apply helpers", () => {
     expect(companyShort("Agency")).toBe("AG")
     const cards = sampleApplyCards()
     expect(cards.length).toBeGreaterThan(0)
+    expect(cards.filter((card) => card.demo).map((card) => card.title)).toEqual([
+      "Associate PM intern",
+      "Business analyst intern",
+      "Product analyst intern",
+      "UX research intern",
+    ])
+    expect(cards.find((card) => card.title === "Product intern")?.demo).toBe(
+      false
+    )
     expect(JSON.stringify(cards)).not.toMatch(/"fit"/)
     expect(JSON.stringify(cards)).not.toMatch(/Eric Nguyen/i)
     expect(SAMPLE_AUTHOR_NAME).not.toMatch(/Eric/i)

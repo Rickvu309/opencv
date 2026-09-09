@@ -24,6 +24,7 @@ const card: ApplyCard = {
   position: "a0",
   starred: true,
   jobUrl: null,
+  demo: true,
   trackDate: "2026-08-26",
   trackKind: "followup",
   createdAt: "2026-08-25T00:00:00.000Z",

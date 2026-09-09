@@ -64,6 +64,13 @@
       "when": 1788854539561,
       "tag": "0008_pitch_docs",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1788926400000,
+      "tag": "0009_apply_card_demo",
+      "breakpoints": true
     }
   ]
 }

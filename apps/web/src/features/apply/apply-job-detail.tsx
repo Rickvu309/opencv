@@ -3,11 +3,13 @@ import {
   APPLY_JOB_URL_BLOCKED,
   APPLY_JOB_URL_INVALID,
   applyJobSourceHost,
+  isDemoApplyCard,
   openableApplyJobUrl,
   parseApplyJobUrlInput,
   publicApplyJobUrl,
   type PaperDoc,
 } from "@workspace/domain"
+import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import {
   DropdownMenu,
@@ -37,6 +39,8 @@ import {
 } from "@/features/apply/apply-guide.ts"
 import { paperDocsLinkedToCard } from "@/features/paper/paper-apply-attach.ts"
 import {
+  APPLY_DEMO_HINT,
+  APPLY_DEMO_LABEL,
   APPLY_JOB_DATE_LABEL,
   APPLY_JOB_NEXT_STEP_LABEL,
   APPLY_JOB_NOTES_PLACEHOLDER,
@@ -171,6 +175,13 @@ export function JobDetailPanel({
       <div className="flex flex-1 flex-col gap-4 overflow-auto p-4">
         {openError ? (
           <ErrorBanner variant="inline">{openError}</ErrorBanner>
+        ) : null}
+
+        {isDemoApplyCard(card) ? (
+          <div role="status" className="space-y-1.5">
+            <Badge variant="secondary">{APPLY_DEMO_LABEL}</Badge>
+            <p className="text-sm text-muted-foreground">{APPLY_DEMO_HINT}</p>
+          </div>
         ) : null}
 
         {guidedAction?.kind === "stage" ? (

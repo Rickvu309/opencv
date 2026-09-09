@@ -246,7 +246,8 @@ export type ApplyCardDeleted = {
 
 /**
  * Public Apply card. `fit` is stored on the row and never appears here
- * (PRODUCT.md open question 1).
+ * (PRODUCT.md open question 1). `demo` marks signup starter cards so they
+ * never read as the User's own jobs (QVE-240).
  */
 export type ApplyCard = {
   id: string
@@ -257,10 +258,17 @@ export type ApplyCard = {
   position: string
   starred: boolean
   jobUrl: string | null
+  /** Signup sample — never a personal Opportunity. Omitted on User-owned cards. */
+  demo: boolean
   trackDate: string
   trackKind: ApplyTrackKind
   createdAt: string
   updatedAt: string
+}
+
+/** Signup starter (or leftover labeled seed) — not a personal job. */
+export function isDemoApplyCard(card: { demo?: boolean }): boolean {
+  return card.demo === true
 }
 
 export function parseApplyScanInput(raw: {

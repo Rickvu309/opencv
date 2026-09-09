@@ -7,6 +7,10 @@ import {
   within,
 } from "@testing-library/react"
 
+import {
+  APPLY_DEMO_HINT,
+  APPLY_DEMO_LABEL,
+} from "@/features/apply/apply-job-structure.ts"
 import { APPLY_OPEN_GUIDE } from "@/features/apply/apply-search.ts"
 import { APPLY_DRAG_TYPE, localIsoDate } from "@/features/apply/apply-types.ts"
 import { SURFACE_COPY, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
@@ -131,6 +135,36 @@ describe("Apply workspace", () => {
     ).toBeInTheDocument()
     expect(screen.queryByText(/Eric Nguyen/i)).not.toBeInTheDocument()
     expectNoVisibleFitScore()
+
+    expect(
+      within(stageColumn("inbox")).getByRole("button", {
+        name: "Associate PM intern at Local startup, Demo",
+      })
+    ).toBeInTheDocument()
+    expect(
+      within(stageColumn("inbox")).getAllByText(APPLY_DEMO_LABEL).length
+    ).toBeGreaterThan(0)
+    expect(
+      within(stageColumn("prep")).getByText(APPLY_DEMO_LABEL)
+    ).toBeInTheDocument()
+    expect(
+      within(stageColumn("sent")).getByText(APPLY_DEMO_LABEL)
+    ).toBeInTheDocument()
+    expect(
+      within(stageColumn("closed")).getByText(APPLY_DEMO_LABEL)
+    ).toBeInTheDocument()
+    expect(
+      within(stageColumn("inbox")).getByRole("button", {
+        name: "Product intern at Fintech scale-up",
+      })
+    ).toBeInTheDocument()
+    expect(
+      within(
+        stageColumn("inbox").querySelector(
+          '[aria-label="Product intern at Fintech scale-up"]'
+        ) as HTMLElement
+      ).queryByText(APPLY_DEMO_LABEL)
+    ).not.toBeInTheDocument()
   })
 
   it("drags a card to another Stage and keeps the move", async () => {
@@ -291,6 +325,8 @@ describe("Apply workspace", () => {
     expect(within(panel).queryByText("Job posting URL")).not.toBeInTheDocument()
     expectNoVisibleFitScore()
     expect(screen.queryByText(/Eric Nguyen/i)).not.toBeInTheDocument()
+    expect(within(panel).getByText(APPLY_DEMO_LABEL)).toBeInTheDocument()
+    expect(within(panel).getByText(APPLY_DEMO_HINT)).toBeInTheDocument()
     expect(
       within(panel).queryByRole("button", { name: "Open job posting" })
     ).not.toBeInTheDocument()
@@ -327,14 +363,16 @@ describe("Apply workspace", () => {
     ).toHaveAttribute("aria-current", "date")
 
     expect(
-      screen.getByRole("button", { name: "Associate PM intern" })
+      screen.getByRole("button", { name: "Associate PM intern · Demo" })
     ).toBeInTheDocument()
     expect(
       screen.getByRole("button", { name: "Product intern" })
     ).toBeInTheDocument()
     expectNoVisibleFitScore()
 
-    fireEvent.click(screen.getByRole("button", { name: "Associate PM intern" }))
+    fireEvent.click(
+      screen.getByRole("button", { name: "Associate PM intern · Demo" })
+    )
     expect(
       await screen.findByRole("complementary", { name: "Job detail" })
     ).toBeInTheDocument()
@@ -526,6 +564,7 @@ describe("Apply workspace", () => {
       name: "Next step",
     })
     expect(sourceField).toHaveValue("")
+    expect(within(panel).queryByText(APPLY_DEMO_HINT)).not.toBeInTheDocument()
     expect(
       within(source).getByPlaceholderText("Paste a posting link")
     ).toBeInTheDocument()
@@ -611,6 +650,8 @@ describe("Apply workspace", () => {
       within(panel).queryByRole("button", { name: "Open job posting" })
     ).not.toBeInTheDocument()
     expect(within(panel).queryByDisplayValue(/jobs\.example\.com/i)).toBeNull()
+    expect(within(panel).getByText(APPLY_DEMO_LABEL)).toBeInTheDocument()
+    expect(within(panel).getByText(APPLY_DEMO_HINT)).toBeInTheDocument()
     expect(open).not.toHaveBeenCalled()
   })
 

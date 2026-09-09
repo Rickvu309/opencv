@@ -8,6 +8,8 @@ function iso(daysAgo: number) {
  * Neutral sample cards for the Apply API mock — never the demo persona.
  * Associate PM intern keeps a leftover jobs.example.com URL so UI tests
  * prove Open job posting is hidden (QVE-217). New production seeds are null.
+ * Starter-shaped cards are `demo: true` so the board/drawer stay honest (QVE-240).
+ * Product intern is a User-owned extra so we can prove Add-job cards stay unlabeled.
  */
 export function sampleApplyCards(): ApplyCard[] {
   return [
@@ -20,6 +22,7 @@ export function sampleApplyCards(): ApplyCard[] {
       position: "a0",
       starred: true,
       jobUrl: "https://jobs.example.com/associate-pm-intern",
+      demo: true,
       trackDate: "2026-08-26",
       trackKind: "followup",
       createdAt: iso(0),
@@ -34,6 +37,7 @@ export function sampleApplyCards(): ApplyCard[] {
       position: "a1",
       starred: false,
       jobUrl: null,
+      demo: false,
       trackDate: "2026-08-26",
       trackKind: "interview",
       createdAt: iso(0),
@@ -48,6 +52,7 @@ export function sampleApplyCards(): ApplyCard[] {
       position: "a0",
       starred: false,
       jobUrl: null,
+      demo: true,
       trackDate: "2026-08-15",
       trackKind: "followup",
       createdAt: iso(1),
@@ -62,6 +67,7 @@ export function sampleApplyCards(): ApplyCard[] {
       position: "a0",
       starred: false,
       jobUrl: null,
+      demo: true,
       trackDate: "2026-08-20",
       trackKind: "applied",
       createdAt: iso(4),
@@ -76,6 +82,7 @@ export function sampleApplyCards(): ApplyCard[] {
       position: "a0",
       starred: false,
       jobUrl: null,
+      demo: true,
       trackDate: "2026-08-10",
       trackKind: "applied",
       createdAt: iso(7),

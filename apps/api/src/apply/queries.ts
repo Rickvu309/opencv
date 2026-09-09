@@ -21,6 +21,7 @@ export function toApplyCard(row: {
   position: string
   starred: boolean
   jobUrl: string | null
+  demo?: boolean
   trackDate: string
   trackKind: ApplyCard["trackKind"]
   createdAt: Date
@@ -35,6 +36,7 @@ export function toApplyCard(row: {
     position: row.position,
     starred: row.starred,
     jobUrl: publicApplyJobUrl(row.jobUrl),
+    demo: row.demo === true,
     trackDate: row.trackDate,
     trackKind: row.trackKind,
     createdAt: iso(row.createdAt),

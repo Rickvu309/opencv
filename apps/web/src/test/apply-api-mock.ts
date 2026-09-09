@@ -212,6 +212,7 @@ export async function applyApiFetch(
       position: positionBefore(stage, null),
       starred: body.starred ?? false,
       jobUrl: body.jobUrl ?? null,
+      demo: false,
       trackDate: body.trackDate ?? todayIso(),
       trackKind: body.trackKind ?? "followup",
       createdAt: now,
