@@ -115,6 +115,7 @@ describe("signup seeds the starter workspace", () => {
     expectNoFit(apply)
     expect(JSON.stringify(apply.data)).not.toMatch(PERSONA)
     expect(apply.data.every((card) => card.jobUrl === null)).toBe(true)
+    expect(apply.data.every((card) => card.demo === true)).toBe(true)
     expect(JSON.stringify(apply.data)).not.toMatch(/example\.com/i)
 
     const listRes = await app.request("/api/threads", { headers })

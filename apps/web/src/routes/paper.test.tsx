@@ -7,6 +7,7 @@ import {
   within,
 } from "@testing-library/react"
 
+import { APPLY_DEMO_LABEL } from "@/features/apply/apply-job-structure.ts"
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { DESKTOP_MEDIA_QUERY } from "@/features/app-shell/use-media-query.ts"
 import {
@@ -316,7 +317,7 @@ describe("Paper drive", () => {
 
     fireEvent.click(
       screen.getByRole("button", {
-        name: `${STARTER_GUIDED_APPLY_TITLE} at ${STARTER_GUIDED_APPLY_COMPANY}`,
+        name: `${STARTER_GUIDED_APPLY_TITLE} at ${STARTER_GUIDED_APPLY_COMPANY}, ${APPLY_DEMO_LABEL}`,
       })
     )
     const panel = await screen.findByRole("complementary", {

@@ -112,6 +112,8 @@ export type StarterApplyCardDraft = {
   stage: ApplyStage
   starred: boolean
   jobUrl: string | null
+  /** Always true — signup samples, never personal jobs (QVE-240). */
+  demo: true
   trackKind: ApplyTrackKind
   /** Days from seed time. Negative is in the past. */
   trackOffsetDays: number
@@ -121,6 +123,7 @@ export type StarterApplyCardDraft = {
  * A few Apply cards across Stages so the board demos itself.
  * Notes are second-person product voice; companies are generic.
  * No posting URL — jobs.example.com NXDOMAINs and looks like a real JD (QVE-217).
+ * `demo: true` so the board and drawer label them Demo, not personal jobs (QVE-240).
  */
 export function starterApplyCards(): StarterApplyCardDraft[] {
   return [
@@ -131,6 +134,7 @@ export function starterApplyCards(): StarterApplyCardDraft[] {
       stage: "inbox",
       starred: true,
       jobUrl: null,
+      demo: true,
       trackKind: "followup",
       trackOffsetDays: 1,
     },
@@ -141,6 +145,7 @@ export function starterApplyCards(): StarterApplyCardDraft[] {
       stage: "prep",
       starred: false,
       jobUrl: null,
+      demo: true,
       trackKind: "followup",
       trackOffsetDays: -10,
     },
@@ -151,6 +156,7 @@ export function starterApplyCards(): StarterApplyCardDraft[] {
       stage: "sent",
       starred: false,
       jobUrl: null,
+      demo: true,
       trackKind: "applied",
       trackOffsetDays: -5,
     },
@@ -161,6 +167,7 @@ export function starterApplyCards(): StarterApplyCardDraft[] {
       stage: "closed",
       starred: false,
       jobUrl: null,
+      demo: true,
       trackKind: "applied",
       trackOffsetDays: -15,
     },
@@ -447,7 +454,7 @@ export function starterPitchContent(): Record<string, unknown> {
 }
 
 export const STARTER_THREAD_COACH_TEXT =
-  "Paper has one sample CV you can replace. Apply has a few example cards across Stages so the board isn't empty. Pitch has a sample page labeled Demo content — edit it or clear the demo when you want it to be yours. Delete any of it when you are ready — none of it is a real person.\n\nI haven't edited Paper, Apply, or Pitch, and I haven't run any Commands — this workspace was seeded for you. Ask here when you want a next step, or open those surfaces yourself."
+  "Paper has one sample CV you can replace. Apply has a few example cards labeled Demo across Stages so the board isn't empty. Pitch has a sample page labeled Demo content — edit it or clear the demo when you want it to be yours. Delete any of it when you are ready — none of it is a real person.\n\nI haven't edited Paper, Apply, or Pitch, and I haven't run any Commands — this workspace was seeded for you. Ask here when you want a next step, or open those surfaces yourself."
 
 export function starterThread() {
   return {

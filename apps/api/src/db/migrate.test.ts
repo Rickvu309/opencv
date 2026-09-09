@@ -141,6 +141,15 @@ describe("committed migrations", () => {
       `)
       expect(focusFk.rows).toEqual([{ delete_rule: "SET NULL" }])
 
+      const applyColumns = await db.execute<{ column_name: string }>(sql`
+        select column_name
+        from information_schema.columns
+        where table_schema = 'openpath_app'
+          and table_name = 'apply_cards'
+        order by column_name
+      `)
+      expect(applyColumns.rows.map((row) => row.column_name)).toContain("demo")
+
       const pitchColumns = await db.execute<{ column_name: string }>(sql`
         select column_name
         from information_schema.columns

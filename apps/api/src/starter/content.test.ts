@@ -94,8 +94,10 @@ describe("starter content", () => {
       company: STARTER_GUIDED_APPLY_COMPANY,
       stage: "inbox",
       starred: true,
+      demo: true,
       trackKind: "followup",
     })
+    expect(cards.every((card) => card.demo === true)).toBe(true)
     expect(cards.some((card) => card.starred)).toBe(true)
     expect(JSON.stringify(cards)).not.toMatch(/"fit"/)
     expect(JSON.stringify(cards)).not.toMatch(PERSONA)
@@ -117,6 +119,7 @@ describe("starter content", () => {
     expect(thread.coachText).toContain("haven't run any Commands")
     expect(thread.coachText).toContain("seeded for you")
     expect(thread.coachText).toContain("Demo content")
+    expect(thread.coachText).toContain("labeled Demo")
     expect(thread.coachText).toContain("clear the demo")
     expect(thread.coachText).not.toMatch(/stub Coach/)
     expect(thread.coachText).not.toMatch(/!/)

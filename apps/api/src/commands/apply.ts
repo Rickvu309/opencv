@@ -89,6 +89,7 @@ export const createApplyCardCommand = defineCommand({
       position,
       starred: input.starred ?? false,
       jobUrl: publicApplyJobUrl(input.jobUrl ?? null),
+      demo: false,
       trackDate: input.trackDate ?? todayIsoDate(now),
       trackKind: input.trackKind ?? "followup",
       fit: 0,

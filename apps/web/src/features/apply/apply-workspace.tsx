@@ -7,12 +7,13 @@
  * Coming-soon chrome is deferred until those actions exist.
  */
 import { useMemo, useRef, useState } from "react"
+import { isDemoApplyCard, type ApplyStage } from "@workspace/domain"
+import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import { ButtonGroup } from "@workspace/ui/components/button-group"
 import { Empty, EmptyDescription } from "@workspace/ui/components/empty-state"
 import { Input } from "@workspace/ui/components/input"
 import { cn } from "@workspace/ui/lib/utils"
-import type { ApplyStage } from "@workspace/domain"
 import {
   CalendarDays,
   GripVertical,
@@ -35,6 +36,7 @@ import {
   setCardDragData,
 } from "@/features/apply/apply-dnd.ts"
 import { pickGuidedApplyCard } from "@/features/apply/apply-guide.ts"
+import { APPLY_DEMO_LABEL } from "@/features/apply/apply-job-structure.ts"
 import { JobDetailPanel } from "@/features/apply/apply-job-detail.tsx"
 import {
   companyShort,
@@ -367,7 +369,11 @@ function BoardJobCard({
       tabIndex={0}
       draggable
       data-card-id={card.id}
-      aria-label={`${card.title} at ${card.company}`}
+      aria-label={
+        isDemoApplyCard(card)
+          ? `${card.title} at ${card.company}, ${APPLY_DEMO_LABEL}`
+          : `${card.title} at ${card.company}`
+      }
       onDragStart={(e) => {
         onDragStart()
         setCardDragData(e, card.id)
@@ -421,6 +427,13 @@ function BoardJobCard({
           {card.company}
         </span>
       </div>
+      {isDemoApplyCard(card) ? (
+        <div className="mt-2 pl-5">
+          <Badge variant="secondary" className="h-4 px-1.5 text-micro">
+            {APPLY_DEMO_LABEL}
+          </Badge>
+        </div>
+      ) : null}
       <div className="mt-2.5 flex items-center justify-between gap-2 pl-5 text-micro text-muted-foreground">
         <span className="inline-flex items-center gap-1 tabular-nums">
           <CalendarDays className="size-3 shrink-0 opacity-70" />

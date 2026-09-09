@@ -200,6 +200,7 @@ export const applyCards = openpathApp.table(
     position: text("position").notNull(),
     starred: boolean("starred").notNull().default(false),
     jobUrl: text("job_url"),
+    demo: boolean("demo").notNull().default(false),
     trackDate: date("track_date", { mode: "string" }).notNull(),
     trackKind: text("track_kind")
       .$type<"interview" | "deadline" | "followup" | "applied">()

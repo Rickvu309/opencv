@@ -2,6 +2,7 @@
  * Apply calendar — month/week view for Opportunity Tracks.
  */
 import { useMemo, useState, type MutableRefObject } from "react"
+import { isDemoApplyCard } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
 import { ButtonGroup } from "@workspace/ui/components/button-group"
 import { cn } from "@workspace/ui/lib/utils"
@@ -12,6 +13,7 @@ import {
   readCardDragId,
   setCardDragData,
 } from "@/features/apply/apply-dnd.ts"
+import { APPLY_DEMO_LABEL } from "@/features/apply/apply-job-structure.ts"
 import {
   localIsoDate,
   trackKindLabel,
@@ -361,7 +363,10 @@ function CalendarJobChip({
       )}
     >
       <span className="min-w-0">
-        <span className="block truncate font-medium">{card.title}</span>
+        <span className="block truncate font-medium">
+          {card.title}
+          {isDemoApplyCard(card) ? ` · ${APPLY_DEMO_LABEL}` : ""}
+        </span>
         {expanded ? (
           <span className="mt-0.5 block truncate text-2xs opacity-80">
             {card.company} · {trackKindLabel(card.trackKind)}

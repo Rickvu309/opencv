@@ -58,6 +58,20 @@ describe("Apply seam", () => {
     expect(calendar).not.toMatch(/card\.fit/)
   })
 
+  it("labels seeded cards Demo on the board and in the drawer", () => {
+    const workspace = read("src/features/apply/apply-workspace.tsx")
+    const detail = read("src/features/apply/apply-job-detail.tsx")
+    const structure = read("src/features/apply/apply-job-structure.ts")
+
+    expect(structure).toMatch(/export const APPLY_DEMO_LABEL = "Demo"/)
+    expect(structure).toMatch(/Starter card so the board isn't empty/)
+    expect(workspace).toMatch(/isDemoApplyCard/)
+    expect(workspace).toMatch(/APPLY_DEMO_LABEL/)
+    expect(detail).toMatch(/isDemoApplyCard/)
+    expect(detail).toMatch(/APPLY_DEMO_HINT/)
+    expect(detail).not.toMatch(/jobs\.example\.com/)
+  })
+
   it("glances five Stages on a café laptop and defers dead Coming-soon chrome", () => {
     const workspace = read("src/features/apply/apply-workspace.tsx")
 

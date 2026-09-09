@@ -95,6 +95,7 @@ export async function seedStarterWorkspace(
         position: generateKeyBetween(null, null),
         starred: draft.starred,
         jobUrl: draft.jobUrl,
+        demo: draft.demo,
         trackDate: isoDateFromOffset(now, draft.trackOffsetDays),
         trackKind: draft.trackKind,
         fit: 0,
