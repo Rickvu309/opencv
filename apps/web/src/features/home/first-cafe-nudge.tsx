@@ -15,6 +15,8 @@ export function FirstCafeNudge({
 
   if (!nudge) return null
 
+  const quietDone = nudge.optional === true
+
   return (
     <section
       role="region"
@@ -27,7 +29,7 @@ export function FirstCafeNudge({
             id="first-cafe-nudge-heading"
             className="font-heading text-sm font-medium tracking-tight"
           >
-            One next thing
+            {quietDone ? "You're set" : "One next thing"}
           </h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
             Skip whenever. This is not a tour.
@@ -40,7 +42,7 @@ export function FirstCafeNudge({
           className="h-7 shrink-0 px-2 text-xs text-muted-foreground"
           onClick={skipNudge}
         >
-          Skip
+          {quietDone ? "Hide" : "Skip"}
         </Button>
       </div>
 
@@ -53,6 +55,11 @@ export function FirstCafeNudge({
         )}
       >
         {nudge.label}
+        {quietDone ? (
+          <span className="ml-1.5 text-xs text-muted-foreground">
+            optional
+          </span>
+        ) : null}
       </Link>
     </section>
   )

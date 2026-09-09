@@ -10,6 +10,7 @@ import {
   dismissFirstCafeChecklist,
   nextFirstCafeNudge,
   readFirstCafeState,
+  requiredFirstCafeItemsDone,
   skipFirstCafeNudge,
   writeFirstCafeState,
 } from "@/features/home/first-cafe-checklist.ts"
@@ -46,8 +47,14 @@ export function useFirstCafeChecklist(opts?: { aimResolved?: boolean }) {
           aimResolved,
         })
 
+  const requiredDone = requiredFirstCafeItemsDone(stored.completed)
+
   return {
-    visible: Boolean(userId) && !stored.dismissed && !sessionDismissed,
+    visible:
+      Boolean(userId) &&
+      !stored.dismissed &&
+      !sessionDismissed &&
+      !requiredDone,
     completed: stored.completed,
     items: FIRST_CAFE_CHECKLIST_ITEMS,
     dismiss,
