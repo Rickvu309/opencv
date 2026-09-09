@@ -13,6 +13,9 @@ import { PITCH_CONTENT_KIND, PITCH_CONTENT_VERSION } from "./pitch.js"
 /** Drive name for the sample CV created at signup. Wipeable. */
 export const STARTER_CV_NAME = "Sample internship CV"
 
+/** Placeholder person name on the sample CV — not a real identity. */
+export const STARTER_CV_PERSON_NAME = "Your name"
+
 /** Seeded Inbox card Home pokes for the first Apply win (QVE-226). */
 export const STARTER_GUIDED_APPLY_TITLE = "Associate PM intern"
 export const STARTER_GUIDED_APPLY_COMPANY = "Local startup"
@@ -27,7 +30,7 @@ export const STARTER_THREAD_TITLE = "Welcome to OpenPath"
 export function starterCvDocument(): CvDocument {
   return {
     templateId: "internship",
-    name: "Your name",
+    name: STARTER_CV_PERSON_NAME,
     headline: "Early-career product intern",
     contact: {
       email: "",

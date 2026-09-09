@@ -50,11 +50,13 @@ import {
 import { type CvData, type CvTemplateId } from "./paper-cv-types.ts"
 import {
   SAMPLE_CV_LABEL,
+  SAMPLE_CV_MAKE_MINE,
   TYPE_LABEL,
   cvContentOf,
   formatPaperUpdated,
   isSampleCv,
   letterMarkdownOf,
+  ownedCvName,
   profileFirstName,
   proofContentOf,
   type PaperDoc,
@@ -160,8 +162,11 @@ export function PaperEditor({
   const proofDataRef = useRef(proofData)
   const docRef = useRef(doc)
   const onChangeRef = useRef(onChange)
+  const onRenameRef = useRef(onRename)
   const isCvRef = useRef(isCv)
   const isProofRef = useRef(isProof)
+  const titleRef = useRef(title)
+  const userNameRef = useRef(session?.user.name)
   const [conflict, setConflict] = useState(false)
   const [sectionFocus, setSectionFocus] = useState<{
     ids: string[]
@@ -180,8 +185,11 @@ export function PaperEditor({
     proofDataRef.current = proofData
     docRef.current = doc
     onChangeRef.current = onChange
+    onRenameRef.current = onRename
     isCvRef.current = isCv
     isProofRef.current = isProof
+    titleRef.current = title
+    userNameRef.current = session?.user.name
     dirtyRef.current = dirty
   })
 
@@ -311,6 +319,17 @@ export function PaperEditor({
     collapsePaperSelection(canvasRef.current)
   }, [])
 
+  function claimSampleCv(personName?: string) {
+    const current = docRef.current
+    if (!isSampleCv(current)) return
+    const typed = titleRef.current.trim()
+    if (typed && typed !== current.name) return
+    const name = ownedCvName(userNameRef.current, personName)
+    setTitle(name)
+    titleRef.current = name
+    onRenameRef.current(name)
+  }
+
   function persistOpenDoc() {
     const current = docRef.current
     if (isCvRef.current) {
@@ -320,6 +339,7 @@ export function PaperEditor({
         ...current,
         content,
       })
+      claimSampleCv(content.name)
       return
     }
     if (isProofRef.current) {
@@ -521,6 +541,21 @@ export function PaperEditor({
     setSaving(false)
   }
 
+  function makeMine() {
+    if (dirtyRef.current) {
+      persistOpenDoc()
+      setDirty(false)
+      setSaving(false)
+      return
+    }
+    const current = docRef.current
+    if (!isSampleCv(current)) return
+    const name = ownedCvName(userNameRef.current, cvDataRef.current.name)
+    setTitle(name)
+    titleRef.current = name
+    onRenameRef.current(name)
+  }
+
   const maxWidth = isProof
     ? "max-w-[58rem]"
     : isCv
@@ -590,6 +625,18 @@ export function PaperEditor({
               <PanelLeftOpen className="size-4" />
             )}
           </Button>
+
+          {isSampleCv(doc) ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              className="h-8"
+              onClick={makeMine}
+            >
+              {SAMPLE_CV_MAKE_MINE}
+            </Button>
+          ) : null}
 
           <DropdownMenu>
             <DropdownMenuTrigger
