@@ -12,6 +12,7 @@ import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 import { AIM_OPTIONS } from "@/features/home/aim-prompt.ts"
 import { SUGGESTION_POOLS } from "@/features/home/suggestions.ts"
 import { STARTER_PITCH_HEADLINE, starterPitchDocument } from "@workspace/domain"
+import { writeAimPromptState } from "@/features/home/aim-prompt.ts"
 import {
   readFirstCafeState,
   writeFirstCafeState,
@@ -39,6 +40,10 @@ function firstCafeList() {
 
 function firstCafeNudge() {
   return screen.getByRole("region", { name: "One next thing" })
+}
+
+function firstCafeQuietDone() {
+  return screen.getByRole("region", { name: "You're set" })
 }
 
 beforeEach(() => {
@@ -583,6 +588,140 @@ describe("Home first-café next nudge", () => {
     expect(
       within(list).queryByRole("link", { name: "Open the sample CV, done" })
     ).not.toBeInTheDocument()
+  })
+})
+
+function seedAimSkipped() {
+  writeAimPromptState("user_test", { resolved: true, aimId: null })
+}
+
+describe("Home first-café quiet done", () => {
+  it("hides Four small things after required wins and offers leftover Connect email", async () => {
+    seedAimSkipped()
+    writeFirstCafeState("user_test", {
+      dismissed: false,
+      completed: ["sample-cv", "pitch", "apply"],
+      nudgeSkipped: false,
+      wins: [],
+    })
+
+    const { router } = renderApp()
+    await expectHomeIdle()
+
+    expect(
+      screen.queryByRole("heading", { name: "What are you aiming for?" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("heading", { name: "Four small things" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("region", { name: "One next thing" })
+    ).not.toBeInTheDocument()
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: /congratulat|celebrate|next step/i })
+    ).not.toBeInTheDocument()
+
+    const done = firstCafeQuietDone()
+    expect(
+      within(done).getByText("Skip whenever. This is not a tour.")
+    ).toBeInTheDocument()
+    const leftover = within(done).getByRole("link", {
+      name: /Connect email/,
+    })
+    expect(leftover).toHaveAttribute(
+      "href",
+      `${SURFACE_PATHS.settings}?tab=apps`
+    )
+    expect(within(done).getAllByRole("link")).toHaveLength(1)
+    expect(
+      screen.getByRole("textbox", { name: "Message Coach" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("link", { name: "Connect apps" })
+    ).toBeInTheDocument()
+
+    fireEvent.click(leftover)
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(SURFACE_PATHS.settings)
+      expect(router.state.location.search).toMatchObject({ tab: "apps" })
+    })
+  })
+
+  it("lets Hide drop the leftover without bringing the checklist back", async () => {
+    seedAimSkipped()
+    writeFirstCafeState("user_test", {
+      dismissed: false,
+      completed: ["sample-cv", "pitch", "apply"],
+      nudgeSkipped: false,
+      wins: [],
+    })
+
+    renderApp()
+    await expectHomeIdle()
+
+    fireEvent.click(within(firstCafeQuietDone()).getByRole("button", { name: "Hide" }))
+    expect(
+      screen.queryByRole("region", { name: "You're set" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("heading", { name: "Four small things" })
+    ).not.toBeInTheDocument()
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    expect(
+      screen.getByRole("textbox", { name: "Message Coach" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("link", { name: "Connect apps" })
+    ).toBeInTheDocument()
+    expect(readFirstCafeState("user_test").nudgeSkipped).toBe(true)
+    expect(readFirstCafeState("user_test").completed).toEqual([
+      "sample-cv",
+      "pitch",
+      "apply",
+    ])
+
+    fireEvent.click(screen.getByRole("link", { name: "Paper" }))
+    await screen.findByRole("region", { name: "Paper" })
+    fireEvent.click(screen.getByRole("link", { name: "Home" }))
+    await expectHomeIdle()
+
+    expect(
+      screen.queryByRole("region", { name: "You're set" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("heading", { name: "Four small things" })
+    ).not.toBeInTheDocument()
+  })
+
+  it("when every item is done, Home is greeting and composer only", async () => {
+    seedAimSkipped()
+    writeFirstCafeState("user_test", {
+      dismissed: false,
+      completed: ["sample-cv", "pitch", "apply", "email"],
+      nudgeSkipped: false,
+      wins: [],
+    })
+
+    renderApp()
+    await expectHomeIdle()
+
+    expect(
+      screen.queryByRole("heading", { name: "Four small things" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("region", { name: "You're set" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("region", { name: "One next thing" })
+    ).not.toBeInTheDocument()
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    expect(
+      screen.getByRole("textbox", { name: "Message Coach" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("link", { name: "Connect apps" })
+    ).toBeInTheDocument()
   })
 })
 

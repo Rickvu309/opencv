@@ -11,6 +11,7 @@ import {
   firstCafeStorageKey,
   nextFirstCafeNudge,
   parseFirstCafeState,
+  requiredFirstCafeItemsDone,
   readFirstCafeState,
   recordFirstCafeItem,
   recordFirstCafeVisit,
@@ -267,17 +268,51 @@ describe("first-café next nudge", () => {
     expect(readFirstCafeState(userId).wins).toEqual(["pitch"])
   })
 
-  it("does not invent a Settings or email nudge, and hides when craft wins are done", () => {
+  it("does not invent an email nudge while a required item is still open", () => {
+    expect(
+      nextFirstCafeNudge({
+        completed: ["sample-cv", "apply"],
+        nudgeSkipped: false,
+        extraWins: ["pitch"],
+      })
+    ).toBeNull()
+    expect(requiredFirstCafeItemsDone(["sample-cv", "apply"])).toBe(false)
+  })
+
+  it("after required items are done, leftover optional is Connect email", () => {
+    expect(requiredFirstCafeItemsDone(["sample-cv", "pitch", "apply"])).toBe(
+      true
+    )
+    expect(
+      requiredFirstCafeItemsDone(["sample-cv", "pitch", "apply", "email"])
+    ).toBe(true)
+    expect(requiredFirstCafeItemsDone(["sample-cv", "pitch"])).toBe(false)
+
     expect(
       nextFirstCafeNudge({
         completed: ["sample-cv", "pitch", "apply"],
         nudgeSkipped: false,
       })
-    ).toBeNull()
+    ).toMatchObject({
+      id: "email",
+      label: "Connect email",
+      optional: true,
+      to: SURFACE_PATHS.settings,
+      search: { tab: "apps" },
+    })
+  })
+
+  it("hides the leftover when email is done or the quiet next is skipped", () => {
     expect(
       nextFirstCafeNudge({
         completed: ["sample-cv", "pitch", "apply", "email"],
         nudgeSkipped: false,
+      })
+    ).toBeNull()
+    expect(
+      nextFirstCafeNudge({
+        completed: ["sample-cv", "pitch", "apply"],
+        nudgeSkipped: true,
       })
     ).toBeNull()
   })

@@ -141,6 +141,15 @@ export function noteFirstCafeWin(
   return { ...state, wins: [...state.wins, id] }
 }
 
+/** Required first-café items — optional Connect email does not block done. */
+export function requiredFirstCafeItemsDone(
+  completed: readonly FirstCafeItemId[]
+): boolean {
+  return FIRST_CAFE_CHECKLIST_ITEMS.every(
+    (item) => item.optional || completed.includes(item.id)
+  )
+}
+
 export function nextFirstCafeNudge(input: {
   completed: readonly FirstCafeItemId[]
   nudgeSkipped: boolean
@@ -159,9 +168,16 @@ export function nextFirstCafeNudge(input: {
   }
   if (wins.size === 0 && !input.aimResolved) return null
 
+  const nextCraft = FIRST_CAFE_CHECKLIST_ITEMS.find(
+    (item) => WIN_ID_SET.has(item.id) && !wins.has(item.id as FirstCafeWinId)
+  )
+  if (nextCraft) return nextCraft
+
+  if (!requiredFirstCafeItemsDone(input.completed)) return null
+
   return (
     FIRST_CAFE_CHECKLIST_ITEMS.find(
-      (item) => WIN_ID_SET.has(item.id) && !wins.has(item.id as FirstCafeWinId)
+      (item) => item.optional && !input.completed.includes(item.id)
     ) ?? null
   )
 }
