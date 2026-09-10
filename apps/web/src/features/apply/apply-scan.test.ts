@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest"
 import {
   APPLY_SCAN_EMPTY,
+  APPLY_SCAN_FETCH_FAILED,
   APPLY_SCAN_NOT_FOUND,
   applyScanFieldGrounded,
+  applyScanFieldLooksUnreadable,
   extractApplyFieldsFromLabeledText,
   extractApplyFieldsFromMarkup,
   formatApplyScanReceipt,
   groundApplyScanResult,
+  isUnreadableApplyPosting,
   parseApplyScanInput,
   parseApplyScanModelText,
   postingTextFromHtml,
@@ -123,5 +126,26 @@ describe("apply scan helpers", () => {
         note: null,
       })
     ).toBe("Associate PM intern at Local startup")
+  })
+
+  it("treats a Page not found shell as unreadable, not a fill (QVE-249)", () => {
+    const html = `<!doctype html><html><body>
+      <h1>Page not found</h1>
+      <nav>Microsoft Careers</nav>
+    </body></html>`
+    const text = postingTextFromHtml(html)
+    expect(isUnreadableApplyPosting(text)).toBe(true)
+    expect(applyScanFieldLooksUnreadable("Page not found")).toBe(true)
+    expect(applyScanFieldLooksUnreadable("Microsoft")).toBe(false)
+    expect(isUnreadableApplyPosting(CAFE_JD)).toBe(false)
+    expect(APPLY_SCAN_FETCH_FAILED).toMatch(/paste the job text/i)
+
+    expect(
+      groundApplyScanResult(text, {
+        title: null,
+        company: "Microsoft",
+        note: "Page not found",
+      })
+    ).toEqual({ title: null, company: "Microsoft", note: null })
   })
 })

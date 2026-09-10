@@ -1,5 +1,6 @@
 import {
   APPLY_COMMANDS,
+  APPLY_SCAN_FETCH_FAILED,
   APPLY_SCAN_NOT_FOUND,
   DEFAULT_APPLY_COMPANY,
   DEFAULT_APPLY_TITLE,
@@ -155,7 +156,11 @@ export async function applyApiFetch(
         ? "Example is hiring a PM intern."
         : "")
     if (!source) {
-      return jsonError(400, "VALIDATION_ERROR", APPLY_SCAN_NOT_FOUND)
+      return jsonError(
+        400,
+        "VALIDATION_ERROR",
+        parsed.jobUrl ? APPLY_SCAN_FETCH_FAILED : APPLY_SCAN_NOT_FOUND
+      )
     }
     const labeled = extractApplyFieldsFromLabeledText(source)
     const extracted: ApplyScanResult = applyScanHasIdentity(labeled)

@@ -141,6 +141,34 @@ describe("scanApplyPosting", () => {
     })
   })
 
+  it("honest-fails a fetched Page not found shell instead of filling company", async () => {
+    let modelCalls = 0
+    const html = `<!doctype html><html><body>
+      <h1>Page not found</h1>
+      <p>Microsoft Careers</p>
+    </body></html>`
+    const result = await scanApplyPosting({
+      input: {
+        jobUrl: "https://jobs.careers.microsoft.com/global/en/job/missing",
+      },
+      coach: withScanJobPosting(createDemoCoachRuntime(), async () => {
+        modelCalls += 1
+        return JSON.stringify({
+          title: null,
+          company: "Microsoft",
+          note: "Page not found",
+        })
+      }),
+      fetchJobPosting: async () => ({ ok: true, text: html }),
+    })
+    expect(result).toEqual({
+      ok: false,
+      code: ERROR_CODES.VALIDATION_ERROR,
+      message: APPLY_SCAN_FETCH_FAILED,
+    })
+    expect(modelCalls).toBe(0)
+  })
+
   it("asks the user to paste when the posting fetch fails", async () => {
     const result = await scanApplyPosting({
       input: { jobUrl: "https://careers.example.com/missing" },
