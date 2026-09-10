@@ -281,11 +281,13 @@ export function PitchWorkspace() {
             </Empty>
           ) : (
             <>
+              {content.storyHighlights.length > 0 ? (
               <StoryHighlightsRow
                 highlights={content.storyHighlights}
                 editing={editing}
                 onOpen={openStory}
               />
+              ) : null}
 
               <div className="space-y-14">
                 {visible.map((block) => (

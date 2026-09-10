@@ -1,7 +1,10 @@
 import { z } from "zod"
 
 import { PITCH_CONTENT_KIND, PITCH_CONTENT_VERSION } from "./pitch.js"
-import { restoreWipedStarterMoments } from "./pitch-heal.js"
+import {
+  pitchIdentityCopyCleared,
+  restoreWipedStarterMoments,
+} from "./pitch-heal.js"
 
 export const pitchBlockKindSchema = z.enum([
   "about",
@@ -194,7 +197,11 @@ export function emptyPitchDocument(): PitchDocument {
     about: "",
     published: false,
     github: { username: "", connected: false },
-    blocks: DEFAULT_PITCH_BLOCKS,
+    blocks: DEFAULT_PITCH_BLOCKS.map((block) =>
+      block.kind === "moments" || block.kind === "github"
+        ? { ...block, hidden: true }
+        : block
+    ),
     achievements: [],
     experience: [],
     storyHighlights: [],
@@ -255,6 +262,17 @@ export function isDemoPitchDocument(doc: PitchDocument) {
     doc.demo === true ||
     isLegacyFakePitchHeadline(doc.headline) ||
     isStarterPitchAbout(doc.about)
+  )
+}
+
+/**
+ * Clear demo residue: identity copy is gone but starter Moments / bento
+ * still make the page look like a campus-club portfolio.
+ */
+export function hasLeftoverStarterMoments(doc: PitchDocument) {
+  return (
+    pitchIdentityCopyCleared(doc) &&
+    (doc.storyHighlights.length > 0 || doc.bento.length > 0)
   )
 }
 
@@ -395,8 +413,11 @@ export function decodePitchContent(
   return { ok: true, data: healPitchDocument(loose.data) }
 }
 
-/** Decode-time repair: restore wiped Moments, then rewrite leftover personas. */
+/** Decode-time repair: restore wiped demo Moments, never after Clear demo. */
 export function healPitchDocument(doc: PitchDocument): PitchDocument {
+  if (pitchIdentityCopyCleared(doc)) {
+    return { ...emptyPitchDocument(), published: doc.published }
+  }
   return markDemoPitch(alignStoryChipIdentity(restoreWipedStarterMoments(doc)))
 }
 
