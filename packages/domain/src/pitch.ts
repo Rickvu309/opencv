@@ -34,3 +34,37 @@ export type PitchDoc = {
   createdAt: string
   updatedAt: string
 }
+
+export type PublicPitchAuthor = {
+  name: string
+  email: string
+  image: string | null
+}
+
+/** Published Pitch a recruiter can load without a session. */
+export type PublicPitch = {
+  slug: string
+  author: PublicPitchAuthor
+  kind: typeof PITCH_CONTENT_KIND
+  content: unknown
+  contentVersion: number
+}
+
+const PITCH_PUBLIC_SLUG_MAX = 64
+
+/** Handle used in `/u/{slug}` — derived from the User's name, not a stored column. */
+export function pitchHandle(name: string) {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+}
+
+export function isPitchPublicSlug(slug: string) {
+  return (
+    slug.length > 0 &&
+    slug.length <= PITCH_PUBLIC_SLUG_MAX &&
+    slug === pitchHandle(slug)
+  )
+}

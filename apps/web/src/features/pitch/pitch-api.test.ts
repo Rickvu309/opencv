@@ -1,9 +1,9 @@
-import { PITCH_COMMANDS, type PitchDoc } from "@workspace/domain"
+import { PITCH_COMMANDS, type PitchDoc, type PublicPitch } from "@workspace/domain"
 import { describe, expect, it, vi } from "vitest"
 
 import { apiBaseUrl } from "@/lib/api-url.ts"
 
-import { getPitch, updatePitch } from "./pitch-api.ts"
+import { getPitch, getPublicPitch, updatePitch } from "./pitch-api.ts"
 
 function envelope<T>(data: T) {
   return Response.json({ ok: true, data })
@@ -25,6 +25,23 @@ describe("pitch API client", () => {
 
     await expect(getPitch()).resolves.toEqual(doc)
     expect(String(fetchMock.mock.calls[0]?.[0])).toBe(`${apiBaseUrl}/api/pitch`)
+  })
+
+  it("reads a published Pitch from GET /api/pitch/public/:slug", async () => {
+    const page: PublicPitch = {
+      slug: "alex-tran",
+      author: { name: "Alex Tran", email: "you@openpath.app", image: null },
+      kind: "pitch",
+      content: { published: true },
+      contentVersion: 1,
+    }
+    const fetchMock = vi.fn().mockResolvedValue(envelope(page))
+    vi.stubGlobal("fetch", fetchMock)
+
+    await expect(getPublicPitch("alex-tran")).resolves.toEqual(page)
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
+      `${apiBaseUrl}/api/pitch/public/alex-tran`
+    )
   })
 
   it("updates through the Command registry", async () => {

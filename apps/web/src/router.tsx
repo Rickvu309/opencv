@@ -8,10 +8,12 @@ import {
   type RouterHistory,
 } from "@tanstack/react-router"
 
+import { NotFoundPage } from "@/components/not-found-page.tsx"
 import { AppShellLayout } from "@/features/app-shell/app-shell-layout.tsx"
 import { validateSettingsSearch } from "@/features/app-shell/surfaces.ts"
 import { validateApplySearch } from "@/features/apply/apply-search.ts"
 import { validatePaperSearch } from "@/features/paper/paper-search.ts"
+import { PublicPitchPage } from "@/features/pitch/pitch-public-page.tsx"
 import { ApplyPage } from "@/routes/apply.tsx"
 import { HomePage } from "@/routes/home.tsx"
 import { PaperPage } from "@/routes/paper.tsx"
@@ -25,6 +27,7 @@ import { validateAuthSearch } from "@/lib/auth-redirect.ts"
 
 const rootRoute = createRootRoute({
   component: () => <Outlet />,
+  notFoundComponent: () => <NotFoundPage />,
 })
 
 const indexRoute = createRoute({
@@ -116,10 +119,20 @@ const settingsRoute = createRoute({
   component: SettingsPage,
 })
 
+const publicPitchRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/u/$slug",
+  component: function PublicPitchRoute() {
+    const { slug } = publicPitchRoute.useParams()
+    return <PublicPitchPage slug={slug} />
+  },
+})
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   signInRoute,
   signUpRoute,
+  publicPitchRoute,
   appLayoutRoute.addChildren([
     homeRoute,
     searchRoute,

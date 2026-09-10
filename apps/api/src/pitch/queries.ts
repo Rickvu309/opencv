@@ -1,12 +1,16 @@
 import {
   ERROR_CODES,
   decodePitchContent,
+  isPitchPublicSlug,
+  pitchHandle,
   type PitchDoc,
+  type PitchDocument,
+  type PublicPitch,
 } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 
 import { CommandError, type AppDatabase } from "../commands/registry.js"
-import { pitchDocs } from "../db/schema.js"
+import { pitchDocs, user } from "../db/schema.js"
 
 function iso(value: Date) {
   return value.toISOString()
@@ -65,4 +69,64 @@ export async function getPitchDocDetail(
 ): Promise<PitchDoc> {
   const row = await requirePitchDocForUser(db, userId)
   return toPitchDoc(row)
+}
+
+export async function getPublishedPitchBySlug(
+  db: AppDatabase,
+  slug: string
+): Promise<PublicPitch | null> {
+  if (!isPitchPublicSlug(slug)) return null
+
+  const rows = await db
+    .select({
+      contentKind: pitchDocs.contentKind,
+      content: pitchDocs.content,
+      contentVersion: pitchDocs.contentVersion,
+      createdAt: pitchDocs.createdAt,
+      name: user.name,
+      email: user.email,
+      image: user.image,
+    })
+    .from(pitchDocs)
+    .innerJoin(user, eq(pitchDocs.userId, user.id))
+
+  type PublishedPitchRow = {
+    contentKind: "pitch"
+    content: unknown
+    contentVersion: number
+    createdAt: Date
+    name: string
+    email: string
+    image: string | null
+  }
+
+  const matches: { row: PublishedPitchRow; content: PitchDocument }[] = []
+  for (const row of rows as PublishedPitchRow[]) {
+    if (pitchHandle(row.name) !== slug) continue
+    const decoded = decodePitchContent(
+      row.contentKind,
+      row.contentVersion,
+      row.content
+    )
+    if (!decoded.ok || !decoded.data.published) continue
+    matches.push({ row, content: decoded.data })
+  }
+
+  matches.sort(
+    (left, right) => left.row.createdAt.getTime() - right.row.createdAt.getTime()
+  )
+  const hit = matches[0]
+  if (!hit) return null
+
+  return {
+    slug,
+    author: {
+      name: hit.row.name,
+      email: hit.row.email,
+      image: hit.row.image,
+    },
+    kind: hit.row.contentKind,
+    content: hit.content,
+    contentVersion: hit.row.contentVersion,
+  }
 }

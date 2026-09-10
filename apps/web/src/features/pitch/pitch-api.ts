@@ -2,12 +2,14 @@ import {
   PITCH_COMMANDS,
   type PitchDoc,
   type PitchDocument,
+  type PublicPitch,
 } from "@workspace/domain"
 
 import { apiFetch } from "@/lib/api.ts"
 
 export const pitchQueryKeys = {
   current: () => ["pitch"] as const,
+  public: (slug: string) => ["pitch", "public", slug] as const,
 }
 
 type SuccessBody<T> = {
@@ -21,6 +23,13 @@ function unwrapData<T>(body: SuccessBody<T>): T {
 
 export async function getPitch(): Promise<PitchDoc> {
   const body = await apiFetch<SuccessBody<PitchDoc>>("/api/pitch")
+  return unwrapData(body)
+}
+
+export async function getPublicPitch(slug: string): Promise<PublicPitch> {
+  const body = await apiFetch<SuccessBody<PublicPitch>>(
+    `/api/pitch/public/${encodeURIComponent(slug)}`
+  )
   return unwrapData(body)
 }
 

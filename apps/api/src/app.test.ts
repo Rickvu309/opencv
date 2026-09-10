@@ -171,5 +171,8 @@ describe("commands without auth", () => {
 
     const pitch = await api.request("/api/pitch")
     expect(pitch.status).toBe(503)
+
+    const publicPitch = await api.request("/api/pitch/public/alex-tran")
+    expect(publicPitch.status).toBe(503)
   })
 })

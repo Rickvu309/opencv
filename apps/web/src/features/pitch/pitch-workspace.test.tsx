@@ -23,7 +23,11 @@ import { SURFACE_COPY } from "@/features/app-shell/surfaces.ts"
 import { getMockGithubUsername } from "@/features/pitch/pitch-github-mock.ts"
 import { readFirstCafeState } from "@/features/home/first-cafe-checklist.ts"
 import { PitchWorkspace } from "@/features/pitch/pitch-workspace.tsx"
-import { BLOCK_LABELS, pitchHandle } from "@/features/pitch/pitch-types.ts"
+import {
+  BLOCK_LABELS,
+  pitchHandle,
+  publicPitchHref,
+} from "@/features/pitch/pitch-types.ts"
 import { createQueryClient } from "@/lib/query-client.ts"
 import {
   getMockPitchDoc,
@@ -388,8 +392,42 @@ describe("Pitch workspace", () => {
 
     expect(await screen.findByRole("button", { name: "Copied" })).toBeInTheDocument()
     expect(writeText).toHaveBeenCalledWith(
-      `https://openpath.app/u/${pitchHandle(SAMPLE_AUTHOR_NAME)}`
+      publicPitchHref(pitchHandle(SAMPLE_AUTHOR_NAME))
     )
+  })
+
+  it("does not claim Copy link succeeded when the public URL is not live", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    vi.stubGlobal("navigator", {
+      ...navigator,
+      clipboard: { writeText },
+    })
+
+    const starter = starterPitchDocument()
+    setMockPitchDoc({
+      id: "55555555-5555-7555-8555-555555555561",
+      kind: "pitch",
+      content: { ...starter, published: true },
+      contentVersion: 1,
+      createdAt: "2026-08-25T00:00:00.000Z",
+      updatedAt: "2026-08-25T00:00:00.000Z",
+    })
+
+    await loadedPitch()
+    expect(screen.getByRole("button", { name: "Copy link" })).toBeEnabled()
+
+    setMockPitchDoc({
+      ...getMockPitchDoc()!,
+      content: { ...starter, published: false },
+    })
+
+    fireEvent.click(screen.getByRole("button", { name: "Copy link" }))
+
+    await waitFor(() => {
+      expect(writeText).not.toHaveBeenCalled()
+    })
+    expect(screen.getByRole("button", { name: "Copy link" })).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Copied" })).not.toBeInTheDocument()
   })
 
   it("opens the checkout Proof from Achievements and closes it", async () => {

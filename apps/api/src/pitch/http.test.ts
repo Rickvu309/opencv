@@ -229,6 +229,66 @@ describe("pitch API", () => {
     expect(JSON.stringify(content)).not.toMatch(/Alex Tran/i)
   })
 
+  it("serves a published Pitch at GET /api/pitch/public/:slug without a session", async () => {
+    const next = {
+      ...starterPitchDocument(),
+      about: "Minh's public about.",
+      published: true,
+    }
+    const updatedRes = await postCommand(app, cookieA, PITCH_COMMANDS.update, {
+      content: next,
+      contentVersion: 1,
+    })
+    expect(updatedRes.status).toBe(200)
+
+    const publicRes = await app.request("/api/pitch/public/minh")
+    expect(publicRes.status).toBe(200)
+    const body = await json<{
+      ok: true
+      data: {
+        slug: string
+        author: { name: string; email: string; image: string | null }
+        content: ReturnType<typeof starterPitchDocument>
+      }
+    }>(publicRes)
+    expect(body.data.slug).toBe("minh")
+    expect(body.data.author).toEqual({
+      name: userA.name,
+      email: userA.email,
+      image: null,
+    })
+    expect(body.data.content.about).toBe("Minh's public about.")
+    expect(body.data.content.published).toBe(true)
+  })
+
+  it("returns 404 for an unpublished or unknown public slug", async () => {
+    const unpublished = await app.request("/api/pitch/public/lan")
+    expect(unpublished.status).toBe(404)
+    await expect(unpublished.json()).resolves.toEqual({
+      ok: false,
+      error: { code: ERROR_CODES.NOT_FOUND, message: "Pitch not found" },
+    })
+
+    const unknown = await app.request("/api/pitch/public/no-such-user")
+    expect(unknown.status).toBe(404)
+
+    const invalid = await app.request("/api/pitch/public/Minh")
+    expect(invalid.status).toBe(404)
+
+    const unpublishedMine = await postCommand(
+      app,
+      cookieA,
+      PITCH_COMMANDS.update,
+      {
+        content: { ...starterPitchDocument(), published: false },
+        contentVersion: 1,
+      }
+    )
+    expect(unpublishedMine.status).toBe(200)
+    const gone = await app.request("/api/pitch/public/minh")
+    expect(gone.status).toBe(404)
+  })
+
   it("rejects malformed content", async () => {
     const bad = await postCommand(app, cookieA, PITCH_COMMANDS.update, {
       content: { markdown: "nope" },
