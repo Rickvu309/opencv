@@ -259,9 +259,9 @@ describe("pitch codecs", () => {
       body: "Hallway test setup",
       storyHighlightId: "sh-checkout",
     })
-    expect(decoded.data.blocks.find((block) => block.kind === "moments")).toEqual(
-      { id: "b-moments", kind: "moments", hidden: true }
-    )
+    expect(
+      decoded.data.blocks.find((block) => block.kind === "moments")
+    ).toEqual({ id: "b-moments", kind: "moments", hidden: true })
     expect(JSON.stringify(decoded.data)).not.toMatch(/sacred space/i)
     expect(JSON.stringify(decoded.data)).not.toMatch(/Alex Tran/i)
     expect(healPitchDocument(decoded.data)).toEqual(decoded.data)
@@ -282,13 +282,15 @@ describe("pitch codecs", () => {
     expect(decoded.data.demo).toBe(true)
     expect(decoded.data.headline).toBe(STARTER_PITCH_HEADLINE)
     expect(isDemoPitchDocument(decoded.data)).toBe(true)
-    expect(JSON.stringify(decoded.data)).not.toMatch(/Aspiring product manager/i)
+    expect(JSON.stringify(decoded.data)).not.toMatch(
+      /Aspiring product manager/i
+    )
   })
 
   it("allows a full clear so Demo content can become an empty Pitch", () => {
-    expect(preservePitchMoments(starterPitchDocument(), emptyPitchDocument())).toEqual(
-      emptyPitchDocument()
-    )
+    expect(
+      preservePitchMoments(starterPitchDocument(), emptyPitchDocument())
+    ).toEqual(emptyPitchDocument())
   })
 
   it("does not restore sample Moments after Clear demo leaves identity copy empty", () => {
@@ -349,9 +351,9 @@ describe("pitch codecs", () => {
     expect(decoded.data.about).toBe("I ship small checkout studies.")
     expect(decoded.data.storyHighlights).toEqual([])
     expect(decoded.data.bento).toEqual([])
-    expect(decoded.data.blocks.find((block) => block.kind === "moments")?.hidden).toBe(
-      true
-    )
+    expect(
+      decoded.data.blocks.find((block) => block.kind === "moments")?.hidden
+    ).toBe(true)
     expect(JSON.stringify(decoded.data)).not.toMatch(/Checkout/)
     expect(JSON.stringify(decoded.data)).not.toMatch(/Wallet audit/)
     expect(JSON.stringify(decoded.data)).not.toMatch(/Club sprint/)

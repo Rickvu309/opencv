@@ -1,7 +1,4 @@
-import {
-  isStarterSampleIdentity,
-  type PitchDocument,
-} from "./pitch-codecs.js"
+import { isStarterSampleIdentity, type PitchDocument } from "./pitch-codecs.js"
 import { starterPitchDocument } from "./starter.js"
 
 /** Non-Moments fields that mean this is a real Pitch, not the empty schema default. */

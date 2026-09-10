@@ -227,7 +227,10 @@ export const STARTER_PITCH_ABOUT_LEAD =
   "This is sample copy. Clear the demo when you want the page to be yours."
 
 /** Demo names that used to be baked into Pitch. Never identity. */
-export const LEFTOVER_PITCH_PERSONA_NAMES = ["Alex Tran", "Eric Nguyen"] as const
+export const LEFTOVER_PITCH_PERSONA_NAMES = [
+  "Alex Tran",
+  "Eric Nguyen",
+] as const
 
 /** Moments card titles from the pre-honest starter. */
 export const LEFTOVER_STORY_CHIP_TITLES = ["my sacred space"] as const
