@@ -210,6 +210,8 @@ export function emptyPitchDocument(): PitchDocument {
     files: [],
     links: [],
     workDocs: [],
+    /** Clear demo / never-filled — not the signup sample. */
+    demo: false,
   }
 }
 
@@ -263,6 +265,14 @@ export function isDemoPitchDocument(doc: PitchDocument) {
     isLegacyFakePitchHeadline(doc.headline) ||
     isStarterPitchAbout(doc.about)
   )
+}
+
+/**
+ * QVE-221 wipe restore is only honest while sample About is still on the page.
+ * A leaked `demo: true` plus a real About (QVE-250 live path) is User-owned.
+ */
+export function isStarterSampleIdentity(doc: PitchDocument) {
+  return isStarterPitchAbout(doc.about)
 }
 
 /**
@@ -413,7 +423,7 @@ export function decodePitchContent(
   return { ok: true, data: healPitchDocument(loose.data) }
 }
 
-/** Decode-time repair: restore wiped demo Moments, never after Clear demo. */
+/** Decode-time repair: restore wiped sample Moments, never after Clear demo. */
 export function healPitchDocument(doc: PitchDocument): PitchDocument {
   if (pitchIdentityCopyCleared(doc)) {
     return { ...emptyPitchDocument(), published: doc.published }

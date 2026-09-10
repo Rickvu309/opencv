@@ -1,4 +1,7 @@
-import { isDemoPitchDocument, type PitchDocument } from "./pitch-codecs.js"
+import {
+  isStarterSampleIdentity,
+  type PitchDocument,
+} from "./pitch-codecs.js"
 import { starterPitchDocument } from "./starter.js"
 
 /** Non-Moments fields that mean this is a real Pitch, not the empty schema default. */
@@ -42,16 +45,16 @@ export function isGhostPitchDocument(doc: PitchDocument): boolean {
 
 /**
  * QVE-221: starter Moments cannot be emptied in the UI (add chip/card is
- * coming soon). Empty arrays on a still-demo Pitch that still has body are
- * a wipe — restore the honest starter highlights + bento so heal write-back
- * cannot persist `[]`.
+ * coming soon). Empty arrays on a Pitch that still carries sample About
+ * are a wipe — restore the honest starter highlights + bento so heal
+ * write-back cannot persist `[]`.
  *
- * QVE-246: never put sample Moments back on a cleared or User-owned Pitch.
- * Clear demo drops `demo` and identity copy; the first About/status edit
- * must not resurrect campus-club chips and the +18% card.
+ * QVE-246 / QVE-250: never put sample Moments back on a cleared or
+ * User-owned Pitch. `demo: true` alone is not enough — the first real
+ * About (or any non-sample identity) must not resurrect campus-club chips.
  */
 export function restoreWipedStarterMoments(doc: PitchDocument): PitchDocument {
-  if (!isDemoPitchDocument(doc)) return doc
+  if (!isStarterSampleIdentity(doc)) return doc
 
   const missingHighlights = doc.storyHighlights.length === 0
   const missingBento = doc.bento.length === 0
@@ -70,7 +73,7 @@ export function restoreWipedStarterMoments(doc: PitchDocument): PitchDocument {
 
 /**
  * Persist guard: leftover-persona heal must not write empty Moments arrays
- * over a still-demo document that still had them. A cleared or User-owned
+ * over a still-sample document that still had them. A cleared or User-owned
  * Pitch must keep empty Moments — Clear demo is intentional.
  */
 export function preservePitchMoments(
@@ -78,7 +81,7 @@ export function preservePitchMoments(
   next: PitchDocument
 ): PitchDocument {
   if (!previous) return next
-  if (!isDemoPitchDocument(next)) {
+  if (!isStarterSampleIdentity(next)) {
     return next
   }
   if (!pitchHasSurvivingBody(next)) return next

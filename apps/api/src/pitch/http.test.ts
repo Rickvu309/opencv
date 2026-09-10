@@ -289,6 +289,83 @@ describe("pitch API", () => {
     expect(gone.status).toBe(404)
   })
 
+  it("keeps starter highlights gone after Clear demo then a real About", async () => {
+    const scout = await signUp(app, {
+      name: "Scout 250",
+      email: "scout250+clear-about@example.com",
+      password: "correct-horse-battery",
+    })
+
+    const seeded = await json<{ ok: true; data: PitchDoc }>(
+      await app.request("/api/pitch", { headers: authHeaders(scout.cookie) })
+    )
+    const starter = starterPitchDocument()
+    expect(
+      (seeded.data.content as ReturnType<typeof starterPitchDocument>)
+        .storyHighlights.length
+    ).toBeGreaterThan(0)
+
+    const clearedRes = await postCommand(app, scout.cookie, PITCH_COMMANDS.update, {
+      content: emptyPitchDocument(),
+      contentVersion: 1,
+    })
+    expect(clearedRes.status).toBe(200)
+    const cleared = await json<{ ok: true; data: PitchDoc }>(clearedRes)
+    const clearedContent = cleared.data.content as ReturnType<
+      typeof emptyPitchDocument
+    >
+    expect(clearedContent.storyHighlights).toEqual([])
+    expect(clearedContent.bento).toEqual([])
+    expect(JSON.stringify(clearedContent)).not.toMatch(/Checkout/)
+    expect(JSON.stringify(clearedContent)).not.toMatch(/Wallet audit/)
+    expect(JSON.stringify(clearedContent)).not.toMatch(/Club sprint/)
+
+    const typed = {
+      ...emptyPitchDocument(),
+      about: "I ship small checkout studies.",
+    }
+    const typedRes = await postCommand(app, scout.cookie, PITCH_COMMANDS.update, {
+      content: typed,
+      contentVersion: 1,
+    })
+    expect(typedRes.status).toBe(200)
+
+    const reread = await json<{ ok: true; data: PitchDoc }>(
+      await app.request("/api/pitch", { headers: authHeaders(scout.cookie) })
+    )
+    const content = reread.data.content as ReturnType<typeof emptyPitchDocument>
+    expect(content.about).toBe("I ship small checkout studies.")
+    expect(content.storyHighlights).toEqual([])
+    expect(content.bento).toEqual([])
+    expect(content.blocks.find((block) => block.kind === "moments")?.hidden).toBe(
+      true
+    )
+    expect(JSON.stringify(content)).not.toMatch(/Checkout/)
+    expect(JSON.stringify(content)).not.toMatch(/Wallet audit/)
+    expect(JSON.stringify(content)).not.toMatch(/Club sprint/)
+    expect(JSON.stringify(content)).not.toMatch(/campus club/i)
+    expect(JSON.stringify(content)).not.toMatch(/\+18%/)
+    expect(content.storyHighlights).not.toEqual(starter.storyHighlights)
+
+    const leakedRes = await postCommand(app, scout.cookie, PITCH_COMMANDS.update, {
+      content: {
+        ...emptyPitchDocument(),
+        demo: true,
+        about: "I ship small checkout studies.",
+      },
+      contentVersion: 1,
+    })
+    expect(leakedRes.status).toBe(200)
+    const leaked = await json<{ ok: true; data: PitchDoc }>(leakedRes)
+    const leakedContent = leaked.data.content as ReturnType<
+      typeof emptyPitchDocument
+    >
+    expect(leakedContent.storyHighlights).toEqual([])
+    expect(leakedContent.bento).toEqual([])
+    expect(JSON.stringify(leakedContent)).not.toMatch(/Wallet audit/)
+    expect(JSON.stringify(leakedContent)).not.toMatch(/Club sprint/)
+  })
+
   it("rejects malformed content", async () => {
     const bad = await postCommand(app, cookieA, PITCH_COMMANDS.update, {
       content: { markdown: "nope" },
