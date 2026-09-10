@@ -30,6 +30,10 @@ if (
   Element.prototype.scrollTo = function scrollTo() {}
 }
 
+if (typeof window !== "undefined") {
+  window.scrollTo = () => {}
+}
+
 if (
   typeof window !== "undefined" &&
   typeof window.ResizeObserver !== "function"

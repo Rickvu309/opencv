@@ -97,6 +97,10 @@ export function usePitch() {
     [mutation, queryClient]
   )
 
+  const whenSettled = useCallback(async () => {
+    await writeChain.current
+  }, [])
+
   useEffect(() => {
     const doc = query.data
     if (!doc || query.isPending || mutation.isPending) return
@@ -112,5 +116,6 @@ export function usePitch() {
     error,
     dismissError: () => setError(null),
     persist,
+    whenSettled,
   }
 }

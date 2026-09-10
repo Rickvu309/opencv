@@ -19,7 +19,6 @@ import {
   isDemoPitchDocument,
   isGhostPitchDocument,
   type PitchBlockKind,
-  type PitchDocument,
   type ProofDocument,
 } from "@workspace/domain"
 import { Check, Copy, EyeOff, Globe, Pencil } from "lucide-react"
@@ -27,30 +26,22 @@ import { Check, Copy, EyeOff, Globe, Pencil } from "lucide-react"
 import { ErrorBanner } from "@/components/error-banner.tsx"
 import { WorkspaceHeader } from "@/components/workspace-header.tsx"
 import { PitchEditToolbar } from "@/features/pitch/pitch-edit-toolbar.tsx"
+import { PitchProfileHeader } from "@/features/pitch/pitch-showcase.tsx"
+import { PitchSection } from "@/features/pitch/pitch-sections.tsx"
 import {
-  AboutSection,
-  AchievementsSection,
-  ContactSection,
-  ExperienceSection,
-  GallerySection,
-  GithubSection,
-  PitchProfileHeader,
-  WorkSection,
-} from "@/features/pitch/pitch-showcase.tsx"
-import {
-  MomentsBentoSection,
   PitchStoryViewer,
   StoryHighlightsRow,
 } from "@/features/pitch/pitch-stories.tsx"
 import { PitchProofViewer } from "@/features/pitch/pitch-proof-viewer.tsx"
 import type { StoryViewerState } from "@/features/pitch/pitch-story-utils.ts"
+import { getPublicPitch } from "@/features/pitch/pitch-api.ts"
 import {
   overlayPitchBento,
   overlayPitchLinks,
+  pitchHandle,
   pitchProfileFromIdentity,
-  type PitchBlock,
+  publicPitchHref,
   type PitchIdentity,
-  type PitchProfile,
 } from "@/features/pitch/pitch-types.ts"
 import { recordFirstCafeWin } from "@/features/home/first-cafe-checklist.ts"
 import { usePitch } from "@/features/pitch/use-pitch.ts"
@@ -131,8 +122,12 @@ export function PitchWorkspace() {
 
   async function copyLink() {
     if (!profile.published) return
+    const handle = pitchHandle(identity.name) || "you"
+    const href = publicPitchHref(handle)
     try {
-      await navigator.clipboard.writeText(`https://${profile.slug}`)
+      await pitch.whenSettled()
+      await getPublicPitch(handle)
+      await navigator.clipboard.writeText(href)
     } catch {
       return
     }
@@ -346,91 +341,4 @@ export function PitchWorkspace() {
       />
     </div>
   )
-}
-
-function PitchSection({
-  block,
-  profile,
-  editing,
-  content,
-  bento,
-  links,
-  onHide,
-  onAboutChange,
-  onOpenStory,
-  onOpenProof,
-}: {
-  block: PitchBlock
-  profile: PitchProfile
-  editing: boolean
-  content: PitchDocument
-  bento: ReturnType<typeof overlayPitchBento>
-  links: ReturnType<typeof overlayPitchLinks>
-  onHide: () => void
-  onAboutChange: (text: string) => void
-  onOpenStory: (highlightId: string) => void
-  onOpenProof: (proof: ProofDocument) => void
-}) {
-  switch (block.kind) {
-    case "moments":
-      return (
-        <MomentsBentoSection
-          cards={bento}
-          editing={editing}
-          onHide={onHide}
-          onOpenStory={onOpenStory}
-        />
-      )
-    case "about":
-      return (
-        <AboutSection
-          text={profile.about}
-          editing={editing}
-          onHide={onHide}
-          onChange={onAboutChange}
-        />
-      )
-    case "achievements":
-      return (
-        <AchievementsSection
-          items={content.achievements}
-          editing={editing}
-          onHide={onHide}
-          onOpenProof={onOpenProof}
-        />
-      )
-    case "experience":
-      return (
-        <ExperienceSection
-          items={content.experience}
-          editing={editing}
-          onHide={onHide}
-        />
-      )
-    case "work":
-      return (
-        <WorkSection
-          files={content.files}
-          workDocs={content.workDocs}
-          editing={editing}
-          onHide={onHide}
-        />
-      )
-    case "github":
-      return (
-        <GithubSection profile={profile} editing={editing} onHide={onHide} />
-      )
-    case "contact":
-      return <ContactSection links={links} editing={editing} onHide={onHide} />
-    case "gallery":
-      return (
-        <GallerySection
-          items={content.gallery}
-          editing={editing}
-          onHide={onHide}
-        />
-      )
-    default:
-      return null
-  }
 }

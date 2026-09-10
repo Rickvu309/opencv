@@ -19,6 +19,7 @@ import {
   emptyPitchDocument,
   isLeftoverPitchGithubUsername,
   isLeftoverPitchPersonaName,
+  pitchHandle,
   type PitchBentoCard,
   type PitchBlockKind,
   type PitchDocument,
@@ -27,6 +28,8 @@ import {
   type PitchTone,
   type PitchWorkDoc,
 } from "@workspace/domain"
+
+export { isPitchPublicSlug, pitchHandle } from "@workspace/domain"
 
 export type PitchProfile = {
   name: string
@@ -65,12 +68,19 @@ export function pitchToneClass(tone?: PitchTone | string) {
   return PITCH_TONE_CLASS.neutral
 }
 
-export function pitchHandle(name: string) {
-  return name
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
+export function publicPitchPath(slug: string) {
+  return `/u/${slug}`
+}
+
+export function publicPitchHref(
+  slug: string,
+  origin = typeof window === "undefined" ? "" : window.location.origin
+) {
+  return `${origin}${publicPitchPath(slug)}`
+}
+
+export function publicPitchLabel(slug: string) {
+  return `openpath.app/u/${slug}`
 }
 
 export function pitchProfileFromIdentity(
@@ -89,7 +99,7 @@ export function pitchProfileFromIdentity(
     legalName: identity.name,
     headline: content.headline,
     location: content.location,
-    slug: `openpath.app/u/${handle}`,
+    slug: publicPitchLabel(handle),
     status: content.status,
     avatar: identity.image ?? "",
     about: content.about,
