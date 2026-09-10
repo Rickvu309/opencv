@@ -1,4 +1,4 @@
-import type { PitchDocument } from "./pitch-codecs.js"
+import { isDemoPitchDocument, type PitchDocument } from "./pitch-codecs.js"
 import { starterPitchDocument } from "./starter.js"
 
 /** Non-Moments fields that mean this is a real Pitch, not the empty schema default. */
@@ -17,6 +17,20 @@ export function pitchHasSurvivingBody(doc: PitchDocument): boolean {
   )
 }
 
+/**
+ * Clear demo emptied the copy the User can edit today (About / headline /
+ * status) and dropped the demo stamp. Leftover starter Moments on that
+ * document are sample residue, not a User-owned portfolio.
+ */
+export function pitchIdentityCopyCleared(doc: PitchDocument): boolean {
+  return (
+    doc.demo !== true &&
+    doc.headline.trim() === "" &&
+    doc.status.trim() === "" &&
+    doc.about.trim() === ""
+  )
+}
+
 /** Cleared or never-filled Pitch — ghost page, not a sample persona. */
 export function isGhostPitchDocument(doc: PitchDocument): boolean {
   return (
@@ -28,11 +42,17 @@ export function isGhostPitchDocument(doc: PitchDocument): boolean {
 
 /**
  * QVE-221: starter Moments cannot be emptied in the UI (add chip/card is
- * coming soon). Empty arrays on a Pitch that still has body are a wipe —
- * restore the honest starter highlights + bento so heal write-back cannot
- * persist `[]`. The empty schema default stays empty.
+ * coming soon). Empty arrays on a still-demo Pitch that still has body are
+ * a wipe — restore the honest starter highlights + bento so heal write-back
+ * cannot persist `[]`.
+ *
+ * QVE-246: never put sample Moments back on a cleared or User-owned Pitch.
+ * Clear demo drops `demo` and identity copy; the first About/status edit
+ * must not resurrect campus-club chips and the +18% card.
  */
 export function restoreWipedStarterMoments(doc: PitchDocument): PitchDocument {
+  if (!isDemoPitchDocument(doc)) return doc
+
   const missingHighlights = doc.storyHighlights.length === 0
   const missingBento = doc.bento.length === 0
   if (!missingHighlights && !missingBento) return doc
@@ -50,14 +70,17 @@ export function restoreWipedStarterMoments(doc: PitchDocument): PitchDocument {
 
 /**
  * Persist guard: leftover-persona heal must not write empty Moments arrays
- * over a document that still had them. A full clear (no surviving body) is
- * intentional — Demo content → empty Pitch — and must stay empty.
+ * over a still-demo document that still had them. A cleared or User-owned
+ * Pitch must keep empty Moments — Clear demo is intentional.
  */
 export function preservePitchMoments(
   previous: PitchDocument | undefined,
   next: PitchDocument
 ): PitchDocument {
   if (!previous) return next
+  if (!isDemoPitchDocument(next)) {
+    return next
+  }
   if (!pitchHasSurvivingBody(next)) return next
   const storyHighlights =
     next.storyHighlights.length === 0 && previous.storyHighlights.length > 0

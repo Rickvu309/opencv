@@ -103,12 +103,14 @@ export function PublicPitchPage({ slug }: { slug: string }) {
           </p>
         ) : (
           <>
+            {content.storyHighlights.length > 0 ? (
             <StoryHighlightsRow
               highlights={content.storyHighlights}
               onOpen={(highlightId) =>
                 setStoryView({ highlightId, slideIndex: 0 })
               }
             />
+            ) : null}
 
             <div className="space-y-14">
               {visible.map((block) => (

@@ -65,6 +65,24 @@ function clickClearDemo() {
   fireEvent.click(clearDemoButtons()[0]!)
 }
 
+function expectSampleMomentsGone() {
+  expect(screen.queryByText(/Sample · campus club/i)).not.toBeInTheDocument()
+  expect(screen.queryByText("+18%")).not.toBeInTheDocument()
+  expect(screen.queryByText(/add-to-cart lift/i)).not.toBeInTheDocument()
+  expect(
+    screen.queryByRole("button", { name: "Checkout highlight" })
+  ).not.toBeInTheDocument()
+  expect(
+    screen.queryByRole("button", { name: "Club sprint highlight" })
+  ).not.toBeInTheDocument()
+  expect(
+    screen.queryByRole("button", { name: "Wallet audit highlight" })
+  ).not.toBeInTheDocument()
+  expect(
+    screen.queryByText("Tap a highlight to watch work moments · like Instagram Stories")
+  ).not.toBeInTheDocument()
+}
+
 async function loadedPitch() {
   renderPitch()
   expect(
@@ -183,9 +201,74 @@ describe("Pitch workspace", () => {
     expect(getMockPitchDoc()?.content).toEqual(emptyPitchDocument())
     expect(readFirstCafeState(TEST_SESSION_USER.id).wins).toEqual(["pitch"])
     expect(readFirstCafeState(TEST_SESSION_USER.id).completed).toEqual([])
+    expectSampleMomentsGone()
 
     fireEvent.click(screen.getByRole("button", { name: "Start your Pitch" }))
     expect(screen.getByText("Editing Pitch")).toBeInTheDocument()
+    expectSampleMomentsGone()
+    expect(screen.queryByRole("heading", { name: "Moments" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("heading", { name: "GitHub" })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: /add card/i })
+    ).not.toBeInTheDocument()
+  })
+
+  it("does not resurrect sample Moments after Clear demo plus a real About line", async () => {
+    await loadedPitch()
+    clickClearDemo()
+    expect(await screen.findByText("Your Pitch is empty")).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: "Start your Pitch" }))
+    fireEvent.click(screen.getByRole("button", { name: "Add section" }))
+    fireEvent.click(screen.getByRole("button", { name: BLOCK_LABELS.about }))
+    const about = screen.getByRole("heading", { name: "About" }).closest("section")
+    expect(about).not.toBeNull()
+    fireEvent.change(within(about as HTMLElement).getByRole("textbox"), {
+      target: { value: "I ship small checkout studies." },
+    })
+
+    await waitFor(() => {
+      const stored = getMockPitchDoc()?.content as PitchDocument
+      expect(stored.about).toBe("I ship small checkout studies.")
+      expect(stored.storyHighlights).toEqual([])
+      expect(stored.bento).toEqual([])
+    })
+    expectSampleMomentsGone()
+    expect(screen.queryByRole("heading", { name: "Moments" })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: /add achievement/i })
+    ).toBeDisabled()
+  })
+
+  it("heals a cleared Pitch that still stored leftover sample Moments", async () => {
+    const starter = starterPitchDocument()
+    const { demo, ...rest } = starter
+    expect(demo).toBe(true)
+    setMockPitchDoc({
+      id: "55555555-5555-7555-8555-555555555561",
+      kind: "pitch",
+      content: {
+        ...rest,
+        headline: "",
+        status: "",
+        about: "",
+      },
+      contentVersion: 1,
+      createdAt: "2026-08-25T00:00:00.000Z",
+      updatedAt: "2026-08-25T00:00:00.000Z",
+    })
+
+    await loadedPitch()
+    expect(
+      await screen.findByText("Your Pitch is empty")
+    ).toBeInTheDocument()
+    expectSampleMomentsGone()
+    expect(screen.queryByText("Demo content")).not.toBeInTheDocument()
+    await waitFor(() => {
+      const stored = getMockPitchDoc()?.content as PitchDocument
+      expect(stored.storyHighlights).toEqual([])
+      expect(stored.bento).toEqual([])
+    })
   })
 
   it("lets the User edit, hide, and restore showcase blocks", async () => {
