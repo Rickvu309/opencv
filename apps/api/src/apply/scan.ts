@@ -10,6 +10,7 @@ import {
   extractApplyFieldsFromLabeledText,
   extractApplyFieldsFromMarkup,
   groundApplyScanResult,
+  isUnreadableApplyPosting,
   mergeApplyScanResults,
   parseApplyScanInput,
   parseApplyScanModelText,
@@ -122,7 +123,7 @@ async function resolveScanSource({
     }
   }
   const text = postingTextFromHtml(fetched.text)
-  if (!text) {
+  if (!text || isUnreadableApplyPosting(text)) {
     return {
       ok: false,
       code: ERROR_CODES.VALIDATION_ERROR,

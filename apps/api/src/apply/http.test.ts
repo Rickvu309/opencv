@@ -1,5 +1,6 @@
 import {
   APPLY_COMMANDS,
+  APPLY_SCAN_FETCH_FAILED,
   APPLY_SCAN_NOT_FOUND,
   APPLY_SCAN_UNAVAILABLE,
   ERROR_CODES,
@@ -384,6 +385,57 @@ describe("POST /api/apply/scan labeled JD twice (QVE-232)", () => {
         note: "District 1, Ho Chi Minh City",
       })
       expect(secondBody.data).toEqual(firstBody.data)
+    } finally {
+      await migrated.client.close()
+    }
+  })
+})
+
+describe("POST /api/apply/scan unreadable fetch (QVE-249)", () => {
+  it("honest-fails a Page not found shell and does not write a card", async () => {
+    const migrated = await createMigratedTestDb()
+    try {
+      const localApp = createTestApp(migrated.db, {
+        coach: withScanJobPosting(createDemoCoachRuntime(), async () =>
+          JSON.stringify({
+            title: null,
+            company: "Microsoft",
+            note: "Page not found",
+          })
+        ),
+        fetchJobPosting: async () => ({
+          ok: true,
+          text: "<h1>Page not found</h1><p>Microsoft Careers</p>",
+        }),
+      })
+      const { cookie } = await signUp(localApp, {
+        name: "Mai",
+        email: "mai-apply-scan-unreadable@example.com",
+        password: "correct-horse-battery",
+      })
+      const before = await json<{ ok: true; data: ApplyCard[] }>(
+        await localApp.request("/api/apply", { headers: authHeaders(cookie) })
+      )
+      const res = await localApp.request("/api/apply/scan", {
+        method: "POST",
+        headers: authHeaders(cookie),
+        body: JSON.stringify({
+          jobUrl:
+            "https://jobs.careers.microsoft.com/global/en/job/missing",
+        }),
+      })
+      expect(res.status).toBe(400)
+      await expect(res.json()).resolves.toEqual({
+        ok: false,
+        error: {
+          code: ERROR_CODES.VALIDATION_ERROR,
+          message: APPLY_SCAN_FETCH_FAILED,
+        },
+      })
+      const after = await json<{ ok: true; data: ApplyCard[] }>(
+        await localApp.request("/api/apply", { headers: authHeaders(cookie) })
+      )
+      expect(after.data).toHaveLength(before.data.length)
     } finally {
       await migrated.client.close()
     }

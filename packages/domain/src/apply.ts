@@ -339,9 +339,17 @@ export function groundApplyScanResult(
   const company = emptyApplyScanField(extracted.company)
   const note = emptyApplyScanField(extracted.note)
   return {
-    title: applyScanFieldGrounded(source, title) ? title : null,
+    title:
+      applyScanFieldGrounded(source, title) &&
+      !applyScanFieldLooksUnreadable(title)
+        ? title
+        : null,
     company: applyScanFieldGrounded(source, company) ? company : null,
-    note: applyScanFieldGrounded(source, note) ? note : null,
+    note:
+      applyScanFieldGrounded(source, note) &&
+      !applyScanFieldLooksUnreadable(note)
+        ? note
+        : null,
   }
 }
 
@@ -409,6 +417,44 @@ export function postingTextFromHtml(html: string): string {
     .replace(/&#39;/gi, "'")
     .replace(/\s+/g, " ")
     .trim()
+}
+
+/**
+ * Visible error-page chrome — not a job posting we can read (QVE-249).
+ * Folded so “Page not found” / “PAGE NOT FOUND” match the same café paste.
+ */
+const UNREADABLE_APPLY_POSTING_PHRASES = [
+  "page not found",
+  "this page could not be found",
+  "we can't find this page",
+  "we couldn't find this page",
+  "job not found",
+  "this job is no longer available",
+  "this posting is no longer available",
+  "this job posting is no longer available",
+  "404 not found",
+  "error 404",
+] as const
+
+/** Fetched HTML (or its text) is an error shell, not a posting. */
+export function isUnreadableApplyPosting(text: string): boolean {
+  const folded = foldApplyScanText(text)
+  if (!folded) return true
+  return UNREADABLE_APPLY_POSTING_PHRASES.some((phrase) =>
+    folded.includes(phrase)
+  )
+}
+
+/** Extracted title/note is error-page chrome — never persist it as a fill. */
+export function applyScanFieldLooksUnreadable(
+  value: string | null | undefined
+): boolean {
+  if (value == null) return false
+  const folded = foldApplyScanText(value)
+  if (!folded) return false
+  return UNREADABLE_APPLY_POSTING_PHRASES.some(
+    (phrase) => folded === phrase || folded.includes(phrase)
+  )
 }
 
 function emptyApplyScanResult(): ApplyScanResult {

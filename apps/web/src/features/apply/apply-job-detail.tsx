@@ -2,11 +2,11 @@ import { useState, type ReactNode } from "react"
 import {
   APPLY_JOB_URL_COPIED,
   APPLY_JOB_URL_COPY_FAILED,
-  APPLY_JOB_URL_INVALID,
   applyJobSourceHost,
   isDemoApplyCard,
   openableApplyJobUrl,
   parseApplyJobUrlInput,
+  parseApplyScanInput,
   publicApplyJobUrl,
   type PaperDoc,
 } from "@workspace/domain"
@@ -48,6 +48,8 @@ import {
   APPLY_JOB_NEXT_STEP_LABEL,
   APPLY_JOB_NOTES_PLACEHOLDER,
   APPLY_JOB_OPEN_LABEL,
+  APPLY_JOB_SCAN_TEXT_LABEL,
+  APPLY_JOB_SCAN_TEXT_PLACEHOLDER,
   APPLY_JOB_OPEN_SOURCE_LABEL,
   APPLY_JOB_SOURCE_LABEL,
   APPLY_JOB_SOURCE_PLACEHOLDER,
@@ -229,9 +231,11 @@ function JobDetailFields({
   const [jobUrlError, setJobUrlError] = useState<string | null>(null)
   const [scanning, setScanning] = useState(false)
   const [scanError, setScanError] = useState<string | null>(null)
+  const [scanJdText, setScanJdText] = useState("")
   const [copied, setCopied] = useState(false)
   const [copyError, setCopyError] = useState<string | null>(null)
   const postingUrl = openableApplyJobUrl(jobUrl)
+  const showScanJd = Boolean(scanError || scanJdText.trim())
 
   function commitTitle() {
     const next = title.trim()
@@ -284,15 +288,18 @@ function JobDetailFields({
   }
 
   async function scanPosting() {
-    const href = openableApplyJobUrl(jobUrl)
-    if (!href) {
-      setScanError(APPLY_JOB_URL_INVALID)
+    const parsed = parseApplyScanInput({ jobUrl, jdText: scanJdText })
+    if (!parsed.ok) {
+      setScanError(parsed.message)
       return
     }
     setScanning(true)
     setScanError(null)
     try {
-      const result = await scanApplyJob({ jobUrl: href })
+      const result = await scanApplyJob({
+        ...(parsed.jobUrl ? { jobUrl: parsed.jobUrl } : {}),
+        ...(parsed.jdText ? { jdText: parsed.jdText } : {}),
+      })
       const patch: Parameters<Props["onPatch"]>[0] = {}
       if (result.title) patch.title = result.title
       if (result.company) patch.company = result.company
@@ -300,6 +307,7 @@ function JobDetailFields({
       if (result.title) setTitle(result.title)
       if (result.company) setCompany(result.company)
       if (Object.keys(patch).length > 0) onPatch(patch)
+      setScanJdText("")
     } catch (error) {
       setScanError(
         error instanceof ApiError
@@ -436,6 +444,24 @@ function JobDetailFields({
             <ErrorBanner variant="inline" className="mt-2">
               {scanError}
             </ErrorBanner>
+          ) : null}
+          {showScanJd ? (
+            <div className="mt-3 block">
+              <Label
+                htmlFor={`job-scan-jd-${card.id}`}
+                className={FIELD_LABEL}
+              >
+                {APPLY_JOB_SCAN_TEXT_LABEL}
+              </Label>
+              <Textarea
+                id={`job-scan-jd-${card.id}`}
+                value={scanJdText}
+                onChange={(e) => setScanJdText(e.target.value)}
+                rows={4}
+                className="min-h-0 resize-none leading-relaxed"
+                placeholder={APPLY_JOB_SCAN_TEXT_PLACEHOLDER}
+              />
+            </div>
           ) : null}
         </div>
       </section>

@@ -22,6 +22,10 @@ import { ErrorBanner } from "@/components/error-banner.tsx"
 import { ApiError } from "@/lib/api-error.ts"
 
 import { scanApplyJob } from "./apply-api.ts"
+import {
+  APPLY_JOB_SCAN_TEXT_LABEL,
+  APPLY_JOB_SCAN_TEXT_PLACEHOLDER,
+} from "./apply-job-structure.ts"
 
 export type AddJobDraft = {
   jobUrl: string | null
@@ -147,7 +151,7 @@ export function AddJobDialog({ open, creating, onOpenChange, onAdd }: Props) {
         </div>
         <div className="block">
           <Label htmlFor="add-job-jd" className="mb-1">
-            Job text
+            {APPLY_JOB_SCAN_TEXT_LABEL}
           </Label>
           <Textarea
             id="add-job-jd"
@@ -158,7 +162,7 @@ export function AddJobDialog({ open, creating, onOpenChange, onAdd }: Props) {
             }}
             rows={4}
             className="min-h-0 resize-none leading-relaxed"
-            placeholder="Paste the job post if the link won't open"
+            placeholder={APPLY_JOB_SCAN_TEXT_PLACEHOLDER}
           />
         </div>
         {receipt ? (
