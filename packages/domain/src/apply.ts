@@ -55,9 +55,10 @@ export const applyJobUrlSchema = z
 const HAS_URL_SCHEME = /^[a-zA-Z][a-zA-Z0-9+.-]*:/
 
 export const APPLY_JOB_URL_INVALID = "That posting link isn't a valid web URL."
-export const APPLY_JOB_URL_BLOCKED = "The browser blocked opening this posting."
-export const APPLY_SCAN_EMPTY =
-  "Paste a posting link or the job text to scan."
+export const APPLY_JOB_URL_COPIED = "Posting link copied."
+export const APPLY_JOB_URL_COPY_FAILED =
+  "Couldn't copy the posting link. Select Source and copy it."
+export const APPLY_SCAN_EMPTY = "Paste a posting link or the job text to scan."
 export const APPLY_SCAN_FETCH_FAILED =
   "Couldn't read that posting. Paste the job text and scan again."
 export const APPLY_SCAN_NOT_FOUND =
@@ -66,7 +67,7 @@ export const APPLY_SCAN_UNAVAILABLE =
   "Scan isn't available right now. Add the title and company yourself."
 export const APPLY_SCAN_SYSTEM_PROMPT = [
   "You extract a job title and company from a posting for OpenPath Apply.",
-  "Return JSON only: {\"title\": string or null, \"company\": string or null, \"note\": string or null}",
+  'Return JSON only: {"title": string or null, "company": string or null, "note": string or null}',
   "Rules:",
   "- Use only words that appear in the posting. Do not invent or guess.",
   "- If the title or company is not clearly in the posting, use null.",
@@ -120,7 +121,13 @@ export function applyJobSourceHost(
   return host ? host.replace(/^www\./i, "") : null
 }
 
-/** http(s) posting URL we can honestly open, or null. */
+/**
+ * http(s) posting URL we can honestly open, or null.
+ * Open it with a real `<a target="_blank" rel="noopener noreferrer">`.
+ * Do not call `window.open(url, "_blank", "noopener,noreferrer")` — that
+ * feature string makes the call return null even when the tab opened, which
+ * Apply used to toast as blocked with no recovery (QVE-248).
+ */
 export function openableApplyJobUrl(
   raw: string | null | undefined
 ): string | null {

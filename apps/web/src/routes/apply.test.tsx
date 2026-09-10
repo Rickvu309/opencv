@@ -328,6 +328,9 @@ describe("Apply workspace", () => {
     expect(within(panel).getByText(APPLY_DEMO_LABEL)).toBeInTheDocument()
     expect(within(panel).getByText(APPLY_DEMO_HINT)).toBeInTheDocument()
     expect(
+      within(panel).queryByRole("link", { name: "Open job posting" })
+    ).not.toBeInTheDocument()
+    expect(
       within(panel).queryByRole("button", { name: "Open job posting" })
     ).not.toBeInTheDocument()
     expect(within(panel).queryByDisplayValue(/example\.com/i)).toBeNull()
@@ -489,6 +492,9 @@ describe("Apply workspace", () => {
     })
     expect(within(panel).getByDisplayValue("Untitled role")).toBeInTheDocument()
     expect(
+      within(panel).queryByRole("link", { name: "Open job posting" })
+    ).not.toBeInTheDocument()
+    expect(
       within(panel).queryByRole("button", { name: "Open job posting" })
     ).not.toBeInTheDocument()
 
@@ -523,14 +529,21 @@ describe("Apply workspace", () => {
       within(panel).getByDisplayValue("https://careers.example.com/pm-intern")
     ).toBeInTheDocument()
 
-    fireEvent.click(
-      within(panel).getByRole("button", { name: "Open job posting" })
+    const posting = within(panel).getByRole("link", {
+      name: "Open job posting",
+    })
+    expect(posting).toHaveAttribute(
+      "href",
+      "https://careers.example.com/pm-intern"
     )
-    expect(open).toHaveBeenCalledWith(
-      "https://careers.example.com/pm-intern",
-      "_blank",
-      "noopener,noreferrer"
-    )
+    expect(posting).toHaveAttribute("target", "_blank")
+    expect(posting).toHaveAttribute("rel", "noopener noreferrer")
+    fireEvent.click(posting)
+    expect(open).not.toHaveBeenCalled()
+    expect(within(panel).queryByRole("alert")).not.toBeInTheDocument()
+    expect(
+      screen.queryByText(/browser blocked opening this posting/i)
+    ).not.toBeInTheDocument()
   })
 
   it("keeps Add job open when the posting URL is not a web URL", async () => {
@@ -588,8 +601,8 @@ describe("Apply workspace", () => {
     })
     expect(within(panel).getByText("careers.example.com")).toBeInTheDocument()
     expect(
-      within(panel).getByRole("button", { name: "Open job posting" })
-    ).toBeInTheDocument()
+      within(panel).getByRole("link", { name: "Open job posting" })
+    ).toHaveAttribute("href", "https://careers.example.com/cafe-role")
 
     fireEvent.change(within(panel).getByLabelText("Date"), {
       target: { value: "2026-09-20" },
@@ -614,11 +627,12 @@ describe("Apply workspace", () => {
     ).toHaveTextContent("Follow-up")
   })
 
-  it("honest-fails when the browser blocks opening the posting", async () => {
-    vi.stubGlobal(
-      "open",
-      vi.fn(() => null)
-    )
+  it("copies the posting link when a new tab is not the path", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    vi.stubGlobal("navigator", {
+      ...navigator,
+      clipboard: { writeText },
+    })
 
     renderApply()
     await expectApplyLive()
@@ -627,12 +641,42 @@ describe("Apply workspace", () => {
     const panel = await screen.findByRole("complementary", {
       name: "Job detail",
     })
-    fireEvent.click(
-      within(panel).getByRole("button", { name: "Open job posting" })
+    fireEvent.click(within(panel).getByRole("button", { name: "Copy link" }))
+    expect(
+      await within(panel).findByRole("button", { name: "Copied" })
+    ).toBeInTheDocument()
+    expect(await within(panel).findByRole("status")).toHaveTextContent(
+      "Posting link copied."
     )
-    expect(within(panel).getByRole("alert")).toHaveTextContent(
-      "The browser blocked opening this posting."
+    expect(writeText).toHaveBeenCalledWith("https://linkedin.com/jobs/view/123")
+    expect(
+      screen.queryByText(/browser blocked opening this posting/i)
+    ).not.toBeInTheDocument()
+  })
+
+  it("honest-fails copy without claiming the link left", async () => {
+    vi.stubGlobal("navigator", {
+      ...navigator,
+      clipboard: { writeText: vi.fn().mockRejectedValue(new Error("denied")) },
+    })
+
+    renderApply()
+    await expectApplyLive()
+
+    await addJobFromDialog("linkedin.com/jobs/view/123")
+    const panel = await screen.findByRole("complementary", {
+      name: "Job detail",
+    })
+    fireEvent.click(within(panel).getByRole("button", { name: "Copy link" }))
+    expect(await within(panel).findByRole("alert")).toHaveTextContent(
+      "Couldn't copy the posting link. Select Source and copy it."
     )
+    expect(
+      within(panel).getByRole("button", { name: "Copy link" })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText(/browser blocked opening this posting/i)
+    ).not.toBeInTheDocument()
   })
 
   it("does not open leftover seeded jobs.example.com", async () => {
@@ -646,6 +690,9 @@ describe("Apply workspace", () => {
     const panel = await screen.findByRole("complementary", {
       name: "Job detail",
     })
+    expect(
+      within(panel).queryByRole("link", { name: "Open job posting" })
+    ).not.toBeInTheDocument()
     expect(
       within(panel).queryByRole("button", { name: "Open job posting" })
     ).not.toBeInTheDocument()
