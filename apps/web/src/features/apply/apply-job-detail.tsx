@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react"
 import {
-  APPLY_JOB_URL_BLOCKED,
+  APPLY_JOB_URL_COPIED,
+  APPLY_JOB_URL_COPY_FAILED,
   APPLY_JOB_URL_INVALID,
   applyJobSourceHost,
   isDemoApplyCard,
@@ -10,7 +11,7 @@ import {
   type PaperDoc,
 } from "@workspace/domain"
 import { Badge } from "@workspace/ui/components/badge"
-import { Button } from "@workspace/ui/components/button"
+import { Button, buttonVariants } from "@workspace/ui/components/button"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -29,7 +30,7 @@ import {
 } from "@workspace/ui/components/select"
 import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
-import { ExternalLink, Link2, Star, Trash2, X } from "lucide-react"
+import { Check, Copy, ExternalLink, Link2, Star, Trash2, X } from "lucide-react"
 
 import { ErrorBanner } from "@/components/error-banner.tsx"
 import { scanApplyJob } from "@/features/apply/apply-api.ts"
@@ -41,12 +42,17 @@ import { paperDocsLinkedToCard } from "@/features/paper/paper-apply-attach.ts"
 import {
   APPLY_DEMO_HINT,
   APPLY_DEMO_LABEL,
+  APPLY_JOB_COPIED_LABEL,
+  APPLY_JOB_COPY_LABEL,
   APPLY_JOB_DATE_LABEL,
   APPLY_JOB_NEXT_STEP_LABEL,
   APPLY_JOB_NOTES_PLACEHOLDER,
+  APPLY_JOB_OPEN_LABEL,
+  APPLY_JOB_OPEN_SOURCE_LABEL,
   APPLY_JOB_SOURCE_LABEL,
   APPLY_JOB_SOURCE_PLACEHOLDER,
 } from "@/features/apply/apply-job-structure.ts"
+import { copyApplyJobUrl } from "@/features/apply/apply-open-posting.ts"
 import { ApiError } from "@/lib/api-error.ts"
 import {
   formatApplyUpdated,
@@ -103,22 +109,7 @@ export function JobDetailPanel({
   const guidedAction = guided ? guidedApplyNextAction(card) : null
   const linkedPaper = paperDocsLinkedToCard(paperDocs, card.id)
   const [linkOpen, setLinkOpen] = useState(false)
-  const [openError, setOpenError] = useState<string | null>(null)
-  const postingUrl = publicApplyJobUrl(card.jobUrl)
-
-  function openPosting() {
-    const href = openableApplyJobUrl(postingUrl)
-    if (!href) {
-      setOpenError(APPLY_JOB_URL_INVALID)
-      return
-    }
-    const opened = window.open(href, "_blank", "noopener,noreferrer")
-    if (!opened) {
-      setOpenError(APPLY_JOB_URL_BLOCKED)
-      return
-    }
-    setOpenError(null)
-  }
+  const postingHref = openableApplyJobUrl(card.jobUrl)
 
   return (
     <aside
@@ -143,10 +134,10 @@ export function JobDetailPanel({
 
         <div className="mx-0.5 h-5 w-px bg-border" aria-hidden />
 
-        {postingUrl ? (
-          <ToolbarIconButton label="Open job posting" onClick={openPosting}>
+        {postingHref ? (
+          <ToolbarIconLink href={postingHref} label={APPLY_JOB_OPEN_LABEL}>
             <ExternalLink className="size-3.5" />
-          </ToolbarIconButton>
+          </ToolbarIconLink>
         ) : null}
         <PaperLinkMenu
           open={linkOpen}
@@ -173,10 +164,6 @@ export function JobDetailPanel({
       </div>
 
       <div className="flex flex-1 flex-col gap-4 overflow-auto p-4">
-        {openError ? (
-          <ErrorBanner variant="inline">{openError}</ErrorBanner>
-        ) : null}
-
         {isDemoApplyCard(card) ? (
           <div role="status" className="space-y-1.5">
             <Badge variant="secondary">{APPLY_DEMO_LABEL}</Badge>
@@ -242,6 +229,8 @@ function JobDetailFields({
   const [jobUrlError, setJobUrlError] = useState<string | null>(null)
   const [scanning, setScanning] = useState(false)
   const [scanError, setScanError] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
+  const [copyError, setCopyError] = useState<string | null>(null)
   const postingUrl = openableApplyJobUrl(jobUrl)
 
   function commitTitle() {
@@ -274,6 +263,24 @@ function JobDetailFields({
     if (parsed.jobUrl !== (card.jobUrl ?? null)) {
       onPatch({ jobUrl: parsed.jobUrl })
     }
+  }
+
+  async function copyPosting() {
+    const href = openableApplyJobUrl(jobUrl)
+    if (!href) {
+      setCopied(false)
+      setCopyError(APPLY_JOB_URL_COPY_FAILED)
+      return
+    }
+    const ok = await copyApplyJobUrl(href)
+    if (!ok) {
+      setCopied(false)
+      setCopyError(APPLY_JOB_URL_COPY_FAILED)
+      return
+    }
+    setCopyError(null)
+    setCopied(true)
+    window.setTimeout(() => setCopied(false), 2000)
   }
 
   async function scanPosting() {
@@ -372,16 +379,58 @@ function JobDetailFields({
             </ErrorBanner>
           ) : null}
           {postingUrl ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="mt-2 h-8"
-              disabled={scanning}
-              onClick={() => void scanPosting()}
-            >
-              {scanning ? "Scanning…" : "Scan posting"}
-            </Button>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <a
+                href={postingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "sm" }),
+                  "h-8"
+                )}
+              >
+                {APPLY_JOB_OPEN_SOURCE_LABEL}
+              </a>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8"
+                onClick={() => void copyPosting()}
+              >
+                {copied ? (
+                  <>
+                    <Check className="size-3.5" />
+                    {APPLY_JOB_COPIED_LABEL}
+                  </>
+                ) : (
+                  <>
+                    <Copy className="size-3.5" />
+                    {APPLY_JOB_COPY_LABEL}
+                  </>
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8"
+                disabled={scanning}
+                onClick={() => void scanPosting()}
+              >
+                {scanning ? "Scanning…" : "Scan posting"}
+              </Button>
+            </div>
+          ) : null}
+          {copied ? (
+            <p role="status" className="mt-2 text-sm text-muted-foreground">
+              {APPLY_JOB_URL_COPIED}
+            </p>
+          ) : null}
+          {copyError ? (
+            <ErrorBanner variant="inline" className="mt-2">
+              {copyError}
+            </ErrorBanner>
           ) : null}
           {scanError ? (
             <ErrorBanner variant="inline" className="mt-2">
@@ -583,6 +632,32 @@ function StageMenu({
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
+  )
+}
+
+function ToolbarIconLink({
+  href,
+  label,
+  children,
+}: {
+  href: string
+  label: string
+  children: ReactNode
+}) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={label}
+      title={label}
+      className={cn(
+        buttonVariants({ variant: "ghost", size: "icon-sm" }),
+        "text-muted-foreground"
+      )}
+    >
+      {children}
+    </a>
   )
 }
 
