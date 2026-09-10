@@ -128,21 +128,13 @@ export function createOpenRouterCoachRuntime({
           }))
         )
       const hasFocusDoc = Boolean(input.focusDoc)
-      const pitchScoped = isPitchCoachAsk(userText)
-      const coachTools = withApplyCardIdGuard(
-        withMustEditRepair(
-          omitApplyMutations(
-            assembleCoachTools({
-              db,
-              userId: input.userId,
-              registry,
-            }),
-            pitchScoped
-          ),
-          input.focusDoc
-        ),
-        { pitchScoped }
-      )
+      const coachTools = assembleTurnCoachTools({
+        db,
+        userId: input.userId,
+        registry,
+        focusDoc: input.focusDoc,
+        userText,
+      })
       const tools = toAiSdkTools(coachTools)
       const executeUpdate = (updateInput: {
         docId: string
@@ -266,6 +258,33 @@ export function createOpenRouterCoachRuntime({
       }
     },
   }
+}
+
+/** Per-turn surface: Pitch café asks drop Apply mutations (QVE-247). */
+export function assembleTurnCoachTools({
+  db,
+  userId,
+  registry = commandRegistry,
+  focusDoc,
+  userText,
+}: {
+  db: AppDatabase
+  userId: string
+  registry?: CommandRegistry
+  focusDoc?: CoachTurnInput["focusDoc"]
+  userText: string
+}): CoachToolSurface {
+  const pitchScoped = isPitchCoachAsk(userText)
+  return withApplyCardIdGuard(
+    withMustEditRepair(
+      omitApplyMutations(
+        assembleCoachTools({ db, userId, registry }),
+        pitchScoped
+      ),
+      focusDoc
+    ),
+    { pitchScoped }
+  )
 }
 
 async function loadWorkspaceSnapshot(db: AppDatabase, userId: string) {

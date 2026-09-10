@@ -1,11 +1,14 @@
 import {
+  APPLY_CARD_ID_MISSING_COPY,
   APPLY_COMMANDS,
   COACH_READ_TOOLS,
   COACH_VOICE_COMMAND,
   ERROR_CODES,
+  INVALID_CARD_ID_COPY,
   PAPER_COMMANDS,
   PAPER_CONTENT_VERSION,
   PITCH_COMMANDS,
+  PITCH_SCOPED_NO_APPLY_COPY,
   PROFILE_COMMANDS,
   THREAD_COMMANDS,
   emptyLetterDocument,
@@ -31,6 +34,7 @@ import { createMigratedTestDb } from "../test/harness.js"
 import { repairPaperUpdateInput } from "./must-edit-repair.js"
 import { withApplyCardIdGuard } from "./apply-card-guard.js"
 import {
+  assembleTurnCoachTools,
   jsonSchemaForCoachInput,
   toAiSdkTools,
   withMustEditRepair,
@@ -309,6 +313,47 @@ describe("coach tool surface", () => {
       markdown: "Rewritten for a product internship.",
     })
     expect(applied.contentVersion).toBe(PAPER_CONTENT_VERSION)
+  })
+
+  it("scopes a Pitch café ask off Apply mutations and refuses invented card ids", async () => {
+    const polish =
+      "What should I put on my Pitch page before I share the link? I have two Proofs ready and a draft CV."
+    const pitchTools = assembleTurnCoachTools({
+      db,
+      userId: ownerId,
+      userText: polish,
+    })
+    expect(pitchTools.apply_moveCard).toBeUndefined()
+    expect(pitchTools.apply_createCard).toBeUndefined()
+    expect(pitchTools.apply_updateCard).toBeUndefined()
+    expect(pitchTools.apply_toggleStar).toBeUndefined()
+    expect(pitchTools.paper_linkApplyCard).toBeUndefined()
+    expect(pitchTools.apply_listCards).toBeDefined()
+    expect(pitchTools.pitch_update).toBeDefined()
+
+    const applyTools = assembleTurnCoachTools({
+      db,
+      userId: ownerId,
+      userText: "Move my starred card to Prep.",
+    })
+    const move = applyTools.apply_moveCard
+    expect(move).toBeDefined()
+    if (!move) throw new Error("expected apply_moveCard on an Apply ask")
+    const invented = await move.execute({
+      cardId: "00000000-0000-0000-0000-000000000002",
+      stage: "prep",
+    })
+    expect(invented).toEqual({
+      ok: false,
+      error: {
+        code: ERROR_CODES.VALIDATION_ERROR,
+        message: APPLY_CARD_ID_MISSING_COPY,
+      },
+    })
+    expect(invented.ok === false && invented.error.message).not.toBe(
+      INVALID_CARD_ID_COPY
+    )
+    expect(PITCH_SCOPED_NO_APPLY_COPY).not.toBe(INVALID_CARD_ID_COPY)
   })
 
   it("converts every assembled tool, including repaired paper_updateContent, to JSON Schema", async () => {
