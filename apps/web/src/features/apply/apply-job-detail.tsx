@@ -2,7 +2,6 @@ import { useState, type ReactNode } from "react"
 import {
   APPLY_JOB_URL_COPIED,
   APPLY_JOB_URL_COPY_FAILED,
-  APPLY_JOB_URL_INVALID,
   applyJobSourceHost,
   isDemoApplyCard,
   openableApplyJobUrl,
