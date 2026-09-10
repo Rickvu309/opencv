@@ -210,6 +210,8 @@ export function emptyPitchDocument(): PitchDocument {
     files: [],
     links: [],
     workDocs: [],
+    /** Clear demo / never-filled — not the signup sample. */
+    demo: false,
   }
 }
 
@@ -225,7 +227,10 @@ export const STARTER_PITCH_ABOUT_LEAD =
   "This is sample copy. Clear the demo when you want the page to be yours."
 
 /** Demo names that used to be baked into Pitch. Never identity. */
-export const LEFTOVER_PITCH_PERSONA_NAMES = ["Alex Tran", "Eric Nguyen"] as const
+export const LEFTOVER_PITCH_PERSONA_NAMES = [
+  "Alex Tran",
+  "Eric Nguyen",
+] as const
 
 /** Moments card titles from the pre-honest starter. */
 export const LEFTOVER_STORY_CHIP_TITLES = ["my sacred space"] as const
@@ -263,6 +268,14 @@ export function isDemoPitchDocument(doc: PitchDocument) {
     isLegacyFakePitchHeadline(doc.headline) ||
     isStarterPitchAbout(doc.about)
   )
+}
+
+/**
+ * QVE-221 wipe restore is only honest while sample About is still on the page.
+ * A leaked `demo: true` plus a real About (QVE-250 live path) is User-owned.
+ */
+export function isStarterSampleIdentity(doc: PitchDocument) {
+  return isStarterPitchAbout(doc.about)
 }
 
 /**
@@ -413,7 +426,7 @@ export function decodePitchContent(
   return { ok: true, data: healPitchDocument(loose.data) }
 }
 
-/** Decode-time repair: restore wiped demo Moments, never after Clear demo. */
+/** Decode-time repair: restore wiped sample Moments, never after Clear demo. */
 export function healPitchDocument(doc: PitchDocument): PitchDocument {
   if (pitchIdentityCopyCleared(doc)) {
     return { ...emptyPitchDocument(), published: doc.published }

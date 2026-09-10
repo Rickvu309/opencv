@@ -5,6 +5,7 @@ import {
   hasLeftoverStarterMoments,
   healPitchDocument,
   isDemoPitchDocument,
+  isStarterSampleIdentity,
   LEGACY_FAKE_PITCH_HEADLINE,
   preservePitchMoments,
   STARTER_PITCH_ABOUT_LEAD,
@@ -50,6 +51,9 @@ describe("pitch codecs", () => {
     expect(starterPitchDocument().about).toContain(STARTER_PITCH_ABOUT_LEAD)
     expect(isDemoPitchDocument(starterPitchDocument())).toBe(true)
     expect(isDemoPitchDocument(emptyPitchDocument())).toBe(false)
+    expect(isStarterSampleIdentity(starterPitchDocument())).toBe(true)
+    expect(isStarterSampleIdentity(emptyPitchDocument())).toBe(false)
+    expect(emptyPitchDocument().demo).toBe(false)
   })
 
   it("treats unlabeled sample About as Demo content so Clear demo can show", () => {
@@ -255,9 +259,9 @@ describe("pitch codecs", () => {
       body: "Hallway test setup",
       storyHighlightId: "sh-checkout",
     })
-    expect(decoded.data.blocks.find((block) => block.kind === "moments")).toEqual(
-      { id: "b-moments", kind: "moments", hidden: true }
-    )
+    expect(
+      decoded.data.blocks.find((block) => block.kind === "moments")
+    ).toEqual({ id: "b-moments", kind: "moments", hidden: true })
     expect(JSON.stringify(decoded.data)).not.toMatch(/sacred space/i)
     expect(JSON.stringify(decoded.data)).not.toMatch(/Alex Tran/i)
     expect(healPitchDocument(decoded.data)).toEqual(decoded.data)
@@ -278,13 +282,15 @@ describe("pitch codecs", () => {
     expect(decoded.data.demo).toBe(true)
     expect(decoded.data.headline).toBe(STARTER_PITCH_HEADLINE)
     expect(isDemoPitchDocument(decoded.data)).toBe(true)
-    expect(JSON.stringify(decoded.data)).not.toMatch(/Aspiring product manager/i)
+    expect(JSON.stringify(decoded.data)).not.toMatch(
+      /Aspiring product manager/i
+    )
   })
 
   it("allows a full clear so Demo content can become an empty Pitch", () => {
-    expect(preservePitchMoments(starterPitchDocument(), emptyPitchDocument())).toEqual(
-      emptyPitchDocument()
-    )
+    expect(
+      preservePitchMoments(starterPitchDocument(), emptyPitchDocument())
+    ).toEqual(emptyPitchDocument())
   })
 
   it("does not restore sample Moments after Clear demo leaves identity copy empty", () => {
@@ -326,6 +332,50 @@ describe("pitch codecs", () => {
     expect(decoded.data.about).toBe("I ship small checkout studies.")
     expect(JSON.stringify(decoded.data)).not.toMatch(/campus club/i)
     expect(JSON.stringify(decoded.data)).not.toMatch(/\+18%/)
+  })
+
+  it("does not restore chips when demo:true leaked onto a real About", () => {
+    const starter = starterPitchDocument()
+    const leaked = {
+      ...emptyPitchDocument(),
+      demo: true,
+      about: "I ship small checkout studies.",
+    }
+    expect(isDemoPitchDocument(leaked)).toBe(true)
+    expect(isStarterSampleIdentity(leaked)).toBe(false)
+    expect(preservePitchMoments(starter, leaked)).toEqual(leaked)
+
+    const decoded = decodePitchContent("pitch", 1, leaked)
+    expect(decoded.ok).toBe(true)
+    if (!decoded.ok) throw new Error("expected success")
+    expect(decoded.data.about).toBe("I ship small checkout studies.")
+    expect(decoded.data.storyHighlights).toEqual([])
+    expect(decoded.data.bento).toEqual([])
+    expect(
+      decoded.data.blocks.find((block) => block.kind === "moments")?.hidden
+    ).toBe(true)
+    expect(JSON.stringify(decoded.data)).not.toMatch(/Checkout/)
+    expect(JSON.stringify(decoded.data)).not.toMatch(/Wallet audit/)
+    expect(JSON.stringify(decoded.data)).not.toMatch(/Club sprint/)
+    expect(JSON.stringify(decoded.data)).not.toMatch(/campus club/i)
+    expect(JSON.stringify(decoded.data)).not.toMatch(/\+18%/)
+  })
+
+  it("does not restore chips after Clear plus a real status line", () => {
+    const starter = starterPitchDocument()
+    const typed = {
+      ...emptyPitchDocument(),
+      demo: true,
+      status: "Open to intern roles · Summer 2026",
+    }
+    expect(preservePitchMoments(starter, typed)).toEqual(typed)
+
+    const decoded = decodePitchContent("pitch", 1, typed)
+    expect(decoded.ok).toBe(true)
+    if (!decoded.ok) throw new Error("expected success")
+    expect(decoded.data.status).toBe("Open to intern roles · Summer 2026")
+    expect(decoded.data.storyHighlights).toEqual([])
+    expect(decoded.data.bento).toEqual([])
   })
 
   it("keeps the empty schema default empty and still accepts extra leftover keys", () => {

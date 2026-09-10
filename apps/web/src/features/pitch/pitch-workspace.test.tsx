@@ -235,6 +235,46 @@ describe("Pitch workspace", () => {
     })
     expectSampleMomentsGone()
     expect(screen.queryByRole("heading", { name: "Moments" })).not.toBeInTheDocument()
+    expect(screen.queryByText(/Demo content/i)).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: /add achievement/i })
+    ).toBeDisabled()
+  })
+
+  it("does not resurrect highlight chips when demo:true leaked onto a real About", async () => {
+    setMockPitchDoc({
+      id: "55555555-5555-7555-8555-555555555562",
+      kind: "pitch",
+      content: {
+        ...emptyPitchDocument(),
+        demo: true,
+      },
+      contentVersion: 1,
+      createdAt: "2026-08-25T00:00:00.000Z",
+      updatedAt: "2026-08-25T00:00:00.000Z",
+    })
+
+    renderPitch()
+    expect(await screen.findByText("Your Pitch is empty")).toBeInTheDocument()
+    expectSampleMomentsGone()
+
+    fireEvent.click(screen.getByRole("button", { name: "Start your Pitch" }))
+    fireEvent.click(screen.getByRole("button", { name: "Add section" }))
+    fireEvent.click(screen.getByRole("button", { name: BLOCK_LABELS.about }))
+    const about = screen.getByRole("heading", { name: "About" }).closest("section")
+    expect(about).not.toBeNull()
+    fireEvent.change(within(about as HTMLElement).getByRole("textbox"), {
+      target: { value: "I ship small checkout studies." },
+    })
+
+    await waitFor(() => {
+      const stored = getMockPitchDoc()?.content as PitchDocument
+      expect(stored.about).toBe("I ship small checkout studies.")
+      expect(stored.storyHighlights).toEqual([])
+      expect(stored.bento).toEqual([])
+    })
+    expectSampleMomentsGone()
+    expect(screen.queryByRole("heading", { name: "Moments" })).not.toBeInTheDocument()
     expect(
       screen.queryByRole("button", { name: /add achievement/i })
     ).toBeDisabled()
