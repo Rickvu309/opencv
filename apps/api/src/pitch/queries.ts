@@ -4,6 +4,7 @@ import {
   isPitchPublicSlug,
   pitchHandle,
   type PitchDoc,
+  type PitchDocument,
   type PublicPitch,
 } from "@workspace/domain"
 import { eq } from "drizzle-orm"
@@ -89,18 +90,31 @@ export async function getPublishedPitchBySlug(
     .from(pitchDocs)
     .innerJoin(user, eq(pitchDocs.userId, user.id))
 
-  const matches = rows.flatMap((row) => {
-    if (pitchHandle(row.name) !== slug) return []
+  type PublishedPitchRow = {
+    contentKind: "pitch"
+    content: unknown
+    contentVersion: number
+    createdAt: Date
+    name: string
+    email: string
+    image: string | null
+  }
+
+  const matches: { row: PublishedPitchRow; content: PitchDocument }[] = []
+  for (const row of rows as PublishedPitchRow[]) {
+    if (pitchHandle(row.name) !== slug) continue
     const decoded = decodePitchContent(
       row.contentKind,
       row.contentVersion,
       row.content
     )
-    if (!decoded.ok || !decoded.data.published) return []
-    return [{ row, content: decoded.data }]
-  })
+    if (!decoded.ok || !decoded.data.published) continue
+    matches.push({ row, content: decoded.data })
+  }
 
-  matches.sort((a, b) => a.row.createdAt.getTime() - b.row.createdAt.getTime())
+  matches.sort(
+    (left, right) => left.row.createdAt.getTime() - right.row.createdAt.getTime()
+  )
   const hit = matches[0]
   if (!hit) return null
 
