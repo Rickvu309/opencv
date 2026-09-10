@@ -69,7 +69,10 @@ describe("personaSystemPrompt", () => {
     expect(persona).toMatch(/honest about distance/i)
     expect(persona).toMatch(/Never claim an action succeeded/)
     expect(persona).toMatch(/Never invent ids/)
-    expect(persona).toMatch(/Do not mutate Apply or Paper unless the User asked/)
+    expect(persona).toMatch(/not consent to change an Apply card/)
+    expect(persona).toMatch(
+      /Do not mutate Apply, Paper, or Pitch unless the User asked/
+    )
     expect(persona).toMatch(/paper_updateContent/)
     expect(persona).toMatch(/failed tool receipt/)
     expect(persona).toMatch(/Never tell them to paste the rewrite/)
@@ -93,6 +96,27 @@ describe("summarizeWorkspace", () => {
     )
     expect(summary).not.toMatch(
       /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i
+    )
+  })
+
+  it("names Pitch without ids when the runtime loaded it", () => {
+    const summary = summarizeWorkspace({
+      ...sampleSnapshot,
+      pitch: {
+        published: false,
+        demo: true,
+        headline: "Sample Pitch · replace with your story",
+        achievements: 2,
+        experience: 1,
+        highlights: 2,
+      },
+    })
+    expect(summary).toContain(
+      "Pitch: sample page · unpublished · Sample Pitch · replace with your story · 2 achievements · 1 experience · 2 moments"
+    )
+    expect(summary).not.toMatch(/That card id isn't valid/)
+    expect(summarizeWorkspace({ ...sampleSnapshot, pitch: null })).toContain(
+      "Pitch: none"
     )
   })
 
@@ -226,6 +250,36 @@ describe("assembleSystemPrompt", () => {
       latestUserText: "How do I edit my summary?",
     })
     expect(paperAdvice).not.toMatch(/This User message is an edit ask/)
+  })
+
+  it("scopes a Pitch café ask to coaching and forbids Apply card mutations", () => {
+    const snapshot: WorkspaceSnapshot = {
+      ...sampleSnapshot,
+      pitch: {
+        published: false,
+        demo: true,
+        headline: "Sample Pitch · replace with your story",
+        achievements: 2,
+        experience: 1,
+        highlights: 2,
+      },
+    }
+    const prompt = assembleSystemPrompt(snapshot, undefined, {
+      latestUserText:
+        "What should I put on my Pitch page before I share the link? I have two Proofs ready and a draft CV.",
+    })
+    expect(prompt).toContain(
+      "Pitch: sample page · unpublished · Sample Pitch · replace with your story"
+    )
+    expect(prompt).toMatch(/This User message is about Pitch, not Apply/)
+    expect(prompt).toMatch(/Do not invent Apply card ids/)
+    expect(prompt).not.toMatch(/This User message is an edit ask/)
+    expect(prompt).not.toMatch(/That card id isn't valid/)
+
+    const applyAsk = assembleSystemPrompt(sampleSnapshot, undefined, {
+      latestUserText: "Move my starred card to Prep.",
+    })
+    expect(applyAsk).not.toMatch(/This User message is about Pitch/)
   })
 
   it("asks the Coach to prefer the User's selection when one is present", () => {

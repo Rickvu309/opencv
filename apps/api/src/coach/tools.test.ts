@@ -29,6 +29,7 @@ import { getPaperDocDetail, listPaperDocsForUser } from "../paper/queries.js"
 import { getProfileForUser } from "../profile/queries.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { repairPaperUpdateInput } from "./must-edit-repair.js"
+import { withApplyCardIdGuard } from "./apply-card-guard.js"
 import {
   jsonSchemaForCoachInput,
   toAiSdkTools,
@@ -311,8 +312,8 @@ describe("coach tool surface", () => {
   })
 
   it("converts every assembled tool, including repaired paper_updateContent, to JSON Schema", async () => {
-    const surface = withMustEditRepair(
-      assembleCoachTools({ db, userId: ownerId })
+    const surface = withApplyCardIdGuard(
+      withMustEditRepair(assembleCoachTools({ db, userId: ownerId }))
     )
     const tools = toAiSdkTools(surface)
     expect(Object.keys(tools).sort()).toEqual([...EXPECTED_COACH_TOOLS])

@@ -3,6 +3,8 @@ import {
   COACH_HISTORY_MESSAGE_CAP,
   COACH_WORKSPACE_LIST_CAP,
   PAPER_KIND_LABEL,
+  isDemoPitchDocument,
+  isPitchDocument,
   type ApplyCard,
   type CoachFocusDoc,
   type CoachSelection,
@@ -16,6 +18,7 @@ import {
   isPaperEditAsk,
   mustEditTurnInstruction,
 } from "./must-edit.js"
+import { isPitchCoachAsk, pitchScopeTurnInstruction } from "./pitch-scope.js"
 
 export type WorkspacePaperItem = {
   name: string
@@ -30,10 +33,21 @@ export type WorkspaceApplyItem = {
   starred: boolean
 }
 
+export type WorkspacePitchItem = {
+  published: boolean
+  demo: boolean
+  headline: string
+  achievements: number
+  experience: number
+  highlights: number
+}
+
 export type WorkspaceSnapshot = {
   profileName: string | null
   paper: WorkspacePaperItem[]
   apply: WorkspaceApplyItem[]
+  /** Present when the runtime loaded Pitch; omit in unit fixtures. */
+  pitch?: WorkspacePitchItem | null
   focusDoc?: CoachFocusDoc
 }
 
@@ -76,8 +90,8 @@ export function personaSystemPrompt(): string {
     "- A compact workspace snapshot is below. Use read tools for ids, content, and anything not listed.",
     "- You act through tools. Reads do not change state. Mutations run the same Commands the User can run.",
     "- Read before you advise when the snapshot is not enough. Act when the User asked for an outcome you can do.",
-    "- Never invent ids. List or read first, then use the real UUID from the tool result.",
-    "- Do not mutate Apply or Paper unless the User asked for that change. Asking to change, rewrite, shorten, tailor, sharpen, or fix content is that ask — run the Command in the same turn.",
+    "- Never invent ids. List or read first, then use the real UUID from the tool result. A Pitch or café advice ask is not consent to change an Apply card.",
+    "- Do not mutate Apply, Paper, or Pitch unless the User asked for that change. Asking to change, rewrite, shorten, tailor, sharpen, or fix content is that ask — run the Command in the same turn.",
     "- When the User selected text, prefer editing that selection. Do not rewrite the rest of the document unless they asked. When there is no selection, use the named section or the open document outline.",
     "- When the User asks to change, rewrite, shorten, tailor, sharpen, or fix content in the open document or a Paper document they name, you must attempt paper_updateContent. If the open document JSON is already in this prompt, call paper_updateContent immediately — do not call paper_getDoc first. Read with paper_listDocs or paper_getDoc only when you still need an id. Use paper_createDoc when they asked for a new document. A prose-only reply is allowed only after a failed tool receipt: one plain line on what failed, then one next step. Never tell them to paste the rewrite themselves. Never ask whether to apply.",
   ].join("\n")
@@ -113,6 +127,10 @@ export function summarizeWorkspace(
     }`,
     ...applyLines,
   ]
+
+  if (snapshot.pitch !== undefined) {
+    lines.push(summarizePitch(snapshot.pitch))
+  }
 
   if (snapshot.focusDoc) {
     lines.push(describeFocusDoc(snapshot.focusDoc))
@@ -179,6 +197,9 @@ export function assembleSystemPrompt(
   if (userText && isPaperEditAsk(userText, Boolean(snapshot.focusDoc))) {
     parts.push(mustEditTurnInstruction(Boolean(snapshot.focusDoc)))
   }
+  if (userText && isPitchCoachAsk(userText)) {
+    parts.push(pitchScopeTurnInstruction())
+  }
   return parts.join("\n\n")
 }
 
@@ -235,6 +256,7 @@ export function snapshotFromLists(input: {
   profile?: UserProfile | null
   paper: PaperDoc[]
   apply: ApplyCard[]
+  pitch?: unknown
   focusDoc?: CoachFocusDoc
 }): WorkspaceSnapshot {
   return {
@@ -250,8 +272,33 @@ export function snapshotFromLists(input: {
       stage: card.stage,
       starred: card.starred,
     })),
+    ...(input.pitch !== undefined
+      ? { pitch: pitchItemFromDocument(input.pitch) }
+      : {}),
     ...(input.focusDoc ? { focusDoc: input.focusDoc } : {}),
   }
+}
+
+export function pitchItemFromDocument(
+  content: unknown
+): WorkspacePitchItem | null {
+  if (!isPitchDocument(content)) return null
+  return {
+    published: content.published,
+    demo: isDemoPitchDocument(content),
+    headline: content.headline.trim(),
+    achievements: content.achievements.length,
+    experience: content.experience.length,
+    highlights: content.storyHighlights.length,
+  }
+}
+
+function summarizePitch(pitch: WorkspacePitchItem | null): string {
+  if (!pitch) return "Pitch: none"
+  const kind = pitch.demo ? "sample page" : "page"
+  const published = pitch.published ? "published" : "unpublished"
+  const headline = pitch.headline ? ` · ${pitch.headline}` : " · no headline"
+  return `Pitch: ${kind} · ${published}${headline} · ${countLabel(pitch.achievements, "achievement")} · ${countLabel(pitch.experience, "experience")} · ${countLabel(pitch.highlights, "moment")}`
 }
 
 function countLabel(count: number, noun: string) {
