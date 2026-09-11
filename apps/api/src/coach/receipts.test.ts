@@ -1,7 +1,9 @@
 import {
+  APPLY_CARD_ID_MISSING_COPY,
   applyMoveCardInputSchema,
   ERROR_CODES,
   INVALID_CARD_ID_COPY,
+  PITCH_SCOPED_NO_APPLY_COPY,
   INVALID_COMMAND_INPUT_COPY,
 } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
@@ -77,6 +79,25 @@ describe("summarizeToolResult", () => {
     expect(fromZod).toBe(INVALID_CARD_ID_COPY)
     expect(fromZodDump).toBe(INVALID_CARD_ID_COPY)
     expect(fromDump).toBe(INVALID_CARD_ID_COPY)
+
+    expect(
+      summarizeToolResult("apply_moveCard", {
+        ok: false,
+        error: {
+          code: ERROR_CODES.VALIDATION_ERROR,
+          message: APPLY_CARD_ID_MISSING_COPY,
+        },
+      })
+    ).toBe(APPLY_CARD_ID_MISSING_COPY)
+    expect(
+      summarizeToolResult("apply_moveCard", {
+        ok: false,
+        error: {
+          code: ERROR_CODES.VALIDATION_ERROR,
+          message: PITCH_SCOPED_NO_APPLY_COPY,
+        },
+      })
+    ).toBe(PITCH_SCOPED_NO_APPLY_COPY)
     for (const summary of [fromZod, fromZodDump, fromDump]) {
       expect(summary).not.toMatch(/Invalid input for tool/i)
       expect(summary).not.toMatch(/Type validation failed/i)

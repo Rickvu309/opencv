@@ -23,6 +23,7 @@ import {
   type CommandRegistry,
 } from "../commands/index.js"
 import { listPaperDocsForUser } from "../paper/queries.js"
+import { getPitchDocForUser, toPitchDoc } from "../pitch/queries.js"
 import { getProfileForUser } from "../profile/queries.js"
 import { runFreeTextMustEdit } from "./free-must-edit.js"
 import { guaranteeMustEditStream } from "./must-edit-guarantee.js"
@@ -44,6 +45,11 @@ import {
   snapshotFromLists,
   windowHistory,
 } from "./prompt.js"
+import { withApplyCardIdGuard } from "./apply-card-guard.js"
+import {
+  isPitchCoachAsk,
+  omitApplyMutations,
+} from "./pitch-scope.js"
 import { reversalForTool } from "./receipts.js"
 import {
   partsFromModelStream,
@@ -109,15 +115,6 @@ export function createOpenRouterCoachRuntime({
         ...(await loadWorkspaceSnapshot(db, input.userId)),
         ...(input.focusDoc ? { focusDoc: input.focusDoc } : {}),
       }
-      const coachTools = withMustEditRepair(
-        assembleCoachTools({
-          db,
-          userId: input.userId,
-          registry,
-        }),
-        input.focusDoc
-      )
-      const tools = toAiSdkTools(coachTools)
       const prepared = input.regenerate
         ? historyForRegenerate(input.history)
         : { history: input.history, priorCoach: undefined }
@@ -131,6 +128,14 @@ export function createOpenRouterCoachRuntime({
           }))
         )
       const hasFocusDoc = Boolean(input.focusDoc)
+      const coachTools = assembleTurnCoachTools({
+        db,
+        userId: input.userId,
+        registry,
+        focusDoc: input.focusDoc,
+        userText,
+      })
+      const tools = toAiSdkTools(coachTools)
       const executeUpdate = (updateInput: {
         docId: string
         content: unknown
@@ -255,13 +260,42 @@ export function createOpenRouterCoachRuntime({
   }
 }
 
+/** Per-turn surface: Pitch café asks drop Apply mutations (QVE-247). */
+export function assembleTurnCoachTools({
+  db,
+  userId,
+  registry = commandRegistry,
+  focusDoc,
+  userText,
+}: {
+  db: AppDatabase
+  userId: string
+  registry?: CommandRegistry
+  focusDoc?: CoachTurnInput["focusDoc"]
+  userText: string
+}): CoachToolSurface {
+  const pitchScoped = isPitchCoachAsk(userText)
+  return withApplyCardIdGuard(
+    withMustEditRepair(
+      omitApplyMutations(
+        assembleCoachTools({ db, userId, registry }),
+        pitchScoped
+      ),
+      focusDoc
+    ),
+    { pitchScoped }
+  )
+}
+
 async function loadWorkspaceSnapshot(db: AppDatabase, userId: string) {
-  const [profile, paper, apply] = await Promise.all([
+  const [profile, paper, apply, pitchRow] = await Promise.all([
     getProfileForUser(db, userId).catch(() => null),
     listPaperDocsForUser(db, userId).catch(() => []),
     listApplyCardsForUser(db, userId).catch(() => []),
+    getPitchDocForUser(db, userId).catch(() => null),
   ])
-  return snapshotFromLists({ profile, paper, apply })
+  const pitch = pitchRow ? toPitchDoc(pitchRow).content : null
+  return snapshotFromLists({ profile, paper, apply, pitch })
 }
 
 export function withMustEditRepair(
