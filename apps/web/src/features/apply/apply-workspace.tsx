@@ -48,9 +48,12 @@ import {
 } from "@/features/apply/apply-types.ts"
 import { useApplyCards } from "@/features/apply/use-apply-cards.ts"
 import { DestructiveCommandDialog } from "@/features/commands/destructive-command-dialog.tsx"
+import { recordFirstCafeItem } from "@/features/home/first-cafe-checklist.ts"
 import { usePaperDocs } from "@/features/paper/use-paper-docs.ts"
+import { authClient } from "@/lib/auth-client.ts"
 
 export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
+  const { data: session } = authClient.useSession()
   const apply = useApplyCards()
   const paper = usePaperDocs()
   const [view, setView] = useState<"board" | "calendar">("board")
@@ -105,6 +108,8 @@ export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
     }
 
     apply.moveCard(id, stage, beforeCardId)
+    const userId = session?.user.id
+    if (userId) recordFirstCafeItem(userId, "apply")
   }
 
   function moveDate(id: string, trackDate: string) {

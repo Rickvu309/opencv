@@ -136,6 +136,7 @@ describe("Pitch workspace", () => {
     expect(screen.queryByText(/Eric Nguyen/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/eric-nguyen/i)).not.toBeInTheDocument()
     expect(screen.queryByText(SURFACE_COPY.pitch.body)).not.toBeInTheDocument()
+    expect(readFirstCafeState(TEST_SESSION_USER.id).completed).toEqual([])
   })
 
   it("keeps Clear demo on page chrome, not inside Edit menus", async () => {
@@ -665,6 +666,7 @@ describe("Pitch workspace", () => {
     await waitFor(() => {
       expect(screen.queryByRole("heading", { name: "About" })).not.toBeInTheDocument()
     })
+    expect(readFirstCafeState(TEST_SESSION_USER.id).completed).toEqual(["pitch"])
 
     cleanup()
     await loadedPitch()

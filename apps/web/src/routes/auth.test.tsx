@@ -217,7 +217,7 @@ describe("auth flows", () => {
     ).not.toBeInTheDocument()
   })
 
-  it("after signup, visiting Apply only completes that item", async () => {
+  it("after signup, visiting Apply only does not complete that item", async () => {
     setMockSession(null)
     const { router } = renderApp("/sign-up")
 
@@ -265,8 +265,11 @@ describe("auth flows", () => {
 
     const list = screen.getByRole("region", { name: "Four small things" })
     expect(
-      within(list).getByRole("link", { name: "Triage one Apply card, done" })
+      within(list).getByRole("link", { name: "Triage one Apply card" })
     ).toBeInTheDocument()
+    expect(
+      within(list).queryByRole("link", { name: "Triage one Apply card, done" })
+    ).not.toBeInTheDocument()
     expect(
       within(list).getByRole("link", { name: "Open the sample CV" })
     ).toBeInTheDocument()
@@ -282,7 +285,7 @@ describe("auth flows", () => {
     expect(
       within(list).queryByRole("link", { name: "Make Pitch yours, done" })
     ).not.toBeInTheDocument()
-    expect(readFirstCafeState("user_test").completed).toEqual(["apply"])
+    expect(readFirstCafeState("user_test").completed).toEqual([])
   })
 
   it("shows a form error when sign-in is refused", async () => {

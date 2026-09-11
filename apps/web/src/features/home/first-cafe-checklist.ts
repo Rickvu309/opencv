@@ -47,6 +47,22 @@ export const FIRST_CAFE_CHECKLIST_ITEMS: readonly FirstCafeItem[] = [
 
 export const FIRST_CAFE_STORAGE_PREFIX = "openpath:home:first-cafe-checklist"
 
+/**
+ * Items a surface visit may honestly complete (QVE-252).
+ * Pitch / Apply stay open until a real edit / triage — not aim, not a peek.
+ */
+export const FIRST_CAFE_VISIT_ITEM_IDS = ["sample-cv", "email"] as const
+
+export type FirstCafeVisitItemId = (typeof FIRST_CAFE_VISIT_ITEM_IDS)[number]
+
+const VISIT_ITEM_ID_SET = new Set<string>(FIRST_CAFE_VISIT_ITEM_IDS)
+
+export function isFirstCafeVisitItem(
+  id: FirstCafeItemId
+): id is FirstCafeVisitItemId {
+  return VISIT_ITEM_ID_SET.has(id)
+}
+
 /** Craft-surface wins the quiet next nudge may follow. Email is optional. */
 export const FIRST_CAFE_WIN_IDS = ["sample-cv", "pitch", "apply"] as const
 
@@ -220,7 +236,10 @@ export function writeFirstCafeState(userId: string, state: FirstCafeState) {
   }
 }
 
-/** Completes one item from the mounted surface page — never from a path flash. */
+/**
+ * Completes one item. Pitch / Apply must come from a real win
+ * (edit Pitch / triage a card) — never from aim or a surface peek.
+ */
 export function recordFirstCafeItem(
   userId: string,
   id: FirstCafeItemId
@@ -238,7 +257,7 @@ export function recordFirstCafeVisit(
   search: Record<string, unknown> = {}
 ): FirstCafeState {
   const id = firstCafeItemForVisit(pathname, search)
-  if (!id) return readFirstCafeState(userId)
+  if (!id || !isFirstCafeVisitItem(id)) return readFirstCafeState(userId)
   return recordFirstCafeItem(userId, id)
 }
 

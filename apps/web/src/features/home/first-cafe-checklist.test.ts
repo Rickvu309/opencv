@@ -5,10 +5,12 @@ import { APPLY_OPEN_GUIDE } from "@/features/apply/apply-search.ts"
 
 import {
   FIRST_CAFE_CHECKLIST_ITEMS,
+  FIRST_CAFE_VISIT_ITEM_IDS,
   completeFirstCafeItem,
   dismissFirstCafeChecklist,
   firstCafeItemForVisit,
   firstCafeStorageKey,
+  isFirstCafeVisitItem,
   nextFirstCafeNudge,
   parseFirstCafeState,
   requiredFirstCafeItemsDone,
@@ -112,6 +114,14 @@ describe("first-café checklist", () => {
     expect(dismissFirstCafeChecklist(hidden)).toBe(hidden)
   })
 
+  it("lets a visit complete Sample CV or email, never Pitch or Apply", () => {
+    expect(FIRST_CAFE_VISIT_ITEM_IDS).toEqual(["sample-cv", "email"])
+    expect(isFirstCafeVisitItem("sample-cv")).toBe(true)
+    expect(isFirstCafeVisitItem("email")).toBe(true)
+    expect(isFirstCafeVisitItem("pitch")).toBe(false)
+    expect(isFirstCafeVisitItem("apply")).toBe(false)
+  })
+
   it("records only the mounted surface item when sibling paths flash", () => {
     const userId = "user_apply_flash"
     const afterApply = recordFirstCafeItem(userId, "apply")
@@ -142,24 +152,33 @@ describe("first-café checklist", () => {
     expect(afterHomeAgain.completed).toEqual(["sample-cv"])
   })
 
-  it("records Apply alone without completing Sample CV or Pitch", () => {
-    const userId = "user_apply_only"
+  it("does not complete Apply or Pitch from a surface peek", () => {
+    const userId = "user_apply_peek"
     const afterApply = recordFirstCafeVisit(userId, SURFACE_PATHS.apply, {
       open: APPLY_OPEN_GUIDE,
     })
-    expect(afterApply.completed).toEqual(["apply"])
-    expect(readFirstCafeState(userId).completed).toEqual(["apply"])
-    expect(afterApply.completed).not.toContain("sample-cv")
-    expect(afterApply.completed).not.toContain("pitch")
+    expect(afterApply.completed).toEqual([])
+    expect(readFirstCafeState(userId).completed).toEqual([])
+
+    const afterPitch = recordFirstCafeVisit(userId, SURFACE_PATHS.pitch)
+    expect(afterPitch.completed).toEqual([])
+    expect(readFirstCafeState(userId).completed).toEqual([])
+    expect(requiredFirstCafeItemsDone(afterPitch.completed)).toBe(false)
   })
 
-  it("records Pitch alone without completing Sample CV or Apply", () => {
-    const userId = "user_pitch_only"
-    const afterPitch = recordFirstCafeVisit(userId, SURFACE_PATHS.pitch)
-    expect(afterPitch.completed).toEqual(["pitch"])
-    expect(readFirstCafeState(userId).completed).toEqual(["pitch"])
-    expect(afterPitch.completed).not.toContain("sample-cv")
-    expect(afterPitch.completed).not.toContain("apply")
+  it("completes Pitch / Apply only when a real win is recorded", () => {
+    const userId = "user_real_wins"
+    expect(recordFirstCafeVisit(userId, SURFACE_PATHS.pitch).completed).toEqual(
+      []
+    )
+    expect(recordFirstCafeVisit(userId, SURFACE_PATHS.apply).completed).toEqual(
+      []
+    )
+
+    const afterPitchEdit = recordFirstCafeItem(userId, "pitch")
+    expect(afterPitchEdit.completed).toEqual(["pitch"])
+    const afterApplyTriage = recordFirstCafeItem(userId, "apply")
+    expect(afterApplyTriage.completed).toEqual(["pitch", "apply"])
   })
 })
 
