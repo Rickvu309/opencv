@@ -10,7 +10,12 @@ import {
   preservePitchMoments,
   STARTER_PITCH_ABOUT_LEAD,
   STARTER_PITCH_HEADLINE,
+  STARTER_CHECKOUT_ACHIEVEMENT_TITLE,
+  STARTER_CHECKOUT_PITCH_HEADLINE,
+  STARTER_CHECKOUT_PROOF_ID,
+  starterCheckoutAchievement,
   starterPitchDocument,
+  withStarterCheckoutAchievement,
 } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
 
@@ -45,7 +50,12 @@ describe("pitch codecs", () => {
       ok: true,
       data: starterPitchDocument(),
     })
-    expect(starterPitchDocument().achievements[0]?.proofId).toBe("checkout")
+    expect(starterPitchDocument().achievements[0]).toEqual(
+      starterCheckoutAchievement()
+    )
+    expect(starterPitchDocument().achievements[0]?.proofId).toBe(
+      STARTER_CHECKOUT_PROOF_ID
+    )
     expect(starterPitchDocument().achievements[0]?.link).toBeUndefined()
     expect(starterPitchDocument().demo).toBe(true)
     expect(starterPitchDocument().about).toContain(STARTER_PITCH_ABOUT_LEAD)
@@ -180,6 +190,53 @@ describe("pitch codecs", () => {
       body: "Hallway test setup",
       storyHighlightId: "sh-checkout",
     })
+  })
+
+  it("adds one checkout Proof card on an empty Pitch without stamping demo", () => {
+    const empty = emptyPitchDocument()
+    const next = withStarterCheckoutAchievement(empty)
+    expect(next.achievements).toEqual([starterCheckoutAchievement()])
+    expect(next.demo).toBe(false)
+    expect(next.headline).toBe(STARTER_CHECKOUT_PITCH_HEADLINE)
+    expect(isDemoPitchDocument(next)).toBe(false)
+    expect(withStarterCheckoutAchievement(next)).toEqual(next)
+    expect(next.achievements[0]?.title).toBe(STARTER_CHECKOUT_ACHIEVEMENT_TITLE)
+    expect(next.achievements[0]?.proofId).toBe(STARTER_CHECKOUT_PROOF_ID)
+    expect(JSON.stringify(next.achievements)).not.toMatch(/"#"/)
+
+    const decoded = decodePitchContent("pitch", 1, next)
+    expect(decoded.ok).toBe(true)
+    if (!decoded.ok) throw new Error("expected success")
+    expect(decoded.data.achievements).toEqual([starterCheckoutAchievement()])
+    expect(decoded.data.headline).toBe(STARTER_CHECKOUT_PITCH_HEADLINE)
+    expect(decoded.data.storyHighlights).toEqual([])
+    expect(decoded.data.bento).toEqual([])
+    expect(isDemoPitchDocument(decoded.data)).toBe(false)
+
+    const identityCleared =
+      next.demo !== true &&
+      next.headline.trim() === "" &&
+      next.status.trim() === "" &&
+      next.about.trim() === ""
+    expect(identityCleared).toBe(false)
+  })
+
+  it("keeps a unique id when a1 is already taken by another card", () => {
+    const next = withStarterCheckoutAchievement({
+      ...emptyPitchDocument(),
+      achievements: [
+        {
+          id: "a1",
+          year: "2024",
+          title: "Campus expense app",
+          context: "UIT Product Club",
+          description: "Led discovery for a student expense splitter.",
+        },
+      ],
+    })
+    expect(next.achievements).toHaveLength(2)
+    expect(next.achievements[1]).toEqual(starterCheckoutAchievement("a-checkout"))
+    expect(next.headline).toBe(STARTER_CHECKOUT_PITCH_HEADLINE)
   })
 
   it("still accepts a persisted achievement that only has a dead link", () => {

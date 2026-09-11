@@ -16,6 +16,7 @@ import {
   starterCvContent,
   starterCvDocument,
   starterPitchContent,
+  starterCheckoutAchievement,
   starterPitchDocument,
   starterThread,
 } from "@workspace/domain"
@@ -67,6 +68,10 @@ describe("starter content", () => {
     expect(JSON.stringify(starterPitchDocument())).not.toMatch(PERSONA)
     expect(JSON.stringify(starterPitchDocument())).not.toMatch(/you@openpath/)
     expect(JSON.stringify(starterPitchDocument())).not.toMatch(/sacred space/i)
+    expect(starterPitchDocument().achievements[0]).toEqual(
+      starterCheckoutAchievement()
+    )
+    expect(starterPitchDocument().achievements[0]?.proofId).toBe("checkout")
   })
 
   it("keeps Pitch story chips honest about the highlight they open", () => {

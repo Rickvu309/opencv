@@ -2,7 +2,9 @@ import {
   ERROR_CODES,
   PITCH_COMMANDS,
   emptyPitchDocument,
+  starterCheckoutAchievement,
   starterPitchDocument,
+  withStarterCheckoutAchievement,
   type PitchDoc,
 } from "@workspace/domain"
 import { eq } from "drizzle-orm"
@@ -364,6 +366,39 @@ describe("pitch API", () => {
     expect(leakedContent.bento).toEqual([])
     expect(JSON.stringify(leakedContent)).not.toMatch(/Wallet audit/)
     expect(JSON.stringify(leakedContent)).not.toMatch(/Club sprint/)
+  })
+
+  it("persists a User-added checkout Proof after Clear demo", async () => {
+    const scout = await signUp(app, {
+      name: "Scout 220",
+      email: "scout220+add-proof@example.com",
+      password: "correct-horse-battery",
+    })
+
+    const clearedRes = await postCommand(app, scout.cookie, PITCH_COMMANDS.update, {
+      content: emptyPitchDocument(),
+      contentVersion: 1,
+    })
+    expect(clearedRes.status).toBe(200)
+
+    const added = withStarterCheckoutAchievement(emptyPitchDocument())
+    const addedRes = await postCommand(app, scout.cookie, PITCH_COMMANDS.update, {
+      content: added,
+      contentVersion: 1,
+    })
+    expect(addedRes.status).toBe(200)
+
+    const reread = await json<{ ok: true; data: PitchDoc }>(
+      await app.request("/api/pitch", { headers: authHeaders(scout.cookie) })
+    )
+    const content = reread.data.content as ReturnType<typeof emptyPitchDocument>
+    expect(content.achievements).toEqual([starterCheckoutAchievement()])
+    expect(content.achievements[0]?.proofId).toBe("checkout")
+    expect(content.headline).toBe("Proof on this page — replace with your story")
+    expect(content.demo).toBe(false)
+    expect(content.storyHighlights).toEqual([])
+    expect(content.bento).toEqual([])
+    expect(JSON.stringify(content.achievements)).not.toMatch(/"#"/)
   })
 
   it("rejects malformed content", async () => {

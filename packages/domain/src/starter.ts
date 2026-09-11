@@ -6,6 +6,7 @@ import {
   DEFAULT_PITCH_BLOCKS,
   STARTER_PITCH_ABOUT_LEAD,
   STARTER_PITCH_HEADLINE,
+  type PitchAchievement,
   type PitchDocument,
 } from "./pitch-codecs.js"
 import { PITCH_CONTENT_KIND, PITCH_CONTENT_VERSION } from "./pitch.js"
@@ -177,10 +178,73 @@ export function starterApplyCards(): StarterApplyCardDraft[] {
   ]
 }
 
+/** Proof key the Pitch Open Proof CTA resolves — never a dead href. */
+export const STARTER_CHECKOUT_PROOF_ID = "checkout"
+
+/** First starter ACHIEVEMENT — the one card that opens Open Proof. */
+export const STARTER_CHECKOUT_ACHIEVEMENT_ID = "a1"
+export const STARTER_CHECKOUT_ACHIEVEMENT_TITLE = "Checkout card resize study"
+
+/** Product-voice Proof card a café student can add on an empty Pitch. */
+export function starterCheckoutAchievement(
+  id = STARTER_CHECKOUT_ACHIEVEMENT_ID
+): PitchAchievement {
+  return {
+    id,
+    year: "2025",
+    title: STARTER_CHECKOUT_ACHIEVEMENT_TITLE,
+    context: "Side project",
+    description:
+      "Ran a 12-person hallway test on two mobile checkout layouts. Shorter card + sticky CTA lifted add-to-cart taps by 18%. Documented as a Proof chain.",
+    proofId: STARTER_CHECKOUT_PROOF_ID,
+    tag: "UX research",
+  }
+}
+
+export function pitchHasCheckoutAchievement(
+  achievements: readonly Pick<PitchAchievement, "title" | "proofId">[]
+): boolean {
+  return achievements.some(
+    (item) =>
+      item.proofId === STARTER_CHECKOUT_PROOF_ID ||
+      item.title === STARTER_CHECKOUT_ACHIEVEMENT_TITLE
+  )
+}
+
+/** Honest headline so a Proof-only Pitch is not treated as leftover demo. */
+export const STARTER_CHECKOUT_PITCH_HEADLINE =
+  "Proof on this page — replace with your story"
+
 /**
- * Opening Coach message. Honest: the workspace was seeded by the product,
- * not by a Command the Coach ran.
+ * One smokeable Open Proof card. No-op when checkout is already on the page.
+ * Does not stamp `demo` — Clear demo stays empty until the User adds this.
+ * If identity copy is still blank, set a quiet headline so decode (old or
+ * new heal) cannot wipe the card as leftover sample residue.
  */
+export function withStarterCheckoutAchievement(
+  doc: PitchDocument
+): PitchDocument {
+  if (pitchHasCheckoutAchievement(doc.achievements)) return doc
+  const taken = new Set(doc.achievements.map((item) => item.id))
+  const id = taken.has(STARTER_CHECKOUT_ACHIEVEMENT_ID)
+    ? "a-checkout"
+    : STARTER_CHECKOUT_ACHIEVEMENT_ID
+  const next: PitchDocument = {
+    ...doc,
+    achievements: [...doc.achievements, starterCheckoutAchievement(id)],
+  }
+  const identityEmpty =
+    next.demo !== true &&
+    next.headline.trim() === "" &&
+    next.status.trim() === "" &&
+    next.about.trim() === ""
+  if (!identityEmpty) return next
+  return {
+    ...next,
+    headline: STARTER_CHECKOUT_PITCH_HEADLINE,
+  }
+}
+
 /**
  * Neutral Pitch page — product voice, never a named persona.
  * Identity (name, email, avatar) is overlaid from the session User.
@@ -202,16 +266,7 @@ I learn product by shipping small experiments — checkout UX studies, onboardin
     },
     blocks: DEFAULT_PITCH_BLOCKS,
     achievements: [
-      {
-        id: "a1",
-        year: "2025",
-        title: "Checkout card resize study",
-        context: "Side project",
-        description:
-          "Ran a 12-person hallway test on two mobile checkout layouts. Shorter card + sticky CTA lifted add-to-cart taps by 18%. Documented as a Proof chain.",
-        proofId: "checkout",
-        tag: "UX research",
-      },
+      starterCheckoutAchievement(),
       {
         id: "a2",
         year: "2025",

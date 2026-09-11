@@ -1,8 +1,13 @@
-import type { PitchAchievement, ProofDocument } from "@workspace/domain"
+import {
+  STARTER_CHECKOUT_ACHIEVEMENT_TITLE,
+  STARTER_CHECKOUT_PROOF_ID,
+  type PitchAchievement,
+  type ProofDocument,
+} from "@workspace/domain"
 
 import { DEFAULT_CHECKOUT_PROOF } from "@/features/paper/paper-proof-types.ts"
 
-export const PITCH_CHECKOUT_PROOF_ID = "checkout"
+export const PITCH_CHECKOUT_PROOF_ID = STARTER_CHECKOUT_PROOF_ID
 
 const PROOFS: Record<string, ProofDocument> = {
   [PITCH_CHECKOUT_PROOF_ID]: DEFAULT_CHECKOUT_PROOF,
@@ -10,7 +15,7 @@ const PROOFS: Record<string, ProofDocument> = {
 
 /** Starter / already-persisted titles that map to a real Proof. */
 const TITLE_TO_PROOF_ID: Record<string, string> = {
-  "Checkout card resize study": PITCH_CHECKOUT_PROOF_ID,
+  [STARTER_CHECKOUT_ACHIEVEMENT_TITLE]: PITCH_CHECKOUT_PROOF_ID,
 }
 
 function proofFromId(id: string | undefined): ProofDocument | null {

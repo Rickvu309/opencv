@@ -237,9 +237,11 @@ describe("Pitch workspace", () => {
     expectSampleMomentsGone()
     expect(screen.queryByRole("heading", { name: "Moments" })).not.toBeInTheDocument()
     expect(screen.queryByText(/Demo content/i)).not.toBeInTheDocument()
-    expect(
-      screen.queryByRole("button", { name: /add achievement/i })
-    ).toBeDisabled()
+    const addAchievement = screen.getByRole("button", {
+      name: /add achievement/i,
+    })
+    expect(addAchievement).toBeEnabled()
+    expect(addAchievement).not.toHaveTextContent("Coming soon")
   })
 
   it("does not resurrect highlight chips when demo:true leaked onto a real About", async () => {
@@ -276,9 +278,11 @@ describe("Pitch workspace", () => {
     })
     expectSampleMomentsGone()
     expect(screen.queryByRole("heading", { name: "Moments" })).not.toBeInTheDocument()
-    expect(
-      screen.queryByRole("button", { name: /add achievement/i })
-    ).toBeDisabled()
+    const addAchievement = screen.getByRole("button", {
+      name: /add achievement/i,
+    })
+    expect(addAchievement).toBeEnabled()
+    expect(addAchievement).not.toHaveTextContent("Coming soon")
   })
 
   it("heals a cleared Pitch that still stored leftover sample Moments", async () => {
@@ -552,6 +556,63 @@ describe("Pitch workspace", () => {
     })
     expect(screen.getByRole("button", { name: "Copy link" })).toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Copied" })).not.toBeInTheDocument()
+  })
+
+  it("adds a starter ACHIEVEMENT on an empty Pitch so Open Proof is smokeable", async () => {
+    await loadedPitch()
+    clickClearDemo()
+    expect(await screen.findByText("Your Pitch is empty")).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: "Start your Pitch" }))
+    expect(screen.getByText("Editing Pitch")).toBeInTheDocument()
+    expect(
+      screen.getByText(/Add a Proof you can open — a checkout hallway study is ready/)
+    ).toBeInTheDocument()
+
+    const addAchievement = screen.getByRole("button", {
+      name: /add achievement/i,
+    })
+    expect(addAchievement).toBeEnabled()
+    expect(addAchievement).not.toHaveTextContent("Coming soon")
+    fireEvent.click(addAchievement)
+
+    await waitFor(() => {
+      expect(screen.getByText("Checkout card resize study")).toBeInTheDocument()
+    })
+    expect(screen.getByText("Open Proof")).toBeInTheDocument()
+    expect(screen.queryByText("Read case study")).not.toBeInTheDocument()
+    expect(document.querySelector("a[href='#']")).toBeNull()
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Open Proof: Product card resize study" })
+    )
+    const viewer = screen.getByRole("dialog", {
+      name: "Product card resize study",
+    })
+    expect(viewer).toBeInTheDocument()
+    expect(within(viewer).getByText("E-commerce checkout · Side project")).toBeInTheDocument()
+    expect(within(viewer).getByText("What I did")).toBeInTheDocument()
+    expect(within(viewer).getByText(/12-person hallway test/i)).toBeInTheDocument()
+
+    fireEvent.click(within(viewer).getByRole("button", { name: "Close" }))
+    expect(
+      screen.queryByRole("dialog", { name: "Product card resize study" })
+    ).not.toBeInTheDocument()
+
+    const addAgain = screen.getByRole("button", { name: /add achievement/i })
+    expect(addAgain).toBeDisabled()
+    expect(addAgain).toHaveTextContent("Coming soon")
+    expect(getMockPitchDoc()?.content).toMatchObject({
+      demo: false,
+      headline: "Proof on this page — replace with your story",
+      achievements: [
+        expect.objectContaining({
+          title: "Checkout card resize study",
+          proofId: "checkout",
+        }),
+      ],
+    })
+    expectSampleMomentsGone()
   })
 
   it("opens the checkout Proof from Achievements and closes it", async () => {

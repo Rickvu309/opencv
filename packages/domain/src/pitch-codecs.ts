@@ -426,10 +426,18 @@ export function decodePitchContent(
   return { ok: true, data: healPitchDocument(loose.data) }
 }
 
-/** Decode-time repair: restore wiped sample Moments, never after Clear demo. */
+/**
+ * Decode-time repair: restore wiped sample Moments, never after Clear demo.
+ * Leftover starter Moments on a cleared identity are residue — wipe the page.
+ * A User-added ACHIEVEMENT / Proof on an otherwise empty Pitch must survive
+ * (QVE-220) so Open Proof stays smokeable without reseeding Demo content.
+ */
 export function healPitchDocument(doc: PitchDocument): PitchDocument {
   if (pitchIdentityCopyCleared(doc)) {
-    return { ...emptyPitchDocument(), published: doc.published }
+    if (doc.storyHighlights.length > 0 || doc.bento.length > 0) {
+      return { ...emptyPitchDocument(), published: doc.published }
+    }
+    return doc
   }
   return markDemoPitch(alignStoryChipIdentity(restoreWipedStarterMoments(doc)))
 }

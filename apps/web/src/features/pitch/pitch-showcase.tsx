@@ -23,7 +23,10 @@ import {
   Share2,
 } from "lucide-react"
 
-import type { ProofDocument } from "@workspace/domain"
+import {
+  pitchHasCheckoutAchievement,
+  type ProofDocument,
+} from "@workspace/domain"
 
 import { ComingSoon } from "@/components/coming-soon.tsx"
 import { profileInitials } from "@/features/app-shell/profile-display.ts"
@@ -204,16 +207,24 @@ export function AchievementsSection({
   editing,
   onHide,
   onOpenProof,
+  onAdd,
 }: {
   items: PitchAchievement[]
   editing?: boolean
   onHide?: () => void
   onOpenProof?: (proof: ProofDocument) => void
+  onAdd?: () => void
 }) {
   const proofMeta = paperDocPitchMeta({ type: "proof" })
+  const canAddProof = Boolean(onAdd) && !pitchHasCheckoutAchievement(items)
 
   return (
     <SectionShell title="Achievements" editing={editing} onHide={onHide}>
+      {items.length === 0 && editing ? (
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          Add a Proof you can open — a checkout hallway study is ready.
+        </p>
+      ) : null}
       <ul className="space-y-10">
         {items.map((item) => {
           const proof = onOpenProof ? resolveAchievementProof(item) : null
@@ -271,12 +282,13 @@ export function AchievementsSection({
       {editing ? (
         <Button
           type="button"
-          disabled
+          disabled={!canAddProof}
           variant="ghost"
           className="mt-6 h-auto px-0 text-xs font-medium text-muted-foreground"
+          onClick={canAddProof ? onAdd : undefined}
         >
           + Add achievement
-          <ComingSoon />
+          {canAddProof ? null : <ComingSoon />}
         </Button>
       ) : null}
     </SectionShell>

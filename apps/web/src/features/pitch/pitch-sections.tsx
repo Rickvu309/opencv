@@ -28,6 +28,7 @@ export function PitchSection({
   onAboutChange,
   onOpenStory,
   onOpenProof,
+  onAddAchievement,
 }: {
   block: PitchBlock
   profile: PitchProfile
@@ -39,6 +40,7 @@ export function PitchSection({
   onAboutChange?: (text: string) => void
   onOpenStory: (highlightId: string) => void
   onOpenProof: (proof: ProofDocument) => void
+  onAddAchievement?: () => void
 }) {
   switch (block.kind) {
     case "moments":
@@ -66,6 +68,7 @@ export function PitchSection({
           editing={editing}
           onHide={onHide}
           onOpenProof={onOpenProof}
+          onAdd={onAddAchievement}
         />
       )
     case "experience":
