@@ -18,6 +18,7 @@ import {
   emptyPitchDocument,
   isDemoPitchDocument,
   isGhostPitchDocument,
+  withStarterCheckoutAchievement,
   type PitchBlockKind,
   type ProofDocument,
 } from "@workspace/domain"
@@ -314,6 +315,9 @@ export function PitchWorkspace() {
                     }
                     onOpenStory={openStory}
                     onOpenProof={setProofView}
+                    onAddAchievement={() =>
+                      persistEdit(withStarterCheckoutAchievement)
+                    }
                   />
                 ))}
               </div>
