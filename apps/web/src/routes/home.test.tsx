@@ -11,7 +11,12 @@ import { SURFACE_COPY, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 import { AIM_OPTIONS } from "@/features/home/aim-prompt.ts"
 import { SUGGESTION_POOLS } from "@/features/home/suggestions.ts"
-import { STARTER_PITCH_HEADLINE, starterPitchDocument } from "@workspace/domain"
+import {
+  LEGACY_FAKE_PITCH_HEADLINE,
+  LEFTOVER_PITCH_PERSONA_NAMES,
+  STARTER_PITCH_HEADLINE,
+  starterPitchDocument,
+} from "@workspace/domain"
 import { writeAimPromptState } from "@/features/home/aim-prompt.ts"
 import {
   readFirstCafeState,
@@ -1129,6 +1134,67 @@ describe("Home optional aim prompt", () => {
         headline: "Design intern · night shift",
       })
     })
+  })
+
+  it("lets a café aim soft-feed headline without forcing a fake Pitch persona", async () => {
+    const starter = starterPitchDocument()
+    const { router } = renderApp()
+    await expectHomeIdle()
+
+    expect(
+      screen.getByRole("button", { name: "A café or part-time job" })
+    ).toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "A café or part-time job" })
+    )
+    expect(
+      screen.queryByRole("heading", { name: "What are you aiming for?" })
+    ).not.toBeInTheDocument()
+    expect(
+      within(firstCafeNudge()).getByRole("link", { name: "Open the sample CV" })
+    ).toBeInTheDocument()
+    expect(readFirstCafeState("user_test").completed).toEqual([])
+
+    await waitFor(() => {
+      expect(getMockPitchDoc()?.content).toMatchObject({
+        headline: "Working café shifts while I study",
+        about: starter.about,
+        location: starter.location,
+        status: starter.status,
+        demo: true,
+      })
+    })
+    expect(getMockPitchDoc()?.content.experience).toEqual(starter.experience)
+    expect(getMockPitchDoc()?.content.achievements).toEqual(starter.achievements)
+    expect(getMockPitchDoc()?.content.headline).not.toBe(
+      LEGACY_FAKE_PITCH_HEADLINE
+    )
+
+    fireEvent.click(screen.getByRole("link", { name: "Pitch" }))
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(SURFACE_PATHS.pitch)
+    })
+    expect(
+      await screen.findByText("Working café shifts while I study")
+    ).toBeInTheDocument()
+    expect(screen.queryByText(STARTER_PITCH_HEADLINE)).not.toBeInTheDocument()
+    expect(screen.queryByText(LEGACY_FAKE_PITCH_HEADLINE)).not.toBeInTheDocument()
+    for (const name of LEFTOVER_PITCH_PERSONA_NAMES) {
+      expect(screen.queryByText(name)).not.toBeInTheDocument()
+    }
+    expect(
+      screen.queryByRole("heading", { name: /step \d|goal|school/i })
+    ).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("link", { name: "Home" }))
+    await expectHomeIdle()
+    expect(
+      within(firstCafeList()).queryByRole("link", {
+        name: "Make Pitch yours, done",
+      })
+    ).not.toBeInTheDocument()
+    expect(readFirstCafeState("user_test").completed).toEqual([])
   })
 
   it("does not reboot into an /onboarding multi-step flow", async () => {

@@ -156,6 +156,9 @@ describe("auth flows", () => {
       screen.getByRole("button", { name: "I'm not sure yet" })
     ).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Skip" })).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "A café or part-time job" })
+    ).toBeInTheDocument()
     expect(screen.queryByText(/step 1 of/i)).not.toBeInTheDocument()
   })
 
