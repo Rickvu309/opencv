@@ -13,7 +13,6 @@ import { AIM_OPTIONS } from "@/features/home/aim-prompt.ts"
 import { SUGGESTION_POOLS } from "@/features/home/suggestions.ts"
 import {
   LEGACY_FAKE_PITCH_HEADLINE,
-  LEFTOVER_PITCH_PERSONA_NAMES,
   STARTER_PITCH_HEADLINE,
   starterPitchDocument,
 } from "@workspace/domain"
@@ -1180,9 +1179,8 @@ describe("Home optional aim prompt", () => {
     ).toBeInTheDocument()
     expect(screen.queryByText(STARTER_PITCH_HEADLINE)).not.toBeInTheDocument()
     expect(screen.queryByText(LEGACY_FAKE_PITCH_HEADLINE)).not.toBeInTheDocument()
-    for (const name of LEFTOVER_PITCH_PERSONA_NAMES) {
-      expect(screen.queryByText(name)).not.toBeInTheDocument()
-    }
+    expect(getMockPitchDoc()?.content.about).toBe(starter.about)
+    expect(getMockPitchDoc()?.content.about).not.toMatch(/Alex Tran|Eric Nguyen/)
     expect(
       screen.queryByRole("heading", { name: /step \d|goal|school/i })
     ).not.toBeInTheDocument()
