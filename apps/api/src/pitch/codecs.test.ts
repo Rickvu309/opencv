@@ -11,6 +11,7 @@ import {
   STARTER_PITCH_ABOUT_LEAD,
   STARTER_PITCH_HEADLINE,
   STARTER_CHECKOUT_ACHIEVEMENT_TITLE,
+  STARTER_CHECKOUT_PITCH_HEADLINE,
   STARTER_CHECKOUT_PROOF_ID,
   starterCheckoutAchievement,
   starterPitchDocument,
@@ -196,7 +197,8 @@ describe("pitch codecs", () => {
     const next = withStarterCheckoutAchievement(empty)
     expect(next.achievements).toEqual([starterCheckoutAchievement()])
     expect(next.demo).toBe(false)
-    expect(next.headline).toBe("")
+    expect(next.headline).toBe(STARTER_CHECKOUT_PITCH_HEADLINE)
+    expect(isDemoPitchDocument(next)).toBe(false)
     expect(withStarterCheckoutAchievement(next)).toEqual(next)
     expect(next.achievements[0]?.title).toBe(STARTER_CHECKOUT_ACHIEVEMENT_TITLE)
     expect(next.achievements[0]?.proofId).toBe(STARTER_CHECKOUT_PROOF_ID)
@@ -206,9 +208,17 @@ describe("pitch codecs", () => {
     expect(decoded.ok).toBe(true)
     if (!decoded.ok) throw new Error("expected success")
     expect(decoded.data.achievements).toEqual([starterCheckoutAchievement()])
+    expect(decoded.data.headline).toBe(STARTER_CHECKOUT_PITCH_HEADLINE)
     expect(decoded.data.storyHighlights).toEqual([])
     expect(decoded.data.bento).toEqual([])
     expect(isDemoPitchDocument(decoded.data)).toBe(false)
+
+    const identityCleared =
+      next.demo !== true &&
+      next.headline.trim() === "" &&
+      next.status.trim() === "" &&
+      next.about.trim() === ""
+    expect(identityCleared).toBe(false)
   })
 
   it("keeps a unique id when a1 is already taken by another card", () => {
@@ -226,6 +236,7 @@ describe("pitch codecs", () => {
     })
     expect(next.achievements).toHaveLength(2)
     expect(next.achievements[1]).toEqual(starterCheckoutAchievement("a-checkout"))
+    expect(next.headline).toBe(STARTER_CHECKOUT_PITCH_HEADLINE)
   })
 
   it("still accepts a persisted achievement that only has a dead link", () => {

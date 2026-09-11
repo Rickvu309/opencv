@@ -211,9 +211,15 @@ export function pitchHasCheckoutAchievement(
   )
 }
 
+/** Honest headline so a Proof-only Pitch is not treated as leftover demo. */
+export const STARTER_CHECKOUT_PITCH_HEADLINE =
+  "Proof on this page — replace with your story"
+
 /**
  * One smokeable Open Proof card. No-op when checkout is already on the page.
  * Does not stamp `demo` — Clear demo stays empty until the User adds this.
+ * If identity copy is still blank, set a quiet headline so decode (old or
+ * new heal) cannot wipe the card as leftover sample residue.
  */
 export function withStarterCheckoutAchievement(
   doc: PitchDocument
@@ -223,9 +229,19 @@ export function withStarterCheckoutAchievement(
   const id = taken.has(STARTER_CHECKOUT_ACHIEVEMENT_ID)
     ? "a-checkout"
     : STARTER_CHECKOUT_ACHIEVEMENT_ID
-  return {
+  const next: PitchDocument = {
     ...doc,
     achievements: [...doc.achievements, starterCheckoutAchievement(id)],
+  }
+  const identityEmpty =
+    next.demo !== true &&
+    next.headline.trim() === "" &&
+    next.status.trim() === "" &&
+    next.about.trim() === ""
+  if (!identityEmpty) return next
+  return {
+    ...next,
+    headline: STARTER_CHECKOUT_PITCH_HEADLINE,
   }
 }
 

@@ -604,6 +604,7 @@ describe("Pitch workspace", () => {
     expect(addAgain).toHaveTextContent("Coming soon")
     expect(getMockPitchDoc()?.content).toMatchObject({
       demo: false,
+      headline: "Proof on this page — replace with your story",
       achievements: [
         expect.objectContaining({
           title: "Checkout card resize study",

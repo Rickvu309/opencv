@@ -394,6 +394,7 @@ describe("pitch API", () => {
     const content = reread.data.content as ReturnType<typeof emptyPitchDocument>
     expect(content.achievements).toEqual([starterCheckoutAchievement()])
     expect(content.achievements[0]?.proofId).toBe("checkout")
+    expect(content.headline).toBe("Proof on this page — replace with your story")
     expect(content.demo).toBe(false)
     expect(content.storyHighlights).toEqual([])
     expect(content.bento).toEqual([])
