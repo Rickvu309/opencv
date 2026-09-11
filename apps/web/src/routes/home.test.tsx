@@ -507,21 +507,27 @@ describe("Home first-café checklist", () => {
       })
     ).not.toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole("link", { name: "Open the sample CV" }))
+    fireEvent.click(
+      within(firstCafeList()).getByRole("link", { name: "Open the sample CV" })
+    )
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(SURFACE_PATHS.paper)
     })
     fireEvent.click(screen.getByRole("link", { name: "Home" }))
     await expectHomeIdle()
 
-    fireEvent.click(screen.getByRole("link", { name: "Make Pitch yours" }))
+    fireEvent.click(
+      within(firstCafeList()).getByRole("link", { name: "Make Pitch yours" })
+    )
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(SURFACE_PATHS.pitch)
     })
     fireEvent.click(screen.getByRole("link", { name: "Home" }))
     await expectHomeIdle()
 
-    fireEvent.click(screen.getByRole("link", { name: "Triage one Apply card" }))
+    fireEvent.click(
+      within(firstCafeList()).getByRole("link", { name: "Triage one Apply card" })
+    )
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(SURFACE_PATHS.apply)
     })
@@ -556,14 +562,18 @@ describe("Home first-café checklist", () => {
     await expectHomeIdle()
     fireEvent.click(screen.getByRole("button", { name: "I'm not sure yet" }))
 
-    fireEvent.click(screen.getByRole("link", { name: "Open the sample CV" }))
+    fireEvent.click(
+      within(firstCafeList()).getByRole("link", { name: "Open the sample CV" })
+    )
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(SURFACE_PATHS.paper)
     })
     fireEvent.click(screen.getByRole("link", { name: "Home" }))
     await expectHomeIdle()
 
-    fireEvent.click(screen.getByRole("link", { name: "Make Pitch yours" }))
+    fireEvent.click(
+      within(firstCafeList()).getByRole("link", { name: "Make Pitch yours" })
+    )
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(SURFACE_PATHS.pitch)
     })
@@ -585,7 +595,9 @@ describe("Home first-café checklist", () => {
       screen.queryByRole("region", { name: "You're set" })
     ).not.toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole("link", { name: "Triage one Apply card" }))
+    fireEvent.click(
+      within(firstCafeList()).getByRole("link", { name: "Triage one Apply card" })
+    )
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(SURFACE_PATHS.apply)
     })
