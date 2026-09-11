@@ -20,7 +20,8 @@ export function pitchHasSurvivingBody(doc: PitchDocument): boolean {
 /**
  * Clear demo emptied the copy the User can edit today (About / headline /
  * status) and dropped the demo stamp. Leftover starter Moments on that
- * document are sample residue, not a User-owned portfolio.
+ * document are sample residue, not a User-owned portfolio. A User-added
+ * ACHIEVEMENT with no Moments is owned content, not residue (QVE-220).
  */
 export function pitchIdentityCopyCleared(doc: PitchDocument): boolean {
   return (

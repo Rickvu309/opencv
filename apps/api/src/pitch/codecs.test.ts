@@ -201,6 +201,14 @@ describe("pitch codecs", () => {
     expect(next.achievements[0]?.title).toBe(STARTER_CHECKOUT_ACHIEVEMENT_TITLE)
     expect(next.achievements[0]?.proofId).toBe(STARTER_CHECKOUT_PROOF_ID)
     expect(JSON.stringify(next.achievements)).not.toMatch(/"#"/)
+
+    const decoded = decodePitchContent("pitch", 1, next)
+    expect(decoded.ok).toBe(true)
+    if (!decoded.ok) throw new Error("expected success")
+    expect(decoded.data.achievements).toEqual([starterCheckoutAchievement()])
+    expect(decoded.data.storyHighlights).toEqual([])
+    expect(decoded.data.bento).toEqual([])
+    expect(isDemoPitchDocument(decoded.data)).toBe(false)
   })
 
   it("keeps a unique id when a1 is already taken by another card", () => {

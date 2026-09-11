@@ -576,9 +576,9 @@ describe("Pitch workspace", () => {
     expect(addAchievement).not.toHaveTextContent("Coming soon")
     fireEvent.click(addAchievement)
 
-    expect(
-      await screen.findByText("Checkout card resize study")
-    ).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByText("Checkout card resize study")).toBeInTheDocument()
+    })
     expect(screen.getByText("Open Proof")).toBeInTheDocument()
     expect(screen.queryByText("Read case study")).not.toBeInTheDocument()
     expect(document.querySelector("a[href='#']")).toBeNull()
