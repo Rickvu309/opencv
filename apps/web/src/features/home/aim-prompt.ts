@@ -8,6 +8,11 @@ export const AIM_PROMPT_STORAGE_PREFIX = "openpath:home:aim-prompt"
 
 export const AIM_OPTIONS = [
   {
+    id: "cafe-part-time",
+    label: "A café or part-time job",
+    headline: "Working café shifts while I study",
+  },
+  {
     id: "summer-intern",
     label: "A summer internship",
     headline: "Looking for a summer internship",
