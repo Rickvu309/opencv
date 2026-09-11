@@ -11,10 +11,7 @@ import {
 } from "@workspace/domain"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
-import {
-  createDemoCoachRuntime,
-  withScanJobPosting,
-} from "../coach/fake.js"
+import { createDemoCoachRuntime, withScanJobPosting } from "../coach/fake.js"
 import {
   authHeaders,
   createMigratedTestDb,
@@ -143,8 +140,9 @@ describe("apply API", () => {
       APPLY_COMMANDS.toggleStar,
       { cardId: created.data.id }
     )
-    expect((await json<{ ok: true; data: ApplyCard }>(starredRes)).data.starred)
-      .toBe(true)
+    expect(
+      (await json<{ ok: true; data: ApplyCard }>(starredRes)).data.starred
+    ).toBe(true)
 
     const updatedRes = await postCommand(
       app,
@@ -216,9 +214,9 @@ describe("apply API", () => {
     const paperList = await json<{ ok: true; data: PaperDoc[] }>(
       await app.request("/api/paper", { headers: authHeaders(cookieA) })
     )
-    expect(
-      paperList.data.find((item) => item.id === doc.id)?.applyCardId
-    ).toBe(card.id)
+    expect(paperList.data.find((item) => item.id === doc.id)?.applyCardId).toBe(
+      card.id
+    )
     expectNoFit(paperList)
   })
 
@@ -259,16 +257,18 @@ describe("POST /api/apply/scan", () => {
     const migrated = await createMigratedTestDb()
     client = migrated.client
     app = createTestApp(migrated.db, {
-      coach: withScanJobPosting(createDemoCoachRuntime(), async ({ postingText }) =>
-        JSON.stringify({
-          title: postingText.includes("Associate PM intern")
-            ? "Associate PM intern"
-            : null,
-          company: postingText.includes("Local startup")
-            ? "Local startup"
-            : null,
-          note: postingText.includes("Hanoi") ? "Hanoi" : null,
-        })
+      coach: withScanJobPosting(
+        createDemoCoachRuntime(),
+        async ({ postingText }) =>
+          JSON.stringify({
+            title: postingText.includes("Associate PM intern")
+              ? "Associate PM intern"
+              : null,
+            company: postingText.includes("Local startup")
+              ? "Local startup"
+              : null,
+            note: postingText.includes("Hanoi") ? "Hanoi" : null,
+          })
       ),
       fetchJobPosting: async () => ({
         ok: true,
@@ -391,6 +391,46 @@ describe("POST /api/apply/scan labeled JD twice (QVE-232)", () => {
   })
 })
 
+describe("POST /api/apply/scan paste JD after unread URL (QVE-251)", () => {
+  it("fills hiring prose when the model is empty and does not fetch the dead URL", async () => {
+    const migrated = await createMigratedTestDb()
+    try {
+      let fetches = 0
+      const localApp = createTestApp(migrated.db, {
+        coach: withScanJobPosting(createDemoCoachRuntime(), async () => "{}"),
+        fetchJobPosting: async () => {
+          fetches += 1
+          throw new Error("must not fetch when job text is pasted")
+        },
+      })
+      const { cookie } = await signUp(localApp, {
+        name: "Mai",
+        email: "mai-apply-scan-paste-after-unread@example.com",
+        password: "correct-horse-battery",
+      })
+      const res = await localApp.request("/api/apply/scan", {
+        method: "POST",
+        headers: authHeaders(cookie),
+        body: JSON.stringify({
+          jobUrl: "https://jobs.careers.microsoft.com/global/en/job/missing",
+          jdText:
+            "Local startup is hiring an Associate PM intern in Hanoi. Apply by 12 September.",
+        }),
+      })
+      expect(res.status).toBe(200)
+      expect(fetches).toBe(0)
+      const body = await json<{ ok: true; data: ApplyScanResult }>(res)
+      expect(body.data).toEqual({
+        title: "Associate PM intern",
+        company: "Local startup",
+        note: "Hanoi",
+      })
+    } finally {
+      await migrated.client.close()
+    }
+  })
+})
+
 describe("POST /api/apply/scan unreadable fetch (QVE-249)", () => {
   it("honest-fails a Page not found shell and does not write a card", async () => {
     const migrated = await createMigratedTestDb()
@@ -420,8 +460,7 @@ describe("POST /api/apply/scan unreadable fetch (QVE-249)", () => {
         method: "POST",
         headers: authHeaders(cookie),
         body: JSON.stringify({
-          jobUrl:
-            "https://jobs.careers.microsoft.com/global/en/job/missing",
+          jobUrl: "https://jobs.careers.microsoft.com/global/en/job/missing",
         }),
       })
       expect(res.status).toBe(400)
@@ -443,7 +482,7 @@ describe("POST /api/apply/scan unreadable fetch (QVE-249)", () => {
 })
 
 describe("POST /api/apply/scan without a scan runtime", () => {
-  it("honest-fails instead of inventing fields", async () => {
+  it("fills café hiring prose without inventing fields", async () => {
     const migrated = await createMigratedTestDb()
     try {
       const localApp = createTestApp(migrated.db)
@@ -457,6 +496,34 @@ describe("POST /api/apply/scan without a scan runtime", () => {
         headers: authHeaders(cookie),
         body: JSON.stringify({
           jdText: "Local startup is hiring an Associate PM intern.",
+        }),
+      })
+      expect(res.status).toBe(200)
+      const body = await json<{ ok: true; data: ApplyScanResult }>(res)
+      expect(body.data).toEqual({
+        title: "Associate PM intern",
+        company: "Local startup",
+        note: null,
+      })
+    } finally {
+      await migrated.client.close()
+    }
+  })
+
+  it("honest-fails garbage JD instead of inventing fields", async () => {
+    const migrated = await createMigratedTestDb()
+    try {
+      const localApp = createTestApp(migrated.db)
+      const { cookie } = await signUp(localApp, {
+        name: "Mai",
+        email: "mai-apply-scan-garbage@example.com",
+        password: "correct-horse-battery",
+      })
+      const res = await localApp.request("/api/apply/scan", {
+        method: "POST",
+        headers: authHeaders(cookie),
+        body: JSON.stringify({
+          jdText: "Come work with us. Nice people.",
         }),
       })
       expect(res.status).toBe(503)

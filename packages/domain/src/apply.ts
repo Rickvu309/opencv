@@ -536,6 +536,71 @@ export function extractApplyFieldsFromLabeledText(
   return result
 }
 
+/**
+ * Honest hiring-prose extract — `X is hiring a Y in Z`.
+ * Café recovery paste after an unread URL has no Label: lines (QVE-251).
+ */
+const HIRING_PROSE_PATTERN =
+  /(?:^|[.!?]\s+)(.+?)\s+is hiring\s+(?:an?\s+)?(.+?)(?=\s+(?:in|at|to|for|who|that|which|apply)\b|[.,;!?]|$)/iu
+
+const HIRING_LOCATION_PATTERN =
+  /\bis hiring\b.+?\sin\s+(?!a\b|an\b|the\b)([^.,;!?]+)/iu
+
+const APPLY_BY_PROSE_PATTERN = /\bapply by\s+([^.,;!?]+)/iu
+
+const HIRING_COMPANY_REJECT = new Set([
+  "we",
+  "they",
+  "i",
+  "it",
+  "this",
+  "that",
+  "our",
+  "their",
+  "someone",
+  "anyone",
+  "everyone",
+])
+
+function hiringFieldLooksUsable(
+  value: string,
+  kind: "title" | "company"
+): boolean {
+  const words = value.split(/\s+/).filter(Boolean)
+  if (words.length === 0 || words.length > 8) return false
+  if (kind === "company") {
+    const first = foldApplyScanText(words[0] ?? "")
+    if (HIRING_COMPANY_REJECT.has(first)) return false
+  }
+  return true
+}
+
+export function extractApplyFieldsFromHiringText(
+  text: string
+): ApplyScanResult {
+  const collapsed = text.replace(/\s+/g, " ").trim()
+  if (!collapsed) return emptyApplyScanResult()
+
+  const match = collapsed.match(HIRING_PROSE_PATTERN)
+  const company = emptyApplyScanField(match?.[1])
+  const title = emptyApplyScanField(match?.[2])
+  const location = emptyApplyScanField(
+    collapsed.match(HIRING_LOCATION_PATTERN)?.[1]
+  )
+  const applyBy = emptyApplyScanField(
+    collapsed.match(APPLY_BY_PROSE_PATTERN)?.[1]
+  )
+  const note =
+    location && location.split(/\s+/).length <= 4 ? location : applyBy
+
+  return {
+    title: title && hiringFieldLooksUsable(title, "title") ? title : null,
+    company:
+      company && hiringFieldLooksUsable(company, "company") ? company : null,
+    note,
+  }
+}
+
 /** Honest structured extract — only JobPosting JSON-LD already in the post. */
 export function extractApplyFieldsFromMarkup(html: string): ApplyScanResult {
   const blocks = html.matchAll(
