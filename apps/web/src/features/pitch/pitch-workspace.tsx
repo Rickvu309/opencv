@@ -43,7 +43,10 @@ import {
   publicPitchHref,
   type PitchIdentity,
 } from "@/features/pitch/pitch-types.ts"
-import { recordFirstCafeWin } from "@/features/home/first-cafe-checklist.ts"
+import {
+  recordFirstCafeItem,
+  recordFirstCafeWin,
+} from "@/features/home/first-cafe-checklist.ts"
 import { usePitch } from "@/features/pitch/use-pitch.ts"
 import { authClient } from "@/lib/auth-client.ts"
 
@@ -73,8 +76,14 @@ export function PitchWorkspace() {
   )
   const links = overlayPitchLinks(content.links, identity, profile.github.username)
 
+  function persistEdit(patch: (current: typeof content) => typeof content) {
+    const userId = session?.user.id
+    if (userId) recordFirstCafeItem(userId, "pitch")
+    pitch.persist(patch)
+  }
+
   function hideBlock(id: string) {
-    pitch.persist((current) => ({
+    persistEdit((current) => ({
       ...current,
       blocks: current.blocks.map((b) =>
         b.id === id ? { ...b, hidden: true } : b
@@ -83,7 +92,7 @@ export function PitchWorkspace() {
   }
 
   function addBlock(kind: PitchBlockKind) {
-    pitch.persist((current) => {
+    persistEdit((current) => {
       const exists = current.blocks.some((b) => b.kind === kind && !b.hidden)
       if (exists) {
         return {
@@ -106,11 +115,11 @@ export function PitchWorkspace() {
   }
 
   function publish() {
-    pitch.persist((current) => ({ ...current, published: true }))
+    persistEdit((current) => ({ ...current, published: true }))
   }
 
   function unpublish() {
-    pitch.persist((current) => ({ ...current, published: false }))
+    persistEdit((current) => ({ ...current, published: false }))
   }
 
   function clearDemo() {
@@ -252,7 +261,7 @@ export function PitchWorkspace() {
             profile={profile}
             editing={editing}
             onStatusChange={(status) =>
-              pitch.persist((current) => ({ ...current, status }))
+              persistEdit((current) => ({ ...current, status }))
             }
           />
 
@@ -301,7 +310,7 @@ export function PitchWorkspace() {
                     links={links}
                     onHide={() => hideBlock(block.id)}
                     onAboutChange={(about) =>
-                      pitch.persist((current) => ({ ...current, about }))
+                      persistEdit((current) => ({ ...current, about }))
                     }
                     onOpenStory={openStory}
                     onOpenProof={setProofView}

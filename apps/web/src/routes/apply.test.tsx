@@ -16,6 +16,7 @@ import {
 import { APPLY_OPEN_GUIDE } from "@/features/apply/apply-search.ts"
 import { APPLY_DRAG_TYPE, localIsoDate } from "@/features/apply/apply-types.ts"
 import { SURFACE_COPY, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { readFirstCafeState } from "@/features/home/first-cafe-checklist.ts"
 import { sampleApplyCards } from "@/test/apply-fixtures.ts"
 import { renderApp } from "@/test/render-app.tsx"
 
@@ -254,6 +255,7 @@ describe("Apply workspace", () => {
     expect(
       screen.queryByRole("button", { name: /skip tour|continue tour/i })
     ).not.toBeInTheDocument()
+    expect(readFirstCafeState("user_test").completed).toEqual([])
   })
 
   it("moves the guided inbox card to Prep and keeps the other cards", async () => {
@@ -287,6 +289,7 @@ describe("Apply workspace", () => {
         await screen.findByRole("complementary", { name: "Job detail" })
       ).getByRole("combobox", { name: "Next step" })
     ).toHaveTextContent("Follow-up")
+    expect(readFirstCafeState("user_test").completed).toEqual(["apply"])
   })
 
   it("opens job detail from a card without showing Fit", async () => {
