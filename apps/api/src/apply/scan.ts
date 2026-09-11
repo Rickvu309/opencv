@@ -7,6 +7,7 @@ import {
   applyScanHasIdentity,
   applyScanInputSchema,
   coachProviderErrorMessage,
+  extractApplyFieldsFromHiringText,
   extractApplyFieldsFromLabeledText,
   extractApplyFieldsFromMarkup,
   groundApplyScanResult,
@@ -69,11 +70,15 @@ export async function scanApplyPosting({
     source.text,
     extractApplyFieldsFromLabeledText(source.text)
   )
+  const hiring = groundApplyScanResult(
+    source.text,
+    extractApplyFieldsFromHiringText(source.text)
+  )
   const markup = groundApplyScanResult(
     source.text,
     extractApplyFieldsFromMarkup(source.raw)
   )
-  const deterministic = mergeApplyScanResults(labeled, markup)
+  const deterministic = mergeApplyScanResults(labeled, hiring, markup)
   const model = await extractWithModel(source.text, coach)
   if (!model.ok && !applyScanHasIdentity(deterministic)) return model
 

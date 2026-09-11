@@ -76,7 +76,7 @@ describe("scanApplyPosting", () => {
     })
   })
 
-  it("drops invented fields that are not in the post", async () => {
+  it("keeps honest hiring prose when the model invents a title", async () => {
     const result = await scanApplyPosting({
       input: { jdText: JD },
       coach: scanRuntime(
@@ -91,14 +91,14 @@ describe("scanApplyPosting", () => {
     expect(result).toEqual({
       ok: true,
       data: {
-        title: null,
+        title: "Associate PM intern",
         company: "Local startup",
-        note: null,
+        note: "Hanoi",
       },
     })
   })
 
-  it("honest-fails when the model invents everything", async () => {
+  it("keeps honest hiring prose when the model invents everything", async () => {
     const result = await scanApplyPosting({
       input: { jdText: JD },
       coach: scanRuntime(
@@ -111,9 +111,12 @@ describe("scanApplyPosting", () => {
       fetchJobPosting: async () => ({ ok: true, text: JD }),
     })
     expect(result).toEqual({
-      ok: false,
-      code: ERROR_CODES.VALIDATION_ERROR,
-      message: APPLY_SCAN_NOT_FOUND,
+      ok: true,
+      data: {
+        title: "Associate PM intern",
+        company: "Local startup",
+        note: "Hanoi",
+      },
     })
   })
 
@@ -185,9 +188,27 @@ describe("scanApplyPosting", () => {
     })
   })
 
-  it("honest-fails when scan AI is missing and the post has no JobPosting markup", async () => {
+  it("fills café hiring prose when scan AI is missing (QVE-251)", async () => {
     const result = await scanApplyPosting({
       input: { jdText: JD },
+      coach: createDemoCoachRuntime(),
+      fetchJobPosting: async () => {
+        throw new Error("should not fetch when JD is pasted")
+      },
+    })
+    expect(result).toEqual({
+      ok: true,
+      data: {
+        title: "Associate PM intern",
+        company: "Local startup",
+        note: "Hanoi",
+      },
+    })
+  })
+
+  it("honest-fails when scan AI is missing and the post has no extractable identity", async () => {
+    const result = await scanApplyPosting({
+      input: { jdText: "Come work with us. Nice people." },
       coach: createDemoCoachRuntime(),
       fetchJobPosting: async () => ({ ok: true, text: JD }),
     })
@@ -195,6 +216,28 @@ describe("scanApplyPosting", () => {
       ok: false,
       code: ERROR_CODES.COACH_UNAVAILABLE,
       message: APPLY_SCAN_UNAVAILABLE,
+    })
+  })
+
+  it("fills pasted hiring prose after an unread URL without fetching (QVE-251)", async () => {
+    const result = await scanApplyPosting({
+      input: {
+        jobUrl: "https://jobs.careers.microsoft.com/global/en/job/missing",
+        jdText:
+          "Local startup is hiring an Associate PM intern in Hanoi. Apply by 12 September.",
+      },
+      coach: scanRuntime("{}"),
+      fetchJobPosting: async () => {
+        throw new Error("must not fetch when job text is pasted")
+      },
+    })
+    expect(result).toEqual({
+      ok: true,
+      data: {
+        title: "Associate PM intern",
+        company: "Local startup",
+        note: "Hanoi",
+      },
     })
   })
 

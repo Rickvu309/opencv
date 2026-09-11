@@ -5,6 +5,7 @@ import {
   APPLY_SCAN_NOT_FOUND,
   applyScanFieldGrounded,
   applyScanFieldLooksUnreadable,
+  extractApplyFieldsFromHiringText,
   extractApplyFieldsFromLabeledText,
   extractApplyFieldsFromMarkup,
   formatApplyScanReceipt,
@@ -92,6 +93,31 @@ describe("apply scan helpers", () => {
       title: "Café Barista Lead",
       company: "Highlands Coffee",
       note: "District 1, Ho Chi Minh City",
+    })
+  })
+
+  it("reads title and company from café hiring prose (QVE-251)", () => {
+    const source =
+      "Local startup is hiring an Associate PM intern in Hanoi. Apply by 12 September."
+    expect(extractApplyFieldsFromHiringText(source)).toEqual({
+      title: "Associate PM intern",
+      company: "Local startup",
+      note: "Hanoi",
+    })
+    expect(
+      groundApplyScanResult(source, extractApplyFieldsFromHiringText(source))
+    ).toEqual({
+      title: "Associate PM intern",
+      company: "Local startup",
+      note: "Hanoi",
+    })
+    expect(
+      extractApplyFieldsFromHiringText("Come work with us. Nice people.")
+    ).toEqual({ title: null, company: null, note: null })
+    expect(extractApplyFieldsFromHiringText(CAFE_JD)).toEqual({
+      title: null,
+      company: null,
+      note: null,
     })
   })
 

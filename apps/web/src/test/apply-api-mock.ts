@@ -5,12 +5,13 @@ import {
   DEFAULT_APPLY_COMPANY,
   DEFAULT_APPLY_TITLE,
   applyScanHasIdentity,
+  extractApplyFieldsFromHiringText,
   extractApplyFieldsFromLabeledText,
   generateKeyBetween,
   groundApplyScanResult,
+  mergeApplyScanResults,
   parseApplyScanInput,
   type ApplyCard,
-  type ApplyScanResult,
   type ApplyStage,
   type ApplyTrackKind,
 } from "@workspace/domain"
@@ -73,11 +74,13 @@ function sortCards(cards: ApplyCard[]) {
   })
 }
 
-function positionBefore(stage: ApplyStage, beforeCardId?: string | null, excludeId?: string) {
+function positionBefore(
+  stage: ApplyStage,
+  beforeCardId?: string | null,
+  excludeId?: string
+) {
   const column = sortCards(
-    store.cards.filter(
-      (card) => card.stage === stage && card.id !== excludeId
-    )
+    store.cards.filter((card) => card.stage === stage && card.id !== excludeId)
   )
   if (beforeCardId == null) {
     return generateKeyBetween(column.at(-1)?.position ?? null, null)
@@ -162,18 +165,10 @@ export async function applyApiFetch(
         parsed.jobUrl ? APPLY_SCAN_FETCH_FAILED : APPLY_SCAN_NOT_FOUND
       )
     }
-    const labeled = extractApplyFieldsFromLabeledText(source)
-    const extracted: ApplyScanResult = applyScanHasIdentity(labeled)
-      ? labeled
-      : parsed.jdText
-        ? {
-            title: source.includes("Associate PM intern")
-              ? "Associate PM intern"
-              : null,
-            company: source.includes("Local startup") ? "Local startup" : null,
-            note: source.includes("Hanoi") ? "Hanoi" : null,
-          }
-        : { title: "PM intern", company: "Example", note: null }
+    const extracted = mergeApplyScanResults(
+      extractApplyFieldsFromLabeledText(source),
+      extractApplyFieldsFromHiringText(source)
+    )
     const grounded = groundApplyScanResult(source, extracted)
     if (!applyScanHasIdentity(grounded)) {
       return jsonError(400, "VALIDATION_ERROR", APPLY_SCAN_NOT_FOUND)
@@ -246,7 +241,10 @@ export async function applyApiFetch(
     return jsonOk(card)
   }
 
-  if (method === "POST" && path === `/api/commands/${APPLY_COMMANDS.moveCard}`) {
+  if (
+    method === "POST" &&
+    path === `/api/commands/${APPLY_COMMANDS.moveCard}`
+  ) {
     const body = (await readBody(init)) as {
       cardId?: string
       stage?: ApplyStage

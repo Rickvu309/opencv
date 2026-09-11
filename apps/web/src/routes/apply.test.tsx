@@ -842,13 +842,45 @@ describe("Apply workspace", () => {
     expect(within(panel).queryByDisplayValue(/Page not found/i)).toBeNull()
   })
 
+  it("fills pasted hiring prose in Add job after an unread URL fail", async () => {
+    renderApply()
+    await expectApplyLive()
+
+    fireEvent.click(screen.getByRole("button", { name: "Add job" }))
+    const dialog = await screen.findByRole("dialog", { name: "Add job" })
+    fireEvent.change(within(dialog).getByLabelText("Job posting URL"), {
+      target: {
+        value: "jobs.careers.microsoft.com/global/en/job/missing",
+      },
+    })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Scan" }))
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+      APPLY_SCAN_FETCH_FAILED
+    )
+
+    fireEvent.change(within(dialog).getByLabelText("Job text"), {
+      target: {
+        value:
+          "Local startup is hiring an Associate PM intern in Hanoi. Apply by 12 September.",
+      },
+    })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Scan" }))
+    expect(
+      await within(dialog).findByText(
+        "Filled Associate PM intern at Local startup."
+      )
+    ).toBeInTheDocument()
+    expect(within(dialog).queryByRole("alert")).not.toBeInTheDocument()
+    expect(within(dialog).getByLabelText("Job posting URL")).toHaveValue(
+      "jobs.careers.microsoft.com/global/en/job/missing"
+    )
+  })
+
   it("keeps the URL on a failed drawer scan and fills after pasted JD", async () => {
     renderApply()
     await expectApplyLive()
 
-    await addJobFromDialog(
-      "jobs.careers.microsoft.com/global/en/job/missing"
-    )
+    await addJobFromDialog("jobs.careers.microsoft.com/global/en/job/missing")
     const panel = await screen.findByRole("complementary", {
       name: "Job detail",
     })
