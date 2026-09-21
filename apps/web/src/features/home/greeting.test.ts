@@ -5,6 +5,10 @@ import { greetingPhrase, homeGreeting } from "@/features/home/greeting.ts"
 
 describe("home greeting", () => {
   it("uses Good morning for morning ICT hours even when UTC is overnight", () => {
+    // 00:30 ICT = 17:30 UTC — getHours() on a UTC host would say evening.
+    expect(greetingPhrase(new Date("2026-09-20T17:30:00.000Z"))).toBe(
+      "Good morning"
+    )
     // 09:18 ICT = 02:18 UTC — the live Scout miss that showed Good evening.
     const morningIct = new Date("2026-09-21T02:18:00.000Z")
     expect(greetingPhrase(morningIct)).toBe("Good morning")
@@ -23,6 +27,7 @@ describe("home greeting", () => {
   })
 
   it("uses Good evening from 17:00 ICT", () => {
+    // 17:00 ICT = 10:00 UTC — getHours() on a UTC host would say morning.
     expect(greetingPhrase(new Date("2026-09-21T10:00:00.000Z"))).toBe(
       "Good evening"
     )
