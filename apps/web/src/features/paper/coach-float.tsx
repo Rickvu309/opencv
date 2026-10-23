@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import {
+  Suspense,
+  lazy,
   memo,
   useCallback,
   useEffect,
@@ -8,18 +10,16 @@ import {
   useState,
 } from "react"
 import { createPortal } from "react-dom"
-import { AssistantRuntimeProvider } from "@assistant-ui/react"
 import type { CoachSelection } from "@workspace/domain"
 import { Maximize2, Minus, Pin, X } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
+import { Skeleton } from "@workspace/ui/components/skeleton"
 import { useMediaQuery } from "@workspace/ui/hooks/use-media-query"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { ErrorBanner } from "@/components/error-banner.tsx"
 import { DESKTOP_MEDIA_QUERY } from "@/features/app-shell/use-media-query.ts"
-import { useCoachExternalRuntime } from "@/features/coach/coach-runtime.ts"
-import { CoachThread } from "@/features/coach/coach-thread.tsx"
 import { useCoachTurn } from "@/features/coach/use-coach-turn.ts"
 import {
   getThreadByFocusDoc,
@@ -53,6 +53,12 @@ export const COACH_FLOAT_NUDGE_ATTR = "data-coach-float-nudge"
 export const COACH_FLOAT_DESKTOP_OPEN_HEIGHT_CLASS = "max-h-[min(22rem,42vh)]"
 
 export type CoachFloatState = "closed" | "open" | "minimized"
+
+const CoachThreadPanel = lazy(() =>
+  import("@/features/coach/coach-thread-panel.tsx").then((m) => ({
+    default: m.CoachThreadPanel,
+  }))
+)
 
 const REWRITE_SELECTION = "Rewrite selection"
 
@@ -361,14 +367,6 @@ export const CoachFloat = memo(function CoachFloat({
       return result.ok ? result.chips : prev
     })
   }, [docId, docName])
-  const runtime = useCoachExternalRuntime({
-    messages,
-    phase,
-    send: sendWithSelection,
-    stop,
-    regenerate,
-    rate,
-  })
 
   const turnActive = phase !== "idle"
   const headerTitle = focusedThreadQuery.data?.title ?? docName
@@ -573,8 +571,26 @@ export const CoachFloat = memo(function CoachFloat({
               ) : null}
             </div>
           ) : null}
-          <AssistantRuntimeProvider runtime={runtime}>
-            <CoachThread
+          <Suspense
+            fallback={
+              <div
+                data-coach-thread-loading
+                className="flex flex-1 flex-col gap-2 pt-1"
+              >
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            }
+          >
+            <CoachThreadPanel
+              turn={{
+                messages,
+                phase,
+                send: sendWithSelection,
+                stop,
+                regenerate,
+                rate,
+              }}
               messages={messages}
               waiting={phase === "waiting"}
               turnActive={turnActive}
@@ -646,7 +662,7 @@ export const CoachFloat = memo(function CoachFloat({
                 ) : null
               }
             />
-          </AssistantRuntimeProvider>
+          </Suspense>
         </div>
       ) : null}
     </>

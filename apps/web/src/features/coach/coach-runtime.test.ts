@@ -100,7 +100,8 @@ describe("assistant-ui ExternalStoreRuntime spike", () => {
     expect(pkg.dependencies["@assistant-ui/react"]).not.toMatch(/^\^|~/)
 
     const float = read("../paper/coach-float.tsx")
-    expect(float).toMatch(/useCoachExternalRuntime/)
+    expect(float).not.toMatch(/@assistant-ui|coach-runtime/)
+    expect(read("coach-thread-panel.tsx")).toMatch(/useCoachExternalRuntime/)
     expect(float).toMatch(/useCoachTurn/)
     expect(float).toMatch(/CoachThread/)
     expect(float).not.toMatch(/ThreadView/)

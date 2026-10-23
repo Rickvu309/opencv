@@ -3,6 +3,7 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
+  lazyRouteComponent,
   redirect,
   type AnyRouter,
   type RouterHistory,
@@ -13,13 +14,7 @@ import { AppShellLayout } from "@/features/app-shell/app-shell-layout.tsx"
 import { validateSettingsSearch } from "@/features/app-shell/surfaces.ts"
 import { validateApplySearch } from "@/features/apply/apply-search.ts"
 import { validatePaperSearch } from "@/features/paper/paper-search.ts"
-import { PublicPitchPage } from "@/features/pitch/pitch-public-page.tsx"
-import { ApplyPage } from "@/routes/apply.tsx"
 import { HomePage } from "@/routes/home.tsx"
-import { PaperPage } from "@/routes/paper.tsx"
-import { PitchPage } from "@/routes/pitch.tsx"
-import { SearchPage } from "@/routes/search.tsx"
-import { SettingsPage } from "@/routes/settings.tsx"
 import { SignInPage } from "@/routes/sign-in.tsx"
 import { SignUpPage } from "@/routes/sign-up.tsx"
 import { authClient } from "@/lib/auth-client.ts"
@@ -90,34 +85,54 @@ const paperRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/paper",
   validateSearch: validatePaperSearch,
-  component: PaperPage,
+  component: lazyRouteComponent(
+    () => import("@/routes/paper.tsx"),
+    "PaperPage"
+  ),
 })
 
 const searchRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/search",
-  component: SearchPage,
+  component: lazyRouteComponent(
+    () => import("@/routes/search.tsx"),
+    "SearchPage"
+  ),
 })
 
 const applyRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/apply",
   validateSearch: validateApplySearch,
-  component: ApplyPage,
+  component: lazyRouteComponent(
+    () => import("@/routes/apply.tsx"),
+    "ApplyPage"
+  ),
 })
 
 const pitchRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/pitch",
-  component: PitchPage,
+  component: lazyRouteComponent(
+    () => import("@/routes/pitch.tsx"),
+    "PitchPage"
+  ),
 })
 
 const settingsRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/settings",
   validateSearch: validateSettingsSearch,
-  component: SettingsPage,
+  component: lazyRouteComponent(
+    () => import("@/routes/settings.tsx"),
+    "SettingsPage"
+  ),
 })
+
+const PublicPitchPage = lazyRouteComponent(
+  () => import("@/features/pitch/pitch-public-page.tsx"),
+  "PublicPitchPage"
+)
 
 const publicPitchRoute = createRoute({
   getParentRoute: () => rootRoute,
