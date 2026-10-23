@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# commit-msg: light local checks. Enable once per clone:  git config core.hooksPath .githooks
+#   - no commits on main (work on a task branch in a worktree)
+#   - first line must not be empty; warn if longer than 72 characters
+#   - reject a non-comment line whose trimmed text matches /^(co-authored-by|generated-with):/i
+# Branch commits are squashed on merge, so their wording is free. Only the PR title lands on main.
+# This hook does not see a trailer GitHub may add during that squash.
+set -euo pipefail
+
+msg_file=$1
+branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null || true)
+
+if [[ "$branch" == "main" ]]; then
+  echo "commit-msg: committing on main is not allowed. Start a task: scripts/new-task.sh <type> <issue#>" >&2
+  exit 1
+fi
+
+first=$(grep -v '^#' "$msg_file" | sed '/^[[:space:]]*$/d' | head -n1 || true)
+if [[ -z "$first" ]]; then
+  echo "commit-msg: empty commit message." >&2
+  exit 1
+fi
+if (( ${#first} > 72 )); then
+  echo "commit-msg: warning: first line is ${#first} characters; keep it under 72." >&2
+fi
+
+shopt -s nocasematch
+while IFS= read -r line || [[ -n "$line" ]]; do
+  [[ "$line" == \#* ]] && continue
+  trimmed=${line#"${line%%[![:space:]]*}"}
+  trimmed=${trimmed%"${trimmed##*[![:space:]]}"}
+  if [[ "$trimmed" =~ ^(co-authored-by|generated-with): ]]; then
+    echo "commit-msg: refusing attribution trailer." >&2
+    exit 1
+  fi
+done < "$msg_file"
+shopt -u nocasematch
+
+exit 0

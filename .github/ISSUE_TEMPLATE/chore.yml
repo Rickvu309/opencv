@@ -1,0 +1,30 @@
+name: Chore / refactor / docs
+description: Tooling, dependencies, config, refactors with no behavior change, or documentation.
+title: "chore: "
+labels: ["chore"]
+body:
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type
+      description: Change the issue label and title prefix to match if not `chore`.
+      options:
+        - chore
+        - refactor
+        - docs
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What and why
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      placeholder: |
+        - [ ] ...
+    validations:
+      required: false

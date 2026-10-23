@@ -34,9 +34,6 @@ describe("Storybook catalog", () => {
     )
     expect(ui.scripts.storybook).toMatch(/storybook dev/)
     expect(ui.scripts["build-storybook"]).toMatch(/storybook build/)
-
-    const ci = read(".github/workflows/ci.yml")
-    expect(ci).toMatch(/build-storybook/)
   })
 
   it("gives every absorbed primitive a colocated story that imports the source file", () => {

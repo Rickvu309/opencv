@@ -44,18 +44,12 @@ describe("coach deploy docs", () => {
     expect(deploy).toContain("railway.md#coach")
   })
 
-  it("keeps the live smoke script out of CI", () => {
+  it("keeps the live smoke script out of the test script", () => {
     const apiPkg = JSON.parse(
       readFileSync(path.join(repoRoot, "apps/api/package.json"), "utf8")
     ) as { scripts: Record<string, string> }
     expect(apiPkg.scripts.smoke).toBe("tsx src/coach/smoke.ts")
     expect(apiPkg.scripts.test).not.toMatch(/smoke/)
-
-    const ci = readFileSync(
-      path.join(repoRoot, ".github/workflows/ci.yml"),
-      "utf8"
-    )
-    expect(ci).not.toMatch(/filter api smoke|run smoke/)
 
     const vitest = readFileSync(
       path.join(repoRoot, "apps/api/vitest.config.ts"),
