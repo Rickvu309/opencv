@@ -1,0 +1,183 @@
+import { useEffect, useRef, useState, type CSSProperties } from "react"
+
+import { cn } from "@workspace/ui/lib/utils"
+
+/**
+ * Adapted from affectUI (https://github.com/flohoeller/affectui), MIT License,
+ * Copyright (c) 2026 Florian Höller (adfects)
+ *
+ * Screen readers get the whole sentence at once; the moving pieces are hidden from them.
+ */
+
+export type TextRevealProps = {
+  /** The text to reveal */
+  text: string
+  /** Reveal word by word or letter by letter */
+  by?: "word" | "char"
+  /** Time between two pieces, in ms */
+  stagger?: number
+  /** Wait before the first piece, in ms */
+  delay?: number
+  /** Time each piece takes to arrive, in ms */
+  duration?: number
+  /** Element to render */
+  as?: "p" | "h1" | "h2" | "h3" | "span"
+  /** Reveal only the first time; otherwise it plays again each time it enters the view */
+  once?: boolean
+  className?: string
+}
+
+function TextReveal({
+  text,
+  by = "word",
+  stagger,
+  delay,
+  duration,
+  as: Tag = "p",
+  once = true,
+  className,
+}: TextRevealProps) {
+  const ref = useRef<HTMLElement>(null)
+  const [shown, setShown] = useState(false)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el || typeof IntersectionObserver === "undefined")
+      return setShown(true)
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            setShown(true)
+            if (once) io.disconnect()
+          } else if (!once) {
+            setShown(false)
+          }
+        }
+      },
+      { threshold: 0.3 }
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [once])
+
+  // Words and the whitespace between them; whitespace stays plain text so lines wrap normally
+  let i = 0
+  const parts = text.split(/(\s+)/).map((part, k) => {
+    if (part === "") return null
+    if (/^\s+$/.test(part)) return part
+    if (by === "word") {
+      return (
+        <span
+          key={k}
+          className="ui-trv__p"
+          style={{ "--ui-trv-i": i++ } as CSSProperties}
+        >
+          {part}
+        </span>
+      )
+    }
+    // Letter by letter: the letters of a word sit in one unbreakable group
+    return (
+      <span key={k} className="ui-trv__w">
+        {Array.from(part).map((ch, c) => (
+          <span
+            key={c}
+            className="ui-trv__p"
+            style={{ "--ui-trv-i": i++ } as CSSProperties}
+          >
+            {ch}
+          </span>
+        ))}
+      </span>
+    )
+  })
+
+  return (
+    <Tag
+      ref={ref as never}
+      data-slot="text-reveal"
+      className={cn("ui-trv", className)}
+      data-shown={shown ? "" : undefined}
+      style={
+        {
+          "--ui-trv-stagger":
+            stagger === undefined ? undefined : `${stagger}ms`,
+          "--ui-trv-delay": delay === undefined ? undefined : `${delay}ms`,
+          "--ui-trv-duration":
+            duration === undefined ? undefined : `${duration}ms`,
+        } as CSSProperties
+      }
+    >
+      {/* React 19 hoists this into <head> once, no matter how many instances render */}
+      <style href="ui-text-reveal" precedence="default">
+        {css}
+      </style>
+      <span className="ui-trv__sr">{text}</span>
+      <span aria-hidden="true">{parts}</span>
+    </Tag>
+  )
+}
+
+const css = /* css */ `
+.ui-trv {
+  --ui-trv-blur: 8px;
+  --ui-trv-rise: 0.35em;
+  --ui-trv-stagger: 40ms;
+  --ui-trv-delay: 0ms;
+  --ui-trv-duration: var(--duration-slow);
+  --ui-trv-ease: var(--ease-emphasized);
+}
+.ui-trv__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+.ui-trv__w {
+  display: inline-block;
+  white-space: nowrap;
+}
+.ui-trv__p {
+  display: inline-block;
+  opacity: 0;
+  filter: blur(var(--ui-trv-blur));
+  transform: translateY(var(--ui-trv-rise));
+  will-change: opacity, filter, transform;
+}
+.ui-trv[data-shown] .ui-trv__p {
+  animation: ui-trv-in var(--ui-trv-duration) var(--ui-trv-ease) both;
+  animation-delay: calc(var(--ui-trv-delay) + var(--ui-trv-i) * var(--ui-trv-stagger));
+}
+@keyframes ui-trv-in {
+  from {
+    opacity: 0;
+    filter: blur(var(--ui-trv-blur));
+    transform: translateY(var(--ui-trv-rise));
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: none;
+  }
+}
+
+/* Reduced motion: the text is simply there */
+@media (prefers-reduced-motion: reduce) {
+  .ui-trv .ui-trv__p,
+  .ui-trv[data-shown] .ui-trv__p {
+    opacity: 1;
+    filter: none;
+    transform: none;
+    animation: none;
+  }
+}
+
+`
+
+export { TextReveal }
