@@ -8,7 +8,6 @@ import {
   coachTurnRequestSchema,
   coachProviderErrorMessage,
   coachUnavailableEnvelope,
-  DEFAULT_COACH_DAILY_TURN_LIMIT,
   DEFAULT_COACH_DAILY_TURN_LIMITS,
   DEFAULT_COACH_MODE,
   ERROR_CODES,
@@ -39,10 +38,7 @@ import { Hono, type MiddlewareHandler } from "hono"
 import { streamSSE, type SSEStreamingApi } from "hono/streaming"
 
 import type { Auth } from "../auth.js"
-import type {
-  AppDatabase,
-  CommandRegistry,
-} from "../commands/registry.js"
+import type { AppDatabase, CommandRegistry } from "../commands/registry.js"
 import { coachUsage, threadMessages, threads } from "../db/schema.js"
 import { jsonWithStatus } from "../http-json.js"
 import { createId } from "../id.js"
@@ -50,7 +46,11 @@ import { requireSession, type SessionVariables } from "../middleware.js"
 import { getOwnedPaperDoc } from "../paper/queries.js"
 import { toCoachFocusDoc } from "./must-edit.js"
 import { getCoachModeForUser } from "../profile/queries.js"
-import { getOwnedThread, getThreadDetail, toThreadMessage } from "../threads/queries.js"
+import {
+  getOwnedThread,
+  getThreadDetail,
+  toThreadMessage,
+} from "../threads/queries.js"
 import { reverseCoachReceipt } from "./reverse.js"
 import { maybeAutoTitleThread } from "./title.js"
 import { countCoachTurnsToday, rateCoachTurn } from "./usage.js"
@@ -60,10 +60,6 @@ export type CoachRouteOptions = {
   db?: AppDatabase
   registry: CommandRegistry
   coach?: CoachRuntime
-  /** @deprecated Legacy single-model fallback when a turn has no resolved mode. */
-  coachModel?: string
-  /** Legacy global cap; used when a mode-specific limit is unset. */
-  coachDailyTurnLimit?: number
   coachModels?: Partial<Record<CoachMode, string>>
   coachDailyTurnLimits?: Partial<Record<CoachMode, number>>
   coachSseHeartbeatMs?: number
@@ -91,8 +87,6 @@ export function createCoachRoutes({
   db,
   registry,
   coach,
-  coachModel,
-  coachDailyTurnLimit,
   coachModels,
   coachDailyTurnLimits,
   coachSseHeartbeatMs,
@@ -156,16 +150,10 @@ export function createCoachRoutes({
 
     const mode =
       parsed.data.mode ??
-      (await getCoachModeForUser(db, userId).catch(
-        () => DEFAULT_COACH_MODE
-      ))
-    const model =
-      coachModels?.[mode] ?? resolveCoachModel(mode) ?? coachModel ?? ""
+      (await getCoachModeForUser(db, userId).catch(() => DEFAULT_COACH_MODE))
+    const model = coachModels?.[mode] ?? resolveCoachModel(mode)
     const limit =
-      coachDailyTurnLimits?.[mode] ??
-      coachDailyTurnLimit ??
-      DEFAULT_COACH_DAILY_TURN_LIMITS[mode] ??
-      DEFAULT_COACH_DAILY_TURN_LIMIT
+      coachDailyTurnLimits?.[mode] ?? DEFAULT_COACH_DAILY_TURN_LIMITS[mode]
     const used = await countCoachTurnsToday(db, userId, new Date(), mode)
     if (used >= limit) {
       return c.json(coachLimitReachedEnvelope(), 429)
@@ -191,7 +179,10 @@ export function createCoachRoutes({
       if (!text) {
         return jsonWithStatus(
           c,
-          errorEnvelope(ERROR_CODES.VALIDATION_ERROR, "Message text is required"),
+          errorEnvelope(
+            ERROR_CODES.VALIDATION_ERROR,
+            "Message text is required"
+          ),
           httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
         )
       }
@@ -232,105 +223,113 @@ export function createCoachRoutes({
     })
   })
 
-  routes.post("/:id/messages/:messageId/feedback", requireSession(auth, db), async (c) => {
-    const { userId, db } = c.var
+  routes.post(
+    "/:id/messages/:messageId/feedback",
+    requireSession(auth, db),
+    async (c) => {
+      const { userId, db } = c.var
 
-    const threadIdParsed = threadIdSchema.safeParse(c.req.param("id"))
-    const messageIdParsed = threadMessageIdSchema.safeParse(
-      c.req.param("messageId")
-    )
-    if (!threadIdParsed.success || !messageIdParsed.success) {
-      return jsonWithStatus(
-        c,
-        errorEnvelope(ERROR_CODES.VALIDATION_ERROR, "Invalid id"),
-        httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
+      const threadIdParsed = threadIdSchema.safeParse(c.req.param("id"))
+      const messageIdParsed = threadMessageIdSchema.safeParse(
+        c.req.param("messageId")
       )
-    }
+      if (!threadIdParsed.success || !messageIdParsed.success) {
+        return jsonWithStatus(
+          c,
+          errorEnvelope(ERROR_CODES.VALIDATION_ERROR, "Invalid id"),
+          httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
+        )
+      }
 
-    let body: unknown
-    try {
-      const text = await c.req.text()
-      body = text.trim() === "" ? {} : JSON.parse(text)
-    } catch {
-      return jsonWithStatus(
-        c,
-        errorEnvelope(
-          ERROR_CODES.VALIDATION_ERROR,
-          "Request body must be JSON"
-        ),
-        httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
+      let body: unknown
+      try {
+        const text = await c.req.text()
+        body = text.trim() === "" ? {} : JSON.parse(text)
+      } catch {
+        return jsonWithStatus(
+          c,
+          errorEnvelope(
+            ERROR_CODES.VALIDATION_ERROR,
+            "Request body must be JSON"
+          ),
+          httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
+        )
+      }
+
+      const parsed = coachFeedbackInputSchema.safeParse(body)
+      if (!parsed.success) {
+        return jsonWithStatus(
+          c,
+          errorEnvelope(ERROR_CODES.VALIDATION_ERROR, "Invalid rating"),
+          httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
+        )
+      }
+
+      await getOwnedThread(db, userId, threadIdParsed.data)
+      const result = await rateCoachTurn(
+        db,
+        userId,
+        threadIdParsed.data,
+        messageIdParsed.data,
+        parsed.data.rating
       )
+      return c.json(successEnvelope(result))
     }
+  )
 
-    const parsed = coachFeedbackInputSchema.safeParse(body)
-    if (!parsed.success) {
-      return jsonWithStatus(
-        c,
-        errorEnvelope(ERROR_CODES.VALIDATION_ERROR, "Invalid rating"),
-        httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
+  routes.post(
+    "/:id/messages/:messageId/reverse",
+    requireSession(auth, db),
+    async (c) => {
+      const { userId, db } = c.var
+
+      const threadIdParsed = threadIdSchema.safeParse(c.req.param("id"))
+      const messageIdParsed = threadMessageIdSchema.safeParse(
+        c.req.param("messageId")
       )
+      if (!threadIdParsed.success || !messageIdParsed.success) {
+        return jsonWithStatus(
+          c,
+          errorEnvelope(ERROR_CODES.VALIDATION_ERROR, "Invalid id"),
+          httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
+        )
+      }
+
+      let body: unknown
+      try {
+        const text = await c.req.text()
+        body = text.trim() === "" ? {} : JSON.parse(text)
+      } catch {
+        return jsonWithStatus(
+          c,
+          errorEnvelope(
+            ERROR_CODES.VALIDATION_ERROR,
+            "Request body must be JSON"
+          ),
+          httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
+        )
+      }
+
+      const parsed = coachReverseRequestSchema.safeParse(body)
+      if (!parsed.success) {
+        return jsonWithStatus(
+          c,
+          errorEnvelope(ERROR_CODES.VALIDATION_ERROR, "Invalid reversal"),
+          httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
+        )
+      }
+
+      const result = await reverseCoachReceipt({
+        db,
+        registry,
+        userId,
+        threadId: threadIdParsed.data,
+        messageId: messageIdParsed.data,
+        toolCallId: parsed.data.toolCallId,
+      })
+      return c.json(successEnvelope(result))
     }
-
-    await getOwnedThread(db, userId, threadIdParsed.data)
-    const result = await rateCoachTurn(
-      db,
-      userId,
-      threadIdParsed.data,
-      messageIdParsed.data,
-      parsed.data.rating
-    )
-    return c.json(successEnvelope(result))
-  })
-
-  routes.post("/:id/messages/:messageId/reverse", requireSession(auth, db), async (c) => {
-    const { userId, db } = c.var
-
-    const threadIdParsed = threadIdSchema.safeParse(c.req.param("id"))
-    const messageIdParsed = threadMessageIdSchema.safeParse(
-      c.req.param("messageId")
-    )
-    if (!threadIdParsed.success || !messageIdParsed.success) {
-      return jsonWithStatus(
-        c,
-        errorEnvelope(ERROR_CODES.VALIDATION_ERROR, "Invalid id"),
-        httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
-      )
-    }
-
-    let body: unknown
-    try {
-      const text = await c.req.text()
-      body = text.trim() === "" ? {} : JSON.parse(text)
-    } catch {
-      return jsonWithStatus(
-        c,
-        errorEnvelope(
-          ERROR_CODES.VALIDATION_ERROR,
-          "Request body must be JSON"
-        ),
-        httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
-      )
-    }
-
-    const parsed = coachReverseRequestSchema.safeParse(body)
-    if (!parsed.success) {
-      return jsonWithStatus(
-        c,
-        errorEnvelope(ERROR_CODES.VALIDATION_ERROR, "Invalid reversal"),
-        httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
-      )
-    }
-
-    const result = await reverseCoachReceipt({
-      db,
-      registry,
-      userId,
-      threadId: threadIdParsed.data,
-      messageId: messageIdParsed.data,
-      toolCallId: parsed.data.toolCallId,
-    })
-    return c.json(successEnvelope(result))
-  })
+  )
 
   return routes
 }

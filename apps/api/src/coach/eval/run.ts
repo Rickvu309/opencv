@@ -29,7 +29,10 @@ export async function runEvalHarness(
   const apiKey = requireOpenRouterApiKey(env)
   const coachModel = coachModelForModeFromEnv(mode, env)
   const judgeModel = judgeModelFromEnv(env)
-  const selected = scenariosToRun(GOLDEN_SCENARIOS, env.COACH_EVAL_SCENARIO?.trim())
+  const selected = scenariosToRun(
+    GOLDEN_SCENARIOS,
+    env.COACH_EVAL_SCENARIO?.trim()
+  )
   const results: ScenarioEvalResult[] = []
 
   for (const scenario of selected) {
@@ -38,13 +41,12 @@ export async function runEvalHarness(
       const seeded = await seedGoldenScenario(db, scenario)
       const runtime = createOpenRouterCoachRuntime({
         apiKey,
-        model: coachModel,
         db,
       })
-      const transcript = await collectTranscript(
-        runtime,
-        evalTurnInput(seeded, scenario)
-      )
+      const transcript = await collectTranscript(runtime, {
+        ...evalTurnInput(seeded, scenario),
+        model: coachModel,
+      })
       const tools = assembleCoachTools({ db, userId: seeded.userId })
       const honesty = scoreHonesty(transcript, tools, scenario.expect)
 
@@ -78,7 +80,9 @@ async function main() {
     for (const mode of modes) {
       reports.push(await runEvalHarness(process.env, mode))
     }
-    process.stdout.write(reports.map((report) => renderEvalReport(report)).join("\n"))
+    process.stdout.write(
+      reports.map((report) => renderEvalReport(report)).join("\n")
+    )
     const failed = reports.some((report) =>
       report.results.some((result) => !honestyPassed(result.honesty))
     )

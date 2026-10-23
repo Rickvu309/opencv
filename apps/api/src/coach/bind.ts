@@ -1,8 +1,4 @@
-import {
-  DEFAULT_COACH_MODEL,
-  resolveCoachModel,
-  type CoachRuntime,
-} from "@workspace/domain"
+import { resolveCoachModel, type CoachRuntime } from "@workspace/domain"
 
 import type { AppDatabase } from "../commands/registry.js"
 import { createDemoCoachRuntime } from "./fake.js"
@@ -11,7 +7,6 @@ import { createOpenRouterCoachRuntime } from "./runtime.js"
 export type CoachRuntimeConfig = {
   db?: AppDatabase
   openRouterApiKey?: string
-  coachModel?: string
   /** Light-tier id for first-turn titles. Defaults to `resolveCoachModel("light")`. */
   titleModel?: string
   /** Model id for Apply scan. Defaults to `resolveCoachModel("free")`. */
@@ -26,7 +21,6 @@ export type CoachRuntimeConfig = {
 export function coachRuntimeFromConfig({
   db,
   openRouterApiKey,
-  coachModel,
   titleModel,
   scanModel,
   runtimeMode,
@@ -39,7 +33,6 @@ export function coachRuntimeFromConfig({
   }
   return createOpenRouterCoachRuntime({
     apiKey: openRouterApiKey,
-    model: coachModel ?? DEFAULT_COACH_MODEL,
     titleModel: titleModel ?? resolveCoachModel("light"),
     scanModel: scanModel ?? resolveCoachModel("free"),
     db,

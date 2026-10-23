@@ -1,5 +1,5 @@
 import {
-  DEFAULT_COACH_MODEL,
+  DEFAULT_COACH_MODELS,
   type ApplyScanExtractInput,
   type CoachRuntime,
   type CoachStreamPart,
@@ -32,7 +32,7 @@ export const DEMO_COACH_SCRIPT: CoachStreamPart[] = [
     type: "finish",
     finishReason: "stop",
     usage: {
-      model: DEFAULT_COACH_MODEL,
+      model: DEFAULT_COACH_MODELS.free,
       tokens: 42,
       costEstimate: "0.001",
       finishReason: "stop",

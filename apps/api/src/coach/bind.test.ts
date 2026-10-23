@@ -1,4 +1,3 @@
-import { DEFAULT_COACH_MODEL } from "@workspace/domain"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { createApp } from "../app.js"
@@ -30,7 +29,6 @@ describe("coachRuntimeFromConfig", () => {
   it("constructs the OpenRouter runtime without calling a model", () => {
     const runtime = coachRuntimeFromConfig({
       openRouterApiKey: "sk-or-test-key",
-      coachModel: DEFAULT_COACH_MODEL,
       db: {} as never,
     })
     expect(runtime).toBeDefined()

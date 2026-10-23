@@ -1,7 +1,6 @@
 import { fileURLToPath } from "node:url"
 
 import {
-  DEFAULT_COACH_DAILY_TURN_LIMIT,
   resolveCoachDailyTurnLimit,
   resolveCoachModel,
   type CoachMode,
@@ -84,38 +83,12 @@ export function openRouterApiKeyFromEnv(
   return configured ? configured : undefined
 }
 
-/**
- * @deprecated Legacy single-model fallback when a turn has no mode.
- * New turns resolve via `resolveCoachModel(mode, env)`.
- */
-export function coachModelFromEnv(env: NodeJS.ProcessEnv): string {
-  return resolveCoachModel(undefined, env)
-}
-
 /** OpenRouter model id for a User-selected Coach mode (ADR-0009). */
 export function coachModelForModeFromEnv(
   mode: CoachMode,
   env: NodeJS.ProcessEnv
 ): string {
   return resolveCoachModel(mode, env)
-}
-
-/**
- * Legacy global daily Coach turn cap. Unset, blank, or non-positive integers
- * fall back to 50 (ADR-0007). New turns use `coachDailyTurnLimitForModeFromEnv`.
- */
-export function coachDailyTurnLimitFromEnv(env: NodeJS.ProcessEnv): number {
-  const raw = env.COACH_DAILY_TURN_LIMIT?.trim()
-  if (!raw) {
-    return DEFAULT_COACH_DAILY_TURN_LIMIT
-  }
-
-  const parsed = Number(raw)
-  if (!Number.isInteger(parsed) || parsed < 1) {
-    return DEFAULT_COACH_DAILY_TURN_LIMIT
-  }
-
-  return parsed
 }
 
 /** Per-mode daily turn cap (ADR-0009). */

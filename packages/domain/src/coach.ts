@@ -10,8 +10,6 @@ export type CoachMode = z.infer<typeof coachModeSchema>
 export const COACH_MODES = coachModeSchema.options
 export const DEFAULT_COACH_MODE: CoachMode = "free"
 
-/** @deprecated Single-model fallback for legacy paths. New turns resolve via mode. */
-export const DEFAULT_COACH_MODEL = "anthropic/claude-sonnet-4.5"
 export const DEFAULT_COACH_MODEL_FREE = "openrouter/free"
 export const DEFAULT_COACH_MODEL_LIGHT = "deepseek/deepseek-chat-v3.1"
 export const DEFAULT_COACH_MODEL_MAX = "anthropic/claude-opus-4"
@@ -22,7 +20,6 @@ export const DEFAULT_COACH_MODELS = {
   max: DEFAULT_COACH_MODEL_MAX,
 } as const satisfies Record<CoachMode, string>
 
-export const DEFAULT_COACH_DAILY_TURN_LIMIT = 50
 export const DEFAULT_COACH_DAILY_TURN_LIMIT_FREE = 50
 export const DEFAULT_COACH_DAILY_TURN_LIMIT_LIGHT = 30
 export const DEFAULT_COACH_DAILY_TURN_LIMIT_MAX = 10
@@ -37,15 +34,12 @@ export type CoachModelEnv = {
   COACH_MODEL_FREE?: string
   COACH_MODEL_LIGHT?: string
   COACH_MODEL_MAX?: string
-  /** @deprecated Used only when mode is unset in legacy paths. */
-  COACH_MODEL?: string
 }
 
 export type CoachDailyTurnLimitEnv = {
   COACH_DAILY_TURN_LIMIT_FREE?: string
   COACH_DAILY_TURN_LIMIT_LIGHT?: string
   COACH_DAILY_TURN_LIMIT_MAX?: string
-  COACH_DAILY_TURN_LIMIT?: string
 }
 
 function trimmedEnv(value: string | undefined) {
@@ -61,18 +55,11 @@ function positiveIntEnv(value: string | undefined) {
   return parsed
 }
 
-/**
- * Resolve the OpenRouter model id for a Coach mode. New turns always pass a
- * mode. `COACH_MODEL` is a deprecated fallback only when mode is unset.
- */
+/** Resolve the OpenRouter model id for a Coach mode. */
 export function resolveCoachModel(
-  mode: CoachMode | undefined,
+  mode: CoachMode,
   env: CoachModelEnv = {}
 ): string {
-  if (!mode) {
-    return trimmedEnv(env.COACH_MODEL) ?? DEFAULT_COACH_MODEL
-  }
-
   const override = {
     free: env.COACH_MODEL_FREE,
     light: env.COACH_MODEL_LIGHT,
@@ -82,10 +69,7 @@ export function resolveCoachModel(
   return trimmedEnv(override) ?? DEFAULT_COACH_MODELS[mode]
 }
 
-/**
- * Per-mode daily turn cap. Mode-specific env wins, then the legacy global
- * `COACH_DAILY_TURN_LIMIT`, then the mode default (50 / 30 / 10).
- */
+/** Per-mode daily turn cap. Mode-specific env wins, then the mode default (50 / 30 / 10). */
 export function resolveCoachDailyTurnLimit(
   mode: CoachMode,
   env: CoachDailyTurnLimitEnv = {}
@@ -96,11 +80,7 @@ export function resolveCoachDailyTurnLimit(
     max: env.COACH_DAILY_TURN_LIMIT_MAX,
   }[mode]
 
-  return (
-    positiveIntEnv(override) ??
-    positiveIntEnv(env.COACH_DAILY_TURN_LIMIT) ??
-    DEFAULT_COACH_DAILY_TURN_LIMITS[mode]
-  )
+  return positiveIntEnv(override) ?? DEFAULT_COACH_DAILY_TURN_LIMITS[mode]
 }
 
 export function coachProviderErrorMessage(

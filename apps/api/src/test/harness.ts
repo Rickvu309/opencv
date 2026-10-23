@@ -52,9 +52,9 @@ export function createTestApp(
   db: ReturnType<typeof drizzle>,
   options?: {
     coach?: CoachRuntime
-    coachModel?: string
-    coachDailyTurnLimit?: number
     coachModels?: Partial<Record<CoachMode, string>>
+    /** One cap applied to every mode; `coachDailyTurnLimits` wins when both are set. */
+    coachDailyTurnLimit?: number
     coachDailyTurnLimits?: Partial<Record<CoachMode, number>>
     coachSseHeartbeatMs?: number
     fetchJobPosting?: FetchJobPosting
@@ -67,10 +67,16 @@ export function createTestApp(
     db,
     rateLimitEnabled: false,
     coach: options?.coach,
-    coachModel: options?.coachModel,
-    coachDailyTurnLimit: options?.coachDailyTurnLimit,
     coachModels: options?.coachModels,
-    coachDailyTurnLimits: options?.coachDailyTurnLimits,
+    coachDailyTurnLimits:
+      options?.coachDailyTurnLimits ??
+      (options?.coachDailyTurnLimit === undefined
+        ? undefined
+        : {
+            free: options.coachDailyTurnLimit,
+            light: options.coachDailyTurnLimit,
+            max: options.coachDailyTurnLimit,
+          }),
     coachSseHeartbeatMs: options?.coachSseHeartbeatMs,
     fetchJobPosting: options?.fetchJobPosting,
   })

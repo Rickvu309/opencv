@@ -6,10 +6,8 @@ import {
   COACH_HISTORY_MESSAGE_CAP,
   COACH_STEP_CAP,
   COACH_WORKSPACE_LIST_CAP,
-  DEFAULT_COACH_DAILY_TURN_LIMIT,
   DEFAULT_COACH_DAILY_TURN_LIMITS,
   DEFAULT_COACH_MAX_OUTPUT_TOKENS,
-  DEFAULT_COACH_MODEL,
   DEFAULT_COACH_MODEL_FREE,
   DEFAULT_COACH_MODEL_LIGHT,
   DEFAULT_COACH_MODEL_MAX,
@@ -55,9 +53,7 @@ describe("coach domain exports", () => {
   })
 
   it("exports the runtime port, stream-part tags, and SSE event names", () => {
-    expect(DEFAULT_COACH_MODEL).toBe("anthropic/claude-sonnet-4.5")
     expect(DEFAULT_COACH_MODE).toBe("free")
-    expect(DEFAULT_COACH_DAILY_TURN_LIMIT).toBe(50)
     expect(DEFAULT_COACH_MODEL_FREE).toBe("openrouter/free")
     expect(DEFAULT_COACH_MODEL_LIGHT).toBe("deepseek/deepseek-chat-v3.1")
     expect(DEFAULT_COACH_MODEL_MAX).toBe("anthropic/claude-opus-4")
@@ -95,7 +91,7 @@ describe("coach domain exports", () => {
       {
         type: "finish",
         finishReason: "stop",
-        usage: { model: DEFAULT_COACH_MODEL, tokens: 20 },
+        usage: { model: DEFAULT_COACH_MODEL_FREE, tokens: 20 },
       },
     ]
     expect(parts.map((part) => part.type)).toEqual([
@@ -121,7 +117,9 @@ describe("coach domain exports", () => {
     expect(coachTurnRequestSchema.parse({ text: "Hello" })).toEqual({
       text: "Hello",
     })
-    expect(coachTurnRequestSchema.parse({ text: "Hello", mode: "light" })).toEqual({
+    expect(
+      coachTurnRequestSchema.parse({ text: "Hello", mode: "light" })
+    ).toEqual({
       text: "Hello",
       mode: "light",
     })
@@ -132,9 +130,9 @@ describe("coach domain exports", () => {
       coachTurnRequestSchema.parse({ regenerate: true, mode: "max" })
     ).toEqual({ regenerate: true, mode: "max" })
     expect(coachTurnRequestSchema.safeParse({}).success).toBe(false)
-    expect(coachTurnRequestSchema.safeParse({ regenerate: false }).success).toBe(
-      false
-    )
+    expect(
+      coachTurnRequestSchema.safeParse({ regenerate: false }).success
+    ).toBe(false)
     expect(coachTurnRequestSchema.safeParse({ mode: "free" }).success).toBe(
       false
     )
@@ -277,19 +275,9 @@ describe("resolveCoachModel", () => {
     expect(resolveCoachModel("free", env)).toBe("z-ai/glm-5.2:free")
     expect(resolveCoachModel("light", env)).toBe("deepseek/deepseek-chat")
     expect(resolveCoachModel("max", env)).toBe("anthropic/claude-fable-5")
-    expect(
-      resolveCoachModel("max", { COACH_MODEL_MAX: "   " })
-    ).toBe(DEFAULT_COACH_MODEL_MAX)
-  })
-
-  it("uses deprecated COACH_MODEL only when mode is unset", () => {
-    expect(resolveCoachModel(undefined, { COACH_MODEL: "openai/gpt-5" })).toBe(
-      "openai/gpt-5"
+    expect(resolveCoachModel("max", { COACH_MODEL_MAX: "   " })).toBe(
+      DEFAULT_COACH_MODEL_MAX
     )
-    expect(resolveCoachModel("free", { COACH_MODEL: "openai/gpt-5" })).toBe(
-      DEFAULT_COACH_MODEL_FREE
-    )
-    expect(resolveCoachModel(undefined, {})).toBe(DEFAULT_COACH_MODEL)
   })
 
   it("rejects invalid modes at the schema", () => {
@@ -311,16 +299,15 @@ describe("resolveCoachDailyTurnLimit", () => {
     )
   })
 
-  it("falls back to the legacy global cap when the mode-specific var is unset", () => {
+  it("ignores COACH_MODEL and COACH_DAILY_TURN_LIMIT", () => {
+    expect(resolveCoachModel("free", { COACH_MODEL: "x" } as never)).toBe(
+      DEFAULT_COACH_MODEL_FREE
+    )
     expect(
-      resolveCoachDailyTurnLimit("max", { COACH_DAILY_TURN_LIMIT: "7" })
-    ).toBe(7)
-    expect(
-      resolveCoachDailyTurnLimit("max", {
-        COACH_DAILY_TURN_LIMIT: "7",
-        COACH_DAILY_TURN_LIMIT_MAX: "3",
-      })
-    ).toBe(3)
+      resolveCoachDailyTurnLimit("free", {
+        COACH_DAILY_TURN_LIMIT: "1",
+      } as never)
+    ).toBe(DEFAULT_COACH_DAILY_TURN_LIMITS.free)
   })
 })
 
@@ -329,9 +316,9 @@ describe("coachProviderErrorMessage", () => {
     expect(coachProviderErrorMessage({ statusCode: 402 }, "free")).toMatch(
       /Try Light mode/
     )
-    expect(coachProviderErrorMessage(new Error("429 Too Many Requests"), "free")).toMatch(
-      /Try Light mode/
-    )
+    expect(
+      coachProviderErrorMessage(new Error("429 Too Many Requests"), "free")
+    ).toMatch(/Try Light mode/)
     expect(coachProviderErrorMessage({ status: 429 }, "max")).toMatch(
       /switch modes/
     )
@@ -353,9 +340,9 @@ describe("coachProviderErrorMessage", () => {
         "free"
       )
     ).toMatch(/Try Light mode/)
-    expect(
-      coachProviderErrorMessage({ status: 404 }, "light")
-    ).toMatch(/Try another mode/)
+    expect(coachProviderErrorMessage({ status: 404 }, "light")).toMatch(
+      /Try another mode/
+    )
     expect(
       coachProviderErrorMessage(
         new Error("No endpoints found for retired/dead-model."),
