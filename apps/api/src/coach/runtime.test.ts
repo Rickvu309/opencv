@@ -108,7 +108,8 @@ describe("normalizeFullStream", () => {
     expect(events).toEqual([
       {
         type: "error",
-        message: "The free Coach model isn't available right now. Try Light mode.",
+        message:
+          "The free Coach model isn't available right now. Try Light mode.",
       },
     ])
   })

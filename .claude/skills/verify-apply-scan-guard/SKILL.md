@@ -31,12 +31,12 @@ pnpm --filter api test:formal
 
 Four tests, each one slice of the same grammar. A scheme from `http`, `https`, `HTTPS`, `ftp`, `file`, `javascript`, `data`; userinfo none, `user@`, `user:pw@`; port none, `:80`, `:8443`; tail empty, `/x`, `?q=1`, `#f`; and 33 fixed hosts (26 blocked, 7 public). That is 8316 sweep tuples, split across the tests as 756 + 2496 + 312 + 4752. The tuple counts print as `[formal] <name>: sweep N tuples, M failing`.
 
-| Test | Covers |
-| --- | --- |
-| F1: no public hostname is refused | http(s) to the 7 public hosts, any shape, plus random DNS names and public IPv4 quads |
+| Test                                                                 | Covers                                                                                     |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| F1: no public hostname is refused                                    | http(s) to the 7 public hosts, any shape, plus random DNS names and public IPv4 quads      |
 | F2: no blocked host reaches fetch when it carries a port or userinfo | http(s) to the 21 blocked hosts with a port or userinfo, with and without a lenient lookup |
-| no bare blocked host reaches fetch | the same hosts with no port and no userinfo |
-| no non-http(s) scheme reaches fetch | `ftp`, `file`, `javascript`, `data` and others to every host |
+| no bare blocked host reaches fetch                                   | the same hosts with no port and no userinfo                                                |
+| no non-http(s) scheme reaches fetch                                  | `ftp`, `file`, `javascript`, `data` and others to every host                               |
 
 "Reaches fetch" means the `fetchImpl` spy was called or `createFetchJobPosting` returned `ok:true`. It is checked twice: with `lookupImpl: null`, and with a lookup that always answers the public address `93.184.216.34`.
 
@@ -60,15 +60,15 @@ The failure prints witness lines, the first failing sweep tuples, and the `fast-
 
 ## Coverage record
 
-| Item | Where |
-| --- | --- |
-| `isPrivateIPv4` | `apps/api/src/apply/fetch-posting.ts` line 25 |
-| `isPrivateIPv6` | `apps/api/src/apply/fetch-posting.ts` line 63 |
-| `isBlockedApplyScanHost` | `apps/api/src/apply/fetch-posting.ts` line 75 |
-| `hostFromHttpUrl` | `apps/api/src/apply/fetch-posting.ts` line 86 |
-| `assertPublicApplyScanUrl` | `apps/api/src/apply/fetch-posting.ts` line 94 |
-| `createFetchJobPosting` | `apps/api/src/apply/fetch-posting.ts` line 150 |
-| `openableApplyJobUrl` | `packages/domain/src/apply.ts` line 131 |
+| Item                       | Where                                          |
+| -------------------------- | ---------------------------------------------- |
+| `isPrivateIPv4`            | `apps/api/src/apply/fetch-posting.ts` line 25  |
+| `isPrivateIPv6`            | `apps/api/src/apply/fetch-posting.ts` line 63  |
+| `isBlockedApplyScanHost`   | `apps/api/src/apply/fetch-posting.ts` line 75  |
+| `hostFromHttpUrl`          | `apps/api/src/apply/fetch-posting.ts` line 86  |
+| `assertPublicApplyScanUrl` | `apps/api/src/apply/fetch-posting.ts` line 94  |
+| `createFetchJobPosting`    | `apps/api/src/apply/fetch-posting.ts` line 150 |
+| `openableApplyJobUrl`      | `packages/domain/src/apply.ts` line 131        |
 
 Check file: `apps/api/src/apply/fetch-posting.formal.test.ts`. Runner: `apps/api/vitest.formal.config.ts`.
 

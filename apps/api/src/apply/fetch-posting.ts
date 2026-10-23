@@ -2,9 +2,9 @@ import { APPLY_SCAN_FETCH_FAILED, openableApplyJobUrl } from "@workspace/domain"
 import { lookup } from "node:dns/promises"
 import { isIPv6 } from "node:net"
 
-export type FetchJobPosting = (url: string) => Promise<
-  { ok: true; text: string } | { ok: false; message: string }
->
+export type FetchJobPosting = (
+  url: string
+) => Promise<{ ok: true; text: string } | { ok: false; message: string }>
 
 export type JobPostingLookup = (host: string) => Promise<{
   address: string
@@ -76,7 +76,11 @@ export function isBlockedApplyScanHost(host: string): boolean {
   const h = host.toLowerCase().replace(/\.$/, "")
   if (!h) return true
   if (BLOCKED_HOSTS.has(h)) return true
-  if (h.endsWith(".localhost") || h.endsWith(".local") || h.endsWith(".internal")) {
+  if (
+    h.endsWith(".localhost") ||
+    h.endsWith(".local") ||
+    h.endsWith(".internal")
+  ) {
     return true
   }
   if (isPrivateIPv4(h) || isPrivateIPv6(h)) return true

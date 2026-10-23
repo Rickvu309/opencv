@@ -14,7 +14,14 @@ import {
   type CoachTitleInput,
   type CoachTurnInput,
 } from "@workspace/domain"
-import { asSchema, generateText, stepCountIs, streamText, tool, type ToolSet } from "ai"
+import {
+  asSchema,
+  generateText,
+  stepCountIs,
+  streamText,
+  tool,
+  type ToolSet,
+} from "ai"
 
 import { listApplyCardsForUser } from "../apply/queries.js"
 import {
@@ -46,10 +53,7 @@ import {
   windowHistory,
 } from "./prompt.js"
 import { withApplyCardIdGuard } from "./apply-card-guard.js"
-import {
-  isPitchCoachAsk,
-  omitApplyMutations,
-} from "./pitch-scope.js"
+import { isPitchCoachAsk, omitApplyMutations } from "./pitch-scope.js"
 import { reversalForTool } from "./receipts.js"
 import {
   partsFromModelStream,
@@ -214,17 +218,13 @@ export function createOpenRouterCoachRuntime({
 
         const result = streamText({
           model: openrouter(turnModel, { usage: { include: true } }),
-          system: assembleSystemPrompt(
-            snapshot,
-            undefined,
-            {
-              ...(input.regenerate
-                ? { regenerateFrom: prepared.priorCoach }
-                : {}),
-              ...(input.selection ? { selection: input.selection } : {}),
-              ...(userText ? { latestUserText: userText } : {}),
-            }
-          ),
+          system: assembleSystemPrompt(snapshot, undefined, {
+            ...(input.regenerate
+              ? { regenerateFrom: prepared.priorCoach }
+              : {}),
+            ...(input.selection ? { selection: input.selection } : {}),
+            ...(userText ? { latestUserText: userText } : {}),
+          }),
           messages,
           tools,
           stopWhen: stepCountIs(COACH_STEP_CAP),
@@ -438,10 +438,7 @@ function modelIdFromResponse(response: unknown): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined
 }
 
-function usageFromUnknown(
-  usage: unknown,
-  pendingCost?: number
-): ModelUsage {
+function usageFromUnknown(usage: unknown, pendingCost?: number): ModelUsage {
   const row =
     usage && typeof usage === "object" ? (usage as Record<string, unknown>) : {}
   const inputTokens =
@@ -470,9 +467,9 @@ function costFromUsage(usage: unknown): number | undefined {
 
 function costFromUnknown(metadata: unknown): number | undefined {
   if (!metadata || typeof metadata !== "object") return undefined
-  const openrouter = (metadata as { openrouter?: { usage?: { cost?: unknown } } })
-    .openrouter
+  const openrouter = (
+    metadata as { openrouter?: { usage?: { cost?: unknown } } }
+  ).openrouter
   const cost = openrouter?.usage?.cost
   return typeof cost === "number" && Number.isFinite(cost) ? cost : undefined
 }
-
