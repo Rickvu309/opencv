@@ -1,12 +1,9 @@
 import {
-  appendCoachPart,
-  COACH_SSE_EVENTS,
   COACH_SSE_HEARTBEAT_MS,
   coachFeedbackInputSchema,
   coachReverseRequestSchema,
   coachLimitReachedEnvelope,
   coachTurnRequestSchema,
-  coachProviderErrorMessage,
   coachUnavailableEnvelope,
   DEFAULT_COACH_DAILY_TURN_LIMITS,
   DEFAULT_COACH_MODE,
@@ -15,44 +12,28 @@ import {
   httpStatusForError,
   resolveCoachModel,
   successEnvelope,
-  textFromParts,
   THREAD_COMMANDS,
   threadIdSchema,
   threadMessageIdSchema,
   type CoachMode,
   type CoachRuntime,
-  type CoachSseErrorData,
-  type CoachSseMessageEndData,
-  type CoachSseMessageStartData,
   type CoachFocusDoc,
-  type CoachSelection,
-  type CoachStreamPart,
-  type CoachTurnUsage,
   type ThreadDetail,
   type ThreadMessage,
-  type ThreadMessagePart,
-  type ThreadMessageStatus,
 } from "@workspace/domain"
-import { eq } from "drizzle-orm"
 import { Hono, type MiddlewareHandler } from "hono"
-import { streamSSE, type SSEStreamingApi } from "hono/streaming"
+import { streamSSE } from "hono/streaming"
 
 import type { Auth } from "../auth.js"
 import type { AppDatabase, CommandRegistry } from "../commands/registry.js"
-import { coachUsage, threadMessages, threads } from "../db/schema.js"
 import { jsonWithStatus } from "../http-json.js"
-import { createId } from "../id.js"
 import { requireSession, type SessionVariables } from "../middleware.js"
 import { getOwnedPaperDoc } from "../paper/queries.js"
 import { toCoachFocusDoc } from "./must-edit.js"
 import { getCoachModeForUser } from "../profile/queries.js"
-import {
-  getOwnedThread,
-  getThreadDetail,
-  toThreadMessage,
-} from "../threads/queries.js"
+import { getOwnedThread, getThreadDetail } from "../threads/queries.js"
 import { reverseCoachReceipt } from "./reverse.js"
-import { maybeAutoTitleThread } from "./title.js"
+import { runCoachTurn } from "./turn.js"
 import { countCoachTurnsToday, rateCoachTurn } from "./usage.js"
 
 export type CoachRouteOptions = {
@@ -332,353 +313,4 @@ export function createCoachRoutes({
   )
 
   return routes
-}
-
-type RunCoachTurnOptions = {
-  stream: SSEStreamingApi
-  coach: CoachRuntime
-  db: AppDatabase
-  registry: CommandRegistry
-  userId: string
-  threadId: string
-  history: ThreadMessage[]
-  model: string
-  mode: CoachMode
-  regenerate?: boolean
-  focusDoc?: CoachFocusDoc
-  selection?: CoachSelection
-  heartbeatMs: number
-  signal?: AbortSignal
-}
-
-async function runCoachTurn({
-  stream,
-  coach,
-  db,
-  registry,
-  userId,
-  threadId,
-  history,
-  model,
-  mode,
-  regenerate,
-  focusDoc,
-  selection,
-  heartbeatMs,
-  signal,
-}: RunCoachTurnOptions) {
-  const startedAt = Date.now()
-  let parts: ThreadMessagePart[] = []
-  let status: ThreadMessageStatus = "final"
-  let usage: CoachTurnUsage = { model, mode }
-  let persisted: ThreadMessage | undefined
-
-  const heartbeat = setInterval(() => {
-    void writeHeartbeat(stream)
-  }, heartbeatMs)
-
-  const aborted = waitForAbort(stream, signal)
-
-  try {
-    const start: CoachSseMessageStartData = { threadId }
-    await writeEvent(stream, COACH_SSE_EVENTS.messageStart, start)
-
-    for await (const part of takeUntilAbort(
-      coach.streamTurn({
-        userId,
-        threadId,
-        history,
-        model,
-        mode,
-        regenerate,
-        focusDoc,
-        selection,
-      }),
-      aborted.promise,
-      () => isDisconnected(stream, signal)
-    )) {
-      if (isDisconnected(stream, signal)) {
-        status = "aborted"
-        break
-      }
-
-      const terminal = applyStreamPart(part, {
-        parts,
-        status,
-        usage,
-        model,
-      })
-      parts = terminal.parts
-      status = terminal.status
-      usage = terminal.usage
-
-      if (part.type === "finish") {
-        break
-      }
-      if (part.type === "error") {
-        await writeEvent(stream, COACH_SSE_EVENTS.error, {
-          message: part.message,
-        } satisfies CoachSseErrorData)
-        break
-      }
-      if (
-        part.type !== "text-delta" &&
-        part.type !== "tool-call" &&
-        part.type !== "tool-result"
-      ) {
-        continue
-      }
-      await writeEvent(stream, part.type, sseDataForPart(part))
-    }
-
-    if (isDisconnected(stream, signal)) {
-      status = "aborted"
-    }
-  } catch (error) {
-    if (isDisconnected(stream, signal)) {
-      status = "aborted"
-    } else {
-      status = "error"
-      const message = coachProviderErrorMessage(error, mode)
-      await writeEvent(stream, COACH_SSE_EVENTS.error, {
-        message,
-      } satisfies CoachSseErrorData)
-    }
-  } finally {
-    clearInterval(heartbeat)
-    aborted.dispose()
-
-    if (isDisconnected(stream, signal) && status === "final") {
-      status = "aborted"
-    }
-
-    const workedMs = Math.max(0, Date.now() - startedAt)
-    usage = {
-      ...usage,
-      model: usage.model || model,
-      mode,
-      latencyMs: usage.latencyMs ?? workedMs,
-      finishReason: usage.finishReason ?? status,
-    }
-
-    persisted = await persistCoachTurn({
-      db,
-      userId,
-      threadId,
-      parts,
-      status,
-      workedMs,
-      usage,
-      mode,
-    })
-
-    await maybeAutoTitleThread({
-      db,
-      registry,
-      coach,
-      userId,
-      threadId,
-      history,
-      coachText: textFromParts(parts),
-      status,
-    })
-
-    if (!isDisconnected(stream, signal)) {
-      const end: CoachSseMessageEndData = {
-        message: persisted,
-        usage,
-      }
-      await writeEvent(stream, COACH_SSE_EVENTS.messageEnd, end)
-    }
-  }
-}
-
-function applyStreamPart(
-  part: CoachStreamPart,
-  state: {
-    parts: ThreadMessagePart[]
-    status: ThreadMessageStatus
-    usage: CoachTurnUsage
-    model: string
-  }
-) {
-  const next = {
-    parts: appendCoachPart(state.parts, part),
-    status: state.status,
-    usage: state.usage,
-  }
-
-  if (part.type === "finish") {
-    next.usage = {
-      model: part.usage.model || state.model,
-      mode: part.usage.mode ?? state.usage.mode,
-      tokens: part.usage.tokens,
-      costEstimate: part.usage.costEstimate,
-      latencyMs: part.usage.latencyMs,
-      finishReason: part.finishReason,
-    }
-  }
-  if (part.type === "error") {
-    next.status = "error"
-  }
-
-  return next
-}
-
-function sseDataForPart(part: CoachStreamPart): unknown {
-  switch (part.type) {
-    case "text-delta":
-      return { text: part.text }
-    case "tool-call":
-      return {
-        toolCallId: part.toolCallId,
-        name: part.name,
-        input: part.input,
-      }
-    case "tool-result":
-      return {
-        toolCallId: part.toolCallId,
-        name: part.name,
-        summary: part.summary,
-        ok: part.ok,
-        ...(part.reversal ? { reversal: part.reversal } : {}),
-        ...(part.detail ? { detail: part.detail } : {}),
-        result: part.result,
-      }
-    default:
-      return {}
-  }
-}
-
-async function persistCoachTurn({
-  db,
-  userId,
-  threadId,
-  parts,
-  status,
-  workedMs,
-  usage,
-  mode,
-}: {
-  db: AppDatabase
-  userId: string
-  threadId: string
-  parts: ThreadMessagePart[]
-  status: ThreadMessageStatus
-  workedMs: number
-  usage: CoachTurnUsage
-  mode: CoachMode
-}): Promise<ThreadMessage> {
-  const now = new Date()
-  const messageId = createId(now.getTime())
-  const usageId = createId(now.getTime())
-  const text = textFromParts(parts)
-  const row = {
-    id: messageId,
-    threadId,
-    role: "coach" as const,
-    text,
-    parts,
-    status,
-    workedMs,
-    createdAt: now,
-  }
-
-  await db.transaction(async (tx: AppDatabase) => {
-    await tx.insert(threadMessages).values(row)
-    await tx
-      .update(threads)
-      .set({ updatedAt: now })
-      .where(eq(threads.id, threadId))
-    await tx.insert(coachUsage).values({
-      id: usageId,
-      userId,
-      threadId,
-      messageId,
-      model: usage.model,
-      mode,
-      tokens: usage.tokens,
-      costEstimate: usage.costEstimate,
-      latencyMs: usage.latencyMs,
-      finishReason: usage.finishReason,
-    })
-  })
-
-  return toThreadMessage({ ...row, rating: null })
-}
-
-function isDisconnected(stream: SSEStreamingApi, signal?: AbortSignal) {
-  return stream.aborted || Boolean(signal?.aborted)
-}
-
-function waitForAbort(stream: SSEStreamingApi, signal?: AbortSignal) {
-  let settled = false
-  let resolve = () => {}
-  const promise = new Promise<void>((r) => {
-    resolve = r
-  })
-
-  const settle = () => {
-    if (settled) return
-    settled = true
-    resolve()
-  }
-
-  stream.onAbort(settle)
-  signal?.addEventListener("abort", settle, { once: true })
-  if (isDisconnected(stream, signal)) settle()
-
-  return {
-    promise,
-    dispose() {
-      signal?.removeEventListener("abort", settle)
-      settle()
-    },
-  }
-}
-
-async function* takeUntilAbort<T>(
-  iterable: AsyncIterable<T>,
-  abort: Promise<void>,
-  isAborted: () => boolean
-): AsyncGenerator<T> {
-  const iterator = iterable[Symbol.asyncIterator]()
-  try {
-    while (!isAborted()) {
-      const outcome = await Promise.race([
-        iterator.next().then((value) => ({ kind: "next" as const, value })),
-        abort.then(() => ({ kind: "abort" as const })),
-      ])
-      if (outcome.kind === "abort" || isAborted()) return
-      if (outcome.value.done) return
-      yield outcome.value.value
-    }
-  } finally {
-    void iterator.return?.()
-  }
-}
-
-async function writeEvent(
-  stream: SSEStreamingApi,
-  event: string,
-  data: unknown
-) {
-  if (stream.aborted) return
-  try {
-    await stream.writeSSE({
-      event,
-      data: JSON.stringify(data),
-    })
-  } catch {
-    // Client gone — persistence still runs in finally.
-  }
-}
-
-async function writeHeartbeat(stream: SSEStreamingApi) {
-  if (stream.aborted) return
-  try {
-    await stream.write(": heartbeat\n\n")
-  } catch {
-    // ignore
-  }
 }
