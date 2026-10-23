@@ -9,6 +9,7 @@
 #   STRICT_SCRIPTS=1 scripts/check.sh   fail if a script is missing (recommended once all exist)
 #   CHECK_DRY_RUN=1 scripts/check.sh ...   print the plan and the commands, run nothing
 #   CHECK_BASE_REF=<ref> scripts/check.sh --changed   compare with <ref> instead of origin/main
+#   CHECK_CONCURRENCY=<n> scripts/check.sh   turbo task concurrency (default: turbo's own for the full run, 2 for --changed)
 #
 # --changed (pnpm only; may be combined with task names) looks at the files that differ from
 # `git merge-base origin/main HEAD`: committed, staged, unstaged and untracked (not ignored). Then:
@@ -35,6 +36,7 @@ for a in "$@"; do
 done
 [[ ${#tasks[@]} -gt 0 ]] || tasks=(lint typecheck test)
 dry=0; [[ "${CHECK_DRY_RUN:-}" == "1" ]] && dry=1
+conc=${CHECK_CONCURRENCY:-2}
 
 # Run a command, or only print it when CHECK_DRY_RUN=1.
 run() {
@@ -120,7 +122,7 @@ if (( changed_mode )); then
       lint)
         if [[ ${#scope_dirs[@]} -gt 0 ]]; then
           echo "==> turbo lint (${#scope_dirs[@]} changed packages + dependents)"
-          run pnpm exec turbo run lint --concurrency=2 "${filters[@]}" || failed+=(lint)
+          run pnpm exec turbo run lint --concurrency=$conc "${filters[@]}" || failed+=(lint)
         fi
         if [[ ${#existing[@]} -gt 0 ]]; then
           echo "==> prettier --check (${#existing[@]} files)"
@@ -130,7 +132,7 @@ if (( changed_mode )); then
       typecheck|test)
         if [[ ${#scope_dirs[@]} -gt 0 ]]; then
           echo "==> turbo $t (${#scope_dirs[@]} changed packages + dependents)"
-          run pnpm exec turbo run "$t" --concurrency=2 "${filters[@]}" || failed+=("$t")
+          run pnpm exec turbo run "$t" --concurrency=$conc "${filters[@]}" || failed+=("$t")
         else
           echo "==> $t: no workspace package changed, nothing to run"
         fi
@@ -163,7 +165,7 @@ else
   for t in "${tasks[@]}"; do
     if has_script "$t"; then
       echo "==> $pm run $t"
-      if ! run "$pm" run "$t"; then failed+=("$t"); fi
+      if ! run "$pm" run "$t" ${CHECK_CONCURRENCY:+--concurrency=$CHECK_CONCURRENCY}; then failed+=("$t"); fi
     elif [[ "${STRICT_SCRIPTS:-0}" == "1" ]]; then
       echo "check: package.json has no '$t' script (STRICT_SCRIPTS=1)." >&2
       failed+=("$t")
