@@ -22,6 +22,7 @@ import {
 
 import { apiFetch, apiStream } from "@/lib/api.ts"
 import { ApiError } from "@/lib/api-error.ts"
+import { runCommand, unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
 import { readSseStream } from "@/lib/sse.ts"
 
 export const threadQueryKeys = {
@@ -30,23 +31,6 @@ export const threadQueryKeys = {
   detail: (id: string) => ["threads", "detail", id] as const,
   byFocusDoc: (focusDocId: string) =>
     ["threads", "focusDoc", focusDocId] as const,
-}
-
-type SuccessBody<T> = {
-  ok: true
-  data: T
-}
-
-function unwrapData<T>(body: SuccessBody<T>): T {
-  return body.data
-}
-
-async function runCommand<T>(name: string, input: unknown): Promise<T> {
-  const body = await apiFetch<SuccessBody<T>>(`/api/commands/${name}`, {
-    method: "POST",
-    body: JSON.stringify(input),
-  })
-  return unwrapData(body)
 }
 
 export async function listThreads(): Promise<ThreadListItem[]> {

@@ -6,19 +6,11 @@ import {
 } from "@workspace/domain"
 
 import { apiFetch } from "@/lib/api.ts"
+import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
 
 export const pitchQueryKeys = {
   current: () => ["pitch"] as const,
   public: (slug: string) => ["pitch", "public", slug] as const,
-}
-
-type SuccessBody<T> = {
-  ok: true
-  data: T
-}
-
-function unwrapData<T>(body: SuccessBody<T>): T {
-  return body.data
 }
 
 export async function getPitch(): Promise<PitchDoc> {

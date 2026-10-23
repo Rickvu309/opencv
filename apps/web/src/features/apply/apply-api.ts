@@ -10,6 +10,7 @@ import {
 } from "@workspace/domain"
 
 import { apiFetch } from "@/lib/api.ts"
+import { runCommand, unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
 
 import { sortApplyCards } from "./apply-types.ts"
 
@@ -17,23 +18,6 @@ export const applyQueryKeys = {
   all: ["apply"] as const,
   list: () => ["apply", "list"] as const,
   detail: (id: string) => ["apply", "detail", id] as const,
-}
-
-type SuccessBody<T> = {
-  ok: true
-  data: T
-}
-
-function unwrapData<T>(body: SuccessBody<T>): T {
-  return body.data
-}
-
-async function runCommand<T>(name: string, input: unknown): Promise<T> {
-  const body = await apiFetch<SuccessBody<T>>(`/api/commands/${name}`, {
-    method: "POST",
-    body: JSON.stringify(input),
-  })
-  return unwrapData(body)
 }
 
 export async function listApplyCards(): Promise<ApplyCard[]> {
@@ -47,7 +31,9 @@ export function createApplyCard(
   return runCommand<ApplyCard>(APPLY_COMMANDS.createCard, input)
 }
 
-export function updateApplyCard(input: ApplyUpdateCardInput): Promise<ApplyCard> {
+export function updateApplyCard(
+  input: ApplyUpdateCardInput
+): Promise<ApplyCard> {
   return runCommand<ApplyCard>(APPLY_COMMANDS.updateCard, input)
 }
 

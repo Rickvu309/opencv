@@ -7,28 +7,12 @@ import {
 } from "@workspace/domain"
 
 import { apiFetch } from "@/lib/api.ts"
+import { runCommand, unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
 
 export const paperQueryKeys = {
   all: ["paper"] as const,
   list: () => ["paper", "list"] as const,
   detail: (id: string) => ["paper", "detail", id] as const,
-}
-
-type SuccessBody<T> = {
-  ok: true
-  data: T
-}
-
-function unwrapData<T>(body: SuccessBody<T>): T {
-  return body.data
-}
-
-async function runCommand<T>(name: string, input: unknown): Promise<T> {
-  const body = await apiFetch<SuccessBody<T>>(`/api/commands/${name}`, {
-    method: "POST",
-    body: JSON.stringify(input),
-  })
-  return unwrapData(body)
 }
 
 export async function listPaperDocs(): Promise<PaperDoc[]> {
