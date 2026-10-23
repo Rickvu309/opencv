@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises"
+
 import type { CoachMode, CoachRuntime } from "@workspace/domain"
 
 import type { FetchJobPosting } from "../apply/fetch-posting.js"
@@ -21,7 +23,25 @@ export function cookieHeader(res: Response) {
     .join("; ")
 }
 
+let templateBlob: Promise<Blob> | undefined
+
+async function injectedTemplatePath() {
+  if (!process.env.VITEST) return undefined
+  try {
+    return (await import("vitest")).inject("pgliteTemplatePath")
+  } catch {
+    return undefined
+  }
+}
+
 export async function createMigratedTestDb() {
+  const templatePath = await injectedTemplatePath()
+  if (templatePath) {
+    templateBlob ??= readFile(templatePath).then((bytes) => new Blob([bytes]))
+    const client = new PGlite({ loadDataDir: await templateBlob })
+    return { client, db: drizzle({ client, schema }) }
+  }
+
   const client = new PGlite()
   const db = drizzle({ client, schema })
   await migrate(db, { migrationsFolder })
