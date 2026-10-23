@@ -12,12 +12,12 @@ function read(rel: string) {
 
 describe("shared Coach turn hook", () => {
   it("is the only turn implementation; Paper no longer has a private coach hook", () => {
-    expect(existsSync(path.join(webSrc, "features/paper/use-paper-coach.ts"))).toBe(
-      false
-    )
-    expect(existsSync(path.join(webSrc, "features/paper/paper-ai-chat.tsx"))).toBe(
-      false
-    )
+    expect(
+      existsSync(path.join(webSrc, "features/paper/use-paper-coach.ts"))
+    ).toBe(false)
+    expect(
+      existsSync(path.join(webSrc, "features/paper/paper-ai-chat.tsx"))
+    ).toBe(false)
     expect(
       existsSync(path.join(webSrc, "features/paper/coach-thread-panel.tsx"))
     ).toBe(false)
@@ -33,7 +33,9 @@ describe("shared Coach turn hook", () => {
     expect(store).toMatch(/useCoachTurn/)
     expect(store).not.toMatch(/streamCoachTurn/)
 
-    const panel = read("features/paper/coach-float.tsx")
+    const panel =
+      read("features/paper/coach-float.tsx") +
+      read("features/paper/coach-float-chips.tsx")
     expect(panel).toMatch(/useCoachTurn/)
     expect(read("features/coach/coach-thread-panel.tsx")).toMatch(
       /useCoachExternalRuntime/

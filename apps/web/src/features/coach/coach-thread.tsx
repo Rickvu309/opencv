@@ -1,9 +1,4 @@
-import {
-  createContext,
-  useContext,
-  useState,
-  type ReactNode,
-} from "react"
+import { createContext, useContext, useState, type ReactNode } from "react"
 import {
   AuiIf,
   ComposerPrimitive,
@@ -36,7 +31,10 @@ import {
   receiptShowsUndo,
 } from "@/features/home/coach-receipt.ts"
 import { RichReceiptBody } from "@/features/home/rich-receipts.tsx"
-import { STREAMING_COACH_ID, type HomeMessage } from "@/features/home/threads.ts"
+import {
+  STREAMING_COACH_ID,
+  type HomeMessage,
+} from "@/features/home/threads.ts"
 import { useFlash } from "@/lib/use-flash.ts"
 
 import { RECEIPT_PART_NAME } from "./coach-runtime.ts"
@@ -127,7 +125,7 @@ function CoachReceipt({
       data-coach-receipt-enter={enter || undefined}
       data-coach-receipt-collapse={collapsed || undefined}
       className={cn(
-        "min-w-0 max-w-full text-xs text-muted-foreground",
+        "max-w-full min-w-0 text-xs text-muted-foreground",
         enter && "coach-receipt-enter",
         collapsed && "coach-receipt-collapse"
       )}
@@ -151,7 +149,7 @@ function CoachReceipt({
             )}
             aria-hidden
           />
-          <span className="min-w-0 flex-1 break-words [overflow-wrap:anywhere]">
+          <span className="min-w-0 flex-1 [overflow-wrap:anywhere] break-words">
             {receiptHeadline(part)}
           </span>
         </p>
@@ -169,12 +167,12 @@ function CoachReceipt({
           </div>
         ) : null}
         {note && !collapsed ? (
-          <p className="min-w-0 pl-5 break-words [overflow-wrap:anywhere]">
+          <p className="min-w-0 pl-5 [overflow-wrap:anywhere] break-words">
             {note}
           </p>
         ) : null}
         {canUndo ? (
-          <div className="pl-5 pt-0.5">
+          <div className="pt-0.5 pl-5">
             <Button
               type="button"
               variant="outline"
@@ -203,7 +201,8 @@ function ReceiptPart({ data }: DataMessagePart<ThreadToolPart>) {
   const message = useBoundHomeMessage()
   const [undoneFlash, flashUndone] = useFlash(UNDO_FLASH_MS)
 
-  const stagger = (message?.parts ?? []).filter((part) => part.type === "tool")
+  const stagger = (message?.parts ?? [])
+    .filter((part) => part.type === "tool")
     .findIndex((part) => part === data || part.toolCallId === data.toolCallId)
   const lastTool = [...(message?.parts ?? [])]
     .reverse()
@@ -226,9 +225,7 @@ function ReceiptPart({ data }: DataMessagePart<ThreadToolPart>) {
           ? stagger * RECEIPT_ENTER_STAGGER_MS
           : undefined
       }
-      announceUndone={
-        undoneFlash && lastTool?.toolCallId === data.toolCallId
-      }
+      announceUndone={undoneFlash && lastTool?.toolCallId === data.toolCallId}
       onUndo={
         message && data.toolCallId && onUndo
           ? async () => {
@@ -243,9 +240,7 @@ function ReceiptPart({ data }: DataMessagePart<ThreadToolPart>) {
 
 function MessageActions({ message }: { message: HomeMessage }) {
   const { waiting, onRate, onRegenerate } = useThreadActions()
-  const isLast = useAuiState(
-    (state) => state.optional.message?.isLast === true
-  )
+  const isLast = useAuiState((state) => state.optional.message?.isLast === true)
   const [copied, flashCopied] = useFlash(2000)
   const rateable = message.rating !== undefined
   const canRegenerate = !waiting && Boolean(onRegenerate) && isLast
@@ -368,7 +363,12 @@ function UserMessage() {
           <div className="space-y-2 text-right">
             <ErrorBanner variant="inline">{message.error}</ErrorBanner>
             {onRetry ? (
-              <Button type="button" variant="outline" size="sm" onClick={onRetry}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onRetry}
+              >
                 Retry
               </Button>
             ) : null}
@@ -400,15 +400,18 @@ function CoachBoundBody({ message }: { message: HomeMessage }) {
         if (part.type === "text") {
           return <CoachMarkdown key={`text-${index}`} text={part.text} />
         }
-        const stagger = message.parts!.slice(0, index).filter(
-          (item) => item.type === "tool"
-        ).length
+        const stagger = message
+          .parts!.slice(0, index)
+          .filter((item) => item.type === "tool").length
         return (
           <CoachReceipt
             key={part.toolCallId ?? `tool-${index}`}
             part={part}
             canUndo={
-              !waiting && !streaming && Boolean(onUndo) && receiptShowsUndo(part)
+              !waiting &&
+              !streaming &&
+              Boolean(onUndo) &&
+              receiptShowsUndo(part)
             }
             enter={streaming && !part.undone}
             enterDelayMs={
@@ -543,7 +546,12 @@ function ThreadChrome({
           <div className="space-y-2">
             <ErrorBanner variant="inline">{error}</ErrorBanner>
             {onRetry ? (
-              <Button type="button" variant="outline" size="sm" onClick={onRetry}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onRetry}
+              >
                 Retry
               </Button>
             ) : null}
