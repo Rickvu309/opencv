@@ -28,9 +28,16 @@ const rootRoute = createRootRoute({
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
-  beforeLoad: () => {
-    throw redirect({ to: "/app" })
+  beforeLoad: async () => {
+    const { data } = await authClient.getSession()
+    if (data) {
+      throw redirect({ to: "/app" })
+    }
   },
+  component: lazyRouteComponent(
+    () => import("@/features/landing/landing-page.tsx"),
+    "LandingPage"
+  ),
 })
 
 const signInRoute = createRoute({

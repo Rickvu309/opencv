@@ -1,0 +1,50 @@
+.landing-root {
+  --landing-h1-desktop: 3.5rem;
+  --landing-h1-mobile: 2.5rem;
+}
+
+.landing-h1 {
+  font-size: var(--landing-h1-mobile);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  font-weight: 500;
+  text-wrap: balance;
+}
+
+@media (min-width: 48rem) {
+  .landing-h1 {
+    font-size: var(--landing-h1-desktop);
+  }
+}
+
+.landing-link {
+  transition: color 160ms ease-out;
+}
+
+.landing-fade {
+  mask-image: linear-gradient(to bottom, black 78%, transparent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html:has(.landing-root) {
+    scroll-behavior: smooth;
+  }
+
+  .landing-reveal {
+    mask-image: linear-gradient(to right, black 40%, transparent 60%);
+    mask-size: 250% 100%;
+    mask-repeat: no-repeat;
+    animation: landing-reveal 0.8s var(--ease-emphasized) both;
+  }
+
+  @keyframes landing-reveal {
+    from {
+      opacity: 0;
+      mask-position: 100% 0;
+    }
+    to {
+      opacity: 1;
+      mask-position: 0 0;
+    }
+  }
+}
