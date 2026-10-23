@@ -31,6 +31,20 @@ describe("landing page", () => {
     expect(router.state.location.pathname).toBe("/")
   })
 
+  it("sets the document title and description", async () => {
+    await renderLanding()
+
+    await waitFor(() => {
+      expect(document.title).toBe("OpenCV, the career coach for your first job")
+    })
+    expect(
+      document.head.querySelector('meta[name="description"]')
+    ).toHaveAttribute(
+      "content",
+      "Chat with a coach, write your CV and letters, track every application, and share a portfolio page."
+    )
+  })
+
   it("links Start free to sign-up and Sign in to sign-in", async () => {
     await renderLanding()
 

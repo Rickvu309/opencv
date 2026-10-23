@@ -105,3 +105,5 @@ export const LANDING_SURFACES: readonly LandingSurface[] = [
 ]
 
 export const LANDING_CTA = "Your career, started. Free today."
+
+export const LANDING_TITLE = "OpenCV, the career coach for your first job"

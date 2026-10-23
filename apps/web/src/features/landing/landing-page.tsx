@@ -7,7 +7,12 @@ import { TextReveal } from "@workspace/ui/components/text-reveal"
 import { cn } from "@workspace/ui/lib/utils"
 
 import "./landing.css"
-import { LANDING_CTA, LANDING_SURFACES } from "./landing-copy.ts"
+import {
+  LANDING_CTA,
+  LANDING_SUBHEAD,
+  LANDING_SURFACES,
+  LANDING_TITLE,
+} from "./landing-copy.ts"
 import { LandingFooter } from "./landing-footer.tsx"
 import { LandingHero } from "./landing-hero.tsx"
 import { LandingNav } from "./landing-nav.tsx"
@@ -17,6 +22,8 @@ import { LandingSurfaceSection } from "./landing-surface.tsx"
 export function LandingPage() {
   return (
     <div className="landing-root min-h-svh bg-background text-foreground">
+      <title>{LANDING_TITLE}</title>
+      <meta name="description" content={LANDING_SUBHEAD} />
       <LandingNav />
       <main>
         <LandingHero />

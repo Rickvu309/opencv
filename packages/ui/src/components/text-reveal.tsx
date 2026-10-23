@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react"
 
+import { cn } from "@workspace/ui/lib/utils"
+
 /**
- * Text reveal. Source: affectUI (MIT, free set), https://www.affectui.com/r/text-reveal.json.
+ * Adapted from affectUI (https://github.com/flohoeller/affectui), MIT License,
+ * Copyright (c) 2026 Florian Höller (adfects)
+ *
  * Screen readers get the whole sentence at once; the moving pieces are hidden from them.
  */
 
@@ -26,9 +30,9 @@ export type TextRevealProps = {
 function TextReveal({
   text,
   by = "word",
-  stagger = 40,
-  delay = 0,
-  duration = 700,
+  stagger,
+  delay,
+  duration,
   as: Tag = "p",
   once = true,
   className,
@@ -93,13 +97,15 @@ function TextReveal({
     <Tag
       ref={ref as never}
       data-slot="text-reveal"
-      className={["ui-trv", className].filter(Boolean).join(" ")}
+      className={cn("ui-trv", className)}
       data-shown={shown ? "" : undefined}
       style={
         {
-          "--ui-trv-stagger": `${stagger}ms`,
-          "--ui-trv-delay": `${delay}ms`,
-          "--ui-trv-duration": `${duration}ms`,
+          "--ui-trv-stagger":
+            stagger === undefined ? undefined : `${stagger}ms`,
+          "--ui-trv-delay": delay === undefined ? undefined : `${delay}ms`,
+          "--ui-trv-duration":
+            duration === undefined ? undefined : `${duration}ms`,
         } as CSSProperties
       }
     >
@@ -117,7 +123,10 @@ const css = /* css */ `
 .ui-trv {
   --ui-trv-blur: 8px;
   --ui-trv-rise: 0.35em;
-  --ui-trv-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ui-trv-stagger: 40ms;
+  --ui-trv-delay: 0ms;
+  --ui-trv-duration: var(--duration-slow);
+  --ui-trv-ease: var(--ease-emphasized);
 }
 .ui-trv__sr {
   position: absolute;
