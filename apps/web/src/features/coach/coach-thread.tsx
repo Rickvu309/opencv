@@ -1,7 +1,6 @@
 import {
   createContext,
   useContext,
-  useEffect,
   useState,
   type ReactNode,
 } from "react"
@@ -38,6 +37,7 @@ import {
 } from "@/features/home/coach-receipt.ts"
 import { RichReceiptBody } from "@/features/home/rich-receipts.tsx"
 import { STREAMING_COACH_ID, type HomeMessage } from "@/features/home/threads.ts"
+import { useFlash } from "@/lib/use-flash.ts"
 
 import { RECEIPT_PART_NAME } from "./coach-runtime.ts"
 import { CoachDock } from "./coach-dock.tsx"
@@ -201,13 +201,7 @@ function CoachReceipt({
 function ReceiptPart({ data }: DataMessagePart<ThreadToolPart>) {
   const { waiting, onUndo } = useThreadActions()
   const message = useBoundHomeMessage()
-  const [undoneFlash, setUndoneFlash] = useState(false)
-
-  useEffect(() => {
-    if (!undoneFlash) return
-    const timer = window.setTimeout(() => setUndoneFlash(false), UNDO_FLASH_MS)
-    return () => window.clearTimeout(timer)
-  }, [undoneFlash])
+  const [undoneFlash, flashUndone] = useFlash(UNDO_FLASH_MS)
 
   const stagger = (message?.parts ?? []).filter((part) => part.type === "tool")
     .findIndex((part) => part === data || part.toolCallId === data.toolCallId)
@@ -239,7 +233,7 @@ function ReceiptPart({ data }: DataMessagePart<ThreadToolPart>) {
         message && data.toolCallId && onUndo
           ? async () => {
               await onUndo(message.id, data.toolCallId!)
-              setUndoneFlash(true)
+              flashUndone()
             }
           : undefined
       }
@@ -252,16 +246,16 @@ function MessageActions({ message }: { message: HomeMessage }) {
   const isLast = useAuiState(
     (state) => state.optional.message?.isLast === true
   )
-  const [copied, setCopied] = useState(false)
+  const [copied, flashCopied] = useFlash(2000)
   const rateable = message.rating !== undefined
   const canRegenerate = !waiting && Boolean(onRegenerate) && isLast
 
   async function copy() {
     try {
       await navigator.clipboard.writeText(message.text)
-      setCopied(true)
+      flashCopied()
     } catch {
-      setCopied(false)
+      // Clipboard denied: leave the button unpressed.
     }
   }
 
@@ -388,13 +382,7 @@ function UserMessage() {
 function CoachBoundBody({ message }: { message: HomeMessage }) {
   const { waiting, onUndo } = useThreadActions()
   const streaming = message.id === STREAMING_COACH_ID
-  const [undoneFlash, setUndoneFlash] = useState(false)
-
-  useEffect(() => {
-    if (!undoneFlash) return
-    const timer = window.setTimeout(() => setUndoneFlash(false), UNDO_FLASH_MS)
-    return () => window.clearTimeout(timer)
-  }, [undoneFlash])
+  const [undoneFlash, flashUndone] = useFlash(UNDO_FLASH_MS)
 
   if (!message.parts?.length) {
     if (streaming || !message.text) return <CoachWorking />
@@ -431,7 +419,7 @@ function CoachBoundBody({ message }: { message: HomeMessage }) {
               part.toolCallId && onUndo
                 ? async () => {
                     await onUndo(message.id, part.toolCallId!)
-                    setUndoneFlash(true)
+                    flashUndone()
                   }
                 : undefined
             }

@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { useMediaQuery } from "@workspace/ui/hooks/use-media-query"
@@ -25,6 +32,7 @@ import {
 import { WorkspaceHeader } from "@/components/workspace-header.tsx"
 import { DESKTOP_MEDIA_QUERY } from "@/features/app-shell/use-media-query.ts"
 import { authClient } from "@/lib/auth-client.ts"
+import { readStored, writeStored } from "@/lib/local-storage.ts"
 
 import { CvDocument } from "./paper-cv-document.tsx"
 import { CvA4Canvas } from "./paper-cv-a4.tsx"
@@ -92,22 +100,8 @@ const DOCS_PANEL_ID = "paper-docs-panel"
 
 type DocsPanelState = "expanded" | "collapsed"
 
-function readDocsPanel(): DocsPanelState {
-  try {
-    const value = window.localStorage.getItem(DOCS_PANEL_KEY)
-    if (value === "expanded" || value === "collapsed") return value
-  } catch {
-    // Private mode / blocked storage — first visit is expanded.
-  }
-  return "expanded"
-}
-
-function writeDocsPanel(value: DocsPanelState) {
-  try {
-    window.localStorage.setItem(DOCS_PANEL_KEY, value)
-  } catch {
-    // Private mode / blocked storage — preference is session-only.
-  }
+function parseDocsPanel(raw: string | null): DocsPanelState {
+  return raw === "collapsed" ? "collapsed" : "expanded"
 }
 
 type Props = {
@@ -173,7 +167,9 @@ export function PaperEditor({
     nonce: number
   }>({ ids: [], nonce: 0 })
   const [selection, setSelection] = useState<CoachSelection | null>(null)
-  const [docsPanel, setDocsPanel] = useState<DocsPanelState>(readDocsPanel)
+  const [docsPanel, setDocsPanel] = useState<DocsPanelState>(() =>
+    readStored(DOCS_PANEL_KEY, parseDocsPanel, "expanded")
+  )
   const [phoneDocsOpen, setPhoneDocsOpen] = useState(false)
   const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)", false)
   const isDesktop = useMediaQuery(DESKTOP_MEDIA_QUERY, true)
@@ -200,7 +196,7 @@ export function PaperEditor({
     }
     const next: DocsPanelState = docsExpanded ? "collapsed" : "expanded"
     setDocsPanel(next)
-    writeDocsPanel(next)
+    writeStored(DOCS_PANEL_KEY, next)
   }
 
   function applyServerDoc(next: PaperDoc, highlight = false) {
@@ -242,7 +238,7 @@ export function PaperEditor({
     setSectionFocus((prev) => ({ ids, nonce: prev.nonce + 1 }))
   }
 
-  useEffect(() => {
+  const syncServerDoc = useEffectEvent(() => {
     const switched = doc.id !== lastDocIdRef.current
     const reverted = revertKey !== lastRevertKeyRef.current
     lastDocIdRef.current = doc.id
@@ -260,7 +256,10 @@ export function PaperEditor({
       return
     }
     applyServerDoc(doc, true)
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- see above
+  })
+
+  useEffect(() => {
+    syncServerDoc()
   }, [doc.id, doc.updatedAt, isCv, isProof, revertKey])
 
   useEffect(() => {
@@ -361,12 +360,14 @@ export function PaperEditor({
     })
   }
 
+  const persistOpenDocInEffect = useEffectEvent(persistOpenDoc)
+
   useEffect(() => {
     if (!dirty || conflict) return
 
     setSaving(true)
     const timer = window.setTimeout(() => {
-      persistOpenDoc()
+      persistOpenDocInEffect()
       setDirty(false)
       setSaving(false)
     }, 700)
@@ -377,7 +378,7 @@ export function PaperEditor({
   useEffect(() => {
     return () => {
       if (!dirtyRef.current) return
-      persistOpenDoc()
+      persistOpenDocInEffect()
     }
   }, [])
 

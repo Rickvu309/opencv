@@ -21,6 +21,7 @@ import { cn } from "@workspace/ui/lib/utils"
 import { ErrorBanner } from "@/components/error-banner.tsx"
 import { DESKTOP_MEDIA_QUERY } from "@/features/app-shell/use-media-query.ts"
 import { useCoachTurn } from "@/features/coach/use-coach-turn.ts"
+import { readStored, writeStored } from "@/lib/local-storage.ts"
 import {
   getThreadByFocusDoc,
   threadQueryKeys,
@@ -216,24 +217,8 @@ type Props = {
   onCitePaper?: (sectionId: string) => void
 }
 
-function readFloatState(): CoachFloatState {
-  try {
-    const value = localStorage.getItem(COACH_FLOAT_STORAGE_KEY)
-    if (value === "closed" || value === "open" || value === "minimized") {
-      return value
-    }
-  } catch {
-    // Private mode / storage blocked.
-  }
-  return "closed"
-}
-
-function writeFloatState(state: CoachFloatState) {
-  try {
-    localStorage.setItem(COACH_FLOAT_STORAGE_KEY, state)
-  } catch {
-    // Private mode / storage blocked.
-  }
+function parseFloatState(raw: string | null): CoachFloatState {
+  return raw === "open" || raw === "minimized" ? raw : "closed"
 }
 
 function focusableIn(root: HTMLElement) {
@@ -270,7 +255,9 @@ export const CoachFloat = memo(function CoachFloat({
   const threadScrollRef = useRef(0)
   const restoreThreadScrollRef = useRef(false)
   const [createdThreadId, setCreatedThreadId] = useState<string | null>(null)
-  const [floatState, setFloatState] = useState<CoachFloatState>(readFloatState)
+  const [floatState, setFloatState] = useState<CoachFloatState>(() =>
+    readStored(COACH_FLOAT_STORAGE_KEY, parseFloatState, "closed")
+  )
   const [softScope, setSoftScope] = useState(true)
   const [contextChips, setContextChips] = useState<CoachContextChip[]>([])
   const [attachError, setAttachError] = useState<string | null>(null)
@@ -373,7 +360,7 @@ export const CoachFloat = memo(function CoachFloat({
   const mobileSheet = !isDesktop && floatState === "open"
 
   useEffect(() => {
-    writeFloatState(floatState)
+    writeStored(COACH_FLOAT_STORAGE_KEY, floatState)
   }, [floatState])
 
   useEffect(() => {
