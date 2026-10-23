@@ -1,15 +1,13 @@
 import {
-  authUnavailableEnvelope,
   errorEnvelope,
   ERROR_CODES,
   httpStatusForError,
-  unauthorizedEnvelope,
 } from "@workspace/domain"
 import { Hono } from "hono"
 
 import type { Auth } from "../auth.js"
 import { jsonWithStatus } from "../http-json.js"
-import { readSession } from "../session.js"
+import { requireSession, type SessionVariables } from "../middleware.js"
 import type { AppDatabase, CommandRegistry } from "./registry.js"
 
 export function createCommandRoutes({
@@ -21,17 +19,10 @@ export function createCommandRoutes({
   db?: AppDatabase
   registry: CommandRegistry
 }) {
-  const routes = new Hono()
+  const routes = new Hono<{ Variables: SessionVariables }>()
 
-  routes.post("/:name", async (c) => {
-    if (!auth || !db) {
-      return c.json(authUnavailableEnvelope(), 503)
-    }
-
-    const session = await readSession(auth, c)
-    if (!session) {
-      return c.json(unauthorizedEnvelope(), 401)
-    }
+  routes.post("/:name", requireSession(auth, db), async (c) => {
+    const { userId, db } = c.var
 
     let input: unknown
     try {
@@ -51,7 +42,7 @@ export function createCommandRoutes({
     const result = await registry.execute({
       name: c.req.param("name"),
       input,
-      actor: { type: "user", userId: session.user.id },
+      actor: { type: "user", userId },
       db,
     })
 

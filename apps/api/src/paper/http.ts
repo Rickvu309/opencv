@@ -1,18 +1,16 @@
 import {
-  authUnavailableEnvelope,
   ERROR_CODES,
   errorEnvelope,
   httpStatusForError,
   paperDocIdSchema,
   successEnvelope,
-  unauthorizedEnvelope,
 } from "@workspace/domain"
 import { Hono } from "hono"
 
 import type { Auth } from "../auth.js"
-import { CommandError, type AppDatabase } from "../commands/registry.js"
+import type { AppDatabase } from "../commands/registry.js"
 import { jsonWithStatus } from "../http-json.js"
-import { readSession } from "../session.js"
+import { requireSession, type SessionVariables } from "../middleware.js"
 import { getPaperDocDetail, listPaperDocsForUser } from "./queries.js"
 
 export function createPaperReadRoutes({
@@ -22,31 +20,17 @@ export function createPaperReadRoutes({
   auth?: Auth
   db?: AppDatabase
 }) {
-  const routes = new Hono()
+  const routes = new Hono<{ Variables: SessionVariables }>()
 
-  routes.get("/", async (c) => {
-    if (!auth || !db) {
-      return c.json(authUnavailableEnvelope(), 503)
-    }
+  routes.get("/", requireSession(auth, db), async (c) => {
+    const { userId, db } = c.var
 
-    const session = await readSession(auth, c)
-    if (!session) {
-      return c.json(unauthorizedEnvelope(), 401)
-    }
-
-    const docs = await listPaperDocsForUser(db, session.user.id)
+    const docs = await listPaperDocsForUser(db, userId)
     return c.json(successEnvelope(docs))
   })
 
-  routes.get("/:id", async (c) => {
-    if (!auth || !db) {
-      return c.json(authUnavailableEnvelope(), 503)
-    }
-
-    const session = await readSession(auth, c)
-    if (!session) {
-      return c.json(unauthorizedEnvelope(), 401)
-    }
+  routes.get("/:id", requireSession(auth, db), async (c) => {
+    const { userId, db } = c.var
 
     const parsed = paperDocIdSchema.safeParse(c.req.param("id"))
     if (!parsed.success) {
@@ -57,19 +41,8 @@ export function createPaperReadRoutes({
       )
     }
 
-    try {
-      const doc = await getPaperDocDetail(db, session.user.id, parsed.data)
-      return c.json(successEnvelope(doc))
-    } catch (error) {
-      if (error instanceof CommandError) {
-        return jsonWithStatus(
-          c,
-          errorEnvelope(error.code, error.message),
-          error.status
-        )
-      }
-      throw error
-    }
+    const doc = await getPaperDocDetail(db, userId, parsed.data)
+    return c.json(successEnvelope(doc))
   })
 
   return routes

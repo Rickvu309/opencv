@@ -138,22 +138,10 @@ export function createRegistry(commands: RegisteredCommand[]) {
       }
 
       const ctx = { db, actor }
-      let captured: unknown
-      if (command.captureForReversal) {
-        try {
-          captured = await command.captureForReversal(ctx, parsed.data)
-        } catch (error) {
-          if (error instanceof CommandError) {
-            return {
-              status: error.status,
-              body: errorEnvelope(error.code, error.message),
-            }
-          }
-          throw error
-        }
-      }
-
       try {
+        const captured = command.captureForReversal
+          ? await command.captureForReversal(ctx, parsed.data)
+          : undefined
         const data = await command.handler(ctx, parsed.data)
         return {
           status: 200,

@@ -178,6 +178,19 @@ describe("coach route guards", () => {
     })
   })
 
+  it("signed-out caller gets 503 COACH_UNAVAILABLE when no runtime is wired", async () => {
+    const app = createTestApp(db)
+    const res = await app.request(`/api/threads/${threadId}/coach`, {
+      method: "POST",
+      body: JSON.stringify({ text: "Hello" }),
+    })
+    expect(res.status).toBe(503)
+    await expect(res.json()).resolves.toMatchObject({
+      ok: false,
+      error: { code: ERROR_CODES.COACH_UNAVAILABLE },
+    })
+  })
+
   it("returns 503 AUTH_UNAVAILABLE when the app has no database", async () => {
     const app = createApp({ webOrigins: [] })
     const res = await app.request(

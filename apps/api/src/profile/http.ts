@@ -1,15 +1,9 @@
-import {
-  authUnavailableEnvelope,
-  errorEnvelope,
-  successEnvelope,
-  unauthorizedEnvelope,
-} from "@workspace/domain"
+import { successEnvelope } from "@workspace/domain"
 import { Hono } from "hono"
 
 import type { Auth } from "../auth.js"
-import { CommandError, type AppDatabase } from "../commands/registry.js"
-import { jsonWithStatus } from "../http-json.js"
-import { readSession } from "../session.js"
+import type { AppDatabase } from "../commands/registry.js"
+import { requireSession, type SessionVariables } from "../middleware.js"
 import { getProfileForUser } from "./queries.js"
 
 export function createProfileReadRoutes({
@@ -19,31 +13,13 @@ export function createProfileReadRoutes({
   auth?: Auth
   db?: AppDatabase
 }) {
-  const routes = new Hono()
+  const routes = new Hono<{ Variables: SessionVariables }>()
 
-  routes.get("/", async (c) => {
-    if (!auth || !db) {
-      return c.json(authUnavailableEnvelope(), 503)
-    }
+  routes.get("/", requireSession(auth, db), async (c) => {
+    const { userId, db } = c.var
 
-    const session = await readSession(auth, c)
-    if (!session) {
-      return c.json(unauthorizedEnvelope(), 401)
-    }
-
-    try {
-      const profile = await getProfileForUser(db, session.user.id)
-      return c.json(successEnvelope(profile))
-    } catch (error) {
-      if (error instanceof CommandError) {
-        return jsonWithStatus(
-          c,
-          errorEnvelope(error.code, error.message),
-          error.status
-        )
-      }
-      throw error
-    }
+    const profile = await getProfileForUser(db, userId)
+    return c.json(successEnvelope(profile))
   })
 
   return routes
