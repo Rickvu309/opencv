@@ -10,11 +10,9 @@ import {
 } from "@tanstack/react-router"
 
 import { NotFoundPage } from "@/components/not-found-page.tsx"
-import { AppShellLayout } from "@/features/app-shell/app-shell-layout.tsx"
 import { validateSettingsSearch } from "@/features/app-shell/surfaces.ts"
 import { validateApplySearch } from "@/features/apply/apply-search.ts"
 import { validatePaperSearch } from "@/features/paper/paper-search.ts"
-import { HomePage } from "@/routes/home.tsx"
 import { SignInPage } from "@/routes/sign-in.tsx"
 import { SignUpPage } from "@/routes/sign-up.tsx"
 import { authClient } from "@/lib/auth-client.ts"
@@ -79,13 +77,16 @@ const appLayoutRoute = createRoute({
     }
     return { session: data }
   },
-  component: AppShellLayout,
+  component: lazyRouteComponent(
+    () => import("@/features/app-shell/app-shell-layout.tsx"),
+    "AppShellLayout"
+  ),
 })
 
 const homeRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/",
-  component: HomePage,
+  component: lazyRouteComponent(() => import("@/routes/home.tsx"), "HomePage"),
 })
 
 const paperRoute = createRoute({
