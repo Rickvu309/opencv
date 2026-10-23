@@ -103,30 +103,38 @@ describe("profile.setCoachMode", () => {
 })
 
 describe("GET /api/profile", () => {
-  it("returns the signed-in User including coachMode", async () => {
-    const { client, db } = await createMigratedTestDb()
-    try {
-      const app = createTestApp(db)
-      const signed = await signUp(app, {
-        name: "Lan",
-        email: "profile-http@example.com",
-        password: "correct-horse-battery",
-      })
-      const res = await app.request("/api/profile", {
-        headers: authHeaders(signed.cookie),
-      })
-      expect(res.status).toBe(200)
-      const body = (await res.json()) as {
-        ok: true
-        data: { coachMode: string; email: string }
-      }
-      expect(body.ok).toBe(true)
-      expect(body.data).toMatchObject({
-        email: "profile-http@example.com",
-        coachMode: DEFAULT_COACH_MODE,
-      })
-    } finally {
-      await client.close()
-    }
+  let client: Awaited<ReturnType<typeof createMigratedTestDb>>["client"]
+  let db: Awaited<ReturnType<typeof createMigratedTestDb>>["db"]
+
+  beforeAll(async () => {
+    const migrated = await createMigratedTestDb()
+    client = migrated.client
+    db = migrated.db
   }, 60_000)
+
+  afterAll(async () => {
+    await client.close()
+  })
+
+  it("returns the signed-in User including coachMode", async () => {
+    const app = createTestApp(db)
+    const signed = await signUp(app, {
+      name: "Lan",
+      email: "profile-http@example.com",
+      password: "correct-horse-battery",
+    })
+    const res = await app.request("/api/profile", {
+      headers: authHeaders(signed.cookie),
+    })
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as {
+      ok: true
+      data: { coachMode: string; email: string }
+    }
+    expect(body.ok).toBe(true)
+    expect(body.data).toMatchObject({
+      email: "profile-http@example.com",
+      coachMode: DEFAULT_COACH_MODE,
+    })
+  })
 })

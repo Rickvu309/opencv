@@ -1,9 +1,12 @@
+import { readFile } from "node:fs/promises"
+
 import type { CoachMode, CoachRuntime } from "@workspace/domain"
 
 import type { FetchJobPosting } from "../apply/fetch-posting.js"
 import { PGlite } from "@electric-sql/pglite"
 import { drizzle } from "drizzle-orm/pglite"
 import { migrate } from "drizzle-orm/pglite/migrator"
+import { inject } from "vitest"
 
 import { createApp } from "../app.js"
 import { migrationsFolder } from "../db/paths.js"
@@ -21,7 +24,24 @@ export function cookieHeader(res: Response) {
     .join("; ")
 }
 
+let templateBlob: Promise<Blob> | undefined
+
+function injectedTemplatePath() {
+  try {
+    return inject("pgliteTemplatePath")
+  } catch {
+    return undefined
+  }
+}
+
 export async function createMigratedTestDb() {
+  const templatePath = injectedTemplatePath()
+  if (templatePath) {
+    templateBlob ??= readFile(templatePath).then((bytes) => new Blob([bytes]))
+    const client = new PGlite({ loadDataDir: await templateBlob })
+    return { client, db: drizzle({ client, schema }) }
+  }
+
   const client = new PGlite()
   const db = drizzle({ client, schema })
   await migrate(db, { migrationsFolder })

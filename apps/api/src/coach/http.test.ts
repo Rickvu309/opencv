@@ -719,7 +719,14 @@ describe("coach feedback", () => {
 
 describe("coach route curl -N", () => {
   let client: Awaited<ReturnType<typeof createMigratedTestDb>>["client"]
+  let db: Awaited<ReturnType<typeof createMigratedTestDb>>["db"]
   let close: (() => Promise<void>) | undefined
+
+  beforeAll(async () => {
+    const migrated = await createMigratedTestDb()
+    client = migrated.client
+    db = migrated.db
+  }, 60_000)
 
   afterAll(async () => {
     await close?.()
@@ -727,9 +734,7 @@ describe("coach route curl -N", () => {
   })
 
   it("shows the full event sequence through curl -N against the fake", async () => {
-    const migrated = await createMigratedTestDb()
-    client = migrated.client
-    const app = createTestApp(migrated.db, { coach: createDemoCoachRuntime() })
+    const app = createTestApp(db, { coach: createDemoCoachRuntime() })
     const cookie = (await signUp(app, userA)).cookie
     const threadId = await createThread(app, cookie, "Curl")
     const server = await listen(app)
