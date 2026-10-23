@@ -12,7 +12,7 @@ describe("GET /health", () => {
 
   it("serves 200 when constructed with no database, even if DATABASE_URL is set", async () => {
     const previous = process.env.DATABASE_URL
-    process.env.DATABASE_URL = "postgresql://example.invalid/openpath"
+    process.env.DATABASE_URL = "postgresql://example.invalid/opencv"
 
     try {
       const res = await createApp({ webOrigins: [] }).request("/health")
@@ -55,19 +55,19 @@ describe("GET /health", () => {
 
 describe("CORS", () => {
   it("lets the configured web origin read the health response", async () => {
-    const api = createApp({ webOrigins: ["https://openpath-app.vercel.app"] })
+    const api = createApp({ webOrigins: ["https://opencv.me"] })
 
     const res = await api.request("/health", {
-      headers: { Origin: "https://openpath-app.vercel.app" },
+      headers: { Origin: "https://opencv.me" },
     })
 
     expect(res.headers.get("access-control-allow-origin")).toBe(
-      "https://openpath-app.vercel.app"
+      "https://opencv.me"
     )
   })
 
   it("does not let an unlisted origin read the health response", async () => {
-    const api = createApp({ webOrigins: ["https://openpath-app.vercel.app"] })
+    const api = createApp({ webOrigins: ["https://opencv.me"] })
 
     const res = await api.request("/health", {
       headers: { Origin: "https://attacker.example.com" },
@@ -78,29 +78,29 @@ describe("CORS", () => {
 
   it("lets a Vercel preview origin matching the configured pattern read the health response", async () => {
     const api = createApp({
-      webOrigins: ["https://openpath-*-rickvudev.vercel.app"],
+      webOrigins: ["https://opencv-*-example.vercel.app"],
     })
 
     const res = await api.request("/health", {
       headers: {
-        Origin: "https://openpath-git-feat-qve-85-rickvudev.vercel.app",
+        Origin: "https://opencv-git-feat-qve-85-example.vercel.app",
       },
     })
 
     expect(res.headers.get("access-control-allow-origin")).toBe(
-      "https://openpath-git-feat-qve-85-rickvudev.vercel.app"
+      "https://opencv-git-feat-qve-85-example.vercel.app"
     )
   })
 
   it("does not let a lookalike host slip through the preview pattern", async () => {
     const api = createApp({
-      webOrigins: ["https://openpath-*-rickvudev.vercel.app"],
+      webOrigins: ["https://opencv-*-example.vercel.app"],
     })
 
     for (const origin of [
-      "https://openpath-build-rickvudev.vercel.app.attacker.example.com",
-      "https://openpath-build.attacker-rickvudev.vercel.app",
-      "https://openpath--rickvudev.vercel.app",
+      "https://opencv-build-example.vercel.app.attacker.example.com",
+      "https://opencv-build.attacker-example.vercel.app",
+      "https://opencv--example.vercel.app",
     ]) {
       const res = await api.request("/health", { headers: { Origin: origin } })
       expect(res.headers.get("access-control-allow-origin")).toBeNull()
@@ -108,31 +108,31 @@ describe("CORS", () => {
   })
 
   it("answers the browser preflight for a configured origin", async () => {
-    const api = createApp({ webOrigins: ["https://openpath-app.vercel.app"] })
+    const api = createApp({ webOrigins: ["https://opencv.me"] })
 
     const res = await api.request("/health", {
       method: "OPTIONS",
       headers: {
-        Origin: "https://openpath-app.vercel.app",
+        Origin: "https://opencv.me",
         "Access-Control-Request-Method": "GET",
       },
     })
 
     expect(res.status).toBe(204)
     expect(res.headers.get("access-control-allow-origin")).toBe(
-      "https://openpath-app.vercel.app"
+      "https://opencv.me"
     )
     expect(res.headers.get("access-control-allow-credentials")).toBe("true")
   })
 
   it("echoes credentials on an allowed origin and still refuses an unlisted one", async () => {
-    const api = createApp({ webOrigins: ["https://openpath-app.vercel.app"] })
+    const api = createApp({ webOrigins: ["https://opencv.me"] })
 
     const allowed = await api.request("/health", {
-      headers: { Origin: "https://openpath-app.vercel.app" },
+      headers: { Origin: "https://opencv.me" },
     })
     expect(allowed.headers.get("access-control-allow-origin")).toBe(
-      "https://openpath-app.vercel.app"
+      "https://opencv.me"
     )
     expect(allowed.headers.get("access-control-allow-credentials")).toBe("true")
 

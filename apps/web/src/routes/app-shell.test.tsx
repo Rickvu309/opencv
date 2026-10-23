@@ -370,7 +370,7 @@ describe("settings workspace", () => {
       await screen.findByRole("heading", { level: 2, name: "Account" })
     ).toBeInTheDocument()
     expect(screen.getAllByText(SAMPLE_AUTHOR_NAME).length).toBeGreaterThan(0)
-    expect(screen.getByText("you@openpath.app")).toBeInTheDocument()
+    expect(screen.getByText("you@opencv.me")).toBeInTheDocument()
     expect(screen.queryByText(/Eric Nguyen/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/Aspiring product manager/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/Sample Pitch/i)).not.toBeInTheDocument()

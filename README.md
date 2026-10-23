@@ -1,4 +1,4 @@
-# OpenPath
+# OpenCV
 
 Personalised AI career coaching monorepo (`apps/web`, `apps/api`, `packages/ui`).
 

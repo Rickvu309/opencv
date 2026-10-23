@@ -1,4 +1,4 @@
-# OpenPath
+# OpenCV
 
 Personalised AI career coaching for Vietnamese early-career users, where the Coach can act in the product through the same actions the user can.
 
@@ -11,7 +11,7 @@ English for chrome, starter content, receipts, and the Coach persona. No locale 
 _Avoid_: i18n, locale, Vietnamese-first (until a follow-up ADR)
 
 **User**:
-A Vietnamese early-career person (student or new graduate) using OpenPath for themselves.
+A Vietnamese early-career person (student or new graduate) using OpenCV for themselves.
 _Avoid_: Customer, client, account (for the person)
 
 **Coach**:
@@ -71,5 +71,5 @@ One Coach conversation. Recent Threads appear as History in the sidebar and can 
 _Avoid_: Chat, session
 
 **Connected apps**:
-External services the User links to OpenPath (Gmail, Outlook, Google Calendar). Catalog stub only for now; no real OAuth.
+External services the User links to OpenCV (Gmail, Outlook, Google Calendar). Catalog stub only for now; no real OAuth.
 _Avoid_: Integrations, plugins

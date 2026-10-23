@@ -459,7 +459,7 @@ describe("coach-actor command sweep", () => {
     const card = successData<ApplyCard>(
       await commandRegistry.execute({
         name: APPLY_COMMANDS.createCard,
-        input: { title: "Sweep intern", company: "OpenPath" },
+        input: { title: "Sweep intern", company: "OpenCV" },
         actor: coachActor(ownerId),
         db,
       })

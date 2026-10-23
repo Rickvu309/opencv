@@ -66,7 +66,7 @@ describe("starter content", () => {
       /aspiring product manager/i
     )
     expect(JSON.stringify(starterPitchDocument())).not.toMatch(PERSONA)
-    expect(JSON.stringify(starterPitchDocument())).not.toMatch(/you@openpath/)
+    expect(JSON.stringify(starterPitchDocument())).not.toMatch(/you@opencv/)
     expect(JSON.stringify(starterPitchDocument())).not.toMatch(/sacred space/i)
     expect(starterPitchDocument().achievements[0]).toEqual(
       starterCheckoutAchievement()
@@ -120,6 +120,7 @@ describe("starter content", () => {
   it("opens with an honest Coach Thread in the product voice", () => {
     const thread = starterThread()
     expect(thread.title).toBe(STARTER_THREAD_TITLE)
+    expect(STARTER_THREAD_TITLE).toBe("Welcome to OpenCV")
     expect(thread.coachText).toContain(
       "I haven't edited Paper, Apply, or Pitch"
     )

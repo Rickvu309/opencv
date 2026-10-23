@@ -30,7 +30,7 @@ describe("pitch API client", () => {
   it("reads a published Pitch from GET /api/pitch/public/:slug", async () => {
     const page: PublicPitch = {
       slug: "alex-tran",
-      author: { name: "Alex Tran", email: "you@openpath.app", image: null },
+      author: { name: "Alex Tran", email: "you@opencv.me", image: null },
       kind: "pitch",
       content: { published: true },
       contentVersion: 1,

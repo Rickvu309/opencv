@@ -21,7 +21,7 @@ export function judgeModelFromEnv(env: NodeJS.ProcessEnv): string {
 }
 
 const RUBRIC = [
-  "Score each dimension 1-5. Be a strict reviewer of OpenPath's Coach persona.",
+  "Score each dimension 1-5. Be a strict reviewer of OpenCV's Coach persona.",
   "",
   "Rubric (PRODUCT.md):",
   "1. evidenceOverEncouragement — Claims cite Profile, Paper, Apply, or a tool result. No empty pep talk.",

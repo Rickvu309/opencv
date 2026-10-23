@@ -45,7 +45,7 @@ describe("Paper fixtures", () => {
     expect(serialized).not.toMatch(/Eric Nguyen/i)
     expect(serialized).not.toMatch(/\bEric\b/)
     expect(serialized).toContain(SAMPLE_AUTHOR_NAME)
-    expect(serialized).toContain("you@openpath.app")
+    expect(serialized).toContain("you@opencv.me")
     expect(serialized).not.toMatch(/cv:v1:|proof:v1:/)
   })
 

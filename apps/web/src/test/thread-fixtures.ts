@@ -24,7 +24,7 @@ export const FIXTURE_THREADS: ThreadDetail[] = [
       message(
         "11111111-1111-4111-8111-111111111101",
         "coach",
-        "Hey. I'm your OpenPath Coach. Ask anything about direction or your next step.",
+        "Hey. I'm your OpenCV Coach. Ask anything about direction or your next step.",
         iso(20)
       ),
       message(

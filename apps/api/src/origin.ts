@@ -1,6 +1,6 @@
 /**
  * Origin patterns allow a single `*`, which matches one DNS label — enough for
- * Vercel preview subdomains (`openpath-<build>-<scope>.vercel.app`) without
+ * Vercel preview subdomains (`opencv-<build>-<scope>.vercel.app`) without
  * widening the match to every host under `vercel.app`.
  *
  * Shared by CORS and Better Auth `trustedOrigins` so CSRF and CORS use one

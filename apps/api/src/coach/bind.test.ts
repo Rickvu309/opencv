@@ -56,7 +56,7 @@ describe("missing key leaves health untouched", () => {
       const created = await app.request("/api/commands/threads.create", {
         method: "POST",
         headers: {
-          Origin: "https://openpath-app.vercel.app",
+          Origin: "https://opencv.me",
           Cookie: signed.cookie,
           "Content-Type": "application/json",
         },
@@ -66,7 +66,7 @@ describe("missing key leaves health untouched", () => {
       const res = await app.request(`/api/threads/${body.data.id}/coach`, {
         method: "POST",
         headers: {
-          Origin: "https://openpath-app.vercel.app",
+          Origin: "https://opencv.me",
           Cookie: signed.cookie,
           "Content-Type": "application/json",
         },

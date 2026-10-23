@@ -9,7 +9,7 @@ import { Input } from "@workspace/ui/components/input"
 import { cn } from "@workspace/ui/lib/utils"
 import { Briefcase, FileText, Globe, Search, SquarePen } from "lucide-react"
 
-import { OpenPathLogo } from "@/features/app-shell/app-logo.tsx"
+import { OpenCvLogo } from "@/features/app-shell/app-logo.tsx"
 import type { SearchThread } from "@/features/app-shell/search-threads.ts"
 import type { SurfaceId } from "@/features/app-shell/surfaces.ts"
 
@@ -295,7 +295,7 @@ export function SearchModal({
               {selected ? (
                 <div className="w-full max-w-sm">
                   <div className="mb-4 flex items-center gap-2">
-                    <OpenPathLogo size="sm" />
+                    <OpenCvLogo size="sm" />
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold">
                         {selected.title}

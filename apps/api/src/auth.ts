@@ -39,7 +39,7 @@ export function createAuth({
   const cookies = cookieAttributesForAuthUrl(authUrl)
 
   return betterAuth({
-    appName: "OpenPath",
+    appName: "OpenCV",
     secret: sessionSecret,
     baseURL: authUrl,
     basePath: "/api/auth",

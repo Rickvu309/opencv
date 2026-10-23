@@ -19,7 +19,7 @@ describe("public Pitch slug", () => {
 
   it("builds a same-origin public URL for Copy link", () => {
     expect(publicPitchPath("alex-tran")).toBe("/u/alex-tran")
-    expect(publicPitchLabel("alex-tran")).toBe("openpath.app/u/alex-tran")
+    expect(publicPitchLabel("alex-tran")).toBe("opencv.me/u/alex-tran")
     expect(publicPitchHref("alex-tran")).toBe(
       `${window.location.origin}/u/alex-tran`
     )

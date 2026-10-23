@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 
-import { OpenPathLogo } from "@/features/app-shell/app-logo.tsx"
+import { OpenCvLogo } from "@/features/app-shell/app-logo.tsx"
 
 type AuthScreenProps = {
   title: string
@@ -12,7 +12,7 @@ export function AuthScreen({ title, body, children }: AuthScreenProps) {
   return (
     <div className="flex min-h-svh flex-col items-center justify-center bg-background px-4 py-10 text-foreground">
       <div className="w-full max-w-sm space-y-8">
-        <OpenPathLogo withWordmark size="md" />
+        <OpenCvLogo withWordmark size="md" />
         <header className="space-y-2">
           <h1 className="font-heading text-page-title font-normal tracking-tight">
             {title}

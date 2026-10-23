@@ -26,11 +26,11 @@ describe("webOriginsFromEnv", () => {
     expect(
       webOriginsFromEnv({
         WEB_ORIGINS:
-          " https://openpath-app.vercel.app , https://openpath-*-rickvudev.vercel.app ,, ",
+          " https://opencv.me , https://opencv-*-example.vercel.app ,, ",
       })
     ).toEqual([
-      "https://openpath-app.vercel.app",
-      "https://openpath-*-rickvudev.vercel.app",
+      "https://opencv.me",
+      "https://opencv-*-example.vercel.app",
     ])
   })
 
@@ -43,9 +43,9 @@ describe("databaseUrlFromEnv", () => {
   it("reads DATABASE_URL, ignoring padding", () => {
     expect(
       databaseUrlFromEnv({
-        DATABASE_URL: "  postgresql://user:pass@localhost:5432/openpath  ",
+        DATABASE_URL: "  postgresql://user:pass@localhost:5432/opencv  ",
       })
-    ).toBe("postgresql://user:pass@localhost:5432/openpath")
+    ).toBe("postgresql://user:pass@localhost:5432/opencv")
   })
 
   it("returns undefined when DATABASE_URL is unset or blank", () => {

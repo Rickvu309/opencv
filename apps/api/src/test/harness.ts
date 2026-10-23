@@ -9,7 +9,7 @@ import { createApp } from "../app.js"
 import { migrationsFolder } from "../db/paths.js"
 import * as schema from "../db/schema.js"
 
-export const testWebOrigin = "https://openpath-app.vercel.app"
+export const testWebOrigin = "https://opencv.me"
 export const testSessionSecret = "test-session-secret-that-is-at-least-32ch"
 export const testAuthUrl = "https://api.example.com"
 

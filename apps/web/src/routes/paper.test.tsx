@@ -1140,14 +1140,14 @@ describe("Paper editors", () => {
     await openDoc("PM track CV")
 
     expect(screen.getByRole("button", { name: "Coach" })).toBeInTheDocument()
-    expect(localStorage.getItem("openpath:paper:coach-float")).toBe("closed")
+    expect(localStorage.getItem("opencv:paper:coach-float")).toBe("closed")
 
     const dialog = await openCoach()
-    expect(localStorage.getItem("openpath:paper:coach-float")).toBe("open")
+    expect(localStorage.getItem("opencv:paper:coach-float")).toBe("open")
     expect(messageCoach(dialog)).toBeInTheDocument()
 
     fireEvent.click(within(dialog).getByRole("button", { name: "Minimize" }))
-    expect(localStorage.getItem("openpath:paper:coach-float")).toBe("minimized")
+    expect(localStorage.getItem("opencv:paper:coach-float")).toBe("minimized")
     expect(screen.getByRole("dialog", { name: "Coach" })).toHaveAttribute(
       "data-coach-float-state",
       "minimized"
@@ -1157,12 +1157,12 @@ describe("Paper editors", () => {
     ).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole("button", { name: "Restore" }))
-    expect(localStorage.getItem("openpath:paper:coach-float")).toBe("open")
+    expect(localStorage.getItem("opencv:paper:coach-float")).toBe("open")
     expect(messageCoach()).toBeInTheDocument()
 
     fireEvent.click(within(coachDialog()).getByRole("button", { name: "Close" }))
     expect(screen.queryByRole("dialog", { name: "Coach" })).not.toBeInTheDocument()
-    expect(localStorage.getItem("openpath:paper:coach-float")).toBe("closed")
+    expect(localStorage.getItem("opencv:paper:coach-float")).toBe("closed")
     expect(screen.getByRole("button", { name: "Coach" })).toBeInTheDocument()
 
     cleanup()
@@ -1172,7 +1172,7 @@ describe("Paper editors", () => {
     expect(screen.getByRole("button", { name: "Coach" })).toBeInTheDocument()
     expect(screen.queryByRole("dialog", { name: "Coach" })).not.toBeInTheDocument()
 
-    localStorage.setItem("openpath:paper:coach-float", "minimized")
+    localStorage.setItem("opencv:paper:coach-float", "minimized")
     cleanup()
     renderPaper()
     await expectPaperDrive()
@@ -1681,7 +1681,7 @@ describe("Paper editors", () => {
 
     const minimized = screen.getByRole("dialog", { name: "Coach" })
     expect(minimized).toHaveAttribute("data-coach-float-state", "minimized")
-    expect(localStorage.getItem("openpath:paper:coach-float")).toBe("minimized")
+    expect(localStorage.getItem("opencv:paper:coach-float")).toBe("minimized")
     expect(canvas).not.toHaveAttribute(COACH_FLOAT_NUDGE_ATTR)
     expect(
       screen.queryByRole("textbox", { name: "Message Coach" })
@@ -2490,7 +2490,7 @@ describe("Paper documents panel", () => {
     expect(editor.querySelector(".w-60")).toBeNull()
     expect(editor.children).toHaveLength(1)
     expect(editor.firstElementChild).toHaveClass("flex-1")
-    expect(localStorage.getItem("openpath:paper:docs-panel")).toBe("collapsed")
+    expect(localStorage.getItem("opencv:paper:docs-panel")).toBe("collapsed")
 
     fireEvent.click(toggle)
     expect(toggle).toHaveAttribute("aria-expanded", "true")
@@ -2498,11 +2498,11 @@ describe("Paper documents panel", () => {
       screen.getByRole("complementary", { name: "Documents" })
     ).toBeInTheDocument()
     expect(editor.children).toHaveLength(2)
-    expect(localStorage.getItem("openpath:paper:docs-panel")).toBe("expanded")
+    expect(localStorage.getItem("opencv:paper:docs-panel")).toBe("expanded")
   })
 
   it("restores a saved collapsed preference after remount", async () => {
-    localStorage.setItem("openpath:paper:docs-panel", "collapsed")
+    localStorage.setItem("opencv:paper:docs-panel", "collapsed")
     const first = renderPaper()
     await expectPaperDrive()
     const firstEditor = await openDoc("PM track CV")
@@ -2531,11 +2531,11 @@ describe("Paper documents panel", () => {
       "false"
     )
     expect(secondEditor.children).toHaveLength(1)
-    expect(localStorage.getItem("openpath:paper:docs-panel")).toBe("collapsed")
+    expect(localStorage.getItem("opencv:paper:docs-panel")).toBe("collapsed")
   })
 
   it("defaults expanded on first visit and ignores invalid storage", async () => {
-    localStorage.setItem("openpath:paper:docs-panel", "hidden")
+    localStorage.setItem("opencv:paper:docs-panel", "hidden")
     renderPaper()
     await expectPaperDrive()
     await openDoc("PM track CV")

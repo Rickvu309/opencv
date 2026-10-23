@@ -80,7 +80,7 @@ export function publicPitchHref(
 }
 
 export function publicPitchLabel(slug: string) {
-  return `openpath.app/u/${slug}`
+  return `opencv.me/u/${slug}`
 }
 
 export function pitchProfileFromIdentity(

@@ -48,7 +48,7 @@ function smokeUser(env: NodeJS.ProcessEnv) {
   const stamp = Date.now()
   return {
     name: env.COACH_SMOKE_NAME?.trim() || "Coach Smoke",
-    email: env.COACH_SMOKE_EMAIL?.trim() || `coach-smoke-${stamp}@openpath.app`,
+    email: env.COACH_SMOKE_EMAIL?.trim() || `coach-smoke-${stamp}@opencv.me`,
     password: env.COACH_SMOKE_PASSWORD?.trim() || "correct-horse-battery",
   }
 }
@@ -182,8 +182,8 @@ async function main() {
 
   const origin =
     api.includes("staging")
-      ? "https://openpath-git-smoke-rickvudev.vercel.app"
-      : "https://openpath-app.vercel.app"
+      ? "https://opencv-git-smoke-example.vercel.app"
+      : "https://opencv.me"
 
   const signUp = await fetch(`${api}/api/auth/sign-up/email`, {
     method: "POST",

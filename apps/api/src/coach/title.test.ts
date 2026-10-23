@@ -86,9 +86,9 @@ describe("shouldAutoTitleThread", () => {
 
     expect(
       shouldAutoTitleThread({
-        currentTitle: "Welcome to OpenPath",
+        currentTitle: "Welcome to OpenCV",
         messages: [
-          { role: "coach", text: "Hey. I'm your OpenPath Coach." },
+          { role: "coach", text: "Hey. I'm your OpenCV Coach." },
           { role: "user", text: "Help me plan the week" },
         ],
         status: "final",

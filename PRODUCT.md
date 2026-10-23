@@ -4,7 +4,7 @@ This PRD describes the product the app-shell prototype validated (`prototype/app
 
 ## Users
 
-Vietnamese early-career users: university students (roughly year 3–4) and new graduates with under ~5 years of experience. They are unsure of direction, easily swayed by trends, and often cannot afford or access a human mentor. They use OpenPath in short, anxious sessions — between classes, late at night before a deadline — asking questions they'd hesitate to ask a professor.
+Vietnamese early-career users: university students (roughly year 3–4) and new graduates with under ~5 years of experience. They are unsure of direction, easily swayed by trends, and often cannot afford or access a human mentor. They use OpenCV in short, anxious sessions — between classes, late at night before a deadline — asking questions they'd hesitate to ask a professor.
 
 **Job to be done:** understand myself, find a direction that fits, and know the next concrete step.
 
@@ -12,7 +12,7 @@ Secondary (later): companies hiring early-career talent who want better-fit cand
 
 ## Purpose
 
-OpenPath is a personalised AI career Coach inside a working product. The User lives in one shell: Home is the Coach; Paper, Apply, and Pitch are the craft surfaces where career evidence gets made, used, and shown. The Coach helps build all three by acting through Commands, not only advising.
+OpenCV is a personalised AI career Coach inside a working product. The User lives in one shell: Home is the Coach; Paper, Apply, and Pitch are the craft surfaces where career evidence gets made, used, and shown. The Coach helps build all three by acting through Commands, not only advising.
 
 Success: a User who decides from evidence about themselves and the market (not trend-chasing), and who comes back weekly.
 

@@ -48,7 +48,7 @@ import {
 import { previewCoachSelectionText } from "./paper-selection.ts"
 import type { ToolbarVariant } from "./paper-editor-toolbar.tsx"
 
-export const COACH_FLOAT_STORAGE_KEY = "openpath:paper:coach-float"
+export const COACH_FLOAT_STORAGE_KEY = "opencv:paper:coach-float"
 export const COACH_FLOAT_NUDGE_ATTR = "data-coach-float-nudge"
 export const COACH_FLOAT_DESKTOP_OPEN_HEIGHT_CLASS = "max-h-[min(22rem,42vh)]"
 
