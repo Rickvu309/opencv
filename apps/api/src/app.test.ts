@@ -27,15 +27,11 @@ describe("GET /health", () => {
     }
   })
 
-  it("never reads env — coach vars set on the process do not affect the factory", async () => {
+  it("never reads env — OPENROUTER_API_KEY set on the process does not affect the factory", async () => {
     const previous = {
       OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
-      COACH_MODEL: process.env.COACH_MODEL,
-      COACH_DAILY_TURN_LIMIT: process.env.COACH_DAILY_TURN_LIMIT,
     }
     process.env.OPENROUTER_API_KEY = "sk-or-should-not-be-read"
-    process.env.COACH_MODEL = "openai/should-not-be-read"
-    process.env.COACH_DAILY_TURN_LIMIT = "1"
 
     try {
       const res = await createApp({ webOrigins: [] }).request("/health")

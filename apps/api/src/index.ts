@@ -11,13 +11,12 @@ import { COACH_MODES, type CoachMode } from "@workspace/domain"
 import {
   authUrlFromEnv,
   coachDailyTurnLimitForModeFromEnv,
-  coachDailyTurnLimitFromEnv,
   coachModelForModeFromEnv,
-  coachModelFromEnv,
   coachRuntimeModeFromEnv,
   databaseUrlFromEnv,
   dbDriverFromEnv,
   openRouterApiKeyFromEnv,
+  openRouterBaseUrlFromEnv,
   pgliteDataDirFromEnv,
   sessionSecretFromEnv,
   webOriginsFromEnv,
@@ -64,7 +63,6 @@ const db =
       ? drizzle(pool, { schema })
       : undefined
 const openRouterApiKey = openRouterApiKeyFromEnv(process.env)
-const coachModel = coachModelFromEnv(process.env)
 const coachModels = Object.fromEntries(
   COACH_MODES.map((mode) => [mode, coachModelForModeFromEnv(mode, process.env)])
 ) as Record<CoachMode, string>
@@ -78,7 +76,7 @@ const coachRuntimeMode = coachRuntimeModeFromEnv(process.env)
 const baseCoach = coachRuntimeFromConfig({
   db,
   openRouterApiKey,
-  coachModel,
+  openRouterBaseUrl: openRouterBaseUrlFromEnv(process.env),
   titleModel: coachModels.light,
   scanModel: coachModels.free,
   runtimeMode: coachRuntimeMode,
@@ -94,9 +92,7 @@ const app = createApp({
   sessionSecret: sessionSecretFromEnv(process.env),
   authUrl: authUrlFromEnv(process.env),
   openRouterApiKey,
-  coachModel,
   coachModels,
-  coachDailyTurnLimit: coachDailyTurnLimitFromEnv(process.env),
   coachDailyTurnLimits,
   db,
   coach,

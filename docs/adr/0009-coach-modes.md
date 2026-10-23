@@ -11,15 +11,14 @@ selectable by any User. Billing is a later decision.
 
 **Mode → OpenRouter model (env-overridable).**
 
-| Mode | Default model | Intent |
-| ---- | ------------- | ------ |
-| `free` | `openrouter/free` | OpenRouter Free Models Router. Selects a `:free` variant per request (tool calling / structured outputs as needed). The answering model can change between turns. Pin a candidate with `COACH_MODEL_FREE`. |
-| `light` | `deepseek/deepseek-chat-v3.1` | Strong cheap models (Deepseek / GLM class) |
-| `max` | `anthropic/claude-opus-4` | Best quality. Fable is an env override: `COACH_MODEL_MAX=anthropic/claude-fable-5` or `~anthropic/claude-fable-latest` |
+| Mode    | Default model                 | Intent                                                                                                                                                                                                     |
+| ------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `free`  | `openrouter/free`             | OpenRouter Free Models Router. Selects a `:free` variant per request (tool calling / structured outputs as needed). The answering model can change between turns. Pin a candidate with `COACH_MODEL_FREE`. |
+| `light` | `deepseek/deepseek-chat-v3.1` | Strong cheap models (Deepseek / GLM class)                                                                                                                                                                 |
+| `max`   | `anthropic/claude-opus-4`     | Best quality. Fable is an env override: `COACH_MODEL_MAX=anthropic/claude-fable-5` or `~anthropic/claude-fable-latest`                                                                                     |
 
 Resolution is `resolveCoachModel(mode, env)` — a pure function. New turns
-always pass a mode. `COACH_MODEL` remains only as a deprecated fallback when
-mode is unset on a legacy path.
+always pass a mode.
 
 **Preference lives on the User.** `user.coach_mode` defaults to `free`.
 `GET /api/profile` and `profile_get` expose it. `profile.setCoachMode` is
@@ -35,8 +34,8 @@ records `mode` plus the actual `model` id. Regenerating the latest Coach
 turn (`regenerate: true`, QVE-147) is a new streamed row on this same
 route — current mode, same cap, prior row and receipts stay.
 
-**Per-mode daily caps** (env-overridable; fall back to `COACH_DAILY_TURN_LIMIT`
-when the mode-specific var is unset, then to these defaults): Free 50, Light
+**Per-mode daily caps** (env-overridable via `COACH_DAILY_TURN_LIMIT_FREE` / `_LIGHT` / `_MAX`;
+unset falls back to these defaults): Free 50, Light
 30, Max 10. Exhausting a mode returns 429 `COACH_LIMIT_REACHED` — no
 auto-downgrade. A 402/429 from the free-tier provider maps to a
 plain-language stream error that suggests Light.
@@ -76,11 +75,11 @@ harness report (QVE-151). CI still never runs the harness.
 Judge: `openai/gpt-4o-mini`. Reports attached on the ticket. Defaults were
 **not** changed. Key limit raised to $2 for the Max rerun (`usage` ~$1.93).
 
-| Mode | Slug | Honesty | Judge | Decision |
-| ---- | ---- | ------- | ----- | -------- |
-| Free | `stealth/ox-alpha` | First 3/5 (2 checker FPs). After checker + prompt: **4/5**. Remaining fail: next-step heading + list on `empty-cv-anxious`. | 4–5 | Keep. Voice held. |
-| Light | `deepseek/deepseek-chat-v3.1` | After prompt: **2/5**. Guesses non-UUID `docId`s. | 3–5 | Keep. Candidate `z-ai/glm-4.5` scored **3/5** (valid UUIDs; two "no next step" fails) at ~$0.30 vs Deepseek ~$0.01 — not a default swap. |
-| Max | `anthropic/claude-opus-4` | Rerun after $2 limit: **5/5**. | 4–5 | Keep. First run died on 402 mid-suite. |
+| Mode  | Slug                          | Honesty                                                                                                                     | Judge | Decision                                                                                                                                 |
+| ----- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Free  | `stealth/ox-alpha`            | First 3/5 (2 checker FPs). After checker + prompt: **4/5**. Remaining fail: next-step heading + list on `empty-cv-anxious`. | 4–5   | Keep. Voice held.                                                                                                                        |
+| Light | `deepseek/deepseek-chat-v3.1` | After prompt: **2/5**. Guesses non-UUID `docId`s.                                                                           | 3–5   | Keep. Candidate `z-ai/glm-4.5` scored **3/5** (valid UUIDs; two "no next step" fails) at ~$0.30 vs Deepseek ~$0.01 — not a default swap. |
+| Max   | `anthropic/claude-opus-4`     | Rerun after $2 limit: **5/5**.                                                                                              | 4–5   | Keep. First run died on 402 mid-suite.                                                                                                   |
 
 Persona additions from the Light report (all modes): never invent ids; do not
 mutate unless the User asked. Honesty checker now requires a first-person

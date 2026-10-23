@@ -4,7 +4,6 @@ import {
   COACH_STEP_CAP,
   coachProviderErrorMessage,
   DEFAULT_COACH_MAX_OUTPUT_TOKENS,
-  DEFAULT_COACH_MODEL,
   DEFAULT_COACH_MODE,
   ERROR_CODES,
   errorEnvelope,
@@ -65,7 +64,8 @@ import { assembleCoachTools, type CoachToolSurface } from "./tools.js"
 
 export type OpenRouterCoachRuntimeOptions = {
   apiKey: string
-  model?: string
+  /** Local checks only: overrides the OpenRouter API URL. */
+  baseURL?: string
   /** Light-tier model for first-turn History titles (QVE-153 / ADR-0009). */
   titleModel?: string
   /** Model for Apply scan extraction. Defaults to the free-mode model. */
@@ -81,7 +81,7 @@ export type OpenRouterCoachRuntimeOptions = {
  */
 export function createOpenRouterCoachRuntime({
   apiKey,
-  model = DEFAULT_COACH_MODEL,
+  baseURL,
   titleModel = resolveCoachModel("light"),
   scanModel = resolveCoachModel("free"),
   db,
@@ -90,6 +90,7 @@ export function createOpenRouterCoachRuntime({
 }: OpenRouterCoachRuntimeOptions): CoachRuntime {
   const openrouter = createOpenRouter({
     apiKey,
+    ...(baseURL ? { baseURL } : {}),
     compatibility: "strict",
     appName: "OpenCV",
     appUrl: "https://opencv.me",
@@ -117,7 +118,8 @@ export function createOpenRouterCoachRuntime({
     async *streamTurn(input: CoachTurnInput) {
       const startedAt = Date.now()
       const abort = new AbortController()
-      const turnModel = input.model ?? model
+      const turnModel =
+        input.model ?? resolveCoachModel(input.mode ?? DEFAULT_COACH_MODE)
       const snapshot = {
         ...(await loadWorkspaceSnapshot(db, input.userId)),
         ...(input.focusDoc ? { focusDoc: input.focusDoc } : {}),

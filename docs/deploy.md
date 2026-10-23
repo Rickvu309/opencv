@@ -14,12 +14,12 @@ project (not a second app). The previous auto alias
 (`openpath-rickvudev.vercel.app`, `openpath-git-main-rickvudev.vercel.app`)
 still serve the same production deployment without redirecting.
 
-| Field             | Value                            | Why                                                                                                                                                                                                                  |
-| ----------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `installCommand`  | `pnpm install --frozen-lockfile` | Fails the build when `pnpm-lock.yaml` drifts from `package.json` instead of silently resolving something new.                                                                                                        |
-| `buildCommand`    | `pnpm turbo build --filter=web`  | Builds only the web app and its workspace dependencies. `apps/api` is not part of this deployment.                                                                                                                   |
+| Field             | Value                            | Why                                                                                                                                                                                                                      |
+| ----------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `installCommand`  | `pnpm install --frozen-lockfile` | Fails the build when `pnpm-lock.yaml` drifts from `package.json` instead of silently resolving something new.                                                                                                            |
+| `buildCommand`    | `pnpm turbo build --filter=web`  | Builds only the web app and its workspace dependencies. `apps/api` is not part of this deployment.                                                                                                                       |
 | `outputDirectory` | `apps/web/dist`                  | Where Vite writes the build. `apps/web/src/test/deploy-config.test.ts` compares it against Vite's resolved `build.outDir`. GitHub Actions (`pnpm test` on every PR and every push to `main`) catches drift before merge. |
-| `rewrites`        | `/(.*)` → `/index.html`          | TanStack Router routes client-side. Without this, a hard refresh on any route but `/` returns 404. Vercel checks the filesystem before applying rewrites, so the hashed files under `/assets/` still serve as files. |
+| `rewrites`        | `/(.*)` → `/index.html`          | TanStack Router routes client-side. Without this, a hard refresh on any route but `/` returns 404. Vercel checks the filesystem before applying rewrites, so the hashed files under `/assets/` still serve as files.     |
 
 pnpm comes from `packageManager` in the root `package.json`. Node comes from
 `engines.node`, which is the open range `>=20` — Vercel resolves that to its
@@ -59,8 +59,7 @@ API host directly to confirm reachability.
 
 The Coach runtime lives on Railway, not Vercel. Vercel only needs
 `VITE_API_URL` pointing at the right API; `OPENROUTER_API_KEY`,
-the `COACH_MODEL_*` / `COACH_DAILY_TURN_LIMIT_*` mode vars, and the
-deprecated `COACH_MODEL` / `COACH_DAILY_TURN_LIMIT` fallbacks are
+and the `COACH_MODEL_*` / `COACH_DAILY_TURN_LIMIT_*` mode vars are
 api-service variables. See
 [Coach](railway.md#coach). When the key is absent the web app still loads —
 Home send fails with the existing Retry error (`COACH_UNAVAILABLE` / 503)
@@ -111,12 +110,12 @@ project — root `vercel.json` always builds `apps/web`. Storybook settings live
 in `packages/ui/vercel.json` and only apply when that project's **Root
 Directory** is `packages/ui`.
 
-| Field             | Value                                           | Why                                                                                          |
-| ----------------- | ----------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `installCommand`  | `cd ../.. && pnpm install --frozen-lockfile`    | Root Directory is `packages/ui`; the lockfile and workspaces live at the repo root.          |
-| `buildCommand`    | `pnpm build-storybook`                          | Static catalog from `@storybook/react-vite`. Runs in the UI package after the root install.  |
-| `outputDirectory` | `storybook-static`                              | Storybook's default static output, relative to `packages/ui`.                                |
-| `framework`       | `storybook`                                     | Vercel Storybook preset; secrets stay out — this is a static front-end surface.              |
+| Field             | Value                                        | Why                                                                                         |
+| ----------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `installCommand`  | `cd ../.. && pnpm install --frozen-lockfile` | Root Directory is `packages/ui`; the lockfile and workspaces live at the repo root.         |
+| `buildCommand`    | `pnpm build-storybook`                       | Static catalog from `@storybook/react-vite`. Runs in the UI package after the root install. |
+| `outputDirectory` | `storybook-static`                           | Storybook's default static output, relative to `packages/ui`.                               |
+| `framework`       | `storybook`                                  | Vercel Storybook preset; secrets stay out — this is a static front-end surface.             |
 
 `main` deploys to the Storybook production URL; other branches get catalog
 previews. Reproduce the build locally:
@@ -137,4 +136,3 @@ pnpm build-storybook
 
 Production catalog: https://openpath-storybook.vercel.app
 (`main` and the current Storybook project both serve this alias).
-

@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest"
 
 import {
-  DEFAULT_COACH_DAILY_TURN_LIMIT,
-  DEFAULT_COACH_MODEL,
   DEFAULT_COACH_MODEL_FREE,
   DEFAULT_COACH_MODEL_LIGHT,
   DEFAULT_COACH_MODEL_MAX,
@@ -11,14 +9,13 @@ import {
 import {
   authUrlFromEnv,
   coachDailyTurnLimitForModeFromEnv,
-  coachDailyTurnLimitFromEnv,
   coachModelForModeFromEnv,
-  coachModelFromEnv,
   coachRuntimeModeFromEnv,
   databaseUrlFromEnv,
   dbDriverFromEnv,
   pgliteDataDirFromEnv,
   openRouterApiKeyFromEnv,
+  openRouterBaseUrlFromEnv,
   sessionSecretFromEnv,
   webOriginsFromEnv,
 } from "./config.js"
@@ -30,10 +27,7 @@ describe("webOriginsFromEnv", () => {
         WEB_ORIGINS:
           " https://opencv.me , https://opencv-*-example.vercel.app ,, ",
       })
-    ).toEqual([
-      "https://opencv.me",
-      "https://opencv-*-example.vercel.app",
-    ])
+    ).toEqual(["https://opencv.me", "https://opencv-*-example.vercel.app"])
   })
 
   it("falls back to the local web dev server when WEB_ORIGINS is unset", () => {
@@ -125,24 +119,29 @@ describe("openRouterApiKeyFromEnv", () => {
   })
 })
 
-describe("coachModelFromEnv", () => {
-  it("reads COACH_MODEL, ignoring padding", () => {
-    expect(coachModelFromEnv({ COACH_MODEL: "  openai/gpt-5  " })).toBe(
-      "openai/gpt-5"
-    )
-  })
-
-  it("falls back to Claude Sonnet 4.5 when COACH_MODEL is unset or blank", () => {
-    expect(coachModelFromEnv({})).toBe(DEFAULT_COACH_MODEL)
-    expect(coachModelFromEnv({ COACH_MODEL: "   " })).toBe(DEFAULT_COACH_MODEL)
-    expect(DEFAULT_COACH_MODEL).toBe("anthropic/claude-sonnet-4.5")
+describe("openRouterBaseUrlFromEnv", () => {
+  it("is unset by default, trims an http(s) URL and refuses anything else", () => {
+    expect(openRouterBaseUrlFromEnv({})).toBeUndefined()
+    expect(
+      openRouterBaseUrlFromEnv({ OPENROUTER_BASE_URL: "  " })
+    ).toBeUndefined()
+    expect(
+      openRouterBaseUrlFromEnv({
+        OPENROUTER_BASE_URL: " http://localhost:9999/v1 ",
+      })
+    ).toBe("http://localhost:9999/v1")
+    expect(() =>
+      openRouterBaseUrlFromEnv({ OPENROUTER_BASE_URL: "file:///etc/passwd" })
+    ).toThrow("OPENROUTER_BASE_URL must be an http(s) URL")
   })
 })
 
 describe("coachModelForModeFromEnv", () => {
   it("reads the per-mode vars and falls back to the mode defaults", () => {
     expect(coachModelForModeFromEnv("free", {})).toBe(DEFAULT_COACH_MODEL_FREE)
-    expect(coachModelForModeFromEnv("light", {})).toBe(DEFAULT_COACH_MODEL_LIGHT)
+    expect(coachModelForModeFromEnv("light", {})).toBe(
+      DEFAULT_COACH_MODEL_LIGHT
+    )
     expect(coachModelForModeFromEnv("max", {})).toBe(DEFAULT_COACH_MODEL_MAX)
     expect(
       coachModelForModeFromEnv("max", {
@@ -152,45 +151,11 @@ describe("coachModelForModeFromEnv", () => {
   })
 })
 
-describe("coachDailyTurnLimitFromEnv", () => {
-  it("reads a positive integer COACH_DAILY_TURN_LIMIT, ignoring padding", () => {
-    expect(
-      coachDailyTurnLimitFromEnv({ COACH_DAILY_TURN_LIMIT: "  12  " })
-    ).toBe(12)
-  })
-
-  it("falls back to 50 when unset, blank, or not a positive integer", () => {
-    expect(coachDailyTurnLimitFromEnv({})).toBe(DEFAULT_COACH_DAILY_TURN_LIMIT)
-    expect(coachDailyTurnLimitFromEnv({ COACH_DAILY_TURN_LIMIT: "   " })).toBe(
-      DEFAULT_COACH_DAILY_TURN_LIMIT
-    )
-    expect(coachDailyTurnLimitFromEnv({ COACH_DAILY_TURN_LIMIT: "0" })).toBe(
-      DEFAULT_COACH_DAILY_TURN_LIMIT
-    )
-    expect(coachDailyTurnLimitFromEnv({ COACH_DAILY_TURN_LIMIT: "-3" })).toBe(
-      DEFAULT_COACH_DAILY_TURN_LIMIT
-    )
-    expect(coachDailyTurnLimitFromEnv({ COACH_DAILY_TURN_LIMIT: "1.5" })).toBe(
-      DEFAULT_COACH_DAILY_TURN_LIMIT
-    )
-    expect(coachDailyTurnLimitFromEnv({ COACH_DAILY_TURN_LIMIT: "nope" })).toBe(
-      DEFAULT_COACH_DAILY_TURN_LIMIT
-    )
-    expect(DEFAULT_COACH_DAILY_TURN_LIMIT).toBe(50)
-  })
-})
-
 describe("coachDailyTurnLimitForModeFromEnv", () => {
-  it("reads per-mode caps and falls back to the global then the mode default", () => {
+  it("reads per-mode caps and falls back to the mode default", () => {
     expect(coachDailyTurnLimitForModeFromEnv("light", {})).toBe(30)
     expect(
-      coachDailyTurnLimitForModeFromEnv("light", {
-        COACH_DAILY_TURN_LIMIT: "12",
-      })
-    ).toBe(12)
-    expect(
       coachDailyTurnLimitForModeFromEnv("max", {
-        COACH_DAILY_TURN_LIMIT: "12",
         COACH_DAILY_TURN_LIMIT_MAX: "4",
       })
     ).toBe(4)

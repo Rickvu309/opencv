@@ -43,10 +43,6 @@ export type AppConfig = {
    * `index.ts` wires OpenRouter via `coachRuntimeFromConfig` when this is set.
    */
   openRouterApiKey?: string
-  /** @deprecated From `coachModelFromEnv`. New turns resolve via mode. */
-  coachModel?: string
-  /** From `coachDailyTurnLimitFromEnv` — global fallback when a mode cap is unset. */
-  coachDailyTurnLimit?: number
   /** Per-mode OpenRouter model ids (ADR-0009). */
   coachModels?: Partial<Record<CoachMode, string>>
   /** Per-mode daily turn caps (ADR-0009). */
@@ -64,8 +60,6 @@ export function createApp({
   db,
   rateLimitEnabled,
   coach,
-  coachModel,
-  coachDailyTurnLimit,
   coachModels,
   coachDailyTurnLimits,
   coachSseHeartbeatMs,
@@ -121,8 +115,6 @@ export function createApp({
       db,
       registry: commandRegistry,
       coach,
-      coachModel,
-      coachDailyTurnLimit,
       coachModels,
       coachDailyTurnLimits,
       coachSseHeartbeatMs,

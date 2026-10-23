@@ -16,11 +16,9 @@ describe("coach deploy docs", () => {
 
     for (const name of [
       "OPENROUTER_API_KEY",
-      "COACH_MODEL",
       "COACH_MODEL_FREE",
       "COACH_MODEL_LIGHT",
       "COACH_MODEL_MAX",
-      "COACH_DAILY_TURN_LIMIT",
       "COACH_DAILY_TURN_LIMIT_FREE",
       "COACH_DAILY_TURN_LIMIT_LIGHT",
       "COACH_DAILY_TURN_LIMIT_MAX",
@@ -36,12 +34,19 @@ describe("coach deploy docs", () => {
     expect(envExample).toContain("deepseek/deepseek-chat-v3.1")
     expect(envExample).toContain("anthropic/claude-opus-4")
     expect(envExample).toContain("anthropic/claude-fable-5")
-    expect(envExample).toContain("COACH_DAILY_TURN_LIMIT=50")
     expect(envExample).toContain("COACH_EVAL_MODE")
     expect(railway).toContain("COACH_UNAVAILABLE")
     expect(railway).toContain("GET /health")
     expect(deploy).toContain("COACH_UNAVAILABLE")
     expect(deploy).toContain("railway.md#coach")
+  })
+
+  it("does not document the removed variables", () => {
+    for (const file of [".env.example", "docs/railway.md"]) {
+      const text = readFileSync(path.join(repoRoot, file), "utf8")
+      expect(text).not.toContain("COACH_DAILY_TURN_LIMIT=")
+      expect(text).not.toMatch(/\| `COACH_MODEL` \||^#\s*COACH_MODEL=/m)
+    }
   })
 
   it("keeps the live smoke script out of the test script", () => {

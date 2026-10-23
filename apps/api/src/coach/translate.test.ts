@@ -1,4 +1,4 @@
-import { DEFAULT_COACH_MODEL } from "@workspace/domain"
+import { DEFAULT_COACH_MODEL_FREE } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
 
 import { commandRegistry } from "../commands/index.js"
@@ -13,7 +13,7 @@ import {
 async function collect(events: ModelStreamEvent[]) {
   const parts = []
   for await (const part of partsFromModelStream(replay(events), {
-    model: DEFAULT_COACH_MODEL,
+    model: DEFAULT_COACH_MODEL_FREE,
     startedAt: Date.now() - 12,
     reversalFor: (name) => reversalForTool(name, commandRegistry),
   })) {
@@ -52,7 +52,12 @@ describe("partsFromModelStream", () => {
       {
         type: "finish",
         finishReason: "stop",
-        usage: { inputTokens: 100, outputTokens: 40, totalTokens: 140, cost: 0.0021 },
+        usage: {
+          inputTokens: 100,
+          outputTokens: 40,
+          totalTokens: 140,
+          cost: 0.0021,
+        },
       },
     ])
 
@@ -87,7 +92,7 @@ describe("partsFromModelStream", () => {
       type: "finish",
       finishReason: "stop",
       usage: {
-        model: DEFAULT_COACH_MODEL,
+        model: DEFAULT_COACH_MODEL_FREE,
         tokens: 140,
         costEstimate: "0.002100",
         latencyMs: expect.any(Number),
