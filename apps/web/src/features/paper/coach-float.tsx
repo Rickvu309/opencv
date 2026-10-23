@@ -10,7 +10,6 @@ import {
   useState,
 } from "react"
 import { createPortal } from "react-dom"
-import { AssistantRuntimeProvider } from "@assistant-ui/react"
 import type { CoachSelection } from "@workspace/domain"
 import { Maximize2, Minus, Pin, X } from "lucide-react"
 
@@ -21,7 +20,6 @@ import { cn } from "@workspace/ui/lib/utils"
 
 import { ErrorBanner } from "@/components/error-banner.tsx"
 import { DESKTOP_MEDIA_QUERY } from "@/features/app-shell/use-media-query.ts"
-import { useCoachExternalRuntime } from "@/features/coach/coach-runtime.ts"
 import { useCoachTurn } from "@/features/coach/use-coach-turn.ts"
 import {
   getThreadByFocusDoc,
@@ -56,9 +54,9 @@ export const COACH_FLOAT_DESKTOP_OPEN_HEIGHT_CLASS = "max-h-[min(22rem,42vh)]"
 
 export type CoachFloatState = "closed" | "open" | "minimized"
 
-const CoachThread = lazy(() =>
-  import("@/features/coach/coach-thread.tsx").then((m) => ({
-    default: m.CoachThread,
+const CoachThreadPanel = lazy(() =>
+  import("@/features/coach/coach-thread-panel.tsx").then((m) => ({
+    default: m.CoachThreadPanel,
   }))
 )
 
@@ -369,14 +367,6 @@ export const CoachFloat = memo(function CoachFloat({
       return result.ok ? result.chips : prev
     })
   }, [docId, docName])
-  const runtime = useCoachExternalRuntime({
-    messages,
-    phase,
-    send: sendWithSelection,
-    stop,
-    regenerate,
-    rate,
-  })
 
   const turnActive = phase !== "idle"
   const headerTitle = focusedThreadQuery.data?.title ?? docName
@@ -581,94 +571,98 @@ export const CoachFloat = memo(function CoachFloat({
               ) : null}
             </div>
           ) : null}
-          <AssistantRuntimeProvider runtime={runtime}>
-            <Suspense
-              fallback={
-                <div
-                  data-coach-thread-loading
-                  className="flex flex-1 flex-col gap-2 pt-1"
-                >
-                  <Skeleton className="h-4 w-2/3" />
-                  <Skeleton className="h-4 w-1/2" />
-                </div>
+          <Suspense
+            fallback={
+              <div
+                data-coach-thread-loading
+                className="flex flex-1 flex-col gap-2 pt-1"
+              >
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            }
+          >
+            <CoachThreadPanel
+              turn={{
+                messages,
+                phase,
+                send: sendWithSelection,
+                stop,
+                regenerate,
+                rate,
+              }}
+              messages={messages}
+              waiting={phase === "waiting"}
+              turnActive={turnActive}
+              error={error}
+              send={sendWithSelection}
+              stop={stop}
+              onRetry={retry}
+              onRate={rate}
+              onRegenerate={phase === "idle" ? regenerate : undefined}
+              onUndo={phase === "idle" ? undo : undefined}
+              onAttachFromPaper={attachFromPaper}
+              messageCite={onCitePaper ? messageCite : undefined}
+              placeholder="Ask about this document…"
+              empty={
+                <QuickPromptChips
+                  chips={QUICK_PROMPTS[variant]}
+                  turnActive={turnActive}
+                  hasSelection={Boolean(selection?.text)}
+                  onSubmit={submit}
+                />
               }
-            >
-              <CoachThread
-                messages={messages}
-                waiting={phase === "waiting"}
-                turnActive={turnActive}
-                error={error}
-                send={sendWithSelection}
-                stop={stop}
-                onRetry={retry}
-                onRate={rate}
-                onRegenerate={phase === "idle" ? regenerate : undefined}
-                onUndo={phase === "idle" ? undo : undefined}
-                onAttachFromPaper={attachFromPaper}
-                messageCite={onCitePaper ? messageCite : undefined}
-                placeholder="Ask about this document…"
-                empty={
-                  <QuickPromptChips
-                    chips={QUICK_PROMPTS[variant]}
-                    turnActive={turnActive}
-                    hasSelection={Boolean(selection?.text)}
-                    onSubmit={submit}
-                  />
-                }
-                beforeComposer={
-                  softScope ||
-                  contextChips.length > 0 ||
-                  attachError ||
-                  (messages.length > 0 && selection?.text) ? (
-                    <>
-                      {softScope || contextChips.length > 0 ? (
-                        <div
-                          data-coach-context-chips
-                          className="flex flex-wrap gap-1"
-                        >
-                          {softScope ? (
-                            <SoftScopeChip
-                              docName={docName}
-                              onRemove={() => setSoftScope(false)}
-                            />
-                          ) : null}
-                          {contextChips.map((chip) => (
-                            <DurableContextChip
-                              key={chip.id}
-                              chip={chip}
-                              onPin={() =>
-                                setContextChips((prev) =>
-                                  toggleContextChipPin(prev, chip.id)
-                                )
-                              }
-                              onRemove={() =>
-                                setContextChips((prev) =>
-                                  removeContextChip(prev, chip.id)
-                                )
-                              }
-                            />
-                          ))}
-                        </div>
-                      ) : null}
-                      {attachError ? (
-                        <ErrorBanner variant="inline">
-                          {attachError}
-                        </ErrorBanner>
-                      ) : null}
-                      {messages.length > 0 && selection?.text ? (
-                        <QuickPromptChips
-                          chips={[REWRITE_SELECTION]}
-                          turnActive={turnActive}
-                          hasSelection
-                          onSubmit={submit}
-                        />
-                      ) : null}
-                    </>
-                  ) : null
-                }
-              />
-            </Suspense>
-          </AssistantRuntimeProvider>
+              beforeComposer={
+                softScope ||
+                contextChips.length > 0 ||
+                attachError ||
+                (messages.length > 0 && selection?.text) ? (
+                  <>
+                    {softScope || contextChips.length > 0 ? (
+                      <div
+                        data-coach-context-chips
+                        className="flex flex-wrap gap-1"
+                      >
+                        {softScope ? (
+                          <SoftScopeChip
+                            docName={docName}
+                            onRemove={() => setSoftScope(false)}
+                          />
+                        ) : null}
+                        {contextChips.map((chip) => (
+                          <DurableContextChip
+                            key={chip.id}
+                            chip={chip}
+                            onPin={() =>
+                              setContextChips((prev) =>
+                                toggleContextChipPin(prev, chip.id)
+                              )
+                            }
+                            onRemove={() =>
+                              setContextChips((prev) =>
+                                removeContextChip(prev, chip.id)
+                              )
+                            }
+                          />
+                        ))}
+                      </div>
+                    ) : null}
+                    {attachError ? (
+                      <ErrorBanner variant="inline">{attachError}</ErrorBanner>
+                    ) : null}
+                    {messages.length > 0 && selection?.text ? (
+                      <QuickPromptChips
+                        chips={[REWRITE_SELECTION]}
+                        turnActive={turnActive}
+                        hasSelection
+                        onSubmit={submit}
+                      />
+                    ) : null}
+                  </>
+                ) : null
+              }
+            />
+          </Suspense>
         </div>
       ) : null}
     </>
