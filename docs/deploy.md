@@ -102,37 +102,3 @@ pnpm --filter web preview   # serve apps/web/dist
 `vite preview` does its own SPA fallback, so deep links work locally whether or
 not the `rewrites` entry is present. Local success does not verify the Vercel
 rewrite — that is only observable on a real deployment.
-
-# Deploying Storybook to Vercel
-
-The owned kit catalog is a second Vercel project. It must not reuse the web
-project — root `vercel.json` always builds `apps/web`. Storybook settings live
-in `packages/ui/vercel.json` and only apply when that project's **Root
-Directory** is `packages/ui`.
-
-| Field             | Value                                        | Why                                                                                         |
-| ----------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `installCommand`  | `cd ../.. && pnpm install --frozen-lockfile` | Root Directory is `packages/ui`; the lockfile and workspaces live at the repo root.         |
-| `buildCommand`    | `pnpm build-storybook`                       | Static catalog from `@storybook/react-vite`. Runs in the UI package after the root install. |
-| `outputDirectory` | `storybook-static`                           | Storybook's default static output, relative to `packages/ui`.                               |
-| `framework`       | `storybook`                                  | Vercel Storybook preset; secrets stay out — this is a static front-end surface.             |
-
-`main` deploys to the Storybook production URL; other branches get catalog
-previews. Reproduce the build locally:
-
-```bash
-pnpm install --frozen-lockfile
-pnpm build-storybook
-```
-
-## One-time Storybook project setup
-
-1. In Vercel, **Add New → Project** and import `quanvu309/openpath` again (do
-   not add Storybook to the existing `openpath` web project).
-2. Set **Root Directory** to `packages/ui`. Vercel then reads
-   `packages/ui/vercel.json` instead of the web settings at the repo root.
-3. Deploy. Production URL is the public catalog; post it on QVE-87 / QVE-81
-   when it first goes live.
-
-Production catalog: https://openpath-storybook.vercel.app
-(`main` and the current Storybook project both serve this alias).

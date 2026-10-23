@@ -38,9 +38,6 @@ dist-ssr
 # OS
 .DS_Store
 
-# Storybook
-storybook-static
-
 # local agent tooling
 .claude/*
 !.claude/skills/
