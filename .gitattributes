@@ -1,3 +1,5 @@
 # Machine-written files. The pre-commit size limit skips them (see .githooks/pre-commit).
 pnpm-lock.yaml linguist-generated
 apps/api/drizzle/** linguist-generated
+# Program plans and trails are produced by the planning swarm and read by scripts, not hand-edited.
+docs/plans/*.md linguist-generated
