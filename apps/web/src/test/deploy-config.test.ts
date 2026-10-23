@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url"
 import { createRailwayContext } from "railway/iac"
 import { describe, expect, it } from "vitest"
 
-import railwayConfig from "../../../../.railway/railway"
+import railwayConfig, { partial } from "../../../../.railway/railway"
 
 const webRoot = fileURLToPath(new URL("../..", import.meta.url))
 const repoRoot = path.resolve(webRoot, "../..")
@@ -70,26 +70,49 @@ describe(".railway/railway.ts", () => {
     expect(railway).toContain('dockerfilePath: "apps/web/Dockerfile"')
   })
 
-  it("keeps the api migration and preserves existing variable values", () => {
-    const api = railwayConfig(createRailwayContext({ environment: "staging" }))
-      .resources?.flat()
-      .find((resource) => resource.address === "service.api")
+  it.each(["staging", "production"])(
+    "scopes %s ownership to application services and retains API source and variables",
+    (environment) => {
+      const resources = railwayConfig(
+        createRailwayContext({ environment })
+      ).resources?.flat()
+      const api = resources
+        ?.filter((resource) => resource.type === "service")
+        .find((resource) => resource.name === "api")
 
-    expect(api).toMatchObject({
-      deploy: { preDeployCommand: ["pnpm --filter api run migrate"] },
-      variables: {
+      expect(partial).toBe("opencv-apps")
+      expect(resources?.map((resource) => resource.address)).toEqual([
+        "service.api",
+        "service.web",
+      ])
+      expect(api).toMatchObject({
+        source: { type: "github", repo: "quanvu309/opencv", branch: "main" },
+        deploy: { preDeployCommand: ["pnpm --filter api run migrate"] },
+      })
+      expect(api?.variables).toEqual({
         AUTH_URL: { type: "preserve" },
         DATABASE_URL: { type: "preserve" },
         OPENROUTER_API_KEY: { type: "preserve" },
         SESSION_SECRET: { type: "preserve" },
         WEB_ORIGINS: { type: "preserve" },
-      },
-    })
-  })
+      })
+    }
+  )
 
-  it("points each environment's web build at its own api", () => {
-    expect(railway).toContain("https://api.opencv.me")
-    expect(railway).toContain("https://api-staging.opencv.me")
+  it.each([
+    ["staging", "https://api-staging.opencv.me"],
+    ["production", "https://api.opencv.me"],
+  ])("points %s's web build at its own api", (environment, apiUrl) => {
+    const web = railwayConfig(createRailwayContext({ environment }))
+      .resources?.flat()
+      .find((resource) => resource.address === "service.web")
+
+    expect(web).toMatchObject({
+      source: { type: "github", repo: "quanvu309/opencv", branch: "main" },
+      build: { builder: "DOCKERFILE", dockerfilePath: "apps/web/Dockerfile" },
+      deploy: { healthcheckPath: "/health" },
+      variables: { VITE_API_URL: { type: "literal", value: apiUrl } },
+    })
   })
 })
 

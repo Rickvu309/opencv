@@ -22,12 +22,27 @@ cosmetic, then update the name in `.railway/railway.ts`).
 | `staging`    | `web`      | `apps/web/Dockerfile`                       | `staging.opencv.me`                                                 |
 | `staging`    | `Postgres` | own instance                                | private network only                                                |
 
-`.railway/railway.ts` is the source of truth for the `api` and `web` build,
-start, watch-path and health settings (Railway stops reading `railway.json` on
-2026-12-01, so that file is gone). Preview the effect of an edit with
-`railway config plan --file .railway/railway.ts --environment staging`. The file
-declares no secrets, no domains, no `Postgres`, and neither `AUTH_URL` nor
-`WEB_ORIGINS`, because the cutover flips those by hand.
+`.railway/railway.ts` declares the intended `api` and `web` build, start,
+watch-path and health settings (Railway stops reading `railway.json` on
+2026-12-01, so that file is gone). IaC evaluation requires Node >=22, the root
+`railway` SDK dependency installed with `pnpm install --frozen-lockfile`, and
+Railway CLI >=5.42.1. Preview an edit with
+`railway config plan --file .railway/railway.ts --environment staging`.
+Railway does not automatically apply this file during GitHub deploys.
+
+The stable named partial `opencv-apps` scopes ownership to `api` and `web`.
+Existing `Postgres` and `postgres-volume` stay outside that ownership; do not
+redeclare them from defaults. Omitted resources are retained only when this
+partial does not already own them. Check `railway config partials list --json`
+and the structured plan before any apply. Do not rename the partial without
+an ownership transfer. See [Railway's ownership rules](https://docs.railway.com/infrastructure-as-code#ownership-rules).
+
+The API retains GitHub source `quanvu309/opencv` on `main`. Its `AUTH_URL`,
+`WEB_ORIGINS`, `DATABASE_URL`, `OPENROUTER_API_KEY` and `SESSION_SECRET` are
+explicit `preserve()` declarations: values stay in Railway. The file declares
+no secret values or domains. The cutover flips `AUTH_URL` and `WEB_ORIGINS`
+by hand. The layout above is the target; a plan that creates `web` does not
+prove it is deployed.
 
 | Service | Build                                                                                     | Pre-deploy                      | Start                         | Health                       |
 | ------- | ----------------------------------------------------------------------------------------- | ------------------------------- | ----------------------------- | ---------------------------- |
@@ -171,8 +186,14 @@ is reversible in config, but every signed-in user is signed out once either
 way. Do not start without the operator's go.
 
 1. Migrate the config. Review `railway config plan --file .railway/railway.ts --environment staging`
-   (it must create `web` and change nothing on `api` but the config source),
-   apply it to staging, then production, then run `railway config migrate cutover`.
+   as structured JSON: the intended changes create `web`, set the API builder
+   to `NIXPACKS`, build API workspace dependencies with `--filter api...`,
+   and add the pre-deploy migration and restart policy. Reject database or
+   volume changes, source removal, and existing variable-value changes.
+   Recheck production's plan before applying there. With operator approval,
+   apply to staging, then production; inspect `railway config migrate status`
+   before any needed `railway config migrate cutover`. Planning does not
+   execute the migration; an approved deployment's pre-deploy command does.
    Finish this **before 2026-12-01**, when `railway.json` stops being read.
 2. Add the five domains and the Cloudflare records, then wait for each
    certificate. Check `curl -sI https://api-staging.opencv.me/health`.
