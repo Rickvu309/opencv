@@ -7,6 +7,7 @@ import { createOpenRouterCoachRuntime } from "./runtime.js"
 export type CoachRuntimeConfig = {
   db?: AppDatabase
   openRouterApiKey?: string
+  openRouterBaseUrl?: string
   /** Light-tier id for first-turn titles. Defaults to `resolveCoachModel("light")`. */
   titleModel?: string
   /** Model id for Apply scan. Defaults to `resolveCoachModel("free")`. */
@@ -21,6 +22,7 @@ export type CoachRuntimeConfig = {
 export function coachRuntimeFromConfig({
   db,
   openRouterApiKey,
+  openRouterBaseUrl,
   titleModel,
   scanModel,
   runtimeMode,
@@ -33,6 +35,7 @@ export function coachRuntimeFromConfig({
   }
   return createOpenRouterCoachRuntime({
     apiKey: openRouterApiKey,
+    baseURL: openRouterBaseUrl,
     titleModel: titleModel ?? resolveCoachModel("light"),
     scanModel: scanModel ?? resolveCoachModel("free"),
     db,

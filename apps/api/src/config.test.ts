@@ -15,6 +15,7 @@ import {
   dbDriverFromEnv,
   pgliteDataDirFromEnv,
   openRouterApiKeyFromEnv,
+  openRouterBaseUrlFromEnv,
   sessionSecretFromEnv,
   webOriginsFromEnv,
 } from "./config.js"
@@ -115,6 +116,23 @@ describe("openRouterApiKeyFromEnv", () => {
     expect(
       openRouterApiKeyFromEnv({ OPENROUTER_API_KEY: "   " })
     ).toBeUndefined()
+  })
+})
+
+describe("openRouterBaseUrlFromEnv", () => {
+  it("is unset by default, trims an http(s) URL and refuses anything else", () => {
+    expect(openRouterBaseUrlFromEnv({})).toBeUndefined()
+    expect(
+      openRouterBaseUrlFromEnv({ OPENROUTER_BASE_URL: "  " })
+    ).toBeUndefined()
+    expect(
+      openRouterBaseUrlFromEnv({
+        OPENROUTER_BASE_URL: " http://localhost:9999/v1 ",
+      })
+    ).toBe("http://localhost:9999/v1")
+    expect(() =>
+      openRouterBaseUrlFromEnv({ OPENROUTER_BASE_URL: "file:///etc/passwd" })
+    ).toThrow("OPENROUTER_BASE_URL must be an http(s) URL")
   })
 })
 

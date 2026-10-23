@@ -16,6 +16,7 @@ import {
   databaseUrlFromEnv,
   dbDriverFromEnv,
   openRouterApiKeyFromEnv,
+  openRouterBaseUrlFromEnv,
   pgliteDataDirFromEnv,
   sessionSecretFromEnv,
   webOriginsFromEnv,
@@ -75,6 +76,7 @@ const coachRuntimeMode = coachRuntimeModeFromEnv(process.env)
 const baseCoach = coachRuntimeFromConfig({
   db,
   openRouterApiKey,
+  openRouterBaseUrl: openRouterBaseUrlFromEnv(process.env),
   titleModel: coachModels.light,
   scanModel: coachModels.free,
   runtimeMode: coachRuntimeMode,

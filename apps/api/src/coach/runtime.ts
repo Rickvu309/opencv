@@ -64,6 +64,8 @@ import { assembleCoachTools, type CoachToolSurface } from "./tools.js"
 
 export type OpenRouterCoachRuntimeOptions = {
   apiKey: string
+  /** Local checks only: overrides the OpenRouter API URL. */
+  baseURL?: string
   /** Light-tier model for first-turn History titles (QVE-153 / ADR-0009). */
   titleModel?: string
   /** Model for Apply scan extraction. Defaults to the free-mode model. */
@@ -79,6 +81,7 @@ export type OpenRouterCoachRuntimeOptions = {
  */
 export function createOpenRouterCoachRuntime({
   apiKey,
+  baseURL,
   titleModel = resolveCoachModel("light"),
   scanModel = resolveCoachModel("free"),
   db,
@@ -87,6 +90,7 @@ export function createOpenRouterCoachRuntime({
 }: OpenRouterCoachRuntimeOptions): CoachRuntime {
   const openrouter = createOpenRouter({
     apiKey,
+    ...(baseURL ? { baseURL } : {}),
     compatibility: "strict",
     appName: "OpenCV",
     appUrl: "https://opencv.me",

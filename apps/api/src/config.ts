@@ -83,6 +83,21 @@ export function openRouterApiKeyFromEnv(
   return configured ? configured : undefined
 }
 
+/**
+ * Local checks only: points the OpenRouter provider at a stub. Unset/blank
+ * keeps the provider's own URL; anything but an http(s) URL is refused.
+ */
+export function openRouterBaseUrlFromEnv(
+  env: NodeJS.ProcessEnv
+): string | undefined {
+  const configured = env.OPENROUTER_BASE_URL?.trim()
+  if (!configured) return undefined
+  if (!/^https?:\/\/\S+$/i.test(configured)) {
+    throw new Error("OPENROUTER_BASE_URL must be an http(s) URL")
+  }
+  return configured
+}
+
 /** OpenRouter model id for a User-selected Coach mode (ADR-0009). */
 export function coachModelForModeFromEnv(
   mode: CoachMode,
