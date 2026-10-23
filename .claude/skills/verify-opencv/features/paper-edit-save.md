@@ -19,7 +19,7 @@ Paper (`/app/paper`) lists documents. Opening the starter CV shows an editor tha
 Preconditions: signed in on a new account (see `auth.md`).
 
 - **Open.** `agent-browser open "$WEB_URL/app/paper"`, then `agent-browser find text "Sample internship CV" click --exact`. A region named `Editing Sample internship CV` appears. The URL stays `/app/paper`.
-- **Edit.** `agent-browser snapshot -i`, find the first `Bullet point` textbox, and `agent-browser fill @<ref> "Ran weekly problem interviews with 8 classmates; edited for verify."`.
+- **Edit.** The bullet is a contenteditable element, and `fill` prepends instead of replacing. Take `agent-browser snapshot -i`, note the ref of the first `Bullet point` textbox, then `agent-browser click @<ref>`, `agent-browser press Control+a`, `agent-browser press Backspace`, and `agent-browser type @<ref> "Ran weekly problem interviews with 8 classmates; edited for verify."`. The snapshot then shows exactly that text in the bullet.
 - **Wait for the save.** The button named `Saved` is disabled again after the edit. Wait 3 s and re-check with `agent-browser snapshot -i`.
 - **Reload.** `agent-browser reload`. The page returns to the documents table, now with a row named `<Name>'s CV` (for example `Ada's CV`).
 - **Read back.** `agent-browser eval "fetch('$API_URL/api/paper',{credentials:'include'}).then(r=>r.text())"` contains `edited for verify`.
@@ -29,7 +29,8 @@ Preconditions: signed in on a new account (see `auth.md`).
 ## Gotchas
 
 - The editor is not URL-addressed. A reload goes back to the table, so reopen the row to see the text.
-- The first edit to the sample CV turns it into the user's own document and renames it to `<Name>'s CV`. On that first edit a `fill` produced the new text followed by the old text, because the editor remounts while the document is promoted. Do the first edit, wait for `Saved`, reopen, and use a second `fill` for the assertion text.
-- Table rows have no accessible name, so click the row by its visible text.
+- The first edit to the sample CV turns it into the user's own document and renames it to `<Name>'s CV`. The select-all, delete and type sequence still leaves only the new text in the bullet.
+- Never use `fill` on a bullet: it prepends the new text to the old text, and repeating it accumulates.
+- Table rows are named by their cell text in `snapshot -i` (for example `row "SASample internship CV..."`), but `find role row --name "Sample internship CV"` does not match them. Click the row by its `@ref` from the snapshot, or by visible text with `find text "<name>" click --exact`.
 - Bullet textboxes all share the name `Bullet point`. Pick by order in the snapshot.
 - Filter, the file chooser and Share are not part of this recipe and were not driven.

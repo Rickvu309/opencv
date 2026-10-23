@@ -55,6 +55,8 @@ A proof that drives one convenient entry point is incomplete when the feature fi
 
 Everything goes under `~/tmp/opencv-verify/<run>/` (the `EVIDENCE_DIR` in `run.env`): screenshots (`agent-browser screenshot <name>.png`), the two logs, `run.env`, and any response bodies.
 
+The evidence root defaults to `~/tmp/opencv-verify`. Set `OPENCV_VERIFY_ROOT=<dir>` for `launch.sh`, `doctor.sh` and `cleanup.sh` alike to use another root; every path above then lives under `<dir>/<run>/`.
+
 Proof standards:
 
 - Exercise the real user path in the browser, not internal setters or test-only endpoints.
