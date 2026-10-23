@@ -46,6 +46,7 @@ storybook-static
 !.claude/skills/
 .claude/skills/*
 !.claude/skills/verify-opencv/
+!.claude/skills/verify-apply-scan-guard/
 
 # local PGlite data for DB_DRIVER=pglite
 apps/api/.data/
