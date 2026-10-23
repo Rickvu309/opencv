@@ -16,6 +16,8 @@ import {
   coachModelFromEnv,
   coachRuntimeModeFromEnv,
   databaseUrlFromEnv,
+  dbDriverFromEnv,
+  pgliteDataDirFromEnv,
   openRouterApiKeyFromEnv,
   sessionSecretFromEnv,
   webOriginsFromEnv,
@@ -51,6 +53,34 @@ describe("databaseUrlFromEnv", () => {
   it("returns undefined when DATABASE_URL is unset or blank", () => {
     expect(databaseUrlFromEnv({})).toBeUndefined()
     expect(databaseUrlFromEnv({ DATABASE_URL: "   " })).toBeUndefined()
+  })
+})
+
+describe("dbDriverFromEnv", () => {
+  it("returns pglite for DB_DRIVER=pglite, ignoring padding", () => {
+    expect(dbDriverFromEnv({ DB_DRIVER: "pglite" })).toBe("pglite")
+    expect(dbDriverFromEnv({ DB_DRIVER: " pglite " })).toBe("pglite")
+  })
+
+  it("returns undefined when DB_DRIVER is unset, blank or another value", () => {
+    expect(dbDriverFromEnv({})).toBeUndefined()
+    expect(dbDriverFromEnv({ DB_DRIVER: "   " })).toBeUndefined()
+    expect(dbDriverFromEnv({ DB_DRIVER: "postgres" })).toBeUndefined()
+  })
+})
+
+describe("pgliteDataDirFromEnv", () => {
+  it("falls back to the default data dir when PGLITE_DATA_DIR is unset or blank", () => {
+    expect(pgliteDataDirFromEnv({})).toMatch(/apps\/api\/\.data\/default$/)
+    expect(pgliteDataDirFromEnv({ PGLITE_DATA_DIR: "   " })).toMatch(
+      /apps\/api\/\.data\/default$/
+    )
+  })
+
+  it("reads PGLITE_DATA_DIR, ignoring padding", () => {
+    expect(pgliteDataDirFromEnv({ PGLITE_DATA_DIR: "  /tmp/pg  " })).toBe(
+      "/tmp/pg"
+    )
   })
 })
 

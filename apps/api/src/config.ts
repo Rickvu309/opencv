@@ -1,3 +1,5 @@
+import { fileURLToPath } from "node:url"
+
 import {
   DEFAULT_COACH_DAILY_TURN_LIMIT,
   resolveCoachDailyTurnLimit,
@@ -30,6 +32,22 @@ export function webOriginsFromEnv(env: NodeJS.ProcessEnv): string[] {
 export function databaseUrlFromEnv(env: NodeJS.ProcessEnv): string | undefined {
   const configured = env.DATABASE_URL?.trim()
   return configured ? configured : undefined
+}
+
+/**
+ * Local-only database driver. `pglite` runs the api on a file-backed PGlite
+ * instead of Postgres; `index.ts` refuses it when `NODE_ENV=production`.
+ */
+export function dbDriverFromEnv(env: NodeJS.ProcessEnv): "pglite" | undefined {
+  return env.DB_DRIVER?.trim() === "pglite" ? "pglite" : undefined
+}
+
+/** Data directory for the PGlite driver. Defaults to `apps/api/.data/default`. */
+export function pgliteDataDirFromEnv(env: NodeJS.ProcessEnv): string {
+  const configured = env.PGLITE_DATA_DIR?.trim()
+  return configured
+    ? configured
+    : fileURLToPath(new URL("../.data/default", import.meta.url))
 }
 
 const localAuthUrl = "http://localhost:3001"

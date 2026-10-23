@@ -42,4 +42,10 @@ dist-ssr
 storybook-static
 
 # local agent tooling
-.claude/
+.claude/*
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/verify-opencv/
+
+# local PGlite data for DB_DRIVER=pglite
+apps/api/.data/
