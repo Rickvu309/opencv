@@ -118,7 +118,9 @@ function coachDialog() {
 
 async function openCoach() {
   fireEvent.click(screen.getByRole("button", { name: "Coach" }))
-  return screen.findByRole("dialog", { name: "Coach" })
+  const dialog = await screen.findByRole("dialog", { name: "Coach" })
+  await within(dialog).findByRole("textbox", { name: "Message Coach" })
+  return dialog
 }
 
 function messageCoach(container: HTMLElement = coachDialog()) {

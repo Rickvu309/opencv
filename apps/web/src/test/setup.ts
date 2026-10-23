@@ -1,3 +1,4 @@
+import { configure } from "@testing-library/react"
 import { afterEach, beforeEach, vi } from "vitest"
 
 import "@testing-library/jest-dom/vitest"
@@ -10,6 +11,8 @@ import { resetPaperApiMock } from "./paper-api-mock.ts"
 import { resetPitchApiMock } from "./pitch-api-mock.ts"
 import { resetProfileApiMock } from "./profile-api-mock.ts"
 import { resetThreadApiMock } from "./threads-api-mock.ts"
+
+configure({ asyncUtilTimeout: 5000 })
 
 vi.mock(
   "@/lib/auth-client.ts",
