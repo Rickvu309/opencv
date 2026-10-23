@@ -11,14 +11,16 @@
 		respond "ok" 200
 	}
 
-	# try_files rewrites deep links to /index.html after header matchers run,
-	# so index.html is every path that is not a hashed asset.
-	handle {
-		@assets path /assets/*
-		header @assets Cache-Control "public, max-age=31536000, immutable"
+	handle /assets/* {
+		header {
+			Cache-Control "public, max-age=31536000, immutable"
+			match status 2xx
+		}
+		file_server
+	}
 
-		@pages not path /assets/*
-		header @pages Cache-Control "no-cache"
+	handle {
+		header Cache-Control "no-cache"
 
 		try_files {path} /index.html
 		file_server

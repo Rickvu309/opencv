@@ -20,8 +20,10 @@ describe("apps/web/Caddyfile", () => {
   })
 
   it("caches hashed assets forever and never caches index.html", () => {
-    expect(caddyfile).toMatch(/\/assets\/\*[\s\S]*immutable/)
-    expect(caddyfile).toMatch(/not path \/assets\/\*[\s\S]*no-cache/)
+    expect(caddyfile).toMatch(
+      /handle \/assets\/\*[\s\S]*immutable[\s\S]*match status 2xx/
+    )
+    expect(caddyfile).toMatch(/handle \{\s*header Cache-Control "no-cache"/)
   })
 })
 
