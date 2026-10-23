@@ -44,7 +44,7 @@ zero tokens. The script refuses to start without `OPENROUTER_API_KEY`.
 
 ## Deployment
 
-`apps/web` deploys to Vercel: `main` → production, every other branch → a preview URL. Build settings live in `vercel.json`. Production: https://opencv.me.
+`apps/web` deploys to Vercel: `main` → production, every other branch → a preview URL. Build settings live in `vercel.json`. Production: https://openpath-app.vercel.app.
 
 The owned UI kit catalog is Storybook in `packages/ui`. It deploys to its own Vercel project from `main` (Root Directory `packages/ui`, settings in `packages/ui/vercel.json`). Live catalog: https://openpath-storybook.vercel.app. See `docs/deploy.md`.
 
