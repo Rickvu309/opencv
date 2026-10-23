@@ -2,11 +2,11 @@
 
 ## Environments
 
-| Environment | Comes from | When |
-|---|---|---|
-| Web production (Railway `production`, `web`) | `main` | Every merge to `main` that touches its watch paths |
-| API production (Railway `production`, `api`) | `main` | Every merge to `main` that touches its watch paths |
-| Web and API staging (Railway `staging`) | `main` | Same watch paths; not tied to PRs |
+| Environment                                  | Comes from | When                                               |
+| -------------------------------------------- | ---------- | -------------------------------------------------- |
+| Web production (Railway `production`, `web`) | `main`     | Every merge to `main` that touches its watch paths |
+| API production (Railway `production`, `api`) | `main`     | Every merge to `main` that touches its watch paths |
+| Web and API staging (Railway `staging`)      | `main`     | Same watch paths; not tied to PRs                  |
 
 There is no staging branch. Hosting is described in `docs/deploy.md`.
 

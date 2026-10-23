@@ -13,14 +13,14 @@ check and the review before merge are the gate.
 Railway project `openpath` (the name predates the rename; renaming it is
 cosmetic, then update the name in `.railway/railway.ts`).
 
-| Environment  | Service    | Built from                                  | Public host                                           |
-| ------------ | ---------- | ------------------------------------------- | ----------------------------------------------------- |
-| `production` | `api`      | Nixpacks, repo root                         | `api.opencv.me`, fallback `api-production-0876.up.railway.app` |
-| `production` | `web`      | `apps/web/Dockerfile`, repo root as context | `opencv.me`, `www.opencv.me`                          |
-| `production` | `Postgres` | Railway database                            | private network only                                  |
+| Environment  | Service    | Built from                                  | Public host                                                         |
+| ------------ | ---------- | ------------------------------------------- | ------------------------------------------------------------------- |
+| `production` | `api`      | Nixpacks, repo root                         | `api.opencv.me`, fallback `api-production-0876.up.railway.app`      |
+| `production` | `web`      | `apps/web/Dockerfile`, repo root as context | `opencv.me`, `www.opencv.me`                                        |
+| `production` | `Postgres` | Railway database                            | private network only                                                |
 | `staging`    | `api`      | Nixpacks, repo root                         | `api-staging.opencv.me`, fallback `api-staging-f689.up.railway.app` |
-| `staging`    | `web`      | `apps/web/Dockerfile`                       | `staging.opencv.me`                                   |
-| `staging`    | `Postgres` | own instance                                | private network only                                  |
+| `staging`    | `web`      | `apps/web/Dockerfile`                       | `staging.opencv.me`                                                 |
+| `staging`    | `Postgres` | own instance                                | private network only                                                |
 
 `.railway/railway.ts` is the source of truth for the `api` and `web` build,
 start, watch-path and health settings (Railway stops reading `railway.json` on
@@ -29,10 +29,10 @@ start, watch-path and health settings (Railway stops reading `railway.json` on
 declares no secrets, no domains, no `Postgres`, and neither `AUTH_URL` nor
 `WEB_ORIGINS`, because the cutover flips those by hand.
 
-| Service | Build                                                                   | Pre-deploy                       | Start                         | Health                       |
-| ------- | ----------------------------------------------------------------------- | -------------------------------- | ----------------------------- | ---------------------------- |
-| `api`   | `pnpm install --frozen-lockfile && pnpm --filter api... run build`      | `pnpm --filter api run migrate`  | `pnpm --filter api run start` | `GET /health`, 120 s timeout |
-| `web`   | Dockerfile: `pnpm install --frozen-lockfile && pnpm turbo build --filter=web`, then Caddy | none                  | `caddy run` (image `CMD`)     | `GET /health`                |
+| Service | Build                                                                                     | Pre-deploy                      | Start                         | Health                       |
+| ------- | ----------------------------------------------------------------------------------------- | ------------------------------- | ----------------------------- | ---------------------------- |
+| `api`   | `pnpm install --frozen-lockfile && pnpm --filter api... run build`                        | `pnpm --filter api run migrate` | `pnpm --filter api run start` | `GET /health`, 120 s timeout |
+| `web`   | Dockerfile: `pnpm install --frozen-lockfile && pnpm turbo build --filter=web`, then Caddy | none                            | `caddy run` (image `CMD`)     | `GET /health`                |
 
 `api` restarts `ON_FAILURE` up to 10 times. `api` watches `apps/api/**`,
 `packages/**`, the lockfile, `pnpm-workspace.yaml`, `package.json` and
@@ -80,14 +80,14 @@ Set by hand in Railway, never in git. `DATABASE_URL` is the shared reference
 `${{Postgres.DATABASE_URL}}` in both environments, so each environment resolves
 to its own Postgres. `SESSION_SECRET` differs per environment.
 
-| Environment  | Service | Variable       | Value                                                                                  |
-| ------------ | ------- | -------------- | -------------------------------------------------------------------------------------- |
+| Environment  | Service | Variable       | Value                                                                                     |
+| ------------ | ------- | -------------- | ----------------------------------------------------------------------------------------- |
 | `production` | `api`   | `AUTH_URL`     | `https://api.opencv.me` (set at cutover step 4; before that, the `*.up.railway.app` host) |
-| `production` | `api`   | `WEB_ORIGINS`  | `https://opencv.me`, plus the old Vercel origin until the overlap ends                 |
-| `production` | `web`   | `VITE_API_URL` | `https://api.opencv.me` (from `.railway/railway.ts`)                                   |
-| `staging`    | `api`   | `AUTH_URL`     | `https://api-staging.opencv.me`                                                        |
-| `staging`    | `api`   | `WEB_ORIGINS`  | `https://staging.opencv.me,http://localhost:5173`                                      |
-| `staging`    | `web`   | `VITE_API_URL` | `https://api-staging.opencv.me` (from `.railway/railway.ts`)                           |
+| `production` | `api`   | `WEB_ORIGINS`  | `https://opencv.me`, plus the old Vercel origin until the overlap ends                    |
+| `production` | `web`   | `VITE_API_URL` | `https://api.opencv.me` (from `.railway/railway.ts`)                                      |
+| `staging`    | `api`   | `AUTH_URL`     | `https://api-staging.opencv.me`                                                           |
+| `staging`    | `api`   | `WEB_ORIGINS`  | `https://staging.opencv.me,http://localhost:5173`                                         |
+| `staging`    | `web`   | `VITE_API_URL` | `https://api-staging.opencv.me` (from `.railway/railway.ts`)                              |
 
 `AUTH_URL` is the public api origin and selects the cookie attributes:
 `SameSite=None; Secure` when it is https (`apps/api/src/auth.ts`). That stays
@@ -109,17 +109,17 @@ Apply and Threads reads are untouched. Do not fail the deploy or the healthcheck
 for a missing key. The web app only needs `VITE_API_URL`; the Coach vars are
 `api` variables.
 
-| Variable                       | Required              | Default                                    | Notes                                                                                                  |
-| ------------------------------ | --------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
-| `OPENROUTER_API_KEY`           | Yes, for a live Coach | none                                       | Set on staging and production. Pass it on stdin so it never hits shell history.                        |
-| `OPENROUTER_BASE_URL`          | No                    | unset (the provider URL)                   | Local checks only: points the Coach at a stub endpoint. **Never on staging or production.**            |
-| `COACH_MODEL_FREE`             | No                    | `openrouter/free`                          | Free mode id (ADR-0009). Free Models Router; the answering model can change between turns.            |
-| `COACH_MODEL_LIGHT`            | No                    | `deepseek/deepseek-chat-v3.1`              | Light mode id.                                                                                         |
-| `COACH_MODEL_MAX`              | No                    | `anthropic/claude-opus-4`                  | Max mode. For Fable: `anthropic/claude-fable-5` or `~anthropic/claude-fable-latest`.                   |
-| `COACH_DAILY_TURN_LIMIT_FREE`  | No                    | `50`                                       | Free-mode daily turn cap.                                                                              |
-| `COACH_DAILY_TURN_LIMIT_LIGHT` | No                    | `30`                                       | Light-mode daily turn cap.                                                                             |
-| `COACH_DAILY_TURN_LIMIT_MAX`   | No                    | `10`                                       | Max-mode daily turn cap.                                                                               |
-| `COACH_RUNTIME`                | No                    | unset (OpenRouter when the key is present) | `fake` injects the scripted runtime for `curl -N` protocol checks. **Never on production.**            |
+| Variable                       | Required              | Default                                    | Notes                                                                                       |
+| ------------------------------ | --------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| `OPENROUTER_API_KEY`           | Yes, for a live Coach | none                                       | Set on staging and production. Pass it on stdin so it never hits shell history.             |
+| `OPENROUTER_BASE_URL`          | No                    | unset (the provider URL)                   | Local checks only: points the Coach at a stub endpoint. **Never on staging or production.** |
+| `COACH_MODEL_FREE`             | No                    | `openrouter/free`                          | Free mode id (ADR-0009). Free Models Router; the answering model can change between turns.  |
+| `COACH_MODEL_LIGHT`            | No                    | `deepseek/deepseek-chat-v3.1`              | Light mode id.                                                                              |
+| `COACH_MODEL_MAX`              | No                    | `anthropic/claude-opus-4`                  | Max mode. For Fable: `anthropic/claude-fable-5` or `~anthropic/claude-fable-latest`.        |
+| `COACH_DAILY_TURN_LIMIT_FREE`  | No                    | `50`                                       | Free-mode daily turn cap.                                                                   |
+| `COACH_DAILY_TURN_LIMIT_LIGHT` | No                    | `30`                                       | Light-mode daily turn cap.                                                                  |
+| `COACH_DAILY_TURN_LIMIT_MAX`   | No                    | `10`                                       | Max-mode daily turn cap.                                                                    |
+| `COACH_RUNTIME`                | No                    | unset (OpenRouter when the key is present) | `fake` injects the scripted runtime for `curl -N` protocol checks. **Never on production.** |
 
 ```bash
 printf '%s' "$OPENROUTER_API_KEY" | railway variable set OPENROUTER_API_KEY --stdin \
@@ -146,14 +146,14 @@ target and a TXT verification record. Both are needed (a missing TXT serves
 404). The certificate arrives within about an hour. Zone `opencv.me` is on
 Cloudflare with SSL mode **Full** (Railway says Full (Strict) does not work).
 
-| Name          | Type  | Target                                  | Proxy mode | Service           |
-| ------------- | ----- | --------------------------------------- | ---------- | ----------------- |
-| `@`           | CNAME | web production target (flattened)       | proxied    | `web` production  |
-| `www`         | CNAME | web production target                   | proxied    | `web` production  |
-| `api`         | CNAME | api production target                   | DNS-only   | `api` production  |
-| `staging`     | CNAME | web staging target                      | proxied    | `web` staging     |
-| `api-staging` | CNAME | api staging target                      | DNS-only   | `api` staging     |
-| Railway TXT   | TXT   | name and value shown per domain         | not proxied | each of the five |
+| Name          | Type  | Target                            | Proxy mode  | Service          |
+| ------------- | ----- | --------------------------------- | ----------- | ---------------- |
+| `@`           | CNAME | web production target (flattened) | proxied     | `web` production |
+| `www`         | CNAME | web production target             | proxied     | `web` production |
+| `api`         | CNAME | api production target             | DNS-only    | `api` production |
+| `staging`     | CNAME | web staging target                | proxied     | `web` staging    |
+| `api-staging` | CNAME | api staging target                | DNS-only    | `api` staging    |
+| Railway TXT   | TXT   | name and value shown per domain   | not proxied | each of the five |
 
 Use single-label names (`api-staging`, not `api.staging`): behind the proxy a
 deeper name needs Cloudflare's Advanced Certificate Manager.

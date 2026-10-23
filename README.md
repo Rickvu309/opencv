@@ -30,14 +30,14 @@ zero tokens. The script refuses to start without `OPENROUTER_API_KEY`.
 
 ## Useful scripts
 
-| Script | Purpose |
-| --- | --- |
-| `pnpm dev` | Run web + api |
-| `pnpm build` | Production builds |
-| `pnpm test` | Workspace tests |
-| `pnpm --filter api eval` | Manual Coach eval harness (needs `OPENROUTER_API_KEY`; never CI) |
-| `pnpm --filter api smoke` | Live Coach smoke against Railway (`COACH_SMOKE_API`; never CI) |
-| `pnpm typecheck` | Typecheck all packages |
+| Script                    | Purpose                                                          |
+| ------------------------- | ---------------------------------------------------------------- |
+| `pnpm dev`                | Run web + api                                                    |
+| `pnpm build`              | Production builds                                                |
+| `pnpm test`               | Workspace tests                                                  |
+| `pnpm --filter api eval`  | Manual Coach eval harness (needs `OPENROUTER_API_KEY`; never CI) |
+| `pnpm --filter api smoke` | Live Coach smoke against Railway (`COACH_SMOKE_API`; never CI)   |
+| `pnpm typecheck`          | Typecheck all packages                                           |
 
 ## Deployment
 
