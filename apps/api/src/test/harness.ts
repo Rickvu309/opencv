@@ -6,7 +6,6 @@ import type { FetchJobPosting } from "../apply/fetch-posting.js"
 import { PGlite } from "@electric-sql/pglite"
 import { drizzle } from "drizzle-orm/pglite"
 import { migrate } from "drizzle-orm/pglite/migrator"
-import { inject } from "vitest"
 
 import { createApp } from "../app.js"
 import { migrationsFolder } from "../db/paths.js"
@@ -26,16 +25,17 @@ export function cookieHeader(res: Response) {
 
 let templateBlob: Promise<Blob> | undefined
 
-function injectedTemplatePath() {
+async function injectedTemplatePath() {
+  if (!process.env.VITEST) return undefined
   try {
-    return inject("pgliteTemplatePath")
+    return (await import("vitest")).inject("pgliteTemplatePath")
   } catch {
     return undefined
   }
 }
 
 export async function createMigratedTestDb() {
-  const templatePath = injectedTemplatePath()
+  const templatePath = await injectedTemplatePath()
   if (templatePath) {
     templateBlob ??= readFile(templatePath).then((bytes) => new Blob([bytes]))
     const client = new PGlite({ loadDataDir: await templateBlob })
