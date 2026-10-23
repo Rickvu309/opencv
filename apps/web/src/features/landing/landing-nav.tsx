@@ -50,7 +50,7 @@ export function LandingNav() {
           </Link>
           <Link
             to="/sign-up"
-            className={buttonVariants({ variant: "outline", size: "sm" })}
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
           >
             Start free
           </Link>
