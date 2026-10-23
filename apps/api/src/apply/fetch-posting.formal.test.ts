@@ -56,6 +56,11 @@ const HOSTS: ReadonlyArray<readonly [string, Verdict]> = [
   ["[fe80::1]", "blocked"],
   ["[fd00::1]", "blocked"],
   ["[fd00:ec2::254]", "blocked"],
+  ["[::ffff:127.0.0.1]", "blocked"],
+  ["[::ffff:7f00:1]", "blocked"],
+  ["[::ffff:10.0.0.1]", "blocked"],
+  ["[::ffff:169.254.169.254]", "blocked"],
+  ["[::ffff:c0a8:1]", "blocked"],
   ["example.com", "public"],
   ["jobs.lever.co", "public"],
   ["fda.gov", "public"],
@@ -248,7 +253,12 @@ const blockedV6 = fc.constantFrom(
   "[fe80::1]",
   "[fd12:3456::1]",
   "[fc00::1]",
-  "[fd00:ec2::254]"
+  "[fd00:ec2::254]",
+  "[::ffff:127.0.0.1]",
+  "[::ffff:7f00:1]",
+  "[::ffff:10.0.0.1]",
+  "[::ffff:a9fe:a9fe]",
+  "[::ffff:c0a8:1]"
 )
 const blockedHost = fc.oneof(blockedV4, blockedNamed, blockedV6)
 

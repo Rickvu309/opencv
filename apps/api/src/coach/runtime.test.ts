@@ -1,12 +1,30 @@
-import { DEFAULT_COACH_MODE, successEnvelope } from "@workspace/domain"
-import { describe, expect, it } from "vitest"
+import {
+  DEFAULT_COACH_MODE,
+  resolveCoachModel,
+  successEnvelope,
+} from "@workspace/domain"
+import { describe, expect, it, vi } from "vitest"
 
 import { paperUpdateContentCoachInputSchema } from "./must-edit-repair.js"
 import {
+  createOpenRouterCoachRuntime,
   jsonSchemaForCoachInput,
   normalizeFullStream,
   toAiSdkTools,
 } from "./runtime.js"
+
+const sdk = vi.hoisted(() => ({
+  generateText: vi.fn(async () => ({ text: "{}" })),
+}))
+
+vi.mock("@openrouter/ai-sdk-provider", () => ({
+  createOpenRouter: () => (modelId: string) => ({ modelId }),
+}))
+
+vi.mock("ai", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("ai")>()),
+  generateText: sdk.generateText,
+}))
 
 async function* replay(
   parts: Array<{ type: string } & Record<string, unknown>>
@@ -90,7 +108,8 @@ describe("normalizeFullStream", () => {
     expect(events).toEqual([
       {
         type: "error",
-        message: "The free Coach model isn't available right now. Try Light mode.",
+        message:
+          "The free Coach model isn't available right now. Try Light mode.",
       },
     ])
   })
@@ -152,5 +171,31 @@ describe("toAiSdkTools", () => {
         },
       })
     ).toThrow(/schema is not a function/)
+  })
+})
+
+describe("createOpenRouterCoachRuntime scanJobPosting", () => {
+  const db = {} as Parameters<typeof createOpenRouterCoachRuntime>[0]["db"]
+
+  async function scanModelUsed(scanModel?: string) {
+    sdk.generateText.mockClear()
+    const runtime = createOpenRouterCoachRuntime({
+      apiKey: "test-key",
+      db,
+      ...(scanModel ? { scanModel } : {}),
+    })
+    await runtime.scanJobPosting?.({ postingText: "Title: Engineer" })
+    const call = sdk.generateText.mock.calls[0] as unknown as [
+      { model: { modelId: string } },
+    ]
+    return call[0].model.modelId
+  }
+
+  it("uses scanModel for scanJobPosting", async () => {
+    expect(await scanModelUsed("openai/test-free")).toBe("openai/test-free")
+  })
+
+  it("defaults scanModel to the free-mode default", async () => {
+    expect(await scanModelUsed()).toBe(resolveCoachModel("free"))
   })
 })

@@ -6,10 +6,7 @@ import { createApp } from "./app.js"
 import type { FetchJobPosting } from "./apply/fetch-posting.js"
 import { coachRuntimeFromConfig } from "./coach/bind.js"
 import { withScanJobPosting } from "./coach/fake.js"
-import {
-  COACH_MODES,
-  type CoachMode,
-} from "@workspace/domain"
+import { COACH_MODES, type CoachMode } from "@workspace/domain"
 
 import {
   authUrlFromEnv,
@@ -83,6 +80,7 @@ const baseCoach = coachRuntimeFromConfig({
   openRouterApiKey,
   coachModel,
   titleModel: coachModels.light,
+  scanModel: coachModels.free,
   runtimeMode: coachRuntimeMode,
 })
 const coach =

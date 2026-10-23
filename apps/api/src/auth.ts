@@ -37,6 +37,7 @@ export function createAuth({
   rateLimitEnabled = true,
 }: AuthConfig) {
   const cookies = cookieAttributesForAuthUrl(authUrl)
+  const logMailUrls = process.env.NODE_ENV !== "production"
 
   return betterAuth({
     appName: "OpenCV",
@@ -51,12 +52,16 @@ export function createAuth({
       enabled: true,
       requireEmailVerification: false,
       sendResetPassword: async ({ user, url }) => {
-        console.log(`[auth] password reset for ${user.email}: ${url}`)
+        if (logMailUrls) {
+          console.log(`[auth] password reset for ${user.email}: ${url}`)
+        }
       },
     },
     emailVerification: {
       sendVerificationEmail: async ({ user, url }) => {
-        console.log(`[auth] verify email for ${user.email}: ${url}`)
+        if (logMailUrls) {
+          console.log(`[auth] verify email for ${user.email}: ${url}`)
+        }
       },
     },
     trustedOrigins: (request) => {
