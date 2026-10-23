@@ -1,6 +1,5 @@
 import {
   appendCoachPart,
-  authUnavailableEnvelope,
   COACH_SSE_EVENTS,
   COACH_SSE_HEARTBEAT_MS,
   coachFeedbackInputSchema,
@@ -21,7 +20,6 @@ import {
   THREAD_COMMANDS,
   threadIdSchema,
   threadMessageIdSchema,
-  unauthorizedEnvelope,
   type CoachMode,
   type CoachRuntime,
   type CoachSseErrorData,
@@ -37,19 +35,18 @@ import {
   type ThreadMessageStatus,
 } from "@workspace/domain"
 import { eq } from "drizzle-orm"
-import { Hono } from "hono"
+import { Hono, type MiddlewareHandler } from "hono"
 import { streamSSE, type SSEStreamingApi } from "hono/streaming"
 
 import type { Auth } from "../auth.js"
-import {
-  CommandError,
-  type AppDatabase,
-  type CommandRegistry,
+import type {
+  AppDatabase,
+  CommandRegistry,
 } from "../commands/registry.js"
 import { coachUsage, threadMessages, threads } from "../db/schema.js"
 import { jsonWithStatus } from "../http-json.js"
 import { createId } from "../id.js"
-import { readSession } from "../session.js"
+import { requireSession, type SessionVariables } from "../middleware.js"
 import { getOwnedPaperDoc } from "../paper/queries.js"
 import { toCoachFocusDoc } from "./must-edit.js"
 import { getCoachModeForUser } from "../profile/queries.js"
@@ -72,6 +69,23 @@ export type CoachRouteOptions = {
   coachSseHeartbeatMs?: number
 }
 
+// Unconfigured auth answers AUTH_UNAVAILABLE before a missing runtime answers
+// COACH_UNAVAILABLE, and both come before the session check.
+function requireCoach(
+  auth: Auth | undefined,
+  db: AppDatabase | undefined,
+  coach: CoachRuntime | undefined
+): MiddlewareHandler<{ Variables: { coach: CoachRuntime } }> {
+  return async (c, next) => {
+    if (coach) {
+      c.set("coach", coach)
+    } else if (auth && db) {
+      return c.json(coachUnavailableEnvelope(), 503)
+    }
+    await next()
+  }
+}
+
 export function createCoachRoutes({
   auth,
   db,
@@ -83,20 +97,13 @@ export function createCoachRoutes({
   coachDailyTurnLimits,
   coachSseHeartbeatMs,
 }: CoachRouteOptions) {
-  const routes = new Hono()
+  const routes = new Hono<{
+    Variables: SessionVariables & { coach: CoachRuntime }
+  }>()
 
-  routes.post("/:id/coach", async (c) => {
-    if (!auth || !db) {
-      return c.json(authUnavailableEnvelope(), 503)
-    }
-    if (!coach) {
-      return c.json(coachUnavailableEnvelope(), 503)
-    }
-
-    const session = await readSession(auth, c)
-    if (!session) {
-      return c.json(unauthorizedEnvelope(), 401)
-    }
+  routes.on("POST", "/:id/coach", requireCoach(auth, db, coach))
+  routes.post("/:id/coach", requireSession(auth, db), async (c) => {
+    const { userId, db } = c.var
 
     const threadIdParsed = threadIdSchema.safeParse(c.req.param("id"))
     if (!threadIdParsed.success) {
@@ -135,19 +142,7 @@ export function createCoachRoutes({
       )
     }
 
-    let thread
-    try {
-      thread = await getOwnedThread(db, session.user.id, threadId)
-    } catch (error) {
-      if (error instanceof CommandError) {
-        return jsonWithStatus(
-          c,
-          errorEnvelope(error.code, error.message),
-          error.status
-        )
-      }
-      throw error
-    }
+    const thread = await getOwnedThread(db, userId, threadId)
 
     const focusDocId =
       parsed.data.focusDocId === null
@@ -156,24 +151,12 @@ export function createCoachRoutes({
 
     let focusDoc: CoachFocusDoc | undefined
     if (focusDocId) {
-      try {
-        const row = await getOwnedPaperDoc(db, session.user.id, focusDocId)
-        focusDoc = toCoachFocusDoc(row)
-      } catch (error) {
-        if (error instanceof CommandError) {
-          return jsonWithStatus(
-            c,
-            errorEnvelope(error.code, error.message),
-            error.status
-          )
-        }
-        throw error
-      }
+      focusDoc = toCoachFocusDoc(await getOwnedPaperDoc(db, userId, focusDocId))
     }
 
     const mode =
       parsed.data.mode ??
-      (await getCoachModeForUser(db, session.user.id).catch(
+      (await getCoachModeForUser(db, userId).catch(
         () => DEFAULT_COACH_MODE
       ))
     const model =
@@ -183,14 +166,14 @@ export function createCoachRoutes({
       coachDailyTurnLimit ??
       DEFAULT_COACH_DAILY_TURN_LIMITS[mode] ??
       DEFAULT_COACH_DAILY_TURN_LIMIT
-    const used = await countCoachTurnsToday(db, session.user.id, new Date(), mode)
+    const used = await countCoachTurnsToday(db, userId, new Date(), mode)
     if (used >= limit) {
       return c.json(coachLimitReachedEnvelope(), 429)
     }
 
     let history: ThreadMessage[]
     if (parsed.data.regenerate) {
-      const detail = await getThreadDetail(db, session.user.id, threadId)
+      const detail = await getThreadDetail(db, userId, threadId)
       const last = detail.messages[detail.messages.length - 1]
       if (!last || last.role !== "coach") {
         return jsonWithStatus(
@@ -215,7 +198,7 @@ export function createCoachRoutes({
       const posted = await registry.execute({
         name: THREAD_COMMANDS.postMessage,
         input: { threadId, text },
-        actor: { type: "user", userId: session.user.id },
+        actor: { type: "user", userId },
         db,
       })
       if (!posted.body.ok) {
@@ -232,10 +215,10 @@ export function createCoachRoutes({
     return streamSSE(c, async (stream) => {
       await runCoachTurn({
         stream,
-        coach,
+        coach: c.var.coach,
         db,
         registry,
-        userId: session.user.id,
+        userId,
         threadId,
         history,
         model,
@@ -249,15 +232,8 @@ export function createCoachRoutes({
     })
   })
 
-  routes.post("/:id/messages/:messageId/feedback", async (c) => {
-    if (!auth || !db) {
-      return c.json(authUnavailableEnvelope(), 503)
-    }
-
-    const session = await readSession(auth, c)
-    if (!session) {
-      return c.json(unauthorizedEnvelope(), 401)
-    }
+  routes.post("/:id/messages/:messageId/feedback", requireSession(auth, db), async (c) => {
+    const { userId, db } = c.var
 
     const threadIdParsed = threadIdSchema.safeParse(c.req.param("id"))
     const messageIdParsed = threadMessageIdSchema.safeParse(
@@ -295,37 +271,19 @@ export function createCoachRoutes({
       )
     }
 
-    try {
-      await getOwnedThread(db, session.user.id, threadIdParsed.data)
-      const result = await rateCoachTurn(
-        db,
-        session.user.id,
-        threadIdParsed.data,
-        messageIdParsed.data,
-        parsed.data.rating
-      )
-      return c.json(successEnvelope(result))
-    } catch (error) {
-      if (error instanceof CommandError) {
-        return jsonWithStatus(
-          c,
-          errorEnvelope(error.code, error.message),
-          error.status
-        )
-      }
-      throw error
-    }
+    await getOwnedThread(db, userId, threadIdParsed.data)
+    const result = await rateCoachTurn(
+      db,
+      userId,
+      threadIdParsed.data,
+      messageIdParsed.data,
+      parsed.data.rating
+    )
+    return c.json(successEnvelope(result))
   })
 
-  routes.post("/:id/messages/:messageId/reverse", async (c) => {
-    if (!auth || !db) {
-      return c.json(authUnavailableEnvelope(), 503)
-    }
-
-    const session = await readSession(auth, c)
-    if (!session) {
-      return c.json(unauthorizedEnvelope(), 401)
-    }
+  routes.post("/:id/messages/:messageId/reverse", requireSession(auth, db), async (c) => {
+    const { userId, db } = c.var
 
     const threadIdParsed = threadIdSchema.safeParse(c.req.param("id"))
     const messageIdParsed = threadMessageIdSchema.safeParse(
@@ -363,26 +321,15 @@ export function createCoachRoutes({
       )
     }
 
-    try {
-      const result = await reverseCoachReceipt({
-        db,
-        registry,
-        userId: session.user.id,
-        threadId: threadIdParsed.data,
-        messageId: messageIdParsed.data,
-        toolCallId: parsed.data.toolCallId,
-      })
-      return c.json(successEnvelope(result))
-    } catch (error) {
-      if (error instanceof CommandError) {
-        return jsonWithStatus(
-          c,
-          errorEnvelope(error.code, error.message),
-          error.status
-        )
-      }
-      throw error
-    }
+    const result = await reverseCoachReceipt({
+      db,
+      registry,
+      userId,
+      threadId: threadIdParsed.data,
+      messageId: messageIdParsed.data,
+      toolCallId: parsed.data.toolCallId,
+    })
+    return c.json(successEnvelope(result))
   })
 
   return routes

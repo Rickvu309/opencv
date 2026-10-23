@@ -1,19 +1,17 @@
 import {
   applyCardIdSchema,
-  authUnavailableEnvelope,
   ERROR_CODES,
   errorEnvelope,
   httpStatusForError,
   successEnvelope,
-  unauthorizedEnvelope,
   type CoachRuntime,
 } from "@workspace/domain"
 import { Hono } from "hono"
 
 import type { Auth } from "../auth.js"
-import { CommandError, type AppDatabase } from "../commands/registry.js"
+import type { AppDatabase } from "../commands/registry.js"
 import { jsonWithStatus } from "../http-json.js"
-import { readSession } from "../session.js"
+import { requireSession, type SessionVariables } from "../middleware.js"
 import { fetchJobPosting, type FetchJobPosting } from "./fetch-posting.js"
 import { getApplyCardDetail, listApplyCardsForUser } from "./queries.js"
 import { scanApplyPosting } from "./scan.js"
@@ -29,18 +27,9 @@ export function createApplyReadRoutes({
   coach?: CoachRuntime
   fetchJobPosting?: FetchJobPosting
 }) {
-  const routes = new Hono()
+  const routes = new Hono<{ Variables: SessionVariables }>()
 
-  routes.post("/scan", async (c) => {
-    if (!auth || !db) {
-      return c.json(authUnavailableEnvelope(), 503)
-    }
-
-    const session = await readSession(auth, c)
-    if (!session) {
-      return c.json(unauthorizedEnvelope(), 401)
-    }
-
+  routes.post("/scan", requireSession(auth, db), async (c) => {
     let input: unknown
     try {
       const text = await c.req.text()
@@ -71,29 +60,15 @@ export function createApplyReadRoutes({
     return c.json(successEnvelope(result.data))
   })
 
-  routes.get("/", async (c) => {
-    if (!auth || !db) {
-      return c.json(authUnavailableEnvelope(), 503)
-    }
+  routes.get("/", requireSession(auth, db), async (c) => {
+    const { userId, db } = c.var
 
-    const session = await readSession(auth, c)
-    if (!session) {
-      return c.json(unauthorizedEnvelope(), 401)
-    }
-
-    const cards = await listApplyCardsForUser(db, session.user.id)
+    const cards = await listApplyCardsForUser(db, userId)
     return c.json(successEnvelope(cards))
   })
 
-  routes.get("/:id", async (c) => {
-    if (!auth || !db) {
-      return c.json(authUnavailableEnvelope(), 503)
-    }
-
-    const session = await readSession(auth, c)
-    if (!session) {
-      return c.json(unauthorizedEnvelope(), 401)
-    }
+  routes.get("/:id", requireSession(auth, db), async (c) => {
+    const { userId, db } = c.var
 
     const parsed = applyCardIdSchema.safeParse(c.req.param("id"))
     if (!parsed.success) {
@@ -104,19 +79,8 @@ export function createApplyReadRoutes({
       )
     }
 
-    try {
-      const card = await getApplyCardDetail(db, session.user.id, parsed.data)
-      return c.json(successEnvelope(card))
-    } catch (error) {
-      if (error instanceof CommandError) {
-        return jsonWithStatus(
-          c,
-          errorEnvelope(error.code, error.message),
-          error.status
-        )
-      }
-      throw error
-    }
+    const card = await getApplyCardDetail(db, userId, parsed.data)
+    return c.json(successEnvelope(card))
   })
 
   return routes

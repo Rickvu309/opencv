@@ -6,7 +6,12 @@ import { createAuth, type AuthDatabase } from "./auth.js"
 import { createCoachRoutes } from "./coach/http.js"
 import { commandRegistry } from "./commands/index.js"
 import { createCommandRoutes } from "./commands/http.js"
-import { authUnavailableEnvelope, unauthorizedEnvelope } from "./envelope.js"
+import { authUnavailableEnvelope } from "./envelope.js"
+import {
+  handleApiError,
+  notFoundEnvelopeResponse,
+  requireSession,
+} from "./middleware.js"
 import { isAllowedOrigin } from "./origin.js"
 import { createApplyReadRoutes } from "./apply/http.js"
 import type { FetchJobPosting } from "./apply/fetch-posting.js"
@@ -77,6 +82,9 @@ export function createApp({
     })
   )
 
+  app.onError(handleApiError)
+  app.notFound(notFoundEnvelopeResponse)
+
   app.get("/health", (c) => c.json({ ok: true }))
 
   const auth =
@@ -90,24 +98,16 @@ export function createApp({
         })
       : undefined
 
-  if (auth) {
-    app.all("/api/auth/*", (c) => auth.handler(c.req.raw))
-
-    app.get("/api/session", async (c) => {
-      const session = await auth.api.getSession({
-        headers: c.req.raw.headers,
-      })
-
-      if (!session) {
-        return c.json(unauthorizedEnvelope(), 401)
-      }
-
-      return c.json({ ok: true, user: session.user, session: session.session })
+  app.all("/api/auth/*", (c) =>
+    auth ? auth.handler(c.req.raw) : c.json(authUnavailableEnvelope(), 503)
+  )
+  app.get("/api/session", requireSession(auth, db), (c) =>
+    c.json({
+      ok: true,
+      user: c.var.session.user,
+      session: c.var.session.session,
     })
-  } else {
-    app.all("/api/auth/*", (c) => c.json(authUnavailableEnvelope(), 503))
-    app.get("/api/session", (c) => c.json(authUnavailableEnvelope(), 503))
-  }
+  )
 
   app.route(
     "/api/commands",

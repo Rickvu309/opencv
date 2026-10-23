@@ -8,6 +8,7 @@ export const ERROR_CODES = {
   COACH_NOT_ALLOWED: "COACH_NOT_ALLOWED",
   COACH_UNAVAILABLE: "COACH_UNAVAILABLE",
   COACH_LIMIT_REACHED: "COACH_LIMIT_REACHED",
+  INTERNAL_ERROR: "INTERNAL_ERROR",
 } as const
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES]
@@ -77,6 +78,8 @@ export function httpStatusForError(code: string): number {
       return 404
     case ERROR_CODES.COACH_LIMIT_REACHED:
       return 429
+    case ERROR_CODES.INTERNAL_ERROR:
+      return 500
     default:
       return 400
   }

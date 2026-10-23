@@ -1,0 +1,75 @@
+import {
+  authUnavailableEnvelope,
+  ERROR_CODES,
+  errorEnvelope,
+  httpStatusForError,
+  unauthorizedEnvelope,
+} from "@workspace/domain"
+import type { Context, MiddlewareHandler } from "hono"
+
+import type { Auth } from "./auth.js"
+import { CommandError, type AppDatabase } from "./commands/registry.js"
+import { jsonWithStatus } from "./http-json.js"
+import { readSession } from "./session.js"
+
+type Session = NonNullable<Awaited<ReturnType<typeof readSession>>>
+
+export type SessionVariables = {
+  session: Session
+  userId: string
+  db: AppDatabase
+}
+
+export function requireSession(
+  auth: Auth | undefined,
+  db: AppDatabase | undefined
+): MiddlewareHandler<{ Variables: SessionVariables }> {
+  return async (c, next) => {
+    if (!auth || !db) {
+      return jsonWithStatus(
+        c,
+        authUnavailableEnvelope(),
+        httpStatusForError(ERROR_CODES.AUTH_UNAVAILABLE)
+      )
+    }
+
+    const session = await readSession(auth, c)
+    if (!session) {
+      return jsonWithStatus(
+        c,
+        unauthorizedEnvelope(),
+        httpStatusForError(ERROR_CODES.UNAUTHORIZED)
+      )
+    }
+
+    c.set("session", session)
+    c.set("userId", session.user.id)
+    c.set("db", db)
+    await next()
+  }
+}
+
+export function handleApiError(error: Error, c: Context) {
+  if (error instanceof CommandError) {
+    return jsonWithStatus(
+      c,
+      errorEnvelope(error.code, error.message),
+      error.status
+    )
+  }
+
+  console.error(error)
+  return jsonWithStatus(
+    c,
+    errorEnvelope(ERROR_CODES.INTERNAL_ERROR, "Something went wrong"),
+    httpStatusForError(ERROR_CODES.INTERNAL_ERROR)
+  )
+}
+
+export function notFoundEnvelopeResponse(c: Context) {
+  return jsonWithStatus(
+    c,
+    errorEnvelope(ERROR_CODES.NOT_FOUND, "Not found"),
+    httpStatusForError(ERROR_CODES.NOT_FOUND)
+  )
+}
