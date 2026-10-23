@@ -1,0 +1,3 @@
+# Blank issues are disabled in the web UI. Use a form below.
+# Agents can still create issues with `gh issue create --title ... --body ...`.
+blank_issues_enabled: false
