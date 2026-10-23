@@ -14,13 +14,14 @@ Single-context (`CONTEXT.md` + `docs/adr/` at repo root). See `docs/agents/domai
 
 ### Git
 
-- `main` is the only long-lived branch; keep it mergeable.
+- `main` is the only long-lived branch; keep it mergeable. It is protected by a ruleset that requires a pull request, the `ci` check, linear history and no force push.
 - One Linear ticket → one branch (any name) from updated `main` → one PR that references the QVE id.
-- CI green and a review verdict before a human squash-merges.
+- PR titles use `QVE-123: summary`, or `chore`, `docs`, `fix`, `ci`, `deps` as the prefix. The `pr-title` check enforces it. Fill in `.github/pull_request_template.md`.
+- The merge is a squash whose subject is the PR title and whose body is blank. Auto-merge is on, so the PR merges once the required check `ci` is green.
 - `ready-for-human` tickets are decisions; implementation agents never pick them up.
 - Parallel frontier work: one git worktree per ticket.
 - Blocked tickets start only after their blockers are on `main`.
-- Commit on the current branch; a human squash-merges, then removes the branch/worktree.
+- Commit on the current branch; after the squash merge, remove the branch/worktree.
 
 ### Design system
 

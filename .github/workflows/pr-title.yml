@@ -1,0 +1,32 @@
+name: pr-title
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - synchronize
+      - reopened
+
+permissions:
+  contents: read
+
+jobs:
+  pr-title:
+    name: pr-title
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check the PR title
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          PATTERN='^(QVE-[0-9]+|chore|docs|fix|ci|deps): .+'
+          if [[ ! "$TITLE" =~ $PATTERN ]]; then
+            echo "PR title must match $PATTERN"
+            echo "Examples:"
+            echo "  QVE-123: add the profile page"
+            echo "  fix: handle an empty cover letter"
+            echo "  deps: bump vitest"
+            exit 1
+          fi

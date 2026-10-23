@@ -29,3 +29,11 @@ Used by `/wayfinder`. The **map** is a single Linear issue with **child** issues
 - **Frontier**: open children of the map with no open blockers and unclaimed; first in map order wins.
 - **Claim**: assign to the driving session/user before work.
 - **Resolve**: comment the answer, mark done/cancelled as appropriate, then append a context pointer to the map's Decisions-so-far.
+
+## Pull requests
+
+- One ticket, one branch, one PR. Fill in [`.github/pull_request_template.md`](../../.github/pull_request_template.md).
+- PR titles use `QVE-123: summary`, or `chore`, `docs`, `fix`, `ci`, `deps` as the prefix. The `pr-title` check enforces it.
+- The merge is a squash whose subject is the PR title and whose body is blank.
+- Auto-merge is on, so the PR merges once the required check `ci` is green.
+- `main` is protected by a ruleset requiring a pull request, `ci`, linear history and no force push.
