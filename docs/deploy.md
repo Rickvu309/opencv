@@ -166,7 +166,9 @@ it only if every check passes, heartbeats included.
 ## Cutover
 
 The one-time move from the `*.up.railway.app` hosts and Vercel to `opencv.me`.
-Each step can be undone. Do not start without the operator's go.
+Steps 1 to 3 and 5 are reversible by reverting the record or variable. Step 4
+is reversible in config, but every signed-in user is signed out once either
+way. Do not start without the operator's go.
 
 1. Migrate the config. Review `railway config plan --file .railway/railway.ts --environment staging`
    (it must create `web` and change nothing on `api` but the config source),
@@ -189,9 +191,11 @@ Each step can be undone. Do not start without the operator's go.
 Point `AUTH_URL` back to the `*.up.railway.app` host (one more forced
 re-login), remove the new origin from `WEB_ORIGINS`, run
 `railway config migrate undo`, and re-enable the Vercel production deploy. The
-Railway `web` services and the DNS records can stay; nothing routes to them
-once the web origin is out of `WEB_ORIGINS`. To roll back one bad deploy,
-open the service in Railway and pick the previous deployment.
+`opencv.me` zone held no records before the cutover, so there are no earlier
+targets to restore: delete the Cloudflare records, or leave them. Resolvers may
+cache them for a while, and the Railway service domains (`*.up.railway.app`)
+stay reachable directly until the services are removed. To roll back one bad
+deploy, open the service in Railway and pick the previous deployment.
 
 ## Migration pipeline
 

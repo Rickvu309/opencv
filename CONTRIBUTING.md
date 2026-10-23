@@ -38,14 +38,14 @@ flowchart LR
 
 `type/<issue#>-short-description`, for example `feat/42-login-page` or `fix/57-cart-total`.
 
-| Type | Use for |
-|---|---|
-| `feat` | New features |
-| `fix` | Bug fixes |
-| `hotfix` | Urgent production fixes |
+| Type       | Use for                              |
+| ---------- | ------------------------------------ |
+| `feat`     | New features                         |
+| `fix`      | Bug fixes                            |
+| `hotfix`   | Urgent production fixes              |
 | `refactor` | Code changes with no behavior change |
-| `chore` | Dependencies, config, tooling |
-| `docs` | Documentation only |
+| `chore`    | Dependencies, config, tooling        |
+| `docs`     | Documentation only                   |
 
 - The issue number is always required.
 - Lowercase kebab-case, 3-5 words.
@@ -106,19 +106,19 @@ If the fix is risky or will take time, first roll back to the previous productio
 
 ## 9. Guardrails (set up once per repo)
 
-| Guardrail | Where | What it does |
-|---|---|---|
-| Ruleset on `main` | GitHub | Requires a PR (1 approval: one account, see `docs/git-workflow/review-and-approval.md`), linear history; blocks force-push and deletion |
-| Merge settings | GitHub | Squash only, PR title as commit message, branches auto-deleted after merge |
-| `CODEOWNERS` | GitHub | Names the owner of every path; `review-pr.sh` notes env/secrets paths |
-| `pre-push` hook | Local | Blocks pushes to `main` and bad branch names; runs `scripts/check.sh --changed` (quick, scoped to what changed) |
-| `commit-msg` hook | Local | Blocks commits on `main`; rejects empty messages |
-| `pre-commit` hook | Local | Rejects a staged file over 5000 tokens (bytes / 4); binary files and `linguist-generated` files in `.gitattributes` are skipped |
-| `scripts/open-pr.sh` | Local | Correct PR title and `Closes #`, quick check before push |
-| `scripts/review-pr.sh` | Review agent | Verifies the PR and runs the checks in a clean worktree |
-| Templates | GitHub | PR template; Feature, Bug, Chore issue forms |
-| Labels | GitHub | `feat`, `fix`, `hotfix`, `refactor`, `chore`, `docs`, `needs-human-review` |
-| Dependabot | GitHub | Weekly grouped npm version updates (no GitHub Actions) |
+| Guardrail              | Where        | What it does                                                                                                                            |
+| ---------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Ruleset on `main`      | GitHub       | Requires a PR (1 approval: one account, see `docs/git-workflow/review-and-approval.md`), linear history; blocks force-push and deletion |
+| Merge settings         | GitHub       | Squash only, PR title as commit message, branches auto-deleted after merge                                                              |
+| `CODEOWNERS`           | GitHub       | Names the owner of every path; `review-pr.sh` notes env/secrets paths                                                                   |
+| `pre-push` hook        | Local        | Blocks pushes to `main` and bad branch names; runs `scripts/check.sh --changed` (quick, scoped to what changed)                         |
+| `commit-msg` hook      | Local        | Blocks commits on `main`; rejects empty messages                                                                                        |
+| `pre-commit` hook      | Local        | Rejects a staged file over 5000 tokens (bytes / 4); binary files and `linguist-generated` files in `.gitattributes` are skipped         |
+| `scripts/open-pr.sh`   | Local        | Correct PR title and `Closes #`, quick check before push                                                                                |
+| `scripts/review-pr.sh` | Review agent | Verifies the PR and runs the checks in a clean worktree                                                                                 |
+| Templates              | GitHub       | PR template; Feature, Bug, Chore issue forms                                                                                            |
+| Labels                 | GitHub       | `feat`, `fix`, `hotfix`, `refactor`, `chore`, `docs`, `needs-human-review`                                                              |
+| Dependabot             | GitHub       | Weekly grouped npm version updates (no GitHub Actions)                                                                                  |
 
 Local hooks are on once `git config core.hooksPath .githooks` is set in your clone (`scripts/new-task.sh` does it). Anyone can skip them with `--no-verify`. Don't, because the reviewer re-runs everything.
 
@@ -132,7 +132,7 @@ Run these once per repo (the owner does the GitHub settings steps):
 4. Check `gh api repos/quanvu309/opencv/codeowners/errors --jq '.errors | length'` reads `0`.
 5. Labels (`.github/labels.yml` is the source of truth): create each one with `gh label create <name> --color <hex> --description <text> --force`.
 
-Hosting is Vercel for the web app and Railway for the API. `docs/git-workflow/deploys-and-hotfixes.md` describes it as it is today; the hosting plan will change it.
+Hosting is Railway behind Cloudflare (web, api and Postgres); `docs/deploy.md` describes it. Per-branch previews are pending.
 
 ## Cheatsheet
 
