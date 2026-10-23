@@ -15,7 +15,7 @@ Several agents on one machine each get their own folder, so they never overwrite
     57-cart-total/                     # fix/57-cart-total,   PORT=4057
 ```
 
-The worktree folder is `../<repo>.worktrees/<issue#>-short-description`, next to the main checkout.
+The worktree folder is `../opencv.worktrees/<issue#>-short-description`, next to the main checkout.
 
 ## Start a task
 
@@ -31,7 +31,7 @@ The script:
 2. Builds the branch name `type/<issue#>-short-description` and validates it.
 3. Fetches `origin/main` and creates the branch and worktree from it, with no upstream yet.
 4. Copies `.env.example` to `.env` in the worktree and sets `PORT`.
-5. Installs dependencies (pnpm, yarn, or npm, detected from the lockfile). Skip with `--no-install`.
+5. Installs dependencies (`pnpm install --frozen-lockfile`). Skip with `--no-install`.
 6. Turns on the local hooks for the clone: `git config core.hooksPath .githooks` (shared by all worktrees).
 7. Prints the path, branch, and port.
 
@@ -58,8 +58,8 @@ The 4000-4999 range avoids common local services (3000 default dev server, 3306 
 Some dev servers read `PORT` from the shell, not from `.env`. Start them with the port explicitly:
 
 ```bash
-PORT=4042 npm run dev
-# or: npm run dev -- --port 4042
+PORT=4042 pnpm --filter api dev
+pnpm --filter web dev --port 4043
 ```
 
 ## Clean up after merge
@@ -89,4 +89,4 @@ git worktree prune
 | `fatal: 'feat/42-...' is already checked out` | Someone else has that branch. Pick another issue. |
 | Worktree folder was deleted by hand | `git worktree prune` |
 | Port already in use | Check `.env` in your worktree; use the next free port and update `PORT` |
-| Agent sandbox can't reach `../` | Allow the sibling `<repo>.worktrees/` folder in the agent's sandbox |
+| Agent sandbox can't reach `../` | Allow the sibling `opencv.worktrees/` folder in the agent's sandbox |

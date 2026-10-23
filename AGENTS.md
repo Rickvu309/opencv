@@ -21,7 +21,7 @@ There is no CI and no GitHub Actions. Local hooks (`.githooks/`) and the review 
 
 #### 1. Issue first
 - Never start work without a GitHub issue.
-- If no issue exists, create one, or let `scripts/new-task.sh <type> "Issue title"` create it.
+- If no issue exists, create one with `gh issue create` (or the issue forms), or let `scripts/new-task.sh <type> "Issue title"` create it.
 - If the issue is assigned to someone else, or a branch for it exists, stop and pick another issue.
 - If the work will take more than a few days, split it into sub-issues and do one at a time.
 
@@ -33,7 +33,7 @@ There is no CI and no GitHub Actions. Local hooks (`.githooks/`) and the review 
   scripts/new-task.sh <type> "Issue title"          # creates the issue first
   ```
   It also turns on the local hooks (`git config core.hooksPath .githooks`).
-- Work only inside the printed worktree path (`../<repo>.worktrees/<issue#>-short-description`).
+- Work only inside the printed worktree path (`../opencv.worktrees/<issue#>-short-description`).
 - Use only your assigned port (printed by the script, stored as `PORT` in the worktree's `.env`).
 - One agent, one issue, one branch, one worktree. Never touch another agent's worktree.
 
@@ -45,7 +45,7 @@ There is no CI and no GitHub Actions. Local hooks (`.githooks/`) and the review 
 #### 4. Checks, commits, and PRs
 - Pushes run a quick check scoped to what changed: `scripts/check.sh --changed` (the pre-push hook does it). The full lint, typecheck and test run once per PR, in `scripts/review-pr.sh`.
 - Open the PR with `scripts/open-pr.sh --draft`. It validates the branch, runs the quick check, pushes, and creates the PR with the title `type: description (#<issue>)` and `Closes #<issue>` in the body.
-- Before marking ready (`gh pr ready`), the quick check passes and, for a web change, the Vercel preview works.
+- Before marking ready (`gh pr ready`), the quick check passes and the verify-opencv evidence (`.claude/skills/verify-opencv`) is attached to the PR. Preview deploys arrive with the Railway move.
 - If `main` moved ahead: `git fetch origin && git rebase origin/main && git push --force-with-lease`.
   Force-push only ever goes to your own task branch.
 
@@ -63,7 +63,7 @@ There is no CI and no GitHub Actions. Local hooks (`.githooks/`) and the review 
 
 #### 6. Merge and clean up
 - Merge only with squash: `gh pr merge --squash`.
-- An agent running under the owner's account (`@quanvu309`) merges its own PR with `gh pr merge <pr#> --squash --admin` once `scripts/review-pr.sh` is OK (it also fails on requested changes and unresolved review threads) and an independent review has no open finding. Do not wait for a human; merge as soon as those pass. `--admin` skips the ruleset, so never use it past one of those. Never for a contributor's PR or a result of `HUMAN REQUIRED`.
+- An agent running under the owner's account (`@quanvu309`) merges its own PR with `gh pr merge <pr#> --squash --admin` only after `scripts/review-pr.sh` prints OK and the gates lane report at the exact head is green; never before. The ruleset's one-approval rule cannot be met by the only human approving their own agent's PR, so `--admin` is the bypass; it skips the ruleset, so it also needs an independent review with no open finding and no requested changes or unresolved threads. Never use it for a contributor's PR or a result of `HUMAN REQUIRED`.
 - After merge, the issue closes and the remote branch is deleted automatically.
 - From the main checkout: `scripts/cleanup-worktree.sh <issue#>`.
 
@@ -78,7 +78,7 @@ For the agent that reviews PRs. Run from the main checkout, for every PR marked 
 1. `scripts/review-pr.sh <pr#>`. It checks the branch name, title, `Closes #`, the issue, the label, mass deletion, committed env files, and up-to-date with `main`, then runs the full `scripts/check.sh` (lint, typecheck, test) once, in a throwaway worktree of the PR.
 2. Result `HUMAN REQUIRED` (exit 2): the PR has `needs-human-review` or is a mass deletion. **Do not merge.** Comment your findings and leave it to a human.
 3. Result `FAIL` (exit 1), including a committed real `.env` file or a requested-changes review: `gh pr review <pr#> --comment --body "FAIL: <what to fix>"`. Don't merge.
-4. Result `OK` (exit 0): for a web change open the Vercel preview and test the changed flow, then read the diff (scope, tests, no secrets; look closely at `package.json` scripts, `scripts/`, `.githooks/`, `.github/`).
+4. Result `OK` (exit 0): check the verify-opencv evidence for the changed flow, then read the diff (scope, tests, no secrets; look closely at `package.json` scripts, `scripts/`, `.githooks/`, `.github/`).
 5. All good: `gh pr review <pr#> --comment --body "review-pr.sh: OK"`, then merge with `gh pr merge <pr#> --squash`. Otherwise comment what to fix. (One account: GitHub won't take an approval or "request changes" from the PR author.)
 
 Full checklist: `docs/git-workflow/review-and-approval.md`.

@@ -13,7 +13,7 @@ Every change starts as a GitHub issue, gets its own short-lived branch, comes ba
 flowchart LR
     A["Issue #42"] --> B["Branch feat/42-login-page<br/>(own worktree)"]
     B --> C["Draft PR<br/>feat: add login page (#42)<br/>Closes #42"]
-    C --> D["Local checks + preview deploy<br/>+ review checklist"]
+    C --> D["Local checks + verify-opencv<br/>evidence + review checklist"]
     D --> E["Squash-merge to main"]
     E --> F["Production deploy"]
     E --> G["Issue closes,<br/>branch deleted,<br/>worktree removed"]
@@ -55,7 +55,7 @@ flowchart LR
 ## 4. Worktrees
 
 - **Required for agents, optional for people.** Several agents share one machine; worktrees keep their files apart.
-- Location: `../<repo>.worktrees/<issue#>-short-description`, next to the main checkout.
+- Location: `../opencv.worktrees/<issue#>-short-description`, next to the main checkout.
 - The main checkout stays on `main` and is only used to fetch and create worktrees.
 - Each worktree has its own dependency install, its own `.env` (copied from `.env.example`), and its own dev port.
 - Git refuses to check out one branch in two worktrees, so two agents can't work on the same branch.
@@ -69,7 +69,7 @@ flowchart LR
 - Body: the PR template with the `Closes #42` line.
 - Before merge, the PR needs:
   - passing checks: the quick `scripts/check.sh --changed` on each push, and the full `scripts/check.sh` (lint, typecheck, test) once, by the reviewer
-  - a working preview deploy
+  - local verification with the verify-opencv skill (`.claude/skills/verify-opencv`), with its evidence attached to the PR; preview deploys arrive with the Railway move
   - an approval after the review checklist
 - If the branch falls behind `main`, rebase it: `git fetch origin && git rebase origin/main && git push --force-with-lease`.
 - See `docs/git-workflow/commit-and-pr-conventions.md`.
@@ -85,7 +85,7 @@ flowchart LR
 ## 6. Merging and deploying
 
 - Squash-merge is the only merge method. Each PR lands as one commit on `main`.
-- Every PR gets a preview deploy on the hosting platform.
+- There are no preview deploys yet: verify locally with the verify-opencv skill (`.claude/skills/verify-opencv`) and attach its evidence; preview deploys arrive with the Railway move.
 - A merge to `main` deploys **straight to production**. There is no staging step.
 - After the merge, the issue closes automatically (from `Closes #42`), the remote branch is deleted automatically, and you remove your worktree.
 
@@ -111,7 +111,6 @@ If the fix is risky or will take time, first roll back to the previous productio
 | Ruleset on `main` | GitHub | Requires a PR (1 approval: one account, see `docs/git-workflow/review-and-approval.md`), linear history; blocks force-push and deletion |
 | Merge settings | GitHub | Squash only, PR title as commit message, branches auto-deleted after merge |
 | `CODEOWNERS` | GitHub | Names the owner of every path; `review-pr.sh` notes env/secrets paths |
-| Preview deploy check (optional) | GitHub, from the hosting platform | Merge blocked while the preview deploy fails |
 | `pre-push` hook | Local | Blocks pushes to `main` and bad branch names; runs `scripts/check.sh --changed` (quick, scoped to what changed) |
 | `commit-msg` hook | Local | Blocks commits on `main`; rejects empty messages |
 | `pre-commit` hook | Local | Rejects a staged file over 5000 tokens (bytes / 4); binary files and `linguist-generated` files in `.gitattributes` are skipped |
@@ -133,7 +132,7 @@ Run these once per repo (the owner does the GitHub settings steps):
 4. Check `gh api repos/quanvu309/opencv/codeowners/errors --jq '.errors | length'` reads `0`.
 5. Labels (`.github/labels.yml` is the source of truth): create each one with `gh label create <name> --color <hex> --description <text> --force`.
 
-Hosting is Vercel for the web app (previews on every branch) and Railway for the API. `docs/git-workflow/deploys-and-hotfixes.md` describes it as it is today; the hosting plan will change it.
+Hosting is Vercel for the web app and Railway for the API. `docs/git-workflow/deploys-and-hotfixes.md` describes it as it is today; the hosting plan will change it.
 
 ## Cheatsheet
 
@@ -146,7 +145,7 @@ scripts/new-task.sh feat 42 -d "login page"
 scripts/new-task.sh fix "Cart total rounds wrong"     # creates the issue first
 
 # Work
-cd ../<repo>.worktrees/42-login-page
+cd ../opencv.worktrees/42-login-page
 git add -p && git commit -m "add login form"
 scripts/check.sh --changed                             # quick lint, typecheck, test of what changed (full run: scripts/check.sh)
 

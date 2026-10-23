@@ -1,7 +1,7 @@
 # CODEOWNERS: paths listed here need approval from a listed owner before merge
 # (the main ruleset has "require code owner review" turned on).
 #
-# Rule: every path needs @quanvu309's approval, so contributors (e.g. @tnguy753)
+# Rule: every path needs @quanvu309's approval, so contributors
 # can open PRs but cannot merge them. Only @quanvu309 bypasses the ruleset.
 # The review agent must NOT be listed here.
 #
@@ -24,10 +24,6 @@ env/                  @quanvu309
 
 # Anything named secret/secrets
 *secret*              @quanvu309
-
-# TODO: add project-specific secrets handling, e.g.
-# /src/lib/secrets/   @quanvu309
-# /src/lib/crypto/    @quanvu309
 
 # Protect this file so nobody (or no agent) can remove the rules above without a human.
 /.github/CODEOWNERS   @quanvu309

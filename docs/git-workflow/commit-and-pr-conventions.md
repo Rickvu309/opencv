@@ -35,8 +35,8 @@ That links the PR to the issue and closes the issue when the PR merges into `mai
    scripts/open-pr.sh --draft
    ```
    It checks the branch name, runs `scripts/check.sh --changed` (quick, scoped to what changed), pushes, and creates the PR. The title is `type: description (#N)`, taken from the issue title or set with `-d "..."`. The body is the PR template with `Closes #N` filled in. Use `--dry-run` to preview.
-2. Keep pushing. The pre-push hook runs the quick check; Vercel builds a web preview on every push.
-3. When done: checks pass, the preview deploy works, and the checklist is ticked. Run `gh pr ready`.
+2. Keep pushing. The pre-push hook runs the quick check.
+3. When done: checks pass, the verify-opencv evidence is attached, and the checklist is ticked. Run `gh pr ready`.
 4. Review (see `review-and-approval.md`). Fix comments in new commits and resolve the threads.
 5. If `main` moved ahead, rebase. The reviewer refuses branches that are behind `main`:
    ```bash

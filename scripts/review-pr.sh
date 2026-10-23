@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # review-pr.sh: the review agent's gate. Verifies a PR against the workflow and runs the checks
-# in a throwaway worktree. It never approves. OK means the PR may merge once the preview works and an
+# in a throwaway worktree. It never approves. OK means the PR may merge once the change is verified locally and an
 # independent review has no open finding; no human approval is needed.
 #
 # Usage (from the main checkout):
 #   scripts/review-pr.sh <pr#> [--keep] [--no-install]
 #
 # Exit code:
-#   0  OK to merge (after you confirm the preview deploy works and the independent review is clean)
+#   0  OK to merge (after you confirm the verify-opencv evidence and the independent review is clean)
 #   1  FAIL: request changes
 #   2  HUMAN REQUIRED: do not merge. Only for super important changes: the needs-human-review label (a big
 #      decision) or a mass deletion (the PR deletes MASS_DELETE_PCT% or more of the files tracked on main, or
@@ -184,8 +184,8 @@ rm -f "$checker"
 if (( keep )); then note "review worktree kept at $wt"; else git -C "$main_checkout" worktree remove --force "$wt"; fi
 
 echo
-echo "Preview deploy"
-note "open the preview deploy and test the changed flow (gh pr checks $pr lists the hosting platform's status)"
+echo "Verification"
+note "check the verify-opencv evidence on the PR (.claude/skills/verify-opencv); there are no preview deploys yet"
 
 echo
 if [[ ${#fails[@]} -gt 0 ]]; then
@@ -195,6 +195,6 @@ elif [[ ${#humans[@]} -gt 0 ]]; then
   echo "RESULT: HUMAN REQUIRED. Do NOT merge. Comment with your findings and leave the decision to a human."
   exit 2
 else
-  echo "RESULT: OK. Check the preview deploy and the independent review, then: gh pr merge $pr --squash"
+  echo "RESULT: OK. Check the verify-opencv evidence and the independent review, then: gh pr merge $pr --squash"
   exit 0
 fi

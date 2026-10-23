@@ -39,8 +39,8 @@ The script does steps 1-6 and prints `OK`, `FAIL`, or `HUMAN REQUIRED`. It never
 3. **Body** contains `Closes #<issue>`, and the issue exists and is open.
 4. **Human needed?** Only if the PR has the `needs-human-review` label or is a mass deletion (it deletes 25% or more of the files tracked on `main`, or 80% or more of one `apps/*` or `packages/*` directory with at least 5 files; renames are counted as deletions, so moving a whole app also needs a human): **stop: do not merge**. Review and comment if useful, then leave the decision to a human. Env/secrets paths in `CODEOWNERS` (the file list comes from `git diff --no-renames`, so renames and PRs over 100 files are covered) are only noted; the catch-all `*` line only decides who may merge, so `scripts/review-pr.sh` ignores it here (`scripts/test-codeowners.sh` guards that). A committed real env file (`.env`, `.env.local`, `prod.env`; templates such as `.env.example` are fine) fails the checklist, and so does a requested-changes review.
 5. **Up to date:** the branch contains the latest `main`. If not, request a rebase.
-6. **Checks pass:** the PR is checked out in a throwaway worktree (`../<repo>.worktrees/review-pr-<n>`), dependencies are installed, and `scripts/check.sh` (full, no `--changed`) from `main` runs lint, typecheck, and test. This is the one full run per PR; pushes only run `scripts/check.sh --changed`. It uses `main`'s copy so a PR can't weaken its own checks. The worktree is removed afterwards (`--keep` keeps it).
-7. **Preview deploy:** for a change under `apps/web`, open the PR's Vercel preview (linked on the PR page) and test the changed flow. It must work. API-only changes have no preview; test them locally.
+6. **Checks pass:** the PR is checked out in a throwaway worktree (`../opencv.worktrees/review-pr-<n>`), dependencies are installed, and `scripts/check.sh` (full, no `--changed`) from `main` runs lint, typecheck, and test. This is the one full run per PR; pushes only run `scripts/check.sh --changed`. It uses `main`'s copy so a PR can't weaken its own checks. The worktree is removed afterwards (`--keep` keeps it).
+7. **Verification:** the PR carries verify-opencv evidence for the changed flow (`.claude/skills/verify-opencv`). Preview deploys arrive with the Railway move.
 8. **Read the diff.** It does what the issue asks and nothing unrelated, tests cover it, and there are no secrets, debug code, or commented-out code. Look closely at changes to `package.json` scripts, `scripts/`, `.githooks/`, and `.github/`: they change the gate itself.
 9. **Decide:**
    - All good: `gh pr review <pr#> --comment --body "review-pr.sh: OK"`, then `gh pr merge <pr#> --squash` (an agent under the owner's account adds `--admin`)
@@ -55,9 +55,9 @@ Without the script, do steps 1-6 by hand:
 gh pr view <pr#> --json headRefName,title,body,labels,files,baseRefName,isDraft
 git fetch origin main "pull/<pr#>/head:refs/remotes/origin/pr/<pr#>"
 git merge-base --is-ancestor origin/main origin/pr/<pr#> && echo up-to-date
-git worktree add --detach ../<repo>.worktrees/review-pr-<pr#> origin/pr/<pr#>
-cd ../<repo>.worktrees/review-pr-<pr#> && cp .env.example .env && npm ci && ../../<repo>/scripts/check.sh
-cd - && git worktree remove --force ../<repo>.worktrees/review-pr-<pr#>
+git worktree add --detach ../opencv.worktrees/review-pr-<pr#> origin/pr/<pr#>
+cd ../opencv.worktrees/review-pr-<pr#> && cp .env.example .env && pnpm install --frozen-lockfile && ../../opencv/scripts/check.sh
+cd - && git worktree remove --force ../opencv.worktrees/review-pr-<pr#>
 ```
 
 ## The review agent

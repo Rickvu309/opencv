@@ -19,7 +19,7 @@
 #
 # Result:
 #   branch    <type>/<issue#>-short-description   (from the latest origin/main, no upstream yet)
-#   worktree  ../<repo>.worktrees/<issue#>-short-description
+#   worktree  ../opencv.worktrees/<issue#>-short-description
 #   .env      copied from .env.example, with PORT set
 #   hooks     git config core.hooksPath .githooks (pre-push + commit-msg guardrails)
 #   port      4000 + (issue# mod 1000), or the next free port above it
@@ -118,7 +118,7 @@ if [[ "$target" =~ ^#?([0-9]+)$ ]]; then
 else
   (( have_gh )) || die "creating an issue needs the gh CLI, logged in (gh auth login)"
   issue_title=$target
-  [[ -n "$body" ]] || body="Created with scripts/new-task.sh. TODO: describe the goal and done criteria."
+  [[ -n "$body" ]] || body="Created with scripts/new-task.sh. Describe the goal and done criteria."
   info "Creating issue: $issue_title"
   assign_args=(); (( do_assign )) && assign_args=(--assignee @me)
   url=$(gh issue create --title "$issue_title" --body "$body" --label "$type" ${assign_args[@]+"${assign_args[@]}"}) \
@@ -208,7 +208,7 @@ Ready.
   issue     #$issue${issue_title:+  $issue_title}
   branch    $branch
   worktree  $wt_path
-  port      $port   (start the dev server with PORT=$port, e.g. PORT=$port npm run dev)
+  port      $port   (start the dev server with PORT=$port, e.g. PORT=$port pnpm dev)
 
 Next:
   cd "$wt_path"

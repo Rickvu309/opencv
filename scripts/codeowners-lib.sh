@@ -46,7 +46,7 @@ codeowners_protected() {
   done <<<"$files"
 }
 
-# pr_changed_files <repo> <diff-args...>: every path a PR changes, e.g. origin/main...origin/pr/7. --no-renames lists both sides of a rename, so moving
+# pr_changed_files <git-dir> <diff-args...>: every path a PR changes, e.g. origin/main...origin/pr/7. --no-renames lists both sides of a rename, so moving
 # a protected file away still counts. Unlike `gh pr view --json files`, it is not capped at 100 files.
 pr_changed_files() {
   git -C "$1" diff --name-only -z --no-renames "${@:2}" | tr '\0' '\n'

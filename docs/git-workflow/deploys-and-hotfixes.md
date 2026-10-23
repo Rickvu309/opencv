@@ -4,20 +4,19 @@
 
 | Environment | Comes from | When |
 |---|---|---|
-| Web preview (Vercel) | Each branch | Every push to a PR branch |
 | Web production (Vercel) | `main` | Every merge to `main` |
 | API production (Railway `production`) | `main` | Every merge to `main` |
 | API staging (Railway `staging`) | Manual | Not tied to PRs |
 
-There is no staging branch. Today only the web app has a per-PR preview. This describes hosting as it is now; the hosting plan (PR-3 in `docs/plans/opencv-program.md`) changes it, and this file is updated with it.
+There is no staging branch. This describes hosting as it is now; the hosting plan (PR-3 in `docs/plans/opencv-program.md`) changes it, and this file is updated with it.
 
-## Preview deploys
+## Verifying a change
 
-- Vercel builds every branch of `apps/web` and posts a link on the PR (settings in `vercel.json`, see `docs/deploy.md`).
-- Test your change there before marking the PR ready. Reviewers test there too.
-- A broken preview deploy blocks approval: the reviewer checks it. The ruleset has no required status check.
-- A web preview talks to whichever API its `VITE_API_URL` points at. Do not point a preview at production data you cannot afford to change.
-- The API has no per-PR environment. Test API changes locally (the `verify-opencv` skill runs the api on PGlite).
+There are no preview deploys yet. Verify locally with the verify-opencv skill (`.claude/skills/verify-opencv`) and attach its evidence; preview deploys arrive with the Railway move.
+
+- Run the `verify-opencv` skill: it starts the web app and the api on PGlite with a scripted Coach, drives the changed flow, and captures proof.
+- Attach that evidence to the PR before marking it ready. Reviewers check it.
+- The ruleset has no required status check, so GitHub does not block on it; `scripts/review-pr.sh` and the reviewer do.
 
 ## Railway setup
 
@@ -57,7 +56,7 @@ The fastest safe undo is a revert PR:
 ```bash
 # open an issue first, e.g. #95 "Revert login page"
 scripts/new-task.sh fix 95 -d "revert login page"
-cd ../<repo>.worktrees/95-revert-login-page
+cd ../opencv.worktrees/95-revert-login-page
 git revert <squash-commit-sha>
 scripts/open-pr.sh -d "revert login page"
 ```

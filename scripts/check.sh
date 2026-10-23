@@ -46,7 +46,7 @@ run() {
 }
 
 if [[ ! -f package.json ]]; then
-  echo "check: no package.json. TODO: adapt scripts/check.sh to this project. Nothing to run." >&2
+  echo "check: no package.json; nothing to run." >&2
   exit 0
 fi
 
@@ -161,7 +161,7 @@ if (( changed_mode )); then
           echo "==> $pm run $t"
           run "$pm" run "$t" || failed+=("$t")
         else
-          echo "check: warning: package.json has no '$t' script. TODO: add one." >&2
+          echo "check: warning: package.json has no '$t' script." >&2
         fi
         ;;
     esac
@@ -177,7 +177,7 @@ else
       echo "check: package.json has no '$t' script (STRICT_SCRIPTS=1)." >&2
       failed+=("$t")
     else
-      echo "check: warning: package.json has no '$t' script. TODO: add one." >&2
+      echo "check: warning: package.json has no '$t' script." >&2
     fi
   done
 

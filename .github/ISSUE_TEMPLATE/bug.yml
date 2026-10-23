@@ -37,7 +37,6 @@ body:
       label: Where
       options:
         - Production
-        - Preview deploy
         - Local
     validations:
       required: true
