@@ -146,6 +146,10 @@ if (( changed_mode )); then
             echo "==> scripts/test-commit-msg.sh"
             run scripts/test-commit-msg.sh || failed+=(commit-msg-tests)
           fi
+          if has_changed scripts/new-task.sh scripts/test-new-task.sh; then
+            echo "==> scripts/test-new-task.sh"
+            run scripts/test-new-task.sh || failed+=(new-task-tests)
+          fi
           if has_changed .githooks/pre-commit scripts/test-pre-commit.sh .gitattributes; then
             echo "==> scripts/test-pre-commit.sh"
             run scripts/test-pre-commit.sh || failed+=(pre-commit-tests)
@@ -178,7 +182,7 @@ else
   done
 
   if [[ " ${tasks[*]} " == *" test "* ]]; then
-    for t in test-commit-msg test-pre-commit test-codeowners; do
+    for t in test-commit-msg test-pre-commit test-codeowners test-new-task; do
       echo "==> scripts/$t.sh"
       run "scripts/$t.sh" || failed+=("$t")
     done

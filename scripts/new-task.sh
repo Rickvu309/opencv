@@ -61,12 +61,9 @@ port_claimed() {
 }
 
 # ---- args -------------------------------------------------------------------
-[[ $# -ge 1 ]] || usage 1
-case "$1" in -h|--help) usage 0 ;; esac
-[[ $# -ge 2 ]] || usage 1
-
-type=$1; target=$2; shift 2
+[[ $# -ge 1 ]] || usage 2
 desc=""; body=""; do_install=1; do_assign=1; take=0
+positional=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -d|--desc) [[ $# -ge 2 ]] || die "$1 needs a value"; desc=$2; shift 2 ;;
@@ -75,9 +72,12 @@ while [[ $# -gt 0 ]]; do
     --no-assign)  do_assign=0; shift ;;
     --take)       take=1; shift ;;
     -h|--help) usage 0 ;;
-    *) die "unknown option: $1 (see --help)" ;;
+    -*) echo "error: unknown option: $1" >&2; usage 2 ;;
+    *) positional+=("$1"); shift ;;
   esac
 done
+[[ ${#positional[@]} -eq 2 ]] || { echo "error: expected <type> and <issue#|title>, got ${#positional[@]} argument(s)" >&2; usage 2; }
+type=${positional[0]}; target=${positional[1]}
 
 [[ " $TYPES " == *" $type "* ]] || die "type must be one of: $TYPES"
 
