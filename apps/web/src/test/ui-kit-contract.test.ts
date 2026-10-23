@@ -119,8 +119,8 @@ describe("UI package kit surface", () => {
 
   it("covers every component file in the kit directory", () => {
     const componentsDir = path.join(repoRoot, "packages/ui/src/components")
-    const files = readdirSync(componentsDir).filter(
-      (name) => name.endsWith(".tsx") && !name.endsWith(".stories.tsx")
+    const files = readdirSync(componentsDir).filter((name) =>
+      name.endsWith(".tsx")
     )
     expect(files.length).toBeGreaterThan(0)
 

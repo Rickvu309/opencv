@@ -80,7 +80,6 @@ function appSourceFiles() {
     (file) =>
       /\.(tsx?|css)$/.test(file) &&
       !file.includes(".test.") &&
-      !file.includes(".stories.") &&
       !file.startsWith("test/")
   )
 }

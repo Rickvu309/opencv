@@ -8,9 +8,7 @@
     "lint": "turbo lint",
     "format": "turbo format",
     "typecheck": "turbo typecheck",
-    "test": "turbo test",
-    "storybook": "pnpm --filter @workspace/ui storybook",
-    "build-storybook": "pnpm --filter @workspace/ui build-storybook"
+    "test": "turbo test"
   },
   "devDependencies": {
     "prettier": "^3.8.3",

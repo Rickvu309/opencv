@@ -25,6 +25,7 @@ describe("kit classes survive the web production build", () => {
     () => {
       const css = cssFiles.map((file) => readFileSync(file, "utf8")).join("\n")
       expect(css).toMatch(/\.bg-primary\b/)
+      expect(css).toMatch(/--primary:/)
     }
   )
 })

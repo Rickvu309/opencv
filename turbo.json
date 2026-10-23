@@ -23,9 +23,6 @@
     "test": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"]
-    },
-    "build-storybook": {
-      "outputs": ["storybook-static/**"]
     }
   }
 }
