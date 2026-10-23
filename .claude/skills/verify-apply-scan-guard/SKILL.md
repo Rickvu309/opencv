@@ -24,7 +24,7 @@ pnpm --filter @workspace/domain build   # the api imports the built domain packa
 pnpm --filter api test:formal
 ```
 
-- One command, about 1 second, `fast-check` 4.x pinned by `pnpm-lock.yaml`.
+- One command, a few seconds, `fast-check` 4.x pinned by `pnpm-lock.yaml`.
 - Exit 0 means every test passed. A non-zero exit lists the failing tests and prints evidence for each.
 - `pnpm --filter api test` skips the file on purpose (`**/*.formal.test.ts` is excluded in `apps/api/vitest.config.ts`). The exclusion is there because the check is red on trunk while the findings below are open. The PR that fixes them deletes the exclusion line.
 - `FORMAL_SEED=<n>` changes the fast-check seed (default 241). Run a few seeds after a change to the guard. Runs per property: 400.
@@ -98,5 +98,5 @@ If a later run probes one of these and it fails, it is a new finding. Do not shr
 1. Run `pnpm --filter api test:formal`. Compare the failing tests to the known findings.
 2. A fix for F1 or F2 should turn that test green without editing the property or the host table. Delete the matching entry under Known findings, and when both are gone delete the `**/*.formal.test.ts` line from `apps/api/vitest.config.ts` so the default suite runs the check.
 3. A new rule (a new blocked range, a new scheme) needs a row in the `HOSTS` or `SCHEMES` table in the test and a matching generator in the same commit.
-4. Prove the check still bites. Make a scratch change that breaks the guard, confirm a named counterexample, then `git checkout` the file and confirm the run is back to where it started. Useful breaks: delete the `a === 192 && b === 168` line (line 36), remove the `.localhost` clause in `isBlockedApplyScanHost`, make the scheme test in `openableApplyJobUrl` also accept `ftp://`.
+4. Prove the check still bites. Make a scratch change that breaks the guard, confirm a named counterexample, then `git checkout` the file and confirm the run is back to where it started. A scratch edit in `packages/domain` only bites after `pnpm --filter @workspace/domain build`, and again after you revert it. Useful breaks: delete the `a === 192 && b === 168` line (line 36), remove the `.localhost` clause in `isBlockedApplyScanHost`, make the scheme test in `openableApplyJobUrl` also accept `ftp://`.
 5. Move the sync commit only after you reread every covered function at the new commit, rerun the check, and confirm every row of the coverage record and the Known findings still describes the code. Then set it to `git rev-parse origin/main` and fix any line numbers.
