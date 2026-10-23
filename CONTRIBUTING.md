@@ -132,7 +132,7 @@ Run these once per repo (the owner does the GitHub settings steps):
 4. Check `gh api repos/quanvu309/opencv/codeowners/errors --jq '.errors | length'` reads `0`.
 5. Labels (`.github/labels.yml` is the source of truth): create each one with `gh label create <name> --color <hex> --description <text> --force`.
 
-Hosting is Vercel for the web app and Railway for the API. `docs/git-workflow/deploys-and-hotfixes.md` describes it as it is today; the hosting plan will change it.
+Hosting is Railway for the web app, the API and Postgres. `docs/deploy.md` describes it.
 
 ## Cheatsheet
 

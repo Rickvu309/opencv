@@ -17,7 +17,7 @@ Copy `.env.example` to `.env` (or `.env.local`) and fill in values as features n
 API schema changes: edit `apps/api/src/db/schema.ts`, generate SQL with
 `pnpm --filter api run db:generate`, commit `apps/api/drizzle/`. CI applies
 migrations from scratch; Railway `preDeploy` applies them per environment
-(`docs/railway.md`). New accounts get a starter workspace on signup. To seed
+(`docs/deploy.md`). New accounts get a starter workspace on signup. To seed
 an existing empty dev/staging user: `pnpm --filter api run db:seed`.
 
 Before merging Coach persona or prompt changes, run the manual eval harness
@@ -41,6 +41,6 @@ zero tokens. The script refuses to start without `OPENROUTER_API_KEY`.
 
 ## Deployment
 
-`apps/web` deploys to Vercel: `main` → production, every other branch → a preview URL. Build settings live in `vercel.json`. Production: https://openpath-app.vercel.app.
+The web app and the api deploy to Railway behind `opencv.me`. Layout, variables, cutover and rollback are in `docs/deploy.md`.
 
 Domain and product docs: `CONTEXT.md`, `PRODUCT.md`, `AGENTS.md`, `docs/adr/`.

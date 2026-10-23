@@ -1,104 +1,253 @@
-# Deploying the web app to Vercel
+# Deploying OpenCV on Railway
 
-`main` deploys to production; every other branch gets a preview URL. The build
-settings live in `vercel.json` at the repo root rather than in the Vercel
-dashboard — `vercel.json` wins over the dashboard's build fields, so those can
-stay untouched. Root Directory and Ignored Build Step are dashboard-only and are
-covered under setup below.
+Railway hosts everything: the `api`, `Postgres` and the static `web` app, each
+in a `production` and a `staging` environment, behind the `opencv.me` zone on
+Cloudflare. ADR-0012 records the decision; this file is the runbook.
 
-Production web: https://openpath-app.vercel.app
+Each service redeploys from `main` when a file under its watch paths changes.
+No CI gates a deploy (the repo runs no GitHub Actions), so the local pre-push
+check and the review before merge are the gate.
 
-That hostname is a project domain on the existing `openpath` Vercel web
-project (not a second app). The previous auto alias
-`https://openpath-lovat.vercel.app` 308-redirects there. Team aliases
-(`openpath-rickvudev.vercel.app`, `openpath-git-main-rickvudev.vercel.app`)
-still serve the same production deployment without redirecting.
+## Layout
 
-| Field             | Value                            | Why                                                                                                                                                                                                                      |
-| ----------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `installCommand`  | `pnpm install --frozen-lockfile` | Fails the build when `pnpm-lock.yaml` drifts from `package.json` instead of silently resolving something new.                                                                                                            |
-| `buildCommand`    | `pnpm turbo build --filter=web`  | Builds only the web app and its workspace dependencies. `apps/api` is not part of this deployment.                                                                                                                       |
-| `outputDirectory` | `apps/web/dist`                  | Where Vite writes the build. `apps/web/src/test/deploy-config.test.ts` compares it against Vite's resolved `build.outDir`. GitHub Actions (`pnpm test` on every PR and every push to `main`) catches drift before merge. |
-| `rewrites`        | `/(.*)` → `/index.html`          | TanStack Router routes client-side. Without this, a hard refresh on any route but `/` returns 404. Vercel checks the filesystem before applying rewrites, so the hashed files under `/assets/` still serve as files.     |
+Railway project `openpath` (the name predates the rename; renaming it is
+cosmetic, then update the name in `.railway/railway.ts`).
 
-pnpm comes from `packageManager` in the root `package.json`. Node comes from
-`engines.node`, which is the open range `>=20` — Vercel resolves that to its
-newest supported major, so the version can move under us. Pin it there if a
-future build needs a specific major.
+| Environment  | Service    | Built from                                  | Public host                                           |
+| ------------ | ---------- | ------------------------------------------- | ----------------------------------------------------- |
+| `production` | `api`      | Nixpacks, repo root                         | `api.opencv.me`, fallback `api-production-0876.up.railway.app` |
+| `production` | `web`      | `apps/web/Dockerfile`, repo root as context | `opencv.me`, `www.opencv.me`                          |
+| `production` | `Postgres` | Railway database                            | private network only                                  |
+| `staging`    | `api`      | Nixpacks, repo root                         | `api-staging.opencv.me`, fallback `api-staging-f689.up.railway.app` |
+| `staging`    | `web`      | `apps/web/Dockerfile`                       | `staging.opencv.me`                                   |
+| `staging`    | `Postgres` | own instance                                | private network only                                  |
 
-## One-time setup
+`.railway/railway.ts` is the source of truth for the `api` and `web` build,
+start, watch-path and health settings (Railway stops reading `railway.json` on
+2026-12-01, so that file is gone). Preview the effect of an edit with
+`railway config plan --file .railway/railway.ts --environment staging`. The file
+declares no secrets, no domains, no `Postgres`, and neither `AUTH_URL` nor
+`WEB_ORIGINS`, because the cutover flips those by hand.
 
-1. In Vercel, **Add New → Project** and import `quanvu309/openpath`.
-2. Leave **Root Directory** as the repository root. `vercel.json` points the
-   build at `apps/web` — setting the root directory to `apps/web` would make
-   Vercel look for `apps/web/vercel.json` instead and lose these settings.
-3. Deploy.
+| Service | Build                                                                   | Pre-deploy                       | Start                         | Health                       |
+| ------- | ----------------------------------------------------------------------- | -------------------------------- | ----------------------------- | ---------------------------- |
+| `api`   | `pnpm install --frozen-lockfile && pnpm --filter api... run build`      | `pnpm --filter api run migrate`  | `pnpm --filter api run start` | `GET /health`, 120 s timeout |
+| `web`   | Dockerfile: `pnpm install --frozen-lockfile && pnpm turbo build --filter=web`, then Caddy | none                  | `caddy run` (image `CMD`)     | `GET /health`                |
 
-## Reaching the API
+`api` restarts `ON_FAILURE` up to 10 times. `api` watches `apps/api/**`,
+`packages/**`, the lockfile, `pnpm-workspace.yaml`, `package.json` and
+`turbo.json`. `web` watches `apps/web/**`, `packages/ui/**`,
+`packages/domain/**` and `pnpm-lock.yaml`.
 
-The web app reads the API base URL from `VITE_API_URL`. Vite bakes it into the
-bundle at build time, so it is a build input, not a runtime setting: changing it
-in Vercel only takes effect on the next deployment. When it is unset the app
-falls back to `http://localhost:3001` (see `apps/web/src/lib/api.ts`), which is
-what local `pnpm dev` wants.
+## Web
 
-| Vercel environment | `VITE_API_URL`                               |
-| ------------------ | -------------------------------------------- |
-| Production         | `https://api-production-0876.up.railway.app` |
-| Preview            | `https://api-staging-f689.up.railway.app`    |
-| Development        | `http://localhost:3001`                      |
+`apps/web/Dockerfile` has two stages. The build stage declares
+`ARG VITE_API_URL` and exports it as `ENV` before the build, because Vite bakes
+the value into the bundle at build time. A change to `VITE_API_URL` takes
+effect on the next deploy of `web`, not on a restart. When it is unset the app
+falls back to `http://localhost:3001` (`apps/web/src/lib/api.ts`), which is what
+local `pnpm dev` wants. The second stage is `caddy:2-alpine` serving
+`apps/web/dist` from `/srv` with `apps/web/Caddyfile`:
 
-Previews point at the Railway `staging` environment, which has its own Postgres,
-so branch work never touches production data. The API decides which origins may
-call it — see `WEB_ORIGINS` in [railway.md](railway.md). Both sides have to
-agree: a new web origin needs adding there, or the browser blocks the response.
+- `auto_https off`: Railway terminates TLS.
+- Listens on `$PORT`, 8080 when unset.
+- `GET /health` answers `ok` with 200.
+- Every other path tries the file, then falls back to `/index.html`, because
+  TanStack Router routes client-side and a refresh on `/app` must not 404.
+- `/assets/*` is `public, max-age=31536000, immutable`; everything else is
+  `no-cache`, so a deploy shows up on the next load.
 
-`apps/web` calls `GET /health` through `fetchHealth` in `apps/web/src/lib/api.ts`.
-The Spec 3 app shell no longer shows that check on the landing page — hit the
-API host directly to confirm reachability.
+Railway passes a service variable to a Dockerfile build only when the stage
+declares it with `ARG`. If a staging deploy shows the bundle without the
+expected URL, the fallback is a runtime `window.__API_URL__` that Caddy injects
+from an env var.
 
-The Coach runtime lives on Railway, not Vercel. Vercel only needs
-`VITE_API_URL` pointing at the right API; `OPENROUTER_API_KEY`,
-and the `COACH_MODEL_*` / `COACH_DAILY_TURN_LIMIT_*` mode vars are
-api-service variables. See
-[Coach](railway.md#coach). When the key is absent the web app still loads —
-Home send fails with the existing Retry error (`COACH_UNAVAILABLE` / 503)
-and `/health` stays 200.
+Build the same thing locally (no Docker needed):
 
-Vercel never applies Postgres migrations. The API on Railway runs
-`pnpm --filter api run migrate` as `preDeployCommand` before each api
-rollout (pglite from-scratch in CI; staging and production each have their
-own Postgres). See [railway.md](railway.md#migration-pipeline). New accounts
-are seeded by the API signup hook, not by the web build.
+```bash
+VITE_API_URL=https://api-staging.opencv.me pnpm turbo build --filter=web
+grep -l "api-staging.opencv.me" apps/web/dist/assets/*.js
+pnpm --filter web preview   # serves apps/web/dist
+```
 
-## Previews
+`vite preview` falls back to `index.html` on its own, so it does not prove the
+Caddy behaviour. `caddy validate --config apps/web/Caddyfile --adapter caddyfile`
+does, when `caddy` is installed.
 
-Pushing any branch to GitHub creates a preview deployment. The URL appears on
-the commit in GitHub and in the Vercel project's Deployments list.
+## Variables
+
+Set by hand in Railway, never in git. `DATABASE_URL` is the shared reference
+`${{Postgres.DATABASE_URL}}` in both environments, so each environment resolves
+to its own Postgres. `SESSION_SECRET` differs per environment.
+
+| Environment  | Service | Variable       | Value                                                                                  |
+| ------------ | ------- | -------------- | -------------------------------------------------------------------------------------- |
+| `production` | `api`   | `AUTH_URL`     | `https://api.opencv.me` (set at cutover step 4; before that, the `*.up.railway.app` host) |
+| `production` | `api`   | `WEB_ORIGINS`  | `https://opencv.me`, plus the old Vercel origin until the overlap ends                 |
+| `production` | `web`   | `VITE_API_URL` | `https://api.opencv.me` (from `.railway/railway.ts`)                                   |
+| `staging`    | `api`   | `AUTH_URL`     | `https://api-staging.opencv.me`                                                        |
+| `staging`    | `api`   | `WEB_ORIGINS`  | `https://staging.opencv.me,http://localhost:5173`                                      |
+| `staging`    | `web`   | `VITE_API_URL` | `https://api-staging.opencv.me` (from `.railway/railway.ts`)                           |
+
+`AUTH_URL` is the public api origin and selects the cookie attributes:
+`SameSite=None; Secure` when it is https (`apps/api/src/auth.ts`). That stays
+during the overlap, because the old Vercel web is cross-site to the api. It can
+become `Lax` once only `opencv.me` calls the api; that is a separate change.
+
+`WEB_ORIGINS` is a comma-separated allowlist of exact origins with no trailing
+slash (a trailing slash never matches). An entry may contain one `*`, which
+matches a single DNS label. Unset means local only (`http://localhost:5173`).
+The api and web must agree: a new web origin has to be added here, or the
+browser blocks the response.
+
+## Coach
+
+The Coach runtime is built only when `OPENROUTER_API_KEY` is set on the `api`
+service. Missing or blank key: the app boots, `GET /health` stays 200, and
+`POST /api/threads/:id/coach` returns 503 `COACH_UNAVAILABLE`. Auth, Paper,
+Apply and Threads reads are untouched. Do not fail the deploy or the healthcheck
+for a missing key. The web app only needs `VITE_API_URL`; the Coach vars are
+`api` variables.
+
+| Variable                       | Required              | Default                                    | Notes                                                                                                  |
+| ------------------------------ | --------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| `OPENROUTER_API_KEY`           | Yes, for a live Coach | none                                       | Set on staging and production. Pass it on stdin so it never hits shell history.                        |
+| `OPENROUTER_BASE_URL`          | No                    | unset (the provider URL)                   | Local checks only: points the Coach at a stub endpoint. **Never on staging or production.**            |
+| `COACH_MODEL_FREE`             | No                    | `openrouter/free`                          | Free mode id (ADR-0009). Free Models Router; the answering model can change between turns.            |
+| `COACH_MODEL_LIGHT`            | No                    | `deepseek/deepseek-chat-v3.1`              | Light mode id.                                                                                         |
+| `COACH_MODEL_MAX`              | No                    | `anthropic/claude-opus-4`                  | Max mode. For Fable: `anthropic/claude-fable-5` or `~anthropic/claude-fable-latest`.                   |
+| `COACH_DAILY_TURN_LIMIT_FREE`  | No                    | `50`                                       | Free-mode daily turn cap.                                                                              |
+| `COACH_DAILY_TURN_LIMIT_LIGHT` | No                    | `30`                                       | Light-mode daily turn cap.                                                                             |
+| `COACH_DAILY_TURN_LIMIT_MAX`   | No                    | `10`                                       | Max-mode daily turn cap.                                                                               |
+| `COACH_RUNTIME`                | No                    | unset (OpenRouter when the key is present) | `fake` injects the scripted runtime for `curl -N` protocol checks. **Never on production.**            |
+
+```bash
+printf '%s' "$OPENROUTER_API_KEY" | railway variable set OPENROUTER_API_KEY --stdin \
+  --project openpath --environment staging --service api
+```
+
+Setting a variable redeploys `api`. When the rollout is SUCCESS:
+
+```bash
+COACH_SMOKE_API=https://api-staging.opencv.me pnpm --filter api smoke
+COACH_SMOKE_API=https://api.opencv.me COACH_SMOKE_MODE=production pnpm --filter api smoke
+```
+
+The staging smoke checks that a long streamed turn survives every proxy on the
+path: `message-start` flushes at once, `X-Accel-Buffering: no`, no gzip on the
+route, 15 s heartbeats, and an abort persists `status=aborted`. Production mode
+asks for advice that cites workspace state and a Command (`apply.moveCard`) and
+looks for the receipt.
+
+## Domains and DNS
+
+Add each domain on its Railway service first; Railway then shows the CNAME
+target and a TXT verification record. Both are needed (a missing TXT serves
+404). The certificate arrives within about an hour. Zone `opencv.me` is on
+Cloudflare with SSL mode **Full** (Railway says Full (Strict) does not work).
+
+| Name          | Type  | Target                                  | Proxy mode | Service           |
+| ------------- | ----- | --------------------------------------- | ---------- | ----------------- |
+| `@`           | CNAME | web production target (flattened)       | proxied    | `web` production  |
+| `www`         | CNAME | web production target                   | proxied    | `web` production  |
+| `api`         | CNAME | api production target                   | DNS-only   | `api` production  |
+| `staging`     | CNAME | web staging target                      | proxied    | `web` staging     |
+| `api-staging` | CNAME | api staging target                      | DNS-only   | `api` staging     |
+| Railway TXT   | TXT   | name and value shown per domain         | not proxied | each of the five |
+
+Use single-label names (`api-staging`, not `api.staging`): behind the proxy a
+deeper name needs Cloudflare's Advanced Certificate Manager.
+
+`api` and `api-staging` stay DNS-only because the Coach streams SSE and a
+Cloudflare proxy adds a buffering and timeout layer the smoke has not been run
+through. To turn the proxy on, run the staging smoke once with it on and keep
+it only if every check passes, heartbeats included.
+
+## Cutover
+
+The one-time move from the `*.up.railway.app` hosts and Vercel to `opencv.me`.
+Each step can be undone. Do not start without the operator's go.
+
+1. Migrate the config. Review `railway config plan --file .railway/railway.ts --environment staging`
+   (it must create `web` and change nothing on `api` but the config source),
+   apply it to staging, then production, then run `railway config migrate cutover`.
+   Finish this **before 2026-12-01**, when `railway.json` stops being read.
+2. Add the five domains and the Cloudflare records, then wait for each
+   certificate. Check `curl -sI https://api-staging.opencv.me/health`.
+3. Add the new origin to `WEB_ORIGINS` and keep the old one, then redeploy `web`
+   so it builds with the new `VITE_API_URL`. Staging first; confirm the bundle
+   holds `api-staging.opencv.me` and that sign-in works on `https://staging.opencv.me`.
+4. Flip production `AUTH_URL` to `https://api.opencv.me`. Do this last. Browsers
+   hold no cookie for the new host, so every user signs in once more (the
+   sessions and data are kept). Announce it first.
+5. Keep the `*.up.railway.app` hosts and the Vercel deploy for one to two weeks.
+   Then drop the Vercel origin from `WEB_ORIGINS` and set the GitHub homepage
+   to `https://opencv.me`.
+
+## Rollback
+
+Point `AUTH_URL` back to the `*.up.railway.app` host (one more forced
+re-login), remove the new origin from `WEB_ORIGINS`, run
+`railway config migrate undo`, and re-enable the Vercel production deploy. The
+Railway `web` services and the DNS records can stay; nothing routes to them
+once the web origin is out of `WEB_ORIGINS`. To roll back one bad deploy,
+open the service in Railway and pick the previous deployment.
+
+## Migration pipeline
+
+Schema changes are reviewable SQL, applied automatically, and never touched by
+`GET /health` (ADR-0006).
+
+1. Edit the TypeScript tables in `apps/api/src/db/schema.ts` (`pgSchema("openpath_app")`).
+   The schema keeps that name as an internal id (ADR-0012).
+2. Generate SQL with `pnpm --filter api run db:generate` and commit the files
+   under `apps/api/drizzle/`. Migration 0000 is hand-edited to
+   `CREATE SCHEMA IF NOT EXISTS` and must stay that way.
+3. `apps/api/src/db/migrate.test.ts` applies the migrations from scratch on pglite.
+4. Railway's `preDeployCommand` runs `pnpm --filter api run migrate`
+   (`apps/api/dist/migrate.js`) against that environment's Postgres.
+5. A failed migrate exits non-zero and aborts the rollout. The previous
+   deployment keeps serving, and `GET /health` still serves 200 with no database.
+
+Do **not** put the seed script on `preDeployCommand`. Signup already writes the
+starter workspace for new accounts.
+
+### Production's pre-existing `openpath_app` (QVE-135)
+
+Production Postgres is not empty. Its `openpath_app` schema predates these
+migrations and still holds 26 tables from the pre-QVE-84 legacy app (`users`,
+`profiles`, `conversations`, `openings`, `waitlist`, ...), plus stray Better
+Auth tables in `public`. None collide with the current tables, so the committed
+migrations apply alongside them. Because the schema already existed, a bare
+`CREATE SCHEMA` aborted every production rollout (Postgres `42P06`); keep 0000
+idempotent.
+
+Dropping the legacy tables is deliberate destructive work that needs its own
+ticket and a backup; do not fold it into a deploy. Until then, check
+`openpath_app` for a name before a migration uses it.
+
+## Seed and local commands
+
+`pnpm --filter api run seed` writes the same starter workspace as the signup
+hook. It needs `DATABASE_URL` and `SEED_EMAIL`, plus `SEED_PASSWORD`,
+`SESSION_SECRET` and `AUTH_URL` when the account does not exist yet. It skips an
+account that already has Paper, Apply or Threads. Do not point it at production
+unless you mean to seed one empty account.
+
+```bash
+SEED_EMAIL=dev@example.com SEED_PASSWORD='correct-horse-battery' \
+  SEED_NAME=Dev pnpm --filter api run db:seed          # local, after migrate
+railway run -e staging --service api -- pnpm --filter api run seed
+
+railway status                                          # linked project + environments
+railway logs --service api                              # deploy and runtime logs
+railway redeploy --service web                          # rebuild web with current variables
+railway variable list --service api -e production --kv  # names + values
+```
 
 ## When a build fails
 
-A failed build fails the deployment — production keeps serving the last good
-deploy, and the failing deployment is marked **Error** in the Deployments list
-with the full log. Both failure modes exit non-zero and stop the deploy:
-
-- a type error (`tsc -b` runs before `vite build`)
-- a lockfile mismatch (`--frozen-lockfile`)
-
-Lint and tests are **not** part of the Vercel deploy. `pnpm turbo build --filter=web`
-only compiles, so a branch with failing tests still produces a green preview.
-GitHub Actions (`.github/workflows/ci.yml`) runs `lint`, `typecheck`, `test`,
-and `build` on every pull request and every push to `main` — that check is
-what to trust before merging, not the preview deploy.
-
-Reproduce a Vercel build locally with the same commands:
-
-```bash
-pnpm install --frozen-lockfile
-pnpm turbo build --filter=web
-pnpm --filter web preview   # serve apps/web/dist
-```
-
-`vite preview` does its own SPA fallback, so deep links work locally whether or
-not the `rewrites` entry is present. Local success does not verify the Vercel
-rewrite — that is only observable on a real deployment.
+A failed build fails the deployment and the service keeps serving its last good
+deployment. The usual causes are a type error (`tsc -b` runs before `vite build`)
+and a lockfile mismatch (`--frozen-lockfile`). Lint and tests are not part of
+the deploy, so run `pnpm turbo run lint typecheck build test` before merging.

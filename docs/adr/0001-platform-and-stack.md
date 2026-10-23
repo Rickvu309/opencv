@@ -4,7 +4,7 @@ OpenPath is AI-native: the AI can act in-app on the user's behalf via tools. Pri
 
 **Repo:** one monorepo — `apps/web`, `apps/api`, `packages/ui` (Storybook colocated with the UI package).
 
-**Hosting:** Vercel for web and Storybook (`main` → production, ticket branches → previews). Railway for API (including AI runtime), and Postgres (production + one non-prod).
+**Hosting:** *Superseded in part by ADR-0012.* Vercel for web and Storybook (`main` → production, ticket branches → previews). Railway for API (including AI runtime), and Postgres (production + one non-prod).
 
 **Stack:** TypeScript everywhere; web = Vite + React + TanStack Router + TanStack Query; UI = React package + Storybook; API = thin HTTP service (e.g. Hono) with server-side LLM, tools, and streaming; data = Postgres. AI runtime lives in `apps/api` until long-running work justifies a separate worker.
 
