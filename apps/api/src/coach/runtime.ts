@@ -64,6 +64,8 @@ export type OpenRouterCoachRuntimeOptions = {
   model?: string
   /** Light-tier model for first-turn History titles (QVE-153 / ADR-0009). */
   titleModel?: string
+  /** Model for Apply scan extraction. Defaults to the free-mode model. */
+  scanModel?: string
   db: AppDatabase
   registry?: CommandRegistry
   maxOutputTokens?: number
@@ -77,6 +79,7 @@ export function createOpenRouterCoachRuntime({
   apiKey,
   model = DEFAULT_COACH_MODEL,
   titleModel = resolveCoachModel("light"),
+  scanModel = resolveCoachModel("free"),
   db,
   registry = commandRegistry,
   maxOutputTokens = DEFAULT_COACH_MAX_OUTPUT_TOKENS,
@@ -100,7 +103,7 @@ export function createOpenRouterCoachRuntime({
     },
     async scanJobPosting({ postingText }: ApplyScanExtractInput) {
       const result = await generateText({
-        model: openrouter(resolveCoachModel("free")),
+        model: openrouter(scanModel),
         system: APPLY_SCAN_SYSTEM_PROMPT,
         prompt: postingText,
         maxOutputTokens: 200,

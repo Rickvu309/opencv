@@ -1,12 +1,26 @@
 import { PGlite } from "@electric-sql/pglite"
 import { drizzle } from "drizzle-orm/pglite"
 import { migrate } from "drizzle-orm/pglite/migrator"
-import { afterAll, beforeAll, describe, expect, it } from "vitest"
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest"
 
 import { createApp } from "./app.js"
 import { cookieAttributesForAuthUrl } from "./auth.js"
 import * as schema from "./db/schema.js"
 import { migrationsFolder } from "./db/paths.js"
+import {
+  createMigratedTestDb,
+  createTestApp,
+  signUp,
+  testWebOrigin,
+} from "./test/harness.js"
 
 const webOrigin = "https://opencv.me"
 const sessionSecret = "test-session-secret-that-is-at-least-32ch"
@@ -226,5 +240,51 @@ describe("auth cookie round-trip", () => {
     const setCookie = sessionSetCookie(signUp)
     expect(setCookie).not.toMatch(/samesite=none/i)
     expect(setCookie).not.toMatch(/;\s*secure/i)
+  })
+})
+
+describe("auth mail logging", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+  })
+
+  async function requestReset(nodeEnv: string) {
+    vi.stubEnv("NODE_ENV", nodeEnv)
+    const log = vi.spyOn(console, "log").mockImplementation(() => {})
+    const { client, db } = await createMigratedTestDb()
+    try {
+      const app = createTestApp(db)
+      const email = `reset-${nodeEnv}@example.com`
+      await signUp(app, {
+        name: "Reset",
+        email,
+        password: "correct-horse-battery",
+      })
+      const res = await app.request("/api/auth/request-password-reset", {
+        method: "POST",
+        headers: {
+          Origin: testWebOrigin,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, redirectTo: `${testWebOrigin}/reset` }),
+      })
+      expect(res.status).toBe(200)
+      return log.mock.calls.map((call) => String(call[0]))
+    } finally {
+      await client.close()
+    }
+  }
+
+  it("does not log reset or verify URLs in production", async () => {
+    const lines = await requestReset("production")
+    expect(lines.filter((line) => line.startsWith("[auth]"))).toEqual([])
+  })
+
+  it("logs the reset URL outside production", async () => {
+    const lines = await requestReset("development")
+    expect(
+      lines.filter((line) => line.startsWith("[auth] password reset for"))
+    ).toHaveLength(1)
   })
 })

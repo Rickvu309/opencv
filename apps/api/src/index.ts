@@ -83,6 +83,7 @@ const baseCoach = coachRuntimeFromConfig({
   openRouterApiKey,
   coachModel,
   titleModel: coachModels.light,
+  scanModel: coachModels.free,
   runtimeMode: coachRuntimeMode,
 })
 const coach =

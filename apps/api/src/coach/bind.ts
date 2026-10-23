@@ -14,6 +14,8 @@ export type CoachRuntimeConfig = {
   coachModel?: string
   /** Light-tier id for first-turn titles. Defaults to `resolveCoachModel("light")`. */
   titleModel?: string
+  /** Model id for Apply scan. Defaults to `resolveCoachModel("free")`. */
+  scanModel?: string
   runtimeMode?: "fake"
 }
 
@@ -26,6 +28,7 @@ export function coachRuntimeFromConfig({
   openRouterApiKey,
   coachModel,
   titleModel,
+  scanModel,
   runtimeMode,
 }: CoachRuntimeConfig): CoachRuntime | undefined {
   if (runtimeMode === "fake") {
@@ -38,6 +41,7 @@ export function coachRuntimeFromConfig({
     apiKey: openRouterApiKey,
     model: coachModel ?? DEFAULT_COACH_MODEL,
     titleModel: titleModel ?? resolveCoachModel("light"),
+    scanModel: scanModel ?? resolveCoachModel("free"),
     db,
   })
 }

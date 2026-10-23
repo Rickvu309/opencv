@@ -1,5 +1,6 @@
 import { APPLY_SCAN_FETCH_FAILED, openableApplyJobUrl } from "@workspace/domain"
 import { lookup } from "node:dns/promises"
+import { isIPv6 } from "node:net"
 
 export type FetchJobPosting = (url: string) => Promise<
   { ok: true; text: string } | { ok: false; message: string }
@@ -38,14 +39,36 @@ export function isPrivateIPv4(host: string): boolean {
   return false
 }
 
+function ipv6Groups(address: string): number[] | null {
+  const bare = address
+    .toLowerCase()
+    .replace(/^\[|\]$/g, "")
+    .replace(/%.*$/, "")
+  if (!isIPv6(bare)) return null
+  const tail = bare.match(/(\d+)\.(\d+)\.(\d+)\.(\d+)$/)
+  const text = tail
+    ? bare.slice(0, tail.index) +
+      `${((Number(tail[1]) << 8) | Number(tail[2])).toString(16)}:` +
+      ((Number(tail[3]) << 8) | Number(tail[4])).toString(16)
+    : bare
+  const [head = "", rest] = text.split("::")
+  const left = head ? head.split(":") : []
+  const right = rest ? rest.split(":") : []
+  const zeros = rest === undefined ? 0 : 8 - left.length - right.length
+  return [...left, ...Array(zeros).fill("0"), ...right].map((g) =>
+    parseInt(g, 16)
+  )
+}
+
 export function isPrivateIPv6(address: string): boolean {
-  const host = address.toLowerCase().replace(/^\[|\]$/g, "")
-  if (host === "::1") return true
-  if (host.startsWith("fe80:") || host.startsWith("fc") || host.startsWith("fd")) {
-    return true
+  const g = ipv6Groups(address)
+  if (!g) return false
+  const [g0 = 0, , , , , g5 = 0, g6 = 0, g7 = 0] = g
+  if (g.slice(0, 7).every((n) => n === 0)) return true
+  if ((g0 & 0xffc0) === 0xfe80 || (g0 & 0xfe00) === 0xfc00) return true
+  if (g.slice(0, 5).every((n) => n === 0) && (g5 === 0xffff || g5 === 0)) {
+    return isPrivateIPv4(`${g6 >> 8}.${g6 & 255}.${g7 >> 8}.${g7 & 255}`)
   }
-  const mapped = host.match(/::ffff:(\d+\.\d+\.\d+\.\d+)$/)
-  if (mapped?.[1] && isPrivateIPv4(mapped[1])) return true
   return false
 }
 
@@ -61,9 +84,11 @@ export function isBlockedApplyScanHost(host: string): boolean {
 }
 
 function hostFromHttpUrl(url: string): string | null {
-  const withoutScheme = url.replace(/^https?:\/\//i, "")
-  const host = withoutScheme.split(/[/?#]/)[0] ?? ""
-  return host ? host.toLowerCase() : null
+  try {
+    return new URL(url).hostname.toLowerCase() || null
+  } catch {
+    return null
+  }
 }
 
 export async function assertPublicApplyScanUrl(
@@ -92,6 +117,34 @@ export async function assertPublicApplyScanUrl(
     }
   }
   return { ok: true, url: openable }
+}
+
+async function readCappedText(response: Response): Promise<string | null> {
+  const reader = response.body?.getReader()
+  try {
+    if (Number(response.headers.get("content-length")) > FETCH_MAX_BYTES) {
+      await reader?.cancel()
+      return null
+    }
+    if (!reader) return ""
+    const chunks: Uint8Array[] = []
+    let total = 0
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) break
+      total += value.byteLength
+      if (total > FETCH_MAX_BYTES) {
+        await reader.cancel()
+        return null
+      }
+      chunks.push(value)
+    }
+    return new TextDecoder("utf-8", { fatal: false }).decode(
+      Buffer.concat(chunks)
+    )
+  } catch {
+    return null
+  }
 }
 
 export function createFetchJobPosting(options?: {
@@ -146,12 +199,8 @@ export function createFetchJobPosting(options?: {
         return { ok: false, message: APPLY_SCAN_FETCH_FAILED }
       }
 
-      const raw = await response.arrayBuffer()
-      if (raw.byteLength > FETCH_MAX_BYTES) {
-        return { ok: false, message: APPLY_SCAN_FETCH_FAILED }
-      }
-      const text = new TextDecoder("utf-8", { fatal: false }).decode(raw)
-      if (!text.trim()) {
+      const text = await readCappedText(response)
+      if (!text?.trim()) {
         return { ok: false, message: APPLY_SCAN_FETCH_FAILED }
       }
       return { ok: true, text }
