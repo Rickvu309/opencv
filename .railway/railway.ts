@@ -1,11 +1,18 @@
-import { defineRailway, github, project, service } from "railway/iac"
+import { defineRailway, github, preserve, project, service } from "railway/iac"
 
-// AUTH_URL and WEB_ORIGINS are not declared here: the cutover flips them last,
-// by hand (docs/deploy.md). api secrets stay in Railway, so api has no env.
+// Keep existing api variables in Railway. The cutover flips AUTH_URL and
+// WEB_ORIGINS last, by hand (docs/deploy.md).
 export default defineRailway((ctx) => {
   const production = ctx.isEnvironment("production")
 
   const api = service("api", {
+    env: {
+      AUTH_URL: preserve(),
+      DATABASE_URL: preserve(),
+      OPENROUTER_API_KEY: preserve(),
+      SESSION_SECRET: preserve(),
+      WEB_ORIGINS: preserve(),
+    },
     build: {
       builder: "NIXPACKS",
       buildCommand:

@@ -2,7 +2,10 @@
 import { readdirSync, readFileSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
+import { createRailwayContext } from "railway/iac"
 import { describe, expect, it } from "vitest"
+
+import railwayConfig from "../../../../.railway/railway"
 
 const webRoot = fileURLToPath(new URL("../..", import.meta.url))
 const repoRoot = path.resolve(webRoot, "../..")
@@ -67,9 +70,21 @@ describe(".railway/railway.ts", () => {
     expect(railway).toContain('dockerfilePath: "apps/web/Dockerfile"')
   })
 
-  it("keeps the api pre-deploy migration and leaves the hand-flipped vars out", () => {
-    expect(railway).toContain("pnpm --filter api run migrate")
-    expect(railway).not.toMatch(/^\s*(AUTH_URL|WEB_ORIGINS)\s*:/m)
+  it("keeps the api migration and preserves existing variable values", () => {
+    const api = railwayConfig(createRailwayContext({ environment: "staging" }))
+      .resources?.flat()
+      .find((resource) => resource.address === "service.api")
+
+    expect(api).toMatchObject({
+      deploy: { preDeployCommand: ["pnpm --filter api run migrate"] },
+      variables: {
+        AUTH_URL: { type: "preserve" },
+        DATABASE_URL: { type: "preserve" },
+        OPENROUTER_API_KEY: { type: "preserve" },
+        SESSION_SECRET: { type: "preserve" },
+        WEB_ORIGINS: { type: "preserve" },
+      },
+    })
   })
 
   it("points each environment's web build at its own api", () => {
