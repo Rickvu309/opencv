@@ -112,7 +112,7 @@ describe("Pitch workspace", () => {
     expect(screen.queryByText("Editing Pitch")).not.toBeInTheDocument()
     expect(screen.queryByText(/Aspiring product manager/i)).not.toBeInTheDocument()
     expect(
-      screen.getByText(`openpath.app/u/${pitchHandle(SAMPLE_AUTHOR_NAME)}`)
+      screen.getByText(`opencv.me/u/${pitchHandle(SAMPLE_AUTHOR_NAME)}`)
     ).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Moments" })).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "About" })).toBeInTheDocument()

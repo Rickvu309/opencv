@@ -22,7 +22,7 @@ export const STARTER_GUIDED_APPLY_TITLE = "Associate PM intern"
 export const STARTER_GUIDED_APPLY_COMPANY = "Local startup"
 
 /** History title for the Coach Thread created at signup. Wipeable. */
-export const STARTER_THREAD_TITLE = "Welcome to OpenPath"
+export const STARTER_THREAD_TITLE = "Welcome to OpenCV"
 
 /**
  * Neutral sample CV — product voice, never a named persona.

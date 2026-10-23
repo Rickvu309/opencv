@@ -6,7 +6,7 @@ type MarkProps = {
 }
 
 /** Icon only: open C arc with center dot */
-function OpenPathMark({ className }: MarkProps) {
+function OpenCvMark({ className }: MarkProps) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -40,7 +40,7 @@ const SIZES = {
   lg: { box: "size-12", text: "text-xl" },
 } as const
 
-export function OpenPathLogo({
+export function OpenCvLogo({
   className,
   withWordmark = false,
   size = "md",
@@ -48,7 +48,7 @@ export function OpenPathLogo({
   const s = SIZES[size]
   return (
     <span className={cn("inline-flex items-center gap-2.5", className)}>
-      <OpenPathMark className={s.box} />
+      <OpenCvMark className={s.box} />
       {withWordmark ? (
         <span
           className={cn("font-semibold tracking-tight text-foreground", s.text)}

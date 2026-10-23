@@ -79,7 +79,7 @@ export function defaultCvData(profile: SampleAuthor = SAMPLE_AUTHOR): CvData {
       email: profile.email,
       phone: "+84 90 123 4567",
       location: "Ho Chi Minh City, Vietnam",
-      linkedin: "linkedin.com/in/openpath-dev",
+      linkedin: "linkedin.com/in/opencv-dev",
     },
     summary:
       "Year-4 Information Systems student targeting associate product manager roles. I learn by shipping small product experiments: teardowns, UI refinements, and specs backed by user notes—not slide decks alone.",

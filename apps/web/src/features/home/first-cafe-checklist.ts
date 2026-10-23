@@ -45,7 +45,7 @@ export const FIRST_CAFE_CHECKLIST_ITEMS: readonly FirstCafeItem[] = [
   },
 ]
 
-export const FIRST_CAFE_STORAGE_PREFIX = "openpath:home:first-cafe-checklist"
+export const FIRST_CAFE_STORAGE_PREFIX = "opencv:home:first-cafe-checklist"
 
 /**
  * Items a surface visit may honestly complete (QVE-252).

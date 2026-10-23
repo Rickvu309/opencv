@@ -16,7 +16,7 @@ export const STAGES: { id: StageId; label: string; dot: string }[] = [
   { id: "closed", label: "Closed", dot: "bg-chart-5" },
 ]
 
-export const APPLY_DRAG_TYPE = "application/x-openpath-apply-card"
+export const APPLY_DRAG_TYPE = "application/x-opencv-apply-card"
 
 const STAGE_ORDER: Record<StageId, number> = {
   inbox: 0,

@@ -84,8 +84,8 @@ export function createOpenRouterCoachRuntime({
   const openrouter = createOpenRouter({
     apiKey,
     compatibility: "strict",
-    appName: "OpenPath",
-    appUrl: "https://openpath-app.vercel.app",
+    appName: "OpenCV",
+    appUrl: "https://opencv.me",
   })
 
   return {

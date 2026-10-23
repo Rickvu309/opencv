@@ -4,7 +4,7 @@ import {
   type PitchDocument,
 } from "@workspace/domain"
 
-export const AIM_PROMPT_STORAGE_PREFIX = "openpath:home:aim-prompt"
+export const AIM_PROMPT_STORAGE_PREFIX = "opencv:home:aim-prompt"
 
 export const AIM_OPTIONS = [
   {

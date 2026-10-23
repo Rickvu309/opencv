@@ -20,6 +20,7 @@ import {
 } from "drizzle-orm/pg-core"
 
 /** App tables live in this schema (ADR-0006). */
+// `openpath_app` is a historical schema name kept on purpose (ADR-0011).
 export const openpathApp = pgSchema("openpath_app")
 
 const timestamptz = (name: string) =>

@@ -66,7 +66,7 @@ export const APPLY_SCAN_NOT_FOUND =
 export const APPLY_SCAN_UNAVAILABLE =
   "Scan isn't available right now. Add the title and company yourself."
 export const APPLY_SCAN_SYSTEM_PROMPT = [
-  "You extract a job title and company from a posting for OpenPath Apply.",
+  "You extract a job title and company from a posting for OpenCV Apply.",
   'Return JSON only: {"title": string or null, "company": string or null, "note": string or null}',
   "Rules:",
   "- Use only words that appear in the posting. Do not invent or guess.",

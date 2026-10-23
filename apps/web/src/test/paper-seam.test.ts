@@ -34,7 +34,7 @@ describe("Spec 4 Paper seam", () => {
   it("persists the documents panel inline without a storage helper", () => {
     const editor = read("src/features/paper/paper-editor.tsx")
 
-    expect(editor).toMatch(/openpath:paper:docs-panel/)
+    expect(editor).toMatch(/opencv:paper:docs-panel/)
     expect(editor).toMatch(/localStorage/)
     expect(editor).toMatch(/try \{/)
     expect(editor).not.toMatch(/from ["'][^"']*storage/)

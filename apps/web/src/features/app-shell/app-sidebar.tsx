@@ -19,7 +19,7 @@ import {
   Search,
 } from "lucide-react"
 
-import { OpenPathLogo } from "@/features/app-shell/app-logo.tsx"
+import { OpenCvLogo } from "@/features/app-shell/app-logo.tsx"
 import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
 import { NavProfile } from "@/features/app-shell/nav-profile.tsx"
 import { SidebarHistory } from "@/features/app-shell/sidebar-history.tsx"
@@ -210,7 +210,7 @@ export function AppSidebar({
         >
           {open ? (
             <>
-              <OpenPathLogo size="sm" />
+              <OpenCvLogo size="sm" />
               <Button
                 type="button"
                 size="icon-sm"

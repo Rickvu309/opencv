@@ -87,7 +87,7 @@ import {
   type ProofStepType,
 } from "./paper-proof-types.ts"
 
-const DOCS_PANEL_KEY = "openpath:paper:docs-panel"
+const DOCS_PANEL_KEY = "opencv:paper:docs-panel"
 const DOCS_PANEL_ID = "paper-docs-panel"
 
 type DocsPanelState = "expanded" | "collapsed"

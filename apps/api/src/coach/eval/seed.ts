@@ -34,7 +34,7 @@ export async function seedGoldenScenario(
   await db.insert(userTable).values({
     id: userId,
     name: scenario.seed.profileName,
-    email: `${scenario.id}@eval.openpath.app`,
+    email: `${scenario.id}@eval.opencv.me`,
     emailVerified: false,
     createdAt: now,
     updatedAt: now,

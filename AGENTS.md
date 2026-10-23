@@ -2,7 +2,7 @@
 
 ### Issue tracker
 
-Issues live in the Linear project **OpenPath**. See `docs/agents/issue-tracker.md`.
+Issues live in the Linear project **OpenCV**. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 

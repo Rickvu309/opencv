@@ -121,7 +121,7 @@ export function createFetchJobPosting(options?: {
           headers: {
             Accept:
               "text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.8",
-            "User-Agent": "OpenPath/1.0 (Apply scan)",
+            "User-Agent": "OpenCV/1.0 (Apply scan)",
           },
           signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
         })

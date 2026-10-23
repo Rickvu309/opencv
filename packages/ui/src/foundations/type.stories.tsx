@@ -92,7 +92,7 @@ export const HeadingStack: Story = {
   render: () => (
     <div className="grid max-w-2xl gap-3">
       <h2 className="text-section-title">Heading stack</h2>
-      <p className="font-heading text-page-title">OpenPath</p>
+      <p className="font-heading text-page-title">OpenCV</p>
       <code className="text-micro text-muted-foreground">
         ui-serif, Georgia, Cambria, Times New Roman, Times, serif
       </code>

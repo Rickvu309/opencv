@@ -8,7 +8,7 @@ import { cookieAttributesForAuthUrl } from "./auth.js"
 import * as schema from "./db/schema.js"
 import { migrationsFolder } from "./db/paths.js"
 
-const webOrigin = "https://openpath-app.vercel.app"
+const webOrigin = "https://opencv.me"
 const sessionSecret = "test-session-secret-that-is-at-least-32ch"
 
 function cookieHeader(res: Response) {

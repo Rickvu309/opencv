@@ -12,7 +12,7 @@ import type { CommandRegistry, AppDatabase } from "../commands/registry.js"
 import { getOwnedThread } from "../threads/queries.js"
 
 export const THREAD_TITLE_SYSTEM_PROMPT = [
-  "You write History titles for OpenPath Threads.",
+  "You write History titles for OpenCV Threads.",
   "Write a short title (3 to 8 words) for this first exchange.",
   "Rules:",
   "- Honest: name the topic that was discussed",
