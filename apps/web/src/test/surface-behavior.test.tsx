@@ -176,7 +176,7 @@ describe("Pitch does not seed a persona", () => {
     renderApp(SURFACE_PATHS.pitch)
 
     expect(
-      await screen.findByRole("heading", { level: 1, name: "Scout Tester" })
+      await screen.findByRole("heading", { level: 2, name: "Scout Tester" })
     ).toBeInTheDocument()
     expect(document.body.textContent).not.toMatch(PERSONA_NAMES)
   })

@@ -126,23 +126,29 @@ describe("pitch codecs", () => {
     const persisted = {
       ...starter,
       github: { username: "alex-tran-uit", connected: true },
-      bento: starter.bento.map((card) => {
-        if (card.id === "b1") {
-          return { ...card, title: "Alex Tran" }
-        }
-        if (card.id === "b4") {
-          return {
-            ...card,
-            title: "my sacred space",
-            body: "Hallway test · late night Figma",
-            storyHighlightId: "sh-checkout",
+      bento: starter.bento
+        .map((card) => {
+          if (card.id === "b1") {
+            return { ...card, title: "Alex Tran" }
           }
-        }
-        if (card.id === "b5") {
-          return { ...card, title: "@alex-tran-uit" }
-        }
-        return card
-      }),
+          if (card.id === "b4") {
+            return {
+              ...card,
+              title: "my sacred space",
+              body: "Hallway test · late night Figma",
+              storyHighlightId: "sh-checkout",
+            }
+          }
+          return card
+        })
+        .concat({
+          id: "b5",
+          kind: "link",
+          title: "@alex-tran-uit",
+          body: "GitHub · mock",
+          tone: "dark",
+          span: "wide",
+        }),
     }
 
     const decoded = decodePitchContent("pitch", 1, persisted)
@@ -235,7 +241,9 @@ describe("pitch codecs", () => {
       ],
     })
     expect(next.achievements).toHaveLength(2)
-    expect(next.achievements[1]).toEqual(starterCheckoutAchievement("a-checkout"))
+    expect(next.achievements[1]).toEqual(
+      starterCheckoutAchievement("a-checkout")
+    )
     expect(next.headline).toBe(STARTER_CHECKOUT_PITCH_HEADLINE)
   })
 

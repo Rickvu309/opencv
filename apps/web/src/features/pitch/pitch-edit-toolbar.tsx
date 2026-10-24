@@ -45,7 +45,12 @@ export function PitchEditToolbar({
         <Popover open={addOpen} onOpenChange={onAddOpenChange}>
           <PopoverTrigger
             render={
-              <Button type="button" size="sm" variant="outline" className="h-8" />
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-8"
+              />
             }
           >
             <Plus className="size-3.5" />
@@ -91,7 +96,12 @@ export function PitchEditToolbar({
             Unpublish
           </Button>
         ) : (
-          <Button type="button" size="sm" className="h-8" onClick={onPublish}>
+          <Button
+            type="button"
+            size="sm"
+            className="h-12 px-5"
+            onClick={onPublish}
+          >
             <Globe className="size-3.5" />
             Publish
           </Button>

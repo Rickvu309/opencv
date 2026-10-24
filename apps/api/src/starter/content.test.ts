@@ -74,6 +74,22 @@ describe("starter content", () => {
     expect(starterPitchDocument().achievements[0]?.proofId).toBe("checkout")
   })
 
+  it("states no metric and carries no stock photo in the sample Pitch", () => {
+    const pitch = starterPitchDocument()
+    const text = JSON.stringify(pitch)
+    expect(text).not.toMatch(/\d\s*%|percent|add-to-cart/i)
+    expect(text).not.toMatch(/"(image|coverImage)"/)
+    expect(text).not.toMatch(/\.jpg|\.png/)
+    expect(pitch.bento.some((card) => card.kind === "stat")).toBe(false)
+    expect(
+      pitch.bento.some(
+        (card) => card.tone === "emerald" || card.tone === "dark"
+      )
+    ).toBe(false)
+    expect(pitch.achievements).toHaveLength(1)
+    expect(pitch.achievements[0]?.proofId).toBe("checkout")
+  })
+
   it("keeps Pitch story chips honest about the highlight they open", () => {
     const pitch = starterPitchDocument()
     const storyCards = pitch.bento.filter((card) => card.storyHighlightId)

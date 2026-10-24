@@ -1,6 +1,4 @@
-/**
- * Instagram-style story highlights + fullscreen viewer.
- */
+/** Story highlights row and the fullscreen viewer. */
 import { useCallback, useEffect, useState, type ImgHTMLAttributes } from "react"
 import { Button } from "@workspace/ui/components/button"
 import { useMediaQuery } from "@workspace/ui/hooks/use-media-query"
@@ -110,8 +108,8 @@ export function StoryHighlightsRow({
           </Button>
         ) : null}
       </div>
-      <p className="mt-3 text-center text-2xs text-muted-foreground/80">
-        Tap a highlight to watch work moments · like Instagram Stories
+      <p className="mt-3 text-center text-2xs text-muted-foreground">
+        Tap a highlight to play it.
       </p>
     </div>
   )
@@ -315,7 +313,7 @@ function StoryFrame({
             className="h-[2px] flex-1 overflow-hidden rounded-full bg-white/25"
           >
             <div
-              className="h-full rounded-full bg-white transition-[width] duration-75 ease-linear"
+              className="h-full rounded-full bg-white"
               style={{
                 width:
                   i < slideIndex
@@ -401,16 +399,18 @@ function StoryFrame({
         )}
       </div>
 
-      <div className="relative z-20 p-4 pt-2">
-        <p className="inline-block max-w-full rounded-full bg-black/50 px-3 py-1.5 text-sm text-white backdrop-blur-sm">
-          {slide.caption}
-        </p>
-        {slide.detail && slide.image ? (
-          <p className="mt-1.5 max-w-[90%] text-xs leading-snug text-white/70">
-            {slide.detail}
+      {slide.image ? (
+        <div className="relative z-20 p-4 pt-2">
+          <p className="inline-block max-w-full rounded-full bg-black/50 px-3 py-1.5 text-sm text-white backdrop-blur-sm">
+            {slide.caption}
           </p>
-        ) : null}
-      </div>
+          {slide.detail ? (
+            <p className="mt-1.5 max-w-[90%] text-xs leading-snug text-white/70">
+              {slide.detail}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   )
 }

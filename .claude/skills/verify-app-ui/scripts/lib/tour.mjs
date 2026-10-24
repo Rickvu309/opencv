@@ -174,8 +174,8 @@ export async function runTour({ browser, webUrl, apiUrl, shots }) {
       await a.key("Escape")
       await a.sleep(500)
       must(
-        await clickByText(a, "button", "Edit profile"),
-        "Edit profile was not found"
+        await clickByText(a, "button", "Edit Pitch"),
+        "Edit Pitch was not found"
       )
       must(
         await a.waitFor(

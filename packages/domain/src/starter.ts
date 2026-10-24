@@ -198,7 +198,7 @@ export function starterCheckoutAchievement(
     title: STARTER_CHECKOUT_ACHIEVEMENT_TITLE,
     context: "Side project",
     description:
-      "Ran a 12-person hallway test on two mobile checkout layouts. Shorter card + sticky CTA lifted add-to-cart taps by 18%. Documented as a Proof chain.",
+      "Ran a 12-person hallway test on two mobile checkout layouts, then wrote it up as a Proof.",
     proofId: STARTER_CHECKOUT_PROOF_ID,
     tag: "UX research",
   }
@@ -268,27 +268,7 @@ I learn product by shipping small experiments — checkout UX studies, onboardin
       connected: true,
     },
     blocks: DEFAULT_PITCH_BLOCKS,
-    achievements: [
-      starterCheckoutAchievement(),
-      {
-        id: "a2",
-        year: "2025",
-        title: "Wallet onboarding audit",
-        context: "Fintech teardown",
-        description:
-          "Mapped friction across three wallet apps, then prototyped a shorter KYC path with classmates. Presented findings at UIT Product Club.",
-        tag: "Product critique",
-      },
-      {
-        id: "a3",
-        year: "2024",
-        title: "Campus expense app",
-        context: "UIT Product Club",
-        description:
-          "Led discovery for a student expense splitter — 8 interviews, PRD, and a shipped Figma prototype in three weeks.",
-        tag: "Shipped prototype",
-      },
-    ],
+    achievements: [starterCheckoutAchievement()],
     experience: [
       {
         id: "e1",
@@ -311,30 +291,26 @@ I learn product by shipping small experiments — checkout UX studies, onboardin
       {
         id: "sh-checkout",
         label: "Checkout",
-        coverTone: "emerald",
-        coverImage: "/pitch/stories/mobile-checkout.jpg",
+        coverTone: "neutral",
         slides: [
           {
             id: "s1",
             caption: "Hallway test setup",
             detail: "12 participants · two mobile layouts · 15 min each",
             tone: "warm",
-            image: "/pitch/stories/hallway-test.jpg",
           },
           {
             id: "s2",
             caption: "Variant B — shorter card",
             detail: "Sticky CTA + tighter image ratio",
             tone: "neutral",
-            image: "/pitch/stories/phone-ui.jpg",
           },
           {
             id: "s3",
-            caption: "+18% add-to-cart taps",
-            detail: "Documented as a Proof chain on Paper",
-            tone: "emerald",
+            caption: "Written up as a Proof",
+            detail: "Open it from Achievements",
+            tone: "neutral",
             durationMs: 6000,
-            image: "/pitch/stories/team-win.jpg",
           },
         ],
       },
@@ -342,21 +318,18 @@ I learn product by shipping small experiments — checkout UX studies, onboardin
         id: "sh-wallet",
         label: "Wallet audit",
         coverTone: "cool",
-        coverImage: "/pitch/stories/whiteboard.jpg",
         slides: [
           {
             id: "s4",
             caption: "Friction map",
             detail: "Compared 3 wallet apps · flagged KYC drop-off",
             tone: "cool",
-            image: "/pitch/stories/whiteboard.jpg",
           },
           {
             id: "s5",
             caption: "Shorter KYC prototype",
             detail: "Sketched a 4-step path with classmates",
             tone: "neutral",
-            image: "/pitch/stories/team-laptop.jpg",
           },
         ],
       },
@@ -364,28 +337,24 @@ I learn product by shipping small experiments — checkout UX studies, onboardin
         id: "sh-club",
         label: "Club sprint",
         coverTone: "warm",
-        coverImage: "/pitch/stories/sprint-board.jpg",
         slides: [
           {
             id: "s6",
             caption: "Sprint board",
             detail: "UIT Product Club · week 3 of discovery",
             tone: "warm",
-            image: "/pitch/stories/sprint-board.jpg",
           },
           {
             id: "s7",
             caption: "Shipped prototype",
             detail: "Campus expense app · demo day with the club",
             tone: "cool",
-            image: "/pitch/stories/award-trophy.jpg",
           },
           {
             id: "s8",
             caption: "Team after demo",
             detail: "Gift from mentors · proud of the sprint",
             tone: "warm",
-            image: "/pitch/stories/gift-celebration.jpg",
           },
         ],
       },
@@ -398,22 +367,12 @@ I learn product by shipping small experiments — checkout UX studies, onboardin
         body: "Sample · campus club",
         tone: "warm",
         span: "normal",
-        image: "/pitch/stories/team-meeting.jpg",
       },
       {
         id: "b2",
         kind: "quote",
         title: "I ship small experiments",
         body: "Checkout UX, onboarding teardowns, club-led discovery.",
-        span: "normal",
-      },
-      {
-        id: "b3",
-        kind: "stat",
-        title: "+18%",
-        body: "add-to-cart lift",
-        meta: "Checkout study · 2025",
-        tone: "emerald",
         span: "normal",
       },
       {
@@ -424,16 +383,6 @@ I learn product by shipping small experiments — checkout UX studies, onboardin
         tone: "cool",
         span: "tall",
         storyHighlightId: "sh-checkout",
-        image: "/pitch/stories/hallway-test.jpg",
-      },
-      {
-        id: "b5",
-        kind: "link",
-        title: "@github",
-        body: "GitHub · mock",
-        meta: "github.com",
-        tone: "dark",
-        span: "wide",
       },
     ],
     gallery: [

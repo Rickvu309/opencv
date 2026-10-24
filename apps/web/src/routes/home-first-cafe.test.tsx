@@ -409,7 +409,7 @@ describe("Home first-café checklist", () => {
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(SURFACE_PATHS.pitch)
     })
-    fireEvent.click(await screen.findByRole("button", { name: "Edit profile" }))
+    fireEvent.click(await screen.findByRole("button", { name: "Edit Pitch" }))
     const about = screen
       .getByRole("heading", { name: "About" })
       .closest("section")

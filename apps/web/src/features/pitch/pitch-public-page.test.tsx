@@ -40,7 +40,7 @@ describe("public Pitch URL", () => {
     expect(screen.getByRole("heading", { name: "About" })).toBeInTheDocument()
     expect(screen.getByText(starterPitchDocument().headline)).toBeInTheDocument()
     expect(
-      screen.queryByRole("button", { name: "Edit profile" })
+      screen.queryByRole("button", { name: "Edit Pitch" })
     ).not.toBeInTheDocument()
     expect(
       screen.queryByRole("complementary", { name: "App" })
