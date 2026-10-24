@@ -22,7 +22,7 @@ Closes #<!-- issue number, required -->
 
 ## Checklist
 
-- [ ] Branch is `type/<issue#>-short-description` and is rebased on the latest `main`
+- [ ] Branch is `type/<issue#>-short-description` (a branch behind `main` is fine; the review tests the merge)
 - [ ] Title is `type: description (#<issue>)`
 - [ ] `scripts/check.sh` passes (lint, typecheck, test). No `--no-verify`; if `SKIP_CHECKS=1` was used, say why
 - [ ] verify-opencv evidence attached (web or api change)

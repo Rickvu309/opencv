@@ -38,26 +38,26 @@ That links the PR to the issue and closes the issue when the PR merges into `mai
 2. Keep pushing. The pre-push hook runs the quick check.
 3. When done: checks pass, the verify-opencv evidence is attached, and the checklist is ticked. Run `gh pr ready`.
 4. Review (see `review-and-approval.md`). Fix comments in new commits and resolve the threads.
-5. If `main` moved ahead, rebase. The reviewer refuses branches that are behind `main`:
+5. A branch behind `main` needs no rebase: the reviewer tests the merge of `main` and the PR, which is what the squash merge lands. Rebase only when the review reports a merge conflict:
    ```bash
    git fetch origin
    git rebase origin/main
    git push --force-with-lease
    ```
-   A new push dismisses earlier approvals, so the reviewer re-runs the checklist and re-approves.
+   `scripts/review-pr.sh` prints a patch id that such a rebase keeps when the diff text stays the same, whitespace included. The independent review and the verify evidence name the patch id they cover and stay valid while it is unchanged, so only the script reruns, and its passing check is cached by the tested tree. GitHub still dismisses a human approval on every push (the ruleset), so a contributor's PR needs that approval again.
 6. Squash-merge: `gh pr merge --squash`.
 
 ## Checks (no CI)
 
 There is no GitHub Actions CI. The same checks run locally at these points:
 
-| When                 | What runs              | What it enforces                                                                                                                                                                                                   |
-| -------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `git commit`         | `commit-msg` hook      | No commits on `main`; no empty message                                                                                                                                                                             |
-| `git commit`         | `pre-commit` hook      | No staged file over 5000 tokens (bytes / 4), except binary and `linguist-generated` files                                                                                                                          |
-| `git push`           | `pre-push` hook        | No push to `main`; branch name format; `scripts/check.sh --changed` (quick lint, typecheck, test of what changed)                                                                                                  |
-| `scripts/open-pr.sh` | itself                 | Branch name, `scripts/check.sh --changed`, correct title and `Closes #`                                                                                                                                            |
-| Review               | `scripts/review-pr.sh` | Branch, title, `Closes #`, issue open, up to date with `main`, full `scripts/check.sh` in a clean worktree (the one full run per PR), mass deletion and `needs-human-review` (human required), committed env files |
+| When                 | What runs              | What it enforces                                                                                                                                                                                                                     |
+| -------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `git commit`         | `commit-msg` hook      | No commits on `main`; no empty message                                                                                                                                                                                               |
+| `git commit`         | `pre-commit` hook      | No staged file over 5000 tokens (bytes / 4), except binary and `linguist-generated` files                                                                                                                                            |
+| `git push`           | `pre-push` hook        | No push to `main`; branch name format; `scripts/check.sh --changed` (quick lint, typecheck, test of what changed)                                                                                                                    |
+| `scripts/open-pr.sh` | itself                 | Branch name, `scripts/check.sh --changed`, correct title and `Closes #`                                                                                                                                                              |
+| Review               | `scripts/review-pr.sh` | Branch, title, `Closes #`, issue open, merges cleanly with `main`, full `scripts/check.sh` on that merge in a clean worktree (the one full run per PR), mass deletion and `needs-human-review` (human required), committed env files |
 
 Hooks are on once `git config core.hooksPath .githooks` is set in the clone (`scripts/new-task.sh` does it).
 
