@@ -228,6 +228,15 @@ function declared(block: string) {
   return [...block.matchAll(/^\s*--([\w-]+):/gm)].map((match) => match[1])
 }
 
+/** Custom properties a file declares or sets itself, such as the sizing variables of a showpiece component. */
+function localVariables(source: string) {
+  return new Set(
+    [...source.matchAll(/(?:^|[\s{;"'`(])--([\w-]+)(?=\s*[:{]|["'`])/gm)].map(
+      (match) => match[1]
+    )
+  )
+}
+
 function rel(file: string) {
   return file.replaceAll("\\", "/")
 }
@@ -289,11 +298,13 @@ describe("design-system vocabulary", () => {
       ...kitSourceFiles().map((file) => [file, readKit(file)] as const),
     ]
     for (const [file, source] of files) {
+      const local = localVariables(source)
       const unknown = [...source.matchAll(VARIABLE_READ_RE)]
         .map((match) => match[1].slice(2))
         .filter(
           (name) =>
             !READABLE_VARIABLES.has(name) &&
+            !local.has(name) &&
             !CV_VARIABLE_RE.test(name) &&
             !AFFECT_VARIABLE_RE.test(name) &&
             !LEGACY_VARIABLE_RE.test(name) &&

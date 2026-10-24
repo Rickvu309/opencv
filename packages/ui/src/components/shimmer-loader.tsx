@@ -1,0 +1,145 @@
+"use client"
+
+import type { CSSProperties, ReactNode } from "react"
+
+/*
+ * Shimmer Loader – loading states with a soft light sweep, in a single self-contained file.
+ * Skeleton draws placeholder blocks; the highlight is pinned to the viewport (background-attachment: fixed),
+ * so every skeleton on the page shares one sweep that travels across them together. ShimmerText runs a
+ * highlight band through the letters of a label, like an AI "Thinking…" state. The styles are injected below.
+ */
+
+export type SkeletonProps = {
+  /** Width – a number is px, a string any CSS length; defaults to 100% */
+  width?: number | string
+  /** Height – a number is px, a string any CSS length; defaults to 12px */
+  height?: number | string
+  /** Corner radius; defaults to 6px */
+  radius?: number | string
+  /** Round shape, e.g. for avatars – uses width for both sides */
+  circle?: boolean
+  className?: string
+  style?: CSSProperties
+}
+
+export type ShimmerTextProps = {
+  children: ReactNode
+  /** Seconds for one pass of the highlight */
+  duration?: number
+  className?: string
+}
+
+const len = (v: number | string | undefined) =>
+  typeof v === "number" ? `${v}px` : v
+
+const Style = () => (
+  <style href="ui-shimmer-loader" precedence="default">
+    {css}
+  </style>
+)
+
+export function Skeleton({
+  width,
+  height,
+  radius,
+  circle,
+  className,
+  style,
+}: SkeletonProps) {
+  const w = len(width)
+  return (
+    <>
+      <Style />
+      <span
+        data-slot="shimmer-skeleton"
+        className={["ui-shm", className].filter(Boolean).join(" ")}
+        aria-hidden="true"
+        style={{
+          width: w,
+          height: circle ? (w ?? len(height)) : len(height),
+          borderRadius: circle ? "50%" : len(radius),
+          ...style,
+        }}
+      />
+    </>
+  )
+}
+
+export function ShimmerText({
+  children,
+  duration = 2,
+  className,
+}: ShimmerTextProps) {
+  return (
+    <>
+      <Style />
+      <span
+        data-slot="shimmer-text"
+        className={["ui-shm-text", className].filter(Boolean).join(" ")}
+        style={{ animationDuration: `${duration}s` }}
+      >
+        {children}
+      </span>
+    </>
+  )
+}
+
+/* ---------- Styles ---------- */
+
+const css = /* css */ `
+/* Skeleton: one fixed gradient for the whole viewport, so all blocks sweep together */
+.ui-shm {
+  display: block;
+  flex: none;
+  width: 100%;
+  height: 12px;
+  max-width: 100%;
+  border-radius: 6px;
+  background-color: var(--muted);
+  background-image: linear-gradient(
+    100deg,
+    transparent 0%,
+    transparent 30%,
+    color-mix(in oklab, var(--background) 70%, transparent) 50%,
+    transparent 70%,
+    transparent 100%
+  );
+  background-size: 150vw 100%;
+  background-repeat: repeat-x;
+  background-attachment: fixed;
+  animation: ui-shm-sweep 2.2s linear infinite;
+}
+@keyframes ui-shm-sweep {
+  from { background-position: -50vw 0; }
+  to { background-position: 100vw 0; }
+}
+
+/* Text: a highlight band runs through the letters */
+.ui-shm-text {
+  display: inline-block;
+  color: var(--muted-foreground);
+  background-image: linear-gradient(
+    90deg,
+    var(--muted-foreground) 0%,
+    var(--muted-foreground) 40%,
+    var(--foreground) 50%,
+    var(--muted-foreground) 60%,
+    var(--muted-foreground) 100%
+  );
+  background-size: 300% 100%;
+  background-position: 100% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: ui-shm-text 2s linear infinite;
+}
+@keyframes ui-shm-text {
+  from { background-position: 100% 0; }
+  to { background-position: 0% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-shm { animation: none; background-image: none; }
+  .ui-shm-text { animation: none; background-image: none; -webkit-text-fill-color: currentColor; }
+}
+`

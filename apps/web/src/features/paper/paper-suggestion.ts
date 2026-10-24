@@ -36,3 +36,71 @@ export function suggestionSentence(sections: readonly string[]): string {
   const named = head.length ? `${head.join(", ")} and ${last}` : last
   return `Coach changed ${named}. Keep it or undo this change.`
 }
+
+export type SuggestionOutcome = "kept" | "undone"
+
+export type SuggestionEntry = {
+  id: string
+  sections: string[]
+  outcome: SuggestionOutcome
+  at: number
+}
+
+export function logSuggestion(
+  log: readonly SuggestionEntry[],
+  suggestion: PaperSuggestion,
+  outcome: SuggestionOutcome,
+  at: number
+): SuggestionEntry[] {
+  return [
+    ...log,
+    {
+      id: `suggestion-${log.length}`,
+      sections: suggestion.sections,
+      outcome,
+      at,
+    },
+  ]
+}
+
+export type SuggestionNote = {
+  id: string
+  text: string
+  status: string
+  details: string[]
+  at: number
+}
+
+const OUTCOME_STATUS: Record<SuggestionOutcome | "pending", string> = {
+  pending: "Waiting for your decision",
+  kept: "You kept it",
+  undone: "You undid it",
+}
+
+/** One note per Coach change, oldest first, the open suggestion last. */
+export function suggestionNotes(
+  log: readonly SuggestionEntry[],
+  pending: PaperSuggestion | null,
+  now: number
+): SuggestionNote[] {
+  const note = (
+    id: string,
+    sections: readonly string[],
+    status: SuggestionOutcome | "pending",
+    at: number
+  ): SuggestionNote => ({
+    id,
+    text: `Changed ${sections.join(", ") || "this"}.`,
+    status: OUTCOME_STATUS[status],
+    details: [...sections],
+    at,
+  })
+  return [
+    ...log.map((entry) =>
+      note(entry.id, entry.sections, entry.outcome, entry.at)
+    ),
+    ...(pending
+      ? [note("suggestion-open", pending.sections, "pending", now)]
+      : []),
+  ]
+}

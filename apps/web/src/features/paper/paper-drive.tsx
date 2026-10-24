@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react"
 import { Plus, Search } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -8,10 +9,19 @@ import {
 } from "@workspace/ui/components/dropdown-menu"
 import { Empty, EmptyDescription } from "@workspace/ui/components/empty"
 import { Input } from "@workspace/ui/components/input"
-import { Skeleton } from "@workspace/ui/components/skeleton"
+import { ShimmerText, Skeleton } from "@workspace/ui/components/shimmer-loader"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@workspace/ui/components/table"
 import type { PaperContentKind } from "@workspace/domain"
 
 import { ErrorBanner } from "@/components/error-banner.tsx"
+import type { LayerStackItem } from "@/components/layer-stack.tsx"
 import { WorkspaceHeader } from "@/components/workspace-header.tsx"
 
 import {
@@ -23,12 +33,27 @@ import {
   type PaperZeroState,
   type PaperZeroStateId,
 } from "./paper-data.ts"
+import type { PaperKindFilter } from "./paper-kind-filter.tsx"
 import { RowMenu, StatusBadge, type RowMenuProps } from "./paper-row-menu.tsx"
 
-const TABLE_WIDTH = "min-w-[48rem]"
+const KindFilter = lazy(() => import("./paper-kind-filter.tsx"))
+const LayerStack = lazy(() =>
+  import("@/components/layer-stack.tsx").then((m) => ({
+    default: m.LayerStack,
+  }))
+)
+
+const EMPTY_LAYERS: LayerStackItem[] = [
+  { title: "CV", hint: "Your story", icon: "bolt" },
+  { title: "Letter", hint: "One Opportunity", icon: "pulse" },
+  { title: "Proof", hint: "Work you made", icon: "spark" },
+]
 
 type Props = {
   docs: PaperDoc[]
+  kind: PaperKindFilter
+  onKind: (kind: PaperKindFilter) => void
+  counts: Record<PaperKindFilter, number>
   isLoading: boolean
   loadFailed: boolean
   onReload: () => void
@@ -45,6 +70,9 @@ type Props = {
 
 export function PaperDrive({
   docs,
+  kind,
+  onKind,
+  counts,
   isLoading,
   loadFailed,
   onReload,
@@ -94,78 +122,94 @@ export function PaperDrive({
       </WorkspaceHeader>
 
       <div className="min-h-0 flex-1 overflow-auto p-6">
+        {!isLoading && counts.all > 0 ? (
+          <div className="mb-4 h-[26px]">
+            <Suspense fallback={null}>
+              <KindFilter value={kind} onChange={onKind} counts={counts} />
+            </Suspense>
+          </div>
+        ) : null}
         <div className="overflow-hidden rounded-lg border border-border bg-background">
           {loadFailed && !isLoading ? <LoadError onReload={onReload} /> : null}
-          <div className="overflow-x-auto">
-            {isLoading ? (
-              <DriveLoading />
-            ) : docs.length === 0 ? (
-              loadFailed ? null : (
-                <Empty className="py-8">
-                  <EmptyDescription>
-                    {query.trim()
-                      ? "No documents match that search."
-                      : "No documents yet. Create a CV, Letter, or Proof to start."}
-                  </EmptyDescription>
-                </Empty>
-              )
+          {isLoading ? (
+            <DriveLoading />
+          ) : docs.length === 0 ? (
+            loadFailed ? null : counts.all === 0 && !query.trim() ? (
+              <EmptyDrive />
             ) : (
-              <table className={`w-full ${TABLE_WIDTH} text-left text-sm`}>
-                <thead>
-                  <tr className="border-b border-border text-xs text-muted-foreground">
-                    <th className="px-4 py-2.5 font-medium">Name</th>
-                    <th className="px-4 py-2.5 font-medium">Type</th>
-                    <th className="px-4 py-2.5 font-medium">Status</th>
-                    <th className="px-4 py-2.5 font-medium">Updated</th>
-                    <th className="px-4 py-2.5 font-medium">Apply</th>
-                    <th className="w-10 px-4 py-2.5" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {docs.map((doc) => (
-                    <tr
-                      key={doc.id}
-                      onClick={() => onOpen(doc.id)}
-                      className="cursor-pointer border-b border-border transition-colors last:border-b-0 hover:bg-muted/30"
-                    >
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-foreground">
-                            {doc.name.slice(0, 2).toUpperCase()}
-                          </span>
-                          <span className="min-w-0">
-                            <span className="block font-medium">
-                              {doc.name}
+              <Empty className="py-8">
+                <EmptyDescription>
+                  No documents match that search.
+                </EmptyDescription>
+              </Empty>
+            )
+          ) : (
+            <Table className="min-w-[48rem]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="px-4">Name</TableHead>
+                  <TableHead className="px-4">Type</TableHead>
+                  <TableHead className="px-4">Status</TableHead>
+                  <TableHead className="px-4">Updated</TableHead>
+                  <TableHead className="px-4">Apply</TableHead>
+                  <TableHead className="w-10 px-4">
+                    <span className="sr-only">Actions</span>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {docs.map((doc) => (
+                  <TableRow
+                    key={doc.id}
+                    onClick={() => onOpen(doc.id)}
+                    className="cursor-pointer"
+                  >
+                    <TableCell className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-foreground">
+                          {doc.name.slice(0, 2).toUpperCase()}
+                        </span>
+                        <span className="min-w-0">
+                          <Button
+                            type="button"
+                            variant="link"
+                            aria-label={`Open ${doc.name}`}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onOpen(doc.id)
+                            }}
+                            className="h-auto p-0 font-medium text-foreground"
+                          >
+                            {doc.name}
+                          </Button>
+                          {isSampleCv(doc) ? (
+                            <span className="mt-0.5 block text-xs text-muted-foreground">
+                              {SAMPLE_CV_LABEL}
                             </span>
-                            {isSampleCv(doc) ? (
-                              <span className="mt-0.5 block text-xs text-muted-foreground">
-                                {SAMPLE_CV_LABEL}
-                              </span>
-                            ) : null}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {TYPE_LABEL[doc.kind]}
-                      </td>
-                      <td className="px-4 py-3">
-                        <StatusBadge status={doc.status} />
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {formatPaperUpdated(doc.updatedAt)}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {companyOf(doc) ?? "—"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <RowMenu doc={doc} {...rowActions(doc)} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
+                          ) : null}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-muted-foreground">
+                      {TYPE_LABEL[doc.kind]}
+                    </TableCell>
+                    <TableCell className="px-4 py-3">
+                      <StatusBadge status={doc.status} />
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-muted-foreground">
+                      {formatPaperUpdated(doc.updatedAt)}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-muted-foreground">
+                      {companyOf(doc) ?? "—"}
+                    </TableCell>
+                    <TableCell className="px-4 py-3">
+                      <RowMenu doc={doc} {...rowActions(doc)} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </div>
 
         {!isLoading && !loadFailed && zeroStates.length > 0 ? (
@@ -198,26 +242,38 @@ export function PaperDrive({
 
 function DriveLoading() {
   return (
-    <div className={TABLE_WIDTH}>
-      <p
-        aria-live="polite"
-        className="px-4 py-2.5 text-xs text-muted-foreground"
-      >
-        Loading documents…
+    <div aria-busy="true" className="min-w-[48rem]">
+      <p aria-live="polite" className="px-4 py-2.5 text-xs">
+        <ShimmerText>Loading documents…</ShimmerText>
       </p>
-      <div aria-hidden className="grid gap-px">
+      <div className="grid gap-px">
         {[0, 1, 2].map((row) => (
           <div
             key={row}
             className="flex h-14 items-center gap-3 border-t border-border px-4"
           >
-            <Skeleton className="size-8 rounded-full" />
-            <Skeleton className="h-4 w-48" />
-            <Skeleton className="ml-auto h-4 w-24" />
+            <Skeleton circle width={32} />
+            <Skeleton width={192} height={16} />
+            <Skeleton width={96} height={16} className="ml-auto" />
           </div>
         ))}
       </div>
     </div>
+  )
+}
+
+function EmptyDrive() {
+  return (
+    <Empty className="py-8">
+      <div className="hidden w-full max-w-xl sm:block">
+        <Suspense fallback={null}>
+          <LayerStack items={EMPTY_LAYERS} interval={3200} />
+        </Suspense>
+      </div>
+      <EmptyDescription>
+        No documents yet. Create a CV, Letter, or Proof to start.
+      </EmptyDescription>
+    </Empty>
   )
 }
 
