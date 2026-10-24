@@ -54,8 +54,9 @@ Without the script, do steps 1-6 by hand:
 ```bash
 gh pr view <pr#> --json headRefName,title,body,labels,files,baseRefName,isDraft
 git fetch origin main "pull/<pr#>/head:refs/remotes/origin/pr/<pr#>"
-git worktree add --detach ../opencv.worktrees/review-pr-<pr#> origin/main
-git -C ../opencv.worktrees/review-pr-<pr#> merge --no-commit --no-ff origin/pr/<pr#>   # a conflict fails the review
+tree=$(git --attr-source=origin/main merge-tree --write-tree --name-only --no-messages origin/main origin/pr/<pr#>)   # exit 1 means a conflict, which fails the review
+git worktree add --detach --no-checkout ../opencv.worktrees/review-pr-<pr#> origin/main
+git -C ../opencv.worktrees/review-pr-<pr#> -c core.hooksPath=/dev/null read-tree -u --reset "$tree"
 cd ../opencv.worktrees/review-pr-<pr#> && cp .env.example .env && pnpm install --frozen-lockfile && ../../opencv/scripts/check.sh
 cd - && git worktree remove --force ../opencv.worktrees/review-pr-<pr#>
 ```

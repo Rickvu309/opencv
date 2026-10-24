@@ -9,7 +9,7 @@
 # The checks run on the merge of origin/main and the PR head, which is what a squash merge lands, so a branch behind
 # main needs no rebase. Only a merge conflict does. A passing check is cached by the tested tree (--no-cache reruns it).
 # The patch id it prints is stable across a rebase that leaves the diff text unchanged; record it with the independent
-# review and the verify evidence so they stay valid for the same patch on a new base.
+# review and the verify evidence so they stay valid for the same patch on a new base. Needs git 2.39 or later.
 #
 # Exit code:
 #   0  OK to merge (after you confirm the verify-opencv evidence and the independent review is clean)
@@ -168,8 +168,9 @@ merge_base=$(git -C "$main_checkout" merge-base origin/main "$head_ref") || die 
 # --verbatim hashes the diff text without line numbers, so the id survives a rebase that leaves every hunk's text the
 # same (whitespace included) and changes with anything a reviewer would need to read again. Plain prefixes and no
 # color or external diff keep the id the same on every machine.
-patch_id=$(git -C "$main_checkout" diff --no-color --no-ext-diff --src-prefix=a/ --dst-prefix=b/ "$merge_base" "$head_ref" | git patch-id --verbatim | cut -d' ' -f1)
-if [[ -z "$patch_id" && "$merge_base" != "$head_sha" ]]; then die "could not compute the patch id of PR #$pr"; fi
+diff_text=$(git -C "$main_checkout" -c diff.suppressBlankEmpty=false diff --no-color --no-ext-diff --no-textconv --unified=3 --src-prefix=a/ --dst-prefix=b/ "$merge_base" "$head_ref")
+patch_id=$(git patch-id --verbatim <<<"$diff_text" | cut -d' ' -f1)
+if [[ -n "$diff_text" && -z "$patch_id" ]]; then die "could not compute the patch id of PR #$pr"; fi
 echo "  main ${main_sha:0:12}   head ${head_sha:0:12}   patch id ${patch_id:-none}"
 if git -C "$main_checkout" merge-base --is-ancestor origin/main "$head_ref"; then
   ok "branch contains the latest main"
@@ -189,7 +190,7 @@ mkdir -p "$wt_root"
 # Test what a squash merge would land: main with the PR merged in, not the PR head alone. merge-tree writes no ref, no
 # index and no commit, so none of the PR's hooks and no git identity take part; the tree is then checked out as is.
 set +e
-merge_out=$(git -C "$main_checkout" merge-tree --write-tree --name-only origin/main "$head_ref" 2>&1)
+merge_out=$(git -C "$main_checkout" --attr-source=origin/main merge-tree --write-tree --name-only --no-messages origin/main "$head_ref" 2>/dev/null)
 merge_rc=$?
 set -e
 if (( merge_rc == 0 )); then
@@ -239,7 +240,8 @@ elif (( merge_rc == 1 )); then
   conflicts=$(tail -n +2 <<<"$merge_out" | tr '\n' ' ')
   bad "does not merge cleanly with main; author must rebase (git rebase origin/main) and resolve: ${conflicts:-see git merge origin/main}"
 else
-  bad "merge with main failed (git merge-tree exit $merge_rc): $(tr '\n' ' ' <<<"$merge_out")"
+  merge_err=$(git -C "$main_checkout" --attr-source=origin/main merge-tree --write-tree --name-only --no-messages origin/main "$head_ref" 2>&1 >/dev/null | head -3 | tr '\n' ' ' || true)
+  bad "merge with main failed (git merge-tree exit $merge_rc): ${merge_err:-no message}"
 fi
 if [[ -e "$wt" ]]; then
   if (( keep )); then note "review worktree kept at $wt"; else git -C "$main_checkout" worktree remove --force "$wt"; fi

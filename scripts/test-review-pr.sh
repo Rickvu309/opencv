@@ -201,13 +201,22 @@ run --no-install
 expect "failing check is not cached" 1 "scripts/check.sh failed"
 want_runs "not cached" 10
 
+# A PR whose net diff is empty gets no patch id and still passes.
+git -C "$work" reset -q --hard main
+echo noop >"$work/noop.txt" && git -C "$work" add -A && git -C "$work" commit -q -m "add"
+git -C "$work" rm -q noop.txt && git -C "$work" commit -q -m "remove"
+git -C "$work" push -q -f origin "$REVIEW_TEST_BRANCH:refs/pull/1/head"
+run --no-install
+expect "empty net diff" 0 "patch id none" "RESULT: OK"
+
 # A conflicting PR fails without running the check and names the file.
+echo change >"$work/other.txt"; touch "$work/FAIL_CHECK"; git -C "$work" add -A && git -C "$work" commit -q -m "change again" && git -C "$work" push -q -f origin "$REVIEW_TEST_BRANCH:refs/pull/1/head"
 git -C "$work" checkout -q main
 echo conflict-main >"$work/other.txt"
 git -C "$work" add -A && git -C "$work" commit -q -m "conflicts with the PR" && git -C "$work" push -q origin main
 run --no-install
 expect "merge conflict" 1 "does not merge cleanly with main; author must rebase" "resolve: other.txt" "RESULT: FAIL"
-want_runs "conflict" 10
+want_runs "conflict" 11
 
 if git -C "$main_checkout" worktree list | grep -q review-pr-; then fail "cleanup" "review worktree left behind"; fi
 echo "all review-pr tests passed"
