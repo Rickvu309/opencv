@@ -164,6 +164,8 @@ export function PaperWorkspace({
       <PaperDrive
         docs={filtered}
         isLoading={paper.isLoading}
+        loadFailed={paper.loadFailed}
+        onReload={paper.reload}
         creating={paper.creating}
         query={query}
         onQuery={setQuery}

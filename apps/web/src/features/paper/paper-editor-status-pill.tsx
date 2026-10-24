@@ -26,7 +26,7 @@ export function PaperEditorStatusPill({
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
-          "inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium",
+          "inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
           status === "published" && "border-border bg-muted text-foreground",
           status === "ready" &&
             "border-border bg-secondary text-secondary-foreground",

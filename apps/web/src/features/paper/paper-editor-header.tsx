@@ -77,7 +77,7 @@ export function PaperEditorHeader({
             onKeyDown={(e) => {
               if (e.key === "Enter") (e.target as HTMLInputElement).blur()
             }}
-            className="h-auto w-full truncate border-0 bg-transparent px-0 text-sm font-semibold shadow-none focus-visible:border-0 focus-visible:ring-0 md:text-sm"
+            className="h-auto w-full truncate border-transparent bg-transparent px-1 text-sm font-semibold shadow-none md:text-sm"
             aria-label="Name"
           />
           <p className="paper-editor-chrome-meta text-xs text-muted-foreground">

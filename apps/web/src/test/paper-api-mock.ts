@@ -16,12 +16,14 @@ type Store = {
   docs: PaperDoc[]
   failNext: { command: string; message: string } | null
   listGate: Promise<void> | null
+  failList: boolean
 }
 
 const store: Store = {
   docs: samplePaperDocs(),
   failNext: null,
   listGate: null,
+  failList: false,
 }
 
 function cloneDocs(docs: PaperDoc[]): PaperDoc[] {
@@ -47,6 +49,11 @@ export function resetPaperApiMock() {
   store.docs = cloneDocs(samplePaperDocs())
   store.failNext = null
   store.listGate = null
+  store.failList = false
+}
+
+export function failPaperList(fail = true) {
+  store.failList = fail
 }
 
 export function holdPaperList() {
@@ -102,6 +109,7 @@ export async function paperApiFetch(
 
   if (method === "GET" && path === "/api/paper") {
     if (store.listGate) await store.listGate
+    if (store.failList) return jsonError(500, "INTERNAL", "Server error")
     return jsonOk(sortDocs(store.docs))
   }
 

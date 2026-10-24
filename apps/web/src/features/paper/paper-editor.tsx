@@ -547,7 +547,14 @@ export function PaperEditor({
         />
       ) : null}
 
-      <div data-paper-editor="" className="flex min-w-0 flex-1 flex-col">
+      <div
+        data-paper-editor=""
+        hidden={coachDocked && !isDesktop}
+        className={cn(
+          "flex min-w-0 flex-1 flex-col",
+          coachDocked && isDesktop && "min-w-[min(890px,calc(100%-18rem))]"
+        )}
+      >
         <PaperEditorHeader
           doc={doc}
           title={title}
@@ -588,7 +595,10 @@ export function PaperEditor({
         <div
           ref={canvasRef}
           data-paper-canvas
-          className="paper-editor-canvas-scroll min-h-0 flex-1 overflow-auto px-4 py-8 sm:px-8"
+          className={cn(
+            "paper-editor-canvas-scroll min-h-0 flex-1 overflow-auto px-4 py-8",
+            !coachDocked && "sm:px-8"
+          )}
         >
           <div
             className={cn(
@@ -660,7 +670,15 @@ export function PaperEditor({
           }
         />
       </div>
-      <div ref={setDockEl} className="flex h-full shrink-0" />
+      <div
+        ref={setDockEl}
+        className={cn(
+          "flex h-full min-w-0",
+          isDesktop
+            ? "shrink [&:not(:empty)]:min-w-72 [&:not(:empty)]:basis-96"
+            : "[&:not(:empty)]:flex-1"
+        )}
+      />
     </div>
   )
 }

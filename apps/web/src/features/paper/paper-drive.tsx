@@ -11,6 +11,7 @@ import { Input } from "@workspace/ui/components/input"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import type { PaperContentKind } from "@workspace/domain"
 
+import { ErrorBanner } from "@/components/error-banner.tsx"
 import { WorkspaceHeader } from "@/components/workspace-header.tsx"
 
 import {
@@ -29,6 +30,8 @@ const TABLE_WIDTH = "min-w-[48rem]"
 type Props = {
   docs: PaperDoc[]
   isLoading: boolean
+  loadFailed: boolean
+  onReload: () => void
   creating: boolean
   query: string
   onQuery: (query: string) => void
@@ -43,6 +46,8 @@ type Props = {
 export function PaperDrive({
   docs,
   isLoading,
+  loadFailed,
+  onReload,
   creating,
   query,
   onQuery,
@@ -93,6 +98,21 @@ export function PaperDrive({
           <div className="overflow-x-auto">
             {isLoading ? (
               <DriveLoading />
+            ) : loadFailed ? (
+              <div className="flex flex-col items-start gap-3 px-4 py-8">
+                <ErrorBanner variant="inline">
+                  Couldn&apos;t load your CVs, Letters and Proof. Check your
+                  connection, then try again.
+                </ErrorBanner>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onReload}
+                >
+                  Retry
+                </Button>
+              </div>
             ) : docs.length === 0 ? (
               <Empty className="py-8">
                 <EmptyDescription>
@@ -160,7 +180,7 @@ export function PaperDrive({
           </div>
         </div>
 
-        {!isLoading && zeroStates.length > 0 ? (
+        {!isLoading && !loadFailed && zeroStates.length > 0 ? (
           <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {zeroStates.map((state) => (
               <Button

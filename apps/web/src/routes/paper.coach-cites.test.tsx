@@ -14,12 +14,11 @@ import {
   messageCoach,
   selectNodeContents,
   collapseWindowSelection,
-  stubDesktopViewport,
 } from "@/test/paper-route-fixtures.ts"
 
 installPaperTestLifecycle()
 
-describe("Paper Coach cites and mobile sheet", () => {
+describe("Paper Coach cites", () => {
   it("offers one cite that scrolls and highlights the matching Experience bullet", async () => {
     const scrollIntoView = vi.fn()
     const originalScroll = HTMLElement.prototype.scrollIntoView
@@ -230,33 +229,6 @@ describe("Paper Coach cites and mobile sheet", () => {
     })
   })
 
-  it("opens a mobile sheet with a backdrop and focus trap", async () => {
-    stubDesktopViewport(false)
-    renderPaper()
-    await expectPaperDrive()
-    await openDoc("PM track CV")
-    const dialog = await openCoach()
-
-    expect(
-      queryByAttr(document, "data-coach-float-backdrop")
-    ).toBeInTheDocument()
-    expect(dialog).toHaveAttribute("aria-modal", "true")
-
-    const focusable = [
-      ...dialog.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-      ),
-    ]
-    expect(focusable.length).toBeGreaterThan(1)
-    const first = focusable[0]
-    const last = focusable[focusable.length - 1]
-    last?.focus()
-    fireEvent.keyDown(dialog, { key: "Tab" })
-    expect(first).toHaveFocus()
-    fireEvent.keyDown(dialog, { key: "Tab", shiftKey: true })
-    expect(last).toHaveFocus()
-  })
-
   it("keeps the docked Coach and its Thread while the CV is edited", async () => {
     scriptCoachStream({ texts: ["Keep the checkout metric."] })
     renderPaper()
@@ -301,22 +273,5 @@ describe("Paper Coach cites and mobile sheet", () => {
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "Coach" })).toHaveFocus()
     })
-  })
-
-  it("keeps the mobile sheet open on canvas focus", async () => {
-    stubDesktopViewport(false)
-    renderPaper()
-    await expectPaperDrive()
-    const editor = await openDoc("PM track CV")
-    await openCoach()
-
-    const summary = within(editor).getByRole("textbox", { name: "Summary" })
-    fireEvent.pointerDown(summary)
-    fireEvent.focusIn(summary)
-
-    expect(screen.getByRole("dialog", { name: "Coach" })).toHaveAttribute(
-      "data-coach-float-state",
-      "open"
-    )
   })
 })
