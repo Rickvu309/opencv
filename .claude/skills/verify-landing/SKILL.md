@@ -63,7 +63,7 @@ Check 09 (the H1 alone says what is sold) is judged, as J1 below. Numbers drawn 
 
 ### Baseline at the sync commit
 
-At `b11dd50` (before the craft pass) the checker printed 14 PASS and 11 FAIL: 02 03 06 08 11 13 15 16 20b 21 25. The craft pass (PR #296) fixed all of them. At `6e4c8c5` (2026-10-24) it prints 25 PASS, 0 FAIL. A change that breaks one should flip its line to FAIL and nothing else. Check 04 passes only because "your best work" is the exempt phrase; rewording the Pitch line is a copy change, not a checker change.
+At `b11dd50` (before the craft pass) the checker printed 14 PASS and 11 FAIL: 02 03 06 08 11 13 15 16 20b 21 25. The craft pass (PR #296) fixed all of them. At `88e2d37` (2026-10-24) it prints 25 PASS, 0 FAIL. A change that breaks one should flip its line to FAIL and nothing else. Check 04 passes only because "your best work" is the exempt phrase; rewording the Pitch line is a copy change, not a checker change.
 
 ## Taste review (judged layer)
 
@@ -111,7 +111,7 @@ J8 is partly decided by checks 20, 21 and 25; the reviewers see stills, so treat
 
 ## Coverage record
 
-Sync commit: `6e4c8c5`, the head of PR #296 (craft pass) at which the checks were last run against the landing. The checks describe the landing as of that commit.
+Sync commit: `88e2d37`, the head of PR #296 (craft pass) at which the checks were last run against the landing. The checks describe the landing as of that commit.
 
 | Checks                   | Files and symbols they read                                                                                                                                                                                                                                                                                                                |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
