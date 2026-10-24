@@ -237,10 +237,15 @@ async function main() {
     process.exitCode = 1
     return
   }
-  if (advice.headers.get("x-accel-buffering") !== "no") {
-    fail("X-Accel-Buffering is not no")
-  } else {
+  if (advice.headers.get("x-accel-buffering") === "no") {
     pass("X-Accel-Buffering: no")
+  } else if (advice.headers.get("server") === "cloudflare") {
+    // Cloudflare drops this hop header; the flush timing checks below still prove streaming.
+    pass(
+      "X-Accel-Buffering absent behind Cloudflare (header stripped at the edge)"
+    )
+  } else {
+    fail("X-Accel-Buffering is not no")
   }
   if (advice.headers.get("content-encoding") === "gzip") {
     fail("coach stream is gzip-compressed")
