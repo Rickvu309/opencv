@@ -22,28 +22,20 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-async function openModeMenu() {
-  const trigger = await screen.findByRole("button", { name: "Coach mode" })
-  await waitFor(() => {
-    expect(screen.queryByRole("menu")).not.toBeInTheDocument()
-  })
-  fireEvent.click(trigger)
-  return screen.findByRole("menu")
+async function chooseMode(label: "Free" | "Light" | "Power") {
+  const group = await screen.findByRole("radiogroup", { name: "Coach mode" })
+  fireEvent.click(within(group).getByRole("radio", { name: label }))
 }
 
-async function chooseMode(label: "Free" | "Light" | "Max") {
-  const menu = await openModeMenu()
-  fireEvent.click(within(menu).getByRole("menuitem", { name: label }))
-  await waitFor(() => {
-    expect(screen.queryByRole("menu")).not.toBeInTheDocument()
-  })
+function expectChecked(group: HTMLElement, label: string) {
+  expect(within(group).getByRole("radio", { name: label })).toBeChecked()
 }
 
 describe("coach mode copy", () => {
   it("labels the three modes and stays honest about Free", () => {
     expect(coachModeLabel("free")).toBe("Free")
     expect(coachModeLabel("light")).toBe("Light")
-    expect(coachModeLabel("max")).toBe("Max")
+    expect(coachModeLabel("max")).toBe("Power")
     expect(coachModeHelper("free")).toMatch(/free models/)
     expect(coachModeHelper("free")).toMatch(/change between turns/)
     expect(coachModeHelper("free")).not.toMatch(/unlimited/i)
@@ -51,44 +43,56 @@ describe("coach mode copy", () => {
   })
 })
 
-describe("Home dock mode dropdown", () => {
-  it("shows mode inside the idle dock and has no under-dock radiogroup", async () => {
+describe("Home dock mode control", () => {
+  it("shows Free, Light, Power in order as one radiogroup in the dock", async () => {
     renderApp(SURFACE_PATHS.home)
 
-    const trigger = await screen.findByRole("button", { name: "Coach mode" })
-    expect(trigger).toHaveTextContent("Free")
+    const group = await screen.findByRole("radiogroup", { name: "Coach mode" })
     expect(
-      screen.queryByRole("radiogroup", { name: "Coach mode" })
-    ).not.toBeInTheDocument()
-
-    const menu = await openModeMenu()
-    expect(
-      within(menu).getByRole("menuitem", { name: "Free" })
-    ).toBeInTheDocument()
-    expect(
-      within(menu).getByRole("menuitem", { name: "Light" })
-    ).toBeInTheDocument()
-    expect(
-      within(menu).getByRole("menuitem", { name: "Max" })
-    ).toBeInTheDocument()
+      within(group)
+        .getAllByRole("radio")
+        .map((radio) => radio.textContent)
+    ).toEqual(["Free", "Light", "Power"])
+    expectChecked(group, "Free")
+    expect(screen.queryByRole("menuitem")).not.toBeInTheDocument()
   })
 
-  it("selects Free, Light, and Max and persists the preference", async () => {
+  it("selects Free, Light, and Power and stores Power as max", async () => {
     renderApp(SURFACE_PATHS.home)
 
     await chooseMode("Light")
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Coach mode" })).toHaveTextContent(
+      expectChecked(
+        screen.getByRole("radiogroup", { name: "Coach mode" }),
         "Light"
       )
       expect(getMockCoachMode()).toBe("light")
     })
 
-    await chooseMode("Max")
+    await chooseMode("Power")
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Coach mode" })).toHaveTextContent(
-        "Max"
+      expectChecked(
+        screen.getByRole("radiogroup", { name: "Coach mode" }),
+        "Power"
       )
+      expect(getMockCoachMode()).toBe("max")
+    })
+  })
+
+  it("moves the mode with the arrow keys", async () => {
+    renderApp(SURFACE_PATHS.home)
+
+    const group = await screen.findByRole("radiogroup", { name: "Coach mode" })
+    const free = within(group).getByRole("radio", { name: "Free" })
+    free.focus()
+    fireEvent.keyDown(free, { key: "ArrowRight" })
+    await waitFor(() => {
+      expect(getMockCoachMode()).toBe("light")
+    })
+    fireEvent.keyDown(within(group).getByRole("radio", { name: "Light" }), {
+      key: "ArrowRight",
+    })
+    await waitFor(() => {
       expect(getMockCoachMode()).toBe("max")
     })
   })
@@ -103,13 +107,11 @@ describe("Home dock mode dropdown", () => {
 
     renderApp(SURFACE_PATHS.home)
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Coach mode" })).toHaveTextContent(
+      expectChecked(
+        screen.getByRole("radiogroup", { name: "Coach mode" }),
         "Light"
       )
     })
-    expect(
-      screen.queryByRole("radiogroup", { name: "Coach mode" })
-    ).not.toBeInTheDocument()
 
     const composer = screen.getByRole("textbox", { name: "Message Coach" })
     fireEvent.change(composer, { target: { value: "Help me plan the week" } })
@@ -118,13 +120,13 @@ describe("Home dock mode dropdown", () => {
     await waitFor(() => {
       expect(getLastCoachRequest()?.mode).toBe("light")
     })
-    expect(await screen.findByRole("log", { name: "Thread" })).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Coach mode" })).toHaveTextContent(
+    expect(
+      await screen.findByRole("log", { name: "Thread" })
+    ).toBeInTheDocument()
+    expectChecked(
+      screen.getByRole("radiogroup", { name: "Coach mode" }),
       "Light"
     )
-    expect(
-      screen.queryByRole("radiogroup", { name: "Coach mode" })
-    ).not.toBeInTheDocument()
   })
 })
 
@@ -139,11 +141,10 @@ describe("Settings coach mode", () => {
       await screen.findByRole("radiogroup", { name: "Coach mode" })
     ).toBeInTheDocument()
     expect(screen.getByText(/Free stays first/)).toBeInTheDocument()
-    expect(screen.getByRole("link", { name: "OpenRouter listing" })).toHaveAttribute(
-      "href",
-      "https://openrouter.ai/openrouter/free"
-    )
-    fireEvent.click(screen.getByRole("radio", { name: "Max" }))
+    expect(
+      screen.getByRole("link", { name: "OpenRouter listing" })
+    ).toHaveAttribute("href", "https://openrouter.ai/openrouter/free")
+    fireEvent.click(screen.getByRole("radio", { name: "Power" }))
     await waitFor(() => {
       expect(getMockCoachMode()).toBe("max")
     })

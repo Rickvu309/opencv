@@ -13,10 +13,11 @@ import {
 } from "react"
 
 /*
- * Segmented Control – switch between two to six options, in a single self-contained file.
- * "tray": a gray track with a white raised pill; "underline": text tabs with a sliding line.
- * The indicator glides to the picked option – its leading edge runs ahead, so it stretches a little and settles.
- * Labels crossfade to semibold without the width jumping, and when a label or count changes the control morphs to its new size.
+ * Segmented Control (Clean) – switch between two to six options, in a single self-contained file.
+ * Clean style: "buttons" (the default): separate quiet chips with a hairline, the active one filled light gray;
+ * "tray": a compact light-gray track with a white raised pill; "underline": text tabs with a sliding line.
+ * The indicator slides to the picked option, short and crisp – its leading edge runs a touch ahead.
+ * Labels keep one weight, so nothing shifts; when a label or count changes the control morphs to its new size.
  * Arrow keys, Home and End move and select; press the pill and drag it across the options to pick as you go.
  * If it doesn't fit (phones), it scrolls sideways with soft edges and keeps the active option in view.
  * The styles are injected below, so no extra files are needed.
@@ -45,8 +46,8 @@ export type SegmentedControlProps<T extends string = string> = {
   defaultValue?: T
   onChange?: (value: T) => void
   size?: "sm" | "md" | "lg"
-  /** "tray" = gray track with a raised pill, "underline" = text tabs with a sliding line */
-  variant?: "tray" | "underline"
+  /** "buttons" = separate chips, the active one filled; "tray" = light track with a raised pill; "underline" = text tabs with a sliding line */
+  variant?: "buttons" | "tray" | "underline"
   /** Fill the container with equal segments */
   fullWidth?: boolean
   /** "radio" (a radiogroup, the default) or "tabs" (a tablist that switches panels) */
@@ -63,7 +64,7 @@ export function SegmentedControl<T extends string = string>({
   defaultValue,
   onChange,
   size = "md",
-  variant = "tray",
+  variant = "buttons",
   fullWidth = false,
   kind = "radio",
   disabled = false,
@@ -82,9 +83,8 @@ export function SegmentedControl<T extends string = string>({
   const pill = useRef<HTMLSpanElement>(null)
   // Latest value without waiting for a render – dragging picks several options in one frame
   const latest = useRef(current)
-  useLayoutEffect(() => {
-    latest.current = current
-  }, [current])
+  // eslint-disable-next-line react-hooks/refs -- vendored: a drag picks several options before the next render
+  latest.current = current
   const gliding = useRef(false)
   const glideTimer = useRef(0)
   const placed = useRef<T | undefined>(undefined)
@@ -98,7 +98,7 @@ export function SegmentedControl<T extends string = string>({
 
   const buttons = () =>
     Array.from(
-      track.current?.querySelectorAll<HTMLElement>(":scope > .ui-seg__opt") ??
+      track.current?.querySelectorAll<HTMLElement>(":scope > .ui-segc__opt") ??
         []
     )
   const activeIndex = options.findIndex((o) => o.value === current)
@@ -124,7 +124,7 @@ export function SegmentedControl<T extends string = string>({
     )
     if (fullWidth) {
       track.current.style.setProperty(
-        "--ui-seg-min",
+        "--ui-segc-min",
         `${Math.max(...widths)}px`
       )
       els.forEach((b) => (b.style.width = ""))
@@ -137,7 +137,7 @@ export function SegmentedControl<T extends string = string>({
     const p = pill.current
     if (!t || !p) return
     const btn = t.querySelector<HTMLElement>(
-      ":scope > .ui-seg__opt[data-active]"
+      ":scope > .ui-segc__opt[data-active]"
     )
     if (!btn || !btn.offsetWidth) {
       p.style.opacity = "0"
@@ -172,9 +172,9 @@ export function SegmentedControl<T extends string = string>({
     if (!s) return
     const max = s.scrollWidth - s.clientWidth
     root.current?.toggleAttribute("data-overflow", max > 1)
-    s.style.setProperty("--ui-seg-fade-l", s.scrollLeft > 1 ? "24px" : "0px")
+    s.style.setProperty("--ui-segc-fade-l", s.scrollLeft > 1 ? "24px" : "0px")
     s.style.setProperty(
-      "--ui-seg-fade-r",
+      "--ui-segc-fade-r",
       s.scrollLeft < max - 1 ? "24px" : "0px"
     )
   }
@@ -184,7 +184,7 @@ export function SegmentedControl<T extends string = string>({
     const s = scroller.current
     const t = track.current
     const btn = t?.querySelector<HTMLElement>(
-      ":scope > .ui-seg__opt[data-active]"
+      ":scope > .ui-segc__opt[data-active]"
     )
     if (!s || !t || !btn || s.scrollWidth <= s.clientWidth + 1) return
     const left =
@@ -218,7 +218,7 @@ export function SegmentedControl<T extends string = string>({
     })
     ro.observe(s)
     ro.observe(t)
-    t.querySelectorAll(".ui-seg__opt, .ui-seg__content").forEach((el) =>
+    t.querySelectorAll(".ui-segc__opt, .ui-segc__content").forEach((el) =>
       ro.observe(el)
     )
     return () => {
@@ -239,7 +239,7 @@ export function SegmentedControl<T extends string = string>({
       clearTimeout(glideTimer.current)
       glideTimer.current = window.setTimeout(
         () => (gliding.current = false),
-        440
+        240
       )
     }
     place(!first)
@@ -346,21 +346,21 @@ export function SegmentedControl<T extends string = string>({
     <div
       ref={root}
       data-slot="segmented-control"
-      className={["ui-seg", className].filter(Boolean).join(" ")}
+      className={["ui-segc", className].filter(Boolean).join(" ")}
       data-size={size}
       data-variant={variant}
       data-full={fullWidth || undefined}
       data-disabled={disabled || undefined}
     >
       {/* React 19 hoists this into <head> once, no matter how many controls render */}
-      <style href="ui-segmented-control" precedence="default">
+      <style href="ui-segmented-control-clean" precedence="default">
         {css}
       </style>
 
-      <div ref={scroller} className="ui-seg__scroller" onScroll={fades}>
+      <div ref={scroller} className="ui-segc__scroller" onScroll={fades}>
         <div
           ref={track}
-          className="ui-seg__track"
+          className="ui-segc__track"
           role={isTabs ? "tablist" : "radiogroup"}
           aria-label={ariaLabel}
           aria-labelledby={ariaLabelledby}
@@ -373,14 +373,14 @@ export function SegmentedControl<T extends string = string>({
           onPointerCancel={endPress}
           onLostPointerCapture={endPress}
         >
-          <span ref={pill} className="ui-seg__pill" aria-hidden="true" />
+          <span ref={pill} className="ui-segc__pill" aria-hidden="true" />
           {options.map((o, i) => {
             const active = i === activeIndex
             return (
               <button
                 key={o.value}
                 type="button"
-                className="ui-seg__opt"
+                className="ui-segc__opt"
                 role={isTabs ? "tab" : "radio"}
                 aria-checked={isTabs ? undefined : active}
                 aria-selected={isTabs ? active : undefined}
@@ -392,27 +392,19 @@ export function SegmentedControl<T extends string = string>({
                 // Keyboard (Enter / Space) and screen readers – pointers are handled on the track
                 onClick={() => select(o.value)}
               >
-                <span className="ui-seg__content">
-                  {o.icon && <span className="ui-seg__icon">{o.icon}</span>}
+                <span className="ui-segc__content">
+                  {o.icon && <span className="ui-segc__icon">{o.icon}</span>}
+                  {/* One weight for both states – only the color changes, so nothing shifts */}
                   {o.label != null && (
-                    // The semibold copy reserves the width; the two crossfade, so nothing shifts
-                    <span className="ui-seg__label">
-                      <span className="ui-seg__text">{o.label}</span>
-                      <span
-                        className="ui-seg__text ui-seg__text-bold"
-                        aria-hidden="true"
-                      >
-                        {o.label}
-                      </span>
-                    </span>
+                    <span className="ui-segc__label">{o.label}</span>
                   )}
                   {o.count != null && (
-                    <span key={String(o.count)} className="ui-seg__count">
+                    <span key={String(o.count)} className="ui-segc__count">
                       {o.count}
                     </span>
                   )}
                   {o.badge != null && (
-                    <span className="ui-seg__badge">{o.badge}</span>
+                    <span className="ui-segc__badge">{o.badge}</span>
                   )}
                 </span>
               </button>

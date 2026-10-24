@@ -28,16 +28,18 @@ describe("Home idle", () => {
     expect(screen.queryByText(/Eric/i)).not.toBeInTheDocument()
   })
 
-  it("fills the composer when a suggestion chip is tapped", async () => {
+  it("sends the prompt when a suggestion chip is tapped", async () => {
     renderApp()
     await expectHomeIdle()
 
     const chip = BROAD_SUGGESTIONS[0]!
-    fireEvent.click(screen.getByRole("button", { name: chip.label }))
-
-    expect(screen.getByRole("textbox", { name: "Message Coach" })).toHaveValue(
-      chip.prompt
+    fireEvent.click(
+      screen.getByRole("button", { name: chip.label + ": " + chip.prompt })
     )
+
+    expect(
+      await screen.findByRole("log", { name: "Thread" })
+    ).toHaveTextContent(chip.prompt)
   })
 
   it("sends on Enter and inserts a newline on Shift+Enter", async () => {
@@ -55,8 +57,8 @@ describe("Home idle", () => {
       ""
     )
     expect(
-      screen.getByRole("status", { name: "Coach is working" })
-    ).toBeInTheDocument()
+      within(screen.getByRole("log", { name: "Thread" })).getByRole("status")
+    ).toHaveTextContent("Thinking")
     expect(
       screen.queryByRole("heading", {
         level: 1,
@@ -69,9 +71,7 @@ describe("Home idle", () => {
       await screen.findByRole("log", { name: "Thread" })
     ).toHaveTextContent("Help me plan the week")
     await waitFor(() => {
-      expect(
-        screen.queryByRole("status", { name: "Coach is working" })
-      ).not.toBeInTheDocument()
+      expect(screen.queryByText("Thinking")).not.toBeInTheDocument()
     })
   })
 
@@ -213,7 +213,9 @@ describe("Home idle", () => {
       "Triage Apply",
       "Start a Proof",
     ]) {
-      expect(screen.getByRole("button", { name: label })).toBeInTheDocument()
+      expect(
+        screen.getByRole("button", { name: new RegExp(`^${label}:`) })
+      ).toBeInTheDocument()
     }
     expect(
       screen.queryByRole("button", { name: "Prep interview" })
@@ -224,14 +226,10 @@ describe("Home idle", () => {
     fireEvent.click(more)
 
     expect(more).toHaveAttribute("aria-expanded", "true")
-    fireEvent.click(screen.getByRole("button", { name: "Prep interview" }))
+    fireEvent.click(screen.getByRole("button", { name: /^Prep interview:/ }))
     expect(
-      (
-        screen.getByRole("textbox", {
-          name: "Message Coach",
-        }) as HTMLTextAreaElement
-      ).value
-    ).toContain("interview")
+      await screen.findByRole("log", { name: "Thread" })
+    ).toHaveTextContent("interview")
     expect(
       screen.queryByRole("button", { name: /follow.?up email/i })
     ).not.toBeInTheDocument()
@@ -248,9 +246,9 @@ describe("Home idle", () => {
     const frame = composer.closest("[data-slot='coach-composer']")
     expect(frame).not.toBeNull()
     expect(frame).toHaveClass(
-      "has-focus-visible:ring-3",
-      "has-focus-visible:ring-ring/50",
-      "has-focus-visible:border-ring"
+      "has-[[data-slot=input-group-control]:focus-visible]:ring-3",
+      "has-[[data-slot=input-group-control]:focus-visible]:ring-ring/50",
+      "has-[[data-slot=input-group-control]:focus-visible]:border-ring"
     )
   })
 })

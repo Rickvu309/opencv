@@ -1,13 +1,25 @@
 import { createElement, useState } from "react"
-import { afterEach, describe, expect, it } from "vitest"
-import { cleanup, fireEvent, render, screen } from "@testing-library/react"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react"
 
-import { RECEIPT_ENTER_STAGGER_MS } from "@/features/coach/coach-working.tsx"
 import { STREAMING_COACH_ID } from "@/features/home/threads.ts"
 import { ThreadView } from "@/features/home/thread-view.tsx"
 
 afterEach(() => {
   cleanup()
+  vi.useRealTimers()
+  vi.unstubAllGlobals()
+})
+
+beforeEach(() => {
+  vi.stubGlobal("scrollTo", vi.fn())
 })
 
 const moveReceipt = {
@@ -32,20 +44,28 @@ const createReceipt = {
   toolCallId: "call-2",
 }
 
-describe("ThreadView Coach motion", () => {
-  it("shows Working… with a thin bar and no pulse dots", () => {
+function coachTurn(
+  parts: Parameters<typeof ThreadView>[0]["messages"][0]["parts"]
+) {
+  return {
+    id: "coach-1",
+    role: "coach" as const,
+    text: "Moved it.",
+    parts,
+  }
+}
+
+describe("ThreadView thinking state", () => {
+  it("shows one Thinking loader and no second shimmer while waiting", () => {
     render(createElement(ThreadView, { messages: [], waiting: true }))
 
-    const status = screen.getByRole("status", { name: "Coach is working" })
-    expect(status).toHaveTextContent("Working…")
-    expect(
-      status.querySelector("[data-slot='coach-working-bar']")
-    ).toBeInTheDocument()
-    expect(status.querySelector(".animate-pulse")).not.toBeInTheDocument()
-    expect(status.textContent).not.toMatch(/\.\s*\.\s*\./)
+    const thread = screen.getByRole("log", { name: "Thread" })
+    expect(within(thread).getByRole("status")).toHaveTextContent("Thinking")
+    expect(screen.queryByText("Thinking…")).not.toBeInTheDocument()
+    expect(thread.querySelector(".animate-pulse")).not.toBeInTheDocument()
   })
 
-  it("fades in first coach text and staggers receipt enter on the live turn", () => {
+  it("drops the loader once reply text is on screen and keeps no running timer", () => {
     render(
       createElement(ThreadView, {
         messages: [
@@ -56,53 +76,70 @@ describe("ThreadView Coach motion", () => {
             parts: [
               { type: "text", text: "Moved it and started a CV." },
               moveReceipt,
-              createReceipt,
             ],
           },
         ],
       })
     )
 
-    expect(screen.getByRole("log", { name: "Thread" }).firstElementChild).toHaveAttribute(
-      "data-coach-text-enter",
-      "true"
-    )
-    const receipts = screen.getAllByRole("status", { name: "Command succeeded" })
-    expect(receipts).toHaveLength(2)
-    expect(receipts[0]).toHaveAttribute("data-coach-receipt-enter", "true")
-    expect(receipts[1]).toHaveAttribute("data-coach-receipt-enter", "true")
-    expect(receipts[0]).not.toHaveStyle({ animationDelay: `${RECEIPT_ENTER_STAGGER_MS}ms` })
-    expect(receipts[1]).toHaveStyle({
-      animationDelay: `${RECEIPT_ENTER_STAGGER_MS}ms`,
-    })
+    expect(screen.getByText("Moved it and started a CV.")).toBeInTheDocument()
+    expect(screen.queryByText("Thinking")).not.toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: /Moved 'Backend Intern' to Prep/ })
+    ).toHaveAttribute("aria-expanded", "false")
+    expect(screen.getByText(/^apply\.moveCard finished/)).toBeInTheDocument()
   })
 
-  it("does not enter-animate persisted coach turns", () => {
+  it("renders no reply actions on the live turn", () => {
     render(
       createElement(ThreadView, {
         messages: [
           {
-            id: "coach-1",
+            id: STREAMING_COACH_ID,
             role: "coach",
-            text: "Moved it.",
-            parts: [
-              { type: "text", text: "Moved it." },
-              moveReceipt,
-            ],
+            text: "Working on it",
+            parts: [{ type: "text", text: "Working on it" }],
           },
         ],
       })
     )
 
     expect(
-      screen.getByRole("log", { name: "Thread" }).querySelector("[data-coach-text-enter]")
+      screen.queryByRole("button", { name: "Copy" })
     ).not.toBeInTheDocument()
-    expect(
-      screen.getByRole("status", { name: "Command succeeded" })
-    ).not.toHaveAttribute("data-coach-receipt-enter")
+  })
+})
+
+describe("ThreadView steps", () => {
+  it("folds two adjacent steps into one group and keeps Undo reachable", () => {
+    render(
+      createElement(ThreadView, {
+        messages: [coachTurn([moveReceipt, createReceipt])],
+        onUndo: async () => {},
+      })
+    )
+
+    const group = screen.getByRole("button", { name: /Used 2 tools/ })
+    expect(group).toHaveAttribute("aria-expanded", "false")
+    expect(screen.getByRole("button", { name: "Undo" })).toBeEnabled()
   })
 
-  it("collapses an undone receipt and flashes Undone on the replacement", async () => {
+  it("leaves a single step as its own card", () => {
+    render(
+      createElement(ThreadView, {
+        messages: [coachTurn([moveReceipt])],
+      })
+    )
+
+    expect(
+      screen.queryByRole("button", { name: /Used 1 tool/ })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: /Moved 'Backend Intern' to Prep/ })
+    ).toBeInTheDocument()
+  })
+
+  it("shows Undone and the replacement step after an undo", async () => {
     function Harness() {
       const [undone, setUndone] = useState(false)
       const parts = undone
@@ -119,9 +156,7 @@ describe("ThreadView Coach motion", () => {
           ]
         : [{ type: "text" as const, text: "Moved it." }, moveReceipt]
       return createElement(ThreadView, {
-        messages: [
-          { id: "coach-1", role: "coach", text: "Moved it.", parts },
-        ],
+        messages: [coachTurn(parts)],
         onUndo: async () => {
           setUndone(true)
         },
@@ -131,10 +166,57 @@ describe("ThreadView Coach motion", () => {
     render(createElement(Harness))
     fireEvent.click(screen.getByRole("button", { name: "Undo" }))
 
-    expect(await screen.findByText("Undid the previous action")).toBeInTheDocument()
     expect(
-      screen.getAllByRole("status", { name: "Command succeeded" })[0]
-    ).toHaveAttribute("data-coach-receipt-collapse", "true")
-    expect(screen.getByText("Undone")).toBeInTheDocument()
+      await screen.findByRole("button", { name: /Undid the previous action/ })
+    ).toBeInTheDocument()
+    expect(screen.getAllByText("Undone")).toHaveLength(1)
+    expect(
+      screen.queryByRole("button", { name: "Undo" })
+    ).not.toBeInTheDocument()
+  })
+})
+
+describe("ThreadView reply actions", () => {
+  it("copies from the keyboard and announces it", async () => {
+    vi.useFakeTimers()
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    vi.stubGlobal("navigator", { ...navigator, clipboard: { writeText } })
+    render(
+      createElement(ThreadView, {
+        messages: [coachTurn([{ type: "text", text: "Moved it." }])],
+        onRegenerate: () => {},
+      })
+    )
+
+    const copy = screen.getByRole("button", { name: "Copy" })
+    copy.focus()
+    expect(copy).toHaveFocus()
+    fireEvent.click(copy)
+
+    expect(writeText).toHaveBeenCalledWith("Moved it.")
+    expect(
+      screen.getByText("Copied", { selector: "[aria-live='polite']" })
+    ).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Copied" })).toBeInTheDocument()
+
+    act(() => {
+      vi.advanceTimersByTime(2000)
+    })
+    expect(screen.getByRole("button", { name: "Copy" })).toBeInTheDocument()
+  })
+
+  it("offers Copy and Regenerate and no voice control", () => {
+    render(
+      createElement(ThreadView, {
+        messages: [coachTurn([{ type: "text", text: "Moved it." }])],
+        onRegenerate: () => {},
+      })
+    )
+
+    expect(screen.getByRole("button", { name: "Copy" })).toBeEnabled()
+    expect(screen.getByRole("button", { name: "Regenerate" })).toBeEnabled()
+    expect(
+      screen.queryByRole("button", { name: /read aloud|speak|voice/i })
+    ).not.toBeInTheDocument()
   })
 })

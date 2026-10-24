@@ -437,10 +437,10 @@ describe("Paper Coach selection and doc updates", () => {
       "Rewrite the Experience checkout bullet for a product internship"
     )
     expect(
-      within(dialog).getByText("Updated CV PM track CV")
+      within(dialog).getByRole("button", { name: /Updated CV PM track CV/ })
     ).toBeInTheDocument()
     expect(
-      within(dialog).getByRole("status", { name: "Command succeeded" })
+      within(dialog).getByText(/^paper\.updateContent finished/)
     ).toBeInTheDocument()
     await waitFor(() => {
       expect(
@@ -484,8 +484,10 @@ describe("Paper Coach selection and doc updates", () => {
       )
     ).toBeInTheDocument()
     expect(
-      within(dialog).getByRole("status", { name: "Command failed" })
-    ).toHaveTextContent("Paper doc not found")
+      within(dialog).getByText(
+        /paper\.updateContent failed: Paper doc not found/
+      )
+    ).toBeInTheDocument()
     expect(dialog).not.toHaveTextContent(/paste/i)
     expect(
       within(panel).getByRole("textbox", { name: "Summary" })

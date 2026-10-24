@@ -12,6 +12,11 @@ import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 
 import {
+  Suggestion as SuggestionButton,
+  Suggestions,
+} from "@/components/ai-elements/suggestion.tsx"
+
+import {
   BROAD_SUGGESTIONS,
   MORE_SUGGESTIONS,
   type Suggestion,
@@ -39,18 +44,12 @@ function Chip({
   onSelect: (prompt: string) => void
 }) {
   return (
-    <Button
-      type="button"
-      variant="outline"
-      size="sm"
-      onClick={() => onSelect(item.prompt)}
-      className="h-8 shrink-0 rounded-full"
-    >
+    <SuggestionButton prompt={item.prompt} onPick={onSelect}>
       {Icon ? (
         <Icon className="size-3.5 shrink-0 text-muted-foreground" />
       ) : null}
       {item.label}
-    </Button>
+    </SuggestionButton>
   )
 }
 
@@ -59,7 +58,7 @@ export function HomeSuggestions({ onSelect, className }: Props) {
 
   return (
     <div className={cn("w-full space-y-2", className)}>
-      <div className="flex flex-wrap justify-center gap-2">
+      <Suggestions>
         {BROAD_SUGGESTIONS.map((item) => (
           <Chip
             key={item.id}
@@ -85,16 +84,13 @@ export function HomeSuggestions({ onSelect, className }: Props) {
           />
           More ideas
         </Button>
-      </div>
+      </Suggestions>
       {moreOpen ? (
-        <div
-          id="home-more-ideas"
-          className="flex flex-wrap justify-center gap-2"
-        >
+        <Suggestions id="home-more-ideas">
           {MORE_SUGGESTIONS.map((item) => (
             <Chip key={item.id} item={item} onSelect={onSelect} />
           ))}
-        </div>
+        </Suggestions>
       ) : null}
     </div>
   )

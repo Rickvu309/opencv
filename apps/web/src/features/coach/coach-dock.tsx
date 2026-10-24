@@ -1,8 +1,7 @@
-import { useEffect, useRef, useState } from "react"
+import { useState } from "react"
 import { useNavigate } from "@tanstack/react-router"
 import {
   ArrowUp,
-  ChevronDown,
   Clock,
   Mic,
   Paperclip,
@@ -14,32 +13,26 @@ import {
 } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
-import { Textarea } from "@workspace/ui/components/textarea"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
+import { InputGroupButton } from "@workspace/ui/components/input-group"
+import { SegmentedControl } from "@workspace/ui/components/segmented-control"
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip"
-import { cn } from "@workspace/ui/lib/utils"
-import type { CoachMode } from "@workspace/domain"
 
+import { PromptInput } from "@/components/ai-elements/prompt-input.tsx"
 import { ComingSoon } from "@/components/coming-soon.tsx"
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
-import {
-  COACH_MODE_OPTIONS,
-  coachModeLabel,
-} from "@/features/home/coach-mode.ts"
+import { COACH_MODE_OPTIONS } from "@/features/home/coach-mode.ts"
 import { useCoachMode } from "@/features/home/use-coach-mode.ts"
-
-const LINE_HEIGHT_PX = 24
-const MAX_LINES = 8
 
 const DOCK_MENU = [
   { id: "upload", label: "Upload a file", icon: Upload, comingSoon: true },
@@ -49,6 +42,11 @@ const DOCK_MENU = [
 ] as const
 
 type MenuId = (typeof DOCK_MENU)[number]["id"]
+
+const MODE_SEGMENTS = COACH_MODE_OPTIONS.map(({ id, label }) => ({
+  value: id,
+  label,
+}))
 
 type Props = {
   draft: string
@@ -63,50 +61,6 @@ type Props = {
   onAttachFromPaper?: () => void
 }
 
-function CoachModeDropdown({
-  mode,
-  onModeChange,
-  menuPlacement,
-}: {
-  mode: CoachMode
-  onModeChange: (mode: CoachMode) => void
-  menuPlacement: "below" | "above"
-}) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button
-            type="button"
-            size="xs"
-            variant="ghost"
-            className="rounded-full px-2 text-muted-foreground"
-          />
-        }
-        aria-label="Coach mode"
-      >
-        {coachModeLabel(mode)}
-        <ChevronDown className="size-3 opacity-60" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        side={menuPlacement === "above" ? "top" : "bottom"}
-        align="start"
-        sideOffset={8}
-        className="w-auto min-w-28"
-      >
-        {COACH_MODE_OPTIONS.map((option) => (
-          <DropdownMenuItem
-            key={option.id}
-            onClick={() => onModeChange(option.id)}
-          >
-            {option.label}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
-}
-
 export function CoachDock({
   draft,
   setDraft,
@@ -119,22 +73,9 @@ export function CoachDock({
   onAttachFromPaper,
 }: Props) {
   const navigate = useNavigate()
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [expanded, setExpanded] = useState(false)
   const { mode, setMode } = useCoachMode()
   const canSend = draft.trim().length > 0
-
-  useEffect(() => {
-    const el = textareaRef.current
-    if (!el) return
-    el.style.height = "auto"
-    const maxHeight = LINE_HEIGHT_PX * MAX_LINES
-    const next = Math.min(el.scrollHeight, maxHeight)
-    el.style.height = `${next}px`
-    const hasMultipleLines = draft.includes("\n") || next > LINE_HEIGHT_PX + 2
-    setExpanded(hasMultipleLines)
-  }, [draft])
 
   function handleMenuAction(id: MenuId) {
     setMenuOpen(false)
@@ -150,167 +91,122 @@ export function CoachDock({
     }
   }
 
-  const modeDropdown = (
-    <CoachModeDropdown
-      mode={mode}
-      onModeChange={setMode}
-      menuPlacement={menuPlacement}
-    />
-  )
-
-  const addButton = (
-    <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
-      <DropdownMenuTrigger
-        render={
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="rounded-full text-muted-foreground"
-          />
-        }
-        aria-label={menuOpen ? "Close menu" : "Add"}
-      >
-        {menuOpen ? <X className="size-4" /> : <Plus className="size-4" />}
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        side={menuPlacement === "above" ? "top" : "bottom"}
-        align="start"
-        sideOffset={8}
-        className="w-56 min-w-56"
-      >
-        {DOCK_MENU.map((item) => {
-          const Icon = item.icon
-          const comingSoon = "comingSoon" in item && item.comingSoon
-          return (
-            <DropdownMenuItem
-              key={item.id}
-              disabled={comingSoon}
-              onClick={comingSoon ? undefined : () => handleMenuAction(item.id)}
-            >
-              <Icon className="size-4 shrink-0 text-muted-foreground" />
-              {item.label}
-              {comingSoon ? <ComingSoon /> : null}
-            </DropdownMenuItem>
-          )
-        })}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
-
-  const leadingActions = (
-    <div className="flex shrink-0 items-center gap-0.5">
-      {showModePicker ? modeDropdown : null}
-      {addButton}
-    </div>
-  )
-
-  const micButton = (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger
+  const tools = (
+    <>
+      <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+        <DropdownMenuTrigger
           render={
-            <span className="inline-flex">
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                disabled
-                aria-disabled="true"
-                aria-label="Voice input — coming soon"
-                className="rounded-full text-muted-foreground"
-              >
-                <Mic className="size-4" />
-                <ComingSoon silent />
-              </Button>
-            </span>
+            <InputGroupButton
+              size="icon-sm"
+              className="rounded-full text-muted-foreground"
+            />
           }
+          aria-label={menuOpen ? "Close menu" : "Add"}
+        >
+          {menuOpen ? <X /> : <Plus />}
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          side={menuPlacement === "above" ? "top" : "bottom"}
+          align="start"
+          sideOffset={8}
+          className="w-56 min-w-56"
+        >
+          {DOCK_MENU.map((item) => {
+            const Icon = item.icon
+            const comingSoon = "comingSoon" in item && item.comingSoon
+            return (
+              <DropdownMenuItem
+                key={item.id}
+                disabled={comingSoon}
+                onClick={
+                  comingSoon ? undefined : () => handleMenuAction(item.id)
+                }
+              >
+                <Icon className="size-4 shrink-0 text-muted-foreground" />
+                {item.label}
+                {comingSoon ? <ComingSoon /> : null}
+              </DropdownMenuItem>
+            )
+          })}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {showModePicker ? (
+        <SegmentedControl
+          aria-label="Coach mode"
+          kind="radio"
+          variant="tray"
+          size="md"
+          options={MODE_SEGMENTS}
+          value={mode}
+          onChange={setMode}
         />
-        <TooltipContent>Coming soon</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+      ) : null}
+    </>
   )
 
-  const sendButton = (
-    <Button
-      type="button"
-      variant={canSend ? "default" : "secondary"}
-      size="icon"
-      onClick={onSend}
-      disabled={!canSend}
-      aria-label="Send"
-      className="rounded-full"
-    >
-      <ArrowUp className="size-4" />
-    </Button>
-  )
-
-  const stopButton = (
-    <Button
-      type="button"
-      variant="secondary"
-      size="icon"
-      onClick={onStop}
-      aria-label="Stop"
-      className="rounded-full"
-    >
-      <Square className="size-3 fill-current" />
-    </Button>
-  )
-
-  const textarea = (
-    <Textarea
-      ref={textareaRef}
-      value={draft}
-      onChange={(e) => setDraft(e.target.value)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-          e.preventDefault()
-          if (!turnActive) onSend()
-        }
-      }}
-      placeholder={placeholder}
-      rows={1}
-      className={cn(
-        "min-h-0 min-w-0 resize-none overflow-y-auto border-0 bg-transparent px-0 py-0 shadow-none focus-visible:border-0 focus-visible:ring-0 md:text-base",
-        "text-base leading-6",
-        expanded
-          ? "max-h-48 w-full px-0.5"
-          : "field-sizing-fixed max-h-6 min-h-6 flex-1"
+  const actions = (
+    <>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <span className="inline-flex">
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  disabled
+                  aria-disabled="true"
+                  aria-label="Voice input — coming soon"
+                  className="rounded-full text-muted-foreground"
+                >
+                  <Mic className="size-4" />
+                  <ComingSoon silent />
+                </Button>
+              </span>
+            }
+          />
+          <TooltipContent>Coming soon</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+      {turnActive ? (
+        <Button
+          type="button"
+          variant="secondary"
+          size="icon"
+          onClick={onStop}
+          aria-label="Stop"
+          className="rounded-full"
+        >
+          <Square className="size-3 fill-current" />
+        </Button>
+      ) : (
+        <Button
+          type="button"
+          variant={canSend ? "default" : "secondary"}
+          size="icon"
+          onClick={onSend}
+          disabled={!canSend}
+          aria-label="Send"
+          className="rounded-full"
+        >
+          <ArrowUp className="size-4" />
+        </Button>
       )}
-      aria-label="Message Coach"
-    />
-  )
-
-  const trailingActions = (
-    <div className="flex shrink-0 items-center gap-0.5">
-      {micButton}
-      {turnActive ? stopButton : sendButton}
-    </div>
+    </>
   )
 
   return (
-    <div className="relative w-full">
-      <div
-        data-slot="coach-composer"
-        className={cn(
-          "border border-border/80 bg-background shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-[border-radius,padding] focus-within:border-border focus-within:shadow-[0_2px_8px_rgba(0,0,0,0.06)] has-focus-visible:border-ring has-focus-visible:ring-3 has-focus-visible:ring-ring/50",
-          expanded
-            ? "flex flex-col rounded-[1.25rem] px-4 pt-3.5 pb-2.5"
-            : "flex min-h-[3.25rem] items-center gap-1 rounded-full px-2.5 py-2"
-        )}
-      >
-        {expanded ? null : leadingActions}
-        {textarea}
-        {expanded ? (
-          <div className="mt-1 flex w-full items-center justify-between gap-2">
-            {leadingActions}
-            {trailingActions}
-          </div>
-        ) : (
-          trailingActions
-        )}
-      </div>
-    </div>
+    <PromptInput
+      data-slot="coach-composer"
+      value={draft}
+      onValueChange={setDraft}
+      onSubmit={onSend}
+      submitBlocked={turnActive}
+      placeholder={placeholder}
+      label="Message Coach"
+      tools={tools}
+      actions={actions}
+    />
   )
 }

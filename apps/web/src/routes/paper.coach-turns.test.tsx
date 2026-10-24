@@ -15,7 +15,6 @@ import {
   scriptCoachStream,
 } from "@/test/threads-api-mock.ts"
 import {
-  queryByAttr,
   installPaperTestLifecycle,
   renderPaper,
   openDoc,
@@ -79,9 +78,11 @@ describe("Paper Coach turns", () => {
         name: "Sharpen my checkout project bullet",
       })
     ).not.toBeInTheDocument()
-    expect(within(dialog).getByText("Updated PM track CV")).toBeInTheDocument()
     expect(
-      within(dialog).getByRole("status", { name: "Command succeeded" })
+      within(dialog).getByRole("button", { name: /Updated PM track CV/ })
+    ).toBeInTheDocument()
+    expect(
+      within(dialog).getByText(/^paper\.updateContent finished/)
     ).toBeInTheDocument()
     expect(
       within(dialog).getByText(
@@ -137,13 +138,10 @@ describe("Paper Coach turns", () => {
       target: { value: "Stop me" },
     })
     fireEvent.click(within(dialog).getByRole("button", { name: "Send" }))
-    const working = within(dialog).getByRole("status", {
-      name: "Coach is working",
-    })
-    expect(working).toHaveTextContent("Working…")
-    expect(
-      queryByAttr(working, "data-slot='coach-working-bar'")
-    ).toBeInTheDocument()
+    const working = within(
+      within(dialog).getByRole("log", { name: "Thread" })
+    ).getByRole("status")
+    expect(working).toHaveTextContent("Thinking")
     stream.release(2)
     expect(
       await within(dialog).findByText("Partial from Paper")

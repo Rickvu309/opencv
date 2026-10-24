@@ -59,9 +59,9 @@ export const COACH_FLOAT_STORAGE_KEY = "opencv:paper:coach-float"
 
 export type CoachFloatState = "closed" | "open"
 
-const CoachThreadPanel = lazy(() =>
-  import("@/features/coach/coach-thread-panel.tsx").then((m) => ({
-    default: m.CoachThreadPanel,
+const CoachThread = lazy(() =>
+  import("@/features/coach/coach-thread.tsx").then((m) => ({
+    default: m.CoachThread,
   }))
 )
 
@@ -301,15 +301,7 @@ export const CoachFloat = memo(function CoachFloat({
               </div>
             }
           >
-            <CoachThreadPanel
-              turn={{
-                messages,
-                phase,
-                send: sendWithSelection,
-                stop,
-                regenerate,
-                rate,
-              }}
+            <CoachThread
               messages={messages}
               waiting={phase === "waiting"}
               turnActive={turnActive}
