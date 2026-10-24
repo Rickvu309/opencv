@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from "vitest"
 import { fireEvent, screen, waitFor, within } from "@testing-library/react"
-import { COACH_FLOAT_NUDGE_ATTR } from "@/features/paper/coach-float.tsx"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
 import {
   getLastCoachRequest,
@@ -258,7 +257,7 @@ describe("Paper Coach cites and mobile sheet", () => {
     expect(last).toHaveFocus()
   })
 
-  it("auto-minimizes on canvas focus so the CV stays editable, then restores the Thread", async () => {
+  it("keeps the docked Coach and its Thread while the CV is edited", async () => {
     scriptCoachStream({ texts: ["Keep the checkout metric."] })
     renderPaper()
     await expectPaperDrive()
@@ -267,10 +266,7 @@ describe("Paper Coach cites and mobile sheet", () => {
 
     expect(dialog).not.toHaveAttribute("draggable")
     expect(queryByAttr(dialog, "data-coach-float-resize")).toBeNull()
-
-    const canvas = queryByAttr(editor, "data-paper-canvas")
-    expect(canvas).toBeInstanceOf(HTMLElement)
-    expect(canvas).toHaveAttribute(COACH_FLOAT_NUDGE_ATTR)
+    expect(editor).toContainElement(dialog)
 
     fireEvent.change(messageCoach(dialog), {
       target: { value: "Sharpen the checkout bullet" },
@@ -280,49 +276,25 @@ describe("Paper Coach cites and mobile sheet", () => {
       await within(dialog).findByText("Keep the checkout metric.")
     ).toBeInTheDocument()
 
-    const thread = queryByAttr(dialog, "data-coach-float-thread")
-    const viewport = queryByAttr(dialog, "data-coach-thread-viewport")
-    expect(thread).toBeInstanceOf(HTMLElement)
-    expect(viewport).toBeInstanceOf(HTMLElement)
-    if (viewport instanceof HTMLElement) viewport.scrollTop = 48
-    const rememberedScroll =
-      viewport instanceof HTMLElement ? viewport.scrollTop : 0
-
     const summary = within(editor).getByRole("textbox", { name: "Summary" })
     fireEvent.pointerDown(summary)
     fireEvent.focusIn(summary)
-
-    const minimized = screen.getByRole("dialog", { name: "Coach" })
-    expect(minimized).toHaveAttribute("data-coach-float-state", "minimized")
-    expect(localStorage.getItem("opencv:paper:coach-float")).toBe("minimized")
-    expect(canvas).not.toHaveAttribute(COACH_FLOAT_NUDGE_ATTR)
-    expect(
-      screen.queryByRole("textbox", { name: "Message Coach" })
-    ).not.toBeInTheDocument()
-    expect(queryByAttr(minimized, "data-coach-float-thread")).toBe(thread)
-
-    summary.textContent = "Edited while Coach is tucked away."
+    summary.textContent = "Edited beside the Coach."
     fireEvent.input(summary)
-    expect(summary).toHaveTextContent("Edited while Coach is tucked away.")
 
-    fireEvent.click(screen.getByRole("button", { name: "Restore" }))
-    const restored = screen.getByRole("dialog", { name: "Coach" })
-    expect(restored).toHaveAttribute("data-coach-float-state", "open")
-    expect(canvas).toHaveAttribute(COACH_FLOAT_NUDGE_ATTR)
-    expect(queryByAttr(restored, "data-coach-float-thread")).toBe(thread)
+    expect(screen.getByRole("dialog", { name: "Coach" })).toHaveAttribute(
+      "data-coach-float-state",
+      "open"
+    )
+    expect(summary).toHaveTextContent("Edited beside the Coach.")
     expect(
-      within(restored).getByText("Keep the checkout metric.")
+      within(dialog).getByText("Keep the checkout metric.")
     ).toBeInTheDocument()
     expect(
-      within(restored).getByText("Sharpen the checkout bullet")
+      within(dialog).getByText("Sharpen the checkout bullet")
     ).toBeInTheDocument()
-    if (rememberedScroll > 0) {
-      expect(
-        queryByAttr(restored, "data-coach-thread-viewport")
-      ).toHaveProperty("scrollTop", rememberedScroll)
-    }
 
-    fireEvent.keyDown(restored, { key: "Escape" })
+    fireEvent.keyDown(dialog, { key: "Escape" })
     expect(
       screen.queryByRole("dialog", { name: "Coach" })
     ).not.toBeInTheDocument()
@@ -331,7 +303,7 @@ describe("Paper Coach cites and mobile sheet", () => {
     })
   })
 
-  it("does not auto-minimize the mobile sheet on canvas focus", async () => {
+  it("keeps the mobile sheet open on canvas focus", async () => {
     stubDesktopViewport(false)
     renderPaper()
     await expectPaperDrive()
@@ -345,9 +317,6 @@ describe("Paper Coach cites and mobile sheet", () => {
     expect(screen.getByRole("dialog", { name: "Coach" })).toHaveAttribute(
       "data-coach-float-state",
       "open"
-    )
-    expect(queryByAttr(editor, "data-paper-canvas")).not.toHaveAttribute(
-      COACH_FLOAT_NUDGE_ATTR
     )
   })
 })

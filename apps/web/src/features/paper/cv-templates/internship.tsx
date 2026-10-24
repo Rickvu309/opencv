@@ -21,7 +21,8 @@ export function InternshipCv({
       <header className="border-b border-foreground/10 pb-4 text-center">
         <CvType role="page-title" as="h1">
           <EditableField
-            aria-label="Full name"
+            aria-label="Your name"
+            placeholder="Your name"
             sectionId="name"
             value={data.name}
             onChange={(name) => patch("name", name)}

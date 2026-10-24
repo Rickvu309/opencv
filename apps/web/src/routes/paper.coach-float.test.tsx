@@ -16,6 +16,7 @@ import {
   messageCoach,
   selectNodeContents,
   collapseWindowSelection,
+  stubDesktopViewport,
 } from "@/test/paper-route-fixtures.ts"
 
 installPaperTestLifecycle()
@@ -68,10 +69,10 @@ describe("Paper Coach float", () => {
 
     const dialog = await openCoach()
     expect((canvas as HTMLElement).clientHeight).toBe(640)
-    expect(editor.contains(dialog)).toBe(false)
+    expect(editor).toContainElement(dialog)
   })
 
-  it("cycles pill, open, minimize, and close and persists the float state", async () => {
+  it("cycles pill, open and close and persists the float state", async () => {
     renderPaper()
     await expectPaperDrive()
     await openDoc("PM track CV")
@@ -82,20 +83,9 @@ describe("Paper Coach float", () => {
     const dialog = await openCoach()
     expect(localStorage.getItem("opencv:paper:coach-float")).toBe("open")
     expect(messageCoach(dialog)).toBeInTheDocument()
-
-    fireEvent.click(within(dialog).getByRole("button", { name: "Minimize" }))
-    expect(localStorage.getItem("opencv:paper:coach-float")).toBe("minimized")
-    expect(screen.getByRole("dialog", { name: "Coach" })).toHaveAttribute(
-      "data-coach-float-state",
-      "minimized"
-    )
     expect(
-      screen.queryByRole("textbox", { name: "Message Coach" })
+      within(dialog).queryByRole("button", { name: "Minimize" })
     ).not.toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole("button", { name: "Restore" }))
-    expect(localStorage.getItem("opencv:paper:coach-float")).toBe("open")
-    expect(messageCoach()).toBeInTheDocument()
 
     fireEvent.click(
       within(coachDialog()).getByRole("button", { name: "Close" })
@@ -120,9 +110,32 @@ describe("Paper Coach float", () => {
     renderPaper()
     await expectPaperDrive()
     await openDoc("PM track CV")
+    expect(screen.getByRole("button", { name: "Coach" })).toBeInTheDocument()
     expect(
-      await screen.findByRole("dialog", { name: "Coach" })
-    ).toHaveAttribute("data-coach-float-state", "minimized")
+      screen.queryByRole("dialog", { name: "Coach" })
+    ).not.toBeInTheDocument()
+  })
+
+  it("minimizes and restores the Coach sheet on a phone", async () => {
+    stubDesktopViewport(false)
+    renderPaper()
+    await expectPaperDrive()
+    await openDoc("PM track CV")
+    const dialog = await openCoach()
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Minimize" }))
+    expect(localStorage.getItem("opencv:paper:coach-float")).toBe("minimized")
+    expect(screen.getByRole("dialog", { name: "Coach" })).toHaveAttribute(
+      "data-coach-float-state",
+      "minimized"
+    )
+    expect(
+      screen.queryByRole("textbox", { name: "Message Coach" })
+    ).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: "Restore" }))
+    expect(localStorage.getItem("opencv:paper:coach-float")).toBe("open")
+    expect(messageCoach()).toBeInTheDocument()
   })
 
   it("shows a removable soft-scope chip for the open Paper CV", async () => {
@@ -151,9 +164,8 @@ describe("Paper Coach float", () => {
       within(dialog).queryByRole("status", { name: "In context" })
     ).not.toBeInTheDocument()
 
-    fireEvent.click(within(dialog).getByRole("button", { name: "Minimize" }))
-    fireEvent.click(screen.getByRole("button", { name: "Restore" }))
-    const restored = coachDialog()
+    fireEvent.click(within(dialog).getByRole("button", { name: "Close" }))
+    const restored = await openCoach()
     expect(
       within(restored).queryByRole("status", { name: "In context" })
     ).not.toBeInTheDocument()

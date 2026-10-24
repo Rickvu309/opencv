@@ -57,8 +57,6 @@ import { previewCoachSelectionText } from "./paper-selection.ts"
 import type { ToolbarVariant } from "./paper-editor-toolbar.tsx"
 
 export const COACH_FLOAT_STORAGE_KEY = "opencv:paper:coach-float"
-export const COACH_FLOAT_NUDGE_ATTR = "data-coach-float-nudge"
-export const COACH_FLOAT_DESKTOP_OPEN_HEIGHT_CLASS = "max-h-[min(22rem,42vh)]"
 
 export type CoachFloatState = "closed" | "open" | "minimized"
 
@@ -85,6 +83,8 @@ type Props = {
   onClearSelection?: () => void
   citeSpans?: readonly PaperCiteSpan[]
   onCitePaper?: (sectionId: string) => void
+  dock?: HTMLElement | null
+  onDockedChange?: (docked: boolean) => void
 }
 
 function parseFloatState(raw: string | null): CoachFloatState {
@@ -94,16 +94,6 @@ function parseFloatState(raw: string | null): CoachFloatState {
 function focusableIn(root: HTMLElement) {
   return [...root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)].filter(
     (el) => el.getAttribute("aria-disabled") !== "true"
-  )
-}
-
-function isPaperDocumentSurface(target: EventTarget | null) {
-  if (!(target instanceof Element)) return false
-  if (target.closest("[data-coach-float-card], [data-coach-float-pill]")) {
-    return false
-  }
-  return Boolean(
-    target.closest("[data-paper-section], .cv-a4-page, .paper-editor-canvas")
   )
 }
 
@@ -121,19 +111,27 @@ export const CoachFloat = memo(function CoachFloat({
   onClearSelection,
   citeSpans = [],
   onCitePaper,
+  dock = null,
+  onDockedChange,
 }: Props) {
   const dialogRef = useRef<HTMLDivElement>(null)
   const returnFocusRef = useRef(false)
   const threadScrollRef = useRef(0)
   const restoreThreadScrollRef = useRef(false)
   const [createdThreadId, setCreatedThreadId] = useState<string | null>(null)
-  const [floatState, setFloatState] = useState<CoachFloatState>(() =>
+  const [storedState, setFloatState] = useState<CoachFloatState>(() =>
     readStored(COACH_FLOAT_STORAGE_KEY, parseFloatState, "closed")
   )
   const [softScope, setSoftScope] = useState(true)
   const [contextChips, setContextChips] = useState<CoachContextChip[]>([])
   const [attachError, setAttachError] = useState<string | null>(null)
   const isDesktop = useMediaQuery(DESKTOP_MEDIA_QUERY, true)
+  const floatState: CoachFloatState =
+    isDesktop && storedState === "minimized" ? "closed" : storedState
+  const docked = isDesktop && floatState === "open" && dock !== null
+  useEffect(() => {
+    onDockedChange?.(docked)
+  }, [docked, onDockedChange])
   const focusDocId = focusDocIdForTurn(softScope, contextChips, docId)
 
   const captureThreadScroll = useCallback(() => {
@@ -232,31 +230,6 @@ export const CoachFloat = memo(function CoachFloat({
   useEffect(() => {
     writeStored(COACH_FLOAT_STORAGE_KEY, floatState)
   }, [floatState])
-
-  useEffect(() => {
-    const canvas = document.querySelector("[data-paper-canvas]")
-    if (!(canvas instanceof HTMLElement)) return
-    const shouldNudge = isDesktop && floatState === "open"
-    if (shouldNudge) canvas.setAttribute(COACH_FLOAT_NUDGE_ATTR, "")
-    else canvas.removeAttribute(COACH_FLOAT_NUDGE_ATTR)
-    return () => canvas.removeAttribute(COACH_FLOAT_NUDGE_ATTR)
-  }, [floatState, isDesktop])
-
-  useEffect(() => {
-    if (floatState !== "open" || !isDesktop) return
-
-    function onDocumentIntent(event: Event) {
-      if (!isPaperDocumentSurface(event.target)) return
-      applyMinimized()
-    }
-
-    document.addEventListener("pointerdown", onDocumentIntent)
-    document.addEventListener("focusin", onDocumentIntent)
-    return () => {
-      document.removeEventListener("pointerdown", onDocumentIntent)
-      document.removeEventListener("focusin", onDocumentIntent)
-    }
-  }, [applyMinimized, floatState, isDesktop])
 
   useLayoutEffect(() => {
     if (floatState !== "open" || !restoreThreadScrollRef.current) return
@@ -364,7 +337,7 @@ export const CoachFloat = memo(function CoachFloat({
           >
             <Maximize2 />
           </Button>
-        ) : (
+        ) : isDesktop ? null : (
           <Button
             type="button"
             variant="ghost"
@@ -561,12 +534,9 @@ export const CoachFloat = memo(function CoachFloat({
             "coach-float-card z-popover flex flex-col border border-border bg-popover text-popover-foreground shadow-lg",
             mobileSheet
               ? "fixed inset-x-0 top-6 bottom-0 rounded-t-xl"
-              : cn(
-                  "fixed right-4 bottom-4 w-[min(24rem,calc(100vw-2rem))]",
-                  floatState === "open"
-                    ? cn(COACH_FLOAT_DESKTOP_OPEN_HEIGHT_CLASS, "rounded-xl")
-                    : "rounded-xl"
-                )
+              : docked
+                ? "h-full w-[min(24rem,40vw)] shrink-0 border-0 border-l shadow-none"
+                : "fixed right-4 bottom-4 w-[min(24rem,calc(100vw-2rem))] rounded-xl"
           )}
         >
           {chrome}
@@ -574,5 +544,5 @@ export const CoachFloat = memo(function CoachFloat({
       </>
     )
 
-  return createPortal(ui, document.body)
+  return createPortal(ui, docked && dock ? dock : document.body)
 })

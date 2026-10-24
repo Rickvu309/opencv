@@ -47,12 +47,7 @@ import {
 export type ToolbarVariant = "full" | "cv" | "proof" | "letter"
 
 export type CvInsertId =
-  | "experience"
-  | "education"
-  | "skill"
-  | "project"
-  | "section"
-  | "photo"
+  "experience" | "education" | "skill" | "project" | "section" | "photo"
 export type LetterInsertId = "salutation" | "paragraph" | "signoff" | "ps"
 export type ProofInsertId = ProofStepType | "photo"
 
@@ -326,7 +321,7 @@ export function PaperEditorToolbar({
         ? "Letter tools"
         : variant === "proof"
           ? "Proof tools"
-          : "Document tools"
+          : "Tools"
 
   return (
     <ToolbarRoot className={className} aria-label={toolbarLabel}>

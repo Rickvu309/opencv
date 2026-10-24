@@ -55,6 +55,9 @@ import {
   retainCoachSelection,
 } from "./paper-selection.ts"
 import { PaperEditorConflictBanner } from "./paper-editor-conflict-banner.tsx"
+import { PaperSuggestionBar } from "./paper-suggestion-bar.tsx"
+import { addSuggestion, type PaperSuggestion } from "./paper-suggestion.ts"
+import { useSectionFocus } from "./use-section-focus.ts"
 import { DOCS_PANEL_ID, PaperEditorHeader } from "./paper-editor-header.tsx"
 import { countWords } from "./paper-editor-helpers.ts"
 import { PaperCvSurface } from "./paper-cv-surface.tsx"
@@ -141,18 +144,18 @@ export function PaperEditor({
   const titleRef = useRef(title)
   const userNameRef = useRef(session?.user.name)
   const [conflict, setConflict] = useState(false)
-  const [sectionFocus, setSectionFocus] = useState<{
-    ids: string[]
-    nonce: number
-  }>({ ids: [], nonce: 0 })
+  const { focusSections, clearSectionFocus } = useSectionFocus(canvasRef)
+  const [suggestion, setSuggestion] = useState<PaperSuggestion | null>(null)
+  const [dockEl, setDockEl] = useState<HTMLElement | null>(null)
+  const [coachDocked, setCoachDocked] = useState(false)
   const [selection, setSelection] = useState<CoachSelection | null>(null)
   const [docsPanel, setDocsPanel] = useState<DocsPanelState>(() =>
     readStored(DOCS_PANEL_KEY, parseDocsPanel, "expanded")
   )
   const [phoneDocsOpen, setPhoneDocsOpen] = useState(false)
-  const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)", false)
   const isDesktop = useMediaQuery(DESKTOP_MEDIA_QUERY, true)
-  const docsExpanded = isDesktop ? docsPanel === "expanded" : phoneDocsOpen
+  const overlayDocs = !isDesktop || coachDocked
+  const docsExpanded = overlayDocs ? phoneDocsOpen : docsPanel === "expanded"
 
   useEffect(() => {
     cvHistoryRef.current = cvHistory
@@ -169,7 +172,7 @@ export function PaperEditor({
   })
 
   function toggleDocsPanel() {
-    if (!isDesktop) {
+    if (overlayDocs) {
       setPhoneDocsOpen((open) => !open)
       return
     }
@@ -205,16 +208,24 @@ export function PaperEditor({
     loadedUpdatedAtRef.current = next.updatedAt
     loadedContentRef.current = next.content
     if (highlight) {
-      focusPaperSections(
-        changedSectionIds(diffPaperContent(next.kind, previous, next.content))
-      )
+      const hunks = diffPaperContent(next.kind, previous, next.content)
+      focusSections(changedSectionIds(hunks))
+      setSuggestion((current) => addSuggestion(current, previous, hunks))
     } else {
-      setSectionFocus({ ids: [], nonce: 0 })
+      clearSectionFocus()
     }
   }
 
-  function focusPaperSections(ids: string[]) {
-    setSectionFocus((prev) => ({ ids, nonce: prev.nonce + 1 }))
+  function acceptSuggestion() {
+    setSuggestion(null)
+  }
+
+  function rejectSuggestion() {
+    if (!suggestion) return
+    const restored = { ...docRef.current, content: suggestion.previous }
+    setSuggestion(null)
+    applyServerDoc(restored as PaperDoc)
+    onChangeRef.current(restored as PaperDoc)
   }
 
   const syncServerDoc = useEffectEvent(() => {
@@ -227,6 +238,7 @@ export function PaperEditor({
     if (switched || reverted) {
       applyServerDoc(doc)
       setSelection(null)
+      setSuggestion(null)
       return
     }
     if (doc.updatedAt === loadedUpdatedAtRef.current) return
@@ -242,50 +254,22 @@ export function PaperEditor({
   }, [doc.id, doc.updatedAt, isCv, isProof, revertKey])
 
   useEffect(() => {
-    const root = canvasRef.current
-    if (!root || sectionFocus.ids.length === 0) return
-    const els = sectionFocus.ids
-      .map((id) =>
-        root.querySelector<HTMLElement>(
-          `[data-paper-section="${CSS.escape(id)}"]`
-        )
-      )
-      .filter((el): el is HTMLElement => Boolean(el))
-    for (const el of els) el.classList.add("paper-coach-changed")
-    const first = els[0]
-    if (typeof first?.scrollIntoView === "function") {
-      first.scrollIntoView({
-        block: "center",
-        behavior: reduceMotion ? "auto" : "smooth",
-      })
-    }
-    const timer = window.setTimeout(() => {
-      for (const el of els) el.classList.remove("paper-coach-changed")
-      setSectionFocus((prev) =>
-        prev.nonce === sectionFocus.nonce
-          ? { ids: [], nonce: prev.nonce }
-          : prev
-      )
-    }, 1200)
-    return () => {
-      window.clearTimeout(timer)
-      for (const el of els) el.classList.remove("paper-coach-changed")
-    }
-  }, [sectionFocus, reduceMotion])
-
-  useEffect(() => {
     function onSelection() {
-      setSelection((prev) =>
-        retainCoachSelection(prev, readPaperSelection(canvasRef.current))
-      )
+      const next = readPaperSelection(canvasRef.current)
+      setSelection((prev) => retainCoachSelection(prev, next))
     }
     document.addEventListener("selectionchange", onSelection)
     return () => document.removeEventListener("selectionchange", onSelection)
   }, [])
 
-  const highlightPaperCite = useCallback((sectionId: string) => {
-    setSectionFocus((prev) => ({ ids: [sectionId], nonce: prev.nonce + 1 }))
-  }, [])
+  const highlightPaperCite = useCallback(
+    (sectionId: string) => focusSections([sectionId]),
+    [focusSections]
+  )
+
+  useEffect(() => {
+    if (dirty) setSuggestion(null)
+  }, [dirty])
 
   const citeSpans = useMemo(() => {
     if (isCv) return paperCiteSpansFromCv(cvData)
@@ -557,7 +541,7 @@ export function PaperEditor({
           activeId={doc.id}
           onSelect={onSelectDoc}
           onBack={onBack}
-          overlay={!isDesktop}
+          overlay={overlayDocs}
         />
       ) : null}
 
@@ -579,11 +563,23 @@ export function PaperEditor({
 
         {conflict ? (
           <PaperEditorConflictBanner
+            kind={doc.kind}
             onKeepMine={() => {
               loadedUpdatedAtRef.current = doc.updatedAt
               setConflict(false)
             }}
-            onUseServer={() => applyServerDoc(doc, true)}
+            onUseServer={() => {
+              applyServerDoc(doc, true)
+              setSuggestion(null)
+            }}
+          />
+        ) : null}
+
+        {suggestion && !conflict ? (
+          <PaperSuggestionBar
+            suggestion={suggestion}
+            onAccept={acceptSuggestion}
+            onReject={rejectSuggestion}
           />
         ) : null}
 
@@ -649,6 +645,8 @@ export function PaperEditor({
 
         <CoachFloat
           key={doc.id}
+          dock={dockEl}
+          onDockedChange={setCoachDocked}
           docId={doc.id}
           docName={doc.name}
           selection={selection}
@@ -660,6 +658,7 @@ export function PaperEditor({
           }
         />
       </div>
+      <div ref={setDockEl} className="flex h-full shrink-0" />
     </div>
   )
 }

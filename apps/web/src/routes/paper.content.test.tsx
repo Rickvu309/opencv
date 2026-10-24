@@ -215,7 +215,7 @@ describe("Paper content editors", () => {
     await expectPaperDrive()
     await openDoc("Cover: Associate PM intern")
 
-    const editor = screen.getByRole("textbox", { name: "Document content" })
+    const editor = screen.getByRole("textbox", { name: "Letter text" })
     expect(editor).toHaveAttribute("contenteditable", "true")
     expect(editor).toHaveTextContent(/associate product manager intern/i)
     expect(editor).toHaveTextContent(new RegExp(`Best,\\s*Alex`))
@@ -254,14 +254,14 @@ describe("Paper documents panel", () => {
     await expectPaperDrive()
     const editor = await openDoc("PM track CV")
 
-    const toggle = within(editor).getByRole("button", { name: "Documents" })
+    const toggle = within(editor).getByRole("button", { name: "Paper list" })
     expect(toggle).toHaveAttribute("aria-expanded", "true")
     expect(toggle).toHaveAttribute("aria-controls", "paper-docs-panel")
     expect(toggle.textContent?.trim()).toBe("")
 
-    const sidebar = screen.getByRole("complementary", { name: "Documents" })
+    const sidebar = screen.getByRole("complementary", { name: "Paper list" })
     expect(sidebar).toHaveAttribute("id", "paper-docs-panel")
-    expect(editor.children).toHaveLength(2)
+    expect(editor.children).toHaveLength(3)
 
     const docRow = within(sidebar).getByRole("button", { name: /PM track CV/ })
     expect(docRow).toBeEnabled()
@@ -269,17 +269,17 @@ describe("Paper documents panel", () => {
     fireEvent.click(toggle)
     expect(toggle).toHaveAttribute("aria-expanded", "false")
     expect(
-      screen.queryByRole("complementary", { name: "Documents" })
+      screen.queryByRole("complementary", { name: "Paper list" })
     ).not.toBeInTheDocument()
-    expect(editor.children).toHaveLength(1)
+    expect(editor.children).toHaveLength(2)
     expect(localStorage.getItem("opencv:paper:docs-panel")).toBe("collapsed")
 
     fireEvent.click(toggle)
     expect(toggle).toHaveAttribute("aria-expanded", "true")
     expect(
-      screen.getByRole("complementary", { name: "Documents" })
+      screen.getByRole("complementary", { name: "Paper list" })
     ).toBeInTheDocument()
-    expect(editor.children).toHaveLength(2)
+    expect(editor.children).toHaveLength(3)
     expect(localStorage.getItem("opencv:paper:docs-panel")).toBe("expanded")
   })
 
@@ -290,13 +290,13 @@ describe("Paper documents panel", () => {
     const firstEditor = await openDoc("PM track CV")
 
     expect(
-      screen.queryByRole("complementary", { name: "Documents" })
+      screen.queryByRole("complementary", { name: "Paper list" })
     ).not.toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Documents" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "Paper list" })).toHaveAttribute(
       "aria-expanded",
       "false"
     )
-    expect(firstEditor.children).toHaveLength(1)
+    expect(firstEditor.children).toHaveLength(2)
 
     first.unmount()
     cleanup()
@@ -305,13 +305,13 @@ describe("Paper documents panel", () => {
     await expectPaperDrive()
     const secondEditor = await openDoc("PM track CV")
     expect(
-      screen.queryByRole("complementary", { name: "Documents" })
+      screen.queryByRole("complementary", { name: "Paper list" })
     ).not.toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Documents" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "Paper list" })).toHaveAttribute(
       "aria-expanded",
       "false"
     )
-    expect(secondEditor.children).toHaveLength(1)
+    expect(secondEditor.children).toHaveLength(2)
     expect(localStorage.getItem("opencv:paper:docs-panel")).toBe("collapsed")
   })
 
@@ -322,9 +322,9 @@ describe("Paper documents panel", () => {
     await openDoc("PM track CV")
 
     expect(
-      screen.getByRole("complementary", { name: "Documents" })
+      screen.getByRole("complementary", { name: "Paper list" })
     ).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Documents" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "Paper list" })).toHaveAttribute(
       "aria-expanded",
       "true"
     )
@@ -335,14 +335,14 @@ describe("Paper documents panel", () => {
     await expectPaperDrive()
 
     expect(
-      screen.queryByRole("button", { name: "Documents" })
+      screen.queryByRole("button", { name: "Paper list" })
     ).not.toBeInTheDocument()
     expect(
-      screen.queryByRole("complementary", { name: "Documents" })
+      screen.queryByRole("complementary", { name: "Paper list" })
     ).not.toBeInTheDocument()
     expect(screen.getByRole("region", { name: "Paper" })).toBeInTheDocument()
     expect(
-      screen.getByRole("textbox", { name: "Search documents" })
+      screen.getByRole("textbox", { name: "Search Paper" })
     ).toBeInTheDocument()
   })
 })

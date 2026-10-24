@@ -1,7 +1,7 @@
 import {
   PAPER_KIND_LABEL,
   STARTER_CV_NAME,
-  STARTER_CV_PERSON_NAME,
+  LEGACY_STARTER_CV_PERSON_NAME,
   emptyCvDocument,
   emptyProofDocument,
   isCvDocument,
@@ -28,8 +28,10 @@ export function profileFirstName(profile: { name: string } = SAMPLE_AUTHOR) {
 }
 
 export function cvContentOf(doc: PaperDoc): CvData {
-  if (doc.kind === "cv" && isCvDocument(doc.content)) return doc.content
-  return emptyCvDocument()
+  if (doc.kind !== "cv" || !isCvDocument(doc.content)) return emptyCvDocument()
+  return isStarterCvPersonName(doc.content.name)
+    ? { ...doc.content, name: "" }
+    : doc.content
 }
 
 export function proofContentOf(doc: PaperDoc): ProofData {
@@ -82,25 +84,19 @@ export const SAMPLE_CV_LABEL = "Sample · replace anytime"
 export const SAMPLE_CV_MAKE_MINE = "Make mine"
 export const OWNED_CV_NAME = "My internship CV"
 
-/** One-sentence value for the Linked to Apply empty tile. */
-export const PAPER_LINKED_EMPTY_HINT =
-  "So Apply knows which CV goes with a job."
+export const PAPER_LINKED_EMPTY_HINT = "So Apply knows which CV goes with it."
 
-export const PAPER_ATTACH_SAMPLE_CTA = "Attach Sample CV to a live job"
-export const PAPER_ATTACH_CV_CTA = "Attach CV to a live job"
-
-export const PAPER_LIST_EMPTY_CTA = {
-  letter: "Start letter",
-  proof: "Add proof",
-  linked: PAPER_ATTACH_SAMPLE_CTA,
-} as const
+export const PAPER_ATTACH_SAMPLE_CTA = "Attach Sample CV to an Opportunity"
+export const PAPER_ATTACH_CV_CTA = "Attach CV to an Opportunity"
 
 export function isSampleCv(doc: PaperDoc) {
   return doc.kind === "cv" && doc.name === STARTER_CV_NAME
 }
 
 export function isStarterCvPersonName(name: string) {
-  return name.trim().toLowerCase() === STARTER_CV_PERSON_NAME.toLowerCase()
+  return (
+    name.trim().toLowerCase() === LEGACY_STARTER_CV_PERSON_NAME.toLowerCase()
+  )
 }
 
 /** Drive title after the User claims the sample CV. */
@@ -133,70 +129,34 @@ export function paperLinkedEmptyCta(docs: readonly PaperDoc[]): string | null {
   return isSampleCv(doc) ? PAPER_ATTACH_SAMPLE_CTA : PAPER_ATTACH_CV_CTA
 }
 
-export type PaperSummaryId = "cvs" | "letters" | "proof" | "linked"
+export type PaperZeroStateId = "cv" | "letter" | "proof" | "linked"
 
-export type PaperSummaryItem = {
-  id: PaperSummaryId
-  label: string
-  value: string
+export type PaperZeroState = {
+  id: PaperZeroStateId
+  title: string
   hint: string
-  cta: string | null
 }
 
-function statusHint(docs: PaperDoc[]): string {
-  if (docs.length === 0) return "None yet"
-  const drafts = docs.filter((doc) => doc.status === "draft").length
-  const ready = docs.filter((doc) => doc.status === "ready").length
-  if (drafts === docs.length) {
-    return docs.length === 1 ? "1 draft" : "All drafts"
-  }
-  if (ready === docs.length) {
-    return docs.length === 1 ? "1 ready" : "All ready"
-  }
-  const parts = []
-  if (drafts) parts.push(`${drafts} draft${drafts === 1 ? "" : "s"}`)
-  if (ready) parts.push(`${ready} ready`)
-  return parts.join(" · ") || "Mixed"
-}
+export const PAPER_ZERO_STATES = {
+  cv: { title: "Start a CV", hint: "Pick a template and fill it in." },
+  letter: { title: "Start a Letter", hint: "Write to one Opportunity." },
+  proof: { title: "Add a Proof", hint: "Show one thing you made." },
+} as const
 
-export function paperSummary(docs: PaperDoc[]): PaperSummaryItem[] {
-  const cvs = docs.filter((doc) => doc.kind === "cv")
-  const letters = docs.filter((doc) => doc.kind === "letter")
-  const proofs = docs.filter((doc) => doc.kind === "proof")
-  const linked = docs.filter((doc) => doc.applyCardId)
-  const onlySampleCv = cvs.length === 1 && cvs[0] !== undefined && isSampleCv(cvs[0])
-
-  return [
-    {
-      id: "cvs",
-      label: "CVs",
-      value: String(cvs.length),
-      hint: onlySampleCv ? SAMPLE_CV_LABEL : statusHint(cvs),
-      cta: null,
-    },
-    {
-      id: "letters",
-      label: "Letters",
-      value: String(letters.length),
-      hint: letters.length === 0 ? "" : statusHint(letters),
-      cta: letters.length === 0 ? PAPER_LIST_EMPTY_CTA.letter : null,
-    },
-    {
-      id: "proof",
-      label: "Proof",
-      value: String(proofs.length),
-      hint: proofs.length === 0 ? "" : statusHint(proofs),
-      cta: proofs.length === 0 ? PAPER_LIST_EMPTY_CTA.proof : null,
-    },
-    {
-      id: "linked",
-      label: "Linked to Apply",
-      value: String(linked.length),
-      hint:
-        linked.length === 0
-          ? PAPER_LINKED_EMPTY_HINT
-          : "Linked to an Opportunity",
-      cta: linked.length === 0 ? paperLinkedEmptyCta(docs) : null,
-    },
-  ]
+/** One prompt per kind the person has none of, plus the Apply link when one is possible. */
+export function paperZeroStates(
+  docs: readonly PaperDoc[],
+  canLink: boolean
+): PaperZeroState[] {
+  const states: PaperZeroState[] = []
+  for (const kind of ["cv", "letter", "proof"] as const) {
+    if (!docs.some((doc) => doc.kind === kind)) {
+      states.push({ id: kind, ...PAPER_ZERO_STATES[kind] })
+    }
+  }
+  const attach = paperLinkedEmptyCta(docs)
+  if (attach && canLink && !docs.some((doc) => doc.applyCardId)) {
+    states.push({ id: "linked", title: attach, hint: PAPER_LINKED_EMPTY_HINT })
+  }
+  return states
 }

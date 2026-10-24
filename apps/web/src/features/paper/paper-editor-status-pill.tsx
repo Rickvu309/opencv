@@ -33,7 +33,7 @@ export function PaperEditorStatusPill({
           status === "draft" &&
             "border-border bg-muted/40 text-muted-foreground"
         )}
-        aria-label="Document status"
+        aria-label="Status"
       >
         {status === "published" ? <Globe className="size-3.5" /> : null}
         {label}

@@ -16,7 +16,7 @@ import {
 import {
   PAPER_ATTACH_SAMPLE_CTA,
   PAPER_LINKED_EMPTY_HINT,
-  PAPER_LIST_EMPTY_CTA,
+  PAPER_ZERO_STATES,
   SAMPLE_CV_LABEL,
   SAMPLE_CV_MAKE_MINE,
   ownedCvName,
@@ -44,14 +44,17 @@ describe("Paper drive", () => {
     renderPaper()
     await expectPaperDrive()
 
-    expect(screen.getByText("CVs")).toBeInTheDocument()
-    expect(screen.getByText("Letters")).toBeInTheDocument()
-    expect(screen.getAllByText("Proof").length).toBeGreaterThan(0)
+    expect(screen.getAllByRole("row")).toHaveLength(
+      getMockPaperDocs().length + 1
+    )
+    expect(
+      screen.getByRole("columnheader", { name: "Type" })
+    ).toBeInTheDocument()
     expect(screen.getAllByText("Draft").length).toBeGreaterThan(0)
     expect(screen.getByText("Ready")).toBeInTheDocument()
     expect(screen.queryByText(/Eric Nguyen/i)).not.toBeInTheDocument()
 
-    const search = screen.getByRole("textbox", { name: "Search documents" })
+    const search = screen.getByRole("textbox", { name: "Search Paper" })
     fireEvent.change(search, { target: { value: "cover" } })
 
     expect(screen.getByText("Cover: Associate PM intern")).toBeInTheDocument()
@@ -81,7 +84,7 @@ describe("Paper drive", () => {
       screen.getByRole("button", { name: SAMPLE_CV_MAKE_MINE })
     ).toBeInTheDocument()
     expect(
-      screen.queryByRole("button", { name: "New document" })
+      screen.queryByRole("button", { name: "New" })
     ).not.toBeInTheDocument()
   })
 
@@ -98,24 +101,14 @@ describe("Paper drive", () => {
       1
     )
 
-    const letters = screen.getByRole("region", { name: "Letters" })
-    const proof = screen.getByRole("region", { name: "Proof" })
-    const linked = screen.getByRole("region", { name: "Linked to Apply" })
     expect(
-      within(letters).getByRole("button", { name: PAPER_LIST_EMPTY_CTA.letter })
+      screen.getByRole("button", { name: PAPER_ZERO_STATES.letter.title })
     ).toBeInTheDocument()
     expect(
-      within(proof).getByRole("button", { name: PAPER_LIST_EMPTY_CTA.proof })
+      screen.getByRole("button", { name: PAPER_ZERO_STATES.proof.title })
     ).toBeInTheDocument()
-    expect(
-      within(linked).getByText(PAPER_LINKED_EMPTY_HINT)
-    ).toBeInTheDocument()
-    expect(
-      within(linked).getByRole("button", { name: PAPER_ATTACH_SAMPLE_CTA })
-    ).toBeInTheDocument()
-    expect(
-      within(linked).queryByRole("button", { name: "Link to a job" })
-    ).not.toBeInTheDocument()
+    const linked = screen.getByRole("button", { name: PAPER_ATTACH_SAMPLE_CTA })
+    expect(linked).toHaveAccessibleDescription(PAPER_LINKED_EMPTY_HINT)
 
     expect(screen.queryByText("None yet")).not.toBeInTheDocument()
     expect(
@@ -126,28 +119,28 @@ describe("Paper drive", () => {
     expect(queryByAttr(document, "data-slot='empty-icon'")).toBeNull()
 
     fireEvent.click(
-      screen.getByRole("button", { name: PAPER_LIST_EMPTY_CTA.letter })
+      screen.getByRole("button", { name: PAPER_ZERO_STATES.letter.title })
     )
     expect(
       await screen.findByRole("region", { name: "Editing Untitled Letter" })
     ).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole("button", { name: /all documents/i }))
+    fireEvent.click(screen.getByRole("button", { name: /back to Paper/i }))
     expect(
       await screen.findByRole("region", { name: "Paper" })
     ).toBeInTheDocument()
     expect(
-      screen.queryByRole("button", { name: PAPER_LIST_EMPTY_CTA.letter })
+      screen.queryByRole("button", { name: PAPER_ZERO_STATES.letter.title })
     ).not.toBeInTheDocument()
 
     fireEvent.click(
-      screen.getByRole("button", { name: PAPER_LIST_EMPTY_CTA.proof })
+      screen.getByRole("button", { name: PAPER_ZERO_STATES.proof.title })
     )
     expect(
       await screen.findByRole("region", { name: "Editing Untitled Proof" })
     ).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole("button", { name: /all documents/i }))
+    fireEvent.click(screen.getByRole("button", { name: /back to Paper/i }))
     expect(
       await screen.findByRole("region", { name: "Paper" })
     ).toBeInTheDocument()
@@ -158,25 +151,16 @@ describe("Paper drive", () => {
     expect(
       screen.queryByRole("dialog", { name: "Link to Apply" })
     ).not.toBeInTheDocument()
-    const linkedAfter = await screen.findByRole("region", {
-      name: "Linked to Apply",
-    })
-    await waitFor(() => {
-      expect(
-        within(linkedAfter).queryByText(PAPER_LINKED_EMPTY_HINT)
-      ).not.toBeInTheDocument()
-    })
-    expect(within(linkedAfter).getByText("1")).toBeInTheDocument()
-    expect(screen.getByText(STARTER_GUIDED_APPLY_COMPANY)).toBeInTheDocument()
     expect(
-      within(linkedAfter).queryByRole("button", {
-        name: PAPER_ATTACH_SAMPLE_CTA,
-      })
+      await screen.findByText(STARTER_GUIDED_APPLY_COMPANY)
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: PAPER_ATTACH_SAMPLE_CTA })
     ).not.toBeInTheDocument()
 
     fireEvent.click(
       screen.getByRole("button", {
-        name: `Document actions for ${STARTER_CV_NAME}`,
+        name: `Actions for ${STARTER_CV_NAME}`,
       })
     )
     fireEvent.click(
@@ -198,7 +182,7 @@ describe("Paper drive", () => {
     expect(await screen.findByText(STARTER_CV_NAME)).toBeInTheDocument()
     fireEvent.click(
       screen.getByRole("button", {
-        name: `Document actions for ${STARTER_CV_NAME}`,
+        name: `Actions for ${STARTER_CV_NAME}`,
       })
     )
     fireEvent.click(
@@ -228,7 +212,7 @@ describe("Paper drive", () => {
       within(editor).getByText(new RegExp(SAMPLE_CV_LABEL))
     ).toBeInTheDocument()
 
-    const name = within(editor).getByRole("textbox", { name: "Full name" })
+    const name = within(editor).getByRole("textbox", { name: "Your name" })
     name.textContent = "Linh Nguyen"
     fireEvent.input(name)
 
@@ -246,7 +230,7 @@ describe("Paper drive", () => {
       screen.queryByRole("dialog", { name: /clear|wipe|reset|confirm/i })
     ).not.toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole("button", { name: /all documents/i }))
+    fireEvent.click(screen.getByRole("button", { name: /back to Paper/i }))
     expect(
       await screen.findByRole("region", { name: "Paper" })
     ).toBeInTheDocument()
@@ -301,15 +285,9 @@ describe("Paper drive", () => {
       await screen.findByRole("region", { name: "Paper" })
     ).toBeInTheDocument()
     expect(await screen.findByText(STARTER_CV_NAME)).toBeInTheDocument()
-    const linked = screen.getByRole("region", { name: "Linked to Apply" })
-    expect(
-      within(linked).getByText(PAPER_LINKED_EMPTY_HINT)
-    ).toBeInTheDocument()
-    fireEvent.click(
-      await within(linked).findByRole("button", {
-        name: PAPER_ATTACH_SAMPLE_CTA,
-      })
-    )
+    const linked = screen.getByRole("button", { name: PAPER_ATTACH_SAMPLE_CTA })
+    expect(linked).toHaveAccessibleDescription(PAPER_LINKED_EMPTY_HINT)
+    fireEvent.click(linked)
 
     await waitFor(() => {
       expect(
@@ -355,11 +333,10 @@ describe("Paper drive", () => {
 
     expect(screen.getByText("Local startup")).toBeInTheDocument()
     expect(screen.getByText("Fintech scale-up")).toBeInTheDocument()
-    expect(screen.getByText("Linked to Apply")).toBeInTheDocument()
 
     fireEvent.click(
       screen.getByRole("button", {
-        name: "Document actions for Cover: Associate PM intern",
+        name: "Actions for Cover: Associate PM intern",
       })
     )
     fireEvent.click(
@@ -374,46 +351,46 @@ describe("Paper drive", () => {
     expect(screen.getByText("Fintech scale-up")).toBeInTheDocument()
   })
 
-  it("marks filter as coming soon and keeps New enabled", async () => {
+  it("keeps New enabled and offers no Filter", async () => {
     renderPaper()
     await expectPaperDrive()
 
-    const filter = screen.getByRole("button", { name: /filter/i })
-    expect(filter).toBeDisabled()
-    expect(filter).toHaveTextContent("Coming soon")
-    expect(screen.getByRole("button", { name: "New document" })).toBeEnabled()
+    expect(
+      screen.queryByRole("button", { name: /filter/i })
+    ).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "New" })).toBeEnabled()
   })
 
   it("creates, renames, changes status, and deletes a document", async () => {
     renderPaper()
     await expectPaperDrive()
 
-    fireEvent.click(screen.getByRole("button", { name: "New document" }))
+    fireEvent.click(screen.getByRole("button", { name: "New" }))
     fireEvent.click(await screen.findByRole("menuitem", { name: "Letter" }))
 
     expect(
       await screen.findByRole("region", { name: "Editing Untitled Letter" })
     ).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole("button", { name: /all documents/i }))
+    fireEvent.click(screen.getByRole("button", { name: /back to Paper/i }))
     await expectPaperDrive()
     expect(screen.getByText("Untitled Letter")).toBeInTheDocument()
 
     fireEvent.click(
       screen.getByRole("button", {
-        name: "Document actions for Untitled Letter",
+        name: "Actions for Untitled Letter",
       })
     )
     fireEvent.click(await screen.findByRole("menuitem", { name: "Rename" }))
     const nameInput = await screen.findByRole("textbox", {
-      name: "Document name",
+      name: "Name",
     })
     fireEvent.change(nameInput, { target: { value: "Cover: intern" } })
     fireEvent.click(screen.getByRole("button", { name: "Save" }))
     expect(await screen.findByText("Cover: intern")).toBeInTheDocument()
 
     fireEvent.click(
-      screen.getByRole("button", { name: "Document actions for Cover: intern" })
+      screen.getByRole("button", { name: "Actions for Cover: intern" })
     )
     fireEvent.click(
       await screen.findByRole("menuitem", { name: "Mark as Ready" })
@@ -421,30 +398,30 @@ describe("Paper drive", () => {
     await waitFor(() => {
       expect(
         screen
-          .getByRole("button", { name: "Document actions for Cover: intern" })
+          .getByRole("button", { name: "Actions for Cover: intern" })
           .closest("tr")
       ).toHaveTextContent("Ready")
     })
 
     fireEvent.click(
-      screen.getByRole("button", { name: "Document actions for Cover: intern" })
+      screen.getByRole("button", { name: "Actions for Cover: intern" })
     )
     fireEvent.click(await screen.findByRole("menuitem", { name: "Delete" }))
     const confirm = await screen.findByRole("dialog", {
-      name: "Delete document",
+      name: "Delete",
     })
     fireEvent.click(within(confirm).getByRole("button", { name: "Cancel" }))
     expect(
-      screen.queryByRole("dialog", { name: "Delete document" })
+      screen.queryByRole("dialog", { name: "Delete" })
     ).not.toBeInTheDocument()
     expect(screen.getByText("Cover: intern")).toBeInTheDocument()
 
     fireEvent.click(
-      screen.getByRole("button", { name: "Document actions for Cover: intern" })
+      screen.getByRole("button", { name: "Actions for Cover: intern" })
     )
     fireEvent.click(await screen.findByRole("menuitem", { name: "Delete" }))
     const confirmAgain = await screen.findByRole("dialog", {
-      name: "Delete document",
+      name: "Delete",
     })
     fireEvent.click(
       within(confirmAgain).getByRole("button", { name: "Delete" })
@@ -487,13 +464,13 @@ describe("Paper drive", () => {
 
     await openDoc("PM track CV")
     expect(
-      screen.getByRole("button", { name: /all documents/i })
+      screen.getByRole("button", { name: /back to Paper/i })
     ).toBeInTheDocument()
     expect(
       screen.queryByRole("region", { name: "Paper" })
     ).not.toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole("button", { name: /all documents/i }))
+    fireEvent.click(screen.getByRole("button", { name: /back to Paper/i }))
     await expectPaperDrive()
   })
 })

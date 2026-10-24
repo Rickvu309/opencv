@@ -224,15 +224,6 @@
     opacity: 1;
   }
 
-  /* QVE-186: when CoachFloat is open on desktop, clear the A4 column. */
-  [data-paper-canvas] {
-    transition: padding-right var(--duration-base) var(--ease-standard);
-  }
-
-  [data-paper-canvas][data-coach-float-nudge] {
-    padding-right: min(26rem, 42vw);
-  }
-
   /*
    * QVE-208: café / phone density. Fit-width A4 (no transform — that
    * would shrink tap targets), larger fields, slim sticky chrome that
@@ -315,10 +306,6 @@
 
     .paper-canvas-field,
     .paper-canvas-affordance {
-      transition: none;
-    }
-
-    [data-paper-canvas] {
       transition: none;
     }
   }

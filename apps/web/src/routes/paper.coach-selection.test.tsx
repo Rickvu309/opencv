@@ -324,7 +324,7 @@ describe("Paper Coach selection and doc updates", () => {
     )
 
     expect(await within(panel).findByRole("alert")).toHaveTextContent(
-      "Coach updated this document"
+      "Coach updated this CV"
     )
     expect(summary).toHaveTextContent("My local edit that should stay")
 
@@ -350,7 +350,7 @@ describe("Paper Coach selection and doc updates", () => {
       )
     )
     expect(await within(panel).findByRole("alert")).toHaveTextContent(
-      "Coach updated this document"
+      "Coach updated this CV"
     )
     fireEvent.click(
       within(panel).getByRole("button", { name: "Use Coach's version" })

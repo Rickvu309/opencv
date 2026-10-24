@@ -33,15 +33,15 @@ function mountFields(labels: string[]) {
 
 describe("café keyboard (QVE-208)", () => {
   it("lists structured fields in DOM order", () => {
-    const { nodes } = mountFields(["Full name", "Headline", "Summary"])
-    expect(listCanvasFields().map((el) => el.getAttribute("aria-label"))).toEqual(
-      ["Full name", "Headline", "Summary"]
-    )
+    const { nodes } = mountFields(["Your name", "Headline", "Summary"])
+    expect(
+      listCanvasFields().map((el) => el.getAttribute("aria-label"))
+    ).toEqual(["Your name", "Headline", "Summary"])
     expect(nodes).toHaveLength(3)
   })
 
   it("Tabs forward and Shift+Tabs backward between fields", () => {
-    const { nodes } = mountFields(["Full name", "Headline", "Summary"])
+    const { nodes } = mountFields(["Your name", "Headline", "Summary"])
     const [name, headline, summary] = nodes
     name!.focus()
     expect(focusAdjacentCanvasField(name!, 1)).toBe(headline)
@@ -73,7 +73,7 @@ describe("café keyboard (QVE-208)", () => {
   })
 
   it("Tab on the last field blurs instead of trapping", () => {
-    const { nodes } = mountFields(["Full name", "Headline"])
+    const { nodes } = mountFields(["Your name", "Headline"])
     const headline = nodes[1]!
     headline.focus()
     const preventDefault = vi.fn()

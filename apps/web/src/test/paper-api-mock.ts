@@ -15,11 +15,13 @@ import { isoNow, pathOf, jsonOk, jsonError } from "./mock-http.ts"
 type Store = {
   docs: PaperDoc[]
   failNext: { command: string; message: string } | null
+  listGate: Promise<void> | null
 }
 
 const store: Store = {
   docs: samplePaperDocs(),
   failNext: null,
+  listGate: null,
 }
 
 function cloneDocs(docs: PaperDoc[]): PaperDoc[] {
@@ -44,6 +46,18 @@ function sortDocs(docs: PaperDoc[]) {
 export function resetPaperApiMock() {
   store.docs = cloneDocs(samplePaperDocs())
   store.failNext = null
+  store.listGate = null
+}
+
+export function holdPaperList() {
+  let release: () => void = () => {}
+  store.listGate = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  return () => {
+    store.listGate = null
+    release()
+  }
 }
 
 export function failNextPaperCommand(command: string, message: string) {
@@ -87,6 +101,7 @@ export async function paperApiFetch(
   }
 
   if (method === "GET" && path === "/api/paper") {
+    if (store.listGate) await store.listGate
     return jsonOk(sortDocs(store.docs))
   }
 

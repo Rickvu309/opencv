@@ -56,6 +56,7 @@ type FieldProps = {
   multiline?: boolean
   sectionId?: string
   historyRevision?: number
+  placeholder?: string
   "aria-label": string
 }
 
@@ -66,6 +67,7 @@ export function EditableField({
   multiline,
   sectionId,
   historyRevision,
+  placeholder = "Add text…",
   "aria-label": ariaLabel,
 }: FieldProps) {
   const ref = useRef<HTMLSpanElement>(null)
@@ -105,7 +107,7 @@ export function EditableField({
         multiline && "block",
         className
       )}
-      data-placeholder="Add text…"
+      data-placeholder={placeholder}
     />
   )
 }
@@ -260,7 +262,7 @@ export function SectionTitle({
         "mb-2 border-b pb-1",
         dark
           ? "border-white/20 text-white/70"
-          : "border-foreground/15 text-foreground/55"
+          : "border-foreground/15 text-foreground/60"
       )}
     >
       {children}

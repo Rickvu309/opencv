@@ -48,10 +48,10 @@ describe("Paper ↔ Apply attach path", () => {
     const pair = paperAttachPair([doc], cards)
 
     expect(PAPER_LINKED_EMPTY_HINT).toBe(
-      "So Apply knows which CV goes with a job."
+      "So Apply knows which CV goes with it."
     )
     expect(paperLinkedEmptyCta([doc])).toBe(PAPER_ATTACH_SAMPLE_CTA)
-    expect(PAPER_ATTACH_SAMPLE_CTA).toBe("Attach Sample CV to a live job")
+    expect(PAPER_ATTACH_SAMPLE_CTA).toBe("Attach Sample CV to an Opportunity")
     expect(pair?.doc).toBe(doc)
     expect(pair?.card.title).toBe(STARTER_GUIDED_APPLY_TITLE)
     expect(pair?.card.company).toBe(STARTER_GUIDED_APPLY_COMPANY)
@@ -65,7 +65,7 @@ describe("Paper ↔ Apply attach path", () => {
     const pair = paperAttachPair([doc], cards)
 
     expect(paperLinkedEmptyCta([doc])).toBe(PAPER_ATTACH_CV_CTA)
-    expect(PAPER_ATTACH_CV_CTA).toBe("Attach CV to a live job")
+    expect(PAPER_ATTACH_CV_CTA).toBe("Attach CV to an Opportunity")
     expect(pair?.doc).toBe(doc)
     expect(pair?.card.title).toBe(STARTER_GUIDED_APPLY_TITLE)
   })

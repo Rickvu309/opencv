@@ -19,7 +19,7 @@ const ROUTES = {
 // Also listed under "Constants the checks assume" in SKILL.md.
 const PRIMARY = {
   home: /Message Coach|^Send$/,
-  paper: /^(New document|Make mine)$/,
+  paper: /^(New|Make mine)$/,
   apply: /^Add /,
   pitch: /^(Edit|Publish)/,
 }
