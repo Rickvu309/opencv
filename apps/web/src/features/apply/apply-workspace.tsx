@@ -30,6 +30,7 @@ import {
 import { ApplyCalendar } from "@/features/apply/apply-calendar.tsx"
 import { BoardJobCard } from "@/features/apply/apply-board-card.tsx"
 import { ApplyDemoBanner } from "@/features/apply/apply-demo-banner.tsx"
+import { ApplyDemoClearDialog } from "@/features/apply/apply-demo-clear-dialog.tsx"
 import { allowCardDrop, readCardDragId } from "@/features/apply/apply-dnd.ts"
 import { pickGuidedApplyCard } from "@/features/apply/apply-guide.ts"
 import {
@@ -62,6 +63,7 @@ export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
   const [dragOverCardId, setDragOverCardId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ApplyCard | null>(null)
   const [addOpen, setAddOpen] = useState(false)
+  const [clearDemoOpen, setClearDemoOpen] = useState(false)
   const dragMovedRef = useRef(false)
 
   const guidedCard = apply.isLoading ? null : pickGuidedApplyCard(apply.cards)
@@ -204,7 +206,10 @@ export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
       {errorBanner}
 
       {apply.cards.some(isDemoApplyCard) ? (
-        <ApplyDemoBanner onClear={() => void apply.clearDemo()} />
+        <ApplyDemoBanner
+          clearing={apply.clearing}
+          onClear={() => setClearDemoOpen(true)}
+        />
       ) : null}
 
       <div className="flex min-h-0 flex-1">
@@ -348,6 +353,14 @@ export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
         onOpenChange={setAddOpen}
         onAdd={addJob}
       />
+
+      {clearDemoOpen ? (
+        <ApplyDemoClearDialog
+          count={apply.cards.filter(isDemoApplyCard).length}
+          onOpenChange={setClearDemoOpen}
+          onConfirm={() => void apply.clearDemo()}
+        />
+      ) : null}
 
       {deleteTarget ? (
         <DestructiveCommandDialog

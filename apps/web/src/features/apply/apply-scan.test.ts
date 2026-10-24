@@ -164,7 +164,7 @@ describe("apply scan helpers", () => {
     expect(applyScanFieldLooksUnreadable("Page not found")).toBe(true)
     expect(applyScanFieldLooksUnreadable("Microsoft")).toBe(false)
     expect(isUnreadableApplyPosting(CAFE_JD)).toBe(false)
-    expect(APPLY_SCAN_FETCH_FAILED).toMatch(/paste the job text/i)
+    expect(APPLY_SCAN_FETCH_FAILED).toMatch(/paste the posting text/i)
 
     expect(
       groundApplyScanResult(text, {

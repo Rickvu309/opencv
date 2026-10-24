@@ -3,6 +3,7 @@ import { fireEvent, screen, waitFor, within } from "@testing-library/react"
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { getMockApplyCards } from "@/test/apply-api-mock.ts"
 import {
+  dragCardToStage,
   expectApplyLive,
   installApplyTestLifecycle,
   renderApply,
@@ -27,7 +28,7 @@ describe("Apply craft pass", () => {
     expect(screen.queryByLabelText(/\bjobs?\b/i)).not.toBeInTheDocument()
   })
 
-  it("shows one Demo banner for the starter set and clears only the demo cards", async () => {
+  it("shows one Demo banner for the starter set", async () => {
     renderApply()
     await expectApplyLive()
 
@@ -35,18 +36,53 @@ describe("Apply craft pass", () => {
     expect(screen.getByRole("status")).toHaveTextContent(
       "The starter set shows how the board works"
     )
-    const inbox = stageColumn("inbox")
-    expect(within(inbox).queryByText("Demo")).not.toBeInTheDocument()
+    expect(
+      within(stageColumn("inbox")).queryByText("Demo")
+    ).not.toBeInTheDocument()
+  })
+
+  it("asks before Clear demo deletes anything, and Cancel keeps every card", async () => {
+    renderApply()
+    await expectApplyLive()
+    const before = getMockApplyCards().length
 
     fireEvent.click(screen.getByRole("button", { name: "Clear demo" }))
+
+    const dialog = await screen.findByRole("dialog", {
+      name: "Remove 4 sample opportunities?",
+    })
+    expect(getMockApplyCards()).toHaveLength(before)
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }))
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    })
+    expect(getMockApplyCards()).toHaveLength(before)
+    expect(screen.getByText("Associate PM intern")).toBeInTheDocument()
+  })
+
+  it("removes only cards still flagged demo, so a card the User moved survives", async () => {
+    renderApply()
+    await expectApplyLive()
+
+    dragCardToStage("Business analyst intern", "sent")
+    await waitFor(() => {
+      expect(
+        within(stageColumn("sent")).getByText("Business analyst intern")
+      ).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear demo" }))
+    const dialog = await screen.findByRole("dialog", {
+      name: "Remove 3 sample opportunities?",
+    })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Remove" }))
 
     await waitFor(() => {
       expect(screen.queryByRole("status")).not.toBeInTheDocument()
     })
-    expect(
-      screen.queryByRole("button", { name: "Clear demo" })
-    ).not.toBeInTheDocument()
     expect(screen.queryByText("Associate PM intern")).not.toBeInTheDocument()
+    expect(screen.getByText("Business analyst intern")).toBeInTheDocument()
     expect(screen.getByText("Product intern")).toBeInTheDocument()
     expect(getMockApplyCards().every((card) => !card.demo)).toBe(true)
   })

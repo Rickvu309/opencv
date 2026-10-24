@@ -212,6 +212,7 @@ export async function applyApiFetch(
     }
     const card = store.cards.find((item) => item.id === body.cardId)
     if (!card) return jsonError(404, "NOT_FOUND", "Apply card not found")
+    card.demo = false
     if (body.title !== undefined) card.title = body.title
     if (body.company !== undefined) card.company = body.company
     if (body.note !== undefined) card.note = body.note
@@ -236,6 +237,7 @@ export async function applyApiFetch(
     if (!body.stage) {
       return jsonError(400, "VALIDATION_ERROR", "Stage is required")
     }
+    card.demo = false
     card.stage = body.stage
     card.position = positionBefore(body.stage, body.beforeCardId, card.id)
     card.updatedAt = isoNow()
@@ -249,6 +251,7 @@ export async function applyApiFetch(
     const body = (await readBody(init)) as { cardId?: string }
     const card = store.cards.find((item) => item.id === body.cardId)
     if (!card) return jsonError(404, "NOT_FOUND", "Apply card not found")
+    card.demo = false
     card.starred = !card.starred
     card.updatedAt = isoNow()
     return jsonOk(card)

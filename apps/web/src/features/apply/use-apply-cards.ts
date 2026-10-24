@@ -34,6 +34,7 @@ export function useApplyCards() {
   const queryClient = useQueryClient()
   const [error, setError] = useState<string | null>(null)
   const [revertKey, setRevertKey] = useState(0)
+  const [clearing, setClearing] = useState(false)
 
   const listQuery = useQuery({
     queryKey: applyQueryKeys.list(),
@@ -98,6 +99,7 @@ export function useApplyCards() {
                   ...("trackKind" in input && input.trackKind !== undefined
                     ? { trackKind: input.trackKind }
                     : {}),
+                  demo: false,
                   updatedAt: new Date().toISOString(),
                 }
               : card
@@ -168,6 +170,7 @@ export function useApplyCards() {
               ? {
                   ...card,
                   starred: !card.starred,
+                  demo: false,
                   updatedAt: new Date().toISOString(),
                 }
               : card
@@ -231,9 +234,17 @@ export function useApplyCards() {
       starMutation.mutate(cardId)
     },
     deleteCard: (cardId: string) => deleteMutation.mutateAsync(cardId),
+    clearing,
     clearDemo: async () => {
-      for (const card of cards.filter(isDemoApplyCard)) {
-        await deleteMutation.mutateAsync(card.id)
+      setClearing(true)
+      try {
+        for (const card of cards.filter(isDemoApplyCard)) {
+          await deleteMutation.mutateAsync(card.id)
+        }
+      } catch {
+        // deleteMutation.onError already rolled back and set the error banner
+      } finally {
+        setClearing(false)
       }
     },
   }

@@ -6,7 +6,13 @@ import {
   APPLY_DEMO_TITLE,
 } from "@/features/apply/apply-job-structure.ts"
 
-export function ApplyDemoBanner({ onClear }: { onClear: () => void }) {
+export function ApplyDemoBanner({
+  onClear,
+  clearing,
+}: {
+  onClear: () => void
+  clearing: boolean
+}) {
   return (
     <div
       role="status"
@@ -21,6 +27,7 @@ export function ApplyDemoBanner({ onClear }: { onClear: () => void }) {
         size="sm"
         variant="secondary"
         className="h-8 shrink-0"
+        disabled={clearing}
         onClick={onClear}
       >
         {APPLY_DEMO_CLEAR_LABEL}

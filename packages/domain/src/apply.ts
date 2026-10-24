@@ -58,9 +58,10 @@ export const APPLY_JOB_URL_INVALID = "That posting link isn't a valid web URL."
 export const APPLY_JOB_URL_COPIED = "Posting link copied."
 export const APPLY_JOB_URL_COPY_FAILED =
   "Couldn't copy the posting link. Select Source and copy it."
-export const APPLY_SCAN_EMPTY = "Paste a posting link or the job text to scan."
+export const APPLY_SCAN_EMPTY =
+  "Paste a posting link or the posting text to scan."
 export const APPLY_SCAN_FETCH_FAILED =
-  "Couldn't read that posting. Paste the job text and scan again."
+  "Couldn't read that posting. Paste the posting text and scan again."
 export const APPLY_SCAN_NOT_FOUND =
   "Couldn't find a title or company in that post."
 export const APPLY_SCAN_UNAVAILABLE =
@@ -219,7 +220,7 @@ export const applyListCardsInputSchema = z.object({}).strict()
 
 export const applyJdTextSchema = z
   .string()
-  .max(APPLY_JD_TEXT_MAX, "Job text is too long")
+  .max(APPLY_JD_TEXT_MAX, "Posting text is too long")
 
 export const applyScanInputSchema = z
   .object({
@@ -287,7 +288,7 @@ export function parseApplyScanInput(raw: {
   const urlRaw = raw.jobUrl ?? ""
   const jdRaw = raw.jdText ?? ""
   if (jdRaw.length > APPLY_JD_TEXT_MAX) {
-    return { ok: false, message: "Job text is too long" }
+    return { ok: false, message: "Posting text is too long" }
   }
   const parsedUrl = parseApplyJobUrlInput(urlRaw)
   if (!parsedUrl.ok) return parsedUrl

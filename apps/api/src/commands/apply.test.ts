@@ -200,6 +200,44 @@ describe("apply commands", () => {
     expect(listed.find((card) => card.id === created.id)?.jobUrl).toBeNull()
   })
 
+  it("stops marking a starter card Demo once the User edits, moves or stars it", async () => {
+    const writes: [string, (id: string) => Record<string, unknown>][] = [
+      [APPLY_COMMANDS.updateCard, (cardId) => ({ cardId, note: "Mine" })],
+      [APPLY_COMMANDS.moveCard, (cardId) => ({ cardId, stage: "prep" })],
+      [APPLY_COMMANDS.toggleStar, (cardId) => ({ cardId })],
+    ]
+    for (const [name, input] of writes) {
+      const created = successData<ApplyCard>(
+        await commandRegistry.execute({
+          name: APPLY_COMMANDS.createCard,
+          input: { title: "Starter", company: "Sample" },
+          actor: userActor(ownerId),
+          db,
+        })
+      )
+      await db
+        .update(applyCards)
+        .set({ demo: true })
+        .where(eq(applyCards.id, created.id))
+
+      const result = successData<ApplyCard>(
+        await commandRegistry.execute({
+          name,
+          input: input(created.id),
+          actor: userActor(ownerId),
+          db,
+        })
+      )
+
+      expect(result.demo, name).toBe(false)
+      const [row] = await db
+        .select()
+        .from(applyCards)
+        .where(eq(applyCards.id, created.id))
+      expect(row?.demo, name).toBe(false)
+    }
+  })
+
   it("moves a card between and within a Stage using one-row fractional keys", async () => {
     const first = successData<ApplyCard>(
       await commandRegistry.execute({
