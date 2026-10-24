@@ -73,7 +73,9 @@ describe("Pitch workspace", () => {
     expect(screen.getByRole("heading", { name: "Contact" })).toBeInTheDocument()
     expect(screen.getAllByText(`@${github}`).length).toBeGreaterThan(0)
     expect(screen.getByText("Connected · mock integration")).toBeInTheDocument()
-    expect(screen.getAllByTitle(/contribution/i).length).toBeGreaterThan(50)
+    expect(
+      document.querySelectorAll("rect[data-date] > title").length
+    ).toBeGreaterThan(50)
     expect(
       screen.getByRole("button", { name: "Checkout highlight" })
     ).toBeInTheDocument()

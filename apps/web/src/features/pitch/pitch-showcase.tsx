@@ -30,7 +30,7 @@ import {
 
 import { ComingSoon } from "@/components/coming-soon.tsx"
 import { profileInitials } from "@/features/app-shell/profile-display.ts"
-import { PitchGithubHeatmap } from "@/features/pitch/pitch-github-heatmap.tsx"
+import { PitchGithubHeatmap } from "@/features/pitch/pitch-github-graph.tsx"
 import { resolveAchievementProof } from "@/features/pitch/pitch-proof.ts"
 import {
   getMockGithubProfile,
@@ -165,7 +165,7 @@ export function PitchProfileHeader({
             />
           ) : (
             <p className="flex items-start gap-2 text-sm leading-relaxed">
-              <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-success" />
+              <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary" />
               {profile.status}
             </p>
           )}
@@ -437,7 +437,7 @@ export function GithubSection({
                 @{mock.username}
               </p>
               <span className="inline-flex items-center gap-1 text-xs text-foreground">
-                <span className="size-1.5 rounded-full bg-success" />
+                <span className="size-1.5 rounded-full bg-primary" />
                 Connected · mock integration
               </span>
             </div>
@@ -453,6 +453,7 @@ export function GithubSection({
 
         <PitchGithubHeatmap
           contributions={MOCK_GITHUB_CONTRIBUTIONS}
+          total={mock.totalLastYear}
           className="mt-3"
         />
 
@@ -552,7 +553,7 @@ export function GallerySection({
               pitchToneClass(item.tone)
             )}
           >
-            <span className="text-xs font-medium text-foreground/70">
+            <span className="text-xs font-medium opacity-80">
               {item.caption}
             </span>
           </div>

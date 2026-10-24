@@ -12,7 +12,7 @@
 4. Sources, in order: shadcn/ui, shadcn AI Elements patterns copied into `apps/web/src/components/ai-elements/`, Kibo UI for heavy app pieces, then Cult UI, Magic UI and free affectUI items for showpieces. Install through the shadcn CLI. Colors a registry piece brings map to shadcn variables. A registry piece never adds a token.
 5. The CV print paper (`apps/web/src/styles/paper.css`, `features/paper/cv-templates/`) is the one documented exception: print layout where paper is white keeps its own variables and hex.
 6. `scripts/ds-codemod.mjs` renames the retired names (`text-micro`, `text-body`, `font-heading`, `ease-standard`, `z-popover` and the rest) to stock Tailwind. Run it with `--dry-run` after every `shadcn add`.
-7. `packages/ui/src/styles/legacy-overlay.css` holds the tokens later surface PRs still read (`--pitch-tone-*`, `--github-heatmap-*`, `--success*`, `--warning*`). It is temporary: DS-5 deletes it, and the `LEGACY_OVERLAY_ALLOWLIST` in the vocabulary test only shrinks.
+7. `packages/ui/src/styles/legacy-overlay.css` holds the tokens later surface PRs still read (`--success*`). It is temporary: DS-5 deletes it, and the `LEGACY_OVERLAY_ALLOWLIST` in the vocabulary test only shrinks.
 
 **Enforcement.** `apps/web/src/test/design-vocabulary.test.ts` allows only the stock color utilities and `var(--*)` names plus the four motion tokens, pins the `:root` variable set, forbids the retired class roots, raw hex and named palette classes (one allowlist entry, the CV print paper), and keeps the raw-interactive rule. `apps/web/src/test/ui-kit-contract.test.ts` asserts the exact stock variable set and the motion tokens. `pnpm --filter web test` fails on a violation.
 

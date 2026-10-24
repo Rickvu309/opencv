@@ -4,7 +4,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
-import { cn } from "@workspace/ui/lib/utils"
 import { Eye, EyeOff, Globe, Pencil, Plus, X } from "lucide-react"
 
 import {
@@ -111,10 +110,7 @@ export function PitchEditToolbar({
           type="button"
           size="sm"
           variant={published ? "outline" : "secondary"}
-          className={cn(
-            "ml-auto h-8",
-            published && "border-success/30 text-success"
-          )}
+          className="ml-auto h-8"
           onClick={onDone}
         >
           {published ? (

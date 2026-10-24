@@ -78,7 +78,7 @@ export function StoryHighlightsRow({
               ) : (
                 <span
                   className={cn(
-                    "flex size-full items-center justify-center rounded-full border-2 border-background text-xs font-bold tracking-tight text-foreground/70",
+                    "flex size-full items-center justify-center rounded-full border-2 border-background text-xs font-bold tracking-tight",
                     pitchToneClass(h.coverTone)
                   )}
                 >
@@ -411,11 +411,11 @@ function StoryFrame({
                   pitchToneClass(slide.tone)
                 )}
               >
-                <p className="text-center text-lg font-semibold tracking-tight text-foreground/90">
+                <p className="text-center text-lg font-semibold tracking-tight">
                   {slide.caption}
                 </p>
                 {slide.detail ? (
-                  <p className="mt-2 text-center text-xs leading-relaxed text-foreground/60">
+                  <p className="mt-2 text-center text-xs leading-relaxed opacity-80">
                     {slide.detail}
                   </p>
                 ) : null}

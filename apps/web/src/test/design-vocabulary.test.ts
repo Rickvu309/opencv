@@ -128,7 +128,7 @@ const CV_VARIABLE_RE = /^cv-/
 const AFFECT_VARIABLE_RE = /^ui-(?:fm|ns|sr|nt)-/
 
 /** Variables owned by legacy-overlay.css; the legacy allowlist governs their use. */
-const LEGACY_VARIABLE_RE = /^(?:success|warning|pitch-tone|github-heatmap)/
+const LEGACY_VARIABLE_RE = /^success/
 
 const RETIRED_CLASS_RE = new RegExp(
   [
@@ -142,7 +142,7 @@ const RETIRED_CLASS_RE = new RegExp(
 )
 
 const LEGACY_TOKEN_RE =
-  /(?<![\w-])(?:bg|text|border|ring|from|to|via|fill|stroke|outline)-(?:success|warning|info|pitch-tone-[a-z]+|github-heatmap-\d)(?:-foreground)?(?![\w-])|var\(--(?:success|warning|info|pitch-tone|github-heatmap)/g
+  /(?<![\w-])(?:bg|text|border|ring|from|to|via|fill|stroke|outline)-(?:success|warning|info)(?:-foreground)?(?![\w-])|var\(--(?:success|warning|info)/g
 
 const VARIABLE_READ_RE = /(?:var\(|[\w-]\()(--[a-zA-Z0-9-]+)/g
 
@@ -164,18 +164,7 @@ const VOCABULARY_ALLOWLIST = [
  * file that uses one without an entry fails. Each path needs a `//` line
  * above it naming the PR that removes it.
  */
-const LEGACY_OVERLAY_ALLOWLIST = [
-  // DS-4b replaces the Published pill with a stock Badge.
-  "features/pitch/pitch-edit-toolbar.tsx",
-  // DS-4b swaps the heatmap for the Kibo contribution graph.
-  "features/pitch/pitch-github-heatmap.tsx",
-  // DS-4b drops the success dot for a stock Badge.
-  "features/pitch/pitch-showcase.tsx",
-  // DS-4b maps tones to stock surfaces.
-  "features/pitch/pitch-types.ts",
-  // DS-4b turns the status chips and banner into stock Badge and Alert.
-  "features/pitch/pitch-workspace.tsx",
-] as const
+const LEGACY_OVERLAY_ALLOWLIST = [] as const
 
 /**
  * Feature files allowed to host a raw interactive element. Each path MUST
@@ -359,9 +348,7 @@ describe("legacy overlay", () => {
       ...declared(cssBlock(css, "\\.dark")),
     ]
     const unknown = names.filter(
-      (name) =>
-        !/^(?:success|warning)(?:-foreground)?$/.test(name) &&
-        !/^(?:pitch-tone|github-heatmap)-/.test(name)
+      (name) => !/^success(?:-foreground)?$/.test(name)
     )
     expect(unknown).toEqual([])
   })

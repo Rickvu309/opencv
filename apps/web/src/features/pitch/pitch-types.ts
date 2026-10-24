@@ -54,11 +54,11 @@ export type PitchIdentity = {
 }
 
 export const PITCH_TONE_CLASS: Record<PitchTone, string> = {
-  warm: "[background-image:var(--pitch-tone-warm)]",
-  cool: "[background-image:var(--pitch-tone-cool)]",
-  neutral: "[background-image:var(--pitch-tone-neutral)]",
-  emerald: "[background-image:var(--pitch-tone-emerald)]",
-  dark: "[background-image:var(--pitch-tone-dark)]",
+  warm: "bg-muted text-foreground",
+  cool: "bg-muted text-foreground",
+  neutral: "bg-muted text-foreground",
+  emerald: "bg-muted text-foreground",
+  dark: "bg-primary text-primary-foreground",
 } as const
 
 export function pitchToneClass(tone?: PitchTone | string) {
