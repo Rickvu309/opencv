@@ -129,9 +129,9 @@ describe("Apply shows no Fit label", () => {
     )
     expect(within(drawer).queryAllByText(FIT_LABEL)).toEqual([])
 
-    fireEvent.click(screen.getByRole("button", { name: "Calendar" }))
+    fireEvent.click(screen.getByRole("radio", { name: "Calendar" }))
     expect(
-      await screen.findByRole("button", { name: "Board" })
+      await screen.findByRole("radio", { name: "Board" })
     ).toBeInTheDocument()
     expect(within(screen.getByRole("main")).queryAllByText(FIT_LABEL)).toEqual(
       []

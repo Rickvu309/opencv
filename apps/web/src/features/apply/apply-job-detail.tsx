@@ -40,6 +40,7 @@ import {
   APPLY_JOB_SOURCE_LABEL,
   APPLY_JOB_SOURCE_PLACEHOLDER,
 } from "@/features/apply/apply-job-structure.ts"
+import { ApplyNextStep } from "@/features/apply/apply-next-step.tsx"
 import { useJobPosting } from "@/features/apply/use-job-posting.ts"
 import {
   PaperLinkMenu,
@@ -168,6 +169,12 @@ export function JobDetailPanel({
             {GUIDED_APPLY_PREP_ACTION}
           </Button>
         ) : null}
+
+        <ApplyNextStep
+          card={card}
+          onMove={onMove}
+          onTrack={(trackKind) => onPatch({ trackKind })}
+        />
 
         {linkedPaper.length > 0 ? (
           <div role="region" aria-label="Linked Paper">

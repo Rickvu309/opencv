@@ -87,3 +87,11 @@ afterEach(() => {
     localStorage.clear()
   }
 })
+
+// jsdom has no Web Animations API; Base UI and the kit read it when closing.
+if (
+  typeof Element !== "undefined" &&
+  typeof Element.prototype.getAnimations !== "function"
+) {
+  Element.prototype.getAnimations = () => []
+}

@@ -117,6 +117,13 @@ const READABLE_VARIABLES = new Set<string>([
 /** CV print variables declared in paper.css, the documented exception. */
 const CV_VARIABLE_RE = /^cv-/
 
+/**
+ * Variables an affectUI kit file declares inside its own injected stylesheet
+ * and maps to stock variables there (segmented-control, filter-menu,
+ * notification-stack, smart-recommendation, number-ticker).
+ */
+const AFFECT_VARIABLE_RE = /^ui-(?:seg|fm|ns|sr|nt)-/
+
 /** Variables owned by legacy-overlay.css; the legacy allowlist governs their use. */
 const LEGACY_VARIABLE_RE = /^(?:success|warning|pitch-tone|github-heatmap)/
 
@@ -288,6 +295,7 @@ describe("design-system vocabulary", () => {
           (name) =>
             !READABLE_VARIABLES.has(name) &&
             !CV_VARIABLE_RE.test(name) &&
+            !AFFECT_VARIABLE_RE.test(name) &&
             !LEGACY_VARIABLE_RE.test(name) &&
             !name.startsWith("tw-")
         )
