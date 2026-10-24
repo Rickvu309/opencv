@@ -5,10 +5,7 @@ import { describe, expect, it } from "vitest"
 
 import { STREAMING_COACH_ID } from "@/features/home/threads.ts"
 
-import {
-  RECEIPT_PART_NAME,
-  toAssistantUiMessage,
-} from "./coach-runtime.ts"
+import { RECEIPT_PART_NAME, toAssistantUiMessage } from "./coach-runtime.ts"
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 
@@ -96,7 +93,7 @@ describe("assistant-ui ExternalStoreRuntime spike", () => {
     const pkg = JSON.parse(
       readFileSync(path.join(here, "../../../package.json"), "utf8")
     ) as { dependencies: Record<string, string> }
-    expect(pkg.dependencies["@assistant-ui/react"]).toBe("0.15.16")
+    expect(pkg.dependencies["@assistant-ui/react"]).toBe("0.15.30")
     expect(pkg.dependencies["@assistant-ui/react"]).not.toMatch(/^\^|~/)
 
     const float = read("../paper/coach-float.tsx")
