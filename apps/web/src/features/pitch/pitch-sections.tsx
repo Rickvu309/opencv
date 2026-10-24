@@ -9,7 +9,7 @@ import {
   GithubSection,
   WorkSection,
 } from "@/features/pitch/pitch-showcase.tsx"
-import { MomentsBentoSection } from "@/features/pitch/pitch-stories.tsx"
+import { MomentsBentoSection } from "@/features/pitch/pitch-moments.tsx"
 import {
   overlayPitchBento,
   overlayPitchLinks,

@@ -1,12 +1,10 @@
 import { useState, type ReactNode } from "react"
 import {
   APPLY_JOB_URL_COPIED,
-  APPLY_JOB_URL_COPY_FAILED,
   applyJobSourceHost,
   isDemoApplyCard,
   openableApplyJobUrl,
   parseApplyJobUrlInput,
-  parseApplyScanInput,
   publicApplyJobUrl,
   type PaperDoc,
 } from "@workspace/domain"
@@ -33,7 +31,6 @@ import { cn } from "@workspace/ui/lib/utils"
 import { Check, Copy, ExternalLink, Link2, Star, Trash2, X } from "lucide-react"
 
 import { ErrorBanner } from "@/components/error-banner.tsx"
-import { scanApplyJob } from "@/features/apply/apply-api.ts"
 import {
   GUIDED_APPLY_PREP_ACTION,
   guidedApplyNextAction,
@@ -54,8 +51,7 @@ import {
   APPLY_JOB_SOURCE_LABEL,
   APPLY_JOB_SOURCE_PLACEHOLDER,
 } from "@/features/apply/apply-job-structure.ts"
-import { copyApplyJobUrl } from "@/features/apply/apply-open-posting.ts"
-import { ApiError } from "@/lib/api-error.ts"
+import { useJobPosting } from "@/features/apply/use-job-posting.ts"
 import {
   formatApplyUpdated,
   STAGES,
@@ -229,11 +225,24 @@ function JobDetailFields({
   const [company, setCompany] = useState(card.company)
   const [jobUrl, setJobUrl] = useState(publicApplyJobUrl(card.jobUrl) ?? "")
   const [jobUrlError, setJobUrlError] = useState<string | null>(null)
-  const [scanning, setScanning] = useState(false)
-  const [scanError, setScanError] = useState<string | null>(null)
-  const [scanJdText, setScanJdText] = useState("")
-  const [copied, setCopied] = useState(false)
-  const [copyError, setCopyError] = useState<string | null>(null)
+  const {
+    scanning,
+    scanError,
+    scanJdText,
+    setScanJdText,
+    copied,
+    copyError,
+    scanPosting,
+    copyPosting,
+  } = useJobPosting({
+    card,
+    jobUrl,
+    onPatch,
+    onScanned: ({ title: scannedTitle, company: scannedCompany }) => {
+      if (scannedTitle) setTitle(scannedTitle)
+      if (scannedCompany) setCompany(scannedCompany)
+    },
+  })
   const postingUrl = openableApplyJobUrl(jobUrl)
   const showScanJd = Boolean(scanError || scanJdText.trim())
 
@@ -266,58 +275,6 @@ function JobDetailFields({
     setJobUrl(parsed.jobUrl ?? "")
     if (parsed.jobUrl !== (card.jobUrl ?? null)) {
       onPatch({ jobUrl: parsed.jobUrl })
-    }
-  }
-
-  async function copyPosting() {
-    const href = openableApplyJobUrl(jobUrl)
-    if (!href) {
-      setCopied(false)
-      setCopyError(APPLY_JOB_URL_COPY_FAILED)
-      return
-    }
-    const ok = await copyApplyJobUrl(href)
-    if (!ok) {
-      setCopied(false)
-      setCopyError(APPLY_JOB_URL_COPY_FAILED)
-      return
-    }
-    setCopyError(null)
-    setCopied(true)
-    window.setTimeout(() => setCopied(false), 2000)
-  }
-
-  async function scanPosting() {
-    const parsed = parseApplyScanInput({ jobUrl, jdText: scanJdText })
-    if (!parsed.ok) {
-      setScanError(parsed.message)
-      return
-    }
-    setScanning(true)
-    setScanError(null)
-    try {
-      const result = await scanApplyJob({
-        ...(parsed.jobUrl ? { jobUrl: parsed.jobUrl } : {}),
-        ...(parsed.jdText ? { jdText: parsed.jdText } : {}),
-      })
-      const patch: Parameters<Props["onPatch"]>[0] = {}
-      if (result.title) patch.title = result.title
-      if (result.company) patch.company = result.company
-      if (result.note && !card.note.trim()) patch.note = result.note
-      if (result.title) setTitle(result.title)
-      if (result.company) setCompany(result.company)
-      if (Object.keys(patch).length > 0) onPatch(patch)
-      setScanJdText("")
-    } catch (error) {
-      setScanError(
-        error instanceof ApiError
-          ? error.message
-          : error instanceof Error
-            ? error.message
-            : "Couldn't scan that post."
-      )
-    } finally {
-      setScanning(false)
     }
   }
 
@@ -447,10 +404,7 @@ function JobDetailFields({
           ) : null}
           {showScanJd ? (
             <div className="mt-3 block">
-              <Label
-                htmlFor={`job-scan-jd-${card.id}`}
-                className={FIELD_LABEL}
-              >
+              <Label htmlFor={`job-scan-jd-${card.id}`} className={FIELD_LABEL}>
                 {APPLY_JOB_SCAN_TEXT_LABEL}
               </Label>
               <Textarea
