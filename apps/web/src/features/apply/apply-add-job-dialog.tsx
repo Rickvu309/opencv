@@ -23,6 +23,7 @@ import { ApiError } from "@/lib/api-error.ts"
 
 import { scanApplyJob } from "./apply-api.ts"
 import {
+  APPLY_ADD_LABEL,
   APPLY_JOB_SCAN_TEXT_LABEL,
   APPLY_JOB_SCAN_TEXT_PLACEHOLDER,
 } from "./apply-job-structure.ts"
@@ -118,15 +119,15 @@ export function AddJobDialog({ open, creating, onOpenChange, onAdd }: Props) {
     >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add job</DialogTitle>
+          <DialogTitle>{APPLY_ADD_LABEL}</DialogTitle>
           <DialogDescription>
-            Paste a posting link or the job text. Scan fills title and company
-            when the post says them.
+            Paste a posting link or the posting text. Scan fills title and
+            company when the posting says them.
           </DialogDescription>
         </DialogHeader>
         <div className="block">
           <Label htmlFor="add-job-url" className="mb-1">
-            Job posting URL
+            Posting link
           </Label>
           <Input
             id="add-job-url"
@@ -185,12 +186,8 @@ export function AddJobDialog({ open, creating, onOpenChange, onAdd }: Props) {
           >
             {scanning ? "Scanning…" : "Scan"}
           </Button>
-          <Button
-            type="button"
-            disabled={busy}
-            onClick={() => void submit()}
-          >
-            Add job
+          <Button type="button" disabled={busy} onClick={() => void submit()}>
+            {APPLY_ADD_LABEL}
           </Button>
         </DialogFooter>
       </DialogContent>

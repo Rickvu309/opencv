@@ -2,7 +2,6 @@
  * Apply calendar — month/week view for Opportunity Tracks.
  */
 import { useMemo, useState, type MutableRefObject } from "react"
-import { isDemoApplyCard } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
 import { ButtonGroup } from "@workspace/ui/components/button-group"
 import { cn } from "@workspace/ui/lib/utils"
@@ -13,7 +12,6 @@ import {
   readCardDragId,
   setCardDragData,
 } from "@/features/apply/apply-dnd.ts"
-import { APPLY_DEMO_LABEL } from "@/features/apply/apply-job-structure.ts"
 import {
   localIsoDate,
   trackKindLabel,
@@ -162,7 +160,8 @@ export function ApplyCalendar({
             {monthLabel(year, month)} {year}
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            {monthCount} job{monthCount === 1 ? "" : "s"} with a track date
+            {monthCount} {monthCount === 1 ? "opportunity" : "opportunities"}{" "}
+            with a track date
           </p>
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-2">
@@ -253,12 +252,12 @@ export function ApplyCalendar({
                 data-track-date={cell.date}
                 data-today={isToday ? "true" : undefined}
                 className={cn(
-                  "flex min-h-24 flex-col border-r border-b border-border p-1.5 last:border-r-0 transition-colors",
+                  "flex min-h-24 flex-col border-r border-b border-border p-1.5 transition-colors last:border-r-0",
                   !cell.inMonth && "bg-muted/20 text-muted-foreground",
                   cell.inMonth && "bg-background",
                   isFocused && "bg-muted/40",
-                  isToday && "ring-1 ring-inset ring-foreground/10",
-                  isDropTarget && "bg-muted/60 ring-2 ring-inset ring-ring/30"
+                  isToday && "ring-1 ring-foreground/10 ring-inset",
+                  isDropTarget && "bg-muted/60 ring-2 ring-ring/30 ring-inset"
                 )}
                 onDragOver={(e) => {
                   allowCardDrop(e)
@@ -363,10 +362,7 @@ function CalendarJobChip({
       )}
     >
       <span className="min-w-0">
-        <span className="block truncate font-medium">
-          {card.title}
-          {isDemoApplyCard(card) ? ` · ${APPLY_DEMO_LABEL}` : ""}
-        </span>
+        <span className="block truncate font-medium">{card.title}</span>
         {expanded ? (
           <span className="mt-0.5 block truncate text-2xs opacity-80">
             {card.company} · {trackKindLabel(card.trackKind)}

@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useCallback, useState } from "react"
-import type {
-  ApplyCard,
-  ApplyCreateCardInput,
-  ApplyStage,
-  ApplyUpdateCardInput,
+import {
+  isDemoApplyCard,
+  type ApplyCard,
+  type ApplyCreateCardInput,
+  type ApplyStage,
+  type ApplyUpdateCardInput,
 } from "@workspace/domain"
 
 import { ApiError } from "@/lib/api-error.ts"
@@ -230,5 +231,10 @@ export function useApplyCards() {
       starMutation.mutate(cardId)
     },
     deleteCard: (cardId: string) => deleteMutation.mutateAsync(cardId),
+    clearDemo: async () => {
+      for (const card of cards.filter(isDemoApplyCard)) {
+        await deleteMutation.mutateAsync(card.id)
+      }
+    },
   }
 }

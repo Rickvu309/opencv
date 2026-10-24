@@ -1,10 +1,6 @@
 import { describe, expect, it, vi } from "vitest"
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react"
 import {
-  APPLY_DEMO_HINT,
-  APPLY_DEMO_LABEL,
-} from "@/features/apply/apply-job-structure.ts"
-import {
   installApplyTestLifecycle,
   renderApply,
   expectApplyLive,
@@ -20,14 +16,14 @@ describe("Apply job detail", () => {
 
     await addJobFromDialog()
     const panel = await screen.findByRole("complementary", {
-      name: "Job detail",
+      name: "Opportunity detail",
     })
     expect(within(panel).getByDisplayValue("Untitled role")).toBeInTheDocument()
     expect(
-      within(panel).queryByRole("link", { name: "Open job posting" })
+      within(panel).queryByRole("link", { name: "Open posting in a new tab" })
     ).not.toBeInTheDocument()
     expect(
-      within(panel).queryByRole("button", { name: "Open job posting" })
+      within(panel).queryByRole("button", { name: "Open posting in a new tab" })
     ).not.toBeInTheDocument()
 
     fireEvent.click(
@@ -54,7 +50,7 @@ describe("Apply job detail", () => {
 
     await addJobFromDialog("careers.example.com/pm-intern")
     const panel = await screen.findByRole("complementary", {
-      name: "Job detail",
+      name: "Opportunity detail",
     })
     expect(within(panel).getByDisplayValue("Untitled role")).toBeInTheDocument()
     expect(
@@ -62,7 +58,7 @@ describe("Apply job detail", () => {
     ).toBeInTheDocument()
 
     const posting = within(panel).getByRole("link", {
-      name: "Open job posting",
+      name: "Open posting in a new tab",
     })
     expect(posting).toHaveAttribute(
       "href",
@@ -78,17 +74,19 @@ describe("Apply job detail", () => {
     ).not.toBeInTheDocument()
   })
 
-  it("keeps Add job open when the posting URL is not a web URL", async () => {
+  it("keeps Add opportunity open when the posting URL is not a web URL", async () => {
     renderApply()
     await expectApplyLive()
 
     await addJobFromDialog("javascript:alert(1)")
-    const dialog = await screen.findByRole("dialog", { name: "Add job" })
+    const dialog = await screen.findByRole("dialog", {
+      name: "Add opportunity",
+    })
     expect(within(dialog).getByRole("alert")).toHaveTextContent(
       "That posting link isn't a valid web URL."
     )
     expect(
-      screen.queryByRole("complementary", { name: "Job detail" })
+      screen.queryByRole("complementary", { name: "Opportunity detail" })
     ).not.toBeInTheDocument()
     expect(screen.queryByText("Untitled role")).not.toBeInTheDocument()
   })
@@ -99,17 +97,16 @@ describe("Apply job detail", () => {
 
     await addJobFromDialog()
     const panel = await screen.findByRole("complementary", {
-      name: "Job detail",
+      name: "Opportunity detail",
     })
     const source = within(panel).getByRole("region", { name: "Source" })
-    const nextStep = within(panel).getByRole("region", { name: "Next step" })
+    const nextStep = within(panel).getByRole("region", { name: "Track" })
 
     const sourceField = within(source).getByRole("textbox", { name: "Source" })
     const nextStepKind = within(nextStep).getByRole("combobox", {
-      name: "Next step",
+      name: "Track",
     })
     expect(sourceField).toHaveValue("")
-    expect(within(panel).queryByText(APPLY_DEMO_HINT)).not.toBeInTheDocument()
     expect(
       within(source).getByPlaceholderText("Paste a posting link")
     ).toBeInTheDocument()
@@ -133,7 +130,7 @@ describe("Apply job detail", () => {
     })
     expect(within(panel).getByText("careers.example.com")).toBeInTheDocument()
     expect(
-      within(panel).getByRole("link", { name: "Open job posting" })
+      within(panel).getByRole("link", { name: "Open posting in a new tab" })
     ).toHaveAttribute("href", "https://careers.example.com/cafe-role")
 
     fireEvent.change(within(panel).getByLabelText("Date"), {
@@ -148,14 +145,14 @@ describe("Apply job detail", () => {
       screen.getByRole("button", { name: /Untitled role at Company/ })
     )
     const reopened = await screen.findByRole("complementary", {
-      name: "Job detail",
+      name: "Opportunity detail",
     })
     expect(
       within(reopened).getByRole("textbox", { name: "Source" })
     ).toHaveValue("https://careers.example.com/cafe-role")
     expect(within(reopened).getByLabelText("Date")).toHaveValue("2026-09-20")
     expect(
-      within(reopened).getByRole("combobox", { name: "Next step" })
+      within(reopened).getByRole("combobox", { name: "Track" })
     ).toHaveTextContent("Follow-up")
   })
 
@@ -171,7 +168,7 @@ describe("Apply job detail", () => {
 
     await addJobFromDialog("linkedin.com/jobs/view/123")
     const panel = await screen.findByRole("complementary", {
-      name: "Job detail",
+      name: "Opportunity detail",
     })
     fireEvent.click(within(panel).getByRole("button", { name: "Copy link" }))
     expect(
@@ -194,7 +191,7 @@ describe("Apply job detail", () => {
     await expectApplyLive()
     await addJobFromDialog("linkedin.com/jobs/view/123")
     const panel = await screen.findByRole("complementary", {
-      name: "Job detail",
+      name: "Opportunity detail",
     })
 
     vi.useFakeTimers()
@@ -236,7 +233,7 @@ describe("Apply job detail", () => {
 
     await addJobFromDialog("linkedin.com/jobs/view/123")
     const panel = await screen.findByRole("complementary", {
-      name: "Job detail",
+      name: "Opportunity detail",
     })
     fireEvent.click(within(panel).getByRole("button", { name: "Copy link" }))
     expect(await within(panel).findByRole("alert")).toHaveTextContent(
@@ -259,17 +256,16 @@ describe("Apply job detail", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Associate PM intern/ }))
     const panel = await screen.findByRole("complementary", {
-      name: "Job detail",
+      name: "Opportunity detail",
     })
     expect(
-      within(panel).queryByRole("link", { name: "Open job posting" })
+      within(panel).queryByRole("link", { name: "Open posting in a new tab" })
     ).not.toBeInTheDocument()
     expect(
-      within(panel).queryByRole("button", { name: "Open job posting" })
+      within(panel).queryByRole("button", { name: "Open posting in a new tab" })
     ).not.toBeInTheDocument()
     expect(within(panel).queryByDisplayValue(/jobs\.example\.com/i)).toBeNull()
-    expect(within(panel).getByText(APPLY_DEMO_LABEL)).toBeInTheDocument()
-    expect(within(panel).getByText(APPLY_DEMO_HINT)).toBeInTheDocument()
+    expect(within(panel).queryByText("Demo")).not.toBeInTheDocument()
     expect(open).not.toHaveBeenCalled()
   })
 })

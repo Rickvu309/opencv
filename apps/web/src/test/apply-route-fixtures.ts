@@ -89,14 +89,16 @@ export function expectNoVisibleFitScore() {
 }
 
 export async function addJobFromDialog(jobUrl?: string) {
-  fireEvent.click(screen.getByRole("button", { name: "Add job" }))
-  const dialog = await screen.findByRole("dialog", { name: "Add job" })
+  fireEvent.click(screen.getByRole("button", { name: "Add opportunity" }))
+  const dialog = await screen.findByRole("dialog", { name: "Add opportunity" })
   if (jobUrl !== undefined) {
-    fireEvent.change(within(dialog).getByLabelText("Job posting URL"), {
+    fireEvent.change(within(dialog).getByLabelText("Posting link"), {
       target: { value: jobUrl },
     })
   }
-  fireEvent.click(within(dialog).getByRole("button", { name: "Add job" }))
+  fireEvent.click(
+    within(dialog).getByRole("button", { name: "Add opportunity" })
+  )
   return dialog
 }
 

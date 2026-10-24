@@ -6,7 +6,6 @@ import {
   waitFor,
   within,
 } from "@testing-library/react"
-import { APPLY_DEMO_LABEL } from "@/features/apply/apply-job-structure.ts"
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import {
   STARTER_CV_NAME,
@@ -330,11 +329,11 @@ describe("Paper drive", () => {
 
     fireEvent.click(
       screen.getByRole("button", {
-        name: `${STARTER_GUIDED_APPLY_TITLE} at ${STARTER_GUIDED_APPLY_COMPANY}, ${APPLY_DEMO_LABEL}`,
+        name: `${STARTER_GUIDED_APPLY_TITLE} at ${STARTER_GUIDED_APPLY_COMPANY}`,
       })
     )
     const panel = await screen.findByRole("complementary", {
-      name: "Job detail",
+      name: "Opportunity detail",
     })
     const paperLink = within(panel).getByRole("region", {
       name: "Linked Paper",
