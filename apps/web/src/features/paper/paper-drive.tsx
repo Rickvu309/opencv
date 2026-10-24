@@ -9,7 +9,6 @@ import {
 } from "@workspace/ui/components/dropdown-menu"
 import { Empty, EmptyDescription } from "@workspace/ui/components/empty"
 import { Input } from "@workspace/ui/components/input"
-import { SegmentedControl } from "@workspace/ui/components/segmented-control"
 import { ShimmerText, Skeleton } from "@workspace/ui/components/shimmer-loader"
 import {
   Table,
@@ -34,28 +33,21 @@ import {
   type PaperZeroState,
   type PaperZeroStateId,
 } from "./paper-data.ts"
+import type { PaperKindFilter } from "./paper-kind-filter.tsx"
 import { RowMenu, StatusBadge, type RowMenuProps } from "./paper-row-menu.tsx"
 
+const KindFilter = lazy(() => import("./paper-kind-filter.tsx"))
 const LayerStack = lazy(() =>
   import("@/components/layer-stack.tsx").then((m) => ({
     default: m.LayerStack,
   }))
 )
 
-const KIND_OPTIONS = [
-  { value: "all", label: "All" },
-  { value: "cv", label: "CV" },
-  { value: "letter", label: "Letter" },
-  { value: "proof", label: "Proof" },
-] as const
-
 const EMPTY_LAYERS: LayerStackItem[] = [
   { title: "CV", hint: "Your story", icon: "bolt" },
   { title: "Letter", hint: "One Opportunity", icon: "pulse" },
   { title: "Proof", hint: "Work you made", icon: "spark" },
 ]
-
-export type PaperKindFilter = "all" | PaperContentKind
 
 type Props = {
   docs: PaperDoc[]
@@ -131,17 +123,11 @@ export function PaperDrive({
 
       <div className="min-h-0 flex-1 overflow-auto p-6">
         {!isLoading && counts.all > 0 ? (
-          <SegmentedControl
-            aria-label="Show"
-            size="sm"
-            value={kind}
-            onChange={onKind}
-            className="mb-4"
-            options={KIND_OPTIONS.map((option) => ({
-              ...option,
-              count: counts[option.value],
-            }))}
-          />
+          <div className="mb-4 h-[26px]">
+            <Suspense fallback={null}>
+              <KindFilter value={kind} onChange={onKind} counts={counts} />
+            </Suspense>
+          </div>
         ) : null}
         <div className="overflow-hidden rounded-lg border border-border bg-background">
           {loadFailed && !isLoading ? <LoadError onReload={onReload} /> : null}

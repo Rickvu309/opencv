@@ -78,9 +78,9 @@ describe("PaperDrive", () => {
     expect(onOpen).toHaveBeenCalledWith("11111111-1111-7111-8111-111111111111")
   })
 
-  it("filters by kind through the segmented control and shows counts", () => {
+  it("filters by kind through the segmented control and shows counts", async () => {
     const { onKind } = drive()
-    const group = screen.getByRole("radiogroup", { name: "Show" })
+    const group = await screen.findByRole("radiogroup", { name: "Show" })
     expect(group).toBeInTheDocument()
     fireEvent.click(screen.getByRole("radio", { name: /Letter/ }))
     expect(onKind).toHaveBeenCalledWith("letter")

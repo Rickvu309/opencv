@@ -22,7 +22,8 @@ import {
   type PaperZeroStateId,
 } from "./paper-data.ts"
 import { PaperDialogs } from "./paper-dialogs.tsx"
-import { PaperDrive, type PaperKindFilter } from "./paper-drive.tsx"
+import { PaperDrive } from "./paper-drive.tsx"
+import type { PaperKindFilter } from "./paper-kind-filter.tsx"
 import { PaperEditor } from "./paper-editor.tsx"
 import { usePaperDocs } from "./use-paper-docs.ts"
 
