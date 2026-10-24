@@ -13,7 +13,7 @@ import {
   messageCoach,
   selectNodeContents,
   stubDesktopViewport,
-} from "./paper.fixtures.ts"
+} from "@/test/paper-route-fixtures.ts"
 
 installPaperTestLifecycle()
 

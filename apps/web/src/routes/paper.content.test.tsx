@@ -21,7 +21,7 @@ import {
   sampleSkillItems,
   goHomeThenPaper,
   stubDesktopViewport,
-} from "./paper.fixtures.ts"
+} from "@/test/paper-route-fixtures.ts"
 
 installPaperTestLifecycle()
 

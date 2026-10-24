@@ -13,7 +13,7 @@ import {
   messageCoach,
   selectNodeContents,
   collapseWindowSelection,
-} from "./paper.fixtures.ts"
+} from "@/test/paper-route-fixtures.ts"
 
 installPaperTestLifecycle()
 

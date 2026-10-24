@@ -22,7 +22,7 @@ import {
   openCoach,
   messageCoach,
   selectNodeContents,
-} from "./paper.fixtures.ts"
+} from "@/test/paper-route-fixtures.ts"
 
 installPaperTestLifecycle()
 
