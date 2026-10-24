@@ -119,9 +119,17 @@ scripted Coach with no paid provider calls.
 ## Coach
 
 Set `OPENROUTER_API_KEY` on the API to enable the real Coach. Without it the
-API still boots and Coach returns `503 COACH_UNAVAILABLE`. Model names and
-per-mode limits are defined in source; `.env.example` documents the override
-names. `COACH_RUNTIME=fake` is for isolated local verification only.
+API still boots and Coach returns `503 COACH_UNAVAILABLE`; `GET /health`
+continues to work. Free defaults to `openrouter/free`. The current model and
+limit defaults live in source and `.env.example`; Railway can override them:
+
+| Mode                   | Model variable      | Daily turn limit variable      |
+| ---------------------- | ------------------- | ------------------------------ |
+| Free                   | `COACH_MODEL_FREE`  | `COACH_DAILY_TURN_LIMIT_FREE`  |
+| Light                  | `COACH_MODEL_LIGHT` | `COACH_DAILY_TURN_LIMIT_LIGHT` |
+| Power (internal `max`) | `COACH_MODEL_MAX`   | `COACH_DAILY_TURN_LIMIT_MAX`   |
+
+`COACH_RUNTIME=fake` is for isolated local verification only.
 
 ## Rollback
 
