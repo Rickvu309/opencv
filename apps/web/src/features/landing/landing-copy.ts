@@ -2,7 +2,7 @@ export const LANDING_HEADLINE =
   "A first-job coach for Vietnamese students and new graduates."
 
 export const LANDING_SUBHEAD =
-  "OpenCV is one workspace for your job search, with a coach beside you. You write your CV with the coach, then track each application and share one page of your work."
+  "OpenCV is a coach with a CV editor, an application board and a public page for your work. You write the CV with the coach, then send each application and track every answer."
 
 export const LANDING_OBJECTION =
   "Answers come from your CV and goals, and you edit every line."
@@ -31,49 +31,51 @@ export type LandingSurface = {
 export const LANDING_HERO_SHOT: Shot = {
   src: "/landing/coach.webp",
   mobileSrc: "/landing/coach-mobile.webp",
-  width: 1600,
-  height: 573,
+  width: 1440,
+  height: 705,
   mobileWidth: 780,
-  mobileHeight: 820,
-  alt: "A Coach thread. Linh, a student, asks for help preparing for a product intern interview, and the Coach checks her Apply cards and replies with a next step.",
+  mobileHeight: 900,
+  displayWidth: 960,
+  alt: "A Coach thread. Linh, a student, asks which role to apply for first, and the Coach checks her Apply cards and names one, citing her CV.",
 }
 
 export const LANDING_SURFACES: readonly LandingSurface[] = [
   {
     id: "coach",
     label: "Coach",
-    title: "Ask about the role you want.",
-    body: "First, name the job you want. The coach answers from your own CV and goals and ends with a next step.",
+    title: "Find the role to apply for.",
+    body: "First, pick one job: the coach names it from your CV and goals and files it on your board. Every move shows a receipt you can undo.",
     shot: {
-      src: "/landing/coach-home.webp",
-      mobileSrc: "/landing/coach-home-mobile.webp",
-      width: 1600,
-      height: 640,
+      src: "/landing/coach-act.webp",
+      mobileSrc: "/landing/coach-act-mobile.webp",
+      width: 1440,
+      height: 600,
       mobileWidth: 780,
-      mobileHeight: 1080,
-      alt: "OpenCV Home for Linh Tran, a student. The Coach asks what she is aiming for and offers prompts such as Prep interview and Draft cover letter.",
+      mobileHeight: 900,
+      displayWidth: 960,
+      alt: "A Coach thread. Linh asks the Coach to move the Associate PM intern card to Prep, and the Coach shows a receipt with an Undo button.",
     },
   },
   {
     id: "paper",
     label: "Paper",
     title: "Write the CV beside the coach.",
-    body: "Then write your CV with a coach beside you. Tailor it to each role and export it.",
+    body: "Then send a CV written for that job. Pick a bullet, ask the coach to rewrite it, and edit the result.",
     shot: {
       src: "/landing/paper.webp",
       mobileSrc: "/landing/paper-mobile.webp",
       width: 1600,
-      height: 1000,
-      mobileWidth: 780,
-      mobileHeight: 1010,
-      alt: "The Paper editor with Linh Tran's CV open: a student summary and a campus product club role, with a template picker, Tailor for role and Export above the page.",
+      height: 1041,
+      mobileWidth: 790,
+      mobileHeight: 710,
+      alt: "The Paper editor with Linh Tran's CV open beside the Coach, which has rewritten a bullet about classmate interviews into a one-page product spec.",
     },
   },
   {
     id: "apply",
     label: "Apply",
     title: "Track every application.",
-    body: "Next, keep each job you apply for on one board. Move cards from first look to final answer.",
+    body: "Next, see where each application stands: Inbox, Prep, Sent, Live or Closed. Move cards as answers arrive.",
     shot: {
       src: "/landing/apply.webp",
       mobileSrc: "/landing/apply-mobile.webp",
@@ -81,14 +83,14 @@ export const LANDING_SURFACES: readonly LandingSurface[] = [
       height: 467,
       mobileWidth: 760,
       mobileHeight: 440,
-      alt: "The Apply board with an Associate PM intern job in Inbox and a Business analyst intern job in Prep, beside the Sent, Live and Closed columns.",
+      alt: "The Apply board with a Business analyst intern job in Inbox, an Associate PM intern job in Prep and a UX research intern job in Sent.",
     },
   },
   {
     id: "pitch",
     label: "Pitch",
     title: "Share one page of your work.",
-    body: "Last, turn your best work into one page. Send the link with every application.",
+    body: "Last, show what a CV cannot: your projects, in one page you can link. Send it with every application.",
     shot: {
       src: "/landing/pitch.webp",
       mobileSrc: "/landing/pitch-mobile.webp",
@@ -97,12 +99,13 @@ export const LANDING_SURFACES: readonly LandingSurface[] = [
       mobileWidth: 780,
       mobileHeight: 1060,
       displayWidth: 720,
-      alt: "A public Pitch page for Linh Tran, a student aiming for a product intern role, with a status line, story highlights and an About section.",
+      alt: "A public Pitch page for Linh Tran, a student aiming for a product intern role, with an open-to-internships status, story highlights and an About section.",
     },
   },
 ]
 
-export const LANDING_CTA = "Your career, started. Free today."
+export const LANDING_CTA =
+  "Write the CV, send it, and keep every answer in one place. Free today."
 
 export const LANDING_TITLE =
   "OpenCV, a first-job coach for Vietnamese students and new graduates"

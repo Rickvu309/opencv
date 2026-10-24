@@ -25,7 +25,7 @@ describe("landing page", () => {
     )
     expect(
       screen.getByText(
-        "OpenCV is one workspace for your job search, with a coach beside you. You write your CV with the coach, then track each application and share one page of your work."
+        "OpenCV is a coach with a CV editor, an application board and a public page for your work. You write the CV with the coach, then send each application and track every answer."
       )
     ).toBeInTheDocument()
     expect(router.state.location.pathname).toBe("/")
@@ -43,7 +43,7 @@ describe("landing page", () => {
       document.head.querySelector('meta[name="description"]')
     ).toHaveAttribute(
       "content",
-      "OpenCV is one workspace for your job search, with a coach beside you. You write your CV with the coach, then track each application and share one page of your work."
+      "OpenCV is a coach with a CV editor, an application board and a public page for your work. You write the CV with the coach, then send each application and track every answer."
     )
   })
 
@@ -69,7 +69,7 @@ describe("landing page", () => {
     await renderLanding()
 
     const titles = [
-      "Coach. Ask about the role you want.",
+      "Coach. Find the role to apply for.",
       "Paper. Write the CV beside the coach.",
       "Apply. Track every application.",
       "Pitch. Share one page of your work.",
@@ -117,7 +117,9 @@ describe("landing page", () => {
   it("keeps the closing line as plain text with one primary action", async () => {
     await renderLanding()
 
-    const closing = screen.getByText("Your career, started. Free today.")
+    const closing = screen.getByText(
+      "Write the CV, send it, and keep every answer in one place. Free today."
+    )
     expect(closing.tagName).toBe("P")
     expect(closing.children).toHaveLength(0)
     expect(
