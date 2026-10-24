@@ -72,6 +72,9 @@ describe("Pitch craft pass", () => {
         0
       )
     ).toBe(1240)
+    expect(
+      screen.getByText(/contributions in the last year on GitHub/i)
+    ).toHaveTextContent("1240 contributions in the last year")
   })
 
   it("keeps one h1 on the screen and sets the person's name under it", async () => {

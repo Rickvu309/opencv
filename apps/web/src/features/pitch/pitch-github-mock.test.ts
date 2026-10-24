@@ -28,6 +28,8 @@ describe("pitch GitHub mock", () => {
     expect(mock.username).toBe(`${handle}-uit`)
     expect(mock.username).not.toMatch(/eric/i)
     expect(mock.profileUrl).toBe(`https://github.com/${mock.username}`)
-    expect(mock.totalLastYear).toBe(284)
+    expect(mock.totalLastYear).toBe(
+      MOCK_GITHUB_CONTRIBUTIONS.reduce((sum, day) => sum + day.count, 0)
+    )
   })
 })
