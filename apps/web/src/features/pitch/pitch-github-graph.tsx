@@ -7,18 +7,10 @@ import {
   ContributionGraphCalendar,
   ContributionGraphFooter,
   ContributionGraphLegend,
-} from "@workspace/ui/components/kibo-ui/contribution-graph/index"
+} from "@workspace/ui/components/contribution-graph"
 import { cn } from "@workspace/ui/lib/utils"
 
 import type { GithubContribution } from "@/features/pitch/pitch-github-mock.ts"
-
-const LEVEL_FILL = [
-  'data-[level="0"]:fill-muted',
-  'data-[level="1"]:fill-primary/25',
-  'data-[level="2"]:fill-primary/50',
-  'data-[level="3"]:fill-primary/75',
-  'data-[level="4"]:fill-primary',
-] as const
 
 const BLOCK_SIZE = 8
 const BLOCK_MARGIN = 2
@@ -26,11 +18,10 @@ const FONT_SIZE = 12
 
 type Props = {
   contributions: GithubContribution[]
-  total?: number
   className?: string
 }
 
-export function PitchGithubHeatmap({ contributions, total, className }: Props) {
+export function PitchGithubHeatmap({ contributions, className }: Props) {
   if (contributions.length === 0) {
     return (
       <div
@@ -44,7 +35,7 @@ export function PitchGithubHeatmap({ contributions, total, className }: Props) {
     )
   }
 
-  const count = total ?? contributions.reduce((sum, day) => sum + day.count, 0)
+  const count = contributions.reduce((sum, day) => sum + day.count, 0)
 
   return (
     <ContributionGraph
@@ -67,31 +58,13 @@ export function PitchGithubHeatmap({ contributions, total, className }: Props) {
             activity={activity}
             dayIndex={dayIndex}
             weekIndex={weekIndex}
-            className={LEVEL_FILL.join(" ")}
           >
             <title>{`${activity.count} contribution${activity.count === 1 ? "" : "s"} on ${activity.date}`}</title>
           </ContributionGraphBlock>
         )}
       </ContributionGraphCalendar>
       <ContributionGraphFooter>
-        <ContributionGraphLegend>
-          {({ level }) => (
-            <svg
-              width={BLOCK_SIZE}
-              height={BLOCK_SIZE}
-              aria-hidden
-              className="shrink-0"
-            >
-              <rect
-                width={BLOCK_SIZE}
-                height={BLOCK_SIZE}
-                rx={2}
-                data-level={level}
-                className={cn("stroke-border", LEVEL_FILL.join(" "))}
-              />
-            </svg>
-          )}
-        </ContributionGraphLegend>
+        <ContributionGraphLegend />
       </ContributionGraphFooter>
     </ContributionGraph>
   )

@@ -453,7 +453,6 @@ export function GithubSection({
 
         <PitchGithubHeatmap
           contributions={MOCK_GITHUB_CONTRIBUTIONS}
-          total={mock.totalLastYear}
           className="mt-3"
         />
 

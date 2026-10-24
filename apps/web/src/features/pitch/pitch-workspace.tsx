@@ -256,7 +256,10 @@ export function PitchWorkspace() {
             )}
           >
             {!profile.published ? (
-              <Alert className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+              <Alert
+                role="status"
+                className="mb-6 flex flex-col items-start gap-3 has-[>svg]:grid-cols-none has-[>svg]:gap-x-3 sm:flex-row sm:items-center *:[svg]:translate-y-0"
+              >
                 <EyeOff className="shrink-0" />
                 <AlertDescription className="min-w-0 flex-1 text-foreground">
                   This page is <strong>unpublished</strong>. Only you can see it

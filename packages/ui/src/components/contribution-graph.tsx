@@ -61,6 +61,14 @@ const DEFAULT_MONTH_LABELS = [
   "Dec",
 ]
 
+const LEVEL_FILL = [
+  'data-[level="0"]:fill-muted',
+  'data-[level="1"]:fill-primary/25',
+  'data-[level="2"]:fill-primary/50',
+  'data-[level="3"]:fill-primary/75',
+  'data-[level="4"]:fill-primary',
+]
+
 const DEFAULT_LABELS: Labels = {
   months: DEFAULT_MONTH_LABELS,
   weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
@@ -291,6 +299,7 @@ export const ContributionGraph = ({
       }}
     >
       <div
+        data-slot="contribution-graph"
         className={cn("flex w-max max-w-full flex-col gap-2", className)}
         style={{ fontSize, ...style }}
         {...props}
@@ -323,14 +332,8 @@ export const ContributionGraphBlock = ({
 
   return (
     <rect
-      className={cn(
-        'data-[level="0"]:fill-muted',
-        'data-[level="1"]:fill-muted-foreground/20',
-        'data-[level="2"]:fill-muted-foreground/40',
-        'data-[level="3"]:fill-muted-foreground/60',
-        'data-[level="4"]:fill-muted-foreground/80',
-        className
-      )}
+      data-slot="contribution-graph-block"
+      className={cn(...LEVEL_FILL, className)}
       data-count={activity.count}
       data-date={activity.date}
       data-level={activity.level}
@@ -374,6 +377,7 @@ export const ContributionGraphCalendar = ({
 
   return (
     <div
+      data-slot="contribution-graph-calendar"
       className={cn("max-w-full overflow-x-auto overflow-y-hidden", className)}
       {...props}
     >
@@ -422,6 +426,7 @@ export const ContributionGraphFooter = ({
   ...props
 }: ContributionGraphFooterProps) => (
   <div
+    data-slot="contribution-graph-footer"
     className={cn(
       "flex flex-wrap gap-1 whitespace-nowrap sm:gap-x-4",
       className
@@ -449,7 +454,11 @@ export const ContributionGraphTotalCount = ({
   }
 
   return (
-    <div className={cn("text-muted-foreground", className)} {...props}>
+    <div
+      data-slot="contribution-graph-total-count"
+      className={cn("text-muted-foreground", className)}
+      {...props}
+    >
       {labels.totalCount
         ? labels.totalCount
             .replace("{{count}}", String(totalCount))
@@ -475,6 +484,7 @@ export const ContributionGraphLegend = ({
 
   return (
     <div
+      data-slot="contribution-graph-legend"
       className={cn("ml-auto flex items-center gap-[3px]", className)}
       {...props}
     >
@@ -488,14 +498,7 @@ export const ContributionGraphLegend = ({
           <svg height={blockSize} key={level} width={blockSize}>
             <title>{`${level} contributions`}</title>
             <rect
-              className={cn(
-                "stroke-border stroke-[1px]",
-                'data-[level="0"]:fill-muted',
-                'data-[level="1"]:fill-muted-foreground/20',
-                'data-[level="2"]:fill-muted-foreground/40',
-                'data-[level="3"]:fill-muted-foreground/60',
-                'data-[level="4"]:fill-muted-foreground/80'
-              )}
+              className={cn("stroke-border stroke-[1px]", ...LEVEL_FILL)}
               data-level={level}
               height={blockSize}
               rx={blockRadius}
