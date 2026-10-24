@@ -95,32 +95,20 @@ export function PaperDrive({
 
       <div className="min-h-0 flex-1 overflow-auto p-6">
         <div className="overflow-hidden rounded-lg border border-border bg-background">
+          {loadFailed && !isLoading ? <LoadError onReload={onReload} /> : null}
           <div className="overflow-x-auto">
             {isLoading ? (
               <DriveLoading />
-            ) : loadFailed ? (
-              <div className="flex flex-col items-start gap-3 px-4 py-8">
-                <ErrorBanner variant="inline">
-                  Couldn&apos;t load your CVs, Letters and Proof. Check your
-                  connection, then try again.
-                </ErrorBanner>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={onReload}
-                >
-                  Retry
-                </Button>
-              </div>
             ) : docs.length === 0 ? (
-              <Empty className="py-8">
-                <EmptyDescription>
-                  {query.trim()
-                    ? "No documents match that search."
-                    : "No documents yet. Create a CV, Letter, or Proof to start."}
-                </EmptyDescription>
-              </Empty>
+              loadFailed ? null : (
+                <Empty className="py-8">
+                  <EmptyDescription>
+                    {query.trim()
+                      ? "No documents match that search."
+                      : "No documents yet. Create a CV, Letter, or Proof to start."}
+                  </EmptyDescription>
+                </Empty>
+              )
             ) : (
               <table className={`w-full ${TABLE_WIDTH} text-left text-sm`}>
                 <thead>
@@ -229,6 +217,20 @@ function DriveLoading() {
           </div>
         ))}
       </div>
+    </div>
+  )
+}
+
+function LoadError({ onReload }: { onReload: () => void }) {
+  return (
+    <div className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3 last:border-b-0">
+      <ErrorBanner variant="inline">
+        Couldn&apos;t load your CVs, Letters and Proof. Check your connection,
+        then try again.
+      </ErrorBanner>
+      <Button type="button" variant="outline" size="sm" onClick={onReload}>
+        Retry
+      </Button>
     </div>
   )
 }

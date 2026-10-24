@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react"
 import { STARTER_CV_NAME } from "@workspace/domain"
 import { paperQueryKeys } from "@/features/paper/paper-api.ts"
@@ -174,6 +174,10 @@ describe("Paper list beside the docked Coach", () => {
   })
 })
 
+afterEach(() => {
+  vi.useRealTimers()
+})
+
 describe("Paper Coach suggestions", () => {
   it("treats the person's own edit as accepting the suggestion", async () => {
     const { queryClient } = renderPaper()
@@ -205,6 +209,7 @@ describe("Paper Coach suggestions", () => {
     const editor = await openDoc("PM track CV")
     const summary = within(editor).getByRole("textbox", { name: "Summary" })
     expect(summary).toHaveTextContent(original)
+    vi.useFakeTimers({ shouldAdvanceTime: true })
 
     coachWrites(queryClient)
     expect(serverSummary()).toBe("Coach version of the summary")
@@ -215,7 +220,9 @@ describe("Paper Coach suggestions", () => {
     expect(bar).toHaveTextContent("Coach changed Summary.")
     expect(within(bar).getByRole("button", { name: "Keep" })).toBeEnabled()
     expect(summary).toHaveClass("paper-coach-suggested")
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    act(() => {
+      vi.advanceTimersByTime(1500)
+    })
     expect(summary).toHaveClass("paper-coach-suggested")
 
     fireEvent.click(

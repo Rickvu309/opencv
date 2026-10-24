@@ -194,6 +194,10 @@ export const CoachFloat = memo(function CoachFloat({
   }, [floatState])
 
   useEffect(() => {
+    if (floatState === "open" && !isDesktop) dialogRef.current?.focus()
+  }, [floatState, isDesktop])
+
+  useEffect(() => {
     if (floatState !== "closed" || !returnFocusRef.current) return
     returnFocusRef.current = false
     const pill = document.querySelector<HTMLElement>("[data-coach-float-pill]")

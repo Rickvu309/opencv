@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest"
-import { fireEvent, screen, within } from "@testing-library/react"
+import { fireEvent, screen, waitFor, within } from "@testing-library/react"
 import { STARTER_CV_NAME } from "@workspace/domain"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
+import { paperQueryKeys } from "@/features/paper/paper-api.ts"
 import { failPaperList } from "@/test/paper-api-mock.ts"
 import {
   installPaperTestLifecycle,
@@ -35,6 +36,22 @@ describe("Paper list that fails to load", () => {
     )
     await expectPaperDrive()
     expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+  })
+})
+
+describe("Paper list that fails to refresh", () => {
+  it("keeps the rows that already loaded and shows the error line with Retry", async () => {
+    const { queryClient } = renderPaper()
+    await expectPaperDrive()
+
+    failPaperList()
+    await queryClient
+      .invalidateQueries({ queryKey: paperQueryKeys.all })
+      .catch(() => undefined)
+    expect(await screen.findByRole("alert")).toHaveTextContent(/couldn.t load/i)
+    expect(screen.getByText("PM track CV")).toBeInTheDocument()
+    expect(screen.getByRole("table")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument()
   })
 })
 
@@ -72,6 +89,7 @@ describe("Paper Coach on a phone", () => {
     const dialog = await openCoach()
     expect(column).not.toBeVisible()
     expect(dialog).toBeVisible()
+    expect(dialog).toHaveFocus()
     expect(
       within(dialog).queryByRole("button", { name: "Minimize" })
     ).toBeNull()
@@ -79,5 +97,8 @@ describe("Paper Coach on a phone", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Close" }))
     expect(screen.queryByRole("dialog", { name: "Coach" })).toBeNull()
     expect(column).toBeVisible()
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Coach" })).toHaveFocus()
+    })
   })
 })

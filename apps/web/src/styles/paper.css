@@ -169,6 +169,17 @@
     outline-offset: -1px;
   }
 
+  /*
+   * Kit buttons fade every property, box-shadow included, so the focus ring
+   * is not there on the first frame. Paper controls show it at once.
+   */
+  [data-paper-editor] button,
+  [data-coach-float-card] button,
+  button[data-coach-float-pill] {
+    transition-property:
+      color, background-color, border-color, opacity, translate;
+  }
+
   .paper-coach-suggested {
     border-radius: var(--radius-sm);
     background-color: var(--muted);
