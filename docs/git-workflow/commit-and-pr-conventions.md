@@ -51,13 +51,13 @@ That links the PR to the issue and closes the issue when the PR merges into `mai
 
 There is no GitHub Actions CI. The same checks run locally at these points:
 
-| When | What runs | What it enforces |
-|---|---|---|
-| `git commit` | `commit-msg` hook | No commits on `main`; no empty message |
-| `git commit` | `pre-commit` hook | No staged file over 5000 tokens (bytes / 4), except binary and `linguist-generated` files |
-| `git push` | `pre-push` hook | No push to `main`; branch name format; `scripts/check.sh --changed` (quick lint, typecheck, test of what changed) |
-| `scripts/open-pr.sh` | itself | Branch name, `scripts/check.sh --changed`, correct title and `Closes #` |
-| Review | `scripts/review-pr.sh` | Branch, title, `Closes #`, issue open, up to date with `main`, full `scripts/check.sh` in a clean worktree (the one full run per PR), mass deletion and `needs-human-review` (human required), committed env files |
+| When                 | What runs              | What it enforces                                                                                                                                                                                                   |
+| -------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `git commit`         | `commit-msg` hook      | No commits on `main`; no empty message                                                                                                                                                                             |
+| `git commit`         | `pre-commit` hook      | No staged file over 5000 tokens (bytes / 4), except binary and `linguist-generated` files                                                                                                                          |
+| `git push`           | `pre-push` hook        | No push to `main`; branch name format; `scripts/check.sh --changed` (quick lint, typecheck, test of what changed)                                                                                                  |
+| `scripts/open-pr.sh` | itself                 | Branch name, `scripts/check.sh --changed`, correct title and `Closes #`                                                                                                                                            |
+| Review               | `scripts/review-pr.sh` | Branch, title, `Closes #`, issue open, up to date with `main`, full `scripts/check.sh` in a clean worktree (the one full run per PR), mass deletion and `needs-human-review` (human required), committed env files |
 
 Hooks are on once `git config core.hooksPath .githooks` is set in the clone (`scripts/new-task.sh` does it).
 
