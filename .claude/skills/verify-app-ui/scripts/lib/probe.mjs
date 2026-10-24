@@ -260,14 +260,23 @@ function probe() {
   // Colors: every text, fill and border color against the token palette (raw hex shows as a non-token rgb).
   const tokenRgb = []
   const names = new Set()
+  // Design tokens are the semantic variables (--background, --primary, --chart-1 ...) from the
+  // :root block, plus .dark only when the page is dark. Tailwind emits every palette variable a class
+  // uses into :root too (--color-red-600, --color-black); those are not design tokens.
+  const PALETTE =
+    /^--color-(black|white|(red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone|taupe|mauve|mist|olive)(-\d+)?)$/
+  const dark = document.documentElement.classList.contains("dark")
   const scan = (rules) => {
     for (const rule of rules) {
       if (rule.cssRules && !rule.style) scan(rule.cssRules)
-      else if (
-        rule.style &&
-        /(^|,)\s*(:root|\.dark|html)/.test(rule.selectorText ?? "")
-      ) {
-        for (const n of rule.style) if (n.startsWith("--")) names.add(n)
+      else if (rule.style) {
+        const sel = rule.selectorText ?? ""
+        const hit =
+          /(^|,)\s*(:root|html)\b/.test(sel) ||
+          (dark && /(^|,)\s*\.dark\b/.test(sel))
+        if (!hit) continue
+        for (const n of rule.style)
+          if (n.startsWith("--") && !PALETTE.test(n)) names.add(n)
       }
     }
   }
@@ -295,7 +304,7 @@ function probe() {
     for (const [kind, css] of list) {
       const c = rgba(css)
       if (c[3] === 0) continue
-      if (tokenRgb.some((t) => near(t, c, 6))) continue
+      if (tokenRgb.some((t) => near(t, c, c[3] < 1 ? 12 : 6))) continue
       if (c[0] === 0 && c[1] === 0 && c[2] === 0 && c[3] < 1) continue
       const key = `${kind} rgb(${c[0]},${c[1]},${c[2]})`
       rawColors[key] = (rawColors[key] ?? 0) + 1
@@ -404,6 +413,9 @@ function probe() {
         .map((n) => ({
           ariaHidden: n.getAttribute("aria-hidden") === "true",
           text: clean(n.textContent),
+          named: Boolean(
+            n.getAttribute("aria-label") || n.getAttribute("aria-labelledby")
+          ),
           ...rect(n),
         }))
     : null
@@ -414,9 +426,12 @@ function probe() {
     return {
       h: Math.round(c.getBoundingClientRect().height),
       titleLines: p ? Math.round(p.getBoundingClientRect().height / lh) : 0,
-      text: clean(c.textContent).slice(0, 80),
+      text: clean(c.textContent).slice(0, 300),
     }
   })
+  out.emptyStates = visible.filter((e) =>
+    e.matches('[data-slot="empty"]')
+  ).length
   out.rows = [...document.querySelectorAll("tbody tr, [role=row]")]
     .filter(shown)
     .map((r) => Math.round(r.getBoundingClientRect().height))
@@ -507,6 +522,17 @@ function probe() {
         r.width * r.height < innerWidth * innerHeight * 0.6
       )
         panel = n
+    }
+    if (!panel && out.h1Rect) {
+      // An in-flow side pane: the widest ancestor of the composer that does not hold the h1.
+      const main = document.querySelector("main")
+      for (
+        let n = composer.parentElement;
+        n && n !== main && n !== document.body && !n.contains(h1s[0]);
+        n = n.parentElement
+      ) {
+        if (n.getBoundingClientRect().width < innerWidth * 0.6) panel = n
+      }
     }
     if (panel) {
       const pr = panel.getBoundingClientRect()

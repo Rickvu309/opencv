@@ -35,6 +35,15 @@ const taken = (port) =>
 
 const run = `app-ui-${process.pid}`
 let browser = null
+const bail = (code) => async () => {
+  try {
+    if (browser) await browser.quit()
+  } catch {}
+  stopStack(run)
+  process.exit(code)
+}
+process.on("SIGINT", bail(130))
+process.on("SIGTERM", bail(143))
 let exit = 0
 try {
   for (const port of [base, base + 1]) {

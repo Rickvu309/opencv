@@ -29,6 +29,26 @@ test("nouns: job, email, document and profile are flagged", () => {
   )
 })
 
+test("nouns: the exemption is only for short goal chips and the connector row", () => {
+  const found = nounViolations([
+    "Drop a dream job here",
+    "Add a summer job",
+    "Paste your first job posting",
+    "Connect email to send this job",
+    "Connect email, optional",
+    "A café or part-time job",
+  ])
+  assert.deepEqual(
+    [...new Set(found.map((f) => f.label))],
+    [
+      "Drop a dream job here",
+      "Add a summer job",
+      "Paste your first job posting",
+      "Connect email to send this job",
+    ]
+  )
+})
+
 test("empty action labels", () => {
   assert.deepEqual(
     emptyActionLabels(["Learn more", "More", "Add opportunity"]),
@@ -38,6 +58,7 @@ test("empty action labels", () => {
 
 test("other product names", () => {
   assert.deepEqual(otherProductNames("like Instagram Stories"), ["Instagram"])
+  assert.deepEqual(otherProductNames("like Twitter"), ["Twitter"])
   assert.deepEqual(otherProductNames("Tap a highlight to play it."), [])
 })
 
@@ -46,6 +67,7 @@ test("metric claims and basis", () => {
     "18%",
     "add-to-cart",
   ])
+  assert.deepEqual(metricClaims("lift 18 percent"), ["18 percent"])
   assert.deepEqual(metricClaims("Shipped a checkout redesign"), [])
   assert.equal(hasBasisSentence("82% because your CV lists React"), true)
   assert.equal(hasBasisSentence("82%"), false)

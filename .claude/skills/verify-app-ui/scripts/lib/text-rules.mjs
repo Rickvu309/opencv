@@ -9,13 +9,18 @@ const BANNED_NOUNS = [
   [/\bdocuments?\b/i, "document (say CV, Letter or Proof)"],
   [/\bprofile\b/i, "profile (say Pitch)"],
 ]
-// "A café or part-time job" and "A first full-time job" are the person's goal, not the Opportunity object.
+// "A café or part-time job" and "A first full-time job" are goal chips, not the Opportunity object: a short
+// label that starts with A or An. "Connect email, optional" is the mail connector row, and the account menu label "<name>, profile and settings". Nothing else is exempt.
 const EMPLOYMENT_SENSE =
   /\b(part-time|full-time|first|dream|summer)\s+jobs?\b/gi
+const GOAL_CHIP = /^an?\s/i
+const CONNECTOR = /^(connect email(, optional)?|.+, profile and settings)$/i
 export function nounViolations(labels) {
   const out = []
   for (const label of labels) {
-    const text = label.replace(EMPLOYMENT_SENSE, "")
+    if (CONNECTOR.test(label.trim())) continue
+    const chip = GOAL_CHIP.test(label) && label.split(/\s+/).length <= 6
+    const text = chip ? label.replace(EMPLOYMENT_SENSE, "") : label
     for (const [re, why] of BANNED_NOUNS) {
       if (re.test(text)) out.push({ label, why })
     }
@@ -34,15 +39,17 @@ export function emptyActionLabels(labels) {
 
 // 05. Another product's name in this product's chrome.
 export function otherProductNames(text) {
-  return [...text.matchAll(/instagram|tiktok|snapchat|facebook/gi)].map(
-    (m) => m[0]
-  )
+  return [
+    ...text.matchAll(
+      /instagram|tiktok|snapchat|facebook|twitter|youtube|pinterest|whatsapp|linktree/gi
+    ),
+  ].map((m) => m[0])
 }
 
 // 07 and 13. A percentage or a metric claim with no stated basis.
 export function metricClaims(text) {
   return [
-    ...text.matchAll(/\d+(?:\.\d+)?\s?%/g),
+    ...text.matchAll(/\d+(?:\.\d+)?\s?(?:%|percent\b)/gi),
     ...text.matchAll(/add-to-cart/gi),
   ].map((m) => m[0])
 }

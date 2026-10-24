@@ -1,7 +1,9 @@
 // Drives one signed-in tour of the app and returns the raw measurements. It decides nothing.
 // Signs up a throwaway account through the api (the starter workspace seeds a CV, four Apply cards,
 // a sample Pitch and a welcome Thread), then visits Home, a Thread, the Search palette, Paper (list and
-// open CV with the Coach float), Apply and Pitch. Scenario pages answer or hold one api call each.
+// open CV with the Coach float), Apply and Pitch (with a story open and the edit bar). Scenario pages
+// make an api call fail or wait, and the last one deletes the Apply cards through the api.
+// A step that does not happen throws (exit 2); it is never counted as a pass.
 import { probeSource } from "./probe.mjs"
 
 const ROUTES = {
@@ -13,11 +15,17 @@ const ROUTES = {
   apply: ["/app/apply", "document.querySelector('[data-card-id]')"],
   pitch: ["/app/pitch", "document.querySelector('h1')"],
 }
+// Also listed under "Constants the checks assume" in SKILL.md.
 const PRIMARY = {
   home: /Message Coach|^Send$/,
   paper: /^(New document|Make mine)$/,
   apply: /^Add /,
   pitch: /^(Edit|Publish)/,
+}
+const STAGES =
+  "['Inbox','Prep','Sent','Live','Closed'].every((w) => new RegExp('\\\\b' + w + '\\\\b').test(document.body.innerText))"
+const must = (ok, what) => {
+  if (!ok) throw new Error(`tour step did not happen: ${what}`)
 }
 const clickByText = (page, selector, text) =>
   page.evaluate(`(() => {
@@ -57,6 +65,18 @@ export async function runTour({ browser, webUrl, apiUrl, shots }) {
   const shot = (page, name) =>
     shots ? page.screenshot(`${shots}/${name}.png`, false) : null
   const snap = (page) => page.evaluate(probeSource)
+  const send = async (page, text) => {
+    must(
+      await page.waitFor("document.querySelector('textarea')", 15000),
+      "the composer did not render"
+    )
+    await typeInto(page, text)
+    await page.sleep(300)
+    must(
+      await clickByText(page, "button", "Send"),
+      "the Send button was not found"
+    )
+  }
 
   const a = await browser.openPage({
     width: 1440,
@@ -71,7 +91,7 @@ export async function runTour({ browser, webUrl, apiUrl, shots }) {
     method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ name: 'Live Check', email: 'tour-' + Date.now() + '@verify.local', password: 'Probe-pass-123' }),
   }).then((r) => r.status)`)
-  if (status !== 200) throw new Error(`sign-up returned ${status}`)
+  must(status === 200, `sign-up returned ${status}`)
 
   const visit = async (key) => {
     const [path, ready] = ROUTES[key]
@@ -84,50 +104,87 @@ export async function runTour({ browser, webUrl, apiUrl, shots }) {
   for (const key of Object.keys(ROUTES)) await visit(key)
 
   for (const key of ["home", "paper", "apply", "pitch"]) {
-    if (!(await visit(key)))
-      throw new Error(`${key} did not render at ${ROUTES[key][0]}`)
+    must(await visit(key), `${key} did not render at ${ROUTES[key][0]}`)
     d.tabs[key] = await tabWalk(a, key)
     await a.sleep(1200)
     d[key] = await snap(a)
     await shot(a, `desktop-${key}`)
     if (key === "home") {
       await a.key("k", { ctrl: true })
-      await a.waitFor("document.querySelector('[role=dialog]')", 4000)
+      must(
+        await a.waitFor("document.querySelector('[role=dialog]')", 4000),
+        "Ctrl-K did not open a dialog"
+      )
       await a.sleep(500)
       d.palette = await snap(a)
       await a.key("Escape")
       await a.sleep(300)
-      await typeInto(a, "Review my CV")
-      await a.sleep(300)
-      await clickByText(a, "button", "Send")
-      await a.waitFor("document.body.innerText.includes('Listed your')", 10000)
+      await send(a, "Review my CV")
+      must(
+        await a.waitFor(
+          "document.body.innerText.includes('Listed your')",
+          10000
+        ),
+        "the scripted Coach turn did not finish"
+      )
       await a.sleep(800)
       d.thread = await snap(a)
       await shot(a, "desktop-thread")
     }
     if (key === "paper") {
-      await clickByText(a, "tr, a, button, [role=row]", "Sample internship CV")
-      await a.waitFor("document.querySelector('h1')", 10000)
+      must(
+        await clickByText(
+          a,
+          "tr, a, button, [role=row]",
+          "Sample internship CV"
+        ),
+        "the sample CV row was not found"
+      )
+      must(
+        await a.waitFor("document.querySelector('h1')", 10000),
+        "the CV did not open"
+      )
       await a.sleep(1500)
       d.cv = await snap(a)
       await shot(a, "desktop-paper-cv")
-      await clickByText(a, "button", "Coach")
-      await a.waitFor("document.querySelector('textarea')", 6000)
+      must(
+        await clickByText(a, "button", "Coach"),
+        "the Coach button was not found"
+      )
+      must(
+        await a.waitFor("document.querySelector('textarea')", 6000),
+        "the Coach float did not open"
+      )
       await a.sleep(1200)
       d.cvCoach = await snap(a)
       await shot(a, "desktop-paper-cv-coach")
     }
     if (key === "pitch") {
-      await clickByText(a, "button", "Edit profile")
-      await a.waitFor(
-        "[...document.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Publish')",
-        5000
+      must(
+        await clickByText(a, "button", "Checkout highlight"),
+        "the Checkout highlight was not found"
+      )
+      await a.sleep(1000)
+      d.pitchStory = await snap(a)
+      await shot(a, "desktop-pitch-story")
+      await a.key("Escape")
+      await a.sleep(500)
+      must(
+        await clickByText(a, "button", "Edit profile"),
+        "Edit profile was not found"
+      )
+      must(
+        await a.waitFor(
+          "[...document.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Publish')",
+          5000
+        ),
+        "the Pitch edit bar did not open"
       )
       await a.sleep(600)
       d.pitchEdit = await snap(a)
     }
   }
-  d.logs = a.logs.splice(0)
+  d.logs.push(...a.logs.splice(0))
   await a.close()
 
   const b = await browser.openPage({
@@ -136,17 +193,6 @@ export async function runTour({ browser, webUrl, apiUrl, shots }) {
     mobile: false,
     reducedMotion: false,
   })
-  b.setIntercept((r) =>
-    r.method === "GET" && new URL(r.url).pathname === "/api/apply"
-      ? { status: 200, body: { ok: true, data: [] } }
-      : null
-  )
-  await b.goto(`${webUrl}/app/apply`)
-  await b.waitFor("document.body.innerText.includes('Inbox')", 15000)
-  await b.sleep(1000)
-  d.applyEmpty = await snap(b)
-  await shot(b, "desktop-apply-empty")
-
   b.setIntercept((r) =>
     r.method === "GET" && new URL(r.url).pathname === "/api/paper"
       ? "hold"
@@ -158,9 +204,11 @@ export async function runTour({ browser, webUrl, apiUrl, shots }) {
   b.setIntercept(null)
   await b.release()
 
-  b.setIntercept((r) =>
+  const coachCall = (r) =>
     r.method === "POST" &&
     /\/api\/threads\/[^/]+\/coach$/.test(new URL(r.url).pathname)
+  b.setIntercept((r) =>
+    coachCall(r)
       ? {
           status: 404,
           body: {
@@ -171,17 +219,19 @@ export async function runTour({ browser, webUrl, apiUrl, shots }) {
       : null
   )
   await b.goto(`${webUrl}/app`)
-  await b.waitFor("document.querySelector('textarea')", 15000)
-  await typeInto(b, "hello")
-  await b.sleep(300)
-  await clickByText(b, "button", "Send")
-  await b.waitFor(
-    "document.body.innerText.includes('Retry') || document.body.innerText.includes('not found')",
-    8000
-  )
+  await send(b, "hello")
+  await b.waitFor("document.querySelector('[role=alert]')", 8000)
   await b.sleep(800)
   d.coachError = await snap(b)
   await shot(b, "desktop-coach-error")
+
+  b.setIntercept((r) => (coachCall(r) ? "fail" : null))
+  await b.goto(`${webUrl}/app`)
+  await send(b, "hello again")
+  await b.waitFor("document.querySelector('[role=alert]')", 8000)
+  await b.sleep(800)
+  d.coachNet = await snap(b)
+  b.setIntercept(null)
   await b.close()
 
   const r = await browser.openPage({
@@ -193,10 +243,14 @@ export async function runTour({ browser, webUrl, apiUrl, shots }) {
   d.reduced = {}
   for (const key of Object.keys(ROUTES)) {
     await r.goto(`${webUrl}${ROUTES[key][0]}`)
-    await r.waitFor(ROUTES[key][1], 20000)
+    must(
+      await r.waitFor(ROUTES[key][1], 20000),
+      `${key} did not render (reduced motion)`
+    )
     await r.sleep(1200)
     d.reduced[key] = await snap(r)
   }
+  d.logs.push(...r.logs.splice(0))
   await r.close()
 
   const m = await browser.openPage({
@@ -208,11 +262,49 @@ export async function runTour({ browser, webUrl, apiUrl, shots }) {
   d.mobile = {}
   for (const key of Object.keys(ROUTES)) {
     await m.goto(`${webUrl}${ROUTES[key][0]}`)
-    await m.waitFor(ROUTES[key][1], 20000)
+    must(
+      await m.waitFor(ROUTES[key][1], 20000),
+      `${key} did not render at 390px`
+    )
     await m.sleep(1200)
     d.mobile[key] = await snap(m)
     await shot(m, `mobile-${key}`)
   }
+  d.logs.push(...m.logs.splice(0))
   await m.close()
+
+  // Last, because it deletes the seeded cards through the api to reach the zero-card state.
+  const e = await browser.openPage({
+    width: 1440,
+    height: 900,
+    mobile: false,
+    reducedMotion: false,
+  })
+  await e.goto(`${webUrl}/app/apply`)
+  must(
+    await e.waitFor("document.querySelector('[data-card-id]')", 15000),
+    "the seeded board did not render"
+  )
+  const deleted = await e.evaluate(`(async () => {
+    const o = { credentials: 'include' }
+    const list = await (await fetch(${JSON.stringify(`${apiUrl}/api/apply`)}, o)).json()
+    let n = 0
+    for (const c of list.data) {
+      const res = await fetch(${JSON.stringify(`${apiUrl}/api/commands/apply.deleteCard`)}, { ...o, method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ cardId: c.id }) })
+      if (res.ok) n++
+    }
+    return { total: list.data.length, deleted: n }
+  })()`)
+  must(
+    deleted.total > 0 && deleted.deleted === deleted.total,
+    `deleting the seeded cards (${JSON.stringify(deleted)})`
+  )
+  await e.goto(`${webUrl}/app/apply`)
+  await e.waitFor(STAGES, 15000)
+  await e.sleep(1000)
+  d.applyEmpty = await snap(e)
+  d.applyEmpty.deleted = deleted
+  await shot(e, "desktop-apply-empty")
+  await e.close()
   return d
 }

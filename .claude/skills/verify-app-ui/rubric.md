@@ -36,7 +36,7 @@ J4 The starter data tells the right story. 0: a stranger, stock photos, an inven
 J5 Copy is specific, plain and uses one noun per object. 0: two words for one object (job and opportunity, profile and Pitch, document and CV), or a label that would fit any product. 2: one noun per object and every label names what it does.
 J6 The work comes first and chrome recedes, with one primary action per view. 0: summary cards, disabled controls or a floating panel sit above or over the work, and two buttons look equally important. 2: the work fills the view, supporting controls are quiet, one button is primary.
 J7 Visual quiet. 0: decorative color, gradients or dark tiles compete with the one action. 2: grey, whitespace and type carry the hierarchy and color only means a status.
-J8 Motion restraint. You cannot see motion in a still. Score it from layout and copy: 0 if something probably arrives late or decorated, 2 if everything reads as present at first paint. If you cannot tell, score 1 and say so.
+J8 Motion restraint. You cannot see motion in a still. Score it from layout and copy: 0 if something probably arrives late or decorated, 2 if nothing in the stills suggests late or decorated motion and everything reads as present at first paint. Say so when the still gives no evidence.
 J9 The four surfaces work at 390x844. 0: content is cut off, controls are too small to tap, or a surface is unreachable. 2: all four surfaces are reachable and readable with room to tap.
 J10 Failures say what happened and what to do. 0: the screen shows a raw system message such as "User not found." or a bare error with no next step. 2: it says in plain words what went wrong and offers a clear next step.
 

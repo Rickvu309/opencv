@@ -60,7 +60,12 @@ export function context(d) {
     d.cvCoach,
     d.apply,
     d.pitch,
+    d.pitchStory,
     d.pitchEdit,
+    d.coachError,
+    d.coachNet,
+    d.paperLoading,
+    d.applyEmpty,
   ]
   const files = featureFiles()
   const has = (re) => files.filter((f) => re.test(read(f))).map(rel)

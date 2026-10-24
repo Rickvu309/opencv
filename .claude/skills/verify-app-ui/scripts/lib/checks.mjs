@@ -45,13 +45,13 @@ export function runChecks(d) {
       Boolean(c.panelRect) && under.length === 0 && widest,
       c.panelRect
         ? `Coach panel ${c.panelPosition} ${c.panelRect.w}x${c.panelRect.h} covers ${under.length} text blocks (${list(under, 2)}); CV ${c.cvRect?.w}px wide`
-        : "no Coach panel found",
-      "with the Coach open, the CV is the widest region and the Coach covers none of its text"
+        : "no Coach panel or side pane found",
+      "with the Coach open, the CV is the widest region and the Coach (a floating panel or an in-flow side pane) covers none of its text"
     )
   )
 
   const words = ["Inbox", "Prep", "Sent", "Live", "Closed"].filter(
-    (w) => !new RegExp(`\\b${w}\\b`).test(d.apply.text)
+    (w) => !d.apply.stageDots.some((t) => t.includes(w))
   )
   const hs =
     d.apply.docScroll.sw > d.apply.docScroll.cw || d.apply.hScrollers.length > 0
@@ -61,7 +61,7 @@ export function runChecks(d) {
       "apply-five-stages-no-hscroll",
       words.length === 0 && !hs,
       `missing: ${words.join(" ") || "none"}; horizontal scroll: ${hs ? list(d.apply.hScrollers) || "page" : "none"}`,
-      "at 1440x900 Apply shows Inbox, Prep, Sent, Live and Closed without horizontal scrolling"
+      "at 1440x900 Apply shows Inbox, Prep, Sent, Live and Closed as visible column headers (found beside the stage dots) without horizontal scrolling"
     )
   )
 
@@ -123,7 +123,7 @@ export function runChecks(d) {
             )}`
           : ""
       }`,
-      "text is 4.5:1, or 3:1 at 24px (18.66px bold); text over images and gradients and disabled controls are skipped"
+      "text is 4.5:1, or 3:1 at 24px (18.66px bold); text over images and gradients, disabled controls, aria-hidden text and svg are skipped"
     )
   )
 
@@ -141,16 +141,19 @@ export function runChecks(d) {
     )
   )
 
-  const dots = (d.home.applyDots ?? []).filter((x) => x.ariaHidden && !x.text)
+  const found22 = d.home.applyDots !== null
+  const dots = (d.home.applyDots ?? []).filter((x) => !x.text && !x.named)
   r.push(
     result(
       "22",
       "apply-dot-count-or-absent",
-      dots.length === 0,
-      dots.length
-        ? `Apply nav has an aria-hidden dot ${dots[0].w}x${dots[0].h} with no count`
-        : "no always-on dot",
-      "the Apply nav dot is absent, or a count with an accessible name"
+      found22 && dots.length === 0,
+      !found22
+        ? "the Apply nav item was not found"
+        : dots.length
+          ? `Apply nav has a ${dots[0].w}x${dots[0].h} dot with no count and no accessible name${dots[0].ariaHidden ? " (aria-hidden)" : ""}`
+          : "no unnamed dot",
+      "the Apply nav dot is absent, or a count or a dot with an accessible name (an aria-hidden dot has none)"
     )
   )
 
@@ -172,17 +175,35 @@ export function runChecks(d) {
   const examples = allSnaps
     .flatMap((s) => s.durationSamples)
     .filter((x) => !["150ms", "280ms"].includes(x.k))
+  const srcMotion = []
+  for (const f of sourceFiles([
+    ...FEATURE_DIRS.map((x) => `apps/web/src/features/${x}`),
+    "apps/web/src/routes",
+  ])) {
+    for (const m of read(f).matchAll(
+      /\bduration-(\d+|fast|slow)\b|\bduration-\[(\d+)ms\]|\b(\d+)ms\b/g
+    )) {
+      const ms =
+        m[1] === "fast"
+          ? 100
+          : m[1] === "slow"
+            ? 200
+            : Number(m[1] ?? m[2] ?? m[3])
+      if (![0, 150, 280].includes(ms))
+        srcMotion.push(`${rel(f).split("/").pop()}: ${m[0]}`)
+    }
+  }
   r.push(
     result(
       "24",
       "motion-tokens",
-      Object.keys(dur).length === 0,
-      `off-token durations: ${
+      Object.keys(dur).length === 0 && srcMotion.length === 0,
+      `computed off-token durations: ${
         Object.entries(dur)
           .map(([k, n]) => `${k} x${n}`)
           .join(", ") || "none"
-      }${examples[0] ? ` e.g. ${examples[0].t}.${examples[0].c.slice(0, 40)}` : ""}`,
-      "every transition and animation runs 150ms or 280ms (looping spinners and skeletons skipped)"
+      }${examples[0] ? ` e.g. ${examples[0].t}.${examples[0].c.slice(0, 40)}` : ""}; in feature source: ${list([...new Set(srcMotion)], 3) || "none"}`,
+      "every transition and animation runs 150ms or 280ms, measured on the toured screens including an open Pitch story and as duration-N classes or Nms values in features and routes (looping spinners and skeletons skipped)"
     )
   )
 
@@ -193,8 +214,10 @@ export function runChecks(d) {
     ...(s.runningAnimations ? [`${k}:${s.runningAnimations} running`] : []),
     ...(s.scrollBehavior.includes("smooth") ? [`${k}:smooth scroll`] : []),
   ])
-  const pitchFiles = sourceFiles(["apps/web/src/features/pitch"]).filter((f) =>
-    /setInterval|requestAnimationFrame/.test(read(f))
+  const pitchFiles = sourceFiles(["apps/web/src/features/pitch"]).filter(
+    (f) =>
+      /stor|viewer/i.test(f.split("/").pop()) &&
+      /setInterval|setTimeout|requestAnimationFrame/.test(read(f))
   )
   const timers = pitchFiles.filter(
     (f) => !/prefers-reduced-motion|useReducedMotion|matchMedia/.test(read(f))
@@ -205,7 +228,7 @@ export function runChecks(d) {
       "reduced-motion",
       reducedBad.length === 0 && timers.length === 0,
       `with reduce: ${reducedBad.length ? list(reducedBad) : "no motion over 1ms"}; Pitch story timers without a reduced-motion guard: ${timers.length ? list(timers.map(rel), 2) : "none"}`,
-      "with prefers-reduced-motion nothing runs over 1ms, scroll is not smooth, and a Pitch loop (setInterval or requestAnimationFrame) checks the preference (source read)"
+      "with prefers-reduced-motion nothing runs over 1ms, scroll is not smooth, and a Pitch story or viewer file that uses setInterval, setTimeout or requestAnimationFrame checks the preference (source read of the file name and a guard string)"
     )
   )
 
@@ -275,7 +298,7 @@ export function runChecks(d) {
   const reject =
     [...d.cv.buttons, ...d.cvCoach.buttons].some((b) =>
       /reject/i.test(b.label)
-    ) || has(/\bReject\b/).length > 0
+    ) || has(/>\s*Reject\s*<|["'`]Reject["'`]/).length > 0
   r.push(
     result(
       "30",
@@ -320,7 +343,7 @@ export function runChecks(d) {
       "no-console-errors",
       logs.length === 0,
       logs.length ? `${logs.length}: ${list(logs, 2)}` : "none",
-      "the tour logs no console error, React warning, uncaught exception or failed load"
+      "the signed-in passes (desktop, reduced motion, 390px) log no console error, React warning, uncaught exception or failed load (the mocked scenario pages are not counted)"
     )
   )
 
@@ -393,7 +416,7 @@ export function runChecks(d) {
             3
           )}`
         : "every color is a token",
-      "every computed text, fill and border color equals a design token (black scrims allowed); the source test covers raw hex"
+      "every computed text, fill and border color equals a semantic design token within 6 per channel (12 when translucent); Tailwind palette variables such as --color-red-600 are not tokens; black scrims, SVG fills and gradient stops are not measured here (19 reads gradients); the source test covers raw hex in apps/web/src"
     )
   )
 
@@ -429,6 +452,5 @@ export function runChecks(d) {
       "at 390x844 the four surface links are in view at 24px or more and the page does not scroll sideways"
     )
   )
-  return r
   return r
 }

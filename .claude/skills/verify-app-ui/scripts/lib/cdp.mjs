@@ -99,7 +99,7 @@ export async function launchBrowser() {
     })
 
   // intercept(request) returns null (let it through), "hold" (keep it paused until release()),
-  // or { status, body } (answer it without reaching the api). Only /api/ calls are offered to it.
+  // "fail" (refuse the connection, as if the api were down) or { status, body } (answer it without reaching the api). Only /api/ calls are offered to it.
   async function openPage({ width, height, mobile, reducedMotion, intercept }) {
     const { targetId } = await send("Target.createTarget", {
       url: "about:blank",
@@ -140,6 +140,11 @@ export async function launchBrowser() {
           handler && request.url.includes("/api/") ? handler(request) : null
         if (!verdict) return call("Fetch.continueRequest", { requestId })
         if (verdict === "hold") return held.push(requestId)
+        if (verdict === "fail")
+          return call("Fetch.failRequest", {
+            requestId,
+            errorReason: "ConnectionRefused",
+          })
         call("Fetch.fulfillRequest", {
           requestId,
           responseCode: verdict.status,
