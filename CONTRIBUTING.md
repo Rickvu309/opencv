@@ -69,7 +69,7 @@ flowchart LR
 - Body: the PR template with the `Closes #42` line.
 - Before merge, the PR needs:
   - passing checks: the quick `scripts/check.sh --changed` on each push, and the full `scripts/check.sh` (lint, typecheck, test) once, by the reviewer
-  - local verification with the verify-opencv skill (`.claude/skills/verify-opencv`), with its evidence attached to the PR; preview deploys arrive with the Railway move
+  - local verification with the verify-opencv skill (`.claude/skills/verify-opencv`), with its evidence attached to the PR
   - an approval after the review checklist
 - If the branch falls behind `main`, rebase it: `git fetch origin && git rebase origin/main && git push --force-with-lease`.
 - See `docs/git-workflow/commit-and-pr-conventions.md`.
@@ -85,8 +85,8 @@ flowchart LR
 ## 6. Merging and deploying
 
 - Squash-merge is the only merge method. Each PR lands as one commit on `main`.
-- There are no preview deploys yet: verify locally with the verify-opencv skill (`.claude/skills/verify-opencv`) and attach its evidence; preview deploys arrive with the Railway move.
-- A merge to `main` deploys **straight to production**. There is no staging step.
+- There are no preview deploys yet: verify locally with the verify-opencv skill (`.claude/skills/verify-opencv`) and attach its evidence.
+- A merge to `main` deploys **straight to production**. There is no staging environment and no staging step.
 - After the merge, the issue closes automatically (from `Closes #42`), the remote branch is deleted automatically, and you remove your worktree.
 
 ## 7. Hotfixes

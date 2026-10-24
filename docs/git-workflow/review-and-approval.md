@@ -16,11 +16,11 @@ so **the review is the real gate**. Nothing merges without the checklist below.
 
 **Human review only for super important changes.** Owner decision, 2026-10-23: a human reviews a PR only when it is a mass deletion (it deletes 25% or more of the files tracked on `main`, or 80% or more of one app or package) or a big decision flagged with the `needs-human-review` label. Everything else, env and secrets changes included, merges once the checklist passes and the independent review has no open finding.
 
-| PR | Who approves |
-|---|---|
-| Any change, env and secrets included | `@quanvu309`'s agent merges after the checklist passes and the independent review is clean. Contributors cannot merge |
-| Mass deletion (25% or more of the files on `main`, or 80% or more of one app or package) | A human (`review-pr.sh` reports `HUMAN REQUIRED`) |
-| Has the `needs-human-review` label (a big decision) | A human (enforced by rule: the review agent never merges it) |
+| PR                                                                                       | Who approves                                                                                                          |
+| ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Any change, env and secrets included                                                     | `@quanvu309`'s agent merges after the checklist passes and the independent review is clean. Contributors cannot merge |
+| Mass deletion (25% or more of the files on `main`, or 80% or more of one app or package) | A human (`review-pr.sh` reports `HUMAN REQUIRED`)                                                                     |
+| Has the `needs-human-review` label (a big decision)                                      | A human (enforced by rule: the review agent never merges it)                                                          |
 
 People can read, comment on, and **request changes** on any PR at any time. A "changes requested" review blocks merge until that person approves or the review is dismissed.
 
@@ -40,7 +40,7 @@ The script does steps 1-6 and prints `OK`, `FAIL`, or `HUMAN REQUIRED`. It never
 4. **Human needed?** Only if the PR has the `needs-human-review` label or is a mass deletion (it deletes 25% or more of the files tracked on `main`, or 80% or more of one `apps/*` or `packages/*` directory with at least 5 files; renames are counted as deletions, so moving a whole app also needs a human): **stop: do not merge**. Review and comment if useful, then leave the decision to a human. Env/secrets paths in `CODEOWNERS` (the file list comes from `git diff --no-renames`, so renames and PRs over 100 files are covered) are only noted; the catch-all `*` line only decides who may merge, so `scripts/review-pr.sh` ignores it here (`scripts/test-codeowners.sh` guards that). A committed real env file (`.env`, `.env.local`, `prod.env`; templates such as `.env.example` are fine) fails the checklist, and so does a requested-changes review.
 5. **Up to date:** the branch contains the latest `main`. If not, request a rebase.
 6. **Checks pass:** the PR is checked out in a throwaway worktree (`../opencv.worktrees/review-pr-<n>`), dependencies are installed, and `scripts/check.sh` (full, no `--changed`) from `main` runs lint, typecheck, and test. This is the one full run per PR; pushes only run `scripts/check.sh --changed`. It uses `main`'s copy so a PR can't weaken its own checks. The worktree is removed afterwards (`--keep` keeps it).
-7. **Verification:** the PR carries verify-opencv evidence for the changed flow (`.claude/skills/verify-opencv`). Preview deploys arrive with the Railway move.
+7. **Verification:** the PR carries verify-opencv evidence for the changed flow (`.claude/skills/verify-opencv`). There are no preview deploys yet.
 8. **Read the diff.** It does what the issue asks and nothing unrelated, tests cover it, and there are no secrets, debug code, or commented-out code. Look closely at changes to `package.json` scripts, `scripts/`, `.githooks/`, and `.github/`: they change the gate itself.
 9. **Decide:**
    - All good: `gh pr review <pr#> --comment --body "review-pr.sh: OK"`, then `gh pr merge <pr#> --squash` (an agent under the owner's account adds `--admin`)

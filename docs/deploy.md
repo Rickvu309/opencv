@@ -1,8 +1,11 @@
 # Deploying OpenCV on Railway
 
-Railway hosts everything: the `api`, `Postgres` and the static `web` app, each
-in a `production` and a `staging` environment, behind the `opencv.me` zone on
-Cloudflare. ADR-0012 records the decision; this file is the runbook.
+Railway hosts everything: the `api`, `Postgres` and the static `web` app,
+behind the `opencv.me` zone on Cloudflare. There is one environment:
+production. Main deploys straight to production; there is no staging and no
+per-PR preview deploy yet. Rollback is a Railway redeploy of the previous
+deployment (see Rollback). ADR-0012 records the decision; this file is the
+runbook.
 
 Each service redeploys from `main` when a file under its watch paths changes.
 No CI gates a deploy (the repo runs no GitHub Actions), so the local pre-push
@@ -13,21 +16,18 @@ check and the review before merge are the gate.
 Railway project `openpath` (the name predates the rename; renaming it is
 cosmetic, then update the name in `.railway/railway.ts`).
 
-| Environment  | Service    | Built from                                  | Public host                                                         |
-| ------------ | ---------- | ------------------------------------------- | ------------------------------------------------------------------- |
-| `production` | `api`      | Nixpacks, repo root                         | `api.opencv.me`, fallback `api-production-0876.up.railway.app`      |
-| `production` | `web`      | `apps/web/Dockerfile`, repo root as context | `opencv.me`, `www.opencv.me`                                        |
-| `production` | `Postgres` | Railway database                            | private network only                                                |
-| `staging`    | `api`      | Nixpacks, repo root                         | `api-staging.opencv.me`, fallback `api-staging-f689.up.railway.app` |
-| `staging`    | `web`      | `apps/web/Dockerfile`                       | `staging.opencv.me`                                                 |
-| `staging`    | `Postgres` | own instance                                | private network only                                                |
+| Environment  | Service    | Built from                                  | Public host                                                    |
+| ------------ | ---------- | ------------------------------------------- | -------------------------------------------------------------- |
+| `production` | `api`      | Nixpacks, repo root                         | `api.opencv.me`, fallback `api-production-0876.up.railway.app` |
+| `production` | `web`      | `apps/web/Dockerfile`, repo root as context | `opencv.me`, `www.opencv.me`                                   |
+| `production` | `Postgres` | Railway database                            | private network only                                           |
 
 `.railway/railway.ts` declares the intended `api` and `web` build, start,
 watch-path and health settings (Railway stops reading `railway.json` on
 2026-12-01, so that file is gone). IaC evaluation requires Node >=22, the root
 `railway` SDK dependency installed with `pnpm install --frozen-lockfile`, and
 Railway CLI >=5.42.1. Preview an edit with
-`railway config plan --file .railway/railway.ts --environment staging`.
+`railway config plan --file .railway/railway.ts --environment production`.
 Railway does not automatically apply this file during GitHub deploys.
 
 The stable named partial `opencv-apps` scopes ownership to `api` and `web`.
@@ -73,15 +73,15 @@ local `pnpm dev` wants. The second stage is `caddy:2-alpine` serving
   `no-cache`, so a deploy shows up on the next load.
 
 Railway passes a service variable to a Dockerfile build only when the stage
-declares it with `ARG`. If a staging deploy shows the bundle without the
+declares it with `ARG`. If a deploy shows the bundle without the
 expected URL, the fallback is a runtime `window.__API_URL__` that Caddy injects
 from an env var.
 
 Build the same thing locally (no Docker needed):
 
 ```bash
-VITE_API_URL=https://api-staging.opencv.me pnpm turbo build --filter=web
-grep -l "api-staging.opencv.me" apps/web/dist/assets/*.js
+VITE_API_URL=https://api.opencv.me pnpm turbo build --filter=web
+grep -l "api.opencv.me" apps/web/dist/assets/*.js
 pnpm --filter web preview   # serves apps/web/dist
 ```
 
@@ -92,22 +92,19 @@ does, when `caddy` is installed.
 ## Variables
 
 Set by hand in Railway, never in git. `DATABASE_URL` is the shared reference
-`${{Postgres.DATABASE_URL}}` in both environments, so each environment resolves
-to its own Postgres. `SESSION_SECRET` differs per environment.
+`${{Postgres.DATABASE_URL}}`, which resolves to the `Postgres` service in the
+`production` environment.
 
 | Environment  | Service | Variable       | Value                                                                                     |
 | ------------ | ------- | -------------- | ----------------------------------------------------------------------------------------- |
 | `production` | `api`   | `AUTH_URL`     | `https://api.opencv.me` (set at cutover step 4; before that, the `*.up.railway.app` host) |
-| `production` | `api`   | `WEB_ORIGINS`  | `https://opencv.me`, plus the old Vercel origin until the overlap ends                    |
+| `production` | `api`   | `WEB_ORIGINS`  | `https://opencv.me`, plus any origin of the previous host until the overlap ends          |
 | `production` | `web`   | `VITE_API_URL` | `https://api.opencv.me` (from `.railway/railway.ts`)                                      |
-| `staging`    | `api`   | `AUTH_URL`     | `https://api-staging.opencv.me`                                                           |
-| `staging`    | `api`   | `WEB_ORIGINS`  | `https://staging.opencv.me,http://localhost:5173`                                         |
-| `staging`    | `web`   | `VITE_API_URL` | `https://api-staging.opencv.me` (from `.railway/railway.ts`)                              |
 
 `AUTH_URL` is the public api origin and selects the cookie attributes:
 `SameSite=None; Secure` when it is https (`apps/api/src/auth.ts`). That stays
-during the overlap, because the old Vercel web is cross-site to the api. It can
-become `Lax` once only `opencv.me` calls the api; that is a separate change.
+until only `opencv.me` calls the api; it can then become `Lax`, as a separate
+change.
 
 `WEB_ORIGINS` is a comma-separated allowlist of exact origins with no trailing
 slash (a trailing slash never matches). An entry may contain one `*`, which
@@ -126,8 +123,8 @@ for a missing key. The web app only needs `VITE_API_URL`; the Coach vars are
 
 | Variable                       | Required              | Default                                    | Notes                                                                                       |
 | ------------------------------ | --------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------- |
-| `OPENROUTER_API_KEY`           | Yes, for a live Coach | none                                       | Set on staging and production. Pass it on stdin so it never hits shell history.             |
-| `OPENROUTER_BASE_URL`          | No                    | unset (the provider URL)                   | Local checks only: points the Coach at a stub endpoint. **Never on staging or production.** |
+| `OPENROUTER_API_KEY`           | Yes, for a live Coach | none                                       | Set on production. Pass it on stdin so it never hits shell history.                         |
+| `OPENROUTER_BASE_URL`          | No                    | unset (the provider URL)                   | Local checks only: points the Coach at a stub endpoint. **Never on production.**            |
 | `COACH_MODEL_FREE`             | No                    | `openrouter/free`                          | Free mode id (ADR-0009). Free Models Router; the answering model can change between turns.  |
 | `COACH_MODEL_LIGHT`            | No                    | `deepseek/deepseek-chat-v3.1`              | Light mode id.                                                                              |
 | `COACH_MODEL_MAX`              | No                    | `anthropic/claude-opus-4`                  | Max mode. For Fable: `anthropic/claude-fable-5` or `~anthropic/claude-fable-latest`.        |
@@ -138,21 +135,17 @@ for a missing key. The web app only needs `VITE_API_URL`; the Coach vars are
 
 ```bash
 printf '%s' "$OPENROUTER_API_KEY" | railway variable set OPENROUTER_API_KEY --stdin \
-  --project openpath --environment staging --service api
+  --project openpath --environment production --service api
 ```
 
 Setting a variable redeploys `api`. When the rollout is SUCCESS:
 
 ```bash
-COACH_SMOKE_API=https://api-staging.opencv.me pnpm --filter api smoke
 COACH_SMOKE_API=https://api.opencv.me COACH_SMOKE_MODE=production pnpm --filter api smoke
 ```
 
-The staging smoke checks that a long streamed turn survives every proxy on the
-path: `message-start` flushes at once, `X-Accel-Buffering: no`, no gzip on the
-route, 15 s heartbeats, and an abort persists `status=aborted`. Production mode
-asks for advice that cites workspace state and a Command (`apply.moveCard`) and
-looks for the receipt.
+Production mode asks for advice that cites workspace state and a Command
+(`apply.moveCard`) and looks for the receipt.
 
 ## Domains and DNS
 
@@ -161,62 +154,63 @@ target and a TXT verification record. Both are needed (a missing TXT serves
 404). The certificate arrives within about an hour. Zone `opencv.me` is on
 Cloudflare with SSL mode **Full** (Railway says Full (Strict) does not work).
 
-| Name          | Type  | Target                            | Proxy mode  | Service          |
-| ------------- | ----- | --------------------------------- | ----------- | ---------------- |
-| `@`           | CNAME | web production target (flattened) | proxied     | `web` production |
-| `www`         | CNAME | web production target             | proxied     | `web` production |
-| `api`         | CNAME | api production target             | DNS-only    | `api` production |
-| `staging`     | CNAME | web staging target                | proxied     | `web` staging    |
-| `api-staging` | CNAME | api staging target                | DNS-only    | `api` staging    |
-| Railway TXT   | TXT   | name and value shown per domain   | not proxied | each of the five |
+| Name        | Type  | Target                            | Proxy mode  | Service           |
+| ----------- | ----- | --------------------------------- | ----------- | ----------------- |
+| `@`         | CNAME | web production target (flattened) | proxied     | `web` production  |
+| `www`       | CNAME | web production target             | proxied     | `web` production  |
+| `api`       | CNAME | api production target             | DNS-only    | `api` production  |
+| Railway TXT | TXT   | name and value shown per domain   | not proxied | each of the three |
 
-Use single-label names (`api-staging`, not `api.staging`): behind the proxy a
-deeper name needs Cloudflare's Advanced Certificate Manager.
+Use single-label names: behind the proxy a deeper name needs Cloudflare's
+Advanced Certificate Manager.
 
-`api` and `api-staging` stay DNS-only because the Coach streams SSE and a
-Cloudflare proxy adds a buffering and timeout layer the smoke has not been run
-through. To turn the proxy on, run the staging smoke once with it on and keep
-it only if every check passes, heartbeats included.
+`api` stays DNS-only because the Coach streams SSE and a Cloudflare proxy adds
+a buffering and timeout layer the smoke has not been run through. To turn the
+proxy on, run the production smoke once with it on and keep it only if every
+check passes.
 
 ## Cutover
 
-The one-time move from the `*.up.railway.app` hosts and Vercel to `opencv.me`.
+The one-time move from the `*.up.railway.app` hosts and the previous web host to `opencv.me`.
 Steps 1 to 3 and 5 are reversible by reverting the record or variable. Step 4
 is reversible in config, but every signed-in user is signed out once either
 way. Do not start without the operator's go.
 
-1. Migrate the config. Review `railway config plan --file .railway/railway.ts --environment staging`
+1. Migrate the config. Review `railway config plan --file .railway/railway.ts --environment production`
    as structured JSON: the intended changes create `web`, set the API builder
    to `NIXPACKS`, build API workspace dependencies with `--filter api...`,
    and add the pre-deploy migration and restart policy. Reject database or
    volume changes, source removal, and existing variable-value changes.
-   Recheck production's plan before applying there. With operator approval,
-   apply to staging, then production; inspect `railway config migrate status`
+   With operator approval, apply to production; inspect `railway config migrate status`
    before any needed `railway config migrate cutover`. Planning does not
    execute the migration; an approved deployment's pre-deploy command does.
    Finish this **before 2026-12-01**, when `railway.json` stops being read.
-2. Add the five domains and the Cloudflare records, then wait for each
-   certificate. Check `curl -sI https://api-staging.opencv.me/health`.
+2. Add the three domains and the Cloudflare records, then wait for each
+   certificate. Check `curl -sI https://api.opencv.me/health`.
 3. Add the new origin to `WEB_ORIGINS` and keep the old one, then redeploy `web`
-   so it builds with the new `VITE_API_URL`. Staging first; confirm the bundle
-   holds `api-staging.opencv.me` and that sign-in works on `https://staging.opencv.me`.
+   so it builds with the new `VITE_API_URL`. Confirm the bundle holds
+   `api.opencv.me` and that sign-in works on `https://opencv.me`.
 4. Flip production `AUTH_URL` to `https://api.opencv.me`. Do this last. Browsers
    hold no cookie for the new host, so every user signs in once more (the
    sessions and data are kept). Announce it first.
-5. Keep the `*.up.railway.app` hosts and the Vercel deploy for one to two weeks.
-   Then drop the Vercel origin from `WEB_ORIGINS` and set the GitHub homepage
-   to `https://opencv.me`.
+5. Keep the `*.up.railway.app` hosts for one to two weeks. Then drop any origin
+   of the previous host from `WEB_ORIGINS` and set the GitHub homepage to
+   `https://opencv.me`.
 
 ## Rollback
 
-Point `AUTH_URL` back to the `*.up.railway.app` host (one more forced
-re-login), remove the new origin from `WEB_ORIGINS`, run
-`railway config migrate undo`, and re-enable the Vercel production deploy. The
-`opencv.me` zone held no records before the cutover, so there are no earlier
-targets to restore: delete the Cloudflare records, or leave them. Resolvers may
-cache them for a while, and the Railway service domains (`*.up.railway.app`)
-stay reachable directly until the services are removed. To roll back one bad
-deploy, open the service in Railway and pick the previous deployment.
+One environment: production. Main deploys straight to production, so rollback
+is a Railway redeploy of the previous deployment: open the service in Railway
+and pick the previous deployment. A failed build or a failed pre-deploy
+migration never replaces the running deployment (see Migration pipeline).
+
+To undo the `opencv.me` cutover itself, point `AUTH_URL` back to the
+`*.up.railway.app` host (one more forced re-login), remove the new origin from
+`WEB_ORIGINS`, and run `railway config migrate undo`. The `opencv.me` zone held
+no records before the cutover, so there are no earlier targets to restore:
+delete the Cloudflare records, or leave them. Resolvers may cache them for a
+while, and the Railway service domains (`*.up.railway.app`) stay reachable
+directly until the services are removed.
 
 ## Migration pipeline
 
@@ -262,7 +256,7 @@ unless you mean to seed one empty account.
 ```bash
 SEED_EMAIL=dev@example.com SEED_PASSWORD='correct-horse-battery' \
   SEED_NAME=Dev pnpm --filter api run db:seed          # local, after migrate
-railway run -e staging --service api -- pnpm --filter api run seed
+railway run -e production --service api -- pnpm --filter api run seed
 
 railway status                                          # linked project + environments
 railway logs --service api                              # deploy and runtime logs
