@@ -1,33 +1,21 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { Button } from "@workspace/ui/components/button"
-import { Input } from "@workspace/ui/components/input"
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 import { useMediaQuery } from "@workspace/ui/hooks/use-media-query"
 import type { CoachSelection } from "@workspace/domain"
 import { changedSectionIds, diffPaperContent } from "@workspace/domain"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@workspace/ui/components/dropdown-menu"
 import { cn } from "@workspace/ui/lib/utils"
 import type { PaperDocStatus } from "@workspace/domain"
-import {
-  ChevronDown,
-  FileText,
-  Globe,
-  MoreHorizontal,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Share2,
-} from "lucide-react"
 
-import { WorkspaceHeader } from "@/components/workspace-header.tsx"
 import { DESKTOP_MEDIA_QUERY } from "@/features/app-shell/use-media-query.ts"
 import { authClient } from "@/lib/auth-client.ts"
+import { readStored, writeStored } from "@/lib/local-storage.ts"
 
-import { CvDocument } from "./paper-cv-document.tsx"
-import { CvA4Canvas } from "./paper-cv-a4.tsx"
 import { applyCvTemplate } from "./paper-cv-template-picker.tsx"
 import {
   addEducation,
@@ -37,8 +25,6 @@ import {
 } from "./paper-cv-edits.ts"
 import {
   absorbCvServerSnapshot,
-  canRedoCv,
-  canUndoCv,
   createCvHistory,
   isPaperRedoShortcut,
   isPaperUndoShortcut,
@@ -49,11 +35,7 @@ import {
 } from "./paper-cv-history.ts"
 import { type CvData, type CvTemplateId } from "./paper-cv-types.ts"
 import {
-  SAMPLE_CV_LABEL,
-  SAMPLE_CV_MAKE_MINE,
-  TYPE_LABEL,
   cvContentOf,
-  formatPaperUpdated,
   isSampleCv,
   letterMarkdownOf,
   ownedCvName,
@@ -72,6 +54,12 @@ import {
   readPaperSelection,
   retainCoachSelection,
 } from "./paper-selection.ts"
+import { PaperEditorConflictBanner } from "./paper-editor-conflict-banner.tsx"
+import { DOCS_PANEL_ID, PaperEditorHeader } from "./paper-editor-header.tsx"
+import { countWords } from "./paper-editor-helpers.ts"
+import { PaperCvSurface } from "./paper-cv-surface.tsx"
+import { PaperLetterArticle } from "./paper-letter-article.tsx"
+import { PaperProofToolbar } from "./paper-proof-toolbar.tsx"
 import { PaperEditorSidebar } from "./paper-editor-sidebar.tsx"
 import {
   PaperEditorToolbar,
@@ -88,26 +76,11 @@ import {
 } from "./paper-proof-types.ts"
 
 const DOCS_PANEL_KEY = "opencv:paper:docs-panel"
-const DOCS_PANEL_ID = "paper-docs-panel"
 
 type DocsPanelState = "expanded" | "collapsed"
 
-function readDocsPanel(): DocsPanelState {
-  try {
-    const value = window.localStorage.getItem(DOCS_PANEL_KEY)
-    if (value === "expanded" || value === "collapsed") return value
-  } catch {
-    // Private mode / blocked storage — first visit is expanded.
-  }
-  return "expanded"
-}
-
-function writeDocsPanel(value: DocsPanelState) {
-  try {
-    window.localStorage.setItem(DOCS_PANEL_KEY, value)
-  } catch {
-    // Private mode / blocked storage — preference is session-only.
-  }
+function parseDocsPanel(raw: string | null): DocsPanelState {
+  return raw === "collapsed" ? "collapsed" : "expanded"
 }
 
 type Props = {
@@ -173,7 +146,9 @@ export function PaperEditor({
     nonce: number
   }>({ ids: [], nonce: 0 })
   const [selection, setSelection] = useState<CoachSelection | null>(null)
-  const [docsPanel, setDocsPanel] = useState<DocsPanelState>(readDocsPanel)
+  const [docsPanel, setDocsPanel] = useState<DocsPanelState>(() =>
+    readStored(DOCS_PANEL_KEY, parseDocsPanel, "expanded")
+  )
   const [phoneDocsOpen, setPhoneDocsOpen] = useState(false)
   const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)", false)
   const isDesktop = useMediaQuery(DESKTOP_MEDIA_QUERY, true)
@@ -200,7 +175,7 @@ export function PaperEditor({
     }
     const next: DocsPanelState = docsExpanded ? "collapsed" : "expanded"
     setDocsPanel(next)
-    writeDocsPanel(next)
+    writeStored(DOCS_PANEL_KEY, next)
   }
 
   function applyServerDoc(next: PaperDoc, highlight = false) {
@@ -242,7 +217,7 @@ export function PaperEditor({
     setSectionFocus((prev) => ({ ids, nonce: prev.nonce + 1 }))
   }
 
-  useEffect(() => {
+  const syncServerDoc = useEffectEvent(() => {
     const switched = doc.id !== lastDocIdRef.current
     const reverted = revertKey !== lastRevertKeyRef.current
     lastDocIdRef.current = doc.id
@@ -260,7 +235,10 @@ export function PaperEditor({
       return
     }
     applyServerDoc(doc, true)
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- see above
+  })
+
+  useEffect(() => {
+    syncServerDoc()
   }, [doc.id, doc.updatedAt, isCv, isProof, revertKey])
 
   useEffect(() => {
@@ -284,7 +262,9 @@ export function PaperEditor({
     const timer = window.setTimeout(() => {
       for (const el of els) el.classList.remove("paper-coach-changed")
       setSectionFocus((prev) =>
-        prev.nonce === sectionFocus.nonce ? { ids: [], nonce: prev.nonce } : prev
+        prev.nonce === sectionFocus.nonce
+          ? { ids: [], nonce: prev.nonce }
+          : prev
       )
     }, 1200)
     return () => {
@@ -361,12 +341,14 @@ export function PaperEditor({
     })
   }
 
+  const persistOpenDocInEffect = useEffectEvent(persistOpenDoc)
+
   useEffect(() => {
     if (!dirty || conflict) return
 
     setSaving(true)
     const timer = window.setTimeout(() => {
-      persistOpenDoc()
+      persistOpenDocInEffect()
       setDirty(false)
       setSaving(false)
     }, 700)
@@ -377,7 +359,7 @@ export function PaperEditor({
   useEffect(() => {
     return () => {
       if (!dirtyRef.current) return
-      persistOpenDoc()
+      persistOpenDocInEffect()
     }
   }, [])
 
@@ -579,125 +561,30 @@ export function PaperEditor({
         />
       ) : null}
 
-      <div
-        data-paper-editor=""
-        className="flex min-w-0 flex-1 flex-col"
-      >
-        <WorkspaceHeader
-          className="items-center gap-3 px-5 py-3"
-          icon={<FileText className="size-4 shrink-0 text-muted-foreground" />}
-          title={
-            <div className="min-w-0 flex-1">
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                onBlur={() => {
-                  const name = title.trim()
-                  if (name && name !== doc.name) onRename(name)
-                  else setTitle(doc.name)
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") (e.target as HTMLInputElement).blur()
-                }}
-                className="h-auto w-full truncate border-0 bg-transparent px-0 text-sm font-semibold shadow-none focus-visible:border-0 focus-visible:ring-0 md:text-sm"
-                aria-label="Document name"
-              />
-              <p className="paper-editor-chrome-meta text-xs text-muted-foreground">
-                {TYPE_LABEL[doc.kind]}
-                {isSampleCv(doc) ? ` · ${SAMPLE_CV_LABEL}` : null}
-                {" · "}Updated {formatPaperUpdated(doc.updatedAt)}
-              </p>
-            </div>
-          }
-        >
-          <Button
-            type="button"
-            size="icon-sm"
-            variant="ghost"
-            aria-label="Documents"
-            aria-expanded={docsExpanded}
-            aria-controls={DOCS_PANEL_ID}
-            onClick={toggleDocsPanel}
-          >
-            {docsExpanded ? (
-              <PanelLeftClose className="size-4" />
-            ) : (
-              <PanelLeftOpen className="size-4" />
-            )}
-          </Button>
-
-          {isSampleCv(doc) ? (
-            <Button
-              type="button"
-              size="sm"
-              variant="secondary"
-              className="h-8"
-              onClick={makeMine}
-            >
-              {SAMPLE_CV_MAKE_MINE}
-            </Button>
-          ) : null}
-
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={<Button type="button" size="icon-sm" variant="ghost" />}
-              aria-label="More"
-            >
-              <MoreHorizontal className="size-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem variant="destructive" onClick={onDelete}>
-                {isSampleCv(doc) ? "Clear sample" : "Delete"}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <StatusPill status={doc.status} onChange={onStatusChange} />
-
-          <Button type="button" size="sm" variant="outline">
-            <Share2 className="size-3.5" />
-            <span className="max-md:hidden">Share</span>
-          </Button>
-
-          <Button
-            type="button"
-            size="sm"
-            disabled={!dirty && !saving}
-            onClick={handleSave}
-          >
-            {saving ? "Saving…" : dirty ? "Save changes" : "Saved"}
-          </Button>
-        </WorkspaceHeader>
+      <div data-paper-editor="" className="flex min-w-0 flex-1 flex-col">
+        <PaperEditorHeader
+          doc={doc}
+          title={title}
+          onTitleChange={setTitle}
+          onRename={onRename}
+          docsExpanded={docsExpanded}
+          onToggleDocs={toggleDocsPanel}
+          onMakeMine={makeMine}
+          onDelete={onDelete}
+          onStatusChange={onStatusChange}
+          dirty={dirty}
+          saving={saving}
+          onSave={handleSave}
+        />
 
         {conflict ? (
-          <div
-            role="alert"
-            className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-muted/60 px-5 py-2 text-sm"
-          >
-            <p>
-              Coach updated this document while you have unsaved edits.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  loadedUpdatedAtRef.current = doc.updatedAt
-                  setConflict(false)
-                }}
-              >
-                Keep mine
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => applyServerDoc(doc, true)}
-              >
-                Use Coach&apos;s version
-              </Button>
-            </div>
-          </div>
+          <PaperEditorConflictBanner
+            onKeepMine={() => {
+              loadedUpdatedAtRef.current = doc.updatedAt
+              setConflict(false)
+            }}
+            onUseServer={() => applyServerDoc(doc, true)}
+          />
         ) : null}
 
         <div
@@ -712,63 +599,26 @@ export function PaperEditor({
             )}
           >
             {isCv ? (
-              <>
-                {/* Documented exception: native file input — kit Input cannot host a hidden file picker. */}
-                <input
-                  ref={cvPhotoRef}
-                  type="file"
-                  accept="image/*"
-                  className="sr-only"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (file) handleCvPhoto(file)
-                    e.target.value = ""
-                  }}
-                />
-                <PaperEditorToolbar
-                  variant="cv"
-                  className="sticky top-0 z-10 mb-4 w-full backdrop-blur-sm supports-[backdrop-filter]:bg-background/90"
-                  cvTemplateId={cvData.templateId}
-                  onCvTemplateChange={handleTemplateChange}
-                  onCvInsert={handleCvInsert}
-                  onCvTailor={handleCvTailor}
-                  canUndo={canUndoCv(cvHistory)}
-                  canRedo={canRedoCv(cvHistory)}
-                  onUndo={applyCvUndo}
-                  onRedo={applyCvRedo}
-                />
-                <CvA4Canvas>
-                  <CvDocument
-                    data={cvData}
-                    onChange={handleCvChange}
-                    historyRevision={cvHistory.revision}
-                  />
-                </CvA4Canvas>
-              </>
+              <PaperCvSurface
+                photoRef={cvPhotoRef}
+                onPhoto={handleCvPhoto}
+                cvData={cvData}
+                cvHistory={cvHistory}
+                onTemplateChange={handleTemplateChange}
+                onInsert={handleCvInsert}
+                onTailor={handleCvTailor}
+                onUndo={applyCvUndo}
+                onRedo={applyCvRedo}
+                onChange={handleCvChange}
+              />
             ) : isProof ? (
-              <>
-                {/* Documented exception: native file input — kit Input cannot host a hidden file picker. */}
-                <input
-                  ref={proofPhotoRef}
-                  type="file"
-                  accept="image/*"
-                  className="sr-only"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (file) handleProofPhoto(file)
-                    e.target.value = ""
-                  }}
-                />
-                <PaperEditorToolbar
-                  variant="proof"
-                  className="mb-5 w-full"
-                  proofViewMode={proofData.viewMode}
-                  onProofViewModeChange={(mode) =>
-                    handleProofChange({ ...proofData, viewMode: mode })
-                  }
-                  onProofInsert={handleProofInsert}
-                />
-              </>
+              <PaperProofToolbar
+                photoRef={proofPhotoRef}
+                onPhoto={handleProofPhoto}
+                proofData={proofData}
+                onChange={handleProofChange}
+                onInsert={handleProofInsert}
+              />
             ) : (
               <PaperEditorToolbar
                 variant={isLetter ? "letter" : "full"}
@@ -787,50 +637,11 @@ export function PaperEditor({
                   />
                 </div>
               ) : (
-                <article
-                  className={cn(
-                    "w-full overflow-hidden rounded-xl border bg-card shadow-sm",
-                    doc.status === "draft"
-                      ? "border-border ring-1 ring-ring/20"
-                      : "border-border/80"
-                  )}
-                >
-                  <div className="flex items-center justify-between border-b border-border/60 px-5 py-3">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <FileText className="size-3.5 shrink-0 text-muted-foreground" />
-                      <span className="truncate text-xs font-medium text-muted-foreground">
-                        {doc.name}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {doc.status === "draft" ? (
-                        <span className="rounded-md bg-muted px-2 py-0.5 text-2xs font-semibold tracking-wide text-muted-foreground uppercase">
-                          Draft
-                        </span>
-                      ) : null}
-                      <Button
-                        type="button"
-                        size="icon-sm"
-                        variant="ghost"
-                        aria-label="More"
-                        className="text-muted-foreground"
-                      >
-                        <MoreHorizontal className="size-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  <div
-                    ref={editorRef}
-                    contentEditable
-                    role="textbox"
-                    suppressContentEditableWarning
-                    onInput={handleRichInput}
-                    data-paper-section="letter"
-                    className="paper-editor-canvas prose-kit min-h-[70vh] px-10 py-10 outline-none sm:px-14 sm:py-12"
-                    aria-label="Document content"
-                    spellCheck
-                  />
-                </article>
+                <PaperLetterArticle
+                  doc={doc}
+                  editorRef={editorRef}
+                  onInput={handleRichInput}
+                />
               )
             ) : null}
           </div>
@@ -850,55 +661,5 @@ export function PaperEditor({
         />
       </div>
     </div>
-  )
-}
-
-function countWords(text: string | undefined) {
-  return (text ?? "").trim().split(/\s+/).filter(Boolean).length
-}
-
-function StatusPill({
-  status,
-  onChange,
-}: {
-  status: PaperDocStatus
-  onChange: (status: PaperDocStatus) => void
-}) {
-  const label =
-    status === "published"
-      ? "Published"
-      : status === "ready"
-        ? "Ready"
-        : "Draft"
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        className={cn(
-          "inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium",
-          status === "published" && "border-border bg-muted text-foreground",
-          status === "ready" &&
-            "border-border bg-secondary text-secondary-foreground",
-          status === "draft" &&
-            "border-border bg-muted/40 text-muted-foreground"
-        )}
-        aria-label="Document status"
-      >
-        {status === "published" ? <Globe className="size-3.5" /> : null}
-        {label}
-        <ChevronDown className="size-3 opacity-60" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => onChange("draft")}>
-          Draft
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onChange("ready")}>
-          Ready
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onChange("published")}>
-          Published
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
   )
 }

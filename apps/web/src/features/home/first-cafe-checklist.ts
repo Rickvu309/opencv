@@ -1,5 +1,6 @@
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { APPLY_OPEN_GUIDE } from "@/features/apply/apply-search.ts"
+import { readStored, writeStored } from "@/lib/local-storage.ts"
 
 export const FIRST_CAFE_ITEM_IDS = [
   "sample-cv",
@@ -216,24 +217,13 @@ export function firstCafeItemForVisit(
 }
 
 export function readFirstCafeState(userId: string): FirstCafeState {
-  try {
-    return parseFirstCafeState(
-      window.localStorage.getItem(firstCafeStorageKey(userId))
-    )
-  } catch {
-    return { ...EMPTY_FIRST_CAFE_STATE }
-  }
+  return readStored(firstCafeStorageKey(userId), parseFirstCafeState, {
+    ...EMPTY_FIRST_CAFE_STATE,
+  })
 }
 
 export function writeFirstCafeState(userId: string, state: FirstCafeState) {
-  try {
-    window.localStorage.setItem(
-      firstCafeStorageKey(userId),
-      JSON.stringify(state)
-    )
-  } catch {
-    // Private mode / blocked storage — keep the session copy only.
-  }
+  writeStored(firstCafeStorageKey(userId), JSON.stringify(state))
 }
 
 /**

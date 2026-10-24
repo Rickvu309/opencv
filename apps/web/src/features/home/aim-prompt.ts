@@ -4,6 +4,8 @@ import {
   type PitchDocument,
 } from "@workspace/domain"
 
+import { readStored, writeStored } from "@/lib/local-storage.ts"
+
 export const AIM_PROMPT_STORAGE_PREFIX = "opencv:home:aim-prompt"
 
 export const AIM_OPTIONS = [
@@ -107,22 +109,12 @@ export function applyAimToPitchHeadline(
 }
 
 export function readAimPromptState(userId: string): AimPromptState {
-  try {
-    return parseAimPromptState(
-      window.localStorage.getItem(aimPromptStorageKey(userId))
-    )
-  } catch {
-    return { resolved: false, aimId: null }
-  }
+  return readStored(aimPromptStorageKey(userId), parseAimPromptState, {
+    resolved: false,
+    aimId: null,
+  })
 }
 
 export function writeAimPromptState(userId: string, state: AimPromptState) {
-  try {
-    window.localStorage.setItem(
-      aimPromptStorageKey(userId),
-      JSON.stringify(state)
-    )
-  } catch {
-    // Private mode / blocked storage — keep the session copy only.
-  }
+  writeStored(aimPromptStorageKey(userId), JSON.stringify(state))
 }
