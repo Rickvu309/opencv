@@ -59,8 +59,6 @@ There is no GitHub Actions CI. The same checks run locally at these points:
 | `scripts/open-pr.sh` | itself | Branch name, `scripts/check.sh --changed`, correct title and `Closes #` |
 | Review | `scripts/review-pr.sh` | Branch, title, `Closes #`, issue open, up to date with `main`, full `scripts/check.sh` in a clean worktree (the one full run per PR), mass deletion and `needs-human-review` (human required), committed env files |
 
-The file-size rule has one exception: `docs/plans/*.md` is marked `linguist-generated` in `.gitattributes` because the planning swarm writes those program plans and trails, so they may exceed the limit.
-
 Hooks are on once `git config core.hooksPath .githooks` is set in the clone (`scripts/new-task.sh` does it).
 
 **Skipping checks:** `SKIP_CHECKS=1 git push` skips lint/typecheck/test in the hook (the main-branch and naming rules still apply). Use it only in a production emergency, and say so in the PR. `--no-verify` skips the hooks entirely; never use it. Either way, the reviewer runs the checks again.
