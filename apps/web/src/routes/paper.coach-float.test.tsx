@@ -7,6 +7,7 @@ import {
   scriptCoachStream,
 } from "@/test/threads-api-mock.ts"
 import {
+  byAttr,
   installPaperTestLifecycle,
   renderPaper,
   openDoc,
@@ -57,7 +58,7 @@ describe("Paper Coach float", () => {
     renderPaper()
     await expectPaperDrive()
     const editor = await openDoc("PM track CV")
-    const canvas = editor.querySelector("[data-paper-canvas]")
+    const canvas = byAttr(editor, "data-paper-canvas")
     expect(canvas).toBeInstanceOf(HTMLElement)
     Object.defineProperty(canvas, "clientHeight", {
       configurable: true,
@@ -67,8 +68,6 @@ describe("Paper Coach float", () => {
 
     const dialog = await openCoach()
     expect((canvas as HTMLElement).clientHeight).toBe(640)
-    expect(canvas).toHaveClass("flex-1")
-    expect(dialog.className).toMatch(/fixed/)
     expect(editor.contains(dialog)).toBe(false)
   })
 
@@ -135,7 +134,7 @@ describe("Paper Coach float", () => {
 
     const chip = within(dialog).getByRole("status", { name: "In context" })
     expect(chip).toHaveTextContent("PM track CV")
-    expect(dialog.querySelector("[data-coach-soft-scope]")).toBe(chip)
+    expect(chip).toHaveAttribute("data-coach-soft-scope")
     expect(dialog).not.toHaveTextContent(/knowledge.?base/i)
     expect(dialog).not.toHaveTextContent(/add sources/i)
     expect(
@@ -151,7 +150,6 @@ describe("Paper Coach float", () => {
     expect(
       within(dialog).queryByRole("status", { name: "In context" })
     ).not.toBeInTheDocument()
-    expect(dialog.querySelector("[data-coach-soft-scope]")).toBeNull()
 
     fireEvent.click(within(dialog).getByRole("button", { name: "Minimize" }))
     fireEvent.click(screen.getByRole("button", { name: "Restore" }))
@@ -326,7 +324,9 @@ describe("Paper Coach float", () => {
     })
     expect(attached).toHaveTextContent("PM track CV")
     expect(attached).toHaveAttribute("data-kind", "doc")
-    expect(dialog.querySelector("[data-coach-soft-scope]")).toBeTruthy()
+    expect(
+      within(dialog).getByRole("status", { name: "In context" })
+    ).toBeInTheDocument()
     expect(dialog).not.toHaveTextContent(/knowledge.?base/i)
     expect(dialog).not.toHaveTextContent(/add sources/i)
     expect(

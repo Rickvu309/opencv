@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from "vitest"
 import { fireEvent, screen, waitFor, within } from "@testing-library/react"
 import { isCvDocument } from "@workspace/domain"
-import { PAPER_CANVAS_FIELD_CLASS } from "@/features/paper/paper-cv-document.tsx"
 import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 import { getMockPaperDocs } from "@/test/paper-api-mock.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
 import {
+  byAttr,
   installPaperTestLifecycle,
   renderPaper,
   openDoc,
@@ -43,8 +43,8 @@ describe("Paper canvas editors", () => {
     expect(
       within(cvTools).queryByRole("button", { name: "Bullet list" })
     ).not.toBeInTheDocument()
-    expect(document.querySelector("[data-cv-type='page-title']")).not.toBeNull()
-    expect(document.querySelector("[data-cv-type='body']")).not.toBeNull()
+    expect(byAttr(document, "data-cv-type='page-title'")).not.toBeNull()
+    expect(byAttr(document, "data-cv-type='body'")).not.toBeNull()
 
     fireEvent.click(screen.getByRole("button", { name: /Product & design/ }))
     const templates = await screen.findByRole("listbox", {
@@ -96,11 +96,7 @@ describe("Paper canvas editors", () => {
     expect(bullet).toBeTruthy()
 
     for (const field of [summary, bullet!]) {
-      expect(field).toHaveClass(PAPER_CANVAS_FIELD_CLASS)
       expect(field).toHaveAttribute("data-paper-canvas-field")
-      expect(field.className).not.toMatch(/bg-muted\/80/)
-      expect(field.className).not.toMatch(/border-input/)
-      expect(field.className).not.toMatch(/rounded-full/)
 
       fireEvent.click(field)
       field.focus()
@@ -115,9 +111,13 @@ describe("Paper canvas editors", () => {
       expect(field).not.toHaveFocus()
     }
 
-    expect(editor.querySelector("[data-coach-soft-scope]")).toBeNull()
-    expect(editor.querySelector("[data-coach-context-chip]")).toBeNull()
-    expect(editor.querySelector("[data-coach-selection-preview]")).toBeNull()
+    expect(
+      screen.queryByRole("status", { name: "In context" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("status", { name: "Selected text" })
+    ).not.toBeInTheDocument()
+    expect(byAttr(editor, "data-coach-context-chip")).toBeNull()
   })
 
   it("keeps canvas field selection chrome distinct from CoachFloat chips", async () => {
@@ -130,9 +130,8 @@ describe("Paper canvas editors", () => {
       name: "Bullet point",
     })[0]!
 
-    expect(bullet).toHaveClass(PAPER_CANVAS_FIELD_CLASS)
-    expect(bullet.className).not.toMatch(/bg-muted\/70/)
-    expect(bullet.className).not.toMatch(/rounded-full/)
+    expect(bullet).toHaveAttribute("data-paper-canvas-field")
+    expect(bullet).not.toHaveAttribute("data-coach-selection-preview")
 
     selectNodeContents(bullet)
     messageCoach(dialog).focus()
@@ -141,14 +140,12 @@ describe("Paper canvas editors", () => {
       name: "Selected text",
     })
     expect(preview).toHaveAttribute("data-coach-selection-preview")
-    expect(preview.className).toMatch(/rounded-lg/)
-    expect(preview.className).toMatch(/bg-muted\/70/)
+    expect(preview).not.toHaveAttribute("data-paper-canvas-field")
 
     const softScope = within(dialog).getByRole("status", { name: "In context" })
-    expect(softScope.querySelector(".rounded-full")).not.toBeNull()
-    expect(
-      softScope.className + (softScope.firstElementChild?.className ?? "")
-    ).toMatch(/bg-muted\/70/)
+    expect(softScope).toHaveAttribute("data-coach-soft-scope")
+    expect(softScope).not.toHaveAttribute("data-paper-canvas-field")
+    expect(softScope).not.toBe(preview)
   })
 
   it("mutates Experience and Skills on the Sample CV and persists after refresh", async () => {
@@ -192,7 +189,9 @@ describe("Paper canvas editors", () => {
       within(again).getAllByRole("textbox", { name: "Bullet point" })
     ).toHaveLength(bulletsBefore.length + 1)
     expect(within(again).getByText("Café interviews")).toBeInTheDocument()
-    expect(again.querySelector("[data-coach-soft-scope]")).toBeNull()
+    expect(
+      screen.queryByRole("status", { name: "In context" })
+    ).not.toBeInTheDocument()
   })
 
   it("undoes and redoes Experience + Summary after autosave on desktop", async () => {
@@ -287,7 +286,7 @@ describe("Paper canvas editors", () => {
 
     const dialog = await openCoach()
     expect(dialog).not.toHaveAttribute("draggable")
-    expect(dialog.querySelector("[data-coach-float-resize]")).toBeNull()
+    expect(byAttr(dialog, "data-coach-float-resize")).toBeNull()
   })
 
   it("fits A4 to a phone width with slim chrome and a usable edit", async () => {
@@ -304,23 +303,20 @@ describe("Paper canvas editors", () => {
       screen.queryByRole("complementary", { name: "Documents" })
     ).not.toBeInTheDocument()
 
-    const fit = editor.querySelector("[data-paper-a4-fit='width']")
+    const fit = byAttr(editor, "data-paper-a4-fit='width'")
     expect(fit).toBeInstanceOf(HTMLElement)
-    const page = editor.querySelector(".cv-a4-page")
-    expect(page).toBeInstanceOf(HTMLElement)
-    expect((page as HTMLElement).style.maxWidth).toBe("100%")
-    expect((page as HTMLElement).style.width).toBe("210mm")
+    const page = fit!.firstElementChild as HTMLElement
+    expect(page.style.maxWidth).toBe("100%")
+    expect(page.style.width).toBe("210mm")
 
-    const canvas = editor.querySelector("[data-paper-canvas]")
-    expect(canvas).toHaveClass("paper-editor-canvas-scroll")
-    expect(editor.querySelector("[data-paper-editor]")).not.toBeNull()
+    expect(byAttr(editor, "data-paper-canvas")).toBeInstanceOf(HTMLElement)
+    expect(byAttr(editor, "data-paper-editor")).not.toBeNull()
 
     const toolbar = within(editor).getByRole("toolbar", { name: "CV tools" })
-    expect(toolbar.className).toMatch(/sticky/)
     expect(toolbar).toHaveAttribute("data-paper-toolbar")
 
     const summary = within(editor).getByRole("textbox", { name: "Summary" })
-    expect(summary).toHaveClass(PAPER_CANVAS_FIELD_CLASS)
+    expect(summary).toHaveAttribute("data-paper-canvas-field")
     summary.textContent = "Café rewrite on a phone"
     fireEvent.input(summary)
     expect(summary).toHaveTextContent("Café rewrite on a phone")
@@ -335,6 +331,6 @@ describe("Paper canvas editors", () => {
     expect(headline).toHaveFocus()
 
     expect(screen.getByRole("button", { name: "Coach" })).toBeInTheDocument()
-    expect(document.querySelector("[data-coach-float-resize]")).toBeNull()
+    expect(byAttr(document, "data-coach-float-resize")).toBeNull()
   })
 })

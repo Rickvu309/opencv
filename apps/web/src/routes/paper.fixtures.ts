@@ -123,6 +123,10 @@ export function stubDesktopViewport(isDesktop: boolean) {
   }))
 }
 
+export function byAttr(root: ParentNode, selector: string) {
+  return root.querySelector(`[${selector}]`)
+}
+
 export function installPaperTestLifecycle() {
   beforeEach(() => {
     sessionStorage.clear()

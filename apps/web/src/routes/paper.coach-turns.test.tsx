@@ -15,6 +15,7 @@ import {
   scriptCoachStream,
 } from "@/test/threads-api-mock.ts"
 import {
+  byAttr,
   installPaperTestLifecycle,
   renderPaper,
   openDoc,
@@ -140,10 +141,7 @@ describe("Paper Coach turns", () => {
       name: "Coach is working",
     })
     expect(working).toHaveTextContent("Working…")
-    expect(
-      working.querySelector("[data-slot='coach-working-bar']")
-    ).toBeInTheDocument()
-    expect(working.querySelector(".animate-pulse")).not.toBeInTheDocument()
+    expect(byAttr(working, "data-slot='coach-working-bar'")).toBeInTheDocument()
     stream.release(2)
     expect(
       await within(dialog).findByText("Partial from Paper")

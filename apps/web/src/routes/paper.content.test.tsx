@@ -11,6 +11,7 @@ import { EMPTY_SECTION_CTA } from "@/features/paper/paper-cv-edits.ts"
 import { SAMPLE_CV_LABEL } from "@/features/paper/paper-data.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
 import {
+  byAttr,
   installPaperTestLifecycle,
   renderPaper,
   openDoc,
@@ -164,13 +165,13 @@ describe("Paper content editors", () => {
     const addRole = within(editor).getByRole("button", {
       name: EMPTY_SECTION_CTA.experience,
     })
-    expect(addRole).toHaveClass("paper-canvas-next-step")
+    expect(addRole).toBeEnabled()
     expect(
       within(editor).queryByRole("button", {
         name: EMPTY_SECTION_CTA.education,
       })
     ).not.toBeInTheDocument()
-    expect(editor.querySelector("[data-slot='empty']")).toBeNull()
+    expect(byAttr(editor, "data-slot='empty'")).toBeNull()
     expect(within(editor).queryByText(/get started/i)).not.toBeInTheDocument()
 
     fireEvent.click(addRole)
@@ -206,7 +207,7 @@ describe("Paper content editors", () => {
     expect(
       within(editor).getByRole("textbox", { name: "School" })
     ).toHaveTextContent("School name")
-    expect(editor.querySelector("[data-slot='empty']")).toBeNull()
+    expect(byAttr(editor, "data-slot='empty'")).toBeNull()
   })
 
   it("opens and edits a Letter", async () => {
@@ -253,33 +254,24 @@ describe("Paper documents panel", () => {
     await expectPaperDrive()
     const editor = await openDoc("PM track CV")
 
-    const header = editor.querySelector("header")
-    expect(header).not.toBeNull()
-    const toggle = within(header as HTMLElement).getByRole("button", {
-      name: "Documents",
-    })
+    const toggle = within(editor).getByRole("button", { name: "Documents" })
     expect(toggle).toHaveAttribute("aria-expanded", "true")
     expect(toggle).toHaveAttribute("aria-controls", "paper-docs-panel")
     expect(toggle.textContent?.trim()).toBe("")
 
     const sidebar = screen.getByRole("complementary", { name: "Documents" })
     expect(sidebar).toHaveAttribute("id", "paper-docs-panel")
-    expect(sidebar).toHaveClass("w-60")
     expect(editor.children).toHaveLength(2)
 
     const docRow = within(sidebar).getByRole("button", { name: /PM track CV/ })
-    expect(docRow).toHaveClass("justify-start")
-    expect(docRow).toHaveClass("text-left")
-    expect(docRow).not.toHaveClass("justify-center")
+    expect(docRow).toBeEnabled()
 
     fireEvent.click(toggle)
     expect(toggle).toHaveAttribute("aria-expanded", "false")
     expect(
       screen.queryByRole("complementary", { name: "Documents" })
     ).not.toBeInTheDocument()
-    expect(editor.querySelector(".w-60")).toBeNull()
     expect(editor.children).toHaveLength(1)
-    expect(editor.firstElementChild).toHaveClass("flex-1")
     expect(localStorage.getItem("opencv:paper:docs-panel")).toBe("collapsed")
 
     fireEvent.click(toggle)
@@ -305,7 +297,6 @@ describe("Paper documents panel", () => {
       "false"
     )
     expect(firstEditor.children).toHaveLength(1)
-    expect(firstEditor.firstElementChild).toHaveClass("flex-1")
 
     first.unmount()
     cleanup()

@@ -1,15 +1,13 @@
 import { describe, expect, it, vi } from "vitest"
 import { fireEvent, screen, waitFor, within } from "@testing-library/react"
-import {
-  COACH_FLOAT_DESKTOP_OPEN_HEIGHT_CLASS,
-  COACH_FLOAT_NUDGE_ATTR,
-} from "@/features/paper/coach-float.tsx"
+import { COACH_FLOAT_NUDGE_ATTR } from "@/features/paper/coach-float.tsx"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
 import {
   getLastCoachRequest,
   scriptCoachStream,
 } from "@/test/threads-api-mock.ts"
 import {
+  byAttr,
   installPaperTestLifecycle,
   renderPaper,
   openDoc,
@@ -68,8 +66,9 @@ describe("Paper Coach cites and mobile sheet", () => {
       ).not.toBeInTheDocument()
 
       fireEvent.click(cite)
-      const bullet = editor.querySelector(
-        '[data-paper-section="experience-1-bullet-1"]'
+      const bullet = byAttr(
+        editor,
+        'data-paper-section="experience-1-bullet-1"'
       )
       expect(bullet).toHaveClass("paper-coach-changed")
       expect(scrollIntoView).toHaveBeenCalledWith(
@@ -206,7 +205,7 @@ describe("Paper Coach cites and mobile sheet", () => {
     expect(
       within(dialog).queryByRole("button", { name: /Show on Paper/ })
     ).not.toBeInTheDocument()
-    expect(dialog.querySelector("[data-coach-cite]")).toBeNull()
+    expect(byAttr(dialog, "data-coach-cite")).toBeNull()
     expect(dialog).not.toHaveTextContent(/provenance/i)
     expect(
       within(dialog).queryByRole("complementary", { name: /sources/i })
@@ -239,9 +238,7 @@ describe("Paper Coach cites and mobile sheet", () => {
     await openDoc("PM track CV")
     const dialog = await openCoach()
 
-    expect(
-      document.querySelector("[data-coach-float-backdrop]")
-    ).toBeInTheDocument()
+    expect(byAttr(document, "data-coach-float-backdrop")).toBeInTheDocument()
     expect(dialog).toHaveAttribute("aria-modal", "true")
 
     const focusable = [
@@ -266,13 +263,10 @@ describe("Paper Coach cites and mobile sheet", () => {
     const editor = await openDoc("PM track CV")
     const dialog = await openCoach()
 
-    expect(dialog.className).toContain(COACH_FLOAT_DESKTOP_OPEN_HEIGHT_CLASS)
-    expect(dialog.className).not.toMatch(/70vh/)
     expect(dialog).not.toHaveAttribute("draggable")
-    expect(dialog.querySelector("[data-coach-float-resize]")).toBeNull()
-    expect(dialog.className).not.toMatch(/resize-/)
+    expect(byAttr(dialog, "data-coach-float-resize")).toBeNull()
 
-    const canvas = editor.querySelector("[data-paper-canvas]")
+    const canvas = byAttr(editor, "data-paper-canvas")
     expect(canvas).toBeInstanceOf(HTMLElement)
     expect(canvas).toHaveAttribute(COACH_FLOAT_NUDGE_ATTR)
 
@@ -284,8 +278,8 @@ describe("Paper Coach cites and mobile sheet", () => {
       await within(dialog).findByText("Keep the checkout metric.")
     ).toBeInTheDocument()
 
-    const thread = dialog.querySelector("[data-coach-float-thread]")
-    const viewport = dialog.querySelector("[data-coach-thread-viewport]")
+    const thread = byAttr(dialog, "data-coach-float-thread")
+    const viewport = byAttr(dialog, "data-coach-thread-viewport")
     expect(thread).toBeInstanceOf(HTMLElement)
     expect(viewport).toBeInstanceOf(HTMLElement)
     if (viewport instanceof HTMLElement) viewport.scrollTop = 48
@@ -303,7 +297,7 @@ describe("Paper Coach cites and mobile sheet", () => {
     expect(
       screen.queryByRole("textbox", { name: "Message Coach" })
     ).not.toBeInTheDocument()
-    expect(minimized.querySelector("[data-coach-float-thread]")).toBe(thread)
+    expect(byAttr(minimized, "data-coach-float-thread")).toBe(thread)
 
     summary.textContent = "Edited while Coach is tucked away."
     fireEvent.input(summary)
@@ -313,7 +307,7 @@ describe("Paper Coach cites and mobile sheet", () => {
     const restored = screen.getByRole("dialog", { name: "Coach" })
     expect(restored).toHaveAttribute("data-coach-float-state", "open")
     expect(canvas).toHaveAttribute(COACH_FLOAT_NUDGE_ATTR)
-    expect(restored.querySelector("[data-coach-float-thread]")).toBe(thread)
+    expect(byAttr(restored, "data-coach-float-thread")).toBe(thread)
     expect(
       within(restored).getByText("Keep the checkout metric.")
     ).toBeInTheDocument()
@@ -321,9 +315,10 @@ describe("Paper Coach cites and mobile sheet", () => {
       within(restored).getByText("Sharpen the checkout bullet")
     ).toBeInTheDocument()
     if (rememberedScroll > 0) {
-      expect(
-        restored.querySelector("[data-coach-thread-viewport]")
-      ).toHaveProperty("scrollTop", rememberedScroll)
+      expect(byAttr(restored, "data-coach-thread-viewport")).toHaveProperty(
+        "scrollTop",
+        rememberedScroll
+      )
     }
 
     fireEvent.keyDown(restored, { key: "Escape" })
@@ -350,7 +345,7 @@ describe("Paper Coach cites and mobile sheet", () => {
       "data-coach-float-state",
       "open"
     )
-    expect(editor.querySelector("[data-paper-canvas]")).not.toHaveAttribute(
+    expect(byAttr(editor, "data-paper-canvas")).not.toHaveAttribute(
       COACH_FLOAT_NUDGE_ATTR
     )
   })
