@@ -1,3 +1,6 @@
 # Machine-written files. The pre-commit size limit skips them (see .githooks/pre-commit).
 pnpm-lock.yaml linguist-generated
 apps/api/drizzle/** linguist-generated
+
+# Exported design HTML (machine-written)
+docs/design/opencv/exports/**/*.html linguist-generated
