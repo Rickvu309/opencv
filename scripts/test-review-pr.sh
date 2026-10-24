@@ -44,17 +44,18 @@ export REVIEW_TEST_TITLE='chore: thing (#7)'
 # Throwaway repos run no hooks unless a case turns them on; commits use the global identity.
 quiet_repo() { git -C "$1" config core.hooksPath /dev/null; }
 
-# origin: main has a check.sh that logs the tree it ran on; the main checkout clones it.
+# origin: main has a check.sh that logs the tree it ran on; the main checkout clones it. Writing the tree touches the
+# index, and PR code runs with hooks on during the check anyway, so the stub keeps hooks off to isolate the merge step.
 origin=$tmp/origin.git
 work=$tmp/work
-git init -q --bare "$origin"
+git init -q --bare -b main "$origin"
 git init -q -b main "$work"
 quiet_repo "$work"
 cd "$work"
 mkdir -p scripts .github
 cat >scripts/check.sh <<'CHK'
 #!/usr/bin/env bash
-echo "ran on $(git write-tree)" >>"$REVIEW_TEST_RUNS"
+echo "ran on $(git -c core.hooksPath=/dev/null write-tree)" >>"$REVIEW_TEST_RUNS"
 [[ -f FAIL_CHECK ]] && exit 1
 exit 0
 CHK
@@ -109,10 +110,12 @@ pr_commit() { git -C "$work" add -A && git -C "$work" commit -q -m "$1" && git -
 main_commit() { git -C "$work" checkout -q main && git -C "$work" add -A && git -C "$work" commit -q -m "$1" && git -C "$work" push -q origin main && git -C "$work" checkout -q "$REVIEW_TEST_BRANCH"; }
 
 run --no-install
-expect "behind main merges and passes" 0 "branch is behind main; the checks run on the merge" "merges cleanly" "lint, typecheck, test passed" "RESULT: OK (patch id"
+expect "behind main merges and passes" 0 "branch is behind main; the checks run on the merge" "merges cleanly" "lint, typecheck, test passed" "RESULT: OK (patch id" "--match-head-commit $(git -C "$work" rev-parse "$REVIEW_TEST_BRANCH")"
 want_runs "behind main" 1
 grep -q "ran on $(merge_tree)" "$REVIEW_TEST_RUNS" || fail "behind main" "check did not run on the merge tree $(merge_tree)"
 patch1=$(patch_id)
+GIT_CONFIG_PARAMETERS="'color.ui=always' 'diff.noprefix=true'" run --no-install
+expect "patch id ignores color and prefix config" 0 "$patch1"
 
 run --no-install
 expect "same tree is cached" 0 "(cached; --no-cache reruns)" "RESULT: OK"
@@ -156,10 +159,12 @@ REVIEW_TEST_TITLE='bad title' run --no-install
 expect "checklist FAIL skips the check" 1 "merges cleanly" "skipped the full check" "RESULT: FAIL"
 want_runs "checklist fail" 4
 
-# The PR's own hooks never run: the merge makes no commit.
+# The PR's own hooks take no part in the merge or the checkout: merge-tree writes no ref or index, and the checkout runs with hooks off.
 mkdir -p "$work/.githooks"
-printf '#!/usr/bin/env bash\necho PR_HOOK_RAN >&2\nexit 1\n' >"$work/.githooks/commit-msg"
-printf '#!/usr/bin/env bash\necho PR_HOOK_RAN >&2\nexit 1\n' >"$work/.githooks/pre-merge-commit"
+printf '#!/usr/bin/env bash\necho "PR_HOOK_RAN $0" >&2\nexit 1\n' >"$work/.githooks/commit-msg"
+printf '#!/usr/bin/env bash\necho "PR_HOOK_RAN $0" >&2\nexit 1\n' >"$work/.githooks/pre-merge-commit"
+printf '#!/usr/bin/env bash\necho "PR_HOOK_RAN $0" >&2\nexit 1\n' >"$work/.githooks/reference-transaction"
+printf '#!/usr/bin/env bash\necho "PR_HOOK_RAN $0" >&2\nexit 1\n' >"$work/.githooks/post-index-change"
 chmod +x "$work/.githooks/"*
 pr_commit "add failing hooks"
 git -C "$main_checkout" config core.hooksPath .githooks

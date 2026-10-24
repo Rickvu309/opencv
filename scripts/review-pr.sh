@@ -163,11 +163,14 @@ gate=$(grep -E '^(package\.json|scripts/|\.githooks/|\.github/)' <<<"$files" || 
 echo
 echo "Merge with main and checks"
 main_sha=$(git -C "$main_checkout" rev-parse origin/main)
+head_sha=$(git -C "$main_checkout" rev-parse "$head_ref")
 merge_base=$(git -C "$main_checkout" merge-base origin/main "$head_ref") || die "PR #$pr has no common ancestor with main"
 # --verbatim hashes the diff text without line numbers, so the id survives a rebase that leaves every hunk's text the
-# same (whitespace included) and changes with anything a reviewer would need to read again.
-patch_id=$(git -C "$main_checkout" diff "$merge_base" "$head_ref" | git patch-id --verbatim | cut -d' ' -f1)
-echo "  main ${main_sha:0:12}   patch id ${patch_id:-none}"
+# same (whitespace included) and changes with anything a reviewer would need to read again. Plain prefixes and no
+# color or external diff keep the id the same on every machine.
+patch_id=$(git -C "$main_checkout" diff --no-color --no-ext-diff --src-prefix=a/ --dst-prefix=b/ "$merge_base" "$head_ref" | git patch-id --verbatim | cut -d' ' -f1)
+if [[ -z "$patch_id" && "$merge_base" != "$head_sha" ]]; then die "could not compute the patch id of PR #$pr"; fi
+echo "  main ${main_sha:0:12}   head ${head_sha:0:12}   patch id ${patch_id:-none}"
 if git -C "$main_checkout" merge-base --is-ancestor origin/main "$head_ref"; then
   ok "branch contains the latest main"
 else
@@ -183,17 +186,23 @@ cleanup() {
 trap cleanup EXIT
 [[ ! -e "$wt" ]] || git -C "$main_checkout" worktree remove --force "$wt"
 mkdir -p "$wt_root"
-# Test what a squash merge would land: main with the PR merged in, not the PR head alone. No commit is made, so no
-# hook and no git identity take part, and the merged index gives the tree.
-git -C "$main_checkout" worktree add --quiet --detach "$wt" origin/main
-if git -C "$wt" merge --quiet --no-commit --no-ff "$head_ref" >/dev/null 2>&1; then
-  tree=$(git -C "$wt" write-tree)
+# Test what a squash merge would land: main with the PR merged in, not the PR head alone. merge-tree writes no ref, no
+# index and no commit, so none of the PR's hooks and no git identity take part; the tree is then checked out as is.
+set +e
+merge_out=$(git -C "$main_checkout" merge-tree --write-tree --name-only origin/main "$head_ref" 2>&1)
+merge_rc=$?
+set -e
+if (( merge_rc == 0 )); then
+  tree=${merge_out%%$'\n'*}
   ok "merges cleanly with main (tested tree ${tree:0:12})"
+  git -C "$main_checkout" worktree add --quiet --detach --no-checkout "$wt" origin/main
+  # The checkout writes the PR's .githooks/ too; hooks stay off for this one command so none of them fires here.
+  git -C "$wt" -c core.hooksPath=/dev/null read-tree -u --reset "$tree"
   if (( ${#fails[@]} > soft_fails )); then
     note "skipped the full check; fix the FAIL item(s) above first (a review thread or a requested change alone does not skip it)"
   else
     # Use check.sh from main, not the PR's copy, so a PR can't weaken its own gate. A passing run is cached by the
-    # tested tree and that checker, so a rerun that lands the same tree is free. Only a run with no FAIL is cached.
+    # tested tree and that checker, so a rerun that lands the same tree is free. Cached only when this step adds no FAIL.
     checker_blob=$(git -C "$main_checkout" rev-parse --verify --quiet origin/main:scripts/check.sh || true)
     cache_dir="$wt_root/.review-pr-cache"
     cache_hit="$cache_dir/$tree-$checker_blob-install$install"
@@ -226,11 +235,15 @@ if git -C "$wt" merge --quiet --no-commit --no-ff "$head_ref" >/dev/null 2>&1; t
       fi
     fi
   fi
-else
-  conflicts=$(git -C "$wt" diff --name-only --diff-filter=U 2>/dev/null | tr '\n' ' ')
+elif (( merge_rc == 1 )); then
+  conflicts=$(tail -n +2 <<<"$merge_out" | tr '\n' ' ')
   bad "does not merge cleanly with main; author must rebase (git rebase origin/main) and resolve: ${conflicts:-see git merge origin/main}"
+else
+  bad "merge with main failed (git merge-tree exit $merge_rc): $(tr '\n' ' ' <<<"$merge_out")"
 fi
-if (( keep )); then note "review worktree kept at $wt"; else git -C "$main_checkout" worktree remove --force "$wt"; fi
+if [[ -e "$wt" ]]; then
+  if (( keep )); then note "review worktree kept at $wt"; else git -C "$main_checkout" worktree remove --force "$wt"; fi
+fi
 
 echo
 echo "Verification"
@@ -244,6 +257,6 @@ elif [[ ${#humans[@]} -gt 0 ]]; then
   echo "RESULT: HUMAN REQUIRED. Do NOT merge. Comment with your findings and leave the decision to a human."
   exit 2
 else
-  echo "RESULT: OK (patch id ${patch_id:-none}, main ${main_sha:0:12}). Check the verify-opencv evidence and the independent review, then: gh pr merge $pr --squash"
+  echo "RESULT: OK (patch id ${patch_id:-none}, main ${main_sha:0:12}). Check the verify-opencv evidence and the independent review, then: gh pr merge $pr --squash --match-head-commit $head_sha"
   exit 0
 fi
