@@ -30,8 +30,7 @@ async function answers() {
   }
 }
 
-async function ensureServer() {
-  if (await answers()) return null
+async function startServer() {
   const child = spawn(
     "pnpm",
     [
@@ -45,11 +44,7 @@ async function ensureServer() {
       port,
       "--strictPort",
     ],
-    {
-      cwd: repo,
-      stdio: "ignore",
-      detached: true,
-    }
+    { cwd: repo, stdio: "ignore", detached: true }
   )
   for (let i = 0; i < 120; i++) {
     if (await answers()) return child
@@ -93,16 +88,38 @@ async function visit(
         await page.screenshot(`${shots}/${wanted.shot}-full.png`, true)
       }
     }
+    if (wanted.menu) {
+      await page.evaluate("scrollTo(0, 0)")
+      const clicked = await page.evaluate(`(() => {
+        const b = [...document.querySelectorAll('header button[aria-expanded="false"]')].find((n) => n.getBoundingClientRect().width > 0)
+        if (b) b.click()
+        return Boolean(b)
+      })()`)
+      if (clicked) {
+        await sleep(600)
+        snap.topOpen = await page.evaluate(probeSource("top"))
+      }
+    }
     return snap
   } finally {
     await page.close()
   }
 }
 
-const server = await ensureServer()
-const browser = await launchBrowser()
+let server = null
+let browser = null
 let exit = 0
 try {
+  if (await answers()) {
+    if (!process.env.VERIFY_LANDING_REUSE) {
+      throw new Error(
+        `something already answers on ${url}; it may be another tree. Stop it, pick another PORT, or set VERIFY_LANDING_REUSE=1`
+      )
+    }
+  } else {
+    server = await startServer()
+  }
+  browser = await launchBrowser()
   const desktop = await visit(
     browser,
     { width: 1440, height: 900, mobile: false, reducedMotion: false },
@@ -111,7 +128,7 @@ try {
   const mobile = await visit(
     browser,
     { width: 390, height: 844, mobile: true, reducedMotion: false },
-    { top: true, shot: "mobile" }
+    { top: true, shot: "mobile", menu: true }
   )
   const reduced = await visit(
     browser,
@@ -125,6 +142,7 @@ try {
     ...pageChecks({
       desktop: desktop.top,
       mobile: mobile.top,
+      mobileOpen: mobile.topOpen ?? null,
       first: desktop.first,
       reduced: reduced.first,
       deep: desktop.deep,
@@ -146,7 +164,7 @@ try {
   console.error(`verify-landing error: ${error.message}`)
   exit = 2
 } finally {
-  await browser.quit()
+  if (browser) await browser.quit()
   if (server) process.kill(-server.pid, "SIGTERM")
 }
 process.exit(exit)

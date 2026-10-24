@@ -79,6 +79,7 @@ function probe(kind) {
     )
 
   if (kind === "first-now") {
+    const heroSub = hero ? hero.querySelector("h1 ~ p") : null
     const animatedText = ownTextEls()
       .filter((el) => el.getBoundingClientRect().width > 1)
       .map((el) => {
@@ -86,11 +87,13 @@ function probe(kind) {
         const why = []
         if (effOpacity(el) < 0.95) why.push("opacity")
         if (s.filter !== "none") why.push("blur")
-        if (s.transform !== "none") why.push("offset")
         if (el.getAnimations().length) why.push("animation")
         return why.length
           ? {
               region: regionOf(el),
+              lead: Boolean(
+                el.closest("h1") || (heroSub && heroSub.contains(el))
+              ),
               text: el.textContent.trim().slice(0, 24),
               why,
             }
@@ -126,7 +129,7 @@ function probe(kind) {
     }))
     const links = [
       ...document.querySelectorAll(
-        "header a,header button,main a,main button,footer a,footer button"
+        "header a,header button,main a,main button,footer a,footer button,[role=dialog] a,[role=menu] a"
       ),
     ].map((el) => {
       const s = cs(el)
@@ -135,6 +138,7 @@ function probe(kind) {
         region: regionOf(el),
         text: readText(el),
         href: el.getAttribute("href"),
+        expanded: el.getAttribute("aria-expanded"),
         visible: visible(el),
         rect: rectOf(el),
         buttonLike: bg[3] > 0.05 || parseFloat(s.borderTopWidth) > 0,
@@ -276,35 +280,32 @@ function probe(kind) {
       ),
     ]
       .filter((el) => visible(el))
-      .map((el) => ({ text: readText(el).slice(0, 24), ...rectOf(el) }))
-    const WATCH =
-      /opacity|transform|translate|scale|rotate|filter|mask|top|left|margin/
-    const configured = []
+      .map((el) => ({
+        text: readText(el).slice(0, 24),
+        href: el.getAttribute("href"),
+        ...rectOf(el),
+      }))
+    const configured = new Map()
     const hidden = []
+    const times = (v) => v.split(",").map(parseFloat)
     for (const el of document.querySelectorAll("header *, main *, footer *")) {
       const s = cs(el)
-      const times = (v) => v.split(",").map(parseFloat)
+      const tag = el.tagName.toLowerCase()
+      const note = (label) =>
+        configured.set(label, (configured.get(label) ?? 0) + 1)
       if (
         s.animationName !== "none" &&
         times(s.animationDuration).some((t) => t > 0)
       )
-        configured.push(
-          `animation:${s.animationName} on ${el.tagName.toLowerCase()}`
-        )
+        note(`animation:${s.animationName} on ${tag}`)
       const props = s.transitionProperty.split(",").map((p) => p.trim())
       const durs = times(s.transitionDuration)
       props.forEach((p, i) => {
-        if (p !== "all" && WATCH.test(p) && durs[i % durs.length] > 0)
-          configured.push(`transition:${p} on ${el.tagName.toLowerCase()}`)
+        if (durs[i % durs.length] > 0) note(`transition:${p} on ${tag}`)
       })
     }
     for (const el of textEls) {
-      const s = cs(el)
-      if (
-        effOpacity(el) < 0.95 ||
-        s.filter !== "none" ||
-        s.transform !== "none"
-      )
+      if (effOpacity(el) < 0.95 || cs(el).filter !== "none")
         hidden.push(el.textContent.trim().slice(0, 24))
     }
     return {
@@ -315,7 +316,7 @@ function probe(kind) {
         .getAnimations()
         .filter((a) => a.playState === "running" || a.playState === "pending")
         .map((a) => a.animationName ?? a.transitionProperty ?? "animation"),
-      configured: [...new Set(configured)],
+      configured: [...configured].map(([label, n]) => `${label} x${n}`),
       hidden,
       scrollBehavior: cs(document.documentElement).scrollBehavior,
     }

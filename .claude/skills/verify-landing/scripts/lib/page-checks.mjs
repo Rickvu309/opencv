@@ -37,6 +37,7 @@ const hex = (c) =>
 export function pageChecks({
   desktop,
   mobile,
+  mobileOpen,
   first,
   reduced,
   deep,
@@ -66,25 +67,27 @@ export function pageChecks({
   )
 
   const names = ["coach", "paper", "apply", "pitch"]
-  const seen = names.filter((n) =>
-    mobile.links.some(
+  const inView = (snap, n) =>
+    snap.links.some(
       (l) =>
         l.visible &&
         l.text.toLowerCase() === n &&
         l.rect.y >= 0 &&
-        l.rect.y + l.rect.h <= mobile.vh &&
+        l.rect.y + l.rect.h <= snap.vh &&
         l.rect.x >= 0 &&
-        l.rect.x < mobile.vw
+        l.rect.x < snap.vw
     )
-  )
+  const seenOpen = mobileOpen ? names.filter((n) => inView(mobileOpen, n)) : []
+  const seenClosed = names.filter((n) => inView(mobile, n))
+  const seen = seenOpen.length > seenClosed.length ? seenOpen : seenClosed
   // NN/g 4.3
   out.push(
     verdict(
       "15",
       "surface-names-before-fold-390",
-      "At 390x844 all four surface names are visible as links without scrolling",
+      "At 390x844 all four surface names are visible as links without scrolling, in the page or in a menu the checker opens with one click",
       seen.length === 4,
-      `${seen.length} of 4 visible without scrolling: ${seen.join(", ") || "none"}`
+      `${seen.length} of 4 visible without scrolling: ${seen.join(", ") || "none"} (${mobileOpen ? "menu opened" : "no menu button found"})`
     )
   )
 
@@ -107,16 +110,35 @@ export function pageChecks({
 
   const light = luminance(desktop.bg) >= 0.85
   const sat = deep.colors.filter((c) => chroma(c.rgb) >= 0.18)
-  const buckets = new Map()
-  for (const c of sat) buckets.set(Math.round(hue(c.rgb) / 40) % 9, hex(c.rgb))
+  const hues = sat
+    .map((c) => ({ h: hue(c.rgb), hex: hex(c.rgb) }))
+    .sort((x, y) => x.h - y.h)
+  const clusters = []
+  for (const item of hues) {
+    const last = clusters[clusters.length - 1]
+    if (last && item.h - last[last.length - 1].h <= 25) last.push(item)
+    else clusters.push([item])
+  }
+  if (clusters.length > 1) {
+    const head = clusters[0]
+    const tail = clusters[clusters.length - 1]
+    if (head[0].h + 360 - tail[tail.length - 1].h <= 25) {
+      clusters[0] = [...tail, ...head]
+      clusters.pop()
+    }
+  }
+  const buckets = {
+    size: clusters.length,
+    values: () => clusters.map((c) => c[0].hex),
+  }
   // Refactoring UI, color palette
   out.push(
     verdict(
       "17",
       "light-field-one-accent",
-      "Background luminance 0.85 or more; at most one saturated hue on marketing text and shapes (chroma >= 0.18, product shots excluded)",
+      "Background luminance 0.85 or more; at most one saturated hue family (hues within 25 degrees count as one) on marketing text and shapes (chroma >= 0.18, product shots excluded)",
       light && buckets.size <= 1,
-      `background ${hex(desktop.bg)} (L=${luminance(desktop.bg).toFixed(2)}), ${buckets.size} saturated hue(s)${buckets.size ? `: ${[...buckets.values()].join(" ")}` : ""}`
+      `background ${hex(desktop.bg)} (L=${luminance(desktop.bg).toFixed(2)}), ${buckets.size} saturated hue(s)${buckets.size ? `: ${buckets.values().join(" ")}` : ""}`
     )
   )
 
@@ -155,38 +177,52 @@ export function pageChecks({
     )
   )
 
-  const animated = first.animatedText
+  const describe = (list) =>
+    list.length
+      ? `${list.length} elements, e.g. ${list
+          .slice(0, 2)
+          .map((a) => `${a.region} "${a.text}" (${a.why.join("+")})`)
+          .join("; ")}`
+      : "none"
+  const lead = first.animatedText.filter((a) => a.lead)
+  const rest = first.animatedText.filter((a) => !a.lead)
   // NN/g 5.3, the tagline is immediately visible
   out.push(
     verdict(
       "20",
-      "text-visible-at-first-paint",
-      "No text starts hidden, blurred, offset or animated at first paint (covers H1, subhead and the closing line)",
-      animated.length === 0,
-      animated.length
-        ? `${animated.length} elements, e.g. ${animated
-            .slice(0, 2)
-            .map((a) => `${a.region} "${a.text}" (${a.why.join("+")})`)
-            .join("; ")}`
-        : "none"
+      "headline-visible-at-first-paint",
+      "The H1 and subhead are not hidden, blurred or animated at first paint",
+      lead.length === 0,
+      describe(lead)
+    )
+  )
+  // NN/g 5.3, scroll-triggered text animations delay users (research gap 15, the closing line)
+  out.push(
+    verdict(
+      "20b",
+      "other-text-visible-at-first-paint",
+      "No other text on the page starts hidden, blurred or animated, so nothing waits for a scroll trigger",
+      rest.length === 0,
+      describe(rest)
     )
   )
 
   const motion = [
-    ...reducedDeep.running,
+    ...reducedDeep.running.map((r) => `running: ${r}`),
     ...reducedDeep.configured,
     ...reducedDeep.hidden.map((t) => `still hidden: ${t}`),
     ...reduced.animatedText.map((a) => `first paint: ${a.text}`),
   ]
+  const smooth = reducedDeep.scrollBehavior === "smooth"
   // WCAG 2.2 SC 2.3.3
   out.push(
     verdict(
       "21",
       "reduced-motion-disables-animation",
-      "With prefers-reduced-motion: reduce nothing animates opacity, blur, transform or position, and scroll is not smooth",
-      motion.length === 0 && reducedDeep.scrollBehavior !== "smooth",
-      motion.length || reducedDeep.scrollBehavior === "smooth"
-        ? `${motion.length} item(s): ${motion.slice(0, 3).join("; ")}; scroll-behavior=${reducedDeep.scrollBehavior}`
+      "With prefers-reduced-motion: reduce no element has a non-zero transition or animation duration (transition: all counts), nothing runs or stays hidden, and scroll is not smooth",
+      motion.length === 0 && !smooth,
+      motion.length || smooth
+        ? `${motion.length} item(s): ${motion.slice(0, 4).join("; ")}; scroll-behavior=${reducedDeep.scrollBehavior}`
         : "none"
     )
   )
@@ -221,25 +257,30 @@ export function pageChecks({
   )
 
   const small = deep.targets.filter((t) => t.w < 24 || t.h < 24)
+  const undersized = new Set(small)
   const crowded = small.filter((t) => {
     const cx = t.x + t.w / 2
     const cy = t.y + t.h / 2
     return deep.targets.some((o) => {
       if (o === t) return false
+      if (undersized.has(o)) {
+        return Math.hypot(o.x + o.w / 2 - cx, o.y + o.h / 2 - cy) < 24
+      }
       const dx = Math.max(o.x - cx, 0, cx - (o.x + o.w))
       const dy = Math.max(o.y - cy, 0, cy - (o.y + o.h))
       return Math.hypot(dx, dy) < 12
     })
   })
+  const smallPrimary = small.filter((t) => t.href === "/sign-up")
   const minSide = Math.min(...deep.targets.map((t) => Math.min(t.w, t.h)))
   // WCAG 2.2 SC 2.5.8
   out.push(
     verdict(
       "24",
       "target-size-24",
-      "Every link and button is 24x24 CSS px, or has a 24px circle clear of other targets (WCAG 2.5.8)",
-      crowded.length === 0,
-      `${deep.targets.length} targets, smallest side ${px(minSide)}px, ${small.length} undersized, ${crowded.length} crowded${crowded[0] ? `: "${crowded[0].text}"` : ""}`
+      "Every link and button is 24x24 CSS px, or has a 24px circle clear of other targets and circles; the sign-up buttons are always 24x24 (WCAG 2.5.8)",
+      crowded.length === 0 && smallPrimary.length === 0,
+      `${deep.targets.length} targets, smallest side ${px(minSide)}px, ${small.length} undersized, ${crowded.length} crowded, ${smallPrimary.length} undersized sign-up${crowded[0] ? `: "${crowded[0].text}"` : ""}`
     )
   )
 

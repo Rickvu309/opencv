@@ -1,6 +1,6 @@
 // Writing, logic and proof-markup properties. Each reads the "top" snapshot and returns
-// { id, name, rule, pass, measured }. The id is the check number in
-// ~/tmp/opencv-run/LANDING/research.md section 5 (sources are cited there and in SKILL.md).
+// { id, name, rule, pass, measured }. The id is the check number in the landing research,
+// section 5. The source of each rule is in the comment above it and in SKILL.md.
 const SURFACES = ["Coach", "Paper", "Apply", "Pitch"]
 const words = (s) => s.split(/\s+/).filter(Boolean)
 const sentences = (s) => s.split(/(?<=[.!?])\s+/).filter(Boolean)
@@ -18,10 +18,15 @@ const OUTCOME =
   /\b(job|jobs|role|roles|offer|interview|interviews|career|cv|hired|internship)\b/i
 const AUDIENCE =
   /\b(student|students|graduate|graduates|grad|grads|intern|interns)\b/i
+const STUDENT = /\b(students?|(new|recent|fresh) (graduates?|grads?))\b/i
 const MARKETESE =
-  /(?<!\b(?:your|my|their|our)\s)\b(best|#1|dream|seamless|seamlessly|empower\w*|revolutioni[sz]\w*|supercharge\w*|unlock\w*|cutting-edge|world-class|game-chang\w*|next-level)\b/i
+  /(?<![\w#])#1(?!\w)|(?<!\w)(?:best|dream|seamless|seamlessly|empower\w*|revolutioni[sz]\w*|supercharge\w*|unlock\w*|cutting-edge|world-class|game-chang\w*|next-level)(?!\w)/gi
+const ALLOWED = /\byour best work\b/gi
 const GENERIC_LABEL =
-  /^(get started|learn more|click here|start|start now|start free|start for free|sign up|sign up free|try it|try free|try now|join|join now)$/i
+  /^(get started|learn more|click here|(start|get|try|join|begin|sign up)( (now|free|for free|today|here|started))?)$/i
+
+export const findMarketese = (text) =>
+  [...text.replace(ALLOWED, " ").matchAll(MARKETESE)].map((m) => m[0])
 const PASSIVE =
   /\b(is|are|was|were|be|been|being)\s+(\w+ed|built|made|given|written|shown|done|known|taken|seen|kept|found|sent|chosen|held)\b/i
 
@@ -54,8 +59,8 @@ export function textRules(top) {
   )
 
   const heroText = `${h1} ${sub}`
-  const vietnamese = /vietnam/i.test(heroText)
-  const student = /student|new graduate|graduate/i.test(heroText)
+  const vietnamese = /\bvietnamese\b/i.test(heroText)
+  const student = STUDENT.test(heroText)
   // NN/g 2.3; Digital.gov plain language
   out.push(
     verdict(
@@ -87,15 +92,13 @@ export function textRules(top) {
   )
 
   const copy = [...top.blocks.map((b) => b.text), top.description, top.title]
-  const hits = copy.flatMap((t) =>
-    [...t.matchAll(new RegExp(MARKETESE, "gi"))].map((m) => m[0])
-  )
+  const hits = copy.flatMap(findMarketese)
   // Nielsen, marketese (nngroup.com/articles/how-users-read-on-the-web)
   out.push(
     verdict(
       "04",
       "no-marketese",
-      'No best, #1, dream, seamless, empower, revolutionize, supercharge (list in text-rules.mjs; "your best" is exempt)',
+      'No best, #1, dream, seamless, empower, revolutionize, supercharge (list in text-rules.mjs; only the exact phrase "your best work" is exempt)',
       hits.length === 0,
       `hits: ${quote([...new Set(hits)])}`
     )
@@ -169,28 +172,30 @@ export function textRules(top) {
     verdict(
       "08",
       "label-has-object",
-      "The label is 3+ words and not a generic verb such as Start free, Get started, Learn more",
-      Boolean(label) && words(label).length >= 3 && !GENERIC_LABEL.test(label),
-      `label ${quote([label])}, ${words(label).length} words`
+      "The label is 2+ words and names the next step, not a bare verb such as Start free, Get started, Learn more, Join",
+      words(label).length >= 2 && !GENERIC_LABEL.test(label),
+      `label ${quote([label])}, ${words(label).length} words, generic=${GENERIC_LABEL.test(label)}`
     )
   )
 
-  const before = top.blocks
-    .filter((b) => b.region === "hero" || b.region === "section")
-    .map((b) => b.text)
-    .join(" ")
+  const objection =
+    /\b(from|built on|based on|uses|using)\s+your\s+(own\s+)?(cv|goals|story)\b/i
+  const firstSurface = top.blocks.findIndex((b) =>
+    b.region.startsWith("surface:")
+  )
+  const objectionAt = top.blocks.findIndex(
+    (b) => b.region !== "nav" && objection.test(b.text)
+  )
   const answered =
-    /\b(from|built on|based on|uses|using)\s+your\s+(own\s+)?(cv|goals|story)\b/i.test(
-      before
-    )
+    firstSurface > 0 && objectionAt >= 0 && objectionAt < firstSurface
   // Shapiro, answer the objection before the scroll
   out.push(
     verdict(
       "10",
       "objection-above-first-surface",
-      "A sentence above the first surface says answers come from the reader's own CV or goals (heuristic)",
+      "A sentence earlier in the DOM than the first surface section says answers come from the reader's own CV or goals (heuristic)",
       answered,
-      `answered above first surface: ${answered}`
+      `objection at block ${objectionAt}, first surface at block ${firstSurface} (answered above: ${answered})`
     )
   )
 

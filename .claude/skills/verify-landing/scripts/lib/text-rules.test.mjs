@@ -1,0 +1,85 @@
+// Unit assertions for the pure rules. Run: node --test .claude/skills/verify-landing/scripts/lib
+import assert from "node:assert/strict"
+import test from "node:test"
+
+import { findMarketese, textRules } from "./text-rules.mjs"
+
+test("04 catches each banned term, including #1 and possessive forms", () => {
+  for (const [text, hit] of [
+    ["We are the #1 coach", "#1"],
+    ["#1 career coach", "#1"],
+    ["Land your dream job", "dream"],
+    ["Our best coach yet", "best"],
+    ["Our seamless onboarding", "seamless"],
+    ["The best coach", "best"],
+    ["Supercharge your search", "Supercharge"],
+  ]) {
+    assert.deepEqual(findMarketese(text), [hit], text)
+  }
+})
+
+test("04 exempts only the exact phrase your best work", () => {
+  assert.deepEqual(findMarketese("Turn your best work into a page"), [])
+  assert.deepEqual(findMarketese("Show your best coach"), ["best"])
+  assert.deepEqual(findMarketese("Your best work, our best tool"), ["best"])
+})
+
+const block = (region, text, tag = "p") => ({ region, text, tag })
+const base = (blocks, links = []) => ({
+  blocks,
+  links,
+  description: "",
+  title: "",
+  bodyText: "",
+  alts: [],
+  imgs: [],
+  markup: { blockquote: 0, logoImgs: 0 },
+})
+const verdictOf = (top, id) => textRules(top).find((r) => r.id === id)
+
+test("10 needs the objection above the first surface in DOM order", () => {
+  const objection = block("section", "Answers come from your own CV and goals.")
+  const surface = block("surface:coach", "Coach", "h2")
+  assert.equal(
+    verdictOf(base([block("hero", "Hi"), objection, surface]), "10").pass,
+    true
+  )
+  assert.equal(
+    verdictOf(base([block("hero", "Hi"), surface, objection]), "10").pass,
+    false
+  )
+  assert.equal(
+    verdictOf(base([block("hero", "Hi"), surface]), "10").pass,
+    false
+  )
+})
+
+test("08 accepts short labels with an object and rejects bare verbs", () => {
+  const link = (text) => [
+    { region: "nav", text, href: "/sign-up" },
+    { region: "hero", text, href: "/sign-up" },
+    { region: "closing", text, href: "/sign-up" },
+  ]
+  const label = (text) => verdictOf(base([], link(text)), "08").pass
+  assert.equal(label("Start learning"), true)
+  assert.equal(label("Find food"), true)
+  for (const bad of ["Start free", "Get started", "Join", "Try now"])
+    assert.equal(label(bad), false, bad)
+})
+
+test("02 needs Vietnamese and student or new graduate, not undergraduate", () => {
+  const hero = (h1, sub = "") =>
+    base([block("hero", h1, "h1"), block("hero", sub)])
+  assert.equal(
+    verdictOf(hero("A first-job coach for Vietnamese students"), "02").pass,
+    true
+  )
+  assert.equal(
+    verdictOf(hero("Coach for Vietnam undergraduates"), "02").pass,
+    false
+  )
+  assert.equal(
+    verdictOf(hero("Coach for Vietnamese new graduates"), "02").pass,
+    true
+  )
+})
