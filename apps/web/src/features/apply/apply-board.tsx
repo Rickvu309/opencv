@@ -66,7 +66,7 @@ export function ApplyBoard({
   }
 
   return (
-    <div className="relative flex min-w-0 flex-1 flex-col overflow-hidden p-3">
+    <div className="relative flex min-w-0 flex-1 flex-col overflow-hidden p-2 sm:p-3">
       {boardEmpty ? empty : null}
       <div data-apply-board className="min-h-[28rem] flex-1">
         <KanbanProvider
@@ -99,8 +99,8 @@ export function ApplyBoard({
                 data-stage={stage.id}
                 className="min-w-0 border-0 bg-background"
               >
-                <KanbanHeader className="flex items-center gap-2 px-2 py-2">
-                  <Status className="min-w-0 gap-1.5 px-1.5">
+                <KanbanHeader className="flex items-center gap-2 px-1 py-2 sm:px-2">
+                  <Status className="min-w-0 gap-1 px-1 sm:gap-1.5 sm:px-1.5">
                     <StatusIndicator className={stage.dot} />
                     <StatusLabel className="truncate font-medium">
                       {stage.label}
@@ -109,7 +109,7 @@ export function ApplyBoard({
                   <NumberTicker
                     value={count}
                     duration={280}
-                    className="text-xs font-normal text-muted-foreground"
+                    className="hidden text-xs font-normal text-muted-foreground sm:inline-flex"
                   />
                 </KanbanHeader>
                 {count === 0 && !boardEmpty ? (
