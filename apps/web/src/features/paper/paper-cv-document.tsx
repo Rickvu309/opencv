@@ -1,6 +1,6 @@
 /**
  * CV print-paper templates. Shared type roles live in paper.css (ADR-0010
- * names, print-scaled). The product-sidebar hex stays here on purpose —
+ * names, print-scaled). The product-sidebar hex lives in cv-templates/product.tsx on purpose;
  * print layout is a documented ADR-0010 exception. Focus/selection chrome
  * is QVE-206 (`paper-canvas-field` in paper.css). Café Tab/Esc is QVE-208.
  * Empty-section next steps are QVE-209 (`paper-canvas-next-step`).
