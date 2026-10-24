@@ -249,204 +249,36 @@ export function withStarterCheckoutAchievement(
 }
 
 /**
- * Neutral Pitch page — product voice, never a named persona.
- * Identity (name, email, avatar) is overlaid from the session User.
- * `demo: true` so the page is labeled Demo content, not a fake UIT/PM self.
+ * One-line sample Pitch for a new account: the name line, one status, one
+ * Proof. No stock highlights, no Moments, no metric. Identity (name, email,
+ * avatar) is overlaid from the session User. `demo: true` labels the page
+ * Demo content, and Clear demo leads to the empty Pitch.
  */
 export function starterPitchDocument(): PitchDocument {
   return {
     headline: STARTER_PITCH_HEADLINE,
-    location: "HCMC · open to intern roles",
-    status: "Sample — open to intern roles · Summer 2026",
-    about: `${STARTER_PITCH_ABOUT_LEAD}
-
-I learn product by shipping small experiments — checkout UX studies, onboarding teardowns, and club-led discovery sprints. Looking for a team that values evidence over slide decks.`,
+    location: "",
+    status: "Open to intern roles",
+    about: STARTER_PITCH_ABOUT_LEAD,
     published: false,
     demo: true,
     github: {
       username: "",
       connected: true,
     },
-    blocks: DEFAULT_PITCH_BLOCKS,
+    blocks: DEFAULT_PITCH_BLOCKS.map((block) =>
+      block.kind === "about" || block.kind === "achievements"
+        ? block
+        : { ...block, hidden: true }
+    ),
     achievements: [starterCheckoutAchievement()],
-    experience: [
-      {
-        id: "e1",
-        period: "2024 – now",
-        title: "Product discovery lead",
-        org: "UIT Product Club",
-        summary:
-          "Weekly user interviews, prioritisation workshops, and PRDs for campus-side projects.",
-      },
-      {
-        id: "e2",
-        period: "2023 – 2024",
-        title: "Information Systems",
-        org: "University of Information Technology",
-        summary:
-          "GPA 3.4 · focus on systems analysis, SQL, and product electives.",
-      },
-    ],
-    storyHighlights: [
-      {
-        id: "sh-checkout",
-        label: "Checkout",
-        coverTone: "neutral",
-        slides: [
-          {
-            id: "s1",
-            caption: "Hallway test setup",
-            detail: "12 participants · two mobile layouts · 15 min each",
-            tone: "warm",
-          },
-          {
-            id: "s2",
-            caption: "Variant B — shorter card",
-            detail: "Sticky CTA + tighter image ratio",
-            tone: "neutral",
-          },
-          {
-            id: "s3",
-            caption: "Written up as a Proof",
-            detail: "Open it from Achievements",
-            tone: "neutral",
-            durationMs: 6000,
-          },
-        ],
-      },
-      {
-        id: "sh-wallet",
-        label: "Wallet audit",
-        coverTone: "cool",
-        slides: [
-          {
-            id: "s4",
-            caption: "Friction map",
-            detail: "Compared 3 wallet apps · flagged KYC drop-off",
-            tone: "cool",
-          },
-          {
-            id: "s5",
-            caption: "Shorter KYC prototype",
-            detail: "Sketched a 4-step path with classmates",
-            tone: "neutral",
-          },
-        ],
-      },
-      {
-        id: "sh-club",
-        label: "Club sprint",
-        coverTone: "warm",
-        slides: [
-          {
-            id: "s6",
-            caption: "Sprint board",
-            detail: "UIT Product Club · week 3 of discovery",
-            tone: "warm",
-          },
-          {
-            id: "s7",
-            caption: "Shipped prototype",
-            detail: "Campus expense app · demo day with the club",
-            tone: "cool",
-          },
-          {
-            id: "s8",
-            caption: "Team after demo",
-            detail: "Gift from mentors · proud of the sprint",
-            tone: "warm",
-          },
-        ],
-      },
-    ],
-    bento: [
-      {
-        id: "b1",
-        kind: "visual",
-        title: "Your name",
-        body: "Sample · campus club",
-        tone: "warm",
-        span: "normal",
-      },
-      {
-        id: "b2",
-        kind: "quote",
-        title: "I ship small experiments",
-        body: "Checkout UX, onboarding teardowns, club-led discovery.",
-        span: "normal",
-      },
-      {
-        id: "b4",
-        kind: "story",
-        title: "Checkout",
-        body: "Hallway test setup",
-        tone: "cool",
-        span: "tall",
-        storyHighlightId: "sh-checkout",
-      },
-    ],
-    gallery: [
-      { id: "g1", caption: "Hallway test", tone: "warm" },
-      { id: "g2", caption: "Sprint board", tone: "cool" },
-      { id: "g3", caption: "Flow maps", tone: "neutral" },
-    ],
-    files: [
-      {
-        id: "f1",
-        name: "Sample internship CV.pdf",
-        meta: "142 KB",
-        kind: "pdf",
-      },
-      {
-        id: "f2",
-        name: "Checkout study deck.fig",
-        meta: "Figma",
-        kind: "fig",
-      },
-    ],
-    links: [
-      {
-        id: "l1",
-        label: "GitHub",
-        href: "https://github.com",
-        icon: "github",
-      },
-      {
-        id: "l2",
-        label: "LinkedIn",
-        href: "https://linkedin.com",
-        icon: "linkedin",
-      },
-      {
-        id: "l3",
-        label: "Email",
-        href: "mailto:",
-        icon: "mail",
-      },
-    ],
-    workDocs: [
-      {
-        id: "d1",
-        name: "PM track CV",
-        type: "cv",
-        status: "draft",
-        updated: "Today",
-      },
-      {
-        id: "d3",
-        name: "Checkout card resize study",
-        type: "proof",
-        status: "ready",
-        updated: "3 days ago",
-      },
-      {
-        id: "d4",
-        name: "Wallet onboarding audit",
-        type: "proof",
-        status: "draft",
-        updated: "Last week",
-      },
-    ],
+    experience: [],
+    storyHighlights: [],
+    bento: [],
+    gallery: [],
+    files: [],
+    links: [],
+    workDocs: [],
   }
 }
 

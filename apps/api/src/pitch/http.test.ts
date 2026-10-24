@@ -3,7 +3,7 @@ import {
   PITCH_COMMANDS,
   emptyPitchDocument,
   starterCheckoutAchievement,
-  starterPitchDocument,
+  legacyStarterPitchDocument,
   withStarterCheckoutAchievement,
   type PitchDoc,
 } from "@workspace/domain"
@@ -78,14 +78,17 @@ describe("pitch API", () => {
       },
     })
 
-    const command = await app.request(`/api/commands/${PITCH_COMMANDS.update}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        content: emptyPitchDocument(),
-        contentVersion: 1,
-      }),
-    })
+    const command = await app.request(
+      `/api/commands/${PITCH_COMMANDS.update}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: emptyPitchDocument(),
+          contentVersion: 1,
+        }),
+      }
+    )
     expect(command.status).toBe(401)
   })
 
@@ -113,7 +116,11 @@ describe("pitch API", () => {
     expect(seeded.data.kind).toBe("pitch")
     expect(seeded.data.contentVersion).toBe(1)
 
-    const next = { ...starterPitchDocument(), about: "Minh's about.", published: true }
+    const next = {
+      ...legacyStarterPitchDocument(),
+      about: "Minh's about.",
+      published: true,
+    }
     const updatedRes = await postCommand(app, cookieA, PITCH_COMMANDS.update, {
       content: next,
       contentVersion: 1,
@@ -142,7 +149,7 @@ describe("pitch API", () => {
       headers: authHeaders(cookieA),
     })
     const seeded = await json<{ ok: true; data: PitchDoc }>(first)
-    const starter = starterPitchDocument()
+    const starter = legacyStarterPitchDocument()
     const leftover = {
       ...starter,
       github: { username: "alex-tran-uit", connected: true },
@@ -171,7 +178,7 @@ describe("pitch API", () => {
     expect(repairedRes.status).toBe(200)
     const repaired = await json<{ ok: true; data: PitchDoc }>(repairedRes)
     const content = repaired.data.content as ReturnType<
-      typeof starterPitchDocument
+      typeof legacyStarterPitchDocument
     >
     expect(content.bento.find((card) => card.id === "b4")).toMatchObject({
       title: "Checkout",
@@ -193,7 +200,7 @@ describe("pitch API", () => {
       headers: authHeaders(cookieA),
     })
     const seeded = await json<{ ok: true; data: PitchDoc }>(first)
-    const starter = starterPitchDocument()
+    const starter = legacyStarterPitchDocument()
     const wiped = {
       ...starter,
       status: "QVE134-persist-marker-1532",
@@ -215,7 +222,7 @@ describe("pitch API", () => {
     expect(restoredRes.status).toBe(200)
     const restored = await json<{ ok: true; data: PitchDoc }>(restoredRes)
     const content = restored.data.content as ReturnType<
-      typeof starterPitchDocument
+      typeof legacyStarterPitchDocument
     >
     expect(content.storyHighlights.length).toBeGreaterThan(0)
     expect(content.bento.length).toBeGreaterThan(0)
@@ -223,9 +230,9 @@ describe("pitch API", () => {
       title: "Checkout",
       body: "Hallway test setup",
     })
-    expect(content.blocks.find((block) => block.kind === "moments")?.hidden).toBe(
-      true
-    )
+    expect(
+      content.blocks.find((block) => block.kind === "moments")?.hidden
+    ).toBe(true)
     expect(content.status).toBe("QVE134-persist-marker-1532")
     expect(JSON.stringify(content)).not.toMatch(/sacred space/i)
     expect(JSON.stringify(content)).not.toMatch(/Alex Tran/i)
@@ -233,7 +240,7 @@ describe("pitch API", () => {
 
   it("serves a published Pitch at GET /api/pitch/public/:slug without a session", async () => {
     const next = {
-      ...starterPitchDocument(),
+      ...legacyStarterPitchDocument(),
       about: "Minh's public about.",
       published: true,
     }
@@ -250,7 +257,7 @@ describe("pitch API", () => {
       data: {
         slug: string
         author: { name: string; email: string; image: string | null }
-        content: ReturnType<typeof starterPitchDocument>
+        content: ReturnType<typeof legacyStarterPitchDocument>
       }
     }>(publicRes)
     expect(body.data.slug).toBe("minh")
@@ -282,7 +289,7 @@ describe("pitch API", () => {
       cookieA,
       PITCH_COMMANDS.update,
       {
-        content: { ...starterPitchDocument(), published: false },
+        content: { ...legacyStarterPitchDocument(), published: false },
         contentVersion: 1,
       }
     )
@@ -301,16 +308,21 @@ describe("pitch API", () => {
     const seeded = await json<{ ok: true; data: PitchDoc }>(
       await app.request("/api/pitch", { headers: authHeaders(scout.cookie) })
     )
-    const starter = starterPitchDocument()
+    const starter = legacyStarterPitchDocument()
     expect(
-      (seeded.data.content as ReturnType<typeof starterPitchDocument>)
-        .storyHighlights.length
-    ).toBeGreaterThan(0)
+      (seeded.data.content as ReturnType<typeof legacyStarterPitchDocument>)
+        .storyHighlights
+    ).toEqual([])
 
-    const clearedRes = await postCommand(app, scout.cookie, PITCH_COMMANDS.update, {
-      content: emptyPitchDocument(),
-      contentVersion: 1,
-    })
+    const clearedRes = await postCommand(
+      app,
+      scout.cookie,
+      PITCH_COMMANDS.update,
+      {
+        content: emptyPitchDocument(),
+        contentVersion: 1,
+      }
+    )
     expect(clearedRes.status).toBe(200)
     const cleared = await json<{ ok: true; data: PitchDoc }>(clearedRes)
     const clearedContent = cleared.data.content as ReturnType<
@@ -326,10 +338,15 @@ describe("pitch API", () => {
       ...emptyPitchDocument(),
       about: "I ship small checkout studies.",
     }
-    const typedRes = await postCommand(app, scout.cookie, PITCH_COMMANDS.update, {
-      content: typed,
-      contentVersion: 1,
-    })
+    const typedRes = await postCommand(
+      app,
+      scout.cookie,
+      PITCH_COMMANDS.update,
+      {
+        content: typed,
+        contentVersion: 1,
+      }
+    )
     expect(typedRes.status).toBe(200)
 
     const reread = await json<{ ok: true; data: PitchDoc }>(
@@ -339,9 +356,9 @@ describe("pitch API", () => {
     expect(content.about).toBe("I ship small checkout studies.")
     expect(content.storyHighlights).toEqual([])
     expect(content.bento).toEqual([])
-    expect(content.blocks.find((block) => block.kind === "moments")?.hidden).toBe(
-      true
-    )
+    expect(
+      content.blocks.find((block) => block.kind === "moments")?.hidden
+    ).toBe(true)
     expect(JSON.stringify(content)).not.toMatch(/Checkout/)
     expect(JSON.stringify(content)).not.toMatch(/Wallet audit/)
     expect(JSON.stringify(content)).not.toMatch(/Club sprint/)
@@ -349,14 +366,19 @@ describe("pitch API", () => {
     expect(JSON.stringify(content)).not.toMatch(/\+18%/)
     expect(content.storyHighlights).not.toEqual(starter.storyHighlights)
 
-    const leakedRes = await postCommand(app, scout.cookie, PITCH_COMMANDS.update, {
-      content: {
-        ...emptyPitchDocument(),
-        demo: true,
-        about: "I ship small checkout studies.",
-      },
-      contentVersion: 1,
-    })
+    const leakedRes = await postCommand(
+      app,
+      scout.cookie,
+      PITCH_COMMANDS.update,
+      {
+        content: {
+          ...emptyPitchDocument(),
+          demo: true,
+          about: "I ship small checkout studies.",
+        },
+        contentVersion: 1,
+      }
+    )
     expect(leakedRes.status).toBe(200)
     const leaked = await json<{ ok: true; data: PitchDoc }>(leakedRes)
     const leakedContent = leaked.data.content as ReturnType<
@@ -375,17 +397,27 @@ describe("pitch API", () => {
       password: "correct-horse-battery",
     })
 
-    const clearedRes = await postCommand(app, scout.cookie, PITCH_COMMANDS.update, {
-      content: emptyPitchDocument(),
-      contentVersion: 1,
-    })
+    const clearedRes = await postCommand(
+      app,
+      scout.cookie,
+      PITCH_COMMANDS.update,
+      {
+        content: emptyPitchDocument(),
+        contentVersion: 1,
+      }
+    )
     expect(clearedRes.status).toBe(200)
 
     const added = withStarterCheckoutAchievement(emptyPitchDocument())
-    const addedRes = await postCommand(app, scout.cookie, PITCH_COMMANDS.update, {
-      content: added,
-      contentVersion: 1,
-    })
+    const addedRes = await postCommand(
+      app,
+      scout.cookie,
+      PITCH_COMMANDS.update,
+      {
+        content: added,
+        contentVersion: 1,
+      }
+    )
     expect(addedRes.status).toBe(200)
 
     const reread = await json<{ ok: true; data: PitchDoc }>(
@@ -394,7 +426,9 @@ describe("pitch API", () => {
     const content = reread.data.content as ReturnType<typeof emptyPitchDocument>
     expect(content.achievements).toEqual([starterCheckoutAchievement()])
     expect(content.achievements[0]?.proofId).toBe("checkout")
-    expect(content.headline).toBe("Proof on this page — replace with your story")
+    expect(content.headline).toBe(
+      "Proof on this page — replace with your story"
+    )
     expect(content.demo).toBe(false)
     expect(content.storyHighlights).toEqual([])
     expect(content.bento).toEqual([])

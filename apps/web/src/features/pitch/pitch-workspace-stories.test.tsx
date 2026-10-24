@@ -6,7 +6,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react"
-import { starterPitchDocument } from "@workspace/domain"
+import { legacyStarterPitchDocument } from "@workspace/domain"
 import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 import {
   setMockSession,
@@ -53,7 +53,7 @@ describe("Pitch workspace stories and edits", () => {
 
   it("opens a story whose title matches each visible highlight chip", async () => {
     await loadedPitch()
-    const highlights = starterPitchDocument().storyHighlights
+    const highlights = legacyStarterPitchDocument().storyHighlights
     expect(highlights.length).toBeGreaterThan(0)
 
     for (const highlight of highlights) {
@@ -88,7 +88,7 @@ describe("Pitch workspace stories and edits", () => {
   })
 
   it("repairs a persisted sacred-space chip so it opens Checkout", async () => {
-    const starter = starterPitchDocument()
+    const starter = legacyStarterPitchDocument()
     setMockPitchDoc({
       id: "55555555-5555-7555-8555-555555555556",
       kind: "pitch",
@@ -131,7 +131,7 @@ describe("Pitch workspace stories and edits", () => {
       },
       session: TEST_SESSION,
     })
-    const starter = starterPitchDocument()
+    const starter = legacyStarterPitchDocument()
     setMockPitchDoc({
       id: "55555555-5555-7555-8555-555555555557",
       kind: "pitch",
@@ -203,7 +203,7 @@ describe("Pitch workspace stories and edits", () => {
       clipboard: { writeText },
     })
 
-    const starter = starterPitchDocument()
+    const starter = legacyStarterPitchDocument()
     setMockPitchDoc({
       id: "55555555-5555-7555-8555-555555555561",
       kind: "pitch",

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest"
 import { cleanup, screen } from "@testing-library/react"
-import { starterPitchDocument } from "@workspace/domain"
+import { legacyStarterPitchDocument } from "@workspace/domain"
 
 import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 import { pitchHandle, publicPitchPath } from "@/features/pitch/pitch-types.ts"
@@ -11,7 +11,7 @@ import { renderApp } from "@/test/render-app.tsx"
 const publishedSlug = pitchHandle(SAMPLE_AUTHOR_NAME)
 
 function publishStarter() {
-  const starter = starterPitchDocument()
+  const starter = legacyStarterPitchDocument()
   setMockPitchDoc({
     id: "55555555-5555-7555-8555-555555555555",
     kind: "pitch",
@@ -39,7 +39,7 @@ describe("public Pitch URL", () => {
     ).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "About" })).toBeInTheDocument()
     expect(
-      screen.getByText(starterPitchDocument().headline)
+      screen.getByText(legacyStarterPitchDocument().headline)
     ).toBeInTheDocument()
     expect(
       screen.queryByRole("button", { name: "Edit Pitch" })

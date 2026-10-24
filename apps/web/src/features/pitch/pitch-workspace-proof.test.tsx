@@ -6,7 +6,10 @@ import {
   waitFor,
   within,
 } from "@testing-library/react"
-import { starterPitchDocument, type PitchDocument } from "@workspace/domain"
+import {
+  legacyStarterPitchDocument,
+  type PitchDocument,
+} from "@workspace/domain"
 import {
   SAMPLE_AUTHOR,
   SAMPLE_AUTHOR_NAME,
@@ -66,7 +69,7 @@ describe("Pitch workspace Proof and persistence", () => {
   })
 
   it("opens the checkout Proof from a persisted dead-link achievement", async () => {
-    const starter = starterPitchDocument()
+    const starter = legacyStarterPitchDocument()
     const [checkout, ...rest] = starter.achievements
     setMockPitchDoc({
       id: "55555555-5555-7555-8555-555555555555",
@@ -189,7 +192,7 @@ describe("Pitch workspace Proof and persistence", () => {
       },
       session: TEST_SESSION,
     })
-    const starter = starterPitchDocument()
+    const starter = legacyStarterPitchDocument()
     setMockPitchDoc({
       id: "55555555-5555-7555-8555-555555555558",
       kind: "pitch",
@@ -249,7 +252,7 @@ describe("Pitch workspace Proof and persistence", () => {
       },
       session: TEST_SESSION,
     })
-    const starter = starterPitchDocument()
+    const starter = legacyStarterPitchDocument()
     setMockPitchDoc({
       id: "55555555-5555-7555-8555-555555555559",
       kind: "pitch",

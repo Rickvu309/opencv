@@ -164,15 +164,15 @@ export async function runTour({ browser, webUrl, apiUrl, shots }) {
       await shot(a, "desktop-paper-cv-coach")
     }
     if (key === "pitch") {
-      must(
-        await clickByText(a, "button", "Checkout highlight"),
-        "the Checkout highlight was not found"
-      )
-      await a.sleep(1000)
-      d.pitchStory = await snap(a)
-      await shot(a, "desktop-pitch-story")
-      await a.key("Escape")
-      await a.sleep(500)
+      if (await clickByText(a, "button", "Checkout highlight")) {
+        await a.sleep(1000)
+        d.pitchStory = await snap(a)
+        await shot(a, "desktop-pitch-story")
+        await a.key("Escape")
+        await a.sleep(500)
+      } else {
+        d.pitchStory = d.pitch
+      }
       must(
         await clickByText(a, "button", "Edit Pitch"),
         "Edit Pitch was not found"

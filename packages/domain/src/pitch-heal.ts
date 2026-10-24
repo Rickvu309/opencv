@@ -1,5 +1,5 @@
 import { isStarterSampleIdentity, type PitchDocument } from "./pitch-codecs.js"
-import { starterPitchDocument } from "./starter.js"
+import { legacyStarterPitchDocument } from "./starter-pitch-legacy.js"
 
 /** Non-Moments fields that mean this is a real Pitch, not the empty schema default. */
 export function pitchHasSurvivingBody(doc: PitchDocument): boolean {
@@ -50,6 +50,9 @@ export function isGhostPitchDocument(doc: PitchDocument): boolean {
  * QVE-246 / QVE-250: never put sample Moments back on a cleared or
  * User-owned Pitch. `demo: true` alone is not enough — the first real
  * About (or any non-sample identity) must not resurrect campus-club chips.
+ * Only the full sample an older account stored (its location line is the
+ * marker) is restored; the one-line sample of a new account has no Moments
+ * by design.
  */
 export function restoreWipedStarterMoments(doc: PitchDocument): PitchDocument {
   if (!isStarterSampleIdentity(doc)) return doc
@@ -59,7 +62,8 @@ export function restoreWipedStarterMoments(doc: PitchDocument): PitchDocument {
   if (!missingHighlights && !missingBento) return doc
   if (!pitchHasSurvivingBody(doc)) return doc
 
-  const starter = starterPitchDocument()
+  const starter = legacyStarterPitchDocument()
+  if (doc.location !== starter.location) return doc
   return {
     ...doc,
     storyHighlights: missingHighlights

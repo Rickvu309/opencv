@@ -10,7 +10,7 @@ import {
   emptyPitchDocument,
   STARTER_PITCH_ABOUT_LEAD,
   STARTER_PITCH_HEADLINE,
-  starterPitchDocument,
+  legacyStarterPitchDocument,
   type PitchDocument,
 } from "@workspace/domain"
 import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
@@ -41,7 +41,7 @@ afterEach(() => {
 describe("Pitch workspace", () => {
   it("renders the session User portfolio with mock GitHub activity", async () => {
     await loadedPitch()
-    const starter = starterPitchDocument()
+    const starter = legacyStarterPitchDocument()
     const github = getMockGithubUsername(SAMPLE_AUTHOR_NAME)
 
     expect(screen.getByText(starter.headline)).toBeInTheDocument()
@@ -105,7 +105,7 @@ describe("Pitch workspace", () => {
   })
 
   it("still offers Clear demo when sample About is present without the demo flag", async () => {
-    const starter = starterPitchDocument()
+    const starter = legacyStarterPitchDocument()
     const { demo, ...rest } = starter
     expect(demo).toBe(true)
     setMockPitchDoc({
@@ -244,7 +244,7 @@ describe("Pitch workspace", () => {
   })
 
   it("heals a cleared Pitch that still stored leftover sample Moments", async () => {
-    const starter = starterPitchDocument()
+    const starter = legacyStarterPitchDocument()
     const { demo, ...rest } = starter
     expect(demo).toBe(true)
     setMockPitchDoc({

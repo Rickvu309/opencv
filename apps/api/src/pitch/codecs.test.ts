@@ -14,13 +14,14 @@ import {
   STARTER_CHECKOUT_PITCH_HEADLINE,
   STARTER_CHECKOUT_PROOF_ID,
   starterCheckoutAchievement,
+  legacyStarterPitchDocument,
   starterPitchDocument,
   withStarterCheckoutAchievement,
 } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
 
 function leftoverPersonaPitch() {
-  const starter = starterPitchDocument()
+  const starter = legacyStarterPitchDocument()
   return {
     ...starter,
     github: { username: "alex-tran-uit", connected: true },
@@ -46,6 +47,12 @@ describe("pitch codecs", () => {
       ok: true,
       data: emptyPitchDocument(),
     })
+    expect(
+      decodePitchContent("pitch", 1, legacyStarterPitchDocument())
+    ).toEqual({
+      ok: true,
+      data: legacyStarterPitchDocument(),
+    })
     expect(decodePitchContent("pitch", 1, starterPitchDocument())).toEqual({
       ok: true,
       data: starterPitchDocument(),
@@ -53,21 +60,23 @@ describe("pitch codecs", () => {
     expect(starterPitchDocument().achievements[0]).toEqual(
       starterCheckoutAchievement()
     )
-    expect(starterPitchDocument().achievements[0]?.proofId).toBe(
+    expect(legacyStarterPitchDocument().achievements[0]?.proofId).toBe(
       STARTER_CHECKOUT_PROOF_ID
     )
-    expect(starterPitchDocument().achievements[0]?.link).toBeUndefined()
-    expect(starterPitchDocument().demo).toBe(true)
-    expect(starterPitchDocument().about).toContain(STARTER_PITCH_ABOUT_LEAD)
-    expect(isDemoPitchDocument(starterPitchDocument())).toBe(true)
+    expect(legacyStarterPitchDocument().achievements[0]?.link).toBeUndefined()
+    expect(legacyStarterPitchDocument().demo).toBe(true)
+    expect(legacyStarterPitchDocument().about).toContain(
+      STARTER_PITCH_ABOUT_LEAD
+    )
+    expect(isDemoPitchDocument(legacyStarterPitchDocument())).toBe(true)
     expect(isDemoPitchDocument(emptyPitchDocument())).toBe(false)
-    expect(isStarterSampleIdentity(starterPitchDocument())).toBe(true)
+    expect(isStarterSampleIdentity(legacyStarterPitchDocument())).toBe(true)
     expect(isStarterSampleIdentity(emptyPitchDocument())).toBe(false)
     expect(emptyPitchDocument().demo).toBe(false)
   })
 
   it("treats unlabeled sample About as Demo content so Clear demo can show", () => {
-    const starter = starterPitchDocument()
+    const starter = legacyStarterPitchDocument()
     const { demo: _demo, ...rest } = starter
     expect(_demo).toBe(true)
     expect(isDemoPitchDocument(rest)).toBe(true)
@@ -119,7 +128,7 @@ describe("pitch codecs", () => {
   })
 
   it("rewrites a persisted story chip so its label matches the opened highlight", () => {
-    const starter = starterPitchDocument()
+    const starter = legacyStarterPitchDocument()
     const checkout = starter.storyHighlights.find((h) => h.id === "sh-checkout")
     expect(checkout?.label).toBe("Checkout")
 
@@ -173,7 +182,7 @@ describe("pitch codecs", () => {
   })
 
   it("repairs a leftover sacred-space Moments card even without a highlight id", () => {
-    const starter = starterPitchDocument()
+    const starter = legacyStarterPitchDocument()
     const persisted = {
       ...starter,
       bento: starter.bento.map((card) =>
@@ -248,7 +257,7 @@ describe("pitch codecs", () => {
   })
 
   it("still accepts a persisted achievement that only has a dead link", () => {
-    const starter = starterPitchDocument()
+    const starter = legacyStarterPitchDocument()
     const decoded = decodePitchContent("pitch", 1, {
       ...starter,
       achievements: [
@@ -302,7 +311,7 @@ describe("pitch codecs", () => {
   })
 
   it("restores starter Moments after a wipe so GET/heal is smokeable", () => {
-    const starter = starterPitchDocument()
+    const starter = legacyStarterPitchDocument()
     const wiped = {
       ...starter,
       status: "QVE134-persist-marker-1532",
@@ -333,7 +342,7 @@ describe("pitch codecs", () => {
   })
 
   it("relabels a leftover UIT/PM headline as Demo content", () => {
-    const starter = starterPitchDocument()
+    const starter = legacyStarterPitchDocument()
     const { demo, ...rest } = starter
     expect(demo).toBe(true)
     const legacy = {
@@ -354,12 +363,12 @@ describe("pitch codecs", () => {
 
   it("allows a full clear so Demo content can become an empty Pitch", () => {
     expect(
-      preservePitchMoments(starterPitchDocument(), emptyPitchDocument())
+      preservePitchMoments(legacyStarterPitchDocument(), emptyPitchDocument())
     ).toEqual(emptyPitchDocument())
   })
 
   it("does not restore sample Moments after Clear demo leaves identity copy empty", () => {
-    const starter = starterPitchDocument()
+    const starter = legacyStarterPitchDocument()
     const leftover = {
       ...starter,
       demo: undefined,
@@ -382,7 +391,7 @@ describe("pitch codecs", () => {
   })
 
   it("does not put sample Moments back when a cleared Pitch gets a real About", () => {
-    const starter = starterPitchDocument()
+    const starter = legacyStarterPitchDocument()
     const typed = {
       ...emptyPitchDocument(),
       about: "I ship small checkout studies.",
@@ -400,7 +409,7 @@ describe("pitch codecs", () => {
   })
 
   it("does not restore chips when demo:true leaked onto a real About", () => {
-    const starter = starterPitchDocument()
+    const starter = legacyStarterPitchDocument()
     const leaked = {
       ...emptyPitchDocument(),
       demo: true,
@@ -427,7 +436,7 @@ describe("pitch codecs", () => {
   })
 
   it("does not restore chips after Clear plus a real status line", () => {
-    const starter = starterPitchDocument()
+    const starter = legacyStarterPitchDocument()
     const typed = {
       ...emptyPitchDocument(),
       demo: true,

@@ -5,7 +5,7 @@ import {
   LEGACY_FAKE_PITCH_HEADLINE,
   LEFTOVER_PITCH_PERSONA_NAMES,
   STARTER_PITCH_HEADLINE,
-  starterPitchDocument,
+  legacyStarterPitchDocument,
 } from "@workspace/domain"
 
 import {
@@ -35,7 +35,9 @@ describe("optional aim prompt", () => {
     })
     expect(
       AIM_OPTIONS.some((option) =>
-        /café|cafe|part-time|studying/i.test(`${option.label} ${option.headline}`)
+        /café|cafe|part-time|studying/i.test(
+          `${option.label} ${option.headline}`
+        )
       )
     ).toBe(true)
     expect(AIM_OPTIONS.every((option) => option.headline.length > 0)).toBe(true)
@@ -90,7 +92,7 @@ describe("optional aim prompt", () => {
       false
     )
 
-    const starter = starterPitchDocument()
+    const starter = legacyStarterPitchDocument()
     const fed = applyAimToPitchHeadline(starter, "product-intern")
     expect(fed).toEqual({
       ...starter,
@@ -107,7 +109,7 @@ describe("optional aim prompt", () => {
       "Working café shifts while I study"
     )
 
-    const starter = starterPitchDocument()
+    const starter = legacyStarterPitchDocument()
     const fed = applyAimToPitchHeadline(starter, "cafe-part-time")
     expect(fed).toEqual({
       ...starter,
@@ -127,7 +129,11 @@ describe("optional aim prompt", () => {
       expect(snapshot).not.toContain(name)
     }
 
-    const custom = { ...starter, headline: "Barista · night shift", demo: false }
+    const custom = {
+      ...starter,
+      headline: "Barista · night shift",
+      demo: false,
+    }
     expect(applyAimToPitchHeadline(custom, "cafe-part-time")).toBeNull()
   })
 

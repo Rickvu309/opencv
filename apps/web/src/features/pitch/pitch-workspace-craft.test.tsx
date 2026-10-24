@@ -1,3 +1,7 @@
+import {
+  legacyStarterPitchDocument,
+  starterPitchDocument,
+} from "@workspace/domain"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import {
   cleanup,
@@ -8,7 +12,11 @@ import {
 } from "@testing-library/react"
 
 import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
-import { resetPitchApiMock, getMockPitchDoc } from "@/test/pitch-api-mock.ts"
+import {
+  getMockPitchDoc,
+  resetPitchApiMock,
+  setMockPitchDoc,
+} from "@/test/pitch-api-mock.ts"
 import {
   clickClearDemo,
   loadedPitch,
@@ -71,17 +79,60 @@ describe("Pitch craft pass", () => {
     expect(screen.queryByText(/instagram/i)).not.toBeInTheDocument()
   })
 
-  it("shows the sample without a metric, a stock photo or a decorative tile", async () => {
+  it("opens a new account on a one-line sample with one Proof and nothing else", async () => {
+    setMockPitchDoc({
+      id: "55555555-5555-7555-8555-555555555570",
+      kind: "pitch",
+      content: starterPitchDocument(),
+      contentVersion: 1,
+      createdAt: "2026-10-24T00:00:00.000Z",
+      updatedAt: "2026-10-24T00:00:00.000Z",
+    })
     const { container } = await renderLoaded()
 
+    expect(screen.getByText("Open to intern roles")).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: /open proof/i })
+    ).toBeInTheDocument()
     expect(container.textContent).not.toMatch(/\d\s*%|add-to-cart/i)
     expect(container.querySelector("img")).toBeNull()
+    expect(
+      screen.queryAllByRole("button", { name: /highlight$/ })
+    ).toHaveLength(0)
+    expect(screen.queryByText("Tap a highlight to play it.")).toBeNull()
+    expect(screen.queryByRole("heading", { name: "Moments" })).toBeNull()
+    expect(
+      screen.getByText(/Clear it to start your Pitch\./)
+    ).toBeInTheDocument()
+
+    clickClearDemo()
+    expect(
+      await screen.findByRole("button", { name: "Start your Pitch" })
+    ).toBeInTheDocument()
+  })
+
+  it("keeps the stored sample an older account already holds", async () => {
+    await renderLoaded()
+
     expect(screen.getAllByRole("button", { name: /highlight$/ })).toHaveLength(
       3
     )
+    expect(screen.getByRole("heading", { name: "Moments" })).toBeInTheDocument()
   })
 
   it("offers Add a photo as an empty slot only while editing", async () => {
+    const sample = legacyStarterPitchDocument()
+    setMockPitchDoc({
+      id: "55555555-5555-7555-8555-555555555571",
+      kind: "pitch",
+      content: {
+        ...sample,
+        bento: sample.bento.map((card) => ({ ...card, image: undefined })),
+      },
+      contentVersion: 1,
+      createdAt: "2026-10-24T00:00:00.000Z",
+      updatedAt: "2026-10-24T00:00:00.000Z",
+    })
     await loadedPitch()
 
     expect(screen.queryByRole("button", { name: /add a photo/i })).toBeNull()
