@@ -48,10 +48,10 @@ There is no CI and no GitHub Actions. Local hooks (`.githooks/`) and the review 
 #### 4. Checks, commits, and PRs
 
 - Pushes run a quick check scoped to what changed: `scripts/check.sh --changed` (the pre-push hook does it). The full lint, typecheck and test run once per PR, in `scripts/review-pr.sh`.
-- Open the PR with `scripts/open-pr.sh --draft`. It validates the branch, runs the quick check, pushes, and creates the PR with the title `type: description (#<issue>)` and `Closes #<issue>` in the body.
+- Open the PR with `heavy -- scripts/open-pr.sh --draft`. It validates the branch, runs the quick check, pushes, and creates the PR with the title `type: description (#<issue>)` and `Closes #<issue>` in the body.
 - Before marking ready (`gh pr ready`), the quick check passes and the verify-opencv evidence (`.claude/skills/verify-opencv`) is attached to the PR. There are no preview deploys yet; verify locally with verify-opencv.
 - Heavy commands run through `heavy` (installed in `~/.local/bin` by `~/projects/setup/setup-skills.sh`): the full `scripts/check.sh`, `scripts/review-pr.sh`, and `scripts/open-pr.sh` or any push that triggers the pre-push hook, for example `heavy --label review-123 -- scripts/review-pr.sh 123`. It admits two heavy jobs at a time on this box, caps each at 4 cores and 4 GB, gives a waiting OpenCV job the next free slot, and exports `CHECK_CONCURRENCY=2` and `VITEST_MAX_WORKERS=2`, which `scripts/check.sh` and vitest honor. Never run a heavy command outside it, and never run two of your own at once. `heavy status` shows who holds the slots.
-- A branch behind `main` needs no rebase: `scripts/review-pr.sh` tests the merge of `main` and the PR, which is what the squash merge lands. Rebase only when the review reports a merge conflict: `git fetch origin && git rebase origin/main && git push --force-with-lease`.
+- A branch behind `main` needs no rebase: `scripts/review-pr.sh` tests the merge of `main` and the PR, which is what the squash merge lands. Rebase only when the review reports a merge conflict: `git fetch origin && git rebase origin/main && heavy -- git push --force-with-lease`.
   Force-push only ever goes to your own task branch.
 
 #### 5. Never
@@ -77,7 +77,7 @@ There is no CI and no GitHub Actions. Local hooks (`.githooks/`) and the review 
 
 #### 7. Production is broken
 
-- Open an issue, run `scripts/new-task.sh hotfix <issue#> -d "..."`, fix, run `scripts/open-pr.sh`, and ask for immediate review.
+- Open an issue, run `scripts/new-task.sh hotfix <issue#> -d "..."`, fix, run `heavy -- scripts/open-pr.sh`, and ask for immediate review.
 - If the fix is risky, tell a human to roll back to the previous production deploy on the hosting platform first.
 
 #### Review agent checklist

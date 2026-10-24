@@ -71,7 +71,7 @@ flowchart LR
   - passing checks: the quick `scripts/check.sh --changed` on each push, and the full `scripts/check.sh` (lint, typecheck, test) once, by the reviewer
   - local verification with the verify-opencv skill (`.claude/skills/verify-opencv`), with its evidence attached to the PR
   - an approval after the review checklist
-- A branch behind `main` needs no rebase: the reviewer tests the merge of `main` and the PR. Rebase only when the review reports a merge conflict: `git fetch origin && git rebase origin/main && git push --force-with-lease`.
+- A branch behind `main` needs no rebase: the reviewer tests the merge of `main` and the PR. Rebase only when the review reports a merge conflict: `git fetch origin && git rebase origin/main && heavy -- git push --force-with-lease`.
 - See `docs/git-workflow/commit-and-pr-conventions.md`.
 
 ### Who approves
@@ -153,7 +153,7 @@ scripts/check.sh --changed                             # quick lint, typecheck, 
 heavy -- scripts/open-pr.sh --draft
 
 # Rebase only when the review reports a merge conflict (a branch behind main is fine)
-git fetch origin && git rebase origin/main && git push --force-with-lease
+git fetch origin && git rebase origin/main && heavy -- git push --force-with-lease
 
 # Ready for review / merge
 gh pr ready
@@ -163,7 +163,7 @@ gh pr merge --squash            # or --auto
 gh pr edit --add-label needs-human-review
 
 # Review a PR (review agent, from the main checkout)
-heavy -- scripts/review-pr.sh 57                                # OK: gh pr merge 57 --squash
+heavy -- scripts/review-pr.sh 57                       # OK: gh pr merge 57 --squash
 
 # Clean up merged worktrees (run from the main checkout)
 scripts/cleanup-worktree.sh             # all merged
