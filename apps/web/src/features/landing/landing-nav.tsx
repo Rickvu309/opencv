@@ -28,7 +28,7 @@ export function LandingNav() {
   return (
     <header
       data-scrolled={scrolled}
-      className="duration-(--duration-micro) fixed inset-x-0 top-0 z-40 border-b border-transparent transition-[background-color,border-color,backdrop-filter] ease-out data-[scrolled=true]:border-border data-[scrolled=true]:bg-background/80 data-[scrolled=true]:backdrop-blur-lg"
+      className="fixed inset-x-0 top-0 z-40 border-b border-transparent transition-[background-color,border-color,backdrop-filter] duration-(--duration-micro) ease-out data-[scrolled=true]:border-border data-[scrolled=true]:bg-background/80 data-[scrolled=true]:backdrop-blur-lg"
     >
       <SectionContainer className="flex flex-wrap items-center justify-between gap-x-6 md:h-16 md:flex-nowrap">
         <Link to="/" className={cn("rounded-md py-4 md:py-0", FOCUS_RING)}>

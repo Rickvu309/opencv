@@ -67,7 +67,7 @@ export function BoardJobCard({
         }
       }}
       className={cn(
-        "group duration-(--duration-micro) cursor-grab rounded-xl border bg-card p-3 text-left shadow-[0_1px_2px_oklch(0_0_0/0.04)] transition-[border-color,box-shadow,opacity] active:cursor-grabbing",
+        "group cursor-grab rounded-xl border bg-card p-3 text-left shadow-[0_1px_2px_oklch(0_0_0/0.04)] transition-[border-color,box-shadow,opacity] duration-(--duration-micro) active:cursor-grabbing",
         active
           ? "border-foreground/20 ring-1 ring-ring/30"
           : "border-border hover:border-foreground/15 hover:shadow-[0_2px_8px_oklch(0_0_0/0.05)]",
