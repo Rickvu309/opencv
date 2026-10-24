@@ -50,6 +50,7 @@ There is no CI and no GitHub Actions. Local hooks (`.githooks/`) and the review 
 - Pushes run a quick check scoped to what changed: `scripts/check.sh --changed` (the pre-push hook does it). The full lint, typecheck and test run once per PR, in `scripts/review-pr.sh`.
 - Open the PR with `scripts/open-pr.sh --draft`. It validates the branch, runs the quick check, pushes, and creates the PR with the title `type: description (#<issue>)` and `Closes #<issue>` in the body.
 - Before marking ready (`gh pr ready`), the quick check passes and the verify-opencv evidence (`.claude/skills/verify-opencv`) is attached to the PR. There are no preview deploys yet; verify locally with verify-opencv.
+- Heavy commands run through `heavy` (installed in `~/.local/bin` by `~/projects/setup/setup-skills.sh`): the full `scripts/check.sh`, `scripts/review-pr.sh`, and `scripts/open-pr.sh` or any push that triggers the pre-push hook, for example `heavy --label review-123 -- scripts/review-pr.sh 123`. It admits two heavy jobs at a time on this box, caps each at 4 cores and 4 GB, gives a waiting OpenCV job the next free slot, and exports `CHECK_CONCURRENCY=2` and `VITEST_MAX_WORKERS=2`, which `scripts/check.sh` and vitest honor. Never run a heavy command outside it, and never run two of your own at once. `heavy status` shows who holds the slots.
 - A branch behind `main` needs no rebase: `scripts/review-pr.sh` tests the merge of `main` and the PR, which is what the squash merge lands. Rebase only when the review reports a merge conflict: `git fetch origin && git rebase origin/main && git push --force-with-lease`.
   Force-push only ever goes to your own task branch.
 
@@ -70,7 +71,7 @@ There is no CI and no GitHub Actions. Local hooks (`.githooks/`) and the review 
 
 - Merge only with squash: `gh pr merge --squash`.
 - An agent running under the owner's account (`@quanvu309`) merges its own PR with `gh pr merge <pr#> --squash --admin` only after `scripts/review-pr.sh` prints OK and the gates lane report at the exact head is green; never before. The ruleset's one-approval rule cannot be met by the only human approving their own agent's PR, so `--admin` is the bypass; it skips the ruleset, so it also needs an independent review with no open finding and no requested changes or unresolved threads. Never use it for a contributor's PR or a result of `HUMAN REQUIRED`.
-- `scripts/review-pr.sh` prints a patch id that a rebase keeps as long as the diff text stays the same, whitespace included. The independent review and the verify evidence name the patch id they cover and stay valid while it is unchanged, so a rebase or a fresh `main` that keeps the patch id needs no new review or verify round, only a rerun of `scripts/review-pr.sh` (free when the merge tree is unchanged). Before merging, rerun it if `origin/main` is no longer the commit its OK line printed, and merge with `--match-head-commit <head sha>`.
+- `scripts/review-pr.sh` prints a patch id that a rebase keeps as long as the diff text stays the same, whitespace included. The independent review and the verify evidence name the patch id they cover and stay valid while it is unchanged, so a rebase or a fresh `main` that keeps the patch id needs no new review or verify round, only a rerun of `heavy -- scripts/review-pr.sh` (free when the merge tree is unchanged). Before merging, rerun it if `origin/main` is no longer the commit its OK line printed, and merge with `--match-head-commit <head sha>`.
 - After merge, the issue closes and the remote branch is deleted automatically.
 - From the main checkout: `scripts/cleanup-worktree.sh <issue#>`.
 
@@ -83,7 +84,7 @@ There is no CI and no GitHub Actions. Local hooks (`.githooks/`) and the review 
 
 For the agent that reviews PRs. Run from the main checkout, for every PR marked ready (hotfixes immediately):
 
-1. `scripts/review-pr.sh <pr#>`. It checks the branch name, title, `Closes #`, the issue, the label, mass deletion, committed env files, and up-to-date with `main`, then runs the full `scripts/check.sh` (lint, typecheck, test) once, in a throwaway worktree of the PR.
+1. `heavy -- scripts/review-pr.sh <pr#>`. It checks the branch name, title, `Closes #`, the issue, the label, mass deletion, committed env files, and up-to-date with `main`, then runs the full `scripts/check.sh` (lint, typecheck, test) once, in a throwaway worktree of the PR.
 2. Result `HUMAN REQUIRED` (exit 2): the PR has `needs-human-review` or is a mass deletion. **Do not merge.** Comment your findings and leave it to a human.
 3. Result `FAIL` (exit 1), including a committed real `.env` file or a requested-changes review: `gh pr review <pr#> --comment --body "FAIL: <what to fix>"`. Don't merge.
 4. Result `OK` (exit 0): check the verify-opencv evidence for the changed flow, then read the diff (scope, tests, no secrets; look closely at `package.json` scripts, `scripts/`, `.githooks/`, `.github/`).

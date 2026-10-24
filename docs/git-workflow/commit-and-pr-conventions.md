@@ -30,9 +30,9 @@ That links the PR to the issue and closes the issue when the PR merges into `mai
 
 ## Lifecycle
 
-1. Open a **draft** PR as soon as you have a first commit. Run this inside your worktree:
+1. Open a **draft** PR as soon as you have a first commit. Run this inside your worktree (`heavy` caps the run; see AGENTS.md section 4):
    ```bash
-   scripts/open-pr.sh --draft
+   heavy -- scripts/open-pr.sh --draft
    ```
    It checks the branch name, runs `scripts/check.sh --changed` (quick, scoped to what changed), pushes, and creates the PR. The title is `type: description (#N)`, taken from the issue title or set with `-d "..."`. The body is the PR template with `Closes #N` filled in. Use `--dry-run` to preview.
 2. Keep pushing. The pre-push hook runs the quick check.
