@@ -64,13 +64,11 @@ async function expectStub(
 async function expectPitch() {
   expect(
     await screen.findByRole("heading", {
-      level: 1,
+      level: 2,
       name: SAMPLE_AUTHOR_NAME,
     })
   ).toBeInTheDocument()
-  expect(
-    screen.getByRole("button", { name: "Edit profile" })
-  ).toBeInTheDocument()
+  expect(screen.getByRole("button", { name: "Edit Pitch" })).toBeInTheDocument()
   expect(screen.getByRole("heading", { name: "About" })).toBeInTheDocument()
   expect(screen.queryByText(SURFACE_COPY.pitch.body)).not.toBeInTheDocument()
   expect(screen.queryByText(/Eric Nguyen/i)).not.toBeInTheDocument()
@@ -382,7 +380,7 @@ describe("settings workspace", () => {
     renderApp(SURFACE_PATHS.pitch)
 
     expect(
-      await screen.findByRole("heading", { level: 1, name: "Minh Le" })
+      await screen.findByRole("heading", { level: 2, name: "Minh Le" })
     ).toBeInTheDocument()
     expect(screen.getByText("Demo content")).toBeInTheDocument()
     fireEvent.click(screen.getAllByRole("button", { name: "Clear demo" })[0]!)

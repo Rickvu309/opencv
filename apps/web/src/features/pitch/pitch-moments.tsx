@@ -1,13 +1,10 @@
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
-import { Plus } from "lucide-react"
+import { ImagePlus, Plus } from "lucide-react"
 
 import { ComingSoon } from "@/components/coming-soon.tsx"
 import { StoryPhoto } from "@/features/pitch/pitch-stories.tsx"
-import {
-  pitchToneClass,
-  type PitchBentoCard,
-} from "@/features/pitch/pitch-types.ts"
+import type { PitchBentoCard } from "@/features/pitch/pitch-types.ts"
 
 export function MomentsBentoSection({
   cards,
@@ -50,6 +47,7 @@ export function MomentsBentoSection({
           <BentoCard
             key={card.id}
             card={card}
+            editing={editing}
             onOpenStory={
               card.storyHighlightId
                 ? () => onOpenStory(card.storyHighlightId!)
@@ -76,9 +74,11 @@ export function MomentsBentoSection({
 
 function BentoCard({
   card,
+  editing,
   onOpenStory,
 }: {
   card: PitchBentoCard
+  editing?: boolean
   onOpenStory?: () => void
 }) {
   const span =
@@ -92,15 +92,30 @@ function BentoCard({
   const isPhotoCard =
     hasPhoto && (card.kind === "story" || card.kind === "visual")
 
+  if (card.kind === "visual" && !hasPhoto && editing) {
+    return (
+      <Button
+        type="button"
+        disabled
+        variant="ghost"
+        className={cn(
+          "flex h-auto min-h-[7rem] flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-border text-muted-foreground",
+          span
+        )}
+      >
+        <ImagePlus className="size-4" />
+        <span className="text-2xs">Add a photo</span>
+        <ComingSoon />
+      </Button>
+    )
+  }
+
   const inner = (
     <div
       className={cn(
-        "relative flex h-full min-h-[7rem] flex-col justify-end overflow-hidden rounded-2xl shadow-[0_2px_12px_oklch(0_0_0/0.06)] ring-1 ring-black/[0.04] transition-transform active:scale-[0.98]",
-        !isPhotoCard && "justify-between p-4",
-        !isPhotoCard && pitchToneClass(card.tone),
-        !isPhotoCard &&
-          (card.tone === "dark" ? "text-white" : "text-foreground"),
-        onOpenStory && "cursor-pointer hover:shadow-md"
+        "relative flex h-full min-h-[7rem] flex-col justify-end overflow-hidden rounded-2xl ring-1 ring-border transition-transform active:scale-[0.98]",
+        !isPhotoCard && "justify-between bg-background p-4 text-foreground",
+        onOpenStory && "cursor-pointer hover:bg-muted"
       )}
     >
       {isPhotoCard ? (
@@ -129,20 +144,26 @@ function BentoCard({
           <div>
             <p className="text-sm font-medium">{card.body}</p>
             {card.meta ? (
-              <p className="mt-0.5 text-2xs opacity-70">{card.meta}</p>
+              <p className="mt-0.5 text-2xs text-muted-foreground">
+                {card.meta}
+              </p>
             ) : null}
           </div>
         </>
       ) : card.kind === "link" ? (
         <>
           <p className="font-mono text-sm font-semibold">{card.title}</p>
-          <p className="text-xs opacity-70">{card.meta ?? card.body}</p>
+          <p className="text-xs text-muted-foreground">
+            {card.meta ?? card.body}
+          </p>
         </>
       ) : (
         <>
           <p className="text-sm font-semibold">{card.title}</p>
           {card.body ? (
-            <p className="text-xs leading-relaxed opacity-75">{card.body}</p>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              {card.body}
+            </p>
           ) : null}
         </>
       )}

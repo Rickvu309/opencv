@@ -1,8 +1,7 @@
-/**
- * Instagram-style story highlights + fullscreen viewer.
- */
+/** Story highlights row and the fullscreen viewer. */
 import { useCallback, useEffect, useState, type ImgHTMLAttributes } from "react"
 import { Button } from "@workspace/ui/components/button"
+import { Dialog, DialogContent } from "@workspace/ui/components/dialog"
 import { useMediaQuery } from "@workspace/ui/hooks/use-media-query"
 import { cn } from "@workspace/ui/lib/utils"
 import { ChevronLeft, ChevronRight, Pause, Play, Plus, X } from "lucide-react"
@@ -110,11 +109,34 @@ export function StoryHighlightsRow({
           </Button>
         ) : null}
       </div>
-      <p className="mt-3 text-center text-2xs text-muted-foreground/80">
-        Tap a highlight to watch work moments · like Instagram Stories
+      <p className="mt-3 text-center text-2xs text-muted-foreground">
+        Tap a highlight to play it.
       </p>
     </div>
   )
+}
+
+const VIEWER_SELECTOR =
+  '[data-slot="dialog-content"][aria-label="Work story viewer"]'
+
+function trapTab(e: KeyboardEvent) {
+  const viewer = document.querySelector<HTMLElement>(VIEWER_SELECTOR)
+  if (!viewer) return
+  const stops = [
+    ...viewer.querySelectorAll<HTMLButtonElement>("button"),
+  ].filter((b) => !b.disabled && b.getClientRects().length > 0)
+  const first = stops[0]
+  const last = stops[stops.length - 1]
+  if (!first || !last) return
+  const active = document.activeElement
+  const outside = !viewer.contains(active)
+  if (e.shiftKey && (outside || active === first)) {
+    e.preventDefault()
+    last.focus()
+  } else if (!e.shiftKey && (outside || active === last)) {
+    e.preventDefault()
+    first.focus()
+  }
 }
 
 export function PitchStoryViewer({
@@ -166,13 +188,13 @@ export function PitchStoryViewer({
   useEffect(() => {
     if (!state) return
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose()
+      if (e.key === "Tab") trapTab(e)
       if (e.key === "ArrowRight") goNext()
       if (e.key === "ArrowLeft") goPrev()
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [state, onClose, goNext, goPrev])
+  }, [state, goNext, goPrev])
 
   if (!state || !highlight || !slide) return null
 
@@ -182,89 +204,91 @@ export function PitchStoryViewer({
   const nextPreview = nextH ? findHighlight(highlights, nextH) : null
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/92 backdrop-blur-sm"
-      role="dialog"
-      aria-modal
-      aria-label="Work story viewer"
-    >
-      {/* Documented exception: photographic overlays on the story viewer — black/white sit on photos, not product chrome. */}
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        onClick={onClose}
-        className="absolute top-4 right-4 z-10 size-9 rounded-full bg-white/10 text-white hover:bg-white/20 hover:text-white"
-        aria-label="Close"
+    <Dialog open onOpenChange={(open) => (open ? undefined : onClose())}>
+      <DialogContent
+        aria-label="Work story viewer"
+        showCloseButton={false}
+        overlayClassName="bg-black/92 backdrop-blur-sm supports-backdrop-filter:backdrop-blur-sm"
+        className="top-0 left-0 flex h-dvh w-dvw max-w-none translate-x-0 translate-y-0 items-center justify-center gap-0 rounded-none bg-transparent p-0 shadow-none ring-0 sm:max-w-none"
       >
-        <X className="size-5" />
-      </Button>
-
-      {prevPreview ? (
-        <div
-          className="pointer-events-none absolute left-[6%] hidden h-[70vh] w-[10rem] overflow-hidden rounded-2xl opacity-30 blur-sm lg:block"
-          aria-hidden
+        {/* Documented exception: photographic overlays on the story viewer — black/white sit on photos, not product chrome. */}
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={onClose}
+          className="absolute top-4 right-4 z-10 size-9 rounded-full bg-white/10 text-white hover:bg-white/20 hover:text-white"
+          aria-label="Close"
         >
-          <StoryFramePreview highlight={prevPreview} />
-        </div>
-      ) : null}
-      {nextPreview ? (
-        <div
-          className="pointer-events-none absolute right-[6%] hidden h-[70vh] w-[10rem] overflow-hidden rounded-2xl opacity-30 blur-sm lg:block"
-          aria-hidden
+          <X className="size-5" />
+        </Button>
+
+        {prevPreview ? (
+          <div
+            className="pointer-events-none absolute left-[6%] hidden h-[70vh] w-[10rem] overflow-hidden rounded-2xl opacity-30 blur-sm lg:block"
+            aria-hidden
+          >
+            <StoryFramePreview highlight={prevPreview} />
+          </div>
+        ) : null}
+        {nextPreview ? (
+          <div
+            className="pointer-events-none absolute right-[6%] hidden h-[70vh] w-[10rem] overflow-hidden rounded-2xl opacity-30 blur-sm lg:block"
+            aria-hidden
+          >
+            <StoryFramePreview highlight={nextPreview} />
+          </div>
+        ) : null}
+
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={goPrev}
+          className="absolute left-3 z-10 hidden size-9 rounded-full bg-white/10 text-white hover:bg-white/20 hover:text-white sm:flex"
+          aria-label="Previous"
         >
-          <StoryFramePreview highlight={nextPreview} />
+          <ChevronLeft className="size-5" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={goNext}
+          className="absolute right-3 z-10 hidden size-9 rounded-full bg-white/10 text-white hover:bg-white/20 hover:text-white sm:flex"
+          aria-label="Next"
+        >
+          <ChevronRight className="size-5" />
+        </Button>
+
+        <div className="relative mx-4 flex h-[min(85vh,720px)] w-full max-w-[min(100%,380px)] flex-col">
+          <StoryFrame
+            key={`${state.highlightId}-${state.slideIndex}`}
+            profile={profile}
+            highlight={highlight}
+            slide={slide}
+            slideIndex={state.slideIndex}
+            slideDuration={slideDuration}
+            onNext={goNext}
+          />
         </div>
-      ) : null}
 
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        onClick={goPrev}
-        className="absolute left-3 z-10 hidden size-9 rounded-full bg-white/10 text-white hover:bg-white/20 hover:text-white sm:flex"
-        aria-label="Previous"
-      >
-        <ChevronLeft className="size-5" />
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        onClick={goNext}
-        className="absolute right-3 z-10 hidden size-9 rounded-full bg-white/10 text-white hover:bg-white/20 hover:text-white sm:flex"
-        aria-label="Next"
-      >
-        <ChevronRight className="size-5" />
-      </Button>
-
-      <div className="relative mx-4 flex h-[min(85vh,720px)] w-full max-w-[min(100%,380px)] flex-col">
-        <StoryFrame
-          key={`${state.highlightId}-${state.slideIndex}`}
-          profile={profile}
-          highlight={highlight}
-          slide={slide}
-          slideIndex={state.slideIndex}
-          slideDuration={slideDuration}
-          onNext={goNext}
+        <Button
+          type="button"
+          variant="ghost"
+          className="absolute inset-y-0 left-0 z-[5] h-auto w-1/3 rounded-none bg-transparent hover:bg-transparent sm:hidden"
+          aria-label="Previous slide"
+          onClick={goPrev}
         />
-      </div>
-
-      <Button
-        type="button"
-        variant="ghost"
-        className="absolute inset-y-0 left-0 z-[5] h-auto w-1/3 rounded-none bg-transparent hover:bg-transparent sm:hidden"
-        aria-label="Previous slide"
-        onClick={goPrev}
-      />
-      <Button
-        type="button"
-        variant="ghost"
-        className="absolute inset-y-0 right-0 z-[5] h-auto w-1/3 rounded-none bg-transparent hover:bg-transparent sm:hidden"
-        aria-label="Next slide"
-        onClick={goNext}
-      />
-    </div>
+        <Button
+          type="button"
+          variant="ghost"
+          className="absolute inset-y-0 right-0 z-[5] h-auto w-1/3 rounded-none bg-transparent hover:bg-transparent sm:hidden"
+          aria-label="Next slide"
+          onClick={goNext}
+        />
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -315,7 +339,7 @@ function StoryFrame({
             className="h-[2px] flex-1 overflow-hidden rounded-full bg-white/25"
           >
             <div
-              className="h-full rounded-full bg-white transition-[width] duration-75 ease-linear"
+              className="h-full rounded-full bg-white"
               style={{
                 width:
                   i < slideIndex
@@ -401,16 +425,18 @@ function StoryFrame({
         )}
       </div>
 
-      <div className="relative z-20 p-4 pt-2">
-        <p className="inline-block max-w-full rounded-full bg-black/50 px-3 py-1.5 text-sm text-white backdrop-blur-sm">
-          {slide.caption}
-        </p>
-        {slide.detail && slide.image ? (
-          <p className="mt-1.5 max-w-[90%] text-xs leading-snug text-white/70">
-            {slide.detail}
+      {slide.image ? (
+        <div className="relative z-20 p-4 pt-2">
+          <p className="inline-block max-w-full rounded-full bg-black/50 px-3 py-1.5 text-sm text-white backdrop-blur-sm">
+            {slide.caption}
           </p>
-        ) : null}
-      </div>
+          {slide.detail ? (
+            <p className="mt-1.5 max-w-[90%] text-xs leading-snug text-white/70">
+              {slide.detail}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   )
 }

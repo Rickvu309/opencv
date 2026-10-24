@@ -11,7 +11,7 @@ import { AIM_OPTIONS } from "@/features/home/aim-prompt.ts"
 import {
   LEGACY_FAKE_PITCH_HEADLINE,
   STARTER_PITCH_HEADLINE,
-  starterPitchDocument,
+  legacyStarterPitchDocument,
 } from "@workspace/domain"
 import { readFirstCafeState } from "@/features/home/first-cafe-checklist.ts"
 import { getMockPitchDoc, setMockPitchDoc } from "@/test/pitch-api-mock.ts"
@@ -257,7 +257,7 @@ describe("Home optional aim prompt", () => {
     setMockPitchDoc({
       ...current,
       content: {
-        ...starterPitchDocument(),
+        ...legacyStarterPitchDocument(),
         headline: "Design intern · night shift",
         demo: false,
       },
@@ -281,7 +281,7 @@ describe("Home optional aim prompt", () => {
   })
 
   it("lets a café aim soft-feed headline without forcing a fake Pitch persona", async () => {
-    const starter = starterPitchDocument()
+    const starter = legacyStarterPitchDocument()
     const { router } = renderApp()
     await expectHomeStarted()
 

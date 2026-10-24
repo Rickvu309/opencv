@@ -15,6 +15,7 @@ import {
   starterApplyCards,
   starterCvContent,
   starterCvDocument,
+  legacyStarterPitchDocument,
   starterPitchContent,
   starterCheckoutAchievement,
   starterPitchDocument,
@@ -74,8 +75,27 @@ describe("starter content", () => {
     expect(starterPitchDocument().achievements[0]?.proofId).toBe("checkout")
   })
 
-  it("keeps Pitch story chips honest about the highlight they open", () => {
+  it("is a one-line sample for a new account: a name line, one status, one Proof", () => {
     const pitch = starterPitchDocument()
+    const text = JSON.stringify(pitch)
+    expect(text).not.toMatch(/\d\s*%|percent|add-to-cart/i)
+    expect(text).not.toMatch(/"(image|coverImage)"/)
+    expect(text).not.toMatch(/\.jpg|\.png/)
+    expect(pitch.status).toMatch(/^Open to /)
+    expect(pitch.status).not.toMatch(/\d/)
+    expect(pitch.about).not.toContain("\n")
+    expect(pitch.storyHighlights).toEqual([])
+    expect(pitch.bento).toEqual([])
+    expect(pitch.achievements).toHaveLength(1)
+    expect(pitch.achievements[0]?.proofId).toBe("checkout")
+    expect(
+      pitch.blocks.filter((block) => !block.hidden).map((block) => block.kind)
+    ).toEqual(["about", "achievements"])
+    expect(pitch.demo).toBe(true)
+  })
+
+  it("keeps stored sample story chips honest about the highlight they open", () => {
+    const pitch = legacyStarterPitchDocument()
     const storyCards = pitch.bento.filter((card) => card.storyHighlightId)
     expect(storyCards.length).toBeGreaterThan(0)
     for (const card of storyCards) {

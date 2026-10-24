@@ -178,8 +178,7 @@ export const BLOCK_PURPOSE: Record<PitchBlockKind, string> = {
   work: "CV, proof cards, and downloads.",
   github: "Builder activity from a linked GitHub account.",
   contact: "Email and socials — one tap to reach you.",
-  moments:
-    "Story highlights + bento grid — swipeable work moments like Instagram.",
+  moments: "Story highlights and a grid of work moments.",
   gallery: "Photos from workshops, tests, and team moments.",
 }
 

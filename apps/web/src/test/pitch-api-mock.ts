@@ -5,7 +5,7 @@ import {
   decodePitchContent,
   isPitchPublicSlug,
   pitchHandle,
-  starterPitchDocument,
+  legacyStarterPitchDocument,
   type PitchDoc,
   type PitchDocument,
   type PublicPitch,
@@ -49,7 +49,7 @@ function starterDoc(): PitchDoc {
   return {
     id: "55555555-5555-7555-8555-555555555555",
     kind: PITCH_CONTENT_KIND,
-    content: starterPitchDocument(),
+    content: legacyStarterPitchDocument(),
     contentVersion: PITCH_CONTENT_VERSION,
     createdAt: "2026-08-25T00:00:00.000Z",
     updatedAt: "2026-08-25T00:00:00.000Z",

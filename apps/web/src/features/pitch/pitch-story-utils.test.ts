@@ -7,11 +7,11 @@ import {
   prevHighlightId,
   prevSlideIndex,
 } from "@/features/pitch/pitch-story-utils.ts"
-import { starterPitchDocument } from "@workspace/domain"
+import { legacyStarterPitchDocument } from "@workspace/domain"
 
 describe("pitch story navigation", () => {
   it("walks slides then highlights", () => {
-    const highlights = starterPitchDocument().storyHighlights
+    const highlights = legacyStarterPitchDocument().storyHighlights
     const first = highlights[0]!
     const second = highlights[1]!
 

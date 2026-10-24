@@ -96,7 +96,9 @@ function TimelineRow({
 }) {
   return (
     <div className="grid grid-cols-[3.25rem_1fr] gap-x-4 gap-y-1 sm:grid-cols-[4.5rem_1fr]">
-      <p className="pt-0.5 text-sm tabular-nums text-muted-foreground">{when}</p>
+      <p className="pt-0.5 text-sm text-muted-foreground tabular-nums">
+        {when}
+      </p>
       <div>{children}</div>
     </div>
   )
@@ -114,7 +116,7 @@ function PitchAvatar({
   return (
     <Avatar className={cn("size-16 sm:size-[4.5rem]", className)}>
       {src ? <AvatarImage src={src} alt="" /> : null}
-      <AvatarFallback className="text-lg font-medium">
+      <AvatarFallback className="text-lg font-medium text-foreground">
         {profileInitials(name)}
       </AvatarFallback>
     </Avatar>
@@ -124,10 +126,12 @@ function PitchAvatar({
 export function PitchProfileHeader({
   profile,
   editing,
+  nameAs: Name = "h1",
   onStatusChange,
 }: {
   profile: PitchProfile
   editing?: boolean
+  nameAs?: "h1" | "h2"
   onStatusChange?: (status: string) => void
 }) {
   return (
@@ -135,16 +139,16 @@ export function PitchProfileHeader({
       <div className="flex items-start gap-4">
         <PitchAvatar src={profile.avatar} name={profile.name} />
         <div className="min-w-0 pt-0.5">
-          <h1 className="font-heading text-page-title font-semibold tracking-tight">
+          <Name className="font-heading text-page-title font-semibold tracking-tight">
             {profile.name}
-          </h1>
+          </Name>
           <p className="mt-1 text-sm text-muted-foreground">
             {profile.headline}
           </p>
-          <p className="mt-0.5 text-sm text-muted-foreground/80">
+          <p className="mt-0.5 text-sm text-muted-foreground">
             {profile.location}
           </p>
-          <p className="mt-1 font-mono text-xs text-muted-foreground/70">
+          <p className="mt-1 font-mono text-xs text-muted-foreground">
             {profile.slug}
           </p>
         </div>
@@ -232,7 +236,7 @@ export function AchievementsSection({
             <li key={item.id}>
               <TimelineRow when={item.year}>
                 <div>
-                  <p className="font-medium leading-snug">
+                  <p className="leading-snug font-medium">
                     {item.title}
                     <span className="font-normal text-muted-foreground">
                       {" "}
@@ -240,7 +244,7 @@ export function AchievementsSection({
                     </span>
                   </p>
                   {item.tag ? (
-                    <span className="mt-1.5 inline-block rounded-full bg-muted px-2 py-0.5 text-2xs font-medium text-muted-foreground">
+                    <span className="mt-1.5 inline-block rounded-full bg-muted px-2 py-0.5 text-2xs font-medium text-foreground">
                       {item.tag}
                     </span>
                   ) : null}
@@ -253,7 +257,7 @@ export function AchievementsSection({
                       variant="outline"
                       onClick={() => onOpenProof(proof)}
                       aria-label={`Open Proof: ${proof.title}`}
-                      className="mt-3 h-auto w-full justify-start gap-3 whitespace-normal rounded-xl p-3 text-left font-normal"
+                      className="mt-3 h-auto w-full justify-start gap-3 rounded-xl p-3 text-left font-normal whitespace-normal"
                     >
                       <span
                         className={cn(
@@ -311,7 +315,7 @@ export function ExperienceSection({
           <li key={item.id}>
             <TimelineRow when={item.period}>
               <div>
-                <p className="font-medium leading-snug">
+                <p className="leading-snug font-medium">
                   {item.title}
                   <span className="font-normal text-muted-foreground">
                     {" "}
@@ -432,7 +436,7 @@ export function GithubSection({
               <p className="block truncate font-mono text-sm font-medium">
                 @{mock.username}
               </p>
-              <span className="inline-flex items-center gap-1 text-2xs text-success">
+              <span className="inline-flex items-center gap-1 text-2xs text-foreground">
                 <span className="size-1.5 rounded-full bg-success" />
                 Connected · mock integration
               </span>
@@ -454,25 +458,19 @@ export function GithubSection({
 
         <dl className="mt-4 grid grid-cols-4 gap-2 border-t border-border/50 pt-3 text-center">
           <div>
-            <dt className="text-3xs text-muted-foreground uppercase">
-              Streak
-            </dt>
+            <dt className="text-3xs text-muted-foreground uppercase">Streak</dt>
             <dd className="text-sm font-semibold tabular-nums">
               {mock.streak}d
             </dd>
           </div>
           <div>
-            <dt className="text-3xs text-muted-foreground uppercase">
-              Repos
-            </dt>
+            <dt className="text-3xs text-muted-foreground uppercase">Repos</dt>
             <dd className="text-sm font-semibold tabular-nums">
               {mock.publicRepos}
             </dd>
           </div>
           <div>
-            <dt className="text-3xs text-muted-foreground uppercase">
-              Since
-            </dt>
+            <dt className="text-3xs text-muted-foreground uppercase">Since</dt>
             <dd className="text-sm font-semibold tabular-nums">
               {mock.memberSince}
             </dd>

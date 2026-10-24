@@ -75,7 +75,11 @@ export function PitchWorkspace() {
     profile.github.username,
     content.storyHighlights
   )
-  const links = overlayPitchLinks(content.links, identity, profile.github.username)
+  const links = overlayPitchLinks(
+    content.links,
+    identity,
+    profile.github.username
+  )
 
   function persistEdit(patch: (current: typeof content) => typeof content) {
     const userId = session?.user.id
@@ -151,7 +155,6 @@ export function PitchWorkspace() {
         title="Pitch"
         icon={<Globe className="size-4 text-muted-foreground" />}
       >
-
         {!editing ? (
           <Button
             type="button"
@@ -161,7 +164,7 @@ export function PitchWorkspace() {
             onClick={() => setMode("edit")}
           >
             <Pencil className="size-3.5" />
-            Edit profile
+            Edit Pitch
           </Button>
         ) : null}
 
@@ -222,8 +225,9 @@ export function PitchWorkspace() {
         >
           <div className="min-w-0 flex-1">
             <Badge variant="secondary">Demo content</Badge>
-            <p className="mt-1.5 text-sm text-muted-foreground">
-              This page is a sample, not your story.
+            <p className="mt-1.5 text-sm text-foreground">
+              This page is a sample, not your story. Clear it to start your
+              Pitch.
             </p>
           </div>
           <Button
@@ -240,90 +244,103 @@ export function PitchWorkspace() {
 
       <div className="min-h-0 flex-1 overflow-auto">
         {pitch.isLoading ? (
-          <p className="px-5 py-8 text-sm text-muted-foreground">Loading Pitch…</p>
+          <p className="px-5 py-8 text-sm text-muted-foreground">
+            Loading Pitch…
+          </p>
         ) : (
-        <div
-          className={cn(
-            "mx-auto max-w-2xl px-4 py-8 sm:px-6",
-            editing ? "pb-28" : "pb-16"
-          )}
-        >
-          {!profile.published ? (
-            <div className="mb-6 flex items-center gap-2 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning-foreground">
-              <EyeOff className="size-4 shrink-0 opacity-70" />
-              <span>
-                This page is <strong>unpublished</strong> — only you can see it.
-                Hit Publish when you&apos;re ready to share.
-              </span>
-            </div>
-          ) : null}
-
-          <PitchProfileHeader
-            profile={profile}
-            editing={editing}
-            onStatusChange={(status) =>
-              persistEdit((current) => ({ ...current, status }))
-            }
-          />
-
-          {isGhostPitchDocument(content) && !editing ? (
-            <Empty className="mt-2 border border-dashed border-border">
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <Globe className="size-4" />
-                </EmptyMedia>
-                <EmptyTitle>Your Pitch is empty</EmptyTitle>
-                <EmptyDescription>
-                  Write a line about what you want next, or leave it quiet until
-                  you have something to show.
-                </EmptyDescription>
-              </EmptyHeader>
-              <EmptyContent>
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() => setMode("edit")}
-                >
-                  <Pencil className="size-3.5" />
-                  Start your Pitch
-                </Button>
-              </EmptyContent>
-            </Empty>
-          ) : (
-            <>
-              {content.storyHighlights.length > 0 ? (
-              <StoryHighlightsRow
-                highlights={content.storyHighlights}
-                editing={editing}
-                onOpen={openStory}
-              />
-              ) : null}
-
-              <div className="space-y-14">
-                {visible.map((block) => (
-                  <PitchSection
-                    key={block.id}
-                    block={block}
-                    profile={profile}
-                    editing={editing}
-                    content={content}
-                    bento={bento}
-                    links={links}
-                    onHide={() => hideBlock(block.id)}
-                    onAboutChange={(about) =>
-                      persistEdit((current) => ({ ...current, about }))
-                    }
-                    onOpenStory={openStory}
-                    onOpenProof={setProofView}
-                    onAddAchievement={() =>
-                      persistEdit(withStarterCheckoutAchievement)
-                    }
-                  />
-                ))}
+          <div
+            className={cn(
+              "mx-auto max-w-2xl px-4 py-8 sm:px-6",
+              editing ? "pb-28" : "pb-16"
+            )}
+          >
+            {!profile.published ? (
+              <div className="mb-6 flex flex-col gap-3 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning-foreground sm:flex-row sm:items-center">
+                <EyeOff className="size-4 shrink-0 opacity-70" />
+                <p className="min-w-0 flex-1">
+                  This page is <strong>unpublished</strong>. Only you can see it
+                  until you publish.
+                </p>
+                {editing ? null : (
+                  <Button
+                    type="button"
+                    className="h-12 shrink-0 px-5"
+                    onClick={publish}
+                  >
+                    <Globe className="size-3.5" />
+                    Publish
+                  </Button>
+                )}
               </div>
-            </>
-          )}
-        </div>
+            ) : null}
+
+            <PitchProfileHeader
+              profile={profile}
+              editing={editing}
+              nameAs="h2"
+              onStatusChange={(status) =>
+                persistEdit((current) => ({ ...current, status }))
+              }
+            />
+
+            {isGhostPitchDocument(content) && !editing ? (
+              <Empty className="mt-2 border border-dashed border-border">
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <Globe className="size-4" />
+                  </EmptyMedia>
+                  <EmptyTitle>Your Pitch is empty</EmptyTitle>
+                  <EmptyDescription>
+                    Write a line about what you want next, or leave it quiet
+                    until you have something to show.
+                  </EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => setMode("edit")}
+                  >
+                    <Pencil className="size-3.5" />
+                    Start your Pitch
+                  </Button>
+                </EmptyContent>
+              </Empty>
+            ) : (
+              <>
+                {content.storyHighlights.length > 0 ? (
+                  <StoryHighlightsRow
+                    highlights={content.storyHighlights}
+                    editing={editing}
+                    onOpen={openStory}
+                  />
+                ) : null}
+
+                <div className="space-y-14">
+                  {visible.map((block) => (
+                    <PitchSection
+                      key={block.id}
+                      block={block}
+                      profile={profile}
+                      editing={editing}
+                      content={content}
+                      bento={bento}
+                      links={links}
+                      onHide={() => hideBlock(block.id)}
+                      onAboutChange={(about) =>
+                        persistEdit((current) => ({ ...current, about }))
+                      }
+                      onOpenStory={openStory}
+                      onOpenProof={setProofView}
+                      onAddAchievement={() =>
+                        persistEdit(withStarterCheckoutAchievement)
+                      }
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
         )}
       </div>
 
@@ -350,10 +367,7 @@ export function PitchWorkspace() {
         onChange={setStoryView}
       />
 
-      <PitchProofViewer
-        proof={proofView}
-        onClose={() => setProofView(null)}
-      />
+      <PitchProofViewer proof={proofView} onClose={() => setProofView(null)} />
     </div>
   )
 }

@@ -164,9 +164,32 @@ export async function runTour({ browser, webUrl, apiUrl, shots }) {
       await shot(a, "desktop-paper-cv-coach")
     }
     if (key === "pitch") {
+      const added = await a.evaluate(`(async () => {
+        const o = { credentials: 'include' }
+        const cur = await (await fetch(${JSON.stringify(`${apiUrl}/api/pitch`)}, o)).json()
+        const content = { ...cur.data.content, storyHighlights: [{
+          id: 'sh-checkout', label: 'Checkout', coverTone: 'neutral',
+          slides: [
+            { id: 's1', caption: 'Hallway test setup', detail: 'Two mobile layouts', tone: 'neutral' },
+            { id: 's2', caption: 'Written up as a Proof', tone: 'neutral' },
+          ],
+        }] }
+        const res = await fetch(${JSON.stringify(`${apiUrl}/api/commands/pitch.update`)}, { ...o, method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ content, contentVersion: cur.data.contentVersion ?? 1 }) })
+        return res.ok
+      })()`)
+      must(added === true, "adding a highlight to the Pitch through the api")
+      must(
+        await visit("pitch"),
+        "the Pitch did not render after adding a highlight"
+      )
+      await a.sleep(800)
       must(
         await clickByText(a, "button", "Checkout highlight"),
         "the Checkout highlight was not found"
+      )
+      must(
+        await a.waitFor("document.querySelector('[role=dialog]')", 4000),
+        "the story viewer did not open"
       )
       await a.sleep(1000)
       d.pitchStory = await snap(a)
@@ -174,8 +197,8 @@ export async function runTour({ browser, webUrl, apiUrl, shots }) {
       await a.key("Escape")
       await a.sleep(500)
       must(
-        await clickByText(a, "button", "Edit profile"),
-        "Edit profile was not found"
+        await clickByText(a, "button", "Edit Pitch"),
+        "Edit Pitch was not found"
       )
       must(
         await a.waitFor(
