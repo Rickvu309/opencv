@@ -97,9 +97,7 @@ else
 fi
 
 info "Pushing $branch"
-# The quick check just passed on this clean tree, so don't run it again in pre-push.
-SKIP_CHECKS=1 git push -u origin HEAD 2>&1 | grep -v 'SKIP_CHECKS=1' || true
-git ls-remote --exit-code --heads origin "$branch" >/dev/null || die "push failed"
+git push -u origin HEAD || die "push failed; no PR created. Fix the push error and retry."
 
 args=(--base main --head "$branch" --title "$title" --body "$body")
 (( draft )) && args+=(--draft)
