@@ -11,7 +11,7 @@ import { EMPTY_SECTION_CTA } from "@/features/paper/paper-cv-edits.ts"
 import { SAMPLE_CV_LABEL } from "@/features/paper/paper-data.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
 import {
-  byAttr,
+  queryByAttr,
   installPaperTestLifecycle,
   renderPaper,
   openDoc,
@@ -171,7 +171,7 @@ describe("Paper content editors", () => {
         name: EMPTY_SECTION_CTA.education,
       })
     ).not.toBeInTheDocument()
-    expect(byAttr(editor, "data-slot='empty'")).toBeNull()
+    expect(queryByAttr(editor, "data-slot='empty'")).toBeNull()
     expect(within(editor).queryByText(/get started/i)).not.toBeInTheDocument()
 
     fireEvent.click(addRole)
@@ -207,7 +207,7 @@ describe("Paper content editors", () => {
     expect(
       within(editor).getByRole("textbox", { name: "School" })
     ).toHaveTextContent("School name")
-    expect(byAttr(editor, "data-slot='empty'")).toBeNull()
+    expect(queryByAttr(editor, "data-slot='empty'")).toBeNull()
   })
 
   it("opens and edits a Letter", async () => {

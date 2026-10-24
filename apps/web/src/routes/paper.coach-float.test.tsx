@@ -7,7 +7,7 @@ import {
   scriptCoachStream,
 } from "@/test/threads-api-mock.ts"
 import {
-  byAttr,
+  queryByAttr,
   installPaperTestLifecycle,
   renderPaper,
   openDoc,
@@ -58,7 +58,7 @@ describe("Paper Coach float", () => {
     renderPaper()
     await expectPaperDrive()
     const editor = await openDoc("PM track CV")
-    const canvas = byAttr(editor, "data-paper-canvas")
+    const canvas = queryByAttr(editor, "data-paper-canvas")
     expect(canvas).toBeInstanceOf(HTMLElement)
     Object.defineProperty(canvas, "clientHeight", {
       configurable: true,

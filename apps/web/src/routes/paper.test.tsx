@@ -27,7 +27,7 @@ import { getMockPaperDocs } from "@/test/paper-api-mock.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
 import { renderApp } from "@/test/render-app.tsx"
 import {
-  byAttr,
+  queryByAttr,
   installPaperTestLifecycle,
   renderPaper,
   openDoc,
@@ -123,8 +123,8 @@ describe("Paper drive", () => {
       screen.queryByText(/unlock your|get started|welcome to your/i)
     ).not.toBeInTheDocument()
     expect(screen.queryByText(/no letters yet/i)).not.toBeInTheDocument()
-    expect(byAttr(document, "data-slot='empty-title'")).toBeNull()
-    expect(byAttr(document, "data-slot='empty-icon'")).toBeNull()
+    expect(queryByAttr(document, "data-slot='empty-title'")).toBeNull()
+    expect(queryByAttr(document, "data-slot='empty-icon'")).toBeNull()
 
     fireEvent.click(
       screen.getByRole("button", { name: PAPER_LIST_EMPTY_CTA.letter })

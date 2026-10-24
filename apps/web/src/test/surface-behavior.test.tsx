@@ -135,22 +135,16 @@ describe("Apply shows no Fit label", () => {
 
 describe("Pitch makes no third-party requests", () => {
   it("sends every request to the api origin", async () => {
-    renderApp(SURFACE_PATHS.pitch)
-    const appFetch = globalThis.fetch
     const requested: string[] = []
-    vi.stubGlobal(
-      "fetch",
-      async (input: RequestInfo | URL, init?: RequestInit) => {
-        const raw =
-          typeof input === "string"
-            ? input
-            : input instanceof URL
-              ? input.href
-              : input.url
-        requested.push(new URL(raw, apiBaseUrl).href)
-        return appFetch(input, init)
-      }
-    )
+    renderApp(SURFACE_PATHS.pitch, (input) => {
+      const raw =
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.href
+            : input.url
+      requested.push(new URL(raw, apiBaseUrl).href)
+    })
 
     expect(
       await screen.findByRole("heading", { name: "GitHub" })

@@ -40,19 +40,19 @@ export default defineConfig([
         {
           patterns: [
             {
-              group: ["@/router", "@/router.*"],
+              group: ["**/router", "**/router.*"],
               message: "A surface feature must not import the router.",
             },
             {
               group: [
-                "@/features/app-shell/*",
-                "!@/features/app-shell/use-media-query.ts",
-                "!@/features/app-shell/profile-display.ts",
+                "**/app-shell/*",
+                "!**/app-shell/use-media-query.ts",
+                "!**/app-shell/profile-display.ts",
               ],
               message: "A surface feature must not import shell chrome.",
             },
             {
-              group: ["@/components/search-modal*"],
+              group: ["**/search-modal*"],
               message: "A surface feature must not import the search modal.",
             },
           ],

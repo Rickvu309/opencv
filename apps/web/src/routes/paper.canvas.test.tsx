@@ -5,7 +5,7 @@ import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 import { getMockPaperDocs } from "@/test/paper-api-mock.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
 import {
-  byAttr,
+  queryByAttr,
   installPaperTestLifecycle,
   renderPaper,
   openDoc,
@@ -43,8 +43,8 @@ describe("Paper canvas editors", () => {
     expect(
       within(cvTools).queryByRole("button", { name: "Bullet list" })
     ).not.toBeInTheDocument()
-    expect(byAttr(document, "data-cv-type='page-title'")).not.toBeNull()
-    expect(byAttr(document, "data-cv-type='body'")).not.toBeNull()
+    expect(queryByAttr(document, "data-cv-type='page-title'")).not.toBeNull()
+    expect(queryByAttr(document, "data-cv-type='body'")).not.toBeNull()
 
     fireEvent.click(screen.getByRole("button", { name: /Product & design/ }))
     const templates = await screen.findByRole("listbox", {
@@ -117,7 +117,7 @@ describe("Paper canvas editors", () => {
     expect(
       screen.queryByRole("status", { name: "Selected text" })
     ).not.toBeInTheDocument()
-    expect(byAttr(editor, "data-coach-context-chip")).toBeNull()
+    expect(queryByAttr(editor, "data-coach-context-chip")).toBeNull()
   })
 
   it("keeps canvas field selection chrome distinct from CoachFloat chips", async () => {
@@ -286,7 +286,7 @@ describe("Paper canvas editors", () => {
 
     const dialog = await openCoach()
     expect(dialog).not.toHaveAttribute("draggable")
-    expect(byAttr(dialog, "data-coach-float-resize")).toBeNull()
+    expect(queryByAttr(dialog, "data-coach-float-resize")).toBeNull()
   })
 
   it("fits A4 to a phone width with slim chrome and a usable edit", async () => {
@@ -303,14 +303,14 @@ describe("Paper canvas editors", () => {
       screen.queryByRole("complementary", { name: "Documents" })
     ).not.toBeInTheDocument()
 
-    const fit = byAttr(editor, "data-paper-a4-fit='width'")
+    const fit = queryByAttr(editor, "data-paper-a4-fit='width'")
     expect(fit).toBeInstanceOf(HTMLElement)
     const page = fit!.firstElementChild as HTMLElement
     expect(page.style.maxWidth).toBe("100%")
     expect(page.style.width).toBe("210mm")
 
-    expect(byAttr(editor, "data-paper-canvas")).toBeInstanceOf(HTMLElement)
-    expect(byAttr(editor, "data-paper-editor")).not.toBeNull()
+    expect(queryByAttr(editor, "data-paper-canvas")).toBeInstanceOf(HTMLElement)
+    expect(queryByAttr(editor, "data-paper-editor")).not.toBeNull()
 
     const toolbar = within(editor).getByRole("toolbar", { name: "CV tools" })
     expect(toolbar).toHaveAttribute("data-paper-toolbar")
@@ -331,6 +331,6 @@ describe("Paper canvas editors", () => {
     expect(headline).toHaveFocus()
 
     expect(screen.getByRole("button", { name: "Coach" })).toBeInTheDocument()
-    expect(byAttr(document, "data-coach-float-resize")).toBeNull()
+    expect(queryByAttr(document, "data-coach-float-resize")).toBeNull()
   })
 })

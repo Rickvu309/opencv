@@ -7,7 +7,7 @@ import {
   scriptCoachStream,
 } from "@/test/threads-api-mock.ts"
 import {
-  byAttr,
+  queryByAttr,
   installPaperTestLifecycle,
   renderPaper,
   openDoc,
@@ -66,7 +66,7 @@ describe("Paper Coach cites and mobile sheet", () => {
       ).not.toBeInTheDocument()
 
       fireEvent.click(cite)
-      const bullet = byAttr(
+      const bullet = queryByAttr(
         editor,
         'data-paper-section="experience-1-bullet-1"'
       )
@@ -205,7 +205,7 @@ describe("Paper Coach cites and mobile sheet", () => {
     expect(
       within(dialog).queryByRole("button", { name: /Show on Paper/ })
     ).not.toBeInTheDocument()
-    expect(byAttr(dialog, "data-coach-cite")).toBeNull()
+    expect(queryByAttr(dialog, "data-coach-cite")).toBeNull()
     expect(dialog).not.toHaveTextContent(/provenance/i)
     expect(
       within(dialog).queryByRole("complementary", { name: /sources/i })
@@ -238,7 +238,9 @@ describe("Paper Coach cites and mobile sheet", () => {
     await openDoc("PM track CV")
     const dialog = await openCoach()
 
-    expect(byAttr(document, "data-coach-float-backdrop")).toBeInTheDocument()
+    expect(
+      queryByAttr(document, "data-coach-float-backdrop")
+    ).toBeInTheDocument()
     expect(dialog).toHaveAttribute("aria-modal", "true")
 
     const focusable = [
@@ -264,9 +266,9 @@ describe("Paper Coach cites and mobile sheet", () => {
     const dialog = await openCoach()
 
     expect(dialog).not.toHaveAttribute("draggable")
-    expect(byAttr(dialog, "data-coach-float-resize")).toBeNull()
+    expect(queryByAttr(dialog, "data-coach-float-resize")).toBeNull()
 
-    const canvas = byAttr(editor, "data-paper-canvas")
+    const canvas = queryByAttr(editor, "data-paper-canvas")
     expect(canvas).toBeInstanceOf(HTMLElement)
     expect(canvas).toHaveAttribute(COACH_FLOAT_NUDGE_ATTR)
 
@@ -278,8 +280,8 @@ describe("Paper Coach cites and mobile sheet", () => {
       await within(dialog).findByText("Keep the checkout metric.")
     ).toBeInTheDocument()
 
-    const thread = byAttr(dialog, "data-coach-float-thread")
-    const viewport = byAttr(dialog, "data-coach-thread-viewport")
+    const thread = queryByAttr(dialog, "data-coach-float-thread")
+    const viewport = queryByAttr(dialog, "data-coach-thread-viewport")
     expect(thread).toBeInstanceOf(HTMLElement)
     expect(viewport).toBeInstanceOf(HTMLElement)
     if (viewport instanceof HTMLElement) viewport.scrollTop = 48
@@ -297,7 +299,7 @@ describe("Paper Coach cites and mobile sheet", () => {
     expect(
       screen.queryByRole("textbox", { name: "Message Coach" })
     ).not.toBeInTheDocument()
-    expect(byAttr(minimized, "data-coach-float-thread")).toBe(thread)
+    expect(queryByAttr(minimized, "data-coach-float-thread")).toBe(thread)
 
     summary.textContent = "Edited while Coach is tucked away."
     fireEvent.input(summary)
@@ -307,7 +309,7 @@ describe("Paper Coach cites and mobile sheet", () => {
     const restored = screen.getByRole("dialog", { name: "Coach" })
     expect(restored).toHaveAttribute("data-coach-float-state", "open")
     expect(canvas).toHaveAttribute(COACH_FLOAT_NUDGE_ATTR)
-    expect(byAttr(restored, "data-coach-float-thread")).toBe(thread)
+    expect(queryByAttr(restored, "data-coach-float-thread")).toBe(thread)
     expect(
       within(restored).getByText("Keep the checkout metric.")
     ).toBeInTheDocument()
@@ -315,10 +317,9 @@ describe("Paper Coach cites and mobile sheet", () => {
       within(restored).getByText("Sharpen the checkout bullet")
     ).toBeInTheDocument()
     if (rememberedScroll > 0) {
-      expect(byAttr(restored, "data-coach-thread-viewport")).toHaveProperty(
-        "scrollTop",
-        rememberedScroll
-      )
+      expect(
+        queryByAttr(restored, "data-coach-thread-viewport")
+      ).toHaveProperty("scrollTop", rememberedScroll)
     }
 
     fireEvent.keyDown(restored, { key: "Escape" })
@@ -345,7 +346,7 @@ describe("Paper Coach cites and mobile sheet", () => {
       "data-coach-float-state",
       "open"
     )
-    expect(byAttr(editor, "data-paper-canvas")).not.toHaveAttribute(
+    expect(queryByAttr(editor, "data-paper-canvas")).not.toHaveAttribute(
       COACH_FLOAT_NUDGE_ATTR
     )
   })

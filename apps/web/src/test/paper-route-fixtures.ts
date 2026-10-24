@@ -123,7 +123,7 @@ export function stubDesktopViewport(isDesktop: boolean) {
   }))
 }
 
-export function byAttr(root: ParentNode, selector: string) {
+export function queryByAttr(root: ParentNode, selector: string) {
   return root.querySelector(`[${selector}]`)
 }
 
