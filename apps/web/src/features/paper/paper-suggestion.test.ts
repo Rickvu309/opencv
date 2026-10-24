@@ -12,7 +12,11 @@ const hunk = (section: string): DiffHunk => ({
 describe("paper suggestion", () => {
   it("starts from the first hunks and keeps the earliest previous content", () => {
     const first = addSuggestion(null, { v: 1 }, [hunk("Summary")])
-    expect(first).toEqual({ previous: { v: 1 }, sections: ["Summary"] })
+    expect(first).toEqual({
+      previous: { v: 1 },
+      sections: ["Summary"],
+      sectionIds: ["summary"],
+    })
     const second = addSuggestion(first, { v: 2 }, [
       hunk("Experience"),
       hunk("Summary"),
@@ -20,22 +24,29 @@ describe("paper suggestion", () => {
     expect(second).toEqual({
       previous: { v: 1 },
       sections: ["Summary", "Experience"],
+      sectionIds: ["summary", "experience"],
     })
   })
 
   it("keeps the current suggestion when nothing changed", () => {
     expect(addSuggestion(null, {}, [])).toBeNull()
-    const current = { previous: 1, sections: ["Summary"] }
+    const current = {
+      previous: 1,
+      sections: ["Summary"],
+      sectionIds: ["summary"],
+    }
     expect(addSuggestion(current, 2, [])).toBe(current)
   })
 
   it("names the changed sections in one sentence", () => {
-    expect(suggestionSentence(["Summary"])).toBe("Coach changed Summary.")
+    expect(suggestionSentence(["Summary"])).toBe(
+      "Coach changed Summary. Keep it or undo this change."
+    )
     expect(suggestionSentence(["Summary", "Skills"])).toBe(
-      "Coach changed Summary and Skills."
+      "Coach changed Summary and Skills. Keep it or undo this change."
     )
     expect(suggestionSentence(["A", "B", "C"])).toBe(
-      "Coach changed A, B and C."
+      "Coach changed A, B and C. Keep it or undo this change."
     )
   })
 })

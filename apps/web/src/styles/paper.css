@@ -169,6 +169,12 @@
     outline-offset: -1px;
   }
 
+  .paper-coach-suggested {
+    border-radius: var(--radius-sm);
+    background-color: var(--muted);
+    box-shadow: 0 0 0 2px var(--muted);
+  }
+
   .paper-coach-changed {
     border-radius: var(--radius-sm);
     animation: paper-coach-highlight var(--duration-slow) var(--ease-standard);

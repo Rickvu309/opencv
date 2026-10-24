@@ -58,6 +58,7 @@ import { PaperEditorConflictBanner } from "./paper-editor-conflict-banner.tsx"
 import { PaperSuggestionBar } from "./paper-suggestion-bar.tsx"
 import { addSuggestion, type PaperSuggestion } from "./paper-suggestion.ts"
 import { useSectionFocus } from "./use-section-focus.ts"
+import { useSuggestionMarks } from "./use-suggestion-marks.ts"
 import { DOCS_PANEL_ID, PaperEditorHeader } from "./paper-editor-header.tsx"
 import { countWords } from "./paper-editor-helpers.ts"
 import { PaperCvSurface } from "./paper-cv-surface.tsx"
@@ -148,6 +149,7 @@ export function PaperEditor({
   const [suggestion, setSuggestion] = useState<PaperSuggestion | null>(null)
   const [dockEl, setDockEl] = useState<HTMLElement | null>(null)
   const [coachDocked, setCoachDocked] = useState(false)
+  useSuggestionMarks(canvasRef, suggestion?.sectionIds)
   const [selection, setSelection] = useState<CoachSelection | null>(null)
   const [docsPanel, setDocsPanel] = useState<DocsPanelState>(() =>
     readStored(DOCS_PANEL_KEY, parseDocsPanel, "expanded")
@@ -216,11 +218,11 @@ export function PaperEditor({
     }
   }
 
-  function acceptSuggestion() {
+  function keepSuggestion() {
     setSuggestion(null)
   }
 
-  function rejectSuggestion() {
+  function undoSuggestion() {
     if (!suggestion) return
     const restored = { ...docRef.current, content: suggestion.previous }
     setSuggestion(null)
@@ -578,8 +580,8 @@ export function PaperEditor({
         {suggestion && !conflict ? (
           <PaperSuggestionBar
             suggestion={suggestion}
-            onAccept={acceptSuggestion}
-            onReject={rejectSuggestion}
+            onKeep={keepSuggestion}
+            onUndo={undoSuggestion}
           />
         ) : null}
 

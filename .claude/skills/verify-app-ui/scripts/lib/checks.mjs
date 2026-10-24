@@ -300,8 +300,8 @@ export function runChecks(d) {
   const undo = d.cv.buttons.some((b) => /^undo$/i.test(b.label))
   const reject =
     [...d.cv.buttons, ...d.cvCoach.buttons].some((b) =>
-      /reject/i.test(b.label)
-    ) || has(/>\s*Reject\s*<|["'`]Reject["'`]/).length > 0
+      /reject|undo this change/i.test(b.label)
+    ) || has(/>\s*Reject\s*<|["'`](Reject|Undo this change)["'`]/).length > 0
   r.push(
     result(
       "30",

@@ -37,6 +37,10 @@ function coachWrites(
         }
       : doc
   )
+  patchMockPaperDoc(PM_CV_ID, {
+    content: next.find((doc) => doc.id === PM_CV_ID)?.content,
+    updatedAt: "2026-08-26T15:00:00.000Z",
+  })
   act(() => {
     queryClient.setQueryData(paperQueryKeys.list(), next)
   })
@@ -189,35 +193,53 @@ describe("Paper Coach suggestions", () => {
     expect(summary).toHaveTextContent("Mine now")
   })
 
-  it("shows a Coach edit as a suggestion and Reject restores the earlier text", async () => {
+  function serverSummary() {
+    const doc = getMockPaperDocs().find((d) => d.id === PM_CV_ID)
+    return (doc?.content as { summary: string }).summary
+  }
+
+  it("marks a Coach edit until it is kept or undone, and Undo writes the earlier text back to the server", async () => {
+    const original = serverSummary()
     const { queryClient } = renderPaper()
     await expectPaperDrive()
     const editor = await openDoc("PM track CV")
     const summary = within(editor).getByRole("textbox", { name: "Summary" })
-    const before = summary.textContent
+    expect(summary).toHaveTextContent(original)
 
     coachWrites(queryClient)
+    expect(serverSummary()).toBe("Coach version of the summary")
     await waitFor(() => {
       expect(summary).toHaveTextContent("Coach version of the summary")
     })
     const bar = within(editor).getByRole("status", { name: "Coach suggestion" })
-    expect(bar).toHaveTextContent("Coach changed Summary")
-    expect(within(bar).getByRole("button", { name: "Accept" })).toBeEnabled()
+    expect(bar).toHaveTextContent("Coach changed Summary.")
+    expect(within(bar).getByRole("button", { name: "Keep" })).toBeEnabled()
+    expect(summary).toHaveClass("paper-coach-suggested")
+    await new Promise((resolve) => setTimeout(resolve, 1500))
+    expect(summary).toHaveClass("paper-coach-suggested")
 
-    fireEvent.click(within(bar).getByRole("button", { name: "Reject" }))
+    fireEvent.click(
+      within(bar).getByRole("button", { name: "Undo this change" })
+    )
     await waitFor(() => {
-      expect(summary).toHaveTextContent(before ?? "")
+      expect(summary).toHaveTextContent(original)
     })
+    expect(summary).not.toHaveClass("paper-coach-suggested")
     expect(
       within(editor).queryByRole("status", { name: "Coach suggestion" })
     ).not.toBeInTheDocument()
     await waitFor(() => {
-      const doc = getMockPaperDocs().find((d) => d.id === PM_CV_ID)
-      expect((doc?.content as { summary: string }).summary).toBe(before)
+      expect(serverSummary()).toBe(original)
     })
+    const listed = (await (await fetch("/api/paper")).json()) as {
+      data: Array<{ id: string; content: { summary: string } }>
+    }
+    expect(listed.data.find((d) => d.id === PM_CV_ID)?.content.summary).toBe(
+      original
+    )
   })
 
-  it("Accept keeps the Coach text and clears the suggestion", async () => {
+  it("Keep leaves the Coach text and clears the mark", async () => {
     const { queryClient } = renderPaper()
     await expectPaperDrive()
     const editor = await openDoc("PM track CV")
@@ -225,13 +247,14 @@ describe("Paper Coach suggestions", () => {
     const bar = await within(editor).findByRole("status", {
       name: "Coach suggestion",
     })
-    fireEvent.click(within(bar).getByRole("button", { name: "Accept" }))
+    fireEvent.click(within(bar).getByRole("button", { name: "Keep" }))
     expect(
       within(editor).queryByRole("status", { name: "Coach suggestion" })
     ).not.toBeInTheDocument()
-    expect(
-      within(editor).getByRole("textbox", { name: "Summary" })
-    ).toHaveTextContent("Coach version of the summary")
+    const summary = within(editor).getByRole("textbox", { name: "Summary" })
+    expect(summary).toHaveTextContent("Coach version of the summary")
+    expect(summary).not.toHaveClass("paper-coach-suggested")
+    expect(serverSummary()).toBe("Coach version of the summary")
   })
 
   it("names the document kind in the conflict banner", async () => {

@@ -1,19 +1,19 @@
 import { Button } from "@workspace/ui/components/button"
 
 import {
-  SUGGESTION_ACCEPT,
-  SUGGESTION_REJECT,
+  SUGGESTION_KEEP,
+  SUGGESTION_UNDO,
   suggestionSentence,
   type PaperSuggestion,
 } from "./paper-suggestion.ts"
 
 type Props = {
   suggestion: PaperSuggestion
-  onAccept: () => void
-  onReject: () => void
+  onKeep: () => void
+  onUndo: () => void
 }
 
-export function PaperSuggestionBar({ suggestion, onAccept, onReject }: Props) {
+export function PaperSuggestionBar({ suggestion, onKeep, onUndo }: Props) {
   return (
     <div
       role="status"
@@ -22,11 +22,11 @@ export function PaperSuggestionBar({ suggestion, onAccept, onReject }: Props) {
     >
       <p>{suggestionSentence(suggestion.sections)}</p>
       <div className="flex flex-wrap gap-2">
-        <Button type="button" size="sm" variant="outline" onClick={onReject}>
-          {SUGGESTION_REJECT}
+        <Button type="button" size="sm" variant="outline" onClick={onUndo}>
+          {SUGGESTION_UNDO}
         </Button>
-        <Button type="button" size="sm" onClick={onAccept}>
-          {SUGGESTION_ACCEPT}
+        <Button type="button" size="sm" onClick={onKeep}>
+          {SUGGESTION_KEEP}
         </Button>
       </div>
     </div>
