@@ -29,22 +29,14 @@
   html:has(.landing-root) {
     scroll-behavior: smooth;
   }
+}
 
-  .landing-reveal {
-    mask-image: linear-gradient(to right, black 40%, transparent 60%);
-    mask-size: 250% 100%;
-    mask-repeat: no-repeat;
-    animation: landing-reveal 0.8s var(--ease-emphasized) both;
-  }
-
-  @keyframes landing-reveal {
-    from {
-      opacity: 0;
-      mask-position: 100% 0;
-    }
-    to {
-      opacity: 1;
-      mask-position: 0 0;
-    }
+@media (prefers-reduced-motion: reduce) {
+  .landing-root,
+  .landing-root *,
+  .landing-root *::before,
+  .landing-root *::after {
+    transition-duration: 0s !important;
+    animation-duration: 0s !important;
   }
 }

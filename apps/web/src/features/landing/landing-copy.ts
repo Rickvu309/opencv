@@ -1,24 +1,15 @@
-export const LANDING_HEADLINE = "The career coach that gets you your first job."
+export const LANDING_HEADLINE =
+  "A first-job coach for Vietnamese students and new graduates."
 
 export const LANDING_SUBHEAD =
-  "Chat with a coach, write your CV and letters, track every application, and share a portfolio page."
+  "OpenCV is a coach with a CV editor, an application board and a public page for your work. You write the CV with the coach, then send each application and track every answer."
 
-export const LANDING_PILLARS = [
-  {
-    title: "Knows your story",
-    body: "Answers come from your own CV, goals and applications.",
-  },
-  {
-    title: "Writes with you",
-    body: "Drafts CVs and letters beside you and edits them in place.",
-  },
-  {
-    title: "Tracks every application",
-    body: "Keeps every job, date and follow-up in one place.",
-  },
-] as const
+export const LANDING_OBJECTION =
+  "Answers come from your CV and goals, and you edit every line."
 
-type Shot = {
+export const LANDING_PRIMARY_LABEL = "Start with a coach"
+
+export type Shot = {
   src: string
   mobileSrc: string
   width: number
@@ -26,10 +17,12 @@ type Shot = {
   mobileWidth: number
   mobileHeight: number
   alt: string
+  displayWidth?: number
 }
 
 export type LandingSurface = {
   id: "coach" | "paper" | "apply" | "pitch"
+  label: string
   title: string
   body: string
   shot: Shot
@@ -38,72 +31,81 @@ export type LandingSurface = {
 export const LANDING_HERO_SHOT: Shot = {
   src: "/landing/coach.webp",
   mobileSrc: "/landing/coach-mobile.webp",
-  width: 1600,
-  height: 900,
-  mobileWidth: 768,
-  mobileHeight: 600,
-  alt: "OpenCV Home with a greeting, a question about what you are aiming for, and the Coach message box.",
+  width: 1440,
+  height: 705,
+  mobileWidth: 640,
+  mobileHeight: 862,
+  displayWidth: 960,
+  alt: "A Coach thread. Linh, a student, asks which role to apply for first, and the Coach checks her Apply cards and names one, citing her CV.",
 }
 
 export const LANDING_SURFACES: readonly LandingSurface[] = [
   {
     id: "coach",
-    title: "Coach",
-    body: "Ask anything about your career. Get an answer built on your own CV and goals.",
+    label: "Coach",
+    title: "Find the role to apply for.",
+    body: "First, pick one job: the coach names it from your CV and goals and files it on your board. Every move shows a receipt you can undo.",
     shot: {
-      src: "/landing/coach-thread.webp",
-      mobileSrc: "/landing/coach-thread-mobile.webp",
+      src: "/landing/coach-act.webp",
+      mobileSrc: "/landing/coach-act-mobile.webp",
       width: 1600,
-      height: 383,
-      mobileWidth: 768,
-      mobileHeight: 410,
-      alt: "A Coach thread. You ask for interview prep, the Coach checks your Apply cards and replies with a next step.",
+      height: 338,
+      mobileWidth: 780,
+      mobileHeight: 804,
+      displayWidth: 1180,
+      alt: "A Coach reply beside the Apply board. Linh asks the Coach to move the Associate PM intern card to Prep, the receipt has an Undo button, and the card shows in the Prep column.",
     },
   },
   {
     id: "paper",
-    title: "Paper",
-    body: "Write CVs, cover letters and proofs with a coach beside you. Edit, tailor and export.",
+    label: "Paper",
+    title: "Write the CV beside the coach.",
+    body: "Then send a CV written for that job. Pick a bullet, ask the coach to rewrite it, and edit the result.",
     shot: {
       src: "/landing/paper.webp",
       mobileSrc: "/landing/paper-mobile.webp",
       width: 1600,
-      height: 633,
-      mobileWidth: 792,
-      mobileHeight: 700,
-      alt: "The Paper editor with a sample CV open, and a template picker, Tailor for role and Export above the page.",
+      height: 1041,
+      mobileWidth: 780,
+      mobileHeight: 1353,
+      alt: "The Paper editor with Linh Tran's CV open and the Coach panel beside it, showing a reply about the selected bullet.",
     },
   },
   {
     id: "apply",
-    title: "Apply",
-    body: "Track every job you pursue on one board, from first look to final answer.",
+    label: "Apply",
+    title: "Track every application.",
+    body: "Next, see where each application stands: Inbox, Prep, Sent, Live or Closed. Move cards as answers arrive.",
     shot: {
       src: "/landing/apply.webp",
       mobileSrc: "/landing/apply-mobile.webp",
       width: 1600,
       height: 467,
-      mobileWidth: 660,
-      mobileHeight: 340,
-      alt: "The Apply board with job cards in the Inbox, Prep, Sent and Closed columns.",
+      mobileWidth: 760,
+      mobileHeight: 440,
+      alt: "The Apply board with a Business analyst intern job in Inbox, an Associate PM intern job in Prep and a UX research intern job in Sent.",
     },
   },
   {
     id: "pitch",
-    title: "Pitch",
-    body: "Turn your best work into a page you can share with one link.",
+    label: "Pitch",
+    title: "Share one page of your work.",
+    body: "Last, when an employer wants more than your CV, send one link to your page. It holds the projects behind the CV.",
     shot: {
       src: "/landing/pitch.webp",
       mobileSrc: "/landing/pitch-mobile.webp",
-      width: 960,
-      height: 700,
-      mobileWidth: 640,
-      mobileHeight: 680,
-      alt: "A public Pitch page with a name, story highlights and cards of work.",
+      width: 1080,
+      height: 750,
+      mobileWidth: 780,
+      mobileHeight: 1060,
+      displayWidth: 720,
+      alt: "A public Pitch page for Linh Tran, a student aiming for a product intern role, with an open-to-internships status, story highlights and an About section.",
     },
   },
 ]
 
-export const LANDING_CTA = "Your career, started. Free today."
+export const LANDING_CTA =
+  "Write the CV, send it, and keep every answer in one place. Free today."
 
-export const LANDING_TITLE = "OpenCV, the career coach for your first job"
+export const LANDING_TITLE =
+  "OpenCV, a first-job coach for Vietnamese students and new graduates"

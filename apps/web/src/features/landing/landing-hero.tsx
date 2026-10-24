@@ -2,39 +2,46 @@ import { Link } from "@tanstack/react-router"
 
 import { buttonVariants } from "@workspace/ui/components/button"
 import { Section } from "@workspace/ui/components/section"
+import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
 import { cn } from "@workspace/ui/lib/utils"
 
 import {
   LANDING_HEADLINE,
   LANDING_HERO_SHOT,
+  LANDING_OBJECTION,
+  LANDING_PRIMARY_LABEL,
   LANDING_SUBHEAD,
 } from "./landing-copy.ts"
 import { LandingShot } from "./landing-surface.tsx"
 
-const CTA = "h-11 w-full px-5 text-base sm:w-auto"
-
 export function LandingHero() {
   return (
-    <Section className="pt-28 pb-0 md:pt-40 md:pb-0">
-      <h1 className="landing-h1 max-w-3xl font-sans">{LANDING_HEADLINE}</h1>
-      <p className="mt-6 max-w-xl text-lg text-pretty text-muted-foreground">
+    <Section className="pt-28 pb-0 md:pt-28 md:pb-0">
+      <h1 className="landing-h1 max-w-4xl font-sans">{LANDING_HEADLINE}</h1>
+      <p className="mt-5 max-w-3xl text-base text-pretty text-muted-foreground md:text-lg">
         {LANDING_SUBHEAD}
       </p>
-      <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-        <Link to="/sign-up" className={cn(buttonVariants({ size: "lg" }), CTA)}>
-          Start free
+      <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-1">
+        <Link
+          to="/sign-up"
+          className={cn(buttonVariants({ size: "lg" }), "h-11 px-5 text-base")}
+        >
+          {LANDING_PRIMARY_LABEL}
         </Link>
         <Link
           to="/sign-in"
           className={cn(
-            buttonVariants({ variant: "outline", size: "lg" }),
-            CTA
+            "landing-link inline-flex h-11 items-center rounded-md px-1 text-base text-muted-foreground hover:text-foreground",
+            FOCUS_RING
           )}
         >
           Sign in
         </Link>
       </div>
-      <div className="mt-16 md:mt-20">
+      <p className="mt-4 max-w-xl text-sm text-pretty text-muted-foreground">
+        {LANDING_OBJECTION}
+      </p>
+      <div className="mt-8 md:mt-10">
         <LandingShot shot={LANDING_HERO_SHOT} priority />
       </div>
     </Section>

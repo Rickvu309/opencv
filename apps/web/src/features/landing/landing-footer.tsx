@@ -9,7 +9,7 @@ import { OpenCvLogo } from "@/features/app-shell/app-logo.tsx"
 import { LANDING_SURFACES } from "./landing-copy.ts"
 
 const FOOTER_LINK = cn(
-  "landing-link rounded-md text-sm text-muted-foreground hover:text-foreground",
+  "landing-link inline-flex min-h-6 items-center rounded-md text-sm text-muted-foreground hover:text-foreground",
   FOCUS_RING
 )
 
@@ -23,7 +23,7 @@ export function LandingFooter() {
         <nav aria-label="Footer" className="flex flex-wrap gap-x-6 gap-y-3">
           {LANDING_SURFACES.map((surface) => (
             <a key={surface.id} href={`#${surface.id}`} className={FOOTER_LINK}>
-              {surface.title}
+              {surface.label}
             </a>
           ))}
           <Link to="/sign-in" className={FOOTER_LINK}>

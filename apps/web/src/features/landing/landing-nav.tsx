@@ -8,10 +8,10 @@ import { cn } from "@workspace/ui/lib/utils"
 
 import { OpenCvLogo } from "@/features/app-shell/app-logo.tsx"
 
-import { LANDING_SURFACES } from "./landing-copy.ts"
+import { LANDING_PRIMARY_LABEL, LANDING_SURFACES } from "./landing-copy.ts"
 
 const NAV_LINK = cn(
-  "landing-link rounded-md text-sm text-muted-foreground hover:text-foreground",
+  "landing-link inline-flex min-h-6 items-center rounded-md text-sm text-muted-foreground hover:text-foreground",
   FOCUS_RING
 )
 
@@ -30,17 +30,21 @@ export function LandingNav() {
       data-scrolled={scrolled}
       className="fixed inset-x-0 top-0 z-sticky border-b border-transparent transition-[background-color,border-color,backdrop-filter] duration-100 ease-out data-[scrolled=true]:border-border data-[scrolled=true]:bg-background/80 data-[scrolled=true]:backdrop-blur-lg"
     >
-      <SectionContainer className="flex h-16 items-center justify-between gap-6">
-        <Link to="/" className={cn("rounded-md", FOCUS_RING)}>
+      <SectionContainer className="flex flex-wrap items-center justify-between gap-x-6 md:h-16 md:flex-nowrap">
+        <Link to="/" className={cn("rounded-md py-4 md:py-0", FOCUS_RING)}>
           <OpenCvLogo withWordmark />
         </Link>
         <nav
           aria-label="Surfaces"
-          className="hidden items-center gap-6 md:flex"
+          className="order-last -mx-2 flex w-full items-center gap-2 pb-2 md:order-none md:w-auto md:gap-6 md:pb-0"
         >
           {LANDING_SURFACES.map((surface) => (
-            <a key={surface.id} href={`#${surface.id}`} className={NAV_LINK}>
-              {surface.title}
+            <a
+              key={surface.id}
+              href={`#${surface.id}`}
+              className={cn(NAV_LINK, "px-2 py-1.5 md:p-0")}
+            >
+              {surface.label}
             </a>
           ))}
         </nav>
@@ -52,7 +56,7 @@ export function LandingNav() {
             to="/sign-up"
             className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
           >
-            Start free
+            {LANDING_PRIMARY_LABEL}
           </Link>
         </div>
       </SectionContainer>
