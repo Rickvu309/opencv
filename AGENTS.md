@@ -50,7 +50,7 @@ There is no CI and no GitHub Actions. Local hooks (`.githooks/`) and the review 
 - Pushes run a quick check scoped to what changed: `scripts/check.sh --changed` (the pre-push hook does it). The full lint, typecheck and test run once per PR, in `scripts/review-pr.sh`.
 - Open the PR with `scripts/open-pr.sh --draft`. It validates the branch, runs the quick check, pushes, and creates the PR with the title `type: description (#<issue>)` and `Closes #<issue>` in the body.
 - Before marking ready (`gh pr ready`), the quick check passes and the verify-opencv evidence (`.claude/skills/verify-opencv`) is attached to the PR. There are no preview deploys yet; verify locally with verify-opencv.
-- If `main` moved ahead: `git fetch origin && git rebase origin/main && git push --force-with-lease`.
+- A branch behind `main` needs no rebase: `scripts/review-pr.sh` tests the merge of `main` and the PR, which is what the squash merge lands. Rebase only when the review reports a merge conflict: `git fetch origin && git rebase origin/main && git push --force-with-lease`.
   Force-push only ever goes to your own task branch.
 
 #### 5. Never
@@ -70,6 +70,7 @@ There is no CI and no GitHub Actions. Local hooks (`.githooks/`) and the review 
 
 - Merge only with squash: `gh pr merge --squash`.
 - An agent running under the owner's account (`@quanvu309`) merges its own PR with `gh pr merge <pr#> --squash --admin` only after `scripts/review-pr.sh` prints OK and the gates lane report at the exact head is green; never before. The ruleset's one-approval rule cannot be met by the only human approving their own agent's PR, so `--admin` is the bypass; it skips the ruleset, so it also needs an independent review with no open finding and no requested changes or unresolved threads. Never use it for a contributor's PR or a result of `HUMAN REQUIRED`.
+- `scripts/review-pr.sh` prints a patch id that a rebase keeps as long as the hunks stay the same. The independent review and the verify evidence name the patch id they cover and stay valid while it is unchanged, so a rebase or a fresh `main` that keeps the patch id needs no new review or verify round, only a rerun of `scripts/review-pr.sh` (cached when the tested tree is unchanged).
 - After merge, the issue closes and the remote branch is deleted automatically.
 - From the main checkout: `scripts/cleanup-worktree.sh <issue#>`.
 

@@ -71,7 +71,7 @@ flowchart LR
   - passing checks: the quick `scripts/check.sh --changed` on each push, and the full `scripts/check.sh` (lint, typecheck, test) once, by the reviewer
   - local verification with the verify-opencv skill (`.claude/skills/verify-opencv`), with its evidence attached to the PR
   - an approval after the review checklist
-- If the branch falls behind `main`, rebase it: `git fetch origin && git rebase origin/main && git push --force-with-lease`.
+- A branch behind `main` needs no rebase: the reviewer tests the merge of `main` and the PR. Rebase only when the review reports a merge conflict: `git fetch origin && git rebase origin/main && git push --force-with-lease`.
 - See `docs/git-workflow/commit-and-pr-conventions.md`.
 
 ### Who approves
@@ -152,7 +152,7 @@ scripts/check.sh --changed                             # quick lint, typecheck, 
 # Open a draft PR (validates, runs the quick check, pushes, fills title + Closes #)
 scripts/open-pr.sh --draft
 
-# Catch up with main
+# Rebase only when the review reports a merge conflict (a branch behind main is fine)
 git fetch origin && git rebase origin/main && git push --force-with-lease
 
 # Ready for review / merge

@@ -38,12 +38,12 @@ The script does steps 1-6 and prints `OK`, `FAIL`, or `HUMAN REQUIRED`. It never
 2. **PR title** is `type: description (#<issue>)`, and the issue number matches the branch.
 3. **Body** contains `Closes #<issue>`, and the issue exists and is open.
 4. **Human needed?** Only if the PR has the `needs-human-review` label or is a mass deletion (it deletes 25% or more of the files tracked on `main`, or 80% or more of one `apps/*` or `packages/*` directory with at least 5 files; renames are counted as deletions, so moving a whole app also needs a human): **stop: do not merge**. Review and comment if useful, then leave the decision to a human. Env/secrets paths in `CODEOWNERS` (the file list comes from `git diff --no-renames`, so renames and PRs over 100 files are covered) are only noted; the catch-all `*` line only decides who may merge, so `scripts/review-pr.sh` ignores it here (`scripts/test-codeowners.sh` guards that). A committed real env file (`.env`, `.env.local`, `prod.env`; templates such as `.env.example` are fine) fails the checklist, and so does a requested-changes review.
-5. **Up to date:** the branch contains the latest `main`. If not, request a rebase.
-6. **Checks pass:** the PR is checked out in a throwaway worktree (`../opencv.worktrees/review-pr-<n>`), dependencies are installed, and `scripts/check.sh` (full, no `--changed`) from `main` runs lint, typecheck, and test. This is the one full run per PR; pushes only run `scripts/check.sh --changed`. It uses `main`'s copy so a PR can't weaken its own checks. The worktree is removed afterwards (`--keep` keeps it).
+5. **Merges cleanly:** the checks run on the merge of `main` and the PR head, which is what the squash merge lands, so a branch behind `main` needs no rebase. A merge conflict fails; the author rebases and resolves it. The script prints the `main` commit it tested and a patch id that stays the same across a rebase that keeps the hunks.
+6. **Checks pass:** `main` with the PR merged in is checked out in a throwaway worktree (`../opencv.worktrees/review-pr-<n>`), dependencies are installed, and `scripts/check.sh` (full, no `--changed`) from `main` runs lint, typecheck, and test. This is the one full run per PR; pushes only run `scripts/check.sh --changed`. It uses `main`'s copy so a PR can't weaken its own checks. A passing run is cached by the tested tree, so a rerun that lands the same tree is free (`--no-cache` reruns it). Items 1-5 run first; a FAIL there skips this step. The worktree is removed afterwards (`--keep` keeps it).
 7. **Verification:** the PR carries verify-opencv evidence for the changed flow (`.claude/skills/verify-opencv`). There are no preview deploys yet.
 8. **Read the diff.** It does what the issue asks and nothing unrelated, tests cover it, and there are no secrets, debug code, or commented-out code. Look closely at changes to `package.json` scripts, `scripts/`, `.githooks/`, and `.github/`: they change the gate itself.
 9. **Decide:**
-   - All good: `gh pr review <pr#> --comment --body "review-pr.sh: OK"`, then `gh pr merge <pr#> --squash` (an agent under the owner's account adds `--admin`)
+   - All good: `gh pr review <pr#> --comment --body "review-pr.sh: OK, patch id <id>"` (the id the script printed; the independent review and the verify evidence name the same id, and stay valid while it is unchanged), then `gh pr merge <pr#> --squash` (an agent under the owner's account adds `--admin`)
    - Problems: `gh pr review <pr#> --request-changes --body "<what to fix>"`
    - Human needed: `gh pr review <pr#> --comment --body "<findings>. Needs human approval."`
 
@@ -54,8 +54,8 @@ Without the script, do steps 1-6 by hand:
 ```bash
 gh pr view <pr#> --json headRefName,title,body,labels,files,baseRefName,isDraft
 git fetch origin main "pull/<pr#>/head:refs/remotes/origin/pr/<pr#>"
-git merge-base --is-ancestor origin/main origin/pr/<pr#> && echo up-to-date
-git worktree add --detach ../opencv.worktrees/review-pr-<pr#> origin/pr/<pr#>
+git worktree add --detach ../opencv.worktrees/review-pr-<pr#> origin/main
+git -C ../opencv.worktrees/review-pr-<pr#> merge --no-edit origin/pr/<pr#>   # a conflict fails the review
 cd ../opencv.worktrees/review-pr-<pr#> && cp .env.example .env && pnpm install --frozen-lockfile && ../../opencv/scripts/check.sh
 cd - && git worktree remove --force ../opencv.worktrees/review-pr-<pr#>
 ```

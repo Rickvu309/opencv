@@ -4,7 +4,12 @@
 # independent review has no open finding; no human approval is needed.
 #
 # Usage (from the main checkout):
-#   scripts/review-pr.sh <pr#> [--keep] [--no-install]
+#   scripts/review-pr.sh <pr#> [--keep] [--no-install] [--no-cache]
+#
+# The checks run on the merge of origin/main and the PR head, which is what a squash merge lands, so a branch behind
+# main needs no rebase. Only a merge conflict does. A passing check is cached by the tested tree (--no-cache reruns it).
+# The patch id it prints is stable across a rebase that keeps the same hunks; record it with the independent review and
+# the verify evidence so they stay valid for the same patch on a new base.
 #
 # Exit code:
 #   0  OK to merge (after you confirm the verify-opencv evidence and the independent review is clean)
@@ -32,11 +37,12 @@ note()  { echo "  note  $*"; notes+=("$*"); }
 
 [[ $# -ge 1 && "$1" =~ ^#?([0-9]+)$ ]] || { awk 'NR>1 && /^#/ {sub(/^# ?/, ""); print; next} NR>1 {exit}' "$0"; exit 1; }
 pr=${BASH_REMATCH[1]}; shift
-keep=0; install=1
+keep=0; install=1; use_cache=1
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --keep) keep=1; shift ;;
     --no-install) install=0; shift ;;
+    --no-cache) use_cache=0; shift ;;
     *) die "unknown option: $1" ;;
   esac
 done
@@ -152,36 +158,67 @@ gate=$(grep -E '^(package\.json|scripts/|\.githooks/|\.github/)' <<<"$files" || 
 [[ -z "$gate" ]] || note "changes workflow/check files, review them closely: $(tr '\n' ' ' <<<"$gate")"
 
 echo
-echo "Up to date and checks"
+echo "Merge with main and checks"
+main_sha=$(git -C "$main_checkout" rev-parse origin/main)
+merge_base=$(git -C "$main_checkout" merge-base origin/main "$head_ref")
+# A patch id is stable across a rebase that leaves the hunks unchanged, so a review verdict or verify evidence recorded
+# against it stays valid for the same patch on a new base.
+patch_id=$(git -C "$main_checkout" diff "$merge_base" "$head_ref" | git patch-id --stable | cut -d' ' -f1)
+echo "  main ${main_sha:0:12}   patch id ${patch_id:-none}"
 if git -C "$main_checkout" merge-base --is-ancestor origin/main "$head_ref"; then
-  ok "branch is up to date with main"
+  ok "branch contains the latest main"
 else
-  bad "branch is behind main; author must rebase (git rebase origin/main)"
+  note "branch is behind main; the checks run on the merge of main and the PR, no rebase needed"
 fi
 
-wt="$wt_root/review-pr-$pr"
-[[ ! -e "$wt" ]] || git -C "$main_checkout" worktree remove --force "$wt"
-mkdir -p "$wt_root"
-git -C "$main_checkout" worktree add --quiet --detach "$wt" "$head_ref"
-[[ -f "$wt/.env.example" ]] && cp "$wt/.env.example" "$wt/.env"
-if (( install )) && [[ -f "$wt/package.json" ]]; then
-  if   [[ -f "$wt/pnpm-lock.yaml" ]];    then cmd=(pnpm install --frozen-lockfile)
-  elif [[ -f "$wt/yarn.lock" ]];         then cmd=(yarn install)
-  elif [[ -f "$wt/package-lock.json" ]]; then cmd=(npm ci)
-  else cmd=(npm install); fi
-  (cd "$wt" && "${cmd[@]}") >/dev/null 2>&1 || bad "dependency install failed (${cmd[*]})"
-fi
-# Use check.sh from main, not the PR's copy, so a PR can't weaken its own gate.
-checker=$(mktemp)
-if git -C "$main_checkout" show origin/main:scripts/check.sh >"$checker" 2>/dev/null; then
-  chmod +x "$checker"
-  # A stray CHECK_DRY_RUN, CHECK_BASE_REF in the reviewer shell must not turn the full run into a no-op.
-  if (cd "$wt" && env -u CHECK_DRY_RUN -u CHECK_BASE_REF "$checker"); then ok "lint, typecheck, test passed"; else bad "scripts/check.sh failed"; fi
+if [[ ${#fails[@]} -gt 0 ]]; then
+  note "skipped the full check; fix the ${#fails[@]} FAIL item(s) above first"
 else
-  note "no scripts/check.sh on main; run the project's checks by hand"
+  wt="$wt_root/review-pr-$pr"
+  [[ ! -e "$wt" ]] || git -C "$main_checkout" worktree remove --force "$wt"
+  mkdir -p "$wt_root"
+  # Test what a squash merge would land: main with the PR merged in, not the PR head alone.
+  git -C "$main_checkout" worktree add --quiet --detach "$wt" origin/main
+  if git -C "$wt" merge --quiet --no-edit "$head_ref" >/dev/null 2>&1; then
+    tree=$(git -C "$wt" rev-parse 'HEAD^{tree}')
+    ok "merges cleanly with main (tested tree ${tree:0:12})"
+    # Use check.sh from main, not the PR's copy, so a PR can't weaken its own gate. A passing run is cached by the
+    # tested tree and that checker, so a rerun after a rebase or a comment round that lands the same tree is free.
+    checker_blob=$(git -C "$main_checkout" rev-parse --verify --quiet origin/main:scripts/check.sh || true)
+    cache_dir="$wt_root/.review-pr-cache"
+    cache_hit="$cache_dir/$tree-$checker_blob"
+    if (( use_cache )) && [[ -n "$checker_blob" && -f "$cache_hit" ]]; then
+      ok "lint, typecheck, test passed for this exact tree on $(cat "$cache_hit") (cached; --no-cache reruns)"
+    else
+      [[ -f "$wt/.env.example" ]] && cp "$wt/.env.example" "$wt/.env"
+      if (( install )) && [[ -f "$wt/package.json" ]]; then
+        if   [[ -f "$wt/pnpm-lock.yaml" ]];    then cmd=(pnpm install --frozen-lockfile)
+        elif [[ -f "$wt/yarn.lock" ]];         then cmd=(yarn install)
+        elif [[ -f "$wt/package-lock.json" ]]; then cmd=(npm ci)
+        else cmd=(npm install); fi
+        (cd "$wt" && "${cmd[@]}") >/dev/null 2>&1 || bad "dependency install failed (${cmd[*]})"
+      fi
+      if [[ -n "$checker_blob" ]]; then
+        checker=$(mktemp)
+        git -C "$main_checkout" cat-file blob "$checker_blob" >"$checker"
+        chmod +x "$checker"
+        # A stray CHECK_DRY_RUN, CHECK_BASE_REF in the reviewer shell must not turn the full run into a no-op.
+        if (cd "$wt" && env -u CHECK_DRY_RUN -u CHECK_BASE_REF "$checker"); then
+          ok "lint, typecheck, test passed"
+          mkdir -p "$cache_dir" && date -u +%Y-%m-%dT%H:%M:%SZ >"$cache_hit"
+        else
+          bad "scripts/check.sh failed"
+        fi
+        rm -f "$checker"
+      else
+        note "no scripts/check.sh on main; run the project's checks by hand"
+      fi
+    fi
+  else
+    bad "does not merge cleanly with main; author must rebase (git rebase origin/main) and resolve the conflicts"
+  fi
+  if (( keep )); then note "review worktree kept at $wt"; else git -C "$main_checkout" worktree remove --force "$wt"; fi
 fi
-rm -f "$checker"
-if (( keep )); then note "review worktree kept at $wt"; else git -C "$main_checkout" worktree remove --force "$wt"; fi
 
 echo
 echo "Verification"
@@ -195,6 +232,6 @@ elif [[ ${#humans[@]} -gt 0 ]]; then
   echo "RESULT: HUMAN REQUIRED. Do NOT merge. Comment with your findings and leave the decision to a human."
   exit 2
 else
-  echo "RESULT: OK. Check the verify-opencv evidence and the independent review, then: gh pr merge $pr --squash"
+  echo "RESULT: OK (patch id ${patch_id:-none}, main ${main_sha:0:12}). Check the verify-opencv evidence and the independent review, then: gh pr merge $pr --squash"
   exit 0
 fi
