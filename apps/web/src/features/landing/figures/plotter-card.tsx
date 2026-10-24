@@ -7,12 +7,6 @@ import { VIEW } from "./layout.ts"
 import { PLOTTER_SPEC, plotterPose } from "./model.ts"
 import { back, carriage, near } from "./plotter/geometry.ts"
 
-const STOPS = [
-  { value: 0, label: "Your line" },
-  { value: 1, label: "Coach line" },
-  { value: 2, label: "Letter" },
-] as const
-
 type TraceName = "user" | "coach" | "letter"
 
 export function PlotterCard() {
@@ -54,11 +48,8 @@ export function PlotterCard() {
         }
       }}
       titleId="landing-plotter-title"
-      fig="02"
-      instrument="CV plotter"
       heading="Written for you"
       description="You pick a line. The Coach can rewrite it, and you edit the result. The Letter for that opportunity can carry the same line."
-      stops={STOPS}
     >
       <svg
         ref={svgRef}

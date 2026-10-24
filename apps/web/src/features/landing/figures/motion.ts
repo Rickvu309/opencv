@@ -2,7 +2,6 @@ import {
   useEffect,
   useRef,
   useState,
-  type FocusEvent,
   type KeyboardEvent,
   type PointerEvent,
   type RefObject,
@@ -17,8 +16,6 @@ import {
 
 export type FigureRefs = {
   well: RefObject<HTMLDivElement | null>
-  group: RefObject<HTMLDivElement | null>
-  readout: RefObject<HTMLParagraphElement | null>
   live: RefObject<HTMLParagraphElement | null>
 }
 
@@ -26,14 +23,13 @@ type FigureMotion = {
   stop: number
   onKeyDown: (event: KeyboardEvent<HTMLDivElement>) => void
   onFocus: () => void
-  onBlur: (event: FocusEvent<HTMLDivElement>) => void
+  onBlur: () => void
   onPointerEnter: (event: PointerEvent<HTMLDivElement>) => void
   onPointerMove: (event: PointerEvent<HTMLDivElement>) => void
   onPointerDown: (event: PointerEvent<HTMLDivElement>) => void
   onPointerUp: (event: PointerEvent<HTMLDivElement>) => void
   onPointerLeave: (event: PointerEvent<HTMLDivElement>) => void
   onPointerCancel: (event: PointerEvent<HTMLDivElement>) => void
-  commit: (value: number) => void
 }
 
 type Drag = {
@@ -71,7 +67,6 @@ export function useFigureMotion(
       demoStarted: false,
       demoClock: 0,
       interacted: false,
-      preview: false,
       visible: false,
     }
     let frame = 0
@@ -81,9 +76,6 @@ export function useFigureMotion(
 
     const currentSpec = () => latest.current.spec
     const paint = () => {
-      const text = latest.current.readoutOf(state.value)
-      const readout = latest.current.refs.readout.current
-      if (readout && readout.textContent !== text) readout.textContent = text
       latest.current.apply(state.value)
     }
     const needsFrame = () => state.demonstrating || state.value !== state.target
@@ -94,6 +86,8 @@ export function useFigureMotion(
     }
     const announce = (text: string) => {
       window.clearTimeout(announceTimer)
+      // A focused slider already speaks its value text when the stop changes.
+      if (document.activeElement === latest.current.refs.well.current) return
       announceTimer = window.setTimeout(() => {
         const node = latest.current.refs.live.current
         if (node) node.textContent = text
@@ -130,18 +124,9 @@ export function useFigureMotion(
       const bounds = currentSpec()
       const next = Math.min(bounds.max, Math.max(bounds.min, value))
       disarm()
-      state.preview = false
       state.target = next
       publish(next)
-      focusValue(next)
       kick()
-    }
-    const focusValue = (value: number) => {
-      const root = latest.current.refs.group.current
-      const active = document.activeElement
-      if (!root || !(active instanceof Node) || !root.contains(active)) return
-      const target = root.querySelector(`[data-stop="${value}"]`)
-      if (target instanceof HTMLElement && target !== active) target.focus()
     }
     const beginDemo = () => {
       if (state.demoStarted || state.interacted || !state.visible) return
@@ -149,7 +134,6 @@ export function useFigureMotion(
       if (prefersStill()) return
       state.demonstrating = true
       state.demoClock = 0
-      state.preview = false
       kick()
     }
     function tick(now: number) {
@@ -203,20 +187,15 @@ export function useFigureMotion(
     }
 
     api.current = {
-      commit,
       onFocus: () => {
         const touring = state.demonstrating
         disarm()
-        state.preview = false
         if (touring || state.value !== state.published) {
           state.target = state.published
           kick()
         }
-        announce(latest.current.readoutOf(state.published))
       },
-      onBlur: (event) => {
-        const next = event.relatedTarget
-        if (next instanceof Node && event.currentTarget.contains(next)) return
+      onBlur: () => {
         const touring = state.demonstrating
         disarm()
         if (!touring) return
@@ -243,14 +222,12 @@ export function useFigureMotion(
         if (drag && drag.id === event.pointerId) {
           if (Math.hypot(event.clientX - drag.x, event.clientY - drag.y) > 5)
             drag.moved = true
-          state.preview = true
           state.target = valueFromX(event.clientX)
           kick()
           return
         }
         if (drag || event.pointerType === "touch") return
         disarm()
-        state.preview = true
         state.target = nearest(valueFromX(event.clientX))
         kick()
       },
@@ -280,14 +257,12 @@ export function useFigureMotion(
       onPointerCancel: (event) => {
         drag = null
         disarm()
-        state.preview = false
         state.target = state.published
         releasePointer(event)
         kick()
       },
       onPointerLeave: () => {
         if (drag) return
-        state.preview = false
         state.target = state.published
         kick()
       },
@@ -331,13 +306,12 @@ export function useFigureMotion(
     stop,
     onKeyDown: (event) => api.current?.onKeyDown(event),
     onFocus: () => api.current?.onFocus(),
-    onBlur: (event) => api.current?.onBlur(event),
+    onBlur: () => api.current?.onBlur(),
     onPointerEnter: (event) => api.current?.onPointerEnter(event),
     onPointerMove: (event) => api.current?.onPointerMove(event),
     onPointerDown: (event) => api.current?.onPointerDown(event),
     onPointerUp: (event) => api.current?.onPointerUp(event),
     onPointerLeave: (event) => api.current?.onPointerLeave(event),
     onPointerCancel: (event) => api.current?.onPointerCancel(event),
-    commit: (value) => api.current?.commit(value),
   }
 }
