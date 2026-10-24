@@ -1,24 +1,15 @@
-import { useState, type ReactNode } from "react"
+import { useState } from "react"
 import {
   APPLY_JOB_URL_COPIED,
-  APPLY_JOB_URL_COPY_FAILED,
   applyJobSourceHost,
   isDemoApplyCard,
   openableApplyJobUrl,
   parseApplyJobUrlInput,
-  parseApplyScanInput,
   publicApplyJobUrl,
   type PaperDoc,
 } from "@workspace/domain"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button, buttonVariants } from "@workspace/ui/components/button"
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@workspace/ui/components/dropdown-menu"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 import {
@@ -30,10 +21,9 @@ import {
 } from "@workspace/ui/components/select"
 import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
-import { Check, Copy, ExternalLink, Link2, Star, Trash2, X } from "lucide-react"
+import { Check, Copy, ExternalLink, Star, Trash2, X } from "lucide-react"
 
 import { ErrorBanner } from "@/components/error-banner.tsx"
-import { scanApplyJob } from "@/features/apply/apply-api.ts"
 import {
   GUIDED_APPLY_PREP_ACTION,
   guidedApplyNextAction,
@@ -54,8 +44,13 @@ import {
   APPLY_JOB_SOURCE_LABEL,
   APPLY_JOB_SOURCE_PLACEHOLDER,
 } from "@/features/apply/apply-job-structure.ts"
-import { copyApplyJobUrl } from "@/features/apply/apply-open-posting.ts"
-import { ApiError } from "@/lib/api-error.ts"
+import { useJobPosting } from "@/features/apply/use-job-posting.ts"
+import {
+  PaperLinkMenu,
+  StageMenu,
+  ToolbarIconButton,
+  ToolbarIconLink,
+} from "@/features/apply/apply-job-detail-toolbar.tsx"
 import {
   formatApplyUpdated,
   STAGES,
@@ -229,11 +224,24 @@ function JobDetailFields({
   const [company, setCompany] = useState(card.company)
   const [jobUrl, setJobUrl] = useState(publicApplyJobUrl(card.jobUrl) ?? "")
   const [jobUrlError, setJobUrlError] = useState<string | null>(null)
-  const [scanning, setScanning] = useState(false)
-  const [scanError, setScanError] = useState<string | null>(null)
-  const [scanJdText, setScanJdText] = useState("")
-  const [copied, setCopied] = useState(false)
-  const [copyError, setCopyError] = useState<string | null>(null)
+  const {
+    scanning,
+    scanError,
+    scanJdText,
+    setScanJdText,
+    copied,
+    copyError,
+    scanPosting,
+    copyPosting,
+  } = useJobPosting({
+    card,
+    jobUrl,
+    onPatch,
+    onScanned: ({ title: scannedTitle, company: scannedCompany }) => {
+      if (scannedTitle) setTitle(scannedTitle)
+      if (scannedCompany) setCompany(scannedCompany)
+    },
+  })
   const postingUrl = openableApplyJobUrl(jobUrl)
   const showScanJd = Boolean(scanError || scanJdText.trim())
 
@@ -266,58 +274,6 @@ function JobDetailFields({
     setJobUrl(parsed.jobUrl ?? "")
     if (parsed.jobUrl !== (card.jobUrl ?? null)) {
       onPatch({ jobUrl: parsed.jobUrl })
-    }
-  }
-
-  async function copyPosting() {
-    const href = openableApplyJobUrl(jobUrl)
-    if (!href) {
-      setCopied(false)
-      setCopyError(APPLY_JOB_URL_COPY_FAILED)
-      return
-    }
-    const ok = await copyApplyJobUrl(href)
-    if (!ok) {
-      setCopied(false)
-      setCopyError(APPLY_JOB_URL_COPY_FAILED)
-      return
-    }
-    setCopyError(null)
-    setCopied(true)
-    window.setTimeout(() => setCopied(false), 2000)
-  }
-
-  async function scanPosting() {
-    const parsed = parseApplyScanInput({ jobUrl, jdText: scanJdText })
-    if (!parsed.ok) {
-      setScanError(parsed.message)
-      return
-    }
-    setScanning(true)
-    setScanError(null)
-    try {
-      const result = await scanApplyJob({
-        ...(parsed.jobUrl ? { jobUrl: parsed.jobUrl } : {}),
-        ...(parsed.jdText ? { jdText: parsed.jdText } : {}),
-      })
-      const patch: Parameters<Props["onPatch"]>[0] = {}
-      if (result.title) patch.title = result.title
-      if (result.company) patch.company = result.company
-      if (result.note && !card.note.trim()) patch.note = result.note
-      if (result.title) setTitle(result.title)
-      if (result.company) setCompany(result.company)
-      if (Object.keys(patch).length > 0) onPatch(patch)
-      setScanJdText("")
-    } catch (error) {
-      setScanError(
-        error instanceof ApiError
-          ? error.message
-          : error instanceof Error
-            ? error.message
-            : "Couldn't scan that post."
-      )
-    } finally {
-      setScanning(false)
     }
   }
 
@@ -447,10 +403,7 @@ function JobDetailFields({
           ) : null}
           {showScanJd ? (
             <div className="mt-3 block">
-              <Label
-                htmlFor={`job-scan-jd-${card.id}`}
-                className={FIELD_LABEL}
-              >
+              <Label htmlFor={`job-scan-jd-${card.id}`} className={FIELD_LABEL}>
                 {APPLY_JOB_SCAN_TEXT_LABEL}
               </Label>
               <Textarea
@@ -556,168 +509,5 @@ function JobDetailNote({
         placeholder={APPLY_JOB_NOTES_PLACEHOLDER}
       />
     </div>
-  )
-}
-
-function PaperLinkMenu({
-  open,
-  onOpenChange,
-  cardId,
-  docs,
-  onLink,
-}: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  cardId: string
-  docs: PaperDoc[]
-  onLink: (docId: string, applyCardId: string | null) => void
-}) {
-  return (
-    <DropdownMenu open={open} onOpenChange={onOpenChange}>
-      <DropdownMenuTrigger
-        render={
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            aria-label="Link Paper docs"
-            className={cn(
-              "text-muted-foreground",
-              (open || docs.some((doc) => doc.applyCardId === cardId)) &&
-                "bg-muted text-foreground"
-            )}
-          />
-        }
-      >
-        <Link2 className="size-3.5" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="start"
-        aria-label="Link Paper docs"
-        className="max-h-64 w-64"
-      >
-        {docs.length === 0 ? (
-          <p className="px-2 py-3 text-xs text-muted-foreground">
-            No Paper docs yet.
-          </p>
-        ) : (
-          docs.map((doc) => {
-            const linkedHere = doc.applyCardId === cardId
-            return (
-              <DropdownMenuCheckboxItem
-                key={doc.id}
-                checked={linkedHere}
-                onCheckedChange={() =>
-                  onLink(doc.id, linkedHere ? null : cardId)
-                }
-              >
-                <span className="min-w-0 flex-1 truncate">{doc.name}</span>
-              </DropdownMenuCheckboxItem>
-            )
-          })
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
-}
-
-function StageMenu({
-  value,
-  label,
-  onChange,
-}: {
-  value: StageId
-  label: string
-  onChange: (stage: StageId) => void
-}) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            aria-label={`Stage: ${label}`}
-            className="h-8 text-xs font-medium text-muted-foreground"
-          />
-        }
-      >
-        {label}
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="min-w-[8.5rem]">
-        {STAGES.map((stage) => (
-          <DropdownMenuItem
-            key={stage.id}
-            onClick={() => onChange(stage.id)}
-            className={cn(value === stage.id && "bg-muted font-medium")}
-          >
-            <span className={cn("size-1.5 rounded-full", stage.dot)} />
-            {stage.label}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
-}
-
-function ToolbarIconLink({
-  href,
-  label,
-  children,
-}: {
-  href: string
-  label: string
-  children: ReactNode
-}) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={label}
-      title={label}
-      className={cn(
-        buttonVariants({ variant: "ghost", size: "icon-sm" }),
-        "text-muted-foreground"
-      )}
-    >
-      {children}
-    </a>
-  )
-}
-
-function ToolbarIconButton({
-  label,
-  onClick,
-  children,
-  active,
-  className,
-  disabled,
-}: {
-  label: string
-  onClick?: () => void
-  children?: ReactNode
-  active?: boolean
-  className?: string
-  disabled?: boolean
-}) {
-  return (
-    <Button
-      type="button"
-      variant="ghost"
-      size="icon-sm"
-      aria-label={label}
-      onClick={onClick}
-      disabled={disabled}
-      title={disabled ? "Coming soon" : undefined}
-      className={cn(
-        "text-muted-foreground",
-        active && "bg-muted text-foreground",
-        className
-      )}
-    >
-      {children}
-    </Button>
   )
 }

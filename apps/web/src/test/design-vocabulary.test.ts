@@ -58,7 +58,7 @@ const RAW_INTERACTIVE_RE = /<(button|input|textarea|select)\b/g
  */
 const VOCABULARY_ALLOWLIST = [
   // CV print paper — documented ADR-0010 exception (print layout; paper is white).
-  "features/paper/paper-cv-document.tsx",
+  "features/paper/cv-templates/product.tsx",
 ] as const
 
 /**
@@ -68,7 +68,7 @@ const VOCABULARY_ALLOWLIST = [
  */
 const RAW_INTERACTIVE_ALLOWLIST = [
   // Hidden file pickers — kit Input cannot host type="file".
-  "features/paper/paper-cv-document.tsx",
+  "features/paper/cv-templates/cv-parts.tsx",
   // Hidden file pickers — kit Input cannot host type="file".
   "features/paper/paper-cv-surface.tsx",
   // Hidden file pickers — kit Input cannot host type="file".

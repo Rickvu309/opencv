@@ -191,12 +191,16 @@ describe("on-canvas Experience and Skills edits (QVE-207)", () => {
       screen.getAllByRole("textbox", { name: "Bullet point" })
     ).toHaveLength(bulletsBefore.length + 1)
 
-    fireEvent.click(screen.getAllByRole("button", { name: "Remove bullet" })[0]!)
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "Remove bullet" })[0]!
+    )
     expect(
       screen.getAllByRole("textbox", { name: "Bullet point" })
     ).toHaveLength(bulletsBefore.length)
 
-    fireEvent.click(screen.getAllByRole("button", { name: "Duplicate role" })[0]!)
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "Duplicate role" })[0]!
+    )
     expect(screen.getAllByRole("textbox", { name: "Role" })).toHaveLength(
       rolesBefore.length + 1
     )
@@ -231,9 +235,7 @@ describe("on-canvas Experience and Skills edits (QVE-207)", () => {
     first.unmount()
     cleanup()
 
-    render(
-      createElement(CvDocument, { data: latest, onChange: () => {} })
-    )
+    render(createElement(CvDocument, { data: latest, onChange: () => {} }))
     expect(screen.getByText("QVE207SkillMarker")).toBeInTheDocument()
   })
 
@@ -266,9 +268,9 @@ describe("on-canvas Experience and Skills edits (QVE-207)", () => {
     fireEvent.input(school)
     expect(school).toHaveTextContent("Campus café lab")
     expect(screen.getByRole("textbox", { name: "Degree" })).toBeInTheDocument()
-    expect(screen.getAllByRole("textbox", { name: "Skill" }).length).toBeGreaterThan(
-      0
-    )
+    expect(
+      screen.getAllByRole("textbox", { name: "Skill" }).length
+    ).toBeGreaterThan(0)
 
     cleanup()
     renderCv("academic")
@@ -347,7 +349,9 @@ describe("empty section next-step CTAs (QVE-209)", () => {
       screen.getByRole("button", { name: EMPTY_SECTION_CTA.skills })
     ).toHaveClass(PAPER_CANVAS_NEXT_STEP_CLASS)
 
-    expect(screen.getAllByRole("button", { name: /Add first / })).toHaveLength(3)
+    expect(screen.getAllByRole("button", { name: /Add first / })).toHaveLength(
+      3
+    )
     expect(document.querySelector("[data-slot='empty']")).toBeNull()
     expect(screen.queryByText(/get started/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/no experience/i)).not.toBeInTheDocument()
@@ -401,12 +405,16 @@ describe("empty section next-step CTAs (QVE-209)", () => {
     expect(
       screen.queryByRole("button", { name: EMPTY_SECTION_CTA.skills })
     ).not.toBeInTheDocument()
-    expect(screen.queryByRole("button", { name: /Add first / })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: /Add first / })
+    ).not.toBeInTheDocument()
     expect(document.querySelector("[data-slot='empty']")).toBeNull()
-    expect(document.querySelectorAll("[data-paper-section-cta]")).toHaveLength(0)
-    expect(screen.getAllByRole("button", { name: "Add skill" }).length).toBeLessThan(
-      6
+    expect(document.querySelectorAll("[data-paper-section-cta]")).toHaveLength(
+      0
     )
+    expect(
+      screen.getAllByRole("button", { name: "Add skill" }).length
+    ).toBeLessThan(6)
   })
 
   it("shows the empty CTA on every template, not only internship", () => {
@@ -441,4 +449,19 @@ describe("empty section next-step CSS (QVE-209)", () => {
     expect(chrome).not.toMatch(/rounded-full/)
     expect(chrome).not.toMatch(/bg-muted\/70/)
   })
+})
+
+describe("CV templates split across cv-templates", () => {
+  it.each(["internship", "photo", "product", "service", "academic"] as const)(
+    "renders the %s template with the candidate name and an experience heading",
+    (templateId) => {
+      renderCv(templateId)
+      expect(
+        screen.getByRole("textbox", { name: "Full name" })
+      ).toHaveTextContent(defaultCvData().name)
+      expect(
+        screen.getByText(/^(Work experience|Experience)$/)
+      ).toBeInTheDocument()
+    }
+  )
 })
