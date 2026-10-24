@@ -295,13 +295,12 @@ describe("Apply board", () => {
     expectNoVisibleFitScore()
   })
 
-  it("filters cards by company and keeps the Apply badge in the sidebar", async () => {
+  it("filters cards by company and keeps Apply current in the sidebar", async () => {
     renderApply()
     await expectApplyLive()
 
     const apply = screen.getByRole("link", { name: "Apply" })
     expect(apply).toHaveAttribute("aria-current", "page")
-    expect(apply.querySelector("[data-slot='badge']")).not.toBeNull()
 
     fireEvent.change(screen.getByRole("textbox", { name: "Search jobs" }), {
       target: { value: "fintech" },

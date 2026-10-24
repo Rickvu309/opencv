@@ -113,7 +113,7 @@ export function CoachDock({
   onSend,
   onStop,
   turnActive = false,
-  placeholder = "How can I help you today?",
+  placeholder = "Ask the Coach",
   menuPlacement = "below",
   showModePicker = true,
   onAttachFromPaper,
@@ -274,7 +274,9 @@ export function CoachDock({
       className={cn(
         "min-h-0 min-w-0 resize-none overflow-y-auto border-0 bg-transparent px-0 py-0 shadow-none focus-visible:border-0 focus-visible:ring-0 md:text-base",
         "text-base leading-6",
-        expanded ? "max-h-48 w-full px-0.5" : "max-h-6 min-h-6 flex-1 field-sizing-fixed"
+        expanded
+          ? "max-h-48 w-full px-0.5"
+          : "field-sizing-fixed max-h-6 min-h-6 flex-1"
       )}
       aria-label="Message Coach"
     />
@@ -291,7 +293,7 @@ export function CoachDock({
     <div className="relative w-full">
       <div
         className={cn(
-          "border border-border/80 bg-background shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-[border-radius,padding] duration-200 ease-out focus-within:border-border focus-within:shadow-[0_2px_8px_rgba(0,0,0,0.06)]",
+          "border border-border/80 bg-background shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-[border-radius,padding] focus-within:border-border focus-within:shadow-[0_2px_8px_rgba(0,0,0,0.06)]",
           expanded
             ? "flex flex-col rounded-[1.25rem] px-4 pt-3.5 pb-2.5"
             : "flex min-h-[3.25rem] items-center gap-1 rounded-full px-2.5 py-2"

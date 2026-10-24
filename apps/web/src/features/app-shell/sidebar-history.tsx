@@ -39,7 +39,7 @@ export function SidebarHistory({ collapsed, onNavigate }: Props) {
   return (
     <div
       className={cn(
-        "mt-2 flex min-h-0 flex-1 flex-col overflow-hidden px-1.5 transition-opacity duration-200",
+        "mt-2 flex min-h-0 flex-1 flex-col overflow-hidden px-1.5 transition-opacity",
         collapsed ? "pointer-events-none opacity-0" : "opacity-100"
       )}
       aria-hidden={collapsed}

@@ -7,12 +7,13 @@ import {
   within,
 } from "@testing-library/react"
 
-import { SEARCH_PATH, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { SIGN_UP_COPY } from "@/features/auth/sign-up-copy.ts"
 import { readFirstCafeState } from "@/features/home/first-cafe-checklist.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import { setMockSession } from "@/test/auth-client-mock.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
+import { openGetStarted } from "@/test/home-helpers.ts"
 import { renderApp } from "@/test/render-app.tsx"
 
 afterEach(() => {
@@ -28,7 +29,7 @@ describe("session guard", () => {
   it("sends a signed-out visitor from every surface to sign-in", async () => {
     setMockSession(null)
 
-    for (const path of [...Object.values(SURFACE_PATHS), SEARCH_PATH]) {
+    for (const path of Object.values(SURFACE_PATHS)) {
       cleanup()
       const { router } = renderApp(path)
 
@@ -128,6 +129,7 @@ describe("auth flows", () => {
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(SURFACE_PATHS.home)
     })
+    openGetStarted()
     expect(
       screen.getByRole("heading", { name: "Four small things" })
     ).toBeInTheDocument()
@@ -181,6 +183,7 @@ describe("auth flows", () => {
     })
     fireEvent.click(screen.getByRole("button", { name: "Create account" }))
 
+    fireEvent.click(await screen.findByRole("button", { name: "Get started" }))
     expect(
       await screen.findByRole("heading", { name: "Four small things" })
     ).toBeInTheDocument()
@@ -202,6 +205,7 @@ describe("auth flows", () => {
       })
     ).toBeInTheDocument()
 
+    openGetStarted()
     const list = screen.getByRole("region", { name: "Four small things" })
     expect(
       within(list).getByRole("link", { name: "Open the sample CV, done" })
@@ -239,6 +243,7 @@ describe("auth flows", () => {
     })
     fireEvent.click(screen.getByRole("button", { name: "Create account" }))
 
+    fireEvent.click(await screen.findByRole("button", { name: "Get started" }))
     expect(
       await screen.findByRole("heading", { name: "Four small things" })
     ).toBeInTheDocument()
@@ -266,6 +271,7 @@ describe("auth flows", () => {
       })
     ).toBeInTheDocument()
 
+    openGetStarted()
     const list = screen.getByRole("region", { name: "Four small things" })
     expect(
       within(list).getByRole("link", { name: "Triage one Apply card" })

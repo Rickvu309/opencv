@@ -25,4 +25,51 @@ describe("coachSendErrorMessage", () => {
       "Couldn't reach the Coach. Check your connection and try again."
     )
   })
+
+  it.each([
+    [404, "USER_NOT_FOUND", "User not found."],
+    [404, ERROR_CODES.NOT_FOUND, "Thread not found"],
+    [401, ERROR_CODES.UNAUTHORIZED, "Authentication required"],
+    [403, ERROR_CODES.FORBIDDEN, "Forbidden"],
+    [403, ERROR_CODES.COACH_NOT_ALLOWED, "This Command cannot be run"],
+    [
+      400,
+      ERROR_CODES.VALIDATION_ERROR,
+      "text: String must contain 1 character",
+    ],
+    [500, ERROR_CODES.INTERNAL_ERROR, "SQLSTATE 23505 duplicate key"],
+    [502, "REQUEST_FAILED", "Request failed with 502"],
+    [418, "SOMETHING_NEW", "teapot exploded"],
+  ])("never shows the raw message for %i %s", (status, code, raw) => {
+    const sentence = coachSendErrorMessage(new ApiError(status, code, raw))
+    expect(sentence).not.toContain(raw)
+    expect(sentence).toMatch(/^[A-Z].*[.]$/)
+    expect(sentence.split(/(?<=[.])\s+/).length).toBeGreaterThanOrEqual(2)
+  })
+
+  it("tells the person to sign in again when the session ended", () => {
+    expect(
+      coachSendErrorMessage(new ApiError(401, ERROR_CODES.UNAUTHORIZED, "x"))
+    ).toMatch(/sign in again/i)
+  })
+
+  it("tells the person to reload or start a new Thread when a record is missing", () => {
+    expect(
+      coachSendErrorMessage(
+        new ApiError(404, "USER_NOT_FOUND", "User not found.")
+      )
+    ).toMatch(/new Thread/)
+  })
+
+  it("never shows a thrown Error's message", () => {
+    const sentence = coachSendErrorMessage(new Error("boom: stack trace"))
+    expect(sentence).not.toContain("boom")
+    expect(sentence).toBe("Something went wrong sending that. Try again.")
+  })
+
+  it("falls back for a value that is not an Error", () => {
+    expect(coachSendErrorMessage("nope")).toBe(
+      "Something went wrong sending that. Try again."
+    )
+  })
 })

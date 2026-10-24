@@ -1,47 +1,27 @@
-import { useMemo, useState } from "react"
+import { useState } from "react"
 import {
   Briefcase,
   ClipboardList,
   FileText,
   Mail,
-  MessageCircle,
-  RefreshCw,
-  Search,
-  Sparkles,
-  Target,
+  Plus,
   type LucideIcon,
 } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { SUGGESTION_POOLS } from "@/features/home/suggestions.ts"
+import {
+  BROAD_SUGGESTIONS,
+  MORE_SUGGESTIONS,
+  type Suggestion,
+} from "@/features/home/suggestions.ts"
 
-const ICONS: Record<string, LucideIcon> = {
-  interview: Sparkles,
-  letter: Mail,
+const BROAD_ICONS: Record<string, LucideIcon> = {
   cv: FileText,
+  letter: Mail,
   apply: Briefcase,
   proof: ClipboardList,
-  followup: Mail,
-  pitch: Sparkles,
-  inbox: Target,
-  star: Briefcase,
-  gap: Search,
-  linkedin: MessageCircle,
-  outcome: FileText,
-  "letter-fintech": Mail,
-  deadline: ClipboardList,
-  reject: Sparkles,
-  project: FileText,
-  mock: MessageCircle,
-  salary: Search,
-  referral: Mail,
-  portfolio: FileText,
-  compare: Briefcase,
-  weekend: Target,
-  anxiety: Sparkles,
-  "proof-link": ClipboardList,
 }
 
 type Props = {
@@ -49,55 +29,73 @@ type Props = {
   className?: string
 }
 
-export function HomeSuggestions({ onSelect, className }: Props) {
-  const [poolIndex, setPoolIndex] = useState(0)
-  const [spinning, setSpinning] = useState(false)
-
-  const ideas = useMemo(
-    () => SUGGESTION_POOLS[poolIndex % SUGGESTION_POOLS.length] ?? [],
-    [poolIndex]
+function Chip({
+  item,
+  icon: Icon,
+  onSelect,
+}: {
+  item: Suggestion
+  icon?: LucideIcon
+  onSelect: (prompt: string) => void
+}) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      onClick={() => onSelect(item.prompt)}
+      className="h-8 shrink-0 rounded-full"
+    >
+      {Icon ? (
+        <Icon className="size-3.5 shrink-0 text-muted-foreground" />
+      ) : null}
+      {item.label}
+    </Button>
   )
+}
 
-  function moreIdeas() {
-    setSpinning(true)
-    setPoolIndex((i) => i + 1)
-    window.setTimeout(() => setSpinning(false), 400)
-  }
+export function HomeSuggestions({ onSelect, className }: Props) {
+  const [moreOpen, setMoreOpen] = useState(false)
 
   return (
-    <div className={cn("relative w-full", className)}>
-      <div
-        className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-background via-background/80 to-transparent"
-        aria-hidden
-      />
-      <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className={cn("w-full space-y-2", className)}>
+      <div className="flex flex-wrap justify-center gap-2">
+        {BROAD_SUGGESTIONS.map((item) => (
+          <Chip
+            key={item.id}
+            item={item}
+            icon={BROAD_ICONS[item.id]}
+            onSelect={onSelect}
+          />
+        ))}
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           size="sm"
-          onClick={moreIdeas}
-          className="h-8 shrink-0 rounded-full border-dashed text-muted-foreground"
+          aria-expanded={moreOpen}
+          aria-controls="home-more-ideas"
+          onClick={() => setMoreOpen((open) => !open)}
+          className="h-8 shrink-0 rounded-full text-muted-foreground"
         >
-          <RefreshCw className={cn("size-3.5", spinning && "animate-spin")} />
+          <Plus
+            className={cn(
+              "size-3.5 transition-transform duration-150",
+              moreOpen && "rotate-45"
+            )}
+          />
           More ideas
         </Button>
-        {ideas.map((item) => {
-          const Icon = ICONS[item.id] ?? Sparkles
-          return (
-            <Button
-              key={`${poolIndex}-${item.id}`}
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => onSelect(item.prompt)}
-              className="h-8 shrink-0 rounded-full"
-            >
-              <Icon className="size-3.5 shrink-0 text-muted-foreground" />
-              {item.label}
-            </Button>
-          )
-        })}
       </div>
+      {moreOpen ? (
+        <div
+          id="home-more-ideas"
+          className="flex flex-wrap justify-center gap-2"
+        >
+          {MORE_SUGGESTIONS.map((item) => (
+            <Chip key={item.id} item={item} onSelect={onSelect} />
+          ))}
+        </div>
+      ) : null}
     </div>
   )
 }

@@ -5,11 +5,13 @@ import { Button } from "@workspace/ui/components/button"
 import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { useFirstCafeChecklist } from "@/features/home/use-first-cafe-checklist.ts"
+import type { useFirstCafeChecklist } from "@/features/home/use-first-cafe-checklist.ts"
 
-export function FirstCafeChecklist() {
-  const { visible, completed, items, dismiss } = useFirstCafeChecklist()
-
+export function FirstCafeChecklist({
+  cafe: { visible, completed, items, dismiss },
+}: {
+  cafe: ReturnType<typeof useFirstCafeChecklist>
+}) {
   if (!visible) return null
 
   const done = new Set(completed)
