@@ -34,7 +34,7 @@ const ACTIONS: {
   { id: "a4", label: "Open Pitch", icon: Globe, run: "pitch" },
 ]
 
-const RESET_LIST_KEY = "\0false"
+const RESET_LIST_KEY = ""
 
 type ListItem =
   | { kind: "action"; id: string; run: (typeof ACTIONS)[number]["run"] }
@@ -49,7 +49,6 @@ export function SearchModal({
   onSurface,
 }: Props) {
   const [query, setQuery] = useState("")
-  const [showAllActions, setShowAllActions] = useState(false)
   const [highlight, setHighlight] = useState({
     listKey: RESET_LIST_KEY,
     index: 0,
@@ -62,7 +61,6 @@ export function SearchModal({
     setWasOpen(open)
     if (open) {
       setQuery("")
-      setShowAllActions(false)
       setHighlight({ listKey: RESET_LIST_KEY, index: 0 })
       setStickyThreadId(null)
     }
@@ -75,12 +73,11 @@ export function SearchModal({
   }, [open])
 
   const q = query.trim().toLowerCase()
-  const listKey = `${q}\0${showAllActions}`
+  const listKey = q
   const actions = useMemo(() => {
-    const list = showAllActions ? ACTIONS : ACTIONS.slice(0, 1)
-    if (!q) return list
+    if (!q) return ACTIONS
     return ACTIONS.filter((a) => a.label.toLowerCase().includes(q))
-  }, [q, showAllActions])
+  }, [q])
 
   const recents = useMemo(() => {
     if (!q) return threads
@@ -99,8 +96,7 @@ export function SearchModal({
     [actions, recents]
   )
 
-  const activeIndex =
-    highlight.listKey === listKey ? highlight.index : 0
+  const activeIndex = highlight.listKey === listKey ? highlight.index : 0
   const activeItem = items[activeIndex]
   const selectedId =
     activeItem?.kind === "thread" ? activeItem.id : stickyThreadId
@@ -187,22 +183,9 @@ export function SearchModal({
               className="flex w-full shrink-0 flex-col overflow-auto border-border max-sm:max-h-[48%] max-sm:border-b sm:w-[42%] sm:border-r"
             >
               <div className="px-3 pt-3">
-                <div className="mb-1.5 flex items-center justify-between px-1">
-                  <span className="text-micro font-medium tracking-wide text-muted-foreground uppercase">
-                    Actions
-                  </span>
-                  {!q ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="xs"
-                      className="text-micro text-muted-foreground"
-                      onClick={() => setShowAllActions((v) => !v)}
-                    >
-                      {showAllActions ? "Show less" : "Show all"}
-                    </Button>
-                  ) : null}
-                </div>
+                <p className="mb-1.5 px-1 text-micro font-medium tracking-wide text-muted-foreground uppercase">
+                  Actions
+                </p>
                 <div className="space-y-0.5">
                   {actions.map((a) => {
                     const Icon = a.icon

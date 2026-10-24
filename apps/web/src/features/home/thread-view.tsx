@@ -1,15 +1,13 @@
 import { useEffect, useState } from "react"
 import {
-  Check,
   Copy,
   Link2,
   MoreHorizontal,
   RefreshCw,
   ThumbsDown,
   ThumbsUp,
-  X,
 } from "lucide-react"
-import type { CoachUsageRating, ThreadToolPart } from "@workspace/domain"
+import type { CoachUsageRating } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
@@ -21,13 +19,9 @@ import {
   RECEIPT_ENTER_STAGGER_MS,
   UNDO_FLASH_MS,
 } from "@/features/coach/coach-working.tsx"
+import { CoachToolLine } from "@/features/coach/coach-tool-line.tsx"
 import { CoachMarkdown } from "@/features/home/coach-markdown.tsx"
-import {
-  receiptHeadline,
-  receiptReversalNote,
-  receiptShowsUndo,
-} from "@/features/home/coach-receipt.ts"
-import { RichReceiptBody } from "@/features/home/rich-receipts.tsx"
+import { receiptShowsUndo } from "@/features/home/coach-receipt.ts"
 import {
   STREAMING_COACH_ID,
   latestCoachMessageId,
@@ -38,120 +32,6 @@ const DISABLED_ACTIONS = [
   { label: "Copy link", icon: Link2 },
   { label: "More", icon: MoreHorizontal },
 ] as const
-
-function CoachReceipt({
-  part,
-  canUndo,
-  onUndo,
-  enter,
-  enterDelayMs,
-  announceUndone,
-}: {
-  part: ThreadToolPart
-  canUndo: boolean
-  onUndo?: () => Promise<void>
-  enter?: boolean
-  enterDelayMs?: number
-  announceUndone?: boolean
-}) {
-  const Icon = part.ok ? Check : X
-  const note = receiptReversalNote(part)
-  const [pending, setPending] = useState(false)
-  const [undoError, setUndoError] = useState<string | null>(null)
-  const collapsed = part.undone === true
-
-  async function undo() {
-    if (!onUndo || pending) return
-    setPending(true)
-    setUndoError(null)
-    try {
-      await onUndo()
-    } catch (error) {
-      setUndoError(
-        error instanceof Error ? error.message : "Couldn't undo this action"
-      )
-    } finally {
-      setPending(false)
-    }
-  }
-
-  return (
-    <div
-      role="status"
-      aria-label={part.ok ? "Command succeeded" : "Command failed"}
-      data-coach-receipt-enter={enter || undefined}
-      data-coach-receipt-collapse={collapsed || undefined}
-      className={cn(
-        "min-w-0 max-w-full text-xs text-muted-foreground",
-        enter && "coach-receipt-enter",
-        collapsed && "coach-receipt-collapse"
-      )}
-      style={
-        enter && enterDelayMs
-          ? { animationDelay: `${enterDelayMs}ms` }
-          : undefined
-      }
-    >
-      <div
-        className={cn(
-          "min-w-0 space-y-0.5",
-          collapsed && "coach-receipt-collapse-inner"
-        )}
-      >
-        <p className="flex min-w-0 items-start gap-1.5">
-          <Icon
-            className={cn(
-              "mt-0.5 size-3 shrink-0",
-              part.ok ? "text-success" : "text-destructive"
-            )}
-            aria-hidden
-          />
-          <span className="min-w-0 flex-1 break-words [overflow-wrap:anywhere]">
-            {receiptHeadline(part)}
-          </span>
-        </p>
-        {announceUndone ? (
-          <p
-            className="coach-undone-flash pl-5 text-xs text-muted-foreground"
-            data-slot="coach-undone"
-          >
-            Undone
-          </p>
-        ) : null}
-        {part.ok && part.detail && !collapsed ? (
-          <div className="min-w-0 pl-5">
-            <RichReceiptBody detail={part.detail} />
-          </div>
-        ) : null}
-        {note && !collapsed ? (
-          <p className="min-w-0 pl-5 break-words [overflow-wrap:anywhere]">
-            {note}
-          </p>
-        ) : null}
-        {canUndo ? (
-          <div className="pl-5 pt-0.5">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-6 px-2 text-xs"
-              aria-label="Undo"
-              disabled={pending}
-              onClick={() => void undo()}
-            >
-              {pending ? "Undoing…" : "Undo"}
-            </Button>
-          </div>
-        ) : null}
-        {undoError ? (
-          <ErrorBanner variant="inline" className="pl-5">
-            {undoError}
-          </ErrorBanner>
-        ) : null}
-      </div>
-    </div>
-  )
-}
 
 function CoachBody({
   message,
@@ -183,11 +63,11 @@ function CoachBody({
           if (part.type === "text") {
             return <CoachMarkdown key={`text-${index}`} text={part.text} />
           }
-          const stagger = message.parts!.slice(0, index).filter(
-            (item) => item.type === "tool"
-          ).length
+          const stagger = message
+            .parts!.slice(0, index)
+            .filter((item) => item.type === "tool").length
           return (
-            <CoachReceipt
+            <CoachToolLine
               key={part.toolCallId ?? `tool-${index}`}
               part={part}
               canUndo={canUndo && receiptShowsUndo(part)}
@@ -266,7 +146,9 @@ function MessageActions({
           rating === "up" && "text-foreground"
         )}
       >
-        <ThumbsUp className={cn("size-3.5", rating === "up" && "fill-current")} />
+        <ThumbsUp
+          className={cn("size-3.5", rating === "up" && "fill-current")}
+        />
       </Button>
       <Button
         type="button"
@@ -403,14 +285,10 @@ export function ThreadView({
               message={item}
               animateEnter={item.id === STREAMING_COACH_ID}
               canUndo={
-                !waiting &&
-                item.id !== STREAMING_COACH_ID &&
-                Boolean(onUndo)
+                !waiting && item.id !== STREAMING_COACH_ID && Boolean(onUndo)
               }
               onUndo={
-                onUndo
-                  ? (toolCallId) => onUndo(item.id, toolCallId)
-                  : undefined
+                onUndo ? (toolCallId) => onUndo(item.id, toolCallId) : undefined
               }
             />
             {item.id !== STREAMING_COACH_ID ? (

@@ -460,7 +460,7 @@ export const CoachFloat = memo(function CoachFloat({
               onUndo={phase === "idle" ? undo : undefined}
               onAttachFromPaper={attachFromPaper}
               messageCite={onCitePaper ? messageCite : undefined}
-              placeholder="Ask about this document…"
+              placeholder="Ask the Coach"
               empty={
                 <QuickPromptChips
                   chips={QUICK_PROMPTS[variant]}

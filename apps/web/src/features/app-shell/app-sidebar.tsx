@@ -1,7 +1,7 @@
-import type { ComponentType, ReactElement } from "react"
+import { Fragment, type ComponentType, type ReactElement } from "react"
 import { Link } from "@tanstack/react-router"
-import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
+import { Kbd } from "@workspace/ui/components/kbd"
 import {
   Tooltip,
   TooltipContent,
@@ -23,22 +23,16 @@ import { OpenCvLogo } from "@/features/app-shell/app-logo.tsx"
 import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
 import { NavProfile } from "@/features/app-shell/nav-profile.tsx"
 import { SidebarHistory } from "@/features/app-shell/sidebar-history.tsx"
-import {
-  SEARCH_PATH,
-  SURFACE_PATHS,
-  type SurfaceId,
-} from "@/features/app-shell/surfaces.ts"
+import { searchShortcutLabel } from "@/features/app-shell/search-shortcut.ts"
+import { SURFACE_PATHS, type SurfaceId } from "@/features/app-shell/surfaces.ts"
 import { useThreadList } from "@/features/home/use-thread-list.ts"
 
 type RouteNavItem = {
   kind: "route"
-  id: Exclude<SurfaceId, "settings"> | "search"
+  id: Exclude<SurfaceId, "settings">
   label: string
   icon: ComponentType<{ className?: string }>
-  to:
-    | (typeof SURFACE_PATHS)[Exclude<SurfaceId, "settings">]
-    | typeof SEARCH_PATH
-  badge?: boolean
+  to: (typeof SURFACE_PATHS)[Exclude<SurfaceId, "settings">]
 }
 
 const PRIMARY_NAV: RouteNavItem[] = [
@@ -48,13 +42,6 @@ const PRIMARY_NAV: RouteNavItem[] = [
     label: "Home",
     icon: Home,
     to: SURFACE_PATHS.home,
-  },
-  {
-    kind: "route",
-    id: "search",
-    label: "Search",
-    icon: Search,
-    to: SEARCH_PATH,
   },
   {
     kind: "route",
@@ -69,7 +56,6 @@ const PRIMARY_NAV: RouteNavItem[] = [
     label: "Apply",
     icon: Briefcase,
     to: SURFACE_PATHS.apply,
-    badge: true,
   },
   {
     kind: "route",
@@ -91,18 +77,6 @@ function navItemClassName(active: boolean, collapsed: boolean) {
   )
 }
 
-function ActivityBadge({ collapsed }: { collapsed: boolean }) {
-  return (
-    <Badge
-      aria-hidden
-      className={cn(
-        "size-1.5 border-0 bg-info p-0",
-        collapsed ? "absolute top-1.5 right-1.5" : "ml-auto"
-      )}
-    />
-  )
-}
-
 function NavLabel({
   collapsed,
   children,
@@ -113,7 +87,7 @@ function NavLabel({
   return (
     <span
       className={cn(
-        "truncate transition-opacity duration-200",
+        "truncate transition-opacity",
         collapsed ? "sr-only" : "opacity-100"
       )}
     >
@@ -151,7 +125,6 @@ function RouteNavLink({
     <>
       <Icon className="size-4 shrink-0 text-foreground/70" />
       <NavLabel collapsed={collapsed}>{item.label}</NavLabel>
-      {item.badge ? <ActivityBadge collapsed={collapsed} /> : null}
     </>
   )
 
@@ -177,16 +150,47 @@ function RouteNavLink({
   return <CollapsedTip label={item.label}>{link}</CollapsedTip>
 }
 
+function SearchNavButton({
+  collapsed,
+  onSearch,
+}: {
+  collapsed: boolean
+  onSearch: () => void
+}) {
+  const shortcut = searchShortcutLabel()
+  const button = (
+    <Button
+      type="button"
+      variant="ghost"
+      aria-label="Search"
+      aria-keyshortcuts="Control+K Meta+K"
+      onClick={onSearch}
+      className={navItemClassName(false, collapsed)}
+    >
+      <Search className="size-4 shrink-0 text-foreground/70" />
+      <NavLabel collapsed={collapsed}>Search</NavLabel>
+      {collapsed ? null : (
+        <Kbd className="ml-auto text-foreground/80">{shortcut}</Kbd>
+      )}
+    </Button>
+  )
+
+  if (!collapsed) return button
+  return <CollapsedTip label={`Search (${shortcut})`}>{button}</CollapsedTip>
+}
+
 type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
   onNavigate?: () => void
+  onSearch: () => void
 }
 
 export function AppSidebar({
   open,
   onOpenChange,
   onNavigate,
+  onSearch,
 }: Props) {
   const { newThread } = useThreadList()
   const collapsed = !open
@@ -197,7 +201,7 @@ export function AppSidebar({
         aria-label="App"
         data-expanded={open ? "true" : "false"}
         className={cn(
-          "flex h-full shrink-0 flex-col overflow-hidden border-r border-border/60 bg-background py-2 transition-[width] duration-200 ease-in-out",
+          "flex h-full shrink-0 flex-col overflow-hidden border-r border-border/60 bg-background py-2 transition-[width] duration-(--duration-panel) ease-(--ease-panel)",
           "max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-40",
           open ? "w-[15rem]" : "w-14"
         )}
@@ -244,15 +248,25 @@ export function AppSidebar({
           className="flex flex-col gap-0.5 px-1.5"
         >
           {PRIMARY_NAV.map((item) => (
-            <RouteNavLink
-              key={item.id}
-              item={item}
-              collapsed={collapsed}
-              onClick={() => {
-                if (item.id === "home") newThread()
-                onNavigate?.()
-              }}
-            />
+            <Fragment key={item.id}>
+              <RouteNavLink
+                item={item}
+                collapsed={collapsed}
+                onClick={() => {
+                  if (item.id === "home") newThread()
+                  onNavigate?.()
+                }}
+              />
+              {item.id === "home" ? (
+                <SearchNavButton
+                  collapsed={collapsed}
+                  onSearch={() => {
+                    onNavigate?.()
+                    onSearch()
+                  }}
+                />
+              ) : null}
+            </Fragment>
           ))}
         </nav>
 

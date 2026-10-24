@@ -276,6 +276,7 @@ function probe() {
   out.applyDots = applyItem
     ? [...applyItem.querySelectorAll("*")]
         .filter((n) => {
+          if (n.parentElement?.closest("svg")) return false
           const r = n.getBoundingClientRect()
           return (
             (r.width > 0 && r.width <= 12 && r.height <= 12) ||

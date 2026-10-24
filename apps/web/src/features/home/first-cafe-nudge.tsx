@@ -4,15 +4,13 @@ import { Button } from "@workspace/ui/components/button"
 import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { useFirstCafeChecklist } from "@/features/home/use-first-cafe-checklist.ts"
+import type { useFirstCafeChecklist } from "@/features/home/use-first-cafe-checklist.ts"
 
 export function FirstCafeNudge({
-  aimResolved = false,
+  cafe: { nudge, skipNudge },
 }: {
-  aimResolved?: boolean
+  cafe: ReturnType<typeof useFirstCafeChecklist>
 }) {
-  const { nudge, skipNudge } = useFirstCafeChecklist({ aimResolved })
-
   if (!nudge) return null
 
   const quietDone = nudge.optional === true
@@ -56,9 +54,7 @@ export function FirstCafeNudge({
       >
         {nudge.label}
         {quietDone ? (
-          <span className="ml-1.5 text-xs text-muted-foreground">
-            optional
-          </span>
+          <span className="ml-1.5 text-xs text-muted-foreground">optional</span>
         ) : null}
       </Link>
     </section>

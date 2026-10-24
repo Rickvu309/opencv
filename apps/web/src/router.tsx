@@ -99,15 +99,6 @@ const paperRoute = createRoute({
   ),
 })
 
-const searchRoute = createRoute({
-  getParentRoute: () => appLayoutRoute,
-  path: "/search",
-  component: lazyRouteComponent(
-    () => import("@/routes/search.tsx"),
-    "SearchPage"
-  ),
-})
-
 const applyRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/apply",
@@ -158,7 +149,6 @@ const routeTree = rootRoute.addChildren([
   publicPitchRoute,
   appLayoutRoute.addChildren([
     homeRoute,
-    searchRoute,
     paperRoute,
     applyRoute,
     pitchRoute,
