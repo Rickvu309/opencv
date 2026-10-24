@@ -59,7 +59,7 @@ function NextStepCard({
   return (
     <Suspense fallback={null}>
       <SmartRecommendation
-        title="Next step"
+        title="Suggestion"
         options={steps}
         onAccept={(step) => onAccept(step as NextStep)}
         onUndo={(step) => onUndo(step as NextStep)}

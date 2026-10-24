@@ -35,7 +35,6 @@ import {
 import { createPortal } from "react-dom"
 import tunnel from "tunnel-rat"
 import { Card } from "@workspace/ui/components/card"
-import { ScrollArea, ScrollBar } from "@workspace/ui/components/scroll-area"
 import { cn } from "@workspace/ui/lib/utils"
 
 const t = tunnel()
@@ -195,18 +194,18 @@ export const KanbanCards = <T extends KanbanItemProps = KanbanItemProps>({
   const items = filteredData.map((item) => item.id)
 
   return (
-    <ScrollArea className="min-h-0 flex-1 overflow-hidden">
-      <SortableContext items={items}>
-        <div
-          data-slot="kanban-cards"
-          className={cn("flex flex-grow flex-col gap-2 p-2", className)}
-          {...props}
-        >
-          {filteredData.map(children)}
-        </div>
-      </SortableContext>
-      <ScrollBar orientation="vertical" />
-    </ScrollArea>
+    <SortableContext items={items}>
+      <div
+        data-slot="kanban-cards"
+        className={cn(
+          "flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-2",
+          className
+        )}
+        {...props}
+      >
+        {filteredData.map(children)}
+      </div>
+    </SortableContext>
   )
 }
 

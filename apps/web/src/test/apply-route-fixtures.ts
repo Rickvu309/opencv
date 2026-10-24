@@ -133,6 +133,7 @@ export async function addJobFromDialog(jobUrl?: string) {
 export function installApplyTestLifecycle() {
   beforeEach(() => {
     vi.stubGlobal("scrollTo", vi.fn())
+    Element.prototype.getAnimations = () => []
   })
 
   afterEach(() => {
@@ -140,6 +141,7 @@ export function installApplyTestLifecycle() {
     vi.restoreAllMocks()
     if (restoreObserver) window.ResizeObserver = restoreObserver
     restoreObserver = null
+    Reflect.deleteProperty(Element.prototype, "getAnimations")
     vi.useRealTimers()
     vi.unstubAllGlobals()
   })
