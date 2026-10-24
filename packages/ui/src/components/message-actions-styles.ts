@@ -70,7 +70,7 @@ export const css = /* css */ `
 
 /* Regenerate spins once per press, and keeps going while busy */
 .ui-mac__spin { display: grid; place-items: center; }
-.ui-mac__spin[data-spin] { animation: ui-mac-spin 640ms var(--ui-mac-ease); }
+.ui-mac__spin[data-spin] { animation: ui-mac-spin var(--duration-panel) var(--ui-mac-ease); }
 .ui-mac__btn[data-busy] { color: var(--ui-mac-ink); }
 .ui-mac__btn[data-busy] .ui-mac__spin { animation: ui-mac-spin 900ms linear infinite; }
 

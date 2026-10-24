@@ -1,5 +1,7 @@
 # Coach runtime: AI SDK loop over the Command registry, SSE, parts persistence
 
+> Superseded in part by DS-2 (#324): the web no longer uses `@assistant-ui/react`. The Coach thread renders the derived `useCoachTurn` messages directly on AI Elements (`apps/web/src/features/coach`), and Paper `CoachFloat` and Home share one renderer. The rest of this ADR still holds.
+
 The Coach becomes a real LLM agent. These are the load-bearing choices; supersede only with a follow-up ADR.
 
 **Toolkit: Vercel AI SDK `streamText` + OpenRouter.** The runtime is `streamText` from `ai` with `stopWhen: stepCountIs(8)` and a max-output-token bound, consuming `fullStream` server-side; the provider is `@openrouter/ai-sdk-provider`. Model routing is User-selectable Free / Light / Max — see **ADR-0009**. A missing `OPENROUTER_API_KEY` degrades gracefully: the app boots, the coach route serves 503 `COACH_UNAVAILABLE`.

@@ -56,7 +56,11 @@ describe("CoachToolLine", () => {
       name: /Moved Backend Intern at Acme from Inbox to Prep/,
     })
     expect(header).toHaveAttribute("aria-expanded", "false")
-    expect(screen.getByText(/^apply\.moveCard finished/)).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        /^Moved Backend Intern at Acme from Inbox to Prep finished/
+      )
+    ).toBeInTheDocument()
     expect(screen.getByText(/Undo by moving the card back\./)).toBeVisible()
   })
 
@@ -80,7 +84,7 @@ describe("CoachToolLine", () => {
     )
 
     expect(
-      screen.getByText("apply.moveCard failed: Card not found")
+      screen.getByText(/Card not found failed: Nothing changed\./)
     ).toHaveAttribute("aria-live", "polite")
     expect(screen.getByRole("button", { name: /Failed/ })).toHaveAttribute(
       "aria-expanded",

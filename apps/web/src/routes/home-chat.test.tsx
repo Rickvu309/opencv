@@ -103,7 +103,9 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
         name: stepButton("Moved 'Backend Intern' to Prep"),
       })
     ).toBeInTheDocument()
-    expect(screen.getByText(/^apply\.moveCard finished/)).toBeInTheDocument()
+    expect(
+      screen.getByText(/^Moved 'Backend Intern' to Prep finished/)
+    ).toBeInTheDocument()
     expect(
       screen.getByText(
         "Reversible — Undo by moving the card back to its previous Stage and order."
@@ -216,13 +218,15 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
     ).toBeInTheDocument()
     expect(screen.getByLabelText("Inbox to Prep")).toBeInTheDocument()
     expect(
-      screen.getByRole("button", { name: stepButton("Created CV Untitled CV") })
+      screen.getAllByRole("button", {
+        name: stepButton("Created CV Untitled CV"),
+      })[0]
     ).toBeInTheDocument()
     expect(screen.getByText("Draft")).toBeInTheDocument()
     expect(
       screen.queryByText(/Ran paper\.|Ran apply\./)
     ).not.toBeInTheDocument()
-    expect(screen.getAllByRole("button", { name: "Undo" })).toHaveLength(3)
+    expect(screen.getAllByRole("button", { name: /^Undo/ })).toHaveLength(3)
   })
 
   it("renders markdown in coach replies and leaves user bubbles as plain text", async () => {
@@ -443,7 +447,11 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
       "The Coach is unavailable right now. Try again in a moment."
     )
     expect(within(thread).getByText("Are you there?")).toBeInTheDocument()
-    expect(thread.querySelector("[data-failed='true']")).not.toBeNull()
+    expect(
+      within(thread)
+        .getByText("Are you there?")
+        .closest("[aria-invalid='true']")
+    ).not.toBeNull()
 
     scriptCoachStream()
     fireEvent.click(screen.getByRole("button", { name: "Retry" }))

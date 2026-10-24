@@ -1,16 +1,6 @@
 import { useState } from "react"
 import { useNavigate } from "@tanstack/react-router"
-import {
-  ArrowUp,
-  Clock,
-  Mic,
-  Paperclip,
-  Plug,
-  Plus,
-  Square,
-  Upload,
-  X,
-} from "lucide-react"
+import { ArrowUp, Paperclip, Plug, Plus, Square, X } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -21,22 +11,13 @@ import {
 } from "@workspace/ui/components/dropdown-menu"
 import { InputGroupButton } from "@workspace/ui/components/input-group"
 import { SegmentedControl } from "@workspace/ui/components/segmented-control"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@workspace/ui/components/tooltip"
 
 import { PromptInput } from "@/components/ai-elements/prompt-input.tsx"
-import { ComingSoon } from "@/components/coming-soon.tsx"
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { COACH_MODE_OPTIONS } from "@/features/home/coach-mode.ts"
 import { useCoachMode } from "@/features/home/use-coach-mode.ts"
 
 const DOCK_MENU = [
-  { id: "upload", label: "Upload a file", icon: Upload, comingSoon: true },
-  { id: "recent", label: "Recent", icon: Clock, comingSoon: true },
   { id: "attach", label: "Attach from Paper", icon: Paperclip },
   { id: "connector", label: "Add connector", icon: Plug },
 ] as const
@@ -113,18 +94,13 @@ export function CoachDock({
         >
           {DOCK_MENU.map((item) => {
             const Icon = item.icon
-            const comingSoon = "comingSoon" in item && item.comingSoon
             return (
               <DropdownMenuItem
                 key={item.id}
-                disabled={comingSoon}
-                onClick={
-                  comingSoon ? undefined : () => handleMenuAction(item.id)
-                }
+                onClick={() => handleMenuAction(item.id)}
               >
                 <Icon className="size-4 shrink-0 text-muted-foreground" />
                 {item.label}
-                {comingSoon ? <ComingSoon /> : null}
               </DropdownMenuItem>
             )
           })}
@@ -146,29 +122,6 @@ export function CoachDock({
 
   const actions = (
     <>
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <span className="inline-flex">
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  disabled
-                  aria-disabled="true"
-                  aria-label="Voice input — coming soon"
-                  className="rounded-full text-muted-foreground"
-                >
-                  <Mic className="size-4" />
-                  <ComingSoon silent />
-                </Button>
-              </span>
-            }
-          />
-          <TooltipContent>Coming soon</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
       {turnActive ? (
         <Button
           type="button"

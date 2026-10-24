@@ -64,7 +64,7 @@ export function SegmentedControl<T extends string = string>({
   defaultValue,
   onChange,
   size = "md",
-  variant = "buttons",
+  variant = "tray",
   fullWidth = false,
   kind = "radio",
   disabled = false,

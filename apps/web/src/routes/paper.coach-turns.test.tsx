@@ -82,7 +82,7 @@ describe("Paper Coach turns", () => {
       within(dialog).getByRole("button", { name: /Updated PM track CV/ })
     ).toBeInTheDocument()
     expect(
-      within(dialog).getByText(/^paper\.updateContent finished/)
+      within(dialog).getByText(/^Updated PM track CV finished/)
     ).toBeInTheDocument()
     expect(
       within(dialog).getByText(

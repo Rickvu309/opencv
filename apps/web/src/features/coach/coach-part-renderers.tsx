@@ -83,6 +83,7 @@ export function CoachParts({
           <CoachToolExtras
             key={tool.key}
             tool={tool}
+            undoLabel={`Undo: ${tool.label}`}
             canUndo={ctx.canUndo}
             onUndo={undoFor(tool, ctx)}
           />

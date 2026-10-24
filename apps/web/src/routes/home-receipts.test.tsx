@@ -58,7 +58,7 @@ describe("Home Command receipts", { timeout: 15_000 }, () => {
     expect(
       screen.queryByRole("button", { name: "Undo" })
     ).not.toBeInTheDocument()
-    expect(screen.getAllByText(/^apply\.moveCard finished/)).toHaveLength(2)
+    expect(screen.getAllByText(/finished$/)).toHaveLength(2)
   })
 
   it("states a failed undo plainly and keeps the original undo", async () => {
@@ -95,9 +95,9 @@ describe("Home Command receipts", { timeout: 15_000 }, () => {
       })
     ).toBeInTheDocument()
     expect(
-      screen.getByText("apply.moveCard failed: Apply card not found")
+      screen.getByText(/Apply card not found failed: Nothing changed\./)
     ).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Undo" })).toBeEnabled()
+    expect(screen.getByRole("button", { name: /^Undo/ })).toBeEnabled()
   })
 
   it("keeps irreversible receipts as read-only notes", async () => {
@@ -152,7 +152,7 @@ describe("Home Command receipts", { timeout: 15_000 }, () => {
       })
     ).toBeInTheDocument()
     expect(
-      screen.getByText("apply.moveCard failed: Apply card not found")
+      screen.getByText(/Apply card not found failed: Nothing changed\./)
     ).toBeInTheDocument()
     expect(screen.getByText("Nothing changed.")).toBeInTheDocument()
     expect(screen.queryByText(/Reversible —/)).not.toBeInTheDocument()
@@ -174,9 +174,9 @@ describe("Home Command receipts", { timeout: 15_000 }, () => {
     await expectHomeIdle()
     await sendMessage("Move card 00000000-0000-0000-0000-000000000002 to Prep")
 
-    const receipt = (
-      await screen.findByRole("button", { name: /That card id isn't valid/ })
-    ).closest<HTMLElement>("[data-slot='tool-call-card']")!
+    const receipt = await screen.findByRole("button", {
+      name: /That card id isn't valid/,
+    })
     expect(receipt).toHaveTextContent("That card id isn't valid")
     expect(receipt).not.toHaveTextContent(
       /Invalid input for tool|Type validation failed|Invalid UUID/

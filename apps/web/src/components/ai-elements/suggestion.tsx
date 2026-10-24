@@ -28,7 +28,6 @@ export function Suggestion({
       {...props}
     >
       {children ?? prompt}
-      {children ? <span className="sr-only">: {prompt}</span> : null}
     </Button>
   )
 }

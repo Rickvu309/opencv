@@ -28,18 +28,19 @@ describe("Home idle", () => {
     expect(screen.queryByText(/Eric/i)).not.toBeInTheDocument()
   })
 
-  it("sends the prompt when a suggestion chip is tapped", async () => {
+  it("fills the composer with the prompt when a suggestion chip is tapped", async () => {
     renderApp()
     await expectHomeIdle()
 
     const chip = BROAD_SUGGESTIONS[0]!
-    fireEvent.click(
-      screen.getByRole("button", { name: chip.label + ": " + chip.prompt })
-    )
+    fireEvent.click(screen.getByRole("button", { name: chip.label }))
 
+    expect(screen.getByRole("textbox", { name: "Message Coach" })).toHaveValue(
+      chip.prompt
+    )
     expect(
-      await screen.findByRole("log", { name: "Thread" })
-    ).toHaveTextContent(chip.prompt)
+      screen.queryByRole("log", { name: "Thread" })
+    ).not.toBeInTheDocument()
   })
 
   it("sends on Enter and inserts a newline on Shift+Enter", async () => {
@@ -75,7 +76,7 @@ describe("Home idle", () => {
     })
   })
 
-  it("opens stub attach and upload items from the + menu", async () => {
+  it("lists attach and connector items in the + menu", async () => {
     renderApp()
     await expectHomeIdle()
 
@@ -83,11 +84,8 @@ describe("Home idle", () => {
 
     const menu = await screen.findByRole("menu")
     expect(
-      within(menu).getByRole("menuitem", { name: /upload a file/i })
-    ).toBeInTheDocument()
-    expect(
-      within(menu).getByRole("menuitem", { name: /recent/i })
-    ).toBeInTheDocument()
+      within(menu).queryByRole("menuitem", { name: /upload a file|recent/i })
+    ).not.toBeInTheDocument()
     expect(
       within(menu).getByRole("menuitem", { name: "Attach from Paper" })
     ).toBeInTheDocument()
@@ -112,34 +110,16 @@ describe("Home idle", () => {
     })
   })
 
-  it("disables coming-soon composer affordances", async () => {
+  it("offers no voice control and no coming-soon menu items", async () => {
     renderApp()
     await expectHomeIdle()
 
-    const mic = screen.getByRole("button", {
-      name: "Voice input — coming soon",
-    })
-    expect(mic).toBeDisabled()
-    expect(mic).toHaveAttribute("aria-disabled", "true")
-
+    expect(
+      screen.queryByRole("button", { name: /voice/i })
+    ).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "Add" }))
     const menu = await screen.findByRole("menu")
-
-    const upload = within(menu).getByRole("menuitem", {
-      name: /upload a file/i,
-    })
-    const recent = within(menu).getByRole("menuitem", { name: /^recent/i })
-    expect(upload).toHaveAttribute("aria-disabled", "true")
-    expect(recent).toHaveAttribute("aria-disabled", "true")
-    expect(upload).toHaveTextContent("Coming soon")
-    expect(recent).toHaveTextContent("Coming soon")
-
-    expect(
-      within(menu).getByRole("menuitem", { name: "Attach from Paper" })
-    ).not.toHaveAttribute("aria-disabled", "true")
-    expect(
-      within(menu).getByRole("menuitem", { name: "Add connector" })
-    ).not.toHaveAttribute("aria-disabled", "true")
+    expect(menu).not.toHaveTextContent("Coming soon")
   })
 
   it("opens Settings on the Connected apps tab from the connect row", async () => {
@@ -213,9 +193,7 @@ describe("Home idle", () => {
       "Triage Apply",
       "Start a Proof",
     ]) {
-      expect(
-        screen.getByRole("button", { name: new RegExp(`^${label}:`) })
-      ).toBeInTheDocument()
+      expect(screen.getByRole("button", { name: label })).toBeInTheDocument()
     }
     expect(
       screen.queryByRole("button", { name: "Prep interview" })
@@ -226,10 +204,14 @@ describe("Home idle", () => {
     fireEvent.click(more)
 
     expect(more).toHaveAttribute("aria-expanded", "true")
-    fireEvent.click(screen.getByRole("button", { name: /^Prep interview:/ }))
+    fireEvent.click(screen.getByRole("button", { name: "Prep interview" }))
     expect(
-      await screen.findByRole("log", { name: "Thread" })
-    ).toHaveTextContent("interview")
+      (
+        screen.getByRole("textbox", {
+          name: "Message Coach",
+        }) as HTMLTextAreaElement
+      ).value
+    ).toContain("interview")
     expect(
       screen.queryByRole("button", { name: /follow.?up email/i })
     ).not.toBeInTheDocument()

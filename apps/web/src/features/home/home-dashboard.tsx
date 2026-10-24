@@ -99,7 +99,7 @@ export function HomeDashboard() {
                 onSend={handleSend}
                 menuPlacement="below"
               />
-              <HomeSuggestions onSelect={send} />
+              <HomeSuggestions onSelect={setDraft} />
               <HomeStart />
               <ConnectedApps className="mt-1" />
             </div>

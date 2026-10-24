@@ -111,11 +111,11 @@ export const css = /* css */ `
 }
 .ui-tcc__name {
   flex: 0 1 auto;
-  max-width: 55%;
+  max-width: 100%;
   overflow: hidden;
   color: var(--ui-tcc-strong);
-  font-family: var(--ui-tcc-mono);
-  font-size: 12px;
+  font-family: var(--font-sans);
+  font-size: 13px;
   font-weight: 500;
   letter-spacing: 0;
   text-overflow: ellipsis;

@@ -117,9 +117,6 @@ const READABLE_VARIABLES = new Set<string>([
   "landing-h1-desktop",
 ])
 
-/** Widget-scoped variables inside the affectUI files, mapped to stock variables at their root. */
-const UI_WIDGET_VARIABLE_RE = /^ui-(?:segc|tlc|tcc|mac)-/
-
 /** CV print variables declared in paper.css, the documented exception. */
 const CV_VARIABLE_RE = /^cv-/
 
@@ -128,7 +125,7 @@ const CV_VARIABLE_RE = /^cv-/
  * and maps to stock variables there (segmented-control, filter-menu,
  * notification-stack, smart-recommendation, number-ticker).
  */
-const AFFECT_VARIABLE_RE = /^ui-(?:seg|fm|ns|sr|nt)-/
+const AFFECT_VARIABLE_RE = /^ui-(?:fm|ns|sr|nt)-/
 
 /** Variables owned by legacy-overlay.css; the legacy allowlist governs their use. */
 const LEGACY_VARIABLE_RE = /^(?:success|warning|pitch-tone|github-heatmap)/
@@ -309,7 +306,6 @@ describe("design-system vocabulary", () => {
             !local.has(name) &&
             !CV_VARIABLE_RE.test(name) &&
             !AFFECT_VARIABLE_RE.test(name) &&
-            !UI_WIDGET_VARIABLE_RE.test(name) &&
             !LEGACY_VARIABLE_RE.test(name) &&
             !name.startsWith("tw-")
         )
@@ -374,9 +370,10 @@ describe("legacy overlay", () => {
 describe("chat library", () => {
   it("keeps the second chat library out of the app", () => {
     const importsIt = new RegExp("[\"']@" + "assistant-ui/")
-    const offenders = appSourceFiles().filter((file) =>
-      importsIt.test(readApp(file))
-    )
+    const offenders = [
+      ...appSourceFiles().filter((file) => importsIt.test(readApp(file))),
+      ...kitSourceFiles().filter((file) => importsIt.test(readKit(file))),
+    ]
     expect(offenders).toEqual([])
   })
 })

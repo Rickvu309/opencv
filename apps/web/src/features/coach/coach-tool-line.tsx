@@ -19,11 +19,11 @@ export const UNDO_FAILED_COPY =
 export function toolCardProps(tool: CoachToolPart) {
   const failed = tool.status === "error"
   return {
-    name: tool.name,
-    summary: tool.label,
+    name: tool.label,
+    args: { command: tool.name },
     status: failed ? "error" : tool.status === "done" ? "success" : "running",
     result: tool.status === "done" ? tool.part.summary : undefined,
-    error: failed ? tool.label : undefined,
+    error: failed ? "Nothing changed." : undefined,
     defaultOpen: failed,
   } as const
 }
@@ -34,11 +34,17 @@ export function CoachToolCard({ tool }: { tool: CoachToolPart }) {
 
 type ExtrasProps = {
   tool: CoachToolPart
+  undoLabel?: string
   canUndo: boolean
   onUndo?: () => Promise<void>
 }
 
-export function CoachToolExtras({ tool, canUndo, onUndo }: ExtrasProps) {
+export function CoachToolExtras({
+  tool,
+  undoLabel = "Undo",
+  canUndo,
+  onUndo,
+}: ExtrasProps) {
   const { part } = tool
   const note = receiptReversalNote(part)
   const [pending, setPending] = useState(false)
@@ -63,7 +69,6 @@ export function CoachToolExtras({ tool, canUndo, onUndo }: ExtrasProps) {
 
   return (
     <div className="min-w-0 space-y-2 text-xs text-muted-foreground">
-      {!part.ok ? <p>Nothing changed.</p> : null}
       {part.ok && part.detail ? <ReceiptDetail detail={part.detail} /> : null}
       {note ? (
         <p className="min-w-0 [overflow-wrap:anywhere] break-words">{note}</p>
@@ -73,7 +78,7 @@ export function CoachToolExtras({ tool, canUndo, onUndo }: ExtrasProps) {
           type="button"
           variant="outline"
           size="xs"
-          aria-label="Undo"
+          aria-label={undoLabel}
           disabled={pending}
           onClick={() => void undo()}
         >

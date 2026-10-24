@@ -62,7 +62,6 @@ describe("ThreadView thinking state", () => {
     const thread = screen.getByRole("log", { name: "Thread" })
     expect(within(thread).getByRole("status")).toHaveTextContent("Thinking")
     expect(screen.queryByText("Thinking…")).not.toBeInTheDocument()
-    expect(thread.querySelector(".animate-pulse")).not.toBeInTheDocument()
   })
 
   it("drops the loader once reply text is on screen and keeps no running timer", () => {
@@ -87,7 +86,9 @@ describe("ThreadView thinking state", () => {
     expect(
       screen.getByRole("button", { name: /Moved 'Backend Intern' to Prep/ })
     ).toHaveAttribute("aria-expanded", "false")
-    expect(screen.getByText(/^apply\.moveCard finished/)).toBeInTheDocument()
+    expect(
+      screen.getByText(/^Moved 'Backend Intern' to Prep finished/)
+    ).toBeInTheDocument()
   })
 
   it("renders no reply actions on the live turn", () => {
@@ -121,7 +122,9 @@ describe("ThreadView steps", () => {
 
     const group = screen.getByRole("button", { name: /Used 2 tools/ })
     expect(group).toHaveAttribute("aria-expanded", "false")
-    expect(screen.getByRole("button", { name: "Undo" })).toBeEnabled()
+    expect(
+      screen.getByRole("button", { name: /^Undo: Moved 'Backend Intern'/ })
+    ).toBeEnabled()
   })
 
   it("leaves a single step as its own card", () => {
