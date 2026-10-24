@@ -133,6 +133,9 @@ try {
     }
     assert.equal(calls.length, count)
   }
+  const emptyHome = await request("app.opencv.me", "/")
+  assert.equal(emptyHome.status, 302)
+  assert.equal(emptyHome.headers.get("location"), "/app")
   const home = await request("app.opencv.me", "/?welcome=1")
   assert.equal(home.status, 302)
   assert.equal(home.headers.get("location"), "/app?welcome=1")

@@ -51,7 +51,7 @@ The web app is at http://localhost:5173 and the api health check is at http://lo
 
 ## Hosting and deploy
 
-Railway runs the `api`, `web` and Postgres services in one environment, production, behind Cloudflare at https://opencv.me, https://www.opencv.me, https://app.opencv.me and https://api.opencv.me. A merge to `main` deploys straight to production; there is no staging and no preview deploy yet. Layout, variables, DNS, rollback and migrations are in `docs/deploy.md`.
+Railway runs the `api`, `web` and Postgres services in one production environment. The host split targets `opencv.me` and `www.opencv.me` for the public site and `app.opencv.me` for the product, with `api.opencv.me` retained as the API domain. A merge to `main` deploys straight to production; there is no staging or preview deployment. Complete the DNS and runtime preparation in `docs/deploy.md` before merging the host split. That runbook also covers rollback and migrations.
 
 ## How work happens
 

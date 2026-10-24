@@ -10,8 +10,7 @@ const localWebOrigin = "http://localhost:5173"
 
 /**
  * Origins the API accepts browser calls from, as a comma-separated list. Each
- * entry is an exact origin or a single-`*` pattern (see `createApp`). Set per
- * Railway environment: production allows `https://app.opencv.me`.
+ * entry is an exact origin or a single-`*` pattern (see `createApp`).
  */
 export function webOriginsFromEnv(env: NodeJS.ProcessEnv): string[] {
   const configured = (env.WEB_ORIGINS ?? "")
@@ -63,8 +62,7 @@ export function sessionSecretFromEnv(
 
 /**
  * Browser-facing auth origin, used as Better Auth `baseURL` and to choose
- * secure cookies for HTTPS. Production uses `https://app.opencv.me`. Falls back to the local api
- * when unset, matching `WEB_ORIGINS`.
+ * secure cookies for HTTPS. Falls back to the local api when unset.
  */
 export function authUrlFromEnv(env: NodeJS.ProcessEnv): string {
   const configured = env.AUTH_URL?.trim()

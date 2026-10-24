@@ -3,8 +3,6 @@ import { defineRailway, github, preserve, project, service } from "railway/iac"
 // Own only application services; leave the existing Postgres and volume unmanaged.
 export const partial = "opencv-apps"
 
-// Preserve secrets and browser-origin settings; coordinate the host cutover
-// using docs/deploy.md.
 export default defineRailway(() => {
   const api = service("api", {
     source: github("quanvu309/opencv", { branch: "main" }),

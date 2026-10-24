@@ -39,7 +39,9 @@
 			redir https://app.opencv.me{uri} 308
 		}
 		handle @appHome {
-			redir * /app?{query} 302
+			@withQuery expression {query} != ""
+			redir @withQuery /app?{query} 302
+			redir * /app 302
 		}
 		handle @appPitch {
 			redir https://opencv.me{uri} 308

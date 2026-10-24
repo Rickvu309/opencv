@@ -34,24 +34,32 @@ application services in the same Railway environment.
 
 ## Host cutover
 
-These are deployment prerequisites, not actions performed by a GitHub PR.
-Coordinate them with the release because the browser now calls its own host.
+Merging to `main` automatically deploys both application services. Complete
+the preparation below before merging this PR. Do not let the new web revision
+roll out until `app.opencv.me` resolves and presents a valid certificate.
 
-1. Add `app.opencv.me` to the existing Railway **web** service. Configure its
+1. Record the current API/web deployment revisions and origin/runtime variables
+   for rollback. Add `app.opencv.me` to the existing Railway **web** service. Configure its
    DNS record using Railway's displayed target and wait for the certificate.
    Keep `opencv.me` and `www.opencv.me` on that same service. Preserve the
    original Host header through any upstream proxy.
-2. Set API `PORT=3001`, `AUTH_URL=https://app.opencv.me` and
-   `WEB_ORIGINS=https://app.opencv.me`. Preserve `SESSION_SECRET`,
+2. Prepare API `PORT=3001` and temporarily allow both browser origins with
+   `WEB_ORIGINS=https://opencv.me,https://app.opencv.me`. Retain any other
+   currently allowed production origins until the new web is serving. Keep
+   the existing `AUTH_URL` during preparation. Preserve `SESSION_SECRET`,
    `DATABASE_URL`, `OPENROUTER_API_KEY` and other existing runtime settings.
-   `AUTH_URL` is the browser-facing origin, without an `/api/auth` suffix.
 3. Set web `API_UPSTREAM=http://api.railway.internal:3001`. Remove the old
-   web `VITE_API_URL`; the production Docker build no longer reads it.
+   web `VITE_API_URL` only with the new web release; the old build still needs it.
    Review the IaC plan before applying it: only the two application services
    should change, with no Postgres or volume replacement.
-4. Release the matching API and web revisions together. The IaC deliberately
-   preserves auth-origin variables, so applying it alone does not set them.
-5. Verify the production paths below before considering the cutover complete.
+4. In the release window, set API `AUTH_URL=https://app.opencv.me` and merge
+   the matching API/web revisions. Keep both allowed browser origins throughout
+   their rollouts. `AUTH_URL` is the browser-facing origin, without an
+   `/api/auth` suffix. The IaC preserves auth-origin variables, so applying it
+   alone does not set them.
+5. Verify the production paths below after both deployments are serving.
+   Then restrict API `WEB_ORIGINS=https://app.opencv.me` and verify sign-in
+   again. Remove the old web `VITE_API_URL` if it is still configured.
 
 Existing sessions on the old API host do not transfer to the app host. Users
 sign in again. HTTPS sessions use host-only, Secure, HttpOnly, `SameSite=Lax`

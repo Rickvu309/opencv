@@ -23,7 +23,7 @@ The web app and the API run on the Railway project `openpath` (the name predates
 
 - `.railway/railway.ts` builds the API with `pnpm --filter api... run build`, runs `pnpm --filter api run migrate` as the pre-deploy command, starts `pnpm --filter api run start`, and health-checks `GET /health`. The `web` service builds `apps/web/Dockerfile` and serves it with Caddy.
 - Secrets live in Railway variables, never in git.
-- Rolling back production: in Railway, open `api` in `production`, pick the previous successful deployment, and choose Rollback. Roll back `web` the same way.
+- Rolling back production: restore the previous successful `api` and `web` deployments and their matching variables. Follow the [rollback runbook](../deploy.md#rollback), including `AUTH_URL`, `WEB_ORIGINS` and web build/runtime variables.
 
 ## Production deploys
 
