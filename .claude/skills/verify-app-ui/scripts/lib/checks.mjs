@@ -1,0 +1,464 @@
+// Decisions. Each check reads the tour data and returns { id, name, pass, measured, rule }.
+// Ids 01 to 30 are the research section 5 check numbers; 31 and up are the app-wide checks the
+// signed-in tour adds. A rule says when it is a heuristic. Source reads are named as such.
+import { join } from "node:path"
+import { readFileSync } from "node:fs"
+
+import { contentChecks } from "./checks-content.mjs"
+import {
+  FEATURE_DIRS,
+  SURFACES,
+  context,
+  list,
+  pitchTimers,
+  read,
+  rel,
+  repo,
+  result,
+  sourceFiles,
+} from "./check-util.mjs"
+
+export function runChecks(d) {
+  const r = contentChecks(d)
+  const { screens, allSnaps, has } = context(d)
+
+  // Structure.
+  const both = ["What are you aiming for?", "Four small things"].every((h) =>
+    d.home.headingsText.includes(h)
+  )
+  r.push(
+    result(
+      "14",
+      "home-composer-first",
+      !both,
+      `headings on first paint: ${list(d.home.headingsText.slice(1))}; composer top ${d.home.composerRect?.y}px`,
+      "at 1440x900 Home does not stack both What are you aiming for? and Four small things above the composer"
+    )
+  )
+
+  const c = d.cvCoach
+  const under = c.underPanel ?? []
+  const widest = c.cvRect && c.panelRect ? c.cvRect.w >= c.panelRect.w : false
+  r.push(
+    result(
+      "15",
+      "cv-widest-coach-beside",
+      Boolean(c.panelRect) && under.length === 0 && widest,
+      c.panelRect
+        ? `Coach panel ${c.panelPosition} ${c.panelRect.w}x${c.panelRect.h} covers ${under.length} text blocks (${list(under, 2)}); CV ${c.cvRect?.w}px wide`
+        : "no Coach panel or side pane found",
+      "with the Coach open, the CV is the widest region and the Coach (a floating panel or an in-flow side pane) covers none of its text"
+    )
+  )
+
+  const words = ["Inbox", "Prep", "Sent", "Live", "Closed"].filter(
+    (w) => !d.apply.stageDots.some((t) => t.includes(w))
+  )
+  const hs =
+    d.apply.docScroll.sw > d.apply.docScroll.cw || d.apply.hScrollers.length > 0
+  r.push(
+    result(
+      "16",
+      "apply-five-stages-no-hscroll",
+      words.length === 0 && !hs,
+      `missing: ${words.join(" ") || "none"}; horizontal scroll: ${hs ? list(d.apply.hScrollers) || "page" : "none"}`,
+      "at 1440x900 Apply shows Inbox, Prep, Sent, Live and Closed as visible column headers (found beside the stage dots) without horizontal scrolling"
+    )
+  )
+
+  r.push(
+    result(
+      "17",
+      "search-key-hint",
+      d.home.searchHasKbd && Boolean(d.palette.dialog),
+      `Search row has a kbd: ${d.home.searchHasKbd}; Ctrl-K opens a dialog: ${Boolean(d.palette.dialog)}`,
+      "the sidebar Search item shows a key hint and Ctrl-K opens the dialog"
+    )
+  )
+
+  const coming = d.paper.disabledControls.filter((l) => /coming soon/i.test(l))
+  r.push(
+    result(
+      "18",
+      "paper-no-disabled-filter",
+      coming.length === 0,
+      coming.length ? list(coming) : "none",
+      "Paper shows no control marked Coming soon"
+    )
+  )
+
+  // Visual craft.
+  const decor = []
+  for (const k of ["home", "paper", "apply", "pitch", "pitchEdit"]) {
+    for (const f of d[k].fills) {
+      if (f.lum < 0.1 || (f.chroma >= 0.08 && !f.token))
+        decor.push(
+          `${k}: ${f.lum < 0.1 ? "dark" : "tinted"} ${f.area}px2 "${f.t}"`
+        )
+    }
+  }
+  const light = SURFACES.every((k) => screens[k].bodyBgLum >= 0.85)
+  r.push(
+    result(
+      "19",
+      "light-field-sparse-accent",
+      light && decor.length === 0,
+      `light: ${light}; decorative dark or tinted fills: ${decor.length ? list(decor, 3) : "none"}`,
+      "background luminance 0.85+; no large dark or tinted decorative fill (heuristic: 6000px2 and up, non-button, non-token chroma 0.08+ or luminance under 0.1)"
+    )
+  )
+
+  const sum = (key, f) => allSnaps.reduce((n, s) => n + f(s[key]), 0)
+  const cfails = allSnaps.flatMap((s) => s.contrast.fails)
+  const ccount = sum("contrast", (x) => x.failCount)
+  r.push(
+    result(
+      "20",
+      "text-contrast",
+      ccount === 0,
+      `${ccount} of ${sum("contrast", (x) => x.checked)} text nodes fail${
+        cfails.length
+          ? `: ${list(
+              cfails.map((f) => `"${f.text}" ${f.ratio}:1 needs ${f.need}`),
+              3
+            )}`
+          : ""
+      }`,
+      "text is 4.5:1, or 3:1 at 24px (18.66px bold); text over images and gradients, disabled controls, aria-hidden text and svg are skipped"
+    )
+  )
+
+  const tfail = sum("targets", (x) => x.fail)
+  r.push(
+    result(
+      "21",
+      "target-size-24",
+      tfail === 0,
+      `${tfail} targets under 24px with no spacing exception: ${list(
+        allSnaps.flatMap((s) => s.targets.samples),
+        3
+      )}`,
+      "every link and button is 24x24, or a 24px circle on it touches no other target"
+    )
+  )
+
+  const found22 = d.home.applyDots !== null
+  const dots = (d.home.applyDots ?? []).filter((x) => !x.text && !x.named)
+  r.push(
+    result(
+      "22",
+      "apply-dot-count-or-absent",
+      found22 && dots.length === 0,
+      !found22
+        ? "the Apply nav item was not found"
+        : dots.length
+          ? `Apply nav has a ${dots[0].w}x${dots[0].h} dot with no count and no accessible name${dots[0].ariaHidden ? " (aria-hidden)" : ""}`
+          : "no unnamed dot",
+      "the Apply nav dot is absent, or a count or a dot with an accessible name (an aria-hidden dot has none)"
+    )
+  )
+
+  const sd = d.apply.stageDots
+  r.push(
+    result(
+      "23",
+      "stage-word-plus-dot",
+      sd.length >= 5 && sd.every((t) => /[A-Za-z]{3,}/.test(t)),
+      `${sd.length} stage dots; beside: ${list(sd, 5)}`,
+      "each stage dot sits with its stage word"
+    )
+  )
+
+  const dur = {}
+  for (const s of allSnaps)
+    for (const [k, n] of Object.entries(s.durations))
+      if (!["150ms", "280ms"].includes(k)) dur[k] = (dur[k] ?? 0) + n
+  const examples = allSnaps
+    .flatMap((s) => s.durationSamples)
+    .filter((x) => !["150ms", "280ms"].includes(x.k))
+  const srcMotion = []
+  for (const f of sourceFiles([
+    ...FEATURE_DIRS.map((x) => `apps/web/src/features/${x}`),
+    "apps/web/src/routes",
+  ])) {
+    for (const m of read(f).matchAll(
+      /\bduration-(\d+|fast|slow)\b|\bduration-\[(\d+)ms\]|\b(\d+)ms\b/g
+    )) {
+      const ms =
+        m[1] === "fast"
+          ? 100
+          : m[1] === "slow"
+            ? 200
+            : Number(m[1] ?? m[2] ?? m[3])
+      if (![0, 150, 280].includes(ms))
+        srcMotion.push(`${rel(f).split("/").pop()}: ${m[0]}`)
+    }
+  }
+  r.push(
+    result(
+      "24",
+      "motion-tokens",
+      Object.keys(dur).length === 0 && srcMotion.length === 0,
+      `computed off-token durations: ${
+        Object.entries(dur)
+          .map(([k, n]) => `${k} x${n}`)
+          .join(", ") || "none"
+      }${examples[0] ? ` e.g. ${examples[0].t}.${examples[0].c.slice(0, 40)}` : ""}; in feature source: ${list([...new Set(srcMotion)], 3) || "none"}`,
+      "every transition and animation runs 150ms or 280ms, measured on the toured screens including an open Pitch story and as duration-N classes or Nms values in features and routes (looping spinners and skeletons skipped)"
+    )
+  )
+
+  const reducedBad = Object.entries(d.reduced).flatMap(([k, s]) => [
+    ...Object.keys(s.durations)
+      .filter((v) => parseFloat(v) > 1)
+      .map((v) => `${k}:${v}`),
+    ...(s.runningAnimations ? [`${k}:${s.runningAnimations} running`] : []),
+    ...(s.scrollBehavior.includes("smooth") ? [`${k}:smooth scroll`] : []),
+  ])
+  const timerFiles = pitchTimers()
+  const timers = timerFiles.filter((t) => !t.guarded)
+  r.push(
+    result(
+      "25",
+      "reduced-motion",
+      reducedBad.length === 0 && timerFiles.length > 0 && timers.length === 0,
+      `with reduce: ${reducedBad.length ? list(reducedBad) : "no motion over 1ms"}; Pitch timers: ${timerFiles.length ? timerFiles.map((t) => `${t.file.split("/").pop()} ${t.apis.join("+")} ${t.guarded ? "guarded" : "UNGUARDED"}`).join("; ") : "no story timer found"}`,
+      "with prefers-reduced-motion nothing runs over 1ms, scroll is not smooth, and every timer-driven motion under features/pitch and the use-* hooks it imports (requestAnimationFrame, setInterval, setTimeout other than a flag reset) sits in a file that checks the preference, and at least one story timer is found (source read)"
+    )
+  )
+
+  const reveal = sourceFiles([
+    ...FEATURE_DIRS.map((x) => `apps/web/src/features/${x}`),
+    "apps/web/src/routes",
+  ]).filter((f) => /text-reveal|TextReveal/.test(read(f)))
+  r.push(
+    result(
+      "26",
+      "no-text-reveal",
+      reveal.length === 0,
+      reveal.length ? list(reveal.map(rel)) : "no import",
+      "no app screen imports text-reveal (source read)"
+    )
+  )
+
+  const banner = read(
+    join(repo, "apps/web/src/features/paper/paper-editor-conflict-banner.tsx")
+  )
+  const errText = d.coachError.alerts.some((t) =>
+    /not found|Retry|wrong|unavailable|reach/i.test(t)
+  )
+  const red = SURFACES.flatMap((k) => screens[k].redOutsideAlert)
+  r.push(
+    result(
+      "27",
+      "alerts-have-role",
+      errText && red.length === 0 && /role="alert"/.test(banner),
+      `Coach error inside a live region: ${errText}; red text outside one: ${red.length ? list(red, 2) : "none"}; conflict banner role=alert: ${/role="alert"/.test(banner)}`,
+      "the Coach error and the Paper conflict banner expose a live region role"
+    )
+  )
+
+  const need = {
+    apply: [d.apply, /^Add /],
+    paper: [d.cv, /^(Make mine|Save)/],
+    pitch: [d.pitchEdit, /^Publish$/],
+  }
+  const found = Object.entries(need).map(([k, [s, re]]) => {
+    const b = s.buttons.find((x) => re.test(x.label))
+    return { k, label: b?.label, h: b?.h }
+  })
+  r.push(
+    result(
+      "28",
+      "primary-buttons-48",
+      found.every((f) => f.h >= 48),
+      found
+        .map((f) => `${f.k} "${f.label ?? "not found"}" ${f.h ?? "?"}px`)
+        .join(", "),
+      "the primary button on Apply, Paper and Pitch is 48px high or more"
+    )
+  )
+
+  const loadingCopy = /Loading documents|Loading…|Loading\.\.\./.exec(
+    d.paperLoading.text
+  )?.[0]
+  const loadingOwn = Boolean(loadingCopy) || d.paperLoading.skeletons > 0
+  const emptyCopy = /No documents yet[^.]*\./.exec(d.paperEmpty.text)?.[0]
+  r.push(
+    result(
+      "29",
+      "table-not-mounted-while-loading",
+      loadingOwn &&
+        !d.paperLoading.hasTable &&
+        Boolean(emptyCopy) &&
+        emptyCopy !== loadingCopy,
+      `loading: ${loadingCopy ? `"${loadingCopy}"` : d.paperLoading.skeletons ? `${d.paperLoading.skeletons} skeletons` : "no loading copy or skeleton"}, table mounted ${d.paperLoading.hasTable}; empty (list answered with none): ${emptyCopy ? `"${emptyCopy.slice(0, 50)}"` : "no empty sentence"}`,
+      "while the call is held the page shows its own loading copy or a skeleton and no table; with an empty list it shows a different empty sentence (a blank state is a FAIL; the empty list is an api answer, not a deletion)"
+    )
+  )
+
+  const undo = d.cv.buttons.some((b) => /^undo$/i.test(b.label))
+  const reject =
+    [...d.cv.buttons, ...d.cvCoach.buttons].some((b) =>
+      /reject/i.test(b.label)
+    ) || has(/>\s*Reject\s*<|["'`]Reject["'`]/).length > 0
+  r.push(
+    result(
+      "30",
+      "undo-and-reject",
+      undo && reject,
+      `Undo on the CV toolbar: ${undo}; a Coach Reject control: ${reject}`,
+      "the CV toolbar keeps Undo, and a Coach suggestion has its own Reject"
+    )
+  )
+
+  // App-wide checks the tour adds.
+  const h1s = SURFACES.map((k) => `${k}:${screens[k].h1.length}`)
+  r.push(
+    result(
+      "31",
+      "one-h1-per-screen",
+      SURFACES.every((k) => screens[k].h1.length === 1),
+      h1s.join(" "),
+      "each screen has exactly one visible h1"
+    )
+  )
+
+  const tabs = Object.entries(d.tabs).map(
+    ([k, v]) => `${k}:${v.reached ?? "none in 60"}`
+  )
+  r.push(
+    result(
+      "32",
+      "keyboard-reaches-primary",
+      Object.values(d.tabs).every((v) => v.reached && v.reached <= 30),
+      `Tab presses to the primary action: ${tabs.join(" ")}`,
+      "the primary action of each surface takes focus within 30 Tab presses"
+    )
+  )
+
+  const logs = [
+    ...new Set(d.logs.map((l) => `${l.kind} ${l.text.slice(0, 90)}`)),
+  ]
+  r.push(
+    result(
+      "33",
+      "no-console-errors",
+      logs.length === 0,
+      logs.length ? `${logs.length}: ${list(logs, 2)}` : "none",
+      "the signed-in passes (desktop, reduced motion, 390px) log no console error, React warning, uncaught exception or failed load (the mocked scenario pages are not counted)"
+    )
+  )
+
+  const budget = 2000
+  const slow = Object.entries(d.timing).filter(
+    ([, ms]) => ms === null || ms > budget
+  )
+  r.push(
+    result(
+      "34",
+      "first-render-budget",
+      slow.length === 0,
+      Object.entries(d.timing)
+        .map(([k, ms]) => `${k} ${ms ?? "none"}ms`)
+        .join(", "),
+      `each route renders its content within ${budget}ms of navigation (dev server, warm, one shared 8-core machine)`
+    )
+  )
+
+  const sp = SURFACES.map((k) => screens[k].spacing)
+  const total = sp.reduce((n, s) => n + s.total, 0)
+  const off = {}
+  for (const s of sp)
+    for (const [k, n] of Object.entries(s.off)) off[k] = (off[k] ?? 0) + n
+  const offN = Object.values(off).reduce((a, b) => a + b, 0)
+  r.push(
+    result(
+      "35",
+      "spacing-scale",
+      offN / total <= 0.05,
+      `${offN} of ${total} paddings and gaps off the 4px scale (${Math.round((offN / total) * 1000) / 10}%): ${list(
+        Object.entries(off)
+          .sort((a, b) => b[1] - a[1])
+          .map(([k, n]) => `${k} x${n}`),
+        4
+      )}`,
+      "95% or more of padding and gap values are on the 4px scale (multiples of 4 and the half steps 2, 6, 10, 14)"
+    )
+  )
+
+  const rows = d.paper.rows.filter((h) => h > 0)
+  const bad = rows.filter((h) => h < 40 || h > 72)
+  const tall = d.apply.cards.filter((x) => x.titleLines > 2)
+  const untitled = d.apply.cards.filter((x) => x.titleLines === null)
+  r.push(
+    result(
+      "36",
+      "row-density",
+      rows.length > 0 &&
+        bad.length === 0 &&
+        d.apply.cards.length > 0 &&
+        untitled.length === 0 &&
+        tall.length === 0,
+      `Paper rows ${list(
+        rows.map((h) => `${h}px`),
+        6
+      )}; Apply cards over 2 title lines: ${tall.length}${untitled.length ? `; ${untitled.length} cards with no card title element` : ""}${d.apply.cards.length ? "" : "; no cards"}`,
+      "Paper rows are 40 to 72px and no Apply card title runs past two lines (the title is found by its text from the card's aria-label, not by tag; no title element is a FAIL)"
+    )
+  )
+
+  const rc = {}
+  for (const s of allSnaps)
+    for (const [k, n] of Object.entries(s.rawColors)) rc[k] = (rc[k] ?? 0) + n
+  r.push(
+    result(
+      "37",
+      "no-raw-colors",
+      Object.keys(rc).length === 0,
+      Object.keys(rc).length
+        ? `${Object.keys(rc).length} colors match no token: ${list(
+            Object.entries(rc)
+              .sort((a, b) => b[1] - a[1])
+              .map(([k, n]) => `${k} x${n}`),
+            3
+          )}`
+        : "every color is a token",
+      "every computed text, fill and border color equals a semantic design token within 6 per channel (12 when translucent); Tailwind palette variables such as --color-red-600 are not tokens; black scrims, SVG fills and gradient stops are not measured here (19 reads gradients); the source test covers raw hex in apps/web/src"
+    )
+  )
+
+  const ms = Object.entries(d.mobile).map(([k, s]) => {
+    const names = ["Home", "Paper", "Apply", "Pitch"].map((n) =>
+      s.buttons.find(
+        (b) =>
+          b.label === n &&
+          b.x >= 0 &&
+          b.x + b.w <= 390 &&
+          b.y < 844 &&
+          b.w >= 24 &&
+          b.h >= 24
+      )
+    )
+    return {
+      k,
+      overflow: s.docScroll.sw > s.docScroll.cw,
+      missing: names.filter((x) => !x).length,
+    }
+  })
+  r.push(
+    result(
+      "38",
+      "mobile-surfaces-reachable",
+      ms.every((m) => !m.overflow && m.missing === 0),
+      ms
+        .map(
+          (m) =>
+            `${m.k}: ${m.overflow ? "page scrolls sideways" : "fits"}, ${4 - m.missing}/4 surface links in view`
+        )
+        .join("; "),
+      "at 390x844 the four surface links are in view at 24px or more and the page does not scroll sideways"
+    )
+  )
+  return r
+}
