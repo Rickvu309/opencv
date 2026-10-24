@@ -21,11 +21,11 @@ describe("landing page", () => {
     const { router, headline } = await renderLanding()
 
     expect(headline).toHaveTextContent(
-      "The career coach that gets you your first job."
+      "A first-job coach for Vietnamese students and new graduates."
     )
     expect(
       screen.getByText(
-        "Chat with a coach, write your CV and letters, track every application, and share a portfolio page."
+        "OpenCV is one workspace for your job search, with a coach beside you. You write your CV with the coach, then track each application and share one page of your work."
       )
     ).toBeInTheDocument()
     expect(router.state.location.pathname).toBe("/")
@@ -35,22 +35,26 @@ describe("landing page", () => {
     await renderLanding()
 
     await waitFor(() => {
-      expect(document.title).toBe("OpenCV, the career coach for your first job")
+      expect(document.title).toBe(
+        "OpenCV, a first-job coach for Vietnamese students and new graduates"
+      )
     })
     expect(
       document.head.querySelector('meta[name="description"]')
     ).toHaveAttribute(
       "content",
-      "Chat with a coach, write your CV and letters, track every application, and share a portfolio page."
+      "OpenCV is one workspace for your job search, with a coach beside you. You write your CV with the coach, then track each application and share one page of your work."
     )
   })
 
-  it("links Start free to sign-up and Sign in to sign-in", async () => {
+  it("links Start with a coach to sign-up and Sign in to sign-in", async () => {
     await renderLanding()
 
-    const startFree = screen.getAllByRole("link", { name: "Start free" })
-    expect(startFree).toHaveLength(3)
-    for (const link of startFree) {
+    const startLinks = screen.getAllByRole("link", {
+      name: "Start with a coach",
+    })
+    expect(startLinks).toHaveLength(3)
+    for (const link of startLinks) {
       expect(link).toHaveAttribute("href", "/sign-up")
     }
 
@@ -64,7 +68,12 @@ describe("landing page", () => {
   it("shows the four surfaces in order, each with one screenshot", async () => {
     await renderLanding()
 
-    const titles = ["Coach", "Paper", "Apply", "Pitch"]
+    const titles = [
+      "Coach. Ask about the role you want.",
+      "Paper. Write the CV beside the coach.",
+      "Apply. Track every application.",
+      "Pitch. Share one page of your work.",
+    ]
     const headings = screen
       .getAllByRole("heading", { level: 2 })
       .map((heading) => heading.textContent)
@@ -72,7 +81,10 @@ describe("landing page", () => {
 
     for (const title of titles) {
       const section = screen
-        .getByRole("heading", { level: 2, name: title })
+        .getByRole("heading", {
+          level: 2,
+          name: (name) => name.replace(/\.\s*/, ". ") === title,
+        })
         .closest("section")
       expect(section).not.toBeNull()
       expect(within(section!).getAllByRole("img")).toHaveLength(1)
@@ -87,6 +99,30 @@ describe("landing page", () => {
       "#apply",
       "#pitch",
     ])
+  })
+
+  it("answers the generic CV doubt before the first surface", async () => {
+    await renderLanding()
+
+    const objection = screen.getByText(
+      "Answers come from your CV and goals, and you edit every line."
+    )
+    const coach = screen.getByRole("heading", { level: 2, name: /^Coach/ })
+    expect(
+      objection.compareDocumentPosition(coach) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy()
+  })
+
+  it("keeps the closing line as plain text with one primary action", async () => {
+    await renderLanding()
+
+    const closing = screen.getByText("Your career, started. Free today.")
+    expect(closing.tagName).toBe("P")
+    expect(closing.children).toHaveLength(0)
+    expect(
+      screen.queryByText("Knows your story", { exact: false })
+    ).not.toBeInTheDocument()
   })
 
   it("leaves out sections the product cannot back up", async () => {
@@ -126,7 +162,7 @@ describe("index route guard", () => {
     expect(
       screen.queryByRole("heading", {
         level: 1,
-        name: "The career coach that gets you your first job.",
+        name: "A first-job coach for Vietnamese students and new graduates.",
       })
     ).not.toBeInTheDocument()
   })

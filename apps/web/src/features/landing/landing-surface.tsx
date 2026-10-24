@@ -2,9 +2,7 @@ import { Card } from "@workspace/ui/components/card"
 import { Section } from "@workspace/ui/components/section"
 import { cn } from "@workspace/ui/lib/utils"
 
-import type { LandingSurface } from "./landing-copy.ts"
-
-type Shot = LandingSurface["shot"]
+import type { LandingSurface, Shot } from "./landing-copy.ts"
 
 export function LandingShot({
   shot,
@@ -14,7 +12,13 @@ export function LandingShot({
   priority?: boolean
 }) {
   return (
-    <Card className="landing-fade gap-0 rounded-b-none border border-b-0 border-border py-0 shadow-none ring-0">
+    <Card
+      style={{ maxWidth: shot.displayWidth }}
+      className={cn(
+        "mx-auto gap-0 border border-border py-0 shadow-none ring-0",
+        priority ? "overflow-hidden" : "landing-fade rounded-b-none border-b-0"
+      )}
+    >
       <picture>
         <source
           media="(max-width: 767px)"
@@ -30,7 +34,7 @@ export function LandingShot({
           loading={priority ? "eager" : "lazy"}
           fetchPriority={priority ? "high" : "auto"}
           decoding="async"
-          className={cn("block h-auto w-full", priority && "landing-reveal")}
+          className="block h-auto w-full"
         />
       </picture>
     </Card>
@@ -48,13 +52,17 @@ export function LandingSurfaceSection({
     <Section
       id={surface.id}
       aria-labelledby={headingId}
-      className="scroll-mt-16"
+      className="scroll-mt-28 py-12 md:scroll-mt-16 md:py-24"
     >
       <div className="mb-10 grid gap-4 md:mb-16 md:grid-cols-2 md:items-end md:gap-8">
         <h2
           id={headingId}
           className="font-sans text-3xl font-medium tracking-tight text-balance md:text-4xl"
         >
+          <span className="mb-3 block text-sm font-medium tracking-normal text-muted-foreground">
+            {surface.label}
+            <span className="sr-only">. </span>
+          </span>
           {surface.title}
         </h2>
         <p className="max-w-md text-base text-pretty text-muted-foreground md:text-lg">
