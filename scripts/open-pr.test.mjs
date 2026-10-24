@@ -33,6 +33,9 @@ case "$1" in
   status) exit 0 ;;
   rev-list) echo local-new-commit ;;
   push)
+    for arg in "$@"; do
+      [ "$arg" != --no-verify ] || { echo "hook bypass forbidden" >&2; exit 97; }
+    done
     printf 'push skip=%s\\n' "\${SKIP_CHECKS-unset}" >> "$PROOF_ROOT/events"
     if [ "$PROOF_QUIET" != 1 ]; then echo 'push transport diagnostic' >&2; fi
     exit "$PROOF_PUSH_EXIT" ;;
@@ -53,13 +56,11 @@ esac
 `
   )
   const env = {
-    ...process.env,
     PATH: `${join(root, "bin")}:${process.env.PATH}`,
     PROOF_ROOT: root,
     PROOF_PUSH_EXIT: String(pushExit),
     PROOF_QUIET: quiet ? "1" : "0",
   }
-  delete env.SKIP_CHECKS
   const result = spawnSync(
     "bash",
     [script, "--draft", "-d", "push failure proof"],
