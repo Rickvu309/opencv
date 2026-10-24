@@ -44,7 +44,7 @@ That links the PR to the issue and closes the issue when the PR merges into `mai
    git rebase origin/main
    git push --force-with-lease
    ```
-   `scripts/review-pr.sh` prints a patch id that such a rebase keeps when the hunks stay the same. The independent review and the verify evidence name the patch id they cover and stay valid while it is unchanged, so only the script reruns, and its passing check is cached by the tested tree.
+   `scripts/review-pr.sh` prints a patch id that such a rebase keeps when the diff text stays the same, whitespace included. The independent review and the verify evidence name the patch id they cover and stay valid while it is unchanged, so only the script reruns, and its passing check is cached by the tested tree. GitHub still dismisses a human approval on every push (the ruleset), so a contributor's PR needs that approval again.
 6. Squash-merge: `gh pr merge --squash`.
 
 ## Checks (no CI)

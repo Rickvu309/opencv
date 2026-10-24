@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Each case runs scripts/review-pr.sh against a throwaway "main checkout" with a local bare origin and a stub gh,
-# so no network is needed. The stub answers the gh calls the script makes from REVIEW_TEST_* variables.
+# Each case runs scripts/review-pr.sh against a throwaway "main checkout" with a local bare origin and stub gh and pnpm,
+# so no network is needed. The stub gh answers the calls the script makes from REVIEW_TEST_* variables.
 set -euo pipefail
 unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE CHECK_DRY_RUN CHECK_BASE_REF
 
@@ -20,7 +20,7 @@ case "$1 $2" in
     case "$5" in
       state) echo OPEN ;; baseRefName) echo main ;; headRefName) echo "${REVIEW_TEST_BRANCH}" ;;
       title) echo "${REVIEW_TEST_TITLE}" ;; body) echo "Closes #${REVIEW_TEST_ISSUE}" ;;
-      isDraft) echo false ;; labels) echo "" ;; reviews) echo 0 ;;
+      isDraft) echo false ;; labels) echo "" ;; reviews) echo "${REVIEW_TEST_CHANGES:-0}" ;;
       *) echo "stub gh: unknown field $5" >&2; exit 1 ;;
     esac ;;
   "issue view") echo OPEN ;;
@@ -29,16 +29,22 @@ case "$1 $2" in
   *) echo "stub gh: unexpected: $*" >&2; exit 1 ;;
 esac
 STUB
-chmod +x "$tmp/bin/gh"
+# pnpm install: creates node_modules, then exits with REVIEW_TEST_PNPM_EXIT (default 0).
+cat >"$tmp/bin/pnpm" <<'STUB'
+#!/usr/bin/env bash
+mkdir -p node_modules
+exit "${REVIEW_TEST_PNPM_EXIT:-0}"
+STUB
+chmod +x "$tmp/bin/gh" "$tmp/bin/pnpm"
 export PATH=$tmp/bin:$PATH
 export REVIEW_TEST_ISSUE=7
 export REVIEW_TEST_BRANCH=chore/7-thing
 export REVIEW_TEST_TITLE='chore: thing (#7)'
 
-# Throwaway repos run no hooks, like the other script tests; commits use the global identity.
+# Throwaway repos run no hooks unless a case turns them on; commits use the global identity.
 quiet_repo() { git -C "$1" config core.hooksPath /dev/null; }
 
-# origin: main has a check.sh that logs each run; the main checkout clones it.
+# origin: main has a check.sh that logs the tree it ran on; the main checkout clones it.
 origin=$tmp/origin.git
 work=$tmp/work
 git init -q --bare "$origin"
@@ -48,7 +54,7 @@ cd "$work"
 mkdir -p scripts .github
 cat >scripts/check.sh <<'CHK'
 #!/usr/bin/env bash
-echo "ran on $(git rev-parse --short 'HEAD^{tree}')" >>"$REVIEW_TEST_RUNS"
+echo "ran on $(git write-tree)" >>"$REVIEW_TEST_RUNS"
 [[ -f FAIL_CHECK ]] && exit 1
 exit 0
 CHK
@@ -93,59 +99,110 @@ expect() {
   for needle in "$@"; do grep -F -q -- "$needle" "$tmp/out" || fail "$name" "output missing: $needle"; done
   printf 'ok: %s (exit %s)\n' "$name" "$code"
 }
+absent() { grep -F -q -- "$2" "$tmp/out" && fail "$1" "output has: $2"; return 0; }
 runs() { grep -c . "$REVIEW_TEST_RUNS" || true; }
+want_runs() { [[ $(runs) -eq "$2" ]] || fail "$1" "check ran $(runs) times, want $2"; }
+patch_id() { grep -oE 'patch id [0-9a-f]+' "$tmp/out" | head -1; }
+# The tree a squash merge of the PR into main lands, computed independently of the script.
+merge_tree() { git -C "$work" merge-tree --write-tree main "$REVIEW_TEST_BRANCH"; }
+pr_commit() { git -C "$work" add -A && git -C "$work" commit -q -m "$1" && git -C "$work" push -q -f origin "$REVIEW_TEST_BRANCH:refs/pull/1/head"; }
+main_commit() { git -C "$work" checkout -q main && git -C "$work" add -A && git -C "$work" commit -q -m "$1" && git -C "$work" push -q origin main && git -C "$work" checkout -q "$REVIEW_TEST_BRANCH"; }
 
 run --no-install
 expect "behind main merges and passes" 0 "branch is behind main; the checks run on the merge" "merges cleanly" "lint, typecheck, test passed" "RESULT: OK (patch id"
-[[ $(runs) -eq 1 ]] || fail "behind main" "check ran $(runs) times, want 1"
-if grep -q "ran on $(git -C "$main_checkout" rev-parse --short 'origin/main^{tree}')" "$REVIEW_TEST_RUNS"; then
-  fail "behind main" "check ran on main's tree, not the merge"
-fi
-patch1=$(grep -oE 'patch id [0-9a-f]+' "$tmp/out" | head -1)
+want_runs "behind main" 1
+grep -q "ran on $(merge_tree)" "$REVIEW_TEST_RUNS" || fail "behind main" "check did not run on the merge tree $(merge_tree)"
+patch1=$(patch_id)
 
 run --no-install
 expect "same tree is cached" 0 "(cached; --no-cache reruns)" "RESULT: OK"
-[[ $(runs) -eq 1 ]] || fail "cached" "check ran $(runs) times, want 1"
+want_runs "cached" 1
 
 run --no-install --no-cache
 expect "--no-cache reruns" 0 "lint, typecheck, test passed"
-[[ $(runs) -eq 2 ]] || fail "no-cache" "check ran $(runs) times, want 2"
+want_runs "no-cache" 2
 
-# A rebase that keeps the same hunks keeps the patch id and lands the same tree, so the cache still hits.
+# A rebase that keeps the diff text keeps the patch id and lands the same tree, so the cache still hits.
 git -C "$work" checkout -q "$REVIEW_TEST_BRANCH"
 git -C "$work" rebase -q main
 git -C "$work" push -q -f origin "$REVIEW_TEST_BRANCH:refs/pull/1/head"
 run --no-install
 expect "rebased same patch" 0 "branch contains the latest main" "(cached; --no-cache reruns)" "$patch1"
-[[ $(runs) -eq 2 ]] || fail "rebased" "check ran $(runs) times, want 2"
+want_runs "rebased" 2
 
-# A checklist FAIL skips the expensive check.
+# main moves again without touching the PR: same patch id, new merge tree, so the check runs once more.
+echo third >"$work/file.txt"
+main_commit "main moves again"
+run --no-install
+expect "fresh main keeps the patch id" 0 "branch is behind main" "lint, typecheck, test passed" "$patch1"
+want_runs "fresh main" 3
+
+# A change in whitespace only is a different patch. A requested change is a soft FAIL: the checks still run and are
+# cached for the rerun after it clears.
+printf 'change \n' >"$work/other.txt"
+pr_commit "trailing space"
+REVIEW_TEST_CHANGES=1 run --no-install
+expect "requested changes still runs the check" 1 "a reviewer has requested changes" "lint, typecheck, test passed" "RESULT: FAIL"
+absent "soft fail" "skipped the full check"
+absent "soft fail" "(cached;"
+[[ "$(patch_id)" != "$patch1" ]] || fail "whitespace" "patch id unchanged: $patch1"
+want_runs "soft fail" 4
+run --no-install
+expect "cleared request hits the cache" 0 "(cached; --no-cache reruns)"
+want_runs "cleared" 4
+
+# A checklist FAIL that needs a new push skips the expensive check, but the merge still runs.
 REVIEW_TEST_TITLE='bad title' run --no-install
-expect "checklist FAIL skips the check" 1 "skipped the full check" "RESULT: FAIL"
-[[ $(runs) -eq 2 ]] || fail "checklist fail" "check ran $(runs) times, want 2"
+expect "checklist FAIL skips the check" 1 "merges cleanly" "skipped the full check" "RESULT: FAIL"
+want_runs "checklist fail" 4
 
-# A conflicting PR fails without running the check.
-git -C "$work" checkout -q main
-echo conflict >"$work/other.txt"
-git -C "$work" add -A && git -C "$work" commit -q -m "conflicts with the PR"
-git -C "$work" push -q origin main
+# The PR's own hooks never run: the merge makes no commit.
+mkdir -p "$work/.githooks"
+printf '#!/usr/bin/env bash\necho PR_HOOK_RAN >&2\nexit 1\n' >"$work/.githooks/commit-msg"
+printf '#!/usr/bin/env bash\necho PR_HOOK_RAN >&2\nexit 1\n' >"$work/.githooks/pre-merge-commit"
+chmod +x "$work/.githooks/"*
+pr_commit "add failing hooks"
+git -C "$main_checkout" config core.hooksPath .githooks
 run --no-install
-expect "merge conflict" 1 "does not merge cleanly with main; author must rebase" "RESULT: FAIL"
-[[ $(runs) -eq 2 ]] || fail "conflict" "check ran $(runs) times, want 2"
+expect "PR hooks do not run during the merge" 0 "merges cleanly" "RESULT: OK"
+grep -q PR_HOOK_RAN "$tmp/err" && fail "hooks" "a PR hook ran"
+quiet_repo "$main_checkout"
+want_runs "hooks" 5
 
-# A failing check is not cached.
-git -C "$work" checkout -q "$REVIEW_TEST_BRANCH"
-git -C "$work" reset -q --hard main
-echo change >"$work/other.txt"
+# A failed install is a FAIL and is never cached, even though the check itself passed.
+echo '{}' >"$work/package.json"; : >"$work/pnpm-lock.yaml"
+pr_commit "add a package.json"
+REVIEW_TEST_PNPM_EXIT=1 run
+expect "failed install fails" 1 "dependency install failed (pnpm install --frozen-lockfile)" "lint, typecheck, test passed" "RESULT: FAIL"
+want_runs "failed install" 6
+REVIEW_TEST_PNPM_EXIT=1 run
+expect "failed install is not cached" 1 "dependency install failed" "RESULT: FAIL"
+want_runs "failed install rerun" 7
+run
+expect "install passes" 0 "lint, typecheck, test passed" "RESULT: OK"
+want_runs "install passes" 8
+run
+expect "install pass is cached" 0 "(cached; --no-cache reruns)"
+want_runs "install cached" 8
+
+# A PR cannot weaken the gate: main's check.sh runs, not the PR's copy.
+printf '#!/usr/bin/env bash\nexit 0\n' >"$work/scripts/check.sh"
 touch "$work/FAIL_CHECK"
-git -C "$work" add -A && git -C "$work" commit -q -m "break the check"
-git -C "$work" push -q -f origin "$REVIEW_TEST_BRANCH:refs/pull/1/head"
+pr_commit "replace check.sh and break the check"
 run --no-install
-expect "failing check" 1 "scripts/check.sh failed" "RESULT: FAIL"
-before=$(runs)
+expect "main's check.sh runs, not the PR's" 1 "scripts/check.sh failed" "RESULT: FAIL"
+want_runs "gate" 9
 run --no-install
 expect "failing check is not cached" 1 "scripts/check.sh failed"
-[[ $(runs) -eq $((before + 1)) ]] || fail "not cached" "check ran $(runs) times, want $((before + 1))"
+want_runs "not cached" 10
+
+# A conflicting PR fails without running the check and names the file.
+git -C "$work" checkout -q main
+echo conflict-main >"$work/other.txt"
+git -C "$work" add -A && git -C "$work" commit -q -m "conflicts with the PR" && git -C "$work" push -q origin main
+run --no-install
+expect "merge conflict" 1 "does not merge cleanly with main; author must rebase" "resolve: other.txt" "RESULT: FAIL"
+want_runs "conflict" 10
 
 if git -C "$main_checkout" worktree list | grep -q review-pr-; then fail "cleanup" "review worktree left behind"; fi
 echo "all review-pr tests passed"

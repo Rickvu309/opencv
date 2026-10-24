@@ -70,7 +70,7 @@ There is no CI and no GitHub Actions. Local hooks (`.githooks/`) and the review 
 
 - Merge only with squash: `gh pr merge --squash`.
 - An agent running under the owner's account (`@quanvu309`) merges its own PR with `gh pr merge <pr#> --squash --admin` only after `scripts/review-pr.sh` prints OK and the gates lane report at the exact head is green; never before. The ruleset's one-approval rule cannot be met by the only human approving their own agent's PR, so `--admin` is the bypass; it skips the ruleset, so it also needs an independent review with no open finding and no requested changes or unresolved threads. Never use it for a contributor's PR or a result of `HUMAN REQUIRED`.
-- `scripts/review-pr.sh` prints a patch id that a rebase keeps as long as the hunks stay the same. The independent review and the verify evidence name the patch id they cover and stay valid while it is unchanged, so a rebase or a fresh `main` that keeps the patch id needs no new review or verify round, only a rerun of `scripts/review-pr.sh` (cached when the tested tree is unchanged).
+- `scripts/review-pr.sh` prints a patch id that a rebase keeps as long as the diff text stays the same, whitespace included. The independent review and the verify evidence name the patch id they cover and stay valid while it is unchanged, so a rebase or a fresh `main` that keeps the patch id needs no new review or verify round, only a rerun of `scripts/review-pr.sh` (free when the merge tree is unchanged). Before merging, rerun it if `origin/main` is no longer the commit its OK line printed, and merge with `--match-head-commit <head sha>`.
 - After merge, the issue closes and the remote branch is deleted automatically.
 - From the main checkout: `scripts/cleanup-worktree.sh <issue#>`.
 

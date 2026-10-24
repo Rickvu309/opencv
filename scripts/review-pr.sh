@@ -8,8 +8,8 @@
 #
 # The checks run on the merge of origin/main and the PR head, which is what a squash merge lands, so a branch behind
 # main needs no rebase. Only a merge conflict does. A passing check is cached by the tested tree (--no-cache reruns it).
-# The patch id it prints is stable across a rebase that keeps the same hunks; record it with the independent review and
-# the verify evidence so they stay valid for the same patch on a new base.
+# The patch id it prints is stable across a rebase that leaves the diff text unchanged; record it with the independent
+# review and the verify evidence so they stay valid for the same patch on a new base.
 #
 # Exit code:
 #   0  OK to merge (after you confirm the verify-opencv evidence and the independent review is clean)
@@ -32,6 +32,9 @@ die() { echo "error: $*" >&2; exit 1; }
 fails=(); humans=(); notes=()
 ok()    { echo "  ok    $*"; }
 bad()   { echo "  FAIL  $*"; fails+=("$*"); }
+# A soft FAIL clears without a new push (a review thread, a requested change), so the checks still run and get cached.
+soft_fails=0
+soft_bad() { bad "$*"; soft_fails=$((soft_fails + 1)); }
 human() { echo "  HUMAN $*"; humans+=("$*"); }
 note()  { echo "  note  $*"; notes+=("$*"); }
 
@@ -135,11 +138,11 @@ while read -r unit; do
 done < <(grep -E '^(apps|packages)/[^/]+/' <<<"$deleted_list" | cut -d/ -f1-2 | sort -u)
 
 changes=$(gh pr view "$pr" --json reviews --jq '[.reviews[] | select(.state != "COMMENTED" and .state != "PENDING")] | group_by(.author.login) | map(last) | map(select(.state == "CHANGES_REQUESTED")) | length')
-if (( changes > 0 )); then bad "a reviewer has requested changes"; else ok "no reviewer has requested changes"; fi
+if (( changes > 0 )); then soft_bad "a reviewer has requested changes"; else ok "no reviewer has requested changes"; fi
 slug=$(gh repo view --json owner,name --jq '.owner.login + " " + .name')
 read -r repo_owner repo_short <<<"$slug"
 open_threads=$(gh api graphql -F n="$pr" -f o="$repo_owner" -f r="$repo_short" -f query='query($o:String!,$r:String!,$n:Int!){repository(owner:$o,name:$r){pullRequest(number:$n){reviewThreads(first:100){pageInfo{hasNextPage} nodes{isResolved}}}}}' --jq '.data.repository.pullRequest.reviewThreads | ([.nodes[] | select(.isResolved == false)] | length) + (if .pageInfo.hasNextPage then 100 else 0 end)') || die "cannot read review threads"
-if (( open_threads > 0 )); then bad "$open_threads unresolved review thread(s)"; else ok "no unresolved review threads"; fi
+if (( open_threads > 0 )); then soft_bad "$open_threads unresolved review thread(s)"; else ok "no unresolved review threads"; fi
 
 # CODEOWNERS from origin/main (not the PR's copy). The catch-all line is ignored; see codeowners-lib.sh.
 owners=$(git -C "$main_checkout" show origin/main:.github/CODEOWNERS 2>/dev/null || true)
@@ -160,10 +163,10 @@ gate=$(grep -E '^(package\.json|scripts/|\.githooks/|\.github/)' <<<"$files" || 
 echo
 echo "Merge with main and checks"
 main_sha=$(git -C "$main_checkout" rev-parse origin/main)
-merge_base=$(git -C "$main_checkout" merge-base origin/main "$head_ref")
-# A patch id is stable across a rebase that leaves the hunks unchanged, so a review verdict or verify evidence recorded
-# against it stays valid for the same patch on a new base.
-patch_id=$(git -C "$main_checkout" diff "$merge_base" "$head_ref" | git patch-id --stable | cut -d' ' -f1)
+merge_base=$(git -C "$main_checkout" merge-base origin/main "$head_ref") || die "PR #$pr has no common ancestor with main"
+# --verbatim hashes the diff text without line numbers, so the id survives a rebase that leaves every hunk's text the
+# same (whitespace included) and changes with anything a reviewer would need to read again.
+patch_id=$(git -C "$main_checkout" diff "$merge_base" "$head_ref" | git patch-id --verbatim | cut -d' ' -f1)
 echo "  main ${main_sha:0:12}   patch id ${patch_id:-none}"
 if git -C "$main_checkout" merge-base --is-ancestor origin/main "$head_ref"; then
   ok "branch contains the latest main"
@@ -171,25 +174,33 @@ else
   note "branch is behind main; the checks run on the merge of main and the PR, no rebase needed"
 fi
 
-if [[ ${#fails[@]} -gt 0 ]]; then
-  note "skipped the full check; fix the ${#fails[@]} FAIL item(s) above first"
-else
-  wt="$wt_root/review-pr-$pr"
-  [[ ! -e "$wt" ]] || git -C "$main_checkout" worktree remove --force "$wt"
-  mkdir -p "$wt_root"
-  # Test what a squash merge would land: main with the PR merged in, not the PR head alone.
-  git -C "$main_checkout" worktree add --quiet --detach "$wt" origin/main
-  if git -C "$wt" merge --quiet --no-edit "$head_ref" >/dev/null 2>&1; then
-    tree=$(git -C "$wt" rev-parse 'HEAD^{tree}')
-    ok "merges cleanly with main (tested tree ${tree:0:12})"
+wt="$wt_root/review-pr-$pr"
+checker=""
+cleanup() {
+  [[ -z "$checker" ]] || rm -f "$checker"
+  if [[ -e "$wt" ]] && (( ! keep )); then git -C "$main_checkout" worktree remove --force "$wt" >/dev/null 2>&1 || true; fi
+}
+trap cleanup EXIT
+[[ ! -e "$wt" ]] || git -C "$main_checkout" worktree remove --force "$wt"
+mkdir -p "$wt_root"
+# Test what a squash merge would land: main with the PR merged in, not the PR head alone. No commit is made, so no
+# hook and no git identity take part, and the merged index gives the tree.
+git -C "$main_checkout" worktree add --quiet --detach "$wt" origin/main
+if git -C "$wt" merge --quiet --no-commit --no-ff "$head_ref" >/dev/null 2>&1; then
+  tree=$(git -C "$wt" write-tree)
+  ok "merges cleanly with main (tested tree ${tree:0:12})"
+  if (( ${#fails[@]} > soft_fails )); then
+    note "skipped the full check; fix the FAIL item(s) above first (a review thread or a requested change alone does not skip it)"
+  else
     # Use check.sh from main, not the PR's copy, so a PR can't weaken its own gate. A passing run is cached by the
-    # tested tree and that checker, so a rerun after a rebase or a comment round that lands the same tree is free.
+    # tested tree and that checker, so a rerun that lands the same tree is free. Only a run with no FAIL is cached.
     checker_blob=$(git -C "$main_checkout" rev-parse --verify --quiet origin/main:scripts/check.sh || true)
     cache_dir="$wt_root/.review-pr-cache"
-    cache_hit="$cache_dir/$tree-$checker_blob"
+    cache_hit="$cache_dir/$tree-$checker_blob-install$install"
     if (( use_cache )) && [[ -n "$checker_blob" && -f "$cache_hit" ]]; then
       ok "lint, typecheck, test passed for this exact tree on $(cat "$cache_hit") (cached; --no-cache reruns)"
     else
+      fails_before=${#fails[@]}
       [[ -f "$wt/.env.example" ]] && cp "$wt/.env.example" "$wt/.env"
       if (( install )) && [[ -f "$wt/package.json" ]]; then
         if   [[ -f "$wt/pnpm-lock.yaml" ]];    then cmd=(pnpm install --frozen-lockfile)
@@ -205,20 +216,21 @@ else
         # A stray CHECK_DRY_RUN, CHECK_BASE_REF in the reviewer shell must not turn the full run into a no-op.
         if (cd "$wt" && env -u CHECK_DRY_RUN -u CHECK_BASE_REF "$checker"); then
           ok "lint, typecheck, test passed"
-          mkdir -p "$cache_dir" && date -u +%Y-%m-%dT%H:%M:%SZ >"$cache_hit"
+          if (( ${#fails[@]} == fails_before )); then mkdir -p "$cache_dir" && date -u +%Y-%m-%dT%H:%M:%SZ >"$cache_hit"; fi
         else
           bad "scripts/check.sh failed"
         fi
-        rm -f "$checker"
+        rm -f "$checker"; checker=""
       else
         note "no scripts/check.sh on main; run the project's checks by hand"
       fi
     fi
-  else
-    bad "does not merge cleanly with main; author must rebase (git rebase origin/main) and resolve the conflicts"
   fi
-  if (( keep )); then note "review worktree kept at $wt"; else git -C "$main_checkout" worktree remove --force "$wt"; fi
+else
+  conflicts=$(git -C "$wt" diff --name-only --diff-filter=U 2>/dev/null | tr '\n' ' ')
+  bad "does not merge cleanly with main; author must rebase (git rebase origin/main) and resolve: ${conflicts:-see git merge origin/main}"
 fi
+if (( keep )); then note "review worktree kept at $wt"; else git -C "$main_checkout" worktree remove --force "$wt"; fi
 
 echo
 echo "Verification"
