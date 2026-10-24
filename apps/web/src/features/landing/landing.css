@@ -1,28 +1,86 @@
 .landing-root {
-  --landing-h1-desktop: 3.5rem;
-  --landing-h1-mobile: 2.5rem;
+  --landing-h1-desktop: 4rem;
+  --landing-h1-mobile: clamp(2rem, 10vw, 3rem);
+}
+
+.landing-frame {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 1440px;
+  padding-inline: 1.5rem;
 }
 
 .landing-h1 {
   font-size: var(--landing-h1-mobile);
-  line-height: 1.1;
+  line-height: 1.125;
   letter-spacing: -0.025em;
   font-weight: 500;
   text-wrap: balance;
 }
 
+.landing-section-title {
+  font-size: 2rem;
+  line-height: 2.25rem;
+  letter-spacing: -0.022em;
+  font-weight: 500;
+  text-wrap: balance;
+}
+
+.landing-statement {
+  font-size: 2rem;
+  line-height: 2.4rem;
+  letter-spacing: -0.022em;
+  font-weight: 500;
+}
+
+.landing-close {
+  font-size: 2.5rem;
+  line-height: 2.75rem;
+  letter-spacing: -0.022em;
+  font-weight: 500;
+  text-wrap: balance;
+}
+
 @media (min-width: 48rem) {
+  .landing-frame {
+    padding-inline: 3rem;
+  }
+
   .landing-h1 {
     font-size: var(--landing-h1-desktop);
+    line-height: 4.5rem;
+  }
+
+  .landing-section-title {
+    font-size: 3rem;
+    line-height: 3rem;
+  }
+
+  .landing-statement {
+    font-size: 3rem;
+    line-height: 3.25rem;
+  }
+
+  .landing-close {
+    font-size: 4.5rem;
+    line-height: 4.5rem;
+  }
+}
+
+@media (min-width: 80rem) {
+  .landing-frame {
+    padding-inline: 4rem;
   }
 }
 
 .landing-link {
-  transition: color 160ms ease-out;
+  transition: color var(--duration-micro) var(--ease-micro);
 }
 
-.landing-fade {
-  mask-image: linear-gradient(to bottom, black 78%, transparent);
+.landing-nav {
+  transition-property: background-color, border-color;
+  transition-duration: var(--duration-micro);
+  transition-timing-function: var(--ease-micro);
 }
 
 @media (prefers-reduced-motion: no-preference) {

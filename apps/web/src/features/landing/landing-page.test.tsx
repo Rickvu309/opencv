@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { cleanup, screen, waitFor, within } from "@testing-library/react"
+import { cleanup, screen, waitFor } from "@testing-library/react"
 
 import { setMockSession } from "@/test/auth-client-mock.ts"
 import { renderApp } from "@/test/render-app.tsx"
@@ -9,6 +9,38 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
+const HEADLINE = "Get your butt in your dream seat."
+const SUBHEAD = "Turn what you’ve done into proof. Turn proof into interviews."
+const STATEMENT_REST =
+  "OpenCV helps you say it properly: clear proof of your work, then a CV, letter and page for the role you want."
+const TITLE = "OpenCV — Get your butt in your dream seat."
+
+const SURFACES = [
+  {
+    title: "Capture your work",
+    srcs: ["/landing/coach.webp", "/landing/coach-act.webp"],
+  },
+  { title: "Write with a coach", srcs: ["/landing/paper.webp"] },
+  { title: "Plan your search", srcs: ["/landing/apply.webp"] },
+  { title: "Share your work", srcs: ["/landing/pitch.webp"] },
+] as const
+
+function follows(earlier: Element, later: Element) {
+  return (
+    (earlier.compareDocumentPosition(later) &
+      Node.DOCUMENT_POSITION_FOLLOWING) !==
+    0
+  )
+}
+
+function sectionOf(heading: HTMLElement) {
+  const section = heading.closest("section")
+  if (!(section instanceof HTMLElement)) {
+    throw new Error("heading is outside a section")
+  }
+  return section
+}
+
 async function renderLanding() {
   setMockSession(null)
   const view = renderApp("/")
@@ -17,137 +49,154 @@ async function renderLanding() {
 }
 
 describe("landing page", () => {
-  it("keeps a signed-out visitor on / under the headline", async () => {
+  it("keeps a signed-out visitor on / under the new headline", async () => {
     const { router, headline } = await renderLanding()
 
-    expect(headline).toHaveTextContent(
-      "A first-job coach for Vietnamese students and new graduates."
-    )
-    expect(
-      screen.getByText(
-        "OpenCV is a coach with a CV editor, an application board and a public page for your work. You write the CV with the coach, then send each application and track every answer."
-      )
-    ).toBeInTheDocument()
+    expect(headline).toHaveTextContent(HEADLINE)
+    expect(headline.querySelectorAll("br")).toHaveLength(1)
+    expect(screen.getByText(SUBHEAD)).toBeInTheDocument()
     expect(router.state.location.pathname).toBe("/")
   })
 
-  it("sets the document title and description", async () => {
+  it("sets the document title and description from the new copy", async () => {
     await renderLanding()
 
     await waitFor(() => {
-      expect(document.title).toBe(
-        "OpenCV, a first-job coach for Vietnamese students and new graduates"
-      )
+      expect(document.title).toBe(TITLE)
     })
     expect(
       document.head.querySelector('meta[name="description"]')
-    ).toHaveAttribute(
-      "content",
-      "OpenCV is a coach with a CV editor, an application board and a public page for your work. You write the CV with the coach, then send each application and track every answer."
-    )
+    ).toHaveAttribute("content", `${SUBHEAD} ${STATEMENT_REST}`)
   })
 
-  it("links Start with a coach to sign-up and Sign in to sign-in", async () => {
+  it("sends Get started to sign-up and Log in to sign-in", async () => {
     await renderLanding()
 
-    const startLinks = screen.getAllByRole("link", {
-      name: "Start with a coach",
-    })
-    expect(startLinks).toHaveLength(3)
+    const startLinks = screen.getAllByRole("link", { name: "Get started" })
+    expect(startLinks).toHaveLength(2)
     for (const link of startLinks) {
       expect(link).toHaveAttribute("href", "/sign-up")
     }
 
-    const signIn = screen.getAllByRole("link", { name: "Sign in" })
-    expect(signIn.length).toBeGreaterThanOrEqual(2)
-    for (const link of signIn) {
+    const logIn = screen.getAllByRole("link", { name: "Log in" })
+    expect(logIn).toHaveLength(2)
+    for (const link of logIn) {
       expect(link).toHaveAttribute("href", "/sign-in")
     }
   })
 
-  it("shows the four surfaces in order, each with one screenshot", async () => {
+  it("anchors Product and the four surfaces on the page", async () => {
     await renderLanding()
 
-    const titles = [
-      "Coach. Find the role to apply for.",
-      "Paper. Write the CV beside the coach.",
-      "Apply. Track every application.",
-      "Pitch. Share one page of your work.",
-    ]
+    const anchors = screen
+      .getByRole("navigation", { name: "Primary" })
+      .querySelectorAll("a")
+    expect(
+      [...anchors].map((anchor) => [
+        anchor.textContent,
+        anchor.getAttribute("href"),
+      ])
+    ).toEqual([
+      ["Product", "#product"],
+      ["Coach", "#coach"],
+      ["Paper", "#paper"],
+      ["Apply", "#apply"],
+      ["Pitch", "#pitch"],
+    ])
+
+    expect(document.getElementById("product")).toBeInstanceOf(HTMLElement)
+    for (const id of ["coach", "paper", "apply", "pitch"]) {
+      expect(document.getElementById(id)).toBeInstanceOf(HTMLElement)
+    }
+  })
+
+  it("places the chair, the statement, the figures, then real screenshots", async () => {
+    const { container } = await renderLanding()
+
+    const chair = screen.getByRole("img", { name: /leather armchair/i })
+    expect(chair).toHaveAttribute("src", "/landing/chair.webp")
+    const statement = screen.getByText("You’ve done more than your CV says.")
+    const figures = container.querySelector("[data-slot='landing-figures']")
+    const capture = screen.getByRole("heading", {
+      level: 2,
+      name: "Capture your work",
+    })
+    if (!(figures instanceof HTMLElement)) {
+      throw new Error("missing figures slot")
+    }
+
+    expect(follows(chair, statement)).toBe(true)
+    expect(follows(statement, figures)).toBe(true)
+    expect(follows(figures, capture)).toBe(true)
+
     const headings = screen
       .getAllByRole("heading", { level: 2 })
       .map((heading) => heading.textContent)
-    expect(headings).toEqual(titles)
+    const indexes = SURFACES.map((surface) => headings.indexOf(surface.title))
+    expect(indexes.every((index) => index >= 0)).toBe(true)
+    expect([...indexes].sort((a, b) => a - b)).toEqual(indexes)
 
-    for (const title of titles) {
-      const section = screen
-        .getByRole("heading", {
-          level: 2,
-          name: (name) => name.replace(/\.\s*/, ". ") === title,
-        })
-        .closest("section")
-      expect(section).not.toBeNull()
-      expect(within(section!).getAllByRole("img")).toHaveLength(1)
+    for (const surface of SURFACES) {
+      const section = sectionOf(
+        screen.getByRole("heading", { level: 2, name: surface.title })
+      )
+      const sources = [...section.querySelectorAll("img")].map((image) =>
+        image.getAttribute("src")
+      )
+      expect(sources).toEqual([...surface.srcs])
     }
-
-    const anchors = within(
-      screen.getByRole("navigation", { name: "Surfaces" })
-    ).getAllByRole("link")
-    expect(anchors.map((a) => a.getAttribute("href"))).toEqual([
-      "#coach",
-      "#paper",
-      "#apply",
-      "#pitch",
-    ])
   })
 
-  it("answers the generic CV doubt before the first surface", async () => {
+  it("keeps the close as plain text with one primary action", async () => {
     await renderLanding()
 
-    const objection = screen.getByText(
-      "Answers come from your CV and goals, and you edit every line."
-    )
-    const coach = screen.getByRole("heading", { level: 2, name: /^Coach/ })
-    expect(
-      objection.compareDocumentPosition(coach) &
-        Node.DOCUMENT_POSITION_FOLLOWING
-    ).toBeTruthy()
-  })
-
-  it("keeps the closing line as plain text with one primary action", async () => {
-    await renderLanding()
-
-    const closing = screen.getByText(
-      "Write the CV, send it, and keep every answer in one place. Free today."
-    )
+    const closing = screen.getByText(/Be the obvious hire\./)
     expect(closing.tagName).toBe("P")
-    expect(closing.children).toHaveLength(0)
+    expect(closing.querySelector("br")).not.toBeNull()
+    const region = closing.closest("section")
+    if (!(region instanceof HTMLElement)) {
+      throw new Error("close is outside a section")
+    }
     expect(
-      screen.queryByText("Knows your story", { exact: false })
-    ).not.toBeInTheDocument()
+      [...region.querySelectorAll("a")].map((link) => link.textContent)
+    ).toEqual(["Get started"])
   })
 
   it("leaves out sections the product cannot back up", async () => {
     await renderLanding()
 
     expect(document.body).not.toHaveTextContent(
-      /pricing|testimonial|changelog/i
+      /pricing|testimonial|changelog|voice notes|see a sample|linked sources/i
     )
+    expect(
+      screen.queryByRole("link", { name: /^blog$/i })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("link", { name: /^help$/i })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("link", { name: /pricing/i })
+    ).not.toBeInTheDocument()
     expect(
       screen.queryByRole("combobox", { name: /language/i })
     ).not.toBeInTheDocument()
     expect(
-      screen.queryByRole("button", { name: /language|english|tiếng việt/i })
+      screen.queryByText(
+        "A first-job coach for Vietnamese students and new graduates."
+      )
     ).not.toBeInTheDocument()
   })
 
-  it("describes every image and stays on the light theme", async () => {
+  it("names every photo and every role=img graphic, and stays light", async () => {
     const { container } = await renderLanding()
 
-    const images = screen.getAllByRole("img")
-    expect(images.length).toBeGreaterThanOrEqual(5)
-    for (const image of images) {
-      expect(image.getAttribute("alt")?.trim()).toBeTruthy()
+    const graphics = container.querySelectorAll("img, [role='img']")
+    expect(graphics.length).toBeGreaterThanOrEqual(6)
+    for (const node of graphics) {
+      if (node.getAttribute("aria-hidden") === "true") continue
+      const name =
+        node.getAttribute("alt") ?? node.getAttribute("aria-label") ?? ""
+      expect(name.trim().length).toBeGreaterThan(0)
     }
     expect(container.querySelector(".dark")).toBeNull()
     expect(document.documentElement).not.toHaveClass("dark")
@@ -162,10 +211,7 @@ describe("index route guard", () => {
       expect(router.state.location.pathname).toBe("/app")
     })
     expect(
-      screen.queryByRole("heading", {
-        level: 1,
-        name: "A first-job coach for Vietnamese students and new graduates.",
-      })
+      screen.queryByRole("heading", { level: 1, name: HEADLINE })
     ).not.toBeInTheDocument()
   })
 })

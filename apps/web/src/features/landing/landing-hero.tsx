@@ -1,52 +1,30 @@
-import { Link } from "@tanstack/react-router"
-
-import { buttonVariants } from "@workspace/ui/components/button"
-import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
-import { cn } from "@workspace/ui/lib/utils"
-
 import {
-  LANDING_HEADLINE,
-  LANDING_HERO_SHOT,
-  LANDING_OBJECTION,
-  LANDING_PRIMARY_LABEL,
+  LANDING_CHAIR,
+  LANDING_HEADLINE_LINES,
   LANDING_SUBHEAD,
 } from "./landing-copy.ts"
-import { LandingShot } from "./landing-surface.tsx"
 
 export function LandingHero() {
   return (
-    <section className="pt-28 pb-0">
-      <div className="mx-auto w-full max-w-[1344px] px-4 md:px-8">
-        <h1 className="landing-h1 max-w-4xl font-sans">{LANDING_HEADLINE}</h1>
-        <p className="mt-5 max-w-3xl text-base text-pretty text-muted-foreground md:text-lg">
+    <section className="pt-16 md:pt-28 lg:pt-40">
+      <div className="landing-frame">
+        <h1 className="landing-h1 max-w-3xl text-left font-sans">
+          {LANDING_HEADLINE_LINES[0]} <br />
+          {LANDING_HEADLINE_LINES[1]}
+        </h1>
+        <p className="mt-8 max-w-3xl text-base leading-6 text-pretty text-muted-foreground">
           {LANDING_SUBHEAD}
         </p>
-        <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-1">
-          <Link
-            to="/sign-up"
-            className={cn(
-              buttonVariants({ size: "lg" }),
-              "h-11 px-5 text-base"
-            )}
-          >
-            {LANDING_PRIMARY_LABEL}
-          </Link>
-          <Link
-            to="/sign-in"
-            className={cn(
-              "landing-link inline-flex h-11 items-center rounded-md px-1 text-base text-muted-foreground hover:text-foreground",
-              FOCUS_RING
-            )}
-          >
-            Sign in
-          </Link>
-        </div>
-        <p className="mt-4 max-w-xl text-sm text-pretty text-muted-foreground">
-          {LANDING_OBJECTION}
-        </p>
-        <div className="mt-8 md:mt-10">
-          <LandingShot shot={LANDING_HERO_SHOT} priority />
-        </div>
+        <img
+          src={LANDING_CHAIR.src}
+          alt={LANDING_CHAIR.alt}
+          width={LANDING_CHAIR.width}
+          height={LANDING_CHAIR.height}
+          loading="eager"
+          fetchPriority="high"
+          decoding="async"
+          className="mt-16 aspect-[7/4] w-full rounded-2xl border border-border object-cover object-[center_58%] md:mt-20"
+        />
       </div>
     </section>
   )
