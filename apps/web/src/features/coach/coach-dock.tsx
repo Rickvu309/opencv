@@ -292,8 +292,9 @@ export function CoachDock({
   return (
     <div className="relative w-full">
       <div
+        data-slot="coach-composer"
         className={cn(
-          "border border-border/80 bg-background shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-[border-radius,padding] focus-within:border-border focus-within:shadow-[0_2px_8px_rgba(0,0,0,0.06)]",
+          "border border-border/80 bg-background shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-[border-radius,padding] focus-within:border-border focus-within:shadow-[0_2px_8px_rgba(0,0,0,0.06)] has-focus-visible:border-ring has-focus-visible:ring-3 has-focus-visible:ring-ring/50",
           expanded
             ? "flex flex-col rounded-[1.25rem] px-4 pt-3.5 pb-2.5"
             : "flex min-h-[3.25rem] items-center gap-1 rounded-full px-2.5 py-2"

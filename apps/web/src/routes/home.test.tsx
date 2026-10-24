@@ -236,4 +236,21 @@ describe("Home idle", () => {
       screen.queryByRole("button", { name: /follow.?up email/i })
     ).not.toBeInTheDocument()
   })
+
+  it("shows the same keyboard focus ring on the composer as the other controls", async () => {
+    renderApp()
+    await expectHomeIdle()
+
+    const composer = screen.getByRole("textbox", { name: "Message Coach" })
+    composer.focus()
+    expect(composer).toHaveFocus()
+
+    const frame = composer.closest("[data-slot='coach-composer']")
+    expect(frame).not.toBeNull()
+    expect(frame).toHaveClass(
+      "has-focus-visible:ring-3",
+      "has-focus-visible:ring-ring/50",
+      "has-focus-visible:border-ring"
+    )
+  })
 })
