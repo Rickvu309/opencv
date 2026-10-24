@@ -407,7 +407,7 @@ const css = /* css */ `
   --ui-seg-line: var(--border);
   --ui-seg-ink: var(--foreground);
   --ui-seg-text: var(--foreground);
-  --ui-seg-soft: var(--muted-foreground);
+  --ui-seg-soft: color-mix(in oklab, var(--foreground) 75%, transparent);
   --ui-seg-muted: var(--muted-foreground);
   --ui-seg-count: color-mix(in oklab, var(--foreground) 8%, transparent);
   --ui-seg-pill-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.08), 0 2px 8px -2px rgba(0, 0, 0, 0.06);
