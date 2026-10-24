@@ -30,7 +30,7 @@ export function NavProfile({ collapsed, onNavigate }: Props) {
   const avatar = (
     <Avatar size="sm" className="size-7 rounded-md after:rounded-md">
       {data?.user.image ? <AvatarImage src={data.user.image} alt="" /> : null}
-      <AvatarFallback className="rounded-md text-xs font-medium">
+      <AvatarFallback className="rounded-md text-xs font-medium text-foreground">
         {initials}
       </AvatarFallback>
     </Avatar>
