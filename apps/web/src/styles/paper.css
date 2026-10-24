@@ -183,8 +183,8 @@
     outline: none;
     border-radius: var(--radius-sm);
     transition:
-      background-color var(--duration-fast) var(--ease-standard),
-      box-shadow var(--duration-fast) var(--ease-standard);
+      background-color var(--duration-base) var(--ease-standard),
+      box-shadow var(--duration-base) var(--ease-standard);
   }
 
   .paper-canvas-field:focus {
@@ -207,7 +207,7 @@
 
   .paper-canvas-affordance {
     opacity: 0;
-    transition: opacity var(--duration-fast) var(--ease-standard);
+    transition: opacity var(--duration-base) var(--ease-standard);
   }
 
   .paper-canvas-block:hover .paper-canvas-affordance,

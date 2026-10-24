@@ -310,7 +310,7 @@ describe("paper canvas affordance CSS (QVE-207)", () => {
     const end = paperCss.indexOf("QVE-208")
     const chrome = paperCss.slice(start, end).replace(/\/\*[\s\S]*?\*\//g, "")
     expect(chrome).toContain(".paper-canvas-affordance")
-    expect(chrome).toContain("var(--duration-fast)")
+    expect(chrome).toContain("var(--duration-base)")
     expect(chrome).not.toMatch(/var\(--info\)/)
     expect(chrome).not.toMatch(/rounded-full/)
     expect(chrome).not.toMatch(/bg-muted\/70/)
