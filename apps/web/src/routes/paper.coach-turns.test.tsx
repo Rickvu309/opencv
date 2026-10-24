@@ -277,7 +277,7 @@ describe("Paper Coach turns", () => {
     expect(rewrite).toBeDisabled()
 
     const canvas = within(editor).getByRole("textbox", {
-      name: "Document content",
+      name: "Letter text",
     })
     selectNodeContents(canvas)
 

@@ -217,7 +217,11 @@ export function usePaperDocs() {
 
   return {
     docs,
-    isLoading: listQuery.isPending,
+    isLoading:
+      listQuery.isPending ||
+      (listQuery.data === undefined && listQuery.isFetching),
+    loadFailed: listQuery.isError && !listQuery.isFetching,
+    reload: () => void listQuery.refetch(),
     error,
     revertKey,
     dismissError: () => setError(null),

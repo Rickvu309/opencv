@@ -45,7 +45,7 @@ describe("starter content", () => {
     )
     expect(decoded.ok).toBe(true)
     expect(starterCvDocument().name).toBe(STARTER_CV_PERSON_NAME)
-    expect(STARTER_CV_PERSON_NAME).toBe("Your name")
+    expect(STARTER_CV_PERSON_NAME).toBe("")
     expect(STARTER_CV_NAME).toBe("Sample internship CV")
     expect(flattenStarterCopy()).not.toMatch(PERSONA)
     expect(flattenStarterCopy()).not.toMatch(/cv:v1:|proof:v1:/)

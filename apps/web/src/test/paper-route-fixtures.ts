@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, expect, vi } from "vitest"
+import { afterEach, beforeAll, beforeEach, expect, vi } from "vitest"
 import { cleanup, fireEvent, screen, within } from "@testing-library/react"
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { DESKTOP_MEDIA_QUERY } from "@/features/app-shell/use-media-query.ts"
@@ -128,6 +128,10 @@ export function queryByAttr(root: ParentNode, selector: string) {
 }
 
 export function installPaperTestLifecycle() {
+  beforeAll(async () => {
+    await import("@/features/coach/coach-thread-panel.tsx")
+  }, 60_000)
+
   beforeEach(() => {
     sessionStorage.clear()
     localStorage.clear()

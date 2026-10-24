@@ -169,6 +169,23 @@
     outline-offset: -1px;
   }
 
+  /*
+   * Kit buttons fade every property, box-shadow included, so the focus ring
+   * is not there on the first frame. Paper controls show it at once.
+   */
+  [data-paper-editor] button,
+  [data-coach-float-card] button,
+  button[data-coach-float-pill] {
+    transition-property:
+      color, background-color, border-color, opacity, translate;
+  }
+
+  .paper-coach-suggested {
+    border-radius: var(--radius-sm);
+    background-color: var(--muted);
+    box-shadow: 0 0 0 2px var(--muted);
+  }
+
   .paper-coach-changed {
     border-radius: var(--radius-sm);
     animation: paper-coach-highlight var(--duration-slow) var(--ease-standard);
@@ -183,8 +200,8 @@
     outline: none;
     border-radius: var(--radius-sm);
     transition:
-      background-color var(--duration-fast) var(--ease-standard),
-      box-shadow var(--duration-fast) var(--ease-standard);
+      background-color var(--duration-base) var(--ease-standard),
+      box-shadow var(--duration-base) var(--ease-standard);
   }
 
   .paper-canvas-field:focus {
@@ -207,7 +224,7 @@
 
   .paper-canvas-affordance {
     opacity: 0;
-    transition: opacity var(--duration-fast) var(--ease-standard);
+    transition: opacity var(--duration-base) var(--ease-standard);
   }
 
   .paper-canvas-block:hover .paper-canvas-affordance,
@@ -222,15 +239,6 @@
    */
   .paper-canvas-next-step {
     opacity: 1;
-  }
-
-  /* QVE-186: when CoachFloat is open on desktop, clear the A4 column. */
-  [data-paper-canvas] {
-    transition: padding-right var(--duration-base) var(--ease-standard);
-  }
-
-  [data-paper-canvas][data-coach-float-nudge] {
-    padding-right: min(26rem, 42vw);
   }
 
   /*
@@ -315,10 +323,6 @@
 
     .paper-canvas-field,
     .paper-canvas-affordance {
-      transition: none;
-    }
-
-    [data-paper-canvas] {
       transition: none;
     }
   }

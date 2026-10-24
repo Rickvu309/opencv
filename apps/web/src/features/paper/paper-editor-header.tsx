@@ -58,9 +58,11 @@ export function PaperEditorHeader({
   saving,
   onSave,
 }: Props) {
+  const sample = isSampleCv(doc)
+  const saveIsPrimary = !sample && (dirty || saving)
   return (
     <WorkspaceHeader
-      className="items-center gap-3 px-5 py-3"
+      className="items-center gap-3 px-5 py-2"
       icon={<FileText className="size-4 shrink-0 text-muted-foreground" />}
       title={
         <div className="min-w-0 flex-1">
@@ -75,8 +77,8 @@ export function PaperEditorHeader({
             onKeyDown={(e) => {
               if (e.key === "Enter") (e.target as HTMLInputElement).blur()
             }}
-            className="h-auto w-full truncate border-0 bg-transparent px-0 text-sm font-semibold shadow-none focus-visible:border-0 focus-visible:ring-0 md:text-sm"
-            aria-label="Document name"
+            className="h-auto w-full truncate border-transparent bg-transparent px-1 text-sm font-semibold shadow-none md:text-sm"
+            aria-label="Name"
           />
           <p className="paper-editor-chrome-meta text-xs text-muted-foreground">
             {TYPE_LABEL[doc.kind]}
@@ -90,7 +92,7 @@ export function PaperEditorHeader({
         type="button"
         size="icon-sm"
         variant="ghost"
-        aria-label="Documents"
+        aria-label="Paper list"
         aria-expanded={docsExpanded}
         aria-controls={DOCS_PANEL_ID}
         onClick={onToggleDocs}
@@ -102,12 +104,11 @@ export function PaperEditorHeader({
         )}
       </Button>
 
-      {isSampleCv(doc) ? (
+      {sample ? (
         <Button
           type="button"
           size="sm"
-          variant="secondary"
-          className="h-8"
+          className="h-12 px-5 text-sm"
           onClick={onMakeMine}
         >
           {SAMPLE_CV_MAKE_MINE}
@@ -138,6 +139,8 @@ export function PaperEditorHeader({
       <Button
         type="button"
         size="sm"
+        variant={saveIsPrimary ? "default" : "outline"}
+        className={sample ? undefined : "h-12 px-5 text-sm"}
         disabled={!dirty && !saving}
         onClick={onSave}
       >

@@ -17,17 +17,18 @@ import {
   PAPER_ATTACH_CV_CTA,
   PAPER_ATTACH_SAMPLE_CTA,
   PAPER_LINKED_EMPTY_HINT,
-  PAPER_LIST_EMPTY_CTA,
+  PAPER_ZERO_STATES,
   OWNED_CV_NAME,
   SAMPLE_CV_LABEL,
   SAMPLE_CV_MAKE_MINE,
   formatPaperUpdated,
   isSampleCv,
+  cvContentOf,
   isStarterCvPersonName,
   ownedCvName,
   paperDocToLink,
   paperLinkedEmptyCta,
-  paperSummary,
+  paperZeroStates,
 } from "./paper-data.ts"
 import { samplePaperDocs } from "@/test/paper-fixtures.ts"
 
@@ -80,76 +81,41 @@ describe("paper display helpers", () => {
     )
   })
 
-  it("summarizes counts from live docs", () => {
-    const summary = paperSummary(samplePaperDocs())
-    expect(summary[0]).toEqual({
-      id: "cvs",
-      label: "CVs",
-      value: "1",
-      hint: "1 draft",
-      cta: null,
-    })
-    expect(summary[1]).toEqual({
-      id: "letters",
-      label: "Letters",
-      value: "2",
-      hint: "All drafts",
-      cta: null,
-    })
-    expect(summary[3]).toEqual({
-      id: "linked",
-      label: "Linked to Apply",
-      value: "2",
-      hint: "Linked to an Opportunity",
-      cta: null,
-    })
+  it("offers no prompt when every kind exists and a doc is linked", () => {
+    expect(paperZeroStates(samplePaperDocs(), true)).toEqual([])
   })
 
-  it("labels a lone sample CV and offers one empty-list CTA each", () => {
+  it("labels a lone sample CV and offers one prompt per missing kind", () => {
     const sample = starterSampleCv()
-    const summary = paperSummary([sample])
+    const states = paperZeroStates([sample], true)
 
     expect(isSampleCv(sample)).toBe(true)
     expect(paperDocToLink([sample])).toBe(sample)
-    expect(summary[0]).toEqual({
-      id: "cvs",
-      label: "CVs",
-      value: "1",
-      hint: SAMPLE_CV_LABEL,
-      cta: null,
-    })
-    expect(summary[1]).toEqual({
-      id: "letters",
-      label: "Letters",
-      value: "0",
-      hint: "",
-      cta: PAPER_LIST_EMPTY_CTA.letter,
-    })
-    expect(summary[2]).toEqual({
-      id: "proof",
-      label: "Proof",
-      value: "0",
-      hint: "",
-      cta: PAPER_LIST_EMPTY_CTA.proof,
-    })
-    expect(summary[3]).toEqual({
-      id: "linked",
-      label: "Linked to Apply",
-      value: "0",
-      hint: PAPER_LINKED_EMPTY_HINT,
-      cta: PAPER_ATTACH_SAMPLE_CTA,
-    })
+    expect(states).toEqual([
+      { id: "letter", ...PAPER_ZERO_STATES.letter },
+      { id: "proof", ...PAPER_ZERO_STATES.proof },
+      {
+        id: "linked",
+        title: PAPER_ATTACH_SAMPLE_CTA,
+        hint: PAPER_LINKED_EMPTY_HINT,
+      },
+    ])
     expect(paperLinkedEmptyCta([sample])).toBe(PAPER_ATTACH_SAMPLE_CTA)
-    expect(summary.map((item) => item.hint).join(" ")).not.toMatch(/None yet/)
-    expect(PAPER_LIST_EMPTY_CTA).toEqual({
-      letter: "Start letter",
-      proof: "Add proof",
-      linked: PAPER_ATTACH_SAMPLE_CTA,
-    })
-    expect(PAPER_ATTACH_SAMPLE_CTA).toBe("Attach Sample CV to a live job")
+    expect(PAPER_ATTACH_SAMPLE_CTA).toBe("Attach Sample CV to an Opportunity")
     expect(PAPER_LINKED_EMPTY_HINT).toMatch(/Apply knows which CV/)
     expect(SAMPLE_CV_LABEL).toBe("Sample · replace anytime")
     expect(SAMPLE_CV_MAKE_MINE).toBe("Make mine")
+  })
+
+  it("offers a CV prompt first on an empty drive and no link without a card", () => {
+    expect(paperZeroStates([], true).map((state) => state.id)).toEqual([
+      "cv",
+      "letter",
+      "proof",
+    ])
+    expect(
+      paperZeroStates([starterSampleCv()], false).map((state) => state.id)
+    ).toEqual(["letter", "proof"])
   })
 
   it("names a claimed sample CV after the person on the page, then the User", () => {
@@ -161,37 +127,33 @@ describe("paper display helpers", () => {
     expect(ownedCvName("  ")).toBe(OWNED_CV_NAME)
   })
 
-  it("offers an attach CTA for the first CV when the sample is gone", () => {
+  it("offers an attach prompt for the first CV when the sample is gone", () => {
     const own: PaperDoc = {
       ...starterSampleCv(),
       id: "77777777-7777-7777-8777-777777777777",
       name: "My internship CV",
     }
     expect(paperLinkedEmptyCta([own])).toBe(PAPER_ATTACH_CV_CTA)
-    expect(paperSummary([own])[3]).toMatchObject({
+    expect(paperZeroStates([own], true).at(-1)).toEqual({
       id: "linked",
-      value: "0",
+      title: PAPER_ATTACH_CV_CTA,
       hint: PAPER_LINKED_EMPTY_HINT,
-      cta: PAPER_ATTACH_CV_CTA,
     })
   })
 
-  it("keeps the sample row honest when other CVs exist", () => {
+  it("shows the legacy Your name placeholder as an empty name", () => {
     const sample = starterSampleCv()
+    const legacy: PaperDoc = {
+      ...sample,
+      content: { ...(sample.content as object), name: "Your name" },
+    }
+    expect(cvContentOf(legacy).name).toBe("")
+    expect(cvContentOf(sample).name).toBe("")
     const own: PaperDoc = {
       ...sample,
-      id: "77777777-7777-7777-8777-777777777777",
-      name: "My internship CV",
+      content: { ...(sample.content as object), name: "Linh Nguyen" },
     }
-    const summary = paperSummary([sample, own])
-
-    expect(isSampleCv(own)).toBe(false)
-    expect(summary[0]).toMatchObject({
-      id: "cvs",
-      value: "2",
-      hint: "All drafts",
-      cta: null,
-    })
+    expect(cvContentOf(own).name).toBe("Linh Nguyen")
   })
 })
 

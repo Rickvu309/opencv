@@ -47,7 +47,7 @@ Accessibility and performance:
 - 27 `alerts-have-role`: the Coach error sits in a live region, no red text outside one, the conflict banner keeps `role="alert"`. Source: Apple feedback.
 - 28 `primary-buttons-48`: the primary button on Apply, Paper and Pitch is 48px high or more. Source: Material density.
 - 29 `table-not-mounted-while-loading`: while the Paper call is held the page shows its own loading copy ("Loading documents") or a skeleton and no table, and with the call answered by an empty list it shows a different empty sentence ("No documents yet."). A blank loading state, or the same sentence for both, is a FAIL. Source: NN/g.
-- 30 `undo-and-reject`: Undo on the CV toolbar and a Coach Reject control (DOM, or a JSX label or quoted string in source). Source: Apple undo; Gemini.
+- 30 `undo-and-reject`: Undo on the CV toolbar and a Coach Reject or "Undo this change" control (DOM, or a JSX label or quoted string in source). Source: Apple undo; Gemini.
 
 App-wide:
 

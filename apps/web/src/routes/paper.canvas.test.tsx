@@ -271,7 +271,7 @@ describe("Paper canvas editors", () => {
     await expectPaperDrive()
     const editor = await openDoc("PM track CV")
 
-    const name = within(editor).getByRole("textbox", { name: "Full name" })
+    const name = within(editor).getByRole("textbox", { name: "Your name" })
     const headline = within(editor).getByRole("textbox", { name: "Headline" })
     name.focus()
     fireEvent.keyDown(name, { key: "Tab" })
@@ -300,7 +300,7 @@ describe("Paper canvas editors", () => {
     const editor = await openDoc("PM track CV")
 
     expect(
-      screen.queryByRole("complementary", { name: "Documents" })
+      screen.queryByRole("complementary", { name: "Paper list" })
     ).not.toBeInTheDocument()
 
     const fit = queryByAttr(editor, "data-paper-a4-fit='width'")
@@ -324,7 +324,7 @@ describe("Paper canvas editors", () => {
     fireEvent.keyDown(summary, { key: "Escape" })
     expect(summary).not.toHaveFocus()
 
-    const name = within(editor).getByRole("textbox", { name: "Full name" })
+    const name = within(editor).getByRole("textbox", { name: "Your name" })
     const headline = within(editor).getByRole("textbox", { name: "Headline" })
     name.focus()
     fireEvent.keyDown(name, { key: "Tab" })

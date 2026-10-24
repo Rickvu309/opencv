@@ -28,7 +28,8 @@ export function AcademicCv({
         <div>
           <CvType role="page-title" as="h1">
             <EditableField
-              aria-label="Full name"
+              aria-label="Your name"
+              placeholder="Your name"
               sectionId="name"
               value={data.name}
               onChange={(name) => patch("name", name)}

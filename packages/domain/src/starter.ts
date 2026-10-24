@@ -14,8 +14,11 @@ import { PITCH_CONTENT_KIND, PITCH_CONTENT_VERSION } from "./pitch.js"
 /** Drive name for the sample CV created at signup. Wipeable. */
 export const STARTER_CV_NAME = "Sample internship CV"
 
-/** Placeholder person name on the sample CV — not a real identity. */
-export const STARTER_CV_PERSON_NAME = "Your name"
+/** The sample CV starts with an empty name field, labelled "Your name" in the editor. */
+export const STARTER_CV_PERSON_NAME = ""
+
+/** Name text that sample CVs created before the empty field still carry. */
+export const LEGACY_STARTER_CV_PERSON_NAME = "Your name"
 
 /** Seeded Inbox card Home pokes for the first Apply win (QVE-226). */
 export const STARTER_GUIDED_APPLY_TITLE = "Associate PM intern"

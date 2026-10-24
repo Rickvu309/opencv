@@ -10,15 +10,18 @@ const BANNED_NOUNS = [
   [/\bprofile\b/i, "profile (say Pitch)"],
 ]
 // "A café or part-time job" and "A first full-time job" are goal chips, not the Opportunity object: a short
-// label that starts with A or An. "Connect email, optional" is the mail connector row, and the account menu label "<name>, profile and settings". Nothing else is exempt.
+// label that starts with A or An. "Connect email, optional" is the mail connector row, and the account menu label "<name>, profile and settings", and the Paper empty sentence check 29 demands. Nothing else is exempt.
 const EMPLOYMENT_SENSE =
   /\b(part-time|full-time|first|dream|summer)\s+jobs?\b/gi
 const GOAL_CHIP = /^an?\s/i
 const CONNECTOR = /^(connect email(, optional)?|.+, profile and settings)$/i
+// Check 29 requires the Paper empty sentence to start "No documents yet", so check 01 cannot flag it.
+const PAPER_EMPTY =
+  /^No documents yet\. Create a CV, Letter, or Proof to start\.$/
 export function nounViolations(labels) {
   const out = []
   for (const label of labels) {
-    if (CONNECTOR.test(label.trim())) continue
+    if (CONNECTOR.test(label.trim()) || PAPER_EMPTY.test(label.trim())) continue
     const chip = GOAL_CHIP.test(label) && label.split(/\s+/).length <= 6
     const text = chip ? label.replace(EMPLOYMENT_SENSE, "") : label
     for (const [re, why] of BANNED_NOUNS) {

@@ -29,6 +29,17 @@ test("nouns: job, email, document and profile are flagged", () => {
   )
 })
 
+test("nouns: the Paper empty sentence is exempt and a near copy is not", () => {
+  const found = nounViolations([
+    "No documents yet. Create a CV, Letter, or Proof to start.",
+    "No documents yet. Create a document to start.",
+  ])
+  assert.deepEqual(
+    found.map((f) => f.label),
+    ["No documents yet. Create a document to start."]
+  )
+})
+
 test("nouns: the exemption is only for short goal chips and the connector row", () => {
   const found = nounViolations([
     "Drop a dream job here",

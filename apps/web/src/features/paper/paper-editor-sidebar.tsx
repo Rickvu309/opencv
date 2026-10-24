@@ -25,7 +25,7 @@ export function PaperEditorSidebar({
   return (
     <aside
       id={id}
-      aria-label="Documents"
+      aria-label="Paper list"
       data-paper-docs-overlay={overlay ? "" : undefined}
       className={cn(
         "flex w-60 shrink-0 flex-col border-r border-border bg-background",
@@ -40,9 +40,9 @@ export function PaperEditorSidebar({
           onClick={onBack}
           className="h-auto px-0 text-xs font-medium text-muted-foreground"
         >
-          ← All documents
+          ← Back to Paper
         </Button>
-        <p className="mt-2 text-sm font-semibold">Documents</p>
+        <p className="mt-2 text-sm font-semibold">Paper</p>
       </div>
 
       <div className="border-b border-border px-3 py-2">
@@ -51,7 +51,7 @@ export function PaperEditorSidebar({
           <Input
             placeholder="Search…"
             className="h-8 pl-8 text-xs"
-            aria-label="Search documents"
+            aria-label="Search Paper"
           />
         </div>
       </div>
@@ -82,10 +82,15 @@ export function PaperEditorSidebar({
                 <span className="block truncate text-sm font-medium">
                   {doc.name}
                 </span>
-                <span className="mt-0.5 flex items-center gap-1.5 text-micro text-muted-foreground">
+                <span
+                  className={cn(
+                    "mt-0.5 flex items-center gap-1.5 text-micro",
+                    active ? "text-foreground" : "text-muted-foreground"
+                  )}
+                >
                   {TYPE_LABEL[doc.kind]}
                   {doc.status === "draft" ? (
-                    <span className="rounded bg-muted px-1 py-px text-2xs font-medium uppercase">
+                    <span className="rounded border border-border bg-background px-1 py-px text-2xs font-medium uppercase">
                       Draft
                     </span>
                   ) : null}

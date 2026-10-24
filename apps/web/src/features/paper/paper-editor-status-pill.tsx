@@ -26,14 +26,14 @@ export function PaperEditorStatusPill({
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
-          "inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium",
+          "inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
           status === "published" && "border-border bg-muted text-foreground",
           status === "ready" &&
             "border-border bg-secondary text-secondary-foreground",
           status === "draft" &&
             "border-border bg-muted/40 text-muted-foreground"
         )}
-        aria-label="Document status"
+        aria-label="Status"
       >
         {status === "published" ? <Globe className="size-3.5" /> : null}
         {label}

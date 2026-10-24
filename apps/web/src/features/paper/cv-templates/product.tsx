@@ -26,7 +26,8 @@ export function ProductCv({
       <aside className="cv-template-product-sidebar bg-[#1e293b] text-white">
         <CvType role="page-title" as="h1">
           <EditableField
-            aria-label="Full name"
+            aria-label="Your name"
+            placeholder="Your name"
             sectionId="name"
             value={data.name}
             className="text-white"

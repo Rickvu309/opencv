@@ -55,13 +55,14 @@ describe("empty api data shows empty states, never sample content", () => {
     getMockPaperDocs().splice(0)
     renderApp(SURFACE_PATHS.paper)
 
-    const letters = await screen.findByRole("region", { name: "Letters" })
     expect(
-      await within(letters).findByRole("button", { name: "Start letter" })
+      await screen.findByRole("button", { name: "Start a Letter" })
     ).toBeInTheDocument()
-    const proof = screen.getByRole("region", { name: "Proof" })
     expect(
-      await within(proof).findByRole("button", { name: "Add proof" })
+      screen.getByRole("button", { name: "Add a Proof" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "Start a CV" })
     ).toBeInTheDocument()
     expectNone(samplePaperDocs().map((doc) => doc.name))
   })

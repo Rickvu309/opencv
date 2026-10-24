@@ -58,7 +58,7 @@ describe("CV print-paper type rhythm", () => {
         ).not.toBeNull()
       }
 
-      const name = screen.getByRole("textbox", { name: "Full name" })
+      const name = screen.getByRole("textbox", { name: "Your name" })
       expect(name.closest("[data-cv-type='page-title']")).not.toBeNull()
 
       const headline = screen.getByRole("textbox", { name: "Headline" })
@@ -138,7 +138,7 @@ describe("EditableField canvas chrome (QVE-206)", () => {
 describe("EditableField café keyboard (QVE-208)", () => {
   it("Tabs between structured fields and Esc blurs without trapping", () => {
     renderCv("internship")
-    const name = screen.getByRole("textbox", { name: "Full name" })
+    const name = screen.getByRole("textbox", { name: "Your name" })
     const headline = screen.getByRole("textbox", { name: "Headline" })
     const contacts = screen.getAllByRole("textbox", { name: "Contact detail" })
 
@@ -167,7 +167,7 @@ describe("paper canvas field CSS (QVE-206)", () => {
     expect(paperCss).toMatch(/currentColor/)
 
     const start = paperCss.indexOf(".paper-canvas-field {")
-    const end = paperCss.indexOf("QVE-186")
+    const end = paperCss.indexOf("QVE-208")
     const chrome = paperCss.slice(start, end).replace(/\/\*[\s\S]*?\*\//g, "")
     expect(chrome).toContain(".paper-canvas-field:focus")
     expect(chrome).toContain("var(--muted)")
@@ -307,10 +307,10 @@ describe("paper canvas affordance CSS (QVE-207)", () => {
     expect(paperCss).toMatch(/display:\s*none/)
 
     const start = paperCss.indexOf(".paper-canvas-block {")
-    const end = paperCss.indexOf("QVE-186")
+    const end = paperCss.indexOf("QVE-208")
     const chrome = paperCss.slice(start, end).replace(/\/\*[\s\S]*?\*\//g, "")
     expect(chrome).toContain(".paper-canvas-affordance")
-    expect(chrome).toContain("var(--duration-fast)")
+    expect(chrome).toContain("var(--duration-base)")
     expect(chrome).not.toMatch(/var\(--info\)/)
     expect(chrome).not.toMatch(/rounded-full/)
     expect(chrome).not.toMatch(/bg-muted\/70/)
@@ -441,7 +441,7 @@ describe("empty section next-step CSS (QVE-209)", () => {
   it("stays visible and quiet — not hover-hidden or Coach pills", () => {
     expect(paperCss).toMatch(/\.paper-canvas-next-step/)
     const start = paperCss.indexOf(".paper-canvas-next-step {")
-    const end = paperCss.indexOf("QVE-186")
+    const end = paperCss.indexOf("QVE-208")
     const chrome = paperCss.slice(start, end).replace(/\/\*[\s\S]*?\*\//g, "")
     expect(chrome).toContain("opacity: 1")
     expect(chrome).not.toMatch(/opacity:\s*0/)
@@ -457,7 +457,7 @@ describe("CV templates split across cv-templates", () => {
     (templateId) => {
       renderCv(templateId)
       expect(
-        screen.getByRole("textbox", { name: "Full name" })
+        screen.getByRole("textbox", { name: "Your name" })
       ).toHaveTextContent(defaultCvData().name)
       expect(
         screen.getByText(/^(Work experience|Experience)$/)

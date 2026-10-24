@@ -54,7 +54,7 @@ export function PaperLetterArticle({ doc, editorRef, onInput }: Props) {
         onInput={onInput}
         data-paper-section="letter"
         className="paper-editor-canvas prose-kit min-h-[70vh] px-10 py-10 outline-none sm:px-14 sm:py-12"
-        aria-label="Document content"
+        aria-label="Letter text"
         spellCheck
       />
     </article>
