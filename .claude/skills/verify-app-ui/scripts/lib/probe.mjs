@@ -257,131 +257,6 @@ function probe() {
       ),
   }
 
-  // Colors: every text, fill and border color against the token palette (raw hex shows as a non-token rgb).
-  const tokenRgb = []
-  const names = new Set()
-  // Design tokens are the semantic variables (--background, --primary, --chart-1 ...) from the
-  // :root block, plus .dark only when the page is dark. Tailwind emits every palette variable a class
-  // uses into :root too (--color-red-600, --color-black); those are not design tokens.
-  const PALETTE =
-    /^--color-(black|white|(red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone|taupe|mauve|mist|olive)(-\d+)?)$/
-  const dark = document.documentElement.classList.contains("dark")
-  const scan = (rules) => {
-    for (const rule of rules) {
-      if (rule.cssRules && !rule.style) scan(rule.cssRules)
-      else if (rule.style) {
-        const sel = rule.selectorText ?? ""
-        const hit =
-          /(^|,)\s*(:root|html)\b/.test(sel) ||
-          (dark && /(^|,)\s*\.dark\b/.test(sel))
-        if (!hit) continue
-        for (const n of rule.style)
-          if (n.startsWith("--") && !PALETTE.test(n)) names.add(n)
-      }
-    }
-  }
-  for (const sheet of document.styleSheets) {
-    try {
-      scan(sheet.cssRules)
-    } catch {}
-  }
-  for (const n of names) {
-    const v = root.getPropertyValue(n).trim()
-    if (/^(oklch|oklab|rgb|hsl|lab|lch|color|#)/.test(v) && !v.includes("var("))
-      tokenRgb.push(rgba(v))
-  }
-  const rawColors = {}
-  const fills = []
-  for (const el of visible) {
-    const s = cs(el)
-    const own = [...el.childNodes].some(
-      (n) => n.nodeType === 3 && n.textContent.trim()
-    )
-    const list = [["bg", s.backgroundColor]]
-    if (own) list.push(["text", s.color])
-    if (parseFloat(s.borderTopWidth) > 0)
-      list.push(["border", s.borderTopColor])
-    for (const [kind, css] of list) {
-      const c = rgba(css)
-      if (c[3] === 0) continue
-      if (tokenRgb.some((t) => near(t, c, c[3] < 1 ? 12 : 6))) continue
-      if (c[0] === 0 && c[1] === 0 && c[2] === 0 && c[3] < 1) continue
-      const key = `${kind} rgb(${c[0]},${c[1]},${c[2]})`
-      rawColors[key] = (rawColors[key] ?? 0) + 1
-    }
-    const r = el.getBoundingClientRect()
-    if (
-      s.backgroundImage.includes("gradient(") &&
-      r.width * r.height >= 6000 &&
-      !el.closest("button")
-    ) {
-      const stops = (
-        s.backgroundImage.match(
-          /(rgba?\([^)]*\)|color\([^)]*\)|okl(?:ch|ab)\([^)]*\))/g
-        ) ?? []
-      ).map(rgba)
-      // A stop that fades to transparent is a scrim over a photo, not a decorative fill.
-      if (stops.length && stops.every((c) => c[3] > 0.5)) {
-        const mean = [0, 1, 2].map(
-          (i) => stops.reduce((n, c) => n + c[i], 0) / stops.length
-        )
-        const mx = Math.max(...mean),
-          mn = Math.min(...mean)
-        fills.push({
-          c: "gradient",
-          chroma: Math.round(((mx - mn) / 255) * 100) / 100,
-          lum: Math.round(lum(mean) * 100) / 100,
-          area: Math.round(r.width * r.height),
-          t: clean(el.textContent).slice(0, 28),
-          token: false,
-        })
-      }
-    }
-    const bg = rgba(s.backgroundColor)
-    if (
-      bg[3] > 0.5 &&
-      r.width * r.height >= 6000 &&
-      !el.closest("img, button, [role=dialog]") &&
-      el.tagName !== "IMG"
-    ) {
-      const mx = Math.max(bg[0], bg[1], bg[2]),
-        mn = Math.min(bg[0], bg[1], bg[2])
-      fills.push({
-        c: `rgb(${bg[0]},${bg[1]},${bg[2]})`,
-        chroma: Math.round(((mx - mn) / 255) * 100) / 100,
-        lum: Math.round(lum(bg) * 100) / 100,
-        area: Math.round(r.width * r.height),
-        t: clean(el.textContent).slice(0, 28),
-        token: tokenRgb.some((t) => near(t, bg, 2)),
-      })
-    }
-  }
-  out.rawColors = rawColors
-  out.fills = fills.slice(0, 80)
-  out.bodyBgLum = Math.round(lum(bodyBg) * 100) / 100
-
-  // Spacing: padding and gap values on the 4px scale (margins skipped: auto margins resolve to odd pixels).
-  const spacing = { total: 0, off: {} }
-  for (const el of visible) {
-    const s = cs(el)
-    for (const p of [
-      "paddingTop",
-      "paddingRight",
-      "paddingBottom",
-      "paddingLeft",
-      "rowGap",
-      "columnGap",
-    ]) {
-      const v = parseFloat(s[p])
-      if (!v || Number.isNaN(v)) continue
-      spacing.total++
-      const px = Math.round(v * 10) / 10
-      if (!(px % 4 === 0 || [2, 6, 10, 14].includes(px)))
-        spacing.off[`${px}px`] = (spacing.off[`${px}px`] ?? 0) + 1
-    }
-  }
-  out.spacing = spacing
-
   // Screen facts used by single checks.
   const sidebar =
     document.querySelector("aside, [data-sidebar]") ??
@@ -420,15 +295,36 @@ function probe() {
         }))
     : null
   out.sidebarRect = sidebar ? rect(sidebar) : null
+  // The card title is the deepest element inside the card whose text is the title taken from the card's
+  // aria-label ("<title> at <company>"), whatever its tag. None found means titleLines is null.
   out.cards = [...document.querySelectorAll("[data-card-id]")].map((c) => {
-    const p = c.querySelector("p")
-    const lh = p ? parseFloat(cs(p).lineHeight) || 20 : 20
+    const aria = c.getAttribute("aria-label") ?? ""
+    let title = null
+    for (
+      let i = aria.indexOf(" at ");
+      i > 0 && !title;
+      i = aria.indexOf(" at ", i + 1)
+    ) {
+      const want = aria.slice(0, i)
+      const hit = [...c.querySelectorAll("*")].filter(
+        (e) =>
+          clean(e.textContent) === want &&
+          ![...e.children].some((k) => clean(k.textContent) === want)
+      )[0]
+      if (hit) title = hit
+    }
+    const lh = title ? parseFloat(cs(title).lineHeight) || 20 : 20
     return {
       h: Math.round(c.getBoundingClientRect().height),
-      titleLines: p ? Math.round(p.getBoundingClientRect().height / lh) : 0,
+      titleLines: title
+        ? Math.round(title.getBoundingClientRect().height / lh)
+        : null,
       text: clean(c.textContent).slice(0, 300),
     }
   })
+  out.skeletons = visible.filter((e) =>
+    e.matches('[data-slot="skeleton"], [class*="animate-pulse"]')
+  ).length
   out.emptyStates = visible.filter((e) =>
     e.matches('[data-slot="empty"]')
   ).length

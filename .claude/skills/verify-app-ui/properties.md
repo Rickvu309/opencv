@@ -39,14 +39,14 @@ Visual craft:
 Motion:
 
 - 24 `motion-tokens`: every computed transition and animation runs 150 ms or 280 ms on the toured screens, including an open Pitch story, and no `duration-N` class or `Nms` value in features or routes source is off-token (so the 75 ms in `pitch-stories.tsx` counts). Looping spinners and skeletons are skipped. Source: `globals.css`; the program motion rule.
-- 25 `reduced-motion`: with reduce, nothing over 1 ms runs, scroll is not smooth, and a Pitch story or viewer file that uses `setInterval`, `setTimeout` or `requestAnimationFrame` checks the preference (source read of the file name and a guard string). Source: WCAG 2.3.3.
+- 25 `reduced-motion`: with reduce, nothing over 1 ms runs, scroll is not smooth, and every timer-driven motion under `features/pitch` and the `use-*` hooks it imports (`requestAnimationFrame`, `setInterval`, `setTimeout` other than a flag reset such as `setCopied(false)`) sits in a file that checks the preference. If the scan finds no timer at all the check FAILs with "no story timer found". Source: WCAG 2.3.3.
 - 26 `no-text-reveal`: no app file imports text-reveal (source read). Source: Apple layout.
 
 Accessibility and performance:
 
 - 27 `alerts-have-role`: the Coach error sits in a live region, no red text outside one, the conflict banner keeps `role="alert"`. Source: Apple feedback.
 - 28 `primary-buttons-48`: the primary button on Apply, Paper and Pitch is 48px high or more. Source: Material density.
-- 29 `table-not-mounted-while-loading`: no table while the held call is pending. Source: NN/g.
+- 29 `table-not-mounted-while-loading`: while the Paper call is held the page shows its own loading copy ("Loading documents") or a skeleton and no table, and with the call answered by an empty list it shows a different empty sentence ("No documents yet."). A blank loading state, or the same sentence for both, is a FAIL. Source: NN/g.
 - 30 `undo-and-reject`: Undo on the CV toolbar and a Coach Reject control (DOM, or a JSX label or quoted string in source). Source: Apple undo; Gemini.
 
 App-wide:
@@ -56,6 +56,6 @@ App-wide:
 - 33 `no-console-errors`: the signed-in desktop, reduced-motion and 390px passes log no console error, React warning, uncaught exception or failed load. The mocked scenario pages are not counted.
 - 34 `first-render-budget`: each route renders its content within 2000 ms of navigation (dev server, warm). The budget is this skill's, set for the shared 8-core machine.
 - 35 `spacing-scale`: 95% or more of padding and gap values are on the 4px scale plus the half steps 2, 6, 10, 14.
-- 36 `row-density`: Paper rows 40 to 72px; no Apply card title past two lines. Source: Material density.
+- 36 `row-density`: Paper rows 40 to 72px; no Apply card title past two lines. The title is the deepest element in the card whose text is the title from the card's aria-label, whatever its tag; a card with no such element, or no cards, is a FAIL. Source: Material density.
 - 37 `no-raw-colors`: every computed text, fill and border color equals a semantic design token (the `:root` variables of `globals.css`) within 6 per channel, 12 when translucent. Tailwind palette variables such as `--color-red-600` and `--color-black` are not design tokens, so a palette class fails. Black scrims, SVG fills and gradient stops are not measured here (19 reads gradients). The source test `apps/web/src/test/design-vocabulary.test.ts` covers raw hex in `apps/web/src`.
 - 38 `mobile-surfaces-reachable`: at 390x844 the four surface links are in view at 24px or more and the page does not scroll sideways.

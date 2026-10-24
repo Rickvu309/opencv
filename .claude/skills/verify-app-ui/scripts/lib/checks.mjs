@@ -10,6 +10,7 @@ import {
   SURFACES,
   context,
   list,
+  pitchTimers,
   read,
   rel,
   repo,
@@ -214,21 +215,15 @@ export function runChecks(d) {
     ...(s.runningAnimations ? [`${k}:${s.runningAnimations} running`] : []),
     ...(s.scrollBehavior.includes("smooth") ? [`${k}:smooth scroll`] : []),
   ])
-  const pitchFiles = sourceFiles(["apps/web/src/features/pitch"]).filter(
-    (f) =>
-      /stor|viewer/i.test(f.split("/").pop()) &&
-      /setInterval|setTimeout|requestAnimationFrame/.test(read(f))
-  )
-  const timers = pitchFiles.filter(
-    (f) => !/prefers-reduced-motion|useReducedMotion|matchMedia/.test(read(f))
-  )
+  const timerFiles = pitchTimers()
+  const timers = timerFiles.filter((t) => !t.guarded)
   r.push(
     result(
       "25",
       "reduced-motion",
-      reducedBad.length === 0 && timers.length === 0,
-      `with reduce: ${reducedBad.length ? list(reducedBad) : "no motion over 1ms"}; Pitch story timers without a reduced-motion guard: ${timers.length ? list(timers.map(rel), 2) : "none"}`,
-      "with prefers-reduced-motion nothing runs over 1ms, scroll is not smooth, and a Pitch story or viewer file that uses setInterval, setTimeout or requestAnimationFrame checks the preference (source read of the file name and a guard string)"
+      reducedBad.length === 0 && timerFiles.length > 0 && timers.length === 0,
+      `with reduce: ${reducedBad.length ? list(reducedBad) : "no motion over 1ms"}; Pitch timers: ${timerFiles.length ? timerFiles.map((t) => `${t.file.split("/").pop()} ${t.apis.join("+")} ${t.guarded ? "guarded" : "UNGUARDED"}`).join("; ") : "no story timer found"}`,
+      "with prefers-reduced-motion nothing runs over 1ms, scroll is not smooth, and every timer-driven motion under features/pitch and the use-* hooks it imports (requestAnimationFrame, setInterval, setTimeout other than a flag reset) sits in a file that checks the preference, and at least one story timer is found (source read)"
     )
   )
 
@@ -284,13 +279,21 @@ export function runChecks(d) {
     )
   )
 
+  const loadingCopy = /Loading documents|Loading…|Loading\.\.\./.exec(
+    d.paperLoading.text
+  )?.[0]
+  const loadingOwn = Boolean(loadingCopy) || d.paperLoading.skeletons > 0
+  const emptyCopy = /No documents yet[^.]*\./.exec(d.paperEmpty.text)?.[0]
   r.push(
     result(
       "29",
       "table-not-mounted-while-loading",
-      !d.paperLoading.hasTable,
-      `table mounted while loading: ${d.paperLoading.hasTable}`,
-      "the document table is not mounted until loading ends"
+      loadingOwn &&
+        !d.paperLoading.hasTable &&
+        Boolean(emptyCopy) &&
+        emptyCopy !== loadingCopy,
+      `loading: ${loadingCopy ? `"${loadingCopy}"` : d.paperLoading.skeletons ? `${d.paperLoading.skeletons} skeletons` : "no loading copy or skeleton"}, table mounted ${d.paperLoading.hasTable}; empty (list answered with none): ${emptyCopy ? `"${emptyCopy.slice(0, 50)}"` : "no empty sentence"}`,
+      "while the call is held the page shows its own loading copy or a skeleton and no table; with an empty list it shows a different empty sentence (a blank state is a FAIL; the empty list is an api answer, not a deletion)"
     )
   )
 
@@ -387,16 +390,21 @@ export function runChecks(d) {
   const rows = d.paper.rows.filter((h) => h > 0)
   const bad = rows.filter((h) => h < 40 || h > 72)
   const tall = d.apply.cards.filter((x) => x.titleLines > 2)
+  const untitled = d.apply.cards.filter((x) => x.titleLines === null)
   r.push(
     result(
       "36",
       "row-density",
-      rows.length > 0 && bad.length === 0 && tall.length === 0,
+      rows.length > 0 &&
+        bad.length === 0 &&
+        d.apply.cards.length > 0 &&
+        untitled.length === 0 &&
+        tall.length === 0,
       `Paper rows ${list(
         rows.map((h) => `${h}px`),
         6
-      )}; Apply cards over 2 title lines: ${tall.length}`,
-      "Paper rows are 40 to 72px and no Apply card title runs past two lines"
+      )}; Apply cards over 2 title lines: ${tall.length}${untitled.length ? `; ${untitled.length} cards with no card title element` : ""}${d.apply.cards.length ? "" : "; no cards"}`,
+      "Paper rows are 40 to 72px and no Apply card title runs past two lines (the title is found by its text from the card's aria-label, not by tag; no title element is a FAIL)"
     )
   )
 

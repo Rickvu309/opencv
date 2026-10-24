@@ -4,6 +4,7 @@
 // open CV with the Coach float), Apply and Pitch (with a story open and the edit bar). Scenario pages
 // make an api call fail or wait, and the last one deletes the Apply cards through the api.
 // A step that does not happen throws (exit 2); it is never counted as a pass.
+import { colorsSource } from "./probe-colors.mjs"
 import { probeSource } from "./probe.mjs"
 
 const ROUTES = {
@@ -64,7 +65,10 @@ export async function runTour({ browser, webUrl, apiUrl, shots }) {
   const d = { timing: {}, tabs: {}, logs: [] }
   const shot = (page, name) =>
     shots ? page.screenshot(`${shots}/${name}.png`, false) : null
-  const snap = (page) => page.evaluate(probeSource)
+  const snap = async (page) => ({
+    ...(await page.evaluate(probeSource)),
+    ...(await page.evaluate(colorsSource)),
+  })
   const send = async (page, text) => {
     must(
       await page.waitFor("document.querySelector('textarea')", 15000),
@@ -203,6 +207,17 @@ export async function runTour({ browser, webUrl, apiUrl, shots }) {
   d.paperLoading = await snap(b)
   b.setIntercept(null)
   await b.release()
+
+  b.setIntercept((r) =>
+    r.method === "GET" && new URL(r.url).pathname === "/api/paper"
+      ? { status: 200, body: { ok: true, data: [] } }
+      : null
+  )
+  await b.goto(`${webUrl}/app/paper`)
+  await b.waitFor("document.body.innerText.includes('Create a CV')", 10000)
+  await b.sleep(800)
+  d.paperEmpty = await snap(b)
+  b.setIntercept(null)
 
   const coachCall = (r) =>
     r.method === "POST" &&
