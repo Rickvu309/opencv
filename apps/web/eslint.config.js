@@ -27,4 +27,37 @@ export default defineConfig([
       'react-refresh/only-export-components': 'off',
     },
   },
+  {
+    files: [
+      'src/features/paper/**/*.{ts,tsx}',
+      'src/features/apply/**/*.{ts,tsx}',
+      'src/features/pitch/**/*.{ts,tsx}',
+    ],
+    ignores: ['**/*.test.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/router', '@/router.*'],
+              message: 'A surface feature must not import the router.',
+            },
+            {
+              group: [
+                '@/features/app-shell/*',
+                '!@/features/app-shell/use-media-query.ts',
+                '!@/features/app-shell/profile-display.ts',
+              ],
+              message: 'A surface feature must not import shell chrome.',
+            },
+            {
+              group: ['@/components/search-modal*'],
+              message: 'A surface feature must not import the search modal.',
+            },
+          ],
+        },
+      ],
+    },
+  },
 ])

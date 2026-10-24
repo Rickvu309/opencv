@@ -97,13 +97,16 @@ describe("assistant-ui ExternalStoreRuntime spike", () => {
     expect(pkg.dependencies["@assistant-ui/react"]).not.toMatch(/^\^|~/)
 
     const float = read("../paper/coach-float.tsx")
-    expect(float).not.toMatch(/@assistant-ui|coach-runtime/)
     expect(read("coach-thread-panel.tsx")).toMatch(/useCoachExternalRuntime/)
     expect(float).toMatch(/useCoachTurn/)
     expect(float).toMatch(/CoachThread/)
-    expect(float).not.toMatch(/ThreadView/)
-    expect(float).not.toMatch(/AI assist/)
-    expect(float).not.toMatch(/Sparkles/)
-    expect(float).not.toMatch(/draggable|onDrag|resize-/)
+    for (const file of ["coach-float.tsx", "coach-float-chips.tsx"]) {
+      const source = read(`../paper/${file}`)
+      expect(source, file).not.toMatch(/@assistant-ui|coach-runtime/)
+      expect(source, file).not.toMatch(/ThreadView/)
+      expect(source, file).not.toMatch(/AI assist/)
+      expect(source, file).not.toMatch(/Sparkles/)
+      expect(source, file).not.toMatch(/draggable|onDrag|resize-/)
+    }
   })
 })
