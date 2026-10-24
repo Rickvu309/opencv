@@ -59,7 +59,7 @@ Every change starts with a GitHub issue, and every issue gets its own branch and
 
 ```bash
 scripts/new-task.sh <type> <issue#> -d "short description"   # branch + worktree
-scripts/open-pr.sh --draft                                   # checks, push, PR
+heavy -- scripts/open-pr.sh --draft                          # checks, push, PR
 ```
 
 Read `CONTRIBUTING.md` for the full flow and `AGENTS.md` for the rules agents follow. Product and domain language are in `PRODUCT.md` and `CONTEXT.md`; decisions are in `docs/adr/`.

@@ -22,7 +22,8 @@
     },
     "test": {
       "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", ".env*"]
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "passThroughEnv": ["VITEST_MAX_WORKERS"]
     }
   }
 }

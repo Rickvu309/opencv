@@ -9,8 +9,9 @@
 #   STRICT_SCRIPTS=1 scripts/check.sh   fail if a script is missing (recommended once all exist)
 #   CHECK_DRY_RUN=1 scripts/check.sh ...   print the plan and the commands, run nothing
 #   CHECK_BASE_REF=<ref> scripts/check.sh --changed   compare with <ref> instead of origin/main
-#   CHECK_TEST_ARGS="--maxWorkers=2 --testTimeout=30000" scripts/check.sh   extra vitest args for the full run's test task (loaded or shared machines)
-#   CHECK_CONCURRENCY=<n> scripts/check.sh   turbo task concurrency (default: turbo's own for the full run, 2 for --changed)
+#   CHECK_CONCURRENCY=<n> scripts/check.sh   turbo task concurrency (--concurrency; default: turbo's own for the full run, 2 for --changed)
+#   VITEST_MAX_WORKERS=<n> scripts/check.sh   vitest worker pool per package (vitest reads it itself; turbo passes it through)
+#   `heavy -- scripts/check.sh` sets both to 2 (see AGENTS.md section 4)
 #
 # --changed (pnpm only; may be combined with task names) looks at the files that differ from
 # `git merge-base origin/main HEAD`: committed, staged, unstaged and untracked (not ignored). Then:
@@ -175,7 +176,6 @@ else
     if has_script "$t"; then
       echo "==> $pm run $t"
       extra=(); [[ -n "${CHECK_CONCURRENCY:-}" ]] && extra+=("--concurrency=$CHECK_CONCURRENCY")
-      [[ "$t" == "test" && -n "${CHECK_TEST_ARGS:-}" ]] && extra+=(-- $CHECK_TEST_ARGS)
       if ! run "$pm" run "$t" ${extra[@]+"${extra[@]}"}; then failed+=("$t"); fi
     elif [[ "${STRICT_SCRIPTS:-0}" == "1" ]]; then
       echo "check: package.json has no '$t' script (STRICT_SCRIPTS=1)." >&2

@@ -24,7 +24,7 @@ Closes #<!-- issue number, required -->
 
 - [ ] Branch is `type/<issue#>-short-description` (a branch behind `main` is fine; the review tests the merge)
 - [ ] Title is `type: description (#<issue>)`
-- [ ] `scripts/check.sh` passes (lint, typecheck, test). No `--no-verify`; if `SKIP_CHECKS=1` was used, say why
+- [ ] `heavy -- scripts/check.sh` passes (lint, typecheck, test). No `--no-verify`; if `SKIP_CHECKS=1` was used, say why
 - [ ] verify-opencv evidence attached (web or api change)
 - [ ] Gates lane report is green on the exact head
 - [ ] Env/secrets handling touched? Check no real secret or `.env` file is committed

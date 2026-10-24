@@ -26,10 +26,10 @@ People can read, comment on, and **request changes** on any PR at any time. A "c
 
 ## Review agent checklist
 
-Run this for every PR when it is marked ready, and immediately for `hotfix` PRs. Work from the main checkout.
+Run this for every PR when it is marked ready, and immediately for `hotfix` PRs. Work from the main checkout (`heavy` caps the run; see AGENTS.md section 4).
 
 ```bash
-scripts/review-pr.sh <pr#>
+heavy -- scripts/review-pr.sh <pr#>
 ```
 
 The script does steps 1-6 and prints `OK`, `FAIL`, or `HUMAN REQUIRED`. It never approves.
@@ -57,7 +57,7 @@ git fetch origin main "pull/<pr#>/head:refs/remotes/origin/pr/<pr#>"
 tree=$(git --attr-source=origin/main merge-tree --write-tree --name-only --no-messages origin/main origin/pr/<pr#>)   # exit 1 means a conflict, which fails the review
 git worktree add --detach --no-checkout ../opencv.worktrees/review-pr-<pr#> origin/main
 git -C ../opencv.worktrees/review-pr-<pr#> -c core.hooksPath=/dev/null read-tree -u --reset "$tree"
-cd ../opencv.worktrees/review-pr-<pr#> && cp .env.example .env && pnpm install --frozen-lockfile && ../../opencv/scripts/check.sh
+cd ../opencv.worktrees/review-pr-<pr#> && cp .env.example .env && pnpm install --frozen-lockfile && heavy -- ../../opencv/scripts/check.sh
 cd - && git worktree remove --force ../opencv.worktrees/review-pr-<pr#>
 ```
 
