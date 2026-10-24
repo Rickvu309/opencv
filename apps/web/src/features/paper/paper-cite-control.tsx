@@ -17,7 +17,7 @@ export function PaperCiteControl({
       data-coach-cite={cite.sectionId}
       aria-label={`Show on Paper: ${cite.label}`}
       onClick={() => onCite(cite)}
-      className="h-auto rounded-full px-2 py-0.5 text-2xs text-muted-foreground"
+      className="h-auto rounded-full px-2 py-0.5 text-xs text-muted-foreground"
     >
       {cite.label}
     </Button>

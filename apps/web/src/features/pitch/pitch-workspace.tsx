@@ -12,7 +12,7 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@workspace/ui/components/empty-state"
+} from "@workspace/ui/components/empty"
 import { cn } from "@workspace/ui/lib/utils"
 import {
   emptyPitchDocument,
@@ -182,12 +182,12 @@ export function PitchWorkspace() {
 
         <div className="ml-auto flex items-center gap-2">
           {profile.published ? (
-            <span className="hidden items-center gap-1.5 rounded-full bg-success/10 px-2.5 py-1 text-micro font-medium text-success sm:inline-flex">
+            <span className="hidden items-center gap-1.5 rounded-full bg-success/10 px-2.5 py-1 text-xs font-medium text-success sm:inline-flex">
               <span className="size-1.5 rounded-full bg-success" />
               Published
             </span>
           ) : (
-            <span className="hidden items-center gap-1.5 rounded-full bg-warning/15 px-2.5 py-1 text-micro font-medium text-warning-foreground sm:inline-flex">
+            <span className="hidden items-center gap-1.5 rounded-full bg-warning/15 px-2.5 py-1 text-xs font-medium text-warning-foreground sm:inline-flex">
               <EyeOff className="size-3" />
               Draft
             </span>

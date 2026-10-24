@@ -79,7 +79,7 @@ export function HomeSuggestions({ onSelect, className }: Props) {
         >
           <Plus
             className={cn(
-              "size-3.5 transition-transform duration-150",
+              "size-3.5 transition-transform duration-(--duration-micro)",
               moreOpen && "rotate-45"
             )}
           />

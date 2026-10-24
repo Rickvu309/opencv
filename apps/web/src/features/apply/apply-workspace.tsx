@@ -16,7 +16,7 @@ import {
   EmptyDescription,
   EmptyHeader,
   EmptyTitle,
-} from "@workspace/ui/components/empty-state"
+} from "@workspace/ui/components/empty"
 import { Input } from "@workspace/ui/components/input"
 import { cn } from "@workspace/ui/lib/utils"
 import { CalendarDays, LayoutGrid, Plus, Search } from "lucide-react"

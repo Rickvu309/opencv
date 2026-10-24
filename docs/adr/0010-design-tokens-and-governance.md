@@ -1,5 +1,7 @@
 # Design tokens and governance: monochrome + status hues, light-only, vocabulary lock
 
+**Status.** Superseded by ADR-0014 (`docs/adr/0014-shadcn-design-system.md`).
+
 Decisions for Spec 6, grounded in the 2026-08-26 audit (`docs/research/2026-08-26-design-system-audit.md`). Agent-facing absorb + vocabulary rules live in ADR-0002; this file is the token and governance record. Supersede only with a follow-up ADR.
 
 **Color: the monochrome identity is deliberate.** OpenPath stays achromatic — calm under uncertainty, made visual. No brand accent hue. What gets added is _meaning_: semantic status tokens (`--success`, `--warning`, `--info` with foreground pairs), a genuinely differentiated `--chart-1..5` ramp so the Apply stage dots communicate, and one token-backed tone table for Pitch's warm gradients replacing the three incompatible raw-Tailwind maps (and one tone union across all Pitch types). Raw hex and named Tailwind palette classes are forbidden in app code, with exactly two documented exceptions: CV print paper (paper is white) and the mock GitHub heatmap ramp (tokenized as its own variables).

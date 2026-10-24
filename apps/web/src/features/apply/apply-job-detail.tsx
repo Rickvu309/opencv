@@ -84,7 +84,7 @@ const TRACK_KINDS: TrackKind[] = [
 ]
 
 const FIELD_LABEL =
-  "mb-1 text-2xs font-medium tracking-wide text-muted-foreground uppercase"
+  "mb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase"
 
 export function JobDetailPanel({
   card,
@@ -194,7 +194,7 @@ export function JobDetailPanel({
           onCommit={(next) => onPatch({ note: next })}
         />
 
-        <p className="text-micro text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           {formatApplyUpdated(card.updatedAt)}
         </p>
       </div>
@@ -322,9 +322,7 @@ function JobDetailFields({
             aria-invalid={Boolean(jobUrlError)}
           />
           {sourceHost ? (
-            <p className="mt-1 text-micro text-muted-foreground">
-              {sourceHost}
-            </p>
+            <p className="mt-1 text-xs text-muted-foreground">{sourceHost}</p>
           ) : null}
           {jobUrlError ? (
             <ErrorBanner variant="inline" className="mt-1">

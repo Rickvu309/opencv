@@ -84,13 +84,13 @@ export function PaperEditorSidebar({
                 </span>
                 <span
                   className={cn(
-                    "mt-0.5 flex items-center gap-1.5 text-micro",
+                    "mt-0.5 flex items-center gap-1.5 text-xs",
                     active ? "text-foreground" : "text-muted-foreground"
                   )}
                 >
                   {TYPE_LABEL[doc.kind]}
                   {doc.status === "draft" ? (
-                    <span className="rounded border border-border bg-background px-1 py-px text-2xs font-medium uppercase">
+                    <span className="rounded border border-border bg-background px-1 py-px text-xs font-medium uppercase">
                       Draft
                     </span>
                   ) : null}

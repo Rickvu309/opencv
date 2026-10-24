@@ -183,7 +183,7 @@ export function SearchModal({
               className="flex w-full shrink-0 flex-col overflow-auto border-border max-sm:max-h-[48%] max-sm:border-b sm:w-[42%] sm:border-r"
             >
               <div className="px-3 pt-3">
-                <p className="mb-1.5 px-1 text-micro font-medium tracking-wide text-muted-foreground uppercase">
+                <p className="mb-1.5 px-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
                   Actions
                 </p>
                 <div className="space-y-0.5">
@@ -228,7 +228,7 @@ export function SearchModal({
               </div>
 
               <div className="mt-4 px-3 pb-3">
-                <p className="mb-1.5 px-1 text-micro font-medium tracking-wide text-muted-foreground uppercase">
+                <p className="mb-1.5 px-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
                   Recent
                 </p>
                 <div className="space-y-0.5">
@@ -259,7 +259,7 @@ export function SearchModal({
                         <span className="min-w-0 flex-1 truncate">
                           {t.title}
                         </span>
-                        <span className="shrink-0 text-micro text-muted-foreground">
+                        <span className="shrink-0 text-xs text-muted-foreground">
                           {t.when}
                         </span>
                       </Button>

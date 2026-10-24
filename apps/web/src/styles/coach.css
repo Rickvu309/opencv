@@ -1,4 +1,4 @@
-/* Coach motion — Spec 7 / QVE-174. Tokens from ADR-0010. */
+/* Coach motion — Spec 7 / QVE-174. Tokens from ADR-0014. */
 @reference "@workspace/ui/globals.css";
 
 @layer utilities {
@@ -17,7 +17,7 @@
     inset-block: 0;
     width: 40%;
     background: var(--muted-foreground);
-    animation: coach-working-indeterminate 1.2s var(--ease-standard) infinite;
+    animation: coach-working-indeterminate 1.2s var(--ease-micro) infinite;
   }
 
   @keyframes coach-working-indeterminate {
@@ -30,7 +30,7 @@
   }
 
   .coach-text-enter {
-    animation: coach-text-fade var(--duration-base) var(--ease-standard) both;
+    animation: coach-text-fade var(--duration-micro) var(--ease-micro) both;
   }
 
   @keyframes coach-text-fade {
@@ -43,7 +43,7 @@
   }
 
   .coach-receipt-enter {
-    animation: coach-receipt-enter var(--duration-base) var(--ease-standard) both;
+    animation: coach-receipt-enter var(--duration-micro) var(--ease-micro) both;
   }
 
   @keyframes coach-receipt-enter {
@@ -60,7 +60,7 @@
   .coach-receipt-collapse {
     display: grid;
     grid-template-rows: 1fr;
-    animation: coach-receipt-collapse var(--duration-slow) var(--ease-standard)
+    animation: coach-receipt-collapse var(--duration-panel) var(--ease-micro)
       forwards;
   }
 
@@ -77,17 +77,17 @@
   }
 
   .coach-undone-flash {
-    animation: coach-undone-flash var(--duration-slow) var(--ease-standard) both;
+    animation: coach-undone-flash var(--duration-panel) var(--ease-micro) both;
   }
 
   .coach-float-card {
     transition:
-      opacity var(--duration-base) var(--ease-standard),
-      transform var(--duration-base) var(--ease-standard);
+      opacity var(--duration-micro) var(--ease-micro),
+      transform var(--duration-micro) var(--ease-micro);
   }
 
   .coach-float-backdrop {
-    transition: opacity var(--duration-base) var(--ease-standard);
+    transition: opacity var(--duration-micro) var(--ease-micro);
   }
 
   @keyframes coach-undone-flash {

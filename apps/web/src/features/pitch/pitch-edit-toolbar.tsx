@@ -74,7 +74,7 @@ export function PitchEditToolbar({
                 <span className="text-xs font-medium">
                   {BLOCK_LABELS[kind]}
                 </span>
-                <span className="mt-0.5 text-2xs leading-snug font-normal text-muted-foreground">
+                <span className="mt-0.5 text-xs leading-snug font-normal text-muted-foreground">
                   {BLOCK_PURPOSE[kind]}
                 </span>
               </Button>

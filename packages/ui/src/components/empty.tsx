@@ -1,7 +1,5 @@
-import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
-
-import { cn } from "@workspace/ui/lib/utils"
+import { cn } from "cn"
 
 function Empty({ className, ...props }: React.ComponentProps<"div">) {
   return (
@@ -60,10 +58,7 @@ function EmptyTitle({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="empty-title"
-      className={cn(
-        "font-heading text-sm font-medium tracking-tight",
-        className
-      )}
+      className={cn("text-sm font-medium tracking-tight", className)}
       {...props}
     />
   )
@@ -95,12 +90,8 @@ function EmptyContent({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
-/** Ticket name for the absorbed empty primitive. */
-const EmptyState = Empty
-
 export {
   Empty,
-  EmptyState,
   EmptyHeader,
   EmptyTitle,
   EmptyDescription,

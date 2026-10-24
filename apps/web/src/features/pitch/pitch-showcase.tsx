@@ -63,7 +63,7 @@ function SectionShell({
     <section className="group relative">
       {editing ? (
         <div className="absolute -top-1 right-0 flex gap-1">
-          <span className="rounded-md border border-border bg-background px-1.5 py-0.5 text-2xs text-muted-foreground shadow-sm">
+          <span className="rounded-md border border-border bg-background px-1.5 py-0.5 text-xs text-muted-foreground shadow-sm">
             {title}
           </span>
           {onHide ? (
@@ -72,14 +72,14 @@ function SectionShell({
               variant="outline"
               size="xs"
               onClick={onHide}
-              className="h-auto px-1.5 py-0.5 text-2xs"
+              className="h-auto px-1.5 py-0.5 text-xs"
             >
               Hide
             </Button>
           ) : null}
         </div>
       ) : null}
-      <h2 className="mb-5 text-micro font-medium tracking-widest text-muted-foreground uppercase">
+      <h2 className="mb-5 text-xs font-medium tracking-widest text-muted-foreground uppercase">
         {title}
       </h2>
       {children}
@@ -139,7 +139,7 @@ export function PitchProfileHeader({
       <div className="flex items-start gap-4">
         <PitchAvatar src={profile.avatar} name={profile.name} />
         <div className="min-w-0 pt-0.5">
-          <Name className="font-heading text-page-title font-semibold tracking-tight">
+          <Name className="text-3xl font-semibold tracking-tight">
             {profile.name}
           </Name>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -193,10 +193,10 @@ export function AboutSection({
           value={text}
           onChange={(e) => onChange?.(e.target.value)}
           rows={6}
-          className="min-h-0 resize-none rounded-xl text-body leading-relaxed"
+          className="min-h-0 resize-none rounded-xl text-sm leading-relaxed"
         />
       ) : (
-        <div className="space-y-3 text-body leading-relaxed text-muted-foreground">
+        <div className="space-y-3 text-sm leading-relaxed text-muted-foreground">
           {text.split("\n\n").map((para, i) => (
             <p key={i}>{para}</p>
           ))}
@@ -244,7 +244,7 @@ export function AchievementsSection({
                     </span>
                   </p>
                   {item.tag ? (
-                    <span className="mt-1.5 inline-block rounded-full bg-muted px-2 py-0.5 text-2xs font-medium text-foreground">
+                    <span className="mt-1.5 inline-block rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-foreground">
                       {item.tag}
                     </span>
                   ) : null}
@@ -261,7 +261,7 @@ export function AchievementsSection({
                     >
                       <span
                         className={cn(
-                          "flex size-10 shrink-0 items-center justify-center rounded-lg text-2xs font-bold",
+                          "flex size-10 shrink-0 items-center justify-center rounded-lg text-xs font-bold",
                           proofMeta.gradient
                         )}
                       >
@@ -359,7 +359,7 @@ export function WorkSection({
             >
               <div
                 className={cn(
-                  "flex size-10 shrink-0 items-center justify-center rounded-lg text-2xs font-bold",
+                  "flex size-10 shrink-0 items-center justify-center rounded-lg text-xs font-bold",
                   meta.gradient
                 )}
               >
@@ -385,7 +385,7 @@ export function WorkSection({
               <FileKindIcon kind={file.kind} />
               <span>
                 <span className="block font-medium">{file.name}</span>
-                <span className="text-2xs font-normal text-muted-foreground">
+                <span className="text-xs font-normal text-muted-foreground">
                   {file.meta}
                 </span>
               </span>
@@ -436,7 +436,7 @@ export function GithubSection({
               <p className="block truncate font-mono text-sm font-medium">
                 @{mock.username}
               </p>
-              <span className="inline-flex items-center gap-1 text-2xs text-foreground">
+              <span className="inline-flex items-center gap-1 text-xs text-foreground">
                 <span className="size-1.5 rounded-full bg-success" />
                 Connected · mock integration
               </span>
@@ -458,25 +458,25 @@ export function GithubSection({
 
         <dl className="mt-4 grid grid-cols-4 gap-2 border-t border-border/50 pt-3 text-center">
           <div>
-            <dt className="text-3xs text-muted-foreground uppercase">Streak</dt>
+            <dt className="text-xs text-muted-foreground uppercase">Streak</dt>
             <dd className="text-sm font-semibold tabular-nums">
               {mock.streak}d
             </dd>
           </div>
           <div>
-            <dt className="text-3xs text-muted-foreground uppercase">Repos</dt>
+            <dt className="text-xs text-muted-foreground uppercase">Repos</dt>
             <dd className="text-sm font-semibold tabular-nums">
               {mock.publicRepos}
             </dd>
           </div>
           <div>
-            <dt className="text-3xs text-muted-foreground uppercase">Since</dt>
+            <dt className="text-xs text-muted-foreground uppercase">Since</dt>
             <dd className="text-sm font-semibold tabular-nums">
               {mock.memberSince}
             </dd>
           </div>
           <div>
-            <dt className="text-3xs text-muted-foreground uppercase">Top</dt>
+            <dt className="text-xs text-muted-foreground uppercase">Top</dt>
             <dd className="truncate text-sm font-semibold">
               {mock.topLanguage}
             </dd>
@@ -484,7 +484,7 @@ export function GithubSection({
         </dl>
       </div>
       {editing ? (
-        <p className="mt-2 text-2xs text-muted-foreground">
+        <p className="mt-2 text-xs text-muted-foreground">
           Live GitHub data waits on a product decision. This heatmap is mock
           data for @{mock.username}.
         </p>
@@ -508,7 +508,7 @@ export function ContactSection({
     <SectionShell title="Contact" editing={editing} onHide={onHide}>
       {email ? (
         <div className="mb-4 flex flex-col rounded-xl border border-border bg-muted/20 px-4 py-3">
-          <span className="text-2xs font-medium tracking-wide text-muted-foreground uppercase">
+          <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
             Email
           </span>
           <span className="mt-1 text-base font-semibold">
@@ -552,7 +552,7 @@ export function GallerySection({
               pitchToneClass(item.tone)
             )}
           >
-            <span className="text-2xs font-medium text-foreground/70">
+            <span className="text-xs font-medium text-foreground/70">
               {item.caption}
             </span>
           </div>
@@ -565,7 +565,7 @@ export function GallerySection({
             className="flex aspect-[4/3] h-auto flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border text-muted-foreground"
           >
             <ImagePlus className="size-4" />
-            <span className="text-2xs">Upload</span>
+            <span className="text-xs">Upload</span>
             <ComingSoon />
           </Button>
         ) : null}

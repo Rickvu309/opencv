@@ -156,7 +156,7 @@ export function PitchGithubHeatmap({ contributions, className }: Props) {
           return (
             <div
               key={weekIndex}
-              className="shrink-0 overflow-hidden text-3xs leading-none text-muted-foreground"
+              className="shrink-0 overflow-hidden text-xs leading-none text-muted-foreground"
               style={{ width: cellPx, height: 10 }}
             >
               {month ? month.label : ""}
@@ -167,7 +167,7 @@ export function PitchGithubHeatmap({ contributions, className }: Props) {
 
       <div className="flex" style={{ gap: 4 }}>
         <div
-          className="flex shrink-0 flex-col justify-between py-0.5 text-3xs leading-none text-muted-foreground"
+          className="flex shrink-0 flex-col justify-between py-0.5 text-xs leading-none text-muted-foreground"
           style={{ width: WEEKDAY_COL_WIDTH, height: rowHeight }}
         >
           {WEEKDAY_LABELS.map((label, i) => (
@@ -195,11 +195,7 @@ export function PitchGithubHeatmap({ contributions, className }: Props) {
                   )
                 }
                 const level = Math.min(4, Math.max(0, day.level)) as
-                  | 0
-                  | 1
-                  | 2
-                  | 3
-                  | 4
+                  0 | 1 | 2 | 3 | 4
                 return (
                   <div
                     key={dayIndex}
@@ -223,7 +219,7 @@ export function PitchGithubHeatmap({ contributions, className }: Props) {
     return (
       <div
         className={cn(
-          "flex h-20 items-center justify-center rounded-lg border border-dashed border-border text-micro text-muted-foreground",
+          "flex h-20 items-center justify-center rounded-lg border border-dashed border-border text-xs text-muted-foreground",
           className
         )}
       >

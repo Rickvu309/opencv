@@ -78,7 +78,7 @@ export function StoryHighlightsRow({
               ) : (
                 <span
                   className={cn(
-                    "flex size-full items-center justify-center rounded-full border-2 border-background text-2xs font-bold tracking-tight text-foreground/70",
+                    "flex size-full items-center justify-center rounded-full border-2 border-background text-xs font-bold tracking-tight text-foreground/70",
                     pitchToneClass(h.coverTone)
                   )}
                 >
@@ -86,7 +86,7 @@ export function StoryHighlightsRow({
                 </span>
               )}
             </span>
-            <span className="max-w-full truncate text-micro font-normal text-muted-foreground">
+            <span className="max-w-full truncate text-xs font-normal text-muted-foreground">
               {h.label}
             </span>
           </Button>
@@ -102,14 +102,14 @@ export function StoryHighlightsRow({
             <span className="flex size-[4.25rem] items-center justify-center rounded-full border border-dashed border-border bg-muted/30">
               <Plus className="size-5 text-muted-foreground" />
             </span>
-            <span className="text-micro font-normal text-muted-foreground">
+            <span className="text-xs font-normal text-muted-foreground">
               New
             </span>
             <ComingSoon silent />
           </Button>
         ) : null}
       </div>
-      <p className="mt-3 text-center text-2xs text-muted-foreground">
+      <p className="mt-3 text-center text-xs text-muted-foreground">
         Tap a highlight to play it.
       </p>
     </div>
@@ -363,7 +363,7 @@ function StoryFrame({
           <p className="truncate text-sm font-semibold text-white">
             {profile.name}
           </p>
-          <p className="truncate text-micro text-white/60">{highlight.label}</p>
+          <p className="truncate text-xs text-white/60">{highlight.label}</p>
         </div>
         <Button
           type="button"

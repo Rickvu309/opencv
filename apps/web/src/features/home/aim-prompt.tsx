@@ -24,7 +24,7 @@ export function AimPrompt({
         <div className="min-w-0">
           <h2
             id="aim-prompt-heading"
-            className="font-heading text-sm font-medium tracking-tight"
+            className="text-sm font-medium tracking-tight"
           >
             What are you aiming for?
           </h2>

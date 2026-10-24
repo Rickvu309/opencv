@@ -67,7 +67,7 @@ export function BoardJobCard({
         }
       }}
       className={cn(
-        "group cursor-grab rounded-xl border bg-card p-3 text-left shadow-[0_1px_2px_oklch(0_0_0/0.04)] transition-[border-color,box-shadow,opacity] duration-150 active:cursor-grabbing",
+        "group cursor-grab rounded-xl border bg-card p-3 text-left shadow-[0_1px_2px_oklch(0_0_0/0.04)] transition-[border-color,box-shadow,opacity] duration-(--duration-micro) active:cursor-grabbing",
         active
           ? "border-foreground/20 ring-1 ring-ring/30"
           : "border-border hover:border-foreground/15 hover:shadow-[0_2px_8px_oklch(0_0_0/0.05)]",
@@ -87,14 +87,14 @@ export function BoardJobCard({
         ) : null}
       </div>
       <div className="mt-2 flex items-center gap-2 pl-5">
-        <span className="flex size-5 items-center justify-center rounded bg-muted text-3xs font-bold tracking-tight text-foreground">
+        <span className="flex size-5 items-center justify-center rounded bg-muted text-xs font-bold tracking-tight text-foreground">
           {companyShort(card.company)}
         </span>
         <span className="truncate text-xs text-muted-foreground">
           {card.company}
         </span>
       </div>
-      <div className="mt-2.5 flex items-center justify-between gap-2 pl-5 text-micro text-muted-foreground">
+      <div className="mt-2.5 flex items-center justify-between gap-2 pl-5 text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1 tabular-nums">
           <CalendarDays className="size-3 shrink-0 opacity-70" />
           {formatTrackDate(card.trackDate)}

@@ -44,7 +44,7 @@ export function WorkspaceHeader({
           <h1
             className={
               page
-                ? "text-section-title font-semibold tracking-tight"
+                ? "text-xl font-semibold tracking-tight"
                 : "text-sm font-semibold tracking-tight"
             }
           >

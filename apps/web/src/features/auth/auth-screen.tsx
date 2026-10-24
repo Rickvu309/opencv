@@ -14,9 +14,7 @@ export function AuthScreen({ title, body, children }: AuthScreenProps) {
       <div className="w-full max-w-sm space-y-8">
         <OpenCvLogo withWordmark size="md" />
         <header className="space-y-2">
-          <h1 className="font-heading text-page-title font-normal tracking-tight">
-            {title}
-          </h1>
+          <h1 className="text-3xl font-normal tracking-tight">{title}</h1>
           <p className="text-sm text-muted-foreground">{body}</p>
         </header>
         {children}

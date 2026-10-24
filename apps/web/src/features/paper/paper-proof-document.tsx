@@ -200,10 +200,10 @@ function ChainNode({
     >
       <div className="flex items-start justify-between gap-2 px-3.5 pt-3.5 pb-2.5">
         <div className="min-w-0">
-          <p className="text-2xs font-medium tracking-[0.12em] text-muted-foreground uppercase">
+          <p className="text-xs font-medium tracking-[0.12em] text-muted-foreground uppercase">
             {PROOF_STEP_LABEL[step.type]}
           </p>
-          <p className="mt-0.5 text-micro text-muted-foreground/60 tabular-nums">
+          <p className="mt-0.5 text-xs text-muted-foreground/60 tabular-nums">
             Step {String(index + 1).padStart(2, "0")}
           </p>
         </div>
@@ -364,7 +364,7 @@ function TimelineRow({
       className="relative flex gap-4 pb-6"
       data-paper-section={`proof-step-${step.id}`}
     >
-      <p className="w-12 shrink-0 pt-1 text-right text-micro text-muted-foreground tabular-nums">
+      <p className="w-12 shrink-0 pt-1 text-right text-xs text-muted-foreground tabular-nums">
         {step.time ?? "—"}
       </p>
 
@@ -389,7 +389,7 @@ function TimelineRow({
               <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
             )}
             <span className="truncate text-sm font-medium">{step.title}</span>
-            <span className="shrink-0 rounded-md border border-border bg-secondary px-1.5 py-0.5 text-2xs font-medium text-secondary-foreground uppercase">
+            <span className="shrink-0 rounded-md border border-border bg-secondary px-1.5 py-0.5 text-xs font-medium text-secondary-foreground uppercase">
               {step.type}
             </span>
           </Button>
@@ -471,7 +471,7 @@ function PhotoStrip({
             variant="ghost"
             size="icon-xs"
             onClick={() => onRemove(photo.id)}
-            className="absolute top-0.5 right-0.5 size-5 rounded bg-black/50 text-white opacity-0 hover:bg-black/60 hover:text-white group-hover:opacity-100"
+            className="absolute top-0.5 right-0.5 size-5 rounded bg-black/50 text-white opacity-0 group-hover:opacity-100 hover:bg-black/60 hover:text-white"
             aria-label="Remove photo"
           >
             <X className="size-3" />

@@ -21,7 +21,7 @@ export function MomentsBentoSection({
     <section className="group relative">
       {editing ? (
         <div className="absolute -top-1 right-0 flex gap-1">
-          <span className="rounded-md border border-border bg-background px-1.5 py-0.5 text-2xs text-muted-foreground shadow-sm">
+          <span className="rounded-md border border-border bg-background px-1.5 py-0.5 text-xs text-muted-foreground shadow-sm">
             Moments
           </span>
           {onHide ? (
@@ -30,7 +30,7 @@ export function MomentsBentoSection({
               variant="outline"
               size="xs"
               onClick={onHide}
-              className="h-auto px-1.5 py-0.5 text-2xs"
+              className="h-auto px-1.5 py-0.5 text-xs"
             >
               Hide
             </Button>
@@ -38,7 +38,7 @@ export function MomentsBentoSection({
         </div>
       ) : null}
 
-      <h2 className="mb-4 text-micro font-medium tracking-widest text-muted-foreground uppercase">
+      <h2 className="mb-4 text-xs font-medium tracking-widest text-muted-foreground uppercase">
         Moments
       </h2>
 
@@ -63,7 +63,7 @@ export function MomentsBentoSection({
             className="flex h-auto min-h-[7rem] flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-border text-muted-foreground"
           >
             <Plus className="size-4" />
-            <span className="text-2xs">Add card</span>
+            <span className="text-xs">Add card</span>
             <ComingSoon />
           </Button>
         ) : null}
@@ -104,7 +104,7 @@ function BentoCard({
         )}
       >
         <ImagePlus className="size-4" />
-        <span className="text-2xs">Add a photo</span>
+        <span className="text-xs">Add a photo</span>
         <ComingSoon />
       </Button>
     )
@@ -144,7 +144,7 @@ function BentoCard({
           <div>
             <p className="text-sm font-medium">{card.body}</p>
             {card.meta ? (
-              <p className="mt-0.5 text-2xs text-muted-foreground">
+              <p className="mt-0.5 text-xs text-muted-foreground">
                 {card.meta}
               </p>
             ) : null}

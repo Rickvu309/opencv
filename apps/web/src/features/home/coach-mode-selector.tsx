@@ -51,7 +51,7 @@ export function CoachModeSelector({
         </div>
       </div>
       {showHelper ? (
-        <p className="text-micro leading-4 text-muted-foreground">
+        <p className="text-xs leading-4 text-muted-foreground">
           {coachModeHelper(mode)}
           {mode === "free" ? (
             <>
