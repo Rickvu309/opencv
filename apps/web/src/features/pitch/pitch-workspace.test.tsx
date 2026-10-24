@@ -73,7 +73,9 @@ describe("Pitch workspace", () => {
     expect(screen.getByRole("heading", { name: "Contact" })).toBeInTheDocument()
     expect(screen.getAllByText(`@${github}`).length).toBeGreaterThan(0)
     expect(screen.getByText("Connected · mock integration")).toBeInTheDocument()
-    expect(screen.getAllByTitle(/contribution/i).length).toBeGreaterThan(50)
+    expect(
+      document.querySelectorAll("rect[data-date] > title").length
+    ).toBeGreaterThan(50)
     expect(
       screen.getByRole("button", { name: "Checkout highlight" })
     ).toBeInTheDocument()
@@ -92,7 +94,7 @@ describe("Pitch workspace", () => {
       within(chrome as HTMLElement).getByRole("button", { name: "Clear demo" })
     ).toBeInTheDocument()
 
-    const demoBar = screen.getByRole("status")
+    const demoBar = screen.getByText("Demo content").closest("[role=status]")!
     expect(within(demoBar).getByText("Demo content")).toBeInTheDocument()
     expect(
       within(demoBar).getByRole("button", { name: "Clear demo" })

@@ -43,6 +43,40 @@ describe("Pitch craft pass", () => {
     expect(screen.queryByText(/only you can see it/i)).not.toBeInTheDocument()
   })
 
+  it("holds the Publish button inside the unpublished notice and publishes from it", async () => {
+    await loadedPitch()
+
+    const notice = screen
+      .getAllByRole("status")
+      .find((el) => /unpublished/i.test(el.textContent ?? ""))!
+    fireEvent.click(within(notice).getByRole("button", { name: "Publish" }))
+
+    await waitFor(() => {
+      expect(getMockPitchDoc()?.content).toMatchObject({ published: true })
+    })
+    expect(screen.queryByText(/only you can see it/i)).not.toBeInTheDocument()
+    expect(screen.getByText("Published")).toBeInTheDocument()
+  })
+
+  it("labels the contribution graph with the total of its cells for a screen reader", async () => {
+    await loadedPitch()
+
+    expect(
+      screen.getByRole("img", {
+        name: /contribution graph, 1240 contributions in the last year/i,
+      })
+    ).toBeInTheDocument()
+    expect(
+      Array.from(document.querySelectorAll("rect[data-count]")).reduce(
+        (sum, cell) => sum + Number(cell.getAttribute("data-count")),
+        0
+      )
+    ).toBe(1240)
+    expect(
+      screen.getByText(/contributions in the last year on GitHub/i)
+    ).toHaveTextContent("1240 contributions in the last year")
+  })
+
   it("keeps one h1 on the screen and sets the person's name under it", async () => {
     await loadedPitch()
 

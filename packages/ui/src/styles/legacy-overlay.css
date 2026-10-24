@@ -1,6 +1,6 @@
 /*
  * Temporary. These tokens survive only until the surface PRs that read them
- * land (DS-2 to DS-4b). DS-5 deletes this file and its import in globals.css.
+ * land (DS-2). DS-5 deletes this file and its import in globals.css.
  * The LEGACY_OVERLAY_ALLOWLIST in design-vocabulary.test.ts lists the files
  * that still use them. Do not add to it (ADR-0014).
  */
@@ -8,94 +8,14 @@
 @theme inline {
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
-  --color-warning: var(--warning);
-  --color-warning-foreground: var(--warning-foreground);
-  --color-pitch-tone-warm-from: var(--pitch-tone-warm-from);
-  --color-pitch-tone-warm-via: var(--pitch-tone-warm-via);
-  --color-pitch-tone-warm-to: var(--pitch-tone-warm-to);
-  --color-pitch-tone-cool-from: var(--pitch-tone-cool-from);
-  --color-pitch-tone-cool-via: var(--pitch-tone-cool-via);
-  --color-pitch-tone-cool-to: var(--pitch-tone-cool-to);
-  --color-pitch-tone-neutral-from: var(--pitch-tone-neutral-from);
-  --color-pitch-tone-neutral-via: var(--pitch-tone-neutral-via);
-  --color-pitch-tone-neutral-to: var(--pitch-tone-neutral-to);
-  --color-pitch-tone-emerald-from: var(--pitch-tone-emerald-from);
-  --color-pitch-tone-emerald-via: var(--pitch-tone-emerald-via);
-  --color-pitch-tone-emerald-to: var(--pitch-tone-emerald-to);
-  --color-pitch-tone-dark-from: var(--pitch-tone-dark-from);
-  --color-pitch-tone-dark-via: var(--pitch-tone-dark-via);
-  --color-pitch-tone-dark-to: var(--pitch-tone-dark-to);
-  --color-github-heatmap-0: var(--github-heatmap-0);
-  --color-github-heatmap-1: var(--github-heatmap-1);
-  --color-github-heatmap-2: var(--github-heatmap-2);
-  --color-github-heatmap-3: var(--github-heatmap-3);
-  --color-github-heatmap-4: var(--github-heatmap-4);
 }
 
 :root {
   --success: oklch(0.55 0.14 145);
   --success-foreground: oklch(0.985 0.02 145);
-  --warning: oklch(0.75 0.15 75);
-  --warning-foreground: oklch(0.28 0.06 55);
-
-  /* Pitch tone table — variables only; feature adoption is DS-2. */
-  --pitch-tone-warm-from: oklch(0.88 0.08 75);
-  --pitch-tone-warm-via: oklch(0.92 0.06 50);
-  --pitch-tone-warm-to: oklch(0.93 0.04 15);
-  --pitch-tone-cool-from: oklch(0.88 0.06 240);
-  --pitch-tone-cool-via: oklch(0.92 0.05 270);
-  --pitch-tone-cool-to: oklch(0.94 0.04 300);
-  --pitch-tone-neutral-from: oklch(0.88 0.01 80);
-  --pitch-tone-neutral-via: oklch(0.93 0.005 80);
-  --pitch-tone-neutral-to: oklch(0.97 0 0);
-  --pitch-tone-emerald-from: oklch(0.88 0.08 160);
-  --pitch-tone-emerald-via: oklch(0.92 0.05 180);
-  --pitch-tone-emerald-to: oklch(0.95 0.03 200);
-  --pitch-tone-dark-from: oklch(0.32 0.01 0);
-  --pitch-tone-dark-via: oklch(0.22 0.005 0);
-  --pitch-tone-dark-to: oklch(0.12 0 0);
-  --pitch-tone-warm: linear-gradient(
-    to bottom right,
-    var(--pitch-tone-warm-from),
-    var(--pitch-tone-warm-via),
-    var(--pitch-tone-warm-to)
-  );
-  --pitch-tone-cool: linear-gradient(
-    to bottom right,
-    var(--pitch-tone-cool-from),
-    var(--pitch-tone-cool-via),
-    var(--pitch-tone-cool-to)
-  );
-  --pitch-tone-neutral: linear-gradient(
-    to bottom right,
-    var(--pitch-tone-neutral-from),
-    var(--pitch-tone-neutral-via),
-    var(--pitch-tone-neutral-to)
-  );
-  --pitch-tone-emerald: linear-gradient(
-    to bottom right,
-    var(--pitch-tone-emerald-from),
-    var(--pitch-tone-emerald-via),
-    var(--pitch-tone-emerald-to)
-  );
-  --pitch-tone-dark: linear-gradient(
-    to bottom right,
-    var(--pitch-tone-dark-from),
-    var(--pitch-tone-dark-via),
-    var(--pitch-tone-dark-to)
-  );
-
-  /* Documented hex exception: mock GitHub heatmap ramp. */
-  --github-heatmap-0: #ebedf0;
-  --github-heatmap-1: #9be9a8;
-  --github-heatmap-2: #40c463;
-  --github-heatmap-3: #30a14e;
-  --github-heatmap-4: #216e39;
 }
 
 .dark {
   --success: oklch(0.72 0.16 145);
   --success-foreground: oklch(0.2 0.04 145);
-  --warning: oklch(0.8 0.14 85);
-  --warning-foreground: oklch(0.22 0.05 75);
 }

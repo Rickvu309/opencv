@@ -3,6 +3,7 @@
  * Do not import shell chrome — the route mounts this into `<Outlet />`.
  */
 import { useState } from "react"
+import { Alert, AlertDescription } from "@workspace/ui/components/alert"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -182,15 +183,15 @@ export function PitchWorkspace() {
 
         <div className="ml-auto flex items-center gap-2">
           {profile.published ? (
-            <span className="hidden items-center gap-1.5 rounded-full bg-success/10 px-2.5 py-1 text-xs font-medium text-success sm:inline-flex">
-              <span className="size-1.5 rounded-full bg-success" />
+            <Badge variant="secondary" className="hidden sm:inline-flex">
+              <Check />
               Published
-            </span>
+            </Badge>
           ) : (
-            <span className="hidden items-center gap-1.5 rounded-full bg-warning/15 px-2.5 py-1 text-xs font-medium text-warning-foreground sm:inline-flex">
-              <EyeOff className="size-3" />
+            <Badge variant="outline" className="hidden sm:inline-flex">
+              <EyeOff />
               Draft
-            </span>
+            </Badge>
           )}
 
           <Button
@@ -255,12 +256,15 @@ export function PitchWorkspace() {
             )}
           >
             {!profile.published ? (
-              <div className="mb-6 flex flex-col gap-3 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning-foreground sm:flex-row sm:items-center">
-                <EyeOff className="size-4 shrink-0 opacity-70" />
-                <p className="min-w-0 flex-1">
+              <Alert
+                role="status"
+                className="mb-6 flex flex-col items-start gap-3 has-[>svg]:grid-cols-none has-[>svg]:gap-x-3 sm:flex-row sm:items-center *:[svg]:translate-y-0"
+              >
+                <EyeOff className="shrink-0" />
+                <AlertDescription className="min-w-0 flex-1 text-foreground">
                   This page is <strong>unpublished</strong>. Only you can see it
                   until you publish.
-                </p>
+                </AlertDescription>
                 {editing ? null : (
                   <Button
                     type="button"
@@ -271,7 +275,7 @@ export function PitchWorkspace() {
                     Publish
                   </Button>
                 )}
-              </div>
+              </Alert>
             ) : null}
 
             <PitchProfileHeader

@@ -41,7 +41,10 @@ export function getMockGithubProfile(name: string, avatarUrl = "") {
     publicRepos: 14,
     followers: 28,
     memberSince: 2022,
-    totalLastYear: 284,
+    totalLastYear: MOCK_GITHUB_CONTRIBUTIONS.reduce(
+      (sum, day) => sum + day.count,
+      0
+    ),
     streak: 11,
     topLanguage: "TypeScript",
   }
