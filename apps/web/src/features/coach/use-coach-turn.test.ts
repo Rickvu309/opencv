@@ -1,7 +1,18 @@
-import { describe, expect, it } from "vitest"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { act, renderHook, waitFor } from "@testing-library/react"
+import { createElement, useState, type ReactNode } from "react"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { existsSync, readFileSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
+
+import { STREAMING_COACH_ID } from "@/features/home/threads.ts"
+import {
+  installThreadApiMock,
+  scriptCoachStream,
+} from "@/test/threads-api-mock.ts"
+
+import { useCoachTurn } from "./use-coach-turn.ts"
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const webSrc = path.join(here, "../..")
@@ -73,5 +84,60 @@ describe("shared Coach turn hook", () => {
     expect(panel).not.toMatch(/knowledge-base/)
     expect(panel).not.toMatch(/Add sources/)
     expect(panel).not.toMatch(/sources library/)
+  })
+})
+
+describe("useCoachTurn turn lifecycle", () => {
+  beforeEach(() => installThreadApiMock())
+  afterEach(() => vi.unstubAllGlobals())
+
+  it("regenerates after an aborted send without duplicating the new reply", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    })
+    const wrapper = ({ children }: { children: ReactNode }) =>
+      createElement(QueryClientProvider, { client: queryClient }, children)
+    const { result } = renderHook(
+      () => {
+        const [threadId, setThreadId] = useState<string | null>(null)
+        return useCoachTurn({
+          threadId,
+          setThreadId,
+          titleForCreate: (text) => text,
+        })
+      },
+      { wrapper }
+    )
+    const coachTexts = () =>
+      result.current.messages
+        .filter((message) => message.role === "coach")
+        .map((message) => message.text)
+
+    const stream = scriptCoachStream({
+      gated: true,
+      texts: ["Partial reply", " never shown"],
+    })
+    act(() => {
+      result.current.send("Stop me")
+    })
+    expect(result.current.phase).toBe("waiting")
+    stream.release(2)
+    await waitFor(() => expect(result.current.phase).toBe("streaming"))
+
+    act(() => result.current.stop())
+    await waitFor(() => expect(result.current.phase).toBe("idle"))
+    expect(coachTexts()).toEqual(["Partial reply"])
+    expect(result.current.error).toBeNull()
+
+    scriptCoachStream({ texts: ["Fresh reply"] })
+    act(() => {
+      result.current.regenerate()
+    })
+    await waitFor(() => expect(coachTexts()).toContain("Fresh reply"))
+    await waitFor(() => expect(result.current.phase).toBe("idle"))
+    expect(coachTexts()).toEqual(["Partial reply", "Fresh reply"])
+    const ids = result.current.messages.map((message) => message.id)
+    expect(new Set(ids).size).toBe(ids.length)
+    expect(ids).not.toContain(STREAMING_COACH_ID)
   })
 })
