@@ -104,21 +104,23 @@ export const KanbanBoard = ({
   )
 }
 
-export type KanbanCardProps<T extends KanbanItemProps = KanbanItemProps> = T &
-  Omit<HTMLAttributes<HTMLDivElement>, "id" | "children"> & {
-    children?: ReactNode
-    className?: string
-  }
+export type KanbanCardProps = Omit<
+  HTMLAttributes<HTMLDivElement>,
+  "id" | "children"
+> & {
+  id: string
+  name: string
+  children?: ReactNode
+}
 
-export const KanbanCard = <T extends KanbanItemProps = KanbanItemProps>({
+export const KanbanCard = ({
   id,
   name,
-  column: _column,
   children,
   className,
   onKeyDown,
   ...props
-}: KanbanCardProps<T>) => {
+}: KanbanCardProps) => {
   const {
     attributes,
     listeners,

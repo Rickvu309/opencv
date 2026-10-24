@@ -1,5 +1,7 @@
 "use client"
 
+/* eslint-disable react-hooks/refs -- affectUI tracks entering columns in refs during render */
+
 import { useEffect, useMemo, useRef, useState } from "react"
 
 /*

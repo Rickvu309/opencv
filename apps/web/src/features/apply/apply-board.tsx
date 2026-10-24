@@ -125,7 +125,6 @@ export function ApplyBoard({
                       key={item.id}
                       id={item.id}
                       name={item.name}
-                      column={item.column}
                       data-card-id={item.id}
                       aria-label={`${item.card.title} at ${item.card.company}`}
                       onClick={() => onSelect(item.id)}

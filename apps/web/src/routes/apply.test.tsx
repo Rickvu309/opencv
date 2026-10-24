@@ -50,9 +50,9 @@ describe("Apply board", () => {
         name: "Associate PM intern at Local startup",
       })
     ).toBeInTheDocument()
-    expect(screen.getAllByRole("button", { name: "Clear demo" })).toHaveLength(
-      1
-    )
+    expect(
+      await screen.findAllByRole("button", { name: "Clear demo" })
+    ).toHaveLength(1)
     expect(
       within(stageColumn("inbox")).getByRole("button", {
         name: "Product intern at Fintech scale-up",

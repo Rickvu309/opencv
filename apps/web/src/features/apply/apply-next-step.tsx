@@ -1,5 +1,4 @@
-import { useState } from "react"
-import { SmartRecommendation } from "@workspace/ui/components/smart-recommendation"
+import { lazy, Suspense, useState } from "react"
 
 import { nextSteps, type NextStep } from "@/features/apply/apply-next-step.ts"
 import type {
@@ -7,6 +6,12 @@ import type {
   StageId,
   TrackKind,
 } from "@/features/apply/apply-types.ts"
+
+const SmartRecommendation = lazy(() =>
+  import("@workspace/ui/components/smart-recommendation").then((m) => ({
+    default: m.SmartRecommendation,
+  }))
+)
 
 type Props = {
   card: ApplyCard
@@ -52,11 +57,13 @@ function NextStepCard({
   const [steps] = useState(() => nextSteps(card))
   if (steps.length === 0) return null
   return (
-    <SmartRecommendation
-      title="Next step"
-      options={steps}
-      onAccept={(step) => onAccept(step as NextStep)}
-      onUndo={(step) => onUndo(step as NextStep)}
-    />
+    <Suspense fallback={null}>
+      <SmartRecommendation
+        title="Next step"
+        options={steps}
+        onAccept={(step) => onAccept(step as NextStep)}
+        onUndo={(step) => onUndo(step as NextStep)}
+      />
+    </Suspense>
   )
 }

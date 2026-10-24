@@ -1,5 +1,7 @@
 "use client"
 
+/* eslint-disable react-hooks/refs */
+
 import {
   useEffect,
   useLayoutEffect,
@@ -124,8 +126,8 @@ export function SegmentedControl<T extends string = string>({
       p.style.opacity = "0"
       return
     }
-    let x = btn.offsetLeft
-    let w = btn.offsetWidth
+    const x = btn.offsetLeft
+    const w = btn.offsetWidth
     const instant = !p.dataset.ready || (!animate && !gliding.current)
     const prev = parseFloat(p.style.left) || 0
     // The edge facing the target leads, the other one trails – the stretch
@@ -227,8 +229,6 @@ export function SegmentedControl<T extends string = string>({
 
   useEffect(() => () => clearTimeout(glideTimer.current), [])
 
-  /* ---------- Keyboard ---------- */
-
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     const enabled = options.filter((o) => !o.disabled)
     if (!enabled.length || disabled) return
@@ -248,8 +248,6 @@ export function SegmentedControl<T extends string = string>({
     select(target.value)
     buttons()[options.indexOf(target)]?.focus()
   }
-
-  /* ---------- Pointer: press feedback and dragging across options ---------- */
 
   /** The option under (or nearest to) a horizontal pointer position */
   const optionAt = (clientX: number) => {

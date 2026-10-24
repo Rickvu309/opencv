@@ -78,8 +78,8 @@ async function expectApplyLive() {
   expect(
     await screen.findByRole("heading", { level: 1, name: "Apply" })
   ).toBeInTheDocument()
-  expect(screen.getByRole("button", { name: "Board" })).toBeInTheDocument()
-  expect(screen.getByRole("button", { name: "Calendar" })).toBeInTheDocument()
+  expect(screen.getByRole("radio", { name: "Board" })).toBeInTheDocument()
+  expect(screen.getByRole("radio", { name: "Calendar" })).toBeInTheDocument()
   expect(await screen.findByText("Inbox")).toBeInTheDocument()
   expect(screen.queryByText(SURFACE_COPY.apply.body)).not.toBeInTheDocument()
 }

@@ -6,7 +6,7 @@
  * typical laptop without horizontal hunting. The board is Kibo kanban:
  * pointer, touch and keyboard moves all end in `move`.
  */
-import { useMemo, useRef, useState } from "react"
+import { lazy, Suspense, useMemo, useRef, useState } from "react"
 import { isDemoApplyCard, type ApplyStage } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -18,7 +18,6 @@ import {
 } from "@workspace/ui/components/empty"
 import type { FilterValue } from "@workspace/ui/components/filter-menu"
 import { Input } from "@workspace/ui/components/input"
-import { NotificationStack } from "@workspace/ui/components/notification-stack"
 import { NumberTicker } from "@workspace/ui/components/number-ticker"
 import { SegmentedControl } from "@workspace/ui/components/segmented-control"
 import { CalendarDays, LayoutGrid, Plus, Search } from "lucide-react"
@@ -53,6 +52,12 @@ import { DestructiveCommandDialog } from "@/features/commands/destructive-comman
 import { recordFirstCafeItem } from "@/features/home/first-cafe-checklist.ts"
 import { usePaperDocs } from "@/features/paper/use-paper-docs.ts"
 import { authClient } from "@/lib/auth-client.ts"
+
+const NotificationStack = lazy(() =>
+  import("@workspace/ui/components/notification-stack").then((m) => ({
+    default: m.NotificationStack,
+  }))
+)
 
 export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
   const { data: session } = authClient.useSession()
@@ -160,13 +165,15 @@ export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
   const noticeStack =
     notices.length > 0 ? (
       <div className="absolute bottom-3 left-3 z-20 w-[min(18rem,calc(100%-1.5rem))]">
-        <NotificationStack
-          key={notices.map((notice) => notice.id).join()}
-          notices={notices}
-          onDismiss={(notice) =>
-            setDismissed((prev) => new Set(prev).add(notice.id))
-          }
-        />
+        <Suspense fallback={null}>
+          <NotificationStack
+            key={notices.map((notice) => notice.id).join()}
+            notices={notices}
+            onDismiss={(notice) =>
+              setDismissed((prev) => new Set(prev).add(notice.id))
+            }
+          />
+        </Suspense>
       </div>
     ) : null
 

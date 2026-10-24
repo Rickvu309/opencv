@@ -98,7 +98,7 @@ describe("Apply notices", () => {
     renderApply()
     await expectApplyLive()
 
-    const stack = screen.getByRole("region", { name: "Notifications" })
+    const stack = await screen.findByRole("region", { name: "Notifications" })
     expect(
       within(stack).getByRole("button", { name: "Clear demo" })
     ).toBeInTheDocument()
@@ -121,7 +121,7 @@ describe("Apply notices", () => {
     renderApply()
     await expectApplyLive()
 
-    fireEvent.click(screen.getByRole("button", { name: "Clear demo" }))
+    fireEvent.click(await screen.findByRole("button", { name: "Clear demo" }))
     let dialog = await screen.findByRole("dialog", {
       name: "Remove 4 sample opportunities?",
     })
@@ -133,7 +133,7 @@ describe("Apply notices", () => {
       screen.getByRole("button", { name: /Associate PM intern/ })
     ).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole("button", { name: "Clear demo" }))
+    fireEvent.click(await screen.findByRole("button", { name: "Clear demo" }))
     dialog = await screen.findByRole("dialog")
     fireEvent.click(within(dialog).getByRole("button", { name: "Remove" }))
 
@@ -161,7 +161,7 @@ describe("Apply next step", () => {
       name: "Opportunity detail",
     })
     fireEvent.click(
-      within(panel).getByRole("button", { name: "Accept move to prep" })
+      await within(panel).findByRole("button", { name: "Accept move to prep" })
     )
 
     await waitFor(() => {

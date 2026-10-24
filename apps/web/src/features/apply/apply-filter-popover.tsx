@@ -1,9 +1,6 @@
-import { useMemo } from "react"
+import { lazy, Suspense, useMemo } from "react"
 import { Button } from "@workspace/ui/components/button"
-import {
-  FilterMenu,
-  type FilterValue,
-} from "@workspace/ui/components/filter-menu"
+import type { FilterValue } from "@workspace/ui/components/filter-menu"
 import {
   Popover,
   PopoverContent,
@@ -16,6 +13,12 @@ import {
   applyFilterGroups,
 } from "@/features/apply/apply-filters.ts"
 import type { ApplyCard } from "@/features/apply/apply-types.ts"
+
+const FilterMenu = lazy(() =>
+  import("@workspace/ui/components/filter-menu").then((m) => ({
+    default: m.FilterMenu,
+  }))
+)
 
 export function ApplyFilterPopover({
   cards,
@@ -49,13 +52,15 @@ export function ApplyFilterPopover({
         ) : null}
       </PopoverTrigger>
       <PopoverContent align="end" className="w-auto p-0">
-        <FilterMenu
-          groups={groups}
-          value={value}
-          onChange={onChange}
-          hints={false}
-          defaultOpen={["stage"]}
-        />
+        <Suspense fallback={null}>
+          <FilterMenu
+            groups={groups}
+            value={value}
+            onChange={onChange}
+            hints={false}
+            defaultOpen={["stage"]}
+          />
+        </Suspense>
       </PopoverContent>
     </Popover>
   )
