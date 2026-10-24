@@ -6,9 +6,8 @@ import {
   type UserProfile,
 } from "@workspace/domain"
 
-import { apiBaseUrl } from "@/lib/api-url.ts"
-
 import { SAMPLE_AUTHOR } from "@/features/seed/sample-author.ts"
+import { pathOf, jsonOk, jsonError } from "./mock-http.ts"
 
 type Store = {
   profile: UserProfile
@@ -29,20 +28,6 @@ function defaultProfile(): UserProfile {
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",
   }
-}
-
-function pathOf(input: RequestInfo | URL) {
-  if (typeof input === "string") return new URL(input, apiBaseUrl).pathname
-  if (input instanceof URL) return input.pathname
-  return new URL(input.url, apiBaseUrl).pathname
-}
-
-function jsonOk<T>(data: T, status = 200) {
-  return Response.json({ ok: true, data }, { status })
-}
-
-function jsonError(status: number, code: string, message: string) {
-  return Response.json({ ok: false, error: { code, message } }, { status })
 }
 
 async function readBody(init?: RequestInit): Promise<unknown> {

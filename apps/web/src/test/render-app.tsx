@@ -12,10 +12,14 @@ import { profileApiFetch } from "@/test/profile-api-mock.ts"
 import { threadApiFetch } from "@/test/threads-api-mock.ts"
 import { vi } from "vitest"
 
-export function renderApp(initialEntry = "/") {
+export function renderApp(
+  initialEntry = "/",
+  onRequest?: (input: RequestInfo | URL) => void
+) {
   vi.stubGlobal(
     "fetch",
     async (input: RequestInfo | URL, init?: RequestInit) => {
+      onRequest?.(input)
       const apply = await applyApiFetch(input, init)
       if (apply) return apply
       const paper = await paperApiFetch(input, init)

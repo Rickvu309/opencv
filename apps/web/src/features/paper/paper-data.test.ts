@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { readFileSync } from "node:fs"
+import { readdirSync, readFileSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { describe, expect, it } from "vitest"
@@ -218,7 +218,17 @@ describe("prefixed-string retirement", () => {
       "paper-editor.tsx",
       "paper-workspace.tsx",
       "paper-api.ts",
+      "paper-cv-surface.tsx",
+      "paper-proof-toolbar.tsx",
+      "coach-float-chips.tsx",
+      ...readdirSync(paperRoot).filter((file) =>
+        /^paper-editor-.+\.tsx?$/.test(file)
+      ),
+      ...readdirSync(path.join(paperRoot, "cv-templates"))
+        .filter((file) => file.endsWith(".tsx"))
+        .map((file) => `cv-templates/${file}`),
     ]
+    expect(sources.length).toBeGreaterThan(15)
     for (const file of sources) {
       expect(readFeature(file)).not.toMatch(/cv:v1:|proof:v1:/)
     }

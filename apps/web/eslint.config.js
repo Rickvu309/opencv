@@ -1,14 +1,14 @@
-import js from '@eslint/js'
-import globals from 'globals'
-import reactHooks from 'eslint-plugin-react-hooks'
-import reactRefresh from 'eslint-plugin-react-refresh'
-import tseslint from 'typescript-eslint'
-import { defineConfig, globalIgnores } from 'eslint/config'
+import js from "@eslint/js"
+import globals from "globals"
+import reactHooks from "eslint-plugin-react-hooks"
+import reactRefresh from "eslint-plugin-react-refresh"
+import tseslint from "typescript-eslint"
+import { defineConfig, globalIgnores } from "eslint/config"
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(["dist"]),
   {
-    files: ['**/*.{ts,tsx}'],
+    files: ["**/*.{ts,tsx}"],
     extends: [
       js.configs.recommended,
       tseslint.configs.recommended,
@@ -20,11 +20,44 @@ export default defineConfig([
     },
   },
   {
-    files: ['src/features/paper/**/*.{ts,tsx}'],
+    files: ["src/features/paper/**/*.{ts,tsx}"],
     rules: {
       // Prototype-port reset, debounce, and dropdown mount flags.
-      'react-hooks/set-state-in-effect': 'off',
-      'react-refresh/only-export-components': 'off',
+      "react-hooks/set-state-in-effect": "off",
+      "react-refresh/only-export-components": "off",
+    },
+  },
+  {
+    files: [
+      "src/features/paper/**/*.{ts,tsx}",
+      "src/features/apply/**/*.{ts,tsx}",
+      "src/features/pitch/**/*.{ts,tsx}",
+    ],
+    ignores: ["**/*.test.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["**/router", "**/router.*"],
+              message: "A surface feature must not import the router.",
+            },
+            {
+              group: [
+                "**/app-shell/*",
+                "!**/app-shell/use-media-query.ts",
+                "!**/app-shell/profile-display.ts",
+              ],
+              message: "A surface feature must not import shell chrome.",
+            },
+            {
+              group: ["**/search-modal*"],
+              message: "A surface feature must not import the search modal.",
+            },
+          ],
+        },
+      ],
     },
   },
 ])

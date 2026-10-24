@@ -7,10 +7,7 @@ import {
   DEFAULT_THREAD_TITLE,
   THREAD_COMMANDS,
   type CoachUsageRating,
-  type CoachReceiptDetail,
   type CoachSelection,
-  type CommandEnvelope,
-  type ReversalDescriptor,
   type ThreadDetail,
   type ThreadListItem,
   type ThreadMessage,
@@ -19,9 +16,15 @@ import {
 } from "@workspace/domain"
 import { vi } from "vitest"
 
-import { apiBaseUrl } from "@/lib/api-url.ts"
-
 import { FIXTURE_THREADS } from "./thread-fixtures.ts"
+import type {
+  CoachScriptPart,
+  CoachStreamControl,
+  CoachStreamScript,
+  GateState,
+  LastCoachRequest,
+} from "./coach-stream-types.ts"
+import { isoNow, urlOf, pathOf, jsonOk, jsonError } from "./mock-http.ts"
 
 export const DEFAULT_COACH_STREAM_TEXTS = [
   "I looked at Apply. ",
@@ -32,56 +35,8 @@ export const DEFAULT_COACH_STREAM_REPLY = DEFAULT_COACH_STREAM_TEXTS.join("")
 
 export const DEFAULT_COACH_WORKED_MS = 1100
 
-export type CoachScriptPart =
-  | { kind: "text"; text: string }
-  | {
-      kind: "tool"
-      name: string
-      summary: string
-      ok: boolean
-      reversal?: ReversalDescriptor
-      result?: CommandEnvelope
-      detail?: CoachReceiptDetail
-    }
-
-export type CoachStreamScript = {
-  gated?: boolean
-  delayMs?: number
-  texts?: readonly string[]
-  parts?: readonly CoachScriptPart[]
-  httpError?: { status: number; code: string; message: string }
-  networkError?: boolean
-  streamError?: string
-  omitEnd?: boolean
-  workedMs?: number
-  undoFail?: { summary: string }
-  undoError?: { status: number; code: string; message: string }
-}
-
-export type CoachStreamControl = {
-  release: (count?: number) => void
-  releaseAll: () => void
-  emitted: () => number
-}
-
-type LastCoachRequest = {
-  threadId: string
-  text?: string
-  mode?: string
-  regenerate?: boolean
-  focusDocId?: string
-  selection?: CoachSelection
-}
-
 type Store = {
   threads: ThreadDetail[]
-}
-
-type GateState = {
-  permits: number
-  waiters: Array<() => void>
-  releasedAll: boolean
-  emitted: number
 }
 
 const store: Store = {
@@ -103,32 +58,6 @@ function openGate(): GateState {
 
 function cloneThreads(threads: ThreadDetail[]): ThreadDetail[] {
   return structuredClone(threads)
-}
-
-function isoNow() {
-  return new Date().toISOString()
-}
-
-function urlOf(input: RequestInfo | URL) {
-  const raw =
-    typeof input === "string"
-      ? input
-      : input instanceof URL
-        ? input.href
-        : input.url
-  return new URL(raw, apiBaseUrl)
-}
-
-function pathOf(input: RequestInfo | URL) {
-  return urlOf(input).pathname
-}
-
-function jsonOk<T>(data: T, status = 200) {
-  return Response.json({ ok: true, data }, { status })
-}
-
-function jsonError(status: number, code: string, message: string) {
-  return Response.json({ ok: false, error: { code, message } }, { status })
 }
 
 function listItems(): ThreadListItem[] {
@@ -447,7 +376,9 @@ export async function threadApiFetch(
   if (method === "GET" && path === "/api/threads") {
     const focusDocId = urlOf(input).searchParams.get("focusDocId")
     if (focusDocId) {
-      const match = listItems().find((thread) => thread.focusDocId === focusDocId)
+      const match = listItems().find(
+        (thread) => thread.focusDocId === focusDocId
+      )
       return jsonOk(match ?? null)
     }
     return jsonOk(listItems())
@@ -506,8 +437,9 @@ export async function threadApiFetch(
     return coachStreamResponse(thread, init?.signal ?? undefined)
   }
 
-  const reverse =
-    /^\/api\/threads\/([^/]+)\/messages\/([^/]+)\/reverse$/.exec(path)
+  const reverse = /^\/api\/threads\/([^/]+)\/messages\/([^/]+)\/reverse$/.exec(
+    path
+  )
   if (method === "POST" && reverse) {
     if (script.undoError) {
       const error = script.undoError
@@ -530,7 +462,11 @@ export async function threadApiFetch(
       return jsonError(400, "VALIDATION_ERROR", "This receipt cannot be undone")
     }
     if (part.undone) {
-      return jsonError(400, "VALIDATION_ERROR", "This action was already undone")
+      return jsonError(
+        400,
+        "VALIDATION_ERROR",
+        "This action was already undone"
+      )
     }
 
     const commandName = part.reversal.command ?? part.name

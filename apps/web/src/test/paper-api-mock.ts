@@ -9,9 +9,8 @@ import {
   type PaperDocStatus,
 } from "@workspace/domain"
 
-import { apiBaseUrl } from "@/lib/api-url.ts"
-
 import { samplePaperDocs } from "./paper-fixtures.ts"
+import { isoNow, pathOf, jsonOk, jsonError } from "./mock-http.ts"
 
 type Store = {
   docs: PaperDoc[]
@@ -25,24 +24,6 @@ const store: Store = {
 
 function cloneDocs(docs: PaperDoc[]): PaperDoc[] {
   return structuredClone(docs)
-}
-
-function isoNow() {
-  return new Date().toISOString()
-}
-
-function pathOf(input: RequestInfo | URL) {
-  if (typeof input === "string") return new URL(input, apiBaseUrl).pathname
-  if (input instanceof URL) return input.pathname
-  return new URL(input.url, apiBaseUrl).pathname
-}
-
-function jsonOk<T>(data: T, status = 200) {
-  return Response.json({ ok: true, data }, { status })
-}
-
-function jsonError(status: number, code: string, message: string) {
-  return Response.json({ ok: false, error: { code, message } }, { status })
 }
 
 async function readBody(init?: RequestInit): Promise<unknown> {

@@ -1,6 +1,12 @@
 import path from "path"
 import react from "@vitejs/plugin-react"
-import { defineConfig } from "vitest/config"
+import { configDefaults, defineConfig } from "vitest/config"
+
+// These files assert first-load module state, so each needs a fresh module graph.
+const ISOLATED_FILES = [
+  "src/router-lazy.test.tsx",
+  "src/routes/app-shell.test.tsx",
+]
 
 export default defineConfig({
   plugins: [react()],
@@ -16,8 +22,24 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
+    // Files share one module graph (isolate: false below); drop fetch stubs between files.
+    unstubGlobals: true,
     // Home/Paper RTL suites mount the full app. On contended CI the first
     // tests in a file can exceed Vitest's 5s default before the stream settles.
     testTimeout: 15_000,
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: "shared-modules",
+          isolate: false,
+          exclude: [...configDefaults.exclude, ...ISOLATED_FILES],
+        },
+      },
+      {
+        extends: true,
+        test: { name: "isolated", isolate: true, include: ISOLATED_FILES },
+      },
+    ],
   },
 })
