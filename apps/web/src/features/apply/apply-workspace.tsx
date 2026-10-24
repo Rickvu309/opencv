@@ -3,13 +3,12 @@
  * Do not import shell chrome — the route mounts this into `<Outlet />`.
  * Fit is stored on the server and never rendered (PRODUCT.md open q. 1).
  * Board columns are fluid (QVE-235) so Inbox → Closed glances on a
- * typical laptop without horizontal hunting. Filter / column-menu
- * Coming-soon chrome is deferred until those actions exist.
+ * typical laptop without horizontal hunting. The board is Kibo kanban:
+ * pointer, touch and keyboard moves all end in `move`.
  */
-import { useMemo, useRef, useState } from "react"
+import { lazy, Suspense, useMemo, useRef, useState } from "react"
 import { isDemoApplyCard, type ApplyStage } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
-import { ButtonGroup } from "@workspace/ui/components/button-group"
 import {
   Empty,
   EmptyContent,
@@ -17,8 +16,10 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from "@workspace/ui/components/empty"
+import type { FilterValue } from "@workspace/ui/components/filter-menu"
 import { Input } from "@workspace/ui/components/input"
-import { cn } from "@workspace/ui/lib/utils"
+import { NumberTicker } from "@workspace/ui/components/number-ticker"
+import { SegmentedControl } from "@workspace/ui/components/segmented-control"
 import { CalendarDays, LayoutGrid, Plus, Search } from "lucide-react"
 
 import { ErrorBanner } from "@/components/error-banner.tsx"
@@ -28,10 +29,10 @@ import {
   type AddJobDraft,
 } from "@/features/apply/apply-add-job-dialog.tsx"
 import { ApplyCalendar } from "@/features/apply/apply-calendar.tsx"
-import { BoardJobCard } from "@/features/apply/apply-board-card.tsx"
-import { ApplyDemoBanner } from "@/features/apply/apply-demo-banner.tsx"
+import { ApplyBoard } from "@/features/apply/apply-board.tsx"
 import { ApplyDemoClearDialog } from "@/features/apply/apply-demo-clear-dialog.tsx"
-import { allowCardDrop, readCardDragId } from "@/features/apply/apply-dnd.ts"
+import { ApplyFilterPopover } from "@/features/apply/apply-filter-popover.tsx"
+import { filterApplyCards } from "@/features/apply/apply-filters.ts"
 import { pickGuidedApplyCard } from "@/features/apply/apply-guide.ts"
 import {
   APPLY_ADD_LABEL,
@@ -40,8 +41,9 @@ import {
   APPLY_SEARCH_LABEL,
 } from "@/features/apply/apply-job-structure.ts"
 import { JobDetailPanel } from "@/features/apply/apply-job-detail.tsx"
+import { applyNotices } from "@/features/apply/apply-notices.ts"
 import {
-  STAGES,
+  localIsoDate,
   type ApplyCard,
   type StageId,
 } from "@/features/apply/apply-types.ts"
@@ -51,6 +53,12 @@ import { recordFirstCafeItem } from "@/features/home/first-cafe-checklist.ts"
 import { usePaperDocs } from "@/features/paper/use-paper-docs.ts"
 import { authClient } from "@/lib/auth-client.ts"
 
+const NotificationStack = lazy(() =>
+  import("@workspace/ui/components/notification-stack").then((m) => ({
+    default: m.NotificationStack,
+  }))
+)
+
 export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
   const { data: session } = authClient.useSession()
   const apply = useApplyCards()
@@ -59,8 +67,8 @@ export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
   const [pickedId, setPickedId] = useState<string | null>(null)
   const [selectionTouched, setSelectionTouched] = useState(false)
   const [query, setQuery] = useState("")
-  const [dragOverStage, setDragOverStage] = useState<StageId | null>(null)
-  const [dragOverCardId, setDragOverCardId] = useState<string | null>(null)
+  const [filters, setFilters] = useState<FilterValue>({})
+  const [dismissed, setDismissed] = useState<ReadonlySet<string>>(new Set())
   const [deleteTarget, setDeleteTarget] = useState<ApplyCard | null>(null)
   const [addOpen, setAddOpen] = useState(false)
   const [clearDemoOpen, setClearDemoOpen] = useState(false)
@@ -82,14 +90,12 @@ export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
     setPickedId(id)
   }
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    if (!q) return apply.cards
-    return apply.cards.filter(
-      (c) =>
-        c.title.toLowerCase().includes(q) || c.company.toLowerCase().includes(q)
-    )
-  }, [apply.cards, query])
+  const filtered = useMemo(
+    () => filterApplyCards(apply.cards, query, filters),
+    [apply.cards, query, filters]
+  )
+  const filtering =
+    query.trim() !== "" || Object.values(filters).some((ids) => ids.length > 0)
 
   function move(id: string, stage: StageId, beforeCardId?: string | null) {
     const card = apply.cards.find((item) => item.id === id)
@@ -117,10 +123,6 @@ export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
   }
 
   function selectCard(id: string) {
-    if (dragMovedRef.current) {
-      dragMovedRef.current = false
-      return
-    }
     chooseCard(selectedId === id ? null : id)
   }
 
@@ -136,6 +138,44 @@ export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
   }
 
   const boardEmpty = apply.cards.length === 0
+
+  const emptyState = (
+    <Empty className="absolute top-1/2 left-1/2 z-10 w-80 flex-none -translate-x-1/2 -translate-y-1/2 border border-border bg-background">
+      <EmptyHeader>
+        <EmptyTitle>{APPLY_EMPTY_TITLE}</EmptyTitle>
+        <EmptyDescription>{APPLY_EMPTY_TEXT}</EmptyDescription>
+      </EmptyHeader>
+      <EmptyContent>
+        <Button
+          type="button"
+          className="h-12 px-4"
+          onClick={() => setAddOpen(true)}
+        >
+          <Plus className="size-3.5" />
+          {APPLY_ADD_LABEL}
+        </Button>
+      </EmptyContent>
+    </Empty>
+  )
+
+  const notices = applyNotices(apply.cards, localIsoDate(), dismissed, {
+    onClearDemo: () => setClearDemoOpen(true),
+    onOpenCard: chooseCard,
+  })
+  const noticeStack =
+    notices.length > 0 ? (
+      <div className="absolute bottom-3 left-3 z-20 w-[min(18rem,calc(100%-1.5rem))]">
+        <Suspense fallback={null}>
+          <NotificationStack
+            key={notices.map((notice) => notice.id).join()}
+            notices={notices}
+            onDismiss={(notice) =>
+              setDismissed((prev) => new Set(prev).add(notice.id))
+            }
+          />
+        </Suspense>
+      </div>
+    ) : null
 
   const errorBanner = apply.error ? (
     <ErrorBanner>{apply.error}</ErrorBanner>
@@ -155,41 +195,27 @@ export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
           />
         </div>
 
-        <ButtonGroup
+        <p className="text-xs text-muted-foreground tabular-nums">
+          <NumberTicker value={apply.cards.length} duration={280} />{" "}
+          {apply.cards.length === 1 ? "Opportunity" : "Opportunities"}
+        </p>
+
+        <ApplyFilterPopover
+          cards={apply.cards}
+          value={filters}
+          onChange={setFilters}
+        />
+
+        <SegmentedControl
           aria-label="Apply view"
-          className="rounded-lg border border-border p-0.5"
-        >
-          <Button
-            type="button"
-            size="xs"
-            variant="ghost"
-            onClick={() => setView("board")}
-            aria-pressed={view === "board"}
-            className={
-              view === "board"
-                ? "bg-muted text-foreground"
-                : "text-muted-foreground"
-            }
-          >
-            <LayoutGrid className="size-3.5" />
-            Board
-          </Button>
-          <Button
-            type="button"
-            size="xs"
-            variant="ghost"
-            onClick={() => setView("calendar")}
-            aria-pressed={view === "calendar"}
-            className={
-              view === "calendar"
-                ? "bg-muted text-foreground"
-                : "text-muted-foreground"
-            }
-          >
-            <CalendarDays className="size-3.5" />
-            Calendar
-          </Button>
-        </ButtonGroup>
+          size="sm"
+          value={view}
+          onChange={setView}
+          options={[
+            { value: "board", label: "Board", icon: <LayoutGrid /> },
+            { value: "calendar", label: "Calendar", icon: <CalendarDays /> },
+          ]}
+        />
 
         <Button
           type="button"
@@ -205,118 +231,23 @@ export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
 
       {errorBanner}
 
-      {apply.cards.some(isDemoApplyCard) ? (
-        <ApplyDemoBanner
-          clearing={apply.clearing}
-          onClear={() => setClearDemoOpen(true)}
-        />
-      ) : null}
-
-      <div className="flex min-h-0 flex-1">
+      <div className="relative flex min-h-0 flex-1">
         {apply.isLoading ? (
           <p className="px-4 py-8 text-sm text-muted-foreground">
             Loading Apply…
           </p>
         ) : view === "board" ? (
-          <div className="relative min-w-0 flex-1 overflow-hidden p-3">
-            {boardEmpty ? (
-              <Empty className="absolute top-1/2 left-1/2 z-10 w-80 flex-none -translate-x-1/2 -translate-y-1/2 border border-border bg-background">
-                <EmptyHeader>
-                  <EmptyTitle>{APPLY_EMPTY_TITLE}</EmptyTitle>
-                  <EmptyDescription>{APPLY_EMPTY_TEXT}</EmptyDescription>
-                </EmptyHeader>
-                <EmptyContent>
-                  <Button
-                    type="button"
-                    className="h-12 px-4"
-                    onClick={() => setAddOpen(true)}
-                  >
-                    <Plus className="size-3.5" />
-                    {APPLY_ADD_LABEL}
-                  </Button>
-                </EmptyContent>
-              </Empty>
-            ) : null}
-            <div
-              data-apply-board
-              className="grid h-full min-h-[28rem] grid-cols-5 gap-2"
-            >
-              {STAGES.map((stage) => {
-                const col = filtered.filter((c) => c.stage === stage.id)
-                const isDropTarget = dragOverStage === stage.id
-                return (
-                  <div
-                    key={stage.id}
-                    data-stage={stage.id}
-                    className={cn(
-                      "flex min-w-0 flex-col rounded-xl bg-background transition-colors",
-                      isDropTarget && "ring-2 ring-ring/30"
-                    )}
-                    onDragOver={(e) => {
-                      allowCardDrop(e)
-                      setDragOverStage(stage.id)
-                    }}
-                    onDragLeave={() =>
-                      setDragOverStage((s) => (s === stage.id ? null : s))
-                    }
-                    onDrop={(e) => {
-                      e.preventDefault()
-                      const id = readCardDragId(e)
-                      if (id) move(id, stage.id, null)
-                      setDragOverStage(null)
-                      setDragOverCardId(null)
-                    }}
-                  >
-                    <div className="flex items-center gap-2 px-2.5 py-2">
-                      <span
-                        className={cn(
-                          "size-2 shrink-0 rounded-full",
-                          stage.dot
-                        )}
-                      />
-                      <span className="min-w-0 truncate text-sm font-medium">
-                        {stage.label}
-                      </span>
-                      <span className="text-xs text-muted-foreground tabular-nums">
-                        {col.length}
-                      </span>
-                    </div>
-                    <div className="flex flex-1 flex-col gap-2 overflow-auto px-2 pb-3">
-                      {col.map((card) => (
-                        <BoardJobCard
-                          key={card.id}
-                          card={card}
-                          active={card.id === selectedId}
-                          insertBefore={dragOverCardId === card.id}
-                          onSelect={() => selectCard(card.id)}
-                          onDragStart={() => {
-                            dragMovedRef.current = false
-                          }}
-                          onDrag={() => {
-                            dragMovedRef.current = true
-                          }}
-                          onDragOver={() => setDragOverCardId(card.id)}
-                          onDragLeave={() =>
-                            setDragOverCardId((id) =>
-                              id === card.id ? null : id
-                            )
-                          }
-                          onDrop={(id) => move(id, stage.id, card.id)}
-                        />
-                      ))}
-                      {col.length === 0 && !boardEmpty ? (
-                        <p className="px-1 text-xs text-muted-foreground">
-                          {query.trim()
-                            ? `No match in ${stage.label}`
-                            : `Nothing in ${stage.label}`}
-                        </p>
-                      ) : null}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
+          <ApplyBoard
+            cards={filtered}
+            selectedId={selectedId}
+            filtering={filtering}
+            boardEmpty={boardEmpty}
+            empty={emptyState}
+            onSelect={selectCard}
+            onMove={(id, placement) =>
+              move(id, placement.stage, placement.beforeCardId)
+            }
+          />
         ) : (
           <ApplyCalendar
             cards={filtered}
@@ -326,6 +257,8 @@ export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
             dragMovedRef={dragMovedRef}
           />
         )}
+
+        {noticeStack}
 
         {selected ? (
           <JobDetailPanel

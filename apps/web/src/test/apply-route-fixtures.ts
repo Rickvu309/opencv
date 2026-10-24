@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, vi } from "vitest"
-import { cleanup, fireEvent, screen, within } from "@testing-library/react"
+import { act, cleanup, fireEvent, screen, within } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { SURFACE_COPY, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { sampleApplyCards } from "@/test/apply-fixtures.ts"
 import { renderApp } from "@/test/render-app.tsx"
@@ -17,8 +18,8 @@ export async function expectApplyLive() {
   expect(
     await screen.findByRole("heading", { level: 1, name: "Apply" })
   ).toBeInTheDocument()
-  expect(screen.getByRole("button", { name: "Board" })).toBeInTheDocument()
-  expect(screen.getByRole("button", { name: "Calendar" })).toBeInTheDocument()
+  expect(screen.getByRole("radio", { name: "Board" })).toBeInTheDocument()
+  expect(screen.getByRole("radio", { name: "Calendar" })).toBeInTheDocument()
   expect(await screen.findByText("Associate PM intern")).toBeInTheDocument()
   expect(stageColumn("inbox")).toBeTruthy()
   expect(stageColumn("prep")).toBeTruthy()
@@ -34,50 +35,77 @@ export function stageColumn(id: string) {
   return column as HTMLElement
 }
 
-export function createDataTransfer() {
-  const store: Record<string, string> = {}
-  return {
-    dropEffect: "none",
-    effectAllowed: "all",
-    files: [] as File[],
-    items: [] as unknown[],
-    types: [] as string[],
-    setData(type: string, value: string) {
-      store[type] = value
-      if (!this.types.includes(type)) this.types.push(type)
-    },
-    getData(type: string) {
-      return store[type] ?? ""
-    },
-    clearData() {
-      for (const key of Object.keys(store)) delete store[key]
-      this.types.length = 0
-    },
-    setDragImage() {},
-  }
+let restoreObserver: typeof ResizeObserver | null = null
+
+const STAGE_IDS = ["inbox", "prep", "sent", "live", "closed"]
+
+/**
+ * jsdom has no layout, and dnd-kit moves by measured rectangles. Lay the
+ * columns out side by side and stack each column's cards so the keyboard
+ * sensor can find its neighbours. The drag overlay sits where the held card is.
+ */
+export function layoutBoard() {
+  const rect = (left: number, top: number, width: number, height: number) =>
+    ({
+      left,
+      top,
+      width,
+      height,
+      right: left + width,
+      bottom: top + height,
+      x: left,
+      y: top,
+      toJSON: () => ({}),
+    }) as DOMRect
+  // dnd-kit measures a node when its ResizeObserver first reports it.
+  restoreObserver = window.ResizeObserver
+  window.ResizeObserver = class {
+    constructor(private callback: ResizeObserverCallback) {}
+    observe(target: Element) {
+      queueMicrotask(() =>
+        this.callback(
+          [
+            { target, contentRect: target.getBoundingClientRect() },
+          ] as ResizeObserverEntry[],
+          this as unknown as ResizeObserver
+        )
+      )
+    }
+    unobserve() {}
+    disconnect() {}
+  } as unknown as typeof ResizeObserver
+  vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(
+    function (this: Element) {
+      const column = this.closest("[data-stage]")
+      if (!column) {
+        const held = document.activeElement?.closest("[data-card-id]")
+        const overlay = this.closest("[style*='position: fixed']")
+        return overlay && held ? held.getBoundingClientRect() : rect(0, 0, 0, 0)
+      }
+      const x = STAGE_IDS.indexOf(column.getAttribute("data-stage")!) * 200
+      if (this === column) return rect(x, 0, 190, 600)
+      const card = this.closest("[data-card-id]")
+      if (card !== this) return rect(0, 0, 0, 0)
+      const index = [...column.querySelectorAll("[data-card-id]")].indexOf(card)
+      return rect(x + 5, 60 + index * 90, 180, 80)
+    }
+  )
 }
 
-export function dragCardToStage(cardName: string, stageId: string) {
-  const card = screen.getByRole("button", { name: new RegExp(cardName) })
-  const dataTransfer = createDataTransfer()
-  fireEvent.dragStart(card, { dataTransfer })
-  fireEvent.drag(card, { dataTransfer })
-  const column = stageColumn(stageId)
-  fireEvent.dragOver(column, { dataTransfer })
-  fireEvent.drop(column, { dataTransfer })
-  fireEvent.dragEnd(card, { dataTransfer })
-  return dataTransfer
+export function boardCard(name: string | RegExp) {
+  return screen.getByRole("button", { name })
 }
 
-export function dragCardOntoCard(sourceName: string, targetName: string) {
-  const source = screen.getByRole("button", { name: new RegExp(sourceName) })
-  const target = screen.getByRole("button", { name: new RegExp(targetName) })
-  const dataTransfer = createDataTransfer()
-  fireEvent.dragStart(source, { dataTransfer })
-  fireEvent.drag(source, { dataTransfer })
-  fireEvent.dragOver(target, { dataTransfer })
-  fireEvent.drop(target, { dataTransfer })
-  fireEvent.dragEnd(source, { dataTransfer })
+/** Pick a card up with Space, press the arrow keys, and drop it with Space. */
+export async function moveCardByKeyboard(
+  user: ReturnType<typeof userEvent.setup>,
+  name: string | RegExp,
+  arrows: string[]
+) {
+  act(() => boardCard(name).focus())
+  await user.keyboard(" ")
+  for (const arrow of arrows) await user.keyboard(`{${arrow}}`)
+  await user.keyboard(" ")
 }
 
 export function expectNoVisibleFitScore() {
@@ -105,10 +133,15 @@ export async function addJobFromDialog(jobUrl?: string) {
 export function installApplyTestLifecycle() {
   beforeEach(() => {
     vi.stubGlobal("scrollTo", vi.fn())
+    Element.prototype.getAnimations = () => []
   })
 
   afterEach(() => {
     cleanup()
+    vi.restoreAllMocks()
+    if (restoreObserver) window.ResizeObserver = restoreObserver
+    restoreObserver = null
+    Reflect.deleteProperty(Element.prototype, "getAnimations")
     vi.useRealTimers()
     vi.unstubAllGlobals()
   })

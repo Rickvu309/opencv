@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest"
-import { fireEvent, screen, waitFor, within } from "@testing-library/react"
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { APPLY_OPEN_GUIDE } from "@/features/apply/apply-search.ts"
-import { APPLY_DRAG_TYPE, localIsoDate } from "@/features/apply/apply-types.ts"
+import { localIsoDate } from "@/features/apply/apply-types.ts"
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { readFirstCafeState } from "@/features/home/first-cafe-checklist.ts"
 import { renderApp } from "@/test/render-app.tsx"
@@ -11,8 +12,9 @@ import {
   renderApply,
   expectApplyLive,
   stageColumn,
-  dragCardToStage,
-  dragCardOntoCard,
+  boardCard,
+  layoutBoard,
+  moveCardByKeyboard,
   expectNoVisibleFitScore,
 } from "@/test/apply-route-fixtures.ts"
 
@@ -48,9 +50,9 @@ describe("Apply board", () => {
         name: "Associate PM intern at Local startup",
       })
     ).toBeInTheDocument()
-    expect(screen.getAllByRole("button", { name: "Clear demo" })).toHaveLength(
-      1
-    )
+    expect(
+      await screen.findAllByRole("button", { name: "Clear demo" })
+    ).toHaveLength(1)
     expect(
       within(stageColumn("inbox")).getByRole("button", {
         name: "Product intern at Fintech scale-up",
@@ -58,31 +60,49 @@ describe("Apply board", () => {
     ).toBeInTheDocument()
   })
 
-  it("drags a card to another Stage and keeps the move", async () => {
+  it("moves a card to another Stage with the keyboard and keeps the move", async () => {
+    const { getMockApplyCards } = await import("@/test/apply-api-mock.ts")
+    layoutBoard()
+    const user = userEvent.setup()
     renderApply()
     await expectApplyLive()
 
-    const dataTransfer = dragCardToStage("Business analyst intern", "sent")
-    expect(dataTransfer.getData(APPLY_DRAG_TYPE)).toBe(ANALYST_ID)
+    await moveCardByKeyboard(user, /Business analyst intern/, ["ArrowRight"])
 
     await waitFor(() => {
       expect(
-        within(stageColumn("sent")).getByText("Business analyst intern")
+        within(stageColumn("sent")).getByRole("button", {
+          name: /Business analyst intern/,
+        })
       ).toBeInTheDocument()
     })
     expect(
-      within(stageColumn("prep")).queryByText("Business analyst intern")
+      within(stageColumn("prep")).queryByRole("button", {
+        name: /Business analyst intern/,
+      })
     ).not.toBeInTheDocument()
     expect(
-      within(stageColumn("sent")).getByText("Product analyst intern")
+      within(stageColumn("sent")).getByRole("button", {
+        name: /Product analyst intern/,
+      })
     ).toBeInTheDocument()
+    await waitFor(() => {
+      expect(
+        getMockApplyCards().find((card) => card.id === ANALYST_ID)?.stage
+      ).toBe("sent")
+    })
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Moved the Opportunity Business analyst intern to Sent"
+    )
   })
 
-  it("reorders a card within a Stage", async () => {
+  it("reorders a card within a Stage with the keyboard", async () => {
+    layoutBoard()
+    const user = userEvent.setup()
     renderApply()
     await expectApplyLive()
 
-    dragCardOntoCard("Product intern", "Associate PM intern")
+    await moveCardByKeyboard(user, /Product intern/, ["ArrowUp"])
 
     await waitFor(() => {
       const titles = [
@@ -91,6 +111,41 @@ describe("Apply board", () => {
       expect(titles[0]).toMatch(/Product intern/)
       expect(titles[1]).toMatch(/Associate PM intern/)
     })
+  })
+
+  it("opens the card on Enter and keeps Space for picking it up", async () => {
+    const user = userEvent.setup()
+    renderApply()
+    await expectApplyLive()
+
+    act(() => boardCard(/Associate PM intern/).focus())
+    await user.keyboard("{Enter}")
+
+    expect(
+      await screen.findByRole("complementary", { name: "Opportunity detail" })
+    ).toBeInTheDocument()
+  })
+
+  it("does not move a card that is picked up and cancelled", async () => {
+    const { getMockApplyCards } = await import("@/test/apply-api-mock.ts")
+    layoutBoard()
+    const user = userEvent.setup()
+    renderApply()
+    await expectApplyLive()
+
+    act(() => boardCard(/Business analyst intern/).focus())
+    await user.keyboard(" ")
+    await user.keyboard("{ArrowRight}")
+    await user.keyboard("{Escape}")
+
+    expect(
+      within(stageColumn("prep")).getByRole("button", {
+        name: /Business analyst intern/,
+      })
+    ).toBeInTheDocument()
+    expect(
+      getMockApplyCards().find((card) => card.id === ANALYST_ID)?.stage
+    ).toBe("prep")
   })
 
   it("does not auto-open a card without the guided deep-link", async () => {
@@ -239,7 +294,7 @@ describe("Apply board", () => {
     renderApply()
     await expectApplyLive()
 
-    fireEvent.click(screen.getByRole("button", { name: "Calendar" }))
+    fireEvent.click(screen.getByRole("radio", { name: "Calendar" }))
 
     const monthTitle = `${now.toLocaleString("en-US", { month: "long" })} ${now.getFullYear()}`
     expect(screen.getByText(monthTitle)).toBeInTheDocument()
@@ -299,7 +354,8 @@ describe("Apply board", () => {
 
     const board = document.querySelector("[data-apply-board]")
     expect(board).toBeTruthy()
-    expect(board).toHaveClass("grid-cols-5")
+    const grid = board!.querySelector('[data-slot="kanban"]')
+    expect(grid).toHaveClass("grid", "auto-cols-fr", "grid-flow-col")
     expect(board?.className ?? "").not.toMatch(/overflow-x-auto/)
     for (const id of ["inbox", "prep", "sent", "live", "closed"] as const) {
       const column = stageColumn(id)
@@ -307,9 +363,7 @@ describe("Apply board", () => {
       expect(column.className).not.toMatch(/shrink-0/)
     }
 
-    expect(
-      screen.queryByRole("button", { name: /filter/i })
-    ).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Filters" })).toBeEnabled()
     expect(
       screen.queryByRole("button", { name: /column menu/i })
     ).not.toBeInTheDocument()
@@ -374,7 +428,10 @@ describe("Apply board", () => {
     renderApply()
     await expectApplyLive()
 
-    dragCardToStage("Business analyst intern", "sent")
+    layoutBoard()
+    await moveCardByKeyboard(userEvent.setup(), /Business analyst intern/, [
+      "ArrowRight",
+    ])
 
     expect(
       await screen.findByRole("alert", {}, { timeout: 2000 })

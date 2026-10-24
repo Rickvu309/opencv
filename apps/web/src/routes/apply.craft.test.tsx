@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest"
 import { fireEvent, screen, waitFor, within } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { getMockApplyCards } from "@/test/apply-api-mock.ts"
 import {
-  dragCardToStage,
   expectApplyLive,
   installApplyTestLifecycle,
+  layoutBoard,
+  moveCardByKeyboard,
   renderApply,
   stageColumn,
 } from "@/test/apply-route-fixtures.ts"
@@ -32,10 +34,9 @@ describe("Apply craft pass", () => {
     renderApply()
     await expectApplyLive()
 
-    expect(screen.getAllByRole("status")).toHaveLength(1)
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "The starter set shows how the board works"
-    )
+    const stack = await screen.findByRole("region", { name: "Notifications" })
+    expect(within(stack).getAllByRole("article")).toHaveLength(1)
+    expect(stack).toHaveTextContent("The starter set shows how the board works")
     expect(
       within(stageColumn("inbox")).queryByText("Demo")
     ).not.toBeInTheDocument()
@@ -46,7 +47,7 @@ describe("Apply craft pass", () => {
     await expectApplyLive()
     const before = getMockApplyCards().length
 
-    fireEvent.click(screen.getByRole("button", { name: "Clear demo" }))
+    fireEvent.click(await screen.findByRole("button", { name: "Clear demo" }))
 
     const dialog = await screen.findByRole("dialog", {
       name: "Remove 4 sample opportunities?",
@@ -65,21 +66,26 @@ describe("Apply craft pass", () => {
     renderApply()
     await expectApplyLive()
 
-    dragCardToStage("Business analyst intern", "sent")
+    layoutBoard()
+    await moveCardByKeyboard(userEvent.setup(), /Business analyst intern/, [
+      "ArrowRight",
+    ])
     await waitFor(() => {
       expect(
         within(stageColumn("sent")).getByText("Business analyst intern")
       ).toBeInTheDocument()
     })
 
-    fireEvent.click(screen.getByRole("button", { name: "Clear demo" }))
+    fireEvent.click(await screen.findByRole("button", { name: "Clear demo" }))
     const dialog = await screen.findByRole("dialog", {
       name: "Remove 3 sample opportunities?",
     })
     fireEvent.click(within(dialog).getByRole("button", { name: "Remove" }))
 
     await waitFor(() => {
-      expect(screen.queryByRole("status")).not.toBeInTheDocument()
+      expect(
+        screen.queryByRole("button", { name: "Clear demo" })
+      ).not.toBeInTheDocument()
     })
     expect(screen.queryByText("Associate PM intern")).not.toBeInTheDocument()
     expect(screen.getByText("Business analyst intern")).toBeInTheDocument()
