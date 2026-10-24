@@ -102,7 +102,7 @@ describe("Paper drive", () => {
     expect(screen.queryByRole("table")).not.toBeInTheDocument()
     expect(screen.queryByText(/^No documents yet/)).not.toBeInTheDocument()
     expect(
-      document.querySelectorAll("[data-slot='skeleton']").length
+      document.querySelectorAll("[data-slot='shimmer-skeleton']").length
     ).toBeGreaterThan(0)
     release()
     await expectPaperDrive()

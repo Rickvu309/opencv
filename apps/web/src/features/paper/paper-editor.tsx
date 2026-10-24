@@ -56,7 +56,7 @@ import {
 } from "./paper-selection.ts"
 import { PaperEditorConflictBanner } from "./paper-editor-conflict-banner.tsx"
 import { PaperSuggestionBar } from "./paper-suggestion-bar.tsx"
-import { addSuggestion, type PaperSuggestion } from "./paper-suggestion.ts"
+import { usePaperSuggestion } from "./use-paper-suggestion.ts"
 import { useSectionFocus } from "./use-section-focus.ts"
 import { useSuggestionMarks } from "./use-suggestion-marks.ts"
 import { DOCS_PANEL_ID, PaperEditorHeader } from "./paper-editor-header.tsx"
@@ -146,7 +146,14 @@ export function PaperEditor({
   const userNameRef = useRef(session?.user.name)
   const [conflict, setConflict] = useState(false)
   const { focusSections, clearSectionFocus } = useSectionFocus(canvasRef)
-  const [suggestion, setSuggestion] = useState<PaperSuggestion | null>(null)
+  const {
+    suggestion,
+    log: suggestionLog,
+    add: addSuggestion,
+    clear: clearSuggestion,
+    keep: keepSuggestion,
+    undo: undoSuggestion,
+  } = usePaperSuggestion()
   const [dockEl, setDockEl] = useState<HTMLElement | null>(null)
   const [coachDocked, setCoachDocked] = useState(false)
   useSuggestionMarks(canvasRef, suggestion?.sectionIds)
@@ -212,20 +219,16 @@ export function PaperEditor({
     if (highlight) {
       const hunks = diffPaperContent(next.kind, previous, next.content)
       focusSections(changedSectionIds(hunks))
-      setSuggestion((current) => addSuggestion(current, previous, hunks))
+      addSuggestion(previous, hunks)
     } else {
       clearSectionFocus()
     }
   }
 
-  function keepSuggestion() {
-    setSuggestion(null)
-  }
-
-  function undoSuggestion() {
-    if (!suggestion) return
-    const restored = { ...docRef.current, content: suggestion.previous }
-    setSuggestion(null)
+  function undoCoachChange() {
+    const undone = undoSuggestion()
+    if (!undone) return
+    const restored = { ...docRef.current, content: undone.previous }
     applyServerDoc(restored as PaperDoc)
     onChangeRef.current(restored as PaperDoc)
   }
@@ -240,7 +243,7 @@ export function PaperEditor({
     if (switched || reverted) {
       applyServerDoc(doc)
       setSelection(null)
-      setSuggestion(null)
+      clearSuggestion(switched)
       return
     }
     if (doc.updatedAt === loadedUpdatedAtRef.current) return
@@ -270,8 +273,8 @@ export function PaperEditor({
   )
 
   useEffect(() => {
-    if (dirty) setSuggestion(null)
-  }, [dirty])
+    if (dirty) clearSuggestion()
+  }, [dirty, clearSuggestion])
 
   const citeSpans = useMemo(() => {
     if (isCv) return paperCiteSpansFromCv(cvData)
@@ -579,7 +582,7 @@ export function PaperEditor({
             }}
             onUseServer={() => {
               applyServerDoc(doc, true)
-              setSuggestion(null)
+              clearSuggestion()
             }}
           />
         ) : null}
@@ -587,8 +590,9 @@ export function PaperEditor({
         {suggestion && !conflict ? (
           <PaperSuggestionBar
             suggestion={suggestion}
-            onKeep={keepSuggestion}
-            onUndo={undoSuggestion}
+            log={suggestionLog}
+            onKeep={() => keepSuggestion()}
+            onUndo={undoCoachChange}
           />
         ) : null}
 

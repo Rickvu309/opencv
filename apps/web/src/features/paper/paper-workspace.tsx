@@ -22,7 +22,7 @@ import {
   type PaperZeroStateId,
 } from "./paper-data.ts"
 import { PaperDialogs } from "./paper-dialogs.tsx"
-import { PaperDrive } from "./paper-drive.tsx"
+import { PaperDrive, type PaperKindFilter } from "./paper-drive.tsx"
 import { PaperEditor } from "./paper-editor.tsx"
 import { usePaperDocs } from "./use-paper-docs.ts"
 
@@ -35,6 +35,7 @@ export function PaperWorkspace({
   const apply = useApplyCards()
   const { data: session } = authClient.useSession()
   const [query, setQuery] = useState("")
+  const [kind, setKind] = useState<PaperKindFilter>("all")
   const [openDocId, setOpenDocId] = useState<string | null>(null)
   const [openedSample, setOpenedSample] = useState(false)
   const [renameTarget, setRenameTarget] = useState<PaperDoc | null>(null)
@@ -58,13 +59,24 @@ export function PaperWorkspace({
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return paper.docs
     return paper.docs.filter(
       (d) =>
-        d.name.toLowerCase().includes(q) ||
-        TYPE_LABEL[d.kind].toLowerCase().includes(q)
+        (kind === "all" || d.kind === kind) &&
+        (!q ||
+          d.name.toLowerCase().includes(q) ||
+          TYPE_LABEL[d.kind].toLowerCase().includes(q))
     )
-  }, [paper.docs, query])
+  }, [paper.docs, query, kind])
+
+  const counts = useMemo(
+    () => ({
+      all: paper.docs.length,
+      cv: paper.docs.filter((d) => d.kind === "cv").length,
+      letter: paper.docs.filter((d) => d.kind === "letter").length,
+      proof: paper.docs.filter((d) => d.kind === "proof").length,
+    }),
+    [paper.docs]
+  )
 
   const attachPair = paperAttachPair(paper.docs, apply.cards)
   const zeroStates = paperZeroStates(paper.docs, Boolean(attachPair))
@@ -163,6 +175,9 @@ export function PaperWorkspace({
       {errorBanner}
       <PaperDrive
         docs={filtered}
+        kind={kind}
+        onKind={setKind}
+        counts={counts}
         isLoading={paper.isLoading}
         loadFailed={paper.loadFailed}
         onReload={paper.reload}

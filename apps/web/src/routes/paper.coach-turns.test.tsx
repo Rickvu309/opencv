@@ -212,10 +212,10 @@ describe("Paper Coach turns", () => {
 
     renderPaper()
     await expectPaperDrive()
-    const driveName = await screen.findByText("PM track CV", {
-      selector: "span.font-medium",
+    const driveName = await screen.findByRole("button", {
+      name: "Open PM track CV",
     })
-    fireEvent.click(driveName.closest("tr") ?? driveName)
+    fireEvent.click(driveName)
     await screen.findByRole("region", {
       name: "Editing PM track CV",
     })

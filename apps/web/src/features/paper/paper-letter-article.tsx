@@ -1,5 +1,6 @@
 import type { RefObject } from "react"
 
+import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 import { FileText, MoreHorizontal } from "lucide-react"
@@ -31,9 +32,9 @@ export function PaperLetterArticle({ doc, editorRef, onInput }: Props) {
         </div>
         <div className="flex items-center gap-2">
           {doc.status === "draft" ? (
-            <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+            <Badge variant="secondary" className="uppercase">
               Draft
-            </span>
+            </Badge>
           ) : null}
           <Button
             type="button"
@@ -53,7 +54,7 @@ export function PaperLetterArticle({ doc, editorRef, onInput }: Props) {
         suppressContentEditableWarning
         onInput={onInput}
         data-paper-section="letter"
-        className="paper-editor-canvas prose-kit min-h-[70vh] px-10 py-10 outline-none sm:px-14 sm:py-12"
+        className="paper-editor-canvas text-sm leading-relaxed min-h-[70vh] px-10 py-10 outline-none sm:px-14 sm:py-12"
         aria-label="Letter text"
         spellCheck
       />
