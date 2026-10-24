@@ -1,7 +1,4 @@
-/**
- * Base URL of the API, baked in at build time. The Railway `web` service sets
- * `VITE_API_URL` per environment (production → production API, staging →
- * staging API); locally it falls back to the dev server port in `.env.example`.
- */
+/** Deployed clients use the host proxy; local development may override it. */
 export const apiBaseUrl =
-  import.meta.env.VITE_API_URL || "http://localhost:3001"
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.DEV ? "http://localhost:3001" : window.location.origin)

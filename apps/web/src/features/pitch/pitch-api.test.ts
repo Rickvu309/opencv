@@ -1,4 +1,8 @@
-import { PITCH_COMMANDS, type PitchDoc, type PublicPitch } from "@workspace/domain"
+import {
+  PITCH_COMMANDS,
+  type PitchDoc,
+  type PublicPitch,
+} from "@workspace/domain"
 import { describe, expect, it, vi } from "vitest"
 
 import { apiBaseUrl } from "@/lib/api-url.ts"
@@ -42,6 +46,17 @@ describe("pitch API client", () => {
     expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
       `${apiBaseUrl}/api/pitch/public/alex-tran`
     )
+    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({ credentials: "omit" })
+  })
+
+  it("does not redirect an anonymous missing Pitch to sign-in", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(new Response(null, { status: 404 }))
+    )
+    await expect(getPublicPitch("missing")).rejects.toMatchObject({
+      status: 404,
+    })
   })
 
   it("updates through the Command registry", async () => {

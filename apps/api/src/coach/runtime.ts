@@ -66,7 +66,7 @@ export type OpenRouterCoachRuntimeOptions = {
   apiKey: string
   /** Local checks only: overrides the OpenRouter API URL. */
   baseURL?: string
-  /** Light-tier model for first-turn History titles (QVE-153 / ADR-0009). */
+  /** Light-tier model for first-turn History titles (QVE-153). */
   titleModel?: string
   /** Model for Apply scan extraction. Defaults to the free-mode model. */
   scanModel?: string
@@ -77,7 +77,7 @@ export type OpenRouterCoachRuntimeOptions = {
 
 /**
  * OpenRouter-backed CoachRuntime. This is the only module that imports
- * the AI SDK (ADR-0007).
+ * the AI SDK.
  */
 export function createOpenRouterCoachRuntime({
   apiKey,
@@ -195,8 +195,7 @@ export function createOpenRouterCoachRuntime({
                 })
                 let text = ""
                 let finish:
-                  | Extract<ModelStreamEvent, { type: "finish" }>
-                  | undefined
+                  Extract<ModelStreamEvent, { type: "finish" }> | undefined
                 for await (const event of normalizeFullStream(
                   result.fullStream,
                   mode

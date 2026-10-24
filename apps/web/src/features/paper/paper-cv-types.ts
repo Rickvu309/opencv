@@ -21,7 +21,7 @@ export type CvTemplateMeta = {
   description: string
 }
 
-/** ADR-0014 type roles, print-scaled on CV paper (ADR-0014 exception). */
+/** Print type roles, print-scaled on CV paper (print exception). */
 export const CV_TYPE_ROLES = [
   "page-title",
   "section-title",

@@ -28,17 +28,14 @@ type InputSchema<TInput> = {
 
 export type CommandDefinition<TInput, TOutput> = {
   name: string
-  /** Human description for the Coach tool surface (ADR-0007). */
+  /** Human description for the Coach tool surface. */
   description: string
   input: InputSchema<TInput>
   coachAllowed: boolean
   destructive: boolean
   reversal: ReversalDescriptor
   /** Capture pre-mutation state used to plan a one-click undo. */
-  captureForReversal?: (
-    ctx: CommandContext,
-    input: TInput
-  ) => Promise<unknown>
+  captureForReversal?: (ctx: CommandContext, input: TInput) => Promise<unknown>
   /** Build `reversal.input` after a successful handler. */
   reversalInput?: (args: {
     input: TInput

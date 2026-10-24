@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router"
+import { appHref } from "@/lib/site-url.ts"
 
 import { buttonVariants } from "@workspace/ui/components/button"
 import { Card } from "@workspace/ui/components/card"
@@ -34,15 +34,15 @@ export function LandingPage() {
               <p className="max-w-xl px-4 font-sans text-3xl font-medium tracking-tight text-balance md:text-4xl">
                 {LANDING_CTA}
               </p>
-              <Link
-                to="/sign-up"
+              <a
+                href={appHref("/sign-up")}
                 className={cn(
                   buttonVariants({ size: "lg" }),
                   "h-11 px-5 text-base"
                 )}
               >
                 {LANDING_PRIMARY_LABEL}
-              </Link>
+              </a>
             </Card>
           </div>
         </section>

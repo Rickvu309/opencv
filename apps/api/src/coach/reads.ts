@@ -45,7 +45,7 @@ function defineReadTool<TInput>(
 }
 
 /**
- * Parallel read-tool table (ADR-0007). Each runner reuses a GET mapper so
+ * Parallel read-tool table. Each runner reuses a GET mapper so
  * the Coach cannot see more than the User's own read endpoints return.
  */
 export const coachReadTools = [
@@ -86,8 +86,7 @@ export async function executeCoachRead(
 ): Promise<CommandEnvelope> {
   const parsed = tool.input.safeParse(input)
   if (!parsed.success) {
-    const message =
-      parsed.error.issues[0]?.message ?? "Invalid tool input"
+    const message = parsed.error.issues[0]?.message ?? "Invalid tool input"
     return errorEnvelope(ERROR_CODES.VALIDATION_ERROR, message)
   }
 

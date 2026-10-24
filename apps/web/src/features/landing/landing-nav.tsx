@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { Link } from "@tanstack/react-router"
+import { appHref } from "@/lib/site-url.ts"
 
 import { buttonVariants } from "@workspace/ui/components/button"
 import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
@@ -48,15 +49,15 @@ export function LandingNav() {
           ))}
         </nav>
         <div className="flex items-center gap-4">
-          <Link to="/sign-in" className={NAV_LINK}>
+          <a href={appHref("/sign-in")} className={NAV_LINK}>
             Sign in
-          </Link>
-          <Link
-            to="/sign-up"
+          </a>
+          <a
+            href={appHref("/sign-up")}
             className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
           >
             {LANDING_PRIMARY_LABEL}
-          </Link>
+          </a>
         </div>
       </div>
     </header>

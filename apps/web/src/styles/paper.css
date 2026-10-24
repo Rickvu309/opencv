@@ -1,4 +1,4 @@
-/* Paper / Proof / CV / A4 / print — app-level, not kit (ADR-0014). */
+/* Paper / Proof / CV / A4 / print — app-level, not kit. */
 @reference "@workspace/ui/globals.css";
 
 :root {
@@ -48,8 +48,7 @@
     line-height: 1.45;
   }
 
-  /* One calm print-paper voice. Sizes are the CV print-paper exception
-     (ADR-0014) so A4 stays readable without product chrome scale. */
+  /* One calm print-paper voice. Sizes are the CV print-paper exception so A4 stays readable without product chrome scale. */
   .cv-type-page-title {
     font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
     font-size: 22px;

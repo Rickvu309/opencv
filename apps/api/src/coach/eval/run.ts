@@ -1,7 +1,7 @@
 /**
  * Manual Coach eval CLI. Never imported by vitest — `pnpm --filter api eval`.
  * Refuses without OPENROUTER_API_KEY and is excluded from CI.
- * Resolves the OpenRouter id through ADR-0009 `resolveCoachModel` (QVE-155).
+ * Resolves the OpenRouter id through `resolveCoachModel` (QVE-155).
  */
 import type { CoachMode } from "@workspace/domain"
 

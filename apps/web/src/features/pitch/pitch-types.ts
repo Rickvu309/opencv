@@ -1,3 +1,5 @@
+import { publicHref } from "@/lib/site-url.ts"
+
 export type {
   PitchAchievement,
   PitchBentoCard,
@@ -76,7 +78,9 @@ export function publicPitchHref(
   slug: string,
   origin = typeof window === "undefined" ? "" : window.location.origin
 ) {
-  return `${origin}${publicPitchPath(slug)}`
+  return origin
+    ? publicHref(publicPitchPath(slug), origin)
+    : publicPitchPath(slug)
 }
 
 export function publicPitchLabel(slug: string) {

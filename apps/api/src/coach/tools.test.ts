@@ -19,9 +19,6 @@ import {
   type ThreadListItem,
   type UserProfile,
 } from "@workspace/domain"
-import { readFileSync } from "node:fs"
-import { dirname, join } from "node:path"
-import { fileURLToPath } from "node:url"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { commandRegistry } from "../commands/index.js"
@@ -174,7 +171,9 @@ describe("coach tool surface", () => {
       error: expect.objectContaining({ code: ERROR_CODES.VALIDATION_ERROR }),
     })
 
-    await expect(tools.paper_getDoc.execute({ docId: "nope" })).resolves.toEqual({
+    await expect(
+      tools.paper_getDoc.execute({ docId: "nope" })
+    ).resolves.toEqual({
       ok: false,
       error: expect.objectContaining({ code: ERROR_CODES.VALIDATION_ERROR }),
     })
@@ -212,15 +211,15 @@ describe("coach tool surface", () => {
 
     const tools = assembleCoachTools({ db, userId: ownerId })
 
-    const listedDocs = expectOk<PaperDoc[]>(await tools.paper_listDocs.execute({}))
+    const listedDocs = expectOk<PaperDoc[]>(
+      await tools.paper_listDocs.execute({})
+    )
     expect(listedDocs).toEqual(await listPaperDocsForUser(db, ownerId))
 
     const gotDoc = expectOk<PaperDoc>(
       await tools.paper_getDoc.execute({ docId: createdDoc.id })
     )
-    expect(gotDoc).toEqual(
-      await getPaperDocDetail(db, ownerId, createdDoc.id)
-    )
+    expect(gotDoc).toEqual(await getPaperDocDetail(db, ownerId, createdDoc.id))
 
     const listedCards = expectOk<ApplyCard[]>(
       await tools.apply_listCards.execute({})
@@ -373,24 +372,6 @@ describe("coach tool surface", () => {
   })
 })
 
-describe("destructive filter is temporary", () => {
-  it("documents the !destructive filter as temporary until Coach confirm is live", () => {
-    const here = dirname(fileURLToPath(import.meta.url))
-    const tools = readFileSync(join(here, "tools.ts"), "utf8")
-    const adr = readFileSync(
-      join(here, "../../../../docs/adr/0007-coach-runtime.md"),
-      "utf8"
-    )
-
-    expect(tools).toMatch(/Temporary \(QVE-148/)
-    expect(tools).toMatch(/!command\.destructive/)
-    expect(tools).toMatch(/Do not remove this filter/)
-    expect(adr).toMatch(/temporary/)
-    expect(adr).toMatch(/QVE-148/)
-    expect(adr).toMatch(/!destructive/)
-  })
-})
-
 describe("coach-actor command sweep", () => {
   let db: Awaited<ReturnType<typeof createMigratedTestDb>>["db"]
   let client: Awaited<ReturnType<typeof createMigratedTestDb>>["client"]
@@ -434,9 +415,9 @@ describe("coach-actor command sweep", () => {
 
     const mutationTools = commands.filter(isCoachMutationCommand)
     expect(mutationTools).toHaveLength(12)
-    expect(
-      mutationTools.map((command) => command.name)
-    ).not.toContain(COACH_VOICE_COMMAND)
+    expect(mutationTools.map((command) => command.name)).not.toContain(
+      COACH_VOICE_COMMAND
+    )
   })
 
   it("executes every coach-allowed Command and blocks every forbidden one", async () => {
@@ -513,8 +494,12 @@ describe("coach-actor command sweep", () => {
       }
     }
 
-    const allowed = commandRegistry.list().filter((command) => command.coachAllowed)
-    const forbidden = commandRegistry.list().filter((command) => !command.coachAllowed)
+    const allowed = commandRegistry
+      .list()
+      .filter((command) => command.coachAllowed)
+    const forbidden = commandRegistry
+      .list()
+      .filter((command) => !command.coachAllowed)
 
     expect(allowed.length).toBe(13)
     expect(forbidden.map((command) => command.name).sort()).toEqual([

@@ -17,8 +17,13 @@ import { SignInPage } from "@/routes/sign-in.tsx"
 import { SignUpPage } from "@/routes/sign-up.tsx"
 import { authClient } from "@/lib/auth-client.ts"
 import { validateAuthSearch } from "@/lib/auth-redirect.ts"
+import { siteRedirect } from "@/lib/site-url.ts"
 
 const rootRoute = createRootRoute({
+  beforeLoad: ({ location }) => {
+    const target = siteRedirect(location.href)
+    if (target) throw redirect({ href: target, reloadDocument: true })
+  },
   component: () => <Outlet />,
   notFoundComponent: () => <NotFoundPage />,
 })
@@ -27,6 +32,8 @@ const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
   beforeLoad: async () => {
+    if (["opencv.me", "www.opencv.me"].includes(window.location.hostname))
+      return
     const { data } = await authClient.getSession()
     if (data) {
       throw redirect({ to: "/app" })
@@ -72,7 +79,9 @@ const appLayoutRoute = createRoute({
     if (!data) {
       throw redirect({
         to: "/sign-in",
-        search: { redirect: `${location.pathname}${location.searchStr}` },
+        search: {
+          redirect: `${location.pathname}${location.searchStr}${location.hash ? `#${location.hash}` : ""}`,
+        },
       })
     }
     return { session: data }

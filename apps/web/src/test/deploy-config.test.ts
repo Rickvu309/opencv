@@ -34,15 +34,8 @@ describe("apps/web/Dockerfile", () => {
   const dockerfile = read("apps/web/Dockerfile")
   const lines = dockerfile.split("\n")
 
-  it("bakes VITE_API_URL into the build before the build command runs", () => {
-    const arg = lines.findIndex((line) => line.trim() === "ARG VITE_API_URL")
-    const build = lines.findIndex((line) =>
-      line.includes("pnpm turbo build --filter=web")
-    )
-
-    expect(arg).toBeGreaterThan(-1)
-    expect(build).toBeGreaterThan(arg)
-    expect(dockerfile).toContain("ENV VITE_API_URL=$VITE_API_URL")
+  it("ships a same-origin client without a separate API build URL", () => {
+    expect(dockerfile).not.toContain("VITE_API_URL")
   })
 
   it("builds with the frozen lockfile and ships dist next to the Caddyfile", () => {
@@ -90,6 +83,7 @@ describe(".railway/railway.ts", () => {
         deploy: { preDeployCommand: ["pnpm --filter api run migrate"] },
       })
       expect(api?.variables).toEqual({
+        PORT: { type: "literal", value: "3001" },
         AUTH_URL: { type: "preserve" },
         DATABASE_URL: { type: "preserve" },
         OPENROUTER_API_KEY: { type: "preserve" },
@@ -99,19 +93,22 @@ describe(".railway/railway.ts", () => {
     }
   )
 
-  it.each([
-    ["staging", "https://api-staging.opencv.me"],
-    ["production", "https://api.opencv.me"],
-  ])("points %s's web build at its own api", (environment, apiUrl) => {
-    const web = railwayConfig(createRailwayContext({ environment }))
+  it("routes web API requests through the private API network", () => {
+    const web = railwayConfig(
+      createRailwayContext({ environment: "production" })
+    )
       .resources?.flat()
       .find((resource) => resource.address === "service.web")
-
     expect(web).toMatchObject({
       source: { type: "github", repo: "quanvu309/opencv", branch: "main" },
       build: { builder: "DOCKERFILE", dockerfilePath: "apps/web/Dockerfile" },
       deploy: { healthcheckPath: "/health" },
-      variables: { VITE_API_URL: { type: "literal", value: apiUrl } },
+      variables: {
+        API_UPSTREAM: {
+          type: "literal",
+          value: "http://api.railway.internal:3001",
+        },
+      },
     })
   })
 })

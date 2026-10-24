@@ -16,15 +16,11 @@ export type AuthConfig = {
   rateLimitEnabled?: boolean
 }
 
-/**
- * Cookie attributes follow ADR-0006: `SameSite=None; Secure` when AUTH_URL is
- * https (cross-origin Vercel ↔ Railway), browser defaults locally.
- */
 export function cookieAttributesForAuthUrl(authUrl: string) {
   const secure = authUrl.startsWith("https:")
   return {
     secure,
-    sameSite: (secure ? "none" : "lax") as "none" | "lax",
+    sameSite: "lax" as const,
     httpOnly: true,
   }
 }
@@ -73,7 +69,7 @@ export function createAuth({
       useSecureCookies: cookies.secure,
       defaultCookieAttributes: cookies,
       // Better Auth skips origin checks when `isTest()`; keep one CORS/CSRF
-      // policy in vitest and on Railway (ADR-0006).
+      // policy in vitest and on Railway.
       disableOriginCheck: false,
     },
     rateLimit: { enabled: rateLimitEnabled },

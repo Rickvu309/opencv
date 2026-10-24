@@ -17,7 +17,10 @@ describe("public Pitch slug", () => {
     expect(isPitchPublicSlug("")).toBe(false)
   })
 
-  it("builds a same-origin public URL for Copy link", () => {
+  it("builds a public URL for Copy link", () => {
+    expect(publicPitchHref("alex-tran", "https://app.opencv.me")).toBe(
+      "https://opencv.me/u/alex-tran"
+    )
     expect(publicPitchPath("alex-tran")).toBe("/u/alex-tran")
     expect(publicPitchLabel("alex-tran")).toBe("opencv.me/u/alex-tran")
     expect(publicPitchHref("alex-tran")).toBe(

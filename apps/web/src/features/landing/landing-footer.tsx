@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router"
+import { appHref } from "@/lib/site-url.ts"
 
 import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
 import { cn } from "@workspace/ui/lib/utils"
@@ -25,9 +26,9 @@ export function LandingFooter() {
               {surface.label}
             </a>
           ))}
-          <Link to="/sign-in" className={FOOTER_LINK}>
+          <a href={appHref("/sign-in")} className={FOOTER_LINK}>
             Sign in
-          </Link>
+          </a>
         </nav>
       </div>
     </footer>

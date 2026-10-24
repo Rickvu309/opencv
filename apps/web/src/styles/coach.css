@@ -1,4 +1,4 @@
-/* Paper Coach float motion. Tokens from ADR-0014. */
+/* Paper Coach float motion. Tokens from globals.css. */
 @reference "@workspace/ui/globals.css";
 
 @layer utilities {

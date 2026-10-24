@@ -3,14 +3,13 @@ import { defineRailway, github, preserve, project, service } from "railway/iac"
 // Own only application services; leave the existing Postgres and volume unmanaged.
 export const partial = "opencv-apps"
 
-// Keep existing api variables in Railway. The cutover flips AUTH_URL and
-// WEB_ORIGINS last, by hand (docs/deploy.md).
-export default defineRailway((ctx) => {
-  const production = ctx.isEnvironment("production")
-
+// Preserve secrets and browser-origin settings; coordinate the host cutover
+// using docs/deploy.md.
+export default defineRailway(() => {
   const api = service("api", {
     source: github("quanvu309/opencv", { branch: "main" }),
     env: {
+      PORT: "3001",
       AUTH_URL: preserve(),
       DATABASE_URL: preserve(),
       OPENROUTER_API_KEY: preserve(),
@@ -54,9 +53,7 @@ export default defineRailway((ctx) => {
     },
     deploy: { healthcheckPath: "/health" },
     env: {
-      VITE_API_URL: production
-        ? "https://api.opencv.me"
-        : "https://api-staging.opencv.me",
+      API_UPSTREAM: "http://api.railway.internal:3001",
     },
   })
 

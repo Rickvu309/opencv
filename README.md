@@ -2,7 +2,7 @@
 
 OpenCV is an AI career coach for Vietnamese students and new graduates. It helps them work out what to apply for, write CVs and cover letters that fit each job, keep track of applications, and share a portfolio page with employers. It was called OpenPath before the rename.
 
-Live: https://opencv.me
+Public site: https://opencv.me. App: https://app.opencv.me.
 
 ## What it does
 
@@ -51,7 +51,7 @@ The web app is at http://localhost:5173 and the api health check is at http://lo
 
 ## Hosting and deploy
 
-Railway runs the `api`, `web` and Postgres services in one environment, production, behind Cloudflare at https://opencv.me, https://www.opencv.me and https://api.opencv.me. A merge to `main` deploys straight to production; there is no staging and no preview deploy yet. Layout, variables, DNS, rollback and migrations are in `docs/deploy.md`.
+Railway runs the `api`, `web` and Postgres services in one environment, production, behind Cloudflare at https://opencv.me, https://www.opencv.me, https://app.opencv.me and https://api.opencv.me. A merge to `main` deploys straight to production; there is no staging and no preview deploy yet. Layout, variables, DNS, rollback and migrations are in `docs/deploy.md`.
 
 ## How work happens
 
@@ -62,4 +62,4 @@ scripts/new-task.sh <type> <issue#> -d "short description"   # branch + worktree
 heavy -- scripts/open-pr.sh --draft                          # checks, push, PR
 ```
 
-Read `CONTRIBUTING.md` for the full flow and `AGENTS.md` for the rules agents follow. Product and domain language are in `PRODUCT.md` and `CONTEXT.md`; decisions are in `docs/adr/`.
+Read `CONTRIBUTING.md` for the full flow and `AGENTS.md` for the rules agents follow. Product and domain language are in `PRODUCT.md` and `CONTEXT.md`. Current implementation is defined by source and tests. Historical technical plans and ADRs have been retired; Git history retains them.

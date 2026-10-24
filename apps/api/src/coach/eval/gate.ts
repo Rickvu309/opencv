@@ -21,7 +21,7 @@ export function requireOpenRouterApiKey(env: NodeJS.ProcessEnv): string {
 }
 
 /**
- * Modes the harness should score. Uses ADR-0009 `resolveCoachModel` — no
+ * Modes the harness should score. Uses `resolveCoachModel` — no
  * second routing layer. Unset defaults to `free`. `all` runs Free, Light,
  * and Max in that order.
  */

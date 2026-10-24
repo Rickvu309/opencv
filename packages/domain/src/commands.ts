@@ -48,7 +48,7 @@ export type PitchCommandName =
   (typeof PITCH_COMMANDS)[keyof typeof PITCH_COMMANDS]
 
 /**
- * Coach-allowed but excluded from the tool surface (ADR-0007): the stream
+ * Coach-allowed but excluded from the tool surface: the stream
  * is the Coach's voice, and this Command means the User posted a message.
  */
 export const COACH_VOICE_COMMAND = THREAD_COMMANDS.postMessage

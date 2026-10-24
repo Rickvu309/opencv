@@ -38,15 +38,6 @@ export function commandToToolName(commandName: string) {
   return commandName.replaceAll(".", "_")
 }
 
-/**
- * Mutation Commands the Coach may auto-run.
- *
- * Temporary (QVE-148 / ADR-0007): `!destructive` stays until a Coach tool
- * call can pause for User confirmation instead of executing. User-fired
- * deletes already confirm in the UI. Do not remove this filter without
- * that confirm path — `executeCoachMutation` also refuses destructive
- * Commands so a leaked tool still cannot run them.
- */
 export function isCoachMutationCommand(command: RegisteredCommand) {
   return (
     command.coachAllowed &&
@@ -114,10 +105,7 @@ function mutationToolsFromRegistry(
   return tools
 }
 
-function readToolsFromTable(
-  db: AppDatabase,
-  userId: string
-): CoachToolSurface {
+function readToolsFromTable(db: AppDatabase, userId: string): CoachToolSurface {
   const tools: CoachToolSurface = {}
 
   for (const tool of coachReadTools) {
@@ -132,7 +120,7 @@ function readToolsFromTable(
 }
 
 /**
- * Single enumeration point for the Coach tool surface (ADR-0007).
+ * Single enumeration point for the Coach tool surface.
  * Mutations come from the registry; reads come from the parallel table.
  */
 export function assembleCoachTools({

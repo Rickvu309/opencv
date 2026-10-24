@@ -11,8 +11,7 @@ const localWebOrigin = "http://localhost:5173"
 /**
  * Origins the API accepts browser calls from, as a comma-separated list. Each
  * entry is an exact origin or a single-`*` pattern (see `createApp`). Set per
- * Railway environment: production allows `https://opencv.me` (plus the old
- * Vercel origin during the overlap), staging allows `https://staging.opencv.me`.
+ * Railway environment: production allows `https://app.opencv.me`.
  */
 export function webOriginsFromEnv(env: NodeJS.ProcessEnv): string[] {
   const configured = (env.WEB_ORIGINS ?? "")
@@ -63,8 +62,8 @@ export function sessionSecretFromEnv(
 }
 
 /**
- * Public URL of this API, used as Better Auth `baseURL` and to choose cookie
- * attributes (https → SameSite=None; Secure). Falls back to the local api
+ * Browser-facing auth origin, used as Better Auth `baseURL` and to choose
+ * secure cookies for HTTPS. Production uses `https://app.opencv.me`. Falls back to the local api
  * when unset, matching `WEB_ORIGINS`.
  */
 export function authUrlFromEnv(env: NodeJS.ProcessEnv): string {
@@ -98,7 +97,7 @@ export function openRouterBaseUrlFromEnv(
   return configured
 }
 
-/** OpenRouter model id for a User-selected Coach mode (ADR-0009). */
+/** OpenRouter model id for a User-selected Coach mode. */
 export function coachModelForModeFromEnv(
   mode: CoachMode,
   env: NodeJS.ProcessEnv
@@ -106,7 +105,7 @@ export function coachModelForModeFromEnv(
   return resolveCoachModel(mode, env)
 }
 
-/** Per-mode daily turn cap (ADR-0009). */
+/** Per-mode daily turn cap. */
 export function coachDailyTurnLimitForModeFromEnv(
   mode: CoachMode,
   env: NodeJS.ProcessEnv

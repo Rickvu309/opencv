@@ -5,7 +5,8 @@ import {
   type PublicPitch,
 } from "@workspace/domain"
 
-import { apiFetch } from "@/lib/api.ts"
+import { apiBaseUrl, apiFetch } from "@/lib/api.ts"
+import { ApiError } from "@/lib/api-error.ts"
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
 
 export const pitchQueryKeys = {
@@ -19,9 +20,19 @@ export async function getPitch(): Promise<PitchDoc> {
 }
 
 export async function getPublicPitch(slug: string): Promise<PublicPitch> {
-  const body = await apiFetch<SuccessBody<PublicPitch>>(
-    `/api/pitch/public/${encodeURIComponent(slug)}`
+  const response = await fetch(
+    new URL(`/api/pitch/public/${encodeURIComponent(slug)}`, apiBaseUrl),
+    {
+      credentials: "omit",
+    }
   )
+  if (!response.ok)
+    throw new ApiError(
+      response.status,
+      "PITCH_UNAVAILABLE",
+      "Pitch could not be loaded."
+    )
+  const body: SuccessBody<PublicPitch> = await response.json()
   return unwrapData(body)
 }
 

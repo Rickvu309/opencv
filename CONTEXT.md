@@ -2,13 +2,13 @@
 
 Personalised AI career coaching for Vietnamese early-career users, where the Coach can act in the product through the same actions the user can.
 
-Vocabulary follows the validated app-shell prototype (`prototype/app-shell`, frozen 2026-08-24). Where this file and older docs disagree, this file wins.
+This file defines current product vocabulary. Read source and tests for implemented behavior.
 
 ## Language
 
 **Product language**:
-English for chrome, starter content, receipts, and the Coach persona. No locale toggle. A User who writes in Vietnamese may still get an answer from the Coach as a model capability (ADR-0008 / QVE-150).
-_Avoid_: i18n, locale, Vietnamese-first (until a follow-up ADR)
+English for chrome, starter content, receipts, and the Coach persona. No locale toggle. A User who writes in Vietnamese may still get an answer from the Coach as a model capability.
+_Avoid_: i18n, locale, Vietnamese-first (until a product decision changes this)
 
 **User**:
 A Vietnamese early-career person (student or new graduate) using OpenCV for themselves.

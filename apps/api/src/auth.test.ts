@@ -52,10 +52,10 @@ function createAuthedApp(db: ReturnType<typeof drizzle>, authUrl: string) {
 }
 
 describe("cookieAttributesForAuthUrl", () => {
-  it("uses SameSite=None; Secure when the auth URL is https", () => {
+  it("uses host-only SameSite=Lax; Secure when the auth URL is https", () => {
     expect(cookieAttributesForAuthUrl("https://api.example.com")).toEqual({
       secure: true,
-      sameSite: "none",
+      sameSite: "lax",
       httpOnly: true,
     })
   })
@@ -102,8 +102,9 @@ describe("auth cookie round-trip", () => {
 
     expect(signUp.status).toBe(200)
     expect(sessionSetCookie(signUp)).toMatch(/session_token/i)
-    expect(sessionSetCookie(signUp)).toMatch(/samesite=none/i)
+    expect(sessionSetCookie(signUp)).toMatch(/samesite=lax/i)
     expect(sessionSetCookie(signUp)).toMatch(/secure/i)
+    expect(sessionSetCookie(signUp)).not.toMatch(/domain=/i)
 
     const session = await app.request("/api/session", {
       headers: {

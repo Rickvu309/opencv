@@ -34,7 +34,7 @@ export type AppConfig = {
   db?: AuthDatabase
   rateLimitEnabled?: boolean
   /**
-   * Optional Coach runtime (ADR-0007). Injected like `db` — the factory
+   * Optional Coach runtime. Injected like `db` — the factory
    * never constructs one from env. Missing runtime → 503 on the coach route.
    */
   coach?: CoachRuntime
@@ -43,9 +43,9 @@ export type AppConfig = {
    * `index.ts` wires OpenRouter via `coachRuntimeFromConfig` when this is set.
    */
   openRouterApiKey?: string
-  /** Per-mode OpenRouter model ids (ADR-0009). */
+  /** Per-mode OpenRouter model ids. */
   coachModels?: Partial<Record<CoachMode, string>>
-  /** Per-mode daily turn caps (ADR-0009). */
+  /** Per-mode daily turn caps. */
   coachDailyTurnLimits?: Partial<Record<CoachMode, number>>
   /** Test override; production uses `COACH_SSE_HEARTBEAT_MS` (15s). */
   coachSseHeartbeatMs?: number

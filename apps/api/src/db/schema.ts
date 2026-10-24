@@ -19,14 +19,14 @@ import {
   uuid,
 } from "drizzle-orm/pg-core"
 
-/** App tables live in this schema (ADR-0006). */
-// `openpath_app` is a historical schema name kept on purpose (ADR-0011).
+/** App tables live in this schema. */
+// `openpath_app` is a historical schema name kept on purpose.
 export const openpathApp = pgSchema("openpath_app")
 
 const timestamptz = (name: string) =>
   timestamp(name, { withTimezone: true, mode: "date" })
 
-/** Better Auth user table — text ids, not app UUIDv7 (ADR-0006). */
+/** Better Auth user table — text ids, not app UUIDv7. */
 export const user = openpathApp.table("user", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
@@ -104,7 +104,7 @@ export const authSchema = {
   verification,
 }
 
-/** App-generated UUIDv7; server owns timestamps (ADR-0006). */
+/** App-generated UUIDv7; server owns timestamps. */
 export const threads = openpathApp.table(
   "threads",
   {
@@ -151,7 +151,7 @@ export const threadMessages = openpathApp.table(
   ]
 )
 
-/** Paper docs: kind + jsonb content + version (ADR-0006 / PRODUCT.md q3). */
+/** Paper docs: kind + jsonb content + version. */
 export const paperDocs = openpathApp.table(
   "paper_docs",
   {
@@ -224,7 +224,7 @@ export const applyCards = openpathApp.table(
 )
 
 /**
- * One Pitch document per User (ADR-0006): kind + jsonb + version.
+ * One Pitch document per User: kind + jsonb + version.
  * Unique on user_id — there is never a second Pitch row.
  */
 export const pitchDocs = openpathApp.table(
@@ -234,21 +234,17 @@ export const pitchDocs = openpathApp.table(
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    contentKind: text("content_kind")
-      .$type<"pitch">()
-      .notNull(),
+    contentKind: text("content_kind").$type<"pitch">().notNull(),
     content: jsonb("content").$type<Record<string, unknown>>().notNull(),
     contentVersion: integer("content_version").notNull(),
     createdAt: timestamptz("created_at").notNull().defaultNow(),
     updatedAt: timestamptz("updated_at").notNull().defaultNow(),
   },
-  (table) => [
-    uniqueIndex("pitch_docs_user_id_uidx").on(table.userId),
-  ]
+  (table) => [uniqueIndex("pitch_docs_user_id_uidx").on(table.userId)]
 )
 
 /**
- * One row per Coach turn. Rate-limit counter and thumbs sink (ADR-0007).
+ * One row per Coach turn. Rate-limit counter and thumbs sink.
  * Thread/message FKs set-null so deleting a Thread does not refund the daily cap.
  */
 export const coachUsage = openpathApp.table(

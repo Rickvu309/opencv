@@ -39,7 +39,7 @@ const skipped: StarterWorkspaceSeed = {
 }
 
 /**
- * Neutral starter workspace for a brand-new account (ADR-0006).
+ * Neutral starter workspace for a brand-new account.
  * Idempotent: skips when the User already has Paper, Apply, or Threads.
  */
 export async function seedStarterWorkspace(
