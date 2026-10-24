@@ -13,7 +13,7 @@ import {
 
 import { authMockState, TEST_SESSION_USER } from "@/test/auth-client-mock.ts"
 
-import { apiBaseUrl } from "@/lib/api-url.ts"
+import { isoNow, pathOf, jsonOk, jsonError } from "./mock-http.ts"
 
 type PublicAuthor = {
   name: string
@@ -45,10 +45,6 @@ function sessionAuthor(): PublicAuthor {
   }
 }
 
-function isoNow() {
-  return new Date().toISOString()
-}
-
 function starterDoc(): PitchDoc {
   return {
     id: "55555555-5555-7555-8555-555555555555",
@@ -64,20 +60,6 @@ const store: Store = {
   doc: starterDoc(),
   author: defaultAuthor(),
   failNext: null,
-}
-
-function pathOf(input: RequestInfo | URL) {
-  if (typeof input === "string") return new URL(input, apiBaseUrl).pathname
-  if (input instanceof URL) return input.pathname
-  return new URL(input.url, apiBaseUrl).pathname
-}
-
-function jsonOk<T>(data: T, status = 200) {
-  return Response.json({ ok: true, data }, { status })
-}
-
-function jsonError(status: number, code: string, message: string) {
-  return Response.json({ ok: false, error: { code, message } }, { status })
 }
 
 async function readBody(init?: RequestInit): Promise<unknown> {
@@ -163,7 +145,8 @@ export async function pitchApiFetch(
   }
 
   if (method === "GET" && path === "/api/pitch") {
-    if (!store.doc) return jsonError(404, "NOT_FOUND", "Pitch document not found")
+    if (!store.doc)
+      return jsonError(404, "NOT_FOUND", "Pitch document not found")
     return jsonOk(store.doc)
   }
 

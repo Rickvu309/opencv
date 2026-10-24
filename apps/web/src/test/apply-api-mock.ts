@@ -16,10 +16,9 @@ import {
   type ApplyTrackKind,
 } from "@workspace/domain"
 
-import { apiBaseUrl } from "@/lib/api-url.ts"
-
 import { sampleApplyCards } from "./apply-fixtures.ts"
 import { getMockPaperDocs } from "./paper-api-mock.ts"
+import { isoNow, pathOf, jsonOk, jsonError } from "./mock-http.ts"
 
 type Store = {
   cards: ApplyCard[]
@@ -37,26 +36,8 @@ function cloneCards(cards: ApplyCard[]): ApplyCard[] {
   return structuredClone(cards)
 }
 
-function isoNow() {
-  return new Date().toISOString()
-}
-
 function todayIso() {
   return new Date().toISOString().slice(0, 10)
-}
-
-function pathOf(input: RequestInfo | URL) {
-  if (typeof input === "string") return new URL(input, apiBaseUrl).pathname
-  if (input instanceof URL) return input.pathname
-  return new URL(input.url, apiBaseUrl).pathname
-}
-
-function jsonOk<T>(data: T, status = 200) {
-  return Response.json({ ok: true, data }, { status })
-}
-
-function jsonError(status: number, code: string, message: string) {
-  return Response.json({ ok: false, error: { code, message } }, { status })
 }
 
 async function readBody(init?: RequestInit): Promise<unknown> {
