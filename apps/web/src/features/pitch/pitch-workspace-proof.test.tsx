@@ -27,10 +27,7 @@ import {
   resetPitchApiMock,
   setMockPitchDoc,
 } from "@/test/pitch-api-mock.ts"
-import {
-  renderPitch,
-  loadedPitch,
-} from "@/features/pitch/pitch-test-helpers.tsx"
+import { renderPitch, loadedPitch } from "@/test/pitch-test-helpers.tsx"
 
 afterEach(() => {
   cleanup()

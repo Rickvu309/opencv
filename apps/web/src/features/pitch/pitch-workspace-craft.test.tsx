@@ -21,7 +21,7 @@ import {
   clickClearDemo,
   loadedPitch,
   renderPitch,
-} from "@/features/pitch/pitch-test-helpers.tsx"
+} from "@/test/pitch-test-helpers.tsx"
 
 afterEach(() => {
   cleanup()

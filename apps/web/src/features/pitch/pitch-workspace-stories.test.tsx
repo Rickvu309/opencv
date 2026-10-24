@@ -24,7 +24,7 @@ import {
   clickClearDemo,
   expectSampleMomentsGone,
   loadedPitch,
-} from "@/features/pitch/pitch-test-helpers.tsx"
+} from "@/test/pitch-test-helpers.tsx"
 
 afterEach(() => {
   cleanup()
