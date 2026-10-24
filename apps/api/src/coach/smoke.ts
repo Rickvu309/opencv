@@ -4,13 +4,19 @@
  * checks the graceful 503 posture, then (when the key is live) a streamed
  * turn, abort, and a Command receipt.
  *
- *   COACH_SMOKE_API=https://api-staging-f689.up.railway.app pnpm --filter api smoke
- *   COACH_SMOKE_API=https://api-production-0876.up.railway.app \
+ *   COACH_SMOKE_API=https://api.opencv.me \
  *     COACH_SMOKE_MODE=production pnpm --filter api smoke
+ *
+ * The Origin header defaults to https://opencv.me. Set COACH_SMOKE_ORIGIN
+ * to a local or preview origin that the api lists in WEB_ORIGINS.
  */
 import { COACH_SSE_EVENTS } from "@workspace/domain"
 
-import { analyzeCoachStream, consumeSseChunk, type SseFrame } from "./smoke-parse.js"
+import {
+  analyzeCoachStream,
+  consumeSseChunk,
+  type SseFrame,
+} from "./smoke-parse.js"
 
 type SmokeMode = "auto" | "posture" | "staging" | "production"
 
@@ -94,10 +100,7 @@ async function streamFrames(
         frames.push(frame)
         if (frame.kind === "event") eventCount += 1
       }
-      if (
-        options?.abortAfterEvents &&
-        eventCount >= options.abortAfterEvents
-      ) {
+      if (options?.abortAfterEvents && eventCount >= options.abortAfterEvents) {
         await reader.cancel()
         break
       }
@@ -135,11 +138,14 @@ async function main() {
     fail(`GET /health → ${health.status} ${JSON.stringify(healthBody)}`)
   }
 
-  const unauth = await fetch(`${api}/api/threads/00000000-0000-4000-8000-000000000000/coach`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text: "smoke" }),
-  })
+  const unauth = await fetch(
+    `${api}/api/threads/00000000-0000-4000-8000-000000000000/coach`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: "smoke" }),
+    }
+  )
   const unauthBody = await readJson(unauth)
   const unauthCode =
     unauthBody.error && typeof unauthBody.error === "object"
@@ -180,10 +186,7 @@ async function main() {
     return
   }
 
-  const origin =
-    api.includes("staging")
-      ? "https://opencv-git-smoke-example.vercel.app"
-      : "https://opencv.me"
+  const origin = process.env.COACH_SMOKE_ORIGIN ?? "https://opencv.me"
 
   const signUp = await fetch(`${api}/api/auth/sign-up/email`, {
     method: "POST",
@@ -213,7 +216,10 @@ async function main() {
   }
 
   const list = await fetch(`${api}/api/threads`, { headers })
-  const listBody = (await readJson(list)) as { ok?: boolean; data?: { id: string }[] }
+  const listBody = (await readJson(list)) as {
+    ok?: boolean
+    data?: { id: string }[]
+  }
   const threadId = listBody.data?.[0]?.id
   if (list.status !== 200 || !threadId) {
     fail(`list threads → ${list.status} ${JSON.stringify(listBody)}`)
@@ -243,9 +249,7 @@ async function main() {
   const adviceFrames = await streamFrames(advice)
   const adviceAnalysis = analyzeCoachStream(adviceFrames)
   if (adviceAnalysis.messageStartFlushed) {
-    pass(
-      `message-start flushed in ${adviceAnalysis.firstEventMs ?? "?"}ms`
-    )
+    pass(`message-start flushed in ${adviceAnalysis.firstEventMs ?? "?"}ms`)
   } else {
     fail(
       `message-start not flushed promptly (${adviceAnalysis.events[0]} @ ${adviceAnalysis.firstEventMs}ms)`
@@ -313,9 +317,7 @@ async function main() {
       if (moved) {
         pass(`command receipt (${commandAnalysis.toolNames.join(", ")})`)
       } else if (commandAnalysis.toolNames.length > 0) {
-        pass(
-          `command turn ran tools (${commandAnalysis.toolNames.join(", ")})`
-        )
+        pass(`command turn ran tools (${commandAnalysis.toolNames.join(", ")})`)
       } else {
         fail(
           `command turn had no tool-result (events=${commandAnalysis.events.join(",")})`
