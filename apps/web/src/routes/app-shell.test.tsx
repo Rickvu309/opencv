@@ -68,9 +68,7 @@ async function expectPitch() {
       name: SAMPLE_AUTHOR_NAME,
     })
   ).toBeInTheDocument()
-  expect(
-    screen.getByRole("button", { name: "Edit Pitch" })
-  ).toBeInTheDocument()
+  expect(screen.getByRole("button", { name: "Edit Pitch" })).toBeInTheDocument()
   expect(screen.getByRole("heading", { name: "About" })).toBeInTheDocument()
   expect(screen.queryByText(SURFACE_COPY.pitch.body)).not.toBeInTheDocument()
   expect(screen.queryByText(/Eric Nguyen/i)).not.toBeInTheDocument()

@@ -38,14 +38,18 @@ describe("public Pitch URL", () => {
       })
     ).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "About" })).toBeInTheDocument()
-    expect(screen.getByText(starterPitchDocument().headline)).toBeInTheDocument()
+    expect(
+      screen.getByText(starterPitchDocument().headline)
+    ).toBeInTheDocument()
     expect(
       screen.queryByRole("button", { name: "Edit Pitch" })
     ).not.toBeInTheDocument()
     expect(
       screen.queryByRole("complementary", { name: "App" })
     ).not.toBeInTheDocument()
-    expect(screen.queryByRole("heading", { name: "Not Found" })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("heading", { name: "Not Found" })
+    ).not.toBeInTheDocument()
   })
 
   it("serves the published Pitch when the viewer has no session", async () => {
@@ -60,7 +64,9 @@ describe("public Pitch URL", () => {
       })
     ).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "About" })).toBeInTheDocument()
-    expect(screen.queryByRole("heading", { name: "Not Found" })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("heading", { name: "Not Found" })
+    ).not.toBeInTheDocument()
   })
 
   it("stays honest Not Found for an unpublished slug", async () => {
