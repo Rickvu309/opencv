@@ -2,13 +2,11 @@ import { useState } from "react"
 import {
   APPLY_JOB_URL_COPIED,
   applyJobSourceHost,
-  isDemoApplyCard,
   openableApplyJobUrl,
   parseApplyJobUrlInput,
   publicApplyJobUrl,
   type PaperDoc,
 } from "@workspace/domain"
-import { Badge } from "@workspace/ui/components/badge"
 import { Button, buttonVariants } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
@@ -30,12 +28,10 @@ import {
 } from "@/features/apply/apply-guide.ts"
 import { paperDocsLinkedToCard } from "@/features/paper/paper-apply-attach.ts"
 import {
-  APPLY_DEMO_HINT,
-  APPLY_DEMO_LABEL,
   APPLY_JOB_COPIED_LABEL,
   APPLY_JOB_COPY_LABEL,
   APPLY_JOB_DATE_LABEL,
-  APPLY_JOB_NEXT_STEP_LABEL,
+  APPLY_JOB_TRACK_LABEL,
   APPLY_JOB_NOTES_PLACEHOLDER,
   APPLY_JOB_OPEN_LABEL,
   APPLY_JOB_SCAN_TEXT_LABEL,
@@ -110,12 +106,12 @@ export function JobDetailPanel({
 
   return (
     <aside
-      aria-label="Job detail"
+      aria-label="Opportunity detail"
       className="flex w-80 shrink-0 flex-col border-l border-border bg-background shadow-[-4px_0_24px_oklch(0_0_0/0.04)]"
     >
       <div className="flex items-center gap-0.5 border-b border-border px-2 py-2">
         <ToolbarIconButton
-          label={card.starred ? "Unstar job" : "Star job"}
+          label={card.starred ? "Unstar opportunity" : "Star opportunity"}
           onClick={onToggleStar}
           active={card.starred}
         >
@@ -144,7 +140,7 @@ export function JobDetailPanel({
           onLink={onLinkPaper}
         />
         <ToolbarIconButton
-          label="Delete job"
+          label="Delete opportunity"
           onClick={onRemove}
           className="hover:text-destructive"
         >
@@ -161,13 +157,6 @@ export function JobDetailPanel({
       </div>
 
       <div className="flex flex-1 flex-col gap-4 overflow-auto p-4">
-        {isDemoApplyCard(card) ? (
-          <div role="status" className="space-y-1.5">
-            <Badge variant="secondary">{APPLY_DEMO_LABEL}</Badge>
-            <p className="text-sm text-muted-foreground">{APPLY_DEMO_HINT}</p>
-          </div>
-        ) : null}
-
         {guidedAction?.kind === "stage" ? (
           <Button
             type="button"
@@ -284,7 +273,7 @@ function JobDetailFields({
       <div className="space-y-3">
         <div className="block">
           <Label htmlFor={`job-title-${card.id}`} className={FIELD_LABEL}>
-            Job title
+            Title
           </Label>
           <Input
             id={`job-title-${card.id}`}
@@ -344,12 +333,21 @@ function JobDetailFields({
           ) : null}
           {postingUrl ? (
             <div className="mt-2 flex flex-wrap gap-2">
+              <Button
+                type="button"
+                size="sm"
+                className="h-8"
+                disabled={scanning}
+                onClick={() => void scanPosting()}
+              >
+                {scanning ? "Scanning…" : "Scan posting"}
+              </Button>
               <a
                 href={postingUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={cn(
-                  buttonVariants({ variant: "outline", size: "sm" }),
+                  buttonVariants({ variant: "ghost", size: "sm" }),
                   "h-8"
                 )}
               >
@@ -357,7 +355,7 @@ function JobDetailFields({
               </a>
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 className="h-8"
                 onClick={() => void copyPosting()}
@@ -373,16 +371,6 @@ function JobDetailFields({
                     {APPLY_JOB_COPY_LABEL}
                   </>
                 )}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-8"
-                disabled={scanning}
-                onClick={() => void scanPosting()}
-              >
-                {scanning ? "Scanning…" : "Scan posting"}
               </Button>
             </div>
           ) : null}
@@ -419,12 +407,12 @@ function JobDetailFields({
         </div>
       </section>
 
-      <JobDetailNextStep card={card} onPatch={onPatch} />
+      <JobDetailTrack card={card} onPatch={onPatch} />
     </div>
   )
 }
 
-function JobDetailNextStep({
+function JobDetailTrack({
   card,
   onPatch,
 }: {
@@ -432,17 +420,14 @@ function JobDetailNextStep({
   onPatch: Props["onPatch"]
 }) {
   return (
-    <section
-      aria-labelledby={`next-step-heading-${card.id}`}
-      className="space-y-2"
-    >
-      <h2 id={`next-step-heading-${card.id}`} className={FIELD_LABEL}>
-        {APPLY_JOB_NEXT_STEP_LABEL}
+    <section aria-labelledby={`track-heading-${card.id}`} className="space-y-2">
+      <h2 id={`track-heading-${card.id}`} className={FIELD_LABEL}>
+        {APPLY_JOB_TRACK_LABEL}
       </h2>
       <div className="grid grid-cols-2 gap-3">
         <div className="block">
           <Label htmlFor={`event-type-${card.id}`} className="sr-only">
-            {APPLY_JOB_NEXT_STEP_LABEL}
+            {APPLY_JOB_TRACK_LABEL}
           </Label>
           <Select
             value={card.trackKind}
@@ -453,7 +438,7 @@ function JobDetailNextStep({
             <SelectTrigger
               id={`event-type-${card.id}`}
               className="w-full"
-              aria-label={APPLY_JOB_NEXT_STEP_LABEL}
+              aria-label={APPLY_JOB_TRACK_LABEL}
             >
               <SelectValue>{trackKindLabel(card.trackKind)}</SelectValue>
             </SelectTrigger>

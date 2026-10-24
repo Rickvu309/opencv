@@ -1,16 +1,21 @@
 /** Café labels for the Apply job drawer — honest fields, not ATS chrome. */
 export const APPLY_JOB_SOURCE_LABEL = "Source"
-export const APPLY_JOB_NEXT_STEP_LABEL = "Next step"
+export const APPLY_JOB_TRACK_LABEL = "Track"
 export const APPLY_JOB_DATE_LABEL = "Date"
 export const APPLY_JOB_SOURCE_PLACEHOLDER = "Paste a posting link"
-export const APPLY_JOB_SCAN_TEXT_LABEL = "Job text"
+export const APPLY_JOB_SCAN_TEXT_LABEL = "Posting text"
 export const APPLY_JOB_SCAN_TEXT_PLACEHOLDER =
-  "Paste the job post if the link won't open"
-export const APPLY_JOB_OPEN_LABEL = "Open job posting"
+  "Paste the posting if the link won't open"
+export const APPLY_JOB_OPEN_LABEL = "Open posting in a new tab"
 export const APPLY_JOB_OPEN_SOURCE_LABEL = "Open posting"
 export const APPLY_JOB_COPY_LABEL = "Copy link"
 export const APPLY_JOB_COPIED_LABEL = "Copied"
 export const APPLY_JOB_NOTES_PLACEHOLDER = "What to prep, who you talked to…"
-/** Quiet honesty on signup seeds — not a personal job (QVE-240). */
-export const APPLY_DEMO_LABEL = "Demo"
-export const APPLY_DEMO_HINT = "Starter card so the board isn't empty."
+export const APPLY_DEMO_TITLE = "Demo"
+export const APPLY_DEMO_TEXT =
+  "The starter set shows how the board works. Clear it when you add your own."
+export const APPLY_DEMO_CLEAR_LABEL = "Clear demo"
+export const APPLY_ADD_LABEL = "Add opportunity"
+export const APPLY_SEARCH_LABEL = "Search opportunities"
+export const APPLY_EMPTY_TITLE = "No opportunities yet"
+export const APPLY_EMPTY_TEXT = "Add one to follow it from Inbox to Closed."

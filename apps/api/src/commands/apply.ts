@@ -146,6 +146,7 @@ export const updateApplyCardCommand = defineCommand({
           : publicApplyJobUrl(existing.jobUrl),
       trackDate: input.trackDate ?? existing.trackDate,
       trackKind: input.trackKind ?? existing.trackKind,
+      demo: false,
       updatedAt,
     }
 
@@ -223,6 +224,7 @@ export const moveApplyCardCommand = defineCommand({
       .set({
         stage: input.stage,
         position,
+        demo: false,
         updatedAt,
       })
       .where(ownedCard(existing.id, ctx.actor.userId))
@@ -231,6 +233,7 @@ export const moveApplyCardCommand = defineCommand({
       ...existing,
       stage: input.stage,
       position,
+      demo: false,
       updatedAt,
     })
   },
@@ -261,12 +264,13 @@ export const toggleApplyStarCommand = defineCommand({
 
     await ctx.db
       .update(applyCards)
-      .set({ starred, updatedAt })
+      .set({ starred, demo: false, updatedAt })
       .where(ownedCard(existing.id, ctx.actor.userId))
 
     return toApplyCard({
       ...existing,
       starred,
+      demo: false,
       updatedAt,
     })
   },

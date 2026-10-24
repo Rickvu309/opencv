@@ -254,7 +254,7 @@ describe("Home first-café checklist", () => {
     })
 
     const panel = await screen.findByRole("complementary", {
-      name: "Job detail",
+      name: "Opportunity detail",
     })
     expect(
       within(panel).getByDisplayValue("Associate PM intern")
@@ -263,7 +263,7 @@ describe("Home first-café checklist", () => {
       within(panel).getByRole("button", { name: "Move to Prep" })
     ).toBeInTheDocument()
     expect(
-      within(panel).getByRole("combobox", { name: "Next step" })
+      within(panel).getByRole("combobox", { name: "Track" })
     ).toHaveTextContent("Follow-up")
 
     expect(screen.getByText("Product intern")).toBeInTheDocument()
@@ -302,8 +302,8 @@ describe("Home first-café checklist", () => {
     ).not.toBeInTheDocument()
     expect(
       within(
-        await screen.findByRole("complementary", { name: "Job detail" })
-      ).getByRole("combobox", { name: "Next step" })
+        await screen.findByRole("complementary", { name: "Opportunity detail" })
+      ).getByRole("combobox", { name: "Track" })
     ).toHaveTextContent("Follow-up")
 
     fireEvent.click(screen.getByRole("link", { name: "Home" }))
@@ -442,7 +442,7 @@ describe("Home first-café checklist", () => {
       expect(router.state.location.pathname).toBe(SURFACE_PATHS.apply)
     })
     const panel = await screen.findByRole("complementary", {
-      name: "Job detail",
+      name: "Opportunity detail",
     })
     fireEvent.click(within(panel).getByRole("button", { name: "Move to Prep" }))
     fireEvent.click(screen.getByRole("link", { name: "Home" }))

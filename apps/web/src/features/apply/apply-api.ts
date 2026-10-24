@@ -95,6 +95,7 @@ export function optimisticMoveCard(
     ...card,
     stage,
     position: generateKeyBetween(left, right),
+    demo: false,
     updatedAt: new Date().toISOString(),
   })
 }

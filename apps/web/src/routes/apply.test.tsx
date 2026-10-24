@@ -1,9 +1,5 @@
 import { describe, expect, it, vi } from "vitest"
 import { fireEvent, screen, waitFor, within } from "@testing-library/react"
-import {
-  APPLY_DEMO_HINT,
-  APPLY_DEMO_LABEL,
-} from "@/features/apply/apply-job-structure.ts"
 import { APPLY_OPEN_GUIDE } from "@/features/apply/apply-search.ts"
 import { APPLY_DRAG_TYPE, localIsoDate } from "@/features/apply/apply-types.ts"
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
@@ -42,40 +38,24 @@ describe("Apply board", () => {
       within(stageColumn("closed")).getByText("UX research intern")
     ).toBeInTheDocument()
     expect(
-      within(stageColumn("live")).getByText("Drop a job here")
+      within(stageColumn("live")).getByText("Nothing in Live")
     ).toBeInTheDocument()
     expect(screen.queryByText(/Eric Nguyen/i)).not.toBeInTheDocument()
     expectNoVisibleFitScore()
 
     expect(
       within(stageColumn("inbox")).getByRole("button", {
-        name: "Associate PM intern at Local startup, Demo",
+        name: "Associate PM intern at Local startup",
       })
     ).toBeInTheDocument()
-    expect(
-      within(stageColumn("inbox")).getAllByText(APPLY_DEMO_LABEL).length
-    ).toBeGreaterThan(0)
-    expect(
-      within(stageColumn("prep")).getByText(APPLY_DEMO_LABEL)
-    ).toBeInTheDocument()
-    expect(
-      within(stageColumn("sent")).getByText(APPLY_DEMO_LABEL)
-    ).toBeInTheDocument()
-    expect(
-      within(stageColumn("closed")).getByText(APPLY_DEMO_LABEL)
-    ).toBeInTheDocument()
+    expect(screen.getAllByRole("button", { name: "Clear demo" })).toHaveLength(
+      1
+    )
     expect(
       within(stageColumn("inbox")).getByRole("button", {
         name: "Product intern at Fintech scale-up",
       })
     ).toBeInTheDocument()
-    expect(
-      within(
-        stageColumn("inbox").querySelector(
-          '[aria-label="Product intern at Fintech scale-up"]'
-        ) as HTMLElement
-      ).queryByText(APPLY_DEMO_LABEL)
-    ).not.toBeInTheDocument()
   })
 
   it("drags a card to another Stage and keeps the move", async () => {
@@ -117,7 +97,7 @@ describe("Apply board", () => {
     renderApply()
     await expectApplyLive()
     expect(
-      screen.queryByRole("complementary", { name: "Job detail" })
+      screen.queryByRole("complementary", { name: "Opportunity detail" })
     ).not.toBeInTheDocument()
     expect(
       screen.queryByRole("button", { name: "Move to Prep" })
@@ -135,7 +115,7 @@ describe("Apply board", () => {
     await expectApplyLive()
 
     const panel = await screen.findByRole("complementary", {
-      name: "Job detail",
+      name: "Opportunity detail",
     })
     expect(
       within(panel).getByDisplayValue("Associate PM intern")
@@ -145,7 +125,7 @@ describe("Apply board", () => {
       within(panel).getByRole("button", { name: "Move to Prep" })
     ).toBeInTheDocument()
     expect(
-      within(panel).getByRole("combobox", { name: "Next step" })
+      within(panel).getByRole("combobox", { name: "Track" })
     ).toHaveTextContent("Follow-up")
 
     expect(
@@ -171,7 +151,7 @@ describe("Apply board", () => {
     await expectApplyLive()
 
     const panel = await screen.findByRole("complementary", {
-      name: "Job detail",
+      name: "Opportunity detail",
     })
     fireEvent.click(within(panel).getByRole("button", { name: "Move to Prep" }))
 
@@ -194,8 +174,8 @@ describe("Apply board", () => {
     ).not.toBeInTheDocument()
     expect(
       within(
-        await screen.findByRole("complementary", { name: "Job detail" })
-      ).getByRole("combobox", { name: "Next step" })
+        await screen.findByRole("complementary", { name: "Opportunity detail" })
+      ).getByRole("combobox", { name: "Track" })
     ).toHaveTextContent("Follow-up")
     expect(readFirstCafeState("user_test").completed).toEqual(["apply"])
   })
@@ -207,7 +187,7 @@ describe("Apply board", () => {
     fireEvent.click(screen.getByRole("button", { name: /Associate PM intern/ }))
 
     const panel = await screen.findByRole("complementary", {
-      name: "Job detail",
+      name: "Opportunity detail",
     })
     expect(
       within(panel).getByDisplayValue("Associate PM intern")
@@ -223,34 +203,31 @@ describe("Apply board", () => {
       )
     ).toBeInTheDocument()
     expect(within(panel).getByRole("region", { name: "Source" })).toBeTruthy()
-    expect(
-      within(panel).getByRole("region", { name: "Next step" })
-    ).toBeTruthy()
+    expect(within(panel).getByRole("region", { name: "Track" })).toBeTruthy()
     expect(
       within(panel).getByRole("textbox", { name: "Source" })
     ).toBeInTheDocument()
     expect(
-      within(panel).getByRole("combobox", { name: "Next step" })
+      within(panel).getByRole("combobox", { name: "Track" })
     ).toBeInTheDocument()
     expect(within(panel).getByLabelText("Date")).toHaveValue("2026-08-26")
     expect(within(panel).queryByText("Event type")).not.toBeInTheDocument()
     expect(within(panel).queryByText("Track date")).not.toBeInTheDocument()
-    expect(within(panel).queryByText("Job posting URL")).not.toBeInTheDocument()
+    expect(within(panel).queryByText("Posting link")).not.toBeInTheDocument()
     expectNoVisibleFitScore()
     expect(screen.queryByText(/Eric Nguyen/i)).not.toBeInTheDocument()
-    expect(within(panel).getByText(APPLY_DEMO_LABEL)).toBeInTheDocument()
-    expect(within(panel).getByText(APPLY_DEMO_HINT)).toBeInTheDocument()
+    expect(within(panel).queryByText("Demo")).not.toBeInTheDocument()
     expect(
-      within(panel).queryByRole("link", { name: "Open job posting" })
+      within(panel).queryByRole("link", { name: "Open posting in a new tab" })
     ).not.toBeInTheDocument()
     expect(
-      within(panel).queryByRole("button", { name: "Open job posting" })
+      within(panel).queryByRole("button", { name: "Open posting in a new tab" })
     ).not.toBeInTheDocument()
     expect(within(panel).queryByDisplayValue(/example\.com/i)).toBeNull()
 
     fireEvent.click(screen.getByRole("button", { name: "Close panel" }))
     expect(
-      screen.queryByRole("complementary", { name: "Job detail" })
+      screen.queryByRole("complementary", { name: "Opportunity detail" })
     ).not.toBeInTheDocument()
   })
 
@@ -266,7 +243,9 @@ describe("Apply board", () => {
 
     const monthTitle = `${now.toLocaleString("en-US", { month: "long" })} ${now.getFullYear()}`
     expect(screen.getByText(monthTitle)).toBeInTheDocument()
-    expect(screen.getByText(/jobs with a track date/)).toBeInTheDocument()
+    expect(
+      screen.getByText(/opportunities with a track date/)
+    ).toBeInTheDocument()
     expect(screen.getByText("Sun")).toBeInTheDocument()
 
     const todayIso = localIsoDate(now)
@@ -279,18 +258,16 @@ describe("Apply board", () => {
     ).toHaveAttribute("aria-current", "date")
 
     expect(
-      screen.getByRole("button", { name: "Associate PM intern · Demo" })
+      screen.getByRole("button", { name: "Associate PM intern" })
     ).toBeInTheDocument()
     expect(
       screen.getByRole("button", { name: "Product intern" })
     ).toBeInTheDocument()
     expectNoVisibleFitScore()
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Associate PM intern · Demo" })
-    )
+    fireEvent.click(screen.getByRole("button", { name: "Associate PM intern" }))
     expect(
-      await screen.findByRole("complementary", { name: "Job detail" })
+      await screen.findByRole("complementary", { name: "Opportunity detail" })
     ).toBeInTheDocument()
     expectNoVisibleFitScore()
   })
@@ -302,9 +279,12 @@ describe("Apply board", () => {
     const apply = screen.getByRole("link", { name: "Apply" })
     expect(apply).toHaveAttribute("aria-current", "page")
 
-    fireEvent.change(screen.getByRole("textbox", { name: "Search jobs" }), {
-      target: { value: "fintech" },
-    })
+    fireEvent.change(
+      screen.getByRole("textbox", { name: "Search opportunities" }),
+      {
+        target: { value: "fintech" },
+      }
+    )
 
     expect(screen.getByText("Product intern")).toBeInTheDocument()
     expect(screen.queryByText("Associate PM intern")).not.toBeInTheDocument()
@@ -334,7 +314,7 @@ describe("Apply board", () => {
       screen.queryByRole("button", { name: /column menu/i })
     ).not.toBeInTheDocument()
     expect(screen.queryByText("Coming soon")).not.toBeInTheDocument()
-    const addJob = screen.getByRole("button", { name: /add job/i })
+    const addJob = screen.getByRole("button", { name: /add opportunity/i })
     expect(addJob).toBeEnabled()
     expect(addJob).not.toHaveTextContent("Coming soon")
 
@@ -350,24 +330,28 @@ describe("Apply board", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Associate PM intern/ }))
     const panel = await screen.findByRole("complementary", {
-      name: "Job detail",
+      name: "Opportunity detail",
     })
-    fireEvent.click(within(panel).getByRole("button", { name: "Delete job" }))
+    fireEvent.click(
+      within(panel).getByRole("button", { name: "Delete opportunity" })
+    )
 
-    const confirm = await screen.findByRole("dialog", { name: "Delete job" })
+    const confirm = await screen.findByRole("dialog", {
+      name: "Delete opportunity",
+    })
     expect(confirm).toHaveTextContent("Associate PM intern at Local startup")
     fireEvent.click(within(confirm).getByRole("button", { name: "Cancel" }))
     expect(
-      screen.queryByRole("dialog", { name: "Delete job" })
+      screen.queryByRole("dialog", { name: "Delete opportunity" })
     ).not.toBeInTheDocument()
     expect(screen.getByText("Associate PM intern")).toBeInTheDocument()
     expect(
-      screen.getByRole("complementary", { name: "Job detail" })
+      screen.getByRole("complementary", { name: "Opportunity detail" })
     ).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole("button", { name: "Delete job" }))
+    fireEvent.click(screen.getByRole("button", { name: "Delete opportunity" }))
     const confirmAgain = await screen.findByRole("dialog", {
-      name: "Delete job",
+      name: "Delete opportunity",
     })
     fireEvent.click(
       within(confirmAgain).getByRole("button", { name: "Delete" })
@@ -377,7 +361,7 @@ describe("Apply board", () => {
       expect(screen.queryByText("Associate PM intern")).not.toBeInTheDocument()
     })
     expect(
-      screen.queryByRole("complementary", { name: "Job detail" })
+      screen.queryByRole("complementary", { name: "Opportunity detail" })
     ).not.toBeInTheDocument()
     expect(screen.getByText("Product intern")).toBeInTheDocument()
   })

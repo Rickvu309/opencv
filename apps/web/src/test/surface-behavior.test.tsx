@@ -7,7 +7,6 @@ import {
   PITCH_CONTENT_VERSION,
 } from "@workspace/domain"
 
-import { APPLY_DEMO_LABEL } from "@/features/apply/apply-job-structure.ts"
 import { APPLY_OPEN_GUIDE } from "@/features/apply/apply-search.ts"
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { apiBaseUrl } from "@/lib/api-url.ts"
@@ -67,16 +66,22 @@ describe("empty api data shows empty states, never sample content", () => {
     expectNone(samplePaperDocs().map((doc) => doc.name))
   })
 
-  it("Apply shows five empty Stages and no sample card or Demo label", async () => {
+  it("Apply shows one empty state and no sample card or Demo banner", async () => {
     getMockApplyCards().splice(0)
     renderApp(SURFACE_PATHS.apply)
 
     expect(
       await screen.findByRole("heading", { level: 1, name: "Apply" })
     ).toBeInTheDocument()
-    expect(await screen.findAllByText("Drop a job here")).toHaveLength(5)
+    expect(await screen.findByText("No opportunities yet")).toBeInTheDocument()
+    expect(
+      screen.getAllByRole("button", { name: "Add opportunity" }).length
+    ).toBeGreaterThan(0)
+    expect(screen.queryByText(/^Nothing in /)).not.toBeInTheDocument()
     expectNone(sampleApplyCards().map((card) => card.title))
-    expect(screen.queryByText(APPLY_DEMO_LABEL)).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "Clear demo" })
+    ).not.toBeInTheDocument()
   })
 
   it("Pitch shows the empty state and no demo content", async () => {
@@ -113,7 +118,7 @@ describe("Apply shows no Fit label", () => {
       await screen.findByRole("heading", { level: 1, name: "Apply" })
     ).toBeInTheDocument()
     const drawer = await screen.findByRole("complementary", {
-      name: "Job detail",
+      name: "Opportunity detail",
     })
     expect(
       within(drawer).getByDisplayValue("Associate PM intern")

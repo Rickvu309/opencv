@@ -15,9 +15,11 @@ describe("Apply posting scan", () => {
     renderApply()
     await expectApplyLive()
 
-    fireEvent.click(screen.getByRole("button", { name: "Add job" }))
-    const dialog = await screen.findByRole("dialog", { name: "Add job" })
-    fireEvent.change(within(dialog).getByLabelText("Job text"), {
+    fireEvent.click(screen.getByRole("button", { name: "Add opportunity" }))
+    const dialog = await screen.findByRole("dialog", {
+      name: "Add opportunity",
+    })
+    fireEvent.change(within(dialog).getByLabelText("Posting text"), {
       target: {
         value:
           "Local startup is hiring an Associate PM intern in Hanoi. Apply by 12 September.",
@@ -30,9 +32,11 @@ describe("Apply posting scan", () => {
       )
     ).toBeInTheDocument()
 
-    fireEvent.click(within(dialog).getByRole("button", { name: "Add job" }))
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Add opportunity" })
+    )
     const panel = await screen.findByRole("complementary", {
-      name: "Job detail",
+      name: "Opportunity detail",
     })
     expect(
       within(panel).getByDisplayValue("Associate PM intern")
@@ -40,10 +44,10 @@ describe("Apply posting scan", () => {
     expect(within(panel).getByDisplayValue("Local startup")).toBeInTheDocument()
     expect(within(panel).getByDisplayValue("Hanoi")).toBeInTheDocument()
 
-    fireEvent.change(within(panel).getByLabelText("Job title"), {
+    fireEvent.change(within(panel).getByLabelText("Title"), {
       target: { value: "Associate PM intern (edited)" },
     })
-    fireEvent.blur(within(panel).getByLabelText("Job title"))
+    fireEvent.blur(within(panel).getByLabelText("Title"))
     await waitFor(() => {
       expect(
         screen.getByRole("button", {
@@ -57,9 +61,11 @@ describe("Apply posting scan", () => {
     renderApply()
     await expectApplyLive()
 
-    fireEvent.click(screen.getByRole("button", { name: "Add job" }))
-    const dialog = await screen.findByRole("dialog", { name: "Add job" })
-    fireEvent.change(within(dialog).getByLabelText("Job posting URL"), {
+    fireEvent.click(screen.getByRole("button", { name: "Add opportunity" }))
+    const dialog = await screen.findByRole("dialog", {
+      name: "Add opportunity",
+    })
+    fireEvent.change(within(dialog).getByLabelText("Posting link"), {
       target: { value: "careers.example.com/pm-intern" },
     })
     fireEvent.click(within(dialog).getByRole("button", { name: "Scan" }))
@@ -67,9 +73,11 @@ describe("Apply posting scan", () => {
       await within(dialog).findByText("Filled PM intern at Example.")
     ).toBeInTheDocument()
 
-    fireEvent.click(within(dialog).getByRole("button", { name: "Add job" }))
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Add opportunity" })
+    )
     const panel = await screen.findByRole("complementary", {
-      name: "Job detail",
+      name: "Opportunity detail",
     })
     expect(within(panel).getByDisplayValue("PM intern")).toBeInTheDocument()
     expect(within(panel).getByDisplayValue("Example")).toBeInTheDocument()
@@ -85,9 +93,11 @@ describe("Apply posting scan", () => {
     renderApply()
     await expectApplyLive()
 
-    fireEvent.click(screen.getByRole("button", { name: "Add job" }))
-    const dialog = await screen.findByRole("dialog", { name: "Add job" })
-    const jd = within(dialog).getByLabelText("Job text")
+    fireEvent.click(screen.getByRole("button", { name: "Add opportunity" }))
+    const dialog = await screen.findByRole("dialog", {
+      name: "Add opportunity",
+    })
+    const jd = within(dialog).getByLabelText("Posting text")
     const cafeJd = [
       "Job Title: Café Barista Lead",
       "Company: Highlands Coffee",
@@ -118,9 +128,11 @@ describe("Apply posting scan", () => {
     renderApply()
     await expectApplyLive()
 
-    fireEvent.click(screen.getByRole("button", { name: "Add job" }))
-    const dialog = await screen.findByRole("dialog", { name: "Add job" })
-    fireEvent.change(within(dialog).getByLabelText("Job posting URL"), {
+    fireEvent.click(screen.getByRole("button", { name: "Add opportunity" }))
+    const dialog = await screen.findByRole("dialog", {
+      name: "Add opportunity",
+    })
+    fireEvent.change(within(dialog).getByLabelText("Posting link"), {
       target: {
         value: "jobs.careers.microsoft.com/global/en/job/missing",
       },
@@ -130,13 +142,15 @@ describe("Apply posting scan", () => {
       APPLY_SCAN_FETCH_FAILED
     )
     expect(within(dialog).queryByText(/^Filled /)).not.toBeInTheDocument()
-    expect(within(dialog).getByLabelText("Job posting URL")).toHaveValue(
+    expect(within(dialog).getByLabelText("Posting link")).toHaveValue(
       "jobs.careers.microsoft.com/global/en/job/missing"
     )
 
-    fireEvent.click(within(dialog).getByRole("button", { name: "Add job" }))
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Add opportunity" })
+    )
     const panel = await screen.findByRole("complementary", {
-      name: "Job detail",
+      name: "Opportunity detail",
     })
     expect(within(panel).getByDisplayValue("Untitled role")).toBeInTheDocument()
     expect(within(panel).getByDisplayValue("Company")).toBeInTheDocument()
@@ -149,13 +163,15 @@ describe("Apply posting scan", () => {
     expect(within(panel).queryByDisplayValue(/Page not found/i)).toBeNull()
   })
 
-  it("fills pasted hiring prose in Add job after an unread URL fail", async () => {
+  it("fills pasted hiring prose in Add opportunity after an unread URL fail", async () => {
     renderApply()
     await expectApplyLive()
 
-    fireEvent.click(screen.getByRole("button", { name: "Add job" }))
-    const dialog = await screen.findByRole("dialog", { name: "Add job" })
-    fireEvent.change(within(dialog).getByLabelText("Job posting URL"), {
+    fireEvent.click(screen.getByRole("button", { name: "Add opportunity" }))
+    const dialog = await screen.findByRole("dialog", {
+      name: "Add opportunity",
+    })
+    fireEvent.change(within(dialog).getByLabelText("Posting link"), {
       target: {
         value: "jobs.careers.microsoft.com/global/en/job/missing",
       },
@@ -165,7 +181,7 @@ describe("Apply posting scan", () => {
       APPLY_SCAN_FETCH_FAILED
     )
 
-    fireEvent.change(within(dialog).getByLabelText("Job text"), {
+    fireEvent.change(within(dialog).getByLabelText("Posting text"), {
       target: {
         value:
           "Local startup is hiring an Associate PM intern in Hanoi. Apply by 12 September.",
@@ -178,7 +194,7 @@ describe("Apply posting scan", () => {
       )
     ).toBeInTheDocument()
     expect(within(dialog).queryByRole("alert")).not.toBeInTheDocument()
-    expect(within(dialog).getByLabelText("Job posting URL")).toHaveValue(
+    expect(within(dialog).getByLabelText("Posting link")).toHaveValue(
       "jobs.careers.microsoft.com/global/en/job/missing"
     )
   })
@@ -189,7 +205,7 @@ describe("Apply posting scan", () => {
 
     await addJobFromDialog("jobs.careers.microsoft.com/global/en/job/missing")
     const panel = await screen.findByRole("complementary", {
-      name: "Job detail",
+      name: "Opportunity detail",
     })
     fireEvent.click(within(panel).getByRole("button", { name: "Scan posting" }))
     expect(await within(panel).findByRole("alert")).toHaveTextContent(
@@ -204,7 +220,7 @@ describe("Apply posting scan", () => {
     ).toBeInTheDocument()
     expect(within(panel).getByLabelText("Notes")).toHaveValue("")
 
-    fireEvent.change(within(panel).getByLabelText("Job text"), {
+    fireEvent.change(within(panel).getByLabelText("Posting text"), {
       target: {
         value:
           "Local startup is hiring an Associate PM intern in Hanoi. Apply by 12 September.",
@@ -229,9 +245,11 @@ describe("Apply posting scan", () => {
     renderApply()
     await expectApplyLive()
 
-    fireEvent.click(screen.getByRole("button", { name: "Add job" }))
-    const dialog = await screen.findByRole("dialog", { name: "Add job" })
-    fireEvent.change(within(dialog).getByLabelText("Job text"), {
+    fireEvent.click(screen.getByRole("button", { name: "Add opportunity" }))
+    const dialog = await screen.findByRole("dialog", {
+      name: "Add opportunity",
+    })
+    fireEvent.change(within(dialog).getByLabelText("Posting text"), {
       target: { value: "Come work with us. Nice people." },
     })
     fireEvent.click(within(dialog).getByRole("button", { name: "Scan" }))
@@ -239,7 +257,7 @@ describe("Apply posting scan", () => {
       "Couldn't find a title or company in that post."
     )
     expect(
-      screen.queryByRole("complementary", { name: "Job detail" })
+      screen.queryByRole("complementary", { name: "Opportunity detail" })
     ).not.toBeInTheDocument()
   })
 })

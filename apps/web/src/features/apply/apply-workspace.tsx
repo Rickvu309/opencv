@@ -8,20 +8,18 @@
  */
 import { useMemo, useRef, useState } from "react"
 import { isDemoApplyCard, type ApplyStage } from "@workspace/domain"
-import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import { ButtonGroup } from "@workspace/ui/components/button-group"
-import { Empty, EmptyDescription } from "@workspace/ui/components/empty-state"
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+} from "@workspace/ui/components/empty-state"
 import { Input } from "@workspace/ui/components/input"
 import { cn } from "@workspace/ui/lib/utils"
-import {
-  CalendarDays,
-  GripVertical,
-  LayoutGrid,
-  Plus,
-  Search,
-  Star,
-} from "lucide-react"
+import { CalendarDays, LayoutGrid, Plus, Search } from "lucide-react"
 
 import { ErrorBanner } from "@/components/error-banner.tsx"
 import { WorkspaceHeader } from "@/components/workspace-header.tsx"
@@ -30,19 +28,20 @@ import {
   type AddJobDraft,
 } from "@/features/apply/apply-add-job-dialog.tsx"
 import { ApplyCalendar } from "@/features/apply/apply-calendar.tsx"
-import {
-  allowCardDrop,
-  readCardDragId,
-  setCardDragData,
-} from "@/features/apply/apply-dnd.ts"
+import { BoardJobCard } from "@/features/apply/apply-board-card.tsx"
+import { ApplyDemoBanner } from "@/features/apply/apply-demo-banner.tsx"
+import { ApplyDemoClearDialog } from "@/features/apply/apply-demo-clear-dialog.tsx"
+import { allowCardDrop, readCardDragId } from "@/features/apply/apply-dnd.ts"
 import { pickGuidedApplyCard } from "@/features/apply/apply-guide.ts"
-import { APPLY_DEMO_LABEL } from "@/features/apply/apply-job-structure.ts"
+import {
+  APPLY_ADD_LABEL,
+  APPLY_EMPTY_TEXT,
+  APPLY_EMPTY_TITLE,
+  APPLY_SEARCH_LABEL,
+} from "@/features/apply/apply-job-structure.ts"
 import { JobDetailPanel } from "@/features/apply/apply-job-detail.tsx"
 import {
-  companyShort,
-  formatTrackDate,
   STAGES,
-  trackKindLabel,
   type ApplyCard,
   type StageId,
 } from "@/features/apply/apply-types.ts"
@@ -64,6 +63,7 @@ export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
   const [dragOverCardId, setDragOverCardId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ApplyCard | null>(null)
   const [addOpen, setAddOpen] = useState(false)
+  const [clearDemoOpen, setClearDemoOpen] = useState(false)
   const dragMovedRef = useRef(false)
 
   const guidedCard = apply.isLoading ? null : pickGuidedApplyCard(apply.cards)
@@ -135,6 +135,8 @@ export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
     chooseCard(created.id)
   }
 
+  const boardEmpty = apply.cards.length === 0
+
   const errorBanner = apply.error ? (
     <ErrorBanner>{apply.error}</ErrorBanner>
   ) : null
@@ -147,9 +149,9 @@ export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search jobs or companies"
+            placeholder={`${APPLY_SEARCH_LABEL} or companies`}
             className="h-8 pl-8"
-            aria-label="Search jobs"
+            aria-label={APPLY_SEARCH_LABEL}
           />
         </div>
 
@@ -192,16 +194,23 @@ export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
         <Button
           type="button"
           size="sm"
-          className="h-8"
+          className="h-12 px-4"
           onClick={() => setAddOpen(true)}
           disabled={apply.creating}
         >
           <Plus className="size-3.5" />
-          Add job
+          {APPLY_ADD_LABEL}
         </Button>
       </WorkspaceHeader>
 
       {errorBanner}
+
+      {apply.cards.some(isDemoApplyCard) ? (
+        <ApplyDemoBanner
+          clearing={apply.clearing}
+          onClear={() => setClearDemoOpen(true)}
+        />
+      ) : null}
 
       <div className="flex min-h-0 flex-1">
         {apply.isLoading ? (
@@ -209,7 +218,25 @@ export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
             Loading Apply…
           </p>
         ) : view === "board" ? (
-          <div className="min-w-0 flex-1 overflow-hidden p-3">
+          <div className="relative min-w-0 flex-1 overflow-hidden p-3">
+            {boardEmpty ? (
+              <Empty className="absolute top-1/2 left-1/2 z-10 w-80 flex-none -translate-x-1/2 -translate-y-1/2 border border-border bg-background">
+                <EmptyHeader>
+                  <EmptyTitle>{APPLY_EMPTY_TITLE}</EmptyTitle>
+                  <EmptyDescription>{APPLY_EMPTY_TEXT}</EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent>
+                  <Button
+                    type="button"
+                    className="h-12 px-4"
+                    onClick={() => setAddOpen(true)}
+                  >
+                    <Plus className="size-3.5" />
+                    {APPLY_ADD_LABEL}
+                  </Button>
+                </EmptyContent>
+              </Empty>
+            ) : null}
             <div
               data-apply-board
               className="grid h-full min-h-[28rem] grid-cols-5 gap-2"
@@ -277,12 +304,12 @@ export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
                           onDrop={(id) => move(id, stage.id, card.id)}
                         />
                       ))}
-                      {col.length === 0 ? (
-                        <Empty className="rounded-xl border border-dashed border-border px-3 py-8">
-                          <EmptyDescription className="text-xs">
-                            Drop a job here
-                          </EmptyDescription>
-                        </Empty>
+                      {col.length === 0 && !boardEmpty ? (
+                        <p className="px-1 text-xs text-muted-foreground">
+                          {query.trim()
+                            ? `No match in ${stage.label}`
+                            : `Nothing in ${stage.label}`}
+                        </p>
                       ) : null}
                     </div>
                   </div>
@@ -327,10 +354,18 @@ export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
         onAdd={addJob}
       />
 
+      {clearDemoOpen ? (
+        <ApplyDemoClearDialog
+          count={apply.cards.filter(isDemoApplyCard).length}
+          onOpenChange={setClearDemoOpen}
+          onConfirm={() => void apply.clearDemo()}
+        />
+      ) : null}
+
       {deleteTarget ? (
         <DestructiveCommandDialog
           open
-          title="Delete job"
+          title="Delete opportunity"
           name={`${deleteTarget.title} at ${deleteTarget.company}`}
           onOpenChange={(open) => {
             if (!open) setDeleteTarget(null)
@@ -343,109 +378,6 @@ export function ApplyWorkspace({ openGuide = false }: { openGuide?: boolean }) {
           }}
         />
       ) : null}
-    </div>
-  )
-}
-
-function BoardJobCard({
-  card,
-  active,
-  insertBefore,
-  onSelect,
-  onDragStart,
-  onDrag,
-  onDragOver,
-  onDragLeave,
-  onDrop,
-}: {
-  card: ApplyCard
-  active: boolean
-  insertBefore: boolean
-  onSelect: () => void
-  onDragStart: () => void
-  onDrag: () => void
-  onDragOver: () => void
-  onDragLeave: () => void
-  onDrop: (id: string) => void
-}) {
-  return (
-    <div
-      role="button"
-      tabIndex={0}
-      draggable
-      data-card-id={card.id}
-      aria-label={
-        isDemoApplyCard(card)
-          ? `${card.title} at ${card.company}, ${APPLY_DEMO_LABEL}`
-          : `${card.title} at ${card.company}`
-      }
-      onDragStart={(e) => {
-        onDragStart()
-        setCardDragData(e, card.id)
-      }}
-      onDrag={onDrag}
-      onDragEnd={onDrag}
-      onDragOver={(e) => {
-        allowCardDrop(e)
-        e.stopPropagation()
-        onDragOver()
-      }}
-      onDragLeave={onDragLeave}
-      onDrop={(e) => {
-        e.preventDefault()
-        e.stopPropagation()
-        const id = readCardDragId(e)
-        if (id) onDrop(id)
-      }}
-      onClick={onSelect}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault()
-          onSelect()
-        }
-      }}
-      className={cn(
-        "group cursor-grab rounded-xl border bg-card p-3 text-left shadow-[0_1px_2px_oklch(0_0_0/0.04)] transition-[border-color,box-shadow,opacity] duration-150 active:cursor-grabbing",
-        active
-          ? "border-foreground/20 ring-1 ring-ring/30"
-          : "border-border hover:border-foreground/15 hover:shadow-[0_2px_8px_oklch(0_0_0/0.05)]",
-        insertBefore && "ring-2 ring-ring/40"
-      )}
-    >
-      <div className="flex items-start gap-1.5">
-        <GripVertical
-          className="mt-0.5 size-3.5 shrink-0 text-muted-foreground/40"
-          aria-hidden
-        />
-        <p className="min-w-0 flex-1 text-sm leading-snug font-semibold">
-          {card.title}
-        </p>
-        {card.starred ? (
-          <Star className="size-3.5 shrink-0 fill-foreground/20 text-foreground/50" />
-        ) : null}
-      </div>
-      <div className="mt-2 flex items-center gap-2 pl-5">
-        <span className="flex size-5 items-center justify-center rounded bg-muted text-3xs font-bold tracking-tight text-muted-foreground">
-          {companyShort(card.company)}
-        </span>
-        <span className="truncate text-xs text-muted-foreground">
-          {card.company}
-        </span>
-      </div>
-      {isDemoApplyCard(card) ? (
-        <div className="mt-2 pl-5">
-          <Badge variant="secondary" className="h-4 px-1.5 text-micro">
-            {APPLY_DEMO_LABEL}
-          </Badge>
-        </div>
-      ) : null}
-      <div className="mt-2.5 flex items-center justify-between gap-2 pl-5 text-micro text-muted-foreground">
-        <span className="inline-flex items-center gap-1 tabular-nums">
-          <CalendarDays className="size-3 shrink-0 opacity-70" />
-          {formatTrackDate(card.trackDate)}
-        </span>
-        <span className="truncate">{trackKindLabel(card.trackKind)}</span>
-      </div>
     </div>
   )
 }
