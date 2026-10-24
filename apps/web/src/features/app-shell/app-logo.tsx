@@ -46,7 +46,7 @@ export function OpenCvLogo({
 }: Props) {
   const s = SIZES[size]
   return (
-    <span className={cn("inline-flex items-center gap-1.5", className)}>
+    <span className={cn("inline-flex items-center gap-1", className)}>
       <OpenCvMark className={s.box} />
       {withWordmark ? (
         <span

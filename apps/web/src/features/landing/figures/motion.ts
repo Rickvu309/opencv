@@ -84,9 +84,8 @@ export function useFigureMotion(
       last = 0
       frame = window.requestAnimationFrame(tick)
     }
-    const announce = (text: string) => {
+    const announceUnlessSliderFocused = (text: string) => {
       window.clearTimeout(announceTimer)
-      // A focused slider already speaks its value text when the stop changes.
       if (document.activeElement === latest.current.refs.well.current) return
       announceTimer = window.setTimeout(() => {
         const node = latest.current.refs.live.current
@@ -97,7 +96,7 @@ export function useFigureMotion(
       const changed = state.published !== value
       state.published = value
       if (changed) setStop(value)
-      announce(latest.current.readoutOf(value))
+      announceUnlessSliderFocused(latest.current.readoutOf(value))
     }
     const disarm = () => {
       state.interacted = true
@@ -190,6 +189,7 @@ export function useFigureMotion(
       onFocus: () => {
         const touring = state.demonstrating
         disarm()
+        if (drag) return
         if (touring || state.value !== state.published) {
           state.target = state.published
           kick()

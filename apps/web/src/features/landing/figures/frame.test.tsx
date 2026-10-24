@@ -1,10 +1,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { cleanup, fireEvent, render, screen } from "@testing-library/react"
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 
 import { FigureCard } from "./frame.tsx"
 import { PROOF_SPEC, proofPose } from "./model.ts"
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  vi.restoreAllMocks()
+  vi.useRealTimers()
+})
 
 function renderFigure(apply: (value: number) => void = () => {}) {
   render(
@@ -55,14 +59,42 @@ describe("figure slider", () => {
 
   it("ignores keys that do not move the slider", () => {
     const slider = renderFigure()
-    const prevented = vi.fn()
 
     slider.focus()
-    slider.addEventListener("keydown", (event) => {
-      if (event.defaultPrevented) prevented()
+    expect(fireEvent.keyDown(slider, { key: "a" })).toBe(true)
+    expect(slider.getAttribute("aria-valuenow")).toBe("0")
+    expect(fireEvent.keyDown(slider, { key: "ArrowRight" })).toBe(false)
+  })
+
+  it("keeps the hovered pose when a pointer press focuses the slider", () => {
+    vi.useFakeTimers()
+    const apply = vi.fn()
+    const slider = renderFigure(apply)
+    vi.spyOn(slider, "getBoundingClientRect").mockReturnValue(
+      new DOMRect(0, 0, 300, 300)
+    )
+    Object.defineProperty(slider, "setPointerCapture", { value: vi.fn() })
+
+    fireEvent.pointerMove(slider, {
+      pointerId: 1,
+      pointerType: "mouse",
+      clientX: 300,
+      clientY: 100,
     })
-    fireEvent.keyDown(slider, { key: "a" })
-    expect(prevented).not.toHaveBeenCalled()
+    act(() => vi.advanceTimersByTime(100))
+    expect(apply).toHaveBeenLastCalledWith(3)
+
+    fireEvent.pointerDown(slider, {
+      pointerId: 1,
+      pointerType: "mouse",
+      button: 0,
+      clientX: 300,
+      clientY: 100,
+    })
+    act(() => slider.focus())
+    act(() => vi.advanceTimersByTime(100))
+
+    expect(apply).toHaveBeenLastCalledWith(3)
     expect(slider.getAttribute("aria-valuenow")).toBe("0")
   })
 })
