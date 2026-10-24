@@ -5,30 +5,34 @@ import { cn } from "@workspace/ui/lib/utils"
 
 import { OpenCvLogo } from "@/features/app-shell/app-logo.tsx"
 
-import { LANDING_SURFACES } from "./landing-copy.ts"
+import { LANDING_LOGIN_LABEL, LANDING_SURFACES } from "./landing-copy.ts"
 
 const FOOTER_LINK = cn(
-  "landing-link inline-flex min-h-6 items-center rounded-md text-sm text-muted-foreground hover:text-foreground",
+  "landing-link inline-flex min-h-8 items-center rounded-md text-sm text-muted-foreground hover:text-foreground",
   FOCUS_RING
 )
 
 export function LandingFooter() {
   return (
-    <footer className="border-t border-border py-12">
-      <div className="mx-auto flex w-full max-w-[1344px] flex-col gap-8 px-4 md:flex-row md:items-center md:justify-between md:px-8">
+    <footer className="border-t border-border pt-16 pb-12 md:pt-24 md:pb-16">
+      <div className="landing-frame grid gap-12 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)] sm:gap-16">
         <Link to="/" className={cn("w-fit rounded-md", FOCUS_RING)}>
           <OpenCvLogo withWordmark />
         </Link>
-        <nav aria-label="Footer" className="flex flex-wrap gap-x-6 gap-y-3">
+        <nav aria-label="Footer" className="flex flex-col gap-3">
+          <p className="text-sm font-medium text-foreground">Product</p>
           {LANDING_SURFACES.map((surface) => (
             <a key={surface.id} href={`#${surface.id}`} className={FOOTER_LINK}>
               {surface.label}
             </a>
           ))}
-          <Link to="/sign-in" className={FOOTER_LINK}>
-            Sign in
-          </Link>
         </nav>
+        <div className="flex flex-col gap-3">
+          <p className="text-sm font-medium text-foreground">Account</p>
+          <Link to="/sign-in" className={FOOTER_LINK}>
+            {LANDING_LOGIN_LABEL}
+          </Link>
+        </div>
       </div>
     </footer>
   )
