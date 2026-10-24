@@ -109,6 +109,9 @@ const READABLE_VARIABLES = new Set<string>([
   "anchor-height",
   // Declared by the stock Card as an arbitrary property on itself.
   "card-spacing",
+  // Theme font stacks the affectUI widgets inherit.
+  "font-sans",
+  "font-mono",
   // Landing hero fluid size, declared in features/landing/landing.css.
   "landing-h1-mobile",
   "landing-h1-desktop",
@@ -122,7 +125,7 @@ const CV_VARIABLE_RE = /^cv-/
  * and maps to stock variables there (segmented-control, filter-menu,
  * notification-stack, smart-recommendation, number-ticker).
  */
-const AFFECT_VARIABLE_RE = /^ui-(?:seg|fm|ns|sr|nt)-/
+const AFFECT_VARIABLE_RE = /^ui-(?:fm|ns|sr|nt)-/
 
 /** Variables owned by legacy-overlay.css; the legacy allowlist governs their use. */
 const LEGACY_VARIABLE_RE = /^(?:success|warning|pitch-tone|github-heatmap)/
@@ -162,10 +165,6 @@ const VOCABULARY_ALLOWLIST = [
  * above it naming the PR that removes it.
  */
 const LEGACY_OVERLAY_ALLOWLIST = [
-  // DS-2 replaces the hand-rolled tool line with the AI Elements Trace.
-  "components/ai-elements/tool.tsx",
-  // DS-2 turns receipt diff lines into Code Block diff lines.
-  "features/home/rich-receipts.tsx",
   // DS-4b replaces the Published pill with a stock Badge.
   "features/pitch/pitch-edit-toolbar.tsx",
   // DS-4b swaps the heatmap for the Kibo contribution graph.
@@ -365,6 +364,17 @@ describe("legacy overlay", () => {
         !/^(?:pitch-tone|github-heatmap)-/.test(name)
     )
     expect(unknown).toEqual([])
+  })
+})
+
+describe("chat library", () => {
+  it("keeps the second chat library out of the app", () => {
+    const importsIt = new RegExp("[\"']@" + "assistant-ui/")
+    const offenders = [
+      ...appSourceFiles().filter((file) => importsIt.test(readApp(file))),
+      ...kitSourceFiles().filter((file) => importsIt.test(readKit(file))),
+    ]
+    expect(offenders).toEqual([])
   })
 })
 

@@ -1,6 +1,13 @@
 import type { ReactNode } from "react"
 
 import {
+  CodeBlock,
+  CodeBlockActions,
+  CodeBlockContent,
+  CodeBlockCopyButton,
+} from "@workspace/ui/components/code-block"
+
+import {
   parseCoachMarkdown,
   type CoachInline,
   type CoachMarkdownBlock,
@@ -32,13 +39,16 @@ function renderBlock(block: CoachMarkdownBlock, index: number) {
   switch (block.type) {
     case "p":
       return (
-        <p key={index} className="prose-kit">
+        <p key={index} className="text-sm leading-relaxed">
           {renderInline(block.children)}
         </p>
       )
     case "ul":
       return (
-        <ul key={index} className="prose-kit list-disc space-y-1 pl-5">
+        <ul
+          key={index}
+          className="list-disc space-y-1 pl-5 text-sm leading-relaxed"
+        >
           {block.items.map((item, itemIndex) => (
             <li key={itemIndex}>{renderInline(item)}</li>
           ))}
@@ -48,7 +58,7 @@ function renderBlock(block: CoachMarkdownBlock, index: number) {
       return (
         <ol
           key={index}
-          className="prose-kit list-decimal space-y-1 pl-5"
+          className="list-decimal space-y-1 pl-5 text-sm leading-relaxed"
         >
           {block.items.map((item, itemIndex) => (
             <li key={itemIndex}>{renderInline(item)}</li>
@@ -57,12 +67,12 @@ function renderBlock(block: CoachMarkdownBlock, index: number) {
       )
     case "pre":
       return (
-        <pre
-          key={index}
-          className="overflow-x-auto rounded-md bg-muted px-3 py-2 font-mono text-xs leading-relaxed"
-        >
-          <code>{block.text}</code>
-        </pre>
+        <CodeBlock key={index} size="sm">
+          <CodeBlockActions>
+            <CodeBlockCopyButton value={block.text} />
+          </CodeBlockActions>
+          <CodeBlockContent wrap>{block.text}</CodeBlockContent>
+        </CodeBlock>
       )
   }
 }

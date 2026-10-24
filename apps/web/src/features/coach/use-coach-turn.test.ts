@@ -48,8 +48,8 @@ describe("shared Coach turn hook", () => {
       read("features/paper/coach-float.tsx") +
       read("features/paper/coach-float-chips.tsx")
     expect(panel).toMatch(/useCoachTurn/)
-    expect(read("features/coach/coach-thread-panel.tsx")).toMatch(
-      /useCoachExternalRuntime/
+    expect(read("features/coach/coach-thread.tsx")).not.toMatch(
+      /assistant-ui|AssistantRuntime/
     )
     expect(panel).toMatch(/CoachThread/)
     expect(panel).toMatch(/data-coach-soft-scope/)

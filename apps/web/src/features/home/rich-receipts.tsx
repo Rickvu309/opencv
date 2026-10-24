@@ -3,6 +3,13 @@ import { FilePlus, FileText } from "lucide-react"
 
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
+import {
+  CodeBlock,
+  CodeBlockContent,
+  CodeBlockHeader,
+  CodeBlockLine,
+  CodeBlockTitle,
+} from "@workspace/ui/components/code-block"
 import { cn } from "@workspace/ui/lib/utils"
 import {
   PAPER_KIND_LABEL,
@@ -13,57 +20,16 @@ import {
 
 import { STAGES } from "@/features/apply/apply-types.ts"
 
+type UpdateContentDetail = Extract<
+  CoachReceiptDetail,
+  { type: "paper.updateContent" }
+>
+
 function stageLabel(stage: string) {
   return STAGES.find((item) => item.id === stage)?.label ?? stage
 }
 
-function DiffView({
-  hunks,
-}: {
-  hunks: Extract<CoachReceiptDetail, { type: "paper.updateContent" }>["hunks"]
-}) {
-  return (
-    <div className="space-y-2">
-      {hunks.map((hunk) => (
-        <div key={`${hunk.sectionId}-${hunk.section}`}>
-          <p className="mb-1 text-[11px] font-medium text-foreground">
-            {hunk.section}
-          </p>
-          <ul className="overflow-hidden rounded-md border border-border bg-background font-mono text-[11px] leading-relaxed">
-            {hunk.lines.map((line, index) => (
-              <li
-                key={`${hunk.sectionId}-${index}`}
-                className={cn(
-                  "flex gap-2 px-2 py-1",
-                  line.kind === "add" && "bg-success/10 text-success",
-                  line.kind === "del" && "bg-destructive/10 text-destructive",
-                  line.kind === "eq" && "text-muted-foreground"
-                )}
-              >
-                <span aria-hidden className="w-3 shrink-0">
-                  {line.kind === "add" ? "+" : line.kind === "del" ? "−" : " "}
-                </span>
-                {line.kind === "add" ? (
-                  <ins className="no-underline">{line.text}</ins>
-                ) : line.kind === "del" ? (
-                  <del>{line.text}</del>
-                ) : (
-                  <span>{line.text}</span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function UpdateContentBody({
-  detail,
-}: {
-  detail: Extract<CoachReceiptDetail, { type: "paper.updateContent" }>
-}) {
+export function DiffBlock({ detail }: { detail: UpdateContentDetail }) {
   const [expanded, setExpanded] = useState(false)
   const changed = countChangedLines(detail.hunks)
   const hunks = expanded ? detail.hunks : collapsedHunks(detail.hunks)
@@ -71,14 +37,42 @@ function UpdateContentBody({
 
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap items-center gap-1.5">
+      <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
         <Badge variant="outline">{PAPER_KIND_LABEL[detail.docKind]}</Badge>
         <span className="inline-flex items-center gap-1">
           <FileText className="size-3" aria-hidden />
           {detail.docName}
         </span>
       </div>
-      <DiffView hunks={hunks} />
+      {hunks.map((hunk) => (
+        <CodeBlock key={`${hunk.sectionId}-${hunk.section}`} size="sm">
+          <CodeBlockHeader>
+            <CodeBlockTitle>{hunk.section}</CodeBlockTitle>
+          </CodeBlockHeader>
+          <CodeBlockContent wrap aria-label={`Changes in ${hunk.section}`}>
+            {hunk.lines.map((line, index) => (
+              <CodeBlockLine
+                key={`${hunk.sectionId}-${index}`}
+                variant={
+                  line.kind === "add"
+                    ? "added"
+                    : line.kind === "del"
+                      ? "removed"
+                      : "default"
+                }
+              >
+                {line.kind === "add" ? (
+                  <ins className="no-underline">{line.text}</ins>
+                ) : line.kind === "del" ? (
+                  <del>{line.text}</del>
+                ) : (
+                  line.text
+                )}
+              </CodeBlockLine>
+            ))}
+          </CodeBlockContent>
+        </CodeBlock>
+      ))}
       {hidden > 0 || expanded ? (
         <Button
           type="button"
@@ -105,7 +99,7 @@ function MoveCardBody({
 
   return (
     <div
-      className="flex flex-wrap items-center gap-x-3 gap-y-1"
+      className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs"
       aria-label={`${fromLabel} to ${toLabel}`}
     >
       {STAGES.map((stage) => {
@@ -120,14 +114,14 @@ function MoveCardBody({
           >
             <span className={cn("size-1.5 rounded-full", stage.dot)} />
             {involved ? (
-              <span className="text-[11px] font-medium">{stage.label}</span>
+              <span className="font-medium">{stage.label}</span>
             ) : (
               <span className="sr-only">{stage.label}</span>
             )}
           </span>
         )
       })}
-      <span className="text-[11px] text-muted-foreground">
+      <span className="text-muted-foreground">
         {fromLabel} → {toLabel}
       </span>
     </div>
@@ -139,7 +133,6 @@ function CreateDocBody({
 }: {
   detail: Extract<CoachReceiptDetail, { type: "paper.createDoc" }>
 }) {
-  const kindLabel = PAPER_KIND_LABEL[detail.docKind]
   const statusLabel =
     detail.status === "published"
       ? "Published"
@@ -148,8 +141,8 @@ function CreateDocBody({
         : "Draft"
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
-      <Badge variant="outline">{kindLabel}</Badge>
+    <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+      <Badge variant="outline">{PAPER_KIND_LABEL[detail.docKind]}</Badge>
       <Badge variant="secondary">{statusLabel}</Badge>
       <span className="inline-flex items-center gap-1">
         <FilePlus className="size-3" aria-hidden />
@@ -159,13 +152,13 @@ function CreateDocBody({
   )
 }
 
-export function RichReceiptBody({ detail }: { detail: CoachReceiptDetail }) {
+export function ReceiptDetail({ detail }: { detail: CoachReceiptDetail }) {
   switch (detail.type) {
-    case "paper.updateContent":
-      return <UpdateContentBody detail={detail} />
     case "apply.moveCard":
       return <MoveCardBody detail={detail} />
     case "paper.createDoc":
       return <CreateDocBody detail={detail} />
+    case "paper.updateContent":
+      return null
   }
 }

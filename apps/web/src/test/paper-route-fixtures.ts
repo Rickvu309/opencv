@@ -129,7 +129,7 @@ export function queryByAttr(root: ParentNode, selector: string) {
 
 export function installPaperTestLifecycle() {
   beforeAll(async () => {
-    await import("@/features/coach/coach-thread-panel.tsx")
+    await import("@/features/coach/coach-thread.tsx")
   }, 60_000)
 
   beforeEach(() => {

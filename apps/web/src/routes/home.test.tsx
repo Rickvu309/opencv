@@ -28,7 +28,7 @@ describe("Home idle", () => {
     expect(screen.queryByText(/Eric/i)).not.toBeInTheDocument()
   })
 
-  it("fills the composer when a suggestion chip is tapped", async () => {
+  it("fills the composer with the prompt when a suggestion chip is tapped", async () => {
     renderApp()
     await expectHomeIdle()
 
@@ -38,6 +38,9 @@ describe("Home idle", () => {
     expect(screen.getByRole("textbox", { name: "Message Coach" })).toHaveValue(
       chip.prompt
     )
+    expect(
+      screen.queryByRole("log", { name: "Thread" })
+    ).not.toBeInTheDocument()
   })
 
   it("sends on Enter and inserts a newline on Shift+Enter", async () => {
@@ -55,8 +58,8 @@ describe("Home idle", () => {
       ""
     )
     expect(
-      screen.getByRole("status", { name: "Coach is working" })
-    ).toBeInTheDocument()
+      within(screen.getByRole("log", { name: "Thread" })).getByRole("status")
+    ).toHaveTextContent("Thinking")
     expect(
       screen.queryByRole("heading", {
         level: 1,
@@ -69,13 +72,11 @@ describe("Home idle", () => {
       await screen.findByRole("log", { name: "Thread" })
     ).toHaveTextContent("Help me plan the week")
     await waitFor(() => {
-      expect(
-        screen.queryByRole("status", { name: "Coach is working" })
-      ).not.toBeInTheDocument()
+      expect(screen.queryByText("Thinking")).not.toBeInTheDocument()
     })
   })
 
-  it("opens stub attach and upload items from the + menu", async () => {
+  it("lists attach and connector items in the + menu", async () => {
     renderApp()
     await expectHomeIdle()
 
@@ -83,11 +84,8 @@ describe("Home idle", () => {
 
     const menu = await screen.findByRole("menu")
     expect(
-      within(menu).getByRole("menuitem", { name: /upload a file/i })
-    ).toBeInTheDocument()
-    expect(
-      within(menu).getByRole("menuitem", { name: /recent/i })
-    ).toBeInTheDocument()
+      within(menu).queryByRole("menuitem", { name: /upload a file|recent/i })
+    ).not.toBeInTheDocument()
     expect(
       within(menu).getByRole("menuitem", { name: "Attach from Paper" })
     ).toBeInTheDocument()
@@ -112,34 +110,16 @@ describe("Home idle", () => {
     })
   })
 
-  it("disables coming-soon composer affordances", async () => {
+  it("offers no voice control and no coming-soon menu items", async () => {
     renderApp()
     await expectHomeIdle()
 
-    const mic = screen.getByRole("button", {
-      name: "Voice input — coming soon",
-    })
-    expect(mic).toBeDisabled()
-    expect(mic).toHaveAttribute("aria-disabled", "true")
-
+    expect(
+      screen.queryByRole("button", { name: /voice/i })
+    ).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "Add" }))
     const menu = await screen.findByRole("menu")
-
-    const upload = within(menu).getByRole("menuitem", {
-      name: /upload a file/i,
-    })
-    const recent = within(menu).getByRole("menuitem", { name: /^recent/i })
-    expect(upload).toHaveAttribute("aria-disabled", "true")
-    expect(recent).toHaveAttribute("aria-disabled", "true")
-    expect(upload).toHaveTextContent("Coming soon")
-    expect(recent).toHaveTextContent("Coming soon")
-
-    expect(
-      within(menu).getByRole("menuitem", { name: "Attach from Paper" })
-    ).not.toHaveAttribute("aria-disabled", "true")
-    expect(
-      within(menu).getByRole("menuitem", { name: "Add connector" })
-    ).not.toHaveAttribute("aria-disabled", "true")
+    expect(menu).not.toHaveTextContent("Coming soon")
   })
 
   it("opens Settings on the Connected apps tab from the connect row", async () => {
@@ -248,9 +228,9 @@ describe("Home idle", () => {
     const frame = composer.closest("[data-slot='coach-composer']")
     expect(frame).not.toBeNull()
     expect(frame).toHaveClass(
-      "has-focus-visible:ring-3",
-      "has-focus-visible:ring-ring/50",
-      "has-focus-visible:border-ring"
+      "has-[[data-slot=input-group-control]:focus-visible]:ring-3",
+      "has-[[data-slot=input-group-control]:focus-visible]:ring-ring/50",
+      "has-[[data-slot=input-group-control]:focus-visible]:border-ring"
     )
   })
 })

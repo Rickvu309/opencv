@@ -1,7 +1,4 @@
-import {
-  DEFAULT_COACH_MODE,
-  type CoachMode,
-} from "@workspace/domain"
+import { DEFAULT_COACH_MODE, type CoachMode } from "@workspace/domain"
 
 export const COACH_MODE_OPTIONS = [
   {
@@ -18,7 +15,7 @@ export const COACH_MODE_OPTIONS = [
   },
   {
     id: "max" as const,
-    label: "Max",
+    label: "Power",
     helper:
       "Highest quality for hard turns. The smallest daily cap of the three modes.",
   },
@@ -31,7 +28,9 @@ export const COACH_MODE_OPTIONS = [
 export const DEFAULT_HOME_COACH_MODE = DEFAULT_COACH_MODE
 
 export function coachModeLabel(mode: CoachMode) {
-  return COACH_MODE_OPTIONS.find((option) => option.id === mode)?.label ?? "Free"
+  return (
+    COACH_MODE_OPTIONS.find((option) => option.id === mode)?.label ?? "Free"
+  )
 }
 
 export function coachModeHelper(mode: CoachMode) {
