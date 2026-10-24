@@ -1,24 +1,16 @@
 import { useQuery } from "@tanstack/react-query"
-import {
-  Suspense,
-  lazy,
-  memo,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react"
+import { memo, useCallback, useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import type { CoachSelection } from "@workspace/domain"
 import { X } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
-import { Skeleton } from "@workspace/ui/components/skeleton"
 import { useMediaQuery } from "@workspace/ui/hooks/use-media-query"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { ErrorBanner } from "@/components/error-banner.tsx"
 import { DESKTOP_MEDIA_QUERY } from "@/features/app-shell/use-media-query.ts"
+import { CoachThreadPanel } from "@/features/coach/coach-thread-panel.tsx"
 import { useCoachTurn } from "@/features/coach/use-coach-turn.ts"
 import { readStored, writeStored } from "@/lib/local-storage.ts"
 import {
@@ -58,12 +50,6 @@ import type { ToolbarVariant } from "./paper-editor-toolbar.tsx"
 export const COACH_FLOAT_STORAGE_KEY = "opencv:paper:coach-float"
 
 export type CoachFloatState = "closed" | "open"
-
-const CoachThreadPanel = lazy(() =>
-  import("@/features/coach/coach-thread-panel.tsx").then((m) => ({
-    default: m.CoachThreadPanel,
-  }))
-)
 
 type Props = {
   docId: string
@@ -290,98 +276,86 @@ export const CoachFloat = memo(function CoachFloat({
               ) : null}
             </div>
           ) : null}
-          <Suspense
-            fallback={
-              <div
-                data-coach-thread-loading
-                className="flex flex-1 flex-col gap-2 pt-1"
-              >
-                <Skeleton className="h-4 w-2/3" />
-                <Skeleton className="h-4 w-1/2" />
-              </div>
+          <CoachThreadPanel
+            turn={{
+              messages,
+              phase,
+              send: sendWithSelection,
+              stop,
+              regenerate,
+              rate,
+            }}
+            messages={messages}
+            waiting={phase === "waiting"}
+            turnActive={turnActive}
+            error={error}
+            send={sendWithSelection}
+            stop={stop}
+            onRetry={retry}
+            onRate={rate}
+            onRegenerate={phase === "idle" ? regenerate : undefined}
+            onUndo={phase === "idle" ? undo : undefined}
+            onAttachFromPaper={attachFromPaper}
+            messageCite={onCitePaper ? messageCite : undefined}
+            placeholder="Ask the Coach"
+            empty={
+              <QuickPromptChips
+                chips={QUICK_PROMPTS[variant]}
+                turnActive={turnActive}
+                hasSelection={Boolean(selection?.text)}
+                onSubmit={submit}
+              />
             }
-          >
-            <CoachThreadPanel
-              turn={{
-                messages,
-                phase,
-                send: sendWithSelection,
-                stop,
-                regenerate,
-                rate,
-              }}
-              messages={messages}
-              waiting={phase === "waiting"}
-              turnActive={turnActive}
-              error={error}
-              send={sendWithSelection}
-              stop={stop}
-              onRetry={retry}
-              onRate={rate}
-              onRegenerate={phase === "idle" ? regenerate : undefined}
-              onUndo={phase === "idle" ? undo : undefined}
-              onAttachFromPaper={attachFromPaper}
-              messageCite={onCitePaper ? messageCite : undefined}
-              placeholder="Ask the Coach"
-              empty={
-                <QuickPromptChips
-                  chips={QUICK_PROMPTS[variant]}
-                  turnActive={turnActive}
-                  hasSelection={Boolean(selection?.text)}
-                  onSubmit={submit}
-                />
-              }
-              beforeComposer={
-                softScope ||
-                contextChips.length > 0 ||
-                attachError ||
-                (messages.length > 0 && selection?.text) ? (
-                  <>
-                    {softScope || contextChips.length > 0 ? (
-                      <div
-                        data-coach-context-chips
-                        className="flex flex-wrap gap-1"
-                      >
-                        {softScope ? (
-                          <SoftScopeChip
-                            docName={docName}
-                            onRemove={() => setSoftScope(false)}
-                          />
-                        ) : null}
-                        {contextChips.map((chip) => (
-                          <DurableContextChip
-                            key={chip.id}
-                            chip={chip}
-                            onPin={() =>
-                              setContextChips((prev) =>
-                                toggleContextChipPin(prev, chip.id)
-                              )
-                            }
-                            onRemove={() =>
-                              setContextChips((prev) =>
-                                removeContextChip(prev, chip.id)
-                              )
-                            }
-                          />
-                        ))}
-                      </div>
-                    ) : null}
-                    {attachError ? (
-                      <ErrorBanner variant="inline">{attachError}</ErrorBanner>
-                    ) : null}
-                    {messages.length > 0 && selection?.text ? (
-                      <QuickPromptChips
-                        chips={[REWRITE_SELECTION]}
-                        turnActive={turnActive}
-                        hasSelection
-                        onSubmit={submit}
-                      />
-                    ) : null}
-                  </>
-                ) : null
-              }
-            />
-          </Suspense>
+            beforeComposer={
+              softScope ||
+              contextChips.length > 0 ||
+              attachError ||
+              (messages.length > 0 && selection?.text) ? (
+                <>
+                  {softScope || contextChips.length > 0 ? (
+                    <div
+                      data-coach-context-chips
+                      className="flex flex-wrap gap-1"
+                    >
+                      {softScope ? (
+                        <SoftScopeChip
+                          docName={docName}
+                          onRemove={() => setSoftScope(false)}
+                        />
+                      ) : null}
+                      {contextChips.map((chip) => (
+                        <DurableContextChip
+                          key={chip.id}
+                          chip={chip}
+                          onPin={() =>
+                            setContextChips((prev) =>
+                              toggleContextChipPin(prev, chip.id)
+                            )
+                          }
+                          onRemove={() =>
+                            setContextChips((prev) =>
+                              removeContextChip(prev, chip.id)
+                            )
+                          }
+                        />
+                      ))}
+                    </div>
+                  ) : null}
+                  {attachError ? (
+                    <ErrorBanner variant="inline">{attachError}</ErrorBanner>
+                  ) : null}
+                  {messages.length > 0 && selection?.text ? (
+                    <QuickPromptChips
+                      chips={[REWRITE_SELECTION]}
+                      turnActive={turnActive}
+                      hasSelection
+                      onSubmit={submit}
+                    />
+                  ) : null}
+                </>
+              ) : null
+            }
+          />
         </div>
       ) : null}
     </>
