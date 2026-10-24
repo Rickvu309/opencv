@@ -2,17 +2,17 @@
 
 ## Environments
 
-| Environment | Comes from | When |
-|---|---|---|
-| Web production (Vercel) | `main` | Every merge to `main` |
-| API production (Railway `production`) | `main` | Every merge to `main` |
-| API staging (Railway `staging`) | Manual | Not tied to PRs |
+| Environment                                  | Comes from | When                                               |
+| -------------------------------------------- | ---------- | -------------------------------------------------- |
+| Web production (Railway `production`, `web`) | `main`     | Every merge to `main` that touches its watch paths |
+| API production (Railway `production`, `api`) | `main`     | Every merge to `main` that touches its watch paths |
+| Web and API staging (Railway `staging`)      | `main`     | Same watch paths; not tied to PRs                  |
 
-There is no staging branch. This describes hosting as it is now; the hosting plan (PR-3 in `docs/plans/opencv-program.md`) changes it, and this file is updated with it.
+There is no staging branch. Hosting is described in `docs/deploy.md`.
 
 ## Verifying a change
 
-There are no preview deploys yet. Verify locally with the verify-opencv skill (`.claude/skills/verify-opencv`) and attach its evidence; preview deploys arrive with the Railway move.
+There are no per-branch preview deploys. Verify locally with the verify-opencv skill (`.claude/skills/verify-opencv`) and attach its evidence.
 
 - Run the `verify-opencv` skill: it starts the web app and the api on PGlite with a scripted Coach, drives the changed flow, and captures proof.
 - Attach that evidence to the PR before marking it ready. Reviewers check it.
@@ -20,15 +20,15 @@ There are no preview deploys yet. Verify locally with the verify-opencv skill (`
 
 ## Railway setup
 
-The API runs on the Railway project `openpath` (the name predates the rename to opencv). It has two environments and services `api` and `Postgres` only; see `docs/railway.md`.
+The web app and the API run on the Railway project `openpath` (the name predates the rename to opencv). It has two environments and services `api`, `web` and `Postgres`; see `docs/deploy.md`.
 
-- `railway.json` builds with `pnpm --filter api... run build`, runs `pnpm --filter api run migrate` as the pre-deploy command, starts `pnpm --filter api run start`, and health-checks `GET /health`.
+- `.railway/railway.ts` builds the API with `pnpm --filter api... run build`, runs `pnpm --filter api run migrate` as the pre-deploy command, starts `pnpm --filter api run start`, and health-checks `GET /health`. The `web` service builds `apps/web/Dockerfile` and serves it with Caddy.
 - `production` and `staging` hold separate secrets and separate databases.
-- Rolling back production: in Railway, open `api` in `production`, pick the previous successful deployment, and choose Rollback. Roll back the web app in Vercel the same way (promote the previous production deployment).
+- Rolling back production: in Railway, open `api` in `production`, pick the previous successful deployment, and choose Rollback. Roll back `web` the same way.
 
 ## Production deploys
 
-- A merge to `main` deploys straight to production (web on Vercel, API on Railway). Merge only what you are ready to ship.
+- A merge to `main` deploys straight to production (web and API on Railway). Merge only what you are ready to ship.
 - After merging, check the production deploy finished and smoke-test the changed flow.
 - If a deploy fails, `main` is not deployable: fix it right away with a `fix` or `hotfix` PR, or revert.
 

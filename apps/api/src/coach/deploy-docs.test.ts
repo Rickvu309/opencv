@@ -11,7 +11,6 @@ const repoRoot = path.resolve(
 describe("coach deploy docs", () => {
   it("documents the three Railway Coach vars and the 503 posture", () => {
     const envExample = readFileSync(path.join(repoRoot, ".env.example"), "utf8")
-    const railway = readFileSync(path.join(repoRoot, "docs/railway.md"), "utf8")
     const deploy = readFileSync(path.join(repoRoot, "docs/deploy.md"), "utf8")
 
     for (const name of [
@@ -24,25 +23,24 @@ describe("coach deploy docs", () => {
       "COACH_DAILY_TURN_LIMIT_MAX",
     ]) {
       expect(envExample).toContain(name)
-      expect(railway).toContain(name)
+      expect(deploy).toContain(name)
     }
 
     expect(envExample).toContain("openrouter/free")
     expect(envExample).not.toContain("stealth/ox-alpha")
-    expect(railway).toContain("openrouter/free")
-    expect(railway).not.toContain("stealth/ox-alpha")
+    expect(deploy).toContain("openrouter/free")
+    expect(deploy).not.toContain("stealth/ox-alpha")
     expect(envExample).toContain("deepseek/deepseek-chat-v3.1")
     expect(envExample).toContain("anthropic/claude-opus-4")
     expect(envExample).toContain("anthropic/claude-fable-5")
     expect(envExample).toContain("COACH_EVAL_MODE")
-    expect(railway).toContain("COACH_UNAVAILABLE")
-    expect(railway).toContain("GET /health")
     expect(deploy).toContain("COACH_UNAVAILABLE")
-    expect(deploy).toContain("railway.md#coach")
+    expect(deploy).toContain("GET /health")
+    expect(deploy).toContain("COACH_UNAVAILABLE")
   })
 
   it("does not document the removed variables", () => {
-    for (const file of [".env.example", "docs/railway.md"]) {
+    for (const file of [".env.example", "docs/deploy.md"]) {
       const text = readFileSync(path.join(repoRoot, file), "utf8")
       expect(text).not.toContain("COACH_DAILY_TURN_LIMIT=")
       expect(text).not.toMatch(/\| `COACH_MODEL` \||^#\s*COACH_MODEL=/m)

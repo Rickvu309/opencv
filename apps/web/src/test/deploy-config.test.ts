@@ -2,20 +2,117 @@
 import { readdirSync, readFileSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
+import { createRailwayContext } from "railway/iac"
 import { describe, expect, it } from "vitest"
-import { resolveConfig } from "vite"
+
+import railwayConfig, { partial } from "../../../../.railway/railway"
 
 const webRoot = fileURLToPath(new URL("../..", import.meta.url))
 const repoRoot = path.resolve(webRoot, "../..")
 
-describe("vercel.json", () => {
-  it("points outputDirectory at the directory Vite actually builds into", async () => {
-    const { outputDirectory } = JSON.parse(
-      readFileSync(path.join(repoRoot, "vercel.json"), "utf8")
-    )
-    const vite = await resolveConfig({ root: webRoot }, "build")
+const read = (file: string) => readFileSync(path.join(repoRoot, file), "utf8")
 
-    expect(path.relative(repoRoot, vite.build.outDir)).toBe(outputDirectory)
+describe("apps/web/Caddyfile", () => {
+  const caddyfile = read("apps/web/Caddyfile")
+
+  it("serves the SPA with a fallback to index.html and a /health handler", () => {
+    expect(caddyfile).toContain("auto_https off")
+    expect(caddyfile).toContain("try_files {path} /index.html")
+    expect(caddyfile).toMatch(/handle \/health[\s\S]*respond "ok" 200/)
+    expect(caddyfile).toContain("file_server")
+  })
+
+  it("caches hashed assets forever and never caches index.html", () => {
+    expect(caddyfile).toMatch(
+      /handle \/assets\/\*[\s\S]*immutable[\s\S]*match status 2xx/
+    )
+    expect(caddyfile).toMatch(/handle \{\s*header Cache-Control "no-cache"/)
+  })
+})
+
+describe("apps/web/Dockerfile", () => {
+  const dockerfile = read("apps/web/Dockerfile")
+  const lines = dockerfile.split("\n")
+
+  it("bakes VITE_API_URL into the build before the build command runs", () => {
+    const arg = lines.findIndex((line) => line.trim() === "ARG VITE_API_URL")
+    const build = lines.findIndex((line) =>
+      line.includes("pnpm turbo build --filter=web")
+    )
+
+    expect(arg).toBeGreaterThan(-1)
+    expect(build).toBeGreaterThan(arg)
+    expect(dockerfile).toContain("ENV VITE_API_URL=$VITE_API_URL")
+  })
+
+  it("builds with the frozen lockfile and ships dist next to the Caddyfile", () => {
+    expect(dockerfile).toContain(
+      "pnpm install --frozen-lockfile && pnpm turbo build --filter=web"
+    )
+    expect(lines.filter((line) => line.startsWith("FROM "))).toHaveLength(2)
+    expect(dockerfile).toContain("/app/apps/web/dist /srv")
+    expect(dockerfile).toContain("apps/web/Caddyfile /etc/caddy/Caddyfile")
+  })
+})
+
+describe(".railway/railway.ts", () => {
+  const railway = read(".railway/railway.ts")
+
+  it("rebuilds web only when something web reads changes", () => {
+    for (const watched of [
+      "apps/web/**",
+      "packages/ui/**",
+      "packages/domain/**",
+      "pnpm-lock.yaml",
+    ]) {
+      expect(railway).toContain(watched)
+    }
+    expect(railway).toContain('dockerfilePath: "apps/web/Dockerfile"')
+  })
+
+  it.each(["staging", "production"])(
+    "scopes %s ownership to application services and retains API source and variables",
+    (environment) => {
+      const resources = railwayConfig(
+        createRailwayContext({ environment })
+      ).resources?.flat()
+      const api = resources
+        ?.filter((resource) => resource.type === "service")
+        .find((resource) => resource.name === "api")
+
+      expect(partial).toBe("opencv-apps")
+      expect(resources?.map((resource) => resource.address)).toEqual([
+        "service.api",
+        "service.web",
+      ])
+      expect(api).toMatchObject({
+        source: { type: "github", repo: "quanvu309/opencv", branch: "main" },
+        deploy: { preDeployCommand: ["pnpm --filter api run migrate"] },
+      })
+      expect(api?.variables).toEqual({
+        AUTH_URL: { type: "preserve" },
+        DATABASE_URL: { type: "preserve" },
+        OPENROUTER_API_KEY: { type: "preserve" },
+        SESSION_SECRET: { type: "preserve" },
+        WEB_ORIGINS: { type: "preserve" },
+      })
+    }
+  )
+
+  it.each([
+    ["staging", "https://api-staging.opencv.me"],
+    ["production", "https://api.opencv.me"],
+  ])("points %s's web build at its own api", (environment, apiUrl) => {
+    const web = railwayConfig(createRailwayContext({ environment }))
+      .resources?.flat()
+      .find((resource) => resource.address === "service.web")
+
+    expect(web).toMatchObject({
+      source: { type: "github", repo: "quanvu309/opencv", branch: "main" },
+      build: { builder: "DOCKERFILE", dockerfilePath: "apps/web/Dockerfile" },
+      deploy: { healthcheckPath: "/health" },
+      variables: { VITE_API_URL: { type: "literal", value: apiUrl } },
+    })
   })
 })
 
