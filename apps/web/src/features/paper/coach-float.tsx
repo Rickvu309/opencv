@@ -259,7 +259,7 @@ export const CoachFloat = memo(function CoachFloat({
               data-coach-selection-preview
               role="status"
               aria-label="Selected text"
-              className="flex items-start gap-1 rounded-lg bg-muted/70 px-2 py-1.5 text-2xs text-muted-foreground"
+              className="flex items-start gap-1 rounded-lg bg-muted/70 px-2 py-1.5 text-xs text-muted-foreground"
             >
               <p className="min-w-0 flex-1 text-pretty">
                 “{previewCoachSelectionText(selection.text)}”
@@ -271,7 +271,7 @@ export const CoachFloat = memo(function CoachFloat({
                 aria-label="Add to context"
                 disabled={hasMatchingSelectionChip(contextChips, selection)}
                 onClick={addSelectionToContext}
-                className="h-auto shrink-0 rounded-full px-2 py-0.5 text-2xs"
+                className="h-auto shrink-0 rounded-full px-2 py-0.5 text-xs"
               >
                 {hasMatchingSelectionChip(contextChips, selection)
                   ? "Added"
@@ -397,7 +397,7 @@ export const CoachFloat = memo(function CoachFloat({
         aria-haspopup="dialog"
         aria-expanded={false}
         onClick={open}
-        className="coach-float-card fixed right-4 bottom-4 z-popover rounded-full px-3 shadow-md"
+        className="coach-float-card fixed right-4 bottom-4 z-50 rounded-full px-3 shadow-md"
       >
         Coach
       </Button>
@@ -411,7 +411,7 @@ export const CoachFloat = memo(function CoachFloat({
           data-coach-float-card
           data-coach-float-state={floatState}
           className={cn(
-            "coach-float-card z-popover flex flex-col border border-border bg-popover text-popover-foreground shadow-lg",
+            "coach-float-card z-50 flex flex-col border border-border bg-popover text-popover-foreground shadow-lg",
             docked
               ? "h-full w-full border-0 border-l shadow-none"
               : "fixed right-4 bottom-4 w-[min(24rem,calc(100vw-2rem))] rounded-xl"

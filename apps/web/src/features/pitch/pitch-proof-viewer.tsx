@@ -38,11 +38,10 @@ export function PitchProofViewer({
                   key={step.id}
                   className="rounded-xl border border-border bg-muted/20 p-3"
                 >
-                  <p className="text-2xs font-medium tracking-widest text-muted-foreground uppercase">
+                  <p className="text-xs font-medium tracking-widest text-muted-foreground uppercase">
                     {PROOF_STEP_LABEL[step.type]}
                   </p>
-                  {step.title &&
-                  step.title !== PROOF_STEP_LABEL[step.type] ? (
+                  {step.title && step.title !== PROOF_STEP_LABEL[step.type] ? (
                     <p className="mt-1 text-sm font-medium">{step.title}</p>
                   ) : null}
                   <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">

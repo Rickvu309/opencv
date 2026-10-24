@@ -13,9 +13,9 @@ function read(rel: string) {
 describe("Coach motion tokens and reduced-motion", () => {
   it("uses Spec 6 duration tokens and disables enter motion under reduced-motion", () => {
     const css = read("styles/coach.css")
-    expect(css).toContain("--duration-base")
-    expect(css).toContain("--duration-slow")
-    expect(css).toContain("--ease-standard")
+    expect(css).toContain("--duration-micro")
+    expect(css).toContain("--duration-panel")
+    expect(css).toContain("--ease-micro")
     expect(css).toContain(".coach-working-bar")
     expect(css).toContain(".coach-text-enter")
     expect(css).toContain(".coach-receipt-enter")
@@ -37,7 +37,7 @@ describe("Coach motion tokens and reduced-motion", () => {
   it("keeps the S7.4 Paper highlight static under reduced-motion", () => {
     const css = read("styles/paper.css")
     expect(css).toContain("paper-coach-changed")
-    expect(css).toContain("--duration-slow")
+    expect(css).toContain("--duration-panel")
     expect(css).toMatch(
       /prefers-reduced-motion: reduce[\s\S]*\.paper-coach-changed[\s\S]*animation:\s*none/
     )

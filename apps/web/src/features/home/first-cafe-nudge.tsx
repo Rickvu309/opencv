@@ -25,7 +25,7 @@ export function FirstCafeNudge({
         <div className="min-w-0">
           <h2
             id="first-cafe-nudge-heading"
-            className="font-heading text-sm font-medium tracking-tight"
+            className="text-sm font-medium tracking-tight"
           >
             {quietDone ? "You're set" : "One next thing"}
           </h2>

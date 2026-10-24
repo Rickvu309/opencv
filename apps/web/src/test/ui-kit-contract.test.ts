@@ -53,40 +53,78 @@ describe("UI package kit surface", () => {
     expect(css).toMatch(/@source\s+["'][^"']+\*\.\{ts,tsx\}["']/)
   })
 
-  it("ships ADR-0010 tokens for type, status, chart, pitch, motion, shadow, and z-index", () => {
+  it("ships the stock shadcn variables and the four motion tokens", () => {
     const css = read("packages/ui/src/styles/globals.css")
-    const tokens = [
-      "--font-heading:",
-      "--text-micro:",
-      "--text-page-title:",
-      "--text-section-title:",
-      "--text-body:",
-      "--text-label:",
-      "--success:",
-      "--success-foreground:",
-      "--warning:",
-      "--warning-foreground:",
-      "--info:",
-      "--info-foreground:",
-      "--pitch-tone-warm:",
-      "--pitch-tone-cool:",
-      "--pitch-tone-neutral:",
-      "--pitch-tone-emerald:",
-      "--pitch-tone-dark:",
-      "--duration-fast:",
-      "--duration-base:",
-      "--duration-slow:",
-      "--ease-standard:",
-      "--shadow-sm:",
-      "--z-index-dropdown:",
-      "--z-index-modal:",
-      "prefers-reduced-motion",
+    const stock = [
+      "background",
+      "foreground",
+      "card",
+      "card-foreground",
+      "popover",
+      "popover-foreground",
+      "primary",
+      "primary-foreground",
+      "secondary",
+      "secondary-foreground",
+      "muted",
+      "muted-foreground",
+      "accent",
+      "accent-foreground",
+      "destructive",
+      "border",
+      "input",
+      "ring",
+      "chart-1",
+      "chart-2",
+      "chart-3",
+      "chart-4",
+      "chart-5",
+      "radius",
+      "sidebar",
+      "sidebar-foreground",
+      "sidebar-primary",
+      "sidebar-primary-foreground",
+      "sidebar-accent",
+      "sidebar-accent-foreground",
+      "sidebar-border",
+      "sidebar-ring",
     ]
-    for (const token of tokens) {
+    const root = /^:root \{\n([\s\S]*?)^\}/m.exec(css)?.[1] ?? ""
+    const names = [...root.matchAll(/^\s*--([\w-]+):/gm)].map((m) => m[1])
+    expect(names.sort()).toEqual([...stock].sort())
+
+    for (const token of [
+      "--duration-micro: 150ms",
+      "--ease-micro: cubic-bezier(0.22, 1, 0.36, 1)",
+      "--duration-panel: 280ms",
+      "--ease-panel: cubic-bezier(0.32, 0.72, 0, 1)",
+      "prefers-reduced-motion",
+    ]) {
       expect(css, token).toContain(token)
     }
-    expect(css).toMatch(/ui-serif,\s*Georgia/)
-    expect(css).not.toMatch(/--sidebar-primary:\s*oklch\(0\.488 0\.243 264/)
+    for (const retired of [
+      /--text-/,
+      /--info\b/,
+      /--duration-(?:base|fast|slow)/,
+      /--ease-(?:standard|emphasized)/,
+      /--z-index-/,
+      /--shadow-/,
+      /ui-serif/,
+    ]) {
+      expect(css, String(retired)).not.toMatch(retired)
+    }
+    expect(css).toMatch(/@import\s+["']\.\/legacy-overlay\.css["']/)
+  })
+
+  it("removes the hand-rolled kit pieces the stock kit replaced", () => {
+    const dir = path.join(repoRoot, "packages/ui/src/components")
+    const files = readdirSync(dir)
+    expect(files).toContain("empty.tsx")
+    expect(files).not.toContain("empty-state.tsx")
+    expect(files).not.toContain("text-reveal.tsx")
+    expect(read("packages/ui/src/lib/utils.ts")).toMatch(
+      /export \{ cn \} from "cn"/
+    )
   })
 
   it("keeps Paper / CV / print CSS out of the kit stylesheet", () => {

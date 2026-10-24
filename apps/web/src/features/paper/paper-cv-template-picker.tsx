@@ -55,7 +55,7 @@ export function CvTemplateDropdown({ value, onChange }: Props) {
         data-cv-template-panel
       >
         <div role="listbox" aria-label="CV templates">
-          <p className="px-2 py-1 text-2xs font-medium tracking-wide text-muted-foreground uppercase">
+          <p className="px-2 py-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
             Template
           </p>
           <div className="grid grid-cols-2 gap-1.5">
@@ -85,10 +85,10 @@ export function CvTemplateDropdown({ value, onChange }: Props) {
                     </span>
                   ) : null}
                   <TemplateThumb id={template.id} />
-                  <p className="mt-1.5 text-micro leading-tight font-semibold">
+                  <p className="mt-1.5 text-xs leading-tight font-semibold">
                     {template.name}
                   </p>
-                  <p className="mt-0.5 text-2xs leading-snug text-muted-foreground">
+                  <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
                     {template.useCase}
                   </p>
                 </Button>

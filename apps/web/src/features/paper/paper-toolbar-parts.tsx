@@ -158,7 +158,7 @@ function MenuItemRow({
       <span className="min-w-0">
         <span className="block text-xs font-medium">{item.label}</span>
         {item.hint ? (
-          <span className="block text-micro leading-snug text-muted-foreground">
+          <span className="block text-xs leading-snug text-muted-foreground">
             {item.hint}
           </span>
         ) : null}
@@ -219,7 +219,10 @@ export function ToolbarMenu({
         )}
         <ChevronDown className="size-3 opacity-60" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align={align} className={cn("min-w-44", panelClassName)}>
+      <DropdownMenuContent
+        align={align}
+        className={cn("min-w-44", panelClassName)}
+      >
         {items.map((item) => (
           <MenuItemRow key={item.id} item={item} onSelect={onSelect} />
         ))}
@@ -262,7 +265,7 @@ export function ToolbarOverflowMenu({
           <div key={section.label ?? i}>
             {i > 0 ? <DropdownMenuSeparator /> : null}
             {section.label ? (
-              <DropdownMenuLabel className="text-2xs font-medium tracking-wide uppercase">
+              <DropdownMenuLabel className="text-xs font-medium tracking-wide uppercase">
                 {section.label}
               </DropdownMenuLabel>
             ) : null}
@@ -288,7 +291,10 @@ export function ToolbarToggle({
   ariaLabel: string
 }) {
   return (
-    <ButtonGroup aria-label={ariaLabel} className="rounded-lg border border-border p-0.5">
+    <ButtonGroup
+      aria-label={ariaLabel}
+      className="rounded-lg border border-border p-0.5"
+    >
       {options.map((opt) => (
         <Button
           key={opt.id}

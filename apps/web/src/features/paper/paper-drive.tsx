@@ -6,7 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
-import { Empty, EmptyDescription } from "@workspace/ui/components/empty-state"
+import { Empty, EmptyDescription } from "@workspace/ui/components/empty"
 import { Input } from "@workspace/ui/components/input"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import type { PaperContentKind } from "@workspace/domain"

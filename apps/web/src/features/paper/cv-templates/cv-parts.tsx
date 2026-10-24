@@ -186,7 +186,7 @@ export function CanvasAffordance({
       onClick={onClick}
       className={cn(
         PAPER_CANVAS_AFFORDANCE_CLASS,
-        "h-6 gap-1 px-1.5 text-2xs font-medium",
+        "h-6 gap-1 px-1.5 text-xs font-medium",
         dark
           ? "text-white/65 hover:bg-white/10 hover:text-white"
           : "text-muted-foreground"
@@ -216,7 +216,7 @@ export function SectionNextStep({
       onClick={onClick}
       className={cn(
         PAPER_CANVAS_NEXT_STEP_CLASS,
-        "h-6 gap-1 px-1.5 text-2xs font-medium",
+        "h-6 gap-1 px-1.5 text-xs font-medium",
         dark
           ? "text-white/65 hover:bg-white/10 hover:text-white"
           : "text-muted-foreground"
@@ -308,7 +308,7 @@ export function CvPhoto({
             <ImagePlus className="size-3.5 opacity-60" />
           </span>
         )}
-        <span className="absolute inset-x-0 bottom-0 bg-foreground/70 px-1 py-0.5 text-3xs font-medium text-background opacity-0 transition-opacity group-hover:opacity-100">
+        <span className="absolute inset-x-0 bottom-0 bg-foreground/70 px-1 py-0.5 text-xs font-medium text-background opacity-0 transition-opacity group-hover:opacity-100">
           {url ? "Change" : "Add photo"}
         </span>
       </Button>

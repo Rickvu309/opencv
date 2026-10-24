@@ -1,5 +1,7 @@
 # Design system: absorb-when-possible, shadcn-style, Storybook catalog
 
+**Status.** Superseded by ADR-0014 (`docs/adr/0014-shadcn-design-system.md`).
+
 OpenPath grows UI by curation, not by inventing a full custom kit up front. This ADR records how the design system works; supersede it when the approach changes on purpose.
 
 **Model:** Prefer owned UI in `packages/ui`. When something useful appears (link, registry item, block), **absorb it if it can** become owned code (e.g. shadcn CLI/`add`, port). If it cannot, compose from what we already own and invent only the gap. After absorb, **owned code and Storybook** are the source of truth—not the original link.

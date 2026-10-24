@@ -45,7 +45,7 @@ export function SoftScopeChip({
       aria-label="In context"
       className="flex min-w-0"
     >
-      <div className="inline-flex max-w-full items-center gap-0.5 rounded-full bg-muted/40 py-0.5 pr-0.5 pl-2 text-2xs text-muted-foreground">
+      <div className="inline-flex max-w-full items-center gap-0.5 rounded-full bg-muted/40 py-0.5 pr-0.5 pl-2 text-xs text-muted-foreground">
         <span className="min-w-0 truncate">{docName.trim() || "This CV"}</span>
         <Button
           type="button"
@@ -80,7 +80,7 @@ export function DurableContextChip({
       aria-label={isDoc ? "Attached from Paper" : "Selection in context"}
       className="flex min-w-0"
     >
-      <div className="inline-flex max-w-full items-center gap-0.5 rounded-full bg-muted/40 py-0.5 pr-0.5 pl-2 text-2xs text-muted-foreground">
+      <div className="inline-flex max-w-full items-center gap-0.5 rounded-full bg-muted/40 py-0.5 pr-0.5 pl-2 text-xs text-muted-foreground">
         <span className="min-w-0 truncate">
           {isDoc ? chip.label : `“${chip.label}”`}
         </span>
@@ -132,7 +132,7 @@ export function QuickPromptChips({
             size="xs"
             onClick={() => onSubmit(chip)}
             disabled={disabled}
-            className="h-auto rounded-full px-2 py-0.5 text-2xs text-muted-foreground"
+            className="h-auto rounded-full px-2 py-0.5 text-xs text-muted-foreground"
           >
             {chip}
           </Button>

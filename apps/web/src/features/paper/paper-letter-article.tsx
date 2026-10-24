@@ -31,7 +31,7 @@ export function PaperLetterArticle({ doc, editorRef, onInput }: Props) {
         </div>
         <div className="flex items-center gap-2">
           {doc.status === "draft" ? (
-            <span className="rounded-md bg-muted px-2 py-0.5 text-2xs font-semibold tracking-wide text-muted-foreground uppercase">
+            <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
               Draft
             </span>
           ) : null}

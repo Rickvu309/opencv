@@ -226,7 +226,7 @@ export function ApplyCalendar({
           {WEEKDAYS.map((d) => (
             <div
               key={d}
-              className="border-r border-border px-2 py-2 text-center text-micro font-medium tracking-wide text-muted-foreground uppercase last:border-r-0"
+              className="border-r border-border px-2 py-2 text-center text-xs font-medium tracking-wide text-muted-foreground uppercase last:border-r-0"
             >
               {d}
             </div>
@@ -304,7 +304,7 @@ export function ApplyCalendar({
                     />
                   ))}
                   {overflow > 0 ? (
-                    <span className="px-1 text-2xs text-muted-foreground">
+                    <span className="px-1 text-xs text-muted-foreground">
                       +{overflow} more
                     </span>
                   ) : null}
@@ -356,7 +356,7 @@ function CalendarJobChip({
         onSelect()
       }}
       className={cn(
-        "h-auto w-full cursor-grab justify-start rounded-md px-1.5 py-1 text-left text-micro leading-tight hover:bg-transparent active:cursor-grabbing",
+        "h-auto w-full cursor-grab justify-start rounded-md px-1.5 py-1 text-left text-xs leading-tight hover:bg-transparent active:cursor-grabbing",
         kindChipClass(card.trackKind),
         active && "ring-1 ring-ring/40"
       )}
@@ -364,7 +364,7 @@ function CalendarJobChip({
       <span className="min-w-0">
         <span className="block truncate font-medium">{card.title}</span>
         {expanded ? (
-          <span className="mt-0.5 block truncate text-2xs opacity-80">
+          <span className="mt-0.5 block truncate text-xs opacity-80">
             {card.company} · {trackKindLabel(card.trackKind)}
           </span>
         ) : null}
