@@ -84,7 +84,7 @@ describe("Apply craft pass", () => {
 
     await waitFor(() => {
       expect(
-        screen.queryByRole("region", { name: "Notifications" })
+        screen.queryByRole("button", { name: "Clear demo" })
       ).not.toBeInTheDocument()
     })
     expect(screen.queryByText("Associate PM intern")).not.toBeInTheDocument()
