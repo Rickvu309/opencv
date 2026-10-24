@@ -6,9 +6,8 @@
 | -------------------------------------------- | ---------- | -------------------------------------------------- |
 | Web production (Railway `production`, `web`) | `main`     | Every merge to `main` that touches its watch paths |
 | API production (Railway `production`, `api`) | `main`     | Every merge to `main` that touches its watch paths |
-| Web and API staging (Railway `staging`)      | `main`     | Same watch paths; not tied to PRs                  |
 
-There is no staging branch. Hosting is described in `docs/deploy.md`.
+There is one environment: production. There is no staging branch and no staging environment: a merge to `main` deploys straight to production. Hosting is described in `docs/deploy.md`.
 
 ## Verifying a change
 
@@ -20,10 +19,10 @@ There are no per-branch preview deploys. Verify locally with the verify-opencv s
 
 ## Railway setup
 
-The web app and the API run on the Railway project `openpath` (the name predates the rename to opencv). It has two environments and services `api`, `web` and `Postgres`; see `docs/deploy.md`.
+The web app and the API run on the Railway project `openpath` (the name predates the rename to opencv). It has one environment, `production`, and services `api`, `web` and `Postgres`; see `docs/deploy.md`.
 
 - `.railway/railway.ts` builds the API with `pnpm --filter api... run build`, runs `pnpm --filter api run migrate` as the pre-deploy command, starts `pnpm --filter api run start`, and health-checks `GET /health`. The `web` service builds `apps/web/Dockerfile` and serves it with Caddy.
-- `production` and `staging` hold separate secrets and separate databases.
+- Secrets live in Railway variables, never in git.
 - Rolling back production: in Railway, open `api` in `production`, pick the previous successful deployment, and choose Rollback. Roll back `web` the same way.
 
 ## Production deploys

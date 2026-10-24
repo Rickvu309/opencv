@@ -20,12 +20,14 @@ Full details: `CONTRIBUTING.md` and `docs/git-workflow/`.
 There is no CI and no GitHub Actions. Local hooks (`.githooks/`) and the review checklist are the only gates, so never bypass them.
 
 #### 1. Issue first
+
 - Never start work without a GitHub issue.
 - If no issue exists, create one with `gh issue create` (or the issue forms), or let `scripts/new-task.sh <type> "Issue title"` create it.
 - If the issue is assigned to someone else, or a branch for it exists, stop and pick another issue.
 - If the work will take more than a few days, split it into sub-issues and do one at a time.
 
 #### 2. Always work in your own worktree
+
 - Never edit files in the main checkout. It stays on `main` and is only used to fetch, create worktrees, and review.
 - Start every task with:
   ```bash
@@ -38,18 +40,21 @@ There is no CI and no GitHub Actions. Local hooks (`.githooks/`) and the review 
 - One agent, one issue, one branch, one worktree. Never touch another agent's worktree.
 
 #### 3. Branch naming
+
 - Format: `type/<issue#>-short-description`, e.g. `feat/42-login-page`.
 - Types: `feat`, `fix`, `hotfix`, `refactor`, `chore`, `docs`.
 - Lowercase kebab-case, 3-5 words, branched from the latest `origin/main`. The pre-push hook rejects other names.
 
 #### 4. Checks, commits, and PRs
+
 - Pushes run a quick check scoped to what changed: `scripts/check.sh --changed` (the pre-push hook does it). The full lint, typecheck and test run once per PR, in `scripts/review-pr.sh`.
 - Open the PR with `scripts/open-pr.sh --draft`. It validates the branch, runs the quick check, pushes, and creates the PR with the title `type: description (#<issue>)` and `Closes #<issue>` in the body.
-- Before marking ready (`gh pr ready`), the quick check passes and the verify-opencv evidence (`.claude/skills/verify-opencv`) is attached to the PR. Preview deploys arrive with the Railway move.
+- Before marking ready (`gh pr ready`), the quick check passes and the verify-opencv evidence (`.claude/skills/verify-opencv`) is attached to the PR. There are no preview deploys yet; verify locally with verify-opencv.
 - If `main` moved ahead: `git fetch origin && git rebase origin/main && git push --force-with-lease`.
   Force-push only ever goes to your own task branch.
 
 #### 5. Never
+
 - Never push to `main`, commit on `main`, or merge into `main` locally.
 - Never use `git push --no-verify` or `git commit --no-verify`.
 - Never use `SKIP_CHECKS=1` unless a human declared a production emergency, and then say so in the PR.
@@ -62,12 +67,14 @@ There is no CI and no GitHub Actions. Local hooks (`.githooks/`) and the review 
 - Never add GitHub Actions workflows (`.github/workflows/`). The account has no Actions budget.
 
 #### 6. Merge and clean up
+
 - Merge only with squash: `gh pr merge --squash`.
 - An agent running under the owner's account (`@quanvu309`) merges its own PR with `gh pr merge <pr#> --squash --admin` only after `scripts/review-pr.sh` prints OK and the gates lane report at the exact head is green; never before. The ruleset's one-approval rule cannot be met by the only human approving their own agent's PR, so `--admin` is the bypass; it skips the ruleset, so it also needs an independent review with no open finding and no requested changes or unresolved threads. Never use it for a contributor's PR or a result of `HUMAN REQUIRED`.
 - After merge, the issue closes and the remote branch is deleted automatically.
 - From the main checkout: `scripts/cleanup-worktree.sh <issue#>`.
 
 #### 7. Production is broken
+
 - Open an issue, run `scripts/new-task.sh hotfix <issue#> -d "..."`, fix, run `scripts/open-pr.sh`, and ask for immediate review.
 - If the fix is risky, tell a human to roll back to the previous production deploy on the hosting platform first.
 
