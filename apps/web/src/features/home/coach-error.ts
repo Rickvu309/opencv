@@ -2,6 +2,8 @@ import { ERROR_CODES } from "@workspace/domain"
 
 import { ApiError } from "@/lib/api-error.ts"
 
+const SIGN_IN_AGAIN =
+  "Something went wrong: the Coach couldn't find your account. Sign in again, then retry."
 const GENERIC = "Something went wrong sending that. Try again."
 const UNAVAILABLE = "The Coach is unavailable right now. Try again in a moment."
 
@@ -15,6 +17,8 @@ function apiErrorSentence(error: ApiError): string {
       return "You've reached today's limit for this Coach mode. Try another mode, or come back tomorrow."
     case ERROR_CODES.UNAUTHORIZED:
       return "Your session ended, so the Coach couldn't answer. Sign in again, then retry."
+    case "USER_NOT_FOUND":
+      return SIGN_IN_AGAIN
     case ERROR_CODES.FORBIDDEN:
     case ERROR_CODES.COACH_NOT_ALLOWED:
       return "The Coach can't do that here. Ask for something else, or make the change yourself."

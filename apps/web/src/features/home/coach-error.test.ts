@@ -53,10 +53,19 @@ describe("coachSendErrorMessage", () => {
     ).toMatch(/sign in again/i)
   })
 
+  it("points a missing account at signing in again, not at the Thread", () => {
+    const sentence = coachSendErrorMessage(
+      new ApiError(404, "USER_NOT_FOUND", "User not found.")
+    )
+    expect(sentence).toMatch(/account/)
+    expect(sentence).toMatch(/sign in again/i)
+    expect(sentence).not.toMatch(/Thread/)
+  })
+
   it("tells the person to reload or start a new Thread when a record is missing", () => {
     expect(
       coachSendErrorMessage(
-        new ApiError(404, "USER_NOT_FOUND", "User not found.")
+        new ApiError(404, ERROR_CODES.NOT_FOUND, "Thread not found")
       )
     ).toMatch(/new Thread/)
   })
