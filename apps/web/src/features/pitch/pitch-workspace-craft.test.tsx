@@ -120,6 +120,55 @@ describe("Pitch craft pass", () => {
     expect(screen.getByRole("heading", { name: "Moments" })).toBeInTheDocument()
   })
 
+  it("moves focus into the story viewer on open and back to the highlight on Escape", async () => {
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: true,
+      media: query,
+      onchange: null,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      dispatchEvent: () => false,
+    }))
+    setMockPitchDoc({
+      id: "55555555-5555-7555-8555-555555555572",
+      kind: "pitch",
+      content: {
+        ...starterPitchDocument(),
+        storyHighlights: [
+          {
+            id: "sh-checkout",
+            label: "Checkout",
+            coverTone: "neutral",
+            slides: [
+              { id: "s1", caption: "Hallway test setup", tone: "neutral" },
+              { id: "s2", caption: "Written up as a Proof", tone: "neutral" },
+            ],
+          },
+        ],
+      },
+      contentVersion: 1,
+      createdAt: "2026-10-24T00:00:00.000Z",
+      updatedAt: "2026-10-24T00:00:00.000Z",
+    })
+    await loadedPitch()
+
+    const trigger = screen.getByRole("button", { name: "Checkout highlight" })
+    trigger.focus()
+    fireEvent.click(trigger)
+
+    const viewer = await screen.findByRole("dialog", {
+      name: "Work story viewer",
+    })
+    await until(() => viewer.contains(document.activeElement))
+    expect(document.activeElement).not.toBe(trigger)
+
+    fireEvent.keyDown(document.activeElement as HTMLElement, { key: "Escape" })
+    await until(() => document.querySelector('[role="dialog"]') === null)
+    await until(() => document.activeElement === trigger)
+  }, 90_000)
+
   it("offers Add a photo as an empty slot only while editing", async () => {
     const sample = legacyStarterPitchDocument()
     setMockPitchDoc({
@@ -157,4 +206,10 @@ async function renderLoaded() {
   const view = renderPitch()
   await screen.findByRole("heading", { level: 2, name: SAMPLE_AUTHOR_NAME })
   return view
+}
+
+async function until(condition: () => boolean) {
+  await waitFor(() => {
+    if (!condition()) throw new Error("condition not met yet")
+  })
 }
