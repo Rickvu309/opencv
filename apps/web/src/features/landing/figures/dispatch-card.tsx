@@ -5,9 +5,7 @@ import { Chunks } from "./chunks.tsx"
 import { back, carriage, near } from "./dispatch/geometry.ts"
 import { FigureCard } from "./frame.tsx"
 import { VIEW } from "./layout.ts"
-import { DISPATCH_SPEC, DISPATCH_STAGES, dispatchPose } from "./model.ts"
-
-const STOPS = DISPATCH_STAGES.map((label, value) => ({ value, label }))
+import { DISPATCH_SPEC, dispatchPose } from "./model.ts"
 
 export function DispatchCard() {
   const carriageRef = useRef<SVGGElement>(null)
@@ -24,11 +22,8 @@ export function DispatchCard() {
         )
       }}
       titleId="landing-dispatch-title"
-      fig="03"
-      instrument="Dispatch rack"
       heading="Ready for what’s next"
       description="Inbox, Prep, Sent, Live, Closed. You or the Coach move the card, and it stays on the board. Sent means you marked it sent."
-      stops={STOPS}
     >
       <svg
         viewBox={`0 0 ${VIEW.width} ${VIEW.height}`}

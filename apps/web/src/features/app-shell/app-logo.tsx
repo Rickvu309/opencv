@@ -5,25 +5,24 @@ type MarkProps = {
   className?: string
 }
 
-/** Icon only: open C arc with center dot */
 function OpenCvMark({ className }: MarkProps) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 32 32"
+      viewBox="0 0 24 24"
       fill="none"
       className={cn("shrink-0 text-foreground", className)}
       aria-hidden="true"
     >
-      <rect width="32" height="32" rx="9" fill="currentColor" opacity="0.1" />
-      <path
-        d="M16 7.5a8.5 8.5 0 1 0 6.8 13.6"
+      <rect
+        x="3.2"
+        y="3.2"
+        width="17.6"
+        height="17.6"
         stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        fill="none"
+        strokeWidth="2.4"
       />
-      <circle cx="16" cy="16" r="2.2" fill="currentColor" />
+      <path d="M2 8A14 14 0 0 1 16 22H2Z" fill="currentColor" />
     </svg>
   )
 }
@@ -35,9 +34,9 @@ type Props = {
 }
 
 const SIZES = {
-  sm: { box: "size-7", text: "text-sm" },
-  md: { box: "size-8", text: "text-base" },
-  lg: { box: "size-12", text: "text-xl" },
+  sm: { box: "size-5", text: "text-sm" },
+  md: { box: "size-6", text: "text-base" },
+  lg: { box: "size-8", text: "text-xl" },
 } as const
 
 export function OpenCvLogo({
@@ -47,11 +46,14 @@ export function OpenCvLogo({
 }: Props) {
   const s = SIZES[size]
   return (
-    <span className={cn("inline-flex items-center gap-2.5", className)}>
+    <span className={cn("inline-flex items-center gap-1", className)}>
       <OpenCvMark className={s.box} />
       {withWordmark ? (
         <span
-          className={cn("font-semibold tracking-tight text-foreground", s.text)}
+          className={cn(
+            "font-semibold tracking-[-0.035em] text-foreground lowercase",
+            s.text
+          )}
         >
           {brandName}
         </span>

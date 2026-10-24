@@ -15,13 +15,6 @@ import {
   platen,
 } from "./proof/geometry.ts"
 
-const STOPS = [
-  { value: 0, label: "Open" },
-  { value: 1, label: "Context" },
-  { value: 2, label: "Action" },
-  { value: 3, label: "Outcome" },
-] as const
-
 export function ProofCard() {
   const platenRef = useRef<SVGGElement>(null)
   const contextRef = useRef<SVGGElement>(null)
@@ -52,11 +45,8 @@ export function ProofCard() {
         )
       }}
       titleId="landing-proof-title"
-      fig="01"
-      instrument="Proof press"
       heading="Proof, not claims"
       description="Context, what you did, and the outcome. The stamp falls only when those three are seated. The CV can cite the Proof, and Pitch can show it."
-      stops={STOPS}
     >
       <svg
         viewBox={`0 0 ${VIEW.width} ${VIEW.height}`}
