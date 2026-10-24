@@ -104,7 +104,7 @@ describe("UI package kit surface", () => {
     }
     for (const retired of [
       /--text-/,
-      /--info\b/,
+      /--(?:info|success|warning)\b/,
       /--duration-(?:base|fast|slow)/,
       /--ease-(?:standard|emphasized)/,
       /--z-index-/,
@@ -113,7 +113,6 @@ describe("UI package kit surface", () => {
     ]) {
       expect(css, String(retired)).not.toMatch(retired)
     }
-    expect(css).toMatch(/@import\s+["']\.\/legacy-overlay\.css["']/)
   })
 
   it("removes the hand-rolled kit pieces the stock kit replaced", () => {
@@ -122,6 +121,10 @@ describe("UI package kit surface", () => {
     expect(files).toContain("empty.tsx")
     expect(files).not.toContain("empty-state.tsx")
     expect(files).not.toContain("text-reveal.tsx")
+    expect(files).not.toContain("section.tsx")
+    expect(readdirSync(path.join(repoRoot, "packages/ui/src/styles"))).toEqual([
+      "globals.css",
+    ])
     expect(read("packages/ui/src/lib/utils.ts")).toMatch(
       /export \{ cn \} from "cn"/
     )
@@ -157,9 +160,10 @@ describe("UI package kit surface", () => {
 
   it("covers every component file in the kit directory", () => {
     const componentsDir = path.join(repoRoot, "packages/ui/src/components")
-    const files = readdirSync(componentsDir).filter((name) =>
-      name.endsWith(".tsx")
-    )
+    const files = readdirSync(componentsDir, {
+      recursive: true,
+      encoding: "utf8",
+    }).filter((name) => name.endsWith(".tsx"))
     expect(files.length).toBeGreaterThan(0)
 
     for (const file of files) {

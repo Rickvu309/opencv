@@ -38,7 +38,14 @@ const PALETTE_UTILITIES =
   "bg|text|border|ring|from|to|via|fill|stroke|outline|decoration|accent|shadow|caret|divide|placeholder|ring-offset"
 
 const HEX_RE =
-  /(?:-\[#[0-9A-Fa-f]{3,8}\]|["'`]#[0-9A-Fa-f]{3,8}["'`]|#[0-9A-Fa-f]{6,8}\b)/g
+  /(?:-\[#[0-9A-Fa-f]{3,8}\]|["'`]#[0-9A-Fa-f]{3,8}["'`]|#[0-9A-Fa-f]{6,8}\b|#(?=[0-9a-f]*[a-f])[0-9a-f]{3}\b)/gi
+
+/**
+ * Functional colours that name a hue. Pure black with an alpha (shadows) and
+ * relative colours built from a variable are allowed.
+ */
+const FUNCTIONAL_COLOR_RE =
+  /\b(?:oklch|oklab|lab|lch|hsla?|hwb|rgba?)\((?!from[\s_])(?!\s*0[\s,_]+0[\s,_]+0\b)[^)]*\)/g
 
 const PALETTE_RE = new RegExp(
   `(?<![\\w-])(?:${PALETTE_UTILITIES})-(?:${PALETTE_HUES.join("|")})-(?:\\d{2,3})(?:/\\d{1,3})?\\b`,
@@ -122,13 +129,14 @@ const CV_VARIABLE_RE = /^cv-/
 
 /**
  * Variables an affectUI kit file declares inside its own injected stylesheet
- * and maps to stock variables there (segmented-control, filter-menu,
- * notification-stack, smart-recommendation, number-ticker).
+ * and maps to stock variables there: a `ui-<widget>-` prefix, plus the `--u`
+ * and `--i` per-element index values. Only the kit files under
+ * packages/ui/src/components and the one affectUI file kept in the app may
+ * read them.
  */
-const AFFECT_VARIABLE_RE = /^ui-(?:fm|ns|sr|nt)-/
+const AFFECT_VARIABLE_RE = /^(?:ui-[a-z]+-|[ui]$)/
 
-/** Variables owned by legacy-overlay.css; the legacy allowlist governs their use. */
-const LEGACY_VARIABLE_RE = /^success/
+const AFFECT_APP_FILES = new Set(["components/layer-stack.tsx"])
 
 const RETIRED_CLASS_RE = new RegExp(
   [
@@ -159,14 +167,6 @@ const VOCABULARY_ALLOWLIST = [
 ] as const
 
 /**
- * Files that still use a token from `legacy-overlay.css`. The list only
- * shrinks: an entry whose file no longer uses a legacy token fails, and a
- * file that uses one without an entry fails. Each path needs a `//` line
- * above it naming the PR that removes it.
- */
-const LEGACY_OVERLAY_ALLOWLIST = [] as const
-
-/**
  * Feature files allowed to host a raw interactive element. Each path MUST
  * have a `//` reason on the previous line. The element itself must sit
  * under a `Documented exception` comment in the feature file.
@@ -192,7 +192,10 @@ function appSourceFiles() {
 }
 
 function kitSourceFiles() {
-  return readdirSync(path.join(uiDir, "components"), { encoding: "utf8" })
+  return readdirSync(path.join(uiDir, "components"), {
+    recursive: true,
+    encoding: "utf8",
+  })
     .filter((file) => /\.tsx?$/.test(file))
     .map((file) => `components/${file}`)
 }
@@ -214,15 +217,6 @@ function cssBlock(css: string, selector: string) {
 
 function declared(block: string) {
   return [...block.matchAll(/^\s*--([\w-]+):/gm)].map((match) => match[1])
-}
-
-/** Custom properties a file declares or sets itself, such as the sizing variables of a showpiece component. */
-function localVariables(source: string) {
-  return new Set(
-    [...source.matchAll(/(?:^|[\s{;"'`(])--([\w-]+)(?=\s*[:{]|["'`])/gm)].map(
-      (match) => match[1]
-    )
-  )
 }
 
 function rel(file: string) {
@@ -250,17 +244,21 @@ describe("design-system vocabulary", () => {
     requireCommentedAllowlist(VOCABULARY_ALLOWLIST, "vocabulary")
   })
 
-  it("forbids raw hex and named Tailwind palette classes outside the allowlist", () => {
+  it("forbids raw hex, functional colours and named Tailwind palette classes outside the allowlist", () => {
     const allowed = new Set<string>(VOCABULARY_ALLOWLIST)
     const violations: string[] = []
+    const files = [
+      ...appSourceFiles().map((file) => [file, readApp(file)] as const),
+      ...kitSourceFiles().map((file) => [file, readKit(file)] as const),
+    ]
 
-    for (const file of appSourceFiles()) {
+    for (const [file, source] of files) {
       if (allowed.has(rel(file))) continue
-      const source = readApp(file)
-      const hex = hits(source, HEX_RE)
-      const palette = hits(source, PALETTE_RE)
-      if (hex.length === 0 && palette.length === 0) continue
-      violations.push(`${rel(file)}: ${[...hex, ...palette].join(", ")}`)
+      const found = [HEX_RE, PALETTE_RE, FUNCTIONAL_COLOR_RE].flatMap(
+        (pattern) => hits(source, pattern)
+      )
+      if (found.length === 0) continue
+      violations.push(`${rel(file)}: ${found.join(", ")}`)
     }
 
     expect(violations, violations.join("\n")).toEqual([])
@@ -282,20 +280,20 @@ describe("design-system vocabulary", () => {
   it("reads only stock variables, the motion tokens and documented runtime variables", () => {
     const violations: string[] = []
     const files = [
-      ...appSourceFiles().map((file) => [file, readApp(file)] as const),
-      ...kitSourceFiles().map((file) => [file, readKit(file)] as const),
+      ...appSourceFiles().map(
+        (file) =>
+          [file, readApp(file), AFFECT_APP_FILES.has(rel(file))] as const
+      ),
+      ...kitSourceFiles().map((file) => [file, readKit(file), true] as const),
     ]
-    for (const [file, source] of files) {
-      const local = localVariables(source)
+    for (const [file, source, isAffect] of files) {
       const unknown = [...source.matchAll(VARIABLE_READ_RE)]
         .map((match) => match[1].slice(2))
         .filter(
           (name) =>
             !READABLE_VARIABLES.has(name) &&
-            !local.has(name) &&
             !CV_VARIABLE_RE.test(name) &&
-            !AFFECT_VARIABLE_RE.test(name) &&
-            !LEGACY_VARIABLE_RE.test(name) &&
+            !(isAffect && AFFECT_VARIABLE_RE.test(name)) &&
             !name.startsWith("tw-")
         )
       if (unknown.length > 0) {
@@ -328,29 +326,18 @@ describe("design-system vocabulary", () => {
   })
 })
 
-describe("legacy overlay", () => {
-  it("justifies every legacy allowlist entry with a comment", () => {
-    requireCommentedAllowlist(LEGACY_OVERLAY_ALLOWLIST, "legacy overlay")
-  })
-
-  it("lists exactly the files that still use a legacy token", () => {
-    const using = appSourceFiles()
-      .filter((file) => hits(readApp(file), LEGACY_TOKEN_RE).length > 0)
-      .map(rel)
-      .sort()
-    expect(using).toEqual([...LEGACY_OVERLAY_ALLOWLIST].sort())
-  })
-
-  it("declares only the legacy variables", () => {
-    const css = readKit("styles/legacy-overlay.css")
-    const names = [
-      ...declared(cssBlock(css, ":root")),
-      ...declared(cssBlock(css, "\\.dark")),
+describe("retired status tokens", () => {
+  it("keeps success, warning and info classes and variables out of app and kit code", () => {
+    const violations: string[] = []
+    const files = [
+      ...appSourceFiles().map((file) => [file, readApp(file)] as const),
+      ...kitSourceFiles().map((file) => [file, readKit(file)] as const),
     ]
-    const unknown = names.filter(
-      (name) => !/^success(?:-foreground)?$/.test(name)
-    )
-    expect(unknown).toEqual([])
+    for (const [file, source] of files) {
+      const found = hits(source, LEGACY_TOKEN_RE)
+      if (found.length > 0) violations.push(`${rel(file)}: ${found.join(", ")}`)
+    }
+    expect(violations, violations.join("\n")).toEqual([])
   })
 })
 

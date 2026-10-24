@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router"
 
-import { SectionContainer } from "@workspace/ui/components/section"
 import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
 import { cn } from "@workspace/ui/lib/utils"
 
@@ -16,7 +15,7 @@ const FOOTER_LINK = cn(
 export function LandingFooter() {
   return (
     <footer className="border-t border-border py-12">
-      <SectionContainer className="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
+      <div className="mx-auto flex w-full max-w-[1344px] flex-col gap-8 px-4 md:flex-row md:items-center md:justify-between md:px-8">
         <Link to="/" className={cn("w-fit rounded-md", FOCUS_RING)}>
           <OpenCvLogo withWordmark />
         </Link>
@@ -30,7 +29,7 @@ export function LandingFooter() {
             Sign in
           </Link>
         </nav>
-      </SectionContainer>
+      </div>
     </footer>
   )
 }

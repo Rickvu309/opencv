@@ -8,13 +8,8 @@
       transform var(--duration-micro) var(--ease-micro);
   }
 
-  .coach-float-backdrop {
-    transition: opacity var(--duration-micro) var(--ease-micro);
-  }
-
   @media (prefers-reduced-motion: reduce) {
-    .coach-float-card,
-    .coach-float-backdrop {
+    .coach-float-card {
       transition: none;
     }
   }
