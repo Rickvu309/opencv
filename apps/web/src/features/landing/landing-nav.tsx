@@ -14,7 +14,7 @@ import {
 } from "./landing-copy.ts"
 
 const NAV_LINK = cn(
-  "landing-link inline-flex min-h-8 items-center rounded-full px-1.5 text-xs text-muted-foreground hover:text-foreground md:px-3 md:text-sm",
+  "landing-link inline-flex min-h-10 items-center rounded-full px-2 text-xs text-muted-foreground hover:text-foreground md:min-h-8 md:px-3 md:text-sm",
   FOCUS_RING
 )
 
@@ -31,7 +31,10 @@ function LandingNavLink({ link }: { link: LandingLink }) {
     return (
       <Link
         to={link.to}
-        className={cn(buttonVariants({ size: "sm" }), "h-8 rounded-full px-3")}
+        className={cn(
+          buttonVariants({ size: "sm" }),
+          "h-10 rounded-full px-3 md:h-8"
+        )}
       >
         {link.label}
       </Link>

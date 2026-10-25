@@ -8,7 +8,7 @@ import { OpenCvLogo } from "@/features/app-shell/app-logo.tsx"
 import { LANDING_LOGIN_LABEL, LANDING_SURFACES } from "./landing-copy.ts"
 
 const FOOTER_LINK = cn(
-  "landing-link inline-flex min-h-8 items-center rounded-md text-sm text-muted-foreground hover:text-foreground",
+  "landing-link inline-flex min-h-10 items-center rounded-md text-sm text-muted-foreground hover:text-foreground md:min-h-8",
   FOCUS_RING
 )
 

@@ -1,4 +1,7 @@
 import { useRef, type ReactNode } from "react"
+import { Pause, Play } from "lucide-react"
+
+import { Button } from "@workspace/ui/components/button"
 
 import type { MotionSpec } from "./model.ts"
 import { useFigureMotion } from "./motion.ts"
@@ -30,28 +33,41 @@ export function FigureCard({
 
   return (
     <section className="min-w-0" aria-labelledby={titleId}>
-      <div
-        ref={wellRef}
-        role="slider"
-        tabIndex={0}
-        aria-labelledby={titleId}
-        aria-describedby={descriptionId}
-        aria-valuemin={spec.min}
-        aria-valuemax={spec.max}
-        aria-valuenow={motion.stop}
-        aria-valuetext={readoutOf(motion.stop)}
-        className="relative aspect-[405/388] touch-pan-y overflow-hidden rounded-2xl bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-        onKeyDown={motion.onKeyDown}
-        onFocus={motion.onFocus}
-        onBlur={motion.onBlur}
-        onPointerEnter={motion.onPointerEnter}
-        onPointerMove={motion.onPointerMove}
-        onPointerDown={motion.onPointerDown}
-        onPointerUp={motion.onPointerUp}
-        onPointerLeave={motion.onPointerLeave}
-        onPointerCancel={motion.onPointerCancel}
-      >
-        {children}
+      <div className="relative">
+        <div
+          ref={wellRef}
+          role="slider"
+          tabIndex={0}
+          aria-labelledby={titleId}
+          aria-describedby={descriptionId}
+          aria-valuemin={spec.min}
+          aria-valuemax={spec.max}
+          aria-valuenow={motion.stop}
+          aria-valuetext={readoutOf(motion.stop)}
+          className="relative aspect-[405/388] touch-pan-y overflow-hidden rounded-2xl bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          onKeyDown={motion.onKeyDown}
+          onFocus={motion.onFocus}
+          onPointerEnter={motion.onPointerEnter}
+          onPointerMove={motion.onPointerMove}
+          onPointerDown={motion.onPointerDown}
+          onPointerUp={motion.onPointerUp}
+          onPointerLeave={motion.onPointerLeave}
+          onPointerCancel={motion.onPointerCancel}
+        >
+          {children}
+        </div>
+        {motion.canPlay ? (
+          <Button
+            type="button"
+            variant="secondary"
+            size="icon-lg"
+            className="absolute right-3 bottom-3"
+            aria-label={`${motion.playing ? "Pause" : "Play"} animation: ${heading}`}
+            onClick={motion.togglePlaying}
+          >
+            {motion.playing ? <Pause /> : <Play />}
+          </Button>
+        ) : null}
       </div>
       <p ref={liveRef} className="sr-only" aria-live="polite" />
       <h2
