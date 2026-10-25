@@ -26,7 +26,6 @@ type FigureMotion = {
   togglePlaying: () => void
   onKeyDown: (event: KeyboardEvent<HTMLDivElement>) => void
   onFocus: () => void
-  onBlur: () => void
   onPointerEnter: (event: PointerEvent<HTMLDivElement>) => void
   onPointerMove: (event: PointerEvent<HTMLDivElement>) => void
   onPointerDown: (event: PointerEvent<HTMLDivElement>) => void
@@ -207,20 +206,13 @@ export function useFigureMotion(
 
     api.current = {
       onFocus: () => {
+        if (drag) return
         const touring = state.demonstrating
         disarm()
-        if (drag) return
         if (touring || state.value !== state.published) {
           state.target = state.published
           kick()
         }
-      },
-      onBlur: () => {
-        const touring = state.demonstrating
-        disarm()
-        if (!touring) return
-        state.target = state.published
-        kick()
       },
       onKeyDown: (event) => {
         const next = applyKey(
@@ -355,7 +347,6 @@ export function useFigureMotion(
     togglePlaying: () => api.current?.togglePlaying(),
     onKeyDown: (event) => api.current?.onKeyDown(event),
     onFocus: () => api.current?.onFocus(),
-    onBlur: () => api.current?.onBlur(),
     onPointerEnter: (event) => api.current?.onPointerEnter(event),
     onPointerMove: (event) => api.current?.onPointerMove(event),
     onPointerDown: (event) => api.current?.onPointerDown(event),

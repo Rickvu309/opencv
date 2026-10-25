@@ -236,4 +236,34 @@ describe("figure slider", () => {
       Math.max(...apply.mock.calls.map(([value]) => value))
     ).toBeGreaterThan(2)
   })
+
+  it("keeps running when the browser focuses the slider during a touch scroll", () => {
+    vi.useFakeTimers()
+    stubReducedMotion(false)
+    const apply = vi.fn()
+    const slider = renderFigure(apply)
+    Object.defineProperty(slider, "setPointerCapture", { value: vi.fn() })
+    Object.defineProperty(slider, "hasPointerCapture", { value: () => false })
+
+    act(() => vi.advanceTimersByTime(1000))
+    fireEvent.pointerDown(slider, {
+      pointerId: 1,
+      pointerType: "touch",
+      button: 0,
+      clientX: 10,
+      clientY: 10,
+    })
+    act(() => slider.focus())
+    fireEvent.pointerCancel(slider, { pointerId: 1, pointerType: "touch" })
+    act(() => slider.blur())
+    apply.mockClear()
+    act(() => vi.advanceTimersByTime(1500))
+
+    expect(
+      Math.max(...apply.mock.calls.map(([value]) => value))
+    ).toBeGreaterThan(2)
+    expect(
+      screen.getByRole("button", { name: /^Pause animation/ })
+    ).toBeTruthy()
+  })
 })

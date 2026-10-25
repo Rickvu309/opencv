@@ -47,7 +47,6 @@ export function FigureCard({
           className="relative aspect-[405/388] touch-pan-y overflow-hidden rounded-2xl bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
           onKeyDown={motion.onKeyDown}
           onFocus={motion.onFocus}
-          onBlur={motion.onBlur}
           onPointerEnter={motion.onPointerEnter}
           onPointerMove={motion.onPointerMove}
           onPointerDown={motion.onPointerDown}
