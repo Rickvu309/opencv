@@ -21,6 +21,9 @@ export type FigureRefs = {
 
 type FigureMotion = {
   stop: number
+  playing: boolean
+  canPlay: boolean
+  togglePlaying: () => void
   onKeyDown: (event: KeyboardEvent<HTMLDivElement>) => void
   onFocus: () => void
   onBlur: () => void
@@ -40,8 +43,11 @@ type Drag = {
   pointerType: string
 }
 
+const STILL_QUERY = "(prefers-reduced-motion: reduce)"
+const VISIBLE_RATIO = 0.25
+
 function prefersStill(): boolean {
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  return window.matchMedia(STILL_QUERY).matches
 }
 
 export function useFigureMotion(
@@ -52,7 +58,11 @@ export function useFigureMotion(
 ): FigureMotion {
   const latest = useRef({ readoutOf, apply, spec, refs })
   const [stop, setStop] = useState(spec.min)
-  const api = useRef<Omit<FigureMotion, "stop"> | null>(null)
+  const [playing, setPlaying] = useState(false)
+  const [canPlay, setCanPlay] = useState(false)
+  const api = useRef<Omit<FigureMotion, "stop" | "playing" | "canPlay"> | null>(
+    null
+  )
 
   useEffect(() => {
     latest.current = { readoutOf, apply, spec, refs }
@@ -64,6 +74,7 @@ export function useFigureMotion(
       target: spec.min,
       published: spec.min,
       demonstrating: false,
+      suspended: false,
       demoStarted: false,
       demoClock: 0,
       interacted: false,
@@ -98,9 +109,26 @@ export function useFigureMotion(
       if (changed) setStop(value)
       announceUnlessSliderFocused(latest.current.readoutOf(value))
     }
+    const setDemonstrating = (on: boolean) => {
+      state.demonstrating = on
+      setPlaying(on)
+    }
     const disarm = () => {
       state.interacted = true
+      state.suspended = false
+      setDemonstrating(false)
+    }
+    const suspend = () => {
+      if (!state.demonstrating) return
       state.demonstrating = false
+      state.suspended = true
+      state.target = state.value
+    }
+    const resume = () => {
+      if (!state.suspended) return
+      state.suspended = false
+      state.demonstrating = true
+      kick()
     }
     const valueFromX = (clientX: number) => {
       const bounds = currentSpec()
@@ -131,8 +159,8 @@ export function useFigureMotion(
       if (state.demoStarted || state.interacted || !state.visible) return
       state.demoStarted = true
       if (prefersStill()) return
-      state.demonstrating = true
       state.demoClock = 0
+      setDemonstrating(true)
       kick()
     }
     function tick(now: number) {
@@ -145,27 +173,19 @@ export function useFigureMotion(
       const calm = prefersStill()
       if (state.demonstrating) {
         if (calm || state.interacted) {
-          state.demonstrating = false
+          setDemonstrating(false)
           state.target = state.published
           if (calm) state.value = state.published
         } else {
-          const nextClock = state.demoClock + dt
-          if (nextClock >= DEMONSTRATION_SECONDS) {
-            state.demoClock = DEMONSTRATION_SECONDS
-            state.demonstrating = false
-            state.value = state.published
-            state.target = state.published
-          } else {
-            state.demoClock = nextClock
-            const bounds = currentSpec()
-            const shown = demonstrationValue(
-              bounds.min,
-              bounds.max,
-              state.demoClock
-            )
-            state.value = shown
-            state.target = shown
-          }
+          state.demoClock = (state.demoClock + dt) % DEMONSTRATION_SECONDS
+          const bounds = currentSpec()
+          const shown = demonstrationValue(
+            bounds.min,
+            bounds.max,
+            state.demoClock
+          )
+          state.value += (shown - state.value) * (1 - Math.exp(-dt / 0.22))
+          state.target = shown
         }
       }
       if (!state.demonstrating) {
@@ -215,8 +235,7 @@ export function useFigureMotion(
       },
       onPointerEnter: (event) => {
         if (event.pointerType === "touch") return
-        if (state.demonstrating) state.target = state.value
-        disarm()
+        suspend()
       },
       onPointerMove: (event) => {
         if (drag && drag.id === event.pointerId) {
@@ -227,13 +246,14 @@ export function useFigureMotion(
           return
         }
         if (drag || event.pointerType === "touch") return
-        disarm()
+        suspend()
         state.target = nearest(valueFromX(event.clientX))
         kick()
       },
       onPointerDown: (event) => {
         if (event.button !== 0) return
-        disarm()
+        if (event.pointerType === "touch") suspend()
+        else disarm()
         drag = {
           id: event.pointerId,
           x: event.clientX,
@@ -248,7 +268,7 @@ export function useFigureMotion(
         const tapped = !drag.moved && drag.pointerType !== "mouse"
         const bounds = currentSpec()
         const next = tapped
-          ? Math.min(bounds.max, Math.round(state.value) + bounds.step)
+          ? Math.min(bounds.max, state.published + bounds.step)
           : nearest(valueFromX(event.clientX))
         drag = null
         releasePointer(event)
@@ -256,14 +276,32 @@ export function useFigureMotion(
       },
       onPointerCancel: (event) => {
         drag = null
-        disarm()
-        state.target = state.published
         releasePointer(event)
-        kick()
+        state.target = state.published
+        if (state.suspended) resume()
+        else {
+          disarm()
+          kick()
+        }
       },
       onPointerLeave: () => {
         if (drag) return
         state.target = state.published
+        if (state.suspended) resume()
+        else kick()
+      },
+      togglePlaying: () => {
+        if (state.demonstrating || state.suspended) {
+          disarm()
+          state.target = state.published
+          kick()
+          return
+        }
+        state.interacted = false
+        state.demoStarted = true
+        state.demoClock = 0
+        state.target = state.published
+        setDemonstrating(true)
         kick()
       },
     }
@@ -275,7 +313,7 @@ export function useFigureMotion(
       observer = new IntersectionObserver(
         (entries) => {
           const entry = entries[entries.length - 1]
-          state.visible = entry?.isIntersecting ?? false
+          state.visible = (entry?.intersectionRatio ?? 0) >= VISIBLE_RATIO
           if (!state.visible) {
             if (frame) window.cancelAnimationFrame(frame)
             frame = 0
@@ -286,7 +324,7 @@ export function useFigureMotion(
           paint()
           kick()
         },
-        { rootMargin: "120px 0px" }
+        { threshold: VISIBLE_RATIO }
       )
       observer.observe(well)
     } else {
@@ -302,8 +340,19 @@ export function useFigureMotion(
     }
   }, [spec.min])
 
+  useEffect(() => {
+    const query = window.matchMedia(STILL_QUERY)
+    const sync = () => setCanPlay(!query.matches)
+    sync()
+    query.addEventListener("change", sync)
+    return () => query.removeEventListener("change", sync)
+  }, [])
+
   return {
     stop,
+    playing,
+    canPlay,
+    togglePlaying: () => api.current?.togglePlaying(),
     onKeyDown: (event) => api.current?.onKeyDown(event),
     onFocus: () => api.current?.onFocus(),
     onBlur: () => api.current?.onBlur(),
