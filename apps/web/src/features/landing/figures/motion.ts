@@ -78,6 +78,7 @@ export function useFigureMotion(
       demoClock: 0,
       interacted: false,
       visible: false,
+      ready: false,
     }
     let frame = 0
     let last = 0
@@ -155,7 +156,7 @@ export function useFigureMotion(
       kick()
     }
     const beginDemo = () => {
-      if (state.demoStarted || state.interacted || !state.visible) return
+      if (state.demoStarted || state.interacted || !state.ready) return
       state.demoStarted = true
       if (prefersStill()) return
       state.demoClock = 0
@@ -271,10 +272,7 @@ export function useFigureMotion(
         releasePointer(event)
         state.target = state.published
         if (state.suspended) resume()
-        else {
-          disarm()
-          kick()
-        }
+        else kick()
       },
       onPointerLeave: () => {
         if (drag) return
@@ -305,7 +303,9 @@ export function useFigureMotion(
       observer = new IntersectionObserver(
         (entries) => {
           const entry = entries[entries.length - 1]
-          state.visible = (entry?.intersectionRatio ?? 0) >= VISIBLE_RATIO
+          const ratio = entry?.intersectionRatio ?? 0
+          state.visible = ratio > 0
+          state.ready = ratio >= VISIBLE_RATIO
           if (!state.visible) {
             if (frame) window.cancelAnimationFrame(frame)
             frame = 0
@@ -316,11 +316,12 @@ export function useFigureMotion(
           paint()
           kick()
         },
-        { threshold: VISIBLE_RATIO }
+        { threshold: [0, VISIBLE_RATIO] }
       )
       observer.observe(well)
     } else {
       state.visible = true
+      state.ready = true
       beginDemo()
       paint()
       kick()

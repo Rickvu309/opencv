@@ -266,4 +266,75 @@ describe("figure slider", () => {
       screen.getByRole("button", { name: /^Pause animation/ })
     ).toBeTruthy()
   })
+
+  it("still autoplays when a touch cancelled before the figure was a quarter visible", () => {
+    vi.useFakeTimers()
+    stubReducedMotion(false)
+    let notify: (ratio: number) => void = () => {}
+    class FakeObserver {
+      constructor(callback: IntersectionObserverCallback) {
+        notify = (ratio) =>
+          callback(
+            [{ intersectionRatio: ratio } as IntersectionObserverEntry],
+            this as unknown as IntersectionObserver
+          )
+      }
+      observe() {}
+      disconnect() {}
+    }
+    vi.stubGlobal("IntersectionObserver", FakeObserver)
+    const apply = vi.fn()
+    const slider = renderFigure(apply)
+    Object.defineProperty(slider, "setPointerCapture", { value: vi.fn() })
+    Object.defineProperty(slider, "hasPointerCapture", { value: () => false })
+
+    act(() => notify(0.1))
+    fireEvent.pointerDown(slider, {
+      pointerId: 1,
+      pointerType: "touch",
+      button: 0,
+      clientX: 10,
+      clientY: 10,
+    })
+    act(() => slider.focus())
+    fireEvent.pointerCancel(slider, { pointerId: 1, pointerType: "touch" })
+    act(() => notify(0.6))
+    act(() => vi.advanceTimersByTime(2500))
+
+    expect(
+      Math.max(...apply.mock.calls.map(([value]) => value))
+    ).toBeGreaterThan(2)
+    act(() => vi.advanceTimersByTime(5000))
+    expect(
+      Math.max(...apply.mock.calls.map(([value]) => value))
+    ).toBeGreaterThan(2)
+  })
+
+  it("starts a requested play as soon as any part of the figure is on screen", () => {
+    vi.useFakeTimers()
+    stubReducedMotion(false)
+    let notify: (ratio: number) => void = () => {}
+    class FakeObserver {
+      constructor(callback: IntersectionObserverCallback) {
+        notify = (ratio) =>
+          callback(
+            [{ intersectionRatio: ratio } as IntersectionObserverEntry],
+            this as unknown as IntersectionObserver
+          )
+      }
+      observe() {}
+      disconnect() {}
+    }
+    vi.stubGlobal("IntersectionObserver", FakeObserver)
+    const apply = vi.fn()
+    renderFigure(apply)
+
+    act(() => notify(0.1))
+    fireEvent.click(screen.getByRole("button", { name: /^Play animation/ }))
+    act(() => vi.advanceTimersByTime(2500))
+
+    expect(
+      Math.max(...apply.mock.calls.map(([value]) => value))
+    ).toBeGreaterThan(2)
+  })
 })
