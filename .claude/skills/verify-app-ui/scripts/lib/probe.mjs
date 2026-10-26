@@ -65,6 +65,8 @@ function probe() {
       const a = el.getAttribute("aria-label")
       if (a) chrome.add(a)
     }
+    const dataPlaceholder = el.getAttribute("data-placeholder")
+    if (dataPlaceholder) chrome.add(dataPlaceholder)
     if (el.matches('[role="alert"], [role="status"], [data-slot^="empty"]')) {
       chrome.add(clean(el.textContent))
     }

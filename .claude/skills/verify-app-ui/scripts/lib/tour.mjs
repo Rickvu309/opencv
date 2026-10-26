@@ -196,7 +196,12 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
     must(await visit(key), `${key} did not render at ${ROUTES[key][0]}`)
     d.tabs[key] = await tabWalk(a, key)
     await a.sleep(1200)
-    if (key === "home") await openDockCoach(a)
+    if (key === "home") {
+      const hasComposer = await a.evaluate(
+        "Boolean(document.querySelector('textarea'))"
+      )
+      if (!hasComposer) await openDockCoach(a)
+    }
     d[key] = await snap(a)
     await shot(a, `desktop-${key}`)
     if (key === "home") {
@@ -305,10 +310,9 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
   )
   await b.goto(`${webUrl}/app/home`)
   must(
-    await b.waitFor("document.querySelector('h1')", 15000),
+    await b.waitFor("document.querySelector('textarea')", 15000),
     "the start page did not render"
   )
-  await openDockCoach(b)
   await send(b, "hello")
   await b.waitFor("document.querySelector('[role=alert]')", 8000)
   await b.sleep(800)
@@ -318,10 +322,9 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
   b.setIntercept((r) => (coachCall(r) ? "fail" : null))
   await b.goto(`${webUrl}/app/home`)
   must(
-    await b.waitFor("document.querySelector('h1')", 15000),
+    await b.waitFor("document.querySelector('textarea')", 15000),
     "the start page did not render"
   )
-  await openDockCoach(b)
   await send(b, "hello again")
   await b.waitFor("document.querySelector('[role=alert]')", 8000)
   await b.sleep(800)
