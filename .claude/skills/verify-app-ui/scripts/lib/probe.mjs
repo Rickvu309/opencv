@@ -68,6 +68,13 @@ function probe() {
     if (el.matches('[role="alert"], [role="status"], [data-slot^="empty"]')) {
       chrome.add(clean(el.textContent))
     }
+    if (
+      typeof el.className === "string" &&
+      el.className.includes("chrome-meta")
+    ) {
+      const meta = clean(el.textContent)
+      if (meta) chrome.add(meta)
+    }
   }
   out.chrome = [...chrome].filter((s) => s.length < 160)
 
@@ -458,6 +465,14 @@ function probe() {
         .slice(0, 6)
     }
   }
+  out.glowCount = visible.filter((el) => {
+    const cls = typeof el.className === "string" ? el.className : ""
+    return (
+      /(^|\s)glow(\s|$)/.test(cls) ||
+      ((el.tagName === "BUTTON" || el.getAttribute("role") === "button") &&
+        cs(el).backgroundImage.includes("radial-gradient"))
+    )
+  }).length
   out.active = document.activeElement
     ? {
         tag: document.activeElement.tagName,

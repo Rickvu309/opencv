@@ -1,6 +1,6 @@
 ---
 name: verify-app-ui
-description: Check the interior quality and taste of the signed-in OpenCV app (Home and Coach, Paper, Apply, Pitch), covering writing, logic, structure, visual craft, motion, accessibility and performance. A mechanical checker signs up a throwaway account on a PGlite stack and measures 38 properties in headless Chromium at 1440x900, 390x844 and reduced motion, and a judged rubric scores what a program cannot decide. Use after any change under apps/web/src/features/home, coach, paper, apply, pitch, app-shell, apps/web/src/routes, or a packages/ui component those import (button, card, dialog, empty, input, kbd, skeleton, spinner, tabs, tooltip, badge), the motion tokens in packages/ui/src/styles/globals.css, and when asked whether the app is good.
+description: Check the interior quality and taste of the signed-in OpenCV app (Home and Coach, Paper, Apply, Pitch), covering writing, logic, structure, visual craft, motion, accessibility and performance. A mechanical checker signs up a throwaway account on a PGlite stack and measures 44 properties in headless Chromium at 1440x900, 390x844 and reduced motion, and a judged rubric scores what a program cannot decide. Use after any change under apps/web/src/features/home, coach, paper, apply, pitch, app-shell, apps/web/src/routes, or a packages/ui component those import (button, card, dialog, empty, input, kbd, skeleton, spinner, tabs, tooltip, badge), the motion tokens in packages/ui/src/styles/globals.css, and when asked whether the app is good.
 ---
 
 # verify-app-ui
@@ -22,7 +22,7 @@ PORT=4450 pnpm --filter web verify:app-ui
 - About 2 to 4 minutes on a loaded machine (stack start, 4 routes, 8 steps, 4 scenarios, 2 more passes). One browser plus the two servers, so do not run it beside install, vitest or another browser run on the shared machine.
 - `VERIFY_APP_UI_SHOTS=<dir>` writes the screenshots the reviewers need (list in `rubric.md`). `VERIFY_APP_UI_DATA=<file>` writes every raw measurement as JSON, which is the way to see what a FAIL measured.
 
-Output is one line per property, `PASS|FAIL <id> <name>: <measured> | rule: <rule>`, then `N PASS, M FAIL: <ids>`. Exit 0 all pass, 1 any FAIL, 2 the stack, the browser or a screen did not work (an error, not a verdict). 40 lines. The pure text and color rules have unit tests: `node --test .claude/skills/verify-app-ui/scripts/lib/text-rules.test.mjs` (no browser, under a second).
+Output is one line per property, `PASS|FAIL <id> <name>: <measured> | rule: <rule>`, then `N PASS, M FAIL: <ids>`. Exit 0 all pass, 1 any FAIL, 2 the stack, the browser or a screen did not work (an error, not a verdict). 46 lines (44 properties, the header, the summary). The pure text and color rules have unit tests: `node --test .claude/skills/verify-app-ui/scripts/lib/text-rules.test.mjs` (no browser, under a second).
 
 What the tour does, in order, signed in at 1440x900: visits every route once to warm the dev server; then for Home, Paper, Apply and Pitch it loads the route and times it, walks Tab to the primary action, and measures the screen. On Home it opens Search with Ctrl-K and sends "Review my CV" for a scripted Coach turn. On Paper it opens the sample CV and the Coach float. On Pitch it opens a story and then the edit bar. Scenario pages follow: `GET /api/paper` held while the page is read, `GET /api/paper` answered with an empty list, the Coach send answered with `404 USER_NOT_FOUND "User not found."`, and the Coach send with the connection refused. A reduced-motion pass and a 390x844 mobile pass visit the four routes again. Last, the tour deletes the four seeded Apply cards through the api (`apply.deleteCard`) and reads the empty board. A step that does not happen (a click finds nothing, a screen never renders, the deletes fail) throws and the run exits 2; it is never a pass. The api answers are the only mocks, apart from the scripted Coach and the stub posting scan that verify-opencv already isolates; say so in a report. The throwaway account is not reused, and the stack and its data are removed at the end.
 
@@ -34,7 +34,7 @@ Reading a FAIL: the measured value is what the app does, the rule is what it sho
 
 ## The properties
 
-Thirty-eight named properties; ids 01 to 30 are the research check numbers and 31 to 38 are app-wide checks the signed-in tour adds. Each has a rule, a source and a note when it is a heuristic: read [properties.md](properties.md). Search the id in `scripts/lib/checks-content.mjs` (01 to 13) or `scripts/lib/checks.mjs` (14 to 38).
+Forty-four named properties; ids 01 to 30 are the research check numbers, 31 to 38 are app-wide checks the signed-in tour adds, and 39 to 44 are the design text rules (pinned phrases in `scripts/lib/copy.json`). Each has a rule, a source and a note when it is a heuristic: read [properties.md](properties.md). Search the id in `scripts/lib/checks-content.mjs` (01 to 13) or `scripts/lib/checks.mjs` (14 to 44).
 
 ## Baseline at the sync commit
 

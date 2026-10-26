@@ -93,6 +93,24 @@ describe("UI package kit surface", () => {
     const names = [...root.matchAll(/^\s*--([\w-]+):/gm)].map((m) => m[1])
     expect(names.sort()).toEqual([...stock].sort())
 
+    // Release-one ADR-0006. Stock names, the design's values.
+    for (const value of [
+      '--font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, sans-serif;',
+      "--background: oklch(0.982 0.001 286.376);",
+      "--foreground: oklch(0.218 0 0);",
+      "--ring: oklch(0.607 0.141 276.281);",
+      "--chart-1: oklch(0.649 0.186 267.396);",
+      "--chart-2: oklch(0.650 0.130 154.934);",
+      "--chart-3: oklch(0.567 0.159 275.206);",
+      "--chart-4: oklch(0.758 0.156 81.298);",
+      "--chart-5: oklch(0.706 0.003 286.326);",
+      "--destructive: oklch(0.572 0.183 23.679);",
+      "@utility glow",
+    ]) {
+      expect(css, value).toContain(value)
+    }
+    expect(css).not.toMatch(/@utility glow[\s\S]*#[0-9A-Fa-f]{3,8}/)
+
     for (const token of [
       "--duration-micro: 150ms",
       "--ease-micro: cubic-bezier(0.22, 1, 0.36, 1)",

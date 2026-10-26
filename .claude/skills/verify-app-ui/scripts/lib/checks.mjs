@@ -6,6 +6,16 @@ import { readFileSync } from "node:fs"
 
 import { contentChecks } from "./checks-content.mjs"
 import {
+  brandViolations,
+  capturedGlowViews,
+  chromeCopy,
+  dashViolations,
+  exclamationViolations,
+  extraGlowPrimaries,
+  titleBeforeCompany,
+  toggleViolations,
+} from "./text-rules.mjs"
+import {
   FEATURE_DIRS,
   SURFACES,
   context,
@@ -20,7 +30,7 @@ import {
 
 export function runChecks(d) {
   const r = contentChecks(d)
-  const { screens, allSnaps, has } = context(d)
+  const { screens, allSnaps, labels, has } = context(d)
 
   // Structure.
   const both = ["What are you aiming for?", "Four small things"].every((h) =>
@@ -458,6 +468,79 @@ export function runChecks(d) {
         )
         .join("; "),
       "at 390x844 the four surface links are in view at 24px or more and the page does not scroll sideways"
+    )
+  )
+
+  const copy = chromeCopy(
+    labels,
+    allSnaps.map((snap) => snap?.docTitle)
+  )
+  const brand = brandViolations(copy)
+  r.push(
+    result(
+      "39",
+      "brand-wordmark",
+      brand.length === 0,
+      brand.length
+        ? list(brand.map((item) => item.label))
+        : "chrome spells opencv",
+      "chrome spells the brand as the mark plus lowercase opencv, and never OpenCV"
+    )
+  )
+
+  const glowViews = capturedGlowViews(d)
+  const extraGlow = extraGlowPrimaries(glowViews.map((view) => view.count))
+  r.push(
+    result(
+      "40",
+      "one-glow-primary",
+      extraGlow.length === 0,
+      glowViews.map((view) => `${view.name} ${view.count}`).join(", "),
+      "each view has at most one glow primary"
+    )
+  )
+
+  const dashes = dashViolations(copy)
+  r.push(
+    result(
+      "41",
+      "no-dash-in-copy",
+      dashes.length === 0,
+      dashes.length ? list(dashes) : "no em dash or middle dot",
+      "chrome copy has no em dash, en dash, or middle dot"
+    )
+  )
+
+  const toggles = toggleViolations(labels)
+  r.push(
+    result(
+      "42",
+      "toggle-enabled-disabled",
+      toggles.length === 0,
+      toggles.length ? list(toggles) : "toggles read Enabled or Disabled",
+      "a toggle reads Enabled or Disabled, never On, Off, or Connected"
+    )
+  )
+
+  const titles = titleBeforeCompany(labels)
+  r.push(
+    result(
+      "43",
+      "title-before-company",
+      titles.length === 0,
+      titles.length ? list(titles) : "job lines lead with the title",
+      "a job line leads with the title, then the company"
+    )
+  )
+
+  const bangs = exclamationViolations(labels)
+  r.push(
+    result(
+      "44",
+      "no-exclamation",
+      bangs.length === 0,
+      bangs.length ? list(bangs) : "no exclamation or Oops",
+      "chrome copy has no exclamation mark and does not say Oops"
     )
   )
   return r

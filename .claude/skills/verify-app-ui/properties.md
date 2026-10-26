@@ -2,7 +2,7 @@
 
 The full list the checker measures. `SKILL.md` links here.
 
-Ids 01 to 30 are the research check numbers. 31 to 38 are app-wide checks the signed-in tour adds. A heuristic is a word list or threshold that can misjudge; it says so in its rule text. Search the id in `scripts/lib/checks-content.mjs` (01 to 13) or `scripts/lib/checks.mjs` (14 to 38).
+Ids 01 to 30 are the research check numbers. 31 to 38 are app-wide checks the signed-in tour adds. 39 to 44 are the design text rules, and their pinned phrases live in `scripts/lib/copy.json`. A heuristic is a word list or threshold that can misjudge; it says so in its rule text. Search the id in `scripts/lib/checks-content.mjs` (01 to 13) or `scripts/lib/checks.mjs` (14 to 44).
 
 Writing and logic:
 
@@ -59,3 +59,12 @@ App-wide:
 - 36 `row-density`: Paper rows 40 to 72px; no Apply card title past two lines. The title is the deepest element in the card whose text is the title from the card's aria-label, whatever its tag; a card with no such element, or no cards, is a FAIL. Source: Material density.
 - 37 `no-raw-colors`: every computed text, fill and border color equals a semantic design token (the `:root` variables of `globals.css`) within 6 per channel, 12 when translucent. Tailwind palette variables such as `--color-red-600` and `--color-black` are not design tokens, so a palette class fails. Black scrims, SVG fills and gradient stops are not measured here (19 reads gradients). The source test `apps/web/src/test/design-vocabulary.test.ts` covers raw hex in `apps/web/src`.
 - 38 `mobile-surfaces-reachable`: at 390x844 the four surface links are in view at 24px or more and the page does not scroll sideways.
+
+Design text, properties 39 to 44. Phrases are pinned in `scripts/lib/copy.json`.
+
+- 39 `brand-wordmark`: chrome never contains OpenCV. The brand is the mark plus lowercase opencv.
+- 40 `one-glow-primary`: each toured view, including the 390px pass, has at most one control wearing the glow utility.
+- 41 `no-dash-in-copy`: chrome has no em dash, en dash, or middle dot.
+- 42 `toggle-enabled-disabled`: a toggle label is Enabled or Disabled. On, Off, and Connected fail.
+- 43 `title-before-company`: a job line does not start with "at" and no title.
+- 44 `no-exclamation`: chrome has no exclamation mark and does not say Oops.

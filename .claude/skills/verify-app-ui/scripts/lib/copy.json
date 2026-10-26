@@ -1,0 +1,9 @@
+{
+  "brandForbidden": "OpenCV",
+  "brandWord": "opencv",
+  "dashes": ["—", "–", "·"],
+  "toggleBad": ["On", "Off", "Connected"],
+  "toggleOn": "Enabled",
+  "toggleOff": "Disabled",
+  "oops": "Oops"
+}
