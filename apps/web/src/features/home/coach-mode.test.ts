@@ -131,22 +131,15 @@ describe("Home dock mode control", () => {
 })
 
 describe("Settings coach mode", () => {
-  it("shows the same three-way control on General", async () => {
-    renderApp(SURFACE_PATHS.settings)
+  it("sends a Pro mode to the upgrade screen and keeps Free stored", async () => {
+    renderApp("/app/settings/coach")
 
-    expect(
-      await screen.findByRole("heading", { level: 1, name: "Settings" })
-    ).toBeInTheDocument()
     expect(
       await screen.findByRole("radiogroup", { name: "Coach mode" })
     ).toBeInTheDocument()
-    expect(screen.getByText(/Free stays first/)).toBeInTheDocument()
-    expect(
-      screen.getByRole("link", { name: "OpenRouter listing" })
-    ).toHaveAttribute("href", "https://openrouter.ai/openrouter/free")
-    fireEvent.click(screen.getByRole("radio", { name: "Power" }))
-    await waitFor(() => {
-      expect(getMockCoachMode()).toBe("max")
-    })
+    fireEvent.click(screen.getByRole("radio", { name: "Light" }))
+    await screen.findByText("Billing is not open yet.")
+    expect(screen.getByText("Billing is not open yet.")).toBeInTheDocument()
+    expect(getMockCoachMode()).toBe("free")
   })
 })

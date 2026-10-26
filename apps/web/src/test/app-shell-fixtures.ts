@@ -26,12 +26,6 @@ export function linkNames(root: HTMLElement) {
     .map((el) => el.getAttribute("aria-label") || el.textContent?.trim())
 }
 
-export async function expectStub(surface: "settings") {
-  const copy = SURFACE_COPY[surface]
-  await expectHeading(copy.title)
-  expect(screen.getByText(copy.body)).toBeInTheDocument()
-}
-
 async function expectHeading(name: string) {
   expect(
     await screen.findByRole("heading", { level: 1, name })
