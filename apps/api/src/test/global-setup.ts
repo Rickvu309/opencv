@@ -5,10 +5,10 @@ import path from "node:path"
 
 import { PGlite } from "@electric-sql/pglite"
 import { drizzle } from "drizzle-orm/pglite"
-import { migrate } from "drizzle-orm/pglite/migrator"
 import type { TestProject } from "vitest/node"
 
-import { migrationsFolder } from "../db/paths.js"
+import type { AppDatabase } from "../db/context.js"
+import { runMigrations } from "../db/migrate.js"
 import * as schema from "../db/schema.js"
 
 declare module "vitest" {
@@ -19,7 +19,7 @@ declare module "vitest" {
 
 export default async function setup(project: TestProject) {
   const client = new PGlite()
-  await migrate(drizzle({ client, schema }), { migrationsFolder })
+  await runMigrations(drizzle({ client, schema }) as unknown as AppDatabase)
   const dump = await client.dumpDataDir("none")
   await client.close()
 

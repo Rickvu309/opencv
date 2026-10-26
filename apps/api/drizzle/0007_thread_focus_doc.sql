@@ -1,3 +1,0 @@
-ALTER TABLE "openpath_app"."threads" ADD COLUMN "focus_doc_id" uuid;--> statement-breakpoint
-ALTER TABLE "openpath_app"."threads" ADD CONSTRAINT "threads_focus_doc_id_paper_docs_id_fk" FOREIGN KEY ("focus_doc_id") REFERENCES "openpath_app"."paper_docs"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-CREATE INDEX "threads_user_id_focus_doc_id_idx" ON "openpath_app"."threads" USING btree ("user_id","focus_doc_id");

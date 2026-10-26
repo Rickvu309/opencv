@@ -37,9 +37,9 @@ Editing files under `apps/api/src` while the stack is up makes `tsx watch` respa
 
 Use the `agent-browser` skill with its own named session (`export AGENT_BROWSER_SESSION=verify-<run>`). Load `$WEB_URL` from `run.env` (`set -a; . ~/tmp/opencv-verify/<run>/run.env; set +a`). Prefer ARIA roles and accessible names: `agent-browser find role button click --name "Create account"`.
 
-Routes: `/sign-up`, `/sign-in`, `/app` (Home and Coach), `/app/paper`, `/app/apply`, `/app/pitch`, `/app/search`, `/app/settings`, and the public `/u/<slug>`. Signed-out visits to `/app/*` redirect to `/sign-in?redirect=...`.
+Routes: `/sign-up`, `/sign-in`, `/app` (Home and Coach), `/app/paper`, `/app/apply`, `/app/pitch`, `/app/search`, `/app/settings`. Signed-out visits to `/app/*` redirect to `/sign-in?redirect=...`. `/u/<slug>` is not a route.
 
-Sign-up seeds the starter workspace (sample CV, four Apply cards, sample Pitch, a welcome thread), so every drive starts with demo data. Brand text may change between branches, so assert on behavior and accessible names, not the product name.
+Sign-up creates an empty account. It does not seed a CV, Apply cards, a Pitch, or a welcome thread. Each feature recipe creates the records it drives. Brand text may change between branches, so assert on behavior and accessible names, not the product name.
 
 Open `features/README.md`, pick the feature file for what changed, and follow its recipe:
 

@@ -1,5 +1,3 @@
-import { PitchWorkspace } from "@/features/pitch/pitch-workspace.tsx"
-
 export function PitchPage() {
-  return <PitchWorkspace />
+  return <h1>Pitch. Coming soon.</h1>
 }

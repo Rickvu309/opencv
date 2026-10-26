@@ -1,9 +1,3 @@
-import {
-  LEGACY_FAKE_PITCH_HEADLINE,
-  STARTER_PITCH_HEADLINE,
-  type PitchDocument,
-} from "@workspace/domain"
-
 import { readStored, writeStored } from "@/lib/local-storage.ts"
 
 export const AIM_PROMPT_STORAGE_PREFIX = "opencv:home:aim-prompt"
@@ -87,25 +81,6 @@ export function resolveAimPrompt(
 export function headlineForAim(id: AimId) {
   const option = AIM_OPTIONS.find((item) => item.id === id)
   return option?.headline ?? ""
-}
-
-export function isSoftFeedablePitchHeadline(headline: string) {
-  const trimmed = headline.trim()
-  return (
-    trimmed === "" ||
-    trimmed === STARTER_PITCH_HEADLINE ||
-    trimmed === LEGACY_FAKE_PITCH_HEADLINE
-  )
-}
-
-export function applyAimToPitchHeadline(
-  doc: PitchDocument,
-  aimId: AimId
-): PitchDocument | null {
-  if (!isSoftFeedablePitchHeadline(doc.headline)) return null
-  const headline = headlineForAim(aimId)
-  if (!headline || doc.headline === headline) return null
-  return { ...doc, headline }
 }
 
 export function readAimPromptState(userId: string): AimPromptState {

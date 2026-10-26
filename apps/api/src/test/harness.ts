@@ -1,14 +1,15 @@
 import { readFile } from "node:fs/promises"
 
-import type { CoachMode, CoachRuntime } from "@workspace/domain"
+import type { CoachRuntime } from "@workspace/domain"
 
 import type { FetchJobPosting } from "../apply/fetch-posting.js"
 import { PGlite } from "@electric-sql/pglite"
 import { drizzle } from "drizzle-orm/pglite"
-import { migrate } from "drizzle-orm/pglite/migrator"
 
 import { createApp } from "../app.js"
-import { migrationsFolder } from "../db/paths.js"
+import { logAuthMailFromEnv } from "../config.js"
+import type { AppDatabase, TestDatabase } from "../db/context.js"
+import { runMigrations } from "../db/migrate.js"
 import * as schema from "../db/schema.js"
 
 export const testWebOrigin = "https://opencv.me"
@@ -34,7 +35,10 @@ async function injectedTemplatePath() {
   }
 }
 
-export async function createMigratedTestDb() {
+export async function createMigratedTestDb(): Promise<{
+  client: PGlite
+  db: TestDatabase
+}> {
   const templatePath = await injectedTemplatePath()
   if (templatePath) {
     templateBlob ??= readFile(templatePath).then((bytes) => new Blob([bytes]))
@@ -44,7 +48,7 @@ export async function createMigratedTestDb() {
 
   const client = new PGlite()
   const db = drizzle({ client, schema })
-  await migrate(db, { migrationsFolder })
+  await runMigrations(db as unknown as AppDatabase)
   return { client, db }
 }
 
@@ -52,10 +56,6 @@ export function createTestApp(
   db: ReturnType<typeof drizzle>,
   options?: {
     coach?: CoachRuntime
-    coachModels?: Partial<Record<CoachMode, string>>
-    /** One cap applied to every mode; `coachDailyTurnLimits` wins when both are set. */
-    coachDailyTurnLimit?: number
-    coachDailyTurnLimits?: Partial<Record<CoachMode, number>>
     coachSseHeartbeatMs?: number
     fetchJobPosting?: FetchJobPosting
   }
@@ -67,18 +67,9 @@ export function createTestApp(
     db,
     rateLimitEnabled: false,
     coach: options?.coach,
-    coachModels: options?.coachModels,
-    coachDailyTurnLimits:
-      options?.coachDailyTurnLimits ??
-      (options?.coachDailyTurnLimit === undefined
-        ? undefined
-        : {
-            free: options.coachDailyTurnLimit,
-            light: options.coachDailyTurnLimit,
-            max: options.coachDailyTurnLimit,
-          }),
     coachSseHeartbeatMs: options?.coachSseHeartbeatMs,
     fetchJobPosting: options?.fetchJobPosting,
+    logAuthMail: logAuthMailFromEnv(process.env),
   })
 }
 

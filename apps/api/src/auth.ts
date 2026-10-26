@@ -1,9 +1,13 @@
 import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
 
+import { PROFILE_DEFAULTS } from "@workspace/domain"
+import { eq } from "drizzle-orm"
+
+import type { AppDatabase } from "./db/context.js"
+import { user } from "./db/schema.js"
 import { authSchema } from "./db/schema.js"
 import { isAllowedOrigin } from "./origin.js"
-import { seedStarterWorkspace } from "./starter/workspace.js"
 
 export type AuthDatabase = Parameters<typeof drizzleAdapter>[0]
 
@@ -14,6 +18,8 @@ export type AuthConfig = {
   webOrigins: string[]
   /** Default on. Tests turn this off so sign-up loops do not trip the limiter. */
   rateLimitEnabled?: boolean
+  /** Logs reset and verify URLs. Production passes false. */
+  logAuthMail?: boolean
 }
 
 /**
@@ -35,9 +41,9 @@ export function createAuth({
   authUrl,
   webOrigins,
   rateLimitEnabled = true,
+  logAuthMail = true,
 }: AuthConfig) {
   const cookies = cookieAttributesForAuthUrl(authUrl)
-  const logMailUrls = process.env.NODE_ENV !== "production"
 
   return betterAuth({
     appName: "OpenCV",
@@ -52,14 +58,14 @@ export function createAuth({
       enabled: true,
       requireEmailVerification: false,
       sendResetPassword: async ({ user, url }) => {
-        if (logMailUrls) {
+        if (logAuthMail) {
           console.log(`[auth] password reset for ${user.email}: ${url}`)
         }
       },
     },
     emailVerification: {
       sendVerificationEmail: async ({ user, url }) => {
-        if (logMailUrls) {
+        if (logAuthMail) {
           console.log(`[auth] verify email for ${user.email}: ${url}`)
         }
       },
@@ -81,8 +87,11 @@ export function createAuth({
     databaseHooks: {
       user: {
         create: {
-          after: async (user) => {
-            await seedStarterWorkspace(db, user.id)
+          after: async (created) => {
+            await (db as AppDatabase)
+              .update(user)
+              .set({ ...PROFILE_DEFAULTS })
+              .where(eq(user.id, created.id))
           },
         },
       },

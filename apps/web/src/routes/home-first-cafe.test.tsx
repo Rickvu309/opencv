@@ -13,7 +13,6 @@ import {
   expectHomeStarted,
   firstCafeList,
   firstCafeNudge,
-  firstCafeQuietDone,
 } from "@/test/home-helpers.ts"
 
 beforeEach(() => {
@@ -409,21 +408,14 @@ describe("Home first-café checklist", () => {
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(SURFACE_PATHS.pitch)
     })
-    fireEvent.click(await screen.findByRole("button", { name: "Edit Pitch" }))
-    const about = screen
-      .getByRole("heading", { name: "About" })
-      .closest("section")
-    expect(about).not.toBeNull()
-    fireEvent.click(
-      within(about as HTMLElement).getByRole("button", { name: "Hide" })
-    )
+    expect(await screen.findByText("Pitch. Coming soon.")).toBeInTheDocument()
     fireEvent.click(screen.getByRole("link", { name: "Home" }))
     await expectHomeStarted()
     expect(
-      within(firstCafeList()).getByRole("link", {
+      within(firstCafeList()).queryByRole("link", {
         name: "Make Pitch yours, done",
       })
-    ).toBeInTheDocument()
+    ).not.toBeInTheDocument()
     expect(
       within(firstCafeList()).queryByRole("link", {
         name: "Triage one Apply card, done",
@@ -449,12 +441,13 @@ describe("Home first-café checklist", () => {
     await expectHomeStarted()
 
     expect(
-      screen.queryByRole("heading", { name: "Four small things" })
+      screen.getByRole("heading", { name: "Four small things" })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("region", { name: "You're set" })
     ).not.toBeInTheDocument()
-    expect(firstCafeQuietDone()).toBeInTheDocument()
     expect(readFirstCafeState("user_test").completed).toEqual([
       "sample-cv",
-      "pitch",
       "apply",
     ])
   })

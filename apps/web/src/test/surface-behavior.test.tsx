@@ -1,12 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, screen, within } from "@testing-library/react"
 
-import {
-  emptyPitchDocument,
-  PITCH_CONTENT_KIND,
-  PITCH_CONTENT_VERSION,
-} from "@workspace/domain"
-
 import { APPLY_OPEN_GUIDE } from "@/features/apply/apply-search.ts"
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { apiBaseUrl } from "@/lib/api-url.ts"
@@ -19,7 +13,6 @@ import {
 } from "@/test/auth-client-mock.ts"
 import { getMockPaperDocs } from "@/test/paper-api-mock.ts"
 import { samplePaperDocs } from "@/test/paper-fixtures.ts"
-import { setMockPitchDoc } from "@/test/pitch-api-mock.ts"
 import { renderApp } from "@/test/render-app.tsx"
 import { FIXTURE_THREADS } from "@/test/thread-fixtures.ts"
 import { getMockThreads } from "@/test/threads-api-mock.ts"
@@ -37,17 +30,6 @@ function expectNone(texts: string[]) {
   for (const text of texts) {
     expect(screen.queryByText(text), text).not.toBeInTheDocument()
   }
-}
-
-function emptyPitch() {
-  setMockPitchDoc({
-    id: "55555555-5555-7555-8555-555555555562",
-    kind: PITCH_CONTENT_KIND,
-    content: emptyPitchDocument(),
-    contentVersion: PITCH_CONTENT_VERSION,
-    createdAt: "2026-08-25T00:00:00.000Z",
-    updatedAt: "2026-08-25T00:00:00.000Z",
-  })
 }
 
 describe("empty api data shows empty states, never sample content", () => {
@@ -85,11 +67,10 @@ describe("empty api data shows empty states, never sample content", () => {
     ).not.toBeInTheDocument()
   })
 
-  it("Pitch shows the empty state and no demo content", async () => {
-    emptyPitch()
+  it("Pitch shows the placeholder and no demo content", async () => {
     renderApp(SURFACE_PATHS.pitch)
 
-    expect(await screen.findByText("Your Pitch is empty")).toBeInTheDocument()
+    expect(await screen.findByText("Pitch. Coming soon.")).toBeInTheDocument()
     expect(screen.queryByText("Demo content")).not.toBeInTheDocument()
     expect(
       screen.queryByRole("heading", { name: "Moments" })
@@ -152,11 +133,8 @@ describe("Pitch makes no third-party requests", () => {
       requested.push(new URL(raw, apiBaseUrl).href)
     })
 
-    expect(
-      await screen.findByRole("heading", { name: "GitHub" })
-    ).toBeInTheDocument()
+    expect(await screen.findByText("Pitch. Coming soon.")).toBeInTheDocument()
 
-    expect(requested.length).toBeGreaterThan(0)
     for (const href of requested) {
       expect(new URL(href).origin, href).toBe(new URL(apiBaseUrl).origin)
     }
@@ -175,9 +153,7 @@ describe("Pitch does not seed a persona", () => {
     })
     renderApp(SURFACE_PATHS.pitch)
 
-    expect(
-      await screen.findByRole("heading", { level: 2, name: "Scout Tester" })
-    ).toBeInTheDocument()
+    expect(await screen.findByText("Pitch. Coming soon.")).toBeInTheDocument()
     expect(document.body.textContent).not.toMatch(PERSONA_NAMES)
   })
 })

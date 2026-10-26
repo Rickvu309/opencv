@@ -4,24 +4,22 @@ import { Pool } from "pg"
 
 import { createApp } from "./app.js"
 import type { FetchJobPosting } from "./apply/fetch-posting.js"
-import { coachRuntimeFromConfig } from "./coach/bind.js"
-import { withScanJobPosting } from "./coach/fake.js"
-import { COACH_MODES, type CoachMode } from "@workspace/domain"
-
+import { createDemoCoachRuntime, withScanJobPosting } from "./coach/index.js"
 import {
   authUrlFromEnv,
-  coachDailyTurnLimitForModeFromEnv,
-  coachModelForModeFromEnv,
+  coachModelEnvFromEnv,
   coachRuntimeModeFromEnv,
   databaseUrlFromEnv,
   dbDriverFromEnv,
-  openRouterApiKeyFromEnv,
-  openRouterBaseUrlFromEnv,
+  gmailEnabledFromEnv,
+  googleEnabledFromEnv,
+  logAuthMailFromEnv,
   pgliteDataDirFromEnv,
   sessionSecretFromEnv,
   webOriginsFromEnv,
 } from "./config.js"
-import { migrationsFolder } from "./db/paths.js"
+import { bindDatabase, type AppDatabase } from "./db/context.js"
+import { runMigrations } from "./db/migrate.js"
 import * as schema from "./db/schema.js"
 
 const fakePosting = {
@@ -40,14 +38,12 @@ async function createPgliteDb(dataDir: string) {
     console.error("DB_DRIVER=pglite is local-only and refused in production")
     process.exit(1)
   }
-  const [{ PGlite }, { drizzle: drizzlePglite }, { migrate }] =
-    await Promise.all([
-      import("@electric-sql/pglite"),
-      import("drizzle-orm/pglite"),
-      import("drizzle-orm/pglite/migrator"),
-    ])
+  const [{ PGlite }, { drizzle: drizzlePglite }] = await Promise.all([
+    import("@electric-sql/pglite"),
+    import("drizzle-orm/pglite"),
+  ])
   const db = drizzlePglite({ client: new PGlite(dataDir), schema })
-  await migrate(db, { migrationsFolder })
+  await runMigrations(db as unknown as AppDatabase)
   return db
 }
 
@@ -62,40 +58,32 @@ const db =
     : pool
       ? drizzle(pool, { schema })
       : undefined
-const openRouterApiKey = openRouterApiKeyFromEnv(process.env)
-const coachModels = Object.fromEntries(
-  COACH_MODES.map((mode) => [mode, coachModelForModeFromEnv(mode, process.env)])
-) as Record<CoachMode, string>
-const coachDailyTurnLimits = Object.fromEntries(
-  COACH_MODES.map((mode) => [
-    mode,
-    coachDailyTurnLimitForModeFromEnv(mode, process.env),
-  ])
-) as Record<CoachMode, number>
+
+if (db) bindDatabase(db as AppDatabase)
+
 const coachRuntimeMode = coachRuntimeModeFromEnv(process.env)
-const baseCoach = coachRuntimeFromConfig({
-  db,
-  openRouterApiKey,
-  openRouterBaseUrl: openRouterBaseUrlFromEnv(process.env),
-  titleModel: coachModels.light,
-  scanModel: coachModels.free,
-  runtimeMode: coachRuntimeMode,
-})
+const coachEnv = coachModelEnvFromEnv(process.env)
 const coach =
-  coachRuntimeMode === "fake" && baseCoach
-    ? withScanJobPosting(baseCoach, async () => JSON.stringify(fakePosting))
-    : baseCoach
+  coachRuntimeMode === "fake"
+    ? withScanJobPosting(createDemoCoachRuntime(), async () =>
+        JSON.stringify(fakePosting)
+      )
+    : undefined
 
 const app = createApp({
   webOrigins: webOriginsFromEnv(process.env),
   databaseUrl,
   sessionSecret: sessionSecretFromEnv(process.env),
   authUrl: authUrlFromEnv(process.env),
-  openRouterApiKey,
-  coachModels,
-  coachDailyTurnLimits,
   db,
   coach,
+  coachEnv,
+  gmailEnabled: gmailEnabledFromEnv(process.env),
+  googleEnabled: googleEnabledFromEnv(process.env),
+  logAuthMail: logAuthMailFromEnv(process.env),
+  interpretPostings:
+    coachRuntimeMode !== "fake" &&
+    Boolean(coachEnv.OPENROUTER_API_KEY || coachEnv.ANTHROPIC_API_KEY),
   fetchJobPosting:
     coachRuntimeMode === "fake" ? fakeFetchJobPosting : undefined,
 })

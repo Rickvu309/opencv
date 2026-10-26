@@ -6,7 +6,7 @@ This directory is the maintained source for verifying the user-facing behavior o
 
 - A stack launched by `scripts/launch.sh <run>` and a green `scripts/doctor.sh <run>`.
 - Load `WEB_URL`, `API_URL` and `EVIDENCE_DIR` from `~/tmp/opencv-verify/<run>/run.env`.
-- Use your own `agent-browser` session. Every feature except Auth starts signed in as a freshly signed-up user (see `auth.md` for the sign-up commands), which also gives the starter workspace.
+- Use your own `agent-browser` session. Every feature except Auth starts signed in as a freshly signed-up user (see `auth.md`). A new account is empty. The feature file creates the CV, cards, or thread it drives.
 - Never drive an instance that was not started by this run.
 
 ## Driving conventions
@@ -23,9 +23,9 @@ This directory is the maintained source for verifying the user-facing behavior o
 | --- | --- | --- |
 | `auth.md` | Sign up, sign out, sign in | `/sign-up`, `/sign-in` |
 | `home-coach-turn.md` | One Coach turn streams a scripted reply | `/app` |
-| `paper-edit-save.md` | Edit the starter CV, save, reload | `/app/paper` |
-| `apply-board-and-scan.md` | Move a card, scan a posting URL | `/app/apply` |
-| `pitch-publish.md` | Publish Pitch, open the public page | `/app/pitch`, `/u/<slug>` |
+| `paper-edit-save.md` | Create a CV, edit it, reload | `/app/paper` |
+| `apply-board-and-scan.md` | Add a card, move it, scan a posting URL | `/app/apply` |
+| `pitch-publish.md` | Open the Pitch placeholder | `/app/pitch` |
 
 ## Proof and skip reporting
 

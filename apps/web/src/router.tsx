@@ -137,26 +137,11 @@ const settingsRoute = createRoute({
   ),
 })
 
-const PublicPitchPage = lazyRouteComponent(
-  () => import("@/features/pitch/pitch-public-page.tsx"),
-  "PublicPitchPage"
-)
-
-const publicPitchRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/u/$slug",
-  component: function PublicPitchRoute() {
-    const { slug } = publicPitchRoute.useParams()
-    return <PublicPitchPage slug={slug} />
-  },
-})
-
 const routeTree = rootRoute.addChildren([
   indexRoute,
   pricingRoute,
   signInRoute,
   signUpRoute,
-  publicPitchRoute,
   appLayoutRoute.addChildren([
     homeRoute,
     paperRoute,

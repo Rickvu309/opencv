@@ -11,6 +11,7 @@ export default defineRailway((ctx) => {
   const api = service("api", {
     source: github("quanvu309/opencv", { branch: "main" }),
     env: {
+      ANTHROPIC_API_KEY: preserve(),
       AUTH_URL: preserve(),
       DATABASE_URL: preserve(),
       OPENROUTER_API_KEY: preserve(),

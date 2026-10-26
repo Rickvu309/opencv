@@ -9,16 +9,32 @@ export const ERROR_CODES = {
   COACH_UNAVAILABLE: "COACH_UNAVAILABLE",
   COACH_LIMIT_REACHED: "COACH_LIMIT_REACHED",
   INTERNAL_ERROR: "INTERNAL_ERROR",
+  CONFLICT: "CONFLICT",
+  PLAN_REQUIRED: "PLAN_REQUIRED",
+  DUPLICATE_JOB: "DUPLICATE_JOB",
+  FILE_UNSUPPORTED: "FILE_UNSUPPORTED",
+  LINK_UNREADABLE: "LINK_UNREADABLE",
+  PENDING_EXPIRED: "PENDING_EXPIRED",
+  CALENDAR_REQUIRED: "CALENDAR_REQUIRED",
+  COMPANY_REQUIRED: "COMPANY_REQUIRED",
 } as const
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES]
 
+export type ErrorDetail = {
+  code: string
+  message: string
+  resetsAt?: string
+  window?: "day"
+  mode?: string
+  plan?: string
+  document?: unknown
+  jobId?: string
+}
+
 export type ErrorEnvelope = {
   ok: false
-  error: {
-    code: string
-    message: string
-  }
+  error: ErrorDetail
 }
 
 export type SuccessEnvelope<T> = {
@@ -69,13 +85,25 @@ export function httpStatusForError(code: string): number {
     case ERROR_CODES.COACH_UNAVAILABLE:
       return 503
     case ERROR_CODES.VALIDATION_ERROR:
+    case ERROR_CODES.COMPANY_REQUIRED:
       return 400
+    case ERROR_CODES.PLAN_REQUIRED:
+      return 402
     case ERROR_CODES.FORBIDDEN:
     case ERROR_CODES.COACH_NOT_ALLOWED:
       return 403
     case ERROR_CODES.UNKNOWN_COMMAND:
     case ERROR_CODES.NOT_FOUND:
       return 404
+    case ERROR_CODES.CONFLICT:
+    case ERROR_CODES.DUPLICATE_JOB:
+    case ERROR_CODES.PENDING_EXPIRED:
+    case ERROR_CODES.CALENDAR_REQUIRED:
+      return 409
+    case ERROR_CODES.FILE_UNSUPPORTED:
+      return 415
+    case ERROR_CODES.LINK_UNREADABLE:
+      return 422
     case ERROR_CODES.COACH_LIMIT_REACHED:
       return 429
     case ERROR_CODES.INTERNAL_ERROR:

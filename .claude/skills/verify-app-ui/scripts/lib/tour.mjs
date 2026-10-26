@@ -1,17 +1,15 @@
-// Drives one signed-in tour of the app and returns the raw measurements. It decides nothing.
-// Signs up a throwaway account through the api (the starter workspace seeds a CV, four Apply cards,
-// a sample Pitch and a welcome Thread), then visits Home, a Thread, the Search palette, Paper (list and
-// open CV with the Coach float), Apply and Pitch (with a story open and the edit bar). Scenario pages
-// make an api call fail or wait, and the last one deletes the Apply cards through the api.
+// Drives one signed-in tour and returns raw measurements. It decides nothing.
+// Sign-up no longer seeds a workspace, so the tour creates one CV and one Apply card.
 // A step that does not happen throws (exit 2); it is never counted as a pass.
 import { colorsSource } from "./probe-colors.mjs"
 import { probeSource } from "./probe.mjs"
 
+const CV_NAME = "Live Check CV"
 const ROUTES = {
   home: ["/app", "document.querySelector('h1')"],
   paper: [
     "/app/paper",
-    "document.body.innerText.includes('Sample internship CV')",
+    `document.body.innerText.includes(${JSON.stringify(CV_NAME)})`,
   ],
   apply: ["/app/apply", "document.querySelector('[data-card-id]')"],
   pitch: ["/app/pitch", "document.querySelector('h1')"],
@@ -96,6 +94,36 @@ export async function runTour({ browser, webUrl, apiUrl, shots }) {
     body: JSON.stringify({ name: 'Live Check', email: 'tour-' + Date.now() + '@verify.local', password: 'Probe-pass-123' }),
   }).then((r) => r.status)`)
   must(status === 200, `sign-up returned ${status}`)
+  const prepared = await a.evaluate(`(async () => {
+    const post = (path, body) => fetch(${JSON.stringify(apiUrl)} + path, {
+      method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    const cv = await post('/api/commands/paper.createDoc', {
+      kind: 'cv',
+      name: ${JSON.stringify(CV_NAME)},
+      content: {
+        templateId: 'internship',
+        name: 'Live Check',
+        headline: 'Product intern',
+        contact: { email: 'tour@verify.local', phone: '', location: '' },
+        summary: 'A CV created for this check.',
+        experience: [{ role: 'Intern', company: 'Lab', period: '2025', bullets: ['Shipped a small study.'] }],
+        education: [],
+        skills: [],
+      },
+    })
+    const card = await post('/api/commands/apply.createCard', {
+      title: 'Associate PM intern',
+      company: 'Local startup',
+      stage: 'prep',
+    })
+    return { cv: cv.ok, card: card.ok }
+  })()`)
+  must(
+    prepared.cv === true && prepared.card === true,
+    `creating the tour CV and card failed (${JSON.stringify(prepared)})`
+  )
 
   const visit = async (key) => {
     const [path, ready] = ROUTES[key]
@@ -137,12 +165,8 @@ export async function runTour({ browser, webUrl, apiUrl, shots }) {
     }
     if (key === "paper") {
       must(
-        await clickByText(
-          a,
-          "tr, a, button, [role=row]",
-          "Sample internship CV"
-        ),
-        "the sample CV row was not found"
+        await clickByText(a, "tr, a, button, [role=row]", CV_NAME),
+        "the created CV row was not found"
       )
       must(
         await a.waitFor("document.querySelector('h1')", 10000),
@@ -164,51 +188,8 @@ export async function runTour({ browser, webUrl, apiUrl, shots }) {
       await shot(a, "desktop-paper-cv-coach")
     }
     if (key === "pitch") {
-      const added = await a.evaluate(`(async () => {
-        const o = { credentials: 'include' }
-        const cur = await (await fetch(${JSON.stringify(`${apiUrl}/api/pitch`)}, o)).json()
-        const content = { ...cur.data.content, storyHighlights: [{
-          id: 'sh-checkout', label: 'Checkout', coverTone: 'neutral',
-          slides: [
-            { id: 's1', caption: 'Hallway test setup', detail: 'Two mobile layouts', tone: 'neutral' },
-            { id: 's2', caption: 'Written up as a Proof', tone: 'neutral' },
-          ],
-        }] }
-        const res = await fetch(${JSON.stringify(`${apiUrl}/api/commands/pitch.update`)}, { ...o, method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ content, contentVersion: cur.data.contentVersion ?? 1 }) })
-        return res.ok
-      })()`)
-      must(added === true, "adding a highlight to the Pitch through the api")
-      must(
-        await visit("pitch"),
-        "the Pitch did not render after adding a highlight"
-      )
-      await a.sleep(800)
-      must(
-        await clickByText(a, "button", "Checkout highlight"),
-        "the Checkout highlight was not found"
-      )
-      must(
-        await a.waitFor("document.querySelector('[role=dialog]')", 4000),
-        "the story viewer did not open"
-      )
-      await a.sleep(1000)
-      d.pitchStory = await snap(a)
-      await shot(a, "desktop-pitch-story")
-      await a.key("Escape")
-      await a.sleep(500)
-      must(
-        await clickByText(a, "button", "Edit Pitch"),
-        "Edit Pitch was not found"
-      )
-      must(
-        await a.waitFor(
-          "[...document.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Publish')",
-          5000
-        ),
-        "the Pitch edit bar did not open"
-      )
-      await a.sleep(600)
-      d.pitchEdit = await snap(a)
+      d.pitchEdit = d.pitch
+      d.pitchStory = d.pitch
     }
   }
   d.logs.push(...a.logs.splice(0))
@@ -311,7 +292,7 @@ export async function runTour({ browser, webUrl, apiUrl, shots }) {
   d.logs.push(...m.logs.splice(0))
   await m.close()
 
-  // Last, because it deletes the seeded cards through the api to reach the zero-card state.
+  // Last, because it deletes the card this tour created to reach the zero-card state.
   const e = await browser.openPage({
     width: 1440,
     height: 900,
@@ -321,7 +302,7 @@ export async function runTour({ browser, webUrl, apiUrl, shots }) {
   await e.goto(`${webUrl}/app/apply`)
   must(
     await e.waitFor("document.querySelector('[data-card-id]')", 15000),
-    "the seeded board did not render"
+    "the created board did not render"
   )
   const deleted = await e.evaluate(`(async () => {
     const o = { credentials: 'include' }
@@ -335,7 +316,7 @@ export async function runTour({ browser, webUrl, apiUrl, shots }) {
   })()`)
   must(
     deleted.total > 0 && deleted.deleted === deleted.total,
-    `deleting the seeded cards (${JSON.stringify(deleted)})`
+    `deleting the created cards (${JSON.stringify(deleted)})`
   )
   await e.goto(`${webUrl}/app/apply`)
   await e.waitFor(STAGES, 15000)

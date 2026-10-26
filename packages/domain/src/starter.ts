@@ -1,15 +1,6 @@
 import type { ApplyStage, ApplyTrackKind } from "./apply.js"
 import { decodePaperContent, type CvDocument } from "./paper-codecs.js"
 import { PAPER_CONTENT_VERSION } from "./paper.js"
-import {
-  decodePitchContent,
-  DEFAULT_PITCH_BLOCKS,
-  STARTER_PITCH_ABOUT_LEAD,
-  STARTER_PITCH_HEADLINE,
-  type PitchAchievement,
-  type PitchDocument,
-} from "./pitch-codecs.js"
-import { PITCH_CONTENT_KIND, PITCH_CONTENT_VERSION } from "./pitch.js"
 
 /** Drive name for the sample CV created at signup. Wipeable. */
 export const STARTER_CV_NAME = "Sample internship CV"
@@ -181,122 +172,8 @@ export function starterApplyCards(): StarterApplyCardDraft[] {
   ]
 }
 
-/** Proof key the Pitch Open Proof CTA resolves — never a dead href. */
-export const STARTER_CHECKOUT_PROOF_ID = "checkout"
-
-/** First starter ACHIEVEMENT — the one card that opens Open Proof. */
-export const STARTER_CHECKOUT_ACHIEVEMENT_ID = "a1"
-export const STARTER_CHECKOUT_ACHIEVEMENT_TITLE = "Checkout card resize study"
-
-/** Product-voice Proof card a café student can add on an empty Pitch. */
-export function starterCheckoutAchievement(
-  id = STARTER_CHECKOUT_ACHIEVEMENT_ID
-): PitchAchievement {
-  return {
-    id,
-    year: "2025",
-    title: STARTER_CHECKOUT_ACHIEVEMENT_TITLE,
-    context: "Side project",
-    description:
-      "Ran a 12-person hallway test on two mobile checkout layouts, then wrote it up as a Proof.",
-    proofId: STARTER_CHECKOUT_PROOF_ID,
-    tag: "UX research",
-  }
-}
-
-export function pitchHasCheckoutAchievement(
-  achievements: readonly Pick<PitchAchievement, "title" | "proofId">[]
-): boolean {
-  return achievements.some(
-    (item) =>
-      item.proofId === STARTER_CHECKOUT_PROOF_ID ||
-      item.title === STARTER_CHECKOUT_ACHIEVEMENT_TITLE
-  )
-}
-
-/** Honest headline so a Proof-only Pitch is not treated as leftover demo. */
-export const STARTER_CHECKOUT_PITCH_HEADLINE =
-  "Proof on this page — replace with your story"
-
-/**
- * One smokeable Open Proof card. No-op when checkout is already on the page.
- * Does not stamp `demo` — Clear demo stays empty until the User adds this.
- * If identity copy is still blank, set a quiet headline so decode (old or
- * new heal) cannot wipe the card as leftover sample residue.
- */
-export function withStarterCheckoutAchievement(
-  doc: PitchDocument
-): PitchDocument {
-  if (pitchHasCheckoutAchievement(doc.achievements)) return doc
-  const taken = new Set(doc.achievements.map((item) => item.id))
-  const id = taken.has(STARTER_CHECKOUT_ACHIEVEMENT_ID)
-    ? "a-checkout"
-    : STARTER_CHECKOUT_ACHIEVEMENT_ID
-  const next: PitchDocument = {
-    ...doc,
-    achievements: [...doc.achievements, starterCheckoutAchievement(id)],
-  }
-  const identityEmpty =
-    next.demo !== true &&
-    next.headline.trim() === "" &&
-    next.status.trim() === "" &&
-    next.about.trim() === ""
-  if (!identityEmpty) return next
-  return {
-    ...next,
-    headline: STARTER_CHECKOUT_PITCH_HEADLINE,
-  }
-}
-
-/**
- * One-line sample Pitch for a new account: the name line, one status, one
- * Proof. No stock highlights, no Moments, no metric. Identity (name, email,
- * avatar) is overlaid from the session User. `demo: true` labels the page
- * Demo content, and Clear demo leads to the empty Pitch.
- */
-export function starterPitchDocument(): PitchDocument {
-  return {
-    headline: STARTER_PITCH_HEADLINE,
-    location: "",
-    status: "Open to intern roles",
-    about: STARTER_PITCH_ABOUT_LEAD,
-    published: false,
-    demo: true,
-    github: {
-      username: "",
-      connected: true,
-    },
-    blocks: DEFAULT_PITCH_BLOCKS.map((block) =>
-      block.kind === "about" || block.kind === "achievements"
-        ? block
-        : { ...block, hidden: true }
-    ),
-    achievements: [starterCheckoutAchievement()],
-    experience: [],
-    storyHighlights: [],
-    bento: [],
-    gallery: [],
-    files: [],
-    links: [],
-    workDocs: [],
-  }
-}
-
-export function starterPitchContent(): Record<string, unknown> {
-  const content = starterPitchDocument()
-  const decoded = decodePitchContent(
-    PITCH_CONTENT_KIND,
-    PITCH_CONTENT_VERSION,
-    content
-  )
-  if (!decoded.ok) {
-    throw new Error(`Starter Pitch failed the codec: ${decoded.message}`)
-  }
-  return decoded.data as Record<string, unknown>
-}
-
 export const STARTER_THREAD_COACH_TEXT =
-  "Paper has one sample CV you can replace. Apply has a few example cards labeled Demo across Stages so the board isn't empty. Pitch has a sample page labeled Demo content — edit it or clear the demo when you want it to be yours. Delete any of it when you are ready — none of it is a real person.\n\nI haven't edited Paper, Apply, or Pitch, and I haven't run any Commands — this workspace was seeded for you. Ask here when you want a next step, or open those surfaces yourself."
+  "Paper has one sample CV you can replace. Apply has a few example cards labeled Demo across Stages so the board isn't empty. Delete any of it when you are ready. None of it is a real person.\n\nI haven't edited Paper or Apply, and I haven't run any Commands. This workspace was seeded for you. Ask here when you want a next step, or open those surfaces yourself."
 
 export function starterThread() {
   return {
