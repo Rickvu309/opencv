@@ -168,4 +168,68 @@ describe("apply board", () => {
       rect.mockRestore()
     }
   })
+
+  it("moves into an empty column from the keyboard", async () => {
+    const offer = mockJob({
+      id: "01900000-0000-7000-8000-000000000013",
+      title: "Support engineer",
+      company: "Northwind Labs",
+      stage: "offer",
+      position: "a0",
+    })
+    const rect = vi
+      .spyOn(HTMLElement.prototype, "getBoundingClientRect")
+      .mockImplementation(function (this: HTMLElement) {
+        const board = this.closest("[data-slot='kanban-board']")
+        const stage =
+          board?.getAttribute("data-stage") ?? this.getAttribute("data-stage")
+        const order = ["saved", "applied", "interview", "offer", "closed"]
+        const index = stage ? order.indexOf(stage) : -1
+        const card = this.closest("[data-slot='kanban-card']")
+        if (index < 0) return new DOMRect(24, 96, 200, 80)
+        return new DOMRect(
+          index * 320 + (card ? 24 : 0),
+          card ? 96 : 0,
+          card ? 200 : 244,
+          card ? 80 : 2400
+        )
+      })
+    try {
+      setMockJobs([applied, offer])
+      renderApp("/app/apply")
+      const card = await screen.findByRole("button", {
+        name: "Business Analyst, Regional bank",
+      })
+      async function key(target: EventTarget, code: string) {
+        await act(async () => {
+          fireEvent.keyDown(target, {
+            code,
+            key: code === "Space" ? " " : code,
+          })
+          await new Promise((resolve) => setTimeout(resolve, 0))
+        })
+      }
+      card.focus()
+      await key(card, "Space")
+      await key(document, "ArrowRight")
+      await key(document, "Space")
+      await waitFor(() => {
+        expect(
+          getMockJobPosts().some(
+            (post) =>
+              post.name === "job.move" &&
+              post.input.jobId === applied.id &&
+              post.input.stage === "interview"
+          )
+        ).toBe(true)
+      })
+      expect(
+        getMockJobPosts().some(
+          (post) => post.name === "job.move" && post.input.stage === "offer"
+        )
+      ).toBe(false)
+    } finally {
+      rect.mockRestore()
+    }
+  })
 })
