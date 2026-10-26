@@ -104,10 +104,10 @@ export function JobRow({
       <span className="min-w-24 flex-1 truncate text-left text-sm">
         {job.title}
       </span>
-      <span className="min-w-14 max-w-28 truncate text-xs text-muted-foreground md:max-w-none md:shrink-0">
+      <span className="max-w-28 min-w-14 truncate text-xs text-muted-foreground md:max-w-none md:shrink-0">
         {job.company}
       </span>
-      <span className="min-w-0 max-w-24 shrink truncate text-xs text-muted-foreground sm:max-w-none sm:shrink-0">
+      <span className="max-w-24 min-w-0 shrink truncate text-xs text-muted-foreground sm:max-w-none sm:shrink-0">
         {phrase}
       </span>
     </Button>
