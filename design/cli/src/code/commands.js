@@ -71,9 +71,7 @@ export function makeCodeCommands({ out, fail, c }) {
     ok(
       !!cfg?.componentsDir &&
         existsSync(resolve(cwd, cfg.componentsDir, "button.tsx")),
-      cfg?.componentsDir
-        ? `${cfg.componentsDir}/button.tsx`
-        : "button.tsx",
+      cfg?.componentsDir ? `${cfg.componentsDir}/button.tsx` : "button.tsx",
       "add the glow Button"
     )
     ok(

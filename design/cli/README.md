@@ -71,39 +71,39 @@ Files land where `opencv.json` says (defaults: `src/components/opencv`, `src/scr
 
 ## Commands
 
-| Command                      | What it does                                                                 |
-| ---------------------------- | ---------------------------------------------------------------------------- |
-| `guide`                      | The agent playbook.                                                          |
-| `new <dir> [--install]`      | A complete app with every screen.                                            |
-| `init [--force]`             | Add opencv to an existing React project.                                     |
-| `doctor`                     | Check the setup. A shadcn `opencv.json` checks Button, Toaster, globals.css and sonner. |
-| `list [components\|screens]` | What you can add. `--json` for agents.                                       |
-| `show <name> [--source]`     | A component file, export or screen: exports, notes, dependencies, code.      |
-| `add <names...> \| --all`    | Copy components with their dependencies.                                     |
+| Command                      | What it does                                                                                                            |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `guide`                      | The agent playbook.                                                                                                     |
+| `new <dir> [--install]`      | A complete app with every screen.                                                                                       |
+| `init [--force]`             | Add opencv to an existing React project.                                                                                |
+| `doctor`                     | Check the setup. A shadcn `opencv.json` checks Button, Toaster, globals.css and sonner.                                 |
+| `list [components\|screens]` | What you can add. `--json` for agents.                                                                                  |
+| `show <name> [--source]`     | A component file, export or screen: exports, notes, dependencies, code.                                                 |
+| `add <names...> \| --all`    | Copy components with their dependencies.                                                                                |
 | `screen <names...>`          | Copy screens with everything they use and print the routes. `--target shadcn` maps classes. `--dry-run` prints residue. |
-| `theme`                      | Print `opencv.css`: the Tailwind v4 `@theme`, glow utilities and base layer. |
-| `lint [paths...]`            | Lint your code. Exits 1 on errors. `--target shadcn` keys orange on the hex. `--json`, `--verbose`. |
-| `copy "<text>"`              | Writing rules on one string.                                                 |
-| `rules [topic]`              | Product decisions: brand, color, buttons, copy, layout, apply, coach, plans. |
-| `tokens`, `export <dir>`     | Raw design tokens and a hand-off bundle.                                     |
-| `skill [--install [dir]]`    | Print or install the Claude skills.                                          |
-| `pen <command>`              | pen.dev canvas tools. `opencv pen --help`.                                   |
+| `theme`                      | Print `opencv.css`: the Tailwind v4 `@theme`, glow utilities and base layer.                                            |
+| `lint [paths...]`            | Lint your code. Exits 1 on errors. `--target shadcn` keys orange on the hex. `--json`, `--verbose`.                     |
+| `copy "<text>"`              | Writing rules on one string.                                                                                            |
+| `rules [topic]`              | Product decisions: brand, color, buttons, copy, layout, apply, coach, plans.                                            |
+| `tokens`, `export <dir>`     | Raw design tokens and a hand-off bundle.                                                                                |
+| `skill [--install [dir]]`    | Print or install the Claude skills.                                                                                     |
+| `pen <command>`              | pen.dev canvas tools. `opencv pen --help`.                                                                              |
 
 ## Lint rules
 
 `opencv lint` reads `.tsx .ts .jsx .js .css .html .mdx`, skips comments, and checks class names, hex values, string literals and JSX text.
 
-| Rule                                  | Level   | Catches                                                                       |
-| ------------------------------------- | ------- | ----------------------------------------------------------------------------- |
-| `brand-name`                          | error   | "OpenCV" in copy. Use `<Brand />`.                                            |
-| `em-dash`, `middle-dot`               | error   | `—` and `·` in copy.                                                          |
+| Rule                                  | Level   | Catches                                                                                     |
+| ------------------------------------- | ------- | ------------------------------------------------------------------------------------------- |
+| `brand-name`                          | error   | "OpenCV" in copy. Use `<Brand />`.                                                          |
+| `em-dash`, `middle-dot`               | error   | `—` and `·` in copy.                                                                        |
 | `orange-accent`                       | error   | The reserved orange. On `--target shadcn`, the hex only. `bg-accent` stays a hover surface. |
-| `warm-tint`                           | error   | Peach, beige and orange hex values.                                           |
-| `black-primary`                       | error   | Black buttons with white labels. Primary is `<Button variant="primary">`.     |
-| `oops`                                | error   | "Oops" in copy.                                                               |
-| `font`                                | warning | A font family other than Inter.                                               |
-| `connected`, `exclamation`, `credits` | warning | Copy rules: "Enabled" for on states, no exclamation marks, no credit numbers. |
-| `raw-hex`                             | hint    | A hex value with a theme class available. Shown with `--verbose`.             |
+| `warm-tint`                           | error   | Peach, beige and orange hex values.                                                         |
+| `black-primary`                       | error   | Black buttons with white labels. Primary is `<Button variant="primary">`.                   |
+| `oops`                                | error   | "Oops" in copy.                                                                             |
+| `font`                                | warning | A font family other than Inter.                                                             |
+| `connected`, `exclamation`, `credits` | warning | Copy rules: "Enabled" for on states, no exclamation marks, no credit numbers.               |
+| `raw-hex`                             | hint    | A hex value with a theme class available. Shown with `--verbose`.                           |
 
 Lint cannot see layout or states. Open the page at 1440 and 375 wide and walk each state.
 

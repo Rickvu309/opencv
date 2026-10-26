@@ -97,12 +97,7 @@ function texts(src) {
   return out
 }
 
-const COPY_ERRORS = new Set([
-  "brand-name",
-  "em-dash",
-  "middle-dot",
-  "oops",
-])
+const COPY_ERRORS = new Set(["brand-name", "em-dash", "middle-dot", "oops"])
 
 export function lintSource(file, src, kit, target = "kit") {
   const ext = extname(file)
@@ -129,7 +124,9 @@ export function lintSource(file, src, kit, target = "kit") {
   lines.forEach((l, i) => {
     const n = i + 1
     const orange =
-      target === "shadcn" ? ORANGE_HEX.test(l) : ORANGE_HEX.test(l) || ORANGE_CLASS.test(l)
+      target === "shadcn"
+        ? ORANGE_HEX.test(l)
+        : ORANGE_HEX.test(l) || ORANGE_CLASS.test(l)
     if (orange)
       add(
         n,

@@ -249,7 +249,14 @@ test("screen apply-board --target shadcn --dry-run leaves no hex and no raw cont
     join(dir, "opencv.json"),
     JSON.stringify({ ...DEFAULT_CONFIG, target: "shadcn" })
   )
-  const out = run(dir, "screen", "apply-board", "--target", "shadcn", "--dry-run")
+  const out = run(
+    dir,
+    "screen",
+    "apply-board",
+    "--target",
+    "shadcn",
+    "--dry-run"
+  )
   assert.match(out, /^target shadcn$/m)
   assert.match(out, /^hex 0$/m)
   assert.match(out, /^raw 0$/m)

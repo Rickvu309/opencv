@@ -181,10 +181,11 @@ export function residueOf(file, source) {
       )
     else hex.push(`${file} ${value}`)
   }
-  const raw = [...source.matchAll(RAW_RE)].map(
-    (match) => `${file} ${match[0]}`
+  const raw = [...source.matchAll(RAW_RE)].map((match) => `${file} ${match[0]}`)
+  if (
+    /@tanstack\/react-router/.test(source) &&
+    /useParams|useLocation/.test(source)
   )
-  if (/@tanstack\/react-router/.test(source) && /useParams|useLocation/.test(source))
     handFinish.push(
       `${file} react-router hooks now import @tanstack/react-router (check useParams and useLocation)`
     )

@@ -57,7 +57,13 @@ function put(path, content, force) {
   return exists ? "updated" : "created"
 }
 
-export function writeComponents(cwd, cfg, names, force, transform = (src) => src) {
+export function writeComponents(
+  cwd,
+  cfg,
+  names,
+  force,
+  transform = (src) => src
+) {
   const { components } = registry()
   const dir = resolve(cwd, cfg.componentsDir)
   return names.map((n) => ({
