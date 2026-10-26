@@ -28,8 +28,9 @@ const must = (ok, what) => {
   if (!ok) throw new Error(`tour step did not happen: ${what}`)
 }
 async function openDockCoach(page) {
-  const already =
-    await page.evaluate("Boolean(document.querySelector('textarea'))")
+  const already = await page.evaluate(
+    "Boolean(document.querySelector('textarea'))"
+  )
   if (already) return
   must(
     await clickByText(page, "button", "Coach"),
