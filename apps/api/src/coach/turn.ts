@@ -267,10 +267,13 @@ export async function runCoachTurn(options: {
         })
       } else {
         const snapshot = await readUsage(options.userId).catch(() => null)
+        const day = snapshot?.day
+        const reached =
+          day?.capped === true && "remaining" in day && day.remaining <= 0
         await emit(COACH_SSE_EVENTS.usage, {
           plan: options.plan,
           mode: options.mode,
-          capped: snapshot?.day.capped ?? false,
+          capped: reached,
         })
         await emit(COACH_SSE_EVENTS.messageEnd, { chatId: options.chatId })
       }

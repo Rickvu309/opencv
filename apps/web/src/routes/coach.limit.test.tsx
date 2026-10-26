@@ -35,4 +35,27 @@ describe("coach free cap", () => {
     expect(field).toHaveAttribute("placeholder", "Coach is back at 7:00")
     expect(screen.getByRole("button", { name: "Send" })).toBeDisabled()
   })
+
+  it("keeps the composer open while the metered day still has turns left", async () => {
+    setMockCoachUsage({
+      plan: "free",
+      mode: "free",
+      caps: { free: 2, light: 10, max: 5 },
+      day: {
+        capped: true,
+        used: 0,
+        cap: 2,
+        remaining: 2,
+        resetsAt: "2026-10-28T00:00:00.000Z",
+      },
+    })
+    renderApp("/app/coach")
+    expect(
+      await screen.findByRole("heading", { name: "How can I help?" })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText("You've reached today's Free limit")
+    ).not.toBeInTheDocument()
+    expect(screen.getByRole("textbox", { name: "Message Coach" })).toBeEnabled()
+  })
 })

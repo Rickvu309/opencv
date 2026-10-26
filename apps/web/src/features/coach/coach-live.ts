@@ -109,6 +109,28 @@ export async function loadCoachChat(chatId: string) {
   }
 }
 
+/** The server names a chat after the turn. Keep the messages already on screen. */
+export async function refreshCoachMeta(chatId: string) {
+  try {
+    const chat = await getChat(chatId)
+    const latest = cache.get(chatId)
+    if (!latest) return
+    const title = chat.title?.trim() || latest.title
+    const focusKind = chat.focusKind ?? null
+    const focusId = chat.focusId ?? null
+    if (
+      title === latest.title &&
+      focusKind === latest.focusKind &&
+      focusId === latest.focusId
+    ) {
+      return
+    }
+    write(chatId, { ...latest, title, focusKind, focusId })
+  } catch {
+    // The heading keeps the title already on screen.
+  }
+}
+
 function textPart(parts: CoachUiPart[]) {
   return parts.find((part) => part.kind === "text")
 }
@@ -306,6 +328,7 @@ export async function sendCoachTurn(input: {
           : item
       ),
     })
+    void refreshCoachMeta(input.chatId)
     return { restoreDraft: false, limited: false, error: null }
   } catch (error) {
     if (isAbortError(error) || controller.signal.aborted) {

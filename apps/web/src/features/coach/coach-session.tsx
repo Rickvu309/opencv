@@ -95,7 +95,7 @@ export function CoachSession({ chatId, variant, onChatId }: Props) {
   const usage = usageQuery.data ?? null
   const selectedMode = mode ?? usage?.mode ?? "free"
   const timeZone = profileZone(profileQuery.data)
-  const capped = usage?.day.capped === true
+  const capped = usage?.day.capped === true && (usage.day.remaining ?? 1) <= 0
   const resetTime = usage?.day.resetsAt
     ? formatResetTime(usage.day.resetsAt, timeZone)
     : ""
@@ -186,9 +186,7 @@ export function CoachSession({ chatId, variant, onChatId }: Props) {
       setDraft("")
       setAttachments([])
     }
-    if (result.limited) {
-      void queryClient.invalidateQueries({ queryKey: ["coach", "usage"] })
-    }
+    void queryClient.invalidateQueries({ queryKey: ["coach", "usage"] })
     void queryClient.invalidateQueries({ queryKey: ["coach", "chats"] })
   }
 
@@ -471,9 +469,6 @@ export function CoachSession({ chatId, variant, onChatId }: Props) {
               <p className="text-sm font-medium">{coachCopy.limitHeading}</p>
               <p className="text-sm text-muted-foreground">
                 {resetsAtLine(resetTime)}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {coachCopy.limitBody}
               </p>
               <Button
                 type="button"

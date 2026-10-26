@@ -64,7 +64,7 @@ export function maxModeLine(cap: number) {
 }
 
 export function resetsAtLine(time: string) {
-  return `Resets at ${time}. Pro has unlimited Coach chats.`
+  return `Resets at ${time}. ${coachCopy.limitBody}`
 }
 
 export function backAtLine(time: string) {
