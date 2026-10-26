@@ -273,6 +273,23 @@ html:has(.landing-root) {
   border-block-start: 1px solid var(--border);
 }
 
+.landing-footer .landing-stack {
+  inline-size: 100%;
+  align-items: stretch;
+}
+
+.landing-footer .landing-stack > a {
+  align-self: start;
+}
+
+.landing-footer ul.landing-stack {
+  gap: 0.125rem;
+}
+
+.landing-footer .landing-link {
+  min-block-size: 2rem;
+}
+
 .landing-footer-grid {
   display: grid;
   gap: 2rem 1.5rem;
