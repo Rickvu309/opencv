@@ -108,7 +108,7 @@ export function registerAccountQueries(registry: Registry) {
       name: "integrations.list",
       description: "Read the integrations catalog.",
       input: empty,
-      coach: true,
+      coach: false,
       step: () => "Read integrations",
       read: (_input, actor) => listIntegrations(actor.userId),
     })
@@ -118,7 +118,7 @@ export function registerAccountQueries(registry: Registry) {
       name: "billing.get",
       description: "Read the plan and billing placeholder.",
       input: empty,
-      coach: true,
+      coach: false,
       step: () => "Read billing",
       read: (_input, actor) => readBilling(actor.userId),
     })
