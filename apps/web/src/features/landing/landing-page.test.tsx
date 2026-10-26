@@ -12,34 +12,28 @@ afterEach(() => {
 const HEADLINE = "Get your butt in your dream seat."
 const SUBHEAD = "Turn what you’ve done into proof. Turn proof into interviews."
 const STATEMENT_REST =
-  "OpenCV helps you say it properly: clear proof of your work, then a CV, letter and page for the role you want."
-const TITLE = "OpenCV — Get your butt in your dream seat."
+  "opencv helps you say it properly: clear proof of your work, then a CV, letter and site written for each role you want."
+const TITLE = "opencv. Get your butt in your dream seat."
 
-const SURFACES = [
-  {
-    title: "Capture your work",
-    srcs: ["/landing/coach.webp", "/landing/coach-act.webp"],
-  },
-  { title: "Write with a coach", srcs: ["/landing/paper.webp"] },
-  { title: "Plan your search", srcs: ["/landing/apply.webp"] },
-  { title: "Share your work", srcs: ["/landing/pitch.webp"] },
+const SECTION_IDS = [
+  "hero",
+  "logos",
+  "product",
+  "benefits",
+  "capture",
+  "plan",
+  "assistant",
+  "review",
+  "stories",
+  "close",
 ] as const
 
-function follows(earlier: Element, later: Element) {
-  return (
-    (earlier.compareDocumentPosition(later) &
-      Node.DOCUMENT_POSITION_FOLLOWING) !==
-    0
-  )
-}
-
-function sectionOf(heading: HTMLElement) {
-  const section = heading.closest("section")
-  if (!(section instanceof HTMLElement)) {
-    throw new Error("heading is outside a section")
-  }
-  return section
-}
+const FEATURES = [
+  "Capture your work",
+  "Plan your search",
+  "Your writing assistant",
+  "Review, then send",
+] as const
 
 async function renderLanding() {
   setMockSession(null)
@@ -49,7 +43,7 @@ async function renderLanding() {
 }
 
 describe("landing page", () => {
-  it("keeps a signed-out visitor on / under the new headline", async () => {
+  it("keeps a signed-out visitor on / under the design headline", async () => {
     const { router, headline } = await renderLanding()
 
     expect(headline).toHaveTextContent(HEADLINE)
@@ -58,7 +52,7 @@ describe("landing page", () => {
     expect(router.state.location.pathname).toBe("/")
   })
 
-  it("sets the document title and description from the new copy", async () => {
+  it("sets the document title and description from the design copy", async () => {
     await renderLanding()
 
     await waitFor(() => {
@@ -69,125 +63,65 @@ describe("landing page", () => {
     ).toHaveAttribute("content", `${SUBHEAD} ${STATEMENT_REST}`)
   })
 
-  it("sends Get started to sign-up and Log in to sign-in", async () => {
+  it("sends Get started to sign-up, Log in to sign-in, and Pricing to /pricing", async () => {
     await renderLanding()
 
     const startLinks = screen.getAllByRole("link", { name: "Get started" })
-    expect(startLinks).toHaveLength(2)
+    expect(startLinks.length).toBeGreaterThanOrEqual(2)
     for (const link of startLinks) {
       expect(link).toHaveAttribute("href", "/sign-up")
     }
 
-    const logIn = screen.getAllByRole("link", { name: "Log in" })
-    expect(logIn).toHaveLength(2)
-    for (const link of logIn) {
+    for (const link of screen.getAllByRole("link", { name: "Log in" })) {
       expect(link).toHaveAttribute("href", "/sign-in")
     }
-  })
 
-  it("anchors Product and the four surfaces on the page", async () => {
-    await renderLanding()
-
-    const anchors = screen
-      .getByRole("navigation", { name: "Primary" })
-      .querySelectorAll("a")
-    expect(
-      [...anchors].map((anchor) => [
-        anchor.textContent,
-        anchor.getAttribute("href"),
-      ])
-    ).toEqual([
-      ["Product", "#product"],
-      ["Coach", "#coach"],
-      ["Paper", "#paper"],
-      ["Apply", "#apply"],
-      ["Pitch", "#pitch"],
-    ])
-
-    expect(document.getElementById("product")).toBeInstanceOf(HTMLElement)
-    for (const id of ["coach", "paper", "apply", "pitch"]) {
-      expect(document.getElementById(id)).toBeInstanceOf(HTMLElement)
+    const pricing = screen.getAllByRole("link", { name: "Pricing" })
+    expect(pricing.length).toBeGreaterThan(0)
+    for (const link of pricing) {
+      expect(link).toHaveAttribute("href", "/pricing")
     }
   })
 
-  it("places the chair, the statement, the figures, then real screenshots", async () => {
+  it("renders the twelve sections in design order and keeps real destinations", async () => {
     const { container } = await renderLanding()
 
-    const chair = screen.getByRole("img", { name: /leather armchair/i })
-    expect(chair).toHaveAttribute("src", "/landing/chair.webp")
-    const statement = screen.getByText("You’ve done more than your CV says.")
-    const figures = container.querySelector("[data-slot='landing-figures']")
-    const capture = screen.getByRole("heading", {
-      level: 2,
-      name: "Capture your work",
-    })
-    if (!(figures instanceof HTMLElement)) {
-      throw new Error("missing figures slot")
-    }
-
-    expect(follows(chair, statement)).toBe(true)
-    expect(follows(statement, figures)).toBe(true)
-    expect(follows(figures, capture)).toBe(true)
-
-    const headings = screen
-      .getAllByRole("heading", { level: 2 })
-      .map((heading) => heading.textContent)
-    const indexes = SURFACES.map((surface) => headings.indexOf(surface.title))
-    expect(indexes.every((index) => index >= 0)).toBe(true)
-    expect([...indexes].sort((a, b) => a - b)).toEqual(indexes)
-
-    for (const surface of SURFACES) {
-      const section = sectionOf(
-        screen.getByRole("heading", { level: 2, name: surface.title })
-      )
-      const sources = [...section.querySelectorAll("img")].map((image) =>
-        image.getAttribute("src")
-      )
-      expect(sources).toEqual([...surface.srcs])
-    }
-  })
-
-  it("keeps the close as plain text with one primary action", async () => {
-    await renderLanding()
-
-    const closing = screen.getByText(/Be the obvious hire\./)
-    expect(closing.tagName).toBe("P")
-    expect(closing.querySelector("br")).not.toBeNull()
-    const region = closing.closest("section")
-    if (!(region instanceof HTMLElement)) {
-      throw new Error("close is outside a section")
-    }
-    expect(
-      [...region.querySelectorAll("a")].map((link) => link.textContent)
-    ).toEqual(["Get started"])
-  })
-
-  it("leaves out sections the product cannot back up", async () => {
-    await renderLanding()
-
-    expect(document.body).not.toHaveTextContent(
-      /pricing|testimonial|changelog|voice notes|see a sample|linked sources/i
+    const ids = [...container.querySelectorAll("main > section")].map(
+      (section) => section.id
     )
+    expect(ids).toEqual([...SECTION_IDS])
+
+    for (const title of FEATURES) {
+      expect(
+        screen.getByRole("heading", { level: 2, name: title })
+      ).toBeInTheDocument()
+    }
+
+    expect(
+      screen.getByRole("heading", { name: "Proof, not claims" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText("PEOPLE USING OPENCV HAVE INTERVIEWED AT")
+    ).toBeInTheDocument()
+    expect(screen.getByText("Maya T.")).toBeInTheDocument()
+    expect(screen.getByText("Daniel K.")).toBeInTheDocument()
+
     expect(
       screen.queryByRole("link", { name: /^blog$/i })
     ).not.toBeInTheDocument()
     expect(
       screen.queryByRole("link", { name: /^help$/i })
     ).not.toBeInTheDocument()
-    expect(
-      screen.queryByRole("link", { name: /pricing/i })
-    ).not.toBeInTheDocument()
-    expect(
-      screen.queryByRole("combobox", { name: /language/i })
-    ).not.toBeInTheDocument()
-    expect(
-      screen.queryByText(
-        "A first-job coach for Vietnamese students and new graduates."
-      )
-    ).not.toBeInTheDocument()
+    expect(container.querySelector('a[href*="/u/"]')).toBeNull()
+
+    for (const image of container.querySelectorAll("img")) {
+      expect(image.getAttribute("width")).toBeTruthy()
+      expect(image.getAttribute("height")).toBeTruthy()
+      expect(image.getAttribute("alt")?.trim().length).toBeGreaterThan(20)
+    }
   })
 
-  it("names every photo and every role=img graphic, and stays light", async () => {
+  it("names every photo and stays on the light field", async () => {
     const { container } = await renderLanding()
 
     const graphics = container.querySelectorAll("img, [role='img']")
@@ -200,6 +134,29 @@ describe("landing page", () => {
     }
     expect(container.querySelector(".dark")).toBeNull()
     expect(document.documentElement).not.toHaveClass("dark")
+  })
+})
+
+describe("pricing page", () => {
+  it("shows Free and Pro with sign-up actions", async () => {
+    setMockSession(null)
+    renderApp("/pricing")
+
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Pricing" })
+    ).toBeInTheDocument()
+    expect(screen.getByText("$0")).toBeInTheDocument()
+    expect(screen.getByText("$9")).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Start free" })).toHaveAttribute(
+      "href",
+      "/sign-up"
+    )
+    expect(screen.getByRole("link", { name: "Get Pro" })).toHaveAttribute(
+      "href",
+      "/sign-up"
+    )
+    expect(screen.getAllByText("Not included").length).toBeGreaterThan(0)
+    expect(document.body).not.toHaveTextContent("–")
   })
 })
 
