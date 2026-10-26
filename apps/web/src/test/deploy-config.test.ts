@@ -91,9 +91,13 @@ describe(".railway/railway.ts", () => {
       })
       expect(api?.variables).toEqual({
         ANTHROPIC_API_KEY: { type: "preserve" },
+        AUTH_EMAIL_FROM: { type: "preserve" },
         AUTH_URL: { type: "preserve" },
         DATABASE_URL: { type: "preserve" },
+        GOOGLE_CLIENT_ID: { type: "preserve" },
+        GOOGLE_CLIENT_SECRET: { type: "preserve" },
         OPENROUTER_API_KEY: { type: "preserve" },
+        RESEND_API_KEY: { type: "preserve" },
         SESSION_SECRET: { type: "preserve" },
         WEB_ORIGINS: { type: "preserve" },
       })

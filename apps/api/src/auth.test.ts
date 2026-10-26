@@ -468,7 +468,9 @@ describe("auth code delivery", () => {
   })
 
   it("posts the code to Resend and hides it from the log", async () => {
-    const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }))
+    const fetchMock = vi.fn<
+      (u: string, init?: RequestInit) => Promise<Response>
+    >(async () => new Response("{}", { status: 200 }))
     vi.stubGlobal("fetch", fetchMock)
     const log = vi.spyOn(console, "log").mockImplementation(() => {})
     const errorLog = vi.spyOn(console, "error").mockImplementation(() => {})
