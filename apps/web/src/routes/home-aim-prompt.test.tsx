@@ -6,7 +6,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react"
-import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { HOME_PATH, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { AIM_OPTIONS } from "@/features/home/aim-prompt.ts"
 import { readFirstCafeState } from "@/features/home/first-cafe-checklist.ts"
 import { goHome } from "@/test/go-home.ts"
@@ -46,7 +46,7 @@ describe("Home optional aim prompt", () => {
     expect(
       screen.queryByRole("button", { name: /next step|continue|skip tour/i })
     ).not.toBeInTheDocument()
-    expect(router.state.location.pathname).toBe(SURFACE_PATHS.home)
+    expect(router.state.location.pathname).toBe(HOME_PATH)
 
     fireEvent.click(screen.getByRole("button", { name: "Skip" }))
     expect(

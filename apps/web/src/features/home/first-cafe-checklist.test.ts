@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { HOME_PATH, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { APPLY_OPEN_GUIDE } from "@/features/apply/apply-search.ts"
 
 import {
@@ -54,7 +54,7 @@ describe("first-café checklist", () => {
       "email"
     )
     expect(firstCafeItemForVisit(SURFACE_PATHS.settings)).toBeNull()
-    expect(firstCafeItemForVisit(SURFACE_PATHS.home)).toBeNull()
+    expect(firstCafeItemForVisit(HOME_PATH)).toBeNull()
     expect(firstCafeItemForVisit("/app")).toBeNull()
     expect(firstCafeItemForVisit(`${SURFACE_PATHS.apply}/`)).toBeNull()
   })
@@ -139,7 +139,7 @@ describe("first-café checklist", () => {
     const userId = "user_fresh"
     expect(firstCafeStorageKey(userId)).toContain(userId)
 
-    const afterHome = recordFirstCafeVisit(userId, SURFACE_PATHS.home)
+    const afterHome = recordFirstCafeVisit(userId, HOME_PATH)
     expect(afterHome.completed).toEqual([])
 
     const afterPaper = recordFirstCafeVisit(userId, SURFACE_PATHS.paper, {
@@ -148,7 +148,7 @@ describe("first-café checklist", () => {
     expect(afterPaper.completed).toEqual(["sample-cv"])
     expect(readFirstCafeState(userId).completed).toEqual(["sample-cv"])
 
-    const afterHomeAgain = recordFirstCafeVisit(userId, SURFACE_PATHS.home)
+    const afterHomeAgain = recordFirstCafeVisit(userId, HOME_PATH)
     expect(afterHomeAgain.completed).toEqual(["sample-cv"])
   })
 

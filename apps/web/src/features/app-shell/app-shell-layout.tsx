@@ -4,7 +4,11 @@ import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router"
 import { AppShell } from "@/features/app-shell/app-shell.tsx"
 import { SearchModal } from "@/features/app-shell/search-modal.tsx"
 import { searchThreadsFromList } from "@/features/app-shell/search-threads.ts"
-import { SURFACE_PATHS, type SurfaceId } from "@/features/app-shell/surfaces.ts"
+import {
+  HOME_PATH,
+  SURFACE_PATHS,
+  type SurfaceId,
+} from "@/features/app-shell/surfaces.ts"
 import { ShellOverlays } from "@/features/auth/shell-overlays.tsx"
 import { ThreadStoreProvider } from "@/features/home/thread-store.tsx"
 import { useThreadList } from "@/features/home/use-thread-list.ts"
@@ -42,12 +46,12 @@ function AppShellChrome() {
 
   function handleNewThread() {
     newThread()
-    void navigate({ to: SURFACE_PATHS.home })
+    void navigate({ to: HOME_PATH })
   }
 
   function handleOpenThread(id: string) {
     openThread(id)
-    void navigate({ to: SURFACE_PATHS.home })
+    void navigate({ to: HOME_PATH })
   }
 
   function goSurface(id: SurfaceId) {

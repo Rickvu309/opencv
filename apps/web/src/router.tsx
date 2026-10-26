@@ -76,18 +76,41 @@ const signUpRoute = createRoute({
   component: () => null,
 })
 
+function isAppIndex(pathname: string) {
+  return pathname === "/app" || pathname === "/app/"
+}
+
 const appLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/app",
   beforeLoad: async ({ location }) => {
-    const { data } = await authClient.getSession()
-    if (!data) {
-      throw redirect({
-        to: "/sign-in",
-        search: { redirect: `${location.pathname}${location.searchStr}` },
-      })
+    const index = isAppIndex(location.pathname)
+    try {
+      const { data } = await authClient.getSession()
+      if (!data) {
+        throw redirect({
+          to: "/sign-in",
+          search: { redirect: `${location.pathname}${location.searchStr}` },
+        })
+      }
+      if (index) {
+        let startPage: unknown = "apply"
+        try {
+          const profile = await getShellProfile()
+          startPage = profile.startPage
+        } catch (error) {
+          if (isRedirect(error)) throw error
+        }
+        throw redirect({ href: startPagePath(startPage) })
+      }
+      return { session: data }
+    } catch (error) {
+      if (isRedirect(error)) throw error
+      // A dead api throws. /app falls back to Apply. A child route renders
+      // so the same failure does not redirect again.
+      if (index) throw redirect({ href: startPagePath("apply") })
+      return { session: null }
     }
-    return { session: data }
   },
   component: lazyRouteComponent(
     () => import("@/features/app-shell/app-shell-layout.tsx"),

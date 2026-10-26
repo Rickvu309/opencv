@@ -1,14 +1,33 @@
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import { CoachDock } from "@/features/coach/coach-dock.tsx"
 import { ThreadView } from "@/features/home/thread-view.tsx"
 import { useThreadStore } from "@/features/home/use-thread-store.ts"
 
-export function ShellThreadBody() {
-  const { messages, phase, error, send, stop, retry, regenerate, rate, undo } =
-    useThreadStore()
+export function ShellThreadBody({ chatId = null }: { chatId?: string | null }) {
+  const {
+    messages,
+    phase,
+    error,
+    send,
+    stop,
+    retry,
+    regenerate,
+    rate,
+    undo,
+    openThread,
+  } = useThreadStore()
   const [draft, setDraft] = useState("")
   const turnActive = phase !== "idle"
+  const seenChat = useRef(chatId)
+
+  useEffect(() => {
+    if (seenChat.current !== chatId) {
+      seenChat.current = chatId
+      setDraft("")
+    }
+    if (chatId) openThread(chatId)
+  }, [chatId, openThread])
 
   function handleSend() {
     const text = draft.trim()

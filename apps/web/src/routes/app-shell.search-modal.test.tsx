@@ -7,7 +7,7 @@ import {
   within,
 } from "@testing-library/react"
 
-import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { HOME_PATH, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
 import { FIXTURE_THREADS } from "@/test/thread-fixtures.ts"
 import { expectHomeIdle } from "@/test/home-helpers.ts"
@@ -33,7 +33,7 @@ async function openSearch() {
 
 describe("search modal", () => {
   it("opens from ⌘K and closes on Escape", async () => {
-    renderApp(SURFACE_PATHS.home)
+    renderApp(HOME_PATH)
     await expectHomeIdle()
     await openSearch()
 
@@ -46,7 +46,7 @@ describe("search modal", () => {
   })
 
   it("opens from Ctrl+K and from Meta+K", async () => {
-    renderApp(SURFACE_PATHS.home)
+    renderApp(HOME_PATH)
     await expectHomeIdle()
 
     fireEvent.keyDown(window, { key: "k", ctrlKey: true })
@@ -68,7 +68,7 @@ describe("search modal", () => {
   })
 
   it("jumps surfaces and starts a new Thread", async () => {
-    const { router } = renderApp(SURFACE_PATHS.home)
+    const { router } = renderApp(HOME_PATH)
     await expectHomeIdle()
     await openSearch()
 
@@ -91,12 +91,12 @@ describe("search modal", () => {
       screen.queryByRole("dialog", { name: "Search" })
     ).not.toBeInTheDocument()
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe(SURFACE_PATHS.home)
+      expect(router.state.location.pathname).toBe(HOME_PATH)
     })
   })
 
   it("filters Thread titles from the list port", async () => {
-    renderApp(SURFACE_PATHS.home)
+    renderApp(HOME_PATH)
     await expectHomeIdle()
     await openSearch()
 
@@ -168,7 +168,7 @@ describe("search modal", () => {
   })
 
   it("moves keyboard highlight with arrows and keeps the Thread preview sticky", async () => {
-    renderApp(SURFACE_PATHS.home)
+    renderApp(HOME_PATH)
     await expectHomeIdle()
     await openSearch()
 
@@ -218,7 +218,7 @@ describe("search modal", () => {
   })
 
   it("activates a filtered action with Enter", async () => {
-    const { router } = renderApp(SURFACE_PATHS.home)
+    const { router } = renderApp(HOME_PATH)
     await expectHomeIdle()
     await openSearch()
 
@@ -236,7 +236,7 @@ describe("search modal", () => {
   })
 
   it("toggles closed when ⌘K is pressed again", async () => {
-    renderApp(SURFACE_PATHS.home)
+    renderApp(HOME_PATH)
     await expectHomeIdle()
 
     fireEvent.keyDown(window, { key: "k", metaKey: true })

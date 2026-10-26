@@ -6,7 +6,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react"
-import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { HOME_PATH } from "@/features/app-shell/surfaces.ts"
 import { goHome } from "@/test/go-home.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
 import {
@@ -232,7 +232,7 @@ describe("Paper Coach turns", () => {
     ).toBe(false)
   })
 
-  it("shows the Paper Thread in History and continues it on Home", async () => {
+  it("stores the Paper thread and does not list History on Home", async () => {
     scriptCoachStream({ texts: ["I read PM track CV."] })
     const { router } = renderPaper()
     await expectPaperDrive()
@@ -248,20 +248,19 @@ describe("Paper Coach turns", () => {
     ).toBeInTheDocument()
 
     await goHome()
-    const history = await screen.findByRole("navigation", { name: "History" })
-    expect(
-      await within(history).findByRole("button", { name: "PM track CV" })
-    ).toBeInTheDocument()
-
-    fireEvent.click(
-      within(history).getByRole("button", { name: "PM track CV" })
-    )
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe(SURFACE_PATHS.home)
+      expect(router.state.location.pathname).toBe(HOME_PATH)
     })
-    const thread = await screen.findByRole("log", { name: "Thread" })
-    expect(thread).toHaveTextContent("Sharpen the checkout bullet")
-    expect(thread).toHaveTextContent("I read PM track CV.")
+    expect(
+      screen.queryByRole("navigation", { name: "History" })
+    ).not.toBeInTheDocument()
+    expect(
+      getMockThreads().some((thread) =>
+        thread.messages.some(
+          (message) => message.text === "Sharpen the checkout bullet"
+        )
+      )
+    ).toBe(true)
   })
 
   it("disables Rewrite selection until the User selects text, then sends it", async () => {

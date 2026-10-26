@@ -7,16 +7,21 @@ import {
   within,
 } from "@testing-library/react"
 
-import { SURFACE_COPY, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
-import { DESKTOP_MEDIA_QUERY } from "@/features/app-shell/use-media-query.ts"
+import { HOME_PATH, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
+import { authClient } from "@/lib/auth-client.ts"
+import {
+  expectApplyLive,
+  expectHomeIdle,
+  expectPitch,
+  expectStub,
+  linkNames,
+  NAV,
+  stubDesktopViewport,
+} from "@/routes/app-shell.fixtures.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
 import { failPaperList } from "@/test/paper-api-mock.ts"
-import {
-  TEST_SESSION,
-  TEST_SESSION_USER,
-  setMockSession,
-} from "@/test/auth-client-mock.ts"
+import { setMockSession } from "@/test/auth-client-mock.ts"
 import { renderApp } from "@/test/render-app.tsx"
 import {
   chatCreateCalls,
@@ -39,63 +44,6 @@ vi.mock("@/features/app-shell/shell-api.ts", async (importOriginal) => {
       shellProfile.next ? shellProfile.next() : actual.getShellProfile(),
   }
 })
-
-const NAV = ["Inbox", "Coach", "Jobs", "Paper", "Apply", "Pitch"]
-
-function stubDesktopViewport(isDesktop: boolean) {
-  vi.stubGlobal("matchMedia", (query: string) => ({
-    matches: query === DESKTOP_MEDIA_QUERY ? isDesktop : true,
-    media: query,
-    onchange: null,
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    addListener: () => {},
-    removeListener: () => {},
-    dispatchEvent: () => false,
-  }))
-}
-
-function linkNames(root: HTMLElement) {
-  return within(root)
-    .getAllByRole("link")
-    .map((el) => el.getAttribute("aria-label") || el.textContent?.trim())
-}
-
-async function expectStub(
-  surface: Exclude<
-    keyof typeof SURFACE_COPY,
-    "home" | "paper" | "apply" | "pitch"
-  >
-) {
-  const copy = SURFACE_COPY[surface]
-  expect(
-    await screen.findByRole("heading", { level: 1, name: copy.title })
-  ).toBeInTheDocument()
-  expect(screen.getByText(copy.body)).toBeInTheDocument()
-}
-
-async function expectPitch() {
-  expect(await screen.findByText("Pitch. Coming soon.")).toBeInTheDocument()
-}
-
-async function expectApplyLive() {
-  expect(
-    await screen.findByRole("heading", { level: 1, name: "Apply" })
-  ).toBeInTheDocument()
-  expect(screen.getByRole("radio", { name: "Board" })).toBeInTheDocument()
-  expect(screen.getByRole("radio", { name: "Calendar" })).toBeInTheDocument()
-}
-
-async function expectHomeIdle() {
-  expect(
-    await screen.findByRole("heading", {
-      level: 1,
-      name: new RegExp(
-        `^Good (morning|afternoon|evening), ${SAMPLE_AUTHOR_NAME}$`
-      ),
-    })
-  ).toBeInTheDocument()
-}
 
 beforeEach(() => {
   sessionStorage.clear()
@@ -215,6 +163,39 @@ describe("app shell layout", () => {
     expect(screen.getByText(SAMPLE_AUTHOR_NAME)).toBeInTheDocument()
   })
 
+  it("sends /app to Apply when the session read throws", async () => {
+    const session = vi
+      .spyOn(authClient, "getSession")
+      .mockRejectedValue(new TypeError("Failed to fetch"))
+    try {
+      const { router } = renderApp("/app")
+      expect(
+        await screen.findByRole("heading", { level: 1, name: "Apply" })
+      ).toBeInTheDocument()
+      await waitFor(() => {
+        expect(router.state.location.pathname).toBe("/app/apply")
+      })
+      expect(screen.queryByText("Something went wrong")).not.toBeInTheDocument()
+      expect(screen.queryByText("Failed to fetch")).not.toBeInTheDocument()
+    } finally {
+      session.mockRestore()
+    }
+  })
+
+  it("sends a signed-out visitor from /app to sign-in", async () => {
+    setMockSession(null)
+    const { router } = renderApp("/app")
+    expect(
+      await screen.findByRole("heading", { name: "Log in to opencv" })
+    ).toBeInTheDocument()
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/sign-in")
+    })
+    expect(
+      screen.queryByRole("heading", { level: 1, name: "Apply" })
+    ).toBeNull()
+  })
+
   it("opens each surface at a stable URL", async () => {
     renderApp(SURFACE_PATHS.paper)
     await expectPaperDrive()
@@ -275,14 +256,14 @@ describe("app shell layout", () => {
   })
 
   it("opens the Search dialog from the sidebar and stays on the same page", async () => {
-    const { router } = renderApp(SURFACE_PATHS.home)
+    const { router } = renderApp(HOME_PATH)
     await expectHomeIdle()
 
     fireEvent.click(screen.getByRole("button", { name: "Search" }))
     expect(
       await screen.findByRole("dialog", { name: "Search" })
     ).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe(SURFACE_PATHS.home)
+    expect(router.state.location.pathname).toBe(HOME_PATH)
   })
 
   it("renders a favorite as title then company, and omits the section when empty", async () => {
@@ -346,6 +327,7 @@ describe("app shell layout", () => {
     expect(
       await screen.findByRole("button", { name: "Close" })
     ).toBeInTheDocument()
+    expect(screen.getByRole("region", { name: "New chat" })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Minimize" })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Expand" })).toBeInTheDocument()
     expect(chatCreateCalls()).toEqual([
@@ -378,6 +360,69 @@ describe("app shell layout", () => {
       await screen.findByRole("button", { name: "Close" })
     ).toBeInTheDocument()
     expect(chatCreateCalls()).toEqual([])
+  })
+
+  it("keeps a typed draft across Expand and Minimize", async () => {
+    renderApp(SURFACE_PATHS.pitch)
+    await expectPitch()
+    fireEvent.click(screen.getByRole("button", { name: "Coach" }))
+    const draft = await screen.findByRole("textbox", { name: "Message Coach" })
+    fireEvent.change(draft, { target: { value: "Keep this draft" } })
+
+    fireEvent.click(screen.getByRole("button", { name: "Expand" }))
+    expect(screen.getByRole("button", { name: "Expand" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    )
+    expect(screen.getByRole("textbox", { name: "Message Coach" })).toHaveValue(
+      "Keep this draft"
+    )
+
+    fireEvent.click(screen.getByRole("button", { name: "Minimize" }))
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: "Close" })).toBeNull()
+    })
+    expect(screen.getByRole("button", { name: "Coach" })).toHaveFocus()
+
+    fireEvent.click(screen.getByRole("button", { name: "Coach" }))
+    expect(
+      await screen.findByRole("textbox", { name: "Message Coach" })
+    ).toHaveValue("Keep this draft")
+    fireEvent.click(screen.getByRole("button", { name: "Expand" }))
+    expect(screen.getByRole("textbox", { name: "Message Coach" })).toHaveValue(
+      "Keep this draft"
+    )
+  })
+
+  it("opens a dock chip on that chat's messages", async () => {
+    setMockChats([
+      {
+        id: "11111111-1111-4111-8111-111111111111",
+        title: "CV vs internship first",
+        focusKind: null,
+        focusId: null,
+        createdAt: "2026-02-01T00:00:00.000Z",
+        updatedAt: "2026-02-02T00:00:00.000Z",
+      },
+    ])
+    renderApp(SURFACE_PATHS.pitch)
+    fireEvent.click(
+      await screen.findByRole("button", { name: "CV vs internship first" })
+    )
+    const panel = await screen.findByRole("region", {
+      name: "CV vs internship first",
+    })
+    expect(
+      await within(panel).findByText(
+        "I don't know if I should chase internships or finish my CV first."
+      )
+    ).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "Minimize" }))
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: "CV vs internship first" })
+      ).toHaveFocus()
+    })
   })
 
   it("hides the sidebar at 390 until Menu, and a link closes the drawer", async () => {
@@ -415,147 +460,5 @@ describe("app shell layout", () => {
       expect(screen.queryByRole("dialog")).toBeNull()
     })
     expect(menu).toHaveFocus()
-  })
-})
-
-describe("settings workspace", () => {
-  it("opens the Connected apps catalog from Home without OAuth", async () => {
-    renderApp(SURFACE_PATHS.home)
-    await expectHomeIdle()
-
-    fireEvent.click(screen.getByRole("link", { name: "Connect apps" }))
-
-    expect(
-      await screen.findByRole("heading", { level: 2, name: "Connected apps" })
-    ).toBeInTheDocument()
-    expect(screen.getByRole("tab", { name: "Connected apps" })).toHaveAttribute(
-      "data-active"
-    )
-    expect(screen.getByRole("heading", { name: "Gmail" })).toBeInTheDocument()
-    expect(screen.getByRole("heading", { name: "Outlook" })).toBeInTheDocument()
-    expect(
-      screen.getByRole("heading", { name: "Google Calendar" })
-    ).toBeInTheDocument()
-    expect(screen.getAllByRole("button", { name: /Connect/ })).toHaveLength(3)
-    for (const button of screen.getAllByRole("button", { name: /Connect/ })) {
-      expect(button).toBeDisabled()
-    }
-  })
-
-  it("shows the session identity and signs out to sign-in", async () => {
-    const { router } = renderApp(`${SURFACE_PATHS.settings}?tab=account`)
-
-    expect(
-      await screen.findByRole("heading", { level: 2, name: "Account" })
-    ).toBeInTheDocument()
-    expect(screen.getAllByText(SAMPLE_AUTHOR_NAME).length).toBeGreaterThan(0)
-    expect(screen.getByText("you@opencv.me")).toBeInTheDocument()
-    expect(screen.queryByText(/Eric Nguyen/i)).not.toBeInTheDocument()
-    expect(
-      screen.queryByText(/Aspiring product manager/i)
-    ).not.toBeInTheDocument()
-    expect(screen.queryByText(/Sample Pitch/i)).not.toBeInTheDocument()
-    expect(screen.queryByText("Coming soon")).not.toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole("button", { name: "Sign out" }))
-    expect(
-      await screen.findByRole("heading", { name: "Log in to opencv" })
-    ).toBeInTheDocument()
-    await waitFor(() => {
-      expect(router.state.location.pathname).toBe("/sign-in")
-    })
-  })
-
-  it("shows the signed-in User, not a build-time placeholder", async () => {
-    setMockSession({
-      user: {
-        ...TEST_SESSION_USER,
-        name: "Minh Le",
-        email: "minh@example.com",
-      },
-      session: TEST_SESSION,
-    })
-    renderApp(`${SURFACE_PATHS.settings}?tab=account`)
-
-    expect(
-      await screen.findByRole("heading", { level: 2, name: "Account" })
-    ).toBeInTheDocument()
-    expect(screen.getAllByText("Minh Le").length).toBeGreaterThan(0)
-    expect(screen.getByText("minh@example.com")).toBeInTheDocument()
-  })
-
-  it("keeps Settings Account as the session User after leaving Pitch", async () => {
-    setMockSession({
-      user: {
-        ...TEST_SESSION_USER,
-        name: "Minh Le",
-        email: "minh@example.com",
-      },
-      session: TEST_SESSION,
-    })
-    renderApp(SURFACE_PATHS.pitch)
-    expect(await screen.findByText("Pitch. Coming soon.")).toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole("link", { name: "Settings" }))
-    fireEvent.click(await screen.findByRole("tab", { name: "Account" }))
-    expect(
-      await screen.findByRole("heading", { level: 2, name: "Account" })
-    ).toBeInTheDocument()
-    expect(screen.getAllByText("Minh Le").length).toBeGreaterThan(0)
-    expect(screen.getByText("minh@example.com")).toBeInTheDocument()
-    expect(screen.queryByText(/Eric Nguyen/i)).not.toBeInTheDocument()
-    expect(
-      screen.queryByText(/Aspiring product manager/i)
-    ).not.toBeInTheDocument()
-  })
-})
-
-describe("shell polish and a11y", () => {
-  it("exposes a skip link, the sidebar, and the dock", async () => {
-    renderApp(SURFACE_PATHS.pitch)
-    await expectPitch()
-
-    expect(
-      screen.getByRole("link", { name: "Skip to main content" })
-    ).toHaveAttribute("href", "#app-main")
-    expect(document.getElementById("app-main")).not.toBeNull()
-    expect(
-      screen.getByRole("complementary", { name: "Sidebar" })
-    ).toBeInTheDocument()
-    expect(screen.getByRole("navigation", { name: "Main" })).toBeInTheDocument()
-    expect(screen.getByRole("main")).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "History" })).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Coach" })).toBeInTheDocument()
-    expect(
-      screen.queryByRole("navigation", { name: "History" })
-    ).not.toBeInTheDocument()
-  })
-
-  it("lets Settings tabs take focus and activate from the keyboard", async () => {
-    renderApp(SURFACE_PATHS.settings)
-    await expectStub("settings")
-
-    const general = screen.getByRole("tab", { name: "General" })
-    const apps = screen.getByRole("tab", { name: "Connected apps" })
-    const account = screen.getByRole("tab", { name: "Account" })
-
-    general.focus()
-    expect(general).toHaveFocus()
-    expect(general).toHaveAttribute("aria-selected", "true")
-
-    apps.focus()
-    expect(apps).toHaveFocus()
-    fireEvent.click(apps)
-    expect(apps).toHaveAttribute("aria-selected", "true")
-    expect(
-      await screen.findByRole("heading", { level: 2, name: "Connected apps" })
-    ).toBeInTheDocument()
-
-    account.focus()
-    fireEvent.click(account)
-    expect(account).toHaveAttribute("aria-selected", "true")
-    expect(
-      await screen.findByRole("heading", { level: 2, name: "Account" })
-    ).toBeInTheDocument()
   })
 })

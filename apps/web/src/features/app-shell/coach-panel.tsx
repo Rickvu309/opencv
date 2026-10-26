@@ -25,7 +25,7 @@ export function CoachPanel({
   onClose,
   children,
 }: CoachPanelProps) {
-  if (!open || mode === "dock") return null
+  if (!open) return null
 
   return (
     <section

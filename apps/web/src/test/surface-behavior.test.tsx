@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, screen, within } from "@testing-library/react"
 
 import { APPLY_OPEN_GUIDE } from "@/features/apply/apply-search.ts"
-import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { HOME_PATH, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { apiBaseUrl } from "@/lib/api-url.ts"
 import { getMockApplyCards } from "@/test/apply-api-mock.ts"
 import { sampleApplyCards } from "@/test/apply-fixtures.ts"
@@ -79,7 +79,7 @@ describe("empty api data shows empty states, never sample content", () => {
 
   it("Home shows the greeting and no sample thread", async () => {
     getMockThreads().splice(0)
-    renderApp(SURFACE_PATHS.home)
+    renderApp(HOME_PATH)
 
     expect(
       await screen.findByRole("heading", {

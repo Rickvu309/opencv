@@ -13,7 +13,7 @@ import { searchShortcutLabel } from "@/features/app-shell/search-shortcut.ts"
 import { SHELL_PRIMARY, SHELL_WORK } from "@/features/app-shell/sidebar-nav.ts"
 import { shellChatTitle, shellCopy } from "@/features/app-shell/shell-copy.ts"
 import { createShellChat } from "@/features/app-shell/shell-api.ts"
-import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { HOME_PATH } from "@/features/app-shell/surfaces.ts"
 import {
   DESKTOP_MEDIA_QUERY,
   useMediaQuery,
@@ -42,12 +42,14 @@ import { Skeleton } from "@workspace/ui/components/skeleton"
 import { cn } from "@workspace/ui/lib/utils"
 
 type PanelState = {
+  open: boolean
   mode: CoachPanelMode
   title: string
   chatId: string | null
 }
 
 const CLOSED_PANEL: PanelState = {
+  open: false,
   mode: "dock",
   title: "",
   chatId: null,
@@ -199,10 +201,12 @@ export function AppShell({ onSearch }: AppShellProps) {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const openerRef = useRef<HTMLElement | null>(null)
   const menuRef = useRef<HTMLButtonElement>(null)
-  const showDock = pathname !== SURFACE_PATHS.home
+  const dockRef = useRef<HTMLDivElement>(null)
+  const showDock = pathname !== HOME_PATH
+  const panelVisible = panel.open && panel.mode !== "dock"
 
   useEffect(() => {
-    if (panel.mode === "dock") return
+    if (!panel.open || panel.mode === "dock") return
     function onKey(event: KeyboardEvent) {
       if (event.key !== "Escape") return
       event.preventDefault()
@@ -211,7 +215,21 @@ export function AppShell({ onSearch }: AppShellProps) {
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [panel.mode])
+  }, [panel.mode, panel.open])
+
+  useEffect(() => {
+    if (!panel.open || panel.mode !== "dock") return
+    const root = dockRef.current
+    if (!root) {
+      openerRef.current?.focus()
+      return
+    }
+    const chip = panel.chatId
+      ? root.querySelector<HTMLElement>(`[data-chat-id="${panel.chatId}"]`)
+      : null
+    const coach = root.querySelector<HTMLElement>("[data-dock-coach]")
+    ;(chip ?? coach)?.focus()
+  }, [panel.chatId, panel.mode, panel.open])
 
   function rememberOpener() {
     openerRef.current =
@@ -222,7 +240,12 @@ export function AppShell({ onSearch }: AppShellProps) {
 
   function openPanel(next: { title: string; chatId: string | null }) {
     rememberOpener()
-    setPanel({ mode: "side", title: next.title, chatId: next.chatId })
+    setPanel({
+      open: true,
+      mode: "side",
+      title: next.title,
+      chatId: next.chatId,
+    })
   }
 
   function closePanel() {
@@ -235,6 +258,7 @@ export function AppShell({ onSearch }: AppShellProps) {
     try {
       const chat = await createShellChat()
       setPanel({
+        open: true,
         mode: "side",
         title: shellChatTitle(chat.title),
         chatId: chat.id,
@@ -250,24 +274,38 @@ export function AppShell({ onSearch }: AppShellProps) {
     menuRef.current?.focus()
   }
 
-  const panelFrame =
-    panel.mode === "dock" ? null : (
-      <CoachPanel
-        title={panel.title}
-        open
-        mode={panel.mode}
-        onMinimize={() => setPanel((current) => ({ ...current, mode: "dock" }))}
-        onExpand={() =>
-          setPanel((current) => ({
-            ...current,
-            mode: current.mode === "full" ? "side" : "full",
-          }))
-        }
-        onClose={closePanel}
-      >
-        <ShellThreadBody />
-      </CoachPanel>
-    )
+  const panelFrame = (
+    <div
+      hidden={!panelVisible}
+      className={cn(
+        "min-h-0 bg-background",
+        panelVisible && "flex flex-col",
+        panel.mode === "full" && "absolute inset-0",
+        panel.mode === "side" &&
+          "h-full w-96 max-w-full shrink-0 border-l border-border"
+      )}
+    >
+      {panel.open ? (
+        <CoachPanel
+          title={panel.title}
+          open
+          mode={panel.mode === "dock" ? "side" : panel.mode}
+          onMinimize={() =>
+            setPanel((current) => ({ ...current, mode: "dock" }))
+          }
+          onExpand={() =>
+            setPanel((current) => ({
+              ...current,
+              mode: current.mode === "full" ? "side" : "full",
+            }))
+          }
+          onClose={closePanel}
+        >
+          <ShellThreadBody chatId={panel.chatId} />
+        </CoachPanel>
+      ) : null}
+    </div>
+  )
 
   const nav = (
     <ShellNav
@@ -322,32 +360,20 @@ export function AppShell({ onSearch }: AppShellProps) {
           </aside>
         ) : null}
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <div className="flex min-h-0 min-w-0 flex-1">
-            {panel.mode === "full" ? (
-              <div
-                id="app-main"
-                tabIndex={-1}
-                className="flex min-h-0 min-w-0 flex-1 flex-col"
-              >
-                {panelFrame}
-              </div>
-            ) : (
-              <main
-                id="app-main"
-                tabIndex={-1}
-                className="min-h-0 min-w-0 flex-1 overflow-hidden"
-              >
-                <Outlet />
-              </main>
-            )}
-            {panel.mode === "side" ? (
-              <div className="flex h-full min-h-0 w-96 max-w-full shrink-0 flex-col border-l border-border">
-                {panelFrame}
-              </div>
-            ) : null}
+          <div className="relative flex min-h-0 min-w-0 flex-1">
+            <main
+              id="app-main"
+              tabIndex={-1}
+              hidden={panel.open && panel.mode === "full"}
+              className="min-h-0 min-w-0 flex-1 overflow-hidden"
+            >
+              <Outlet />
+            </main>
+            {panelFrame}
           </div>
           {showDock ? (
             <ShellDock
+              dockRef={dockRef}
               titles={(chats.data ?? []).map((chat) => ({
                 id: chat.id,
                 title: shellChatTitle(chat.title),
@@ -396,11 +422,13 @@ export function AppShell({ onSearch }: AppShellProps) {
 }
 
 function ShellDock({
+  dockRef,
   titles,
   onOpenChat,
   onCoach,
   onHistory,
 }: {
+  dockRef: { current: HTMLDivElement | null }
   titles: { id: string; title: string }[]
   onOpenChat: (chat: { title: string; chatId: string }) => void
   onCoach: () => void
@@ -408,6 +436,7 @@ function ShellDock({
 }) {
   return (
     <div
+      ref={dockRef}
       data-slot="app-dock"
       className="flex h-10 shrink-0 items-center justify-end gap-1 border-t border-border px-2"
     >
@@ -418,12 +447,19 @@ function ShellDock({
           variant="ghost"
           size="sm"
           className="max-w-36"
+          data-chat-id={chat.id}
           onClick={() => onOpenChat({ title: chat.title, chatId: chat.id })}
         >
           <span className="truncate">{chat.title}</span>
         </Button>
       ))}
-      <Button type="button" variant="ghost" size="sm" onClick={onCoach}>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        data-dock-coach=""
+        onClick={onCoach}
+      >
         {shellCopy.coach}
       </Button>
       <Button type="button" variant="ghost" size="sm" onClick={onHistory}>
