@@ -96,7 +96,7 @@ export async function loadCoachChat(chatId: string) {
     write(chatId, {
       messages: (chat.messages ?? []).map(messageFromServer),
       streaming: false,
-      error: null,
+      error: latest?.error ?? null,
       loaded: true,
       title: chat.title?.trim() || "New chat",
       focusKind: chat.focusKind ?? null,
@@ -104,7 +104,7 @@ export async function loadCoachChat(chatId: string) {
     })
   } catch {
     const latest = cache.get(chatId)
-    if (latest?.streaming || latest?.loaded) return
+    if (latest?.streaming || latest?.loaded || latest?.error) return
     write(chatId, { ...EMPTY, loaded: true })
   }
 }

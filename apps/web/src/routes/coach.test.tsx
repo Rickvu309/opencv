@@ -198,4 +198,22 @@ describe("coach page", () => {
       getCoachCommandCalls().some((call) => call.name === "activity.undo")
     ).toBe(true)
   })
+
+  it("shows a sentence when the turn answers 404", async () => {
+    scriptCoachStream({
+      httpError: {
+        status: 404,
+        code: "USER_NOT_FOUND",
+        message: "User not found.",
+      },
+    })
+    await openCoach()
+    fireEvent.change(screen.getByRole("textbox", { name: "Message Coach" }), {
+      target: { value: "hello" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Send" }))
+    const alert = await screen.findByRole("alert")
+    expect(alert).toHaveTextContent("Sign in again")
+    expect(alert).not.toHaveTextContent("User not found.")
+  })
 })
