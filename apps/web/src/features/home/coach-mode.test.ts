@@ -7,7 +7,7 @@ import {
   within,
 } from "@testing-library/react"
 
-import { HOME_PATH, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { HOME_PATH } from "@/features/app-shell/surfaces.ts"
 import { coachModeHelper, coachModeLabel } from "@/features/home/coach-mode.ts"
 import { renderApp } from "@/test/render-app.tsx"
 import { getMockCoachMode } from "@/test/profile-api-mock.ts"
