@@ -1,5 +1,7 @@
 import { z } from "zod"
 
+import { activityIdSchema, chatIdSchema, pendingActionIdSchema } from "./ids.js"
+
 export const CHAT_TITLE_MAX = 200
 export const CHAT_MESSAGE_MAX = 8000
 export const CHAT_OPEN_WINDOW_DAYS = 7
@@ -26,7 +28,7 @@ export const chatCreateInputSchema = z
 
 export const chatRenameInputSchema = z
   .object({
-    chatId: z.string().uuid(),
+    chatId: chatIdSchema,
     title: titleSchema,
   })
   .strict()
@@ -39,7 +41,7 @@ export const chatOpenInputSchema = z
 
 export const chatSetFocusInputSchema = z
   .object({
-    chatId: z.string().uuid(),
+    chatId: chatIdSchema,
     focus: chatFocusSchema.nullable(),
   })
   .strict()
@@ -56,7 +58,7 @@ export type ChatAttachment = z.infer<typeof chatAttachmentSchema>
 
 export const chatAppendMessageInputSchema = z
   .object({
-    chatId: z.string().uuid(),
+    chatId: chatIdSchema,
     text: z.string().trim().min(1).max(CHAT_MESSAGE_MAX),
     attachments: z.array(chatAttachmentSchema).max(8).optional(),
   })
@@ -64,13 +66,13 @@ export const chatAppendMessageInputSchema = z
 
 export const chatDeleteInputSchema = z
   .object({
-    chatId: z.string().uuid(),
+    chatId: chatIdSchema,
   })
   .strict()
 
 export const chatStopInputSchema = z
   .object({
-    chatId: z.string().uuid(),
+    chatId: chatIdSchema,
   })
   .strict()
 
@@ -78,13 +80,15 @@ export type ChatCreateInput = z.infer<typeof chatCreateInputSchema>
 export type ChatRenameInput = z.infer<typeof chatRenameInputSchema>
 export type ChatOpenInput = z.infer<typeof chatOpenInputSchema>
 export type ChatSetFocusInput = z.infer<typeof chatSetFocusInputSchema>
-export type ChatAppendMessageInput = z.infer<typeof chatAppendMessageInputSchema>
+export type ChatAppendMessageInput = z.infer<
+  typeof chatAppendMessageInputSchema
+>
 export type ChatDeleteInput = z.infer<typeof chatDeleteInputSchema>
 export type ChatStopInput = z.infer<typeof chatStopInputSchema>
 
 export const actionsApproveInputSchema = z
   .object({
-    pendingActionId: z.string().uuid(),
+    pendingActionId: pendingActionIdSchema,
   })
   .strict()
 
@@ -92,7 +96,7 @@ export const actionsDenyInputSchema = actionsApproveInputSchema
 
 export const activityUndoInputSchema = z
   .object({
-    activityId: z.string().uuid(),
+    activityId: activityIdSchema,
   })
   .strict()
 

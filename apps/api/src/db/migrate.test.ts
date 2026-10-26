@@ -17,6 +17,7 @@ const productTables = [
   "coach_usage",
   "connections",
   "files",
+  "idempotency",
   "inbox_messages",
   "inbox_threads",
   "job_checklist",
@@ -56,10 +57,17 @@ describe("opencv_app migrations", () => {
     const journal = JSON.parse(
       readFileSync(path.join(migrationsFolder, "meta/_journal.json"), "utf8")
     ) as { entries: { tag: string }[] }
-    expect(journal.entries.map((entry) => entry.tag)).toEqual(["0000_opencv_app"])
-    const sqlFiles = readdirSync(migrationsFolder).filter((name) => name.endsWith(".sql"))
+    expect(journal.entries.map((entry) => entry.tag)).toEqual([
+      "0000_opencv_app",
+    ])
+    const sqlFiles = readdirSync(migrationsFolder).filter((name) =>
+      name.endsWith(".sql")
+    )
     expect(sqlFiles).toEqual(["0000_opencv_app.sql"])
-    const source = readFileSync(path.join(migrationsFolder, "0000_opencv_app.sql"), "utf8")
+    const source = readFileSync(
+      path.join(migrationsFolder, "0000_opencv_app.sql"),
+      "utf8"
+    )
     expect(source.includes(legacySchema)).toBe(false)
     await client.close()
   })
@@ -68,8 +76,14 @@ describe("opencv_app migrations", () => {
     const client = new PGlite()
     const db = drizzle({ client })
     await db.execute(sql.raw(`create schema "${legacySchema}"`))
-    await db.execute(sql.raw(`create table "${legacySchema}"."legacy_rows" ("id" text)`))
-    await db.execute(sql.raw(`insert into "${legacySchema}"."legacy_rows" ("id") values ('kept')`))
+    await db.execute(
+      sql.raw(`create table "${legacySchema}"."legacy_rows" ("id" text)`)
+    )
+    await db.execute(
+      sql.raw(
+        `insert into "${legacySchema}"."legacy_rows" ("id") values ('kept')`
+      )
+    )
     await db.execute(sql.raw(`create schema if not exists "drizzle"`))
     await db.execute(
       sql.raw(

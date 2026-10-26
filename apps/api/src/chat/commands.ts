@@ -8,6 +8,7 @@ import {
   chatOpenInputSchema,
   chatRenameInputSchema,
   chatSetFocusInputSchema,
+  chatIdSchema,
   chatStopInputSchema,
   defineQuery,
   type Actor,
@@ -112,7 +113,8 @@ export function registerChat(registry: Registry) {
   registry.addCommand(
     {
       name: "chat.appendMessage",
-      description: "Append the person's message. The Coach does not post as the person.",
+      description:
+        "Append the person's message. The Coach does not post as the person.",
       input: chatAppendMessageInputSchema,
       coach: "never",
       destructive: false,
@@ -211,10 +213,29 @@ export function registerChat(registry: Registry) {
     defineQuery({
       name: "chat.get",
       description: "Read one chat.",
-      input: z.object({ chatId: z.string().uuid() }).strict(),
+      input: z.object({ chatId: chatIdSchema }).strict(),
       coach: true,
       step: () => "Read the chat",
       read: (input, actor) => getChat(actor.userId, input.chatId),
+    })
+  )
+
+  registry.addQuery(
+    defineQuery({
+      name: "link.get",
+      description: "Read a link host. The page is not fetched.",
+      input: z.object({ url: z.string().trim().min(1).max(2000) }).strict(),
+      coach: true,
+      step: () => "Read the link",
+      read: async (input) => {
+        let host: string
+        try {
+          host = new URL(input.url).host
+        } catch {
+          host = ""
+        }
+        return { url: input.url, host }
+      },
     })
   )
 }

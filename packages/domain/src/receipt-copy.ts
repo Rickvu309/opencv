@@ -8,10 +8,6 @@ export const INVALID_CARD_ID_COPY = "That card id isn't valid"
 export const APPLY_CARD_ID_MISSING_COPY =
   "I need a listed Apply card id before I can change the board."
 
-/** Pitch café ask is coaching, not an Apply Command. */
-export const PITCH_SCOPED_NO_APPLY_COPY =
-  "This Pitch question does not change Apply cards."
-
 const MACHINE_FAIL = [
   /invalid input for tool/i,
   /type validation failed/i,

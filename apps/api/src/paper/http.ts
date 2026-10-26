@@ -2,6 +2,8 @@ import {
   ERROR_CODES,
   errorEnvelope,
   httpStatusForError,
+  parseUserId,
+  personActor,
   successEnvelope,
 } from "@workspace/domain"
 import { Hono } from "hono"
@@ -12,10 +14,10 @@ import { jsonWithStatus } from "../http-json.js"
 import { readJsonBody } from "../http-json.js"
 import { requireSession, type SessionVariables } from "../middleware.js"
 import { registry } from "../registry/registry.js"
-import { importPaper, renderPdf, saveFile } from "./store.js"
+import { renderPdf, saveFile } from "./store.js"
 
 function person(userId: string) {
-  return { type: "person" as const, userId }
+  return personActor(userId)
 }
 
 export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
@@ -25,7 +27,7 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
     const data = await registry.read(
       "paper.shared",
       { token: c.req.param("token") },
-      { type: "person", userId: "public" }
+      personActor("public")
     )
     return c.json(successEnvelope(data))
   })
@@ -51,14 +53,18 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
       )
     }
     const saved = await saveFile({
-      userId: c.var.userId,
+      userId: parseUserId(c.var.userId),
       name: file.name,
       mediaType: file.type || "application/octet-stream",
       bytes: Buffer.from(await file.arrayBuffer()),
       purpose: "import",
     })
-    const doc = await importPaper(person(c.var.userId), saved.id)
-    return c.json(successEnvelope(doc))
+    const imported = await registry.execute({
+      name: "paper.import",
+      input: { fileId: saved.id },
+      actor: person(c.var.userId),
+    })
+    return c.json(successEnvelope(imported.output))
   })
 
   routes.get("/:id/pdf", async (c) => {

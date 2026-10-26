@@ -12,12 +12,21 @@ import {
 import { createAuth, type AuthDatabase } from "./auth.js"
 import type { FetchJobPosting } from "./apply/fetch-posting.js"
 import { createChatRoutes } from "./chat/index.js"
-import { createCoachRoutes } from "./coach/index.js"
-import { createCompatApplyRoutes, createCompatPaperRoutes, createCompatThreadRoutes } from "./compat/index.js"
+import { createCoachRoutes, interpretPosting } from "./coach/index.js"
+import { setCoachModelEnv, type CoachModelEnv } from "./config.js"
+import {
+  createCompatApplyRoutes,
+  createCompatPaperRoutes,
+  createCompatThreadRoutes,
+} from "./compat/index.js"
 import { withDatabase, type AppDatabase } from "./db/context.js"
 import { authUnavailableEnvelope } from "./envelope.js"
 import { createInboxRoutes } from "./inbox/index.js"
-import { createJobRoutes, setJobPostingFetch } from "./job/index.js"
+import {
+  createJobRoutes,
+  setJobPostingFetch,
+  setJobPostingInterpret,
+} from "./job/index.js"
 import {
   handleApiError,
   notFoundEnvelopeResponse,
@@ -37,6 +46,11 @@ export type AppConfig = {
   rateLimitEnabled?: boolean
   coach?: CoachRuntime
   coachSseHeartbeatMs?: number
+  coachEnv?: CoachModelEnv
+  gmailEnabled?: boolean
+  googleEnabled?: boolean
+  /** When set, job.preview may call the free model. Fake runs leave this off. */
+  interpretPostings?: boolean
   fetchJobPosting?: FetchJobPosting
 }
 
@@ -48,10 +62,26 @@ export function createApp({
   rateLimitEnabled,
   coach,
   coachSseHeartbeatMs,
+  coachEnv,
+  gmailEnabled = false,
+  googleEnabled = false,
+  interpretPostings = false,
   fetchJobPosting,
 }: AppConfig) {
   const registry = installRegistry()
+  setCoachModelEnv(coachEnv ?? {})
   if (fetchJobPosting) setJobPostingFetch(fetchJobPosting)
+  setJobPostingInterpret(
+    interpretPostings
+      ? async ({ plan, text }) => {
+          try {
+            return await interpretPosting({ plan, text, env: coachEnv ?? {} })
+          } catch {
+            return null
+          }
+        }
+      : null
+  )
   const app = new Hono()
 
   app.use(
@@ -88,7 +118,7 @@ export function createApp({
   )
   app.get("/api/public-config", (c) =>
     c.json({
-      google: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
+      google: googleEnabled,
     })
   )
   app.get("/api/session", requireSession(auth, database), (c) =>
@@ -106,7 +136,10 @@ export function createApp({
     coachSseHeartbeatMs,
   })
 
-  app.route("/api/commands", createCommandRoutes({ auth, db: database, registry }))
+  app.route(
+    "/api/commands",
+    createCommandRoutes({ auth, db: database, registry })
+  )
   app.route("/api/threads", createCompatThreadRoutes(auth, database))
   app.route("/api/threads", coachRoutes.compat)
   app.route("/api/chats", createChatRoutes(auth, database))
@@ -119,7 +152,7 @@ export function createApp({
     createCompatApplyRoutes({ auth, db: database, coach, fetchJobPosting })
   )
   app.route("/api/jobs", createJobRoutes(auth, database))
-  app.route("/api/inbox", createInboxRoutes(auth, database))
+  app.route("/api/inbox", createInboxRoutes(auth, database, gmailEnabled))
   app.route("/api/profile", createProfileRoutes(auth, database))
   app.route("/api/account", createAccountRoutes(auth, database))
   app.route("/api/search", createSearchRoutes(auth, database))

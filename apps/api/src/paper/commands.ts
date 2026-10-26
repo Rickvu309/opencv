@@ -1,5 +1,7 @@
 import {
   defineQuery,
+  fileIdSchema,
+  paperIdSchema,
   paperCreateInputSchema,
   paperDeleteInputSchema,
   paperDismissCheckInputSchema,
@@ -33,6 +35,7 @@ import {
   listPapers,
   ownedPaper,
   pageCount,
+  readFileMeta,
   readShared,
   renamePaper,
   replacePaper,
@@ -140,7 +143,8 @@ export function registerPaper(registry: Registry) {
         summary: `Duplicated ${output.name}`,
       }),
     },
-    (input: PaperDuplicateInput, actor: Actor) => duplicatePaper(actor, input.docId)
+    (input: PaperDuplicateInput, actor: Actor) =>
+      duplicatePaper(actor, input.docId)
   )
 
   registry.addCommand(
@@ -185,7 +189,10 @@ export function registerPaper(registry: Registry) {
       input: paperShareInputSchema,
       coach: "never",
       destructive: false,
-      reversal: (input) => ({ command: "paper.unshare", input: { docId: input.docId } }),
+      reversal: (input) => ({
+        command: "paper.unshare",
+        input: { docId: input.docId },
+      }),
       step: () => "Share the document",
       activity: () => null,
     },
@@ -288,17 +295,18 @@ export function registerPaper(registry: Registry) {
     defineQuery({
       name: "paper.get",
       description: "Read one document.",
-      input: z.object({ docId: z.string().uuid() }).strict(),
+      input: z.object({ docId: paperIdSchema }).strict(),
       coach: true,
       step: (input) => `Read document ${input.docId}`,
-      read: async (input, actor) => toPaper(await ownedPaper(actor.userId, input.docId)),
+      read: async (input, actor) =>
+        toPaper(await ownedPaper(actor.userId, input.docId)),
     })
   )
   registry.addQuery(
     defineQuery({
       name: "paper.pageCount",
       description: "Count pages in a document.",
-      input: z.object({ docId: z.string().uuid() }).strict(),
+      input: z.object({ docId: paperIdSchema }).strict(),
       coach: true,
       step: () => "Count pages",
       read: (input, actor) => pageCount(actor, input.docId),
@@ -308,7 +316,7 @@ export function registerPaper(registry: Registry) {
     defineQuery({
       name: "paper.pdf",
       description: "Render a document as PDF bytes.",
-      input: z.object({ docId: z.string().uuid() }).strict(),
+      input: z.object({ docId: paperIdSchema }).strict(),
       coach: false,
       step: () => "Download PDF",
       read: async (input, actor) => {
@@ -325,6 +333,16 @@ export function registerPaper(registry: Registry) {
       coach: false,
       step: () => "Read a shared document",
       read: (input) => readShared(input.token),
+    })
+  )
+  registry.addQuery(
+    defineQuery({
+      name: "file.get",
+      description: "Read a file's name and size. The bytes stay in the store.",
+      input: z.object({ fileId: fileIdSchema }).strict(),
+      coach: true,
+      step: () => "Read the file",
+      read: (input, actor) => readFileMeta(actor.userId, input.fileId),
     })
   )
 }

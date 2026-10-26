@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto"
 
-import { ERROR_CODES } from "@workspace/domain"
+import { ERROR_CODES, personActor } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 
@@ -21,7 +21,7 @@ describe("release-one commands", () => {
       name: "Ada",
       email: "ada-accept@example.com",
     })
-    const person = { type: "person" as const, userId }
+    const person = personActor(userId)
 
     await withDatabase(db as never, async () => {
       await expect(
@@ -37,14 +37,22 @@ describe("release-one commands", () => {
 
       const first = await registry.execute({
         name: "job.create",
-        input: { title: "Intern", company: "Northwind", jobUrl: "https://jobs.example/n" },
+        input: {
+          title: "Intern",
+          company: "Northwind",
+          jobUrl: "https://jobs.example/n",
+        },
         actor: person,
       })
       const jobId = (first.output as { id: string }).id
       await expect(
         registry.execute({
           name: "job.create",
-          input: { title: "Intern", company: "Northwind", jobUrl: "https://jobs.example/n" },
+          input: {
+            title: "Intern",
+            company: "Northwind",
+            jobUrl: "https://jobs.example/n",
+          },
           actor: person,
         })
       ).rejects.toMatchObject({
@@ -72,13 +80,17 @@ describe("release-one commands", () => {
         input: { docId: doc.id, contentVersion: 1, document: next },
         actor: person,
       })
-      expect((replaced.output as { contentVersion: number }).contentVersion).toBe(2)
+      expect(
+        (replaced.output as { contentVersion: number }).contentVersion
+      ).toBe(2)
       const replay = await registry.execute({
         name: "paper.replace",
         input: { docId: doc.id, contentVersion: 1, document: next },
         actor: person,
       })
-      expect((replay.output as { contentVersion: number }).contentVersion).toBe(2)
+      expect((replay.output as { contentVersion: number }).contentVersion).toBe(
+        2
+      )
 
       try {
         await registry.execute({
@@ -149,11 +161,14 @@ describe("release-one commands", () => {
     })
     await withDatabase(db as never, async () => {
       await expect(
-        assertDayCap(cappedId, "free", new Date(), { COACH_DAILY_TURN_LIMIT_FREE: "1" })
+        assertDayCap(cappedId, "free", new Date(), {
+          COACH_DAILY_TURN_LIMIT_FREE: "1",
+        })
       ).rejects.toMatchObject({
         code: ERROR_CODES.COACH_LIMIT_REACHED,
         status: 429,
-        message: "You've reached today's Free limit. Resets at 7:00. Pro has unlimited Coach chats.",
+        message:
+          "You've reached today's Free limit. Resets at 7:00. Pro has unlimited Coach chats.",
         detail: { window: "day", mode: "free", plan: "free" },
       })
     })

@@ -8,8 +8,8 @@ import {
   planAllowsMode,
   threadIdSchema,
   threadMessageIdSchema,
+  personActor,
   PLAN_REQUIRED_MESSAGE,
-  type CoachFocusDoc,
   type CoachMode,
   type CoachRuntime,
   type Plan,
@@ -19,6 +19,7 @@ import { Hono, type Context } from "hono"
 import { streamSSE } from "hono/streaming"
 
 import { assertDayCap, getProfileRow } from "../account/index.js"
+import { coachModelEnv } from "../config.js"
 import type { Auth } from "../auth.js"
 import { reverseCompatReceipt } from "../compat/index.js"
 import type { AppDatabase } from "../db/context.js"
@@ -26,6 +27,7 @@ import { readJsonBody } from "../http-json.js"
 import { jsonWithStatus } from "../http-json.js"
 import { requireSession, type SessionVariables } from "../middleware.js"
 import { registry } from "../registry/registry.js"
+import { resolveTurnGrounding } from "./context.js"
 import { runCoachTurn } from "./turn.js"
 import { routeCoachModel } from "./router.js"
 
@@ -109,7 +111,8 @@ async function startTurn(
     )
   }
 
-  const profile = await getProfileRow(c.var.userId)
+  const actor = personActor(c.var.userId)
+  const profile = await getProfileRow(actor.userId)
   const plan = profile.plan as Plan
   const mode = (parsed.data.mode ?? profile.coachMode) as CoachMode
   if (!planAllowsMode(plan, mode)) {
@@ -122,67 +125,41 @@ async function startTurn(
   await assertDayCap(c.var.userId, mode)
 
   const chatId = chatIdParsed.data
-  let history: Awaited<ReturnType<typeof registry.read>>
-  if (parsed.data.regenerate) {
-    history = await registry.read("chat.get", { chatId }, {
-      type: "person",
-      userId: c.var.userId,
-    })
-  } else {
-    const posted = await registry.execute({
-      name: "chat.appendMessage",
-      input: { chatId, text: parsed.data.text },
-      actor: { type: "person", userId: c.var.userId },
-    })
-    history = posted.output
-  }
-  const detail = history as {
-    messages: {
-      id: string
-      role: "person" | "coach"
-      text: string
-      createdAt: string
-      parts?: []
-      status?: "final"
-    }[]
-  }
+  const history = parsed.data.regenerate
+    ? await registry.read("chat.get", { chatId }, actor)
+    : (
+        await registry.execute({
+          name: "chat.appendMessage",
+          input: { chatId, text: parsed.data.text },
+          actor,
+        })
+      ).output
+  const detail = chatDetail(history)
   const messages = detail.messages.map((message) => ({
-    ...message,
+    id: message.id,
     role: message.role === "person" ? ("user" as const) : ("coach" as const),
+    text: message.text,
+    createdAt: message.createdAt,
   }))
 
   let model: LanguageModel | undefined
   let provider = "fake"
   let modelId = "fake"
   if (!coach) {
-    model = routeCoachModel({ plan, mode })
+    model = routeCoachModel({ plan, mode, env: coachModelEnv() })
     provider = plan === "free" ? "openrouter" : "anthropic"
     modelId = "routed"
   }
 
-  let focusDoc: CoachFocusDoc | undefined
-  if (parsed.data.focusDocId) {
-    const doc = (await registry.read(
-      "paper.get",
-      { docId: parsed.data.focusDocId },
-      { type: "person", userId: c.var.userId }
-    )) as {
-      id: string
-      name: string
-      kind: "cv" | "letter"
-      status: "draft" | "ready" | "published"
-      document: unknown
-      contentVersion: number
-    }
-    focusDoc = {
-      id: doc.id,
-      name: doc.name,
-      kind: doc.kind,
-      status: doc.status,
-      content: doc.document,
-      contentVersion: doc.contentVersion,
-    }
-  }
+  const grounding = await resolveTurnGrounding({
+    registry,
+    actor,
+    requestFocusDocId: parsed.data.focusDocId,
+    storedKind: detail.focusKind,
+    storedId: detail.focusId,
+    context: parsed.data.context,
+    memoryEnabled: profile.memoryEnabled,
+  })
 
   c.header("X-Accel-Buffering", "no")
   c.header("Content-Encoding", "identity")
@@ -200,10 +177,54 @@ async function startTurn(
       provider,
       modelId,
       history: messages,
-      focusDoc,
+      focusDoc: grounding.focusDoc,
       selection: parsed.data.selection,
+      note: grounding.note,
       heartbeatMs,
       signal: c.req.raw.signal,
     })
   })
+}
+
+function chatDetail(value: unknown): {
+  messages: {
+    id: string
+    role: "person" | "coach"
+    text: string
+    createdAt: string
+  }[]
+  focusKind: string | null
+  focusId: string | null
+} {
+  const row =
+    value && typeof value === "object" ? (value as Record<string, unknown>) : {}
+  const messages = Array.isArray(row.messages)
+    ? row.messages.flatMap((item) => {
+        if (!item || typeof item !== "object") return []
+        const message = item as Record<string, unknown>
+        if (typeof message.id !== "string" || typeof message.text !== "string")
+          return []
+        if (typeof message.createdAt !== "string") return []
+        const role: "person" | "coach" | null =
+          message.role === "person"
+            ? "person"
+            : message.role === "coach"
+              ? "coach"
+              : null
+        if (!role) return []
+        return [
+          {
+            id: message.id,
+            role,
+            text: message.text,
+            createdAt: message.createdAt,
+          },
+        ]
+      })
+    : []
+  return {
+    messages,
+    focusKind: typeof row.focusKind === "string" ? row.focusKind : null,
+    focusId: typeof row.focusId === "string" ? row.focusId : null,
+  }
 }

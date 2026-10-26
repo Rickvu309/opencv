@@ -7,6 +7,7 @@ import {
   integer,
   jsonb,
   pgSchema,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -21,8 +22,7 @@ const timestamptz = (name: string) =>
 const bytea = customType<{ data: Buffer; driverData: Buffer }>({
   dataType: () => "bytea",
   toDriver: (value) => value,
-  fromDriver: (value) =>
-    Buffer.isBuffer(value) ? value : Buffer.from(value),
+  fromDriver: (value) => (Buffer.isBuffer(value) ? value : Buffer.from(value)),
 })
 
 export const user = opencvApp.table("user", {
@@ -152,10 +152,12 @@ export const paperDocs = opencvApp.table(
       .$type<"draft" | "ready" | "published">()
       .notNull()
       .default("draft"),
-    checks: jsonb("checks").$type<
-      { id: string; kind: string; message: string }[]
-    >(),
-    pageChoice: text("page_choice").$type<"unset" | "keep">().notNull().default("unset"),
+    checks:
+      jsonb("checks").$type<{ id: string; kind: string; message: string }[]>(),
+    pageChoice: text("page_choice")
+      .$type<"unset" | "keep">()
+      .notNull()
+      .default("unset"),
     sourceFileId: uuid("source_file_id").references(() => files.id, {
       onDelete: "set null",
     }),
@@ -163,22 +165,22 @@ export const paperDocs = opencvApp.table(
     updatedAt: timestamptz("updated_at").notNull().defaultNow(),
   },
   (table) => [
-    index("paper_docs_user_id_updated_at_idx").on(table.userId, table.updatedAt),
+    index("paper_docs_user_id_updated_at_idx").on(
+      table.userId,
+      table.updatedAt
+    ),
   ]
 )
 
-export const paperShares = opencvApp.table(
-  "paper_shares",
-  {
-    id: uuid("id").primaryKey(),
-    docId: uuid("doc_id")
-      .notNull()
-      .references(() => paperDocs.id, { onDelete: "cascade" })
-      .unique(),
-    token: text("token").notNull().unique(),
-    createdAt: timestamptz("created_at").notNull().defaultNow(),
-  }
-)
+export const paperShares = opencvApp.table("paper_shares", {
+  id: uuid("id").primaryKey(),
+  docId: uuid("doc_id")
+    .notNull()
+    .references(() => paperDocs.id, { onDelete: "cascade" })
+    .unique(),
+  token: text("token").notNull().unique(),
+  createdAt: timestamptz("created_at").notNull().defaultNow(),
+})
 
 export const jobs = opencvApp.table(
   "jobs",
@@ -259,12 +261,18 @@ export const connections = opencvApp.table(
     refreshToken: text("refresh_token"),
     expiresAt: timestamptz("expires_at"),
     scope: text("scope"),
-    status: text("status").$type<"active" | "expired">().notNull().default("active"),
+    status: text("status")
+      .$type<"active" | "expired">()
+      .notNull()
+      .default("active"),
     syncCursor: text("sync_cursor"),
     createdAt: timestamptz("created_at").notNull().defaultNow(),
   },
   (table) => [
-    uniqueIndex("connections_user_provider_uidx").on(table.userId, table.provider),
+    uniqueIndex("connections_user_provider_uidx").on(
+      table.userId,
+      table.provider
+    ),
   ]
 )
 
@@ -341,7 +349,11 @@ export const chats = opencvApp.table(
   },
   (table) => [
     index("chats_user_id_updated_at_idx").on(table.userId, table.updatedAt),
-    index("chats_user_id_focus_idx").on(table.userId, table.focusKind, table.focusId),
+    index("chats_user_id_focus_idx").on(
+      table.userId,
+      table.focusKind,
+      table.focusId
+    ),
   ]
 )
 
@@ -386,7 +398,9 @@ export const pendingActions = opencvApp.table(
       .default("pending"),
     createdAt: timestamptz("created_at").notNull().defaultNow(),
   },
-  (table) => [index("pending_actions_user_id_idx").on(table.userId, table.status)]
+  (table) => [
+    index("pending_actions_user_id_idx").on(table.userId, table.status),
+  ]
 )
 
 export const activity = opencvApp.table(
@@ -403,7 +417,7 @@ export const activity = opencvApp.table(
     subjectId: text("subject_id").notNull(),
     summary: text("summary").notNull(),
     detail: jsonb("detail"),
-    result: jsonb("result"),
+    result: jsonb("result").$type<unknown>(),
     reversalCommand: text("reversal_command"),
     reversalInput: jsonb("reversal_input"),
     undoneAt: timestamptz("undone_at"),
@@ -423,6 +437,20 @@ export const activity = opencvApp.table(
   ]
 )
 
+export const idempotency = opencvApp.table(
+  "idempotency",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    key: text("key").notNull(),
+    command: text("command").notNull(),
+    result: jsonb("result").$type<unknown>(),
+    createdAt: timestamptz("created_at").notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.key] })]
+)
+
 export const coachUsage = opencvApp.table(
   "coach_usage",
   {
@@ -430,7 +458,9 @@ export const coachUsage = opencvApp.table(
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    chatId: uuid("chat_id").references(() => chats.id, { onDelete: "set null" }),
+    chatId: uuid("chat_id").references(() => chats.id, {
+      onDelete: "set null",
+    }),
     messageId: uuid("message_id").references(() => chatMessages.id, {
       onDelete: "set null",
     }),
@@ -443,7 +473,10 @@ export const coachUsage = opencvApp.table(
     createdAt: timestamptz("created_at").notNull().defaultNow(),
   },
   (table) => [
-    index("coach_usage_user_id_created_at_idx").on(table.userId, table.createdAt),
+    index("coach_usage_user_id_created_at_idx").on(
+      table.userId,
+      table.createdAt
+    ),
     uniqueIndex("coach_usage_message_id_uidx").on(table.messageId),
   ]
 )
@@ -459,6 +492,9 @@ export const notifyRequests = opencvApp.table(
     createdAt: timestamptz("created_at").notNull().defaultNow(),
   },
   (table) => [
-    uniqueIndex("notify_requests_user_topic_uidx").on(table.userId, table.topic),
+    uniqueIndex("notify_requests_user_topic_uidx").on(
+      table.userId,
+      table.topic
+    ),
   ]
 )

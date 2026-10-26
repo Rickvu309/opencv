@@ -1,3 +1,5 @@
+import { z } from "zod"
+
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -19,7 +21,10 @@ export function parseUserId(value: string): UserId {
   return trimmed as UserId
 }
 
-function parseUuid<TName extends string>(value: string, label: string): Brand<TName> {
+function parseUuid<TName extends string>(
+  value: string,
+  label: string
+): Brand<TName> {
   if (!uuidPattern.test(value)) throw new Error(`Invalid ${label}`)
   return value as Brand<TName>
 }
@@ -47,3 +52,14 @@ export function parsePendingActionId(value: string): PendingActionId {
 export function parseFileId(value: string): FileId {
   return parseUuid(value, "file id")
 }
+
+export const userIdSchema = z.string().trim().min(1).transform(parseUserId)
+export const chatIdSchema = z.string().uuid().transform(parseChatId)
+export const paperIdSchema = z.string().uuid().transform(parsePaperId)
+export const jobIdSchema = z.string().uuid().transform(parseJobId)
+export const activityIdSchema = z.string().uuid().transform(parseActivityId)
+export const pendingActionIdSchema = z
+  .string()
+  .uuid()
+  .transform(parsePendingActionId)
+export const fileIdSchema = z.string().uuid().transform(parseFileId)

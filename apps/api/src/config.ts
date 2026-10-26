@@ -125,3 +125,61 @@ export function coachRuntimeModeFromEnv(
   const configured = env.COACH_RUNTIME?.trim()
   return configured === "fake" ? "fake" : undefined
 }
+
+export type CoachModelEnv = {
+  ANTHROPIC_API_KEY?: string
+  OPENROUTER_API_KEY?: string
+  COACH_MODEL_FREE?: string
+  COACH_MODEL_PRO_FREE?: string
+  COACH_MODEL_LIGHT?: string
+  COACH_MODEL_MAX?: string
+  COACH_DAILY_TURN_LIMIT_FREE?: string
+  COACH_DAILY_TURN_LIMIT_LIGHT?: string
+  COACH_DAILY_TURN_LIMIT_MAX?: string
+  COACH_DAILY_TURN_LIMIT_PRO_FREE?: string
+  COACH_SESSION_HOURS?: string
+}
+
+const coachEnvKeys = [
+  "ANTHROPIC_API_KEY",
+  "OPENROUTER_API_KEY",
+  "COACH_MODEL_FREE",
+  "COACH_MODEL_PRO_FREE",
+  "COACH_MODEL_LIGHT",
+  "COACH_MODEL_MAX",
+  "COACH_DAILY_TURN_LIMIT_FREE",
+  "COACH_DAILY_TURN_LIMIT_LIGHT",
+  "COACH_DAILY_TURN_LIMIT_MAX",
+  "COACH_DAILY_TURN_LIMIT_PRO_FREE",
+  "COACH_SESSION_HOURS",
+] as const satisfies readonly (keyof CoachModelEnv)[]
+
+/** Model and cap settings. Callers pass this object. They do not read the process env. */
+export function coachModelEnvFromEnv(env: NodeJS.ProcessEnv): CoachModelEnv {
+  const picked: CoachModelEnv = {}
+  for (const key of coachEnvKeys) {
+    const value = env[key]
+    if (value !== undefined) picked[key] = value
+  }
+  return picked
+}
+
+let storedCoachModelEnv: CoachModelEnv = {}
+
+export function setCoachModelEnv(env: CoachModelEnv) {
+  storedCoachModelEnv = env
+}
+
+export function coachModelEnv(): CoachModelEnv {
+  return storedCoachModelEnv
+}
+
+export function gmailEnabledFromEnv(env: NodeJS.ProcessEnv): boolean {
+  return env.GMAIL_ENABLED === "true"
+}
+
+export function googleEnabledFromEnv(env: NodeJS.ProcessEnv): boolean {
+  return Boolean(
+    env.GOOGLE_CLIENT_ID?.trim() && env.GOOGLE_CLIENT_SECRET?.trim()
+  )
+}

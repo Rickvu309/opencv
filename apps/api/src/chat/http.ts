@@ -1,4 +1,11 @@
-import { successEnvelope, threadIdSchema, ERROR_CODES, errorEnvelope, httpStatusForError } from "@workspace/domain"
+import {
+  personActor,
+  successEnvelope,
+  threadIdSchema,
+  ERROR_CODES,
+  errorEnvelope,
+  httpStatusForError,
+} from "@workspace/domain"
 import { Hono } from "hono"
 
 import type { Auth } from "../auth.js"
@@ -16,7 +23,7 @@ export function createChatRoutes(auth?: Auth, db?: AppDatabase) {
     const data = await registry.read(
       "chat.list",
       query ? { query } : {},
-      { type: "person", userId: c.var.userId }
+      personActor(c.var.userId)
     )
     return c.json(successEnvelope(data))
   })
@@ -33,7 +40,7 @@ export function createChatRoutes(auth?: Auth, db?: AppDatabase) {
     const data = await registry.read(
       "chat.get",
       { chatId: parsed.data },
-      { type: "person", userId: c.var.userId }
+      personActor(c.var.userId)
     )
     return c.json(successEnvelope(data))
   })
@@ -50,7 +57,7 @@ export function createChatRoutes(auth?: Auth, db?: AppDatabase) {
     const result = await registry.execute({
       name: "coach.stop",
       input: { chatId: parsed.data },
-      actor: { type: "person", userId: c.var.userId },
+      actor: personActor(c.var.userId),
     })
     return c.json(successEnvelope(result.output))
   })

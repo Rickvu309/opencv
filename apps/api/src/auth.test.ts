@@ -1,6 +1,5 @@
 import { PGlite } from "@electric-sql/pglite"
 import { drizzle } from "drizzle-orm/pglite"
-import { migrate } from "drizzle-orm/pglite/migrator"
 import {
   afterAll,
   afterEach,
@@ -13,8 +12,9 @@ import {
 
 import { createApp } from "./app.js"
 import { cookieAttributesForAuthUrl } from "./auth.js"
+import type { AppDatabase } from "./db/context.js"
+import { runMigrations } from "./db/migrate.js"
 import * as schema from "./db/schema.js"
-import { migrationsFolder } from "./db/paths.js"
 import {
   createMigratedTestDb,
   createTestApp,
@@ -77,7 +77,7 @@ describe("auth cookie round-trip", () => {
   beforeAll(async () => {
     client = new PGlite()
     const db = drizzle({ client, schema })
-    await migrate(db, { migrationsFolder })
+    await runMigrations(db as unknown as AppDatabase)
     app = createAuthedApp(db, "https://api.example.com")
     localApp = createAuthedApp(db, "http://localhost:3001")
   }, 60_000)

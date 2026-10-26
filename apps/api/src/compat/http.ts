@@ -1,8 +1,10 @@
+// Temporary compat routes. #377 deletes threads, #376 deletes apply, and #378 deletes paper.
 import {
   ERROR_CODES,
   errorEnvelope,
   httpStatusForError,
   paperDocIdSchema,
+  personActor,
   successEnvelope,
   threadIdSchema,
 } from "@workspace/domain"
@@ -27,7 +29,7 @@ import {
 } from "./commands.js"
 
 function person(userId: string) {
-  return { type: "person" as const, userId }
+  return personActor(userId)
 }
 
 export function createCompatThreadRoutes(auth?: Auth, db?: AppDatabase) {

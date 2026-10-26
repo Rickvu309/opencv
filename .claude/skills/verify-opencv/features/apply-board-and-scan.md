@@ -6,7 +6,7 @@ Apply (`/app/apply`) is a board with columns Inbox, Prep, Sent, Live and Closed.
 
 - `apply-board` shows the empty columns before the first card.
 - `apply-scan` fills title and company from a posting URL.
-- `apply-add` adds the scanned card. Compat stores Inbox and Prep as `saved`, and a read of `saved` comes back as Prep, so the new card shows in Prep.
+- `apply-add` adds the scanned card. Compat stores Inbox and Prep as `saved`, and a read of `saved` comes back as Inbox, so the new card shows in Inbox.
 - `apply-move` moves that card to Sent and keeps it there after reload. Sent is `applied` and round-trips.
 
 ## How to get to it (user POV)
@@ -21,8 +21,8 @@ Preconditions: signed in on a new account (see `auth.md`). The board has no card
 
 - **Board.** `agent-browser open "$WEB_URL/app/apply"` and `agent-browser get text main`. The columns Inbox, Prep, Sent, Live and Closed are on the page, and no card title is present.
 - **Scan.** `agent-browser find role button click --name "Add opportunity"`, `agent-browser find role textbox fill "https://careers.verify-posting.dev/associate-pm-intern" --name "Posting link"`, `agent-browser find role button click --name "Scan"`. Wait 3 s. The dialog text reads `Filled Associate Product Manager Intern at Northwind Labs.`
-- **Add.** Choose the dialog's `Add opportunity` button (the last `Add opportunity` button in `snapshot -i`). The detail opens on a card titled `Associate Product Manager Intern` with company `Northwind Labs`. The stage button reads `Stage: Prep`.
-- **Move.** `agent-browser find role button click --name "Stage: Prep"`, then `agent-browser find role menuitem click --name "Sent"`. Wait 2 s. The stage button reads `Stage: Sent`.
+- **Add.** Choose the dialog's `Add opportunity` button (the last `Add opportunity` button in `snapshot -i`). The detail opens on a card titled `Associate Product Manager Intern` with company `Northwind Labs`. The stage button reads `Stage: Inbox`.
+- **Move.** `agent-browser find role button click --name "Stage: Inbox"`, then `agent-browser find role menuitem click --name "Sent"`. Wait 2 s. The stage button reads `Stage: Sent`.
 - **Persist.** `agent-browser reload`, open the card again, and confirm the stage button still reads `Stage: Sent`. `GET /api/apply` shows `stage` `sent`.
 - **Proof.** `agent-browser screenshot "$EVIDENCE_DIR/apply-move-scan.png"` after the move, plus the api read of `GET /api/apply` showing the card.
 

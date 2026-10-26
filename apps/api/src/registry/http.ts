@@ -2,6 +2,7 @@ import {
   ERROR_CODES,
   errorEnvelope,
   httpStatusForError,
+  personActor,
   successEnvelope,
 } from "@workspace/domain"
 import { Hono } from "hono"
@@ -29,7 +30,8 @@ const PRIVATE_OUTPUT_KEYS = new Set([
 ])
 
 export function publicCommandOutput(output: unknown) {
-  if (!output || typeof output !== "object" || Array.isArray(output)) return output
+  if (!output || typeof output !== "object" || Array.isArray(output))
+    return output
   const copy: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(output)) {
     if (!PRIVATE_OUTPUT_KEYS.has(key)) copy[key] = value
@@ -56,7 +58,10 @@ export function createCommandRoutes({
     } catch {
       return jsonWithStatus(
         c,
-        errorEnvelope(ERROR_CODES.VALIDATION_ERROR, "Request body must be JSON"),
+        errorEnvelope(
+          ERROR_CODES.VALIDATION_ERROR,
+          "Request body must be JSON"
+        ),
         httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
       )
     }
@@ -66,14 +71,16 @@ export function createCommandRoutes({
       typeof body === "object" &&
       !Array.isArray(body) &&
       "input" in body
-    const record = wrapped ? (body as { input?: unknown; idempotencyKey?: unknown }) : null
+    const record = wrapped
+      ? (body as { input?: unknown; idempotencyKey?: unknown })
+      : null
     const input = record ? record.input : body
     const idempotencyKey =
       record && typeof record.idempotencyKey === "string"
         ? record.idempotencyKey
         : undefined
     const name = c.req.param("name")
-    const actor = { type: "person" as const, userId: c.var.userId }
+    const actor = personActor(c.var.userId)
 
     try {
       if (isCompatCommand(name)) {

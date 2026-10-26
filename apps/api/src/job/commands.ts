@@ -1,5 +1,6 @@
 import {
   defineQuery,
+  jobIdSchema,
   jobAddChecklistItemInputSchema,
   jobAddNoteInputSchema,
   jobCreateInputSchema,
@@ -13,6 +14,7 @@ import {
   jobUpdateInputSchema,
   type Actor,
   type JobAddChecklistItemInput,
+  type Plan,
   type JobCreateInput,
   type JobLinkPaperInput,
   type JobMoveInput,
@@ -51,15 +53,36 @@ export function setJobPostingFetch(next: FetchJobPosting) {
   postingFetch = next
 }
 
+type PostingFields = { title: string; company: string; location: string }
+
+type PostingInterpret = (input: {
+  plan: Plan
+  text: string
+}) => Promise<PostingFields | null>
+
+let postingInterpret: PostingInterpret | null = null
+
+export function setJobPostingInterpret(next: PostingInterpret | null) {
+  postingInterpret = next
+}
+
+function planFrom(value: unknown): Plan | null {
+  if (!value || typeof value !== "object" || !("plan" in value)) return null
+  const plan = (value as { plan?: unknown }).plan
+  return plan === "free" || plan === "pro" ? plan : null
+}
+
 const listInput = z
   .object({
-    stage: z.enum(["saved", "applied", "interview", "offer", "closed"]).optional(),
+    stage: z
+      .enum(["saved", "applied", "interview", "offer", "closed"])
+      .optional(),
     company: z.string().optional(),
     location: z.string().optional(),
   })
   .strict()
 
-const idInput = z.object({ jobId: z.string().uuid() }).strict()
+const idInput = z.object({ jobId: jobIdSchema }).strict()
 
 const previewInput = z
   .object({
@@ -118,7 +141,8 @@ export function registerJob(registry: Registry) {
             }
           : null,
     },
-    (input: JobUpdateInput, actor: Actor) => updateJob(actor, input.jobId, input.patch)
+    (input: JobUpdateInput, actor: Actor) =>
+      updateJob(actor, input.jobId, input.patch)
   )
 
   registry.addCommand(
@@ -161,7 +185,8 @@ export function registerJob(registry: Registry) {
       step: (input) => (input.starred ? "Star the job" : "Unstar the job"),
       activity: () => null,
     },
-    (input: JobStarInput, actor: Actor) => starJob(actor, input.jobId, input.starred)
+    (input: JobStarInput, actor: Actor) =>
+      starJob(actor, input.jobId, input.starred)
   )
 
   registry.addCommand(
@@ -205,7 +230,11 @@ export function registerJob(registry: Registry) {
       destructive: false,
       reversal: (input, output) => ({
         command: "job.setChecklistItem",
-        input: { jobId: input.jobId, itemId: input.itemId, done: output.previousDone },
+        input: {
+          jobId: input.jobId,
+          itemId: input.itemId,
+          done: output.previousDone,
+        },
       }),
       step: () => "Update a checklist item",
       activity: () => null,
@@ -323,7 +352,21 @@ export function registerJob(registry: Registry) {
       input: previewInput,
       coach: true,
       step: () => "Preview the posting",
-      read: (input, actor) => previewJob(actor, input, postingFetch),
+      read: (input, actor) =>
+        previewJob(
+          actor,
+          input,
+          postingFetch,
+          postingInterpret
+            ? async (text) => {
+                const plan = planFrom(
+                  await registry.read("profile.get", {}, actor)
+                )
+                if (!plan || !postingInterpret) return null
+                return postingInterpret({ plan, text })
+              }
+            : undefined
+        ),
     })
   )
 

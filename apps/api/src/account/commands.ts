@@ -3,6 +3,7 @@ import {
   accountRequestEmailChangeInputSchema,
   ERROR_CODES,
   notifyRequestInputSchema,
+  parseFileId,
   profileSetPhotoInputSchema,
   profileUpdateInputSchema,
   type Actor,
@@ -20,7 +21,6 @@ import {
   toProfile,
   updateProfile,
 } from "./store.js"
-
 
 export function registerAccount(registry: Registry) {
   registry.addCommand(
@@ -58,7 +58,7 @@ export function registerAccount(registry: Registry) {
       if (!file || file.purpose !== "avatar") {
         throw new CommandError(ERROR_CODES.NOT_FOUND, "Photo file not found")
       }
-      return setProfilePhoto(actor.userId, file.id)
+      return setProfilePhoto(actor.userId, parseFileId(file.id))
     }
   )
 
@@ -121,7 +121,10 @@ async function requestNotify(actor: Actor, topic: "jobs" | "proof") {
     .select()
     .from(notifyRequests)
     .where(
-      and(eq(notifyRequests.userId, actor.userId), eq(notifyRequests.topic, topic))
+      and(
+        eq(notifyRequests.userId, actor.userId),
+        eq(notifyRequests.topic, topic)
+      )
     )
     .limit(1)
   if (existing[0]) {

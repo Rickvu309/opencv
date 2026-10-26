@@ -141,8 +141,11 @@ export const COACH_WORKSPACE_LIST_CAP = 8
 export const COACH_SSE_EVENTS = {
   messageStart: "message-start",
   textDelta: "text-delta",
+  step: "step",
   toolCall: "tool-call",
   toolResult: "tool-result",
+  confirm: "confirm",
+  usage: "usage",
   messageEnd: "message-end",
   error: "error",
 } as const
@@ -201,6 +204,8 @@ export type CoachToolResultPart = {
   reversal?: ReversalDescriptor
   result: CommandEnvelope
   detail?: CoachReceiptDetail
+  pendingActionId?: string
+  command?: string
 }
 
 export type CoachFinishPart = {
@@ -277,6 +282,8 @@ export type CoachTurnInput = {
   focusDoc?: CoachFocusDoc
   /** Highlighted Paper text when the User sends from the editor. */
   selection?: CoachSelection
+  /** Names and titles for this turn. Bytes never appear here. */
+  note?: string
 }
 
 export type CoachTitleInput = {

@@ -173,7 +173,7 @@ export function starterApplyCards(): StarterApplyCardDraft[] {
 }
 
 export const STARTER_THREAD_COACH_TEXT =
-  "Paper has one sample CV you can replace. Apply has a few example cards labeled Demo across Stages so the board isn't empty. Pitch has a sample page labeled Demo content — edit it or clear the demo when you want it to be yours. Delete any of it when you are ready — none of it is a real person.\n\nI haven't edited Paper, Apply, or Pitch, and I haven't run any Commands — this workspace was seeded for you. Ask here when you want a next step, or open those surfaces yourself."
+  "Paper has one sample CV you can replace. Apply has a few example cards labeled Demo across Stages so the board isn't empty. Delete any of it when you are ready. None of it is a real person.\n\nI haven't edited Paper or Apply, and I haven't run any Commands. This workspace was seeded for you. Ask here when you want a next step, or open those surfaces yourself."
 
 export function starterThread() {
   return {

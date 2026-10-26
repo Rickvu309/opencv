@@ -236,7 +236,9 @@ export function zonedTimeToUtc(
 }
 
 function addCalendarDays(date: CalendarDate, delta: number): CalendarDate {
-  const shifted = new Date(Date.UTC(date.year, date.month - 1, date.day + delta))
+  const shifted = new Date(
+    Date.UTC(date.year, date.month - 1, date.day + delta)
+  )
   return {
     year: shifted.getUTCFullYear(),
     month: shifted.getUTCMonth() + 1,
@@ -244,11 +246,7 @@ function addCalendarDays(date: CalendarDate, delta: number): CalendarDate {
   }
 }
 
-export function dayWindow(
-  now: Date,
-  timeZone: string,
-  hour = DAY_START_HOUR
-) {
+export function dayWindow(now: Date, timeZone: string, hour = DAY_START_HOUR) {
   const parts = zonedParts(now, timeZone)
   const startDate =
     parts.hour < hour
@@ -306,12 +304,16 @@ export function sessionWindow(
   hours = DEFAULT_SESSION_HOURS
 ) {
   const day = dayWindow(now, timeZone)
-  const rawStart = new Date(now.getTime() - hours * 60 * 60 * 1000)
+  const span = hours * 60 * 60 * 1000
+  const rawStart = new Date(now.getTime() - span)
   const start = rawStart < day.start ? day.start : rawStart
-  const unclippedEnd = new Date(start.getTime() + hours * 60 * 60 * 1000)
-  const resetsAt = unclippedEnd > now ? unclippedEnd : day.resetsAt
-  const clipped = resetsAt > day.resetsAt ? day.resetsAt : resetsAt
-  return { start, resetsAt: clipped }
+  let sessionEnd = new Date(start.getTime() + span)
+  if (sessionEnd.getTime() <= now.getTime()) {
+    sessionEnd = new Date(now.getTime() + span)
+  }
+  const resetsAt =
+    sessionEnd.getTime() < day.resetsAt.getTime() ? sessionEnd : day.resetsAt
+  return { start, resetsAt }
 }
 
 export function percentOf(used: number, cap: number) {

@@ -1,16 +1,30 @@
 import type { ZodType } from "zod"
 
+import { parseChatId, parseUserId, type ChatId, type UserId } from "./ids.js"
+
 export type CoachAccess = "auto" | "confirm" | "never"
 
 export type PersonActor = {
   type: "person"
-  userId: string
+  userId: UserId
 }
 
 export type CoachActor = {
   type: "coach"
-  userId: string
-  chatId: string
+  userId: UserId
+  chatId: ChatId
+}
+
+export function personActor(userId: string): PersonActor {
+  return { type: "person", userId: parseUserId(userId) }
+}
+
+export function coachActor(userId: string, chatId: string): CoachActor {
+  return {
+    type: "coach",
+    userId: parseUserId(userId),
+    chatId: parseChatId(chatId),
+  }
 }
 
 export type Actor = PersonActor | CoachActor

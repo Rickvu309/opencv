@@ -2,6 +2,8 @@ import {
   ERROR_CODES,
   errorEnvelope,
   httpStatusForError,
+  parseUserId,
+  personActor,
   successEnvelope,
 } from "@workspace/domain"
 import { Hono } from "hono"
@@ -28,7 +30,7 @@ function sessionApp(auth?: Auth, db?: AppDatabase) {
 export function createProfileRoutes(auth?: Auth, db?: AppDatabase) {
   const routes = sessionApp(auth, db)
   routes.get("/", async (c) => {
-    const row = await getProfileRow(c.var.userId)
+    const row = await getProfileRow(parseUserId(c.var.userId))
     return c.json(successEnvelope(toProfile(row)))
   })
   return routes
@@ -43,12 +45,15 @@ export function createAccountRoutes(auth?: Auth, db?: AppDatabase) {
     if (!(file instanceof File)) {
       return jsonWithStatus(
         c,
-        errorEnvelope(ERROR_CODES.VALIDATION_ERROR, "Choose an image to upload."),
+        errorEnvelope(
+          ERROR_CODES.VALIDATION_ERROR,
+          "Choose an image to upload."
+        ),
         httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
       )
     }
     const saved = await saveFile({
-      userId: c.var.userId,
+      userId: parseUserId(c.var.userId),
       name: file.name,
       mediaType: file.type || "application/octet-stream",
       bytes: Buffer.from(await file.arrayBuffer()),
@@ -57,7 +62,7 @@ export function createAccountRoutes(auth?: Auth, db?: AppDatabase) {
     const result = await registry.execute({
       name: "profile.setPhoto",
       input: { fileId: saved.id },
-      actor: { type: "person", userId: c.var.userId },
+      actor: personActor(c.var.userId),
     })
     return c.json(successEnvelope(result.output))
   })
@@ -85,7 +90,7 @@ export function createSearchRoutes(auth?: Auth, db?: AppDatabase) {
     const data = await registry.read(
       "workspace.search",
       { query },
-      { type: "person", userId: c.var.userId }
+      personActor(c.var.userId)
     )
     return c.json(successEnvelope(data))
   })
@@ -95,10 +100,15 @@ export function createSearchRoutes(auth?: Auth, db?: AppDatabase) {
 export function createActivityRoutes(auth?: Auth, db?: AppDatabase) {
   const routes = sessionApp(auth, db)
   routes.get("/", async (c) => {
+    const subjectKind = c.req.query("subjectKind")
+    const subjectId = c.req.query("subjectId")
+    const filters = [eq(activity.userId, c.var.userId)]
+    if (subjectKind) filters.push(eq(activity.subjectKind, subjectKind))
+    if (subjectId) filters.push(eq(activity.subjectId, subjectId))
     const rows = await getDb()
       .select()
       .from(activity)
-      .where(and(eq(activity.userId, c.var.userId)))
+      .where(and(...filters))
       .orderBy(desc(activity.createdAt))
       .limit(100)
     return c.json(
@@ -112,6 +122,7 @@ export function createActivityRoutes(auth?: Auth, db?: AppDatabase) {
           subjectId: row.subjectId,
           summary: row.summary,
           undoneAt: row.undoneAt?.toISOString() ?? null,
+          reversible: Boolean(row.reversalCommand) && row.undoneAt == null,
         }))
       )
     )

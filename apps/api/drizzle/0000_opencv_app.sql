@@ -34,6 +34,15 @@ CREATE TABLE "opencv_app"."activity" (
 	"idempotency_key" text
 );
 --> statement-breakpoint
+CREATE TABLE "opencv_app"."idempotency" (
+	"user_id" text NOT NULL,
+	"key" text NOT NULL,
+	"command" text NOT NULL,
+	"result" jsonb,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "idempotency_user_id_key_pk" PRIMARY KEY("user_id","key")
+);
+--> statement-breakpoint
 CREATE TABLE "opencv_app"."chat_messages" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"chat_id" uuid NOT NULL,
@@ -249,6 +258,7 @@ CREATE TABLE "opencv_app"."verification" (
 --> statement-breakpoint
 ALTER TABLE "opencv_app"."account" ADD CONSTRAINT "account_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "opencv_app"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "opencv_app"."activity" ADD CONSTRAINT "activity_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "opencv_app"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "opencv_app"."idempotency" ADD CONSTRAINT "idempotency_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "opencv_app"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "opencv_app"."chat_messages" ADD CONSTRAINT "chat_messages_chat_id_chats_id_fk" FOREIGN KEY ("chat_id") REFERENCES "opencv_app"."chats"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "opencv_app"."chats" ADD CONSTRAINT "chats_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "opencv_app"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "opencv_app"."coach_usage" ADD CONSTRAINT "coach_usage_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "opencv_app"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

@@ -7,9 +7,12 @@ import type { FetchJobPosting } from "./apply/fetch-posting.js"
 import { createDemoCoachRuntime, withScanJobPosting } from "./coach/index.js"
 import {
   authUrlFromEnv,
+  coachModelEnvFromEnv,
   coachRuntimeModeFromEnv,
   databaseUrlFromEnv,
   dbDriverFromEnv,
+  gmailEnabledFromEnv,
+  googleEnabledFromEnv,
   pgliteDataDirFromEnv,
   sessionSecretFromEnv,
   webOriginsFromEnv,
@@ -45,7 +48,9 @@ async function createPgliteDb(dataDir: string) {
 
 const port = Number(process.env.PORT ?? 3001)
 const databaseUrl = databaseUrlFromEnv(process.env)
-const pool = databaseUrl ? new Pool({ connectionString: databaseUrl }) : undefined
+const pool = databaseUrl
+  ? new Pool({ connectionString: databaseUrl })
+  : undefined
 const db =
   dbDriverFromEnv(process.env) === "pglite"
     ? await createPgliteDb(pgliteDataDirFromEnv(process.env))
@@ -56,6 +61,7 @@ const db =
 if (db) bindDatabase(db as AppDatabase)
 
 const coachRuntimeMode = coachRuntimeModeFromEnv(process.env)
+const coachEnv = coachModelEnvFromEnv(process.env)
 const coach =
   coachRuntimeMode === "fake"
     ? withScanJobPosting(createDemoCoachRuntime(), async () =>
@@ -70,7 +76,14 @@ const app = createApp({
   authUrl: authUrlFromEnv(process.env),
   db,
   coach,
-  fetchJobPosting: coachRuntimeMode === "fake" ? fakeFetchJobPosting : undefined,
+  coachEnv,
+  gmailEnabled: gmailEnabledFromEnv(process.env),
+  googleEnabled: googleEnabledFromEnv(process.env),
+  interpretPostings:
+    coachRuntimeMode !== "fake" &&
+    Boolean(coachEnv.OPENROUTER_API_KEY || coachEnv.ANTHROPIC_API_KEY),
+  fetchJobPosting:
+    coachRuntimeMode === "fake" ? fakeFetchJobPosting : undefined,
 })
 
 serve({ fetch: app.fetch, port }, (info) => {

@@ -7,9 +7,13 @@ import {
   decodePaperContent,
   emptyCvDocument,
   emptyLetterDocument,
+  parsePaperId,
   type Actor,
+  type FileId,
+  type PaperId,
   type PaperReplaceInput,
   type PaperStoredKind,
+  type UserId,
 } from "@workspace/domain"
 import { and, desc, eq } from "drizzle-orm"
 
@@ -42,7 +46,7 @@ export function toPaper(row: typeof paperDocs.$inferSelect) {
   }
 }
 
-export async function ownedPaper(userId: string, docId: string) {
+export async function ownedPaper(userId: UserId, docId: PaperId) {
   const rows = await getDb()
     .select()
     .from(paperDocs)
@@ -93,7 +97,11 @@ async function assertCvAgent(actor: Actor, kind: PaperStoredKind) {
   }
 }
 
-export async function listPapers(userId: string, query?: string, kind?: PaperStoredKind) {
+export async function listPapers(
+  userId: UserId,
+  query?: string,
+  kind?: PaperStoredKind
+) {
   const rows = await getDb()
     .select()
     .from(paperDocs)
@@ -108,25 +116,32 @@ export async function listPapers(userId: string, query?: string, kind?: PaperSto
 
 export async function createPaper(
   actor: Actor,
-  input: { kind: PaperStoredKind; name?: string; templateId?: string; document?: unknown }
+  input: {
+    kind: PaperStoredKind
+    name?: string
+    templateId?: string
+    document?: unknown
+  }
 ) {
   const now = new Date()
   const id = createId(now.getTime())
   const document = input.document
     ? requireDocument(input.kind, input.document)
     : blankDocument(input.kind)
-  await getDb().insert(paperDocs).values({
-    id,
-    userId: actor.userId,
-    name: input.name?.trim() || DEFAULT_PAPER_DOC_NAME[input.kind],
-    kind: input.kind,
-    templateId: input.templateId ?? "simple",
-    document,
-    contentVersion: 1,
-    createdAt: now,
-    updatedAt: now,
-  })
-  return toPaper(await ownedPaper(actor.userId, id))
+  await getDb()
+    .insert(paperDocs)
+    .values({
+      id,
+      userId: actor.userId,
+      name: input.name?.trim() || DEFAULT_PAPER_DOC_NAME[input.kind],
+      kind: input.kind,
+      templateId: input.templateId ?? "simple",
+      document,
+      contentVersion: 1,
+      createdAt: now,
+      updatedAt: now,
+    })
+  return toPaper(await ownedPaper(actor.userId, parsePaperId(id)))
 }
 
 export async function replacePaper(actor: Actor, input: PaperReplaceInput) {
@@ -159,17 +174,20 @@ export async function replacePaper(actor: Actor, input: PaperReplaceInput) {
   }
 }
 
-export async function renamePaper(actor: Actor, docId: string, name: string) {
+export async function renamePaper(actor: Actor, docId: PaperId, name: string) {
   const current = await ownedPaper(actor.userId, docId)
   const updatedAt = new Date()
   await getDb()
     .update(paperDocs)
     .set({ name, updatedAt })
     .where(eq(paperDocs.id, current.id))
-  return { ...toPaper({ ...current, name, updatedAt }), previousName: current.name }
+  return {
+    ...toPaper({ ...current, name, updatedAt }),
+    previousName: current.name,
+  }
 }
 
-export async function duplicatePaper(actor: Actor, docId: string) {
+export async function duplicatePaper(actor: Actor, docId: PaperId) {
   const current = await ownedPaper(actor.userId, docId)
   return createPaper(actor, {
     kind: current.kind,
@@ -179,24 +197,31 @@ export async function duplicatePaper(actor: Actor, docId: string) {
   })
 }
 
-export async function deletePaper(actor: Actor, docId: string) {
+export async function deletePaper(actor: Actor, docId: PaperId) {
   await ownedPaper(actor.userId, docId)
   await getDb().delete(paperDocs).where(eq(paperDocs.id, docId))
   return { id: docId }
 }
 
-export async function setPaperTemplate(actor: Actor, docId: string, templateId: string) {
+export async function setPaperTemplate(
+  actor: Actor,
+  docId: PaperId,
+  templateId: string
+) {
   const current = await ownedPaper(actor.userId, docId)
   await getDb()
     .update(paperDocs)
     .set({ templateId, updatedAt: new Date() })
     .where(eq(paperDocs.id, current.id))
-  return { ...toPaper(await ownedPaper(actor.userId, docId)), previousTemplateId: current.templateId }
+  return {
+    ...toPaper(await ownedPaper(actor.userId, docId)),
+    previousTemplateId: current.templateId,
+  }
 }
 
 export async function setPaperStatus(
   actor: Actor,
-  docId: string,
+  docId: PaperId,
   status: "draft" | "ready" | "published"
 ) {
   await ownedPaper(actor.userId, docId)
@@ -207,7 +232,7 @@ export async function setPaperStatus(
   return toPaper(await ownedPaper(actor.userId, docId))
 }
 
-export async function sharePaper(actor: Actor, docId: string) {
+export async function sharePaper(actor: Actor, docId: PaperId) {
   await ownedPaper(actor.userId, docId)
   const existing = await getDb()
     .select()
@@ -220,13 +245,17 @@ export async function sharePaper(actor: Actor, docId: string) {
   return { docId, token }
 }
 
-export async function unsharePaper(actor: Actor, docId: string) {
+export async function unsharePaper(actor: Actor, docId: PaperId) {
   await ownedPaper(actor.userId, docId)
   await getDb().delete(paperShares).where(eq(paperShares.docId, docId))
   return { docId }
 }
 
-export async function dismissCheck(actor: Actor, docId: string, checkId: string) {
+export async function dismissCheck(
+  actor: Actor,
+  docId: PaperId,
+  checkId: string
+) {
   const current = await ownedPaper(actor.userId, docId)
   const checks = (current.checks ?? []).filter((check) => check.id !== checkId)
   await getDb()
@@ -236,7 +265,7 @@ export async function dismissCheck(actor: Actor, docId: string, checkId: string)
   return toPaper(await ownedPaper(actor.userId, docId))
 }
 
-export async function keepTwoPages(actor: Actor, docId: string) {
+export async function keepTwoPages(actor: Actor, docId: PaperId) {
   await ownedPaper(actor.userId, docId)
   await getDb()
     .update(paperDocs)
@@ -245,7 +274,7 @@ export async function keepTwoPages(actor: Actor, docId: string) {
   return toPaper(await ownedPaper(actor.userId, docId))
 }
 
-export async function pageCount(actor: Actor, docId: string) {
+export async function pageCount(actor: Actor, docId: PaperId) {
   const doc = await ownedPaper(actor.userId, docId)
   const weight = JSON.stringify(doc.document).length
   return { docId, pages: weight > 3500 ? 2 : 1, pageChoice: doc.pageChoice }
@@ -275,7 +304,8 @@ export async function readShared(token: string) {
     .where(eq(paperShares.token, token))
     .limit(1)
   const row = rows[0]
-  if (!row) throw new CommandError(ERROR_CODES.NOT_FOUND, "Share link not found")
+  if (!row)
+    throw new CommandError(ERROR_CODES.NOT_FOUND, "Share link not found")
   return toPaper(row.doc)
 }
 
@@ -287,7 +317,7 @@ const IMPORT_TYPES = new Set([
 ])
 
 export async function saveFile(input: {
-  userId: string
+  userId: UserId
   name: string
   mediaType: string
   bytes: Buffer
@@ -312,19 +342,37 @@ export async function saveFile(input: {
     throw new CommandError(ERROR_CODES.FILE_UNSUPPORTED, "Upload an image.")
   }
   const id = createId()
-  await getDb().insert(files).values({
-    id,
-    userId: input.userId,
-    name: input.name.slice(0, 200) || "file",
-    mediaType: input.mediaType,
-    byteSize: input.bytes.byteLength,
-    purpose: input.purpose,
-    bytes: input.bytes,
-  })
+  await getDb()
+    .insert(files)
+    .values({
+      id,
+      userId: input.userId,
+      name: input.name.slice(0, 200) || "file",
+      mediaType: input.mediaType,
+      byteSize: input.bytes.byteLength,
+      purpose: input.purpose,
+      bytes: input.bytes,
+    })
   return { id }
 }
 
-export async function importPaper(actor: Actor, fileId: string) {
+export async function readFileMeta(userId: UserId, fileId: FileId) {
+  const rows = await getDb()
+    .select({
+      id: files.id,
+      name: files.name,
+      mediaType: files.mediaType,
+      byteSize: files.byteSize,
+    })
+    .from(files)
+    .where(and(eq(files.id, fileId), eq(files.userId, userId)))
+    .limit(1)
+  const row = rows[0]
+  if (!row) throw new CommandError(ERROR_CODES.NOT_FOUND, "File not found")
+  return row
+}
+
+export async function importPaper(actor: Actor, fileId: FileId) {
   const rows = await getDb()
     .select()
     .from(files)
@@ -335,7 +383,10 @@ export async function importPaper(actor: Actor, fileId: string) {
     throw new CommandError(ERROR_CODES.NOT_FOUND, "Import file not found")
   }
   let document = blankDocument("cv")
-  if (file.mediaType === "application/json" || file.mediaType === "text/plain") {
+  if (
+    file.mediaType === "application/json" ||
+    file.mediaType === "text/plain"
+  ) {
     const text = file.bytes.toString("utf8")
     try {
       document = requireDocument("cv", JSON.parse(text) as unknown)
@@ -355,15 +406,25 @@ export async function importPaper(actor: Actor, fileId: string) {
       checks:
         file.mediaType === "text/plain" || file.mediaType === "application/json"
           ? []
-          : [{ id: "import", kind: "import", message: "Imported file needs a read." }],
+          : [
+              {
+                id: "import",
+                kind: "import",
+                message: "Imported file needs a read.",
+              },
+            ],
     })
     .where(eq(paperDocs.id, created.id))
-  return toPaper(await ownedPaper(actor.userId, created.id))
+  return toPaper(await ownedPaper(actor.userId, parsePaperId(created.id)))
 }
 
-export async function linkedJobId(docId: string) {
+export async function linkedJobId(docId: PaperId) {
   const rows = await getDb()
-    .select({ id: jobs.id, cvDocId: jobs.cvDocId, letterDocId: jobs.letterDocId })
+    .select({
+      id: jobs.id,
+      cvDocId: jobs.cvDocId,
+      letterDocId: jobs.letterDocId,
+    })
     .from(jobs)
     .where(eq(jobs.cvDocId, docId))
     .limit(1)

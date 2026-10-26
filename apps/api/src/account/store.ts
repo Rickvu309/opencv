@@ -5,7 +5,9 @@ import {
   isKnownTimeZone,
   planAllowsMode,
   type Actor,
+  type FileId,
   type ProfileUpdateInput,
+  type UserId,
 } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 
@@ -15,7 +17,7 @@ import { CommandError } from "../registry/errors.js"
 
 export type ProfileRow = typeof user.$inferSelect
 
-export async function getProfileRow(userId: string) {
+export async function getProfileRow(userId: UserId) {
   const rows = await getDb()
     .select()
     .from(user)
@@ -77,10 +79,7 @@ export async function writeProfileDefaults(userId: string) {
 
 export async function updateProfile(actor: Actor, input: ProfileUpdateInput) {
   const current = await getProfileRow(actor.userId)
-  if (
-    input.coachMode &&
-    !planAllowsMode(current.plan, input.coachMode)
-  ) {
+  if (input.coachMode && !planAllowsMode(current.plan, input.coachMode)) {
     throw new CommandError(ERROR_CODES.PLAN_REQUIRED, PLAN_REQUIRED_MESSAGE)
   }
   if (input.timeZone && !isKnownTimeZone(input.timeZone)) {
@@ -112,7 +111,9 @@ export async function updateProfile(actor: Actor, input: ProfileUpdateInput) {
       ...(input.agentInterview !== undefined
         ? { agentInterview: input.agentInterview }
         : {}),
-      ...(input.agentEmail !== undefined ? { agentEmail: input.agentEmail } : {}),
+      ...(input.agentEmail !== undefined
+        ? { agentEmail: input.agentEmail }
+        : {}),
       ...(input.agentWeekly !== undefined
         ? { agentWeekly: input.agentWeekly }
         : {}),
@@ -122,7 +123,7 @@ export async function updateProfile(actor: Actor, input: ProfileUpdateInput) {
   return toProfile(await getProfileRow(actor.userId))
 }
 
-export async function setProfilePhoto(userId: string, fileId: string) {
+export async function setProfilePhoto(userId: UserId, fileId: FileId) {
   await getDb()
     .update(user)
     .set({ image: fileId, updatedAt: new Date() })
@@ -130,7 +131,7 @@ export async function setProfilePhoto(userId: string, fileId: string) {
   return toProfile(await getProfileRow(userId))
 }
 
-export async function deleteAccount(userId: string) {
+export async function deleteAccount(userId: UserId) {
   await getDb().delete(user).where(eq(user.id, userId))
   return { deleted: true }
 }

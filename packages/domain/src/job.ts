@@ -1,5 +1,7 @@
 import { z } from "zod"
 
+import { jobIdSchema, paperIdSchema } from "./ids.js"
+
 export const JOB_STAGES = [
   "saved",
   "applied",
@@ -17,8 +19,6 @@ export type JobPriority = z.infer<typeof jobPrioritySchema>
 export const COMPANY_REQUIRED_MESSAGE = "Add the company name to save this job."
 export const DUPLICATE_JOB_MESSAGE = "You already saved a job with this link."
 
-const jobIdSchema = z.string().uuid()
-
 export const jobCreateInputSchema = z
   .object({
     title: z.string().trim().min(1).max(200),
@@ -27,7 +27,10 @@ export const jobCreateInputSchema = z
     description: z.string().max(20_000).optional(),
     jobUrl: z.string().trim().max(2000).optional(),
     location: z.string().trim().max(200).optional(),
-    deadline: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    deadline: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional(),
     sourceHost: z.string().trim().max(200).optional(),
     anyway: z.boolean().optional(),
   })
@@ -130,14 +133,14 @@ export const jobRemoveChecklistItemInputSchema = z
 export const jobAddNoteInputSchema = z
   .object({
     jobId: jobIdSchema,
-    body: z.string().trim().min(1).max(4000),
+    body: z.string().trim().max(4000),
   })
   .strict()
 
 export const jobLinkPaperInputSchema = z
   .object({
     jobId: jobIdSchema,
-    docId: z.string().uuid(),
+    docId: paperIdSchema,
     kind: z.enum(["cv", "letter"]),
   })
   .strict()
@@ -155,8 +158,12 @@ export type JobStarInput = z.infer<typeof jobStarInputSchema>
 export type JobDeleteInput = z.infer<typeof jobDeleteInputSchema>
 export type JobLinkPaperInput = z.infer<typeof jobLinkPaperInputSchema>
 export type JobUnlinkPaperInput = z.infer<typeof jobUnlinkPaperInputSchema>
-export type JobAddChecklistItemInput = z.infer<typeof jobAddChecklistItemInputSchema>
-export type JobSetChecklistItemInput = z.infer<typeof jobSetChecklistItemInputSchema>
+export type JobAddChecklistItemInput = z.infer<
+  typeof jobAddChecklistItemInputSchema
+>
+export type JobSetChecklistItemInput = z.infer<
+  typeof jobSetChecklistItemInputSchema
+>
 
 type ParsedUrl = {
   hash: string

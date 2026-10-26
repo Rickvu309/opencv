@@ -102,6 +102,17 @@ export const coachTurnRequestSchema = z
     focusDocId: paperDocIdSchema.nullish(),
     /** Highlighted Paper text when the User sends from the editor. */
     selection: coachSelectionSchema.optional(),
+    context: z
+      .array(
+        z
+          .object({
+            kind: z.enum(["paper", "job", "link", "file"]),
+            id: z.string().trim().min(1).max(2000),
+          })
+          .strict()
+      )
+      .max(8)
+      .optional(),
   })
   .strict()
   .superRefine((value, ctx) => {
@@ -249,7 +260,16 @@ export type CoachReverseResult = {
 }
 
 /** Whether a persisted receipt can run its reversal Command. */
-export function canReverseReceipt(part: ThreadToolPart): boolean {
+export function canReverseReceipt(
+  part: ThreadToolPart
+): part is ThreadToolPart & {
+  reversal: {
+    possible: true
+    description: string
+    command: string
+    input: unknown
+  }
+} {
   return (
     part.ok &&
     part.reversal?.possible === true &&

@@ -5,6 +5,7 @@ import {
   ERROR_CODES,
   sessionHours,
   sessionWindow,
+  parseUserId,
   usageSnapshot,
   weekWindow,
   type CoachMode,
@@ -12,6 +13,7 @@ import {
 } from "@workspace/domain"
 import { and, eq, gte, sql } from "drizzle-orm"
 
+import { coachModelEnv, type CoachModelEnv } from "../config.js"
 import { getDb } from "../db/context.js"
 import { coachUsage } from "../db/schema.js"
 import { CommandError } from "../registry/errors.js"
@@ -31,8 +33,13 @@ async function countSince(userId: string, mode: CoachMode, since: Date) {
   return Number(rows[0]?.total ?? 0)
 }
 
-export async function readUsage(userId: string, now = new Date(), env = process.env) {
-  const profile = await getProfileRow(userId)
+export async function readUsage(
+  userId: string,
+  now = new Date(),
+  env: CoachModelEnv = coachModelEnv()
+) {
+  const id = parseUserId(userId)
+  const profile = await getProfileRow(id)
   const plan = profile.plan as Plan
   const mode = profile.coachMode
   const cap = dailyTurnCap(plan, mode, env)
@@ -41,9 +48,9 @@ export async function readUsage(userId: string, now = new Date(), env = process.
   const week = weekWindow(now, profile.timeZone)
   const session = sessionWindow(now, profile.timeZone, hours)
   const [sessionTurns, dayTurns, weekTurns] = await Promise.all([
-    countSince(userId, mode, session.start),
-    countSince(userId, mode, day.start),
-    countSince(userId, mode, week.start),
+    countSince(id, mode, session.start),
+    countSince(id, mode, day.start),
+    countSince(id, mode, week.start),
   ])
   return usageSnapshot({
     plan,
@@ -62,21 +69,26 @@ export async function assertDayCap(
   userId: string,
   mode: CoachMode,
   now = new Date(),
-  env = process.env
+  env: CoachModelEnv = coachModelEnv()
 ) {
-  const profile = await getProfileRow(userId)
+  const id = parseUserId(userId)
+  const profile = await getProfileRow(id)
   const plan = profile.plan as Plan
   const cap = dailyTurnCap(plan, mode, env)
   if (cap <= 0) return { plan, cap, profile }
   const day = dayWindow(now, profile.timeZone)
-  const used = await countSince(userId, mode, day.start)
+  const used = await countSince(id, mode, day.start)
   if (used >= cap) {
-    throw new CommandError(ERROR_CODES.COACH_LIMIT_REACHED, coachLimitMessage(plan, mode), {
-      resetsAt: day.resetsAt.toISOString(),
-      window: "day",
-      mode,
-      plan,
-    })
+    throw new CommandError(
+      ERROR_CODES.COACH_LIMIT_REACHED,
+      coachLimitMessage(plan, mode),
+      {
+        resetsAt: day.resetsAt.toISOString(),
+        window: "day",
+        mode,
+        plan,
+      }
+    )
   }
   return { plan, cap, profile }
 }

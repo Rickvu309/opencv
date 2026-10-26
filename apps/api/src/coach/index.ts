@@ -1,5 +1,5 @@
 export { createCoachRoutes } from "./http.js"
-export { routeCoachModel } from "./router.js"
+export { interpretPosting, routeCoachModel, titleFromModel } from "./router.js"
 export {
   createDemoCoachRuntime,
   createScriptedCoachRuntime,

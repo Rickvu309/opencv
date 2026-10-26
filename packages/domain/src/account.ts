@@ -1,6 +1,7 @@
 import { z } from "zod"
 
 import { coachModeSchema } from "./coach.js"
+import { fileIdSchema } from "./ids.js"
 import type { Plan } from "./usage.js"
 
 export const planSchema = z.enum(["free", "pro"])
@@ -63,7 +64,7 @@ export type ProfileUpdateInput = z.infer<typeof profileUpdateInputSchema>
 
 export const profileSetPhotoInputSchema = z
   .object({
-    fileId: z.string().uuid(),
+    fileId: fileIdSchema,
   })
   .strict()
 

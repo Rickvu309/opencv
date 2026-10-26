@@ -2,11 +2,14 @@ import {
   CHAT_OPEN_WINDOW_DAYS,
   DEFAULT_THREAD_TITLE,
   ERROR_CODES,
+  parseChatId,
   type Actor,
   type ChatAppendMessageInput,
   type ChatFocus,
+  type ChatId,
   type ChatOpenInput,
   type ChatSetFocusInput,
+  type UserId,
 } from "@workspace/domain"
 import { and, desc, eq, gt } from "drizzle-orm"
 
@@ -43,7 +46,7 @@ function toMessage(row: typeof chatMessages.$inferSelect) {
   }
 }
 
-async function ownedChat(userId: string, chatId: string) {
+async function ownedChat(userId: UserId, chatId: ChatId) {
   const rows = await getDb()
     .select()
     .from(chats)
@@ -54,7 +57,7 @@ async function ownedChat(userId: string, chatId: string) {
   return row
 }
 
-export async function listChats(userId: string, query?: string) {
+export async function listChats(userId: UserId, query?: string) {
   const rows = await getDb()
     .select()
     .from(chats)
@@ -66,7 +69,7 @@ export async function listChats(userId: string, query?: string) {
     .map(toChat)
 }
 
-export async function getChat(userId: string, chatId: string) {
+export async function getChat(userId: UserId, chatId: ChatId) {
   const row = await ownedChat(userId, chatId)
   const messages = await getDb()
     .select()
@@ -76,24 +79,32 @@ export async function getChat(userId: string, chatId: string) {
   return { ...toChat(row), messages: messages.map(toMessage) }
 }
 
-export async function createChat(actor: Actor, title?: string, focus?: ChatFocus | null) {
+export async function createChat(
+  actor: Actor,
+  title?: string,
+  focus?: ChatFocus | null
+) {
   const now = new Date()
   const id = createId(now.getTime())
-  await getDb().insert(chats).values({
-    id,
-    userId: actor.userId,
-    title: title?.trim() || DEFAULT_THREAD_TITLE,
-    focusKind: focus?.kind ?? null,
-    focusId: focus?.id ?? null,
-    createdAt: now,
-    updatedAt: now,
-  })
-  return getChat(actor.userId, id)
+  await getDb()
+    .insert(chats)
+    .values({
+      id,
+      userId: actor.userId,
+      title: title?.trim() || DEFAULT_THREAD_TITLE,
+      focusKind: focus?.kind ?? null,
+      focusId: focus?.id ?? null,
+      createdAt: now,
+      updatedAt: now,
+    })
+  return getChat(actor.userId, parseChatId(id))
 }
 
 export async function openChat(actor: Actor, input: ChatOpenInput) {
   if (input.focus) {
-    const since = new Date(Date.now() - CHAT_OPEN_WINDOW_DAYS * 24 * 60 * 60 * 1000)
+    const since = new Date(
+      Date.now() - CHAT_OPEN_WINDOW_DAYS * 24 * 60 * 60 * 1000
+    )
     const rows = await getDb()
       .select()
       .from(chats)
@@ -107,18 +118,21 @@ export async function openChat(actor: Actor, input: ChatOpenInput) {
       )
       .orderBy(desc(chats.updatedAt))
       .limit(1)
-    if (rows[0]) return getChat(actor.userId, rows[0].id)
+    if (rows[0]) return getChat(actor.userId, parseChatId(rows[0].id))
   }
   return createChat(actor, undefined, input.focus)
 }
 
-export async function renameChat(actor: Actor, chatId: string, title: string) {
+export async function renameChat(actor: Actor, chatId: ChatId, title: string) {
   const current = await ownedChat(actor.userId, chatId)
   await getDb()
     .update(chats)
     .set({ title, updatedAt: new Date() })
     .where(eq(chats.id, current.id))
-  return { ...(await getChat(actor.userId, chatId)), previousTitle: current.title }
+  return {
+    ...(await getChat(actor.userId, chatId)),
+    previousTitle: current.title,
+  }
 }
 
 export async function setChatFocus(actor: Actor, input: ChatSetFocusInput) {
@@ -140,7 +154,10 @@ export async function setChatFocus(actor: Actor, input: ChatSetFocusInput) {
   }
 }
 
-export async function appendChatMessage(actor: Actor, input: ChatAppendMessageInput) {
+export async function appendChatMessage(
+  actor: Actor,
+  input: ChatAppendMessageInput
+) {
   await ownedChat(actor.userId, input.chatId)
   const now = new Date()
   const id = createId(now.getTime())
@@ -168,8 +185,8 @@ export async function appendChatMessage(actor: Actor, input: ChatAppendMessageIn
 }
 
 export async function insertCoachMessage(input: {
-  chatId: string
-  userId: string
+  chatId: ChatId
+  userId: UserId
   text: string
   parts: unknown[]
   status: "final" | "error" | "aborted"
@@ -194,11 +211,12 @@ export async function insertCoachMessage(input: {
     .where(eq(chats.id, input.chatId))
   const detail = await getChat(input.userId, input.chatId)
   const message = detail.messages.find((item) => item.id === id)
-  if (!message) throw new CommandError(ERROR_CODES.INTERNAL_ERROR, "Message was not saved")
+  if (!message)
+    throw new CommandError(ERROR_CODES.INTERNAL_ERROR, "Message was not saved")
   return message
 }
 
-export async function deleteChat(actor: Actor, chatId: string) {
+export async function deleteChat(actor: Actor, chatId: ChatId) {
   await ownedChat(actor.userId, chatId)
   await getDb().delete(chats).where(eq(chats.id, chatId))
   return { id: chatId }

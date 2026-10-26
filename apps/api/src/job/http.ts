@@ -2,6 +2,7 @@ import {
   ERROR_CODES,
   errorEnvelope,
   httpStatusForError,
+  personActor,
   successEnvelope,
 } from "@workspace/domain"
 import { Hono } from "hono"
@@ -14,7 +15,7 @@ import { requireSession, type SessionVariables } from "../middleware.js"
 import { registry } from "../registry/registry.js"
 
 function person(userId: string) {
-  return { type: "person" as const, userId }
+  return personActor(userId)
 }
 
 export function createJobRoutes(auth?: Auth, db?: AppDatabase) {
@@ -40,7 +41,11 @@ export function createJobRoutes(auth?: Auth, db?: AppDatabase) {
   routes.post("/preview", async (c) => {
     const body = await readJsonBody(c)
     if (!body.ok) return body.response
-    const data = await registry.read("job.preview", body.value, person(c.var.userId))
+    const data = await registry.read(
+      "job.preview",
+      body.value,
+      person(c.var.userId)
+    )
     return c.json(successEnvelope(data))
   })
 
@@ -53,7 +58,11 @@ export function createJobRoutes(auth?: Auth, db?: AppDatabase) {
         httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
       )
     }
-    const data = await registry.read("job.get", { jobId: id }, person(c.var.userId))
+    const data = await registry.read(
+      "job.get",
+      { jobId: id },
+      person(c.var.userId)
+    )
     return c.json(successEnvelope(data))
   })
 

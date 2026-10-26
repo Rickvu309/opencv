@@ -1,10 +1,15 @@
 import {
   COACH_SSE_EVENTS,
   appendCoachPart,
+  coachActor,
   deterministicThreadTitle,
   focusedEditNeedsReplace,
+  parseChatId,
+  parseUserId,
+  personActor,
   shouldAutoTitleThread,
   textFromParts,
+  type CoachActor,
   type CoachFocusDoc,
   type CoachMode,
   type CoachRuntime,
@@ -16,12 +21,22 @@ import {
   type ThreadMessagePart,
   type ThreadMessageStatus,
 } from "@workspace/domain"
-import { stepCountIs, streamText, tool, type LanguageModel, type ToolSet } from "ai"
+import {
+  stepCountIs,
+  streamText,
+  tool,
+  type LanguageModel,
+  type ToolSet,
+} from "ai"
 import type { SSEStreamingApi } from "hono/streaming"
 
-import { getChat, insertCoachMessage, renameChat, trackChatTurn } from "../chat/index.js"
+import { readUsage } from "../account/index.js"
+import { coachModelEnv } from "../config.js"
+import { getChat, insertCoachMessage, trackChatTurn } from "../chat/index.js"
 import { registry as defaultRegistry } from "../registry/registry.js"
-import type { Registry } from "../registry/registry.js"
+import type { Registry, ToolEntry } from "../registry/registry.js"
+import { toolResultFromExecute } from "./receipt.js"
+import { titleFromModel } from "./router.js"
 import {
   isDisconnected,
   sseDataForPart,
@@ -39,6 +54,8 @@ const SYSTEM_PROMPT = [
   "Stages are saved, applied, interview, offer, and closed.",
 ].join(" ")
 
+export { toolResultFromExecute } from "./receipt.js"
+
 export async function runCoachTurn(options: {
   stream: SSEStreamingApi
   wire: "compat" | "native"
@@ -54,16 +71,13 @@ export async function runCoachTurn(options: {
   history: ThreadMessage[]
   focusDoc?: CoachFocusDoc
   selection?: CoachSelection
+  note?: string
   heartbeatMs: number
   signal?: AbortSignal
 }) {
   const startedAt = Date.now()
   const registry = options.registry ?? defaultRegistry
-  const actor = {
-    type: "coach" as const,
-    userId: options.userId,
-    chatId: options.chatId,
-  }
+  const actor = coachActor(options.userId, options.chatId)
   const usageId = await openCoachUsage({
     userId: options.userId,
     chatId: options.chatId,
@@ -89,6 +103,7 @@ export async function runCoachTurn(options: {
     void writeHeartbeat(options.stream)
   }, options.heartbeatMs)
   const aborted = waitForAbort(options.stream, signal)
+  const toolEntries = await registry.tools(actor)
 
   const emit = async (event: string, data: unknown) => {
     await writeEvent(options.stream, event, data)
@@ -110,14 +125,17 @@ export async function runCoachTurn(options: {
           mode: options.mode,
           focusDoc: options.focusDoc,
           selection: options.selection,
+          note: options.note,
         })
       : liveParts({
           model: options.model,
           history: options.history,
           registry,
           actor,
+          toolEntries,
           focusDoc: options.focusDoc,
           selection: options.selection,
+          note: options.note,
         })
 
     for await (const part of takeUntilAbort(iterable, aborted.promise, () =>
@@ -146,10 +164,13 @@ export async function runCoachTurn(options: {
         break
       }
       if (part.type === "tool-call" && options.wire === "native") {
-        const entry = registry.tools(actor).find(
-          (item) => item.name === part.name || item.name.replaceAll(".", "_") === part.name
+        const entry = toolEntries.find(
+          (item) =>
+            item.name === part.name ||
+            item.name.replaceAll(".", "_") === part.name
         )
-        if (entry) await emit("step", { label: entry.step(part.input) })
+        if (entry)
+          await emit(COACH_SSE_EVENTS.step, { label: entry.step(part.input) })
       }
       if (
         part.type === "text-delta" ||
@@ -157,6 +178,13 @@ export async function runCoachTurn(options: {
         part.type === "tool-result"
       ) {
         await emit(part.type, sseDataForPart(part))
+      }
+      if (part.type === "tool-result" && part.pendingActionId && part.command) {
+        await emit(COACH_SSE_EVENTS.confirm, {
+          pendingActionId: part.pendingActionId,
+          command: part.command,
+          summary: part.summary,
+        })
       }
     }
 
@@ -173,7 +201,8 @@ export async function runCoachTurn(options: {
     ) {
       status = "error"
       await emit(COACH_SSE_EVENTS.error, {
-        message: "The edit did not save. Ask again and I will update the document.",
+        message:
+          "The edit did not save. Ask again and I will update the document.",
       })
     }
   } catch (error) {
@@ -181,7 +210,8 @@ export async function runCoachTurn(options: {
       status = "aborted"
     } else {
       status = "error"
-      const message = error instanceof Error ? error.message : "The Coach stopped."
+      const message =
+        error instanceof Error ? error.message : "The Coach stopped."
       await emit(COACH_SSE_EVENTS.error, { message })
     }
   } finally {
@@ -193,8 +223,8 @@ export async function runCoachTurn(options: {
     }
     const workedMs = Math.max(0, Date.now() - startedAt)
     const saved = await insertCoachMessage({
-      chatId: options.chatId,
-      userId: options.userId,
+      chatId: parseChatId(options.chatId),
+      userId: parseUserId(options.userId),
       text: textFromParts(parts),
       parts,
       status,
@@ -206,13 +236,16 @@ export async function runCoachTurn(options: {
       finishReason: usage.finishReason ?? status,
       latencyMs: workedMs,
     })
-    await maybeTitle(
-      options.userId,
-      options.chatId,
-      textFromParts(parts),
+    await maybeTitle({
+      registry,
+      userId: options.userId,
+      chatId: options.chatId,
+      coachText: textFromParts(parts),
       status,
-      saved.id
-    )
+      currentMessageId: saved.id,
+      plan: options.plan,
+      runtime: Boolean(options.runtime),
+    })
     if (!isDisconnected(options.stream, signal)) {
       const message = {
         id: saved.id,
@@ -222,7 +255,6 @@ export async function runCoachTurn(options: {
         parts,
         status,
         workedMs,
-        rating: null,
       }
       if (options.wire === "compat") {
         await emit(COACH_SSE_EVENTS.messageEnd, {
@@ -230,10 +262,11 @@ export async function runCoachTurn(options: {
           usage: { ...usage, latencyMs: workedMs, mode: options.mode },
         })
       } else {
-        await emit("usage", {
+        const snapshot = await readUsage(options.userId).catch(() => null)
+        await emit(COACH_SSE_EVENTS.usage, {
           plan: options.plan,
           mode: options.mode,
-          capped: true,
+          capped: snapshot?.day.capped ?? false,
         })
         await emit(COACH_SSE_EVENTS.messageEnd, { chatId: options.chatId })
       }
@@ -255,20 +288,28 @@ function linkSignals(signals: AbortSignal[]) {
 
 function askedForEdit(history: ThreadMessage[], selection?: CoachSelection) {
   if (selection?.text) return true
-  const text = [...history].reverse().find((message) => message.role === "user")?.text ?? ""
+  const text =
+    [...history].reverse().find((message) => message.role === "user")?.text ??
+    ""
   return /\b(edit|rewrite|tailor|shorten|fix|update)\b/i.test(text)
 }
 
-async function maybeTitle(
-  userId: string,
-  chatId: string,
-  coachText: string,
-  status: string,
+async function maybeTitle(input: {
+  registry: Registry
+  userId: string
+  chatId: string
+  coachText: string
+  status: string
   currentMessageId: string
-) {
-  const chat = await getChat(userId, chatId)
+  plan: Plan
+  runtime: boolean
+}) {
+  const chat = await getChat(
+    parseUserId(input.userId),
+    parseChatId(input.chatId)
+  )
   const messages = chat.messages
-    .filter((message) => message.id !== currentMessageId)
+    .filter((message) => message.id !== input.currentMessageId)
     .map((message) => ({
       role: message.role === "person" ? ("user" as const) : ("coach" as const),
       text: message.text,
@@ -277,28 +318,50 @@ async function maybeTitle(
   const decision = shouldAutoTitleThread({
     currentTitle: chat.title,
     messages,
-    status,
+    status: input.status,
   })
   if (!decision) return
-  const title = deterministicThreadTitle({ userText: decision.userText, coachText })
+  let title = deterministicThreadTitle({
+    userText: decision.userText,
+    coachText: input.coachText,
+  })
+  if (!input.runtime) {
+    try {
+      const generated = await titleFromModel({
+        plan: input.plan,
+        userText: decision.userText,
+        coachText: input.coachText,
+        env: coachModelEnv(),
+      })
+      if (generated) title = generated
+    } catch {
+      // A missing key keeps the deterministic title and does not open a usage row.
+    }
+  }
   if (!title || title === chat.title) return
-  await renameChat({ type: "person", userId }, chatId, title)
+  await input.registry.execute({
+    name: "chat.rename",
+    input: { chatId: input.chatId, title },
+    actor: personActor(input.userId),
+  })
 }
 
 async function* liveParts(input: {
   model?: LanguageModel
   history: ThreadMessage[]
   registry: Registry
-  actor: { type: "coach"; userId: string; chatId: string }
+  actor: CoachActor
+  toolEntries: ToolEntry[]
   focusDoc?: CoachFocusDoc
   selection?: CoachSelection
+  note?: string
 }): AsyncGenerator<CoachStreamPart> {
   if (!input.model) {
     yield { type: "error", message: "The Coach is unavailable right now" }
     return
   }
   const tools: ToolSet = {}
-  for (const entry of input.registry.tools(input.actor)) {
+  for (const entry of input.toolEntries) {
     const name = entry.name.replaceAll(".", "_")
     tools[name] = tool({
       description: entry.description,
@@ -313,20 +376,15 @@ async function* liveParts(input: {
           input: args,
           actor: input.actor,
         })
-        if (result.pending) {
-          return {
-            ok: true,
-            pending: true,
-            pendingActionId: result.pendingActionId,
-            summary: result.summary,
-            command: result.command,
-          }
-        }
         return {
           ok: true,
-          summary: entry.step(args),
+          pending: result.pending,
+          pendingActionId: result.pendingActionId,
+          command: result.command ?? entry.name,
+          summary: result.summary ?? entry.step(args),
           output: result.output,
           activityId: result.activityId,
+          reversal: result.reversal,
         }
       },
     })
@@ -334,11 +392,13 @@ async function* liveParts(input: {
   const focus = input.focusDoc
     ? `The open document is ${input.focusDoc.name} (${input.focusDoc.kind}).`
     : ""
+  const note = input.note ?? ""
   const result = streamText({
     model: input.model,
-    system: `${SYSTEM_PROMPT} ${focus}`.trim(),
+    system: `${SYSTEM_PROMPT} ${focus} ${note}`.trim(),
     messages: input.history.map((message) => ({
-      role: message.role === "coach" ? ("assistant" as const) : ("user" as const),
+      role:
+        message.role === "coach" ? ("assistant" as const) : ("user" as const),
       content: message.text,
     })),
     tools,
@@ -346,8 +406,8 @@ async function* liveParts(input: {
   })
   for await (const part of result.fullStream) {
     if (part.type === "text-delta") {
-      const text = "text" in part ? part.text : ""
-      if (text) yield { type: "text-delta", text }
+      const delta = "text" in part ? part.text : ""
+      if (delta) yield { type: "text-delta", text: delta }
       continue
     }
     if (part.type === "tool-call") {
@@ -360,25 +420,21 @@ async function* liveParts(input: {
       continue
     }
     if (part.type === "tool-result") {
-      const output = part.output as {
-        ok?: boolean
-        summary?: string
-        pending?: boolean
-        pendingActionId?: string
-        command?: string
-        data?: unknown
-        activityId?: string
-      }
-      yield {
-        type: "tool-result",
+      const output = record(part.output)
+      yield toolResultFromExecute({
         toolCallId: part.toolCallId,
         name: part.toolName,
-        summary: output.summary ?? part.toolName,
-        ok: output.ok !== false,
-        result: output.ok === false
-          ? { ok: false, error: { code: "INTERNAL_ERROR", message: "Tool failed" } }
-          : { ok: true, data: output.data ?? output },
-      }
+        summary: textField(output?.summary) || part.toolName,
+        result: {
+          pending: output?.pending === true,
+          pendingActionId: textField(output?.pendingActionId) || undefined,
+          command: textField(output?.command) || part.toolName,
+          summary: textField(output?.summary) || part.toolName,
+          output: output?.data ?? output?.output,
+          activityId: textField(output?.activityId) || null,
+          reversal: reversalPlan(output?.reversal),
+        },
+      })
     }
   }
   yield {
@@ -386,4 +442,19 @@ async function* liveParts(input: {
     finishReason: "stop",
     usage: { model: "routed", finishReason: "stop" },
   }
+}
+
+function record(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object") return null
+  return value as Record<string, unknown>
+}
+
+function textField(value: unknown) {
+  return typeof value === "string" ? value : ""
+}
+
+function reversalPlan(value: unknown) {
+  const row = record(value)
+  if (!row || typeof row.command !== "string") return null
+  return { command: row.command, input: row.input }
 }

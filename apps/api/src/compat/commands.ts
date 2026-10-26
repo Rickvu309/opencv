@@ -1,3 +1,5 @@
+// Temporary compat for the current web.
+// #377 deletes the thread map, #376 the apply map, #378 the paper map, and #375 the profile map.
 import {
   APPLY_COMMANDS,
   DEFAULT_APPLY_COMPANY,
@@ -53,7 +55,7 @@ const WRITE_STAGE: Record<ApplyStage, JobStage> = {
 }
 
 const READ_STAGE: Record<JobStage, ApplyStage> = {
-  saved: "prep",
+  saved: "inbox",
   applied: "sent",
   interview: "live",
   // Offer has no old column, so the board shows it in Live.
@@ -114,8 +116,8 @@ export function isCompatCommand(name: string) {
   return COMPAT_COMMANDS.has(name)
 }
 
-function outputOf(result: ExecuteResult) {
-  return result.output as Record<string, never>
+function outputOf(result: ExecuteResult): unknown {
+  return result.output
 }
 
 async function run(
@@ -123,9 +125,9 @@ async function run(
   name: string,
   input: unknown,
   actor: Actor
-) {
+): Promise<unknown> {
   const result = await registry.execute({ name, input, actor })
-  return outputOf(result) as never
+  return outputOf(result)
 }
 
 function asThread(chat: ChatView): ThreadListItem {
@@ -147,7 +149,6 @@ function asMessage(message: MessageView): ThreadMessage {
     ...(message.parts ? { parts: message.parts } : {}),
     ...(message.status ? { status: message.status } : {}),
     ...(message.workedMs != null ? { workedMs: message.workedMs } : {}),
-    rating: null,
   }
 }
 
@@ -158,7 +159,9 @@ function asDetail(chat: ChatView): ThreadDetail {
   }
 }
 
-function asProfile(profile: UserProfile & Record<string, unknown>): UserProfile {
+function asProfile(
+  profile: UserProfile & Record<string, unknown>
+): UserProfile {
   return {
     id: profile.id,
     name: profile.name,
@@ -252,7 +255,10 @@ async function paperById(registry: Registry, actor: Actor, docId: string) {
 
 function record(input: unknown) {
   if (!input || typeof input !== "object" || Array.isArray(input)) {
-    throw new CommandError(ERROR_CODES.VALIDATION_ERROR, "Invalid command input")
+    throw new CommandError(
+      ERROR_CODES.VALIDATION_ERROR,
+      "Invalid command input"
+    )
   }
   return input as Record<string, unknown>
 }
@@ -267,15 +273,31 @@ export async function runCompatCommand(
   switch (name) {
     case THREAD_COMMANDS.create: {
       const title = typeof body.title === "string" ? body.title : undefined
-      const focusDocId = typeof body.focusDocId === "string" ? body.focusDocId : undefined
+      const focusDocId =
+        typeof body.focusDocId === "string" ? body.focusDocId : undefined
       const chat = focusDocId
-        ? ((await run(registry, "chat.open", {
-            focus: { kind: "paper", id: focusDocId },
-          }, actor)) as ChatView)
-        : ((await run(registry, "chat.create", title ? { title } : {}, actor)) as ChatView)
+        ? ((await run(
+            registry,
+            "chat.open",
+            {
+              focus: { kind: "paper", id: focusDocId },
+            },
+            actor
+          )) as ChatView)
+        : ((await run(
+            registry,
+            "chat.create",
+            title ? { title } : {},
+            actor
+          )) as ChatView)
       if (focusDocId && title) {
         return asThread(
-          (await run(registry, "chat.rename", { chatId: chat.id, title }, actor)) as ChatView
+          (await run(
+            registry,
+            "chat.rename",
+            { chatId: chat.id, title },
+            actor
+          )) as ChatView
         )
       }
       return asThread(chat)
@@ -367,15 +389,29 @@ export async function runCompatCommand(
     }
     case PAPER_COMMANDS.linkApplyCard: {
       const docId = String(body.docId)
-      const doc = (await registry.read("paper.get", { docId }, actor)) as PaperView
+      const doc = (await registry.read(
+        "paper.get",
+        { docId },
+        actor
+      )) as PaperView
       const jobs = await jobsOf(registry, actor)
       if (body.applyCardId == null) {
         for (const job of jobs) {
           if (job.cvDocId === docId) {
-            await run(registry, "job.unlinkPaper", { jobId: job.id, kind: "cv" }, actor)
+            await run(
+              registry,
+              "job.unlinkPaper",
+              { jobId: job.id, kind: "cv" },
+              actor
+            )
           }
           if (job.letterDocId === docId) {
-            await run(registry, "job.unlinkPaper", { jobId: job.id, kind: "letter" }, actor)
+            await run(
+              registry,
+              "job.unlinkPaper",
+              { jobId: job.id, kind: "letter" },
+              actor
+            )
           }
         }
       } else if (doc.kind === "cv" || doc.kind === "letter") {
@@ -389,7 +425,8 @@ export async function runCompatCommand(
       return paperById(registry, actor, docId)
     }
     case APPLY_COMMANDS.createCard: {
-      const stage = WRITE_STAGE[(body.stage as ApplyStage) ?? "prep"] ?? "saved"
+      const stage =
+        WRITE_STAGE[(body.stage as ApplyStage) ?? "inbox"] ?? "saved"
       const created = (await run(
         registry,
         "job.create",
@@ -412,7 +449,7 @@ export async function runCompatCommand(
         },
         actor
       )) as JobView
-      if (typeof body.note === "string" && body.note.trim()) {
+      if (typeof body.note === "string") {
         await run(
           registry,
           "job.addNote",
@@ -421,7 +458,12 @@ export async function runCompatCommand(
         )
       }
       if (body.starred === true) {
-        await run(registry, "job.star", { jobId: created.id, starred: true }, actor)
+        await run(
+          registry,
+          "job.star",
+          { jobId: created.id, starred: true },
+          actor
+        )
       }
       if (typeof body.trackDate === "string") {
         const patch =
@@ -434,21 +476,57 @@ export async function runCompatCommand(
     }
     case APPLY_COMMANDS.updateCard: {
       const jobId = String(body.cardId)
+      const current = (await registry.read(
+        "job.get",
+        { jobId },
+        actor
+      )) as JobView
       const patch: Record<string, unknown> = {}
       if (typeof body.title === "string") patch.title = body.title
       if (typeof body.company === "string") patch.company = body.company
-      if (typeof body.jobUrl === "string" || body.jobUrl === null) patch.jobUrl = body.jobUrl
-      if (typeof body.trackDate === "string") {
+      if (typeof body.jobUrl === "string" || body.jobUrl === null)
+        patch.jobUrl = body.jobUrl
+      const today = new Date().toISOString().slice(0, 10)
+      const currentDate =
+        current.interviewAt?.slice(0, 10) ?? current.deadline ?? today
+      if (
+        typeof body.trackKind === "string" &&
+        typeof body.trackDate !== "string"
+      ) {
+        if (body.trackKind === "interview") {
+          patch.interviewAt = `${currentDate}T00:00:00.000Z`
+          patch.deadline = null
+        } else if (body.trackKind === "deadline") {
+          patch.deadline =
+            current.deadline ?? current.interviewAt?.slice(0, 10) ?? today
+          patch.interviewAt = null
+        } else if (
+          body.trackKind === "followup" ||
+          body.trackKind === "applied"
+        ) {
+          patch.interviewAt = null
+          patch.deadline = null
+        }
+      } else if (
+        typeof body.trackDate === "string" &&
+        typeof body.trackKind !== "string"
+      ) {
+        if (current.interviewAt)
+          patch.interviewAt = `${body.trackDate}T00:00:00.000Z`
+        else patch.deadline = body.trackDate
+      } else if (typeof body.trackDate === "string") {
         if (body.trackKind === "interview") {
           patch.interviewAt = `${body.trackDate}T00:00:00.000Z`
+          patch.deadline = null
         } else {
           patch.deadline = body.trackDate
+          patch.interviewAt = null
         }
       }
       if (Object.keys(patch).length > 0) {
         await run(registry, "job.update", { jobId, patch }, actor)
       }
-      if (typeof body.note === "string" && body.note.trim()) {
+      if (typeof body.note === "string") {
         await run(registry, "job.addNote", { jobId, body: body.note }, actor)
       }
       return cardById(registry, actor, jobId)
@@ -461,11 +539,14 @@ export async function runCompatCommand(
       }
       let position: string | undefined
       if (typeof body.beforeCardId === "string") {
-        const jobs = (await jobsOf(registry, actor)).filter((job) => job.stage === stage)
+        const jobs = (await jobsOf(registry, actor)).filter(
+          (job) => job.stage === stage
+        )
         const index = jobs.findIndex((job) => job.id === body.beforeCardId)
         if (index >= 0) {
           const before = jobs[index]?.position ?? null
-          const previous = index > 0 ? (jobs[index - 1]?.position ?? null) : null
+          const previous =
+            index > 0 ? (jobs[index - 1]?.position ?? null) : null
           position = generateKeyBetween(previous, before)
         }
       }
@@ -479,7 +560,11 @@ export async function runCompatCommand(
     }
     case APPLY_COMMANDS.toggleStar: {
       const jobId = String(body.cardId)
-      const current = (await registry.read("job.get", { jobId }, actor)) as JobView
+      const current = (await registry.read(
+        "job.get",
+        { jobId },
+        actor
+      )) as JobView
       await run(
         registry,
         "job.star",

@@ -1,6 +1,7 @@
 import { z } from "zod"
 
 import { PAPER_COMMANDS } from "./commands.js"
+import { fileIdSchema, jobIdSchema, paperIdSchema } from "./ids.js"
 
 export { PAPER_COMMANDS }
 
@@ -22,7 +23,7 @@ export const DEFAULT_PAPER_DOC_NAME = {
 export const paperContentKindSchema = z.enum(["cv", "letter", "proof"])
 export const paperDocStatusSchema = z.enum(["draft", "ready", "published"])
 
-export const paperDocIdSchema = z.string().uuid()
+export const paperDocIdSchema = paperIdSchema
 
 export const paperDocNameSchema = z
   .string()
@@ -147,7 +148,7 @@ export const paperCreateInputSchema = z
     kind: paperStoredKindSchema,
     templateId: paperTemplateIdSchema.optional(),
     name: paperDocNameSchema.optional(),
-    jobId: z.string().uuid().optional(),
+    jobId: jobIdSchema.optional(),
   })
   .strict()
 
@@ -194,7 +195,7 @@ export const paperKeepTwoPagesInputSchema = paperShareInputSchema
 
 export const paperImportInputSchema = z
   .object({
-    fileId: z.string().uuid(),
+    fileId: fileIdSchema,
   })
   .strict()
 

@@ -1,4 +1,4 @@
-import { defineCommand } from "@workspace/domain"
+import { coachActor, defineCommand, personActor } from "@workspace/domain"
 import { z } from "zod"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
@@ -16,6 +16,7 @@ const coachToolNames = [
   "chat.rename",
   "chat.setFocus",
   "coach.usage",
+  "file.get",
   "job.addChecklistItem",
   "job.addNote",
   "job.calendar",
@@ -31,6 +32,7 @@ const coachToolNames = [
   "job.star",
   "job.unlinkPaper",
   "job.update",
+  "link.get",
   "notify.request",
   "paper.create",
   "paper.delete",
@@ -71,7 +73,7 @@ describe("registry", () => {
       name: "Ada",
       email: "ada-behavior@example.com",
     })
-    const person = { type: "person" as const, userId }
+    const person = personActor(userId)
     await withDatabase(db as never, async () => {
       const chat = await registry.execute({
         name: "chat.create",
@@ -85,7 +87,7 @@ describe("registry", () => {
         actor: person,
       })
       const jobId = (created.output as { id: string }).id
-      const coach = { type: "coach" as const, userId, chatId }
+      const coach = coachActor(userId, chatId)
       const pending = await registry.execute({
         name: "job.move",
         input: { jobId, stage: "applied" },
@@ -132,8 +134,7 @@ describe("registry", () => {
       }
       expect(stayed.stage).toBe("saved")
 
-      const names = registry
-        .tools(coach)
+      const names = (await registry.tools(coach))
         .map((entry) => entry.name)
         .sort()
       expect(names).toEqual(coachToolNames)

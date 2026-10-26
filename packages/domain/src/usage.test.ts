@@ -36,6 +36,23 @@ describe("usage windows", () => {
   it("clips the session so it does not start before 07:00", () => {
     const session = sessionWindow(new Date("2026-10-26T01:00:00.000Z"), zone, 4)
     assert.equal(session.start.toISOString(), "2026-10-26T00:00:00.000Z")
+    assert.equal(session.resetsAt.toISOString(), "2026-10-26T04:00:00.000Z")
+  })
+
+  it("keeps the session reset after now and no later than the next morning", () => {
+    const now = new Date("2026-10-26T08:00:00.000Z")
+    const session = sessionWindow(now, zone, 4)
+    const nextMorning = new Date("2026-10-27T00:00:00.000Z")
+    assert.equal(session.start.toISOString(), "2026-10-26T04:00:00.000Z")
+    assert.ok(session.resetsAt.getTime() > now.getTime())
+    assert.ok(session.resetsAt.getTime() <= nextMorning.getTime())
+    assert.notEqual(session.resetsAt.toISOString(), nextMorning.toISOString())
+
+    const boundary = new Date("2026-10-26T04:00:00.000Z")
+    const rolled = sessionWindow(boundary, zone, 4)
+    assert.equal(rolled.start.toISOString(), "2026-10-26T00:00:00.000Z")
+    assert.ok(rolled.resetsAt.getTime() > boundary.getTime())
+    assert.notEqual(rolled.resetsAt.toISOString(), nextMorning.toISOString())
   })
 
   it("keeps pro free mode uncapped and blocks light on a free plan", () => {
@@ -51,11 +68,14 @@ describe("usage windows", () => {
       provider: "anthropic",
       modelId: "claude-opus-5-5",
     })
-    assert.deepEqual(resolveModelRoute("free", "free", { COACH_MODEL_FREE: "custom/free" }), {
-      ok: true,
-      provider: "openrouter",
-      modelId: "custom/free",
-    })
+    assert.deepEqual(
+      resolveModelRoute("free", "free", { COACH_MODEL_FREE: "custom/free" }),
+      {
+        ok: true,
+        provider: "openrouter",
+        modelId: "custom/free",
+      }
+    )
   })
 
   it("omits numbers when the window is uncapped", () => {

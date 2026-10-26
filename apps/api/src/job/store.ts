@@ -6,10 +6,14 @@ import {
   generateKeyBetween,
   normalizeJobUrl,
   sourceHostFromUrl,
+  parseJobId,
   type Actor,
   type JobCreateInput,
+  type JobId,
   type JobPatch,
   type JobStage,
+  type PaperId,
+  type UserId,
 } from "@workspace/domain"
 import { and, asc, desc, eq, gte, isNull, lte, or } from "drizzle-orm"
 
@@ -47,7 +51,7 @@ export function toJob(row: typeof jobs.$inferSelect) {
   }
 }
 
-export async function ownedJob(userId: string, jobId: string) {
+export async function ownedJob(userId: UserId, jobId: JobId) {
   const rows = await getDb()
     .select()
     .from(jobs)
@@ -58,7 +62,7 @@ export async function ownedJob(userId: string, jobId: string) {
   return row
 }
 
-async function nextPosition(userId: string, stage: JobStage) {
+async function nextPosition(userId: UserId, stage: JobStage) {
   const rows = await getDb()
     .select({ position: jobs.position })
     .from(jobs)
@@ -68,23 +72,24 @@ async function nextPosition(userId: string, stage: JobStage) {
   return generateKeyBetween(last, null)
 }
 
-async function findDuplicate(userId: string, jobUrl: string) {
+async function findDuplicate(userId: UserId, jobUrl: string) {
   const key = normalizeJobUrl(jobUrl)
   if (!key) return null
   const rows = await getDb()
     .select()
     .from(jobs)
     .where(and(eq(jobs.userId, userId), eq(jobs.jobUrl, jobUrl)))
-  const normalized = rows.find((row) => row.jobUrl && normalizeJobUrl(row.jobUrl) === key)
+  const normalized = rows.find(
+    (row) => row.jobUrl && normalizeJobUrl(row.jobUrl) === key
+  )
   if (normalized) return normalized
-  const all = await getDb()
-    .select()
-    .from(jobs)
-    .where(eq(jobs.userId, userId))
-  return all.find((row) => row.jobUrl && normalizeJobUrl(row.jobUrl) === key) ?? null
+  const all = await getDb().select().from(jobs).where(eq(jobs.userId, userId))
+  return (
+    all.find((row) => row.jobUrl && normalizeJobUrl(row.jobUrl) === key) ?? null
+  )
 }
 
-export async function latestJobNote(userId: string, jobId: string) {
+export async function latestJobNote(userId: UserId, jobId: JobId) {
   const rows = await getDb()
     .select({ summary: activity.summary })
     .from(activity)
@@ -102,7 +107,7 @@ export async function latestJobNote(userId: string, jobId: string) {
 }
 
 export async function listJobs(
-  userId: string,
+  userId: UserId,
   filter?: { stage?: JobStage; company?: string; location?: string }
 ) {
   const rows = await getDb()
@@ -119,7 +124,9 @@ export async function listJobs(
     )
     .filter((row) =>
       filter?.location
-        ? (row.location ?? "").toLowerCase().includes(filter.location.toLowerCase())
+        ? (row.location ?? "")
+            .toLowerCase()
+            .includes(filter.location.toLowerCase())
         : true
     )
     .map(toJob)
@@ -128,7 +135,10 @@ export async function listJobs(
 export async function createJob(actor: Actor, input: JobCreateInput) {
   const company = input.company?.trim() ?? ""
   if (!company) {
-    throw new CommandError(ERROR_CODES.COMPANY_REQUIRED, COMPANY_REQUIRED_MESSAGE)
+    throw new CommandError(
+      ERROR_CODES.COMPANY_REQUIRED,
+      COMPANY_REQUIRED_MESSAGE
+    )
   }
   const jobUrl = input.jobUrl?.trim() || null
   if (jobUrl && !input.anyway) {
@@ -142,44 +152,51 @@ export async function createJob(actor: Actor, input: JobCreateInput) {
   const stage = input.stage ?? "saved"
   const now = new Date()
   const id = createId(now.getTime())
-  await getDb().insert(jobs).values({
-    id,
-    userId: actor.userId,
-    title: input.title.trim(),
-    company,
-    stage,
-    position: await nextPosition(actor.userId, stage),
-    location: input.location?.trim() || null,
-    jobUrl,
-    sourceHost: input.sourceHost?.trim() || sourceHostFromUrl(jobUrl ?? undefined),
-    description: input.description ?? null,
-    deadline: input.deadline ?? null,
-    createdAt: now,
-    updatedAt: now,
-  })
-  const job = toJob(await ownedJob(actor.userId, id))
+  await getDb()
+    .insert(jobs)
+    .values({
+      id,
+      userId: actor.userId,
+      title: input.title.trim(),
+      company,
+      stage,
+      position: await nextPosition(actor.userId, stage),
+      location: input.location?.trim() || null,
+      jobUrl,
+      sourceHost:
+        input.sourceHost?.trim() || sourceHostFromUrl(jobUrl ?? undefined),
+      description: input.description ?? null,
+      deadline: input.deadline ?? null,
+      createdAt: now,
+      updatedAt: now,
+    })
+  const job = toJob(await ownedJob(actor.userId, parseJobId(id)))
   return {
     ...job,
     sourceLabel: job.sourceHost ?? "the board",
   }
 }
 
-export async function updateJob(actor: Actor, jobId: string, patch: JobPatch) {
+export async function updateJob(actor: Actor, jobId: JobId, patch: JobPatch) {
   const current = await ownedJob(actor.userId, jobId)
   const previousPatch: JobPatch = {}
   if (patch.title !== undefined) previousPatch.title = current.title
   if (patch.company !== undefined) previousPatch.company = current.company
   if (patch.location !== undefined) previousPatch.location = current.location
   if (patch.priority !== undefined) previousPatch.priority = current.priority
-  if (patch.interviewAt !== undefined) previousPatch.interviewAt = iso(current.interviewAt)
+  if (patch.interviewAt !== undefined)
+    previousPatch.interviewAt = iso(current.interviewAt)
   if (patch.deadline !== undefined) previousPatch.deadline = current.deadline
-  if (patch.recruiterName !== undefined) previousPatch.recruiterName = current.recruiterName
+  if (patch.recruiterName !== undefined)
+    previousPatch.recruiterName = current.recruiterName
   if (patch.recruiterEmail !== undefined) {
     previousPatch.recruiterEmail = current.recruiterEmail
   }
-  if (patch.description !== undefined) previousPatch.description = current.description
+  if (patch.description !== undefined)
+    previousPatch.description = current.description
   if (patch.jobUrl !== undefined) previousPatch.jobUrl = current.jobUrl
-  if (patch.posting !== undefined) previousPatch.posting = current.posting ?? undefined
+  if (patch.posting !== undefined)
+    previousPatch.posting = current.posting ?? undefined
   if (patch.jobUrl) {
     const existing = await findDuplicate(actor.userId, patch.jobUrl)
     if (existing && existing.id !== current.id) {
@@ -188,7 +205,9 @@ export async function updateJob(actor: Actor, jobId: string, patch: JobPatch) {
       })
     }
   }
-  const watched = JOB_ACTIVITY_PATCH_KEYS.some((key) => patch[key] !== undefined)
+  const watched = JOB_ACTIVITY_PATCH_KEYS.some(
+    (key) => patch[key] !== undefined
+  )
   await getDb()
     .update(jobs)
     .set({
@@ -197,7 +216,9 @@ export async function updateJob(actor: Actor, jobId: string, patch: JobPatch) {
       ...(patch.location !== undefined ? { location: patch.location } : {}),
       ...(patch.priority !== undefined ? { priority: patch.priority } : {}),
       ...(patch.interviewAt !== undefined
-        ? { interviewAt: patch.interviewAt ? new Date(patch.interviewAt) : null }
+        ? {
+            interviewAt: patch.interviewAt ? new Date(patch.interviewAt) : null,
+          }
         : {}),
       ...(patch.deadline !== undefined ? { deadline: patch.deadline } : {}),
       ...(patch.recruiterName !== undefined
@@ -206,7 +227,9 @@ export async function updateJob(actor: Actor, jobId: string, patch: JobPatch) {
       ...(patch.recruiterEmail !== undefined
         ? { recruiterEmail: patch.recruiterEmail }
         : {}),
-      ...(patch.description !== undefined ? { description: patch.description } : {}),
+      ...(patch.description !== undefined
+        ? { description: patch.description }
+        : {}),
       ...(patch.jobUrl !== undefined ? { jobUrl: patch.jobUrl } : {}),
       ...(patch.posting !== undefined ? { posting: patch.posting } : {}),
       updatedAt: new Date(),
@@ -221,7 +244,7 @@ export async function updateJob(actor: Actor, jobId: string, patch: JobPatch) {
 
 export async function moveJob(
   actor: Actor,
-  jobId: string,
+  jobId: JobId,
   stage: JobStage,
   position?: string
 ) {
@@ -238,16 +261,19 @@ export async function moveJob(
   }
 }
 
-export async function starJob(actor: Actor, jobId: string, starred: boolean) {
+export async function starJob(actor: Actor, jobId: JobId, starred: boolean) {
   const current = await ownedJob(actor.userId, jobId)
   await getDb()
     .update(jobs)
     .set({ starred, updatedAt: new Date() })
     .where(eq(jobs.id, current.id))
-  return { ...toJob(await ownedJob(actor.userId, jobId)), previousStarred: current.starred }
+  return {
+    ...toJob(await ownedJob(actor.userId, jobId)),
+    previousStarred: current.starred,
+  }
 }
 
-export async function deleteJob(actor: Actor, jobId: string) {
+export async function deleteJob(actor: Actor, jobId: JobId) {
   await ownedJob(actor.userId, jobId)
   await getDb().delete(jobs).where(eq(jobs.id, jobId))
   return { id: jobId }
@@ -261,14 +287,15 @@ async function assertInterviewAgent(actor: Actor) {
     .where(eq(user.id, actor.userId))
     .limit(1)
   if (rows[0]?.agentInterview === false) {
-    throw new CommandError(
-      ERROR_CODES.FORBIDDEN,
-      "Interview prep is disabled."
-    )
+    throw new CommandError(ERROR_CODES.FORBIDDEN, "Interview prep is disabled.")
   }
 }
 
-export async function addChecklistItem(actor: Actor, jobId: string, label: string) {
+export async function addChecklistItem(
+  actor: Actor,
+  jobId: JobId,
+  label: string
+) {
   await assertInterviewAgent(actor)
   await ownedJob(actor.userId, jobId)
   const rows = await getDb()
@@ -277,18 +304,20 @@ export async function addChecklistItem(actor: Actor, jobId: string, label: strin
     .where(eq(jobChecklist.jobId, jobId))
     .orderBy(asc(jobChecklist.position))
   const id = createId()
-  await getDb().insert(jobChecklist).values({
-    id,
-    jobId,
-    label,
-    position: generateKeyBetween(rows.at(-1)?.position ?? null, null),
-  })
+  await getDb()
+    .insert(jobChecklist)
+    .values({
+      id,
+      jobId,
+      label,
+      position: generateKeyBetween(rows.at(-1)?.position ?? null, null),
+    })
   return { id, jobId, label, done: false }
 }
 
 export async function setChecklistItem(
   actor: Actor,
-  jobId: string,
+  jobId: JobId,
   itemId: string,
   done: boolean
 ) {
@@ -300,12 +329,20 @@ export async function setChecklistItem(
     .where(and(eq(jobChecklist.id, itemId), eq(jobChecklist.jobId, jobId)))
     .limit(1)
   const item = rows[0]
-  if (!item) throw new CommandError(ERROR_CODES.NOT_FOUND, "Checklist item not found")
-  await getDb().update(jobChecklist).set({ done }).where(eq(jobChecklist.id, itemId))
+  if (!item)
+    throw new CommandError(ERROR_CODES.NOT_FOUND, "Checklist item not found")
+  await getDb()
+    .update(jobChecklist)
+    .set({ done })
+    .where(eq(jobChecklist.id, itemId))
   return { id: itemId, jobId, done, previousDone: item.done }
 }
 
-export async function removeChecklistItem(actor: Actor, jobId: string, itemId: string) {
+export async function removeChecklistItem(
+  actor: Actor,
+  jobId: JobId,
+  itemId: string
+) {
   await assertInterviewAgent(actor)
   await ownedJob(actor.userId, jobId)
   await getDb()
@@ -316,8 +353,8 @@ export async function removeChecklistItem(actor: Actor, jobId: string, itemId: s
 
 export async function linkPaper(
   actor: Actor,
-  jobId: string,
-  docId: string,
+  jobId: JobId,
+  docId: PaperId,
   kind: "cv" | "letter"
 ) {
   const job = await ownedJob(actor.userId, jobId)
@@ -339,10 +376,18 @@ export async function linkPaper(
         : { letterDocId: docId, updatedAt: new Date() }
     )
     .where(eq(jobs.id, jobId))
-  return { ...toJob(await ownedJob(actor.userId, jobId)), previousDocId, docName: doc.name }
+  return {
+    ...toJob(await ownedJob(actor.userId, jobId)),
+    previousDocId,
+    docName: doc.name,
+  }
 }
 
-export async function unlinkPaper(actor: Actor, jobId: string, kind: "cv" | "letter") {
+export async function unlinkPaper(
+  actor: Actor,
+  jobId: JobId,
+  kind: "cv" | "letter"
+) {
   await ownedJob(actor.userId, jobId)
   await getDb()
     .update(jobs)
@@ -355,18 +400,25 @@ export async function unlinkPaper(actor: Actor, jobId: string, kind: "cv" | "let
   return toJob(await ownedJob(actor.userId, jobId))
 }
 
-export async function calendarJobs(userId: string, from: string, to: string) {
+export async function calendarJobs(userId: UserId, from: string, to: string) {
   const start = new Date(from)
   const end = new Date(to)
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-    throw new CommandError(ERROR_CODES.VALIDATION_ERROR, "Use a from and to date.")
+    throw new CommandError(
+      ERROR_CODES.VALIDATION_ERROR,
+      "Use a from and to date."
+    )
   }
   const rows = await getDb().select().from(jobs).where(eq(jobs.userId, userId))
   return rows
     .filter((row) => {
       const interview = row.interviewAt
-      const deadline = row.deadline ? new Date(`${row.deadline}T00:00:00.000Z`) : null
-      const inInterview = interview ? interview >= start && interview <= end : false
+      const deadline = row.deadline
+        ? new Date(`${row.deadline}T00:00:00.000Z`)
+        : null
+      const inInterview = interview
+        ? interview >= start && interview <= end
+        : false
       const inDeadline = deadline ? deadline >= start && deadline <= end : false
       return inInterview || inDeadline
     })
@@ -386,35 +438,67 @@ export function parsePostingText(text: string) {
 export async function previewJob(
   actor: Actor,
   input: { url?: string; text?: string },
-  fetchPosting: (url: string) => Promise<{ ok: true; text: string } | { ok: false; message: string }>
+  fetchPosting: (
+    url: string
+  ) => Promise<{ ok: true; text: string } | { ok: false; message: string }>,
+  interpret?: (
+    text: string
+  ) => Promise<{ title: string; company: string; location: string } | null>
 ) {
   let text = input.text?.trim() ?? ""
   if (!text && input.url) {
     const fetched = await fetchPosting(input.url)
     if (!fetched.ok) {
-      return { status: "unreadable" as const, fields: {}, message: fetched.message }
+      return {
+        status: "unreadable" as const,
+        fields: {},
+        message: fetched.message,
+      }
     }
     text = fetched.text
   }
   if (!text) {
-    return { status: "unreadable" as const, fields: {}, message: "Add a link or some text." }
+    return {
+      status: "unreadable" as const,
+      fields: {},
+      message: "Add a link or some text.",
+    }
   }
   const parsed = parsePostingText(text)
-  const company = parsed?.company ?? ""
-  const title = parsed?.title ?? ""
-  const location = parsed?.location ?? ""
+  let company = parsed?.company ?? ""
+  let title = parsed?.title ?? ""
+  let location = parsed?.location ?? ""
+  if (interpret) {
+    try {
+      const modelFields = await interpret(text)
+      if (modelFields) {
+        company = modelFields.company || company
+        title = modelFields.title || title
+        location = modelFields.location || location
+      }
+    } catch {
+      // A missing key keeps the deterministic parse. This read does not open a usage row.
+    }
+  }
   if (input.url) {
     const duplicate = await findDuplicate(actor.userId, input.url)
     if (duplicate) {
       return {
         status: "duplicate" as const,
         jobId: duplicate.id,
-        fields: { title: title || duplicate.title, company: company || duplicate.company, location },
+        fields: {
+          title: title || duplicate.title,
+          company: company || duplicate.company,
+          location,
+        },
       }
     }
   }
   if (!company) {
-    return { status: "company-missing" as const, fields: { title, company, location } }
+    return {
+      status: "company-missing" as const,
+      fields: { title, company, location },
+    }
   }
   return {
     status: "filled" as const,
@@ -422,7 +506,7 @@ export async function previewJob(
   }
 }
 
-export async function jobsBetween(userId: string, from: Date, to: Date) {
+export async function jobsBetween(userId: UserId, from: Date, to: Date) {
   const rows = await getDb()
     .select()
     .from(jobs)
@@ -431,7 +515,10 @@ export async function jobsBetween(userId: string, from: Date, to: Date) {
         eq(jobs.userId, userId),
         or(
           and(gte(jobs.interviewAt, from), lte(jobs.interviewAt, to)),
-          and(gte(jobs.deadline, from.toISOString().slice(0, 10)), lte(jobs.deadline, to.toISOString().slice(0, 10)))
+          and(
+            gte(jobs.deadline, from.toISOString().slice(0, 10)),
+            lte(jobs.deadline, to.toISOString().slice(0, 10))
+          )
         )
       )
     )

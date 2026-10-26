@@ -1,4 +1,4 @@
-import { defineQuery, type Actor } from "@workspace/domain"
+import { defineQuery, parseUserId, type Actor } from "@workspace/domain"
 import { z } from "zod"
 import { and, desc, eq, ilike, or } from "drizzle-orm"
 
@@ -58,7 +58,8 @@ export async function readProfile(actor: Actor) {
 
 export async function exportAccount(userId: string) {
   const db = getDb()
-  const profile = toProfile(await getProfileRow(userId))
+  const id = parseUserId(userId)
+  const profile = toProfile(await getProfileRow(id))
   const documents = await db
     .select()
     .from(paperDocs)
@@ -186,7 +187,9 @@ async function searchWorkspace(actor: Actor, query: string) {
     db
       .select({ id: paperDocs.id, name: paperDocs.name, kind: paperDocs.kind })
       .from(paperDocs)
-      .where(and(eq(paperDocs.userId, actor.userId), ilike(paperDocs.name, pattern)))
+      .where(
+        and(eq(paperDocs.userId, actor.userId), ilike(paperDocs.name, pattern))
+      )
       .limit(8),
     db
       .select({ id: jobs.id, title: jobs.title, company: jobs.company })
