@@ -16,6 +16,7 @@ import {
 import {
   isPlanRequired,
   readProfile,
+  TIME_ZONE_REJECTION,
   updateProfile,
   type ProfilePatch,
   type SettingsProfile,
@@ -92,7 +93,13 @@ function useSettingsSave() {
         return
       }
       setErrorKey(key)
-      setError(caught instanceof Error ? caught.message : "Try again.")
+      setError(
+        key === "timeZone"
+          ? TIME_ZONE_REJECTION
+          : caught instanceof Error && caught.message.trim()
+            ? caught.message
+            : "Try again."
+      )
     } finally {
       setPending(false)
     }

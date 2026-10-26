@@ -162,11 +162,7 @@ export function AccountSection({
                   void downloadExport()
                     .then(() => toast("Export started"))
                     .catch((caught: unknown) => {
-                      toast(
-                        caught instanceof Error
-                          ? caught.message
-                          : "Try the export again."
-                      )
+                      toast(serverMessage(caught))
                     })
                 }}
               >
@@ -253,13 +249,13 @@ function ChangeEmailDialog({
     try {
       const result = await requestEmailChange(email.trim())
       if (!result.sent) {
-        setError("We could not send the code. Try again.")
+        setError(result.message?.trim() ? result.message : "Try again.")
         return
       }
       setPendingEmail(result.email)
       setFocusNonce((value) => value + 1)
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Try again.")
+      setError(serverMessage(caught))
     }
   }
 
@@ -272,7 +268,7 @@ function ChangeEmailDialog({
       }) => Promise<{ error: { message?: string } | null }>
     }
     if (!otpClient.changeEmail) {
-      setError("We could not send the code. Try again.")
+      setError("Try again.")
       return
     }
     const result = await otpClient.changeEmail({
@@ -280,7 +276,9 @@ function ChangeEmailDialog({
       otp,
     })
     if (result.error) {
-      setError(result.error.message ?? "That code is incorrect or expired.")
+      setError(
+        result.error.message?.trim() ? result.error.message : "Try again."
+      )
       return
     }
     close(false)
@@ -329,6 +327,12 @@ function ChangeEmailDialog({
       </DialogContent>
     </Dialog>
   )
+}
+
+function serverMessage(caught: unknown) {
+  return caught instanceof Error && caught.message.trim()
+    ? caught.message
+    : "Try again."
 }
 
 function initials(name: string) {

@@ -110,7 +110,11 @@ export type BillingSnapshot = {
   invoices: []
 }
 
-export type EmailChangeResult = { email: string; sent: boolean }
+export type EmailChangeResult = {
+  email: string
+  sent: boolean
+  message?: string
+}
 
 const START_PATHS: Record<SettingsStartPage, string> = {
   apply: "/app/apply",

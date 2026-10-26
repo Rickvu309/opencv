@@ -1,8 +1,6 @@
 import {
   DEFAULT_COACH_MODE,
   PROFILE_COMMANDS,
-  coachModeSchema,
-  type CoachMode,
   type UserProfile,
 } from "@workspace/domain"
 
@@ -40,6 +38,8 @@ let identityLocked = false
 let weekCapped = true
 let lastUpdate: Record<string, unknown> | null = null
 let lastDelete: unknown = null
+let emailChangeOverride:
+  null | { sent: false; message: string } | { error: string } = null
 const paths: string[] = []
 
 export function setMockWelcomedAt(value: string | null) {
@@ -132,12 +132,19 @@ function patchFrom(body: unknown) {
   return {}
 }
 
+export function setMockEmailChange(
+  value: null | { sent: false; message: string } | { error: string }
+) {
+  emailChangeOverride = value
+}
+
 export function resetProfileApiMock() {
   store.profile = defaultProfile()
   extras = defaultExtras()
   welcomedAt = undefined
   identityLocked = false
   weekCapped = true
+  emailChangeOverride = null
   lastUpdate = null
   lastDelete = null
   paths.length = 0
@@ -404,6 +411,16 @@ export async function profileApiFetch(
   ) {
     const patch = patchFrom(await readBody(init))
     const email = typeof patch.email === "string" ? patch.email : ""
+    if (emailChangeOverride && "error" in emailChangeOverride) {
+      return jsonError(400, "VALIDATION_ERROR", emailChangeOverride.error)
+    }
+    if (emailChangeOverride && emailChangeOverride.sent === false) {
+      return jsonOk({
+        email,
+        sent: false,
+        message: emailChangeOverride.message,
+      })
+    }
     return jsonOk({ email, sent: true })
   }
 
@@ -416,17 +433,7 @@ export async function profileApiFetch(
     method === "POST" &&
     path === `/api/commands/${PROFILE_COMMANDS.setCoachMode}`
   ) {
-    const body = (await readBody(init)) as { mode?: unknown }
-    const parsed = coachModeSchema.safeParse(body.mode)
-    if (!parsed.success) {
-      return jsonError(400, "VALIDATION_ERROR", "Invalid mode")
-    }
-    store.profile = {
-      ...store.profile,
-      coachMode: parsed.data as CoachMode,
-      updatedAt: new Date().toISOString(),
-    }
-    return jsonOk(store.profile)
+    return jsonError(404, "NOT_FOUND", "Not found")
   }
 
   return jsonError(404, "NOT_FOUND", "Not found")

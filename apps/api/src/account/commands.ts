@@ -150,7 +150,7 @@ async function requestEmailChange(email: string) {
   const headers = getRequestHeaders()
   if (!headers) {
     // Registry coverage calls the command with no HTTP request.
-    return { email, sent: false }
+    return { email, sent: false, message: SEND_FAILED }
   }
   const cookie = headers.get("cookie")
   if (!cookie) {

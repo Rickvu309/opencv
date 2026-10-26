@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
 import { Button } from "@workspace/ui/components/button"
-import { SegmentedControl } from "@workspace/ui/components/segmented-control"
 import { UsageBar } from "@workspace/ui/components/usage-bar"
 
 import {
@@ -46,12 +45,6 @@ const AGENTS = [
     label: "Weekly plan",
     desc: "Every Monday, the jobs to apply for next",
   },
-] as const
-
-const MODES = [
-  { value: "free", label: "Free" },
-  { value: "light", label: "Light" },
-  { value: "max", label: "Max" },
 ] as const
 
 export function CoachSection({
@@ -133,25 +126,6 @@ export function CoachSection({
               control={<StateWord on={profile[agent.key]} />}
             />
           ))}
-        </SettingsCard>
-      </SettingsSection>
-      <SettingsSection label="Coach mode">
-        <SettingsCard>
-          <SettingsRow
-            label="Coach mode"
-            desc="Free is included. Light and Max need Pro."
-            error={errorKey === "coachMode" ? error : undefined}
-            control={
-              <SegmentedControl
-                aria-label="Coach mode"
-                size="sm"
-                disabled={pending}
-                value={profile.coachMode}
-                onChange={(coachMode) => onSave({ coachMode })}
-                options={MODES.map((mode) => ({ ...mode }))}
-              />
-            }
-          />
         </SettingsCard>
       </SettingsSection>
     </>

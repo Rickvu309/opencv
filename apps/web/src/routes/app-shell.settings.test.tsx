@@ -23,18 +23,17 @@ afterEach(() => {
 })
 
 describe("settings workspace", () => {
-  it("opens Preferences from the connect row and keeps the apps tab search", async () => {
+  it("opens Integrations from the connect row", async () => {
     const { router } = renderApp(HOME_PATH)
     await expectHomeIdle()
 
     fireEvent.click(screen.getByRole("link", { name: "Connect apps" }))
 
     expect(
-      await screen.findByRole("heading", { level: 1, name: "Preferences" })
+      await screen.findByRole("heading", { level: 1, name: "Integrations" })
     ).toBeInTheDocument()
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe(SURFACE_PATHS.settings)
-      expect(router.state.location.search).toMatchObject({ tab: "apps" })
+      expect(router.state.location.pathname).toBe("/app/settings/integrations")
     })
     expect(
       screen.queryByRole("tab", { name: "Connected apps" })

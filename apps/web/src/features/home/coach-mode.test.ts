@@ -10,7 +10,12 @@ import {
 import { HOME_PATH } from "@/features/app-shell/surfaces.ts"
 import { coachModeHelper, coachModeLabel } from "@/features/home/coach-mode.ts"
 import { renderApp } from "@/test/render-app.tsx"
-import { getMockCoachMode } from "@/test/profile-api-mock.ts"
+import {
+  getMockCoachMode,
+  getProfileMockPaths,
+  profileApiFetch,
+  setMockPlan,
+} from "@/test/profile-api-mock.ts"
 import { getLastCoachRequest } from "@/test/threads-api-mock.ts"
 
 beforeEach(() => {
@@ -58,6 +63,7 @@ describe("Home dock mode control", () => {
   })
 
   it("selects Free, Light, and Power and stores Power as max", async () => {
+    setMockPlan("pro")
     renderApp(HOME_PATH)
 
     await chooseMode("Light")
@@ -77,9 +83,12 @@ describe("Home dock mode control", () => {
       )
       expect(getMockCoachMode()).toBe("max")
     })
+    expect(getProfileMockPaths()).toContain("/api/commands/profile.update")
+    expect(getProfileMockPaths().join(" ")).not.toContain("setCoachMode")
   })
 
   it("moves the mode with the arrow keys", async () => {
+    setMockPlan("pro")
     renderApp(HOME_PATH)
 
     const group = await screen.findByRole("radiogroup", { name: "Coach mode" })
@@ -98,6 +107,7 @@ describe("Home dock mode control", () => {
   })
 
   it("keeps the chosen mode after remount, on the active Thread, and on the next send", async () => {
+    setMockPlan("pro")
     const first = renderApp(HOME_PATH)
     await chooseMode("Light")
     await waitFor(() => {
@@ -130,16 +140,13 @@ describe("Home dock mode control", () => {
   })
 })
 
-describe("Settings coach mode", () => {
-  it("sends a Pro mode to the upgrade screen and keeps Free stored", async () => {
-    renderApp("/app/settings/coach")
-
-    expect(
-      await screen.findByRole("radiogroup", { name: "Coach mode" })
-    ).toBeInTheDocument()
-    fireEvent.click(screen.getByRole("radio", { name: "Light" }))
-    await screen.findByText("Billing is not open yet.")
-    expect(screen.getByText("Billing is not open yet.")).toBeInTheDocument()
+describe("removed coach mode command", () => {
+  it("returns 404 for profile.setCoachMode and leaves Free stored", async () => {
+    const res = await profileApiFetch("/api/commands/profile.setCoachMode", {
+      method: "POST",
+      body: JSON.stringify({ mode: "light" }),
+    })
+    expect(res?.status).toBe(404)
     expect(getMockCoachMode()).toBe("free")
   })
 })

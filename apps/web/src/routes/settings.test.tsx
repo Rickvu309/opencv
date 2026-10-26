@@ -9,12 +9,14 @@ import {
 import userEvent from "@testing-library/user-event"
 
 import { DESKTOP_MEDIA_QUERY } from "@/features/app-shell/use-media-query.ts"
+import { updateProfile } from "@/features/settings/settings-api.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import {
   getLastDelete,
   getLastProfileUpdate,
   getMockCoachMode,
   getProfileMockPaths,
+  setMockEmailChange,
   setMockPlan,
   setMockWeekUncapped,
 } from "@/test/profile-api-mock.ts"
@@ -259,11 +261,59 @@ describe("settings", () => {
     expect(authClient.signOut).toHaveBeenCalled()
   })
 
-  it("opens the upgrade screen when a mode change needs Pro", async () => {
+  it("keeps Free when profile.update asks for a Pro mode", async () => {
     renderApp("/app/settings/coach")
-    fireEvent.click(await screen.findByRole("radio", { name: "Light" }))
-    await expectUpgradePlaceholder()
+    expect(
+      await screen.findByRole("heading", { name: "Coach" })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("radiogroup", { name: "Coach mode" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByText("Free is included. Light and Max need Pro.")
+    ).not.toBeInTheDocument()
+    await expect(updateProfile({ coachMode: "light" })).rejects.toMatchObject({
+      code: "PLAN_REQUIRED",
+    })
     expect(getMockCoachMode()).toBe("free")
+  })
+
+  it("keeps the email dialog open and shows the server message", async () => {
+    setMockEmailChange({
+      sent: false,
+      message: "Mailbox refused the code. Try again.",
+    })
+    renderApp("/app/settings/account")
+    fireEvent.click(await screen.findByRole("button", { name: "Change email" }))
+    const dialog = await screen.findByRole("dialog")
+    fireEvent.change(within(dialog).getByRole("textbox", { name: "Email" }), {
+      target: { value: "ada-next@example.com" },
+    })
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Change email" })
+    )
+    expect(
+      await within(dialog).findByText("Mailbox refused the code. Try again.")
+    ).toBeInTheDocument()
+    expect(screen.getByRole("dialog")).toBeInTheDocument()
+    expect(screen.queryByLabelText("Digit 1")).not.toBeInTheDocument()
+  })
+
+  it("shows a failed send from the command error and keeps the dialog open", async () => {
+    setMockEmailChange({ error: "We could not send the code. Try again." })
+    renderApp("/app/settings/account")
+    fireEvent.click(await screen.findByRole("button", { name: "Change email" }))
+    const dialog = await screen.findByRole("dialog")
+    fireEvent.change(within(dialog).getByRole("textbox", { name: "Email" }), {
+      target: { value: "ada-next@example.com" },
+    })
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Change email" })
+    )
+    expect(
+      await within(dialog).findByText("We could not send the code. Try again.")
+    ).toBeInTheDocument()
+    expect(screen.getByRole("dialog")).toBeInTheDocument()
   })
 
   it("uses a Section select at 390", async () => {
