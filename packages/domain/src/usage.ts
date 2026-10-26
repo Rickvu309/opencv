@@ -303,17 +303,12 @@ export function sessionWindow(
   timeZone: string,
   hours = DEFAULT_SESSION_HOURS
 ) {
-  const day = dayWindow(now, timeZone)
-  const span = hours * 60 * 60 * 1000
-  const rawStart = new Date(now.getTime() - span)
-  const start = rawStart < day.start ? day.start : rawStart
-  let sessionEnd = new Date(start.getTime() + span)
-  if (sessionEnd.getTime() <= now.getTime()) {
-    sessionEnd = new Date(now.getTime() + span)
-  }
-  const resetsAt =
-    sessionEnd.getTime() < day.resetsAt.getTime() ? sessionEnd : day.resetsAt
-  return { start, resetsAt }
+  const spanHours = hours > 0 ? hours : DEFAULT_SESSION_HOURS
+  const span = spanHours * 60 * 60 * 1000
+  const anchor = dayWindow(now, timeZone).start
+  const index = Math.floor((now.getTime() - anchor.getTime()) / span)
+  const start = new Date(anchor.getTime() + index * span)
+  return { start, resetsAt: new Date(start.getTime() + span) }
 }
 
 export function percentOf(used: number, cap: number) {
