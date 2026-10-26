@@ -52,7 +52,11 @@ test("nouns: the Paper empty sentence is exempt and a near copy is not", () => {
   ])
   assert.deepEqual(
     found.map((f) => f.label),
-    ["No documents yet. Create a document to start.", "New document"]
+    [
+      "No documents yet. Create a document to start.",
+      "Document name",
+      "New document",
+    ]
   )
 })
 

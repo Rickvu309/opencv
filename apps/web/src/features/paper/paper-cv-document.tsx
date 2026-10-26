@@ -15,6 +15,7 @@ import {
 } from "./paper-cv-types.ts"
 import {
   CvHistoryRevisionContext,
+  CvPlaceholderContext,
   type TemplateProps,
 } from "./cv-templates/cv-parts.tsx"
 import { AcademicCv } from "./cv-templates/academic.tsx"
@@ -34,9 +35,15 @@ type Props = {
   data: CvData
   onChange: (data: CvData) => void
   historyRevision?: number
+  placeholders?: boolean
 }
 
-export function CvDocument({ data, onChange, historyRevision = 0 }: Props) {
+export function CvDocument({
+  data,
+  onChange,
+  historyRevision = 0,
+  placeholders = false,
+}: Props) {
   const dataRef = useRef(data)
   useEffect(() => {
     dataRef.current = data
@@ -107,8 +114,10 @@ export function CvDocument({ data, onChange, historyRevision = 0 }: Props) {
   }
 
   return (
-    <CvHistoryRevisionContext.Provider value={historyRevision}>
-      {tree}
-    </CvHistoryRevisionContext.Provider>
+    <CvPlaceholderContext.Provider value={placeholders}>
+      <CvHistoryRevisionContext.Provider value={historyRevision}>
+        {tree}
+      </CvHistoryRevisionContext.Provider>
+    </CvPlaceholderContext.Provider>
   )
 }

@@ -12,7 +12,7 @@ type SurfaceProps = {
 export function PaperCvSurface({ data, onChange }: SurfaceProps) {
   return (
     <CvA4Canvas>
-      <CvDocument data={data} onChange={onChange} />
+      <CvDocument data={data} onChange={onChange} placeholders />
     </CvA4Canvas>
   )
 }

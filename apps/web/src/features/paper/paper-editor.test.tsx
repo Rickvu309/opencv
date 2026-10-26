@@ -144,4 +144,168 @@ describe("CV editor chrome", () => {
       screen.getByRole("region", { name: "Document changed" })
     ).toBeInTheDocument()
   })
+
+  it("shows page 2 when a later read says keep", () => {
+    const view = render(
+      <PaperCvEditor
+        initial={{ ...record, pageChoice: "keep" }}
+        pages={{ docId: record.id, pages: 1, pageChoice: "keep" }}
+        onBack={() => undefined}
+      />
+    )
+    expect(screen.queryByText("Page 2")).not.toBeInTheDocument()
+    view.rerender(
+      <PaperCvEditor
+        initial={{ ...record, pageChoice: "keep" }}
+        pages={{ docId: record.id, pages: 2, pageChoice: "keep" }}
+        onBack={() => undefined}
+      />
+    )
+    expect(screen.getByText("Page 2")).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "Fit to one page" })
+    ).not.toBeInTheDocument()
+  })
+
+  it("shows blank CV placeholders and does not save them", () => {
+    installFetch()
+    render(
+      <PaperCvEditor
+        initial={record}
+        pages={pages(1)}
+        onBack={() => undefined}
+      />
+    )
+    for (const label of [
+      "Email",
+      "Phone",
+      "City",
+      "LinkedIn",
+      "Role, company",
+      "Dates",
+      "What you did, and what changed because of it",
+      "School, degree",
+      "Tools, software and languages",
+    ]) {
+      const field = screen.getByRole("textbox", { name: label })
+      expect(field).toHaveAttribute("data-placeholder", label)
+      expect(field.textContent).toBe("")
+    }
+  })
+
+  it("does not send a stale version when a conflict lands between two edits", async () => {
+    const bodies: { contentVersion: number }[] = []
+    let replaceCount = 0
+    let release: (value: Response) => void = () => undefined
+    const gate = new Promise<Response>((resolve) => {
+      release = resolve
+    })
+    vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      if (url.includes("/api/commands/paper.replace")) {
+        replaceCount += 1
+        bodies.push(
+          JSON.parse(String(init?.body)) as { contentVersion: number }
+        )
+        if (replaceCount === 1) return gate
+        return Promise.resolve(ok({ ...record, contentVersion: 3 }))
+      }
+      if (url.includes(`/api/paper/${record.id}`)) {
+        return Promise.resolve(
+          ok({
+            ...record,
+            contentVersion: 4,
+            document: { ...emptyCvDocument(), summary: "Server text" },
+          })
+        )
+      }
+      return Promise.resolve(ok({}))
+    })
+
+    render(
+      <PaperCvEditor
+        initial={record}
+        pages={pages(1)}
+        onBack={() => undefined}
+      />
+    )
+    const summary = screen.getByRole("textbox", { name: "Summary" })
+    vi.useFakeTimers()
+    summary.textContent = "First"
+    fireEvent.input(summary)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(700)
+    })
+    expect(replaceCount).toBe(1)
+    expect(bodies[0]?.contentVersion).toBe(1)
+
+    summary.textContent = "Second"
+    fireEvent.input(summary)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(700)
+    })
+    expect(replaceCount).toBe(1)
+
+    await act(async () => {
+      release(
+        fail(409, "CONFLICT", "This document changed. Reload it and try again.")
+      )
+    })
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(700)
+    })
+    expect(replaceCount).toBe(1)
+    expect(bodies.map((body) => body.contentVersion)).toEqual([1])
+
+    const reload = screen.getByRole("button", { name: "Reload" })
+    reload.focus()
+    fireEvent.click(reload)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0)
+    })
+    expect(summary.textContent).toBe("Server text")
+    expect(replaceCount).toBe(1)
+  })
+
+  it("sets the open CV template from the gallery", async () => {
+    const bodies: { docId?: string; templateId?: string }[] = []
+    vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      if (url.includes("/api/commands/paper.setTemplate")) {
+        bodies.push(
+          JSON.parse(String(init?.body)) as {
+            docId?: string
+            templateId?: string
+          }
+        )
+        return Promise.resolve(
+          ok({ ...record, templateId: "modern", contentVersion: 2 })
+        )
+      }
+      return Promise.resolve(ok({}))
+    })
+    const view = render(
+      <PaperCvEditor
+        initial={record}
+        pages={pages(1)}
+        onBack={() => undefined}
+      />
+    )
+    expect(
+      view.container
+        .querySelector("[data-paper-editor] [data-template]")
+        ?.getAttribute("data-template")
+    ).toBe("simple")
+    fireEvent.click(screen.getByRole("button", { name: "Change template" }))
+    fireEvent.click(screen.getByRole("button", { name: "Modern" }))
+    fireEvent.click(screen.getByRole("button", { name: "Use template" }))
+    await vi.waitFor(() => {
+      expect(bodies).toEqual([{ docId: record.id, templateId: "modern" }])
+      expect(
+        view.container
+          .querySelector("[data-paper-editor] [data-template]")
+          ?.getAttribute("data-template")
+      ).toBe("modern")
+    })
+  })
 })

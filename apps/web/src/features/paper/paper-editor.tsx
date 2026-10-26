@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import {
   emptyCvDocument,
   isCvDocument,
@@ -7,21 +7,29 @@ import {
 } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@workspace/ui/components/dialog"
 import { Input } from "@workspace/ui/components/input"
 import { toast } from "@workspace/ui/components/sonner"
 
-import { ApiError } from "@/lib/api-error.ts"
 import { apiBaseUrl } from "@/lib/api-url.ts"
 
+import { usePaperAutosave } from "./paper-autosave.ts"
 import { PaperEditorConflictBanner } from "./paper-editor-conflict-banner.tsx"
 import { PaperCvSurface } from "./paper-cv-surface.tsx"
+import { PaperTemplateGallery } from "./paper-template-gallery.tsx"
 import {
   createPaperChat,
   getPaper,
   keepTwoPages,
   openPaperChat,
   renamePaper,
-  replacePaper,
+  setPaperTemplate,
   sharePaper,
   streamPaperTurn,
   type PaperPages,
@@ -52,9 +60,6 @@ export function PaperCvEditor({
   pages: PaperPages
   onBack: () => void
 }) {
-  const versionRef = useRef(initial.contentVersion)
-  const pendingRef = useRef<CvDocument | null>(null)
-  const timerRef = useRef<number | null>(null)
   const [cv, setCv] = useState(() => cvOf(initial.document, initial.templateId))
   const [name, setName] = useState(initial.name)
   const [nameError, setNameError] = useState<string | null>(null)
@@ -62,55 +67,28 @@ export function PaperCvEditor({
   const [pageState, setPageState] = useState(pages)
   const [conflict, setConflict] = useState(false)
   const [favorite, setFavorite] = useState(false)
+  const [templateId, setTemplateId] = useState(initial.templateId)
+  const [galleryOpen, setGalleryOpen] = useState(false)
+  const { schedule, adopt, versionRef } = usePaperAutosave<CvDocument>({
+    docId: initial.id,
+    initialVersion: initial.contentVersion,
+    toDocument: (next) => next,
+    onSaved: () => {
+      setUpdatedAt(new Date().toISOString())
+      setConflict(false)
+    },
+    onConflict: () => setConflict(true),
+    onError: (error) => {
+      toast(
+        error instanceof Error ? error.message : "Could not save. Try again."
+      )
+    },
+  })
   const showBanner = pageState.pages > 1 && pageState.pageChoice === "unset"
 
   useEffect(() => {
-    setPageState((current) => (current.pageChoice === "keep" ? current : pages))
+    setPageState(pages)
   }, [pages])
-
-  const flush = useCallback(async () => {
-    const next = pendingRef.current
-    if (!next) return
-    pendingRef.current = null
-    try {
-      const saved = await replacePaper({
-        docId: initial.id,
-        contentVersion: versionRef.current,
-        document: next,
-      })
-      versionRef.current = saved.contentVersion
-      setUpdatedAt(new Date().toISOString())
-      setConflict(false)
-    } catch (error) {
-      pendingRef.current = next
-      if (error instanceof ApiError && error.code === "CONFLICT")
-        setConflict(true)
-      else
-        toast(
-          error instanceof Error ? error.message : "Could not save. Try again."
-        )
-    }
-  }, [initial.id])
-
-  function schedule(next: CvDocument) {
-    pendingRef.current = next
-    if (timerRef.current != null) window.clearTimeout(timerRef.current)
-    timerRef.current = window.setTimeout(() => {
-      timerRef.current = null
-      void flush()
-    }, 700)
-  }
-
-  const flushRef = useRef(flush)
-  useEffect(() => {
-    flushRef.current = flush
-  }, [flush])
-  useEffect(() => {
-    return () => {
-      if (timerRef.current != null) window.clearTimeout(timerRef.current)
-      void flushRef.current()
-    }
-  }, [])
 
   async function commitName() {
     const parsed = paperDocNameSchema.safeParse(name.trim())
@@ -221,8 +199,8 @@ export function PaperCvEditor({
   async function reload() {
     try {
       const next = await getPaper(initial.id)
-      versionRef.current = next.contentVersion
-      pendingRef.current = null
+      adopt(next.contentVersion)
+      setTemplateId(next.templateId)
       setCv(cvOf(next.document, next.templateId))
       setUpdatedAt(next.updatedAt)
       setConflict(false)
@@ -231,6 +209,24 @@ export function PaperCvEditor({
         error instanceof Error
           ? error.message
           : "Could not reload. Refresh the page."
+      )
+    }
+  }
+
+  async function applyTemplate(nextTemplateId: string) {
+    try {
+      const saved = await setPaperTemplate(initial.id, nextTemplateId)
+      setTemplateId(saved.templateId)
+      setCv((current) => ({
+        ...current,
+        templateId: printLayout(saved.templateId),
+      }))
+      setGalleryOpen(false)
+    } catch (error) {
+      toast(
+        error instanceof Error
+          ? error.message
+          : "Could not change the template. Try again."
       )
     }
   }
@@ -250,7 +246,7 @@ export function PaperCvEditor({
         </Button>
         <span className="text-sm text-muted-foreground">CVs</span>
         <Input
-          aria-label="Document name"
+          aria-label="Name"
           value={name}
           onChange={(event) => setName(event.target.value)}
           onBlur={() => void commitName()}
@@ -274,6 +270,13 @@ export function PaperCvEditor({
         </Button>
         <Button type="button" variant="outline" onClick={() => void copyLink()}>
           Copy link
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setGalleryOpen(true)}
+        >
+          Change template
         </Button>
         <Button
           type="button"
@@ -345,10 +348,7 @@ export function PaperCvEditor({
           </div>
         </div>
       ) : null}
-      <div
-        data-template={previewTemplate(initial.templateId)}
-        className="min-w-0"
-      >
+      <div data-template={previewTemplate(templateId)} className="min-w-0">
         <PaperCvSurface
           data={cv}
           onChange={(next) => {
@@ -363,6 +363,24 @@ export function PaperCvEditor({
       {nameError ? (
         <p className="text-sm text-destructive">{nameError}</p>
       ) : null}
+      <Dialog
+        open={galleryOpen}
+        onOpenChange={(open) => {
+          if (!open) setGalleryOpen(false)
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Choose a template</DialogTitle>
+            <DialogDescription>
+              The open CV keeps its text and uses this layout.
+            </DialogDescription>
+          </DialogHeader>
+          <PaperTemplateGallery
+            onUse={(nextTemplateId) => void applyTemplate(nextTemplateId)}
+          />
+        </DialogContent>
+      </Dialog>
     </section>
   )
 }

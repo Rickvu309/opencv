@@ -37,5 +37,8 @@ describe("Paper template gallery", () => {
     expect(preview("Academic")).toBe("academic")
     expect(preview("With photo")).toBe("with-photo")
     expect(preview("Bold")).toBe("simple")
+    expect(
+      view.container.querySelector("[data-template-list]")?.className
+    ).toContain("flex-col")
   })
 })

@@ -11,7 +11,7 @@ export function PaperTemplateGallery({
   onImport,
 }: {
   onUse: (templateId: string) => void
-  onImport: () => void
+  onImport?: () => void
 }) {
   const [query, setQuery] = useState("")
   const [selected, setSelected] = useState("simple")
@@ -27,14 +27,17 @@ export function PaperTemplateGallery({
     PAPER_TEMPLATE_LABELS[0]!
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="@container flex flex-col gap-4">
       <Input
         aria-label="Search templates"
         placeholder="Search templates"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
       />
-      <div className="flex flex-wrap gap-2">
+      <div
+        data-template-list=""
+        className="flex flex-col gap-2 @min-[391px]:flex-row @min-[391px]:flex-wrap"
+      >
         <Button
           type="button"
           size="sm"
@@ -63,9 +66,11 @@ export function PaperTemplateGallery({
         <MiniCv templateId={current.id} />
       </div>
       <div className="flex flex-wrap justify-end gap-2">
-        <Button type="button" variant="ghost" onClick={onImport}>
-          Import a file
-        </Button>
+        {onImport ? (
+          <Button type="button" variant="ghost" onClick={onImport}>
+            Import a file
+          </Button>
+        ) : null}
         <Button type="button" variant="glow" onClick={() => onUse(current.id)}>
           Use template
         </Button>

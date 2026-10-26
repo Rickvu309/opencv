@@ -45,7 +45,6 @@ const PAPER_LINES = new Set(
     copy.paperEmptyBody,
     copy.paperNoResults,
     copy.paperOnePage,
-    "Document name",
     "Loading documents",
     "Could not load documents. Refresh the page.",
     "This link does not open a document.",

@@ -369,7 +369,7 @@ export function registerPaper(registry: Registry) {
       name: "paper.files",
       description: "List uploaded files. Bytes stay in the store.",
       input: z.object({}).strict(),
-      coach: true,
+      coach: false,
       step: () => "List files",
       read: (_input, actor) => listFiles(actor.userId),
     })

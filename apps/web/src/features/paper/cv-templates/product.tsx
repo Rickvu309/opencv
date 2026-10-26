@@ -9,6 +9,7 @@ import {
   CanvasAffordance,
   EducationEmptyCta,
   SectionTitle,
+  useCvPlaceholders,
 } from "./cv-parts.tsx"
 import { ExperienceList, SkillChips } from "./cv-entries.tsx"
 
@@ -21,6 +22,7 @@ export function ProductCv({
   setEducation,
   setSkills,
 }: TemplateProps) {
+  const placeholders = useCvPlaceholders()
   return (
     <div className="cv-template-root cv-template-root--product cv-template-product">
       <aside className="cv-template-product-sidebar bg-[#1e293b] text-white">
@@ -47,28 +49,32 @@ export function ProductCv({
           <CvType role="micro" as="div">
             <EditableField
               aria-label="Email"
+              placeholder={placeholders ? "Email" : undefined}
               value={data.contact.email}
               className="block text-white/75"
               onChange={(email) => patch("contact", { ...data.contact, email })}
             />
             <EditableField
               aria-label="Phone"
+              placeholder={placeholders ? "Phone" : undefined}
               value={data.contact.phone}
               className="block text-white/75"
               onChange={(phone) => patch("contact", { ...data.contact, phone })}
             />
             <EditableField
-              aria-label="Location"
+              aria-label={placeholders ? "City" : "Location"}
+              placeholder={placeholders ? "City" : undefined}
               value={data.contact.location}
               className="block text-white/75"
               onChange={(location) =>
                 patch("contact", { ...data.contact, location })
               }
             />
-            {data.contact.linkedin ? (
+            {placeholders || data.contact.linkedin ? (
               <EditableField
                 aria-label="LinkedIn"
-                value={data.contact.linkedin}
+                placeholder={placeholders ? "LinkedIn" : undefined}
+                value={data.contact.linkedin ?? ""}
                 className="block text-white/75"
                 onChange={(linkedin) =>
                   patch("contact", { ...data.contact, linkedin })

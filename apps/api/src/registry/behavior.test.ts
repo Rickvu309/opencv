@@ -37,7 +37,6 @@ const coachToolNames = [
   "paper.create",
   "paper.delete",
   "paper.duplicate",
-  "paper.files",
   "paper.get",
   "paper.import",
   "paper.keywordGap",

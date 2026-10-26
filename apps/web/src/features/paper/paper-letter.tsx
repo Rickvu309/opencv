@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { keywordGap } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
@@ -21,6 +21,8 @@ import {
   type JobSummary,
   type PaperRecord,
 } from "./paper-api.ts"
+import { usePaperAutosave } from "./paper-autosave.ts"
+import { PaperEditorConflictBanner } from "./paper-editor-conflict-banner.tsx"
 import { PaperLetterArticle } from "./paper-letter-article.tsx"
 import { editorEditedLabel } from "./paper-templates.ts"
 
@@ -267,13 +269,25 @@ export function PaperLetterEditor({
   onBack: () => void
 }) {
   const editorRef = useRef<HTMLDivElement>(null)
-  const versionRef = useRef(doc.contentVersion)
-  const pendingRef = useRef<string | null>(null)
-  const timerRef = useRef<number | null>(null)
   const [markdown, setMarkdown] = useState(markdownOf(doc.document))
   const [updatedAt, setUpdatedAt] = useState(doc.updatedAt)
   const [hiddenGap, setHiddenGap] = useState(false)
   const [conflict, setConflict] = useState(false)
+  const { schedule, adopt, versionRef } = usePaperAutosave<string>({
+    docId: doc.id,
+    initialVersion: doc.contentVersion,
+    toDocument: (next) => ({ markdown: next }),
+    onSaved: () => {
+      setUpdatedAt(new Date().toISOString())
+      setConflict(false)
+    },
+    onConflict: () => setConflict(true),
+    onError: (error) => {
+      toast(
+        error instanceof Error ? error.message : "Could not save. Try again."
+      )
+    },
+  })
   const gap = hiddenGap
     ? null
     : keywordGap(markdown, job?.posting?.requirements ?? "")
@@ -284,48 +298,24 @@ export function PaperLetterEditor({
     if (node.textContent !== markdown) node.textContent = markdown
   }, [markdown])
 
-  const flush = useCallback(async () => {
-    const next = pendingRef.current
-    if (next == null) return
-    pendingRef.current = null
+  async function reloadLetter() {
     try {
-      const saved = await replacePaper({
-        docId: doc.id,
-        contentVersion: versionRef.current,
-        document: { markdown: next },
-      })
-      versionRef.current = saved.contentVersion
-      setUpdatedAt(new Date().toISOString())
+      const next = await getPaper(doc.id)
+      const text = markdownOf(next.document)
+      adopt(next.contentVersion)
+      setMarkdown(text)
+      const node = editorRef.current
+      if (node) node.textContent = text
+      setUpdatedAt(next.updatedAt)
       setConflict(false)
     } catch (error) {
-      if (error instanceof ApiError && error.code === "CONFLICT")
-        setConflict(true)
-      else
-        toast(
-          error instanceof Error ? error.message : "Could not save. Try again."
-        )
+      toast(
+        error instanceof Error
+          ? error.message
+          : "Could not reload. Refresh the page."
+      )
     }
-  }, [doc.id])
-
-  function schedule(next: string) {
-    pendingRef.current = next
-    if (timerRef.current != null) window.clearTimeout(timerRef.current)
-    timerRef.current = window.setTimeout(() => {
-      timerRef.current = null
-      void flush()
-    }, 700)
   }
-
-  const flushRef = useRef(flush)
-  useEffect(() => {
-    flushRef.current = flush
-  }, [flush])
-  useEffect(() => {
-    return () => {
-      if (timerRef.current != null) window.clearTimeout(timerRef.current)
-      void flushRef.current()
-    }
-  }, [])
 
   async function addKeyword() {
     if (!gap) return
@@ -370,9 +360,7 @@ export function PaperLetterEditor({
         </p>
       </div>
       {conflict ? (
-        <p role="region" aria-label="Document changed">
-          This document changed. Reload it and try again.
-        </p>
+        <PaperEditorConflictBanner onReload={() => void reloadLetter()} />
       ) : null}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
         <div className="min-w-0 flex-1">
