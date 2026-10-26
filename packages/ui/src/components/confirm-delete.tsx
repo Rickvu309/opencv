@@ -8,7 +8,6 @@ import {
   DialogTitle,
 } from "./dialog"
 
-/** Title names the thing. The body says it is final. The button repeats the verb. */
 function ConfirmDelete({
   open,
   onClose,

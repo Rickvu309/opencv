@@ -1,6 +1,5 @@
 import { cn } from "cn"
 
-/** Square frame with a quarter disc. Same color as the text around it. */
 function Mark({ size = 20, className }: { size?: number; className?: string }) {
   return (
     <svg
@@ -25,7 +24,6 @@ function Mark({ size = 20, className }: { size?: number; className?: string }) {
   )
 }
 
-/** The mark plus the lowercase word. Pass lead for "Log in to". */
 function Brand({
   lead,
   size = 13,

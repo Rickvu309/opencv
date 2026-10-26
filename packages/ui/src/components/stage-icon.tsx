@@ -18,7 +18,6 @@ const STAGE_LABEL: Record<Stage, string> = {
   closed: "Closed",
 }
 
-/** The only colored icons in the app. Saved, applied, interview, offer, closed. */
 function StageIcon({
   stage,
   size = 14,

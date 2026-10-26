@@ -9,7 +9,6 @@ type ToolbarTab = {
   icon?: ReactNode
 }
 
-/** View links on the left, filters on the right. */
 function Toolbar({
   tabs,
   active,
@@ -40,6 +39,7 @@ function Toolbar({
               key={tab.href}
               variant={current ? "secondary" : "outline"}
               size="sm"
+              // render is an anchor, so Base UI must not expect a native button.
               nativeButton={false}
               aria-current={current ? "page" : undefined}
               render={<a href={tab.href} />}

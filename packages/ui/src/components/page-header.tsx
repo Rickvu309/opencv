@@ -1,7 +1,6 @@
 import type { ReactNode } from "react"
 import { cn } from "cn"
 
-/** Page title on the left, actions on the right. */
 function PageHeader({
   title,
   children,

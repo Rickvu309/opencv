@@ -2,7 +2,6 @@ import type { ComponentProps } from "react"
 import { Toaster as Sonner, toast } from "sonner"
 import { cn } from "cn"
 
-/** One toaster for the app. Undo is an action on the toast, not a second toast. */
 function Toaster({ className, ...props }: ComponentProps<typeof Sonner>) {
   return (
     <Sonner

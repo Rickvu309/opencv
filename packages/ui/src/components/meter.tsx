@@ -10,7 +10,6 @@ function tone(pct: number) {
   return "bg-foreground"
 }
 
-/** Usage as a share of the limit, never a count. */
 function Meter({
   label,
   value,

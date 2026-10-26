@@ -1,6 +1,5 @@
 import { cn } from "cn"
 
-/** The bar alone, when the row already shows the label and the caption. */
 function UsageBar({
   value,
   label,

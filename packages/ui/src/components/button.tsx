@@ -2,6 +2,7 @@ import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
 
+// The default variant wears the glow so current primary buttons match the kit.
 const glowButton =
   "glow text-foreground hover:brightness-[0.97] active:brightness-[0.94] motion-reduce:transition-none motion-reduce:hover:brightness-100 motion-reduce:active:brightness-100"
 

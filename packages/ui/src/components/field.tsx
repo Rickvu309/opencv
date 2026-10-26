@@ -15,7 +15,6 @@ type ControlProps = {
   "aria-invalid"?: boolean
 }
 
-/** Label above the control. An error replaces the helper and says how to fix it. */
 function Field({
   label,
   helper,
