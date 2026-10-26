@@ -7,7 +7,6 @@ import { createQueryClient } from "@/lib/query-client.ts"
 import { createAppRouter } from "@/router.tsx"
 import { applyApiFetch } from "@/test/apply-api-mock.ts"
 import { paperApiFetch } from "@/test/paper-api-mock.ts"
-import { pitchApiFetch } from "@/test/pitch-api-mock.ts"
 import { profileApiFetch } from "@/test/profile-api-mock.ts"
 import { threadApiFetch } from "@/test/threads-api-mock.ts"
 import { vi } from "vitest"
@@ -24,8 +23,6 @@ export function renderApp(
       if (apply) return apply
       const paper = await paperApiFetch(input, init)
       if (paper) return paper
-      const pitch = await pitchApiFetch(input, init)
-      if (pitch) return pitch
       const profile = await profileApiFetch(input, init)
       if (profile) return profile
       return threadApiFetch(input, init)

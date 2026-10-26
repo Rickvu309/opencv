@@ -62,16 +62,7 @@ async function expectStub(
 }
 
 async function expectPitch() {
-  expect(
-    await screen.findByRole("heading", {
-      level: 2,
-      name: SAMPLE_AUTHOR_NAME,
-    })
-  ).toBeInTheDocument()
-  expect(screen.getByRole("button", { name: "Edit Pitch" })).toBeInTheDocument()
-  expect(screen.getByRole("heading", { name: "About" })).toBeInTheDocument()
-  expect(screen.queryByText(SURFACE_COPY.pitch.body)).not.toBeInTheDocument()
-  expect(screen.queryByText(/Eric Nguyen/i)).not.toBeInTheDocument()
+  expect(await screen.findByText("Pitch. Coming soon.")).toBeInTheDocument()
 }
 
 async function expectApplyLive() {
@@ -378,14 +369,7 @@ describe("settings workspace", () => {
       session: TEST_SESSION,
     })
     renderApp(SURFACE_PATHS.pitch)
-
-    expect(
-      await screen.findByRole("heading", { level: 2, name: "Minh Le" })
-    ).toBeInTheDocument()
-    expect(screen.getByText("Demo content")).toBeInTheDocument()
-    fireEvent.click(screen.getAllByRole("button", { name: "Clear demo" })[0]!)
-    expect(await screen.findByText("Your Pitch is empty")).toBeInTheDocument()
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    expect(await screen.findByText("Pitch. Coming soon.")).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole("link", { name: /profile and settings/i }))
     fireEvent.click(await screen.findByRole("tab", { name: "Account" }))

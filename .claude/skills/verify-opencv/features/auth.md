@@ -1,6 +1,6 @@
 # Auth
 
-Auth lets a visitor create an account, sign out, and sign in again. Sign-up seeds the starter workspace, so a new account lands on Home with demo data.
+Auth lets a visitor create an account, sign out, and sign in again. Sign-up writes profile defaults only. Home has no sample CV, no Apply cards, and no welcome thread.
 
 ## Sub-features
 

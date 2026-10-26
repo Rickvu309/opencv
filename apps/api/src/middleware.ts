@@ -8,8 +8,9 @@ import {
 import type { Context, MiddlewareHandler } from "hono"
 
 import type { Auth } from "./auth.js"
-import { CommandError, type AppDatabase } from "./commands/registry.js"
+import { withDatabase, type AppDatabase } from "./db/context.js"
 import { jsonWithStatus } from "./http-json.js"
+import { CommandError } from "./registry/errors.js"
 import { readSession } from "./session.js"
 
 type Session = NonNullable<Awaited<ReturnType<typeof readSession>>>
@@ -45,7 +46,7 @@ export function requireSession(
     c.set("session", session)
     c.set("userId", session.user.id)
     c.set("db", db)
-    await next()
+    return withDatabase(db, () => next())
   }
 }
 
@@ -53,7 +54,10 @@ export function handleApiError(error: Error, c: Context) {
   if (error instanceof CommandError) {
     return jsonWithStatus(
       c,
-      errorEnvelope(error.code, error.message),
+      {
+        ok: false,
+        error: { code: error.code, message: error.message, ...error.detail },
+      },
       error.status
     )
   }

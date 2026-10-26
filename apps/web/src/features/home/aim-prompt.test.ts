@@ -1,18 +1,10 @@
 import { existsSync, readFileSync } from "node:fs"
 import path from "node:path"
 import { describe, expect, it } from "vitest"
-import {
-  LEGACY_FAKE_PITCH_HEADLINE,
-  LEFTOVER_PITCH_PERSONA_NAMES,
-  STARTER_PITCH_HEADLINE,
-  legacyStarterPitchDocument,
-} from "@workspace/domain"
 
 import {
   AIM_OPTIONS,
-  applyAimToPitchHeadline,
   headlineForAim,
-  isSoftFeedablePitchHeadline,
   parseAimPromptState,
   readAimPromptState,
   resolveAimPrompt,
@@ -81,60 +73,13 @@ describe("optional aim prompt", () => {
     expect(resolveAimPrompt(chosen, "summer-intern")).toBe(chosen)
   })
 
-  it("maps an aim to a Pitch headline and leaves a custom headline alone", () => {
+  it("maps an aim to a headline", () => {
     expect(headlineForAim("summer-intern")).toBe(
       "Looking for a summer internship"
     )
-    expect(isSoftFeedablePitchHeadline("")).toBe(true)
-    expect(isSoftFeedablePitchHeadline(STARTER_PITCH_HEADLINE)).toBe(true)
-    expect(isSoftFeedablePitchHeadline(LEGACY_FAKE_PITCH_HEADLINE)).toBe(true)
-    expect(isSoftFeedablePitchHeadline("Design intern · night shift")).toBe(
-      false
-    )
-
-    const starter = legacyStarterPitchDocument()
-    const fed = applyAimToPitchHeadline(starter, "product-intern")
-    expect(fed).toEqual({
-      ...starter,
-      headline: "Aiming for a product intern role",
-    })
-    expect(starter.headline).toBe(STARTER_PITCH_HEADLINE)
-
-    const custom = { ...starter, headline: "Design intern · night shift" }
-    expect(applyAimToPitchHeadline(custom, "first-job")).toBeNull()
-  })
-
-  it("soft-feeds a café aim headline without inventing a Pitch persona", () => {
     expect(headlineForAim("cafe-part-time")).toBe(
       "Working café shifts while I study"
     )
-
-    const starter = legacyStarterPitchDocument()
-    const fed = applyAimToPitchHeadline(starter, "cafe-part-time")
-    expect(fed).toEqual({
-      ...starter,
-      headline: "Working café shifts while I study",
-    })
-    expect(fed?.about).toBe(starter.about)
-    expect(fed?.experience).toEqual(starter.experience)
-    expect(fed?.achievements).toEqual(starter.achievements)
-    expect(fed?.location).toBe(starter.location)
-    expect(fed?.status).toBe(starter.status)
-    expect(fed?.demo).toBe(true)
-    expect(fed?.headline).not.toBe(LEGACY_FAKE_PITCH_HEADLINE)
-    expect(fed?.headline).not.toMatch(/product intern|full-time|UIT/i)
-
-    const snapshot = JSON.stringify(fed)
-    for (const name of LEFTOVER_PITCH_PERSONA_NAMES) {
-      expect(snapshot).not.toContain(name)
-    }
-
-    const custom = {
-      ...starter,
-      headline: "Barista · night shift",
-      demo: false,
-    }
-    expect(applyAimToPitchHeadline(custom, "cafe-part-time")).toBeNull()
   })
 
   it("persists skip so the prompt appears once", () => {

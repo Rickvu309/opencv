@@ -20,7 +20,7 @@ Preconditions: signed in on `/app` (see `auth.md`); `run.env` loaded; `OPENROUTE
 - **Type.** `agent-browser find role textbox fill "Help me prepare for a product intern interview" --name "Message Coach"`. The `Send` button becomes enabled.
 - **Send.** `agent-browser find role button click --name "Send"`. Wait about 4 s, or `agent-browser wait --text "Prep the starred one next"`.
 - **Read the thread.** `agent-browser get text body` contains the sent message, then `I looked at Apply.`, `Listed your Apply cards` and `Prep the starred one next.`
-- **History.** `agent-browser snapshot -i` lists a button `Prepare for a product intern interview` under the `History` navigation, above `Welcome to ...`.
+- **History.** `agent-browser snapshot -i` lists a button `Prepare for a product intern interview` under the `History` navigation. A new account has no earlier thread.
 - **Side effects.** `grep -ci openrouter "$EVIDENCE_DIR/api.log"` prints `0`.
 - **Proof.** `agent-browser screenshot "$EVIDENCE_DIR/home-coach-turn.png"` shows the thread with the scripted reply and the new History entry.
 

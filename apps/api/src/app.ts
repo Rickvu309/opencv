@@ -1,55 +1,42 @@
-import type { CoachMode, CoachRuntime } from "@workspace/domain"
+import type { CoachRuntime } from "@workspace/domain"
 import { Hono } from "hono"
 import { cors } from "hono/cors"
 
+import {
+  createAccountRoutes,
+  createActivityRoutes,
+  createProfileRoutes,
+  createSearchRoutes,
+  createUsageRoutes,
+} from "./account/index.js"
 import { createAuth, type AuthDatabase } from "./auth.js"
-import { createCoachRoutes } from "./coach/http.js"
-import { commandRegistry } from "./commands/index.js"
-import { createCommandRoutes } from "./commands/http.js"
+import type { FetchJobPosting } from "./apply/fetch-posting.js"
+import { createChatRoutes } from "./chat/index.js"
+import { createCoachRoutes } from "./coach/index.js"
+import { createCompatApplyRoutes, createCompatPaperRoutes, createCompatThreadRoutes } from "./compat/index.js"
+import { withDatabase, type AppDatabase } from "./db/context.js"
 import { authUnavailableEnvelope } from "./envelope.js"
+import { createInboxRoutes } from "./inbox/index.js"
+import { createJobRoutes, setJobPostingFetch } from "./job/index.js"
 import {
   handleApiError,
   notFoundEnvelopeResponse,
   requireSession,
 } from "./middleware.js"
 import { isAllowedOrigin } from "./origin.js"
-import { createApplyReadRoutes } from "./apply/http.js"
-import type { FetchJobPosting } from "./apply/fetch-posting.js"
-import { createPaperReadRoutes } from "./paper/http.js"
-import { createPitchReadRoutes } from "./pitch/http.js"
-import { createProfileReadRoutes } from "./profile/http.js"
-import { createThreadReadRoutes } from "./threads/http.js"
+import { createPaperRoutes } from "./paper/index.js"
+import { createCommandRoutes } from "./registry/http.js"
+import { installRegistry } from "./registry/install.js"
 
 export type AppConfig = {
-  /** Origins the browser may call this API from. */
   webOrigins: string[]
-  /**
-   * Optional Postgres URL from `databaseUrlFromEnv`. Health never uses it;
-   * constructing the app without this value must still serve `GET /health`.
-   */
   databaseUrl?: string
   sessionSecret?: string
   authUrl?: string
-  /** Injected Drizzle instance. Tests pass pglite; production passes `pg`. */
   db?: AuthDatabase
   rateLimitEnabled?: boolean
-  /**
-   * Optional Coach runtime (ADR-0007). Injected like `db` — the factory
-   * never constructs one from env. Missing runtime → 503 on the coach route.
-   */
   coach?: CoachRuntime
-  /**
-   * From `openRouterApiKeyFromEnv`. The factory never constructs a runtime;
-   * `index.ts` wires OpenRouter via `coachRuntimeFromConfig` when this is set.
-   */
-  openRouterApiKey?: string
-  /** Per-mode OpenRouter model ids (ADR-0009). */
-  coachModels?: Partial<Record<CoachMode, string>>
-  /** Per-mode daily turn caps (ADR-0009). */
-  coachDailyTurnLimits?: Partial<Record<CoachMode, number>>
-  /** Test override; production uses `COACH_SSE_HEARTBEAT_MS` (15s). */
   coachSseHeartbeatMs?: number
-  /** Test override for Apply URL scan fetch (QVE-218). */
   fetchJobPosting?: FetchJobPosting
 }
 
@@ -60,11 +47,11 @@ export function createApp({
   db,
   rateLimitEnabled,
   coach,
-  coachModels,
-  coachDailyTurnLimits,
   coachSseHeartbeatMs,
   fetchJobPosting,
 }: AppConfig) {
+  const registry = installRegistry()
+  if (fetchJobPosting) setJobPostingFetch(fetchJobPosting)
   const app = new Hono()
 
   app.use(
@@ -76,9 +63,13 @@ export function createApp({
     })
   )
 
+  const database = db as AppDatabase | undefined
+  if (database) {
+    app.use("*", async (_c, next) => withDatabase(database, () => next()))
+  }
+
   app.onError(handleApiError)
   app.notFound(notFoundEnvelopeResponse)
-
   app.get("/health", (c) => c.json({ ok: true }))
 
   const auth =
@@ -95,7 +86,12 @@ export function createApp({
   app.all("/api/auth/*", (c) =>
     auth ? auth.handler(c.req.raw) : c.json(authUnavailableEnvelope(), 503)
   )
-  app.get("/api/session", requireSession(auth, db), (c) =>
+  app.get("/api/public-config", (c) =>
+    c.json({
+      google: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
+    })
+  )
+  app.get("/api/session", requireSession(auth, database), (c) =>
     c.json({
       ok: true,
       user: c.var.session.user,
@@ -103,30 +99,31 @@ export function createApp({
     })
   )
 
-  app.route(
-    "/api/commands",
-    createCommandRoutes({ auth, db, registry: commandRegistry })
-  )
-  app.route("/api/threads", createThreadReadRoutes({ auth, db }))
-  app.route(
-    "/api/threads",
-    createCoachRoutes({
-      auth,
-      db,
-      registry: commandRegistry,
-      coach,
-      coachModels,
-      coachDailyTurnLimits,
-      coachSseHeartbeatMs,
-    })
-  )
-  app.route("/api/paper", createPaperReadRoutes({ auth, db }))
+  const coachRoutes = createCoachRoutes({
+    auth,
+    db: database,
+    coach,
+    coachSseHeartbeatMs,
+  })
+
+  app.route("/api/commands", createCommandRoutes({ auth, db: database, registry }))
+  app.route("/api/threads", createCompatThreadRoutes(auth, database))
+  app.route("/api/threads", coachRoutes.compat)
+  app.route("/api/chats", createChatRoutes(auth, database))
+  app.route("/api/chats", coachRoutes.native)
+  app.route("/api/coach", createUsageRoutes(auth, database))
+  app.route("/api/paper", createCompatPaperRoutes(auth, database))
+  app.route("/api/paper", createPaperRoutes(auth, database))
   app.route(
     "/api/apply",
-    createApplyReadRoutes({ auth, db, coach, fetchJobPosting })
+    createCompatApplyRoutes({ auth, db: database, coach, fetchJobPosting })
   )
-  app.route("/api/profile", createProfileReadRoutes({ auth, db }))
-  app.route("/api/pitch", createPitchReadRoutes({ auth, db }))
+  app.route("/api/jobs", createJobRoutes(auth, database))
+  app.route("/api/inbox", createInboxRoutes(auth, database))
+  app.route("/api/profile", createProfileRoutes(auth, database))
+  app.route("/api/account", createAccountRoutes(auth, database))
+  app.route("/api/search", createSearchRoutes(auth, database))
+  app.route("/api/activity", createActivityRoutes(auth, database))
 
   return app
 }

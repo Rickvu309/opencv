@@ -266,7 +266,7 @@ export type ApplyCard = {
   position: string
   starred: boolean
   jobUrl: string | null
-  /** Signup sample — never a personal Opportunity. Omitted on User-owned cards. */
+  /** Signup sample. Omitted on cards the person added. */
   demo: boolean
   trackDate: string
   trackKind: ApplyTrackKind

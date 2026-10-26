@@ -3,7 +3,8 @@ import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 
 import type { Auth } from "./auth.js"
-import { CommandError, type AppDatabase } from "./commands/registry.js"
+import type { AppDatabase } from "./db/context.js"
+import { CommandError } from "./registry/errors.js"
 import {
   handleApiError,
   notFoundEnvelopeResponse,

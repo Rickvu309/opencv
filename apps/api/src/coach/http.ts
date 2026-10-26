@@ -1,316 +1,209 @@
 import {
   COACH_SSE_HEARTBEAT_MS,
-  coachFeedbackInputSchema,
-  coachReverseRequestSchema,
-  coachLimitReachedEnvelope,
-  coachTurnRequestSchema,
-  coachUnavailableEnvelope,
-  DEFAULT_COACH_DAILY_TURN_LIMITS,
-  DEFAULT_COACH_MODE,
   ERROR_CODES,
+  coachReverseRequestSchema,
+  coachTurnRequestSchema,
   errorEnvelope,
   httpStatusForError,
-  resolveCoachModel,
-  successEnvelope,
-  THREAD_COMMANDS,
+  planAllowsMode,
   threadIdSchema,
   threadMessageIdSchema,
+  PLAN_REQUIRED_MESSAGE,
+  type CoachFocusDoc,
   type CoachMode,
   type CoachRuntime,
-  type CoachFocusDoc,
-  type ThreadDetail,
-  type ThreadMessage,
+  type Plan,
 } from "@workspace/domain"
-import { Hono, type MiddlewareHandler } from "hono"
+import type { LanguageModel } from "ai"
+import { Hono, type Context } from "hono"
 import { streamSSE } from "hono/streaming"
 
+import { assertDayCap, getProfileRow } from "../account/index.js"
 import type { Auth } from "../auth.js"
-import type { AppDatabase, CommandRegistry } from "../commands/registry.js"
+import { reverseCompatReceipt } from "../compat/index.js"
+import type { AppDatabase } from "../db/context.js"
+import { readJsonBody } from "../http-json.js"
 import { jsonWithStatus } from "../http-json.js"
 import { requireSession, type SessionVariables } from "../middleware.js"
-import { getOwnedPaperDoc } from "../paper/queries.js"
-import { toCoachFocusDoc } from "./must-edit.js"
-import { getCoachModeForUser } from "../profile/queries.js"
-import { getOwnedThread, getThreadDetail } from "../threads/queries.js"
-import { reverseCoachReceipt } from "./reverse.js"
+import { registry } from "../registry/registry.js"
 import { runCoachTurn } from "./turn.js"
-import { countCoachTurnsToday, rateCoachTurn } from "./usage.js"
+import { routeCoachModel } from "./router.js"
 
-export type CoachRouteOptions = {
+export function createCoachRoutes(options: {
   auth?: Auth
   db?: AppDatabase
-  registry: CommandRegistry
   coach?: CoachRuntime
-  coachModels?: Partial<Record<CoachMode, string>>
-  coachDailyTurnLimits?: Partial<Record<CoachMode, number>>
   coachSseHeartbeatMs?: number
-}
-
-// Unconfigured auth answers AUTH_UNAVAILABLE before a missing runtime answers
-// COACH_UNAVAILABLE, and both come before the session check.
-function requireCoach(
-  auth: Auth | undefined,
-  db: AppDatabase | undefined,
-  coach: CoachRuntime | undefined
-): MiddlewareHandler<{ Variables: { coach: CoachRuntime } }> {
-  return async (c, next) => {
-    if (coach) {
-      c.set("coach", coach)
-    } else if (auth && db) {
-      return c.json(coachUnavailableEnvelope(), 503)
-    }
-    await next()
+}) {
+  const compat = new Hono<{ Variables: SessionVariables }>()
+  const native = new Hono<{ Variables: SessionVariables }>()
+  for (const routes of [compat, native]) {
+    routes.use("*", requireSession(options.auth, options.db))
   }
-}
 
-export function createCoachRoutes({
-  auth,
-  db,
-  registry,
-  coach,
-  coachModels,
-  coachDailyTurnLimits,
-  coachSseHeartbeatMs,
-}: CoachRouteOptions) {
-  const routes = new Hono<{
-    Variables: SessionVariables & { coach: CoachRuntime }
-  }>()
+  compat.post("/:id/coach", (c) =>
+    startTurn(c, "compat", options.coach, options.coachSseHeartbeatMs)
+  )
+  native.post("/:id/turns", (c) =>
+    startTurn(c, "native", options.coach, options.coachSseHeartbeatMs)
+  )
 
-  routes.on("POST", "/:id/coach", requireCoach(auth, db, coach))
-  routes.post("/:id/coach", requireSession(auth, db), async (c) => {
-    const { userId, db } = c.var
-
-    const threadIdParsed = threadIdSchema.safeParse(c.req.param("id"))
-    if (!threadIdParsed.success) {
+  compat.post("/:id/messages/:messageId/reverse", async (c) => {
+    const threadId = threadIdSchema.safeParse(c.req.param("id"))
+    const messageId = threadMessageIdSchema.safeParse(c.req.param("messageId"))
+    if (!threadId.success || !messageId.success) {
       return jsonWithStatus(
         c,
-        errorEnvelope(ERROR_CODES.VALIDATION_ERROR, "Invalid thread id"),
+        errorEnvelope(ERROR_CODES.VALIDATION_ERROR, "Invalid id"),
         httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
       )
     }
-    const threadId = threadIdParsed.data
-
-    let body: unknown
-    try {
-      const text = await c.req.text()
-      body = text.trim() === "" ? {} : JSON.parse(text)
-    } catch {
-      return jsonWithStatus(
-        c,
-        errorEnvelope(
-          ERROR_CODES.VALIDATION_ERROR,
-          "Request body must be JSON"
-        ),
-        httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
-      )
-    }
-
-    const parsed = coachTurnRequestSchema.safeParse(
-      typeof body === "object" && body && !Array.isArray(body) ? body : {}
-    )
+    const body = await readJsonBody(c)
+    if (!body.ok) return body.response
+    const parsed = coachReverseRequestSchema.safeParse(body.value)
     if (!parsed.success) {
-      const message = parsed.error.issues[0]?.message ?? "Invalid command input"
       return jsonWithStatus(
         c,
-        errorEnvelope(ERROR_CODES.VALIDATION_ERROR, message),
+        errorEnvelope(ERROR_CODES.VALIDATION_ERROR, "Invalid undo request"),
         httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
       )
     }
-
-    const thread = await getOwnedThread(db, userId, threadId)
-
-    const focusDocId =
-      parsed.data.focusDocId === null
-        ? undefined
-        : (parsed.data.focusDocId ?? thread.focusDocId ?? undefined)
-
-    let focusDoc: CoachFocusDoc | undefined
-    if (focusDocId) {
-      focusDoc = toCoachFocusDoc(await getOwnedPaperDoc(db, userId, focusDocId))
-    }
-
-    const mode =
-      parsed.data.mode ??
-      (await getCoachModeForUser(db, userId).catch(() => DEFAULT_COACH_MODE))
-    const model = coachModels?.[mode] ?? resolveCoachModel(mode)
-    const limit =
-      coachDailyTurnLimits?.[mode] ?? DEFAULT_COACH_DAILY_TURN_LIMITS[mode]
-    const used = await countCoachTurnsToday(db, userId, new Date(), mode)
-    if (used >= limit) {
-      return c.json(coachLimitReachedEnvelope(), 429)
-    }
-
-    let history: ThreadMessage[]
-    if (parsed.data.regenerate) {
-      const detail = await getThreadDetail(db, userId, threadId)
-      const last = detail.messages[detail.messages.length - 1]
-      if (!last || last.role !== "coach") {
-        return jsonWithStatus(
-          c,
-          errorEnvelope(
-            ERROR_CODES.VALIDATION_ERROR,
-            "Only the latest Coach turn can be regenerated"
-          ),
-          httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
-        )
-      }
-      history = detail.messages
-    } else {
-      const text = parsed.data.text
-      if (!text) {
-        return jsonWithStatus(
-          c,
-          errorEnvelope(
-            ERROR_CODES.VALIDATION_ERROR,
-            "Message text is required"
-          ),
-          httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
-        )
-      }
-      const posted = await registry.execute({
-        name: THREAD_COMMANDS.postMessage,
-        input: { threadId, text },
-        actor: { type: "user", userId },
-        db,
-      })
-      if (!posted.body.ok) {
-        return jsonWithStatus(c, posted.body, posted.status)
-      }
-      history = (posted.body.data as ThreadDetail).messages
-    }
-
-    const heartbeatMs = coachSseHeartbeatMs ?? COACH_SSE_HEARTBEAT_MS
-
-    c.header("X-Accel-Buffering", "no")
-    c.header("Content-Encoding", "identity")
-
-    return streamSSE(c, async (stream) => {
-      await runCoachTurn({
-        stream,
-        coach: c.var.coach,
-        db,
-        registry,
-        userId,
-        threadId,
-        history,
-        model,
-        mode,
-        regenerate: parsed.data.regenerate === true,
-        focusDoc,
-        selection: parsed.data.selection,
-        heartbeatMs,
-        signal: c.req.raw.signal,
-      })
+    const result = await reverseCompatReceipt({
+      registry,
+      userId: c.var.userId,
+      chatId: threadId.data,
+      messageId: messageId.data,
+      toolCallId: parsed.data.toolCallId,
     })
+    return c.json({ ok: true, data: result })
   })
 
-  routes.post(
-    "/:id/messages/:messageId/feedback",
-    requireSession(auth, db),
-    async (c) => {
-      const { userId, db } = c.var
+  return { compat, native }
+}
 
-      const threadIdParsed = threadIdSchema.safeParse(c.req.param("id"))
-      const messageIdParsed = threadMessageIdSchema.safeParse(
-        c.req.param("messageId")
-      )
-      if (!threadIdParsed.success || !messageIdParsed.success) {
-        return jsonWithStatus(
-          c,
-          errorEnvelope(ERROR_CODES.VALIDATION_ERROR, "Invalid id"),
-          httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
-        )
-      }
+async function startTurn(
+  c: Context<{ Variables: SessionVariables }>,
+  wire: "compat" | "native",
+  coach: CoachRuntime | undefined,
+  heartbeatMs = COACH_SSE_HEARTBEAT_MS
+) {
+  const chatIdParsed = threadIdSchema.safeParse(c.req.param("id"))
+  if (!chatIdParsed.success) {
+    return jsonWithStatus(
+      c,
+      errorEnvelope(ERROR_CODES.VALIDATION_ERROR, "Invalid chat id"),
+      httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
+    )
+  }
+  const body = await readJsonBody(c)
+  if (!body.ok) return body.response
+  const parsed = coachTurnRequestSchema.safeParse(body.value)
+  if (!parsed.success) {
+    return jsonWithStatus(
+      c,
+      errorEnvelope(
+        ERROR_CODES.VALIDATION_ERROR,
+        parsed.error.issues[0]?.message ?? "Invalid command input"
+      ),
+      httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
+    )
+  }
 
-      let body: unknown
-      try {
-        const text = await c.req.text()
-        body = text.trim() === "" ? {} : JSON.parse(text)
-      } catch {
-        return jsonWithStatus(
-          c,
-          errorEnvelope(
-            ERROR_CODES.VALIDATION_ERROR,
-            "Request body must be JSON"
-          ),
-          httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
-        )
-      }
+  const profile = await getProfileRow(c.var.userId)
+  const plan = profile.plan as Plan
+  const mode = (parsed.data.mode ?? profile.coachMode) as CoachMode
+  if (!planAllowsMode(plan, mode)) {
+    return jsonWithStatus(
+      c,
+      errorEnvelope(ERROR_CODES.PLAN_REQUIRED, PLAN_REQUIRED_MESSAGE),
+      httpStatusForError(ERROR_CODES.PLAN_REQUIRED)
+    )
+  }
+  await assertDayCap(c.var.userId, mode)
 
-      const parsed = coachFeedbackInputSchema.safeParse(body)
-      if (!parsed.success) {
-        return jsonWithStatus(
-          c,
-          errorEnvelope(ERROR_CODES.VALIDATION_ERROR, "Invalid rating"),
-          httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
-        )
-      }
+  const chatId = chatIdParsed.data
+  let history: Awaited<ReturnType<typeof registry.read>>
+  if (parsed.data.regenerate) {
+    history = await registry.read("chat.get", { chatId }, {
+      type: "person",
+      userId: c.var.userId,
+    })
+  } else {
+    const posted = await registry.execute({
+      name: "chat.appendMessage",
+      input: { chatId, text: parsed.data.text },
+      actor: { type: "person", userId: c.var.userId },
+    })
+    history = posted.output
+  }
+  const detail = history as {
+    messages: {
+      id: string
+      role: "person" | "coach"
+      text: string
+      createdAt: string
+      parts?: []
+      status?: "final"
+    }[]
+  }
+  const messages = detail.messages.map((message) => ({
+    ...message,
+    role: message.role === "person" ? ("user" as const) : ("coach" as const),
+  }))
 
-      await getOwnedThread(db, userId, threadIdParsed.data)
-      const result = await rateCoachTurn(
-        db,
-        userId,
-        threadIdParsed.data,
-        messageIdParsed.data,
-        parsed.data.rating
-      )
-      return c.json(successEnvelope(result))
+  let model: LanguageModel | undefined
+  let provider = "fake"
+  let modelId = "fake"
+  if (!coach) {
+    model = routeCoachModel({ plan, mode })
+    provider = plan === "free" ? "openrouter" : "anthropic"
+    modelId = "routed"
+  }
+
+  let focusDoc: CoachFocusDoc | undefined
+  if (parsed.data.focusDocId) {
+    const doc = (await registry.read(
+      "paper.get",
+      { docId: parsed.data.focusDocId },
+      { type: "person", userId: c.var.userId }
+    )) as {
+      id: string
+      name: string
+      kind: "cv" | "letter"
+      status: "draft" | "ready" | "published"
+      document: unknown
+      contentVersion: number
     }
-  )
-
-  routes.post(
-    "/:id/messages/:messageId/reverse",
-    requireSession(auth, db),
-    async (c) => {
-      const { userId, db } = c.var
-
-      const threadIdParsed = threadIdSchema.safeParse(c.req.param("id"))
-      const messageIdParsed = threadMessageIdSchema.safeParse(
-        c.req.param("messageId")
-      )
-      if (!threadIdParsed.success || !messageIdParsed.success) {
-        return jsonWithStatus(
-          c,
-          errorEnvelope(ERROR_CODES.VALIDATION_ERROR, "Invalid id"),
-          httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
-        )
-      }
-
-      let body: unknown
-      try {
-        const text = await c.req.text()
-        body = text.trim() === "" ? {} : JSON.parse(text)
-      } catch {
-        return jsonWithStatus(
-          c,
-          errorEnvelope(
-            ERROR_CODES.VALIDATION_ERROR,
-            "Request body must be JSON"
-          ),
-          httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
-        )
-      }
-
-      const parsed = coachReverseRequestSchema.safeParse(body)
-      if (!parsed.success) {
-        return jsonWithStatus(
-          c,
-          errorEnvelope(ERROR_CODES.VALIDATION_ERROR, "Invalid reversal"),
-          httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
-        )
-      }
-
-      const result = await reverseCoachReceipt({
-        db,
-        registry,
-        userId,
-        threadId: threadIdParsed.data,
-        messageId: messageIdParsed.data,
-        toolCallId: parsed.data.toolCallId,
-      })
-      return c.json(successEnvelope(result))
+    focusDoc = {
+      id: doc.id,
+      name: doc.name,
+      kind: doc.kind,
+      status: doc.status,
+      content: doc.document,
+      contentVersion: doc.contentVersion,
     }
-  )
+  }
 
-  return routes
+  c.header("X-Accel-Buffering", "no")
+  c.header("Content-Encoding", "identity")
+  c.header("Cache-Control", "no-cache")
+  return streamSSE(c, async (stream) => {
+    await runCoachTurn({
+      stream,
+      wire,
+      runtime: coach,
+      model,
+      userId: c.var.userId,
+      chatId,
+      mode,
+      plan,
+      provider,
+      modelId,
+      history: messages,
+      focusDoc,
+      selection: parsed.data.selection,
+      heartbeatMs,
+      signal: c.req.raw.signal,
+    })
+  })
 }

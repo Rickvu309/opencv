@@ -1,0 +1,31 @@
+import { httpStatusForError } from "@workspace/domain"
+
+export class CommandError extends Error {
+  readonly code: string
+  readonly status: number
+  readonly detail: Record<string, unknown>
+
+  constructor(
+    code: string,
+    message: string,
+    detail: Record<string, unknown> = {}
+  ) {
+    super(message)
+    this.name = "CommandError"
+    this.code = code
+    this.status = httpStatusForError(code)
+    this.detail = detail
+  }
+}
+
+export function isUniqueViolation(error: unknown) {
+  const seen = new Set<unknown>()
+  let current: unknown = error
+  while (current && typeof current === "object" && !seen.has(current)) {
+    seen.add(current)
+    if ("code" in current && current.code === "23505") return true
+    current = "cause" in current ? (current as { cause?: unknown }).cause : undefined
+  }
+  const message = error instanceof Error ? error.message : ""
+  return /duplicate key|unique constraint/i.test(message)
+}

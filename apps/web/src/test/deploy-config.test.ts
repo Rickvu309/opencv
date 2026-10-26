@@ -90,6 +90,7 @@ describe(".railway/railway.ts", () => {
         deploy: { preDeployCommand: ["pnpm --filter api run migrate"] },
       })
       expect(api?.variables).toEqual({
+        ANTHROPIC_API_KEY: { type: "preserve" },
         AUTH_URL: { type: "preserve" },
         DATABASE_URL: { type: "preserve" },
         OPENROUTER_API_KEY: { type: "preserve" },

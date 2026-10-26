@@ -1,206 +1,100 @@
-import { readFileSync } from "node:fs"
+import { readFileSync, readdirSync } from "node:fs"
 import path from "node:path"
 import { PGlite } from "@electric-sql/pglite"
 import { sql } from "drizzle-orm"
 import { drizzle } from "drizzle-orm/pglite"
-import { migrate } from "drizzle-orm/pglite/migrator"
 import { describe, expect, it } from "vitest"
 
+import type { AppDatabase } from "./context.js"
+import { runMigrations } from "./migrate.js"
 import { migrationsFolder } from "./paths.js"
 
-const migratedTables = [
+const productTables = [
   "account",
-  "apply_cards",
+  "activity",
+  "chat_messages",
+  "chats",
   "coach_usage",
+  "connections",
+  "files",
+  "inbox_messages",
+  "inbox_threads",
+  "job_checklist",
+  "jobs",
+  "notify_requests",
   "paper_docs",
-  "pitch_docs",
+  "paper_shares",
+  "pending_actions",
   "session",
-  "thread_messages",
-  "threads",
   "user",
   "verification",
 ]
 
-async function tableNames(db: ReturnType<typeof drizzle>) {
+const legacySchema = "open" + "path_app"
+
+async function names(db: ReturnType<typeof drizzle>, schemaName: string) {
   const tables = await db.execute<{ table_name: string }>(sql`
     select table_name
     from information_schema.tables
-    where table_schema = 'openpath_app'
+    where table_schema = ${schemaName}
+      and table_type = 'BASE TABLE'
     order by table_name
   `)
-
   return tables.rows.map((row) => row.table_name)
 }
 
-describe("committed migrations", () => {
-  it("apply from scratch on pglite and create openpath_app", async () => {
+describe("opencv_app migrations", () => {
+  it("creates every product table on a fresh database", async () => {
+    const client = new PGlite()
+    const db = drizzle({ client })
+    await runMigrations(db as unknown as AppDatabase)
+    const tables = await names(db, "opencv_app")
+    for (const name of productTables) {
+      expect(tables).toContain(name)
+    }
+    expect(tables).toContain("migrations")
     const journal = JSON.parse(
       readFileSync(path.join(migrationsFolder, "meta/_journal.json"), "utf8")
     ) as { entries: { tag: string }[] }
+    expect(journal.entries.map((entry) => entry.tag)).toEqual(["0000_opencv_app"])
+    const sqlFiles = readdirSync(migrationsFolder).filter((name) => name.endsWith(".sql"))
+    expect(sqlFiles).toEqual(["0000_opencv_app.sql"])
+    const source = readFileSync(path.join(migrationsFolder, "0000_opencv_app.sql"), "utf8")
+    expect(source.includes(legacySchema)).toBe(false)
+    await client.close()
+  })
 
-    expect(journal.entries.length).toBeGreaterThan(0)
-
+  it("leaves a legacy schema and its journal untouched", async () => {
     const client = new PGlite()
-    try {
-      const db = drizzle({ client })
-      await migrate(db, { migrationsFolder })
-      await migrate(db, { migrationsFolder })
-
-      const result = await db.execute<{ schema_name: string }>(sql`
-        select schema_name
-        from information_schema.schemata
-        where schema_name = 'openpath_app'
-      `)
-
-      expect(result.rows).toEqual([{ schema_name: "openpath_app" }])
-
-      expect(await tableNames(db)).toEqual(migratedTables)
-
-      const messageColumns = await db.execute<{ column_name: string }>(sql`
-        select column_name
-        from information_schema.columns
-        where table_schema = 'openpath_app'
-          and table_name = 'thread_messages'
-        order by column_name
-      `)
-      expect(messageColumns.rows.map((row) => row.column_name)).toEqual([
-        "created_at",
-        "id",
-        "parts",
-        "role",
-        "status",
-        "text",
-        "thread_id",
-        "worked_ms",
-      ])
-
-      const usageIndexes = await db.execute<{ indexname: string }>(sql`
-        select indexname
-        from pg_indexes
-        where schemaname = 'openpath_app'
-          and tablename = 'coach_usage'
-        order by indexname
-      `)
-      expect(usageIndexes.rows.map((row) => row.indexname)).toEqual([
-        "coach_usage_message_id_uidx",
-        "coach_usage_pkey",
-        "coach_usage_user_id_created_at_idx",
-      ])
-
-      const userColumns = await db.execute<{ column_name: string }>(sql`
-        select column_name
-        from information_schema.columns
-        where table_schema = 'openpath_app'
-          and table_name = 'user'
-        order by column_name
-      `)
-      expect(userColumns.rows.map((row) => row.column_name)).toContain(
-        "coach_mode"
+    const db = drizzle({ client })
+    await db.execute(sql.raw(`create schema "${legacySchema}"`))
+    await db.execute(sql.raw(`create table "${legacySchema}"."legacy_rows" ("id" text)`))
+    await db.execute(sql.raw(`insert into "${legacySchema}"."legacy_rows" ("id") values ('kept')`))
+    await db.execute(sql.raw(`create schema if not exists "drizzle"`))
+    await db.execute(
+      sql.raw(
+        `create table "drizzle"."__drizzle_migrations" ("id" serial primary key, "hash" text not null, "created_at" bigint)`
       )
-
-      const usageColumns = await db.execute<{ column_name: string }>(sql`
-        select column_name
-        from information_schema.columns
-        where table_schema = 'openpath_app'
-          and table_name = 'coach_usage'
-        order by column_name
-      `)
-      expect(usageColumns.rows.map((row) => row.column_name)).toContain("mode")
-
-      const threadColumns = await db.execute<{ column_name: string }>(sql`
-        select column_name
-        from information_schema.columns
-        where table_schema = 'openpath_app'
-          and table_name = 'threads'
-        order by column_name
-      `)
-      expect(threadColumns.rows.map((row) => row.column_name)).toContain(
-        "focus_doc_id"
+    )
+    await db.execute(
+      sql.raw(
+        `insert into "drizzle"."__drizzle_migrations" ("hash", "created_at") values ('legacy-hash', 1)`
       )
-
-      const threadIndexes = await db.execute<{ indexname: string }>(sql`
-        select indexname
-        from pg_indexes
-        where schemaname = 'openpath_app'
-          and tablename = 'threads'
-        order by indexname
-      `)
-      expect(threadIndexes.rows.map((row) => row.indexname)).toContain(
-        "threads_user_id_focus_doc_id_idx"
-      )
-
-      const focusFk = await db.execute<{ delete_rule: string }>(sql`
-        select rc.delete_rule
-        from information_schema.referential_constraints rc
-        join information_schema.table_constraints tc
-          on tc.constraint_name = rc.constraint_name
-         and tc.constraint_schema = rc.constraint_schema
-        where tc.table_schema = 'openpath_app'
-          and tc.table_name = 'threads'
-          and rc.constraint_name = 'threads_focus_doc_id_paper_docs_id_fk'
-      `)
-      expect(focusFk.rows).toEqual([{ delete_rule: "SET NULL" }])
-
-      const applyColumns = await db.execute<{ column_name: string }>(sql`
-        select column_name
-        from information_schema.columns
-        where table_schema = 'openpath_app'
-          and table_name = 'apply_cards'
-        order by column_name
-      `)
-      expect(applyColumns.rows.map((row) => row.column_name)).toContain("demo")
-
-      const pitchColumns = await db.execute<{ column_name: string }>(sql`
-        select column_name
-        from information_schema.columns
-        where table_schema = 'openpath_app'
-          and table_name = 'pitch_docs'
-        order by column_name
-      `)
-      expect(pitchColumns.rows.map((row) => row.column_name)).toEqual([
-        "content",
-        "content_kind",
-        "content_version",
-        "created_at",
-        "id",
-        "updated_at",
-        "user_id",
-      ])
-
-      const pitchIndexes = await db.execute<{ indexname: string }>(sql`
-        select indexname
-        from pg_indexes
-        where schemaname = 'openpath_app'
-          and tablename = 'pitch_docs'
-        order by indexname
-      `)
-      expect(pitchIndexes.rows.map((row) => row.indexname)).toEqual([
-        "pitch_docs_pkey",
-        "pitch_docs_user_id_uidx",
-      ])
-    } finally {
-      await client.close()
-    }
-  }, 60_000)
-
-  it("apply onto a database that already has openpath_app", async () => {
-    const client = new PGlite()
-    try {
-      const db = drizzle({ client })
-      // Production's openpath_app predates these migrations and holds unrelated
-      // tables, so 0000 must no-op instead of failing the whole rollout.
-      await db.execute(sql`create schema "openpath_app"`)
-      await db.execute(
-        sql`create table "openpath_app"."legacy_waitlist" ("id" text)`
-      )
-
-      await migrate(db, { migrationsFolder })
-
-      expect(await tableNames(db)).toEqual(
-        [...migratedTables, "legacy_waitlist"].sort()
-      )
-    } finally {
-      await client.close()
-    }
-  }, 60_000)
+    )
+    await runMigrations(db as unknown as AppDatabase)
+    const legacyTables = await names(db, legacySchema)
+    expect(legacyTables).toEqual(["legacy_rows"])
+    const kept = await db.execute<{ id: string }>(
+      sql.raw(`select "id" from "${legacySchema}"."legacy_rows"`)
+    )
+    expect(kept.rows).toEqual([{ id: "kept" }])
+    const oldJournal = await db.execute<{ hash: string }>(
+      sql.raw(`select "hash" from "drizzle"."__drizzle_migrations"`)
+    )
+    expect(oldJournal.rows).toEqual([{ hash: "legacy-hash" }])
+    const tables = await names(db, "opencv_app")
+    expect(tables).toContain("jobs")
+    expect(tables).toContain("migrations")
+    await client.close()
+  })
 })

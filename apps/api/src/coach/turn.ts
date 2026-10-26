@@ -1,28 +1,27 @@
 import {
-  appendCoachPart,
   COACH_SSE_EVENTS,
-  coachProviderErrorMessage,
+  appendCoachPart,
+  deterministicThreadTitle,
+  focusedEditNeedsReplace,
+  shouldAutoTitleThread,
   textFromParts,
   type CoachFocusDoc,
   type CoachMode,
   type CoachRuntime,
   type CoachSelection,
-  type CoachSseErrorData,
-  type CoachSseMessageEndData,
-  type CoachSseMessageStartData,
   type CoachStreamPart,
   type CoachTurnUsage,
+  type Plan,
   type ThreadMessage,
   type ThreadMessagePart,
   type ThreadMessageStatus,
 } from "@workspace/domain"
-import { eq } from "drizzle-orm"
+import { stepCountIs, streamText, tool, type LanguageModel, type ToolSet } from "ai"
 import type { SSEStreamingApi } from "hono/streaming"
 
-import type { AppDatabase, CommandRegistry } from "../commands/registry.js"
-import { coachUsage, threadMessages, threads } from "../db/schema.js"
-import { createId } from "../id.js"
-import { toThreadMessage } from "../threads/queries.js"
+import { getChat, insertCoachMessage, renameChat, trackChatTurn } from "../chat/index.js"
+import { registry as defaultRegistry } from "../registry/registry.js"
+import type { Registry } from "../registry/registry.js"
 import {
   isDisconnected,
   sseDataForPart,
@@ -31,252 +30,351 @@ import {
   writeEvent,
   writeHeartbeat,
 } from "./sse.js"
-import { maybeAutoTitleThread } from "./title.js"
+import { finishCoachUsage, openCoachUsage } from "./usage-store.js"
 
-type RunCoachTurnOptions = {
+const SYSTEM_PROMPT = [
+  "You are the opencv Coach.",
+  "Help the person with a job search, a CV, or a letter.",
+  "Call a tool when you change something. Do not invent a saved edit.",
+  "Stages are saved, applied, interview, offer, and closed.",
+].join(" ")
+
+export async function runCoachTurn(options: {
   stream: SSEStreamingApi
-  coach: CoachRuntime
-  db: AppDatabase
-  registry: CommandRegistry
+  wire: "compat" | "native"
+  registry?: Registry
+  runtime?: CoachRuntime
+  model?: LanguageModel
   userId: string
-  threadId: string
-  history: ThreadMessage[]
-  model: string
+  chatId: string
   mode: CoachMode
-  regenerate?: boolean
+  plan: Plan
+  provider: string
+  modelId: string
+  history: ThreadMessage[]
   focusDoc?: CoachFocusDoc
   selection?: CoachSelection
   heartbeatMs: number
   signal?: AbortSignal
-}
-
-export async function runCoachTurn({
-  stream,
-  coach,
-  db,
-  registry,
-  userId,
-  threadId,
-  history,
-  model,
-  mode,
-  regenerate,
-  focusDoc,
-  selection,
-  heartbeatMs,
-  signal,
-}: RunCoachTurnOptions) {
+}) {
   const startedAt = Date.now()
+  const registry = options.registry ?? defaultRegistry
+  const actor = {
+    type: "coach" as const,
+    userId: options.userId,
+    chatId: options.chatId,
+  }
+  const usageId = await openCoachUsage({
+    userId: options.userId,
+    chatId: options.chatId,
+    plan: options.plan,
+    mode: options.mode,
+    provider: options.runtime ? "fake" : options.provider,
+    model: options.runtime ? "fake" : options.modelId,
+  })
+  const stop = new AbortController()
+  const release = trackChatTurn(options.chatId, stop)
+  const signal = linkSignals([
+    stop.signal,
+    ...(options.signal ? [options.signal] : []),
+  ])
   let parts: ThreadMessagePart[] = []
   let status: ThreadMessageStatus = "final"
-  let usage: CoachTurnUsage = { model, mode }
-  let persisted: ThreadMessage | undefined
-
+  let usage: CoachTurnUsage = {
+    model: options.runtime ? "fake" : options.modelId,
+    mode: options.mode,
+  }
+  const called = new Set<string>()
   const heartbeat = setInterval(() => {
-    void writeHeartbeat(stream)
-  }, heartbeatMs)
+    void writeHeartbeat(options.stream)
+  }, options.heartbeatMs)
+  const aborted = waitForAbort(options.stream, signal)
 
-  const aborted = waitForAbort(stream, signal)
+  const emit = async (event: string, data: unknown) => {
+    await writeEvent(options.stream, event, data)
+  }
 
   try {
-    const start: CoachSseMessageStartData = { threadId }
-    await writeEvent(stream, COACH_SSE_EVENTS.messageStart, start)
+    await emit(
+      COACH_SSE_EVENTS.messageStart,
+      options.wire === "compat"
+        ? { threadId: options.chatId }
+        : { chatId: options.chatId }
+    )
+    const iterable = options.runtime
+      ? options.runtime.streamTurn({
+          userId: options.userId,
+          threadId: options.chatId,
+          history: options.history,
+          model: options.modelId,
+          mode: options.mode,
+          focusDoc: options.focusDoc,
+          selection: options.selection,
+        })
+      : liveParts({
+          model: options.model,
+          history: options.history,
+          registry,
+          actor,
+          focusDoc: options.focusDoc,
+          selection: options.selection,
+        })
 
-    for await (const part of takeUntilAbort(
-      coach.streamTurn({
-        userId,
-        threadId,
-        history,
-        model,
-        mode,
-        regenerate,
-        focusDoc,
-        selection,
-      }),
-      aborted.promise,
-      () => isDisconnected(stream, signal)
+    for await (const part of takeUntilAbort(iterable, aborted.promise, () =>
+      isDisconnected(options.stream, signal)
     )) {
-      if (isDisconnected(stream, signal)) {
+      if (isDisconnected(options.stream, signal)) {
         status = "aborted"
         break
       }
-
-      const terminal = applyStreamPart(part, {
-        parts,
-        status,
-        usage,
-        model,
-      })
-      parts = terminal.parts
-      status = terminal.status
-      usage = terminal.usage
-
+      if (part.type === "tool-call" || part.type === "tool-result") {
+        called.add(part.name)
+      }
+      parts = appendCoachPart(parts, part)
       if (part.type === "finish") {
+        usage = {
+          model: part.usage.model || usage.model,
+          mode: options.mode,
+          finishReason: part.finishReason,
+          latencyMs: part.usage.latencyMs,
+        }
         break
       }
       if (part.type === "error") {
-        await writeEvent(stream, COACH_SSE_EVENTS.error, {
-          message: part.message,
-        } satisfies CoachSseErrorData)
+        status = "error"
+        await emit(COACH_SSE_EVENTS.error, { message: part.message })
         break
       }
-      if (
-        part.type !== "text-delta" &&
-        part.type !== "tool-call" &&
-        part.type !== "tool-result"
-      ) {
-        continue
+      if (part.type === "tool-call" && options.wire === "native") {
+        const entry = registry.tools(actor).find(
+          (item) => item.name === part.name || item.name.replaceAll(".", "_") === part.name
+        )
+        if (entry) await emit("step", { label: entry.step(part.input) })
       }
-      await writeEvent(stream, part.type, sseDataForPart(part))
+      if (
+        part.type === "text-delta" ||
+        part.type === "tool-call" ||
+        part.type === "tool-result"
+      ) {
+        await emit(part.type, sseDataForPart(part))
+      }
     }
 
-    if (isDisconnected(stream, signal)) {
-      status = "aborted"
+    const asked = askedForEdit(options.history, options.selection)
+    if (
+      !options.runtime &&
+      focusedEditNeedsReplace({
+        mode: options.mode,
+        focusKind: options.focusDoc ? "paper" : null,
+        askedForEdit: asked,
+        calledReplace:
+          called.has("paper.replace") || called.has("paper_replace"),
+      })
+    ) {
+      status = "error"
+      await emit(COACH_SSE_EVENTS.error, {
+        message: "The edit did not save. Ask again and I will update the document.",
+      })
     }
   } catch (error) {
-    if (isDisconnected(stream, signal)) {
+    if (isDisconnected(options.stream, signal)) {
       status = "aborted"
     } else {
       status = "error"
-      const message = coachProviderErrorMessage(error, mode)
-      await writeEvent(stream, COACH_SSE_EVENTS.error, {
-        message,
-      } satisfies CoachSseErrorData)
+      const message = error instanceof Error ? error.message : "The Coach stopped."
+      await emit(COACH_SSE_EVENTS.error, { message })
     }
   } finally {
     clearInterval(heartbeat)
     aborted.dispose()
-
-    if (isDisconnected(stream, signal) && status === "final") {
+    release()
+    if (isDisconnected(options.stream, signal) && status === "final") {
       status = "aborted"
     }
-
     const workedMs = Math.max(0, Date.now() - startedAt)
-    usage = {
-      ...usage,
-      model: usage.model || model,
-      mode,
-      latencyMs: usage.latencyMs ?? workedMs,
-      finishReason: usage.finishReason ?? status,
-    }
-
-    persisted = await persistCoachTurn({
-      db,
-      userId,
-      threadId,
+    const saved = await insertCoachMessage({
+      chatId: options.chatId,
+      userId: options.userId,
+      text: textFromParts(parts),
       parts,
       status,
       workedMs,
-      usage,
-      mode,
     })
-
-    await maybeAutoTitleThread({
-      db,
-      registry,
-      coach,
-      userId,
-      threadId,
-      history,
-      coachText: textFromParts(parts),
-      status,
-    })
-
-    if (!isDisconnected(stream, signal)) {
-      const end: CoachSseMessageEndData = {
-        message: persisted,
-        usage,
-      }
-      await writeEvent(stream, COACH_SSE_EVENTS.messageEnd, end)
-    }
-  }
-}
-
-function applyStreamPart(
-  part: CoachStreamPart,
-  state: {
-    parts: ThreadMessagePart[]
-    status: ThreadMessageStatus
-    usage: CoachTurnUsage
-    model: string
-  }
-) {
-  const next = {
-    parts: appendCoachPart(state.parts, part),
-    status: state.status,
-    usage: state.usage,
-  }
-
-  if (part.type === "finish") {
-    next.usage = {
-      model: part.usage.model || state.model,
-      mode: part.usage.mode ?? state.usage.mode,
-      tokens: part.usage.tokens,
-      costEstimate: part.usage.costEstimate,
-      latencyMs: part.usage.latencyMs,
-      finishReason: part.finishReason,
-    }
-  }
-  if (part.type === "error") {
-    next.status = "error"
-  }
-
-  return next
-}
-
-async function persistCoachTurn({
-  db,
-  userId,
-  threadId,
-  parts,
-  status,
-  workedMs,
-  usage,
-  mode,
-}: {
-  db: AppDatabase
-  userId: string
-  threadId: string
-  parts: ThreadMessagePart[]
-  status: ThreadMessageStatus
-  workedMs: number
-  usage: CoachTurnUsage
-  mode: CoachMode
-}): Promise<ThreadMessage> {
-  const now = new Date()
-  const messageId = createId(now.getTime())
-  const usageId = createId(now.getTime())
-  const text = textFromParts(parts)
-  const row = {
-    id: messageId,
-    threadId,
-    role: "coach" as const,
-    text,
-    parts,
-    status,
-    workedMs,
-    createdAt: now,
-  }
-
-  await db.transaction(async (tx: AppDatabase) => {
-    await tx.insert(threadMessages).values(row)
-    await tx
-      .update(threads)
-      .set({ updatedAt: now })
-      .where(eq(threads.id, threadId))
-    await tx.insert(coachUsage).values({
+    await finishCoachUsage({
       id: usageId,
-      userId,
-      threadId,
-      messageId,
-      model: usage.model,
-      mode,
-      tokens: usage.tokens,
-      costEstimate: usage.costEstimate,
-      latencyMs: usage.latencyMs,
-      finishReason: usage.finishReason,
+      messageId: saved.id,
+      finishReason: usage.finishReason ?? status,
+      latencyMs: workedMs,
     })
-  })
+    await maybeTitle(options.userId, options.chatId, textFromParts(parts), status)
+    if (!isDisconnected(options.stream, signal)) {
+      const message = {
+        id: saved.id,
+        role: "coach" as const,
+        text: saved.text,
+        createdAt: saved.createdAt,
+        parts,
+        status,
+        workedMs,
+        rating: null,
+      }
+      if (options.wire === "compat") {
+        await emit(COACH_SSE_EVENTS.messageEnd, {
+          message,
+          usage: { ...usage, latencyMs: workedMs, mode: options.mode },
+        })
+      } else {
+        await emit("usage", {
+          plan: options.plan,
+          mode: options.mode,
+          capped: true,
+        })
+        await emit(COACH_SSE_EVENTS.messageEnd, { chatId: options.chatId })
+      }
+    }
+  }
+}
 
-  return toThreadMessage({ ...row, rating: null })
+function linkSignals(signals: AbortSignal[]) {
+  const controller = new AbortController()
+  for (const signal of signals) {
+    if (signal.aborted) {
+      controller.abort()
+      return controller.signal
+    }
+    signal.addEventListener("abort", () => controller.abort(), { once: true })
+  }
+  return controller.signal
+}
+
+function askedForEdit(history: ThreadMessage[], selection?: CoachSelection) {
+  if (selection?.text) return true
+  const text = [...history].reverse().find((message) => message.role === "user")?.text ?? ""
+  return /\b(edit|rewrite|tailor|shorten|fix|update)\b/i.test(text)
+}
+
+async function maybeTitle(
+  userId: string,
+  chatId: string,
+  coachText: string,
+  status: string
+) {
+  const chat = await getChat(userId, chatId)
+  const messages = chat.messages.map((message) => ({
+    role: message.role === "person" ? ("user" as const) : ("coach" as const),
+    text: message.text,
+    status: message.status ?? undefined,
+  }))
+  const decision = shouldAutoTitleThread({
+    currentTitle: chat.title,
+    messages,
+    status,
+  })
+  if (!decision) return
+  const title = deterministicThreadTitle({ userText: decision.userText, coachText })
+  if (!title || title === chat.title) return
+  await renameChat({ type: "person", userId }, chatId, title)
+}
+
+async function* liveParts(input: {
+  model?: LanguageModel
+  history: ThreadMessage[]
+  registry: Registry
+  actor: { type: "coach"; userId: string; chatId: string }
+  focusDoc?: CoachFocusDoc
+  selection?: CoachSelection
+}): AsyncGenerator<CoachStreamPart> {
+  if (!input.model) {
+    yield { type: "error", message: "The Coach is unavailable right now" }
+    return
+  }
+  const tools: ToolSet = {}
+  for (const entry of input.registry.tools(input.actor)) {
+    const name = entry.name.replaceAll(".", "_")
+    tools[name] = tool({
+      description: entry.description,
+      inputSchema: entry.input,
+      execute: async (args) => {
+        if (entry.kind === "query") {
+          const data = await input.registry.read(entry.name, args, input.actor)
+          return { ok: true, summary: entry.step(args), data }
+        }
+        const result = await input.registry.execute({
+          name: entry.name,
+          input: args,
+          actor: input.actor,
+        })
+        if (result.pending) {
+          return {
+            ok: true,
+            pending: true,
+            pendingActionId: result.pendingActionId,
+            summary: result.summary,
+            command: result.command,
+          }
+        }
+        return {
+          ok: true,
+          summary: entry.step(args),
+          output: result.output,
+          activityId: result.activityId,
+        }
+      },
+    })
+  }
+  const focus = input.focusDoc
+    ? `The open document is ${input.focusDoc.name} (${input.focusDoc.kind}).`
+    : ""
+  const result = streamText({
+    model: input.model,
+    system: `${SYSTEM_PROMPT} ${focus}`.trim(),
+    messages: input.history.map((message) => ({
+      role: message.role === "coach" ? ("assistant" as const) : ("user" as const),
+      content: message.text,
+    })),
+    tools,
+    stopWhen: stepCountIs(8),
+  })
+  for await (const part of result.fullStream) {
+    if (part.type === "text-delta") {
+      const text = "text" in part ? part.text : ""
+      if (text) yield { type: "text-delta", text }
+      continue
+    }
+    if (part.type === "tool-call") {
+      yield {
+        type: "tool-call",
+        toolCallId: part.toolCallId,
+        name: part.toolName,
+        input: part.input,
+      }
+      continue
+    }
+    if (part.type === "tool-result") {
+      const output = part.output as {
+        ok?: boolean
+        summary?: string
+        pending?: boolean
+        pendingActionId?: string
+        command?: string
+        data?: unknown
+        activityId?: string
+      }
+      yield {
+        type: "tool-result",
+        toolCallId: part.toolCallId,
+        name: part.toolName,
+        summary: output.summary ?? part.toolName,
+        ok: output.ok !== false,
+        result: output.ok === false
+          ? { ok: false, error: { code: "INTERNAL_ERROR", message: "Tool failed" } }
+          : { ok: true, data: output.data ?? output },
+      }
+    }
+  }
+  yield {
+    type: "finish",
+    finishReason: "stop",
+    usage: { model: "routed", finishReason: "stop" },
+  }
 }

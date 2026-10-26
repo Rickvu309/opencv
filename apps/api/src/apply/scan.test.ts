@@ -7,7 +7,7 @@ import {
 } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
 
-import { createDemoCoachRuntime, withScanJobPosting } from "../coach/fake.js"
+import { createDemoCoachRuntime, withScanJobPosting } from "../coach/index.js"
 import {
   assertPublicApplyScanUrl,
   createFetchJobPosting,

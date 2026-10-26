@@ -1,9 +1,13 @@
 import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
 
+import { PROFILE_DEFAULTS } from "@workspace/domain"
+import { eq } from "drizzle-orm"
+
+import type { AppDatabase } from "./db/context.js"
+import { user } from "./db/schema.js"
 import { authSchema } from "./db/schema.js"
 import { isAllowedOrigin } from "./origin.js"
-import { seedStarterWorkspace } from "./starter/workspace.js"
 
 export type AuthDatabase = Parameters<typeof drizzleAdapter>[0]
 
@@ -81,8 +85,11 @@ export function createAuth({
     databaseHooks: {
       user: {
         create: {
-          after: async (user) => {
-            await seedStarterWorkspace(db, user.id)
+          after: async (created) => {
+            await (db as AppDatabase)
+              .update(user)
+              .set({ ...PROFILE_DEFAULTS })
+              .where(eq(user.id, created.id))
           },
         },
       },
