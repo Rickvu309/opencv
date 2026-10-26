@@ -250,18 +250,52 @@ export function SignInScreen() {
           </p>
         </form>
       ) : (
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1">
+        <div
+          className={
+            step === "verifying"
+              ? "grid gap-4 [grid-template-areas:'intro'_'change'_'digits'_'follow']"
+              : noticeText || inbox
+                ? "grid gap-4 [grid-template-areas:'intro'_'change'_'digits'_'follow'_'resend']"
+                : "grid gap-4 [grid-template-areas:'intro'_'change'_'digits'_'resend']"
+          }
+        >
+          <div className="flex flex-col gap-1 [grid-area:intro]">
             <h1 className="text-xl font-semibold">{AUTH_COPY.checkEmail}</h1>
             <p className="text-sm text-muted-foreground">
               {AUTH_COPY.sentTo}{" "}
               <span className="text-foreground">{email}</span>
             </p>
           </div>
+          <div className="[grid-area:digits]">
+            <CodeInput
+              value={code}
+              disabled={step === "verifying"}
+              focusNonce={focusNonce}
+              onChange={setCode}
+              onComplete={(otp) => void onComplete(otp)}
+            />
+          </div>
+          {step === "verifying" ? null : (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground [grid-area:resend]">
+              <span>{AUTH_COPY.didntGet}</span>
+              {showResend ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={sending}
+                  onClick={() => void sendCode(email.trim())}
+                >
+                  {AUTH_COPY.sendNew}
+                </Button>
+              ) : (
+                <span>{resendLabel(seconds)}</span>
+              )}
+            </div>
+          )}
           <Button
             type="button"
             variant="outline"
-            className="w-fit"
+            className="w-fit justify-self-start [grid-area:change]"
             onClick={() => {
               setStep("email")
               setNotice(null)
@@ -271,16 +305,9 @@ export function SignInScreen() {
           >
             {AUTH_COPY.change}
           </Button>
-          <CodeInput
-            value={code}
-            disabled={step === "verifying"}
-            focusNonce={focusNonce}
-            onChange={setCode}
-            onComplete={(otp) => void onComplete(otp)}
-          />
           {step === "verifying" ? (
             <p
-              className="flex items-center gap-2 text-sm text-muted-foreground"
+              className="flex items-center gap-2 text-sm text-muted-foreground [grid-area:follow]"
               role="status"
             >
               <span
@@ -289,8 +316,8 @@ export function SignInScreen() {
               />
               {AUTH_COPY.verifying}
             </p>
-          ) : (
-            <>
+          ) : noticeText || inbox ? (
+            <div className="flex flex-col gap-4 [grid-area:follow]">
               {noticeText ? (
                 <p role="alert" className="text-sm text-destructive">
                   {noticeText}
@@ -306,23 +333,8 @@ export function SignInScreen() {
                   {AUTH_COPY.openEmail}
                 </a>
               ) : null}
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span>{AUTH_COPY.didntGet}</span>
-                {showResend ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={sending}
-                    onClick={() => void sendCode(email.trim())}
-                  >
-                    {AUTH_COPY.sendNew}
-                  </Button>
-                ) : (
-                  <span>{resendLabel(seconds)}</span>
-                )}
-              </div>
-            </>
-          )}
+            </div>
+          ) : null}
         </div>
       )}
     </AuthFrame>

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 
 import { AUTH_COPY } from "@/features/auth/auth-copy.ts"
 import { apiFetch } from "@/lib/api.ts"
@@ -220,6 +221,53 @@ describe("email code", () => {
     expect(
       screen.getByRole("heading", { name: AUTH_COPY.logIn })
     ).toBeInTheDocument()
+  })
+
+  it("tabs Email, Continue, then the language control, and on the code step the digits, Send a new code, Change, then the language control", async () => {
+    const user = userEvent.setup()
+    renderApp("/sign-in")
+    expect(
+      await screen.findByRole("heading", { name: AUTH_COPY.logIn })
+    ).toBeInTheDocument()
+
+    await user.tab()
+    expect(emailBox()).toHaveFocus()
+    await user.tab()
+    expect(
+      screen.getByRole("button", { name: AUTH_COPY.continue })
+    ).toHaveFocus()
+    await user.tab()
+    expect(screen.getByRole("radio", { name: AUTH_COPY.en })).toHaveFocus()
+
+    await sendCode()
+    refuseCode("INVALID_OTP", 400)
+    pasteCode("048291")
+    expect(
+      await screen.findByRole("button", { name: AUTH_COPY.sendNew })
+    ).toBeInTheDocument()
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur()
+    }
+
+    for (const name of [
+      "Digit 1",
+      "Digit 2",
+      "Digit 3",
+      "Digit 4",
+      "Digit 5",
+      "Digit 6",
+    ]) {
+      await user.tab()
+      expect(screen.getByRole("textbox", { name })).toHaveFocus()
+    }
+    await user.tab()
+    expect(
+      screen.getByRole("button", { name: AUTH_COPY.sendNew })
+    ).toHaveFocus()
+    await user.tab()
+    expect(screen.getByRole("button", { name: AUTH_COPY.change })).toHaveFocus()
+    await user.tab()
+    expect(screen.getByRole("radio", { name: AUTH_COPY.en })).toHaveFocus()
   })
 
   it("keeps English when VI is chosen", async () => {
