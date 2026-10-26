@@ -11,170 +11,380 @@ export const LANDING_SUBHEAD =
 export const LANDING_STATEMENT_LEAD = "You’ve done more than your CV says."
 
 export const LANDING_STATEMENT_REST =
-  "OpenCV helps you say it properly: clear proof of your work, then a CV, letter and page for the role you want."
+  "opencv helps you say it properly: clear proof of your work, then a CV, letter and site written for each role you want."
 
-export const LANDING_CLOSE_LINES = [
-  "Be the obvious hire.",
-  "Start today.",
-] as const
-
-export const LANDING_CTA = `${LANDING_CLOSE_LINES[0]} ${LANDING_CLOSE_LINES[1]}`
+export const LANDING_CLOSE = "Be the obvious hire. Start today."
 
 export const LANDING_PRIMARY_LABEL = "Get started"
 
 export const LANDING_LOGIN_LABEL = "Log in"
 
-export const LANDING_TITLE = "OpenCV — Get your butt in your dream seat."
+export const LANDING_SAMPLE_LABEL = "See a sample"
+
+export const LANDING_TITLE = "opencv. Get your butt in your dream seat."
 
 export const LANDING_DESCRIPTION = `${LANDING_SUBHEAD} ${LANDING_STATEMENT_REST}`
 
-export type Shot = {
+export const LANDING_LOGO_LABEL = "PEOPLE USING OPENCV HAVE INTERVIEWED AT"
+
+export const LANDING_LOGOS = [
+  "Stripe",
+  "Figma",
+  "Notion",
+  "Vercel",
+  "Airbnb",
+  "Shopify",
+  "Coinbase",
+] as const
+
+export type LandingNavLink = {
+  label: "Product" | "Examples" | "Stories" | "Pricing"
+  href: "/#product" | "/#capture" | "/#stories" | "/pricing"
+}
+
+export const LANDING_NAV_LINKS: readonly LandingNavLink[] = [
+  { label: "Product", href: "/#product" },
+  { label: "Examples", href: "/#capture" },
+  { label: "Stories", href: "/#stories" },
+  { label: "Pricing", href: "/pricing" },
+]
+
+export const LANDING_CHAIR = {
+  src: "/landing/chair.webp",
+  width: 1080,
+  height: 1976,
+  alt: "A tan leather armchair with a dark frame against blue wooden doors.",
+} as const
+
+export type LandingShot = {
   src: string
-  mobileSrc: string
   width: number
   height: number
-  mobileWidth: number
-  mobileHeight: number
   alt: string
 }
 
-export type LandingAnchor = {
-  kind: "anchor"
-  label: string
-  href: "#product" | "#coach" | "#paper" | "#apply" | "#pitch"
-}
-
-export type LandingRouteLink = {
-  kind: "route"
-  label: string
-  to: "/sign-in" | "/sign-up"
-}
-
-export type LandingLink = LandingAnchor | LandingRouteLink
-
-export const LANDING_CHAIR: Shot = {
-  src: "/landing/chair.webp",
-  mobileSrc: "/landing/chair.webp",
-  width: 1080,
-  height: 1976,
-  mobileWidth: 1080,
-  mobileHeight: 1976,
-  alt: "A tan leather armchair with a dark frame against blue wooden doors.",
-}
-
-type SurfaceId = "coach" | "paper" | "apply" | "pitch"
-
-export type LandingSurface = {
-  id: SurfaceId
-  label: "Coach" | "Paper" | "Apply" | "Pitch"
+export type LandingFeature = {
+  id: "capture" | "plan" | "assistant" | "review"
   title: string
   body: string
   features: readonly string[]
-  shots: readonly Shot[]
+  shot: LandingShot
 }
 
-const COACH_THREAD: Shot = {
-  src: "/landing/coach.webp",
-  mobileSrc: "/landing/coach-mobile.webp",
-  width: 1440,
-  height: 705,
-  mobileWidth: 640,
-  mobileHeight: 862,
-  alt: "A Coach thread. Linh, a student, asks which role to apply for first, and the Coach checks her Apply cards and names one, citing her CV.",
-}
-
-const COACH_ACT: Shot = {
-  src: "/landing/coach-act.webp",
-  mobileSrc: "/landing/coach-act-mobile.webp",
-  width: 1600,
-  height: 338,
-  mobileWidth: 780,
-  mobileHeight: 804,
-  alt: "A Coach reply beside the Apply board. Linh asks the Coach to move the Associate PM intern card to Prep, the receipt has an Undo button, and the card shows in the Prep column.",
-}
-
-export const LANDING_SURFACES: readonly LandingSurface[] = [
+export const LANDING_FEATURES: readonly LandingFeature[] = [
   {
-    id: "coach",
-    label: "Coach",
+    id: "capture",
     title: "Capture your work",
-    body: "Tell the Coach what you have done. It asks from your CV and goals. When it changes your board, you get a receipt you can undo.",
+    body: "Drop in notes, an old CV or your profile. opencv asks the right questions and turns them into clear proof.",
     features: [
-      "Questions from your CV and goals",
-      "A thread you can read back",
-      "Receipts you can undo",
+      "Guided questions",
+      "Import a CV",
+      "Voice notes",
+      "Linked sources",
     ],
-    shots: [COACH_THREAD, COACH_ACT],
+    shot: {
+      src: "/landing/coach.webp",
+      width: 1440,
+      height: 705,
+      alt: "A Coach thread. Linh, a student, asks which role to apply for first, and the Coach checks her Apply cards and names one, citing her CV.",
+    },
   },
   {
-    id: "paper",
-    label: "Paper",
-    title: "Write with a coach",
-    body: "Pick a bullet on the CV. The Coach can rewrite it, and you edit the result. A Letter for that role can use the same line.",
-    features: ["CV", "Letter", "Proof", "You edit every line"],
-    shots: [
-      {
-        src: "/landing/paper.webp",
-        mobileSrc: "/landing/paper-mobile.webp",
-        width: 1600,
-        height: 1041,
-        mobileWidth: 780,
-        mobileHeight: 1353,
-        alt: "The Paper editor with Linh Tran's CV open and the Coach panel beside it, showing a reply about the selected bullet.",
-      },
-    ],
-  },
-  {
-    id: "apply",
-    label: "Apply",
+    id: "plan",
     title: "Plan your search",
-    body: "See every application on one board: Inbox, Prep, Sent, Live, or Closed. You move the card. Sent means you marked it sent.",
+    body: "See every role you’re going for, which of your proof fits best, and what to do next, all in one place.",
     features: [
-      "Inbox, Prep, Sent, Live, Closed",
-      "You or the Coach moves the card",
-      "Undo puts it back",
+      "Roles",
+      "Applications",
+      "Your proof",
+      "Next steps",
+      "Fit score",
+      "Insights",
     ],
-    shots: [
+    shot: {
+      src: "/landing/apply.webp",
+      width: 1600,
+      height: 467,
+      alt: "The Apply board with a Business analyst intern job in Inbox, an Associate PM intern job in Prep and a UX research intern job in Sent.",
+    },
+  },
+  {
+    id: "assistant",
+    title: "Your writing assistant",
+    body: "Ask for a tailored CV, a cover letter or a site update. It uses only what you’ve told it, in your own voice.",
+    features: ["Tailored CVs", "Cover letters", "Site updates", "Your voice"],
+    shot: {
+      src: "/landing/paper.webp",
+      width: 1600,
+      height: 1041,
+      alt: "The Paper editor with Linh Tran's CV open and the Coach panel beside it, showing a reply about the selected bullet.",
+    },
+  },
+  {
+    id: "review",
+    title: "Review, then send",
+    body: "Check every change, see where each claim comes from, and approve it. Then send your CV and letter, or publish your site.",
+    features: [
+      "CV",
+      "Cover letter",
+      "Personal site",
+      "Versions",
+      "Changes",
+      "Publishing",
+    ],
+    shot: {
+      src: "/landing/coach-act.webp",
+      width: 1600,
+      height: 338,
+      alt: "A Coach reply beside the Apply board. Linh asks the Coach to move a job, the receipt has an Undo button, and she can approve the change.",
+    },
+  },
+]
+
+export const LANDING_QUOTES = [
+  {
+    quote:
+      "I stopped sending the same CV to everyone. Every application now starts from what I actually did.",
+    name: "Maya T.",
+    role: "Product Designer",
+  },
+  {
+    quote:
+      "It made me say the numbers out loud. I was calmer in every interview.",
+    name: "Daniel K.",
+    role: "Staff Engineer",
+  },
+] as const
+
+export const LANDING_CUSTOMERS_LINE =
+  "opencv helps people go from a first note to an offer. From first jobs to senior roles."
+
+export const LANDING_CUSTOMERS_LABEL = "Customer stories"
+
+export type FooterLink = {
+  label: string
+  href: string
+}
+
+export type FooterColumn = {
+  heading: string
+  links: readonly FooterLink[]
+}
+
+export const LANDING_FOOTER: readonly FooterColumn[] = [
+  {
+    heading: "Product",
+    links: [
+      { label: "Proof vault", href: "/#benefits" },
+      { label: "CV and letters", href: "/#assistant" },
+      { label: "Personal site", href: "/#review" },
+      { label: "Pricing", href: "/pricing" },
+    ],
+  },
+  {
+    heading: "Features",
+    links: [
+      { label: "Proof interviews", href: "/#benefits" },
+      { label: "Tailored CVs", href: "/#assistant" },
+      { label: "Cover letters", href: "/#assistant" },
+      { label: "Reviews", href: "/#review" },
+      { label: "Imports", href: "/#capture" },
+    ],
+  },
+  {
+    heading: "Company",
+    links: [{ label: "Stories", href: "/#stories" }],
+  },
+  {
+    heading: "Resources",
+    links: [
+      { label: "CV examples", href: "/#assistant" },
+      { label: "For students", href: "/#product" },
+    ],
+  },
+]
+
+export const PRICING_TITLE = "opencv. Pricing"
+
+export const PRICING_HEADLINE = "Pricing"
+
+export const PRICING_SUBHEAD = "Start free. Upgrade when you need more Coach."
+
+export const PRICING_DESCRIPTION = `${PRICING_SUBHEAD} Free is $0 a month. Pro is $9 a month.`
+
+export const PRICING_FREE = {
+  name: "Free",
+  audience: "Try opencv with no card.",
+  price: "$0",
+  period: "per month",
+  cta: "Start free",
+  note: "No credit card required",
+  features: [
+    "Limited Coach chats",
+    "Basic Coach model",
+    "CVs and cover letters in Paper",
+    "Board, list and calendar in Apply",
+    "Integrations",
+  ],
+} as const
+
+export const PRICING_PRO = {
+  name: "Pro",
+  kicker: "For active search",
+  audience: "For when you apply every week.",
+  price: "$9",
+  period: "per month",
+  cta: "Get Pro",
+  note: "Cancel anytime",
+  features: [
+    "Everything in Free, plus",
+    "Unlimited Coach chats",
+    "Stronger Coach model",
+    "Priority support",
+    "Early access to Proof and Pitch",
+  ],
+} as const
+
+export const PRICING_INCLUDED = [
+  {
+    title: "Paper",
+    body: "Write and tailor CVs and letters.",
+  },
+  {
+    title: "Apply",
+    body: "Track every job from Saved to Offer.",
+  },
+  {
+    title: "Calendar",
+    body: "Interviews and deadlines in one view.",
+  },
+  {
+    title: "Integrations",
+    body: "Gmail, Calendar, Drive and more.",
+  },
+] as const
+
+export type CompareCell = "Included" | "Not included" | string
+
+export type CompareRow = {
+  feature: string
+  free: CompareCell
+  pro: CompareCell
+}
+
+export type CompareGroup = {
+  group: string
+  rows: readonly CompareRow[]
+}
+
+export const PRICING_COMPARE: readonly CompareGroup[] = [
+  {
+    group: "Coach",
+    rows: [
+      { feature: "Chats", free: "Limited", pro: "Unlimited" },
+      { feature: "Model", free: "Basic", pro: "Stronger" },
       {
-        src: "/landing/apply.webp",
-        mobileSrc: "/landing/apply-mobile.webp",
-        width: 1600,
-        height: 467,
-        mobileWidth: 760,
-        mobileHeight: 440,
-        alt: "The Apply board with a Business analyst intern job in Inbox, an Associate PM intern job in Prep and a UX research intern job in Sent.",
+        feature: "Instructions and memory",
+        free: "Included",
+        pro: "Included",
       },
     ],
   },
   {
-    id: "pitch",
-    label: "Pitch",
-    title: "Share your work",
-    body: "When a CV is not enough, send one public link. The page shows the projects, the story, and an About section you choose.",
-    features: ["One public link", "Projects behind the CV", "Story and About"],
-    shots: [
+    group: "Paper",
+    rows: [
       {
-        src: "/landing/pitch.webp",
-        mobileSrc: "/landing/pitch-mobile.webp",
-        width: 1080,
-        height: 750,
-        mobileWidth: 780,
-        mobileHeight: 1060,
-        alt: "A public Pitch page for Linh Tran, a student aiming for a product intern role, with an open-to-internships status, story highlights and an About section.",
+        feature: "CVs and cover letters",
+        free: "Included",
+        pro: "Included",
+      },
+      { feature: "Templates", free: "Basic", pro: "All" },
+      {
+        feature: "Export to PDF and DOCX",
+        free: "Included",
+        pro: "Included",
       },
     ],
   },
+  {
+    group: "Apply",
+    rows: [
+      {
+        feature: "Board, list and calendar",
+        free: "Included",
+        pro: "Included",
+      },
+      {
+        feature: "Job details and interview prep",
+        free: "Included",
+        pro: "Included",
+      },
+    ],
+  },
+  {
+    group: "Integrations",
+    rows: [{ feature: "Integrations", free: "Included", pro: "Included" }],
+  },
+  {
+    group: "Support",
+    rows: [
+      { feature: "Help centre", free: "Included", pro: "Included" },
+      {
+        feature: "Priority support",
+        free: "Not included",
+        pro: "Coming soon",
+      },
+    ],
+  },
+  {
+    group: "Proof",
+    rows: [{ feature: "Proof", free: "Not included", pro: "Early access" }],
+  },
+  {
+    group: "Pitch",
+    rows: [{ feature: "Pitch", free: "Not included", pro: "Early access" }],
+  },
 ]
 
-export const LANDING_NAV_ANCHORS: readonly LandingAnchor[] = [
-  { kind: "anchor", label: "Product", href: "#product" },
-  { kind: "anchor", label: "Coach", href: "#coach" },
-  { kind: "anchor", label: "Paper", href: "#paper" },
-  { kind: "anchor", label: "Apply", href: "#apply" },
-  { kind: "anchor", label: "Pitch", href: "#pitch" },
+export const PRICING_FAQ = [
+  {
+    q: "What happens when I hit the Free limit?",
+    a: "Coach pauses until your limit resets. Paper and Apply keep working.",
+  },
+  {
+    q: "Can I cancel anytime?",
+    a: "Yes. Pro stays on until the end of your billing month.",
+  },
+  {
+    q: "Is my data used to train models?",
+    a: "No. Your CVs, jobs and chats are never used to train models.",
+  },
+  {
+    q: "How do I pay?",
+    a: "By card, billed monthly in USD. Local taxes may apply.",
+  },
+  {
+    q: "What is coming to Pro?",
+    a: "Proof and Pitch. Pro members get them first.",
+  },
+] as const
+
+export const PRICING_FOOTER: readonly FooterColumn[] = [
+  {
+    heading: "Product",
+    links: [
+      { label: "Paper", href: "/#assistant" },
+      { label: "Apply", href: "/#plan" },
+      { label: "Coach", href: "/#capture" },
+      { label: "Pricing", href: "/pricing" },
+    ],
+  },
+  {
+    heading: "Company",
+    links: [{ label: "Stories", href: "/#stories" }],
+  },
 ]
 
-export const LANDING_AUTH_LINKS: readonly LandingRouteLink[] = [
-  { kind: "route", label: LANDING_LOGIN_LABEL, to: "/sign-in" },
-  { kind: "route", label: LANDING_PRIMARY_LABEL, to: "/sign-up" },
-]
+export const PRICING_TAGLINE = "Show your work. Get the job."
+
+export const LANDING_COPYRIGHT = "© 2026 opencv"

@@ -5,33 +5,56 @@ import { cn } from "@workspace/ui/lib/utils"
 
 import { OpenCvLogo } from "@/features/app-shell/app-logo.tsx"
 
-import { LANDING_LOGIN_LABEL, LANDING_SURFACES } from "./landing-copy.ts"
+import { LANDING_COPYRIGHT, type FooterColumn } from "./landing-copy.ts"
 
-const FOOTER_LINK = cn(
-  "landing-link inline-flex min-h-10 items-center rounded-md text-sm text-muted-foreground hover:text-foreground md:min-h-8",
-  FOCUS_RING
-)
-
-export function LandingFooter() {
+export function LandingFooter({
+  columns,
+  tagline,
+}: {
+  columns: readonly FooterColumn[]
+  tagline?: string
+}) {
   return (
-    <footer className="border-t border-border pt-16 pb-12 md:pt-24 md:pb-16">
-      <div className="landing-frame grid gap-12 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)] sm:gap-16">
-        <Link to="/" className={cn("w-fit rounded-md", FOCUS_RING)}>
-          <OpenCvLogo withWordmark />
-        </Link>
-        <nav aria-label="Footer" className="flex flex-col gap-3">
-          <p className="text-sm font-medium text-foreground">Product</p>
-          {LANDING_SURFACES.map((surface) => (
-            <a key={surface.id} href={`#${surface.id}`} className={FOOTER_LINK}>
-              {surface.label}
-            </a>
-          ))}
-        </nav>
-        <div className="flex flex-col gap-3">
-          <p className="text-sm font-medium text-foreground">Account</p>
-          <Link to="/sign-in" className={FOOTER_LINK}>
-            {LANDING_LOGIN_LABEL}
+    <footer className="landing-footer">
+      <div className="landing-grid">
+        <div className="landing-stack">
+          <Link
+            to="/"
+            className={cn("rounded-md [inline-size:fit-content]", FOCUS_RING)}
+          >
+            <OpenCvLogo withWordmark />
           </Link>
+          {tagline ? <p className="text-muted-foreground">{tagline}</p> : null}
+          <div className="landing-footer-grid">
+            {columns.map((column) => (
+              <nav key={column.heading} aria-label={column.heading}>
+                <p className="text-sm font-medium">{column.heading}</p>
+                <ul className="landing-stack">
+                  {column.links.map((link) => (
+                    <li key={link.label}>
+                      {link.href === "/pricing" ? (
+                        <Link
+                          to="/pricing"
+                          className={cn("landing-link", FOCUS_RING)}
+                        >
+                          {link.label}
+                        </Link>
+                      ) : (
+                        <Link
+                          to="/"
+                          hash={link.href.slice(2)}
+                          className={cn("landing-link", FOCUS_RING)}
+                        >
+                          {link.label}
+                        </Link>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            ))}
+          </div>
+          <p className="text-sm text-muted-foreground">{LANDING_COPYRIGHT}</p>
         </div>
       </div>
     </footer>

@@ -46,7 +46,7 @@ export function ProofCard() {
       }}
       titleId="landing-proof-title"
       heading="Proof, not claims"
-      description="Context, what you did, and the outcome. The stamp falls only when those three are seated. The CV can cite the Proof, and Pitch can show it."
+      description="Turn rough notes into clear results with numbers, so every line holds up."
     >
       <svg
         viewBox={`0 0 ${VIEW.width} ${VIEW.height}`}

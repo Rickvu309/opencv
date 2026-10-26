@@ -42,8 +42,8 @@ export function clamp(value: number, min: number, max: number): number {
 
 export function proofReadout(links: ProofLinks): string {
   const open = PROOF_ORDER.find((key) => links[key] < 1)
-  if (!open) return "stamped · context, action, outcome"
-  return `held · ${open} open`
+  if (!open) return "stamped, context, action, outcome"
+  return `held, ${open} open`
 }
 
 export function proofPose(value: number): {
@@ -65,16 +65,16 @@ export function proofPose(value: number): {
 }
 
 export function plotterReadout(stop: PlotterStop): string {
-  if (stop === 0) return "CV · your line"
-  if (stop === 1) return "CV · coach line"
-  return "Letter · that line"
+  if (stop === 0) return "CV, your line"
+  if (stop === 1) return "CV, coach line"
+  return "Letter, that line"
 }
 
 export function plotterLiveReadout(value: number): string {
   if (value < 0.12) return plotterReadout(0)
   if (Math.abs(value - 1) < 0.12) return plotterReadout(1)
   if (value > 1.88) return plotterReadout(2)
-  if (value < 1) return "CV · between your line and the coach line"
+  if (value < 1) return "CV, between your line and the coach line"
   return "carrying that line to the Letter"
 }
 
@@ -121,13 +121,13 @@ export function plotterPose(value: number): {
 
 export function dispatchReadout(stage: DispatchStage): string {
   const name = DISPATCH_STAGES[stage]
-  if (name === "Sent") return "Sent · marked sent, not mailed"
-  return `${name} · on your board`
+  if (name === "Sent") return "Sent, marked sent, not mailed"
+  return `${name}, on your board`
 }
 
 export function dispatchLiveReadout(value: number): string {
   const stage = asStage(value)
-  if (Math.abs(value - stage) > 0.08) return "moving · still on the board"
+  if (Math.abs(value - stage) > 0.08) return "moving, still on the board"
   return dispatchReadout(stage)
 }
 
