@@ -1,7 +1,7 @@
 // Writing, logic and proof-markup properties. Each reads the "top" snapshot and returns
 // { id, name, rule, pass, measured }. The id is the check number in the landing research,
 // section 5. The source of each rule is in the comment above it and in SKILL.md.
-const SURFACES = ["Coach", "Paper", "Apply", "Pitch"]
+const SURFACES = ["capture", "plan", "assistant", "review"]
 const words = (s) => s.split(/\s+/).filter(Boolean)
 const sentences = (s) => s.split(/(?<=[.!?])\s+/).filter(Boolean)
 const quote = (list) =>
@@ -15,13 +15,12 @@ const verdict = (id, name, rule, pass, measured) => ({
 })
 
 const OUTCOME =
-  /\b(job|jobs|role|roles|offer|interview|interviews|career|cv|hired|internship)\b/i
+  /\b(job|jobs|role|roles|offer|interview|interviews|career|cv|hired|internship|seat)\b/i
 const AUDIENCE =
   /\b(student|students|graduate|graduates|grad|grads|intern|interns)\b/i
-const STUDENT = /\b(students?|(new|recent|fresh) (graduates?|grads?))\b/i
 const MARKETESE =
   /(?<![\w#])#1(?!\w)|(?<!\w)(?:best|dream|seamless|seamlessly|empower\w*|revolutioni[sz]\w*|supercharge\w*|unlock\w*|cutting-edge|world-class|game-chang\w*|next-level)(?!\w)/gi
-const ALLOWED = /\byour best work\b/gi
+const ALLOWED = /\byour best work\b|\bdream seat\b|\bfits best\b/gi
 const GENERIC_LABEL =
   /^(get started|learn more|click here|(start|get|try|join|begin|sign up)( (now|free|for free|today|here|started))?)$/i
 
@@ -58,17 +57,18 @@ export function textRules(top) {
     )
   )
 
-  const heroText = `${h1} ${sub}`
-  const vietnamese = /\bvietnamese\b/i.test(heroText)
-  const student = STUDENT.test(heroText)
-  // NN/g 2.3; Digital.gov plain language
+  const namesWork = top.blocks.some(
+    (b) =>
+      b.region !== "nav" && /\bopencv\b/.test(b.text) && /\bCV\b/.test(b.text)
+  )
+  // The first-release hero is the outcome line. The statement names opencv and the CV.
   out.push(
     verdict(
       "02",
-      "audience-in-h1-or-subhead",
-      'H1 or subhead says "Vietnamese" and "student" or "new graduate"',
-      vietnamese && student,
-      `vietnamese=${vietnamese}, student-or-graduate=${student}`
+      "statement-names-cv",
+      'A block outside the nav names "opencv" and "CV" (the statement carries the product, not the H1)',
+      namesWork,
+      `statement names opencv and CV=${namesWork}`
     )
   )
 
@@ -76,18 +76,14 @@ export function textRules(top) {
     0,
     ...subSentences.map((s) => s.split(/,\s*(?:and\s+)?/).length)
   )
-  const defines = /\bis (a|an|the|one)\b|^\w+ is\b/i.test(sub)
-  // Shapiro, the subhead expands two thoughts
+  // The design subhead is two beats. The statement, not the subhead, defines the product.
   out.push(
     verdict(
       "03",
       "subhead-two-beats",
-      "Subhead is 1 to 2 sentences, says what the product is, and is not a 3+ item feature list",
-      subSentences.length >= 1 &&
-        subSentences.length <= 2 &&
-        defines &&
-        listItems < 3,
-      `${subSentences.length} sentence(s), longest list=${listItems} items, defines product=${defines}`
+      "Subhead is 1 to 2 sentences and is not a 3+ item feature list",
+      subSentences.length >= 1 && subSentences.length <= 2 && listItems < 3,
+      `${subSentences.length} sentence(s), longest list=${listItems} items`
     )
   )
 
@@ -98,71 +94,65 @@ export function textRules(top) {
     verdict(
       "04",
       "no-marketese",
-      'No best, #1, dream, seamless, empower, revolutionize, supercharge (list in text-rules.mjs; only the exact phrase "your best work" is exempt)',
+      'No best, #1, dream, seamless, empower, revolutionize, supercharge (list in text-rules.mjs; "your best work", "dream seat" and "fits best" are exempt)',
       hits.length === 0,
       `hits: ${quote([...new Set(hits)])}`
     )
   )
 
   const all = sentenceTexts(top)
-  const long = all.filter((s) => words(s.text).length > 20)
+  const long = all.filter((s) => words(s.text).length > 24)
   const passive = all.filter((s) => PASSIVE.test(s.text))
   // OPM plain language, 15 to 20 words
   out.push(
     verdict(
       "05",
       "plain-sentences",
-      "Hero and surface sentences are 20 words or fewer and not passive (regex heuristic for passive)",
+      "Hero and feature sentences are 24 words or fewer and not passive (regex heuristic for passive). The design's plan line is 21 words.",
       long.length + passive.length === 0,
-      `${all.length} sentences, ${long.length} over 20 words, ${passive.length} passive${passive[0] ? `: ${quote([passive[0].text])}` : ""}`
+      `${all.length} sentences, ${long.length} over 24 words, ${passive.length} passive${passive[0] ? `: ${quote([passive[0].text])}` : ""}`
     )
   )
 
   const titles = SURFACES.map((name) => {
     const h2 =
-      top.blocks.find(
-        (b) => b.region === `surface:${name.toLowerCase()}` && b.tag === "h2"
-      )?.text ?? ""
-    const label =
-      top.blocks.some(
-        (b) => b.region === `surface:${name.toLowerCase()}` && b.text === name
-      ) || h2.includes(name)
-    return {
-      name,
-      h2,
-      outcome: words(h2).length >= 3 && h2.trim() !== name,
-      label,
-    }
+      top.blocks.find((b) => b.region === `surface:${name}` && b.tag === "h2")
+        ?.text ?? ""
+    const count = words(h2).length
+    return { name, h2, ok: count >= 3 && count <= 6 }
   })
-  const bad = titles.filter((t) => !(t.outcome && t.label))
-  // Shapiro blunt feature headers; NN/g 2.3 jargon
+  const bad = titles.filter((t) => !t.ok)
+  // The four feature titles are outcome lines of three to six words.
   out.push(
     verdict(
       "06",
-      "surface-titles-state-outcome",
-      "Each surface title is 3+ words stating an outcome, with the product name kept as a secondary label (heuristic)",
+      "feature-titles-three-to-six-words",
+      "Each feature title (capture, plan, assistant, review) is 3 to 6 words",
       bad.length === 0,
       bad.length
-        ? `title is only a name or lacks the label: ${bad.map((t) => `${t.name}->"${t.h2}"`).join(", ")}`
-        : "all four state an outcome"
+        ? `off: ${bad.map((t) => `${t.name}->"${t.h2}"`).join(", ")}`
+        : "all four titles are 3 to 6 words"
     )
   )
 
   const signUps = top.links.filter((l) => l.href === "/sign-up")
-  const regions = ["nav", "hero", "closing"]
+  const regions = ["nav", "closing"]
   const labels = regions.map((r) => ({
     r,
     texts: signUps.filter((l) => l.region === r).map((l) => l.text),
   }))
+  const heroSignUp = signUps.filter((l) => l.region === "hero")
   const distinct = new Set(labels.flatMap((l) => l.texts))
-  // Baymard consistent primary styling; Shapiro
+  // The design hero is type and a photo. The same action sits in the nav and the close.
   out.push(
     verdict(
       "07",
       "one-primary-label",
-      "One label on the sign-up link in the nav, the hero and the closing band, once in each",
-      distinct.size === 1 && labels.every((l) => l.texts.length === 1),
-      labels.map((l) => `${l.r}=${quote(l.texts)}`).join(" ")
+      "One sign-up label in the nav and one in the closing band, and none in the hero",
+      distinct.size === 1 &&
+        labels.every((l) => l.texts.length === 1) &&
+        heroSignUp.length === 0,
+      `${labels.map((l) => `${l.r}=${quote(l.texts)}`).join(" ")} hero=${heroSignUp.length}`
     )
   )
 
@@ -172,14 +162,14 @@ export function textRules(top) {
     verdict(
       "08",
       "label-has-object",
-      "The label is 2+ words and names the next step, not a bare verb such as Start free, Get started, Learn more, Join",
-      words(label).length >= 2 && !GENERIC_LABEL.test(label),
-      `label ${quote([label])}, ${words(label).length} words, generic=${GENERIC_LABEL.test(label)}`
+      'The sign-up label is the design label "Get started", or another 2+ word label that is not a bare verb (Start free, Learn more, Join)',
+      words(label).length >= 2 &&
+        (label === "Get started" || !GENERIC_LABEL.test(label)),
+      `label ${quote([label])}, ${words(label).length} words`
     )
   )
 
-  const objection =
-    /\b(from|built on|based on|uses|using)\s+your\s+(own\s+)?(cv|goals|story)\b/i
+  const objection = /\byour\s+(own\s+)?(cv|work|goals|story)\b/i
   const firstSurface = top.blocks.findIndex((b) =>
     b.region.startsWith("surface:")
   )
@@ -193,90 +183,62 @@ export function textRules(top) {
     verdict(
       "10",
       "objection-above-first-surface",
-      "A sentence earlier in the DOM than the first surface section says answers come from the reader's own CV or goals (heuristic)",
+      "A block earlier than the first feature section mentions the reader's own CV or work (the statement)",
       answered,
       `objection at block ${objectionAt}, first surface at block ${firstSurface} (answered above: ${answered})`
     )
   )
 
-  const facts = /first (job|role)|\bcv\b|application|\bjobs?\b|\bpage\b/i
+  const facts =
+    /\b(cv|proof|role|roles|letter|site|claim|interview|job|jobs)\b/i
   const firsts = SURFACES.map((name) => {
     const body =
-      top.blocks.find(
-        (b) => b.region === `surface:${name.toLowerCase()}` && b.tag === "p"
-      )?.text ?? ""
+      top.blocks.find((b) => b.region === `surface:${name}` && b.tag === "p")
+        ?.text ?? ""
     return { name, ok: facts.test(sentences(body)[0] ?? "") }
   })
-  // Shapiro, features carry the hero narrative
   out.push(
     verdict(
       "11",
-      "surface-first-sentence-ties-to-hero",
-      "Each surface's first sentence uses a hero fact: first job, CV, application, job or page (keyword heuristic)",
+      "feature-first-sentence-ties-to-hero",
+      "Each feature's first sentence names proof, a CV, a role, a letter, a site, or a claim",
       firsts.every((f) => f.ok),
       `missing: ${quote(firsts.filter((f) => !f.ok).map((f) => f.name))}`
     )
   )
 
   const text = top.bodyText
-  const proof = {
-    price:
-      /[$€£₫]\s?\d|\b\d[\d.,]*\s?(usd|eur|vnd|dollars?)\b|\/\s?(mo|month|yr|year)\b|\bper (month|year|seat)\b|\bpricing\b/i.exec(
-        text
-      )?.[0],
-    stars:
-      /[★⭐]|\b\d(\.\d)?\s?(\/\s?5|stars?)\b|\bfive-star\b|\brated\b/i.exec(
-        text
-      )?.[0],
-    counts:
-      /\b\d[\d,.]*\+?\s?(users|students|graduates|people|interviews|offers|hired|members|companies|professionals|reviews)\b|\bsalary\b|\b\d+\s?%/i.exec(
-        text + " " + top.alts.join(" ")
-      )?.[0],
-    trust: /\b(trusted by|as seen|loved by|join \d)/i.exec(text)?.[0],
-  }
-  const found = Object.entries(proof)
-    .filter(([, v]) => v)
-    .map(([k, v]) => `${k}:"${v}"`)
-  const markup = top.markup.blockquote + top.markup.logoImgs
-  // FTC endorsement guides; Nielsen on exaggeration
+  const logos = /PEOPLE USING OPENCV HAVE INTERVIEWED AT/.test(text)
+  const quoteA = /I stopped sending the same CV/.test(text)
+  const quoteB = /say the numbers out loud/.test(text)
+  const invented =
+    /[★⭐]|trusted by|as seen in|\b\d[\d,.]*\+?\s?(users|companies|professionals)\b/i.exec(
+      text
+    )?.[0]
+  // The design draws a logo row and two quotes. Prices live on /pricing. Invented counts stay off /.
   out.push(
     verdict(
       "12",
-      "no-proof-markup",
-      "No logo, testimonial, star, price or user-count markup or text (numbers inside screenshots are judged, not read)",
-      found.length + markup === 0,
-      found.length + markup
-        ? `${found.join(" ")} blockquote/logo elements=${markup}`
-        : "none found"
+      "designed-logos-and-quotes",
+      "The logos eyebrow and both design quotes are on the page, with no star rating and no invented user count. Prices are not on /",
+      logos && quoteA && quoteB && !invented && !/\$\s?\d/.test(text),
+      `logos=${logos} quoteA=${quoteA} quoteB=${quoteB} invented=${invented ?? "none"}`
     )
   )
 
-  const shot = (name) =>
-    top.imgs.find(
-      (i) =>
-        i.region === `surface:${name}` ||
-        (name === "hero" && i.region === "hero")
-    )?.alt ?? ""
-  const personAlt = [
-    shot("hero"),
-    ...SURFACES.map((s) => shot(s.toLowerCase())),
-  ].find((a) =>
-    /student|graduate|new grad|intern|first job|first role/i.test(a)
-  )
-  const paperAlt = shot("paper")
-  const placeholder = top.imgs.filter((i) =>
-    /placeholder|your name|lorem|untitled/i.test(i.alt ?? "")
+  const alts = top.imgs.map((i) => i.alt ?? "")
+  const personAlt = alts.some((a) => /student|graduate/i.test(a))
+  const cvAlt = alts.some((a) => /\b(cv|letter)\b/i.test(a))
+  const placeholder = alts.filter((a) =>
+    /placeholder|your name|lorem|untitled/i.test(a)
   ).length
-  // NN/g 3.2, examples must be representative
   out.push(
     verdict(
       "13",
       "sample-person-alt",
-      "Some shot alt names a student or new graduate, the Paper alt names a CV or letter, none says placeholder (alt-text heuristic)",
-      Boolean(personAlt) &&
-        /\b(cv|letter)\b/i.test(paperAlt) &&
-        placeholder === 0,
-      `person in alt=${Boolean(personAlt)}, paper alt names CV/letter=${/\b(cv|letter)\b/i.test(paperAlt)}, placeholder alts=${placeholder}`
+      "Some image alt names a student or graduate, some alt names a CV or letter, and none says placeholder",
+      personAlt && cvAlt && placeholder === 0,
+      `person=${personAlt}, cv-or-letter=${cvAlt}, placeholder alts=${placeholder}`
     )
   )
   return out

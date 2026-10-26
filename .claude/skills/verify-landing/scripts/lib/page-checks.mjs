@@ -57,8 +57,8 @@ export function pageChecks({
   out.push(
     verdict(
       "14",
-      "coach-frame-in-first-view-1440",
-      "At 1440x900 the H1 and 120px or more of the Coach frame share the first view",
+      "hero-photo-in-first-view-1440",
+      "At 1440x900 the H1 and 120px or more of the hero photo share the first view",
       desktop.h1Bottom !== null &&
         desktop.h1Bottom <= desktop.vh &&
         visibleH >= 120,
@@ -66,7 +66,7 @@ export function pageChecks({
     )
   )
 
-  const names = ["coach", "paper", "apply", "pitch"]
+  const names = ["product", "examples", "stories", "pricing"]
   const inView = (snap, n) =>
     snap.links.some(
       (l) =>
@@ -84,8 +84,8 @@ export function pageChecks({
   out.push(
     verdict(
       "15",
-      "surface-names-before-fold-390",
-      "At 390x844 all four surface names are visible as links without scrolling, in the page or in a menu the checker opens with one click",
+      "nav-links-before-fold-390",
+      "At 390x844 Product, Examples, Stories and Pricing are visible as links without scrolling, in the page or in a menu the checker opens with one click",
       seen.length === 4,
       `${seen.length} of 4 visible without scrolling: ${seen.join(", ") || "none"} (${mobileOpen ? "menu opened" : "no menu button found"})`
     )
@@ -101,10 +101,10 @@ export function pageChecks({
   out.push(
     verdict(
       "16",
-      "hero-one-primary-button",
-      "The hero has one button; Sign in there, if present, is a text link",
-      heroButtons.length === 1 && !(signIn && signIn.buttonLike),
-      `${heroButtons.length} button(s) in hero: ${heroButtons.map((b) => `"${b.text}"`).join(", ")}; Sign in is ${signIn ? (signIn.buttonLike ? "a button" : "a text link") : "absent"}`
+      "hero-has-no-button",
+      "The hero is the headline and the photo, with no button. The action is in the nav and the close",
+      heroButtons.length === 0 && !(signIn && signIn.buttonLike),
+      `${heroButtons.length} button(s) in hero: ${heroButtons.map((b) => `"${b.text}"`).join(", ") || "none"}`
     )
   )
 
@@ -164,14 +164,13 @@ export function pageChecks({
       !i.src?.startsWith("/landing/") ||
       !i.alt ||
       i.alt.length < 20 ||
-      !/coach|paper|apply|pitch/i.test(i.alt)
+      !/armchair|coach|paper|apply|cv|letter/i.test(i.alt)
   )
-  // NN/g 2.4
   out.push(
     verdict(
       "19",
-      "images-are-product-with-alt",
-      "Every marketing image is from /landing/ and its alt names a surface (Coach, Paper, Apply or Pitch)",
+      "images-named-and-local",
+      "Every marketing image is from /landing/ and its alt names the chair, Coach, Paper, Apply, a CV or a letter",
       desktop.imgs.length > 0 && bad.length === 0,
       `${desktop.imgs.length} images, ${bad.length} without a surface-naming alt${bad[0] ? `: ${bad[0].src}` : ""}`
     )
@@ -300,6 +299,21 @@ export function pageChecks({
       "Hero image has width, height, fetchpriority=high, is not lazy, and does not start at opacity 0",
       miss.length === 0 && !invisible,
       `missing=${miss.join(",") || "none"}, starts invisible=${Boolean(invisible)} (opacity ${first.heroImg?.opacity})`
+    )
+  )
+
+  const wide = (snap, label) =>
+    snap.pageWidth > snap.viewWidth + 1
+      ? `${label} scroll ${px(snap.pageWidth)} > view ${px(snap.viewWidth)}`
+      : null
+  const overflow = [wide(desktop, "1440"), wide(mobile, "390")].filter(Boolean)
+  out.push(
+    verdict(
+      "26",
+      "no-sideways-scroll",
+      "The page does not scroll sideways at 1440 or 390",
+      overflow.length === 0,
+      overflow.join("; ") || "none"
     )
   )
   return out

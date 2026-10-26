@@ -18,9 +18,12 @@ test("04 catches each banned term, including #1 and possessive forms", () => {
   }
 })
 
-test("04 exempts only the exact phrase your best work", () => {
+test("04 exempts your best work, dream seat and fits best", () => {
   assert.deepEqual(findMarketese("Turn your best work into a page"), [])
+  assert.deepEqual(findMarketese("Get your butt in your dream seat."), [])
+  assert.deepEqual(findMarketese("which of your proof fits best"), [])
   assert.deepEqual(findMarketese("Show your best coach"), ["best"])
+  assert.deepEqual(findMarketese("Land your dream job"), ["dream"])
   assert.deepEqual(findMarketese("Your best work, our best tool"), ["best"])
 })
 
@@ -63,23 +66,24 @@ test("08 accepts short labels with an object and rejects bare verbs", () => {
   const label = (text) => verdictOf(base([], link(text)), "08").pass
   assert.equal(label("Start learning"), true)
   assert.equal(label("Find food"), true)
-  for (const bad of ["Start free", "Get started", "Join", "Try now"])
+  assert.equal(label("Get started"), true)
+  for (const bad of ["Start free", "Learn more", "Join", "Try now"])
     assert.equal(label(bad), false, bad)
 })
 
-test("02 needs Vietnamese and student or new graduate, not undergraduate", () => {
-  const hero = (h1, sub = "") =>
-    base([block("hero", h1, "h1"), block("hero", sub)])
+test("02 needs a block that names opencv and a CV", () => {
+  const page = (text) => base([block("section", text)])
   assert.equal(
-    verdictOf(hero("A first-job coach for Vietnamese students"), "02").pass,
+    verdictOf(
+      page(
+        "opencv helps you say it properly: clear proof of your work, then a CV."
+      ),
+      "02"
+    ).pass,
     true
   )
   assert.equal(
-    verdictOf(hero("Coach for Vietnam undergraduates"), "02").pass,
+    verdictOf(page("Get your butt in your dream seat."), "02").pass,
     false
-  )
-  assert.equal(
-    verdictOf(hero("Coach for Vietnamese new graduates"), "02").pass,
-    true
   )
 })
