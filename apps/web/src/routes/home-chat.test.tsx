@@ -216,10 +216,10 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
     expect(screen.getByText("New summary")).toBeInTheDocument()
     expect(
       screen.getByText(
-        "Moved Associate PM intern at Local startup from Inbox to Prep"
+        "Moved Associate PM intern at Local startup from inbox to prep"
       )
     ).toBeInTheDocument()
-    expect(screen.getByLabelText("Inbox to Prep")).toBeInTheDocument()
+    expect(screen.getByLabelText("inbox to prep")).toBeInTheDocument()
     expect(
       screen.getAllByRole("button", {
         name: stepButton("Created CV Untitled CV"),

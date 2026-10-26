@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest"
 
 import { HOME_PATH, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
-import { APPLY_OPEN_GUIDE } from "@/features/apply/apply-search.ts"
 
 import {
   FIRST_CAFE_CHECKLIST_ITEMS,
@@ -37,7 +36,6 @@ describe("first-café checklist", () => {
     expect(FIRST_CAFE_CHECKLIST_ITEMS[1]?.to).toBe(SURFACE_PATHS.pitch)
     expect(FIRST_CAFE_CHECKLIST_ITEMS[2]).toMatchObject({
       to: SURFACE_PATHS.apply,
-      search: { open: APPLY_OPEN_GUIDE },
     })
     expect(FIRST_CAFE_CHECKLIST_ITEMS[3]).toMatchObject({
       to: SURFACE_PATHS.settings,
@@ -154,9 +152,7 @@ describe("first-café checklist", () => {
 
   it("does not complete Apply or Pitch from a surface peek", () => {
     const userId = "user_apply_peek"
-    const afterApply = recordFirstCafeVisit(userId, SURFACE_PATHS.apply, {
-      open: APPLY_OPEN_GUIDE,
-    })
+    const afterApply = recordFirstCafeVisit(userId, SURFACE_PATHS.apply)
     expect(afterApply.completed).toEqual([])
     expect(readFirstCafeState(userId).completed).toEqual([])
 
@@ -262,7 +258,6 @@ describe("first-café next nudge", () => {
       id: "apply",
       label: "Triage one Apply card",
       to: SURFACE_PATHS.apply,
-      search: { open: APPLY_OPEN_GUIDE },
     })
   })
 

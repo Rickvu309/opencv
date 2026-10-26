@@ -39,6 +39,19 @@ export function publicCommandOutput(output: unknown) {
   return copy
 }
 
+export function withActivityId(output: unknown, activityId: string | null) {
+  const published = publicCommandOutput(output)
+  if (
+    !activityId ||
+    !published ||
+    typeof published !== "object" ||
+    Array.isArray(published)
+  ) {
+    return published
+  }
+  return { ...published, activityId }
+}
+
 export function createCommandRoutes({
   auth,
   db,
@@ -106,7 +119,11 @@ export function createCommandRoutes({
       )
       if (data.kind === "compat") return c.json(successEnvelope(data.output))
       if (data.result.pending) return c.json(successEnvelope(data.result))
-      return c.json(successEnvelope(publicCommandOutput(data.result.output)))
+      return c.json(
+        successEnvelope(
+          withActivityId(data.result.output, data.result.activityId)
+        )
+      )
     } catch (error) {
       if (error instanceof CommandError) throw error
       throw error

@@ -8,8 +8,12 @@ import {
   STARTER_CV_NAME,
   starterCvDocument,
 } from "@workspace/domain"
+import type { JobStage } from "@/features/apply/apply-api.ts"
 import { ownedCvName } from "@/features/paper/paper-data.ts"
 import { TEST_SESSION_USER } from "@/test/auth-client-mock.ts"
+import { sampleApplyCards } from "@/test/apply-fixtures.ts"
+import { mockJob } from "@/test/apply-job-fixtures.ts"
+import { resetMockJobs, setMockJobs } from "@/test/apply-jobs-mock.ts"
 import { getMockPaperDocs } from "@/test/paper-api-mock.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
 import { goHome } from "@/test/go-home.ts"
@@ -137,6 +141,14 @@ export function queryByAttr(root: ParentNode, selector: string) {
   return root.querySelector(`[${selector}]`)
 }
 
+function releaseStage(stage: string): JobStage {
+  if (stage === "inbox") return "saved"
+  if (stage === "prep") return "applied"
+  if (stage === "sent") return "interview"
+  if (stage === "live") return "offer"
+  return "closed"
+}
+
 export function installPaperTestLifecycle() {
   beforeAll(async () => {
     await import("@/features/coach/coach-thread.tsx")
@@ -146,9 +158,25 @@ export function installPaperTestLifecycle() {
     sessionStorage.clear()
     localStorage.clear()
     vi.stubGlobal("scrollTo", vi.fn())
+    setMockJobs(
+      sampleApplyCards().map((card) =>
+        mockJob({
+          id: card.id,
+          title: card.title,
+          company: card.company,
+          stage: releaseStage(card.stage),
+          position: card.position,
+          starred: card.starred,
+          jobUrl: card.jobUrl,
+          createdAt: card.createdAt,
+          updatedAt: card.updatedAt,
+        })
+      )
+    )
   })
 
   afterEach(() => {
+    resetMockJobs()
     cleanup()
     sessionStorage.clear()
     localStorage.clear()

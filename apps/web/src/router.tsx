@@ -160,6 +160,15 @@ const applyRoute = createRoute({
   ),
 })
 
+const applyJobRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/apply/$jobId",
+  component: lazyRouteComponent(
+    () => import("@/routes/apply-job.tsx"),
+    "ApplyJobPage"
+  ),
+})
+
 const pitchRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/pitch",
@@ -225,6 +234,7 @@ const routeTree = rootRoute.addChildren([
     homeRoute,
     paperRoute,
     applyRoute,
+    applyJobRoute,
     pitchRoute,
     coachRoute,
     jobsRoute,

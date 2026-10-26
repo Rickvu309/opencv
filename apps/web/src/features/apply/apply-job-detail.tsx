@@ -1,13 +1,21 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { Link, useNavigate } from "@tanstack/react-router"
+import { ChevronLeft, ChevronRight, MoreHorizontal, Star } from "lucide-react"
+
+import { Button } from "@workspace/ui/components/button"
 import {
-  APPLY_JOB_URL_COPIED,
-  applyJobSourceHost,
-  openableApplyJobUrl,
-  parseApplyJobUrlInput,
-  publicApplyJobUrl,
-  type PaperDoc,
-} from "@workspace/domain"
-import { Button, buttonVariants } from "@workspace/ui/components/button"
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@workspace/ui/components/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 import {
@@ -18,486 +26,537 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select"
 import { Textarea } from "@workspace/ui/components/textarea"
-import { cn } from "@workspace/ui/lib/utils"
-import { Check, Copy, ExternalLink, Star, Trash2, X } from "lucide-react"
+import { toast, toastWithUndo } from "@workspace/ui/components/sonner"
 
-import { ErrorBanner } from "@/components/error-banner.tsx"
-import {
-  GUIDED_APPLY_PREP_ACTION,
-  guidedApplyNextAction,
-} from "@/features/apply/apply-guide.ts"
-import { paperDocsLinkedToCard } from "@/features/paper/paper-apply-attach.ts"
-import {
-  APPLY_JOB_COPIED_LABEL,
-  APPLY_JOB_COPY_LABEL,
-  APPLY_JOB_DATE_LABEL,
-  APPLY_JOB_TRACK_LABEL,
-  APPLY_JOB_NOTES_PLACEHOLDER,
-  APPLY_JOB_OPEN_LABEL,
-  APPLY_JOB_SCAN_TEXT_LABEL,
-  APPLY_JOB_SCAN_TEXT_PLACEHOLDER,
-  APPLY_JOB_OPEN_SOURCE_LABEL,
-  APPLY_JOB_SOURCE_LABEL,
-  APPLY_JOB_SOURCE_PLACEHOLDER,
-} from "@/features/apply/apply-job-structure.ts"
-import { ApplyNextStep } from "@/features/apply/apply-next-step.tsx"
-import { useJobPosting } from "@/features/apply/use-job-posting.ts"
-import {
-  PaperLinkMenu,
-  StageMenu,
-  ToolbarIconButton,
-  ToolbarIconLink,
-} from "@/features/apply/apply-job-detail-toolbar.tsx"
-import {
-  formatApplyUpdated,
-  STAGES,
-  trackKindLabel,
-  type ApplyCard,
-  type StageId,
-  type TrackKind,
-} from "@/features/apply/apply-types.ts"
+import { authClient } from "@/lib/auth-client.ts"
+import { recordFirstCafeItem } from "@/features/home/first-cafe-checklist.ts"
 
-type Props = {
-  card: ApplyCard
-  guided?: boolean
-  revertKey: number
-  paperDocs: PaperDoc[]
-  onClose: () => void
-  onPatch: (
-    patch: Partial<
-      Pick<
-        ApplyCard,
-        "title" | "company" | "note" | "jobUrl" | "trackDate" | "trackKind"
-      >
-    >
-  ) => void
-  onMove: (stage: StageId) => void
-  onToggleStar: () => void
-  onRemove: () => void
-  onLinkPaper: (docId: string, applyCardId: string | null) => void
+import {
+  addChecklistItem,
+  addNote,
+  applyQueryKeys,
+  deleteJob,
+  getJob,
+  linkPaper,
+  listActivity,
+  listJobs,
+  listPaper,
+  moveJob,
+  setChecklistItem,
+  starJob,
+  undoActivity,
+  unlinkPaper,
+  updateJob,
+  type JobDetail,
+  type JobPriority,
+  type JobStage,
+  type PaperListItem,
+} from "./apply-api.ts"
+import {
+  ActivityItem,
+  ChecklistItem as ChecklistRow,
+  PriorityBars,
+  Property,
+} from "./apply-parts.tsx"
+import {
+  ALL_STAGES,
+  compareJobs,
+  interviewInputValue,
+  interviewInstant,
+  priorityLabel,
+  stageLabel,
+} from "./apply-stages.ts"
+
+const POSTING = [
+  ["About the role", "about"],
+  ["What you'll do", "duties"],
+  ["What they look for", "requirements"],
+  ["Details", "details"],
+] as const
+
+function fieldTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false
+  const tag = target.tagName
+  return tag === "INPUT" || tag === "TEXTAREA" || target.isContentEditable
 }
 
-const TRACK_KINDS: TrackKind[] = [
-  "interview",
-  "deadline",
-  "followup",
-  "applied",
-]
-
-const FIELD_LABEL =
-  "mb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase"
-
-export function JobDetailPanel({
-  card,
-  guided = false,
-  revertKey,
-  paperDocs,
-  onClose,
-  onPatch,
-  onMove,
-  onToggleStar,
-  onRemove,
-  onLinkPaper,
-}: Props) {
-  const stageLabel = STAGES.find((s) => s.id === card.stage)?.label ?? "Inbox"
-  const guidedAction = guided ? guidedApplyNextAction(card) : null
-  const linkedPaper = paperDocsLinkedToCard(paperDocs, card.id)
-  const [linkOpen, setLinkOpen] = useState(false)
-  const postingHref = openableApplyJobUrl(card.jobUrl)
-
-  return (
-    <aside
-      aria-label="Opportunity detail"
-      className="flex w-80 shrink-0 flex-col border-l border-border bg-background shadow-[-4px_0_24px_oklch(0_0_0/0.04)]"
-    >
-      <div className="flex items-center gap-0.5 border-b border-border px-2 py-2">
-        <ToolbarIconButton
-          label={card.starred ? "Unstar opportunity" : "Star opportunity"}
-          onClick={onToggleStar}
-          active={card.starred}
-        >
-          <Star
-            className={cn(
-              "size-3.5",
-              card.starred && "fill-foreground/20 text-foreground"
-            )}
-          />
-        </ToolbarIconButton>
-
-        <StageMenu value={card.stage} label={stageLabel} onChange={onMove} />
-
-        <div className="mx-0.5 h-5 w-px bg-border" aria-hidden />
-
-        {postingHref ? (
-          <ToolbarIconLink href={postingHref} label={APPLY_JOB_OPEN_LABEL}>
-            <ExternalLink className="size-3.5" />
-          </ToolbarIconLink>
-        ) : null}
-        <PaperLinkMenu
-          open={linkOpen}
-          onOpenChange={setLinkOpen}
-          cardId={card.id}
-          docs={paperDocs}
-          onLink={onLinkPaper}
-        />
-        <ToolbarIconButton
-          label="Delete opportunity"
-          onClick={onRemove}
-          className="hover:text-destructive"
-        >
-          <Trash2 className="size-3.5" />
-        </ToolbarIconButton>
-
-        <ToolbarIconButton
-          label="Close panel"
-          onClick={onClose}
-          className="ml-auto"
-        >
-          <X className="size-3.5" />
-        </ToolbarIconButton>
-      </div>
-
-      <div className="flex flex-1 flex-col gap-4 overflow-auto p-4">
-        {guidedAction?.kind === "stage" ? (
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="h-8 self-start"
-            onClick={() => onMove(guidedAction.stage)}
-          >
-            {GUIDED_APPLY_PREP_ACTION}
-          </Button>
-        ) : null}
-
-        <ApplyNextStep
-          card={card}
-          onMove={onMove}
-          onTrack={(trackKind) => onPatch({ trackKind })}
-        />
-
-        {linkedPaper.length > 0 ? (
-          <div role="region" aria-label="Linked Paper">
-            <p className={FIELD_LABEL}>Paper</p>
-            <ul className="grid gap-1">
-              {linkedPaper.map((doc) => (
-                <li key={doc.id} className="text-sm">
-                  {doc.name}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-
-        <JobDetailFields
-          key={`${card.id}:${revertKey}:${card.title}:${card.company}:${card.jobUrl}`}
-          card={card}
-          onPatch={onPatch}
-        />
-
-        <JobDetailNote
-          key={`${card.id}:note:${revertKey}:${card.note}`}
-          note={card.note}
-          onCommit={(next) => onPatch({ note: next })}
-        />
-
-        <p className="text-xs text-muted-foreground">
-          {formatApplyUpdated(card.updatedAt)}
-        </p>
-      </div>
-    </aside>
-  )
-}
-
-function JobDetailFields({
-  card,
-  onPatch,
-}: {
-  card: ApplyCard
-  onPatch: Props["onPatch"]
-}) {
-  const [title, setTitle] = useState(card.title)
-  const [company, setCompany] = useState(card.company)
-  const [jobUrl, setJobUrl] = useState(publicApplyJobUrl(card.jobUrl) ?? "")
-  const [jobUrlError, setJobUrlError] = useState<string | null>(null)
-  const {
-    scanning,
-    scanError,
-    scanJdText,
-    setScanJdText,
-    copied,
-    copyError,
-    scanPosting,
-    copyPosting,
-  } = useJobPosting({
-    card,
-    jobUrl,
-    onPatch,
-    onScanned: ({ title: scannedTitle, company: scannedCompany }) => {
-      if (scannedTitle) setTitle(scannedTitle)
-      if (scannedCompany) setCompany(scannedCompany)
-    },
+export function ApplyJobDetail({ jobId }: { jobId: string }) {
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const { data: session } = authClient.useSession()
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [step, setStep] = useState("")
+  const [note, setNote] = useState("")
+  const detail = useQuery({
+    queryKey: applyQueryKeys.detail(jobId),
+    queryFn: () => getJob(jobId),
   })
-  const postingUrl = openableApplyJobUrl(jobUrl)
-  const showScanJd = Boolean(scanError || scanJdText.trim())
+  const jobs = useQuery({
+    queryKey: applyQueryKeys.list(),
+    queryFn: listJobs,
+  })
+  const activity = useQuery({
+    queryKey: applyQueryKeys.activity(jobId),
+    queryFn: () => listActivity(jobId),
+  })
 
-  function commitTitle() {
-    const next = title.trim()
-    if (!next || next === card.title) {
-      setTitle(card.title)
-      return
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      if (event.key !== "Delete" && event.key !== "Backspace") return
+      if (fieldTarget(event.target)) return
+      event.preventDefault()
+      setDeleteOpen(true)
     }
-    onPatch({ title: next })
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [])
+
+  const ordered = [...(jobs.data ?? [])].sort(compareJobs)
+  const index = ordered.findIndex((job) => job.id === jobId)
+  const previous = index > 0 ? ordered[index - 1] : undefined
+  const next = index >= 0 ? ordered[index + 1] : undefined
+  const job = detail.data
+
+  function refresh() {
+    void queryClient.invalidateQueries({ queryKey: applyQueryKeys.all })
   }
 
-  function commitCompany() {
-    const next = company.trim()
-    if (!next || next === card.company) {
-      setCompany(card.company)
-      return
-    }
-    onPatch({ company: next })
+  function noteCafe() {
+    const userId = session?.user.id
+    if (userId) recordFirstCafeItem(userId, "apply")
   }
 
-  function commitJobUrl() {
-    const parsed = parseApplyJobUrlInput(jobUrl)
-    if (!parsed.ok) {
-      setJobUrlError(parsed.message)
-      setJobUrl(card.jobUrl ?? "")
-      return
+  async function changeStage(stage: JobStage) {
+    const result = await moveJob({ jobId, stage })
+    noteCafe()
+    if (stage === "closed" && result.activityId) {
+      const activityId = result.activityId
+      toastWithUndo("Moved to Closed", () => {
+        void undoActivity({ activityId }).then(refresh)
+      })
     }
-    setJobUrlError(null)
-    setJobUrl(parsed.jobUrl ?? "")
-    if (parsed.jobUrl !== (card.jobUrl ?? null)) {
-      onPatch({ jobUrl: parsed.jobUrl })
-    }
+    refresh()
   }
 
-  const sourceHost = applyJobSourceHost(jobUrl)
+  async function savePatch(patch: Parameters<typeof updateJob>[0]["patch"]) {
+    await updateJob({ jobId, patch })
+    refresh()
+  }
+
+  if (detail.isLoading) return <p role="status">Loading jobs</p>
+  if (detail.isError || !job) {
+    return (
+      <div>
+        <p>Could not load jobs. Refresh the page.</p>
+        <Button type="button" onClick={() => void detail.refetch()}>
+          Refresh
+        </Button>
+      </div>
+    )
+  }
+
+  const done = job.checklist.filter((item) => item.done).length
+  const total = job.checklist.length
+  const prepName =
+    total > 0 ? `Interview prep, ${done} of ${total}` : "Interview prep"
+  const rows = (activity.data ?? []).filter((row) => !row.undoneAt)
 
   return (
-    <div className="space-y-5">
-      <div className="space-y-3">
-        <div className="block">
-          <Label htmlFor={`job-title-${card.id}`} className={FIELD_LABEL}>
-            Title
-          </Label>
-          <Input
-            id={`job-title-${card.id}`}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            onBlur={commitTitle}
-            className="font-semibold"
-          />
-        </div>
-        <div className="block">
-          <Label htmlFor={`company-${card.id}`} className={FIELD_LABEL}>
-            Company
-          </Label>
-          <Input
-            id={`company-${card.id}`}
-            value={company}
-            onChange={(e) => setCompany(e.target.value)}
-            onBlur={commitCompany}
-          />
-        </div>
-      </div>
-
-      <section
-        aria-labelledby={`source-heading-${card.id}`}
-        className="space-y-2"
+    <div className="flex h-full min-h-0 flex-col">
+      <nav
+        aria-label="Breadcrumb"
+        className="flex items-center gap-2 px-5 py-3"
       >
-        <h2 id={`source-heading-${card.id}`} className={FIELD_LABEL}>
-          {APPLY_JOB_SOURCE_LABEL}
-        </h2>
-        <div className="block">
-          <Label htmlFor={`job-url-${card.id}`} className="sr-only">
-            {APPLY_JOB_SOURCE_LABEL}
-          </Label>
-          <Input
-            id={`job-url-${card.id}`}
-            type="text"
-            inputMode="url"
-            autoComplete="url"
-            value={jobUrl}
-            onChange={(e) => {
-              setJobUrl(e.target.value)
-              if (jobUrlError) setJobUrlError(null)
-            }}
-            onBlur={commitJobUrl}
-            placeholder={APPLY_JOB_SOURCE_PLACEHOLDER}
-            aria-invalid={Boolean(jobUrlError)}
-          />
-          {sourceHost ? (
-            <p className="mt-1 text-xs text-muted-foreground">{sourceHost}</p>
-          ) : null}
-          {jobUrlError ? (
-            <ErrorBanner variant="inline" className="mt-1">
-              {jobUrlError}
-            </ErrorBanner>
-          ) : null}
-          {postingUrl ? (
-            <div className="mt-2 flex flex-wrap gap-2">
-              <Button
-                type="button"
-                size="sm"
-                className="h-8"
-                disabled={scanning}
-                onClick={() => void scanPosting()}
-              >
-                {scanning ? "Scanning…" : "Scan posting"}
-              </Button>
-              <a
-                href={postingUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={cn(
-                  buttonVariants({ variant: "ghost", size: "sm" }),
-                  "h-8"
-                )}
-              >
-                {APPLY_JOB_OPEN_SOURCE_LABEL}
-              </a>
+        <Link to="/app/apply" className="text-sm font-medium">
+          Apply
+        </Link>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label="Previous job"
+          disabled={!previous}
+          onClick={() =>
+            previous &&
+            void navigate({
+              to: "/app/apply/$jobId",
+              params: { jobId: previous.id },
+            })
+          }
+        >
+          <ChevronLeft />
+        </Button>
+        <span className="text-sm whitespace-nowrap">
+          {index >= 0 ? ` ${index + 1} / ${ordered.length} ` : ""}
+        </span>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label="Next job"
+          disabled={!next}
+          onClick={() =>
+            next &&
+            void navigate({
+              to: "/app/apply/$jobId",
+              params: { jobId: next.id },
+            })
+          }
+        >
+          <ChevronRight />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label="Favorite"
+          aria-pressed={job.starred}
+          onClick={() =>
+            void starJob({ jobId, starred: !job.starred }).then(refresh)
+          }
+        >
+          <Star />
+        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
               <Button
                 type="button"
                 variant="ghost"
-                size="sm"
-                className="h-8"
-                onClick={() => void copyPosting()}
-              >
-                {copied ? (
-                  <>
-                    <Check className="size-3.5" />
-                    {APPLY_JOB_COPIED_LABEL}
-                  </>
-                ) : (
-                  <>
-                    <Copy className="size-3.5" />
-                    {APPLY_JOB_COPY_LABEL}
-                  </>
-                )}
-              </Button>
-            </div>
-          ) : null}
-          {copied ? (
-            <p role="status" className="mt-2 text-sm text-muted-foreground">
-              {APPLY_JOB_URL_COPIED}
-            </p>
-          ) : null}
-          {copyError ? (
-            <ErrorBanner variant="inline" className="mt-2">
-              {copyError}
-            </ErrorBanner>
-          ) : null}
-          {scanError ? (
-            <ErrorBanner variant="inline" className="mt-2">
-              {scanError}
-            </ErrorBanner>
-          ) : null}
-          {showScanJd ? (
-            <div className="mt-3 block">
-              <Label htmlFor={`job-scan-jd-${card.id}`} className={FIELD_LABEL}>
-                {APPLY_JOB_SCAN_TEXT_LABEL}
-              </Label>
-              <Textarea
-                id={`job-scan-jd-${card.id}`}
-                value={scanJdText}
-                onChange={(e) => setScanJdText(e.target.value)}
-                rows={4}
-                className="min-h-0 resize-none leading-relaxed"
-                placeholder={APPLY_JOB_SCAN_TEXT_PLACEHOLDER}
+                size="icon"
+                aria-label="More"
               />
-            </div>
-          ) : null}
-        </div>
-      </section>
-
-      <JobDetailTrack card={card} onPatch={onPatch} />
-    </div>
-  )
-}
-
-function JobDetailTrack({
-  card,
-  onPatch,
-}: {
-  card: ApplyCard
-  onPatch: Props["onPatch"]
-}) {
-  return (
-    <section aria-labelledby={`track-heading-${card.id}`} className="space-y-2">
-      <h2 id={`track-heading-${card.id}`} className={FIELD_LABEL}>
-        {APPLY_JOB_TRACK_LABEL}
-      </h2>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="block">
-          <Label htmlFor={`event-type-${card.id}`} className="sr-only">
-            {APPLY_JOB_TRACK_LABEL}
-          </Label>
-          <Select
-            value={card.trackKind}
-            onValueChange={(kind) => {
-              if (kind) onPatch({ trackKind: kind as TrackKind })
+            }
+          >
+            <MoreHorizontal />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setDeleteOpen(true)}>
+              Delete job
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </nav>
+      <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-auto px-5 pb-6 lg:flex-row">
+        <div className="flex min-w-0 flex-1 flex-col gap-6">
+          <header>
+            <h1 className="text-lg font-medium">{job.title}</h1>
+            <p className="text-sm text-muted-foreground">{job.company}</p>
+          </header>
+          <Posting job={job} />
+          <section aria-label={prepName} className="flex flex-col gap-2">
+            <h2 className="text-sm font-medium">Interview prep</h2>
+            {total > 0 ? (
+              <p className="text-xs text-muted-foreground">
+                {done} of {total}
+              </p>
+            ) : null}
+            {job.checklist.map((item) => (
+              <ChecklistRow
+                key={item.id}
+                item={item}
+                onToggle={() =>
+                  void setChecklistItem({
+                    jobId,
+                    itemId: item.id,
+                    done: !item.done,
+                  }).then(refresh)
+                }
+              />
+            ))}
+            <form
+              className="flex gap-2"
+              onSubmit={(event) => {
+                event.preventDefault()
+                const label = step.trim()
+                if (!label) return
+                void addChecklistItem({ jobId, label }).then(() => {
+                  setStep("")
+                  refresh()
+                })
+              }}
+            >
+              <Label htmlFor="add-step" className="sr-only">
+                Add a step
+              </Label>
+              <Input
+                id="add-step"
+                value={step}
+                placeholder="Add a step"
+                onChange={(event) => setStep(event.target.value)}
+              />
+              <Button type="submit" variant="ghost">
+                Add a step
+              </Button>
+            </form>
+          </section>
+          <section aria-label="Activity" className="flex flex-col gap-2">
+            <h2 className="text-sm font-medium">Activity</h2>
+            <ul className="flex flex-col gap-1">
+              {rows.map((row) => (
+                <ActivityItem key={row.id} row={row} />
+              ))}
+            </ul>
+          </section>
+          <form
+            className="flex flex-col gap-2"
+            onSubmit={(event) => {
+              event.preventDefault()
+              const body = note.trim()
+              if (!body) return
+              void addNote({ jobId, body }).then(() => {
+                setNote("")
+                refresh()
+              })
             }}
           >
-            <SelectTrigger
-              id={`event-type-${card.id}`}
-              className="w-full"
-              aria-label={APPLY_JOB_TRACK_LABEL}
+            <Label htmlFor="job-note">Leave a note</Label>
+            <Textarea
+              id="job-note"
+              value={note}
+              placeholder="Leave a note…"
+              onChange={(event) => setNote(event.target.value)}
+            />
+            <Button type="submit" variant="ghost">
+              Leave a note
+            </Button>
+          </form>
+        </div>
+        <aside className="flex w-full shrink-0 flex-col gap-3 lg:w-72">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => toast("Subscriptions are not on yet.")}
+          >
+            Subscribe
+          </Button>
+          <h2 className="text-sm font-medium">Properties</h2>
+          <Property label="Stage">
+            <Select
+              value={job.stage}
+              onValueChange={(value) => {
+                if (value) void changeStage(value as JobStage)
+              }}
             >
-              <SelectValue>{trackKindLabel(card.trackKind)}</SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {TRACK_KINDS.map((kind) => (
-                <SelectItem key={kind} value={kind}>
-                  {trackKindLabel(kind)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="block">
-          <Label htmlFor={`track-date-${card.id}`} className="sr-only">
-            {APPLY_JOB_DATE_LABEL}
-          </Label>
-          <Input
-            id={`track-date-${card.id}`}
-            type="date"
-            value={card.trackDate}
-            onChange={(e) => onPatch({ trackDate: e.target.value })}
-            aria-label={APPLY_JOB_DATE_LABEL}
+              <SelectTrigger aria-label="Stage">
+                <SelectValue>{stageLabel(job.stage)}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {ALL_STAGES.map((stage) => (
+                  <SelectItem key={stage} value={stage}>
+                    {stageLabel(stage)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Property>
+          <Property label="Priority">
+            <div className="flex items-center gap-2">
+              <PriorityBars level={job.priority} />
+              <Select
+                value={job.priority}
+                onValueChange={(value) => {
+                  if (value) void savePatch({ priority: value as JobPriority })
+                }}
+              >
+                <SelectTrigger aria-label="Priority">
+                  <SelectValue>{priorityLabel(job.priority)}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {(["low", "normal", "high"] as const).map((priority) => (
+                    <SelectItem key={priority} value={priority}>
+                      {priorityLabel(priority)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </Property>
+          <Property label="Location">
+            <Input
+              aria-label="Location"
+              defaultValue={job.location ?? ""}
+              key={`${job.id}-location-${job.location ?? ""}`}
+              onBlur={(event) =>
+                void savePatch({ location: event.target.value || null })
+              }
+            />
+          </Property>
+          <Property label="Interview">
+            <Input
+              aria-label="Interview"
+              type="datetime-local"
+              defaultValue={interviewInputValue(job.interviewAt)}
+              key={`${job.id}-interview-${job.interviewAt ?? ""}`}
+              onBlur={(event) =>
+                void savePatch({
+                  interviewAt: interviewInstant(event.target.value),
+                })
+              }
+            />
+          </Property>
+          <Property label="Deadline">
+            <Input
+              aria-label="Deadline"
+              type="date"
+              defaultValue={job.deadline ?? ""}
+              key={`${job.id}-deadline-${job.deadline ?? ""}`}
+              placeholder="Add deadline"
+              onBlur={(event) =>
+                void savePatch({ deadline: event.target.value || null })
+              }
+            />
+          </Property>
+          <Property label="Recruiter">
+            <Input
+              aria-label="Recruiter"
+              defaultValue={job.recruiterName ?? ""}
+              key={`${job.id}-recruiter-${job.recruiterName ?? ""}`}
+              placeholder="Add recruiter"
+              onBlur={(event) =>
+                void savePatch({ recruiterName: event.target.value || null })
+              }
+            />
+          </Property>
+          <Property label="Source">
+            <p className="text-sm">{job.sourceHost || job.jobUrl || ""}</p>
+          </Property>
+          <PaperField label="CV" kind="cv" job={job} onChange={refresh} />
+          <PaperField
+            label="Cover letter"
+            kind="letter"
+            job={job}
+            onChange={refresh}
           />
-        </div>
+        </aside>
       </div>
-    </section>
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent data-slot="confirm-delete">
+          <DialogTitle>Delete {job.title}?</DialogTitle>
+          <DialogDescription>This can't be undone.</DialogDescription>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setDeleteOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="glow"
+              onClick={() =>
+                void changeStage("closed").then(() => setDeleteOpen(false))
+              }
+            >
+              Move to Closed
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => {
+                void deleteJob({ jobId }).then(() => {
+                  const destination = next ?? previous
+                  if (destination) {
+                    void navigate({
+                      to: "/app/apply/$jobId",
+                      params: { jobId: destination.id },
+                    })
+                  } else {
+                    void navigate({ to: "/app/apply" })
+                  }
+                })
+              }}
+            >
+              Delete job
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
   )
 }
 
-function JobDetailNote({
-  note,
-  onCommit,
+function Posting({ job }: { job: JobDetail }) {
+  if (!job.posting) {
+    return (
+      <section className="flex flex-col gap-2">
+        <h2 className="text-sm font-medium">About the role</h2>
+        <p className="text-sm whitespace-pre-wrap">{job.description}</p>
+      </section>
+    )
+  }
+  return (
+    <div className="flex flex-col gap-4">
+      {POSTING.map(([heading, key]) => (
+        <section key={key} className="flex flex-col gap-2">
+          <h2 className="text-sm font-medium">{heading}</h2>
+          <p className="text-sm whitespace-pre-wrap">{job.posting?.[key]}</p>
+        </section>
+      ))}
+    </div>
+  )
+}
+
+function PaperField({
+  label,
+  kind,
+  job,
+  onChange,
 }: {
-  note: string
-  onCommit: (note: string) => void
+  label: string
+  kind: "cv" | "letter"
+  job: JobDetail
+  onChange: () => void
 }) {
-  const [value, setValue] = useState(note)
+  const linked = kind === "cv" ? job.linked.cv : job.linked.letter
+  const [docs, setDocs] = useState<PaperListItem[] | null>(null)
+
+  async function openList() {
+    const rows = await listPaper(kind)
+    setDocs(rows.filter((row) => row.kind === kind))
+  }
 
   return (
-    <div className="block">
-      <Label htmlFor="job-notes" className={FIELD_LABEL}>
-        Notes
-      </Label>
-      <Textarea
-        id="job-notes"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onBlur={() => {
-          if (value !== note) onCommit(value)
-        }}
-        rows={5}
-        className="min-h-0 resize-none leading-relaxed"
-        placeholder={APPLY_JOB_NOTES_PLACEHOLDER}
-      />
-    </div>
+    <Property label={label}>
+      {linked ? <p className="text-sm">{linked.name}</p> : null}
+      <Button type="button" variant="ghost" onClick={() => void openList()}>
+        Find in Paper
+      </Button>
+      {docs ? (
+        <div className="flex flex-col gap-1">
+          {docs.map((doc) => (
+            <Button
+              key={doc.id}
+              type="button"
+              variant="ghost"
+              onClick={() =>
+                void linkPaper({ jobId: job.id, docId: doc.id, kind }).then(
+                  onChange
+                )
+              }
+            >
+              {doc.name}
+            </Button>
+          ))}
+          {linked ? (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() =>
+                void unlinkPaper({ jobId: job.id, kind }).then(onChange)
+              }
+            >
+              Remove
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
+      {kind === "letter" ? (
+        <Link to="/app/paper" className="text-sm underline">
+          Write a new cover letter
+        </Link>
+      ) : null}
+    </Property>
   )
 }

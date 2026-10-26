@@ -41,10 +41,28 @@ function ownCv(): PaperDoc {
   }
 }
 
+function releaseStage(stage: string) {
+  if (stage === "inbox") return "saved"
+  if (stage === "prep") return "applied"
+  if (stage === "sent") return "interview"
+  if (stage === "live") return "offer"
+  return "closed"
+}
+
+function releaseCards() {
+  return sampleApplyCards().map((card) => ({
+    id: card.id,
+    title: card.title,
+    company: card.company,
+    stage: releaseStage(card.stage),
+    starred: card.starred,
+  }))
+}
+
 describe("Paper ↔ Apply attach path", () => {
   it("names one café CTA and attaches the sample CV to the seeded job", () => {
     const doc = sampleCv()
-    const cards = sampleApplyCards()
+    const cards = releaseCards()
     const pair = paperAttachPair([doc], cards)
 
     expect(PAPER_LINKED_EMPTY_HINT).toBe(
@@ -55,13 +73,13 @@ describe("Paper ↔ Apply attach path", () => {
     expect(pair?.doc).toBe(doc)
     expect(pair?.card.title).toBe(STARTER_GUIDED_APPLY_TITLE)
     expect(pair?.card.company).toBe(STARTER_GUIDED_APPLY_COMPANY)
-    expect(pair?.card.stage).toBe("inbox")
+    expect(pair?.card.stage).toBe("saved")
     expect(paperDocsLinkedToCard([doc], pair!.card.id)).toEqual([])
   })
 
   it("falls back to the first CV when the sample is gone", () => {
     const doc = ownCv()
-    const cards = sampleApplyCards()
+    const cards = releaseCards()
     const pair = paperAttachPair([doc], cards)
 
     expect(paperLinkedEmptyCta([doc])).toBe(PAPER_ATTACH_CV_CTA)
@@ -72,12 +90,12 @@ describe("Paper ↔ Apply attach path", () => {
 
   it("does not invent a job or a doc", () => {
     expect(paperLinkedEmptyCta([])).toBeNull()
-    expect(paperAttachPair([], sampleApplyCards())).toBeNull()
+    expect(paperAttachPair([], releaseCards())).toBeNull()
     expect(paperAttachPair([sampleCv()], [])).toBeNull()
     expect(
       paperAttachPair(
         [sampleCv()],
-        sampleApplyCards().filter((card) => card.stage === "sent")
+        releaseCards().filter((card) => card.stage === "interview")
       )
     ).toBeNull()
   })

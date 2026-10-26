@@ -8,7 +8,7 @@ import { probeSource } from "./probe.mjs"
 
 const CV_NAME = "Live Check CV"
 const ROUTES = {
-  home: ["/app", "document.querySelector('h1')"],
+  home: ["/app/home", "document.querySelector('h1')"],
   paper: [
     "/app/paper",
     `document.body.innerText.includes(${JSON.stringify(CV_NAME)})`,
@@ -20,15 +20,18 @@ const ROUTES = {
 const PRIMARY = {
   home: /^Add /,
   paper: /^(New|Make mine)$/,
-  apply: /^Add /,
+  apply: /^(New job|Add job)$/,
   pitch: /^(Edit|Publish)/,
 }
-const STAGES =
-  "['Inbox','Prep','Sent','Live','Closed'].every((w) => new RegExp('\\\\b' + w + '\\\\b').test(document.body.innerText))"
+const EMPTY_BOARD = "document.body.innerText.includes('Track your first job')"
 const must = (ok, what) => {
   if (!ok) throw new Error(`tour step did not happen: ${what}`)
 }
 async function openDockCoach(page) {
+  const already = await page.evaluate(
+    "Boolean(document.querySelector('textarea'))"
+  )
+  if (already) return
   must(
     await clickByText(page, "button", "Coach"),
     "the dock Coach button was not found"
@@ -153,10 +156,10 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
         skills: [],
       },
     })
-    const card = await post('/api/commands/apply.createCard', {
+    const card = await post('/api/commands/job.create', {
       title: 'Associate PM intern',
       company: 'Local startup',
-      stage: 'prep',
+      stage: 'interview',
     })
     return { cv: cv.ok, card: card.ok }
   })()`)
@@ -164,7 +167,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
     prepared.cv === true && prepared.card === true,
     `creating the tour CV and card failed (${JSON.stringify(prepared)})`
   )
-  await a.goto(`${webUrl}/app`)
+  await a.goto(`${webUrl}/app/home`)
   must(
     await a.waitFor("document.querySelector('textarea')", 20000),
     "welcome did not finish"
@@ -283,7 +286,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
         }
       : null
   )
-  await b.goto(`${webUrl}/app`)
+  await b.goto(`${webUrl}/app/home`)
   must(
     await b.waitFor("document.querySelector('h1')", 15000),
     "the start page did not render"
@@ -296,7 +299,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
   await shot(b, "desktop-coach-error")
 
   b.setIntercept((r) => (coachCall(r) ? "fail" : null))
-  await b.goto(`${webUrl}/app`)
+  await b.goto(`${webUrl}/app/home`)
   must(
     await b.waitFor("document.querySelector('h1')", 15000),
     "the start page did not render"
@@ -371,10 +374,10 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
   )
   const deleted = await e.evaluate(`(async () => {
     const o = { credentials: 'include' }
-    const list = await (await fetch(${JSON.stringify(`${apiUrl}/api/apply`)}, o)).json()
+    const list = await (await fetch(${JSON.stringify(`${apiUrl}/api/jobs`)}, o)).json()
     let n = 0
-    for (const c of list.data) {
-      const res = await fetch(${JSON.stringify(`${apiUrl}/api/commands/apply.deleteCard`)}, { ...o, method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ cardId: c.id }) })
+    for (const c of list.data ?? []) {
+      const res = await fetch(${JSON.stringify(`${apiUrl}/api/commands/job.delete`)}, { ...o, method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jobId: c.id }) })
       if (res.ok) n++
     }
     return { total: list.data.length, deleted: n }
@@ -384,7 +387,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
     `deleting the created cards (${JSON.stringify(deleted)})`
   )
   await e.goto(`${webUrl}/app/apply`)
-  await e.waitFor(STAGES, 15000)
+  await e.waitFor(EMPTY_BOARD, 15000)
   await e.sleep(1000)
   d.applyEmpty = await snap(e)
   d.applyEmpty.deleted = deleted

@@ -22,7 +22,7 @@ import {
   toggleViolations,
 } from "./text-rules.mjs"
 
-test("nouns: opportunity, thread, email, document and profile are flagged", () => {
+test("nouns: Opportunity and Thread are flagged, and Job is allowed", () => {
   const found = nounViolations([
     "Add job",
     "Jobs",
@@ -32,6 +32,8 @@ test("nouns: opportunity, thread, email, document and profile are flagged", () =
     "Add opportunity",
     "Start a new Thread",
     "A first full-time job",
+    "Attach Sample CV to an Opportunity",
+    "New Thread",
   ])
   assert.deepEqual(
     found.map((f) => f.label),

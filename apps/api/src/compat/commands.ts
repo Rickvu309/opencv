@@ -1,20 +1,11 @@
 // Temporary compat for the current web.
-// #377 deletes the thread map, #376 the apply map, #378 the paper map, and #375 the profile map.
+// #376 removed the apply map. #377 deletes the thread map, #378 the paper map, and #375 the profile map.
 import {
-  APPLY_COMMANDS,
-  DEFAULT_APPLY_COMPANY,
-  DEFAULT_APPLY_TITLE,
   ERROR_CODES,
   PAPER_COMMANDS,
   PROFILE_COMMANDS,
   THREAD_COMMANDS,
-  generateKeyBetween,
-  parseJobId,
-  parseUserId,
   type Actor,
-  type ApplyCard,
-  type ApplyStage,
-  type ApplyTrackKind,
   type JobStage,
   type PaperDoc,
   type ThreadDetail,
@@ -23,7 +14,6 @@ import {
   type UserProfile,
 } from "@workspace/domain"
 
-import { latestJobNote } from "../job/index.js"
 import { CommandError } from "../registry/errors.js"
 import type { ExecuteResult, Registry } from "../registry/registry.js"
 
@@ -38,30 +28,8 @@ const COMPAT_COMMANDS = new Set<string>([
   PAPER_COMMANDS.setStatus,
   PAPER_COMMANDS.deleteDoc,
   PAPER_COMMANDS.linkApplyCard,
-  APPLY_COMMANDS.createCard,
-  APPLY_COMMANDS.updateCard,
-  APPLY_COMMANDS.moveCard,
-  APPLY_COMMANDS.toggleStar,
-  APPLY_COMMANDS.deleteCard,
   PROFILE_COMMANDS.setCoachMode,
 ])
-
-const WRITE_STAGE: Record<ApplyStage, JobStage> = {
-  inbox: "saved",
-  prep: "saved",
-  sent: "applied",
-  live: "interview",
-  closed: "closed",
-}
-
-const READ_STAGE: Record<JobStage, ApplyStage> = {
-  saved: "inbox",
-  applied: "sent",
-  interview: "live",
-  // Offer has no old column, so the board shows it in Live.
-  offer: "live",
-  closed: "closed",
-}
 
 type ChatView = {
   id: string
@@ -174,41 +142,8 @@ function asProfile(
   }
 }
 
-function asCard(job: JobView, note = ""): ApplyCard {
-  const trackDate = job.interviewAt
-    ? job.interviewAt.slice(0, 10)
-    : (job.deadline ?? job.createdAt.slice(0, 10))
-  const trackKind: ApplyTrackKind = job.interviewAt
-    ? "interview"
-    : job.deadline
-      ? "deadline"
-      : job.stage === "applied"
-        ? "applied"
-        : "followup"
-  return {
-    id: job.id,
-    title: job.title,
-    company: job.company,
-    note,
-    stage: READ_STAGE[job.stage],
-    position: job.position,
-    starred: job.starred,
-    jobUrl: job.jobUrl,
-    demo: false,
-    trackDate,
-    trackKind,
-    createdAt: job.createdAt,
-    updatedAt: job.updatedAt,
-  }
-}
-
 async function jobsOf(registry: Registry, actor: Actor) {
   return (await registry.read("job.list", {}, actor)) as JobView[]
-}
-
-async function cardById(registry: Registry, actor: Actor, jobId: string) {
-  const job = (await registry.read("job.get", { jobId }, actor)) as JobView
-  return asCard(job, job.note ?? "")
 }
 
 function asPaper(doc: PaperView, jobs: JobView[]): PaperDoc {
@@ -405,164 +340,6 @@ export async function runCompatCommand(
       }
       return paperById(registry, actor, docId)
     }
-    case APPLY_COMMANDS.createCard: {
-      const stage =
-        WRITE_STAGE[(body.stage as ApplyStage) ?? "inbox"] ?? "saved"
-      const created = (await run(
-        registry,
-        "job.create",
-        {
-          title:
-            typeof body.title === "string" && body.title.trim()
-              ? body.title
-              : DEFAULT_APPLY_TITLE,
-          company:
-            typeof body.company === "string" && body.company.trim()
-              ? body.company
-              : DEFAULT_APPLY_COMPANY,
-          stage,
-          ...(typeof body.jobUrl === "string" && body.jobUrl.trim()
-            ? { jobUrl: body.jobUrl }
-            : {}),
-          ...(typeof body.note === "string" && body.note.trim()
-            ? { description: body.note }
-            : {}),
-        },
-        actor
-      )) as JobView
-      if (typeof body.note === "string") {
-        await run(
-          registry,
-          "job.addNote",
-          { jobId: created.id, body: body.note },
-          actor
-        )
-      }
-      if (body.starred === true) {
-        await run(
-          registry,
-          "job.star",
-          { jobId: created.id, starred: true },
-          actor
-        )
-      }
-      if (typeof body.trackDate === "string") {
-        const patch =
-          body.trackKind === "interview"
-            ? { interviewAt: `${body.trackDate}T00:00:00.000Z` }
-            : { deadline: body.trackDate }
-        await run(registry, "job.update", { jobId: created.id, patch }, actor)
-      }
-      return cardById(registry, actor, created.id)
-    }
-    case APPLY_COMMANDS.updateCard: {
-      const jobId = String(body.cardId)
-      const current = (await registry.read(
-        "job.get",
-        { jobId },
-        actor
-      )) as JobView
-      const patch: Record<string, unknown> = {}
-      if (typeof body.title === "string") patch.title = body.title
-      if (typeof body.company === "string") patch.company = body.company
-      if (typeof body.jobUrl === "string" || body.jobUrl === null)
-        patch.jobUrl = body.jobUrl
-      const today = new Date().toISOString().slice(0, 10)
-      const currentDate =
-        current.interviewAt?.slice(0, 10) ?? current.deadline ?? today
-      if (
-        typeof body.trackKind === "string" &&
-        typeof body.trackDate !== "string"
-      ) {
-        if (body.trackKind === "interview") {
-          patch.interviewAt = `${currentDate}T00:00:00.000Z`
-          patch.deadline = null
-        } else if (body.trackKind === "deadline") {
-          patch.deadline =
-            current.deadline ?? current.interviewAt?.slice(0, 10) ?? today
-          patch.interviewAt = null
-        } else if (
-          body.trackKind === "followup" ||
-          body.trackKind === "applied"
-        ) {
-          patch.interviewAt = null
-          patch.deadline = null
-        }
-      } else if (
-        typeof body.trackDate === "string" &&
-        typeof body.trackKind !== "string"
-      ) {
-        if (current.interviewAt)
-          patch.interviewAt = `${body.trackDate}T00:00:00.000Z`
-        else patch.deadline = body.trackDate
-      } else if (typeof body.trackDate === "string") {
-        if (body.trackKind === "interview") {
-          patch.interviewAt = `${body.trackDate}T00:00:00.000Z`
-          patch.deadline = null
-        } else {
-          patch.deadline = body.trackDate
-          patch.interviewAt = null
-        }
-      }
-      if (Object.keys(patch).length > 0) {
-        await run(registry, "job.update", { jobId, patch }, actor)
-      }
-      if (typeof body.note === "string") {
-        await run(registry, "job.addNote", { jobId, body: body.note }, actor)
-      }
-      return cardById(registry, actor, jobId)
-    }
-    case APPLY_COMMANDS.moveCard: {
-      const jobId = String(body.cardId)
-      const stage = WRITE_STAGE[body.stage as ApplyStage]
-      if (!stage) {
-        throw new CommandError(ERROR_CODES.VALIDATION_ERROR, "Unknown stage")
-      }
-      let position: string | undefined
-      if (typeof body.beforeCardId === "string") {
-        const jobs = (await jobsOf(registry, actor)).filter(
-          (job) => job.stage === stage
-        )
-        const index = jobs.findIndex((job) => job.id === body.beforeCardId)
-        if (index >= 0) {
-          const before = jobs[index]?.position ?? null
-          const previous =
-            index > 0 ? (jobs[index - 1]?.position ?? null) : null
-          position = generateKeyBetween(previous, before)
-        }
-      }
-      await run(
-        registry,
-        "job.move",
-        { jobId, stage, ...(position ? { position } : {}) },
-        actor
-      )
-      return cardById(registry, actor, jobId)
-    }
-    case APPLY_COMMANDS.toggleStar: {
-      const jobId = String(body.cardId)
-      const current = (await registry.read(
-        "job.get",
-        { jobId },
-        actor
-      )) as JobView
-      await run(
-        registry,
-        "job.star",
-        { jobId, starred: !current.starred },
-        actor
-      )
-      return cardById(registry, actor, jobId)
-    }
-    case APPLY_COMMANDS.deleteCard: {
-      const deleted = await run(
-        registry,
-        "job.delete",
-        { jobId: body.cardId },
-        actor
-      )
-      return { id: (deleted as { id: string }).id }
-    }
     case PROFILE_COMMANDS.setCoachMode: {
       const profile = (await run(
         registry,
@@ -609,14 +386,4 @@ export async function listCompatPaper(registry: Registry, actor: Actor) {
   return docs.map((doc) => asPaper(doc, jobs))
 }
 
-export async function listCompatJobs(registry: Registry, actor: Actor) {
-  const jobs = await jobsOf(registry, actor)
-  const userId = parseUserId(actor.userId)
-  return Promise.all(
-    jobs.map(async (job) =>
-      asCard(job, await latestJobNote(userId, parseJobId(job.id)))
-    )
-  )
-}
-
-export { asDetail, asMessage, asThread, cardById }
+export { asDetail, asMessage, asThread }

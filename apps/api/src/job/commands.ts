@@ -33,7 +33,7 @@ import {
   calendarJobs,
   createJob,
   deleteJob,
-  latestJobNote,
+  getJob,
   linkPaper,
   listJobs,
   moveJob,
@@ -42,7 +42,6 @@ import {
   removeChecklistItem,
   setChecklistItem,
   starJob,
-  toJob,
   unlinkPaper,
   updateJob,
 } from "./store.js"
@@ -348,10 +347,7 @@ export function registerJob(registry: Registry, options?: JobPreviewOptions) {
       input: idInput,
       coach: true,
       step: () => "Read the job",
-      read: async (input, actor) => ({
-        ...toJob(await ownedJob(actor.userId, input.jobId)),
-        note: await latestJobNote(actor.userId, input.jobId),
-      }),
+      read: (input, actor) => getJob(actor.userId, input.jobId),
     })
   )
 

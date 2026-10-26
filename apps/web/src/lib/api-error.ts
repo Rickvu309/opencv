@@ -3,25 +3,40 @@ export type ErrorEnvelope = {
   error: {
     code: string
     message: string
+    jobId?: string
+    stage?: string
   }
 }
 
 export class ApiError extends Error {
   readonly status: number
   readonly code: string
+  readonly jobId?: string
+  readonly stage?: string
 
-  constructor(status: number, code: string, message: string) {
+  constructor(
+    status: number,
+    code: string,
+    message: string,
+    detail?: { jobId?: string; stage?: string }
+  ) {
     super(message)
     this.name = "ApiError"
     this.status = status
     this.code = code
+    this.jobId = detail?.jobId
+    this.stage = detail?.stage
   }
 }
 
 export function isErrorEnvelope(value: unknown): value is ErrorEnvelope {
   if (typeof value !== "object" || value === null) return false
   if (!("ok" in value) || value.ok !== false) return false
-  if (!("error" in value) || typeof value.error !== "object" || value.error === null) {
+  if (
+    !("error" in value) ||
+    typeof value.error !== "object" ||
+    value.error === null
+  ) {
     return false
   }
 

@@ -106,6 +106,44 @@ export async function latestJobNote(userId: UserId, jobId: JobId) {
   return rows[0]?.summary ?? ""
 }
 
+export async function checklistFor(jobId: JobId) {
+  const rows = await getDb()
+    .select()
+    .from(jobChecklist)
+    .where(eq(jobChecklist.jobId, jobId))
+    .orderBy(asc(jobChecklist.position))
+  return rows.map((row) => ({
+    id: row.id,
+    label: row.label,
+    done: row.done,
+    position: row.position,
+  }))
+}
+
+async function linkedDoc(userId: UserId, docId: string | null) {
+  if (!docId) return null
+  const rows = await getDb()
+    .select({ id: paperDocs.id, name: paperDocs.name })
+    .from(paperDocs)
+    .where(and(eq(paperDocs.id, docId), eq(paperDocs.userId, userId)))
+    .limit(1)
+  const doc = rows[0]
+  return doc ? { id: doc.id, name: doc.name } : null
+}
+
+export async function getJob(userId: UserId, jobId: JobId) {
+  const row = await ownedJob(userId, jobId)
+  return {
+    ...toJob(row),
+    note: await latestJobNote(userId, jobId),
+    checklist: await checklistFor(jobId),
+    linked: {
+      cv: await linkedDoc(userId, row.cvDocId),
+      letter: await linkedDoc(userId, row.letterDocId),
+    },
+  }
+}
+
 export async function listJobs(
   userId: UserId,
   filter?: { stage?: JobStage; company?: string; location?: string }
@@ -146,6 +184,7 @@ export async function createJob(actor: Actor, input: JobCreateInput) {
     if (existing) {
       throw new CommandError(ERROR_CODES.DUPLICATE_JOB, DUPLICATE_JOB_MESSAGE, {
         jobId: existing.id,
+        stage: existing.stage,
       })
     }
   }
@@ -202,6 +241,7 @@ export async function updateJob(actor: Actor, jobId: JobId, patch: JobPatch) {
     if (existing && existing.id !== current.id) {
       throw new CommandError(ERROR_CODES.DUPLICATE_JOB, DUPLICATE_JOB_MESSAGE, {
         jobId: existing.id,
+        stage: existing.stage,
       })
     }
   }
@@ -486,6 +526,7 @@ export async function previewJob(
       return {
         status: "duplicate" as const,
         jobId: duplicate.id,
+        stage: duplicate.stage,
         fields: {
           title: title || duplicate.title,
           company: company || duplicate.company,

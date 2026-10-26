@@ -15,7 +15,6 @@ import { createChatRoutes } from "./chat/index.js"
 import { createCoachRoutes, interpretPosting } from "./coach/index.js"
 import { setCoachModelEnv, type CoachModelEnv } from "./config.js"
 import {
-  createCompatApplyRoutes,
   createCompatPaperRoutes,
   createCompatThreadRoutes,
 } from "./compat/index.js"
@@ -156,10 +155,6 @@ export function createApp({
   app.route("/api/coach", createUsageRoutes(auth, database))
   app.route("/api/paper", createCompatPaperRoutes(auth, database))
   app.route("/api/paper", createPaperRoutes(auth, database))
-  app.route(
-    "/api/apply",
-    createCompatApplyRoutes({ auth, db: database, coach, fetchJobPosting })
-  )
   app.route("/api/jobs", createJobRoutes(auth, database))
   app.route("/api/inbox", createInboxRoutes(auth, database, gmailEnabled))
   app.route("/api/profile", createProfileRoutes(auth, database))

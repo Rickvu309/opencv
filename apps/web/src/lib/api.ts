@@ -100,12 +100,16 @@ export async function apiRequest(
     const code = error?.code ?? "REQUEST_FAILED"
     const message = error?.message ?? `Request failed with ${res.status}`
 
+    const detail = {
+      jobId: typeof error?.jobId === "string" ? error.jobId : undefined,
+      stage: typeof error?.stage === "string" ? error.stage : undefined,
+    }
     if (res.status === 401 || code === "UNAUTHORIZED") {
       notifyUnauthorized()
-      throw new ApiError(401, code, message)
+      throw new ApiError(401, code, message, detail)
     }
 
-    throw new ApiError(res.status, code, message)
+    throw new ApiError(res.status, code, message, detail)
   }
 
   return res

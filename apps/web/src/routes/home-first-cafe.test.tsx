@@ -1,3 +1,4 @@
+import userEvent from "@testing-library/user-event"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import {
   cleanup,
@@ -8,6 +9,8 @@ import {
 } from "@testing-library/react"
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { readFirstCafeState } from "@/features/home/first-cafe-checklist.ts"
+import { mockJob } from "@/test/apply-job-fixtures.ts"
+import { setMockJobs } from "@/test/apply-jobs-mock.ts"
 import { goHome } from "@/test/go-home.ts"
 import { renderApp } from "@/test/render-app.tsx"
 import {
@@ -47,7 +50,7 @@ describe("Home first-café checklist", () => {
       `${SURFACE_PATHS.paper}?open=sample`
     )
     expect(pitch).toHaveAttribute("href", SURFACE_PATHS.pitch)
-    expect(apply).toHaveAttribute("href", `${SURFACE_PATHS.apply}?open=guide`)
+    expect(apply).toHaveAttribute("href", SURFACE_PATHS.apply)
     expect(email).toHaveAttribute("href", `${SURFACE_PATHS.settings}?tab=apps`)
 
     expect(
@@ -131,7 +134,6 @@ describe("Home first-café checklist", () => {
     fireEvent.click(screen.getByRole("link", { name: "Triage one Apply card" }))
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(SURFACE_PATHS.apply)
-      expect(router.state.location.search).toMatchObject({ open: "guide" })
     })
     expect(
       await screen.findByRole("heading", { level: 1, name: "Apply" })
@@ -243,68 +245,33 @@ describe("Home first-café checklist", () => {
     expect(readFirstCafeState("user_test").completed).toEqual([])
   })
 
-  it("opens one seeded Apply card with a Prep next action and keeps the board", async () => {
+  it("moves one job and completes Apply", async () => {
+    setMockJobs([
+      mockJob({
+        id: "01900000-0000-7000-8000-000000000001",
+        title: "Associate PM intern",
+        company: "Local startup",
+        stage: "saved",
+      }),
+    ])
     const { router } = renderApp()
     await expectHomeStarted()
 
     fireEvent.click(screen.getByRole("link", { name: "Triage one Apply card" }))
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(SURFACE_PATHS.apply)
-      expect(router.state.location.search).toMatchObject({ open: "guide" })
     })
-
-    const panel = await screen.findByRole("complementary", {
-      name: "Opportunity detail",
-    })
-    expect(
-      within(panel).getByDisplayValue("Associate PM intern")
-    ).toBeInTheDocument()
-    expect(
-      within(panel).getByRole("button", { name: "Move to Prep" })
-    ).toBeInTheDocument()
-    expect(
-      within(panel).getByRole("combobox", { name: "Track" })
-    ).toHaveTextContent("Follow-up")
-
-    expect(screen.getByText("Product intern")).toBeInTheDocument()
-    expect(screen.getByText("Business analyst intern")).toBeInTheDocument()
-    expect(screen.getByText("Product analyst intern")).toBeInTheDocument()
-    expect(screen.getByText("UX research intern")).toBeInTheDocument()
-    expect(
-      screen.queryByRole("button", { name: /skip tour|continue tour/i })
-    ).not.toBeInTheDocument()
-
-    fireEvent.click(within(panel).getByRole("button", { name: "Move to Prep" }))
+    const user = userEvent.setup()
+    await user.click(
+      await screen.findByRole("button", {
+        name: "Associate PM intern, Local startup",
+      })
+    )
+    await user.click(await screen.findByRole("combobox", { name: "Stage" }))
+    await user.click(await screen.findByRole("option", { name: "Applied" }))
     await waitFor(() => {
-      expect(
-        within(
-          document.querySelector('[data-stage="prep"]') as HTMLElement
-        ).getByText("Associate PM intern")
-      ).toBeInTheDocument()
+      expect(readFirstCafeState("user_test").completed).toEqual(["apply"])
     })
-    expect(
-      within(
-        document.querySelector('[data-stage="inbox"]') as HTMLElement
-      ).queryByText("Associate PM intern")
-    ).not.toBeInTheDocument()
-    expect(
-      within(
-        document.querySelector('[data-stage="inbox"]') as HTMLElement
-      ).getByText("Product intern")
-    ).toBeInTheDocument()
-    expect(
-      within(
-        document.querySelector('[data-stage="prep"]') as HTMLElement
-      ).getByText("Business analyst intern")
-    ).toBeInTheDocument()
-    expect(
-      screen.queryByRole("button", { name: "Move to Prep" })
-    ).not.toBeInTheDocument()
-    expect(
-      within(
-        await screen.findByRole("complementary", { name: "Opportunity detail" })
-      ).getByRole("combobox", { name: "Track" })
-    ).toHaveTextContent("Follow-up")
 
     await goHome()
     await expectHomeStarted()
@@ -318,7 +285,6 @@ describe("Home first-café checklist", () => {
         name: "Make Pitch yours, done",
       })
     ).not.toBeInTheDocument()
-    expect(readFirstCafeState("user_test").completed).toEqual(["apply"])
   })
 
   it("peeking Paper / Pitch / Apply does not reach You're set", async () => {
@@ -390,6 +356,14 @@ describe("Home first-café checklist", () => {
   })
 
   it("marks Pitch and Apply only after an edit and a triage", async () => {
+    setMockJobs([
+      mockJob({
+        id: "01900000-0000-7000-8000-000000000001",
+        title: "Associate PM intern",
+        company: "Local startup",
+        stage: "saved",
+      }),
+    ])
     const { router } = renderApp()
     await expectHomeStarted()
     fireEvent.click(screen.getByRole("button", { name: "I'm not sure yet" }))
@@ -434,10 +408,14 @@ describe("Home first-café checklist", () => {
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(SURFACE_PATHS.apply)
     })
-    const panel = await screen.findByRole("complementary", {
-      name: "Opportunity detail",
-    })
-    fireEvent.click(within(panel).getByRole("button", { name: "Move to Prep" }))
+    const user = userEvent.setup()
+    await user.click(
+      await screen.findByRole("button", {
+        name: "Associate PM intern, Local startup",
+      })
+    )
+    await user.click(await screen.findByRole("combobox", { name: "Stage" }))
+    await user.click(await screen.findByRole("option", { name: "Applied" }))
     await goHome()
     await expectHomeStarted()
 

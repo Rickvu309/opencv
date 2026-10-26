@@ -56,6 +56,10 @@ export function resetProfileApiMock() {
   welcomedAt = undefined
 }
 
+export function setMockProfile(patch: Partial<UserProfile>) {
+  store.profile = { ...store.profile, ...patch }
+}
+
 export function getMockCoachMode() {
   return store.profile.coachMode
 }

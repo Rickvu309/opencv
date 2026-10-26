@@ -44,8 +44,12 @@ export async function expectPitch() {
 
 export async function expectApplyLive() {
   await expectHeading("Apply")
-  expect(screen.getByRole("radio", { name: "Board" })).toBeInTheDocument()
-  expect(screen.getByRole("radio", { name: "Calendar" })).toBeInTheDocument()
+  expect(screen.getByRole("button", { name: "Board" })).toBeInTheDocument()
+  expect(screen.getByRole("button", { name: "Calendar" })).toBeInTheDocument()
+  expect(
+    await screen.findByRole("heading", { name: "Track your first job" })
+  ).toBeInTheDocument()
+  expect(screen.queryByText(SURFACE_COPY.apply.body)).not.toBeInTheDocument()
 }
 
 export async function expectHomeIdle() {

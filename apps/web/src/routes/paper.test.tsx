@@ -10,7 +10,6 @@ import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import {
   STARTER_CV_NAME,
   STARTER_GUIDED_APPLY_COMPANY,
-  STARTER_GUIDED_APPLY_TITLE,
   starterCvDocument,
 } from "@workspace/domain"
 import {
@@ -305,41 +304,32 @@ describe("Paper drive", () => {
     expect(
       screen.queryByRole("dialog", { name: "Link to Apply" })
     ).not.toBeInTheDocument()
-    expect(screen.getByText(STARTER_GUIDED_APPLY_COMPANY)).toBeInTheDocument()
+    expect(
+      within(
+        screen.getByRole("row", { name: new RegExp(STARTER_CV_NAME) })
+      ).getByText(STARTER_GUIDED_APPLY_COMPANY)
+    ).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole("link", { name: /^Apply/ }))
     expect(
       await screen.findByRole("heading", { level: 1, name: "Apply" })
     ).toBeInTheDocument()
-
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: `${STARTER_GUIDED_APPLY_TITLE} at ${STARTER_GUIDED_APPLY_COMPANY}`,
-      })
-    )
-    const panel = await screen.findByRole("complementary", {
-      name: "Opportunity detail",
-    })
-    const paperLink = within(panel).getByRole("region", {
-      name: "Linked Paper",
-    })
-    expect(within(paperLink).getByText(STARTER_CV_NAME)).toBeInTheDocument()
-
-    fireEvent.click(
-      within(panel).getByRole("button", { name: "Link Paper docs" })
-    )
-    const menu = await screen.findByRole("menu", { name: "Link Paper docs" })
-    expect(
-      within(menu).getByRole("menuitemcheckbox", { name: STARTER_CV_NAME })
-    ).toHaveAttribute("aria-checked", "true")
   })
 
   it("shows and changes the Apply card link", async () => {
     renderPaper()
     await expectPaperDrive()
 
-    expect(screen.getByText("Local startup")).toBeInTheDocument()
-    expect(screen.getByText("Fintech scale-up")).toBeInTheDocument()
+    expect(
+      within(
+        screen.getByRole("row", { name: /Cover: Associate PM intern/ })
+      ).getByText("Local startup")
+    ).toBeInTheDocument()
+    expect(
+      within(
+        screen.getByRole("row", { name: /Cover: Product intern/ })
+      ).getByText("Fintech scale-up")
+    ).toBeInTheDocument()
 
     fireEvent.click(
       screen.getByRole("button", {
@@ -353,9 +343,17 @@ describe("Paper drive", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Unlink" }))
 
     await waitFor(() => {
-      expect(screen.queryByText("Local startup")).not.toBeInTheDocument()
+      expect(
+        within(
+          screen.getByRole("row", { name: /Cover: Associate PM intern/ })
+        ).queryByText("Local startup")
+      ).not.toBeInTheDocument()
     })
-    expect(screen.getByText("Fintech scale-up")).toBeInTheDocument()
+    expect(
+      within(
+        screen.getByRole("row", { name: /Cover: Product intern/ })
+      ).getByText("Fintech scale-up")
+    ).toBeInTheDocument()
   })
 
   it("keeps New enabled and offers no Filter", async () => {

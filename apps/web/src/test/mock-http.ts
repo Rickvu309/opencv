@@ -22,6 +22,14 @@ export function jsonOk<T>(data: T, status = 200) {
   return Response.json({ ok: true, data }, { status })
 }
 
-export function jsonError(status: number, code: string, message: string) {
-  return Response.json({ ok: false, error: { code, message } }, { status })
+export function jsonError(
+  status: number,
+  code: string,
+  message: string,
+  detail?: { jobId?: string; stage?: string }
+) {
+  return Response.json(
+    { ok: false, error: { code, message, ...detail } },
+    { status }
+  )
 }

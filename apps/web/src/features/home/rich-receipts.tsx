@@ -18,16 +18,15 @@ import {
   type CoachReceiptDetail,
 } from "@workspace/domain"
 
-import { STAGES } from "@/features/apply/apply-types.ts"
+import {
+  RECEIPT_STAGES as STAGES,
+  stageLabel,
+} from "@/features/home/coach-receipt.ts"
 
 type UpdateContentDetail = Extract<
   CoachReceiptDetail,
   { type: "paper.updateContent" }
 >
-
-function stageLabel(stage: string) {
-  return STAGES.find((item) => item.id === stage)?.label ?? stage
-}
 
 export function DiffBlock({ detail }: { detail: UpdateContentDetail }) {
   const [expanded, setExpanded] = useState(false)
