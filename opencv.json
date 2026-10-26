@@ -3,5 +3,6 @@
   "srcDir": "apps/web/src",
   "componentsDir": "packages/ui/src/components",
   "screensDir": "apps/web/src/features",
+  "appDir": "apps/web/src",
   "styles": "packages/ui/src/styles/globals.css"
 }
