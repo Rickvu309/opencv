@@ -95,6 +95,7 @@ export function sseDataForPart(part: CoachStreamPart): unknown {
         ok: part.ok,
         ...(part.reversal ? { reversal: part.reversal } : {}),
         ...(part.detail ? { detail: part.detail } : {}),
+        ...(part.activityId ? { activityId: part.activityId } : {}),
         result: part.result,
       }
     default:

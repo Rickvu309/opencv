@@ -1,6 +1,7 @@
 import { z } from "zod"
 
 import { applyStageSchema } from "./apply.js"
+import { chatAttachmentSchema } from "./chat.js"
 import { coachModeSchema, type CoachUsageRating } from "./coach.js"
 import { reversalDescriptorSchema, THREAD_COMMANDS } from "./commands.js"
 import {
@@ -113,6 +114,7 @@ export const coachTurnRequestSchema = z
       )
       .max(8)
       .optional(),
+    attachments: z.array(chatAttachmentSchema).max(8).optional(),
   })
   .strict()
   .superRefine((value, ctx) => {

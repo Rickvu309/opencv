@@ -1,5 +1,6 @@
 import {
   coachLimitMessage,
+  coachModeCaps,
   dailyTurnCap,
   dayWindow,
   ERROR_CODES,
@@ -62,6 +63,7 @@ export async function readUsage(
     weekTurns,
     cap,
     sessionHours: hours,
+    caps: coachModeCaps(env),
   })
 }
 

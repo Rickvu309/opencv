@@ -160,7 +160,7 @@ describe("commands without auth", () => {
     })
 
     const list = await api.request("/api/threads")
-    expect(list.status).toBe(503)
+    expect(list.status).toBe(404)
 
     const paper = await api.request("/api/paper")
     expect(paper.status).toBe(503)

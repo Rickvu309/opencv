@@ -37,11 +37,11 @@ async function paperFocus(
 
 async function jobLine(registry: Registry, actor: Actor, jobId: string) {
   const row = record(await registry.read("job.get", { jobId }, actor))
-  if (!row) return ""
+  if (!row) return { line: "", title: "" }
   const title = text(row.title)
   const company = text(row.company)
-  if (!title && !company) return ""
-  return `Open job: ${title} at ${company}.`
+  if (!title && !company) return { line: "", title: "" }
+  return { line: `Open job: ${title} at ${company}.`, title }
 }
 
 export async function resolveTurnGrounding(input: {
@@ -52,7 +52,7 @@ export async function resolveTurnGrounding(input: {
   storedId: string | null
   context?: ContextItem[]
   memoryEnabled: boolean
-}): Promise<{ focusDoc?: CoachFocusDoc; note?: string }> {
+}): Promise<{ focusDoc?: CoachFocusDoc; note?: string; readLabel?: string }> {
   const lines: string[] = []
   let paperId: string | undefined
   let jobId: string | undefined
@@ -64,16 +64,19 @@ export async function resolveTurnGrounding(input: {
   }
 
   let focusDoc: CoachFocusDoc | undefined
+  let readLabel: string | undefined
   if (paperId) {
     const doc = await paperFocus(input.registry, input.actor, paperId)
     if (doc) {
       focusDoc = doc
+      readLabel = `Read ${doc.name}`
       lines.push(`Open document: ${doc.name} (${doc.kind}).`)
     }
   }
   if (jobId) {
-    const line = await jobLine(input.registry, input.actor, jobId)
-    if (line) lines.push(line)
+    const job = await jobLine(input.registry, input.actor, jobId)
+    if (job.line) lines.push(job.line)
+    if (job.title) readLabel = `Read the ${job.title} posting`
   }
 
   for (const item of input.context ?? []) {
@@ -118,5 +121,9 @@ export async function resolveTurnGrounding(input: {
   }
 
   const note = lines.join("\n")
-  return note ? { focusDoc, note } : { focusDoc }
+  return {
+    ...(focusDoc ? { focusDoc } : {}),
+    ...(note ? { note } : {}),
+    ...(readLabel ? { readLabel } : {}),
+  }
 }

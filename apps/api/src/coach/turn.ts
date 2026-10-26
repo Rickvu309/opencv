@@ -72,6 +72,7 @@ export async function runCoachTurn(options: {
   focusDoc?: CoachFocusDoc
   selection?: CoachSelection
   note?: string
+  readLabel?: string
   heartbeatMs: number
   signal?: AbortSignal
 }) {
@@ -116,6 +117,9 @@ export async function runCoachTurn(options: {
         ? { threadId: options.chatId }
         : { chatId: options.chatId }
     )
+    if (options.wire === "native" && options.readLabel) {
+      await emit(COACH_SSE_EVENTS.step, { label: options.readLabel })
+    }
     const iterable = options.runtime
       ? options.runtime.streamTurn({
           userId: options.userId,

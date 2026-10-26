@@ -206,6 +206,7 @@ export type CoachToolResultPart = {
   detail?: CoachReceiptDetail
   pendingActionId?: string
   command?: string
+  activityId?: string
 }
 
 export type CoachFinishPart = {

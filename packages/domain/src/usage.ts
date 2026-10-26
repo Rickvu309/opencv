@@ -61,9 +61,30 @@ export type DayUsage =
     }
   | UncappedWindow
 
+export type CoachModeCaps = {
+  free: number
+  light: number
+  max: number
+}
+
+export function coachModeCaps(env: DailyLimitEnv = {}): CoachModeCaps {
+  return {
+    free:
+      nonNegativeInt(env.COACH_DAILY_TURN_LIMIT_FREE) ??
+      DEFAULT_DAILY_TURN_LIMIT_FREE,
+    light:
+      nonNegativeInt(env.COACH_DAILY_TURN_LIMIT_LIGHT) ??
+      DEFAULT_DAILY_TURN_LIMIT_LIGHT,
+    max:
+      nonNegativeInt(env.COACH_DAILY_TURN_LIMIT_MAX) ??
+      DEFAULT_DAILY_TURN_LIMIT_MAX,
+  }
+}
+
 export type UsageSnapshot = {
   plan: Plan
   mode: CoachMode
+  caps: CoachModeCaps
   session: CappedPercent | UncappedWindow
   day: DayUsage
   week: CappedPercent | UncappedWindow
@@ -326,6 +347,7 @@ export function usageSnapshot(input: {
   weekTurns: number
   cap: number
   sessionHours?: number
+  caps?: CoachModeCaps
 }): UsageSnapshot {
   const day = dayWindow(input.now, input.timeZone)
   const week = weekWindow(input.now, input.timeZone)
@@ -334,10 +356,12 @@ export function usageSnapshot(input: {
     input.timeZone,
     input.sessionHours ?? DEFAULT_SESSION_HOURS
   )
+  const caps = input.caps ?? coachModeCaps()
   if (input.cap <= 0) {
     return {
       plan: input.plan,
       mode: input.mode,
+      caps,
       session: { capped: false, resetsAt: session.resetsAt.toISOString() },
       day: { capped: false, resetsAt: day.resetsAt.toISOString() },
       week: { capped: false, resetsAt: week.resetsAt.toISOString() },
@@ -347,6 +371,7 @@ export function usageSnapshot(input: {
   return {
     plan: input.plan,
     mode: input.mode,
+    caps,
     session: {
       capped: true,
       percent: percentOf(input.sessionTurns, input.cap),

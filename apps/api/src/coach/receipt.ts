@@ -128,5 +128,6 @@ export function toolResultFromExecute(input: {
           command: input.result.command ?? input.name,
         }
       : {}),
+    ...(input.result.activityId ? { activityId: input.result.activityId } : {}),
   }
 }
