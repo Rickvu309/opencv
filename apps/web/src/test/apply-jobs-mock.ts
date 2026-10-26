@@ -281,13 +281,16 @@ export async function jobApiFetch(
     const payload = commandInput(readBody(init))
     if (name === "activity.undo") {
       const activityId = String(payload.activityId ?? "")
+      let found = false
       for (const [jobId, more] of extras) {
         const row = more.activity.find((item) => item.id === activityId)
         if (!row) continue
+        found = true
         row.undoneAt = new Date().toISOString()
         const job = jobs.find((item) => item.id === jobId)
         if (job && more.previousStage) job.stage = more.previousStage
       }
+      if (!found) return null
       record(name, payload)
       return jsonOk({ activityId })
     }

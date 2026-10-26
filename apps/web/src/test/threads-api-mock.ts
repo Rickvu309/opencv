@@ -256,6 +256,7 @@ export function resetThreadApiMock() {
   mockState.nativeTurn = null
   mockState.commandCalls = []
   mockState.usage = defaultUsage()
+  mockState.usageTouched = false
 }
 
 export function getLastCoachRequest() {

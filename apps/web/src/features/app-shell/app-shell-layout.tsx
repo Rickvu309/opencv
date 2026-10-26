@@ -16,18 +16,18 @@ export function AppShellLayout() {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   })
-  if (pathname.startsWith("/app/settings")) {
-    return (
-      <div className="flex h-svh min-h-0 flex-col overflow-hidden bg-background text-foreground">
-        <Outlet />
-      </div>
-    )
-  }
+  const settings = pathname.startsWith("/app/settings")
   return (
     <ThreadStoreProvider>
-      <ShellOverlays>
-        <AppShellChrome />
-      </ShellOverlays>
+      {settings ? (
+        <div className="flex h-svh min-h-0 flex-col overflow-hidden bg-background text-foreground">
+          <Outlet />
+        </div>
+      ) : (
+        <ShellOverlays>
+          <AppShellChrome />
+        </ShellOverlays>
+      )}
     </ThreadStoreProvider>
   )
 }

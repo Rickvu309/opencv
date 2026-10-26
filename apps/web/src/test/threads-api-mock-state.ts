@@ -72,6 +72,7 @@ export const mockState: {
   nativeTurn: NativeTurnRecord | null
   commandCalls: Array<{ name: string; body: unknown }>
   usage: UsageOverride
+  usageTouched: boolean
 } = {
   threads: cloneThreads(FIXTURE_THREADS),
   script: {},
@@ -80,6 +81,7 @@ export const mockState: {
   nativeTurn: null,
   commandCalls: [],
   usage: defaultUsage(),
+  usageTouched: false,
 }
 
 export async function readBody(init?: RequestInit): Promise<unknown> {

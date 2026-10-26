@@ -20,6 +20,7 @@ export function getCoachCommandCalls() {
 }
 
 export function setMockCoachUsage(next: Partial<UsageOverride>) {
+  mockState.usageTouched = true
   mockState.usage = {
     ...mockState.usage,
     ...next,

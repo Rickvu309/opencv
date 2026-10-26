@@ -27,7 +27,7 @@ type Props = {
 }
 
 function detail(mode: CoachMode, usage: CoachUsageView | null) {
-  if (!usage) return ""
+  if (!usage?.caps) return ""
   if (mode === "free") {
     const cap = usage.caps.free
     if (cap === 0) return "Quick edits"

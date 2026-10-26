@@ -7,6 +7,7 @@ import {
 import { SAMPLE_AUTHOR } from "@/features/seed/sample-author.ts"
 import { authMockState } from "@/test/auth-client-mock.ts"
 import { pathOf, jsonOk, jsonError } from "./mock-http.ts"
+import { mockState } from "./threads-api-mock-state.ts"
 
 type Extras = {
   plan: "free" | "pro"
@@ -355,7 +356,16 @@ export async function profileApiFetch(
   }
 
   if (method === "GET" && path === "/api/coach/usage") {
-    return jsonOk(usagePayload())
+    const base = usagePayload()
+    const caps = mockState.usage.caps
+    if (!mockState.usageTouched) return jsonOk({ ...base, caps })
+    return jsonOk({
+      ...base,
+      plan: mockState.usage.plan,
+      mode: mockState.usage.mode,
+      caps,
+      day: mockState.usage.day,
+    })
   }
 
   if (method === "GET" && path === "/api/inbox/connect") {
