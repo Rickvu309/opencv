@@ -101,13 +101,15 @@ export function JobRow({
     >
       <StageIcon stage={job.stage} />
       <CompanyTile company={job.company} />
-      <span className="min-w-0 flex-1 truncate text-left text-sm">
+      <span className="min-w-24 flex-1 truncate text-left text-sm">
         {job.title}
       </span>
-      <span className="truncate text-xs text-muted-foreground">
+      <span className="min-w-14 max-w-28 truncate text-xs text-muted-foreground md:max-w-none md:shrink-0">
         {job.company}
       </span>
-      <span className="shrink-0 text-xs text-muted-foreground">{phrase}</span>
+      <span className="min-w-0 max-w-24 shrink truncate text-xs text-muted-foreground sm:max-w-none sm:shrink-0">
+        {phrase}
+      </span>
     </Button>
   )
 }
