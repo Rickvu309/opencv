@@ -37,7 +37,7 @@ Editing files under `apps/api/src` while the stack is up makes `tsx watch` respa
 
 Use the `agent-browser` skill with its own named session (`export AGENT_BROWSER_SESSION=verify-<run>`). Load `$WEB_URL` from `run.env` (`set -a; . ~/tmp/opencv-verify/<run>/run.env; set +a`). Prefer ARIA roles and accessible names: `agent-browser find role button click --name "Continue"`.
 
-Routes: `/sign-in`. `/sign-up` redirects to `/sign-in`. `/app` redirects to the start page, Apply by default. `/app/paper`, `/app/apply`, `/app/pitch`, `/app/coach`, `/app/jobs`, `/app/inbox`, `/app/settings`. Signed-out visits to `/app/*` redirect to `/sign-in?redirect=...`. `/u/<slug>` is not a route.
+Routes: `/sign-in`. `/sign-up` redirects to `/sign-in`. `/app` redirects to the start page, Apply by default. `/app/paper`, `/app/apply`, `/app/pitch`, `/app/coach`, `/app/jobs`, `/app/inbox`, `/app/settings` (Preferences, plus `/app/settings/coach`, `/app/settings/integrations`, `/app/settings/usage`, `/app/settings/billing`, `/app/settings/billing/upgrade`, and `/app/settings/account`). Signed-out visits to `/app/*` redirect to `/sign-in?redirect=...`. `/u/<slug>` is not a route.
 
 The first email code creates an empty account. It does not seed a CV, Apply cards, a Pitch, or a welcome thread. Each feature recipe creates the records it drives. Brand text may change between branches, so assert on behavior and accessible names, not the product name.
 
@@ -49,6 +49,7 @@ Open `features/README.md`, pick the feature file for what changed, and follow it
 - `features/paper-edit-save.md`
 - `features/apply-board-and-scan.md`
 - `features/pitch-publish.md`
+- `features/settings.md`
 
 A proof that drives one convenient entry point is incomplete when the feature file lists others.
 

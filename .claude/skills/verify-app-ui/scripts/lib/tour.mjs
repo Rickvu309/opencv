@@ -241,6 +241,14 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
       d.pitchStory = d.pitch
     }
   }
+  await a.goto(`${webUrl}/app/settings`)
+  must(
+    await a.waitFor("document.body.innerText.includes('Preferences')", 20000),
+    "settings did not render"
+  )
+  await a.sleep(1200)
+  d.settings = await snap(a)
+  await shot(a, "desktop-settings")
   d.logs.push(...a.logs.splice(0))
   await a.close()
 
@@ -328,6 +336,13 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
     await r.sleep(1200)
     d.reduced[key] = await snap(r)
   }
+  await r.goto(`${webUrl}/app/settings`)
+  must(
+    await r.waitFor("document.body.innerText.includes('Preferences')", 20000),
+    "settings did not render (reduced motion)"
+  )
+  await r.sleep(1200)
+  d.settingsReduced = await snap(r)
   d.logs.push(...r.logs.splice(0))
   await r.close()
 
@@ -357,6 +372,14 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
     d.mobile[key] = await snap(m)
     await shot(m, `mobile-${key}`)
   }
+  await m.goto(`${webUrl}/app/settings`)
+  must(
+    await m.waitFor("document.body.innerText.includes('Preferences')", 20000),
+    "settings did not render at 390px"
+  )
+  await m.sleep(1200)
+  d.settingsMobile = await snap(m)
+  await shot(m, "mobile-settings")
   d.logs.push(...m.logs.splice(0))
   await m.close()
 
