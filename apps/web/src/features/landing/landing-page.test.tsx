@@ -100,9 +100,13 @@ describe("landing page", () => {
     expect(
       screen.getByRole("heading", { name: "Proof, not claims" })
     ).toBeInTheDocument()
+    const logos = container.querySelector("#logos")
     expect(
-      screen.getByText("PEOPLE USING OPENCV HAVE INTERVIEWED AT")
-    ).toBeInTheDocument()
+      [...(logos?.children ?? [])].map((node) => node.tagName)
+    ).toEqual(["UL", "H2"])
+    expect(logos?.querySelector("h2")).toHaveTextContent(
+      "PEOPLE USING OPENCV HAVE INTERVIEWED AT"
+    )
     expect(screen.getByText("Maya T.")).toBeInTheDocument()
     expect(screen.getByText("Daniel K.")).toBeInTheDocument()
 

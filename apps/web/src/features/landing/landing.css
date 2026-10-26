@@ -150,7 +150,12 @@ html:has(.landing-root) {
   padding-block: clamp(3rem, 7vw, 6.5rem);
 }
 
+.landing-logos {
+  gap: 2.25rem;
+}
+
 .landing-kicker {
+  margin: 0;
   color: var(--muted-foreground);
   font-size: 0.75rem;
   letter-spacing: 0.08em;
@@ -160,7 +165,9 @@ html:has(.landing-root) {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
   gap: 0.75rem 1.75rem;
+  inline-size: 100%;
   margin: 0;
   padding: 0;
   color: var(--muted-foreground);

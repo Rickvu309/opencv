@@ -23,16 +23,16 @@ export function LandingLogos() {
     <section
       id="logos"
       aria-labelledby="landing-logos"
-      className="landing-section landing-stack"
+      className="landing-section landing-stack landing-logos"
     >
-      <h2 id="landing-logos" className="landing-kicker">
-        {LANDING_LOGO_LABEL}
-      </h2>
       <ul className="landing-logo-row">
         {LANDING_LOGOS.map((name) => (
           <li key={name}>{name}</li>
         ))}
       </ul>
+      <h2 id="landing-logos" className="landing-kicker">
+        {LANDING_LOGO_LABEL}
+      </h2>
     </section>
   )
 }
