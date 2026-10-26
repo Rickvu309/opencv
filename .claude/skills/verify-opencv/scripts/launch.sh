@@ -108,11 +108,23 @@ WEB_PID=$(listener_pid "$WEB_PORT")
 [[ -n "$API_PID" && -n "$WEB_PID" ]] || fail "could not find the listener pid for a port"
 
 PROBE_EMAIL="launch-probe-$(date +%s%N)@verify.local"
-probe_code=$(curl -s -o "$EVIDENCE/launch-probe.json" -w '%{http_code}' \
-  -X POST "$API_URL/api/auth/sign-up/email" \
+send_code=$(curl -s -o "$EVIDENCE/launch-probe-send.json" -w '%{http_code}' \
+  -X POST "$API_URL/api/auth/email-otp/send-verification-otp" \
   -H 'content-type: application/json' -H "origin: $WEB_URL" \
-  -d "{\"name\":\"Launch Probe\",\"email\":\"$PROBE_EMAIL\",\"password\":\"Probe-pass-123\"}")
-[[ "$probe_code" == 200 ]] || fail "probe sign-up returned $probe_code"
+  -d "{\"email\":\"$PROBE_EMAIL\",\"type\":\"sign-in\"}")
+[[ "$send_code" == 200 ]] || fail "probe send returned $send_code"
+probe_otp=""
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+  probe_otp=$(grep -E "\[auth\] email code for ${PROBE_EMAIL} type sign-in: [0-9]{6}" "$EVIDENCE/api.log" | tail -n 1 | grep -Eo '[0-9]{6}$' || true)
+  [[ -n "$probe_otp" ]] && break
+  sleep 0.2
+done
+[[ -n "$probe_otp" ]] || fail "probe code was not logged"
+probe_code=$(curl -s -o "$EVIDENCE/launch-probe.json" -w '%{http_code}' \
+  -X POST "$API_URL/api/auth/sign-in/email-otp" \
+  -H 'content-type: application/json' -H "origin: $WEB_URL" \
+  -d "{\"email\":\"$PROBE_EMAIL\",\"otp\":\"$probe_otp\",\"name\":\"Launch Probe\"}")
+[[ "$probe_code" == 200 ]] || fail "probe sign-in returned $probe_code"
 
 cat > "$RUN_ENV" <<ENV
 RUN=$RUN
