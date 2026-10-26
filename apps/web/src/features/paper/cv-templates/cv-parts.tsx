@@ -153,7 +153,11 @@ export function ContactLine({
       <CvType role="micro" className={cn("leading-relaxed", className)}>
         {CONTACT_PLACEHOLDERS.map(([key, label], index) => (
           <span key={key}>
-            {index > 0 ? <span className="mx-1.5 text-border">|</span> : null}
+            {index > 0 ? (
+              <span className="mx-1.5 text-border" aria-hidden="true">
+                |
+              </span>
+            ) : null}
             <EditableField
               aria-label={label}
               placeholder={label}
@@ -178,7 +182,11 @@ export function ContactLine({
     <CvType role="micro" className={cn("leading-relaxed", className)}>
       {parts.map((part, i) => (
         <span key={i}>
-          {i > 0 ? <span className="mx-1.5 text-border">|</span> : null}
+          {i > 0 ? (
+            <span className="mx-1.5 text-border" aria-hidden="true">
+              |
+            </span>
+          ) : null}
           <EditableField
             aria-label="Contact detail"
             value={part ?? ""}
