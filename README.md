@@ -1,15 +1,18 @@
-# OpenCV
+# opencv
 
-OpenCV is an AI career coach for Vietnamese students and new graduates. It helps them work out what to apply for, write CVs and cover letters that fit each job, keep track of applications, and share a portfolio page with employers. It was called OpenPath before the rename.
+opencv is an AI career coach for Vietnamese students and new graduates. The person writes a CV and a cover letter, tracks jobs on a board, and talks to the Coach. The Coach can change those surfaces. Inbox reads recruiter mail and drafts a reply the person can send.
 
-Live: https://opencv.me
+Live at https://opencv.me
 
-## What it does
+## What ships in release one
 
-- **Coach**: a chat that gives career advice and can change the other three surfaces for you.
-- **Paper**: CVs and cover letters.
-- **Apply**: a tracker for the jobs you applied to.
-- **Pitch**: a portfolio page you can share by link.
+- **Coach.** A Chat page and a Chat panel. Modes are Free, Light, and Max. Light and Max need Pro.
+- **Paper.** CVs, cover letters, and a Proof placeholder.
+- **Apply.** A board, a list, and a calendar for Jobs. Stages are Saved, Applied, Interview, Offer, and Closed.
+- **Inbox.** Recruiter mail matched to Jobs. A fake source on a local run. Gmail when `GOOGLE_CLIENT_ID` is set.
+- **Settings.** Preferences, Coach, integrations, usage, billing, and account. The start page opens after sign-in. Apply is the default. There is no Home screen.
+- **Jobs, Proof, and Pitch.** Coming-soon pages. The old Pitch code is removed.
+- **Upgrade to Pro.** A placeholder. Pro is granted by hand.
 
 ## Stack
 
@@ -29,11 +32,12 @@ Local development needs no Postgres and no API keys. `DB_DRIVER=pglite` runs the
 ```bash
 pnpm install
 pnpm --filter @workspace/domain build
+mkdir -p apps/api/.data
 export DB_DRIVER=pglite COACH_RUNTIME=fake SESSION_SECRET="$(openssl rand -hex 24)"
 pnpm dev --env-mode=loose
 ```
 
-The web app is at http://localhost:5173 and the api health check is at http://localhost:3001/health. `--env-mode=loose` lets turbo pass the exported variables to the dev servers. Other variables are listed in `.env.example`.
+PGlite writes its files to `apps/api/.data/default`. That directory is gitignored, and PGlite does not create the parent, so the `mkdir` is required on a fresh checkout. The web app is at http://localhost:5173 and the api health check is at http://localhost:3001/health. A worktree stores its api port as `PORT` in `.env`. Use that port for the health check, and a free web port if 5173 is already taken. `--env-mode=loose` lets turbo pass the exported variables to the dev servers. Other variables are listed in `.env.example`.
 
 ## Scripts
 
@@ -49,17 +53,37 @@ The web app is at http://localhost:5173 and the api health check is at http://lo
 | `pnpm --filter api eval`            | Manual Coach eval harness (needs `OPENROUTER_API_KEY`; never CI)       |
 | `pnpm --filter api smoke`           | Live Coach smoke; set `COACH_SMOKE_API=https://api.opencv.me`          |
 
-## Hosting and deploy
+## Design
 
-Railway runs the `api`, `web` and Postgres services in one environment, production, behind Cloudflare at https://opencv.me, https://www.opencv.me and https://api.opencv.me. A merge to `main` deploys straight to production; there is no staging and no preview deploy yet. Layout, variables, DNS, rollback and migrations are in `docs/deploy.md`.
+The release-one design is not on `main`. It lives on branch `chore/350-design-kit-cli-skills`.
+
+```bash
+git fetch origin chore/350-design-kit-cli-skills
+git worktree add ../opencv.worktrees/350-design-kit-cli-skills origin/chore/350-design-kit-cli-skills
+```
+
+The files are `design/opencv.pen`, `design/exports`, and `design/cli`. From that worktree, run the kit CLI with `node design/cli/bin/opencv.js`.
 
 ## How work happens
 
-Every change starts with a GitHub issue, and every issue gets its own branch and worktree. There is no CI; local hooks and `scripts/review-pr.sh` are the gates.
+Every change starts with a GitHub issue, and every issue gets its own branch and worktree. There is no CI. Local hooks and `scripts/review-pr.sh` are the gates.
 
 ```bash
 scripts/new-task.sh <type> <issue#> -d "short description"   # branch + worktree
 heavy -- scripts/open-pr.sh --draft                          # checks, push, PR
 ```
 
-Read `CONTRIBUTING.md` for the full flow and `AGENTS.md` for the rules agents follow. Product and domain language are in `PRODUCT.md` and `CONTEXT.md`; decisions are in `docs/adr/`.
+Read `CONTRIBUTING.md` for the full flow and `AGENTS.md` for the rules agents follow.
+
+## Docs
+
+| Doc                  | What it holds                                |
+| -------------------- | -------------------------------------------- |
+| `PRODUCT.md`         | Release one, as the design draws it          |
+| `CONTEXT.md`         | The glossary                                 |
+| `docs/adr/`          | Decisions `0001` to `0009`. `0009` is a stub |
+| `docs/deploy.md`     | Railway and Cloudflare runbook               |
+| `docs/agents/`       | How agents read issues and the glossary      |
+| `docs/git-workflow/` | Branches, worktrees, review, and deploys     |
+| `AGENTS.md`          | Rules for agents                             |
+| `CONTRIBUTING.md`    | Rules for people and agents                  |

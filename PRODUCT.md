@@ -1,78 +1,82 @@
 # Product
 
-This PRD describes the product the app-shell prototype validated (`prototype/app-shell`, frozen 2026-08-24). The prototype is the UX reference; this file records what it decided and what it left open. Vocabulary: `CONTEXT.md`.
+Release one is the product drawn in `design/opencv.pen` on branch `chore/350-design-kit-cli-skills`. Words are in `CONTEXT.md`. Decisions are in `docs/adr/`.
 
 ## Users
 
-Vietnamese early-career users: university students (roughly year 3–4) and new graduates with under ~5 years of experience. They are unsure of direction, easily swayed by trends, and often cannot afford or access a human mentor. They use OpenCV in short, anxious sessions — between classes, late at night before a deadline — asking questions they'd hesitate to ask a professor.
-
-**Job to be done:** understand myself, find a direction that fits, and know the next concrete step.
-
-Secondary (later): companies hiring early-career talent who want better-fit candidates at lower cost.
+The user is a Vietnamese student or new graduate. They use opencv for themselves. A company is not a user in this release.
 
 ## Purpose
 
-OpenCV is a personalised AI career Coach inside a working product. The User lives in one shell: Home is the Coach; Paper, Apply, and Pitch are the craft surfaces where career evidence gets made, used, and shown. The Coach helps build all three by acting through Commands, not only advising.
+opencv is a career coach inside a working product. The Coach can take the same actions the person can. The person keeps a CV and a cover letter, tracks jobs, and reads recruiter mail in Inbox.
 
-Success: a User who decides from evidence about themselves and the market (not trend-chasing), and who comes back weekly.
+## Surfaces
 
-## The product (validated by prototype)
+### Sign-in
 
-### Shell
-Grok-style layout (ADR-0004): collapsible left sidebar — Home, Search, Paper, Apply, Pitch, History (recent Threads), profile → Settings — and a main pane the active surface fills. Search is a ⌘K modal with quick actions and Thread lookup.
+Sign-in is an email and a 6-digit code. There is no password. Codes go out through Resend. The Google button is drawn and shown only when `GOOGLE_CLIENT_ID` is set. The first successful code creates the account. A Welcome page follows. A session-expired overlay offers to continue as the same email or to email a new code. The EN/VI switch is drawn and inert.
 
-### Home — the Coach
-Idle: time-of-day greeting, suggestion chips, multi-line composer, connect-apps row. Sending switches Home into a chat Thread; History resumes old Threads; new chat returns to idle.
+### The shell
 
-### Paper — evidence and documents
-Drive-style workspace of CVs, Letters, and Proofs with status (draft/ready/published) and links to Apply. CV editor: five templates (classic internship, product & design, project-led, campus, with-photo), A4 pagination, section editing. Proof editor: chain or timeline of context → action → outcome steps with photos. The documents list is hideable. Coach is a bottom-right float on the open doc (same Thread as Home — Spec 7 continuity, Spec 8 shell); edit asks run `paper.updateContent` instead of "paste this yourself".
+A signed-in screen has a sidebar, a main panel, and a bottom bar. The sidebar lists Inbox, Coach, and Jobs, then Paper, Apply, and Pitch, then favorites. The bottom bar holds recent Chats, a Coach button, and History. A Chat panel can open over any page. Under 768 px the sidebar is a drawer.
 
-### Apply — pursuit tracking
-Kanban of Opportunity cards across Stages (Inbox, Prep, Sent, Live, Closed) with drag-and-drop, a calendar of Tracks (interviews, deadlines, follow-ups), per-card Fit score and notes, and a job-detail view.
+### Start page
 
-### Pitch — the shareable portfolio
-Read.cv-style page: about, achievements, experience, work, GitHub heatmap, Instagram-style story highlights, bento moments, gallery, contact. Edit mode hides/shows blocks; publish produces a copyable link.
+The page that opens after sign-in is chosen in Settings. Apply is the default. There is no Home screen.
+
+### Inbox
+
+Inbox lists recruiter emails matched to Jobs. The person can read a thread, move the Job, and send a drafted reply. Nothing is sent without that click. Local runs use a fake mail source. Gmail is the provider when `GOOGLE_CLIENT_ID` is set.
+
+### Coach
+
+Coach is a page and a panel. A new Chat offers starters. Chat history is grouped by day. The composer has modes Free, Light, and Max. Light and Max need Pro. While the Coach works, the thread shows the steps it is taking. At the Free cap, a banner states the reset time and the composer waits.
+
+### Jobs
+
+Jobs is a coming-soon page. The person can ask to be notified, or track a job in Apply.
+
+### Paper
+
+Paper is a library of CVs, cover letters, Proofs, and imported files. The CV editor is a block document with templates, an import check, and a one-page fit prompt. A cover letter can be drafted from a Job. A suggestion can be added to the letter or skipped.
+
+### Apply
+
+Apply tracks Jobs on a board, a list, and a calendar. The stages are Saved, Applied, Interview, Offer, and Closed. Closed is a hidden column. The person adds a Job by hand. A pasted link fills the form and does not promise a scan. Job detail shows the posting, a prep checklist, notes, an activity feed, and properties.
+
+### Pitch
+
+Pitch is a coming-soon page. The old Pitch editor and public page are removed. The future Pitch is one link with the CV and Proofs, after the Proof flow.
 
 ### Settings
-Tabs: General, Connected apps (catalog stub — Gmail, Outlook, Google Calendar), Account (placeholder until auth).
 
-### Notifications
-Bell popover inbox on Home (Apply and Paper events). Prototype-validated; ships after the shell.
+Settings has Preferences, Coach, Integrations, Usage and limits, Billing, and Account. Preferences include language, time zone, the start page, and notifications. Coach settings show week usage as a percentage, and toggles that read Enabled or Disabled. Usage and limits show the plan and the session and week percentages. Billing shows Free at $0 and Pro at $9 a month, with no card and no invoices. Account can change the email, export data, sign out, and delete the account.
 
-## Productionization order
+## Plans
 
-The prototype is throwaway code; production rebuilds it spec by spec. Spec 3 = shell + stub surfaces; Spec 4 = auth + durable Paper / Apply / Threads; Spec 5 = the real Coach (streaming, Commands as tools); Spec 6 = design system; Spec 7 = Coach experience (one dock, Thread continuity, visible editing, calm motion); Spec 8 = Paper Coach shell (hideable docs panel, floating Coach, must-edit). Pitch persistence remains a follow-up (see `docs/specs/spec-3-app-shell.md`, Route to real product). Product language is English (ADR-0008 / QVE-150).
+Free and Pro are the plans. Free routes Coach to OpenRouter free models. Pro routes Coach to Claude through the AI SDK Anthropic provider. Daily caps are configuration. The defaults are 20 for Free, 10 for Light, and 5 for Max. Usage is a percentage for the session and for the week. It is never a credit number.
+
+## Placeholders
+
+These ship as drawn, and do not do the full job yet.
+
+- Jobs is a coming-soon page.
+- Proof is a coming-soon page. The full Proof flow sits in the Later zone of the design.
+- Pitch is a coming-soon page. The old Pitch code is removed.
+- Upgrade to Pro is a placeholder. Pro is granted by hand.
+
+Google sign-in and Gmail are behind `GOOGLE_CLIENT_ID`. They stay hidden until that variable is set.
 
 ## Out of scope
 
-- Search / job-board discovery (Users bring Opportunities in themselves).
-- Publishing or scheduling social posts. Pitch publishes a portfolio link only.
-- Real OAuth for Connected apps.
-- Company/recruiter product.
-- i18n / Vietnamese-first copy (ADR-0008 / QVE-150). English is the product language (Coach + chrome + starter content + receipts). No locale default or toggle. If a User writes in Vietnamese, the Coach may still answer as a model capability — that is not a configured feature.
+- The Later zone, including the full Proof flow.
+- A job board. The person brings Jobs in.
+- A payment provider.
+- Vietnamese copy. The language switch stores a value and nothing reads it.
+- A product for companies.
+- Sending mail without a click.
 
-## Open questions (created by the prototype, not settled)
+## Open questions
 
-1. **Naked Fit score.** Cards show a bare 0–100 number. Principle 1 says claims show their basis; anti-references warn against career-quiz astrology. Production Fit must either show its evidence or not ship as a number.
-2. **Live GitHub APIs.** Pitch calls `api.github.com` and a third-party contributions API (`jogruber.de`) client-side. Dependency, rate limits, and privacy are undecided.
-3. **Paper storage format.** Settled in ADR-0006: `paper_docs` stores `content_kind` + `content jsonb` + `content_version`. The prototype's `cv:v1:` / `proof:v1:` prefixed strings are retired.
-4. **Seed persona.** Settled for real accounts (Spec 4 / QVE-134 / QVE-225 / QVE-240): signup writes a neutral starter workspace (sample CV, a few Apply cards, one Thread, one Pitch document) in the product voice. "Eric Nguyen" is demo data only and must not appear. Pitch identity is the session User; the document stores portfolio content, not a fake name. The Pitch starter is labeled **Demo content** with Edit / Clear demo so it never reads as a real UIT/PM self. The Paper sample CV is labeled **Sample · replace anytime**; a real edit or **Make mine** renames it so it is no longer Sample internship CV. Apply starter cards are labeled **Demo** on the board and in the drawer so they never read as personal jobs.
-5. **Pitch post drafts.** The pre-prototype "social post drafts" idea is out of the definition; whether it returns as a later Pitch phase is unresolved.
-
-## Personality
-
-Grounded, warm, honest — like a good older mentor: encouraging but not flattering; willing to push back with evidence. No hype, no gamified badges, no corporate-HR voice. English (ADR-0008): second person, contractions OK, no exclamation marks. If a User writes in Vietnamese, the Coach may reply without a locale setting.
-
-## Principles
-
-1. **Evidence over encouragement.** Claims show their basis (Profile, market, a real gap).
-2. **One next step, always visible.** A lost User never leaves without knowing what to do next.
-3. **Calm under uncertainty.** Restraint and clarity are functional for anxious Users.
-4. **Honest about distance.** Show the real gap to a goal, including when it is large.
-5. **Coach can act, with trust.** The Coach operates via the same Commands as the User where allowed; never claim an action that did not succeed.
-
-## Anti-references
-
-- Trend-chasing edtech / career-quiz astrology (confetti, badges, flattery).
-- Enterprise HR dashboards that turn a person into KPI widgets.
-- Generic SaaS chrome and "AI chatbot" bolted on as support afterthought.
+1. Fit. The glossary defines a 0 to 100 estimate. The Apply board in the design does not show that number. The Jobs preview shows fit percentages on a faded board. Whether Apply shows Fit is unsettled.
+2. A Coach session. The design shows a session percentage and a week percentage, with sample reset copy. The boundary of a session is not decided beyond that copy.

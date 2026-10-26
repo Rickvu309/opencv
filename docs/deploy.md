@@ -4,8 +4,7 @@ Railway hosts everything: the `api`, `Postgres` and the static `web` app,
 behind the `opencv.me` zone on Cloudflare. There is one environment:
 production. Main deploys straight to production; there is no staging and no
 per-PR preview deploy yet. Rollback is a Railway redeploy of the previous
-deployment (see Rollback). ADR-0012 records the decision; this file is the
-runbook.
+deployment (see Rollback). This file is the runbook.
 
 Each service redeploys from `main` when a file under its watch paths changes.
 No CI gates a deploy (the repo runs no GitHub Actions), so the local pre-push
@@ -125,13 +124,15 @@ for a missing key. The web app only needs `VITE_API_URL`; the Coach vars are
 | ------------------------------ | --------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------- |
 | `OPENROUTER_API_KEY`           | Yes, for a live Coach | none                                       | Set on production. Pass it on stdin so it never hits shell history.                         |
 | `OPENROUTER_BASE_URL`          | No                    | unset (the provider URL)                   | Local checks only: points the Coach at a stub endpoint. **Never on production.**            |
-| `COACH_MODEL_FREE`             | No                    | `openrouter/free`                          | Free mode id (ADR-0009). Free Models Router; the answering model can change between turns.  |
+| `COACH_MODEL_FREE`             | No                    | `openrouter/free`                          | Free mode id. Free Models Router. The answering model can change between turns.             |
 | `COACH_MODEL_LIGHT`            | No                    | `deepseek/deepseek-chat-v3.1`              | Light mode id.                                                                              |
 | `COACH_MODEL_MAX`              | No                    | `anthropic/claude-opus-4`                  | Max mode. For Fable: `anthropic/claude-fable-5` or `~anthropic/claude-fable-latest`.        |
 | `COACH_DAILY_TURN_LIMIT_FREE`  | No                    | `50`                                       | Free-mode daily turn cap.                                                                   |
 | `COACH_DAILY_TURN_LIMIT_LIGHT` | No                    | `30`                                       | Light-mode daily turn cap.                                                                  |
 | `COACH_DAILY_TURN_LIMIT_MAX`   | No                    | `10`                                       | Max-mode daily turn cap.                                                                    |
 | `COACH_RUNTIME`                | No                    | unset (OpenRouter when the key is present) | `fake` injects the scripted runtime for `curl -N` protocol checks. **Never on production.** |
+
+The defaults in this table are what the api ships today. Release one changes the daily caps to 20, 10 and 5, and routes Pro to Claude. See `docs/adr/0004-plans-and-coach-tiers.md`.
 
 ```bash
 printf '%s' "$OPENROUTER_API_KEY" | railway variable set OPENROUTER_API_KEY --stdin \
@@ -215,10 +216,12 @@ directly until the services are removed.
 ## Migration pipeline
 
 Schema changes are reviewable SQL, applied automatically, and never touched by
-`GET /health` (ADR-0006).
+`GET /health`.
 
-1. Edit the TypeScript tables in `apps/api/src/db/schema.ts` (`pgSchema("openpath_app")`).
-   The schema keeps that name as an internal id (ADR-0012).
+1. Edit the TypeScript tables in `apps/api/src/db/schema.ts`. The code on `main`
+   still uses `pgSchema("openpath_app")`. Release one adds `opencv_app` in a
+   fresh baseline and leaves `openpath_app` in place. See
+   `docs/adr/0002-vocabulary-job-chat-stages.md`. No migration deletes data.
 2. Generate SQL with `pnpm --filter api run db:generate` and commit the files
    under `apps/api/drizzle/`. Migration 0000 is hand-edited to
    `CREATE SCHEMA IF NOT EXISTS` and must stay that way.
