@@ -8,7 +8,7 @@ import { probeSource } from "./probe.mjs"
 
 const CV_NAME = "Live Check CV"
 const ROUTES = {
-  home: ["/app", "document.querySelector('h1')"],
+  home: ["/app/home", "document.querySelector('h1')"],
   paper: [
     "/app/paper",
     `document.body.innerText.includes(${JSON.stringify(CV_NAME)})`,
@@ -28,6 +28,9 @@ const must = (ok, what) => {
   if (!ok) throw new Error(`tour step did not happen: ${what}`)
 }
 async function openDockCoach(page) {
+  const already =
+    await page.evaluate("Boolean(document.querySelector('textarea'))")
+  if (already) return
   must(
     await clickByText(page, "button", "Coach"),
     "the dock Coach button was not found"
@@ -163,7 +166,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
     prepared.cv === true && prepared.card === true,
     `creating the tour CV and card failed (${JSON.stringify(prepared)})`
   )
-  await a.goto(`${webUrl}/app`)
+  await a.goto(`${webUrl}/app/home`)
   must(
     await a.waitFor("document.querySelector('textarea')", 20000),
     "welcome did not finish"
@@ -282,7 +285,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
         }
       : null
   )
-  await b.goto(`${webUrl}/app`)
+  await b.goto(`${webUrl}/app/home`)
   must(
     await b.waitFor("document.querySelector('h1')", 15000),
     "the start page did not render"
@@ -295,7 +298,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
   await shot(b, "desktop-coach-error")
 
   b.setIntercept((r) => (coachCall(r) ? "fail" : null))
-  await b.goto(`${webUrl}/app`)
+  await b.goto(`${webUrl}/app/home`)
   must(
     await b.waitFor("document.querySelector('h1')", 15000),
     "the start page did not render"
