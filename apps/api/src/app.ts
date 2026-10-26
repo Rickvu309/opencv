@@ -48,6 +48,8 @@ export type AppConfig = {
   /** When set, job.preview may call the free model. Fake runs leave this off. */
   interpretPostings?: boolean
   fetchJobPosting?: FetchJobPosting
+  /** Logs reset and verify URLs. Production passes false. */
+  logAuthMail?: boolean
 }
 
 export function createApp({
@@ -63,6 +65,7 @@ export function createApp({
   googleEnabled = false,
   interpretPostings = false,
   fetchJobPosting,
+  logAuthMail = true,
 }: AppConfig) {
   const registry = installRegistry({
     ...(fetchJobPosting ? { fetch: fetchJobPosting } : {}),
@@ -105,6 +108,7 @@ export function createApp({
           authUrl,
           webOrigins,
           rateLimitEnabled,
+          logAuthMail,
         })
       : undefined
 

@@ -18,6 +18,8 @@ export type AuthConfig = {
   webOrigins: string[]
   /** Default on. Tests turn this off so sign-up loops do not trip the limiter. */
   rateLimitEnabled?: boolean
+  /** Logs reset and verify URLs. Production passes false. */
+  logAuthMail?: boolean
 }
 
 /**
@@ -39,9 +41,9 @@ export function createAuth({
   authUrl,
   webOrigins,
   rateLimitEnabled = true,
+  logAuthMail = true,
 }: AuthConfig) {
   const cookies = cookieAttributesForAuthUrl(authUrl)
-  const logMailUrls = process.env.NODE_ENV !== "production"
 
   return betterAuth({
     appName: "OpenCV",
@@ -56,14 +58,14 @@ export function createAuth({
       enabled: true,
       requireEmailVerification: false,
       sendResetPassword: async ({ user, url }) => {
-        if (logMailUrls) {
+        if (logAuthMail) {
           console.log(`[auth] password reset for ${user.email}: ${url}`)
         }
       },
     },
     emailVerification: {
       sendVerificationEmail: async ({ user, url }) => {
-        if (logMailUrls) {
+        if (logAuthMail) {
           console.log(`[auth] verify email for ${user.email}: ${url}`)
         }
       },

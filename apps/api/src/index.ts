@@ -13,6 +13,7 @@ import {
   dbDriverFromEnv,
   gmailEnabledFromEnv,
   googleEnabledFromEnv,
+  logAuthMailFromEnv,
   pgliteDataDirFromEnv,
   sessionSecretFromEnv,
   webOriginsFromEnv,
@@ -79,6 +80,7 @@ const app = createApp({
   coachEnv,
   gmailEnabled: gmailEnabledFromEnv(process.env),
   googleEnabled: googleEnabledFromEnv(process.env),
+  logAuthMail: logAuthMailFromEnv(process.env),
   interpretPostings:
     coachRuntimeMode !== "fake" &&
     Boolean(coachEnv.OPENROUTER_API_KEY || coachEnv.ANTHROPIC_API_KEY),

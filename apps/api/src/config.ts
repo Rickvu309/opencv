@@ -178,6 +178,10 @@ export function gmailEnabledFromEnv(env: NodeJS.ProcessEnv): boolean {
   return env.GMAIL_ENABLED === "true"
 }
 
+export function logAuthMailFromEnv(env: NodeJS.ProcessEnv): boolean {
+  return env.NODE_ENV !== "production"
+}
+
 export function googleEnabledFromEnv(env: NodeJS.ProcessEnv): boolean {
   return Boolean(
     env.GOOGLE_CLIENT_ID?.trim() && env.GOOGLE_CLIENT_SECRET?.trim()

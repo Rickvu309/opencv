@@ -7,6 +7,7 @@ import { PGlite } from "@electric-sql/pglite"
 import { drizzle } from "drizzle-orm/pglite"
 
 import { createApp } from "../app.js"
+import { logAuthMailFromEnv } from "../config.js"
 import type { AppDatabase, TestDatabase } from "../db/context.js"
 import { runMigrations } from "../db/migrate.js"
 import * as schema from "../db/schema.js"
@@ -68,6 +69,7 @@ export function createTestApp(
     coach: options?.coach,
     coachSseHeartbeatMs: options?.coachSseHeartbeatMs,
     fetchJobPosting: options?.fetchJobPosting,
+    logAuthMail: logAuthMailFromEnv(process.env),
   })
 }
 
