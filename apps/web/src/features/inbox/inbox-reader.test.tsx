@@ -1,0 +1,102 @@
+import { cleanup, render, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
+import { afterEach, describe, expect, it, vi } from "vitest"
+
+import { jsonOk, pathOf } from "@/test/mock-http.ts"
+import {
+  INBOX_NOW,
+  LOCAL_DETAIL,
+  REGIONAL_DETAIL,
+} from "@/test/inbox-fixtures.ts"
+
+import { InboxReader } from "./inbox-reader.tsx"
+
+afterEach(() => {
+  cleanup()
+  vi.unstubAllGlobals()
+})
+
+function postsOf() {
+  const posts: { path: string; input: unknown }[] = []
+  vi.stubGlobal(
+    "fetch",
+    async (input: RequestInfo | URL, init?: RequestInit) => {
+      if ((init?.method ?? "GET") === "POST") {
+        const body = init?.body ? JSON.parse(String(init.body)) : null
+        posts.push({ path: pathOf(input), input: body?.input })
+      }
+      return jsonOk({ activityId: "00000000-0000-4000-8000-000000000099" })
+    }
+  )
+  return posts
+}
+
+function renderReader(detail: typeof LOCAL_DETAIL) {
+  return render(
+    <InboxReader
+      detail={detail}
+      index={1}
+      count={6}
+      narrow={false}
+      now={INBOX_NOW}
+      onBack={vi.fn()}
+      onPrevious={vi.fn()}
+      onNext={vi.fn()}
+      onChanged={vi.fn()}
+    />
+  )
+}
+
+describe("inbox reader", () => {
+  it("offers the interview move and does not offer Send", async () => {
+    const posts = postsOf()
+    const view = renderReader(LOCAL_DETAIL)
+    expect(
+      screen.getByRole("button", { name: "Move to Interview" })
+    ).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Not now" })).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Send" })).toBeNull()
+    expect(view.container.querySelectorAll(".glow")).toHaveLength(1)
+    expect(view.container.querySelector(".glow")).toHaveAccessibleName(
+      "Move to Interview"
+    )
+    expect(posts).toEqual([])
+    await userEvent.click(screen.getByRole("button", { name: "Not now" }))
+    expect(posts.map((post) => post.path)).toEqual([
+      "/api/commands/inbox.clearSuggestion",
+    ])
+  })
+
+  it("moves the job only after Move to Interview", async () => {
+    const posts = postsOf()
+    renderReader(LOCAL_DETAIL)
+    await userEvent.click(
+      screen.getByRole("button", { name: "Move to Interview" })
+    )
+    expect(posts.map((post) => post.path)).toEqual([
+      "/api/commands/inbox.acceptSuggestion",
+    ])
+  })
+
+  it("keeps Send as the only glow and does not send on first paint", async () => {
+    const posts = postsOf()
+    const view = renderReader(REGIONAL_DETAIL)
+    expect(screen.getByText("Drafted by opencv")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Thu 14:30" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    )
+    expect(
+      screen.getByRole("button", { name: "Suggest another time" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "Add to calendar" })
+    ).toBeInTheDocument()
+    const glows = view.container.querySelectorAll(".glow")
+    expect(glows).toHaveLength(1)
+    expect(glows[0]).toHaveAccessibleName("Send")
+    expect(posts).toEqual([])
+    await userEvent.click(screen.getByRole("button", { name: "Send" }))
+    expect(posts.map((post) => post.path)).toEqual(["/api/commands/inbox.send"])
+  })
+})

@@ -243,7 +243,7 @@ const inboxRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/inbox",
   component: lazyRouteComponent(
-    () => import("@/routes/placeholder.tsx"),
+    () => import("@/routes/inbox.tsx"),
     "InboxPage"
   ),
 })
