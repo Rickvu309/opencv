@@ -63,13 +63,13 @@ describe("landing page", () => {
     ).toHaveAttribute("content", `${SUBHEAD} ${STATEMENT_REST}`)
   })
 
-  it("sends Get started to sign-up, Log in to sign-in, and Pricing to /pricing", async () => {
+  it("sends Get started and Log in to sign-in, and Pricing to /pricing", async () => {
     await renderLanding()
 
     const startLinks = screen.getAllByRole("link", { name: "Get started" })
     expect(startLinks.length).toBeGreaterThanOrEqual(2)
     for (const link of startLinks) {
-      expect(link).toHaveAttribute("href", "/sign-up")
+      expect(link).toHaveAttribute("href", "/sign-in")
     }
 
     for (const link of screen.getAllByRole("link", { name: "Log in" })) {
@@ -163,11 +163,11 @@ describe("pricing page", () => {
     expect(screen.getByText("$9")).toBeInTheDocument()
     expect(screen.getByRole("link", { name: "Start free" })).toHaveAttribute(
       "href",
-      "/sign-up"
+      "/sign-in"
     )
     expect(screen.getByRole("link", { name: "Get Pro" })).toHaveAttribute(
       "href",
-      "/sign-up"
+      "/sign-in"
     )
     expect(screen.getAllByText("Not included").length).toBeGreaterThan(0)
     expect(document.body).not.toHaveTextContent("–")

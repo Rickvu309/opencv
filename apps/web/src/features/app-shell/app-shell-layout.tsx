@@ -11,13 +11,16 @@ import {
   DESKTOP_MEDIA_QUERY,
   useMediaQuery,
 } from "@/features/app-shell/use-media-query.ts"
+import { ShellOverlays } from "@/features/auth/shell-overlays.tsx"
 import { ThreadStoreProvider } from "@/features/home/thread-store.tsx"
 import { useThreadList } from "@/features/home/use-thread-list.ts"
 
 export function AppShellLayout() {
   return (
     <ThreadStoreProvider>
-      <AppShellChrome />
+      <ShellOverlays>
+        <AppShellChrome />
+      </ShellOverlays>
     </ThreadStoreProvider>
   )
 }

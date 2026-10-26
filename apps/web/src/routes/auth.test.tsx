@@ -1,20 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import {
-  cleanup,
-  fireEvent,
-  screen,
-  waitFor,
-  within,
-} from "@testing-library/react"
+import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react"
 
-import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
-import { SIGN_UP_COPY } from "@/features/auth/sign-up-copy.ts"
-import { readFirstCafeState } from "@/features/home/first-cafe-checklist.ts"
+import { AUTH_COPY } from "@/features/auth/auth-copy.ts"
+import { apiFetch } from "@/lib/api.ts"
 import { authClient } from "@/lib/auth-client.ts"
-import { setMockSession } from "@/test/auth-client-mock.ts"
-import { expectPaperDrive } from "@/test/paper-drive.ts"
-import { openGetStarted } from "@/test/home-helpers.ts"
+import { LANGUAGE_STORAGE_KEY } from "@/features/auth/auth-copy.ts"
+import { SIGNED_OUT_EMAIL_KEY } from "@/lib/auth-redirect.ts"
+import { setMockGoogle, setMockSession } from "@/test/auth-client-mock.ts"
+import { pathOf } from "@/test/mock-http.ts"
+import { setMockWelcomedAt } from "@/test/profile-api-mock.ts"
 import { renderApp } from "@/test/render-app.tsx"
+import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 
 afterEach(() => {
   cleanup()
@@ -25,301 +21,315 @@ beforeEach(() => {
   vi.stubGlobal("scrollTo", vi.fn())
 })
 
+function emailBox() {
+  return screen.getByRole("textbox", { name: AUTH_COPY.email })
+}
+
+async function sendCode(address = "ada@verify.local") {
+  fireEvent.change(emailBox(), { target: { value: address } })
+  fireEvent.click(screen.getByRole("button", { name: AUTH_COPY.continue }))
+  expect(
+    await screen.findByRole("heading", { name: AUTH_COPY.checkEmail })
+  ).toBeInTheDocument()
+}
+
+function pasteCode(otp: string) {
+  fireEvent.paste(screen.getByRole("textbox", { name: "Digit 1" }), {
+    clipboardData: { getData: () => otp },
+  })
+}
+
+function refuseCode(code: string, status: number) {
+  vi.mocked(authClient.signIn.emailOtp).mockResolvedValueOnce({
+    data: null,
+    error: { code, status, message: code },
+  } as never)
+}
+
+async function openExpired() {
+  renderApp(SURFACE_PATHS.home)
+  expect(
+    await screen.findByRole("heading", { level: 1, name: /Alex Tran/ })
+  ).toBeInTheDocument()
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(
+      Response.json(
+        {
+          ok: false,
+          error: { code: "UNAUTHORIZED", message: "Authentication required" },
+        },
+        { status: 401 }
+      )
+    )
+  )
+  await apiFetch("/api/profile").catch(() => undefined)
+  return screen.findByRole("dialog", { name: AUTH_COPY.loggedOutTitle })
+}
+
 describe("session guard", () => {
-  it("sends a signed-out visitor from every surface to sign-in", async () => {
+  it("sends a signed-out visitor to the email step", async () => {
     setMockSession(null)
-
-    for (const path of Object.values(SURFACE_PATHS)) {
-      cleanup()
-      const { router } = renderApp(path)
-
-      expect(
-        await screen.findByRole("heading", { name: "Welcome back" })
-      ).toBeInTheDocument()
-      expect(
-        screen.getByRole("button", { name: "Sign in" })
-      ).toBeInTheDocument()
-      expect(
-        screen.queryByRole("heading", { name: SIGN_UP_COPY.title })
-      ).not.toBeInTheDocument()
-      await waitFor(() => {
-        expect(router.state.location.pathname).toBe("/sign-in")
-        expect(router.state.location.search).toEqual({ redirect: path })
+    const { router } = renderApp(SURFACE_PATHS.paper)
+    expect(
+      await screen.findByRole("heading", { name: AUTH_COPY.logIn })
+    ).toBeInTheDocument()
+    expect(emailBox()).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: AUTH_COPY.continue })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("textbox", { name: "Password" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "Create account" })
+    ).not.toBeInTheDocument()
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/sign-in")
+      expect(router.state.location.search).toEqual({
+        redirect: SURFACE_PATHS.paper,
       })
-    }
+    })
   })
 
-  it("keeps sign-in and sign-up reachable without a session", async () => {
+  it("redirects /sign-up to /sign-in", async () => {
     setMockSession(null)
-    renderApp("/sign-in")
+    const { router } = renderApp("/sign-up")
     expect(
-      await screen.findByRole("heading", { name: "Welcome back" })
+      await screen.findByRole("heading", { name: AUTH_COPY.logIn })
     ).toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole("link", { name: "Create an account" }))
-    expect(
-      await screen.findByRole("heading", { name: SIGN_UP_COPY.title })
-    ).toBeInTheDocument()
-    expect(screen.getByText(SIGN_UP_COPY.body)).toBeInTheDocument()
-    expect(
-      screen.queryByText(/Threads, Paper, and Apply/)
-    ).not.toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Create account" })).toBeTruthy()
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/sign-in")
+    })
   })
 })
 
-describe("auth flows", () => {
-  it("returns to the originally requested surface after sign-in", async () => {
+describe("email code", () => {
+  beforeEach(() => {
     setMockSession(null)
-    const { router } = renderApp("/app/paper")
-
-    expect(
-      await screen.findByRole("heading", { name: "Welcome back" })
-    ).toBeInTheDocument()
-
-    fireEvent.change(screen.getByLabelText("Email"), {
-      target: { value: "minh@example.com" },
-    })
-    fireEvent.change(screen.getByLabelText("Password"), {
-      target: { value: "correct-horse" },
-    })
-    fireEvent.click(screen.getByRole("button", { name: "Sign in" }))
-
-    expect(authClient.signIn.email).toHaveBeenCalledWith({
-      email: "minh@example.com",
-      password: "correct-horse",
-    })
-    await expectPaperDrive()
-    await waitFor(() => {
-      expect(router.state.location.pathname).toBe(SURFACE_PATHS.paper)
-    })
   })
 
-  it("lands on Home after sign-up", async () => {
-    setMockSession(null)
-    const { router } = renderApp("/sign-up")
-
-    expect(
-      await screen.findByRole("heading", { name: SIGN_UP_COPY.title })
-    ).toBeInTheDocument()
-    expect(screen.getByText(SIGN_UP_COPY.body)).toBeInTheDocument()
-
-    fireEvent.change(screen.getByLabelText("Name"), {
-      target: { value: "Lan Nguyen" },
-    })
-    fireEvent.change(screen.getByLabelText("Email"), {
-      target: { value: "lan@example.com" },
-    })
-    fireEvent.change(screen.getByLabelText("Password"), {
-      target: { value: "correct-horse" },
-    })
-    fireEvent.click(screen.getByRole("button", { name: "Create account" }))
-
-    expect(authClient.signUp.email).toHaveBeenCalledWith({
-      name: "Lan Nguyen",
-      email: "lan@example.com",
-      password: "correct-horse",
-    })
-    expect(
-      await screen.findByRole("heading", {
-        level: 1,
-        name: /^Good (morning|afternoon|evening), Lan Nguyen$/,
-      })
-    ).toBeInTheDocument()
-    await waitFor(() => {
-      expect(router.state.location.pathname).toBe(SURFACE_PATHS.home)
-    })
-    openGetStarted()
-    expect(
-      screen.getByRole("heading", { name: "Four small things" })
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole("link", { name: "Open the sample CV" })
-    ).toHaveAttribute("href", `${SURFACE_PATHS.paper}?open=sample`)
-    expect(
-      screen.getByRole("link", { name: "Make Pitch yours" })
-    ).toHaveAttribute("href", SURFACE_PATHS.pitch)
-    expect(
-      screen.getByRole("link", { name: "Triage one Apply card" })
-    ).toHaveAttribute("href", `${SURFACE_PATHS.apply}?open=guide`)
-    expect(
-      screen.getByRole("link", { name: "Connect email, optional" })
-    ).toHaveAttribute("href", `${SURFACE_PATHS.settings}?tab=apps`)
-    expect(
-      screen.queryByRole("link", { name: "Triage one Apply card, done" })
-    ).not.toBeInTheDocument()
-    expect(
-      screen.queryByRole("link", { name: /done$/ })
-    ).not.toBeInTheDocument()
-    expect(
-      screen.getByRole("heading", { name: "What are you aiming for?" })
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole("button", { name: "I'm not sure yet" })
-    ).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Skip" })).toBeInTheDocument()
-    expect(
-      screen.getByRole("button", { name: "A café or part-time job" })
-    ).toBeInTheDocument()
-    expect(screen.queryByText(/step 1 of/i)).not.toBeInTheDocument()
-  })
-
-  it("after signup, opening only the sample CV completes just that item", async () => {
-    setMockSession(null)
-    const { router } = renderApp("/sign-up")
-
-    expect(
-      await screen.findByRole("heading", { name: SIGN_UP_COPY.title })
-    ).toBeInTheDocument()
-
-    fireEvent.change(screen.getByLabelText("Name"), {
-      target: { value: "Lan Nguyen" },
-    })
-    fireEvent.change(screen.getByLabelText("Email"), {
-      target: { value: "lan@example.com" },
-    })
-    fireEvent.change(screen.getByLabelText("Password"), {
-      target: { value: "correct-horse" },
-    })
-    fireEvent.click(screen.getByRole("button", { name: "Create account" }))
-
-    fireEvent.click(await screen.findByRole("button", { name: "Get started" }))
-    expect(
-      await screen.findByRole("heading", { name: "Four small things" })
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole("link", { name: "Triage one Apply card" })
-    ).toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole("link", { name: "Open the sample CV" }))
-    await waitFor(() => {
-      expect(router.state.location.pathname).toBe(SURFACE_PATHS.paper)
-      expect(router.state.location.search).toMatchObject({ open: "sample" })
-    })
-
-    fireEvent.click(screen.getByRole("link", { name: "Home" }))
-    expect(
-      await screen.findByRole("heading", {
-        level: 1,
-        name: /^Good (morning|afternoon|evening), Lan Nguyen$/,
-      })
-    ).toBeInTheDocument()
-
-    openGetStarted()
-    const list = screen.getByRole("region", { name: "Four small things" })
-    expect(
-      within(list).getByRole("link", { name: "Open the sample CV, done" })
-    ).toBeInTheDocument()
-    expect(
-      within(list).getByRole("link", { name: "Make Pitch yours" })
-    ).toBeInTheDocument()
-    expect(
-      within(list).getByRole("link", { name: "Triage one Apply card" })
-    ).toBeInTheDocument()
-    expect(
-      within(list).getByRole("link", { name: "Connect email, optional" })
-    ).toBeInTheDocument()
-    expect(
-      within(list).queryByRole("link", { name: "Triage one Apply card, done" })
-    ).not.toBeInTheDocument()
-  })
-
-  it("after signup, visiting Apply only does not complete that item", async () => {
-    setMockSession(null)
-    const { router } = renderApp("/sign-up")
-
-    expect(
-      await screen.findByRole("heading", { name: SIGN_UP_COPY.title })
-    ).toBeInTheDocument()
-
-    fireEvent.change(screen.getByLabelText("Name"), {
-      target: { value: "Lan Nguyen" },
-    })
-    fireEvent.change(screen.getByLabelText("Email"), {
-      target: { value: "lan@example.com" },
-    })
-    fireEvent.change(screen.getByLabelText("Password"), {
-      target: { value: "correct-horse" },
-    })
-    fireEvent.click(screen.getByRole("button", { name: "Create account" }))
-
-    fireEvent.click(await screen.findByRole("button", { name: "Get started" }))
-    expect(
-      await screen.findByRole("heading", { name: "Four small things" })
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole("link", { name: "Open the sample CV" })
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole("link", { name: "Make Pitch yours" })
-    ).toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole("link", { name: "Triage one Apply card" }))
-    await waitFor(() => {
-      expect(router.state.location.pathname).toBe(SURFACE_PATHS.apply)
-      expect(router.state.location.search).toMatchObject({ open: "guide" })
-    })
-    expect(
-      await screen.findByRole("heading", { level: 1, name: "Apply" })
-    ).toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole("link", { name: "Home" }))
-    expect(
-      await screen.findByRole("heading", {
-        level: 1,
-        name: /^Good (morning|afternoon|evening), Lan Nguyen$/,
-      })
-    ).toBeInTheDocument()
-
-    openGetStarted()
-    const list = screen.getByRole("region", { name: "Four small things" })
-    expect(
-      within(list).getByRole("link", { name: "Triage one Apply card" })
-    ).toBeInTheDocument()
-    expect(
-      within(list).queryByRole("link", { name: "Triage one Apply card, done" })
-    ).not.toBeInTheDocument()
-    expect(
-      within(list).getByRole("link", { name: "Open the sample CV" })
-    ).toBeInTheDocument()
-    expect(
-      within(list).getByRole("link", { name: "Make Pitch yours" })
-    ).toBeInTheDocument()
-    expect(
-      within(list).getByRole("link", { name: "Connect email, optional" })
-    ).toBeInTheDocument()
-    expect(
-      within(list).queryByRole("link", { name: "Open the sample CV, done" })
-    ).not.toBeInTheDocument()
-    expect(
-      within(list).queryByRole("link", { name: "Make Pitch yours, done" })
-    ).not.toBeInTheDocument()
-    expect(readFirstCafeState("user_test").completed).toEqual([])
-  })
-
-  it("shows a form error when sign-in is refused", async () => {
-    setMockSession(null)
-    vi.mocked(authClient.signIn.email).mockResolvedValueOnce({
-      data: null,
-      error: { message: "Invalid email or password" },
-    } as never)
-
+  it("rejects a partial address without sending", async () => {
     renderApp("/sign-in")
     expect(
-      await screen.findByRole("heading", { name: "Welcome back" })
+      await screen.findByRole("heading", { name: AUTH_COPY.logIn })
     ).toBeInTheDocument()
-
-    fireEvent.change(screen.getByLabelText("Email"), {
-      target: { value: "minh@example.com" },
-    })
-    fireEvent.change(screen.getByLabelText("Password"), {
-      target: { value: "wrong-password" },
-    })
-    fireEvent.click(screen.getByRole("button", { name: "Sign in" }))
-
+    fireEvent.change(emailBox(), { target: { value: "a@b" } })
+    fireEvent.click(screen.getByRole("button", { name: AUTH_COPY.continue }))
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Invalid email or password"
+      AUTH_COPY.emailInvalid
     )
-    expect(screen.getByRole("heading", { name: "Welcome back" })).toBeTruthy()
+    expect(authClient.emailOtp.sendVerificationOtp).not.toHaveBeenCalled()
+  })
+
+  it("sends a code and shows the code step", async () => {
+    renderApp("/sign-in")
+    expect(
+      await screen.findByRole("heading", { name: AUTH_COPY.logIn })
+    ).toBeInTheDocument()
+    expect(document.querySelectorAll('[data-variant="glow"]')).toHaveLength(1)
+    await sendCode()
+    expect(authClient.emailOtp.sendVerificationOtp).toHaveBeenCalledWith({
+      email: "ada@verify.local",
+      type: "sign-in",
+    })
+    expect(
+      screen.getByRole("button", { name: AUTH_COPY.change })
+    ).toBeInTheDocument()
+    expect(document.querySelectorAll('[data-variant="glow"]')).toHaveLength(0)
+  })
+
+  it("hides Google until config says it is on", async () => {
+    renderApp("/sign-in")
+    expect(
+      await screen.findByRole("heading", { name: AUTH_COPY.logIn })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: AUTH_COPY.google })
+    ).not.toBeInTheDocument()
+    expect(screen.queryByText(AUTH_COPY.or)).not.toBeInTheDocument()
+  })
+
+  it("starts Google when config allows it", async () => {
+    setMockGoogle(true)
+    renderApp("/sign-in")
+    fireEvent.click(
+      await screen.findByRole("button", { name: AUTH_COPY.google })
+    )
+    expect(authClient.signIn.social).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: "google" })
+    )
+  })
+
+  it("shows the Google error from search", async () => {
+    renderApp("/sign-in?error=google")
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      AUTH_COPY.googleUnavailable
+    )
+  })
+
+  it("signs in with a pasted code and follows redirect", async () => {
+    const { router } = renderApp(SURFACE_PATHS.paper)
+    expect(
+      await screen.findByRole("heading", { name: AUTH_COPY.logIn })
+    ).toBeInTheDocument()
+    await sendCode("minh@example.com")
+    pasteCode("048291")
+    expect(authClient.signIn.emailOtp).toHaveBeenCalledWith({
+      email: "minh@example.com",
+      otp: "048291",
+    })
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(SURFACE_PATHS.paper)
+    })
+  })
+
+  it("clears the boxes when the code is wrong or expired", async () => {
+    renderApp("/sign-in")
+    expect(
+      await screen.findByRole("heading", { name: AUTH_COPY.logIn })
+    ).toBeInTheDocument()
+    await sendCode()
+    for (const code of ["INVALID_OTP", "OTP_EXPIRED"]) {
+      refuseCode(code, 400)
+      pasteCode("048291")
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        AUTH_COPY.codeBad
+      )
+      expect(
+        screen.getByRole("button", { name: AUTH_COPY.sendNew })
+      ).toBeInTheDocument()
+      expect(screen.getByRole("textbox", { name: "Digit 1" })).toHaveValue("")
+    }
+  })
+
+  it("stays put when sending is rate limited", async () => {
+    vi.mocked(authClient.emailOtp.sendVerificationOtp).mockResolvedValueOnce({
+      data: null,
+      error: { status: 429, message: "Too many requests" },
+    } as never)
+    renderApp("/sign-in")
+    expect(
+      await screen.findByRole("heading", { name: AUTH_COPY.logIn })
+    ).toBeInTheDocument()
+    fireEvent.change(emailBox(), { target: { value: "ada@verify.local" } })
+    fireEvent.click(screen.getByRole("button", { name: AUTH_COPY.continue }))
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      AUTH_COPY.tooManyCodes
+    )
+    expect(
+      screen.getByRole("heading", { name: AUTH_COPY.logIn })
+    ).toBeInTheDocument()
+  })
+
+  it("keeps English when VI is chosen", async () => {
+    renderApp("/sign-in")
+    expect(
+      await screen.findByRole("heading", { name: AUTH_COPY.logIn })
+    ).toBeInTheDocument()
+    await sendCode()
+    fireEvent.click(screen.getByRole("radio", { name: AUTH_COPY.vi }))
+    expect(
+      screen.getByRole("heading", { name: AUTH_COPY.checkEmail })
+    ).toBeInTheDocument()
+    expect(sessionStorage.getItem(LANGUAGE_STORAGE_KEY)).toBe("vi")
+  })
+})
+
+describe("welcome", () => {
+  it("marks welcome once and then shows the app", async () => {
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    }))
+    const calls: string[] = []
+    setMockWelcomedAt(null)
+    renderApp(SURFACE_PATHS.home, (input) => {
+      calls.push(pathOf(input))
+    })
+    expect(
+      await screen.findByRole("heading", { name: AUTH_COPY.welcome })
+    ).toBeInTheDocument()
+    expect(screen.getByText(AUTH_COPY.accountCreated)).toBeInTheDocument()
+    expect(screen.getByText(AUTH_COPY.workspaceReady)).toBeInTheDocument()
+    expect(screen.getByText(AUTH_COPY.coachReady)).toBeInTheDocument()
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("heading", { name: AUTH_COPY.welcome })
+      ).not.toBeInTheDocument()
+    })
+    expect(calls).toContain("/api/commands/profile.markWelcomed")
+  })
+
+  it("skips welcome when the profile was already welcomed", async () => {
+    setMockWelcomedAt("2026-01-02T00:00:00.000Z")
+    renderApp(SURFACE_PATHS.home)
+    expect(
+      await screen.findByRole("heading", { level: 1, name: /Alex Tran/ })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("heading", { name: AUTH_COPY.welcome })
+    ).not.toBeInTheDocument()
+  })
+})
+
+describe("session expired", () => {
+  it("keeps the dialog open on Escape and offers the remembered email", async () => {
+    const dialog = await openExpired()
+    expect(
+      screen.getByRole("button", { name: "Continue as you@opencv.me" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: AUTH_COPY.emailMe })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: AUTH_COPY.logOut })
+    ).toBeInTheDocument()
+    expect(dialog.querySelectorAll('[data-variant="glow"]')).toHaveLength(1)
+    fireEvent.keyDown(dialog, { key: "Escape" })
+    expect(
+      screen.getByRole("dialog", { name: AUTH_COPY.loggedOutTitle })
+    ).toBeInTheDocument()
+  })
+
+  it("sends a code for Continue as", async () => {
+    await openExpired()
+    fireEvent.click(
+      screen.getByRole("button", { name: "Continue as you@opencv.me" })
+    )
+    expect(authClient.emailOtp.sendVerificationOtp).toHaveBeenCalledWith({
+      email: "you@opencv.me",
+      type: "sign-in",
+    })
+    expect(
+      await screen.findByRole("heading", { name: AUTH_COPY.checkEmail })
+    ).toBeInTheDocument()
+  })
+
+  it("opens a blank email step for Email me a code", async () => {
+    await openExpired()
+    fireEvent.click(screen.getByRole("button", { name: AUTH_COPY.emailMe }))
+    expect(
+      await screen.findByRole("heading", { name: AUTH_COPY.logIn })
+    ).toBeInTheDocument()
+    expect(emailBox()).toHaveValue("")
+    expect(authClient.emailOtp.sendVerificationOtp).not.toHaveBeenCalled()
+  })
+
+  it("logs out and clears the remembered email", async () => {
+    await openExpired()
+    fireEvent.click(screen.getByRole("button", { name: AUTH_COPY.logOut }))
+    expect(authClient.signOut).toHaveBeenCalled()
+    expect(
+      await screen.findByRole("heading", { name: AUTH_COPY.logIn })
+    ).toBeInTheDocument()
+    expect(sessionStorage.getItem(SIGNED_OUT_EMAIL_KEY)).toBeNull()
+    expect(sessionStorage.getItem(LANGUAGE_STORAGE_KEY)).toBeNull()
   })
 })

@@ -49,7 +49,7 @@ export function PricingPage() {
                 </span>
               </p>
               <Link
-                to="/sign-up"
+                to="/sign-in"
                 className={cn(
                   buttonVariants({ variant: "outline", size: "lg" }),
                   "rounded-full"
@@ -77,7 +77,7 @@ export function PricingPage() {
                 </span>
               </p>
               <Link
-                to="/sign-up"
+                to="/sign-in"
                 className={cn(buttonVariants({ size: "lg" }), "rounded-full")}
               >
                 {PRICING_PRO.cta}

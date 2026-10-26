@@ -1,3 +1,4 @@
+import { emailOTPClient } from "better-auth/client/plugins"
 import { createAuthClient } from "better-auth/react"
 
 import { apiBaseUrl } from "@/lib/api-url.ts"
@@ -10,6 +11,7 @@ import { apiBaseUrl } from "@/lib/api-url.ts"
 export const authClient = createAuthClient({
   baseURL: apiBaseUrl,
   basePath: "/api/auth",
+  plugins: [emailOTPClient()],
 })
 
 export type SessionUser = {

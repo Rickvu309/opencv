@@ -17,6 +17,20 @@ const store: Store = {
   profile: defaultProfile(),
 }
 
+let welcomedAt: string | null | undefined = undefined
+
+export function setMockWelcomedAt(value: string | null) {
+  welcomedAt = value
+}
+
+function profilePayload() {
+  return {
+    ...store.profile,
+    language: "en",
+    ...(welcomedAt !== undefined ? { welcomedAt } : {}),
+  }
+}
+
 function defaultProfile(): UserProfile {
   return {
     id: "user_test",
@@ -39,6 +53,7 @@ async function readBody(init?: RequestInit): Promise<unknown> {
 
 export function resetProfileApiMock() {
   store.profile = defaultProfile()
+  welcomedAt = undefined
 }
 
 export function getMockCoachMode() {
@@ -49,7 +64,9 @@ export function handlesProfileRequest(input: RequestInfo | URL) {
   const path = pathOf(input)
   return (
     path === "/api/profile" ||
-    path === `/api/commands/${PROFILE_COMMANDS.setCoachMode}`
+    path === `/api/commands/${PROFILE_COMMANDS.setCoachMode}` ||
+    path === "/api/commands/profile.markWelcomed" ||
+    path === "/api/commands/profile.update"
   )
 }
 
@@ -63,7 +80,16 @@ export async function profileApiFetch(
   const method = (init?.method ?? "GET").toUpperCase()
 
   if (method === "GET" && path === "/api/profile") {
-    return jsonOk(store.profile)
+    return jsonOk(profilePayload())
+  }
+
+  if (method === "POST" && path === "/api/commands/profile.markWelcomed") {
+    if (welcomedAt == null) welcomedAt = new Date().toISOString()
+    return jsonOk(profilePayload())
+  }
+
+  if (method === "POST" && path === "/api/commands/profile.update") {
+    return jsonOk(profilePayload())
   }
 
   if (

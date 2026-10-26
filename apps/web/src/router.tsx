@@ -14,7 +14,6 @@ import { validateSettingsSearch } from "@/features/app-shell/surfaces.ts"
 import { validateApplySearch } from "@/features/apply/apply-search.ts"
 import { validatePaperSearch } from "@/features/paper/paper-search.ts"
 import { SignInPage } from "@/routes/sign-in.tsx"
-import { SignUpPage } from "@/routes/sign-up.tsx"
 import { authClient } from "@/lib/auth-client.ts"
 import { validateAuthSearch } from "@/lib/auth-redirect.ts"
 
@@ -64,13 +63,13 @@ const signUpRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/sign-up",
   validateSearch: validateAuthSearch,
-  beforeLoad: async () => {
-    const { data } = await authClient.getSession()
-    if (data) {
-      throw redirect({ href: "/app" })
-    }
+  beforeLoad: ({ search }) => {
+    throw redirect({
+      to: "/sign-in",
+      search: search.redirect ? { redirect: search.redirect } : {},
+    })
   },
-  component: SignUpPage,
+  component: () => null,
 })
 
 const appLayoutRoute = createRoute({
