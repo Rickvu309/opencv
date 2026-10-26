@@ -25,7 +25,7 @@ describe("receiptHeadline", () => {
           to: "prep",
         },
       })
-    ).toBe("Moved Associate PM intern at Local startup from Inbox to Prep")
+    ).toBe("Moved Associate PM intern at Local startup from inbox to prep")
     expect(
       receiptHeadline({
         type: "tool",

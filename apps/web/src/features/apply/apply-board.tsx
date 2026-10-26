@@ -94,21 +94,29 @@ export function ApplyBoard({
     tails.current.set(jobId, next)
   }
 
-  function onDataChange(next: Card[]) {
-    for (const item of next) {
-      const before = data.find((card) => card.id === item.id)
-      if (before && before.column !== item.column) {
-        persist(item.id, item.column as JobStage)
-      }
+  function stageOf(id: string): JobStage | null {
+    if ((stages as readonly string[]).includes(id)) return id as JobStage
+    const card = data.find((item) => item.id === id)
+    if (!card || !(stages as readonly string[]).includes(card.column)) {
+      return null
     }
+    return card.column as JobStage
+  }
+
+  function onDragEnd(event: {
+    active: { id: string | number }
+    over: { id: string | number } | null
+  }) {
+    if (!event.over) return
+    const jobId = String(event.active.id)
+    const stage = stageOf(String(event.over.id))
+    const before = data.find((card) => card.id === jobId)
+    if (!before || !stage || before.column === stage) return
     queryClient.setQueryData<Job[]>(applyQueryKeys.list(), (current) => {
       if (!current) return current
-      return current.map((job) => {
-        const item = next.find((card) => card.id === job.id)
-        if (!item || item.column === job.stage) return job
-        return { ...job, stage: item.column as JobStage }
-      })
+      return current.map((job) => (job.id === jobId ? { ...job, stage } : job))
     })
+    persist(jobId, stage)
   }
 
   return (
@@ -117,7 +125,7 @@ export function ApplyBoard({
         <KanbanProvider
           columns={columns}
           data={data}
-          onDataChange={onDataChange}
+          onDragEnd={onDragEnd}
           className="h-full min-h-80 w-max auto-cols-[244px]"
         >
           {(column) => (

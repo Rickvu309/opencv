@@ -29,6 +29,18 @@ describe("apply calendar", () => {
     ])
     const { router } = renderApp("/app/apply?view=calendar")
     expect(await screen.findByText("Week interview")).toBeInTheDocument()
+    const dayLabel = new Intl.DateTimeFormat("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      timeZone: "UTC",
+    }).format(
+      new Date(Date.UTC(Number(year), Number(month) - 1, Number(day), 12))
+    )
+    expect(screen.getByRole("group", { name: dayLabel })).toBeInTheDocument()
+    expect(
+      screen.getByRole("group", { name: "Week interview" })
+    ).toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "Week" }))
     await waitFor(() => {
       expect(router.state.location.search).toMatchObject({

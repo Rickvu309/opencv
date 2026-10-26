@@ -40,6 +40,7 @@ type Draft = {
   url: string
   title: string
   company: string
+  location: string
   description: string
   stage: JobStage
   deadline: string
@@ -49,9 +50,17 @@ const EMPTY: Draft = {
   url: "",
   title: "",
   company: "",
+  location: "",
   description: "",
   stage: "saved",
   deadline: "",
+}
+
+function asStage(value: string | undefined): JobStage | null {
+  if (!value) return null
+  return (ALL_STAGES as readonly string[]).includes(value)
+    ? (value as JobStage)
+    : null
 }
 
 export function NewJobDialog({
@@ -87,17 +96,16 @@ export function NewJobDialog({
   async function runPreview(input: { url?: string; text?: string }) {
     const result = await previewJob(input)
     setPreview(result)
-    if (result.fields?.title) patch({ title: result.fields.title })
-    if (result.fields?.company) patch({ company: result.fields.company })
-    if (result.fields?.description)
-      patch({ description: result.fields.description })
-    if (result.fields?.location) {
-      /* location is not a dialog field. The create call can still send it. */
-    }
+    const next: Partial<Draft> = {}
+    if (result.fields?.title) next.title = result.fields.title
+    if (result.fields?.company) next.company = result.fields.company
+    if (result.fields?.location) next.location = result.fields.location
+    if (result.fields?.description) next.description = result.fields.description
+    if (Object.keys(next).length > 0) patch(next)
     if (result.status === "company-missing") {
       setCompanyError(COMPANY_REQUIRED)
       companyRef.current?.focus()
-    } else if (result.status !== "duplicate") {
+    } else {
       setCompanyError("")
     }
     return result
@@ -138,6 +146,7 @@ export function NewJobDialog({
         company,
         stage: draft.stage,
         ...(draft.description ? { description: draft.description } : {}),
+        ...(draft.location ? { location: draft.location } : {}),
         ...(draft.url ? { jobUrl: draft.url } : {}),
         ...(draft.deadline ? { deadline: draft.deadline } : {}),
         ...(anyway ? { anyway: true } : {}),
@@ -148,7 +157,12 @@ export function NewJobDialog({
       onOpenChange(false)
     } catch (error) {
       if (error instanceof ApiError && error.code === "DUPLICATE_JOB") {
-        setPreview({ status: "duplicate", fields: { title, company } })
+        setPreview({
+          status: "duplicate",
+          jobId: error.jobId,
+          stage: asStage(error.stage) ?? undefined,
+          fields: { title, company, location: draft.location },
+        })
       } else if (
         error instanceof ApiError &&
         error.code === "COMPANY_REQUIRED"
@@ -165,6 +179,7 @@ export function NewJobDialog({
   const addDisabled =
     busy || draft.company.trim() === "" || draft.title.trim() === ""
   const stageName = stageLabel(draft.stage)
+  const duplicateStageName = stageLabel(asStage(preview?.stage) ?? "saved")
 
   return (
     <Dialog
@@ -222,7 +237,8 @@ export function NewJobDialog({
               <p>Already on your board</p>
               <p>
                 {preview?.fields?.title ?? draft.title} at{" "}
-                {preview?.fields?.company ?? draft.company}, in {stageName}
+                {preview?.fields?.company ?? draft.company}, in{" "}
+                {duplicateStageName}
               </p>
               <Button
                 type="button"
@@ -257,17 +273,18 @@ export function NewJobDialog({
               ref={companyRef}
               value={draft.company}
               aria-invalid={companyError ? true : undefined}
+              aria-describedby={companyError ? "job-company-error" : undefined}
               onChange={(event) => {
                 patch({ company: event.target.value })
                 if (event.target.value.trim()) setCompanyError("")
               }}
             />
-            {companyError ? <p>{companyError}</p> : null}
+            {companyError ? <p id="job-company-error">{companyError}</p> : null}
           </div>
           <div className="flex flex-col gap-1">
-            <Label htmlFor="job-description">Description</Label>
             <Textarea
               id="job-description"
+              aria-label="Add the job description"
               value={draft.description}
               placeholder="Add the job description…"
               onChange={(event) => patch({ description: event.target.value })}
@@ -316,7 +333,10 @@ export function NewJobDialog({
             <Button
               type="button"
               variant="ghost"
-              onClick={() => onOpenChange(false)}
+              onClick={() => {
+                reset()
+                onOpenChange(false)
+              }}
             >
               Cancel
             </Button>

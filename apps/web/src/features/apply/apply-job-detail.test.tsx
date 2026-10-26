@@ -89,7 +89,8 @@ describe("job detail", () => {
     fireEvent.change(screen.getByRole("textbox", { name: "Leave a note" }), {
       target: { value: "Bring the checkout study." },
     })
-    fireEvent.click(screen.getByRole("button", { name: "Add note" }))
+    expect(screen.getByRole("img", { name: "Normal" })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "Leave a note" }))
     await waitFor(() => {
       expect(
         getMockJobPosts().some(
@@ -111,6 +112,19 @@ describe("job detail", () => {
       expect(
         getMockJobPosts().some(
           (post) => post.name === "job.move" && post.input.stage === "closed"
+        )
+      ).toBe(true)
+    })
+    const move = getMockJobPosts().find(
+      (post) => post.name === "job.move" && post.input.stage === "closed"
+    )
+    fireEvent.click(await screen.findByRole("button", { name: "Undo" }))
+    await waitFor(() => {
+      expect(
+        getMockJobPosts().some(
+          (post) =>
+            post.name === "activity.undo" &&
+            post.input.activityId === move?.activityId
         )
       ).toBe(true)
     })

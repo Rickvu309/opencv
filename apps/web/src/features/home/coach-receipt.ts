@@ -6,15 +6,11 @@ import {
 } from "@workspace/domain"
 
 const RECEIPT_STAGES: { id: string; label: string; dot: string }[] = [
-  { id: "inbox", label: "Inbox", dot: "bg-chart-1" },
-  { id: "prep", label: "Prep", dot: "bg-chart-2" },
-  { id: "sent", label: "Sent", dot: "bg-chart-3" },
-  { id: "live", label: "Live", dot: "bg-chart-4" },
+  { id: "saved", label: "Saved", dot: "bg-chart-1" },
+  { id: "applied", label: "Applied", dot: "bg-chart-2" },
+  { id: "interview", label: "Interview", dot: "bg-chart-3" },
+  { id: "offer", label: "Offer", dot: "bg-chart-4" },
   { id: "closed", label: "Closed", dot: "bg-chart-5" },
-  { id: "saved", label: "Saved", dot: "bg-chart-5" },
-  { id: "applied", label: "Applied", dot: "bg-chart-4" },
-  { id: "interview", label: "Interview", dot: "bg-chart-2" },
-  { id: "offer", label: "Offer", dot: "bg-chart-3" },
 ]
 
 export function commandNameFromTool(name: string) {

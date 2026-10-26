@@ -1,9 +1,16 @@
-import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react"
-import { afterEach, beforeEach, describe, expect, it } from "vitest"
+import {
+  act,
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { renderApp } from "@/test/render-app.tsx"
 import { mockJob } from "@/test/apply-job-fixtures.ts"
-import { setMockJobs } from "@/test/apply-jobs-mock.ts"
+import { getMockJobPosts, setMockJobs } from "@/test/apply-jobs-mock.ts"
 
 const junior = mockJob()
 const applied = mockJob({
@@ -59,9 +66,10 @@ describe("apply board", () => {
     ).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "Hidden columns" }))
     expect(screen.getByRole("region", { name: "Closed" })).toBeInTheDocument()
-    const glows = document.querySelectorAll("[data-variant='glow']")
-    expect(glows).toHaveLength(1)
-    expect(glows[0]).toHaveAccessibleName("New job")
+    expect(screen.getByRole("button", { name: "New job" })).toHaveAttribute(
+      "data-variant",
+      "glow"
+    )
     fireEvent.click(
       screen.getByRole("button", {
         name: "Junior Marketing, Lumière Cosmetics",
@@ -89,5 +97,75 @@ describe("apply board", () => {
         name: "Junior Marketing, Lumière Cosmetics",
       })
     ).toBeInTheDocument()
+  })
+
+  it("keeps one glow while the new job dialog is open", async () => {
+    renderApp("/app/apply")
+    const add = await screen.findByRole("button", { name: "Add job" })
+    expect(add).toHaveAttribute("data-variant", "glow")
+    fireEvent.click(add)
+    const dialog = await screen.findByRole("dialog", { name: "New job" })
+    expect(add).toHaveAttribute("data-variant", "ghost")
+    expect(
+      within(dialog).getByRole("button", { name: "Add job" })
+    ).toHaveAttribute("data-variant", "glow")
+  })
+
+  it("persists a keyboard move on drop", async () => {
+    const rect = vi
+      .spyOn(HTMLElement.prototype, "getBoundingClientRect")
+      .mockImplementation(function (this: HTMLElement) {
+        const board = this.closest("[data-slot='kanban-board']")
+        const stage =
+          board?.getAttribute("data-stage") ?? this.getAttribute("data-stage")
+        const order = ["saved", "applied", "interview", "offer", "closed"]
+        const index = stage ? order.indexOf(stage) : -1
+        const card = this.closest("[data-slot='kanban-card']")
+        if (index < 0) return new DOMRect(24, 96, 200, 80)
+        return new DOMRect(
+          index * 320 + (card ? 24 : 0),
+          card ? 96 : 0,
+          card ? 200 : 244,
+          card ? 80 : 480
+        )
+      })
+    try {
+      setMockJobs([junior, applied])
+      renderApp("/app/apply")
+      const card = await screen.findByRole("button", {
+        name: "Junior Marketing, Lumière Cosmetics",
+      })
+      async function key(target: EventTarget, code: string) {
+        await act(async () => {
+          fireEvent.keyDown(target, {
+            code,
+            key: code === "Space" ? " " : code,
+          })
+          await new Promise((resolve) => setTimeout(resolve, 0))
+        })
+      }
+      card.focus()
+      await key(card, "Space")
+      await key(document, "ArrowRight")
+      await key(document, "Escape")
+      expect(getMockJobPosts().some((post) => post.name === "job.move")).toBe(
+        false
+      )
+      await key(card, "Space")
+      await key(document, "ArrowRight")
+      await key(document, "Space")
+      await waitFor(() => {
+        expect(
+          getMockJobPosts().some(
+            (post) =>
+              post.name === "job.move" &&
+              post.input.jobId === junior.id &&
+              post.input.stage === "applied"
+          )
+        ).toBe(true)
+      })
+    } finally {
+      rect.mockRestore()
+    }
   })
 })

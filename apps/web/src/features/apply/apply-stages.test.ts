@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest"
 
 import type { Job } from "./apply-api.ts"
-import { companyInitials, listPhrase, priorityLabel } from "./apply-stages.ts"
+import {
+  companyInitials,
+  interviewInputValue,
+  interviewInstant,
+  listPhrase,
+  priorityLabel,
+} from "./apply-stages.ts"
 
 const now = new Date("2026-10-27T03:00:00.000Z")
 
@@ -55,9 +61,15 @@ describe("apply stages", () => {
     expect(listPhrase(job({ stage: "offer" }), now)).toBe("Offer")
     expect(listPhrase(job({ stage: "closed" }), now)).toBe("Closed")
     expect(priorityLabel("normal")).toBe("Normal")
-    expect(priorityLabel("low")).toBe("Low")
-    expect(priorityLabel("high")).toBe("High")
+    expect(priorityLabel("low")).toBe("Low priority")
+    expect(priorityLabel("high")).toBe("High priority")
     expect(companyInitials("Lumière Cosmetics")).toBe("LC")
     expect(companyInitials("Northwind")).toBe("NO")
+  })
+
+  it("keeps the interview hour in the profile zone", () => {
+    const iso = "2026-10-27T03:00:00.000Z"
+    expect(interviewInputValue(iso)).toBe("2026-10-27T10:00")
+    expect(interviewInstant("2026-10-27T10:00")).toBe(iso)
   })
 })

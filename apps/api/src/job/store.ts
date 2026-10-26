@@ -184,6 +184,7 @@ export async function createJob(actor: Actor, input: JobCreateInput) {
     if (existing) {
       throw new CommandError(ERROR_CODES.DUPLICATE_JOB, DUPLICATE_JOB_MESSAGE, {
         jobId: existing.id,
+        stage: existing.stage,
       })
     }
   }
@@ -240,6 +241,7 @@ export async function updateJob(actor: Actor, jobId: JobId, patch: JobPatch) {
     if (existing && existing.id !== current.id) {
       throw new CommandError(ERROR_CODES.DUPLICATE_JOB, DUPLICATE_JOB_MESSAGE, {
         jobId: existing.id,
+        stage: existing.stage,
       })
     }
   }
@@ -524,6 +526,7 @@ export async function previewJob(
       return {
         status: "duplicate" as const,
         jobId: duplicate.id,
+        stage: duplicate.stage,
         fields: {
           title: title || duplicate.title,
           company: company || duplicate.company,

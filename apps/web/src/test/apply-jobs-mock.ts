@@ -17,7 +17,11 @@ type Extra = {
   previousStage: JobStage | null
 }
 
-type Post = { name: string; input: Record<string, unknown> }
+type Post = {
+  name: string
+  input: Record<string, unknown>
+  activityId: string
+}
 
 const jobs: Job[] = []
 const extras = new Map<string, Extra>()
@@ -57,9 +61,10 @@ function commandInput(body: Record<string, unknown>) {
 }
 
 function record(name: string, input: Record<string, unknown>) {
-  posts.push({ name, input })
+  const activityId = crypto.randomUUID()
+  posts.push({ name, input, activityId })
   const row: ActivityRow = {
-    id: crypto.randomUUID(),
+    id: activityId,
     createdAt: new Date().toISOString(),
     actor: "person",
     command: name,
@@ -77,7 +82,7 @@ function record(name: string, input: Record<string, unknown>) {
     reversible: name === "job.create" || name === "job.move",
   }
   if (row.subjectId) extra(row.subjectId).activity.unshift(row)
-  return row.id
+  return activityId
 }
 
 export function resetMockJobs() {
@@ -134,6 +139,16 @@ function detailOf(job: Job): JobDetail {
 
 function previewFor(input: { url?: string; text?: string }): JobPreview {
   const url = input.url?.trim() ?? ""
+  if (url.includes("create-duplicate")) {
+    return {
+      status: "filled",
+      fields: {
+        title: "Associate Product Manager Intern",
+        company: "Northwind Labs",
+        location: "Hanoi",
+      },
+    }
+  }
   if (url.includes("jobs.example.com")) {
     return {
       status: "unreadable",
@@ -145,6 +160,7 @@ function previewFor(input: { url?: string; text?: string }): JobPreview {
     return {
       status: "duplicate",
       jobId: duplicate.id,
+      stage: duplicate.stage,
       fields: { title: duplicate.title, company: duplicate.company },
     }
   }
@@ -285,16 +301,18 @@ export async function jobApiFetch(
         )
       }
       const url = payload.jobUrl ? String(payload.jobUrl) : null
-      if (
-        url &&
-        payload.anyway !== true &&
-        jobs.some((job) => job.jobUrl === url)
-      ) {
-        return jsonError(
-          409,
-          "DUPLICATE_JOB",
-          "You already saved a job with this link."
-        )
+      if (url && payload.anyway !== true) {
+        const existing = jobs.find((job) => job.jobUrl === url)
+        const named =
+          existing ?? (url.includes("create-duplicate") ? jobs[0] : undefined)
+        if (named && (existing || url.includes("create-duplicate"))) {
+          return jsonError(
+            409,
+            "DUPLICATE_JOB",
+            "You already saved a job with this link.",
+            { jobId: named.id, stage: named.stage }
+          )
+        }
       }
       const now = new Date().toISOString()
       const created: Job = {

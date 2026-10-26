@@ -55,11 +55,14 @@ import {
 import {
   ActivityItem,
   ChecklistItem as ChecklistRow,
+  PriorityBars,
   Property,
 } from "./apply-parts.tsx"
 import {
   ALL_STAGES,
   compareJobs,
+  interviewInputValue,
+  interviewInstant,
   priorityLabel,
   stageLabel,
 } from "./apply-stages.ts"
@@ -311,10 +314,11 @@ export function ApplyJobDetail({ jobId }: { jobId: string }) {
             <Textarea
               id="job-note"
               value={note}
+              placeholder="Leave a note…"
               onChange={(event) => setNote(event.target.value)}
             />
             <Button type="submit" variant="ghost">
-              Add note
+              Leave a note
             </Button>
           </form>
         </div>
@@ -347,23 +351,26 @@ export function ApplyJobDetail({ jobId }: { jobId: string }) {
             </Select>
           </Property>
           <Property label="Priority">
-            <Select
-              value={job.priority}
-              onValueChange={(value) => {
-                if (value) void savePatch({ priority: value as JobPriority })
-              }}
-            >
-              <SelectTrigger aria-label="Priority">
-                <SelectValue>{priorityLabel(job.priority)}</SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {(["low", "normal", "high"] as const).map((priority) => (
-                  <SelectItem key={priority} value={priority}>
-                    {priorityLabel(priority)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2">
+              <PriorityBars level={job.priority} />
+              <Select
+                value={job.priority}
+                onValueChange={(value) => {
+                  if (value) void savePatch({ priority: value as JobPriority })
+                }}
+              >
+                <SelectTrigger aria-label="Priority">
+                  <SelectValue>{priorityLabel(job.priority)}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {(["low", "normal", "high"] as const).map((priority) => (
+                    <SelectItem key={priority} value={priority}>
+                      {priorityLabel(priority)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </Property>
           <Property label="Location">
             <Input
@@ -379,13 +386,11 @@ export function ApplyJobDetail({ jobId }: { jobId: string }) {
             <Input
               aria-label="Interview"
               type="datetime-local"
-              defaultValue={localInput(job.interviewAt)}
+              defaultValue={interviewInputValue(job.interviewAt)}
               key={`${job.id}-interview-${job.interviewAt ?? ""}`}
               onBlur={(event) =>
                 void savePatch({
-                  interviewAt: event.target.value
-                    ? new Date(event.target.value).toISOString()
-                    : null,
+                  interviewAt: interviewInstant(event.target.value),
                 })
               }
             />
@@ -414,9 +419,7 @@ export function ApplyJobDetail({ jobId }: { jobId: string }) {
             />
           </Property>
           <Property label="Source">
-            <p className="text-sm">
-              {job.sourceHost || job.jobUrl || "Add source"}
-            </p>
+            <p className="text-sm">{job.sourceHost || job.jobUrl || ""}</p>
           </Property>
           <PaperField label="CV" kind="cv" job={job} onChange={refresh} />
           <PaperField
@@ -493,14 +496,6 @@ function Posting({ job }: { job: JobDetail }) {
       ))}
     </div>
   )
-}
-
-function localInput(iso: string | null) {
-  if (!iso) return ""
-  const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return ""
-  const pad = (value: number) => String(value).padStart(2, "0")
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
 
 function PaperField({

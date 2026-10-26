@@ -41,6 +41,15 @@ function rangeFor(days: string[]) {
   return { from, to }
 }
 
+function dayName(ymd: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  }).format(deadlineInstant(ymd))
+}
+
 function hourOf(iso: string) {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: PROFILE_ZONE,
@@ -156,6 +165,8 @@ export function ApplyCalendar({
             return (
               <div
                 key={day}
+                role="group"
+                aria-label={dayName(day)}
                 className={cn(
                   "min-h-16 rounded-md border border-border p-1",
                   day === today && "bg-accent"
@@ -165,6 +176,8 @@ export function ApplyCalendar({
                 {titlesOn(day).map((job) => (
                   <p
                     key={job.id}
+                    role="group"
+                    aria-label={job.title}
                     className={cn(
                       "truncate text-xs",
                       deadlineToday && job.deadline === day && "bg-accent"
@@ -182,6 +195,8 @@ export function ApplyCalendar({
           {days.map((day) => (
             <div
               key={day}
+              role="group"
+              aria-label={dayName(day)}
               className={cn(
                 "rounded-md border border-border p-2",
                 day === today && "bg-accent"
@@ -196,6 +211,8 @@ export function ApplyCalendar({
                 .map((job) => (
                   <p
                     key={job.id}
+                    role="group"
+                    aria-label={job.title}
                     className={cn("text-xs", day === today && "bg-accent")}
                   >
                     {job.title}
@@ -213,7 +230,12 @@ export function ApplyCalendar({
                   <div key={hour}>
                     <p className="text-xs text-muted-foreground">{hour}:00</p>
                     {atHour.map((job) => (
-                      <p key={job.id} className="text-xs">
+                      <p
+                        key={job.id}
+                        role="group"
+                        aria-label={job.title}
+                        className="text-xs"
+                      >
                         {job.title}
                       </p>
                     ))}

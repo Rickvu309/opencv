@@ -53,12 +53,12 @@ describe("CoachToolLine", () => {
     render(<CoachToolLine tool={toolOf(moved)} canUndo={false} />)
 
     const header = screen.getByRole("button", {
-      name: /Moved Backend Intern at Acme from Inbox to Prep/,
+      name: /Moved Backend Intern at Acme from inbox to prep/,
     })
     expect(header).toHaveAttribute("aria-expanded", "false")
     expect(
       screen.getByText(
-        /^Moved Backend Intern at Acme from Inbox to Prep finished/
+        /^Moved Backend Intern at Acme from inbox to prep finished/
       )
     ).toBeInTheDocument()
     expect(screen.getByText(/Undo by moving the card back\./)).toBeVisible()

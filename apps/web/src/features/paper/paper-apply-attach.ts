@@ -1,8 +1,6 @@
 import {
   STARTER_GUIDED_APPLY_COMPANY,
   STARTER_GUIDED_APPLY_TITLE,
-  type ApplyStage,
-  type ApplyTrackKind,
   type PaperDoc,
 } from "@workspace/domain"
 
@@ -12,12 +10,11 @@ export type GuidedApplyCardPick = {
   id: string
   title: string
   company: string
-  stage: ApplyStage
+  stage: string
   starred: boolean
-  trackKind: ApplyTrackKind
 }
 
-const ACTIONABLE_STAGES: ReadonlySet<ApplyStage> = new Set(["inbox", "prep"])
+const ACTIONABLE_STAGES: ReadonlySet<string> = new Set(["saved", "applied"])
 
 function pickGuidedApplyCard<T extends GuidedApplyCardPick>(
   cards: readonly T[]
@@ -31,9 +28,8 @@ function pickGuidedApplyCard<T extends GuidedApplyCardPick>(
   )
   if (starter) return starter
   return (
-    pool.find((card) => card.stage === "inbox" && card.starred) ??
-    pool.find((card) => card.stage === "inbox") ??
-    pool.find((card) => card.trackKind === "followup") ??
+    pool.find((card) => card.stage === "saved" && card.starred) ??
+    pool.find((card) => card.stage === "saved") ??
     pool[0] ??
     null
   )

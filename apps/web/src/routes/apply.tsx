@@ -179,7 +179,7 @@ export function ApplyPage() {
             <EmptyContent>
               <Button
                 type="button"
-                variant="glow"
+                variant={dialogOpen ? "ghost" : "glow"}
                 onClick={() => setDialogOpen(true)}
               >
                 Add job

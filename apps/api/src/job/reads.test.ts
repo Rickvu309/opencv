@@ -22,7 +22,6 @@ describe("job reads", () => {
     const { cookie } = await signUp(app, {
       name: "Ada",
       email: "ada-376-reads@example.com",
-      password: "Verify-pass-123",
     })
     const headers = authHeaders(cookie)
 
@@ -175,6 +174,85 @@ describe("job reads", () => {
       await app.request(`/api/jobs/${jobId}`, { headers })
     )
     expect(after.data?.stage).toBe("saved")
+
+    await client.close()
+  })
+
+  it("previews a posting as filled, company-missing, duplicate, or unreadable", async () => {
+    const { db, client } = await createMigratedTestDb()
+    const app = createTestApp(db)
+    const { cookie } = await signUp(app, {
+      name: "Ada",
+      email: "ada-376-preview@example.com",
+    })
+    const headers = authHeaders(cookie)
+
+    const filled = await jsonOf(
+      await app.request("/api/jobs/preview", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          text: "Northwind Labs is hiring an associate product manager intern in Hanoi.",
+        }),
+      })
+    )
+    expect(filled.data).toMatchObject({
+      status: "filled",
+      fields: {
+        title: "associate product manager intern",
+        company: "Northwind Labs",
+        location: "Hanoi",
+      },
+    })
+
+    const missing = await jsonOf(
+      await app.request("/api/jobs/preview", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ text: "A role with no company pattern." }),
+      })
+    )
+    expect(missing.data?.status).toBe("company-missing")
+
+    const unreadable = await jsonOf(
+      await app.request("/api/jobs/preview", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({}),
+      })
+    )
+    expect(unreadable.data?.status).toBe("unreadable")
+
+    const created = await jsonOf(
+      await app.request("/api/commands/job.create", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          input: {
+            title: "Intern",
+            company: "Northwind",
+            stage: "interview",
+            jobUrl: "https://careers.example.com/intern",
+          },
+          idempotencyKey: "376-preview-create",
+        }),
+      })
+    )
+    const duplicate = await jsonOf(
+      await app.request("/api/jobs/preview", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          url: "https://careers.example.com/intern",
+          text: "Northwind Labs is hiring an associate product manager intern in Hanoi.",
+        }),
+      })
+    )
+    expect(duplicate.data).toMatchObject({
+      status: "duplicate",
+      jobId: created.data?.id,
+      stage: "interview",
+    })
 
     await client.close()
   })

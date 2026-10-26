@@ -22,7 +22,7 @@ export function PriorityBars({ level }: { level: JobPriority }) {
       height="12"
       viewBox="0 0 12 12"
       role="img"
-      aria-label={`${label} priority`}
+      aria-label={label}
     >
       {[0, 1, 2].map((index) => (
         <rect

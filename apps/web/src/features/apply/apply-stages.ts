@@ -26,8 +26,8 @@ export function stageLabel(stage: JobStage): string {
 }
 
 export function priorityLabel(priority: JobPriority): string {
-  if (priority === "low") return "Low"
-  if (priority === "high") return "High"
+  if (priority === "low") return "Low priority"
+  if (priority === "high") return "High priority"
   return "Normal"
 }
 
@@ -120,6 +120,46 @@ export function listPhrase(job: Job, now = new Date()): string {
 export function zonedYmd(date: Date, zone = PROFILE_ZONE) {
   const parts = zonedParts(date, zone)
   return `${parts.year}-${parts.month}-${parts.day}`
+}
+
+function clockHour(hour: string) {
+  return hour === "24" ? "00" : hour
+}
+
+/** Wall time in the profile zone for the interview control. */
+export function interviewInputValue(
+  iso: string | null,
+  zone = PROFILE_ZONE
+): string {
+  if (!iso) return ""
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return ""
+  const parts = zonedParts(date, zone)
+  return `${parts.year}-${parts.month}-${parts.day}T${clockHour(parts.hour)}:${parts.minute}`
+}
+
+/** Parse a datetime-local value as profile-zone wall time. */
+export function interviewInstant(
+  local: string,
+  zone = PROFILE_ZONE
+): string | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(local)
+  if (!match) return null
+  const year = Number(match[1])
+  const month = Number(match[2])
+  const day = Number(match[3])
+  const hour = Number(match[4])
+  const minute = Number(match[5])
+  const utcGuess = Date.UTC(year, month - 1, day, hour, minute)
+  const shown = zonedParts(new Date(utcGuess), zone)
+  const shownAsUtc = Date.UTC(
+    Number(shown.year),
+    Number(shown.month) - 1,
+    Number(shown.day),
+    Number(clockHour(shown.hour)),
+    Number(shown.minute)
+  )
+  return new Date(utcGuess - (shownAsUtc - utcGuess)).toISOString()
 }
 
 export function cardName(job: Pick<Job, "title" | "company">) {

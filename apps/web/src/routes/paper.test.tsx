@@ -304,7 +304,11 @@ describe("Paper drive", () => {
     expect(
       screen.queryByRole("dialog", { name: "Link to Apply" })
     ).not.toBeInTheDocument()
-    expect(screen.getByText(STARTER_GUIDED_APPLY_COMPANY)).toBeInTheDocument()
+    expect(
+      within(
+        screen.getByRole("row", { name: new RegExp(STARTER_CV_NAME) })
+      ).getByText(STARTER_GUIDED_APPLY_COMPANY)
+    ).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole("link", { name: /^Apply/ }))
     expect(
@@ -316,8 +320,16 @@ describe("Paper drive", () => {
     renderPaper()
     await expectPaperDrive()
 
-    expect(screen.getByText("Local startup")).toBeInTheDocument()
-    expect(screen.getByText("Fintech scale-up")).toBeInTheDocument()
+    expect(
+      within(
+        screen.getByRole("row", { name: /Cover: Associate PM intern/ })
+      ).getByText("Local startup")
+    ).toBeInTheDocument()
+    expect(
+      within(
+        screen.getByRole("row", { name: /Cover: Product intern/ })
+      ).getByText("Fintech scale-up")
+    ).toBeInTheDocument()
 
     fireEvent.click(
       screen.getByRole("button", {
@@ -331,9 +343,17 @@ describe("Paper drive", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Unlink" }))
 
     await waitFor(() => {
-      expect(screen.queryByText("Local startup")).not.toBeInTheDocument()
+      expect(
+        within(
+          screen.getByRole("row", { name: /Cover: Associate PM intern/ })
+        ).queryByText("Local startup")
+      ).not.toBeInTheDocument()
     })
-    expect(screen.getByText("Fintech scale-up")).toBeInTheDocument()
+    expect(
+      within(
+        screen.getByRole("row", { name: /Cover: Product intern/ })
+      ).getByText("Fintech scale-up")
+    ).toBeInTheDocument()
   })
 
   it("keeps New enabled and offers no Filter", async () => {

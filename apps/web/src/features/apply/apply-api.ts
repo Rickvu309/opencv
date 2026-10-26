@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query"
-import type { ApplyCard } from "@workspace/domain"
 
 import { apiFetch } from "@/lib/api.ts"
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
@@ -61,6 +60,7 @@ export type JobPreview = {
     description?: string
   }
   jobId?: string
+  stage?: JobStage
   message?: string
 }
 
@@ -253,19 +253,29 @@ export function listPaper(kind: "cv" | "letter"): Promise<PaperListItem[]> {
   )
 }
 
-const EMPTY_CARDS: ApplyCard[] = []
+export type ApplyPickerCard = {
+  id: string
+  title: string
+  company: string
+  stage: JobStage
+  starred: boolean
+}
 
-/** Paper still reads the compat card list until #378. */
+/** Paper's picker reads jobs until #378 owns the attach flow. */
 export function useApplyCards() {
   const listQuery = useQuery({
-    queryKey: applyQueryKeys.cards(),
-    queryFn: async () => {
-      const body = await apiFetch<SuccessBody<ApplyCard[]>>("/api/apply")
-      return unwrapData(body)
-    },
+    queryKey: applyQueryKeys.list(),
+    queryFn: listJobs,
   })
+  const cards: ApplyPickerCard[] = (listQuery.data ?? []).map((job) => ({
+    id: job.id,
+    title: job.title,
+    company: job.company,
+    stage: job.stage,
+    starred: job.starred,
+  }))
   return {
-    cards: listQuery.data ?? EMPTY_CARDS,
+    cards,
     isLoading: listQuery.isLoading,
   }
 }
