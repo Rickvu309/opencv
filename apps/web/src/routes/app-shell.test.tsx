@@ -18,7 +18,7 @@ import {
   linkNames,
   NAV,
   stubDesktopViewport,
-} from "@/routes/app-shell.fixtures.ts"
+} from "@/test/app-shell-fixtures.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
 import { failPaperList } from "@/test/paper-api-mock.ts"
 import { setMockSession } from "@/test/auth-client-mock.ts"

@@ -3,7 +3,7 @@ import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react"
 
 import { HOME_PATH, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
-import { expectHomeIdle } from "@/routes/app-shell.fixtures.ts"
+import { expectHomeIdle } from "@/test/app-shell-fixtures.ts"
 import {
   TEST_SESSION,
   TEST_SESSION_USER,
