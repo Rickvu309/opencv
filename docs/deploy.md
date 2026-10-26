@@ -124,7 +124,7 @@ for a missing key. The web app only needs `VITE_API_URL`; the Coach vars are
 | ------------------------------ | --------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------- |
 | `OPENROUTER_API_KEY`           | Yes, for a live Coach | none                                       | Set on production. Pass it on stdin so it never hits shell history.                         |
 | `OPENROUTER_BASE_URL`          | No                    | unset (the provider URL)                   | Local checks only: points the Coach at a stub endpoint. **Never on production.**            |
-| `COACH_MODEL_FREE`             | No                    | `openrouter/free`                          | Free mode id. Free Models Router. The answering model can change between turns. |
+| `COACH_MODEL_FREE`             | No                    | `openrouter/free`                          | Free mode id. Free Models Router. The answering model can change between turns.             |
 | `COACH_MODEL_LIGHT`            | No                    | `deepseek/deepseek-chat-v3.1`              | Light mode id.                                                                              |
 | `COACH_MODEL_MAX`              | No                    | `anthropic/claude-opus-4`                  | Max mode. For Fable: `anthropic/claude-fable-5` or `~anthropic/claude-fable-latest`.        |
 | `COACH_DAILY_TURN_LIMIT_FREE`  | No                    | `50`                                       | Free-mode daily turn cap.                                                                   |

@@ -174,7 +174,9 @@ describe("coach tool surface", () => {
       error: expect.objectContaining({ code: ERROR_CODES.VALIDATION_ERROR }),
     })
 
-    await expect(tools.paper_getDoc.execute({ docId: "nope" })).resolves.toEqual({
+    await expect(
+      tools.paper_getDoc.execute({ docId: "nope" })
+    ).resolves.toEqual({
       ok: false,
       error: expect.objectContaining({ code: ERROR_CODES.VALIDATION_ERROR }),
     })
@@ -212,15 +214,15 @@ describe("coach tool surface", () => {
 
     const tools = assembleCoachTools({ db, userId: ownerId })
 
-    const listedDocs = expectOk<PaperDoc[]>(await tools.paper_listDocs.execute({}))
+    const listedDocs = expectOk<PaperDoc[]>(
+      await tools.paper_listDocs.execute({})
+    )
     expect(listedDocs).toEqual(await listPaperDocsForUser(db, ownerId))
 
     const gotDoc = expectOk<PaperDoc>(
       await tools.paper_getDoc.execute({ docId: createdDoc.id })
     )
-    expect(gotDoc).toEqual(
-      await getPaperDocDetail(db, ownerId, createdDoc.id)
-    )
+    expect(gotDoc).toEqual(await getPaperDocDetail(db, ownerId, createdDoc.id))
 
     const listedCards = expectOk<ApplyCard[]>(
       await tools.apply_listCards.execute({})
@@ -427,9 +429,9 @@ describe("coach-actor command sweep", () => {
 
     const mutationTools = commands.filter(isCoachMutationCommand)
     expect(mutationTools).toHaveLength(12)
-    expect(
-      mutationTools.map((command) => command.name)
-    ).not.toContain(COACH_VOICE_COMMAND)
+    expect(mutationTools.map((command) => command.name)).not.toContain(
+      COACH_VOICE_COMMAND
+    )
   })
 
   it("executes every coach-allowed Command and blocks every forbidden one", async () => {
@@ -506,8 +508,12 @@ describe("coach-actor command sweep", () => {
       }
     }
 
-    const allowed = commandRegistry.list().filter((command) => command.coachAllowed)
-    const forbidden = commandRegistry.list().filter((command) => !command.coachAllowed)
+    const allowed = commandRegistry
+      .list()
+      .filter((command) => command.coachAllowed)
+    const forbidden = commandRegistry
+      .list()
+      .filter((command) => !command.coachAllowed)
 
     expect(allowed.length).toBe(13)
     expect(forbidden.map((command) => command.name).sort()).toEqual([

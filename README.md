@@ -16,14 +16,14 @@ Live at https://opencv.me
 
 ## Stack
 
-| Part              | Technology                                                                          |
-| ----------------- | ----------------------------------------------------------------------------------- |
+| Part              | Technology                                                                         |
+| ----------------- | ---------------------------------------------------------------------------------- |
 | `apps/web`        | Vite, React 19, TanStack Router single-page app, served by Caddy from a Dockerfile |
-| `apps/api`        | Hono, Drizzle and Better Auth on Node 22                                            |
-| `packages/ui`     | shadcn-style component kit, consumed as source by `apps/web`                        |
-| `packages/domain` | Domain code shared by web and api                                                   |
-| Tooling           | pnpm workspaces, turbo                                                              |
-| Hosting           | Railway (`api`, `web`, Postgres) behind Cloudflare                                  |
+| `apps/api`        | Hono, Drizzle and Better Auth on Node 22                                           |
+| `packages/ui`     | shadcn-style component kit, consumed as source by `apps/web`                       |
+| `packages/domain` | Domain code shared by web and api                                                  |
+| Tooling           | pnpm workspaces, turbo                                                             |
+| Hosting           | Railway (`api`, `web`, Postgres) behind Cloudflare                                 |
 
 ## Local setup
 
@@ -77,13 +77,13 @@ Read `CONTRIBUTING.md` for the full flow and `AGENTS.md` for the rules agents fo
 
 ## Docs
 
-| Doc                  | What it holds                                      |
-| -------------------- | -------------------------------------------------- |
-| `PRODUCT.md`         | Release one, as the design draws it                |
-| `CONTEXT.md`         | The glossary                                       |
-| `docs/adr/`          | Decisions `0001` to `0009`. `0009` is a stub       |
-| `docs/deploy.md`     | Railway and Cloudflare runbook                     |
-| `docs/agents/`       | How agents read issues and the glossary            |
-| `docs/git-workflow/` | Branches, worktrees, review, and deploys           |
-| `AGENTS.md`          | Rules for agents                                   |
-| `CONTRIBUTING.md`    | Rules for people and agents                        |
+| Doc                  | What it holds                                |
+| -------------------- | -------------------------------------------- |
+| `PRODUCT.md`         | Release one, as the design draws it          |
+| `CONTEXT.md`         | The glossary                                 |
+| `docs/adr/`          | Decisions `0001` to `0009`. `0009` is a stub |
+| `docs/deploy.md`     | Railway and Cloudflare runbook               |
+| `docs/agents/`       | How agents read issues and the glossary      |
+| `docs/git-workflow/` | Branches, worktrees, review, and deploys     |
+| `AGENTS.md`          | Rules for agents                             |
+| `CONTRIBUTING.md`    | Rules for people and agents                  |
