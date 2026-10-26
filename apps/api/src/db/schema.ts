@@ -488,7 +488,7 @@ export const notifyRequests = opencvApp.table(
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    topic: text("topic").$type<"jobs" | "proof">().notNull(),
+    topic: text("topic").$type<"jobs" | "proof" | "pitch">().notNull(),
     createdAt: timestamptz("created_at").notNull().defaultNow(),
   },
   (table) => [

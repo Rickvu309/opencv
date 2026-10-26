@@ -330,7 +330,12 @@ async function searchWorkspace(actor: Actor, query: string) {
       )
       .limit(8),
     db
-      .select({ id: jobs.id, title: jobs.title, company: jobs.company })
+      .select({
+        id: jobs.id,
+        title: jobs.title,
+        company: jobs.company,
+        stage: jobs.stage,
+      })
       .from(jobs)
       .where(
         and(
