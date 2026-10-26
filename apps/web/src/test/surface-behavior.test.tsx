@@ -38,14 +38,17 @@ describe("empty api data shows empty states, never sample content", () => {
     getMockPaperDocs().splice(0)
     renderApp(SURFACE_PATHS.paper)
 
+    expect(await screen.findByText("Start a document")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "CV" })).toBeInTheDocument()
     expect(
-      await screen.findByRole("button", { name: "Start a Letter" })
+      screen.getByRole("button", { name: "Cover letter" })
     ).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Proof" })).toHaveAttribute(
+      "href",
+      "/app/proof"
+    )
     expect(
-      screen.getByRole("button", { name: "Add a Proof" })
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole("button", { name: "Start a CV" })
+      screen.getByRole("button", { name: "Choose file" })
     ).toBeInTheDocument()
     expectNone(samplePaperDocs().map((doc) => doc.name))
   })

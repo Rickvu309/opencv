@@ -20,11 +20,13 @@ import { goHome } from "@/test/go-home.ts"
 import { renderApp } from "@/test/render-app.tsx"
 
 export function coachFloatButton() {
-  const pill = document.querySelector("[data-coach-float-pill]")
-  if (!(pill instanceof HTMLElement)) {
-    throw new Error("Coach float is missing")
+  const editor = screen.queryByRole("region", { name: /^Editing / })
+  const scope = editor instanceof HTMLElement ? editor : document.body
+  const button = within(scope).queryByRole("button", { name: "Coach" })
+  if (!(button instanceof HTMLElement)) {
+    throw new Error("Coach button is missing")
   }
-  return pill
+  return button
 }
 
 export function renderPaper() {
@@ -32,8 +34,10 @@ export function renderPaper() {
 }
 
 export async function openDoc(name: string) {
-  const table = await screen.findByRole("table")
-  fireEvent.click(within(table).getByText(name))
+  const card = await screen.findByRole("button", {
+    name: new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")},`),
+  })
+  fireEvent.click(card)
   const editor = await screen.findByRole("region", { name: `Editing ${name}` })
   expect(editor).toBeInTheDocument()
   return editor

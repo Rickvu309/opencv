@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react"
+import { screen } from "@testing-library/react"
 import { expect } from "vitest"
 
 export async function expectPaperDrive() {
@@ -8,12 +8,10 @@ export async function expectPaperDrive() {
   expect(
     screen.getByRole("textbox", { name: "Search Paper" })
   ).toBeInTheDocument()
-  const table = await screen.findByRole("table")
-  expect(within(table).getByText("PM track CV")).toBeInTheDocument()
   expect(
-    within(table).getByText("Cover: Associate PM intern")
+    await screen.findByRole("button", { name: /^PM track CV,/ })
   ).toBeInTheDocument()
   expect(
-    within(table).getByText("Checkout card resize study")
+    screen.getByRole("button", { name: /^Cover: Associate PM intern,/ })
   ).toBeInTheDocument()
 }

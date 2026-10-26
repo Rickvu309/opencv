@@ -1,9 +1,7 @@
 import type { RefObject } from "react"
 
-import {
-  PaperEditorToolbar,
-  type ProofInsertId,
-} from "./paper-editor-toolbar.tsx"
+import { Button } from "@workspace/ui/components/button"
+
 import type { ProofData } from "./paper-proof-types.ts"
 
 type Props = {
@@ -11,7 +9,7 @@ type Props = {
   onPhoto: (file: File) => void
   proofData: ProofData
   onChange: (next: ProofData) => void
-  onInsert: (id: ProofInsertId) => void
+  onInsert: (id: "photo") => void
 }
 
 export function PaperProofToolbar({
@@ -22,28 +20,25 @@ export function PaperProofToolbar({
   onInsert,
 }: Props) {
   return (
-    <>
-      {/* Documented exception: native file input — kit Input cannot host a hidden file picker. */}
+    <div data-proof-toolbar={proofData.viewMode}>
+      {/* Documented exception: native file input. Kit Input cannot host a hidden file picker. */}
       <input
         ref={photoRef}
         type="file"
         accept="image/*"
         className="sr-only"
-        onChange={(e) => {
-          const file = e.target.files?.[0]
+        onChange={(event) => {
+          const file = event.target.files?.[0]
           if (file) onPhoto(file)
-          e.target.value = ""
+          event.target.value = ""
         }}
       />
-      <PaperEditorToolbar
-        variant="proof"
-        className="mb-5 w-full"
-        proofViewMode={proofData.viewMode}
-        onProofViewModeChange={(mode) =>
-          onChange({ ...proofData, viewMode: mode })
-        }
-        onProofInsert={onInsert}
-      />
-    </>
+      <Button type="button" variant="ghost" onClick={() => onInsert("photo")}>
+        Add photo
+      </Button>
+      <Button type="button" variant="ghost" onClick={() => onChange(proofData)}>
+        Keep proof
+      </Button>
+    </div>
   )
 }

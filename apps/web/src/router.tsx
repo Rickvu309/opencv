@@ -19,7 +19,7 @@ import {
   validateSettingsSearch,
 } from "@/features/settings/sections.ts"
 import { validateApplySearch } from "@/features/apply/apply-search.ts"
-import { validatePaperSearch } from "@/features/paper/paper-search.ts"
+import { validatePaperSearch } from "@/features/paper/paper-templates.ts"
 import { SignInPage } from "@/routes/sign-in.tsx"
 import { authClient } from "@/lib/auth-client.ts"
 import { validateAuthSearch } from "@/lib/auth-redirect.ts"
@@ -153,6 +153,24 @@ const paperRoute = createRoute({
   ),
 })
 
+const paperDocRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/paper/$docId",
+  component: lazyRouteComponent(
+    () => import("@/routes/paper-doc.tsx"),
+    "PaperDocPage"
+  ),
+})
+
+const shareRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/share/$token",
+  component: lazyRouteComponent(
+    () => import("@/routes/paper-share.tsx"),
+    "PaperSharePage"
+  ),
+})
+
 const applyRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/apply",
@@ -247,10 +265,12 @@ const routeTree = rootRoute.addChildren([
   pricingRoute,
   signInRoute,
   signUpRoute,
+  shareRoute,
   appLayoutRoute.addChildren([
     appIndexRoute,
     homeRoute,
     paperRoute,
+    paperDocRoute,
     applyRoute,
     applyJobRoute,
     pitchRoute,

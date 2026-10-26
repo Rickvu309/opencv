@@ -53,7 +53,7 @@ import {
   type StoredCoachCites,
 } from "./paper-cite.ts"
 import { previewCoachSelectionText } from "./paper-selection.ts"
-import type { ToolbarVariant } from "./paper-editor-toolbar.tsx"
+import type { ToolbarVariant } from "./coach-float-chips.tsx"
 
 export const COACH_FLOAT_STORAGE_KEY = "opencv:paper:coach-float"
 

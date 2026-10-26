@@ -58,7 +58,7 @@ describe("CV print-paper type rhythm", () => {
         ).not.toBeNull()
       }
 
-      const name = screen.getByRole("textbox", { name: "Your name" })
+      const name = screen.getByRole("textbox", { name: "Name" })
       expect(name.closest("[data-cv-type='page-title']")).not.toBeNull()
 
       const headline = screen.getByRole("textbox", { name: "Headline" })
@@ -138,7 +138,7 @@ describe("EditableField canvas chrome (QVE-206)", () => {
 describe("EditableField café keyboard (QVE-208)", () => {
   it("Tabs between structured fields and Esc blurs without trapping", () => {
     renderCv("internship")
-    const name = screen.getByRole("textbox", { name: "Your name" })
+    const name = screen.getByRole("textbox", { name: "Name" })
     const headline = screen.getByRole("textbox", { name: "Headline" })
     const contacts = screen.getAllByRole("textbox", { name: "Contact detail" })
 
@@ -456,9 +456,9 @@ describe("CV templates split across cv-templates", () => {
     "renders the %s template with the candidate name and an experience heading",
     (templateId) => {
       renderCv(templateId)
-      expect(
-        screen.getByRole("textbox", { name: "Your name" })
-      ).toHaveTextContent(defaultCvData().name)
+      expect(screen.getByRole("textbox", { name: "Name" })).toHaveTextContent(
+        defaultCvData().name
+      )
       expect(
         screen.getByText(/^(Work experience|Experience)$/)
       ).toBeInTheDocument()

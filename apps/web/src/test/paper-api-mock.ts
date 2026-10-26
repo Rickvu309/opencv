@@ -85,7 +85,12 @@ export function patchMockPaperDoc(id: string, patch: Partial<PaperDoc>) {
 
 export function handlesPaperRequest(input: RequestInfo | URL) {
   const path = pathOf(input)
-  return path.startsWith("/api/paper") || path.includes("/api/commands/paper.")
+  return (
+    path.startsWith("/api/paper") ||
+    path.includes("/api/commands/paper.") ||
+    path.endsWith("/api/commands/job.linkPaper") ||
+    path.endsWith("/api/commands/job.unlinkPaper")
+  )
 }
 
 export async function paperApiFetch(
@@ -111,6 +116,31 @@ export async function paperApiFetch(
     if (store.listGate) await store.listGate
     if (store.failList) return jsonError(500, "INTERNAL", "Server error")
     return jsonOk(sortDocs(store.docs))
+  }
+
+  if (method === "GET" && path === "/api/paper/files") {
+    return jsonOk([])
+  }
+
+  const pages = /^\/api\/paper\/([^/]+)\/pages$/.exec(path)
+  if (method === "GET" && pages) {
+    const doc = store.docs.find((item) => item.id === pages[1])
+    if (!doc) return jsonError(404, "NOT_FOUND", "Paper doc not found")
+    const pageChoice =
+      (doc as { pageChoice?: string }).pageChoice === "keep" ? "keep" : "unset"
+    return jsonOk({ docId: doc.id, pages: 1, pageChoice })
+  }
+
+  const shared = /^\/api\/paper\/shared\/([^/]+)$/.exec(path)
+  if (method === "GET" && shared) {
+    return jsonError(404, "NOT_FOUND", "This link does not open a document.")
+  }
+
+  if (method === "GET" && /^\/api\/paper\/[^/]+\/pdf$/.test(path)) {
+    return new Response("pdf", {
+      status: 200,
+      headers: { "content-type": "application/pdf" },
+    })
   }
 
   const detail = /^\/api\/paper\/([^/]+)$/.exec(path)
@@ -228,6 +258,129 @@ export async function paperApiFetch(
     doc.applyCardId = body.applyCardId ?? null
     doc.updatedAt = isoNow()
     return jsonOk(doc)
+  }
+
+  if (method === "POST" && path === "/api/commands/paper.create") {
+    const body = (await readBody(init)) as {
+      kind?: PaperContentKind
+      name?: string
+      templateId?: string
+    }
+    const kind = body.kind === "letter" ? "letter" : "cv"
+    const now = isoNow()
+    const created: PaperDoc = {
+      id: crypto.randomUUID(),
+      name: body.name?.trim() || (kind === "letter" ? "Cover letter" : "CV"),
+      kind,
+      status: "draft",
+      content: emptyPaperDocument(kind),
+      contentVersion: 1,
+      applyCardId: null,
+      createdAt: now,
+      updatedAt: now,
+    }
+    store.docs.unshift(created)
+    return jsonOk(created)
+  }
+
+  if (method === "POST" && path === "/api/commands/paper.replace") {
+    const body = (await readBody(init)) as {
+      docId?: string
+      document?: unknown
+      contentVersion?: number
+    }
+    const doc = store.docs.find((item) => item.id === body.docId)
+    if (!doc) return jsonError(404, "NOT_FOUND", "Paper doc not found")
+    if (
+      typeof body.contentVersion === "number" &&
+      body.contentVersion !== doc.contentVersion
+    ) {
+      return jsonError(
+        409,
+        "CONFLICT",
+        "This document changed. Reload it and try again."
+      )
+    }
+    doc.content = body.document
+    doc.contentVersion += 1
+    doc.updatedAt = isoNow()
+    return jsonOk(doc)
+  }
+
+  if (method === "POST" && path === "/api/commands/paper.rename") {
+    const body = (await readBody(init)) as { docId?: string; name?: string }
+    const doc = store.docs.find((item) => item.id === body.docId)
+    if (!doc) return jsonError(404, "NOT_FOUND", "Paper doc not found")
+    doc.name = body.name?.trim() || doc.name
+    doc.updatedAt = isoNow()
+    return jsonOk(doc)
+  }
+
+  if (method === "POST" && path === "/api/commands/paper.duplicate") {
+    const body = (await readBody(init)) as { docId?: string }
+    const doc = store.docs.find((item) => item.id === body.docId)
+    if (!doc) return jsonError(404, "NOT_FOUND", "Paper doc not found")
+    const now = isoNow()
+    const copy: PaperDoc = {
+      ...structuredClone(doc),
+      id: crypto.randomUUID(),
+      name: `${doc.name} copy`,
+      createdAt: now,
+      updatedAt: now,
+    }
+    store.docs.unshift(copy)
+    return jsonOk(copy)
+  }
+
+  if (method === "POST" && path === "/api/commands/paper.delete") {
+    const body = (await readBody(init)) as { docId?: string }
+    const index = store.docs.findIndex((item) => item.id === body.docId)
+    if (index === -1) return jsonError(404, "NOT_FOUND", "Paper doc not found")
+    store.docs.splice(index, 1)
+    return jsonOk({ docId: body.docId })
+  }
+
+  if (method === "POST" && path === "/api/commands/paper.share") {
+    const body = (await readBody(init)) as { docId?: string }
+    return jsonOk({ token: `share-${body.docId ?? "doc"}` })
+  }
+
+  if (method === "POST" && path === "/api/commands/paper.keepTwoPages") {
+    const body = (await readBody(init)) as { docId?: string }
+    const doc = store.docs.find((item) => item.id === body.docId)
+    if (!doc) return jsonError(404, "NOT_FOUND", "Paper doc not found")
+    ;(doc as PaperDoc & { pageChoice?: string }).pageChoice = "keep"
+    doc.updatedAt = isoNow()
+    return jsonOk(doc)
+  }
+
+  if (method === "POST" && path === "/api/commands/paper.setTemplate") {
+    const body = (await readBody(init)) as {
+      docId?: string
+      templateId?: string
+    }
+    const doc = store.docs.find((item) => item.id === body.docId)
+    if (!doc) return jsonError(404, "NOT_FOUND", "Paper doc not found")
+    ;(doc as PaperDoc & { templateId?: string }).templateId = body.templateId
+    doc.updatedAt = isoNow()
+    return jsonOk(doc)
+  }
+
+  if (method === "POST" && path === "/api/commands/job.linkPaper") {
+    const body = (await readBody(init)) as { docId?: string; jobId?: string }
+    const doc = store.docs.find((item) => item.id === body.docId)
+    if (!doc) return jsonError(404, "NOT_FOUND", "Paper doc not found")
+    doc.applyCardId = body.jobId ?? doc.applyCardId
+    doc.updatedAt = isoNow()
+    return jsonOk({ jobId: body.jobId, docId: body.docId })
+  }
+
+  if (method === "POST" && path === "/api/commands/job.unlinkPaper") {
+    const body = (await readBody(init)) as { jobId?: string; kind?: string }
+    for (const doc of store.docs) {
+      if (doc.applyCardId === body.jobId) doc.applyCardId = null
+    }
+    return jsonOk({ jobId: body.jobId })
   }
 
   if (
