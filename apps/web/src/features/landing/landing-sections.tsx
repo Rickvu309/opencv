@@ -118,7 +118,7 @@ export function LandingCustomers() {
             </blockquote>
             <figcaption>
               <p className="text-[0.9375rem] font-medium">{item.name}</p>
-              <p className="text-sm opacity-80">{item.role}</p>
+              <p className="landing-quote-role text-sm">{item.role}</p>
             </figcaption>
           </figure>
         ))}

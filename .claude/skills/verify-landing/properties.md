@@ -33,4 +33,4 @@ The checker still measures 26 properties at 1440x900, 390x844 and reduced motion
 
 Pinned copy the rules read: `LANDING_HEADLINE`, `LANDING_SUBHEAD`, `LANDING_STATEMENT_LEAD`, `LANDING_STATEMENT_REST`, `LANDING_FEATURES`, `LANDING_LOGO_LABEL`, `LANDING_QUOTES`, `LANDING_PRIMARY_LABEL`.
 
-Sync commit: the head of the landing first-release PR. Move this line to that SHA when the checker is green.
+Sync commit: set on the commit that follows the green checker. The checker printed 26 PASS on the quote-role fix.

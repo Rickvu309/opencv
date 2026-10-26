@@ -252,6 +252,10 @@ html:has(.landing-root) {
   margin: 0;
 }
 
+.landing-quote-role {
+  color: color-mix(in oklch, var(--background) 78%, var(--foreground));
+}
+
 .landing-close {
   font-size: clamp(2rem, 1.2rem + 2.8vw, 4rem);
   font-weight: 500;
