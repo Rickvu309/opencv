@@ -47,12 +47,6 @@ import {
   updateJob,
 } from "./store.js"
 
-let postingFetch: FetchJobPosting = fetchJobPosting
-
-export function setJobPostingFetch(next: FetchJobPosting) {
-  postingFetch = next
-}
-
 type PostingFields = { title: string; company: string; location: string }
 
 type PostingInterpret = (input: {
@@ -60,11 +54,20 @@ type PostingInterpret = (input: {
   text: string
 }) => Promise<PostingFields | null>
 
-let postingInterpret: PostingInterpret | null = null
-
-export function setJobPostingInterpret(next: PostingInterpret | null) {
-  postingInterpret = next
+export type JobPreviewOptions = {
+  fetch?: FetchJobPosting
+  interpret?: PostingInterpret | null
 }
+
+const previewOptions: {
+  fetch: FetchJobPosting
+  interpret: PostingInterpret | null
+} = {
+  fetch: fetchJobPosting,
+  interpret: null,
+}
+
+let commandsAdded = false
 
 function planFrom(value: unknown): Plan | null {
   if (!value || typeof value !== "object" || !("plan" in value)) return null
@@ -98,7 +101,14 @@ const calendarInput = z
   })
   .strict()
 
-export function registerJob(registry: Registry) {
+export function registerJob(registry: Registry, options?: JobPreviewOptions) {
+  if (options?.fetch) previewOptions.fetch = options.fetch
+  if (options && "interpret" in options) {
+    previewOptions.interpret = options.interpret ?? null
+  }
+  if (commandsAdded) return
+  commandsAdded = true
+
   registry.addCommand(
     {
       name: "job.create",
@@ -356,14 +366,14 @@ export function registerJob(registry: Registry) {
         previewJob(
           actor,
           input,
-          postingFetch,
-          postingInterpret
+          previewOptions.fetch,
+          previewOptions.interpret
             ? async (text) => {
                 const plan = planFrom(
                   await registry.read("profile.get", {}, actor)
                 )
-                if (!plan || !postingInterpret) return null
-                return postingInterpret({ plan, text })
+                if (!plan || !previewOptions.interpret) return null
+                return previewOptions.interpret({ plan, text })
               }
             : undefined
         ),

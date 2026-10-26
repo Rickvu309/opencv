@@ -22,11 +22,7 @@ import {
 import { withDatabase, type AppDatabase } from "./db/context.js"
 import { authUnavailableEnvelope } from "./envelope.js"
 import { createInboxRoutes } from "./inbox/index.js"
-import {
-  createJobRoutes,
-  setJobPostingFetch,
-  setJobPostingInterpret,
-} from "./job/index.js"
+import { createJobRoutes } from "./job/index.js"
 import {
   handleApiError,
   notFoundEnvelopeResponse,
@@ -68,11 +64,9 @@ export function createApp({
   interpretPostings = false,
   fetchJobPosting,
 }: AppConfig) {
-  const registry = installRegistry()
-  setCoachModelEnv(coachEnv ?? {})
-  if (fetchJobPosting) setJobPostingFetch(fetchJobPosting)
-  setJobPostingInterpret(
-    interpretPostings
+  const registry = installRegistry({
+    ...(fetchJobPosting ? { fetch: fetchJobPosting } : {}),
+    interpret: interpretPostings
       ? async ({ plan, text }) => {
           try {
             return await interpretPosting({ plan, text, env: coachEnv ?? {} })
@@ -80,8 +74,9 @@ export function createApp({
             return null
           }
         }
-      : null
-  )
+      : null,
+  })
+  setCoachModelEnv(coachEnv ?? {})
   const app = new Hono()
 
   app.use(
