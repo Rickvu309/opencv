@@ -25,6 +25,7 @@ import {
 } from "./project.js"
 import { lintPaths } from "./lint-code.js"
 import { themeCss } from "./theme.js"
+import { formatResidue, residueOf, toShadcn } from "./shadcn-map.js"
 
 export function makeCodeCommands({ out, fail, c }) {
   const { dim, bold, cyan, green, yellow, red } = c
@@ -50,6 +51,88 @@ export function makeCodeCommands({ out, fail, c }) {
     `npm install ${dev ? "-D " : ""}${Object.entries(deps)
       .map(([k, v]) => `${k}@${v}`)
       .join(" ")}`
+
+  // Stock shadcn repos keep the kit's class names off the page. Doctor then
+  // checks the files this repo actually has, and prints only ok lines.
+  function doctorShadcn({ cwd, cfg, out, green, red, dim }) {
+    const checks = []
+    const ok = (cond, label, fix) => checks.push({ cond, label, fix })
+    ok(!!cfg, "opencv.json", "opencv init")
+    ok(
+      cfg?.target === "shadcn",
+      "target shadcn",
+      'set "target": "shadcn" in opencv.json'
+    )
+    ok(
+      !!cfg?.componentsDir && existsSync(resolve(cwd, cfg.componentsDir)),
+      cfg?.componentsDir || "componentsDir",
+      "set componentsDir in opencv.json"
+    )
+    ok(
+      !!cfg?.componentsDir &&
+        existsSync(resolve(cwd, cfg.componentsDir, "button.tsx")),
+      cfg?.componentsDir
+        ? `${cfg.componentsDir}/button.tsx`
+        : "button.tsx",
+      "add the glow Button"
+    )
+    ok(
+      !!cfg?.screensDir && existsSync(resolve(cwd, cfg.screensDir)),
+      cfg?.screensDir || "screensDir",
+      "set screensDir in opencv.json"
+    )
+    ok(
+      !!cfg?.styles && existsSync(resolve(cwd, cfg.styles)),
+      cfg?.styles || "styles",
+      "point styles at globals.css"
+    )
+    const entry = cfg?.srcDir
+      ? ["main.tsx", "main.ts", "index.tsx"]
+          .map((f) => resolve(cwd, cfg.srcDir, f))
+          .find(existsSync)
+      : null
+    const entrySrc = entry ? readFileSync(entry, "utf8") : ""
+    ok(
+      /Toaster/.test(entrySrc),
+      "entry mounts <Toaster>",
+      "mount <Toaster /> once in main.tsx"
+    )
+    ok(
+      /globals\.css/.test(entrySrc),
+      "entry imports globals.css",
+      "import the design globals.css in main.tsx"
+    )
+    const pkgFiles = [
+      "package.json",
+      "apps/web/package.json",
+      "packages/ui/package.json",
+    ]
+    const hasSonner = pkgFiles.some((rel) => {
+      const path = join(cwd, rel)
+      if (!existsSync(path)) return false
+      const pkg = JSON.parse(readFileSync(path, "utf8"))
+      const deps = { ...pkg.dependencies, ...pkg.devDependencies }
+      return !!deps.sonner
+    })
+    ok(hasSonner, "dependency sonner", "add sonner to the web or ui package")
+    const viteNames = ["vite.config.ts", "vite.config.js", "vite.config.mts"]
+    const viteHits = viteNames.map((f) => join(cwd, f))
+    if (existsSync(join(cwd, "apps"))) {
+      for (const name of readdirSync(join(cwd, "apps")))
+        for (const f of viteNames) viteHits.push(join(cwd, "apps", name, f))
+    }
+    const vite = viteHits.find(existsSync)
+    ok(
+      !!vite && /tailwindcss\(/.test(readFileSync(vite, "utf8")),
+      "Tailwind vite plugin",
+      "plugins: [react(), tailwindcss()] in vite.config"
+    )
+    for (const ch of checks)
+      out(
+        `${ch.cond ? green("ok  ") : red("fix ")} ${ch.label}${ch.cond ? "" : dim("  -> " + ch.fix)}`
+      )
+    if (checks.some((ch) => !ch.cond)) process.exitCode = 1
+  }
 
   return {
     new({ args, flags }) {
@@ -170,17 +253,34 @@ export function makeCodeCommands({ out, fail, c }) {
       const cfg = needConfig(cwd)
       if (!args.length)
         fail(
-          `Usage: opencv screen <name...>  Screens: ${SCREENS.map((s) => s.name).join(", ")}`
+          `Usage: opencv screen <name...> [--target shadcn] [--dry-run]  Screens: ${SCREENS.map((s) => s.name).join(", ")}`
         )
       const r = resolveScreen(args)
       if (r.missing.length)
         fail(
           `Unknown screen: ${r.missing.join(", ")}. Run opencv list screens.`
         )
+      const target = flags.target || cfg.target || "kit"
+      if (target === "shadcn" && flags.dryRun) {
+        const reg = registry()
+        const rows = []
+        const take = (group, names) => {
+          for (const name of names) {
+            const item = reg[group][name]
+            rows.push(residueOf(`${group}/${name}`, toShadcn(item.src)))
+          }
+        }
+        take("components", r.components)
+        take("app", r.app)
+        take("screens", r.screens)
+        out(formatResidue(rows))
+        return
+      }
+      const transform = target === "shadcn" ? toShadcn : (src) => src
       report([
-        ...writeComponents(cwd, cfg, r.components, !!flags.force),
-        ...writeApp(cwd, cfg, r.app, false),
-        ...writeScreens(cwd, cfg, r.screens, !!flags.force),
+        ...writeComponents(cwd, cfg, r.components, !!flags.force, transform),
+        ...writeApp(cwd, cfg, r.app, false, transform),
+        ...writeScreens(cwd, cfg, r.screens, !!flags.force, transform),
         ...(r.components.includes("settings")
           ? writeLogos(cwd, cfg, false)
           : []),
@@ -189,7 +289,9 @@ export function makeCodeCommands({ out, fail, c }) {
       out(
         bold("\nAdd the routes") +
           dim(
-            " (react-router, inside <Routes>; wrap the app in <ToastProvider>)"
+            target === "shadcn"
+              ? " (@tanstack/react-router; mount <Toaster /> once)"
+              : " (react-router, inside <Routes>; wrap the app in <ToastProvider>)"
           )
       )
       out(imports)
@@ -279,11 +381,12 @@ export function makeCodeCommands({ out, fail, c }) {
     lint({ args, flags }) {
       const cwd = process.cwd()
       const cfg = loadConfig(cwd)
+      const target = flags.target || cfg?.target || "kit"
       const paths = (args.length ? args : [cfg?.srcDir || "src"]).map((p) =>
         resolve(p)
       )
       for (const p of paths) if (!existsSync(p)) fail(`Not found: ${p}`)
-      const all = lintPaths(paths, loadKit(), cwd)
+      const all = lintPaths(paths, loadKit(), cwd, target)
       const shown = flags.verbose ? all : all.filter((f) => f.level !== "info")
       if (flags.json) out(JSON.stringify(shown, null, 2))
       else {
@@ -317,6 +420,10 @@ export function makeCodeCommands({ out, fail, c }) {
     doctor() {
       const cwd = process.cwd()
       const cfg = loadConfig(cwd)
+      if (cfg?.target === "shadcn") {
+        doctorShadcn({ cwd, cfg, out, green, red, dim })
+        return
+      }
       const checks = []
       const ok = (cond, label, fix) => checks.push({ cond, label, fix })
       ok(!!cfg, "opencv.json", "opencv init")

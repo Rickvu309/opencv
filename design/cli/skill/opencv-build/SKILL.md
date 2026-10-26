@@ -30,6 +30,15 @@ opencv theme                 every theme class the kit defines
 
    Done when each check has been run and seen to pass. Report what you looked at.
 
+## Shadcn target
+
+The opencv repo sets `"target": "shadcn"` in `opencv.json`. Stock shadcn names stay. The kit's classes are rewritten onto them.
+
+- `opencv doctor` prints only `ok` lines, including `target shadcn`, when Button, the Toaster, `globals.css`, sonner and the Tailwind plugin are in place.
+- `opencv screen <name> --target shadcn --dry-run` prints residue and writes nothing. `hex` and `raw` are 0. `hand-finish` names the Google mark, renamed controls, and react-router hooks.
+- `opencv screen <name> --target shadcn` writes the mapped files.
+- `opencv lint <paths> --target shadcn` treats `bg-accent` as a hover surface. Orange is the reserved hex. Copy findings that the current app still has are warnings.
+
 ## House rules
 
 These are settled. Apply them as written.

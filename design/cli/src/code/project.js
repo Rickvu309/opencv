@@ -57,36 +57,40 @@ function put(path, content, force) {
   return exists ? "updated" : "created"
 }
 
-export function writeComponents(cwd, cfg, names, force) {
+export function writeComponents(cwd, cfg, names, force, transform = (src) => src) {
   const { components } = registry()
   const dir = resolve(cwd, cfg.componentsDir)
   return names.map((n) => ({
     path: join(cfg.componentsDir, components[n].file),
-    status: put(join(dir, components[n].file), components[n].src, force),
+    status: put(
+      join(dir, components[n].file),
+      transform(components[n].src),
+      force
+    ),
   }))
 }
 
-export function writeApp(cwd, cfg, names, force) {
+export function writeApp(cwd, cfg, names, force, transform = (src) => src) {
   const { app } = registry()
   const dir = resolve(cwd, cfg.appDir)
   return names.map((n) => ({
     path: join(cfg.appDir, app[n].file),
     status: put(
       join(dir, app[n].file),
-      rewriteImports(app[n].src, dir, cwd, cfg),
+      transform(rewriteImports(app[n].src, dir, cwd, cfg)),
       force
     ),
   }))
 }
 
-export function writeScreens(cwd, cfg, names, force) {
+export function writeScreens(cwd, cfg, names, force, transform = (src) => src) {
   const { screens } = registry()
   const dir = resolve(cwd, cfg.screensDir)
   return names.map((n) => ({
     path: join(cfg.screensDir, screens[n].file),
     status: put(
       join(dir, screens[n].file),
-      rewriteImports(screens[n].src, dir, cwd, cfg),
+      transform(rewriteImports(screens[n].src, dir, cwd, cfg)),
       force
     ),
   }))

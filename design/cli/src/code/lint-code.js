@@ -41,10 +41,11 @@ const KNOWN_HEX = [
   "#FBBC05",
   "#34A853",
 ]
-const ORANGE =
-  /#E8542A|#FBE7E0|\b(?:bg|text|border|ring|fill|stroke)-accent\b|--ds-accent\b/i
+const ORANGE_HEX = /#E8542A|#FBE7E0|--ds-accent\b/i
+const ORANGE_CLASS = /\b(?:bg|text|border|ring|fill|stroke)-accent\b/i
+// A translucent scrim (bg-black/50) is not a primary button.
 const BLACK_BTN =
-  /\b(?:bg-black|bg-neutral-9\d\d|bg-zinc-9\d\d|bg-gray-9\d\d|bg-slate-9\d\d|bg-stone-9\d\d|bg-\[#(?:000|111|1A1A1A|1B1B1F)\w*\])\b/
+  /\b(?:bg-black(?!\/)|bg-neutral-9\d\d|bg-zinc-9\d\d|bg-gray-9\d\d|bg-slate-9\d\d|bg-stone-9\d\d|bg-\[#(?:000|111|1A1A1A|1B1B1F)\w*\])\b/
 
 function hsl(hex) {
   let h = hex.slice(1)
@@ -96,7 +97,14 @@ function texts(src) {
   return out
 }
 
-export function lintSource(file, src, kit) {
+const COPY_ERRORS = new Set([
+  "brand-name",
+  "em-dash",
+  "middle-dot",
+  "oops",
+])
+
+export function lintSource(file, src, kit, target = "kit") {
   const ext = extname(file)
   const clean = stripComments(src, ext)
   const lines = clean.split("\n")
@@ -120,12 +128,16 @@ export function lintSource(file, src, kit) {
 
   lines.forEach((l, i) => {
     const n = i + 1
-    if (ORANGE.test(l))
+    const orange =
+      target === "shadcn" ? ORANGE_HEX.test(l) : ORANGE_HEX.test(l) || ORANGE_CLASS.test(l)
+    if (orange)
       add(
         n,
         "orange-accent",
         "error",
-        "The reserved orange. No orange dots or tints; use text-fg or a grey icon."
+        target === "shadcn"
+          ? "The reserved orange hex. bg-accent is a stock hover surface, not the orange."
+          : "The reserved orange. No orange dots or tints; use text-fg or a grey icon."
       )
     if (BLACK_BTN.test(l) && /text-white/.test(l))
       add(
@@ -166,14 +178,16 @@ export function lintSource(file, src, kit) {
         continue
       for (const f of lintText(t.text)) {
         if (f.rule === "title-case") continue
-        add(t.line, f.rule, f.level, `"${t.text.slice(0, 48)}": ${f.message}`)
+        const level =
+          target === "shadcn" && COPY_ERRORS.has(f.rule) ? "warning" : f.level
+        add(t.line, f.rule, level, `"${t.text.slice(0, 48)}": ${f.message}`)
       }
     }
   }
   return findings
 }
 
-export function lintPaths(paths, kit, root) {
+export function lintPaths(paths, kit, root, target = "kit") {
   const files = []
   const walk = (p) => {
     const st = statSync(p)
@@ -183,6 +197,6 @@ export function lintPaths(paths, kit, root) {
   }
   paths.forEach(walk)
   return files.flatMap((f) =>
-    lintSource(relative(root, f) || f, readFileSync(f, "utf8"), kit)
+    lintSource(relative(root, f) || f, readFileSync(f, "utf8"), kit, target)
   )
 }

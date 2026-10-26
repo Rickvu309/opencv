@@ -3,7 +3,9 @@ import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
 import {
   mkdtempSync,
+  mkdirSync,
   readFileSync,
+  writeFileSync,
   readdirSync,
   existsSync,
   statSync,
@@ -25,6 +27,7 @@ import {
 } from "../src/code/project.js"
 import { themeCss } from "../src/code/theme.js"
 import { lintSource } from "../src/code/lint-code.js"
+import { toShadcn } from "../src/code/shadcn-map.js"
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..")
 const bin = join(root, "bin", "opencv.js")
@@ -190,4 +193,100 @@ test("cli: init then screen adds a screen to an existing project", () => {
   assert.ok(existsSync(join(dir, "src/screens/inbox.tsx")))
   assert.ok(existsSync(join(dir, "src/components/opencv/inbox.tsx")))
   assert.throws(() => run(dir, "screen", "nope"))
+})
+
+test("toShadcn maps kit classes, bracket hex and raw controls", () => {
+  const src = `<button className="bg-canvas text-fg rounded-btn shadow-pop text-body">Go</button>
+    <span className="text-[#1B1B1F]">x</span>
+    import { Link } from "react-router"`
+  const out = toShadcn(src)
+  assert.match(out, /<Button /)
+  assert.match(out, /bg-background/)
+  assert.match(out, /text-foreground/)
+  assert.match(out, /rounded-md/)
+  assert.match(out, /shadow-lg/)
+  assert.match(out, /text-sm/)
+  assert.match(out, /text-foreground/)
+  assert.match(out, /@tanstack\/react-router/)
+  assert.doesNotMatch(out, /<button\b/)
+  assert.doesNotMatch(out, /#1B1B1F/i)
+})
+
+test("shadcn target keys orange on the hex, not on bg-accent", () => {
+  const accent = `<div className="bg-accent" />`
+  assert.ok(rules(accent).includes("orange-accent"))
+  assert.deepEqual(
+    lintSource("a.tsx", accent, kit, "shadcn")
+      .filter((f) => f.level === "error")
+      .map((f) => f.rule),
+    []
+  )
+  const hex = `<span style={{ color: "#E8542A" }} />`
+  assert.ok(
+    lintSource("a.tsx", hex, kit, "shadcn")
+      .filter((f) => f.level === "error")
+      .map((f) => f.rule)
+      .includes("orange-accent")
+  )
+})
+
+test("shadcn target demotes copy-rule errors to warnings", () => {
+  const src = `<h1>OpenCV</h1>`
+  assert.equal(
+    lintSource("a.tsx", src, kit).find((f) => f.rule === "brand-name").level,
+    "error"
+  )
+  assert.equal(
+    lintSource("a.tsx", src, kit, "shadcn").find((f) => f.rule === "brand-name")
+      .level,
+    "warning"
+  )
+})
+
+test("screen apply-board --target shadcn --dry-run leaves no hex and no raw controls", () => {
+  const dir = mkdtempSync(join(tmpdir(), "opencv-shadcn-"))
+  writeFileSync(
+    join(dir, "opencv.json"),
+    JSON.stringify({ ...DEFAULT_CONFIG, target: "shadcn" })
+  )
+  const out = run(dir, "screen", "apply-board", "--target", "shadcn", "--dry-run")
+  assert.match(out, /^target shadcn$/m)
+  assert.match(out, /^hex 0$/m)
+  assert.match(out, /^raw 0$/m)
+  assert.equal(existsSync(join(dir, "src/screens/apply-board.tsx")), false)
+})
+
+test("doctor on a shadcn target prints only ok lines", () => {
+  const dir = mkdtempSync(join(tmpdir(), "opencv-doc-"))
+  const tree = {
+    "opencv.json": JSON.stringify(
+      {
+        target: "shadcn",
+        srcDir: "apps/web/src",
+        componentsDir: "packages/ui/src/components",
+        screensDir: "apps/web/src/features",
+        styles: "packages/ui/src/styles/globals.css",
+      },
+      null,
+      2
+    ),
+    "apps/web/package.json": JSON.stringify({
+      dependencies: { sonner: "^2.0.7" },
+    }),
+    "apps/web/src/main.tsx":
+      'import "@workspace/ui/globals.css"\nimport { Toaster } from "@workspace/ui/components/sonner"\n<Toaster />\n',
+    "apps/web/vite.config.ts": "plugins: [react(), tailwindcss()]\n",
+    "packages/ui/src/styles/globals.css": ":root { }\n",
+    "packages/ui/src/components/button.tsx": "export function Button() {}\n",
+    "apps/web/src/features/.keep": "",
+  }
+  for (const [rel, body] of Object.entries(tree)) {
+    const path = join(dir, rel)
+    mkdirSync(join(path, ".."), { recursive: true })
+    writeFileSync(path, body)
+  }
+  const out = run(dir, "doctor")
+  assert.match(out, /ok +target shadcn/)
+  assert.match(out, /ok +dependency sonner/)
+  assert.doesNotMatch(out, /fix /)
 })

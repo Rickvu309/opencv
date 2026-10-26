@@ -44,6 +44,22 @@ opencv doctor
 
 `init` writes `opencv.json`, `src/styles/opencv.css` and the base components, then prints the npm installs and the two lines to add (Tailwind plugin, `ToastProvider`). `doctor` checks each one.
 
+## Shadcn target
+
+The opencv app keeps stock shadcn variable names. Set `"target": "shadcn"` in `opencv.json`, with `componentsDir` on the shared UI package and `screensDir` on the app features.
+
+```bash
+opencv doctor
+opencv screen apply-board --target shadcn --dry-run
+opencv lint apps/web/src packages/ui/src --target shadcn
+```
+
+`doctor` then checks the Button file, the single Toaster mount, `globals.css`, the sonner dependency and the Tailwind plugin. It prints only `ok` lines, including `target shadcn`.
+
+`--dry-run` prints the residue and writes nothing. `hex` and `raw` are 0 when the map covers the screen. `hand-finish` names the Google mark colors, controls renamed onto `Button`, `Input`, `Textarea` and `Select`, and react-router hooks that now import `@tanstack/react-router`.
+
+`opencv screen <name> --target shadcn` writes that mapped source. Under this target, `orange-accent` keys on the reserved orange hex. `bg-accent` is the stock hover surface. Copy rules that the current app still violates are warnings, so lint can report 0 errors.
+
 Then bring in what you need:
 
 ```bash
@@ -60,13 +76,13 @@ Files land where `opencv.json` says (defaults: `src/components/opencv`, `src/scr
 | `guide`                      | The agent playbook.                                                          |
 | `new <dir> [--install]`      | A complete app with every screen.                                            |
 | `init [--force]`             | Add opencv to an existing React project.                                     |
-| `doctor`                     | Check the setup: deps, theme import, Tailwind plugin, `ToastProvider`.       |
+| `doctor`                     | Check the setup. A shadcn `opencv.json` checks Button, Toaster, globals.css and sonner. |
 | `list [components\|screens]` | What you can add. `--json` for agents.                                       |
 | `show <name> [--source]`     | A component file, export or screen: exports, notes, dependencies, code.      |
 | `add <names...> \| --all`    | Copy components with their dependencies.                                     |
-| `screen <names...>`          | Copy screens with everything they use and print the routes.                  |
+| `screen <names...>`          | Copy screens with everything they use and print the routes. `--target shadcn` maps classes. `--dry-run` prints residue. |
 | `theme`                      | Print `opencv.css`: the Tailwind v4 `@theme`, glow utilities and base layer. |
-| `lint [paths...]`            | Lint your code. Exits 1 on errors. `--json`, `--verbose`.                    |
+| `lint [paths...]`            | Lint your code. Exits 1 on errors. `--target shadcn` keys orange on the hex. `--json`, `--verbose`. |
 | `copy "<text>"`              | Writing rules on one string.                                                 |
 | `rules [topic]`              | Product decisions: brand, color, buttons, copy, layout, apply, coach, plans. |
 | `tokens`, `export <dir>`     | Raw design tokens and a hand-off bundle.                                     |
@@ -81,7 +97,7 @@ Files land where `opencv.json` says (defaults: `src/components/opencv`, `src/scr
 | ------------------------------------- | ------- | ----------------------------------------------------------------------------- |
 | `brand-name`                          | error   | "OpenCV" in copy. Use `<Brand />`.                                            |
 | `em-dash`, `middle-dot`               | error   | `—` and `·` in copy.                                                          |
-| `orange-accent`                       | error   | The reserved orange as a class or hex.                                        |
+| `orange-accent`                       | error   | The reserved orange. On `--target shadcn`, the hex only. `bg-accent` stays a hover surface. |
 | `warm-tint`                           | error   | Peach, beige and orange hex values.                                           |
 | `black-primary`                       | error   | Black buttons with white labels. Primary is `<Button variant="primary">`.     |
 | `oops`                                | error   | "Oops" in copy.                                                               |
@@ -94,7 +110,7 @@ Lint cannot see layout or states. Open the page at 1440 and 375 wide and walk ea
 ## Develop
 
 ```bash
-npm test          # 24 tests: pen tooling, registry, theme, lint, new and init end to end
+npm test          # pen tooling, registry, theme, lint, the shadcn target, new and init
 npm pack          # rebuilds the kit, runs the tests, writes opencv-kit-<version>.tgz
 ```
 

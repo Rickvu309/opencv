@@ -59,11 +59,13 @@ ${bold("Build")}
   list [components|screens]     what you can add
   show <name> [--source]        a component file or screen: exports, props, code
   add <names...> | --all        copy components into your project (Button, JobCard, apply...)
-  screen <names...>             copy full screens with everything they use, print the routes
+  screen <names...> [--target shadcn] [--dry-run]
+                                copy full screens, or print the shadcn residue
   theme                         print opencv.css (Tailwind v4 theme from the kit tokens)
 
 ${bold("Check")}
-  lint [paths...]               opencv rules on your code: brand, copy, orange, black buttons, warm tints
+  lint [paths...] [--target shadcn]
+                                opencv rules on your code. shadcn keys orange on the hex
   copy <text>                   writing rules on one string
   rules [topic]                 design decisions: brand color buttons copy layout apply coach plans process
 
@@ -523,6 +525,8 @@ export function main(argv) {
         all: { type: "boolean" },
         force: { type: "boolean" },
         source: { type: "boolean" },
+        target: { type: "string" },
+        "dry-run": { type: "boolean" },
       },
     })
   } catch (e) {
@@ -532,6 +536,7 @@ export function main(argv) {
     fail(e.message)
   }
   const { values: flags, positionals } = parsed
+  flags.dryRun = !!flags["dry-run"]
   if (flags.version) return out(pkg.version)
   let [cmd, ...args] = positionals
   if (!cmd || cmd === "help" || (flags.help && cmd !== "pen")) return out(HELP)
