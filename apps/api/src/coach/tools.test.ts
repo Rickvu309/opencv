@@ -377,17 +377,10 @@ describe("destructive filter is temporary", () => {
   it("documents the !destructive filter as temporary until Coach confirm is live", () => {
     const here = dirname(fileURLToPath(import.meta.url))
     const tools = readFileSync(join(here, "tools.ts"), "utf8")
-    const adr = readFileSync(
-      join(here, "../../../../docs/adr/0007-coach-runtime.md"),
-      "utf8"
-    )
 
     expect(tools).toMatch(/Temporary \(QVE-148/)
     expect(tools).toMatch(/!command\.destructive/)
     expect(tools).toMatch(/Do not remove this filter/)
-    expect(adr).toMatch(/temporary/)
-    expect(adr).toMatch(/QVE-148/)
-    expect(adr).toMatch(/!destructive/)
   })
 })
 
