@@ -78,9 +78,9 @@ describe("coach page", () => {
     expect(screen.getByText("Keep going")).toBeInTheDocument()
     expect(screen.getAllByText("Stopped", { selector: "p" })).toHaveLength(1)
     await waitFor(() => {
-      expect(getCoachCommandCalls().some((call) => call.name === "coach.stop")).toBe(
-        true
-      )
+      expect(
+        getCoachCommandCalls().some((call) => call.name === "coach.stop")
+      ).toBe(true)
     })
   })
 
@@ -98,9 +98,13 @@ describe("coach page", () => {
     expect(
       (await screen.findAllByRole("menuitem", { name: "PM track CV" })).length
     ).toBeGreaterThan(0)
-    expect(screen.getByRole("menuitem", { name: "Associate PM Northwind" })).toBeInTheDocument()
+    expect(
+      screen.getByRole("menuitem", { name: "Associate PM Northwind" })
+    ).toBeInTheDocument()
     fireEvent.click(screen.getByRole("menuitem", { name: "Paste a job link" }))
-    const link = await screen.findByRole("textbox", { name: "Paste a job link" })
+    const link = await screen.findByRole("textbox", {
+      name: "Paste a job link",
+    })
     fireEvent.change(link, { target: { value: "not a link" } })
     fireEvent.keyDown(link, { key: "Enter" })
     expect(await screen.findByText("Paste a full link.")).toBeInTheDocument()
@@ -132,7 +136,9 @@ describe("coach page", () => {
     })
     await openCoach()
     fireEvent.click(screen.getByRole("button", { name: "Free" }))
-    expect(await screen.findByText("Quick edits, 6 of 7 left today")).toBeInTheDocument()
+    expect(
+      await screen.findByText("Quick edits, 6 of 7 left today")
+    ).toBeInTheDocument()
     expect(screen.getByText("Stronger drafts, 4 a day")).toBeInTheDocument()
     expect(screen.getByText("Hardest rewrites, 2 a day")).toBeInTheDocument()
     expect(screen.getAllByText("Pro").length).toBeGreaterThan(0)
@@ -144,7 +150,9 @@ describe("coach page", () => {
     fireEvent.click(screen.getByRole("button", { name: "Free" }))
     fireEvent.click(await screen.findByRole("menuitemradio", { name: /Max/ }))
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe("/app/settings/billing/upgrade")
+      expect(router.state.location.pathname).toBe(
+        "/app/settings/billing/upgrade"
+      )
     })
   })
 
@@ -183,7 +191,9 @@ describe("coach page", () => {
     await waitFor(() => {
       expect(screen.getByText("Undone")).toBeInTheDocument()
     })
-    expect(screen.queryByRole("button", { name: "Undo" })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "Undo" })
+    ).not.toBeInTheDocument()
     expect(
       getCoachCommandCalls().some((call) => call.name === "activity.undo")
     ).toBe(true)

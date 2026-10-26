@@ -2,7 +2,11 @@ import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 
 import { coachCopy } from "./coach-copy.ts"
-import { groupChats, type CoachListItem, type HistoryGroup } from "./coach-model.ts"
+import {
+  groupChats,
+  type CoachListItem,
+  type HistoryGroup,
+} from "./coach-model.ts"
 
 const ORDER: HistoryGroup[] = ["Today", "Yesterday", "Last 7 days"]
 
@@ -52,8 +56,14 @@ export function CoachHistory({
       ) : (
         ORDER.map((name) =>
           groups[name].length === 0 ? null : (
-            <section key={name} aria-label={name} className="flex flex-col gap-1">
-              <h2 className="text-xs font-medium text-muted-foreground">{name}</h2>
+            <section
+              key={name}
+              aria-label={name}
+              className="flex flex-col gap-1"
+            >
+              <h2 className="text-xs font-medium text-muted-foreground">
+                {name}
+              </h2>
               {groups[name].map((chat) => (
                 <Button
                   key={chat.id}

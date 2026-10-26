@@ -86,10 +86,16 @@ export function CoachAttachMenu({ disabled, onAttach, onError }: Props) {
           <Paperclip />
           {coachCopy.addContext}
         </DropdownMenuTrigger>
-        <DropdownMenuContent side="top" align="start" className="max-h-80 w-72 overflow-auto">
+        <DropdownMenuContent
+          side="top"
+          align="start"
+          className="max-h-80 w-72 overflow-auto"
+        >
           {recent.length > 0 ? (
             <>
-              <div className="px-2 py-1 text-xs text-muted-foreground">{coachCopy.recent}</div>
+              <div className="px-2 py-1 text-xs text-muted-foreground">
+                {coachCopy.recent}
+              </div>
               {recent.map((doc) => (
                 <DropdownMenuItem
                   key={`recent-${doc.id}`}
@@ -103,7 +109,9 @@ export function CoachAttachMenu({ disabled, onAttach, onError }: Props) {
               <DropdownMenuSeparator />
             </>
           ) : null}
-          <div className="px-2 py-1 text-xs text-muted-foreground">{coachCopy.addFromPaper}</div>
+          <div className="px-2 py-1 text-xs text-muted-foreground">
+            {coachCopy.addFromPaper}
+          </div>
           {docs.map((doc) => (
             <DropdownMenuItem
               key={doc.id}
@@ -115,7 +123,9 @@ export function CoachAttachMenu({ disabled, onAttach, onError }: Props) {
             </DropdownMenuItem>
           ))}
           <DropdownMenuSeparator />
-          <div className="px-2 py-1 text-xs text-muted-foreground">{coachCopy.addJob}</div>
+          <div className="px-2 py-1 text-xs text-muted-foreground">
+            {coachCopy.addJob}
+          </div>
           {jobs.map((job) => (
             <DropdownMenuItem
               key={job.id}

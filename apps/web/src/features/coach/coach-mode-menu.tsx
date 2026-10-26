@@ -38,7 +38,9 @@ function detail(mode: CoachMode, usage: CoachUsageView | null) {
     return freeModeLine(remaining, cap)
   }
   if (mode === "light") {
-    return usage.caps.light === 0 ? "Stronger drafts" : lightModeLine(usage.caps.light)
+    return usage.caps.light === 0
+      ? "Stronger drafts"
+      : lightModeLine(usage.caps.light)
   }
   return usage.caps.max === 0 ? "Hardest rewrites" : maxModeLine(usage.caps.max)
 }

@@ -72,7 +72,8 @@ function nativeTurnResponse(chatId: string, signal?: AbortSignal) {
         })
         await emit(COACH_SSE_EVENTS.messageEnd, { workedMs })
       } catch (error) {
-        if (!(error instanceof Error && error.name === "AbortError")) throw error
+        if (!(error instanceof Error && error.name === "AbortError"))
+          throw error
       } finally {
         try {
           controller.close()
@@ -160,7 +161,10 @@ export async function handleNativeCoachRequest(
 
   const stop = /^\/api\/chats\/([^/]+)\/stop$/.exec(path)
   if (method === "POST" && stop) {
-    mockState.commandCalls.push({ name: "coach.stop", body: { chatId: stop[1] } })
+    mockState.commandCalls.push({
+      name: "coach.stop",
+      body: { chatId: stop[1] },
+    })
     return jsonOk({ ok: true })
   }
 

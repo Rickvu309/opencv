@@ -37,7 +37,9 @@ export function CoachResultCard({ part, glowOpen, onOpen, onUndo }: Props) {
           <div className="text-sm text-muted-foreground">{part.summary}</div>
         ) : null}
         {part.undone ? (
-          <div className="text-sm text-muted-foreground">{coachCopy.undone}</div>
+          <div className="text-sm text-muted-foreground">
+            {coachCopy.undone}
+          </div>
         ) : null}
       </div>
       <Button

@@ -120,7 +120,10 @@ export function CoachSession({ chatId, variant, onChatId }: Props) {
   useEffect(() => {
     if (variant !== "page") return
     function onKey(event: KeyboardEvent) {
-      if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== "n") {
+      if (
+        !(event.metaKey || event.ctrlKey) ||
+        event.key.toLowerCase() !== "n"
+      ) {
         return
       }
       const target = event.target
@@ -166,7 +169,8 @@ export function CoachSession({ chatId, variant, onChatId }: Props) {
       if (variant === "page") void navigate({ href: `/app/coach/${id}` })
     }
     const focus = attachments.find(
-      (item) => (item.kind === "paper" || item.kind === "job") && isUuid(item.id)
+      (item) =>
+        (item.kind === "paper" || item.kind === "job") && isUuid(item.id)
     )
     if (focus && (focus.kind === "paper" || focus.kind === "job")) {
       await setChatFocus(id, focus.kind, focus.id).catch(() => undefined)
@@ -249,11 +253,19 @@ export function CoachSession({ chatId, variant, onChatId }: Props) {
   if (variant === "page" && panelCovering) return null
 
   return (
-    <div data-slot="coach-thread" className="flex h-full min-h-0 flex-col bg-background">
+    <div
+      data-slot="coach-thread"
+      className="flex h-full min-h-0 flex-col bg-background"
+    >
       {variant === "page" ? (
         <PageHeader title={empty ? coachCopy.howCanIHelp : title}>
           {live.focusKind === "paper" && live.focusId ? (
-            <Button type="button" variant="outline" size="sm" onClick={() => void onShare()}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => void onShare()}
+            >
               {coachCopy.share}
             </Button>
           ) : null}
@@ -362,35 +374,60 @@ export function CoachSession({ chatId, variant, onChatId }: Props) {
                         <div className="rounded-lg bg-muted px-3 py-2 text-sm">
                           {message.parts
                             .filter((part) => part.kind === "text")
-                            .map((part) => (part.kind === "text" ? part.text : ""))
+                            .map((part) =>
+                              part.kind === "text" ? part.text : ""
+                            )
                             .join("")}
                         </div>
                       ) : null}
                       {message.status === "aborted" ? (
-                        <p className="text-sm text-muted-foreground">{coachCopy.stopped}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {coachCopy.stopped}
+                        </p>
                       ) : null}
                       {streaming && message.id === messages.at(-1)?.id ? (
                         <p className="text-sm text-muted-foreground">
-                          {workingLine(secondsBetween(message.startedAt ?? now, now))}
+                          {workingLine(
+                            secondsBetween(message.startedAt ?? now, now)
+                          )}
                         </p>
                       ) : null}
                       {!streaming && message.workedMs != null ? (
                         <p className="text-sm text-muted-foreground">
-                          {workedLine(Math.max(1, Math.round(message.workedMs / 1000)))}
+                          {workedLine(
+                            Math.max(1, Math.round(message.workedMs / 1000))
+                          )}
                         </p>
                       ) : null}
                       {message.parts
                         .filter((part) => part.kind === "confirm")
                         .map((part) =>
                           part.kind === "confirm" ? (
-                            <div key={part.pendingActionId} className="flex flex-col gap-2 rounded-lg border border-border p-3">
+                            <div
+                              key={part.pendingActionId}
+                              className="flex flex-col gap-2 rounded-lg border border-border p-3"
+                            >
                               <p className="text-sm">{part.summary}</p>
                               {part.decided ? null : (
                                 <div className="flex gap-2">
-                                  <Button type="button" variant="outline" size="sm" onClick={() => void onApprove(part.pendingActionId)}>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      void onApprove(part.pendingActionId)
+                                    }
+                                  >
                                     {coachCopy.approve}
                                   </Button>
-                                  <Button type="button" variant="outline" size="sm" onClick={() => void onDeny(part.pendingActionId)}>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      void onDeny(part.pendingActionId)
+                                    }
+                                  >
                                     {coachCopy.deny}
                                   </Button>
                                 </div>
@@ -408,11 +445,14 @@ export function CoachSession({ chatId, variant, onChatId }: Props) {
                               glowOpen={!showFreeBanner}
                               onOpen={() =>
                                 void navigate({
-                                  href: part.docId ? `/app/paper/${part.docId}` : "/app/paper",
+                                  href: part.docId
+                                    ? `/app/paper/${part.docId}`
+                                    : "/app/paper",
                                 })
                               }
                               onUndo={() => {
-                                if (part.activityId) void onUndo(part.activityId)
+                                if (part.activityId)
+                                  void onUndo(part.activityId)
                               }}
                             />
                           ) : null
@@ -424,23 +464,35 @@ export function CoachSession({ chatId, variant, onChatId }: Props) {
             </div>
           )}
           {showFreeBanner ? (
-            <div role="status" className="mx-auto flex w-full max-w-2xl flex-col gap-2 rounded-lg border border-border p-3">
+            <div
+              role="status"
+              className="mx-auto flex w-full max-w-2xl flex-col gap-2 rounded-lg border border-border p-3"
+            >
               <p className="text-sm font-medium">{coachCopy.limitHeading}</p>
-              <p className="text-sm text-muted-foreground">{resetsAtLine(resetTime)}</p>
-              <p className="text-sm text-muted-foreground">{coachCopy.limitBody}</p>
+              <p className="text-sm text-muted-foreground">
+                {resetsAtLine(resetTime)}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {coachCopy.limitBody}
+              </p>
               <Button
                 type="button"
                 variant="default"
                 size="sm"
                 className="self-start"
-                onClick={() => void navigate({ href: "/app/settings/billing/upgrade" })}
+                onClick={() =>
+                  void navigate({ href: "/app/settings/billing/upgrade" })
+                }
               >
                 {coachCopy.upgrade}
               </Button>
             </div>
           ) : null}
           {error ? (
-            <p role="alert" className="mx-auto w-full max-w-2xl text-sm text-destructive">
+            <p
+              role="alert"
+              className="mx-auto w-full max-w-2xl text-sm text-destructive"
+            >
               {error}
             </p>
           ) : null}
@@ -469,7 +521,9 @@ export function CoachSession({ chatId, variant, onChatId }: Props) {
             )
           }
           onRemove={(id) =>
-            setAttachments((current) => current.filter((item) => item.id !== id))
+            setAttachments((current) =>
+              current.filter((item) => item.id !== id)
+            )
           }
           onError={setLocalError}
         />

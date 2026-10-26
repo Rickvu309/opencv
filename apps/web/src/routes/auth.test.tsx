@@ -50,7 +50,7 @@ function refuseCode(code: string, status: number) {
 async function openExpired() {
   renderApp(HOME_PATH)
   expect(
-    await screen.findByRole("heading", { level: 1, name: /Alex Tran/ })
+    await screen.findByRole("heading", { level: 1, name: "How can I help?" })
   ).toBeInTheDocument()
   vi.stubGlobal(
     "fetch",
@@ -319,7 +319,7 @@ describe("welcome", () => {
     setMockWelcomedAt("2026-01-02T00:00:00.000Z")
     renderApp(HOME_PATH)
     expect(
-      await screen.findByRole("heading", { level: 1, name: /Alex Tran/ })
+      await screen.findByRole("heading", { level: 1, name: "How can I help?" })
     ).toBeInTheDocument()
     expect(
       screen.queryByRole("heading", { name: AUTH_COPY.welcome })

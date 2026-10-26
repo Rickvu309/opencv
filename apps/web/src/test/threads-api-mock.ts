@@ -481,7 +481,9 @@ export async function threadApiFetch(
 
   if (method === "POST" && path === `/api/commands/${THREAD_COMMANDS.delete}`) {
     const body = (await readBody(init)) as { threadId?: string }
-    const index = mockState.threads.findIndex((item) => item.id === body.threadId)
+    const index = mockState.threads.findIndex(
+      (item) => item.id === body.threadId
+    )
     if (index === -1) {
       return jsonError(404, "NOT_FOUND", "Thread not found")
     }

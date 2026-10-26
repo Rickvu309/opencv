@@ -124,7 +124,8 @@ export function contentChecks(d) {
 
   // Source reads. A control counts only as a JSX label or a quoted string, not a comment or a type name.
   const label = (word) => new RegExp(`>\\s*${word}\\s*<|["'\`]${word}["'\`]`)
-  const inCoach = (files) => files.filter((file) => file.includes("features/coach/"))
+  const inCoach = (files) =>
+    files.filter((file) => file.includes("features/coach/"))
   const approve = inCoach(has(label("Approve")))
   const deny = inCoach(has(label("Deny")))
   r.push(

@@ -1,9 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react"
 
-import { HOME_PATH, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
-import { expectHomeIdle } from "@/test/app-shell-fixtures.ts"
 import {
   TEST_SESSION,
   TEST_SESSION_USER,
@@ -23,11 +22,8 @@ afterEach(() => {
 })
 
 describe("settings workspace", () => {
-  it("opens Integrations from the connect row", async () => {
-    const { router } = renderApp(HOME_PATH)
-    await expectHomeIdle()
-
-    fireEvent.click(screen.getByRole("link", { name: "Connect apps" }))
+  it("opens Integrations", async () => {
+    const { router } = renderApp(`${SURFACE_PATHS.settings}/integrations`)
 
     expect(
       await screen.findByRole("heading", { level: 1, name: "Integrations" })

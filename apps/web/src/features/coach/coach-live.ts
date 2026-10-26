@@ -11,7 +11,11 @@ import {
   stopChat,
   streamTurn,
 } from "./coach-api.ts"
-import type { CoachAttachment, CoachUiMessage, CoachUiPart } from "./coach-model.ts"
+import type {
+  CoachAttachment,
+  CoachUiMessage,
+  CoachUiPart,
+} from "./coach-model.ts"
 
 export type LiveChat = {
   messages: CoachUiMessage[]
@@ -203,11 +207,17 @@ export async function sendCoachTurn(input: {
   controllers.set(input.chatId, controller)
   let started = false
 
-  const fail = (error: string | null, restoreDraft: boolean, limited = false) => {
+  const fail = (
+    error: string | null,
+    restoreDraft: boolean,
+    limited = false
+  ) => {
     const latest = cache.get(input.chatId) ?? current
     const stopped =
       controller.signal.aborted ||
-      latest.messages.some((item) => item.id === coach.id && item.status === "aborted")
+      latest.messages.some(
+        (item) => item.id === coach.id && item.status === "aborted"
+      )
     if (stopped) {
       markStopped(input.chatId)
       return { restoreDraft: false, limited: false, error: null }
@@ -262,7 +272,9 @@ export async function sendCoachTurn(input: {
       write(input.chatId, {
         ...latest,
         messages: latest.messages.map((item) =>
-          item.id === message.id ? { ...message, parts: [...message.parts] } : item
+          item.id === message.id
+            ? { ...message, parts: [...message.parts] }
+            : item
         ),
       })
     }
@@ -294,7 +306,6 @@ export async function sendCoachTurn(input: {
           : item
       ),
     })
-    void message
     return { restoreDraft: false, limited: false, error: null }
   } catch (error) {
     if (isAbortError(error) || controller.signal.aborted) {

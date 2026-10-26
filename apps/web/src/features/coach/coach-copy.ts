@@ -34,8 +34,7 @@ export const coachCopy = {
   stopped: "Stopped",
   tooLong: "Message is too long.",
   pasteFullLink: "Paste a full link.",
-  importUnavailable:
-    "Import is not available yet. Add a document from Paper.",
+  importUnavailable: "Import is not available yet. Add a document from Paper.",
   workingPlaceholder: "Coach is working. You can keep typing.",
   linkCopied: "Link copied",
 } as const

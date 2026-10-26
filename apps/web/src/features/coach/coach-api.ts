@@ -131,7 +131,11 @@ export function createChat() {
   return runCommand<ServerChat>("chat.create", {})
 }
 
-export function setChatFocus(chatId: string, kind: "paper" | "job", id: string) {
+export function setChatFocus(
+  chatId: string,
+  kind: "paper" | "job",
+  id: string
+) {
   return runCommand("chat.setFocus", {
     chatId,
     focus: { kind, id },

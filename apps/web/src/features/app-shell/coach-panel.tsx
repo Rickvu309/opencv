@@ -1,4 +1,11 @@
-import { Children, isValidElement, useEffect, useRef, useState, type ReactNode } from "react"
+import {
+  Children,
+  isValidElement,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react"
 import { useNavigate } from "@tanstack/react-router"
 import { Maximize2, Minus, X } from "lucide-react"
 
@@ -133,11 +140,7 @@ export function CoachPanel({
         </Button>
       </div>
       <div className="min-h-0 flex-1">
-        <CoachThread
-          chatId={chatId}
-          variant="panel"
-          onChatId={setChatId}
-        />
+        <CoachThread chatId={chatId} variant="panel" onChatId={setChatId} />
       </div>
     </section>
   )

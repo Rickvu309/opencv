@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it } from "vitest"
-import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react"
+import {
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react"
 
 import { renderApp } from "@/test/render-app.tsx"
 import { chatCreateCalls, setMockChats } from "@/test/shell-api-mock.ts"
@@ -42,24 +48,39 @@ describe("coach history", () => {
     expect(
       within(history).queryByRole("button", { name: "Old notes" })
     ).not.toBeInTheDocument()
-    expect(screen.queryByRole("heading", { name: "Older" })).not.toBeInTheDocument()
-
-    fireEvent.change(within(history).getByRole("textbox", { name: "Search chats" }), {
-      target: { value: "internship" },
-    })
     expect(
-      await within(history).findByRole("button", { name: "CV vs internship first" })
+      screen.queryByRole("heading", { name: "Older" })
+    ).not.toBeInTheDocument()
+
+    fireEvent.change(
+      within(history).getByRole("textbox", { name: "Search chats" }),
+      {
+        target: { value: "internship" },
+      }
+    )
+    expect(
+      await within(history).findByRole("button", {
+        name: "CV vs internship first",
+      })
     ).toBeInTheDocument()
-    fireEvent.change(within(history).getByRole("textbox", { name: "Search chats" }), {
-      target: { value: "zzzz-none" },
-    })
+    fireEvent.change(
+      within(history).getByRole("textbox", { name: "Search chats" }),
+      {
+        target: { value: "zzzz-none" },
+      }
+    )
     expect(await within(history).findByText("No chats yet")).toBeInTheDocument()
 
-    fireEvent.change(within(history).getByRole("textbox", { name: "Search chats" }), {
-      target: { value: "" },
-    })
+    fireEvent.change(
+      within(history).getByRole("textbox", { name: "Search chats" }),
+      {
+        target: { value: "" },
+      }
+    )
     fireEvent.click(
-      await within(history).findByRole("button", { name: "CV vs internship first" })
+      await within(history).findByRole("button", {
+        name: "CV vs internship first",
+      })
     )
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(`/app/coach/${CHAT_ID}`)
