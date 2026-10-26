@@ -19,7 +19,7 @@ describe("Paper editor chrome", () => {
       name: "Editing PM track CV",
     })
     const view = within(editor)
-    expect(view.getByRole("textbox", { name: "Name" })).toBeInTheDocument()
+    expect(view.getAllByRole("textbox", { name: "Name" })).toHaveLength(2)
     expect(view.getByRole("textbox", { name: "Summary" })).toBeInTheDocument()
     expect(view.getByRole("button", { name: "Coach" })).toBeInTheDocument()
     expect(editor.querySelector('[data-paper-a4-fit="width"]')).not.toBeNull()
