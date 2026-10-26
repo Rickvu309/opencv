@@ -77,12 +77,17 @@ WEB_URL="http://localhost:$WEB_PORT"
 SESSION_SECRET_VALUE=$(python3 -c 'import secrets; print(secrets.token_hex(24))')
 echo "--- boot $(date -u +%FT%TZ) ---" | tee -a "$EVIDENCE/api.log" >> "$EVIDENCE/web.log"
 
+coach_limit=()
+if [[ -n "${COACH_DAILY_TURN_LIMIT_FREE:-}" ]]; then
+  coach_limit=(COACH_DAILY_TURN_LIMIT_FREE="$COACH_DAILY_TURN_LIMIT_FREE")
+fi
 (
   cd "$REPO"
   setsid env -u OPENROUTER_API_KEY -u DATABASE_URL -u NODE_ENV \
     OPENCV_VERIFY_RUN="$RUN" DB_DRIVER=pglite COACH_RUNTIME=fake \
     PGLITE_DATA_DIR="$DATA_DIR" SESSION_SECRET="$SESSION_SECRET_VALUE" \
     AUTH_URL="$API_URL" WEB_ORIGINS="$WEB_URL" PORT="$API_PORT" \
+    "${coach_limit[@]}" \
     pnpm --filter api dev </dev/null >> "$EVIDENCE/api.log" 2>&1 &
   echo $! > "$EVIDENCE/.api.pgid"
 )
