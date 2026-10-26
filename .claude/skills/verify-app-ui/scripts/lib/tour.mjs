@@ -18,7 +18,7 @@ const ROUTES = {
 }
 // Also listed under "Constants the checks assume" in SKILL.md.
 const PRIMARY = {
-  home: /Message Coach|^Send$/,
+  home: /^Add /,
   paper: /^(New|Make mine)$/,
   apply: /^Add /,
   pitch: /^(Edit|Publish)/,
@@ -27,6 +27,16 @@ const STAGES =
   "['Inbox','Prep','Sent','Live','Closed'].every((w) => new RegExp('\\\\b' + w + '\\\\b').test(document.body.innerText))"
 const must = (ok, what) => {
   if (!ok) throw new Error(`tour step did not happen: ${what}`)
+}
+async function openDockCoach(page) {
+  must(
+    await clickByText(page, "button", "Coach"),
+    "the dock Coach button was not found"
+  )
+  must(
+    await page.waitFor("document.querySelector('textarea')", 6000),
+    "the dock Coach panel did not open"
+  )
 }
 const clickByText = (page, selector, text) =>
   page.evaluate(`(() => {
@@ -54,8 +64,8 @@ async function tabWalk(page, key) {
       const l = (a.getAttribute('aria-label') || a.placeholder || a.textContent || '').trim()
       return a.tagName + '|' + l
     })()`)
-    const [tag, label] = [hit.split("|")[0], hit.slice(hit.indexOf("|") + 1)]
-    if (PRIMARY[key].test(label) || (key === "home" && tag === "TEXTAREA"))
+    const label = hit.slice(hit.indexOf("|") + 1)
+    if (PRIMARY[key].test(label))
       return { reached: i, label: label.slice(0, 30) }
   }
   return { reached: null }
@@ -174,6 +184,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
     must(await visit(key), `${key} did not render at ${ROUTES[key][0]}`)
     d.tabs[key] = await tabWalk(a, key)
     await a.sleep(1200)
+    if (key === "home") await openDockCoach(a)
     d[key] = await snap(a)
     await shot(a, `desktop-${key}`)
     if (key === "home") {
@@ -200,7 +211,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
     }
     if (key === "paper") {
       must(
-        await clickByText(a, "tr, a, button, [role=row]", CV_NAME),
+        await clickByText(a, "table tr", CV_NAME),
         "the created CV row was not found"
       )
       must(
@@ -211,7 +222,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
       d.cv = await snap(a)
       await shot(a, "desktop-paper-cv")
       must(
-        await clickByText(a, "button", "Coach"),
+        await clickByText(a, "[data-coach-float-pill]", "Coach"),
         "the Coach button was not found"
       )
       must(
@@ -273,6 +284,11 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
       : null
   )
   await b.goto(`${webUrl}/app`)
+  must(
+    await b.waitFor("document.querySelector('h1')", 15000),
+    "the start page did not render"
+  )
+  await openDockCoach(b)
   await send(b, "hello")
   await b.waitFor("document.querySelector('[role=alert]')", 8000)
   await b.sleep(800)
@@ -281,6 +297,11 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
 
   b.setIntercept((r) => (coachCall(r) ? "fail" : null))
   await b.goto(`${webUrl}/app`)
+  must(
+    await b.waitFor("document.querySelector('h1')", 15000),
+    "the start page did not render"
+  )
+  await openDockCoach(b)
   await send(b, "hello again")
   await b.waitFor("document.querySelector('[role=alert]')", 8000)
   await b.sleep(800)
@@ -320,7 +341,16 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
       await m.waitFor(ROUTES[key][1], 20000),
       `${key} did not render at 390px`
     )
-    await m.sleep(1200)
+    await m.sleep(400)
+    must(
+      await clickByText(m, "button", "Menu"),
+      `${key} Menu was not found at 390px`
+    )
+    must(
+      await m.waitFor("document.querySelector('[role=dialog]')", 4000),
+      `${key} drawer did not open`
+    )
+    await m.sleep(400)
     d.mobile[key] = await snap(m)
     await shot(m, `mobile-${key}`)
   }

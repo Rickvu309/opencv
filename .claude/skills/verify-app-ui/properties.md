@@ -6,7 +6,7 @@ Ids 01 to 30 are the research check numbers. 31 to 38 are app-wide checks the si
 
 Writing and logic:
 
-- 01 `product-nouns`: no chrome label (button, placeholder, empty line, banner, aria-label) calls a product object job, email, document or profile. Exempt: a short goal chip that starts with A or An ("A first full-time job"), the "Connect email, optional" row, and the account menu label "<name>, profile and settings". Nothing else, so "Drop a dream job here" fails. Source: Apple writing; WCAG 3.2.4.
+- 01 `product-nouns`: no chrome label (button, placeholder, empty line, banner, aria-label) calls a product object opportunity, thread, email, document or profile. Job is the product word. Exempt: a short goal chip that starts with A or An ("A first full-time job"), the "Connect email, optional" row, and the account menu label "<name>, profile and settings". Source: Apple writing; WCAG 3.2.4.
 - 02 `one-composer-placeholder`: Home, the Thread and the Paper Coach float use one placeholder. Source: Apple writing.
 - 03 `button-labels-act`: no Click here, Learn more, OK (heuristic; a joke label cannot be decided). Source: Apple writing.
 - 04 `coach-error-not-raw`: the tour sends twice, once with the api answering 404 `USER_NOT_FOUND "User not found."` and once with the connection refused. Each must show an error in a live region, and neither may show the raw message or a transport error such as Failed to fetch. No error shown is a FAIL. Source: Apple feedback.
@@ -22,10 +22,10 @@ Writing and logic:
 
 Structure:
 
-- 14 `home-composer-first`: Home does not show both "What are you aiming for?" and "Four small things" on first paint. Source: Apple layout.
+- 14 `home-composer-first`: the `/app` start page does not show "What are you aiming for?" or "Four small things". Home is gone until the Coach page replaces this check. Source: Apple layout.
 - 15 `cv-widest-coach-beside`: with the Coach open, the CV is the widest region and the Coach, a floating panel or an in-flow side pane, covers none of its text (at 1440 wide; a narrower window can overlap). Source: Cursor; Linear.
 - 16 `apply-five-stages-no-hscroll`: Inbox, Prep, Sent, Live, Closed found as visible column headers beside the stage dots, no horizontal scroll. Source: `apply-workspace.tsx`; Material density.
-- 17 `search-key-hint`: the Search item has a `kbd` and Ctrl-K opens the dialog. Source: Raycast.
+- 17 `search-key-hint`: the Search button has a `kbd` inside it and Ctrl-K opens the dialog. Source: Raycast.
 - 18 `paper-no-disabled-filter`: no Paper control says Coming soon. Source: Apple feedback.
 
 Visual craft:
@@ -33,7 +33,7 @@ Visual craft:
 - 19 `light-field-sparse-accent`: body luminance 0.85+; no dark or tinted decorative fill of 6000px2 or more, including gradients (a gradient that fades to transparent is a photo scrim and is skipped). Heuristic. Source: Refactoring UI; ADR-0010.
 - 20 `text-contrast`: 4.5:1, or 3:1 at 24px (18.66px bold). Skipped: text over images and gradients, disabled controls, aria-hidden text and svg. Source: WCAG 1.4.3.
 - 21 `target-size-24`: every link and button 24x24, or a 24px circle that touches no other target; controls that are hidden until hover are not measured. Source: WCAG 2.5.8.
-- 22 `apply-dot-count-or-absent`: the Apply nav item has no dot, or the dot has a count or an accessible name (an aria-hidden dot has none). The Apply nav item not found is a FAIL. Source: Apple feedback.
+- 22 `apply-dot-count-or-absent`: the Apply link is found by the accessible name Apply. It has no dot, or the dot has a count or an accessible name (an aria-hidden dot has none). A missing Apply link is a FAIL. Source: Apple feedback.
 - 23 `stage-word-plus-dot`: each stage dot sits beside its word. Source: Apple feedback.
 
 Motion:
@@ -51,14 +51,14 @@ Accessibility and performance:
 
 App-wide:
 
-- 31 `one-h1-per-screen`: exactly one visible h1 on Home, Paper, the open CV, Apply and Pitch.
-- 32 `keyboard-reaches-primary`: Tab reaches the primary action of each surface within 30 presses (30 is this skill's budget, not a standard).
+- 31 `one-h1-per-screen`: exactly one visible h1 on the start page, Paper, the open CV, Apply and Pitch. Home is not a screen. The shell panel title is not an h1.
+- 32 `keyboard-reaches-primary`: Tab reaches the primary action of each surface within 30 presses (30 is this skill's budget, not a standard). On `/app` the primary is the start page Add control. Message Coach is not required.
 - 33 `no-console-errors`: the signed-in desktop, reduced-motion and 390px passes log no console error, React warning, uncaught exception or failed load. The mocked scenario pages are not counted.
 - 34 `first-render-budget`: each route renders its content within 2000 ms of navigation (dev server, warm). The budget is this skill's, set for the shared 8-core machine.
 - 35 `spacing-scale`: 95% or more of padding and gap values are on the 4px scale plus the half steps 2, 6, 10, 14.
 - 36 `row-density`: Paper rows 40 to 72px; no Apply card title past two lines. The title is the deepest element in the card whose text is the title from the card's aria-label, whatever its tag; a card with no such element, or no cards, is a FAIL. Source: Material density.
 - 37 `no-raw-colors`: every computed text, fill and border color equals a semantic design token (the `:root` variables of `globals.css`) within 6 per channel, 12 when translucent. Tailwind palette variables such as `--color-red-600` and `--color-black` are not design tokens, so a palette class fails. Black scrims, SVG fills and gradient stops are not measured here (19 reads gradients). The source test `apps/web/src/test/design-vocabulary.test.ts` covers raw hex in `apps/web/src`.
-- 38 `mobile-surfaces-reachable`: at 390x844 the four surface links are in view at 24px or more and the page does not scroll sideways.
+- 38 `mobile-surfaces-reachable`: at 390x844 the drawer is open and Inbox, Coach, Jobs, Paper, Apply and Pitch are in view at 24px or more. The page does not scroll sideways.
 
 Design text, properties 39 to 44. Phrases are pinned in `scripts/lib/copy.json`.
 

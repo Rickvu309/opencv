@@ -3,11 +3,15 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
+  isRedirect,
   lazyRouteComponent,
   redirect,
   type AnyRouter,
   type RouterHistory,
 } from "@tanstack/react-router"
+
+import { getShellProfile } from "@/features/app-shell/shell-api.ts"
+import { startPagePath } from "@/features/app-shell/start-page.ts"
 
 import { NotFoundPage } from "@/components/not-found-page.tsx"
 import { validateSettingsSearch } from "@/features/app-shell/surfaces.ts"
@@ -72,18 +76,41 @@ const signUpRoute = createRoute({
   component: () => null,
 })
 
+function isAppIndex(pathname: string) {
+  return pathname === "/app" || pathname === "/app/"
+}
+
 const appLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/app",
   beforeLoad: async ({ location }) => {
-    const { data } = await authClient.getSession()
-    if (!data) {
-      throw redirect({
-        to: "/sign-in",
-        search: { redirect: `${location.pathname}${location.searchStr}` },
-      })
+    const index = isAppIndex(location.pathname)
+    try {
+      const { data } = await authClient.getSession()
+      if (!data) {
+        throw redirect({
+          to: "/sign-in",
+          search: { redirect: `${location.pathname}${location.searchStr}` },
+        })
+      }
+      if (index) {
+        let startPage: unknown = "apply"
+        try {
+          const profile = await getShellProfile()
+          startPage = profile.startPage
+        } catch (error) {
+          if (isRedirect(error)) throw error
+        }
+        throw redirect({ href: startPagePath(startPage) })
+      }
+      return { session: data }
+    } catch (error) {
+      if (isRedirect(error)) throw error
+      // A dead api throws. /app falls back to Apply. A child route renders
+      // so the same failure does not redirect again.
+      if (index) throw redirect({ href: startPagePath("apply") })
+      return { session: null }
     }
-    return { session: data }
   },
   component: lazyRouteComponent(
     () => import("@/features/app-shell/app-shell-layout.tsx"),
@@ -91,9 +118,25 @@ const appLayoutRoute = createRoute({
   ),
 })
 
-const homeRoute = createRoute({
+const appIndexRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/",
+  beforeLoad: async () => {
+    let startPage: unknown = "apply"
+    try {
+      const profile = await getShellProfile()
+      startPage = profile.startPage
+    } catch (error) {
+      if (isRedirect(error)) throw error
+    }
+    throw redirect({ href: startPagePath(startPage) })
+  },
+  component: () => null,
+})
+
+const homeRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/home",
   component: lazyRouteComponent(() => import("@/routes/home.tsx"), "HomePage"),
 })
 
@@ -126,6 +169,42 @@ const pitchRoute = createRoute({
   ),
 })
 
+const coachRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/coach",
+  component: lazyRouteComponent(
+    () => import("@/routes/coach.tsx"),
+    "CoachPage"
+  ),
+})
+
+const jobsRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/jobs",
+  component: lazyRouteComponent(
+    () => import("@/routes/placeholder.tsx"),
+    "JobsPage"
+  ),
+})
+
+const proofsRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/proofs",
+  component: lazyRouteComponent(
+    () => import("@/routes/placeholder.tsx"),
+    "ProofsPage"
+  ),
+})
+
+const inboxRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/inbox",
+  component: lazyRouteComponent(
+    () => import("@/routes/placeholder.tsx"),
+    "InboxPage"
+  ),
+})
+
 const settingsRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/settings",
@@ -142,10 +221,15 @@ const routeTree = rootRoute.addChildren([
   signInRoute,
   signUpRoute,
   appLayoutRoute.addChildren([
+    appIndexRoute,
     homeRoute,
     paperRoute,
     applyRoute,
     pitchRoute,
+    coachRoute,
+    jobsRoute,
+    proofsRoute,
+    inboxRoute,
     settingsRoute,
   ]),
 ])

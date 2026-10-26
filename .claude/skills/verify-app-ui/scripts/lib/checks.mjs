@@ -33,16 +33,18 @@ export function runChecks(d) {
   const { screens, allSnaps, labels, has } = context(d)
 
   // Structure.
-  const both = ["What are you aiming for?", "Four small things"].every((h) =>
-    d.home.headingsText.includes(h)
+  const staleHome = ["What are you aiming for?", "Four small things"].filter(
+    (phrase) => (d.home.text ?? "").includes(phrase)
   )
   r.push(
     result(
       "14",
       "home-composer-first",
-      !both,
-      `headings on first paint: ${list(d.home.headingsText.slice(1))}; composer top ${d.home.composerRect?.y}px`,
-      "at 1440x900 Home does not stack both What are you aiming for? and Four small things above the composer"
+      staleHome.length === 0,
+      staleHome.length
+        ? `start page still shows ${staleHome.join(", ")}`
+        : "start page does not show the old Home prompts",
+      "the /app start page does not show What are you aiming for? or Four small things"
     )
   )
 
@@ -81,8 +83,8 @@ export function runChecks(d) {
       "17",
       "search-key-hint",
       d.home.searchHasKbd && Boolean(d.palette.dialog),
-      `Search row has a kbd: ${d.home.searchHasKbd}; Ctrl-K opens a dialog: ${Boolean(d.palette.dialog)}`,
-      "the sidebar Search item shows a key hint and Ctrl-K opens the dialog"
+      `Search button has a kbd: ${d.home.searchHasKbd}; Ctrl-K opens a dialog: ${Boolean(d.palette.dialog)}`,
+      "the Search button shows a key hint and Ctrl-K opens the dialog"
     )
   )
 
@@ -164,7 +166,7 @@ export function runChecks(d) {
         : dots.length
           ? `Apply nav has a ${dots[0].w}x${dots[0].h} dot with no count and no accessible name${dots[0].ariaHidden ? " (aria-hidden)" : ""}`
           : "no unnamed dot",
-      "the Apply nav dot is absent, or a count or a dot with an accessible name (an aria-hidden dot has none)"
+      "the Apply link is found by the name Apply, and its dot is absent or has a count or an accessible name (an aria-hidden dot has none)"
     )
   )
 
@@ -330,7 +332,7 @@ export function runChecks(d) {
       "one-h1-per-screen",
       SURFACES.every((k) => screens[k].h1.length === 1),
       h1s.join(" "),
-      "each screen has exactly one visible h1"
+      "the start page, Paper, the open CV, Apply and Pitch each have exactly one visible h1"
     )
   )
 
@@ -438,8 +440,9 @@ export function runChecks(d) {
     )
   )
 
+  const mobileNav = ["Inbox", "Coach", "Jobs", "Paper", "Apply", "Pitch"]
   const ms = Object.entries(d.mobile).map(([k, s]) => {
-    const names = ["Home", "Paper", "Apply", "Pitch"].map((n) =>
+    const names = mobileNav.map((n) =>
       s.buttons.find(
         (b) =>
           b.label === n &&
@@ -464,10 +467,10 @@ export function runChecks(d) {
       ms
         .map(
           (m) =>
-            `${m.k}: ${m.overflow ? "page scrolls sideways" : "fits"}, ${4 - m.missing}/4 surface links in view`
+            `${m.k}: ${m.overflow ? "page scrolls sideways" : "fits"}, ${mobileNav.length - m.missing}/${mobileNav.length} surface links in view`
         )
         .join("; "),
-      "at 390x844 the four surface links are in view at 24px or more and the page does not scroll sideways"
+      "at 390x844 the drawer is open and Inbox, Coach, Jobs, Paper, Apply and Pitch are in view at 24px or more, and the page does not scroll sideways"
     )
   )
 

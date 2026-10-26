@@ -26,8 +26,9 @@ describe("Apply craft pass", () => {
     expect(
       screen.getByRole("button", { name: "Add opportunity" })
     ).toBeInTheDocument()
-    expect(screen.queryByText(/\bjobs?\b/i)).not.toBeInTheDocument()
-    expect(screen.queryByLabelText(/\bjobs?\b/i)).not.toBeInTheDocument()
+    const main = screen.getByRole("main")
+    expect(within(main).queryByText(/\bjobs?\b/i)).not.toBeInTheDocument()
+    expect(within(main).queryByLabelText(/\bjobs?\b/i)).not.toBeInTheDocument()
   })
 
   it("shows one Demo banner for the starter set", async () => {
@@ -133,7 +134,7 @@ describe("Apply craft pass", () => {
     expect(document.querySelectorAll("[data-slot='empty']")).toHaveLength(1)
     expect(screen.queryByText(/Nothing in/)).not.toBeInTheDocument()
     for (const stage of ["Inbox", "Prep", "Sent", "Live", "Closed"]) {
-      expect(screen.getByText(stage)).toBeInTheDocument()
+      expect(screen.getAllByText(stage).length).toBeGreaterThan(0)
     }
 
     const empty = document.querySelector("[data-slot='empty']") as HTMLElement

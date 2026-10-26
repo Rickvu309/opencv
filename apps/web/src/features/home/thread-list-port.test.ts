@@ -18,10 +18,12 @@ const appShellDir = path.resolve(here, "../app-shell")
 
 const SHELL_FILES = [
   "app-shell-layout.tsx",
-  "app-sidebar.tsx",
-  "sidebar-history.tsx",
+  "app-shell.tsx",
+  "coach-panel.tsx",
+  "nav-profile.tsx",
   "search-modal.tsx",
   "search-threads.ts",
+  "sidebar-nav.ts",
 ]
 
 function wrapper({ children }: { children: ReactNode }) {

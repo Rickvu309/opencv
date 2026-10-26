@@ -12,10 +12,11 @@ const copy = JSON.parse(
   )
 )
 
-// 01. CONTEXT.md nouns. A button, placeholder, empty line or banner must not call a product object
-// "job", "email", "document" or "profile". Heuristic: a word list, so a legitimate use needs a note here.
+// 01. The product word is Job. A button, placeholder, empty line or banner must not call a
+// product object "opportunity", "thread", "email", "document" or "profile". Heuristic: a word list.
 const BANNED_NOUNS = [
-  [/\bjobs?\b/i, "job (say Opportunity)"],
+  [/\bopportunit(?:y|ies)\b/i, "opportunity (say Job)"],
+  [/\bthreads?\b/i, "thread (say Chat)"],
   [/\bemails?\b/i, "email (say Letter)"],
   [/\bdocuments?\b/i, "document (say CV, Letter or Proof)"],
   [/\bprofile\b/i, "profile (say Pitch)"],

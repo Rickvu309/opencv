@@ -8,6 +8,7 @@ import {
   queryByAttr,
   installPaperTestLifecycle,
   renderPaper,
+  coachFloatButton,
   openDoc,
   openCoach,
   messageCoach,
@@ -330,7 +331,7 @@ describe("Paper canvas editors", () => {
     fireEvent.keyDown(name, { key: "Tab" })
     expect(headline).toHaveFocus()
 
-    expect(screen.getByRole("button", { name: "Coach" })).toBeInTheDocument()
+    expect(coachFloatButton()).toBeInTheDocument()
     expect(queryByAttr(document, "data-coach-float-resize")).toBeNull()
   })
 })

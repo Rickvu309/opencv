@@ -20,7 +20,9 @@ function savedSummary() {
 
 async function openCv() {
   await expectPaperDrive()
-  fireEvent.click(await screen.findByText("PM track CV"))
+  fireEvent.click(
+    within(await screen.findByRole("table")).getByText("PM track CV")
+  )
   const editor = await screen.findByRole("region", {
     name: "Editing PM track CV",
   })

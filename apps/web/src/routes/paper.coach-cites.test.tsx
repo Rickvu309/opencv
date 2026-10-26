@@ -9,6 +9,7 @@ import {
   queryByAttr,
   installPaperTestLifecycle,
   renderPaper,
+  coachFloatButton,
   openDoc,
   openCoach,
   messageCoach,
@@ -215,7 +216,7 @@ describe("Paper Coach cites", () => {
     await expectPaperDrive()
     await openDoc("PM track CV")
 
-    const pill = screen.getByRole("button", { name: "Coach" })
+    const pill = coachFloatButton()
     pill.focus()
     fireEvent.click(pill)
     const dialog = await screen.findByRole("dialog", { name: "Coach" })
@@ -225,7 +226,7 @@ describe("Paper Coach cites", () => {
       screen.queryByRole("dialog", { name: "Coach" })
     ).not.toBeInTheDocument()
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Coach" })).toHaveFocus()
+      expect(coachFloatButton()).toHaveFocus()
     })
   })
 
@@ -271,7 +272,7 @@ describe("Paper Coach cites", () => {
       screen.queryByRole("dialog", { name: "Coach" })
     ).not.toBeInTheDocument()
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Coach" })).toHaveFocus()
+      expect(coachFloatButton()).toHaveFocus()
     })
   })
 })

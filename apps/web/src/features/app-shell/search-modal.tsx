@@ -26,7 +26,7 @@ const ACTIONS: {
   id: string
   label: string
   icon: typeof SquarePen
-  run: "thread" | Exclude<SurfaceId, "home" | "settings">
+  run: "thread" | "paper" | "apply" | "pitch"
 }[] = [
   { id: "a1", label: "Start a new Thread", icon: SquarePen, run: "thread" },
   { id: "a2", label: "Open Paper", icon: FileText, run: "paper" },

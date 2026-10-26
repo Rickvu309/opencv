@@ -32,6 +32,13 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
+async function openStoredThread(title: RegExp) {
+  fireEvent.click(screen.getByRole("button", { name: "Search" }))
+  const dialog = await screen.findByRole("dialog", { name: "Search" })
+  fireEvent.click(await within(dialog).findByRole("button", { name: title }))
+  fireEvent.click(within(dialog).getByRole("button", { name: "Open Thread" }))
+}
+
 describe("Home Thread mode and History", { timeout: 15_000 }, () => {
   it("streams a reply progressively and drops working status at first text", async () => {
     const stream = scriptCoachStream({
@@ -116,11 +123,7 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
 
     renderApp()
     await expectHomeIdle()
-    fireEvent.click(
-      await screen.findByRole("button", {
-        name: "Move the intern card to Prep",
-      })
-    )
+    await openStoredThread(/Move the intern card to Prep/)
     expect(
       await screen.findByRole("button", {
         name: stepButton("Moved 'Backend Intern' to Prep"),
@@ -393,9 +396,7 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
   it("enables Regenerate only on the latest Coach message in a restored Thread", async () => {
     renderApp()
     await expectHomeIdle()
-    fireEvent.click(
-      await screen.findByRole("button", { name: FIXTURE_THREADS[0]!.title })
-    )
+    await openStoredThread(new RegExp(FIXTURE_THREADS[0]!.title))
     await expectThreadText(FIXTURE_THREADS[0]!.messages[0]!.text)
 
     const regenerates = screen.getAllByRole("button", { name: "Regenerate" })

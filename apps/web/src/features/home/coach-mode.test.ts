@@ -7,7 +7,7 @@ import {
   within,
 } from "@testing-library/react"
 
-import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { HOME_PATH, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { coachModeHelper, coachModeLabel } from "@/features/home/coach-mode.ts"
 import { renderApp } from "@/test/render-app.tsx"
 import { getMockCoachMode } from "@/test/profile-api-mock.ts"
@@ -45,7 +45,7 @@ describe("coach mode copy", () => {
 
 describe("Home dock mode control", () => {
   it("shows Free, Light, Power in order as one radiogroup in the dock", async () => {
-    renderApp(SURFACE_PATHS.home)
+    renderApp(HOME_PATH)
 
     const group = await screen.findByRole("radiogroup", { name: "Coach mode" })
     expect(
@@ -58,7 +58,7 @@ describe("Home dock mode control", () => {
   })
 
   it("selects Free, Light, and Power and stores Power as max", async () => {
-    renderApp(SURFACE_PATHS.home)
+    renderApp(HOME_PATH)
 
     await chooseMode("Light")
     await waitFor(() => {
@@ -80,7 +80,7 @@ describe("Home dock mode control", () => {
   })
 
   it("moves the mode with the arrow keys", async () => {
-    renderApp(SURFACE_PATHS.home)
+    renderApp(HOME_PATH)
 
     const group = await screen.findByRole("radiogroup", { name: "Coach mode" })
     const free = within(group).getByRole("radio", { name: "Free" })
@@ -98,14 +98,14 @@ describe("Home dock mode control", () => {
   })
 
   it("keeps the chosen mode after remount, on the active Thread, and on the next send", async () => {
-    const first = renderApp(SURFACE_PATHS.home)
+    const first = renderApp(HOME_PATH)
     await chooseMode("Light")
     await waitFor(() => {
       expect(getMockCoachMode()).toBe("light")
     })
     first.unmount()
 
-    renderApp(SURFACE_PATHS.home)
+    renderApp(HOME_PATH)
     await waitFor(() => {
       expectChecked(
         screen.getByRole("radiogroup", { name: "Coach mode" }),

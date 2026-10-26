@@ -12,14 +12,24 @@ import { ownedCvName } from "@/features/paper/paper-data.ts"
 import { TEST_SESSION_USER } from "@/test/auth-client-mock.ts"
 import { getMockPaperDocs } from "@/test/paper-api-mock.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
+import { goHome } from "@/test/go-home.ts"
 import { renderApp } from "@/test/render-app.tsx"
+
+export function coachFloatButton() {
+  const pill = document.querySelector("[data-coach-float-pill]")
+  if (!(pill instanceof HTMLElement)) {
+    throw new Error("Coach float is missing")
+  }
+  return pill
+}
 
 export function renderPaper() {
   return renderApp(SURFACE_PATHS.paper)
 }
 
 export async function openDoc(name: string) {
-  fireEvent.click(await screen.findByText(name))
+  const table = await screen.findByRole("table")
+  fireEvent.click(within(table).getByText(name))
   const editor = await screen.findByRole("region", { name: `Editing ${name}` })
   expect(editor).toBeInTheDocument()
   return editor
@@ -70,7 +80,7 @@ export function sampleSkillItems() {
 }
 
 export async function goHomeThenPaper() {
-  fireEvent.click(screen.getByRole("link", { name: "Home" }))
+  await goHome()
   expect(
     await screen.findByRole("heading", {
       level: 1,
@@ -86,7 +96,7 @@ export function coachDialog() {
 }
 
 export async function openCoach() {
-  fireEvent.click(screen.getByRole("button", { name: "Coach" }))
+  fireEvent.click(coachFloatButton())
   const dialog = await screen.findByRole("dialog", { name: "Coach" })
   await within(dialog).findByRole("textbox", { name: "Message Coach" })
   return dialog

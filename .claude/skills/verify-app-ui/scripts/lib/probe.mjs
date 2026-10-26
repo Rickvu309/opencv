@@ -271,11 +271,9 @@ function probe() {
   const navLinks = [
     ...document.querySelectorAll("nav[aria-label=Surfaces] a, aside a"),
   ]
-  const searchItem =
-    navLinks.find((a) => /^search$/i.test(label(a))) ??
-    [...document.querySelectorAll("aside button")].find((b) =>
-      /^search$/i.test(label(b))
-    )
+  const searchItem = [...document.querySelectorAll("button")].find((b) =>
+    /^search$/i.test(label(b))
+  )
   out.searchHasKbd = Boolean(
     searchItem && searchItem.querySelector("kbd, [data-slot=kbd]")
   )

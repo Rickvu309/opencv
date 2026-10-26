@@ -175,11 +175,11 @@ describe("pricing page", () => {
 })
 
 describe("index route guard", () => {
-  it("redirects a signed-in visitor from / to /app", async () => {
+  it("redirects a signed-in visitor from / to the start page", async () => {
     const { router } = renderApp("/")
 
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe("/app")
+      expect(router.state.location.pathname).toBe("/app/apply")
     })
     expect(
       screen.queryByRole("heading", { level: 1, name: HEADLINE })

@@ -12,6 +12,7 @@ import {
   renderPaper,
   openDoc,
   coachDialog,
+  coachFloatButton,
   openCoach,
   messageCoach,
   selectNodeContents,
@@ -76,7 +77,7 @@ describe("Paper Coach float", () => {
     await expectPaperDrive()
     await openDoc("PM track CV")
 
-    expect(screen.getByRole("button", { name: "Coach" })).toBeInTheDocument()
+    expect(coachFloatButton()).toBeInTheDocument()
     expect(localStorage.getItem("opencv:paper:coach-float")).toBe("closed")
 
     const dialog = await openCoach()
@@ -93,13 +94,13 @@ describe("Paper Coach float", () => {
       screen.queryByRole("dialog", { name: "Coach" })
     ).not.toBeInTheDocument()
     expect(localStorage.getItem("opencv:paper:coach-float")).toBe("closed")
-    expect(screen.getByRole("button", { name: "Coach" })).toBeInTheDocument()
+    expect(coachFloatButton()).toBeInTheDocument()
 
     cleanup()
     renderPaper()
     await expectPaperDrive()
     await openDoc("PM track CV")
-    expect(screen.getByRole("button", { name: "Coach" })).toBeInTheDocument()
+    expect(coachFloatButton()).toBeInTheDocument()
     expect(
       screen.queryByRole("dialog", { name: "Coach" })
     ).not.toBeInTheDocument()
@@ -109,7 +110,7 @@ describe("Paper Coach float", () => {
     renderPaper()
     await expectPaperDrive()
     await openDoc("PM track CV")
-    expect(screen.getByRole("button", { name: "Coach" })).toBeInTheDocument()
+    expect(coachFloatButton()).toBeInTheDocument()
     expect(
       screen.queryByRole("dialog", { name: "Coach" })
     ).not.toBeInTheDocument()

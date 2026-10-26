@@ -18,8 +18,7 @@ describe("App shell sidebar", () => {
     renderApp()
     await expectHomeIdle()
 
-    const nav = screen.getByRole("navigation", { name: "Surfaces" })
-    const search = within(nav).getByRole("button", { name: "Search" })
+    const search = screen.getByRole("button", { name: "Search" })
     expect(within(search).getByText(/^(⌘K|Ctrl K)$/)).toBeInTheDocument()
 
     fireEvent.click(search)
@@ -60,7 +59,7 @@ describe("App shell sidebar", () => {
     renderApp()
     await expectHomeIdle()
 
-    const nav = screen.getByRole("navigation", { name: "Surfaces" })
+    const nav = screen.getByRole("navigation", { name: "Main" })
     const apply = within(nav).getByRole("link", { name: "Apply" })
     expect(apply).toHaveTextContent(/^Apply$/)
     expect(apply.querySelector("[aria-hidden]:not(svg)")).toBeNull()

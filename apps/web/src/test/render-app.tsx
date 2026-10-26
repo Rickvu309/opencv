@@ -10,11 +10,13 @@ import { applyApiFetch } from "@/test/apply-api-mock.ts"
 import { pathOf } from "@/test/mock-http.ts"
 import { paperApiFetch } from "@/test/paper-api-mock.ts"
 import { profileApiFetch } from "@/test/profile-api-mock.ts"
+import { shellApiFetch } from "@/test/shell-api-mock.ts"
 import { threadApiFetch } from "@/test/threads-api-mock.ts"
+import { bindTestRouter } from "@/test/go-home.ts"
 import { vi } from "vitest"
 
 export function renderApp(
-  initialEntry = "/",
+  initialEntry = "/app/home",
   onRequest?: (input: RequestInfo | URL) => void
 ) {
   vi.stubGlobal(
@@ -30,6 +32,8 @@ export function renderApp(
       if (paper) return paper
       const profile = await profileApiFetch(input, init)
       if (profile) return profile
+      const shell = await shellApiFetch(input, init)
+      if (shell) return shell
       return threadApiFetch(input, init)
     }
   )
@@ -37,6 +41,7 @@ export function renderApp(
   const router = createAppRouter({
     history: createMemoryHistory({ initialEntries: [initialEntry] }),
   })
+  bindTestRouter(router)
 
   return {
     router,

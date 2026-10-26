@@ -8,6 +8,7 @@ import {
 } from "@testing-library/react"
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { readFirstCafeState } from "@/features/home/first-cafe-checklist.ts"
+import { goHome } from "@/test/go-home.ts"
 import { renderApp } from "@/test/render-app.tsx"
 import {
   expectHomeStarted,
@@ -73,7 +74,7 @@ describe("Home first-café checklist", () => {
     fireEvent.click(screen.getByRole("button", { name: "Hide this" }))
     fireEvent.click(screen.getByRole("link", { name: "Paper" }))
     await screen.findByRole("region", { name: "Paper" })
-    fireEvent.click(screen.getByRole("link", { name: "Home" }))
+    await goHome()
     await expectHomeStarted()
 
     expect(
@@ -95,7 +96,7 @@ describe("Home first-café checklist", () => {
       expect(router.state.location.search).toMatchObject({ open: "sample" })
     })
 
-    fireEvent.click(screen.getByRole("link", { name: "Home" }))
+    await goHome()
     await expectHomeStarted()
 
     const list = firstCafeList()
@@ -136,7 +137,7 @@ describe("Home first-café checklist", () => {
       await screen.findByRole("heading", { level: 1, name: "Apply" })
     ).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole("link", { name: "Home" }))
+    await goHome()
     await expectHomeStarted()
 
     const list = firstCafeList()
@@ -192,7 +193,7 @@ describe("Home first-café checklist", () => {
       screen.queryByRole("region", { name: "Paper" })
     ).not.toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole("link", { name: "Home" }))
+    await goHome()
     await expectHomeStarted()
 
     const list = firstCafeList()
@@ -217,7 +218,7 @@ describe("Home first-café checklist", () => {
       expect(router.state.location.pathname).toBe(SURFACE_PATHS.pitch)
     })
 
-    fireEvent.click(screen.getByRole("link", { name: "Home" }))
+    await goHome()
     await expectHomeStarted()
 
     const list = firstCafeList()
@@ -305,7 +306,7 @@ describe("Home first-café checklist", () => {
       ).getByRole("combobox", { name: "Track" })
     ).toHaveTextContent("Follow-up")
 
-    fireEvent.click(screen.getByRole("link", { name: "Home" }))
+    await goHome()
     await expectHomeStarted()
     expect(
       within(firstCafeList()).getByRole("link", {
@@ -342,7 +343,7 @@ describe("Home first-café checklist", () => {
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(SURFACE_PATHS.paper)
     })
-    fireEvent.click(screen.getByRole("link", { name: "Home" }))
+    await goHome()
     await expectHomeStarted()
 
     fireEvent.click(
@@ -351,7 +352,7 @@ describe("Home first-café checklist", () => {
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(SURFACE_PATHS.pitch)
     })
-    fireEvent.click(screen.getByRole("link", { name: "Home" }))
+    await goHome()
     await expectHomeStarted()
 
     fireEvent.click(
@@ -362,7 +363,7 @@ describe("Home first-café checklist", () => {
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(SURFACE_PATHS.apply)
     })
-    fireEvent.click(screen.getByRole("link", { name: "Home" }))
+    await goHome()
     await expectHomeStarted()
 
     const list = firstCafeList()
@@ -399,7 +400,7 @@ describe("Home first-café checklist", () => {
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(SURFACE_PATHS.paper)
     })
-    fireEvent.click(screen.getByRole("link", { name: "Home" }))
+    await goHome()
     await expectHomeStarted()
 
     fireEvent.click(
@@ -409,7 +410,7 @@ describe("Home first-café checklist", () => {
       expect(router.state.location.pathname).toBe(SURFACE_PATHS.pitch)
     })
     expect(await screen.findByText("Pitch. Coming soon.")).toBeInTheDocument()
-    fireEvent.click(screen.getByRole("link", { name: "Home" }))
+    await goHome()
     await expectHomeStarted()
     expect(
       within(firstCafeList()).queryByRole("link", {
@@ -437,7 +438,7 @@ describe("Home first-café checklist", () => {
       name: "Opportunity detail",
     })
     fireEvent.click(within(panel).getByRole("button", { name: "Move to Prep" }))
-    fireEvent.click(screen.getByRole("link", { name: "Home" }))
+    await goHome()
     await expectHomeStarted()
 
     expect(
