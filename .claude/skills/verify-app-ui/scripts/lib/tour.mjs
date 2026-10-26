@@ -142,26 +142,35 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
       method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),
     })
-    const cv = await post('/api/commands/paper.createDoc', {
+    const createdRes = await post('/api/commands/paper.create', {
       kind: 'cv',
+      templateId: 'simple',
       name: ${JSON.stringify(CV_NAME)},
-      content: {
-        templateId: 'internship',
-        name: 'Live Check',
-        headline: 'Product intern',
-        contact: { email: 'tour@verify.local', phone: '', location: '' },
-        summary: 'A CV created for this check.',
-        experience: [{ role: 'Intern', company: 'Lab', period: '2025', bullets: ['Shipped a small study.'] }],
-        education: [],
-        skills: [],
-      },
     })
+    const createdBody = await createdRes.json()
+    const paper = createdBody && createdBody.data
+    const replaced = paper && paper.id
+      ? await post('/api/commands/paper.replace', {
+          docId: paper.id,
+          contentVersion: paper.contentVersion,
+          document: {
+            templateId: 'internship',
+            name: 'Live Check',
+            headline: 'Product intern',
+            contact: { email: 'tour@verify.local', phone: '', location: '' },
+            summary: 'A CV created for this check.',
+            experience: [{ role: 'Intern', company: 'Lab', period: '2025', bullets: ['Shipped a small study.'] }],
+            education: [],
+            skills: [],
+          },
+        })
+      : { ok: false }
     const card = await post('/api/commands/job.create', {
       title: 'Associate PM intern',
       company: 'Local startup',
       stage: 'interview',
     })
-    return { cv: cv.ok, card: card.ok }
+    return { cv: Boolean(createdRes.ok && replaced.ok), card: card.ok }
   })()`)
   must(
     prepared.cv === true && prepared.card === true,
@@ -214,23 +223,23 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
     }
     if (key === "paper") {
       must(
-        await clickByText(a, "table tr", CV_NAME),
-        "the created CV row was not found"
+        await clickByText(a, "button", CV_NAME),
+        "the created CV card was not found"
       )
       must(
-        await a.waitFor("document.querySelector('h1')", 10000),
+        await a.waitFor("document.querySelector('[data-paper-editor]')", 10000),
         "the CV did not open"
       )
       await a.sleep(1500)
       d.cv = await snap(a)
       await shot(a, "desktop-paper-cv")
       must(
-        await clickByText(a, "[data-coach-float-pill]", "Coach"),
+        await clickByText(a, "button", "Coach"),
         "the Coach button was not found"
       )
       must(
         await a.waitFor("document.querySelector('textarea')", 6000),
-        "the Coach float did not open"
+        "the Coach panel did not open"
       )
       await a.sleep(1200)
       d.cvCoach = await snap(a)
@@ -275,7 +284,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
       : null
   )
   await b.goto(`${webUrl}/app/paper`)
-  await b.waitFor("document.body.innerText.includes('Create a CV')", 10000)
+  await b.waitFor("document.body.innerText.includes('Start a document')", 10000)
   await b.sleep(800)
   d.paperEmpty = await snap(b)
   b.setIntercept(null)

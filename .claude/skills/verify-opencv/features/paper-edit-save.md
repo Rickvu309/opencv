@@ -1,34 +1,38 @@
 # Paper edit and save
 
-Paper (`/app/paper`) lists documents. A new account has none. Creating a CV opens an editor that saves on change. The edit survives a reload.
+Paper (`/app/paper`) is a library. A new account sees Start a document. Creating a CV from the Simple template opens an editor at `/app/paper/{id}` that saves on change. The edit survives a reload of that URL.
 
 ## Sub-features
 
-- `paper-create` adds a CV named `Untitled CV`.
-- `paper-edit` sets the name field.
-- `paper-save` reaches the `Saved` state with no extra click.
-- `paper-persist` shows the edit after a reload and in `GET /api/paper`.
+- `paper-library` shows Start a document on an empty account.
+- `paper-create` chooses CV, then Simple, then Use template, and lands on `/app/paper/{id}`.
+- `paper-edit` sets the summary field to `Edited for verify.`
+- `paper-save` shows Edited just now with no extra click.
+- `paper-persist` keeps that sentence after a reload and in `GET /api/paper/{id}`.
+- `paper-letter` starts a blank letter for a job and keeps a typed line after a reload.
 
 ## How to get to it (user POV)
 
-- Choose `Paper` in the sidebar.
-- Choose `New`, then `CV`.
+- Choose `Paper` in the sidebar, or open `/app/paper`.
+- Choose `CV`, then `Simple`, then `Use template`.
 
 ## Driving it with agent-browser
 
-Preconditions: signed in on a new account (see `auth.md`). The documents table is empty.
+Preconditions: signed in on a new account (see `auth.md`). The library shows Start a document.
 
-- **Create.** `agent-browser open "$WEB_URL/app/paper"`. `agent-browser find role button click --name "New"`, then `agent-browser find role menuitem click --name "CV"`. A region named `Editing Untitled CV` appears. The URL stays `/app/paper`.
-- **Edit.** `agent-browser find role textbox fill "Ada Verify" --name "Your name"`.
-- **Wait for the save.** The button named `Saved` is disabled again after the edit. Wait 3 s and re-check with `agent-browser snapshot -i`.
-- **Reload.** `agent-browser reload`. The page returns to the documents table with a row `Untitled CV`.
-- **Read back.** `agent-browser eval "fetch('$API_URL/api/paper',{credentials:'include'}).then(r=>r.text())"` contains `Ada Verify`.
-- **Reopen.** `agent-browser find text "Untitled CV" click --exact`. The name field reads `Ada Verify`.
-- **Proof.** `agent-browser screenshot "$EVIDENCE_DIR/paper-edit-saved.png"` of the reopened editor, plus the api read above.
+- **Library.** `agent-browser open "$WEB_URL/app/paper"`. The heading `Start a document` is visible. Save `agent-browser screenshot "$EVIDENCE_DIR/paper-library-empty.png"`.
+- **Create.** `agent-browser find role button click --name "CV"`. `agent-browser find role button click --name "Simple"`. `agent-browser find role button click --name "Use template"`. Wait until the URL matches `/app/paper/` plus an id. The region name starts with `Editing`.
+- **Edit.** `agent-browser find role textbox fill "Edited for verify." --name "Summary"`.
+- **Wait for the save.** Wait until the text `Edited just now` is visible. That is the save. There is no Save button.
+- **Reload.** `agent-browser reload`. The summary field still reads `Edited for verify.`
+- **Read back.** `agent-browser eval "fetch('$API_URL/api/paper/' + location.pathname.split('/').pop(),{credentials:'include'}).then(r=>r.text())"` contains `Edited for verify.`
+- **Proof.** `agent-browser screenshot "$EVIDENCE_DIR/paper-edit-saved.png"` of the reloaded editor, plus the api read above.
+- **Letter.** Create a job with `POST /api/commands/job.create` and body `{"title":"Associate PM","company":"Northwind"}`. Open `/app/paper`, choose `Cover letter`, choose the button `Associate PM, Northwind`, choose `Start blank`. The URL is `/app/paper/{id}`. Fill the letter textbox with `One line for verify.` Wait 2 s. Reload. The line is still there. Save `agent-browser screenshot "$EVIDENCE_DIR/paper-letter-saved.png"`.
 
 ## Gotchas
 
-- The editor is not URL-addressed. A reload goes back to the table, so reopen the row to see the text.
-- The name field's accessible name stays `Your name` when it is empty. After the fill, the value is `Ada Verify`.
-- Table rows are named by their cell text in `snapshot -i`. `find role row` may not match them. Click the row by visible text with `find text "Untitled CV" click --exact`.
-- Filter, the file chooser and Share are not part of this recipe and were not driven.
+- The editor is URL-addressed. Reload the doc URL. Do not expect a documents table.
+- The name field on the page is `Name`. Do not look for `Your name`.
+- The summary field's accessible name is `Summary`.
+- Fit to one page is not part of this recipe. The scripted Coach may not return a `paper.replace` tool result. Report that step as not driven when a later pass tries it.
+- The card menu, search with no match, Copy link, and the suggestion card are not part of this recipe.

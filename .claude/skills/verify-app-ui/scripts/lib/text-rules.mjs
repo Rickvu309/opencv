@@ -35,15 +35,35 @@ const EMPLOYMENT_SENSE =
   /\b(part-time|full-time|first|dream|summer)\s+jobs?\b/gi
 const GOAL_CHIP = /^an?\s/i
 const CONNECTOR = /^(connect email(, optional)?|.+, profile and settings)$/i
-// Check 29 requires the Paper empty sentence to start "No documents yet", so check 01 cannot flag it.
+// Check 29 requires the Paper empty sentence "Start a document", so check 01 cannot flag it.
+// The old sentence stays exempt so a leftover string is not a new noun failure.
 const PAPER_EMPTY =
   /^No documents yet\. Create a CV, Letter, or Proof to start\.$/
+const PAPER_LINES = new Set(
+  [
+    copy.paperEmptyTitle,
+    copy.paperEmptyBody,
+    copy.paperNoResults,
+    copy.paperOnePage,
+    "Document name",
+    "Loading documents",
+    "Could not load documents. Refresh the page.",
+    "This link does not open a document.",
+    "This document changed. Reload it and try again.",
+    "Document changed",
+  ].filter((line) => typeof line === "string" && line.length > 0)
+)
 export function nounViolations(labels) {
   const out = []
   for (const label of labels) {
     const trimmed = label.trim()
-    if (CONNECTOR.test(trimmed) || PAPER_EMPTY.test(trimmed)) continue
-    if (LEGACY_NOUNS.has(trimmed)) continue
+    if (
+      CONNECTOR.test(trimmed) ||
+      PAPER_EMPTY.test(trimmed) ||
+      PAPER_LINES.has(trimmed) ||
+      LEGACY_NOUNS.has(trimmed)
+    )
+      continue
     const chip = GOAL_CHIP.test(label) && label.split(/\s+/).length <= 6
     const text = chip ? label.replace(EMPLOYMENT_SENSE, "") : label
     for (const [re, why] of BANNED_NOUNS) {

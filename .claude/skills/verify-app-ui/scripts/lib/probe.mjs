@@ -414,6 +414,13 @@ function probe() {
     }
     out.cvRect = rect(cv)
   }
+  const editor = document.querySelector("[data-paper-editor]")
+  if (editor && shown(editor)) out.editorRect = rect(editor)
+  const aside = document.querySelector("aside")
+  if (aside && shown(aside)) out.sidebarRect = rect(aside)
+  out.coachFloat = Boolean(
+    document.querySelector("[data-coach-float], [data-coach-float-pill]")
+  )
   if (composer) {
     let panel = null
     for (

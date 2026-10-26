@@ -201,5 +201,9 @@
   "settings.photoRejected": "Choose an image under 2 MB.",
   "settings.timeZoneRejected": "Use a time zone like Asia/Ho_Chi_Minh.",
   "settings.exportStarted": "Export started",
-  "settings.section": "Section"
+  "settings.section": "Section",
+  "paperEmptyTitle": "Start a document",
+  "paperEmptyBody": "Pick a page, or bring a file you already have.",
+  "paperNoResults": "Try another word, or clear the search.",
+  "paperOnePage": "Most hiring teams read one page. Coach can tighten it for you."
 }

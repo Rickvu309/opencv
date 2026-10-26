@@ -48,18 +48,20 @@ export function runChecks(d) {
     )
   )
 
-  const c = d.cvCoach
-  const under = c.underPanel ?? []
-  const widest = c.cvRect && c.panelRect ? c.cvRect.w >= c.panelRect.w : false
+  const editor = d.cv.editorRect
+  const side = d.cv.sidebarRect
+  const widest = Boolean(editor) && (!side || editor.w >= side.w)
+  const noFloat = !d.cv.coachFloat
+  const panelClosed = !d.cv.panelRect
   r.push(
     result(
       "15",
       "cv-widest-coach-beside",
-      Boolean(c.panelRect) && under.length === 0 && widest,
-      c.panelRect
-        ? `Coach panel ${c.panelPosition} ${c.panelRect.w}x${c.panelRect.h} covers ${under.length} text blocks (${list(under, 2)}); CV ${c.cvRect?.w}px wide`
-        : "no Coach panel or side pane found",
-      "with the Coach open, the CV is the widest region and the Coach (a floating panel or an in-flow side pane) covers none of its text"
+      widest && noFloat && panelClosed,
+      editor
+        ? `editor ${editor.w}px, sidebar ${side?.w ?? "none"}px, float ${Boolean(d.cv.coachFloat)}, panel ${d.cv.panelRect ? "open" : "closed"}`
+        : "no editor region",
+      "with the Coach panel closed, the CV editor is the widest region and no second Coach float covers the sheet (an open panel is #377)"
     )
   )
 
@@ -298,7 +300,7 @@ export function runChecks(d) {
     d.paperLoading.text
   )?.[0]
   const loadingOwn = Boolean(loadingCopy) || d.paperLoading.skeletons > 0
-  const emptyCopy = /No documents yet[^.]*\./.exec(d.paperEmpty.text)?.[0]
+  const emptyCopy = /Start a document/.exec(d.paperEmpty.text)?.[0]
   r.push(
     result(
       "29",

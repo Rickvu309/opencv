@@ -96,14 +96,18 @@ export function contentChecks(d) {
     )
   )
 
-  const yourName = /\bYour name\b/.test(d.cv.text)
+  const chrome = d.cv.chrome ?? []
+  const placeholderName = chrome.includes("Name")
+  const yourName =
+    chrome.includes("Your name") || /\bYour name\b/.test(d.cv.text)
+  const title = d.cv.h1[0] ?? ""
   r.push(
     result(
       "06",
       "starter-cv-name",
-      d.cv.h1.length > 0 && !yourName,
-      `CV title: "${d.cv.h1[0] ?? ""}"; Your name in the CV text: ${yourName}`,
-      "the open starter CV does not render Your name as the person's name"
+      placeholderName && !yourName && title !== "Your name",
+      `name placeholder Name: ${placeholderName}; title: "${title}"; Your name in the CV text: ${yourName}`,
+      "a new CV's name field placeholder is Name, and the title is not Your name"
     )
   )
 
@@ -172,14 +176,14 @@ export function contentChecks(d) {
 
   const pl = d.paperLoading.text
   const loading = /Loading documents|Loading…|Loading\.\.\./.test(pl)
-  const emptyCopy = /No documents yet/i.test(pl)
+  const emptyCopy = /Start a document/i.test(pl)
   r.push(
     result(
       "11",
       "loading-not-empty",
       loading && !emptyCopy,
       `while GET /api/paper is held: loading text ${loading}, empty copy ${emptyCopy}`,
-      "a loading list says it is loading (Loading documents, Loading...) and never shows the empty copy"
+      "a loading list says it is loading (Loading documents, Loading...) and never shows Start a document"
     )
   )
 

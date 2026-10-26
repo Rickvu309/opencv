@@ -45,10 +45,14 @@ test("nouns: the Paper empty sentence is exempt and a near copy is not", () => {
   const found = nounViolations([
     "No documents yet. Create a CV, Letter, or Proof to start.",
     "No documents yet. Create a document to start.",
+    "Start a document",
+    "Pick a page, or bring a file you already have.",
+    "Document name",
+    "New document",
   ])
   assert.deepEqual(
     found.map((f) => f.label),
-    ["No documents yet. Create a document to start."]
+    ["No documents yet. Create a document to start.", "New document"]
   )
 })
 
