@@ -206,7 +206,13 @@ export async function runCoachTurn(options: {
       finishReason: usage.finishReason ?? status,
       latencyMs: workedMs,
     })
-    await maybeTitle(options.userId, options.chatId, textFromParts(parts), status)
+    await maybeTitle(
+      options.userId,
+      options.chatId,
+      textFromParts(parts),
+      status,
+      saved.id
+    )
     if (!isDisconnected(options.stream, signal)) {
       const message = {
         id: saved.id,
@@ -257,14 +263,17 @@ async function maybeTitle(
   userId: string,
   chatId: string,
   coachText: string,
-  status: string
+  status: string,
+  currentMessageId: string
 ) {
   const chat = await getChat(userId, chatId)
-  const messages = chat.messages.map((message) => ({
-    role: message.role === "person" ? ("user" as const) : ("coach" as const),
-    text: message.text,
-    status: message.status ?? undefined,
-  }))
+  const messages = chat.messages
+    .filter((message) => message.id !== currentMessageId)
+    .map((message) => ({
+      role: message.role === "person" ? ("user" as const) : ("coach" as const),
+      text: message.text,
+      status: message.status ?? undefined,
+    }))
   const decision = shouldAutoTitleThread({
     currentTitle: chat.title,
     messages,

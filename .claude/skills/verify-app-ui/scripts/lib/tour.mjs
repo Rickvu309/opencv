@@ -1,8 +1,5 @@
-// Drives one signed-in tour of the app and returns the raw measurements. It decides nothing.
-// Signs up a throwaway account through the api, then creates one CV and one Apply card
-// (sign-up no longer seeds a workspace). Visits Home, a Thread, the Search palette, Paper
-// (list and the created CV with the Coach float), Apply and the Pitch placeholder.
-// Scenario pages make an api call fail or wait, and the last one deletes the Apply card.
+// Drives one signed-in tour and returns raw measurements. It decides nothing.
+// Sign-up no longer seeds a workspace, so the tour creates one CV and one Apply card.
 // A step that does not happen throws (exit 2); it is never counted as a pass.
 import { colorsSource } from "./probe-colors.mjs"
 import { probeSource } from "./probe.mjs"
