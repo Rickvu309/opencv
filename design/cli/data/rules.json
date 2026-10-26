@@ -1,0 +1,91 @@
+{
+  "brand": {
+    "title": "Brand",
+    "rules": [
+      "Never write \"OpenCV\". The brand is the mark plus lowercase \"opencv\", inline: \"Log in to [mark] opencv\".",
+      "The mark is a square frame with a quarter disc. Inline it at about 0.92x the font size, same color as the text.",
+      "Do not redraw or recolor the logo. Copy the OC Mark master or the inline mark from an existing heading.",
+      "Teasers and banners sell the concept: logo only, very little type, shader shaders/logo-reveal.glsl. No product screenshots in teasers."
+    ]
+  },
+  "color": {
+    "title": "Color",
+    "rules": [
+      "The app is grayscale. Use ds-* tokens, never raw hex when a token exists.",
+      "Color carries meaning only: stage icons (ds-stage-*), location pin blue (ds-info), calendar indigo (ds-label-indigo), success green, danger red.",
+      "No warm tints anywhere: no peach, beige or orange glows. ds-accent orange is reserved and is not used for dots or badges.",
+      "Unread and needs-you markers are a dark dot (ds-text-primary) or a grey icon, never an orange or red dot.",
+      "Glow is a cool 3x3 mesh gradient (blue, lilac, ice). Use `opencv glow <name>`. Always pass explicit mesh points or the fill is dropped.",
+      "Marketing pages use l-* tokens. Light, cool backgrounds; dark only for teasers."
+    ]
+  },
+  "buttons": {
+    "title": "Buttons",
+    "rules": [
+      "Primary is the glow button (mesh `button` palette, inner white stroke, soft blue shadow, #1B1B1F label). Never a black primary.",
+      "One primary per view. Secondary for the rest, ghost in toolbars, danger only to delete.",
+      "Labels start with a verb and repeat the consequence: \"Delete job\", not \"Confirm\".",
+      "On a glow card (Pro plan), the button is white.",
+      "Use the Button/<Variant>/<Size>/<State> masters. Sizes: SM 28, MD 32, LG 44 (pill)."
+    ]
+  },
+  "copy": {
+    "title": "Writing",
+    "rules": [
+      "Headings 2 to 4 words. One short helper line. Cut filler, reasons and \"we'll\".",
+      "No em dash and no middle dot in UI copy. Use a comma, a period or \"to\" (\"Jun 2025 to now\").",
+      "On states read \"Enabled\", off states read \"Disabled\" (or \"Off\" for a plain toggle). Never \"Connected\".",
+      "Job title first, company second, everywhere.",
+      "Delete dialogs: title names the thing (\"Delete Associate PM intern?\"), body says only \"This can't be undone.\"",
+      "Errors say how to fix: \"Use a full email, like name@example.com\". No \"Oops\", no exclamation marks.",
+      "Stories and testimonials never name a company. Say \"the recruiter\" or \"the hiring team\".",
+      "Sentence case for every label and button."
+    ]
+  },
+  "layout": {
+    "title": "Layout",
+    "rules": [
+      "Every app screen is an instance of OC App shell (cxAxL). Put content inside its main panel GIhbq.",
+      "Headers are h52 with 20 left padding; use the Header/* masters (Page, Toolbar, List, Document, Detail, Reading, Chat).",
+      "Settings: nav 244, column 640 with 56 top padding on ds-bg-canvas, white cards r10 with 0.5 borders, rows p14x20.",
+      "Space groups first, backgrounds second, separator lines last.",
+      "Focus ring is 2px ds-focus (#6D78D5) outside the control.",
+      "Screenshots inside cards and posts keep 16:10 (height = width / 1.6) and are never cut on the sides."
+    ]
+  },
+  "apply": {
+    "title": "Apply",
+    "rules": [
+      "Stages: Saved (grey), Applied (yellow), Interview (green), Offer (indigo check), Closed (grey x). Use OC Stage masters.",
+      "Board cards show role, company, priority, location and date. No tags on cards. The stage lives in the lane.",
+      "Adding a job is manual first. A pasted link only fills the form; never promise Coach will scan it.",
+      "Property icons may carry color (pin blue, calendar indigo); company logo tiles stay dark."
+    ]
+  },
+  "coach": {
+    "title": "Coach",
+    "rules": [
+      "The composer keeps the \"Free ⌄\" model pill (leaf icon). It opens Free, Light and Max; Light and Max need Pro. Never remove it.",
+      "Coach shows its steps while working (done, active, pending). Typing stays enabled.",
+      "At the Free limit: \"You've reached today's Free limit\" / \"Resets at 7:00. Pro has unlimited Coach chats.\" Paper and Apply keep working.",
+      "No credit numbers anywhere. Usage is shown as percentages, Claude-style (current session, this week)."
+    ]
+  },
+  "plans": {
+    "title": "Plans",
+    "rules": [
+      "Two plans only: Free ($0) and Pro ($9 a month, cancel anytime).",
+      "Free: limited Coach chats, basic Coach model. Pro: unlimited Coach chats, stronger model, priority support, early access to Proof and Pitch."
+    ]
+  },
+  "process": {
+    "title": "Building on pen.dev",
+    "rules": [
+      "Start from a layout: `opencv screen <layout>` prints a scaffold snippet. Then add masters with `opencv snippet`.",
+      "Prefer refs to masters over drawing. Override text with Update(refId + '/' + textId, { content }).",
+      "After each section, Export a PNG and look at it. Check clipping, alignment and contrast before moving on.",
+      "Run the overlap check over top-level frames after every canvas change; keep 600px between parts.",
+      "Before finishing, dump the screen with Get and run `opencv lint` on it."
+    ]
+  }
+}

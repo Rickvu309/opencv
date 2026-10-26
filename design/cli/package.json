@@ -1,0 +1,39 @@
+{
+  "name": "opencv-kit",
+  "version": "2.0.0",
+  "description": "Build real opencv product screens in React: copy components and screens into your app, generate the theme, lint against the design rules. Also drives the pen.dev canvas.",
+  "type": "module",
+  "bin": {
+    "opencv": "bin/opencv.js",
+    "ocv": "bin/opencv.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "data/kit.json",
+    "data/rules.json",
+    "registry",
+    "skill",
+    "README.md"
+  ],
+  "scripts": {
+    "build:kit": "node scripts/build-kit.js",
+    "test": "node --test test/*.test.js",
+    "prepack": "node scripts/build-kit.js && node --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "opencv",
+    "design-system",
+    "react",
+    "tailwind",
+    "components",
+    "cli",
+    "agents",
+    "pen.dev"
+  ],
+  "license": "UNLICENSED",
+  "private": true
+}
