@@ -140,19 +140,17 @@ describe("job reads", () => {
         headers,
       })
     )
-    const summaries = (feed.data as { summary: string; subjectId: string }[])
-      .filter((row) => !("undoneAt" in row) || row)
-      .map((row) => row.summary)
+    const feedRows = feed.data as unknown as {
+      summary: string
+      subjectId: string
+    }[]
+    const summaries = feedRows.map((row) => row.summary)
     expect(
       summaries.some(
         (line) => line.includes("Northwind") || line.includes("added")
       )
     ).toBe(true)
-    expect(
-      (feed.data as { subjectId: string }[]).every(
-        (row) => row.subjectId === jobId
-      )
-    ).toBe(true)
+    expect(feedRows.every((row) => row.subjectId === jobId)).toBe(true)
 
     const movedRes = await app.request("/api/commands/job.move", {
       method: "POST",
