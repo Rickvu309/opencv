@@ -234,7 +234,11 @@ export async function jobApiFetch(
     path.endsWith("/api/commands/activity.undo")
   if (!jobPath) return null
 
-  if (method === "GET" && path === "/api/jobs") return jsonOk(jobs)
+  if (method === "GET" && path === "/api/jobs") {
+    // Shell favorites seed their own list. An empty apply store must not hide it.
+    if (jobs.length === 0) return null
+    return jsonOk(jobs)
+  }
 
   if (method === "GET" && path === "/api/jobs/calendar") {
     const from = urlOf(input).searchParams.get("from") ?? ""

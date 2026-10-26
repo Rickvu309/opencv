@@ -3,6 +3,7 @@ import { cleanup, fireEvent, screen, within } from "@testing-library/react"
 
 import { HOME_PATH, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { setMockJobs } from "@/test/apply-jobs-mock.ts"
+import { setMockProfile } from "@/test/profile-api-mock.ts"
 import { apiBaseUrl } from "@/lib/api-url.ts"
 import { getMockApplyCards } from "@/test/apply-api-mock.ts"
 import { sampleApplyCards } from "@/test/apply-fixtures.ts"
@@ -80,6 +81,7 @@ describe("empty api data shows empty states, never sample content", () => {
 
   it("Home shows the greeting and no sample thread", async () => {
     getMockThreads().splice(0)
+    getMockPaperDocs().splice(0)
     renderApp(HOME_PATH)
 
     expect(
@@ -144,6 +146,7 @@ describe("Pitch does not seed a persona", () => {
       },
       session: TEST_SESSION,
     })
+    setMockProfile({ name: "Scout Tester", email: "scout@example.com" })
     renderApp(SURFACE_PATHS.pitch)
 
     expect(await screen.findByText("Pitch. Coming soon.")).toBeInTheDocument()

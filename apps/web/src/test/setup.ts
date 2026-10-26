@@ -1,4 +1,5 @@
 import { configure } from "@testing-library/react"
+import { toast } from "sonner"
 import { afterEach, beforeEach, vi } from "vitest"
 
 import "@testing-library/jest-dom/vitest"
@@ -70,6 +71,7 @@ if (typeof window !== "undefined" && typeof window.matchMedia !== "function") {
 }
 
 beforeEach(() => {
+  toast.dismiss()
   resetMockSession()
   resetUnauthorizedHandler()
   resetThreadApiMock()
