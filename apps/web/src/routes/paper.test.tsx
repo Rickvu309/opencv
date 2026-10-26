@@ -57,16 +57,21 @@ describe("Paper drive", () => {
     const search = screen.getByRole("textbox", { name: "Search Paper" })
     fireEvent.change(search, { target: { value: "cover" } })
 
-    expect(screen.getByText("Cover: Associate PM intern")).toBeInTheDocument()
-    expect(screen.getByText("Cover: Product intern")).toBeInTheDocument()
-    expect(screen.queryByText("PM track CV")).not.toBeInTheDocument()
+    const filtered = screen.getByRole("table")
     expect(
-      screen.queryByText("Checkout card resize study")
+      within(filtered).getByText("Cover: Associate PM intern")
+    ).toBeInTheDocument()
+    expect(
+      within(filtered).getByText("Cover: Product intern")
+    ).toBeInTheDocument()
+    expect(within(filtered).queryByText("PM track CV")).not.toBeInTheDocument()
+    expect(
+      within(filtered).queryByText("Checkout card resize study")
     ).not.toBeInTheDocument()
 
     fireEvent.change(search, { target: { value: "zzzz-no-doc" } })
     expect(
-      screen.queryByText("Cover: Associate PM intern")
+      within(screen.getByRole("main")).queryByText("Cover: Associate PM intern")
     ).not.toBeInTheDocument()
   })
 
@@ -234,7 +239,9 @@ describe("Paper drive", () => {
     expect(
       await screen.findByRole("region", { name: "Paper" })
     ).toBeInTheDocument()
-    expect(screen.getByText("Linh's CV")).toBeInTheDocument()
+    expect(
+      within(screen.getByRole("main")).getByText("Linh's CV")
+    ).toBeInTheDocument()
     expect(screen.queryByText(STARTER_CV_NAME)).not.toBeInTheDocument()
     expect(screen.queryByText(SAMPLE_CV_LABEL)).not.toBeInTheDocument()
   })
@@ -374,7 +381,9 @@ describe("Paper drive", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /back to Paper/i }))
     await expectPaperDrive()
-    expect(screen.getByText("Untitled Letter")).toBeInTheDocument()
+    expect(
+      within(screen.getByRole("main")).getByText("Untitled Letter")
+    ).toBeInTheDocument()
 
     fireEvent.click(
       screen.getByRole("button", {
@@ -387,7 +396,9 @@ describe("Paper drive", () => {
     })
     fireEvent.change(nameInput, { target: { value: "Cover: intern" } })
     fireEvent.click(screen.getByRole("button", { name: "Save" }))
-    expect(await screen.findByText("Cover: intern")).toBeInTheDocument()
+    expect(
+      await within(screen.getByRole("main")).findByText("Cover: intern")
+    ).toBeInTheDocument()
 
     fireEvent.click(
       screen.getByRole("button", { name: "Actions for Cover: intern" })
@@ -414,7 +425,9 @@ describe("Paper drive", () => {
     expect(
       screen.queryByRole("dialog", { name: "Delete" })
     ).not.toBeInTheDocument()
-    expect(screen.getByText("Cover: intern")).toBeInTheDocument()
+    expect(
+      within(screen.getByRole("main")).getByText("Cover: intern")
+    ).toBeInTheDocument()
 
     fireEvent.click(
       screen.getByRole("button", { name: "Actions for Cover: intern" })

@@ -7,11 +7,11 @@ import {
   within,
 } from "@testing-library/react"
 
-import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
 import { HISTORY_PREVIEW_COUNT } from "@/features/home/threads.ts"
 import { FIXTURE_THREADS } from "@/test/thread-fixtures.ts"
 import { getMockThreads } from "@/test/threads-api-mock.ts"
+import { goHome } from "@/test/go-home.ts"
 import { renderApp } from "@/test/render-app.tsx"
 import {
   expectHistoryTitles,
@@ -126,7 +126,7 @@ describe("Home History", { timeout: 15_000 }, () => {
   })
 
   it("adds a sent Thread to History and restores it after leaving Home", async () => {
-    const { router } = renderApp()
+    renderApp()
     await expectHomeIdle()
 
     await sendMessage("Should I finish my CV first?")
@@ -141,20 +141,14 @@ describe("Home History", { timeout: 15_000 }, () => {
 
     fireEvent.click(screen.getByRole("link", { name: "Paper" }))
     await expectPaperDrive()
-    expect(
-      screen.getByRole("button", { name: "Finish my CV first" })
-    ).toHaveAttribute("aria-current", "true")
 
-    fireEvent.click(screen.getByRole("button", { name: "Finish my CV first" }))
-    await waitFor(() => {
-      expect(router.state.location.pathname).toBe(SURFACE_PATHS.home)
-    })
+    await goHome()
     expect(screen.getByRole("log", { name: "Thread" })).toHaveTextContent(
       "Should I finish my CV first?"
     )
   })
 
-  it("returns to idle Home from the Home nav item", async () => {
+  it("returns to idle Home from New Thread", async () => {
     renderApp()
     await expectHomeIdle()
     await expectHistoryTitles()
@@ -164,7 +158,7 @@ describe("Home History", { timeout: 15_000 }, () => {
     )
     await expectThreadText(FIXTURE_THREADS[1]!.messages[0]!.text)
 
-    fireEvent.click(screen.getByRole("link", { name: "Home" }))
+    fireEvent.click(screen.getByRole("button", { name: "New Thread" }))
     await expectHomeIdle()
   })
 

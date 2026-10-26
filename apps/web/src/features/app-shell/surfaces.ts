@@ -1,7 +1,7 @@
 export type SurfaceId = "home" | "paper" | "apply" | "pitch" | "settings"
 
 export const SURFACE_PATHS = {
-  home: "/app",
+  home: "/app/home",
   paper: "/app/paper",
   apply: "/app/apply",
   pitch: "/app/pitch",

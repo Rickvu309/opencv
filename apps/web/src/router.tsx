@@ -3,11 +3,15 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
+  isRedirect,
   lazyRouteComponent,
   redirect,
   type AnyRouter,
   type RouterHistory,
 } from "@tanstack/react-router"
+
+import { getShellProfile } from "@/features/app-shell/shell-api.ts"
+import { startPagePath } from "@/features/app-shell/start-page.ts"
 
 import { NotFoundPage } from "@/components/not-found-page.tsx"
 import { validateSettingsSearch } from "@/features/app-shell/surfaces.ts"
@@ -91,9 +95,25 @@ const appLayoutRoute = createRoute({
   ),
 })
 
-const homeRoute = createRoute({
+const appIndexRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/",
+  beforeLoad: async () => {
+    let startPage: unknown = "apply"
+    try {
+      const profile = await getShellProfile()
+      startPage = profile.startPage
+    } catch (error) {
+      if (isRedirect(error)) throw error
+    }
+    throw redirect({ href: startPagePath(startPage) })
+  },
+  component: () => null,
+})
+
+const homeRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/home",
   component: lazyRouteComponent(() => import("@/routes/home.tsx"), "HomePage"),
 })
 
@@ -126,6 +146,42 @@ const pitchRoute = createRoute({
   ),
 })
 
+const coachRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/coach",
+  component: lazyRouteComponent(
+    () => import("@/routes/coach.tsx"),
+    "CoachPage"
+  ),
+})
+
+const jobsRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/jobs",
+  component: lazyRouteComponent(
+    () => import("@/routes/placeholder.tsx"),
+    "JobsPage"
+  ),
+})
+
+const proofsRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/proofs",
+  component: lazyRouteComponent(
+    () => import("@/routes/placeholder.tsx"),
+    "ProofsPage"
+  ),
+})
+
+const inboxRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/inbox",
+  component: lazyRouteComponent(
+    () => import("@/routes/placeholder.tsx"),
+    "InboxPage"
+  ),
+})
+
 const settingsRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/settings",
@@ -142,10 +198,15 @@ const routeTree = rootRoute.addChildren([
   signInRoute,
   signUpRoute,
   appLayoutRoute.addChildren([
+    appIndexRoute,
     homeRoute,
     paperRoute,
     applyRoute,
     pitchRoute,
+    coachRoute,
+    jobsRoute,
+    proofsRoute,
+    inboxRoute,
     settingsRoute,
   ]),
 ])

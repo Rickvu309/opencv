@@ -9,6 +9,7 @@ import {
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { AIM_OPTIONS } from "@/features/home/aim-prompt.ts"
 import { readFirstCafeState } from "@/features/home/first-cafe-checklist.ts"
+import { goHome } from "@/test/go-home.ts"
 import { renderApp } from "@/test/render-app.tsx"
 import {
   expectHomeStarted,
@@ -78,7 +79,7 @@ describe("Home optional aim prompt", () => {
 
     fireEvent.click(screen.getByRole("link", { name: "Paper" }))
     await screen.findByRole("region", { name: "Paper" })
-    fireEvent.click(screen.getByRole("link", { name: "Home" }))
+    await goHome()
     await expectHomeStarted()
 
     expect(
@@ -120,7 +121,7 @@ describe("Home optional aim prompt", () => {
 
     fireEvent.click(screen.getByRole("link", { name: "Paper" }))
     await screen.findByRole("region", { name: "Paper" })
-    fireEvent.click(screen.getByRole("link", { name: "Home" }))
+    await goHome()
     await expectHomeStarted()
 
     expect(
@@ -142,7 +143,7 @@ describe("Home optional aim prompt", () => {
       expect(router.state.location.pathname).toBe(SURFACE_PATHS.apply)
     })
 
-    fireEvent.click(screen.getByRole("link", { name: "Home" }))
+    await goHome()
     await expectHomeStarted()
 
     expect(readFirstCafeState("user_test").completed).toEqual([])

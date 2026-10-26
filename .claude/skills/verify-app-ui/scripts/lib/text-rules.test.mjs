@@ -22,18 +22,20 @@ import {
   toggleViolations,
 } from "./text-rules.mjs"
 
-test("nouns: job, email, document and profile are flagged", () => {
+test("nouns: opportunity, thread, email, document and profile are flagged", () => {
   const found = nounViolations([
     "Add job",
+    "Jobs",
     "Edit profile",
     "New document",
     "Draft a Letter",
     "Add opportunity",
+    "Start a new Thread",
     "A first full-time job",
   ])
   assert.deepEqual(
     found.map((f) => f.label),
-    ["Add job", "Edit profile", "New document"]
+    ["Edit profile", "New document", "Add opportunity", "Start a new Thread"]
   )
 })
 
@@ -59,12 +61,7 @@ test("nouns: the exemption is only for short goal chips and the connector row", 
   ])
   assert.deepEqual(
     [...new Set(found.map((f) => f.label))],
-    [
-      "Drop a dream job here",
-      "Add a summer job",
-      "Paste your first job posting",
-      "Connect email to send this job",
-    ]
+    ["Connect email to send this job"]
   )
 })
 

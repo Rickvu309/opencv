@@ -50,7 +50,8 @@ describe("Paper drive", () => {
   it("leads with the table and offers a button only for the kinds that are missing", async () => {
     seedStarterPaperDrive()
     renderPaper()
-    expect(await screen.findByText(STARTER_CV_NAME)).toBeInTheDocument()
+    const main = await screen.findByRole("main")
+    expect(await within(main).findByText(STARTER_CV_NAME)).toBeInTheDocument()
 
     expect(
       screen.queryByRole("region", { name: "CVs" })

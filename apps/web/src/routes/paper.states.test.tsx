@@ -6,6 +6,7 @@ import { paperQueryKeys } from "@/features/paper/paper-api.ts"
 import { failPaperList } from "@/test/paper-api-mock.ts"
 import {
   installPaperTestLifecycle,
+  coachFloatButton,
   openCoach,
   openDoc,
   renderPaper,
@@ -49,7 +50,9 @@ describe("Paper list that fails to refresh", () => {
       .invalidateQueries({ queryKey: paperQueryKeys.all })
       .catch(() => undefined)
     expect(await screen.findByRole("alert")).toHaveTextContent(/couldn.t load/i)
-    expect(screen.getByText("PM track CV")).toBeInTheDocument()
+    expect(
+      within(screen.getByRole("table")).getByText("PM track CV")
+    ).toBeInTheDocument()
     expect(screen.getByRole("table")).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument()
   })
@@ -98,7 +101,7 @@ describe("Paper Coach on a phone", () => {
     expect(screen.queryByRole("dialog", { name: "Coach" })).toBeNull()
     expect(column).toBeVisible()
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Coach" })).toHaveFocus()
+      expect(coachFloatButton()).toHaveFocus()
     })
   })
 })

@@ -21,7 +21,7 @@ describe("lazy routes", () => {
     expect(loaded.paper).toBe(0)
     expect(loaded.apply).toBe(0)
 
-    const { router } = renderApp("/app")
+    const { router } = renderApp("/app/home")
     await screen.findByRole("main")
     expect(loaded.paper).toBe(0)
     expect(loaded.apply).toBe(0)

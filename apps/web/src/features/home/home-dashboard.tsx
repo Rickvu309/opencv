@@ -1,5 +1,6 @@
 import { useState } from "react"
 
+import { SidebarHistory } from "@/features/home/home-history-list.tsx"
 import { ThreadTopBar } from "@/features/home/thread-top-bar.tsx"
 import { authClient } from "@/lib/auth-client.ts"
 import { ThreadView } from "@/features/home/thread-view.tsx"
@@ -77,6 +78,7 @@ export function HomeDashboard() {
             />
           </div>
         </div>
+        <SidebarHistory collapsed={false} />
       </div>
     )
   }
@@ -102,6 +104,7 @@ export function HomeDashboard() {
               <HomeSuggestions onSelect={setDraft} />
               <HomeStart />
               <ConnectedApps className="mt-1" />
+              <SidebarHistory collapsed={false} />
             </div>
           </div>
         </div>

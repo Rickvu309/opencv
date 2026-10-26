@@ -7,6 +7,7 @@ import {
   within,
 } from "@testing-library/react"
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { goHome } from "@/test/go-home.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
 import {
   DEFAULT_COACH_STREAM_REPLY,
@@ -246,7 +247,8 @@ describe("Paper Coach turns", () => {
       await within(dialog).findByText("I read PM track CV.")
     ).toBeInTheDocument()
 
-    const history = screen.getByRole("navigation", { name: "History" })
+    await goHome()
+    const history = await screen.findByRole("navigation", { name: "History" })
     expect(
       await within(history).findByRole("button", { name: "PM track CV" })
     ).toBeInTheDocument()

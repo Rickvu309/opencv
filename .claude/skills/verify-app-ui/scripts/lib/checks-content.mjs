@@ -27,7 +27,7 @@ export function contentChecks(d) {
       nouns.length
         ? `${nouns.length}: ${list(nouns.map((n) => `"${n.label}" (${n.why})`))}`
         : "none",
-      "no chrome label calls a product object job, email, document or profile (word list, heuristic; goal chips such as A first full-time job and the Connect email row and the account menu label are exempt)"
+      "no chrome label calls a product object opportunity, thread, email, document or profile (word list, heuristic; Job is the product word; goal chips such as A first full-time job and the Connect email row and the account menu label are exempt)"
     )
   )
 

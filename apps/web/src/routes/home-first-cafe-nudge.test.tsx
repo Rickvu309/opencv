@@ -12,6 +12,7 @@ import {
   readFirstCafeState,
   writeFirstCafeState,
 } from "@/features/home/first-cafe-checklist.ts"
+import { goHome } from "@/test/go-home.ts"
 import { renderApp } from "@/test/render-app.tsx"
 import {
   expectHomeStarted,
@@ -39,7 +40,7 @@ describe("Home first-café next nudge", () => {
       expect(router.state.location.pathname).toBe(SURFACE_PATHS.paper)
     })
 
-    fireEvent.click(screen.getByRole("link", { name: "Home" }))
+    await goHome()
     await expectHomeStarted()
 
     const nudge = firstCafeNudge()
@@ -74,7 +75,7 @@ describe("Home first-café next nudge", () => {
 
     fireEvent.click(screen.getByRole("link", { name: "Paper" }))
     await screen.findByRole("region", { name: "Paper" })
-    fireEvent.click(screen.getByRole("link", { name: "Home" }))
+    await goHome()
     await expectHomeStarted()
 
     expect(
@@ -102,7 +103,7 @@ describe("Home first-café next nudge", () => {
       expect(router.state.location.pathname).toBe(SURFACE_PATHS.apply)
     })
 
-    fireEvent.click(screen.getByRole("link", { name: "Home" }))
+    await goHome()
     await expectHomeStarted()
 
     const nudge = firstCafeNudge()
@@ -253,7 +254,7 @@ describe("Home first-café quiet done", () => {
 
     fireEvent.click(screen.getByRole("link", { name: "Paper" }))
     await screen.findByRole("region", { name: "Paper" })
-    fireEvent.click(screen.getByRole("link", { name: "Home" }))
+    await goHome()
     await expectHomeStarted()
 
     expect(
