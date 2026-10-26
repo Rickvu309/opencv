@@ -14,7 +14,10 @@ import { getShellProfile } from "@/features/app-shell/shell-api.ts"
 import { startPagePath } from "@/features/app-shell/start-page.ts"
 
 import { NotFoundPage } from "@/components/not-found-page.tsx"
-import { validateSettingsSearch } from "@/features/app-shell/surfaces.ts"
+import {
+  isSettingsSection,
+  validateSettingsSearch,
+} from "@/features/settings/sections.ts"
 import { validateApplySearch } from "@/features/apply/apply-search.ts"
 import { validatePaperSearch } from "@/features/paper/paper-search.ts"
 import { SignInPage } from "@/routes/sign-in.tsx"
@@ -214,10 +217,25 @@ const inboxRoute = createRoute({
   ),
 })
 
+const settingsUpgradeRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/settings/billing/upgrade",
+  component: lazyRouteComponent(
+    () => import("@/routes/settings.tsx"),
+    "SettingsPage"
+  ),
+})
+
 const settingsRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
-  path: "/settings",
+  path: "/settings/{-$section}",
   validateSearch: validateSettingsSearch,
+  beforeLoad: ({ params }) => {
+    const section = params.section
+    if (section && !isSettingsSection(section)) {
+      throw redirect({ href: "/app/settings", replace: true })
+    }
+  },
   component: lazyRouteComponent(
     () => import("@/routes/settings.tsx"),
     "SettingsPage"
@@ -240,6 +258,7 @@ const routeTree = rootRoute.addChildren([
     jobsRoute,
     proofsRoute,
     inboxRoute,
+    settingsUpgradeRoute,
     settingsRoute,
   ]),
 ])

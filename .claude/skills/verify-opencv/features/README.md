@@ -19,14 +19,15 @@ This directory is the maintained source for verifying the user-facing behavior o
 
 ## Features
 
-| File                      | Feature                                 | Entry        |
-| ------------------------- | --------------------------------------- | ------------ |
-| `auth.md`                 | Sign in by code, sign out, sign in      | `/sign-in`   |
-| `shell.md`                | Sidebar, dock, chat panel, drawer       | `/app`       |
-| `home-coach-turn.md`      | One Coach turn streams a scripted reply | `/app`       |
-| `paper-edit-save.md`      | Create a CV, edit it, reload            | `/app/paper` |
-| `apply-board-and-scan.md` | Add a card, move it, scan a posting URL | `/app/apply` |
-| `pitch-publish.md`        | Open the Pitch placeholder              | `/app/pitch` |
+| File                      | Feature                                 | Entry           |
+| ------------------------- | --------------------------------------- | --------------- |
+| `auth.md`                 | Sign in by code, sign out, sign in      | `/sign-in`      |
+| `shell.md`                | Sidebar, dock, chat panel, drawer       | `/app`          |
+| `home-coach-turn.md`      | One Coach turn streams a scripted reply | `/app`          |
+| `paper-edit-save.md`      | Create a CV, edit it, reload            | `/app/paper`    |
+| `apply-board-and-scan.md` | Add a card, move it, scan a posting URL | `/app/apply`    |
+| `pitch-publish.md`        | Open the Pitch placeholder              | `/app/pitch`    |
+| `settings.md`             | Settings sections, export, upgrade      | `/app/settings` |
 
 ## Proof and skip reporting
 

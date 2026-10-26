@@ -1,7 +1,6 @@
 import {
-  PROFILE_COMMANDS,
   type CoachMode,
-  type ProfileSetCoachModeInput,
+  type ProfileUpdateInput,
   type UserProfile,
 } from "@workspace/domain"
 
@@ -19,10 +18,10 @@ export async function getProfile(): Promise<UserProfile> {
 
 export async function setCoachMode(mode: CoachMode): Promise<UserProfile> {
   const body = await apiFetch<SuccessBody<UserProfile>>(
-    `/api/commands/${PROFILE_COMMANDS.setCoachMode}`,
+    "/api/commands/profile.update",
     {
       method: "POST",
-      body: JSON.stringify({ mode } satisfies ProfileSetCoachModeInput),
+      body: JSON.stringify({ coachMode: mode } satisfies ProfileUpdateInput),
     }
   )
   return unwrapData(body)

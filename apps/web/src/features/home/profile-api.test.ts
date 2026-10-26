@@ -1,4 +1,4 @@
-import { DEFAULT_COACH_MODE, PROFILE_COMMANDS } from "@workspace/domain"
+import { DEFAULT_COACH_MODE } from "@workspace/domain"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { apiBaseUrl } from "@/lib/api-url.ts"
@@ -31,15 +31,17 @@ describe("profile API client", () => {
     vi.stubGlobal("fetch", fetchMock)
 
     await expect(getProfile()).resolves.toEqual(profile)
-    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(`${apiBaseUrl}/api/profile`)
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
+      `${apiBaseUrl}/api/profile`
+    )
 
     await expect(setCoachMode("light")).resolves.toMatchObject({
       coachMode: "light",
     })
     expect(String(fetchMock.mock.calls[1]?.[0])).toBe(
-      `${apiBaseUrl}/api/commands/${PROFILE_COMMANDS.setCoachMode}`
+      `${apiBaseUrl}/api/commands/profile.update`
     )
     const [, init] = fetchMock.mock.calls[1] as [string, RequestInit]
-    expect(init.body).toBe(JSON.stringify({ mode: "light" }))
+    expect(init.body).toBe(JSON.stringify({ coachMode: "light" }))
   })
 })

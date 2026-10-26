@@ -23,34 +23,28 @@ afterEach(() => {
 })
 
 describe("settings workspace", () => {
-  it("opens the Connected apps catalog from Home without OAuth", async () => {
-    renderApp(HOME_PATH)
+  it("opens Integrations from the connect row", async () => {
+    const { router } = renderApp(HOME_PATH)
     await expectHomeIdle()
 
     fireEvent.click(screen.getByRole("link", { name: "Connect apps" }))
 
     expect(
-      await screen.findByRole("heading", { level: 2, name: "Connected apps" })
+      await screen.findByRole("heading", { level: 1, name: "Integrations" })
     ).toBeInTheDocument()
-    expect(screen.getByRole("tab", { name: "Connected apps" })).toHaveAttribute(
-      "data-active"
-    )
-    expect(screen.getByRole("heading", { name: "Gmail" })).toBeInTheDocument()
-    expect(screen.getByRole("heading", { name: "Outlook" })).toBeInTheDocument()
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/app/settings/integrations")
+    })
     expect(
-      screen.getByRole("heading", { name: "Google Calendar" })
-    ).toBeInTheDocument()
-    expect(screen.getAllByRole("button", { name: /Connect/ })).toHaveLength(3)
-    for (const button of screen.getAllByRole("button", { name: /Connect/ })) {
-      expect(button).toBeDisabled()
-    }
+      screen.queryByRole("tab", { name: "Connected apps" })
+    ).not.toBeInTheDocument()
   })
 
   it("shows the session identity and signs out to sign-in", async () => {
-    const { router } = renderApp(`${SURFACE_PATHS.settings}?tab=account`)
+    const { router } = renderApp(`${SURFACE_PATHS.settings}/account`)
 
     expect(
-      await screen.findByRole("heading", { level: 2, name: "Account" })
+      await screen.findByRole("heading", { level: 1, name: "Account" })
     ).toBeInTheDocument()
     expect(screen.getAllByText(SAMPLE_AUTHOR_NAME).length).toBeGreaterThan(0)
     expect(screen.getByText("you@opencv.me")).toBeInTheDocument()
@@ -79,10 +73,10 @@ describe("settings workspace", () => {
       },
       session: TEST_SESSION,
     })
-    renderApp(`${SURFACE_PATHS.settings}?tab=account`)
+    renderApp(`${SURFACE_PATHS.settings}/account`)
 
     expect(
-      await screen.findByRole("heading", { level: 2, name: "Account" })
+      await screen.findByRole("heading", { level: 1, name: "Account" })
     ).toBeInTheDocument()
     expect(screen.getAllByText("Minh Le").length).toBeGreaterThan(0)
     expect(screen.getByText("minh@example.com")).toBeInTheDocument()
@@ -101,9 +95,9 @@ describe("settings workspace", () => {
     expect(await screen.findByText("Pitch. Coming soon.")).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole("link", { name: "Settings" }))
-    fireEvent.click(await screen.findByRole("tab", { name: "Account" }))
+    fireEvent.click(await screen.findByRole("link", { name: "Account" }))
     expect(
-      await screen.findByRole("heading", { level: 2, name: "Account" })
+      await screen.findByRole("heading", { level: 1, name: "Account" })
     ).toBeInTheDocument()
     expect(screen.getAllByText("Minh Le").length).toBeGreaterThan(0)
     expect(screen.getByText("minh@example.com")).toBeInTheDocument()

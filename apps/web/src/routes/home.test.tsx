@@ -6,7 +6,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react"
-import { SURFACE_COPY, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
 import { BROAD_SUGGESTIONS } from "@/features/home/suggestions.ts"
 import { renderApp } from "@/test/render-app.tsx"
@@ -122,7 +122,7 @@ describe("Home idle", () => {
     expect(menu).not.toHaveTextContent("Coming soon")
   })
 
-  it("opens Settings on the Connected apps tab from the connect row", async () => {
+  it("opens Integrations from the connect row", async () => {
     const { router } = renderApp()
     await expectHomeIdle()
 
@@ -131,17 +131,32 @@ describe("Home idle", () => {
     expect(
       await screen.findByRole("heading", {
         level: 1,
-        name: SURFACE_COPY.settings.title,
+        name: "Integrations",
       })
     ).toBeInTheDocument()
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe(SURFACE_PATHS.settings)
-      expect(router.state.location.search).toMatchObject({ tab: "apps" })
+      expect(router.state.location.pathname).toBe("/app/settings/integrations")
     })
-    expect(screen.getByRole("tab", { name: "Connected apps" })).toHaveAttribute(
-      "data-active"
+    expect(
+      screen.queryByRole("tab", { name: "Connected apps" })
+    ).not.toBeInTheDocument()
+  })
+
+  it("opens Integrations from Add connector", async () => {
+    const { router } = renderApp()
+    await expectHomeIdle()
+
+    fireEvent.click(screen.getByRole("button", { name: "Add" }))
+    fireEvent.click(
+      await screen.findByRole("menuitem", { name: "Add connector" })
     )
-    expect(screen.getByRole("heading", { name: "Gmail" })).toBeInTheDocument()
+
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Integrations" })
+    ).toBeInTheDocument()
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/app/settings/integrations")
+    })
   })
 
   it("puts the composer before the getting-started cards and keeps them closed", async () => {

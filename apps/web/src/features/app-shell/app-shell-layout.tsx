@@ -14,6 +14,16 @@ import { ThreadStoreProvider } from "@/features/home/thread-store.tsx"
 import { useThreadList } from "@/features/home/use-thread-list.ts"
 
 export function AppShellLayout() {
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  })
+  if (pathname.startsWith("/app/settings")) {
+    return (
+      <div className="flex h-svh min-h-0 flex-col overflow-hidden bg-background text-foreground">
+        <Outlet />
+      </div>
+    )
+  }
   return (
     <ThreadStoreProvider>
       <ShellOverlays>
@@ -25,15 +35,10 @@ export function AppShellLayout() {
 
 function AppShellChrome() {
   const navigate = useNavigate()
-  const pathname = useRouterState({
-    select: (state) => state.location.pathname,
-  })
   const { threads, newThread, openThread } = useThreadList()
   const [searchOpen, setSearchOpen] = useState(false)
-  const settings = pathname.startsWith("/app/settings")
 
   useEffect(() => {
-    if (settings) return
     function onKey(event: KeyboardEvent) {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault()
@@ -42,7 +47,7 @@ function AppShellChrome() {
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [settings])
+  }, [])
 
   function handleNewThread() {
     newThread()
@@ -56,14 +61,6 @@ function AppShellChrome() {
 
   function goSurface(id: SurfaceId) {
     void navigate({ to: SURFACE_PATHS[id] })
-  }
-
-  if (settings) {
-    return (
-      <div className="flex h-svh min-h-0 flex-col overflow-hidden bg-background text-foreground">
-        <Outlet />
-      </div>
-    )
   }
 
   return (

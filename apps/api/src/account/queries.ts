@@ -19,6 +19,79 @@ import { getProfileRow, toProfile } from "./store.js"
 
 const empty = z.object({}).strict()
 
+const INTEGRATION_GROUPS = [
+  {
+    id: "enabled",
+    label: "Enabled",
+    items: [
+      { id: "gmail", name: "Gmail", line: "" },
+      { id: "google-calendar", name: "Google Calendar", line: "" },
+      { id: "outlook", name: "Outlook", line: "" },
+    ],
+  },
+  {
+    id: "meetings",
+    label: "Meetings",
+    items: [
+      { id: "zoom", name: "Zoom", line: "Add interview calls" },
+      { id: "google-meet", name: "Google Meet", line: "Add interview calls" },
+      {
+        id: "microsoft-teams",
+        name: "Microsoft Teams",
+        line: "Add interview calls",
+      },
+    ],
+  },
+  {
+    id: "files",
+    label: "Files",
+    items: [
+      { id: "google-drive", name: "Google Drive", line: "Import your CV" },
+      { id: "onedrive", name: "OneDrive", line: "Import your CV" },
+      { id: "dropbox", name: "Dropbox", line: "Import your CV" },
+    ],
+  },
+  {
+    id: "notes",
+    label: "Notes and design",
+    items: [
+      { id: "notion", name: "Notion", line: "Import notes" },
+      { id: "figma", name: "Figma", line: "Add design work" },
+      { id: "canva", name: "Canva", line: "" },
+    ],
+  },
+  {
+    id: "profiles",
+    label: "Profiles",
+    items: [
+      { id: "linkedin", name: "LinkedIn", line: "Import experience" },
+      { id: "github", name: "GitHub", line: "Add projects" },
+      { id: "behance", name: "Behance", line: "" },
+    ],
+  },
+] as const
+
+const CONNECTION_PROVIDER: Record<string, "gmail" | "gcalendar"> = {
+  gmail: "gmail",
+  "google-calendar": "gcalendar",
+}
+
+const BILLING_FREE = {
+  price: "$0 a month",
+  line: "Limited Coach chats on the basic model.",
+} as const
+
+const BILLING_PRO = {
+  price: "$9 a month",
+  line: "Cancel anytime.",
+  benefits: [
+    "Unlimited Coach chats",
+    "Stronger Coach model",
+    "Priority support",
+    "Early access to Proof",
+  ],
+} as const
+
 export function registerAccountQueries(registry: Registry) {
   registry.addQuery(
     defineQuery({
@@ -28,6 +101,26 @@ export function registerAccountQueries(registry: Registry) {
       coach: true,
       step: () => "Read profile",
       read: (_input, actor) => readProfile(actor),
+    })
+  )
+  registry.addQuery(
+    defineQuery({
+      name: "integrations.list",
+      description: "Read the integrations catalog.",
+      input: empty,
+      coach: false,
+      step: () => "Read integrations",
+      read: (_input, actor) => listIntegrations(actor.userId),
+    })
+  )
+  registry.addQuery(
+    defineQuery({
+      name: "billing.get",
+      description: "Read the plan and billing placeholder.",
+      input: empty,
+      coach: false,
+      step: () => "Read billing",
+      read: (_input, actor) => readBilling(actor.userId),
     })
   )
   registry.addQuery(
@@ -54,6 +147,51 @@ export function registerAccountQueries(registry: Registry) {
 
 export async function readProfile(actor: Actor) {
   return toProfile(await getProfileRow(actor.userId))
+}
+
+export async function listIntegrations(userId: string) {
+  const rows = await getDb()
+    .select({
+      provider: connections.provider,
+      status: connections.status,
+    })
+    .from(connections)
+    .where(eq(connections.userId, userId))
+  const active = new Set(
+    rows.filter((row) => row.status === "active").map((row) => row.provider)
+  )
+  return {
+    groups: INTEGRATION_GROUPS.map((group) => ({
+      id: group.id,
+      label: group.label,
+      items: group.items.map((item) => ({
+        id: item.id,
+        name: item.name,
+        line: item.line,
+        status: integrationStatus(item.id, active),
+      })),
+    })),
+  }
+}
+
+function integrationStatus(
+  id: string,
+  active: Set<"gmail" | "gcalendar">
+): "enabled" | "disabled" | "unavailable" {
+  const provider = CONNECTION_PROVIDER[id]
+  if (!provider) return "unavailable"
+  return active.has(provider) ? "enabled" : "disabled"
+}
+
+export async function readBilling(userId: string) {
+  const profile = toProfile(await getProfileRow(parseUserId(userId)))
+  return {
+    plan: profile.plan,
+    free: BILLING_FREE,
+    pro: BILLING_PRO,
+    payment: null,
+    invoices: [] as [],
+  }
 }
 
 export async function exportAccount(userId: string) {

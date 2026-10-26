@@ -1,0 +1,285 @@
+import { runCommand, unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
+import { ApiError, apiFetch } from "@/lib/api.ts"
+import { apiBaseUrl } from "@/lib/api-url.ts"
+
+export const PHOTO_MAX_BYTES = 2 * 1024 * 1024
+export const PHOTO_REJECTION = "Choose an image under 2 MB."
+export const EMAIL_REJECTION = "Use a full email, like name@example.com."
+export const NAME_REJECTION = "Enter your name."
+export const TIME_ZONE_REJECTION = "Use a time zone like Asia/Ho_Chi_Minh."
+export const EXPORT_FILENAME = "opencv-export.json"
+export const GMAIL_UNAVAILABLE = "Gmail is not available in this build."
+export const LOAD_ERROR = "Could not load settings."
+export const NO_WEEKLY_CAP = "No weekly cap on this mode."
+export const NO_SESSION_CAP = "No session cap on this mode."
+export const UPGRADE_PLACEHOLDER = "Billing is not open yet."
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+export type SettingsPlan = "free" | "pro"
+export type SettingsLanguage = "en" | "vi"
+export type SettingsStartPage = "apply" | "paper" | "inbox" | "coach"
+export type CoachMode = "free" | "light" | "max"
+
+export type SettingsProfile = {
+  id: string
+  name: string
+  email: string
+  emailVerified: boolean
+  image: string | null
+  plan: SettingsPlan
+  coachMode: CoachMode
+  language: SettingsLanguage
+  timeZone: string
+  startPage: SettingsStartPage
+  notifyEmail: boolean
+  notifyBrowser: boolean
+  memoryEnabled: boolean
+  agentChat: boolean
+  agentCvs: boolean
+  agentInterview: boolean
+  agentEmail: boolean
+  agentWeekly: boolean
+  welcomedAt: string | null
+  inboxSkippedAt: string | null
+}
+
+export type SettingsSave = {
+  pending: boolean
+  errorKey?: string
+  error?: string
+  onSave: (patch: ProfilePatch) => void
+}
+
+export type ProfilePatch = Partial<{
+  name: string
+  language: SettingsLanguage
+  timeZone: string
+  startPage: SettingsStartPage
+  notifyEmail: boolean
+  notifyBrowser: boolean
+  memoryEnabled: boolean
+  coachMode: CoachMode
+  agentChat: boolean
+  agentCvs: boolean
+  agentInterview: boolean
+  agentEmail: boolean
+  agentWeekly: boolean
+}>
+
+export type UsageWindow =
+  | { capped: true; percent: number; resetsAt: string }
+  | { capped: false; resetsAt: string }
+
+export type UsageSnapshot = {
+  plan: SettingsPlan
+  mode: CoachMode
+  session: UsageWindow
+  day:
+    | {
+        capped: true
+        used: number
+        cap: number
+        remaining: number
+        resetsAt: string
+      }
+    | { capped: false; resetsAt: string }
+  week: UsageWindow
+}
+
+export type IntegrationStatus = "enabled" | "disabled" | "unavailable"
+
+export type IntegrationItem = {
+  id: string
+  name: string
+  line: string
+  status: IntegrationStatus
+}
+
+export type IntegrationGroup = {
+  id: string
+  label: string
+  items: IntegrationItem[]
+}
+
+export type BillingSnapshot = {
+  plan: SettingsPlan
+  free: { price: string; line: string }
+  pro: { price: string; line: string; benefits: string[] }
+  payment: null
+  invoices: []
+}
+
+export type EmailChangeResult = {
+  email: string
+  sent: boolean
+  message?: string
+}
+
+const START_PATHS: Record<SettingsStartPage, string> = {
+  apply: "/app/apply",
+  paper: "/app/paper",
+  coach: "/app/coach",
+  inbox: "/app/inbox",
+}
+
+export function startPageHref(startPage: SettingsStartPage | undefined) {
+  if (!startPage) return "/app/apply"
+  return START_PATHS[startPage] ?? "/app/apply"
+}
+
+export function photoRejection(file: File) {
+  if (!file.type.startsWith("image/")) return PHOTO_REJECTION
+  if (file.size > PHOTO_MAX_BYTES) return PHOTO_REJECTION
+  return null
+}
+
+export function emailRejection(value: string) {
+  return EMAIL_PATTERN.test(value.trim()) ? null : EMAIL_REJECTION
+}
+
+export function filenameFromDisposition(header: string | null) {
+  const match = header?.match(/filename="([^"]+)"/)
+  return match?.[1] || EXPORT_FILENAME
+}
+
+export function sessionResetLabel(resetsAt: string) {
+  const minutes = Math.max(
+    0,
+    Math.round((new Date(resetsAt).getTime() - Date.now()) / 60000)
+  )
+  if (minutes >= 60) {
+    const hours = Math.floor(minutes / 60)
+    return `Resets in ${hours} hr ${minutes % 60} min`
+  }
+  return `Resets in ${minutes} min`
+}
+
+export function weekResetLabel(resetsAt: string, timeZone: string) {
+  const date = new Date(resetsAt)
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    weekday: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date)
+  const weekday = parts.find((part) => part.type === "weekday")?.value ?? ""
+  const hour = parts.find((part) => part.type === "hour")?.value ?? ""
+  const minute = parts.find((part) => part.type === "minute")?.value ?? ""
+  if (weekday === "Monday" && hour === "07" && minute === "00") {
+    return "Resets Monday at 7:00"
+  }
+  const time = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date)
+  return `Resets ${weekday} at ${time}`
+}
+
+export function percentLabel(percent: number) {
+  return `${percent}% used`
+}
+
+export function weekUsageLabel(percent: number) {
+  return `${percent}% of this week used`
+}
+
+export async function readProfile() {
+  const body = await apiFetch<SuccessBody<SettingsProfile>>("/api/profile")
+  return unwrapData(body)
+}
+
+export async function updateProfile(patch: ProfilePatch) {
+  return runCommand<SettingsProfile>("profile.update", patch)
+}
+
+export async function readUsage() {
+  const body = await apiFetch<SuccessBody<UsageSnapshot>>("/api/coach/usage")
+  return unwrapData(body)
+}
+
+export async function readIntegrations() {
+  const body =
+    await apiFetch<SuccessBody<{ groups: IntegrationGroup[] }>>(
+      "/api/integrations"
+    )
+  return unwrapData(body)
+}
+
+export async function readBilling() {
+  const body = await apiFetch<SuccessBody<BillingSnapshot>>("/api/billing")
+  return unwrapData(body)
+}
+
+export async function requestEmailChange(email: string) {
+  return runCommand<EmailChangeResult>("account.requestEmailChange", { email })
+}
+
+export async function deleteAccount() {
+  return runCommand<unknown>("account.delete", { confirm: "DELETE" })
+}
+
+export async function uploadPhoto(file: File) {
+  const rejection = photoRejection(file)
+  if (rejection) throw new ApiError(400, "VALIDATION_ERROR", rejection)
+  const form = new FormData()
+  form.set("file", file)
+  const res = await fetch(new URL("/api/account/photo", apiBaseUrl), {
+    method: "POST",
+    body: form,
+    credentials: "include",
+  })
+  if (!res.ok) {
+    const message = await errorMessage(res)
+    throw new ApiError(res.status, "REQUEST_FAILED", message)
+  }
+  const body = (await res.json()) as SuccessBody<SettingsProfile>
+  return unwrapData(body)
+}
+
+export async function connectGmail() {
+  const res = await fetch(new URL("/api/inbox/connect", apiBaseUrl), {
+    credentials: "include",
+  })
+  if (res.status === 404) return { url: null as string | null }
+  if (!res.ok) return { url: null as string | null }
+  const body = (await res.json()) as {
+    data?: { url?: string | null }
+  }
+  const url = body.data?.url
+  return { url: typeof url === "string" && url.length > 0 ? url : null }
+}
+
+export async function downloadExport() {
+  const res = await fetch(new URL("/api/account/export", apiBaseUrl), {
+    credentials: "include",
+  })
+  if (!res.ok) {
+    const message = await errorMessage(res)
+    throw new ApiError(res.status, "REQUEST_FAILED", message)
+  }
+  const filename = filenameFromDisposition(
+    res.headers.get("content-disposition")
+  )
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement("a")
+  link.href = url
+  link.download = filename
+  link.click()
+  URL.revokeObjectURL(url)
+  return filename
+}
+
+async function errorMessage(res: Response) {
+  const body = (await res.json().catch(() => null)) as {
+    error?: { message?: string }
+  } | null
+  return body?.error?.message ?? `Request failed with ${res.status}`
+}
+
+export function isPlanRequired(error: unknown) {
+  return error instanceof ApiError && error.code === "PLAN_REQUIRED"
+}

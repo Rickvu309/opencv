@@ -477,10 +477,18 @@ export function runChecks(d) {
     )
   )
 
-  const copy = chromeCopy(
-    labels,
-    allSnaps.map((snap) => snap?.docTitle)
-  )
+  const settingsSnaps = [
+    d.settings,
+    d.settingsReduced,
+    d.settingsMobile,
+  ].filter((snap) => snap && Array.isArray(snap.chrome))
+  const checkedLabels = [
+    ...new Set([...labels, ...settingsSnaps.flatMap((snap) => snap.chrome)]),
+  ]
+  const copy = chromeCopy(checkedLabels, [
+    ...allSnaps.map((snap) => snap?.docTitle),
+    ...settingsSnaps.map((snap) => snap.docTitle),
+  ])
   const brand = brandViolations(copy)
   r.push(
     result(
@@ -517,7 +525,7 @@ export function runChecks(d) {
     )
   )
 
-  const toggles = toggleViolations(labels)
+  const toggles = toggleViolations(checkedLabels)
   r.push(
     result(
       "42",
@@ -528,7 +536,7 @@ export function runChecks(d) {
     )
   )
 
-  const titles = titleBeforeCompany(labels)
+  const titles = titleBeforeCompany(checkedLabels)
   r.push(
     result(
       "43",
@@ -539,7 +547,7 @@ export function runChecks(d) {
     )
   )
 
-  const bangs = exclamationViolations(labels)
+  const bangs = exclamationViolations(checkedLabels)
   r.push(
     result(
       "44",

@@ -39,6 +39,7 @@ describe("Home first-café next nudge", () => {
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(SURFACE_PATHS.paper)
     })
+    await screen.findByRole("region", { name: "Paper" })
 
     await goHome()
     await expectHomeStarted()

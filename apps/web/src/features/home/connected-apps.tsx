@@ -6,7 +6,7 @@ import { cn } from "@workspace/ui/lib/utils"
 import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
 import { BrandIcon } from "@/features/app-shell/brand-icon.tsx"
 import { type BrandId } from "@/features/app-shell/brands.ts"
-import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { settingsSectionHref } from "@/features/settings/sections.ts"
 
 const APPS: { id: BrandId; name: string }[] = [
   { id: "gmail", name: "Gmail" },
@@ -27,8 +27,7 @@ export function ConnectedApps({ className }: Props) {
       )}
     >
       <Link
-        to={SURFACE_PATHS.settings}
-        search={{ tab: "apps" }}
+        to={settingsSectionHref("integrations")}
         className={cn(
           FOCUS_RING,
           "inline-flex items-center gap-0.5 rounded-sm transition-colors hover:text-foreground"

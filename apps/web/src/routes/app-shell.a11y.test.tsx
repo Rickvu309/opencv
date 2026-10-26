@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, screen } from "@testing-library/react"
 
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
-import { expectPitch, expectStub } from "@/test/app-shell-fixtures.ts"
+import { expectPitch } from "@/test/app-shell-fixtures.ts"
 import { renderApp } from "@/test/render-app.tsx"
 
 beforeEach(() => {
@@ -37,31 +37,19 @@ describe("shell polish and a11y", () => {
     ).not.toBeInTheDocument()
   })
 
-  it("lets Settings tabs take focus and activate from the keyboard", async () => {
+  it("lets Settings sections take focus and activate from the keyboard", async () => {
     renderApp(SURFACE_PATHS.settings)
-    await expectStub("settings")
+    const preferences = await screen.findByRole("link", { name: "Preferences" })
+    expect(preferences).toHaveAttribute("aria-current", "page")
+    preferences.focus()
+    expect(preferences).toHaveFocus()
 
-    const general = screen.getByRole("tab", { name: "General" })
-    const apps = screen.getByRole("tab", { name: "Connected apps" })
-    const account = screen.getByRole("tab", { name: "Account" })
-
-    general.focus()
-    expect(general).toHaveFocus()
-    expect(general).toHaveAttribute("aria-selected", "true")
-
-    apps.focus()
-    expect(apps).toHaveFocus()
-    fireEvent.click(apps)
-    expect(apps).toHaveAttribute("aria-selected", "true")
-    expect(
-      await screen.findByRole("heading", { level: 2, name: "Connected apps" })
-    ).toBeInTheDocument()
-
+    const account = screen.getByRole("link", { name: "Account" })
     account.focus()
+    expect(account).toHaveFocus()
     fireEvent.click(account)
-    expect(account).toHaveAttribute("aria-selected", "true")
     expect(
-      await screen.findByRole("heading", { level: 2, name: "Account" })
+      await screen.findByRole("heading", { level: 1, name: "Account" })
     ).toBeInTheDocument()
   })
 })

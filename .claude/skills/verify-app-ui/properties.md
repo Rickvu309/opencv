@@ -62,7 +62,7 @@ App-wide:
 
 Design text, properties 39 to 44. Phrases are pinned in `scripts/lib/copy.json`.
 
-- 39 `brand-wordmark`: chrome never contains OpenCV. The brand is the mark plus lowercase opencv.
+- 39 `brand-wordmark`: chrome never contains OpenCV. The brand is the mark plus lowercase opencv. The same 39 to 44 rules also run on `/app/settings` (desktop, reduced motion, and 390). Those snaps stay off the four surfaces in check 38.
 - 40 `one-glow-primary`: each toured view, including the 390px pass, has at most one control wearing the glow utility.
 - 41 `no-dash-in-copy`: chrome has no em dash, en dash, or middle dot.
 - 42 `toggle-enabled-disabled`: a toggle label is Enabled or Disabled. On, Off, and Connected fail.

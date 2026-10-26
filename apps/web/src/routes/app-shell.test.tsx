@@ -14,7 +14,6 @@ import {
   expectApplyLive,
   expectHomeIdle,
   expectPitch,
-  expectStub,
   linkNames,
   NAV,
   stubDesktopViewport,
@@ -226,14 +225,17 @@ describe("app shell layout", () => {
 
     cleanup()
     renderApp(SURFACE_PATHS.settings)
-    await expectStub("settings")
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Preferences" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("link", { name: "Back to app" })
+    ).toBeInTheDocument()
     expect(screen.queryByRole("complementary", { name: "Sidebar" })).toBeNull()
     expect(screen.queryByRole("button", { name: "Search" })).toBeNull()
-    expect(screen.getByRole("tab", { name: "General" })).toBeInTheDocument()
     expect(
-      screen.getByRole("tab", { name: "Connected apps" })
-    ).toBeInTheDocument()
-    expect(screen.getByRole("tab", { name: "Account" })).toBeInTheDocument()
+      screen.queryByRole("tab", { name: "General" })
+    ).not.toBeInTheDocument()
   }, 20_000)
 
   it("highlights the active surface and keeps Search a command", async () => {

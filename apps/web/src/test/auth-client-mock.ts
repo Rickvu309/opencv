@@ -54,6 +54,10 @@ function installAuthMocks() {
     data: { success: true },
     error: null,
   }))
+  authClient.emailOtp.changeEmail.mockImplementation(async () => ({
+    data: { status: true },
+    error: null,
+  }))
   authClient.signIn.emailOtp.mockImplementation(async () => {
     authMockState.data = signedInSession()
     return {
@@ -75,6 +79,7 @@ export function resetMockSession() {
   authMockState.data = signedInSession()
   mockPublicConfig.google = false
   authClient.emailOtp.sendVerificationOtp.mockReset()
+  authClient.emailOtp.changeEmail.mockReset()
   authClient.signIn.emailOtp.mockReset()
   authClient.signIn.social.mockReset()
   authClient.signOut.mockReset()
@@ -98,6 +103,7 @@ export const authClient = {
   }),
   emailOtp: {
     sendVerificationOtp: vi.fn(),
+    changeEmail: vi.fn(),
   },
   signIn: {
     emailOtp: vi.fn(),
