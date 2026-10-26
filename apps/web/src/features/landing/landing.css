@@ -231,21 +231,135 @@ html:has(.landing-root) {
   font-weight: 500;
 }
 
-.landing-quote-grid {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+.landing-stories {
+  gap: 3rem;
+}
+
+.landing-story-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.5rem;
+  inline-size: 100%;
+  container-type: inline-size;
 }
 
 .landing-quote {
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   gap: 1.25rem;
+  min-inline-size: min(100%, 16rem);
+  min-block-size: 18rem;
   margin: 0;
-  padding: 1.5rem;
-  border-radius: 1rem;
+  padding: 2rem;
+  border-radius: 1.5rem;
   background: var(--foreground);
   color: var(--background);
+}
+
+.landing-quote-lead {
+  flex: 2 1 34rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+}
+
+.landing-quote-side {
+  flex: 1 1 18rem;
+}
+
+.landing-portrait {
+  display: grid;
+  place-items: center;
+  inline-size: min(100%, 15.5rem);
+  aspect-ratio: 248 / 416;
+  border-radius: 1rem;
+  background: var(--muted);
+  color: var(--foreground);
+  font-size: 1.25rem;
+  font-weight: 500;
+  outline: 1px solid var(--border);
+  outline-offset: -1px;
+}
+
+@container (inline-size > 36rem) {
+  .landing-quote-lead,
+  .landing-quote-side {
+    min-block-size: 30rem;
+  }
+
+  .landing-quote-lead {
+    grid-template-columns: minmax(0, 1fr) 15.5rem;
+    grid-template-rows: 1fr auto;
+    column-gap: 2rem;
+    row-gap: 1.25rem;
+  }
+
+  .landing-quote-lead blockquote {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .landing-quote-lead figcaption {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: end;
+  }
+
+  .landing-quote-lead .landing-portrait {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    inline-size: 100%;
+    block-size: 100%;
+    aspect-ratio: auto;
+  }
+}
+
+.landing-story-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  inline-size: 100%;
+}
+
+.landing-customers-line {
+  flex: 1 1 16rem;
+  min-inline-size: min(100%, 16rem);
+  margin: 0;
+  max-inline-size: 40rem;
+  color: var(--muted-foreground);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.landing-story-label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4em;
+  margin: 0;
+  margin-inline-start: auto;
+  color: var(--foreground);
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.4;
+}
+
+.landing-story-label span {
+  text-box: trim-both cap alphabetic;
+}
+
+.landing-story-label svg {
+  flex: none;
+  block-size: 1cap;
+  inline-size: auto;
+}
+
+.landing-quote blockquote {
+  min-inline-size: 0;
 }
 
 .landing-quote blockquote p {

@@ -101,29 +101,53 @@ export function LandingFeatures() {
 }
 
 export function LandingCustomers() {
+  const [maya, daniel] = LANDING_QUOTES
+
   return (
     <section
       id="stories"
       aria-labelledby="stories-title"
-      className="landing-section landing-stack"
+      className="landing-section landing-stack landing-stories"
     >
-      <h2 id="stories-title" className="landing-section-title">
-        {LANDING_CUSTOMERS_LABEL}
-      </h2>
-      <div className="landing-quote-grid">
-        {LANDING_QUOTES.map((item) => (
-          <figure key={item.name} className="landing-quote">
-            <blockquote>
-              <p>{item.quote}</p>
-            </blockquote>
-            <figcaption>
-              <p className="text-[0.9375rem] font-medium">{item.name}</p>
-              <p className="landing-quote-role text-sm">{item.role}</p>
-            </figcaption>
-          </figure>
-        ))}
+      <div className="landing-story-row">
+        <figure className="landing-quote landing-quote-lead">
+          <blockquote>
+            <p>{maya.quote}</p>
+          </blockquote>
+          <div className="landing-portrait" role="img" aria-label="Maya T.">
+            <span aria-hidden="true">MT</span>
+          </div>
+          <figcaption>
+            <p className="text-[0.9375rem] font-medium">{maya.name}</p>
+            <p className="landing-quote-role text-sm">{maya.role}</p>
+          </figcaption>
+        </figure>
+        <figure className="landing-quote landing-quote-side">
+          <blockquote>
+            <p>{daniel.quote}</p>
+          </blockquote>
+          <figcaption>
+            <p className="text-[0.9375rem] font-medium">{daniel.name}</p>
+            <p className="landing-quote-role text-sm">{daniel.role}</p>
+          </figcaption>
+        </figure>
       </div>
-      <p className="landing-section-body">{LANDING_CUSTOMERS_LINE}</p>
+      <div className="landing-story-foot">
+        <p className="landing-customers-line">{LANDING_CUSTOMERS_LINE}</p>
+        <h2 id="stories-title" className="landing-story-label">
+          <span>{LANDING_CUSTOMERS_LABEL}</span>
+          <svg viewBox="0 0 14 14" aria-hidden="true">
+            <path
+              d="M2.2 7h9.2M8.2 3.6 11.6 7 8.2 10.4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.25"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </h2>
+      </div>
     </section>
   )
 }

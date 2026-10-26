@@ -101,14 +101,24 @@ describe("landing page", () => {
       screen.getByRole("heading", { name: "Proof, not claims" })
     ).toBeInTheDocument()
     const logos = container.querySelector("#logos")
-    expect(
-      [...(logos?.children ?? [])].map((node) => node.tagName)
-    ).toEqual(["UL", "H2"])
+    expect([...(logos?.children ?? [])].map((node) => node.tagName)).toEqual([
+      "UL",
+      "H2",
+    ])
     expect(logos?.querySelector("h2")).toHaveTextContent(
       "PEOPLE USING OPENCV HAVE INTERVIEWED AT"
     )
-    expect(screen.getByText("Maya T.")).toBeInTheDocument()
-    expect(screen.getByText("Daniel K.")).toBeInTheDocument()
+    const stories = container.querySelector("#stories")
+    const figures = stories?.querySelectorAll("figure")
+    expect(figures).toHaveLength(2)
+    expect(figures?.[0]?.querySelector(".landing-portrait")).toHaveTextContent(
+      "MT"
+    )
+    expect(figures?.[0]).toHaveTextContent("Maya T.")
+    expect(figures?.[1]).toHaveTextContent("Daniel K.")
+    expect(
+      stories?.querySelector(".landing-story-foot")?.lastElementChild
+    ).toHaveAttribute("id", "stories-title")
 
     expect(
       screen.queryByRole("link", { name: /^blog$/i })
