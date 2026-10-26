@@ -14,6 +14,9 @@ import {
   paperSetTemplateInputSchema,
   paperShareInputSchema,
   paperUnshareInputSchema,
+  paperDeleteFileInputSchema,
+  paperKeywordGapInputSchema,
+  keywordGap,
   type Actor,
   type PaperCreateInput,
   type PaperDuplicateInput,
@@ -32,7 +35,9 @@ import {
   duplicatePaper,
   importPaper,
   keepTwoPages,
+  listFiles,
   listPapers,
+  deleteFile,
   ownedPaper,
   pageCount,
   readFileMeta,
@@ -276,6 +281,20 @@ export function registerPaper(registry: Registry) {
     (input, actor) => setPaperStatus(actor, input.docId, input.status)
   )
 
+  registry.addCommand(
+    {
+      name: "paper.deleteFile",
+      description: "Delete an uploaded file.",
+      input: paperDeleteFileInputSchema,
+      coach: "never",
+      destructive: true,
+      reversal: () => null,
+      step: () => "Delete this file",
+      activity: () => null,
+    },
+    (input, actor) => deleteFile(actor, input.fileId)
+  )
+
   registry.addQuery(
     defineQuery({
       name: "paper.list",
@@ -343,6 +362,42 @@ export function registerPaper(registry: Registry) {
       coach: true,
       step: () => "Read the file",
       read: (input, actor) => readFileMeta(actor.userId, input.fileId),
+    })
+  )
+  registry.addQuery(
+    defineQuery({
+      name: "paper.files",
+      description: "List uploaded files. Bytes stay in the store.",
+      input: z.object({}).strict(),
+      coach: true,
+      step: () => "List files",
+      read: (_input, actor) => listFiles(actor.userId),
+    })
+  )
+  registry.addQuery(
+    defineQuery({
+      name: "paper.keywordGap",
+      description: "Find one requirement the letter does not mention.",
+      input: paperKeywordGapInputSchema,
+      coach: true,
+      step: () => "Find a missing keyword",
+      read: async (input, actor) => {
+        const doc = toPaper(await ownedPaper(actor.userId, input.docId))
+        const job = (await registry.read(
+          "job.get",
+          { jobId: input.jobId },
+          actor
+        )) as { posting?: { requirements?: string } | null }
+        const document = doc.document
+        const letterText =
+          document &&
+          typeof document === "object" &&
+          "markdown" in document &&
+          typeof document.markdown === "string"
+            ? document.markdown
+            : ""
+        return keywordGap(letterText, job.posting?.requirements ?? "")
+      },
     })
   )
 }

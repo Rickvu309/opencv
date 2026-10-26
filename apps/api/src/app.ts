@@ -16,10 +16,7 @@ import type { FetchJobPosting } from "./apply/fetch-posting.js"
 import { createChatRoutes } from "./chat/index.js"
 import { createCoachRoutes, interpretPosting } from "./coach/index.js"
 import { setCoachModelEnv, type CoachModelEnv } from "./config.js"
-import {
-  createCompatPaperRoutes,
-  createCompatThreadRoutes,
-} from "./compat/index.js"
+import { createCompatThreadRoutes } from "./compat/index.js"
 import { withDatabase, type AppDatabase } from "./db/context.js"
 import { authUnavailableEnvelope } from "./envelope.js"
 import { createInboxRoutes } from "./inbox/index.js"
@@ -155,7 +152,6 @@ export function createApp({
   app.route("/api/chats", createChatRoutes(auth, database))
   app.route("/api/chats", coachRoutes.native)
   app.route("/api/coach", createUsageRoutes(auth, database))
-  app.route("/api/paper", createCompatPaperRoutes(auth, database))
   app.route("/api/paper", createPaperRoutes(auth, database))
   app.route("/api/jobs", createJobRoutes(auth, database))
   app.route("/api/inbox", createInboxRoutes(auth, database, gmailEnabled))

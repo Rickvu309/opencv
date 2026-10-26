@@ -201,8 +201,44 @@ export const paperImportInputSchema = z
 
 export const paperSetStatusCommandInputSchema = paperSetStatusInputSchema
 
+export const paperKeywordGapInputSchema = z
+  .object({
+    docId: paperDocIdSchema,
+    jobId: jobIdSchema,
+  })
+  .strict()
+
+export const paperDeleteFileInputSchema = z
+  .object({
+    fileId: fileIdSchema,
+  })
+  .strict()
+
 export type PaperCreateInput = z.infer<typeof paperCreateInputSchema>
 export type PaperReplaceInput = z.infer<typeof paperReplaceInputSchema>
 export type PaperDuplicateInput = z.infer<typeof paperDuplicateInputSchema>
 export type PaperSetTemplateInput = z.infer<typeof paperSetTemplateInputSchema>
 export type PaperImportInput = z.infer<typeof paperImportInputSchema>
+export type PaperKeywordGapInput = z.infer<typeof paperKeywordGapInputSchema>
+export type PaperDeleteFileInput = z.infer<typeof paperDeleteFileInputSchema>
+
+const KEYWORD_STOP = new Set(["the", "and", "for", "with", "your"])
+
+/** First requirement token the letter does not already contain. */
+export function keywordGap(
+  letterText: string,
+  requirements: string
+): { keyword: string; sentence: string } | null {
+  const letter = letterText.toLowerCase()
+  const tokens = requirements.match(/[A-Za-z]{3,}/g) ?? []
+  for (const token of tokens) {
+    if (!/[A-Z]/.test(token)) continue
+    if (KEYWORD_STOP.has(token.toLowerCase())) continue
+    if (letter.includes(token.toLowerCase())) continue
+    return {
+      keyword: token,
+      sentence: `The job asks for ${token}. Add it if you've used it.`,
+    }
+  }
+  return null
+}

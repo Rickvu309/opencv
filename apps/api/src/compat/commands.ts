@@ -1,12 +1,9 @@
 // Temporary compat for the current web.
-// #377 deletes the thread map, #376 the apply map, and #378 the paper map.
+// #376 removed apply, #375 profile, and #378 paper. #377 deletes the thread map.
 import {
   ERROR_CODES,
-  PAPER_COMMANDS,
   THREAD_COMMANDS,
   type Actor,
-  type JobStage,
-  type PaperDoc,
   type ThreadDetail,
   type ThreadListItem,
   type ThreadMessage,
@@ -20,12 +17,6 @@ const COMPAT_COMMANDS = new Set<string>([
   THREAD_COMMANDS.rename,
   THREAD_COMMANDS.delete,
   THREAD_COMMANDS.postMessage,
-  PAPER_COMMANDS.createDoc,
-  PAPER_COMMANDS.updateContent,
-  PAPER_COMMANDS.renameDoc,
-  PAPER_COMMANDS.setStatus,
-  PAPER_COMMANDS.deleteDoc,
-  PAPER_COMMANDS.linkApplyCard,
 ])
 
 type ChatView = {
@@ -46,35 +37,6 @@ type MessageView = {
   parts?: ThreadMessage["parts"]
   status?: ThreadMessage["status"]
   workedMs?: number | null
-}
-
-type PaperView = {
-  id: string
-  name: string
-  kind: PaperDoc["kind"]
-  status: PaperDoc["status"]
-  document: unknown
-  contentVersion: number
-  createdAt: string
-  updatedAt: string
-}
-
-type JobView = {
-  id: string
-  title: string
-  company: string
-  stage: JobStage
-  position: string
-  starred: boolean
-  jobUrl: string | null
-  description: string | null
-  interviewAt: string | null
-  deadline: string | null
-  cvDocId: string | null
-  letterDocId: string | null
-  createdAt: string
-  updatedAt: string
-  note?: string
 }
 
 export function isCompatCommand(name: string) {
@@ -122,33 +84,6 @@ function asDetail(chat: ChatView): ThreadDetail {
     ...asThread(chat),
     messages: (chat.messages ?? []).map(asMessage),
   }
-}
-
-async function jobsOf(registry: Registry, actor: Actor) {
-  return (await registry.read("job.list", {}, actor)) as JobView[]
-}
-
-function asPaper(doc: PaperView, jobs: JobView[]): PaperDoc {
-  const linked = jobs.find(
-    (job) => job.cvDocId === doc.id || job.letterDocId === doc.id
-  )
-  return {
-    id: doc.id,
-    name: doc.name,
-    kind: doc.kind,
-    status: doc.status,
-    content: doc.document,
-    contentVersion: doc.contentVersion,
-    applyCardId: linked?.id ?? null,
-    createdAt: doc.createdAt,
-    updatedAt: doc.updatedAt,
-  }
-}
-
-async function paperById(registry: Registry, actor: Actor, docId: string) {
-  const doc = (await registry.read("paper.get", { docId }, actor)) as PaperView
-  const jobs = await jobsOf(registry, actor)
-  return asPaper(doc, jobs)
 }
 
 function record(input: unknown) {
@@ -221,109 +156,9 @@ export async function runCompatCommand(
       )) as ChatView
       return asDetail(chat)
     }
-    case PAPER_COMMANDS.createDoc: {
-      if (body.kind === "proof") {
-        throw new CommandError(
-          ERROR_CODES.VALIDATION_ERROR,
-          "Proof is not a document kind."
-        )
-      }
-      const created = (await run(
-        registry,
-        "paper.create",
-        {
-          kind: body.kind,
-          ...(typeof body.name === "string" ? { name: body.name } : {}),
-        },
-        actor
-      )) as PaperView
-      if (body.content !== undefined) {
-        await run(
-          registry,
-          "paper.replace",
-          {
-            docId: created.id,
-            contentVersion: created.contentVersion,
-            document: body.content,
-          },
-          actor
-        )
-      }
-      return paperById(registry, actor, created.id)
-    }
-    case PAPER_COMMANDS.updateContent: {
-      await run(
-        registry,
-        "paper.replace",
-        {
-          docId: body.docId,
-          contentVersion: body.contentVersion,
-          document: body.content,
-        },
-        actor
-      )
-      return paperById(registry, actor, String(body.docId))
-    }
-    case PAPER_COMMANDS.renameDoc: {
-      await run(
-        registry,
-        "paper.rename",
-        { docId: body.docId, name: body.name },
-        actor
-      )
-      return paperById(registry, actor, String(body.docId))
-    }
-    case PAPER_COMMANDS.setStatus: {
-      await run(
-        registry,
-        "paper.setStatus",
-        { docId: body.docId, status: body.status },
-        actor
-      )
-      return paperById(registry, actor, String(body.docId))
-    }
-    case PAPER_COMMANDS.deleteDoc: {
-      return run(registry, "paper.delete", { docId: body.docId }, actor)
-    }
-    case PAPER_COMMANDS.linkApplyCard: {
-      const docId = String(body.docId)
-      const doc = (await registry.read(
-        "paper.get",
-        { docId },
-        actor
-      )) as PaperView
-      const jobs = await jobsOf(registry, actor)
-      if (body.applyCardId == null) {
-        for (const job of jobs) {
-          if (job.cvDocId === docId) {
-            await run(
-              registry,
-              "job.unlinkPaper",
-              { jobId: job.id, kind: "cv" },
-              actor
-            )
-          }
-          if (job.letterDocId === docId) {
-            await run(
-              registry,
-              "job.unlinkPaper",
-              { jobId: job.id, kind: "letter" },
-              actor
-            )
-          }
-        }
-      } else if (doc.kind === "cv" || doc.kind === "letter") {
-        await run(
-          registry,
-          "job.linkPaper",
-          { jobId: body.applyCardId, docId, kind: doc.kind },
-          actor
-        )
-      }
-      return paperById(registry, actor, docId)
-    }
-    default:
+    default: {
       throw new CommandError(ERROR_CODES.UNKNOWN_COMMAND, "Unknown command")
+    }
   }
 }
 
@@ -351,12 +186,6 @@ export async function compatThreadDetail(
 ) {
   const chat = (await registry.read("chat.get", { chatId }, actor)) as ChatView
   return asDetail(chat)
-}
-
-export async function listCompatPaper(registry: Registry, actor: Actor) {
-  const docs = (await registry.read("paper.list", {}, actor)) as PaperView[]
-  const jobs = await jobsOf(registry, actor)
-  return docs.map((doc) => asPaper(doc, jobs))
 }
 
 export { asDetail, asMessage, asThread }

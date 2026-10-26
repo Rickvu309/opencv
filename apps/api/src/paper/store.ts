@@ -372,6 +372,35 @@ export async function readFileMeta(userId: UserId, fileId: FileId) {
   return row
 }
 
+export async function listFiles(userId: UserId) {
+  const rows = await getDb()
+    .select({
+      id: files.id,
+      name: files.name,
+      mediaType: files.mediaType,
+      byteSize: files.byteSize,
+      createdAt: files.createdAt,
+    })
+    .from(files)
+    .where(eq(files.userId, userId))
+    .orderBy(desc(files.createdAt))
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    mediaType: row.mediaType,
+    byteSize: row.byteSize,
+    createdAt: iso(row.createdAt),
+  }))
+}
+
+export async function deleteFile(actor: Actor, fileId: FileId) {
+  await readFileMeta(actor.userId, fileId)
+  await getDb()
+    .delete(files)
+    .where(and(eq(files.id, fileId), eq(files.userId, actor.userId)))
+  return { fileId }
+}
+
 export async function importPaper(actor: Actor, fileId: FileId) {
   const rows = await getDb()
     .select()
