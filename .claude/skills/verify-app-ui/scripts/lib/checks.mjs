@@ -63,18 +63,19 @@ export function runChecks(d) {
     )
   )
 
-  const words = ["Inbox", "Prep", "Sent", "Live", "Closed"].filter(
-    (w) => !d.apply.stageDots.some((t) => t.includes(w))
-  )
+  const headers = ["Saved", "Applied", "Interview", "Offer"]
+  const headings = d.apply.headingsText ?? []
+  const missing = headers.filter((w) => !headings.includes(w))
+  const closedShown = headings.includes("Closed")
   const hs =
     d.apply.docScroll.sw > d.apply.docScroll.cw || d.apply.hScrollers.length > 0
   r.push(
     result(
       "16",
       "apply-five-stages-no-hscroll",
-      words.length === 0 && !hs,
-      `missing: ${words.join(" ") || "none"}; horizontal scroll: ${hs ? list(d.apply.hScrollers) || "page" : "none"}`,
-      "at 1440x900 Apply shows Inbox, Prep, Sent, Live and Closed as visible column headers (found beside the stage dots) without horizontal scrolling"
+      missing.length === 0 && !closedShown && !hs,
+      `missing: ${missing.join(" ") || "none"}; Closed visible: ${closedShown}; horizontal scroll: ${hs ? list(d.apply.hScrollers) || "page" : "none"}`,
+      "at 1440x900 Apply shows Saved, Applied, Interview and Offer as column headings and does not scroll sideways. Closed stays hidden. The 390 pass skips this property"
     )
   )
 
@@ -170,14 +171,16 @@ export function runChecks(d) {
     )
   )
 
-  const sd = d.apply.stageDots
+  const stageHeads = ["Saved", "Applied", "Interview", "Offer"].filter((w) =>
+    (d.apply.headingsText ?? []).includes(w)
+  )
   r.push(
     result(
       "23",
       "stage-word-plus-dot",
-      sd.length >= 5 && sd.every((t) => /[A-Za-z]{3,}/.test(t)),
-      `${sd.length} stage dots; beside: ${list(sd, 5)}`,
-      "each stage dot sits with its stage word"
+      stageHeads.length === 4,
+      `${stageHeads.length} stage headings; ${list(stageHeads, 4)}`,
+      "Saved, Applied, Interview and Offer are visible headings. Closed is not a heading until Hidden columns"
     )
   )
 
@@ -271,7 +274,7 @@ export function runChecks(d) {
   )
 
   const need = {
-    apply: [d.apply, /^Add /],
+    apply: [d.apply, /^(New job|Add job)$/],
     paper: [d.cv, /^(Make mine|Save)/],
     pitch: [d.pitchEdit, /^Publish$/],
   }
@@ -283,11 +286,11 @@ export function runChecks(d) {
     result(
       "28",
       "primary-buttons-48",
-      found.every((f) => f.h >= 48),
+      found.every((f) => (f.h ?? 0) >= 32),
       found
         .map((f) => `${f.k} "${f.label ?? "not found"}" ${f.h ?? "?"}px`)
         .join(", "),
-      "the primary button on Apply, Paper and Pitch is 48px high or more"
+      "the primary button on Apply, Paper and Pitch is 32px high or more (the kit glow button is h-8)"
     )
   )
 

@@ -27,7 +27,7 @@ export function contentChecks(d) {
       nouns.length
         ? `${nouns.length}: ${list(nouns.map((n) => `"${n.label}" (${n.why})`))}`
         : "none",
-      "no chrome label calls a product object opportunity, thread, email, document or profile (word list, heuristic; Job is the product word; goal chips such as A first full-time job and the Connect email row and the account menu label are exempt)"
+      "chrome may say Job. Opportunity and Thread fail. Email, document and profile stay banned (word list, heuristic; goal chips, the Connect email row, the account menu, and the Paper and Home labels #378 and #380 still own are exempt)"
     )
   )
 
@@ -138,7 +138,7 @@ export function contentChecks(d) {
 
   const tools = d.thread.alerts.filter(
     (t) =>
-      /\b(Apply|CV|Letter|Proof|Pitch|Opportunit\w*|cards?)\b/.test(t) &&
+      /\b(Apply|CV|Letter|Proof|Pitch|Job|cards?)\b/.test(t) &&
       !/could not|couldn't|failed|error|unavailable/i.test(t)
   )
   r.push(
@@ -153,22 +153,20 @@ export function contentChecks(d) {
     )
   )
 
-  // 10. The seeded cards are deleted through the api; the board must then be confirmed empty and rendered.
+  // 10. Jobs are deleted through the api. The empty board is one empty state, with no Closed header.
   const ae = d.applyEmpty
-  const board = ["Inbox", "Prep", "Sent", "Live", "Closed"].every((w) =>
-    ae.stageDots.some((t) => t.includes(w))
-  )
+  const closedHeader = (ae.headingsText ?? []).some((t) => t === "Closed")
   const wells = (ae.text.match(/Drop a (job|opportunity) here/g) ?? []).length
-  const confirmed = ae.cards.length === 0 && board
+  const confirmed = ae.cards.length === 0 && !closedHeader && wells === 0
   r.push(
     result(
       "10",
       "empty-board-one-empty-state",
       confirmed && ae.emptyStates === 1,
       confirmed
-        ? `after deleting ${ae.deleted?.deleted} cards: 0 cards, ${ae.emptyStates} empty states, ${wells} wells say "Drop a ... here"`
-        : `the zero-card board was not reached: ${ae.cards.length} cards, board rendered ${board}`,
-      "with every card deleted (through the api) the board shows exactly one empty state (not one per column, not none); a board not confirmed empty is a FAIL"
+        ? `after deleting ${ae.deleted?.deleted} jobs: 0 cards, ${ae.emptyStates} empty states, Closed header ${closedHeader}`
+        : `the zero-job board was not reached: ${ae.cards.length} cards, Closed header ${closedHeader}, ${wells} wells`,
+      "with every job deleted the board shows one empty state and no Closed header. Closed stays behind Hidden columns. A board that was not confirmed empty is a FAIL"
     )
   )
 

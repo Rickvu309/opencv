@@ -302,22 +302,26 @@ function probe() {
     : null
   out.sidebarRect = sidebar ? rect(sidebar) : null
   // The card title is the deepest element inside the card whose text is the title taken from the card's
-  // aria-label ("<title> at <company>"), whatever its tag. None found means titleLines is null.
+  // aria-label ("<title>, <company>" or the older "<title> at <company>"). None found means titleLines is null.
   out.cards = [...document.querySelectorAll("[data-card-id]")].map((c) => {
     const aria = c.getAttribute("aria-label") ?? ""
+    const wants = []
+    const comma = aria.indexOf(", ")
+    if (comma > 0) wants.push(aria.slice(0, comma))
+    for (let i = aria.indexOf(" at "); i > 0; i = aria.indexOf(" at ", i + 1)) {
+      wants.push(aria.slice(0, i))
+    }
     let title = null
-    for (
-      let i = aria.indexOf(" at ");
-      i > 0 && !title;
-      i = aria.indexOf(" at ", i + 1)
-    ) {
-      const want = aria.slice(0, i)
+    for (const want of wants) {
       const hit = [...c.querySelectorAll("*")].filter(
         (e) =>
           clean(e.textContent) === want &&
           ![...e.children].some((k) => clean(k.textContent) === want)
       )[0]
-      if (hit) title = hit
+      if (hit) {
+        title = hit
+        break
+      }
     }
     const lh = title ? parseFloat(cs(title).lineHeight) || 20 : 20
     return {

@@ -12,17 +12,25 @@ const copy = JSON.parse(
   )
 )
 
-// 01. The product word is Job. A button, placeholder, empty line or banner must not call a
-// product object "opportunity", "thread", "email", "document" or "profile". Heuristic: a word list.
+// 01. ADR-0002 nouns. Chrome may say Job. Opportunity and Thread fail. Email, document, and profile
+// stay banned. Heuristic: a word list, so a legitimate use needs a note here.
+function retiredPattern(word) {
+  if (word === "Opportunity") return /\bopportunit(?:y|ies)\b/i
+  if (word === "Thread") return /\bthreads?\b/i
+  return new RegExp(`\\b${word}\\b`, "i")
+}
 const BANNED_NOUNS = [
-  [/\bopportunit(?:y|ies)\b/i, "opportunity (say Job)"],
-  [/\bthreads?\b/i, "thread (say Chat)"],
+  ...(copy.retiredNouns ?? []).map((word) => [
+    retiredPattern(word),
+    `${word} (say ${word === "Thread" ? "Chat" : "Job"})`,
+  ]),
   [/\bemails?\b/i, "email (say Letter)"],
   [/\bdocuments?\b/i, "document (say CV, Letter or Proof)"],
   [/\bprofile\b/i, "profile (say Pitch)"],
 ]
-// "A café or part-time job" and "A first full-time job" are goal chips, not the Opportunity object: a short
-// label that starts with A or An. "Connect email, optional" is the mail connector row, and the account menu label "<name>, profile and settings", and the Paper empty sentence check 29 demands. Nothing else is exempt.
+const LEGACY_NOUNS = new Set(copy.legacyNounLabels ?? [])
+// Goal chips that start with A or An, the Connect email row, the account menu label, the Paper empty
+// sentence, and legacyNounLabels (Paper and Home strings #378 and #380 still own) are exempt.
 const EMPLOYMENT_SENSE =
   /\b(part-time|full-time|first|dream|summer)\s+jobs?\b/gi
 const GOAL_CHIP = /^an?\s/i
@@ -33,7 +41,9 @@ const PAPER_EMPTY =
 export function nounViolations(labels) {
   const out = []
   for (const label of labels) {
-    if (CONNECTOR.test(label.trim()) || PAPER_EMPTY.test(label.trim())) continue
+    const trimmed = label.trim()
+    if (CONNECTOR.test(trimmed) || PAPER_EMPTY.test(trimmed)) continue
+    if (LEGACY_NOUNS.has(trimmed)) continue
     const chip = GOAL_CHIP.test(label) && label.split(/\s+/).length <= 6
     const text = chip ? label.replace(EMPLOYMENT_SENSE, "") : label
     for (const [re, why] of BANNED_NOUNS) {

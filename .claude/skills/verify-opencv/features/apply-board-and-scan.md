@@ -1,34 +1,34 @@
-# Apply board and URL scan
+# Apply board, list, calendar, and detail
 
-Apply (`/app/apply`) is a board with columns Inbox, Prep, Sent, Live and Closed. A new account has no cards. The `Add opportunity` dialog scans a posting URL to fill title and company. In verification the posting fetch is a stub, so no network is used.
+Apply (`/app/apply`) is a board with columns Saved, Applied, Interview, and Offer. Closed stays behind Hidden columns. A new account has no jobs. New job pastes a posting link. In verification the posting fetch is a stub, so no network is used.
 
 ## Sub-features
 
-- `apply-board` shows the empty columns before the first card.
-- `apply-scan` fills title and company from a posting URL.
-- `apply-add` adds the scanned card. Compat stores Inbox and Prep as `saved`, and a read of `saved` comes back as Inbox, so the new card shows in Inbox.
-- `apply-move` moves that card to Sent and keeps it there after reload. Sent is `applied` and round-trips.
+- `apply-board` shows Track your first job before the first job, then the four columns.
+- `apply-preview` fills title and company from a posting URL.
+- `apply-add` adds the job. The stub posting lands in Saved.
+- `apply-move` moves a card onto Interview and keeps it there after reload.
+- `apply-detail` shows the posting and keeps a note after reload.
 
 ## How to get to it (user POV)
 
-- Choose `Apply` in the sidebar.
-- Choose `Add opportunity`, scan a posting, then add the card.
-- Open the card and choose `Sent` in the stage menu.
+- Choose Apply in the sidebar.
+- Choose New job, paste a posting link, then Add job.
+- Drag a card to another column, or open the job and change Stage.
 
 ## Driving it with agent-browser
 
-Preconditions: signed in on a new account (see `auth.md`). The board has no cards.
+Preconditions: signed in on a new account (see `auth.md`). The board has no jobs. `AGENT_BROWSER_SESSION=verify-376`.
 
-- **Board.** `agent-browser open "$WEB_URL/app/apply"` and `agent-browser get text main`. The columns Inbox, Prep, Sent, Live and Closed are on the page, and no card title is present.
-- **Scan.** `agent-browser find role button click --name "Add opportunity"`, `agent-browser find role textbox fill "https://careers.verify-posting.dev/associate-pm-intern" --name "Posting link"`, `agent-browser find role button click --name "Scan"`. Wait 3 s. The dialog text reads `Filled Associate Product Manager Intern at Northwind Labs.`
-- **Add.** Choose the dialog's `Add opportunity` button (the last `Add opportunity` button in `snapshot -i`). The detail opens on a card titled `Associate Product Manager Intern` with company `Northwind Labs`. The stage button reads `Stage: Inbox`.
-- **Move.** `agent-browser find role button click --name "Stage: Inbox"`, then `agent-browser find role menuitem click --name "Sent"`. Wait 2 s. The stage button reads `Stage: Sent`.
-- **Persist.** `agent-browser reload`, open the card again, and confirm the stage button still reads `Stage: Sent`. `GET /api/apply` shows `stage` `sent`.
-- **Proof.** `agent-browser screenshot "$EVIDENCE_DIR/apply-move-scan.png"` after the move, plus the api read of `GET /api/apply` showing the card.
+- **Board.** `agent-browser open "$WEB_URL/app/apply"`. The page shows Track your first job. Closed is not visible. Create two jobs with `POST /api/commands/job.create`: Associate PM intern at Local startup in `interview`, and Business Analyst at Regional bank in `applied`. Reload. Those titles sit under Interview and Applied.
+- **Move.** Drag the Business Analyst card onto the Interview lane. Reload. It stays under Interview. `GET /api/jobs` shows `stage` `interview` for that job.
+- **Preview.** `agent-browser find role button click --name "New job"`, fill the link textbox with `https://careers.verify-posting.dev/associate-pm-intern`, then `agent-browser find role button click --name "Paste"`. Wait 3 s. The dialog shows Filled, Associate Product Manager Intern, and Northwind Labs. Choose Add job. Saved holds that card.
+- **Detail.** Open the new card. The posting text is on the page. Leave a note `Bring the checkout study.` and submit Add note. Reload. The note is in the activity list.
+- **390 and reduced motion.** Screenshot both widths. Proof images go to `$EVIDENCE_DIR`.
 
 ## Gotchas
 
-- Do not use `https://jobs.example.com/...`. That host is rejected with `That posting link isn't a valid web URL.`
-- The stub ignores the URL and always returns the same posting: `Northwind Labs is hiring an Associate Product Manager Intern in Hanoi.` A second add with the same URL is a duplicate and is refused.
-- Dragging onto an empty column was not driven. The move uses the stage menu because the new card is the only card.
-- Calendar view and search were not driven.
+- Do not use `https://jobs.example.com/...`. The guard still refuses that host.
+- The stub ignores the path and returns the Northwind sentence: `Northwind Labs is hiring an Associate Product Manager Intern in Hanoi.` A second add of the same URL shows Already on your board.
+- The browser must not fetch the posting URL. Preview goes through `POST /api/jobs/preview`.
+- Closed is hidden until Hidden columns. The old columns Inbox, Prep, Sent, and Live are gone.
