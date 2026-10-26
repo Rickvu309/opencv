@@ -1,8 +1,6 @@
 import type { ReactNode } from "react"
 import { cn } from "cn"
 
-import { Button } from "./button"
-
 type ToolbarTab = {
   label: string
   href: string
@@ -35,19 +33,21 @@ function Toolbar({
         {tabs.map((tab) => {
           const current = tab.href === active
           return (
-            <Button
+            <a
               key={tab.href}
-              variant={current ? "secondary" : "outline"}
-              size="sm"
-              // render is an anchor, so Base UI must not expect a native button.
-              nativeButton={false}
+              href={tab.href}
               aria-current={current ? "page" : undefined}
-              render={<a href={tab.href} />}
-              className="rounded-full"
+              data-slot="toolbar-link"
+              className={cn(
+                "inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-sm font-medium",
+                current
+                  ? "bg-accent text-foreground"
+                  : "text-muted-foreground ring-1 ring-border ring-inset hover:bg-secondary"
+              )}
             >
               {tab.icon}
               {tab.label}
-            </Button>
+            </a>
           )
         })}
       </nav>
