@@ -110,7 +110,7 @@ pr_commit() { git -C "$work" add -A && git -C "$work" commit -q -m "$1" && git -
 main_commit() { git -C "$work" checkout -q main && git -C "$work" add -A && git -C "$work" commit -q -m "$1" && git -C "$work" push -q origin main && git -C "$work" checkout -q "$REVIEW_TEST_BRANCH"; }
 
 run --no-install
-expect "behind main merges and passes" 0 "branch is behind main; the checks run on the merge" "merges cleanly" "lint, typecheck, test passed" "RESULT: OK (patch id" "--match-head-commit $(git -C "$work" rev-parse "$REVIEW_TEST_BRANCH")"
+expect "behind main merges and passes" 0 "branch is behind main; the checks run on the merge" "merges cleanly" "lint, typecheck, test passed" "running pnpm --filter web build" "web build passed" "RESULT: OK (patch id" "--match-head-commit $(git -C "$work" rev-parse "$REVIEW_TEST_BRANCH")"
 want_runs "behind main" 1
 grep -q "ran on $(merge_tree)" "$REVIEW_TEST_RUNS" || fail "behind main" "check did not run on the merge tree $(merge_tree)"
 patch1=$(patch_id)
@@ -157,6 +157,7 @@ want_runs "cleared" 4
 # A checklist FAIL that needs a new push skips the expensive check, but the merge still runs.
 REVIEW_TEST_TITLE='bad title' run --no-install
 expect "checklist FAIL skips the check" 1 "merges cleanly" "skipped the full check" "RESULT: FAIL"
+absent "checklist fail" "web build passed"
 want_runs "checklist fail" 4
 
 # The PR's own hooks take no part in the merge or the checkout: merge-tree writes no ref or index, and the checkout runs with hooks off.
@@ -184,7 +185,7 @@ REVIEW_TEST_PNPM_EXIT=1 run
 expect "failed install is not cached" 1 "dependency install failed" "RESULT: FAIL"
 want_runs "failed install rerun" 7
 run
-expect "install passes" 0 "lint, typecheck, test passed" "RESULT: OK"
+expect "install passes" 0 "lint, typecheck, test passed" "web build passed" "RESULT: OK"
 want_runs "install passes" 8
 run
 expect "install pass is cached" 0 "(cached; --no-cache reruns)"

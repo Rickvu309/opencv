@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useCallback, useMemo, useReducer, useRef } from "react"
 import {
   appendCoachPart,
+  parsePaperId,
   textFromParts,
   type CoachSelection,
   type CoachUsageRating,
@@ -140,7 +141,7 @@ export function useCoachTurn({
 
       const created = await createThread({
         title: titleForCreate(text),
-        ...(focusDocId ? { focusDocId } : {}),
+        ...(focusDocId ? { focusDocId: parsePaperId(focusDocId) } : {}),
       })
       rememberListItem(created)
       if (generation !== sendGeneration.current) return null
