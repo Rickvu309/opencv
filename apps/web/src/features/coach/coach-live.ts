@@ -109,7 +109,6 @@ export async function loadCoachChat(chatId: string) {
   }
 }
 
-/** The server names a chat after the turn. Keep the messages already on screen. */
 export async function refreshCoachMeta(chatId: string) {
   try {
     const chat = await getChat(chatId)
