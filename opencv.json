@@ -1,0 +1,7 @@
+{
+  "target": "shadcn",
+  "srcDir": "apps/web/src",
+  "componentsDir": "packages/ui/src/components",
+  "screensDir": "apps/web/src/features",
+  "styles": "packages/ui/src/styles/globals.css"
+}
