@@ -55,6 +55,7 @@ type StoredCommand = {
   destructive: boolean
   input: ZodType
   step: (input: unknown) => string
+  transaction?: "none"
   run: (input: unknown, actor: Actor) => Promise<RanCommand>
 }
 
@@ -129,6 +130,7 @@ export class Registry {
       coach: checked.coach,
       destructive: checked.destructive,
       input: checked.input,
+      transaction: checked.transaction,
       step: (raw) => {
         const parsed = checked.input.safeParse(raw)
         return parsed.success ? checked.step(parsed.data) : checked.name
@@ -237,8 +239,6 @@ export class Registry {
     }
     const parsed = parseInput(command.input, options.input)
 
-    // The email-change command calls better-auth, which uses the same PGlite
-    // client. Running that inside this transaction deadlocks the client.
     const run = async () => {
       if (options.idempotencyKey) {
         const existing = await this.activityByKey(
@@ -338,7 +338,7 @@ export class Registry {
         detail: ran.draft?.detail,
       }
     }
-    if (options.name === "account.requestEmailChange") return run()
+    if (command.transaction === "none") return run()
     return transaction(run)
   }
 

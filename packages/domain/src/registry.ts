@@ -56,6 +56,7 @@ export type CommandSpec<TInput, TOutput> = {
     output: NoInfer<TOutput>,
     actor: Actor
   ) => ActivityDraft | null
+  transaction?: "none"
 }
 
 export function defineCommand<TInput, TOutput>(

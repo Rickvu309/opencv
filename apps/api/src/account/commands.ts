@@ -89,6 +89,8 @@ export function registerAccount(registry: Registry) {
       reversal: () => null,
       step: () => "Request email change",
       activity: () => null,
+      // The handler calls better-auth, which opens its own connection.
+      transaction: "none",
     },
     (input) => requestEmailChange(input.email)
   )
