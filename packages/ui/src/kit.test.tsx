@@ -60,6 +60,22 @@ describe("kit parts", () => {
     expect(onClose).toHaveBeenCalledOnce()
   })
 
+  it("closes ConfirmDelete when Escape is pressed", async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+    render(
+      <ConfirmDelete
+        open
+        thing="Associate PM intern"
+        confirmLabel="Delete job"
+        onConfirm={vi.fn()}
+        onClose={onClose}
+      />
+    )
+    await user.keyboard("{Escape}")
+    expect(onClose).toHaveBeenCalled()
+  })
+
   it("exposes usage as a percentage on the meter", () => {
     render(<Meter label="This week" value={0.52} />)
     const meter = screen.getByRole("meter", { name: "This week" })
@@ -86,15 +102,16 @@ describe("kit parts", () => {
     expect(screen.getByRole("img", { name: "Interview" })).toBeInTheDocument()
   })
 
-  it("gives the glow variant and the default primary the glow utility", () => {
+  it("keeps the glow on the glow variant and the default on the kit secondary", () => {
     const { rerender } = render(<Button variant="glow">Add job</Button>)
-    expect(screen.getByRole("button", { name: "Add job" }).className).toMatch(
-      /\bglow\b/
-    )
+    const glow = screen.getByRole("button", { name: "Add job" })
+    expect(glow).toHaveAttribute("data-variant", "glow")
+    // The glow utility is the visual contract for variant="glow".
+    expect(glow.className).toMatch(/\bglow\b/)
     rerender(<Button>Add job</Button>)
-    expect(screen.getByRole("button", { name: "Add job" }).className).toMatch(
-      /\bglow\b/
-    )
+    const secondary = screen.getByRole("button", { name: "Add job" })
+    expect(secondary).toHaveAttribute("data-variant", "default")
+    expect(secondary.className).not.toMatch(/\bglow\b/)
   })
 
   it("renders a page header and a toolbar of links", () => {
@@ -111,10 +128,11 @@ describe("kit parts", () => {
       </>
     )
     expect(screen.getByRole("heading", { name: "Apply" })).toBeInTheDocument()
-    const board = screen.getByRole("button", { name: "Board" })
+    const board = screen.getByRole("link", { name: "Board" })
     expect(board.tagName).toBe("A")
     expect(board).toHaveAttribute("href", "/apply")
     expect(board).toHaveAttribute("aria-current", "page")
+    expect(board).not.toHaveAttribute("role", "button")
   })
 
   it("sends Undo as the toast action", () => {
