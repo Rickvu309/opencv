@@ -1,9 +1,9 @@
 // Temporary compat for the current web.
-// #376 removed the apply map. #377 deletes the thread map, #378 the paper map, and #375 the profile map.
+// #377 deletes the thread map, #376 the apply map, and #378 the paper map.
+// #375 removed the profile.setCoachMode arm. profile.update still accepts coachMode.
 import {
   ERROR_CODES,
   PAPER_COMMANDS,
-  PROFILE_COMMANDS,
   THREAD_COMMANDS,
   type Actor,
   type JobStage,
@@ -11,7 +11,6 @@ import {
   type ThreadDetail,
   type ThreadListItem,
   type ThreadMessage,
-  type UserProfile,
 } from "@workspace/domain"
 
 import { CommandError } from "../registry/errors.js"
@@ -28,7 +27,6 @@ const COMPAT_COMMANDS = new Set<string>([
   PAPER_COMMANDS.setStatus,
   PAPER_COMMANDS.deleteDoc,
   PAPER_COMMANDS.linkApplyCard,
-  PROFILE_COMMANDS.setCoachMode,
 ])
 
 type ChatView = {
@@ -124,21 +122,6 @@ function asDetail(chat: ChatView): ThreadDetail {
   return {
     ...asThread(chat),
     messages: (chat.messages ?? []).map(asMessage),
-  }
-}
-
-function asProfile(
-  profile: UserProfile & Record<string, unknown>
-): UserProfile {
-  return {
-    id: profile.id,
-    name: profile.name,
-    email: profile.email,
-    emailVerified: profile.emailVerified,
-    image: profile.image,
-    coachMode: profile.coachMode,
-    createdAt: profile.createdAt,
-    updatedAt: profile.updatedAt,
   }
 }
 
@@ -339,15 +322,6 @@ export async function runCompatCommand(
         )
       }
       return paperById(registry, actor, docId)
-    }
-    case PROFILE_COMMANDS.setCoachMode: {
-      const profile = (await run(
-        registry,
-        "profile.update",
-        { coachMode: body.mode },
-        actor
-      )) as UserProfile
-      return asProfile(profile)
     }
     default:
       throw new CommandError(ERROR_CODES.UNKNOWN_COMMAND, "Unknown command")

@@ -17,7 +17,7 @@ import { jsonWithStatus } from "../http-json.js"
 import { requireSession, type SessionVariables } from "../middleware.js"
 import { saveFile } from "../paper/index.js"
 import { registry } from "../registry/registry.js"
-import { exportAccount } from "./queries.js"
+import { exportAccount, listIntegrations, readBilling } from "./queries.js"
 import { getProfileRow, toProfile } from "./store.js"
 import { readUsage } from "./usage.js"
 
@@ -32,6 +32,24 @@ export function createProfileRoutes(auth?: Auth, db?: AppDatabase) {
   routes.get("/", async (c) => {
     const row = await getProfileRow(parseUserId(c.var.userId))
     return c.json(successEnvelope(toProfile(row)))
+  })
+  return routes
+}
+
+export function createIntegrationsRoutes(auth?: Auth, db?: AppDatabase) {
+  const routes = sessionApp(auth, db)
+  routes.get("/", async (c) => {
+    const data = await listIntegrations(c.var.userId)
+    return c.json(successEnvelope(data))
+  })
+  return routes
+}
+
+export function createBillingRoutes(auth?: Auth, db?: AppDatabase) {
+  const routes = sessionApp(auth, db)
+  routes.get("/", async (c) => {
+    const data = await readBilling(c.var.userId)
+    return c.json(successEnvelope(data))
   })
   return routes
 }
