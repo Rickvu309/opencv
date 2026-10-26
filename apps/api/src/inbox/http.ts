@@ -1,9 +1,10 @@
-import { createFakeMailProvider, successEnvelope } from "@workspace/domain"
+import { successEnvelope } from "@workspace/domain"
 import { Hono } from "hono"
 
 import type { Auth } from "../auth.js"
 import type { AppDatabase } from "../db/context.js"
 import { requireSession, type SessionVariables } from "../middleware.js"
+import { connectUrl, readInbox, readInboxThread } from "./store.js"
 
 export function createInboxRoutes(
   auth?: Auth,
@@ -12,33 +13,21 @@ export function createInboxRoutes(
 ) {
   const routes = new Hono<{ Variables: SessionVariables }>()
   routes.use("*", requireSession(auth, db))
-  const mail = createFakeMailProvider()
 
   routes.get("/", async (c) => {
-    if (!gmailEnabled) {
-      return c.json(successEnvelope({ connected: false, threads: [] }))
-    }
-    const threads = await mail.listThreads()
-    return c.json(successEnvelope({ connected: true, threads }))
+    const data = await readInbox(c.var.userId)
+    return c.json(successEnvelope(data))
   })
 
   routes.get("/connect", (c) =>
-    c.json(successEnvelope({ connected: false, url: null }))
+    c.json(successEnvelope({ url: gmailEnabled ? connectUrl() : null }))
   )
 
   routes.get("/callback", (c) => c.json(successEnvelope({ connected: false })))
 
   routes.get("/:id", async (c) => {
-    const detail = await mail.getThread(c.req.param("id"))
-    if (!detail)
-      return c.json(
-        {
-          ok: false,
-          error: { code: "NOT_FOUND", message: "Thread not found" },
-        },
-        404
-      )
-    return c.json(successEnvelope(detail))
+    const data = await readInboxThread(c.var.userId, c.req.param("id"))
+    return c.json(successEnvelope(data))
   })
 
   return routes

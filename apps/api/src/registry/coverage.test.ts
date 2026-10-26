@@ -8,6 +8,7 @@ import { createMigratedTestDb } from "../test/harness.js"
 import { accountCases } from "./coverage-account.js"
 import { chatCases } from "./coverage-chat.js"
 import { idOf, type CoverageTools } from "./coverage-helpers.js"
+import { inboxCases } from "./coverage-inbox.js"
 import { jobCases } from "./coverage-job.js"
 import { paperCases } from "./coverage-paper.js"
 import { installRegistry } from "./install.js"
@@ -84,6 +85,7 @@ describe("registry command coverage", () => {
       ...chatCases(tools),
       ...paperCases(tools),
       ...jobCases(tools),
+      ...inboxCases(tools),
       ...accountCases(tools),
     ]
 
@@ -168,6 +170,8 @@ describe("registry command coverage", () => {
       expect(names).not.toContain("job.addChecklistItem")
       expect(names).not.toContain("job.setChecklistItem")
       expect(names).not.toContain("job.removeChecklistItem")
+      expect(names).not.toContain("inbox.scan")
+      expect(names).not.toContain("inbox.send")
     })
     await client.close()
   })
