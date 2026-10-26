@@ -78,6 +78,19 @@ export function createCompatPaperRoutes(auth?: Auth, db?: AppDatabase) {
   const routes = new Hono<{ Variables: SessionVariables }>()
   routes.use("*", requireSession(auth, db))
   routes.get("/", async (c) => {
+    const kind = c.req.query("kind")
+    const query = c.req.query("query") ?? c.req.query("q")
+    if (kind === "cv" || kind === "letter" || query) {
+      const input: { query?: string; kind?: "cv" | "letter" } = {}
+      if (query) input.query = query
+      if (kind === "cv" || kind === "letter") input.kind = kind
+      const data = await registry.read(
+        "paper.list",
+        input,
+        person(c.var.userId)
+      )
+      return c.json(successEnvelope(data))
+    }
     const docs = await listCompatPaper(registry, person(c.var.userId))
     return c.json(successEnvelope(docs))
   })

@@ -38,7 +38,22 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
   })
 
   routes.get("/", async (c) => {
-    const data = await registry.read("paper.list", {}, person(c.var.userId))
+    const kind = c.req.query("kind")
+    const query = c.req.query("query") ?? c.req.query("q")
+    if (kind && kind !== "cv" && kind !== "letter") {
+      return jsonWithStatus(
+        c,
+        errorEnvelope(
+          ERROR_CODES.VALIDATION_ERROR,
+          "Use cv or letter for kind."
+        ),
+        httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
+      )
+    }
+    const input: { query?: string; kind?: "cv" | "letter" } = {}
+    if (query) input.query = query
+    if (kind === "cv" || kind === "letter") input.kind = kind
+    const data = await registry.read("paper.list", input, person(c.var.userId))
     return c.json(successEnvelope(data))
   })
 
