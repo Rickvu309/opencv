@@ -6,11 +6,11 @@ Ids 01 to 30 are the research check numbers. 31 to 38 are app-wide checks the si
 
 Writing and logic:
 
-- 01 `product-nouns`: chrome may say Job. Opportunity and Thread fail. Email, document and profile stay banned. Exempt: a short goal chip that starts with A or An, the "Connect email, optional" row, the account menu label "<name>, profile and settings", and the Paper and Home labels in `legacyNounLabels` that #378 and #380 still own. Source: ADR-0002.
+- 01 `product-nouns`: chrome may say Job. Opportunity and Thread fail. Email, document and profile stay banned. Exempt: a short goal chip that starts with A or An, the "Connect email, optional" row, the account menu label "<name>, profile and settings", the Paper and Home labels in `legacyNounLabels`, and the Inbox strings `inboxConnectTitle`, `inboxConnectPromise`, `inboxEmptyTitle`, `inboxScanTitle`, plus `{n} emails from {c} companies so far`. Source: ADR-0002.
 - 02 `one-composer-placeholder`: Home, the Thread and the Paper Coach float use one placeholder. Source: Apple writing.
 - 03 `button-labels-act`: no Click here, Learn more, OK (heuristic; a joke label cannot be decided). Source: Apple writing.
 - 04 `coach-error-not-raw`: the tour sends twice, once with the api answering 404 `USER_NOT_FOUND "User not found."` and once with the connection refused. Each must show an error in a live region, and neither may show the raw message or a transport error such as Failed to fetch. No error shown is a FAIL. Source: Apple feedback.
-- 05 `no-other-product-names`: no social product name (Instagram, TikTok, Snapchat, Facebook, Twitter, YouTube, Pinterest, WhatsApp, Linktree). Integrations such as GitHub and Gmail are not matched. Source: Apple writing.
+- 05 `no-other-product-names`: no social product name (Instagram, TikTok, Snapchat, Facebook, Twitter, YouTube, Pinterest, WhatsApp, Linktree). Integrations such as GitHub and Gmail are not matched. Connect Gmail is allowed. Source: Apple writing.
 - 06 `starter-cv-name`: a new CV's name field placeholder is Name, and the title is not Your name. Source: NN/g empty states.
 - 07 `pitch-starter-no-metric`: Pitch coming-soon copy has no percentage, no "N percent", and no add-to-cart. Preview text marked aria-hidden is not counted. Source: NN/g hallucinations.
 - 08 `confirm-before-write`: a JSX label or quoted string Approve and Deny exists in the Coach features (source read; comments and type names do not count; the scripted Coach never writes). Source: shadcn Confirmation; Gemini.
@@ -58,12 +58,12 @@ App-wide:
 - 35 `spacing-scale`: 95% or more of padding and gap values are on the 4px scale plus the half steps 2, 6, 10, 14.
 - 36 `row-density`: Paper rows 40 to 72px; no Apply card title past two lines. The card's accessible name is "{title}, {company}". The title is the deepest element in the card whose text is that title, whatever its tag; a card with no such element, or no cards, is a FAIL. Source: Material density.
 - 37 `no-raw-colors`: every computed text, fill and border color equals a semantic design token (the `:root` variables of `globals.css`) within 6 per channel, 12 when translucent. Tailwind palette variables such as `--color-red-600` and `--color-black` are not design tokens, so a palette class fails. Black scrims, SVG fills and gradient stops are not measured here (19 reads gradients). The source test `apps/web/src/test/design-vocabulary.test.ts` covers raw hex in `apps/web/src`.
-- 38 `mobile-surfaces-reachable`: at 390x844 the drawer is open and Inbox, Coach, Jobs, Paper, Apply and Pitch are in view at 24px or more. The page does not scroll sideways.
+- 38 `mobile-surfaces-reachable`: at 390x844 the drawer is open and Inbox, Coach, Jobs, Paper, Apply and Pitch are in view at 24px or more. The page does not scroll sideways. The count stays six because the shell already lists Inbox.
 
 Design text, properties 39 to 44. Phrases are pinned in `scripts/lib/copy.json`.
 
 - 39 `brand-wordmark`: chrome never contains OpenCV. The brand is the mark plus lowercase opencv. The same 39 to 44 rules also run on `/app/settings` (desktop, reduced motion, and 390). Those snaps stay off the four surfaces in check 38.
-- 40 `one-glow-primary`: each toured view, including the 390px pass, has at most one control wearing the glow utility.
+- 40 `one-glow-primary`: each toured view, including the 390px pass and the Inbox connect screen, has at most one control wearing the glow utility. The reader glow is Move to Interview while the prompt is open, otherwise Send.
 - 41 `no-dash-in-copy`: chrome has no em dash, en dash, or middle dot.
 - 42 `toggle-enabled-disabled`: a toggle label is Enabled or Disabled. On, Off, and Connected fail.
 - 43 `title-before-company`: a job line does not start with "at" and no title.

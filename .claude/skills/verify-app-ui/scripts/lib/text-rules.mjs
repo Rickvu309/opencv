@@ -52,6 +52,15 @@ const PAPER_LINES = new Set(
     "Document changed",
   ].filter((line) => typeof line === "string" && line.length > 0)
 )
+// Inbox connect copy says job and email on purpose. The empty title and the scan count
+// become chrome because the empty slot contributes its full text.
+const INBOX_EXEMPT = new Set([
+  copy.inboxConnectTitle,
+  copy.inboxConnectPromise,
+  copy.inboxEmptyTitle,
+  copy.inboxScanTitle,
+])
+const INBOX_COUNT = /^\d+ emails from \d+ companies so far$/
 export function nounViolations(labels) {
   const out = []
   for (const label of labels) {
@@ -60,7 +69,8 @@ export function nounViolations(labels) {
       CONNECTOR.test(trimmed) ||
       PAPER_EMPTY.test(trimmed) ||
       PAPER_LINES.has(trimmed) ||
-      LEGACY_NOUNS.has(trimmed)
+      LEGACY_NOUNS.has(trimmed) ||
+      inboxExempt(trimmed)
     )
       continue
     const chip = GOAL_CHIP.test(label) && label.split(/\s+/).length <= 6
@@ -70,6 +80,12 @@ export function nounViolations(labels) {
     }
   }
   return out
+}
+
+function inboxExempt(label) {
+  if (INBOX_EXEMPT.has(label)) return true
+  if (label.startsWith(copy.inboxEmptyTitle)) return true
+  return INBOX_COUNT.test(label)
 }
 
 // 03. A label that gives no action. Heuristic: only the named bad labels, a joke label cannot be decided.

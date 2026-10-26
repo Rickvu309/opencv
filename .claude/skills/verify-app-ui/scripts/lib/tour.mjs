@@ -15,6 +15,7 @@ const ROUTES = {
   ],
   apply: ["/app/apply", "document.querySelector('[data-card-id]')"],
   pitch: ["/app/pitch", "document.querySelector('h1')"],
+  inbox: ["/app/inbox", "document.querySelector('h1')"],
 }
 // Also listed under "Constants the checks assume" in SKILL.md.
 const PRIMARY = {
@@ -255,6 +256,10 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
       d.pitchStory = d.pitch
     }
   }
+  must(await visit("inbox"), "inbox did not render")
+  await a.sleep(1200)
+  d.inbox = await snap(a)
+  await shot(a, "desktop-inbox")
   await a.goto(`${webUrl}/app/settings`)
   must(
     await a.waitFor("document.body.innerText.includes('Preferences')", 20000),

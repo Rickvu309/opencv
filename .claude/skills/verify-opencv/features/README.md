@@ -28,6 +28,7 @@ This directory is the maintained source for verifying the user-facing behavior o
 | `apply-board-and-scan.md` | Add a card, move it, scan a posting URL | `/app/apply`    |
 | `coming-soon.md`          | Jobs, Proofs and Pitch coming soon      | `/app/jobs`     |
 | `settings.md`             | Settings sections, export, upgrade      | `/app/settings` |
+| `inbox.md`                | Inbox connect, scan, read, reply        | `/app/inbox`    |
 
 ## Proof and skip reporting
 
