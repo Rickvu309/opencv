@@ -38,21 +38,21 @@ describe("proof press", () => {
     expect(proofPose(0)).toMatchObject({
       links: { context: 0, action: 0, outcome: 0 },
       platen: 0,
-      readout: "held · context open",
+      readout: "held, context open",
     })
     expect(proofPose(1).links).toEqual({ context: 1, action: 0, outcome: 0 })
-    expect(proofPose(1).readout).toBe("held · action open")
+    expect(proofPose(1).readout).toBe("held, action open")
     expect(proofPose(2).platen).toBe(0)
-    expect(proofReadout(proofPose(2).links)).toBe("held · outcome open")
+    expect(proofReadout(proofPose(2).links)).toBe("held, outcome open")
 
     const seating = proofPose(2.5)
     expect(seating.platen).toBeCloseTo(0.5)
     expect(seating.links.outcome).toBeCloseTo(0.5)
-    expect(seating.readout).toBe("held · outcome open")
+    expect(seating.readout).toBe("held, outcome open")
 
     const stamped = proofPose(3)
     expect(stamped.platen).toBe(1)
-    expect(stamped.readout).toBe("stamped · context, action, outcome")
+    expect(stamped.readout).toBe("stamped, context, action, outcome")
   })
 })
 
@@ -67,7 +67,7 @@ describe("cv plotter", () => {
     expect(plotterPose(1.49).sheet).toBe(0)
     expect(plotterPose(1.5).sheet).toBe(1)
     expect(plotterPose(2).sheet).toBe(1)
-    expect(plotterPose(2).readout).toBe("Letter · that line")
+    expect(plotterPose(2).readout).toBe("Letter, that line")
   })
 })
 
@@ -75,11 +75,11 @@ describe("dispatch rack", () => {
   it("keeps the card on the board and treats sent as a mark", () => {
     expect(DISPATCH_STAGES).toEqual(["Inbox", "Prep", "Sent", "Live", "Closed"])
     expect(dispatchReadout(2)).toContain("not mailed")
-    expect(dispatchReadout(0)).toBe("Inbox · on your board")
+    expect(dispatchReadout(0)).toBe("Inbox, on your board")
     expect(previousStage(0)).toBeNull()
     expect(previousStage(1)).toBe(0)
     expect(asStage(0.2)).toBe(0)
-    expect(dispatchPose(0.5).readout).toBe("moving · still on the board")
+    expect(dispatchPose(0.5).readout).toBe("moving, still on the board")
     expect(dispatchPose(0).x).toBe(0)
     expect(dispatchPose(4).x).toBeGreaterThan(0)
   })

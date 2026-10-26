@@ -49,7 +49,7 @@ export function PlotterCard() {
       }}
       titleId="landing-plotter-title"
       heading="Written for you"
-      description="You pick a line. The Coach can rewrite it, and you edit the result. The Letter for that opportunity can carry the same line."
+      description="Paste a job post and get a CV and letter that lead with your best work."
     >
       <svg
         ref={svgRef}

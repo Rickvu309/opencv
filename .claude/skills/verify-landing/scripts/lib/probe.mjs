@@ -14,7 +14,7 @@ function probe(kind) {
       tick()
     })
   }
-  const NAMES = ["coach", "paper", "apply", "pitch"]
+  const NAMES = ["capture", "plan", "assistant", "review"]
   const canvas = document.createElement("canvas")
   canvas.width = canvas.height = 1
   const ctx = canvas.getContext("2d", { willReadFrequently: true })
@@ -167,6 +167,8 @@ function probe(kind) {
         top: heroImg.getBoundingClientRect().top,
       },
       h1Bottom: h1el ? h1el.getBoundingClientRect().bottom : null,
+      pageWidth: document.documentElement.scrollWidth,
+      viewWidth: document.documentElement.clientWidth,
       description:
         document.querySelector("meta[name=description]")?.content ?? "",
       title: document.title,

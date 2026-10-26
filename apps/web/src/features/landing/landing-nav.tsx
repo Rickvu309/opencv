@@ -8,45 +8,10 @@ import { cn } from "@workspace/ui/lib/utils"
 import { OpenCvLogo } from "@/features/app-shell/app-logo.tsx"
 
 import {
-  LANDING_AUTH_LINKS,
-  LANDING_NAV_ANCHORS,
-  type LandingLink,
+  LANDING_LOGIN_LABEL,
+  LANDING_NAV_LINKS,
+  LANDING_PRIMARY_LABEL,
 } from "./landing-copy.ts"
-
-const NAV_LINK = cn(
-  "landing-link inline-flex min-h-10 items-center rounded-full px-2 text-xs text-muted-foreground hover:text-foreground md:min-h-8 md:px-3 md:text-sm",
-  FOCUS_RING
-)
-
-function LandingNavLink({ link }: { link: LandingLink }) {
-  if (link.kind === "anchor") {
-    return (
-      <a href={link.href} className={NAV_LINK}>
-        {link.label}
-      </a>
-    )
-  }
-
-  if (link.to === "/sign-up") {
-    return (
-      <Link
-        to={link.to}
-        className={cn(
-          buttonVariants({ size: "sm" }),
-          "h-10 rounded-full px-3 md:h-8"
-        )}
-      >
-        {link.label}
-      </Link>
-    )
-  }
-
-  return (
-    <Link to={link.to} className={NAV_LINK}>
-      {link.label}
-    </Link>
-  )
-}
 
 export function LandingNav() {
   const [scrolled, setScrolled] = useState(false)
@@ -59,26 +24,48 @@ export function LandingNav() {
   }, [])
 
   return (
-    <header
-      data-scrolled={scrolled}
-      className="landing-nav sticky top-0 z-40 border-b border-transparent bg-background data-[scrolled=true]:border-border"
-    >
-      <div className="landing-frame flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-3 md:h-16 md:flex-nowrap md:py-0">
-        <Link to="/" className={cn("rounded-md py-1", FOCUS_RING)}>
-          <OpenCvLogo withWordmark />
-        </Link>
-        <nav
-          aria-label="Primary"
-          className="order-last -mx-2 flex w-full flex-wrap items-center gap-x-1 gap-y-1 md:order-none md:mx-0 md:w-auto"
-        >
-          {LANDING_NAV_ANCHORS.map((anchor) => (
-            <LandingNavLink key={anchor.href} link={anchor} />
-          ))}
-        </nav>
-        <div className="flex items-center gap-2">
-          {LANDING_AUTH_LINKS.map((link) => (
-            <LandingNavLink key={link.to} link={link} />
-          ))}
+    <header data-scrolled={scrolled} className="landing-nav">
+      <div className="landing-grid">
+        <div className="landing-bar">
+          <Link to="/" className={cn("rounded-md", FOCUS_RING)}>
+            <OpenCvLogo withWordmark />
+          </Link>
+          <nav aria-label="Primary" className="landing-nav-links">
+            {LANDING_NAV_LINKS.map((link) =>
+              link.href.startsWith("/#") ? (
+                <Link
+                  key={link.href}
+                  to="/"
+                  hash={link.href.slice(2)}
+                  className={cn("landing-link", FOCUS_RING)}
+                >
+                  {link.label}
+                </Link>
+              ) : (
+                <Link
+                  key={link.href}
+                  to="/pricing"
+                  className={cn("landing-link", FOCUS_RING)}
+                >
+                  {link.label}
+                </Link>
+              )
+            )}
+          </nav>
+          <div className="landing-nav-actions">
+            <Link to="/sign-in" className={cn("landing-link", FOCUS_RING)}>
+              {LANDING_LOGIN_LABEL}
+            </Link>
+            <Link
+              to="/sign-up"
+              className={cn(
+                buttonVariants({ size: "sm" }),
+                "rounded-full [padding-inline:0.875rem] [block-size:2.5rem]"
+              )}
+            >
+              {LANDING_PRIMARY_LABEL}
+            </Link>
+          </div>
         </div>
       </div>
     </header>

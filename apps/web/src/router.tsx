@@ -23,6 +23,15 @@ const rootRoute = createRootRoute({
   notFoundComponent: () => <NotFoundPage />,
 })
 
+const pricingRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/pricing",
+  component: lazyRouteComponent(
+    () => import("@/routes/landing-pricing.tsx"),
+    "LandingPricingPage"
+  ),
+})
+
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
@@ -144,6 +153,7 @@ const publicPitchRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
+  pricingRoute,
   signInRoute,
   signUpRoute,
   publicPitchRoute,

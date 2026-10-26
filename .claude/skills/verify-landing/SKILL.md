@@ -31,7 +31,7 @@ Reading a FAIL: the measured value is what the page does, the rule is what it sh
 
 ## The properties
 
-Ids are the research check numbers. A heuristic is a regex or keyword rule that can misjudge; it says so in its rule text. The id is also the line to search in `scripts/lib/text-rules.mjs` (01 to 13) or `scripts/lib/page-checks.mjs` (14 to 25, 20b).
+Ids are the check numbers. The current page is the first-release marketing site. `properties.md` records which checks were kept, which were replaced, and why. The id is also the line to search in `scripts/lib/text-rules.mjs` (01 to 13) or `scripts/lib/page-checks.mjs` (14 to 26, 20b).
 
 - 01 `h1-length-and-aim`: 12 words or fewer; an outcome or audience word. Source: Shapiro litmus test; NN/g 2.2.
 - 02 `audience-in-h1-or-subhead`: the word Vietnamese and student(s) or new/recent graduate(s) in H1 or subhead. Source: NN/g 2.3; Digital.gov.
@@ -63,7 +63,7 @@ Check 09 (the H1 alone says what is sold) is judged, as J1 below. Numbers drawn 
 
 ### Baseline at the sync commit
 
-At `b11dd50` (before the craft pass) the checker printed 14 PASS and 11 FAIL: 02 03 06 08 11 13 15 16 20b 21 25. The craft pass (PR #296) fixed all of them. At `88e2d37` (2026-10-24) it prints 25 PASS, 0 FAIL. A change that breaks one should flip its line to FAIL and nothing else. Check 04 passes only because "your best work" is the exempt phrase; rewording the Pitch line is a copy change, not a checker change.
+At `88e2d37` the previous landing printed 25 PASS. The first-release page replaced checks that described that page. The replacements and the reason for each are in `properties.md`. The checker now prints 26 lines. A change that breaks one should flip its line to FAIL and nothing else.
 
 ## Taste review (judged layer)
 

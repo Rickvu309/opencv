@@ -22,8 +22,8 @@ export function DispatchCard() {
         )
       }}
       titleId="landing-dispatch-title"
-      heading="Ready for what’s next"
-      description="Inbox, Prep, Sent, Live, Closed. You or the Coach move the card, and it stays on the board. Sent means you marked it sent."
+      heading="Ready in minutes"
+      description="Stop rewriting the same CV. Get a tailored first draft in about two minutes."
     >
       <svg
         viewBox={`0 0 ${VIEW.width} ${VIEW.height}`}
