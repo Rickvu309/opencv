@@ -9,7 +9,7 @@ import {
   createSearchRoutes,
   createUsageRoutes,
 } from "./account/index.js"
-import { createAuth, type AuthDatabase } from "./auth.js"
+import { bindAuth, createAuth, type AuthDatabase } from "./auth.js"
 import type { FetchJobPosting } from "./apply/fetch-posting.js"
 import { createChatRoutes } from "./chat/index.js"
 import { createCoachRoutes, interpretPosting } from "./coach/index.js"
@@ -45,11 +45,13 @@ export type AppConfig = {
   coachEnv?: CoachModelEnv
   gmailEnabled?: boolean
   googleEnabled?: boolean
+  googleClientId?: string
+  googleClientSecret?: string
+  resendApiKey?: string
+  authEmailFrom?: string
   /** When set, job.preview may call the free model. Fake runs leave this off. */
   interpretPostings?: boolean
   fetchJobPosting?: FetchJobPosting
-  /** Logs reset and verify URLs. Production passes false. */
-  logAuthMail?: boolean
 }
 
 export function createApp({
@@ -63,9 +65,12 @@ export function createApp({
   coachEnv,
   gmailEnabled = false,
   googleEnabled = false,
+  googleClientId,
+  googleClientSecret,
+  resendApiKey,
+  authEmailFrom,
   interpretPostings = false,
   fetchJobPosting,
-  logAuthMail = true,
 }: AppConfig) {
   const registry = installRegistry({
     ...(fetchJobPosting ? { fetch: fetchJobPosting } : {}),
@@ -108,9 +113,14 @@ export function createApp({
           authUrl,
           webOrigins,
           rateLimitEnabled,
-          logAuthMail,
+          resendApiKey,
+          authEmailFrom,
+          googleClientId: googleEnabled ? googleClientId : undefined,
+          googleClientSecret: googleEnabled ? googleClientSecret : undefined,
         })
       : undefined
+
+  bindAuth(auth)
 
   app.all("/api/auth/*", (c) =>
     auth ? auth.handler(c.req.raw) : c.json(authUnavailableEnvelope(), 503)

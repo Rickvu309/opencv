@@ -6,8 +6,16 @@ import type { FetchJobPosting } from "../apply/fetch-posting.js"
 import { PGlite } from "@electric-sql/pglite"
 import { drizzle } from "drizzle-orm/pglite"
 
+import { vi } from "vitest"
+
 import { createApp } from "../app.js"
-import { logAuthMailFromEnv } from "../config.js"
+import {
+  authEmailFromFromEnv,
+  googleClientIdFromEnv,
+  googleClientSecretFromEnv,
+  googleEnabledFromEnv,
+  resendApiKeyFromEnv,
+} from "../config.js"
 import type { AppDatabase, TestDatabase } from "../db/context.js"
 import { runMigrations } from "../db/migrate.js"
 import * as schema from "../db/schema.js"
@@ -69,31 +77,64 @@ export function createTestApp(
     coach: options?.coach,
     coachSseHeartbeatMs: options?.coachSseHeartbeatMs,
     fetchJobPosting: options?.fetchJobPosting,
-    logAuthMail: logAuthMailFromEnv(process.env),
+    googleEnabled: googleEnabledFromEnv(process.env),
+    googleClientId: googleClientIdFromEnv(process.env),
+    googleClientSecret: googleClientSecretFromEnv(process.env),
+    resendApiKey: resendApiKeyFromEnv(process.env),
+    authEmailFrom: authEmailFromFromEnv(process.env),
   })
 }
 
+const codeLine = /^\[auth\] email code for (.+) type ([a-z-]+): ([0-9]{6})$/
+
 export async function signUp(
   app: ReturnType<typeof createApp>,
-  user: { name: string; email: string; password: string }
+  user: { name: string; email: string }
 ) {
-  const res = await app.request("/api/auth/sign-up/email", {
-    method: "POST",
-    headers: {
-      Origin: testWebOrigin,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(user),
-  })
+  const log = vi.spyOn(console, "log").mockImplementation(() => {})
+  try {
+    const send = await app.request(
+      "/api/auth/email-otp/send-verification-otp",
+      {
+        method: "POST",
+        headers: {
+          Origin: testWebOrigin,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: user.email, type: "sign-in" }),
+      }
+    )
+    if (send.status !== 200) {
+      throw new Error(
+        `sign-in code failed: ${send.status} ${await send.text()}`
+      )
+    }
+    const code = log.mock.calls
+      .map((call) => String(call[0]).match(codeLine))
+      .find(
+        (match) =>
+          match?.[1] === user.email.toLowerCase() && match[2] === "sign-in"
+      )?.[3]
+    if (!code) throw new Error("sign-in code was not logged")
 
-  if (res.status !== 200) {
-    throw new Error(`sign-up failed: ${res.status} ${await res.text()}`)
-  }
-
-  return {
-    res,
-    cookie: cookieHeader(res),
-    user,
+    const res = await app.request("/api/auth/sign-in/email-otp", {
+      method: "POST",
+      headers: {
+        Origin: testWebOrigin,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: user.email,
+        otp: code,
+        name: user.name,
+      }),
+    })
+    if (res.status !== 200) {
+      throw new Error(`sign-in failed: ${res.status} ${await res.text()}`)
+    }
+    return { res, cookie: cookieHeader(res), user }
+  } finally {
+    log.mockRestore()
   }
 }
 

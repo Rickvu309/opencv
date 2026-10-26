@@ -237,7 +237,9 @@ export class Registry {
     }
     const parsed = parseInput(command.input, options.input)
 
-    return transaction(async () => {
+    // The email-change command calls better-auth, which uses the same PGlite
+    // client. Running that inside this transaction deadlocks the client.
+    const run = async () => {
       if (options.idempotencyKey) {
         const existing = await this.activityByKey(
           actor.userId,
@@ -335,7 +337,9 @@ export class Registry {
         reversal: ran.reversal,
         detail: ran.draft?.detail,
       }
-    })
+    }
+    if (options.name === "account.requestEmailChange") return run()
+    return transaction(run)
   }
 
   async read(name: string, input: unknown, actor: Actor) {

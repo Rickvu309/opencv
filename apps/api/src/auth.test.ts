@@ -1,3 +1,4 @@
+import { eq } from "drizzle-orm"
 import { PGlite } from "@electric-sql/pglite"
 import { drizzle } from "drizzle-orm/pglite"
 import {
@@ -15,15 +16,19 @@ import { cookieAttributesForAuthUrl } from "./auth.js"
 import type { AppDatabase } from "./db/context.js"
 import { runMigrations } from "./db/migrate.js"
 import * as schema from "./db/schema.js"
+import { user, verification } from "./db/schema.js"
 import {
   createMigratedTestDb,
   createTestApp,
-  signUp,
+  testAuthUrl,
+  testSessionSecret,
   testWebOrigin,
 } from "./test/harness.js"
 
-const webOrigin = "https://opencv.me"
-const sessionSecret = "test-session-secret-that-is-at-least-32ch"
+const webOrigin = testWebOrigin
+const sessionSecret = testSessionSecret
+
+const codeLine = /^\[auth\] email code for (.+) type ([a-z-]+): ([0-9]{6})$/
 
 function cookieHeader(res: Response) {
   return res.headers
@@ -41,14 +46,84 @@ function sessionSetCookie(res: Response) {
   )
 }
 
-function createAuthedApp(db: ReturnType<typeof drizzle>, authUrl: string) {
+function createAuthedApp(
+  db: ReturnType<typeof drizzle>,
+  authUrl: string,
+  options?: {
+    rateLimitEnabled?: boolean
+    resendApiKey?: string
+    authEmailFrom?: string
+    googleEnabled?: boolean
+    googleClientId?: string
+    googleClientSecret?: string
+  }
+) {
   return createApp({
     webOrigins: [webOrigin],
     sessionSecret,
     authUrl,
     db,
-    rateLimitEnabled: false,
+    rateLimitEnabled: options?.rateLimitEnabled ?? false,
+    resendApiKey: options?.resendApiKey,
+    authEmailFrom: options?.authEmailFrom,
+    googleEnabled: options?.googleEnabled ?? false,
+    googleClientId: options?.googleClientId,
+    googleClientSecret: options?.googleClientSecret,
   })
+}
+
+function jsonHeaders(extra?: Record<string, string>) {
+  return {
+    Origin: webOrigin,
+    "Content-Type": "application/json",
+    ...extra,
+  }
+}
+
+function postJson(
+  app: ReturnType<typeof createApp>,
+  path: string,
+  body: unknown,
+  extra?: Record<string, string>
+) {
+  return app.request(path, {
+    method: "POST",
+    headers: jsonHeaders(extra),
+    body: JSON.stringify(body),
+  })
+}
+
+async function sendSignInCode(
+  app: ReturnType<typeof createApp>,
+  email: string
+) {
+  const log = vi.spyOn(console, "log").mockImplementation(() => {})
+  try {
+    const res = await postJson(
+      app,
+      "/api/auth/email-otp/send-verification-otp",
+      {
+        email,
+        type: "sign-in",
+      }
+    )
+    const lines = log.mock.calls.map((call) => String(call[0]))
+    const match = lines
+      .map((line) => line.match(codeLine))
+      .find((row) => row?.[1] === email.toLowerCase() && row[2] === "sign-in")
+    return { res, lines, code: match?.[3] }
+  } finally {
+    log.mockRestore()
+  }
+}
+
+async function signInWithCode(
+  app: ReturnType<typeof createApp>,
+  email: string,
+  otp: string,
+  extra?: { name?: string }
+) {
+  return postJson(app, "/api/auth/sign-in/email-otp", { email, otp, ...extra })
 }
 
 describe("cookieAttributesForAuthUrl", () => {
@@ -71,14 +146,15 @@ describe("cookieAttributesForAuthUrl", () => {
 
 describe("auth cookie round-trip", () => {
   let client: PGlite
+  let db: ReturnType<typeof drizzle>
   let app: ReturnType<typeof createApp>
   let localApp: ReturnType<typeof createApp>
 
   beforeAll(async () => {
     client = new PGlite()
-    const db = drizzle({ client, schema })
+    db = drizzle({ client, schema })
     await runMigrations(db as unknown as AppDatabase)
-    app = createAuthedApp(db, "https://api.example.com")
+    app = createAuthedApp(db, testAuthUrl)
     localApp = createAuthedApp(db, "http://localhost:3001")
   }, 60_000)
 
@@ -86,29 +162,31 @@ describe("auth cookie round-trip", () => {
     await client.close()
   })
 
-  it("signs up, sets a cookie, and reads the authed session", async () => {
-    const signUp = await app.request("/api/auth/sign-up/email", {
-      method: "POST",
-      headers: {
-        Origin: webOrigin,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name: "Minh",
-        email: "minh@example.com",
-        password: "correct-horse-battery",
-      }),
-    })
+  async function signedIn(email: string, name?: string) {
+    const issued = await sendSignInCode(app, email)
+    expect(issued.res.status).toBe(200)
+    expect(issued.code).toMatch(/^[0-9]{6}$/)
+    const signIn = await signInWithCode(
+      app,
+      email,
+      issued.code ?? "",
+      name ? { name } : undefined
+    )
+    expect(signIn.status).toBe(200)
+    return signIn
+  }
 
-    expect(signUp.status).toBe(200)
-    expect(sessionSetCookie(signUp)).toMatch(/session_token/i)
-    expect(sessionSetCookie(signUp)).toMatch(/samesite=none/i)
-    expect(sessionSetCookie(signUp)).toMatch(/secure/i)
+  it("signs in by code, sets a cookie, and reads the session", async () => {
+    const signIn = await signedIn("minh@example.com", "Minh")
+
+    expect(sessionSetCookie(signIn)).toMatch(/session_token/i)
+    expect(sessionSetCookie(signIn)).toMatch(/samesite=none/i)
+    expect(sessionSetCookie(signIn)).toMatch(/secure/i)
 
     const session = await app.request("/api/session", {
       headers: {
         Origin: webOrigin,
-        Cookie: cookieHeader(signUp),
+        Cookie: cookieHeader(signIn),
       },
     })
 
@@ -140,27 +218,13 @@ describe("auth cookie round-trip", () => {
   })
 
   it("signs in, reads the session, then signs out", async () => {
-    const credentials = {
-      name: "Lan",
-      email: "lan@example.com",
-      password: "correct-horse-battery",
-    }
-
-    const signUp = await app.request("/api/auth/sign-up/email", {
-      method: "POST",
-      headers: {
-        Origin: webOrigin,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(credentials),
-    })
-    expect(signUp.status).toBe(200)
-
+    const email = "lan@example.com"
+    const first = await signedIn(email, "Lan")
     const signOut = await app.request("/api/auth/sign-out", {
       method: "POST",
       headers: {
         Origin: webOrigin,
-        Cookie: cookieHeader(signUp),
+        Cookie: cookieHeader(first),
       },
     })
     expect(signOut.status).toBe(200)
@@ -170,17 +234,9 @@ describe("auth cookie round-trip", () => {
     })
     expect(afterSignOut.status).toBe(401)
 
-    const signIn = await app.request("/api/auth/sign-in/email", {
-      method: "POST",
-      headers: {
-        Origin: webOrigin,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email: credentials.email,
-        password: credentials.password,
-      }),
-    })
+    const issued = await sendSignInCode(app, email)
+    expect(issued.code).toMatch(/^[0-9]{6}$/)
+    const signIn = await signInWithCode(app, email, issued.code ?? "")
     expect(signIn.status).toBe(200)
 
     const session = await app.request("/api/session", {
@@ -190,31 +246,19 @@ describe("auth cookie round-trip", () => {
     await expect(session.json()).resolves.toEqual(
       expect.objectContaining({
         ok: true,
-        user: expect.objectContaining({ email: credentials.email }),
+        user: expect.objectContaining({ email }),
       })
     )
   })
 
   it("rejects a cookie-authenticated request from an untrusted origin", async () => {
-    const signUp = await app.request("/api/auth/sign-up/email", {
-      method: "POST",
-      headers: {
-        Origin: webOrigin,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name: "Minh",
-        email: "csrf@example.com",
-        password: "correct-horse-battery",
-      }),
-    })
-    expect(signUp.status).toBe(200)
+    const signIn = await signedIn("csrf@example.com", "Minh")
 
     const res = await app.request("/api/auth/sign-out", {
       method: "POST",
       headers: {
         Origin: "https://attacker.example.com",
-        Cookie: cookieHeader(signUp),
+        Cookie: cookieHeader(signIn),
       },
     })
 
@@ -223,68 +267,368 @@ describe("auth cookie round-trip", () => {
   })
 
   it("uses default cookie attributes when AUTH_URL is local http", async () => {
-    const signUp = await localApp.request("/api/auth/sign-up/email", {
+    const issued = await sendSignInCode(localApp, "local@example.com")
+    expect(issued.code).toMatch(/^[0-9]{6}$/)
+    const signIn = await localApp.request("/api/auth/sign-in/email-otp", {
       method: "POST",
-      headers: {
-        Origin: webOrigin,
-        "Content-Type": "application/json",
-      },
+      headers: jsonHeaders(),
       body: JSON.stringify({
-        name: "Local",
         email: "local@example.com",
-        password: "correct-horse-battery",
+        otp: issued.code,
+        name: "Local",
       }),
     })
 
-    expect(signUp.status).toBe(200)
-    const setCookie = sessionSetCookie(signUp)
+    expect(signIn.status).toBe(200)
+    const setCookie = sessionSetCookie(signIn)
     expect(setCookie).not.toMatch(/samesite=none/i)
     expect(setCookie).not.toMatch(/;\s*secure/i)
   })
+
+  it("issues a code without creating a user, then verifies it", async () => {
+    const email = "ada@verify.local"
+    const issued = await sendSignInCode(app, email)
+    expect(issued.res.status).toBe(200)
+    await expect(issued.res.json()).resolves.toEqual({ success: true })
+    expect(issued.lines.some((line) => codeLine.test(line))).toBe(true)
+    expect(issued.code).toMatch(/^[0-9]{6}$/)
+
+    const people = await db.select().from(user).where(eq(user.email, email))
+    expect(people).toHaveLength(0)
+    const rows = await db
+      .select()
+      .from(verification)
+      .where(eq(verification.identifier, `sign-in-otp-${email}`))
+    expect(rows).toHaveLength(1)
+    expect(rows[0]?.value.startsWith(issued.code ?? "x")).toBe(false)
+
+    const signIn = await signInWithCode(app, email, issued.code ?? "")
+    expect(signIn.status).toBe(200)
+    expect(sessionSetCookie(signIn)).toMatch(/session_token/i)
+    const created = await db.select().from(user).where(eq(user.email, email))
+    expect(created[0]?.emailVerified).toBe(true)
+    expect(created[0]?.name).toBe("")
+
+    const again = await signInWithCode(app, email, issued.code ?? "")
+    expect(again.status).toBe(400)
+    await expect(again.json()).resolves.toMatchObject({ code: "INVALID_OTP" })
+
+    const profile = await app.request("/api/profile", {
+      headers: { Origin: webOrigin, Cookie: cookieHeader(signIn) },
+    })
+    expect(profile.status).toBe(200)
+    const profileBody = (await profile.json()) as {
+      data: { plan: string; language: string; welcomedAt: string | null }
+    }
+    expect(profileBody.data).toMatchObject({
+      plan: "free",
+      language: "en",
+      welcomedAt: null,
+    })
+  })
+
+  it("accepts the right code after one wrong try", async () => {
+    const email = "wrong-once@verify.local"
+    const issued = await sendSignInCode(app, email)
+    const wrong = await signInWithCode(app, email, "000000")
+    expect(wrong.status).toBe(400)
+    await expect(wrong.json()).resolves.toMatchObject({ code: "INVALID_OTP" })
+    const right = await signInWithCode(app, email, issued.code ?? "")
+    expect(right.status).toBe(200)
+  })
+
+  it("locks the code after three wrong tries", async () => {
+    const email = "locked@verify.local"
+    const issued = await sendSignInCode(app, email)
+    for (const guess of ["111111", "222222", "333333"]) {
+      const wrong = await signInWithCode(app, email, guess)
+      expect(wrong.status).toBe(400)
+      await expect(wrong.json()).resolves.toMatchObject({ code: "INVALID_OTP" })
+    }
+    const fourth = await signInWithCode(app, email, issued.code ?? "")
+    expect(fourth.status).toBe(403)
+    await expect(fourth.json()).resolves.toMatchObject({
+      code: "TOO_MANY_ATTEMPTS",
+    })
+  })
+
+  it("rejects an expired code", async () => {
+    const email = "expired@verify.local"
+    const issued = await sendSignInCode(app, email)
+    await db
+      .update(verification)
+      .set({ expiresAt: new Date(Date.now() - 1000) })
+      .where(eq(verification.identifier, `sign-in-otp-${email}`))
+    const res = await signInWithCode(app, email, issued.code ?? "")
+    expect(res.status).toBe(400)
+    await expect(res.json()).resolves.toMatchObject({ code: "OTP_EXPIRED" })
+  })
+
+  it("marks welcome once", async () => {
+    const email = "welcome@verify.local"
+    const signIn = await signedIn(email)
+    const headers = {
+      ...jsonHeaders(),
+      Cookie: cookieHeader(signIn),
+    }
+    const first = await app.request("/api/commands/profile.markWelcomed", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ input: {} }),
+    })
+    expect(first.status).toBe(200)
+    const firstBody = (await first.json()) as {
+      data: { welcomedAt: string }
+    }
+    expect(firstBody.data.welcomedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/)
+    const second = await app.request("/api/commands/profile.markWelcomed", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ input: {} }),
+    })
+    const secondBody = (await second.json()) as {
+      data: { welcomedAt: string }
+    }
+    expect(secondBody.data.welcomedAt).toBe(firstBody.data.welcomedAt)
+  })
+
+  it("sends a change-email code and rejects the current address", async () => {
+    const email = "change@verify.local"
+    const signIn = await signedIn(email, "Ada")
+    const headers = {
+      ...jsonHeaders(),
+      Cookie: cookieHeader(signIn),
+    }
+    const log = vi.spyOn(console, "log").mockImplementation(() => {})
+    try {
+      const sent = await app.request(
+        "/api/commands/account.requestEmailChange",
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ input: { email: "next@verify.local" } }),
+        }
+      )
+      expect(sent.status).toBe(200)
+      await expect(sent.json()).resolves.toEqual({
+        ok: true,
+        data: { email: "next@verify.local", sent: true },
+      })
+      const match = log.mock.calls
+        .map((call) => String(call[0]).match(codeLine))
+        .find((row) => row?.[2] === "change-email")
+      expect(match?.[1]).toBe("next@verify.local")
+      const code = match?.[3] ?? ""
+      expect(code).toMatch(/^[0-9]{6}$/)
+      const changed = await app.request("/api/auth/email-otp/change-email", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ newEmail: "next@verify.local", otp: code }),
+      })
+      expect(changed.status).toBe(200)
+      await expect(changed.json()).resolves.toEqual({ success: true })
+      const same = await app.request(
+        "/api/commands/account.requestEmailChange",
+        {
+          method: "POST",
+          headers: { ...jsonHeaders(), Cookie: cookieHeader(changed) },
+          body: JSON.stringify({ input: { email: "next@verify.local" } }),
+        }
+      )
+      expect(same.status).toBe(400)
+      await expect(same.json()).resolves.toMatchObject({
+        ok: false,
+        error: { code: "VALIDATION_ERROR", message: "Use a different email." },
+      })
+    } finally {
+      log.mockRestore()
+    }
+  })
 })
 
-describe("auth mail logging", () => {
+describe("auth code delivery", () => {
   afterEach(() => {
-    vi.unstubAllEnvs()
+    vi.unstubAllGlobals()
     vi.restoreAllMocks()
   })
 
-  async function requestReset(nodeEnv: string) {
-    vi.stubEnv("NODE_ENV", nodeEnv)
-    const log = vi.spyOn(console, "log").mockImplementation(() => {})
+  it("logs the code and does not call fetch when Resend is unset", async () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal("fetch", fetchMock)
     const { client, db } = await createMigratedTestDb()
     try {
       const app = createTestApp(db)
-      const email = `reset-${nodeEnv}@example.com`
-      await signUp(app, {
-        name: "Reset",
-        email,
-        password: "correct-horse-battery",
-      })
-      const res = await app.request("/api/auth/request-password-reset", {
-        method: "POST",
-        headers: {
-          Origin: testWebOrigin,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, redirectTo: `${testWebOrigin}/reset` }),
-      })
-      expect(res.status).toBe(200)
-      return log.mock.calls.map((call) => String(call[0]))
+      const issued = await sendSignInCode(app, "log@verify.local")
+      expect(issued.res.status).toBe(200)
+      expect(issued.code).toMatch(/^[0-9]{6}$/)
+      expect(fetchMock).not.toHaveBeenCalled()
     } finally {
       await client.close()
     }
-  }
-
-  it("does not log reset or verify URLs in production", async () => {
-    const lines = await requestReset("production")
-    expect(lines.filter((line) => line.startsWith("[auth]"))).toEqual([])
   })
 
-  it("logs the reset URL outside production", async () => {
-    const lines = await requestReset("development")
-    expect(
-      lines.filter((line) => line.startsWith("[auth] password reset for"))
-    ).toHaveLength(1)
+  it("posts the code to Resend and hides it from the log", async () => {
+    const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }))
+    vi.stubGlobal("fetch", fetchMock)
+    const log = vi.spyOn(console, "log").mockImplementation(() => {})
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => {})
+    const { client, db } = await createMigratedTestDb()
+    const key = "test-resend-key"
+    try {
+      const app = createAuthedApp(db, testAuthUrl, {
+        resendApiKey: key,
+        authEmailFrom: "opencv <codes@opencv.me>",
+      })
+      const res = await postJson(
+        app,
+        "/api/auth/email-otp/send-verification-otp",
+        {
+          email: "resend@verify.local",
+          type: "sign-in",
+        }
+      )
+      expect(res.status).toBe(200)
+      const init = fetchMock.mock.calls[0]?.[1] as RequestInit
+      expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
+        "https://api.resend.com/emails"
+      )
+      expect(new Headers(init.headers).get("Authorization")).toBe(
+        `Bearer ${key}`
+      )
+      const body = JSON.parse(String(init.body)) as {
+        from: string
+        to: string
+        subject: string
+        text: string
+      }
+      expect(body).toMatchObject({
+        from: "opencv <codes@opencv.me>",
+        to: "resend@verify.local",
+        subject: "Your opencv code",
+      })
+      expect(body.text).toMatch(/[0-9]{6}/)
+      const logged = [...log.mock.calls, ...errorLog.mock.calls].join(" ")
+      expect(logged).not.toContain(key)
+      expect(logged).not.toMatch(/\[auth\] email code/)
+    } finally {
+      log.mockRestore()
+      errorLog.mockRestore()
+      await client.close()
+    }
+  })
+
+  it("logs a Resend failure without the code or the key", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("nope", { status: 500 }))
+    )
+    const log = vi.spyOn(console, "log").mockImplementation(() => {})
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => {})
+    const { client, db } = await createMigratedTestDb()
+    const key = "test-resend-key"
+    try {
+      const app = createAuthedApp(db, testAuthUrl, {
+        resendApiKey: key,
+        authEmailFrom: "codes@opencv.me",
+      })
+      const res = await postJson(
+        app,
+        "/api/auth/email-otp/send-verification-otp",
+        {
+          email: "resend-fail@verify.local",
+          type: "sign-in",
+        }
+      )
+      const logged = [...log.mock.calls, ...errorLog.mock.calls].join(" ")
+      expect(logged).toContain(
+        "[auth] email send failed for resend-fail@verify.local type sign-in status 500"
+      )
+      expect(logged).not.toContain(key)
+      expect(logged).not.toMatch(/\[auth\] email code/)
+      expect(logged).not.toMatch(/\b\d{6}\b/)
+      expect(res.status).toBe(200)
+    } finally {
+      log.mockRestore()
+      errorLog.mockRestore()
+      await client.close()
+    }
+  })
+})
+
+describe("auth providers", () => {
+  it("rate limits the fourth code send", async () => {
+    const { client, db } = await createMigratedTestDb()
+    try {
+      const app = createAuthedApp(db, testAuthUrl, { rateLimitEnabled: true })
+      const email = "limited@verify.local"
+      for (let i = 0; i < 3; i += 1) {
+        const res = await postJson(
+          app,
+          "/api/auth/email-otp/send-verification-otp",
+          {
+            email,
+            type: "sign-in",
+          }
+        )
+        expect(res.status).toBe(200)
+      }
+      const limited = await postJson(
+        app,
+        "/api/auth/email-otp/send-verification-otp",
+        { email, type: "sign-in" }
+      )
+      expect(limited.status).toBe(429)
+      expect(limited.headers.get("X-Retry-After")).toBeTruthy()
+      await expect(limited.json()).resolves.toEqual({
+        message: "Too many requests. Please try again later.",
+      })
+    } finally {
+      await client.close()
+    }
+  })
+
+  it("hides Google when the env is unset", async () => {
+    const { client, db } = await createMigratedTestDb()
+    try {
+      const app = createTestApp(db)
+      const config = await app.request("/api/public-config")
+      await expect(config.json()).resolves.toEqual({ google: false })
+      const social = await postJson(app, "/api/auth/sign-in/social", {
+        provider: "google",
+        callbackURL: "http://localhost:5173/app",
+      })
+      expect(social.status).not.toBe(200)
+      expect(await social.text()).not.toContain("https://accounts.google.com")
+    } finally {
+      await client.close()
+    }
+  })
+
+  it("refuses password sign-in and sign-up", async () => {
+    const { client, db } = await createMigratedTestDb()
+    try {
+      const app = createTestApp(db)
+      const signIn = await postJson(app, "/api/auth/sign-in/email", {
+        email: "ada@verify.local",
+        password: "correct-horse-battery",
+      })
+      expect(signIn.status).toBe(400)
+      await expect(signIn.json()).resolves.toMatchObject({
+        code: "EMAIL_PASSWORD_DISABLED",
+        message: "Email and password is not enabled",
+      })
+      const signUp = await postJson(app, "/api/auth/sign-up/email", {
+        name: "Ada",
+        email: "ada@verify.local",
+        password: "correct-horse-battery",
+      })
+      expect(signUp.status).toBe(400)
+      await expect(signUp.json()).resolves.toMatchObject({
+        code: "EMAIL_PASSWORD_SIGN_UP_DISABLED",
+        message: "Email and password sign up is not enabled",
+      })
+    } finally {
+      await client.close()
+    }
   })
 })

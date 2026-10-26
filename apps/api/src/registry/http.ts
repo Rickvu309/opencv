@@ -7,7 +7,7 @@ import {
 } from "@workspace/domain"
 import { Hono } from "hono"
 
-import type { Auth } from "../auth.js"
+import { withRequestHeaders, type Auth } from "../auth.js"
 import { isCompatCommand, runCompatCommand } from "../compat/index.js"
 import type { AppDatabase } from "../db/context.js"
 import { jsonWithStatus } from "../http-json.js"
@@ -83,18 +83,30 @@ export function createCommandRoutes({
     const actor = personActor(c.var.userId)
 
     try {
-      if (isCompatCommand(name)) {
-        const data = await runCompatCommand(registry, name, input, actor)
-        return c.json(successEnvelope(data))
-      }
-      const result = await registry.execute({
-        name,
-        input,
-        actor,
-        idempotencyKey,
-      })
-      if (result.pending) return c.json(successEnvelope(result))
-      return c.json(successEnvelope(publicCommandOutput(result.output)))
+      const data = await withRequestHeaders(
+        c.req.raw.headers,
+        async () => {
+          if (isCompatCommand(name)) {
+            return {
+              kind: "compat" as const,
+              output: await runCompatCommand(registry, name, input, actor),
+            }
+          }
+          return {
+            kind: "command" as const,
+            result: await registry.execute({
+              name,
+              input,
+              actor,
+              idempotencyKey,
+            }),
+          }
+        },
+        auth
+      )
+      if (data.kind === "compat") return c.json(successEnvelope(data.output))
+      if (data.result.pending) return c.json(successEnvelope(data.result))
+      return c.json(successEnvelope(publicCommandOutput(data.result.output)))
     } catch (error) {
       if (error instanceof CommandError) throw error
       throw error

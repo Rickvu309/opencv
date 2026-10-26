@@ -26,7 +26,6 @@ describe("coach turn title", () => {
     const { cookie } = await signUp(app, {
       name: "Ada Verify",
       email: "ada-title@verify.local",
-      password: "Verify-pass-123",
     })
     const headers = authHeaders(cookie)
 
@@ -104,7 +103,6 @@ describe("coach turn title", () => {
     const { cookie } = await signUp(app, {
       name: "Ada Confirm",
       email: "ada-confirm@verify.local",
-      password: "Verify-pass-123",
     })
     const headers = authHeaders(cookie)
     const created = await app.request(

@@ -11,10 +11,13 @@ import {
   coachRuntimeModeFromEnv,
   databaseUrlFromEnv,
   dbDriverFromEnv,
+  authEmailFromFromEnv,
   gmailEnabledFromEnv,
+  googleClientIdFromEnv,
+  googleClientSecretFromEnv,
   googleEnabledFromEnv,
-  logAuthMailFromEnv,
   pgliteDataDirFromEnv,
+  resendApiKeyFromEnv,
   sessionSecretFromEnv,
   webOriginsFromEnv,
 } from "./config.js"
@@ -80,7 +83,10 @@ const app = createApp({
   coachEnv,
   gmailEnabled: gmailEnabledFromEnv(process.env),
   googleEnabled: googleEnabledFromEnv(process.env),
-  logAuthMail: logAuthMailFromEnv(process.env),
+  googleClientId: googleClientIdFromEnv(process.env),
+  googleClientSecret: googleClientSecretFromEnv(process.env),
+  resendApiKey: resendApiKeyFromEnv(process.env),
+  authEmailFrom: authEmailFromFromEnv(process.env),
   interpretPostings:
     coachRuntimeMode !== "fake" &&
     Boolean(coachEnv.OPENROUTER_API_KEY || coachEnv.ANTHROPIC_API_KEY),
