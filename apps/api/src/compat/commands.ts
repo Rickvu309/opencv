@@ -9,6 +9,8 @@ import {
   PROFILE_COMMANDS,
   THREAD_COMMANDS,
   generateKeyBetween,
+  parseJobId,
+  parseUserId,
   type Actor,
   type ApplyCard,
   type ApplyStage,
@@ -20,10 +22,8 @@ import {
   type ThreadMessage,
   type UserProfile,
 } from "@workspace/domain"
-import { and, desc, eq, isNull } from "drizzle-orm"
 
-import { getDb } from "../db/context.js"
-import { activity } from "../db/schema.js"
+import { latestJobNote } from "../job/index.js"
 import { CommandError } from "../registry/errors.js"
 import type { ExecuteResult, Registry } from "../registry/registry.js"
 
@@ -172,25 +172,6 @@ function asProfile(
     createdAt: profile.createdAt,
     updatedAt: profile.updatedAt,
   }
-}
-
-async function notesFor(userId: string) {
-  const rows = await getDb()
-    .select({ subjectId: activity.subjectId, summary: activity.summary })
-    .from(activity)
-    .where(
-      and(
-        eq(activity.userId, userId),
-        eq(activity.command, "job.addNote"),
-        isNull(activity.undoneAt)
-      )
-    )
-    .orderBy(desc(activity.createdAt))
-  const notes = new Map<string, string>()
-  for (const row of rows) {
-    if (!notes.has(row.subjectId)) notes.set(row.subjectId, row.summary)
-  }
-  return notes
 }
 
 function asCard(job: JobView, note = ""): ApplyCard {
@@ -630,8 +611,12 @@ export async function listCompatPaper(registry: Registry, actor: Actor) {
 
 export async function listCompatJobs(registry: Registry, actor: Actor) {
   const jobs = await jobsOf(registry, actor)
-  const notes = await notesFor(actor.userId)
-  return jobs.map((job) => asCard(job, notes.get(job.id) ?? ""))
+  const userId = parseUserId(actor.userId)
+  return Promise.all(
+    jobs.map(async (job) =>
+      asCard(job, await latestJobNote(userId, parseJobId(job.id)))
+    )
+  )
 }
 
 export { asDetail, asMessage, asThread, cardById }
