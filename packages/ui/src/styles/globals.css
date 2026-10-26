@@ -126,7 +126,6 @@
   --sidebar-ring: oklch(0.607 0.141 276.281);
 }
 
-/* One primary per view. Mesh stops are mixes of the stock ring and chart hues. */
 @utility glow {
   background-color: var(--background);
   background-image:
