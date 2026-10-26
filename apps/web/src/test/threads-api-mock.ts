@@ -16,52 +16,36 @@ import {
 } from "@workspace/domain"
 import { vi } from "vitest"
 
-import { FIXTURE_THREADS } from "./thread-fixtures.ts"
-import type {
-  CoachScriptPart,
-  CoachStreamControl,
-  CoachStreamScript,
-  GateState,
-  LastCoachRequest,
-} from "./coach-stream-types.ts"
+import type { CoachStreamControl } from "./coach-stream-types.ts"
 import { isoNow, urlOf, pathOf, jsonOk, jsonError } from "./mock-http.ts"
+import { FIXTURE_THREADS } from "./thread-fixtures.ts"
+import { handleNativeCoachRequest } from "./threads-api-mock-native.ts"
+import {
+  cloneThreads,
+  DEFAULT_COACH_WORKED_MS,
+  defaultUsage,
+  formatSse,
+  mockState,
+  openGate,
+  readBody,
+  scriptedParts,
+  waitDelay,
+  waitForPermit,
+} from "./threads-api-mock-state.ts"
 
-export const DEFAULT_COACH_STREAM_TEXTS = [
-  "I looked at Apply. ",
-  "Prep the starred one next.",
-] as const
-
-export const DEFAULT_COACH_STREAM_REPLY = DEFAULT_COACH_STREAM_TEXTS.join("")
-
-export const DEFAULT_COACH_WORKED_MS = 1100
-
-type Store = {
-  threads: ThreadDetail[]
-}
-
-const store: Store = {
-  threads: cloneThreads(FIXTURE_THREADS),
-}
-
-let script: CoachStreamScript = {}
-let gate: GateState = openGate()
-let lastCoachRequest: LastCoachRequest | null = null
-
-function openGate(): GateState {
-  return {
-    permits: 0,
-    waiters: [],
-    releasedAll: true,
-    emitted: 0,
-  }
-}
-
-function cloneThreads(threads: ThreadDetail[]): ThreadDetail[] {
-  return structuredClone(threads)
-}
+export {
+  DEFAULT_COACH_STREAM_REPLY,
+  DEFAULT_COACH_STREAM_TEXTS,
+  DEFAULT_COACH_WORKED_MS,
+} from "./threads-api-mock-state.ts"
+export {
+  getCoachCommandCalls,
+  getLastNativeTurn,
+  setMockCoachUsage,
+} from "./threads-api-mock-native.ts"
 
 function listItems(): ThreadListItem[] {
-  return [...store.threads]
+  return [...mockState.threads]
     .sort((a, b) => {
       const byUpdated = b.updatedAt.localeCompare(a.updatedAt)
       if (byUpdated !== 0) return byUpdated
@@ -76,22 +60,11 @@ function listItems(): ThreadListItem[] {
     }))
 }
 
-async function readBody(init?: RequestInit): Promise<unknown> {
-  if (init?.body == null) return {}
-  const text = String(init.body)
-  if (text.trim() === "") return {}
-  return JSON.parse(text) as unknown
-}
-
-function formatSse(event: string, data: unknown) {
-  return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`
-}
-
 function persistCoach(
   thread: ThreadDetail,
   parts: ThreadMessagePart[],
   status: ThreadMessageStatus,
-  workedMs = script.workedMs ?? DEFAULT_COACH_WORKED_MS
+  workedMs = mockState.script.workedMs ?? DEFAULT_COACH_WORKED_MS
 ): ThreadMessage {
   const now = isoNow()
   const text = textFromParts(parts)
@@ -129,60 +102,13 @@ function maybeAutoTitle(
   })
 }
 
-function scriptedParts(): CoachScriptPart[] {
-  if (script.parts) return [...script.parts]
-  return (script.texts ?? DEFAULT_COACH_STREAM_TEXTS).map((text) => ({
-    kind: "text" as const,
-    text,
-  }))
-}
-
-async function waitForPermit(signal?: AbortSignal) {
-  if (gate.releasedAll) return
-  if (gate.permits > 0) {
-    gate.permits -= 1
-    return
-  }
-
-  await new Promise<void>((resolve, reject) => {
-    const onAbort = () => {
-      reject(new DOMException("Aborted", "AbortError"))
-    }
-    if (signal?.aborted) {
-      onAbort()
-      return
-    }
-    signal?.addEventListener("abort", onAbort, { once: true })
-    gate.waiters.push(() => {
-      signal?.removeEventListener("abort", onAbort)
-      resolve()
-    })
-  })
-}
-
-async function waitDelay(ms: number, signal?: AbortSignal) {
-  if (ms <= 0) return
-  await new Promise<void>((resolve, reject) => {
-    const timer = setTimeout(resolve, ms)
-    const onAbort = () => {
-      clearTimeout(timer)
-      reject(new DOMException("Aborted", "AbortError"))
-    }
-    if (signal?.aborted) {
-      onAbort()
-      return
-    }
-    signal?.addEventListener("abort", onAbort, { once: true })
-  })
-}
-
 function coachStreamResponse(thread: ThreadDetail, signal?: AbortSignal) {
   const encoder = new TextEncoder()
   const partsToEmit = scriptedParts()
-  const streamError = script.streamError
-  const omitEnd = script.omitEnd === true
-  const delayMs = script.delayMs ?? 0
-  script.streamError = undefined
+  const streamError = mockState.script.streamError
+  const omitEnd = mockState.script.omitEnd === true
+  const delayMs = mockState.script.delayMs ?? 0
+  mockState.script.streamError = undefined
 
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
@@ -205,7 +131,7 @@ function coachStreamResponse(thread: ThreadDetail, signal?: AbortSignal) {
           return
         }
         controller.enqueue(encoder.encode(formatSse(event, data)))
-        gate.emitted += 1
+        mockState.gate.emitted += 1
       }
 
       const onAbort = () => {
@@ -323,21 +249,24 @@ function coachStreamResponse(thread: ThreadDetail, signal?: AbortSignal) {
 }
 
 export function resetThreadApiMock() {
-  store.threads = cloneThreads(FIXTURE_THREADS)
-  script = {}
-  gate = openGate()
-  lastCoachRequest = null
+  mockState.threads = cloneThreads(FIXTURE_THREADS)
+  mockState.script = {}
+  mockState.gate = openGate()
+  mockState.lastCoachRequest = null
+  mockState.nativeTurn = null
+  mockState.commandCalls = []
+  mockState.usage = defaultUsage()
 }
 
 export function getLastCoachRequest() {
-  return lastCoachRequest
+  return mockState.lastCoachRequest
 }
 
 export function scriptCoachStream(
   next: CoachStreamScript = {}
 ): CoachStreamControl {
-  script = { ...next }
-  gate = {
+  mockState.script = { ...next }
+  mockState.gate = {
     permits: 0,
     waiters: [],
     releasedAll: next.gated !== true,
@@ -347,23 +276,23 @@ export function scriptCoachStream(
   return {
     release(count = 1) {
       for (let i = 0; i < count; i += 1) {
-        const waiter = gate.waiters.shift()
+        const waiter = mockState.gate.waiters.shift()
         if (waiter) waiter()
-        else gate.permits += 1
+        else mockState.gate.permits += 1
       }
     },
     releaseAll() {
-      gate.releasedAll = true
-      while (gate.waiters.length > 0) {
-        gate.waiters.shift()?.()
+      mockState.gate.releasedAll = true
+      while (mockState.gate.waiters.length > 0) {
+        mockState.gate.waiters.shift()?.()
       }
     },
-    emitted: () => gate.emitted,
+    emitted: () => mockState.gate.emitted,
   }
 }
 
 export function getMockThreads() {
-  return store.threads
+  return mockState.threads
 }
 
 export async function threadApiFetch(
@@ -386,13 +315,13 @@ export async function threadApiFetch(
 
   const coach = /^\/api\/threads\/([^/]+)\/coach$/.exec(path)
   if (method === "POST" && coach) {
-    if (script.networkError) {
-      script.networkError = false
+    if (mockState.script.networkError) {
+      mockState.script.networkError = false
       throw new TypeError("Failed to fetch")
     }
-    if (script.httpError) {
-      const error = script.httpError
-      script.httpError = undefined
+    if (mockState.script.httpError) {
+      const error = mockState.script.httpError
+      mockState.script.httpError = undefined
       return jsonError(error.status, error.code, error.message)
     }
 
@@ -403,7 +332,7 @@ export async function threadApiFetch(
       focusDocId?: string
       selection?: CoachSelection
     }
-    lastCoachRequest = {
+    mockState.lastCoachRequest = {
       threadId: coach[1]!,
       ...(body.text != null ? { text: body.text } : {}),
       ...(body.mode != null ? { mode: body.mode } : {}),
@@ -411,7 +340,7 @@ export async function threadApiFetch(
       ...(body.focusDocId ? { focusDocId: body.focusDocId } : {}),
       ...(body.selection ? { selection: body.selection } : {}),
     }
-    const thread = store.threads.find((item) => item.id === coach[1])
+    const thread = mockState.threads.find((item) => item.id === coach[1])
     if (!thread) {
       return jsonError(404, "NOT_FOUND", "Thread not found")
     }
@@ -441,13 +370,13 @@ export async function threadApiFetch(
     path
   )
   if (method === "POST" && reverse) {
-    if (script.undoError) {
-      const error = script.undoError
-      script.undoError = undefined
+    if (mockState.script.undoError) {
+      const error = mockState.script.undoError
+      mockState.script.undoError = undefined
       return jsonError(error.status, error.code, error.message)
     }
 
-    const thread = store.threads.find((item) => item.id === reverse[1])
+    const thread = mockState.threads.find((item) => item.id === reverse[1])
     const message = thread?.messages.find((item) => item.id === reverse[2])
     if (!thread || !message || message.role !== "coach") {
       return jsonError(404, "NOT_FOUND", "Message not found")
@@ -473,11 +402,11 @@ export async function threadApiFetch(
     const toolName = commandName.includes(".")
       ? commandName.replace(".", "_")
       : commandName
-    const receipt = script.undoFail
+    const receipt = mockState.script.undoFail
       ? {
           type: "tool" as const,
           name: toolName,
-          summary: script.undoFail.summary,
+          summary: mockState.script.undoFail.summary,
           ok: false,
           toolCallId: crypto.randomUUID(),
         }
@@ -488,7 +417,7 @@ export async function threadApiFetch(
           ok: true,
           toolCallId: crypto.randomUUID(),
         }
-    script.undoFail = undefined
+    mockState.script.undoFail = undefined
 
     const nextParts = parts.map((item, itemIndex) =>
       itemIndex === index && item.type === "tool" && receipt.ok
@@ -504,7 +433,7 @@ export async function threadApiFetch(
   const feedback =
     /^\/api\/threads\/([^/]+)\/messages\/([^/]+)\/feedback$/.exec(path)
   if (method === "POST" && feedback) {
-    const thread = store.threads.find((item) => item.id === feedback[1])
+    const thread = mockState.threads.find((item) => item.id === feedback[1])
     const message = thread?.messages.find((item) => item.id === feedback[2])
     if (!thread || !message || message.role !== "coach") {
       return jsonError(404, "NOT_FOUND", "Coach turn not found")
@@ -519,7 +448,7 @@ export async function threadApiFetch(
 
   const detail = /^\/api\/threads\/([^/]+)$/.exec(path)
   if (method === "GET" && detail) {
-    const thread = store.threads.find((item) => item.id === detail[1])
+    const thread = mockState.threads.find((item) => item.id === detail[1])
     if (!thread) {
       return jsonError(404, "NOT_FOUND", "Thread not found")
     }
@@ -540,7 +469,7 @@ export async function threadApiFetch(
       focusDocId: body.focusDocId ?? null,
       messages: [],
     }
-    store.threads.unshift(created)
+    mockState.threads.unshift(created)
     return jsonOk({
       id: created.id,
       title: created.title,
@@ -552,11 +481,11 @@ export async function threadApiFetch(
 
   if (method === "POST" && path === `/api/commands/${THREAD_COMMANDS.delete}`) {
     const body = (await readBody(init)) as { threadId?: string }
-    const index = store.threads.findIndex((item) => item.id === body.threadId)
+    const index = mockState.threads.findIndex((item) => item.id === body.threadId)
     if (index === -1) {
       return jsonError(404, "NOT_FOUND", "Thread not found")
     }
-    const [removed] = store.threads.splice(index, 1)
+    const [removed] = mockState.threads.splice(index, 1)
     return jsonOk({ id: removed!.id })
   }
 
@@ -565,7 +494,7 @@ export async function threadApiFetch(
     path === `/api/commands/${THREAD_COMMANDS.postMessage}`
   ) {
     const body = (await readBody(init)) as { threadId?: string; text?: string }
-    const thread = store.threads.find((item) => item.id === body.threadId)
+    const thread = mockState.threads.find((item) => item.id === body.threadId)
     if (!thread) {
       return jsonError(404, "NOT_FOUND", "Thread not found")
     }
@@ -579,6 +508,9 @@ export async function threadApiFetch(
     thread.updatedAt = now
     return jsonOk(thread)
   }
+
+  const native = await handleNativeCoachRequest(path, method, init)
+  if (native) return native
 
   throw new Error(`Unexpected fetch: ${method} ${path}`)
 }

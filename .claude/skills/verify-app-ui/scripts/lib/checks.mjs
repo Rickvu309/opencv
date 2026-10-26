@@ -33,18 +33,21 @@ export function runChecks(d) {
   const { screens, allSnaps, labels, has } = context(d)
 
   // Structure.
+  const coachText = d.coachPage?.text ?? ""
   const staleHome = ["What are you aiming for?", "Four small things"].filter(
-    (phrase) => (d.home.text ?? "").includes(phrase)
+    (phrase) => coachText.includes(phrase)
   )
   r.push(
     result(
       "14",
       "home-composer-first",
-      staleHome.length === 0,
-      staleHome.length
-        ? `start page still shows ${staleHome.join(", ")}`
-        : "start page does not show the old Home prompts",
-      "the /app start page does not show What are you aiming for? or Four small things"
+      Boolean(d.coachPage) && staleHome.length === 0,
+      !d.coachPage
+        ? "coach page was not measured"
+        : staleHome.length
+          ? `/app/coach still shows ${staleHome.join(", ")}`
+          : "coach page does not show the old Home prompts",
+      "the /app/coach page does not show What are you aiming for? or Four small things"
     )
   )
 
@@ -313,18 +316,18 @@ export function runChecks(d) {
     )
   )
 
-  const undo = d.cv.buttons.some((b) => /^undo$/i.test(b.label))
-  const reject =
-    [...d.cv.buttons, ...d.cvCoach.buttons].some((b) =>
-      /reject|undo this change/i.test(b.label)
-    ) || has(/>\s*Reject\s*<|["'`](Reject|Undo this change)["'`]/).length > 0
+  const coachUndo = has(/>\s*Undo\s*<|["'`]Undo["'`]/).filter((file) =>
+    file.includes("features/coach/")
+  )
   r.push(
     result(
       "30",
       "undo-and-reject",
-      undo && reject,
-      `Undo on the CV toolbar: ${undo}; a Coach Reject control: ${reject}`,
-      "the CV toolbar keeps Undo, and a Coach suggestion has its own Reject"
+      coachUndo.length > 0,
+      coachUndo.length
+        ? `Coach Undo in ${list(coachUndo)}`
+        : "no Undo string in features/coach",
+      "a Coach Undo string in features/coach passes without the Paper toolbar"
     )
   )
 

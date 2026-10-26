@@ -7,14 +7,14 @@ Ids 01 to 30 are the research check numbers. 31 to 38 are app-wide checks the si
 Writing and logic:
 
 - 01 `product-nouns`: chrome may say Job. Opportunity and Thread fail. Email, document and profile stay banned. Exempt: a short goal chip that starts with A or An, the "Connect email, optional" row, the account menu label "<name>, profile and settings", the Paper and Home labels in `legacyNounLabels`, and the Inbox strings `inboxConnectTitle`, `inboxConnectPromise`, `inboxEmptyTitle`, `inboxScanTitle`, plus `{n} emails from {c} companies so far`. Source: ADR-0002.
-- 02 `one-composer-placeholder`: Home, the Thread and the Paper Coach float use one placeholder. Source: Apple writing.
+- 02 `one-composer-placeholder`: the Coach page and the shell panel use one placeholder, Message Coach. The Paper float keeps its own placeholder until the float moves to this thread. Source: Apple writing.
 - 03 `button-labels-act`: no Click here, Learn more, OK (heuristic; a joke label cannot be decided). Source: Apple writing.
-- 04 `coach-error-not-raw`: the tour sends twice, once with the api answering 404 `USER_NOT_FOUND "User not found."` and once with the connection refused. Each must show an error in a live region, and neither may show the raw message or a transport error such as Failed to fetch. No error shown is a FAIL. Source: Apple feedback.
+- 04 `coach-error-not-raw`: the tour sends twice to `POST /api/chats/:id/turns`, once with the api answering 404 `USER_NOT_FOUND "User not found."` and once with the connection refused. Each must show an error in a live region, and neither may show the raw message or a transport error such as Failed to fetch. No error shown is a FAIL. Source: Apple feedback.
 - 05 `no-other-product-names`: no social product name (Instagram, TikTok, Snapchat, Facebook, Twitter, YouTube, Pinterest, WhatsApp, Linktree). Integrations such as GitHub and Gmail are not matched. Connect Gmail is allowed. Source: Apple writing.
 - 06 `starter-cv-name`: a new CV's name field placeholder is Name, and the title is not Your name. Source: NN/g empty states.
 - 07 `pitch-starter-no-metric`: Pitch coming-soon copy has no percentage, no "N percent", and no add-to-cart. Preview text marked aria-hidden is not counted. Source: NN/g hallucinations.
-- 08 `confirm-before-write`: a JSX label or quoted string Approve and Deny exists in the Coach features (source read; comments and type names do not count; the scripted Coach never writes). Source: shadcn Confirmation; Gemini.
-- 09 `tool-line-names-object`: a Coach step status line that is not an error names Apply, CV, Letter, Proof, Pitch, Job or card (case-sensitive; driven with a read turn, not a write). Source: shadcn AI Elements.
+- 08 `confirm-before-write`: a JSX label or quoted string Approve and Deny exists in `features/coach` (source read; comments and type names do not count; the scripted Coach never writes). Source: shadcn Confirmation; Gemini.
+- 09 `tool-line-names-object`: a Coach step status line that is not an error names Apply, Job, CV, Letter, Proof, Pitch or card (case-sensitive; Opportunity is not a match; driven with a read turn, not a write). Source: shadcn AI Elements.
 - 10 `empty-board-one-empty-state`: the tour deletes the jobs through the api, reloads Apply, and requires 0 cards and exactly one empty state. Closed is not a visible heading. A board that was not confirmed empty is a FAIL. Source: NN/g.
 - 11 `loading-not-empty`: while the Paper call is held the page says "Loading documents" or "Loading..." and not "Start a document". Source: NN/g.
 - 12 `unpublished-banner-has-publish`: Pitch is coming soon and does not show a Hit Publish banner. The check fails only when that banner is present without a Publish button. The tour does not look for Publish. Source: NN/g.
@@ -22,7 +22,7 @@ Writing and logic:
 
 Structure:
 
-- 14 `home-composer-first`: the `/app` start page does not show "What are you aiming for?" or "Four small things". Home is gone until the Coach page replaces this check. Source: Apple layout.
+- 14 `home-composer-first`: `/app/coach` does not show "What are you aiming for?" or "Four small things". Source: Apple layout.
 - 15 `cv-widest-coach-beside`: with the Coach panel closed, the CV editor is the widest region and no second Coach float covers the sheet (at 1440 wide). An open panel belongs to #377. Source: Cursor; Linear.
 - 16 `apply-five-stages-no-hscroll`: Saved, Applied, Interview and Offer are visible column headings at 1440x900, Closed is not, and the board does not scroll sideways. The 390 pass skips this property because the lanes scroll there. Source: the Apply board.
 - 17 `search-key-hint`: the Search button has a `kbd` inside it and Ctrl-K opens the dialog. Source: Raycast.
@@ -47,12 +47,12 @@ Accessibility and performance:
 - 27 `alerts-have-role`: the Coach error sits in a live region, no red text outside one, the conflict banner keeps `role="alert"`. Source: Apple feedback.
 - 28 `primary-buttons-48`: the primary button on Apply, Paper and Pitch is 32px high or more. The kit glow button is h-8. Source: the design kit.
 - 29 `table-not-mounted-while-loading`: while the Paper call is held the page shows its own loading copy ("Loading documents") or a skeleton and no table, and with the call answered by an empty list it shows a different empty sentence ("Start a document"). A blank loading state, or the same sentence for both, is a FAIL. Source: NN/g.
-- 30 `undo-and-reject`: Undo on the CV toolbar and a Coach Reject or "Undo this change" control (DOM, or a JSX label or quoted string in source). Source: Apple undo; Gemini.
+- 30 `undo-and-reject`: a Coach Undo string in `features/coach` passes. The Paper CV toolbar is not required. Source: Apple undo; Gemini.
 
 App-wide:
 
 - 31 `one-h1-per-screen`: exactly one visible h1 on the start page, Paper, the open CV, Apply and Pitch. Home is not a screen. The shell panel title is not an h1. Pitch's only h1 is the coming-soon promise. The page name is not an h1.
-- 32 `keyboard-reaches-primary`: Tab reaches the primary action of each surface within 30 presses (30 is this skill's budget, not a standard). On `/app` the primary is the start page Add control. Message Coach is not required. Pitch's primary is Get early access.
+- 32 `keyboard-reaches-primary`: Tab reaches the primary action of each surface within 30 presses (30 is this skill's budget, not a standard). On `/app` the primary is the start page Add control. On the Coach page the primary control is Send. The textbox keeps the name Message Coach and is not that button. Pitch's primary is Get early access.
 - 33 `no-console-errors`: the signed-in desktop, reduced-motion and 390px passes log no console error, React warning, uncaught exception or failed load. The mocked scenario pages are not counted.
 - 34 `first-render-budget`: each route renders its content within 2000 ms of navigation (dev server, warm). The budget is this skill's, set for the shared 8-core machine.
 - 35 `spacing-scale`: 95% or more of padding and gap values are on the 4px scale plus the half steps 2, 6, 10, 14.

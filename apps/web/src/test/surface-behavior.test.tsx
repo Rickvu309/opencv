@@ -87,7 +87,7 @@ describe("empty api data shows empty states, never sample content", () => {
     ).not.toBeInTheDocument()
   })
 
-  it("Home shows the greeting and no sample thread", async () => {
+  it("Home shows the coach start and no sample thread", async () => {
     getMockThreads().splice(0)
     getMockPaperDocs().splice(0)
     renderApp(HOME_PATH)
@@ -95,7 +95,7 @@ describe("empty api data shows empty states, never sample content", () => {
     expect(
       await screen.findByRole("heading", {
         level: 1,
-        name: /^Good (morning|afternoon|evening),/,
+        name: "How can I help?",
       })
     ).toBeInTheDocument()
     expectNone(FIXTURE_THREADS.map((thread) => thread.title))

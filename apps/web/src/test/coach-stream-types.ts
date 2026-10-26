@@ -29,6 +29,19 @@ export type CoachStreamScript = {
   workedMs?: number
   undoFail?: { summary: string }
   undoError?: { status: number; code: string; message: string }
+  steps?: readonly string[]
+  confirm?: {
+    pendingActionId: string
+    command: string
+    summary: string
+  }
+  result?: {
+    activityId: string
+    name: string
+    summary: string
+    changes?: number
+    docId?: string
+  }
 }
 
 export type CoachStreamControl = {

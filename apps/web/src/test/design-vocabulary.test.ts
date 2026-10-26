@@ -182,6 +182,8 @@ const RAW_INTERACTIVE_ALLOWLIST = [
   "features/paper/paper-proof-document.tsx",
   // Hidden file pickers — kit Input cannot host type="file".
   "features/settings/account-section.tsx",
+  // Hidden file pickers — kit Input cannot host type="file".
+  "features/coach/coach-attach-menu.tsx",
 ] as const
 
 function appSourceFiles() {

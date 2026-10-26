@@ -11,6 +11,7 @@ import { resetApplyApiMock } from "./apply-api-mock.ts"
 import { resetPaperApiMock } from "./paper-api-mock.ts"
 import { resetProfileApiMock } from "./profile-api-mock.ts"
 import { resetShellApiMock } from "./shell-api-mock.ts"
+import { resetCoachLive } from "@/features/coach/coach-live.ts"
 import { resetThreadApiMock } from "./threads-api-mock.ts"
 
 configure({ asyncUtilTimeout: 5000 })
@@ -75,6 +76,7 @@ beforeEach(() => {
   resetMockSession()
   resetUnauthorizedHandler()
   resetThreadApiMock()
+  resetCoachLive()
   resetPaperApiMock()
   resetApplyApiMock()
   resetProfileApiMock()

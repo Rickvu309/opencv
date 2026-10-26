@@ -9,8 +9,10 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .coach-float-card {
+    .coach-float-card,
+    .coach-step {
       transition: none;
+      animation: none;
     }
   }
 }

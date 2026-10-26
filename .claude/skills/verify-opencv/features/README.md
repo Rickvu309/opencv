@@ -23,7 +23,7 @@ This directory is the maintained source for verifying the user-facing behavior o
 | ------------------------- | --------------------------------------- | --------------- |
 | `auth.md`                 | Sign in by code, sign out, sign in      | `/sign-in`      |
 | `shell.md`                | Sidebar, dock, chat panel, drawer       | `/app`          |
-| `home-coach-turn.md`      | One Coach turn streams a scripted reply | `/app`          |
+| `coach.md`                | Coach page, history, and the shell panel | `/app/coach`   |
 | `paper-edit-save.md`      | Create a CV, edit it, reload            | `/app/paper`    |
 | `apply-board-and-scan.md` | Add a card, move it, scan a posting URL | `/app/apply`    |
 | `coming-soon.md`          | Jobs, Proofs and Pitch coming soon      | `/app/jobs`     |

@@ -41,6 +41,11 @@ let lastDelete: unknown = null
 let emailChangeOverride:
   null | { sent: false; message: string } | { error: string } = null
 const paths: string[] = []
+let planRequired = false
+
+export function setProfileUpdatePlanRequired(value: boolean) {
+  planRequired = value
+}
 
 export function setMockWelcomedAt(value: string | null) {
   welcomedAt = value
@@ -148,6 +153,7 @@ export function resetProfileApiMock() {
   lastUpdate = null
   lastDelete = null
   paths.length = 0
+  planRequired = false
 }
 
 export function setMockProfile(patch: Partial<UserProfile>) {
@@ -392,7 +398,7 @@ export async function profileApiFetch(
     const patch = patchFrom(await readBody(init))
     if (
       (patch.coachMode === "light" || patch.coachMode === "max") &&
-      extras.plan === "free"
+      (extras.plan === "free" || planRequired)
     ) {
       return jsonError(
         402,

@@ -179,7 +179,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
   )
   await a.goto(`${webUrl}/app/home`)
   must(
-    await a.waitFor("document.querySelector('textarea')", 20000),
+    await a.waitFor("document.querySelector('h1')", 20000),
     "welcome did not finish"
   )
 
@@ -198,6 +198,17 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
     d.tabs[key] = await tabWalk(a, key)
     await a.sleep(1200)
     if (key === "home") {
+      await a.goto(`${webUrl}/app/coach`)
+      must(
+        await a.waitFor(
+          "document.body.innerText.includes('How can I help?')",
+          15000
+        ),
+        "the coach page did not render"
+      )
+      await a.sleep(400)
+      d.coachPage = await snap(a)
+      must(await visit("home"), "home did not render after the coach page")
       const hasComposer = await a.evaluate(
         "Boolean(document.querySelector('textarea'))"
       )
@@ -218,7 +229,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
       await send(a, "Review my CV")
       must(
         await a.waitFor(
-          "document.body.innerText.includes('Listed your')",
+          "document.body.innerText.includes('Prep the starred one next')",
           10000
         ),
         "the scripted Coach turn did not finish"
@@ -301,7 +312,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
 
   const coachCall = (r) =>
     r.method === "POST" &&
-    /\/api\/threads\/[^/]+\/coach$/.test(new URL(r.url).pathname)
+    /\/api\/chats\/[^/]+\/turns$/.test(new URL(r.url).pathname)
   b.setIntercept((r) =>
     coachCall(r)
       ? {

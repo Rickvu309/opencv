@@ -150,7 +150,10 @@ const appIndexRoute = createRoute({
 const homeRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/home",
-  component: lazyRouteComponent(() => import("@/routes/home.tsx"), "HomePage"),
+  component: lazyRouteComponent(
+    () => import("@/routes/coach.tsx"),
+    "CoachPage"
+  ),
 })
 
 const paperRoute = createRoute({
@@ -212,6 +215,15 @@ const pitchRoute = createRoute({
 const coachRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/coach",
+  component: lazyRouteComponent(
+    () => import("@/routes/coach.tsx"),
+    "CoachPage"
+  ),
+})
+
+const coachChatRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/coach/$chatId",
   component: lazyRouteComponent(
     () => import("@/routes/coach.tsx"),
     "CoachPage"
@@ -331,6 +343,7 @@ const routeTree = rootRoute.addChildren([
     applyJobRoute,
     pitchRoute,
     coachRoute,
+    coachChatRoute,
     jobsRoute,
     proofsRoute,
     proofAliasRoute,

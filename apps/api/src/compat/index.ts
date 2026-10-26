@@ -8,4 +8,3 @@ export {
   runCompatCommand,
 } from "./commands.js"
 export { createCompatThreadRoutes } from "./http.js"
-export { reverseCompatReceipt } from "./reverse.js"

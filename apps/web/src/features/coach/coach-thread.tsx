@@ -6,6 +6,7 @@ import { Chat, ChatThread } from "@/components/ai-elements/chat.tsx"
 import type { HomeMessage } from "@/features/home/threads.ts"
 
 import { CoachDock } from "./coach-dock.tsx"
+import { CoachSession } from "./coach-session.tsx"
 import { CoachTurns } from "./coach-turns.tsx"
 
 type Props = {
@@ -26,7 +27,7 @@ type Props = {
   messageCite?: (message: HomeMessage) => ReactNode
 }
 
-export function CoachThread({
+function LegacyCoachThread({
   messages,
   empty,
   beforeComposer,
@@ -73,5 +74,27 @@ export function CoachThread({
         />
       </div>
     </Chat>
+  )
+}
+
+type SessionProps = {
+  chatId: string | null
+  variant: "page" | "panel"
+  onChatId?: (id: string) => void
+  messages?: never
+  send?: never
+}
+
+export function CoachThread(props: Props | SessionProps) {
+  if ("send" in props && props.send) {
+    return <LegacyCoachThread {...props} />
+  }
+  const session = props as SessionProps
+  return (
+    <CoachSession
+      chatId={session.chatId ?? null}
+      variant={session.variant ?? "page"}
+      onChatId={session.onChatId}
+    />
   )
 }

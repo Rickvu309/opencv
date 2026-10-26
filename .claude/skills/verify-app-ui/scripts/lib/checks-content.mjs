@@ -32,20 +32,18 @@ export function contentChecks(d) {
   )
 
   const holders = {
-    home: d.home.composerPlaceholder,
-    thread: d.thread.composerPlaceholder,
-    "paper-coach": d.cvCoach.composerPlaceholder,
+    page: d.coachPage?.composerPlaceholder ?? null,
+    panel: d.home.composerPlaceholder,
   }
-  const set = new Set(Object.values(holders))
   r.push(
     result(
       "02",
       "one-composer-placeholder",
-      set.size === 1 && !set.has(null),
+      holders.page === "Message Coach" && holders.panel === "Message Coach",
       Object.entries(holders)
         .map(([k, v]) => `${k}="${v}"`)
         .join(" | "),
-      "Home, Thread and the Paper Coach float use one placeholder string"
+      "the Coach page and the shell panel use one placeholder, Message Coach (the Paper float is excluded until it uses this thread)"
     )
   )
 
@@ -126,23 +124,24 @@ export function contentChecks(d) {
 
   // Source reads. A control counts only as a JSX label or a quoted string, not a comment or a type name.
   const label = (word) => new RegExp(`>\\s*${word}\\s*<|["'\`]${word}["'\`]`)
-  const approve = has(label("Approve"))
-  const deny = has(label("Deny"))
+  const inCoach = (files) => files.filter((file) => file.includes("features/coach/"))
+  const approve = inCoach(has(label("Approve")))
+  const deny = inCoach(has(label("Deny")))
   r.push(
     result(
       "08",
       "confirm-before-write",
       approve.length > 0 && deny.length > 0,
       approve.length && deny.length
-        ? "Approve and Deny exist"
-        : `no Approve (${approve.length}) and Deny (${deny.length}) button label in features/{coach,home,paper,apply,pitch}; the banner says "Coach updated" after the write`,
-      "a Coach write shows Deny and Approve before it runs (source read of JSX labels; the scripted Coach never writes, so no write turn is driven)"
+        ? "Approve and Deny exist in features/coach"
+        : `no Approve (${approve.length}) and Deny (${deny.length}) button label in features/coach`,
+      "a Coach write shows Deny and Approve before it runs (source read of JSX labels in features/coach; the scripted Coach never writes, so no write turn is driven)"
     )
   )
 
   const tools = d.thread.alerts.filter(
     (t) =>
-      /\b(Apply|CV|Letter|Proof|Pitch|Job|cards?)\b/.test(t) &&
+      /\b(Apply|Job|CV|Letter|Proof|Pitch|cards?)\b/.test(t) &&
       !/could not|couldn't|failed|error|unavailable/i.test(t)
   )
   r.push(

@@ -1,16 +1,9 @@
 import { expect } from "vitest"
 import { fireEvent, screen } from "@testing-library/react"
 
-import { SAMPLE_AUTHOR_NAME } from "@/features/seed/sample-author.ts"
-
 export async function expectHomeIdle() {
   expect(
-    await screen.findByRole("heading", {
-      level: 1,
-      name: new RegExp(
-        `^Good (morning|afternoon|evening), ${SAMPLE_AUTHOR_NAME}$`
-      ),
-    })
+    await screen.findByRole("heading", { name: "How can I help?" })
   ).toBeInTheDocument()
   expect(
     screen.getByRole("textbox", { name: "Message Coach" })

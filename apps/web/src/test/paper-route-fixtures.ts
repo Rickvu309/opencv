@@ -92,7 +92,7 @@ export async function goHomeThenPaper() {
   expect(
     await screen.findByRole("heading", {
       level: 1,
-      name: /^Good (morning|afternoon|evening),/,
+      name: "How can I help?",
     })
   ).toBeInTheDocument()
   fireEvent.click(screen.getByRole("link", { name: /^Paper$/ }))
