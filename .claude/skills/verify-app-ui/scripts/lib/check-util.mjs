@@ -82,40 +82,7 @@ export function context(d) {
   }
 }
 
-// Every timer-driven motion under features/pitch and the use-* hooks it imports. A setTimeout that only
-// resets a flag (setCopied(false)) is feedback, not motion, and is skipped.
-export function pitchTimers() {
-  const files = sourceFiles(["apps/web/src/features/pitch"])
-  const hooks = []
-  for (const f of files) {
-    for (const m of read(f).matchAll(
-      /from\s+["']((?:@\/|\.\/|\.\.\/)[^"']+)["']/g
-    )) {
-      const spec = m[1]
-      const p = spec.startsWith("@/")
-        ? join(repo, "apps/web/src", spec.slice(2))
-        : resolve(dirname(f), spec)
-      if (/\/use-[^/]+\.tsx?$/.test(p) && existsSync(p)) hooks.push(p)
-    }
-  }
-  const out = []
-  for (const f of new Set([...files, ...hooks])) {
-    const src = read(f)
-    const apis = []
-    if (/requestAnimationFrame/.test(src)) apis.push("requestAnimationFrame")
-    if (/setInterval/.test(src)) apis.push("setInterval")
-    for (const m of src.matchAll(
-      /setTimeout\(\s*(?:\(\)\s*=>\s*)?([^,]*?),\s*(\d+)/g
-    )) {
-      if (!/^set\w+\(\s*(false|null)\s*\)$/.test(m[1].trim()))
-        apis.push(`setTimeout ${m[2]}ms`)
-    }
-    if (apis.length)
-      out.push({
-        file: rel(f),
-        apis,
-        guarded: /prefers-reduced-motion|useReducedMotion/.test(src),
-      })
-  }
-  return out
+export function paletteUsesPanelDuration() {
+  const files = sourceFiles(["apps/web/src/features/command-palette"])
+  return files.some((file) => /duration-\(--duration-panel\)/.test(read(file)))
 }

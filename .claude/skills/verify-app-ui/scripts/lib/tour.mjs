@@ -21,7 +21,7 @@ const PRIMARY = {
   home: /^Add /,
   paper: /^(New|Make mine)$/,
   apply: /^(New job|Add job)$/,
-  pitch: /^(Edit|Publish)/,
+  pitch: /^Get early access$/,
 }
 const EMPTY_BOARD = "document.body.innerText.includes('Track your first job')"
 const must = (ok, what) => {

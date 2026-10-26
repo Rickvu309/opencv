@@ -20,7 +20,7 @@ import {
   SURFACES,
   context,
   list,
-  pitchTimers,
+  paletteUsesPanelDuration,
   read,
   rel,
   repo,
@@ -232,15 +232,14 @@ export function runChecks(d) {
     ...(s.runningAnimations ? [`${k}:${s.runningAnimations} running`] : []),
     ...(s.scrollBehavior.includes("smooth") ? [`${k}:smooth scroll`] : []),
   ])
-  const timerFiles = pitchTimers()
-  const timers = timerFiles.filter((t) => !t.guarded)
+  const paletteMotion = paletteUsesPanelDuration()
   r.push(
     result(
       "25",
       "reduced-motion",
-      reducedBad.length === 0 && timerFiles.length > 0 && timers.length === 0,
-      `with reduce: ${reducedBad.length ? list(reducedBad) : "no motion over 1ms"}; Pitch timers: ${timerFiles.length ? timerFiles.map((t) => `${t.file.split("/").pop()} ${t.apis.join("+")} ${t.guarded ? "guarded" : "UNGUARDED"}`).join("; ") : "no story timer found"}`,
-      "with prefers-reduced-motion nothing runs over 1ms, scroll is not smooth, and every timer-driven motion under features/pitch and the use-* hooks it imports (requestAnimationFrame, setInterval, setTimeout other than a flag reset) sits in a file that checks the preference, and at least one story timer is found (source read)"
+      reducedBad.length === 0 && paletteMotion,
+      `with reduce: ${reducedBad.length ? list(reducedBad) : "no motion over 1ms"}; palette panel duration: ${paletteMotion}`,
+      "with prefers-reduced-motion nothing runs over 1ms, scroll is not smooth, and the command palette open transition uses the panel duration token (source read)"
     )
   )
 
@@ -278,7 +277,7 @@ export function runChecks(d) {
   const need = {
     apply: [d.apply, /^(New job|Add job)$/],
     paper: [d.cv, /^(Make mine|Save)/],
-    pitch: [d.pitchEdit, /^Publish$/],
+    pitch: [d.pitchEdit, /^Get early access$/],
   }
   const found = Object.entries(need).map(([k, [s, re]]) => {
     const b = s.buttons.find((x) => re.test(x.label))

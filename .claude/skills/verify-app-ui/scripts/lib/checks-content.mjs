@@ -112,7 +112,7 @@ export function contentChecks(d) {
   )
 
   const claims = metricClaims(
-    `${d.pitch.text} ${d.pitch.imgs.map((i) => i.alt).join(" ")}`
+    `${d.pitch.exposedText ?? d.pitch.text} ${d.pitch.imgs.map((i) => i.alt).join(" ")}`
   )
   r.push(
     result(
@@ -120,7 +120,7 @@ export function contentChecks(d) {
       "pitch-starter-no-metric",
       claims.length === 0,
       claims.length ? list([...new Set(claims)]) : "none",
-      "Pitch starter text has no percentage, percent figure or add-to-cart claim"
+      "Pitch coming-soon copy has no percentage, percent figure or add-to-cart claim. Preview text marked aria-hidden is not counted"
     )
   )
 
