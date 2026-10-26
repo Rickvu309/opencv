@@ -74,7 +74,7 @@ describe("registry", () => {
       email: "ada-behavior@example.com",
     })
     const person = personActor(userId)
-    await withDatabase(db as never, async () => {
+    await withDatabase(db, async () => {
       const chat = await registry.execute({
         name: "chat.create",
         input: {},
@@ -99,21 +99,25 @@ describe("registry", () => {
         stage: string
       }
       expect(before.stage).toBe("saved")
-      const approved = await registry.approve(userId, pending.pendingActionId!)
-      expect(approved?.actor).toBe("coach")
-      expect(approved?.command).toBe("job.move")
-      const again = await registry.approve(userId, pending.pendingActionId!)
-      expect(again?.id).toBe(approved?.id)
+      const pendingId = pending.pendingActionId
+      if (!pendingId) throw new Error("missing pending action")
+      const approved = await registry.approve(userId, pendingId)
+      if (!approved) throw new Error("approve returned no activity")
+      expect(approved.actor).toBe("coach")
+      expect(approved.command).toBe("job.move")
+      const again = await registry.approve(userId, pendingId)
+      if (!again) throw new Error("approve returned no activity")
+      expect(again.id).toBe(approved.id)
       const moved = (await registry.read("job.get", { jobId }, person)) as {
         stage: string
       }
       expect(moved.stage).toBe("applied")
-      await registry.undo(userId, approved!.id)
+      await registry.undo(userId, approved.id)
       const restored = (await registry.read("job.get", { jobId }, person)) as {
         stage: string
       }
       expect(restored.stage).toBe("saved")
-      await expect(registry.undo(userId, approved!.id)).rejects.toThrow(
+      await expect(registry.undo(userId, approved.id)).rejects.toThrow(
         /already undone/
       )
 
@@ -122,13 +126,15 @@ describe("registry", () => {
         input: { jobId, stage: "interview" },
         actor: coach,
       })
-      const denied = await registry.deny(userId, second.pendingActionId!)
+      const secondId = second.pendingActionId
+      if (!secondId) throw new Error("missing pending action")
+      const denied = await registry.deny(userId, secondId)
       expect(denied.status).toBe("denied")
-      const repeat = await registry.deny(userId, second.pendingActionId!)
+      const repeat = await registry.deny(userId, secondId)
       expect(repeat.status).toBe("denied")
-      await expect(
-        registry.approve(userId, second.pendingActionId!)
-      ).rejects.toThrow(/declined/)
+      await expect(registry.approve(userId, secondId)).rejects.toThrow(
+        /declined/
+      )
       const stayed = (await registry.read("job.get", { jobId }, person)) as {
         stage: string
       }

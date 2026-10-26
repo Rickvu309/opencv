@@ -5,6 +5,8 @@ import type { NodePgDatabase } from "drizzle-orm/node-postgres"
 import * as schema from "./schema.js"
 
 export type AppDatabase = NodePgDatabase<typeof schema>
+type PgliteDrizzle = typeof import("drizzle-orm/pglite").drizzle
+export type TestDatabase = ReturnType<PgliteDrizzle>
 
 const requestDb = new AsyncLocalStorage<AppDatabase>()
 const transactionDb = new AsyncLocalStorage<AppDatabase>()
@@ -14,8 +16,12 @@ export function bindDatabase(db: AppDatabase) {
   root = db
 }
 
-export function withDatabase<T>(db: AppDatabase, fn: () => T): T {
-  return requestDb.run(db, fn)
+export function withDatabase<T>(
+  db: AppDatabase | TestDatabase,
+  fn: () => T
+): T {
+  // Both drivers share the query API. The store stays the production type.
+  return requestDb.run(db as AppDatabase, fn)
 }
 
 export function getDb() {

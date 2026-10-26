@@ -7,7 +7,7 @@ import { PGlite } from "@electric-sql/pglite"
 import { drizzle } from "drizzle-orm/pglite"
 
 import { createApp } from "../app.js"
-import type { AppDatabase } from "../db/context.js"
+import type { AppDatabase, TestDatabase } from "../db/context.js"
 import { runMigrations } from "../db/migrate.js"
 import * as schema from "../db/schema.js"
 
@@ -34,7 +34,10 @@ async function injectedTemplatePath() {
   }
 }
 
-export async function createMigratedTestDb() {
+export async function createMigratedTestDb(): Promise<{
+  client: PGlite
+  db: TestDatabase
+}> {
   const templatePath = await injectedTemplatePath()
   if (templatePath) {
     templateBlob ??= readFile(templatePath).then((bytes) => new Blob([bytes]))

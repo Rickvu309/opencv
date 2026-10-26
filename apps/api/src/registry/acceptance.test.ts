@@ -23,7 +23,7 @@ describe("release-one commands", () => {
     })
     const person = personActor(userId)
 
-    await withDatabase(db as never, async () => {
+    await withDatabase(db, async () => {
       await expect(
         registry.execute({
           name: "job.create",
@@ -159,7 +159,7 @@ describe("release-one commands", () => {
       provider: "fake",
       model: "fake",
     })
-    await withDatabase(db as never, async () => {
+    await withDatabase(db, async () => {
       await expect(
         assertDayCap(cappedId, "free", new Date(), {
           COACH_DAILY_TURN_LIMIT_FREE: "1",
