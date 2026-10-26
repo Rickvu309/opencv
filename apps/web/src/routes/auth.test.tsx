@@ -11,7 +11,7 @@ import { setMockGoogle, setMockSession } from "@/test/auth-client-mock.ts"
 import { pathOf } from "@/test/mock-http.ts"
 import { setMockWelcomedAt } from "@/test/profile-api-mock.ts"
 import { renderApp } from "@/test/render-app.tsx"
-import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { HOME_PATH, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 
 afterEach(() => {
   cleanup()
@@ -48,7 +48,7 @@ function refuseCode(code: string, status: number) {
 }
 
 async function openExpired() {
-  renderApp(SURFACE_PATHS.home)
+  renderApp(HOME_PATH)
   expect(
     await screen.findByRole("heading", { level: 1, name: /Alex Tran/ })
   ).toBeInTheDocument()
@@ -298,7 +298,7 @@ describe("welcome", () => {
     }))
     const calls: string[] = []
     setMockWelcomedAt(null)
-    renderApp(SURFACE_PATHS.home, (input) => {
+    renderApp(HOME_PATH, (input) => {
       calls.push(pathOf(input))
     })
     expect(
@@ -317,7 +317,7 @@ describe("welcome", () => {
 
   it("skips welcome when the profile was already welcomed", async () => {
     setMockWelcomedAt("2026-01-02T00:00:00.000Z")
-    renderApp(SURFACE_PATHS.home)
+    renderApp(HOME_PATH)
     expect(
       await screen.findByRole("heading", { level: 1, name: /Alex Tran/ })
     ).toBeInTheDocument()
