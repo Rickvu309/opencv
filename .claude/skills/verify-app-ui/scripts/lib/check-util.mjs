@@ -26,7 +26,11 @@ export function sourceFiles(dirs) {
       else if (/\.(tsx|ts)$/.test(name) && !/\.test\./.test(name)) out.push(p)
     }
   }
-  for (const d of dirs) walk(join(repo, d))
+  for (const d of dirs) {
+    const abs = join(repo, d)
+    if (!existsSync(abs)) continue
+    walk(abs)
+  }
   return out
 }
 export const featureFiles = () =>

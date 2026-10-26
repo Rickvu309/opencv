@@ -189,6 +189,7 @@ export async function runTour({ browser, webUrl, apiUrl, shots }) {
     }
     if (key === "pitch") {
       d.pitchEdit = d.pitch
+      d.pitchStory = d.pitch
     }
   }
   d.logs.push(...a.logs.splice(0))
