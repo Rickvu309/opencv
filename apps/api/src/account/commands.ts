@@ -4,12 +4,14 @@ import {
   ERROR_CODES,
   notifyRequestInputSchema,
   parseFileId,
+  profileMarkWelcomedInputSchema,
   profileSetPhotoInputSchema,
   profileUpdateInputSchema,
   type Actor,
 } from "@workspace/domain"
 import { and, eq } from "drizzle-orm"
 
+import { getBoundAuth, getRequestHeaders } from "../auth.js"
 import { getDb } from "../db/context.js"
 import { files, notifyRequests } from "../db/schema.js"
 import { createId } from "../id.js"
@@ -17,6 +19,7 @@ import { CommandError, isUniqueViolation } from "../registry/errors.js"
 import type { Registry } from "../registry/registry.js"
 import {
   deleteAccount,
+  markWelcomed,
   setProfilePhoto,
   toProfile,
   updateProfile,
@@ -35,6 +38,20 @@ export function registerAccount(registry: Registry) {
       activity: () => null,
     },
     (input, actor) => updateProfile(actor, input)
+  )
+
+  registry.addCommand(
+    {
+      name: "profile.markWelcomed",
+      description: "Record that the welcome screen finished.",
+      input: profileMarkWelcomedInputSchema,
+      coach: "never",
+      destructive: false,
+      reversal: () => null,
+      step: () => "Mark welcomed",
+      activity: () => null,
+    },
+    (_input, actor) => markWelcomed(actor)
   )
 
   registry.addCommand(
@@ -72,8 +89,10 @@ export function registerAccount(registry: Registry) {
       reversal: () => null,
       step: () => "Request email change",
       activity: () => null,
+      // The handler calls better-auth, which opens its own connection.
+      transaction: "none",
     },
-    async (input) => ({ email: input.email, sent: false })
+    (input) => requestEmailChange(input.email)
   )
 
   registry.addCommand(
@@ -103,6 +122,61 @@ export function registerAccount(registry: Registry) {
     },
     (input, actor) => requestNotify(actor, input.topic)
   )
+}
+
+const SEND_FAILED = "We could not send the code. Try again."
+const EMAIL_DIFFERENT = "Use a different email."
+
+function authFailure(error: unknown) {
+  if (!error || typeof error !== "object") {
+    return { message: "", code: undefined as string | undefined }
+  }
+  const body = "body" in error ? error.body : undefined
+  const record =
+    body && typeof body === "object"
+      ? (body as { message?: unknown; code?: unknown })
+      : undefined
+  const message =
+    typeof record?.message === "string"
+      ? record.message
+      : error instanceof Error
+        ? error.message
+        : ""
+  const code = typeof record?.code === "string" ? record.code : undefined
+  return { message, code }
+}
+
+async function requestEmailChange(email: string) {
+  const headers = getRequestHeaders()
+  if (!headers) {
+    // Registry coverage calls the command with no HTTP request.
+    return { email, sent: false }
+  }
+  const cookie = headers.get("cookie")
+  if (!cookie) {
+    throw new CommandError(ERROR_CODES.VALIDATION_ERROR, SEND_FAILED)
+  }
+  const auth = getBoundAuth()
+  if (!auth) {
+    throw new CommandError(ERROR_CODES.VALIDATION_ERROR, SEND_FAILED)
+  }
+  try {
+    await auth.api.requestEmailChangeEmailOTP({
+      body: { newEmail: email },
+      headers,
+    })
+  } catch (error) {
+    const failure = authFailure(error)
+    const sameOrInvalid =
+      failure.message === "Email is the same" ||
+      failure.code === "INVALID_EMAIL" ||
+      /invalid email/i.test(failure.message)
+    throw new CommandError(
+      ERROR_CODES.VALIDATION_ERROR,
+      sameOrInvalid ? EMAIL_DIFFERENT : SEND_FAILED
+    )
+  }
+  return { email, sent: true }
 }
 
 async function deleteOwnedAccount(actor: Actor, confirm: string) {

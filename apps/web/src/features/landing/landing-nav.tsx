@@ -57,7 +57,7 @@ export function LandingNav() {
               {LANDING_LOGIN_LABEL}
             </Link>
             <Link
-              to="/sign-up"
+              to="/sign-in"
               className={cn(
                 buttonVariants({ size: "sm" }),
                 "rounded-full [padding-inline:0.875rem] [block-size:2.5rem]"

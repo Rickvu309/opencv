@@ -40,7 +40,12 @@ export function startStack({ apiPort, webPort, run }) {
   }
   const text = readFileSync(join(root, run, "run.env"), "utf8")
   const get = (k) => new RegExp(`^${k}=(.*)$`, "m").exec(text)?.[1]
-  return { apiUrl: get("API_URL"), webUrl: get("WEB_URL"), run }
+  return {
+    apiUrl: get("API_URL"),
+    webUrl: get("WEB_URL"),
+    logPath: join(root, run, "api.log"),
+    run,
+  }
 }
 
 export function stopStack(run) {

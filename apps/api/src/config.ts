@@ -182,8 +182,27 @@ export function logAuthMailFromEnv(env: NodeJS.ProcessEnv): boolean {
   return env.NODE_ENV !== "production"
 }
 
+function presentEnv(value: string | undefined) {
+  const trimmed = value?.trim()
+  return trimmed ? trimmed : undefined
+}
+
+export function resendApiKeyFromEnv(env: NodeJS.ProcessEnv) {
+  return presentEnv(env.RESEND_API_KEY)
+}
+
+export function authEmailFromFromEnv(env: NodeJS.ProcessEnv) {
+  return presentEnv(env.AUTH_EMAIL_FROM)
+}
+
+export function googleClientIdFromEnv(env: NodeJS.ProcessEnv) {
+  return presentEnv(env.GOOGLE_CLIENT_ID)
+}
+
+export function googleClientSecretFromEnv(env: NodeJS.ProcessEnv) {
+  return presentEnv(env.GOOGLE_CLIENT_SECRET)
+}
+
 export function googleEnabledFromEnv(env: NodeJS.ProcessEnv): boolean {
-  return Boolean(
-    env.GOOGLE_CLIENT_ID?.trim() && env.GOOGLE_CLIENT_SECRET?.trim()
-  )
+  return Boolean(googleClientIdFromEnv(env) && googleClientSecretFromEnv(env))
 }

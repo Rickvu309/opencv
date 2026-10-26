@@ -39,24 +39,32 @@ export const authMockState: { data: MockSession | null } = {
   data: signedInSession(),
 }
 
+export const mockPublicConfig = { google: false }
+
+export function setMockGoogle(google: boolean) {
+  mockPublicConfig.google = google
+}
+
 export function setMockSession(data: MockSession | null) {
   authMockState.data = data
 }
 
 function installAuthMocks() {
-  authClient.signIn.email.mockImplementation(async () => {
+  authClient.emailOtp.sendVerificationOtp.mockImplementation(async () => ({
+    data: { success: true },
+    error: null,
+  }))
+  authClient.signIn.emailOtp.mockImplementation(async () => {
     authMockState.data = signedInSession()
-    return { data: authMockState.data, error: null }
-  })
-  authClient.signUp.email.mockImplementation(
-    async (input: { name: string; email: string; password: string }) => {
-      authMockState.data = signedInSession({
-        name: input.name,
-        email: input.email,
-      })
-      return { data: authMockState.data, error: null }
+    return {
+      data: { token: "test-token", user: authMockState.data?.user },
+      error: null,
     }
-  )
+  })
+  authClient.signIn.social.mockImplementation(async () => ({
+    data: { redirect: true, url: "https://accounts.google.com" },
+    error: null,
+  }))
   authClient.signOut.mockImplementation(async () => {
     authMockState.data = null
     return { data: { success: true }, error: null }
@@ -65,8 +73,10 @@ function installAuthMocks() {
 
 export function resetMockSession() {
   authMockState.data = signedInSession()
-  authClient.signIn.email.mockReset()
-  authClient.signUp.email.mockReset()
+  mockPublicConfig.google = false
+  authClient.emailOtp.sendVerificationOtp.mockReset()
+  authClient.signIn.emailOtp.mockReset()
+  authClient.signIn.social.mockReset()
   authClient.signOut.mockReset()
   authClient.$store.notify.mockReset()
   installAuthMocks()
@@ -86,11 +96,12 @@ export const authClient = {
     error: null,
     refetch: async () => {},
   }),
-  signIn: {
-    email: vi.fn(),
+  emailOtp: {
+    sendVerificationOtp: vi.fn(),
   },
-  signUp: {
-    email: vi.fn(),
+  signIn: {
+    emailOtp: vi.fn(),
+    social: vi.fn(),
   },
   signOut: vi.fn(),
   hydrateSession: (data: MockSession | null) => {

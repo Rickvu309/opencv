@@ -12,9 +12,13 @@ export default defineRailway((ctx) => {
     source: github("quanvu309/opencv", { branch: "main" }),
     env: {
       ANTHROPIC_API_KEY: preserve(),
+      AUTH_EMAIL_FROM: preserve(),
       AUTH_URL: preserve(),
       DATABASE_URL: preserve(),
+      GOOGLE_CLIENT_ID: preserve(),
+      GOOGLE_CLIENT_SECRET: preserve(),
       OPENROUTER_API_KEY: preserve(),
+      RESEND_API_KEY: preserve(),
       SESSION_SECRET: preserve(),
       WEB_ORIGINS: preserve(),
     },

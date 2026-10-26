@@ -1,7 +1,7 @@
 import { ApiError, isErrorEnvelope } from "@/lib/api-error.ts"
 import { apiBaseUrl } from "@/lib/api-url.ts"
 import { invalidateClientSession } from "@/lib/auth-client.ts"
-import { signInHref } from "@/lib/auth-redirect.ts"
+import { SIGNED_OUT_EMAIL_KEY, signInHref } from "@/lib/auth-redirect.ts"
 
 export { apiBaseUrl } from "@/lib/api-url.ts"
 export { ApiError, isErrorEnvelope } from "@/lib/api-error.ts"
@@ -17,25 +17,51 @@ export async function fetchHealth(): Promise<{ ok: boolean }> {
 }
 
 type UnauthorizedHandler = () => void
+type SessionExpiredListener = (email: string | null) => void
 
-function defaultOnUnauthorized() {
-  invalidateClientSession()
+function readSignedOutEmail() {
+  if (typeof sessionStorage === "undefined") return null
+  return sessionStorage.getItem(SIGNED_OUT_EMAIL_KEY)
+}
+
+function assignSignIn() {
   if (typeof window === "undefined") return
-
   const current = `${window.location.pathname}${window.location.search}`
   const next = signInHref(current)
   if (current === next || current.startsWith("/sign-in")) return
   window.location.assign(next)
 }
 
+function defaultOnUnauthorized() {
+  assignSignIn()
+}
+
 let onUnauthorized: UnauthorizedHandler = defaultOnUnauthorized
+let sessionExpiredListener: SessionExpiredListener | null = null
 
 export function setUnauthorizedHandler(handler: UnauthorizedHandler) {
   onUnauthorized = handler
 }
 
+export function setSessionExpiredListener(
+  listener: SessionExpiredListener | null
+) {
+  sessionExpiredListener = listener
+}
+
 export function resetUnauthorizedHandler() {
   onUnauthorized = defaultOnUnauthorized
+  sessionExpiredListener = null
+}
+
+function notifyUnauthorized() {
+  const email = readSignedOutEmail()
+  invalidateClientSession()
+  if (sessionExpiredListener) {
+    sessionExpiredListener(email)
+    return
+  }
+  onUnauthorized()
 }
 
 async function readErrorEnvelope(res: Response) {
@@ -75,7 +101,7 @@ export async function apiRequest(
     const message = error?.message ?? `Request failed with ${res.status}`
 
     if (res.status === 401 || code === "UNAUTHORIZED") {
-      onUnauthorized()
+      notifyUnauthorized()
       throw new ApiError(401, code, message)
     }
 

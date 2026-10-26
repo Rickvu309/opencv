@@ -55,6 +55,7 @@ type StoredCommand = {
   destructive: boolean
   input: ZodType
   step: (input: unknown) => string
+  transaction?: "none"
   run: (input: unknown, actor: Actor) => Promise<RanCommand>
 }
 
@@ -129,6 +130,7 @@ export class Registry {
       coach: checked.coach,
       destructive: checked.destructive,
       input: checked.input,
+      transaction: checked.transaction,
       step: (raw) => {
         const parsed = checked.input.safeParse(raw)
         return parsed.success ? checked.step(parsed.data) : checked.name
@@ -237,7 +239,7 @@ export class Registry {
     }
     const parsed = parseInput(command.input, options.input)
 
-    return transaction(async () => {
+    const run = async () => {
       if (options.idempotencyKey) {
         const existing = await this.activityByKey(
           actor.userId,
@@ -335,7 +337,9 @@ export class Registry {
         reversal: ran.reversal,
         detail: ran.draft?.detail,
       }
-    })
+    }
+    if (command.transaction === "none") return run()
+    return transaction(run)
   }
 
   async read(name: string, input: unknown, actor: Actor) {

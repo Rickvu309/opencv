@@ -62,6 +62,12 @@ export const profileUpdateInputSchema = z
 
 export type ProfileUpdateInput = z.infer<typeof profileUpdateInputSchema>
 
+export const profileMarkWelcomedInputSchema = z.object({}).strict()
+
+export type ProfileMarkWelcomedInput = z.infer<
+  typeof profileMarkWelcomedInputSchema
+>
+
 export const profileSetPhotoInputSchema = z
   .object({
     fileId: fileIdSchema,

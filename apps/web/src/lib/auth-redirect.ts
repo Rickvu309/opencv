@@ -1,5 +1,7 @@
 const AUTH_PATHS = new Set(["/sign-in", "/sign-up"])
 
+export const SIGNED_OUT_EMAIL_KEY = "opencv.signedOutEmail"
+
 /**
  * Only in-app paths. Rejects protocol-relative and auth-screen loops so a
  * crafted `?redirect=` cannot send the User off-origin.
@@ -18,11 +20,24 @@ export function safeRedirectPath(value: unknown): string | undefined {
   return path
 }
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 export function validateAuthSearch(search: Record<string, unknown>): {
   redirect?: string
+  email?: string
+  error?: "google"
 } {
   const redirect = safeRedirectPath(search.redirect)
-  return redirect ? { redirect } : {}
+  const email =
+    typeof search.email === "string" && EMAIL_PATTERN.test(search.email)
+      ? search.email
+      : undefined
+  const error = search.error === "google" ? "google" : undefined
+  return {
+    ...(redirect ? { redirect } : {}),
+    ...(email ? { email } : {}),
+    ...(error ? { error } : {}),
+  }
 }
 
 export function isAuthPath(path: string) {

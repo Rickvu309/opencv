@@ -9,6 +9,7 @@ import {
   apiStream,
   fetchHealth,
   resetUnauthorizedHandler,
+  setSessionExpiredListener,
   setUnauthorizedHandler,
 } from "./api.ts"
 
@@ -192,5 +193,69 @@ describe("apiStream", () => {
       apiStream("/api/threads/t1/coach", { method: "POST" })
     ).rejects.toMatchObject({ status: 401, code: "UNAUTHORIZED" })
     expect(onUnauthorized).toHaveBeenCalledTimes(1)
+  })
+
+  it("assigns sign-in when nothing is listening", async () => {
+    const assign = vi.fn()
+    vi.stubGlobal("location", {
+      pathname: "/app",
+      search: "",
+      origin: "http://localhost:3000",
+      href: "http://localhost:3000/app",
+      assign,
+    })
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        Response.json(
+          {
+            ok: false,
+            error: {
+              code: "UNAUTHORIZED",
+              message: "Authentication required",
+            },
+          },
+          { status: 401 }
+        )
+      )
+    )
+    await expect(apiFetch("/api/session")).rejects.toMatchObject({
+      status: 401,
+    })
+    expect(assign).toHaveBeenCalled()
+    expect(String(assign.mock.calls[0]?.[0])).toContain("/sign-in")
+  })
+
+  it("skips navigation when a session-expired listener is registered", async () => {
+    const assign = vi.fn()
+    vi.stubGlobal("location", {
+      pathname: "/app",
+      search: "",
+      origin: "http://localhost:3000",
+      href: "http://localhost:3000/app",
+      assign,
+    })
+    const listener = vi.fn()
+    setSessionExpiredListener(listener)
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        Response.json(
+          {
+            ok: false,
+            error: {
+              code: "UNAUTHORIZED",
+              message: "Authentication required",
+            },
+          },
+          { status: 401 }
+        )
+      )
+    )
+    await expect(apiFetch("/api/session")).rejects.toMatchObject({
+      status: 401,
+    })
+    expect(listener).toHaveBeenCalledTimes(1)
+    expect(assign).not.toHaveBeenCalled()
   })
 })

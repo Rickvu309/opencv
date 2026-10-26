@@ -76,7 +76,7 @@ export function LandingFeatures() {
             {feature.title}
           </h2>
           <p className="landing-section-body">{feature.body}</p>
-          <Link to="/sign-up" className={cn("landing-link", FOCUS_RING)}>
+          <Link to="/sign-in" className={cn("landing-link", FOCUS_RING)}>
             Learn more
           </Link>
           <img
@@ -166,7 +166,7 @@ export function LandingClose() {
       </p>
       <div className="landing-close-actions">
         <Link
-          to="/sign-up"
+          to="/sign-in"
           className={cn(
             buttonVariants({ size: "lg" }),
             "rounded-full [padding-inline:1.25rem] [block-size:2.75rem]"

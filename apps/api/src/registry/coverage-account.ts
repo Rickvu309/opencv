@@ -40,6 +40,17 @@ export function accountCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
+      name: "profile.markWelcomed",
+      arrange: async () => {},
+      act: () => run("profile.markWelcomed", {}),
+      assert: async (result) => {
+        const welcomedAt = text(result.output, "welcomedAt")
+        expect(welcomedAt).toMatch(/\d{4}-\d{2}-\d{2}T/)
+        const again = await run("profile.markWelcomed", {})
+        expect(text(again.output, "welcomedAt")).toBe(welcomedAt)
+      },
+    },
+    {
       name: "account.requestEmailChange",
       arrange: async () => {},
       act: () =>
