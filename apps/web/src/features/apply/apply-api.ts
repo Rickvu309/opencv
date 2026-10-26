@@ -1,101 +1,271 @@
-import {
-  APPLY_COMMANDS,
-  generateKeyBetween,
-  type ApplyCard,
-  type ApplyCreateCardInput,
-  type ApplyScanInput,
-  type ApplyScanResult,
-  type ApplyStage,
-  type ApplyUpdateCardInput,
-} from "@workspace/domain"
+import { useQuery } from "@tanstack/react-query"
+import type { ApplyCard } from "@workspace/domain"
 
 import { apiFetch } from "@/lib/api.ts"
-import { runCommand, unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
+import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
 
-import { sortApplyCards } from "./apply-types.ts"
+export type JobStage = "saved" | "applied" | "interview" | "offer" | "closed"
+export type JobPriority = "low" | "normal" | "high"
+
+export type JobPosting = {
+  about: string
+  duties: string
+  requirements: string
+  details: string
+}
+
+export type Job = {
+  id: string
+  title: string
+  company: string
+  stage: JobStage
+  position: string
+  location: string | null
+  priority: JobPriority
+  jobUrl: string | null
+  sourceHost: string | null
+  description: string | null
+  posting: JobPosting | null
+  interviewAt: string | null
+  deadline: string | null
+  recruiterName: string | null
+  recruiterEmail: string | null
+  cvDocId: string | null
+  letterDocId: string | null
+  starred: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export type ChecklistItem = {
+  id: string
+  label: string
+  done: boolean
+  position: string
+}
+
+export type LinkedDoc = { id: string; name: string } | null
+
+export type JobDetail = Job & {
+  note: string
+  checklist: ChecklistItem[]
+  linked: { cv: LinkedDoc; letter: LinkedDoc }
+}
+
+export type JobPreview = {
+  status: "filled" | "company-missing" | "duplicate" | "unreadable"
+  fields?: {
+    title?: string
+    company?: string
+    location?: string
+    description?: string
+  }
+  jobId?: string
+  message?: string
+}
+
+export type ActivityRow = {
+  id: string
+  createdAt: string
+  actor: string
+  command: string
+  subjectKind: string
+  subjectId: string
+  summary: string
+  undoneAt: string | null
+  reversible?: boolean
+}
+
+export type PaperListItem = {
+  id: string
+  name: string
+  kind: string
+}
+
+export type CommandResult<T> = T & { activityId?: string }
 
 export const applyQueryKeys = {
   all: ["apply"] as const,
   list: () => ["apply", "list"] as const,
+  /** Compat card list for Paper. Not the job board. */
+  cards: () => ["apply", "cards"] as const,
   detail: (id: string) => ["apply", "detail", id] as const,
+  calendar: (from: string, to: string) =>
+    ["apply", "calendar", from, to] as const,
+  activity: (id: string) => ["apply", "activity", id] as const,
 }
 
-export async function listApplyCards(): Promise<ApplyCard[]> {
-  const body = await apiFetch<SuccessBody<ApplyCard[]>>("/api/apply")
+async function postCommand<T>(
+  name: string,
+  input: unknown
+): Promise<CommandResult<T>> {
+  const body = await apiFetch<SuccessBody<CommandResult<T>>>(
+    `/api/commands/${name}`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        input,
+        idempotencyKey: crypto.randomUUID(),
+      }),
+    }
+  )
   return unwrapData(body)
 }
 
-export function createApplyCard(
-  input: ApplyCreateCardInput = {}
-): Promise<ApplyCard> {
-  return runCommand<ApplyCard>(APPLY_COMMANDS.createCard, input)
+export function listJobs(): Promise<Job[]> {
+  return apiFetch<SuccessBody<Job[]>>("/api/jobs").then(unwrapData)
 }
 
-export function updateApplyCard(
-  input: ApplyUpdateCardInput
-): Promise<ApplyCard> {
-  return runCommand<ApplyCard>(APPLY_COMMANDS.updateCard, input)
+export function getJob(jobId: string): Promise<JobDetail> {
+  return apiFetch<SuccessBody<JobDetail>>(`/api/jobs/${jobId}`).then(unwrapData)
 }
 
-export function moveApplyCard(input: {
-  cardId: string
-  stage: ApplyStage
-  beforeCardId?: string | null
-}): Promise<ApplyCard> {
-  return runCommand<ApplyCard>(APPLY_COMMANDS.moveCard, input)
+export function calendarJobs(from: string, to: string): Promise<Job[]> {
+  const query = new URLSearchParams({ from, to })
+  return apiFetch<SuccessBody<Job[]>>(`/api/jobs/calendar?${query}`).then(
+    unwrapData
+  )
 }
 
-export function toggleApplyStar(input: { cardId: string }): Promise<ApplyCard> {
-  return runCommand<ApplyCard>(APPLY_COMMANDS.toggleStar, input)
-}
-
-export function deleteApplyCard(input: {
-  cardId: string
-}): Promise<{ id: string }> {
-  return runCommand<{ id: string }>(APPLY_COMMANDS.deleteCard, input)
-}
-
-export function scanApplyJob(input: ApplyScanInput): Promise<ApplyScanResult> {
-  return apiFetch<SuccessBody<ApplyScanResult>>("/api/apply/scan", {
+export function previewJob(input: {
+  url?: string
+  text?: string
+}): Promise<JobPreview> {
+  return apiFetch<SuccessBody<JobPreview>>("/api/jobs/preview", {
     method: "POST",
     body: JSON.stringify(input),
   }).then(unwrapData)
 }
 
-export function upsertApplyCard(
-  cards: ApplyCard[],
-  next: ApplyCard
-): ApplyCard[] {
-  return sortApplyCards([next, ...cards.filter((card) => card.id !== next.id)])
+export function createJob(input: {
+  title: string
+  company?: string
+  stage?: JobStage
+  description?: string
+  jobUrl?: string
+  location?: string
+  deadline?: string
+  sourceHost?: string
+  anyway?: true
+}): Promise<CommandResult<Job>> {
+  return postCommand<Job>("job.create", input)
 }
 
-export function optimisticMoveCard(
-  cards: ApplyCard[],
-  cardId: string,
-  stage: ApplyStage,
-  beforeCardId?: string | null
-): ApplyCard[] {
-  const card = cards.find((item) => item.id === cardId)
-  if (!card) return cards
+export function moveJob(input: {
+  jobId: string
+  stage: JobStage
+  position?: string
+}): Promise<CommandResult<Job>> {
+  return postCommand<Job>("job.move", input)
+}
 
-  const others = cards.filter((item) => item.id !== cardId)
-  const column = sortApplyCards(others.filter((item) => item.stage === stage))
-  const index = beforeCardId
-    ? column.findIndex((item) => item.id === beforeCardId)
-    : -1
-  const left =
-    index > 0
-      ? column[index - 1]!.position
-      : index === 0
-        ? null
-        : (column.at(-1)?.position ?? null)
-  const right = index >= 0 ? column[index]!.position : null
+export function updateJob(input: {
+  jobId: string
+  patch: Partial<{
+    title: string
+    company: string
+    location: string | null
+    priority: JobPriority
+    interviewAt: string | null
+    deadline: string | null
+    recruiterName: string | null
+    recruiterEmail: string | null
+    description: string | null
+    jobUrl: string | null
+    posting: JobPosting
+  }>
+}): Promise<Job> {
+  return postCommand<Job>("job.update", input)
+}
 
-  return upsertApplyCard(others, {
-    ...card,
-    stage,
-    position: generateKeyBetween(left, right),
-    demo: false,
-    updatedAt: new Date().toISOString(),
+export function starJob(input: {
+  jobId: string
+  starred: boolean
+}): Promise<Job> {
+  return postCommand<Job>("job.star", input)
+}
+
+export function deleteJob(input: { jobId: string }): Promise<{ id: string }> {
+  return postCommand<{ id: string }>("job.delete", input)
+}
+
+export function addChecklistItem(input: {
+  jobId: string
+  label: string
+}): Promise<ChecklistItem> {
+  return postCommand<ChecklistItem>("job.addChecklistItem", input)
+}
+
+export function setChecklistItem(input: {
+  jobId: string
+  itemId: string
+  done: boolean
+}): Promise<ChecklistItem> {
+  return postCommand<ChecklistItem>("job.setChecklistItem", input)
+}
+
+export function removeChecklistItem(input: {
+  jobId: string
+  itemId: string
+}): Promise<{ id: string }> {
+  return postCommand<{ id: string }>("job.removeChecklistItem", input)
+}
+
+export function addNote(input: {
+  jobId: string
+  body: string
+}): Promise<{ jobId: string; body: string }> {
+  return postCommand("job.addNote", input)
+}
+
+export function linkPaper(input: {
+  jobId: string
+  docId: string
+  kind: "cv" | "letter"
+}): Promise<Job> {
+  return postCommand<Job>("job.linkPaper", input)
+}
+
+export function unlinkPaper(input: {
+  jobId: string
+  kind: "cv" | "letter"
+}): Promise<Job> {
+  return postCommand<Job>("job.unlinkPaper", input)
+}
+
+export function listActivity(jobId: string): Promise<ActivityRow[]> {
+  const query = new URLSearchParams({
+    subjectKind: "job",
+    subjectId: jobId,
   })
+  return apiFetch<SuccessBody<ActivityRow[]>>(`/api/activity?${query}`).then(
+    unwrapData
+  )
+}
+
+export function undoActivity(input: { activityId: string }): Promise<unknown> {
+  return postCommand("activity.undo", input)
+}
+
+export function listPaper(kind: "cv" | "letter"): Promise<PaperListItem[]> {
+  return apiFetch<SuccessBody<PaperListItem[]>>(`/api/paper?kind=${kind}`).then(
+    unwrapData
+  )
+}
+
+const EMPTY_CARDS: ApplyCard[] = []
+
+/** Paper still reads the compat card list until #378. */
+export function useApplyCards() {
+  const listQuery = useQuery({
+    queryKey: applyQueryKeys.cards(),
+    queryFn: async () => {
+      const body = await apiFetch<SuccessBody<ApplyCard[]>>("/api/apply")
+      return unwrapData(body)
+    },
+  })
+  return {
+    cards: listQuery.data ?? EMPTY_CARDS,
+    isLoading: listQuery.isLoading,
+  }
 }

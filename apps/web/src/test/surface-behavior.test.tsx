@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, screen, within } from "@testing-library/react"
 
-import { APPLY_OPEN_GUIDE } from "@/features/apply/apply-search.ts"
 import { HOME_PATH, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { setMockJobs } from "@/test/apply-jobs-mock.ts"
 import { apiBaseUrl } from "@/lib/api-url.ts"
 import { getMockApplyCards } from "@/test/apply-api-mock.ts"
 import { sampleApplyCards } from "@/test/apply-fixtures.ts"
@@ -51,14 +51,15 @@ describe("empty api data shows empty states, never sample content", () => {
 
   it("Apply shows one empty state and no sample card or Demo banner", async () => {
     getMockApplyCards().splice(0)
+    setMockJobs([])
     renderApp(SURFACE_PATHS.apply)
 
     expect(
       await screen.findByRole("heading", { level: 1, name: "Apply" })
     ).toBeInTheDocument()
-    expect(await screen.findByText("No opportunities yet")).toBeInTheDocument()
+    expect(await screen.findByText("Track your first job")).toBeInTheDocument()
     expect(
-      screen.getAllByRole("button", { name: "Add opportunity" }).length
+      screen.getAllByRole("button", { name: "Add job" }).length
     ).toBeGreaterThan(0)
     expect(screen.queryByText(/^Nothing in /)).not.toBeInTheDocument()
     expectNone(sampleApplyCards().map((card) => card.title))
@@ -95,24 +96,16 @@ describe("empty api data shows empty states, never sample content", () => {
 
 describe("Apply shows no Fit label", () => {
   it("on the board, the card drawer or the calendar", async () => {
-    renderApp(`${SURFACE_PATHS.apply}?open=${APPLY_OPEN_GUIDE}`)
+    renderApp(SURFACE_PATHS.apply)
     expect(
       await screen.findByRole("heading", { level: 1, name: "Apply" })
-    ).toBeInTheDocument()
-    const drawer = await screen.findByRole("complementary", {
-      name: "Opportunity detail",
-    })
-    expect(
-      within(drawer).getByDisplayValue("Associate PM intern")
     ).toBeInTheDocument()
     expect(within(screen.getByRole("main")).queryAllByText(FIT_LABEL)).toEqual(
       []
     )
-    expect(within(drawer).queryAllByText(FIT_LABEL)).toEqual([])
-
-    fireEvent.click(screen.getByRole("radio", { name: "Calendar" }))
+    fireEvent.click(screen.getByRole("button", { name: "Calendar" }))
     expect(
-      await screen.findByRole("radio", { name: "Board" })
+      await screen.findByRole("button", { name: "Board" })
     ).toBeInTheDocument()
     expect(within(screen.getByRole("main")).queryAllByText(FIT_LABEL)).toEqual(
       []

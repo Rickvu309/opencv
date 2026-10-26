@@ -17,6 +17,7 @@ import {
 } from "@workspace/domain"
 
 import { sampleApplyCards } from "./apply-fixtures.ts"
+import { jobApiFetch, resetMockJobs } from "./apply-jobs-mock.ts"
 import { getMockPaperDocs } from "./paper-api-mock.ts"
 import { isoNow, pathOf, jsonOk, jsonError } from "./mock-http.ts"
 
@@ -79,6 +80,7 @@ export function resetApplyApiMock() {
   store.cards = cloneCards(sampleApplyCards())
   store.failNext = null
   store.failNextScan = null
+  resetMockJobs()
 }
 
 export function failNextApplyScan(message: string) {
@@ -104,6 +106,8 @@ export async function applyApiFetch(
 ): Promise<Response | null> {
   const path = pathOf(input)
   const method = (init?.method ?? "GET").toUpperCase()
+  const jobs = await jobApiFetch(input, init)
+  if (jobs) return jobs
 
   if (!handlesApplyRequest(input)) return null
 

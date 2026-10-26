@@ -1,157 +1,161 @@
-import { useMemo, useRef, useState, type ReactNode } from "react"
+import { useRef } from "react"
+import { useQueryClient } from "@tanstack/react-query"
+import { useNavigate } from "@tanstack/react-router"
+
 import {
   KanbanBoard,
   KanbanCard,
   KanbanCards,
   KanbanHeader,
   KanbanProvider,
-  type DragEndEvent,
 } from "@workspace/ui/components/kanban"
-import { NumberTicker } from "@workspace/ui/components/number-ticker"
-import {
-  Status,
-  StatusIndicator,
-  StatusLabel,
-} from "@workspace/ui/components/status"
-import { cn } from "@workspace/ui/lib/utils"
+import { toastWithUndo } from "@workspace/ui/components/sonner"
 
-import { BoardJobCardBody } from "@/features/apply/apply-board-card.tsx"
-import {
-  BOARD_INSTRUCTIONS,
-  boardAnnouncements,
-  boardItems,
-  settleBoardMove,
-  type BoardItem,
-  type BoardPlacement,
-} from "@/features/apply/apply-board-move.ts"
-import {
-  sortApplyCards,
-  STAGES,
-  type ApplyCard,
-} from "@/features/apply/apply-types.ts"
+import { authClient } from "@/lib/auth-client.ts"
+import { recordFirstCafeItem } from "@/features/home/first-cafe-checklist.ts"
 
-const COLUMNS = STAGES.map((stage) => ({ id: stage.id, name: stage.label }))
+import {
+  applyQueryKeys,
+  moveJob,
+  undoActivity,
+  type Job,
+  type JobStage,
+} from "./apply-api.ts"
+import { BoardLane, JobCard } from "./apply-parts.tsx"
+import {
+  ALL_STAGES,
+  BOARD_STAGES,
+  cardName,
+  listPhrase,
+  stageLabel,
+} from "./apply-stages.ts"
 
-type Props = {
-  cards: ApplyCard[]
-  selectedId: string | null
-  filtering: boolean
-  boardEmpty: boolean
-  empty: ReactNode
-  onSelect: (id: string) => void
-  onMove: (id: string, placement: BoardPlacement) => void
+type Card = {
+  id: string
+  name: string
+  column: string
+  job: Job
+}
+
+function toCards(jobs: Job[], stages: readonly JobStage[]): Card[] {
+  return jobs
+    .filter((job) => stages.includes(job.stage))
+    .map((job) => ({
+      id: job.id,
+      name: cardName(job),
+      column: job.stage,
+      job,
+    }))
 }
 
 export function ApplyBoard({
-  cards,
-  selectedId,
-  filtering,
-  boardEmpty,
-  empty,
-  onSelect,
-  onMove,
-}: Props) {
-  const items = useMemo(() => boardItems(sortApplyCards(cards)), [cards])
-  const [preview, setPreview] = useState<BoardItem[] | null>(null)
-  const dragging = useRef(false)
-  const data = preview ?? items
+  jobs,
+  showClosed,
+}: {
+  jobs: Job[]
+  showClosed: boolean
+}) {
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const { data: session } = authClient.useSession()
+  const tails = useRef(new Map<string, Promise<unknown>>())
+  const stages = showClosed ? ALL_STAGES : BOARD_STAGES
+  const columns = stages.map((stage) => ({
+    id: stage,
+    name: stageLabel(stage),
+  }))
+  const data = toCards(jobs, stages)
 
-  function finish(event: DragEndEvent) {
-    dragging.current = false
-    const placement = event.over
-      ? settleBoardMove(data, String(event.active.id), String(event.over.id))
-      : null
-    setPreview(null)
-    if (placement) onMove(String(event.active.id), placement)
+  function openJob(jobId: string) {
+    void navigate({
+      to: "/app/apply/$jobId",
+      params: { jobId },
+    })
+  }
+
+  function persist(jobId: string, stage: JobStage) {
+    const run = async () => {
+      const result = await moveJob({ jobId, stage })
+      const userId = session?.user.id
+      if (userId) recordFirstCafeItem(userId, "apply")
+      if (stage === "closed" && result.activityId) {
+        const activityId = result.activityId
+        toastWithUndo("Moved to Closed", () => {
+          void undoActivity({ activityId }).then(() =>
+            queryClient.invalidateQueries({ queryKey: applyQueryKeys.all })
+          )
+        })
+      }
+    }
+    const prev = tails.current.get(jobId) ?? Promise.resolve()
+    const next = prev.then(run).catch(() => {
+      void queryClient.invalidateQueries({ queryKey: applyQueryKeys.list() })
+    })
+    tails.current.set(jobId, next)
+  }
+
+  function onDataChange(next: Card[]) {
+    for (const item of next) {
+      const before = data.find((card) => card.id === item.id)
+      if (before && before.column !== item.column) {
+        persist(item.id, item.column as JobStage)
+      }
+    }
+    queryClient.setQueryData<Job[]>(applyQueryKeys.list(), (current) => {
+      if (!current) return current
+      return current.map((job) => {
+        const item = next.find((card) => card.id === job.id)
+        if (!item || item.column === job.stage) return job
+        return { ...job, stage: item.column as JobStage }
+      })
+    })
   }
 
   return (
-    <div className="relative flex min-w-0 flex-1 flex-col overflow-hidden p-2 sm:p-3">
-      {boardEmpty ? empty : null}
-      <div data-apply-board className="min-h-[28rem] flex-1">
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
+      <div className="min-h-0 flex-1 overflow-x-auto">
         <KanbanProvider
-          columns={COLUMNS}
+          columns={columns}
           data={data}
-          className="h-full gap-2"
-          accessibility={{
-            announcements: boardAnnouncements(data),
-            screenReaderInstructions: { draggable: BOARD_INSTRUCTIONS },
-          }}
-          onDragStart={() => {
-            dragging.current = true
-          }}
-          onDataChange={(next) => {
-            if (dragging.current) setPreview(next)
-          }}
-          onDragEnd={finish}
-          onDragCancel={() => {
-            dragging.current = false
-            setPreview(null)
-          }}
+          onDataChange={onDataChange}
+          className="h-full min-h-80 w-max auto-cols-[244px]"
         >
-          {(column) => {
-            const stage = STAGES.find((s) => s.id === column.id)!
-            const count = items.filter((c) => c.column === stage.id).length
-            return (
-              <KanbanBoard
-                key={stage.id}
-                id={stage.id}
-                data-stage={stage.id}
-                className="min-w-0 border-0 bg-background"
-              >
-                <KanbanHeader className="flex items-center gap-2 px-1 py-2 sm:px-2">
-                  <Status className="min-w-0 gap-1 px-1 sm:gap-1.5 sm:px-1.5">
-                    <StatusIndicator className={stage.dot} />
-                    <StatusLabel className="truncate font-medium">
-                      {stage.label}
-                    </StatusLabel>
-                  </Status>
-                  <NumberTicker
-                    value={count}
-                    duration={280}
-                    className="hidden text-xs font-normal text-muted-foreground sm:inline-flex"
-                  />
-                </KanbanHeader>
-                {count === 0 && !boardEmpty ? (
-                  <p className="px-3 text-xs text-muted-foreground">
-                    {filtering
-                      ? `No match in ${stage.label}`
-                      : `Nothing in ${stage.label}`}
-                  </p>
-                ) : null}
-                <KanbanCards<BoardItem> id={stage.id}>
-                  {(item) => (
-                    <KanbanCard
-                      key={item.id}
-                      id={item.id}
-                      name={item.name}
-                      data-card-id={item.id}
-                      aria-label={`${item.card.title} at ${item.card.company}`}
-                      onClick={() => onSelect(item.id)}
-                      onKeyDown={(event) => {
-                        if (
-                          event.key === "Enter" &&
-                          !event.defaultPrevented &&
-                          !dragging.current
-                        ) {
-                          event.preventDefault()
-                          onSelect(item.id)
-                        }
-                      }}
-                      className={cn(
-                        "gap-0 rounded-xl p-3 shadow-none",
-                        item.id === selectedId
-                          ? "ring-ring/40"
-                          : "hover:ring-foreground/20"
-                      )}
-                    >
-                      <BoardJobCardBody card={item.card} />
-                    </KanbanCard>
-                  )}
-                </KanbanCards>
-              </KanbanBoard>
-            )
-          }}
+          {(column) => (
+            <KanbanBoard
+              key={column.id}
+              id={column.id}
+              role="region"
+              aria-label={column.name}
+              data-stage={column.id}
+              style={{ width: 244, minWidth: 244 }}
+            >
+              <KanbanHeader>
+                <BoardLane name={column.name} stage={column.id}>
+                  {null}
+                </BoardLane>
+              </KanbanHeader>
+              <KanbanCards id={column.id}>
+                {(item: Card) => (
+                  <KanbanCard
+                    key={item.id}
+                    id={item.id}
+                    name={item.name}
+                    aria-label={item.name}
+                    data-card-id={item.id}
+                    onClick={() => openJob(item.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault()
+                        openJob(item.id)
+                      }
+                    }}
+                  >
+                    <JobCard job={item.job} phrase={listPhrase(item.job)} />
+                  </KanbanCard>
+                )}
+              </KanbanCards>
+            </KanbanBoard>
+          )}
         </KanbanProvider>
       </div>
     </div>

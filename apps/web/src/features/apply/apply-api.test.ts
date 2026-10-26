@@ -1,93 +1,166 @@
-import { APPLY_COMMANDS, type ApplyCard } from "@workspace/domain"
-import { describe, expect, it, vi } from "vitest"
-
-import { apiBaseUrl } from "@/lib/api-url.ts"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
-  createApplyCard,
-  listApplyCards,
-  moveApplyCard,
-  optimisticMoveCard,
-  scanApplyJob,
+  addChecklistItem,
+  addNote,
+  calendarJobs,
+  createJob,
+  deleteJob,
+  getJob,
+  linkPaper,
+  listActivity,
+  listJobs,
+  listPaper,
+  moveJob,
+  previewJob,
+  removeChecklistItem,
+  setChecklistItem,
+  starJob,
+  undoActivity,
+  unlinkPaper,
+  updateJob,
 } from "./apply-api.ts"
 
-function envelope<T>(data: T) {
-  return Response.json({ ok: true, data })
-}
+type Call = { url: string; method: string; body: unknown }
 
-const card: ApplyCard = {
-  id: "01900000-0000-7000-8000-000000000001",
-  title: "Associate PM intern",
-  company: "Local startup",
-  note: "",
-  stage: "inbox",
-  position: "a0",
-  starred: true,
-  jobUrl: null,
-  demo: true,
-  trackDate: "2026-08-26",
-  trackKind: "followup",
-  createdAt: "2026-08-25T00:00:00.000Z",
-  updatedAt: "2026-08-25T00:00:00.000Z",
-}
-
-describe("apply API client", () => {
-  it("lists Apply cards from GET /api/apply", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(envelope([card]))
-    vi.stubGlobal("fetch", fetchMock)
-
-    await expect(listApplyCards()).resolves.toEqual([card])
-    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(`${apiBaseUrl}/api/apply`)
-  })
-
-  it("creates and moves through the Command registry", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(envelope(card))
-      .mockResolvedValueOnce(envelope({ ...card, stage: "prep" }))
-    vi.stubGlobal("fetch", fetchMock)
-
-    await expect(createApplyCard({ title: "Associate PM intern" })).resolves.toEqual(
-      card
-    )
-    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
-      `${apiBaseUrl}/api/commands/${APPLY_COMMANDS.createCard}`
-    )
-
-    await moveApplyCard({ cardId: card.id, stage: "prep" })
-    expect(String(fetchMock.mock.calls[1]?.[0])).toBe(
-      `${apiBaseUrl}/api/commands/${APPLY_COMMANDS.moveCard}`
-    )
-  })
-
-  it("scans a posting through POST /api/apply/scan", async () => {
-    const scan = {
-      title: "Associate PM intern",
-      company: "Local startup",
-      note: "Hanoi",
-    }
-    const fetchMock = vi.fn().mockResolvedValue(envelope(scan))
-    vi.stubGlobal("fetch", fetchMock)
-
-    await expect(
-      scanApplyJob({
-        jdText: "Local startup is hiring an Associate PM intern in Hanoi.",
+function installFetch() {
+  const calls: Call[] = []
+  vi.stubGlobal(
+    "fetch",
+    async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url =
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.href
+            : input.url
+      const body = init?.body ? JSON.parse(String(init.body)) : null
+      calls.push({
+        url,
+        method: (init?.method ?? "GET").toUpperCase(),
+        body,
       })
-    ).resolves.toEqual(scan)
-    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
-      `${apiBaseUrl}/api/apply/scan`
-    )
-    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({ method: "POST" })
-  })
-})
+      return Response.json({ ok: true, data: { id: "job-1" } })
+    }
+  )
+  return calls
+}
 
-describe("apply list helpers", () => {
-  it("inserts a moved card between neighbors without exposing fit", () => {
-    const first = { ...card, id: "a", position: "a0" }
-    const second = { ...card, id: "b", title: "Second", position: "a1" }
-    const moved = optimisticMoveCard([first, second], "b", "inbox", "a")
-    expect(moved.map((item) => item.id)).toEqual(["b", "a"])
-    expect(moved[0]!.position < moved[1]!.position).toBe(true)
-    expect(JSON.stringify(moved)).not.toMatch(/"fit"/)
+function last(calls: Call[]) {
+  return calls.at(-1)!
+}
+
+describe("apply api", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it("posts each job call with its path and input", async () => {
+    const calls = installFetch()
+
+    await listJobs()
+    expect(last(calls).method).toBe("GET")
+    expect(new URL(last(calls).url).pathname).toBe("/api/jobs")
+
+    await getJob("job-1")
+    expect(new URL(last(calls).url).pathname).toBe("/api/jobs/job-1")
+
+    await calendarJobs("2026-11-01T00:00:00.000Z", "2026-12-01T00:00:00.000Z")
+    const calendar = new URL(last(calls).url)
+    expect(calendar.pathname).toBe("/api/jobs/calendar")
+    expect(calendar.searchParams.get("from")).toBe("2026-11-01T00:00:00.000Z")
+    expect(calendar.searchParams.get("to")).toBe("2026-12-01T00:00:00.000Z")
+
+    await previewJob({ url: "https://careers.verify-posting.dev/role" })
+    expect(last(calls).method).toBe("POST")
+    expect(new URL(last(calls).url).pathname).toBe("/api/jobs/preview")
+    expect(last(calls).body).toEqual({
+      url: "https://careers.verify-posting.dev/role",
+    })
+
+    await createJob({ title: "Intern", company: "Northwind", stage: "saved" })
+    expect(new URL(last(calls).url).pathname).toBe("/api/commands/job.create")
+    expect(last(calls).body).toMatchObject({
+      input: { title: "Intern", company: "Northwind", stage: "saved" },
+    })
+    expect(
+      typeof (last(calls).body as { idempotencyKey: string }).idempotencyKey
+    ).toBe("string")
+
+    await moveJob({ jobId: "job-1", stage: "applied" })
+    expect(new URL(last(calls).url).pathname).toBe("/api/commands/job.move")
+    expect((last(calls).body as { input: unknown }).input).toEqual({
+      jobId: "job-1",
+      stage: "applied",
+    })
+
+    await updateJob({ jobId: "job-1", patch: { priority: "high" } })
+    expect(new URL(last(calls).url).pathname).toBe("/api/commands/job.update")
+    expect((last(calls).body as { input: unknown }).input).toEqual({
+      jobId: "job-1",
+      patch: { priority: "high" },
+    })
+
+    await starJob({ jobId: "job-1", starred: true })
+    expect(new URL(last(calls).url).pathname).toBe("/api/commands/job.star")
+
+    await deleteJob({ jobId: "job-1" })
+    expect(new URL(last(calls).url).pathname).toBe("/api/commands/job.delete")
+
+    await addChecklistItem({ jobId: "job-1", label: "Practise" })
+    expect(new URL(last(calls).url).pathname).toBe(
+      "/api/commands/job.addChecklistItem"
+    )
+
+    await setChecklistItem({ jobId: "job-1", itemId: "item-1", done: true })
+    expect(new URL(last(calls).url).pathname).toBe(
+      "/api/commands/job.setChecklistItem"
+    )
+    expect((last(calls).body as { input: unknown }).input).toEqual({
+      jobId: "job-1",
+      itemId: "item-1",
+      done: true,
+    })
+
+    await removeChecklistItem({ jobId: "job-1", itemId: "item-1" })
+    expect(new URL(last(calls).url).pathname).toBe(
+      "/api/commands/job.removeChecklistItem"
+    )
+
+    await addNote({ jobId: "job-1", body: "Bring the checkout study." })
+    expect(new URL(last(calls).url).pathname).toBe("/api/commands/job.addNote")
+    expect((last(calls).body as { input: unknown }).input).toEqual({
+      jobId: "job-1",
+      body: "Bring the checkout study.",
+    })
+
+    await linkPaper({ jobId: "job-1", docId: "doc-1", kind: "cv" })
+    expect(new URL(last(calls).url).pathname).toBe(
+      "/api/commands/job.linkPaper"
+    )
+
+    await unlinkPaper({ jobId: "job-1", kind: "letter" })
+    expect(new URL(last(calls).url).pathname).toBe(
+      "/api/commands/job.unlinkPaper"
+    )
+
+    await listActivity("job-1")
+    const activity = new URL(last(calls).url)
+    expect(activity.pathname).toBe("/api/activity")
+    expect(activity.searchParams.get("subjectKind")).toBe("job")
+    expect(activity.searchParams.get("subjectId")).toBe("job-1")
+
+    await undoActivity({ activityId: "act-1" })
+    expect(new URL(last(calls).url).pathname).toBe(
+      "/api/commands/activity.undo"
+    )
+    expect((last(calls).body as { input: unknown }).input).toEqual({
+      activityId: "act-1",
+    })
+
+    await listPaper("cv")
+    const paper = new URL(last(calls).url)
+    expect(paper.pathname).toBe("/api/paper")
+    expect(paper.searchParams.get("kind")).toBe("cv")
   })
 })

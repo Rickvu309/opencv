@@ -9,7 +9,7 @@ import {
 } from "@workspace/domain"
 
 import { ErrorBanner } from "@/components/error-banner.tsx"
-import { useApplyCards } from "@/features/apply/use-apply-cards.ts"
+import { useApplyCards } from "@/features/apply/apply-api.ts"
 import { authClient } from "@/lib/auth-client.ts"
 
 import { paperAttachPair } from "./paper-apply-attach.ts"
