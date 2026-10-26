@@ -190,13 +190,13 @@ const applyJobRoute = createRoute({
   ),
 })
 
+// One import so Jobs, Proofs and Pitch share a chunk.
+const comingSoonRoute = () => import("@/routes/coming-soon.tsx")
+
 const pitchRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/pitch",
-  component: lazyRouteComponent(
-    () => import("@/routes/pitch.tsx"),
-    "PitchPage"
-  ),
+  component: lazyRouteComponent(comingSoonRoute, "PitchPage"),
 })
 
 const coachRoute = createRoute({
@@ -211,19 +211,22 @@ const coachRoute = createRoute({
 const jobsRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/jobs",
-  component: lazyRouteComponent(
-    () => import("@/routes/placeholder.tsx"),
-    "JobsPage"
-  ),
+  component: lazyRouteComponent(comingSoonRoute, "JobsPage"),
 })
 
 const proofsRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/proofs",
-  component: lazyRouteComponent(
-    () => import("@/routes/placeholder.tsx"),
-    "ProofsPage"
-  ),
+  component: lazyRouteComponent(comingSoonRoute, "ProofsPage"),
+})
+
+const proofAliasRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/proof",
+  beforeLoad: () => {
+    throw redirect({ href: "/app/proofs", replace: true })
+  },
+  component: () => null,
 })
 
 const inboxRoute = createRoute({
@@ -260,12 +263,31 @@ const settingsRoute = createRoute({
   ),
 })
 
+const userRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/u/$slug",
+  component: NotFoundPage,
+})
+
+const rootSplatRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "$",
+  component: NotFoundPage,
+})
+
+const appSplatRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "$",
+  component: NotFoundPage,
+})
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   pricingRoute,
   signInRoute,
   signUpRoute,
   shareRoute,
+  userRoute,
   appLayoutRoute.addChildren([
     appIndexRoute,
     homeRoute,
@@ -277,10 +299,13 @@ const routeTree = rootRoute.addChildren([
     coachRoute,
     jobsRoute,
     proofsRoute,
+    proofAliasRoute,
     inboxRoute,
     settingsUpgradeRoute,
     settingsRoute,
+    appSplatRoute,
   ]),
+  rootSplatRoute,
 ])
 
 export function createAppRouter(options?: { history?: RouterHistory }) {

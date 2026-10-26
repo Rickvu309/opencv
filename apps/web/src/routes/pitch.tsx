@@ -1,3 +1,1 @@
-export function PitchPage() {
-  return <h1>Pitch. Coming soon.</h1>
-}
+export { PitchPage } from "@/features/coming-soon/pages.tsx"

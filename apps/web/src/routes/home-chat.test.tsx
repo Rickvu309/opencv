@@ -14,6 +14,7 @@ import {
 } from "@/test/threads-api-mock.ts"
 import { FIXTURE_THREADS } from "@/test/thread-fixtures.ts"
 import { renderApp } from "@/test/render-app.tsx"
+import { setMockChats } from "@/test/shell-api-mock.ts"
 import {
   expectHomeIdle,
   expectSendSettled,
@@ -33,10 +34,19 @@ afterEach(() => {
 })
 
 async function openStoredThread(title: RegExp) {
+  setMockChats(
+    getMockThreads().map((thread) => ({
+      id: thread.id,
+      title: thread.title,
+      focusKind: null,
+      focusId: null,
+      createdAt: thread.createdAt,
+      updatedAt: thread.updatedAt,
+    }))
+  )
   fireEvent.click(screen.getByRole("button", { name: "Search" }))
   const dialog = await screen.findByRole("dialog", { name: "Search" })
   fireEvent.click(await within(dialog).findByRole("button", { name: title }))
-  fireEvent.click(within(dialog).getByRole("button", { name: "Open Thread" }))
 }
 
 describe("Home Thread mode and History", { timeout: 15_000 }, () => {
@@ -125,17 +135,19 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
     await expectHomeIdle()
     await openStoredThread(/Move the intern card to Prep/)
     expect(
-      await screen.findByRole("button", {
-        name: stepButton("Moved 'Backend Intern' to Prep"),
-      })
+      (
+        await screen.findAllByRole("button", {
+          name: stepButton("Moved 'Backend Intern' to Prep"),
+        })
+      )[0]
     ).toBeInTheDocument()
     expect(
-      screen.getByText(
+      screen.getAllByText(
         "Reversible — Undo by moving the card back to its previous Stage and order."
-      )
-    ).toBeInTheDocument()
+      ).length
+    ).toBeGreaterThan(0)
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Undo" })).toBeEnabled()
+      expect(screen.getAllByRole("button", { name: "Undo" })[0]).toBeEnabled()
     })
   })
 
@@ -399,7 +411,10 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
     await openStoredThread(new RegExp(FIXTURE_THREADS[0]!.title))
     await expectThreadText(FIXTURE_THREADS[0]!.messages[0]!.text)
 
-    const regenerates = screen.getAllByRole("button", { name: "Regenerate" })
+    const thread = screen.getAllByRole("log", { name: "Thread" })[0]!
+    const regenerates = within(thread).getAllByRole("button", {
+      name: "Regenerate",
+    })
     expect(regenerates).toHaveLength(2)
     expect(regenerates[0]).toBeDisabled()
     expect(regenerates[1]).toBeEnabled()

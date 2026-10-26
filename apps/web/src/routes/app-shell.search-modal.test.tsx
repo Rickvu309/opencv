@@ -7,47 +7,44 @@ import {
   within,
 } from "@testing-library/react"
 
-import { HOME_PATH, SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
-import { expectPaperDrive } from "@/test/paper-drive.ts"
 import { FIXTURE_THREADS } from "@/test/thread-fixtures.ts"
-import { expectHomeIdle } from "@/test/home-helpers.ts"
 import { renderApp } from "@/test/render-app.tsx"
+import {
+  searchQueries,
+  setMockChats,
+  setMockSearch,
+} from "@/test/shell-api-mock.ts"
 
 beforeEach(() => {
-  sessionStorage.clear()
   vi.stubGlobal("scrollTo", vi.fn())
 })
 
 afterEach(() => {
   cleanup()
-  sessionStorage.clear()
   vi.unstubAllGlobals()
 })
 
-async function openSearch() {
-  fireEvent.keyDown(window, { key: "k", metaKey: true })
+async function openSearch(path = "/app/jobs") {
+  renderApp(path)
   expect(
-    await screen.findByRole("dialog", { name: "Search" })
+    await screen.findByRole("heading", {
+      level: 1,
+      name: "Jobs, matched to you",
+    })
   ).toBeInTheDocument()
+  fireEvent.keyDown(window, { key: "k", ctrlKey: true })
+  return screen.findByRole("dialog", { name: "Search" })
 }
 
-describe("search modal", () => {
-  it("opens from ⌘K and closes on Escape", async () => {
-    renderApp(HOME_PATH)
-    await expectHomeIdle()
-    await openSearch()
-
-    fireEvent.keyDown(document, { key: "Escape" })
-    await waitFor(() => {
-      expect(
-        screen.queryByRole("dialog", { name: "Search" })
-      ).not.toBeInTheDocument()
-    })
-  })
-
-  it("opens from Ctrl+K and from Meta+K", async () => {
-    renderApp(HOME_PATH)
-    await expectHomeIdle()
+describe("command palette", () => {
+  it("opens from Ctrl K and from Meta K", async () => {
+    renderApp("/app/jobs")
+    expect(
+      await screen.findByRole("heading", {
+        level: 1,
+        name: "Jobs, matched to you",
+      })
+    ).toBeInTheDocument()
 
     fireEvent.keyDown(window, { key: "k", ctrlKey: true })
     expect(
@@ -67,188 +64,156 @@ describe("search modal", () => {
     ).toBeInTheDocument()
   })
 
-  it("jumps surfaces and starts a new Thread", async () => {
-    const { router } = renderApp(HOME_PATH)
-    await expectHomeIdle()
-    await openSearch()
-
-    fireEvent.change(screen.getByRole("textbox", { name: "Search" }), {
-      target: { value: "paper" },
-    })
-    fireEvent.click(screen.getByRole("button", { name: "Open Paper" }))
-    await expectPaperDrive()
+  it("lists pages for an empty query and does not call search", async () => {
+    const dialog = await openSearch()
     expect(
-      screen.queryByRole("dialog", { name: "Search" })
-    ).not.toBeInTheDocument()
-    await waitFor(() => {
-      expect(router.state.location.pathname).toBe(SURFACE_PATHS.paper)
-    })
-
-    await openSearch()
-    fireEvent.click(screen.getByRole("button", { name: "Start a new Thread" }))
-    await expectHomeIdle()
-    expect(
-      screen.queryByRole("dialog", { name: "Search" })
-    ).not.toBeInTheDocument()
-    await waitFor(() => {
-      expect(router.state.location.pathname).toBe(HOME_PATH)
-    })
+      within(dialog).getByRole("button", { name: "Apply" })
+    ).toBeInTheDocument()
+    expect(searchQueries()).toEqual([])
   })
 
-  it("filters Thread titles from the list port", async () => {
-    renderApp(HOME_PATH)
-    await expectHomeIdle()
-    await openSearch()
-
-    const dialog = screen.getByRole("dialog", { name: "Search" })
-    expect(within(dialog).getByText("Recent")).toBeInTheDocument()
-    expect(
-      screen.queryByRole("button", { name: "Resize" })
-    ).not.toBeInTheDocument()
-    expect(
-      await within(dialog).findByRole("button", {
-        name: /CV vs internship first/,
-      })
-    ).toBeInTheDocument()
-    expect(
-      within(dialog).getByRole("button", { name: /Checkout study/ })
-    ).toBeInTheDocument()
-
+  it("lists a typed job with the company in the properties strip", async () => {
+    setMockSearch({
+      jobs: [
+        {
+          id: "job-1",
+          title: "Marketing Executive",
+          company: "Lumière Cosmetics",
+          stage: "interview",
+        },
+      ],
+      documents: [],
+      chats: [{ id: "chat-9", title: "A saved chat" }],
+    })
+    const dialog = await openSearch()
     fireEvent.change(within(dialog).getByRole("textbox", { name: "Search" }), {
-      target: { value: "checkout" },
+      target: { value: "Marketing" },
     })
 
-    expect(
-      within(dialog).getByRole("button", { name: /Checkout study/ })
-    ).toBeInTheDocument()
-    expect(
-      within(dialog).queryByRole("button", { name: /CV vs internship first/ })
-    ).not.toBeInTheDocument()
-    expect(
-      within(dialog).queryByRole("button", { name: /Is this role a fit/ })
-    ).not.toBeInTheDocument()
-
-    const other = FIXTURE_THREADS.find((t) => !/checkout/i.test(t.title))
-    expect(other).toBeTruthy()
-    fireEvent.change(within(dialog).getByRole("textbox", { name: "Search" }), {
-      target: { value: "zzzz-no-thread" },
+    const job = await within(dialog).findByRole("button", {
+      name: /^Marketing Executive/,
     })
-    expect(within(dialog).getByText("No conversations")).toBeInTheDocument()
-  })
+    expect(job).toBeInTheDocument()
+    await waitFor(() => {
+      expect(searchQueries()).toContain("Marketing")
+    })
 
-  it("opens a History Thread from Search and returns to idle on new Thread", async () => {
-    renderApp(SURFACE_PATHS.paper)
-    await expectPaperDrive()
-    await openSearch()
-
-    const dialog = screen.getByRole("dialog", { name: "Search" })
-    fireEvent.click(
-      await within(dialog).findByRole("button", {
-        name: /CV vs internship first/,
-      })
+    const strip = dialog.querySelector("[data-slot='palette-properties']")
+    const text = strip?.textContent ?? ""
+    expect(text.indexOf("Marketing Executive")).toBeGreaterThanOrEqual(0)
+    expect(text.indexOf("Marketing Executive")).toBeLessThan(
+      text.indexOf("Lumière Cosmetics")
     )
-    fireEvent.click(within(dialog).getByRole("button", { name: "Open Thread" }))
-
-    expect(
-      await screen.findByRole("log", { name: "Thread" })
-    ).toBeInTheDocument()
-    expect(
-      await screen.findByText(FIXTURE_THREADS[0]!.messages[0]!.text)
-    ).toBeInTheDocument()
-    expect(
-      screen.queryByRole("dialog", { name: "Search" })
-    ).not.toBeInTheDocument()
-
-    await openSearch()
-    fireEvent.click(screen.getByRole("button", { name: "Start a new Thread" }))
-    await expectHomeIdle()
-    expect(
-      screen.queryByRole("log", { name: "Thread" })
-    ).not.toBeInTheDocument()
+    expect(text).toContain("Interview")
   })
 
-  it("moves keyboard highlight with arrows and keeps the Thread preview sticky", async () => {
-    renderApp(HOME_PATH)
-    await expectHomeIdle()
-    await openSearch()
-
-    const input = screen.getByRole("textbox", { name: "Search" })
-    expect(input).toHaveAttribute("aria-activedescendant", "search-item-a1")
+  it("hides chats when the Jobs chip is pressed", async () => {
+    setMockChats([
+      {
+        id: FIXTURE_THREADS[0]!.id,
+        title: FIXTURE_THREADS[0]!.title,
+        focusKind: null,
+        focusId: null,
+        createdAt: FIXTURE_THREADS[0]!.createdAt,
+        updatedAt: FIXTURE_THREADS[0]!.updatedAt,
+      },
+    ])
+    const dialog = await openSearch()
     expect(
-      screen.getByText("Select a conversation to preview")
-    ).toBeInTheDocument()
-    expect(
-      await screen.findByRole("button", { name: /CV vs internship first/ })
+      await within(dialog).findByRole("button", {
+        name: FIXTURE_THREADS[0]!.title,
+      })
     ).toBeInTheDocument()
 
-    for (let step = 0; step < 4; step++) {
+    const chip = within(dialog)
+      .getAllByRole("button", { name: "Jobs" })
+      .find((button) => button.hasAttribute("aria-pressed"))
+    expect(chip).toBeTruthy()
+    fireEvent.click(chip!)
+    expect(
+      within(dialog).queryByRole("button", { name: FIXTURE_THREADS[0]!.title })
+    ).not.toBeInTheDocument()
+    expect(searchQueries()).toEqual([])
+  })
+
+  it("navigates when Enter lands on a page row", async () => {
+    const { router } = renderApp("/app/jobs")
+    expect(
+      await screen.findByRole("heading", {
+        level: 1,
+        name: "Jobs, matched to you",
+      })
+    ).toBeInTheDocument()
+    fireEvent.keyDown(window, { key: "k", ctrlKey: true })
+    const dialog = await screen.findByRole("dialog", { name: "Search" })
+    const input = within(dialog).getByRole("textbox", { name: "Search" })
+    const apply = within(dialog).getByRole("button", { name: "Apply" })
+
+    for (
+      let step = 0;
+      step < 8 && apply.getAttribute("aria-current") !== "true";
+      step += 1
+    ) {
       fireEvent.keyDown(input, { key: "ArrowDown" })
     }
-    expect(input).toHaveAttribute(
-      "aria-activedescendant",
-      `search-item-${FIXTURE_THREADS[0]!.id}`
-    )
-    expect(
-      screen.getByRole("button", { name: "Open Thread" })
-    ).toBeInTheDocument()
-
-    for (let step = 0; step < 4; step++) {
-      fireEvent.keyDown(input, { key: "ArrowUp" })
-    }
-    expect(input).toHaveAttribute("aria-activedescendant", "search-item-a1")
-    expect(
-      screen.getByRole("button", { name: "Open Thread" })
-    ).toBeInTheDocument()
-
-    fireEvent.change(input, { target: { value: "checkout" } })
-    const checkout = FIXTURE_THREADS.find((thread) =>
-      /checkout/i.test(thread.title)
-    )
-    expect(checkout).toBeTruthy()
-    expect(input).toHaveAttribute(
-      "aria-activedescendant",
-      `search-item-${checkout!.id}`
-    )
-    expect(
-      screen.getByRole("button", { name: /Checkout study/ })
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole("button", { name: "Open Thread" })
-    ).toBeInTheDocument()
-  })
-
-  it("activates a filtered action with Enter", async () => {
-    const { router } = renderApp(HOME_PATH)
-    await expectHomeIdle()
-    await openSearch()
-
-    const input = screen.getByRole("textbox", { name: "Search" })
-    fireEvent.change(input, { target: { value: "paper" } })
+    expect(apply).toHaveAttribute("aria-current", "true")
     fireEvent.keyDown(input, { key: "Enter" })
 
-    await expectPaperDrive()
-    expect(
-      screen.queryByRole("dialog", { name: "Search" })
-    ).not.toBeInTheDocument()
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe(SURFACE_PATHS.paper)
+      expect(router.state.location.pathname).toBe("/app/apply")
     })
   })
 
-  it("toggles closed when ⌘K is pressed again", async () => {
-    renderApp(HOME_PATH)
-    await expectHomeIdle()
+  it("opens the shell panel when Enter lands on a chat row", async () => {
+    const thread = FIXTURE_THREADS[0]!
+    setMockChats([
+      {
+        id: thread.id,
+        title: thread.title,
+        focusKind: null,
+        focusId: null,
+        createdAt: thread.createdAt,
+        updatedAt: thread.updatedAt,
+      },
+    ])
+    const dialog = await openSearch()
+    const input = within(dialog).getByRole("textbox", { name: "Search" })
+    const chat = await within(dialog).findByRole("button", {
+      name: thread.title,
+    })
 
-    fireEvent.keyDown(window, { key: "k", metaKey: true })
+    for (
+      let step = 0;
+      step < 12 && chat.getAttribute("aria-current") !== "true";
+      step += 1
+    ) {
+      fireEvent.keyDown(input, { key: "ArrowDown" })
+    }
+    expect(chat).toHaveAttribute("aria-current", "true")
+    fireEvent.keyDown(input, { key: "Enter" })
+
+    expect(
+      await screen.findByRole("region", { name: thread.title })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("dialog", { name: "Search" })
+    ).not.toBeInTheDocument()
+  })
+
+  it("returns focus to Search on Escape", async () => {
+    renderApp("/app/jobs")
+    const search = await screen.findByRole("button", { name: "Search" })
+    fireEvent.keyDown(window, { key: "k", ctrlKey: true })
     expect(
       await screen.findByRole("dialog", { name: "Search" })
     ).toBeInTheDocument()
 
-    fireEvent.keyDown(window, { key: "k", metaKey: true })
+    fireEvent.keyDown(document, { key: "Escape" })
     await waitFor(() => {
       expect(
         screen.queryByRole("dialog", { name: "Search" })
       ).not.toBeInTheDocument()
+      expect(search).toHaveFocus()
     })
   })
 })

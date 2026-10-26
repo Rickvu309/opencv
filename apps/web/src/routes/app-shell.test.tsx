@@ -210,7 +210,10 @@ describe("app shell layout", () => {
     cleanup()
     renderApp("/app/jobs")
     expect(
-      await screen.findByRole("heading", { level: 1, name: "Jobs" })
+      await screen.findByRole("heading", {
+        level: 1,
+        name: "Jobs, matched to you",
+      })
     ).toBeInTheDocument()
 
     cleanup()
