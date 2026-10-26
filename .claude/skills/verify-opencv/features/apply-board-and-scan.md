@@ -28,7 +28,7 @@ Preconditions: signed in on a new account (see `auth.md`). The board has no jobs
 
 ## Gotchas
 
-- Do not use `https://jobs.example.com/...`. The guard still refuses that host.
+- The verify stub answers every http URL with the Northwind posting, including a host the real guard would refuse. Pasting a link cannot show "Add the company name to save this job." The dialog unit test covers that sentence. `jobs.example.com` stays refused in `openableApplyJobUrl` when fetch is real.
 - The stub ignores the path and returns the Northwind sentence: `Northwind Labs is hiring an Associate Product Manager Intern in Hanoi.` A second add of the same URL shows Already on your board.
 - The browser must not fetch the posting URL. Preview goes through `POST /api/jobs/preview`.
 - Closed is hidden until Hidden columns. The old columns Inbox, Prep, Sent, and Live are gone.
