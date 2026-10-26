@@ -211,7 +211,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
     }
     if (key === "paper") {
       must(
-        await clickByText(a, "tr, a, button, [role=row]", CV_NAME),
+        await clickByText(a, "table tr", CV_NAME),
         "the created CV row was not found"
       )
       must(
@@ -222,7 +222,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
       d.cv = await snap(a)
       await shot(a, "desktop-paper-cv")
       must(
-        await clickByText(a, "button", "Coach"),
+        await clickByText(a, "[data-coach-float-pill]", "Coach"),
         "the Coach button was not found"
       )
       must(

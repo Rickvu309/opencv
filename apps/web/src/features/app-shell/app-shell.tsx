@@ -250,6 +250,25 @@ export function AppShell({ onSearch }: AppShellProps) {
     menuRef.current?.focus()
   }
 
+  const panelFrame =
+    panel.mode === "dock" ? null : (
+      <CoachPanel
+        title={panel.title}
+        open
+        mode={panel.mode}
+        onMinimize={() => setPanel((current) => ({ ...current, mode: "dock" }))}
+        onExpand={() =>
+          setPanel((current) => ({
+            ...current,
+            mode: current.mode === "full" ? "side" : "full",
+          }))
+        }
+        onClose={closePanel}
+      >
+        <ShellThreadBody />
+      </CoachPanel>
+    )
+
   const nav = (
     <ShellNav
       onNavigate={() => {
@@ -302,10 +321,16 @@ export function AppShell({ onSearch }: AppShellProps) {
             {nav}
           </aside>
         ) : null}
-        <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <div className="flex min-h-0 min-w-0 flex-1">
             {panel.mode === "full" ? (
-              <div id="app-main" tabIndex={-1} className="min-w-0 flex-1" />
+              <div
+                id="app-main"
+                tabIndex={-1}
+                className="flex min-h-0 min-w-0 flex-1 flex-col"
+              >
+                {panelFrame}
+              </div>
             ) : (
               <main
                 id="app-main"
@@ -316,7 +341,9 @@ export function AppShell({ onSearch }: AppShellProps) {
               </main>
             )}
             {panel.mode === "side" ? (
-              <div aria-hidden="true" className="w-96 max-w-full shrink-0" />
+              <div className="flex h-full min-h-0 w-96 max-w-full shrink-0 flex-col border-l border-border">
+                {panelFrame}
+              </div>
             ) : null}
           </div>
           {showDock ? (
@@ -335,35 +362,6 @@ export function AppShell({ onSearch }: AppShellProps) {
               }}
             />
           ) : null}
-          {panel.mode === "dock" ? null : (
-            <div
-              className={cn(
-                "absolute top-0 right-0 z-20 flex min-h-0 flex-col",
-                panel.mode === "full"
-                  ? "bottom-10 left-0"
-                  : "bottom-10 w-96 max-w-full border-l border-border",
-                !showDock && "bottom-0"
-              )}
-            >
-              <CoachPanel
-                title={panel.title}
-                open
-                mode={panel.mode}
-                onMinimize={() =>
-                  setPanel((current) => ({ ...current, mode: "dock" }))
-                }
-                onExpand={() =>
-                  setPanel((current) => ({
-                    ...current,
-                    mode: current.mode === "full" ? "side" : "full",
-                  }))
-                }
-                onClose={closePanel}
-              >
-                <ShellThreadBody />
-              </CoachPanel>
-            </div>
-          )}
         </div>
       </div>
       {!isDesktop && drawerOpen ? (
