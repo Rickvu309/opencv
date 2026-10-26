@@ -1,6 +1,5 @@
 // Temporary compat for the current web.
 // #377 deletes the thread map, #376 the apply map, and #378 the paper map.
-// #375 removed the profile.setCoachMode arm. profile.update still accepts coachMode.
 import {
   ERROR_CODES,
   PAPER_COMMANDS,
