@@ -1,30 +1,13 @@
 {
   "brandForbidden": "OpenCV",
   "brandWord": "opencv",
-  "dashes": [
-    "\u2014",
-    "\u2013",
-    "\u00b7"
-  ],
-  "toggleBad": [
-    "On",
-    "Off",
-    "Connected"
-  ],
+  "dashes": ["\u2014", "\u2013", "\u00b7"],
+  "toggleBad": ["On", "Off", "Connected"],
   "toggleOn": "Enabled",
   "toggleOff": "Disabled",
   "oops": "Oops",
-  "retiredNouns": [
-    "Opportunity",
-    "Thread"
-  ],
-  "applyStages": [
-    "Saved",
-    "Applied",
-    "Interview",
-    "Offer",
-    "Closed"
-  ],
+  "retiredNouns": ["Opportunity", "Thread"],
+  "applyStages": ["Saved", "Applied", "Interview", "Offer", "Closed"],
   "applyEmptyTitle": "Track your first job",
   "applyEmptyBody": "Add the jobs you're applying to.",
   "applyFilterEmpty": "No jobs match these filters.",
