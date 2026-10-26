@@ -34,19 +34,14 @@ html:has(.landing-root) {
 }
 
 .landing-grid {
-  --gutter: clamp(1.25rem, 4vw, 5rem);
-  --content: 76rem;
-  --breakout: 86rem;
-
   display: grid;
   grid-template-columns:
-    [full-width-start] minmax(var(--gutter), 1fr)
-    [breakout-start] minmax(0, calc((var(--breakout) - var(--content)) / 2))
-    [content-start] min(100% - var(--gutter) * 2, var(--content))
+    [full-width-start] minmax(clamp(1.25rem, 4vw, 5rem), 1fr)
+    [breakout-start] minmax(0, 5rem)
+    [content-start] min(100% - clamp(1.25rem, 4vw, 5rem) * 2, 76rem)
     [content-end]
-    minmax(0, calc((var(--breakout) - var(--content)) / 2))
-    [breakout-end]
-    minmax(var(--gutter), 1fr) [full-width-end];
+    minmax(0, 5rem) [breakout-end]
+    minmax(clamp(1.25rem, 4vw, 5rem), 1fr) [full-width-end];
 }
 
 .landing-grid > * {
