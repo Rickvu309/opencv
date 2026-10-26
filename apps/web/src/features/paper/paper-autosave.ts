@@ -37,10 +37,12 @@ export function usePaperAutosave<T>({
   const onConflictRef = useRef(onConflict)
   const onErrorRef = useRef(onError)
   const toDocumentRef = useRef(toDocument)
-  onSavedRef.current = onSaved
-  onConflictRef.current = onConflict
-  onErrorRef.current = onError
-  toDocumentRef.current = toDocument
+  useEffect(() => {
+    onSavedRef.current = onSaved
+    onConflictRef.current = onConflict
+    onErrorRef.current = onError
+    toDocumentRef.current = toDocument
+  }, [onSaved, onConflict, onError, toDocument])
 
   const flush = useCallback(async () => {
     if (conflictRef.current || inflightRef.current) return
