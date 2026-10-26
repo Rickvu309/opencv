@@ -1,5 +1,16 @@
 // Pure text and colour rules. No browser, no DOM. Each export is one decision the checks call.
 // Sources are the APPUI research section 5 checks (numbers in the comments are those check ids).
+// Properties 39 to 44 read the pinned phrases in copy.json.
+import { readFileSync } from "node:fs"
+import { dirname, join } from "node:path"
+import { fileURLToPath } from "node:url"
+
+const copy = JSON.parse(
+  readFileSync(
+    join(dirname(fileURLToPath(import.meta.url)), "copy.json"),
+    "utf8"
+  )
+)
 
 // 01. CONTEXT.md nouns. A button, placeholder, empty line or banner must not call a product object
 // "job", "email", "document" or "profile". Heuristic: a word list, so a legitimate use needs a note here.
@@ -104,4 +115,40 @@ export function chroma([r, g, b]) {
 const ON_SCALE = new Set([2, 6, 10, 14])
 export function onSpacingScale(px) {
   return px === 0 || px % 4 === 0 || ON_SCALE.has(px)
+}
+
+// 39. Chrome spells the brand as the mark plus lowercase opencv.
+export function brandViolations(labels) {
+  return labels
+    .filter((label) => label.includes(copy.brandForbidden))
+    .map((label) => ({ label, why: `write ${copy.brandWord}` }))
+}
+
+// 40. At most one glow primary on a view. counts is one number per view.
+export function extraGlowPrimaries(counts) {
+  return counts.filter((count) => count > 1)
+}
+
+// 41. No em dash, en dash, or middle dot in copy.
+export function dashViolations(labels) {
+  return labels.filter((label) =>
+    copy.dashes.some((dash) => label.includes(dash))
+  )
+}
+
+// 42. A toggle reads Enabled or Disabled, never On, Off, or Connected.
+export function toggleViolations(labels) {
+  const bad = new Set(copy.toggleBad.map((word) => word.toLowerCase()))
+  return labels.filter((label) => bad.has(label.trim().toLowerCase()))
+}
+
+// 43. A job line leads with the title. "at Company" with no title fails.
+export function titleBeforeCompany(labels) {
+  return labels.filter((label) => /^at\s+\S/i.test(label.trim()))
+}
+
+// 44. No exclamation mark and no Oops.
+export function exclamationViolations(labels) {
+  const oops = new RegExp(copy.oops, "i")
+  return labels.filter((label) => label.includes("!") || oops.test(label))
 }

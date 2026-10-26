@@ -458,6 +458,14 @@ function probe() {
         .slice(0, 6)
     }
   }
+  out.glowCount = visible.filter((el) => {
+    const cls = typeof el.className === "string" ? el.className : ""
+    return (
+      /(^|\s)glow(\s|$)/.test(cls) ||
+      ((el.tagName === "BUTTON" || el.getAttribute("role") === "button") &&
+        cs(el).backgroundImage.includes("radial-gradient"))
+    )
+  }).length
   out.active = document.activeElement
     ? {
         tag: document.activeElement.tagName,
