@@ -129,7 +129,7 @@ export type ChatTurnEvent =
       summary: string
     }
   | { type: "usage"; plan: string; mode: string; capped: boolean }
-  | { type: "message-end" }
+  | { type: "message-end"; workedMs?: number }
   | { type: "error"; message: string }
 
 export function focusedEditNeedsReplace(input: {

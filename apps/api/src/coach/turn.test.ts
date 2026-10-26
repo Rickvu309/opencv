@@ -226,6 +226,7 @@ describe("coach turn contract", () => {
     expect(stepAt).toBeGreaterThan(-1)
     expect(resultAt).toBeGreaterThan(stepAt)
     expect(sse).toContain("List jobs")
+    expect(sse).toMatch(/event: message-end\ndata: \{[^}]*"workedMs":\d+/)
   })
 
   it("returns mode caps on the usage snapshot", async () => {

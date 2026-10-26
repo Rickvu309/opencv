@@ -275,7 +275,10 @@ export async function runCoachTurn(options: {
           mode: options.mode,
           capped: reached,
         })
-        await emit(COACH_SSE_EVENTS.messageEnd, { chatId: options.chatId })
+        await emit(COACH_SSE_EVENTS.messageEnd, {
+          chatId: options.chatId,
+          workedMs,
+        })
       }
     }
   }
