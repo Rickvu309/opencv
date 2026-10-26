@@ -25,7 +25,13 @@ import {
 } from "./project.js"
 import { lintPaths } from "./lint-code.js"
 import { themeCss } from "./theme.js"
-import { formatResidue, residueOf, toShadcn } from "./shadcn-map.js"
+import {
+  formatResidue,
+  residueOf,
+  toShadcn,
+  UI_EXPORT,
+  uiSpecifier,
+} from "./shadcn-map.js"
 
 export function makeCodeCommands({ out, fail, c }) {
   const { dim, bold, cyan, green, yellow, red } = c
@@ -186,7 +192,34 @@ export function makeCodeCommands({ out, fail, c }) {
     init({ flags }) {
       const cwd = process.cwd()
       const existing = loadConfig(cwd)
-      const cfg = existing || { ...DEFAULT_CONFIG }
+      const target = flags.target || existing?.target || "kit"
+      const cfg = {
+        ...(existing || { ...DEFAULT_CONFIG }),
+        ...(target === "shadcn" ? { target: "shadcn" } : {}),
+        appDir: existing?.appDir || DEFAULT_CONFIG.appDir,
+      }
+      if (target === "shadcn") {
+        const persisted = {
+          target: "shadcn",
+          srcDir: cfg.srcDir,
+          componentsDir: cfg.componentsDir,
+          screensDir: cfg.screensDir,
+          appDir: cfg.appDir,
+          styles: cfg.styles,
+          publicDir: cfg.publicDir,
+        }
+        report(
+          writeFiles(
+            cwd,
+            { "opencv.json": JSON.stringify(persisted, null, 2) + "\n" },
+            true
+          )
+        )
+        out(
+          "shadcn target. Imports come from @workspace/ui. No kit files copied."
+        )
+        return
+      }
       const rows = []
       if (!existing)
         rows.push(
@@ -241,6 +274,34 @@ export function makeCodeCommands({ out, fail, c }) {
       const { files, missing } = resolveComponents(names)
       if (missing.length)
         fail(`Unknown: ${missing.join(", ")}. Run opencv list components.`)
+      const target = flags.target || cfg.target || "kit"
+      if (target === "shadcn") {
+        const { components } = registry()
+        const lines = []
+        for (const file of files) {
+          const comp = components[file]
+          const grouped = new Map()
+          for (const name of comp.exports) {
+            const ui = UI_EXPORT[name]
+            const onDisk =
+              ui === "cn" ||
+              (ui && existsSync(resolve(cwd, cfg.componentsDir, `${ui}.tsx`)))
+            if (!ui || !onDisk) {
+              lines.push(
+                `hand-finish: ${file} export ${name} has no @workspace/ui counterpart`
+              )
+              continue
+            }
+            const spec = uiSpecifier(ui)
+            if (!grouped.has(spec)) grouped.set(spec, [])
+            grouped.get(spec).push(name)
+          }
+          for (const [spec, exps] of grouped)
+            lines.push(`import { ${exps.join(", ")} } from "${spec}"`)
+        }
+        out(lines.join("\n"))
+        return
+      }
       report(writeComponents(cwd, cfg, files, !!flags.force))
       if (files.some((f) => f === "settings"))
         report(writeLogos(cwd, cfg, false))
@@ -248,7 +309,7 @@ export function makeCodeCommands({ out, fail, c }) {
 
     screen({ args, flags }) {
       const cwd = process.cwd()
-      const cfg = needConfig(cwd)
+      const loaded = needConfig(cwd)
       if (!args.length)
         fail(
           `Usage: opencv screen <name...> [--target shadcn] [--dry-run]  Screens: ${SCREENS.map((s) => s.name).join(", ")}`
@@ -258,7 +319,8 @@ export function makeCodeCommands({ out, fail, c }) {
         fail(
           `Unknown screen: ${r.missing.join(", ")}. Run opencv list screens.`
         )
-      const target = flags.target || cfg.target || "kit"
+      const target = flags.target || loaded.target || "kit"
+      const cfg = { ...loaded, target }
       if (target === "shadcn" && flags.dryRun) {
         const reg = registry()
         const rows = []
@@ -275,8 +337,15 @@ export function makeCodeCommands({ out, fail, c }) {
         return
       }
       const transform = target === "shadcn" ? toShadcn : (src) => src
+      const componentRows =
+        target === "shadcn"
+          ? r.components.map((name) => ({
+              status: "skipped",
+              path: `${name} (shadcn imports @workspace/ui, no kit copy)`,
+            }))
+          : writeComponents(cwd, cfg, r.components, !!flags.force, transform)
       report([
-        ...writeComponents(cwd, cfg, r.components, !!flags.force, transform),
+        ...componentRows,
         ...writeApp(cwd, cfg, r.app, false, transform),
         ...writeScreens(cwd, cfg, r.screens, !!flags.force, transform),
         ...(r.components.includes("settings")

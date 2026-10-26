@@ -162,8 +162,97 @@ function rewriteRouter(source) {
   return source.replace(/(['"])react-router\1/g, "$1@tanstack/react-router$1")
 }
 
+const KIT_MODULES = new Set([
+  "cn",
+  "brand",
+  "button",
+  "field",
+  "choice",
+  "display",
+  "feedback",
+  "overlay",
+  "shell",
+  "apply",
+  "inbox",
+  "coach",
+  "settings",
+  "paper",
+])
+
+// Kit export -> file under @workspace/ui/components, or "cn" for the helper.
+// A name missing here has no file on the app and stays a hand-finish line.
+export const UI_EXPORT = {
+  cn: "cn",
+  Avatar: "avatar",
+  Badge: "badge",
+  Brand: "brand",
+  Button: "button",
+  ConfirmDelete: "confirm-delete",
+  Dialog: "dialog",
+  Field: "field",
+  Input: "input",
+  Kbd: "kbd",
+  Mark: "brand",
+  Meter: "meter",
+  PageHeader: "page-header",
+  Select: "select",
+  Skeleton: "skeleton",
+  StageIcon: "stage-icon",
+  Textarea: "textarea",
+  Toolbar: "toolbar",
+  UsageBar: "usage-bar",
+}
+
+export function uiSpecifier(file) {
+  return file === "cn" ? "cn" : `@workspace/ui/components/${file}`
+}
+
+function rewriteKitImports(source) {
+  return source.replace(
+    /import\s+(type\s+)?\{([^}]*)\}\s+from\s+(['"])(?:~components\/|\.\/)([\w-]+)\3/g,
+    (full, typeKw, body, quote, mod) => {
+      if (!KIT_MODULES.has(mod)) return full
+      const groups = new Map()
+      const notes = []
+      for (const spec of body.split(",")) {
+        const flat = spec.trim().replace(/\s+/g, " ")
+        if (!flat) continue
+        const parsed = flat.match(/^(type\s+)?(\w+)(?:\s+as\s+(\w+))?$/)
+        if (!parsed) {
+          notes.push(
+            `// hand-finish: ${mod} export ${flat} has no @workspace/ui counterpart`
+          )
+          continue
+        }
+        const name = parsed[2]
+        const ui = UI_EXPORT[name]
+        if (!ui) {
+          notes.push(
+            `// hand-finish: ${mod} export ${name} has no @workspace/ui counterpart`
+          )
+          continue
+        }
+        const rendered = parsed[3] ? `${name} as ${parsed[3]}` : name
+        const piece = !typeKw && parsed[1] ? `type ${rendered}` : rendered
+        const dest = uiSpecifier(ui)
+        if (!groups.has(dest)) groups.set(dest, [])
+        groups.get(dest).push(piece)
+      }
+      const lines = []
+      for (const [dest, names] of groups)
+        lines.push(
+          `import ${typeKw || ""}{ ${names.join(", ")} } from ${quote}${dest}${quote}`
+        )
+      return [...lines, ...notes].join("\n")
+    }
+  )
+}
+
 export function toShadcn(source) {
-  return rewriteRouter(renameRaw(rewriteHex(mapClasses(source))))
+  const mapped = rewriteRouter(
+    renameRaw(rewriteHex(mapClasses(source)))
+  ).replace(/(?<![\w-])glow-button(?![\w-])/g, "glow")
+  return rewriteKitImports(mapped)
 }
 
 const HEX_RE = /#(?:[0-9A-Fa-f]{3,8})\b/g
@@ -193,6 +282,21 @@ export function residueOf(file, source) {
     handFinish.push(
       `${file} raw controls renamed onto Button, Input, Textarea, Select from @workspace/ui`
     )
+  for (const line of source.split("\n")) {
+    const note = line.match(/^\s*\/\/ hand-finish: (.+)$/)
+    if (note) handFinish.push(`${file} ${note[1]}`)
+  }
+  for (const cls of [
+    "shadow-glow-lg",
+    "shadow-glow",
+    "focus-ring",
+    "glow-button",
+  ]) {
+    if (new RegExp(`(?<![\\w-])${cls}(?![\\w-])`).test(source))
+      handFinish.push(`${file} class ${cls} has no stock utility`)
+  }
+  for (const match of source.matchAll(/~components\/([\w-]+)/g))
+    handFinish.push(`${file} import ~components/${match[1]} was not rewritten`)
   return { hex, raw, handFinish }
 }
 

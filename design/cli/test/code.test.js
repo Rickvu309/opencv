@@ -27,7 +27,7 @@ import {
 } from "../src/code/project.js"
 import { themeCss } from "../src/code/theme.js"
 import { lintSource } from "../src/code/lint-code.js"
-import { toShadcn } from "../src/code/shadcn-map.js"
+import { formatResidue, residueOf, toShadcn } from "../src/code/shadcn-map.js"
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..")
 const bin = join(root, "bin", "opencv.js")
@@ -243,6 +243,72 @@ test("shadcn target demotes copy-rule errors to warnings", () => {
   )
 })
 
+test("toShadcn maps kit imports and glow-button, and residue names the rest", () => {
+  const src = `import { AppShell, PageHeader } from "~components/shell"
+import { Button, IconButton } from "~components/button"
+<button className="glow-button shadow-glow hover:shadow-glow-lg focus-ring">Go</button>`
+  const out = toShadcn(src)
+  assert.match(out, /from "@workspace\/ui\/components\/page-header"/)
+  assert.match(out, /from "@workspace\/ui\/components\/button"/)
+  assert.match(out, /className="glow /)
+  assert.doesNotMatch(out, /glow-button/)
+  assert.doesNotMatch(out, /~components\//)
+  assert.match(out, /hand-finish: shell export AppShell/)
+  assert.match(out, /hand-finish: button export IconButton/)
+  const printed = formatResidue([residueOf("screens/apply-board", out)])
+  assert.match(printed, /class shadow-glow has no stock utility/)
+  assert.match(printed, /class shadow-glow-lg has no stock utility/)
+  assert.match(printed, /class focus-ring has no stock utility/)
+  assert.match(printed, /AppShell/)
+  assert.doesNotMatch(printed, /hand-finish 0/)
+  assert.match(printed, /^hex 0$/m)
+  assert.match(printed, /^raw 0$/m)
+})
+
+test("init --target shadcn writes appDir and copies no kit files", () => {
+  const dir = mkdtempSync(join(tmpdir(), "opencv-init-shadcn-"))
+  const out = run(dir, "init", "--target", "shadcn")
+  const cfg = JSON.parse(readFileSync(join(dir, "opencv.json"), "utf8"))
+  assert.equal(cfg.target, "shadcn")
+  assert.equal(cfg.appDir, "src/app")
+  assert.equal(existsSync(join(dir, "src/components/opencv/button.tsx")), false)
+  assert.equal(existsSync(join(dir, "src/styles/opencv.css")), false)
+  assert.match(out, /No kit files copied/)
+})
+
+test("add --target shadcn prints the import and copies nothing that exists", () => {
+  const dir = mkdtempSync(join(tmpdir(), "opencv-add-shadcn-"))
+  const componentsDir = "packages/ui/src/components"
+  writeFileSync(
+    join(dir, "opencv.json"),
+    JSON.stringify({
+      ...DEFAULT_CONFIG,
+      target: "shadcn",
+      appDir: "apps/web/src",
+      componentsDir,
+    })
+  )
+  const button = join(dir, componentsDir, "button.tsx")
+  mkdirSync(join(dir, componentsDir), { recursive: true })
+  writeFileSync(button, "export function Button() { return null }\n")
+  const page = join(dir, componentsDir, "page-header.tsx")
+  const toolbar = join(dir, componentsDir, "toolbar.tsx")
+  writeFileSync(page, "export function PageHeader() { return null }\n")
+  writeFileSync(toolbar, "export function Toolbar() { return null }\n")
+  const added = run(dir, "add", "Button", "--target", "shadcn")
+  assert.match(added, /from "@workspace\/ui\/components\/button"/)
+  assert.match(added, /hand-finish: button export IconButton/)
+  assert.equal(
+    readFileSync(button, "utf8"),
+    "export function Button() { return null }\n"
+  )
+  const shell = run(dir, "add", "shell", "--target", "shadcn")
+  assert.match(shell, /from "@workspace\/ui\/components\/page-header"/)
+  assert.match(shell, /from "@workspace\/ui\/components\/toolbar"/)
+  assert.match(shell, /hand-finish: shell export AppShell/)
+  assert.equal(existsSync(join(dir, componentsDir, "shell.tsx")), false)
+})
+
 test("screen apply-board --target shadcn --dry-run leaves no hex and no raw controls", () => {
   const dir = mkdtempSync(join(tmpdir(), "opencv-shadcn-"))
   writeFileSync(
@@ -260,6 +326,10 @@ test("screen apply-board --target shadcn --dry-run leaves no hex and no raw cont
   assert.match(out, /^target shadcn$/m)
   assert.match(out, /^hex 0$/m)
   assert.match(out, /^raw 0$/m)
+  assert.match(out, /class shadow-glow has no stock utility/)
+  assert.match(out, /shell export AppShell/)
+  assert.doesNotMatch(out, /hand-finish 0/)
+  assert.doesNotMatch(out, /packages\/ui\/src\/components\/shell/)
   assert.equal(existsSync(join(dir, "src/screens/apply-board.tsx")), false)
 })
 

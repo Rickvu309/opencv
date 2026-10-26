@@ -39,6 +39,15 @@ function rel(fromDir, toDir) {
   return r.startsWith(".") ? r : `./${r}`
 }
 
+function prepareSource(src, fileDir, cwd, cfg, transform) {
+  if (cfg.target === "shadcn") {
+    const app = rel(fileDir, resolve(cwd, cfg.appDir || DEFAULT_CONFIG.appDir))
+    const withApp = src.replace(/(['"])~app\/([\w-]+)\1/g, `$1${app}/$2$1`)
+    return transform(withApp)
+  }
+  return transform(rewriteImports(src, fileDir, cwd, cfg))
+}
+
 /** Rewrites ~components/ and ~app/ placeholders to relative paths for where the file lands. */
 export function rewriteImports(src, fileDir, cwd, cfg) {
   const comps = rel(fileDir, resolve(cwd, cfg.componentsDir))
@@ -83,7 +92,7 @@ export function writeApp(cwd, cfg, names, force, transform = (src) => src) {
     path: join(cfg.appDir, app[n].file),
     status: put(
       join(dir, app[n].file),
-      transform(rewriteImports(app[n].src, dir, cwd, cfg)),
+      prepareSource(app[n].src, dir, cwd, cfg, transform),
       force
     ),
   }))
@@ -96,7 +105,7 @@ export function writeScreens(cwd, cfg, names, force, transform = (src) => src) {
     path: join(cfg.screensDir, screens[n].file),
     status: put(
       join(dir, screens[n].file),
-      transform(rewriteImports(screens[n].src, dir, cwd, cfg)),
+      prepareSource(screens[n].src, dir, cwd, cfg, transform),
       force
     ),
   }))
