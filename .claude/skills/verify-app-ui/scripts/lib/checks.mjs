@@ -7,6 +7,8 @@ import { readFileSync } from "node:fs"
 import { contentChecks } from "./checks-content.mjs"
 import {
   brandViolations,
+  capturedGlowViews,
+  chromeCopy,
   dashViolations,
   exclamationViolations,
   extraGlowPrimaries,
@@ -469,7 +471,11 @@ export function runChecks(d) {
     )
   )
 
-  const brand = brandViolations(labels)
+  const copy = chromeCopy(
+    labels,
+    allSnaps.map((snap) => snap?.docTitle)
+  )
+  const brand = brandViolations(copy)
   r.push(
     result(
       "39",
@@ -482,13 +488,7 @@ export function runChecks(d) {
     )
   )
 
-  const glowViews = [
-    ["home", d.home],
-    ["paper", d.paper],
-    ["apply", d.apply],
-    ["pitch", d.pitch],
-    ...Object.entries(d.mobile ?? {}),
-  ].map(([name, snap]) => ({ name, count: snap?.glowCount ?? 0 }))
+  const glowViews = capturedGlowViews(d)
   const extraGlow = extraGlowPrimaries(glowViews.map((view) => view.count))
   r.push(
     result(
@@ -500,7 +500,7 @@ export function runChecks(d) {
     )
   )
 
-  const dashes = dashViolations(labels)
+  const dashes = dashViolations(copy)
   r.push(
     result(
       "41",

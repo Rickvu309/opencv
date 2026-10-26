@@ -129,6 +129,32 @@ export function extraGlowPrimaries(counts) {
   return counts.filter((count) => count > 1)
 }
 
+// Every captured snap, including nested mobile and reduced passes and the empty board.
+export function capturedGlowViews(record) {
+  const views = []
+  for (const [name, value] of Object.entries(record ?? {})) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) continue
+    if (typeof value.glowCount === "number") {
+      views.push({ name, count: value.glowCount })
+      continue
+    }
+    for (const [child, snap] of Object.entries(value)) {
+      if (snap && typeof snap.glowCount === "number")
+        views.push({ name: `${name}-${child}`, count: snap.glowCount })
+    }
+  }
+  return views
+}
+
+// 39 and 41. Control names plus the document title and any other chrome string.
+export function chromeCopy(labels, extras = []) {
+  return [
+    ...new Set(
+      [...labels, ...extras].filter((s) => typeof s === "string" && s.trim())
+    ),
+  ]
+}
+
 // 41. No em dash, en dash, or middle dot in copy.
 export function dashViolations(labels) {
   return labels.filter((label) =>

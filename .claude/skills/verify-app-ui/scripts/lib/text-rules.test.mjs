@@ -3,6 +3,8 @@ import { test } from "node:test"
 
 import {
   brandViolations,
+  capturedGlowViews,
+  chromeCopy,
   contrastNeeded,
   contrastRatio,
   dashViolations,
@@ -134,6 +136,34 @@ test("39 brand is the mark plus lowercase opencv", () => {
 test("40 one glow primary per view", () => {
   assert.deepEqual(extraGlowPrimaries([0, 1, 2, 3]), [2, 3])
   assert.deepEqual(extraGlowPrimaries([0, 1]), [])
+})
+
+test("40 counts every captured view, including the empty board", () => {
+  const views = capturedGlowViews({
+    home: { glowCount: 0 },
+    apply: { glowCount: 1 },
+    applyEmpty: { glowCount: 2 },
+    mobile: { apply: { glowCount: 0 } },
+    timing: { home: 12 },
+    logs: [],
+  })
+  assert.deepEqual(
+    views.map((view) => view.name),
+    ["home", "apply", "applyEmpty", "mobile-apply"]
+  )
+  assert.deepEqual(extraGlowPrimaries(views.map((view) => view.count)), [2])
+})
+
+test("39 and 41 read the document title and the chrome meta line", () => {
+  const copy = chromeCopy(
+    ["Add job"],
+    ["OpenCV", "CV · Sample · replace anytime"]
+  )
+  assert.deepEqual(
+    brandViolations(copy).map((item) => item.label),
+    ["OpenCV"]
+  )
+  assert.deepEqual(dashViolations(copy), ["CV · Sample · replace anytime"])
 })
 
 test("41 no em dash or middle dot", () => {
