@@ -32,11 +32,12 @@ Local development needs no Postgres and no API keys. `DB_DRIVER=pglite` runs the
 ```bash
 pnpm install
 pnpm --filter @workspace/domain build
+mkdir -p apps/api/.data
 export DB_DRIVER=pglite COACH_RUNTIME=fake SESSION_SECRET="$(openssl rand -hex 24)"
 pnpm dev --env-mode=loose
 ```
 
-The web app is at http://localhost:5173 and the api health check is at http://localhost:3001/health. A worktree stores its api port as `PORT` in `.env`. Use that port for the health check, and a free web port if 5173 is already taken. `--env-mode=loose` lets turbo pass the exported variables to the dev servers. Other variables are listed in `.env.example`.
+PGlite writes its files to `apps/api/.data/default`. That directory is gitignored, and PGlite does not create the parent, so the `mkdir` is required on a fresh checkout. The web app is at http://localhost:5173 and the api health check is at http://localhost:3001/health. A worktree stores its api port as `PORT` in `.env`. Use that port for the health check, and a free web port if 5173 is already taken. `--env-mode=loose` lets turbo pass the exported variables to the dev servers. Other variables are listed in `.env.example`.
 
 ## Scripts
 
