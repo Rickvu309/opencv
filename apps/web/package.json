@@ -11,6 +11,7 @@
     "typecheck": "tsc -b --noEmit",
     "preview": "vite preview",
     "test": "vitest run --config vitest.config.ts",
+    "verify:marketing": "vitest run --config vitest.config.ts src/test/marketing/marketing-links.verify.test.tsx src/test/marketing/help-filter.property.test.ts",
     "verify:landing": "node ../../.claude/skills/verify-landing/scripts/verify-landing.mjs",
     "verify:app-ui": "node ../../.claude/skills/verify-app-ui/scripts/verify-app-ui.mjs"
   },
@@ -38,6 +39,7 @@
     "eslint": "^10",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.7",
+    "fast-check": "4.10.2",
     "globals": "^17",
     "jsdom": "^27.0.1",
     "typescript": "~6",
