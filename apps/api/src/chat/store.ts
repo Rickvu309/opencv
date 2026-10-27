@@ -5,6 +5,7 @@ import {
   parseChatId,
   type Actor,
   type ChatAppendMessageInput,
+  type ChatMessagePart,
   type ChatFocus,
   type ChatId,
   type ChatOpenInput,
@@ -39,7 +40,7 @@ function toMessage(row: typeof chatMessages.$inferSelect) {
     chatId: row.chatId,
     role: row.role,
     text: row.text,
-    parts: row.parts ?? [],
+    parts: (row.parts ?? []) as ChatMessagePart[],
     status: row.status,
     workedMs: row.workedMs,
     createdAt: iso(row.createdAt),
@@ -119,7 +120,9 @@ function withUndone(
     ...message,
     parts: message.parts.map((part) => {
       const id = toolActivityId(part)
-      return id && undone.has(id) ? { ...(part as object), undone: true } : part
+      return id && undone.has(id)
+        ? ({ ...part, undone: true } as ChatMessagePart)
+        : part
     }),
   }
 }

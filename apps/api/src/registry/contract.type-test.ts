@@ -7,6 +7,7 @@ import {
   jobContract,
   parseJobId,
   parsePaperId,
+  type ChatContract,
   type CommandInput,
   type JobContract,
   type PaperContract,
@@ -24,6 +25,9 @@ type Snooze = CommandInput<InboxContract, "inbox.snooze">
 type Replace = CommandInput<PaperContract, "paper.replace">
 type SetTemplate = CommandInput<PaperContract, "paper.setTemplate">
 type PaperReplaceBinding = Bindings<PaperContract>["paper.replace"]
+type Undo = CommandInput<ChatContract, "activity.undo">
+type ChatDelete = Bindings<ChatContract>["chat.delete"]
+type ChatRename = Bindings<ChatContract>["chat.rename"]
 type MarkDone = Bindings<InboxContract>["inbox.markDone"]
 
 export function typeProbes(registry: Registry) {
@@ -91,7 +95,22 @@ export function typeProbes(registry: Registry) {
   // @ts-expect-error a paper handler must return the declared view
   const wrongPaperOutput: PaperReplaceBinding["handler"] = async () => ({ id: uuid })
 
+  // prettier-ignore
+  // @ts-expect-error undo takes an activity id, not a pending action id
+  const wrongUndoInput: Undo = { pendingActionId: uuid }
+
+  // prettier-ignore
+  // @ts-expect-error a chat delete handler returns the id, not the chat
+  const wrongChatOutput: ChatDelete["handler"] = async () => ({ stopped: true })
+
+  // prettier-ignore
+  // @ts-expect-error a chat rename reversal must be a valid input of the command it names
+  const wrongChatReversal: ChatRename["reversal"] = () => ({ command: "chat.rename", input: { title: "x" } })
+
   return [
+    wrongUndoInput,
+    wrongChatOutput,
+    wrongChatReversal,
     unknownPaper,
     wrongPaperInput,
     wrongTemplate,
