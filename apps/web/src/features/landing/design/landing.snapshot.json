@@ -1,0 +1,169 @@
+{
+  "source": {
+    "file": "design/opencv.pen",
+    "branch": "chore/350-design-kit-cli-skills",
+    "frameId": "w7zeGR",
+    "frameName": "Landing (Linear layout)"
+  },
+  "sections": [
+    {
+      "id": "amorM",
+      "name": "Nav",
+      "texts": [
+        "opencv",
+        "Product",
+        "Stories",
+        "Pricing",
+        "Blog",
+        "Help",
+        "Log in",
+        "Get started"
+      ]
+    },
+    {
+      "id": "zaFbA",
+      "name": "Hero",
+      "texts": [
+        "Get your butt in your dream seat.",
+        "Tailor your CV for every job. Track every application. Prep with Coach."
+      ]
+    },
+    {
+      "id": "FVT93",
+      "name": "Logos",
+      "texts": ["PEOPLE USING OPENCV HAVE INTERVIEWED AT"]
+    },
+    {
+      "id": "XWAX6",
+      "name": "Statement",
+      "texts": [
+        "You’ve done more than your CV says.",
+        "opencv helps",
+        "you show it: a CV and letter written for each role, a board for every application, and a coach that knows both."
+      ]
+    },
+    {
+      "id": "IEtud",
+      "name": "Benefits",
+      "texts": [
+        "A CV for every job",
+        "Write once in Paper, then tailor your CV and letter to each job in a minute.",
+        "Every application in one place",
+        "Save jobs from any link and see what to do next on one board.",
+        "A coach that does the work",
+        "Ask Coach to tailor, prep or follow up. It reads your work first."
+      ]
+    },
+    {
+      "id": "MGDsx",
+      "name": "Paper Wrap",
+      "texts": [
+        "Paper",
+        "Write your CV and letters in a clean editor. Coach tailors them to each job and keeps it to one page.",
+        "Learn more",
+        "Features",
+        "Tailored CVs",
+        "Import a CV",
+        "Cover letters",
+        "One-page check"
+      ]
+    },
+    {
+      "id": "IQNzE",
+      "name": "Apply Wrap",
+      "texts": [
+        "Apply",
+        "Save any job from a link, move it from Saved to Offer, and never miss an interview or a deadline.",
+        "Learn more",
+        "Features",
+        "Board and list",
+        "Job details",
+        "Calendar",
+        "Interview prep"
+      ]
+    },
+    {
+      "id": "OAtgE",
+      "name": "Coach Wrap",
+      "texts": [
+        "Coach",
+        "Ask in plain words. Coach reads your CV and the job, then does the work while you watch.",
+        "Learn more",
+        "Features",
+        "Tailor a CV",
+        "Prep an interview",
+        "Write a letter",
+        "Email updates"
+      ]
+    },
+    {
+      "id": "oBvMh",
+      "name": "Integrations Wrap",
+      "texts": [
+        "Works with your apps",
+        "Bring in your mail, calendar, files and profiles. Coach uses them to keep Apply up to date.",
+        "See all integrations"
+      ]
+    },
+    {
+      "id": "QXqKc",
+      "name": "Coming next Wrap",
+      "texts": [
+        "Coming next",
+        "Two new ways to show your work. Join the waitlist and get them first.",
+        "Join the waitlist",
+        "Proof",
+        "Turn a CV line into evidence.",
+        "Pitch",
+        "Your CV and Proofs on one page."
+      ]
+    },
+    {
+      "id": "b8FKWt",
+      "name": "Customers",
+      "texts": [
+        "I stopped listing duties and showed the one campaign I actually ran. The recruiter called me back in four days.",
+        "Nguyễn Thảo Vy",
+        "Brand Marketing Associate, Ho Chi Minh City",
+        "I sent fewer applications and treated each one like a pitch.",
+        "Kim Ji-woo",
+        "UX Designer, Seoul",
+        "opencv helps people go from a first note to an offer. From first jobs to senior roles.",
+        "Read all stories"
+      ]
+    },
+    {
+      "id": "f3irQ",
+      "name": "Prefooter",
+      "texts": [
+        "Be the obvious hire. Start today.",
+        "Get started",
+        "See a sample"
+      ]
+    },
+    {
+      "id": "YnPHd",
+      "name": "Footer Wrap",
+      "texts": [
+        "opencv",
+        "Show your work. Get the job.",
+        "Product",
+        "Paper",
+        "Apply",
+        "Coach",
+        "Pricing",
+        "Company",
+        "About",
+        "Stories",
+        "Careers",
+        "Blog",
+        "Connect",
+        "Contact us",
+        "X",
+        "LinkedIn",
+        "© 2026 opencv",
+        "Privacy    Terms"
+      ]
+    }
+  ]
+}

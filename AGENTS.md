@@ -134,3 +134,13 @@ Full checklist: `docs/git-workflow/review-and-approval.md`.
 Stock shadcn/ui on `base-nova` (Base UI) in `packages/ui`, consumed as source by `apps/web`. `docs/adr/0006-design-system-values-and-the-kit-as-generator.md` carries the design-system rule. Import through `@workspace/ui/components/<name>` and `@workspace/ui/globals.css`, and prefer kit components over raw `<button>`/`<input>`/`<textarea>`/`<select>`. Sources in order: shadcn/ui, AI Elements patterns copied into `apps/web/src/components/ai-elements/`, Kibo UI for heavy app pieces, then Cult UI, Magic UI and free affectUI items for showpieces. App code uses shadcn's own CSS variables only (`--background`, `--primary`, `--muted-foreground`, `--chart-1..5`, `--sidebar-*` and the rest of the stock set) and stock Tailwind sizes, with no raw hex or named palette classes (`bg-red-500`) outside the CV print paper. Motion has two token pairs, `--duration-micro` 150 ms with `--ease-micro` and `--duration-panel` 280 ms with `--ease-panel`, defined once in `globals.css`. `apps/web/src/test/design-vocabulary.test.ts` and `ui-kit-contract.test.ts` enforce all of it, and `pnpm --filter web test` fails on a violation.
 
 Install: `pnpm dlx shadcn@latest add <name> -c apps/web` for shadcn, `pnpm dlx shadcn@latest add https://www.kibo-ui.com/r/<name>.json -c apps/web` for Kibo UI, `https://www.cult-ui.com/r/<name>.json` for Cult UI, `@magicui/<name>` for Magic UI and `https://www.affectui.com/r/<name>.json` for affectUI. After every install run `node scripts/ds-codemod.mjs` to rename retired class names. Never add a token; if a registry piece brings one, map it to a shadcn variable.
+
+Design parity. The landing's design source is the pen frame named in `apps/web/src/features/landing/design/landing.snapshot.json`. Regenerate the snapshot with `node scripts/pen-snapshot.mjs` when the design changes. Never build from `design/exports` PNGs. Rules and what enforces them:
+
+| Rule                                 | Enforced by                                        |
+| ------------------------------------ | -------------------------------------------------- |
+| Landing text matches the pen frame   | `landing-design-parity.test.tsx`                   |
+| Landing art comes from pen geometry  | `scripts/pen-art-to-svg.mjs` and verify-landing 27 |
+| Nav lockup spacing matches the frame | verify-landing 28                                  |
+| Stock tokens only                    | `design-vocabulary.test.ts`                        |
+| Module boundaries                    | `boundaries.test.ts`                               |
