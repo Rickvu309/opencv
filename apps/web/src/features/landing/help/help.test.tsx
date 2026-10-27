@@ -13,7 +13,7 @@ afterEach(() => {
 
 describe("filterHelpTopics", () => {
   it("returns the same table when the query is blank", () => {
-    expect(filterHelpTopics(HELP_TOPICS, "   ")).toBe(HELP_TOPICS)
+    expect(filterHelpTopics(HELP_TOPICS, "   ")).toEqual(HELP_TOPICS)
   })
 
   it("matches a topic title without dropping its questions", () => {

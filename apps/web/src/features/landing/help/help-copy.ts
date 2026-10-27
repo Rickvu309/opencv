@@ -84,13 +84,13 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
       {
         id: "paper-holds",
         question: "What does Paper hold?",
-        answer: "Your CVs, cover letters, Proofs and files you import.",
+        answer: "Your CVs, cover letters and files you import.",
       },
       {
         id: "paper-cv",
         question: "How do I edit a CV?",
         answer:
-          "In a block document, with templates, an import check and a one-page fit prompt.",
+          "In a block document, with templates and a one-page fit prompt.",
       },
       {
         id: "paper-letter",
@@ -124,7 +124,7 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
         id: "apply-add",
         question: "How do I add a job?",
         answer:
-          "Add it by hand, or paste a link to fill the form. The link does not scan the page.",
+          "Add it by hand, or paste a link and opencv reads the posting to fill the form. If it cannot read the page, paste the text.",
       },
       {
         id: "apply-detail",
@@ -158,7 +158,7 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
       {
         id: "coach-cap",
         question: "What happens at the Free cap?",
-        answer: "A banner shows the reset time. The composer waits until then.",
+        answer: "Coach tells you that you reached today's limit for that mode. Try another mode, or come back tomorrow.",
       },
       {
         id: "coach-usage",
@@ -199,7 +199,7 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
         id: "inbox-gmail",
         question: "How does mail get into Inbox?",
         answer:
-          "Gmail connects when Google sign-in is turned on. You can skip that for now.",
+          "Inbox shows a sample mailbox for now. You can skip connecting Gmail.",
       },
       {
         id: "inbox-apps",
@@ -242,7 +242,7 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
       {
         id: "plans-next",
         question: "What is coming next?",
-        answer: "Proof and Pitch. Both are coming next.",
+        answer: "Jobs, Proof and Pitch are coming soon.",
       },
     ],
   },
