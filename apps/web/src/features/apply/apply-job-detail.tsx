@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
+  commands,
   parsePaperId,
   type JobId,
   type JobDetail,
@@ -62,7 +63,11 @@ import {
   priorityLabel,
   stageLabel,
 } from "./apply-stages.ts"
-import { activityKey, useRunCommand } from "@/lib/contract-client.ts"
+import {
+  activityKey,
+  refreshQueries,
+  useRunCommand,
+} from "@/lib/contract-client.ts"
 
 const POSTING = [
   ["About the role", "about"],
@@ -444,17 +449,26 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
               type="button"
               variant="destructive"
               onClick={() => {
-                void run("job.delete", { jobId: id }).then(() => {
-                  const destination = next ?? previous
-                  if (destination) {
-                    void navigate({
-                      to: "/app/apply/$jobId",
-                      params: { jobId: destination.id },
-                    })
-                  } else {
-                    void navigate({ to: "/app/apply" })
+                // Navigate before refreshing, so the deleted job's own read is
+                // not refetched into an error on screen.
+                void run("job.delete", { jobId: id }, { refresh: false }).then(
+                  () => {
+                    const destination = next ?? previous
+                    if (destination) {
+                      void navigate({
+                        to: "/app/apply/$jobId",
+                        params: { jobId: destination.id },
+                      })
+                    } else {
+                      void navigate({ to: "/app/apply" })
+                    }
+                    queryClient.removeQueries({ queryKey: jobGetKey(id) })
+                    void refreshQueries(
+                      queryClient,
+                      commands["job.delete"].invalidates({ jobId: id })
+                    )
                   }
-                })
+                )
               }}
             >
               Delete job
