@@ -52,7 +52,7 @@ const RETIRED = [
       },
       {
         path: /^apps\/web\/src\/lib\/requests\.ts$/,
-        match: /^(?:\w*[Ii]nboxThreads?\w*|threadId)$/,
+        match: /^(?:[a-z]*InboxThreads?|inboxThreads?|threadId)$/,
         why: "the inbox thread route is keyed by an inbox threadId",
       },
       {
@@ -78,16 +78,20 @@ const RETIRED = [
       },
       {
         path: /^apps\/web\/src\/features\/paper\/paper-suggestion-(?:bar|thread)(?:\.test)?\.tsx$/,
+        match:
+          /^(?:CommentThread|PaperSuggestionThread|SuggestionThread|SuggestionThreadMessage|ThreadMessage|comment-thread|paper-suggestion-thread|thread)$/,
         line: /CommentThread|ThreadMessage|comment-thread|SuggestionThread|suggestion-thread|read-only thread/,
         why: "a read-only comment thread of the Coach's suggested Paper changes, built on the ui comment-thread; not a Chat",
       },
       {
         path: /^apps\/web\/src\/features\/coach\/chat-list-port\.test\.ts$/,
+        match: /^HomeThread$/,
         line: /HomeThread/,
         why: "tombstone: asserts the retired HomeThread hook stays out of shell chrome",
       },
       {
         path: /^apps\/web\/src\/features\/coach\/use-coach-turn\.test\.ts$/,
+        match: /^(?:coach-thread-panel|Thread)$/,
         line: /coach-thread-panel|paperCoach\(Thread\|Chat\)StorageKey/,
         why: "tombstone: asserts the retired paper coach thread panel and storage key stay deleted",
       },
