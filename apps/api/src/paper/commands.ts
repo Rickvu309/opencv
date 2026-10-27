@@ -1,7 +1,4 @@
 import {
-  defineQuery,
-  fileIdSchema,
-  paperIdSchema,
   paperCreateInputSchema,
   paperDeleteInputSchema,
   paperDismissCheckInputSchema,
@@ -15,7 +12,6 @@ import {
   paperShareInputSchema,
   paperUnshareInputSchema,
   paperDeleteFileInputSchema,
-  paperKeywordGapInputSchema,
   keywordGap,
   type Actor,
   type PaperCreateInput,
@@ -25,8 +21,8 @@ import {
   type PaperReplaceInput,
   type PaperSetTemplateInput,
 } from "@workspace/domain"
-import { z } from "zod"
 
+import { tableQuery } from "../registry/bind.js"
 import type { Registry } from "../registry/registry.js"
 import {
   createPaper,
@@ -296,25 +292,16 @@ export function registerPaper(registry: Registry) {
   )
 
   registry.addQuery(
-    defineQuery({
-      name: "paper.list",
+    tableQuery("paper.list", {
       description: "List documents.",
-      input: z
-        .object({
-          query: z.string().optional(),
-          kind: z.enum(["cv", "letter"]).optional(),
-        })
-        .strict(),
       coach: true,
       step: () => "List documents",
       read: (input, actor) => listPapers(actor.userId, input.query, input.kind),
     })
   )
   registry.addQuery(
-    defineQuery({
-      name: "paper.get",
+    tableQuery("paper.get", {
       description: "Read one document.",
-      input: z.object({ docId: paperIdSchema }).strict(),
       coach: true,
       step: (input) => `Read document ${input.docId}`,
       read: async (input, actor) =>
@@ -322,20 +309,16 @@ export function registerPaper(registry: Registry) {
     })
   )
   registry.addQuery(
-    defineQuery({
-      name: "paper.pageCount",
+    tableQuery("paper.pageCount", {
       description: "Count pages in a document.",
-      input: z.object({ docId: paperIdSchema }).strict(),
       coach: true,
       step: () => "Count pages",
       read: (input, actor) => pageCount(actor, input.docId),
     })
   )
   registry.addQuery(
-    defineQuery({
-      name: "paper.pdf",
+    tableQuery("paper.pdf", {
       description: "Render a document as PDF bytes.",
-      input: z.object({ docId: paperIdSchema }).strict(),
       coach: false,
       step: () => "Download PDF",
       read: async (input, actor) => {
@@ -345,40 +328,32 @@ export function registerPaper(registry: Registry) {
     })
   )
   registry.addQuery(
-    defineQuery({
-      name: "paper.shared",
+    tableQuery("paper.shared", {
       description: "Read a shared document.",
-      input: z.object({ token: z.string().min(8) }).strict(),
       coach: false,
       step: () => "Read a shared document",
       read: (input) => readShared(input.token),
     })
   )
   registry.addQuery(
-    defineQuery({
-      name: "file.get",
+    tableQuery("file.get", {
       description: "Read a file's name and size. The bytes stay in the store.",
-      input: z.object({ fileId: fileIdSchema }).strict(),
       coach: true,
       step: () => "Read the file",
       read: (input, actor) => readFileMeta(actor.userId, input.fileId),
     })
   )
   registry.addQuery(
-    defineQuery({
-      name: "paper.files",
+    tableQuery("paper.files", {
       description: "List uploaded files. Bytes stay in the store.",
-      input: z.object({}).strict(),
       coach: false,
       step: () => "List files",
       read: (_input, actor) => listFiles(actor.userId),
     })
   )
   registry.addQuery(
-    defineQuery({
-      name: "paper.keywordGap",
+    tableQuery("paper.keywordGap", {
       description: "Find one requirement the letter does not mention.",
-      input: paperKeywordGapInputSchema,
       coach: true,
       step: () => "Find a missing keyword",
       read: async (input, actor) => {
