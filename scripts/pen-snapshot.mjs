@@ -68,4 +68,13 @@ const snapshot = {
 }
 
 mkdirSync(path.dirname(outFile), { recursive: true })
-writeFileSync(outFile, `${JSON.stringify(snapshot, null, 2)}\n`)
+// Format with the repo's prettier so a regenerated snapshot passes the format check unchanged.
+const prettier = await import("prettier")
+const options = (await prettier.resolveConfig(outFile)) ?? {}
+writeFileSync(
+  outFile,
+  await prettier.format(JSON.stringify(snapshot), {
+    ...options,
+    filepath: outFile,
+  })
+)
