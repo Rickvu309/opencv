@@ -5,7 +5,10 @@ import {
   CoachParts,
   partRenderers,
 } from "@/features/coach/coach-part-renderers.tsx"
-import { partFromCoachEvent } from "@/features/coach/coach-api.ts"
+import {
+  partFromCoachEvent,
+  resultFromApprove,
+} from "@/features/coach/coach-api.ts"
 import {
   groupCoachParts,
   toCoachParts,
@@ -78,6 +81,26 @@ describe("step and confirm parts", () => {
       kind: "result",
       name: "Coach note",
       docId: "11111111-1111-7111-8111-111111111111",
+    })
+  })
+
+  it("copies the replace change count from an approve row", () => {
+    expect(
+      resultFromApprove({
+        id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        summary: "Updated Coach note",
+        subjectId: "11111111-1111-7111-8111-111111111111",
+        detail: {
+          docId: "11111111-1111-7111-8111-111111111111",
+          name: "Coach note",
+          changes: 1,
+        },
+      })
+    ).toMatchObject({
+      kind: "result",
+      name: "Coach note",
+      summary: "Updated Coach note",
+      changes: 1,
     })
   })
 })

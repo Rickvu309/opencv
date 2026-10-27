@@ -1,4 +1,9 @@
-import { coachModeCaps, emptyCvDocument, titleFrom } from "@workspace/domain"
+import {
+  coachModeCaps,
+  countPaperChanges,
+  emptyCvDocument,
+  titleFrom,
+} from "@workspace/domain"
 import { afterAll, describe, expect, it, vi } from "vitest"
 
 import { coachModelEnv } from "../config.js"
@@ -368,6 +373,8 @@ describe("demo coach scenarios", () => {
     expect(sse.indexOf("event: step")).toBeLessThan(
       sse.indexOf("event: confirm")
     )
+    expect(sse).toContain('event: step\ndata: {"label":"Update the document"}')
+    expect(sse).not.toContain('"label":"paper.replace"')
     expect(sse).toContain("Coach note")
     expect(sse).toContain("Update the document")
     const pendingActionId = sse.match(/"pendingActionId":"([^"]+)"/)?.[1]
@@ -382,12 +389,20 @@ describe("demo coach scenarios", () => {
       data: {
         id?: string
         summary?: string
-        detail?: { name?: string; docId?: string }
+        detail?: { name?: string; docId?: string; changes?: number }
+        result?: { document?: unknown; previousDocument?: unknown }
       }
     }
     expect(body.data.detail?.name).toBe("Coach note")
     expect(body.data.detail?.docId).toBeTruthy()
     expect(body.data.id).toBeTruthy()
+    expect(body.data.detail?.changes).toBe(
+      countPaperChanges(
+        body.data.result?.previousDocument,
+        body.data.result?.document
+      )
+    )
+    expect(body.data.detail?.changes).toBeGreaterThan(0)
   })
 })
 

@@ -318,7 +318,6 @@ export async function sendCoachTurn(input: {
           item.id === coach.id ? { ...item, status: "aborted" } : item
         ),
       })
-      void stopChat(input.chatId).catch(() => undefined)
       return { restoreDraft: false, limited: false, error: null }
     }
     const latest = cache.get(input.chatId) ?? current
@@ -342,7 +341,6 @@ export async function sendCoachTurn(input: {
   } catch (error) {
     if (isAbortError(error) || controller.signal.aborted) {
       markStopped(input.chatId)
-      void stopChat(input.chatId).catch(() => undefined)
       return { restoreDraft: false, limited: false, error: null }
     }
     const limited =
@@ -405,6 +403,7 @@ export function attachApprovedResult(chatId: string, row: unknown) {
             summary: part.summary || prior.summary,
             ...(part.activityId ? { activityId: part.activityId } : {}),
             ...(part.docId ? { docId: part.docId } : {}),
+            ...(part.changes != null ? { changes: part.changes } : {}),
           }
         }
         return { ...message, parts }

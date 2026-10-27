@@ -16,6 +16,9 @@ import {
   paperUnshareInputSchema,
   paperDeleteFileInputSchema,
   paperKeywordGapInputSchema,
+  PAPER_CONTENT_VERSION,
+  countPaperChanges,
+  decodePaperContent,
   keywordGap,
   type Actor,
   type PaperCreateInput,
@@ -50,6 +53,25 @@ import {
   toPaper,
   unsharePaper,
 } from "./store.js"
+
+function paperReplaceChanges(output: {
+  kind: "cv" | "letter"
+  document: unknown
+  previousDocument: unknown
+}) {
+  const before = decodePaperContent(
+    output.kind,
+    PAPER_CONTENT_VERSION,
+    output.previousDocument
+  )
+  const after = decodePaperContent(
+    output.kind,
+    PAPER_CONTENT_VERSION,
+    output.document
+  )
+  if (!before.ok || !after.ok) return 0
+  return countPaperChanges(before.data, after.data)
+}
 
 export function registerPaper(registry: Registry) {
   registry.addCommand(
@@ -105,7 +127,11 @@ export function registerPaper(registry: Registry) {
               subjectKind: "paper",
               subjectId: input.docId,
               summary: `Updated ${output.name}`,
-              detail: { docId: input.docId, name: output.name },
+              detail: {
+                docId: input.docId,
+                name: output.name,
+                changes: paperReplaceChanges(output),
+              },
             }
           : null,
     },

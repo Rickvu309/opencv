@@ -142,13 +142,16 @@ export function resultFromApprove(row: unknown): CoachUiPart | null {
     textField(output?.id) ||
     textField(record.subjectId)
   const activityId = textField(record.id)
-  if (!name && !docId && !activityId) return null
+  const changes =
+    typeof detail?.changes === "number" ? detail.changes : undefined
+  if (!name && !docId && !activityId && changes == null) return null
   return {
     kind: "result",
     name: name || "Document",
     summary: textField(record.summary),
     ...(activityId ? { activityId } : {}),
     ...(docId ? { docId } : {}),
+    ...(changes != null ? { changes } : {}),
   }
 }
 

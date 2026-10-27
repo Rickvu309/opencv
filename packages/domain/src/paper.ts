@@ -242,3 +242,52 @@ export function keywordGap(
   }
   return null
 }
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value)
+}
+
+function stableValue(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableValue).join(",")}]`
+  if (isRecord(value)) {
+    return `{${Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableValue(value[key])}`)
+      .join(",")}}`
+  }
+  return JSON.stringify(value) ?? "null"
+}
+
+function countChangedBlocks(
+  before: readonly unknown[],
+  after: readonly unknown[]
+) {
+  const count = Math.max(before.length, after.length)
+  let changed = 0
+  for (let index = 0; index < count; index += 1) {
+    if (stableValue(before[index]) !== stableValue(after[index])) changed += 1
+  }
+  return changed
+}
+
+/** Changed top-level fields. Array fields count each changed block. */
+export function countPaperChanges(before: unknown, after: unknown): number {
+  if (!isRecord(before) || !isRecord(after)) {
+    return stableValue(before) === stableValue(after) ? 0 : 1
+  }
+  const keys = new Set([...Object.keys(before), ...Object.keys(after)])
+  let count = 0
+  for (const key of keys) {
+    const left = before[key]
+    const right = after[key]
+    if (Array.isArray(left) || Array.isArray(right)) {
+      count += countChangedBlocks(
+        Array.isArray(left) ? left : [],
+        Array.isArray(right) ? right : []
+      )
+      continue
+    }
+    if (stableValue(left) !== stableValue(right)) count += 1
+  }
+  return count
+}

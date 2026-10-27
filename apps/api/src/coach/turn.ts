@@ -369,26 +369,25 @@ async function* confirmScenario(scope: {
   const name = doc.name?.trim() || "Coach note"
   const kind = doc.kind === "cv" || doc.kind === "proof" ? doc.kind : "letter"
   const pendingId = createId()
-  await getDb()
-    .insert(pendingActions)
-    .values({
-      id: pendingId,
-      userId: scope.userId,
-      chatId: scope.chatId,
-      command: "paper.replace",
-      input: {
-        docId,
-        contentVersion: doc.contentVersion ?? 1,
-        document: doc.document,
-      },
-      summary: "Update the document",
-      status: "pending",
-    })
+  const replaceInput = {
+    docId,
+    contentVersion: doc.contentVersion ?? 1,
+    document: documentWithOneEdit(doc.document),
+  }
+  await getDb().insert(pendingActions).values({
+    id: pendingId,
+    userId: scope.userId,
+    chatId: scope.chatId,
+    command: "paper.replace",
+    input: replaceInput,
+    summary: "Update the document",
+    status: "pending",
+  })
   yield {
     type: "tool-call",
     toolCallId: "call_confirm",
     name: "paper.replace",
-    input: {},
+    input: replaceInput,
   }
   yield {
     type: "tool-result",
@@ -412,6 +411,26 @@ async function* confirmScenario(scope: {
     finishReason: "stop",
     usage: { model: "fake", finishReason: "stop" },
   }
+}
+
+function documentWithOneEdit(document: unknown): unknown {
+  if (!document || typeof document !== "object" || Array.isArray(document)) {
+    return { markdown: "Thanks for reading." }
+  }
+  const record = document as Record<string, unknown>
+  if (typeof record.markdown === "string") {
+    const markdown = record.markdown.trim()
+      ? `${record.markdown.trim()}\n\nThanks for reading.`
+      : "Thanks for reading."
+    return { ...record, markdown }
+  }
+  if (typeof record.summary === "string") {
+    const summary = record.summary.trim()
+      ? `${record.summary.trim()} Updated.`
+      : "Updated summary."
+    return { ...record, summary }
+  }
+  return record
 }
 
 function linkSignals(signals: AbortSignal[]) {

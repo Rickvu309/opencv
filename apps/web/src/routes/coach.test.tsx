@@ -82,8 +82,8 @@ describe("coach page", () => {
     expect(screen.getAllByText("Stopped", { selector: "p" })).toHaveLength(1)
     await waitFor(() => {
       expect(
-        getCoachCommandCalls().some((call) => call.name === "coach.stop")
-      ).toBe(true)
+        getCoachCommandCalls().filter((call) => call.name === "coach.stop")
+      ).toHaveLength(1)
     })
   })
 
@@ -282,6 +282,47 @@ describe("coach page", () => {
     expect(chatId).toBeTruthy()
     expect(paths).toContain(`/api/chats/${chatId}/turns`)
     expect(paths.some((path) => path.startsWith("/api/threads"))).toBe(false)
+  })
+
+  it("shows the approve change count on the result card", async () => {
+    const pendingActionId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaad"
+    const docId = "11111111-1111-7111-8111-111111111112"
+    scriptCoachStream({
+      confirm: {
+        pendingActionId,
+        command: "paper.replace",
+        summary: "Update the document",
+      },
+      parts: [
+        {
+          kind: "tool",
+          name: "paper.replace",
+          summary: "Update the document",
+          ok: true,
+          detail: {
+            type: "paper.updateContent",
+            docKind: "letter",
+            docName: "Coach note",
+            hunks: [],
+          },
+          result: { ok: true, data: { id: docId, name: "Coach note" } },
+        },
+      ],
+      approveResult: {
+        id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbc",
+        summary: "Updated Coach note",
+        subjectId: docId,
+        detail: { docId, name: "Coach note", changes: 1 },
+      },
+    })
+    await openCoach()
+    fireEvent.change(screen.getByRole("textbox", { name: "Message Coach" }), {
+      target: { value: "Update the letter" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Send" }))
+    fireEvent.click(await screen.findByRole("button", { name: "Approve" }))
+    expect(await screen.findByText("1 changes")).toBeInTheDocument()
+    expect(screen.queryByText("Updated Coach note")).not.toBeInTheDocument()
   })
 
   it("posts approve once and opens the named document", async () => {
