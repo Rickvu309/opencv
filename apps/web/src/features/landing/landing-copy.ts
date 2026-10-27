@@ -4,7 +4,7 @@ export const LANDING_HEADLINE_LINES = [
 ] as const
 
 export const LANDING_SUBHEAD =
-  "Tailor your CV for every job. Track every application. Prep with Coach."
+  "Tailor your CV for every job and track every application. Prep with Coach."
 
 export const LANDING_STATEMENT_LEAD = "You’ve done more than your CV says."
 

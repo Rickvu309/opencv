@@ -11,7 +11,7 @@ afterEach(() => {
 
 const HEADLINE = "Get your butt in your dream seat."
 const SUBHEAD =
-  "Tailor your CV for every job. Track every application. Prep with Coach."
+  "Tailor your CV for every job and track every application. Prep with Coach."
 const STATEMENT_REST =
   "opencv helps you show it: a CV and letter written for each role, a board for every application, and a coach that knows both."
 const TITLE = "opencv. Get your butt in your dream seat."
