@@ -73,7 +73,7 @@ export const post = {
     },
     {
       kind: "p",
-      text: "The calendar shows the dates you set. A Thursday follow-up is visible on Thursday. A spreadsheet hides it until you remember to look.",
+      text: "The Apply calendar shows each deadline and interview on its day. A spreadsheet hides them until you remember to look.",
     },
     {
       kind: "p",

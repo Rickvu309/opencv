@@ -47,7 +47,7 @@ export const post = {
     { kind: "h2", text: "Keep the date where you can see it" },
     {
       kind: "p",
-      text: "On the Apply card, set the next date to that Thursday. The board is a list, a calendar, and the card. The date is what stops the note from living in your head.",
+      text: "Write that Thursday in the job's notes in Apply, next to its deadline and interview dates. A written date is what stops the note from living in your head.",
     },
     {
       kind: "p",
