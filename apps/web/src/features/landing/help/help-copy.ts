@@ -158,7 +158,8 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
       {
         id: "coach-cap",
         question: "What happens at the Free cap?",
-        answer: "Coach tells you that you reached today's limit for that mode. Try another mode, or come back tomorrow.",
+        answer:
+          "Coach tells you that you reached today's limit for that mode. Try another mode, or come back tomorrow.",
       },
       {
         id: "coach-usage",
