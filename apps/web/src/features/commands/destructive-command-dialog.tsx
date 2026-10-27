@@ -19,7 +19,7 @@ type Props = {
 }
 
 /**
- * Shared confirm step for User-fired destructive Commands (ADR-0003).
+ * Shared confirm step for User-fired destructive Commands (ADR-0009, item 3).
  * Dismiss — Cancel, overlay, or close — must not run the Command.
  */
 export function DestructiveCommandDialog({

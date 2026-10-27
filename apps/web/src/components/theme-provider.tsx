@@ -5,7 +5,7 @@ type ThemeProviderProps = {
 }
 
 /**
- * Light-only shell (ADR-0014). The kit `.dark` token block stays dormant;
+ * Light-only shell. The kit `.dark` token block stays dormant;
  * the undocumented `d` hotkey is gone.
  */
 export function ThemeProvider({ children }: ThemeProviderProps) {

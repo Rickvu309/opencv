@@ -1,4 +1,4 @@
-/** Lexicographic alphabet for fractional-index `position` keys (ADR-0006). */
+/** Lexicographic alphabet for fractional-index `position` keys. */
 export const POSITION_DIGITS =
   "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 

@@ -1,4 +1,4 @@
-# Domain Docs
+# Domain docs
 
 How the engineering skills should consume this repo's domain documentation when exploring the codebase.
 
@@ -17,9 +17,7 @@ This repo is single-context.
 /
 ├── CONTEXT.md
 ├── PRODUCT.md
-└── docs/adr/
-    ├── 0001-release-one-is-the-design.md
-    └── 0002-vocabulary-job-chat-stages.md
+└── docs/adr/              (0001-*.md, 0002-*.md, ... numbered decisions)
 ```
 
 ## Use the glossary's vocabulary

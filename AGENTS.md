@@ -12,6 +12,29 @@ Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-
 
 Single-context (`CONTEXT.md` + `docs/adr/` at repo root). See `docs/agents/domain.md`.
 
+### Code map
+
+- `packages/domain/src` is pure TypeScript and zod, with no database, server or AI SDK import. It holds the typed contract: `<surface>-contract.ts` per surface (`chat`, `paper`, `job`, `inbox`, `account`), joined in `contract-commands.ts` and `queries.ts`, and the Coach stream events in `chat-turn.ts`.
+- `apps/api/src/<module>/` is one product module (`account`, `chat`, `paper`, `job`, `inbox`, `coach`). Other modules import it only through its `index.ts`. `commands.ts` binds the module's contract commands and reads (`account` keeps its reads in `queries.ts`), `http.ts` mounts its routes, and `store.ts` is the only writer of the module's tables. `registry/` runs every command, writes activity and builds the Coach's tools. `coach/` is the only importer of the AI SDK. `db/schema.ts` is the schema.
+- `apps/web/src` is the SPA. `routes/` holds pages, `features/<surface>/` holds each surface's components and state, and `lib/` is the only place that calls the api (`contract-client.ts` for commands and reads, `coach-stream.ts` for the Coach stream).
+- `packages/ui/src/components` is the shadcn kit. See Design system below.
+
+To add a product action, follow `docs/adr/0010-one-typed-contract-for-commands-and-reads.md`:
+
+1. Add a command entry to `packages/domain/src/<surface>-contract.ts`, with `invalidates` naming the reads it makes stale.
+2. Bind it in `apps/api/src/<surface>/commands.ts` with its handler, reversal and activity line. A missing binding is a type error.
+3. Call it from the web with `runContractCommand` from `apps/web/src/lib/contract-client.ts`. The Coach tool, step label, Undo and screen refresh follow from the entry.
+
+Tests that hold this shape, and what each one rejects:
+
+- `apps/api/src/registry/boundaries.test.ts` rejects an import into another api module that skips its `index.ts`.
+- `apps/api/src/registry/ownership.test.ts` rejects a write to a table from outside its owning module.
+- `apps/api/src/registry/names.test.ts` rejects a command or Coach tool name that the registry does not have.
+- `apps/api/src/registry/*-contract.test.ts` and `contract.type-test.ts` reject a binding that drifts from the contract.
+- `apps/web/src/test/request-boundary.test.ts` rejects an API path, `fetch` or query invalidation outside `apps/web/src/lib`.
+- `apps/web/src/test/design-vocabulary.test.ts` and `ui-kit-contract.test.ts` enforce the design system.
+- `scripts/adr-citations.test.mjs` rejects a citation of an ADR number with no file in `docs/adr`.
+
 ### Git
 
 Follow these rules in this repo. They are not optional.

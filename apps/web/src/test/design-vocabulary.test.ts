@@ -159,10 +159,10 @@ const VARIABLE_READ_RE = /(?:var\(|[\w-]\()(--[a-zA-Z0-9-]+)/g
  * classes. Each path MUST have a `//` reason on the previous line — adding
  * a path without that comment fails this file's own contract.
  *
- * The one documented exception (ADR-0014) is the CV print paper.
+ * The one documented exception (AGENTS.md, design system) is the CV print paper.
  */
 const VOCABULARY_ALLOWLIST = [
-  // CV print paper — documented ADR-0014 exception (print layout; paper is white).
+  // CV print paper — documented exception (print layout; paper is white).
   "features/paper/cv-templates/product.tsx",
 ] as const
 
