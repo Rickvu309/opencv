@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react"
 
-import { apiFetch, setSessionExpiredListener } from "@/lib/api.ts"
+import { fetchProfile } from "@/lib/account-api.ts"
+import { setSessionExpiredListener } from "@/lib/api.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import { SIGNED_OUT_EMAIL_KEY } from "@/lib/auth-redirect.ts"
 import { SessionExpiredDialog } from "./session-expired-dialog.tsx"
@@ -34,12 +35,10 @@ export function ShellOverlays({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false
-    void apiFetch<{ ok: true; data: { welcomedAt?: string | null } }>(
-      "/api/profile"
-    )
-      .then((body) => {
+    void fetchProfile()
+      .then((profile) => {
         if (cancelled) return
-        setPhase(body.data.welcomedAt === null ? "welcome" : "app")
+        setPhase(profile.welcomedAt === null ? "welcome" : "app")
       })
       .catch(() => {
         if (!cancelled) setPhase("app")

@@ -3,7 +3,7 @@ import { useCallback, useMemo, useState, type ReactNode } from "react"
 import type { ThreadListItem } from "@workspace/domain"
 
 import { useCoachTurn } from "@/features/coach/use-coach-turn.ts"
-import { profileQueryKeys } from "@/features/home/profile-api.ts"
+import { profileKey } from "@/lib/account-api.ts"
 import {
   deleteThread as deleteThreadRequest,
   listThreads,
@@ -41,7 +41,7 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
     titleForCreate: titleFrom,
     onAfterUndo: () => {
       void queryClient.invalidateQueries({
-        queryKey: profileQueryKeys.current(),
+        queryKey: profileKey(),
       })
     },
   })

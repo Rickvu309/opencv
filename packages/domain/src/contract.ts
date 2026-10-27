@@ -8,6 +8,13 @@ export type CoachPolicy =
 
 type Schema = z.ZodType
 
+/**
+ * "keyed" stores a client key so a replay returns the first result. "none" is for a
+ * write that is already replay-safe (a version compare, a set to a value, a terminal
+ * delete) or whose side effect precedes the key (a sent code); no key is sent or stored.
+ */
+export type IdempotencyPolicy = "keyed" | "none"
+
 export type QueryEntry<I extends Schema = Schema, O extends Schema = Schema> = {
   input: I
   output: O
@@ -32,6 +39,7 @@ export type CommandEntry<
   description: string
   input: I
   output: O
+  idempotency?: IdempotencyPolicy
   step: (input: z.output<I>) => string
   invalidates: (input: z.output<I>) => QueryRef[]
 }

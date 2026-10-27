@@ -31,6 +31,8 @@ type Binding<C extends CommandContract, N extends keyof C & string> = {
     output: CommandOutput<C, N>,
     actor: Actor
   ) => ActivityDraft | null
+  /** "none" for a handler that opens its own connection and cannot join the registry transaction. */
+  transaction?: "none"
 }
 
 export type Bindings<C extends CommandContract> = {
@@ -41,6 +43,7 @@ type LooseBinding = {
   handler: (input: unknown, actor: Actor) => Promise<unknown>
   reversal: CommandSpec<unknown, unknown>["reversal"]
   activity: CommandSpec<unknown, unknown>["activity"]
+  transaction?: "none"
 }
 
 export function bindCommands<C extends CommandContract>(
@@ -58,9 +61,11 @@ export function bindCommands<C extends CommandContract>(
         input: entry.input,
         coach: entry.coach,
         destructive: entry.destructive,
+        ...(entry.idempotency ? { idempotency: entry.idempotency } : {}),
         step: entry.step,
         reversal: bound.reversal,
         activity: bound.activity,
+        ...(bound.transaction ? { transaction: bound.transaction } : {}),
       },
       bound.handler
     )

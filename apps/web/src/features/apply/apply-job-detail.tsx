@@ -99,7 +99,7 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
     queryFn: listJobs,
   })
   const activity = useQuery({
-    queryKey: activityKey(id),
+    queryKey: activityKey("job", id),
     queryFn: () => listActivity(id),
   })
 

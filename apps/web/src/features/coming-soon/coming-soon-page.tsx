@@ -1,16 +1,15 @@
 import { useState, type ReactNode } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { Bell } from "lucide-react"
+import type { NotifyTopic } from "@workspace/domain"
 import { toast } from "sonner"
 
 import { Button, buttonVariants } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { soonCopy } from "@/features/coming-soon/copy.ts"
-import {
-  requestNotify,
-  type NotifyTopic,
-} from "@/features/coming-soon/notify.ts"
+import { requestNotify } from "@/features/coming-soon/notify.ts"
 
 type ComingSoonPageProps = {
   pageTitle: string
@@ -29,6 +28,7 @@ export function ComingSoonPage({
   secondary,
   preview,
 }: ComingSoonPageProps) {
+  const queryClient = useQueryClient()
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -36,7 +36,7 @@ export function ComingSoonPage({
     setPending(true)
     setError(null)
     try {
-      const result = await requestNotify(primary.topic)
+      const result = await requestNotify(queryClient, primary.topic)
       toast(result.already ? soonCopy.already : soonCopy.onList)
     } catch (caught) {
       const message = caught instanceof Error ? caught.message.trim() : ""

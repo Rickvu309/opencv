@@ -102,7 +102,7 @@ describe("paper commands through the contract client", () => {
     )
   })
 
-  it("sends an idempotency key by default and none when a caller opts out", async () => {
+  it("sends an idempotency key unless the contract entry says none", async () => {
     const fetchMock = vi
       .fn()
       .mockImplementation(() => Promise.resolve(envelope({ id: docId })))
@@ -111,8 +111,10 @@ describe("paper commands through the contract client", () => {
     const input = { docId, name: "New" }
 
     await runContractCommand(queryClient, "paper.rename", input)
-    await runContractCommand(queryClient, "paper.rename", input, {
-      idempotencyKey: false,
+    await runContractCommand(queryClient, "paper.replace", {
+      docId,
+      contentVersion: 1,
+      document: {},
     })
 
     const bodies = fetchMock.mock.calls.map((c) =>

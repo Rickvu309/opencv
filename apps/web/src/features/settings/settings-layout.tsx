@@ -1,6 +1,7 @@
 import type { ReactNode } from "react"
 import { useNavigate } from "@tanstack/react-router"
 import { ArrowLeft } from "lucide-react"
+import type { Profile } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
 import {
   Select,
@@ -24,11 +25,7 @@ import {
   type SettingsSectionId,
   type SettingsView,
 } from "./sections.ts"
-import {
-  LOAD_ERROR,
-  startPageHref,
-  type SettingsStartPage,
-} from "./settings-api.ts"
+import { LOAD_ERROR, startPageHref } from "./settings-api.ts"
 
 export function SettingsLayout({
   view,
@@ -37,7 +34,7 @@ export function SettingsLayout({
   children,
 }: {
   view: SettingsView
-  startPage?: SettingsStartPage
+  startPage?: Profile["startPage"]
   name?: string
   children: ReactNode
 }) {

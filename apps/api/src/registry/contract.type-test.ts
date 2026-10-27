@@ -7,6 +7,7 @@ import {
   jobContract,
   parseJobId,
   parsePaperId,
+  type AccountContract,
   type ChatContract,
   type CommandInput,
   type JobContract,
@@ -28,6 +29,8 @@ type PaperReplaceBinding = Bindings<PaperContract>["paper.replace"]
 type Undo = CommandInput<ChatContract, "activity.undo">
 type ChatDelete = Bindings<ChatContract>["chat.delete"]
 type ChatRename = Bindings<ChatContract>["chat.rename"]
+type SetPhoto = CommandInput<AccountContract, "profile.setPhoto">
+type AccountDelete = Bindings<AccountContract>["account.delete"]
 type MarkDone = Bindings<InboxContract>["inbox.markDone"]
 
 export function typeProbes(registry: Registry) {
@@ -107,7 +110,17 @@ export function typeProbes(registry: Registry) {
   // @ts-expect-error a chat rename reversal must be a valid input of the command it names
   const wrongChatReversal: ChatRename["reversal"] = () => ({ command: "chat.rename", input: { title: "x" } })
 
+  // prettier-ignore
+  // @ts-expect-error a photo is a FileId, not a free string
+  const wrongPhoto: SetPhoto = { fileId: "avatar.png" }
+
+  // prettier-ignore
+  // @ts-expect-error an account delete handler returns the deleted flag, not the profile
+  const wrongDelete: AccountDelete["handler"] = async () => ({ id: "x" })
+
   return [
+    wrongPhoto,
+    wrongDelete,
     wrongUndoInput,
     wrongChatOutput,
     wrongChatReversal,

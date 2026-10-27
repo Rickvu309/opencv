@@ -7,19 +7,14 @@ import {
   successEnvelope,
 } from "@workspace/domain"
 import { Hono } from "hono"
-import { and, desc, eq } from "drizzle-orm"
 
 import type { Auth } from "../auth.js"
 import type { AppDatabase } from "../db/context.js"
-import { getDb } from "../db/context.js"
-import { activity } from "../db/schema.js"
 import { jsonWithStatus } from "../http-json.js"
 import { requireSession, type SessionVariables } from "../middleware.js"
 import { saveFile } from "../paper/index.js"
 import { registry } from "../registry/registry.js"
-import { exportAccount, listIntegrations, readBilling } from "./queries.js"
-import { getProfileRow, toProfile } from "./store.js"
-import { readUsage } from "./usage.js"
+import { exportAccount } from "./queries.js"
 
 function sessionApp(auth?: Auth, db?: AppDatabase) {
   const routes = new Hono<{ Variables: SessionVariables }>()
@@ -30,8 +25,12 @@ function sessionApp(auth?: Auth, db?: AppDatabase) {
 export function createProfileRoutes(auth?: Auth, db?: AppDatabase) {
   const routes = sessionApp(auth, db)
   routes.get("/", async (c) => {
-    const row = await getProfileRow(parseUserId(c.var.userId))
-    return c.json(successEnvelope(toProfile(row)))
+    const data = await registry.read(
+      "profile.get",
+      {},
+      personActor(c.var.userId)
+    )
+    return c.json(successEnvelope(data))
   })
   return routes
 }
@@ -39,7 +38,11 @@ export function createProfileRoutes(auth?: Auth, db?: AppDatabase) {
 export function createIntegrationsRoutes(auth?: Auth, db?: AppDatabase) {
   const routes = sessionApp(auth, db)
   routes.get("/", async (c) => {
-    const data = await listIntegrations(c.var.userId)
+    const data = await registry.read(
+      "integrations.list",
+      {},
+      personActor(c.var.userId)
+    )
     return c.json(successEnvelope(data))
   })
   return routes
@@ -48,7 +51,11 @@ export function createIntegrationsRoutes(auth?: Auth, db?: AppDatabase) {
 export function createBillingRoutes(auth?: Auth, db?: AppDatabase) {
   const routes = sessionApp(auth, db)
   routes.get("/", async (c) => {
-    const data = await readBilling(c.var.userId)
+    const data = await registry.read(
+      "billing.get",
+      {},
+      personActor(c.var.userId)
+    )
     return c.json(successEnvelope(data))
   })
   return routes
@@ -120,30 +127,15 @@ export function createActivityRoutes(auth?: Auth, db?: AppDatabase) {
   routes.get("/", async (c) => {
     const subjectKind = c.req.query("subjectKind")
     const subjectId = c.req.query("subjectId")
-    const filters = [eq(activity.userId, c.var.userId)]
-    if (subjectKind) filters.push(eq(activity.subjectKind, subjectKind))
-    if (subjectId) filters.push(eq(activity.subjectId, subjectId))
-    const rows = await getDb()
-      .select()
-      .from(activity)
-      .where(and(...filters))
-      .orderBy(desc(activity.createdAt))
-      .limit(100)
-    return c.json(
-      successEnvelope(
-        rows.map((row) => ({
-          id: row.id,
-          createdAt: row.createdAt.toISOString(),
-          actor: row.actor,
-          command: row.command,
-          subjectKind: row.subjectKind,
-          subjectId: row.subjectId,
-          summary: row.summary,
-          undoneAt: row.undoneAt?.toISOString() ?? null,
-          reversible: Boolean(row.reversalCommand) && row.undoneAt == null,
-        }))
-      )
+    const data = await registry.read(
+      "activity.list",
+      {
+        ...(subjectKind ? { subjectKind } : {}),
+        ...(subjectId ? { subjectId } : {}),
+      },
+      personActor(c.var.userId)
     )
+    return c.json(successEnvelope(data))
   })
   return routes
 }
@@ -151,7 +143,11 @@ export function createActivityRoutes(auth?: Auth, db?: AppDatabase) {
 export function createUsageRoutes(auth?: Auth, db?: AppDatabase) {
   const routes = sessionApp(auth, db)
   routes.get("/usage", async (c) => {
-    const data = await readUsage(c.var.userId)
+    const data = await registry.read(
+      "coach.usage",
+      {},
+      personActor(c.var.userId)
+    )
     return c.json(successEnvelope(data))
   })
   return routes

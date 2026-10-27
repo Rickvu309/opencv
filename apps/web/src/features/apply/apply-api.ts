@@ -12,18 +12,6 @@ import { queryKey } from "@/lib/contract-client.ts"
 
 export type ChecklistItem = JobDetail["checklist"][number]
 
-export type ActivityRow = {
-  id: string
-  createdAt: string
-  actor: string
-  command: string
-  subjectKind: string
-  subjectId: string
-  summary: string
-  undoneAt: string | null
-  reversible?: boolean
-}
-
 export type PaperListItem = {
   id: string
   name: string
@@ -67,14 +55,14 @@ export function previewJob(
   ).then(unwrapData)
 }
 
-export function listActivity(jobId: string): Promise<ActivityRow[]> {
+export function listActivity(jobId: string) {
   const query = new URLSearchParams({
     subjectKind: "job",
     subjectId: jobId,
   })
-  return apiFetch<SuccessBody<ActivityRow[]>>(`/api/activity?${query}`).then(
-    unwrapData
-  )
+  return apiFetch<SuccessBody<QueryOutput<"activity.list">>>(
+    `/api/activity?${query}`
+  ).then(unwrapData)
 }
 
 export function listPaper(kind: "cv" | "letter"): Promise<PaperListItem[]> {

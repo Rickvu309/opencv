@@ -1,0 +1,150 @@
+import {
+  QUERY_NAMES,
+  accountContract,
+  accountQueries,
+  personActor,
+} from "@workspace/domain"
+import { eq } from "drizzle-orm"
+import { describe, expect, it } from "vitest"
+
+import { withDatabase } from "../db/context.js"
+import { idempotency, user } from "../db/schema.js"
+import { saveFile } from "../paper/index.js"
+import { createMigratedTestDb } from "../test/harness.js"
+import { installRegistry } from "./install.js"
+
+describe("account contract", () => {
+  it("parses every account command output and every account read", async () => {
+    const { db, client } = await createMigratedTestDb()
+    const registry = installRegistry()
+    const userId = "user-account-contract"
+    await db.insert(user).values({
+      id: userId,
+      name: "Ada",
+      email: "ada-account-contract@example.com",
+    })
+    const person = personActor(userId)
+
+    await withDatabase(db, async () => {
+      const seen = new Set<string>()
+      const run = async (
+        name: keyof typeof accountContract,
+        input: unknown
+      ) => {
+        const result = await registry.execute({ name, input, actor: person })
+        const parsed = accountContract[name].output.safeParse(result.output)
+        expect(
+          parsed.success,
+          `${name}: ${JSON.stringify(parsed.error?.issues)}`
+        ).toBe(true)
+        seen.add(name)
+        return result.output as Record<string, unknown>
+      }
+      const read = async (
+        name: keyof typeof accountQueries,
+        input: unknown
+      ) => {
+        const output = await registry.read(name, input, person)
+        const parsed = accountQueries[name].output.safeParse(output)
+        expect(
+          parsed.success,
+          `${name}: ${JSON.stringify(parsed.error?.issues)}`
+        ).toBe(true)
+        seen.add(name)
+        return output
+      }
+
+      expect(await read("profile.get", {})).toMatchObject({ name: "Ada" })
+      expect(await read("integrations.list", {})).toHaveProperty("groups")
+      expect(await read("billing.get", {})).toMatchObject({ plan: "free" })
+      expect(await read("coach.usage", {})).toMatchObject({ mode: "free" })
+
+      expect(await run("profile.update", { name: "Ada L" })).toMatchObject({
+        name: "Ada L",
+      })
+      await run("profile.markWelcomed", {})
+      const file = await saveFile({
+        userId: userId as never,
+        name: "face.png",
+        mediaType: "image/png",
+        bytes: Buffer.from("png"),
+        purpose: "avatar",
+      })
+      expect(await run("profile.setPhoto", { fileId: file.id })).toMatchObject({
+        image: file.id,
+      })
+      await run("account.requestEmailChange", { email: "next@example.com" })
+      expect(await run("notify.request", { topic: "jobs" })).toMatchObject({
+        topic: "jobs",
+      })
+
+      const feed = (await read("activity.list", {})) as unknown[]
+      expect(Array.isArray(feed)).toBe(true)
+      await read("activity.list", { subjectKind: "job", subjectId: "x" })
+
+      await run("account.delete", { confirm: "DELETE" })
+
+      expect([...seen].sort()).toEqual(
+        [...Object.keys(accountContract), ...Object.keys(accountQueries)].sort()
+      )
+    })
+    await client.close()
+  })
+
+  it("keeps the Coach's read access to profile and usage only", () => {
+    const registered = installRegistry().list().queries
+    const coachReads = registered
+      .filter((query) => query.coach)
+      .map((query) => query.name)
+    for (const name of Object.keys(accountQueries)) {
+      expect(QUERY_NAMES).toContain(name)
+    }
+    expect(coachReads).toContain("profile.get")
+    expect(coachReads).toContain("coach.usage")
+    for (const name of ["integrations.list", "billing.get", "activity.list"]) {
+      expect(coachReads).not.toContain(name)
+    }
+  })
+
+  it("lets the Coach run only notify.request without asking", () => {
+    const registered = installRegistry().list().commands
+    const coachOnly = registered
+      .filter((command) => command.name in accountContract)
+      .filter((command) => command.coach !== "never")
+      .map((command) => command.name)
+    expect(coachOnly).toEqual(["notify.request"])
+  })
+
+  it("deletes the account even when the caller sends an idempotency key", async () => {
+    const { db, client } = await createMigratedTestDb()
+    const registry = installRegistry()
+    const userId = "user-delete-with-key"
+    await db.insert(user).values({
+      id: userId,
+      name: "Ada",
+      email: "ada-delete-key@example.com",
+    })
+
+    await withDatabase(db, async () => {
+      for (const idempotencyKey of [undefined, "k-1"]) {
+        const result = await registry.execute({
+          name: "account.delete",
+          input: { confirm: "DELETE" },
+          actor: personActor(userId),
+          idempotencyKey,
+        })
+        expect(result.output).toEqual({ deleted: true })
+        expect(await db.select().from(user).where(eq(user.id, userId))).toEqual(
+          []
+        )
+        expect(await db.select().from(idempotency)).toEqual([])
+        await db.insert(user).values({
+          id: userId,
+          name: "Ada",
+          email: "ada-delete-key@example.com",
+        })
+      }
+    })
+    await client.close()
+  })
+})

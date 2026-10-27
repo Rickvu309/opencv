@@ -12,8 +12,7 @@ import { Field } from "@workspace/ui/components/field"
 import { Input } from "@workspace/ui/components/input"
 
 import { authClient } from "@/lib/auth-client.ts"
-
-import { deleteAccount } from "./settings-api.ts"
+import { useRunCommand } from "@/lib/contract-client.ts"
 
 export function DeleteAccountDialog({
   open,
@@ -23,6 +22,7 @@ export function DeleteAccountDialog({
   onOpenChange: (open: boolean) => void
 }) {
   const navigate = useNavigate()
+  const runCommand = useRunCommand()
   const [confirm, setConfirm] = useState("")
   const [error, setError] = useState<string>()
   const [pending, setPending] = useState(false)
@@ -41,7 +41,7 @@ export function DeleteAccountDialog({
     setPending(true)
     setError(undefined)
     try {
-      await deleteAccount()
+      await runCommand("account.delete", { confirm: "DELETE" })
       await authClient.signOut()
       await navigate({ href: "/sign-in" })
     } catch (caught) {

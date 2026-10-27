@@ -2,7 +2,7 @@ import { Suspense, createContext, lazy, useContext } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router"
 
-import { getShellProfile } from "@/features/app-shell/shell-api.ts"
+import { fetchProfile, profileKey } from "@/lib/account-api.ts"
 import { startPagePath } from "@/features/app-shell/start-page.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import { Button } from "@workspace/ui/components/button"
@@ -57,15 +57,9 @@ export function NotFoundPage() {
   const session = authClient.useSession()
   const signedIn = inShell || Boolean(session.data)
   const profile = useQuery({
-    queryKey: ["shell", "profile"],
+    queryKey: profileKey(),
     enabled: signedIn,
-    queryFn: async () => {
-      try {
-        return await getShellProfile()
-      } catch {
-        return null
-      }
-    },
+    queryFn: fetchProfile,
   })
   const label = signedIn ? copy.start : copy.signIn
   const destination = signedIn

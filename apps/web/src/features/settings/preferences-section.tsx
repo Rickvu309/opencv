@@ -15,7 +15,7 @@ import {
   SettingsTitle,
   StateWord,
 } from "./settings-layout.tsx"
-import type { ProfilePatch, SettingsProfile } from "./settings-api.ts"
+import type { Profile, ProfileUpdateInput } from "@workspace/domain"
 
 const ZONES = [
   { value: "Asia/Ho_Chi_Minh", label: "Ho Chi Minh City (UTC+7)" },
@@ -36,11 +36,11 @@ export function PreferencesSection({
   error,
   onSave,
 }: {
-  profile: SettingsProfile
+  profile: Profile
   pending: boolean
   errorKey?: string
   error?: string
-  onSave: (patch: ProfilePatch) => void
+  onSave: (patch: ProfileUpdateInput) => void
 }) {
   const zones = ZONES.some((zone) => zone.value === profile.timeZone)
     ? ZONES

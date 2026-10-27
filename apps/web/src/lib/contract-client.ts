@@ -3,6 +3,7 @@ import { useCallback } from "react"
 import type {
   CommandInput,
   CommandOutput,
+  AnyCommandEntry,
   Commands,
   ContractCommandName,
   QueryRef,
@@ -16,12 +17,13 @@ export function queryKey(ref: QueryRef): readonly unknown[] {
   return ref.input ? [ref.query, ref.input] : [ref.query]
 }
 
-/** Activity reads are not a registered query yet, and any command may write a row. */
-export function activityKey(subjectId: string): readonly unknown[] {
-  return ["activity", subjectId]
+/** Activity rows for one subject, as `activity.list` returns them. */
+export function activityKey(subjectKind: string, subjectId: string) {
+  return queryKey({ query: "activity.list", input: { subjectKind, subjectId } })
 }
 
-export const ACTIVITY_ROOT = ["activity"] as const
+/** Any command may write an activity row, so every command refreshes this root. */
+export const ACTIVITY_ROOT = ["activity.list"] as const
 
 export function refreshQueries(queryClient: QueryClient, refs: QueryRef[]) {
   return Promise.all([
@@ -59,16 +61,13 @@ export function refreshPaperQueries(queryClient: QueryClient) {
 
 export type RunOptions = {
   refresh?: boolean
-  /** False for a write that already compares a version, so a replay cannot apply twice. */
-  idempotencyKey?: boolean
 }
 
 export type CommandResult<T> = T & { activityId?: string }
 
 /**
  * Runs a contract command, then refreshes the reads its contract entry
- * says it invalidates. Named apart from the legacy `runCommand` in
- * api-envelope.ts, which sends no idempotency key and refreshes nothing.
+ * says it invalidates.
  */
 export async function runContractCommand<N extends ContractCommandName>(
   queryClient: QueryClient,
@@ -82,7 +81,7 @@ export async function runContractCommand<N extends ContractCommandName>(
     method: "POST",
     body: JSON.stringify({
       input,
-      ...(options.idempotencyKey === false
+      ...((commands[name] as AnyCommandEntry).idempotency === "none"
         ? {}
         : { idempotencyKey: crypto.randomUUID() }),
     }),

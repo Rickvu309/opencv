@@ -167,6 +167,7 @@ export const paperContract = commandContract({
     description: "Replace a document when the version matches.",
     input: paperReplaceInputSchema,
     output: paperViewSchema.extend({ previousDocument }).strict(),
+    idempotency: "none",
     coach: "auto",
     destructive: false,
     step: () => "Update the document",

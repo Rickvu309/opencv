@@ -2,32 +2,33 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   DEFAULT_COACH_MODE,
   type CoachMode,
-  type UserProfile,
+  type Profile,
 } from "@workspace/domain"
 
-import {
-  getProfile,
-  profileQueryKeys,
-  setCoachMode,
-} from "@/features/home/profile-api.ts"
+import { fetchProfile, profileKey, usageKey } from "@/lib/account-api.ts"
+import { runContractCommand } from "@/lib/contract-client.ts"
 
 export function useCoachMode() {
   const queryClient = useQueryClient()
   const query = useQuery({
-    queryKey: profileQueryKeys.current(),
-    queryFn: getProfile,
+    queryKey: profileKey(),
+    queryFn: fetchProfile,
   })
   const mode = query.data?.coachMode ?? DEFAULT_COACH_MODE
 
   const mutation = useMutation({
-    mutationFn: setCoachMode,
+    mutationFn: (next: CoachMode) =>
+      runContractCommand(
+        queryClient,
+        "profile.update",
+        { coachMode: next },
+        { refresh: false }
+      ),
     onMutate: async (next: CoachMode) => {
-      await queryClient.cancelQueries({ queryKey: profileQueryKeys.current() })
-      const previous = queryClient.getQueryData<UserProfile>(
-        profileQueryKeys.current()
-      )
+      await queryClient.cancelQueries({ queryKey: profileKey() })
+      const previous = queryClient.getQueryData<Profile>(profileKey())
       if (previous) {
-        queryClient.setQueryData(profileQueryKeys.current(), {
+        queryClient.setQueryData(profileKey(), {
           ...previous,
           coachMode: next,
         })
@@ -36,13 +37,12 @@ export function useCoachMode() {
     },
     onError: (_error, _next, context) => {
       if (context?.previous) {
-        queryClient.setQueryData(profileQueryKeys.current(), context.previous)
+        queryClient.setQueryData(profileKey(), context.previous)
       }
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({
-        queryKey: profileQueryKeys.current(),
-      })
+      void queryClient.invalidateQueries({ queryKey: profileKey() })
+      void queryClient.invalidateQueries({ queryKey: usageKey() })
     },
   })
 

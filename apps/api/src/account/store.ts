@@ -144,5 +144,5 @@ export async function setProfilePhoto(userId: UserId, fileId: FileId) {
 
 export async function deleteAccount(userId: UserId) {
   await getDb().delete(user).where(eq(user.id, userId))
-  return { deleted: true }
+  return { deleted: true as const }
 }

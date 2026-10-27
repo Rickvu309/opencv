@@ -1,8 +1,9 @@
 import { QueryClient } from "@tanstack/react-query"
-import { parseChatId, parseJobId } from "@workspace/domain"
+import { parseChatId, parseJobId, parsePaperId } from "@workspace/domain"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
+  activityKey,
   queryKey,
   runContractCommand,
   undoActivity,
@@ -16,7 +17,7 @@ function seed(queryClient: QueryClient) {
     list: queryKey({ query: "job.list" }),
     mine: queryKey({ query: "job.get", input: { jobId: JOB } }),
     other: queryKey({ query: "job.get", input: { jobId: OTHER } }),
-    activity: ["activity", JOB],
+    activity: activityKey("job", JOB),
     paper: queryKey({ query: "paper.list" }),
   }
   for (const key of Object.values(keys)) {
@@ -74,6 +75,28 @@ describe("runContractCommand", () => {
     expect(second.idempotencyKey).not.toBe(first.idempotencyKey)
   })
 
+  it("takes the idempotency key from the contract entry, not the call site", async () => {
+    const queryClient = new QueryClient()
+    const bodies = stubFetch({}) as Record<string, unknown>[]
+
+    await runContractCommand(queryClient, "account.delete", {
+      confirm: "DELETE",
+    })
+    await runContractCommand(queryClient, "paper.replace", {
+      docId: parsePaperId("01900000-0000-7000-8000-000000000020"),
+      contentVersion: 1,
+      document: {},
+    })
+    await runContractCommand(queryClient, "job.move", {
+      jobId: JOB,
+      stage: "applied",
+    })
+
+    expect(bodies[0]).not.toHaveProperty("idempotencyKey")
+    expect(bodies[1]).not.toHaveProperty("idempotencyKey")
+    expect(bodies[2]).toHaveProperty("idempotencyKey")
+  })
+
   it("leaves reads alone when the command fails", async () => {
     const queryClient = new QueryClient()
     const keys = seed(queryClient)
@@ -109,7 +132,7 @@ describe("runContractCommand", () => {
       queryKey({ query: "paper.files" }),
       queryKey({ query: "inbox.get", input: { id: "mail-1" } }),
       queryKey({ query: "chat.get", input: { chatId } }),
-      ["activity", JOB],
+      activityKey("job", JOB),
     ]
     for (const key of refreshed) queryClient.setQueryData(key, { seeded: true })
     stubFetch({ id: activityId })
