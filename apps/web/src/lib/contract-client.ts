@@ -3,11 +3,11 @@ import { useCallback } from "react"
 import type {
   CommandInput,
   CommandOutput,
-  JobCommandName,
-  JobContract,
+  Commands,
+  ContractCommandName,
   QueryRef,
 } from "@workspace/domain"
-import { jobContract } from "@workspace/domain"
+import { commands } from "@workspace/domain"
 
 import { apiFetch } from "@/lib/api.ts"
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
@@ -51,23 +51,20 @@ export type CommandResult<T> = T & { activityId?: string }
  * says it invalidates. Named apart from the legacy `runCommand` in
  * api-envelope.ts, which sends no idempotency key and refreshes nothing.
  */
-export async function runContractCommand<N extends JobCommandName>(
+export async function runContractCommand<N extends ContractCommandName>(
   queryClient: QueryClient,
   name: N,
-  input: CommandInput<JobContract, N>,
+  input: CommandInput<Commands, N>,
   options: { refresh?: boolean } = {}
-): Promise<CommandResult<CommandOutput<JobContract, N>>> {
+): Promise<CommandResult<CommandOutput<Commands, N>>> {
   const body = await apiFetch<
-    SuccessBody<CommandResult<CommandOutput<JobContract, N>>>
+    SuccessBody<CommandResult<CommandOutput<Commands, N>>>
   >(`/api/commands/${name}`, {
     method: "POST",
     body: JSON.stringify({ input, idempotencyKey: crypto.randomUUID() }),
   })
   if (options.refresh !== false) {
-    void refreshQueries(
-      queryClient,
-      jobContract[name].invalidates(input as never)
-    )
+    void refreshQueries(queryClient, commands[name].invalidates(input as never))
   }
   return unwrapData(body)
 }
@@ -76,9 +73,9 @@ export async function runContractCommand<N extends JobCommandName>(
 export function useRunCommand() {
   const queryClient = useQueryClient()
   return useCallback(
-    <N extends JobCommandName>(
+    <N extends ContractCommandName>(
       name: N,
-      input: CommandInput<JobContract, N>,
+      input: CommandInput<Commands, N>,
       options?: { refresh?: boolean }
     ) => runContractCommand(queryClient, name, input, options),
     [queryClient]

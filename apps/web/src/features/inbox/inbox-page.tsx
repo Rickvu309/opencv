@@ -5,18 +5,12 @@ import { PageHeader } from "@workspace/ui/components/page-header"
 import { useMediaQuery } from "@workspace/ui/hooks/use-media-query"
 
 import { ApiError } from "@/lib/api.ts"
+import { queryKey, useRunCommand } from "@/lib/contract-client.ts"
 import { shellQueryKeys } from "@/features/app-shell/use-shell-chats.ts"
 import { PROFILE_ZONE } from "@/features/apply/apply-stages.ts"
 
 import { InboxConnect } from "./inbox-connect.tsx"
-import {
-  fetchConnect,
-  fetchInbox,
-  fetchThread,
-  inboxKeys,
-  scanInbox,
-  skipInbox,
-} from "./inbox-api.ts"
+import { fetchConnect, fetchInbox, fetchThread } from "./inbox-api.ts"
 import { InboxEmpty, InboxList } from "./inbox-list.tsx"
 import { CompanyTile } from "./inbox-parts.tsx"
 import { InboxReader } from "./inbox-reader.tsx"
@@ -25,14 +19,18 @@ const NARROW = "(max-width: 767px)"
 
 export function InboxPage() {
   const queryClient = useQueryClient()
+  const runCommand = useRunCommand()
   const narrow = useMediaQuery(NARROW, false)
   const now = new Date()
-  const list = useQuery({ queryKey: inboxKeys.list, queryFn: fetchInbox })
+  const list = useQuery({
+    queryKey: queryKey({ query: "inbox.list" }),
+    queryFn: fetchInbox,
+  })
   const showConnect = Boolean(
     list.data && !list.data.connected && !list.data.skipped
   )
   const connect = useQuery({
-    queryKey: inboxKeys.connect,
+    queryKey: ["inbox-connect"],
     queryFn: fetchConnect,
     enabled: showConnect,
   })
@@ -47,26 +45,22 @@ export function InboxPage() {
       ? openId
       : (threads[0]?.id ?? null)
   const detail = useQuery({
-    queryKey: inboxKeys.thread(shownId ?? "none"),
+    queryKey: queryKey({
+      query: "inbox.get",
+      input: { threadId: shownId ?? "" },
+    }),
     queryFn: () => fetchThread(shownId ?? ""),
     enabled: Boolean(shownId) && scanning == null && !showConnect,
   })
 
-  async function refresh() {
-    await queryClient.invalidateQueries({ queryKey: inboxKeys.list })
-    await queryClient.invalidateQueries({ queryKey: shellQueryKeys.inbox })
-    if (shownId) {
-      await queryClient.invalidateQueries({
-        queryKey: inboxKeys.thread(shownId),
-      })
-    }
+  function refreshShell() {
+    return queryClient.invalidateQueries({ queryKey: shellQueryKeys.inbox })
   }
 
   async function onSkip() {
     setSkipping(true)
     try {
-      await skipInbox()
-      await queryClient.invalidateQueries({ queryKey: inboxKeys.list })
+      await runCommand("inbox.skip", {})
     } catch (error) {
       toast(messageOf(error))
     } finally {
@@ -77,15 +71,14 @@ export function InboxPage() {
   async function onScan() {
     setScanning({ emails: null, companies: null, names: [] })
     try {
-      const result = await scanInbox()
+      const result = await runCommand("inbox.scan", {})
       setScanning({
         emails: result.emailCount,
         companies: result.companyCount,
         names: result.threads.map((thread) => thread.company),
       })
       await panelHold()
-      await queryClient.invalidateQueries({ queryKey: inboxKeys.list })
-      await queryClient.invalidateQueries({ queryKey: shellQueryKeys.inbox })
+      await refreshShell()
     } catch (error) {
       toast(messageOf(error))
     } finally {
@@ -158,7 +151,7 @@ export function InboxPage() {
                 const next = threads[index + 1]
                 if (next) setOpenId(next.id)
               }}
-              onChanged={() => void refresh()}
+              onChanged={() => void refreshShell()}
             />
           ) : null}
           {shownId && detail.isLoading ? (

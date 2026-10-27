@@ -1,5 +1,6 @@
 import {
   QUERY_NAMES,
+  commands,
   jobContract,
   jobQueries,
   personActor,
@@ -125,7 +126,7 @@ describe("job contract", () => {
     const registered = new Map(
       registry.list().commands.map((command) => [command.name, command])
     )
-    for (const [name, entry] of Object.entries(jobContract)) {
+    for (const [name, entry] of Object.entries(commands)) {
       expect(registered.get(name), name).toMatchObject({
         coach: entry.coach,
         destructive: entry.destructive,

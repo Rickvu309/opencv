@@ -2,6 +2,8 @@ import {
   ERROR_CODES,
   createFakeMailProvider,
   type Actor,
+  type InboxDetail,
+  type InboxThread,
   type MailMessage,
   type MailProvider,
   type MailThread,
@@ -25,34 +27,6 @@ import { createId } from "../id.js"
 import { CommandError } from "../registry/errors.js"
 import { loadFixtureThreads } from "./fixture.js"
 import { matchInboxJob } from "./match.js"
-
-export type InboxListItem = {
-  id: string
-  company: string
-  role: string
-  summary: string
-  lastMessageAt: string
-  unread: boolean
-  suggestedStage: "interview" | null
-  jobId: string | null
-  status: "open" | "done" | "snoozed"
-}
-
-export type InboxDetail = InboxListItem & {
-  subject: string
-  messages: {
-    id: string
-    direction: "in" | "out"
-    fromName: string
-    fromEmail: string
-    toEmail: string
-    bodyText: string
-    sentAt: string
-  }[]
-  draft: { body: string; times: string[] } | null
-  job: { id: string; title: string; stage: string } | null
-  openUrl: string | null
-}
 
 type ThreadRow = typeof inboxThreads.$inferSelect
 
@@ -142,7 +116,7 @@ export async function skipInbox(actor: Actor) {
     .update(user)
     .set({ inboxSkippedAt: new Date(), updatedAt: new Date() })
     .where(eq(user.id, actor.userId))
-  return { skipped: true }
+  return { skipped: true as const }
 }
 
 export async function scanInbox(actor: Actor) {
@@ -160,7 +134,7 @@ export async function scanInbox(actor: Actor) {
     .where(eq(jobs.userId, actor.userId))
     .orderBy(desc(jobs.updatedAt), desc(jobs.id))
   const companies = new Set<string>()
-  const saved: InboxListItem[] = []
+  const saved: InboxThread[] = []
   for (const thread of source) {
     companies.add(thread.company.trim().toLowerCase())
     const detail = await provider.getThread(thread.id)
@@ -464,7 +438,7 @@ function visibleWhileSnoozed(row: ThreadRow, now: number) {
   return row.snoozeUntil.getTime() <= now
 }
 
-function toListItem(row: ThreadRow): InboxListItem {
+function toListItem(row: ThreadRow): InboxThread {
   return {
     id: row.id,
     company: row.company,

@@ -1,40 +1,19 @@
 import { useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
+import type { InboxDetail } from "@workspace/domain"
 import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react"
 import { toast, toastWithUndo } from "@workspace/ui/components/sonner"
 import { Button } from "@workspace/ui/components/button"
-import { StageIcon, type Stage } from "@workspace/ui/components/stage-icon"
+import { StageIcon } from "@workspace/ui/components/stage-icon"
 import { Textarea } from "@workspace/ui/components/textarea"
 
 import { ApiError } from "@/lib/api.ts"
+import { undoActivity } from "@/features/apply/apply-api.ts"
 import { PROFILE_ZONE } from "@/features/apply/apply-stages.ts"
+import { useRunCommand } from "@/lib/contract-client.ts"
 
-import {
-  acceptSuggestion,
-  addToCalendar,
-  clearSuggestion,
-  draftReply,
-  InboxLimitError,
-  isCoachLimit,
-  markDone,
-  sendReply,
-  snoozeThread,
-  undoActivity,
-  updateInboxDraft,
-  type InboxDetail,
-} from "./inbox-api.ts"
+import { InboxLimitError, inboxLimitFrom, isCoachLimit } from "./inbox-api.ts"
 import { chipClock, inboxChip, nextMorningIso } from "./inbox-time.ts"
-
-const STAGES = new Set<Stage>([
-  "saved",
-  "applied",
-  "interview",
-  "offer",
-  "closed",
-])
-
-function stageOf(value: string): Stage {
-  return STAGES.has(value as Stage) ? (value as Stage) : "applied"
-}
 
 function resetClock(iso: string | null, zone: string) {
   if (!iso) return "later"
@@ -70,28 +49,37 @@ export function InboxReader({
   onNext: () => void
   onChanged: () => void
 }) {
-  const saved = detail.draft?.body ?? ""
-  const times = detail.draft?.times ?? []
+  const draft =
+    detail.draft && (detail.draft.body !== "" || detail.draft.times.length > 0)
+      ? detail.draft
+      : null
+  const queryClient = useQueryClient()
+  const runCommand = useRunCommand()
+  const saved = draft?.body ?? ""
+  const times = draft?.times ?? []
   const [body, setBody] = useState(saved)
   const [savedBody, setSavedBody] = useState(saved)
   const [selected, setSelected] = useState(0)
   const [limit, setLimit] = useState<InboxLimitError | null>(null)
   const [busy, setBusy] = useState(false)
   const prompt = Boolean(detail.jobId && detail.suggestedStage === "interview")
-  const hasDraft = detail.draft != null
+  const hasDraft = draft != null
   const sendGlow = hasDraft && !prompt
+
+  function saveDraft(draftBody: string) {
+    return runCommand("inbox.updateDraft", {
+      threadId: detail.id,
+      body: draftBody,
+    })
+  }
 
   async function run(task: () => Promise<void>) {
     setBusy(true)
     try {
       await task()
     } catch (error) {
-      if (error instanceof InboxLimitError) {
-        setLimit(error)
-        return
-      }
-      if (isCoachLimit(error) && error instanceof ApiError) {
-        setLimit(new InboxLimitError(error.message, null))
+      if (isCoachLimit(error)) {
+        setLimit(await inboxLimitFrom(error))
         return
       }
       toast(
@@ -121,9 +109,12 @@ export function InboxReader({
           disabled={busy}
           onClick={() =>
             run(async () => {
-              const result = await markDone(detail.id)
+              const result = await runCommand("inbox.markDone", {
+                threadId: detail.id,
+              })
               toastWithUndo("Marked done", () => {
-                if (result.activityId) void undoActivity(result.activityId)
+                if (result.activityId)
+                  void undoActivity(queryClient, result.activityId)
               })
               onChanged()
             })
@@ -136,7 +127,10 @@ export function InboxReader({
           disabled={busy}
           onClick={() =>
             run(async () => {
-              await snoozeThread(detail.id, nextMorningIso(now, zone))
+              await runCommand("inbox.snooze", {
+                threadId: detail.id,
+                until: nextMorningIso(now, zone),
+              })
               toast("Snoozed until 7:00")
               onChanged()
             })
@@ -184,7 +178,7 @@ export function InboxReader({
           ))}
           {detail.job ? (
             <p className="flex items-center gap-2">
-              <StageIcon stage={stageOf(detail.job.stage)} />
+              <StageIcon stage={detail.job.stage} />
               Linked to {detail.job.title} in Apply
             </p>
           ) : null}
@@ -198,10 +192,12 @@ export function InboxReader({
                 disabled={busy}
                 onClick={() =>
                   run(async () => {
-                    const result = await acceptSuggestion(detail.id)
+                    const result = await runCommand("inbox.acceptSuggestion", {
+                      threadId: detail.id,
+                    })
                     toastWithUndo("Moved to Interview", () => {
                       if (result.activityId)
-                        void undoActivity(result.activityId)
+                        void undoActivity(queryClient, result.activityId)
                     })
                     onChanged()
                   })
@@ -214,7 +210,9 @@ export function InboxReader({
                 disabled={busy}
                 onClick={() =>
                   run(async () => {
-                    await clearSuggestion(detail.id)
+                    await runCommand("inbox.clearSuggestion", {
+                      threadId: detail.id,
+                    })
                     onChanged()
                   })
                 }
@@ -245,7 +243,7 @@ export function InboxReader({
               onChange={(event) => setBody(event.target.value)}
               onBlur={() => {
                 if (body === savedBody) return
-                void updateInboxDraft(detail.id, body)
+                void saveDraft(body)
                   .then(() => setSavedBody(body))
                   .catch((error: unknown) => {
                     toast(
@@ -270,7 +268,7 @@ export function InboxReader({
                       const next = body.replace(/\b\d{1,2}:\d{2}\b/, clock)
                       setBody(next)
                       setSavedBody(next)
-                      void updateInboxDraft(detail.id, next)
+                      void saveDraft(next)
                     }}
                   >
                     {inboxChip(time, zone)}
@@ -284,11 +282,12 @@ export function InboxReader({
                 disabled={busy || limit != null}
                 onClick={() =>
                   run(async () => {
-                    const next = await draftReply(detail.id, "another time")
-                    if (typeof next.body === "string") {
-                      setBody(next.body)
-                      setSavedBody(next.body)
-                    }
+                    const next = await runCommand("inbox.draftReply", {
+                      threadId: detail.id,
+                      hint: "another time",
+                    })
+                    setBody(next.body)
+                    setSavedBody(next.body)
                     setLimit(null)
                     onChanged()
                   })
@@ -304,10 +303,10 @@ export function InboxReader({
                 onClick={() =>
                   run(async () => {
                     if (body !== savedBody) {
-                      await updateInboxDraft(detail.id, body)
+                      await saveDraft(body)
                       setSavedBody(body)
                     }
-                    await sendReply(detail.id)
+                    await runCommand("inbox.send", { threadId: detail.id })
                     toast("Reply sent")
                     onChanged()
                   })
@@ -323,7 +322,10 @@ export function InboxReader({
                     run(async () => {
                       const start = times[selected]
                       if (!start) return
-                      await addToCalendar(detail.id, start)
+                      await runCommand("inbox.addToCalendar", {
+                        threadId: detail.id,
+                        start,
+                      })
                       toast("Added to calendar")
                     })
                   }

@@ -2,6 +2,7 @@ import { z } from "zod"
 
 import { queryContract, queryEntry } from "./contract.js"
 import { chatIdSchema, fileIdSchema, paperIdSchema } from "./ids.js"
+import { inboxQueries } from "./inbox-contract.js"
 import { jobQueries } from "./job-contract.js"
 import { paperKeywordGapInputSchema } from "./paper.js"
 
@@ -11,6 +12,7 @@ const untyped = z.unknown()
 
 export const queries = queryContract({
   ...jobQueries,
+  ...inboxQueries,
   "paper.list": queryEntry({
     input: z
       .object({

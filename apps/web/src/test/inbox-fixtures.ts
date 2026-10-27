@@ -1,4 +1,4 @@
-import type { InboxDetail, InboxThread } from "@/features/inbox/inbox-api.ts"
+import type { InboxDetail, InboxThread } from "@workspace/domain"
 
 export const INBOX_NOW = new Date("2026-10-27T03:00:00.000Z")
 
