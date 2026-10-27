@@ -38,7 +38,7 @@ function parseOrigin(value: string, name: string) {
     url.pathname !== "/" ||
     url.search ||
     url.hash ||
-    !/^[a-z0-9.\-\[\]:]+$/i.test(url.hostname)
+    !/^[a-z0-9.\-[\]:]+$/i.test(url.hostname)
   ) {
     throw new Error(`${name} must be an HTTP(S) origin without a path`)
   }
@@ -119,7 +119,7 @@ export function shareUrl(
 }
 
 export function caddyRedirects(origins: WebOrigins): string {
-  if (origins.kind === "single") return "# Single-host routing.\n"
+  if (origins.kind === "single") return ""
   const block = (name: string, match: string[], target: string) => `
 @${name} {
   ${match.join("\n  ")}
