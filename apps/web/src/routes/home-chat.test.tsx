@@ -100,7 +100,7 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
         { kind: "text", text: "Moved it." },
         {
           kind: "tool",
-          name: "apply_moveCard",
+          name: "job_move",
           summary: "Moved 'Backend Intern' to Prep",
           ok: true,
           reversal: {
@@ -157,7 +157,7 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
         { kind: "text", text: "I made those changes." },
         {
           kind: "tool",
-          name: "paper_updateContent",
+          name: "paper_replace",
           summary: "Updated content of PM track CV",
           ok: true,
           reversal: {
@@ -182,7 +182,7 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
         },
         {
           kind: "tool",
-          name: "apply_moveCard",
+          name: "job_move",
           summary: "Moved Associate PM intern at Local startup to Prep",
           ok: true,
           reversal: {
@@ -201,7 +201,7 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
         },
         {
           kind: "tool",
-          name: "paper_createDoc",
+          name: "paper_create",
           summary: "Created CV Untitled CV",
           ok: true,
           reversal: {
@@ -334,7 +334,7 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
         { kind: "text", text: "Moved it." },
         {
           kind: "tool",
-          name: "apply_moveCard",
+          name: "job_move",
           summary: "Moved 'Backend Intern' to Prep",
           ok: true,
           reversal: {

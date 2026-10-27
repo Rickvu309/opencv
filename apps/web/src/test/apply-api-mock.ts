@@ -16,13 +16,11 @@ import { pathOf, jsonOk, jsonError } from "./mock-http.ts"
 
 type Store = {
   cards: ApplyCard[]
-  failNext: { command: string; message: string } | null
   failNextScan: string | null
 }
 
 const store: Store = {
   cards: sampleApplyCards(),
-  failNext: null,
   failNextScan: null,
 }
 
@@ -47,7 +45,6 @@ function sortCards(cards: ApplyCard[]) {
 
 export function resetApplyApiMock() {
   store.cards = cloneCards(sampleApplyCards())
-  store.failNext = null
   store.failNextScan = null
   resetMockJobs()
 }
@@ -56,17 +53,13 @@ export function failNextApplyScan(message: string) {
   store.failNextScan = message
 }
 
-export function failNextApplyCommand(command: string, message: string) {
-  store.failNext = { command, message }
-}
-
 export function getMockApplyCards() {
   return store.cards
 }
 
 export function handlesApplyRequest(input: RequestInfo | URL) {
   const path = pathOf(input)
-  return path.startsWith("/api/apply") || path.includes("/api/commands/apply.")
+  return path.startsWith("/api/apply")
 }
 
 export async function applyApiFetch(
@@ -79,16 +72,6 @@ export async function applyApiFetch(
   if (jobs) return jobs
 
   if (!handlesApplyRequest(input)) return null
-
-  if (
-    store.failNext &&
-    method === "POST" &&
-    path.endsWith(store.failNext.command)
-  ) {
-    const failure = store.failNext
-    store.failNext = null
-    return jsonError(400, "VALIDATION_ERROR", failure.message)
-  }
 
   if (method === "POST" && path === "/api/apply/scan") {
     if (store.failNextScan) {

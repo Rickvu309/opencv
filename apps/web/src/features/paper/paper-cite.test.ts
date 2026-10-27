@@ -51,7 +51,8 @@ describe("citeFromCoachReply", () => {
   it("cites the Experience role when only the project name is mentioned", () => {
     const cite = citeFromCoachReply({
       ask: "Found the checkout UX section?",
-      reply: "Found the checkout UX project. One next step is to name the company.",
+      reply:
+        "Found the checkout UX project. One next step is to name the company.",
       spans,
     })
     expect(cite?.sectionId).toBe("experience-1")
@@ -131,7 +132,8 @@ describe("citeFromCoachReply", () => {
     expect(
       citeFromCoachReply({
         ask: "What should I do this week?",
-        reply: "Write one Proof with a concrete outcome. That is the next step.",
+        reply:
+          "Write one Proof with a concrete outcome. That is the next step.",
         spans,
       })
     ).toBeNull()
@@ -165,9 +167,7 @@ describe("cite helpers", () => {
         text: "The checkout UX hallway study is thin.",
       },
     ]
-    expect(
-      citeForCoachMessage(messages[1]!, messages, spans)
-    ).toBeNull()
+    expect(citeForCoachMessage(messages[1]!, messages, spans)).toBeNull()
   })
 
   it("extracts receipt hunks from a must-edit part", () => {
@@ -175,7 +175,7 @@ describe("cite helpers", () => {
       paperCiteHunksFromParts([
         {
           type: "tool",
-          name: "paper_updateContent",
+          name: "paper_replace",
           summary: "Updated content",
           ok: true,
           detail: {

@@ -40,9 +40,12 @@ function sourceFiles(path: string): string[] {
   return readdirSync(path).flatMap((entry) => sourceFiles(join(path, entry)))
 }
 
-function referencedNames(): Map<string, Set<string>> {
-  const found = new Map<string, Set<string>>()
-  const add = (name: string, file: string) => {
+type References = Map<string, Set<string>>
+
+function referencedNames(): { dotted: References; tools: References } {
+  const dottedNames: References = new Map()
+  const toolNames: References = new Map()
+  const add = (found: References, name: string, file: string) => {
     if (fileExtension.test(name)) return
     const files = found.get(name) ?? new Set<string>()
     files.add(file)
@@ -52,11 +55,19 @@ function referencedNames(): Map<string, Set<string>> {
     for (const file of sourceFiles(join(repoRoot, root))) {
       const text = readFileSync(file, "utf8")
       const rel = relative(repoRoot, file)
-      for (const m of text.matchAll(dotted)) add(m[1]!, rel)
-      for (const m of text.matchAll(tool)) add(m[1]!.replace("_", "."), rel)
+      for (const m of text.matchAll(dotted)) add(dottedNames, m[1]!, rel)
+      for (const m of text.matchAll(tool))
+        add(toolNames, m[1]!.replace("_", "."), rel)
     }
   }
-  return found
+  return { dotted: dottedNames, tools: toolNames }
+}
+
+function listUnknown(found: References, allowed: (name: string) => boolean) {
+  return [...found]
+    .filter(([name]) => !allowed(name))
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([name, files]) => `${name}  <- ${[...files].sort().join(", ")}`)
 }
 
 describe("registry names", () => {
@@ -66,16 +77,25 @@ describe("registry names", () => {
   )
   const referenced = referencedNames()
 
-  it("registers every command and tool name the web, fake coach and domain refer to", () => {
-    const unknown = [...referenced]
-      .filter(([name]) => !registered.has(name) && !(name in LEGACY))
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([name, files]) => `${name}  <- ${[...files].sort().join(", ")}`)
+  it("registers every command name the web, fake coach and domain refer to", () => {
+    const unknown = listUnknown(
+      referenced.dotted,
+      (name) => registered.has(name) || name in LEGACY
+    )
+    expect(unknown, unknown.join("\n")).toEqual([])
+  })
+
+  it("registers every Coach tool name they refer to, with no LEGACY exceptions", () => {
+    const unknown = listUnknown(referenced.tools, (name) =>
+      registered.has(name)
+    )
     expect(unknown, unknown.join("\n")).toEqual([])
   })
 
   it("keeps a LEGACY entry only while something still refers to it", () => {
-    const stale = Object.keys(LEGACY).filter((name) => !referenced.has(name))
+    const stale = Object.keys(LEGACY).filter(
+      (name) => !referenced.dotted.has(name)
+    )
     expect(stale).toEqual([])
   })
 })

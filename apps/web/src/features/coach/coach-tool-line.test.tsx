@@ -17,7 +17,7 @@ afterEach(() => {
 
 const moved: ThreadToolPart = {
   type: "tool",
-  name: "apply_moveCard",
+  name: "job_move",
   summary: "Moved a card",
   ok: true,
   toolCallId: "call-1",
