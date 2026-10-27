@@ -2,7 +2,10 @@ import { useState } from "react"
 
 import { Button } from "@workspace/ui/components/button"
 
-import { createPaper, type PaperRecord } from "./paper-api.ts"
+import type { PaperTemplateId, PaperView } from "@workspace/domain"
+
+import { useRunCommand } from "@/lib/contract-client.ts"
+
 import { PaperTemplateGallery } from "./paper-template-gallery.tsx"
 
 export function PaperNewDialog({
@@ -14,16 +17,17 @@ export function PaperNewDialog({
 }: {
   step: "kind" | "gallery"
   onStepChange: (step: "kind" | "gallery") => void
-  onCreated: (doc: PaperRecord) => void
+  onCreated: (doc: PaperView) => void
   onChooseLetter: () => void
   onImport: () => void
 }) {
+  const run = useRunCommand()
   const [pending, setPending] = useState(false)
 
-  async function applyTemplate(templateId: string) {
+  async function applyTemplate(templateId: PaperTemplateId) {
     setPending(true)
     try {
-      const created = await createPaper({ kind: "cv", templateId })
+      const created = await run("paper.create", { kind: "cv", templateId })
       onCreated(created)
     } finally {
       setPending(false)

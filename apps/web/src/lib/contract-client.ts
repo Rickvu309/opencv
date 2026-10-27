@@ -44,6 +44,19 @@ export function refreshJobQueries(queryClient: QueryClient) {
   ])
 }
 
+/** Every paper and file read, for writes the contract does not describe (undo, Coach). */
+export function refreshPaperQueries(queryClient: QueryClient) {
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: ACTIVITY_ROOT }),
+    queryClient.invalidateQueries({
+      predicate: (query) =>
+        typeof query.queryKey[0] === "string" &&
+        (query.queryKey[0].startsWith("paper.") ||
+          query.queryKey[0].startsWith("file.")),
+    }),
+  ])
+}
+
 export type CommandResult<T> = T & { activityId?: string }
 
 /**

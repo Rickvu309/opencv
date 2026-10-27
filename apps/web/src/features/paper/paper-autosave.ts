@@ -1,20 +1,23 @@
+import { useQueryClient } from "@tanstack/react-query"
+import type { PaperId, PaperView } from "@workspace/domain"
 import { useCallback, useEffect, useRef } from "react"
 
 import { ApiError } from "@/lib/api-error.ts"
-
-import { replacePaper, type PaperRecord } from "./paper-api.ts"
+import { refreshQueries, useRunCommand } from "@/lib/contract-client.ts"
 
 type Options<T> = {
-  docId: string
+  docId: PaperId
   initialVersion: number
   toDocument: (value: T) => unknown
-  onSaved: (saved: PaperRecord) => void
+  onSaved: (saved: PaperView) => void
   onConflict: () => void
   onError: (error: unknown) => void
 }
 
 /**
- * One save at a time. A completion older than the latest scheduled edit
+ * Saves run with `refresh: false` so a keystroke never refetches the document
+ * over what the person is typing. The list and page count refresh once, when
+ * the queue drains. One save at a time. A completion older than the latest scheduled edit
  * updates the version and does not count as the current document. A conflict
  * drops the pending edit and refuses further schedules until adopt().
  */
@@ -26,6 +29,8 @@ export function usePaperAutosave<T>({
   onConflict,
   onError,
 }: Options<T>) {
+  const run = useRunCommand()
+  const queryClient = useQueryClient()
   const versionRef = useRef(initialVersion)
   const pendingRef = useRef<T | null>(null)
   const timerRef = useRef<number | null>(null)
@@ -47,17 +52,23 @@ export function usePaperAutosave<T>({
   const flush = useCallback(async () => {
     if (conflictRef.current || inflightRef.current) return
     inflightRef.current = true
+    let saves = 0
     try {
       while (pendingRef.current != null && !conflictRef.current) {
         const sentEpoch = epochRef.current
         const next = pendingRef.current
         pendingRef.current = null
         try {
-          const saved = await replacePaper({
-            docId,
-            contentVersion: versionRef.current,
-            document: toDocumentRef.current(next),
-          })
+          const saved = await run(
+            "paper.replace",
+            {
+              docId,
+              contentVersion: versionRef.current,
+              document: toDocumentRef.current(next),
+            },
+            { refresh: false }
+          )
+          saves += 1
           if (sentEpoch < appliedEpochRef.current) continue
           appliedEpochRef.current = sentEpoch
           versionRef.current = saved.contentVersion
@@ -82,8 +93,14 @@ export function usePaperAutosave<T>({
       }
     } finally {
       inflightRef.current = false
+      if (saves > 0 && pendingRef.current == null) {
+        void refreshQueries(queryClient, [
+          { query: "paper.list" },
+          { query: "paper.pageCount", input: { docId } },
+        ])
+      }
     }
-  }, [docId])
+  }, [docId, run, queryClient])
 
   const flushRef = useRef(flush)
   useEffect(() => {

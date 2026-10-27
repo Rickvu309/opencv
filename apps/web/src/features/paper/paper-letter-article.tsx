@@ -5,10 +5,10 @@ import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 import { FileText, MoreHorizontal } from "lucide-react"
 
-import type { PaperDoc } from "./paper-data.ts"
+import type { PaperView } from "@workspace/domain"
 
 type Props = {
-  doc: PaperDoc
+  doc: Pick<PaperView, "name" | "status">
   editorRef: RefObject<HTMLDivElement | null>
   onInput: () => void
 }

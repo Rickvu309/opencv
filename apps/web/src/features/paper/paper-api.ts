@@ -1,65 +1,48 @@
-import {
-  PAPER_TEMPLATE_IDS,
-  type PaperContentKind,
-  type PaperDoc,
-  type PaperDocStatus,
-  type PaperTemplateId,
-} from "@workspace/domain"
+import type { PaperId, PaperView, QueryOutput } from "@workspace/domain"
 
 import { ApiError, apiFetch, apiStream } from "@/lib/api.ts"
 import { runCommand, unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
 import { apiBaseUrl } from "@/lib/api-url.ts"
+import { queryKey } from "@/lib/contract-client.ts"
 import { readSseStream } from "@/lib/sse.ts"
 
-export const paperQueryKeys = {
-  all: ["paper"] as const,
-  list: () => ["paper", "list"] as const,
-  detail: (id: string) => ["paper", "detail", id] as const,
-  files: () => ["paper", "files"] as const,
-  pages: (id: string) => ["paper", "pages", id] as const,
+export const paperListKey = () => queryKey({ query: "paper.list" })
+export const paperGetKey = (docId: PaperId) =>
+  queryKey({ query: "paper.get", input: { docId } })
+export const paperPagesKey = (docId: PaperId) =>
+  queryKey({ query: "paper.pageCount", input: { docId } })
+export const paperFilesKey = () => queryKey({ query: "paper.files" })
+export const paperSharedKey = (token: string) =>
+  queryKey({ query: "paper.shared", input: { token } })
+
+export function listPaper() {
+  return apiFetch<SuccessBody<QueryOutput<"paper.list">>>("/api/paper").then(
+    unwrapData
+  )
 }
 
-export type PaperKind = "cv" | "letter" | "proof"
-
-export type PaperRecord = {
-  id: string
-  name: string
-  kind: PaperKind
-  templateId: string
-  status: PaperDocStatus
-  document: unknown
-  contentVersion: number
-  checks: { id: string; kind: string; message: string }[]
-  pageChoice: "unset" | "keep"
-  sourceFileId: string | null
-  /** Present on the test mock and older list payloads. The new read omits it. */
-  applyCardId: string | null
-  createdAt: string
-  updatedAt: string
+export function getPaper(docId: string) {
+  return apiFetch<SuccessBody<QueryOutput<"paper.get">>>(
+    `/api/paper/${docId}`
+  ).then(unwrapData)
 }
 
-export type PaperFileRecord = {
-  id: string
-  name: string
-  mediaType: string
-  byteSize: number
-  createdAt: string
+export function listPaperFiles() {
+  return apiFetch<SuccessBody<QueryOutput<"paper.files">>>(
+    "/api/paper/files"
+  ).then(unwrapData)
 }
 
-export type PaperPages = {
-  docId: string
-  pages: number
-  pageChoice: "unset" | "keep"
+export function getPaperPages(docId: string) {
+  return apiFetch<SuccessBody<QueryOutput<"paper.pageCount">>>(
+    `/api/paper/${docId}/pages`
+  ).then(unwrapData)
 }
 
-export type JobSummary = {
-  id: string
-  title: string
-  company: string
-  posting?: { requirements?: string } | null
-  cvDocId: string | null
-  letterDocId: string | null
-  updatedAt: string
+export function getSharedPaper(token: string) {
+  return apiFetch<SuccessBody<QueryOutput<"paper.shared">>>(
+    `/api/paper/shared/${token}`
+  ).then(unwrapData)
 }
 
 export class PaperLimitError extends Error {
@@ -72,134 +55,7 @@ export class PaperLimitError extends Error {
   }
 }
 
-const TEMPLATE_IDS = new Set<string>(PAPER_TEMPLATE_IDS)
-
-function asKind(value: unknown): PaperKind {
-  if (value === "letter" || value === "proof") return value
-  return "cv"
-}
-
-export function asRecord(raw: unknown): PaperRecord {
-  const row =
-    raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {}
-  const templateId =
-    typeof row.templateId === "string" && TEMPLATE_IDS.has(row.templateId)
-      ? row.templateId
-      : "simple"
-  const document = "document" in row ? row.document : row.content
-  return {
-    id: String(row.id ?? ""),
-    name: String(row.name ?? ""),
-    kind: asKind(row.kind),
-    templateId,
-    status:
-      row.status === "ready" || row.status === "published"
-        ? row.status
-        : "draft",
-    document,
-    contentVersion:
-      typeof row.contentVersion === "number" ? row.contentVersion : 1,
-    checks: Array.isArray(row.checks)
-      ? (row.checks as PaperRecord["checks"])
-      : [],
-    pageChoice: row.pageChoice === "keep" ? "keep" : "unset",
-    sourceFileId:
-      typeof row.sourceFileId === "string" ? row.sourceFileId : null,
-    applyCardId: typeof row.applyCardId === "string" ? row.applyCardId : null,
-    createdAt: String(row.createdAt ?? ""),
-    updatedAt: String(row.updatedAt ?? ""),
-  }
-}
-
-export function asPaperDoc(record: PaperRecord): PaperDoc {
-  return {
-    id: record.id,
-    name: record.name,
-    kind: record.kind,
-    status: record.status,
-    content: record.document,
-    contentVersion: record.contentVersion,
-    applyCardId: record.applyCardId,
-    createdAt: record.createdAt,
-    updatedAt: record.updatedAt,
-  }
-}
-
-export async function listPaper(): Promise<PaperRecord[]> {
-  const body = await apiFetch<SuccessBody<unknown[]>>("/api/paper")
-  return unwrapData(body).map(asRecord)
-}
-
-export async function getPaper(id: string): Promise<PaperRecord> {
-  const body = await apiFetch<SuccessBody<unknown>>(`/api/paper/${id}`)
-  return asRecord(unwrapData(body))
-}
-
-export async function listPaperFiles(): Promise<PaperFileRecord[]> {
-  const body =
-    await apiFetch<SuccessBody<PaperFileRecord[]>>("/api/paper/files")
-  return unwrapData(body)
-}
-
-export async function getPaperPages(id: string): Promise<PaperPages> {
-  const body = await apiFetch<SuccessBody<PaperPages>>(`/api/paper/${id}/pages`)
-  return unwrapData(body)
-}
-
-export function createPaper(input: {
-  kind: "cv" | "letter"
-  templateId?: PaperTemplateId | string
-  name?: string
-  jobId?: string
-}): Promise<PaperRecord> {
-  return runCommand<unknown>("paper.create", input).then(asRecord)
-}
-
-export function replacePaper(input: {
-  docId: string
-  contentVersion: number
-  document: unknown
-}): Promise<PaperRecord> {
-  return runCommand<unknown>("paper.replace", input).then(asRecord)
-}
-
-export function renamePaper(input: {
-  docId: string
-  name: string
-}): Promise<PaperRecord> {
-  return runCommand<unknown>("paper.rename", input).then(asRecord)
-}
-
-export function duplicatePaper(docId: string): Promise<PaperRecord> {
-  return runCommand<unknown>("paper.duplicate", { docId }).then(asRecord)
-}
-
-export function deletePaper(docId: string): Promise<{ docId: string }> {
-  return runCommand("paper.delete", { docId })
-}
-
-export function deleteFile(fileId: string): Promise<{ fileId: string }> {
-  return runCommand("paper.deleteFile", { fileId })
-}
-
-export function setPaperTemplate(
-  docId: string,
-  templateId: string
-): Promise<PaperRecord> {
-  return runCommand<unknown>("paper.setTemplate", { docId, templateId }).then(
-    asRecord
-  )
-}
-
-export function sharePaper(docId: string): Promise<{ token: string }> {
-  return runCommand("paper.share", { docId })
-}
-
-export function keepTwoPages(docId: string): Promise<PaperRecord> {
-  return runCommand<unknown>("paper.keepTwoPages", { docId }).then(asRecord)
-}
-
-export async function importPaperFile(file: File): Promise<PaperRecord> {
+export async function importPaperFile(file: File): Promise<PaperView> {
   const body = new FormData()
   body.set("file", file)
   const res = await fetch(new URL("/api/paper/import", apiBaseUrl), {
@@ -217,21 +73,8 @@ export async function importPaperFile(file: File): Promise<PaperRecord> {
       payload?.error?.message ?? "Could not import that file. Try it again."
     )
   }
-  const payload = (await res.json()) as SuccessBody<unknown>
-  return asRecord(unwrapData(payload))
-}
-
-export async function listJobs(): Promise<JobSummary[]> {
-  const body = await apiFetch<SuccessBody<JobSummary[]>>("/api/jobs")
-  return unwrapData(body)
-}
-
-export function linkJobPaper(input: {
-  jobId: string
-  docId: string
-  kind: "cv" | "letter"
-}): Promise<unknown> {
-  return runCommand("job.linkPaper", input)
+  const payload = (await res.json()) as SuccessBody<PaperView>
+  return unwrapData(payload)
 }
 
 export function createPaperChat(title: string): Promise<{ id: string }> {
@@ -312,105 +155,4 @@ export async function latestActivityId(
 
 export function undoActivity(activityId: string): Promise<unknown> {
   return runCommand("activity.undo", { activityId })
-}
-
-export async function listPaperDocs(): Promise<PaperDoc[]> {
-  return (await listPaper()).map(asPaperDoc)
-}
-
-export async function getPaperDoc(id: string): Promise<PaperDoc> {
-  return asPaperDoc(await getPaper(id))
-}
-
-export async function createPaperDoc(input: {
-  kind: PaperContentKind
-  name?: string
-  content?: unknown
-}): Promise<PaperDoc> {
-  if (input.kind === "proof") {
-    throw new ApiError(400, "VALIDATION_ERROR", "Proof is not a document kind.")
-  }
-  const created = await createPaper({
-    kind: input.kind,
-    ...(input.name ? { name: input.name } : {}),
-  })
-  if (input.content === undefined) return asPaperDoc(created)
-  const replaced = await replacePaper({
-    docId: created.id,
-    contentVersion: created.contentVersion,
-    document: input.content,
-  })
-  return asPaperDoc(replaced)
-}
-
-export async function updatePaperContent(input: {
-  docId: string
-  content: unknown
-  contentVersion: number
-}): Promise<PaperDoc> {
-  return asPaperDoc(
-    await replacePaper({
-      docId: input.docId,
-      contentVersion: input.contentVersion,
-      document: input.content,
-    })
-  )
-}
-
-export async function renamePaperDoc(input: {
-  docId: string
-  name: string
-}): Promise<PaperDoc> {
-  return asPaperDoc(await renamePaper(input))
-}
-
-export function setPaperDocStatus(input: {
-  docId: string
-  status: PaperDocStatus
-}): Promise<PaperDoc> {
-  return runCommand<unknown>("paper.setStatus", input).then((row) =>
-    asPaperDoc(asRecord(row))
-  )
-}
-
-export async function deletePaperDoc(input: {
-  docId: string
-}): Promise<{ id: string }> {
-  await deletePaper(input.docId)
-  return { id: input.docId }
-}
-
-export async function linkPaperApplyCard(input: {
-  docId: string
-  applyCardId: string | null
-}): Promise<PaperDoc> {
-  const doc = await getPaper(input.docId)
-  const kind = doc.kind === "letter" ? "letter" : "cv"
-  if (input.applyCardId == null) {
-    const jobs = await listJobs()
-    for (const job of jobs) {
-      if (job.cvDocId === input.docId) {
-        await runCommand("job.unlinkPaper", { jobId: job.id, kind: "cv" })
-      }
-      if (job.letterDocId === input.docId) {
-        await runCommand("job.unlinkPaper", { jobId: job.id, kind: "letter" })
-      }
-    }
-  } else {
-    await linkJobPaper({
-      jobId: input.applyCardId,
-      docId: input.docId,
-      kind,
-    })
-  }
-  const next = asPaperDoc(await getPaper(input.docId))
-  return { ...next, applyCardId: input.applyCardId }
-}
-
-export function upsertPaperDoc(docs: PaperDoc[], next: PaperDoc): PaperDoc[] {
-  return [next, ...docs.filter((doc) => doc.id !== next.id)]
-}
-
-export function createKindLabel(kind: PaperContentKind) {
-  return kind === "cv" ? "CV" : kind === "letter" ? "Letter" : "Proof"
 }

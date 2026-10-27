@@ -1,25 +1,23 @@
 import { useEffect, useRef, useState } from "react"
-import { keywordGap } from "@workspace/domain"
+import { keywordGap, type JobView, type PaperView } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { toast } from "@workspace/ui/components/sonner"
 
 import { ApiError } from "@/lib/api-error.ts"
+import { listJobs } from "@/features/apply/apply-api.ts"
+import { useRunCommand } from "@/lib/contract-client.ts"
 import { isAbortError } from "@/lib/sse.ts"
+import { useQueryClient } from "@tanstack/react-query"
 
 import {
-  asPaperDoc,
-  createPaper,
   createPaperChat,
   getPaper,
-  listJobs,
+  paperGetKey,
   PaperLimitError,
-  replacePaper,
   stopPaperChat,
   streamPaperTurn,
-  type JobSummary,
-  type PaperRecord,
 } from "./paper-api.ts"
 import { usePaperAutosave } from "./paper-autosave.ts"
 import { PaperEditorConflictBanner } from "./paper-editor-conflict-banner.tsx"
@@ -53,14 +51,16 @@ export function PaperLetterStart({
   onCreated,
   onImport,
 }: {
-  jobs?: JobSummary[]
+  jobs?: JobView[]
   cvName: string | null
   onCreated: (id: string) => void
   onImport: () => void
 }) {
-  const [jobs, setJobs] = useState<JobSummary[]>(jobsProp ?? [])
+  const run = useRunCommand()
+  const queryClient = useQueryClient()
+  const [jobs, setJobs] = useState<JobView[]>(jobsProp ?? [])
   const [query, setQuery] = useState("")
-  const [selected, setSelected] = useState<JobSummary | null>(null)
+  const [selected, setSelected] = useState<JobView | null>(null)
   const [drafting, setDrafting] = useState(false)
   const [text, setText] = useState("")
   const [limit, setLimit] = useState<PaperLimitError | null>(null)
@@ -103,7 +103,7 @@ export function PaperLetterStart({
     const controller = new AbortController()
     abortRef.current = controller
     try {
-      const created = await createPaper({
+      const created = await run("paper.create", {
         kind: "letter",
         ...(selected
           ? { jobId: selected.id, name: `Cover letter, ${selected.company}` }
@@ -131,12 +131,16 @@ export function PaperLetterStart({
         onToolResult: (tool) => {
           if (tool === "paper.replace" || tool === "paper_replace") {
             replaced = true
-            void getPaper(created.id)
+            void queryClient.fetchQuery({
+              queryKey: paperGetKey(created.id),
+              queryFn: () => getPaper(created.id),
+              staleTime: 0,
+            })
           }
         },
       })
       if (!replaced && textRef.current) {
-        await replacePaper({
+        await run("paper.replace", {
           docId: created.id,
           contentVersion: created.contentVersion,
           document: { markdown: textRef.current },
@@ -167,7 +171,7 @@ export function PaperLetterStart({
 
   async function startBlank() {
     try {
-      const created = await createPaper({
+      const created = await run("paper.create", {
         kind: "letter",
         name: "Cover letter",
       })
@@ -263,11 +267,12 @@ export function PaperLetterEditor({
   cvName,
   onBack,
 }: {
-  doc: PaperRecord
-  job: JobSummary | null
+  doc: PaperView
+  job: JobView | null
   cvName: string | null
   onBack: () => void
 }) {
+  const run = useRunCommand()
   const editorRef = useRef<HTMLDivElement>(null)
   const [markdown, setMarkdown] = useState(markdownOf(doc.document))
   const [updatedAt, setUpdatedAt] = useState(doc.updatedAt)
@@ -326,7 +331,7 @@ export function PaperLetterEditor({
     const node = editorRef.current
     if (node) node.textContent = next
     try {
-      const saved = await replacePaper({
+      const saved = await run("paper.replace", {
         docId: doc.id,
         contentVersion: versionRef.current,
         document: { markdown: next },
@@ -342,8 +347,6 @@ export function PaperLetterEditor({
       )
     }
   }
-
-  const articleDoc = asPaperDoc({ ...doc, document: { markdown } })
 
   return (
     <section
@@ -368,7 +371,7 @@ export function PaperLetterEditor({
             <p className="mb-2 text-sm text-muted-foreground">From {cvName}</p>
           ) : null}
           <PaperLetterArticle
-            doc={articleDoc}
+            doc={doc}
             editorRef={editorRef}
             onInput={() => {
               const next = editorRef.current?.textContent ?? ""

@@ -1,5 +1,6 @@
 import { useNavigate, useRouterState } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
+import { paperIdSchema, parsePaperId } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
 
@@ -8,10 +9,14 @@ import { PaperLetterEditor } from "@/features/paper/paper-letter.tsx"
 import {
   getPaper,
   getPaperPages,
-  listJobs,
   listPaper,
-  paperQueryKeys,
+  paperGetKey,
+  paperListKey,
+  paperPagesKey,
 } from "@/features/paper/paper-api.ts"
+import { jobListKey, listJobs } from "@/features/apply/apply-api.ts"
+
+const NO_DOC = parsePaperId("00000000-0000-4000-8000-000000000000")
 
 function docIdFromPath(pathname: string) {
   const prefix = "/app/paper/"
@@ -25,23 +30,25 @@ export function PaperDocPage() {
     select: (state) => state.location.pathname,
   })
   const docId = docIdFromPath(pathname)
+  const parsedId = paperIdSchema.safeParse(docId)
+  const validId = parsedId.success ? parsedId.data : null
   const docQuery = useQuery({
-    queryKey: paperQueryKeys.detail(docId),
+    queryKey: paperGetKey(validId ?? NO_DOC),
     queryFn: () => getPaper(docId),
-    enabled: docId.length > 0,
+    enabled: validId !== null,
   })
   const pagesQuery = useQuery({
-    queryKey: paperQueryKeys.pages(docId),
+    queryKey: paperPagesKey(validId ?? NO_DOC),
     queryFn: () => getPaperPages(docId),
     enabled: docQuery.data?.kind === "cv",
   })
   const jobsQuery = useQuery({
-    queryKey: ["paper", "jobs"],
+    queryKey: jobListKey(),
     queryFn: listJobs,
     enabled: docQuery.data?.kind === "letter",
   })
   const listQuery = useQuery({
-    queryKey: paperQueryKeys.list(),
+    queryKey: paperListKey(),
     queryFn: listPaper,
     enabled: docQuery.data?.kind === "letter",
   })
@@ -84,19 +91,6 @@ export function PaperDocPage() {
         cvName={linked?.name ?? latest?.name ?? null}
         onBack={back}
       />
-    )
-  }
-  if (doc.kind === "proof") {
-    return (
-      <section
-        aria-label="Paper"
-        className="flex flex-col items-start gap-3 p-4"
-      >
-        <p>Proofs open on the Proof page.</p>
-        <Button type="button" variant="outline" onClick={back}>
-          Paper
-        </Button>
-      </section>
     )
   }
   return (

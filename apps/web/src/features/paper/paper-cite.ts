@@ -105,7 +105,10 @@ function clipLabel(value: string, max = 40) {
 }
 
 function shortRole(role: string) {
-  const parts = role.split("·").map((part) => part.trim()).filter(Boolean)
+  const parts = role
+    .split("·")
+    .map((part) => part.trim())
+    .filter(Boolean)
   return parts[parts.length - 1] || role
 }
 
@@ -130,7 +133,9 @@ function textOverlaps(left: string, right: string) {
   const b = normalize(right)
   if (!a || !b) return false
   if (a.includes(b) || b.includes(a)) return true
-  const shared = uniqueTokens(a).filter((token) => uniqueTokens(b).includes(token))
+  const shared = uniqueTokens(a).filter((token) =>
+    uniqueTokens(b).includes(token)
+  )
   return shared.length >= 3
 }
 

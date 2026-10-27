@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
-import { emptyCvDocument } from "@workspace/domain"
+import { act, cleanup, fireEvent, screen } from "@testing-library/react"
+import { render } from "@/test/render-with-client.tsx"
+import { emptyCvDocument, type PaperPages, PaperView } from "@workspace/domain"
 
 import { PaperCvEditor } from "./paper-editor.tsx"
-import type { PaperPages, PaperRecord } from "./paper-api.ts"
 
-const record: PaperRecord = {
+const record: PaperView = {
   id: "doc-1",
   name: "PM track CV",
   kind: "cv",
@@ -16,13 +16,16 @@ const record: PaperRecord = {
   checks: [],
   pageChoice: "unset",
   sourceFileId: null,
-  applyCardId: null,
   createdAt: "2020-01-01T00:00:00.000Z",
   updatedAt: "2020-01-01T00:00:00.000Z",
 }
 
 function pages(count: number): PaperPages {
   return { docId: record.id, pages: count, pageChoice: "unset" }
+}
+
+function inputOf<T>(init?: RequestInit) {
+  return (JSON.parse(String(init?.body)) as { input: T }).input
 }
 
 function ok(data: unknown) {
@@ -208,9 +211,7 @@ describe("CV editor chrome", () => {
       const url = String(input)
       if (url.includes("/api/commands/paper.replace")) {
         replaceCount += 1
-        bodies.push(
-          JSON.parse(String(init?.body)) as { contentVersion: number }
-        )
+        bodies.push(inputOf<{ contentVersion: number }>(init))
         if (replaceCount === 1) return gate
         return Promise.resolve(ok({ ...record, contentVersion: 3 }))
       }
@@ -276,12 +277,7 @@ describe("CV editor chrome", () => {
     vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
       if (url.includes("/api/commands/paper.setTemplate")) {
-        bodies.push(
-          JSON.parse(String(init?.body)) as {
-            docId?: string
-            templateId?: string
-          }
-        )
+        bodies.push(inputOf<{ docId?: string; templateId?: string }>(init))
         return Promise.resolve(
           ok({ ...record, templateId: "modern", contentVersion: 2 })
         )

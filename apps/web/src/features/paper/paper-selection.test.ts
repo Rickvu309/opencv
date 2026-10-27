@@ -56,7 +56,10 @@ describe("readPaperSelection", () => {
 
 describe("retainCoachSelection", () => {
   it("keeps the last non-empty selection when the live highlight is gone", () => {
-    const previous = { text: "Ran weekly problem interviews", sectionId: "experience-0" }
+    const previous = {
+      text: "Ran weekly problem interviews",
+      sectionId: "experience-0",
+    }
     expect(retainCoachSelection(previous, null)).toEqual(previous)
   })
 

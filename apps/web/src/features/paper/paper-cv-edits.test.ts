@@ -21,7 +21,11 @@ const sample = defaultCvData()
 
 describe("experience row primitives (QVE-207)", () => {
   it("adds and deletes a bullet on one role", () => {
-    const withBullet = addExperienceBullet(sample.experience, 0, "Shipped a café board")
+    const withBullet = addExperienceBullet(
+      sample.experience,
+      0,
+      "Shipped a café board"
+    )
     expect(withBullet[0]?.bullets).toHaveLength(3)
     expect(withBullet[0]?.bullets.at(-1)).toBe("Shipped a café board")
     expect(withBullet[1]?.bullets).toHaveLength(2)

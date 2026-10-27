@@ -35,7 +35,10 @@ function patchBullet(data: typeof sample, bullet: string) {
     ...data,
     experience: data.experience.map((item, i) =>
       i === 0
-        ? { ...item, bullets: item.bullets.map((b, bi) => (bi === 0 ? bullet : b)) }
+        ? {
+            ...item,
+            bullets: item.bullets.map((b, bi) => (bi === 0 ? bullet : b)),
+          }
         : item
     ),
   }
@@ -81,12 +84,18 @@ describe("cv history stack (QVE-210)", () => {
     expect(history.past).toHaveLength(1)
     expect(history.present.summary).toBe("Café rewrite")
 
-    history = pushCvChange(history, patchRole(history.present, "Barista"), t0 + 200)
+    history = pushCvChange(
+      history,
+      patchRole(history.present, "Barista"),
+      t0 + 200
+    )
     expect(history.past).toHaveLength(2)
     expect(history.present.experience[0]?.role).toBe("Barista")
 
     const afterRole = undoCv(history)
-    expect(afterRole?.present.experience[0]?.role).toBe(sample.experience[0]?.role)
+    expect(afterRole?.present.experience[0]?.role).toBe(
+      sample.experience[0]?.role
+    )
     expect(afterRole?.present.summary).toBe("Café rewrite")
 
     const afterSummary = undoCv(afterRole!)

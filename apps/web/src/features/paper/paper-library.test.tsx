@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it } from "vitest"
-import { cleanup, fireEvent, render, screen } from "@testing-library/react"
-import { emptyCvDocument } from "@workspace/domain"
+import { cleanup, fireEvent, screen } from "@testing-library/react"
+import { render } from "@/test/render-with-client.tsx"
+import { emptyCvDocument, type PaperView } from "@workspace/domain"
 
 import { PaperLibrary } from "./paper-library.tsx"
-import type { PaperRecord } from "./paper-api.ts"
 
-function cv(name: string): PaperRecord {
+function cv(name: string): PaperView {
   return {
     id: "11111111-1111-4111-8111-111111111111",
     name,
@@ -17,7 +17,6 @@ function cv(name: string): PaperRecord {
     checks: [],
     pageChoice: "unset",
     sourceFileId: null,
-    applyCardId: null,
     createdAt: "2026-08-25T12:00:00.000Z",
     updatedAt: "2026-08-25T12:00:00.000Z",
   }
@@ -27,7 +26,7 @@ afterEach(() => {
   cleanup()
 })
 
-function renderLibrary(docs: PaperRecord[]) {
+function renderLibrary(docs: PaperView[]) {
   render(
     <PaperLibrary
       docs={docs}

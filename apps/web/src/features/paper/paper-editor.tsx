@@ -4,6 +4,9 @@ import {
   isCvDocument,
   paperDocNameSchema,
   type CvDocument,
+  type PaperPages,
+  type PaperTemplateId,
+  type PaperView,
 } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
@@ -18,6 +21,7 @@ import { Input } from "@workspace/ui/components/input"
 import { toast } from "@workspace/ui/components/sonner"
 
 import { apiBaseUrl } from "@/lib/api-url.ts"
+import { useRunCommand } from "@/lib/contract-client.ts"
 
 import { usePaperAutosave } from "./paper-autosave.ts"
 import { PaperEditorConflictBanner } from "./paper-editor-conflict-banner.tsx"
@@ -29,14 +33,8 @@ import {
 import {
   createPaperChat,
   getPaper,
-  keepTwoPages,
   openPaperChat,
-  renamePaper,
-  setPaperTemplate,
-  sharePaper,
   streamPaperTurn,
-  type PaperPages,
-  type PaperRecord,
 } from "./paper-api.ts"
 import {
   editorEditedLabel,
@@ -44,7 +42,7 @@ import {
   printLayout,
 } from "./paper-templates.ts"
 
-function cvOf(document: unknown, templateId: string): CvDocument {
+function cvOf(document: unknown, templateId: string | null): CvDocument {
   if (isCvDocument(document)) {
     return {
       ...document,
@@ -59,10 +57,11 @@ export function PaperCvEditor({
   pages,
   onBack,
 }: {
-  initial: PaperRecord
+  initial: PaperView
   pages: PaperPages
   onBack: () => void
 }) {
+  const run = useRunCommand()
   const [cv, setCv] = useState(() => cvOf(initial.document, initial.templateId))
   const [name, setName] = useState(initial.name)
   const [nameError, setNameError] = useState<string | null>(null)
@@ -102,7 +101,7 @@ export function PaperCvEditor({
     setNameError(null)
     if (parsed.data === initial.name) return
     try {
-      await renamePaper({ docId: initial.id, name: parsed.data })
+      await run("paper.rename", { docId: initial.id, name: parsed.data })
     } catch (error) {
       setNameError(
         error instanceof Error ? error.message : "Could not rename. Try again."
@@ -112,7 +111,7 @@ export function PaperCvEditor({
 
   async function copyLink() {
     try {
-      const { token } = await sharePaper(initial.id)
+      const { token } = await run("paper.share", { docId: initial.id })
       const url = `${window.location.origin}/share/${token}`
       await navigator.clipboard.writeText(url)
       toast("Link copied")
@@ -127,7 +126,7 @@ export function PaperCvEditor({
 
   async function keepPages() {
     try {
-      await keepTwoPages(initial.id)
+      await run("paper.keepTwoPages", { docId: initial.id })
       setPageState((current) => ({ ...current, pageChoice: "keep" }))
     } catch (error) {
       toast(
@@ -216,9 +215,12 @@ export function PaperCvEditor({
     }
   }
 
-  async function applyTemplate(nextTemplateId: string) {
+  async function applyTemplate(nextTemplateId: PaperTemplateId) {
     try {
-      const saved = await setPaperTemplate(initial.id, nextTemplateId)
+      const saved = await run("paper.setTemplate", {
+        docId: initial.id,
+        templateId: nextTemplateId,
+      })
       setTemplateId(saved.templateId)
       setCv((current) => ({
         ...current,

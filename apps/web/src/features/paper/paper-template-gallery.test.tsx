@@ -1,14 +1,18 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { cleanup, fireEvent, render, screen } from "@testing-library/react"
-import { emptyCvDocument } from "@workspace/domain"
+import { cleanup, fireEvent, screen } from "@testing-library/react"
+import { render } from "@/test/render-with-client.tsx"
+import {
+  emptyCvDocument,
+  type PaperPages,
+  type PaperView,
+} from "@workspace/domain"
 
 import { PaperCvEditor } from "./paper-editor.tsx"
 import { PaperLibrary } from "./paper-library.tsx"
-import type { PaperPages, PaperRecord } from "./paper-api.ts"
 import { PaperTemplateGallery } from "./paper-template-gallery.tsx"
 import { PAPER_TEMPLATE_LABELS } from "./paper-templates.ts"
 
-const record: PaperRecord = {
+const record: PaperView = {
   id: "11111111-1111-4111-8111-111111111111",
   name: "PM track CV",
   kind: "cv",
@@ -19,7 +23,6 @@ const record: PaperRecord = {
   checks: [],
   pageChoice: "unset",
   sourceFileId: null,
-  applyCardId: null,
   createdAt: "2026-08-25T12:00:00.000Z",
   updatedAt: "2026-08-25T12:00:00.000Z",
 }

@@ -1,130 +1,104 @@
+import { QueryClient } from "@tanstack/react-query"
+import { parsePaperId } from "@workspace/domain"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { apiBaseUrl } from "@/lib/api-url.ts"
+import { runContractCommand } from "@/lib/contract-client.ts"
 
 import {
-  createPaper,
-  deletePaper,
   getPaperPages,
-  listPaperDocs,
+  listPaper,
   listPaperFiles,
-  replacePaper,
-  sharePaper,
-  upsertPaperDoc,
+  paperGetKey,
+  paperListKey,
+  paperPagesKey,
 } from "./paper-api.ts"
-import type { PaperDoc } from "@workspace/domain"
 
 function envelope<T>(data: T) {
   return Response.json({ ok: true, data })
 }
 
-const doc: PaperDoc = {
-  id: "11111111-1111-4111-8111-111111111111",
-  name: "PM track CV",
-  kind: "cv",
-  status: "draft",
-  content: { markdown: "nope" },
-  contentVersion: 1,
-  applyCardId: null,
-  createdAt: "2026-08-25T00:00:00.000Z",
-  updatedAt: "2026-08-25T00:00:00.000Z",
-}
-
-function bodyOf(call: unknown[]) {
-  const init = call[1] as RequestInit | undefined
-  return JSON.parse(String(init?.body ?? "{}")) as unknown
-}
+const docId = parsePaperId("11111111-1111-4111-8111-111111111111")
 
 afterEach(() => {
   vi.unstubAllGlobals()
 })
 
 describe("paper API client", () => {
-  it("lists Paper docs from GET /api/paper", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(envelope([doc]))
+  it("lists documents from GET /api/paper", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(envelope([]))
     vi.stubGlobal("fetch", fetchMock)
 
-    await expect(listPaperDocs()).resolves.toEqual([doc])
+    await expect(listPaper()).resolves.toEqual([])
     expect(String(fetchMock.mock.calls[0]?.[0])).toBe(`${apiBaseUrl}/api/paper`)
-  })
-
-  it("creates, replaces, deletes, and shares through the command paths", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(envelope(doc))
-      .mockResolvedValueOnce(envelope({ ...doc, contentVersion: 2 }))
-      .mockResolvedValueOnce(envelope({ docId: doc.id }))
-      .mockResolvedValueOnce(envelope({ token: "share-token" }))
-    vi.stubGlobal("fetch", fetchMock)
-
-    await createPaper({ kind: "cv", templateId: "simple" })
-    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
-      `${apiBaseUrl}/api/commands/paper.create`
-    )
-    expect(bodyOf(fetchMock.mock.calls[0] ?? [])).toEqual({
-      kind: "cv",
-      templateId: "simple",
-    })
-
-    await replacePaper({
-      docId: doc.id,
-      contentVersion: 1,
-      document: doc.content,
-    })
-    expect(String(fetchMock.mock.calls[1]?.[0])).toBe(
-      `${apiBaseUrl}/api/commands/paper.replace`
-    )
-    expect(bodyOf(fetchMock.mock.calls[1] ?? [])).toEqual({
-      docId: doc.id,
-      contentVersion: 1,
-      document: doc.content,
-    })
-
-    await deletePaper(doc.id)
-    expect(String(fetchMock.mock.calls[2]?.[0])).toBe(
-      `${apiBaseUrl}/api/commands/paper.delete`
-    )
-    expect(bodyOf(fetchMock.mock.calls[2] ?? [])).toEqual({ docId: doc.id })
-
-    await expect(sharePaper(doc.id)).resolves.toEqual({ token: "share-token" })
-    expect(String(fetchMock.mock.calls[3]?.[0])).toBe(
-      `${apiBaseUrl}/api/commands/paper.share`
-    )
-    expect(bodyOf(fetchMock.mock.calls[3] ?? [])).toEqual({ docId: doc.id })
   })
 
   it("reads files and pages before the document id route", async () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(envelope([]))
-      .mockResolvedValueOnce(
-        envelope({ docId: doc.id, pages: 2, pageChoice: "unset" })
-      )
+      .mockResolvedValueOnce(envelope({ docId, pages: 2, pageChoice: "unset" }))
     vi.stubGlobal("fetch", fetchMock)
 
     await expect(listPaperFiles()).resolves.toEqual([])
     expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
       `${apiBaseUrl}/api/paper/files`
     )
-
-    await expect(getPaperPages(doc.id)).resolves.toEqual({
-      docId: doc.id,
-      pages: 2,
-      pageChoice: "unset",
-    })
+    await expect(getPaperPages(docId)).resolves.toMatchObject({ pages: 2 })
     expect(String(fetchMock.mock.calls[1]?.[0])).toBe(
-      `${apiBaseUrl}/api/paper/${doc.id}/pages`
+      `${apiBaseUrl}/api/paper/${docId}/pages`
     )
   })
 })
 
-describe("paper list helpers", () => {
-  it("moves an upserted doc to the front", () => {
-    const older = { ...doc, id: "a", name: "Older" }
-    const newer = { ...doc, id: "b", name: "Newer" }
-    expect(upsertPaperDoc([older], newer).map((item) => item.id)).toEqual([
-      "b",
-      "a",
-    ])
+describe("paper commands through the contract client", () => {
+  it("sends the input with an idempotency key and refreshes what the contract names", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(envelope({ id: docId, previousName: "Old" }))
+    vi.stubGlobal("fetch", fetchMock)
+    const queryClient = new QueryClient()
+    for (const key of [
+      paperListKey(),
+      paperGetKey(docId),
+      paperPagesKey(docId),
+    ]) {
+      queryClient.setQueryData(key, { stale: true })
+    }
+
+    await runContractCommand(queryClient, "paper.rename", {
+      docId,
+      name: "New",
+    })
+
+    const call = fetchMock.mock.calls[0] ?? []
+    expect(String(call[0])).toBe(`${apiBaseUrl}/api/commands/paper.rename`)
+    expect(JSON.parse(String((call[1] as RequestInit).body))).toMatchObject({
+      input: { docId, name: "New" },
+    })
+    for (const key of [
+      paperListKey(),
+      paperGetKey(docId),
+      paperPagesKey(docId),
+    ]) {
+      expect(queryClient.getQueryState(key)?.isInvalidated).toBe(true)
+    }
+  })
+
+  it("leaves the cache alone when asked not to refresh, as autosave does", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(envelope({ id: docId })))
+    const queryClient = new QueryClient()
+    queryClient.setQueryData(paperGetKey(docId), { stale: true })
+
+    await runContractCommand(
+      queryClient,
+      "paper.replace",
+      { docId, contentVersion: 1, document: { markdown: "Hi" } },
+      { refresh: false }
+    )
+
+    expect(queryClient.getQueryState(paperGetKey(docId))?.isInvalidated).toBe(
+      false
+    )
   })
 })

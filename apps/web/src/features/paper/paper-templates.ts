@@ -1,6 +1,10 @@
-import { PAPER_TEMPLATE_IDS, type CvTemplateId } from "@workspace/domain"
+import {
+  PAPER_TEMPLATE_IDS,
+  type CvTemplateId,
+  type PaperTemplateId,
+} from "@workspace/domain"
 
-export const PAPER_TEMPLATE_LABELS: { id: string; label: string }[] =
+export const PAPER_TEMPLATE_LABELS: { id: PaperTemplateId; label: string }[] =
   PAPER_TEMPLATE_IDS.map((id) => ({
     id,
     label: templateLabel(id),
@@ -13,7 +17,7 @@ function templateLabel(id: string) {
 }
 
 /** Design id, or a codec id already stored on the document, to a print layout. */
-export function printLayout(templateId: string): CvTemplateId {
+export function printLayout(templateId: string | null): CvTemplateId {
   switch (templateId) {
     case "modern":
     case "product":
@@ -32,7 +36,7 @@ export function printLayout(templateId: string): CvTemplateId {
 }
 
 /** Gallery `data-template`. Unsupported ids reuse simple. */
-export function previewTemplate(templateId: string) {
+export function previewTemplate(templateId: string | null) {
   switch (templateId) {
     case "modern":
     case "product":
