@@ -68,7 +68,7 @@ export const post = {
     },
     {
       kind: "p",
-      text: "A recruiter who already has your email can reply in the thread you already have. You still choose what to send back.",
+      text: "A recruiter who already has your email can reply to the email you already have. You still choose what to send back.",
     },
     {
       kind: "p",
