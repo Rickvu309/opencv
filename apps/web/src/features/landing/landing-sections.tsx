@@ -7,11 +7,10 @@ import { cn } from "@workspace/ui/lib/utils"
 import {
   LANDING_CUSTOMERS_LABEL,
   LANDING_CUSTOMERS_LINE,
-  LANDING_FEATURES,
   LANDING_LOGO_LABEL,
   LANDING_LOGOS,
   LANDING_PRIMARY_LABEL,
-  LANDING_QUOTES,
+  LANDING_STORIES,
   LANDING_SAMPLE_LABEL,
   LANDING_STATEMENT_LEAD,
   LANDING_STATEMENT_REST,
@@ -54,7 +53,11 @@ export function LandingStatement() {
 
 export function LandingBenefits() {
   return (
-    <section id="benefits" aria-label="Benefits" className="landing-section">
+    <section
+      id="benefits"
+      aria-label="Benefits"
+      className="landing-section landing-benefits"
+    >
       <div data-slot="landing-figures">
         <LandingFigures />
       </div>
@@ -62,46 +65,8 @@ export function LandingBenefits() {
   )
 }
 
-export function LandingFeatures() {
-  return (
-    <>
-      {LANDING_FEATURES.map((feature) => (
-        <section
-          key={feature.id}
-          id={feature.id}
-          aria-labelledby={`${feature.id}-title`}
-          className="landing-section landing-stack"
-        >
-          <h2 id={`${feature.id}-title`} className="landing-section-title">
-            {feature.title}
-          </h2>
-          <p className="landing-section-body">{feature.body}</p>
-          <Link to="/sign-in" className={cn("landing-link", FOCUS_RING)}>
-            Learn more
-          </Link>
-          <img
-            src={feature.shot.src}
-            alt={feature.shot.alt}
-            width={feature.shot.width}
-            height={feature.shot.height}
-            loading="lazy"
-            decoding="async"
-            className="landing-shot"
-          />
-          <p className="text-sm font-medium">Features</p>
-          <ul className="landing-chips">
-            {feature.features.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </section>
-      ))}
-    </>
-  )
-}
-
 export function LandingCustomers() {
-  const [maya, daniel] = LANDING_QUOTES
+  const { lead, side } = LANDING_STORIES
 
   return (
     <section
@@ -109,44 +74,56 @@ export function LandingCustomers() {
       aria-labelledby="stories-title"
       className="landing-section landing-stack landing-stories"
     >
+      <h2 id="stories-title" className="sr-only">
+        {LANDING_CUSTOMERS_LABEL}
+      </h2>
       <div className="landing-story-row">
-        <figure className="landing-quote landing-quote-lead">
-          <blockquote>
-            <p>{maya.quote}</p>
-          </blockquote>
-          <div className="landing-portrait" role="img" aria-label="Maya T.">
-            <span aria-hidden="true">MT</span>
+        <figure
+          className="landing-quote landing-quote-lead landing-gradient"
+          data-soft
+        >
+          <div className="landing-quote-body">
+            <blockquote>
+              <p>{lead.quote}</p>
+            </blockquote>
+            <figcaption>
+              <p className="text-[0.9375rem] font-medium">{lead.name}</p>
+              <p className="landing-quote-role text-sm">{lead.role}</p>
+            </figcaption>
           </div>
-          <figcaption>
-            <p className="text-[0.9375rem] font-medium">{maya.name}</p>
-            <p className="landing-quote-role text-sm">{maya.role}</p>
-          </figcaption>
+          <img
+            src={lead.photo.src}
+            alt={lead.photo.alt}
+            width={lead.photo.width}
+            height={lead.photo.height}
+            loading="lazy"
+            decoding="async"
+            className="landing-quote-photo"
+          />
         </figure>
         <figure className="landing-quote landing-quote-side">
           <blockquote>
-            <p>{daniel.quote}</p>
+            <p>{side.quote}</p>
           </blockquote>
-          <figcaption>
-            <p className="text-[0.9375rem] font-medium">{daniel.name}</p>
-            <p className="landing-quote-role text-sm">{daniel.role}</p>
+          <figcaption className="landing-quote-person">
+            <img
+              src={side.photo.src}
+              alt={side.photo.alt}
+              width={side.photo.width}
+              height={side.photo.height}
+              loading="lazy"
+              decoding="async"
+              className="landing-quote-avatar"
+            />
+            <div>
+              <p className="text-[0.9375rem] font-medium">{side.name}</p>
+              <p className="landing-quote-role text-sm">{side.role}</p>
+            </div>
           </figcaption>
         </figure>
       </div>
       <div className="landing-story-foot">
         <p className="landing-customers-line">{LANDING_CUSTOMERS_LINE}</p>
-        <h2 id="stories-title" className="landing-story-label">
-          <span>{LANDING_CUSTOMERS_LABEL}</span>
-          <svg viewBox="0 0 14 14" aria-hidden="true">
-            <path
-              d="M2.2 7h9.2M8.2 3.6 11.6 7 8.2 10.4"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.25"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </h2>
       </div>
     </section>
   )
@@ -169,12 +146,20 @@ export function LandingClose() {
           to="/sign-in"
           className={cn(
             buttonVariants({ size: "lg" }),
-            "rounded-full [padding-inline:1.25rem] [block-size:2.75rem]"
+            "landing-pill landing-gradient [padding-inline:1.25rem] [block-size:2.75rem]"
           )}
         >
           {LANDING_PRIMARY_LABEL}
         </Link>
-        <Link to="/" hash="capture" className={cn("landing-link", FOCUS_RING)}>
+        <Link
+          to="/"
+          hash="paper"
+          className={cn(
+            "landing-pill landing-link [padding-inline:1.25rem] text-base font-medium text-foreground [block-size:2.75rem]",
+            FOCUS_RING
+          )}
+          data-quiet
+        >
           {LANDING_SAMPLE_LABEL}
         </Link>
       </div>

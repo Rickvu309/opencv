@@ -26,7 +26,7 @@ export function LandingNav() {
   return (
     <header data-scrolled={scrolled} className="landing-nav">
       <div className="landing-grid">
-        <div className="landing-bar">
+        <div className="landing-bar landing-inset">
           <Link to="/" className={cn("rounded-md", FOCUS_RING)}>
             <OpenCvLogo withWordmark />
           </Link>
@@ -60,7 +60,7 @@ export function LandingNav() {
               to="/sign-in"
               className={cn(
                 buttonVariants({ size: "sm" }),
-                "rounded-full [padding-inline:0.875rem] [block-size:2.5rem]"
+                "landing-pill landing-gradient [padding-inline:0.75rem] [block-size:2.5rem]"
               )}
             >
               {LANDING_PRIMARY_LABEL}

@@ -5,31 +5,31 @@ import { cn } from "@workspace/ui/lib/utils"
 
 import { OpenCvLogo } from "@/features/app-shell/app-logo.tsx"
 
-import { LANDING_COPYRIGHT, type FooterColumn } from "./landing-copy.ts"
+import {
+  LANDING_COPYRIGHT,
+  LANDING_FOOTER,
+  LANDING_TAGLINE_LINES,
+} from "./landing-copy.ts"
 
-export function LandingFooter({
-  columns,
-  tagline,
-}: {
-  columns: readonly FooterColumn[]
-  tagline?: string
-}) {
+export function LandingFooter() {
   return (
     <footer className="landing-footer">
       <div className="landing-grid">
-        <div className="landing-stack">
-          <Link
-            to="/"
-            className={cn("rounded-md [inline-size:fit-content]", FOCUS_RING)}
-          >
-            <OpenCvLogo withWordmark />
-          </Link>
-          {tagline ? <p className="text-muted-foreground">{tagline}</p> : null}
-          <div className="landing-footer-grid">
-            {columns.map((column) => (
+        <div className="landing-inset">
+          <div className="landing-footer-columns">
+            <div className="landing-footer-brand">
+              <Link to="/" className={cn("rounded-md", FOCUS_RING)}>
+                <OpenCvLogo withWordmark />
+              </Link>
+              <p>
+                {LANDING_TAGLINE_LINES[0]} <br />
+                {LANDING_TAGLINE_LINES[1]}
+              </p>
+            </div>
+            {LANDING_FOOTER.map((column) => (
               <nav key={column.heading} aria-label={column.heading}>
-                <p className="text-sm font-medium">{column.heading}</p>
-                <ul className="landing-stack">
+                <p>{column.heading}</p>
+                <ul>
                   {column.links.map((link) => (
                     <li key={link.label}>
                       {link.href === "/pricing" ? (
@@ -54,7 +54,7 @@ export function LandingFooter({
               </nav>
             ))}
           </div>
-          <p className="text-sm text-muted-foreground">{LANDING_COPYRIGHT}</p>
+          <p className="landing-footer-bottom">{LANDING_COPYRIGHT}</p>
         </div>
       </div>
     </footer>

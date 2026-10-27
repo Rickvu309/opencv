@@ -3,8 +3,6 @@ export const LANDING_HEADLINE_LINES = [
   "in your dream seat.",
 ] as const
 
-export const LANDING_HEADLINE = `${LANDING_HEADLINE_LINES[0]} ${LANDING_HEADLINE_LINES[1]}`
-
 export const LANDING_SUBHEAD =
   "Turn what you’ve done into proof. Turn proof into interviews."
 
@@ -38,23 +36,15 @@ export const LANDING_LOGOS = [
 ] as const
 
 export type LandingNavLink = {
-  label: "Product" | "Examples" | "Stories" | "Pricing"
-  href: "/#product" | "/#capture" | "/#stories" | "/pricing"
+  label: "Product" | "Stories" | "Pricing"
+  href: "/#product" | "/#stories" | "/pricing"
 }
 
 export const LANDING_NAV_LINKS: readonly LandingNavLink[] = [
   { label: "Product", href: "/#product" },
-  { label: "Examples", href: "/#capture" },
   { label: "Stories", href: "/#stories" },
   { label: "Pricing", href: "/pricing" },
 ]
-
-export const LANDING_CHAIR = {
-  src: "/landing/chair.webp",
-  width: 1080,
-  height: 1976,
-  alt: "A tan leather armchair with a dark frame against blue wooden doors.",
-} as const
 
 export type LandingShot = {
   src: string
@@ -63,98 +53,201 @@ export type LandingShot = {
   alt: string
 }
 
-export type LandingFeature = {
-  id: "capture" | "plan" | "assistant" | "review"
-  title: string
-  body: string
-  features: readonly string[]
-  shot: LandingShot
+export const LANDING_HERO_SHOT: LandingShot = {
+  src: "/landing/apply-board.webp",
+  width: 1600,
+  height: 1000,
+  alt: "The Apply board with jobs in Saved, Applied and Interview columns, each card showing its company, city and date.",
 }
 
-export const LANDING_FEATURES: readonly LandingFeature[] = [
-  {
-    id: "capture",
-    title: "Capture your work",
-    body: "Drop in notes, an old CV or your profile. opencv asks the right questions and turns them into clear proof.",
-    features: [
-      "Guided questions",
-      "Import a CV",
-      "Voice notes",
-      "Linked sources",
-    ],
-    shot: {
-      src: "/landing/coach.webp",
-      width: 1440,
-      height: 705,
-      alt: "A Coach chat. Linh, a student, asks which role to apply for first, and the Coach checks her Apply cards and names one, citing her CV.",
-    },
+export type LandingBenefit = {
+  title: string
+  body: string
+}
+
+export const LANDING_BENEFITS = {
+  cv: {
+    title: "A CV for every job",
+    body: "Write once in Paper, then tailor your CV and letter to each job in a minute.",
   },
-  {
-    id: "plan",
-    title: "Plan your search",
-    body: "See every role you’re going for, which of your proof fits best, and what to do next, all in one place.",
-    features: [
-      "Roles",
-      "Applications",
-      "Your proof",
-      "Next steps",
-      "Fit score",
-      "Insights",
-    ],
-    shot: {
-      src: "/landing/apply.webp",
-      width: 1600,
-      height: 467,
-      alt: "The Apply board with a Business analyst intern job in Inbox, an Associate PM intern job in Prep and a UX research intern job in Sent.",
-    },
+  applications: {
+    title: "Every application in one place",
+    body: "Save jobs from any link and see what to do next on one board.",
   },
+  coach: {
+    title: "A coach that does the work",
+    body: "Ask Coach to tailor, prep or follow up. It reads your work first.",
+  },
+} as const satisfies Record<string, LandingBenefit>
+
+export type LandingSectionHeader = {
+  title: string
+  body: string
+  link: { label: string; to: "/sign-in" | "/pricing" }
+}
+
+export type LandingProduct = {
+  id: "paper" | "apply" | "coach"
+  title: string
+  body: string
+  shot: LandingShot
+  features: readonly [string, string, string, string]
+}
+
+export const LANDING_PRODUCTS: readonly LandingProduct[] = [
   {
-    id: "assistant",
-    title: "Your writing assistant",
-    body: "Ask for a tailored CV, a cover letter or a site update. It uses only what you’ve told it, in your own voice.",
-    features: ["Tailored CVs", "Cover letters", "Site updates", "Your voice"],
+    id: "paper",
+    title: "Paper",
+    body: "Write your CV and letters in a clean editor. Coach tailors them to each job and keeps it to one page.",
     shot: {
       src: "/landing/paper.webp",
       width: 1600,
-      height: 1041,
-      alt: "The Paper editor with Linh Tran's CV open and the Coach panel beside it, showing a reply about the selected bullet.",
+      height: 1000,
+      alt: "The Paper editor with Linh Nguyen's Junior Marketing CV open on a single page, with experience, education and skills.",
+    },
+    features: [
+      "Tailored CVs",
+      "Import a CV",
+      "Cover letters",
+      "One-page check",
+    ],
+  },
+  {
+    id: "apply",
+    title: "Apply",
+    body: "Save any job from a link, move it from Saved to Offer, and never miss an interview or a deadline.",
+    shot: {
+      src: "/landing/apply.webp",
+      width: 1600,
+      height: 1000,
+      alt: "An Apply job page for an Associate PM intern, with the role details, an interview date, a linked CV and an interview prep checklist.",
+    },
+    features: ["Board and list", "Job details", "Calendar", "Interview prep"],
+  },
+  {
+    id: "coach",
+    title: "Coach",
+    body: "Ask in plain words. Coach reads your CV and the job, then does the work while you watch.",
+    shot: {
+      src: "/landing/coach.webp",
+      width: 1600,
+      height: 1000,
+      alt: "A Coach chat asking for a CV for a cosmetics brand, with steps ticking off as Coach reads the CV and the posting and drafts bullet rewrites.",
+    },
+    features: [
+      "Tailor a CV",
+      "Prep an interview",
+      "Write a letter",
+      "Email updates",
+    ],
+  },
+]
+
+export const LANDING_PRODUCT_LINK = {
+  label: "Learn more",
+  to: "/sign-in",
+} as const
+
+export const LANDING_INTEGRATIONS_HEADER: LandingSectionHeader = {
+  title: "Works with your apps",
+  body: "Bring in your mail, calendar, files and profiles. Coach uses them to keep Apply up to date.",
+  link: { label: "See all integrations", to: "/pricing" },
+}
+
+export const LANDING_INTEGRATIONS = [
+  { id: "gmail", name: "Gmail", src: "/landing/logo-gmail.webp" },
+  {
+    id: "google-calendar",
+    name: "Google Calendar",
+    src: "/landing/logo-google-calendar.webp",
+  },
+  { id: "zoom", name: "Zoom", src: "/landing/logo-zoom.webp" },
+  {
+    id: "google-meet",
+    name: "Google Meet",
+    src: "/landing/logo-google-meet.webp",
+  },
+  {
+    id: "microsoft-teams",
+    name: "Microsoft Teams",
+    src: "/landing/logo-microsoft-teams.webp",
+  },
+  { id: "drive", name: "Google Drive", src: "/landing/logo-drive.webp" },
+  {
+    id: "microsoft-onedrive",
+    name: "Microsoft OneDrive",
+    src: "/landing/logo-microsoft-onedrive.webp",
+  },
+  { id: "notion", name: "Notion", src: "/landing/logo-notion.webp" },
+  { id: "figma", name: "Figma", src: "/landing/logo-figma.webp" },
+  { id: "canva", name: "Canva", src: "/landing/logo-canva.webp" },
+  { id: "linkedin", name: "LinkedIn", src: "/landing/logo-linkedin.webp" },
+  { id: "github", name: "GitHub", src: "/landing/logo-github.webp" },
+] as const
+
+export const LANDING_COMING_NEXT_HEADER: LandingSectionHeader = {
+  title: "Coming next",
+  body: "Two new ways to show your work. Join the waitlist and get them first.",
+  link: { label: "Join the waitlist", to: "/sign-in" },
+}
+
+export type LandingComingNext = {
+  id: "proof" | "pitch"
+  title: string
+  body: string
+  shot: LandingShot
+}
+
+export const LANDING_COMING_NEXT: readonly LandingComingNext[] = [
+  {
+    id: "proof",
+    title: "Proof",
+    body: "Turn a CV line into evidence.",
+    shot: {
+      src: "/landing/proof.webp",
+      width: 1200,
+      height: 750,
+      alt: "The Proof page, with a CV line about growing followers by 38 percent backed by a rising chart and a manager confirmation.",
     },
   },
   {
-    id: "review",
-    title: "Review, then send",
-    body: "Check every change, see where each claim comes from, and approve it. Then send your CV and letter, or publish your site.",
-    features: [
-      "CV",
-      "Cover letter",
-      "Personal site",
-      "Versions",
-      "Changes",
-      "Publishing",
-    ],
+    id: "pitch",
+    title: "Pitch",
+    body: "Your CV and Proofs on one page.",
     shot: {
-      src: "/landing/coach-act.webp",
-      width: 1600,
-      height: 338,
-      alt: "A Coach reply beside the Apply board. Linh asks the Coach to move a job, the receipt has an Undo button, and she can approve the change.",
+      src: "/landing/pitch.webp",
+      width: 1200,
+      height: 750,
+      alt: "The Pitch page, with a public profile for Linh Nguyen showing a Download CV button, proof charts and a view count.",
     },
   },
 ]
 
-export const LANDING_QUOTES = [
-  {
+export const LANDING_STORIES = {
+  lead: {
     quote:
-      "I stopped sending the same CV to everyone. Every application now starts from what I actually did.",
-    name: "Maya T.",
-    role: "Product Designer",
+      "I stopped listing duties and showed the one campaign I actually ran. The recruiter called me back in four days.",
+    name: "Nguyễn Thảo Vy",
+    role: "Brand Marketing Associate, Ho Chi Minh City",
+    photo: {
+      src: "/landing/story-thao-vy.webp",
+      width: 496,
+      height: 832,
+      alt: "Portrait of Nguyễn Thảo Vy, Brand Marketing Associate.",
+    },
   },
-  {
-    quote:
-      "It made me say the numbers out loud. I was calmer in every interview.",
-    name: "Daniel K.",
-    role: "Staff Engineer",
+  side: {
+    quote: "I sent fewer applications and treated each one like a pitch.",
+    name: "Kim Ji-woo",
+    role: "UX Designer, Seoul",
+    photo: {
+      src: "/landing/story-kim.webp",
+      width: 88,
+      height: 88,
+      alt: "Portrait of Kim Ji-woo, UX Designer.",
+    },
   },
-] as const
+} as const
 
 export const LANDING_CUSTOMERS_LINE =
   "opencv helps people go from a first note to an offer. From first jobs to senior roles."
@@ -163,7 +256,7 @@ export const LANDING_CUSTOMERS_LABEL = "Customer stories"
 
 export type FooterLink = {
   label: string
-  href: string
+  href: "/#paper" | "/#apply" | "/#coach" | "/#stories" | "/pricing"
 }
 
 export type FooterColumn = {
@@ -175,34 +268,22 @@ export const LANDING_FOOTER: readonly FooterColumn[] = [
   {
     heading: "Product",
     links: [
-      { label: "Proof vault", href: "/#benefits" },
-      { label: "CV and letters", href: "/#assistant" },
-      { label: "Personal site", href: "/#review" },
+      { label: "Paper", href: "/#paper" },
+      { label: "Apply", href: "/#apply" },
+      { label: "Coach", href: "/#coach" },
       { label: "Pricing", href: "/pricing" },
-    ],
-  },
-  {
-    heading: "Features",
-    links: [
-      { label: "Proof interviews", href: "/#benefits" },
-      { label: "Tailored CVs", href: "/#assistant" },
-      { label: "Cover letters", href: "/#assistant" },
-      { label: "Reviews", href: "/#review" },
-      { label: "Imports", href: "/#capture" },
     ],
   },
   {
     heading: "Company",
     links: [{ label: "Stories", href: "/#stories" }],
   },
-  {
-    heading: "Resources",
-    links: [
-      { label: "CV examples", href: "/#assistant" },
-      { label: "For students", href: "/#product" },
-    ],
-  },
 ]
+
+export const LANDING_TAGLINE_LINES = [
+  "Show your work.",
+  "Get the job.",
+] as const
 
 export const PRICING_TITLE = "opencv. Pricing"
 
@@ -368,23 +449,5 @@ export const PRICING_FAQ = [
     a: "Proof and Pitch. Pro members get them first.",
   },
 ] as const
-
-export const PRICING_FOOTER: readonly FooterColumn[] = [
-  {
-    heading: "Product",
-    links: [
-      { label: "Paper", href: "/#assistant" },
-      { label: "Apply", href: "/#plan" },
-      { label: "Coach", href: "/#capture" },
-      { label: "Pricing", href: "/pricing" },
-    ],
-  },
-  {
-    heading: "Company",
-    links: [{ label: "Stories", href: "/#stories" }],
-  },
-]
-
-export const PRICING_TAGLINE = "Show your work. Get the job."
 
 export const LANDING_COPYRIGHT = "© 2026 opencv"

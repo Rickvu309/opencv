@@ -1,5 +1,6 @@
 import { useRef } from "react"
 
+import type { LandingBenefit } from "../landing-copy.ts"
 import { translateWorld } from "./camera.ts"
 import { Chunks } from "./chunks.tsx"
 import { FigureCard } from "./frame.tsx"
@@ -15,7 +16,7 @@ import {
   platen,
 } from "./proof/geometry.ts"
 
-export function ProofCard() {
+export function ProofCard({ benefit }: { benefit: LandingBenefit }) {
   const platenRef = useRef<SVGGElement>(null)
   const contextRef = useRef<SVGGElement>(null)
   const actionRef = useRef<SVGGElement>(null)
@@ -45,8 +46,8 @@ export function ProofCard() {
         )
       }}
       titleId="landing-proof-title"
-      heading="Proof, not claims"
-      description="Turn rough notes into clear results with numbers, so every line holds up."
+      heading={benefit.title}
+      description={benefit.body}
     >
       <svg
         viewBox={`0 0 ${VIEW.width} ${VIEW.height}`}
