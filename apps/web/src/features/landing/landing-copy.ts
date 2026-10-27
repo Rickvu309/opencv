@@ -286,14 +286,9 @@ export const LANDING_FOOTER: readonly FooterColumn[] = [
   {
     heading: "Company",
     links: [
-  href:
-    | "/#paper"
-    | "/#apply"
-    | "/#coach"
-    | "/#stories"
-    | "/pricing"
-    | "/about"
-    | "/blog"
+      { label: "About", href: "/about" },
+      { label: "Stories", href: "/#stories" },
+      { label: "Blog", href: "/blog" },
     ],
   },
 ]

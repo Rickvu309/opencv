@@ -14,9 +14,12 @@ import {
   type LandingNavLink,
 } from "./landing-copy.ts"
 
-function pageHref(href: LandingNavLink["href"]): "/pricing" | "/help" | null {
-  if (href === "/pricing" || href === "/help") return href
-  return null
+type NavHref = LandingNavLink["href"]
+
+function pageHref(href: NavHref): Exclude<NavHref, `/#${string}`> | null {
+  return href.startsWith("/#")
+    ? null
+    : (href as Exclude<NavHref, `/#${string}`>)
 }
 
 export function LandingNav() {
