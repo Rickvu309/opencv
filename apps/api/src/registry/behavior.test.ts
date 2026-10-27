@@ -39,6 +39,7 @@ const coachToolNames = [
   "paper.duplicate",
   "paper.get",
   "paper.import",
+  "paper.keywordGap",
   "paper.list",
   "paper.pageCount",
   "paper.rename",

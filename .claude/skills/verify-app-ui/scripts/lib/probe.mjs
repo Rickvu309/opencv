@@ -65,6 +65,8 @@ function probe() {
       const a = el.getAttribute("aria-label")
       if (a) chrome.add(a)
     }
+    const dataPlaceholder = el.getAttribute("data-placeholder")
+    if (dataPlaceholder) chrome.add(dataPlaceholder)
     if (el.matches('[role="alert"], [role="status"], [data-slot^="empty"]')) {
       chrome.add(clean(el.textContent))
     }
@@ -414,6 +416,13 @@ function probe() {
     }
     out.cvRect = rect(cv)
   }
+  const editor = document.querySelector("[data-paper-editor]")
+  if (editor && shown(editor)) out.editorRect = rect(editor)
+  const aside = document.querySelector("aside")
+  if (aside && shown(aside)) out.sidebarRect = rect(aside)
+  out.coachFloat = Boolean(
+    document.querySelector("[data-coach-float], [data-coach-float-pill]")
+  )
   if (composer) {
     let panel = null
     for (

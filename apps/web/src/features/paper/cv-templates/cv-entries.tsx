@@ -27,6 +27,7 @@ import {
   PAPER_CANVAS_AFFORDANCE_CLASS,
   CanvasAffordance,
   SectionNextStep,
+  useCvPlaceholders,
 } from "./cv-parts.tsx"
 
 export function ExperienceList({
@@ -40,13 +41,52 @@ export function ExperienceList({
   patchExperience: (index: number, next: Partial<CvExperience>) => void
   dark?: boolean
 }) {
+  const placeholders = useCvPlaceholders()
   if (experience.length === 0) {
     return (
-      <SectionNextStep
-        label={EMPTY_SECTION_CTA.experience}
-        dark={dark}
-        onClick={() => setExperience(addExperienceRole(experience))}
-      />
+      <>
+        {placeholders ? (
+          <div className="mb-3 flex flex-col gap-1">
+            <EditableField
+              className="block"
+              aria-label="Role, company"
+              placeholder="Role, company"
+              value=""
+              onChange={(role) => {
+                if (!role) return
+                setExperience([{ role, company: "", period: "", bullets: [] }])
+              }}
+            />
+            <EditableField
+              className="block"
+              aria-label="Dates"
+              placeholder="Dates"
+              value=""
+              onChange={(period) => {
+                if (!period) return
+                setExperience([{ role: "", company: "", period, bullets: [] }])
+              }}
+            />
+            <EditableField
+              aria-label="What you did, and what changed because of it"
+              placeholder="What you did, and what changed because of it"
+              value=""
+              multiline
+              onChange={(bullet) => {
+                if (!bullet) return
+                setExperience([
+                  { role: "", company: "", period: "", bullets: [bullet] },
+                ])
+              }}
+            />
+          </div>
+        ) : null}
+        <SectionNextStep
+          label={EMPTY_SECTION_CTA.experience}
+          dark={dark}
+          onClick={() => setExperience(addExperienceRole(experience))}
+        />
+      </>
     )
   }
 
@@ -283,12 +323,26 @@ export function EducationList({
   setEducation: (education: CvEducation[]) => void
   patchEducation: (index: number, next: Partial<CvEducation>) => void
 }) {
+  const placeholders = useCvPlaceholders()
   if (education.length === 0) {
     return (
-      <SectionNextStep
-        label={EMPTY_SECTION_CTA.education}
-        onClick={() => setEducation(addEducation(education))}
-      />
+      <>
+        {placeholders ? (
+          <EditableField
+            aria-label="School, degree"
+            placeholder="School, degree"
+            value=""
+            onChange={(school) => {
+              if (!school) return
+              setEducation([{ school, degree: "", period: "" }])
+            }}
+          />
+        ) : null}
+        <SectionNextStep
+          label={EMPTY_SECTION_CTA.education}
+          onClick={() => setEducation(addEducation(education))}
+        />
+      </>
     )
   }
 
@@ -388,9 +442,21 @@ export function SkillChips({
     )
   }
 
+  const placeholders = useCvPlaceholders()
   if (groups.length === 0) {
     return (
       <div data-paper-section="skills">
+        {placeholders ? (
+          <EditableField
+            aria-label="Tools, software and languages"
+            placeholder="Tools, software and languages"
+            value=""
+            onChange={(item) => {
+              if (!item) return
+              onChange([{ label: "", items: [item] }])
+            }}
+          />
+        ) : null}
         <SectionNextStep
           label={EMPTY_SECTION_CTA.skills}
           dark={dark}

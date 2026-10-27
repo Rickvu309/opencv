@@ -49,6 +49,13 @@ export const PAPER_CANVAS_NEXT_STEP_CLASS = "paper-canvas-next-step"
 
 export const CvHistoryRevisionContext = createContext(0)
 
+/** Editor-only empty-field hints. Share pages and thumbnails leave this off. */
+export const CvPlaceholderContext = createContext(false)
+
+export function useCvPlaceholders() {
+  return useContext(CvPlaceholderContext)
+}
+
 type FieldProps = {
   value: string
   onChange: (value: string) => void
@@ -127,12 +134,43 @@ export type TemplateProps = PatchProps & {
   ) => void
 }
 
+const CONTACT_PLACEHOLDERS = [
+  ["email", "Email"],
+  ["phone", "Phone"],
+  ["location", "City"],
+  ["linkedin", "LinkedIn"],
+] as const
+
 export function ContactLine({
   data,
   patch,
   className,
 }: PatchProps & { className?: string }) {
   const { contact } = data
+  const placeholders = useCvPlaceholders()
+  if (placeholders) {
+    return (
+      <CvType role="micro" className={cn("leading-relaxed", className)}>
+        {CONTACT_PLACEHOLDERS.map(([key, label], index) => (
+          <span key={key}>
+            {index > 0 ? (
+              <span className="mx-1.5 text-border" aria-hidden="true">
+                |
+              </span>
+            ) : null}
+            <EditableField
+              aria-label={label}
+              placeholder={label}
+              value={contact[key] ?? ""}
+              onChange={(value) =>
+                patch("contact", { ...contact, [key]: value })
+              }
+            />
+          </span>
+        ))}
+      </CvType>
+    )
+  }
   const parts = [
     contact.email,
     contact.phone,
@@ -144,7 +182,11 @@ export function ContactLine({
     <CvType role="micro" className={cn("leading-relaxed", className)}>
       {parts.map((part, i) => (
         <span key={i}>
-          {i > 0 ? <span className="mx-1.5 text-border">|</span> : null}
+          {i > 0 ? (
+            <span className="mx-1.5 text-border" aria-hidden="true">
+              |
+            </span>
+          ) : null}
           <EditableField
             aria-label="Contact detail"
             value={part ?? ""}

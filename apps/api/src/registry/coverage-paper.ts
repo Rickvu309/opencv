@@ -1,4 +1,4 @@
-import { emptyCvDocument, parseUserId } from "@workspace/domain"
+import { emptyCvDocument, parseUserId, personActor } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { expect } from "vitest"
 
@@ -14,7 +14,7 @@ import {
 } from "./coverage-helpers.js"
 
 export function paperCases(tools: CoverageTools): CoverageCase[] {
-  const { ctx, db, run, undo, paperOf, gone, shares, userId } = tools
+  const { ctx, db, registry, run, undo, paperOf, gone, shares, userId } = tools
   return [
     {
       name: "paper.create",
@@ -229,6 +229,25 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
       act: () => run("paper.setStatus", { docId: ctx.docId, status: "ready" }),
       assert: async () => {
         expect(text(await paperOf(ctx.docId), "status")).toBe("ready")
+      },
+    },
+    {
+      name: "paper.deleteFile",
+      arrange: async () => {
+        const file = await saveFile({
+          userId: parseUserId(userId),
+          name: "notes.txt",
+          mediaType: "text/plain",
+          bytes: Buffer.from("notes"),
+          purpose: "import",
+        })
+        ctx.fileId = file.id
+      },
+      act: () => run("paper.deleteFile", { fileId: ctx.fileId }),
+      assert: async () => {
+        await expect(
+          registry.read("file.get", { fileId: ctx.fileId }, personActor(userId))
+        ).rejects.toThrow(/not found/i)
       },
     },
   ]

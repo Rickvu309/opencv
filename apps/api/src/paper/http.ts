@@ -82,6 +82,11 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
     return c.json(successEnvelope(imported.output))
   })
 
+  routes.get("/files", async (c) => {
+    const data = await registry.read("paper.files", {}, person(c.var.userId))
+    return c.json(successEnvelope(data))
+  })
+
   routes.get("/:id/pdf", async (c) => {
     const data = await registry.read(
       "paper.pdf",
@@ -94,6 +99,15 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
       status: 200,
       headers: { "content-type": "application/pdf" },
     })
+  })
+
+  routes.get("/:id/pages", async (c) => {
+    const data = await registry.read(
+      "paper.pageCount",
+      { docId: c.req.param("id") },
+      person(c.var.userId)
+    )
+    return c.json(successEnvelope(data))
   })
 
   routes.get("/:id", async (c) => {

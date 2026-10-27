@@ -3,7 +3,8 @@ import { Pin, X } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 
 import type { CoachContextChip } from "./coach-context-chips.ts"
-import type { ToolbarVariant } from "./paper-editor-toolbar.tsx"
+
+export type ToolbarVariant = "full" | "cv" | "proof" | "letter"
 
 export const REWRITE_SELECTION = "Rewrite selection"
 

@@ -27,8 +27,8 @@ export function PhotoCv({
         <div className="min-w-0 flex-1">
           <CvType role="page-title" as="h1">
             <EditableField
-              aria-label="Your name"
-              placeholder="Your name"
+              aria-label="Name"
+              placeholder="Name"
               sectionId="name"
               value={data.name}
               onChange={(name) => patch("name", name)}
