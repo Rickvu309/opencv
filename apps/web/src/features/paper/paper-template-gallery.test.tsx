@@ -1,12 +1,48 @@
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, render, screen } from "@testing-library/react"
-import { Dialog, DialogContent } from "@workspace/ui/components/dialog"
+import { emptyCvDocument } from "@workspace/domain"
 
+import { PaperCvEditor } from "./paper-editor.tsx"
+import { PaperLibrary } from "./paper-library.tsx"
+import type { PaperPages, PaperRecord } from "./paper-api.ts"
 import { PaperTemplateGallery } from "./paper-template-gallery.tsx"
 import { PAPER_TEMPLATE_LABELS } from "./paper-templates.ts"
 
+const record: PaperRecord = {
+  id: "11111111-1111-4111-8111-111111111111",
+  name: "PM track CV",
+  kind: "cv",
+  templateId: "simple",
+  status: "draft",
+  document: emptyCvDocument(),
+  contentVersion: 1,
+  checks: [],
+  pageChoice: "unset",
+  sourceFileId: null,
+  applyCardId: null,
+  createdAt: "2026-08-25T12:00:00.000Z",
+  updatedAt: "2026-08-25T12:00:00.000Z",
+}
+
+const pages: PaperPages = {
+  docId: record.id,
+  pages: 1,
+  pageChoice: "unset",
+}
+
+function wideDialog() {
+  const content = document
+    .querySelector("[data-template-gallery]")
+    ?.closest("[data-slot='dialog-content']")
+  expect(content?.className).toContain("sm:max-w-3xl")
+  expect(content?.className).toContain("max-h-[90vh]")
+  expect(content?.className).toContain("overflow-y-auto")
+  expect(content?.className).not.toContain("sm:max-w-sm")
+}
+
 afterEach(() => {
   cleanup()
+  vi.unstubAllGlobals()
 })
 
 describe("Paper template gallery", () => {
@@ -53,21 +89,35 @@ describe("Paper template gallery", () => {
   })
 
   it("gives the dialog a wide frame that scrolls inside the viewport", () => {
-    render(
-      <Dialog open>
-        <DialogContent>
-          <PaperTemplateGallery
-            onUse={() => undefined}
-            onImport={() => undefined}
-          />
-        </DialogContent>
-      </Dialog>
+    const library = render(
+      <PaperLibrary
+        docs={[record]}
+        files={[]}
+        loading={false}
+        error={null}
+        onRetry={() => undefined}
+        onOpen={() => undefined}
+      />
     )
+    fireEvent.click(screen.getByRole("button", { name: "New" }))
+    const kindDialog = document.querySelector("[data-slot='dialog-content']")
+    expect(kindDialog?.className).toContain("sm:max-w-sm")
+    expect(kindDialog?.className).not.toContain("sm:max-w-3xl")
+    fireEvent.click(screen.getByRole("button", { name: "CV" }))
+    wideDialog()
+    library.unmount()
 
-    const content = document.querySelector("[data-slot='dialog-content']")
-    expect(content?.className).toContain("sm:max-w-3xl")
-    expect(content?.className).toContain("max-h-[90vh]")
-    expect(content?.className).toContain("overflow-y-auto")
-    expect(content?.className).not.toContain("sm:max-w-sm")
+    vi.stubGlobal(
+      "fetch",
+      () =>
+        Promise.resolve(
+          Response.json({ ok: true, data: {} })
+        ) as Promise<Response>
+    )
+    render(
+      <PaperCvEditor initial={record} pages={pages} onBack={() => undefined} />
+    )
+    fireEvent.click(screen.getByRole("button", { name: "Change template" }))
+    wideDialog()
   })
 })

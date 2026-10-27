@@ -378,7 +378,8 @@ export function PaperLibrary({
           </DialogHeader>
           {mode?.type === "new" ? (
             <PaperNewDialog
-              initialStep={mode.step}
+              step={mode.step}
+              onStepChange={(step) => setMode({ type: "new", step })}
               onCreated={(doc) => {
                 setMode(null)
                 void rememberUndo(doc.id, `Created ${doc.name}`)

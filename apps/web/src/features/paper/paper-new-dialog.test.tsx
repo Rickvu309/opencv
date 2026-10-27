@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 
@@ -35,13 +36,20 @@ describe("Paper new dialog", () => {
       )
     })
 
-    render(
-      <PaperNewDialog
-        onCreated={() => undefined}
-        onChooseLetter={() => undefined}
-        onImport={() => undefined}
-      />
-    )
+    function Harness() {
+      const [step, setStep] = useState<"kind" | "gallery">("kind")
+      return (
+        <PaperNewDialog
+          step={step}
+          onStepChange={setStep}
+          onCreated={() => undefined}
+          onChooseLetter={() => undefined}
+          onImport={() => undefined}
+        />
+      )
+    }
+
+    render(<Harness />)
     fireEvent.click(screen.getByRole("button", { name: "CV" }))
     fireEvent.click(screen.getByRole("button", { name: "Simple" }))
     fireEvent.click(screen.getByRole("button", { name: "Use template" }))

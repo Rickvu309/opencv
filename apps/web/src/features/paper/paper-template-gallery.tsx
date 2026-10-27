@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState } from "react"
+import { useMemo, useState } from "react"
 
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
@@ -17,17 +17,8 @@ export function PaperTemplateGallery({
   onUse: (templateId: string) => void
   onImport?: () => void
 }) {
-  const rootRef = useRef<HTMLDivElement>(null)
   const [query, setQuery] = useState("")
   const [selected, setSelected] = useState("simple")
-  useLayoutEffect(() => {
-    // New switches to the gallery in its own state, so the parent dialog
-    // can still be the narrow default when this mounts.
-    const dialog = rootRef.current?.closest("[data-slot='dialog-content']")
-    if (!(dialog instanceof HTMLElement)) return
-    dialog.classList.remove("sm:max-w-sm")
-    dialog.classList.add("max-h-[90vh]", "overflow-y-auto", "sm:max-w-3xl")
-  })
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase()
     if (!needle) return PAPER_TEMPLATE_LABELS
@@ -40,7 +31,7 @@ export function PaperTemplateGallery({
     PAPER_TEMPLATE_LABELS[0]!
 
   return (
-    <div ref={rootRef} className="@container flex flex-col gap-4">
+    <div className="@container flex flex-col gap-4">
       <Input
         aria-label="Search templates"
         placeholder="Search templates"

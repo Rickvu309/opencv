@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 
 import { Button } from "@workspace/ui/components/button"
 
@@ -6,22 +6,19 @@ import { createPaper, type PaperRecord } from "./paper-api.ts"
 import { PaperTemplateGallery } from "./paper-template-gallery.tsx"
 
 export function PaperNewDialog({
-  initialStep = "kind",
+  step,
+  onStepChange,
   onCreated,
   onChooseLetter,
   onImport,
 }: {
-  initialStep?: "kind" | "gallery"
+  step: "kind" | "gallery"
+  onStepChange: (step: "kind" | "gallery") => void
   onCreated: (doc: PaperRecord) => void
   onChooseLetter: () => void
   onImport: () => void
 }) {
-  const [step, setStep] = useState(initialStep)
   const [pending, setPending] = useState(false)
-
-  useEffect(() => {
-    setStep(initialStep)
-  }, [initialStep])
 
   async function applyTemplate(templateId: string) {
     setPending(true)
@@ -48,7 +45,7 @@ export function PaperNewDialog({
         type="button"
         variant="outline"
         className="h-auto justify-start whitespace-normal"
-        onClick={() => setStep("gallery")}
+        onClick={() => onStepChange("gallery")}
         disabled={pending}
       >
         CV
