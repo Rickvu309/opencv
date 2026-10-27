@@ -1,4 +1,4 @@
-import { DEFAULT_THREAD_TITLE, coachActor } from "@workspace/domain"
+import { DEFAULT_CHAT_TITLE, coachActor } from "@workspace/domain"
 import { expect } from "vitest"
 
 import { stopChat, trackChatTurn } from "../chat/index.js"
@@ -44,7 +44,7 @@ export function chatCases(tools: CoverageTools): CoverageCase[] {
       arrange: async () => {},
       act: () => run("chat.open", {}),
       assert: async (result) => {
-        expectTitle(await chatOf(idOf(result.output)), DEFAULT_THREAD_TITLE)
+        expectTitle(await chatOf(idOf(result.output)), DEFAULT_CHAT_TITLE)
       },
     },
     {

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, screen } from "@testing-library/react"
 
-import { scriptCoachStream } from "@/test/threads-api-mock.ts"
+import { scriptCoachStream } from "@/test/chat-api-mock.ts"
 import { renderApp } from "@/test/render-app.tsx"
 import {
   expectHomeIdle,

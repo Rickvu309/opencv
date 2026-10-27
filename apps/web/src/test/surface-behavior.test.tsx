@@ -15,8 +15,8 @@ import {
 import { getMockPaperDocs } from "@/test/paper-api-mock.ts"
 import { samplePaperDocs } from "@/test/paper-fixtures.ts"
 import { renderApp } from "@/test/render-app.tsx"
-import { FIXTURE_THREADS } from "@/test/thread-fixtures.ts"
-import { getMockThreads } from "@/test/threads-api-mock.ts"
+import { FIXTURE_CHATS } from "@/test/chat-fixtures.ts"
+import { getMockChats } from "@/test/chat-api-mock.ts"
 
 const FIT_LABEL = /\bfit\b|\/ 100/i
 const PERSONA_NAMES = /Alex Tran|alex-tran|Eric Nguyen|eric-nguyen/i
@@ -87,8 +87,8 @@ describe("empty api data shows empty states, never sample content", () => {
     ).not.toBeInTheDocument()
   })
 
-  it("Home shows the greeting and no sample thread", async () => {
-    getMockThreads().splice(0)
+  it("Home shows the greeting and no sample chat", async () => {
+    getMockChats().splice(0)
     getMockPaperDocs().splice(0)
     renderApp(HOME_PATH)
 
@@ -98,7 +98,7 @@ describe("empty api data shows empty states, never sample content", () => {
         name: /^Good (morning|afternoon|evening),/,
       })
     ).toBeInTheDocument()
-    expectNone(FIXTURE_THREADS.map((thread) => thread.title))
+    expectNone(FIXTURE_CHATS.map((chat) => chat.title))
     expectNone(samplePaperDocs().map((doc) => doc.name))
     expectNone(sampleApplyCards().map((card) => card.title))
   })

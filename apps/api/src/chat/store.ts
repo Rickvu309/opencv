@@ -1,6 +1,6 @@
 import {
   CHAT_OPEN_WINDOW_DAYS,
-  DEFAULT_THREAD_TITLE,
+  DEFAULT_CHAT_TITLE,
   ERROR_CODES,
   parseChatId,
   type Actor,
@@ -140,7 +140,7 @@ export async function createChat(
     .values({
       id,
       userId: actor.userId,
-      title: title?.trim() || DEFAULT_THREAD_TITLE,
+      title: title?.trim() || DEFAULT_CHAT_TITLE,
       focusKind: focus?.kind ?? null,
       focusId: focus?.id ?? null,
       createdAt: now,

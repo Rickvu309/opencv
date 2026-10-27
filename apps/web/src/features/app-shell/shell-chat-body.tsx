@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react"
 
 import { CoachDock } from "@/features/coach/coach-dock.tsx"
-import { ThreadView } from "@/features/home/thread-view.tsx"
-import { useThreadStore } from "@/features/home/use-thread-store.ts"
+import { ChatView } from "@/features/coach/chat-view.tsx"
+import { useChatStore } from "@/features/coach/use-chat-store.ts"
 
-export function ShellThreadBody({ chatId = null }: { chatId?: string | null }) {
+export function ShellChatBody({ chatId = null }: { chatId?: string | null }) {
   const {
     messages,
     phase,
@@ -14,8 +14,8 @@ export function ShellThreadBody({ chatId = null }: { chatId?: string | null }) {
     retry,
     regenerate,
     undo,
-    openThread,
-  } = useThreadStore()
+    openChat,
+  } = useChatStore()
   const [draft, setDraft] = useState("")
   const turnActive = phase !== "idle"
   const seenChat = useRef(chatId)
@@ -25,8 +25,8 @@ export function ShellThreadBody({ chatId = null }: { chatId?: string | null }) {
       seenChat.current = chatId
       setDraft("")
     }
-    if (chatId) openThread(chatId)
-  }, [chatId, openThread])
+    if (chatId) openChat(chatId)
+  }, [chatId, openChat])
 
   function handleSend() {
     const text = draft.trim()
@@ -37,7 +37,7 @@ export function ShellThreadBody({ chatId = null }: { chatId?: string | null }) {
   return (
     <div data-slot="coach-panel-body" className="flex h-full min-h-0 flex-col">
       <div className="min-h-0 flex-1 overflow-auto">
-        <ThreadView
+        <ChatView
           messages={messages}
           waiting={phase === "waiting"}
           error={error}

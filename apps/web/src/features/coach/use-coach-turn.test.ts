@@ -6,12 +6,12 @@ import { existsSync, readFileSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 
-import { STREAMING_COACH_ID } from "@/features/home/threads.ts"
+import { STREAMING_COACH_ID } from "@/features/coach/chat-messages.ts"
 import {
-  installThreadApiMock,
-  threadApiFetchOrThrow,
+  installChatApiMock,
+  chatApiFetchOrThrow,
   scriptCoachStream,
-} from "@/test/threads-api-mock.ts"
+} from "@/test/chat-api-mock.ts"
 
 import { useCoachTurn } from "./use-coach-turn.ts"
 
@@ -36,12 +36,12 @@ describe("shared Coach turn hook", () => {
 
     const hook = read("features/coach/use-coach-turn.ts")
     expect(hook).toMatch(/export function useCoachTurn/)
-    expect(hook).toMatch(/getThreadByFocusDoc/)
+    expect(hook).toMatch(/getChatByFocusDoc/)
     expect(hook).toMatch(/focusDocId/)
     expect(hook).not.toMatch(/sessionStorage/)
-    expect(hook).not.toMatch(/paperCoachThreadStorageKey/)
+    expect(hook).not.toMatch(/paperCoach(Thread|Chat)StorageKey/)
 
-    const store = read("features/home/thread-store.tsx")
+    const store = read("features/coach/chat-store.tsx")
     expect(store).toMatch(/useCoachTurn/)
     expect(store).not.toMatch(/streamCoachTurn/)
 
@@ -49,10 +49,10 @@ describe("shared Coach turn hook", () => {
       read("features/paper/coach-float.tsx") +
       read("features/paper/coach-float-chips.tsx")
     expect(panel).toMatch(/useCoachTurn/)
-    expect(read("features/coach/coach-thread.tsx")).not.toMatch(
+    expect(read("features/coach/coach-chat.tsx")).not.toMatch(
       /assistant-ui|AssistantRuntime/
     )
-    expect(panel).toMatch(/CoachThread/)
+    expect(panel).toMatch(/CoachChat/)
     expect(panel).toMatch(/data-coach-soft-scope/)
     expect(panel).toMatch(/data-coach-context-chip/)
     expect(panel).toMatch(/Add to context/)
@@ -69,15 +69,15 @@ describe("shared Coach turn hook", () => {
     expect(cite).not.toMatch(/provenance/)
     expect(cite).not.toMatch(/sources rail/)
     expect(cite).not.toMatch(/knowledge-base/)
-    expect(panel).not.toMatch(/ThreadView/)
-    expect(read("features/coach/coach-thread.tsx")).toMatch(/CoachDock/)
-    expect(read("features/coach/coach-thread.tsx")).toMatch(
+    expect(panel).not.toMatch(/ChatView/)
+    expect(read("features/coach/coach-chat.tsx")).toMatch(/CoachDock/)
+    expect(read("features/coach/coach-chat.tsx")).toMatch(
       /showModePicker=\{false\}/
     )
-    expect(read("features/coach/coach-thread.tsx")).toMatch(/onAttachFromPaper/)
-    expect(read("features/coach/coach-thread.tsx")).toMatch(/messageCite/)
-    expect(read("features/coach/coach-thread.tsx")).not.toMatch(/provenance/)
-    expect(read("features/coach/coach-thread.tsx")).not.toMatch(/sources rail/)
+    expect(read("features/coach/coach-chat.tsx")).toMatch(/onAttachFromPaper/)
+    expect(read("features/coach/coach-chat.tsx")).toMatch(/messageCite/)
+    expect(read("features/coach/coach-chat.tsx")).not.toMatch(/provenance/)
+    expect(read("features/coach/coach-chat.tsx")).not.toMatch(/sources rail/)
     expect(read("features/coach/coach-dock.tsx")).toMatch(/onAttachFromPaper/)
     expect(panel).not.toMatch(/sessionStorage/)
     expect(panel).not.toMatch(/Sparkles/)
@@ -89,7 +89,7 @@ describe("shared Coach turn hook", () => {
 })
 
 describe("useCoachTurn turn lifecycle", () => {
-  beforeEach(() => installThreadApiMock())
+  beforeEach(() => installChatApiMock())
   afterEach(() => vi.unstubAllGlobals())
 
   it("regenerates after an aborted send without duplicating the new reply", async () => {
@@ -100,10 +100,10 @@ describe("useCoachTurn turn lifecycle", () => {
       createElement(QueryClientProvider, { client: queryClient }, children)
     const { result } = renderHook(
       () => {
-        const [threadId, setThreadId] = useState<string | null>(null)
+        const [chatId, setChatId] = useState<string | null>(null)
         return useCoachTurn({
-          threadId,
-          setThreadId,
+          chatId,
+          setChatId,
           titleForCreate: (text) => text,
         })
       },
@@ -150,10 +150,10 @@ describe("useCoachTurn turn lifecycle", () => {
       createElement(QueryClientProvider, { client: queryClient }, children)
     const { result } = renderHook(
       () => {
-        const [threadId, setThreadId] = useState<string | null>(null)
+        const [chatId, setChatId] = useState<string | null>(null)
         return useCoachTurn({
-          threadId,
-          setThreadId,
+          chatId,
+          setChatId,
           titleForCreate: (text) => text,
         })
       },
@@ -170,7 +170,7 @@ describe("useCoachTurn turn lifecycle", () => {
         ) {
           return new Response("{}", { status: 500 })
         }
-        return threadApiFetchOrThrow(input, init)
+        return chatApiFetchOrThrow(input, init)
       }
     )
     act(() => {

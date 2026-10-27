@@ -1,20 +1,20 @@
 import {
   appendCoachPart,
   COACH_SSE_EVENTS,
-  deterministicThreadTitle,
-  shouldAutoTitleThread,
+  deterministicChatTitle,
+  shouldAutoTitleChat,
   textFromParts,
-  DEFAULT_THREAD_TITLE,
+  DEFAULT_CHAT_TITLE,
   type CoachSelection,
-  type ThreadDetail,
-  type ThreadListItem,
-  type ThreadMessage,
-  type ThreadMessagePart,
-  type ThreadMessageStatus,
+  type ChatRecord,
+  type ChatSummary,
+  type ChatEntry,
+  type ChatEntryPart,
+  type ChatMessageStatus,
 } from "@workspace/domain"
 import { vi } from "vitest"
 
-import { FIXTURE_THREADS } from "./thread-fixtures.ts"
+import { FIXTURE_CHATS } from "./chat-fixtures.ts"
 import type {
   CoachScriptPart,
   CoachStreamControl,
@@ -34,11 +34,11 @@ export const DEFAULT_COACH_STREAM_REPLY = DEFAULT_COACH_STREAM_TEXTS.join("")
 export const DEFAULT_COACH_WORKED_MS = 1100
 
 type Store = {
-  threads: ThreadDetail[]
+  chats: ChatRecord[]
 }
 
 const store: Store = {
-  threads: cloneThreads(FIXTURE_THREADS),
+  chats: cloneChats(FIXTURE_CHATS),
 }
 
 let script: CoachStreamScript = {}
@@ -55,12 +55,12 @@ function openGate(): GateState {
   }
 }
 
-function cloneThreads(threads: ThreadDetail[]): ThreadDetail[] {
-  return structuredClone(threads)
+function cloneChats(chats: ChatRecord[]): ChatRecord[] {
+  return structuredClone(chats)
 }
 
-function listItems(): ThreadListItem[] {
-  return [...store.threads]
+function listItems(): ChatSummary[] {
+  return [...store.chats]
     .sort((a, b) => {
       const byUpdated = b.updatedAt.localeCompare(a.updatedAt)
       if (byUpdated !== 0) return byUpdated
@@ -87,14 +87,14 @@ function formatSse(event: string, data: unknown) {
 }
 
 function persistCoach(
-  thread: ThreadDetail,
-  parts: ThreadMessagePart[],
-  status: ThreadMessageStatus,
+  chat: ChatRecord,
+  parts: ChatEntryPart[],
+  status: ChatMessageStatus,
   workedMs = script.workedMs ?? DEFAULT_COACH_WORKED_MS
-): ThreadMessage {
+): ChatEntry {
   const now = isoNow()
   const text = textFromParts(parts)
-  const message: ThreadMessage = {
+  const message: ChatEntry = {
     id: crypto.randomUUID(),
     role: "coach",
     text,
@@ -103,25 +103,25 @@ function persistCoach(
     workedMs,
     parts,
   }
-  thread.messages.push(message)
-  thread.updatedAt = now
-  maybeAutoTitle(thread, status, text)
+  chat.messages.push(message)
+  chat.updatedAt = now
+  maybeAutoTitle(chat, status, text)
   return message
 }
 
 function maybeAutoTitle(
-  thread: ThreadDetail,
-  status: ThreadMessageStatus,
+  chat: ChatRecord,
+  status: ChatMessageStatus,
   coachText: string
 ) {
-  const prior = thread.messages.slice(0, -1)
-  const eligible = shouldAutoTitleThread({
-    currentTitle: thread.title,
+  const prior = chat.messages.slice(0, -1)
+  const eligible = shouldAutoTitleChat({
+    currentTitle: chat.title,
     messages: prior,
     status,
   })
   if (!eligible) return
-  thread.title = deterministicThreadTitle({
+  chat.title = deterministicChatTitle({
     userText: eligible.userText,
     coachText,
   })
@@ -174,7 +174,7 @@ async function waitDelay(ms: number, signal?: AbortSignal) {
   })
 }
 
-function coachStreamResponse(thread: ThreadDetail, signal?: AbortSignal) {
+function coachStreamResponse(chat: ChatRecord, signal?: AbortSignal) {
   const encoder = new TextEncoder()
   const partsToEmit = scriptedParts()
   const streamError = script.streamError
@@ -184,15 +184,15 @@ function coachStreamResponse(thread: ThreadDetail, signal?: AbortSignal) {
 
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
-      let streamedParts: ThreadMessagePart[] = []
+      let streamedParts: ChatEntryPart[] = []
       let started = false
       let aborted = false
       let persisted = false
 
-      const persistOnce = (status: ThreadMessageStatus) => {
+      const persistOnce = (status: ChatMessageStatus) => {
         if (persisted) return undefined
         persisted = true
-        return persistCoach(thread, streamedParts, status)
+        return persistCoach(chat, streamedParts, status)
       }
 
       const emit = async (event: string, data: unknown) => {
@@ -219,7 +219,7 @@ function coachStreamResponse(thread: ThreadDetail, signal?: AbortSignal) {
       if (signal?.aborted) onAbort()
 
       try {
-        await emit(COACH_SSE_EVENTS.messageStart, { chatId: thread.id })
+        await emit(COACH_SSE_EVENTS.messageStart, { chatId: chat.id })
         if (aborted) return
         started = true
 
@@ -289,10 +289,10 @@ function coachStreamResponse(thread: ThreadDetail, signal?: AbortSignal) {
           return
         }
 
-        const status: ThreadMessageStatus = streamError ? "error" : "final"
+        const status: ChatMessageStatus = streamError ? "error" : "final"
         const message = persistOnce(status)
         if (message && !omitEnd) {
-          await emit(COACH_SSE_EVENTS.messageEnd, { chatId: thread.id })
+          await emit(COACH_SSE_EVENTS.messageEnd, { chatId: chat.id })
         }
       } catch (error) {
         if (!(error instanceof Error && error.name === "AbortError")) {
@@ -319,8 +319,8 @@ function coachStreamResponse(thread: ThreadDetail, signal?: AbortSignal) {
   })
 }
 
-export function resetThreadApiMock() {
-  store.threads = cloneThreads(FIXTURE_THREADS)
+export function resetChatApiMock() {
+  store.chats = cloneChats(FIXTURE_CHATS)
   script = {}
   gate = openGate()
   lastCoachRequest = null
@@ -360,25 +360,25 @@ export function scriptCoachStream(
   }
 }
 
-export function getMockThreads() {
-  return store.threads
+export function getMockChats() {
+  return store.chats
 }
 
-function chatRow(thread: ThreadDetail) {
+function chatRow(chat: ChatRecord) {
   return {
-    id: thread.id,
-    title: thread.title,
-    focusKind: thread.focusDocId ? "paper" : null,
-    focusId: thread.focusDocId,
-    createdAt: thread.createdAt,
-    updatedAt: thread.updatedAt,
+    id: chat.id,
+    title: chat.title,
+    focusKind: chat.focusDocId ? "paper" : null,
+    focusId: chat.focusDocId,
+    createdAt: chat.createdAt,
+    updatedAt: chat.updatedAt,
   }
 }
 
-function chatDetail(thread: ThreadDetail) {
+function chatDetail(chat: ChatRecord) {
   return {
-    ...chatRow(thread),
-    messages: thread.messages.map((message) => ({
+    ...chatRow(chat),
+    messages: chat.messages.map((message) => ({
       ...message,
       role: message.role === "user" ? "person" : "coach",
       parts: message.parts ?? [],
@@ -390,14 +390,14 @@ function chatDetail(thread: ThreadDetail) {
 
 export function setMockChats(chats: { id: string; title: string }[]) {
   const now = isoNow()
-  store.threads = chats.map((chat) => ({
+  store.chats = chats.map((chat) => ({
     id: chat.id,
     title: chat.title,
     createdAt: now,
     updatedAt: now,
     focusDocId: null,
     messages: structuredClone(
-      FIXTURE_THREADS.find((fixture) => fixture.id === chat.id)?.messages ?? []
+      FIXTURE_CHATS.find((fixture) => fixture.id === chat.id)?.messages ?? []
     ),
   }))
 }
@@ -413,21 +413,21 @@ function commandInput(init?: RequestInit) {
   ) as Record<string, unknown>
 }
 
-function newThread(title?: string, focusDocId?: string): ThreadDetail {
+function newChat(title?: string, focusDocId?: string): ChatRecord {
   const now = isoNow()
-  const created: ThreadDetail = {
+  const created: ChatRecord = {
     id: crypto.randomUUID(),
-    title: title?.trim() || DEFAULT_THREAD_TITLE,
+    title: title?.trim() || DEFAULT_CHAT_TITLE,
     createdAt: now,
     updatedAt: now,
     focusDocId: focusDocId ?? null,
     messages: [],
   }
-  store.threads.unshift(created)
+  store.chats.unshift(created)
   return created
 }
 
-export async function threadApiFetch(
+export async function chatApiFetch(
   input: RequestInfo | URL,
   init?: RequestInit
 ): Promise<Response | null> {
@@ -435,7 +435,7 @@ export async function threadApiFetch(
   const method = (init?.method ?? "GET").toUpperCase()
 
   if (method === "GET" && path === "/api/chats") {
-    return jsonOk(listItems().map((item) => chatRow(item as ThreadDetail)))
+    return jsonOk(listItems().map((item) => chatRow(item as ChatRecord)))
   }
 
   const turn = /^\/api\/chats\/([^/]+)\/turns$/.exec(path)
@@ -458,37 +458,37 @@ export async function threadApiFetch(
       selection?: CoachSelection
     }
     lastCoachRequest = {
-      threadId: turn[1]!,
+      chatId: turn[1]!,
       ...(body.text != null ? { text: body.text } : {}),
       ...(body.mode != null ? { mode: body.mode } : {}),
       ...(body.regenerate ? { regenerate: true } : {}),
       ...(body.focusDocId ? { focusDocId: body.focusDocId } : {}),
       ...(body.selection ? { selection: body.selection } : {}),
     }
-    const thread = store.threads.find((item) => item.id === turn[1])
-    if (!thread) {
+    const chat = store.chats.find((item) => item.id === turn[1])
+    if (!chat) {
       return jsonError(404, "NOT_FOUND", "Chat not found")
     }
     const now = isoNow()
     if (!body.regenerate) {
-      thread.messages.push({
+      chat.messages.push({
         id: crypto.randomUUID(),
         role: "user",
         text: body.text ?? "",
         createdAt: now,
       })
     }
-    thread.updatedAt = now
-    return coachStreamResponse(thread, init?.signal ?? undefined)
+    chat.updatedAt = now
+    return coachStreamResponse(chat, init?.signal ?? undefined)
   }
 
   const detail = /^\/api\/chats\/([^/]+)$/.exec(path)
   if (method === "GET" && detail) {
-    const thread = store.threads.find((item) => item.id === detail[1])
-    if (!thread) {
+    const chat = store.chats.find((item) => item.id === detail[1])
+    if (!chat) {
       return jsonError(404, "NOT_FOUND", "Chat not found")
     }
-    return jsonOk(chatDetail(thread))
+    return jsonOk(chatDetail(chat))
   }
 
   if (method !== "POST" || !path.startsWith("/api/commands/")) return null
@@ -497,37 +497,37 @@ export async function threadApiFetch(
   if (name === "chat.create") {
     const body = commandInput(init)
     createCalls.push(init?.body ? JSON.parse(String(init.body)) : null)
-    return jsonOk(chatDetail(newThread(body.title as string | undefined)))
+    return jsonOk(chatDetail(newChat(body.title as string | undefined)))
   }
 
   if (name === "chat.open") {
     const focus = commandInput(init).focus as { id: string } | undefined
-    const existing = store.threads.find(
+    const existing = store.chats.find(
       (item) => focus && item.focusDocId === focus.id
     )
-    return jsonOk(chatDetail(existing ?? newThread(undefined, focus?.id)))
+    return jsonOk(chatDetail(existing ?? newChat(undefined, focus?.id)))
   }
 
   if (name === "chat.rename") {
     const body = commandInput(init)
-    const thread = store.threads.find((item) => item.id === body.chatId)
-    if (!thread) return jsonError(404, "NOT_FOUND", "Chat not found")
-    thread.title = String(body.title)
-    return jsonOk(chatDetail(thread))
+    const chat = store.chats.find((item) => item.id === body.chatId)
+    if (!chat) return jsonError(404, "NOT_FOUND", "Chat not found")
+    chat.title = String(body.title)
+    return jsonOk(chatDetail(chat))
   }
 
   if (name === "chat.delete") {
     const body = commandInput(init)
-    const index = store.threads.findIndex((item) => item.id === body.chatId)
+    const index = store.chats.findIndex((item) => item.id === body.chatId)
     if (index === -1) return jsonError(404, "NOT_FOUND", "Chat not found")
-    const [removed] = store.threads.splice(index, 1)
+    const [removed] = store.chats.splice(index, 1)
     return jsonOk({ id: removed!.id })
   }
 
   if (name === "activity.undo") {
     const activityId = String(commandInput(init).activityId ?? "")
-    for (const thread of store.threads) {
-      for (const message of thread.messages) {
+    for (const chat of store.chats) {
+      for (const message of chat.messages) {
         const part = message.parts?.find(
           (item) => item.type === "tool" && item.activityId === activityId
         )
@@ -551,17 +551,17 @@ export async function threadApiFetch(
   return null
 }
 
-export async function threadApiFetchOrThrow(
+export async function chatApiFetchOrThrow(
   input: RequestInfo | URL,
   init?: RequestInit
 ): Promise<Response> {
-  const response = await threadApiFetch(input, init)
+  const response = await chatApiFetch(input, init)
   if (response) return response
   throw new Error(
     `Unexpected fetch: ${(init?.method ?? "GET").toUpperCase()} ${pathOf(input)}`
   )
 }
 
-export function installThreadApiMock() {
-  vi.stubGlobal("fetch", threadApiFetchOrThrow)
+export function installChatApiMock() {
+  vi.stubGlobal("fetch", chatApiFetchOrThrow)
 }

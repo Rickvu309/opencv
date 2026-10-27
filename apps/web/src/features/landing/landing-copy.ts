@@ -86,7 +86,7 @@ export const LANDING_FEATURES: readonly LandingFeature[] = [
       src: "/landing/coach.webp",
       width: 1440,
       height: 705,
-      alt: "A Coach thread. Linh, a student, asks which role to apply for first, and the Coach checks her Apply cards and names one, citing her CV.",
+      alt: "A Coach chat. Linh, a student, asks which role to apply for first, and the Coach checks her Apply cards and names one, citing her CV.",
     },
   },
   {

@@ -6,14 +6,14 @@ import {
 } from "@/features/app-shell/shell-api.ts"
 import { inboxListKey, fetchInbox } from "@/features/inbox/inbox-api.ts"
 import { jobListKey, listJobs } from "@/features/apply/apply-api.ts"
-import { chatListKey, listThreads } from "@/features/home/thread-api.ts"
+import { chatListKey, listChats } from "@/features/coach/chat-api.ts"
 import { listPaper, paperListKey } from "@/features/paper/paper-api.ts"
 
 export function useShellChats() {
   return useQuery({
     queryKey: chatListKey(),
-    queryFn: listThreads,
-    select: (threads) => threads.slice(0, 2),
+    queryFn: listChats,
+    select: (chats) => chats.slice(0, 2),
   })
 }
 

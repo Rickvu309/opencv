@@ -10,13 +10,13 @@ import {
 import {
   DEFAULT_COACH_STREAM_REPLY,
   scriptCoachStream,
-} from "@/test/threads-api-mock.ts"
-import { FIXTURE_THREADS } from "@/test/thread-fixtures.ts"
+} from "@/test/chat-api-mock.ts"
+import { FIXTURE_CHATS } from "@/test/chat-fixtures.ts"
 import { renderApp } from "@/test/render-app.tsx"
 import {
   expectHomeIdle,
   expectSendSettled,
-  expectThreadText,
+  expectChatText,
   idleHeading,
   sendMessage,
   stepButton,
@@ -31,13 +31,13 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-async function openStoredThread(title: RegExp) {
+async function openStoredChat(title: RegExp) {
   fireEvent.click(screen.getByRole("button", { name: "Search" }))
   const dialog = await screen.findByRole("dialog", { name: "Search" })
   fireEvent.click(await within(dialog).findByRole("button", { name: title }))
 }
 
-describe("Home Thread mode and History", { timeout: 15_000 }, () => {
+describe("Home Chat mode and History", { timeout: 15_000 }, () => {
   it("streams a reply progressively and drops working status at first text", async () => {
     const stream = scriptCoachStream({
       gated: true,
@@ -48,16 +48,16 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
 
     await sendMessage("Help me plan the week")
 
-    const working = within(
-      screen.getByRole("log", { name: "Thread" })
-    ).getByRole("status")
+    const working = within(screen.getByRole("log", { name: "Chat" })).getByRole(
+      "status"
+    )
     expect(working).toHaveTextContent("Thinking")
     expect(screen.queryByText("Thinking…")).not.toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Stop" })).toBeInTheDocument()
     expect(
       screen.queryByRole("button", { name: "Send" })
     ).not.toBeInTheDocument()
-    expect(screen.getByRole("log", { name: "Thread" })).toHaveTextContent(
+    expect(screen.getByRole("log", { name: "Chat" })).toHaveTextContent(
       "Help me plan the week"
     )
     expect(
@@ -120,7 +120,7 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
 
     renderApp()
     await expectHomeIdle()
-    await openStoredThread(/Move the intern card to Prep/)
+    await openStoredChat(/Move the intern card to Prep/)
     expect(
       (
         await screen.findAllByRole("button", {
@@ -138,7 +138,7 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
     })
   })
 
-  it("renders the three rich receipt types in the Thread", async () => {
+  it("renders the three rich receipt types in the Chat", async () => {
     scriptCoachStream({
       parts: [
         { kind: "text", text: "I made those changes." },
@@ -239,16 +239,16 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
     await expectHomeIdle()
     await sendMessage("Show me **markdown** please")
 
-    const thread = await screen.findByRole("log", { name: "Thread" })
+    const chat = await screen.findByRole("log", { name: "Chat" })
     expect(await screen.findByText("star")).toBeInTheDocument()
-    expect(thread.querySelector("strong")?.textContent).toBe("star")
-    expect(thread.querySelector("code")?.textContent).toBe("Prep")
+    expect(chat.querySelector("strong")?.textContent).toBe("star")
+    expect(chat.querySelector("code")?.textContent).toBe("Prep")
     expect(screen.getByRole("list")).toBeInTheDocument()
+    expect(within(chat).getByText("Show me **markdown** please").tagName).toBe(
+      "DIV"
+    )
     expect(
-      within(thread).getByText("Show me **markdown** please").tagName
-    ).toBe("DIV")
-    expect(
-      within(thread).getByText("Show me **markdown** please").closest("strong")
+      within(chat).getByText("Show me **markdown** please").closest("strong")
     ).toBeNull()
   })
 
@@ -291,10 +291,10 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
     fireEvent.click(screen.getByRole("button", { name: "Regenerate" }))
     expect(await screen.findByText("Second answer")).toBeInTheDocument()
 
-    const thread = screen.getByRole("log", { name: "Thread" })
-    expect(within(thread).getByText("First answer")).toBeInTheDocument()
-    expect(within(thread).getByText("Second answer")).toBeInTheDocument()
-    expect(within(thread).getAllByText("Help me plan the week")).toHaveLength(1)
+    const chat = screen.getByRole("log", { name: "Chat" })
+    expect(within(chat).getByText("First answer")).toBeInTheDocument()
+    expect(within(chat).getByText("Second answer")).toBeInTheDocument()
+    expect(within(chat).getAllByText("Help me plan the week")).toHaveLength(1)
 
     const regenerates = screen.getAllByRole("button", { name: "Regenerate" })
     expect(regenerates).toHaveLength(2)
@@ -374,19 +374,19 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
     )
     expect(screen.getByText("First answer")).toBeInTheDocument()
     expect(
-      within(screen.getByRole("log", { name: "Thread" })).getAllByText("Cap me")
+      within(screen.getByRole("log", { name: "Chat" })).getAllByText("Cap me")
     ).toHaveLength(1)
     expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument()
   })
 
-  it("enables Regenerate only on the latest Coach message in a restored Thread", async () => {
+  it("enables Regenerate only on the latest Coach message in a restored Chat", async () => {
     renderApp()
     await expectHomeIdle()
-    await openStoredThread(new RegExp(FIXTURE_THREADS[0]!.title))
-    await expectThreadText(FIXTURE_THREADS[0]!.messages[0]!.text)
+    await openStoredChat(new RegExp(FIXTURE_CHATS[0]!.title))
+    await expectChatText(FIXTURE_CHATS[0]!.messages[0]!.text)
 
-    const thread = screen.getAllByRole("log", { name: "Thread" })[0]!
-    const regenerates = within(thread).getAllByRole("button", {
+    const chat = screen.getAllByRole("log", { name: "Chat" })[0]!
+    const regenerates = within(chat).getAllByRole("button", {
       name: "Regenerate",
     })
     expect(regenerates).toHaveLength(2)
@@ -432,15 +432,13 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
     await expectHomeIdle()
 
     await sendMessage("Are you there?")
-    const thread = await screen.findByRole("log", { name: "Thread" })
+    const chat = await screen.findByRole("log", { name: "Chat" })
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "The Coach is unavailable right now. Try again in a moment."
     )
-    expect(within(thread).getByText("Are you there?")).toBeInTheDocument()
+    expect(within(chat).getByText("Are you there?")).toBeInTheDocument()
     expect(
-      within(thread)
-        .getByText("Are you there?")
-        .closest("[aria-invalid='true']")
+      within(chat).getByText("Are you there?").closest("[aria-invalid='true']")
     ).not.toBeNull()
 
     scriptCoachStream()
@@ -452,7 +450,7 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
       expect(screen.queryByRole("alert")).not.toBeInTheDocument()
     })
     expect(
-      within(screen.getByRole("log", { name: "Thread" })).getAllByText(
+      within(screen.getByRole("log", { name: "Chat" })).getAllByText(
         "Are you there?"
       )
     ).toHaveLength(1)

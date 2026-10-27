@@ -1,4 +1,4 @@
-import type { ThreadDetail } from "@workspace/domain"
+import type { ChatRecord } from "@workspace/domain"
 
 function iso(day: number) {
   return `2026-08-${String(day).padStart(2, "0")}T12:00:00.000Z`
@@ -13,7 +13,7 @@ function message(
   return { id, role, text, createdAt }
 }
 
-export const FIXTURE_THREADS: ThreadDetail[] = [
+export const FIXTURE_CHATS: ChatRecord[] = [
   {
     id: "11111111-1111-4111-8111-111111111111",
     title: "CV vs internship first",
@@ -78,7 +78,7 @@ export const FIXTURE_THREADS: ThreadDetail[] = [
       message(
         "33333333-3333-4333-8333-333333333302",
         "coach",
-        "I haven't scored Fit or added an Opportunity in Apply. I can help you think it through here until those Commands exist.",
+        "I haven't scored Fit or added a Job in Apply. I can help you think it through here until those Commands exist.",
         iso(18)
       ),
     ],

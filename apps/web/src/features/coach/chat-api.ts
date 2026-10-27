@@ -1,5 +1,5 @@
 import {
-  DEFAULT_THREAD_TITLE,
+  DEFAULT_CHAT_TITLE,
   parseChatId,
   type ChatDetail,
   type ChatTurnEventOf,
@@ -8,10 +8,10 @@ import {
   type ChatMessage,
   type CoachMode,
   type CoachSelection,
-  type ThreadDetail,
-  type ThreadListItem,
-  type ThreadMessage,
-  type ThreadMessagePart,
+  type ChatRecord,
+  type ChatSummary,
+  type ChatEntry,
+  type ChatEntryPart,
 } from "@workspace/domain"
 
 import type { QueryClient } from "@tanstack/react-query"
@@ -22,8 +22,10 @@ import { queryKey, runContractCommand } from "@/lib/contract-client.ts"
 import { streamChatTurn } from "@/lib/coach-stream.ts"
 import { endpoints } from "@/lib/requests.ts"
 
-// The api speaks chats. The UI renders threads. This is the one place that maps between them.
-function asThread(chat: ChatListItem): ThreadListItem {
+// The api speaks wire chats (ChatDetail, ChatMessage). The UI renders
+// ChatRecord, ChatSummary and ChatEntry. This is the one place that maps
+// between them.
+function asChat(chat: ChatListItem): ChatSummary {
   return {
     id: chat.id,
     title: chat.title,
@@ -33,9 +35,9 @@ function asThread(chat: ChatListItem): ThreadListItem {
   }
 }
 
-function asMessage(message: ChatMessage): ThreadMessage {
+function asMessage(message: ChatMessage): ChatEntry {
   const parts = message.parts.filter(
-    (part): part is ThreadMessagePart =>
+    (part): part is ChatEntryPart =>
       part.type === "text" || part.type === "tool"
   )
   return {
@@ -49,8 +51,8 @@ function asMessage(message: ChatMessage): ThreadMessage {
   }
 }
 
-function asDetail(chat: ChatDetail): ThreadDetail {
-  return { ...asThread(chat), messages: chat.messages.map(asMessage) }
+function asDetail(chat: ChatDetail): ChatRecord {
+  return { ...asChat(chat), messages: chat.messages.map(asMessage) }
 }
 
 export const chatListKey = () => queryKey({ query: "chat.list" })
@@ -59,29 +61,29 @@ export const chatListKey = () => queryKey({ query: "chat.list" })
 export const chatDetailKey = (id: string) =>
   queryKey({ query: "chat.get", input: { chatId: id as ChatId } })
 
-export async function listThreads(): Promise<ThreadListItem[]> {
+export async function listChats(): Promise<ChatSummary[]> {
   const body = await apiFetch<SuccessBody<ChatListItem[]>>(endpoints.chats)
-  return unwrapData(body).map(asThread)
+  return unwrapData(body).map(asChat)
 }
 
-export async function getThread(id: string): Promise<ThreadDetail> {
+export async function getChat(id: string): Promise<ChatRecord> {
   const body = await apiFetch<SuccessBody<ChatDetail>>(endpoints.chat(id))
   return asDetail(unwrapData(body))
 }
 
-export async function getThreadByFocusDoc(
+export async function getChatByFocusDoc(
   focusDocId: string
-): Promise<ThreadListItem | null> {
-  const threads = await listThreads()
-  return threads.find((thread) => thread.focusDocId === focusDocId) ?? null
+): Promise<ChatSummary | null> {
+  const chats = await listChats()
+  return chats.find((chat) => chat.focusDocId === focusDocId) ?? null
 }
 
-export async function createThread(
+export async function createChat(
   queryClient: QueryClient,
   input: { title?: string; focusDocId?: string }
-): Promise<ThreadListItem> {
+): Promise<ChatSummary> {
   if (!input.focusDocId) {
-    return asThread(
+    return asChat(
       await runContractCommand(queryClient, "chat.create", {
         ...(input.title ? { title: input.title } : {}),
       })
@@ -90,10 +92,10 @@ export async function createThread(
   const opened = await runContractCommand(queryClient, "chat.open", {
     focus: { kind: "paper", id: input.focusDocId },
   })
-  if (!input.title || opened.title !== DEFAULT_THREAD_TITLE) {
-    return asThread(opened)
+  if (!input.title || opened.title !== DEFAULT_CHAT_TITLE) {
+    return asChat(opened)
   }
-  return asThread(
+  return asChat(
     await runContractCommand(queryClient, "chat.rename", {
       chatId: parseChatId(opened.id),
       title: input.title,
@@ -101,7 +103,7 @@ export async function createThread(
   )
 }
 
-export function deleteThread(queryClient: QueryClient, chatId: string) {
+export function deleteChat(queryClient: QueryClient, chatId: string) {
   return runContractCommand(queryClient, "chat.delete", {
     chatId: parseChatId(chatId),
   })
@@ -127,14 +129,14 @@ type CoachStreamBody =
 
 function consumeCoachStream(
   queryClient: QueryClient,
-  threadId: string,
+  chatId: string,
   body: CoachStreamBody,
   handlers: CoachStreamHandlers,
   signal?: AbortSignal
 ): Promise<void> {
   return streamChatTurn({
     queryClient,
-    chatId: threadId,
+    chatId,
     body,
     signal,
     onEvent(event) {
@@ -166,7 +168,7 @@ function consumeCoachStream(
 
 export async function streamCoachTurn(
   queryClient: QueryClient,
-  threadId: string,
+  chatId: string,
   text: string,
   handlers: CoachStreamHandlers,
   signal?: AbortSignal,
@@ -176,7 +178,7 @@ export async function streamCoachTurn(
 ): Promise<void> {
   await consumeCoachStream(
     queryClient,
-    threadId,
+    chatId,
     {
       text,
       ...(mode ? { mode } : {}),
@@ -190,7 +192,7 @@ export async function streamCoachTurn(
 
 export async function streamCoachRegenerate(
   queryClient: QueryClient,
-  threadId: string,
+  chatId: string,
   handlers: CoachStreamHandlers,
   signal?: AbortSignal,
   mode?: CoachMode,
@@ -198,7 +200,7 @@ export async function streamCoachRegenerate(
 ): Promise<void> {
   await consumeCoachStream(
     queryClient,
-    threadId,
+    chatId,
     {
       regenerate: true,
       ...(mode ? { mode } : {}),
@@ -209,14 +211,14 @@ export async function streamCoachRegenerate(
   )
 }
 
-export function upsertThreadListItem(
-  threads: ThreadListItem[],
-  item: ThreadListItem
-): ThreadListItem[] {
-  return [item, ...threads.filter((thread) => thread.id !== item.id)]
+export function upsertChatSummary(
+  chats: ChatSummary[],
+  item: ChatSummary
+): ChatSummary[] {
+  return [item, ...chats.filter((chat) => chat.id !== item.id)]
 }
 
-export function toListItem(detail: ThreadDetail): ThreadListItem {
+export function toListItem(detail: ChatRecord): ChatSummary {
   return {
     id: detail.id,
     title: detail.title,

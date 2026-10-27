@@ -2,10 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react"
 
 import { BROAD_SUGGESTIONS } from "@/features/home/suggestions.ts"
-import {
-  getLastCoachRequest,
-  scriptCoachStream,
-} from "@/test/threads-api-mock.ts"
+import { getLastCoachRequest, scriptCoachStream } from "@/test/chat-api-mock.ts"
 import { renderApp } from "@/test/render-app.tsx"
 
 beforeEach(() => {
@@ -46,9 +43,7 @@ describe("Home Coach dock", () => {
     fireEvent.click(screen.getByRole("button", { name: first!.label }))
 
     expect(composer).toHaveValue(first!.prompt)
-    expect(
-      screen.queryByRole("log", { name: "Thread" })
-    ).not.toBeInTheDocument()
+    expect(screen.queryByRole("log", { name: "Chat" })).not.toBeInTheDocument()
   })
 
   it("sends on Enter and keeps Shift+Enter as a newline", async () => {
@@ -59,9 +54,7 @@ describe("Home Coach dock", () => {
     fireEvent.change(composer, { target: { value: "Line one" } })
     fireEvent.keyDown(composer, { key: "Enter", shiftKey: true })
     expect(getLastCoachRequest()?.text).not.toBe("Line one")
-    expect(
-      screen.queryByRole("log", { name: "Thread" })
-    ).not.toBeInTheDocument()
+    expect(screen.queryByRole("log", { name: "Chat" })).not.toBeInTheDocument()
 
     fireEvent.keyDown(composer, { key: "Enter" })
     await waitFor(() => {

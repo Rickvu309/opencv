@@ -1,14 +1,15 @@
 import { useState } from "react"
+import { chatDisplayTitle } from "@workspace/domain"
 
-import { ThreadTopBar } from "@/features/home/thread-top-bar.tsx"
+import { ChatTopBar } from "@/features/coach/chat-top-bar.tsx"
 import { authClient } from "@/lib/auth-client.ts"
-import { ThreadView } from "@/features/home/thread-view.tsx"
+import { ChatView } from "@/features/coach/chat-view.tsx"
 import { CoachDock } from "@/features/coach/coach-dock.tsx"
 import { ConnectedApps } from "@/features/home/connected-apps.tsx"
 import { homeGreeting } from "@/features/home/greeting.ts"
 import { HomeStart } from "@/features/home/home-start.tsx"
 import { HomeSuggestions } from "@/features/home/home-suggestions.tsx"
-import { useThreadStore } from "@/features/home/use-thread-store.ts"
+import { useChatStore } from "@/features/coach/use-chat-store.ts"
 
 export function HomeDashboard() {
   const { data } = authClient.useSession()
@@ -22,16 +23,16 @@ export function HomeDashboard() {
     retry,
     regenerate,
     undo,
-    newThread,
-    deleteThread,
-    activeThreadId,
-    threads,
-  } = useThreadStore()
-  const activeTitle =
-    threads.find((thread) => thread.id === activeThreadId)?.title ?? null
+    newChat,
+    deleteChat,
+    activeChatId,
+    chats,
+  } = useChatStore()
+  const activeChat = chats.find((chat) => chat.id === activeChatId)
+  const activeTitle = activeChat ? chatDisplayTitle(activeChat.title) : null
   const [draft, setDraft] = useState("")
   const turnActive = phase !== "idle"
-  const started = messages.length > 0 || turnActive || activeThreadId != null
+  const started = messages.length > 0 || turnActive || activeChatId != null
 
   function handleSend() {
     const text = draft.trim()
@@ -42,19 +43,19 @@ export function HomeDashboard() {
   if (started) {
     return (
       <div className="flex h-full min-h-0 flex-1 flex-col">
-        <ThreadTopBar
-          onNewThread={newThread}
-          threadTitle={activeTitle}
-          onDeleteThread={
-            activeThreadId
+        <ChatTopBar
+          onNewChat={newChat}
+          chatTitle={activeTitle}
+          onDeleteChat={
+            activeChatId
               ? () => {
-                  void deleteThread(activeThreadId)
+                  void deleteChat(activeChatId)
                 }
               : undefined
           }
         />
         <div className="flex min-h-0 flex-1 flex-col">
-          <ThreadView
+          <ChatView
             messages={messages}
             waiting={phase === "waiting"}
             error={error}

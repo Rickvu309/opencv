@@ -1,11 +1,11 @@
 import { MessageActions } from "@workspace/ui/components/message-actions"
 
-import type { HomeMessage } from "@/features/home/threads.ts"
+import type { ChatViewMessage } from "@/features/coach/chat-messages.ts"
 
 const ACTIONS = ["copy", "regenerate"] as const
 
 type Props = {
-  message: HomeMessage
+  message: ChatViewMessage
   canRegenerate: boolean
   onRegenerate?: () => void
 }

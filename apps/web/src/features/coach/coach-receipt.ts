@@ -2,7 +2,7 @@ import {
   humanizeCommandFailCopy,
   PAPER_KIND_LABEL,
   type CoachReceiptDetail,
-  type ThreadToolPart,
+  type ChatToolPart,
 } from "@workspace/domain"
 
 const RECEIPT_STAGES: { id: string; label: string; dot: string }[] = [
@@ -29,13 +29,13 @@ export function namedReceiptHeadline(detail: CoachReceiptDetail) {
   return `Created ${PAPER_KIND_LABEL[detail.docKind]} ${detail.name}`
 }
 
-export function receiptHeadline(part: ThreadToolPart) {
+export function receiptHeadline(part: ChatToolPart) {
   if (!part.ok) return humanizeCommandFailCopy(part.summary)
   if (part.detail) return namedReceiptHeadline(part.detail)
   return part.summary
 }
 
-export function receiptReversalNote(part: ThreadToolPart) {
+export function receiptReversalNote(part: ChatToolPart) {
   if (!part.reversal) return null
   if (part.reversal.possible) {
     return `Reversible — ${part.reversal.description}`
@@ -43,7 +43,7 @@ export function receiptReversalNote(part: ThreadToolPart) {
   return part.reversal.description
 }
 
-export function receiptShowsUndo(part: ThreadToolPart) {
+export function receiptShowsUndo(part: ChatToolPart) {
   return (
     part.ok &&
     part.reversal?.possible === true &&

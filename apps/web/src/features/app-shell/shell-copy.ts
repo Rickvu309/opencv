@@ -18,11 +18,3 @@ export const shellCopy = {
   expand: "Expand",
   close: "Close",
 } as const
-
-const DEFAULT_CHAT_TITLE = "New Thread"
-
-export function shellChatTitle(title: string | null | undefined) {
-  const trimmed = title?.trim() ?? ""
-  if (!trimmed || trimmed === DEFAULT_CHAT_TITLE) return shellCopy.newChat
-  return trimmed
-}

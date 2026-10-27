@@ -86,8 +86,8 @@ export const OWNED_CV_NAME = "My internship CV"
 
 export const PAPER_LINKED_EMPTY_HINT = "So Apply knows which CV goes with it."
 
-export const PAPER_ATTACH_SAMPLE_CTA = "Attach Sample CV to an Opportunity"
-export const PAPER_ATTACH_CV_CTA = "Attach CV to an Opportunity"
+export const PAPER_ATTACH_SAMPLE_CTA = "Attach Sample CV to a Job"
+export const PAPER_ATTACH_CV_CTA = "Attach CV to a Job"
 
 export function isSampleCv(doc: PaperDoc) {
   return doc.kind === "cv" && doc.name === STARTER_CV_NAME
@@ -139,7 +139,7 @@ export type PaperZeroState = {
 
 export const PAPER_ZERO_STATES = {
   cv: { title: "Start a CV", hint: "Pick a template and fill it in." },
-  letter: { title: "Start a Letter", hint: "Write to one Opportunity." },
+  letter: { title: "Start a Letter", hint: "Write to one Job." },
   proof: { title: "Add a Proof", hint: "Show one thing you made." },
 } as const
 

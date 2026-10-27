@@ -5,8 +5,8 @@ import { titleFrom } from "@workspace/domain"
 import {
   STREAMING_COACH_ID,
   latestCoachMessageId,
-  toHomeMessages,
-} from "@/features/home/threads.ts"
+  toChatViewMessages,
+} from "@/features/coach/chat-messages.ts"
 
 describe("titleFrom", () => {
   it("keeps short text and trims long titles", () => {
@@ -29,7 +29,7 @@ describe("latestCoachMessageId", () => {
   })
 })
 
-describe("toHomeMessages", () => {
+describe("toChatViewMessages", () => {
   it("copies server messages including parts and worked time", () => {
     const parts = [
       { type: "text" as const, text: "Hi" },
@@ -40,7 +40,7 @@ describe("toHomeMessages", () => {
         ok: true,
       },
     ]
-    const mapped = toHomeMessages([
+    const mapped = toChatViewMessages([
       { id: "u1", role: "user", text: "Hello" },
       {
         id: "c1",

@@ -6,12 +6,12 @@ import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { ThreadStoreProvider } from "@/features/home/thread-store.tsx"
-import { toThreadListItems } from "@/features/home/thread-list-port.ts"
-import { useThreadList } from "@/features/home/use-thread-list.ts"
+import { ChatStoreProvider } from "@/features/coach/chat-store.tsx"
+import { toChatSummaries } from "@/features/coach/chat-list-port.ts"
+import { useChatList } from "@/features/coach/use-chat-list.ts"
 import { createQueryClient } from "@/lib/query-client.ts"
-import { FIXTURE_THREADS } from "@/test/thread-fixtures.ts"
-import { installThreadApiMock } from "@/test/threads-api-mock.ts"
+import { FIXTURE_CHATS } from "@/test/chat-fixtures.ts"
+import { installChatApiMock } from "@/test/chat-api-mock.ts"
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const appShellDir = path.resolve(here, "../app-shell")
@@ -22,17 +22,17 @@ const SHELL_FILES = [
   "coach-panel.tsx",
   "nav-profile.tsx",
   "search-modal.tsx",
-  "search-threads.ts",
+  "search-chats.ts",
   "sidebar-nav.ts",
 ]
 
 function wrapper({ children }: { children: ReactNode }) {
-  installThreadApiMock()
+  installChatApiMock()
   const client = createQueryClient()
   return createElement(
     QueryClientProvider,
     { client },
-    createElement(ThreadStoreProvider, null, children)
+    createElement(ChatStoreProvider, null, children)
   )
 }
 
@@ -40,36 +40,36 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe("ThreadListPort", () => {
-  it("exposes only id/title Threads plus list actions", async () => {
-    const { result } = renderHook(() => useThreadList(), { wrapper })
+describe("ChatListPort", () => {
+  it("exposes only id/title Chats plus list actions", async () => {
+    const { result } = renderHook(() => useChatList(), { wrapper })
 
     await waitFor(() => {
-      expect(result.current.threads.length).toBe(FIXTURE_THREADS.length)
+      expect(result.current.chats.length).toBe(FIXTURE_CHATS.length)
     })
 
     expect(Object.keys(result.current).sort()).toEqual([
-      "activeThreadId",
-      "deleteThread",
-      "newThread",
-      "openThread",
-      "threads",
+      "activeChatId",
+      "chats",
+      "deleteChat",
+      "newChat",
+      "openChat",
     ])
-    expect(result.current.activeThreadId).toBeNull()
-    expect(result.current.threads[0]).toEqual({
-      id: FIXTURE_THREADS[0]!.id,
-      title: FIXTURE_THREADS[0]!.title,
+    expect(result.current.activeChatId).toBeNull()
+    expect(result.current.chats[0]).toEqual({
+      id: FIXTURE_CHATS[0]!.id,
+      title: FIXTURE_CHATS[0]!.title,
     })
-    expect(Object.keys(result.current.threads[0]!).sort()).toEqual([
+    expect(Object.keys(result.current.chats[0]!).sort()).toEqual([
       "id",
       "title",
     ])
-    expect(result.current.threads[0]).not.toHaveProperty("messages")
+    expect(result.current.chats[0]).not.toHaveProperty("messages")
   })
 
   it("strips message internals when mapping to the port", () => {
-    expect(toThreadListItems(FIXTURE_THREADS)).toEqual(
-      FIXTURE_THREADS.map(({ id, title }) => ({ id, title }))
+    expect(toChatSummaries(FIXTURE_CHATS)).toEqual(
+      FIXTURE_CHATS.map(({ id, title }) => ({ id, title }))
     )
   })
 
@@ -77,7 +77,7 @@ describe("ThreadListPort", () => {
     for (const file of SHELL_FILES) {
       const src = readFileSync(path.join(appShellDir, file), "utf8")
       expect(src, file).not.toMatch(/HomeThread/)
-      expect(src, file).not.toMatch(/useThreadStore/)
+      expect(src, file).not.toMatch(/useChatStore/)
     }
   })
 })

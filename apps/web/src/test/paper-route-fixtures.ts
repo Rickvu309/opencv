@@ -155,7 +155,7 @@ function releaseStage(stage: string): JobStage {
 
 export function installPaperTestLifecycle() {
   beforeAll(async () => {
-    await import("@/features/coach/coach-thread.tsx")
+    await import("@/features/coach/coach-chat.tsx")
   }, 60_000)
 
   beforeEach(() => {

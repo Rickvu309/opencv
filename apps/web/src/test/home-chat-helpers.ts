@@ -20,7 +20,7 @@ export async function sendMessage(text: string) {
 }
 
 export async function expectSendSettled(text: string) {
-  expect(await screen.findByRole("log", { name: "Thread" })).toHaveTextContent(
+  expect(await screen.findByRole("log", { name: "Chat" })).toHaveTextContent(
     text
   )
   await waitFor(() => {
@@ -33,8 +33,8 @@ export function stepButton(text: string) {
   return new RegExp(escaped)
 }
 
-export async function expectThreadText(text: string) {
-  const logs = await screen.findAllByRole("log", { name: "Thread" })
+export async function expectChatText(text: string) {
+  const logs = await screen.findAllByRole("log", { name: "Chat" })
   expect(logs[0]).toBeInTheDocument()
   expect((await screen.findAllByText(text)).length).toBeGreaterThan(0)
 }

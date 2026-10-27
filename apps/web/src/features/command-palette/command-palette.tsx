@@ -35,7 +35,7 @@ const copy = {
 type CommandPaletteProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onOpenThread: (id: string) => void
+  onOpenChat: (id: string) => void
   onSurface: (id: SurfaceId) => void
 }
 
@@ -68,7 +68,7 @@ function focusSearchButton() {
 export function CommandPalette({
   open,
   onOpenChange,
-  onOpenThread,
+  onOpenChat,
   onSurface,
 }: CommandPaletteProps) {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -182,7 +182,7 @@ export function CommandPalette({
     }
     const chatId = row.id.slice("chat:".length)
     if (requestShellChat({ title: row.title, chatId })) return
-    onOpenThread(chatId)
+    onOpenChat(chatId)
   }
 
   function onQuery(value: string) {

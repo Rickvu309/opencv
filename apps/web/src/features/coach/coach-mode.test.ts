@@ -8,14 +8,14 @@ import {
 } from "@testing-library/react"
 
 import { HOME_PATH } from "@/features/app-shell/surfaces.ts"
-import { coachModeHelper, coachModeLabel } from "@/features/home/coach-mode.ts"
+import { coachModeHelper, coachModeLabel } from "@/features/coach/coach-mode.ts"
 import { renderApp } from "@/test/render-app.tsx"
 import {
   getMockCoachMode,
   getProfileMockPaths,
   setMockPlan,
 } from "@/test/profile-api-mock.ts"
-import { getLastCoachRequest } from "@/test/threads-api-mock.ts"
+import { getLastCoachRequest } from "@/test/chat-api-mock.ts"
 
 beforeEach(() => {
   vi.stubGlobal("scrollTo", vi.fn())
@@ -105,7 +105,7 @@ describe("Home dock mode control", () => {
     })
   })
 
-  it("keeps the chosen mode after remount, on the active Thread, and on the next send", async () => {
+  it("keeps the chosen mode after remount, on the active Chat, and on the next send", async () => {
     setMockPlan("pro")
     const first = renderApp(HOME_PATH)
     await chooseMode("Light")
@@ -129,9 +129,7 @@ describe("Home dock mode control", () => {
     await waitFor(() => {
       expect(getLastCoachRequest()?.mode).toBe("light")
     })
-    expect(
-      await screen.findByRole("log", { name: "Thread" })
-    ).toBeInTheDocument()
+    expect(await screen.findByRole("log", { name: "Chat" })).toBeInTheDocument()
     expectChecked(
       screen.getByRole("radiogroup", { name: "Coach mode" }),
       "Light"

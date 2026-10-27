@@ -14,8 +14,8 @@ import { SegmentedControl } from "@workspace/ui/components/segmented-control"
 
 import { PromptInput } from "@/components/ai-elements/prompt-input.tsx"
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
-import { COACH_MODE_OPTIONS } from "@/features/home/coach-mode.ts"
-import { useCoachMode } from "@/features/home/use-coach-mode.ts"
+import { COACH_MODE_OPTIONS } from "@/features/coach/coach-mode.ts"
+import { useCoachMode } from "@/features/coach/use-coach-mode.ts"
 import { settingsSectionHref } from "@/features/settings/sections.ts"
 
 const DOCK_MENU = [

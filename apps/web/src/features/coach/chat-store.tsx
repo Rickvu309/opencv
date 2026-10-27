@@ -1,29 +1,29 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useCallback, useMemo, useState, type ReactNode } from "react"
-import type { ThreadListItem } from "@workspace/domain"
+import type { ChatSummary } from "@workspace/domain"
 
 import { useCoachTurn } from "@/features/coach/use-coach-turn.ts"
 import {
-  deleteThread as deleteThreadRequest,
-  listThreads,
+  deleteChat as deleteChatRequest,
+  listChats,
   chatDetailKey,
   chatListKey,
-} from "@/features/home/thread-api.ts"
-import { ThreadStoreContext } from "@/features/home/thread-store-context.ts"
-import { titleFrom } from "@/features/home/threads.ts"
+} from "@/features/coach/chat-api.ts"
+import { ChatStoreContext } from "@/features/coach/chat-store-context.ts"
+import { titleFrom } from "@/features/coach/chat-messages.ts"
 import { refreshReads } from "@/lib/contract-client.ts"
 
-const EMPTY_THREADS: ThreadListItem[] = []
+const EMPTY_CHATS: ChatSummary[] = []
 
-export function ThreadStoreProvider({ children }: { children: ReactNode }) {
+export function ChatStoreProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
-  const [activeThreadId, setActiveThreadId] = useState<string | null>(null)
+  const [activeChatId, setActiveChatId] = useState<string | null>(null)
 
   const listQuery = useQuery({
     queryKey: chatListKey(),
-    queryFn: listThreads,
+    queryFn: listChats,
   })
-  const threads = listQuery.data ?? EMPTY_THREADS
+  const chats = listQuery.data ?? EMPTY_CHATS
 
   const {
     messages,
@@ -36,43 +36,43 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
     undo,
     cancelInFlight,
   } = useCoachTurn({
-    threadId: activeThreadId,
-    setThreadId: setActiveThreadId,
+    chatId: activeChatId,
+    setChatId: setActiveChatId,
     titleForCreate: titleFrom,
     onAfterUndo: () => {
       void refreshReads(queryClient, [{ query: "profile.get" }])
     },
   })
 
-  const newThread = useCallback(() => {
+  const newChat = useCallback(() => {
     cancelInFlight()
-    setActiveThreadId(null)
+    setActiveChatId(null)
   }, [cancelInFlight])
 
-  const deleteThread = useCallback(
+  const deleteChat = useCallback(
     async (id: string) => {
-      await deleteThreadRequest(queryClient, id)
+      await deleteChatRequest(queryClient, id)
       queryClient.removeQueries({ queryKey: chatDetailKey(id) })
-      if (activeThreadId === id) {
+      if (activeChatId === id) {
         cancelInFlight()
-        setActiveThreadId(null)
+        setActiveChatId(null)
       }
     },
-    [activeThreadId, cancelInFlight, queryClient]
+    [activeChatId, cancelInFlight, queryClient]
   )
 
-  const openThread = useCallback(
+  const openChat = useCallback(
     (id: string) => {
       cancelInFlight()
-      setActiveThreadId(id)
+      setActiveChatId(id)
     },
     [cancelInFlight]
   )
 
   const value = useMemo(
     () => ({
-      threads,
-      activeThreadId,
+      chats,
+      activeChatId,
       messages,
       phase,
       error,
@@ -81,13 +81,13 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
       retry,
       regenerate,
       undo,
-      openThread,
-      newThread,
-      deleteThread,
+      openChat,
+      newChat,
+      deleteChat,
     }),
     [
-      threads,
-      activeThreadId,
+      chats,
+      activeChatId,
       messages,
       phase,
       error,
@@ -96,15 +96,15 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
       retry,
       regenerate,
       undo,
-      openThread,
-      newThread,
-      deleteThread,
+      openChat,
+      newChat,
+      deleteChat,
     ]
   )
 
   return (
-    <ThreadStoreContext.Provider value={value}>
+    <ChatStoreContext.Provider value={value}>
       {children}
-    </ThreadStoreContext.Provider>
+    </ChatStoreContext.Provider>
   )
 }

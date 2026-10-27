@@ -5,7 +5,7 @@ import type { CoachMode } from "@workspace/domain"
 import {
   COACH_MODE_OPTIONS,
   coachModeHelper,
-} from "@/features/home/coach-mode.ts"
+} from "@/features/coach/coach-mode.ts"
 
 type CoachModeSelectorProps = {
   mode: CoachMode

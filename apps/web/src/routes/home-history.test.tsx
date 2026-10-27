@@ -28,7 +28,7 @@ describe("Home without the old history nav", () => {
     ).not.toBeInTheDocument()
   })
 
-  it("keeps the open thread after visiting Paper", async () => {
+  it("keeps the open chat after visiting Paper", async () => {
     renderApp()
     await expectHomeIdle()
     await sendMessage("Should I finish my CV first?")
@@ -38,7 +38,7 @@ describe("Home without the old history nav", () => {
     await expectPaperDrive()
     await goHome()
 
-    expect(screen.getByRole("log", { name: "Thread" })).toHaveTextContent(
+    expect(screen.getByRole("log", { name: "Chat" })).toHaveTextContent(
       "Should I finish my CV first?"
     )
     expect(

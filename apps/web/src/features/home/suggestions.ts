@@ -27,7 +27,7 @@ export const BROAD_SUGGESTIONS: Suggestion[] = [
     id: "apply",
     label: "Triage Apply",
     prompt:
-      "Look at my Apply inbox and tell me which Opportunities to prioritize this week and which to drop.",
+      "Look at my Apply inbox and tell me which Jobs to prioritize this week and which to drop.",
   },
   {
     id: "proof",
@@ -49,7 +49,7 @@ export const MORE_SUGGESTIONS: Suggestion[] = [
     id: "week",
     label: "Plan this week",
     prompt:
-      "What should I focus on this week for my search? I have Opportunities in Apply and a draft CV.",
+      "What should I focus on this week for my search? I have Jobs in Apply and a draft CV.",
   },
   {
     id: "pitch",

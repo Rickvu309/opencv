@@ -9,7 +9,7 @@ import {
   useState,
 } from "react"
 import { createPortal } from "react-dom"
-import type { CoachSelection } from "@workspace/domain"
+import { chatDisplayTitle, type CoachSelection } from "@workspace/domain"
 import { X } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
@@ -21,7 +21,7 @@ import { ErrorBanner } from "@/components/error-banner.tsx"
 import { DESKTOP_MEDIA_QUERY } from "@/features/app-shell/use-media-query.ts"
 import { useCoachTurn } from "@/features/coach/use-coach-turn.ts"
 import { readStored, writeStored } from "@/lib/local-storage.ts"
-import { listThreads, chatListKey } from "@/features/home/thread-api.ts"
+import { listChats, chatListKey } from "@/features/coach/chat-api.ts"
 
 import {
   ATTACH_FROM_PAPER_FAIL,
@@ -56,9 +56,9 @@ export const COACH_FLOAT_STORAGE_KEY = "opencv:paper:coach-float"
 
 export type CoachFloatState = "closed" | "open"
 
-const CoachThread = lazy(() =>
-  import("@/features/coach/coach-thread.tsx").then((m) => ({
-    default: m.CoachThread,
+const CoachChat = lazy(() =>
+  import("@/features/coach/coach-chat.tsx").then((m) => ({
+    default: m.CoachChat,
   }))
 )
 
@@ -91,7 +91,7 @@ export const CoachFloat = memo(function CoachFloat({
 }: Props) {
   const dialogRef = useRef<HTMLDivElement>(null)
   const returnFocusRef = useRef(false)
-  const [createdThreadId, setCreatedThreadId] = useState<string | null>(null)
+  const [createdChatId, setCreatedChatId] = useState<string | null>(null)
   const [floatState, setFloatState] = useState<CoachFloatState>(() =>
     readStored(COACH_FLOAT_STORAGE_KEY, parseFloatState, "closed")
   )
@@ -105,20 +105,19 @@ export const CoachFloat = memo(function CoachFloat({
   }, [docked, onDockedChange])
   const focusDocId = focusDocIdForTurn(softScope, contextChips, docId)
 
-  const focusedThreadQuery = useQuery({
+  const focusedChatQuery = useQuery({
     queryKey: chatListKey(),
-    queryFn: listThreads,
-    select: (threads) =>
-      threads.find((thread) => thread.focusDocId === docId) ?? null,
+    queryFn: listChats,
+    select: (chats) => chats.find((chat) => chat.focusDocId === docId) ?? null,
     staleTime: Infinity,
   })
 
-  const threadId = createdThreadId ?? focusedThreadQuery.data?.id ?? null
+  const chatId = createdChatId ?? focusedChatQuery.data?.id ?? null
   const titleForCreate = useCallback(() => docName, [docName])
   const { messages, phase, error, send, stop, retry, regenerate, undo } =
     useCoachTurn({
-      threadId,
-      setThreadId: setCreatedThreadId,
+      chatId,
+      setChatId: setCreatedChatId,
       titleForCreate,
       focusDocId,
     })
@@ -186,7 +185,9 @@ export const CoachFloat = memo(function CoachFloat({
   }, [docId, docName])
 
   const turnActive = phase !== "idle"
-  const headerTitle = focusedThreadQuery.data?.title ?? docName
+  const headerTitle = focusedChatQuery.data
+    ? chatDisplayTitle(focusedChatQuery.data.title)
+    : docName
 
   useEffect(() => {
     writeStored(COACH_FLOAT_STORAGE_KEY, floatState)
@@ -250,7 +251,7 @@ export const CoachFloat = memo(function CoachFloat({
       </div>
       {floatState !== "closed" ? (
         <div
-          data-coach-float-thread
+          data-coach-float-chat
           className="flex min-h-0 flex-1 flex-col gap-1.5 px-3 pt-1.5 pb-2"
         >
           {selection?.text ? (
@@ -292,7 +293,7 @@ export const CoachFloat = memo(function CoachFloat({
           <Suspense
             fallback={
               <div
-                data-coach-thread-loading
+                data-coach-chat-loading
                 className="flex flex-1 flex-col gap-2 pt-1"
               >
                 <Skeleton className="h-4 w-2/3" />
@@ -300,7 +301,7 @@ export const CoachFloat = memo(function CoachFloat({
               </div>
             }
           >
-            <CoachThread
+            <CoachChat
               messages={messages}
               waiting={phase === "waiting"}
               turnActive={turnActive}

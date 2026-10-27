@@ -1,3 +1,4 @@
+import { chatDisplayTitle } from "@workspace/domain"
 import { STAGE_LABEL, type Stage } from "@workspace/ui/components/stage-icon"
 
 import { apiFetch } from "@/lib/api.ts"
@@ -206,7 +207,7 @@ export function paletteRows(input: {
   ).map((chat) => ({
     kind: "chat" as const,
     id: `chat:${chat.id}`,
-    title: chat.title,
+    title: chatDisplayTitle(chat.title),
   }))
 
   return [...pages, ...jobs, ...paper, ...chats].filter((row) =>

@@ -13,7 +13,7 @@ import { pathOf } from "@/test/mock-http.ts"
 import { paperApiFetch } from "@/test/paper-api-mock.ts"
 import { profileApiFetch } from "@/test/profile-api-mock.ts"
 import { shellApiFetch } from "@/test/shell-api-mock.ts"
-import { threadApiFetch } from "@/test/threads-api-mock.ts"
+import { chatApiFetch } from "@/test/chat-api-mock.ts"
 import { bindTestRouter } from "@/test/go-home.ts"
 import { vi } from "vitest"
 
@@ -28,8 +28,8 @@ export function renderApp(
       if (pathOf(input) === "/api/public-config") {
         return Response.json({ google: mockPublicConfig.google })
       }
-      const thread = await threadApiFetch(input, init)
-      if (thread) return thread
+      const chat = await chatApiFetch(input, init)
+      if (chat) return chat
       const apply = await applyApiFetch(input, init)
       if (apply) return apply
       const paper = await paperApiFetch(input, init)

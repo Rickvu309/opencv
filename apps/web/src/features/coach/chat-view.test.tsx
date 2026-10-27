@@ -9,8 +9,8 @@ import {
   within,
 } from "@testing-library/react"
 
-import { STREAMING_COACH_ID } from "@/features/home/threads.ts"
-import { ThreadView } from "@/features/home/thread-view.tsx"
+import { STREAMING_COACH_ID } from "@/features/coach/chat-messages.ts"
+import { ChatView } from "@/features/coach/chat-view.tsx"
 
 afterEach(() => {
   cleanup()
@@ -46,7 +46,7 @@ const createReceipt = {
 }
 
 function coachTurn(
-  parts: Parameters<typeof ThreadView>[0]["messages"][0]["parts"]
+  parts: Parameters<typeof ChatView>[0]["messages"][0]["parts"]
 ) {
   return {
     id: "coach-1",
@@ -56,18 +56,18 @@ function coachTurn(
   }
 }
 
-describe("ThreadView thinking state", () => {
+describe("ChatView thinking state", () => {
   it("shows one Thinking loader and no second shimmer while waiting", () => {
-    render(createElement(ThreadView, { messages: [], waiting: true }))
+    render(createElement(ChatView, { messages: [], waiting: true }))
 
-    const thread = screen.getByRole("log", { name: "Thread" })
-    expect(within(thread).getByRole("status")).toHaveTextContent("Thinking")
+    const chat = screen.getByRole("log", { name: "Chat" })
+    expect(within(chat).getByRole("status")).toHaveTextContent("Thinking")
     expect(screen.queryByText("Thinking…")).not.toBeInTheDocument()
   })
 
   it("drops the loader once reply text is on screen and keeps no running timer", () => {
     render(
-      createElement(ThreadView, {
+      createElement(ChatView, {
         messages: [
           {
             id: STREAMING_COACH_ID,
@@ -94,7 +94,7 @@ describe("ThreadView thinking state", () => {
 
   it("renders no reply actions on the live turn", () => {
     render(
-      createElement(ThreadView, {
+      createElement(ChatView, {
         messages: [
           {
             id: STREAMING_COACH_ID,
@@ -112,10 +112,10 @@ describe("ThreadView thinking state", () => {
   })
 })
 
-describe("ThreadView steps", () => {
+describe("ChatView steps", () => {
   it("folds two adjacent steps into one group and keeps Undo reachable", () => {
     render(
-      createElement(ThreadView, {
+      createElement(ChatView, {
         messages: [coachTurn([moveReceipt, createReceipt])],
         onUndo: async () => {},
       })
@@ -130,7 +130,7 @@ describe("ThreadView steps", () => {
 
   it("leaves a single step as its own card", () => {
     render(
-      createElement(ThreadView, {
+      createElement(ChatView, {
         messages: [coachTurn([moveReceipt])],
       })
     )
@@ -159,7 +159,7 @@ describe("ThreadView steps", () => {
             },
           ]
         : [{ type: "text" as const, text: "Moved it." }, moveReceipt]
-      return createElement(ThreadView, {
+      return createElement(ChatView, {
         messages: [coachTurn(parts)],
         onUndo: async () => {
           setUndone(true)
@@ -180,13 +180,13 @@ describe("ThreadView steps", () => {
   })
 })
 
-describe("ThreadView reply actions", () => {
+describe("ChatView reply actions", () => {
   it("copies from the keyboard and announces it", async () => {
     vi.useFakeTimers()
     const writeText = vi.fn().mockResolvedValue(undefined)
     vi.stubGlobal("navigator", { ...navigator, clipboard: { writeText } })
     render(
-      createElement(ThreadView, {
+      createElement(ChatView, {
         messages: [coachTurn([{ type: "text", text: "Moved it." }])],
         onRegenerate: () => {},
       })
@@ -211,7 +211,7 @@ describe("ThreadView reply actions", () => {
 
   it("offers Copy and Regenerate and no voice control", () => {
     render(
-      createElement(ThreadView, {
+      createElement(ChatView, {
         messages: [coachTurn([{ type: "text", text: "Moved it." }])],
         onRegenerate: () => {},
       })

@@ -1,7 +1,7 @@
-import type { CoachReceiptDetail, ThreadToolPart } from "@workspace/domain"
+import type { CoachReceiptDetail, ChatToolPart } from "@workspace/domain"
 
-import { receiptHeadline } from "@/features/home/coach-receipt.ts"
-import type { HomeMessage } from "@/features/home/threads.ts"
+import { receiptHeadline } from "@/features/coach/coach-receipt.ts"
+import type { ChatViewMessage } from "@/features/coach/chat-messages.ts"
 
 export type UpdateContentDetail = Extract<
   CoachReceiptDetail,
@@ -18,14 +18,14 @@ export type CoachPart =
       name: string
       label: string
       status: CoachToolStatus
-      part: ThreadToolPart
+      part: ChatToolPart
     }
   | { kind: "diff"; key: string; detail: UpdateContentDetail }
 
 export type CoachToolPart = Extract<CoachPart, { kind: "tool" }>
 
 /** One Coach turn as renderable parts, in the order the Coach produced them. */
-export function toCoachParts(message: HomeMessage): CoachPart[] {
+export function toCoachParts(message: ChatViewMessage): CoachPart[] {
   const source = message.parts
   if (!source?.length) {
     return message.text

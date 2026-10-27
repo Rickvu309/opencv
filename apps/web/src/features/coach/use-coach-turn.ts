@@ -5,30 +5,30 @@ import {
   parsePaperId,
   textFromParts,
   type CoachSelection,
-  type ThreadDetail,
-  type ThreadMessagePart,
+  type ChatRecord,
+  type ChatEntryPart,
 } from "@workspace/domain"
 
-import { coachSendErrorMessage } from "@/features/home/coach-error.ts"
-import { useCoachMode } from "@/features/home/use-coach-mode.ts"
+import { coachSendErrorMessage } from "@/features/coach/coach-error.ts"
+import { useCoachMode } from "@/features/coach/use-coach-mode.ts"
 import { undoActivity } from "@/lib/contract-client.ts"
 import {
-  createThread,
-  getThread,
-  getThreadByFocusDoc,
+  createChat,
+  getChat,
+  getChatByFocusDoc,
   streamCoachRegenerate,
   streamCoachTurn,
   chatDetailKey,
   type CoachStreamHandlers,
-} from "@/features/home/thread-api.ts"
+} from "@/features/coach/chat-api.ts"
 import {
   STREAMING_COACH_ID,
-  toHomeMessages,
-  type HomeMessage,
-} from "@/features/home/threads.ts"
+  toChatViewMessages,
+  type ChatViewMessage,
+} from "@/features/coach/chat-messages.ts"
 import { isAbortError } from "@/lib/sse.ts"
 
-import { useThreadCache } from "./thread-cache.ts"
+import { useChatCache } from "./chat-cache.ts"
 import {
   IDLE_TURN,
   turnPhase,
@@ -43,8 +43,8 @@ export type CoachSendOptions = {
 }
 
 export type UseCoachTurnOptions = {
-  threadId: string | null
-  setThreadId: (id: string) => void
+  chatId: string | null
+  setChatId: (id: string) => void
   titleForCreate: (text: string) => string
   focusDocId?: string | null
   onAfterUndo?: () => void
@@ -52,8 +52,8 @@ export type UseCoachTurnOptions = {
 
 type CoachStreamRun = {
   kind: TurnKind
-  messages: HomeMessage[]
-  user: HomeMessage | undefined
+  messages: ChatViewMessage[]
+  user: ChatViewMessage | undefined
   resolveId: (generation: number) => Promise<string | null>
   stream: (
     id: string,
@@ -68,8 +68,8 @@ type CoachStreamRun = {
 }
 
 export function useCoachTurn({
-  threadId,
-  setThreadId,
+  chatId,
+  setChatId,
   titleForCreate,
   focusDocId,
   onAfterUndo,
@@ -82,16 +82,16 @@ export function useCoachTurn({
   const phase = turnPhase(state)
 
   const detailQuery = useQuery({
-    queryKey: chatDetailKey(threadId ?? ""),
-    queryFn: () => getThread(threadId!),
-    enabled: Boolean(threadId) && phase === "idle",
+    queryKey: chatDetailKey(chatId ?? ""),
+    queryFn: () => getChat(chatId!),
+    enabled: Boolean(chatId) && phase === "idle",
     staleTime: Infinity,
   })
 
   const current = useMemo(
     () =>
       state.messages ??
-      (detailQuery.data ? toHomeMessages(detailQuery.data.messages) : []),
+      (detailQuery.data ? toChatViewMessages(detailQuery.data.messages) : []),
     [detailQuery.data, state.messages]
   )
   const baseline = useMemo(
@@ -113,39 +113,40 @@ export function useCoachTurn({
   const actionError =
     failure?.kind === "regenerate" ? failure.error.message : null
 
-  const { rememberListItem, hydrateThread, keepStreamedCoach } = useThreadCache(
-    { titleForCreate, focusDocId }
-  )
+  const { rememberListItem, hydrateChat, keepStreamedCoach } = useChatCache({
+    titleForCreate,
+    focusDocId,
+  })
 
-  const resolveThreadId = useCallback(
+  const resolveChatId = useCallback(
     async (text: string, generation: number): Promise<string | null> => {
-      if (threadId) return threadId
+      if (chatId) return chatId
 
       if (focusDocId) {
-        const existing = await getThreadByFocusDoc(focusDocId)
+        const existing = await getChatByFocusDoc(focusDocId)
         if (generation !== sendGeneration.current) return null
         if (existing) {
           rememberListItem(existing)
-          setThreadId(existing.id)
+          setChatId(existing.id)
           return existing.id
         }
       }
 
-      const created = await createThread(queryClient, {
+      const created = await createChat(queryClient, {
         title: titleForCreate(text),
         ...(focusDocId ? { focusDocId: parsePaperId(focusDocId) } : {}),
       })
       rememberListItem(created)
       if (generation !== sendGeneration.current) return null
-      setThreadId(created.id)
+      setChatId(created.id)
       return created.id
     },
     [
       focusDocId,
       queryClient,
       rememberListItem,
-      setThreadId,
-      threadId,
+      setChatId,
+      chatId,
       titleForCreate,
     ]
   )
@@ -170,19 +171,19 @@ export function useCoachTurn({
       const stale = () => generation !== sendGeneration.current
       dispatch({ type: "start", kind, messages: prefix })
 
-      let parts: ThreadMessagePart[] = []
+      let parts: ChatEntryPart[] = []
       let painted = prefix
       let ended = false
       let streamError: string | undefined
-      let id: string | null = threadId
+      let id: string | null = chatId
 
-      const settled = (threadKey: string) => {
-        const detail = queryClient.getQueryData<ThreadDetail>(
-          chatDetailKey(threadKey)
+      const settled = (chatKey: string) => {
+        const detail = queryClient.getQueryData<ChatRecord>(
+          chatDetailKey(chatKey)
         )
-        return detail ? toHomeMessages(detail.messages) : prefix
+        return detail ? toChatViewMessages(detail.messages) : prefix
       }
-      const paint = (next: ThreadMessagePart[]) => {
+      const paint = (next: ChatEntryPart[]) => {
         parts = next
         painted = [
           ...prefix,
@@ -195,15 +196,15 @@ export function useCoachTurn({
         ]
         dispatch({ type: "delta", messages: painted })
       }
-      const keepPartial = async (threadKey: string | null) => {
-        if (!threadKey) {
+      const keepPartial = async (chatKey: string | null) => {
+        if (!chatKey) {
           dispatch({ type: "abort", messages: prefix })
           return
         }
-        await hydrateThread(threadKey)
+        await hydrateChat(chatKey)
         if (stale()) return
-        if (parts.length > 0) keepStreamedCoach(threadKey, user, parts)
-        dispatch({ type: "abort", messages: settled(threadKey) })
+        if (parts.length > 0) keepStreamedCoach(chatKey, user, parts)
+        dispatch({ type: "abort", messages: settled(chatKey) })
       }
       const handlers: CoachStreamHandlers = {
         onTextDelta({ text }) {
@@ -230,7 +231,7 @@ export function useCoachTurn({
         if (stale()) return
 
         if (ended) {
-          const detail = await hydrateThread(id)
+          const detail = await hydrateChat(id)
           if (stale()) return
           if (!detail && parts.length > 0) keepStreamedCoach(id, user, parts)
           if (!streamError) {
@@ -238,7 +239,7 @@ export function useCoachTurn({
             return
           }
           const lastUser = [
-            ...(queryClient.getQueryData<ThreadDetail>(chatDetailKey(id))
+            ...(queryClient.getQueryData<ChatRecord>(chatDetailKey(id))
               ?.messages ?? []),
           ]
             .reverse()
@@ -265,7 +266,7 @@ export function useCoachTurn({
           return
         }
 
-        await hydrateThread(id)
+        await hydrateChat(id)
         if (stale()) return
         dispatch({ type: "finish", messages: null })
       } catch (error) {
@@ -283,7 +284,7 @@ export function useCoachTurn({
         if (!stale()) abortRef.current = null
       }
     },
-    [hydrateThread, keepStreamedCoach, queryClient, threadId]
+    [hydrateChat, keepStreamedCoach, queryClient, chatId]
   )
 
   const send = useCallback(
@@ -297,7 +298,7 @@ export function useCoachTurn({
 
       const droppedId =
         retrying && sendError?.local ? sendError.userMessageId : null
-      const userMessage: HomeMessage = {
+      const userMessage: ChatViewMessage = {
         id: `local-${crypto.randomUUID()}`,
         role: "user",
         text: trimmed,
@@ -310,7 +311,7 @@ export function useCoachTurn({
           userMessage,
         ],
         user: userMessage,
-        resolveId: (generation) => resolveThreadId(trimmed, generation),
+        resolveId: (generation) => resolveChatId(trimmed, generation),
         stream: (id, handlers, signal) =>
           streamCoachTurn(
             queryClient,
@@ -338,7 +339,7 @@ export function useCoachTurn({
       mode,
       phase,
       queryClient,
-      resolveThreadId,
+      resolveChatId,
       runCoachStream,
       sendError,
     ]
@@ -346,7 +347,7 @@ export function useCoachTurn({
 
   const regenerate = useCallback(() => {
     if (phase !== "idle") return false
-    const id = threadId
+    const id = chatId
     if (!id) return false
 
     const lastCoach = baseline.findLast((message) => message.role === "coach")
@@ -358,10 +359,10 @@ export function useCoachTurn({
       messages: baseline,
       user: lastUser,
       resolveId: async () => id,
-      stream: (threadKey, handlers, signal) =>
+      stream: (chatKey, handlers, signal) =>
         streamCoachRegenerate(
           queryClient,
-          threadKey,
+          chatKey,
           handlers,
           signal,
           mode,
@@ -375,7 +376,7 @@ export function useCoachTurn({
       }),
     })
     return true
-  }, [baseline, focusDocId, mode, phase, queryClient, runCoachStream, threadId])
+  }, [baseline, focusDocId, mode, phase, queryClient, runCoachStream, chatId])
 
   const retry = useCallback(() => {
     if (!failure) return false
@@ -388,15 +389,15 @@ export function useCoachTurn({
 
   const undo = useCallback(
     async (activityId: string) => {
-      const id = threadId
+      const id = chatId
       if (!id || phase !== "idle") return
 
       await undoActivity(queryClient, activityId)
-      await hydrateThread(id)
+      await hydrateChat(id)
       dispatch({ type: "reset" })
       onAfterUndo?.()
     },
-    [hydrateThread, onAfterUndo, phase, queryClient, threadId]
+    [hydrateChat, onAfterUndo, phase, queryClient, chatId]
   )
 
   return {

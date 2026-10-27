@@ -5,7 +5,7 @@ import {
   errorEnvelope,
   httpStatusForError,
   planAllowsMode,
-  threadIdSchema,
+  chatIdSchema,
   personActor,
   PLAN_REQUIRED_MESSAGE,
   type CoachMode,
@@ -47,7 +47,7 @@ async function startTurn(
   coach: CoachRuntime | undefined,
   heartbeatMs = COACH_SSE_HEARTBEAT_MS
 ) {
-  const chatIdParsed = threadIdSchema.safeParse(c.req.param("id"))
+  const chatIdParsed = chatIdSchema.safeParse(c.req.param("id"))
   if (!chatIdParsed.success) {
     return jsonWithStatus(
       c,

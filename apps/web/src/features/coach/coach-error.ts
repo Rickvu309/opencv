@@ -32,7 +32,7 @@ function apiErrorSentence(error: ApiError): string {
     return "Your session ended, so the Coach couldn't answer. Sign in again, then retry."
   }
   if (error.status === 404) {
-    return "Something went wrong: the Coach couldn't find your Thread. Reload the page, or start a new Thread."
+    return "Something went wrong: the Coach couldn't find this chat. Reload the page, or start a new chat."
   }
   if (error.status === 429) {
     return "The Coach is getting too many requests. Wait a moment, then retry."

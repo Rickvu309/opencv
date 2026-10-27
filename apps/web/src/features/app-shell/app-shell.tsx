@@ -11,7 +11,8 @@ import { Menu, Search, SquarePen } from "lucide-react"
 import { NavProfile } from "@/features/app-shell/nav-profile.tsx"
 import { searchShortcutLabel } from "@/features/app-shell/search-shortcut.ts"
 import { SHELL_PRIMARY, SHELL_WORK } from "@/features/app-shell/sidebar-nav.ts"
-import { shellChatTitle, shellCopy } from "@/features/app-shell/shell-copy.ts"
+import { chatDisplayTitle } from "@workspace/domain"
+import { shellCopy } from "@/features/app-shell/shell-copy.ts"
 import { HOME_PATH } from "@/features/app-shell/surfaces.ts"
 import {
   DESKTOP_MEDIA_QUERY,
@@ -26,7 +27,7 @@ import {
   CoachPanel,
   type CoachPanelMode,
 } from "@/features/app-shell/coach-panel.tsx"
-import { ShellThreadBody } from "@/features/app-shell/shell-thread-body.tsx"
+import { ShellChatBody } from "@/features/app-shell/shell-chat-body.tsx"
 import { registerShellChatOpener } from "@/features/command-palette/shell-chat.ts"
 import { runContractCommand } from "@/lib/contract-client.ts"
 import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
@@ -274,7 +275,7 @@ export function AppShell({ onSearch }: AppShellProps) {
       setPanel({
         open: true,
         mode: "side",
-        title: shellChatTitle(chat.title),
+        title: chatDisplayTitle(chat.title),
         chatId: chat.id,
       })
     } catch {
@@ -314,7 +315,7 @@ export function AppShell({ onSearch }: AppShellProps) {
           }
           onClose={closePanel}
         >
-          <ShellThreadBody chatId={panel.chatId} />
+          <ShellChatBody chatId={panel.chatId} />
         </CoachPanel>
       ) : null}
     </div>
@@ -389,7 +390,7 @@ export function AppShell({ onSearch }: AppShellProps) {
               dockRef={dockRef}
               titles={(chats.data ?? []).map((chat) => ({
                 id: chat.id,
-                title: shellChatTitle(chat.title),
+                title: chatDisplayTitle(chat.title),
               }))}
               onOpenChat={(chat) => openPanel(chat)}
               onCoach={() =>

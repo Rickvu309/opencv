@@ -1,7 +1,8 @@
 import {
   COACH_SSE_EVENTS,
-  type ThreadDetail,
-  type ThreadListItem,
+  DEFAULT_CHAT_TITLE,
+  type ChatRecord,
+  type ChatSummary,
 } from "@workspace/domain"
 import { QueryClient } from "@tanstack/react-query"
 import { afterEach, describe, expect, it, vi } from "vitest"
@@ -9,16 +10,16 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { undoActivity } from "@/lib/contract-client.ts"
 import { apiBaseUrl } from "@/lib/api-url.ts"
 import {
-  createThread,
-  deleteThread,
-  getThread,
-  getThreadByFocusDoc,
-  listThreads,
+  createChat,
+  deleteChat,
+  getChat,
+  getChatByFocusDoc,
+  listChats,
   streamCoachRegenerate,
   streamCoachTurn,
   toListItem,
-  upsertThreadListItem,
-} from "@/features/home/thread-api.ts"
+  upsertChatSummary,
+} from "@/features/coach/chat-api.ts"
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -54,8 +55,8 @@ function callOf(fetchMock: ReturnType<typeof vi.fn>, index = 0) {
   return { url: String(url), init }
 }
 
-describe("thread API client", () => {
-  it("lists chats from GET /api/chats and maps them to Threads", async () => {
+describe("chat API client", () => {
+  it("lists chats from GET /api/chats and maps them to Chats", async () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValue(
@@ -66,7 +67,7 @@ describe("thread API client", () => {
       )
     vi.stubGlobal("fetch", fetchMock)
 
-    await expect(listThreads()).resolves.toEqual([
+    await expect(listChats()).resolves.toEqual([
       {
         id: CHAT_ID,
         title: "Plan the week",
@@ -118,7 +119,7 @@ describe("thread API client", () => {
     )
     vi.stubGlobal("fetch", fetchMock)
 
-    const detail = await getThread(CHAT_ID)
+    const detail = await getChat(CHAT_ID)
     expect(callOf(fetchMock).url).toBe(`${apiBaseUrl}/api/chats/${CHAT_ID}`)
     expect(detail.messages).toEqual([
       {
@@ -148,7 +149,7 @@ describe("thread API client", () => {
     vi.stubGlobal("fetch", fetchMock)
 
     await expect(
-      createThread(new QueryClient(), { title: "Help me plan the week" })
+      createChat(new QueryClient(), { title: "Help me plan the week" })
     ).resolves.toMatchObject({ id: CHAT_ID, title: "Help me plan the week" })
 
     const call = callOf(fetchMock)
@@ -162,7 +163,11 @@ describe("thread API client", () => {
       .fn()
       .mockResolvedValueOnce(
         envelope(
-          chatRow({ title: "New Thread", focusKind: "paper", focusId: DOC_ID })
+          chatRow({
+            title: DEFAULT_CHAT_TITLE,
+            focusKind: "paper",
+            focusId: DOC_ID,
+          })
         )
       )
       .mockResolvedValueOnce(
@@ -173,7 +178,7 @@ describe("thread API client", () => {
     vi.stubGlobal("fetch", fetchMock)
 
     await expect(
-      createThread(new QueryClient(), {
+      createChat(new QueryClient(), {
         title: "PM track CV",
         focusDocId: DOC_ID,
       })
@@ -207,7 +212,7 @@ describe("thread API client", () => {
     vi.stubGlobal("fetch", fetchMock)
 
     await expect(
-      createThread(new QueryClient(), {
+      createChat(new QueryClient(), {
         title: "PM track CV",
         focusDocId: DOC_ID,
       })
@@ -215,7 +220,7 @@ describe("thread API client", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
-  it("finds the Thread grounded on a doc from the chat list", async () => {
+  it("finds the Chat grounded on a doc from the chat list", async () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValue(
@@ -226,22 +231,22 @@ describe("thread API client", () => {
       )
     vi.stubGlobal("fetch", fetchMock)
 
-    await expect(getThreadByFocusDoc(DOC_ID)).resolves.toMatchObject({
+    await expect(getChatByFocusDoc(DOC_ID)).resolves.toMatchObject({
       id: CHAT_ID,
       focusDocId: DOC_ID,
     })
   })
 
-  it("returns null when no Thread is grounded on the doc", async () => {
+  it("returns null when no Chat is grounded on the doc", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(envelope([chatRow()])))
-    await expect(getThreadByFocusDoc(DOC_ID)).resolves.toBeNull()
+    await expect(getChatByFocusDoc(DOC_ID)).resolves.toBeNull()
   })
 
   it("deletes a chat with chat.delete", async () => {
     const fetchMock = vi.fn().mockResolvedValue(envelope({ id: CHAT_ID }))
     vi.stubGlobal("fetch", fetchMock)
 
-    await expect(deleteThread(new QueryClient(), CHAT_ID)).resolves.toEqual({
+    await expect(deleteChat(new QueryClient(), CHAT_ID)).resolves.toEqual({
       id: CHAT_ID,
     })
     const call = callOf(fetchMock)
@@ -297,13 +302,13 @@ describe("thread API client", () => {
   })
 
   it("includes focusDocId on a Paper-scoped coach turn", async () => {
-    const threadId = "11111111-1111-4111-8111-111111111111"
+    const chatId = "11111111-1111-4111-8111-111111111111"
     const focusDocId = "11111111-1111-7111-8111-111111111111"
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(
         [
           `event: ${COACH_SSE_EVENTS.messageStart}`,
-          `data: ${JSON.stringify({ chatId: threadId })}`,
+          `data: ${JSON.stringify({ chatId })}`,
           "",
           `event: ${COACH_SSE_EVENTS.messageEnd}`,
           `data: ${JSON.stringify({
@@ -328,7 +333,7 @@ describe("thread API client", () => {
 
     await streamCoachTurn(
       new QueryClient(),
-      threadId,
+      chatId,
       "Sharpen this bullet",
       {},
       undefined,
@@ -347,12 +352,12 @@ describe("thread API client", () => {
   })
 
   it("sends focusDocId null when Paper soft-scope was cleared", async () => {
-    const threadId = "11111111-1111-4111-8111-111111111111"
+    const chatId = "11111111-1111-4111-8111-111111111111"
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(
         [
           `event: ${COACH_SSE_EVENTS.messageStart}`,
-          `data: ${JSON.stringify({ chatId: threadId })}`,
+          `data: ${JSON.stringify({ chatId })}`,
           "",
           `event: ${COACH_SSE_EVENTS.messageEnd}`,
           `data: ${JSON.stringify({
@@ -377,7 +382,7 @@ describe("thread API client", () => {
 
     await streamCoachTurn(
       new QueryClient(),
-      threadId,
+      chatId,
       "What should I cut?",
       {},
       undefined,
@@ -396,13 +401,13 @@ describe("thread API client", () => {
   })
 
   it("includes selection on a Paper-scoped coach turn", async () => {
-    const threadId = "11111111-1111-4111-8111-111111111111"
+    const chatId = "11111111-1111-4111-8111-111111111111"
     const focusDocId = "11111111-1111-7111-8111-111111111111"
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(
         [
           `event: ${COACH_SSE_EVENTS.messageStart}`,
-          `data: ${JSON.stringify({ chatId: threadId })}`,
+          `data: ${JSON.stringify({ chatId })}`,
           "",
           `event: ${COACH_SSE_EVENTS.messageEnd}`,
           `data: ${JSON.stringify({
@@ -427,7 +432,7 @@ describe("thread API client", () => {
 
     await streamCoachTurn(
       new QueryClient(),
-      threadId,
+      chatId,
       "Rewrite selection",
       {},
       undefined,
@@ -448,12 +453,12 @@ describe("thread API client", () => {
   })
 
   it("streams a regenerate turn without posting user text", async () => {
-    const threadId = "11111111-1111-4111-8111-111111111111"
+    const chatId = "11111111-1111-4111-8111-111111111111"
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(
         [
           `event: ${COACH_SSE_EVENTS.messageStart}`,
-          `data: ${JSON.stringify({ chatId: threadId })}`,
+          `data: ${JSON.stringify({ chatId })}`,
           "",
           `event: ${COACH_SSE_EVENTS.textDelta}`,
           `data: ${JSON.stringify({ text: "Again" })}`,
@@ -482,7 +487,7 @@ describe("thread API client", () => {
     const onTextDelta = vi.fn()
     await streamCoachRegenerate(
       new QueryClient(),
-      threadId,
+      chatId,
       { onTextDelta },
       undefined,
       "max"
@@ -508,16 +513,16 @@ describe("thread API client", () => {
   })
 })
 
-describe("thread list helpers", () => {
-  it("moves an upserted Thread to the front", () => {
-    const older: ThreadListItem = {
+describe("chat list helpers", () => {
+  it("moves an upserted Chat to the front", () => {
+    const older: ChatSummary = {
       id: "a",
       title: "Older",
       createdAt: "2026-08-24T00:00:00.000Z",
       updatedAt: "2026-08-24T00:00:00.000Z",
       focusDocId: null,
     }
-    const newer: ThreadListItem = {
+    const newer: ChatSummary = {
       id: "b",
       title: "Newer",
       createdAt: "2026-08-25T00:00:00.000Z",
@@ -525,18 +530,19 @@ describe("thread list helpers", () => {
       focusDocId: null,
     }
 
+    expect(upsertChatSummary([older], newer).map((chat) => chat.id)).toEqual([
+      "b",
+      "a",
+    ])
     expect(
-      upsertThreadListItem([older], newer).map((thread) => thread.id)
-    ).toEqual(["b", "a"])
-    expect(
-      upsertThreadListItem([newer, older], { ...older, title: "Updated" }).map(
-        (thread) => thread.title
+      upsertChatSummary([newer, older], { ...older, title: "Updated" }).map(
+        (chat) => chat.title
       )
     ).toEqual(["Updated", "Newer"])
   })
 
   it("drops messages when projecting detail onto a list item", () => {
-    const detail: ThreadDetail = {
+    const detail: ChatRecord = {
       id: "a",
       title: "Plan",
       createdAt: "2026-08-25T00:00:00.000Z",

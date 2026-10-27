@@ -38,9 +38,7 @@ describe("Home idle", () => {
     expect(screen.getByRole("textbox", { name: "Message Coach" })).toHaveValue(
       chip.prompt
     )
-    expect(
-      screen.queryByRole("log", { name: "Thread" })
-    ).not.toBeInTheDocument()
+    expect(screen.queryByRole("log", { name: "Chat" })).not.toBeInTheDocument()
   })
 
   it("sends on Enter and inserts a newline on Shift+Enter", async () => {
@@ -58,7 +56,7 @@ describe("Home idle", () => {
       ""
     )
     expect(
-      within(screen.getByRole("log", { name: "Thread" })).getByRole("status")
+      within(screen.getByRole("log", { name: "Chat" })).getByRole("status")
     ).toHaveTextContent("Thinking")
     expect(
       screen.queryByRole("heading", {
@@ -68,9 +66,9 @@ describe("Home idle", () => {
         ),
       })
     ).not.toBeInTheDocument()
-    expect(
-      await screen.findByRole("log", { name: "Thread" })
-    ).toHaveTextContent("Help me plan the week")
+    expect(await screen.findByRole("log", { name: "Chat" })).toHaveTextContent(
+      "Help me plan the week"
+    )
     await waitFor(() => {
       expect(screen.queryByText("Thinking")).not.toBeInTheDocument()
     })

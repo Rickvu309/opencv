@@ -5,7 +5,7 @@ import {
   receiptHeadline,
   receiptReversalNote,
   receiptShowsUndo,
-} from "@/features/home/coach-receipt.ts"
+} from "@/features/coach/coach-receipt.ts"
 
 describe("receiptHeadline", () => {
   it("uses a named headline for graduated receipts and drops Ran", () => {

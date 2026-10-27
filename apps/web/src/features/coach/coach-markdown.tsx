@@ -11,7 +11,7 @@ import {
   parseCoachMarkdown,
   type CoachInline,
   type CoachMarkdownBlock,
-} from "@/features/home/coach-markdown.ts"
+} from "@/features/coach/coach-markdown.ts"
 
 function renderInline(nodes: CoachInline[]): ReactNode {
   return nodes.map((node, index) => {
