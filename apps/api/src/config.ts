@@ -2,16 +2,20 @@ import { fileURLToPath } from "node:url"
 
 import {
   resolveCoachDailyTurnLimit,
+  localDevUrls,
   resolveCoachModel,
   type CoachMode,
 } from "@workspace/domain"
 
-const localWebOrigin = "http://localhost:5173"
+/** Port the API listens on: `PORT`, or 3001 when unset. */
+export function apiPortFromEnv(env: NodeJS.ProcessEnv): number {
+  return localDevUrls(env.PORT).apiPort
+}
 
 /**
  * Origins the API accepts browser calls from, as a comma-separated list. Each
- * entry is an exact origin or a single-`*` pattern (see `createApp`). Set per
- * Railway environment: production allows `https://opencv.me` (plus the old
+ * entry is an exact origin or a single-`*` pattern (see `createApp`). Unset means the web dev
+ * server derived from `PORT`. Set per Railway environment: production allows `https://opencv.me` (plus the old
  * Vercel origin during the overlap), staging allows `https://staging.opencv.me`.
  */
 export function webOriginsFromEnv(env: NodeJS.ProcessEnv): string[] {
@@ -20,7 +24,7 @@ export function webOriginsFromEnv(env: NodeJS.ProcessEnv): string[] {
     .map((origin) => origin.trim())
     .filter(Boolean)
 
-  return configured.length > 0 ? configured : [localWebOrigin]
+  return configured.length > 0 ? configured : [localDevUrls(env.PORT).webOrigin]
 }
 
 /**
@@ -49,8 +53,6 @@ export function pgliteDataDirFromEnv(env: NodeJS.ProcessEnv): string {
     : fileURLToPath(new URL("../.data/default", import.meta.url))
 }
 
-const localAuthUrl = "http://localhost:3001"
-
 /**
  * Better Auth secret. Required to mount `/api/auth/*`. Unset/blank means auth
  * is not configured — `GET /health` must still serve 200.
@@ -65,11 +67,11 @@ export function sessionSecretFromEnv(
 /**
  * Public URL of this API, used as Better Auth `baseURL` and to choose cookie
  * attributes (https → SameSite=None; Secure). Falls back to the local api
- * when unset, matching `WEB_ORIGINS`.
+ * derived from `PORT` when unset, matching `WEB_ORIGINS`.
  */
 export function authUrlFromEnv(env: NodeJS.ProcessEnv): string {
   const configured = env.AUTH_URL?.trim()
-  return configured ? configured : localAuthUrl
+  return configured ? configured : localDevUrls(env.PORT).apiUrl
 }
 
 /**

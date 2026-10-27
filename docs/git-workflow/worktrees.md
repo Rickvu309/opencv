@@ -55,12 +55,7 @@ Port = `4000 + (issue# mod 1000)`. Issue 42 gets `4042`; issue 1042 also maps to
 
 The 4000-4999 range avoids common local services (3000 default dev server, 3306 MySQL, 5432 Postgres, 6379 Redis).
 
-Some dev servers read `PORT` from the shell, not from `.env`. Start them with the port explicitly:
-
-```bash
-PORT=4042 pnpm --filter api dev
-pnpm --filter web dev --port 4043
-```
+`pnpm dev` loads the worktree `.env`. The api listens on `PORT` and the web dev server on `PORT + 1000` (4042 and 5042 for issue 42). The web's API URL, the api's allowed web origin and its auth URL default from the same `PORT`. Set `VITE_API_URL`, `WEB_ORIGINS` or `AUTH_URL` explicitly to override (Railway does).
 
 ## Clean up after merge
 
@@ -84,9 +79,10 @@ git worktree prune
 
 ## Troubleshooting
 
-| Problem | Fix |
-|---|---|
-| `fatal: 'feat/42-...' is already checked out` | Someone else has that branch. Pick another issue. |
-| Worktree folder was deleted by hand | `git worktree prune` |
-| Port already in use | Check `.env` in your worktree; use the next free port and update `PORT` |
-| Agent sandbox can't reach `../` | Allow the sibling `opencv.worktrees/` folder in the agent's sandbox |
+| Problem                                       | Fix                                                                                                          |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `fatal: 'feat/42-...' is already checked out` | Someone else has that branch. Pick another issue.                                                            |
+| Worktree folder was deleted by hand           | `git worktree prune`                                                                                         |
+| Web calls the wrong api or CORS fails         | An older `.env` may still set `VITE_API_URL` or `WEB_ORIGINS`; delete those lines so they derive from `PORT` |
+| Port already in use                           | Check `.env` in your worktree; use the next free port and update `PORT`                                      |
+| Agent sandbox can't reach `../`               | Allow the sibling `opencv.worktrees/` folder in the agent's sandbox                                          |

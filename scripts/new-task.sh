@@ -208,7 +208,7 @@ Ready.
   issue     #$issue${issue_title:+  $issue_title}
   branch    $branch
   worktree  $wt_path
-  port      $port   (start the dev server with PORT=$port, e.g. PORT=$port pnpm dev)
+  port      $port   (pnpm dev reads .env: api on $port, web on $(( port + 1000 )))
 
 Next:
   cd "$wt_path"

@@ -6,6 +6,7 @@ import { createApp } from "./app.js"
 import type { FetchJobPosting } from "./apply/fetch-posting.js"
 import { createDemoCoachRuntime, withScanJobPosting } from "./coach/index.js"
 import {
+  apiPortFromEnv,
   authUrlFromEnv,
   coachModelEnvFromEnv,
   coachRuntimeModeFromEnv,
@@ -50,7 +51,7 @@ async function createPgliteDb(dataDir: string) {
   return db
 }
 
-const port = Number(process.env.PORT ?? 3001)
+const port = apiPortFromEnv(process.env)
 const databaseUrl = databaseUrlFromEnv(process.env)
 const pool = databaseUrl
   ? new Pool({ connectionString: databaseUrl })
