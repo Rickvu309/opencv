@@ -1,36 +1,40 @@
 import { useState } from "react"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { toast } from "@workspace/ui/components/sonner"
 import { PageHeader } from "@workspace/ui/components/page-header"
 import { useMediaQuery } from "@workspace/ui/hooks/use-media-query"
 
 import { ApiError } from "@/lib/api.ts"
 import { queryKey, useRunCommand } from "@/lib/contract-client.ts"
-import { shellQueryKeys } from "@/features/app-shell/use-shell-chats.ts"
 import { PROFILE_ZONE } from "@/features/apply/apply-stages.ts"
 
 import { InboxConnect } from "./inbox-connect.tsx"
-import { fetchConnect, fetchInbox, fetchThread } from "./inbox-api.ts"
+import {
+  fetchConnect,
+  fetchInbox,
+  fetchThread,
+  inboxListKey,
+} from "./inbox-api.ts"
 import { InboxEmpty, InboxList } from "./inbox-list.tsx"
 import { CompanyTile } from "./inbox-parts.tsx"
 import { InboxReader } from "./inbox-reader.tsx"
+import { inboxConnectKey } from "@/lib/requests.ts"
 
 const NARROW = "(max-width: 767px)"
 
 export function InboxPage() {
-  const queryClient = useQueryClient()
   const runCommand = useRunCommand()
   const narrow = useMediaQuery(NARROW, false)
   const now = new Date()
   const list = useQuery({
-    queryKey: queryKey({ query: "inbox.list" }),
+    queryKey: inboxListKey(),
     queryFn: fetchInbox,
   })
   const showConnect = Boolean(
     list.data && !list.data.connected && !list.data.skipped
   )
   const connect = useQuery({
-    queryKey: ["inbox-connect"],
+    queryKey: inboxConnectKey,
     queryFn: fetchConnect,
     enabled: showConnect,
   })
@@ -53,10 +57,6 @@ export function InboxPage() {
     enabled: Boolean(shownId) && scanning == null && !showConnect,
   })
 
-  function refreshShell() {
-    return queryClient.invalidateQueries({ queryKey: shellQueryKeys.inbox })
-  }
-
   async function onSkip() {
     setSkipping(true)
     try {
@@ -78,7 +78,6 @@ export function InboxPage() {
         names: result.threads.map((thread) => thread.company),
       })
       await panelHold()
-      await refreshShell()
     } catch (error) {
       toast(messageOf(error))
     } finally {
@@ -151,7 +150,6 @@ export function InboxPage() {
                 const next = threads[index + 1]
                 if (next) setOpenId(next.id)
               }}
-              onChanged={() => void refreshShell()}
             />
           ) : null}
           {shownId && detail.isLoading ? (

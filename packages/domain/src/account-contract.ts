@@ -253,4 +253,3 @@ export const accountContract = commandContract({
 })
 
 export type AccountContract = typeof accountContract
-export type AccountCommandName = keyof AccountContract & string

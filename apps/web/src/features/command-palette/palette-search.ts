@@ -3,6 +3,7 @@ import { STAGE_LABEL, type Stage } from "@workspace/ui/components/stage-icon"
 import { apiFetch } from "@/lib/api.ts"
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
 import type { SurfaceId } from "@/features/app-shell/surfaces.ts"
+import { endpoints } from "@/lib/requests.ts"
 
 export const PALETTE_PAGES: {
   id: string
@@ -134,15 +135,13 @@ export function parseSearchHits(data: unknown): SearchHits {
 }
 
 export async function searchWorkspace(query: string) {
-  const body = await apiFetch<SuccessBody<unknown>>(
-    `/api/search?q=${encodeURIComponent(query)}`
-  )
+  const body = await apiFetch<SuccessBody<unknown>>(endpoints.search(query))
   return parseSearchHits(unwrapData(body))
 }
 
 export async function listPaletteChats() {
   try {
-    const body = await apiFetch<SuccessBody<unknown>>("/api/chats")
+    const body = await apiFetch<SuccessBody<unknown>>(endpoints.chats)
     return parseChats(unwrapData(body)).slice(0, 8)
   } catch {
     return []

@@ -230,4 +230,3 @@ export const chatContract = commandContract({
 })
 
 export type ChatContract = typeof chatContract
-export type ChatCommandName = keyof ChatContract & string

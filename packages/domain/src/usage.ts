@@ -1,7 +1,6 @@
 import type { CoachMode } from "./coach.js"
 
 export const DAY_START_HOUR = 7
-export const DEFAULT_TIME_ZONE = "Asia/Ho_Chi_Minh"
 export const DEFAULT_SESSION_HOURS = 4
 export const DEFAULT_DAILY_TURN_LIMIT_FREE = 20
 export const DEFAULT_DAILY_TURN_LIMIT_LIGHT = 10

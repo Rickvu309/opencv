@@ -3,7 +3,6 @@ import { useCallback, useMemo, useState, type ReactNode } from "react"
 import type { ThreadListItem } from "@workspace/domain"
 
 import { useCoachTurn } from "@/features/coach/use-coach-turn.ts"
-import { profileKey } from "@/lib/account-api.ts"
 import {
   deleteThread as deleteThreadRequest,
   listThreads,
@@ -12,6 +11,7 @@ import {
 } from "@/features/home/thread-api.ts"
 import { ThreadStoreContext } from "@/features/home/thread-store-context.ts"
 import { titleFrom } from "@/features/home/threads.ts"
+import { refreshReads } from "@/lib/contract-client.ts"
 
 const EMPTY_THREADS: ThreadListItem[] = []
 
@@ -40,9 +40,7 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
     setThreadId: setActiveThreadId,
     titleForCreate: titleFrom,
     onAfterUndo: () => {
-      void queryClient.invalidateQueries({
-        queryKey: profileKey(),
-      })
+      void refreshReads(queryClient, [{ query: "profile.get" }])
     },
   })
 

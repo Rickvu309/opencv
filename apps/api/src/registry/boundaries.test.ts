@@ -4,9 +4,6 @@ import { fileURLToPath } from "node:url"
 import { describe, expect, it } from "vitest"
 
 const srcRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
-// Exemptions stay out of this scan. auth.ts belongs to Better Auth.
-// apply/ is the posting fetcher, kept until #376 moves it into job/.
-const exemptions = ["auth.ts", "apply"]
 const modules = ["account", "chat", "paper", "job", "inbox", "coach"]
 
 function filesUnder(dir: string): string[] {
@@ -45,11 +42,5 @@ describe("module boundaries", () => {
       }
     }
     expect(violations).toEqual([])
-  })
-
-  it("names auth.ts and the apply posting fetcher as exemptions until #376", () => {
-    expect(exemptions).toEqual(["auth.ts", "apply"])
-    expect(modules).not.toContain("auth")
-    expect(modules).not.toContain("apply")
   })
 })

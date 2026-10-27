@@ -18,7 +18,6 @@ import {
 import { Input } from "@workspace/ui/components/input"
 
 import { ApiError } from "@/lib/api-error.ts"
-import { apiBaseUrl } from "@/lib/api-url.ts"
 import {
   undoActivity,
   refreshQueries,
@@ -33,6 +32,7 @@ import { PaperLetterStart } from "./paper-letter.tsx"
 import { PaperImportInput } from "./paper-cv-surface.tsx"
 import { NewPaperCard, PaperCard, SectionHead } from "./paper-parts.tsx"
 import { paperEditedLabel } from "./paper-templates.ts"
+import { endpoints, fetchBinary } from "@/lib/requests.ts"
 
 const IMPORT_ACCEPT =
   ".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
@@ -187,7 +187,7 @@ export function PaperLibrary({
 
   async function download(doc: PaperView) {
     try {
-      const res = await fetch(new URL(`/api/paper/${doc.id}/pdf`, apiBaseUrl), {
+      const res = await fetchBinary(endpoints.paperPdf(doc.id), {
         credentials: "include",
       })
       if (!res.ok) {

@@ -1,4 +1,3 @@
-import type { ApplyStage } from "./apply.js"
 import {
   isCvDocument,
   isLetterDocument,
@@ -75,7 +74,9 @@ function diffCv(before: CvDocument, after: CvDocument): DiffHunk[] {
         fieldHunk(
           label,
           sectionId,
-          [prev.role, prev.company, ...prev.bullets].filter(Boolean).join(" · "),
+          [prev.role, prev.company, ...prev.bullets]
+            .filter(Boolean)
+            .join(" · "),
           ""
         )
       )
@@ -121,8 +122,12 @@ function diffCv(before: CvDocument, after: CvDocument): DiffHunk[] {
       fieldHunk(
         `Education · ${next?.school || prev?.school || "school"}`,
         `education-${index}`,
-        prev ? [prev.school, prev.degree, prev.detail].filter(Boolean).join(" · ") : "",
-        next ? [next.school, next.degree, next.detail].filter(Boolean).join(" · ") : ""
+        prev
+          ? [prev.school, prev.degree, prev.detail].filter(Boolean).join(" · ")
+          : "",
+        next
+          ? [next.school, next.degree, next.detail].filter(Boolean).join(" · ")
+          : ""
       )
     )
   }
@@ -132,8 +137,14 @@ function diffCv(before: CvDocument, after: CvDocument): DiffHunk[] {
 
 function diffLetter(before: string, after: string): DiffHunk[] {
   if (before === after) return []
-  const prevParas = before.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean)
-  const nextParas = after.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean)
+  const prevParas = before
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+  const nextParas = after
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean)
   const count = Math.max(prevParas.length, nextParas.length, 1)
   const hunks: DiffHunk[] = []
   for (let index = 0; index < count; index += 1) {
@@ -194,17 +205,17 @@ export function diffPaperContent(
   if (kind === "cv" && isCvDocument(before) && isCvDocument(after)) {
     return diffCv(before, after)
   }
-  if (kind === "letter" && isLetterDocument(before) && isLetterDocument(after)) {
+  if (
+    kind === "letter" &&
+    isLetterDocument(before) &&
+    isLetterDocument(after)
+  ) {
     return diffLetter(before.markdown, after.markdown)
   }
   if (kind === "proof" && isProofDocument(before) && isProofDocument(after)) {
     return diffProof(before, after)
   }
   return []
-}
-
-export function changedSectionIds(hunks: readonly DiffHunk[]): string[] {
-  return [...new Set(hunks.map((hunk) => hunk.sectionId))]
 }
 
 export function countChangedLines(hunks: readonly DiffHunk[]): number {
@@ -233,17 +244,8 @@ export function collapsedHunks(
       lines.push(line)
       remaining -= 1
     }
-    if (lines.length > 0) out.push({ section: hunk.section, sectionId: hunk.sectionId, lines })
+    if (lines.length > 0)
+      out.push({ section: hunk.section, sectionId: hunk.sectionId, lines })
   }
   return out
-}
-
-export function isApplyStage(value: unknown): value is ApplyStage {
-  return (
-    value === "inbox" ||
-    value === "prep" ||
-    value === "sent" ||
-    value === "live" ||
-    value === "closed"
-  )
 }

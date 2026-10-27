@@ -7,7 +7,12 @@ export {
   readProfile,
 } from "./queries.js"
 export { readUsage, assertDayCap } from "./usage.js"
-export { toProfile, writeProfileDefaults, getProfileRow } from "./store.js"
+export {
+  toProfile,
+  writeProfileDefaults,
+  getProfileRow,
+  markInboxSkipped,
+} from "./store.js"
 export {
   createAccountRoutes,
   createActivityRoutes,

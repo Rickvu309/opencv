@@ -123,6 +123,13 @@ export async function updateProfile(actor: Actor, input: ProfileUpdateInput) {
   return toProfile(await getProfileRow(actor.userId))
 }
 
+export async function markInboxSkipped(userId: string) {
+  await getDb()
+    .update(user)
+    .set({ inboxSkippedAt: new Date(), updatedAt: new Date() })
+    .where(eq(user.id, userId))
+}
+
 export async function markWelcomed(actor: Actor) {
   const current = await getProfileRow(actor.userId)
   if (!current.welcomedAt) {

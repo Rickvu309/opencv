@@ -8,9 +8,9 @@ import type {
 
 import { ApiError, apiFetch } from "@/lib/api.ts"
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
-import { apiBaseUrl } from "@/lib/api-url.ts"
 import { queryKey } from "@/lib/contract-client.ts"
 import { streamChatTurn } from "@/lib/coach-stream.ts"
+import { endpoints, fetchBinary } from "@/lib/requests.ts"
 
 export const paperListKey = () => queryKey({ query: "paper.list" })
 export const paperGetKey = (docId: PaperId) =>
@@ -22,32 +22,32 @@ export const paperSharedKey = (token: string) =>
   queryKey({ query: "paper.shared", input: { token } })
 
 export function listPaper() {
-  return apiFetch<SuccessBody<QueryOutput<"paper.list">>>("/api/paper").then(
+  return apiFetch<SuccessBody<QueryOutput<"paper.list">>>(endpoints.paper).then(
     unwrapData
   )
 }
 
 export function getPaper(docId: string) {
   return apiFetch<SuccessBody<QueryOutput<"paper.get">>>(
-    `/api/paper/${docId}`
+    endpoints.paperDoc(docId)
   ).then(unwrapData)
 }
 
 export function listPaperFiles() {
   return apiFetch<SuccessBody<QueryOutput<"paper.files">>>(
-    "/api/paper/files"
+    endpoints.paperFiles
   ).then(unwrapData)
 }
 
 export function getPaperPages(docId: string) {
   return apiFetch<SuccessBody<QueryOutput<"paper.pageCount">>>(
-    `/api/paper/${docId}/pages`
+    endpoints.paperPages(docId)
   ).then(unwrapData)
 }
 
 export function getSharedPaper(token: string) {
   return apiFetch<SuccessBody<QueryOutput<"paper.shared">>>(
-    `/api/paper/shared/${token}`
+    endpoints.paperShared(token)
   ).then(unwrapData)
 }
 
@@ -64,7 +64,7 @@ export class PaperLimitError extends Error {
 export async function importPaperFile(file: File): Promise<PaperView> {
   const body = new FormData()
   body.set("file", file)
-  const res = await fetch(new URL("/api/paper/import", apiBaseUrl), {
+  const res = await fetchBinary(endpoints.paperImport, {
     method: "POST",
     credentials: "include",
     body,
@@ -84,7 +84,7 @@ export async function importPaperFile(file: File): Promise<PaperView> {
 }
 
 export function stopPaperChat(chatId: string): Promise<void> {
-  return apiFetch(`/api/chats/${chatId}/stop`, { method: "POST" })
+  return apiFetch(endpoints.chatStop(chatId), { method: "POST" })
 }
 
 export async function streamPaperTurn(input: {
@@ -118,7 +118,7 @@ export async function streamPaperTurn(input: {
   } catch (error) {
     if (error instanceof ApiError && error.status === 429) {
       const usage = await apiFetch<SuccessBody<{ resetsAt?: string }>>(
-        "/api/coach/usage"
+        endpoints.coachUsage
       ).catch(() => null)
       throw new PaperLimitError(
         error.message,
@@ -133,7 +133,7 @@ export async function latestActivityId(
   subjectId: string
 ): Promise<string | null> {
   const body = await apiFetch<SuccessBody<QueryOutput<"activity.list">>>(
-    `/api/activity?subjectId=${encodeURIComponent(subjectId)}`
+    endpoints.activityOfSubject(subjectId)
   )
   return unwrapData(body)[0]?.id ?? null
 }

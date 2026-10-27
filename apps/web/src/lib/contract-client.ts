@@ -34,6 +34,15 @@ export function refreshQueries(queryClient: QueryClient, refs: QueryRef[]) {
   ])
 }
 
+/** Refreshes exactly these reads, without the activity root `refreshQueries` adds. */
+export function refreshReads(queryClient: QueryClient, refs: QueryRef[]) {
+  return Promise.all(
+    refs.map((ref) =>
+      queryClient.invalidateQueries({ queryKey: queryKey(ref) })
+    )
+  )
+}
+
 export type RunOptions = {
   refresh?: boolean
 }

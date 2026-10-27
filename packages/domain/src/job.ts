@@ -152,19 +152,6 @@ export const jobUnlinkPaperInputSchema = z
   })
   .strict()
 
-export type JobUpdateInput = z.infer<typeof jobUpdateInputSchema>
-export type JobMoveInput = z.infer<typeof jobMoveInputSchema>
-export type JobStarInput = z.infer<typeof jobStarInputSchema>
-export type JobDeleteInput = z.infer<typeof jobDeleteInputSchema>
-export type JobLinkPaperInput = z.infer<typeof jobLinkPaperInputSchema>
-export type JobUnlinkPaperInput = z.infer<typeof jobUnlinkPaperInputSchema>
-export type JobAddChecklistItemInput = z.infer<
-  typeof jobAddChecklistItemInputSchema
->
-export type JobSetChecklistItemInput = z.infer<
-  typeof jobSetChecklistItemInputSchema
->
-
 type ParsedUrl = {
   hash: string
   pathname: string

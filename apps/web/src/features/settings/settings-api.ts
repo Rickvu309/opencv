@@ -2,7 +2,7 @@ import type { Profile, ProfileUpdateInput } from "@workspace/domain"
 
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
 import { ApiError } from "@/lib/api.ts"
-import { apiBaseUrl } from "@/lib/api-url.ts"
+import { endpoints, fetchBinary } from "@/lib/requests.ts"
 
 export const PHOTO_MAX_BYTES = 2 * 1024 * 1024
 export const PHOTO_REJECTION = "Choose an image under 2 MB."
@@ -100,7 +100,7 @@ export async function uploadPhoto(file: File) {
   if (rejection) throw new ApiError(400, "VALIDATION_ERROR", rejection)
   const form = new FormData()
   form.set("file", file)
-  const res = await fetch(new URL("/api/account/photo", apiBaseUrl), {
+  const res = await fetchBinary(endpoints.accountPhoto, {
     method: "POST",
     body: form,
     credentials: "include",
@@ -114,7 +114,7 @@ export async function uploadPhoto(file: File) {
 }
 
 export async function connectGmail() {
-  const res = await fetch(new URL("/api/inbox/connect", apiBaseUrl), {
+  const res = await fetchBinary(endpoints.inboxConnect, {
     credentials: "include",
   })
   if (res.status === 404) return { url: null as string | null }
@@ -127,7 +127,7 @@ export async function connectGmail() {
 }
 
 export async function downloadExport() {
-  const res = await fetch(new URL("/api/account/export", apiBaseUrl), {
+  const res = await fetchBinary(endpoints.accountExport, {
     credentials: "include",
   })
   if (!res.ok) {

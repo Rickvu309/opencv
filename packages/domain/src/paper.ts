@@ -33,22 +33,6 @@ export const paperContentVersionSchema = z
   .int()
   .positive("Content version must be a positive integer")
 
-export const paperCreateDocInputSchema = z
-  .object({
-    kind: paperContentKindSchema,
-    name: paperDocNameSchema.optional(),
-    content: z.unknown().optional(),
-  })
-  .strict()
-
-export const paperUpdateContentInputSchema = z
-  .object({
-    docId: paperDocIdSchema,
-    content: z.unknown(),
-    contentVersion: paperContentVersionSchema,
-  })
-  .strict()
-
 export const paperRenameDocInputSchema = z
   .object({
     docId: paperDocIdSchema,
@@ -69,39 +53,8 @@ export const paperDeleteDocInputSchema = z
   })
   .strict()
 
-export const paperLinkApplyCardInputSchema = z
-  .object({
-    docId: paperDocIdSchema,
-    applyCardId: z.string().uuid().nullable(),
-  })
-  .strict()
-
-export const paperListDocsInputSchema = z.object({}).strict()
-
-export const paperGetDocInputSchema = z
-  .object({
-    docId: paperDocIdSchema,
-  })
-  .strict()
-
 export type PaperContentKind = z.infer<typeof paperContentKindSchema>
 export type PaperDocStatus = z.infer<typeof paperDocStatusSchema>
-export type PaperCreateDocInput = z.infer<typeof paperCreateDocInputSchema>
-export type PaperUpdateContentInput = z.infer<
-  typeof paperUpdateContentInputSchema
->
-export type PaperRenameDocInput = z.infer<typeof paperRenameDocInputSchema>
-export type PaperSetStatusInput = z.infer<typeof paperSetStatusInputSchema>
-export type PaperDeleteDocInput = z.infer<typeof paperDeleteDocInputSchema>
-export type PaperLinkApplyCardInput = z.infer<
-  typeof paperLinkApplyCardInputSchema
->
-export type PaperListDocsInput = z.infer<typeof paperListDocsInputSchema>
-export type PaperGetDocInput = z.infer<typeof paperGetDocInputSchema>
-
-export type PaperDocDeleted = {
-  id: string
-}
 
 export type PaperDoc = {
   id: string
@@ -211,13 +164,8 @@ export const paperDeleteFileInputSchema = z
   })
   .strict()
 
-export type PaperCreateInput = z.infer<typeof paperCreateInputSchema>
 export type PaperReplaceInput = z.infer<typeof paperReplaceInputSchema>
-export type PaperDuplicateInput = z.infer<typeof paperDuplicateInputSchema>
-export type PaperSetTemplateInput = z.infer<typeof paperSetTemplateInputSchema>
 export type PaperImportInput = z.infer<typeof paperImportInputSchema>
-export type PaperKeywordGapInput = z.infer<typeof paperKeywordGapInputSchema>
-export type PaperDeleteFileInput = z.infer<typeof paperDeleteFileInputSchema>
 
 const KEYWORD_STOP = new Set(["the", "and", "for", "with", "your"])
 

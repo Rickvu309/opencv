@@ -18,14 +18,6 @@ export const messageRoleSchema = z.enum(["user", "coach"])
 
 export const threadIdSchema = z.string().uuid()
 
-export const threadMessageIdSchema = z.string().uuid()
-
-export const threadTitleSchema = z
-  .string()
-  .trim()
-  .min(1, "Title is required")
-  .max(THREAD_TITLE_MAX, "Title is too long")
-
 export const threadMessageTextSchema = z
   .string()
   .trim()
@@ -88,8 +80,6 @@ export const coachTurnRequestSchema = z
       })
     }
   })
-
-export type CoachTurnRequest = z.infer<typeof coachTurnRequestSchema>
 
 const receiptDiffLineSchema = z
   .object({
@@ -203,25 +193,4 @@ export type ThreadMessage = {
 
 export type ThreadDetail = ThreadListItem & {
   messages: ThreadMessage[]
-}
-
-/** Whether a persisted receipt can run its reversal Command. */
-export function canReverseReceipt(
-  part: ThreadToolPart
-): part is ThreadToolPart & {
-  reversal: {
-    possible: true
-    description: string
-    command: string
-    input: unknown
-  }
-} {
-  return (
-    part.ok &&
-    part.reversal?.possible === true &&
-    part.undone !== true &&
-    typeof part.reversal.command === "string" &&
-    part.reversal.command.length > 0 &&
-    part.reversal.input !== undefined
-  )
 }
