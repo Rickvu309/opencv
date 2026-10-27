@@ -1,6 +1,6 @@
 # The AI-native backend: one registry, one activity table, the Coach as a client
 
-**Status.** Accepted 2026-10-26. Synthesized by the release-one program from two independent designs (domain first and agent first). Implemented by #372; #373, #376, #377, #378 and #380 add their entries to the same registry.
+**Status.** Accepted 2026-10-26. Synthesized by the release-one program from two independent designs (domain first and agent first). Implemented by #372; #373, #376, #377, #378 and #380 add their entries to the same registry. Amended by `docs/adr/0010-one-typed-contract-for-commands-and-reads.md`. Commands and reads are now declared in `packages/domain` and bound in the api, and `compat/` is deleted. Where items 1, 4, 11 and 12 disagree with ADR 0010, ADR 0010 holds.
 
 **Context.** The api had one command bus for writes, separate read routers per surface, a hand-copied tool list for the Coach, two refusals that kept every destructive command away from the model, no activity record, last-write-wins document saves, and tables under `openpath_app` named for a product that no longer exists. The operator's intent for release one: the Coach can do every action a person can do, so chatting is enough; Free plan runs on OpenRouter free models and Pro on Claude; the backend is redesigned, not patched.
 

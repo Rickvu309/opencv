@@ -21,7 +21,7 @@ export default defineConfig([
   },
   {
     // shadcn components co-export their cva variants alongside the component
-    // (see docs/adr/0002-design-system.md). Fast Refresh never applies here —
+    // (see docs/adr/0006-design-system-values-and-the-kit-as-generator.md). Fast Refresh never applies here —
     // this package is consumed as source by apps/web.
     files: ['src/components/**/*.tsx', 'src/hooks/**/*.ts'],
     rules: {

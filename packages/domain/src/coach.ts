@@ -237,7 +237,7 @@ export type ApplyScanExtractInput = {
   postingText: string
 }
 
-/** Injected via `AppConfig.coach` like `db` (ADR-0007). */
+/** Injected via `AppConfig.coach` like `db`. */
 export type CoachRuntime = {
   streamTurn(input: CoachTurnInput): AsyncIterable<CoachStreamPart>
   /**

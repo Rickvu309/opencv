@@ -12,6 +12,41 @@ Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-
 
 Single-context (`CONTEXT.md` + `docs/adr/` at repo root). See `docs/agents/domain.md`.
 
+### Code map
+
+- `packages/domain/src` is pure TypeScript and zod, with no database, server or AI SDK import. It holds the typed contract.
+  - `<surface>-contract.ts` declares each surface's commands and most of its reads (`paper`, `job`, `inbox`, `account`, and `chat` for commands).
+  - `contract-commands.ts` joins every command into one table. `queries.ts` joins every read and declares the chat reads, `link.get` and `workspace.search` itself.
+  - `chat-turn.ts` holds `ChatTurnEvent`, the Coach stream events.
+- `apps/api/src/<module>/` is one product module: `account`, `chat`, `paper`, `job` and `inbox`. Other modules import it only through its `index.ts`.
+  - `commands.ts` binds the module's contract commands with `bindCommands` and its reads with `tableQuery`. `account` binds its reads in `queries.ts`.
+  - `http.ts` mounts its routes. `store.ts` holds most of its database writes. Only files under the module's own directory write its tables, plus `auth.ts` for the auth tables. `registry/ownership.test.ts` holds the owner list.
+- Other api folders:
+  - `registry/` runs every command, writes the `activity`, `pending_actions` and idempotency rows, and builds the Coach's tools.
+  - `coach/` runs a Coach turn and is the only importer of the AI SDK. It has no contract commands.
+  - `apply/` fetches job postings for `job`. `mail/` sends sign-in codes. `db/schema.ts` is the schema.
+- `apps/web/src` is the SPA. `routes/` holds pages and `features/<surface>/` holds each surface's components and state. `lib/` is the only place that calls the api.
+  - `contract-client.ts` runs commands and owns read keys and refresh.
+  - `api.ts` (`apiFetch`) and `requests.ts` (`endpoints`) fetch reads.
+  - `coach-stream.ts` reads the Coach stream.
+- `packages/ui/src/components` is the shadcn kit. See Design system below.
+
+To add a product action, follow `docs/adr/0010-one-typed-contract-for-commands-and-reads.md`:
+
+1. Add a command entry to `packages/domain/src/<surface>-contract.ts`, with `invalidates` naming the reads it makes stale.
+2. Bind it in `apps/api/src/<surface>/commands.ts` with its handler, reversal and activity line. A missing binding is a type error.
+3. Call it from the web with `runContractCommand` from `apps/web/src/lib/contract-client.ts`. The Coach tool, step label, Undo and screen refresh follow from the entry.
+
+Tests that hold this shape, and what each one rejects:
+
+- `apps/api/src/registry/boundaries.test.ts` rejects an import into another api module that skips its `index.ts`.
+- `apps/api/src/registry/ownership.test.ts` rejects a write to a table from outside its owning module's directory.
+- `apps/api/src/registry/names.test.ts` rejects a command, read or Coach tool name used in the web, the fake Coach or the domain that the registry does not have.
+- `apps/api/src/**/*-contract.test.ts` and `apps/api/src/registry/contract.type-test.ts` reject a binding that drifts from the contract.
+- `apps/web/src/test/request-boundary.test.ts` rejects an API path, `fetch` or query invalidation outside `apps/web/src/lib`.
+- `apps/web/src/test/design-vocabulary.test.ts` and `ui-kit-contract.test.ts` enforce the design system.
+- `scripts/adr-citations.test.mjs` rejects a citation of an ADR number or path with no file in `docs/adr`. It cannot tell when an old number now names a different decision.
+
 ### Git
 
 Follow these rules in this repo. They are not optional.

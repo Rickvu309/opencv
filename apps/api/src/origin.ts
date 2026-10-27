@@ -4,7 +4,7 @@
  * widening the match to every host under `vercel.app`.
  *
  * Shared by CORS and Better Auth `trustedOrigins` so CSRF and CORS use one
- * origin policy (ADR-0006).
+ * origin policy.
  */
 export function matchesOrigin(pattern: string, origin: string) {
   const [prefix, suffix, ...rest] = pattern.split("*")

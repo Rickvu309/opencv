@@ -49,8 +49,6 @@ PGlite writes its files to `apps/api/.data/default`. That directory is gitignore
 | `pnpm typecheck`                    | Typecheck all packages                                                 |
 | `pnpm --filter api run db:generate` | Generate SQL after editing `apps/api/src/db/schema.ts`                 |
 | `pnpm --filter api run db:seed`     | Seed a starter workspace for an existing empty user (needs a database) |
-| `pnpm --filter api eval`            | Manual Coach eval harness (needs `OPENROUTER_API_KEY`; never CI)       |
-| `pnpm --filter api smoke`           | Live Coach smoke; set `COACH_SMOKE_API=https://api.opencv.me`          |
 
 ## Design
 
@@ -76,13 +74,13 @@ Read `CONTRIBUTING.md` for the full flow and `AGENTS.md` for the rules agents fo
 
 ## Docs
 
-| Doc                  | What it holds                                |
-| -------------------- | -------------------------------------------- |
-| `PRODUCT.md`         | Release one, as the design draws it          |
-| `CONTEXT.md`         | The glossary                                 |
-| `docs/adr/`          | Decisions `0001` to `0009`. `0009` is a stub |
-| `docs/deploy.md`     | Railway and Cloudflare runbook               |
-| `docs/agents/`       | How agents read issues and the glossary      |
-| `docs/git-workflow/` | Branches, worktrees, review, and deploys     |
-| `AGENTS.md`          | Rules for agents                             |
-| `CONTRIBUTING.md`    | Rules for people and agents                  |
+| Doc                  | What it holds                            |
+| -------------------- | ---------------------------------------- |
+| `PRODUCT.md`         | Release one, as the design draws it      |
+| `CONTEXT.md`         | The glossary                             |
+| `docs/adr/`          | Decisions `0001` to `0010`               |
+| `docs/deploy.md`     | Railway and Cloudflare runbook           |
+| `docs/agents/`       | How agents read issues and the glossary  |
+| `docs/git-workflow/` | Branches, worktrees, review, and deploys |
+| `AGENTS.md`          | Rules for agents                         |
+| `CONTRIBUTING.md`    | Rules for people and agents              |

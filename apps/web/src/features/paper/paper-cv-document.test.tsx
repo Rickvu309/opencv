@@ -46,7 +46,7 @@ function emptySections(data: CvData = defaultCvData()): CvData {
 }
 
 describe("CV print-paper type rhythm", () => {
-  it("marks ADR-0014 roles on every default template", () => {
+  it("marks the type roles on every default template", () => {
     for (const template of CV_TEMPLATES) {
       cleanup()
       renderCv(template.id)

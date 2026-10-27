@@ -30,7 +30,7 @@ const commandEnvelopeSchema = z.custom<CommandEnvelope>(
 )
 
 /**
- * The SSE contract of one Coach turn (ADR-0009 section 11). The `type` is the
+ * The SSE contract of one Coach turn (ADR-0010, item 4). The `type` is the
  * SSE `event:` name and the rest of the object is the JSON `data:` payload.
  */
 export const chatTurnEventSchema = z.discriminatedUnion("type", [

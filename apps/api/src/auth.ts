@@ -29,7 +29,7 @@ export type AuthConfig = {
 }
 
 /**
- * Cookie attributes follow ADR-0006: `SameSite=None; Secure` when AUTH_URL is
+ * Cookie attributes: `SameSite=None; Secure` when AUTH_URL is
  * https (cross-origin web ↔ api), browser defaults locally.
  */
 export function cookieAttributesForAuthUrl(authUrl: string) {
@@ -106,7 +106,7 @@ export function createAuth({
       useSecureCookies: cookies.secure,
       defaultCookieAttributes: cookies,
       // Better Auth skips origin checks when `isTest()`; keep one CORS/CSRF
-      // policy in vitest and on Railway (ADR-0006).
+      // policy in vitest and on Railway.
       disableOriginCheck: false,
     },
     rateLimit: { enabled: rateLimitEnabled },
