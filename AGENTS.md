@@ -44,8 +44,10 @@ Tests that hold this shape, and what each one rejects:
 - `apps/api/src/registry/names.test.ts` rejects a command, read or Coach tool name used in the web, the fake Coach or the domain that the registry does not have.
 - `apps/api/src/**/*-contract.test.ts` and `apps/api/src/registry/contract.type-test.ts` reject a binding that drifts from the contract.
 - `apps/web/src/test/request-boundary.test.ts` rejects an API path, `fetch` or query invalidation outside `apps/web/src/lib`.
+- `apps/web/src/test/feature-imports.test.ts` rejects an import from one `apps/web/src/features` folder into another that its `FEATURE_IMPORTS` table does not list, a folder with no row, a row for a folder that is gone, and an edge no import uses.
 - `apps/web/src/test/design-vocabulary.test.ts` and `ui-kit-contract.test.ts` enforce the design system.
 - `scripts/adr-citations.test.mjs` rejects a citation of an ADR number or path with no file in `docs/adr`. It cannot tell when an old number now names a different decision.
+- `scripts/retired-words.test.mjs` rejects Thread or Opportunity in a source file or file name under `apps/*/src` and `packages/*/src` outside its allowed list (Inbox mail threads and a few named exceptions), and says Chat or Job instead. The old Apply stage ids are not guarded until #437 renames them.
 
 ### Git
 
