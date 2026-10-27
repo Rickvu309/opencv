@@ -8,7 +8,7 @@ import snapshotFile from "./design/landing.snapshot.json"
 
 // Links to pages that do not exist yet, plus the subhead kept off the design
 // line so verify-landing rule 03 passes. An entry whose text is on the page,
-// or whose until date has passed, fails this test.
+// whose replacedBy text is missing, or whose until date has passed fails.
 const OMITTED = [
   {
     text: "Blog",
@@ -69,10 +69,25 @@ const OMITTED = [
     text: "Tailor your CV for every job. Track every application. Prep with Coach.",
     reason:
       "Replaced by a two-sentence version so verify-landing rule 03 passes.",
+    replacedBy:
+      "Tailor your CV for every job and track every application. Prep with Coach.",
     until: "2026-11-30",
     approvedBy: "pending operator (quanvu309)",
   },
-] as const
+  {
+    text: "Connect",
+    reason:
+      "Every link under this footer heading points to a page or account that does not exist yet.",
+    until: "2026-11-30",
+    approvedBy: "pending operator (quanvu309)",
+  },
+] as const satisfies readonly {
+  text: string
+  reason: string
+  replacedBy?: string
+  until: string
+  approvedBy: string
+}[]
 
 const DRIFT =
   "Landing text differs from opencv.pen frame w7zeGR (see apps/web/src/features/landing/design/landing.snapshot.json). Change the page to match, or add a dated OMITTED entry with a reason."
@@ -176,6 +191,14 @@ describe("landing design parity", () => {
       if (today > entry.until) {
         problems.push(
           `OMITTED entry "${entry.text}" until ${entry.until} has passed.`
+        )
+      }
+      if (
+        "replacedBy" in entry &&
+        !appears(page, normalize(entry.replacedBy))
+      ) {
+        problems.push(
+          `OMITTED entry "${entry.text}" names replacement "${entry.replacedBy}", which is not on the page. ${DRIFT}`
         )
       }
       if (appears(page, normalize(entry.text))) {
