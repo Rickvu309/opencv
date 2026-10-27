@@ -199,33 +199,6 @@ function visibleText(root: Element): string {
   return normalize(parts.join(" "))
 }
 
-// An element (or its only text) whose visible text equals the needle. A
-// sentence split across elements falls through to countBounded.
-function countExact(root: Element, needle: string): number {
-  if (needle === "") return 0
-  let count = 0
-  const visit = (element: Element): string => {
-    if (hidden(element)) return ""
-    const parts: string[] = []
-    let childMatches = 0
-    for (const child of element.childNodes) {
-      if (child.nodeType === Node.TEXT_NODE) {
-        parts.push(child.textContent ?? "")
-        continue
-      }
-      if (child.nodeType !== Node.ELEMENT_NODE) continue
-      const childText = visit(child as Element)
-      if (childText === needle) childMatches += 1
-      parts.push(childText)
-    }
-    const text = normalize(parts.join(" "))
-    if (text === needle && childMatches === 0) count += 1
-    return text
-  }
-  visit(root)
-  return count
-}
-
 function longerNeedles(texts: readonly string[], needle: string): string[] {
   return texts.filter(
     (item) => item.length > needle.length && item.includes(needle)
@@ -238,13 +211,7 @@ function occurrences(
   texts: readonly string[]
 ): number {
   if (needle === "") return 0
-  const exact = countExact(root, needle)
-  const counted = countBounded(
-    visibleText(root),
-    needle,
-    longerNeedles(texts, needle)
-  )
-  return exact > counted ? exact : counted
+  return countBounded(visibleText(root), needle, longerNeedles(texts, needle))
 }
 
 describe("landing design parity", () => {
