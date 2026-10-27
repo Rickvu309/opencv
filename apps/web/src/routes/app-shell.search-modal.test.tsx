@@ -107,6 +107,22 @@ describe("command palette", () => {
     expect(text).toContain("Interview")
   })
 
+  it("names a paper row with the document name and CV", async () => {
+    setMockSearch({
+      jobs: [],
+      documents: [{ id: "doc-1", name: "Northstar", kind: "cv" }],
+      chats: [],
+    })
+    const dialog = await openSearch()
+    fireEvent.change(within(dialog).getByRole("textbox", { name: "Search" }), {
+      target: { value: "Northstar" },
+    })
+
+    expect(
+      await within(dialog).findByRole("button", { name: "Northstar CV" })
+    ).toBeInTheDocument()
+  })
+
   it("hides chats when the Jobs chip is pressed", async () => {
     setMockChats([
       {

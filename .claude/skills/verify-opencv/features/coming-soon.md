@@ -8,13 +8,13 @@ Jobs, Proofs and Pitch are coming-soon pages. Notify me and Get early access sto
 - `proofs` shows Back your CV with proof and Get early access. `/app/proof` redirects here.
 - `pitch` shows One link that sells you and Get early access.
 - `palette` opens with Ctrl K or Cmd K. An empty query lists pages and recent chats. A job row shows the title, then the company, then the stage word.
-- `not-found` says Page not found. Signed in, Back to start. Signed out, Go to sign in.
+- `not-found` says Page not found. Signed in, the 404 sits inside the shell and the action is Back to start. Signed out, the page is bare and the action is Go to sign in. An unknown `/app` path does not redirect.
 
 ## How to get to it (user POV)
 
 - Choose Jobs, or open `/app/jobs`. Proofs is `/app/proofs`. Pitch is `/app/pitch`.
 - Press Ctrl K anywhere in the shell.
-- Open `/app/nothing` while signed in, or `/u/someone` while signed out.
+- Open `/app/nothing`, `/u/someone`, or `/nothing` while signed in. The 404 is inside the shell. Signed out, those paths are the bare page.
 
 ## Driving it with agent-browser
 
@@ -26,8 +26,8 @@ Preconditions: signed in on a new account (see `auth.md`). `run.env` loaded. Ses
 - **Proof alias.** Open `/app/proof`. The URL becomes `/app/proofs`.
 - **Pitch.** Open `/app/pitch`. The heading is One link that sells you. Click Get early access. There is no Publish button and no story dialog.
 - **Palette.** Press Ctrl+k. The dialog is named Search. An empty query shows Apply and does not request `/api/search`. Create a job named Marketing Executive at Lumière Cosmetics, then type that title. The row name starts with the title and the properties strip shows the company and the stage word. Press Enter. The URL is `/app/apply`. Open the palette again and press Escape. Focus returns to Search.
-- **404.** Open `/app/nothing`. The heading is Page not found. Click Back to start. The URL is the start page, `/app/apply` by default.
-- **Signed out 404.** Sign out, open `/u/someone`. The action is Go to sign in.
+- **404.** Open `/app/nothing`. The heading is Page not found, inside the shell, with one main. Click Back to start. The URL is the start page, `/app/apply` by default. `/u/someone` and `/nothing` show the same shell 404.
+- **Signed out 404.** Sign out, open `/app/nothing`. The action is Go to sign in, the page is bare, and the URL stays `/app/nothing`. `/u/someone` does the same.
 - **390.** `agent-browser set viewport 390 844`. Jobs does not scroll sideways. The palette is full screen.
 - **Reduced motion.** `agent-browser set media reduced-motion reduce`, reload, and confirm no running animation.
 - **Proof.** Screenshots `$EVIDENCE_DIR/jobs-soon.png`, `palette.png`, `404.png`.

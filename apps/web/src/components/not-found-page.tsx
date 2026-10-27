@@ -1,10 +1,17 @@
+import { Suspense, createContext, lazy, useContext } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { useNavigate } from "@tanstack/react-router"
+import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router"
 
 import { getShellProfile } from "@/features/app-shell/shell-api.ts"
 import { startPagePath } from "@/features/app-shell/start-page.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import { Button } from "@workspace/ui/components/button"
+
+const AppShellLayout = lazy(() =>
+  import("@/features/app-shell/app-shell-layout.tsx").then((module) => ({
+    default: module.AppShellLayout,
+  }))
+)
 
 const copy = {
   title: "Page not found",
@@ -13,10 +20,42 @@ const copy = {
   signIn: "Go to sign in",
 } as const
 
+const InShell = createContext(false)
+
+function matchSignedIn(state: {
+  matches: ReadonlyArray<{ context: unknown }>
+}) {
+  return state.matches.some((match) => {
+    const context = match.context
+    if (typeof context !== "object" || context === null) return false
+    if (!("signedIn" in context)) return false
+    return Boolean((context as { signedIn?: boolean }).signedIn)
+  })
+}
+
+export function UnknownShell() {
+  const signedIn = useRouterState({ select: matchSignedIn })
+  if (!signedIn) {
+    return (
+      <InShell.Provider value={false}>
+        <Outlet />
+      </InShell.Provider>
+    )
+  }
+  return (
+    <InShell.Provider value={true}>
+      <Suspense fallback={null}>
+        <AppShellLayout />
+      </Suspense>
+    </InShell.Provider>
+  )
+}
+
 export function NotFoundPage() {
+  const inShell = useContext(InShell)
   const navigate = useNavigate()
   const session = authClient.useSession()
-  const signedIn = Boolean(session.data)
+  const signedIn = inShell || Boolean(session.data)
   const profile = useQuery({
     queryKey: ["shell", "profile"],
     enabled: signedIn,
@@ -32,9 +71,8 @@ export function NotFoundPage() {
   const destination = signedIn
     ? startPagePath(profile.data?.startPage)
     : "/sign-in"
-
-  return (
-    <main className="flex min-h-dvh flex-col items-center justify-center bg-background px-6">
+  const body = (
+    <>
       <h1 className="text-3xl font-semibold tracking-tight text-foreground">
         {copy.title}
       </h1>
@@ -49,6 +87,24 @@ export function NotFoundPage() {
       >
         {label}
       </Button>
+    </>
+  )
+
+  if (inShell) {
+    return (
+      <div
+        role="region"
+        aria-label={copy.title}
+        className="flex h-full min-h-0 w-full flex-col items-center justify-center px-6"
+      >
+        {body}
+      </div>
+    )
+  }
+
+  return (
+    <main className="flex min-h-dvh flex-col items-center justify-center bg-background px-6">
+      {body}
     </main>
   )
 }

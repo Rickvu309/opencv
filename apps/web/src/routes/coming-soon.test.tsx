@@ -135,4 +135,71 @@ describe("coming soon and the calm 404", () => {
       expect(router.state.location.pathname).toBe("/app/apply")
     })
   })
+
+  it("renders a signed-in profile path inside the shell", async () => {
+    renderApp("/u/someone")
+
+    const heading = await screen.findByRole("heading", {
+      level: 1,
+      name: "Page not found",
+    })
+    const main = screen.getByRole("main")
+    expect(document.querySelector("[data-slot='app-shell']")).toBeTruthy()
+    expect(screen.getAllByRole("main")).toHaveLength(1)
+    expect(main).toContainElement(heading)
+    expect(main.className).not.toContain("min-h-dvh")
+    expect(
+      screen.getByRole("button", { name: "Back to start" })
+    ).toBeInTheDocument()
+  })
+
+  it("renders a signed-out unknown app path as the bare 404", async () => {
+    setMockSession(null)
+    const { router } = renderApp("/app/nothing")
+
+    const heading = await screen.findByRole("heading", {
+      level: 1,
+      name: "Page not found",
+    })
+    expect(router.state.location.pathname).toBe("/app/nothing")
+    expect(document.querySelector("[data-slot='app-shell']")).toBeNull()
+    expect(screen.getAllByRole("main")).toHaveLength(1)
+    expect(screen.getByRole("main")).toContainElement(heading)
+    expect(screen.getByRole("main").className).toContain("min-h-dvh")
+    expect(
+      screen.getByRole("button", { name: "Go to sign in" })
+    ).toBeInTheDocument()
+  })
+
+  it("renders a signed-in unknown app path inside one shell main", async () => {
+    renderApp("/app/nothing")
+
+    const heading = await screen.findByRole("heading", {
+      level: 1,
+      name: "Page not found",
+    })
+    const main = screen.getByRole("main")
+    expect(document.querySelector("[data-slot='app-shell']")).toBeTruthy()
+    expect(screen.getAllByRole("main")).toHaveLength(1)
+    expect(main).toContainElement(heading)
+    expect(main.className).not.toContain("min-h-dvh")
+    expect(
+      screen.getByRole("button", { name: "Back to start" })
+    ).toBeInTheDocument()
+  })
+
+  it("renders a signed-in root miss inside the shell", async () => {
+    renderApp("/nothing")
+
+    const heading = await screen.findByRole("heading", {
+      level: 1,
+      name: "Page not found",
+    })
+    expect(document.querySelector("[data-slot='app-shell']")).toBeTruthy()
+    expect(screen.getAllByRole("main")).toHaveLength(1)
+    expect(screen.getByRole("main")).toContainElement(heading)
+    expect(
+      screen.getByRole("button", { name: "Back to start" })
+    ).toBeInTheDocument()
+  })
 })

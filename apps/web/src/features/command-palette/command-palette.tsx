@@ -46,6 +46,15 @@ function rowLabel(row: PaletteRow) {
   return row.title
 }
 
+function RowDetail({ title, detail }: { title: string; detail: string }) {
+  return (
+    <span className="flex min-w-0 flex-col items-start">
+      <span className="text-sm text-foreground">{title}</span>
+      <span className="text-xs text-muted-foreground">{detail}</span>
+    </span>
+  )
+}
+
 function focusSearchButton() {
   window.setTimeout(() => {
     const buttons = [
@@ -263,6 +272,11 @@ export function CommandPalette({
                       type="button"
                       variant="ghost"
                       aria-current={current ? "true" : undefined}
+                      aria-label={
+                        row.kind === "paper"
+                          ? `${row.name} ${row.kindLabel}`
+                          : undefined
+                      }
                       onMouseEnter={() => setActiveId(row.id)}
                       onClick={() => activate(row)}
                       className={cn(
@@ -271,14 +285,9 @@ export function CommandPalette({
                       )}
                     >
                       {row.kind === "job" ? (
-                        <span className="flex min-w-0 flex-col items-start">
-                          <span className="text-sm text-foreground">
-                            {row.title}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {row.company}
-                          </span>
-                        </span>
+                        <RowDetail title={row.title} detail={row.company} />
+                      ) : row.kind === "paper" ? (
+                        <RowDetail title={row.name} detail={row.kindLabel} />
                       ) : (
                         <span className="min-w-0 truncate text-sm">
                           {rowLabel(row)}

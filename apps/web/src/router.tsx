@@ -13,7 +13,7 @@ import {
 import { getShellProfile } from "@/features/app-shell/shell-api.ts"
 import { startPagePath } from "@/features/app-shell/start-page.ts"
 
-import { NotFoundPage } from "@/components/not-found-page.tsx"
+import { NotFoundPage, UnknownShell } from "@/components/not-found-page.tsx"
 import {
   isSettingsSection,
   validateSettingsSearch,
@@ -81,6 +81,16 @@ const signUpRoute = createRoute({
 
 function isAppIndex(pathname: string) {
   return pathname === "/app" || pathname === "/app/"
+}
+
+async function loadUnknownSession() {
+  try {
+    const { data } = await authClient.getSession()
+    return { signedIn: Boolean(data) }
+  } catch (error) {
+    if (isRedirect(error)) throw error
+    return { signedIn: false }
+  }
 }
 
 const appLayoutRoute = createRoute({
@@ -263,21 +273,44 @@ const settingsRoute = createRoute({
   ),
 })
 
+// Misses stay off the app layout. A session renders the 404 inside the shell.
+// No session renders the bare 404, including /app/nothing, with no redirect.
 const userRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/u/$slug",
+  beforeLoad: loadUnknownSession,
+  component: UnknownShell,
+})
+
+const userMissRoute = createRoute({
+  getParentRoute: () => userRoute,
+  path: "/",
+  component: NotFoundPage,
+})
+
+const appMissRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/app/$",
+  beforeLoad: loadUnknownSession,
+  component: UnknownShell,
+})
+
+const appMissIndexRoute = createRoute({
+  getParentRoute: () => appMissRoute,
+  path: "/",
   component: NotFoundPage,
 })
 
 const rootSplatRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "$",
-  component: NotFoundPage,
+  beforeLoad: loadUnknownSession,
+  component: UnknownShell,
 })
 
-const appSplatRoute = createRoute({
-  getParentRoute: () => appLayoutRoute,
-  path: "$",
+const rootSplatIndexRoute = createRoute({
+  getParentRoute: () => rootSplatRoute,
+  path: "/",
   component: NotFoundPage,
 })
 
@@ -287,7 +320,8 @@ const routeTree = rootRoute.addChildren([
   signInRoute,
   signUpRoute,
   shareRoute,
-  userRoute,
+  userRoute.addChildren([userMissRoute]),
+  appMissRoute.addChildren([appMissIndexRoute]),
   appLayoutRoute.addChildren([
     appIndexRoute,
     homeRoute,
@@ -303,9 +337,8 @@ const routeTree = rootRoute.addChildren([
     inboxRoute,
     settingsUpgradeRoute,
     settingsRoute,
-    appSplatRoute,
   ]),
-  rootSplatRoute,
+  rootSplatRoute.addChildren([rootSplatIndexRoute]),
 ])
 
 export function createAppRouter(options?: { history?: RouterHistory }) {
