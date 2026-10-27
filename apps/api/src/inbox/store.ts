@@ -15,6 +15,7 @@ import {
   gmailEnabledFromEnv,
   googleClientIdFromEnv,
 } from "../config.js"
+import { markInboxSkipped } from "../account/index.js"
 import { getDb } from "../db/context.js"
 import {
   connections,
@@ -112,10 +113,7 @@ export async function readInboxThread(
 }
 
 export async function skipInbox(actor: Actor) {
-  await getDb()
-    .update(user)
-    .set({ inboxSkippedAt: new Date(), updatedAt: new Date() })
-    .where(eq(user.id, actor.userId))
+  await markInboxSkipped(actor.userId)
   return { skipped: true as const }
 }
 
