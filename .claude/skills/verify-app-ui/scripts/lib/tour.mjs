@@ -8,7 +8,7 @@ import { probeSource } from "./probe.mjs"
 
 const CV_NAME = "Live Check CV"
 const ROUTES = {
-  home: ["/app/home", "document.querySelector('h1')"],
+  home: ["/app/coach", "document.querySelector('h1')"],
   paper: [
     "/app/paper",
     `document.body.innerText.includes(${JSON.stringify(CV_NAME)})`,
@@ -177,7 +177,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
     prepared.cv === true && prepared.card === true,
     `creating the tour CV and card failed (${JSON.stringify(prepared)})`
   )
-  await a.goto(`${webUrl}/app/home`)
+  await a.goto(`${webUrl}/app/coach`)
   must(
     await a.waitFor("document.querySelector('h1')", 20000),
     "welcome did not finish"
@@ -206,7 +206,12 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
         ),
         "the coach page did not render"
       )
-      await a.sleep(400)
+      await typeInto(a, "Review my CV")
+      must(
+        await a.waitFor("document.querySelector('button.glow')", 4000),
+        "Send did not glow"
+      )
+      await a.sleep(200)
       d.coachPage = await snap(a)
       must(await visit("home"), "home did not render after the coach page")
       const hasComposer = await a.evaluate(
@@ -324,10 +329,10 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
         }
       : null
   )
-  await b.goto(`${webUrl}/app/home`)
+  await b.goto(`${webUrl}/app/coach`)
   must(
     await b.waitFor("document.querySelector('textarea')", 15000),
-    "the start page did not render"
+    "the coach page did not render"
   )
   await send(b, "hello")
   await b.waitFor("document.querySelector('[role=alert]')", 8000)
@@ -336,10 +341,10 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
   await shot(b, "desktop-coach-error")
 
   b.setIntercept((r) => (coachCall(r) ? "fail" : null))
-  await b.goto(`${webUrl}/app/home`)
+  await b.goto(`${webUrl}/app/coach`)
   must(
     await b.waitFor("document.querySelector('textarea')", 15000),
-    "the start page did not render"
+    "the coach page did not render"
   )
   await send(b, "hello again")
   await b.waitFor("document.querySelector('[role=alert]')", 8000)

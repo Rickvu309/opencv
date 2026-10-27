@@ -19,6 +19,23 @@ export function getCoachCommandCalls() {
   return mockState.commandCalls
 }
 
+let releaseApproval: (() => void) | null = null
+let approvalGate: Promise<void> | null = null
+
+export function holdApprovals() {
+  approvalGate = new Promise((resolve) => {
+    releaseApproval = () => {
+      resolve()
+      approvalGate = null
+      releaseApproval = null
+    }
+  })
+}
+
+export function releaseApprovals() {
+  releaseApproval?.()
+}
+
 export function setMockCoachUsage(next: Partial<UsageOverride>) {
   mockState.usageTouched = true
   mockState.usage = {
@@ -31,6 +48,8 @@ export function setMockCoachUsage(next: Partial<UsageOverride>) {
 
 function nativeTurnResponse(chatId: string, signal?: AbortSignal) {
   const encoder = new TextEncoder()
+  const streamError = mockState.script.streamError
+  mockState.script.streamError = undefined
   const parts = scriptedParts()
   const steps = mockState.script.steps ?? []
   const confirm = mockState.script.confirm
@@ -46,6 +65,10 @@ function nativeTurnResponse(chatId: string, signal?: AbortSignal) {
       }
       try {
         await emit(COACH_SSE_EVENTS.messageStart, { chatId })
+        if (streamError) {
+          await emit(COACH_SSE_EVENTS.error, { message: streamError })
+          return
+        }
         for (const label of steps) {
           await emit(COACH_SSE_EVENTS.step, { label })
         }
@@ -59,6 +82,7 @@ function nativeTurnResponse(chatId: string, signal?: AbortSignal) {
               summary: part.summary,
               ok: part.ok,
               ...(part.detail ? { detail: part.detail } : {}),
+              ...(part.result ? { result: part.result } : {}),
             })
           }
         }
@@ -176,6 +200,15 @@ export async function handleNativeCoachRequest(
   if (method === "POST" && command) {
     const body = await readBody(init)
     mockState.commandCalls.push({ name: command[1]!, body })
+    if (command[1] === "actions.approve" && approvalGate) await approvalGate
+    if (command[1] === "actions.approve" && mockState.script.approveError) {
+      const error = mockState.script.approveError
+      mockState.script.approveError = undefined
+      return jsonError(error.status, error.code, error.message)
+    }
+    if (command[1] === "actions.approve" && mockState.script.approveResult) {
+      return jsonOk(mockState.script.approveResult)
+    }
     return jsonOk({ ok: true })
   }
 

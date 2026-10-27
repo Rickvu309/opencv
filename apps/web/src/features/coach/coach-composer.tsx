@@ -92,7 +92,7 @@ export function CoachComposer({
           type="button"
           variant={
             !disabled && (streaming || draft.trim().length > 0)
-              ? "default"
+              ? "glow"
               : "outline"
           }
           size="icon-sm"

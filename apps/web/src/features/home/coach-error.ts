@@ -32,7 +32,7 @@ function apiErrorSentence(error: ApiError): string {
     return "Your session ended, so the Coach couldn't answer. Sign in again, then retry."
   }
   if (error.status === 404) {
-    return "Something went wrong: the Coach couldn't find your Thread. Reload the page, or start a new Thread."
+    return "Something went wrong: the Coach couldn't find your Chat. Reload the page, or start a new Chat."
   }
   if (error.status === 429) {
     return "The Coach is getting too many requests. Wait a moment, then retry."
@@ -48,5 +48,30 @@ export function coachSendErrorMessage(error: unknown): string {
     return "Couldn't reach the Coach. Check your connection and try again."
   }
 
+  return GENERIC
+}
+
+const STREAM_SENTENCES = new Set([
+  UNAVAILABLE,
+  GENERIC,
+  "You've reached today's limit for this Coach mode. Try another mode, or come back tomorrow.",
+  "Your session ended, so the Coach couldn't answer. Sign in again, then retry.",
+  SIGN_IN_AGAIN,
+  "The Coach can't do that here. Ask for something else, or make the change yourself.",
+  "The Coach couldn't read that message. Shorten it or reword it, then send it again.",
+  "Something went wrong: the Coach couldn't find your Chat. Reload the page, or start a new Chat.",
+  "The Coach is getting too many requests. Wait a moment, then retry.",
+  "Couldn't reach the Coach. Check your connection and try again.",
+  "The edit did not save. Ask again and I will update the document.",
+  "The Coach is unavailable right now",
+])
+
+/** SSE errors are codes or a sentence we already show. Anything else stays off the page. */
+export function coachStreamErrorMessage(message: string): string {
+  const trimmed = message.trim()
+  if (/^[A-Z0-9_]+$/.test(trimmed)) {
+    return coachSendErrorMessage(new ApiError(500, trimmed, trimmed))
+  }
+  if (STREAM_SENTENCES.has(trimmed)) return trimmed
   return GENERIC
 }

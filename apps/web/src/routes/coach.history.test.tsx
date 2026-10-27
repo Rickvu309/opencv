@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import {
   cleanup,
   fireEvent,
@@ -14,6 +14,7 @@ const CHAT_ID = "11111111-1111-4111-8111-111111111111"
 
 afterEach(() => {
   cleanup()
+  vi.useRealTimers()
 })
 
 describe("coach history", () => {
@@ -95,5 +96,43 @@ describe("coach history", () => {
     await waitFor(() => {
       expect(chatCreateCalls().length).toBeGreaterThan(0)
     })
+  })
+
+  it("groups Yesterday and Last 7 days from a fixed zone", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] })
+    vi.setSystemTime(new Date("2026-10-27T18:00:00.000Z"))
+    setMockChats([
+      {
+        id: "33333333-3333-4333-8333-333333333331",
+        title: "Yesterday note",
+        focusKind: null,
+        focusId: null,
+        createdAt: "2026-10-27T02:00:00.000Z",
+        updatedAt: "2026-10-27T02:00:00.000Z",
+      },
+      {
+        id: "33333333-3333-4333-8333-333333333332",
+        title: "Earlier note",
+        focusKind: null,
+        focusId: null,
+        createdAt: "2026-10-25T02:00:00.000Z",
+        updatedAt: "2026-10-25T02:00:00.000Z",
+      },
+    ])
+    renderApp("/app/coach")
+    fireEvent.click(await screen.findByRole("button", { name: "Chat history" }))
+    const history = await screen.findByRole("region", { name: "Chats" })
+    expect(
+      await within(history).findByRole("heading", { name: "Yesterday" })
+    ).toBeInTheDocument()
+    expect(
+      within(history).getByRole("button", { name: "Yesterday note" })
+    ).toBeInTheDocument()
+    expect(
+      within(history).getByRole("heading", { name: "Last 7 days" })
+    ).toBeInTheDocument()
+    expect(
+      within(history).getByRole("button", { name: "Earlier note" })
+    ).toBeInTheDocument()
   })
 })

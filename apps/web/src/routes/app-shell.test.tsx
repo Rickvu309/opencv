@@ -268,7 +268,7 @@ describe("app shell layout", () => {
     expect(
       await screen.findByRole("dialog", { name: "Search" })
     ).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe(HOME_PATH)
+    expect(router.state.location.pathname).toBe("/app/coach")
   })
 
   it("renders a favorite as title then company, and omits the section when empty", async () => {

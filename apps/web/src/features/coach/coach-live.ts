@@ -3,11 +3,16 @@ import { useSyncExternalStore } from "react"
 import { ApiError } from "@/lib/api-error.ts"
 import { ERROR_CODES } from "@workspace/domain"
 import { isAbortError, readSseStream } from "@/lib/sse.ts"
-import { coachSendErrorMessage } from "@/features/home/coach-error.ts"
+import {
+  coachSendErrorMessage,
+  coachStreamErrorMessage,
+} from "@/features/home/coach-error.ts"
 
 import {
   getChat,
   messageFromServer,
+  partFromCoachEvent,
+  resultFromApprove,
   stopChat,
   streamTurn,
 } from "./coach-api.ts"
@@ -39,7 +44,9 @@ const EMPTY: LiveChat = {
 
 const cache = new Map<string, LiveChat>()
 const controllers = new Map<string, AbortController>()
+const restoredDrafts = new Map<string, string>()
 const listeners = new Set<() => void>()
+let dayLimited = false
 
 function emit() {
   for (const listener of listeners) listener()
@@ -68,10 +75,35 @@ export function useCoachLive(chatId: string | null) {
   )
 }
 
+export function readCoachLimited() {
+  return dayLimited
+}
+
+export function useCoachLimited() {
+  return useSyncExternalStore(
+    subscribeCoachLive,
+    readCoachLimited,
+    readCoachLimited
+  )
+}
+
+export function readRestoredDraft(chatId: string | null) {
+  if (!chatId) return null
+  return restoredDrafts.get(chatId) ?? null
+}
+
+export function takeRestoredDraft(chatId: string) {
+  if (!restoredDrafts.has(chatId)) return
+  restoredDrafts.delete(chatId)
+  emit()
+}
+
 export function resetCoachLive() {
   for (const controller of controllers.values()) controller.abort()
   controllers.clear()
   cache.clear()
+  restoredDrafts.clear()
+  dayLimited = false
   emit()
 }
 
@@ -141,60 +173,36 @@ function applyEvent(message: CoachUiMessage, event: string, data: unknown) {
     message.startedAt = Date.now()
     return
   }
-  if (event === "text-delta" && typeof record.text === "string") {
-    const existing = textPart(message.parts)
-    if (existing && existing.kind === "text") existing.text += record.text
-    else message.parts.push({ kind: "text", text: record.text })
-    return
-  }
-  if (event === "step" && typeof record.label === "string") {
-    message.parts.push({ kind: "step", label: record.label })
-    return
-  }
-  if (event === "confirm" && typeof record.pendingActionId === "string") {
-    message.parts.push({
-      kind: "confirm",
-      pendingActionId: record.pendingActionId,
-      command: typeof record.command === "string" ? record.command : "",
-      summary: typeof record.summary === "string" ? record.summary : "",
-    })
-    message.status = "awaiting"
-    return
-  }
-  if (event === "tool-result") {
-    const activityId =
-      typeof record.activityId === "string" ? record.activityId : undefined
-    const summary = typeof record.summary === "string" ? record.summary : ""
-    const name = typeof record.name === "string" ? record.name : "Document"
-    const changes =
-      typeof record.changes === "number" ? record.changes : undefined
-    if (activityId || changes != null) {
-      message.parts.push({
-        kind: "result",
-        ...(activityId ? { activityId } : {}),
-        name,
-        summary,
-        ...(changes != null ? { changes } : {}),
-        ...(typeof record.docId === "string" ? { docId: record.docId } : {}),
-      })
-    } else if (summary) {
-      message.parts.push({ kind: "step", label: summary })
-    }
-    return
-  }
   if (event === "message-end" && typeof record.workedMs === "number") {
     message.workedMs = record.workedMs
+    return
   }
-  if (event === "error" && typeof record.message === "string") {
+  if (event === "error") {
     message.status = "error"
+    return
   }
+  const part = partFromCoachEvent(event, data)
+  if (!part) return
+  if (part.kind === "text") {
+    const existing = textPart(message.parts)
+    if (existing && existing.kind === "text") existing.text += part.text
+    else message.parts.push(part)
+    return
+  }
+  if (
+    part.kind === "step" &&
+    message.parts.some(
+      (item) => item.kind === "step" && item.label === part.label
+    )
+  ) {
+    return
+  }
+  message.parts.push(part)
+  if (part.kind === "confirm") message.status = "awaiting"
 }
 
 function liveErrorText(message: string) {
-  if (/^[A-Z0-9_]+$/.test(message.trim())) {
-    return "Something went wrong sending that. Try again."
-  }
-  return message
+  return coachStreamErrorMessage(message)
 }
 
 export async function sendCoachTurn(input: {
@@ -248,6 +256,8 @@ export async function sendCoachTurn(input: {
           (message) => message.id !== person.id && message.id !== coach.id
         )
       : latest.messages
+    if (limited) dayLimited = true
+    if (restoreDraft) restoredDrafts.set(input.chatId, input.text)
     write(input.chatId, {
       ...latest,
       messages,
@@ -366,6 +376,58 @@ export function stopCoachTurn(chatId: string) {
   controllers.get(chatId)?.abort()
   markStopped(chatId)
   void stopChat(chatId).catch(() => undefined)
+}
+
+export function attachApprovedResult(chatId: string, row: unknown) {
+  const part = resultFromApprove(row)
+  if (!part || part.kind !== "result") return
+  const current = cache.get(chatId)
+  if (!current) return
+  write(chatId, {
+    ...current,
+    messages: current.messages.map((message, index) => {
+      if (index !== current.messages.length - 1 || message.role !== "coach") {
+        return message
+      }
+      const existing = message.parts.findIndex(
+        (item) =>
+          item.kind === "result" &&
+          part.docId != null &&
+          item.docId === part.docId
+      )
+      if (existing >= 0) {
+        const parts = message.parts.slice()
+        const prior = parts[existing]
+        if (prior && prior.kind === "result") {
+          parts[existing] = {
+            ...prior,
+            name: part.name || prior.name,
+            summary: part.summary || prior.summary,
+            ...(part.activityId ? { activityId: part.activityId } : {}),
+            ...(part.docId ? { docId: part.docId } : {}),
+          }
+        }
+        return { ...message, parts }
+      }
+      return { ...message, parts: [...message.parts, part] }
+    }),
+  })
+}
+
+export function clearConfirm(chatId: string, pendingActionId: string) {
+  const current = cache.get(chatId)
+  if (!current) return
+  write(chatId, {
+    ...current,
+    messages: current.messages.map((message) => ({
+      ...message,
+      parts: message.parts.map((part) =>
+        part.kind === "confirm" && part.pendingActionId === pendingActionId
+          ? { ...part, decided: undefined }
+          : part
+      ),
+    })),
+  })
 }
 
 export function decideConfirm(

@@ -1,5 +1,6 @@
 import {
   COACH_SSE_EVENTS,
+  ERROR_CODES,
   appendCoachPart,
   coachActor,
   deterministicThreadTitle,
@@ -32,6 +33,9 @@ import type { SSEStreamingApi } from "hono/streaming"
 
 import { readUsage } from "../account/index.js"
 import { coachModelEnv } from "../config.js"
+import { getDb } from "../db/context.js"
+import { pendingActions } from "../db/schema.js"
+import { createId } from "../id.js"
 import { getChat, insertCoachMessage, trackChatTurn } from "../chat/index.js"
 import { registry as defaultRegistry } from "../registry/registry.js"
 import type { Registry, ToolEntry } from "../registry/registry.js"
@@ -100,6 +104,7 @@ export async function runCoachTurn(options: {
     mode: options.mode,
   }
   const called = new Set<string>()
+  const stepped = new Set<string>()
   const heartbeat = setInterval(() => {
     void writeHeartbeat(options.stream)
   }, options.heartbeatMs)
@@ -121,16 +126,23 @@ export async function runCoachTurn(options: {
       await emit(COACH_SSE_EVENTS.step, { label: options.readLabel })
     }
     const iterable = options.runtime
-      ? options.runtime.streamTurn({
-          userId: options.userId,
-          threadId: options.chatId,
-          history: options.history,
-          model: options.modelId,
-          mode: options.mode,
-          focusDoc: options.focusDoc,
-          selection: options.selection,
-          note: options.note,
-        })
+      ? expandDemoConfirm(
+          options.runtime.streamTurn({
+            userId: options.userId,
+            threadId: options.chatId,
+            history: options.history,
+            model: options.modelId,
+            mode: options.mode,
+            focusDoc: options.focusDoc,
+            selection: options.selection,
+            note: options.note,
+          }),
+          {
+            registry,
+            userId: options.userId,
+            chatId: options.chatId,
+          }
+        )
       : liveParts({
           model: options.model,
           history: options.history,
@@ -164,7 +176,9 @@ export async function runCoachTurn(options: {
       }
       if (part.type === "error") {
         status = "error"
-        await emit(COACH_SSE_EVENTS.error, { message: part.message })
+        await emit(COACH_SSE_EVENTS.error, {
+          message: publicCoachErrorMessage(part.message),
+        })
         break
       }
       if (part.type === "tool-call" && options.wire === "native") {
@@ -173,8 +187,21 @@ export async function runCoachTurn(options: {
             item.name === part.name ||
             item.name.replaceAll(".", "_") === part.name
         )
-        if (entry)
+        if (entry) {
           await emit(COACH_SSE_EVENTS.step, { label: entry.step(part.input) })
+          stepped.add(part.toolCallId)
+        }
+      }
+      if (
+        part.type === "tool-result" &&
+        options.wire === "native" &&
+        !stepped.has(part.toolCallId)
+      ) {
+        const label = part.summary || part.name
+        if (label) {
+          await emit(COACH_SSE_EVENTS.step, { label })
+          stepped.add(part.toolCallId)
+        }
       }
       if (
         part.type === "text-delta" ||
@@ -214,9 +241,10 @@ export async function runCoachTurn(options: {
       status = "aborted"
     } else {
       status = "error"
-      const message =
-        error instanceof Error ? error.message : "The Coach stopped."
-      await emit(COACH_SSE_EVENTS.error, { message })
+      const message = error instanceof Error ? error.message : ""
+      await emit(COACH_SSE_EVENTS.error, {
+        message: publicCoachErrorMessage(message),
+      })
     }
   } finally {
     clearInterval(heartbeat)
@@ -281,6 +309,108 @@ export async function runCoachTurn(options: {
         })
       }
     }
+  }
+}
+
+const KEPT_STREAM_SENTENCES = new Set([
+  "The Coach is unavailable right now",
+  "The edit did not save. Ask again and I will update the document.",
+])
+
+export function publicCoachErrorMessage(message: string) {
+  const trimmed = message.trim()
+  if (/^[A-Z0-9_]+$/.test(trimmed)) return trimmed
+  if (KEPT_STREAM_SENTENCES.has(trimmed)) return trimmed
+  return ERROR_CODES.INTERNAL_ERROR
+}
+
+type PaperRow = {
+  id?: string
+  name?: string
+  kind?: string
+  document?: unknown
+  contentVersion?: number
+}
+
+async function* expandDemoConfirm(
+  parts: AsyncIterable<CoachStreamPart>,
+  scope: { registry: Registry; userId: string; chatId: string }
+): AsyncGenerator<CoachStreamPart> {
+  for await (const part of parts) {
+    if (part.type === "tool-call" && part.name === "coach.confirm") {
+      yield* confirmScenario(scope)
+      continue
+    }
+    yield part
+  }
+}
+
+async function* confirmScenario(scope: {
+  registry: Registry
+  userId: string
+  chatId: string
+}): AsyncGenerator<CoachStreamPart> {
+  const actor = coachActor(scope.userId, scope.chatId)
+  const listed = await scope.registry.read("paper.list", {}, actor)
+  const papers = Array.isArray(listed) ? (listed as PaperRow[]) : []
+  let doc = papers.find((item) => item.id && item.document != null)
+  if (!doc) {
+    const created = await scope.registry.execute({
+      name: "paper.create",
+      input: { kind: "letter", name: "Coach note" },
+      actor,
+    })
+    doc =
+      created.output && typeof created.output === "object"
+        ? (created.output as PaperRow)
+        : {}
+  }
+  const docId = String(doc.id ?? "")
+  const name = doc.name?.trim() || "Coach note"
+  const kind = doc.kind === "cv" || doc.kind === "proof" ? doc.kind : "letter"
+  const pendingId = createId()
+  await getDb()
+    .insert(pendingActions)
+    .values({
+      id: pendingId,
+      userId: scope.userId,
+      chatId: scope.chatId,
+      command: "paper.replace",
+      input: {
+        docId,
+        contentVersion: doc.contentVersion ?? 1,
+        document: doc.document,
+      },
+      summary: "Update the document",
+      status: "pending",
+    })
+  yield {
+    type: "tool-call",
+    toolCallId: "call_confirm",
+    name: "paper.replace",
+    input: {},
+  }
+  yield {
+    type: "tool-result",
+    toolCallId: "call_confirm",
+    name: "paper.replace",
+    summary: "Update the document",
+    ok: true,
+    pendingActionId: pendingId,
+    command: "paper.replace",
+    detail: {
+      type: "paper.updateContent",
+      docKind: kind,
+      docName: name,
+      hunks: [],
+    },
+    result: { ok: true, data: { id: docId, name } },
+  }
+  yield { type: "text-delta", text: "Approve to update the document." }
+  yield {
+    type: "finish",
+    finishReason: "stop",
+    usage: { model: "fake", finishReason: "stop" },
   }
 }
 

@@ -45,56 +45,119 @@ export type ServerChat = {
   messages?: ServerMessage[]
 }
 
+function textField(value: unknown) {
+  return typeof value === "string" && value.trim() ? value : ""
+}
+
+function recordOf(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null
+  return value as Record<string, unknown>
+}
+
+function docNameOf(detail: Record<string, unknown> | null) {
+  if (!detail) return ""
+  if (detail.type === "paper.updateContent") return textField(detail.docName)
+  if (detail.type === "paper.createDoc") return textField(detail.name)
+  return textField(detail.docName)
+}
+
+function docIdOf(
+  row: Record<string, unknown>,
+  detail: Record<string, unknown> | null
+) {
+  const direct = textField(row.docId) || textField(detail?.docId)
+  if (direct) return direct
+  const result = recordOf(row.result)
+  const data = recordOf(result?.data) ?? result
+  const fromResult = textField(data?.id) || textField(data?.docId)
+  if (fromResult) return fromResult
+  const reversal = recordOf(row.reversal)
+  const input = recordOf(reversal?.input)
+  return textField(input?.docId)
+}
+
+export function partFromCoachEvent(
+  event: string,
+  data: unknown
+): CoachUiPart | null {
+  const row = recordOf(data) ?? {}
+  if (event === "text" || event === "text-delta") {
+    const value = textField(row.text)
+    return value ? { kind: "text", text: value } : null
+  }
+  if (event === "step") {
+    const label = textField(row.label)
+    return label ? { kind: "step", label } : null
+  }
+  if (event === "confirm") {
+    const pendingActionId = textField(row.pendingActionId)
+    if (!pendingActionId) return null
+    return {
+      kind: "confirm",
+      pendingActionId,
+      command: textField(row.command),
+      summary: textField(row.summary),
+    }
+  }
+  if (event === "tool-result" || event === "tool" || event === "result") {
+    return partFromToolResult(row)
+  }
+  return null
+}
+
+function partFromToolResult(row: Record<string, unknown>): CoachUiPart | null {
+  const detail = recordOf(row.detail)
+  const docName = docNameOf(detail)
+  const docId = docIdOf(row, detail)
+  const summary = textField(row.summary)
+  const changes = typeof row.changes === "number" ? row.changes : undefined
+  const activityId = textField(row.activityId)
+  if (docName || docId || activityId || changes != null) {
+    const toolName = textField(row.name) || textField(row.label)
+    return {
+      kind: "result",
+      name: docName || toolName || "Document",
+      summary,
+      ...(activityId ? { activityId } : {}),
+      ...(docId ? { docId } : {}),
+      ...(changes != null ? { changes } : {}),
+      ...(row.undone === true ? { undone: true } : {}),
+    }
+  }
+  if (summary) return { kind: "step", label: summary }
+  return null
+}
+
+export function resultFromApprove(row: unknown): CoachUiPart | null {
+  const record = recordOf(row)
+  if (!record) return null
+  const detail = recordOf(record.detail)
+  const output = recordOf(record.result)
+  const name =
+    textField(detail?.name) ||
+    textField(detail?.docName) ||
+    textField(output?.name)
+  const docId =
+    textField(detail?.docId) ||
+    textField(output?.id) ||
+    textField(record.subjectId)
+  const activityId = textField(record.id)
+  if (!name && !docId && !activityId) return null
+  return {
+    kind: "result",
+    name: name || "Document",
+    summary: textField(record.summary),
+    ...(activityId ? { activityId } : {}),
+    ...(docId ? { docId } : {}),
+  }
+}
+
 function mapPart(part: unknown): CoachUiPart | null {
   if (!part || typeof part !== "object") return null
   const record = part as Record<string, unknown>
   const type = record.type ?? record.kind
-  if (type === "text" || type === "text-delta") {
-    return typeof record.text === "string" && record.text
-      ? { kind: "text", text: record.text }
-      : null
-  }
-  if (type === "step" && typeof record.label === "string") {
-    return { kind: "step", label: record.label }
-  }
-  if (
-    type === "confirm" &&
-    typeof record.pendingActionId === "string" &&
-    typeof record.command === "string"
-  ) {
-    return {
-      kind: "confirm",
-      pendingActionId: record.pendingActionId,
-      command: record.command,
-      summary: typeof record.summary === "string" ? record.summary : "",
-    }
-  }
-  if (type === "tool-result" || type === "tool" || type === "result") {
-    const name =
-      typeof record.name === "string"
-        ? record.name
-        : typeof record.label === "string"
-          ? record.label
-          : "Document"
-    const summary = typeof record.summary === "string" ? record.summary : ""
-    const changes =
-      typeof record.changes === "number" ? record.changes : undefined
-    if (record.activityId || record.docId || changes != null) {
-      return {
-        kind: "result",
-        ...(typeof record.activityId === "string"
-          ? { activityId: record.activityId }
-          : {}),
-        name,
-        summary,
-        ...(changes != null ? { changes } : {}),
-        ...(typeof record.docId === "string" ? { docId: record.docId } : {}),
-        ...(record.undone === true ? { undone: true } : {}),
-      }
-    }
-    if (summary) return { kind: "step", label: summary }
-  }
-  return null
+  if (typeof type !== "string") return null
+  return partFromCoachEvent(type, record)
 }
 
 export function messageFromServer(message: ServerMessage): CoachUiMessage {

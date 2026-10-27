@@ -25,6 +25,8 @@ export type CoachStreamScript = {
   httpError?: { status: number; code: string; message: string }
   networkError?: boolean
   streamError?: string
+  approveError?: { status: number; code: string; message: string }
+  approveResult?: unknown
   omitEnd?: boolean
   workedMs?: number
   undoFail?: { summary: string }

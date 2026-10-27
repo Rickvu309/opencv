@@ -75,8 +75,62 @@ async function* overlayTurnModel(
   }
 }
 
+export const HOLD_MS = 3000
+
+const FAIL_TEXT = "database password leaked at /tmp/secret"
+
+function latestPersonText(input: CoachTurnInput) {
+  return (
+    [...input.history].reverse().find((message) => message.role !== "coach")
+      ?.text ?? ""
+  )
+}
+
+function finishPart(): CoachStreamPart {
+  return {
+    type: "finish",
+    finishReason: "stop",
+    usage: {
+      model: DEFAULT_COACH_MODELS.free,
+      tokens: 42,
+      costEstimate: "0.001",
+      finishReason: "stop",
+    },
+  }
+}
+
+async function* demoParts(
+  input: CoachTurnInput
+): AsyncGenerator<CoachStreamPart> {
+  const text = latestPersonText(input).toLowerCase()
+  if (text.includes("fail")) throw new Error(FAIL_TEXT)
+  if (text.includes("hold")) {
+    yield {
+      type: "tool-call",
+      toolCallId: "call_hold",
+      name: "job.list",
+      input: {},
+    }
+    await new Promise((resolve) => setTimeout(resolve, HOLD_MS))
+    yield { type: "text-delta", text: "I looked at Apply. " }
+    yield { type: "text-delta", text: "Prep the starred one next." }
+    yield finishPart()
+    return
+  }
+  if (text.includes("confirm")) {
+    yield {
+      type: "tool-call",
+      toolCallId: "call_confirm",
+      name: "coach.confirm",
+      input: {},
+    }
+    return
+  }
+  yield* replay(DEMO_COACH_SCRIPT)
+}
+
 export function createDemoCoachRuntime(): CoachRuntime {
-  return createScriptedCoachRuntime(DEMO_COACH_SCRIPT)
+  return createScriptedCoachRuntime(demoParts)
 }
 
 export function withTitleGenerator(

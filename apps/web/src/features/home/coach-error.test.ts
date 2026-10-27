@@ -1,7 +1,10 @@
 import { ERROR_CODES } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
 
-import { coachSendErrorMessage } from "@/features/home/coach-error.ts"
+import {
+  coachSendErrorMessage,
+  coachStreamErrorMessage,
+} from "@/features/home/coach-error.ts"
 import { ApiError } from "@/lib/api-error.ts"
 
 describe("coachSendErrorMessage", () => {
@@ -62,18 +65,28 @@ describe("coachSendErrorMessage", () => {
     expect(sentence).not.toMatch(/Thread/)
   })
 
-  it("tells the person to reload or start a new Thread when a record is missing", () => {
+  it("tells the person to reload or start a new Chat when a record is missing", () => {
     expect(
       coachSendErrorMessage(
         new ApiError(404, ERROR_CODES.NOT_FOUND, "Thread not found")
       )
-    ).toMatch(/new Thread/)
+    ).toMatch(/new Chat/)
   })
 
   it("never shows a thrown Error's message", () => {
     const sentence = coachSendErrorMessage(new Error("boom: stack trace"))
     expect(sentence).not.toContain("boom")
     expect(sentence).toBe("Something went wrong sending that. Try again.")
+  })
+
+  it("hides an arbitrary stream message and maps a code", () => {
+    const raw = "database password leaked at /tmp/secret"
+    const sentence = coachStreamErrorMessage(raw)
+    expect(sentence).not.toContain(raw)
+    expect(sentence).toBe("Something went wrong sending that. Try again.")
+    expect(coachStreamErrorMessage("INTERNAL_ERROR")).toBe(
+      "The Coach is unavailable right now. Try again in a moment."
+    )
   })
 
   it("falls back for a value that is not an Error", () => {

@@ -5,6 +5,7 @@ import {
   CoachParts,
   partRenderers,
 } from "@/features/coach/coach-part-renderers.tsx"
+import { partFromCoachEvent } from "@/features/coach/coach-api.ts"
 import {
   groupCoachParts,
   toCoachParts,
@@ -39,6 +40,47 @@ const updated = {
 }
 
 const ctx = { canUndo: false }
+
+describe("step and confirm parts", () => {
+  it("maps a step, a confirm, and a document result", () => {
+    expect(partFromCoachEvent("step", { label: "List jobs" })).toEqual({
+      kind: "step",
+      label: "List jobs",
+    })
+    expect(
+      partFromCoachEvent("confirm", {
+        pendingActionId: "pending-1",
+        command: "paper.replace",
+        summary: "Update the document",
+      })
+    ).toEqual({
+      kind: "confirm",
+      pendingActionId: "pending-1",
+      command: "paper.replace",
+      summary: "Update the document",
+    })
+    expect(
+      partFromCoachEvent("tool-result", {
+        name: "paper.replace",
+        summary: "Update the document",
+        detail: {
+          type: "paper.updateContent",
+          docKind: "letter",
+          docName: "Coach note",
+          hunks: [],
+        },
+        result: {
+          ok: true,
+          data: { id: "11111111-1111-7111-8111-111111111111" },
+        },
+      })
+    ).toMatchObject({
+      kind: "result",
+      name: "Coach note",
+      docId: "11111111-1111-7111-8111-111111111111",
+    })
+  })
+})
 
 describe("toCoachParts", () => {
   it("derives text, tool and diff parts in the order the Coach produced them", () => {

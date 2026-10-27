@@ -1,11 +1,14 @@
 import { afterEach, describe, expect, it } from "vitest"
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react"
 
+import { pathOf } from "@/test/mock-http.ts"
 import { renderApp } from "@/test/render-app.tsx"
-import { setMockJobs } from "@/test/shell-api-mock.ts"
+import { chatCreateCalls, setMockJobs } from "@/test/shell-api-mock.ts"
 import {
   getCoachCommandCalls,
   getLastNativeTurn,
+  holdApprovals,
+  releaseApprovals,
   scriptCoachStream,
   setMockCoachUsage,
 } from "@/test/threads-api-mock.ts"
@@ -216,4 +219,167 @@ describe("coach page", () => {
     expect(alert).toHaveTextContent("Sign in again")
     expect(alert).not.toHaveTextContent("User not found.")
   })
+
+  it("glows only Send when the field has text", async () => {
+    await openCoach()
+    expect(glowCount()).toBe(0)
+    expect(screen.getByRole("button", { name: "Send" })).toHaveAttribute(
+      "data-variant",
+      "outline"
+    )
+    fireEvent.change(screen.getByRole("textbox", { name: "Message Coach" }), {
+      target: { value: "Review my CV" },
+    })
+    expect(screen.getByRole("button", { name: "Send" })).toHaveAttribute(
+      "data-variant",
+      "glow"
+    )
+    expect(glowCount()).toBe(1)
+  })
+
+  it("glows only Stop while a turn is streaming", async () => {
+    scriptCoachStream({ gated: true, texts: ["Partial answer"] })
+    await openCoach()
+    fireEvent.change(screen.getByRole("textbox", { name: "Message Coach" }), {
+      target: { value: "Keep going" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Send" }))
+    const stop = await screen.findByRole("button", { name: "Stop" })
+    expect(stop).toHaveAttribute("data-variant", "glow")
+    expect(glowCount()).toBe(1)
+  })
+
+  it("puts the composer before the starter chips", async () => {
+    await openCoach()
+    const root = document.querySelector("[data-slot=coach-thread]")
+    const names = [...(root?.querySelectorAll("button, textarea") ?? [])].map(
+      (node) =>
+        node.getAttribute("aria-label") || node.textContent?.trim() || ""
+    )
+    const at = (label: string) => names.indexOf(label)
+    expect(at("New chat")).toBeGreaterThan(-1)
+    expect(at("Chat history")).toBeGreaterThan(at("New chat"))
+    expect(at("Message Coach")).toBeGreaterThan(at("Chat history"))
+    expect(at("Add context")).toBeGreaterThan(at("Message Coach"))
+    expect(at("Free")).toBeGreaterThan(at("Add context"))
+    expect(at("Send")).toBeGreaterThan(at("Free"))
+    expect(at("Review my CV")).toBeGreaterThan(at("Send"))
+  })
+
+  it("creates a chat, then opens the turn stream, and never calls threads", async () => {
+    const paths: string[] = []
+    renderApp("/app/coach", (input) => {
+      paths.push(pathOf(input))
+    })
+    await screen.findByRole("heading", { name: "How can I help?" })
+    fireEvent.change(screen.getByRole("textbox", { name: "Message Coach" }), {
+      target: { value: "Prep the starred role" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Send" }))
+    await screen.findByText(/I looked at Apply/)
+    expect(chatCreateCalls().length).toBeGreaterThan(0)
+    const chatId = getLastNativeTurn()?.chatId
+    expect(chatId).toBeTruthy()
+    expect(paths).toContain(`/api/chats/${chatId}/turns`)
+    expect(paths.some((path) => path.startsWith("/api/threads"))).toBe(false)
+  })
+
+  it("posts approve once and opens the named document", async () => {
+    const pendingActionId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaab"
+    const docId = "11111111-1111-7111-8111-111111111111"
+    scriptCoachStream({
+      confirm: {
+        pendingActionId,
+        command: "paper.replace",
+        summary: "Update the document",
+      },
+      parts: [
+        {
+          kind: "tool",
+          name: "paper.replace",
+          summary: "Update the document",
+          ok: true,
+          detail: {
+            type: "paper.updateContent",
+            docKind: "letter",
+            docName: "Coach note",
+            hunks: [],
+          },
+          result: { ok: true, data: { id: docId, name: "Coach note" } },
+        },
+      ],
+    })
+    const { router } = renderApp("/app/coach")
+    await screen.findByRole("heading", { name: "How can I help?" })
+    fireEvent.change(screen.getByRole("textbox", { name: "Message Coach" }), {
+      target: { value: "Update the letter" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Send" }))
+    const approve = await screen.findByRole("button", { name: "Approve" })
+    expect(screen.getByText("Coach note")).toBeInTheDocument()
+    holdApprovals()
+    fireEvent.click(approve)
+    const again = screen.queryByRole("button", { name: "Approve" })
+    if (again) fireEvent.click(again)
+    await waitFor(() => {
+      expect(
+        getCoachCommandCalls().filter((call) => call.name === "actions.approve")
+      ).toEqual([{ name: "actions.approve", body: { pendingActionId } }])
+    })
+    releaseApprovals()
+    const open = screen.getByRole("button", { name: "Open" })
+    expect(open).toHaveAttribute("data-variant", "glow")
+    expect(glowCount()).toBe(1)
+    fireEvent.click(open)
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(`/app/paper/${docId}`)
+    })
+  })
+
+  it("keeps Approve available when the post fails", async () => {
+    scriptCoachStream({
+      confirm: {
+        pendingActionId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaac",
+        command: "paper.replace",
+        summary: "Update the document",
+      },
+      approveError: {
+        status: 500,
+        code: "INTERNAL_ERROR",
+        message: "database password leaked at /tmp/secret",
+      },
+    })
+    await openCoach()
+    fireEvent.change(screen.getByRole("textbox", { name: "Message Coach" }), {
+      target: { value: "Update the letter" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Send" }))
+    fireEvent.click(await screen.findByRole("button", { name: "Approve" }))
+    const alert = await screen.findByRole("alert")
+    expect(alert).toHaveTextContent("Try again")
+    expect(alert).not.toHaveTextContent("database password")
+    expect(screen.getByRole("button", { name: "Approve" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Deny" })).toBeInTheDocument()
+  })
+
+  it("hides an arbitrary stream error", async () => {
+    scriptCoachStream({
+      streamError: "database password leaked at /tmp/secret",
+    })
+    await openCoach()
+    fireEvent.change(screen.getByRole("textbox", { name: "Message Coach" }), {
+      target: { value: "break it" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Send" }))
+    const alert = await screen.findByRole("alert")
+    expect(alert).toHaveTextContent("Try again")
+    expect(alert).not.toHaveTextContent("database password")
+    expect(screen.queryByText(/leaked/)).not.toBeInTheDocument()
+  })
 })
+
+function glowCount() {
+  return screen
+    .getAllByRole("button")
+    .filter((button) => button.getAttribute("data-variant") === "glow").length
+}

@@ -3,11 +3,11 @@ import { useCallback, useMemo, useState, type ReactNode } from "react"
 import type { ThreadListItem } from "@workspace/domain"
 
 import { applyQueryKeys } from "@/features/apply/apply-api.ts"
+import { listChats } from "@/features/coach/coach-api.ts"
 import { useCoachTurn } from "@/features/coach/use-coach-turn.ts"
 import { profileQueryKeys } from "@/features/home/profile-api.ts"
 import {
   deleteThread as deleteThreadRequest,
-  listThreads,
   threadQueryKeys,
 } from "@/features/home/thread-api.ts"
 import { ThreadStoreContext } from "@/features/home/thread-store-context.ts"
@@ -21,7 +21,16 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
 
   const listQuery = useQuery({
     queryKey: threadQueryKeys.list(),
-    queryFn: listThreads,
+    queryFn: async () => {
+      const chats = await listChats()
+      return chats.map((chat) => ({
+        id: chat.id,
+        title: chat.title,
+        createdAt: chat.updatedAt,
+        updatedAt: chat.updatedAt,
+        focusDocId: chat.focusKind === "paper" ? (chat.focusId ?? null) : null,
+      }))
+    },
   })
   const threads = listQuery.data ?? EMPTY_THREADS
 
@@ -37,7 +46,7 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
     undo,
     cancelInFlight,
   } = useCoachTurn({
-    threadId: activeThreadId,
+    threadId: null,
     setThreadId: setActiveThreadId,
     titleForCreate: titleFrom,
     onAfterUndo: () => {

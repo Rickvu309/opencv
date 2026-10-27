@@ -150,10 +150,10 @@ const appIndexRoute = createRoute({
 const homeRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/home",
-  component: lazyRouteComponent(
-    () => import("@/routes/coach.tsx"),
-    "CoachPage"
-  ),
+  beforeLoad: () => {
+    throw redirect({ href: "/app/coach" })
+  },
+  component: () => null,
 })
 
 const paperRoute = createRoute({

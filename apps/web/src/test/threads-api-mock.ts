@@ -19,7 +19,10 @@ import { vi } from "vitest"
 import type { CoachStreamControl } from "./coach-stream-types.ts"
 import { isoNow, urlOf, pathOf, jsonOk, jsonError } from "./mock-http.ts"
 import { FIXTURE_THREADS } from "./thread-fixtures.ts"
-import { handleNativeCoachRequest } from "./threads-api-mock-native.ts"
+import {
+  handleNativeCoachRequest,
+  releaseApprovals,
+} from "./threads-api-mock-native.ts"
 import {
   cloneThreads,
   DEFAULT_COACH_WORKED_MS,
@@ -41,6 +44,8 @@ export {
 export {
   getCoachCommandCalls,
   getLastNativeTurn,
+  holdApprovals,
+  releaseApprovals,
   setMockCoachUsage,
 } from "./threads-api-mock-native.ts"
 
@@ -249,6 +254,7 @@ function coachStreamResponse(thread: ThreadDetail, signal?: AbortSignal) {
 }
 
 export function resetThreadApiMock() {
+  releaseApprovals()
   mockState.threads = cloneThreads(FIXTURE_THREADS)
   mockState.script = {}
   mockState.gate = openGate()
@@ -302,6 +308,22 @@ export async function threadApiFetch(
 ): Promise<Response> {
   const path = pathOf(input)
   const method = (init?.method ?? "GET").toUpperCase()
+
+  if (
+    method === "GET" &&
+    (path === "/api/chats" || path.startsWith("/api/chats?"))
+  ) {
+    return jsonOk(
+      listItems().map((thread) => ({
+        id: thread.id,
+        title: thread.title,
+        focusKind: thread.focusDocId ? "paper" : null,
+        focusId: thread.focusDocId,
+        createdAt: thread.createdAt,
+        updatedAt: thread.updatedAt,
+      }))
+    )
+  }
 
   if (method === "GET" && path === "/api/threads") {
     const focusDocId = urlOf(input).searchParams.get("focusDocId")

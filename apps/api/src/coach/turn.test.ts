@@ -1,8 +1,12 @@
 import { coachModeCaps, emptyCvDocument, titleFrom } from "@workspace/domain"
-import { afterAll, describe, expect, it } from "vitest"
+import { afterAll, describe, expect, it, vi } from "vitest"
 
 import { coachModelEnv } from "../config.js"
-import { createDemoCoachRuntime, createScriptedCoachRuntime } from "./fake.js"
+import {
+  HOLD_MS,
+  createDemoCoachRuntime,
+  createScriptedCoachRuntime,
+} from "./fake.js"
 import { toolResultFromExecute } from "./turn.js"
 import {
   authHeaders,
@@ -50,6 +54,11 @@ describe("coach turn title", () => {
     const sse = await turn.text()
     expect(sse).toContain("Prep the starred one next.")
     expect(sse).toContain("event: usage")
+    expect(sse.indexOf("event: step")).toBeGreaterThan(-1)
+    expect(sse.indexOf("event: step")).toBeLessThan(
+      sse.indexOf("event: tool-result")
+    )
+    expect(sse).toContain("Listed your Apply cards")
 
     const list = await app.request("/api/chats", { headers })
     expect(list.status).toBe(200)
@@ -264,6 +273,122 @@ describe("coach turn contract", () => {
       }
     )
     expect(missing.status).toBe(404)
+  })
+})
+
+describe("demo coach scenarios", () => {
+  let close: (() => Promise<void>) | undefined
+
+  afterAll(async () => {
+    await close?.()
+  })
+
+  it("holds the stream open before the default reply", async () => {
+    vi.useFakeTimers()
+    const runtime = createDemoCoachRuntime()
+    const iter = runtime
+      .streamTurn({
+        userId: "user",
+        threadId: "chat",
+        history: [
+          {
+            id: "m1",
+            role: "user",
+            text: "please hold",
+            createdAt: "2026-10-27T00:00:00.000Z",
+          },
+        ],
+      })
+      [Symbol.asyncIterator]()
+    const first = await iter.next()
+    expect(first.value).toMatchObject({ type: "tool-call", name: "job.list" })
+    let settled = false
+    const second = iter.next().then((value) => {
+      settled = true
+      return value
+    })
+    await vi.advanceTimersByTimeAsync(HOLD_MS - 1)
+    expect(settled).toBe(false)
+    await vi.advanceTimersByTimeAsync(1)
+    expect((await second).value).toMatchObject({
+      type: "text-delta",
+      text: "I looked at Apply. ",
+    })
+    vi.useRealTimers()
+  })
+
+  it("emits a fixed code when the script fails", async () => {
+    const { client, db } = await createMigratedTestDb()
+    close = () => client.close()
+    const app = createTestApp(db, { coach: createDemoCoachRuntime() })
+    const { cookie } = await signUp(app, {
+      name: "Ada Fail",
+      email: "ada-fail@verify.local",
+    })
+    const headers = authHeaders(cookie)
+    const created = await app.request("/api/commands/chat.create", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ input: {} }),
+    })
+    const createdBody = (await created.json()) as { data: { id: string } }
+    const turn = await app.request(`/api/chats/${createdBody.data.id}/turns`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ text: "please fail this turn" }),
+    })
+    expect(turn.status).toBe(200)
+    const sse = await turn.text()
+    expect(sse).toContain("INTERNAL_ERROR")
+    expect(sse).not.toContain("database password")
+  })
+
+  it("confirms a real pending edit and names the document", async () => {
+    const { client, db } = await createMigratedTestDb()
+    close = () => client.close()
+    const app = createTestApp(db, { coach: createDemoCoachRuntime() })
+    const { cookie } = await signUp(app, {
+      name: "Ada Confirm Live",
+      email: "ada-confirm-live@verify.local",
+    })
+    const headers = authHeaders(cookie)
+    const created = await app.request("/api/commands/chat.create", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ input: {} }),
+    })
+    const createdBody = (await created.json()) as { data: { id: string } }
+    const turn = await app.request(`/api/chats/${createdBody.data.id}/turns`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ text: "please confirm the edit" }),
+    })
+    expect(turn.status).toBe(200)
+    const sse = await turn.text()
+    expect(sse.indexOf("event: step")).toBeGreaterThan(-1)
+    expect(sse.indexOf("event: step")).toBeLessThan(
+      sse.indexOf("event: confirm")
+    )
+    expect(sse).toContain("Coach note")
+    expect(sse).toContain("Update the document")
+    const pendingActionId = sse.match(/"pendingActionId":"([^"]+)"/)?.[1]
+    expect(pendingActionId).toBeTruthy()
+    const approved = await app.request("/api/commands/actions.approve", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ input: { pendingActionId } }),
+    })
+    expect(approved.status).toBe(200)
+    const body = (await approved.json()) as {
+      data: {
+        id?: string
+        summary?: string
+        detail?: { name?: string; docId?: string }
+      }
+    }
+    expect(body.data.detail?.name).toBe("Coach note")
+    expect(body.data.detail?.docId).toBeTruthy()
+    expect(body.data.id).toBeTruthy()
   })
 })
 

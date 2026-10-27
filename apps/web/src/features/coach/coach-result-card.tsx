@@ -44,7 +44,7 @@ export function CoachResultCard({ part, glowOpen, onOpen, onUndo }: Props) {
       </div>
       <Button
         type="button"
-        variant={glowOpen ? "default" : "outline"}
+        variant={glowOpen ? "glow" : "outline"}
         size="sm"
         onClick={onOpen}
       >

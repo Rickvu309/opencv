@@ -213,7 +213,11 @@ export function AppShell({ onSearch }: AppShellProps) {
   }, [])
   const menuRef = useRef<HTMLButtonElement>(null)
   const dockRef = useRef<HTMLDivElement>(null)
-  const showDock = pathname !== HOME_PATH
+  // The coach page is the thread, so the dock stays off unless a minimized
+  // panel is waiting on it. Expand from another page lands here.
+  const showDock =
+    (panel.open && panel.mode === "dock") ||
+    (pathname !== HOME_PATH && !pathname.startsWith("/app/coach"))
   const panelVisible = panel.open && panel.mode !== "dock"
 
   useEffect(() => {
