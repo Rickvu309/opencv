@@ -16,11 +16,11 @@ Single-context (`CONTEXT.md` + `docs/adr/` at repo root). See `docs/agents/domai
 
 - `packages/domain/src` is pure TypeScript and zod, with no database, server or AI SDK import. It holds the typed contract.
   - `<surface>-contract.ts` declares each surface's commands and most of its reads (`paper`, `job`, `inbox`, `account`, and `chat` for commands).
-  - `contract-commands.ts` joins every command into one table. `queries.ts` joins every read and declares the chat reads and `workspace.search` itself.
+  - `contract-commands.ts` joins every command into one table. `queries.ts` joins every read and declares the chat reads, `link.get` and `workspace.search` itself.
   - `chat-turn.ts` holds `ChatTurnEvent`, the Coach stream events.
 - `apps/api/src/<module>/` is one product module: `account`, `chat`, `paper`, `job` and `inbox`. Other modules import it only through its `index.ts`.
   - `commands.ts` binds the module's contract commands with `bindCommands` and its reads with `tableQuery`. `account` binds its reads in `queries.ts`.
-  - `http.ts` mounts its routes. `store.ts` holds most of its database writes. Only files under the module's own directory write its tables.
+  - `http.ts` mounts its routes. `store.ts` holds most of its database writes. Only files under the module's own directory write its tables, plus `auth.ts` for the auth tables. `registry/ownership.test.ts` holds the owner list.
 - Other api folders:
   - `registry/` runs every command, writes the `activity`, `pending_actions` and idempotency rows, and builds the Coach's tools.
   - `coach/` runs a Coach turn and is the only importer of the AI SDK. It has no contract commands.

@@ -15,7 +15,7 @@ const adrSlugs = new Set(adrFiles.map((name) => name.slice(0, -".md".length)))
 
 const TEXT_FILE = /\.(?:[cm]?[jt]sx?|css|md|json|ya?ml|sh)$/
 const ADR_NUMBER = /\bADR[- ]?(\d{4})\b/g
-const ADR_PATH = /docs\/adr\/((\d{4})(?:-[\w-]*)?)(?:\.md)?/g
+const ADR_PATH = /docs\/adr\/((\d{4})(?:-[\w-]+)?)(?:\.md)?/g
 
 function trackedTextFiles() {
   return execFileSync("git", ["ls-files", "-z"], {
