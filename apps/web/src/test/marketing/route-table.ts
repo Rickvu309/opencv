@@ -2,6 +2,8 @@
 // A route missing from this table fails the marketing check.
 // A marketing route whose path contains `$` must set enumerate.
 
+import { BLOG_POSTS } from "@/features/landing/blog/blog-copy.ts"
+
 export type RouteKind =
   "marketing" | "app" | "auth" | "share" | "not-found" | "layout"
 
@@ -11,7 +13,7 @@ export type RouteClass = {
   kind: RouteKind
   /**
    * Concrete paths for a marketing route with a param.
-   * A future `/blog/$slug` row returns one `/blog/<slug>` per post.
+   * The `/blog/$slug` row returns one `/blog/<slug>` per post.
    */
   enumerate?: () => readonly string[]
 }
@@ -22,6 +24,13 @@ export const ROUTE_TABLE: readonly RouteClass[] = [
   { id: "/pricing", fullPath: "/pricing", kind: "marketing" },
   { id: "/about", fullPath: "/about", kind: "marketing" },
   { id: "/help", fullPath: "/help", kind: "marketing" },
+  { id: "/blog", fullPath: "/blog", kind: "marketing" },
+  {
+    id: "/blog/$slug",
+    fullPath: "/blog/$slug",
+    kind: "marketing",
+    enumerate: () => BLOG_POSTS.map((post) => `/blog/${post.slug}`),
+  },
   { id: "/sign-in", fullPath: "/sign-in", kind: "auth" },
   { id: "/sign-up", fullPath: "/sign-up", kind: "auth" },
   { id: "/share/$token", fullPath: "/share/$token", kind: "share" },
