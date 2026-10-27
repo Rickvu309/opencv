@@ -45,6 +45,18 @@ function probe() {
   out.h1 = h1s.map((e) => clean(e.textContent))
   out.docTitle = document.title
   out.text = clean(document.body.innerText).slice(0, 12000)
+  const exposed = []
+  const walkExposed = (node) => {
+    if (node.nodeType === 3) {
+      exposed.push(node.textContent)
+      return
+    }
+    if (node.nodeType !== 1) return
+    if (node.getAttribute("aria-hidden") === "true") return
+    for (const child of node.childNodes) walkExposed(child)
+  }
+  walkExposed(document.body)
+  out.exposedText = clean(exposed.join(" ")).slice(0, 12000)
 
   // Chrome strings: every control name, placeholder, empty-state line and alert, but not user data.
   const chrome = new Set()
@@ -398,10 +410,12 @@ function probe() {
     .map((e) => clean(e.textContent))
   const dialog = document.querySelector("[role=dialog]")
   out.dialog = dialog ? clean(dialog.textContent).slice(0, 80) : null
-  out.imgs = [...document.querySelectorAll("img")].filter(shown).map((i) => ({
-    alt: i.alt,
-    w: Math.round(i.getBoundingClientRect().width),
-  }))
+  out.imgs = [...document.querySelectorAll("img")]
+    .filter((i) => shown(i) && !i.closest("[aria-hidden='true']"))
+    .map((i) => ({
+      alt: i.alt,
+      w: Math.round(i.getBoundingClientRect().width),
+    }))
   const h1 = h1s[0]
   if (h1) {
     out.h1Rect = rect(h1)

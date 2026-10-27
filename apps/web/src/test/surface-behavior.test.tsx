@@ -75,7 +75,12 @@ describe("empty api data shows empty states, never sample content", () => {
   it("Pitch shows the placeholder and no demo content", async () => {
     renderApp(SURFACE_PATHS.pitch)
 
-    expect(await screen.findByText("Pitch. Coming soon.")).toBeInTheDocument()
+    expect(
+      await screen.findByRole("heading", {
+        level: 1,
+        name: "One link that sells you",
+      })
+    ).toBeInTheDocument()
     expect(screen.queryByText("Demo content")).not.toBeInTheDocument()
     expect(
       screen.queryByRole("heading", { name: "Moments" })
@@ -131,7 +136,12 @@ describe("Pitch makes no third-party requests", () => {
       requested.push(new URL(raw, apiBaseUrl).href)
     })
 
-    expect(await screen.findByText("Pitch. Coming soon.")).toBeInTheDocument()
+    expect(
+      await screen.findByRole("heading", {
+        level: 1,
+        name: "One link that sells you",
+      })
+    ).toBeInTheDocument()
 
     for (const href of requested) {
       expect(new URL(href).origin, href).toBe(new URL(apiBaseUrl).origin)
@@ -152,7 +162,12 @@ describe("Pitch does not seed a persona", () => {
     setMockProfile({ name: "Scout Tester", email: "scout@example.com" })
     renderApp(SURFACE_PATHS.pitch)
 
-    expect(await screen.findByText("Pitch. Coming soon.")).toBeInTheDocument()
+    expect(
+      await screen.findByRole("heading", {
+        level: 1,
+        name: "One link that sells you",
+      })
+    ).toBeInTheDocument()
     expect(document.body.textContent).not.toMatch(PERSONA_NAMES)
   })
 })

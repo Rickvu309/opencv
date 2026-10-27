@@ -12,12 +12,12 @@ Writing and logic:
 - 04 `coach-error-not-raw`: the tour sends twice, once with the api answering 404 `USER_NOT_FOUND "User not found."` and once with the connection refused. Each must show an error in a live region, and neither may show the raw message or a transport error such as Failed to fetch. No error shown is a FAIL. Source: Apple feedback.
 - 05 `no-other-product-names`: no social product name (Instagram, TikTok, Snapchat, Facebook, Twitter, YouTube, Pinterest, WhatsApp, Linktree). Integrations such as GitHub and Gmail are not matched. Source: Apple writing.
 - 06 `starter-cv-name`: a new CV's name field placeholder is Name, and the title is not Your name. Source: NN/g empty states.
-- 07 `pitch-starter-no-metric`: no percentage, no "N percent", no add-to-cart on Pitch. Source: NN/g hallucinations.
+- 07 `pitch-starter-no-metric`: Pitch coming-soon copy has no percentage, no "N percent", and no add-to-cart. Preview text marked aria-hidden is not counted. Source: NN/g hallucinations.
 - 08 `confirm-before-write`: a JSX label or quoted string Approve and Deny exists in the Coach features (source read; comments and type names do not count; the scripted Coach never writes). Source: shadcn Confirmation; Gemini.
 - 09 `tool-line-names-object`: a Coach step status line that is not an error names Apply, CV, Letter, Proof, Pitch, Job or card (case-sensitive; driven with a read turn, not a write). Source: shadcn AI Elements.
 - 10 `empty-board-one-empty-state`: the tour deletes the jobs through the api, reloads Apply, and requires 0 cards and exactly one empty state. Closed is not a visible heading. A board that was not confirmed empty is a FAIL. Source: NN/g.
 - 11 `loading-not-empty`: while the Paper call is held the page says "Loading documents" or "Loading..." and not "Start a document". Source: NN/g.
-- 12 `unpublished-banner-has-publish`: if the banner says Hit Publish, a Publish button is on screen. Source: NN/g.
+- 12 `unpublished-banner-has-publish`: Pitch is coming soon and does not show a Hit Publish banner. The check fails only when that banner is present without a Publish button. The tour does not look for Publish. Source: NN/g.
 - 13 `fit-not-bare-number`: a percentage on a board card passes only with a basis phrase (because, based on, from your, matches your) inside that same card; a percentage outside any card fails. Source: NN/g.
 
 Structure:
@@ -39,7 +39,7 @@ Visual craft:
 Motion:
 
 - 24 `motion-tokens`: every computed transition and animation runs 150 ms or 280 ms on the toured screens, including an open Pitch story, and no `duration-N` class or `Nms` value in features or routes source is off-token (so the 75 ms in `pitch-stories.tsx` counts). Looping spinners and skeletons are skipped. Source: `globals.css`; the program motion rule.
-- 25 `reduced-motion`: with reduce, nothing over 1 ms runs, scroll is not smooth, and every timer-driven motion under `features/pitch` and the `use-*` hooks it imports (`requestAnimationFrame`, `setInterval`, `setTimeout` other than a flag reset such as `setCopied(false)`) sits in a file that checks the preference. If the scan finds no timer at all the check FAILs with "no story timer found". Source: WCAG 2.3.3.
+- 25 `reduced-motion`: with reduce, nothing over 1 ms runs, scroll is not smooth, and the command palette open transition uses the panel duration token. There is no story timer to find. Source: WCAG 2.3.3.
 - 26 `no-text-reveal`: no app file imports text-reveal (source read). Source: Apple layout.
 
 Accessibility and performance:
@@ -51,8 +51,8 @@ Accessibility and performance:
 
 App-wide:
 
-- 31 `one-h1-per-screen`: exactly one visible h1 on the start page, Paper, the open CV, Apply and Pitch. Home is not a screen. The shell panel title is not an h1.
-- 32 `keyboard-reaches-primary`: Tab reaches the primary action of each surface within 30 presses (30 is this skill's budget, not a standard). On `/app` the primary is the start page Add control. Message Coach is not required.
+- 31 `one-h1-per-screen`: exactly one visible h1 on the start page, Paper, the open CV, Apply and Pitch. Home is not a screen. The shell panel title is not an h1. Pitch's only h1 is the coming-soon promise. The page name is not an h1.
+- 32 `keyboard-reaches-primary`: Tab reaches the primary action of each surface within 30 presses (30 is this skill's budget, not a standard). On `/app` the primary is the start page Add control. Message Coach is not required. Pitch's primary is Get early access.
 - 33 `no-console-errors`: the signed-in desktop, reduced-motion and 390px passes log no console error, React warning, uncaught exception or failed load. The mocked scenario pages are not counted.
 - 34 `first-render-budget`: each route renders its content within 2000 ms of navigation (dev server, warm). The budget is this skill's, set for the shared 8-core machine.
 - 35 `spacing-scale`: 95% or more of padding and gap values are on the 4px scale plus the half steps 2, 6, 10, 14.

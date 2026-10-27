@@ -383,7 +383,12 @@ describe("Home first-café checklist", () => {
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(SURFACE_PATHS.pitch)
     })
-    expect(await screen.findByText("Pitch. Coming soon.")).toBeInTheDocument()
+    expect(
+      await screen.findByRole("heading", {
+        level: 1,
+        name: "One link that sells you",
+      })
+    ).toBeInTheDocument()
     await goHome()
     await expectHomeStarted()
     expect(

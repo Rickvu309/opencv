@@ -3,7 +3,6 @@ import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router"
 
 import { AppShell } from "@/features/app-shell/app-shell.tsx"
 import { SearchModal } from "@/features/app-shell/search-modal.tsx"
-import { searchThreadsFromList } from "@/features/app-shell/search-threads.ts"
 import {
   HOME_PATH,
   SURFACE_PATHS,
@@ -35,7 +34,7 @@ export function AppShellLayout() {
 
 function AppShellChrome() {
   const navigate = useNavigate()
-  const { threads, newThread, openThread } = useThreadList()
+  const { openThread } = useThreadList()
   const [searchOpen, setSearchOpen] = useState(false)
 
   useEffect(() => {
@@ -48,11 +47,6 @@ function AppShellChrome() {
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
   }, [])
-
-  function handleNewThread() {
-    newThread()
-    void navigate({ to: HOME_PATH })
-  }
 
   function handleOpenThread(id: string) {
     openThread(id)
@@ -69,8 +63,6 @@ function AppShellChrome() {
       <SearchModal
         open={searchOpen}
         onOpenChange={setSearchOpen}
-        threads={searchThreadsFromList(threads)}
-        onNewThread={handleNewThread}
         onOpenThread={handleOpenThread}
         onSurface={goSurface}
       />

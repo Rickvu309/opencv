@@ -6,14 +6,6 @@ function PlaceholderPage({ title }: { title: string }) {
   )
 }
 
-export function JobsPage() {
-  return <PlaceholderPage title="Jobs" />
-}
-
-export function ProofsPage() {
-  return <PlaceholderPage title="Proofs" />
-}
-
 export function InboxPage() {
   return <PlaceholderPage title="Inbox" />
 }

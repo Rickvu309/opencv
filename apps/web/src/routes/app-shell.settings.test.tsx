@@ -92,7 +92,12 @@ describe("settings workspace", () => {
       session: TEST_SESSION,
     })
     renderApp(SURFACE_PATHS.pitch)
-    expect(await screen.findByText("Pitch. Coming soon.")).toBeInTheDocument()
+    expect(
+      await screen.findByRole("heading", {
+        level: 1,
+        name: "One link that sells you",
+      })
+    ).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole("link", { name: "Settings" }))
     fireEvent.click(await screen.findByRole("link", { name: "Account" }))

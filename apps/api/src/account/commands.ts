@@ -8,6 +8,7 @@ import {
   profileSetPhotoInputSchema,
   profileUpdateInputSchema,
   type Actor,
+  type NotifyTopic,
 } from "@workspace/domain"
 import { and, eq } from "drizzle-orm"
 
@@ -189,7 +190,7 @@ async function deleteOwnedAccount(actor: Actor, confirm: string) {
   return deleteAccount(actor.userId)
 }
 
-async function requestNotify(actor: Actor, topic: "jobs" | "proof") {
+async function requestNotify(actor: Actor, topic: NotifyTopic) {
   const db = getDb()
   const existing = await db
     .select()

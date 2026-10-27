@@ -94,7 +94,7 @@ export const accountDeleteInputSchema = z
 
 export type AccountDeleteInput = z.infer<typeof accountDeleteInputSchema>
 
-export const notifyTopicSchema = z.enum(["jobs", "proof"])
+export const notifyTopicSchema = z.enum(["jobs", "proof", "pitch"])
 export type NotifyTopic = z.infer<typeof notifyTopicSchema>
 
 export const notifyRequestInputSchema = z

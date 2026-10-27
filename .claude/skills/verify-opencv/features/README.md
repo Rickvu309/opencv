@@ -26,7 +26,7 @@ This directory is the maintained source for verifying the user-facing behavior o
 | `home-coach-turn.md`      | One Coach turn streams a scripted reply | `/app`          |
 | `paper-edit-save.md`      | Create a CV, edit it, reload            | `/app/paper`    |
 | `apply-board-and-scan.md` | Add a card, move it, scan a posting URL | `/app/apply`    |
-| `pitch-publish.md`        | Open the Pitch placeholder              | `/app/pitch`    |
+| `coming-soon.md`          | Jobs, Proofs and Pitch coming soon      | `/app/jobs`     |
 | `settings.md`             | Settings sections, export, upgrade      | `/app/settings` |
 
 ## Proof and skip reporting

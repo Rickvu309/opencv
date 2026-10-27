@@ -29,6 +29,7 @@ import {
   type CoachPanelMode,
 } from "@/features/app-shell/coach-panel.tsx"
 import { ShellThreadBody } from "@/features/app-shell/shell-thread-body.tsx"
+import { registerShellChatOpener } from "@/features/command-palette/shell-chat.ts"
 import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
 import { Brand, Mark } from "@workspace/ui/components/brand"
 import { Button } from "@workspace/ui/components/button"
@@ -200,6 +201,16 @@ export function AppShell({ onSearch }: AppShellProps) {
   const [panel, setPanel] = useState<PanelState>(CLOSED_PANEL)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const openerRef = useRef<HTMLElement | null>(null)
+  const openPanelRef = useRef<
+    (next: { title: string; chatId: string | null }) => void
+  >(() => {})
+
+  useEffect(() => {
+    registerShellChatOpener((next) => {
+      openPanelRef.current({ title: next.title, chatId: next.chatId })
+    })
+    return () => registerShellChatOpener(null)
+  }, [])
   const menuRef = useRef<HTMLButtonElement>(null)
   const dockRef = useRef<HTMLDivElement>(null)
   const showDock = pathname !== HOME_PATH
@@ -247,6 +258,10 @@ export function AppShell({ onSearch }: AppShellProps) {
       chatId: next.chatId,
     })
   }
+
+  useEffect(() => {
+    openPanelRef.current = openPanel
+  })
 
   function closePanel() {
     setPanel(CLOSED_PANEL)

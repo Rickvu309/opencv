@@ -34,6 +34,7 @@ export function stepButton(text: string) {
 }
 
 export async function expectThreadText(text: string) {
-  expect(await screen.findByRole("log", { name: "Thread" })).toBeInTheDocument()
-  expect(await screen.findByText(text)).toBeInTheDocument()
+  const logs = await screen.findAllByRole("log", { name: "Thread" })
+  expect(logs[0]).toBeInTheDocument()
+  expect((await screen.findAllByText(text)).length).toBeGreaterThan(0)
 }
