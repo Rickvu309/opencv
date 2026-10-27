@@ -1,41 +1,42 @@
 # verify-landing properties
 
-The checker still measures 28 properties at 1440x900, 390x844 and reduced motion. Ids 01 to 13 are text rules. Ids 14 to 28 are page checks. A property that described the previous four-surface page was replaced with the equivalent on the first-release page.
+The checker measures 28 properties at 1440x900, 390x844 and reduced motion. Ids 01 to 08 and 10 to 13 are text rules. Ids 14 to 28 are page checks (20b sits with 20). Id 09 is judged only (J1) and is not one of the 28. A property that described the previous four-surface page was replaced with the equivalent on the first-release page.
 
-| Id  | Name                                | Why it changed                                                                                                                      |
-| --- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| 01  | h1-length-and-aim                   | Kept. "seat" counts as the outcome, because the design H1 is "Get your butt in your dream seat."                                    |
-| 02  | statement-names-cv                  | Replaces audience-in-h1-or-subhead. The design does not put "Vietnamese students" in the H1. The statement names opencv and the CV. |
-| 03  | subhead-two-beats                   | Kept the two-sentence limit. Dropped the "is a product" regex. The statement defines the product.                                   |
-| 04  | no-marketese                        | Kept. Exempt phrases are now "your best work", "dream seat" and "fits best", which are the design's words.                          |
-| 05  | plain-sentences                     | Word cap moved from 20 to 24. The plan line in the design is 21 words.                                                              |
-| 06  | feature-titles-three-to-six-words   | Replaces the Coach/Paper/Apply/Pitch label rule. The four feature titles are outcome lines.                                         |
-| 07  | one-primary-label                   | The hero has no sign-up link. Nav and the close each have one "Get started".                                                        |
-| 08  | label-has-object                    | "Get started" is the design's primary label, so it is allowed. Start free, Learn more and Join still fail.                          |
-| 10  | objection-above-first-surface       | The statement mentions "your CV" or "your work" before the first feature.                                                           |
-| 11  | feature-first-sentence-ties-to-hero | Each feature's first sentence names proof, a CV, a role, a letter, a site or a claim.                                               |
-| 12  | designed-logos-and-quotes           | Replaces the ban on logos and quotes. The design draws both. Prices stay on /pricing. No star rating and no invented user count.    |
-| 13  | sample-person-alt                   | An alt names a student. An alt names a CV or letter. None says placeholder.                                                         |
-| 14  | hero-photo-in-first-view-1440       | Replaces the Coach frame. The hero photo is the chair.                                                                              |
-| 15  | nav-links-before-fold-390           | Replaces the four surface names. Product, Examples, Stories and Pricing are the nav.                                                |
-| 16  | hero-has-no-button                  | The design hero has no button.                                                                                                      |
-| 17  | light-field-one-accent              | Kept.                                                                                                                               |
-| 18  | h1-sentence-case-solid              | Kept.                                                                                                                               |
-| 19  | images-named-and-local              | Alts name the chair, Coach, Paper, Apply, a CV or a letter. The chair is not a product surface.                                     |
-| 20  | headline-visible-at-first-paint     | Kept.                                                                                                                               |
-| 20b | other-text-visible-at-first-paint   | Kept.                                                                                                                               |
-| 21  | reduced-motion-disables-animation   | Kept.                                                                                                                               |
-| 22  | no-video-or-carousel                | Kept.                                                                                                                               |
-| 23  | text-contrast                       | Kept.                                                                                                                               |
-| 24  | target-size-24                      | Kept.                                                                                                                               |
-| 25  | hero-image-attrs-and-paint          | Kept. The hero image is the chair.                                                                                                  |
-| 26  | no-sideways-scroll                  | Added. The page must not scroll sideways at 1440 or 390.                                                                            |
-| 27  | benefit-art-from-design             | Added. The three benefit cards use the flat pen art: one 300×300 svg each, 94 paths and ellipses in total, no inline hex.           |
-| 28  | nav-lockup-spacing                  | Added. At 1440 the nav wordmark sits 9 to 13 px from the mark's ink and is 16px at weight 600.                                      |
+| Id  | Name                              | Why it changed                                                                                                                                                                                                                                    |
+| --- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 01  | h1-length-and-aim                 | Kept. "seat" counts as the outcome, because the design H1 is "Get your butt in your dream seat."                                                                                                                                                  |
+| 02  | statement-names-cv                | A block outside the nav names opencv and CV. Replaces audience-in-h1-or-subhead. The design does not put "Vietnamese students" in the H1.                                                                                                         |
+| 03  | subhead-two-beats                 | The subhead is 1 to 2 sentences and not a 3+ item list.                                                                                                                                                                                           |
+| 04  | no-marketese                      | Ban the marketese list in text-rules.mjs. Exempt phrases are "your best work", "dream seat", and "fits best".                                                                                                                                     |
+| 05  | plain-sentences                   | Hero and product sentences are 24 words or fewer and not passive. The sentences are the hero paragraph and each product section paragraph. The word cap moved from 20 to 24.                                                                      |
+| 06  | product-titles-name-the-surface   | Each product title (Paper, Apply, Coach) is 1 to 3 words. The titles are the surface names.                                                                                                                                                       |
+| 07  | one-primary-label                 | One sign-up label in the nav and one in the close, the same label, and none in the hero. A sign-up link is `/sign-in` whose label is not "Log in". The check does not require the words "Get started".                                            |
+| 08  | label-has-object                  | The sign-up label is "Get started", or another label of 2 or more words that is not a generic filler (Start free, Learn more, Join).                                                                                                              |
+| 09  | judged only (J1)                  | Judged only (J1). The checker does not measure it. The H1 alone says what is sold.                                                                                                                                                                |
+| 10  | objection-above-first-surface     | A block before the first product mentions the reader's CV, work, goals, or story. The match needs "your" or "your own".                                                                                                                           |
+| 11  | product-body-ties-to-hero         | Each product intro paragraph names proof, a CV, a role, a letter, a site, a claim, an interview, or a job. The check reads the whole paragraph.                                                                                                   |
+| 12  | designed-logos-and-quotes         | The logos eyebrow and both story quotes are in the page text. No star rating, no "trusted by" or "as seen in", no invented user count, and no price on /. The check does not read alt text.                                                       |
+| 13  | customer-and-cv-alt               | An alt names a customer portrait, an alt names a CV or letter, and none says placeholder.                                                                                                                                                         |
+| 14  | hero-photo-in-first-view-1440     | At 1440x900 the H1 and 120px or more of the hero image share the first view. The hero image is the Apply board, `/landing/apply-board.webp`. The check measures that overlap, not the file name.                                                  |
+| 15  | nav-links-before-fold-390         | At 390, Product, Stories, and Pricing are visible without scrolling, on the page or in a menu the checker opens with one click. Blog and Help are not asserted. Examples was dropped from the nav.                                                |
+| 16  | hero-has-no-button                | The hero has no button. A Sign in link in the hero must not look like a button.                                                                                                                                                                   |
+| 17  | light-field-one-accent            | Kept.                                                                                                                                                                                                                                             |
+| 18  | h1-sentence-case-solid            | Kept.                                                                                                                                                                                                                                             |
+| 19  | images-named-and-local            | Every image is served from `/landing/`. A product shot needs an alt of 20 or more characters naming Coach, Paper, Apply, Proof, Pitch, a CV, or a letter. An image whose src starts with `/landing/logo-` or `/landing/story-` needs only an alt. |
+| 20  | headline-visible-at-first-paint   | Kept.                                                                                                                                                                                                                                             |
+| 20b | other-text-visible-at-first-paint | Kept.                                                                                                                                                                                                                                             |
+| 21  | reduced-motion-disables-animation | Kept.                                                                                                                                                                                                                                             |
+| 22  | no-video-or-carousel              | Kept.                                                                                                                                                                                                                                             |
+| 23  | text-contrast                     | Kept.                                                                                                                                                                                                                                             |
+| 24  | target-size-24                    | Kept.                                                                                                                                                                                                                                             |
+| 25  | hero-image-attrs-and-paint        | The hero image has width, height, and fetchpriority=high, is not lazy, and does not start invisible. Opacity under 0.95, or a keyframe at opacity 0, fails.                                                                                       |
+| 26  | no-sideways-scroll                | Added. The page must not scroll sideways at 1440 or 390.                                                                                                                                                                                          |
+| 27  | benefit-art-from-design           | Added. The three benefit cards use the flat pen art: one 300×300 svg each, 94 paths and ellipses in total, no inline hex.                                                                                                                         |
+| 28  | nav-lockup-spacing                | Added. At 1440 the nav wordmark sits 9 to 13 px from the mark's ink and is 16px at weight 600.                                                                                                                                                    |
 
-Pinned copy the rules read: `LANDING_HEADLINE`, `LANDING_SUBHEAD`, `LANDING_STATEMENT_LEAD`, `LANDING_STATEMENT_REST`, `LANDING_PRODUCTS`, `LANDING_LOGO_LABEL`, `LANDING_STORIES`, `LANDING_PRIMARY_LABEL`.
+Pinned copy the rules read: `LANDING_HEADLINE_LINES`, `LANDING_SUBHEAD`, `LANDING_STATEMENT_LEAD`, `LANDING_STATEMENT_REST`, `LANDING_PRODUCTS`, `LANDING_LOGO_LABEL`, `LANDING_STORIES`, `LANDING_PRIMARY_LABEL`.
 
-Sync commit: 760127f63a4ae9552e377f84223e769bea3900f8. The checker printed 26 PASS at that commit.
+Sync commit: e1ff7ab37b54dac73bb31c06c3b18512eb025de3. The checker printed 28 PASS at that commit.
 
 ## Landing rebuild to the newest frame (#438)
 
@@ -45,5 +46,5 @@ Sync commit: 760127f63a4ae9552e377f84223e769bea3900f8. The checker printed 26 PA
 - 12 reads the new quotes (`LANDING_STORIES`). 13 is `customer-and-cv-alt`: a customer portrait alt replaces the student alt.
 - 15 expects Product, Stories and Pricing (Examples was dropped from the nav).
 - 19 lets app logos and customer portraits carry a plain alt; photos of product screens still need a surface name.
-- 07, 08, 24 treat a `/sign-in` link that is not "Log in" as the sign-up link. The app has no `/sign-up` route, so these were failing before this change.
-- Pinned copy now includes `LANDING_PRODUCTS`, `LANDING_STORIES`.
+- 07, 08, 24 treat a `/sign-in` link that is not "Log in" as the sign-up link. `/sign-up` in `apps/web/src/router.tsx` redirects to `/sign-in`.
+- Pinned copy now includes `LANDING_PRODUCTS`, `LANDING_STORIES`, and the headline export `LANDING_HEADLINE_LINES`.
