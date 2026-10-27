@@ -17,7 +17,7 @@ afterEach(() => {
 
 const updated = {
   type: "tool" as const,
-  name: "paper_updateContent",
+  name: "paper_replace",
   summary: "Updated the CV",
   ok: true,
   toolCallId: "call-1",

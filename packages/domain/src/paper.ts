@@ -1,9 +1,6 @@
 import { z } from "zod"
 
-import { PAPER_COMMANDS } from "./commands.js"
 import { fileIdSchema, jobIdSchema, paperIdSchema } from "./ids.js"
-
-export { PAPER_COMMANDS }
 
 export const PAPER_CONTENT_VERSION = 1
 export const PAPER_DOC_NAME_MAX = 200

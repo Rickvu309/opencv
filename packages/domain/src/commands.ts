@@ -10,36 +10,6 @@ export const THREAD_COMMANDS = {
 export type ThreadCommandName =
   (typeof THREAD_COMMANDS)[keyof typeof THREAD_COMMANDS]
 
-export const PAPER_COMMANDS = {
-  createDoc: "paper.createDoc",
-  updateContent: "paper.updateContent",
-  renameDoc: "paper.renameDoc",
-  setStatus: "paper.setStatus",
-  deleteDoc: "paper.deleteDoc",
-  linkApplyCard: "paper.linkApplyCard",
-} as const
-
-export type PaperCommandName =
-  (typeof PAPER_COMMANDS)[keyof typeof PAPER_COMMANDS]
-
-export const APPLY_COMMANDS = {
-  createCard: "apply.createCard",
-  updateCard: "apply.updateCard",
-  moveCard: "apply.moveCard",
-  toggleStar: "apply.toggleStar",
-  deleteCard: "apply.deleteCard",
-} as const
-
-export type ApplyCommandName =
-  (typeof APPLY_COMMANDS)[keyof typeof APPLY_COMMANDS]
-
-export const PROFILE_COMMANDS = {
-  setCoachMode: "profile.setCoachMode",
-} as const
-
-export type ProfileCommandName =
-  (typeof PROFILE_COMMANDS)[keyof typeof PROFILE_COMMANDS]
-
 /**
  * Coach-allowed but excluded from the tool surface (ADR-0007): the stream
  * is the Coach's voice, and this Command means the User posted a message.

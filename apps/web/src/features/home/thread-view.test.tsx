@@ -24,7 +24,7 @@ beforeEach(() => {
 
 const moveReceipt = {
   type: "tool" as const,
-  name: "apply_moveCard",
+  name: "job_move",
   summary: "Moved 'Backend Intern' to Prep",
   ok: true,
   toolCallId: "call-1",
@@ -38,7 +38,7 @@ const moveReceipt = {
 
 const createReceipt = {
   type: "tool" as const,
-  name: "paper_createDoc",
+  name: "paper_create",
   summary: "Created CV Untitled CV",
   ok: true,
   toolCallId: "call-2",
@@ -151,7 +151,7 @@ describe("ThreadView steps", () => {
             { ...moveReceipt, undone: true },
             {
               type: "tool" as const,
-              name: "apply_moveCard",
+              name: "job_move",
               summary: "Undid the previous action",
               ok: true,
               toolCallId: "call-undo",

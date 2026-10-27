@@ -10,11 +10,11 @@ import {
 
 describe("receiptHeadline", () => {
   it("uses a named headline for graduated receipts and drops Ran", () => {
-    expect(commandNameFromTool("apply_moveCard")).toBe("apply.moveCard")
+    expect(commandNameFromTool("job_move")).toBe("job.move")
     expect(
       receiptHeadline({
         type: "tool",
-        name: "apply_moveCard",
+        name: "job_move",
         summary: "Moved Associate PM intern at Local startup to Prep",
         ok: true,
         detail: {
@@ -29,7 +29,7 @@ describe("receiptHeadline", () => {
     expect(
       receiptHeadline({
         type: "tool",
-        name: "apply_listCards",
+        name: "job_list",
         summary: "Listed 2 Apply cards",
         ok: true,
       })
@@ -40,7 +40,7 @@ describe("receiptHeadline", () => {
     expect(
       receiptHeadline({
         type: "tool",
-        name: "apply_moveCard",
+        name: "job_move",
         summary: "Apply card not found",
         ok: false,
       })
@@ -50,7 +50,7 @@ describe("receiptHeadline", () => {
   it("rewrites a Zod dump into a short fail sentence", () => {
     const headline = receiptHeadline({
       type: "tool",
-      name: "apply_moveCard",
+      name: "job_move",
       summary:
         'Invalid input for tool apply_moveCard: Type validation failed: Value: {"cardId":"00000000-0000-0000-0000-000000000002"}. Error message: [{"code":"invalid_format","pattern":"/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}$/","message":"Invalid UUID"}]',
       ok: false,
@@ -86,7 +86,7 @@ describe("receipt reversal helpers", () => {
     expect(
       receiptShowsUndo({
         type: "tool",
-        name: "apply_moveCard",
+        name: "job_move",
         summary: "Moved it",
         ok: true,
         toolCallId: "call_1",
@@ -101,7 +101,7 @@ describe("receipt reversal helpers", () => {
     expect(
       receiptShowsUndo({
         type: "tool",
-        name: "apply_listCards",
+        name: "job_list",
         summary: "Listed cards",
         ok: true,
         toolCallId: "call_2",
@@ -114,7 +114,7 @@ describe("receipt reversal helpers", () => {
     expect(
       receiptShowsUndo({
         type: "tool",
-        name: "apply_moveCard",
+        name: "job_move",
         summary: "Moved it",
         ok: true,
         toolCallId: "call_3",
@@ -131,7 +131,7 @@ describe("receipt reversal helpers", () => {
     expect(
       receiptReversalNote({
         type: "tool",
-        name: "apply_listCards",
+        name: "job_list",
         summary: "Listed cards",
         ok: true,
         reversal: {
@@ -143,7 +143,7 @@ describe("receipt reversal helpers", () => {
     expect(
       receiptReversalNote({
         type: "tool",
-        name: "apply_moveCard",
+        name: "job_move",
         summary: "Moved it",
         ok: true,
         reversal: {

@@ -35,7 +35,7 @@ describe("toHomeMessages", () => {
       { type: "text" as const, text: "Hi" },
       {
         type: "tool" as const,
-        name: "apply_moveCard",
+        name: "job_move",
         summary: "Moved 'Backend Intern' to Prep",
         ok: true,
       },

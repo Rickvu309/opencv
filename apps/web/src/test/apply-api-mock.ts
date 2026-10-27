@@ -1,44 +1,31 @@
 import {
-  APPLY_COMMANDS,
   APPLY_SCAN_FETCH_FAILED,
   APPLY_SCAN_NOT_FOUND,
-  DEFAULT_APPLY_COMPANY,
-  DEFAULT_APPLY_TITLE,
   applyScanHasIdentity,
   extractApplyFieldsFromHiringText,
   extractApplyFieldsFromLabeledText,
-  generateKeyBetween,
   groundApplyScanResult,
   mergeApplyScanResults,
   parseApplyScanInput,
   type ApplyCard,
-  type ApplyStage,
-  type ApplyTrackKind,
 } from "@workspace/domain"
 
 import { sampleApplyCards } from "./apply-fixtures.ts"
 import { jobApiFetch, resetMockJobs } from "./apply-jobs-mock.ts"
-import { getMockPaperDocs } from "./paper-api-mock.ts"
-import { isoNow, pathOf, jsonOk, jsonError } from "./mock-http.ts"
+import { pathOf, jsonOk, jsonError } from "./mock-http.ts"
 
 type Store = {
   cards: ApplyCard[]
-  failNext: { command: string; message: string } | null
   failNextScan: string | null
 }
 
 const store: Store = {
   cards: sampleApplyCards(),
-  failNext: null,
   failNextScan: null,
 }
 
 function cloneCards(cards: ApplyCard[]): ApplyCard[] {
   return structuredClone(cards)
-}
-
-function todayIso() {
-  return new Date().toISOString().slice(0, 10)
 }
 
 async function readBody(init?: RequestInit): Promise<unknown> {
@@ -56,29 +43,8 @@ function sortCards(cards: ApplyCard[]) {
   })
 }
 
-function positionBefore(
-  stage: ApplyStage,
-  beforeCardId?: string | null,
-  excludeId?: string
-) {
-  const column = sortCards(
-    store.cards.filter((card) => card.stage === stage && card.id !== excludeId)
-  )
-  if (beforeCardId == null) {
-    return generateKeyBetween(column.at(-1)?.position ?? null, null)
-  }
-  const index = column.findIndex((card) => card.id === beforeCardId)
-  if (index === -1) {
-    return generateKeyBetween(column.at(-1)?.position ?? null, null)
-  }
-  const right = column[index]!
-  const left = index > 0 ? column[index - 1]! : null
-  return generateKeyBetween(left?.position ?? null, right.position)
-}
-
 export function resetApplyApiMock() {
   store.cards = cloneCards(sampleApplyCards())
-  store.failNext = null
   store.failNextScan = null
   resetMockJobs()
 }
@@ -87,17 +53,13 @@ export function failNextApplyScan(message: string) {
   store.failNextScan = message
 }
 
-export function failNextApplyCommand(command: string, message: string) {
-  store.failNext = { command, message }
-}
-
 export function getMockApplyCards() {
   return store.cards
 }
 
 export function handlesApplyRequest(input: RequestInfo | URL) {
   const path = pathOf(input)
-  return path.startsWith("/api/apply") || path.includes("/api/commands/apply.")
+  return path.startsWith("/api/apply")
 }
 
 export async function applyApiFetch(
@@ -110,16 +72,6 @@ export async function applyApiFetch(
   if (jobs) return jobs
 
   if (!handlesApplyRequest(input)) return null
-
-  if (
-    store.failNext &&
-    method === "POST" &&
-    path.endsWith(store.failNext.command)
-  ) {
-    const failure = store.failNext
-    store.failNext = null
-    return jsonError(400, "VALIDATION_ERROR", failure.message)
-  }
 
   if (method === "POST" && path === "/api/apply/scan") {
     if (store.failNextScan) {
@@ -170,109 +122,6 @@ export async function applyApiFetch(
     const card = store.cards.find((item) => item.id === detail[1])
     if (!card) return jsonError(404, "NOT_FOUND", "Apply card not found")
     return jsonOk(card)
-  }
-
-  if (
-    method === "POST" &&
-    path === `/api/commands/${APPLY_COMMANDS.createCard}`
-  ) {
-    const body = (await readBody(init)) as {
-      title?: string
-      company?: string
-      note?: string
-      stage?: ApplyStage
-      jobUrl?: string | null
-      trackDate?: string
-      trackKind?: ApplyTrackKind
-      starred?: boolean
-    }
-    const stage = body.stage ?? "inbox"
-    const now = isoNow()
-    const created: ApplyCard = {
-      id: crypto.randomUUID(),
-      title: body.title?.trim() || DEFAULT_APPLY_TITLE,
-      company: body.company?.trim() || DEFAULT_APPLY_COMPANY,
-      note: body.note ?? "",
-      stage,
-      position: positionBefore(stage, null),
-      starred: body.starred ?? false,
-      jobUrl: body.jobUrl ?? null,
-      demo: false,
-      trackDate: body.trackDate ?? todayIso(),
-      trackKind: body.trackKind ?? "followup",
-      createdAt: now,
-      updatedAt: now,
-    }
-    store.cards.push(created)
-    return jsonOk(created)
-  }
-
-  if (
-    method === "POST" &&
-    path === `/api/commands/${APPLY_COMMANDS.updateCard}`
-  ) {
-    const body = (await readBody(init)) as Partial<ApplyCard> & {
-      cardId?: string
-    }
-    const card = store.cards.find((item) => item.id === body.cardId)
-    if (!card) return jsonError(404, "NOT_FOUND", "Apply card not found")
-    card.demo = false
-    if (body.title !== undefined) card.title = body.title
-    if (body.company !== undefined) card.company = body.company
-    if (body.note !== undefined) card.note = body.note
-    if (body.jobUrl !== undefined) card.jobUrl = body.jobUrl
-    if (body.trackDate !== undefined) card.trackDate = body.trackDate
-    if (body.trackKind !== undefined) card.trackKind = body.trackKind
-    card.updatedAt = isoNow()
-    return jsonOk(card)
-  }
-
-  if (
-    method === "POST" &&
-    path === `/api/commands/${APPLY_COMMANDS.moveCard}`
-  ) {
-    const body = (await readBody(init)) as {
-      cardId?: string
-      stage?: ApplyStage
-      beforeCardId?: string | null
-    }
-    const card = store.cards.find((item) => item.id === body.cardId)
-    if (!card) return jsonError(404, "NOT_FOUND", "Apply card not found")
-    if (!body.stage) {
-      return jsonError(400, "VALIDATION_ERROR", "Stage is required")
-    }
-    card.demo = false
-    card.stage = body.stage
-    card.position = positionBefore(body.stage, body.beforeCardId, card.id)
-    card.updatedAt = isoNow()
-    return jsonOk(card)
-  }
-
-  if (
-    method === "POST" &&
-    path === `/api/commands/${APPLY_COMMANDS.toggleStar}`
-  ) {
-    const body = (await readBody(init)) as { cardId?: string }
-    const card = store.cards.find((item) => item.id === body.cardId)
-    if (!card) return jsonError(404, "NOT_FOUND", "Apply card not found")
-    card.demo = false
-    card.starred = !card.starred
-    card.updatedAt = isoNow()
-    return jsonOk(card)
-  }
-
-  if (
-    method === "POST" &&
-    path === `/api/commands/${APPLY_COMMANDS.deleteCard}`
-  ) {
-    const body = (await readBody(init)) as { cardId?: string }
-    const index = store.cards.findIndex((item) => item.id === body.cardId)
-    if (index === -1) return jsonError(404, "NOT_FOUND", "Apply card not found")
-    const [removed] = store.cards.splice(index, 1)
-    for (const doc of getMockPaperDocs()) {
-      if (doc.applyCardId === removed!.id) doc.applyCardId = null
-    }
-    return jsonOk({ id: removed!.id })
   }
 
   return jsonError(404, "UNKNOWN_COMMAND", "Unknown command")

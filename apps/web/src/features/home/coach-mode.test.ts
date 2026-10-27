@@ -13,7 +13,6 @@ import { renderApp } from "@/test/render-app.tsx"
 import {
   getMockCoachMode,
   getProfileMockPaths,
-  profileApiFetch,
   setMockPlan,
 } from "@/test/profile-api-mock.ts"
 import { getLastCoachRequest } from "@/test/threads-api-mock.ts"
@@ -137,16 +136,5 @@ describe("Home dock mode control", () => {
       screen.getByRole("radiogroup", { name: "Coach mode" }),
       "Light"
     )
-  })
-})
-
-describe("removed coach mode command", () => {
-  it("returns 404 for profile.setCoachMode and leaves Free stored", async () => {
-    const res = await profileApiFetch("/api/commands/profile.setCoachMode", {
-      method: "POST",
-      body: JSON.stringify({ mode: "light" }),
-    })
-    expect(res?.status).toBe(404)
-    expect(getMockCoachMode()).toBe("free")
   })
 })

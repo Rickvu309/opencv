@@ -26,7 +26,7 @@ describe("Home Command receipts", { timeout: 15_000 }, () => {
         { kind: "text", text: "Moved it." },
         {
           kind: "tool",
-          name: "apply_moveCard",
+          name: "job_move",
           summary: "Moved 'Backend Intern' to Prep",
           ok: true,
           reversal: {
@@ -67,7 +67,7 @@ describe("Home Command receipts", { timeout: 15_000 }, () => {
       parts: [
         {
           kind: "tool",
-          name: "apply_moveCard",
+          name: "job_move",
           summary: "Moved 'Backend Intern' to Prep",
           ok: true,
           reversal: {
@@ -105,7 +105,7 @@ describe("Home Command receipts", { timeout: 15_000 }, () => {
       parts: [
         {
           kind: "tool",
-          name: "apply_listCards",
+          name: "job_list",
           summary: "Listed 2 Apply cards",
           ok: true,
           reversal: {
@@ -137,7 +137,7 @@ describe("Home Command receipts", { timeout: 15_000 }, () => {
       parts: [
         {
           kind: "tool",
-          name: "apply_moveCard",
+          name: "job_move",
           summary: "Apply card not found",
           ok: false,
         },
@@ -163,7 +163,7 @@ describe("Home Command receipts", { timeout: 15_000 }, () => {
       parts: [
         {
           kind: "tool",
-          name: "apply_moveCard",
+          name: "job_move",
           summary:
             'Invalid input for tool apply_moveCard: Type validation failed: Value: {"cardId":"00000000-0000-0000-0000-000000000002"}. Error message: [{"code":"invalid_format","pattern":"/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}$/","message":"Invalid UUID"}]',
           ok: false,

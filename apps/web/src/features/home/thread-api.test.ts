@@ -117,9 +117,7 @@ describe("thread API client", () => {
     ).resolves.toEqual(created)
 
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
-    expect(init.body).toBe(
-      JSON.stringify({ title: "PM track CV", focusDocId })
-    )
+    expect(init.body).toBe(JSON.stringify({ title: "PM track CV", focusDocId }))
   })
 
   it("reads the latest Thread for a focusDocId", async () => {
@@ -483,7 +481,7 @@ describe("thread API client", () => {
     const messageId = "22222222-2222-4222-8222-222222222222"
     const receipt = {
       type: "tool" as const,
-      name: "apply_deleteCard",
+      name: "job_delete",
       summary: "Deleted the card",
       ok: true,
       toolCallId: "undo-1",
