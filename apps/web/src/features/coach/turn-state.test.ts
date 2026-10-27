@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import type { HomeMessage } from "@/features/home/threads.ts"
+import type { ChatViewMessage } from "@/features/coach/chat-messages.ts"
 
 import {
   turnPhase,
@@ -10,8 +10,8 @@ import {
 } from "./turn-state.ts"
 
 const idle: TurnState = { status: "idle", messages: null }
-const user: HomeMessage = { id: "u1", role: "user", text: "hello" }
-const partial: HomeMessage = {
+const user: ChatViewMessage = { id: "u1", role: "user", text: "hello" }
+const partial: ChatViewMessage = {
   id: "streaming-coach",
   role: "coach",
   text: "I looked",

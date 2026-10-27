@@ -5,8 +5,8 @@ import {
   ToolCallGroup,
 } from "@workspace/ui/components/tool-call-card"
 
-import { CoachMarkdown } from "@/features/home/coach-markdown.tsx"
-import { DiffBlock } from "@/features/home/rich-receipts.tsx"
+import { CoachMarkdown } from "@/features/coach/coach-markdown.tsx"
+import { DiffBlock } from "@/features/coach/rich-receipts.tsx"
 
 import {
   groupCoachParts,

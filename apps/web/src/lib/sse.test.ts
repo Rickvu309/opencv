@@ -26,12 +26,10 @@ describe("parseSseBlock", () => {
 describe("consumeSseBuffer", () => {
   it("yields complete events and keeps a partial block", () => {
     const { events, rest } = consumeSseBuffer(
-      'event: message-start\ndata: {"threadId":"t1"}\n\nevent: text-delta\ndata: {"text":"Hel'
+      'event: message-start\ndata: {"chatId":"t1"}\n\nevent: text-delta\ndata: {"text":"Hel'
     )
 
-    expect(events).toEqual([
-      { event: "message-start", data: { threadId: "t1" } },
-    ])
+    expect(events).toEqual([{ event: "message-start", data: { chatId: "t1" } }])
     expect(rest).toBe('event: text-delta\ndata: {"text":"Hel')
   })
 

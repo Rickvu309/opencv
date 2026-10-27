@@ -50,12 +50,12 @@ describe("apiFetch", () => {
   it("sends credentials and returns JSON", async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValue(Response.json({ ok: true, threads: [] }))
+      .mockResolvedValue(Response.json({ ok: true, chats: [] }))
     vi.stubGlobal("fetch", fetchMock)
 
     await expect(apiFetch("/api/chats")).resolves.toEqual({
       ok: true,
-      threads: [],
+      chats: [],
     })
 
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
@@ -119,7 +119,7 @@ describe("apiFetch", () => {
 
 describe("apiStream", () => {
   it("sends credentials and returns the streaming body", async () => {
-    const body = 'event: message-start\ndata: {"threadId":"t1"}\n\n'
+    const body = 'event: message-start\ndata: {"chatId":"t1"}\n\n'
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(body, {
         status: 200,

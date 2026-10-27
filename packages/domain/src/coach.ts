@@ -3,8 +3,8 @@ import { z } from "zod"
 import type { ChatToolName } from "./chat-turn.js"
 import type { CommandEnvelope } from "./envelope.js"
 import type { ReversalDescriptor } from "./commands.js"
-import type { CoachReceiptDetail, CoachSelection } from "./threads.js"
-import type { ThreadMessage, ThreadMessagePart } from "./threads.js"
+import type { CoachReceiptDetail, CoachSelection } from "./chat-messages.js"
+import type { ChatEntry, ChatEntryPart } from "./chat-messages.js"
 
 export const coachModeSchema = z.enum(["free", "light", "max"])
 export type CoachMode = z.infer<typeof coachModeSchema>
@@ -214,8 +214,8 @@ export type CoachFocusDoc = {
 
 export type CoachTurnInput = {
   userId: string
-  threadId: string
-  history: ThreadMessage[]
+  chatId: string
+  history: ChatEntry[]
   model?: string
   mode?: CoachMode
   /** Fresh turn answering the latest User message; prior coach row stays in history. */
@@ -258,9 +258,9 @@ export type CoachRuntime = {
  * deltas merge; tool-calls are stream-only until their result arrives.
  */
 export function appendCoachPart(
-  parts: readonly ThreadMessagePart[],
+  parts: readonly ChatEntryPart[],
   part: CoachStreamPart
-): ThreadMessagePart[] {
+): ChatEntryPart[] {
   switch (part.type) {
     case "text-delta": {
       const last = parts[parts.length - 1]

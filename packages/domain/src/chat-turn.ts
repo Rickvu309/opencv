@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-import { coachReceiptDetailSchema } from "./threads.js"
+import { coachReceiptDetailSchema } from "./chat-messages.js"
 import { reversalDescriptorSchema } from "./commands.js"
 import { commands, type ContractCommandName } from "./contract-commands.js"
 import type { CommandEnvelope } from "./envelope.js"

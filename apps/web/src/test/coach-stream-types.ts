@@ -38,7 +38,7 @@ export type CoachStreamControl = {
 }
 
 export type LastCoachRequest = {
-  threadId: string
+  chatId: string
   text?: string
   mode?: string
   regenerate?: boolean

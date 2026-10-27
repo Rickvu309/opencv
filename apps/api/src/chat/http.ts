@@ -1,7 +1,7 @@
 import {
   personActor,
   successEnvelope,
-  threadIdSchema,
+  chatIdSchema,
   ERROR_CODES,
   errorEnvelope,
   httpStatusForError,
@@ -29,7 +29,7 @@ export function createChatRoutes(auth?: Auth, db?: AppDatabase) {
   })
 
   routes.get("/:id", async (c) => {
-    const parsed = threadIdSchema.safeParse(c.req.param("id"))
+    const parsed = chatIdSchema.safeParse(c.req.param("id"))
     if (!parsed.success) {
       return jsonWithStatus(
         c,
@@ -46,7 +46,7 @@ export function createChatRoutes(auth?: Auth, db?: AppDatabase) {
   })
 
   routes.post("/:id/stop", async (c) => {
-    const parsed = threadIdSchema.safeParse(c.req.param("id"))
+    const parsed = chatIdSchema.safeParse(c.req.param("id"))
     if (!parsed.success) {
       return jsonWithStatus(
         c,

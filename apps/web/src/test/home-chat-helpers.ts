@@ -33,7 +33,7 @@ export function stepButton(text: string) {
   return new RegExp(escaped)
 }
 
-export async function expectThreadText(text: string) {
+export async function expectChatText(text: string) {
   const logs = await screen.findAllByRole("log", { name: "Thread" })
   expect(logs[0]).toBeInTheDocument()
   expect((await screen.findAllByText(text)).length).toBeGreaterThan(0)

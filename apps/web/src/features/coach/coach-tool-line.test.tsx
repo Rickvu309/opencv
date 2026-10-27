@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, render, screen } from "@testing-library/react"
-import type { ThreadToolPart } from "@workspace/domain"
+import type { ChatToolPart } from "@workspace/domain"
 
 import {
   CoachToolLine,
@@ -15,7 +15,7 @@ afterEach(() => {
   cleanup()
 })
 
-const moved: ThreadToolPart = {
+const moved: ChatToolPart = {
   type: "tool",
   name: "job.move",
   summary: "Moved a card",
@@ -38,7 +38,7 @@ const moved: ThreadToolPart = {
   },
 }
 
-function toolOf(part: ThreadToolPart): CoachToolPart {
+function toolOf(part: ChatToolPart): CoachToolPart {
   const found = toCoachParts({
     id: "m1",
     role: "coach",

@@ -1,7 +1,7 @@
 import {
   titleFrom,
-  type ThreadMessagePart,
-  type ThreadMessageStatus,
+  type ChatEntryPart,
+  type ChatMessageStatus,
 } from "@workspace/domain"
 
 export { titleFrom }
@@ -12,19 +12,19 @@ export const STREAMING_COACH_ID = "local-coach"
 
 export type MessageRole = "coach" | "user"
 
-export type HomeMessage = {
+export type ChatViewMessage = {
   id: string
   role: MessageRole
   text: string
   workedMs?: number
-  status?: ThreadMessageStatus
-  parts?: ThreadMessagePart[]
+  status?: ChatMessageStatus
+  parts?: ChatEntryPart[]
   failed?: boolean
   error?: string
 }
 
 export function latestCoachMessageId(
-  messages: readonly HomeMessage[]
+  messages: readonly ChatViewMessage[]
 ): string | null {
   for (let index = messages.length - 1; index >= 0; index -= 1) {
     const message = messages[index]
@@ -35,16 +35,16 @@ export function latestCoachMessageId(
   return null
 }
 
-export function toHomeMessages(
+export function toChatViewMessages(
   messages: ReadonlyArray<{
     id: string
     role: MessageRole
     text: string
     workedMs?: number
-    status?: ThreadMessageStatus
-    parts?: ThreadMessagePart[]
+    status?: ChatMessageStatus
+    parts?: ChatEntryPart[]
   }>
-): HomeMessage[] {
+): ChatViewMessage[] {
   return messages.map((message) => ({
     id: message.id,
     role: message.role,

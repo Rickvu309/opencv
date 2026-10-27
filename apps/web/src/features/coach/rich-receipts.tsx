@@ -21,7 +21,7 @@ import {
 import {
   RECEIPT_STAGES as STAGES,
   stageLabel,
-} from "@/features/home/coach-receipt.ts"
+} from "@/features/coach/coach-receipt.ts"
 
 type UpdateContentDetail = Extract<
   CoachReceiptDetail,

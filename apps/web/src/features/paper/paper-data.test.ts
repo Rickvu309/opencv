@@ -101,7 +101,7 @@ describe("paper display helpers", () => {
       },
     ])
     expect(paperLinkedEmptyCta([sample])).toBe(PAPER_ATTACH_SAMPLE_CTA)
-    expect(PAPER_ATTACH_SAMPLE_CTA).toBe("Attach Sample CV to an Opportunity")
+    expect(PAPER_ATTACH_SAMPLE_CTA).toBe("Attach Sample CV to a Job")
     expect(PAPER_LINKED_EMPTY_HINT).toMatch(/Apply knows which CV/)
     expect(SAMPLE_CV_LABEL).toBe("Sample · replace anytime")
     expect(SAMPLE_CV_MAKE_MINE).toBe("Make mine")

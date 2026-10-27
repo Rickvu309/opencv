@@ -12,8 +12,8 @@ import { ErrorBanner } from "@/components/error-banner.tsx"
 import {
   STREAMING_COACH_ID,
   latestCoachMessageId,
-  type HomeMessage,
-} from "@/features/home/threads.ts"
+  type ChatViewMessage,
+} from "@/features/coach/chat-messages.ts"
 
 import { CoachMessageActions } from "./coach-message-actions.tsx"
 import { CoachParts } from "./coach-part-renderers.tsx"
@@ -21,13 +21,13 @@ import { toCoachParts } from "./coach-parts.ts"
 import { CoachWorking } from "./coach-working.tsx"
 
 export type CoachTurnsProps = {
-  messages: readonly HomeMessage[]
+  messages: readonly ChatViewMessage[]
   waiting?: boolean
   error?: string | null
   onRetry?: () => void
   onRegenerate?: () => void
   onUndo?: (activityId: string) => Promise<void>
-  messageCite?: (message: HomeMessage) => ReactNode
+  messageCite?: (message: ChatViewMessage) => ReactNode
 }
 
 function RetryRow({

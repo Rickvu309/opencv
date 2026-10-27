@@ -7,8 +7,8 @@ import { ErrorBanner } from "@/components/error-banner.tsx"
 import {
   receiptReversalNote,
   receiptShowsUndo,
-} from "@/features/home/coach-receipt.ts"
-import { ReceiptDetail } from "@/features/home/rich-receipts.tsx"
+} from "@/features/coach/coach-receipt.ts"
+import { ReceiptDetail } from "@/features/coach/rich-receipts.tsx"
 
 import type { CoachToolPart } from "./coach-parts.ts"
 

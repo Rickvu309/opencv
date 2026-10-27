@@ -71,11 +71,11 @@ describe("coach turn title", () => {
 
     const list = await app.request("/api/chats", { headers })
     expect(list.status).toBe(200)
-    const threads = (await list.json()) as {
+    const chats = (await list.json()) as {
       data: { id: string; title: string }[]
     }
     expect(
-      threads.data.find((thread) => thread.id === createdBody.data.id)?.title
+      chats.data.find((chat) => chat.id === createdBody.data.id)?.title
     ).toBe("Prepare for a product intern interview")
   })
 

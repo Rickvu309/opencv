@@ -1,9 +1,9 @@
-import { ShellThreadBody } from "@/features/app-shell/shell-thread-body.tsx"
+import { ShellChatBody } from "@/features/app-shell/shell-chat-body.tsx"
 
 export function CoachPage() {
   return (
     <div className="h-full min-h-0 bg-background">
-      <ShellThreadBody />
+      <ShellChatBody />
     </div>
   )
 }

@@ -1,28 +1,28 @@
 import { useQueryClient } from "@tanstack/react-query"
 import { useCallback } from "react"
 import {
-  DEFAULT_THREAD_TITLE,
+  DEFAULT_CHAT_TITLE,
   textFromParts,
-  type ThreadDetail,
-  type ThreadListItem,
-  type ThreadMessage,
-  type ThreadMessagePart,
+  type ChatRecord,
+  type ChatSummary,
+  type ChatEntry,
+  type ChatEntryPart,
 } from "@workspace/domain"
 
 import {
-  getThread,
+  getChat,
   chatDetailKey,
   chatListKey,
   toListItem,
-  upsertThreadListItem,
-} from "@/features/home/thread-api.ts"
-import type { HomeMessage } from "@/features/home/threads.ts"
+  upsertChatSummary,
+} from "@/features/coach/chat-api.ts"
+import type { ChatViewMessage } from "@/features/coach/chat-messages.ts"
 
 type KeepAbortedInput = {
   id: string
-  prev: ThreadDetail | undefined
-  user: HomeMessage | undefined
-  parts: ThreadMessagePart[]
+  prev: ChatRecord | undefined
+  user: ChatViewMessage | undefined
+  parts: ChatEntryPart[]
   title: (text: string) => string
   focusDocId: string | null | undefined
 }
@@ -34,7 +34,7 @@ export function withAbortedCoach({
   parts,
   title,
   focusDocId,
-}: KeepAbortedInput): ThreadDetail | null {
+}: KeepAbortedInput): ChatRecord | null {
   const now = new Date().toISOString()
   const text = textFromParts(parts)
   if (prev?.messages.some((m) => m.role === "coach" && m.text === text)) {
@@ -45,10 +45,10 @@ export function withAbortedCoach({
   const addUser =
     user != null &&
     !existing.some((m) => m.role === "user" && m.text === user.text)
-  const userRow: ThreadMessage[] = addUser
+  const userRow: ChatEntry[] = addUser
     ? [{ id: user.id, role: "user", text: user.text, createdAt: now }]
     : []
-  const coachRow: ThreadMessage = {
+  const coachRow: ChatEntry = {
     id: crypto.randomUUID(),
     role: "coach",
     text,
@@ -59,7 +59,7 @@ export function withAbortedCoach({
 
   return {
     id,
-    title: prev?.title ?? (user ? title(user.text) : DEFAULT_THREAD_TITLE),
+    title: prev?.title ?? (user ? title(user.text) : DEFAULT_CHAT_TITLE),
     createdAt: prev?.createdAt ?? now,
     updatedAt: now,
     focusDocId: prev?.focusDocId ?? focusDocId ?? null,
@@ -67,45 +67,40 @@ export function withAbortedCoach({
   }
 }
 
-type ThreadCacheOptions = {
+type ChatCacheOptions = {
   titleForCreate: (text: string) => string
   focusDocId: string | null | undefined
 }
 
-export function useThreadCache({
-  titleForCreate,
-  focusDocId,
-}: ThreadCacheOptions) {
+export function useChatCache({ titleForCreate, focusDocId }: ChatCacheOptions) {
   const queryClient = useQueryClient()
 
   const writeDetail = useCallback(
-    (id: string, detail: ThreadDetail) => {
+    (id: string, detail: ChatRecord) => {
       queryClient.setQueryData(chatDetailKey(id), detail)
       const item = toListItem(detail)
       queryClient.setQueryData(
         chatListKey(),
-        (prev: ThreadListItem[] | undefined) =>
-          upsertThreadListItem(prev ?? [], item)
+        (prev: ChatSummary[] | undefined) => upsertChatSummary(prev ?? [], item)
       )
     },
     [queryClient]
   )
 
   const rememberListItem = useCallback(
-    (item: ThreadListItem) => {
+    (item: ChatSummary) => {
       queryClient.setQueryData(
         chatListKey(),
-        (prev: ThreadListItem[] | undefined) =>
-          upsertThreadListItem(prev ?? [], item)
+        (prev: ChatSummary[] | undefined) => upsertChatSummary(prev ?? [], item)
       )
     },
     [queryClient]
   )
 
-  const hydrateThread = useCallback(
-    async (id: string): Promise<ThreadDetail | undefined> => {
+  const hydrateChat = useCallback(
+    async (id: string): Promise<ChatRecord | undefined> => {
       try {
-        const detail = await getThread(id)
+        const detail = await getChat(id)
         writeDetail(id, detail)
         return detail
       } catch {
@@ -116,10 +111,10 @@ export function useThreadCache({
   )
 
   const keepStreamedCoach = useCallback(
-    (id: string, user: HomeMessage | undefined, parts: ThreadMessagePart[]) => {
+    (id: string, user: ChatViewMessage | undefined, parts: ChatEntryPart[]) => {
       const next = withAbortedCoach({
         id,
-        prev: queryClient.getQueryData<ThreadDetail>(chatDetailKey(id)),
+        prev: queryClient.getQueryData<ChatRecord>(chatDetailKey(id)),
         user,
         parts,
         title: titleForCreate,
@@ -133,7 +128,7 @@ export function useThreadCache({
   return {
     writeDetail,
     rememberListItem,
-    hydrateThread,
+    hydrateChat,
     keepStreamedCoach,
   }
 }

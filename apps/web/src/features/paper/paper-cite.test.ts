@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import type { HomeMessage } from "@/features/home/threads.ts"
+import type { ChatViewMessage } from "@/features/coach/chat-messages.ts"
 
 import {
   addSelectionChip,
@@ -151,7 +151,7 @@ describe("citeFromCoachReply", () => {
 
 describe("cite helpers", () => {
   it("reads the user ask before a Coach reply", () => {
-    const messages: HomeMessage[] = [
+    const messages: ChatViewMessage[] = [
       { id: "u1", role: "user", text: "Look at checkout UX" },
       { id: "c1", role: "coach", text: "The hallway study is thin." },
     ]
@@ -159,7 +159,7 @@ describe("cite helpers", () => {
   })
 
   it("skips streaming Coach rows when resolving a cite", () => {
-    const messages: HomeMessage[] = [
+    const messages: ChatViewMessage[] = [
       { id: "u1", role: "user", text: "Look at checkout UX" },
       {
         id: "local-coach",
@@ -205,7 +205,7 @@ describe("cite helpers", () => {
       ),
       "sel-1"
     )
-    const first: HomeMessage[] = [
+    const first: ChatViewMessage[] = [
       { id: "u1", role: "user", text: "What is weak about this bullet?" },
       { id: "c1", role: "coach", text: "I read that bullet." },
     ]
@@ -215,7 +215,7 @@ describe("cite helpers", () => {
     })
     expect(stored.c1?.sectionId).toBe("experience-0-bullet-0")
 
-    const second: HomeMessage[] = [
+    const second: ChatViewMessage[] = [
       ...first,
       { id: "u2", role: "user", text: "And the next line?" },
       { id: "c2", role: "coach", text: "Say more?" },

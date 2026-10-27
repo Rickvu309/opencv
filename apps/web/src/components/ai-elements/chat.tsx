@@ -20,16 +20,16 @@ export function Chat({ className, ...props }: ComponentProps<"div">) {
   )
 }
 
-type ChatThreadProps = ComponentProps<typeof MessageScrollerContent> & {
+type ChatLogProps = ComponentProps<typeof MessageScrollerContent> & {
   viewportClassName?: string
 }
 
-export function ChatThread({
+export function ChatLog({
   children,
   className,
   viewportClassName,
   ...props
-}: ChatThreadProps) {
+}: ChatLogProps) {
   return (
     <MessageScrollerProvider autoScroll>
       <MessageScroller>

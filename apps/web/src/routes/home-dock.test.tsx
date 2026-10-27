@@ -2,10 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react"
 
 import { BROAD_SUGGESTIONS } from "@/features/home/suggestions.ts"
-import {
-  getLastCoachRequest,
-  scriptCoachStream,
-} from "@/test/threads-api-mock.ts"
+import { getLastCoachRequest, scriptCoachStream } from "@/test/chat-api-mock.ts"
 import { renderApp } from "@/test/render-app.tsx"
 
 beforeEach(() => {

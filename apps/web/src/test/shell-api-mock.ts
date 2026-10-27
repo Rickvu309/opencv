@@ -1,6 +1,6 @@
 import { jsonOk, pathOf, urlOf } from "./mock-http.ts"
 
-export { chatCreateCalls, setMockChats } from "./threads-api-mock.ts"
+export { chatCreateCalls, setMockChats } from "./chat-api-mock.ts"
 
 export type MockShellJob = {
   id: string

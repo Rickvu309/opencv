@@ -7,7 +7,7 @@ import {
   within,
 } from "@testing-library/react"
 
-import { FIXTURE_THREADS } from "@/test/thread-fixtures.ts"
+import { FIXTURE_CHATS } from "@/test/chat-fixtures.ts"
 import { renderApp } from "@/test/render-app.tsx"
 import {
   searchQueries,
@@ -126,18 +126,18 @@ describe("command palette", () => {
   it("hides chats when the Jobs chip is pressed", async () => {
     setMockChats([
       {
-        id: FIXTURE_THREADS[0]!.id,
-        title: FIXTURE_THREADS[0]!.title,
+        id: FIXTURE_CHATS[0]!.id,
+        title: FIXTURE_CHATS[0]!.title,
         focusKind: null,
         focusId: null,
-        createdAt: FIXTURE_THREADS[0]!.createdAt,
-        updatedAt: FIXTURE_THREADS[0]!.updatedAt,
+        createdAt: FIXTURE_CHATS[0]!.createdAt,
+        updatedAt: FIXTURE_CHATS[0]!.updatedAt,
       },
     ])
     const dialog = await openSearch()
     expect(
       await within(dialog).findByRole("button", {
-        name: FIXTURE_THREADS[0]!.title,
+        name: FIXTURE_CHATS[0]!.title,
       })
     ).toBeInTheDocument()
 
@@ -147,7 +147,7 @@ describe("command palette", () => {
     expect(chip).toBeTruthy()
     fireEvent.click(chip!)
     expect(
-      within(dialog).queryByRole("button", { name: FIXTURE_THREADS[0]!.title })
+      within(dialog).queryByRole("button", { name: FIXTURE_CHATS[0]!.title })
     ).not.toBeInTheDocument()
     expect(searchQueries()).toEqual([])
   })
@@ -181,21 +181,21 @@ describe("command palette", () => {
   })
 
   it("opens the shell panel when Enter lands on a chat row", async () => {
-    const thread = FIXTURE_THREADS[0]!
+    const fixture = FIXTURE_CHATS[0]!
     setMockChats([
       {
-        id: thread.id,
-        title: thread.title,
+        id: fixture.id,
+        title: fixture.title,
         focusKind: null,
         focusId: null,
-        createdAt: thread.createdAt,
-        updatedAt: thread.updatedAt,
+        createdAt: fixture.createdAt,
+        updatedAt: fixture.updatedAt,
       },
     ])
     const dialog = await openSearch()
     const input = within(dialog).getByRole("textbox", { name: "Search" })
     const chat = await within(dialog).findByRole("button", {
-      name: thread.title,
+      name: fixture.title,
     })
 
     for (
@@ -209,7 +209,7 @@ describe("command palette", () => {
     fireEvent.keyDown(input, { key: "Enter" })
 
     expect(
-      await screen.findByRole("region", { name: thread.title })
+      await screen.findByRole("region", { name: fixture.title })
     ).toBeInTheDocument()
     expect(
       screen.queryByRole("dialog", { name: "Search" })

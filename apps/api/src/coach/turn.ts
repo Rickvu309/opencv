@@ -3,12 +3,12 @@ import {
   coachActor,
   chatToolNameSchema,
   commandNameSchema,
-  deterministicThreadTitle,
+  deterministicChatTitle,
   focusedEditNeedsReplace,
   parseChatId,
   parseUserId,
   personActor,
-  shouldAutoTitleThread,
+  shouldAutoTitleChat,
   textFromParts,
   type ChatToolName,
   type ChatTurnEvent,
@@ -20,9 +20,9 @@ import {
   type CoachStreamPart,
   type CoachTurnUsage,
   type Plan,
-  type ThreadMessage,
-  type ThreadMessagePart,
-  type ThreadMessageStatus,
+  type ChatEntry,
+  type ChatEntryPart,
+  type ChatMessageStatus,
 } from "@workspace/domain"
 import {
   stepCountIs,
@@ -70,7 +70,7 @@ export async function runCoachTurn(options: {
   plan: Plan
   provider: string
   modelId: string
-  history: ThreadMessage[]
+  history: ChatEntry[]
   focusDoc?: CoachFocusDoc
   selection?: CoachSelection
   note?: string
@@ -94,8 +94,8 @@ export async function runCoachTurn(options: {
     stop.signal,
     ...(options.signal ? [options.signal] : []),
   ])
-  let parts: ThreadMessagePart[] = []
-  let status: ThreadMessageStatus = "final"
+  let parts: ChatEntryPart[] = []
+  let status: ChatMessageStatus = "final"
   let usage: CoachTurnUsage = {
     model: options.runtime ? "fake" : options.modelId,
     mode: options.mode,
@@ -114,7 +114,7 @@ export async function runCoachTurn(options: {
     const iterable = options.runtime
       ? options.runtime.streamTurn({
           userId: options.userId,
-          threadId: options.chatId,
+          chatId: options.chatId,
           history: options.history,
           model: options.modelId,
           mode: options.mode,
@@ -257,7 +257,7 @@ function linkSignals(signals: AbortSignal[]) {
   return controller.signal
 }
 
-function askedForEdit(history: ThreadMessage[], selection?: CoachSelection) {
+function askedForEdit(history: ChatEntry[], selection?: CoachSelection) {
   if (selection?.text) return true
   const text =
     [...history].reverse().find((message) => message.role === "user")?.text ??
@@ -286,13 +286,13 @@ async function maybeTitle(input: {
       text: message.text,
       status: message.status ?? undefined,
     }))
-  const decision = shouldAutoTitleThread({
+  const decision = shouldAutoTitleChat({
     currentTitle: chat.title,
     messages,
     status: input.status,
   })
   if (!decision) return
-  let title = deterministicThreadTitle({
+  let title = deterministicChatTitle({
     userText: decision.userText,
     coachText: input.coachText,
   })
@@ -319,7 +319,7 @@ async function maybeTitle(input: {
 
 export async function* liveParts(input: {
   model?: LanguageModel
-  history: ThreadMessage[]
+  history: ChatEntry[]
   registry: Registry
   actor: CoachActor
   toolEntries: ToolEntry[]

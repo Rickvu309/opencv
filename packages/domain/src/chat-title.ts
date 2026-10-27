@@ -1,10 +1,11 @@
-import { DEFAULT_THREAD_TITLE, THREAD_TITLE_MAX } from "./threads.js"
+import { CHAT_TITLE_MAX } from "./chat.js"
+import { DEFAULT_CHAT_TITLE } from "./chat-messages.js"
 
 /** First-line History title taken from the User's opening message. */
 export const FIRST_LINE_TITLE_MAX = 36
 
 /** Generated titles stay short enough to scan in History. */
-export const AUTO_THREAD_TITLE_MAX = 48
+export const AUTO_CHAT_TITLE_MAX = 48
 
 const CLAIMED_ACTION_START =
   /^(?:i\s+)?(?:successfully\s+)?(?:moved|created|renamed|updated|starred|unstarred|added|set|linked|posted|wrote|edited|saved|changed|done)\b/i
@@ -15,19 +16,19 @@ const GREETING_ONLY =
 const LEAD_IN =
   /^(?:please\s+)?(?:(?:can|could|would)\s+you\s+)?(?:help\s+(?:me|us)\s+(?:to\s+)?)?(?:should\s+i\s+|can\s+i\s+|could\s+i\s+|do\s+i\s+|how\s+do\s+i\s+|how\s+can\s+i\s+|what(?:'s| is)\s+|i\s+want\s+to\s+|i\s+need\s+to\s+)?/i
 
-export type ThreadTitleTurn = {
+export type ChatTitleTurn = {
   userText: string
   coachText: string
 }
 
-export type ThreadTitleCandidate = {
+export type ChatTitleCandidate = {
   role: "user" | "coach"
   text: string
   status?: string | null
 }
 
 /**
- * First-line title used when a Thread is created from the composer.
+ * First-line title used when a Chat is created from the composer.
  * Distinct from the generated title that replaces it after the first turn.
  */
 export function titleFrom(text: string) {
@@ -36,29 +37,25 @@ export function titleFrom(text: string) {
   return `${clean.slice(0, FIRST_LINE_TITLE_MAX)}…`
 }
 
-export function isDefaultThreadTitle(title: string) {
-  return title.trim() === DEFAULT_THREAD_TITLE
+export function isDefaultChatTitle(title: string) {
+  return title.trim() === DEFAULT_CHAT_TITLE
 }
 
-export function isFirstLineThreadTitle(title: string, firstUserText: string) {
+export function isFirstLineChatTitle(title: string, firstUserText: string) {
   return title.trim() === titleFrom(firstUserText)
 }
 
 /** Default or first-line titles may be replaced. User-renamed titles may not. */
 export function isAutoTitleEligible(title: string, firstUserText: string) {
-  return (
-    isDefaultThreadTitle(title) || isFirstLineThreadTitle(title, firstUserText)
-  )
+  return isDefaultChatTitle(title) || isFirstLineChatTitle(title, firstUserText)
 }
 
 /**
  * A completed Coach turn is a `final` row, or a seed/legacy coach row with no
  * status. Aborted and error turns do not count, so a later successful turn
- * can still title the Thread.
+ * can still title the Chat.
  */
-export function hasCompletedCoachTurn(
-  messages: readonly ThreadTitleCandidate[]
-) {
+export function hasCompletedCoachTurn(messages: readonly ChatTitleCandidate[]) {
   return messages.some(
     (message) =>
       message.role === "coach" &&
@@ -66,9 +63,9 @@ export function hasCompletedCoachTurn(
   )
 }
 
-export function shouldAutoTitleThread(input: {
+export function shouldAutoTitleChat(input: {
   currentTitle: string
-  messages: readonly ThreadTitleCandidate[]
+  messages: readonly ChatTitleCandidate[]
   status: string
 }): { userText: string } | null {
   if (input.status !== "final") return null
@@ -81,7 +78,7 @@ export function shouldAutoTitleThread(input: {
   return { userText: firstUser.text }
 }
 
-export function sanitizeThreadTitle(raw: string): string {
+export function sanitizeChatTitle(raw: string): string {
   const stripped = raw
     .replace(/!/g, "")
     .replace(/^[\s"'“”‘’`]+|[\s"'“”‘’`]+$/g, "")
@@ -94,16 +91,16 @@ export function sanitizeThreadTitle(raw: string): string {
 
   const clipped = clipTitle(stripped)
   if (!clipped) return ""
-  if (clipped.length > THREAD_TITLE_MAX) {
-    return clipTitle(clipped.slice(0, THREAD_TITLE_MAX))
+  if (clipped.length > CHAT_TITLE_MAX) {
+    return clipTitle(clipped.slice(0, CHAT_TITLE_MAX))
   }
   return clipped
 }
 
-export function deterministicThreadTitle({
+export function deterministicChatTitle({
   userText,
   coachText,
-}: ThreadTitleTurn): string {
+}: ChatTitleTurn): string {
   const fromUser = titleFromTopic(userText)
   if (fromUser && !GREETING_ONLY.test(fromUser)) return fromUser
 
@@ -111,17 +108,17 @@ export function deterministicThreadTitle({
   if (fromCoach) return fromCoach
 
   return (
-    sanitizeThreadTitle(titleFrom(userText)) ||
-    sanitizeThreadTitle(titleFrom(coachText)) ||
-    DEFAULT_THREAD_TITLE
+    sanitizeChatTitle(titleFrom(userText)) ||
+    sanitizeChatTitle(titleFrom(coachText)) ||
+    DEFAULT_CHAT_TITLE
   )
 }
 
 function titleFromTopic(text: string) {
-  const cleaned = sanitizeThreadTitle(text)
+  const cleaned = sanitizeChatTitle(text)
   if (!cleaned) return ""
   const withoutLeadIn = cleaned.replace(LEAD_IN, "").trim()
-  const topic = sanitizeThreadTitle(withoutLeadIn) || cleaned
+  const topic = sanitizeChatTitle(withoutLeadIn) || cleaned
   return sentenceCase(topic)
 }
 
@@ -139,8 +136,8 @@ function sentenceCase(text: string) {
 }
 
 function clipTitle(text: string) {
-  if (text.length <= AUTO_THREAD_TITLE_MAX) return text
-  const slice = text.slice(0, AUTO_THREAD_TITLE_MAX)
+  if (text.length <= AUTO_CHAT_TITLE_MAX) return text
+  const slice = text.slice(0, AUTO_CHAT_TITLE_MAX)
   const atWord = slice.lastIndexOf(" ")
   const clipped = (atWord >= 16 ? slice.slice(0, atWord) : slice).trim()
   return clipped.replace(/[,:;.-]+$/g, "")

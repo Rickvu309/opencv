@@ -9,8 +9,8 @@ import {
   type SurfaceId,
 } from "@/features/app-shell/surfaces.ts"
 import { ShellOverlays } from "@/features/auth/shell-overlays.tsx"
-import { ThreadStoreProvider } from "@/features/home/thread-store.tsx"
-import { useThreadList } from "@/features/home/use-thread-list.ts"
+import { ChatStoreProvider } from "@/features/coach/chat-store.tsx"
+import { useChatList } from "@/features/coach/use-chat-list.ts"
 
 export function AppShellLayout() {
   const pathname = useRouterState({
@@ -24,17 +24,17 @@ export function AppShellLayout() {
     )
   }
   return (
-    <ThreadStoreProvider>
+    <ChatStoreProvider>
       <ShellOverlays>
         <AppShellChrome />
       </ShellOverlays>
-    </ThreadStoreProvider>
+    </ChatStoreProvider>
   )
 }
 
 function AppShellChrome() {
   const navigate = useNavigate()
-  const { openThread } = useThreadList()
+  const { openChat } = useChatList()
   const [searchOpen, setSearchOpen] = useState(false)
 
   useEffect(() => {
@@ -48,8 +48,8 @@ function AppShellChrome() {
     return () => window.removeEventListener("keydown", onKey)
   }, [])
 
-  function handleOpenThread(id: string) {
-    openThread(id)
+  function handleOpenChat(id: string) {
+    openChat(id)
     void navigate({ to: HOME_PATH })
   }
 
@@ -63,7 +63,7 @@ function AppShellChrome() {
       <SearchModal
         open={searchOpen}
         onOpenChange={setSearchOpen}
-        onOpenThread={handleOpenThread}
+        onOpenChat={handleOpenChat}
         onSurface={goSurface}
       />
     </>

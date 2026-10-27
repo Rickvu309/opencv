@@ -1,10 +1,10 @@
-import type { CoachSelection, ThreadMessagePart } from "@workspace/domain"
+import type { CoachSelection, ChatEntryPart } from "@workspace/domain"
 
 import {
   STREAMING_COACH_ID,
   latestCoachMessageId,
-  type HomeMessage,
-} from "@/features/home/threads.ts"
+  type ChatViewMessage,
+} from "@/features/coach/chat-messages.ts"
 
 import type { CoachContextChip } from "./coach-context-chips.ts"
 import type { CvData } from "./paper-cv-types.ts"
@@ -250,7 +250,7 @@ export function paperCiteSpansFromLetter(markdown: string): PaperCiteSpan[] {
 }
 
 export function paperCiteHunksFromParts(
-  parts: readonly ThreadMessagePart[] | undefined
+  parts: readonly ChatEntryPart[] | undefined
 ): { sectionId: string; section: string }[] {
   if (!parts) return []
   return parts.flatMap((part) => {
@@ -265,7 +265,7 @@ export function paperCiteHunksFromParts(
 }
 
 export function previousUserText(
-  messages: readonly HomeMessage[],
+  messages: readonly ChatViewMessage[],
   coachId: string
 ): string {
   const index = messages.findIndex((message) => message.id === coachId)
@@ -417,8 +417,8 @@ export function citeFromCoachReply(input: {
 }
 
 export function citeForCoachMessage(
-  message: HomeMessage,
-  messages: readonly HomeMessage[],
+  message: ChatViewMessage,
+  messages: readonly ChatViewMessage[],
   spans: readonly PaperCiteSpan[],
   extras?: {
     chips?: readonly CoachContextChip[]
@@ -460,8 +460,8 @@ export function extrasForCiteTurn(
  */
 export function rememberCoachCite(
   stored: StoredCoachCites,
-  message: HomeMessage,
-  messages: readonly HomeMessage[],
+  message: ChatViewMessage,
+  messages: readonly ChatViewMessage[],
   spans: readonly PaperCiteSpan[],
   extras?: CoachCiteTurnExtras
 ): StoredCoachCites {
@@ -473,7 +473,7 @@ export function rememberCoachCite(
 
 export function rememberCoachCites(
   stored: StoredCoachCites,
-  messages: readonly HomeMessage[],
+  messages: readonly ChatViewMessage[],
   spans: readonly PaperCiteSpan[],
   lastTurn?: CoachCiteTurnExtras | null
 ): StoredCoachCites {

@@ -26,7 +26,7 @@ import {
   CoachPanel,
   type CoachPanelMode,
 } from "@/features/app-shell/coach-panel.tsx"
-import { ShellThreadBody } from "@/features/app-shell/shell-thread-body.tsx"
+import { ShellChatBody } from "@/features/app-shell/shell-chat-body.tsx"
 import { registerShellChatOpener } from "@/features/command-palette/shell-chat.ts"
 import { runContractCommand } from "@/lib/contract-client.ts"
 import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
@@ -314,7 +314,7 @@ export function AppShell({ onSearch }: AppShellProps) {
           }
           onClose={closePanel}
         >
-          <ShellThreadBody chatId={panel.chatId} />
+          <ShellChatBody chatId={panel.chatId} />
         </CoachPanel>
       ) : null}
     </div>

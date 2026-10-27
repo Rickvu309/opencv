@@ -19,18 +19,18 @@ import { commandContract, commandEntry } from "./contract.js"
 import type { ChatId } from "./ids.js"
 import type { QueryRef } from "./queries.js"
 import {
-  threadMessageStatusSchema,
-  threadTextPartSchema,
-  threadToolPartSchema,
-} from "./threads.js"
+  chatMessageStatusSchema,
+  chatTextPartSchema,
+  chatToolPartSchema,
+} from "./chat-messages.js"
 
 export const chatAttachmentPartSchema = chatAttachmentSchema.extend({
   type: z.literal("attachment"),
 })
 
 export const chatMessagePartSchema = z.discriminatedUnion("type", [
-  threadTextPartSchema,
-  threadToolPartSchema,
+  chatTextPartSchema,
+  chatToolPartSchema,
   chatAttachmentPartSchema,
 ])
 
@@ -56,7 +56,7 @@ export const chatMessageSchema = z
     role: z.enum(["person", "coach"]),
     text: z.string(),
     parts: z.array(chatMessagePartSchema),
-    status: threadMessageStatusSchema.nullable(),
+    status: chatMessageStatusSchema.nullable(),
     workedMs: z.number().int().nullable(),
     createdAt: z.string().datetime(),
   })

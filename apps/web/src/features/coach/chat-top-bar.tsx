@@ -6,21 +6,17 @@ import { Button } from "@workspace/ui/components/button"
 import { DestructiveCommandDialog } from "@/features/commands/destructive-command-dialog.tsx"
 
 type Props = {
-  onNewThread: () => void
-  threadTitle?: string | null
-  onDeleteThread?: () => void
+  onNewChat: () => void
+  chatTitle?: string | null
+  onDeleteChat?: () => void
 }
 
-export function ThreadTopBar({
-  onNewThread,
-  threadTitle,
-  onDeleteThread,
-}: Props) {
+export function ChatTopBar({ onNewChat, chatTitle, onDeleteChat }: Props) {
   const [confirmOpen, setConfirmOpen] = useState(false)
 
   return (
     <header className="flex shrink-0 items-center justify-end gap-1 px-4 pt-3 pb-1">
-      {onDeleteThread ? (
+      {onDeleteChat ? (
         <Button
           type="button"
           variant="ghost"
@@ -31,7 +27,7 @@ export function ThreadTopBar({
           Delete Thread
         </Button>
       ) : null}
-      <Button type="button" variant="ghost" size="sm" onClick={onNewThread}>
+      <Button type="button" variant="ghost" size="sm" onClick={onNewChat}>
         <SquarePen className="size-4" />
         New Thread
       </Button>
@@ -39,9 +35,9 @@ export function ThreadTopBar({
         <DestructiveCommandDialog
           open
           title="Delete Thread"
-          name={threadTitle ?? null}
+          name={chatTitle ?? null}
           onOpenChange={setConfirmOpen}
-          onConfirm={() => onDeleteThread?.()}
+          onConfirm={() => onDeleteChat?.()}
         />
       ) : null}
     </header>

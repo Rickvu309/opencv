@@ -1,7 +1,7 @@
 import type { CoachSelection } from "@workspace/domain"
 
-import type { TurnPhase } from "@/features/home/thread-store-context.ts"
-import type { HomeMessage } from "@/features/home/threads.ts"
+import type { TurnPhase } from "@/features/coach/chat-store-context.ts"
+import type { ChatViewMessage } from "@/features/coach/chat-messages.ts"
 
 export type TurnKind = "send" | "regenerate"
 
@@ -14,27 +14,27 @@ export type SendError = {
 }
 
 export type TurnState =
-  | { status: "idle"; messages: HomeMessage[] | null }
+  | { status: "idle"; messages: ChatViewMessage[] | null }
   | {
       status: "streaming"
       kind: TurnKind
-      messages: HomeMessage[]
+      messages: ChatViewMessage[]
       waiting: boolean
     }
   | {
       status: "error"
       kind: TurnKind
-      messages: HomeMessage[]
+      messages: ChatViewMessage[]
       error: SendError
     }
-  | { status: "aborted"; messages: HomeMessage[] }
+  | { status: "aborted"; messages: ChatViewMessage[] }
 
 export type TurnAction =
-  | { type: "start"; kind: TurnKind; messages: HomeMessage[] }
-  | { type: "delta"; messages: HomeMessage[] }
-  | { type: "finish"; messages: HomeMessage[] | null }
-  | { type: "fail"; error: SendError; messages?: HomeMessage[] }
-  | { type: "abort"; messages: HomeMessage[] }
+  | { type: "start"; kind: TurnKind; messages: ChatViewMessage[] }
+  | { type: "delta"; messages: ChatViewMessage[] }
+  | { type: "finish"; messages: ChatViewMessage[] | null }
+  | { type: "fail"; error: SendError; messages?: ChatViewMessage[] }
+  | { type: "abort"; messages: ChatViewMessage[] }
   | { type: "reset" }
 
 export const IDLE_TURN: TurnState = { status: "idle", messages: null }

@@ -3,7 +3,7 @@ import {
   personActor,
   type Actor,
   type Plan,
-  type ThreadMessage,
+  type ChatEntry,
 } from "@workspace/domain"
 import type { SSEStreamingApi } from "hono/streaming"
 
@@ -183,7 +183,7 @@ function messagesOf(value: unknown): ChatMessage[] {
   })
 }
 
-function toHistory(message: ChatMessage): ThreadMessage {
+function toHistory(message: ChatMessage): ChatEntry {
   return {
     id: message.id,
     role: message.role === "person" ? "user" : "coach",
