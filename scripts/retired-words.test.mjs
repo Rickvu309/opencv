@@ -11,8 +11,13 @@ const SCANNED = /^(?:apps|packages)\/[^/]+\/src\//
 const TEXT_FILE = /\.(?:[cm]?[jt]sx?|css|json|md|ya?ml)$/
 
 /**
- * A hit is allowed when some entry's `path` matches the file and its `line`
- * (when given) matches the offending line, or the file name for a name hit.
+ * A hit is allowed when some entry's `path` matches the file, its `match`
+ * (when given) matches the whole retired word that was hit, and its `line`
+ * (when given) matches the line or file name around it. Anchor `match` so a
+ * second identifier on the same line cannot ride along.
+ *
+ * The old Apply stage ids (inbox, prep, sent, live) are not guarded yet: the
+ * code still stores them until #437 renames them.
  */
 const RETIRED = [
   {
@@ -20,47 +25,51 @@ const RETIRED = [
     use: "Chat",
     allowed: [
       {
-        path: /^(?:apps\/api\/src\/inbox\/|apps\/api\/src\/registry\/(?:coverage-inbox|inbox-contract\.test)\.ts$|packages\/domain\/src\/inbox(?:-contract|\.test)?\.ts$|apps\/web\/src\/features\/inbox\/|apps\/web\/src\/test\/inbox-fixtures\.ts$)/,
+        path: /^(?:apps\/api\/src\/inbox\/|apps\/api\/src\/registry\/(?:coverage-inbox|inbox-contract\.test)\.ts$|packages\/domain\/src\/inbox[\w.-]*\.ts$|apps\/web\/src\/features\/inbox\/|apps\/web\/src\/test\/inbox-fixtures\.ts$)/,
         why: "the inbox modules own the mail thread noun (MailThread, InboxThread, threadId, listThreads, getThread)",
       },
       {
         path: /^apps\/api\/src\/db\/(?:schema|migrate\.test)\.ts$/,
-        line: /inbox_threads|inboxThreads|provider_thread_id|providerThreadId|thread_id|threadId|messages_thread_provider/,
+        match:
+          /^(?:inbox_threads|inboxThreads|provider_thread_id|providerThreadId|thread_id|threadId|inbox_threads_connection_provider_uidx|inbox_messages_thread_provider_uidx)$/,
         why: "inbox_threads is the mail thread table and its columns",
       },
       {
         path: /^apps\/api\/src\/registry\/ownership\.test\.ts$/,
-        line: /inboxThreads/,
+        match: /^inboxThreads$/,
         why: "maps the inbox_threads table to the inbox module",
       },
       {
         path: /^apps\/api\/src\/registry\/contract\.type-test\.ts$/,
-        line: /threadId/,
+        match: /^threadId$/,
         why: "the inbox snooze input is keyed by an inbox threadId",
       },
       {
         path: /^apps\/api\/src\/registry\/names\.test\.ts$/,
+        match: /^threads$/,
         line: /\|threads\|/,
         why: "the retired threads.* tool prefix stays in the name scan so old tool names fail",
       },
       {
         path: /^apps\/web\/src\/lib\/requests\.ts$/,
-        line: /inboxThread|threadId/,
+        match: /^(?:\w*[Ii]nboxThreads?\w*|threadId)$/,
         why: "the inbox thread route is keyed by an inbox threadId",
       },
       {
         path: /^apps\/web\/src\/(?:features\/app-shell\/shell-api|test\/shell-api-mock)\.ts$|^apps\/web\/src\/routes\/app-shell\.test\.tsx$/,
-        line: /threads/,
+        match: /^threads$/,
         why: "the inbox list response field is named threads",
       },
       {
         path: /^packages\/domain\/src\/chat-contract\.ts$/,
+        match: /^thread$/,
         line: /inbox thread/,
         why: "a chat can point at an inbox thread",
       },
       {
         path: /^packages\/domain\/src\/chat-messages\.ts$/,
-        line: /New Thread/,
+        match: /^Thread$/,
+        line: /"New Thread"/,
         why: 'DEFAULT_CHAT_TITLE = "New Thread" is a stored value existing chats carry',
       },
       {
@@ -70,7 +79,7 @@ const RETIRED = [
       {
         path: /^apps\/web\/src\/features\/paper\/paper-suggestion-(?:bar|thread)(?:\.test)?\.tsx$/,
         line: /CommentThread|ThreadMessage|comment-thread|SuggestionThread|suggestion-thread|read-only thread/,
-        why: "leftover, see #433 report: the suggestion review list wraps the ui comment-thread",
+        why: "a read-only comment thread of the Coach's suggested Paper changes, built on the ui comment-thread; not a Chat",
       },
       {
         path: /^apps\/web\/src\/features\/coach\/chat-list-port\.test\.ts$/,
@@ -92,10 +101,14 @@ const RETIRED = [
 ]
 
 function scannedFiles() {
-  return execFileSync("git", ["ls-files", "-z"], {
-    cwd: root,
-    encoding: "utf8",
-  })
+  return execFileSync(
+    "git",
+    ["ls-files", "-z", "--cached", "--others", "--exclude-standard"],
+    {
+      cwd: root,
+      encoding: "utf8",
+    }
+  )
     .split("\0")
     .filter((file) => SCANNED.test(file) && existsSync(path.join(root, file)))
 }
@@ -119,12 +132,14 @@ function scan() {
         for (const [match] of text.matchAll(entry.word)) {
           const allowed = entry.allowed.find(
             (rule) =>
-              rule.path.test(file) && (!rule.line || rule.line.test(text))
+              rule.path.test(file) &&
+              (!rule.match || rule.match.test(match)) &&
+              (!rule.line || rule.line.test(text))
           )
           if (allowed) used.add(allowed)
           else
             violations.push(
-              `${where} uses "${match}". CONTEXT.md retired this word, so say ${entry.use}. If this is a legitimate use (see the allowed list in scripts/retired-words.test.mjs), add it there with a reason.`
+              `${where} uses "${match}". CONTEXT.md retired this word, so say ${entry.use}. If it is a legitimate use, such as an Inbox mail thread, add the path and the exact word to the allowed list in scripts/retired-words.test.mjs with a reason.`
             )
         }
       }

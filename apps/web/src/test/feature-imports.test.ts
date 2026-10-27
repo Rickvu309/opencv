@@ -67,8 +67,9 @@ describe("feature imports", () => {
     ).toEqual({ stale: [], missing: [], unknownTargets: [] })
   })
 
-  it("imports another feature only along an edge in FEATURE_IMPORTS", () => {
+  it("imports another feature only along an edge in FEATURE_IMPORTS, and uses every edge", () => {
     const violations: string[] = []
+    const used = new Set<string>()
     for (const file of sourceFiles(featuresDir)) {
       const owner = featureOf(file)
       if (!owner) continue
@@ -76,12 +77,25 @@ describe("feature imports", () => {
       const text = readFileSync(file, "utf8")
       for (const [, specifier] of text.matchAll(SPECIFIER)) {
         const target = importedFeature(file, specifier!)
-        if (!target || target === owner || allowed.includes(target)) continue
+        if (!target || target === owner) continue
+        if (allowed.includes(target)) {
+          used.add(`${owner} -> ${target}`)
+          continue
+        }
         violations.push(
           `${path.relative(srcDir, file)} imports "${specifier}", so ${owner} depends on ${target}, which FEATURE_IMPORTS in apps/web/src/test/feature-imports.test.ts does not list. Either add "${target}" to ${owner} on purpose, or move the shared code into ${owner}, apps/web/src/lib or packages/*.`
         )
       }
     }
     expect(violations, violations.join("\n")).toEqual([])
+    const unused = Object.entries(FEATURE_IMPORTS).flatMap(([owner, allowed]) =>
+      allowed
+        .map((target) => `${owner} -> ${target}`)
+        .filter((edge) => !used.has(edge))
+    )
+    expect(
+      unused,
+      "These FEATURE_IMPORTS edges in apps/web/src/test/feature-imports.test.ts have no import left. Delete them."
+    ).toEqual([])
   })
 })

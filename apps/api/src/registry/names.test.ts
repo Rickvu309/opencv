@@ -70,7 +70,7 @@ describe("registry names", () => {
     )
     expect(
       unknown,
-      `A name used in the web, fake coach or domain is not registered. Register it in apps/api/src/registry, or fix the spelling at the call site. Unknown names:\n${unknown.join("\n")}`
+      `A name used in the web, fake coach or domain is not registered. Declare it in the packages/domain contract and bind it in the module's commands.ts or queries.ts (installed by apps/api/src/registry/install.ts), or fix the spelling at the call site. Unknown names:\n${unknown.join("\n")}`
     ).toEqual([])
   })
 
@@ -80,7 +80,7 @@ describe("registry names", () => {
     )
     expect(
       unknown,
-      `A Coach tool name used in the web, fake coach or domain is not registered. Register the command in apps/api/src/registry, or fix the spelling at the call site. Unknown tool names:\n${unknown.join("\n")}`
+      `A Coach tool name used in the web, fake coach or domain is not registered. Declare the command in the packages/domain contract and bind it in its module's commands.ts (installed by apps/api/src/registry/install.ts), or fix the spelling at the call site. Unknown tool names:\n${unknown.join("\n")}`
     ).toEqual([])
   })
 })
