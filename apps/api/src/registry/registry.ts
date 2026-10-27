@@ -477,7 +477,10 @@ export class Registry {
       .from(user)
       .where(eq(user.id, userId))
       .limit(1)
-    return rows[0] ?? { agentCvs: true, agentInterview: true, agentEmail: true }
+    // No user row means no consent to read, so every gated entry stays closed.
+    return (
+      rows[0] ?? { agentCvs: false, agentInterview: false, agentEmail: false }
+    )
   }
 
   private async expireIfStale(userId: string, id: string) {

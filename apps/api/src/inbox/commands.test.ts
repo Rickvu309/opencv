@@ -116,6 +116,11 @@ describe("inbox commands", () => {
   it("omits send and calendar from the coach tools", async () => {
     const { db, client } = await createMigratedTestDb()
     const registry = installRegistry()
+    await db.insert(user).values({
+      id: "user-inbox-coach",
+      name: "Ada",
+      email: "ada-inbox-coach@example.com",
+    })
     await withDatabase(db, async () => {
       const names = (
         await registry.tools(
