@@ -1,6 +1,5 @@
 import {
   DEFAULT_PAPER_DOC_NAME,
-  PAPER_COMMANDS,
   PAPER_CONTENT_VERSION,
   decodePaperContent,
   emptyPaperDocument,
@@ -150,89 +149,12 @@ export async function paperApiFetch(
     return jsonOk(doc)
   }
 
-  if (
-    method === "POST" &&
-    path === `/api/commands/${PAPER_COMMANDS.createDoc}`
-  ) {
-    const body = (await readBody(init)) as {
-      kind?: PaperContentKind
-      name?: string
-      content?: unknown
-    }
-    const kind = body.kind
-    if (!kind) {
-      return jsonError(400, "VALIDATION_ERROR", "Kind is required")
-    }
-    const content =
-      body.content === undefined
-        ? emptyPaperDocument(kind)
-        : (() => {
-            const decoded = decodePaperContent(
-              kind,
-              PAPER_CONTENT_VERSION,
-              body.content
-            )
-            return decoded.ok ? decoded.data : null
-          })()
-    if (!content) {
-      return jsonError(400, "VALIDATION_ERROR", "Invalid content")
-    }
-    const now = isoNow()
-    const created: PaperDoc = {
-      id: crypto.randomUUID(),
-      name: body.name?.trim() || DEFAULT_PAPER_DOC_NAME[kind],
-      kind,
-      status: "draft",
-      content,
-      contentVersion: PAPER_CONTENT_VERSION,
-      applyCardId: null,
-      createdAt: now,
-      updatedAt: now,
-    }
-    store.docs.unshift(created)
-    return jsonOk(created)
-  }
+
+
 
   if (
     method === "POST" &&
-    path === `/api/commands/${PAPER_COMMANDS.updateContent}`
-  ) {
-    const body = (await readBody(init)) as {
-      docId?: string
-      content?: unknown
-      contentVersion?: number
-    }
-    const doc = store.docs.find((item) => item.id === body.docId)
-    if (!doc) return jsonError(404, "NOT_FOUND", "Paper doc not found")
-    const decoded = decodePaperContent(
-      doc.kind,
-      body.contentVersion ?? doc.contentVersion,
-      body.content
-    )
-    if (!decoded.ok) {
-      return jsonError(400, "VALIDATION_ERROR", decoded.message)
-    }
-    doc.content = decoded.data
-    doc.contentVersion = body.contentVersion ?? doc.contentVersion
-    doc.updatedAt = isoNow()
-    return jsonOk(doc)
-  }
-
-  if (
-    method === "POST" &&
-    path === `/api/commands/${PAPER_COMMANDS.renameDoc}`
-  ) {
-    const body = (await readBody(init)) as { docId?: string; name?: string }
-    const doc = store.docs.find((item) => item.id === body.docId)
-    if (!doc) return jsonError(404, "NOT_FOUND", "Paper doc not found")
-    doc.name = body.name?.trim() || doc.name
-    doc.updatedAt = isoNow()
-    return jsonOk(doc)
-  }
-
-  if (
-    method === "POST" &&
-    path === `/api/commands/${PAPER_COMMANDS.setStatus}`
+    path === "/api/commands/paper.setStatus"
   ) {
     const body = (await readBody(init)) as {
       docId?: string
@@ -245,20 +167,6 @@ export async function paperApiFetch(
     return jsonOk(doc)
   }
 
-  if (
-    method === "POST" &&
-    path === `/api/commands/${PAPER_COMMANDS.linkApplyCard}`
-  ) {
-    const body = (await readBody(init)) as {
-      docId?: string
-      applyCardId?: string | null
-    }
-    const doc = store.docs.find((item) => item.id === body.docId)
-    if (!doc) return jsonError(404, "NOT_FOUND", "Paper doc not found")
-    doc.applyCardId = body.applyCardId ?? null
-    doc.updatedAt = isoNow()
-    return jsonOk(doc)
-  }
 
   if (method === "POST" && path === "/api/commands/paper.create") {
     const body = (await readBody(init)) as {
@@ -383,16 +291,6 @@ export async function paperApiFetch(
     return jsonOk({ jobId: body.jobId })
   }
 
-  if (
-    method === "POST" &&
-    path === `/api/commands/${PAPER_COMMANDS.deleteDoc}`
-  ) {
-    const body = (await readBody(init)) as { docId?: string }
-    const index = store.docs.findIndex((item) => item.id === body.docId)
-    if (index === -1) return jsonError(404, "NOT_FOUND", "Paper doc not found")
-    const [removed] = store.docs.splice(index, 1)
-    return jsonOk({ id: removed!.id })
-  }
 
   return jsonError(404, "UNKNOWN_COMMAND", "Unknown command")
 }

@@ -105,7 +105,7 @@ describe("Home Command receipts", { timeout: 15_000 }, () => {
       parts: [
         {
           kind: "tool",
-          name: "apply_listCards",
+          name: "job_list",
           summary: "Listed 2 Apply cards",
           ok: true,
           reversal: {

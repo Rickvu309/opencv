@@ -29,7 +29,7 @@ describe("receiptHeadline", () => {
     expect(
       receiptHeadline({
         type: "tool",
-        name: "apply_listCards",
+        name: "job_list",
         summary: "Listed 2 Apply cards",
         ok: true,
       })
@@ -101,7 +101,7 @@ describe("receipt reversal helpers", () => {
     expect(
       receiptShowsUndo({
         type: "tool",
-        name: "apply_listCards",
+        name: "job_list",
         summary: "Listed cards",
         ok: true,
         toolCallId: "call_2",
@@ -131,7 +131,7 @@ describe("receipt reversal helpers", () => {
     expect(
       receiptReversalNote({
         type: "tool",
-        name: "apply_listCards",
+        name: "job_list",
         summary: "Listed cards",
         ok: true,
         reversal: {

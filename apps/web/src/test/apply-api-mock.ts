@@ -1,5 +1,4 @@
 import {
-  APPLY_COMMANDS,
   APPLY_SCAN_FETCH_FAILED,
   APPLY_SCAN_NOT_FOUND,
   DEFAULT_APPLY_COMPANY,
@@ -172,108 +171,10 @@ export async function applyApiFetch(
     return jsonOk(card)
   }
 
-  if (
-    method === "POST" &&
-    path === `/api/commands/${APPLY_COMMANDS.createCard}`
-  ) {
-    const body = (await readBody(init)) as {
-      title?: string
-      company?: string
-      note?: string
-      stage?: ApplyStage
-      jobUrl?: string | null
-      trackDate?: string
-      trackKind?: ApplyTrackKind
-      starred?: boolean
-    }
-    const stage = body.stage ?? "inbox"
-    const now = isoNow()
-    const created: ApplyCard = {
-      id: crypto.randomUUID(),
-      title: body.title?.trim() || DEFAULT_APPLY_TITLE,
-      company: body.company?.trim() || DEFAULT_APPLY_COMPANY,
-      note: body.note ?? "",
-      stage,
-      position: positionBefore(stage, null),
-      starred: body.starred ?? false,
-      jobUrl: body.jobUrl ?? null,
-      demo: false,
-      trackDate: body.trackDate ?? todayIso(),
-      trackKind: body.trackKind ?? "followup",
-      createdAt: now,
-      updatedAt: now,
-    }
-    store.cards.push(created)
-    return jsonOk(created)
-  }
 
-  if (
-    method === "POST" &&
-    path === `/api/commands/${APPLY_COMMANDS.updateCard}`
-  ) {
-    const body = (await readBody(init)) as Partial<ApplyCard> & {
-      cardId?: string
-    }
-    const card = store.cards.find((item) => item.id === body.cardId)
-    if (!card) return jsonError(404, "NOT_FOUND", "Apply card not found")
-    card.demo = false
-    if (body.title !== undefined) card.title = body.title
-    if (body.company !== undefined) card.company = body.company
-    if (body.note !== undefined) card.note = body.note
-    if (body.jobUrl !== undefined) card.jobUrl = body.jobUrl
-    if (body.trackDate !== undefined) card.trackDate = body.trackDate
-    if (body.trackKind !== undefined) card.trackKind = body.trackKind
-    card.updatedAt = isoNow()
-    return jsonOk(card)
-  }
 
-  if (
-    method === "POST" &&
-    path === `/api/commands/${APPLY_COMMANDS.moveCard}`
-  ) {
-    const body = (await readBody(init)) as {
-      cardId?: string
-      stage?: ApplyStage
-      beforeCardId?: string | null
-    }
-    const card = store.cards.find((item) => item.id === body.cardId)
-    if (!card) return jsonError(404, "NOT_FOUND", "Apply card not found")
-    if (!body.stage) {
-      return jsonError(400, "VALIDATION_ERROR", "Stage is required")
-    }
-    card.demo = false
-    card.stage = body.stage
-    card.position = positionBefore(body.stage, body.beforeCardId, card.id)
-    card.updatedAt = isoNow()
-    return jsonOk(card)
-  }
 
-  if (
-    method === "POST" &&
-    path === `/api/commands/${APPLY_COMMANDS.toggleStar}`
-  ) {
-    const body = (await readBody(init)) as { cardId?: string }
-    const card = store.cards.find((item) => item.id === body.cardId)
-    if (!card) return jsonError(404, "NOT_FOUND", "Apply card not found")
-    card.demo = false
-    card.starred = !card.starred
-    card.updatedAt = isoNow()
-    return jsonOk(card)
-  }
 
-  if (
-    method === "POST" &&
-    path === `/api/commands/${APPLY_COMMANDS.deleteCard}`
-  ) {
-    const body = (await readBody(init)) as { cardId?: string }
-    const index = store.cards.findIndex((item) => item.id === body.cardId)
-    if (index === -1) return jsonError(404, "NOT_FOUND", "Apply card not found")
-    const [removed] = store.cards.splice(index, 1)
-    for (const doc of getMockPaperDocs()) {
-      if (doc.applyCardId === removed!.id) doc.applyCardId = null
-    }
-    return jsonOk({ id: removed!.id })
-  }
 
   return jsonError(404, "UNKNOWN_COMMAND", "Unknown command")
 }

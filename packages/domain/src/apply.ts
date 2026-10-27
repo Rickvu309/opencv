@@ -1,9 +1,7 @@
 import { z } from "zod"
 
-import { APPLY_COMMANDS } from "./commands.js"
 
 export { generateKeyBetween } from "./apply-position.js"
-export { APPLY_COMMANDS }
 
 export const APPLY_TITLE_MAX = 200
 export const APPLY_COMPANY_MAX = 200

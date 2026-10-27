@@ -483,7 +483,7 @@ describe("thread API client", () => {
     const messageId = "22222222-2222-4222-8222-222222222222"
     const receipt = {
       type: "tool" as const,
-      name: "apply_deleteCard",
+      name: "job_delete",
       summary: "Deleted the card",
       ok: true,
       toolCallId: "undo-1",

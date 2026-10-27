@@ -1,6 +1,5 @@
 import {
   DEFAULT_COACH_MODE,
-  PROFILE_COMMANDS,
   type UserProfile,
 } from "@workspace/domain"
 
@@ -162,7 +161,6 @@ export function handlesProfileRequest(input: RequestInfo | URL) {
   const path = pathOf(input)
   return (
     path === "/api/profile" ||
-    path === `/api/commands/${PROFILE_COMMANDS.setCoachMode}` ||
     path === "/api/commands/profile.markWelcomed" ||
     path === "/api/commands/profile.update" ||
     path === "/api/commands/account.requestEmailChange" ||
@@ -429,12 +427,6 @@ export async function profileApiFetch(
     return jsonOk({ deleted: true })
   }
 
-  if (
-    method === "POST" &&
-    path === `/api/commands/${PROFILE_COMMANDS.setCoachMode}`
-  ) {
-    return jsonError(404, "NOT_FOUND", "Not found")
-  }
 
   return jsonError(404, "NOT_FOUND", "Not found")
 }
