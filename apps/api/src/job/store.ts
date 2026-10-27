@@ -325,24 +325,11 @@ export async function deleteJob(actor: Actor, jobId: JobId) {
   return { id: jobId }
 }
 
-async function assertInterviewAgent(actor: Actor) {
-  if (actor.type !== "coach") return
-  const rows = await getDb()
-    .select({ agentInterview: user.agentInterview })
-    .from(user)
-    .where(eq(user.id, actor.userId))
-    .limit(1)
-  if (rows[0]?.agentInterview === false) {
-    throw new CommandError(ERROR_CODES.FORBIDDEN, "Interview prep is disabled.")
-  }
-}
-
 export async function addChecklistItem(
   actor: Actor,
   jobId: JobId,
   label: string
 ) {
-  await assertInterviewAgent(actor)
   await ownedJob(actor.userId, jobId)
   const rows = await getDb()
     .select({ position: jobChecklist.position })
@@ -367,7 +354,6 @@ export async function setChecklistItem(
   itemId: string,
   done: boolean
 ) {
-  await assertInterviewAgent(actor)
   await ownedJob(actor.userId, jobId)
   const rows = await getDb()
     .select()
@@ -389,7 +375,6 @@ export async function removeChecklistItem(
   jobId: JobId,
   itemId: string
 ) {
-  await assertInterviewAgent(actor)
   await ownedJob(actor.userId, jobId)
   await getDb()
     .delete(jobChecklist)
