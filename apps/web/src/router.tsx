@@ -69,7 +69,11 @@ const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
   beforeLoad: async () => {
-    if (webOrigins.kind === "split") return
+    if (
+      webOrigins.kind === "split" &&
+      webOrigins.publicHosts.includes(window.location.hostname)
+    )
+      return
     const { data } = await authClient.getSession()
     if (data) {
       throw redirect({ to: "/app" })
