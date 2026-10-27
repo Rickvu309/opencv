@@ -3,17 +3,19 @@ import { execFileSync } from "node:child_process"
 import { existsSync, readdirSync, readFileSync } from "node:fs"
 import path from "node:path"
 import { test } from "node:test"
+import { fileURLToPath } from "node:url"
 
-const root = path.resolve(import.meta.dirname, "..")
+const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
 const adrDir = path.join(root, "docs/adr")
 const adrFiles = readdirSync(adrDir).filter((name) =>
   /^\d{4}-.+\.md$/.test(name)
 )
 const adrNumbers = new Set(adrFiles.map((name) => name.slice(0, 4)))
+const adrSlugs = new Set(adrFiles.map((name) => name.slice(0, -".md".length)))
 
 const TEXT_FILE = /\.(?:[cm]?[jt]sx?|css|md|json|ya?ml|sh)$/
 const ADR_NUMBER = /\bADR[- ]?(\d{4})\b/g
-const ADR_PATH = /docs\/adr\/(\d{4})(?:-[\w.-]*)?/g
+const ADR_PATH = /docs\/adr\/((\d{4})(?:-[\w-]*)?)(?:\.md)?/g
 
 function trackedTextFiles() {
   return execFileSync("git", ["ls-files", "-z"], {
@@ -32,11 +34,9 @@ function brokenCitations(file) {
       if (!adrNumbers.has(number))
         broken.push(`${file}:${index + 1} cites ADR-${number}`)
     }
-    for (const [cited, number] of line.matchAll(ADR_PATH)) {
-      const named = cited.endsWith(".md")
-        ? cited.slice("docs/adr/".length)
-        : null
-      if (!adrNumbers.has(number) || (named && !adrFiles.includes(named))) {
+    for (const [cited, slug, number] of line.matchAll(ADR_PATH)) {
+      const hasSlug = slug.length > number.length
+      if (!adrNumbers.has(number) || (hasSlug && !adrSlugs.has(slug))) {
         broken.push(`${file}:${index + 1} cites ${cited}`)
       }
     }
@@ -49,6 +49,6 @@ test("every ADR a file cites exists in docs/adr", () => {
   assert.deepEqual(
     broken,
     [],
-    `These citations point at no file in docs/adr (the pre-release ADRs were deleted in #385, so old numbers point nowhere or at another decision). Retarget each to the decision that holds now (ls docs/adr) or drop the citation:\n${broken.join("\n")}`
+    `These citations point at no file in docs/adr (the pre-release ADRs were deleted in #385). Retarget each to the decision that holds now (ls docs/adr) or drop the citation:\n${broken.join("\n")}`
   )
 })

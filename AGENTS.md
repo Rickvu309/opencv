@@ -14,9 +14,21 @@ Single-context (`CONTEXT.md` + `docs/adr/` at repo root). See `docs/agents/domai
 
 ### Code map
 
-- `packages/domain/src` is pure TypeScript and zod, with no database, server or AI SDK import. It holds the typed contract: `<surface>-contract.ts` per surface (`chat`, `paper`, `job`, `inbox`, `account`), joined in `contract-commands.ts` and `queries.ts`, and the Coach stream events in `chat-turn.ts`.
-- `apps/api/src/<module>/` is one product module (`account`, `chat`, `paper`, `job`, `inbox`, `coach`). Other modules import it only through its `index.ts`. `commands.ts` binds the module's contract commands and reads (`account` keeps its reads in `queries.ts`), `http.ts` mounts its routes, and `store.ts` is the only writer of the module's tables. `registry/` runs every command, writes activity and builds the Coach's tools. `coach/` is the only importer of the AI SDK. `db/schema.ts` is the schema.
-- `apps/web/src` is the SPA. `routes/` holds pages, `features/<surface>/` holds each surface's components and state, and `lib/` is the only place that calls the api (`contract-client.ts` for commands and reads, `coach-stream.ts` for the Coach stream).
+- `packages/domain/src` is pure TypeScript and zod, with no database, server or AI SDK import. It holds the typed contract.
+  - `<surface>-contract.ts` declares each surface's commands and most of its reads (`paper`, `job`, `inbox`, `account`, and `chat` for commands).
+  - `contract-commands.ts` joins every command into one table. `queries.ts` joins every read and declares the chat reads and `workspace.search` itself.
+  - `chat-turn.ts` holds `ChatTurnEvent`, the Coach stream events.
+- `apps/api/src/<module>/` is one product module: `account`, `chat`, `paper`, `job` and `inbox`. Other modules import it only through its `index.ts`.
+  - `commands.ts` binds the module's contract commands with `bindCommands` and its reads with `tableQuery`. `account` binds its reads in `queries.ts`.
+  - `http.ts` mounts its routes. `store.ts` holds most of its database writes. Only files under the module's own directory write its tables.
+- Other api folders:
+  - `registry/` runs every command, writes the `activity`, `pending_actions` and idempotency rows, and builds the Coach's tools.
+  - `coach/` runs a Coach turn and is the only importer of the AI SDK. It has no contract commands.
+  - `apply/` fetches job postings for `job`. `mail/` sends sign-in codes. `db/schema.ts` is the schema.
+- `apps/web/src` is the SPA. `routes/` holds pages and `features/<surface>/` holds each surface's components and state. `lib/` is the only place that calls the api.
+  - `contract-client.ts` runs commands and owns read keys and refresh.
+  - `api.ts` (`apiFetch`) and `requests.ts` (`endpoints`) fetch reads.
+  - `coach-stream.ts` reads the Coach stream.
 - `packages/ui/src/components` is the shadcn kit. See Design system below.
 
 To add a product action, follow `docs/adr/0010-one-typed-contract-for-commands-and-reads.md`:
@@ -28,12 +40,12 @@ To add a product action, follow `docs/adr/0010-one-typed-contract-for-commands-a
 Tests that hold this shape, and what each one rejects:
 
 - `apps/api/src/registry/boundaries.test.ts` rejects an import into another api module that skips its `index.ts`.
-- `apps/api/src/registry/ownership.test.ts` rejects a write to a table from outside its owning module.
-- `apps/api/src/registry/names.test.ts` rejects a command or Coach tool name that the registry does not have.
-- `apps/api/src/registry/*-contract.test.ts` and `contract.type-test.ts` reject a binding that drifts from the contract.
+- `apps/api/src/registry/ownership.test.ts` rejects a write to a table from outside its owning module's directory.
+- `apps/api/src/registry/names.test.ts` rejects a command, read or Coach tool name used in the web, the fake Coach or the domain that the registry does not have.
+- `apps/api/src/**/*-contract.test.ts` and `apps/api/src/registry/contract.type-test.ts` reject a binding that drifts from the contract.
 - `apps/web/src/test/request-boundary.test.ts` rejects an API path, `fetch` or query invalidation outside `apps/web/src/lib`.
 - `apps/web/src/test/design-vocabulary.test.ts` and `ui-kit-contract.test.ts` enforce the design system.
-- `scripts/adr-citations.test.mjs` rejects a citation of an ADR number with no file in `docs/adr`.
+- `scripts/adr-citations.test.mjs` rejects a citation of an ADR number or path with no file in `docs/adr`. It cannot tell when an old number now names a different decision.
 
 ### Git
 
