@@ -1,5 +1,6 @@
 import { useRef } from "react"
 
+import type { LandingBenefit } from "../landing-copy.ts"
 import { translateWorld } from "./camera.ts"
 import { Chunks } from "./chunks.tsx"
 import { FigureCard } from "./frame.tsx"
@@ -9,7 +10,7 @@ import { back, carriage, near } from "./plotter/geometry.ts"
 
 type TraceName = "user" | "coach" | "letter"
 
-export function PlotterCard() {
+export function PlotterCard({ benefit }: { benefit: LandingBenefit }) {
   const svgRef = useRef<SVGSVGElement>(null)
   const carriageRef = useRef<SVGGElement>(null)
   const traces = useRef<Record<TraceName, SVGElement[]> | null>(null)
@@ -48,8 +49,8 @@ export function PlotterCard() {
         }
       }}
       titleId="landing-plotter-title"
-      heading="Written for you"
-      description="Paste a job post and get a CV and letter that lead with your best work."
+      heading={benefit.title}
+      description={benefit.body}
     >
       <svg
         ref={svgRef}

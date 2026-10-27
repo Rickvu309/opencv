@@ -8,13 +8,11 @@ import {
   PRICING_COMPARE,
   PRICING_DESCRIPTION,
   PRICING_FAQ,
-  PRICING_FOOTER,
   PRICING_FREE,
   PRICING_HEADLINE,
   PRICING_INCLUDED,
   PRICING_PRO,
   PRICING_SUBHEAD,
-  PRICING_TAGLINE,
   PRICING_TITLE,
 } from "./landing-copy.ts"
 import { LandingFooter } from "./landing-footer.tsx"
@@ -152,7 +150,7 @@ export function PricingPage() {
         </section>
         <LandingClose />
       </main>
-      <LandingFooter columns={PRICING_FOOTER} tagline={PRICING_TAGLINE} />
+      <LandingFooter />
     </div>
   )
 }

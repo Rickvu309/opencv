@@ -1,5 +1,6 @@
 import { useRef } from "react"
 
+import type { LandingBenefit } from "../landing-copy.ts"
 import { translateWorld } from "./camera.ts"
 import { Chunks } from "./chunks.tsx"
 import { back, carriage, near } from "./dispatch/geometry.ts"
@@ -7,7 +8,7 @@ import { FigureCard } from "./frame.tsx"
 import { VIEW } from "./layout.ts"
 import { DISPATCH_SPEC, dispatchPose } from "./model.ts"
 
-export function DispatchCard() {
+export function DispatchCard({ benefit }: { benefit: LandingBenefit }) {
   const carriageRef = useRef<SVGGElement>(null)
 
   return (
@@ -22,8 +23,8 @@ export function DispatchCard() {
         )
       }}
       titleId="landing-dispatch-title"
-      heading="Ready in minutes"
-      description="Stop rewriting the same CV. Get a tailored first draft in about two minutes."
+      heading={benefit.title}
+      description={benefit.body}
     >
       <svg
         viewBox={`0 0 ${VIEW.width} ${VIEW.height}`}

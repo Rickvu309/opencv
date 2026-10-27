@@ -31,6 +31,17 @@ The checker still measures 26 properties at 1440x900, 390x844 and reduced motion
 | 25  | hero-image-attrs-and-paint          | Kept. The hero image is the chair.                                                                                                  |
 | 26  | no-sideways-scroll                  | Added. The page must not scroll sideways at 1440 or 390.                                                                            |
 
-Pinned copy the rules read: `LANDING_HEADLINE`, `LANDING_SUBHEAD`, `LANDING_STATEMENT_LEAD`, `LANDING_STATEMENT_REST`, `LANDING_FEATURES`, `LANDING_LOGO_LABEL`, `LANDING_QUOTES`, `LANDING_PRIMARY_LABEL`.
+Pinned copy the rules read: `LANDING_HEADLINE`, `LANDING_SUBHEAD`, `LANDING_STATEMENT_LEAD`, `LANDING_STATEMENT_REST`, `LANDING_PRODUCTS`, `LANDING_LOGO_LABEL`, `LANDING_STORIES`, `LANDING_PRIMARY_LABEL`.
 
 Sync commit: 760127f63a4ae9552e377f84223e769bea3900f8. The checker printed 26 PASS at that commit.
+
+## Landing rebuild to the newest frame (#438)
+
+- Surfaces are now `paper`, `apply`, `coach` (probe, 02/06/10/11).
+- 06 is `product-titles-name-the-surface`: 1 to 3 words, since titles are the surface names.
+- 11 is `product-body-ties-to-hero`: reads the whole intro paragraph, because the design's Coach text opens "Ask in plain words."
+- 12 reads the new quotes (`LANDING_STORIES`). 13 is `customer-and-cv-alt`: a customer portrait alt replaces the student alt.
+- 15 expects Product, Stories and Pricing (Examples was dropped from the nav).
+- 19 lets app logos and customer portraits carry a plain alt; photos of product screens still need a surface name.
+- 07, 08, 24 treat a `/sign-in` link that is not "Log in" as the sign-up link. The app has no `/sign-up` route, so these were failing before this change.
+- Pinned copy now includes `LANDING_PRODUCTS`, `LANDING_STORIES`.
