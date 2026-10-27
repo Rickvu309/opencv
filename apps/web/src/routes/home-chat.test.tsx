@@ -49,7 +49,7 @@ describe("Home Chat mode and History", { timeout: 15_000 }, () => {
     await sendMessage("Help me plan the week")
 
     const working = within(
-      screen.getByRole("log", { name: "Thread" })
+      screen.getByRole("log", { name: "Chat" })
     ).getByRole("status")
     expect(working).toHaveTextContent("Thinking")
     expect(screen.queryByText("Thinking…")).not.toBeInTheDocument()
@@ -57,7 +57,7 @@ describe("Home Chat mode and History", { timeout: 15_000 }, () => {
     expect(
       screen.queryByRole("button", { name: "Send" })
     ).not.toBeInTheDocument()
-    expect(screen.getByRole("log", { name: "Thread" })).toHaveTextContent(
+    expect(screen.getByRole("log", { name: "Chat" })).toHaveTextContent(
       "Help me plan the week"
     )
     expect(
@@ -239,7 +239,7 @@ describe("Home Chat mode and History", { timeout: 15_000 }, () => {
     await expectHomeIdle()
     await sendMessage("Show me **markdown** please")
 
-    const chat = await screen.findByRole("log", { name: "Thread" })
+    const chat = await screen.findByRole("log", { name: "Chat" })
     expect(await screen.findByText("star")).toBeInTheDocument()
     expect(chat.querySelector("strong")?.textContent).toBe("star")
     expect(chat.querySelector("code")?.textContent).toBe("Prep")
@@ -291,7 +291,7 @@ describe("Home Chat mode and History", { timeout: 15_000 }, () => {
     fireEvent.click(screen.getByRole("button", { name: "Regenerate" }))
     expect(await screen.findByText("Second answer")).toBeInTheDocument()
 
-    const chat = screen.getByRole("log", { name: "Thread" })
+    const chat = screen.getByRole("log", { name: "Chat" })
     expect(within(chat).getByText("First answer")).toBeInTheDocument()
     expect(within(chat).getByText("Second answer")).toBeInTheDocument()
     expect(within(chat).getAllByText("Help me plan the week")).toHaveLength(1)
@@ -374,7 +374,7 @@ describe("Home Chat mode and History", { timeout: 15_000 }, () => {
     )
     expect(screen.getByText("First answer")).toBeInTheDocument()
     expect(
-      within(screen.getByRole("log", { name: "Thread" })).getAllByText("Cap me")
+      within(screen.getByRole("log", { name: "Chat" })).getAllByText("Cap me")
     ).toHaveLength(1)
     expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument()
   })
@@ -385,7 +385,7 @@ describe("Home Chat mode and History", { timeout: 15_000 }, () => {
     await openStoredChat(new RegExp(FIXTURE_CHATS[0]!.title))
     await expectChatText(FIXTURE_CHATS[0]!.messages[0]!.text)
 
-    const chat = screen.getAllByRole("log", { name: "Thread" })[0]!
+    const chat = screen.getAllByRole("log", { name: "Chat" })[0]!
     const regenerates = within(chat).getAllByRole("button", {
       name: "Regenerate",
     })
@@ -432,7 +432,7 @@ describe("Home Chat mode and History", { timeout: 15_000 }, () => {
     await expectHomeIdle()
 
     await sendMessage("Are you there?")
-    const chat = await screen.findByRole("log", { name: "Thread" })
+    const chat = await screen.findByRole("log", { name: "Chat" })
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "The Coach is unavailable right now. Try again in a moment."
     )
@@ -450,7 +450,7 @@ describe("Home Chat mode and History", { timeout: 15_000 }, () => {
       expect(screen.queryByRole("alert")).not.toBeInTheDocument()
     })
     expect(
-      within(screen.getByRole("log", { name: "Thread" })).getAllByText(
+      within(screen.getByRole("log", { name: "Chat" })).getAllByText(
         "Are you there?"
       )
     ).toHaveLength(1)

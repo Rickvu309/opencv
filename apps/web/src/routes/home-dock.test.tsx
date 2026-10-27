@@ -44,7 +44,7 @@ describe("Home Coach dock", () => {
 
     expect(composer).toHaveValue(first!.prompt)
     expect(
-      screen.queryByRole("log", { name: "Thread" })
+      screen.queryByRole("log", { name: "Chat" })
     ).not.toBeInTheDocument()
   })
 
@@ -57,7 +57,7 @@ describe("Home Coach dock", () => {
     fireEvent.keyDown(composer, { key: "Enter", shiftKey: true })
     expect(getLastCoachRequest()?.text).not.toBe("Line one")
     expect(
-      screen.queryByRole("log", { name: "Thread" })
+      screen.queryByRole("log", { name: "Chat" })
     ).not.toBeInTheDocument()
 
     fireEvent.keyDown(composer, { key: "Enter" })

@@ -35,7 +35,7 @@ export function ChatLog({
       <MessageScroller>
         <MessageScrollerViewport className={viewportClassName}>
           <MessageScrollerContent
-            aria-label="Thread"
+            aria-label="Chat"
             className={className}
             {...props}
           >

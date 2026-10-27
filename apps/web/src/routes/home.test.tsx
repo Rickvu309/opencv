@@ -39,7 +39,7 @@ describe("Home idle", () => {
       chip.prompt
     )
     expect(
-      screen.queryByRole("log", { name: "Thread" })
+      screen.queryByRole("log", { name: "Chat" })
     ).not.toBeInTheDocument()
   })
 
@@ -58,7 +58,7 @@ describe("Home idle", () => {
       ""
     )
     expect(
-      within(screen.getByRole("log", { name: "Thread" })).getByRole("status")
+      within(screen.getByRole("log", { name: "Chat" })).getByRole("status")
     ).toHaveTextContent("Thinking")
     expect(
       screen.queryByRole("heading", {
@@ -69,7 +69,7 @@ describe("Home idle", () => {
       })
     ).not.toBeInTheDocument()
     expect(
-      await screen.findByRole("log", { name: "Thread" })
+      await screen.findByRole("log", { name: "Chat" })
     ).toHaveTextContent("Help me plan the week")
     await waitFor(() => {
       expect(screen.queryByText("Thinking")).not.toBeInTheDocument()

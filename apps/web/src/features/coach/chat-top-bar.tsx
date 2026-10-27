@@ -24,17 +24,17 @@ export function ChatTopBar({ onNewChat, chatTitle, onDeleteChat }: Props) {
           onClick={() => setConfirmOpen(true)}
         >
           <Trash2 className="size-4" />
-          Delete Thread
+          Delete chat
         </Button>
       ) : null}
       <Button type="button" variant="ghost" size="sm" onClick={onNewChat}>
         <SquarePen className="size-4" />
-        New Thread
+        New chat
       </Button>
       {confirmOpen ? (
         <DestructiveCommandDialog
           open
-          title="Delete Thread"
+          title="Delete chat"
           name={chatTitle ?? null}
           onOpenChange={setConfirmOpen}
           onConfirm={() => onDeleteChat?.()}

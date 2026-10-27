@@ -10,6 +10,8 @@ import {
   paperDocStatusSchema,
 } from "./paper.js"
 
+// Stored on every untitled chat row and matched to detect one, so it keeps the
+// old word; screens show shellCopy.newChat instead.
 export const DEFAULT_CHAT_TITLE = "New Thread"
 
 export const messageRoleSchema = z.enum(["user", "coach"])

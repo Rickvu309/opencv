@@ -38,7 +38,7 @@ describe("Home without the old history nav", () => {
     await expectPaperDrive()
     await goHome()
 
-    expect(screen.getByRole("log", { name: "Thread" })).toHaveTextContent(
+    expect(screen.getByRole("log", { name: "Chat" })).toHaveTextContent(
       "Should I finish my CV first?"
     )
     expect(

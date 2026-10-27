@@ -67,7 +67,7 @@ describe("coachSendErrorMessage", () => {
       coachSendErrorMessage(
         new ApiError(404, ERROR_CODES.NOT_FOUND, "Thread not found")
       )
-    ).toMatch(/new Thread/)
+    ).toMatch(/new chat/)
   })
 
   it("never shows a thrown Error's message", () => {

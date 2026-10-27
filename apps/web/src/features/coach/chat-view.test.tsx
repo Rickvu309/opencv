@@ -60,7 +60,7 @@ describe("ChatView thinking state", () => {
   it("shows one Thinking loader and no second shimmer while waiting", () => {
     render(createElement(ChatView, { messages: [], waiting: true }))
 
-    const chat = screen.getByRole("log", { name: "Thread" })
+    const chat = screen.getByRole("log", { name: "Chat" })
     expect(within(chat).getByRole("status")).toHaveTextContent("Thinking")
     expect(screen.queryByText("Thinking…")).not.toBeInTheDocument()
   })

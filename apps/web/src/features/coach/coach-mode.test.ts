@@ -130,7 +130,7 @@ describe("Home dock mode control", () => {
       expect(getLastCoachRequest()?.mode).toBe("light")
     })
     expect(
-      await screen.findByRole("log", { name: "Thread" })
+      await screen.findByRole("log", { name: "Chat" })
     ).toBeInTheDocument()
     expectChecked(
       screen.getByRole("radiogroup", { name: "Coach mode" }),
