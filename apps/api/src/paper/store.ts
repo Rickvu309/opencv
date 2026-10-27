@@ -3,7 +3,10 @@ import { randomBytes } from "node:crypto"
 import {
   DEFAULT_PAPER_DOC_NAME,
   ERROR_CODES,
+  IMPORT_PAGES_MESSAGE,
   PAPER_CONTENT_VERSION,
+  cvBlockDocumentSchema,
+  cvDocumentV1Schema,
   decodePaperContent,
   emptyCvDocument,
   emptyLetterDocument,
@@ -21,6 +24,7 @@ import { getDb } from "../db/context.js"
 import { files, jobs, paperDocs, paperShares, user } from "../db/schema.js"
 import { createId } from "../id.js"
 import { CommandError } from "../registry/errors.js"
+import { parseImportFile } from "./import-parse.js"
 
 const FILE_CAP = 8_000_000
 const AVATAR_CAP = 2_000_000
@@ -71,6 +75,13 @@ function canonicalJson(value: unknown): string {
 }
 
 function requireDocument(kind: PaperStoredKind, document: unknown) {
+  if (kind === "cv") {
+    const blocks = cvBlockDocumentSchema.safeParse(document)
+    if (blocks.success) return blocks.data as Record<string, unknown>
+    const codec = cvDocumentV1Schema.safeParse(document)
+    if (codec.success) return codec.data as Record<string, unknown>
+    throw new CommandError(ERROR_CODES.VALIDATION_ERROR, "Invalid content")
+  }
   const decoded = decodePaperContent(kind, PAPER_CONTENT_VERSION, document)
   if (!decoded.ok) {
     throw new CommandError(ERROR_CODES.VALIDATION_ERROR, decoded.message)
@@ -332,10 +343,16 @@ export async function saveFile(input: {
         : "File must be 8 MB or smaller."
     )
   }
-  if (input.purpose === "import" && !IMPORT_TYPES.has(input.mediaType)) {
+  const pagesFile =
+    input.name.toLowerCase().endsWith(".pages") ||
+    input.mediaType === "application/vnd.apple.pages"
+  if (
+    input.purpose === "import" &&
+    (pagesFile || !IMPORT_TYPES.has(input.mediaType))
+  ) {
     throw new CommandError(
       ERROR_CODES.FILE_UNSUPPORTED,
-      "Upload a PDF, Word, or text file."
+      pagesFile ? IMPORT_PAGES_MESSAGE : "Upload a PDF, Word, or text file."
     )
   }
   if (input.purpose === "avatar" && !input.mediaType.startsWith("image/")) {
@@ -411,18 +428,31 @@ export async function importPaper(actor: Actor, fileId: FileId) {
   if (!file || file.purpose !== "import") {
     throw new CommandError(ERROR_CODES.NOT_FOUND, "Import file not found")
   }
-  let document = blankDocument("cv")
-  if (
-    file.mediaType === "application/json" ||
-    file.mediaType === "text/plain"
-  ) {
-    const text = file.bytes.toString("utf8")
-    try {
-      document = requireDocument("cv", JSON.parse(text) as unknown)
-    } catch {
-      document = blankDocument("cv")
-    }
+  let parsed: Awaited<ReturnType<typeof parseImportFile>>
+  try {
+    parsed = await parseImportFile({
+      name: file.name,
+      mediaType: file.mediaType,
+      bytes: file.bytes,
+    })
+  } catch {
+    throw new CommandError(
+      ERROR_CODES.VALIDATION_ERROR,
+      "Could not import that file. Try it again."
+    )
   }
+  if (!parsed.ok) {
+    await getDb()
+      .delete(files)
+      .where(and(eq(files.id, file.id), eq(files.userId, actor.userId)))
+    throw new CommandError(
+      parsed.code === "LINK_UNREADABLE"
+        ? ERROR_CODES.LINK_UNREADABLE
+        : ERROR_CODES.FILE_UNSUPPORTED,
+      parsed.message
+    )
+  }
+  const document = parsed.document as Record<string, unknown>
   const created = await createPaper(actor, {
     kind: "cv",
     name: file.name.replace(/\.[^.]+$/, "") || DEFAULT_PAPER_DOC_NAME.cv,
@@ -432,16 +462,16 @@ export async function importPaper(actor: Actor, fileId: FileId) {
     .update(paperDocs)
     .set({
       sourceFileId: file.id,
-      checks:
-        file.mediaType === "text/plain" || file.mediaType === "application/json"
-          ? []
-          : [
-              {
-                id: "import",
-                kind: "import",
-                message: "Imported file needs a read.",
-              },
-            ],
+      checks: [
+        {
+          id: "source-file",
+          kind: "source",
+          message: file.name,
+          blockId: "",
+          resolved: true,
+        },
+        ...parsed.checks,
+      ] as unknown as { id: string; kind: string; message: string }[],
     })
     .where(eq(paperDocs.id, created.id))
   return toPaper(await ownedPaper(actor.userId, parsePaperId(created.id)))
