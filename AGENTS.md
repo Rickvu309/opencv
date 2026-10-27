@@ -140,7 +140,7 @@ Design parity. The landing's design source is the pen frame named in `apps/web/s
 | Rule | Enforced by |
 | --- | --- |
 | Landing text matches the pen frame | `landing-design-parity.test.tsx` |
-| Landing art comes from pen geometry | `scripts/pen-art-to-svg.mjs` and verify-landing 27 (landing on its own branch) |
-| Nav lockup spacing matches the frame | verify-landing 28 (same) |
+| Landing art comes from pen geometry | `scripts/pen-art-to-svg.mjs` and verify-landing 27 |
+| Nav lockup spacing matches the frame | verify-landing 28 |
 | Stock tokens only | `design-vocabulary.test.ts` |
 | Module boundaries | `boundaries.test.ts` |
