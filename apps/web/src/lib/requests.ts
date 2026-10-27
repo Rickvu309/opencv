@@ -13,7 +13,7 @@ export const endpoints = {
   inboxConnect: "/api/inbox/connect",
   inboxThread: (threadId: string) => `/api/inbox/${threadId}`,
   paper: "/api/paper",
-  paperOfKind: (kind: string) => `/api/paper?kind=${kind}`,
+  paperOfKind: (kind: "cv" | "letter") => `/api/paper?kind=${kind}`,
   paperDoc: (docId: string) => `/api/paper/${docId}`,
   paperFiles: "/api/paper/files",
   paperPages: (docId: string) => `/api/paper/${docId}/pages`,
@@ -23,7 +23,7 @@ export const endpoints = {
   chats: "/api/chats",
   chat: (chatId: string) => `/api/chats/${chatId}`,
   chatStop: (chatId: string) => `/api/chats/${chatId}/stop`,
-  activity: (query: URLSearchParams | string) => `/api/activity?${query}`,
+  activity: (query: URLSearchParams) => `/api/activity?${query}`,
   activityOfSubject: (subjectId: string) =>
     `/api/activity?subjectId=${encodeURIComponent(subjectId)}`,
   jobs: "/api/jobs",
@@ -33,10 +33,10 @@ export const endpoints = {
   search: (query: string) => `/api/search?q=${encodeURIComponent(query)}`,
 } as const
 
-/** Query keys for reads that are not contract queries. */
+/** The one read that is not a contract query. */
 export const inboxConnectKey = ["inbox-connect"] as const
 
-/** For bodies `apiFetch` cannot carry: uploads and file downloads. */
+/** For requests `apiFetch` cannot carry: uploads, file downloads and bare JSON reads outside the envelope. */
 export function fetchBinary(path: string, init?: RequestInit) {
   return fetch(new URL(path, apiBaseUrl), init)
 }

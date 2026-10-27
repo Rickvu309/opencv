@@ -1,7 +1,3 @@
-import { apiFetch } from "@/lib/api.ts"
-import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
-import { endpoints } from "@/lib/requests.ts"
-
 export type ShellJob = {
   id: string
   title: string
@@ -36,27 +32,11 @@ function parseJobs(data: unknown): ShellJob[] {
   })
 }
 
-export async function listStarredJobs() {
-  try {
-    const body = await apiFetch<SuccessBody<unknown>>(endpoints.jobs)
-    return parseJobs(unwrapData(body))
-  } catch {
-    return []
-  }
-}
+export const starredJobs = parseJobs
 
 export function inboxUnreadCount(data: unknown) {
   const threads = record(data)?.threads
   if (!Array.isArray(threads)) return null
   const count = threads.filter((item) => record(item)?.unread === true).length
   return count > 0 ? count : null
-}
-
-export async function readInboxUnreadCount() {
-  try {
-    const body = await apiFetch<SuccessBody<unknown>>(endpoints.inbox)
-    return inboxUnreadCount(unwrapData(body))
-  } catch {
-    return null
-  }
 }

@@ -35,7 +35,6 @@ export function InboxReader({
   onBack,
   onPrevious,
   onNext,
-  onChanged,
 }: {
   detail: InboxDetail
   index: number
@@ -46,7 +45,6 @@ export function InboxReader({
   onBack: () => void
   onPrevious: () => void
   onNext: () => void
-  onChanged: () => void
 }) {
   const draft =
     detail.draft && (detail.draft.body !== "" || detail.draft.times.length > 0)
@@ -115,7 +113,6 @@ export function InboxReader({
                 if (result.activityId)
                   void undoActivity(queryClient, result.activityId)
               })
-              onChanged()
             })
           }
         >
@@ -131,7 +128,6 @@ export function InboxReader({
                 until: nextMorningIso(now, zone),
               })
               toast("Snoozed until 7:00")
-              onChanged()
             })
           }
         >
@@ -198,7 +194,6 @@ export function InboxReader({
                       if (result.activityId)
                         void undoActivity(queryClient, result.activityId)
                     })
-                    onChanged()
                   })
                 }
               >
@@ -212,7 +207,6 @@ export function InboxReader({
                     await runCommand("inbox.clearSuggestion", {
                       threadId: detail.id,
                     })
-                    onChanged()
                   })
                 }
               >
@@ -288,7 +282,6 @@ export function InboxReader({
                     setBody(next.body)
                     setSavedBody(next.body)
                     setLimit(null)
-                    onChanged()
                   })
                 }
               >
@@ -307,7 +300,6 @@ export function InboxReader({
                     }
                     await runCommand("inbox.send", { threadId: detail.id })
                     toast("Reply sent")
-                    onChanged()
                   })
                 }
               >

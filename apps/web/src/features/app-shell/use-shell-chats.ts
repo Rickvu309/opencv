@@ -1,16 +1,13 @@
 import { useQuery } from "@tanstack/react-query"
 
 import {
-  listStarredJobs,
-  readInboxUnreadCount,
+  inboxUnreadCount,
+  starredJobs,
 } from "@/features/app-shell/shell-api.ts"
+import { inboxListKey, fetchInbox } from "@/features/inbox/inbox-api.ts"
+import { jobListKey, listJobs } from "@/features/apply/apply-api.ts"
 import { chatListKey, listThreads } from "@/features/home/thread-api.ts"
 import { listPaper, paperListKey } from "@/features/paper/paper-api.ts"
-
-export const shellQueryKeys = {
-  jobs: ["shell", "jobs"] as const,
-  inbox: ["shell", "inbox"] as const,
-}
 
 export function useShellChats() {
   return useQuery({
@@ -22,8 +19,9 @@ export function useShellChats() {
 
 export function useShellFavorites() {
   const jobs = useQuery({
-    queryKey: shellQueryKeys.jobs,
-    queryFn: listStarredJobs,
+    queryKey: jobListKey(),
+    queryFn: listJobs,
+    select: starredJobs,
   })
   const docs = useQuery({
     queryKey: paperListKey(),
@@ -43,7 +41,8 @@ export function useShellFavorites() {
 
 export function useInboxUnread() {
   return useQuery({
-    queryKey: shellQueryKeys.inbox,
-    queryFn: readInboxUnreadCount,
+    queryKey: inboxListKey(),
+    queryFn: fetchInbox,
+    select: inboxUnreadCount,
   })
 }

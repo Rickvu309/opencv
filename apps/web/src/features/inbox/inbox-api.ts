@@ -2,6 +2,7 @@ import type { QueryOutput } from "@workspace/domain"
 
 import { ApiError, apiFetch } from "@/lib/api.ts"
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
+import { queryKey } from "@/lib/contract-client.ts"
 import { endpoints } from "@/lib/requests.ts"
 
 export class InboxLimitError extends Error {
@@ -24,6 +25,8 @@ export function isCoachLimit(error: unknown): error is ApiError {
 export async function inboxLimitFrom(error: ApiError) {
   return new InboxLimitError(error.message, await readCoachReset())
 }
+
+export const inboxListKey = () => queryKey({ query: "inbox.list" })
 
 export function fetchInbox() {
   return apiFetch<SuccessBody<QueryOutput<"inbox.list">>>(endpoints.inbox).then(

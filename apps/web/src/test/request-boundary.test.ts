@@ -12,6 +12,15 @@ const FORBIDDEN: { name: string; pattern: RegExp }[] = [
   { name: '"/api/" path', pattern: /\/api\// },
   { name: "queryKey: [", pattern: /queryKey:\s*\[/ },
   { name: "invalidateQueries", pattern: /invalidateQueries/ },
+  {
+    name: "key array definition",
+    pattern: /\b(?:const|let|var)\s+\w*[kK]eys?\s*=\s*[[{]/,
+  },
+  {
+    name: "cache call with a literal key",
+    pattern:
+      /(?:setQueryData|getQueryData|cancelQueries|removeQueries|setQueriesData|getQueriesData)\(\s*\[/,
+  },
 ]
 
 function sourceFiles(dir: string): string[] {

@@ -5,8 +5,8 @@ import {
   type Profile,
 } from "@workspace/domain"
 
-import { fetchProfile, profileKey, usageKey } from "@/lib/account-api.ts"
-import { refreshKey, runContractCommand } from "@/lib/contract-client.ts"
+import { fetchProfile, profileKey } from "@/lib/account-api.ts"
+import { refreshReads, runContractCommand } from "@/lib/contract-client.ts"
 
 export function useCoachMode() {
   const queryClient = useQueryClient()
@@ -41,8 +41,10 @@ export function useCoachMode() {
       }
     },
     onSettled: () => {
-      void refreshKey(queryClient, profileKey())
-      void refreshKey(queryClient, usageKey())
+      void refreshReads(queryClient, [
+        { query: "profile.get" },
+        { query: "coach.usage" },
+      ])
     },
   })
 

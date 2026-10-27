@@ -45,7 +45,6 @@ function renderReader(detail: typeof LOCAL_DETAIL) {
         onBack={vi.fn()}
         onPrevious={vi.fn()}
         onNext={vi.fn()}
-        onChanged={vi.fn()}
       />
     </QueryClientProvider>
   )
