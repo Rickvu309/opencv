@@ -1,6 +1,8 @@
 import { defineConfig } from "vitest/config"
 
 export default defineConfig({
+  // Vitest's node environment resolves through the ssr config.
+  ssr: { resolve: { conditions: ["opencv-source"] } },
   test: {
     testTimeout: 15_000,
     globalSetup: ["./src/test/global-setup.ts"],

@@ -14,16 +14,19 @@
       "dependsOn": ["^format"]
     },
     "typecheck": {
-      "dependsOn": ["^build", "^typecheck"]
+      "dependsOn": ["^typecheck"]
     },
     "dev": {
       "cache": false,
       "persistent": true
     },
     "test": {
-      "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "passThroughEnv": ["VITEST_MAX_WORKERS"]
+      "passThroughEnv": ["VITEST_MAX_WORKERS"],
+      "dependsOn": ["transit"]
+    },
+    "transit": {
+      "dependsOn": ["^transit"]
     }
   }
 }

@@ -1,7 +1,7 @@
 // Starts and stops the real api (PGlite, scripted Coach) and web dev server on ports 4450 to 4459 by
 // calling the verify-opencv skill's launch.sh and cleanup.sh. That skill is not modified.
 import { execFileSync } from "node:child_process"
-import { existsSync, readFileSync } from "node:fs"
+import { readFileSync } from "node:fs"
 import { homedir } from "node:os"
 import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -11,14 +11,6 @@ const skill = join(repo, ".claude/skills/verify-opencv/scripts")
 const root = join(homedir(), "tmp", "verify-app-ui", "stack")
 
 export function startStack({ apiPort, webPort, run }) {
-  // The api imports the built domain package; a fresh worktree has no dist yet.
-  if (!existsSync(join(repo, "packages/domain/dist/index.js"))) {
-    execFileSync("pnpm", ["--filter", "@workspace/domain", "build"], {
-      cwd: repo,
-      stdio: "ignore",
-      timeout: 300000,
-    })
-  }
   const env = {
     ...process.env,
     OPENCV_VERIFY_ROOT: root,
