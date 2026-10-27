@@ -1,14 +1,11 @@
 import type { CoachReceiptDetail, ThreadToolPart } from "@workspace/domain"
 
-import {
-  commandNameFromTool,
-  receiptHeadline,
-} from "@/features/home/coach-receipt.ts"
+import { receiptHeadline } from "@/features/home/coach-receipt.ts"
 import type { HomeMessage } from "@/features/home/threads.ts"
 
 export type UpdateContentDetail = Extract<
   CoachReceiptDetail,
-  { type: "paper.updateContent" }
+  { type: "paper.replace" }
 >
 
 export type CoachToolStatus = "running" | "done" | "error"
@@ -45,13 +42,13 @@ export function toCoachParts(message: HomeMessage): CoachPart[] {
     const tool: CoachToolPart = {
       kind: "tool",
       key,
-      name: commandNameFromTool(part.name),
+      name: part.name,
       label: receiptHeadline(part),
       status: part.ok ? "done" : "error",
       part,
     }
     const diff =
-      part.ok && !part.undone && part.detail?.type === "paper.updateContent"
+      part.ok && !part.undone && part.detail?.type === "paper.replace"
         ? part.detail
         : null
     return diff

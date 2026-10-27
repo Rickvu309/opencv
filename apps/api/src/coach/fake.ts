@@ -12,13 +12,13 @@ export const DEMO_COACH_SCRIPT: CoachStreamPart[] = [
   {
     type: "tool-call",
     toolCallId: "call_1",
-    name: "job_list",
+    name: "job.list",
     input: {},
   },
   {
     type: "tool-result",
     toolCallId: "call_1",
-    name: "job_list",
+    name: "job.list",
     summary: "Listed your Apply cards",
     ok: true,
     reversal: {

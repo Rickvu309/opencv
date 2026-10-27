@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
 import {
   emptyCvDocument,
@@ -57,6 +58,7 @@ export function PaperCvEditor({
   onBack: () => void
 }) {
   const run = useRunCommand()
+  const queryClient = useQueryClient()
   const [cv, setCv] = useState(() => cvOf(initial.document, initial.templateId))
   const [name, setName] = useState(initial.name)
   const [nameError, setNameError] = useState<string | null>(null)
@@ -136,12 +138,13 @@ export function PaperCvEditor({
     try {
       const chat = await run("chat.create", { title: "Fit to one page" })
       await streamPaperTurn({
+        queryClient,
         chatId: chat.id,
         text: "Tighten this CV so it fits on one page.",
         focusDocId: initial.id,
         onText: () => undefined,
         onToolResult: (tool) => {
-          if (tool === "paper.replace" || tool === "paper_replace") {
+          if (tool === "paper.replace") {
             void getPaper(initial.id).then((next) => {
               setCv(cvOf(next.document, next.templateId))
               versionRef.current = next.contentVersion

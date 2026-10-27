@@ -1,5 +1,6 @@
 import { z } from "zod"
 
+import type { ChatToolName } from "./chat-turn.js"
 import type { CommandEnvelope } from "./envelope.js"
 import type { ReversalDescriptor } from "./commands.js"
 import type { CoachReceiptDetail, CoachSelection } from "./threads.js"
@@ -183,14 +184,14 @@ export type CoachTextDeltaPart = {
 export type CoachToolCallPart = {
   type: "tool-call"
   toolCallId: string
-  name: string
+  name: ChatToolName
   input: unknown
 }
 
 export type CoachToolResultPart = {
   type: "tool-result"
   toolCallId: string
-  name: string
+  name: ChatToolName
   summary: string
   ok: boolean
   reversal?: ReversalDescriptor
@@ -219,39 +220,6 @@ export type CoachStreamPart =
   | CoachToolResultPart
   | CoachFinishPart
   | CoachErrorPart
-
-export type CoachSseMessageStartData = {
-  chatId: string
-}
-
-export type CoachSseTextDeltaData = {
-  text: string
-}
-
-export type CoachSseToolCallData = {
-  toolCallId: string
-  name: string
-  input: unknown
-}
-
-export type CoachSseToolResultData = {
-  toolCallId: string
-  name: string
-  summary: string
-  ok: boolean
-  reversal?: ReversalDescriptor
-  result: CommandEnvelope
-  detail?: CoachReceiptDetail
-  activityId?: string
-}
-
-export type CoachSseMessageEndData = {
-  chatId: string
-}
-
-export type CoachSseErrorData = {
-  message: string
-}
 
 export type CoachFocusDoc = {
   id: string

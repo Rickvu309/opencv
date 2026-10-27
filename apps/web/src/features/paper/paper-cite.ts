@@ -254,7 +254,7 @@ export function paperCiteHunksFromParts(
 ): { sectionId: string; section: string }[] {
   if (!parts) return []
   return parts.flatMap((part) => {
-    if (part.type !== "tool" || part.detail?.type !== "paper.updateContent") {
+    if (part.type !== "tool" || part.detail?.type !== "paper.replace") {
       return []
     }
     return part.detail.hunks.map((hunk) => ({

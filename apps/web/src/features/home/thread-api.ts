@@ -1,19 +1,13 @@
 import {
-  COACH_SSE_EVENTS,
   DEFAULT_THREAD_TITLE,
   parseChatId,
   type ChatDetail,
+  type ChatTurnEventOf,
   type ChatId,
   type ChatListItem,
   type ChatMessage,
   type CoachMode,
   type CoachSelection,
-  type CoachSseErrorData,
-  type CoachSseMessageEndData,
-  type CoachSseMessageStartData,
-  type CoachSseTextDeltaData,
-  type CoachSseToolCallData,
-  type CoachSseToolResultData,
   type ThreadDetail,
   type ThreadListItem,
   type ThreadMessage,
@@ -22,11 +16,10 @@ import {
 
 import type { QueryClient } from "@tanstack/react-query"
 
-import { apiFetch, apiStream } from "@/lib/api.ts"
-import { ApiError } from "@/lib/api-error.ts"
+import { apiFetch } from "@/lib/api.ts"
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
 import { queryKey, runContractCommand } from "@/lib/contract-client.ts"
-import { readSseStream } from "@/lib/sse.ts"
+import { streamChatTurn } from "@/lib/coach-stream.ts"
 
 // The api speaks chats. The UI renders threads. This is the one place that maps between them.
 function asThread(chat: ChatListItem): ThreadListItem {
@@ -114,12 +107,12 @@ export function deleteThread(queryClient: QueryClient, chatId: string) {
 }
 
 export type CoachStreamHandlers = {
-  onMessageStart?: (data: CoachSseMessageStartData) => void
-  onTextDelta?: (data: CoachSseTextDeltaData) => void
-  onToolCall?: (data: CoachSseToolCallData) => void
-  onToolResult?: (data: CoachSseToolResultData) => void
-  onMessageEnd?: (data: CoachSseMessageEndData) => void
-  onError?: (data: CoachSseErrorData) => void
+  onMessageStart?: (data: ChatTurnEventOf<"message-start">) => void
+  onTextDelta?: (data: ChatTurnEventOf<"text-delta">) => void
+  onToolCall?: (data: ChatTurnEventOf<"tool-call">) => void
+  onToolResult?: (data: ChatTurnEventOf<"tool-result">) => void
+  onMessageEnd?: (data: ChatTurnEventOf<"message-end">) => void
+  onError?: (data: ChatTurnEventOf<"error">) => void
 }
 
 type CoachStreamBody =
@@ -131,49 +124,47 @@ type CoachStreamBody =
     }
   | { regenerate: true; mode?: CoachMode; focusDocId?: string | null }
 
-async function consumeCoachStream(
+function consumeCoachStream(
+  queryClient: QueryClient,
   threadId: string,
   body: CoachStreamBody,
   handlers: CoachStreamHandlers,
   signal?: AbortSignal
 ): Promise<void> {
-  const res = await apiStream(`/api/chats/${threadId}/turns`, {
-    method: "POST",
-    body: JSON.stringify(body),
+  return streamChatTurn({
+    queryClient,
+    chatId: threadId,
+    body,
     signal,
+    onEvent(event) {
+      switch (event.type) {
+        case "message-start":
+          handlers.onMessageStart?.(event)
+          break
+        case "text-delta":
+          handlers.onTextDelta?.(event)
+          break
+        case "tool-call":
+          handlers.onToolCall?.(event)
+          break
+        case "tool-result":
+          handlers.onToolResult?.(event)
+          break
+        case "message-end":
+          handlers.onMessageEnd?.(event)
+          break
+        case "error":
+          handlers.onError?.(event)
+          break
+        default:
+          break
+      }
+    },
   })
-
-  if (!res.body) {
-    throw new ApiError(502, "REQUEST_FAILED", "Coach stream was empty")
-  }
-
-  for await (const event of readSseStream(res.body, { signal })) {
-    switch (event.event) {
-      case COACH_SSE_EVENTS.messageStart:
-        handlers.onMessageStart?.(event.data as CoachSseMessageStartData)
-        break
-      case COACH_SSE_EVENTS.textDelta:
-        handlers.onTextDelta?.(event.data as CoachSseTextDeltaData)
-        break
-      case COACH_SSE_EVENTS.toolCall:
-        handlers.onToolCall?.(event.data as CoachSseToolCallData)
-        break
-      case COACH_SSE_EVENTS.toolResult:
-        handlers.onToolResult?.(event.data as CoachSseToolResultData)
-        break
-      case COACH_SSE_EVENTS.messageEnd:
-        handlers.onMessageEnd?.(event.data as CoachSseMessageEndData)
-        break
-      case COACH_SSE_EVENTS.error:
-        handlers.onError?.(event.data as CoachSseErrorData)
-        break
-      default:
-        break
-    }
-  }
 }
 
 export async function streamCoachTurn(
+  queryClient: QueryClient,
   threadId: string,
   text: string,
   handlers: CoachStreamHandlers,
@@ -183,6 +174,7 @@ export async function streamCoachTurn(
   selection?: CoachSelection
 ): Promise<void> {
   await consumeCoachStream(
+    queryClient,
     threadId,
     {
       text,
@@ -196,6 +188,7 @@ export async function streamCoachTurn(
 }
 
 export async function streamCoachRegenerate(
+  queryClient: QueryClient,
   threadId: string,
   handlers: CoachStreamHandlers,
   signal?: AbortSignal,
@@ -203,6 +196,7 @@ export async function streamCoachRegenerate(
   focusDocId?: string | null
 ): Promise<void> {
   await consumeCoachStream(
+    queryClient,
     threadId,
     {
       regenerate: true,

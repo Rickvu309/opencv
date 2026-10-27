@@ -73,7 +73,11 @@ function installFetch(mode: "tool" | "stop" | "limit") {
         start(controller) {
           controller.enqueue(
             new TextEncoder().encode(
-              'event: tool-result\ndata: {"name":"paper.replace"}\n\n'
+              [
+                'event: text-delta\ndata: {"text":"Dear team"}\n\n',
+                'event: tool-call\ndata: {"toolCallId":"c1","name":"paper.replace","input":{"docId":"letter-1","contentVersion":1,"document":{"markdown":"Dear team"}}}\n\n',
+                'event: tool-result\ndata: {"toolCallId":"c1","name":"paper.replace","summary":"Updated","ok":true,"result":{"ok":true,"data":{}}}\n\n',
+              ].join("")
             )
           )
           controller.close()

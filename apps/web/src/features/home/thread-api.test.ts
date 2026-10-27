@@ -272,6 +272,7 @@ describe("thread API client", () => {
     const onTextDelta = vi.fn()
     const onMessageEnd = vi.fn()
     await streamCoachTurn(
+      new QueryClient(),
       CHAT_ID,
       "Help me plan the week",
       { onTextDelta, onMessageEnd },
@@ -285,8 +286,14 @@ describe("thread API client", () => {
     expect(init.body).toBe(
       JSON.stringify({ text: "Help me plan the week", mode: "light" })
     )
-    expect(onTextDelta).toHaveBeenCalledWith({ text: "Hello" })
-    expect(onMessageEnd).toHaveBeenCalledWith({ chatId: CHAT_ID })
+    expect(onTextDelta).toHaveBeenCalledWith({
+      type: "text-delta",
+      text: "Hello",
+    })
+    expect(onMessageEnd).toHaveBeenCalledWith({
+      type: "message-end",
+      chatId: CHAT_ID,
+    })
   })
 
   it("includes focusDocId on a Paper-scoped coach turn", async () => {
@@ -296,7 +303,7 @@ describe("thread API client", () => {
       new Response(
         [
           `event: ${COACH_SSE_EVENTS.messageStart}`,
-          `data: ${JSON.stringify({ threadId })}`,
+          `data: ${JSON.stringify({ chatId: threadId })}`,
           "",
           `event: ${COACH_SSE_EVENTS.messageEnd}`,
           `data: ${JSON.stringify({
@@ -320,6 +327,7 @@ describe("thread API client", () => {
     vi.stubGlobal("fetch", fetchMock)
 
     await streamCoachTurn(
+      new QueryClient(),
       threadId,
       "Sharpen this bullet",
       {},
@@ -344,7 +352,7 @@ describe("thread API client", () => {
       new Response(
         [
           `event: ${COACH_SSE_EVENTS.messageStart}`,
-          `data: ${JSON.stringify({ threadId })}`,
+          `data: ${JSON.stringify({ chatId: threadId })}`,
           "",
           `event: ${COACH_SSE_EVENTS.messageEnd}`,
           `data: ${JSON.stringify({
@@ -368,6 +376,7 @@ describe("thread API client", () => {
     vi.stubGlobal("fetch", fetchMock)
 
     await streamCoachTurn(
+      new QueryClient(),
       threadId,
       "What should I cut?",
       {},
@@ -393,7 +402,7 @@ describe("thread API client", () => {
       new Response(
         [
           `event: ${COACH_SSE_EVENTS.messageStart}`,
-          `data: ${JSON.stringify({ threadId })}`,
+          `data: ${JSON.stringify({ chatId: threadId })}`,
           "",
           `event: ${COACH_SSE_EVENTS.messageEnd}`,
           `data: ${JSON.stringify({
@@ -417,6 +426,7 @@ describe("thread API client", () => {
     vi.stubGlobal("fetch", fetchMock)
 
     await streamCoachTurn(
+      new QueryClient(),
       threadId,
       "Rewrite selection",
       {},
@@ -443,7 +453,7 @@ describe("thread API client", () => {
       new Response(
         [
           `event: ${COACH_SSE_EVENTS.messageStart}`,
-          `data: ${JSON.stringify({ threadId })}`,
+          `data: ${JSON.stringify({ chatId: threadId })}`,
           "",
           `event: ${COACH_SSE_EVENTS.textDelta}`,
           `data: ${JSON.stringify({ text: "Again" })}`,
@@ -470,11 +480,20 @@ describe("thread API client", () => {
     vi.stubGlobal("fetch", fetchMock)
 
     const onTextDelta = vi.fn()
-    await streamCoachRegenerate(threadId, { onTextDelta }, undefined, "max")
+    await streamCoachRegenerate(
+      new QueryClient(),
+      threadId,
+      { onTextDelta },
+      undefined,
+      "max"
+    )
 
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
     expect(init.body).toBe(JSON.stringify({ regenerate: true, mode: "max" }))
-    expect(onTextDelta).toHaveBeenCalledWith({ text: "Again" })
+    expect(onTextDelta).toHaveBeenCalledWith({
+      type: "text-delta",
+      text: "Again",
+    })
   })
 
   it("undoes a receipt with activity.undo", async () => {

@@ -74,4 +74,75 @@ describe("chat receipts", () => {
     })
     await client.close()
   })
+
+  it("reads a chat stored before the stream contract with current tool names and receipt kinds", async () => {
+    const { db, client } = await createMigratedTestDb()
+    const userId = "user-legacy-parts"
+    await db.insert(user).values({
+      id: userId,
+      name: "Ada",
+      email: "ada-legacy-parts@example.com",
+    })
+    const actor = personActor(userId)
+    await withDatabase(db, async () => {
+      const chat = await createChat(actor, "Old chat")
+      await insertCoachMessage({
+        chatId: chat.id as never,
+        userId: parseUserId(userId),
+        text: "Done.",
+        status: "final",
+        workedMs: 5,
+        parts: [
+          {
+            type: "tool",
+            name: "paper_replace",
+            summary: "Edited",
+            ok: true,
+            detail: {
+              type: "paper.updateContent",
+              docKind: "cv",
+              docName: "CV",
+              hunks: [],
+            },
+          },
+          {
+            type: "tool",
+            name: "job_move",
+            summary: "Moved",
+            ok: true,
+            detail: {
+              type: "apply.moveCard",
+              title: "Intern",
+              company: "Northwind",
+              from: "inbox",
+              to: "sent",
+            },
+          },
+          {
+            type: "tool",
+            name: "paper_create",
+            summary: "Created",
+            ok: true,
+            detail: {
+              type: "paper.createDoc",
+              docKind: "letter",
+              name: "Letter",
+              status: "draft",
+            },
+          },
+        ],
+      })
+      const read = await getChat(parseUserId(userId), chat.id as never)
+      const parts = read.messages[0]!.parts as {
+        name: string
+        detail: { type: string }
+      }[]
+      expect(parts.map((p) => [p.name, p.detail.type])).toEqual([
+        ["paper.replace", "paper.replace"],
+        ["job.move", "job.move"],
+        ["paper.create", "paper.create"],
+      ])
+    })
+    await client.close()
+  })
 })

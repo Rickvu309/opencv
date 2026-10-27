@@ -1,7 +1,8 @@
 import {
-  COACH_SSE_EVENTS,
   appendCoachPart,
   coachActor,
+  chatToolNameSchema,
+  commandNameSchema,
   deterministicThreadTitle,
   focusedEditNeedsReplace,
   parseChatId,
@@ -9,6 +10,8 @@ import {
   personActor,
   shouldAutoTitleThread,
   textFromParts,
+  type ChatToolName,
+  type ChatTurnEvent,
   type CoachActor,
   type CoachFocusDoc,
   type CoachMode,
@@ -38,11 +41,11 @@ import type { Registry, ToolEntry } from "../registry/registry.js"
 import { toolResultFromExecute } from "./receipt.js"
 import { titleFromModel } from "./router.js"
 import {
+  eventForPart,
   isDisconnected,
-  sseDataForPart,
   takeUntilAbort,
   waitForAbort,
-  writeEvent,
+  writeChatEvent,
   writeHeartbeat,
 } from "./sse.js"
 import { finishCoachUsage, openCoachUsage } from "./usage-store.js"
@@ -104,12 +107,10 @@ export async function runCoachTurn(options: {
   const aborted = waitForAbort(options.stream, signal)
   const toolEntries = await registry.tools(actor)
 
-  const emit = async (event: string, data: unknown) => {
-    await writeEvent(options.stream, event, data)
-  }
+  const emit = (event: ChatTurnEvent) => writeChatEvent(options.stream, event)
 
   try {
-    await emit(COACH_SSE_EVENTS.messageStart, { chatId: options.chatId })
+    await emit({ type: "message-start", chatId: options.chatId })
     const iterable = options.runtime
       ? options.runtime.streamTurn({
           userId: options.userId,
@@ -154,29 +155,20 @@ export async function runCoachTurn(options: {
       }
       if (part.type === "error") {
         status = "error"
-        await emit(COACH_SSE_EVENTS.error, { message: part.message })
+        await emit({ type: "error", message: part.message })
         break
       }
       if (part.type === "tool-call") {
-        const entry = toolEntries.find(
-          (item) =>
-            item.name === part.name ||
-            item.name.replaceAll(".", "_") === part.name
-        )
-        if (entry)
-          await emit(COACH_SSE_EVENTS.step, { label: entry.step(part.input) })
+        const entry = toolEntries.find((item) => item.name === part.name)
+        if (entry) await emit({ type: "step", label: entry.step(part.input) })
       }
-      if (
-        part.type === "text-delta" ||
-        part.type === "tool-call" ||
-        part.type === "tool-result"
-      ) {
-        await emit(part.type, sseDataForPart(part))
-      }
+      const event = eventForPart(part)
+      if (event) await emit(event)
       if (part.type === "tool-result" && part.pendingActionId && part.command) {
-        await emit(COACH_SSE_EVENTS.confirm, {
+        await emit({
+          type: "confirm",
           pendingActionId: part.pendingActionId,
-          command: part.command,
+          command: commandNameSchema.parse(part.command),
           summary: part.summary,
         })
       }
@@ -189,12 +181,12 @@ export async function runCoachTurn(options: {
         mode: options.mode,
         focusKind: options.focusDoc ? "paper" : null,
         askedForEdit: asked,
-        calledReplace:
-          called.has("paper.replace") || called.has("paper_replace"),
+        calledReplace: called.has("paper.replace"),
       })
     ) {
       status = "error"
-      await emit(COACH_SSE_EVENTS.error, {
+      await emit({
+        type: "error",
         message:
           "The edit did not save. Ask again and I will update the document.",
       })
@@ -206,7 +198,7 @@ export async function runCoachTurn(options: {
       status = "error"
       const message =
         error instanceof Error ? error.message : "The Coach stopped."
-      await emit(COACH_SSE_EVENTS.error, { message })
+      await emit({ type: "error", message })
     }
   } finally {
     clearInterval(heartbeat)
@@ -242,12 +234,13 @@ export async function runCoachTurn(options: {
     })
     if (!isDisconnected(options.stream, signal)) {
       const snapshot = await readUsage(options.userId).catch(() => null)
-      await emit(COACH_SSE_EVENTS.usage, {
+      await emit({
+        type: "usage",
         plan: options.plan,
         mode: options.mode,
         capped: snapshot?.day.capped ?? false,
       })
-      await emit(COACH_SSE_EVENTS.messageEnd, { chatId: options.chatId })
+      await emit({ type: "message-end", chatId: options.chatId })
     }
   }
 }
@@ -324,7 +317,7 @@ async function maybeTitle(input: {
   })
 }
 
-async function* liveParts(input: {
+export async function* liveParts(input: {
   model?: LanguageModel
   history: ThreadMessage[]
   registry: Registry
@@ -339,8 +332,11 @@ async function* liveParts(input: {
     return
   }
   const tools: ToolSet = {}
+  // Model providers reject dots in tool names, so the model sees `paper_replace`; everything past this function sees `paper.replace`.
+  const registryName = new Map<string, ChatToolName>()
   for (const entry of input.toolEntries) {
     const name = entry.name.replaceAll(".", "_")
+    registryName.set(name, chatToolNameSchema.parse(entry.name))
     tools[name] = tool({
       description: entry.description,
       inputSchema: entry.input,
@@ -388,26 +384,31 @@ async function* liveParts(input: {
       if (delta) yield { type: "text-delta", text: delta }
       continue
     }
+    // The model can name a tool it was not given (hallucinated, or gated off). The SDK answers it with a tool error and the turn goes on, so the stream skips it.
     if (part.type === "tool-call") {
+      const name = registryName.get(part.toolName)
+      if (!name) continue
       yield {
         type: "tool-call",
         toolCallId: part.toolCallId,
-        name: part.toolName,
+        name,
         input: part.input,
       }
       continue
     }
     if (part.type === "tool-result") {
+      const name = registryName.get(part.toolName)
+      if (!name) continue
       const output = record(part.output)
       yield toolResultFromExecute({
         toolCallId: part.toolCallId,
-        name: part.toolName,
-        summary: textField(output?.summary) || part.toolName,
+        name,
+        summary: textField(output?.summary) || name,
         result: {
           pending: output?.pending === true,
           pendingActionId: textField(output?.pendingActionId) || undefined,
-          command: textField(output?.command) || part.toolName,
-          summary: textField(output?.summary) || part.toolName,
+          command: textField(output?.command) || name,
+          summary: textField(output?.summary) || name,
           output: output?.data ?? output?.output,
           activityId: textField(output?.activityId) || null,
           reversal: reversalPlan(output?.reversal),

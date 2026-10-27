@@ -17,7 +17,6 @@ import {
   upsertThreadListItem,
 } from "@/features/home/thread-api.ts"
 import type { HomeMessage } from "@/features/home/threads.ts"
-import { refreshPaperQueries } from "@/lib/contract-client.ts"
 
 type KeepAbortedInput = {
   id: string
@@ -131,24 +130,10 @@ export function useThreadCache({
     [focusDocId, queryClient, titleForCreate, writeDetail]
   )
 
-  const rememberPaperTools = useCallback(
-    (parts: ThreadMessagePart[]) => {
-      if (
-        parts.some(
-          (part) => part.type === "tool" && part.name.startsWith("paper_")
-        )
-      ) {
-        void refreshPaperQueries(queryClient)
-      }
-    },
-    [queryClient]
-  )
-
   return {
     writeDetail,
     rememberListItem,
     hydrateThread,
     keepStreamedCoach,
-    rememberPaperTools,
   }
 }

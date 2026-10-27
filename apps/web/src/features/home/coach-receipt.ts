@@ -13,10 +13,6 @@ const RECEIPT_STAGES: { id: string; label: string; dot: string }[] = [
   { id: "closed", label: "Closed", dot: "bg-chart-5" },
 ]
 
-export function commandNameFromTool(name: string) {
-  return name.includes(".") ? name : name.replace("_", ".")
-}
-
 export function stageLabel(stage: string) {
   return RECEIPT_STAGES.find((item) => item.id === stage)?.label ?? stage
 }
@@ -24,10 +20,10 @@ export function stageLabel(stage: string) {
 export { RECEIPT_STAGES }
 
 export function namedReceiptHeadline(detail: CoachReceiptDetail) {
-  if (detail.type === "paper.updateContent") {
+  if (detail.type === "paper.replace") {
     return `Updated ${PAPER_KIND_LABEL[detail.docKind]} ${detail.docName}`
   }
-  if (detail.type === "apply.moveCard") {
+  if (detail.type === "job.move") {
     return `Moved ${detail.title} at ${detail.company} from ${stageLabel(detail.from)} to ${stageLabel(detail.to)}`
   }
   return `Created ${PAPER_KIND_LABEL[detail.docKind]} ${detail.name}`

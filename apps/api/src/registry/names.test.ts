@@ -13,15 +13,6 @@ const scanRoots = [
   "packages/domain/src",
 ]
 
-const LEGACY: Record<string, string> = {
-  "paper.updateContent":
-    "receipt kind stored in chat_messages.parts, renamed with the Coach stream contract",
-  "paper.createDoc":
-    "receipt kind stored in chat_messages.parts, renamed with the Coach stream contract",
-  "apply.moveCard":
-    "receipt kind stored in chat_messages.parts, renamed with the Coach stream contract",
-}
-
 const prefixes =
   "chat|paper|job|inbox|profile|account|notify|actions|activity|coach|threads|apply|pitch"
 const dotted = new RegExp(
@@ -74,24 +65,16 @@ describe("registry names", () => {
   const referenced = referencedNames()
 
   it("registers every command name the web, fake coach and domain refer to", () => {
-    const unknown = listUnknown(
-      referenced.dotted,
-      (name) => registered.has(name) || name in LEGACY
-    )
-    expect(unknown, unknown.join("\n")).toEqual([])
-  })
-
-  it("registers every Coach tool name they refer to, with no LEGACY exceptions", () => {
-    const unknown = listUnknown(referenced.tools, (name) =>
+    const unknown = listUnknown(referenced.dotted, (name) =>
       registered.has(name)
     )
     expect(unknown, unknown.join("\n")).toEqual([])
   })
 
-  it("keeps a LEGACY entry only while something still refers to it", () => {
-    const stale = Object.keys(LEGACY).filter(
-      (name) => !referenced.dotted.has(name)
+  it("registers every Coach tool name they refer to", () => {
+    const unknown = listUnknown(referenced.tools, (name) =>
+      registered.has(name)
     )
-    expect(stale).toEqual([])
+    expect(unknown, unknown.join("\n")).toEqual([])
   })
 })

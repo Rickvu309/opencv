@@ -113,12 +113,9 @@ export function useCoachTurn({
   const actionError =
     failure?.kind === "regenerate" ? failure.error.message : null
 
-  const {
-    rememberListItem,
-    hydrateThread,
-    keepStreamedCoach,
-    rememberPaperTools,
-  } = useThreadCache({ titleForCreate, focusDocId })
+  const { rememberListItem, hydrateThread, keepStreamedCoach } = useThreadCache(
+    { titleForCreate, focusDocId }
+  )
 
   const resolveThreadId = useCallback(
     async (text: string, generation: number): Promise<string | null> => {
@@ -215,7 +212,7 @@ export function useCoachTurn({
         },
         onToolResult(data) {
           if (stale()) return
-          paint(appendCoachPart(parts, { type: "tool-result", ...data }))
+          paint(appendCoachPart(parts, data))
         },
         onMessageEnd() {
           ended = true
@@ -231,7 +228,6 @@ export function useCoachTurn({
 
         await stream(id, handlers, controller.signal)
         if (stale()) return
-        rememberPaperTools(parts)
 
         if (ended) {
           const detail = await hydrateThread(id)
@@ -287,13 +283,7 @@ export function useCoachTurn({
         if (!stale()) abortRef.current = null
       }
     },
-    [
-      hydrateThread,
-      keepStreamedCoach,
-      queryClient,
-      rememberPaperTools,
-      threadId,
-    ]
+    [hydrateThread, keepStreamedCoach, queryClient, threadId]
   )
 
   const send = useCallback(
@@ -323,6 +313,7 @@ export function useCoachTurn({
         resolveId: (generation) => resolveThreadId(trimmed, generation),
         stream: (id, handlers, signal) =>
           streamCoachTurn(
+            queryClient,
             id,
             trimmed,
             handlers,
@@ -346,6 +337,7 @@ export function useCoachTurn({
       focusDocId,
       mode,
       phase,
+      queryClient,
       resolveThreadId,
       runCoachStream,
       sendError,
@@ -367,7 +359,14 @@ export function useCoachTurn({
       user: lastUser,
       resolveId: async () => id,
       stream: (threadKey, handlers, signal) =>
-        streamCoachRegenerate(threadKey, handlers, signal, mode, focusDocId),
+        streamCoachRegenerate(
+          queryClient,
+          threadKey,
+          handlers,
+          signal,
+          mode,
+          focusDocId
+        ),
       makeError: (message, local) => ({
         message,
         userMessageId: lastUser?.id ?? "",
@@ -376,7 +375,7 @@ export function useCoachTurn({
       }),
     })
     return true
-  }, [baseline, focusDocId, mode, phase, runCoachStream, threadId])
+  }, [baseline, focusDocId, mode, phase, queryClient, runCoachStream, threadId])
 
   const retry = useCallback(() => {
     if (!failure) return false

@@ -1,5 +1,6 @@
 import {
   diffPaperContent,
+  type ChatToolName,
   type CoachReceiptDetail,
   type CoachToolResultPart,
   type JobStage,
@@ -30,20 +31,19 @@ export function receiptDetail(
   command: string,
   output: unknown
 ): CoachReceiptDetail | undefined {
-  const name = command.replaceAll("_", ".")
   const row = record(output)
   if (!row) return undefined
-  if (name === "paper.replace") {
+  if (command === "paper.replace") {
     const kind = row.kind
     if (kind !== "cv" && kind !== "letter" && kind !== "proof") return undefined
     return {
-      type: "paper.updateContent",
+      type: "paper.replace",
       docKind: kind,
       docName: text(row.name) || "Document",
       hunks: diffPaperContent(kind, row.previousDocument, row.document),
     }
   }
-  if (name === "job.move") {
+  if (command === "job.move") {
     if (typeof row.fromStage !== "string" || typeof row.stage !== "string")
       return undefined
     if (!(row.fromStage in APPLY_STAGE) || !(row.stage in APPLY_STAGE))
@@ -51,7 +51,7 @@ export function receiptDetail(
     const from = APPLY_STAGE[row.fromStage as JobStage]
     const to = APPLY_STAGE[row.stage as JobStage]
     return {
-      type: "apply.moveCard",
+      type: "job.move",
       title: text(row.title),
       company: text(row.company),
       from,
@@ -59,9 +59,9 @@ export function receiptDetail(
     }
   }
   if (
-    name === "paper.create" ||
-    name === "paper.import" ||
-    name === "paper.duplicate"
+    command === "paper.create" ||
+    command === "paper.import" ||
+    command === "paper.duplicate"
   ) {
     const kind = row.kind
     if (kind !== "cv" && kind !== "letter" && kind !== "proof") return undefined
@@ -70,7 +70,7 @@ export function receiptDetail(
         ? row.status
         : "draft"
     return {
-      type: "paper.createDoc",
+      type: "paper.create",
       docKind: kind,
       name: text(row.name) || "Document",
       status,
@@ -94,7 +94,7 @@ export function reversalOf(
 
 export function toolResultFromExecute(input: {
   toolCallId: string
-  name: string
+  name: ChatToolName
   summary: string
   result: Pick<
     ExecuteResult,
