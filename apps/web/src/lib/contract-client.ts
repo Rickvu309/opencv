@@ -57,6 +57,12 @@ export function refreshPaperQueries(queryClient: QueryClient) {
   ])
 }
 
+export type RunOptions = {
+  refresh?: boolean
+  /** False for a write that already compares a version, so a replay cannot apply twice. */
+  idempotencyKey?: boolean
+}
+
 export type CommandResult<T> = T & { activityId?: string }
 
 /**
@@ -68,13 +74,18 @@ export async function runContractCommand<N extends ContractCommandName>(
   queryClient: QueryClient,
   name: N,
   input: CommandInput<Commands, N>,
-  options: { refresh?: boolean } = {}
+  options: RunOptions = {}
 ): Promise<CommandResult<CommandOutput<Commands, N>>> {
   const body = await apiFetch<
     SuccessBody<CommandResult<CommandOutput<Commands, N>>>
   >(`/api/commands/${name}`, {
     method: "POST",
-    body: JSON.stringify({ input, idempotencyKey: crypto.randomUUID() }),
+    body: JSON.stringify({
+      input,
+      ...(options.idempotencyKey === false
+        ? {}
+        : { idempotencyKey: crypto.randomUUID() }),
+    }),
   })
   if (options.refresh !== false) {
     await refreshQueries(
@@ -92,7 +103,7 @@ export function useRunCommand() {
     <N extends ContractCommandName>(
       name: N,
       input: CommandInput<Commands, N>,
-      options?: { refresh?: boolean }
+      options?: RunOptions
     ) => runContractCommand(queryClient, name, input, options),
     [queryClient]
   )

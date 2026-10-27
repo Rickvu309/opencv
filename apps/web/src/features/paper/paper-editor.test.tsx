@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 import { render } from "@/test/render-with-client.tsx"
-import { emptyCvDocument, type PaperPages, PaperView } from "@workspace/domain"
+import { emptyCvDocument, type PaperPages, type PaperView } from "@workspace/domain"
 
 import { PaperCvEditor } from "./paper-editor.tsx"
 
