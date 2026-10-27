@@ -2,6 +2,7 @@ import { ApiError, isErrorEnvelope } from "@/lib/api-error.ts"
 import { apiBaseUrl } from "@/lib/api-url.ts"
 import { invalidateClientSession } from "@/lib/auth-client.ts"
 import { SIGNED_OUT_EMAIL_KEY, signInHref } from "@/lib/auth-redirect.ts"
+import { documentHref } from "@/lib/web-origins-env.ts"
 
 export { apiBaseUrl } from "@/lib/api-url.ts"
 export { ApiError, isErrorEnvelope } from "@/lib/api-error.ts"
@@ -26,10 +27,10 @@ function readSignedOutEmail() {
 
 function assignSignIn() {
   if (typeof window === "undefined") return
-  const current = `${window.location.pathname}${window.location.search}`
+  const current = `${window.location.pathname}${window.location.search}${window.location.hash}`
   const next = signInHref(current)
   if (current === next || current.startsWith("/sign-in")) return
-  window.location.assign(next)
+  window.location.assign(documentHref(next))
 }
 
 function defaultOnUnauthorized() {

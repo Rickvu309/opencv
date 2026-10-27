@@ -1,3 +1,4 @@
+import { documentHref } from "@/lib/web-origins-env.ts"
 import { Link } from "@tanstack/react-router"
 
 import { buttonVariants } from "@workspace/ui/components/button"
@@ -142,15 +143,15 @@ export function LandingClose() {
         Start today.
       </p>
       <div className="landing-close-actions">
-        <Link
-          to="/sign-in"
+        <a
+          href={documentHref("/sign-in")}
           className={cn(
             buttonVariants({ size: "lg" }),
             "landing-pill landing-gradient [padding-inline:1.25rem] [block-size:2.75rem]"
           )}
         >
           {LANDING_PRIMARY_LABEL}
-        </Link>
+        </a>
         <Link
           to="/"
           hash="paper"

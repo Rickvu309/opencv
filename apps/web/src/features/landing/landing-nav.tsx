@@ -1,3 +1,4 @@
+import { documentHref } from "@/lib/web-origins-env.ts"
 import { useEffect, useState } from "react"
 import { Link } from "@tanstack/react-router"
 
@@ -70,18 +71,21 @@ export function LandingNav() {
             })}
           </nav>
           <div className="landing-nav-actions">
-            <Link to="/sign-in" className={cn("landing-link", FOCUS_RING)}>
+            <a
+              href={documentHref("/sign-in")}
+              className={cn("landing-link", FOCUS_RING)}
+            >
               {LANDING_LOGIN_LABEL}
-            </Link>
-            <Link
-              to="/sign-in"
+            </a>
+            <a
+              href={documentHref("/sign-in")}
               className={cn(
                 buttonVariants({ size: "sm" }),
                 "landing-pill landing-gradient [padding-inline:0.75rem] [block-size:2.5rem]"
               )}
             >
               {LANDING_PRIMARY_LABEL}
-            </Link>
+            </a>
           </div>
         </div>
       </div>

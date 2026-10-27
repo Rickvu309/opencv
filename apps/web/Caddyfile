@@ -19,6 +19,8 @@
 		file_server
 	}
 
+	import host-routing.caddy
+
 	handle {
 		header Cache-Control "no-cache"
 

@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router"
+import { documentHref } from "@/lib/web-origins-env.ts"
 
 import { buttonVariants } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
@@ -46,15 +46,15 @@ export function PricingPage() {
                   {PRICING_FREE.period}
                 </span>
               </p>
-              <Link
-                to="/sign-in"
+              <a
+                href={documentHref("/sign-in")}
                 className={cn(
                   buttonVariants({ variant: "outline", size: "lg" }),
                   "rounded-full"
                 )}
               >
                 {PRICING_FREE.cta}
-              </Link>
+              </a>
               <p className="text-sm text-muted-foreground">
                 {PRICING_FREE.note}
               </p>
@@ -74,12 +74,12 @@ export function PricingPage() {
                   {PRICING_PRO.period}
                 </span>
               </p>
-              <Link
-                to="/sign-in"
+              <a
+                href={documentHref("/sign-in")}
                 className={cn(buttonVariants({ size: "lg" }), "rounded-full")}
               >
                 {PRICING_PRO.cta}
-              </Link>
+              </a>
               <p className="text-sm text-muted-foreground">
                 {PRICING_PRO.note}
               </p>

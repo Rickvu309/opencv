@@ -1,3 +1,4 @@
+import { documentHref } from "@/lib/web-origins-env.ts"
 import { useState } from "react"
 import { Link } from "@tanstack/react-router"
 import { ChevronDown } from "lucide-react"
@@ -123,15 +124,15 @@ export function HelpPage() {
             {HELP_STUCK_TITLE}
           </h2>
           <p className="landing-section-body">{HELP_STUCK_BODY}</p>
-          <Link
-            to="/sign-in"
+          <a
+            href={documentHref("/sign-in")}
             className={cn(
               buttonVariants({ size: "lg" }),
               "landing-pill landing-gradient"
             )}
           >
             {HELP_STUCK_LINK}
-          </Link>
+          </a>
         </section>
       </main>
       <LandingFooter />
