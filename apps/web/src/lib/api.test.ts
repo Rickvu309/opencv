@@ -70,7 +70,7 @@ describe("apiFetch", () => {
         Response.json(
           {
             ok: false,
-            error: { code: "NOT_FOUND", message: "Thread missing" },
+            error: { code: "NOT_FOUND", message: "Chat missing" },
           },
           { status: 404 }
         )
@@ -82,7 +82,7 @@ describe("apiFetch", () => {
     expect(error).toMatchObject({
       status: 404,
       code: "NOT_FOUND",
-      message: "Thread missing",
+      message: "Chat missing",
     })
   })
 

@@ -22,7 +22,9 @@ import { queryKey, runContractCommand } from "@/lib/contract-client.ts"
 import { streamChatTurn } from "@/lib/coach-stream.ts"
 import { endpoints } from "@/lib/requests.ts"
 
-// The api speaks wire chats (ChatDetail, ChatMessage). The UI renders ChatRecord, ChatSummary and ChatEntry. This is the one place that maps between them.
+// The api speaks wire chats (ChatDetail, ChatMessage). The UI renders
+// ChatRecord, ChatSummary and ChatEntry. This is the one place that maps
+// between them.
 function asChat(chat: ChatListItem): ChatSummary {
   return {
     id: chat.id,

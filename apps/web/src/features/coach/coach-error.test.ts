@@ -28,7 +28,7 @@ describe("coachSendErrorMessage", () => {
 
   it.each([
     [404, "USER_NOT_FOUND", "User not found."],
-    [404, ERROR_CODES.NOT_FOUND, "Thread not found"],
+    [404, ERROR_CODES.NOT_FOUND, "Chat not found"],
     [401, ERROR_CODES.UNAUTHORIZED, "Authentication required"],
     [403, ERROR_CODES.FORBIDDEN, "Forbidden"],
     [403, ERROR_CODES.COACH_NOT_ALLOWED, "This Command cannot be run"],
@@ -65,7 +65,7 @@ describe("coachSendErrorMessage", () => {
   it("tells the person to reload or start a new Chat when a record is missing", () => {
     expect(
       coachSendErrorMessage(
-        new ApiError(404, ERROR_CODES.NOT_FOUND, "Thread not found")
+        new ApiError(404, ERROR_CODES.NOT_FOUND, "Chat not found")
       )
     ).toMatch(/new chat/)
   })

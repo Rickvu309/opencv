@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { chatDisplayTitle } from "@workspace/domain"
 
 import { ChatTopBar } from "@/features/coach/chat-top-bar.tsx"
 import { authClient } from "@/lib/auth-client.ts"
@@ -27,8 +28,8 @@ export function HomeDashboard() {
     activeChatId,
     chats,
   } = useChatStore()
-  const activeTitle =
-    chats.find((chat) => chat.id === activeChatId)?.title ?? null
+  const activeChat = chats.find((chat) => chat.id === activeChatId)
+  const activeTitle = activeChat ? chatDisplayTitle(activeChat.title) : null
   const [draft, setDraft] = useState("")
   const turnActive = phase !== "idle"
   const started = messages.length > 0 || turnActive || activeChatId != null

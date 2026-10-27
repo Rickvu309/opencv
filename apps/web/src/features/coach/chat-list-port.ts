@@ -1,10 +1,10 @@
-export type ChatSummary = {
+export type ChatListPortItem = {
   id: string
   title: string
 }
 
 export type ChatListPort = {
-  chats: ChatSummary[]
+  chats: ChatListPortItem[]
   activeChatId: string | null
   openChat: (id: string) => void
   newChat: () => void
@@ -13,6 +13,6 @@ export type ChatListPort = {
 
 export function toChatSummaries(
   chats: ReadonlyArray<{ id: string; title: string }>
-): ChatSummary[] {
+): ChatListPortItem[] {
   return chats.map(({ id, title }) => ({ id, title }))
 }

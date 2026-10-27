@@ -11,7 +11,8 @@ import { Menu, Search, SquarePen } from "lucide-react"
 import { NavProfile } from "@/features/app-shell/nav-profile.tsx"
 import { searchShortcutLabel } from "@/features/app-shell/search-shortcut.ts"
 import { SHELL_PRIMARY, SHELL_WORK } from "@/features/app-shell/sidebar-nav.ts"
-import { shellChatTitle, shellCopy } from "@/features/app-shell/shell-copy.ts"
+import { chatDisplayTitle } from "@workspace/domain"
+import { shellCopy } from "@/features/app-shell/shell-copy.ts"
 import { HOME_PATH } from "@/features/app-shell/surfaces.ts"
 import {
   DESKTOP_MEDIA_QUERY,
@@ -274,7 +275,7 @@ export function AppShell({ onSearch }: AppShellProps) {
       setPanel({
         open: true,
         mode: "side",
-        title: shellChatTitle(chat.title),
+        title: chatDisplayTitle(chat.title),
         chatId: chat.id,
       })
     } catch {
@@ -389,7 +390,7 @@ export function AppShell({ onSearch }: AppShellProps) {
               dockRef={dockRef}
               titles={(chats.data ?? []).map((chat) => ({
                 id: chat.id,
-                title: shellChatTitle(chat.title),
+                title: chatDisplayTitle(chat.title),
               }))}
               onOpenChat={(chat) => openPanel(chat)}
               onCoach={() =>

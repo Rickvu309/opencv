@@ -31,7 +31,7 @@ describe("shared Coach turn hook", () => {
       existsSync(path.join(webSrc, "features/paper/paper-ai-chat.tsx"))
     ).toBe(false)
     expect(
-      existsSync(path.join(webSrc, "features/paper/coach-chat-panel.tsx"))
+      existsSync(path.join(webSrc, "features/paper/coach-thread-panel.tsx"))
     ).toBe(false)
 
     const hook = read("features/coach/use-coach-turn.ts")
@@ -39,7 +39,7 @@ describe("shared Coach turn hook", () => {
     expect(hook).toMatch(/getChatByFocusDoc/)
     expect(hook).toMatch(/focusDocId/)
     expect(hook).not.toMatch(/sessionStorage/)
-    expect(hook).not.toMatch(/paperCoachChatStorageKey/)
+    expect(hook).not.toMatch(/paperCoach(Thread|Chat)StorageKey/)
 
     const store = read("features/coach/chat-store.tsx")
     expect(store).toMatch(/useCoachTurn/)

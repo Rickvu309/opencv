@@ -1,5 +1,6 @@
 import {
   COACH_SSE_EVENTS,
+  DEFAULT_CHAT_TITLE,
   type ChatRecord,
   type ChatSummary,
 } from "@workspace/domain"
@@ -162,7 +163,11 @@ describe("chat API client", () => {
       .fn()
       .mockResolvedValueOnce(
         envelope(
-          chatRow({ title: "New Thread", focusKind: "paper", focusId: DOC_ID })
+          chatRow({
+            title: DEFAULT_CHAT_TITLE,
+            focusKind: "paper",
+            focusId: DOC_ID,
+          })
         )
       )
       .mockResolvedValueOnce(

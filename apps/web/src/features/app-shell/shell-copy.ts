@@ -1,5 +1,3 @@
-import { DEFAULT_CHAT_TITLE } from "@workspace/domain"
-
 export const shellCopy = {
   wordmark: "opencv",
   search: "Search",
@@ -20,9 +18,3 @@ export const shellCopy = {
   expand: "Expand",
   close: "Close",
 } as const
-
-export function shellChatTitle(title: string | null | undefined) {
-  const trimmed = title?.trim() ?? ""
-  if (!trimmed || trimmed === DEFAULT_CHAT_TITLE) return shellCopy.newChat
-  return trimmed
-}
