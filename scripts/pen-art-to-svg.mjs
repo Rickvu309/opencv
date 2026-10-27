@@ -128,18 +128,23 @@ function renderChild(node, index) {
     return `      <path ${attrs.join(" ")} />`
   }
   if (node.type === "ellipse") {
-    const cx = node.x + node.width / 2
-    const cy = node.y + node.height / 2
+    const rx = node.width / 2
+    const ry = node.height / 2
+    // A rotated node is placed by its top-left and spun counter-clockwise
+    // around that corner. SVG rotate() is clockwise, so negate the angle and
+    // pivot on the corner. An unrotated ellipse stays centred in user space
+    // so files with no rotation stay byte-identical.
+    const rotated = Boolean(node.rotation)
     const attrs = [
-      `cx={${num(cx, where)}}`,
-      `cy={${num(cy, where)}}`,
-      `rx={${num(node.width / 2, where)}}`,
-      `ry={${num(node.height / 2, where)}}`,
+      `cx={${num(rotated ? rx : node.x + rx, where)}}`,
+      `cy={${num(rotated ? ry : node.y + ry, where)}}`,
+      `rx={${num(rx, where)}}`,
+      `ry={${num(ry, where)}}`,
       `fill="${colour(node.fill, where)}"`,
     ]
-    if (node.rotation) {
+    if (rotated) {
       attrs.push(
-        `transform="rotate(${num(node.rotation, where)} ${num(cx, where)} ${num(cy, where)})"`
+        `transform="translate(${num(node.x, where)} ${num(node.y, where)}) rotate(${num(-node.rotation, where)})"`
       )
     }
     attrs.push(...strokeAttrs(node, where))

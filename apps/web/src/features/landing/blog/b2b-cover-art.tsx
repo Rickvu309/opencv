@@ -24,20 +24,20 @@ export function B2bCoverArt() {
         strokeWidth={0.597656}
       />
       <ellipse
-        cx={80.95855}
-        cy={179.7441}
+        cx={5.66455}
+        cy={9.6442}
         rx={5.66455}
         ry={9.6442}
         fill="var(--border)"
-        transform="rotate(-27.5613 80.95855 179.7441)"
+        transform="translate(75.294 170.0999) rotate(27.5613)"
       />
       <ellipse
-        cx={77.3533}
-        cy={178.1857}
+        cx={2.0434}
+        cy={3.28}
         rx={2.0434}
         ry={3.28}
         fill="var(--card)"
-        transform="rotate(-22.4645 77.3533 178.1857)"
+        transform="translate(75.3099 174.9057) rotate(22.4645)"
         stroke="var(--foreground)"
         strokeWidth={0.747069}
       />
@@ -105,52 +105,52 @@ export function B2bCoverArt() {
         strokeWidth={0.664063}
       />
       <ellipse
-        cx={72.3024}
-        cy={204.5906}
+        cx={0.9491}
+        cy={1.4638}
         rx={0.9491}
         ry={1.4638}
         fill="var(--border)"
-        transform="rotate(-30.3371 72.3024 204.5906)"
+        transform="translate(71.3533 203.1268) rotate(30.3371)"
         stroke="var(--muted-foreground)"
         strokeWidth={0.448243}
       />
       <ellipse
-        cx={71.9069}
-        cy={209.76755}
+        cx={0.7788}
+        cy={1.14615}
         rx={0.7788}
         ry={1.14615}
         fill="var(--border)"
-        transform="rotate(-30.3371 71.9069 209.76755)"
+        transform="translate(71.1281 208.6214) rotate(30.3371)"
         stroke="var(--muted-foreground)"
         strokeWidth={0.369385}
       />
       <ellipse
-        cx={72.1402}
-        cy={214.80125}
+        cx={0.8659}
+        cy={1.28075}
         rx={0.8659}
         ry={1.28075}
         fill="var(--border)"
-        transform="rotate(-30.3371 72.1402 214.80125)"
+        transform="translate(71.2743 213.5205) rotate(30.3371)"
         stroke="var(--muted-foreground)"
         strokeWidth={0.409643}
       />
       <ellipse
-        cx={72.1766}
-        cy={220.38105}
+        cx={0.8659}
+        cy={1.35245}
         rx={0.8659}
         ry={1.35245}
         fill="var(--border)"
-        transform="rotate(-30.3371 72.1766 220.38105)"
+        transform="translate(71.3107 219.0286) rotate(30.3371)"
         stroke="var(--muted-foreground)"
         strokeWidth={0.409643}
       />
       <ellipse
-        cx={72.2097}
-        cy={226.8531}
+        cx={0.9282}
+        cy={1.3845}
         rx={0.9282}
         ry={1.3845}
         fill="var(--input)"
-        transform="rotate(-30.3371 72.2097 226.8531)"
+        transform="translate(71.2815 225.4686) rotate(30.3371)"
         stroke="var(--muted-foreground)"
         strokeWidth={0.409643}
       />
