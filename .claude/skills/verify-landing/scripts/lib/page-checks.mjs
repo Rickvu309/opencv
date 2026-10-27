@@ -387,6 +387,9 @@ export function pageChecks({
     button.fontSize === font &&
     Number(button.fontWeight) === 500 &&
     near(button.padInline, pad)
+  // A pill's computed radius is at least half the button height. 0.6 matches near().
+  const pill = (button) =>
+    Boolean(button) && button.radius + 0.6 >= button.h / 2
   const navCta = desktop.ctas?.nav
   const closeCta = desktop.ctas?.close
   const sampleCta = desktop.ctas?.sample
@@ -394,18 +397,25 @@ export function pageChecks({
     sized(navCta, 32, "13px", 12) &&
     navCta.inset &&
     navCta.outer &&
+    pill(navCta) &&
     sized(closeCta, 44, "16px", 20) &&
+    closeCta.inset &&
+    closeCta.outer &&
+    pill(closeCta) &&
     sized(sampleCta, 44, "16px", 20) &&
-    sampleCta.borderVisible === false
+    sampleCta.inset === false &&
+    sampleCta.outer === false &&
+    sampleCta.borderVisible === false &&
+    pill(sampleCta)
   const fmtCta = (button) =>
     button
-      ? `${button.h.toFixed(1)}px ${button.fontSize}/${button.fontWeight} pad ${button.padInline} ${button.inset ? "inset" : "no-inset"} ${button.outer ? "outer" : "no-outer"} border ${button.borderVisible ? "yes" : "no"}`
+      ? `${button.h.toFixed(1)}px ${button.fontSize}/${button.fontWeight} pad ${button.padInline} r ${Number(button.radius).toFixed(1)} ${button.inset ? "inset" : "no-inset"} ${button.outer ? "outer" : "no-outer"} border ${button.borderVisible ? "yes" : "no"}`
       : "missing"
   out.push(
     verdict(
       "29",
       "cta-buttons-match-design",
-      "At 1440 the nav Get started is 32px tall, 13px at weight 500, with 12px inline padding and a box-shadow that has an inset ring and an outer shadow; the close-band Get started and See a sample are 44px tall, 16px at weight 500, with 20px inline padding, and See a sample has no visible border",
+      "At 1440 the nav Get started is 32px tall, 13px at weight 500, with 12px inline padding, an inset ring, an outer shadow, and a border-radius of at least half its height; the close Get started is 44px tall, 16px at weight 500, with 20px inline padding, an inset ring, an outer shadow, and a border-radius of at least half its height; See a sample is the same size with a border-radius of at least half its height, no inset ring, no outer shadow, and no visible border",
       ctaMatches,
       `nav ${fmtCta(navCta)}; close ${fmtCta(closeCta)}; sample ${fmtCta(sampleCta)}`
     )

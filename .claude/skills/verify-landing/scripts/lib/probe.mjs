@@ -214,6 +214,7 @@ function probe(kind) {
       )
       if (!el) return null
       const s = cs(el)
+      const box = el.getBoundingClientRect()
       const parts = shadowParts(s.boxShadow)
       const borderW = Math.max(
         parseFloat(s.borderTopWidth) || 0,
@@ -221,8 +222,33 @@ function probe(kind) {
         parseFloat(s.borderBottomWidth) || 0,
         parseFloat(s.borderLeftWidth) || 0
       )
+      const axisPx = (token, axis) => {
+        const raw = String(token ?? "").trim()
+        if (raw.endsWith("%")) {
+          return (
+            (parseFloat(raw) / 100) * (axis === "x" ? box.width : box.height)
+          )
+        }
+        return parseFloat(raw) || 0
+      }
+      const cornerPx = (value) => {
+        const bits = String(value || "0")
+          .trim()
+          .split(/\s+/)
+          .filter(Boolean)
+        return Math.min(
+          axisPx(bits[0] || "0", "x"),
+          axisPx(bits[1] || bits[0] || "0", "y")
+        )
+      }
+      const radius = Math.min(
+        cornerPx(s.borderTopLeftRadius),
+        cornerPx(s.borderTopRightRadius),
+        cornerPx(s.borderBottomRightRadius),
+        cornerPx(s.borderBottomLeftRadius)
+      )
       return {
-        h: el.getBoundingClientRect().height,
+        h: box.height,
         fontSize: s.fontSize,
         fontWeight: String(s.fontWeight),
         padInline: parseFloat(s.paddingInlineStart || s.paddingLeft) || 0,
@@ -231,6 +257,7 @@ function probe(kind) {
           (part) => !part.includes("inset") && shadowLive(part)
         ),
         borderVisible: borderW >= 0.5 && rgba(s.borderTopColor)[3] > 0.05,
+        radius,
       }
     }
     const closeBand = document.querySelector("#close")
