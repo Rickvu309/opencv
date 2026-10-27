@@ -64,7 +64,10 @@ export async function runContractCommand<N extends ContractCommandName>(
     body: JSON.stringify({ input, idempotencyKey: crypto.randomUUID() }),
   })
   if (options.refresh !== false) {
-    void refreshQueries(queryClient, commands[name].invalidates(input as never))
+    await refreshQueries(
+      queryClient,
+      commands[name].invalidates(input as never)
+    )
   }
   return unwrapData(body)
 }

@@ -187,6 +187,7 @@ export const inboxContract = commandContract({
     invalidates: (input) => [
       ...listAndThreadChanged(input),
       { query: "job.list" },
+      { query: "job.get" },
       { query: "job.calendar" },
     ],
   }),
