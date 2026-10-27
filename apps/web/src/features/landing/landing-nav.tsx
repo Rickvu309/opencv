@@ -28,7 +28,11 @@ export function LandingNav() {
       <div className="landing-grid">
         <div className="landing-bar landing-inset">
           <Link to="/" className={cn("rounded-md", FOCUS_RING)}>
-            <OpenCvLogo withWordmark />
+            <OpenCvLogo
+              withWordmark
+              className="gap-2.25"
+              wordmarkClassName="text-[16px] tracking-[-0.5px]"
+            />
           </Link>
           <nav aria-label="Primary" className="landing-nav-links">
             {LANDING_NAV_LINKS.map((link) =>

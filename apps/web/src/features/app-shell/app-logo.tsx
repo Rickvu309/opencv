@@ -29,6 +29,7 @@ function OpenCvMark({ className }: MarkProps) {
 
 type Props = {
   className?: string
+  wordmarkClassName?: string
   withWordmark?: boolean
   size?: "sm" | "md" | "lg"
 }
@@ -41,6 +42,7 @@ const SIZES = {
 
 export function OpenCvLogo({
   className,
+  wordmarkClassName,
   withWordmark = false,
   size = "md",
 }: Props) {
@@ -52,7 +54,8 @@ export function OpenCvLogo({
         <span
           className={cn(
             "font-semibold tracking-[-0.035em] text-foreground lowercase",
-            s.text
+            s.text,
+            wordmarkClassName
           )}
         >
           {brandName}
