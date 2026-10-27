@@ -1,10 +1,10 @@
 import { z } from "zod"
 
 import { queryContract, queryEntry } from "./contract.js"
-import { chatIdSchema, fileIdSchema, paperIdSchema } from "./ids.js"
+import { chatIdSchema } from "./ids.js"
 import { inboxQueries } from "./inbox-contract.js"
 import { jobQueries } from "./job-contract.js"
-import { paperKeywordGapInputSchema } from "./paper.js"
+import { paperQueries } from "./paper-contract.js"
 
 const empty = z.object({}).strict()
 // Outputs below stay unknown until the unit that contracts that feature types them.
@@ -13,40 +13,7 @@ const untyped = z.unknown()
 export const queries = queryContract({
   ...jobQueries,
   ...inboxQueries,
-  "paper.list": queryEntry({
-    input: z
-      .object({
-        query: z.string().optional(),
-        kind: z.enum(["cv", "letter"]).optional(),
-      })
-      .strict(),
-    output: untyped,
-  }),
-  "paper.get": queryEntry({
-    input: z.object({ docId: paperIdSchema }).strict(),
-    output: untyped,
-  }),
-  "paper.pageCount": queryEntry({
-    input: z.object({ docId: paperIdSchema }).strict(),
-    output: untyped,
-  }),
-  "paper.pdf": queryEntry({
-    input: z.object({ docId: paperIdSchema }).strict(),
-    output: untyped,
-  }),
-  "paper.shared": queryEntry({
-    input: z.object({ token: z.string().min(8) }).strict(),
-    output: untyped,
-  }),
-  "file.get": queryEntry({
-    input: z.object({ fileId: fileIdSchema }).strict(),
-    output: untyped,
-  }),
-  "paper.files": queryEntry({ input: empty, output: untyped }),
-  "paper.keywordGap": queryEntry({
-    input: paperKeywordGapInputSchema,
-    output: untyped,
-  }),
+  ...paperQueries,
   "chat.list": queryEntry({
     input: z.object({ query: z.string().optional() }).strict(),
     output: untyped,

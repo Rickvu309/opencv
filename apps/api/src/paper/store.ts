@@ -7,18 +7,21 @@ import {
   decodePaperContent,
   emptyCvDocument,
   emptyLetterDocument,
+  parseFileId,
   parsePaperId,
+  type PaperView,
   type Actor,
   type FileId,
   type PaperId,
   type PaperReplaceInput,
   type PaperStoredKind,
+  type PaperTemplateId,
   type UserId,
 } from "@workspace/domain"
 import { and, desc, eq } from "drizzle-orm"
 
 import { getDb } from "../db/context.js"
-import { files, jobs, paperDocs, paperShares, user } from "../db/schema.js"
+import { files, jobs, paperDocs, paperShares } from "../db/schema.js"
 import { createId } from "../id.js"
 import { CommandError } from "../registry/errors.js"
 
@@ -29,18 +32,19 @@ function iso(value: Date) {
   return value.toISOString()
 }
 
-export function toPaper(row: typeof paperDocs.$inferSelect) {
+// Documents are decoded against their kind on every write, so the jsonb column holds a CV or letter document.
+export function toPaper(row: typeof paperDocs.$inferSelect): PaperView {
   return {
-    id: row.id,
+    id: parsePaperId(row.id),
     name: row.name,
     kind: row.kind,
-    templateId: row.templateId,
+    templateId: row.templateId as PaperView["templateId"],
     status: row.status,
-    document: row.document,
+    document: row.document as PaperView["document"],
     contentVersion: row.contentVersion,
     checks: row.checks ?? [],
     pageChoice: row.pageChoice,
-    sourceFileId: row.sourceFileId,
+    sourceFileId: row.sourceFileId ? parseFileId(row.sourceFileId) : null,
     createdAt: iso(row.createdAt),
     updatedAt: iso(row.updatedAt),
   }
@@ -83,18 +87,6 @@ function blankDocument(kind: PaperStoredKind) {
     string,
     unknown
   >
-}
-
-async function assertCvAgent(actor: Actor, kind: PaperStoredKind) {
-  if (actor.type !== "coach" || kind !== "cv") return
-  const rows = await getDb()
-    .select({ agentCvs: user.agentCvs })
-    .from(user)
-    .where(eq(user.id, actor.userId))
-    .limit(1)
-  if (rows[0]?.agentCvs === false) {
-    throw new CommandError(ERROR_CODES.FORBIDDEN, "Tailored CVs are disabled.")
-  }
 }
 
 export async function listPapers(
@@ -146,14 +138,13 @@ export async function createPaper(
 
 export async function replacePaper(actor: Actor, input: PaperReplaceInput) {
   const current = await ownedPaper(actor.userId, input.docId)
-  await assertCvAgent(actor, current.kind)
   const document = requireDocument(current.kind, input.document)
   const view = toPaper(current)
   if (
     current.contentVersion === input.contentVersion + 1 &&
     canonicalJson(current.document) === canonicalJson(document)
   ) {
-    return { ...view, previousDocument: current.document }
+    return { ...view, previousDocument: view.document }
   }
   if (current.contentVersion !== input.contentVersion) {
     throw new CommandError(
@@ -170,7 +161,7 @@ export async function replacePaper(actor: Actor, input: PaperReplaceInput) {
     .where(eq(paperDocs.id, current.id))
   return {
     ...toPaper({ ...current, document, contentVersion, updatedAt }),
-    previousDocument: current.document,
+    previousDocument: view.document,
   }
 }
 
@@ -206,16 +197,17 @@ export async function deletePaper(actor: Actor, docId: PaperId) {
 export async function setPaperTemplate(
   actor: Actor,
   docId: PaperId,
-  templateId: string
+  templateId: PaperTemplateId
 ) {
   const current = await ownedPaper(actor.userId, docId)
+  const view = toPaper(current)
   await getDb()
     .update(paperDocs)
     .set({ templateId, updatedAt: new Date() })
     .where(eq(paperDocs.id, current.id))
   return {
     ...toPaper(await ownedPaper(actor.userId, docId)),
-    previousTemplateId: current.templateId,
+    previousTemplateId: view.templateId,
   }
 }
 
@@ -369,7 +361,7 @@ export async function readFileMeta(userId: UserId, fileId: FileId) {
     .limit(1)
   const row = rows[0]
   if (!row) throw new CommandError(ERROR_CODES.NOT_FOUND, "File not found")
-  return row
+  return { ...row, id: parseFileId(row.id) }
 }
 
 export async function listFiles(userId: UserId) {
@@ -385,7 +377,7 @@ export async function listFiles(userId: UserId) {
     .where(eq(files.userId, userId))
     .orderBy(desc(files.createdAt))
   return rows.map((row) => ({
-    id: row.id,
+    id: parseFileId(row.id),
     name: row.name,
     mediaType: row.mediaType,
     byteSize: row.byteSize,
