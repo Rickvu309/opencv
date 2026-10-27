@@ -29,6 +29,7 @@ import {
   type PaperRecord,
 } from "./paper-api.ts"
 import { PaperNewDialog } from "./paper-new-dialog.tsx"
+import { PAPER_GALLERY_DIALOG_CLASS } from "./paper-template-gallery.tsx"
 import { PaperLetterStart } from "./paper-letter.tsx"
 import { PaperImportInput } from "./paper-cv-surface.tsx"
 import { NewPaperCard, PaperCard, SectionHead } from "./paper-parts.tsx"
@@ -358,7 +359,13 @@ export function PaperLibrary({
           if (!open) setMode(null)
         }}
       >
-        <DialogContent>
+        <DialogContent
+          className={
+            mode?.type === "new" && mode.step === "gallery"
+              ? PAPER_GALLERY_DIALOG_CLASS
+              : undefined
+          }
+        >
           <DialogHeader>
             <DialogTitle>
               {mode?.type === "new" && mode.step === "gallery"

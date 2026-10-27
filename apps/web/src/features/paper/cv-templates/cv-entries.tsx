@@ -46,8 +46,9 @@ export function ExperienceList({
     return (
       <>
         {placeholders ? (
-          <div className="mb-3">
+          <div className="mb-3 flex flex-col gap-1">
             <EditableField
+              className="block"
               aria-label="Role, company"
               placeholder="Role, company"
               value=""
@@ -57,6 +58,7 @@ export function ExperienceList({
               }}
             />
             <EditableField
+              className="block"
               aria-label="Dates"
               placeholder="Dates"
               value=""

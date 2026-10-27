@@ -191,6 +191,10 @@ describe("CV editor chrome", () => {
       expect(field).toHaveAttribute("data-placeholder", label)
       expect(field.textContent).toBe("")
     }
+    expect(screen.getByRole("textbox", { name: "Role, company" })).toHaveClass(
+      "block"
+    )
+    expect(screen.getByRole("textbox", { name: "Dates" })).toHaveClass("block")
   })
 
   it("does not send a stale version when a conflict lands between two edits", async () => {

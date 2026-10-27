@@ -22,7 +22,10 @@ import { apiBaseUrl } from "@/lib/api-url.ts"
 import { usePaperAutosave } from "./paper-autosave.ts"
 import { PaperEditorConflictBanner } from "./paper-editor-conflict-banner.tsx"
 import { PaperCvSurface } from "./paper-cv-surface.tsx"
-import { PaperTemplateGallery } from "./paper-template-gallery.tsx"
+import {
+  PAPER_GALLERY_DIALOG_CLASS,
+  PaperTemplateGallery,
+} from "./paper-template-gallery.tsx"
 import {
   createPaperChat,
   getPaper,
@@ -369,7 +372,7 @@ export function PaperCvEditor({
           if (!open) setGalleryOpen(false)
         }}
       >
-        <DialogContent>
+        <DialogContent className={PAPER_GALLERY_DIALOG_CLASS}>
           <DialogHeader>
             <DialogTitle>Choose a template</DialogTitle>
             <DialogDescription>
