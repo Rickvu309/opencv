@@ -122,7 +122,7 @@ A fast-check failure prints `Counterexample:` and `Shrunk N time(s)`. Replay tha
 
 P1 and P2 are `classificationProblems`, `marketingPaths`, and the link test in `marketing-links.verify.test.tsx`. They read rendered anchors. They do not read the copy arrays except by rendering the components that map over them.
 
-Sync commit: `1dcc12017f3381d65e35df9b6bdf4bc703d729f3`. That commit adds this check. The covered product files match `693366a5b1a61d589d6fdbe706824d5eaa9d4f96` (Help centre on main). Move the sync commit forward only after you reread every row of this table at the new commit, confirm the check still describes that code, and the command passes. A commit that only edits this skill does not move the covered code. Do not advance the sync commit for a blocked run.
+Sync commit: `f9dcc4f0e4aea57ed3ed2b07c69aa1c78d3ff580` (main when this check was written; the covered files were reread at that commit and the command passed). Move the sync commit forward only after you reread every row of this table at the new commit, confirm the check still describes that code, and the command passes. A commit that only edits this skill does not move the covered code. Do not advance the sync commit for a blocked run.
 
 ## Bounds and assumptions
 
