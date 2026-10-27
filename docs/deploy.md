@@ -12,8 +12,7 @@ check and the review before merge are the gate.
 
 ## Layout
 
-Railway project `openpath` (the name predates the rename; renaming it is
-cosmetic, then update the name in `.railway/railway.ts`).
+Railway project `opencv`.
 
 | Environment  | Service    | Built from                                  | Public host                                                    |
 | ------------ | ---------- | ------------------------------------------- | -------------------------------------------------------------- |
@@ -136,7 +135,7 @@ The defaults in this table are what the api ships today. Release one changes the
 
 ```bash
 printf '%s' "$OPENROUTER_API_KEY" | railway variable set OPENROUTER_API_KEY --stdin \
-  --project openpath --environment production --service api
+  --project opencv --environment production --service api
 ```
 
 Setting a variable redeploys `api`. When the rollout is SUCCESS:
@@ -218,10 +217,8 @@ directly until the services are removed.
 Schema changes are reviewable SQL, applied automatically, and never touched by
 `GET /health`.
 
-1. Edit the TypeScript tables in `apps/api/src/db/schema.ts`. The code on `main`
-   still uses `pgSchema("openpath_app")`. Release one adds `opencv_app` in a
-   fresh baseline and leaves `openpath_app` in place. See
-   `docs/adr/0002-vocabulary-job-chat-stages.md`. No migration deletes data.
+1. Edit the TypeScript tables in `apps/api/src/db/schema.ts`, all in
+   `pgSchema("opencv_app")`. No migration deletes data.
 2. Generate SQL with `pnpm --filter api run db:generate` and commit the files
    under `apps/api/drizzle/`. Migration 0000 is hand-edited to
    `CREATE SCHEMA IF NOT EXISTS` and must stay that way.
@@ -234,19 +231,13 @@ Schema changes are reviewable SQL, applied automatically, and never touched by
 Do **not** put the seed script on `preDeployCommand`. Signup already writes the
 starter workspace for new accounts.
 
-### Production's pre-existing `openpath_app` (QVE-135)
+### Production holds only `opencv_app`
 
-Production Postgres is not empty. Its `openpath_app` schema predates these
-migrations and still holds 26 tables from the pre-QVE-84 legacy app (`users`,
-`profiles`, `conversations`, `openings`, `waitlist`, ...), plus stray Better
-Auth tables in `public`. None collide with the current tables, so the committed
-migrations apply alongside them. Because the schema already existed, a bare
-`CREATE SCHEMA` aborted every production rollout (Postgres `42P06`); keep 0000
-idempotent.
-
-Dropping the legacy tables is deliberate destructive work that needs its own
-ticket and a backup; do not fold it into a deploy. Until then, check
-`openpath_app` for a name before a migration uses it.
+On 2026-10-27 the OpenPath-era leftovers were dropped from production Postgres:
+the `openpath`, `openpath_app`, `drizzle` and `test_*` schemas and the stray
+Better Auth tables in `public`. `opencv_app` is the only schema with tables, and
+`public` is empty. Migration 0000 still uses `CREATE SCHEMA IF NOT EXISTS`; keep
+it idempotent.
 
 ## Seed and local commands
 

@@ -19,7 +19,7 @@ There are no per-branch preview deploys. Verify locally with the verify-opencv s
 
 ## Railway setup
 
-The web app and the API run on the Railway project `openpath` (the name predates the rename to opencv). It has one environment, `production`, and services `api`, `web` and `Postgres`; see `docs/deploy.md`.
+The web app and the API run on the Railway project `opencv`. It has one environment, `production`, and services `api`, `web` and `Postgres`; see `docs/deploy.md`.
 
 - `.railway/railway.ts` builds the API with `pnpm --filter api... run build`, runs `pnpm --filter api run migrate` as the pre-deploy command, starts `pnpm --filter api run start`, and health-checks `GET /health`. The `web` service builds `apps/web/Dockerfile` and serves it with Caddy.
 - Secrets live in Railway variables, never in git.
