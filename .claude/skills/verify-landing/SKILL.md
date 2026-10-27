@@ -1,6 +1,6 @@
 ---
 name: verify-landing
-description: Check the OpenCV landing page for quality and taste, writing, logic, structure, visual craft, motion, accessibility and performance. A mechanical checker measures 28 properties in headless Chromium at 1440x900, 390x844 and reduced motion, and a judged rubric scores what a program cannot decide. Use after any change under apps/web/src/features/landing, apps/web/public/landing, a packages/ui component the landing imports (button), or the landing copy, and when asked whether the landing is good.
+description: Check the OpenCV landing page for quality and taste, writing, logic, structure, visual craft, motion, accessibility and performance. A mechanical checker measures 30 properties in headless Chromium at 1440x900, 390x844 and reduced motion, and a judged rubric scores what a program cannot decide. Use after any change under apps/web/src/features/landing, apps/web/public/landing, a packages/ui component the landing imports (button), or the landing copy, and when asked whether the landing is good.
 ---
 
 # verify-landing
@@ -61,12 +61,14 @@ Ids are the check numbers. The current page is the first-release marketing site.
 - 26 `no-sideways-scroll`: the page does not scroll sideways at 1440 or 390.
 - 27 `benefit-art-from-design`: the three benefit cards each contain one svg with viewBox "0 0 300 300", the path and ellipse count across them is 94 (the design art), and no element inside uses an inline hex colour. Source: opencv.pen Benefits frame.
 - 28 `nav-lockup-spacing`: at 1440 the visible gap between the nav mark's right edge and the wordmark's left edge is 9 to 13 px (the mark box has 2 px of inner padding) and the wordmark computed font-size is 16px at weight 600. Source: opencv.pen nav Logo.
+- 29 `cta-buttons-match-design`: nav and close button size, type, padding, shadow and border at 1440. Source: opencv.pen. Full rule in `properties.md`.
+- 30 `benefit-art-matches-pen`: Coach benefit art matches `reference/coach-art.png`. Source: opencv.pen node oWS4Z. Crop and tolerance in `properties.md`.
 
 Check 09 (the H1 alone says what is sold) is judged, as J1 below. It is not one of the 28 measured lines. Numbers drawn inside a screenshot (such as a percent on a card) cannot be read from the DOM. Check 12 reads page text, not alt text, and J4 judges the picture.
 
 ### Baseline at the sync commit
 
-At `e1ff7ab37b54dac73bb31c06c3b18512eb025de3` the checker printed 28 PASS. The replacements and the reason for each are in `properties.md`. A change that breaks one should flip its line to FAIL and nothing else.
+At `e1ff7ab37b54dac73bb31c06c3b18512eb025de3` the checker printed 28 PASS; #454 added 29 and 30. The replacements and the reason for each are in `properties.md`. A change that breaks one should flip its line to FAIL and nothing else.
 
 ## Taste review (judged layer)
 
@@ -131,6 +133,7 @@ Component files in this table are under `apps/web/src/features/landing/` unless 
 | 20, 20b, 21            | `landing.css` reduced motion, nav scroll state, `button.tsx` `transition-all`.                                                                                                                                               |
 | 27                     | `landing-figures.tsx` and `figures/*-art.tsx` (viewBox, paths, ellipses, inline hex).                                                                                                                                        |
 | 28                     | `OpenCvLogo` from `apps/web/src/features/app-shell/app-logo.tsx`, rendered by `landing-nav.tsx`.                                                                                                                             |
+| 29, 30                 | `landing-button.ts`; `reference/coach-art.png`.                                                                                                                                                                              |
 | Probes and rules       | `probe.mjs`, `text-rules.mjs`, `page-checks.mjs` in this skill's `scripts/lib/`.                                                                                                                                             |
 
 Constants the checks assume: product section ids `paper`, `apply`, and `coach`, the route `/`, an `h1` inside `main > section`, a sign-up link with `href="/sign-in"` whose label is not "Log in", and images under `/landing/`. `/sign-up` in `apps/web/src/router.tsx` redirects to `/sign-in`. Pitch is not a product section this checker scores. If a change moves one, update `probe.mjs` and the rule that reads it in the same PR.
@@ -153,7 +156,7 @@ Find whether the covered code moved since the sync commit:
 git diff --stat e1ff7ab37b54dac73bb31c06c3b18512eb025de3..HEAD -- apps/web/src/features/landing apps/web/public/landing apps/web/index.html packages/ui/src/components packages/ui/src/styles/globals.css
 ```
 
-An empty diff means the record still holds. If it lists files, read the diff against the table above, then run the checker. Every line that changed state should match an intended change. If a rule no longer describes the code (a renamed class, a new region, a new surface), fix `probe.mjs` or the rule and prove it again: break the property in a scratch copy of the page, see its line go FAIL, then restore the page and see the baseline return. Move the sync commit and the baseline line above only after you confirm the checks still describe the code at the new commit.
+An empty diff means the record holds. Otherwise read the diff against the table above and run the checker; every changed line must match an intended change. If a rule no longer fits the code, fix `probe.mjs` or the rule and prove it: break the property in a scratch copy, see it FAIL, restore, see the baseline. Move the sync commit only after the checks describe the code at the new commit.
 
 Never edit the landing to make a check pass unless that was the task. A FAIL on today's page is a finding; report it.
 

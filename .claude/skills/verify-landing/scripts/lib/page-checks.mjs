@@ -1,4 +1,21 @@
+import { readFileSync } from "node:fs"
+import { dirname, join } from "node:path"
+import { fileURLToPath } from "node:url"
+
+import { decodeDataUrl, decodePng, pngMismatch } from "./art-diff.mjs"
 import { isSignUpLink } from "./text-rules.mjs"
+
+// Pixels whose max RGB channel delta exceeds this are a mismatch.
+// The corrected Coach art stays under COACH_ART_MAX. The old centre-rotated
+// art (ellipses spun around their own centre) sits well above it.
+const COACH_ART_CHANNEL = 48
+// Corrected art measured 1.05% on three identical runs. The old centre-rotated
+// art measured 1.47% on three identical runs. 1.25% sits between them.
+const COACH_ART_MAX = 0.0125
+const coachReferencePath = join(
+  dirname(fileURLToPath(import.meta.url)),
+  "../../reference/coach-art.png"
+)
 
 // Layout, craft, motion, accessibility and performance properties. They read the snapshots that
 // probe.mjs takes at 1440x900 (desktop), 390x844 (mobile) and 1440x900 with reduced motion.
@@ -359,6 +376,75 @@ export function pageChecks({
       lockup
         ? `gap ${gap.toFixed(2)}px, font ${lockup.fontSize} weight ${lockup.fontWeight}`
         : "nav lockup not found"
+    )
+  )
+
+  const near = (value, target) =>
+    typeof value === "number" && Math.abs(value - target) <= 0.6
+  const sized = (button, height, font, pad) =>
+    Boolean(button) &&
+    near(button.h, height) &&
+    button.fontSize === font &&
+    Number(button.fontWeight) === 500 &&
+    near(button.padInline, pad)
+  const navCta = desktop.ctas?.nav
+  const closeCta = desktop.ctas?.close
+  const sampleCta = desktop.ctas?.sample
+  const ctaMatches =
+    sized(navCta, 32, "13px", 12) &&
+    navCta.inset &&
+    navCta.outer &&
+    sized(closeCta, 44, "16px", 20) &&
+    sized(sampleCta, 44, "16px", 20) &&
+    sampleCta.borderVisible === false
+  const fmtCta = (button) =>
+    button
+      ? `${button.h.toFixed(1)}px ${button.fontSize}/${button.fontWeight} pad ${button.padInline} ${button.inset ? "inset" : "no-inset"} ${button.outer ? "outer" : "no-outer"} border ${button.borderVisible ? "yes" : "no"}`
+      : "missing"
+  out.push(
+    verdict(
+      "29",
+      "cta-buttons-match-design",
+      "At 1440 the nav Get started is 32px tall, 13px at weight 500, with 12px inline padding and a box-shadow that has an inset ring and an outer shadow; the close-band Get started and See a sample are 44px tall, 16px at weight 500, with 20px inline padding, and See a sample has no visible border",
+      ctaMatches,
+      `nav ${fmtCta(navCta)}; close ${fmtCta(closeCta)}; sample ${fmtCta(sampleCta)}`
+    )
+  )
+
+  const rasters = desktop.benefitRasters ?? []
+  const coach = rasters.find(
+    (item) => item.title === "A coach that does the work"
+  )
+  let artMatchesPen = false
+  let artMeasured = "coach raster missing"
+  if (!coach?.png) {
+    artMeasured = coach?.error
+      ? `coach raster failed: ${coach.error}`
+      : `coach raster missing (${rasters.length} cards)`
+  } else if (rasters.length < 3 || rasters.some((item) => !item.png)) {
+    artMeasured = `rasterised ${rasters.filter((item) => item.png).length} of ${rasters.length} benefit svgs`
+  } else {
+    try {
+      const diff = pngMismatch(
+        decodeDataUrl(coach.png),
+        decodePng(readFileSync(coachReferencePath)),
+        COACH_ART_CHANNEL
+      )
+      artMatchesPen = diff.reason === "" && diff.ratio <= COACH_ART_MAX
+      artMeasured = diff.reason
+        ? diff.reason
+        : `${(diff.ratio * 100).toFixed(2)}% of pixels differ by more than ${COACH_ART_CHANNEL} (limit ${(COACH_ART_MAX * 100).toFixed(2)}%), ${rasters.length} svgs rasterised`
+    } catch (error) {
+      artMeasured = `compare failed: ${error.message}`
+    }
+  }
+  out.push(
+    verdict(
+      "30",
+      "benefit-art-matches-pen",
+      `Each benefit card's svg is rasterised in the page. The Coach art matches the pen.dev ground truth (reference/coach-art.png): at most ${(COACH_ART_MAX * 100).toFixed(2)}% of pixels may differ by more than ${COACH_ART_CHANNEL} on any RGB channel. The reference is the 300x300 art cropped from pen-coach-art.png`,
+      artMatchesPen,
+      artMeasured
     )
   )
   return out

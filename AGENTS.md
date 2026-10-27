@@ -137,10 +137,12 @@ Install: `pnpm dlx shadcn@latest add <name> -c apps/web` for shadcn, `pnpm dlx s
 
 Design parity. The landing's design source is the pen frame named in `apps/web/src/features/landing/design/landing.snapshot.json`. Regenerate the snapshot with `node scripts/pen-snapshot.mjs` when the design changes. Never build from `design/exports` PNGs. Rules and what enforces them:
 
-| Rule                                 | Enforced by                                        |
-| ------------------------------------ | -------------------------------------------------- |
-| Landing text matches the pen frame   | `landing-design-parity.test.tsx`                   |
-| Landing art comes from pen geometry  | `scripts/pen-art-to-svg.mjs` and verify-landing 27 |
-| Nav lockup spacing matches the frame | verify-landing 28                                  |
-| Stock tokens only                    | `design-vocabulary.test.ts`                        |
-| Module boundaries                    | `boundaries.test.ts`                               |
+| Rule                                     | Enforced by                                                         |
+| ---------------------------------------- | ------------------------------------------------------------------- |
+| Landing text matches the pen frame       | `landing-design-parity.test.tsx`                                    |
+| Landing art comes from pen geometry      | `scripts/pen-art-to-svg.mjs` and verify-landing 27                  |
+| Rotated pen ellipses pivot on the corner | `scripts/pen-art-to-svg.mjs` and verify-landing 30                  |
+| Nav lockup spacing matches the frame     | verify-landing 28                                                   |
+| Marketing calls to action                | `landing-button.ts`, `landing-button.test.ts` and verify-landing 29 |
+| Stock tokens only                        | `design-vocabulary.test.ts`                                         |
+| Module boundaries                        | `boundaries.test.ts`                                                |

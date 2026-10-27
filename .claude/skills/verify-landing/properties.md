@@ -1,6 +1,6 @@
 # verify-landing properties
 
-The checker measures 28 properties at 1440x900, 390x844 and reduced motion. Ids 01 to 08 and 10 to 13 are text rules. Ids 14 to 28 are page checks (20b sits with 20). Id 09 is judged only (J1) and is not one of the 28. A property that described the previous four-surface page was replaced with the equivalent on the first-release page.
+The checker measures 30 properties at 1440x900, 390x844 and reduced motion. Ids 01 to 08 and 10 to 13 are text rules. Ids 14 to 30 are page checks (20b sits with 20). Id 09 is judged only (J1) and is not one of the 30. A property that described the previous four-surface page was replaced with the equivalent on the first-release page.
 
 | Id  | Name                              | Why it changed                                                                                                                                                                                                                                                                                                      |
 | --- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -33,10 +33,18 @@ The checker measures 28 properties at 1440x900, 390x844 and reduced motion. Ids 
 | 26  | no-sideways-scroll                | Added. The page must not scroll sideways at 1440 or 390.                                                                                                                                                                                                                                                            |
 | 27  | benefit-art-from-design           | Added. The three benefit cards use the flat pen art: one 300×300 svg each, 94 paths and ellipses in total, no inline hex.                                                                                                                                                                                           |
 | 28  | nav-lockup-spacing                | Added. At 1440 the nav wordmark sits 9 to 13 px from the mark's ink and is 16px at weight 600.                                                                                                                                                                                                                      |
+| 29  | cta-buttons-match-design          | Added. At 1440 the nav Get started is 32px, 13px/500, pad 12, with an inset ring and an outer shadow. Close-band Get started and See a sample are 44px, 16px/500, pad 20. See a sample has no visible border.                                                                                                       |
+| 30  | benefit-art-matches-pen           | Added. Each benefit svg is rasterised in the page. The Coach art matches reference/coach-art.png: at most 1.25% of pixels may differ by more than 48 on a channel.                                                                                                                                                  |
 
 Pinned copy the rules read: `LANDING_HEADLINE_LINES`, `LANDING_SUBHEAD`, `LANDING_STATEMENT_LEAD`, `LANDING_STATEMENT_REST`, `LANDING_PRODUCTS`, `LANDING_LOGO_LABEL`, `LANDING_STORIES`, `LANDING_PRIMARY_LABEL`.
 
 Sync commit: e1ff7ab37b54dac73bb31c06c3b18512eb025de3. The checker printed 28 PASS at that commit.
+
+## Coach art reference crop (check 30)
+
+`pen-coach-art.png` is 812×778. It is a roughly 2× export of the benefit shot, which is 405×388 (fill about #F4F4F6, radius 16) and centres the 300×300 art node oWS4Z. The art rectangle in shot pixels starts at ((405 − 300) / 2, (388 − 300) / 2) = (52.5, 44). Scaled by 812/405 and 778/388, the crop origin is (105.26, 88.23) and the crop size is (601.48, 601.55). That rectangle was bilinear-resampled to 300×300 and saved as `reference/coach-art.png`.
+
+The corrected Coach art mismatched that crop by 1.05% of pixels (channel delta above 48) on three identical runs. The old centre-rotated art mismatched by 1.47% on three identical runs. The limit is 1.25%, between those two.
 
 ## Landing rebuild to the newest frame (#438)
 
@@ -48,3 +56,9 @@ Sync commit: e1ff7ab37b54dac73bb31c06c3b18512eb025de3. The checker printed 28 PA
 - 19 lets app logos and customer portraits carry a plain alt; photos of product screens still need a surface name.
 - 07, 08, 24 treat a `/sign-in` link that is not "Log in" as the sign-up link. `/sign-up` in `apps/web/src/router.tsx` redirects to `/sign-in`.
 - Pinned copy now includes `LANDING_PRODUCTS`, `LANDING_STORIES`, and the headline export `LANDING_HEADLINE_LINES`.
+
+## Coach art reference crop (check 30)
+
+`pen-coach-art.png` is 812×778. It is a roughly 2× export of the benefit shot, which is 405×388 (fill about #F4F4F6, radius 16) and centres the 300×300 art node oWS4Z. The art rectangle in shot pixels starts at ((405 − 300) / 2, (388 − 300) / 2) = (52.5, 44). Scaled by 812/405 and 778/388, the crop origin is (105.26, 88.23) and the crop size is (601.48, 601.55). That rectangle was bilinear-resampled to 300×300 and saved as `reference/coach-art.png`.
+
+The corrected Coach art mismatched that crop by 1.05% of pixels (channel delta above 48) on three identical runs. The old centre-rotated art mismatched by 1.47% on three identical runs. The limit is 1.25%, between those two.
