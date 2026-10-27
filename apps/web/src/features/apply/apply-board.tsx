@@ -1,12 +1,7 @@
 import { useRef } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
-import {
-  jobContract,
-  parseJobId,
-  type JobStage,
-  type JobView,
-} from "@workspace/domain"
+import { parseJobId, type JobStage, type JobView } from "@workspace/domain"
 
 import {
   KanbanBoard,
@@ -99,10 +94,11 @@ export function ApplyBoard({
       .finally(() => {
         pendingMoves.current -= 1
         if (pendingMoves.current === 0) {
-          void refreshQueries(
-            queryClient,
-            jobContract["job.move"].invalidates(input)
-          )
+          void refreshQueries(queryClient, [
+            { query: "job.list" },
+            { query: "job.get" },
+            { query: "job.calendar" },
+          ])
         }
       })
     tails.current.set(jobId, next)
