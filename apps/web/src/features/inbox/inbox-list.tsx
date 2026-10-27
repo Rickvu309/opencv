@@ -1,3 +1,4 @@
+import type { InboxThread } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
 import {
   Empty,
@@ -6,7 +7,6 @@ import {
   EmptyTitle,
 } from "@workspace/ui/components/empty"
 
-import type { InboxThread } from "./inbox-api.ts"
 import { InboxRow } from "./inbox-parts.tsx"
 import { inboxWhen, unreadCount } from "./inbox-time.ts"
 

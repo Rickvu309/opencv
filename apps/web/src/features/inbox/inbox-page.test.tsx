@@ -172,4 +172,36 @@ describe("inbox page", () => {
     )?.input as { until?: string } | undefined
     expect(until?.until?.endsWith("T23:00:00.000Z")).toBe(true)
   })
+
+  it("refetches the list and the open thread after a command, through the contract", async () => {
+    const reads: string[] = []
+    vi.stubGlobal(
+      "fetch",
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = pathOf(input)
+        if ((init?.method ?? "GET") === "GET") reads.push(path)
+        if (path === "/api/inbox") {
+          return jsonOk({
+            connected: false,
+            skipped: true,
+            timeZone: "Asia/Singapore",
+            threads: [INBOX_THREADS[0]],
+          })
+        }
+        if (path.startsWith("/api/inbox/")) return jsonOk(REGIONAL_DETAIL)
+        return jsonOk({})
+      }
+    )
+    renderPage()
+    await screen.findByRole("button", { name: "Snooze" })
+    const threadPath = `/api/inbox/${REGIONAL_DETAIL.id}`
+    const count = (path: string) => reads.filter((read) => read === path).length
+    expect(count("/api/inbox")).toBe(1)
+    expect(count(threadPath)).toBe(1)
+    await userEvent.click(screen.getByRole("button", { name: "Snooze" }))
+    await waitFor(() => {
+      expect(count("/api/inbox")).toBe(2)
+      expect(count(threadPath)).toBe(2)
+    })
+  })
 })

@@ -136,4 +136,34 @@ describe("job detail", () => {
       await screen.findByText("Could not load jobs. Check the link.")
     ).toBeTruthy()
   })
+
+  it("opens the next job with no delete dialog left open after a delete", async () => {
+    setMockJobs([
+      mockJob({
+        id,
+        title: "First role",
+        company: "Acme",
+        stage: "saved",
+        position: "a0",
+      }),
+      mockJob({
+        id: other,
+        title: "Next role",
+        company: "Contoso",
+        stage: "saved",
+        position: "a1",
+      }),
+    ])
+    renderApp(`/app/apply/${id}`)
+    fireEvent.click(await screen.findByRole("button", { name: "More" }))
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Delete job" }))
+    const dialog = await screen.findByRole("dialog", {
+      name: "Delete First role?",
+    })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Delete job" }))
+    expect(
+      await screen.findByRole("heading", { name: "Next role" })
+    ).toBeTruthy()
+    expect(screen.queryByRole("dialog")).toBeNull()
+  })
 })

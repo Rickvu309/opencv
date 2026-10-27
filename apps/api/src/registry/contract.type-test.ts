@@ -1,6 +1,9 @@
 // Typechecked by `tsc --noEmit` only. Every expect-error directive below must keep erroring.
 import {
   commandEntry,
+  commands,
+  type ContractCommandName,
+  type InboxContract,
   jobContract,
   parseJobId,
   parsePaperId,
@@ -16,6 +19,8 @@ type MoveInput = CommandInput<JobContract, "job.move">
 type StarInput = CommandInput<JobContract, "job.star">
 type Move = Bindings<JobContract>["job.move"]
 type Delete = Bindings<JobContract>["job.delete"]
+type Snooze = CommandInput<InboxContract, "inbox.snooze">
+type MarkDone = Bindings<InboxContract>["inbox.markDone"]
 
 export function typeProbes(registry: Registry) {
   // prettier-ignore
@@ -46,7 +51,27 @@ export function typeProbes(registry: Registry) {
   // @ts-expect-error a reversal must name a command of the same contract
   const foreignReversal: Move["reversal"] = () => ({ command: "paper.replace", input: {} })
 
+  // prettier-ignore
+  // @ts-expect-error unknown inbox command name
+  const unknownInbox = commands["inbox.nope"]
+
+  // prettier-ignore
+  // @ts-expect-error snooze needs until, not a duration
+  const wrongInboxInput: Snooze = { threadId: uuid, minutes: 5 }
+
+  // prettier-ignore
+  // @ts-expect-error the merged table names no command that neither contract declares
+  const notAContractName: ContractCommandName = "paper.replace"
+
+  // prettier-ignore
+  // @ts-expect-error an inbox reversal must be a valid input of the command it names
+  const wrongInboxReversal: MarkDone["reversal"] = () => ({ command: "inbox.markDone", input: { status: "done" } })
+
   return [
+    unknownInbox,
+    wrongInboxInput,
+    notAContractName,
+    wrongInboxReversal,
     unknownName,
     oldStage,
     paperAsJob,

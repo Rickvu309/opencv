@@ -1,7 +1,9 @@
+import { QueryClientProvider } from "@tanstack/react-query"
 import { cleanup, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+import { createQueryClient } from "@/lib/query-client.ts"
 import { jsonOk, pathOf } from "@/test/mock-http.ts"
 import {
   INBOX_NOW,
@@ -33,17 +35,19 @@ function postsOf() {
 
 function renderReader(detail: typeof LOCAL_DETAIL) {
   return render(
-    <InboxReader
-      detail={detail}
-      index={1}
-      count={6}
-      narrow={false}
-      now={INBOX_NOW}
-      onBack={vi.fn()}
-      onPrevious={vi.fn()}
-      onNext={vi.fn()}
-      onChanged={vi.fn()}
-    />
+    <QueryClientProvider client={createQueryClient()}>
+      <InboxReader
+        detail={detail}
+        index={1}
+        count={6}
+        narrow={false}
+        now={INBOX_NOW}
+        onBack={vi.fn()}
+        onPrevious={vi.fn()}
+        onNext={vi.fn()}
+        onChanged={vi.fn()}
+      />
+    </QueryClientProvider>
   )
 }
 

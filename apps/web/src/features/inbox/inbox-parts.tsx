@@ -1,9 +1,8 @@
+import type { InboxThread } from "@workspace/domain"
 import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar"
 import { Button } from "@workspace/ui/components/button"
 
 import { companyInitials } from "@/features/apply/apply-stages.ts"
-
-import type { InboxThread } from "./inbox-api.ts"
 
 export function InboxRow({
   thread,
