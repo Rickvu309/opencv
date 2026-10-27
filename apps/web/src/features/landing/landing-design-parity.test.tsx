@@ -11,12 +11,6 @@ import snapshotFile from "./design/landing.snapshot.json"
 // whose replacedBy text is missing, or whose until date has passed fails.
 const OMITTED = [
   {
-    text: "Blog",
-    reason: "Nav and footer link to a blog page that does not exist yet.",
-    until: "2026-11-30",
-    approvedBy: "pending operator (quanvu309)",
-  },
-  {
     text: "Careers",
     reason: "Footer link to a careers page that does not exist yet.",
     until: "2026-11-30",
