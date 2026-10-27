@@ -9,7 +9,7 @@ import {
   useState,
 } from "react"
 import { createPortal } from "react-dom"
-import type { CoachSelection } from "@workspace/domain"
+import { chatDisplayTitle, type CoachSelection } from "@workspace/domain"
 import { X } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
@@ -185,7 +185,9 @@ export const CoachFloat = memo(function CoachFloat({
   }, [docId, docName])
 
   const turnActive = phase !== "idle"
-  const headerTitle = focusedChatQuery.data?.title ?? docName
+  const headerTitle = focusedChatQuery.data
+    ? chatDisplayTitle(focusedChatQuery.data.title)
+    : docName
 
   useEffect(() => {
     writeStored(COACH_FLOAT_STORAGE_KEY, floatState)
