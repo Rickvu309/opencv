@@ -375,15 +375,7 @@ export function useCoachTurn({
       }),
     })
     return true
-  }, [
-    baseline,
-    focusDocId,
-    mode,
-    phase,
-    queryClient,
-    runCoachStream,
-    threadId,
-  ])
+  }, [baseline, focusDocId, mode, phase, queryClient, runCoachStream, threadId])
 
   const retry = useCallback(() => {
     if (!failure) return false
