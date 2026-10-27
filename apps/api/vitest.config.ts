@@ -1,6 +1,7 @@
 import { defineConfig } from "vitest/config"
 
 export default defineConfig({
+  ssr: { resolve: { conditions: ["opencv-source"] } },
   test: {
     testTimeout: 15_000,
     globalSetup: ["./src/test/global-setup.ts"],

@@ -11,7 +11,7 @@
     "noEmit": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
-    "rootDir": "src"
+    "customConditions": ["opencv-source"]
   },
   "include": ["src"]
 }
