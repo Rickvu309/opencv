@@ -157,14 +157,6 @@ export const coachUsageRatingSchemaValues = ["up", "down"] as const
 export const coachUsageRatingSchema = z.enum(coachUsageRatingSchemaValues)
 export type CoachUsageRating = z.infer<typeof coachUsageRatingSchema>
 
-export const coachFeedbackInputSchema = z
-  .object({
-    rating: coachUsageRatingSchema,
-  })
-  .strict()
-
-export type CoachFeedbackInput = z.infer<typeof coachFeedbackInputSchema>
-
 export type CoachTurnUsage = {
   model: string
   mode?: CoachMode
@@ -204,6 +196,7 @@ export type CoachToolResultPart = {
   reversal?: ReversalDescriptor
   result: CommandEnvelope
   detail?: CoachReceiptDetail
+  activityId?: string
   pendingActionId?: string
   command?: string
 }
@@ -228,7 +221,7 @@ export type CoachStreamPart =
   | CoachErrorPart
 
 export type CoachSseMessageStartData = {
-  threadId: string
+  chatId: string
 }
 
 export type CoachSseTextDeltaData = {
@@ -249,11 +242,11 @@ export type CoachSseToolResultData = {
   reversal?: ReversalDescriptor
   result: CommandEnvelope
   detail?: CoachReceiptDetail
+  activityId?: string
 }
 
 export type CoachSseMessageEndData = {
-  message: ThreadMessage
-  usage: CoachTurnUsage
+  chatId: string
 }
 
 export type CoachSseErrorData = {
@@ -340,6 +333,7 @@ export function appendCoachPart(
           ok: part.ok,
           ...(part.reversal ? { reversal: part.reversal } : {}),
           ...(part.detail ? { detail: part.detail } : {}),
+          ...(part.activityId ? { activityId: part.activityId } : {}),
           toolCallId: part.toolCallId,
         },
       ]

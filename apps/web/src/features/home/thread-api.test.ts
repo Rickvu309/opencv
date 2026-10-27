@@ -1,6 +1,5 @@
 import {
   COACH_SSE_EVENTS,
-  THREAD_COMMANDS,
   type ThreadDetail,
   type ThreadListItem,
 } from "@workspace/domain"
@@ -13,12 +12,10 @@ import {
   getThread,
   getThreadByFocusDoc,
   listThreads,
-  postThreadMessage,
-  rateCoachMessage,
-  reverseCoachReceipt,
   streamCoachRegenerate,
   streamCoachTurn,
   toListItem,
+  undoReceipt,
   upsertThreadListItem,
 } from "@/features/home/thread-api.ts"
 
@@ -30,205 +27,225 @@ function envelope<T>(data: T) {
   return Response.json({ ok: true, data })
 }
 
+const CHAT_ID = "11111111-1111-4111-8111-111111111111"
+const DOC_ID = "11111111-1111-7111-8111-111111111111"
+const STAMP = "2026-08-25T00:00:00.000Z"
+
+function chatRow(overrides: Record<string, unknown> = {}) {
+  return {
+    id: CHAT_ID,
+    title: "Plan the week",
+    focusKind: null,
+    focusId: null,
+    createdAt: STAMP,
+    updatedAt: STAMP,
+    ...overrides,
+  }
+}
+
+function callOf(fetchMock: ReturnType<typeof vi.fn>, index = 0) {
+  const [url, init] = fetchMock.mock.calls[index] as [string, RequestInit]
+  return { url: String(url), init }
+}
+
 describe("thread API client", () => {
-  it("lists Threads from GET /api/threads and unwraps the envelope", async () => {
-    const threads: ThreadListItem[] = [
-      {
-        id: "11111111-1111-4111-8111-111111111111",
-        title: "Plan the week",
-        createdAt: "2026-08-25T00:00:00.000Z",
-        updatedAt: "2026-08-25T00:00:00.000Z",
-        focusDocId: null,
-      },
-    ]
-    const fetchMock = vi.fn().mockResolvedValue(envelope(threads))
+  it("lists chats from GET /api/chats and maps them to Threads", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        envelope([
+          chatRow(),
+          chatRow({ id: "b", focusKind: "paper", focusId: DOC_ID }),
+        ])
+      )
     vi.stubGlobal("fetch", fetchMock)
 
-    await expect(listThreads()).resolves.toEqual(threads)
-    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
-      `${apiBaseUrl}/api/threads`
-    )
-    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    await expect(listThreads()).resolves.toEqual([
+      {
+        id: CHAT_ID,
+        title: "Plan the week",
+        createdAt: STAMP,
+        updatedAt: STAMP,
+        focusDocId: null,
+      },
+      {
+        id: "b",
+        title: "Plan the week",
+        createdAt: STAMP,
+        updatedAt: STAMP,
+        focusDocId: DOC_ID,
+      },
+    ])
+    const { url, init } = callOf(fetchMock)
+    expect(url).toBe(`${apiBaseUrl}/api/chats`)
     expect(init.credentials).toBe("include")
   })
 
-  it("reads Thread detail from GET /api/threads/:id", async () => {
-    const detail: ThreadDetail = {
-      id: "11111111-1111-4111-8111-111111111111",
-      title: "Plan the week",
-      createdAt: "2026-08-25T00:00:00.000Z",
-      updatedAt: "2026-08-25T00:00:00.000Z",
-      focusDocId: null,
-      messages: [
-        {
-          id: "m1",
-          role: "user",
-          text: "Help",
-          createdAt: "2026-08-25T00:00:00.000Z",
-        },
-      ],
-    }
-    const fetchMock = vi.fn().mockResolvedValue(envelope(detail))
+  it("reads chat detail and maps person messages to user, dropping attachments", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      envelope({
+        ...chatRow(),
+        messages: [
+          {
+            id: "m1",
+            role: "person",
+            text: "Help",
+            createdAt: STAMP,
+            parts: [
+              { type: "text", text: "Help" },
+              { type: "attachment", name: "cv.pdf" },
+            ],
+            status: "final",
+            workedMs: null,
+          },
+          {
+            id: "m2",
+            role: "coach",
+            text: "Done",
+            createdAt: STAMP,
+            parts: [{ type: "text", text: "Done" }],
+            status: "final",
+            workedMs: 900,
+          },
+        ],
+      })
+    )
     vi.stubGlobal("fetch", fetchMock)
 
-    await expect(getThread(detail.id)).resolves.toEqual(detail)
-    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
-      `${apiBaseUrl}/api/threads/${detail.id}`
-    )
+    const detail = await getThread(CHAT_ID)
+    expect(callOf(fetchMock).url).toBe(`${apiBaseUrl}/api/chats/${CHAT_ID}`)
+    expect(detail.messages).toEqual([
+      {
+        id: "m1",
+        role: "user",
+        text: "Help",
+        createdAt: STAMP,
+        parts: [{ type: "text", text: "Help" }],
+        status: "final",
+      },
+      {
+        id: "m2",
+        role: "coach",
+        text: "Done",
+        createdAt: STAMP,
+        parts: [{ type: "text", text: "Done" }],
+        status: "final",
+        workedMs: 900,
+      },
+    ])
   })
 
-  it("creates a Thread through the Command registry", async () => {
-    const created: ThreadListItem = {
-      id: "11111111-1111-4111-8111-111111111111",
-      title: "Help me plan the week",
-      createdAt: "2026-08-25T00:00:00.000Z",
-      updatedAt: "2026-08-25T00:00:00.000Z",
-      focusDocId: null,
-    }
-    const fetchMock = vi.fn().mockResolvedValue(envelope(created))
+  it("creates a chat with chat.create", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(envelope(chatRow({ title: "Help me plan the week" })))
     vi.stubGlobal("fetch", fetchMock)
 
     await expect(
       createThread({ title: "Help me plan the week" })
-    ).resolves.toEqual(created)
+    ).resolves.toMatchObject({ id: CHAT_ID, title: "Help me plan the week" })
 
-    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
-      `${apiBaseUrl}/api/commands/${THREAD_COMMANDS.create}`
-    )
-    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    const { url, init } = callOf(fetchMock)
+    expect(url).toBe(`${apiBaseUrl}/api/commands/chat.create`)
     expect(init.method).toBe("POST")
     expect(init.body).toBe(JSON.stringify({ title: "Help me plan the week" }))
   })
 
-  it("creates a Paper-grounded Thread with focusDocId", async () => {
-    const focusDocId = "11111111-1111-7111-8111-111111111111"
-    const created: ThreadListItem = {
-      id: "11111111-1111-4111-8111-111111111111",
-      title: "PM track CV",
-      createdAt: "2026-08-25T00:00:00.000Z",
-      updatedAt: "2026-08-25T00:00:00.000Z",
-      focusDocId,
-    }
-    const fetchMock = vi.fn().mockResolvedValue(envelope(created))
+  it("opens the Paper chat and names a fresh one", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        envelope(
+          chatRow({ title: "New Thread", focusKind: "paper", focusId: DOC_ID })
+        )
+      )
+      .mockResolvedValueOnce(
+        envelope(
+          chatRow({ title: "PM track CV", focusKind: "paper", focusId: DOC_ID })
+        )
+      )
     vi.stubGlobal("fetch", fetchMock)
 
     await expect(
-      createThread({ title: "PM track CV", focusDocId })
-    ).resolves.toEqual(created)
+      createThread({ title: "PM track CV", focusDocId: DOC_ID })
+    ).resolves.toMatchObject({ title: "PM track CV", focusDocId: DOC_ID })
 
-    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
-    expect(init.body).toBe(JSON.stringify({ title: "PM track CV", focusDocId }))
+    expect(callOf(fetchMock, 0).url).toBe(
+      `${apiBaseUrl}/api/commands/chat.open`
+    )
+    expect(callOf(fetchMock, 0).init.body).toBe(
+      JSON.stringify({ focus: { kind: "paper", id: DOC_ID } })
+    )
+    expect(callOf(fetchMock, 1).url).toBe(
+      `${apiBaseUrl}/api/commands/chat.rename`
+    )
+    expect(callOf(fetchMock, 1).init.body).toBe(
+      JSON.stringify({ chatId: CHAT_ID, title: "PM track CV" })
+    )
   })
 
-  it("reads the latest Thread for a focusDocId", async () => {
-    const focusDocId = "11111111-1111-7111-8111-111111111111"
-    const thread: ThreadListItem = {
-      id: "11111111-1111-4111-8111-111111111111",
-      title: "PM track CV",
-      createdAt: "2026-08-25T00:00:00.000Z",
-      updatedAt: "2026-08-25T00:00:00.000Z",
-      focusDocId,
-    }
-    const fetchMock = vi.fn().mockResolvedValue(envelope(thread))
+  it("keeps the title of a reused Paper chat", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        envelope(
+          chatRow({
+            title: "Earlier talk",
+            focusKind: "paper",
+            focusId: DOC_ID,
+          })
+        )
+      )
     vi.stubGlobal("fetch", fetchMock)
 
-    await expect(getThreadByFocusDoc(focusDocId)).resolves.toEqual(thread)
-    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
-      `${apiBaseUrl}/api/threads?focusDocId=${focusDocId}`
-    )
+    await expect(
+      createThread({ title: "PM track CV", focusDocId: DOC_ID })
+    ).resolves.toMatchObject({ title: "Earlier talk" })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it("finds the Thread grounded on a doc from the chat list", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        envelope([
+          chatRow({ id: "other" }),
+          chatRow({ focusKind: "paper", focusId: DOC_ID }),
+        ])
+      )
+    vi.stubGlobal("fetch", fetchMock)
+
+    await expect(getThreadByFocusDoc(DOC_ID)).resolves.toMatchObject({
+      id: CHAT_ID,
+      focusDocId: DOC_ID,
+    })
   })
 
   it("returns null when no Thread is grounded on the doc", async () => {
-    const focusDocId = "11111111-1111-7111-8111-111111111111"
-    const fetchMock = vi.fn().mockResolvedValue(envelope(null))
-    vi.stubGlobal("fetch", fetchMock)
-
-    await expect(getThreadByFocusDoc(focusDocId)).resolves.toBeNull()
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(envelope([chatRow()])))
+    await expect(getThreadByFocusDoc(DOC_ID)).resolves.toBeNull()
   })
 
-  it("deletes a Thread through the Command registry", async () => {
-    const deleted = { id: "11111111-1111-4111-8111-111111111111" }
-    const fetchMock = vi.fn().mockResolvedValue(envelope(deleted))
+  it("deletes a chat with chat.delete", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(envelope({ id: CHAT_ID }))
     vi.stubGlobal("fetch", fetchMock)
 
-    await expect(deleteThread({ threadId: deleted.id })).resolves.toEqual(
-      deleted
-    )
-
-    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
-      `${apiBaseUrl}/api/commands/${THREAD_COMMANDS.delete}`
-    )
-    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
-    expect(init.method).toBe("POST")
-    expect(init.body).toBe(JSON.stringify({ threadId: deleted.id }))
+    await expect(deleteThread(CHAT_ID)).resolves.toEqual({ id: CHAT_ID })
+    const { url, init } = callOf(fetchMock)
+    expect(url).toBe(`${apiBaseUrl}/api/commands/chat.delete`)
+    expect(init.body).toBe(JSON.stringify({ chatId: CHAT_ID }))
   })
 
-  it("posts a message through the Command registry", async () => {
-    const detail: ThreadDetail = {
-      id: "11111111-1111-4111-8111-111111111111",
-      title: "Help me plan the week",
-      createdAt: "2026-08-25T00:00:00.000Z",
-      updatedAt: "2026-08-25T00:00:00.000Z",
-      focusDocId: null,
-      messages: [
-        {
-          id: "m1",
-          role: "user",
-          text: "Help me plan the week",
-          createdAt: "2026-08-25T00:00:00.000Z",
-        },
-        {
-          id: "m2",
-          role: "coach",
-          text: "I hear you.",
-          createdAt: "2026-08-25T00:00:01.000Z",
-        },
-      ],
-    }
-    const fetchMock = vi.fn().mockResolvedValue(envelope(detail))
-    vi.stubGlobal("fetch", fetchMock)
-
-    await expect(
-      postThreadMessage({
-        threadId: detail.id,
-        text: "Help me plan the week",
-      })
-    ).resolves.toEqual(detail)
-
-    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
-      `${apiBaseUrl}/api/commands/${THREAD_COMMANDS.postMessage}`
-    )
-    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
-    expect(init.method).toBe("POST")
-    expect(init.body).toBe(
-      JSON.stringify({
-        threadId: detail.id,
-        text: "Help me plan the week",
-      })
-    )
-  })
-
-  it("streams a Coach turn from POST /api/threads/:id/coach", async () => {
-    const threadId = "11111111-1111-4111-8111-111111111111"
+  it("streams a Coach turn from POST /api/chats/:id/turns", async () => {
     const body = [
       `event: ${COACH_SSE_EVENTS.messageStart}`,
-      `data: ${JSON.stringify({ threadId })}`,
+      `data: ${JSON.stringify({ chatId: CHAT_ID })}`,
       "",
       `event: ${COACH_SSE_EVENTS.textDelta}`,
       `data: ${JSON.stringify({ text: "Hello" })}`,
       "",
       `event: ${COACH_SSE_EVENTS.messageEnd}`,
-      `data: ${JSON.stringify({
-        message: {
-          id: "c1",
-          role: "coach",
-          text: "Hello",
-          createdAt: "2026-08-25T00:00:01.000Z",
-          workedMs: 1100,
-          status: "final",
-        },
-        usage: { model: "mock" },
-      })}`,
+      `data: ${JSON.stringify({ chatId: CHAT_ID })}`,
       "",
     ].join("\n")
     const fetchMock = vi.fn().mockResolvedValue(
@@ -242,30 +259,21 @@ describe("thread API client", () => {
     const onTextDelta = vi.fn()
     const onMessageEnd = vi.fn()
     await streamCoachTurn(
-      threadId,
+      CHAT_ID,
       "Help me plan the week",
-      {
-        onTextDelta,
-        onMessageEnd,
-      },
+      { onTextDelta, onMessageEnd },
       undefined,
       "light"
     )
 
-    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
-      `${apiBaseUrl}/api/threads/${threadId}/coach`
-    )
-    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    const { url, init } = callOf(fetchMock)
+    expect(url).toBe(`${apiBaseUrl}/api/chats/${CHAT_ID}/turns`)
     expect(init.method).toBe("POST")
     expect(init.body).toBe(
       JSON.stringify({ text: "Help me plan the week", mode: "light" })
     )
     expect(onTextDelta).toHaveBeenCalledWith({ text: "Hello" })
-    expect(onMessageEnd).toHaveBeenCalledWith(
-      expect.objectContaining({
-        message: expect.objectContaining({ text: "Hello", workedMs: 1100 }),
-      })
-    )
+    expect(onMessageEnd).toHaveBeenCalledWith({ chatId: CHAT_ID })
   })
 
   it("includes focusDocId on a Paper-scoped coach turn", async () => {
@@ -456,56 +464,15 @@ describe("thread API client", () => {
     expect(onTextDelta).toHaveBeenCalledWith({ text: "Again" })
   })
 
-  it("records a rating through POST /api/threads/:id/messages/:messageId/feedback", async () => {
-    const threadId = "11111111-1111-4111-8111-111111111111"
-    const messageId = "22222222-2222-4222-8222-222222222222"
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(envelope({ messageId, rating: "up" }))
+  it("undoes a receipt with activity.undo", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(envelope({ activityId: "a1" }))
     vi.stubGlobal("fetch", fetchMock)
 
-    await expect(rateCoachMessage(threadId, messageId, "up")).resolves.toEqual({
-      messageId,
-      rating: "up",
-    })
-    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
-      `${apiBaseUrl}/api/threads/${threadId}/messages/${messageId}/feedback`
-    )
-    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    await undoReceipt("a1")
+    const { url, init } = callOf(fetchMock)
+    expect(url).toBe(`${apiBaseUrl}/api/commands/activity.undo`)
     expect(init.method).toBe("POST")
-    expect(init.body).toBe(JSON.stringify({ rating: "up" }))
-  })
-
-  it("reverses a receipt through POST /api/threads/:id/messages/:messageId/reverse", async () => {
-    const threadId = "11111111-1111-4111-8111-111111111111"
-    const messageId = "22222222-2222-4222-8222-222222222222"
-    const receipt = {
-      type: "tool" as const,
-      name: "job_delete",
-      summary: "Deleted the card",
-      ok: true,
-      toolCallId: "undo-1",
-    }
-    const thread = {
-      id: threadId,
-      title: "Plan",
-      createdAt: "2026-08-25T00:00:00.000Z",
-      updatedAt: "2026-08-25T00:00:01.000Z",
-      focusDocId: null,
-      messages: [],
-    }
-    const fetchMock = vi.fn().mockResolvedValue(envelope({ thread, receipt }))
-    vi.stubGlobal("fetch", fetchMock)
-
-    await expect(
-      reverseCoachReceipt(threadId, messageId, "call_1")
-    ).resolves.toEqual({ thread, receipt })
-    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
-      `${apiBaseUrl}/api/threads/${threadId}/messages/${messageId}/reverse`
-    )
-    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
-    expect(init.method).toBe("POST")
-    expect(init.body).toBe(JSON.stringify({ toolCallId: "call_1" }))
+    expect(init.body).toBe(JSON.stringify({ activityId: "a1" }))
   })
 })
 

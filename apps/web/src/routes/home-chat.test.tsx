@@ -9,12 +9,10 @@ import {
 
 import {
   DEFAULT_COACH_STREAM_REPLY,
-  getMockThreads,
   scriptCoachStream,
 } from "@/test/threads-api-mock.ts"
 import { FIXTURE_THREADS } from "@/test/thread-fixtures.ts"
 import { renderApp } from "@/test/render-app.tsx"
-import { setMockChats } from "@/test/shell-api-mock.ts"
 import {
   expectHomeIdle,
   expectSendSettled,
@@ -34,16 +32,6 @@ afterEach(() => {
 })
 
 async function openStoredThread(title: RegExp) {
-  setMockChats(
-    getMockThreads().map((thread) => ({
-      id: thread.id,
-      title: thread.title,
-      focusKind: null,
-      focusId: null,
-      createdAt: thread.createdAt,
-      updatedAt: thread.updatedAt,
-    }))
-  )
   fireEvent.click(screen.getByRole("button", { name: "Search" }))
   const dialog = await screen.findByRole("dialog", { name: "Search" })
   fireEvent.click(await within(dialog).findByRole("button", { name: title }))
@@ -90,7 +78,6 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
     })
     expect(screen.getByText("Worked for 1s")).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Copy" })).toBeEnabled()
-    expect(screen.getByRole("button", { name: "Good response" })).toBeEnabled()
     expect(screen.getByRole("button", { name: "Regenerate" })).toBeEnabled()
   })
 
@@ -265,7 +252,7 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
     ).toBeNull()
   })
 
-  it("copies reply text and records a thumbs rating with pressed state", async () => {
+  it("copies reply text and offers no rating buttons", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined)
     vi.stubGlobal("navigator", {
       ...navigator,
@@ -281,22 +268,9 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
       expect(writeText).toHaveBeenCalledWith(DEFAULT_COACH_STREAM_REPLY)
     })
 
-    const good = screen.getByRole("button", { name: "Good response" })
-    expect(good).toHaveAttribute("aria-pressed", "false")
-    fireEvent.click(good)
-    await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: "Good response" })
-      ).toHaveAttribute("aria-pressed", "true")
-    })
     expect(
-      getMockThreads()
-        .flatMap((thread) => thread.messages)
-        .some((message) => message.role === "coach" && message.rating === "up")
-    ).toBe(true)
-    expect(
-      screen.getByRole("button", { name: "Bad response" })
-    ).toHaveAttribute("aria-pressed", "false")
+      screen.queryByRole("button", { name: /good response|bad response/i })
+    ).not.toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Regenerate" })).toBeEnabled()
     expect(
       screen.queryByRole("button", { name: /speak|read aloud|share/i })

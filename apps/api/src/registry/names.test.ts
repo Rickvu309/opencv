@@ -14,10 +14,6 @@ const scanRoots = [
 ]
 
 const LEGACY: Record<string, string> = {
-  "threads.create": "compat threads, deleted with apps/api/src/compat",
-  "threads.rename": "compat threads, deleted with apps/api/src/compat",
-  "threads.delete": "compat threads, deleted with apps/api/src/compat",
-  "threads.postMessage": "compat threads, deleted with apps/api/src/compat",
   "paper.updateContent":
     "receipt kind stored in chat_messages.parts, renamed with the Coach stream contract",
   "paper.createDoc":
@@ -27,7 +23,7 @@ const LEGACY: Record<string, string> = {
 }
 
 const prefixes =
-  "chat|paper|job|inbox|profile|account|notify|actions|activity|coach|threads|apply|pitch"
+  "chat|paper|job|inbox|profile|account|notify|actions|activity|coach|apply|pitch"
 const dotted = new RegExp(
   `["'\`/]((?:${prefixes})\\.[a-z][A-Za-z]+)["'\`]`,
   "g"

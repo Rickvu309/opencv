@@ -33,7 +33,6 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
     stop,
     retry,
     regenerate,
-    rate,
     undo,
     cancelInFlight,
   } = useCoachTurn({
@@ -55,7 +54,7 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
 
   const deleteThread = useCallback(
     async (id: string) => {
-      await deleteThreadRequest({ threadId: id })
+      await deleteThreadRequest(id)
       queryClient.setQueryData(
         threadQueryKeys.list(),
         (prev: ThreadListItem[] | undefined) =>
@@ -89,7 +88,6 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
       stop,
       retry,
       regenerate,
-      rate,
       undo,
       openThread,
       newThread,
@@ -105,7 +103,6 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
       stop,
       retry,
       regenerate,
-      rate,
       undo,
       openThread,
       newThread,

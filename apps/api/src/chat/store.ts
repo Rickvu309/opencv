@@ -11,10 +11,10 @@ import {
   type ChatSetFocusInput,
   type UserId,
 } from "@workspace/domain"
-import { and, desc, eq, gt } from "drizzle-orm"
+import { and, desc, eq, gt, inArray, isNotNull } from "drizzle-orm"
 
 import { getDb } from "../db/context.js"
-import { chatMessages, chats } from "../db/schema.js"
+import { activity, chatMessages, chats } from "../db/schema.js"
 import { createId } from "../id.js"
 import { CommandError } from "../registry/errors.js"
 
@@ -76,7 +76,52 @@ export async function getChat(userId: UserId, chatId: ChatId) {
     .from(chatMessages)
     .where(eq(chatMessages.chatId, chatId))
     .orderBy(chatMessages.createdAt)
-  return { ...toChat(row), messages: messages.map(toMessage) }
+  const undone = await undoneActivityIds(userId, messages)
+  return {
+    ...toChat(row),
+    messages: messages.map((message) => withUndone(toMessage(message), undone)),
+  }
+}
+
+function toolActivityId(part: unknown) {
+  const id = (part as { activityId?: unknown } | null)?.activityId
+  return typeof id === "string" ? id : null
+}
+
+async function undoneActivityIds(
+  userId: UserId,
+  messages: (typeof chatMessages.$inferSelect)[]
+) {
+  const ids = messages.flatMap((message) =>
+    (message.parts ?? []).flatMap((part) => toolActivityId(part) ?? [])
+  )
+  if (ids.length === 0) return new Set<string>()
+  const rows = await getDb()
+    .select({ id: activity.id })
+    .from(activity)
+    .where(
+      and(
+        eq(activity.userId, userId),
+        inArray(activity.id, ids),
+        isNotNull(activity.undoneAt)
+      )
+    )
+  return new Set(rows.map((row) => row.id))
+}
+
+// The activity row owns whether a receipt was undone, so a reload cannot offer Undo twice.
+function withUndone(
+  message: ReturnType<typeof toMessage>,
+  undone: Set<string>
+) {
+  if (undone.size === 0) return message
+  return {
+    ...message,
+    parts: message.parts.map((part) => {
+      const id = toolActivityId(part)
+      return id && undone.has(id) ? { ...(part as object), undone: true } : part
+    }),
+  }
 }
 
 export async function createChat(

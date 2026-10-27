@@ -1,13 +1,11 @@
 import {
   COACH_SSE_HEARTBEAT_MS,
   ERROR_CODES,
-  coachReverseRequestSchema,
   coachTurnRequestSchema,
   errorEnvelope,
   httpStatusForError,
   planAllowsMode,
   threadIdSchema,
-  threadMessageIdSchema,
   personActor,
   PLAN_REQUIRED_MESSAGE,
   type CoachMode,
@@ -21,7 +19,6 @@ import { streamSSE } from "hono/streaming"
 import { assertDayCap, getProfileRow } from "../account/index.js"
 import { coachModelEnv } from "../config.js"
 import type { Auth } from "../auth.js"
-import { reverseCompatReceipt } from "../compat/index.js"
 import type { AppDatabase } from "../db/context.js"
 import { readJsonBody } from "../http-json.js"
 import { jsonWithStatus } from "../http-json.js"
@@ -37,55 +34,16 @@ export function createCoachRoutes(options: {
   coach?: CoachRuntime
   coachSseHeartbeatMs?: number
 }) {
-  const compat = new Hono<{ Variables: SessionVariables }>()
-  const native = new Hono<{ Variables: SessionVariables }>()
-  for (const routes of [compat, native]) {
-    routes.use("*", requireSession(options.auth, options.db))
-  }
-
-  compat.post("/:id/coach", (c) =>
-    startTurn(c, "compat", options.coach, options.coachSseHeartbeatMs)
+  const routes = new Hono<{ Variables: SessionVariables }>()
+  routes.use("*", requireSession(options.auth, options.db))
+  routes.post("/:id/turns", (c) =>
+    startTurn(c, options.coach, options.coachSseHeartbeatMs)
   )
-  native.post("/:id/turns", (c) =>
-    startTurn(c, "native", options.coach, options.coachSseHeartbeatMs)
-  )
-
-  compat.post("/:id/messages/:messageId/reverse", async (c) => {
-    const threadId = threadIdSchema.safeParse(c.req.param("id"))
-    const messageId = threadMessageIdSchema.safeParse(c.req.param("messageId"))
-    if (!threadId.success || !messageId.success) {
-      return jsonWithStatus(
-        c,
-        errorEnvelope(ERROR_CODES.VALIDATION_ERROR, "Invalid id"),
-        httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
-      )
-    }
-    const body = await readJsonBody(c)
-    if (!body.ok) return body.response
-    const parsed = coachReverseRequestSchema.safeParse(body.value)
-    if (!parsed.success) {
-      return jsonWithStatus(
-        c,
-        errorEnvelope(ERROR_CODES.VALIDATION_ERROR, "Invalid undo request"),
-        httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
-      )
-    }
-    const result = await reverseCompatReceipt({
-      registry,
-      userId: c.var.userId,
-      chatId: threadId.data,
-      messageId: messageId.data,
-      toolCallId: parsed.data.toolCallId,
-    })
-    return c.json({ ok: true, data: result })
-  })
-
-  return { compat, native }
+  return routes
 }
 
 async function startTurn(
   c: Context<{ Variables: SessionVariables }>,
-  wire: "compat" | "native",
   coach: CoachRuntime | undefined,
   heartbeatMs = COACH_SSE_HEARTBEAT_MS
 ) {
@@ -167,7 +125,6 @@ async function startTurn(
   return streamSSE(c, async (stream) => {
     await runCoachTurn({
       stream,
-      wire,
       runtime: coach,
       model,
       userId: c.var.userId,

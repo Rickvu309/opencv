@@ -7,7 +7,7 @@ const srcRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 // Exemptions stay out of this scan. auth.ts belongs to Better Auth.
 // apply/ is the posting fetcher, kept until #376 moves it into job/.
 const exemptions = ["auth.ts", "apply"]
-const modules = ["account", "chat", "paper", "job", "inbox", "coach", "compat"]
+const modules = ["account", "chat", "paper", "job", "inbox", "coach"]
 
 function filesUnder(dir: string): string[] {
   const found: string[] = []

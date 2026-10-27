@@ -21,7 +21,7 @@ import {
 
 export type PartContext = {
   canUndo: boolean
-  onUndo?: (toolCallId: string) => Promise<void>
+  onUndo?: (activityId: string) => Promise<void>
 }
 
 type PartProps<K extends CoachPart["kind"]> = {
@@ -30,9 +30,9 @@ type PartProps<K extends CoachPart["kind"]> = {
 }
 
 function undoFor(tool: CoachToolPart, ctx: PartContext) {
-  const { toolCallId } = tool.part
+  const { activityId } = tool.part
   const { onUndo } = ctx
-  return toolCallId && onUndo ? () => onUndo(toolCallId) : undefined
+  return activityId && onUndo ? () => onUndo(activityId) : undefined
 }
 
 // eslint-disable-next-line react-refresh/only-export-components -- the record is the module's contract

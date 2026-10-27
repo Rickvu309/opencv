@@ -1,6 +1,5 @@
 import type { ReactNode } from "react"
 
-import type { CoachUsageRating } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
 
 import { ChatItem } from "@/components/ai-elements/chat.tsx"
@@ -26,9 +25,8 @@ export type CoachTurnsProps = {
   waiting?: boolean
   error?: string | null
   onRetry?: () => void
-  onRate?: (messageId: string, rating: CoachUsageRating) => void
   onRegenerate?: () => void
-  onUndo?: (messageId: string, toolCallId: string) => Promise<void>
+  onUndo?: (activityId: string) => Promise<void>
   messageCite?: (message: HomeMessage) => ReactNode
 }
 
@@ -62,7 +60,6 @@ export function CoachTurns({
   waiting = false,
   error = null,
   onRetry,
-  onRate,
   onRegenerate,
   onUndo,
   messageCite,
@@ -112,9 +109,7 @@ export function CoachTurns({
                 parts={parts}
                 ctx={{
                   canUndo: !waiting && !streaming && Boolean(onUndo),
-                  onUndo: onUndo
-                    ? (toolCallId) => onUndo(message.id, toolCallId)
-                    : undefined,
+                  onUndo,
                 }}
               />
               {streaming ? null : messageCite?.(message)}
@@ -127,7 +122,6 @@ export function CoachTurns({
                       Boolean(onRegenerate) &&
                       message.id === latestCoachId
                     }
-                    onRate={onRate}
                     onRegenerate={onRegenerate}
                   />
                 </MessageFooter>

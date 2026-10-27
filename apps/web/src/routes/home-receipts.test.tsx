@@ -20,7 +20,7 @@ afterEach(() => {
 })
 
 describe("Home Command receipts", { timeout: 15_000 }, () => {
-  it("undoes a reversible receipt and appends a truthful new receipt", async () => {
+  it("undoes a reversible receipt and marks it undone", async () => {
     scriptCoachStream({
       parts: [
         { kind: "text", text: "Moved it." },
@@ -49,16 +49,11 @@ describe("Home Command receipts", { timeout: 15_000 }, () => {
     await expectSendSettled("Move the intern card to Prep")
 
     fireEvent.click(screen.getByRole("button", { name: "Undo" }))
-    expect(
-      await screen.findByRole("button", {
-        name: stepButton("Undid the previous action"),
-      })
-    ).toBeInTheDocument()
-    expect(screen.getByText("Undone")).toBeInTheDocument()
+    expect(await screen.findByText("Undone")).toBeInTheDocument()
     expect(
       screen.queryByRole("button", { name: "Undo" })
     ).not.toBeInTheDocument()
-    expect(screen.getAllByText(/finished$/)).toHaveLength(2)
+    expect(screen.getAllByText(/finished$/)).toHaveLength(1)
   })
 
   it("states a failed undo plainly and keeps the original undo", async () => {
@@ -90,13 +85,9 @@ describe("Home Command receipts", { timeout: 15_000 }, () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Undo" }))
     expect(
-      await screen.findByRole("button", {
-        name: stepButton("Apply card not found"),
-      })
+      await screen.findByText(/Couldn't undo this change/)
     ).toBeInTheDocument()
-    expect(
-      screen.getByText(/Apply card not found failed: Nothing changed\./)
-    ).toBeInTheDocument()
+    expect(screen.queryByText("Undone")).not.toBeInTheDocument()
     expect(screen.getByRole("button", { name: /^Undo/ })).toBeEnabled()
   })
 

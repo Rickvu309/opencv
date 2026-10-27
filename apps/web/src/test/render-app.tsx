@@ -28,6 +28,8 @@ export function renderApp(
       if (pathOf(input) === "/api/public-config") {
         return Response.json({ google: mockPublicConfig.google })
       }
+      const thread = await threadApiFetch(input, init)
+      if (thread) return thread
       const apply = await applyApiFetch(input, init)
       if (apply) return apply
       const paper = await paperApiFetch(input, init)
@@ -36,7 +38,7 @@ export function renderApp(
       if (profile) return profile
       const shell = await shellApiFetch(input, init)
       if (shell) return shell
-      return threadApiFetch(input, init)
+      throw new Error(`Unexpected fetch: ${pathOf(input)}`)
     }
   )
   const queryClient = createQueryClient()

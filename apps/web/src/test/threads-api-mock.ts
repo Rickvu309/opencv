@@ -5,8 +5,6 @@ import {
   shouldAutoTitleThread,
   textFromParts,
   DEFAULT_THREAD_TITLE,
-  THREAD_COMMANDS,
-  type CoachUsageRating,
   type CoachSelection,
   type ThreadDetail,
   type ThreadListItem,
@@ -24,7 +22,7 @@ import type {
   GateState,
   LastCoachRequest,
 } from "./coach-stream-types.ts"
-import { isoNow, urlOf, pathOf, jsonOk, jsonError } from "./mock-http.ts"
+import { isoNow, pathOf, jsonOk, jsonError } from "./mock-http.ts"
 
 export const DEFAULT_COACH_STREAM_TEXTS = [
   "I looked at Apply. ",
@@ -46,6 +44,7 @@ const store: Store = {
 let script: CoachStreamScript = {}
 let gate: GateState = openGate()
 let lastCoachRequest: LastCoachRequest | null = null
+let createCalls: unknown[] = []
 
 function openGate(): GateState {
   return {
@@ -103,7 +102,6 @@ function persistCoach(
     status,
     workedMs,
     parts,
-    rating: null,
   }
   thread.messages.push(message)
   thread.updatedAt = now
@@ -221,7 +219,7 @@ function coachStreamResponse(thread: ThreadDetail, signal?: AbortSignal) {
       if (signal?.aborted) onAbort()
 
       try {
-        await emit(COACH_SSE_EVENTS.messageStart, { threadId: thread.id })
+        await emit(COACH_SSE_EVENTS.messageStart, { chatId: thread.id })
         if (aborted) return
         started = true
 
@@ -235,6 +233,10 @@ function coachStreamResponse(thread: ThreadDetail, signal?: AbortSignal) {
             })
           } else {
             const toolCallId = crypto.randomUUID()
+            const activityId =
+              part.ok && part.reversal?.possible
+                ? crypto.randomUUID()
+                : undefined
             const result = part.result ?? {
               ok: part.ok,
               ...(part.ok
@@ -259,6 +261,7 @@ function coachStreamResponse(thread: ThreadDetail, signal?: AbortSignal) {
               ok: part.ok,
               ...(part.reversal ? { reversal: part.reversal } : {}),
               ...(part.detail ? { detail: part.detail } : {}),
+              ...(activityId ? { activityId } : {}),
               result,
             })
             if (aborted) break
@@ -270,6 +273,7 @@ function coachStreamResponse(thread: ThreadDetail, signal?: AbortSignal) {
               ok: part.ok,
               ...(part.reversal ? { reversal: part.reversal } : {}),
               ...(part.detail ? { detail: part.detail } : {}),
+              ...(activityId ? { activityId } : {}),
               result,
             })
           }
@@ -288,14 +292,7 @@ function coachStreamResponse(thread: ThreadDetail, signal?: AbortSignal) {
         const status: ThreadMessageStatus = streamError ? "error" : "final"
         const message = persistOnce(status)
         if (message && !omitEnd) {
-          await emit(COACH_SSE_EVENTS.messageEnd, {
-            message,
-            usage: {
-              model: "mock",
-              latencyMs: message.workedMs,
-              finishReason: status,
-            },
-          })
+          await emit(COACH_SSE_EVENTS.messageEnd, { chatId: thread.id })
         }
       } catch (error) {
         if (!(error instanceof Error && error.name === "AbortError")) {
@@ -327,6 +324,7 @@ export function resetThreadApiMock() {
   script = {}
   gate = openGate()
   lastCoachRequest = null
+  createCalls = []
 }
 
 export function getLastCoachRequest() {
@@ -366,26 +364,82 @@ export function getMockThreads() {
   return store.threads
 }
 
+function chatRow(thread: ThreadDetail) {
+  return {
+    id: thread.id,
+    title: thread.title,
+    focusKind: thread.focusDocId ? "paper" : null,
+    focusId: thread.focusDocId,
+    createdAt: thread.createdAt,
+    updatedAt: thread.updatedAt,
+  }
+}
+
+function chatDetail(thread: ThreadDetail) {
+  return {
+    ...chatRow(thread),
+    messages: thread.messages.map((message) => ({
+      ...message,
+      role: message.role === "user" ? "person" : "coach",
+      parts: message.parts ?? [],
+      status: message.status ?? "final",
+      workedMs: message.workedMs ?? null,
+    })),
+  }
+}
+
+export function setMockChats(chats: { id: string; title: string }[]) {
+  const now = isoNow()
+  store.threads = chats.map((chat) => ({
+    id: chat.id,
+    title: chat.title,
+    createdAt: now,
+    updatedAt: now,
+    focusDocId: null,
+    messages: structuredClone(
+      FIXTURE_THREADS.find((fixture) => fixture.id === chat.id)?.messages ?? []
+    ),
+  }))
+}
+
+export function chatCreateCalls() {
+  return createCalls
+}
+
+function commandInput(init?: RequestInit) {
+  const body = init?.body ? JSON.parse(String(init.body)) : {}
+  return (
+    body && typeof body === "object" && "input" in body ? body.input : body
+  ) as Record<string, unknown>
+}
+
+function newThread(title?: string, focusDocId?: string): ThreadDetail {
+  const now = isoNow()
+  const created: ThreadDetail = {
+    id: crypto.randomUUID(),
+    title: title?.trim() || DEFAULT_THREAD_TITLE,
+    createdAt: now,
+    updatedAt: now,
+    focusDocId: focusDocId ?? null,
+    messages: [],
+  }
+  store.threads.unshift(created)
+  return created
+}
+
 export async function threadApiFetch(
   input: RequestInfo | URL,
   init?: RequestInit
-): Promise<Response> {
+): Promise<Response | null> {
   const path = pathOf(input)
   const method = (init?.method ?? "GET").toUpperCase()
 
-  if (method === "GET" && path === "/api/threads") {
-    const focusDocId = urlOf(input).searchParams.get("focusDocId")
-    if (focusDocId) {
-      const match = listItems().find(
-        (thread) => thread.focusDocId === focusDocId
-      )
-      return jsonOk(match ?? null)
-    }
-    return jsonOk(listItems())
+  if (method === "GET" && path === "/api/chats") {
+    return jsonOk(listItems().map((item) => chatRow(item as ThreadDetail)))
   }
 
-  const coach = /^\/api\/threads\/([^/]+)\/coach$/.exec(path)
-  if (method === "POST" && coach) {
+  const turn = /^\/api\/chats\/([^/]+)\/turns$/.exec(path)
+  if (method === "POST" && turn) {
     if (script.networkError) {
       script.networkError = false
       throw new TypeError("Failed to fetch")
@@ -404,28 +458,19 @@ export async function threadApiFetch(
       selection?: CoachSelection
     }
     lastCoachRequest = {
-      threadId: coach[1]!,
+      threadId: turn[1]!,
       ...(body.text != null ? { text: body.text } : {}),
       ...(body.mode != null ? { mode: body.mode } : {}),
       ...(body.regenerate ? { regenerate: true } : {}),
       ...(body.focusDocId ? { focusDocId: body.focusDocId } : {}),
       ...(body.selection ? { selection: body.selection } : {}),
     }
-    const thread = store.threads.find((item) => item.id === coach[1])
+    const thread = store.threads.find((item) => item.id === turn[1])
     if (!thread) {
-      return jsonError(404, "NOT_FOUND", "Thread not found")
+      return jsonError(404, "NOT_FOUND", "Chat not found")
     }
     const now = isoNow()
-    if (body.regenerate) {
-      const last = thread.messages[thread.messages.length - 1]
-      if (!last || last.role !== "coach") {
-        return jsonError(
-          400,
-          "VALIDATION_ERROR",
-          "Only the latest Coach turn can be regenerated"
-        )
-      }
-    } else {
+    if (!body.regenerate) {
       thread.messages.push({
         id: crypto.randomUUID(),
         role: "user",
@@ -437,152 +482,86 @@ export async function threadApiFetch(
     return coachStreamResponse(thread, init?.signal ?? undefined)
   }
 
-  const reverse = /^\/api\/threads\/([^/]+)\/messages\/([^/]+)\/reverse$/.exec(
-    path
-  )
-  if (method === "POST" && reverse) {
-    if (script.undoError) {
-      const error = script.undoError
-      script.undoError = undefined
-      return jsonError(error.status, error.code, error.message)
-    }
-
-    const thread = store.threads.find((item) => item.id === reverse[1])
-    const message = thread?.messages.find((item) => item.id === reverse[2])
-    if (!thread || !message || message.role !== "coach") {
-      return jsonError(404, "NOT_FOUND", "Message not found")
-    }
-    const body = (await readBody(init)) as { toolCallId?: string }
-    const parts = message.parts ?? []
-    const index = parts.findIndex(
-      (part) => part.type === "tool" && part.toolCallId === body.toolCallId
-    )
-    const part = index >= 0 ? parts[index] : undefined
-    if (!part || part.type !== "tool" || !part.ok || !part.reversal?.possible) {
-      return jsonError(400, "VALIDATION_ERROR", "This receipt cannot be undone")
-    }
-    if (part.undone) {
-      return jsonError(
-        400,
-        "VALIDATION_ERROR",
-        "This action was already undone"
-      )
-    }
-
-    const commandName = part.reversal.command ?? part.name
-    const toolName = commandName.includes(".")
-      ? commandName.replace(".", "_")
-      : commandName
-    const receipt = script.undoFail
-      ? {
-          type: "tool" as const,
-          name: toolName,
-          summary: script.undoFail.summary,
-          ok: false,
-          toolCallId: crypto.randomUUID(),
-        }
-      : {
-          type: "tool" as const,
-          name: toolName,
-          summary: "Undid the previous action",
-          ok: true,
-          toolCallId: crypto.randomUUID(),
-        }
-    script.undoFail = undefined
-
-    const nextParts = parts.map((item, itemIndex) =>
-      itemIndex === index && item.type === "tool" && receipt.ok
-        ? { ...item, undone: true }
-        : item
-    )
-    nextParts.push(receipt)
-    message.parts = nextParts
-    thread.updatedAt = isoNow()
-    return jsonOk({ thread, receipt })
-  }
-
-  const feedback =
-    /^\/api\/threads\/([^/]+)\/messages\/([^/]+)\/feedback$/.exec(path)
-  if (method === "POST" && feedback) {
-    const thread = store.threads.find((item) => item.id === feedback[1])
-    const message = thread?.messages.find((item) => item.id === feedback[2])
-    if (!thread || !message || message.role !== "coach") {
-      return jsonError(404, "NOT_FOUND", "Coach turn not found")
-    }
-    const body = (await readBody(init)) as { rating?: CoachUsageRating }
-    if (body.rating !== "up" && body.rating !== "down") {
-      return jsonError(400, "VALIDATION_ERROR", "Invalid rating")
-    }
-    message.rating = body.rating
-    return jsonOk({ messageId: message.id, rating: body.rating })
-  }
-
-  const detail = /^\/api\/threads\/([^/]+)$/.exec(path)
+  const detail = /^\/api\/chats\/([^/]+)$/.exec(path)
   if (method === "GET" && detail) {
     const thread = store.threads.find((item) => item.id === detail[1])
     if (!thread) {
-      return jsonError(404, "NOT_FOUND", "Thread not found")
+      return jsonError(404, "NOT_FOUND", "Chat not found")
     }
-    return jsonOk(thread)
+    return jsonOk(chatDetail(thread))
   }
 
-  if (method === "POST" && path === `/api/commands/${THREAD_COMMANDS.create}`) {
-    const body = (await readBody(init)) as {
-      title?: string
-      focusDocId?: string
-    }
-    const now = isoNow()
-    const created: ThreadDetail = {
-      id: crypto.randomUUID(),
-      title: body.title?.trim() || DEFAULT_THREAD_TITLE,
-      createdAt: now,
-      updatedAt: now,
-      focusDocId: body.focusDocId ?? null,
-      messages: [],
-    }
-    store.threads.unshift(created)
-    return jsonOk({
-      id: created.id,
-      title: created.title,
-      createdAt: created.createdAt,
-      updatedAt: created.updatedAt,
-      focusDocId: created.focusDocId,
-    })
+  if (method !== "POST" || !path.startsWith("/api/commands/")) return null
+  const name = path.slice("/api/commands/".length)
+
+  if (name === "chat.create") {
+    const body = commandInput(init)
+    createCalls.push(init?.body ? JSON.parse(String(init.body)) : null)
+    return jsonOk(chatDetail(newThread(body.title as string | undefined)))
   }
 
-  if (method === "POST" && path === `/api/commands/${THREAD_COMMANDS.delete}`) {
-    const body = (await readBody(init)) as { threadId?: string }
-    const index = store.threads.findIndex((item) => item.id === body.threadId)
-    if (index === -1) {
-      return jsonError(404, "NOT_FOUND", "Thread not found")
-    }
+  if (name === "chat.open") {
+    const focus = commandInput(init).focus as { id: string } | undefined
+    const existing = store.threads.find(
+      (item) => focus && item.focusDocId === focus.id
+    )
+    return jsonOk(chatDetail(existing ?? newThread(undefined, focus?.id)))
+  }
+
+  if (name === "chat.rename") {
+    const body = commandInput(init)
+    const thread = store.threads.find((item) => item.id === body.chatId)
+    if (!thread) return jsonError(404, "NOT_FOUND", "Chat not found")
+    thread.title = String(body.title)
+    return jsonOk(chatDetail(thread))
+  }
+
+  if (name === "chat.delete") {
+    const body = commandInput(init)
+    const index = store.threads.findIndex((item) => item.id === body.chatId)
+    if (index === -1) return jsonError(404, "NOT_FOUND", "Chat not found")
     const [removed] = store.threads.splice(index, 1)
     return jsonOk({ id: removed!.id })
   }
 
-  if (
-    method === "POST" &&
-    path === `/api/commands/${THREAD_COMMANDS.postMessage}`
-  ) {
-    const body = (await readBody(init)) as { threadId?: string; text?: string }
-    const thread = store.threads.find((item) => item.id === body.threadId)
-    if (!thread) {
-      return jsonError(404, "NOT_FOUND", "Thread not found")
+  if (name === "activity.undo") {
+    const activityId = String(commandInput(init).activityId ?? "")
+    for (const thread of store.threads) {
+      for (const message of thread.messages) {
+        const part = message.parts?.find(
+          (item) => item.type === "tool" && item.activityId === activityId
+        )
+        if (!part || part.type !== "tool") continue
+        if (script.undoError) {
+          const error = script.undoError
+          script.undoError = undefined
+          return jsonError(error.status, error.code, error.message)
+        }
+        if (script.undoFail) {
+          const failure = script.undoFail
+          script.undoFail = undefined
+          return jsonError(409, "CONFLICT", failure.summary)
+        }
+        part.undone = true
+        return jsonOk({ activityId })
+      }
     }
-    const now = isoNow()
-    thread.messages.push({
-      id: crypto.randomUUID(),
-      role: "user",
-      text: body.text ?? "",
-      createdAt: now,
-    })
-    thread.updatedAt = now
-    return jsonOk(thread)
   }
 
-  throw new Error(`Unexpected fetch: ${method} ${path}`)
+  return null
+}
+
+export async function threadApiFetchOrThrow(
+  input: RequestInfo | URL,
+  init?: RequestInit
+): Promise<Response> {
+  const response = await threadApiFetch(input, init)
+  if (response) return response
+  throw new Error(
+    `Unexpected fetch: ${(init?.method ?? "GET").toUpperCase()} ${pathOf(input)}`
+  )
 }
 
 export function installThreadApiMock() {
-  vi.stubGlobal("fetch", threadApiFetch)
+  vi.stubGlobal("fetch", threadApiFetchOrThrow)
 }

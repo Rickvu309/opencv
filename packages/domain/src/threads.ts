@@ -1,15 +1,13 @@
 import { z } from "zod"
 
 import { applyStageSchema } from "./apply.js"
-import { coachModeSchema, type CoachUsageRating } from "./coach.js"
-import { reversalDescriptorSchema, THREAD_COMMANDS } from "./commands.js"
+import { coachModeSchema } from "./coach.js"
+import { reversalDescriptorSchema } from "./commands.js"
 import {
   paperContentKindSchema,
   paperDocIdSchema,
   paperDocStatusSchema,
 } from "./paper.js"
-
-export { THREAD_COMMANDS }
 
 export const DEFAULT_THREAD_TITLE = "New Thread"
 
@@ -33,41 +31,6 @@ export const threadMessageTextSchema = z
   .trim()
   .min(1, "Message text is required")
   .max(THREAD_MESSAGE_MAX, "Message text is too long")
-
-export const threadsCreateInputSchema = z
-  .object({
-    title: threadTitleSchema.optional(),
-    /** Open Paper doc this Thread is grounded on, when created from Paper. */
-    focusDocId: paperDocIdSchema.optional(),
-  })
-  .strict()
-
-export const threadsRenameInputSchema = z
-  .object({
-    threadId: threadIdSchema,
-    title: threadTitleSchema,
-  })
-  .strict()
-
-export const threadsDeleteInputSchema = z
-  .object({
-    threadId: threadIdSchema,
-  })
-  .strict()
-
-export const threadsPostMessageInputSchema = z
-  .object({
-    threadId: threadIdSchema,
-    text: threadMessageTextSchema,
-  })
-  .strict()
-
-export type ThreadsCreateInput = z.infer<typeof threadsCreateInputSchema>
-export type ThreadsRenameInput = z.infer<typeof threadsRenameInputSchema>
-export type ThreadsDeleteInput = z.infer<typeof threadsDeleteInputSchema>
-export type ThreadsPostMessageInput = z.infer<
-  typeof threadsPostMessageInputSchema
->
 
 export const COACH_SELECTION_TEXT_MAX = 2000
 export const COACH_SELECTION_SECTION_ID_MAX = 80
@@ -173,14 +136,6 @@ export const coachReceiptDetailSchema = z.discriminatedUnion("type", [
 
 export type CoachReceiptDetail = z.infer<typeof coachReceiptDetailSchema>
 
-export const coachReverseRequestSchema = z
-  .object({
-    toolCallId: z.string().min(1),
-  })
-  .strict()
-
-export type CoachReverseRequest = z.infer<typeof coachReverseRequestSchema>
-
 export type MessageRole = z.infer<typeof messageRoleSchema>
 
 export const threadMessageStatusSchema = z.enum(["final", "error", "aborted"])
@@ -200,6 +155,8 @@ export const threadToolPartSchema = z
     ok: z.boolean(),
     reversal: reversalDescriptorSchema.optional(),
     toolCallId: z.string().optional(),
+    /** The activity row the command wrote; `activity.undo` takes this id. */
+    activityId: z.string().optional(),
     /** Set after a successful one-click undo of this receipt. */
     undone: z.boolean().optional(),
     /** Per-command scan payload for the three rich receipts. */
@@ -242,21 +199,10 @@ export type ThreadMessage = {
   parts?: ThreadMessagePart[]
   status?: ThreadMessageStatus
   workedMs?: number
-  /** Present when a `coach_usage` row exists for this message. */
-  rating?: CoachUsageRating | null
 }
 
 export type ThreadDetail = ThreadListItem & {
   messages: ThreadMessage[]
-}
-
-export type ThreadDeleted = {
-  id: string
-}
-
-export type CoachReverseResult = {
-  thread: ThreadDetail
-  receipt: ThreadToolPart
 }
 
 /** Whether a persisted receipt can run its reversal Command. */

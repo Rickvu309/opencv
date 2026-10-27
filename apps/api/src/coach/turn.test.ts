@@ -1,4 +1,4 @@
-import { THREAD_COMMANDS, emptyCvDocument, titleFrom } from "@workspace/domain"
+import { emptyCvDocument, titleFrom } from "@workspace/domain"
 import { afterAll, describe, expect, it } from "vitest"
 
 import { createDemoCoachRuntime, createScriptedCoachRuntime } from "./fake.js"
@@ -29,33 +29,27 @@ describe("coach turn title", () => {
     })
     const headers = authHeaders(cookie)
 
-    const created = await app.request(
-      `/api/commands/${THREAD_COMMANDS.create}`,
-      {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ title: titleFrom(prompt) }),
-      }
-    )
+    const created = await app.request("/api/commands/chat.create", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ title: titleFrom(prompt) }),
+    })
     expect(created.status).toBe(200)
     const createdBody = (await created.json()) as {
       data: { id: string; title: string }
     }
     expect(createdBody.data.title).toBe(titleFrom(prompt))
 
-    const turn = await app.request(
-      `/api/threads/${createdBody.data.id}/coach`,
-      {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ text: prompt }),
-      }
-    )
+    const turn = await app.request(`/api/chats/${createdBody.data.id}/turns`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ text: prompt }),
+    })
     expect(turn.status).toBe(200)
     const sse = await turn.text()
     expect(sse).toContain("Prep the starred one next.")
 
-    const list = await app.request("/api/threads", { headers })
+    const list = await app.request("/api/chats", { headers })
     expect(list.status).toBe(200)
     const threads = (await list.json()) as {
       data: { id: string; title: string }[]
@@ -105,23 +99,17 @@ describe("coach turn title", () => {
       email: "ada-confirm@verify.local",
     })
     const headers = authHeaders(cookie)
-    const created = await app.request(
-      `/api/commands/${THREAD_COMMANDS.create}`,
-      {
-        method: "POST",
-        headers,
-        body: JSON.stringify({}),
-      }
-    )
+    const created = await app.request("/api/commands/chat.create", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({}),
+    })
     const createdBody = (await created.json()) as { data: { id: string } }
-    const turn = await app.request(
-      `/api/threads/${createdBody.data.id}/coach`,
-      {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ text: "Move the card" }),
-      }
-    )
+    const turn = await app.request(`/api/chats/${createdBody.data.id}/turns`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ text: "Move the card" }),
+    })
     expect(turn.status).toBe(200)
     const sse = await turn.text()
     expect(sse).toContain("event: confirm")

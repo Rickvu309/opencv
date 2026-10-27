@@ -5,9 +5,7 @@ import {
   parsePaperId,
   textFromParts,
   type CoachSelection,
-  type CoachUsageRating,
   type ThreadDetail,
-  type ThreadMessage,
   type ThreadMessagePart,
 } from "@workspace/domain"
 
@@ -18,11 +16,10 @@ import {
   createThread,
   getThread,
   getThreadByFocusDoc,
-  rateCoachMessage,
-  reverseCoachReceipt,
   streamCoachRegenerate,
   streamCoachTurn,
   threadQueryKeys,
+  undoReceipt,
   type CoachStreamHandlers,
 } from "@/features/home/thread-api.ts"
 import {
@@ -118,7 +115,6 @@ export function useCoachTurn({
     failure?.kind === "regenerate" ? failure.error.message : null
 
   const {
-    writeDetail,
     rememberListItem,
     hydrateThread,
     keepStreamedCoach,
@@ -173,7 +169,7 @@ export function useCoachTurn({
 
       let parts: ThreadMessagePart[] = []
       let painted = prefix
-      let ended: ThreadMessage | undefined
+      let ended = false
       let streamError: string | undefined
       let id: string | null = threadId
 
@@ -215,8 +211,8 @@ export function useCoachTurn({
           if (stale()) return
           paint(appendCoachPart(parts, { type: "tool-result", ...data }))
         },
-        onMessageEnd({ message }) {
-          ended = message
+        onMessageEnd() {
+          ended = true
         },
         onError({ message }) {
           streamError = message
@@ -232,7 +228,7 @@ export function useCoachTurn({
         rememberPaperTools(parts)
 
         if (ended) {
-          await hydrateThread(id, ended)
+          await hydrateThread(id)
           if (stale()) return
           if (!streamError) {
             dispatch({ type: "finish", messages: null })
@@ -385,44 +381,18 @@ export function useCoachTurn({
     })
   }, [failure, regenerate, send])
 
-  const rate = useCallback(
-    (messageId: string, rating: CoachUsageRating) => {
-      const id = threadId
-      if (!id) return
-
-      dispatch({ type: "rate", messageId, rating })
-      queryClient.setQueryData(
-        threadQueryKeys.detail(id),
-        (prev: ThreadDetail | undefined) =>
-          prev
-            ? {
-                ...prev,
-                messages: prev.messages.map((message) =>
-                  message.id === messageId ? { ...message, rating } : message
-                ),
-              }
-            : prev
-      )
-
-      void rateCoachMessage(id, messageId, rating).catch(() => {
-        // Keep the optimistic pressed state; a later hydrate is truthful.
-      })
-    },
-    [queryClient, threadId]
-  )
-
   const undo = useCallback(
-    async (messageId: string, toolCallId: string) => {
+    async (activityId: string) => {
       const id = threadId
       if (!id || phase !== "idle") return
 
-      const result = await reverseCoachReceipt(id, messageId, toolCallId)
-      writeDetail(id, result.thread)
+      await undoReceipt(activityId)
+      await hydrateThread(id)
       dispatch({ type: "reset" })
       void queryClient.invalidateQueries({ queryKey: paperQueryKeys.all })
       onAfterUndo?.()
     },
-    [onAfterUndo, phase, queryClient, threadId, writeDetail]
+    [hydrateThread, onAfterUndo, phase, queryClient, threadId]
   )
 
   return {
@@ -433,7 +403,6 @@ export function useCoachTurn({
     stop,
     retry,
     regenerate,
-    rate,
     undo,
     cancelInFlight,
   }

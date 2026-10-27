@@ -1,6 +1,5 @@
 import {
   titleFrom,
-  type CoachUsageRating,
   type ThreadMessagePart,
   type ThreadMessageStatus,
 } from "@workspace/domain"
@@ -20,7 +19,6 @@ export type HomeMessage = {
   workedMs?: number
   status?: ThreadMessageStatus
   parts?: ThreadMessagePart[]
-  rating?: CoachUsageRating | null
   failed?: boolean
   error?: string
 }
@@ -45,7 +43,6 @@ export function toHomeMessages(
     workedMs?: number
     status?: ThreadMessageStatus
     parts?: ThreadMessagePart[]
-    rating?: CoachUsageRating | null
   }>
 ): HomeMessage[] {
   return messages.map((message) => ({
@@ -55,6 +52,5 @@ export function toHomeMessages(
     ...(message.workedMs != null ? { workedMs: message.workedMs } : {}),
     ...(message.status ? { status: message.status } : {}),
     ...(message.parts ? { parts: message.parts } : {}),
-    ...(message.rating !== undefined ? { rating: message.rating } : {}),
   }))
 }

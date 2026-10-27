@@ -58,7 +58,6 @@ export { toolResultFromExecute } from "./receipt.js"
 
 export async function runCoachTurn(options: {
   stream: SSEStreamingApi
-  wire: "compat" | "native"
   registry?: Registry
   runtime?: CoachRuntime
   model?: LanguageModel
@@ -110,12 +109,7 @@ export async function runCoachTurn(options: {
   }
 
   try {
-    await emit(
-      COACH_SSE_EVENTS.messageStart,
-      options.wire === "compat"
-        ? { threadId: options.chatId }
-        : { chatId: options.chatId }
-    )
+    await emit(COACH_SSE_EVENTS.messageStart, { chatId: options.chatId })
     const iterable = options.runtime
       ? options.runtime.streamTurn({
           userId: options.userId,
@@ -163,7 +157,7 @@ export async function runCoachTurn(options: {
         await emit(COACH_SSE_EVENTS.error, { message: part.message })
         break
       }
-      if (part.type === "tool-call" && options.wire === "native") {
+      if (part.type === "tool-call") {
         const entry = toolEntries.find(
           (item) =>
             item.name === part.name ||
@@ -247,29 +241,13 @@ export async function runCoachTurn(options: {
       runtime: Boolean(options.runtime),
     })
     if (!isDisconnected(options.stream, signal)) {
-      const message = {
-        id: saved.id,
-        role: "coach" as const,
-        text: saved.text,
-        createdAt: saved.createdAt,
-        parts,
-        status,
-        workedMs,
-      }
-      if (options.wire === "compat") {
-        await emit(COACH_SSE_EVENTS.messageEnd, {
-          message,
-          usage: { ...usage, latencyMs: workedMs, mode: options.mode },
-        })
-      } else {
-        const snapshot = await readUsage(options.userId).catch(() => null)
-        await emit(COACH_SSE_EVENTS.usage, {
-          plan: options.plan,
-          mode: options.mode,
-          capped: snapshot?.day.capped ?? false,
-        })
-        await emit(COACH_SSE_EVENTS.messageEnd, { chatId: options.chatId })
-      }
+      const snapshot = await readUsage(options.userId).catch(() => null)
+      await emit(COACH_SSE_EVENTS.usage, {
+        plan: options.plan,
+        mode: options.mode,
+        capped: snapshot?.day.capped ?? false,
+      })
+      await emit(COACH_SSE_EVENTS.messageEnd, { chatId: options.chatId })
     }
   }
 }

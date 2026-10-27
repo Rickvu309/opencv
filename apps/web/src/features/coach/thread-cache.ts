@@ -18,20 +18,6 @@ import {
 import type { HomeMessage } from "@/features/home/threads.ts"
 import { paperQueryKeys } from "@/features/paper/paper-api.ts"
 
-export function withFallbackMessage(
-  prev: ThreadDetail,
-  fallback: ThreadMessage
-): ThreadDetail {
-  const already = prev.messages.some((item) => item.id === fallback.id)
-  return {
-    ...prev,
-    updatedAt: fallback.createdAt,
-    messages: already
-      ? prev.messages.map((item) => (item.id === fallback.id ? fallback : item))
-      : [...prev.messages, fallback],
-  }
-}
-
 type KeepAbortedInput = {
   id: string
   prev: ThreadDetail | undefined
@@ -129,25 +115,16 @@ export function useThreadCache({
   )
 
   const hydrateThread = useCallback(
-    async (
-      id: string,
-      fallback?: ThreadMessage
-    ): Promise<ThreadDetail | undefined> => {
+    async (id: string): Promise<ThreadDetail | undefined> => {
       try {
         const detail = await getThread(id)
         writeDetail(id, detail)
         return detail
       } catch {
-        const prev = queryClient.getQueryData<ThreadDetail>(
-          threadQueryKeys.detail(id)
-        )
-        if (!fallback || !prev) return undefined
-        const next = withFallbackMessage(prev, fallback)
-        writeDetail(id, next)
-        return next
+        return undefined
       }
     },
-    [queryClient, writeDetail]
+    [writeDetail]
   )
 
   const keepStreamedCoach = useCallback(

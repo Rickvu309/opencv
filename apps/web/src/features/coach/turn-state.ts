@@ -1,4 +1,4 @@
-import type { CoachSelection, CoachUsageRating } from "@workspace/domain"
+import type { CoachSelection } from "@workspace/domain"
 
 import type { TurnPhase } from "@/features/home/thread-store-context.ts"
 import type { HomeMessage } from "@/features/home/threads.ts"
@@ -36,7 +36,6 @@ export type TurnAction =
   | { type: "fail"; error: SendError; messages?: HomeMessage[] }
   | { type: "abort"; messages: HomeMessage[] }
   | { type: "reset" }
-  | { type: "rate"; messageId: string; rating: CoachUsageRating }
 
 export const IDLE_TURN: TurnState = { status: "idle", messages: null }
 
@@ -69,16 +68,6 @@ export function turnReducer(state: TurnState, action: TurnAction): TurnState {
       return { status: "aborted", messages: action.messages }
     case "reset":
       return IDLE_TURN
-    case "rate":
-      if (!state.messages) return state
-      return {
-        ...state,
-        messages: state.messages.map((message) =>
-          message.id === action.messageId
-            ? { ...message, rating: action.rating }
-            : message
-        ),
-      }
   }
 }
 
