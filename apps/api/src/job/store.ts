@@ -7,9 +7,11 @@ import {
   normalizeJobUrl,
   sourceHostFromUrl,
   parseJobId,
+  parsePaperId,
   type Actor,
   type JobCreateInput,
   type JobId,
+  type JobPreview,
   type JobPatch,
   type JobStage,
   type PaperId,
@@ -26,9 +28,13 @@ function iso(value: Date | null) {
   return value ? value.toISOString() : null
 }
 
+function paperIdOrNull(value: string | null) {
+  return value ? parsePaperId(value) : null
+}
+
 export function toJob(row: typeof jobs.$inferSelect) {
   return {
-    id: row.id,
+    id: parseJobId(row.id),
     title: row.title,
     company: row.company,
     stage: row.stage,
@@ -43,8 +49,8 @@ export function toJob(row: typeof jobs.$inferSelect) {
     deadline: row.deadline,
     recruiterName: row.recruiterName,
     recruiterEmail: row.recruiterEmail,
-    cvDocId: row.cvDocId,
-    letterDocId: row.letterDocId,
+    cvDocId: paperIdOrNull(row.cvDocId),
+    letterDocId: paperIdOrNull(row.letterDocId),
     starred: row.starred,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -128,7 +134,7 @@ async function linkedDoc(userId: UserId, docId: string | null) {
     .where(and(eq(paperDocs.id, docId), eq(paperDocs.userId, userId)))
     .limit(1)
   const doc = rows[0]
-  return doc ? { id: doc.id, name: doc.name } : null
+  return doc ? { id: parsePaperId(doc.id), name: doc.name } : null
 }
 
 export async function getJob(userId: UserId, jobId: JobId) {
@@ -407,7 +413,9 @@ export async function linkPaper(
   if (!doc || doc.kind !== kind) {
     throw new CommandError(ERROR_CODES.NOT_FOUND, "Document not found")
   }
-  const previousDocId = kind === "cv" ? job.cvDocId : job.letterDocId
+  const previousDocId = paperIdOrNull(
+    kind === "cv" ? job.cvDocId : job.letterDocId
+  )
   await getDb()
     .update(jobs)
     .set(
@@ -484,7 +492,7 @@ export async function previewJob(
   interpret?: (
     text: string
   ) => Promise<{ title: string; company: string; location: string } | null>
-) {
+): Promise<JobPreview> {
   let text = input.text?.trim() ?? ""
   if (!text && input.url) {
     const fetched = await fetchPosting(input.url)
@@ -525,7 +533,7 @@ export async function previewJob(
     if (duplicate) {
       return {
         status: "duplicate" as const,
-        jobId: duplicate.id,
+        jobId: parseJobId(duplicate.id),
         stage: duplicate.stage,
         fields: {
           title: title || duplicate.title,

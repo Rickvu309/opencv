@@ -8,15 +8,13 @@ import {
   chatOpenInputSchema,
   chatRenameInputSchema,
   chatSetFocusInputSchema,
-  chatIdSchema,
   chatStopInputSchema,
-  defineQuery,
   type Actor,
   type ChatRenameInput,
   type ChatSetFocusInput,
 } from "@workspace/domain"
-import { z } from "zod"
 
+import { tableQuery } from "../registry/bind.js"
 import type { Registry } from "../registry/registry.js"
 import {
   appendChatMessage,
@@ -199,10 +197,8 @@ export function registerChat(registry: Registry) {
   )
 
   registry.addQuery(
-    defineQuery({
-      name: "chat.list",
+    tableQuery("chat.list", {
       description: "List chats.",
-      input: z.object({ query: z.string().optional() }).strict(),
       coach: true,
       step: () => "List chats",
       read: (input, actor) => listChats(actor.userId, input.query),
@@ -210,10 +206,8 @@ export function registerChat(registry: Registry) {
   )
 
   registry.addQuery(
-    defineQuery({
-      name: "chat.get",
+    tableQuery("chat.get", {
       description: "Read one chat.",
-      input: z.object({ chatId: chatIdSchema }).strict(),
       coach: true,
       step: () => "Read the chat",
       read: (input, actor) => getChat(actor.userId, input.chatId),
@@ -221,10 +215,8 @@ export function registerChat(registry: Registry) {
   )
 
   registry.addQuery(
-    defineQuery({
-      name: "link.get",
+    tableQuery("link.get", {
       description: "Read a link host. The page is not fetched.",
-      input: z.object({ url: z.string().trim().min(1).max(2000) }).strict(),
       coach: true,
       step: () => "Read the link",
       read: async (input) => {

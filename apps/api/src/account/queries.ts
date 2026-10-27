@@ -1,5 +1,4 @@
-import { defineQuery, parseUserId, type Actor } from "@workspace/domain"
-import { z } from "zod"
+import { parseUserId, type Actor } from "@workspace/domain"
 import { and, desc, eq, ilike, or } from "drizzle-orm"
 
 import { getDb } from "../db/context.js"
@@ -13,11 +12,10 @@ import {
   jobs,
   paperDocs,
 } from "../db/schema.js"
+import { tableQuery } from "../registry/bind.js"
 import type { Registry } from "../registry/registry.js"
 import { readUsage } from "./usage.js"
 import { getProfileRow, toProfile } from "./store.js"
-
-const empty = z.object({}).strict()
 
 const INTEGRATION_GROUPS = [
   {
@@ -94,50 +92,40 @@ const BILLING_PRO = {
 
 export function registerAccountQueries(registry: Registry) {
   registry.addQuery(
-    defineQuery({
-      name: "profile.get",
+    tableQuery("profile.get", {
       description: "Read the signed-in profile.",
-      input: empty,
       coach: true,
       step: () => "Read profile",
       read: (_input, actor) => readProfile(actor),
     })
   )
   registry.addQuery(
-    defineQuery({
-      name: "integrations.list",
+    tableQuery("integrations.list", {
       description: "Read the integrations catalog.",
-      input: empty,
       coach: false,
       step: () => "Read integrations",
       read: (_input, actor) => listIntegrations(actor.userId),
     })
   )
   registry.addQuery(
-    defineQuery({
-      name: "billing.get",
+    tableQuery("billing.get", {
       description: "Read the plan and billing placeholder.",
-      input: empty,
       coach: false,
       step: () => "Read billing",
       read: (_input, actor) => readBilling(actor.userId),
     })
   )
   registry.addQuery(
-    defineQuery({
-      name: "coach.usage",
+    tableQuery("coach.usage", {
       description: "Read Coach usage for the day, session, and week.",
-      input: empty,
       coach: true,
       step: () => "Read usage",
       read: (_input, actor) => readUsage(actor.userId),
     })
   )
   registry.addQuery(
-    defineQuery({
-      name: "workspace.search",
+    tableQuery("workspace.search", {
       description: "Search chats, documents, and jobs.",
-      input: z.object({ query: z.string().trim().min(1).max(200) }).strict(),
       coach: true,
       step: () => "Search",
       read: (input, actor) => searchWorkspace(actor, input.query),
