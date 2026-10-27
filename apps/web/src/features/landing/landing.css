@@ -157,21 +157,6 @@ html:has(.landing-root) {
   inline-size: 0.875rem;
 }
 
-.landing-pill {
-  border-radius: 999px;
-  color: var(--foreground);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .landing-pill:hover {
-    filter: brightness(0.97);
-  }
-}
-
-.landing-pill[data-quiet] {
-  background: color-mix(in oklch, var(--foreground) 4%, transparent);
-}
-
 .landing-h1 {
   max-inline-size: 45rem;
   font-size: clamp(2.5rem, 1.4rem + 3.6vw, 4rem);
@@ -611,10 +596,10 @@ html:has(.landing-root) {
 
 .landing-close {
   max-inline-size: 45rem;
-  font-size: clamp(2.25rem, 1.2rem + 3.4vw, 4.5rem);
+  font-size: clamp(2.25rem, 0.6rem + 4.35vw, 4.5rem);
   font-weight: 500;
   letter-spacing: -0.022em;
-  line-height: 1.05;
+  line-height: 1;
   text-align: center;
   text-wrap: balance;
 }
@@ -748,7 +733,6 @@ html:has(.landing-root) {
   }
 
   .landing-link,
-  .landing-pill,
   .landing-nav {
     transition-property: color, background-color, border-color, filter;
     transition-duration: var(--duration-micro);

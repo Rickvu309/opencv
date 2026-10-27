@@ -3,12 +3,11 @@ import { useState } from "react"
 import { Link } from "@tanstack/react-router"
 import { ChevronDown } from "lucide-react"
 
-import { buttonVariants } from "@workspace/ui/components/button"
 import { Field } from "@workspace/ui/components/field"
 import { Input } from "@workspace/ui/components/input"
-import { cn } from "@workspace/ui/lib/utils"
 
 import "../landing.css"
+import { landingButton } from "../landing-button.ts"
 import { LandingFooter } from "../landing-footer.tsx"
 import { LandingNav } from "../landing-nav.tsx"
 import {
@@ -126,10 +125,7 @@ export function HelpPage() {
           <p className="landing-section-body">{HELP_STUCK_BODY}</p>
           <a
             href={documentHref("/sign-in")}
-            className={cn(
-              buttonVariants({ size: "lg" }),
-              "landing-pill landing-gradient"
-            )}
+            className={landingButton({ tone: "primary", size: "close" })}
           >
             {HELP_STUCK_LINK}
           </a>

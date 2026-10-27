@@ -1,4 +1,24 @@
+import { readFileSync } from "node:fs"
+import { dirname, join } from "node:path"
+import { fileURLToPath } from "node:url"
+
+import { decodeDataUrl, decodePng, pngMismatch } from "./art-diff.mjs"
 import { isSignUpLink } from "./text-rules.mjs"
+
+// Pixels whose max RGB channel delta exceeds this are a mismatch.
+// The corrected Coach art stays under COACH_ART_MAX. The old centre-rotated
+// art (ellipses spun around their own centre) sits well above it.
+// One wrong ellipse moves about 150 pixels, inside this band. Check 30 is the
+// whole-art smoke test. landing-art-rotation.test.ts pins each ellipse.
+const COACH_ART_CHANNEL = 48
+// Corrected art measured 1.05% (943/90000) on three identical runs. The old
+// centre-rotated art measured 1.47% (1327/90000). 1.25% (1125/90000) sits
+// between them. Leave the limit here: it is not a single-mark check.
+const COACH_ART_MAX = 0.0125
+const coachReferencePath = join(
+  dirname(fileURLToPath(import.meta.url)),
+  "../../reference/coach-art.png"
+)
 
 // Layout, craft, motion, accessibility and performance properties. They read the snapshots that
 // probe.mjs takes at 1440x900 (desktop), 390x844 (mobile) and 1440x900 with reduced motion.
@@ -359,6 +379,85 @@ export function pageChecks({
       lockup
         ? `gap ${gap.toFixed(2)}px, font ${lockup.fontSize} weight ${lockup.fontWeight}`
         : "nav lockup not found"
+    )
+  )
+
+  const near = (value, target) =>
+    typeof value === "number" && Math.abs(value - target) <= 0.6
+  const sized = (button, height, font, pad) =>
+    Boolean(button) &&
+    near(button.h, height) &&
+    button.fontSize === font &&
+    Number(button.fontWeight) === 500 &&
+    near(button.padInline, pad)
+  // A pill's computed radius is at least half the button height. 0.6 matches near().
+  const pill = (button) =>
+    Boolean(button) && button.radius + 0.6 >= button.h / 2
+  const navCta = desktop.ctas?.nav
+  const closeCta = desktop.ctas?.close
+  const sampleCta = desktop.ctas?.sample
+  const ctaMatches =
+    sized(navCta, 32, "13px", 12) &&
+    navCta.inset &&
+    navCta.outer &&
+    pill(navCta) &&
+    sized(closeCta, 44, "16px", 20) &&
+    closeCta.inset &&
+    closeCta.outer &&
+    pill(closeCta) &&
+    sized(sampleCta, 44, "16px", 20) &&
+    sampleCta.inset === false &&
+    sampleCta.outer === false &&
+    sampleCta.borderVisible === false &&
+    pill(sampleCta)
+  const fmtCta = (button) =>
+    button
+      ? `${button.h.toFixed(1)}px ${button.fontSize}/${button.fontWeight} pad ${button.padInline} r ${Number(button.radius).toFixed(1)} ${button.inset ? "inset" : "no-inset"} ${button.outer ? "outer" : "no-outer"} border ${button.borderVisible ? "yes" : "no"}`
+      : "missing"
+  out.push(
+    verdict(
+      "29",
+      "cta-buttons-match-design",
+      "At 1440 the nav Get started is 32px tall, 13px at weight 500, with 12px inline padding, an inset ring, an outer shadow, and a border-radius of at least half its height; the close Get started is 44px tall, 16px at weight 500, with 20px inline padding, an inset ring, an outer shadow, and a border-radius of at least half its height; See a sample is the same size with a border-radius of at least half its height, no inset ring, no outer shadow, and no visible border",
+      ctaMatches,
+      `nav ${fmtCta(navCta)}; close ${fmtCta(closeCta)}; sample ${fmtCta(sampleCta)}`
+    )
+  )
+
+  const rasters = desktop.benefitRasters ?? []
+  const coach = rasters.find(
+    (item) => item.title === "A coach that does the work"
+  )
+  let artMatchesPen = false
+  let artMeasured = "coach raster missing"
+  if (!coach?.png) {
+    artMeasured = coach?.error
+      ? `coach raster failed: ${coach.error}`
+      : `coach raster missing (${rasters.length} cards)`
+  } else if (rasters.length < 3 || rasters.some((item) => !item.png)) {
+    artMeasured = `rasterised ${rasters.filter((item) => item.png).length} of ${rasters.length} benefit svgs`
+  } else {
+    try {
+      const diff = pngMismatch(
+        decodeDataUrl(coach.png),
+        decodePng(readFileSync(coachReferencePath)),
+        COACH_ART_CHANNEL
+      )
+      artMatchesPen = diff.reason === "" && diff.ratio <= COACH_ART_MAX
+      artMeasured = diff.reason
+        ? diff.reason
+        : `${(diff.ratio * 100).toFixed(2)}% of pixels differ by more than ${COACH_ART_CHANNEL} (limit ${(COACH_ART_MAX * 100).toFixed(2)}%), ${rasters.length} svgs rasterised`
+    } catch (error) {
+      artMeasured = `compare failed: ${error.message}`
+    }
+  }
+  out.push(
+    verdict(
+      "30",
+      "benefit-art-matches-pen",
+      `Each benefit card's svg is rasterised in the page. The Coach art matches the pen.dev ground truth (reference/coach-art.png, cropped from a pen.dev screenshot): at most ${(COACH_ART_MAX * 100).toFixed(2)}% of pixels may differ by more than ${COACH_ART_CHANNEL} on any RGB channel. This catches a whole-art regression, not a single wrong mark`,
+      artMatchesPen,
+      artMeasured
     )
   )
   return out

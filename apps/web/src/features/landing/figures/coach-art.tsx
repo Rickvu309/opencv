@@ -249,12 +249,12 @@ export function CoachArt() {
         strokeWidth={0.960154}
       />
       <ellipse
-        cx={210.07725}
-        cy={105.09795}
+        cx={10.10545}
+        cy={15.78085}
         rx={10.10545}
         ry={15.78085}
         fill="var(--card)"
-        transform="rotate(-26.7417 210.07725 105.09795)"
+        transform="translate(199.9718 89.3171) rotate(26.7417)"
         stroke="var(--foreground)"
         strokeWidth={0.960154}
       />
@@ -275,12 +275,12 @@ export function CoachArt() {
         strokeWidth={0.960154}
       />
       <ellipse
-        cx={210.055}
-        cy={152.16725}
+        cx={10.2196}
+        cy={15.78085}
         rx={10.2196}
         ry={15.78085}
         fill="var(--card)"
-        transform="rotate(-26.7417 210.055 152.16725)"
+        transform="translate(199.8354 136.3864) rotate(26.7417)"
         stroke="var(--foreground)"
         strokeWidth={0.960154}
       />
@@ -301,30 +301,30 @@ export function CoachArt() {
         strokeWidth={0.960154}
       />
       <ellipse
-        cx={210.817}
-        cy={201.3211}
+        cx={10.5966}
+        cy={16.5256}
         rx={10.5966}
         ry={16.5256}
         fill="var(--card)"
-        transform="rotate(-26.7417 210.817 201.3211)"
+        transform="translate(200.2204 184.7955) rotate(26.7417)"
         stroke="var(--foreground)"
         strokeWidth={0.960154}
       />
       <ellipse
-        cx={207.81835}
-        cy={202.51325}
+        cx={7.02145}
+        cy={10.30285}
         rx={7.02145}
         ry={10.30285}
         fill="var(--accent)"
-        transform="rotate(-26.7417 207.81835 202.51325)"
+        transform="translate(200.7969 192.2104) rotate(26.7417)"
       />
       <ellipse
-        cx={206.41275}
-        cy={202.7283}
+        cx={5.01045}
+        cy={7.583}
         rx={5.01045}
         ry={7.583}
         fill="var(--card)"
-        transform="rotate(-26.7417 206.41275 202.7283)"
+        transform="translate(201.4023 195.1453) rotate(26.7417)"
       />
       <path
         transform="translate(201.9 193.8088)"

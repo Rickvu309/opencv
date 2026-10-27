@@ -138,12 +138,12 @@ export function ApplicationsArt() {
         strokeWidth={0.858514}
       />
       <ellipse
-        cx={25.66425}
-        cy={149.9417}
+        cx={1.66795}
+        cy={2.0485}
         rx={1.66795}
         ry={2.0485}
         fill="var(--border)"
-        transform="rotate(-23.2329 25.66425 149.9417)"
+        transform="translate(23.9963 147.8932) rotate(23.2329)"
       />
       <path
         transform="translate(23.4375 152.0625)"
@@ -167,12 +167,12 @@ export function ApplicationsArt() {
         strokeWidth={0.858514}
       />
       <ellipse
-        cx={100.84745}
-        cy={149.9417}
+        cx={1.66795}
+        cy={2.0485}
         rx={1.66795}
         ry={2.0485}
         fill="var(--border)"
-        transform="rotate(-23.2329 100.84745 149.9417)"
+        transform="translate(99.1795 147.8932) rotate(23.2329)"
       />
       <path
         transform="translate(98.2125 151.9875)"
@@ -196,12 +196,12 @@ export function ApplicationsArt() {
         strokeWidth={0.858514}
       />
       <ellipse
-        cx={168.18615}
-        cy={149.9417}
+        cx={1.66795}
+        cy={2.0485}
         rx={1.66795}
         ry={2.0485}
         fill="var(--border)"
-        transform="rotate(-23.2329 168.18615 149.9417)"
+        transform="translate(166.5182 147.8932) rotate(23.2329)"
       />
       <path
         transform="translate(165.675 151.9875)"
@@ -225,12 +225,12 @@ export function ApplicationsArt() {
         strokeWidth={0.858514}
       />
       <ellipse
-        cx={236.16245}
-        cy={149.96}
+        cx={1.66795}
+        cy={2.0485}
         rx={1.66795}
         ry={2.0485}
         fill="var(--border)"
-        transform="rotate(-23.2329 236.16245 149.96)"
+        transform="translate(234.4945 147.9115) rotate(23.2329)"
       />
       <path
         transform="translate(233.6625 151.9125)"

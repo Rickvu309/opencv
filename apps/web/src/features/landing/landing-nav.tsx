@@ -2,12 +2,12 @@ import { documentHref } from "@/lib/web-origins-env.ts"
 import { useEffect, useState } from "react"
 import { Link } from "@tanstack/react-router"
 
-import { buttonVariants } from "@workspace/ui/components/button"
 import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { OpenCvLogo } from "@/features/app-shell/app-logo.tsx"
 
+import { landingButton } from "./landing-button.ts"
 import {
   LANDING_LOGIN_LABEL,
   LANDING_NAV_LINKS,
@@ -79,10 +79,7 @@ export function LandingNav() {
             </a>
             <a
               href={documentHref("/sign-in")}
-              className={cn(
-                buttonVariants({ size: "sm" }),
-                "landing-pill landing-gradient [padding-inline:0.75rem] [block-size:2.5rem]"
-              )}
+              className={landingButton({ tone: "primary", size: "nav" })}
             >
               {LANDING_PRIMARY_LABEL}
             </a>

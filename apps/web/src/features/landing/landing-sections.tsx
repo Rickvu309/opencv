@@ -1,9 +1,7 @@
 import { documentHref } from "@/lib/web-origins-env.ts"
 import { Link } from "@tanstack/react-router"
 
-import { buttonVariants } from "@workspace/ui/components/button"
-import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
-import { cn } from "@workspace/ui/lib/utils"
+import { landingButton } from "./landing-button.ts"
 
 import {
   LANDING_CUSTOMERS_LABEL,
@@ -145,21 +143,14 @@ export function LandingClose() {
       <div className="landing-close-actions">
         <a
           href={documentHref("/sign-in")}
-          className={cn(
-            buttonVariants({ size: "lg" }),
-            "landing-pill landing-gradient [padding-inline:1.25rem] [block-size:2.75rem]"
-          )}
+          className={landingButton({ tone: "primary", size: "close" })}
         >
           {LANDING_PRIMARY_LABEL}
         </a>
         <Link
           to="/"
           hash="paper"
-          className={cn(
-            "landing-pill landing-link [padding-inline:1.25rem] text-base font-medium text-foreground [block-size:2.75rem]",
-            FOCUS_RING
-          )}
-          data-quiet
+          className={landingButton({ tone: "quiet", size: "close" })}
         >
           {LANDING_SAMPLE_LABEL}
         </Link>
