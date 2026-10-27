@@ -7,6 +7,7 @@ import {
 } from "@workspace/domain"
 
 import {
+  apiPortFromEnv,
   authUrlFromEnv,
   coachDailyTurnLimitForModeFromEnv,
   coachModelForModeFromEnv,
@@ -170,5 +171,30 @@ describe("coachRuntimeModeFromEnv", () => {
       coachRuntimeModeFromEnv({ COACH_RUNTIME: "openrouter" })
     ).toBeUndefined()
     expect(coachRuntimeModeFromEnv({ COACH_RUNTIME: "   " })).toBeUndefined()
+  })
+})
+
+describe("PORT-derived local defaults", () => {
+  it("derives the web origin and auth URL from PORT when unset", () => {
+    expect(webOriginsFromEnv({ PORT: "4402" })).toEqual([
+      "http://localhost:4403",
+    ])
+    expect(authUrlFromEnv({ PORT: "4402" })).toBe("http://localhost:4402")
+    expect(apiPortFromEnv({ PORT: "4402" })).toBe(4402)
+  })
+
+  it("lets explicit WEB_ORIGINS and AUTH_URL win over PORT", () => {
+    expect(
+      webOriginsFromEnv({ PORT: "4402", WEB_ORIGINS: "https://opencv.me" })
+    ).toEqual(["https://opencv.me"])
+    expect(
+      authUrlFromEnv({ PORT: "4402", AUTH_URL: "https://api.opencv.me" })
+    ).toBe("https://api.opencv.me")
+  })
+
+  it("keeps 3001 and 5173 when PORT is unset or invalid", () => {
+    expect(apiPortFromEnv({})).toBe(3001)
+    expect(apiPortFromEnv({ PORT: "nope" })).toBe(3001)
+    expect(webOriginsFromEnv({ PORT: "" })).toEqual(["http://localhost:5173"])
   })
 })

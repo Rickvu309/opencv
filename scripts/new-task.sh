@@ -53,11 +53,12 @@ port_in_use() {
   fi
 }
 
-# Ports already claimed by other worktrees' .env files (servers may not be running yet).
+# Each worktree owns PORT (api) and PORT+1 (web dev server). A port is taken when
+# another worktree's .env claims it as either one.
 port_claimed() {
   local p=$1 wt_root=$2
   [[ -d "$wt_root" ]] || return 1
-  grep -qsxE "PORT=${p}" "$wt_root"/*/.env 2>/dev/null
+  grep -qsxE "PORT=(${p}|$((p - 1)))" "$wt_root"/*/.env 2>/dev/null
 }
 
 # ---- args -------------------------------------------------------------------
@@ -174,7 +175,8 @@ fi
 
 # ---- .env + port ------------------------------------------------------------
 port=$(( 4000 + issue % 1000 ))
-while port_in_use "$port" || port_claimed "$port" "$wt_root"; do
+while port_in_use "$port" || port_in_use "$(( port + 1 ))" \
+  || port_claimed "$port" "$wt_root" || port_claimed "$(( port + 1 ))" "$wt_root"; do
   port=$(( port + 1 ))
   (( port < 65535 )) || die "no free port found"
 done
@@ -208,7 +210,7 @@ Ready.
   issue     #$issue${issue_title:+  $issue_title}
   branch    $branch
   worktree  $wt_path
-  port      $port   (start the dev server with PORT=$port, e.g. PORT=$port pnpm dev)
+  port      $port   (api on $port, web on $(( port + 1 )); pnpm dev reads .env)
 
 Next:
   cd "$wt_path"

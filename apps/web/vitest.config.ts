@@ -2,6 +2,10 @@ import path from "path"
 import react from "@vitejs/plugin-react"
 import { configDefaults, defineConfig } from "vitest/config"
 
+import { applyLocalApiUrl } from "./local-env"
+
+applyLocalApiUrl("test")
+
 // These files assert first-load module state, so each needs a fresh module graph.
 const ISOLATED_FILES = [
   "src/router-lazy.test.tsx",
