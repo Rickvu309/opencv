@@ -48,9 +48,9 @@ describe("Home Chat mode and History", { timeout: 15_000 }, () => {
 
     await sendMessage("Help me plan the week")
 
-    const working = within(
-      screen.getByRole("log", { name: "Chat" })
-    ).getByRole("status")
+    const working = within(screen.getByRole("log", { name: "Chat" })).getByRole(
+      "status"
+    )
     expect(working).toHaveTextContent("Thinking")
     expect(screen.queryByText("Thinking…")).not.toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Stop" })).toBeInTheDocument()

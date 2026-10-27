@@ -43,9 +43,7 @@ describe("Home Coach dock", () => {
     fireEvent.click(screen.getByRole("button", { name: first!.label }))
 
     expect(composer).toHaveValue(first!.prompt)
-    expect(
-      screen.queryByRole("log", { name: "Chat" })
-    ).not.toBeInTheDocument()
+    expect(screen.queryByRole("log", { name: "Chat" })).not.toBeInTheDocument()
   })
 
   it("sends on Enter and keeps Shift+Enter as a newline", async () => {
@@ -56,9 +54,7 @@ describe("Home Coach dock", () => {
     fireEvent.change(composer, { target: { value: "Line one" } })
     fireEvent.keyDown(composer, { key: "Enter", shiftKey: true })
     expect(getLastCoachRequest()?.text).not.toBe("Line one")
-    expect(
-      screen.queryByRole("log", { name: "Chat" })
-    ).not.toBeInTheDocument()
+    expect(screen.queryByRole("log", { name: "Chat" })).not.toBeInTheDocument()
 
     fireEvent.keyDown(composer, { key: "Enter" })
     await waitFor(() => {
