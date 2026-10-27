@@ -1,6 +1,6 @@
 # verify-landing properties
 
-The checker still measures 26 properties at 1440x900, 390x844 and reduced motion. Ids 01 to 13 are text rules. Ids 14 to 26 are page checks. A property that described the previous four-surface page was replaced with the equivalent on the first-release page.
+The checker still measures 28 properties at 1440x900, 390x844 and reduced motion. Ids 01 to 13 are text rules. Ids 14 to 28 are page checks. A property that described the previous four-surface page was replaced with the equivalent on the first-release page.
 
 | Id  | Name                                | Why it changed                                                                                                                      |
 | --- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
@@ -30,6 +30,8 @@ The checker still measures 26 properties at 1440x900, 390x844 and reduced motion
 | 24  | target-size-24                      | Kept.                                                                                                                               |
 | 25  | hero-image-attrs-and-paint          | Kept. The hero image is the chair.                                                                                                  |
 | 26  | no-sideways-scroll                  | Added. The page must not scroll sideways at 1440 or 390.                                                                            |
+| 27  | benefit-art-from-design             | Added. The three benefit cards use the flat pen art: one 300×300 svg each, 94 paths and ellipses in total, no inline hex.           |
+| 28  | nav-lockup-spacing                  | Added. At 1440 the nav wordmark sits 9 to 13 px from the mark's ink and is 16px at weight 600.                                      |
 
 Pinned copy the rules read: `LANDING_HEADLINE`, `LANDING_SUBHEAD`, `LANDING_STATEMENT_LEAD`, `LANDING_STATEMENT_REST`, `LANDING_PRODUCTS`, `LANDING_LOGO_LABEL`, `LANDING_STORIES`, `LANDING_PRIMARY_LABEL`.
 

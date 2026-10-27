@@ -1,13 +1,13 @@
 ---
 name: verify-landing
-description: Check the OpenCV landing page for quality and taste, writing, logic, structure, visual craft, motion, accessibility and performance. A mechanical checker measures 25 properties in headless Chromium at 1440x900, 390x844 and reduced motion, and a judged rubric scores what a program cannot decide. Use after any change under apps/web/src/features/landing, apps/web/public/landing, a packages/ui component the landing imports (button, card, separator), or the landing copy, and when asked whether the landing is good.
+description: Check the OpenCV landing page for quality and taste, writing, logic, structure, visual craft, motion, accessibility and performance. A mechanical checker measures 28 properties in headless Chromium at 1440x900, 390x844 and reduced motion, and a judged rubric scores what a program cannot decide. Use after any change under apps/web/src/features/landing, apps/web/public/landing, a packages/ui component the landing imports (button, card, separator), or the landing copy, and when asked whether the landing is good.
 ---
 
 # verify-landing
 
 Two layers. The checker (`scripts/verify-landing.mjs`) decides what a program can: counts, words, boxes, colors, computed styles, first-paint state. The rubric below decides the rest, and three reviewers from different model families score it. Neither layer replaces the other. A green checker says the page follows the written rules. It does not say the page is good.
 
-All paths are relative to the repo (or worktree) root. The rules come from the landing research (25 quality checks, kept outside the repo). Each property below names its source, so you do not need that file.
+All paths are relative to the repo (or worktree) root. The rules come from the landing research (kept outside the repo) plus the pen parity checks. Each property below names its source, so you do not need that file.
 
 ## Run the checker
 
@@ -31,7 +31,7 @@ Reading a FAIL: the measured value is what the page does, the rule is what it sh
 
 ## The properties
 
-Ids are the check numbers. The current page is the first-release marketing site. `properties.md` records which checks were kept, which were replaced, and why. The id is also the line to search in `scripts/lib/text-rules.mjs` (01 to 13) or `scripts/lib/page-checks.mjs` (14 to 26, 20b).
+Ids are the check numbers. The current page is the first-release marketing site. `properties.md` records which checks were kept, which were replaced, and why. The id is also the line to search in `scripts/lib/text-rules.mjs` (01 to 13) or `scripts/lib/page-checks.mjs` (14 to 28, 20b).
 
 - 01 `h1-length-and-aim`: 12 words or fewer; an outcome or audience word. Source: Shapiro litmus test; NN/g 2.2.
 - 02 `audience-in-h1-or-subhead`: the word Vietnamese and student(s) or new/recent graduate(s) in H1 or subhead. Source: NN/g 2.3; Digital.gov.
@@ -58,12 +58,15 @@ Ids are the check numbers. The current page is the first-release marketing site.
 - 23 `text-contrast`: 4.5:1, or 3:1 at 24px+ (18.66px bold); text over gradients or images skipped. Source: WCAG 1.4.3.
 - 24 `target-size-24`: every link and button 24x24, or a clear 24px circle (against other targets and other undersized circles); sign-up buttons are always 24x24. Source: WCAG 2.5.8.
 - 25 `hero-image-attrs-and-paint`: width, height, fetchpriority=high, not lazy, no opacity-0 start. Source: web.dev CLS and LCP.
+- 26 `no-sideways-scroll`: the page does not scroll sideways at 1440 or 390.
+- 27 `benefit-art-from-design`: the three benefit cards each contain one svg with viewBox "0 0 300 300", the path and ellipse count across them is 94 (the design art), and no element inside uses an inline hex colour. Source: opencv.pen Benefits frame.
+- 28 `nav-lockup-spacing`: at 1440 the visible gap between the nav mark's right edge and the wordmark's left edge is 9 to 13 px (the mark box has 2 px of inner padding) and the wordmark computed font-size is 16px at weight 600. Source: opencv.pen nav Logo.
 
 Check 09 (the H1 alone says what is sold) is judged, as J1 below. Numbers drawn inside a screenshot (such as a percent on a card) cannot be read from the DOM; 12 reads text and alt, and J4 judges the picture.
 
 ### Baseline at the sync commit
 
-At `88e2d37` the previous landing printed 25 PASS. The first-release page replaced checks that described that page. The replacements and the reason for each are in `properties.md`. The checker now prints 26 lines. A change that breaks one should flip its line to FAIL and nothing else.
+At `88e2d37` the previous landing printed 25 PASS. The first-release page replaced checks that described that page. The replacements and the reason for each are in `properties.md`. The checker now prints 28 lines. A change that breaks one should flip its line to FAIL and nothing else.
 
 ## Taste review (judged layer)
 
@@ -123,6 +126,8 @@ Sync commit: `88e2d37`, the head of PR #296 (craft pass) at which the checks wer
 | 17, 18, 23, 24           | `landing.css` (`.landing-h1`), tokens in `packages/ui/src/globals.css`, `packages/ui/src/components/button.tsx`, `card.tsx`, `section.tsx`, `separator.tsx`                                                                                                                                                                                |
 | 19                       | `LandingShot` `<img alt>`, `apps/web/public/landing/*.webp`                                                                                                                                                                                                                                                                                |
 | 20, 20b, 21              | `landing.css` (`@media (prefers-reduced-motion)`), `landing-nav.tsx` scroll transition, `packages/ui/src/components/button.tsx` (`transition-all`)                                                                                                                                                                                         |
+| 27                       | `#benefits` svgs from `landing-figures.tsx` and `figures/*-art.tsx` (viewBox, path and ellipse count, inline hex)                                                                                                                                                                                                                          |
+| 28                       | `landing-nav.tsx` `OpenCvLogo` mark and wordmark at 1440 (visible gap, font-size, weight)                                                                                                                                                                                                                                                  |
 | Probes and rules         | `.claude/skills/verify-landing/scripts/lib/probe.mjs` (in-page measurements), `text-rules.mjs`, `page-checks.mjs`                                                                                                                                                                                                                          |
 
 Constants the checks assume: the four surface ids (`coach`, `paper`, `apply`, `pitch`), the route `/`, `h1` and `main > section` structure, a sign-up link with `href="/sign-up"`, and images under `/landing/`. If a change moves one, update `probe.mjs` and the rule that reads it in the same PR.
