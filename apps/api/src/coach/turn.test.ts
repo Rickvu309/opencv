@@ -180,7 +180,9 @@ describe("coach turn receipts", () => {
     expect(activityId).toEqual(expect.any(String))
 
     const read = async () =>
-      (await (await app.request(`/api/chats/${chatId}`, { headers })).json()) as {
+      (await (
+        await app.request(`/api/chats/${chatId}`, { headers })
+      ).json()) as {
         data: {
           messages: { parts: { activityId?: string; undone?: boolean }[] }[]
         }

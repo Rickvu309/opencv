@@ -160,16 +160,19 @@ describe("useCoachTurn turn lifecycle", () => {
       { wrapper }
     )
     scriptCoachStream({ texts: ["Kept reply"] })
-    vi.stubGlobal("fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = typeof input === "string" ? input : String(input)
-      if (
-        (init?.method ?? "GET").toUpperCase() === "GET" &&
-        /\/api\/chats\/[^/?]+$/.test(new URL(url, "http://x").pathname)
-      ) {
-        return new Response("{}", { status: 500 })
+    vi.stubGlobal(
+      "fetch",
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = typeof input === "string" ? input : String(input)
+        if (
+          (init?.method ?? "GET").toUpperCase() === "GET" &&
+          /\/api\/chats\/[^/?]+$/.test(new URL(url, "http://x").pathname)
+        ) {
+          return new Response("{}", { status: 500 })
+        }
+        return threadApiFetchOrThrow(input, init)
       }
-      return threadApiFetchOrThrow(input, init)
-    })
+    )
     act(() => {
       result.current.send("Hello")
     })
