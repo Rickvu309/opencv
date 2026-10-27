@@ -9,7 +9,24 @@ import {
   LANDING_COPYRIGHT,
   LANDING_FOOTER,
   LANDING_TAGLINE_LINES,
+  type FooterLink,
 } from "./landing-copy.ts"
+
+function FooterAnchor({ link }: { link: FooterLink }) {
+  const className = cn("landing-link", FOCUS_RING)
+  if (link.href.startsWith("/#")) {
+    return (
+      <Link to="/" hash={link.href.slice(2)} className={className}>
+        {link.label}
+      </Link>
+    )
+  }
+  return (
+    <Link to={link.href} className={className}>
+      {link.label}
+    </Link>
+  )
+}
 
 export function LandingFooter() {
   return (
@@ -32,22 +49,7 @@ export function LandingFooter() {
                 <ul>
                   {column.links.map((link) => (
                     <li key={link.label}>
-                      {link.href === "/pricing" ? (
-                        <Link
-                          to="/pricing"
-                          className={cn("landing-link", FOCUS_RING)}
-                        >
-                          {link.label}
-                        </Link>
-                      ) : (
-                        <Link
-                          to="/"
-                          hash={link.href.slice(2)}
-                          className={cn("landing-link", FOCUS_RING)}
-                        >
-                          {link.label}
-                        </Link>
-                      )}
+                      <FooterAnchor link={link} />
                     </li>
                   ))}
                 </ul>

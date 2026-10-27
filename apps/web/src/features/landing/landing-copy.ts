@@ -256,7 +256,7 @@ export const LANDING_CUSTOMERS_LABEL = "Customer stories"
 
 export type FooterLink = {
   label: string
-  href: "/#paper" | "/#apply" | "/#coach" | "/#stories" | "/pricing"
+  href: "/#paper" | "/#apply" | "/#coach" | "/#stories" | "/pricing" | "/about"
 }
 
 export type FooterColumn = {
@@ -276,7 +276,10 @@ export const LANDING_FOOTER: readonly FooterColumn[] = [
   },
   {
     heading: "Company",
-    links: [{ label: "Stories", href: "/#stories" }],
+    links: [
+      { label: "About", href: "/about" },
+      { label: "Stories", href: "/#stories" },
+    ],
   },
 ]
 

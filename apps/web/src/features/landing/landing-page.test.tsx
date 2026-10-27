@@ -178,10 +178,20 @@ describe("landing page", () => {
       "href",
       "/#coach"
     )
-    expect(footer.getByRole("link", { name: "Stories" })).toHaveAttribute(
-      "href",
-      "/#stories"
-    )
+    const company = within(footer.getByRole("navigation", { name: "Company" }))
+    const companyLinks = company.getAllByRole("link")
+    expect(companyLinks.map((link) => link.textContent)).toEqual([
+      "About",
+      "Stories",
+    ])
+    expect(companyLinks[0]).toHaveAttribute("href", "/about")
+    expect(companyLinks[1]).toHaveAttribute("href", "/#stories")
+    expect(
+      within(screen.getByRole("navigation", { name: "Primary" })).queryByRole(
+        "link",
+        { name: "About" }
+      )
+    ).not.toBeInTheDocument()
     expect(footer.getByText("© 2026 opencv")).toBeInTheDocument()
 
     for (const gone of [
@@ -189,7 +199,6 @@ describe("landing page", () => {
       /^help$/i,
       /^examples$/i,
       /read all stories/i,
-      /^about$/i,
       /^careers$/i,
       /^privacy$/i,
       /^terms$/i,
