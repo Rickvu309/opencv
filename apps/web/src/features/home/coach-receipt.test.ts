@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest"
 
 import {
-  commandNameFromTool,
   namedReceiptHeadline,
   receiptHeadline,
   receiptReversalNote,
@@ -10,15 +9,14 @@ import {
 
 describe("receiptHeadline", () => {
   it("uses a named headline for graduated receipts and drops Ran", () => {
-    expect(commandNameFromTool("job_move")).toBe("job.move")
     expect(
       receiptHeadline({
         type: "tool",
-        name: "job_move",
+        name: "job.move",
         summary: "Moved Associate PM intern at Local startup to Prep",
         ok: true,
         detail: {
-          type: "apply.moveCard",
+          type: "job.move",
           title: "Associate PM intern",
           company: "Local startup",
           from: "inbox",
@@ -29,7 +27,7 @@ describe("receiptHeadline", () => {
     expect(
       receiptHeadline({
         type: "tool",
-        name: "job_list",
+        name: "job.list",
         summary: "Listed 2 Apply cards",
         ok: true,
       })
@@ -40,7 +38,7 @@ describe("receiptHeadline", () => {
     expect(
       receiptHeadline({
         type: "tool",
-        name: "job_move",
+        name: "job.move",
         summary: "Apply card not found",
         ok: false,
       })
@@ -50,7 +48,7 @@ describe("receiptHeadline", () => {
   it("rewrites a Zod dump into a short fail sentence", () => {
     const headline = receiptHeadline({
       type: "tool",
-      name: "job_move",
+      name: "job.move",
       summary:
         'Invalid input for tool apply_moveCard: Type validation failed: Value: {"cardId":"00000000-0000-0000-0000-000000000002"}. Error message: [{"code":"invalid_format","pattern":"/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}$/","message":"Invalid UUID"}]',
       ok: false,
@@ -64,7 +62,7 @@ describe("receiptHeadline", () => {
   it("names the three graduated Commands", () => {
     expect(
       namedReceiptHeadline({
-        type: "paper.updateContent",
+        type: "paper.replace",
         docKind: "cv",
         docName: "PM track CV",
         hunks: [],
@@ -72,7 +70,7 @@ describe("receiptHeadline", () => {
     ).toBe("Updated CV PM track CV")
     expect(
       namedReceiptHeadline({
-        type: "paper.createDoc",
+        type: "paper.create",
         docKind: "letter",
         name: "Untitled Letter",
         status: "draft",
@@ -86,7 +84,7 @@ describe("receipt reversal helpers", () => {
     expect(
       receiptShowsUndo({
         type: "tool",
-        name: "job_move",
+        name: "job.move",
         summary: "Moved it",
         ok: true,
         toolCallId: "call_1",
@@ -94,7 +92,7 @@ describe("receipt reversal helpers", () => {
         reversal: {
           possible: true,
           description: "Undo by moving the card back.",
-          command: "apply.moveCard",
+          command: "job.move",
           input: { cardId: "c1", stage: "inbox" },
         },
       })
@@ -102,7 +100,7 @@ describe("receipt reversal helpers", () => {
     expect(
       receiptShowsUndo({
         type: "tool",
-        name: "job_list",
+        name: "job.list",
         summary: "Listed cards",
         ok: true,
         toolCallId: "call_2",
@@ -115,7 +113,7 @@ describe("receipt reversal helpers", () => {
     expect(
       receiptShowsUndo({
         type: "tool",
-        name: "job_move",
+        name: "job.move",
         summary: "Moved it",
         ok: true,
         toolCallId: "call_3",
@@ -133,7 +131,7 @@ describe("receipt reversal helpers", () => {
     expect(
       receiptShowsUndo({
         type: "tool",
-        name: "paper_rename",
+        name: "paper.rename",
         summary: "Renamed it",
         ok: true,
         toolCallId: "call_4",
@@ -146,7 +144,7 @@ describe("receipt reversal helpers", () => {
     expect(
       receiptReversalNote({
         type: "tool",
-        name: "job_list",
+        name: "job.list",
         summary: "Listed cards",
         ok: true,
         reversal: {
@@ -158,7 +156,7 @@ describe("receipt reversal helpers", () => {
     expect(
       receiptReversalNote({
         type: "tool",
-        name: "job_move",
+        name: "job.move",
         summary: "Moved it",
         ok: true,
         reversal: {

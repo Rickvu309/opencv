@@ -26,12 +26,12 @@ describe("Home Command receipts", { timeout: 15_000 }, () => {
         { kind: "text", text: "Moved it." },
         {
           kind: "tool",
-          name: "job_move",
+          name: "job.move",
           summary: "Moved 'Backend Intern' to Prep",
           ok: true,
           reversal: {
             possible: true,
-            command: "apply.moveCard",
+            command: "job.move",
             description:
               "Undo by moving the card back to its previous Stage and order.",
             input: {
@@ -62,12 +62,12 @@ describe("Home Command receipts", { timeout: 15_000 }, () => {
       parts: [
         {
           kind: "tool",
-          name: "job_move",
+          name: "job.move",
           summary: "Moved 'Backend Intern' to Prep",
           ok: true,
           reversal: {
             possible: true,
-            command: "apply.moveCard",
+            command: "job.move",
             description:
               "Undo by moving the card back to its previous Stage and order.",
             input: {
@@ -96,7 +96,7 @@ describe("Home Command receipts", { timeout: 15_000 }, () => {
       parts: [
         {
           kind: "tool",
-          name: "job_list",
+          name: "job.list",
           summary: "Listed 2 Apply cards",
           ok: true,
           reversal: {
@@ -128,7 +128,7 @@ describe("Home Command receipts", { timeout: 15_000 }, () => {
       parts: [
         {
           kind: "tool",
-          name: "job_move",
+          name: "job.move",
           summary: "Apply card not found",
           ok: false,
         },
@@ -149,12 +149,12 @@ describe("Home Command receipts", { timeout: 15_000 }, () => {
     expect(screen.queryByText(/Reversible —/)).not.toBeInTheDocument()
   })
 
-  it("humanizes a failed apply.moveCard Zod dump and keeps it in the column", async () => {
+  it("humanizes a failed job.move Zod dump and keeps it in the column", async () => {
     scriptCoachStream({
       parts: [
         {
           kind: "tool",
-          name: "job_move",
+          name: "job.move",
           summary:
             'Invalid input for tool apply_moveCard: Type validation failed: Value: {"cardId":"00000000-0000-0000-0000-000000000002"}. Error message: [{"code":"invalid_format","pattern":"/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}$/","message":"Invalid UUID"}]',
           ok: false,

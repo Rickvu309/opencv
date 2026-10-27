@@ -104,34 +104,6 @@ export type ActionsApproveInput = z.infer<typeof actionsApproveInputSchema>
 export type ActionsDenyInput = z.infer<typeof actionsDenyInputSchema>
 export type ActivityUndoInput = z.infer<typeof activityUndoInputSchema>
 
-export type ChatTurnEvent =
-  | { type: "message-start"; chatId: string }
-  | { type: "text-delta"; text: string }
-  | { type: "step"; label: string }
-  | {
-      type: "tool-call"
-      toolCallId: string
-      name: string
-      input: unknown
-    }
-  | {
-      type: "tool-result"
-      toolCallId: string
-      name: string
-      summary: string
-      ok: boolean
-      activityId?: string
-    }
-  | {
-      type: "confirm"
-      pendingActionId: string
-      command: string
-      summary: string
-    }
-  | { type: "usage"; plan: string; mode: string; capped: boolean }
-  | { type: "message-end" }
-  | { type: "error"; message: string }
-
 export function focusedEditNeedsReplace(input: {
   mode: string
   focusKind: string | null

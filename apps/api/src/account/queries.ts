@@ -12,6 +12,7 @@ import {
   jobs,
   paperDocs,
 } from "../db/schema.js"
+import { readStoredParts } from "../chat/index.js"
 import { tableQuery } from "../registry/bind.js"
 import type { Registry } from "../registry/registry.js"
 import { readUsage } from "./usage.js"
@@ -303,7 +304,7 @@ export async function exportAccount(userId: string) {
         chatId: message.chatId,
         role: message.role,
         text: message.text,
-        parts: message.parts,
+        parts: readStoredParts(message.parts),
         status: message.status,
         createdAt: message.createdAt.toISOString(),
       })),

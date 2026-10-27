@@ -87,7 +87,7 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
         { kind: "text", text: "Moved it." },
         {
           kind: "tool",
-          name: "job_move",
+          name: "job.move",
           summary: "Moved 'Backend Intern' to Prep",
           ok: true,
           reversal: {
@@ -144,7 +144,7 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
         { kind: "text", text: "I made those changes." },
         {
           kind: "tool",
-          name: "paper_replace",
+          name: "paper.replace",
           summary: "Updated content of PM track CV",
           ok: true,
           reversal: {
@@ -152,7 +152,7 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
             description: "Undo by writing the previous content back.",
           },
           detail: {
-            type: "paper.updateContent",
+            type: "paper.replace",
             docKind: "cv",
             docName: "PM track CV",
             hunks: [
@@ -169,17 +169,17 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
         },
         {
           kind: "tool",
-          name: "job_move",
+          name: "job.move",
           summary: "Moved Associate PM intern at Local startup to Prep",
           ok: true,
           reversal: {
             possible: true,
             description: "Undo by moving the card back.",
-            command: "apply.moveCard",
+            command: "job.move",
             input: { cardId: "c1", stage: "inbox" },
           },
           detail: {
-            type: "apply.moveCard",
+            type: "job.move",
             title: "Associate PM intern",
             company: "Local startup",
             from: "inbox",
@@ -188,7 +188,7 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
         },
         {
           kind: "tool",
-          name: "paper_create",
+          name: "paper.create",
           summary: "Created CV Untitled CV",
           ok: true,
           reversal: {
@@ -196,7 +196,7 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
             description: "Undo by deleting the Paper doc.",
           },
           detail: {
-            type: "paper.createDoc",
+            type: "paper.create",
             docKind: "cv",
             name: "Untitled CV",
             status: "draft",
@@ -308,7 +308,7 @@ describe("Home Thread mode and History", { timeout: 15_000 }, () => {
         { kind: "text", text: "Moved it." },
         {
           kind: "tool",
-          name: "job_move",
+          name: "job.move",
           summary: "Moved 'Backend Intern' to Prep",
           ok: true,
           reversal: {

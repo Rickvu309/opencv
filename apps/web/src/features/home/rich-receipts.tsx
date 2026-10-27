@@ -25,7 +25,7 @@ import {
 
 type UpdateContentDetail = Extract<
   CoachReceiptDetail,
-  { type: "paper.updateContent" }
+  { type: "paper.replace" }
 >
 
 export function DiffBlock({ detail }: { detail: UpdateContentDetail }) {
@@ -91,7 +91,7 @@ export function DiffBlock({ detail }: { detail: UpdateContentDetail }) {
 function MoveCardBody({
   detail,
 }: {
-  detail: Extract<CoachReceiptDetail, { type: "apply.moveCard" }>
+  detail: Extract<CoachReceiptDetail, { type: "job.move" }>
 }) {
   const fromLabel = stageLabel(detail.from)
   const toLabel = stageLabel(detail.to)
@@ -130,7 +130,7 @@ function MoveCardBody({
 function CreateDocBody({
   detail,
 }: {
-  detail: Extract<CoachReceiptDetail, { type: "paper.createDoc" }>
+  detail: Extract<CoachReceiptDetail, { type: "paper.create" }>
 }) {
   const statusLabel =
     detail.status === "published"
@@ -153,11 +153,11 @@ function CreateDocBody({
 
 export function ReceiptDetail({ detail }: { detail: CoachReceiptDetail }) {
   switch (detail.type) {
-    case "apply.moveCard":
+    case "job.move":
       return <MoveCardBody detail={detail} />
-    case "paper.createDoc":
+    case "paper.create":
       return <CreateDocBody detail={detail} />
-    case "paper.updateContent":
+    case "paper.replace":
       return null
   }
 }

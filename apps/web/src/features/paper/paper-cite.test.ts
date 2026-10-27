@@ -118,7 +118,7 @@ describe("citeFromCoachReply", () => {
     expect(cite?.sectionId).toBe("experience-1-bullet-0")
   })
 
-  it("prefers a paper.updateContent hunk over prose matching", () => {
+  it("prefers a paper.replace hunk over prose matching", () => {
     const cite = citeFromCoachReply({
       ask: "Rewrite the summary",
       reply: "I shortened the summary and mentioned checkout in passing.",
@@ -175,11 +175,11 @@ describe("cite helpers", () => {
       paperCiteHunksFromParts([
         {
           type: "tool",
-          name: "paper_replace",
+          name: "paper.replace",
           summary: "Updated content",
           ok: true,
           detail: {
-            type: "paper.updateContent",
+            type: "paper.replace",
             docKind: "cv",
             docName: "PM track CV",
             hunks: [

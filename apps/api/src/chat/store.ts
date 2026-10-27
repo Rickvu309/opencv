@@ -18,6 +18,7 @@ import { getDb } from "../db/context.js"
 import { activity, chatMessages, chats } from "../db/schema.js"
 import { createId } from "../id.js"
 import { CommandError } from "../registry/errors.js"
+import { readStoredParts } from "./stored-parts.js"
 
 function iso(value: Date) {
   return value.toISOString()
@@ -40,7 +41,7 @@ function toMessage(row: typeof chatMessages.$inferSelect) {
     chatId: row.chatId,
     role: row.role,
     text: row.text,
-    parts: (row.parts ?? []) as ChatMessagePart[],
+    parts: readStoredParts(row.parts),
     status: row.status,
     workedMs: row.workedMs,
     createdAt: iso(row.createdAt),

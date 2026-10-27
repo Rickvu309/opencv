@@ -1,4 +1,8 @@
-import type { CoachStreamPart } from "@workspace/domain"
+import {
+  encodeChatTurnEvent,
+  type ChatTurnEvent,
+  type CoachStreamPart,
+} from "@workspace/domain"
 import type { SSEStreamingApi } from "hono/streaming"
 
 export function isDisconnected(stream: SSEStreamingApi, signal?: AbortSignal) {
@@ -52,17 +56,14 @@ export async function* takeUntilAbort<T>(
   }
 }
 
-export async function writeEvent(
+export async function writeChatEvent(
   stream: SSEStreamingApi,
-  event: string,
-  data: unknown
+  event: ChatTurnEvent
 ) {
   if (stream.aborted) return
+  const wire = encodeChatTurnEvent(event)
   try {
-    await stream.writeSSE({
-      event,
-      data: JSON.stringify(data),
-    })
+    await stream.writeSSE(wire)
   } catch {
     // Client gone — persistence still runs in finally.
   }
@@ -77,28 +78,30 @@ export async function writeHeartbeat(stream: SSEStreamingApi) {
   }
 }
 
-export function sseDataForPart(part: CoachStreamPart): unknown {
+export function eventForPart(part: CoachStreamPart): ChatTurnEvent | null {
   switch (part.type) {
     case "text-delta":
-      return { text: part.text }
+      return { type: "text-delta", text: part.text }
     case "tool-call":
       return {
+        type: "tool-call",
         toolCallId: part.toolCallId,
         name: part.name,
         input: part.input,
       }
     case "tool-result":
       return {
+        type: "tool-result",
         toolCallId: part.toolCallId,
         name: part.name,
         summary: part.summary,
         ok: part.ok,
+        result: part.result,
         ...(part.reversal ? { reversal: part.reversal } : {}),
         ...(part.detail ? { detail: part.detail } : {}),
         ...(part.activityId ? { activityId: part.activityId } : {}),
-        result: part.result,
       }
     default:
-      return {}
+      return null
   }
 }

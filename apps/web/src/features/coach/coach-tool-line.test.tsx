@@ -17,13 +17,13 @@ afterEach(() => {
 
 const moved: ThreadToolPart = {
   type: "tool",
-  name: "job_move",
+  name: "job.move",
   summary: "Moved a card",
   ok: true,
   toolCallId: "call-1",
   activityId: "act-1",
   detail: {
-    type: "apply.moveCard",
+    type: "job.move",
     cardId: "c1",
     title: "Backend Intern",
     company: "Acme",
@@ -33,7 +33,7 @@ const moved: ThreadToolPart = {
   reversal: {
     possible: true,
     description: "Undo by moving the card back.",
-    command: "apply.moveCard",
+    command: "job.move",
     input: { cardId: "c1", stage: "inbox" },
   },
 }

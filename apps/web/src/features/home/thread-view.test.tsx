@@ -24,7 +24,7 @@ beforeEach(() => {
 
 const moveReceipt = {
   type: "tool" as const,
-  name: "job_move",
+  name: "job.move",
   summary: "Moved 'Backend Intern' to Prep",
   ok: true,
   toolCallId: "call-1",
@@ -32,14 +32,14 @@ const moveReceipt = {
   reversal: {
     possible: true,
     description: "Undo by moving the card back.",
-    command: "apply.moveCard",
+    command: "job.move",
     input: { cardId: "c1", stage: "inbox" },
   },
 }
 
 const createReceipt = {
   type: "tool" as const,
-  name: "paper_create",
+  name: "paper.create",
   summary: "Created CV Untitled CV",
   ok: true,
   toolCallId: "call-2",
@@ -152,7 +152,7 @@ describe("ThreadView steps", () => {
             { ...moveReceipt, undone: true },
             {
               type: "tool" as const,
-              name: "job_move",
+              name: "job.move",
               summary: "Undid the previous action",
               ok: true,
               toolCallId: "call-undo",

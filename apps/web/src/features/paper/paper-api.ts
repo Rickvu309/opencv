@@ -1,10 +1,16 @@
-import type { PaperId, PaperView, QueryOutput } from "@workspace/domain"
+import type { QueryClient } from "@tanstack/react-query"
+import type {
+  ChatToolName,
+  PaperId,
+  PaperView,
+  QueryOutput,
+} from "@workspace/domain"
 
-import { ApiError, apiFetch, apiStream } from "@/lib/api.ts"
+import { ApiError, apiFetch } from "@/lib/api.ts"
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
 import { apiBaseUrl } from "@/lib/api-url.ts"
 import { queryKey } from "@/lib/contract-client.ts"
-import { readSseStream } from "@/lib/sse.ts"
+import { streamChatTurn } from "@/lib/coach-stream.ts"
 
 export const paperListKey = () => queryKey({ query: "paper.list" })
 export const paperGetKey = (docId: PaperId) =>
@@ -82,24 +88,32 @@ export function stopPaperChat(chatId: string): Promise<void> {
 }
 
 export async function streamPaperTurn(input: {
+  queryClient: QueryClient
   chatId: string
   text: string
   focusDocId: string
   context?: { kind: "paper" | "job" | "link" | "file"; id: string }[]
   signal?: AbortSignal
   onText: (delta: string) => void
-  onToolResult: (tool: string) => void
+  onToolResult: (tool: ChatToolName) => void
 }): Promise<void> {
-  let res: Response
   try {
-    res = await apiStream(`/api/chats/${input.chatId}/turns`, {
-      method: "POST",
-      body: JSON.stringify({
+    await streamChatTurn({
+      queryClient: input.queryClient,
+      chatId: input.chatId,
+      body: {
         text: input.text,
         focusDocId: input.focusDocId,
         ...(input.context ? { context: input.context } : {}),
-      }),
+      },
       signal: input.signal,
+      onEvent(event) {
+        if (event.type === "text-delta") input.onText(event.text)
+        if (event.type === "tool-result") input.onToolResult(event.name)
+        if (event.type === "error") {
+          throw new ApiError(502, "REQUEST_FAILED", event.message)
+        }
+      },
     })
   } catch (error) {
     if (error instanceof ApiError && error.status === 429) {
@@ -112,27 +126,6 @@ export async function streamPaperTurn(input: {
       )
     }
     throw error
-  }
-  if (!res.body) {
-    throw new ApiError(502, "REQUEST_FAILED", "Coach stream was empty")
-  }
-  for await (const event of readSseStream(res.body, { signal: input.signal })) {
-    if (event.event === "text-delta") {
-      const data = event.data as { text?: string; delta?: string }
-      input.onText(data.delta ?? data.text ?? "")
-    }
-    if (event.event === "tool-result") {
-      const data = event.data as { name?: string; tool?: string }
-      input.onToolResult(data.name ?? data.tool ?? "")
-    }
-    if (event.event === "error") {
-      const data = event.data as { message?: string }
-      throw new ApiError(
-        502,
-        "REQUEST_FAILED",
-        data.message ?? "Coach stopped."
-      )
-    }
   }
 }
 

@@ -118,6 +118,7 @@ export function PaperLetterStart({
           : `Draft a cover letter for ${selected.title} at ${selected.company}.`
       let replaced = false
       await streamPaperTurn({
+        queryClient,
         chatId: chat.id,
         text: turnText,
         focusDocId: created.id,
@@ -128,7 +129,7 @@ export function PaperLetterStart({
           setText(textRef.current)
         },
         onToolResult: (tool) => {
-          if (tool === "paper.replace" || tool === "paper_replace") {
+          if (tool === "paper.replace") {
             replaced = true
             void queryClient.fetchQuery({
               queryKey: paperGetKey(created.id),

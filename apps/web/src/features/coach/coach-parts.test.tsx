@@ -17,12 +17,12 @@ afterEach(() => {
 
 const updated = {
   type: "tool" as const,
-  name: "paper_replace",
+  name: "paper.replace",
   summary: "Updated the CV",
   ok: true,
   toolCallId: "call-1",
   detail: {
-    type: "paper.updateContent" as const,
+    type: "paper.replace" as const,
     docKind: "cv" as const,
     docName: "PM track CV",
     hunks: [

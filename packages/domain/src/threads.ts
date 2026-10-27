@@ -109,7 +109,7 @@ const receiptDiffHunkSchema = z
 export const coachReceiptDetailSchema = z.discriminatedUnion("type", [
   z
     .object({
-      type: z.literal("paper.updateContent"),
+      type: z.literal("paper.replace"),
       docKind: paperContentKindSchema,
       docName: z.string(),
       hunks: z.array(receiptDiffHunkSchema),
@@ -117,7 +117,7 @@ export const coachReceiptDetailSchema = z.discriminatedUnion("type", [
     .strict(),
   z
     .object({
-      type: z.literal("apply.moveCard"),
+      type: z.literal("job.move"),
       title: z.string(),
       company: z.string(),
       from: applyStageSchema,
@@ -126,7 +126,7 @@ export const coachReceiptDetailSchema = z.discriminatedUnion("type", [
     .strict(),
   z
     .object({
-      type: z.literal("paper.createDoc"),
+      type: z.literal("paper.create"),
       docKind: paperContentKindSchema,
       name: z.string(),
       status: paperDocStatusSchema,
