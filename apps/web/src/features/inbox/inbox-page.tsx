@@ -5,6 +5,7 @@ import { PageHeader } from "@workspace/ui/components/page-header"
 import { useMediaQuery } from "@workspace/ui/hooks/use-media-query"
 
 import { ApiError } from "@/lib/api.ts"
+import { shellQueryKeys } from "@/features/app-shell/use-shell-chats.ts"
 import { PROFILE_ZONE } from "@/features/apply/apply-stages.ts"
 
 import { InboxConnect } from "./inbox-connect.tsx"
@@ -53,6 +54,7 @@ export function InboxPage() {
 
   async function refresh() {
     await queryClient.invalidateQueries({ queryKey: inboxKeys.list })
+    await queryClient.invalidateQueries({ queryKey: shellQueryKeys.inbox })
     if (shownId) {
       await queryClient.invalidateQueries({
         queryKey: inboxKeys.thread(shownId),
@@ -83,6 +85,7 @@ export function InboxPage() {
       })
       await panelHold()
       await queryClient.invalidateQueries({ queryKey: inboxKeys.list })
+      await queryClient.invalidateQueries({ queryKey: shellQueryKeys.inbox })
     } catch (error) {
       toast(messageOf(error))
     } finally {

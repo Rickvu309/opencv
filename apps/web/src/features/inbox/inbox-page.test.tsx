@@ -65,6 +65,36 @@ describe("inbox page", () => {
     expect(posts).toEqual(["/api/commands/inbox.skip"])
   })
 
+  it("asks the sidebar to recount after Scan", async () => {
+    const client = createQueryClient()
+    const spy = vi.spyOn(client, "invalidateQueries")
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
+      const path = pathOf(input)
+      if (path === "/api/inbox/connect") return jsonOk({ url: null })
+      if (path === "/api/inbox") {
+        return jsonOk({
+          connected: false,
+          skipped: true,
+          timeZone: "",
+          threads: [],
+        })
+      }
+      if (path === "/api/commands/inbox.scan") {
+        return jsonOk({ threads: [], emailCount: 6, companyCount: 6 })
+      }
+      return jsonOk({})
+    })
+    render(
+      <QueryClientProvider client={client}>
+        <InboxPage />
+      </QueryClientProvider>
+    )
+    await userEvent.click(await screen.findByRole("button", { name: "Scan" }))
+    await waitFor(() => {
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["shell", "inbox"] })
+    })
+  })
+
   it("opens a row into the reader with Back to inbox when narrow", async () => {
     vi.stubGlobal("matchMedia", (query: string) => ({
       matches: query.includes("max-width"),
