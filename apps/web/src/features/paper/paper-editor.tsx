@@ -22,6 +22,7 @@ import { Input } from "@workspace/ui/components/input"
 import { toast } from "@workspace/ui/components/sonner"
 
 import { useRunCommand } from "@/lib/contract-client.ts"
+import { publicShareUrl } from "@/lib/web-origins-env.ts"
 
 import { usePaperAutosave } from "./paper-autosave.ts"
 import { PaperEditorConflictBanner } from "./paper-editor-conflict-banner.tsx"
@@ -109,7 +110,7 @@ export function PaperCvEditor({
   async function copyLink() {
     try {
       const { token } = await run("paper.share", { docId: initial.id })
-      const url = `${window.location.origin}/share/${token}`
+      const url = publicShareUrl(token)
       await navigator.clipboard.writeText(url)
       toast("Link copied")
     } catch (error) {

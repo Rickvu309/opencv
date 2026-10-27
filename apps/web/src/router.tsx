@@ -23,8 +23,17 @@ import { validatePaperSearch } from "@/features/paper/paper-templates.ts"
 import { SignInPage } from "@/routes/sign-in.tsx"
 import { authClient } from "@/lib/auth-client.ts"
 import { validateAuthSearch } from "@/lib/auth-redirect.ts"
+import { documentTarget } from "@/lib/web-origins.ts"
+import { webOrigins } from "@/lib/web-origins-env.ts"
 
 const rootRoute = createRootRoute({
+  beforeLoad: ({ location }) => {
+    const target = documentTarget(
+      new URL(location.href, window.location.origin),
+      webOrigins
+    )
+    if (target) throw redirect({ href: target, reloadDocument: true })
+  },
   component: () => <Outlet />,
   notFoundComponent: () => <NotFoundPage />,
 })
@@ -60,6 +69,7 @@ const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
   beforeLoad: async () => {
+    if (webOrigins.kind === "split") return
     const { data } = await authClient.getSession()
     if (data) {
       throw redirect({ to: "/app" })
@@ -121,7 +131,9 @@ const appLayoutRoute = createRoute({
       if (!data) {
         throw redirect({
           to: "/sign-in",
-          search: { redirect: `${location.pathname}${location.searchStr}` },
+          search: {
+            redirect: `${location.pathname}${location.searchStr}${location.hash ? `#${location.hash}` : ""}`,
+          },
         })
       }
       if (index) {

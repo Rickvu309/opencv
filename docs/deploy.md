@@ -83,9 +83,56 @@ grep -l "api.opencv.me" apps/web/dist/assets/*.js
 pnpm --filter web preview   # serves apps/web/dist
 ```
 
-`vite preview` falls back to `index.html` on its own, so it does not prove the
-Caddy behaviour. `caddy validate --config apps/web/Caddyfile --adapter caddyfile`
-does, when `caddy` is installed.
+`vite preview` does not exercise Caddy's routing. After building, run the real
+HTTP check from `apps/web`, with `PORT` set to your assigned web port:
+
+```bash
+PORT=5450 node scripts/verify-host-routing.mjs
+```
+
+Set `CADDY` to the binary path if it is not on `PATH`. The check starts Caddy
+against `dist` and the generated routing snippet, checks responses, then stops it.
+
+### Public and product hosts
+
+The split is disabled when both `VITE_PUBLIC_ORIGIN` and `VITE_APP_ORIGIN`
+are unset. This preserves the current apex app on a normal main deploy.
+Setting only one, invalid origins, or overlapping hostnames fails the build.
+Both values are build inputs, including Turbo's cache key. Restarting an old
+image does not change its routing.
+
+When enabled, one web image serves both hosts. Sign-in, sign-up and `/app/*`
+belong to the app origin. Pricing, about, help, `/share/*` and future published
+`/u/*` pages belong to the public origin. The public root stays the landing page
+even for a signed-in visitor. The app root opens `/app`. Unknown hosts and paths,
+health checks and assets keep their existing behavior. This does not add Pitch.
+
+The Vite build generates `.generated/host-routing.caddy` from the same policy
+used by the router and landing links. Docker copies it next to the Caddyfile,
+outside `/srv`. Redirects use 307 with `Cache-Control: no-store`, preserving the
+path and query. Browsers preserve the fragment across the document redirect.
+
+Production activation is a separate operator step:
+
+1. Attach `app.opencv.me` to the existing Railway `web` service. Add Railway's
+   DNS and verification records in Cloudflare and wait for valid HTTPS.
+2. Add `https://app.opencv.me` to the API's `WEB_ORIGINS`, retaining the apex
+   and `www` origins. Verify CORS and trusted-origin acceptance.
+3. Set `VITE_PUBLIC_ORIGIN=https://opencv.me` and
+   `VITE_APP_ORIGIN=https://app.opencv.me` on `web`, then rebuild it. Keep
+   `VITE_API_URL=https://api.opencv.me` and `AUTH_URL=https://api.opencv.me`.
+4. Check legacy sign-in and app URLs, landing-page links, an existing session,
+   a new email-code sign-in, sign-out, and an anonymous shared CV. If Google is
+   enabled, check its return to the app origin; its provider callback stays on
+   the API origin. No cookie domain or SameSite change is needed.
+
+To roll back, unset both web origins and rebuild, or restore the previous
+single-host image. Keep the API allowlist overlap while sessions and old tabs
+settle. Do not change `AUTH_URL` as part of this rollback.
+
+For local split proof, build with both origins set, then run the HTTP check
+with the same values and `--split`. Browser proof also needs the API to allow
+both local origins. Use the worktree's assigned ports.
 
 ## Variables
 

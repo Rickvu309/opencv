@@ -62,6 +62,8 @@ export default defineRailway((ctx) => {
       VITE_API_URL: production
         ? "https://api.opencv.me"
         : "https://api-staging.opencv.me",
+      VITE_PUBLIC_ORIGIN: preserve(),
+      VITE_APP_ORIGIN: preserve(),
     },
   })
 
