@@ -8,7 +8,7 @@ import {
   STARTER_CV_NAME,
   starterCvDocument,
 } from "@workspace/domain"
-import type { JobStage } from "@/features/apply/apply-api.ts"
+import type { JobStage } from "@workspace/domain"
 import { ownedCvName } from "@/features/paper/paper-data.ts"
 import { TEST_SESSION_USER } from "@/test/auth-client-mock.ts"
 import { sampleApplyCards } from "@/test/apply-fixtures.ts"

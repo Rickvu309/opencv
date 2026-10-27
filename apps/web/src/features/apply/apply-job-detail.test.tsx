@@ -129,4 +129,11 @@ describe("job detail", () => {
       ).toBe(true)
     })
   })
+
+  it("shows a message instead of crashing when the link has a bad job id", async () => {
+    renderApp("/app/apply/not-a-job-id")
+    expect(
+      await screen.findByText("Could not load jobs. Check the link.")
+    ).toBeTruthy()
+  })
 })

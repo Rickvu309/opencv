@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useCallback, useMemo, useState, type ReactNode } from "react"
 import type { ThreadListItem } from "@workspace/domain"
 
-import { applyQueryKeys } from "@/features/apply/apply-api.ts"
+import { refreshJobQueries } from "@/lib/contract-client.ts"
 import { useCoachTurn } from "@/features/coach/use-coach-turn.ts"
 import { profileQueryKeys } from "@/features/home/profile-api.ts"
 import {
@@ -41,7 +41,7 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
     setThreadId: setActiveThreadId,
     titleForCreate: titleFrom,
     onAfterUndo: () => {
-      void queryClient.invalidateQueries({ queryKey: applyQueryKeys.all })
+      void refreshJobQueries(queryClient)
       void queryClient.invalidateQueries({
         queryKey: profileQueryKeys.current(),
       })
