@@ -1,6 +1,7 @@
 import { useState } from "react"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { useNavigate, useRouterState } from "@tanstack/react-router"
+import type { ProfileUpdateInput } from "@workspace/domain"
 
 import { AccountSection } from "@/features/settings/account-section.tsx"
 import { BillingSection } from "@/features/settings/billing-section.tsx"
@@ -15,14 +16,12 @@ import {
 } from "@/features/settings/settings-layout.tsx"
 import {
   isPlanRequired,
-  readProfile,
   TIME_ZONE_REJECTION,
-  updateProfile,
-  type ProfilePatch,
-  type SettingsProfile,
 } from "@/features/settings/settings-api.ts"
 import { UpgradeScreen } from "@/features/settings/upgrade-screen.tsx"
 import { UsageSection } from "@/features/settings/usage-section.tsx"
+import { fetchProfile, profileKey } from "@/lib/account-api.ts"
+import { useRunCommand } from "@/lib/contract-client.ts"
 import { useFirstCafeSurfaceVisit } from "@/features/home/use-first-cafe-surface-visit.ts"
 
 export function SettingsPage() {
@@ -35,8 +34,8 @@ export function SettingsPage() {
   const view = settingsViewFromPath(pathname)
   useFirstCafeSurfaceVisit(search.tab === "apps" ? "email" : null)
   const profile = useQuery({
-    queryKey: ["settings", "profile"],
-    queryFn: readProfile,
+    queryKey: profileKey(),
+    queryFn: fetchProfile,
   })
   const save = useSettingsSave()
 
@@ -73,20 +72,19 @@ export function SettingsPage() {
 }
 
 function useSettingsSave() {
-  const queryClient = useQueryClient()
+  const runCommand = useRunCommand()
   const navigate = useNavigate()
   const [pending, setPending] = useState(false)
   const [errorKey, setErrorKey] = useState<string>()
   const [error, setError] = useState<string>()
 
-  async function onSave(patch: ProfilePatch) {
+  async function onSave(patch: ProfileUpdateInput) {
     const key = Object.keys(patch)[0]
     setPending(true)
     setError(undefined)
     setErrorKey(undefined)
     try {
-      const next = await updateProfile(patch)
-      queryClient.setQueryData<SettingsProfile>(["settings", "profile"], next)
+      await runCommand("profile.update", patch)
     } catch (caught) {
       if (isPlanRequired(caught)) {
         await navigate({ href: "/app/settings/billing/upgrade" })

@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
+import type { Profile, ProfileUpdateInput } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
 import { UsageBar } from "@workspace/ui/components/usage-bar"
 
@@ -12,12 +13,10 @@ import {
 } from "./settings-layout.tsx"
 import {
   NO_WEEKLY_CAP,
-  readUsage,
   weekUsageLabel,
-  type ProfilePatch,
-  type SettingsProfile,
   type SettingsSave,
 } from "./settings-api.ts"
+import { fetchUsage, usageKey } from "@/lib/account-api.ts"
 
 const AGENTS = [
   {
@@ -53,10 +52,10 @@ export function CoachSection({
   errorKey,
   error,
   onSave,
-}: SettingsSave & { profile: SettingsProfile }) {
+}: SettingsSave & { profile: Profile }) {
   const usage = useQuery({
-    queryKey: ["settings", "usage"],
-    queryFn: readUsage,
+    queryKey: usageKey(),
+    queryFn: fetchUsage,
   })
   const week = usage.data?.week
   return (
@@ -121,7 +120,9 @@ export function CoachSection({
               disabled={pending}
               error={errorKey === agent.key ? error : undefined}
               onClick={() =>
-                onSave({ [agent.key]: !profile[agent.key] } as ProfilePatch)
+                onSave({
+                  [agent.key]: !profile[agent.key],
+                } as ProfileUpdateInput)
               }
               control={<StateWord on={profile[agent.key]} />}
             />

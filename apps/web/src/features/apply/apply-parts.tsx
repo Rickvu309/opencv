@@ -6,7 +6,9 @@ import { StageIcon } from "@workspace/ui/components/stage-icon"
 
 import type { JobPriority, JobView } from "@workspace/domain"
 
-import type { ActivityRow, ChecklistItem } from "./apply-api.ts"
+import type { ActivityFeedRow } from "@workspace/domain"
+
+import type { ChecklistItem } from "./apply-api.ts"
 import { companyInitials, priorityLabel } from "./apply-stages.ts"
 
 export function PriorityBars({ level }: { level: JobPriority }) {
@@ -197,7 +199,7 @@ export function ChecklistItem({
   )
 }
 
-export function ActivityItem({ row }: { row: ActivityRow }) {
+export function ActivityItem({ row }: { row: ActivityFeedRow }) {
   return (
     <li data-slot="activity-item" className="text-sm">
       {row.summary}

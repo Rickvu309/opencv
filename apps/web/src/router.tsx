@@ -10,7 +10,7 @@ import {
   type RouterHistory,
 } from "@tanstack/react-router"
 
-import { getShellProfile } from "@/features/app-shell/shell-api.ts"
+import { fetchProfile } from "@/lib/account-api.ts"
 import { startPagePath } from "@/features/app-shell/start-page.ts"
 
 import { NotFoundPage, UnknownShell } from "@/components/not-found-page.tsx"
@@ -109,7 +109,7 @@ const appLayoutRoute = createRoute({
       if (index) {
         let startPage: unknown = "apply"
         try {
-          const profile = await getShellProfile()
+          const profile = await fetchProfile()
           startPage = profile.startPage
         } catch (error) {
           if (isRedirect(error)) throw error
@@ -137,7 +137,7 @@ const appIndexRoute = createRoute({
   beforeLoad: async () => {
     let startPage: unknown = "apply"
     try {
-      const profile = await getShellProfile()
+      const profile = await fetchProfile()
       startPage = profile.startPage
     } catch (error) {
       if (isRedirect(error)) throw error

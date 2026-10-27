@@ -34,13 +34,12 @@ const shellProfile = vi.hoisted(() => ({
   next: null as null | (() => Promise<unknown>),
 }))
 
-vi.mock("@/features/app-shell/shell-api.ts", async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import("@/features/app-shell/shell-api.ts")>()
+vi.mock("@/lib/account-api.ts", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/account-api.ts")>()
   return {
     ...actual,
-    getShellProfile: () =>
-      shellProfile.next ? shellProfile.next() : actual.getShellProfile(),
+    fetchProfile: () =>
+      shellProfile.next ? shellProfile.next() : actual.fetchProfile(),
   }
 })
 

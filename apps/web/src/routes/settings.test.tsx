@@ -1,3 +1,4 @@
+import { QueryClient } from "@tanstack/react-query"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import {
   cleanup,
@@ -9,7 +10,7 @@ import {
 import userEvent from "@testing-library/user-event"
 
 import { DESKTOP_MEDIA_QUERY } from "@/features/app-shell/use-media-query.ts"
-import { updateProfile } from "@/features/settings/settings-api.ts"
+import { runContractCommand } from "@/lib/contract-client.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import {
   getLastDelete,
@@ -272,7 +273,11 @@ describe("settings", () => {
     expect(
       screen.queryByText("Free is included. Light and Max need Pro.")
     ).not.toBeInTheDocument()
-    await expect(updateProfile({ coachMode: "light" })).rejects.toMatchObject({
+    await expect(
+      runContractCommand(new QueryClient(), "profile.update", {
+        coachMode: "light",
+      })
+    ).rejects.toMatchObject({
       code: "PLAN_REQUIRED",
     })
     expect(getMockCoachMode()).toBe("free")

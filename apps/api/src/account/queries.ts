@@ -124,6 +124,14 @@ export function registerAccountQueries(registry: Registry) {
     })
   )
   registry.addQuery(
+    tableQuery("activity.list", {
+      description: "Read the newest activity, optionally for one subject.",
+      coach: false,
+      step: () => "Read activity",
+      read: (input, actor) => readActivity(actor.userId, input),
+    })
+  )
+  registry.addQuery(
     tableQuery("workspace.search", {
       description: "Search chats, documents, and jobs.",
       coach: true,
@@ -131,6 +139,33 @@ export function registerAccountQueries(registry: Registry) {
       read: (input, actor) => searchWorkspace(actor, input.query),
     })
   )
+}
+
+export async function readActivity(
+  userId: string,
+  filter: { subjectKind?: string; subjectId?: string }
+) {
+  const filters = [eq(activity.userId, userId)]
+  if (filter.subjectKind)
+    filters.push(eq(activity.subjectKind, filter.subjectKind))
+  if (filter.subjectId) filters.push(eq(activity.subjectId, filter.subjectId))
+  const rows = await getDb()
+    .select()
+    .from(activity)
+    .where(and(...filters))
+    .orderBy(desc(activity.createdAt))
+    .limit(100)
+  return rows.map((row) => ({
+    id: row.id,
+    createdAt: row.createdAt.toISOString(),
+    actor: row.actor,
+    command: row.command,
+    subjectKind: row.subjectKind,
+    subjectId: row.subjectId,
+    summary: row.summary,
+    undoneAt: row.undoneAt?.toISOString() ?? null,
+    reversible: Boolean(row.reversalCommand) && row.undoneAt == null,
+  }))
 }
 
 export async function readProfile(actor: Actor) {

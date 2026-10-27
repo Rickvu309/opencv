@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { Check } from "lucide-react"
 
-import { apiFetch } from "@/lib/api.ts"
+import { useRunCommand } from "@/lib/contract-client.ts"
 
 import { AUTH_COPY, LANGUAGE_STORAGE_KEY, readLanguage } from "./auth-copy.ts"
 
@@ -12,6 +12,7 @@ function prefersReducedMotion() {
 }
 
 export function WelcomeScreen({ onDone }: { onDone: () => void }) {
+  const runCommand = useRunCommand()
   const [coachReady, setCoachReady] = useState(false)
 
   useEffect(() => {
@@ -22,10 +23,7 @@ export function WelcomeScreen({ onDone }: { onDone: () => void }) {
       const language = readLanguage()
       if (language === "vi") {
         try {
-          await apiFetch("/api/commands/profile.update", {
-            method: "POST",
-            body: JSON.stringify({ input: { language: "vi" } }),
-          })
+          await runCommand("profile.update", { language: "vi" })
         } catch {
           // A failed language post still lets welcome finish.
         }
@@ -40,10 +38,7 @@ export function WelcomeScreen({ onDone }: { onDone: () => void }) {
       if (cancelled) return
       setCoachReady(true)
       try {
-        await apiFetch("/api/commands/profile.markWelcomed", {
-          method: "POST",
-          body: JSON.stringify({ input: {} }),
-        })
+        await runCommand("profile.markWelcomed", {})
       } catch {
         // The next signed-in load tries welcome again.
       }
@@ -54,7 +49,7 @@ export function WelcomeScreen({ onDone }: { onDone: () => void }) {
     return () => {
       cancelled = true
     }
-  }, [onDone])
+  }, [onDone, runCommand])
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-background px-4 text-foreground">

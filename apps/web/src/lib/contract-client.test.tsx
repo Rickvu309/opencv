@@ -3,6 +3,7 @@ import { parseChatId, parseJobId } from "@workspace/domain"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
+  activityKey,
   queryKey,
   runContractCommand,
   undoActivity,
@@ -16,7 +17,7 @@ function seed(queryClient: QueryClient) {
     list: queryKey({ query: "job.list" }),
     mine: queryKey({ query: "job.get", input: { jobId: JOB } }),
     other: queryKey({ query: "job.get", input: { jobId: OTHER } }),
-    activity: ["activity", JOB],
+    activity: activityKey("job", JOB),
     paper: queryKey({ query: "paper.list" }),
   }
   for (const key of Object.values(keys)) {
@@ -109,7 +110,7 @@ describe("runContractCommand", () => {
       queryKey({ query: "paper.files" }),
       queryKey({ query: "inbox.get", input: { id: "mail-1" } }),
       queryKey({ query: "chat.get", input: { chatId } }),
-      ["activity", JOB],
+      activityKey("job", JOB),
     ]
     for (const key of refreshed) queryClient.setQueryData(key, { seeded: true })
     stubFetch({ id: activityId })

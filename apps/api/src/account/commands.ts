@@ -1,12 +1,7 @@
 import {
-  accountDeleteInputSchema,
-  accountRequestEmailChangeInputSchema,
+  accountContract,
   ERROR_CODES,
-  notifyRequestInputSchema,
   parseFileId,
-  profileMarkWelcomedInputSchema,
-  profileSetPhotoInputSchema,
-  profileUpdateInputSchema,
   type Actor,
   type NotifyTopic,
 } from "@workspace/domain"
@@ -16,6 +11,7 @@ import { getBoundAuth, getRequestHeaders } from "../auth.js"
 import { getDb } from "../db/context.js"
 import { files, notifyRequests } from "../db/schema.js"
 import { createId } from "../id.js"
+import { bindCommands } from "../registry/bind.js"
 import { CommandError, isUniqueViolation } from "../registry/errors.js"
 import type { Registry } from "../registry/registry.js"
 import {
@@ -26,103 +22,58 @@ import {
   updateProfile,
 } from "./store.js"
 
+let commandsAdded = false
+
 export function registerAccount(registry: Registry) {
-  registry.addCommand(
-    {
-      name: "profile.update",
-      description: "Update profile, plan mode, and agent settings.",
-      input: profileUpdateInputSchema,
-      coach: "never",
-      destructive: false,
+  if (commandsAdded) return
+  commandsAdded = true
+
+  bindCommands(registry, accountContract, {
+    "profile.update": {
+      handler: (input, actor) => updateProfile(actor, input),
       reversal: () => null,
-      step: () => "Update profile",
       activity: () => null,
     },
-    (input, actor) => updateProfile(actor, input)
-  )
-
-  registry.addCommand(
-    {
-      name: "profile.markWelcomed",
-      description: "Record that the welcome screen finished.",
-      input: profileMarkWelcomedInputSchema,
-      coach: "never",
-      destructive: false,
+    "profile.markWelcomed": {
+      handler: (_input, actor) => markWelcomed(actor),
       reversal: () => null,
-      step: () => "Mark welcomed",
       activity: () => null,
     },
-    (_input, actor) => markWelcomed(actor)
-  )
-
-  registry.addCommand(
-    {
-      name: "profile.setPhoto",
-      description: "Set the profile photo from an uploaded file.",
-      input: profileSetPhotoInputSchema,
-      coach: "never",
-      destructive: false,
+    "profile.setPhoto": {
+      handler: async (input, actor) => {
+        const rows = await getDb()
+          .select({ id: files.id, purpose: files.purpose })
+          .from(files)
+          .where(
+            and(eq(files.id, input.fileId), eq(files.userId, actor.userId))
+          )
+          .limit(1)
+        const file = rows[0]
+        if (!file || file.purpose !== "avatar") {
+          throw new CommandError(ERROR_CODES.NOT_FOUND, "Photo file not found")
+        }
+        return setProfilePhoto(actor.userId, parseFileId(file.id))
+      },
       reversal: () => null,
-      step: () => "Set photo",
       activity: () => null,
     },
-    async (input, actor) => {
-      const rows = await getDb()
-        .select({ id: files.id, purpose: files.purpose })
-        .from(files)
-        .where(and(eq(files.id, input.fileId), eq(files.userId, actor.userId)))
-        .limit(1)
-      const file = rows[0]
-      if (!file || file.purpose !== "avatar") {
-        throw new CommandError(ERROR_CODES.NOT_FOUND, "Photo file not found")
-      }
-      return setProfilePhoto(actor.userId, parseFileId(file.id))
-    }
-  )
-
-  registry.addCommand(
-    {
-      name: "account.requestEmailChange",
-      description: "Ask for a code to change the sign-in email.",
-      input: accountRequestEmailChangeInputSchema,
-      coach: "never",
-      destructive: false,
+    "account.requestEmailChange": {
+      handler: (input) => requestEmailChange(input.email),
       reversal: () => null,
-      step: () => "Request email change",
       activity: () => null,
-      // The handler calls better-auth, which opens its own connection.
       transaction: "none",
     },
-    (input) => requestEmailChange(input.email)
-  )
-
-  registry.addCommand(
-    {
-      name: "account.delete",
-      description: "Delete the account and every row it owns.",
-      input: accountDeleteInputSchema,
-      coach: "never",
-      destructive: true,
+    "account.delete": {
+      handler: (input, actor) => deleteOwnedAccount(actor, input.confirm),
       reversal: () => null,
-      step: () => "Delete account",
       activity: () => null,
     },
-    (input, actor) => deleteOwnedAccount(actor, input.confirm)
-  )
-
-  registry.addCommand(
-    {
-      name: "notify.request",
-      description: "Ask to hear when a topic is ready.",
-      input: notifyRequestInputSchema,
-      coach: "auto",
-      destructive: false,
+    "notify.request": {
+      handler: (input, actor) => requestNotify(actor, input.topic),
       reversal: () => null,
-      step: (input) => `Notify me about ${input.topic}`,
       activity: () => null,
     },
-    (input, actor) => requestNotify(actor, input.topic)
-  )
+  })
 }
 
 const SEND_FAILED = "We could not send the code. Try again."

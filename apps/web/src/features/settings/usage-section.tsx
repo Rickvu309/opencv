@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
+import type { Profile, QueryOutput } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
 import { UsageBar } from "@workspace/ui/components/usage-bar"
 
@@ -15,23 +16,21 @@ import {
   NO_SESSION_CAP,
   NO_WEEKLY_CAP,
   percentLabel,
-  readUsage,
   sessionResetLabel,
   weekResetLabel,
-  type SettingsPlan,
-  type UsageWindow,
 } from "./settings-api.ts"
+import { fetchUsage, usageKey } from "@/lib/account-api.ts"
 
 export function UsageSection({
   plan,
   timeZone,
 }: {
-  plan: SettingsPlan
+  plan: Profile["plan"]
   timeZone: string
 }) {
   const usage = useQuery({
-    queryKey: ["settings", "usage"],
-    queryFn: readUsage,
+    queryKey: usageKey(),
+    queryFn: fetchUsage,
   })
   const navigate = useNavigate()
   const planLine =
@@ -95,7 +94,7 @@ function UsageReadout({
 }: {
   label: string
   kind: "session" | "week"
-  usageWindow: UsageWindow
+  usageWindow: QueryOutput<"coach.usage">["session"]
   timeZone: string
 }) {
   const uncapped = kind === "week" ? NO_WEEKLY_CAP : NO_SESSION_CAP

@@ -1,13 +1,6 @@
 import { apiFetch } from "@/lib/api.ts"
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
 
-export type ShellProfile = {
-  name: string | null
-  image: string | null
-  startPage: string | null
-  timeZone: string | null
-}
-
 export type ShellJob = {
   id: string
   title: string
@@ -22,21 +15,6 @@ function record(value: unknown): Record<string, unknown> | null {
 
 function text(value: unknown) {
   return typeof value === "string" ? value : ""
-}
-
-export function parseShellProfile(data: unknown): ShellProfile {
-  const row = record(data)
-  return {
-    name: text(row?.name) || null,
-    image: text(row?.image) || null,
-    startPage: text(row?.startPage) || null,
-    timeZone: text(row?.timeZone) || null,
-  }
-}
-
-export async function getShellProfile() {
-  const body = await apiFetch<SuccessBody<unknown>>("/api/profile")
-  return parseShellProfile(unwrapData(body))
 }
 
 function parseJobs(data: unknown): ShellJob[] {

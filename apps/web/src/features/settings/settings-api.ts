@@ -1,5 +1,7 @@
-import { runCommand, unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
-import { ApiError, apiFetch } from "@/lib/api.ts"
+import type { Profile, ProfileUpdateInput } from "@workspace/domain"
+
+import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
+import { ApiError } from "@/lib/api.ts"
 import { apiBaseUrl } from "@/lib/api-url.ts"
 
 export const PHOTO_MAX_BYTES = 2 * 1024 * 1024
@@ -16,114 +18,21 @@ export const UPGRADE_PLACEHOLDER = "Billing is not open yet."
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-export type SettingsPlan = "free" | "pro"
-export type SettingsLanguage = "en" | "vi"
-export type SettingsStartPage = "apply" | "paper" | "inbox" | "coach"
-export type CoachMode = "free" | "light" | "max"
-
-export type SettingsProfile = {
-  id: string
-  name: string
-  email: string
-  emailVerified: boolean
-  image: string | null
-  plan: SettingsPlan
-  coachMode: CoachMode
-  language: SettingsLanguage
-  timeZone: string
-  startPage: SettingsStartPage
-  notifyEmail: boolean
-  notifyBrowser: boolean
-  memoryEnabled: boolean
-  agentChat: boolean
-  agentCvs: boolean
-  agentInterview: boolean
-  agentEmail: boolean
-  agentWeekly: boolean
-  welcomedAt: string | null
-  inboxSkippedAt: string | null
-}
-
 export type SettingsSave = {
   pending: boolean
   errorKey?: string
   error?: string
-  onSave: (patch: ProfilePatch) => void
+  onSave: (patch: ProfileUpdateInput) => void
 }
 
-export type ProfilePatch = Partial<{
-  name: string
-  language: SettingsLanguage
-  timeZone: string
-  startPage: SettingsStartPage
-  notifyEmail: boolean
-  notifyBrowser: boolean
-  memoryEnabled: boolean
-  coachMode: CoachMode
-  agentChat: boolean
-  agentCvs: boolean
-  agentInterview: boolean
-  agentEmail: boolean
-  agentWeekly: boolean
-}>
-
-export type UsageWindow =
-  | { capped: true; percent: number; resetsAt: string }
-  | { capped: false; resetsAt: string }
-
-export type UsageSnapshot = {
-  plan: SettingsPlan
-  mode: CoachMode
-  session: UsageWindow
-  day:
-    | {
-        capped: true
-        used: number
-        cap: number
-        remaining: number
-        resetsAt: string
-      }
-    | { capped: false; resetsAt: string }
-  week: UsageWindow
-}
-
-export type IntegrationStatus = "enabled" | "disabled" | "unavailable"
-
-export type IntegrationItem = {
-  id: string
-  name: string
-  line: string
-  status: IntegrationStatus
-}
-
-export type IntegrationGroup = {
-  id: string
-  label: string
-  items: IntegrationItem[]
-}
-
-export type BillingSnapshot = {
-  plan: SettingsPlan
-  free: { price: string; line: string }
-  pro: { price: string; line: string; benefits: string[] }
-  payment: null
-  invoices: []
-}
-
-export type EmailChangeResult = {
-  email: string
-  sent: boolean
-  message?: string
-}
-
-const START_PATHS: Record<SettingsStartPage, string> = {
+const START_PATHS: Record<Profile["startPage"], string> = {
   apply: "/app/apply",
   paper: "/app/paper",
   coach: "/app/coach",
   inbox: "/app/inbox",
 }
 
-export function startPageHref(startPage: SettingsStartPage | undefined) {
+export function startPageHref(startPage: Profile["startPage"] | undefined) {
   if (!startPage) return "/app/apply"
   return START_PATHS[startPage] ?? "/app/apply"
 }
@@ -186,41 +95,6 @@ export function weekUsageLabel(percent: number) {
   return `${percent}% of this week used`
 }
 
-export async function readProfile() {
-  const body = await apiFetch<SuccessBody<SettingsProfile>>("/api/profile")
-  return unwrapData(body)
-}
-
-export async function updateProfile(patch: ProfilePatch) {
-  return runCommand<SettingsProfile>("profile.update", patch)
-}
-
-export async function readUsage() {
-  const body = await apiFetch<SuccessBody<UsageSnapshot>>("/api/coach/usage")
-  return unwrapData(body)
-}
-
-export async function readIntegrations() {
-  const body =
-    await apiFetch<SuccessBody<{ groups: IntegrationGroup[] }>>(
-      "/api/integrations"
-    )
-  return unwrapData(body)
-}
-
-export async function readBilling() {
-  const body = await apiFetch<SuccessBody<BillingSnapshot>>("/api/billing")
-  return unwrapData(body)
-}
-
-export async function requestEmailChange(email: string) {
-  return runCommand<EmailChangeResult>("account.requestEmailChange", { email })
-}
-
-export async function deleteAccount() {
-  return runCommand<unknown>("account.delete", { confirm: "DELETE" })
-}
-
 export async function uploadPhoto(file: File) {
   const rejection = photoRejection(file)
   if (rejection) throw new ApiError(400, "VALIDATION_ERROR", rejection)
@@ -235,7 +109,7 @@ export async function uploadPhoto(file: File) {
     const message = await errorMessage(res)
     throw new ApiError(res.status, "REQUEST_FAILED", message)
   }
-  const body = (await res.json()) as SuccessBody<SettingsProfile>
+  const body = (await res.json()) as SuccessBody<Profile>
   return unwrapData(body)
 }
 

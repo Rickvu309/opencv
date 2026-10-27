@@ -139,7 +139,7 @@ export async function streamPaperTurn(input: {
 export async function latestActivityId(
   subjectId: string
 ): Promise<string | null> {
-  const body = await apiFetch<SuccessBody<{ id: string }[]>>(
+  const body = await apiFetch<SuccessBody<QueryOutput<"activity.list">>>(
     `/api/activity?subjectId=${encodeURIComponent(subjectId)}`
   )
   return unwrapData(body)[0]?.id ?? null

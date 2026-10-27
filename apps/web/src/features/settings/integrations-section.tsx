@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
+import type { QueryOutput } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 
@@ -10,17 +11,13 @@ import {
   SettingsTitle,
   StateWord,
 } from "./settings-layout.tsx"
-import {
-  connectGmail,
-  GMAIL_UNAVAILABLE,
-  readIntegrations,
-  type IntegrationItem,
-} from "./settings-api.ts"
+import { connectGmail, GMAIL_UNAVAILABLE } from "./settings-api.ts"
+import { fetchIntegrations, integrationsKey } from "@/lib/account-api.ts"
 
 export function IntegrationsSection() {
   const catalog = useQuery({
-    queryKey: ["settings", "integrations"],
-    queryFn: readIntegrations,
+    queryKey: integrationsKey(),
+    queryFn: fetchIntegrations,
   })
   const [search, setSearch] = useState("")
   const [notice, setNotice] = useState<string>()
@@ -103,7 +100,7 @@ function IntegrationCard({
   notice,
   onConnect,
 }: {
-  item: IntegrationItem
+  item: QueryOutput<"integrations.list">["groups"][number]["items"][number]
   notice?: string
   onConnect?: () => void
 }) {

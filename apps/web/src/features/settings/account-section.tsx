@@ -1,5 +1,7 @@
 import { useRef, useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
+import type { Profile } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
 import {
   Dialog,
@@ -18,7 +20,9 @@ import {
 } from "@workspace/ui/components/avatar"
 
 import { CodeInput } from "@/features/auth/code-input.tsx"
+import { profileKey } from "@/lib/account-api.ts"
 import { authClient } from "@/lib/auth-client.ts"
+import { useRunCommand } from "@/lib/contract-client.ts"
 
 import { DeleteAccountDialog } from "./delete-account-dialog.tsx"
 import {
@@ -33,9 +37,7 @@ import {
   NAME_REJECTION,
   photoRejection,
   PHOTO_REJECTION,
-  requestEmailChange,
   uploadPhoto,
-  type SettingsProfile,
   type SettingsSave,
 } from "./settings-api.ts"
 
@@ -45,8 +47,9 @@ export function AccountSection({
   errorKey,
   error,
   onSave,
-}: SettingsSave & { profile: SettingsProfile }) {
+}: SettingsSave & { profile: Profile }) {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const fileRef = useRef<HTMLInputElement>(null)
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [photoError, setPhotoError] = useState<string>()
@@ -66,7 +69,10 @@ export function AccountSection({
     }
     setPhotoError(undefined)
     void uploadPhoto(file)
-      .then(() => setPhotoUrl(URL.createObjectURL(file)))
+      .then((next) => {
+        queryClient.setQueryData(profileKey(), next)
+        setPhotoUrl(URL.createObjectURL(file))
+      })
       .catch((caught: unknown) => {
         setPhotoError(
           caught instanceof Error ? caught.message : PHOTO_REJECTION
@@ -223,6 +229,7 @@ function ChangeEmailDialog({
   current: string
   onOpenChange: (open: boolean) => void
 }) {
+  const runCommand = useRunCommand()
   const [email, setEmail] = useState(current)
   const [error, setError] = useState<string>()
   const [pendingEmail, setPendingEmail] = useState<string | null>(null)
@@ -247,7 +254,9 @@ function ChangeEmailDialog({
     }
     setError(undefined)
     try {
-      const result = await requestEmailChange(email.trim())
+      const result = await runCommand("account.requestEmailChange", {
+        email: email.trim(),
+      })
       if (!result.sent) {
         setError(result.message?.trim() ? result.message : "Try again.")
         return

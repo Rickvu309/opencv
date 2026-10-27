@@ -5,7 +5,9 @@ import type {
   JobView,
 } from "@workspace/domain"
 
-import type { ActivityRow, ChecklistItem } from "@/features/apply/apply-api.ts"
+import type { ActivityFeedRow } from "@workspace/domain"
+
+import type { ChecklistItem } from "@/features/apply/apply-api.ts"
 import { jsonError, jsonOk, pathOf, urlOf } from "./mock-http.ts"
 
 type LinkedDoc = JobDetail["linked"]["cv"]
@@ -14,7 +16,7 @@ type Extra = {
   note: string
   checklist: ChecklistItem[]
   linked: { cv: LinkedDoc; letter: LinkedDoc }
-  activity: ActivityRow[]
+  activity: ActivityFeedRow[]
   previousStage: JobStage | null
 }
 
@@ -64,7 +66,7 @@ function commandInput(body: Record<string, unknown>) {
 function record(name: string, input: Record<string, unknown>) {
   const activityId = crypto.randomUUID()
   posts.push({ name, input, activityId })
-  const row: ActivityRow = {
+  const row: ActivityFeedRow = {
     id: activityId,
     createdAt: new Date().toISOString(),
     actor: "person",
@@ -99,7 +101,7 @@ export function setMockJobs(
       note?: string
       checklist?: ChecklistItem[]
       linked?: { cv: LinkedDoc; letter: LinkedDoc }
-      activity?: ActivityRow[]
+      activity?: ActivityFeedRow[]
     }
   >
 ) {

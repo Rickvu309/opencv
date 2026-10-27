@@ -1,4 +1,4 @@
-import { DEFAULT_COACH_MODE, type UserProfile } from "@workspace/domain"
+import { DEFAULT_COACH_MODE, type Profile } from "@workspace/domain"
 
 import { SAMPLE_AUTHOR } from "@/features/seed/sample-author.ts"
 import { authMockState } from "@/test/auth-client-mock.ts"
@@ -20,8 +20,20 @@ type Extras = {
   inboxSkippedAt: string | null
 }
 
+type BaseProfile = Pick<
+  Profile,
+  | "id"
+  | "name"
+  | "email"
+  | "emailVerified"
+  | "image"
+  | "coachMode"
+  | "createdAt"
+  | "updatedAt"
+>
+
 type Store = {
-  profile: UserProfile
+  profile: BaseProfile
 }
 
 const store: Store = {
@@ -97,7 +109,7 @@ function defaultExtras(): Extras {
   }
 }
 
-function defaultProfile(): UserProfile {
+function defaultProfile(): BaseProfile {
   return {
     id: "user_test",
     name: SAMPLE_AUTHOR.name,
@@ -146,7 +158,7 @@ export function resetProfileApiMock() {
   paths.length = 0
 }
 
-export function setMockProfile(patch: Partial<UserProfile>) {
+export function setMockProfile(patch: Partial<BaseProfile>) {
   store.profile = { ...store.profile, ...patch }
 }
 

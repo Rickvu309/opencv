@@ -1,19 +1,13 @@
 import { useQuery } from "@tanstack/react-query"
 
-import { getShellProfile } from "@/features/app-shell/shell-api.ts"
+import { fetchProfile, profileKey } from "@/lib/account-api.ts"
 import { authClient } from "@/lib/auth-client.ts"
 
 export function useShellProfile() {
   const session = authClient.useSession()
   const query = useQuery({
-    queryKey: ["shell", "profile"],
-    queryFn: async () => {
-      try {
-        return await getShellProfile()
-      } catch {
-        return null
-      }
-    },
+    queryKey: profileKey(),
+    queryFn: fetchProfile,
   })
   const sessionUser = session.data?.user
   const name =

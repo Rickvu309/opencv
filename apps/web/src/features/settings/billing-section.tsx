@@ -10,12 +10,12 @@ import {
   SettingsSkeletons,
   SettingsTitle,
 } from "./settings-layout.tsx"
-import { readBilling } from "./settings-api.ts"
+import { billingKey, fetchBilling } from "@/lib/account-api.ts"
 
 export function BillingSection() {
   const billing = useQuery({
-    queryKey: ["settings", "billing"],
-    queryFn: readBilling,
+    queryKey: billingKey(),
+    queryFn: fetchBilling,
   })
   const navigate = useNavigate()
 
