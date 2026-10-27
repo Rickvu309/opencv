@@ -2,11 +2,8 @@ import { useRouterState } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
 import { isCvDocument } from "@workspace/domain"
 
-import { apiFetch } from "@/lib/api.ts"
-import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
-
 import { CvDocument } from "./paper-cv-document.tsx"
-import { asRecord } from "./paper-api.ts"
+import { getSharedPaper, paperSharedKey } from "./paper-api.ts"
 import { printLayout } from "./paper-templates.ts"
 
 function shareToken(pathname: string) {
@@ -20,13 +17,8 @@ export function PaperSharePage() {
   })
   const token = shareToken(pathname)
   const query = useQuery({
-    queryKey: ["paper", "share", token],
-    queryFn: async () => {
-      const body = await apiFetch<SuccessBody<unknown>>(
-        `/api/paper/shared/${token}`
-      )
-      return asRecord(unwrapData(body))
-    },
+    queryKey: paperSharedKey(token),
+    queryFn: () => getSharedPaper(token),
     enabled: token.length > 0,
   })
 

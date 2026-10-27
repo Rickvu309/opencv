@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react"
 
+import type { PaperTemplateId } from "@workspace/domain"
+
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 
@@ -14,11 +16,11 @@ export function PaperTemplateGallery({
   onUse,
   onImport,
 }: {
-  onUse: (templateId: string) => void
+  onUse: (templateId: PaperTemplateId) => void
   onImport?: () => void
 }) {
   const [query, setQuery] = useState("")
-  const [selected, setSelected] = useState("simple")
+  const [selected, setSelected] = useState<PaperTemplateId>("simple")
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase()
     if (!needle) return PAPER_TEMPLATE_LABELS

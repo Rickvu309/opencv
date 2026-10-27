@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { cleanup, fireEvent, render, screen } from "@testing-library/react"
+import { cleanup, fireEvent, screen } from "@testing-library/react"
+import { render } from "@/test/render-with-client.tsx"
 
 import { PaperNewDialog } from "./paper-new-dialog.tsx"
 
@@ -20,7 +21,10 @@ describe("Paper new dialog", () => {
       const url = String(input)
       calls.push({
         url,
-        body: typeof init?.body === "string" ? JSON.parse(init.body) : null,
+        body:
+          typeof init?.body === "string"
+            ? (JSON.parse(init.body) as { input?: unknown }).input
+            : null,
       })
       return Promise.resolve(
         ok({

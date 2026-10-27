@@ -1,5 +1,11 @@
 import { useRef, useState } from "react"
-import { paperDocNameSchema } from "@workspace/domain"
+import { useQueryClient } from "@tanstack/react-query"
+import {
+  paperDocNameSchema,
+  type JobView,
+  type PaperFile,
+  type PaperView,
+} from "@workspace/domain"
 import { toast, toastWithUndo } from "@workspace/ui/components/sonner"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -13,21 +19,14 @@ import { Input } from "@workspace/ui/components/input"
 
 import { ApiError } from "@/lib/api-error.ts"
 import { apiBaseUrl } from "@/lib/api-url.ts"
-
 import {
-  deleteFile,
-  deletePaper,
-  duplicatePaper,
-  importPaperFile,
-  latestActivityId,
-  linkJobPaper,
-  listJobs,
-  renamePaper,
-  undoActivity,
-  type JobSummary,
-  type PaperFileRecord,
-  type PaperRecord,
-} from "./paper-api.ts"
+  refreshPaperQueries,
+  refreshQueries,
+  useRunCommand,
+} from "@/lib/contract-client.ts"
+import { listJobs } from "@/features/apply/apply-api.ts"
+
+import { importPaperFile, latestActivityId, undoActivity } from "./paper-api.ts"
 import { PaperNewDialog } from "./paper-new-dialog.tsx"
 import { PAPER_GALLERY_DIALOG_CLASS } from "./paper-template-gallery.tsx"
 import { PaperLetterStart } from "./paper-letter.tsx"
@@ -41,10 +40,10 @@ const IMPORT_ACCEPT =
 type Mode =
   | { type: "new"; step: "kind" | "gallery" }
   | { type: "letter" }
-  | { type: "rename"; doc: PaperRecord }
-  | { type: "delete"; doc: PaperRecord }
-  | { type: "link"; doc: PaperRecord }
-  | { type: "delete-file"; file: PaperFileRecord }
+  | { type: "rename"; doc: PaperView }
+  | { type: "delete"; doc: PaperView }
+  | { type: "link"; doc: PaperView }
+  | { type: "delete-file"; file: PaperFile }
   | null
 
 function messageOf(error: unknown, fallback: string) {
@@ -60,22 +59,22 @@ export function PaperLibrary({
   error,
   onRetry,
   onOpen,
-  onChanged,
 }: {
-  docs: PaperRecord[]
-  files: PaperFileRecord[]
+  docs: PaperView[]
+  files: PaperFile[]
   loading: boolean
   error: string | null
   onRetry: () => void
   onOpen: (id: string) => void
-  onChanged?: () => void
 }) {
+  const run = useRunCommand()
+  const queryClient = useQueryClient()
   const importRef = useRef<HTMLInputElement>(null)
   const [query, setQuery] = useState("")
   const [mode, setMode] = useState<Mode>(null)
   const [rename, setRename] = useState("")
   const [renameError, setRenameError] = useState<string | null>(null)
-  const [jobs, setJobs] = useState<JobSummary[]>([])
+  const [jobs, setJobs] = useState<JobView[]>([])
   const [jobsError, setJobsError] = useState<string | null>(null)
   const dialogOpen = mode !== null
   const needle = query.trim().toLowerCase()
@@ -100,7 +99,13 @@ export function PaperLibrary({
         toast(label)
         return
       }
-      toastWithUndo(label, () => void undoActivity(activityId))
+      toastWithUndo(
+        label,
+        () =>
+          void undoActivity(activityId).then(() =>
+            refreshPaperQueries(queryClient)
+          )
+      )
     } catch {
       toast(label)
     }
@@ -109,6 +114,10 @@ export function PaperLibrary({
   async function onImport(file: File) {
     try {
       const created = await importPaperFile(file)
+      void refreshQueries(queryClient, [
+        { query: "paper.list" },
+        { query: "paper.files" },
+      ])
       setMode(null)
       onOpen(created.id)
     } catch (err) {
@@ -125,7 +134,7 @@ export function PaperLibrary({
     importRef.current?.click()
   }
 
-  async function openLink(doc: PaperRecord) {
+  async function openLink(doc: PaperView) {
     setMode({ type: "link", doc })
     setJobsError(null)
     try {
@@ -143,9 +152,8 @@ export function PaperLibrary({
       return
     }
     try {
-      await renamePaper({ docId: mode.doc.id, name: parsed.data })
+      await run("paper.rename", { docId: mode.doc.id, name: parsed.data })
       setMode(null)
-      onChanged?.()
     } catch (err) {
       setRenameError(messageOf(err, "Could not rename. Try again."))
     }
@@ -155,10 +163,9 @@ export function PaperLibrary({
     if (!mode || mode.type !== "delete") return
     const name = mode.doc.name
     try {
-      await deletePaper(mode.doc.id)
+      await run("paper.delete", { docId: mode.doc.id })
       toast(`Deleted ${name}`)
       setMode(null)
-      onChanged?.()
     } catch (err) {
       toast(messageOf(err, "Could not delete. Try again."))
     }
@@ -167,26 +174,24 @@ export function PaperLibrary({
   async function confirmDeleteFile() {
     if (!mode || mode.type !== "delete-file") return
     try {
-      await deleteFile(mode.file.id)
+      await run("paper.deleteFile", { fileId: mode.file.id })
       toast(`Deleted ${mode.file.name}`)
       setMode(null)
-      onChanged?.()
     } catch (err) {
       toast(messageOf(err, "Could not delete that file. Try again."))
     }
   }
 
-  async function duplicate(doc: PaperRecord) {
+  async function duplicate(doc: PaperView) {
     try {
-      const copy = await duplicatePaper(doc.id)
-      onChanged?.()
+      const copy = await run("paper.duplicate", { docId: doc.id })
       await rememberUndo(copy.id, `Duplicated ${doc.name}`)
     } catch (err) {
       toast(messageOf(err, "Could not duplicate. Try again."))
     }
   }
 
-  async function download(doc: PaperRecord) {
+  async function download(doc: PaperView) {
     try {
       const res = await fetch(new URL(`/api/paper/${doc.id}/pdf`, apiBaseUrl), {
         credentials: "include",
@@ -207,13 +212,13 @@ export function PaperLibrary({
     }
   }
 
-  function renderCard(doc: PaperRecord) {
+  function renderCard(doc: PaperView) {
     return (
       <PaperCard
         key={doc.id}
         name={doc.name}
         edited={paperEditedLabel(doc.updatedAt)}
-        templateId={doc.templateId}
+        templateId={doc.templateId ?? "simple"}
         onOpen={() => onOpen(doc.id)}
         onRename={() => {
           setRename(doc.name)
@@ -515,7 +520,11 @@ export function PaperLibrary({
                 onClick={() => {
                   if (!mode || mode.type !== "link") return
                   const kind = mode.doc.kind === "letter" ? "letter" : "cv"
-                  void linkJobPaper({ jobId: job.id, docId: mode.doc.id, kind })
+                  void run("job.linkPaper", {
+                    jobId: job.id,
+                    docId: mode.doc.id,
+                    kind,
+                  })
                     .then(() => {
                       toast(`Linked to ${job.title}`)
                       setMode(null)

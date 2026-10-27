@@ -5,7 +5,7 @@ import {
   listStarredJobs,
   readInboxUnreadCount,
 } from "@/features/app-shell/shell-api.ts"
-import { listPaperDocs, paperQueryKeys } from "@/features/paper/paper-api.ts"
+import { listPaper, paperListKey } from "@/features/paper/paper-api.ts"
 
 export const shellQueryKeys = {
   chats: ["shell", "chats"] as const,
@@ -26,8 +26,8 @@ export function useShellFavorites() {
     queryFn: listStarredJobs,
   })
   const docs = useQuery({
-    queryKey: paperQueryKeys.list(),
-    queryFn: listPaperDocs,
+    queryKey: paperListKey(),
+    queryFn: listPaper,
   })
   const favoriteDocs = docs.isError
     ? []

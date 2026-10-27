@@ -1,10 +1,11 @@
+import type { JobView, PaperView } from "@workspace/domain"
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { cleanup, fireEvent, render, screen } from "@testing-library/react"
+import { cleanup, fireEvent, screen } from "@testing-library/react"
+import { render } from "@/test/render-with-client.tsx"
 
 import { PaperLetterEditor, PaperLetterStart } from "./paper-letter.tsx"
-import type { JobSummary, PaperRecord } from "./paper-api.ts"
 
-const job: JobSummary = {
+const job: JobView = {
   id: "job-1",
   title: "Associate PM",
   company: "Northwind",
@@ -14,7 +15,7 @@ const job: JobSummary = {
   updatedAt: "2026-08-25T12:00:00.000Z",
 }
 
-const letter: PaperRecord = {
+const letter: PaperView = {
   id: "letter-1",
   name: "Cover letter, Northwind",
   kind: "letter",
@@ -25,7 +26,6 @@ const letter: PaperRecord = {
   checks: [],
   pageChoice: "unset",
   sourceFileId: null,
-  applyCardId: null,
   createdAt: "2026-08-25T12:00:00.000Z",
   updatedAt: "2026-08-25T12:00:00.000Z",
 }

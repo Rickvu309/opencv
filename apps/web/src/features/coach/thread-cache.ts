@@ -16,7 +16,7 @@ import {
   upsertThreadListItem,
 } from "@/features/home/thread-api.ts"
 import type { HomeMessage } from "@/features/home/threads.ts"
-import { paperQueryKeys } from "@/features/paper/paper-api.ts"
+import { refreshPaperQueries } from "@/lib/contract-client.ts"
 
 type KeepAbortedInput = {
   id: string
@@ -151,7 +151,7 @@ export function useThreadCache({
           (part) => part.type === "tool" && part.name.startsWith("paper_")
         )
       ) {
-        void queryClient.invalidateQueries({ queryKey: paperQueryKeys.all })
+        void refreshPaperQueries(queryClient)
       }
     },
     [queryClient]

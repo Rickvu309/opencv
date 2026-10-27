@@ -114,7 +114,10 @@ describe("selectionForTurn", () => {
     const first = addSelectionChip([], BULLET, "sel-1")
     const chips = addSelectionChip(
       first,
-      { text: "Facilitated prioritization workshops using RICE.", sectionId: "experience-0" },
+      {
+        text: "Facilitated prioritization workshops using RICE.",
+        sectionId: "experience-0",
+      },
       "sel-2"
     )
     expect(selectionForTurn(chips)?.text).toContain("Ran weekly")

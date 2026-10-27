@@ -1,24 +1,24 @@
 import { useNavigate } from "@tanstack/react-router"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 
 import { useFirstCafeSurfaceVisit } from "@/features/home/use-first-cafe-surface-visit.ts"
 import {
   listPaper,
   listPaperFiles,
-  paperQueryKeys,
+  paperFilesKey,
+  paperListKey,
 } from "@/features/paper/paper-api.ts"
 import { PaperLibrary } from "@/features/paper/paper-library.tsx"
 
 export function PaperPage() {
   useFirstCafeSurfaceVisit("sample-cv")
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
   const docs = useQuery({
-    queryKey: paperQueryKeys.list(),
+    queryKey: paperListKey(),
     queryFn: listPaper,
   })
   const files = useQuery({
-    queryKey: paperQueryKeys.files(),
+    queryKey: paperFilesKey(),
     queryFn: listPaperFiles,
   })
 
@@ -33,9 +33,6 @@ export function PaperPage() {
       onRetry={() => void docs.refetch()}
       onOpen={(id) =>
         void navigate({ to: "/app/paper/$docId", params: { docId: id } })
-      }
-      onChanged={() =>
-        void queryClient.invalidateQueries({ queryKey: paperQueryKeys.all })
       }
     />
   )

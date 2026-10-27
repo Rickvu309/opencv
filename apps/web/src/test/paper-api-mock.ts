@@ -30,7 +30,27 @@ async function readBody(init?: RequestInit): Promise<unknown> {
   if (init?.body == null) return {}
   const text = String(init.body)
   if (text.trim() === "") return {}
-  return JSON.parse(text) as unknown
+  const body = JSON.parse(text) as unknown
+  return body && typeof body === "object" && "input" in body ? body.input : body
+}
+
+/** The stored fixtures keep their old shape. What goes on the wire is the contract's view. */
+function toWire(doc: PaperDoc) {
+  const extra = doc as PaperDoc & { pageChoice?: string; templateId?: string }
+  return {
+    id: doc.id,
+    name: doc.name,
+    kind: doc.kind,
+    templateId: extra.templateId ?? "simple",
+    status: doc.status,
+    document: doc.content,
+    contentVersion: doc.contentVersion,
+    checks: [],
+    pageChoice: extra.pageChoice === "keep" ? "keep" : "unset",
+    sourceFileId: null,
+    createdAt: doc.createdAt,
+    updatedAt: doc.updatedAt,
+  }
 }
 
 function sortDocs(docs: PaperDoc[]) {
@@ -111,7 +131,7 @@ export async function paperApiFetch(
   if (method === "GET" && path === "/api/paper") {
     if (store.listGate) await store.listGate
     if (store.failList) return jsonError(500, "INTERNAL", "Server error")
-    return jsonOk(sortDocs(store.docs))
+    return jsonOk(sortDocs(store.docs).map(toWire))
   }
 
   if (method === "GET" && path === "/api/paper/files") {
@@ -143,7 +163,7 @@ export async function paperApiFetch(
   if (method === "GET" && detail) {
     const doc = store.docs.find((item) => item.id === detail[1])
     if (!doc) return jsonError(404, "NOT_FOUND", "Paper doc not found")
-    return jsonOk(doc)
+    return jsonOk(toWire(doc))
   }
 
   if (method === "POST" && path === "/api/commands/paper.setStatus") {
@@ -155,7 +175,7 @@ export async function paperApiFetch(
     if (!doc) return jsonError(404, "NOT_FOUND", "Paper doc not found")
     if (body.status) doc.status = body.status
     doc.updatedAt = isoNow()
-    return jsonOk(doc)
+    return jsonOk(toWire(doc))
   }
 
   if (method === "POST" && path === "/api/commands/paper.create") {
@@ -178,7 +198,7 @@ export async function paperApiFetch(
       updatedAt: now,
     }
     store.docs.unshift(created)
-    return jsonOk(created)
+    return jsonOk(toWire(created))
   }
 
   if (method === "POST" && path === "/api/commands/paper.replace") {
@@ -202,7 +222,7 @@ export async function paperApiFetch(
     doc.content = body.document
     doc.contentVersion += 1
     doc.updatedAt = isoNow()
-    return jsonOk(doc)
+    return jsonOk(toWire(doc))
   }
 
   if (method === "POST" && path === "/api/commands/paper.rename") {
@@ -211,7 +231,7 @@ export async function paperApiFetch(
     if (!doc) return jsonError(404, "NOT_FOUND", "Paper doc not found")
     doc.name = body.name?.trim() || doc.name
     doc.updatedAt = isoNow()
-    return jsonOk(doc)
+    return jsonOk(toWire(doc))
   }
 
   if (method === "POST" && path === "/api/commands/paper.duplicate") {
@@ -227,7 +247,7 @@ export async function paperApiFetch(
       updatedAt: now,
     }
     store.docs.unshift(copy)
-    return jsonOk(copy)
+    return jsonOk(toWire(copy))
   }
 
   if (method === "POST" && path === "/api/commands/paper.delete") {
@@ -235,12 +255,12 @@ export async function paperApiFetch(
     const index = store.docs.findIndex((item) => item.id === body.docId)
     if (index === -1) return jsonError(404, "NOT_FOUND", "Paper doc not found")
     store.docs.splice(index, 1)
-    return jsonOk({ docId: body.docId })
+    return jsonOk({ id: body.docId })
   }
 
   if (method === "POST" && path === "/api/commands/paper.share") {
     const body = (await readBody(init)) as { docId?: string }
-    return jsonOk({ token: `share-${body.docId ?? "doc"}` })
+    return jsonOk({ docId: body.docId, token: `share-${body.docId ?? "doc"}` })
   }
 
   if (method === "POST" && path === "/api/commands/paper.keepTwoPages") {
@@ -249,7 +269,7 @@ export async function paperApiFetch(
     if (!doc) return jsonError(404, "NOT_FOUND", "Paper doc not found")
     ;(doc as PaperDoc & { pageChoice?: string }).pageChoice = "keep"
     doc.updatedAt = isoNow()
-    return jsonOk(doc)
+    return jsonOk(toWire(doc))
   }
 
   if (method === "POST" && path === "/api/commands/paper.setTemplate") {
@@ -261,7 +281,7 @@ export async function paperApiFetch(
     if (!doc) return jsonError(404, "NOT_FOUND", "Paper doc not found")
     ;(doc as PaperDoc & { templateId?: string }).templateId = body.templateId
     doc.updatedAt = isoNow()
-    return jsonOk(doc)
+    return jsonOk(toWire(doc))
   }
 
   if (method === "POST" && path === "/api/commands/job.linkPaper") {

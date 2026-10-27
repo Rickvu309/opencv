@@ -1,31 +1,10 @@
-import {
-  paperCreateInputSchema,
-  paperDeleteInputSchema,
-  paperDismissCheckInputSchema,
-  paperDuplicateInputSchema,
-  paperImportInputSchema,
-  paperKeepTwoPagesInputSchema,
-  paperRenameInputSchema,
-  paperReplaceInputSchema,
-  paperSetStatusCommandInputSchema,
-  paperSetTemplateInputSchema,
-  paperShareInputSchema,
-  paperUnshareInputSchema,
-  paperDeleteFileInputSchema,
-  keywordGap,
-  type Actor,
-  type PaperCreateInput,
-  type PaperDuplicateInput,
-  type PaperImportInput,
-  type PaperRenameDocInput,
-  type PaperReplaceInput,
-  type PaperSetTemplateInput,
-} from "@workspace/domain"
+import { keywordGap, paperContract } from "@workspace/domain"
 
-import { tableQuery } from "../registry/bind.js"
+import { bindCommands, tableQuery } from "../registry/bind.js"
 import type { Registry } from "../registry/registry.js"
 import {
   createPaper,
+  deleteFile,
   deletePaper,
   dismissCheck,
   duplicatePaper,
@@ -33,7 +12,6 @@ import {
   keepTwoPages,
   listFiles,
   listPapers,
-  deleteFile,
   ownedPaper,
   pageCount,
   readFileMeta,
@@ -47,45 +25,35 @@ import {
   unsharePaper,
 } from "./store.js"
 
+const noReversal = () => null
+const noActivity = () => null
+
 export function registerPaper(registry: Registry) {
-  registry.addCommand(
-    {
-      name: "paper.create",
-      description: "Create a CV or letter.",
-      input: paperCreateInputSchema,
-      coach: "auto",
-      destructive: false,
+  bindCommands(registry, paperContract, {
+    "paper.create": {
+      handler: async (input, actor) => {
+        const created = await createPaper(actor, input)
+        if (input.jobId) {
+          await registry.execute({
+            name: "job.linkPaper",
+            input: { jobId: input.jobId, docId: created.id, kind: input.kind },
+            actor,
+          })
+        }
+        return created
+      },
       reversal: (_input, output) => ({
         command: "paper.delete",
         input: { docId: output.id },
       }),
-      step: (input) => `Create a ${input.kind === "cv" ? "CV" : "letter"}`,
       activity: (_input, output) => ({
         subjectKind: "paper",
         subjectId: output.id,
         summary: `Created ${output.name}`,
       }),
     },
-    async (input: PaperCreateInput, actor: Actor) => {
-      const created = await createPaper(actor, input)
-      if (input.jobId) {
-        await registry.execute({
-          name: "job.linkPaper",
-          input: { jobId: input.jobId, docId: created.id, kind: input.kind },
-          actor,
-        })
-      }
-      return created
-    }
-  )
-
-  registry.addCommand(
-    {
-      name: "paper.replace",
-      description: "Replace a document when the version matches.",
-      input: paperReplaceInputSchema,
-      coach: "auto",
-      destructive: false,
+    "paper.replace": {
+      handler: (input, actor) => replacePaper(actor, input),
       reversal: (input, output) => ({
         command: "paper.replace",
         input: {
@@ -94,7 +62,6 @@ export function registerPaper(registry: Registry) {
           document: output.previousDocument,
         },
       }),
-      step: () => "Update the document",
       activity: (input, output, actor) =>
         actor.type === "coach"
           ? {
@@ -105,70 +72,34 @@ export function registerPaper(registry: Registry) {
             }
           : null,
     },
-    (input: PaperReplaceInput, actor: Actor) => replacePaper(actor, input)
-  )
-
-  registry.addCommand(
-    {
-      name: "paper.rename",
-      description: "Rename a document.",
-      input: paperRenameInputSchema,
-      coach: "auto",
-      destructive: false,
+    "paper.rename": {
+      handler: (input, actor) => renamePaper(actor, input.docId, input.name),
       reversal: (input, output) => ({
         command: "paper.rename",
         input: { docId: input.docId, name: output.previousName },
       }),
-      step: () => "Rename the document",
-      activity: () => null,
+      activity: noActivity,
     },
-    (input: PaperRenameDocInput, actor: Actor) =>
-      renamePaper(actor, input.docId, input.name)
-  )
-
-  registry.addCommand(
-    {
-      name: "paper.duplicate",
-      description: "Duplicate a document.",
-      input: paperDuplicateInputSchema,
-      coach: "auto",
-      destructive: false,
+    "paper.duplicate": {
+      handler: (input, actor) => duplicatePaper(actor, input.docId),
       reversal: (_input, output) => ({
         command: "paper.delete",
         input: { docId: output.id },
       }),
-      step: () => "Duplicate the document",
       activity: (_input, output) => ({
         subjectKind: "paper",
         subjectId: output.id,
         summary: `Duplicated ${output.name}`,
       }),
     },
-    (input: PaperDuplicateInput, actor: Actor) =>
-      duplicatePaper(actor, input.docId)
-  )
-
-  registry.addCommand(
-    {
-      name: "paper.delete",
-      description: "Delete a document.",
-      input: paperDeleteInputSchema,
-      coach: "confirm",
-      destructive: true,
-      reversal: () => null,
-      step: () => "Delete this document",
-      activity: () => null,
+    "paper.delete": {
+      handler: (input, actor) => deletePaper(actor, input.docId),
+      reversal: noReversal,
+      activity: noActivity,
     },
-    (input, actor) => deletePaper(actor, input.docId)
-  )
-
-  registry.addCommand(
-    {
-      name: "paper.setTemplate",
-      description: "Change the document template.",
-      input: paperSetTemplateInputSchema,
-      coach: "auto",
-      destructive: false,
+    "paper.setTemplate": {
+      handler: (input, actor) =>
+        setPaperTemplate(actor, input.docId, input.templateId),
       reversal: (input, output) => ({
         command: "paper.setTemplate",
         input: {
@@ -176,120 +107,56 @@ export function registerPaper(registry: Registry) {
           templateId: output.previousTemplateId ?? "simple",
         },
       }),
-      step: () => "Change the template",
-      activity: () => null,
+      activity: noActivity,
     },
-    (input: PaperSetTemplateInput, actor: Actor) =>
-      setPaperTemplate(actor, input.docId, input.templateId)
-  )
-
-  registry.addCommand(
-    {
-      name: "paper.share",
-      description: "Share a document.",
-      input: paperShareInputSchema,
-      coach: "never",
-      destructive: false,
+    "paper.share": {
+      handler: (input, actor) => sharePaper(actor, input.docId),
       reversal: (input) => ({
         command: "paper.unshare",
         input: { docId: input.docId },
       }),
-      step: () => "Share the document",
-      activity: () => null,
+      activity: noActivity,
     },
-    (input, actor) => sharePaper(actor, input.docId)
-  )
-
-  registry.addCommand(
-    {
-      name: "paper.unshare",
-      description: "Stop sharing a document.",
-      input: paperUnshareInputSchema,
-      coach: "never",
-      destructive: false,
-      reversal: () => null,
-      step: () => "Stop sharing",
-      activity: () => null,
+    "paper.unshare": {
+      handler: (input, actor) => unsharePaper(actor, input.docId),
+      reversal: noReversal,
+      activity: noActivity,
     },
-    (input, actor) => unsharePaper(actor, input.docId)
-  )
-
-  registry.addCommand(
-    {
-      name: "paper.import",
-      description: "Create a CV from an uploaded file.",
-      input: paperImportInputSchema,
-      coach: "auto",
-      destructive: false,
+    "paper.import": {
+      handler: (input, actor) => importPaper(actor, input.fileId),
       reversal: (_input, output) => ({
         command: "paper.delete",
         input: { docId: output.id },
       }),
-      step: () => "Import a file",
       activity: (_input, output) => ({
         subjectKind: "paper",
         subjectId: output.id,
         summary: `Imported ${output.name}`,
       }),
     },
-    (input: PaperImportInput, actor: Actor) => importPaper(actor, input.fileId)
-  )
-
-  registry.addCommand(
-    {
-      name: "paper.dismissCheck",
-      description: "Dismiss an import check.",
-      input: paperDismissCheckInputSchema,
-      coach: "never",
-      destructive: false,
-      reversal: () => null,
-      step: () => "Dismiss a check",
-      activity: () => null,
+    "paper.dismissCheck": {
+      handler: (input, actor) =>
+        dismissCheck(actor, input.docId, input.checkId),
+      reversal: noReversal,
+      activity: noActivity,
     },
-    (input, actor) => dismissCheck(actor, input.docId, input.checkId)
-  )
-
-  registry.addCommand(
-    {
-      name: "paper.keepTwoPages",
-      description: "Keep a two-page document.",
-      input: paperKeepTwoPagesInputSchema,
-      coach: "never",
-      destructive: false,
-      reversal: () => null,
-      step: () => "Keep two pages",
-      activity: () => null,
+    "paper.keepTwoPages": {
+      handler: (input, actor) => keepTwoPages(actor, input.docId),
+      reversal: noReversal,
+      activity: noActivity,
     },
-    (input, actor) => keepTwoPages(actor, input.docId)
-  )
-
-  registry.addCommand(
-    {
-      name: "paper.setStatus",
-      description: "Set a document status.",
-      input: paperSetStatusCommandInputSchema,
-      coach: "never",
-      destructive: false,
-      reversal: () => null,
-      step: () => "Set status",
-      activity: () => null,
+    "paper.setStatus": {
+      handler: (input, actor) =>
+        setPaperStatus(actor, input.docId, input.status),
+      reversal: noReversal,
+      activity: noActivity,
     },
-    (input, actor) => setPaperStatus(actor, input.docId, input.status)
-  )
-
-  registry.addCommand(
-    {
-      name: "paper.deleteFile",
-      description: "Delete an uploaded file.",
-      input: paperDeleteFileInputSchema,
-      coach: "never",
-      destructive: true,
-      reversal: () => null,
-      step: () => "Delete this file",
-      activity: () => null,
+    "paper.deleteFile": {
+      handler: (input, actor) => deleteFile(actor, input.fileId),
+      reversal: noReversal,
+      activity: noActivity,
     },
-    (input, actor) => deleteFile(actor, input.fileId)
-  )
+  })
 
   registry.addQuery(
     tableQuery("paper.list", {

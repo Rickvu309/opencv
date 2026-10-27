@@ -9,6 +9,7 @@ import {
   parsePaperId,
   type CommandInput,
   type JobContract,
+  type PaperContract,
 } from "@workspace/domain"
 import { z } from "zod"
 
@@ -20,6 +21,9 @@ type StarInput = CommandInput<JobContract, "job.star">
 type Move = Bindings<JobContract>["job.move"]
 type Delete = Bindings<JobContract>["job.delete"]
 type Snooze = CommandInput<InboxContract, "inbox.snooze">
+type Replace = CommandInput<PaperContract, "paper.replace">
+type SetTemplate = CommandInput<PaperContract, "paper.setTemplate">
+type PaperReplaceBinding = Bindings<PaperContract>["paper.replace"]
 type MarkDone = Bindings<InboxContract>["inbox.markDone"]
 
 export function typeProbes(registry: Registry) {
@@ -60,14 +64,39 @@ export function typeProbes(registry: Registry) {
   const wrongInboxInput: Snooze = { threadId: uuid, minutes: 5 }
 
   // prettier-ignore
-  // @ts-expect-error the merged table names no command that neither contract declares
-  const notAContractName: ContractCommandName = "paper.replace"
+  // @ts-expect-error the merged table names no command that no contract declares
+  const notAContractName: ContractCommandName = "paper.nope"
 
   // prettier-ignore
   // @ts-expect-error an inbox reversal must be a valid input of the command it names
   const wrongInboxReversal: MarkDone["reversal"] = () => ({ command: "inbox.markDone", input: { status: "done" } })
 
+  // prettier-ignore
+  // @ts-expect-error unknown paper command name
+  const unknownPaper = commands["paper.nope"]
+
+  // prettier-ignore
+  // @ts-expect-error replace needs a version, not a revision
+  const wrongPaperInput: Replace = { docId: parsePaperId(uuid), revision: 2, document: {} }
+
+  // prettier-ignore
+  // @ts-expect-error a template id outside the catalog is not a template
+  const wrongTemplate: SetTemplate = { docId: parsePaperId(uuid), templateId: "fancy" }
+
+  // prettier-ignore
+  // @ts-expect-error a JobId is not a PaperId
+  const jobAsPaper: Replace = { docId: someJobId, contentVersion: 1, document: {} }
+
+  // prettier-ignore
+  // @ts-expect-error a paper handler must return the declared view
+  const wrongPaperOutput: PaperReplaceBinding["handler"] = async () => ({ id: uuid })
+
   return [
+    unknownPaper,
+    wrongPaperInput,
+    wrongTemplate,
+    jobAsPaper,
+    wrongPaperOutput,
     unknownInbox,
     wrongInboxInput,
     notAContractName,

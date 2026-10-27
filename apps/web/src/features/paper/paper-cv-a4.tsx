@@ -34,9 +34,7 @@ export function readA4HeightPx(target?: Element | null): number {
   if (!node) return A4_HEIGHT_FALLBACK_PX
   const raw = getComputedStyle(node).getPropertyValue("--cv-page-height")
   const parsed = Number.parseFloat(raw)
-  return Number.isFinite(parsed) && parsed > 0
-    ? parsed
-    : A4_HEIGHT_FALLBACK_PX
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : A4_HEIGHT_FALLBACK_PX
 }
 
 type Props = {

@@ -11,7 +11,7 @@ import {
 
 import { coachSendErrorMessage } from "@/features/home/coach-error.ts"
 import { useCoachMode } from "@/features/home/use-coach-mode.ts"
-import { paperQueryKeys } from "@/features/paper/paper-api.ts"
+import { refreshPaperQueries } from "@/lib/contract-client.ts"
 import {
   createThread,
   getThread,
@@ -390,7 +390,7 @@ export function useCoachTurn({
       await undoReceipt(activityId)
       await hydrateThread(id)
       dispatch({ type: "reset" })
-      void queryClient.invalidateQueries({ queryKey: paperQueryKeys.all })
+      void refreshPaperQueries(queryClient)
       onAfterUndo?.()
     },
     [hydrateThread, onAfterUndo, phase, queryClient, threadId]
