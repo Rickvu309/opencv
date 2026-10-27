@@ -17,18 +17,6 @@ const OMITTED = [
     approvedBy: "pending operator (quanvu309)",
   },
   {
-    text: "Help",
-    reason: "Nav link to a help page that does not exist yet.",
-    until: "2026-11-30",
-    approvedBy: "pending operator (quanvu309)",
-  },
-  {
-    text: "About",
-    reason: "Footer link to an about page that does not exist yet.",
-    until: "2026-11-30",
-    approvedBy: "pending operator (quanvu309)",
-  },
-  {
     text: "Careers",
     reason: "Footer link to a careers page that does not exist yet.",
     until: "2026-11-30",
