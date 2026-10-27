@@ -202,6 +202,9 @@ function probe(kind) {
         viewBoxes: benefitViewBoxes,
         shapes: benefitShapes,
         hex: benefitHex,
+        perCard: [
+          ...document.querySelectorAll("#benefits .landing-benefit"),
+        ].map((card) => card.querySelectorAll("svg").length),
       },
       navLockup,
       pageWidth: document.documentElement.scrollWidth,

@@ -329,14 +329,16 @@ export function pageChecks({
     artBoxes.length === 3 &&
     artBoxes.every((box) => box === "0 0 300 300") &&
     art.shapes === 94 &&
-    art.hex === 0
+    art.hex === 0 &&
+    art.perCard?.length === 3 &&
+    art.perCard.every((n) => n === 1)
   out.push(
     verdict(
       "27",
       "benefit-art-from-design",
       "Each of the three benefit cards contains one svg with viewBox 0 0 300 300, together they hold 94 paths and ellipses (the design art), and no element inside uses an inline hex colour",
       artMatches,
-      `${art?.count ?? 0} svg, viewBox ${artBoxes.join(" | ") || "none"}, ${art?.shapes ?? 0} shapes, ${art?.hex ?? 0} hex`
+      `${art?.count ?? 0} svg (per card ${art?.perCard?.join("/") ?? "none"}), viewBox ${artBoxes.join(" | ") || "none"}, ${art?.shapes ?? 0} shapes, ${art?.hex ?? 0} hex`
     )
   )
 

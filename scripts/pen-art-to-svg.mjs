@@ -99,6 +99,7 @@ function renderChild(node, index) {
       throw new Error(`path ${where} has no geometry`)
     }
     if (node.rotation) throw new Error(`path ${where} has rotation`)
+    if (node.flipX || node.flipY) throw new Error(`path ${where} is flipped`)
     const attrs = [
       `transform="translate(${num(node.x, where)} ${num(node.y, where)})"`,
       `d="${quote(node.geometry)}"`,
