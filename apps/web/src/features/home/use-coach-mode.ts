@@ -36,14 +36,13 @@ export function useCoachMode() {
     },
     onError: (_error, _next, context) => {
       if (context?.previous) {
-        queryClient.setQueryData(
-          profileQueryKeys.current(),
-          context.previous
-        )
+        queryClient.setQueryData(profileQueryKeys.current(), context.previous)
       }
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: profileQueryKeys.current() })
+      void queryClient.invalidateQueries({
+        queryKey: profileQueryKeys.current(),
+      })
     },
   })
 

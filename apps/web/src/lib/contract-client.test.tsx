@@ -1,8 +1,12 @@
 import { QueryClient } from "@tanstack/react-query"
-import { parseJobId } from "@workspace/domain"
+import { parseChatId, parseJobId } from "@workspace/domain"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { queryKey, runContractCommand } from "./contract-client.ts"
+import {
+  queryKey,
+  runContractCommand,
+  undoActivity,
+} from "./contract-client.ts"
 
 const JOB = parseJobId("01900000-0000-7000-8000-000000000010")
 const OTHER = parseJobId("01900000-0000-7000-8000-000000000011")
@@ -88,5 +92,32 @@ describe("runContractCommand", () => {
     ).rejects.toThrow()
 
     expect(isStale(queryClient, keys.list)).toBe(false)
+  })
+
+  it("refreshes every read an undo may have touched", async () => {
+    const queryClient = new QueryClient()
+    const chatId = parseChatId("01900000-0000-7000-8000-000000000020")
+    const activityId = "01900000-0000-7000-8000-000000000030"
+    const refreshed = [
+      queryKey({ query: "job.list" }),
+      queryKey({ query: "job.get", input: { jobId: JOB } }),
+      queryKey({ query: "job.calendar" }),
+      queryKey({ query: "paper.list" }),
+      queryKey({ query: "paper.get", input: { docId: "doc-1" } }),
+      queryKey({ query: "paper.pageCount", input: { docId: "doc-1" } }),
+      queryKey({ query: "paper.shared", input: { docId: "doc-1" } }),
+      queryKey({ query: "paper.files" }),
+      queryKey({ query: "inbox.get", input: { id: "mail-1" } }),
+      queryKey({ query: "chat.get", input: { chatId } }),
+      ["activity", JOB],
+    ]
+    for (const key of refreshed) queryClient.setQueryData(key, { seeded: true })
+    stubFetch({ id: activityId })
+
+    await undoActivity(queryClient, activityId)
+
+    for (const key of refreshed) {
+      expect(isStale(queryClient, key), JSON.stringify(key)).toBe(true)
+    }
   })
 })

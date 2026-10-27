@@ -20,13 +20,13 @@ import { Input } from "@workspace/ui/components/input"
 import { ApiError } from "@/lib/api-error.ts"
 import { apiBaseUrl } from "@/lib/api-url.ts"
 import {
-  refreshPaperQueries,
+  undoActivity,
   refreshQueries,
   useRunCommand,
 } from "@/lib/contract-client.ts"
 import { listJobs } from "@/features/apply/apply-api.ts"
 
-import { importPaperFile, latestActivityId, undoActivity } from "./paper-api.ts"
+import { importPaperFile, latestActivityId } from "./paper-api.ts"
 import { PaperNewDialog } from "./paper-new-dialog.tsx"
 import { PAPER_GALLERY_DIALOG_CLASS } from "./paper-template-gallery.tsx"
 import { PaperLetterStart } from "./paper-letter.tsx"
@@ -99,13 +99,7 @@ export function PaperLibrary({
         toast(label)
         return
       }
-      toastWithUndo(
-        label,
-        () =>
-          void undoActivity(activityId).then(() =>
-            refreshPaperQueries(queryClient)
-          )
-      )
+      toastWithUndo(label, () => void undoActivity(queryClient, activityId))
     } catch {
       toast(label)
     }

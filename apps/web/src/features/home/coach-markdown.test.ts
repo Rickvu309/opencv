@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest"
 
-import { parseCoachMarkdown, parseInline } from "@/features/home/coach-markdown.ts"
+import {
+  parseCoachMarkdown,
+  parseInline,
+} from "@/features/home/coach-markdown.ts"
 
 describe("parseCoachMarkdown", () => {
   it("renders lists, emphasis, and code from the allowlist", () => {

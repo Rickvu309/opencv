@@ -1,6 +1,7 @@
 import { z } from "zod"
 
 import { queryContract, queryEntry } from "./contract.js"
+import { chatDetailSchema, chatListSchema } from "./chat-contract.js"
 import { chatIdSchema } from "./ids.js"
 import { inboxQueries } from "./inbox-contract.js"
 import { jobQueries } from "./job-contract.js"
@@ -16,11 +17,11 @@ export const queries = queryContract({
   ...paperQueries,
   "chat.list": queryEntry({
     input: z.object({ query: z.string().optional() }).strict(),
-    output: untyped,
+    output: chatListSchema,
   }),
   "chat.get": queryEntry({
     input: z.object({ chatId: chatIdSchema }).strict(),
-    output: untyped,
+    output: chatDetailSchema,
   }),
   "link.get": queryEntry({
     input: z.object({ url: z.string().trim().min(1).max(2000) }).strict(),

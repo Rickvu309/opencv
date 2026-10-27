@@ -7,7 +7,7 @@ import type {
   ContractCommandName,
   QueryRef,
 } from "@workspace/domain"
-import { commands } from "@workspace/domain"
+import { commands, parseActivityId } from "@workspace/domain"
 
 import { apiFetch } from "@/lib/api.ts"
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
@@ -94,6 +94,16 @@ export async function runContractCommand<N extends ContractCommandName>(
     )
   }
   return unwrapData(body)
+}
+
+/** Undo refreshes everything the reversal may have touched, as the contract says. */
+export async function undoActivity(
+  queryClient: QueryClient,
+  activityId: string
+) {
+  return runContractCommand(queryClient, "activity.undo", {
+    activityId: parseActivityId(activityId),
+  })
 }
 
 /** `runContractCommand` bound to the app's QueryClient. */

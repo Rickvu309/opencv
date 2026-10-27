@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { parseJobId } from "@workspace/domain"
 import { QueryClient } from "@tanstack/react-query"
+import { undoActivity } from "@/lib/contract-client.ts"
 
 import {
   calendarJobs,
@@ -10,10 +11,10 @@ import {
   listJobs,
   listPaper,
   previewJob,
-  undoActivity,
 } from "./apply-api.ts"
 
 const JOB = "01900000-0000-7000-8000-000000000010"
+const ACTIVITY = "01900000-0000-7000-8000-000000000020"
 
 type Call = { url: string; method: string; body: unknown }
 
@@ -78,11 +79,13 @@ describe("apply api", () => {
     expect(activity.searchParams.get("subjectKind")).toBe("job")
     expect(activity.searchParams.get("subjectId")).toBe(JOB)
 
-    await undoActivity(new QueryClient(), "act-1")
+    await undoActivity(new QueryClient(), ACTIVITY)
     expect(new URL(last(calls).url).pathname).toBe(
       "/api/commands/activity.undo"
     )
-    expect(last(calls).body).toEqual({ activityId: "act-1" })
+    expect(last(calls).body).toMatchObject({
+      input: { activityId: ACTIVITY },
+    })
 
     await listPaper("cv")
     const paper = new URL(last(calls).url)

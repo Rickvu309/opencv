@@ -39,9 +39,7 @@ describe("home greeting", () => {
   it("greets the given name, not the demo persona", () => {
     expect(SAMPLE_AUTHOR_NAME).not.toMatch(/Eric/i)
     expect(homeGreeting(SAMPLE_AUTHOR_NAME)).toMatch(
-      new RegExp(
-        `^Good (morning|afternoon|evening), ${SAMPLE_AUTHOR_NAME}$`
-      )
+      new RegExp(`^Good (morning|afternoon|evening), ${SAMPLE_AUTHOR_NAME}$`)
     )
   })
 })
