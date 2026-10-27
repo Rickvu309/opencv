@@ -79,9 +79,9 @@ git worktree prune
 
 ## Troubleshooting
 
-| Problem | Fix |
-|---|---|
-| `fatal: 'feat/42-...' is already checked out` | Someone else has that branch. Pick another issue. |
-| Worktree folder was deleted by hand | `git worktree prune` |
-| Port already in use | Check `.env` in your worktree; use the next free port and update `PORT` |
-| Agent sandbox can't reach `../` | Allow the sibling `opencv.worktrees/` folder in the agent's sandbox |
+| Problem                                       | Fix                                                                     |
+| --------------------------------------------- | ----------------------------------------------------------------------- |
+| `fatal: 'feat/42-...' is already checked out` | Someone else has that branch. Pick another issue.                       |
+| Worktree folder was deleted by hand           | `git worktree prune`                                                    |
+| Port already in use                           | Check `.env` in your worktree; use the next free port and update `PORT` |
+| Agent sandbox can't reach `../`               | Allow the sibling `opencv.worktrees/` folder in the agent's sandbox     |
