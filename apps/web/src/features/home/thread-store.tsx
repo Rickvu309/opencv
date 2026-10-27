@@ -2,13 +2,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useCallback, useMemo, useState, type ReactNode } from "react"
 import type { ThreadListItem } from "@workspace/domain"
 
-import { refreshJobQueries } from "@/lib/contract-client.ts"
 import { useCoachTurn } from "@/features/coach/use-coach-turn.ts"
 import { profileQueryKeys } from "@/features/home/profile-api.ts"
 import {
   deleteThread as deleteThreadRequest,
   listThreads,
-  threadQueryKeys,
+  chatDetailKey,
+  chatListKey,
 } from "@/features/home/thread-api.ts"
 import { ThreadStoreContext } from "@/features/home/thread-store-context.ts"
 import { titleFrom } from "@/features/home/threads.ts"
@@ -20,7 +20,7 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null)
 
   const listQuery = useQuery({
-    queryKey: threadQueryKeys.list(),
+    queryKey: chatListKey(),
     queryFn: listThreads,
   })
   const threads = listQuery.data ?? EMPTY_THREADS
@@ -40,7 +40,6 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
     setThreadId: setActiveThreadId,
     titleForCreate: titleFrom,
     onAfterUndo: () => {
-      void refreshJobQueries(queryClient)
       void queryClient.invalidateQueries({
         queryKey: profileQueryKeys.current(),
       })
@@ -54,13 +53,8 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
 
   const deleteThread = useCallback(
     async (id: string) => {
-      await deleteThreadRequest(id)
-      queryClient.setQueryData(
-        threadQueryKeys.list(),
-        (prev: ThreadListItem[] | undefined) =>
-          (prev ?? []).filter((thread) => thread.id !== id)
-      )
-      queryClient.removeQueries({ queryKey: threadQueryKeys.detail(id) })
+      await deleteThreadRequest(queryClient, id)
+      queryClient.removeQueries({ queryKey: chatDetailKey(id) })
       if (activeThreadId === id) {
         cancelInFlight()
         setActiveThreadId(null)

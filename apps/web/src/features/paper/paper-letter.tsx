@@ -12,7 +12,6 @@ import { isAbortError } from "@/lib/sse.ts"
 import { useQueryClient } from "@tanstack/react-query"
 
 import {
-  createPaperChat,
   getPaper,
   paperGetKey,
   PaperLimitError,
@@ -109,9 +108,9 @@ export function PaperLetterStart({
           ? { jobId: selected.id, name: `Cover letter, ${selected.company}` }
           : { name: "Cover letter" }),
       })
-      const chat = await createPaperChat(
-        selected ? `Cover letter, ${selected.company}` : "Cover letter"
-      )
+      const chat = await run("chat.create", {
+        title: selected ? `Cover letter, ${selected.company}` : "Cover letter",
+      })
       chatRef.current = chat.id
       const turnText =
         unread || !selected

@@ -11,7 +11,8 @@ import {
 
 import {
   getThread,
-  threadQueryKeys,
+  chatDetailKey,
+  chatListKey,
   toListItem,
   upsertThreadListItem,
 } from "@/features/home/thread-api.ts"
@@ -80,19 +81,13 @@ export function useThreadCache({
 
   const writeDetail = useCallback(
     (id: string, detail: ThreadDetail) => {
-      queryClient.setQueryData(threadQueryKeys.detail(id), detail)
+      queryClient.setQueryData(chatDetailKey(id), detail)
       const item = toListItem(detail)
       queryClient.setQueryData(
-        threadQueryKeys.list(),
+        chatListKey(),
         (prev: ThreadListItem[] | undefined) =>
           upsertThreadListItem(prev ?? [], item)
       )
-      if (detail.focusDocId) {
-        queryClient.setQueryData(
-          threadQueryKeys.byFocusDoc(detail.focusDocId),
-          item
-        )
-      }
     },
     [queryClient]
   )
@@ -100,16 +95,10 @@ export function useThreadCache({
   const rememberListItem = useCallback(
     (item: ThreadListItem) => {
       queryClient.setQueryData(
-        threadQueryKeys.list(),
+        chatListKey(),
         (prev: ThreadListItem[] | undefined) =>
           upsertThreadListItem(prev ?? [], item)
       )
-      if (item.focusDocId) {
-        queryClient.setQueryData(
-          threadQueryKeys.byFocusDoc(item.focusDocId),
-          item
-        )
-      }
     },
     [queryClient]
   )
@@ -131,9 +120,7 @@ export function useThreadCache({
     (id: string, user: HomeMessage | undefined, parts: ThreadMessagePart[]) => {
       const next = withAbortedCoach({
         id,
-        prev: queryClient.getQueryData<ThreadDetail>(
-          threadQueryKeys.detail(id)
-        ),
+        prev: queryClient.getQueryData<ThreadDetail>(chatDetailKey(id)),
         user,
         parts,
         title: titleForCreate,

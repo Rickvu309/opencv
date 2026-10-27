@@ -12,11 +12,15 @@ import {
 } from "@workspace/ui/components/kanban"
 import { toastWithUndo } from "@workspace/ui/components/sonner"
 
-import { refreshQueries, useRunCommand } from "@/lib/contract-client.ts"
+import {
+  refreshQueries,
+  undoActivity,
+  useRunCommand,
+} from "@/lib/contract-client.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import { recordFirstCafeItem } from "@/features/home/first-cafe-checklist.ts"
 
-import { jobListKey, undoActivity } from "./apply-api.ts"
+import { jobListKey } from "./apply-api.ts"
 import { BoardLane, JobCard } from "./apply-parts.tsx"
 import {
   ALL_STAGES,

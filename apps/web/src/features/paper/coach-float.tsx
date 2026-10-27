@@ -21,10 +21,7 @@ import { ErrorBanner } from "@/components/error-banner.tsx"
 import { DESKTOP_MEDIA_QUERY } from "@/features/app-shell/use-media-query.ts"
 import { useCoachTurn } from "@/features/coach/use-coach-turn.ts"
 import { readStored, writeStored } from "@/lib/local-storage.ts"
-import {
-  getThreadByFocusDoc,
-  threadQueryKeys,
-} from "@/features/home/thread-api.ts"
+import { listThreads, chatListKey } from "@/features/home/thread-api.ts"
 
 import {
   ATTACH_FROM_PAPER_FAIL,
@@ -109,8 +106,10 @@ export const CoachFloat = memo(function CoachFloat({
   const focusDocId = focusDocIdForTurn(softScope, contextChips, docId)
 
   const focusedThreadQuery = useQuery({
-    queryKey: threadQueryKeys.byFocusDoc(docId),
-    queryFn: () => getThreadByFocusDoc(docId),
+    queryKey: chatListKey(),
+    queryFn: listThreads,
+    select: (threads) =>
+      threads.find((thread) => thread.focusDocId === docId) ?? null,
     staleTime: Infinity,
   })
 

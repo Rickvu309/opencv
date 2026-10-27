@@ -3,8 +3,10 @@ import {
   type ThreadDetail,
   type ThreadListItem,
 } from "@workspace/domain"
+import { QueryClient } from "@tanstack/react-query"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+import { undoActivity } from "@/lib/contract-client.ts"
 import { apiBaseUrl } from "@/lib/api-url.ts"
 import {
   createThread,
@@ -15,7 +17,6 @@ import {
   streamCoachRegenerate,
   streamCoachTurn,
   toListItem,
-  undoReceipt,
   upsertThreadListItem,
 } from "@/features/home/thread-api.ts"
 
@@ -29,6 +30,7 @@ function envelope<T>(data: T) {
 
 const CHAT_ID = "11111111-1111-4111-8111-111111111111"
 const DOC_ID = "11111111-1111-7111-8111-111111111111"
+const ACTIVITY_ID = "55555555-5555-4555-8555-555555555555"
 const STAMP = "2026-08-25T00:00:00.000Z"
 
 function chatRow(overrides: Record<string, unknown> = {}) {
@@ -41,6 +43,10 @@ function chatRow(overrides: Record<string, unknown> = {}) {
     updatedAt: STAMP,
     ...overrides,
   }
+}
+
+function inputOf(call: { init: RequestInit }) {
+  return JSON.parse(String(call.init.body)).input
 }
 
 function callOf(fetchMock: ReturnType<typeof vi.fn>, index = 0) {
@@ -142,13 +148,13 @@ describe("thread API client", () => {
     vi.stubGlobal("fetch", fetchMock)
 
     await expect(
-      createThread({ title: "Help me plan the week" })
+      createThread(new QueryClient(), { title: "Help me plan the week" })
     ).resolves.toMatchObject({ id: CHAT_ID, title: "Help me plan the week" })
 
-    const { url, init } = callOf(fetchMock)
-    expect(url).toBe(`${apiBaseUrl}/api/commands/chat.create`)
-    expect(init.method).toBe("POST")
-    expect(init.body).toBe(JSON.stringify({ title: "Help me plan the week" }))
+    const call = callOf(fetchMock)
+    expect(call.url).toBe(`${apiBaseUrl}/api/commands/chat.create`)
+    expect(call.init.method).toBe("POST")
+    expect(inputOf(call)).toEqual({ title: "Help me plan the week" })
   })
 
   it("opens the Paper chat and names a fresh one", async () => {
@@ -167,21 +173,25 @@ describe("thread API client", () => {
     vi.stubGlobal("fetch", fetchMock)
 
     await expect(
-      createThread({ title: "PM track CV", focusDocId: DOC_ID })
+      createThread(new QueryClient(), {
+        title: "PM track CV",
+        focusDocId: DOC_ID,
+      })
     ).resolves.toMatchObject({ title: "PM track CV", focusDocId: DOC_ID })
 
     expect(callOf(fetchMock, 0).url).toBe(
       `${apiBaseUrl}/api/commands/chat.open`
     )
-    expect(callOf(fetchMock, 0).init.body).toBe(
-      JSON.stringify({ focus: { kind: "paper", id: DOC_ID } })
-    )
+    expect(inputOf(callOf(fetchMock, 0))).toEqual({
+      focus: { kind: "paper", id: DOC_ID },
+    })
     expect(callOf(fetchMock, 1).url).toBe(
       `${apiBaseUrl}/api/commands/chat.rename`
     )
-    expect(callOf(fetchMock, 1).init.body).toBe(
-      JSON.stringify({ chatId: CHAT_ID, title: "PM track CV" })
-    )
+    expect(inputOf(callOf(fetchMock, 1))).toEqual({
+      chatId: CHAT_ID,
+      title: "PM track CV",
+    })
   })
 
   it("keeps the title of a reused Paper chat", async () => {
@@ -197,7 +207,10 @@ describe("thread API client", () => {
     vi.stubGlobal("fetch", fetchMock)
 
     await expect(
-      createThread({ title: "PM track CV", focusDocId: DOC_ID })
+      createThread(new QueryClient(), {
+        title: "PM track CV",
+        focusDocId: DOC_ID,
+      })
     ).resolves.toMatchObject({ title: "Earlier talk" })
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
@@ -228,10 +241,12 @@ describe("thread API client", () => {
     const fetchMock = vi.fn().mockResolvedValue(envelope({ id: CHAT_ID }))
     vi.stubGlobal("fetch", fetchMock)
 
-    await expect(deleteThread(CHAT_ID)).resolves.toEqual({ id: CHAT_ID })
-    const { url, init } = callOf(fetchMock)
-    expect(url).toBe(`${apiBaseUrl}/api/commands/chat.delete`)
-    expect(init.body).toBe(JSON.stringify({ chatId: CHAT_ID }))
+    await expect(deleteThread(new QueryClient(), CHAT_ID)).resolves.toEqual({
+      id: CHAT_ID,
+    })
+    const call = callOf(fetchMock)
+    expect(call.url).toBe(`${apiBaseUrl}/api/commands/chat.delete`)
+    expect(inputOf(call)).toEqual({ chatId: CHAT_ID })
   })
 
   it("streams a Coach turn from POST /api/chats/:id/turns", async () => {
@@ -466,11 +481,11 @@ describe("thread API client", () => {
     const fetchMock = vi.fn().mockResolvedValue(envelope({ activityId: "a1" }))
     vi.stubGlobal("fetch", fetchMock)
 
-    await undoReceipt("a1")
-    const { url, init } = callOf(fetchMock)
-    expect(url).toBe(`${apiBaseUrl}/api/commands/activity.undo`)
-    expect(init.method).toBe("POST")
-    expect(init.body).toBe(JSON.stringify({ activityId: "a1" }))
+    await undoActivity(new QueryClient(), ACTIVITY_ID)
+    const call = callOf(fetchMock)
+    expect(call.url).toBe(`${apiBaseUrl}/api/commands/activity.undo`)
+    expect(call.init.method).toBe("POST")
+    expect(inputOf(call)).toEqual({ activityId: ACTIVITY_ID })
   })
 })
 

@@ -46,7 +46,6 @@ import {
   listActivity,
   listJobs,
   listPaper,
-  undoActivity,
   type PaperListItem,
 } from "./apply-api.ts"
 import {
@@ -67,6 +66,7 @@ import {
   activityKey,
   refreshQueries,
   useRunCommand,
+  undoActivity,
 } from "@/lib/contract-client.ts"
 
 const POSTING = [

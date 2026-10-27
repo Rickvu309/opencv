@@ -11,15 +11,14 @@ import {
 
 import { coachSendErrorMessage } from "@/features/home/coach-error.ts"
 import { useCoachMode } from "@/features/home/use-coach-mode.ts"
-import { refreshPaperQueries } from "@/lib/contract-client.ts"
+import { undoActivity } from "@/lib/contract-client.ts"
 import {
   createThread,
   getThread,
   getThreadByFocusDoc,
   streamCoachRegenerate,
   streamCoachTurn,
-  threadQueryKeys,
-  undoReceipt,
+  chatDetailKey,
   type CoachStreamHandlers,
 } from "@/features/home/thread-api.ts"
 import {
@@ -83,7 +82,7 @@ export function useCoachTurn({
   const phase = turnPhase(state)
 
   const detailQuery = useQuery({
-    queryKey: threadQueryKeys.detail(threadId ?? ""),
+    queryKey: chatDetailKey(threadId ?? ""),
     queryFn: () => getThread(threadId!),
     enabled: Boolean(threadId) && phase === "idle",
     staleTime: Infinity,
@@ -135,7 +134,7 @@ export function useCoachTurn({
         }
       }
 
-      const created = await createThread({
+      const created = await createThread(queryClient, {
         title: titleForCreate(text),
         ...(focusDocId ? { focusDocId: parsePaperId(focusDocId) } : {}),
       })
@@ -144,7 +143,14 @@ export function useCoachTurn({
       setThreadId(created.id)
       return created.id
     },
-    [focusDocId, rememberListItem, setThreadId, threadId, titleForCreate]
+    [
+      focusDocId,
+      queryClient,
+      rememberListItem,
+      setThreadId,
+      threadId,
+      titleForCreate,
+    ]
   )
 
   const cancelInFlight = useCallback(() => {
@@ -175,7 +181,7 @@ export function useCoachTurn({
 
       const settled = (threadKey: string) => {
         const detail = queryClient.getQueryData<ThreadDetail>(
-          threadQueryKeys.detail(threadKey)
+          chatDetailKey(threadKey)
         )
         return detail ? toHomeMessages(detail.messages) : prefix
       }
@@ -236,9 +242,8 @@ export function useCoachTurn({
             return
           }
           const lastUser = [
-            ...(queryClient.getQueryData<ThreadDetail>(
-              threadQueryKeys.detail(id)
-            )?.messages ?? []),
+            ...(queryClient.getQueryData<ThreadDetail>(chatDetailKey(id))
+              ?.messages ?? []),
           ]
             .reverse()
             .find((message) => message.role === "user")
@@ -387,10 +392,9 @@ export function useCoachTurn({
       const id = threadId
       if (!id || phase !== "idle") return
 
-      await undoReceipt(activityId)
+      await undoActivity(queryClient, activityId)
       await hydrateThread(id)
       dispatch({ type: "reset" })
-      void refreshPaperQueries(queryClient)
       onAfterUndo?.()
     },
     [hydrateThread, onAfterUndo, phase, queryClient, threadId]

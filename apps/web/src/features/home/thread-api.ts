@@ -2,10 +2,10 @@ import {
   COACH_SSE_EVENTS,
   DEFAULT_THREAD_TITLE,
   parseChatId,
-  type ChatCreateInput,
-  type ChatDeleteInput,
-  type ChatOpenInput,
-  type ChatRenameInput,
+  type ChatDetail,
+  type ChatId,
+  type ChatListItem,
+  type ChatMessage,
   type CoachMode,
   type CoachSelection,
   type CoachSseErrorData,
@@ -20,34 +20,16 @@ import {
   type ThreadMessagePart,
 } from "@workspace/domain"
 
+import type { QueryClient } from "@tanstack/react-query"
+
 import { apiFetch, apiStream } from "@/lib/api.ts"
 import { ApiError } from "@/lib/api-error.ts"
-import { runCommand, unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
+import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
+import { queryKey, runContractCommand } from "@/lib/contract-client.ts"
 import { readSseStream } from "@/lib/sse.ts"
 
-type ChatRow = {
-  id: string
-  title: string
-  focusKind: string | null
-  focusId: string | null
-  createdAt: string
-  updatedAt: string
-}
-
-type ChatMessageRow = {
-  id: string
-  role: "person" | "coach"
-  text: string
-  createdAt: string
-  parts?: { type: string }[]
-  status?: ThreadMessage["status"]
-  workedMs?: number | null
-}
-
-type ChatDetailRow = ChatRow & { messages: ChatMessageRow[] }
-
 // The api speaks chats. The UI renders threads. This is the one place that maps between them.
-function asThread(chat: ChatRow): ThreadListItem {
+function asThread(chat: ChatListItem): ThreadListItem {
   return {
     id: chat.id,
     title: chat.title,
@@ -57,8 +39,8 @@ function asThread(chat: ChatRow): ThreadListItem {
   }
 }
 
-function asMessage(message: ChatMessageRow): ThreadMessage {
-  const parts = (message.parts ?? []).filter(
+function asMessage(message: ChatMessage): ThreadMessage {
+  const parts = message.parts.filter(
     (part): part is ThreadMessagePart =>
       part.type === "text" || part.type === "tool"
   )
@@ -73,25 +55,23 @@ function asMessage(message: ChatMessageRow): ThreadMessage {
   }
 }
 
-function asDetail(chat: ChatDetailRow): ThreadDetail {
+function asDetail(chat: ChatDetail): ThreadDetail {
   return { ...asThread(chat), messages: chat.messages.map(asMessage) }
 }
 
-export const threadQueryKeys = {
-  all: ["threads"] as const,
-  list: () => ["threads", "list"] as const,
-  detail: (id: string) => ["threads", "detail", id] as const,
-  byFocusDoc: (focusDocId: string) =>
-    ["threads", "focusDoc", focusDocId] as const,
-}
+export const chatListKey = () => queryKey({ query: "chat.list" })
+
+// The id is a plain string here so a disabled query can still build its key.
+export const chatDetailKey = (id: string) =>
+  queryKey({ query: "chat.get", input: { chatId: id as ChatId } })
 
 export async function listThreads(): Promise<ThreadListItem[]> {
-  const body = await apiFetch<SuccessBody<ChatRow[]>>("/api/chats")
+  const body = await apiFetch<SuccessBody<ChatListItem[]>>("/api/chats")
   return unwrapData(body).map(asThread)
 }
 
 export async function getThread(id: string): Promise<ThreadDetail> {
-  const body = await apiFetch<SuccessBody<ChatDetailRow>>(`/api/chats/${id}`)
+  const body = await apiFetch<SuccessBody<ChatDetail>>(`/api/chats/${id}`)
   return asDetail(unwrapData(body))
 }
 
@@ -102,33 +82,35 @@ export async function getThreadByFocusDoc(
   return threads.find((thread) => thread.focusDocId === focusDocId) ?? null
 }
 
-export async function createThread(input: {
-  title?: string
-  focusDocId?: string
-}): Promise<ThreadListItem> {
+export async function createThread(
+  queryClient: QueryClient,
+  input: { title?: string; focusDocId?: string }
+): Promise<ThreadListItem> {
   if (!input.focusDocId) {
-    const chat = await runCommand<ChatRow>("chat.create", {
-      ...(input.title ? { title: input.title } : {}),
-    } satisfies ChatCreateInput)
-    return asThread(chat)
+    return asThread(
+      await runContractCommand(queryClient, "chat.create", {
+        ...(input.title ? { title: input.title } : {}),
+      })
+    )
   }
-  const opened = await runCommand<ChatRow>("chat.open", {
+  const opened = await runContractCommand(queryClient, "chat.open", {
     focus: { kind: "paper", id: input.focusDocId },
-  } satisfies ChatOpenInput)
+  })
   if (!input.title || opened.title !== DEFAULT_THREAD_TITLE) {
     return asThread(opened)
   }
-  const renamed = await runCommand<ChatRow>("chat.rename", {
-    chatId: parseChatId(opened.id),
-    title: input.title,
-  } satisfies ChatRenameInput)
-  return asThread(renamed)
+  return asThread(
+    await runContractCommand(queryClient, "chat.rename", {
+      chatId: parseChatId(opened.id),
+      title: input.title,
+    })
+  )
 }
 
-export function deleteThread(chatId: string): Promise<{ id: string }> {
-  return runCommand("chat.delete", {
+export function deleteThread(queryClient: QueryClient, chatId: string) {
+  return runContractCommand(queryClient, "chat.delete", {
     chatId: parseChatId(chatId),
-  } satisfies ChatDeleteInput)
+  })
 }
 
 export type CoachStreamHandlers = {
@@ -138,10 +120,6 @@ export type CoachStreamHandlers = {
   onToolResult?: (data: CoachSseToolResultData) => void
   onMessageEnd?: (data: CoachSseMessageEndData) => void
   onError?: (data: CoachSseErrorData) => void
-}
-
-export function undoReceipt(activityId: string): Promise<unknown> {
-  return runCommand("activity.undo", { activityId })
 }
 
 type CoachStreamBody =

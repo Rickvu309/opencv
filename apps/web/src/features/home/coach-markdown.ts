@@ -46,9 +46,11 @@ function splitFences(
     const newline = afterOpen.indexOf("\n")
     const bodyStart = newline === -1 ? afterOpen.length : newline + 1
     const end = afterOpen.indexOf(FENCE, bodyStart)
-    const body = end === -1 ? afterOpen.slice(bodyStart) : afterOpen.slice(bodyStart, end)
+    const body =
+      end === -1 ? afterOpen.slice(bodyStart) : afterOpen.slice(bodyStart, end)
     chunks.push({ type: "pre", text: body.replace(/\n$/, "") })
-    rest = end === -1 ? "" : afterOpen.slice(end + FENCE.length).replace(/^\n/, "")
+    rest =
+      end === -1 ? "" : afterOpen.slice(end + FENCE.length).replace(/^\n/, "")
   }
 
   return chunks

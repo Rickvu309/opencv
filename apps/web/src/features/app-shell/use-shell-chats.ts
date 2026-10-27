@@ -1,22 +1,22 @@
 import { useQuery } from "@tanstack/react-query"
 
 import {
-  listShellChats,
   listStarredJobs,
   readInboxUnreadCount,
 } from "@/features/app-shell/shell-api.ts"
+import { chatListKey, listThreads } from "@/features/home/thread-api.ts"
 import { listPaper, paperListKey } from "@/features/paper/paper-api.ts"
 
 export const shellQueryKeys = {
-  chats: ["shell", "chats"] as const,
   jobs: ["shell", "jobs"] as const,
   inbox: ["shell", "inbox"] as const,
 }
 
 export function useShellChats() {
   return useQuery({
-    queryKey: shellQueryKeys.chats,
-    queryFn: listShellChats,
+    queryKey: chatListKey(),
+    queryFn: listThreads,
+    select: (threads) => threads.slice(0, 2),
   })
 }
 

@@ -8,12 +8,6 @@ export type ShellProfile = {
   timeZone: string | null
 }
 
-export type ShellChat = {
-  id: string
-  title: string
-  updatedAt: string
-}
-
 export type ShellJob = {
   id: string
   title: string
@@ -43,48 +37,6 @@ export function parseShellProfile(data: unknown): ShellProfile {
 export async function getShellProfile() {
   const body = await apiFetch<SuccessBody<unknown>>("/api/profile")
   return parseShellProfile(unwrapData(body))
-}
-
-function parseChats(data: unknown): ShellChat[] {
-  if (!Array.isArray(data)) return []
-  return data.flatMap((item) => {
-    const row = record(item)
-    const id = text(row?.id)
-    if (!id) return []
-    return [
-      {
-        id,
-        title: text(row?.title),
-        updatedAt: text(row?.updatedAt),
-      },
-    ]
-  })
-}
-
-export async function listShellChats() {
-  try {
-    const body = await apiFetch<SuccessBody<unknown>>("/api/chats")
-    return parseChats(unwrapData(body)).slice(0, 2)
-  } catch {
-    return []
-  }
-}
-
-export async function createShellChat() {
-  const body = await apiFetch<SuccessBody<unknown>>(
-    "/api/commands/chat.create",
-    {
-      method: "POST",
-      body: JSON.stringify({
-        input: {},
-        idempotencyKey: crypto.randomUUID(),
-      }),
-    }
-  )
-  const row = record(unwrapData(body))
-  const id = text(row?.id)
-  if (!id) throw new Error("Chat was not created")
-  return { id, title: text(row?.title) }
 }
 
 function parseJobs(data: unknown): ShellJob[] {

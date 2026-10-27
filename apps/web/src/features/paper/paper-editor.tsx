@@ -30,12 +30,7 @@ import {
   PAPER_GALLERY_DIALOG_CLASS,
   PaperTemplateGallery,
 } from "./paper-template-gallery.tsx"
-import {
-  createPaperChat,
-  getPaper,
-  openPaperChat,
-  streamPaperTurn,
-} from "./paper-api.ts"
+import { getPaper, streamPaperTurn } from "./paper-api.ts"
 import {
   editorEditedLabel,
   previewTemplate,
@@ -139,7 +134,7 @@ export function PaperCvEditor({
 
   async function fitOnePage() {
     try {
-      const chat = await createPaperChat("Fit to one page")
+      const chat = await run("chat.create", { title: "Fit to one page" })
       await streamPaperTurn({
         chatId: chat.id,
         text: "Tighten this CV so it fits on one page.",
@@ -165,7 +160,9 @@ export function PaperCvEditor({
 
   function openCoach() {
     document.querySelector<HTMLButtonElement>("[data-dock-coach]")?.click()
-    void openPaperChat(initial.id).catch((error: unknown) => {
+    void run("chat.open", {
+      focus: { kind: "paper", id: initial.id },
+    }).catch((error: unknown) => {
       toast(
         error instanceof Error
           ? error.message

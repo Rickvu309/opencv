@@ -12,14 +12,12 @@ import { NavProfile } from "@/features/app-shell/nav-profile.tsx"
 import { searchShortcutLabel } from "@/features/app-shell/search-shortcut.ts"
 import { SHELL_PRIMARY, SHELL_WORK } from "@/features/app-shell/sidebar-nav.ts"
 import { shellChatTitle, shellCopy } from "@/features/app-shell/shell-copy.ts"
-import { createShellChat } from "@/features/app-shell/shell-api.ts"
 import { HOME_PATH } from "@/features/app-shell/surfaces.ts"
 import {
   DESKTOP_MEDIA_QUERY,
   useMediaQuery,
 } from "@/features/app-shell/use-media-query.ts"
 import {
-  shellQueryKeys,
   useInboxUnread,
   useShellChats,
   useShellFavorites,
@@ -30,6 +28,7 @@ import {
 } from "@/features/app-shell/coach-panel.tsx"
 import { ShellThreadBody } from "@/features/app-shell/shell-thread-body.tsx"
 import { registerShellChatOpener } from "@/features/command-palette/shell-chat.ts"
+import { runContractCommand } from "@/lib/contract-client.ts"
 import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
 import { Brand, Mark } from "@workspace/ui/components/brand"
 import { Button } from "@workspace/ui/components/button"
@@ -271,14 +270,13 @@ export function AppShell({ onSearch }: AppShellProps) {
   async function onNewChat() {
     rememberOpener()
     try {
-      const chat = await createShellChat()
+      const chat = await runContractCommand(queryClient, "chat.create", {})
       setPanel({
         open: true,
         mode: "side",
         title: shellChatTitle(chat.title),
         chatId: chat.id,
       })
-      void queryClient.invalidateQueries({ queryKey: shellQueryKeys.chats })
     } catch {
       // A failed create leaves the panel closed. The page stays usable.
     }

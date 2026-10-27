@@ -1,7 +1,7 @@
 import type { PaperId, PaperView, QueryOutput } from "@workspace/domain"
 
 import { ApiError, apiFetch, apiStream } from "@/lib/api.ts"
-import { runCommand, unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
+import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
 import { apiBaseUrl } from "@/lib/api-url.ts"
 import { queryKey } from "@/lib/contract-client.ts"
 import { readSseStream } from "@/lib/sse.ts"
@@ -77,14 +77,6 @@ export async function importPaperFile(file: File): Promise<PaperView> {
   return unwrapData(payload)
 }
 
-export function createPaperChat(title: string): Promise<{ id: string }> {
-  return runCommand("chat.create", { title })
-}
-
-export function openPaperChat(docId: string): Promise<{ id: string }> {
-  return runCommand("chat.open", { focus: { kind: "paper", id: docId } })
-}
-
 export function stopPaperChat(chatId: string): Promise<void> {
   return apiFetch(`/api/chats/${chatId}/stop`, { method: "POST" })
 }
@@ -151,8 +143,4 @@ export async function latestActivityId(
     `/api/activity?subjectId=${encodeURIComponent(subjectId)}`
   )
   return unwrapData(body)[0]?.id ?? null
-}
-
-export function undoActivity(activityId: string): Promise<unknown> {
-  return runCommand("activity.undo", { activityId })
 }

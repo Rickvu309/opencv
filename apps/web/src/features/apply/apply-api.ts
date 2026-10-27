@@ -1,4 +1,4 @@
-import { useQuery, type QueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import type {
   JobDetail,
   JobId,
@@ -7,8 +7,8 @@ import type {
 } from "@workspace/domain"
 
 import { apiFetch } from "@/lib/api.ts"
-import { runCommand, unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
-import { queryKey, refreshJobQueries } from "@/lib/contract-client.ts"
+import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
+import { queryKey } from "@/lib/contract-client.ts"
 
 export type ChecklistItem = JobDetail["checklist"][number]
 
@@ -75,15 +75,6 @@ export function listActivity(jobId: string): Promise<ActivityRow[]> {
   return apiFetch<SuccessBody<ActivityRow[]>>(`/api/activity?${query}`).then(
     unwrapData
   )
-}
-
-/** activity.undo is not a contract command yet, so it refreshes every job read. */
-export async function undoActivity(
-  queryClient: QueryClient,
-  activityId: string
-): Promise<void> {
-  await runCommand("activity.undo", { activityId })
-  await refreshJobQueries(queryClient)
 }
 
 export function listPaper(kind: "cv" | "letter"): Promise<PaperListItem[]> {
