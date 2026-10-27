@@ -5,7 +5,7 @@ import { PageHeader } from "@workspace/ui/components/page-header"
 import { useMediaQuery } from "@workspace/ui/hooks/use-media-query"
 
 import { ApiError } from "@/lib/api.ts"
-import { queryKey, useRunCommand } from "@/lib/contract-client.ts"
+import { queryKey, refreshKey, useRunCommand } from "@/lib/contract-client.ts"
 import { shellQueryKeys } from "@/features/app-shell/use-shell-chats.ts"
 import { PROFILE_ZONE } from "@/features/apply/apply-stages.ts"
 
@@ -14,6 +14,7 @@ import { fetchConnect, fetchInbox, fetchThread } from "./inbox-api.ts"
 import { InboxEmpty, InboxList } from "./inbox-list.tsx"
 import { CompanyTile } from "./inbox-parts.tsx"
 import { InboxReader } from "./inbox-reader.tsx"
+import { inboxConnectKey } from "@/lib/requests.ts"
 
 const NARROW = "(max-width: 767px)"
 
@@ -30,7 +31,7 @@ export function InboxPage() {
     list.data && !list.data.connected && !list.data.skipped
   )
   const connect = useQuery({
-    queryKey: ["inbox-connect"],
+    queryKey: inboxConnectKey,
     queryFn: fetchConnect,
     enabled: showConnect,
   })
@@ -54,7 +55,7 @@ export function InboxPage() {
   })
 
   function refreshShell() {
-    return queryClient.invalidateQueries({ queryKey: shellQueryKeys.inbox })
+    return refreshKey(queryClient, shellQueryKeys.inbox)
   }
 
   async function onSkip() {

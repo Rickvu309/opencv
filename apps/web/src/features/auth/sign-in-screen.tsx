@@ -4,7 +4,6 @@ import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 
-import { apiBaseUrl } from "@/lib/api-url.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import { redirectFromSearch } from "@/lib/auth-redirect.ts"
 
@@ -19,6 +18,7 @@ import {
 } from "./auth-copy.ts"
 import { CodeInput } from "./code-input.tsx"
 import googleG from "./google-g.svg?url"
+import { endpoints, fetchBinary } from "@/lib/requests.ts"
 
 type Step = "email" | "code" | "verifying"
 type Notice = "email" | "bad" | "locked" | "rate" | "send" | null
@@ -74,7 +74,7 @@ export function SignInScreen() {
 
   useEffect(() => {
     let cancelled = false
-    void fetch(new URL("/api/public-config", apiBaseUrl))
+    void fetchBinary(endpoints.publicConfig)
       .then(async (res) => {
         if (!res.ok) return false
         const body = (await res.json()) as { google?: boolean }

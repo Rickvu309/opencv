@@ -12,6 +12,7 @@ import {
 } from "@/features/home/thread-api.ts"
 import { ThreadStoreContext } from "@/features/home/thread-store-context.ts"
 import { titleFrom } from "@/features/home/threads.ts"
+import { refreshKey } from "@/lib/contract-client.ts"
 
 const EMPTY_THREADS: ThreadListItem[] = []
 
@@ -40,9 +41,7 @@ export function ThreadStoreProvider({ children }: { children: ReactNode }) {
     setThreadId: setActiveThreadId,
     titleForCreate: titleFrom,
     onAfterUndo: () => {
-      void queryClient.invalidateQueries({
-        queryKey: profileKey(),
-      })
+      void refreshKey(queryClient, profileKey())
     },
   })
 

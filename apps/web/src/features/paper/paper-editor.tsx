@@ -21,7 +21,6 @@ import {
 import { Input } from "@workspace/ui/components/input"
 import { toast } from "@workspace/ui/components/sonner"
 
-import { apiBaseUrl } from "@/lib/api-url.ts"
 import { useRunCommand } from "@/lib/contract-client.ts"
 
 import { usePaperAutosave } from "./paper-autosave.ts"
@@ -37,6 +36,7 @@ import {
   previewTemplate,
   printLayout,
 } from "./paper-templates.ts"
+import { endpoints, fetchBinary } from "@/lib/requests.ts"
 
 function cvOf(document: unknown, templateId: string | null): CvDocument {
   if (isCvDocument(document)) {
@@ -176,12 +176,9 @@ export function PaperCvEditor({
 
   async function download() {
     try {
-      const res = await fetch(
-        new URL(`/api/paper/${initial.id}/pdf`, apiBaseUrl),
-        {
-          credentials: "include",
-        }
-      )
+      const res = await fetchBinary(endpoints.paperPdf(initial.id), {
+        credentials: "include",
+      })
       if (!res.ok) {
         toast("Could not download the PDF. Try again.")
         return

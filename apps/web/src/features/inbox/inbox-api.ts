@@ -2,6 +2,7 @@ import type { QueryOutput } from "@workspace/domain"
 
 import { ApiError, apiFetch } from "@/lib/api.ts"
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
+import { endpoints } from "@/lib/requests.ts"
 
 export class InboxLimitError extends Error {
   readonly resetsAt: string | null
@@ -25,27 +26,27 @@ export async function inboxLimitFrom(error: ApiError) {
 }
 
 export function fetchInbox() {
-  return apiFetch<SuccessBody<QueryOutput<"inbox.list">>>("/api/inbox").then(
+  return apiFetch<SuccessBody<QueryOutput<"inbox.list">>>(endpoints.inbox).then(
     unwrapData
   )
 }
 
 export function fetchThread(threadId: string) {
   return apiFetch<SuccessBody<QueryOutput<"inbox.get">>>(
-    `/api/inbox/${threadId}`
+    endpoints.inboxThread(threadId)
   ).then(unwrapData)
 }
 
 /** Not a contract query: the route returns a redirect target for Gmail. */
 export function fetchConnect() {
-  return apiFetch<SuccessBody<unknown>>("/api/inbox/connect").then((body) =>
+  return apiFetch<SuccessBody<unknown>>(endpoints.inboxConnect).then((body) =>
     parseConnect(unwrapData(body))
   )
 }
 
 async function readCoachReset() {
   try {
-    const body = await apiFetch<SuccessBody<unknown>>("/api/coach/usage")
+    const body = await apiFetch<SuccessBody<unknown>>(endpoints.coachUsage)
     return resetsAtOf(unwrapData(body))
   } catch {
     return null

@@ -20,6 +20,7 @@ import { apiFetch } from "@/lib/api.ts"
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
 import { queryKey, runContractCommand } from "@/lib/contract-client.ts"
 import { streamChatTurn } from "@/lib/coach-stream.ts"
+import { endpoints } from "@/lib/requests.ts"
 
 // The api speaks chats. The UI renders threads. This is the one place that maps between them.
 function asThread(chat: ChatListItem): ThreadListItem {
@@ -59,12 +60,12 @@ export const chatDetailKey = (id: string) =>
   queryKey({ query: "chat.get", input: { chatId: id as ChatId } })
 
 export async function listThreads(): Promise<ThreadListItem[]> {
-  const body = await apiFetch<SuccessBody<ChatListItem[]>>("/api/chats")
+  const body = await apiFetch<SuccessBody<ChatListItem[]>>(endpoints.chats)
   return unwrapData(body).map(asThread)
 }
 
 export async function getThread(id: string): Promise<ThreadDetail> {
-  const body = await apiFetch<SuccessBody<ChatDetail>>(`/api/chats/${id}`)
+  const body = await apiFetch<SuccessBody<ChatDetail>>(endpoints.chat(id))
   return asDetail(unwrapData(body))
 }
 

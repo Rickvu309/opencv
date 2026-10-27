@@ -9,6 +9,7 @@ import type {
 import { apiFetch } from "@/lib/api.ts"
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
 import { queryKey } from "@/lib/contract-client.ts"
+import { endpoints } from "@/lib/requests.ts"
 
 export type ChecklistItem = JobDetail["checklist"][number]
 
@@ -25,14 +26,14 @@ export const jobCalendarKey = (from: string, to: string) =>
   queryKey({ query: "job.calendar", input: { from, to } })
 
 export function listJobs(): Promise<QueryOutput<"job.list">> {
-  return apiFetch<SuccessBody<QueryOutput<"job.list">>>("/api/jobs").then(
+  return apiFetch<SuccessBody<QueryOutput<"job.list">>>(endpoints.jobs).then(
     unwrapData
   )
 }
 
 export function getJob(jobId: JobId): Promise<QueryOutput<"job.get">> {
   return apiFetch<SuccessBody<QueryOutput<"job.get">>>(
-    `/api/jobs/${jobId}`
+    endpoints.job(jobId)
   ).then(unwrapData)
 }
 
@@ -42,7 +43,7 @@ export function calendarJobs(
 ): Promise<QueryOutput<"job.calendar">> {
   const query = new URLSearchParams({ from, to })
   return apiFetch<SuccessBody<QueryOutput<"job.calendar">>>(
-    `/api/jobs/calendar?${query}`
+    endpoints.jobsCalendar(query)
   ).then(unwrapData)
 }
 
@@ -50,7 +51,7 @@ export function previewJob(
   input: QueryInput<"job.preview">
 ): Promise<QueryOutput<"job.preview">> {
   return apiFetch<SuccessBody<QueryOutput<"job.preview">>>(
-    "/api/jobs/preview",
+    endpoints.jobsPreview,
     { method: "POST", body: JSON.stringify(input) }
   ).then(unwrapData)
 }
@@ -61,14 +62,14 @@ export function listActivity(jobId: string) {
     subjectId: jobId,
   })
   return apiFetch<SuccessBody<QueryOutput<"activity.list">>>(
-    `/api/activity?${query}`
+    endpoints.activity(query)
   ).then(unwrapData)
 }
 
 export function listPaper(kind: "cv" | "letter"): Promise<PaperListItem[]> {
-  return apiFetch<SuccessBody<PaperListItem[]>>(`/api/paper?kind=${kind}`).then(
-    unwrapData
-  )
+  return apiFetch<SuccessBody<PaperListItem[]>>(
+    endpoints.paperOfKind(kind)
+  ).then(unwrapData)
 }
 
 export type ApplyPickerCard = {

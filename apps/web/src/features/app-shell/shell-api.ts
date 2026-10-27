@@ -1,5 +1,6 @@
 import { apiFetch } from "@/lib/api.ts"
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
+import { endpoints } from "@/lib/requests.ts"
 
 export type ShellJob = {
   id: string
@@ -37,7 +38,7 @@ function parseJobs(data: unknown): ShellJob[] {
 
 export async function listStarredJobs() {
   try {
-    const body = await apiFetch<SuccessBody<unknown>>("/api/jobs")
+    const body = await apiFetch<SuccessBody<unknown>>(endpoints.jobs)
     return parseJobs(unwrapData(body))
   } catch {
     return []
@@ -53,7 +54,7 @@ export function inboxUnreadCount(data: unknown) {
 
 export async function readInboxUnreadCount() {
   try {
-    const body = await apiFetch<SuccessBody<unknown>>("/api/inbox")
+    const body = await apiFetch<SuccessBody<unknown>>(endpoints.inbox)
     return inboxUnreadCount(unwrapData(body))
   } catch {
     return null

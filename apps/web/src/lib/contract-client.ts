@@ -34,6 +34,10 @@ export function refreshQueries(queryClient: QueryClient, refs: QueryRef[]) {
   ])
 }
 
+export function refreshKey(queryClient: QueryClient, key: readonly unknown[]) {
+  return queryClient.invalidateQueries({ queryKey: key })
+}
+
 export type RunOptions = {
   refresh?: boolean
 }
