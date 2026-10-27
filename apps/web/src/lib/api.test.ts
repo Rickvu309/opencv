@@ -59,9 +59,7 @@ describe("apiFetch", () => {
     })
 
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
-    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
-      `${apiBaseUrl}/api/chats`
-    )
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(`${apiBaseUrl}/api/chats`)
     expect(init.credentials).toBe("include")
   })
 

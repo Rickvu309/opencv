@@ -185,17 +185,15 @@ describe("thread API client", () => {
   })
 
   it("keeps the title of a reused Paper chat", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(
-        envelope(
-          chatRow({
-            title: "Earlier talk",
-            focusKind: "paper",
-            focusId: DOC_ID,
-          })
-        )
+    const fetchMock = vi.fn().mockResolvedValue(
+      envelope(
+        chatRow({
+          title: "Earlier talk",
+          focusKind: "paper",
+          focusId: DOC_ID,
+        })
       )
+    )
     vi.stubGlobal("fetch", fetchMock)
 
     await expect(
