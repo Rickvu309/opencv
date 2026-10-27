@@ -187,7 +187,7 @@ function resetsAtOf(value: unknown) {
 
 function parseList(value: unknown): InboxList {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return { connected: false, skipped: false, threads: [] }
+    return { connected: false, skipped: false, timeZone: "", threads: [] }
   }
   const row = value as {
     connected?: unknown
