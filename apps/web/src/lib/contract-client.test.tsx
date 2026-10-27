@@ -1,5 +1,5 @@
 import { QueryClient } from "@tanstack/react-query"
-import { parseChatId, parseJobId } from "@workspace/domain"
+import { parseChatId, parseJobId, parsePaperId } from "@workspace/domain"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
@@ -73,6 +73,28 @@ describe("runContractCommand", () => {
     expect(first.input).toEqual(input)
     expect(first.idempotencyKey).toEqual(expect.any(String))
     expect(second.idempotencyKey).not.toBe(first.idempotencyKey)
+  })
+
+  it("takes the idempotency key from the contract entry, not the call site", async () => {
+    const queryClient = new QueryClient()
+    const bodies = stubFetch({}) as Record<string, unknown>[]
+
+    await runContractCommand(queryClient, "account.delete", {
+      confirm: "DELETE",
+    })
+    await runContractCommand(queryClient, "paper.replace", {
+      docId: parsePaperId("01900000-0000-7000-8000-000000000020"),
+      contentVersion: 1,
+      document: {},
+    })
+    await runContractCommand(queryClient, "job.move", {
+      jobId: JOB,
+      stage: "applied",
+    })
+
+    expect(bodies[0]).not.toHaveProperty("idempotencyKey")
+    expect(bodies[1]).not.toHaveProperty("idempotencyKey")
+    expect(bodies[2]).toHaveProperty("idempotencyKey")
   })
 
   it("leaves reads alone when the command fails", async () => {

@@ -61,6 +61,7 @@ export function bindCommands<C extends CommandContract>(
         input: entry.input,
         coach: entry.coach,
         destructive: entry.destructive,
+        ...(entry.idempotency ? { idempotency: entry.idempotency } : {}),
         step: entry.step,
         reversal: bound.reversal,
         activity: bound.activity,

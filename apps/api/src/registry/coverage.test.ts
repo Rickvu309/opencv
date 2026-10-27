@@ -1,4 +1,4 @@
-import { coachActor, emptyCvDocument, personActor } from "@workspace/domain"
+import { coachActor, personActor } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 
@@ -114,31 +114,25 @@ describe("registry command coverage", () => {
     })
     const person = personActor(userId)
     await withDatabase(db, async () => {
-      const created = await registry.execute({
-        name: "paper.create",
-        input: { kind: "cv", name: "Idem CV" },
-        actor: person,
-      })
-      const docId = idOf(created.output)
       const first = await registry.execute({
-        name: "paper.replace",
-        input: { docId, contentVersion: 1, document: emptyCvDocument() },
+        name: "notify.request",
+        input: { topic: "jobs" },
         actor: person,
-        idempotencyKey: "replace-1",
+        idempotencyKey: "notify-1",
       })
       expect(first.activityId).toBeNull()
       const second = await registry.execute({
-        name: "paper.replace",
-        input: { docId, contentVersion: 1, document: emptyCvDocument() },
+        name: "notify.request",
+        input: { topic: "jobs" },
         actor: person,
-        idempotencyKey: "replace-1",
+        idempotencyKey: "notify-1",
       })
       expect(second.output).toEqual(first.output)
       const rows = await db
         .select()
         .from(idempotency)
         .where(eq(idempotency.userId, userId))
-      expect(rows.map((row) => row.key)).toContain("replace-1")
+      expect(rows.map((row) => row.key)).toContain("notify-1")
     })
     await client.close()
   })

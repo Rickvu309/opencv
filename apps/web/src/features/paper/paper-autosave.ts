@@ -66,7 +66,7 @@ export function usePaperAutosave<T>({
               contentVersion: versionRef.current,
               document: toDocumentRef.current(next),
             },
-            { refresh: false, idempotencyKey: false }
+            { refresh: false }
           )
           saves += 1
           if (sentEpoch < appliedEpochRef.current) continue

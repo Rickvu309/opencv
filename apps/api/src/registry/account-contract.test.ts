@@ -4,10 +4,11 @@ import {
   accountQueries,
   personActor,
 } from "@workspace/domain"
+import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 
 import { withDatabase } from "../db/context.js"
-import { user } from "../db/schema.js"
+import { idempotency, user } from "../db/schema.js"
 import { saveFile } from "../paper/index.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { installRegistry } from "./install.js"
@@ -112,5 +113,38 @@ describe("account contract", () => {
       .filter((command) => command.coach !== "never")
       .map((command) => command.name)
     expect(coachOnly).toEqual(["notify.request"])
+  })
+
+  it("deletes the account even when the caller sends an idempotency key", async () => {
+    const { db, client } = await createMigratedTestDb()
+    const registry = installRegistry()
+    const userId = "user-delete-with-key"
+    await db.insert(user).values({
+      id: userId,
+      name: "Ada",
+      email: "ada-delete-key@example.com",
+    })
+
+    await withDatabase(db, async () => {
+      for (const idempotencyKey of [undefined, "k-1"]) {
+        const result = await registry.execute({
+          name: "account.delete",
+          input: { confirm: "DELETE" },
+          actor: personActor(userId),
+          idempotencyKey,
+        })
+        expect(result.output).toEqual({ deleted: true })
+        expect(await db.select().from(user).where(eq(user.id, userId))).toEqual(
+          []
+        )
+        expect(await db.select().from(idempotency)).toEqual([])
+        await db.insert(user).values({
+          id: userId,
+          name: "Ada",
+          email: "ada-delete-key@example.com",
+        })
+      }
+    })
+    await client.close()
   })
 })

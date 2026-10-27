@@ -72,6 +72,7 @@ type StoredCommand = {
   input: ZodType
   step: (input: unknown) => string
   transaction?: "none"
+  idempotency: "keyed" | "none"
   run: (input: unknown, actor: Actor) => Promise<RanCommand>
 }
 
@@ -147,6 +148,7 @@ export class Registry {
       destructive: checked.destructive,
       input: checked.input,
       transaction: checked.transaction,
+      idempotency: checked.idempotency ?? "keyed",
       step: (raw) => {
         const parsed = checked.input.safeParse(raw)
         return parsed.success ? checked.step(parsed.data) : checked.name
@@ -254,18 +256,15 @@ export class Registry {
       }
     }
     const parsed = parseInput(command.input, options.input)
+    // A command that declares no key never stores one: its own write must stay replay-safe.
+    const idempotencyKey =
+      command.idempotency === "none" ? undefined : options.idempotencyKey
 
     const run = async () => {
-      if (options.idempotencyKey) {
-        const existing = await this.activityByKey(
-          actor.userId,
-          options.idempotencyKey
-        )
+      if (idempotencyKey) {
+        const existing = await this.activityByKey(actor.userId, idempotencyKey)
         if (existing) return replay(existing)
-        const stored = await this.idempotencyByKey(
-          actor.userId,
-          options.idempotencyKey
-        )
+        const stored = await this.idempotencyByKey(actor.userId, idempotencyKey)
         if (stored) return replayStored(stored.result)
       }
 
@@ -314,24 +313,24 @@ export class Registry {
               result: ran.output ?? null,
               reversalCommand: ran.reversal?.command ?? null,
               reversalInput: ran.reversal?.input ?? null,
-              idempotencyKey: options.idempotencyKey ?? null,
+              idempotencyKey: idempotencyKey ?? null,
             })
         } catch (error) {
-          if (!options.idempotencyKey || !isUniqueViolation(error)) throw error
+          if (!idempotencyKey || !isUniqueViolation(error)) throw error
           const existing = await this.activityByKey(
             actor.userId,
-            options.idempotencyKey
+            idempotencyKey
           )
           if (!existing) throw error
           return replay(existing)
         }
-      } else if (options.idempotencyKey) {
+      } else if (idempotencyKey) {
         try {
           await getDb()
             .insert(idempotency)
             .values({
               userId: actor.userId,
-              key: options.idempotencyKey,
+              key: idempotencyKey,
               command: command.name,
               result: ran.output ?? null,
             })
@@ -339,7 +338,7 @@ export class Registry {
           if (!isUniqueViolation(error)) throw error
           const stored = await this.idempotencyByKey(
             actor.userId,
-            options.idempotencyKey
+            idempotencyKey
           )
           if (!stored) throw error
           return replayStored(stored.result)

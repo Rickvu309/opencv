@@ -3,6 +3,7 @@ import { useCallback } from "react"
 import type {
   CommandInput,
   CommandOutput,
+  AnyCommandEntry,
   Commands,
   ContractCommandName,
   QueryRef,
@@ -60,8 +61,6 @@ export function refreshPaperQueries(queryClient: QueryClient) {
 
 export type RunOptions = {
   refresh?: boolean
-  /** False for a write that already compares a version, so a replay cannot apply twice. */
-  idempotencyKey?: boolean
 }
 
 export type CommandResult<T> = T & { activityId?: string }
@@ -82,7 +81,7 @@ export async function runContractCommand<N extends ContractCommandName>(
     method: "POST",
     body: JSON.stringify({
       input,
-      ...(options.idempotencyKey === false
+      ...((commands[name] as AnyCommandEntry).idempotency === "none"
         ? {}
         : { idempotencyKey: crypto.randomUUID() }),
     }),

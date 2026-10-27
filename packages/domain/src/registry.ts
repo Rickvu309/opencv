@@ -1,6 +1,7 @@
 import type { ZodType } from "zod"
 
 import { parseChatId, parseUserId, type ChatId, type UserId } from "./ids.js"
+import type { IdempotencyPolicy } from "./contract.js"
 
 export type CoachAccess = "auto" | "confirm" | "never"
 
@@ -57,6 +58,7 @@ export type CommandSpec<TInput, TOutput> = {
     actor: Actor
   ) => ActivityDraft | null
   transaction?: "none"
+  idempotency?: IdempotencyPolicy
 }
 
 export function defineCommand<TInput, TOutput>(
