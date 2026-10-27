@@ -1,4 +1,4 @@
-import { keywordGap, paperContract, type PaperView } from "@workspace/domain"
+import { keywordGap, paperContract } from "@workspace/domain"
 
 import { bindCommands, tableQuery } from "../registry/bind.js"
 import type { Registry } from "../registry/registry.js"
