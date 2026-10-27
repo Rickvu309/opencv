@@ -21,6 +21,7 @@ const moved: ThreadToolPart = {
   summary: "Moved a card",
   ok: true,
   toolCallId: "call-1",
+  activityId: "act-1",
   detail: {
     type: "apply.moveCard",
     cardId: "c1",

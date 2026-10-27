@@ -120,6 +120,89 @@ describe("coach turn title", () => {
   })
 })
 
+describe("coach turn receipts", () => {
+  it("carries the activity id to the stream and the stored part, and chat.get marks it undone after activity.undo", async () => {
+    const { client, db } = await createMigratedTestDb()
+    let headers: Record<string, string> = {}
+    const app = createTestApp(db, {
+      coach: createScriptedCoachRuntime(async function* () {
+        const moved = await app.request("/api/commands/job.create", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            input: { title: "Intern", company: "Northwind" },
+          }),
+        })
+        const body = (await moved.json()) as {
+          data: { id: string; activityId: string }
+        }
+        yield {
+          type: "tool-result",
+          toolCallId: "call_job",
+          name: "job.create",
+          summary: "Added Intern",
+          ok: true,
+          command: "job.create",
+          activityId: body.data.activityId,
+          reversal: {
+            possible: true,
+            description: "Remove it",
+            command: "activity.undo",
+            input: { activityId: body.data.activityId },
+          },
+          result: { ok: true, data: {} },
+        }
+        yield {
+          type: "finish",
+          finishReason: "stop",
+          usage: { model: "fake", finishReason: "stop" },
+        }
+      }),
+    })
+    const { cookie } = await signUp(app, {
+      name: "Ada Receipt",
+      email: "ada-receipt@verify.local",
+    })
+    headers = authHeaders(cookie)
+    const created = await app.request("/api/commands/chat.create", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({}),
+    })
+    const chatId = ((await created.json()) as { data: { id: string } }).data.id
+    const turn = await app.request(`/api/chats/${chatId}/turns`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ text: "Add the job" }),
+    })
+    const sse = await turn.text()
+    const activityId = /"activityId":"([^"]+)"/.exec(sse)?.[1]
+    expect(activityId).toEqual(expect.any(String))
+
+    const read = async () =>
+      (await (await app.request(`/api/chats/${chatId}`, { headers })).json()) as {
+        data: {
+          messages: { parts: { activityId?: string; undone?: boolean }[] }[]
+        }
+      }
+    const partOf = (detail: Awaited<ReturnType<typeof read>>) =>
+      detail.data.messages
+        .flatMap((message) => message.parts)
+        .find((part) => part.activityId === activityId)
+    expect(partOf(await read())).toBeDefined()
+    expect(partOf(await read())?.undone).toBeUndefined()
+
+    const undone = await app.request("/api/commands/activity.undo", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ input: { activityId } }),
+    })
+    expect(undone.status).toBe(200)
+    expect(partOf(await read())?.undone).toBe(true)
+    await client.close()
+  })
+})
+
 describe("toolResultFromExecute", () => {
   it("puts reversal and detail on the yielded part", () => {
     const part = toolResultFromExecute({

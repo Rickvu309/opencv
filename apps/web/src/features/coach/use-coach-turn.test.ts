@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url"
 import { STREAMING_COACH_ID } from "@/features/home/threads.ts"
 import {
   installThreadApiMock,
+  threadApiFetchOrThrow,
   scriptCoachStream,
 } from "@/test/threads-api-mock.ts"
 
@@ -139,5 +140,42 @@ describe("useCoachTurn turn lifecycle", () => {
     const ids = result.current.messages.map((message) => message.id)
     expect(new Set(ids).size).toBe(ids.length)
     expect(ids).not.toContain(STREAMING_COACH_ID)
+  })
+
+  it("keeps the streamed reply on screen when re-reading the chat fails", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    })
+    const wrapper = ({ children }: { children: ReactNode }) =>
+      createElement(QueryClientProvider, { client: queryClient }, children)
+    const { result } = renderHook(
+      () => {
+        const [threadId, setThreadId] = useState<string | null>(null)
+        return useCoachTurn({
+          threadId,
+          setThreadId,
+          titleForCreate: (text) => text,
+        })
+      },
+      { wrapper }
+    )
+    scriptCoachStream({ texts: ["Kept reply"] })
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === "string" ? input : String(input)
+      if (
+        (init?.method ?? "GET").toUpperCase() === "GET" &&
+        /\/api\/chats\/[^/?]+$/.test(new URL(url, "http://x").pathname)
+      ) {
+        return new Response("{}", { status: 500 })
+      }
+      return threadApiFetchOrThrow(input, init)
+    })
+    act(() => {
+      result.current.send("Hello")
+    })
+    await waitFor(() => expect(result.current.phase).toBe("idle"))
+    const texts = result.current.messages.map((message) => message.text)
+    expect(texts).toContain("Hello")
+    expect(texts).toContain("Kept reply")
   })
 })

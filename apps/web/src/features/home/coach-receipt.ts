@@ -52,6 +52,6 @@ export function receiptShowsUndo(part: ThreadToolPart) {
     part.ok &&
     part.reversal?.possible === true &&
     part.undone !== true &&
-    Boolean(part.toolCallId)
+    Boolean(part.activityId)
   )
 }

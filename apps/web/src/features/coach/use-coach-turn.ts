@@ -228,8 +228,9 @@ export function useCoachTurn({
         rememberPaperTools(parts)
 
         if (ended) {
-          await hydrateThread(id)
+          const detail = await hydrateThread(id)
           if (stale()) return
+          if (!detail && parts.length > 0) keepStreamedCoach(id, user, parts)
           if (!streamError) {
             dispatch({ type: "finish", messages: null })
             return

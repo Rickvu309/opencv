@@ -23,7 +23,7 @@ const LEGACY: Record<string, string> = {
 }
 
 const prefixes =
-  "chat|paper|job|inbox|profile|account|notify|actions|activity|coach|apply|pitch"
+  "chat|paper|job|inbox|profile|account|notify|actions|activity|coach|threads|apply|pitch"
 const dotted = new RegExp(
   `["'\`/]((?:${prefixes})\\.[a-z][A-Za-z]+)["'\`]`,
   "g"
