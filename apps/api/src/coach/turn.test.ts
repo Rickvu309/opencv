@@ -3,10 +3,14 @@ import {
   parseChatTurnEvent,
   titleFrom,
 } from "@workspace/domain"
-import { afterAll, describe, expect, it } from "vitest"
+import { simulateReadableStream } from "ai"
+import { MockLanguageModelV3 } from "ai/test"
+import type { SSEStreamingApi } from "hono/streaming"
+import { afterAll, describe, expect, it, vi } from "vitest"
 
 import { createDemoCoachRuntime, createScriptedCoachRuntime } from "./fake.js"
-import { toolResultFromExecute } from "./turn.js"
+import { writeChatEvent } from "./sse.js"
+import { liveParts, toolResultFromExecute } from "./turn.js"
 import {
   authHeaders,
   createMigratedTestDb,
@@ -346,5 +350,85 @@ describe("toolResultFromExecute", () => {
       docKind: "cv",
       docName: "CV",
     })
+  })
+})
+
+describe("liveParts with a model that calls an unknown tool", () => {
+  it("skips the call, keeps the reply streaming, and ends with finish", async () => {
+    const usage = {
+      inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 },
+      outputTokens: { total: 1, text: 1, reasoning: 0 },
+    }
+    let calls = 0
+    const model = new MockLanguageModelV3({
+      doStream: async () => {
+        calls += 1
+        const chunks =
+          calls === 1
+            ? [
+                {
+                  type: "tool-call",
+                  toolCallId: "c1",
+                  toolName: "paper_replace",
+                  input: "{}",
+                },
+                {
+                  type: "finish",
+                  finishReason: { unified: "tool-calls", raw: undefined },
+                  usage,
+                },
+              ]
+            : [
+                { type: "text-start", id: "t" },
+                { type: "text-delta", id: "t", delta: "Done anyway." },
+                { type: "text-end", id: "t" },
+                {
+                  type: "finish",
+                  finishReason: { unified: "stop", raw: undefined },
+                  usage,
+                },
+              ]
+        return { stream: simulateReadableStream({ chunks: chunks as never[] }) }
+      },
+    })
+    const parts = []
+    for await (const part of liveParts({
+      model,
+      history: [{ role: "user", text: "Fix my CV" }] as never,
+      registry: {} as never,
+      actor: {} as never,
+      toolEntries: [],
+    })) {
+      parts.push(part)
+    }
+    expect(parts.some((part) => part.type === "error")).toBe(false)
+    expect(parts.some((part) => part.type.startsWith("tool-"))).toBe(false)
+    expect(parts.find((part) => part.type === "text-delta")).toMatchObject({
+      text: "Done anyway.",
+    })
+    expect(parts.at(-1)?.type).toBe("finish")
+  })
+})
+
+describe("writeChatEvent", () => {
+  it("sends a plain error event, not Zod text, for an event that breaks the contract", async () => {
+    const written: { event?: string; data: string }[] = []
+    const stream = {
+      aborted: false,
+      writeSSE: async (message: { event?: string; data: string }) => {
+        written.push(message)
+      },
+    } as unknown as SSEStreamingApi
+    vi.spyOn(console, "error").mockImplementation(() => {})
+    await writeChatEvent(stream, {
+      type: "text-delta",
+      text: 42,
+    } as never)
+    expect(written).toEqual([
+      {
+        event: "error",
+        data: JSON.stringify({ message: "The Coach stopped." }),
+      },
+    ])
   })
 })

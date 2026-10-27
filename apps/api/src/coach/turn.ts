@@ -317,7 +317,7 @@ async function maybeTitle(input: {
   })
 }
 
-async function* liveParts(input: {
+export async function* liveParts(input: {
   model?: LanguageModel
   history: ThreadMessage[]
   registry: Registry
@@ -384,22 +384,22 @@ async function* liveParts(input: {
       if (delta) yield { type: "text-delta", text: delta }
       continue
     }
+    // The model can name a tool it was not given (hallucinated, or gated off). The SDK answers it with a tool error and the turn goes on, so the stream skips it.
     if (part.type === "tool-call") {
+      const name = registryName.get(part.toolName)
+      if (!name) continue
       yield {
         type: "tool-call",
         toolCallId: part.toolCallId,
-        name:
-          registryName.get(part.toolName) ??
-          chatToolNameSchema.parse(part.toolName),
+        name,
         input: part.input,
       }
       continue
     }
     if (part.type === "tool-result") {
+      const name = registryName.get(part.toolName)
+      if (!name) continue
       const output = record(part.output)
-      const name =
-        registryName.get(part.toolName) ??
-        chatToolNameSchema.parse(part.toolName)
       yield toolResultFromExecute({
         toolCallId: part.toolCallId,
         name,

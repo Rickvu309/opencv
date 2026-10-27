@@ -61,7 +61,13 @@ export async function writeChatEvent(
   event: ChatTurnEvent
 ) {
   if (stream.aborted) return
-  const wire = encodeChatTurnEvent(event)
+  let wire: ReturnType<typeof encodeChatTurnEvent>
+  try {
+    wire = encodeChatTurnEvent(event)
+  } catch (error) {
+    console.error("Coach event broke the chat turn contract", event.type, error)
+    wire = encodeChatTurnEvent({ type: "error", message: "The Coach stopped." })
+  }
   try {
     await stream.writeSSE(wire)
   } catch {
