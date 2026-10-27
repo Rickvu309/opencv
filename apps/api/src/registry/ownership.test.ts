@@ -48,9 +48,9 @@ function filesUnder(dir: string): string[] {
 }
 
 function writesIn(text: string): string[] {
-  return [
-    ...text.matchAll(/\.(?:insert|update|delete)\(\s*(\w+)\s*\)/g),
-  ].map((match) => match[1] ?? "")
+  return [...text.matchAll(/\.(?:insert|update|delete)\(\s*(\w+)\s*\)/g)].map(
+    (match) => match[1] ?? ""
+  )
 }
 
 function ownedBy(relative: string, owner: string) {
@@ -65,9 +65,9 @@ describe("table ownership", () => {
     ].map((match) => match[1] ?? "")
     expect(tables.length).toBeGreaterThan(0)
     expect(tables.filter((table) => !owners[table])).toEqual([])
-    expect(Object.keys(owners).filter((name) => !tables.includes(name))).toEqual(
-      []
-    )
+    expect(
+      Object.keys(owners).filter((name) => !tables.includes(name))
+    ).toEqual([])
   })
 
   it("writes a table only from its owner's directory", () => {
