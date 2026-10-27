@@ -30,7 +30,7 @@ describe("latestCoachMessageId", () => {
 })
 
 describe("toHomeMessages", () => {
-  it("copies server messages including parts, rating, and worked time", () => {
+  it("copies server messages including parts and worked time", () => {
     const parts = [
       { type: "text" as const, text: "Hi" },
       {
@@ -49,7 +49,6 @@ describe("toHomeMessages", () => {
         workedMs: 800,
         status: "final",
         parts,
-        rating: null,
       },
       { id: "u2", role: "user", text: "Again" },
       {
@@ -58,7 +57,6 @@ describe("toHomeMessages", () => {
         text: "Still here",
         workedMs: 1400,
         status: "final",
-        rating: "up",
       },
     ])
 
@@ -69,7 +67,6 @@ describe("toHomeMessages", () => {
       workedMs: 800,
       status: "final",
       parts,
-      rating: null,
     })
     expect(mapped[3]).toEqual({
       id: "c2",
@@ -77,7 +74,6 @@ describe("toHomeMessages", () => {
       text: "Still here",
       workedMs: 1400,
       status: "final",
-      rating: "up",
     })
   })
 })

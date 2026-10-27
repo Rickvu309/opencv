@@ -14,10 +14,6 @@ const scanRoots = [
 ]
 
 const LEGACY: Record<string, string> = {
-  "threads.create": "compat threads, deleted with apps/api/src/compat",
-  "threads.rename": "compat threads, deleted with apps/api/src/compat",
-  "threads.delete": "compat threads, deleted with apps/api/src/compat",
-  "threads.postMessage": "compat threads, deleted with apps/api/src/compat",
   "paper.updateContent":
     "receipt kind stored in chat_messages.parts, renamed with the Coach stream contract",
   "paper.createDoc":

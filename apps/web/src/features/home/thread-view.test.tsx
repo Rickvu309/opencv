@@ -28,6 +28,7 @@ const moveReceipt = {
   summary: "Moved 'Backend Intern' to Prep",
   ok: true,
   toolCallId: "call-1",
+  activityId: "activity-1",
   reversal: {
     possible: true,
     description: "Undo by moving the card back.",

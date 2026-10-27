@@ -108,22 +108,4 @@ describe("turnReducer", () => {
       waiting: true,
     })
   })
-
-  it("applies a rating to the held messages in any state", () => {
-    const coach: HomeMessage = { id: "c1", role: "coach", text: "hi" }
-    const held = turnReducer(idle, { type: "finish", messages: null })
-    expect(
-      turnReducer(held, { type: "rate", messageId: "c1", rating: "up" })
-    ).toBe(held)
-    const aborted = turnReducer(streaming(), {
-      type: "abort",
-      messages: [user, coach],
-    })
-    expect(
-      turnReducer(aborted, { type: "rate", messageId: "c1", rating: "up" })
-    ).toEqual({
-      status: "aborted",
-      messages: [user, { ...coach, rating: "up" }],
-    })
-  })
 })

@@ -122,6 +122,7 @@ export function toolResultFromExecute(input: {
       : reversalOf(input.result.reversal, summary),
     result: { ok: true, data: input.result.output ?? null },
     ...(detail ? { detail } : {}),
+    ...(input.result.activityId ? { activityId: input.result.activityId } : {}),
     ...(input.result.pending && input.result.pendingActionId
       ? {
           pendingActionId: input.result.pendingActionId,

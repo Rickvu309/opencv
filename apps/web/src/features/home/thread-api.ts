@@ -1,7 +1,11 @@
 import {
   COACH_SSE_EVENTS,
-  THREAD_COMMANDS,
-  type CoachFeedbackInput,
+  DEFAULT_THREAD_TITLE,
+  parseChatId,
+  type ChatCreateInput,
+  type ChatDeleteInput,
+  type ChatOpenInput,
+  type ChatRenameInput,
   type CoachMode,
   type CoachSelection,
   type CoachSseErrorData,
@@ -10,20 +14,68 @@ import {
   type CoachSseTextDeltaData,
   type CoachSseToolCallData,
   type CoachSseToolResultData,
-  type CoachReverseResult,
-  type CoachUsageRating,
-  type ThreadDeleted,
   type ThreadDetail,
   type ThreadListItem,
-  type ThreadsCreateInput,
-  type ThreadsDeleteInput,
-  type ThreadsPostMessageInput,
+  type ThreadMessage,
+  type ThreadMessagePart,
 } from "@workspace/domain"
 
 import { apiFetch, apiStream } from "@/lib/api.ts"
 import { ApiError } from "@/lib/api-error.ts"
 import { runCommand, unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
 import { readSseStream } from "@/lib/sse.ts"
+
+type ChatRow = {
+  id: string
+  title: string
+  focusKind: string | null
+  focusId: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+type ChatMessageRow = {
+  id: string
+  role: "person" | "coach"
+  text: string
+  createdAt: string
+  parts?: { type: string }[]
+  status?: ThreadMessage["status"]
+  workedMs?: number | null
+}
+
+type ChatDetailRow = ChatRow & { messages: ChatMessageRow[] }
+
+// The api speaks chats. The UI renders threads. This is the one place that maps between them.
+function asThread(chat: ChatRow): ThreadListItem {
+  return {
+    id: chat.id,
+    title: chat.title,
+    createdAt: chat.createdAt,
+    updatedAt: chat.updatedAt,
+    focusDocId: chat.focusKind === "paper" ? chat.focusId : null,
+  }
+}
+
+function asMessage(message: ChatMessageRow): ThreadMessage {
+  const parts = (message.parts ?? []).filter(
+    (part): part is ThreadMessagePart =>
+      part.type === "text" || part.type === "tool"
+  )
+  return {
+    id: message.id,
+    role: message.role === "person" ? "user" : "coach",
+    text: message.text,
+    createdAt: message.createdAt,
+    ...(parts.length > 0 ? { parts } : {}),
+    ...(message.status ? { status: message.status } : {}),
+    ...(message.workedMs != null ? { workedMs: message.workedMs } : {}),
+  }
+}
+
+function asDetail(chat: ChatDetailRow): ThreadDetail {
+  return { ...asThread(chat), messages: chat.messages.map(asMessage) }
+}
 
 export const threadQueryKeys = {
   all: ["threads"] as const,
@@ -34,41 +86,49 @@ export const threadQueryKeys = {
 }
 
 export async function listThreads(): Promise<ThreadListItem[]> {
-  const body = await apiFetch<SuccessBody<ThreadListItem[]>>("/api/threads")
-  return unwrapData(body)
+  const body = await apiFetch<SuccessBody<ChatRow[]>>("/api/chats")
+  return unwrapData(body).map(asThread)
 }
 
 export async function getThread(id: string): Promise<ThreadDetail> {
-  const body = await apiFetch<SuccessBody<ThreadDetail>>(`/api/threads/${id}`)
-  return unwrapData(body)
+  const body = await apiFetch<SuccessBody<ChatDetailRow>>(`/api/chats/${id}`)
+  return asDetail(unwrapData(body))
 }
 
 export async function getThreadByFocusDoc(
   focusDocId: string
 ): Promise<ThreadListItem | null> {
-  const params = new URLSearchParams({ focusDocId })
-  const body = await apiFetch<SuccessBody<ThreadListItem | null>>(
-    `/api/threads?${params.toString()}`
-  )
-  return unwrapData(body)
+  const threads = await listThreads()
+  return threads.find((thread) => thread.focusDocId === focusDocId) ?? null
 }
 
-export function createThread(
-  input: ThreadsCreateInput = {}
-): Promise<ThreadListItem> {
-  return runCommand<ThreadListItem>(THREAD_COMMANDS.create, input)
+export async function createThread(input: {
+  title?: string
+  focusDocId?: string
+}): Promise<ThreadListItem> {
+  if (!input.focusDocId) {
+    const chat = await runCommand<ChatRow>("chat.create", {
+      ...(input.title ? { title: input.title } : {}),
+    } satisfies ChatCreateInput)
+    return asThread(chat)
+  }
+  const opened = await runCommand<ChatRow>("chat.open", {
+    focus: { kind: "paper", id: input.focusDocId },
+  } satisfies ChatOpenInput)
+  if (!input.title || opened.title !== DEFAULT_THREAD_TITLE) {
+    return asThread(opened)
+  }
+  const renamed = await runCommand<ChatRow>("chat.rename", {
+    chatId: parseChatId(opened.id),
+    title: input.title,
+  } satisfies ChatRenameInput)
+  return asThread(renamed)
 }
 
-export function postThreadMessage(
-  input: ThreadsPostMessageInput
-): Promise<ThreadDetail> {
-  return runCommand<ThreadDetail>(THREAD_COMMANDS.postMessage, input)
-}
-
-export function deleteThread(
-  input: ThreadsDeleteInput
-): Promise<ThreadDeleted> {
-  return runCommand<ThreadDeleted>(THREAD_COMMANDS.delete, input)
+export function deleteThread(chatId: string): Promise<{ id: string }> {
+  return runCommand("chat.delete", {
+    chatId: parseChatId(chatId),
+  } satisfies ChatDeleteInput)
 }
 
 export type CoachStreamHandlers = {
@@ -80,33 +140,8 @@ export type CoachStreamHandlers = {
   onError?: (data: CoachSseErrorData) => void
 }
 
-export async function reverseCoachReceipt(
-  threadId: string,
-  messageId: string,
-  toolCallId: string
-): Promise<CoachReverseResult> {
-  const body = await apiFetch<SuccessBody<CoachReverseResult>>(
-    `/api/threads/${threadId}/messages/${messageId}/reverse`,
-    {
-      method: "POST",
-      body: JSON.stringify({ toolCallId }),
-    }
-  )
-  return unwrapData(body)
-}
-
-export async function rateCoachMessage(
-  threadId: string,
-  messageId: string,
-  rating: CoachUsageRating
-): Promise<{ messageId: string; rating: CoachUsageRating }> {
-  const body = await apiFetch<
-    SuccessBody<{ messageId: string; rating: CoachUsageRating }>
-  >(`/api/threads/${threadId}/messages/${messageId}/feedback`, {
-    method: "POST",
-    body: JSON.stringify({ rating } satisfies CoachFeedbackInput),
-  })
-  return unwrapData(body)
+export function undoReceipt(activityId: string): Promise<unknown> {
+  return runCommand("activity.undo", { activityId })
 }
 
 type CoachStreamBody =
@@ -124,7 +159,7 @@ async function consumeCoachStream(
   handlers: CoachStreamHandlers,
   signal?: AbortSignal
 ): Promise<void> {
-  const res = await apiStream(`/api/threads/${threadId}/coach`, {
+  const res = await apiStream(`/api/chats/${threadId}/turns`, {
     method: "POST",
     body: JSON.stringify(body),
     signal,

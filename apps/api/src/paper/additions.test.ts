@@ -1,7 +1,6 @@
 import { personActor, parseUserId } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
 
-import { isCompatCommand } from "../compat/index.js"
 import { withDatabase } from "../db/context.js"
 import { user } from "../db/schema.js"
 import { installRegistry } from "../registry/install.js"
@@ -9,13 +8,6 @@ import { createMigratedTestDb, createTestApp } from "../test/harness.js"
 import { saveFile } from "./store.js"
 
 describe("paper additions", () => {
-  it("drops the paper compat command names", () => {
-    expect(isCompatCommand("paper.createDoc")).toBe(false)
-    expect(isCompatCommand("paper.updateContent")).toBe(false)
-    expect(isCompatCommand("paper.linkApplyCard")).toBe(false)
-    expect(isCompatCommand("apply.createCard")).toBe(false)
-  })
-
   it("serves files and pages on the native paper routes", async () => {
     const { db, client } = await createMigratedTestDb()
     const app = createTestApp(db)

@@ -115,7 +115,7 @@ browser blocks the response.
 
 The Coach runtime is built only when `OPENROUTER_API_KEY` is set on the `api`
 service. Missing or blank key: the app boots, `GET /health` stays 200, and
-`POST /api/threads/:id/coach` returns 503 `COACH_UNAVAILABLE`. Auth, Paper,
+`POST /api/chats/:id/turns` returns 503 `COACH_UNAVAILABLE`. Auth, Paper,
 Apply and Threads reads are untouched. Do not fail the deploy or the healthcheck
 for a missing key. The web app only needs `VITE_API_URL`; the Coach vars are
 `api` variables.

@@ -1,5 +1,5 @@
 import { createContext } from "react"
-import type { CoachUsageRating, ThreadListItem } from "@workspace/domain"
+import type { ThreadListItem } from "@workspace/domain"
 
 import type { HomeMessage } from "@/features/home/threads.ts"
 
@@ -15,8 +15,7 @@ export type ThreadStoreValue = {
   stop: () => void
   retry: () => boolean
   regenerate: () => boolean
-  rate: (messageId: string, rating: CoachUsageRating) => void
-  undo: (messageId: string, toolCallId: string) => Promise<void>
+  undo: (activityId: string) => Promise<void>
   openThread: (id: string) => void
   newThread: () => void
   deleteThread: (id: string) => Promise<void>

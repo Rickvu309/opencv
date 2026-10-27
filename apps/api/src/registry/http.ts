@@ -8,7 +8,6 @@ import {
 import { Hono } from "hono"
 
 import { withRequestHeaders, type Auth } from "../auth.js"
-import { isCompatCommand, runCompatCommand } from "../compat/index.js"
 import type { AppDatabase } from "../db/context.js"
 import { jsonWithStatus } from "../http-json.js"
 import { requireSession, type SessionVariables } from "../middleware.js"
@@ -99,33 +98,14 @@ export function createCommandRoutes({
     const actor = personActor(c.var.userId)
 
     try {
-      const data = await withRequestHeaders(
+      const result = await withRequestHeaders(
         c.req.raw.headers,
-        async () => {
-          if (isCompatCommand(name)) {
-            return {
-              kind: "compat" as const,
-              output: await runCompatCommand(registry, name, input, actor),
-            }
-          }
-          return {
-            kind: "command" as const,
-            result: await registry.execute({
-              name,
-              input,
-              actor,
-              idempotencyKey,
-            }),
-          }
-        },
+        () => registry.execute({ name, input, actor, idempotencyKey }),
         auth
       )
-      if (data.kind === "compat") return c.json(successEnvelope(data.output))
-      if (data.result.pending) return c.json(successEnvelope(data.result))
+      if (result.pending) return c.json(successEnvelope(result))
       return c.json(
-        successEnvelope(
-          withActivityId(data.result.output, data.result.activityId)
-        )
+        successEnvelope(withActivityId(result.output, result.activityId))
       )
     } catch (error) {
       if (error instanceof CommandError) throw error

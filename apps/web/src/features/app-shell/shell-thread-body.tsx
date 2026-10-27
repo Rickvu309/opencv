@@ -13,7 +13,6 @@ export function ShellThreadBody({ chatId = null }: { chatId?: string | null }) {
     stop,
     retry,
     regenerate,
-    rate,
     undo,
     openThread,
   } = useThreadStore()
@@ -43,7 +42,6 @@ export function ShellThreadBody({ chatId = null }: { chatId?: string | null }) {
           waiting={phase === "waiting"}
           error={error}
           onRetry={retry}
-          onRate={rate}
           onRegenerate={phase === "idle" ? regenerate : undefined}
           onUndo={phase === "idle" ? undo : undefined}
         />

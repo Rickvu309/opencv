@@ -1,7 +1,5 @@
 import { useState, type ReactNode } from "react"
 
-import type { CoachUsageRating } from "@workspace/domain"
-
 import { Chat, ChatThread } from "@/components/ai-elements/chat.tsx"
 import type { HomeMessage } from "@/features/home/threads.ts"
 
@@ -19,9 +17,8 @@ type Props = {
   send: (text: string) => boolean
   stop: () => void
   onRetry?: () => void
-  onRate?: (messageId: string, rating: CoachUsageRating) => void
   onRegenerate?: () => void
-  onUndo?: (messageId: string, toolCallId: string) => Promise<void>
+  onUndo?: (activityId: string) => Promise<void>
   onAttachFromPaper?: () => void
   messageCite?: (message: HomeMessage) => ReactNode
 }

@@ -1,19 +1,12 @@
 import { jsonOk, pathOf, urlOf } from "./mock-http.ts"
 
+export { chatCreateCalls, setMockChats } from "./threads-api-mock.ts"
+
 export type MockShellJob = {
   id: string
   title: string
   company: string
   starred: boolean
-}
-
-type MockChat = {
-  id: string
-  title: string
-  focusKind: null
-  focusId: null
-  createdAt: string
-  updatedAt: string
 }
 
 export type MockSearchHits = {
@@ -30,9 +23,7 @@ const emptyHits = (): MockSearchHits => ({
 
 const state = {
   jobs: [] as MockShellJob[],
-  chats: [] as MockChat[],
   inbox: { connected: false, threads: [] as unknown[] } as unknown,
-  creates: [] as unknown[],
   searchHits: emptyHits(),
   searchQueries: [] as string[],
   notifies: [] as { topic: string }[],
@@ -40,9 +31,7 @@ const state = {
 
 export function resetShellApiMock() {
   state.jobs = []
-  state.chats = []
   state.inbox = { connected: false, threads: [] }
-  state.creates = []
   state.searchHits = emptyHits()
   state.searchQueries = []
   state.notifies = []
@@ -52,16 +41,8 @@ export function setMockJobs(jobs: MockShellJob[]) {
   state.jobs = jobs
 }
 
-export function setMockChats(chats: MockChat[]) {
-  state.chats = chats
-}
-
 export function setMockInbox(data: unknown) {
   state.inbox = data
-}
-
-export function chatCreateCalls() {
-  return state.creates
 }
 
 export function setMockSearch(hits: MockSearchHits) {
@@ -84,7 +65,6 @@ export async function shellApiFetch(
   const method =
     init?.method ?? (input instanceof Request ? input.method : "GET")
 
-  if (method === "GET" && path === "/api/chats") return jsonOk(state.chats)
   if (method === "GET" && path === "/api/search") {
     state.searchQueries.push(urlOf(input).searchParams.get("q") ?? "")
     return jsonOk(state.searchHits)
@@ -106,20 +86,5 @@ export async function shellApiFetch(
   }
   if (method === "GET" && path === "/api/jobs") return jsonOk(state.jobs)
   if (method === "GET" && path === "/api/inbox") return jsonOk(state.inbox)
-  if (method === "POST" && path === "/api/commands/chat.create") {
-    const body = init?.body ? JSON.parse(String(init.body)) : null
-    state.creates.push(body)
-    const now = new Date().toISOString()
-    const chat: MockChat = {
-      id: crypto.randomUUID(),
-      title: "New Thread",
-      focusKind: null,
-      focusId: null,
-      createdAt: now,
-      updatedAt: now,
-    }
-    state.chats = [chat, ...state.chats]
-    return jsonOk(chat)
-  }
   return null
 }

@@ -21,7 +21,6 @@ export function HomeDashboard() {
     stop,
     retry,
     regenerate,
-    rate,
     undo,
     newThread,
     deleteThread,
@@ -60,7 +59,6 @@ export function HomeDashboard() {
             waiting={phase === "waiting"}
             error={error}
             onRetry={retry}
-            onRate={rate}
             onRegenerate={phase === "idle" ? regenerate : undefined}
             onUndo={phase === "idle" ? undo : undefined}
           />

@@ -90,6 +90,7 @@ describe("receipt reversal helpers", () => {
         summary: "Moved it",
         ok: true,
         toolCallId: "call_1",
+        activityId: "act_1",
         reversal: {
           possible: true,
           description: "Undo by moving the card back.",
@@ -118,11 +119,25 @@ describe("receipt reversal helpers", () => {
         summary: "Moved it",
         ok: true,
         toolCallId: "call_3",
+        activityId: "act_3",
         undone: true,
         reversal: {
           possible: true,
           description: "Undo by moving the card back.",
         },
+      })
+    ).toBe(false)
+  })
+
+  it("shows no undo without an activity id to reverse", () => {
+    expect(
+      receiptShowsUndo({
+        type: "tool",
+        name: "paper_rename",
+        summary: "Renamed it",
+        ok: true,
+        toolCallId: "call_4",
+        reversal: { possible: true, description: "Rename it back." },
       })
     ).toBe(false)
   })

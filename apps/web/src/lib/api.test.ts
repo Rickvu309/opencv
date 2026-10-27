@@ -53,15 +53,13 @@ describe("apiFetch", () => {
       .mockResolvedValue(Response.json({ ok: true, threads: [] }))
     vi.stubGlobal("fetch", fetchMock)
 
-    await expect(apiFetch("/api/threads")).resolves.toEqual({
+    await expect(apiFetch("/api/chats")).resolves.toEqual({
       ok: true,
       threads: [],
     })
 
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
-    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
-      `${apiBaseUrl}/api/threads`
-    )
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(`${apiBaseUrl}/api/chats`)
     expect(init.credentials).toBe("include")
   })
 
@@ -79,7 +77,7 @@ describe("apiFetch", () => {
       )
     )
 
-    const error = await apiFetch("/api/threads/missing").catch((err) => err)
+    const error = await apiFetch("/api/chats/missing").catch((err) => err)
     expect(error).toBeInstanceOf(ApiError)
     expect(error).toMatchObject({
       status: 404,
@@ -130,7 +128,7 @@ describe("apiStream", () => {
     )
     vi.stubGlobal("fetch", fetchMock)
 
-    const res = await apiStream("/api/threads/t1/coach", {
+    const res = await apiStream("/api/chats/t1/turns", {
       method: "POST",
       body: JSON.stringify({ text: "Hello" }),
     })
@@ -138,7 +136,7 @@ describe("apiStream", () => {
     expect(await res.text()).toBe(body)
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
     expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
-      `${apiBaseUrl}/api/threads/t1/coach`
+      `${apiBaseUrl}/api/chats/t1/turns`
     )
     expect(init.credentials).toBe("include")
     expect(init.method).toBe("POST")
@@ -161,7 +159,7 @@ describe("apiStream", () => {
       )
     )
 
-    const error = await apiStream("/api/threads/t1/coach", {
+    const error = await apiStream("/api/chats/t1/turns", {
       method: "POST",
       body: JSON.stringify({ text: "Hello" }),
     }).catch((err) => err)
@@ -190,7 +188,7 @@ describe("apiStream", () => {
     )
 
     await expect(
-      apiStream("/api/threads/t1/coach", { method: "POST" })
+      apiStream("/api/chats/t1/turns", { method: "POST" })
     ).rejects.toMatchObject({ status: 401, code: "UNAUTHORIZED" })
     expect(onUnauthorized).toHaveBeenCalledTimes(1)
   })

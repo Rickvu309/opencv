@@ -116,7 +116,7 @@ export const CoachFloat = memo(function CoachFloat({
 
   const threadId = createdThreadId ?? focusedThreadQuery.data?.id ?? null
   const titleForCreate = useCallback(() => docName, [docName])
-  const { messages, phase, error, send, stop, retry, regenerate, rate, undo } =
+  const { messages, phase, error, send, stop, retry, regenerate, undo } =
     useCoachTurn({
       threadId,
       setThreadId: setCreatedThreadId,
@@ -309,7 +309,6 @@ export const CoachFloat = memo(function CoachFloat({
               send={sendWithSelection}
               stop={stop}
               onRetry={retry}
-              onRate={rate}
               onRegenerate={phase === "idle" ? regenerate : undefined}
               onUndo={phase === "idle" ? undo : undefined}
               onAttachFromPaper={attachFromPaper}
