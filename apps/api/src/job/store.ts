@@ -20,7 +20,7 @@ import {
 import { and, asc, desc, eq, gte, isNull, lte, or } from "drizzle-orm"
 
 import { getDb } from "../db/context.js"
-import { activity, jobChecklist, jobs, paperDocs, user } from "../db/schema.js"
+import { activity, jobChecklist, jobs, paperDocs } from "../db/schema.js"
 import { createId } from "../id.js"
 import { CommandError } from "../registry/errors.js"
 
