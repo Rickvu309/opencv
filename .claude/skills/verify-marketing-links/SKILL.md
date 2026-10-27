@@ -106,19 +106,19 @@ A fast-check failure prints `Counterexample:` and `Shrunk N time(s)`. Replay tha
 
 ## Coverage record
 
-| What the check reads | Where |
-| --- | --- |
-| Route tree and `createAppRouter` | `apps/web/src/router.tsx` `routeTree` line 335, `createAppRouter` line 364 |
-| Classification table | `apps/web/src/test/marketing/route-table.ts` `ROUTE_TABLE` line 19 |
-| Not-found leaf | `NotFoundPage` in `apps/web/src/components/not-found-page.tsx` line 54. P1 treats a match as the not-found page when the leaf route's `component` is this function. Today those leaves are `/$/`, `/app/$/`, and `/u/$slug/`. |
-| Render helper | `renderApp` in `apps/web/src/test/render-app.tsx` line 20 |
-| Home page | `LandingPage` in `apps/web/src/features/landing/landing-page.tsx` line 18. Section ids include `product`, `stories`, `paper`, `apply`, `coach` (`id={product.id}` in `landing-products.tsx` line 12). |
-| Pricing | `PricingPage` in `apps/web/src/features/landing/landing-pricing.tsx` line 22, route `apps/web/src/routes/landing-pricing.tsx` |
-| About | `AboutPage` in `apps/web/src/features/landing/about/about-page.tsx` line 24. Surface links use `hash` `paper`, `apply`, `coach` from `ABOUT_SURFACES` in `about-copy.ts`. Route `apps/web/src/routes/landing-about.tsx`. |
-| Help | `HelpPage` in `apps/web/src/features/landing/help/help-page.tsx` line 29. Topic links are `to="/help"` `hash={topic.id}`, and each topic section has `id={topic.id}`. Route `apps/web/src/routes/landing-help.tsx`. |
-| Nav hand list | `pageHref` in `apps/web/src/features/landing/landing-nav.tsx` line 17. `LANDING_NAV_LINKS` in `landing-copy.ts` line 43. |
-| Footer | `FooterAnchor` in `apps/web/src/features/landing/landing-footer.tsx` line 15. `LANDING_FOOTER` in `landing-copy.ts` line 268. |
-| Help search | `filterHelpTopics` line 276 and `HELP_TOPICS` line 42 in `apps/web/src/features/landing/help/help-copy.ts`. The property is `assertFilterRule` in `help-filter.property.test.ts` line 101. |
+| What the check reads             | Where                                                                                                                                                                                                                         |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Route tree and `createAppRouter` | `apps/web/src/router.tsx` `routeTree` line 335, `createAppRouter` line 364                                                                                                                                                    |
+| Classification table             | `apps/web/src/test/marketing/route-table.ts` `ROUTE_TABLE` line 19                                                                                                                                                            |
+| Not-found leaf                   | `NotFoundPage` in `apps/web/src/components/not-found-page.tsx` line 54. P1 treats a match as the not-found page when the leaf route's `component` is this function. Today those leaves are `/$/`, `/app/$/`, and `/u/$slug/`. |
+| Render helper                    | `renderApp` in `apps/web/src/test/render-app.tsx` line 20                                                                                                                                                                     |
+| Home page                        | `LandingPage` in `apps/web/src/features/landing/landing-page.tsx` line 18. Section ids include `product`, `stories`, `paper`, `apply`, `coach` (`id={product.id}` in `landing-products.tsx` line 12).                         |
+| Pricing                          | `PricingPage` in `apps/web/src/features/landing/landing-pricing.tsx` line 22, route `apps/web/src/routes/landing-pricing.tsx`                                                                                                 |
+| About                            | `AboutPage` in `apps/web/src/features/landing/about/about-page.tsx` line 24. Surface links use `hash` `paper`, `apply`, `coach` from `ABOUT_SURFACES` in `about-copy.ts`. Route `apps/web/src/routes/landing-about.tsx`.      |
+| Help                             | `HelpPage` in `apps/web/src/features/landing/help/help-page.tsx` line 29. Topic links are `to="/help"` `hash={topic.id}`, and each topic section has `id={topic.id}`. Route `apps/web/src/routes/landing-help.tsx`.           |
+| Nav hand list                    | `pageHref` in `apps/web/src/features/landing/landing-nav.tsx` line 17. `LANDING_NAV_LINKS` in `landing-copy.ts` line 43.                                                                                                      |
+| Footer                           | `FooterAnchor` in `apps/web/src/features/landing/landing-footer.tsx` line 15. `LANDING_FOOTER` in `landing-copy.ts` line 268.                                                                                                 |
+| Help search                      | `filterHelpTopics` line 276 and `HELP_TOPICS` line 42 in `apps/web/src/features/landing/help/help-copy.ts`. The property is `assertFilterRule` in `help-filter.property.test.ts` line 101.                                    |
 
 P1 and P2 are `classificationProblems`, `marketingPaths`, and the link test in `marketing-links.verify.test.tsx`. They read rendered anchors. They do not read the copy arrays except by rendering the components that map over them.
 
