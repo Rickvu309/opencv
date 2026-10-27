@@ -50,7 +50,7 @@ Ids are the check numbers. The current page is the first-release marketing site.
 - 16 `hero-has-no-button`: the hero has no button. A Sign in link in the hero must not look like a button. Source: Baymard.
 - 17 `light-field-one-accent`: background luminance 0.85+; at most one saturated hue family (hues within 25 degrees merge, chroma 0.18+) on marketing text and shapes, product shots excluded. Source: Refactoring UI.
 - 18 `h1-sentence-case-solid`: not uppercase, not gradient or transparent fill. Source: Linear homepage.
-- 19 `images-named-and-local`: every image is served from `/landing/`. A product shot needs an alt of 20 or more characters naming Coach, Paper, Apply, Proof, Pitch, a CV, or a letter. An image whose src starts with `/landing/logo-` or `/landing/story-` needs only an alt. Source: NN/g 2.4.
+- 19 `images-named-and-local`: every image is served from `/landing/`. Every image except `/landing/logo-*` and `/landing/story-*` (the hero, the product shots and the Proof and Pitch shots) needs an alt of 20 or more characters naming Coach, Paper, Apply, Proof, Pitch, a CV, or a letter. Logo and story images need only a non-empty alt. Source: NN/g 2.4.
 - 20 `headline-visible-at-first-paint`: the H1 and subhead are not hidden, blurred or animated at first paint. Source: NN/g 5.3.
 - 20b `other-text-visible-at-first-paint`: no other text (the closing line) starts hidden, blurred or animated, so nothing waits for a scroll trigger. Source: NN/g 5.3 on scroll-triggered text.
 - 21 `reduced-motion-disables-animation`: with reduce, no element has a non-zero transition or animation duration (`transition: all` counts, so a kit Button's press motion counts), nothing runs or stays hidden, scroll is not smooth. Source: WCAG 2.3.3.
@@ -123,11 +123,11 @@ Component files in this table are under `apps/web/src/features/landing/` unless 
 | 01, 03, 04, 05         | `LANDING_HEADLINE_LINES`, `LANDING_SUBHEAD`, `LANDING_TITLE`, `LANDING_DESCRIPTION` in `landing-copy.ts`, via `landing-page.tsx` and `landing-hero.tsx`.                                                                     |
 | 02, 06, 08, 10, 11, 13 | `LANDING_STATEMENT_LEAD`, `LANDING_STATEMENT_REST`, `LANDING_PRODUCTS`, `LANDING_HERO_SHOT`, `LANDING_PRIMARY_LABEL`. Rendered by `landing-hero.tsx`, `landing-nav.tsx`, `landing-products.tsx`, and `landing-sections.tsx`. |
 | 07, 16                 | `landing-nav.tsx` `LandingNav` and `landing-sections.tsx` `LandingClose` link to `/sign-in`. `landing-hero.tsx` has no button.                                                                                               |
-| 12, 22                 | Page text and markup. 12 reads `LANDING_LOGO_LABEL` and `LANDING_STORIES`, not alt text, from `landing-sections.tsx` and `landing-footer.tsx`.                                                                               |
-| 14, 25                 | Hero img width, height, fetchPriority from `LANDING_HERO_SHOT` (`/landing/apply-board.webp`).                                                                                                                                |
+| 12, 22                 | Page text and markup. 12 reads `LANDING_LOGO_LABEL` and `LANDING_STORIES` as rendered by `landing-sections.tsx`, not alt text. It scans all page text, footer included, for stars, invented counts and prices.               |
+| 14, 25                 | Hero img width and height from `LANDING_HERO_SHOT` (`/landing/apply-board.webp`); `fetchPriority="high"` is set in `landing-hero.tsx`.                                                                                       |
 | 15                     | `LANDING_NAV_LINKS` in `landing-nav.tsx`. Asserts Product, Stories, and Pricing.                                                                                                                                             |
 | 17, 18, 23, 24         | `landing.css`, `packages/ui/src/styles/globals.css`, `packages/ui/src/components/button.tsx`.                                                                                                                                |
-| 19                     | `LANDING_HERO_SHOT`, `LANDING_PRODUCTS`, `LANDING_COMING_NEXT`, `LANDING_INTEGRATIONS`, `LANDING_STORIES` in `apps/web/public/landing/`.                                                                                     |
+| 19                     | `LANDING_HERO_SHOT`, `LANDING_PRODUCTS`, `LANDING_COMING_NEXT`, `LANDING_INTEGRATIONS`, `LANDING_STORIES` in `landing-copy.ts`; the image files are in `apps/web/public/landing/`.                                           |
 | 20, 20b, 21            | `landing.css` reduced motion, nav scroll state, `button.tsx` `transition-all`.                                                                                                                                               |
 | 27                     | `landing-figures.tsx` and `figures/*-art.tsx` (viewBox, paths, ellipses, inline hex).                                                                                                                                        |
 | 28                     | `OpenCvLogo` from `apps/web/src/features/app-shell/app-logo.tsx`, rendered by `landing-nav.tsx`.                                                                                                                             |
@@ -141,7 +141,7 @@ Not covered: pixel content of screenshots (judged, J4 to J7), real-device and Sa
 
 verify-landing checks only `/`.
 
-Text parity with the pen frame is `apps/web/src/features/landing/landing-design-parity.test.tsx`. Dated `OMITTED` rows are the exceptions. Each row has an `until` date and a reason. That test covers copy this checker does not score: the integrations roster, coming-next copy, benefit titles and bodies, and the Join the waitlist and Learn more labels.
+Text parity with the pen frame is `apps/web/src/features/landing/landing-design-parity.test.tsx`. Dated `OMITTED` rows are the exceptions. Each row has an `until` date and a reason. That test covers copy this checker does not score: the integrations header and sentence, coming-next copy, benefit titles and bodies, and the Join the waitlist and Learn more labels. The integration logo names are alts, which only check 19 sees, and it asks only that they are non-empty.
 
 Links and hashes are `.claude/skills/verify-marketing-links`. Run `pnpm --filter web verify:marketing`. That command covers `/`, `/pricing`, `/about`, `/help`, `/blog`, and every post.
 
