@@ -133,5 +133,6 @@ describe("block drag", () => {
     )
     const node = document.querySelector("[data-sortable-block]")
     expect(node?.getAttribute("style") ?? "").not.toMatch(/transform/)
+    expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument()
   })
 })

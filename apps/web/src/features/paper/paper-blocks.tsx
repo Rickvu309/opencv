@@ -655,8 +655,15 @@ function BlockField({
   onSlash?: (node: HTMLElement) => void
   onChange: (value: string) => void
 }) {
+  const Tag = header === "name" ? "h1" : "div"
   return (
-    <div className="flex min-w-0 items-baseline gap-2">
+    <Tag
+      className={
+        header === "name"
+          ? "m-0 flex min-w-0 items-baseline gap-2 text-sm font-normal"
+          : "flex min-w-0 items-baseline gap-2"
+      }
+    >
       {prefix ? (
         <span className="text-sm text-muted-foreground">{prefix}</span>
       ) : null}
@@ -695,6 +702,6 @@ function BlockField({
           }
         }}
       />
-    </div>
+    </Tag>
   )
 }
