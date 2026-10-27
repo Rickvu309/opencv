@@ -229,5 +229,8 @@
   "inboxMove": "Move this job to Interview?",
   "inboxDraftBy": "Drafted by opencv",
   "inboxEmptyTitle": "No job emails yet",
-  "inboxScanTitle": "Finding your job emails"
+  "inboxScanTitle": "Finding your job emails",
+  "importPages": "Pages files aren't supported. Try a PDF or Word file.",
+  "importGoogle": "Google Docs aren't supported. Download a PDF or Word file.",
+  "importLinkedIn": "LinkedIn links aren't supported. Download a PDF or Word file."
 }

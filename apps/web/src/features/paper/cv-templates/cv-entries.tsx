@@ -14,7 +14,7 @@ import {
   removeSkillItem,
   renameSkillGroup,
   renameSkillItem,
-} from "../paper-cv-edits.ts"
+} from "./row-edits.ts"
 import {
   type CvEducation,
   type CvExperience,

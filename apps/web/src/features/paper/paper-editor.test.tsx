@@ -85,10 +85,12 @@ describe("CV editor chrome", () => {
     )
     expect(screen.queryByText("Edited just now")).not.toBeInTheDocument()
 
-    const summary = screen.getByRole("textbox", { name: "Summary" })
+    const impact = screen.getByRole("textbox", {
+      name: "What you did, and what changed because of it",
+    })
     vi.useFakeTimers()
-    summary.textContent = "Edited for verify."
-    fireEvent.input(summary)
+    impact.textContent = "Edited for verify."
+    fireEvent.input(impact)
     await act(async () => {
       await vi.advanceTimersByTimeAsync(700)
     })
@@ -133,10 +135,12 @@ describe("CV editor chrome", () => {
       ).not.toBeInTheDocument()
     })
 
-    const summary = screen.getByRole("textbox", { name: "Summary" })
+    const impact = screen.getByRole("textbox", {
+      name: "What you did, and what changed because of it",
+    })
     vi.useFakeTimers()
-    summary.textContent = "A conflicting edit."
-    fireEvent.input(summary)
+    impact.textContent = "A conflicting edit."
+    fireEvent.input(impact)
     await act(async () => {
       await vi.advanceTimersByTimeAsync(700)
     })
@@ -233,18 +237,20 @@ describe("CV editor chrome", () => {
         onBack={() => undefined}
       />
     )
-    const summary = screen.getByRole("textbox", { name: "Summary" })
+    const impact = screen.getByRole("textbox", {
+      name: "What you did, and what changed because of it",
+    })
     vi.useFakeTimers()
-    summary.textContent = "First"
-    fireEvent.input(summary)
+    impact.textContent = "First"
+    fireEvent.input(impact)
     await act(async () => {
       await vi.advanceTimersByTimeAsync(700)
     })
     expect(replaceCount).toBe(1)
     expect(bodies[0]?.contentVersion).toBe(1)
 
-    summary.textContent = "Second"
-    fireEvent.input(summary)
+    impact.textContent = "Second"
+    fireEvent.input(impact)
     await act(async () => {
       await vi.advanceTimersByTimeAsync(700)
     })
@@ -267,7 +273,9 @@ describe("CV editor chrome", () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(0)
     })
-    expect(summary.textContent).toBe("Server text")
+    expect(
+      screen.getByRole("textbox", { name: "Server text" }).textContent
+    ).toBe("Server text")
     expect(replaceCount).toBe(1)
   })
 

@@ -1,4 +1,9 @@
-import type { CvEducation, CvExperience, CvProject, CvSkillGroup } from "./paper-cv-types.ts"
+import type {
+  CvEducation,
+  CvExperience,
+  CvProject,
+  CvSkillGroup,
+} from "../paper-cv-types.ts"
 
 /** Quiet next-step copy for empty Experience / Education / Skills (QVE-209). */
 export const EMPTY_SECTION_CTA = {

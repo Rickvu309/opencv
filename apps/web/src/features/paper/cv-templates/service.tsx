@@ -1,6 +1,6 @@
 import { cn } from "@workspace/ui/lib/utils"
 import { X } from "lucide-react"
-import { removeEducation } from "../paper-cv-edits.ts"
+import { removeEducation } from "./row-edits.ts"
 import {
   CvType,
   EditableField,

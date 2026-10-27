@@ -119,5 +119,16 @@ export function usePaperAutosave<T>({
     }
   }
 
-  return { schedule, adopt, versionRef }
+  function commitNow(next: T) {
+    if (conflictRef.current) return
+    epochRef.current += 1
+    pendingRef.current = next
+    if (timerRef.current != null) {
+      window.clearTimeout(timerRef.current)
+      timerRef.current = null
+    }
+    void flush()
+  }
+
+  return { schedule, adopt, commitNow, versionRef }
 }

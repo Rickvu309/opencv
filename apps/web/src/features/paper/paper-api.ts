@@ -29,7 +29,13 @@ export type PaperRecord = {
   status: PaperDocStatus
   document: unknown
   contentVersion: number
-  checks: { id: string; kind: string; message: string }[]
+  checks: {
+    id: string
+    kind: string
+    message: string
+    blockId?: string
+    resolved?: boolean
+  }[]
   pageChoice: "unset" | "keep"
   sourceFileId: string | null
   /** Present on the test mock and older list payloads. The new read omits it. */
@@ -199,13 +205,26 @@ export function keepTwoPages(docId: string): Promise<PaperRecord> {
   return runCommand<unknown>("paper.keepTwoPages", { docId }).then(asRecord)
 }
 
-export async function importPaperFile(file: File): Promise<PaperRecord> {
+export function dismissPaperCheck(
+  docId: string,
+  checkId: string
+): Promise<PaperRecord> {
+  return runCommand<unknown>("paper.dismissCheck", { docId, checkId }).then(
+    asRecord
+  )
+}
+
+export async function importPaperFile(
+  file: File,
+  signal?: AbortSignal
+): Promise<PaperRecord> {
   const body = new FormData()
   body.set("file", file)
   const res = await fetch(new URL("/api/paper/import", apiBaseUrl), {
     method: "POST",
     credentials: "include",
     body,
+    signal,
   })
   if (!res.ok) {
     const payload = (await res.json().catch(() => null)) as {

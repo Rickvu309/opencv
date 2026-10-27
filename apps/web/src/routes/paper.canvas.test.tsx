@@ -19,8 +19,11 @@ describe("Paper editor chrome", () => {
       name: "Editing PM track CV",
     })
     const view = within(editor)
-    expect(view.getAllByRole("textbox", { name: "Name" })).toHaveLength(2)
-    expect(view.getByRole("textbox", { name: "Summary" })).toBeInTheDocument()
+    expect(view.getByRole("textbox", { name: "Name" })).toBeInTheDocument()
+    expect(view.getByRole("textbox", { name: "Alex Tran" })).toBeInTheDocument()
+    expect(
+      view.getByRole("textbox", { name: /Year-4 Information Systems/ })
+    ).toBeInTheDocument()
     expect(view.getByRole("button", { name: "Coach" })).toBeInTheDocument()
     expect(editor.querySelector('[data-paper-a4-fit="width"]')).not.toBeNull()
     expect(document.querySelector("[data-coach-float-pill]")).toBeNull()

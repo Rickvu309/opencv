@@ -15,6 +15,7 @@ import { ApiError } from "@/lib/api-error.ts"
 import { apiBaseUrl } from "@/lib/api-url.ts"
 
 import {
+  createPaper,
   deleteFile,
   deletePaper,
   duplicatePaper,
@@ -31,7 +32,14 @@ import {
 import { PaperNewDialog } from "./paper-new-dialog.tsx"
 import { PAPER_GALLERY_DIALOG_CLASS } from "./paper-template-gallery.tsx"
 import { PaperLetterStart } from "./paper-letter.tsx"
-import { PaperImportInput } from "./paper-cv-surface.tsx"
+import {
+  CantReadDialog,
+  IMPORT_PAGES,
+  ImportProgressDialog,
+  PaperImportInput,
+  linkRefusal,
+  pagesRefusal,
+} from "./paper-import.tsx"
 import { NewPaperCard, PaperCard, SectionHead } from "./paper-parts.tsx"
 import { paperEditedLabel } from "./paper-templates.ts"
 
@@ -71,13 +79,20 @@ export function PaperLibrary({
   onChanged?: () => void
 }) {
   const importRef = useRef<HTMLInputElement>(null)
+  const abortRef = useRef<AbortController | null>(null)
   const [query, setQuery] = useState("")
+  const [link, setLink] = useState("")
+  const [importState, setImportState] = useState<
+    | { type: "importing"; filename: string }
+    | { type: "cant-read"; sentence: string }
+    | null
+  >(null)
   const [mode, setMode] = useState<Mode>(null)
   const [rename, setRename] = useState("")
   const [renameError, setRenameError] = useState<string | null>(null)
   const [jobs, setJobs] = useState<JobSummary[]>([])
   const [jobsError, setJobsError] = useState<string | null>(null)
-  const dialogOpen = mode !== null
+  const dialogOpen = mode !== null || importState !== null
   const needle = query.trim().toLowerCase()
   const documents = docs.filter(
     (doc) => doc.kind === "cv" || doc.kind === "letter"
@@ -106,18 +121,63 @@ export function PaperLibrary({
     }
   }
 
-  async function onImport(file: File) {
+  function cancelImport() {
+    abortRef.current?.abort()
+    abortRef.current = null
+    setImportState(null)
+  }
+
+  async function startBlank() {
     try {
-      const created = await importPaperFile(file)
-      setMode(null)
+      const created = await createPaper({ kind: "cv", templateId: "blank" })
+      setImportState(null)
       onOpen(created.id)
     } catch (err) {
-      toast(
-        messageOf(
-          err,
-          "Could not import that file. Try a PDF, DOCX, or plain text file."
-        )
+      toast(messageOf(err, "Could not start a blank CV. Try again."))
+    }
+  }
+
+  function submitLink() {
+    const sentence = linkRefusal(link)
+    if (!sentence) return
+    setMode(null)
+    setImportState({ type: "cant-read", sentence })
+  }
+
+  async function onImport(file: File) {
+    const pages = pagesRefusal(file)
+    if (pages) {
+      setMode(null)
+      setImportState({ type: "cant-read", sentence: pages })
+      return
+    }
+    const controller = new AbortController()
+    abortRef.current = controller
+    setMode(null)
+    setImportState({ type: "importing", filename: file.name })
+    try {
+      const created = await importPaperFile(file, controller.signal)
+      if (controller.signal.aborted) return
+      setImportState(null)
+      onOpen(created.id)
+    } catch (err) {
+      const aborted =
+        controller.signal.aborted ||
+        (err instanceof Error && err.name === "AbortError")
+      if (aborted) {
+        setImportState(null)
+        return
+      }
+      const message = messageOf(
+        err,
+        "Could not import that file. Try it again."
       )
+      if (message === IMPORT_PAGES) {
+        setImportState({ type: "cant-read", sentence: message })
+        return
+      }
+      setImportState(null)
+      toast(message)
     }
   }
 
@@ -301,6 +361,18 @@ export function PaperLibrary({
             >
               Choose file
             </Button>
+            <Input
+              aria-label="Paste a link"
+              placeholder="Paste a link"
+              value={link}
+              onChange={(event) => setLink(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key !== "Enter") return
+                event.preventDefault()
+                submitLink()
+              }}
+              className="mt-3"
+            />
           </div>
         </div>
       ) : null}
@@ -531,6 +603,18 @@ export function PaperLibrary({
           </div>
         </DialogContent>
       </Dialog>
+      <ImportProgressDialog
+        open={importState?.type === "importing"}
+        filename={importState?.type === "importing" ? importState.filename : ""}
+        onCancel={cancelImport}
+      />
+      <CantReadDialog
+        open={importState?.type === "cant-read"}
+        sentence={importState?.type === "cant-read" ? importState.sentence : ""}
+        onChoose={chooseFile}
+        onBlank={() => void startBlank()}
+        onClose={() => setImportState(null)}
+      />
     </section>
   )
 }

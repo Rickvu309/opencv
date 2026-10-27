@@ -25,6 +25,7 @@ This directory is the maintained source for verifying the user-facing behavior o
 | `shell.md`                | Sidebar, dock, chat panel, drawer       | `/app`          |
 | `home-coach-turn.md`      | One Coach turn streams a scripted reply | `/app`          |
 | `paper-edit-save.md`      | Create a CV, edit it, reload            | `/app/paper`    |
+| `paper-import.md`         | Import a file and check the flags       | `/app/paper`    |
 | `apply-board-and-scan.md` | Add a card, move it, scan a posting URL | `/app/apply`    |
 | `coming-soon.md`          | Jobs, Proofs and Pitch coming soon      | `/app/jobs`     |
 | `settings.md`             | Settings sections, export, upgrade      | `/app/settings` |

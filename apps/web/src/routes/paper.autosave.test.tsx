@@ -14,7 +14,16 @@ afterEach(() => {
 
 function savedSummary() {
   const cv = getMockPaperDocs().find((doc) => doc.name === "PM track CV")
-  const content = cv?.content as { summary?: string } | undefined
+  const content = cv?.content as {
+    summary?: string
+    version?: number
+    sections?: { kind: string; blocks: { type: string; text?: string }[] }[]
+  }
+  if (content?.version === 2) {
+    const section = content.sections?.find((item) => item.kind === "summary")
+    const texts = section?.blocks.filter((block) => block.type === "text") ?? []
+    return texts[1]?.text ?? texts[0]?.text
+  }
   return content?.summary
 }
 
@@ -24,7 +33,9 @@ async function openCv() {
   const editor = await screen.findByRole("region", {
     name: "Editing PM track CV",
   })
-  return within(editor).getByRole("textbox", { name: "Summary" })
+  return within(editor).getByRole("textbox", {
+    name: /Year-4 Information Systems/,
+  })
 }
 
 function typeSummary(summary: HTMLElement, text: string) {

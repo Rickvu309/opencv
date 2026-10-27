@@ -10,8 +10,8 @@ import {
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 import { ImagePlus, Plus, User } from "lucide-react"
-import { addEducation, EMPTY_SECTION_CTA } from "../paper-cv-edits.ts"
-import { handleCanvasFieldKeyDown } from "../paper-cv-keyboard.ts"
+import { addEducation, EMPTY_SECTION_CTA } from "./row-edits.ts"
+import { handleCanvasFieldKeyDown } from "./canvas-keys.ts"
 import {
   cvTypeClass,
   type CvData,

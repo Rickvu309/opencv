@@ -175,7 +175,7 @@ const RAW_INTERACTIVE_ALLOWLIST = [
   // Hidden file pickers — kit Input cannot host type="file".
   "features/paper/cv-templates/cv-parts.tsx",
   // Hidden file pickers — kit Input cannot host type="file".
-  "features/paper/paper-cv-surface.tsx",
+  "features/paper/paper-import.tsx",
   // Hidden file pickers — kit Input cannot host type="file".
   "features/paper/paper-proof-toolbar.tsx",
   // Hidden file pickers — kit Input cannot host type="file".

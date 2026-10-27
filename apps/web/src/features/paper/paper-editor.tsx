@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
-  emptyCvDocument,
-  isCvDocument,
+  blankBlockDocument,
   paperDocNameSchema,
-  type CvDocument,
+  readCvBlocks,
+  type CvBlock,
+  type CvBlockDocument,
 } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
@@ -21,13 +22,15 @@ import { apiBaseUrl } from "@/lib/api-url.ts"
 
 import { usePaperAutosave } from "./paper-autosave.ts"
 import { PaperEditorConflictBanner } from "./paper-editor-conflict-banner.tsx"
-import { PaperCvSurface } from "./paper-cv-surface.tsx"
+import { PaperBlocks } from "./paper-blocks.tsx"
+import { ImportCheckBar } from "./paper-import.tsx"
 import {
   PAPER_GALLERY_DIALOG_CLASS,
   PaperTemplateGallery,
 } from "./paper-template-gallery.tsx"
 import {
   createPaperChat,
+  dismissPaperCheck,
   getPaper,
   keepTwoPages,
   openPaperChat,
@@ -38,20 +41,25 @@ import {
   type PaperPages,
   type PaperRecord,
 } from "./paper-api.ts"
-import {
-  editorEditedLabel,
-  previewTemplate,
-  printLayout,
-} from "./paper-templates.ts"
+import { editorEditedLabel, previewTemplate } from "./paper-templates.ts"
 
-function cvOf(document: unknown, templateId: string): CvDocument {
-  if (isCvDocument(document)) {
-    return {
-      ...document,
-      templateId: printLayout(document.templateId || templateId),
+function blocksOf(document: unknown): CvBlockDocument {
+  return readCvBlocks(document) ?? blankBlockDocument()
+}
+
+function textOf(block: CvBlock) {
+  if (block.type === "divider") return ""
+  if ("items" in block) return block.items.map((item) => item.text).join(" ")
+  return block.text
+}
+
+function blockPlain(document: CvBlockDocument, blockId: string) {
+  for (const section of document.sections) {
+    for (const block of section.blocks) {
+      if (block.id === blockId) return textOf(block)
     }
   }
-  return { ...emptyCvDocument(), templateId: printLayout(templateId) }
+  return ""
 }
 
 export function PaperCvEditor({
@@ -63,7 +71,8 @@ export function PaperCvEditor({
   pages: PaperPages
   onBack: () => void
 }) {
-  const [cv, setCv] = useState(() => cvOf(initial.document, initial.templateId))
+  const [blocks, setBlocks] = useState(() => blocksOf(initial.document))
+  const [checks, setChecks] = useState(initial.checks)
   const [name, setName] = useState(initial.name)
   const [nameError, setNameError] = useState<string | null>(null)
   const [updatedAt, setUpdatedAt] = useState(initial.updatedAt)
@@ -72,21 +81,29 @@ export function PaperCvEditor({
   const [favorite, setFavorite] = useState(false)
   const [templateId, setTemplateId] = useState(initial.templateId)
   const [galleryOpen, setGalleryOpen] = useState(false)
-  const { schedule, adopt, versionRef } = usePaperAutosave<CvDocument>({
-    docId: initial.id,
-    initialVersion: initial.contentVersion,
-    toDocument: (next) => next,
-    onSaved: () => {
-      setUpdatedAt(new Date().toISOString())
-      setConflict(false)
-    },
-    onConflict: () => setConflict(true),
-    onError: (error) => {
-      toast(
-        error instanceof Error ? error.message : "Could not save. Try again."
-      )
-    },
-  })
+  const blocksRef = useRef(blocks)
+  const checksRef = useRef(checks)
+  useEffect(() => {
+    blocksRef.current = blocks
+    checksRef.current = checks
+  }, [blocks, checks])
+  const { schedule, adopt, commitNow, versionRef } =
+    usePaperAutosave<CvBlockDocument>({
+      docId: initial.id,
+      initialVersion: initial.contentVersion,
+      toDocument: (next) => next,
+      onSaved: () => {
+        setUpdatedAt(new Date().toISOString())
+        setConflict(false)
+        void dismissFilled()
+      },
+      onConflict: () => setConflict(true),
+      onError: (error) => {
+        toast(
+          error instanceof Error ? error.message : "Could not save. Try again."
+        )
+      },
+    })
   const showBanner = pageState.pages > 1 && pageState.pageChoice === "unset"
 
   useEffect(() => {
@@ -149,7 +166,8 @@ export function PaperCvEditor({
         onToolResult: (tool) => {
           if (tool === "paper.replace" || tool === "paper_replace") {
             void getPaper(initial.id).then((next) => {
-              setCv(cvOf(next.document, next.templateId))
+              setBlocks(blocksOf(next.document))
+              setChecks(next.checks)
               versionRef.current = next.contentVersion
             })
           }
@@ -204,7 +222,8 @@ export function PaperCvEditor({
       const next = await getPaper(initial.id)
       adopt(next.contentVersion)
       setTemplateId(next.templateId)
-      setCv(cvOf(next.document, next.templateId))
+      setBlocks(blocksOf(next.document))
+      setChecks(next.checks)
       setUpdatedAt(next.updatedAt)
       setConflict(false)
     } catch (error) {
@@ -216,14 +235,52 @@ export function PaperCvEditor({
     }
   }
 
+  async function dismissFilled() {
+    const doc = blocksRef.current
+    let current = checksRef.current
+    const phone = current.find(
+      (check) => check.kind === "phone" && check.resolved !== true
+    )
+    if (phone && doc.header.phone.trim()) {
+      try {
+        const next = await dismissPaperCheck(initial.id, phone.id)
+        current = next.checks
+        checksRef.current = current
+        setChecks(current)
+      } catch (error) {
+        toast(
+          error instanceof Error
+            ? error.message
+            : "Could not update that check. Try again."
+        )
+      }
+    }
+    const dates = current.find(
+      (check) => check.kind === "dates" && check.resolved !== true
+    )
+    if (dates && blockPlain(doc, dates.blockId ?? "").includes("20")) {
+      try {
+        const next = await dismissPaperCheck(initial.id, dates.id)
+        checksRef.current = next.checks
+        setChecks(next.checks)
+      } catch (error) {
+        toast(
+          error instanceof Error
+            ? error.message
+            : "Could not update that check. Try again."
+        )
+      }
+    }
+  }
+
+  function focusCheck(selector: string) {
+    document.querySelector<HTMLElement>(selector)?.focus()
+  }
+
   async function applyTemplate(nextTemplateId: string) {
     try {
       const saved = await setPaperTemplate(initial.id, nextTemplateId)
       setTemplateId(saved.templateId)
-      setCv((current) => ({
-        ...current,
-        templateId: printLayout(saved.templateId),
-      }))
       setGalleryOpen(false)
     } catch (error) {
       toast(
@@ -351,13 +408,55 @@ export function PaperCvEditor({
           </div>
         </div>
       ) : null}
+      <ImportCheckBar
+        checks={checks}
+        onAddPhone={() => focusCheck('[data-paper-header="phone"]')}
+        onAddDates={(blockId) =>
+          focusCheck(`[data-block-id="${CSS.escape(blockId)}"]`)
+        }
+        onSkip={(checkId) => {
+          void dismissPaperCheck(initial.id, checkId)
+            .then((next) => {
+              checksRef.current = next.checks
+              setChecks(next.checks)
+            })
+            .catch((error: unknown) => {
+              toast(
+                error instanceof Error
+                  ? error.message
+                  : "Could not skip that check. Try again."
+              )
+            })
+        }}
+        onDone={() => {
+          const source = checks.find((check) => check.kind === "source")
+          if (!source) return
+          void dismissPaperCheck(initial.id, source.id)
+            .then((next) => {
+              checksRef.current = next.checks
+              setChecks(next.checks)
+            })
+            .catch((error: unknown) => {
+              toast(
+                error instanceof Error
+                  ? error.message
+                  : "Could not dismiss the import. Try again."
+              )
+            })
+        }}
+      />
       <div data-template={previewTemplate(templateId)} className="min-w-0">
-        <PaperCvSurface
-          data={cv}
+        <PaperBlocks
+          document={blocks}
           onChange={(next) => {
-            setCv(next)
+            setBlocks(next)
             schedule(next)
           }}
+          onCommit={(next) => {
+            setBlocks(next)
+            commitNow(next)
+          }}
+          onAskCoach={() => openCoach()}
         />
         {pageState.pages > 1 ? (
           <p className="mt-2 text-sm text-muted-foreground">Page 2</p>
