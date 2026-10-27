@@ -1,24 +1,18 @@
 import {
   APPLY_SCAN_FETCH_FAILED,
   APPLY_SCAN_NOT_FOUND,
-  DEFAULT_APPLY_COMPANY,
-  DEFAULT_APPLY_TITLE,
   applyScanHasIdentity,
   extractApplyFieldsFromHiringText,
   extractApplyFieldsFromLabeledText,
-  generateKeyBetween,
   groundApplyScanResult,
   mergeApplyScanResults,
   parseApplyScanInput,
   type ApplyCard,
-  type ApplyStage,
-  type ApplyTrackKind,
 } from "@workspace/domain"
 
 import { sampleApplyCards } from "./apply-fixtures.ts"
 import { jobApiFetch, resetMockJobs } from "./apply-jobs-mock.ts"
-import { getMockPaperDocs } from "./paper-api-mock.ts"
-import { isoNow, pathOf, jsonOk, jsonError } from "./mock-http.ts"
+import { pathOf, jsonOk, jsonError } from "./mock-http.ts"
 
 type Store = {
   cards: ApplyCard[]
@@ -36,10 +30,6 @@ function cloneCards(cards: ApplyCard[]): ApplyCard[] {
   return structuredClone(cards)
 }
 
-function todayIso() {
-  return new Date().toISOString().slice(0, 10)
-}
-
 async function readBody(init?: RequestInit): Promise<unknown> {
   if (init?.body == null) return {}
   const text = String(init.body)
@@ -53,26 +43,6 @@ function sortCards(cards: ApplyCard[]) {
     if (a.position !== b.position) return a.position < b.position ? -1 : 1
     return a.id < b.id ? -1 : a.id > b.id ? 1 : 0
   })
-}
-
-function positionBefore(
-  stage: ApplyStage,
-  beforeCardId?: string | null,
-  excludeId?: string
-) {
-  const column = sortCards(
-    store.cards.filter((card) => card.stage === stage && card.id !== excludeId)
-  )
-  if (beforeCardId == null) {
-    return generateKeyBetween(column.at(-1)?.position ?? null, null)
-  }
-  const index = column.findIndex((card) => card.id === beforeCardId)
-  if (index === -1) {
-    return generateKeyBetween(column.at(-1)?.position ?? null, null)
-  }
-  const right = column[index]!
-  const left = index > 0 ? column[index - 1]! : null
-  return generateKeyBetween(left?.position ?? null, right.position)
 }
 
 export function resetApplyApiMock() {

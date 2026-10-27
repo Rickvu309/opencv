@@ -1,7 +1,4 @@
 import {
-  DEFAULT_PAPER_DOC_NAME,
-  PAPER_CONTENT_VERSION,
-  decodePaperContent,
   emptyPaperDocument,
   type PaperContentKind,
   type PaperDoc,
