@@ -65,5 +65,5 @@ export default defineRailway((ctx) => {
     },
   })
 
-  return project("openpath", { resources: [api, web] })
+  return project("opencv", { resources: [api, web] })
 })

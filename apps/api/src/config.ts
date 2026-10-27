@@ -15,8 +15,7 @@ export function apiPortFromEnv(env: NodeJS.ProcessEnv): number {
 /**
  * Origins the API accepts browser calls from, as a comma-separated list. Each
  * entry is an exact origin or a single-`*` pattern (see `createApp`). Unset means the web dev
- * server derived from `PORT`. Set per Railway environment: production allows `https://opencv.me` (plus the old
- * Vercel origin during the overlap), staging allows `https://staging.opencv.me`.
+ * server derived from `PORT`. Production allows `https://opencv.me` and `https://www.opencv.me`.
  */
 export function webOriginsFromEnv(env: NodeJS.ProcessEnv): string[] {
   const configured = (env.WEB_ORIGINS ?? "")
