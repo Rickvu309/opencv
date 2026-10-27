@@ -102,6 +102,11 @@ describe("landing page", () => {
     for (const link of pricing) {
       expect(link).toHaveAttribute("href", "/pricing")
     }
+
+    expect(screen.getByRole("link", { name: "Help" })).toHaveAttribute(
+      "href",
+      "/help"
+    )
   })
 
   it("renders the sections in design order under their headings", async () => {
@@ -196,7 +201,6 @@ describe("landing page", () => {
 
     for (const gone of [
       /^blog$/i,
-      /^help$/i,
       /^examples$/i,
       /read all stories/i,
       /^careers$/i,
