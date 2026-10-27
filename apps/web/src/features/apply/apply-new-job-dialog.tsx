@@ -1,6 +1,6 @@
 import { useRef, useState } from "react"
-import { useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
+import { parseJobId, type JobPreview, type JobStage } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -22,14 +22,9 @@ import { Textarea } from "@workspace/ui/components/textarea"
 import { toast } from "@workspace/ui/components/sonner"
 
 import { ApiError } from "@/lib/api-error.ts"
+import { useRunCommand } from "@/lib/contract-client.ts"
 
-import {
-  applyQueryKeys,
-  createJob,
-  previewJob,
-  type JobPreview,
-  type JobStage,
-} from "./apply-api.ts"
+import { previewJob } from "./apply-api.ts"
 import { ALL_STAGES, stageLabel } from "./apply-stages.ts"
 
 const COMPANY_REQUIRED = "Add the company name to save this job."
@@ -71,7 +66,7 @@ export function NewJobDialog({
   onOpenChange: (open: boolean) => void
 }) {
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
+  const run = useRunCommand()
   const companyRef = useRef<HTMLInputElement>(null)
   const linkRef = useRef<HTMLInputElement>(null)
   const [draft, setDraft] = useState<Draft>(EMPTY)
@@ -97,10 +92,14 @@ export function NewJobDialog({
     const result = await previewJob(input)
     setPreview(result)
     const next: Partial<Draft> = {}
-    if (result.fields?.title) next.title = result.fields.title
-    if (result.fields?.company) next.company = result.fields.company
-    if (result.fields?.location) next.location = result.fields.location
-    if (result.fields?.description) next.description = result.fields.description
+    if (result.status !== "unreadable") {
+      if (result.fields.title) next.title = result.fields.title
+      if (result.fields.company) next.company = result.fields.company
+      if (result.fields.location) next.location = result.fields.location
+    }
+    if (result.status === "filled" && result.fields.description) {
+      next.description = result.fields.description
+    }
     if (Object.keys(next).length > 0) patch(next)
     if (result.status === "company-missing") {
       setCompanyError(COMPANY_REQUIRED)
@@ -116,8 +115,7 @@ export function NewJobDialog({
   }
 
   function duplicateJob() {
-    if (preview?.status !== "duplicate" || !preview.jobId) return null
-    return preview
+    return preview?.status === "duplicate" ? preview : null
   }
 
   async function save(anyway = false) {
@@ -141,7 +139,7 @@ export function NewJobDialog({
     setDateError("")
     setBusy(true)
     try {
-      const created = await createJob({
+      const created = await run("job.create", {
         title,
         company,
         stage: draft.stage,
@@ -151,16 +149,19 @@ export function NewJobDialog({
         ...(draft.deadline ? { deadline: draft.deadline } : {}),
         ...(anyway ? { anyway: true } : {}),
       })
-      await queryClient.invalidateQueries({ queryKey: applyQueryKeys.list() })
       if (created.stage === "saved") toast("Job added to Saved")
       reset()
       onOpenChange(false)
     } catch (error) {
-      if (error instanceof ApiError && error.code === "DUPLICATE_JOB") {
+      if (
+        error instanceof ApiError &&
+        error.code === "DUPLICATE_JOB" &&
+        error.jobId
+      ) {
         setPreview({
           status: "duplicate",
-          jobId: error.jobId,
-          stage: asStage(error.stage) ?? undefined,
+          jobId: parseJobId(error.jobId),
+          stage: asStage(error.stage) ?? "saved",
           fields: { title, company, location: draft.location },
         })
       } else if (
@@ -179,7 +180,7 @@ export function NewJobDialog({
   const addDisabled =
     busy || draft.company.trim() === "" || draft.title.trim() === ""
   const stageName = stageLabel(draft.stage)
-  const duplicateStageName = stageLabel(asStage(preview?.stage) ?? "saved")
+  const duplicateStageName = stageLabel(duplicate?.stage ?? "saved")
 
   return (
     <Dialog
@@ -236,19 +237,17 @@ export function NewJobDialog({
             <div>
               <p>Already on your board</p>
               <p>
-                {preview?.fields?.title ?? draft.title} at{" "}
-                {preview?.fields?.company ?? draft.company}, in{" "}
+                {duplicate.fields.title} at {duplicate.fields.company}, in{" "}
                 {duplicateStageName}
               </p>
               <Button
                 type="button"
                 variant="ghost"
                 onClick={() => {
-                  if (!preview?.jobId) return
                   onOpenChange(false)
                   void navigate({
                     to: "/app/apply/$jobId",
-                    params: { jobId: preview.jobId },
+                    params: { jobId: duplicate.jobId },
                   })
                 }}
               >

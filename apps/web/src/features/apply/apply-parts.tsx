@@ -4,12 +4,9 @@ import { MapPin } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { StageIcon } from "@workspace/ui/components/stage-icon"
 
-import type {
-  ActivityRow,
-  ChecklistItem,
-  Job,
-  JobPriority,
-} from "./apply-api.ts"
+import type { JobPriority, JobView } from "@workspace/domain"
+
+import type { ActivityRow, ChecklistItem } from "./apply-api.ts"
 import { companyInitials, priorityLabel } from "./apply-stages.ts"
 
 export function PriorityBars({ level }: { level: JobPriority }) {
@@ -51,7 +48,7 @@ export function CompanyTile({ company }: { company: string }) {
   )
 }
 
-export function JobCard({ job, phrase }: { job: Job; phrase?: string }) {
+export function JobCard({ job, phrase }: { job: JobView; phrase?: string }) {
   return (
     <div data-slot="job-card" className="flex flex-col gap-2 text-left">
       <span className="flex items-start gap-2.5">
@@ -86,7 +83,7 @@ export function JobRow({
   phrase,
   onOpen,
 }: {
-  job: Job
+  job: JobView
   phrase: string
   onOpen: () => void
 }) {

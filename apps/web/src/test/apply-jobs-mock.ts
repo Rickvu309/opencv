@@ -1,13 +1,14 @@
 import type {
-  ActivityRow,
-  ChecklistItem,
-  Job,
   JobDetail,
   JobPreview,
   JobStage,
-  LinkedDoc,
-} from "@/features/apply/apply-api.ts"
+  JobView,
+} from "@workspace/domain"
+
+import type { ActivityRow, ChecklistItem } from "@/features/apply/apply-api.ts"
 import { jsonError, jsonOk, pathOf, urlOf } from "./mock-http.ts"
+
+type LinkedDoc = JobDetail["linked"]["cv"]
 
 type Extra = {
   note: string
@@ -23,7 +24,7 @@ type Post = {
   activityId: string
 }
 
-const jobs: Job[] = []
+const jobs: JobView[] = []
 const extras = new Map<string, Extra>()
 const posts: Post[] = []
 const previews: { url?: string; text?: string }[] = []
@@ -127,7 +128,7 @@ export function getMockPreviews() {
   return previews
 }
 
-function detailOf(job: Job): JobDetail {
+function detailOf(job: JobView): JobDetail {
   const more = extra(job.id)
   return {
     ...job,
@@ -206,7 +207,7 @@ function previewFor(input: { url?: string; text?: string }): JobPreview {
   }
 }
 
-function inRange(job: Job, from: string, to: string) {
+function inRange(job: JobView, from: string, to: string) {
   const start = Date.parse(from)
   const end = Date.parse(to)
   if (Number.isNaN(start) || Number.isNaN(end)) return false
@@ -319,7 +320,7 @@ export async function jobApiFetch(
         }
       }
       const now = new Date().toISOString()
-      const created: Job = {
+      const created: JobView = {
         id: crypto.randomUUID(),
         title,
         company,
@@ -378,7 +379,7 @@ export async function jobApiFetch(
       return jsonOk({ ...job, activityId })
     }
     if (name === "job.update") {
-      const patch = (payload.patch ?? {}) as Partial<Job>
+      const patch = (payload.patch ?? {}) as Partial<JobView>
       Object.assign(job, patch, { updatedAt: new Date().toISOString() })
       return jsonOk(job)
     }

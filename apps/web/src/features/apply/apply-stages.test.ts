@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import type { Job } from "./apply-api.ts"
+import type { JobView } from "@workspace/domain"
 import {
   companyInitials,
   interviewInputValue,
@@ -11,7 +11,7 @@ import {
 
 const now = new Date("2026-10-27T03:00:00.000Z")
 
-function job(patch: Partial<Job>): Job {
+function job(patch: Partial<JobView>): JobView {
   return {
     id: "01900000-0000-7000-8000-000000000010",
     title: "Junior Marketing",

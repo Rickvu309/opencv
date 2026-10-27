@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
+import {
+  parseJobId,
+  parsePaperId,
+  type JobDetail,
+  type JobPriority,
+  type JobStage,
+} from "@workspace/domain"
 import { Link, useNavigate } from "@tanstack/react-router"
 import { ChevronLeft, ChevronRight, MoreHorizontal, Star } from "lucide-react"
 
@@ -32,24 +39,13 @@ import { authClient } from "@/lib/auth-client.ts"
 import { recordFirstCafeItem } from "@/features/home/first-cafe-checklist.ts"
 
 import {
-  addChecklistItem,
-  addNote,
-  applyQueryKeys,
-  deleteJob,
   getJob,
-  linkPaper,
+  jobGetKey,
+  jobListKey,
   listActivity,
   listJobs,
   listPaper,
-  moveJob,
-  setChecklistItem,
-  starJob,
   undoActivity,
-  unlinkPaper,
-  updateJob,
-  type JobDetail,
-  type JobPriority,
-  type JobStage,
   type PaperListItem,
 } from "./apply-api.ts"
 import {
@@ -66,6 +62,7 @@ import {
   priorityLabel,
   stageLabel,
 } from "./apply-stages.ts"
+import { activityKey, useRunCommand } from "@/lib/contract-client.ts"
 
 const POSTING = [
   ["About the role", "about"],
@@ -83,20 +80,22 @@ function fieldTarget(target: EventTarget | null) {
 export function ApplyJobDetail({ jobId }: { jobId: string }) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const run = useRunCommand()
+  const id = parseJobId(jobId)
   const { data: session } = authClient.useSession()
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [step, setStep] = useState("")
   const [note, setNote] = useState("")
   const detail = useQuery({
-    queryKey: applyQueryKeys.detail(jobId),
-    queryFn: () => getJob(jobId),
+    queryKey: jobGetKey(id),
+    queryFn: () => getJob(id),
   })
   const jobs = useQuery({
-    queryKey: applyQueryKeys.list(),
+    queryKey: jobListKey(),
     queryFn: listJobs,
   })
   const activity = useQuery({
-    queryKey: applyQueryKeys.activity(jobId),
+    queryKey: activityKey(jobId),
     queryFn: () => listActivity(jobId),
   })
 
@@ -117,30 +116,26 @@ export function ApplyJobDetail({ jobId }: { jobId: string }) {
   const next = index >= 0 ? ordered[index + 1] : undefined
   const job = detail.data
 
-  function refresh() {
-    void queryClient.invalidateQueries({ queryKey: applyQueryKeys.all })
-  }
-
   function noteCafe() {
     const userId = session?.user.id
     if (userId) recordFirstCafeItem(userId, "apply")
   }
 
   async function changeStage(stage: JobStage) {
-    const result = await moveJob({ jobId, stage })
+    const result = await run("job.move", { jobId: id, stage })
     noteCafe()
     if (stage === "closed" && result.activityId) {
       const activityId = result.activityId
       toastWithUndo("Moved to Closed", () => {
-        void undoActivity({ activityId }).then(refresh)
+        void undoActivity(queryClient, activityId)
       })
     }
-    refresh()
   }
 
-  async function savePatch(patch: Parameters<typeof updateJob>[0]["patch"]) {
-    await updateJob({ jobId, patch })
-    refresh()
+  async function savePatch(
+    patch: Parameters<typeof run<"job.update">>[1]["patch"]
+  ) {
+    await run("job.update", { jobId: id, patch })
   }
 
   if (detail.isLoading) return <p role="status">Loading jobs</p>
@@ -212,7 +207,7 @@ export function ApplyJobDetail({ jobId }: { jobId: string }) {
           aria-label="Favorite"
           aria-pressed={job.starred}
           onClick={() =>
-            void starJob({ jobId, starred: !job.starred }).then(refresh)
+            void run("job.star", { jobId: id, starred: !job.starred })
           }
         >
           <Star />
@@ -256,11 +251,11 @@ export function ApplyJobDetail({ jobId }: { jobId: string }) {
                 key={item.id}
                 item={item}
                 onToggle={() =>
-                  void setChecklistItem({
-                    jobId,
+                  void run("job.setChecklistItem", {
+                    jobId: id,
                     itemId: item.id,
                     done: !item.done,
-                  }).then(refresh)
+                  })
                 }
               />
             ))}
@@ -270,10 +265,11 @@ export function ApplyJobDetail({ jobId }: { jobId: string }) {
                 event.preventDefault()
                 const label = step.trim()
                 if (!label) return
-                void addChecklistItem({ jobId, label }).then(() => {
-                  setStep("")
-                  refresh()
-                })
+                void run("job.addChecklistItem", { jobId: id, label }).then(
+                  () => {
+                    setStep("")
+                  }
+                )
               }}
             >
               <Label htmlFor="add-step" className="sr-only">
@@ -304,9 +300,8 @@ export function ApplyJobDetail({ jobId }: { jobId: string }) {
               event.preventDefault()
               const body = note.trim()
               if (!body) return
-              void addNote({ jobId, body }).then(() => {
+              void run("job.addNote", { jobId: id, body }).then(() => {
                 setNote("")
-                refresh()
               })
             }}
           >
@@ -421,13 +416,8 @@ export function ApplyJobDetail({ jobId }: { jobId: string }) {
           <Property label="Source">
             <p className="text-sm">{job.sourceHost || job.jobUrl || ""}</p>
           </Property>
-          <PaperField label="CV" kind="cv" job={job} onChange={refresh} />
-          <PaperField
-            label="Cover letter"
-            kind="letter"
-            job={job}
-            onChange={refresh}
-          />
+          <PaperField label="CV" kind="cv" job={job} />
+          <PaperField label="Cover letter" kind="letter" job={job} />
         </aside>
       </div>
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
@@ -455,7 +445,7 @@ export function ApplyJobDetail({ jobId }: { jobId: string }) {
               type="button"
               variant="destructive"
               onClick={() => {
-                void deleteJob({ jobId }).then(() => {
+                void run("job.delete", { jobId: id }).then(() => {
                   const destination = next ?? previous
                   if (destination) {
                     void navigate({
@@ -502,13 +492,12 @@ function PaperField({
   label,
   kind,
   job,
-  onChange,
 }: {
   label: string
   kind: "cv" | "letter"
   job: JobDetail
-  onChange: () => void
 }) {
+  const run = useRunCommand()
   const linked = kind === "cv" ? job.linked.cv : job.linked.letter
   const [docs, setDocs] = useState<PaperListItem[] | null>(null)
 
@@ -531,9 +520,11 @@ function PaperField({
               type="button"
               variant="ghost"
               onClick={() =>
-                void linkPaper({ jobId: job.id, docId: doc.id, kind }).then(
-                  onChange
-                )
+                void run("job.linkPaper", {
+                  jobId: job.id,
+                  docId: parsePaperId(doc.id),
+                  kind,
+                })
               }
             >
               {doc.name}
@@ -544,7 +535,7 @@ function PaperField({
               type="button"
               variant="ghost"
               onClick={() =>
-                void unlinkPaper({ jobId: job.id, kind }).then(onChange)
+                void run("job.unlinkPaper", { jobId: job.id, kind })
               }
             >
               Remove

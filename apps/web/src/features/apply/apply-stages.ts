@@ -1,6 +1,6 @@
 import { STAGE_LABEL, type Stage } from "@workspace/ui/components/stage-icon"
 
-import type { Job, JobPriority, JobStage } from "./apply-api.ts"
+import type { JobPriority, JobStage, JobView } from "@workspace/domain"
 
 export const PROFILE_ZONE = "Asia/Ho_Chi_Minh"
 
@@ -38,7 +38,7 @@ export function companyInitials(company: string): string {
   return `${words[0]![0] ?? ""}${words[1]![0] ?? ""}`.toUpperCase()
 }
 
-export function compareJobs(a: Job, b: Job): number {
+export function compareJobs(a: JobView, b: JobView): number {
   const stage = STAGE_ORDER[a.stage] - STAGE_ORDER[b.stage]
   if (stage !== 0) return stage
   if (a.position !== b.position) return a.position < b.position ? -1 : 1
@@ -95,7 +95,7 @@ export function monthDay(date: Date, zone = PROFILE_ZONE): string {
   }).format(date)
 }
 
-export function listPhrase(job: Job, now = new Date()): string {
+export function listPhrase(job: JobView, now = new Date()): string {
   if (job.stage === "offer") return "Offer"
   if (job.stage === "closed") return "Closed"
   if (job.stage === "interview" && job.interviewAt) {
@@ -162,6 +162,6 @@ export function interviewInstant(
   return new Date(utcGuess - (shownAsUtc - utcGuess)).toISOString()
 }
 
-export function cardName(job: Pick<Job, "title" | "company">) {
+export function cardName(job: Pick<JobView, "title" | "company">) {
   return `${job.title}, ${job.company}`
 }

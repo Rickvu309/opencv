@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router"
 
-import type { Job, JobStage } from "./apply-api.ts"
+import type { JobStage, JobView } from "@workspace/domain"
 import { JobRow, ListGroup } from "./apply-parts.tsx"
 import {
   ALL_STAGES,
@@ -13,7 +13,7 @@ export function ApplyList({
   jobs,
   showClosed,
 }: {
-  jobs: Job[]
+  jobs: JobView[]
   showClosed: boolean
 }) {
   const navigate = useNavigate()

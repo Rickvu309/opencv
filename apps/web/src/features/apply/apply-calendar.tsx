@@ -4,7 +4,9 @@ import { useQuery } from "@tanstack/react-query"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { applyQueryKeys, calendarJobs, type Job } from "./apply-api.ts"
+import type { JobView } from "@workspace/domain"
+
+import { calendarJobs, jobCalendarKey } from "./apply-api.ts"
 import { PROFILE_ZONE, deadlineInstant, zonedYmd } from "./apply-stages.ts"
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const
@@ -59,7 +61,7 @@ function hourOf(iso: string) {
   return Number(parts.find((part) => part.type === "hour")?.value)
 }
 
-function matches(job: Job, company: string, location: string) {
+function matches(job: JobView, company: string, location: string) {
   const companyNeedle = company.trim().toLowerCase()
   const locationNeedle = location.trim().toLowerCase()
   if (companyNeedle && !job.company.toLowerCase().includes(companyNeedle)) {
@@ -95,7 +97,7 @@ export function ApplyCalendar({
   )
   const range = useMemo(() => rangeFor(days), [days])
   const query = useQuery({
-    queryKey: applyQueryKeys.calendar(range.from, range.to),
+    queryKey: jobCalendarKey(range.from, range.to),
     queryFn: () => calendarJobs(range.from, range.to),
   })
   const jobs = (query.data ?? []).filter(

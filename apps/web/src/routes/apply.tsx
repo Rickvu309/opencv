@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate, useRouterState } from "@tanstack/react-router"
+import type { JobView } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -22,15 +23,11 @@ import {
 import { ApplyBoard } from "@/features/apply/apply-board.tsx"
 import { ApplyCalendar } from "@/features/apply/apply-calendar.tsx"
 import { ApplyList } from "@/features/apply/apply-list.tsx"
-import {
-  applyQueryKeys,
-  listJobs,
-  type Job,
-} from "@/features/apply/apply-api.ts"
+import { jobListKey, listJobs } from "@/features/apply/apply-api.ts"
 import { NewJobDialog } from "@/features/apply/apply-new-job-dialog.tsx"
 import type { ApplySpan, ApplyView } from "@/features/apply/apply-search.ts"
 
-function matches(job: Job, company: string, location: string) {
+function matches(job: JobView, company: string, location: string) {
   const companyNeedle = company.trim().toLowerCase()
   const locationNeedle = location.trim().toLowerCase()
   if (companyNeedle && !job.company.toLowerCase().includes(companyNeedle)) {
@@ -54,7 +51,7 @@ export function ApplyPage() {
   const view = search.view ?? "board"
   const span = search.span ?? "month"
   const jobs = useQuery({
-    queryKey: applyQueryKeys.list(),
+    queryKey: jobListKey(),
     queryFn: listJobs,
   })
   const [company, setCompany] = useState("")

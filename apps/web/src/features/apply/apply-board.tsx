@@ -1,6 +1,7 @@
 import { useRef } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
+import { parseJobId, type JobStage, type JobView } from "@workspace/domain"
 
 import {
   KanbanBoard,
@@ -11,16 +12,11 @@ import {
 } from "@workspace/ui/components/kanban"
 import { toastWithUndo } from "@workspace/ui/components/sonner"
 
+import { useRunCommand } from "@/lib/contract-client.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import { recordFirstCafeItem } from "@/features/home/first-cafe-checklist.ts"
 
-import {
-  applyQueryKeys,
-  moveJob,
-  undoActivity,
-  type Job,
-  type JobStage,
-} from "./apply-api.ts"
+import { jobListKey, undoActivity } from "./apply-api.ts"
 import { BoardLane, JobCard } from "./apply-parts.tsx"
 import {
   ALL_STAGES,
@@ -34,10 +30,10 @@ type Card = {
   id: string
   name: string
   column: string
-  job: Job
+  job: JobView
 }
 
-function toCards(jobs: Job[], stages: readonly JobStage[]): Card[] {
+function toCards(jobs: JobView[], stages: readonly JobStage[]): Card[] {
   return jobs
     .filter((job) => stages.includes(job.stage))
     .map((job) => ({
@@ -52,11 +48,12 @@ export function ApplyBoard({
   jobs,
   showClosed,
 }: {
-  jobs: Job[]
+  jobs: JobView[]
   showClosed: boolean
 }) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const run = useRunCommand()
   const { data: session } = authClient.useSession()
   const tails = useRef(new Map<string, Promise<unknown>>())
   const stages = showClosed ? ALL_STAGES : BOARD_STAGES
@@ -74,22 +71,20 @@ export function ApplyBoard({
   }
 
   function persist(jobId: string, stage: JobStage) {
-    const run = async () => {
-      const result = await moveJob({ jobId, stage })
+    const move = async () => {
+      const result = await run("job.move", { jobId: parseJobId(jobId), stage })
       const userId = session?.user.id
       if (userId) recordFirstCafeItem(userId, "apply")
       if (stage === "closed" && result.activityId) {
         const activityId = result.activityId
         toastWithUndo("Moved to Closed", () => {
-          void undoActivity({ activityId }).then(() =>
-            queryClient.invalidateQueries({ queryKey: applyQueryKeys.all })
-          )
+          void undoActivity(queryClient, activityId)
         })
       }
     }
     const prev = tails.current.get(jobId) ?? Promise.resolve()
-    const next = prev.then(run).catch(() => {
-      void queryClient.invalidateQueries({ queryKey: applyQueryKeys.list() })
+    const next = prev.then(move).catch(() => {
+      void queryClient.invalidateQueries({ queryKey: jobListKey() })
     })
     tails.current.set(jobId, next)
   }
@@ -112,7 +107,7 @@ export function ApplyBoard({
     const stage = stageOf(String(event.over.id))
     const before = data.find((card) => card.id === jobId)
     if (!before || !stage || before.column === stage) return
-    queryClient.setQueryData<Job[]>(applyQueryKeys.list(), (current) => {
+    queryClient.setQueryData<JobView[]>(jobListKey(), (current) => {
       if (!current) return current
       return current.map((job) => (job.id === jobId ? { ...job, stage } : job))
     })
