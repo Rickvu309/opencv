@@ -107,7 +107,7 @@ change.
 
 `WEB_ORIGINS` is a comma-separated allowlist of exact origins with no trailing
 slash (a trailing slash never matches). An entry may contain one `*`, which
-matches a single DNS label. Unset means local only (`http://localhost:5173`).
+matches a single DNS label. Unset means the local web dev server derived from `PORT` (`http://localhost:5173` when `PORT` is unset).
 The api and web must agree: a new web origin has to be added here, or the
 browser blocks the response.
 

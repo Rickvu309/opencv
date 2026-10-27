@@ -79,7 +79,8 @@ echo "--- boot $(date -u +%FT%TZ) ---" | tee -a "$EVIDENCE/api.log" >> "$EVIDENC
 
 (
   cd "$REPO"
-  setsid env -u OPENROUTER_API_KEY -u DATABASE_URL -u NODE_ENV \
+  # Empty, not unset: the api dev script loads .env, which only fills unset variables.
+  setsid env -u NODE_ENV OPENROUTER_API_KEY= DATABASE_URL= RESEND_API_KEY= \
     OPENCV_VERIFY_RUN="$RUN" DB_DRIVER=pglite COACH_RUNTIME=fake \
     PGLITE_DATA_DIR="$DATA_DIR" SESSION_SECRET="$SESSION_SECRET_VALUE" \
     AUTH_URL="$API_URL" WEB_ORIGINS="$WEB_URL" PORT="$API_PORT" \
