@@ -8,7 +8,6 @@ import type { ThreadMessage, ThreadMessagePart } from "./threads.js"
 
 export const coachModeSchema = z.enum(["free", "light", "max"])
 export type CoachMode = z.infer<typeof coachModeSchema>
-export const COACH_MODES = coachModeSchema.options
 export const DEFAULT_COACH_MODE: CoachMode = "free"
 
 export const DEFAULT_COACH_MODEL_FREE = "openrouter/free"
@@ -133,11 +132,6 @@ export function coachProviderErrorMessage(
   return "The Coach could not finish"
 }
 export const COACH_SSE_HEARTBEAT_MS = 15_000
-export const COACH_STEP_CAP = 8
-export const DEFAULT_COACH_MAX_OUTPUT_TOKENS = 4096
-export const COACH_HISTORY_MESSAGE_CAP = 40
-export const COACH_HISTORY_CHAR_BUDGET = 16_000
-export const COACH_WORKSPACE_LIST_CAP = 8
 
 export const COACH_SSE_EVENTS = {
   messageStart: "message-start",
@@ -151,12 +145,8 @@ export const COACH_SSE_EVENTS = {
   error: "error",
 } as const
 
-export type CoachSseEvent =
-  (typeof COACH_SSE_EVENTS)[keyof typeof COACH_SSE_EVENTS]
-
 export const coachUsageRatingSchemaValues = ["up", "down"] as const
 export const coachUsageRatingSchema = z.enum(coachUsageRatingSchemaValues)
-export type CoachUsageRating = z.infer<typeof coachUsageRatingSchema>
 
 export type CoachTurnUsage = {
   model: string
@@ -165,15 +155,6 @@ export type CoachTurnUsage = {
   costEstimate?: string
   latencyMs?: number
   finishReason?: string
-}
-
-export type CoachUsageRecord = CoachTurnUsage & {
-  id: string
-  userId: string
-  threadId: string | null
-  messageId: string | null
-  rating: CoachUsageRating | null
-  createdAt: string
 }
 
 export type CoachTextDeltaPart = {

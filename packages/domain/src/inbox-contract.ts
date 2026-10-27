@@ -10,7 +10,6 @@ import { jobStageSchema } from "./job.js"
 import type { QueryRef } from "./queries.js"
 
 export const inboxStatusSchema = z.enum(["open", "done", "snoozed"])
-export type InboxStatus = z.output<typeof inboxStatusSchema>
 
 const suggestedStageSchema = z.enum(["interview"]).nullable()
 
@@ -52,8 +51,6 @@ export const inboxMessageSchema = z
     sentAt: z.string().datetime(),
   })
   .strict()
-
-export type InboxMessage = z.output<typeof inboxMessageSchema>
 
 const draftSchema = z
   .object({ body: z.string(), times: z.array(z.string()) })
@@ -247,4 +244,3 @@ export const inboxContract = commandContract({
 })
 
 export type InboxContract = typeof inboxContract
-export type InboxCommandName = keyof InboxContract & string

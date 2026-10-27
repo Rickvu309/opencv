@@ -64,17 +64,11 @@ export type ProfileUpdateInput = z.infer<typeof profileUpdateInputSchema>
 
 export const profileMarkWelcomedInputSchema = z.object({}).strict()
 
-export type ProfileMarkWelcomedInput = z.infer<
-  typeof profileMarkWelcomedInputSchema
->
-
 export const profileSetPhotoInputSchema = z
   .object({
     fileId: fileIdSchema,
   })
   .strict()
-
-export type ProfileSetPhotoInput = z.infer<typeof profileSetPhotoInputSchema>
 
 export const accountRequestEmailChangeInputSchema = z
   .object({
@@ -82,17 +76,11 @@ export const accountRequestEmailChangeInputSchema = z
   })
   .strict()
 
-export type AccountRequestEmailChangeInput = z.infer<
-  typeof accountRequestEmailChangeInputSchema
->
-
 export const accountDeleteInputSchema = z
   .object({
     confirm: z.literal(ACCOUNT_DELETE_CONFIRM),
   })
   .strict()
-
-export type AccountDeleteInput = z.infer<typeof accountDeleteInputSchema>
 
 export const notifyTopicSchema = z.enum(["jobs", "proof", "pitch"])
 export type NotifyTopic = z.infer<typeof notifyTopicSchema>
@@ -102,8 +90,6 @@ export const notifyRequestInputSchema = z
     topic: notifyTopicSchema,
   })
   .strict()
-
-export type NotifyRequestInput = z.infer<typeof notifyRequestInputSchema>
 
 export function isKnownTimeZone(value: string) {
   try {

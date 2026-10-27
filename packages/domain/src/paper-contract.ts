@@ -59,7 +59,6 @@ export const paperViewSchema = z
   .strict()
 
 export type PaperView = z.output<typeof paperViewSchema>
-export type StoredPaperDocument = z.output<typeof storedPaperDocumentSchema>
 
 export const paperFileSchema = z
   .object({
@@ -277,4 +276,3 @@ export const paperContract = commandContract({
 })
 
 export type PaperContract = typeof paperContract
-export type PaperCommandName = keyof PaperContract & string

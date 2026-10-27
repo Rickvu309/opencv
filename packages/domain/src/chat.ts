@@ -7,7 +7,6 @@ export const CHAT_MESSAGE_MAX = 8000
 export const CHAT_OPEN_WINDOW_DAYS = 7
 
 export const focusKindSchema = z.enum(["paper", "job", "inbox"])
-export type FocusKind = z.infer<typeof focusKindSchema>
 
 export const chatFocusSchema = z
   .object({
@@ -54,8 +53,6 @@ export const chatAttachmentSchema = z
   })
   .strict()
 
-export type ChatAttachment = z.infer<typeof chatAttachmentSchema>
-
 export const chatAppendMessageInputSchema = z
   .object({
     chatId: chatIdSchema,
@@ -76,15 +73,11 @@ export const chatStopInputSchema = z
   })
   .strict()
 
-export type ChatCreateInput = z.infer<typeof chatCreateInputSchema>
-export type ChatRenameInput = z.infer<typeof chatRenameInputSchema>
 export type ChatOpenInput = z.infer<typeof chatOpenInputSchema>
 export type ChatSetFocusInput = z.infer<typeof chatSetFocusInputSchema>
 export type ChatAppendMessageInput = z.infer<
   typeof chatAppendMessageInputSchema
 >
-export type ChatDeleteInput = z.infer<typeof chatDeleteInputSchema>
-export type ChatStopInput = z.infer<typeof chatStopInputSchema>
 
 export const actionsApproveInputSchema = z
   .object({
@@ -99,10 +92,6 @@ export const activityUndoInputSchema = z
     activityId: activityIdSchema,
   })
   .strict()
-
-export type ActionsApproveInput = z.infer<typeof actionsApproveInputSchema>
-export type ActionsDenyInput = z.infer<typeof actionsDenyInputSchema>
-export type ActivityUndoInput = z.infer<typeof activityUndoInputSchema>
 
 export function focusedEditNeedsReplace(input: {
   mode: string

@@ -7,8 +7,6 @@ export const APPLY_COMPANY_MAX = 200
 export const APPLY_NOTE_MAX = 8000
 export const APPLY_JOB_URL_MAX = 2000
 export const APPLY_JD_TEXT_MAX = 20_000
-export const DEFAULT_APPLY_TITLE = "Untitled role"
-export const DEFAULT_APPLY_COMPANY = "Company"
 
 export const applyStageSchema = z.enum([
   "inbox",
@@ -52,9 +50,6 @@ export const applyJobUrlSchema = z
 const HAS_URL_SCHEME = /^[a-zA-Z][a-zA-Z0-9+.-]*:/
 
 export const APPLY_JOB_URL_INVALID = "That posting link isn't a valid web URL."
-export const APPLY_JOB_URL_COPIED = "Posting link copied."
-export const APPLY_JOB_URL_COPY_FAILED =
-  "Couldn't copy the posting link. Select Source and copy it."
 export const APPLY_SCAN_EMPTY =
   "Paste a posting link or the posting text to scan."
 export const APPLY_SCAN_FETCH_FAILED =
@@ -63,15 +58,6 @@ export const APPLY_SCAN_NOT_FOUND =
   "Couldn't find a title or company in that post."
 export const APPLY_SCAN_UNAVAILABLE =
   "Scan isn't available right now. Add the title and company yourself."
-export const APPLY_SCAN_SYSTEM_PROMPT = [
-  "You extract a job title and company from a posting for OpenCV Apply.",
-  'Return JSON only: {"title": string or null, "company": string or null, "note": string or null}',
-  "Rules:",
-  "- Use only words that appear in the posting. Do not invent or guess.",
-  "- If the title or company is not clearly in the posting, use null.",
-  "- note is an optional short hint copied from the posting (deadline, location, or a phrase a student might jot down). null if nothing useful is in the post. Do not paraphrase.",
-  "- No extra keys, no markdown, no explanation.",
-].join("\n")
 
 /**
  * Fake job-board host used by older Apply seeds. It NXDOMAINs.
@@ -88,35 +74,6 @@ export function normalizeApplyJobUrl(raw: string): string {
 function applyJobUrlHost(candidate: string): string | null {
   const host = candidate.replace(/^https?:\/\//i, "").split(/[/?#]/)[0] ?? ""
   return host ? host.toLowerCase() : null
-}
-
-/** Older starter cards stored this dead host. Not a real posting. */
-export function isDemoApplyJobUrl(raw: string | null | undefined): boolean {
-  if (raw == null) return false
-  const trimmed = raw.trim()
-  if (!trimmed) return false
-  const host = applyJobUrlHost(normalizeApplyJobUrl(trimmed))
-  return host === DEMO_APPLY_JOB_HOST
-}
-
-/** Stored URL the product may show or open — never the demo seed host. */
-export function publicApplyJobUrl(
-  raw: string | null | undefined
-): string | null {
-  if (raw == null) return null
-  const trimmed = raw.trim()
-  if (!trimmed || isDemoApplyJobUrl(trimmed)) return null
-  return trimmed
-}
-
-/** Quiet host for Source — empty when there is no openable posting. */
-export function applyJobSourceHost(
-  raw: string | null | undefined
-): string | null {
-  const href = openableApplyJobUrl(raw)
-  if (!href) return null
-  const host = applyJobUrlHost(href)
-  return host ? host.replace(/^www\./i, "") : null
 }
 
 /**
@@ -158,63 +115,6 @@ export const applyTrackDateSchema = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Track date must be YYYY-MM-DD")
 
-export const applyCreateCardInputSchema = z
-  .object({
-    title: applyTitleSchema.optional(),
-    company: applyCompanySchema.optional(),
-    note: applyNoteSchema.optional(),
-    stage: applyStageSchema.optional(),
-    jobUrl: applyJobUrlSchema.optional(),
-    trackDate: applyTrackDateSchema.optional(),
-    trackKind: applyTrackKindSchema.optional(),
-    starred: z.boolean().optional(),
-  })
-  .strict()
-
-export const applyUpdateCardInputSchema = z
-  .object({
-    cardId: applyCardIdSchema,
-    title: applyTitleSchema.optional(),
-    company: applyCompanySchema.optional(),
-    note: applyNoteSchema.optional(),
-    jobUrl: applyJobUrlSchema.optional(),
-    trackDate: applyTrackDateSchema.optional(),
-    trackKind: applyTrackKindSchema.optional(),
-  })
-  .strict()
-  .refine(
-    (value) =>
-      value.title !== undefined ||
-      value.company !== undefined ||
-      value.note !== undefined ||
-      value.jobUrl !== undefined ||
-      value.trackDate !== undefined ||
-      value.trackKind !== undefined,
-    { message: "At least one field is required" }
-  )
-
-export const applyMoveCardInputSchema = z
-  .object({
-    cardId: applyCardIdSchema,
-    stage: applyStageSchema,
-    beforeCardId: applyCardIdSchema.nullable().optional(),
-  })
-  .strict()
-
-export const applyToggleStarInputSchema = z
-  .object({
-    cardId: applyCardIdSchema,
-  })
-  .strict()
-
-export const applyDeleteCardInputSchema = z
-  .object({
-    cardId: applyCardIdSchema,
-  })
-  .strict()
-
-export const applyListCardsInputSchema = z.object({}).strict()
-
 export const applyJdTextSchema = z
   .string()
   .max(APPLY_JD_TEXT_MAX, "Posting text is too long")
@@ -236,18 +136,8 @@ export const applyScanResultSchema = z
 
 export type ApplyStage = z.infer<typeof applyStageSchema>
 export type ApplyTrackKind = z.infer<typeof applyTrackKindSchema>
-export type ApplyCreateCardInput = z.infer<typeof applyCreateCardInputSchema>
-export type ApplyUpdateCardInput = z.infer<typeof applyUpdateCardInputSchema>
-export type ApplyMoveCardInput = z.infer<typeof applyMoveCardInputSchema>
-export type ApplyToggleStarInput = z.infer<typeof applyToggleStarInputSchema>
-export type ApplyDeleteCardInput = z.infer<typeof applyDeleteCardInputSchema>
-export type ApplyListCardsInput = z.infer<typeof applyListCardsInputSchema>
 export type ApplyScanInput = z.infer<typeof applyScanInputSchema>
 export type ApplyScanResult = z.infer<typeof applyScanResultSchema>
-
-export type ApplyCardDeleted = {
-  id: string
-}
 
 /**
  * Public Apply card. `fit` is stored on the row and never appears here
@@ -269,11 +159,6 @@ export type ApplyCard = {
   trackKind: ApplyTrackKind
   createdAt: string
   updatedAt: string
-}
-
-/** Signup starter (or leftover labeled seed) — not a personal job. */
-export function isDemoApplyCard(card: { demo?: boolean }): boolean {
-  return card.demo === true
 }
 
 export function parseApplyScanInput(raw: {
@@ -363,13 +248,6 @@ export function mergeApplyScanResults(
 
 export function applyScanHasIdentity(result: ApplyScanResult): boolean {
   return Boolean(result.title || result.company)
-}
-
-export function formatApplyScanReceipt(result: ApplyScanResult): string {
-  if (result.title && result.company) {
-    return `${result.title} at ${result.company}`
-  }
-  return result.title ?? result.company ?? ""
 }
 
 const applyScanModelFieldsSchema = z.object({

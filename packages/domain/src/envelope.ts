@@ -19,8 +19,6 @@ export const ERROR_CODES = {
   COMPANY_REQUIRED: "COMPANY_REQUIRED",
 } as const
 
-export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES]
-
 export type ErrorDetail = {
   code: string
   message: string

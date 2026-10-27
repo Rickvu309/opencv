@@ -281,4 +281,3 @@ export const jobContract = commandContract({
 })
 
 export type JobContract = typeof jobContract
-export type JobCommandName = keyof JobContract & string

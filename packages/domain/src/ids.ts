@@ -53,7 +53,6 @@ export function parseFileId(value: string): FileId {
   return parseUuid(value, "file id")
 }
 
-export const userIdSchema = z.string().trim().min(1).transform(parseUserId)
 export const chatIdSchema = z.string().uuid().transform(parseChatId)
 export const paperIdSchema = z.string().uuid().transform(parsePaperId)
 export const jobIdSchema = z.string().uuid().transform(parseJobId)
