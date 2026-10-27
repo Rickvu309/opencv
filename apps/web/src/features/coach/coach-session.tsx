@@ -72,7 +72,20 @@ export function CoachSession({ chatId, variant, onChatId }: Props) {
     () => readRestoredDraft(chatId)
   )
   const panelCovering = useCoachPanelCovering()
-  const [draft, setDraft] = useState(() => readRestoredDraft(chatId) ?? "")
+  // A 429 navigates to the new chat before the store write. The store
+  // subscription fills the field. A local override keeps later edits.
+  const [draftOverride, setDraftOverride] = useState<{
+    id: string
+    text: string
+  } | null>(null)
+  const draftId = chatId ?? ""
+  const draft =
+    draftOverride && draftOverride.id === draftId
+      ? draftOverride.text
+      : (pendingDraft ?? "")
+  function setDraft(text: string) {
+    setDraftOverride({ id: draftId, text })
+  }
   const [attachments, setAttachments] = useState<CoachAttachment[]>([])
   const [historyOpen, setHistoryOpen] = useState(false)
   const [query, setQuery] = useState("")
@@ -121,11 +134,6 @@ export function CoachSession({ chatId, variant, onChatId }: Props) {
     if (!chatId) return
     void loadCoachChat(chatId)
   }, [chatId])
-
-  useEffect(() => {
-    if (!pendingDraft) return
-    setDraft(pendingDraft)
-  }, [pendingDraft])
 
   useEffect(() => {
     if (!streaming) return
