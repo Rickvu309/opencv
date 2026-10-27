@@ -286,20 +286,19 @@ describe("demo coach scenarios", () => {
   it("holds the stream open before the default reply", async () => {
     vi.useFakeTimers()
     const runtime = createDemoCoachRuntime()
-    const iter = runtime
-      .streamTurn({
-        userId: "user",
-        threadId: "chat",
-        history: [
-          {
-            id: "m1",
-            role: "user",
-            text: "please hold",
-            createdAt: "2026-10-27T00:00:00.000Z",
-          },
-        ],
-      })
-      [Symbol.asyncIterator]()
+    const stream = runtime.streamTurn({
+      userId: "user",
+      threadId: "chat",
+      history: [
+        {
+          id: "m1",
+          role: "user",
+          text: "please hold",
+          createdAt: "2026-10-27T00:00:00.000Z",
+        },
+      ],
+    })
+    const iter = stream[Symbol.asyncIterator]()
     const first = await iter.next()
     expect(first.value).toMatchObject({ type: "tool-call", name: "job.list" })
     let settled = false

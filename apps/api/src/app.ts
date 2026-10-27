@@ -16,7 +16,6 @@ import type { FetchJobPosting } from "./apply/fetch-posting.js"
 import { createChatRoutes } from "./chat/index.js"
 import { createCoachRoutes, interpretPosting } from "./coach/index.js"
 import { setCoachModelEnv, type CoachModelEnv } from "./config.js"
-import { createCompatThreadRoutes } from "./compat/index.js"
 import { withDatabase, type AppDatabase } from "./db/context.js"
 import { authUnavailableEnvelope } from "./envelope.js"
 import { createInboxRoutes } from "./inbox/index.js"
@@ -147,7 +146,6 @@ export function createApp({
     "/api/commands",
     createCommandRoutes({ auth, db: database, registry })
   )
-  app.route("/api/threads", createCompatThreadRoutes(auth, database))
   app.route("/api/chats", createChatRoutes(auth, database))
   app.route("/api/chats", coachRoutes)
   app.route("/api/coach", createUsageRoutes(auth, database))
