@@ -8,9 +8,12 @@ import { isSignUpLink } from "./text-rules.mjs"
 // Pixels whose max RGB channel delta exceeds this are a mismatch.
 // The corrected Coach art stays under COACH_ART_MAX. The old centre-rotated
 // art (ellipses spun around their own centre) sits well above it.
+// One wrong ellipse moves about 150 pixels, inside this band. Check 30 is the
+// whole-art smoke test. landing-art-rotation.test.ts pins each ellipse.
 const COACH_ART_CHANNEL = 48
-// Corrected art measured 1.05% on three identical runs. The old centre-rotated
-// art measured 1.47% on three identical runs. 1.25% sits between them.
+// Corrected art measured 1.05% (943/90000) on three identical runs. The old
+// centre-rotated art measured 1.47% (1327/90000). 1.25% (1125/90000) sits
+// between them. Leave the limit here: it is not a single-mark check.
 const COACH_ART_MAX = 0.0125
 const coachReferencePath = join(
   dirname(fileURLToPath(import.meta.url)),
@@ -452,7 +455,7 @@ export function pageChecks({
     verdict(
       "30",
       "benefit-art-matches-pen",
-      `Each benefit card's svg is rasterised in the page. The Coach art matches the pen.dev ground truth (reference/coach-art.png): at most ${(COACH_ART_MAX * 100).toFixed(2)}% of pixels may differ by more than ${COACH_ART_CHANNEL} on any RGB channel. The reference is the 300x300 art cropped from pen-coach-art.png`,
+      `Each benefit card's svg is rasterised in the page. The Coach art matches the pen.dev ground truth (reference/coach-art.png, cropped from a pen.dev screenshot): at most ${(COACH_ART_MAX * 100).toFixed(2)}% of pixels may differ by more than ${COACH_ART_CHANNEL} on any RGB channel. This catches a whole-art regression, not a single wrong mark`,
       artMatchesPen,
       artMeasured
     )
