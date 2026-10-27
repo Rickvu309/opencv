@@ -64,9 +64,13 @@ describe("table ownership", () => {
       ...schema.matchAll(/export const (\w+) = opencvApp\.table\(/g),
     ].map((match) => match[1] ?? "")
     expect(tables.length).toBeGreaterThan(0)
-    expect(tables.filter((table) => !owners[table])).toEqual([])
     expect(
-      Object.keys(owners).filter((name) => !tables.includes(name))
+      tables.filter((table) => !owners[table]),
+      "A table in apps/api/src/db/schema.ts has no row in `owners` in ownership.test.ts. Add the table with the module directory that writes it."
+    ).toEqual([])
+    expect(
+      Object.keys(owners).filter((name) => !tables.includes(name)),
+      "`owners` in ownership.test.ts names a table that apps/api/src/db/schema.ts no longer defines. Delete the row."
     ).toEqual([])
   })
 
@@ -82,6 +86,9 @@ describe("table ownership", () => {
         violations.push(`${relative} writes ${table}`)
       }
     }
-    expect(violations).toEqual([])
+    expect(
+      violations,
+      `A table is written outside its owner. Move the write into the owning module and call it through that module's index.ts, or change the owner in \`owners\` in ownership.test.ts if ownership truly moved. Offending writes:\n${violations.join("\n")}`
+    ).toEqual([])
   })
 })

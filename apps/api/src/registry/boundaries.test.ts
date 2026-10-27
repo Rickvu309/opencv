@@ -41,6 +41,9 @@ describe("module boundaries", () => {
         violations.push(`${path.relative(srcRoot, file)} -> ${relative}`)
       }
     }
-    expect(violations).toEqual([])
+    expect(
+      violations,
+      `Import another api module only through its index.ts (apps/api/src/<module>/index.ts); export what you need there. Offending imports:\n${violations.join("\n")}`
+    ).toEqual([])
   })
 })

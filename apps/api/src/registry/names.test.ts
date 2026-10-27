@@ -68,13 +68,19 @@ describe("registry names", () => {
     const unknown = listUnknown(referenced.dotted, (name) =>
       registered.has(name)
     )
-    expect(unknown, unknown.join("\n")).toEqual([])
+    expect(
+      unknown,
+      `A name used in the web, fake coach or domain is not registered. Register it in apps/api/src/registry, or fix the spelling at the call site. Unknown names:\n${unknown.join("\n")}`
+    ).toEqual([])
   })
 
   it("registers every Coach tool name they refer to", () => {
     const unknown = listUnknown(referenced.tools, (name) =>
       registered.has(name)
     )
-    expect(unknown, unknown.join("\n")).toEqual([])
+    expect(
+      unknown,
+      `A Coach tool name used in the web, fake coach or domain is not registered. Register the command in apps/api/src/registry, or fix the spelling at the call site. Unknown tool names:\n${unknown.join("\n")}`
+    ).toEqual([])
   })
 })
