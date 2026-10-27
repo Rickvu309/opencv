@@ -36,14 +36,15 @@ export const LANDING_LOGOS = [
 ] as const
 
 export type LandingNavLink = {
-  label: "Product" | "Stories" | "Pricing"
-  href: "/#product" | "/#stories" | "/pricing"
+  label: "Product" | "Stories" | "Pricing" | "Help"
+  href: "/#product" | "/#stories" | "/pricing" | "/help"
 }
 
 export const LANDING_NAV_LINKS: readonly LandingNavLink[] = [
   { label: "Product", href: "/#product" },
   { label: "Stories", href: "/#stories" },
   { label: "Pricing", href: "/pricing" },
+  { label: "Help", href: "/help" },
 ]
 
 export type LandingShot = {

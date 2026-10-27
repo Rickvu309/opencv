@@ -11,7 +11,13 @@ import {
   LANDING_LOGIN_LABEL,
   LANDING_NAV_LINKS,
   LANDING_PRIMARY_LABEL,
+  type LandingNavLink,
 } from "./landing-copy.ts"
+
+function pageHref(href: LandingNavLink["href"]): "/pricing" | "/help" | null {
+  if (href === "/pricing" || href === "/help") return href
+  return null
+}
 
 export function LandingNav() {
   const [scrolled, setScrolled] = useState(false)
@@ -35,8 +41,20 @@ export function LandingNav() {
             />
           </Link>
           <nav aria-label="Primary" className="landing-nav-links">
-            {LANDING_NAV_LINKS.map((link) =>
-              link.href.startsWith("/#") ? (
+            {LANDING_NAV_LINKS.map((link) => {
+              const page = pageHref(link.href)
+              if (page) {
+                return (
+                  <Link
+                    key={link.href}
+                    to={page}
+                    className={cn("landing-link", FOCUS_RING)}
+                  >
+                    {link.label}
+                  </Link>
+                )
+              }
+              return (
                 <Link
                   key={link.href}
                   to="/"
@@ -45,16 +63,8 @@ export function LandingNav() {
                 >
                   {link.label}
                 </Link>
-              ) : (
-                <Link
-                  key={link.href}
-                  to="/pricing"
-                  className={cn("landing-link", FOCUS_RING)}
-                >
-                  {link.label}
-                </Link>
               )
-            )}
+            })}
           </nav>
           <div className="landing-nav-actions">
             <Link to="/sign-in" className={cn("landing-link", FOCUS_RING)}>
