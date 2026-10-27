@@ -10,7 +10,7 @@
     "migrate": "node dist/migrate.js",
     "seed": "node dist/seed.js",
     "db:generate": "drizzle-kit generate",
-    "db:seed": "tsx src/seed.ts",
+    "db:seed": "tsx --conditions=opencv-source src/seed.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:formal": "vitest run --config vitest.formal.config.ts",
