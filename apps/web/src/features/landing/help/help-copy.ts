@@ -258,12 +258,6 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
           "You can change your email, export your data, sign out or delete the account.",
       },
       {
-        id: "account-train",
-        question: "Does Coach train on my chats?",
-        answer:
-          "No. Coach can remember past chats. They are not used to train models.",
-      },
-      {
         id: "account-language",
         question: "Can I switch the language?",
         answer: "The language switch is stored. The product stays in English.",
@@ -273,12 +267,6 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
         question: "What are the Settings sections?",
         answer:
           "Preferences, Coach, Integrations, Usage and limits, Billing and Account.",
-      },
-      {
-        id: "account-home",
-        question: "Is there a Home screen?",
-        answer:
-          "No. You pick a start page in Settings. Apply opens by default.",
       },
     ],
   },
