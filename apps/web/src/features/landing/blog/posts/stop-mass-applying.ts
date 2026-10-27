@@ -3,6 +3,7 @@ export const post = {
   category: "Search",
   title: "Stop mass applying",
   dek: "Fifty generic applications lose to five specific ones. Volume feels productive. Fit gets interviews.",
+  moreDek: "Fifty generic applications lose to five specific ones.",
   date: "2026-10-07",
   cover: "fewer-applications",
   body: [

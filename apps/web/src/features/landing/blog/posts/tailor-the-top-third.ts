@@ -3,6 +3,7 @@ export const post = {
   category: "Paper",
   title: "Tailor the top third",
   dek: "You don't need to rewrite everything. Change the summary, the first role and the first three lines.",
+  moreDek: "Change the summary, the first role and the first three lines.",
   date: "2026-09-30",
   cover: "top-third",
   body: [

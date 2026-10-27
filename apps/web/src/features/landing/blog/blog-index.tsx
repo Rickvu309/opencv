@@ -28,7 +28,7 @@ function FeaturedPost({ post }: { post: BlogPost }) {
           className={cn("blog-featured-link", FOCUS_RING)}
         >
           <div className="blog-featured-cover">
-            <div className="blog-cover landing-gradient">
+            <div className="blog-cover">
               <BlogCoverArt cover={post.cover} decorative />
             </div>
           </div>
@@ -82,7 +82,9 @@ export function BlogIndexPage() {
             <h1 className="landing-section-title">Blog</h1>
             <p className="landing-section-body">{BLOG_DESCRIPTION}</p>
           </header>
-          <FeaturedPost post={featured} />
+        </div>
+        <FeaturedPost post={featured} />
+        <div className="landing-inset blog-page">
           <section className="blog-list-section" aria-labelledby="all-posts">
             <h2 id="all-posts" className="blog-list-title">
               All posts

@@ -65,7 +65,7 @@ function KeepReading({ post }: { post: BlogPost }) {
               {formatBlogDate(item.date)}
             </time>
             <h3 className="blog-more-card-title">{item.title}</h3>
-            <p className="blog-more-card-dek">{item.dek}</p>
+            <p className="blog-more-card-dek">{item.moreDek ?? item.dek}</p>
           </Link>
         ))}
       </div>
@@ -91,13 +91,13 @@ function BlogArticle({ post }: { post: BlogPost }) {
             </Link>
             <p className="blog-kicker">{post.category}</p>
             <h1 className="blog-post-title">{post.title}</h1>
-            <p className="blog-post-dek">{post.dek}</p>
+            <p className="blog-post-dek">{post.subtitle ?? post.dek}</p>
             <p className="blog-meta" data-large>
               <BlogAuthor />
               <time dateTime={post.date}>{formatBlogDate(post.date)}</time>
               <span>{readLabel(post.body)}</span>
             </p>
-            <div className="blog-cover landing-gradient" data-compact>
+            <div className="blog-cover" data-compact>
               <BlogCoverArt cover={post.cover} />
             </div>
             <BlogBody body={post.body} />

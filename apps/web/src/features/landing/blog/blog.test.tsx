@@ -99,7 +99,10 @@ describe("blog post", () => {
         name: "Applying is B2B sales",
       })
     ).toBeInTheDocument()
-    expect(screen.getByText(FEATURED.dek)).toBeInTheDocument()
+    expect(
+      screen.getByText("Stop asking for a job. Start selling a solution.")
+    ).toBeInTheDocument()
+    expect(screen.queryByText(FEATURED.dek)).not.toBeInTheDocument()
     expect(screen.getByText("The opencv team")).toBeInTheDocument()
     expect(screen.getByText(readLabel(FEATURED.body))).toBeInTheDocument()
     expect(

@@ -25,6 +25,8 @@ export type BlogPost = {
   category: string
   title: string
   dek: string
+  subtitle?: string
+  moreDek?: string
   date: string
   cover: BlogCoverKey
   body: readonly BlogBlock[]

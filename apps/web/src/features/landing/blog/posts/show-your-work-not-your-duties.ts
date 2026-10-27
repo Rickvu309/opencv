@@ -3,6 +3,7 @@ export const post = {
   category: "Writing",
   title: "Show your work, not your duties",
   dek: "Duties describe the job. Work describes you. Lead every line with what changed because you were there.",
+  moreDek: "Lead every line with what changed because you were there.",
   date: "2026-10-14",
   cover: "show-work",
   body: [

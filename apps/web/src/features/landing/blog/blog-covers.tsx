@@ -1,13 +1,14 @@
 import type { ReactNode } from "react"
 
 import type { BlogCoverKey } from "./blog-copy.ts"
+import { B2bCoverArt } from "./b2b-cover-art.tsx"
 
 type Pt = [number, number, number]
 
-const TOP = "var(--background)"
+const TOP = "var(--secondary)"
 const FRONT = "var(--card)"
-const SIDE = "var(--muted)"
-const INK = "color-mix(in oklch, var(--foreground) 16%, var(--muted))"
+const SIDE = "var(--border)"
+const MARK = "var(--input)"
 
 function project(x: number, y: number, z: number): [number, number] {
   const scale = 1.35
@@ -47,12 +48,7 @@ function Box({
 }) {
   const stroke = "currentColor"
   return (
-    <g
-      stroke={stroke}
-      strokeOpacity={0.28}
-      strokeWidth={1.1}
-      strokeLinejoin="round"
-    >
+    <g stroke={stroke} strokeWidth={1.15} strokeLinejoin="round">
       <path
         d={face([
           [x, y, z + h],
@@ -115,8 +111,7 @@ function Rules({
         x2={x2}
         y2={y2}
         stroke="currentColor"
-        strokeOpacity={0.4}
-        strokeWidth={1.15}
+        strokeWidth={1}
         strokeLinecap="round"
       />
     )
@@ -142,13 +137,13 @@ function Arrow({ from, to }: { from: Pt; to: Pt }) {
     tipY - head * Math.sin(angle + spread),
   ]
   return (
-    <g fill="currentColor" stroke="currentColor" opacity={0.72}>
+    <g fill="currentColor" stroke="currentColor">
       <line
         x1={x1}
         y1={y1}
         x2={tipX - neck * Math.cos(angle)}
         y2={tipY - neck * Math.sin(angle)}
-        strokeWidth={1.5}
+        strokeWidth={1.15}
         strokeLinecap="round"
       />
       <polygon
@@ -192,100 +187,28 @@ function Scene({
 }) {
   return (
     <svg
-      viewBox="0 0 520 320"
+      viewBox="0 0 420 340"
       className="blog-cover-art"
       role={decorative ? undefined : "img"}
       aria-label={decorative ? undefined : label}
       aria-hidden={decorative ? true : undefined}
     >
-      <g transform="translate(260 214)">
-        <ellipse
-          cx="0"
-          cy="18"
-          rx="168"
-          ry="16"
-          fill="currentColor"
-          opacity={0.06}
-        />
-        {children}
-      </g>
+      <g transform="translate(210 205)">{children}</g>
     </svg>
   )
 }
 
 function CoverB2b({ decorative }: { decorative?: boolean }) {
+  const label = "A CV page, a chart, and an open briefcase."
   return (
-    <Scene
-      label="A CV page, a chart, and an open briefcase."
-      decorative={decorative}
+    <div
+      className="blog-cover-art"
+      role={decorative ? undefined : "img"}
+      aria-label={decorative ? undefined : label}
+      aria-hidden={decorative ? true : undefined}
     >
-      <Sheet x={-168} y={-6} w={44} h={64} rows={5} />
-      <Arrow from={[-112, 4, 34]} to={[-78, 2, 32]} />
-      <Sheet x={-62} y={-4} w={40} h={50} rows={0} />
-      <Box
-        x={-50}
-        y={2}
-        z={8}
-        w={7}
-        d={3}
-        h={16}
-        top={INK}
-        front={INK}
-        side={SIDE}
-      />
-      <Box
-        x={-40}
-        y={2}
-        z={8}
-        w={7}
-        d={3}
-        h={26}
-        top={INK}
-        front={INK}
-        side={SIDE}
-      />
-      <Box
-        x={-30}
-        y={2}
-        z={8}
-        w={7}
-        d={3}
-        h={34}
-        top={INK}
-        front={INK}
-        side={SIDE}
-      />
-      <Arrow from={[-8, 4, 28]} to={[22, 0, 26]} />
-      <Box x={36} y={-22} z={0} w={62} d={36} h={16} />
-      <Box x={36} y={-28} z={16} w={62} d={5} h={32} />
-      <Handle x={52} y={-23} z={40} w={30} />
-    </Scene>
-  )
-}
-
-function Handle({
-  x,
-  y,
-  z,
-  w,
-}: {
-  x: number
-  y: number
-  z: number
-  w: number
-}) {
-  const [x1, y1] = project(x, y, z)
-  const [x2, y2] = project(x + w, y, z)
-  const [cx, cy] = project(x + w / 2, y, z + 12)
-  return (
-    <path
-      d={`M${x1.toFixed(1)} ${y1.toFixed(1)} Q${cx.toFixed(1)} ${cy.toFixed(1)} ${x2.toFixed(1)} ${y2.toFixed(1)}`}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      opacity={0.7}
-    />
+      <B2bCoverArt />
+    </div>
   )
 }
 
@@ -305,8 +228,8 @@ function CoverShowWork({ decorative }: { decorative?: boolean }) {
         w={34}
         d={3}
         h={8}
-        top={INK}
-        front={INK}
+        top={MARK}
+        front={MARK}
         side={SIDE}
       />
       <Box x={40} y={-28} z={0} w={28} d={22} h={18} />
@@ -339,10 +262,9 @@ function Check({ x, y, z }: { x: number; y: number; z: number }) {
       points={`${a1},${a2} ${b1},${b2} ${c1},${c2}`}
       fill="none"
       stroke="currentColor"
-      strokeWidth={2.2}
+      strokeWidth={1.5}
       strokeLinecap="round"
       strokeLinejoin="round"
-      opacity={0.8}
     />
   )
 }
@@ -399,8 +321,7 @@ function Flap({
       ])}
       fill={SIDE}
       stroke="currentColor"
-      strokeOpacity={0.28}
-      strokeWidth={1.1}
+      strokeWidth={1.15}
       strokeLinejoin="round"
     />
   )
@@ -425,10 +346,9 @@ function Numeral({
       textAnchor="middle"
       dominantBaseline="middle"
       fill="currentColor"
-      fontSize={22}
+      fontSize={16}
       fontFamily="Inter, sans-serif"
       fontWeight={500}
-      opacity={0.8}
     >
       {value}
     </text>
@@ -468,9 +388,10 @@ function CoverPublic({ decorative }: { decorative?: boolean }) {
       <Sheet x={-108} y={6} z={16} w={36} h={32} rows={2} />
       <circle
         {...dot(-90, 12, 48)}
-        r={3.2}
-        fill="currentColor"
-        opacity={0.65}
+        r={4}
+        fill="var(--card)"
+        stroke="currentColor"
+        strokeWidth={1.15}
       />
       <Box x={20} y={-8} z={0} w={46} d={34} h={22} />
       <Box
@@ -480,8 +401,8 @@ function CoverPublic({ decorative }: { decorative?: boolean }) {
         w={38}
         d={8}
         h={4}
-        top={INK}
-        front={INK}
+        top={MARK}
+        front={MARK}
         side={SIDE}
       />
     </Scene>

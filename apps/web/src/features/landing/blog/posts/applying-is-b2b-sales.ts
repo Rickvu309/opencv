@@ -3,6 +3,7 @@ export const post = {
   category: "Strategy",
   title: "Applying is B2B sales",
   dek: "A hiring manager is a buyer with a problem. Your application is the proposal. Write it for one buyer, not for everyone.",
+  subtitle: "Stop asking for a job. Start selling a solution.",
   date: "2026-10-21",
   cover: "b2b-sales",
   body: [

@@ -7,11 +7,25 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 1.25rem;
-  padding-block-start: clamp(3rem, 5.5vw, 5rem);
+  padding-block-start: 5rem;
+}
+
+.blog-header .landing-section-title {
+  font-size: clamp(2.25rem, 1.2rem + 2.4vw, 3rem);
+  letter-spacing: -0.022em;
+  line-height: 1;
+}
+
+.blog-header .landing-section-body {
+  max-inline-size: 40rem;
+  font-size: clamp(1.125rem, 0.85rem + 0.85vw, 1.5rem);
+  letter-spacing: -0.012em;
+  line-height: 1.33;
 }
 
 .blog-featured {
-  padding-block-start: clamp(2.5rem, 4.4vw, 4rem);
+  container-type: inline-size;
+  padding-block-start: 4rem;
 }
 
 .blog-featured-link,
@@ -29,8 +43,9 @@
 }
 
 .blog-featured-cover {
-  flex: 1.7 1 28rem;
-  min-inline-size: min(100%, 16rem);
+  flex: 0 1 47.5rem;
+  min-inline-size: min(100%, 47.5rem);
+  max-inline-size: 100%;
 }
 
 .blog-featured-copy {
@@ -40,7 +55,12 @@
   align-items: flex-start;
   gap: 1.25rem;
   min-inline-size: min(100%, 16rem);
-  max-inline-size: 26rem;
+}
+
+@container (min-width: 64rem) {
+  .blog-featured-copy {
+    padding-inline-end: 2rem;
+  }
 }
 
 .blog-kicker {
@@ -55,13 +75,13 @@
 .blog-list-title,
 .blog-more-title {
   font-weight: 500;
-  letter-spacing: -0.025em;
   text-wrap: balance;
 }
 
 .blog-featured-title {
-  font-size: clamp(1.75rem, 1.15rem + 1.5vw, 2.5rem);
-  line-height: 1.12;
+  font-size: clamp(1.75rem, 1rem + 1.7vw, 2.5rem);
+  letter-spacing: -0.0225em;
+  line-height: 1.1;
 }
 
 .blog-featured-dek,
@@ -74,14 +94,15 @@
 
 .blog-featured-dek {
   font-size: 1.125rem;
-  line-height: 1.45;
+  letter-spacing: -0.03em;
+  line-height: 1.5;
 }
 
 .blog-meta {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem 1rem;
+  gap: 1rem;
   margin: 0;
   color: var(--muted-foreground);
   font-size: 0.875rem;
@@ -96,8 +117,9 @@
 }
 
 .blog-author svg {
-  inline-size: 1.25rem;
-  block-size: 1.25rem;
+  flex: none;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
 }
 
 .blog-meta[data-large] .blog-author svg {
@@ -106,13 +128,29 @@
 }
 
 .blog-cover {
-  container-type: size;
+  container-type: inline-size;
   display: grid;
   place-items: center;
   overflow: clip;
+  inline-size: 100%;
   aspect-ratio: 760 / 460;
+  border: 1px solid var(--border);
   border-radius: 1.5rem;
-  padding: clamp(1rem, 3vw, 2rem);
+  /* Pen cover mesh: nine radials over the centre colour. Stops map the
+     design hexes onto stock tokens. oklch(from ...) stays on one line so
+     the vocabulary check can see the relative colour. */
+  /* prettier-ignore */
+  background:
+    radial-gradient(circle farthest-corner at 0% 0%, color-mix(in oklch, var(--chart-2) 12%, var(--background)) 0%, oklch(from color-mix(in oklch, var(--chart-2) 12%, var(--background)) l c h / 0) 55%),
+    radial-gradient(circle farthest-corner at 50% 0%, color-mix(in oklch, var(--ring) 22%, color-mix(in oklch, var(--chart-2) 12%, var(--background))) 0%, oklch(from color-mix(in oklch, var(--ring) 22%, color-mix(in oklch, var(--chart-2) 12%, var(--background))) l c h / 0) 55%),
+    radial-gradient(circle farthest-corner at 100% 0%, color-mix(in oklch, var(--chart-3) 12%, color-mix(in oklch, var(--ring) 4%, var(--background))) 0%, oklch(from color-mix(in oklch, var(--chart-3) 12%, color-mix(in oklch, var(--ring) 4%, var(--background))) l c h / 0) 55%),
+    radial-gradient(circle farthest-corner at 0% 50%, color-mix(in oklch, var(--chart-3) 24%, color-mix(in oklch, var(--chart-2) 12%, var(--background))) 0%, oklch(from color-mix(in oklch, var(--chart-3) 24%, color-mix(in oklch, var(--chart-2) 12%, var(--background))) l c h / 0) 55%),
+    radial-gradient(circle farthest-corner at 55% 50%, color-mix(in oklch, var(--ring) 46%, color-mix(in oklch, var(--chart-2) 18%, var(--background))) 0%, oklch(from color-mix(in oklch, var(--ring) 46%, color-mix(in oklch, var(--chart-2) 18%, var(--background))) l c h / 0) 55%),
+    radial-gradient(circle farthest-corner at 100% 50%, color-mix(in oklch, var(--ring) 28%, color-mix(in oklch, var(--chart-3) 8%, var(--background))) 0%, oklch(from color-mix(in oklch, var(--ring) 28%, color-mix(in oklch, var(--chart-3) 8%, var(--background))) l c h / 0) 55%),
+    radial-gradient(circle farthest-corner at 0% 100%, color-mix(in oklch, var(--chart-2) 10%, color-mix(in oklch, var(--chart-3) 4%, var(--background))) 0%, oklch(from color-mix(in oklch, var(--chart-2) 10%, color-mix(in oklch, var(--chart-3) 4%, var(--background))) l c h / 0) 55%),
+    radial-gradient(circle farthest-corner at 50% 100%, color-mix(in oklch, var(--ring) 32%, color-mix(in oklch, var(--chart-2) 12%, var(--background))) 0%, oklch(from color-mix(in oklch, var(--ring) 32%, color-mix(in oklch, var(--chart-2) 12%, var(--background))) l c h / 0) 55%),
+    radial-gradient(circle farthest-corner at 100% 100%, color-mix(in oklch, var(--chart-3) 10%, color-mix(in oklch, var(--ring) 4%, var(--background))) 0%, oklch(from color-mix(in oklch, var(--chart-3) 10%, color-mix(in oklch, var(--ring) 4%, var(--background))) l c h / 0) 55%),
+    color-mix(in oklch, var(--ring) 46%, color-mix(in oklch, var(--chart-2) 18%, var(--background)));
 }
 
 .blog-cover[data-compact] {
@@ -121,19 +159,30 @@
 }
 
 .blog-cover-art {
-  aspect-ratio: 520 / 320;
-  inline-size: min(100cqi, 40rem, calc(100cqb * 520 / 320));
+  aspect-ratio: 420 / 340;
+  inline-size: min(26.25rem, 100cqi, calc(100cqi * 460 / 760 * 420 / 340));
   block-size: auto;
   color: var(--foreground);
 }
 
+.blog-cover[data-compact] .blog-cover-art {
+  inline-size: min(26.25rem, 100cqi, calc(100cqi * 360 / 680 * 420 / 340));
+}
+
+.blog-cover-art svg {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+}
+
 .blog-list-section {
-  padding-block-start: clamp(4.5rem, 7.8vw, 7rem);
+  padding-block-start: 7rem;
 }
 
 .blog-list-title,
 .blog-more-title {
   font-size: 1.5rem;
+  letter-spacing: -0.0167em;
   line-height: 1.2;
 }
 
@@ -152,9 +201,13 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 0.5rem 1rem;
-  align-items: baseline;
+  align-items: start;
   padding-block: 1.75rem;
-  border-radius: 0.75rem;
+  border-block-start: 1px solid var(--border);
+}
+
+.blog-list > li:last-child .blog-row {
+  border-block-end: 1px solid var(--border);
 }
 
 .blog-row-copy {
@@ -179,21 +232,22 @@
 }
 
 .blog-row-title {
-  font-size: clamp(1.2rem, 1rem + 0.5vw, 1.375rem);
+  font-size: 1.375rem;
+  letter-spacing: -0.0159em;
   line-height: 1.25;
 }
 
 .blog-row-dek {
   max-inline-size: 40rem;
   font-size: 1rem;
-  line-height: 1.45;
+  letter-spacing: -0.03em;
+  line-height: 1.5;
 }
 
 @container (min-width: 46rem) {
   .blog-row {
     grid-template-columns: 12.5rem minmax(0, 1fr) auto;
     column-gap: 2rem;
-    align-items: start;
   }
 
   .blog-row-copy {
@@ -204,14 +258,24 @@
 .blog-article {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  max-inline-size: 42.5rem;
-  padding-block-start: clamp(2.75rem, 5vw, 4.5rem);
+  align-items: stretch;
+  inline-size: min(100%, 42.5rem);
+  margin-inline: auto;
+  padding-block-start: 4.5rem;
 }
 
 .blog-back {
+  align-self: flex-start;
+  gap: 0.375rem;
   min-block-size: 1.5rem;
   padding-inline: 0;
+  font-size: 0.875rem;
+  font-weight: 400;
+}
+
+.blog-back svg {
+  inline-size: 0.875rem;
+  block-size: 0.875rem;
 }
 
 .blog-article .blog-kicker {
@@ -220,13 +284,14 @@
 
 .blog-post-title {
   margin-block-start: 1rem;
-  font-size: clamp(2.25rem, 1.3rem + 2.6vw, 3.5rem);
-  line-height: 1.08;
+  font-size: clamp(2rem, 0.4rem + 3.6vw, 3.5rem);
+  letter-spacing: -0.0286em;
+  line-height: 1.02;
 }
 
 .blog-post-dek {
   margin-block-start: 1.25rem;
-  font-size: clamp(1.125rem, 1rem + 0.45vw, 1.375rem);
+  font-size: clamp(1.125rem, 0.9rem + 0.7vw, 1.375rem);
   line-height: 1.4;
 }
 
@@ -235,14 +300,17 @@
 }
 
 .blog-article .blog-cover {
-  inline-size: 100%;
   margin-block-start: 3rem;
 }
 
 .blog-body {
   margin-block-start: 3.5rem;
   font-size: 1.125rem;
-  line-height: 1.6;
+  line-height: 1.65;
+}
+
+.blog-body > * {
+  margin-block: 0;
 }
 
 .blog-body > * + * {
@@ -260,33 +328,38 @@
 .blog-body h2 {
   font-size: 1.5rem;
   font-weight: 500;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.0167em;
   line-height: 1.25;
 }
 
 .blog-body p {
-  max-inline-size: 65ch;
   text-wrap: pretty;
 }
 
 .blog-pull {
-  margin: 0;
   padding-block: 0.5rem;
   padding-inline-start: 1.5rem;
+  border-inline-start: 2px solid var(--foreground);
   font-size: 1.5rem;
   font-weight: 500;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.0167em;
   line-height: 1.35;
 }
 
 .blog-pull p {
-  margin: 0;
-  max-inline-size: 28ch;
+  max-inline-size: none;
   text-wrap: balance;
 }
 
 .blog-more {
-  padding-block-start: clamp(5rem, 9vw, 8rem);
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding-block-start: 8rem;
+}
+
+.landing-grid:has(.blog-more) + .landing-footer {
+  margin-block-start: 10rem;
 }
 
 .blog-more-head {
@@ -295,12 +368,13 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 0.75rem 1.5rem;
-  margin-block-end: 2rem;
+  padding-block-end: 1.5rem;
+  border-block-end: 1px solid var(--border);
 }
 
 .blog-more-grid {
   display: grid;
-  gap: 1.5rem 2rem;
+  gap: 2rem;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
 }
 
@@ -320,12 +394,14 @@
 
 .blog-more-card-title {
   font-size: 1.25rem;
+  letter-spacing: -0.015em;
   line-height: 1.3;
 }
 
 .blog-more-card-dek {
   font-size: 0.9375rem;
-  line-height: 1.45;
+  letter-spacing: -0.03em;
+  line-height: 1.5;
 }
 
 @media (hover: hover) and (pointer: fine) {
