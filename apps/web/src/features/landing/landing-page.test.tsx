@@ -188,9 +188,11 @@ describe("landing page", () => {
     expect(companyLinks.map((link) => link.textContent)).toEqual([
       "About",
       "Stories",
+      "Blog",
     ])
     expect(companyLinks[0]).toHaveAttribute("href", "/about")
     expect(companyLinks[1]).toHaveAttribute("href", "/#stories")
+    expect(companyLinks[2]).toHaveAttribute("href", "/blog")
     expect(
       within(screen.getByRole("navigation", { name: "Primary" })).queryByRole(
         "link",
@@ -199,8 +201,11 @@ describe("landing page", () => {
     ).not.toBeInTheDocument()
     expect(footer.getByText("© 2026 opencv")).toBeInTheDocument()
 
+    for (const link of screen.getAllByRole("link", { name: "Blog" })) {
+      expect(link).toHaveAttribute("href", "/blog")
+    }
+
     for (const gone of [
-      /^blog$/i,
       /^examples$/i,
       /read all stories/i,
       /^careers$/i,

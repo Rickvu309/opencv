@@ -36,14 +36,15 @@ export const LANDING_LOGOS = [
 ] as const
 
 export type LandingNavLink = {
-  label: "Product" | "Stories" | "Pricing" | "Help"
-  href: "/#product" | "/#stories" | "/pricing" | "/help"
+  label: "Product" | "Stories" | "Pricing" | "Blog" | "Help"
+  href: "/#product" | "/#stories" | "/pricing" | "/blog" | "/help"
 }
 
 export const LANDING_NAV_LINKS: readonly LandingNavLink[] = [
   { label: "Product", href: "/#product" },
   { label: "Stories", href: "/#stories" },
   { label: "Pricing", href: "/pricing" },
+  { label: "Blog", href: "/blog" },
   { label: "Help", href: "/help" },
 ]
 
@@ -257,7 +258,14 @@ export const LANDING_CUSTOMERS_LABEL = "Customer stories"
 
 export type FooterLink = {
   label: string
-  href: "/#paper" | "/#apply" | "/#coach" | "/#stories" | "/pricing" | "/about"
+  href:
+    | "/#paper"
+    | "/#apply"
+    | "/#coach"
+    | "/#stories"
+    | "/pricing"
+    | "/about"
+    | "/blog"
 }
 
 export type FooterColumn = {
@@ -280,6 +288,7 @@ export const LANDING_FOOTER: readonly FooterColumn[] = [
     links: [
       { label: "About", href: "/about" },
       { label: "Stories", href: "/#stories" },
+      { label: "Blog", href: "/blog" },
     ],
   },
 ]

@@ -5,6 +5,7 @@ import {
   createRouter,
   isRedirect,
   lazyRouteComponent,
+  notFound,
   redirect,
   type AnyRouter,
   type RouterHistory,
@@ -20,6 +21,7 @@ import {
 } from "@/features/settings/sections.ts"
 import { validateApplySearch } from "@/features/apply/apply-search.ts"
 import { validatePaperSearch } from "@/features/paper/paper-templates.ts"
+import { findBlogPost } from "@/features/landing/blog/blog-copy.ts"
 import { SignInPage } from "@/routes/sign-in.tsx"
 import { authClient } from "@/lib/auth-client.ts"
 import { validateAuthSearch } from "@/lib/auth-redirect.ts"
@@ -53,6 +55,27 @@ const helpRoute = createRoute({
   component: lazyRouteComponent(
     () => import("@/routes/landing-help.tsx"),
     "LandingHelpPage"
+  ),
+})
+
+const blogRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/blog",
+  component: lazyRouteComponent(
+    () => import("@/routes/landing-blog.tsx"),
+    "LandingBlogPage"
+  ),
+})
+
+const blogPostRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/blog/$slug",
+  beforeLoad: ({ params }) => {
+    if (!findBlogPost(params.slug)) throw notFound()
+  },
+  component: lazyRouteComponent(
+    () => import("@/routes/landing-blog-post.tsx"),
+    "LandingBlogPostPage"
   ),
 })
 
@@ -337,6 +360,8 @@ const routeTree = rootRoute.addChildren([
   pricingRoute,
   aboutRoute,
   helpRoute,
+  blogRoute,
+  blogPostRoute,
   signInRoute,
   signUpRoute,
   shareRoute,

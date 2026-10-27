@@ -145,7 +145,11 @@ describe("about page", () => {
       })
     )
     const links = company.getAllByRole("link")
-    expect(links.map((link) => link.textContent)).toEqual(["About", "Stories"])
+    expect(links.map((link) => link.textContent)).toEqual([
+      "About",
+      "Stories",
+      "Blog",
+    ])
     expect(links[0]).toHaveAttribute("href", "/about")
 
     expect(
