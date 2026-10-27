@@ -31,7 +31,7 @@ The checker still measures 26 properties at 1440x900, 390x844 and reduced motion
 | 25  | hero-image-attrs-and-paint          | Kept. The hero image is the chair.                                                                                                  |
 | 26  | no-sideways-scroll                  | Added. The page must not scroll sideways at 1440 or 390.                                                                            |
 
-Pinned copy the rules read: `LANDING_HEADLINE`, `LANDING_SUBHEAD`, `LANDING_STATEMENT_LEAD`, `LANDING_STATEMENT_REST`, `LANDING_FEATURES`, `LANDING_LOGO_LABEL`, `LANDING_QUOTES`, `LANDING_PRIMARY_LABEL`.
+Pinned copy the rules read: `LANDING_HEADLINE`, `LANDING_SUBHEAD`, `LANDING_STATEMENT_LEAD`, `LANDING_STATEMENT_REST`, `LANDING_PRODUCTS`, `LANDING_LOGO_LABEL`, `LANDING_STORIES`, `LANDING_PRIMARY_LABEL`.
 
 Sync commit: 760127f63a4ae9552e377f84223e769bea3900f8. The checker printed 26 PASS at that commit.
 

@@ -123,7 +123,12 @@ html:has(.landing-root) {
 @container (max-width: 52rem) {
   .landing-nav-links {
     flex-basis: 100%;
+    order: 1;
     margin-inline-start: 0;
+  }
+
+  .landing-nav-actions {
+    margin-inline-start: auto;
   }
 }
 

@@ -4,12 +4,12 @@ export const LANDING_HEADLINE_LINES = [
 ] as const
 
 export const LANDING_SUBHEAD =
-  "Turn what you’ve done into proof. Turn proof into interviews."
+  "Tailor your CV for every job. Track every application. Prep with Coach."
 
 export const LANDING_STATEMENT_LEAD = "You’ve done more than your CV says."
 
 export const LANDING_STATEMENT_REST =
-  "opencv helps you say it properly: clear proof of your work, then a CV, letter and site written for each role you want."
+  "opencv helps you show it: a CV and letter written for each role, a board for every application, and a coach that knows both."
 
 export const LANDING_CLOSE = "Be the obvious hire. Start today."
 

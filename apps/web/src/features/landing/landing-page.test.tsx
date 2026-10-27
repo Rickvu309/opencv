@@ -10,9 +10,9 @@ afterEach(() => {
 })
 
 const HEADLINE = "Get your butt in your dream seat."
-const SUBHEAD = "Turn what you’ve done into proof. Turn proof into interviews."
+const SUBHEAD = "Tailor your CV for every job. Track every application. Prep with Coach."
 const STATEMENT_REST =
-  "opencv helps you say it properly: clear proof of your work, then a CV, letter and site written for each role you want."
+  "opencv helps you show it: a CV and letter written for each role, a board for every application, and a coach that knows both."
 const TITLE = "opencv. Get your butt in your dream seat."
 
 const SECTION_IDS = [
