@@ -20,7 +20,6 @@ TypeScript has no production verifier for this code, so the tool is `fast-check`
 ## How to run
 
 ```bash
-pnpm --filter @workspace/domain build   # the api imports the built domain package
 pnpm --filter api test:formal
 ```
 
@@ -89,5 +88,5 @@ If a later run probes one of these and it fails, it is a new finding. Do not shr
 1. Run `pnpm --filter api test:formal`. It is green on trunk, so any failure is a new finding or a wrong table row.
 2. Fix the guard, never the property or the host table, unless the table row disagrees with the documented ranges.
 3. A new rule (a new blocked range, a new scheme) needs a row in the `HOSTS` or `SCHEMES` table in the test and a matching generator in the same commit.
-4. Prove the check still bites. Make a scratch change that breaks the guard, confirm a named counterexample, then `git checkout` the file and confirm the run is back to where it started. A scratch edit in `packages/domain` only bites after `pnpm --filter @workspace/domain build`, and again after you revert it. Useful breaks: delete the `a === 192 && b === 168` line (line 37), remove the `.localhost` clause in `isBlockedApplyScanHost`, make the scheme test in `openableApplyJobUrl` also accept `ftp://`.
+4. Prove the check still bites. Make a scratch change that breaks the guard, confirm a named counterexample, then `git checkout` the file and confirm the run is back to where it started. Useful breaks: delete the `a === 192 && b === 168` line (line 37), remove the `.localhost` clause in `isBlockedApplyScanHost`, make the scheme test in `openableApplyJobUrl` also accept `ftp://`.
 5. Move the sync commit only after you reread every covered function at the new commit, rerun the check, and confirm every row of the coverage record still describes the code. Then set it to `git rev-parse origin/main` and fix any line numbers.

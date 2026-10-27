@@ -86,7 +86,7 @@ Never edit the app to make a check pass unless that was the task. A FAIL on toda
 ## Helpers
 
 - `verify-app-ui error: port 4450 is in use`: another run holds it. Pick `PORT=4452`, or stop the holder. Never kill a stack you did not start.
-- `stack launch failed`: the message ends with the api and web log tails. A first boot under heavy load can need more time; rerun. On a fresh worktree the api needs `pnpm --filter @workspace/domain build`; the checker does this for you.
+- `stack launch failed`: the message ends with the api and web log tails. A first boot under heavy load can need more time; rerun.
 - `home did not render at /app` (or another route): the stack came up but the screen never showed its content. Open the URL by hand from `~/tmp/verify-app-ui/stack/<run>/run.env`, or rerun with `VERIFY_APP_UI_SHOTS`.
 - `chrome did not start`: set `CHROME_BIN` to a Chromium or Chrome binary.
 - A crashed run can leave the stack up: `OPENCV_VERIFY_ROOT=~/tmp/verify-app-ui/stack bash .claude/skills/verify-opencv/scripts/cleanup.sh app-ui-<pid>` (the run id is `app-ui-` and the node pid, listed under `~/tmp/verify-app-ui/stack/`).

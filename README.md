@@ -31,7 +31,6 @@ Local development needs no Postgres and no API keys. `DB_DRIVER=pglite` runs the
 
 ```bash
 pnpm install
-pnpm --filter @workspace/domain build
 mkdir -p apps/api/.data
 export DB_DRIVER=pglite COACH_RUNTIME=fake SESSION_SECRET="$(openssl rand -hex 24)"
 pnpm dev --env-mode=loose

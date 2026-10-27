@@ -3,6 +3,7 @@
   "compilerOptions": {
     "noEmit": false,
     "rootDir": "src",
+    // Empty so the emitted api imports the built domain package, not its source.
     "customConditions": [],
     "outDir": "dist",
     "declaration": true,

@@ -22,7 +22,11 @@
     },
     "test": {
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "passThroughEnv": ["VITEST_MAX_WORKERS"]
+      "passThroughEnv": ["VITEST_MAX_WORKERS"],
+      "dependsOn": ["transit"]
+    },
+    "transit": {
+      "dependsOn": ["^transit"]
     }
   }
 }
