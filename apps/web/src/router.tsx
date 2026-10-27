@@ -38,6 +38,15 @@ const pricingRoute = createRoute({
   ),
 })
 
+const aboutRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/about",
+  component: lazyRouteComponent(
+    () => import("@/routes/landing-about.tsx"),
+    "LandingAboutPage"
+  ),
+})
+
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
@@ -317,6 +326,7 @@ const rootSplatIndexRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   pricingRoute,
+  aboutRoute,
   signInRoute,
   signUpRoute,
   shareRoute,
