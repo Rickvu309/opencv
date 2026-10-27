@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 
-import "../landing-figures.css"
+import "./about-figures.css"
 
 import type { AboutPrincipleId } from "./about-copy.ts"
 
@@ -390,7 +390,7 @@ export function AboutFigure({
 }) {
   const Scene = SCENES[id]
   return (
-    <div className="about-figure landing-figures">
+    <div className="about-figure">
       <svg
         viewBox="-50 -20 124 100"
         role="img"
