@@ -17,6 +17,10 @@ const coachToolNames = [
   "chat.setFocus",
   "coach.usage",
   "file.get",
+  "inbox.draftReply",
+  "inbox.markDone",
+  "inbox.scan",
+  "inbox.snooze",
   "job.addChecklistItem",
   "job.addNote",
   "job.calendar",
@@ -148,6 +152,8 @@ describe("registry", () => {
       expect(names).not.toContain("chat.open")
       expect(names).not.toContain("account.delete")
       expect(names).not.toContain("profile.update")
+      expect(names).not.toContain("inbox.send")
+      expect(names).not.toContain("inbox.addToCalendar")
     })
     const rows = await db.select().from(user).where(eq(user.id, userId))
     expect(rows).toHaveLength(1)

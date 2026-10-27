@@ -82,10 +82,27 @@ test("empty action labels", () => {
   )
 })
 
+test("nouns: Inbox connect copy and the scan count are exempt", () => {
+  const found = nounViolations([
+    "Never miss a recruiter reply",
+    "Reads job emails only. Nothing is sent without you.",
+    "No job emails yet",
+    "No job emails yet Scan",
+    "Finding your job emails",
+    "6 emails from 6 companies so far",
+    "Forward this email",
+  ])
+  assert.deepEqual(
+    found.map((item) => item.label),
+    ["Forward this email"]
+  )
+})
+
 test("other product names", () => {
   assert.deepEqual(otherProductNames("like Instagram Stories"), ["Instagram"])
   assert.deepEqual(otherProductNames("like Twitter"), ["Twitter"])
   assert.deepEqual(otherProductNames("Tap a highlight to play it."), [])
+  assert.deepEqual(otherProductNames("Connect Gmail"), [])
 })
 
 test("metric claims and basis", () => {
@@ -143,6 +160,15 @@ test("39 brand is the mark plus lowercase opencv", () => {
 test("40 one glow primary per view", () => {
   assert.deepEqual(extraGlowPrimaries([0, 1, 2, 3]), [2, 3])
   assert.deepEqual(extraGlowPrimaries([0, 1]), [])
+})
+
+test("40 inbox reader glow of 1 passes and 2 fails", () => {
+  const views = capturedGlowViews({
+    inbox: { glowCount: 1 },
+    reduced: { inbox: { glowCount: 1 } },
+    inboxReader: { glowCount: 2 },
+  })
+  assert.deepEqual(extraGlowPrimaries(views.map((view) => view.count)), [2])
 })
 
 test("40 counts every captured view, including the empty board", () => {

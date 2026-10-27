@@ -50,6 +50,7 @@ Open `features/README.md`, pick the feature file for what changed, and follow it
 - `features/apply-board-and-scan.md`
 - `features/coming-soon.md`
 - `features/settings.md`
+- `features/inbox.md`
 
 A proof that drives one convenient entry point is incomplete when the feature file lists others.
 

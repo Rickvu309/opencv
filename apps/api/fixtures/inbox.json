@@ -1,0 +1,103 @@
+{
+  "threads": [
+    {
+      "id": "regional-bank",
+      "company": "Regional bank",
+      "role": "Business Analyst",
+      "summary": "Can we do a call Thursday?",
+      "lastMessageAt": "2026-10-26T02:41:00.000Z",
+      "unread": true,
+      "suggestedStage": null,
+      "subject": "Re: Business Analyst application",
+      "draft": {
+        "body": "Hi Hanh, Thank you. Thursday at 14:30 works for me. Should I prepare anything before the call? Best, Linh",
+        "times": ["2026-10-29T07:30:00.000Z", "2026-10-29T08:00:00.000Z"]
+      },
+      "messages": [
+        {
+          "id": "regional-bank-out",
+          "direction": "out",
+          "fromName": "Linh Nguyen",
+          "fromEmail": "linh.nguyen@example.com",
+          "toEmail": "hanh.tran@regionalbank.example",
+          "bodyText": "Hi Hanh, my CV for the Business Analyst role is attached.",
+          "sentAt": "2026-10-15T03:00:00.000Z"
+        },
+        {
+          "id": "regional-bank-in",
+          "direction": "in",
+          "fromName": "Hanh Tran",
+          "fromEmail": "hanh.tran@regionalbank.example",
+          "toEmail": "linh.nguyen@example.com",
+          "bodyText": "Hi Linh,\n\nThanks for applying for the Business Analyst role. Your background fits what we need, especially your SQL and reporting work.\n\nCan you do a 20 minute call on Thursday afternoon? Any time after 14:00 works for us.\n\nBest, Hanh",
+          "sentAt": "2026-10-26T02:41:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "local-startup",
+      "company": "Local startup",
+      "role": "Associate PM",
+      "summary": "Interview invite, Thu 10:00",
+      "lastMessageAt": "2026-10-26T01:02:00.000Z",
+      "unread": true,
+      "suggestedStage": "interview",
+      "subject": "Interview invite",
+      "messages": [
+        {
+          "id": "local-startup-in",
+          "direction": "in",
+          "fromName": "Local startup",
+          "fromEmail": "hiring@localstartup.example",
+          "toEmail": "linh.nguyen@example.com",
+          "bodyText": "Can we do a call Thursday at 10:00?",
+          "sentAt": "2026-10-26T01:02:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "lumiere",
+      "company": "Lumière",
+      "role": "Marketing Executive",
+      "summary": "Closes in 2 days",
+      "lastMessageAt": "2026-10-26T00:00:00.000Z",
+      "unread": true,
+      "suggestedStage": null,
+      "subject": "Closes in 2 days",
+      "messages": []
+    },
+    {
+      "id": "fintech-app",
+      "company": "Fintech app",
+      "role": "Growth Marketer",
+      "summary": "No reply in 11 days",
+      "lastMessageAt": "2026-10-25T04:00:00.000Z",
+      "unread": true,
+      "suggestedStage": null,
+      "subject": "No reply in 11 days",
+      "messages": []
+    },
+    {
+      "id": "agency",
+      "company": "Agency",
+      "role": "Content Specialist",
+      "summary": "Not moving forward",
+      "lastMessageAt": "2026-10-24T04:00:00.000Z",
+      "unread": false,
+      "suggestedStage": null,
+      "subject": "Not moving forward",
+      "messages": []
+    },
+    {
+      "id": "ecommerce",
+      "company": "E-commerce co.",
+      "role": "Product Analyst",
+      "summary": "Application received",
+      "lastMessageAt": "2026-10-21T02:00:00.000Z",
+      "unread": false,
+      "suggestedStage": null,
+      "subject": "Application received",
+      "messages": []
+    }
+  ]
+}

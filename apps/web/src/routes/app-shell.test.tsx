@@ -303,7 +303,7 @@ describe("app shell layout", () => {
     expect(screen.queryByText("Favorites")).not.toBeInTheDocument()
   })
 
-  it("shows an Inbox count only when the payload lists unread items", async () => {
+  it("shows an Inbox count for unread threads on the inbox object", async () => {
     renderApp(SURFACE_PATHS.pitch)
     await expectPitch()
     expect(screen.getByRole("link", { name: "Inbox" })).toHaveTextContent(
@@ -311,10 +311,18 @@ describe("app shell layout", () => {
     )
 
     cleanup()
-    setMockInbox([{ id: "a" }, { id: "b", unread: true }])
+    setMockInbox({
+      connected: false,
+      skipped: true,
+      threads: [
+        { id: "a", unread: true },
+        { id: "b", unread: true },
+        { id: "c", unread: false },
+      ],
+    })
     renderApp(SURFACE_PATHS.pitch)
     await waitFor(() => {
-      expect(screen.getByRole("link", { name: "Inbox" })).toHaveTextContent("1")
+      expect(screen.getByRole("link", { name: "Inbox" })).toHaveTextContent("2")
     })
     expect(screen.getByRole("link", { name: "Inbox" })).toHaveAccessibleName(
       "Inbox"

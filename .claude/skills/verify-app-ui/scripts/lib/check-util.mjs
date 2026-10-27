@@ -14,6 +14,7 @@ export const FEATURE_DIRS = [
   "paper",
   "apply",
   "pitch",
+  "inbox",
   "app-shell",
 ]
 
@@ -70,6 +71,7 @@ export function context(d) {
     d.coachNet,
     d.paperLoading,
     d.applyEmpty,
+    ...(d.inbox ? [d.inbox] : []),
   ]
   const files = featureFiles()
   const has = (re) => files.filter((f) => re.test(read(f))).map(rel)
