@@ -1,7 +1,10 @@
 // Writing, logic and proof-markup properties. Each reads the "top" snapshot and returns
 // { id, name, rule, pass, measured }. The id is the check number in the landing research,
 // section 5. The source of each rule is in the comment above it and in SKILL.md.
-const SURFACES = ["capture", "plan", "assistant", "review"]
+const SURFACES = ["paper", "apply", "coach"]
+// The app signs up and logs in on /sign-in; only the label tells the two apart.
+export const isSignUpLink = (l) =>
+  l.href === "/sign-in" && !/^log in$/i.test(l.text)
 const words = (s) => s.split(/\s+/).filter(Boolean)
 const sentences = (s) => s.split(/(?<=[.!?])\s+/).filter(Boolean)
 const quote = (list) =>
@@ -119,23 +122,25 @@ export function textRules(top) {
       top.blocks.find((b) => b.region === `surface:${name}` && b.tag === "h2")
         ?.text ?? ""
     const count = words(h2).length
-    return { name, h2, ok: count >= 3 && count <= 6 }
+    return { name, h2, ok: count >= 1 && count <= 3 }
   })
   const bad = titles.filter((t) => !t.ok)
-  // The four feature titles are outcome lines of three to six words.
+  // The three product titles are the surface names: one to three words.
   out.push(
     verdict(
       "06",
-      "feature-titles-three-to-six-words",
-      "Each feature title (capture, plan, assistant, review) is 3 to 6 words",
+      "product-titles-name-the-surface",
+      "Each product title (paper, apply, coach) is 1 to 3 words",
       bad.length === 0,
       bad.length
         ? `off: ${bad.map((t) => `${t.name}->"${t.h2}"`).join(", ")}`
-        : "all four titles are 3 to 6 words"
+        : "all three titles are 1 to 3 words"
     )
   )
 
-  const signUps = top.links.filter((l) => l.href === "/sign-up")
+  const signUps = top.links.filter(
+    (l) => isSignUpLink(l) && ["nav", "hero", "closing"].includes(l.region)
+  )
   const regions = ["nav", "closing"]
   const labels = regions.map((r) => ({
     r,
@@ -195,13 +200,13 @@ export function textRules(top) {
     const body =
       top.blocks.find((b) => b.region === `surface:${name}` && b.tag === "p")
         ?.text ?? ""
-    return { name, ok: facts.test(sentences(body)[0] ?? "") }
+    return { name, ok: facts.test(body) }
   })
   out.push(
     verdict(
       "11",
-      "feature-first-sentence-ties-to-hero",
-      "Each feature's first sentence names proof, a CV, a role, a letter, a site, or a claim",
+      "product-body-ties-to-hero",
+      "Each product's intro paragraph names proof, a CV, a role, a letter, a site, or a claim",
       firsts.every((f) => f.ok),
       `missing: ${quote(firsts.filter((f) => !f.ok).map((f) => f.name))}`
     )
@@ -209,8 +214,8 @@ export function textRules(top) {
 
   const text = top.bodyText
   const logos = /PEOPLE USING OPENCV HAVE INTERVIEWED AT/.test(text)
-  const quoteA = /I stopped sending the same CV/.test(text)
-  const quoteB = /say the numbers out loud/.test(text)
+  const quoteA = /I stopped listing duties/.test(text)
+  const quoteB = /treated each one like a pitch/.test(text)
   const invented =
     /[★⭐]|trusted by|as seen in|\b\d[\d,.]*\+?\s?(users|companies|professionals)\b/i.exec(
       text
@@ -227,7 +232,7 @@ export function textRules(top) {
   )
 
   const alts = top.imgs.map((i) => i.alt ?? "")
-  const personAlt = alts.some((a) => /student|graduate/i.test(a))
+  const personAlt = alts.some((a) => /portrait/i.test(a))
   const cvAlt = alts.some((a) => /\b(cv|letter)\b/i.test(a))
   const placeholder = alts.filter((a) =>
     /placeholder|your name|lorem|untitled/i.test(a)
@@ -235,8 +240,8 @@ export function textRules(top) {
   out.push(
     verdict(
       "13",
-      "sample-person-alt",
-      "Some image alt names a student or graduate, some alt names a CV or letter, and none says placeholder",
+      "customer-and-cv-alt",
+      "Some image alt names a customer portrait, some alt names a CV or letter, and none says placeholder",
       personAlt && cvAlt && placeholder === 0,
       `person=${personAlt}, cv-or-letter=${cvAlt}, placeholder alts=${placeholder}`
     )

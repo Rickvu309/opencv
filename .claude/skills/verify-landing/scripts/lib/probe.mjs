@@ -14,7 +14,7 @@ function probe(kind) {
       tick()
     })
   }
-  const NAMES = ["capture", "plan", "assistant", "review"]
+  const NAMES = ["paper", "apply", "coach"]
   const canvas = document.createElement("canvas")
   canvas.width = canvas.height = 1
   const ctx = canvas.getContext("2d", { willReadFrequently: true })

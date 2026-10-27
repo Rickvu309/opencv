@@ -1,3 +1,5 @@
+import { isSignUpLink } from "./text-rules.mjs"
+
 // Layout, craft, motion, accessibility and performance properties. They read the snapshots that
 // probe.mjs takes at 1440x900 (desktop), 390x844 (mobile) and 1440x900 with reduced motion.
 const verdict = (id, name, rule, pass, measured) => ({
@@ -66,7 +68,7 @@ export function pageChecks({
     )
   )
 
-  const names = ["product", "examples", "stories", "pricing"]
+  const names = ["product", "stories", "pricing"]
   const inView = (snap, n) =>
     snap.links.some(
       (l) =>
@@ -85,9 +87,9 @@ export function pageChecks({
     verdict(
       "15",
       "nav-links-before-fold-390",
-      "At 390x844 Product, Examples, Stories and Pricing are visible as links without scrolling, in the page or in a menu the checker opens with one click",
-      seen.length === 4,
-      `${seen.length} of 4 visible without scrolling: ${seen.join(", ") || "none"} (${mobileOpen ? "menu opened" : "no menu button found"})`
+      "At 390x844 Product, Stories and Pricing are visible as links without scrolling, in the page or in a menu the checker opens with one click",
+      seen.length === names.length,
+      `${seen.length} of ${names.length} visible without scrolling: ${seen.join(", ") || "none"} (${mobileOpen ? "menu opened" : "no menu button found"})`
     )
   )
 
@@ -159,18 +161,20 @@ export function pageChecks({
     )
   )
 
+  // App logos and customer portraits are named by app or person, not by a product surface.
+  const named = (i) =>
+    /^\/landing\/(logo|story)-/.test(i.src ?? "")
+      ? Boolean(i.alt)
+      : (i.alt ?? "").length >= 20 &&
+        /coach|paper|apply|proof|pitch|cv|letter/i.test(i.alt)
   const bad = desktop.imgs.filter(
-    (i) =>
-      !i.src?.startsWith("/landing/") ||
-      !i.alt ||
-      i.alt.length < 20 ||
-      !/armchair|coach|paper|apply|cv|letter/i.test(i.alt)
+    (i) => !i.src?.startsWith("/landing/") || !named(i)
   )
   out.push(
     verdict(
       "19",
       "images-named-and-local",
-      "Every marketing image is from /landing/ and its alt names the chair, Coach, Paper, Apply, a CV or a letter",
+      "Every marketing image is from /landing/ and its alt names Coach, Paper, Apply, Proof, Pitch, a CV or a letter (app logos and customer portraits need only an alt)",
       desktop.imgs.length > 0 && bad.length === 0,
       `${desktop.imgs.length} images, ${bad.length} without a surface-naming alt${bad[0] ? `: ${bad[0].src}` : ""}`
     )
@@ -270,7 +274,7 @@ export function pageChecks({
       return Math.hypot(dx, dy) < 12
     })
   })
-  const smallPrimary = small.filter((t) => t.href === "/sign-up")
+  const smallPrimary = small.filter((t) => isSignUpLink(t))
   const minSide = Math.min(...deep.targets.map((t) => Math.min(t.w, t.h)))
   // WCAG 2.2 SC 2.5.8
   out.push(

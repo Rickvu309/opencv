@@ -59,9 +59,9 @@ test("10 needs the objection above the first surface in DOM order", () => {
 
 test("08 accepts short labels with an object and rejects bare verbs", () => {
   const link = (text) => [
-    { region: "nav", text, href: "/sign-up" },
-    { region: "hero", text, href: "/sign-up" },
-    { region: "closing", text, href: "/sign-up" },
+    { region: "nav", text, href: "/sign-in" },
+    { region: "hero", text, href: "/sign-in" },
+    { region: "closing", text, href: "/sign-in" },
   ]
   const label = (text) => verdictOf(base([], link(text)), "08").pass
   assert.equal(label("Start learning"), true)
@@ -69,6 +69,15 @@ test("08 accepts short labels with an object and rejects bare verbs", () => {
   assert.equal(label("Get started"), true)
   for (const bad of ["Start free", "Learn more", "Join", "Try now"])
     assert.equal(label(bad), false, bad)
+})
+
+test("07 tells a sign-up label from Log in on the shared /sign-in route", () => {
+  const links = [
+    { region: "nav", text: "Log in", href: "/sign-in" },
+    { region: "nav", text: "Get started", href: "/sign-in" },
+    { region: "closing", text: "Get started", href: "/sign-in" },
+  ]
+  assert.equal(verdictOf(base([], links), "07").pass, true)
 })
 
 test("02 needs a block that names opencv and a CV", () => {
