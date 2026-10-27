@@ -156,6 +156,36 @@ function probe(kind) {
     }))
     const heroImg = hero ? hero.querySelector("img") : null
     const h1el = h1
+    const benefitSection = document.querySelector("#benefits")
+    const benefitSvgs = benefitSection
+      ? [...benefitSection.querySelectorAll("svg")]
+      : []
+    const hexRe = /#[0-9a-fA-F]{3,8}\b/
+    let benefitShapes = 0
+    let benefitHex = 0
+    const benefitViewBoxes = []
+    for (const svg of benefitSvgs) {
+      benefitViewBoxes.push(svg.getAttribute("viewBox"))
+      benefitShapes += svg.querySelectorAll("path, ellipse").length
+      for (const el of [svg, ...svg.querySelectorAll("*")]) {
+        for (const attr of [...el.attributes]) {
+          if (hexRe.test(attr.value)) benefitHex += 1
+        }
+      }
+    }
+    const mark = header?.querySelector("a svg")
+    const word = mark?.parentElement?.querySelector(":scope > span")
+    let navLockup = null
+    if (mark && word) {
+      const markBox = mark.getBoundingClientRect()
+      const wordBox = word.getBoundingClientRect()
+      const wordStyle = cs(word)
+      navLockup = {
+        gap: wordBox.left - (markBox.right - 2),
+        fontSize: wordStyle.fontSize,
+        fontWeight: wordStyle.fontWeight,
+      }
+    }
     return {
       vw,
       vh,
@@ -167,6 +197,16 @@ function probe(kind) {
         top: heroImg.getBoundingClientRect().top,
       },
       h1Bottom: h1el ? h1el.getBoundingClientRect().bottom : null,
+      benefitArt: {
+        count: benefitSvgs.length,
+        viewBoxes: benefitViewBoxes,
+        shapes: benefitShapes,
+        hex: benefitHex,
+        perCard: [
+          ...document.querySelectorAll("#benefits .landing-benefit"),
+        ].map((card) => card.querySelectorAll("svg").length),
+      },
+      navLockup,
       pageWidth: document.documentElement.scrollWidth,
       viewWidth: document.documentElement.clientWidth,
       description:
