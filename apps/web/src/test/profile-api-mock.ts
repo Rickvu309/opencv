@@ -1,7 +1,4 @@
-import {
-  DEFAULT_COACH_MODE,
-  type UserProfile,
-} from "@workspace/domain"
+import { DEFAULT_COACH_MODE, type UserProfile } from "@workspace/domain"
 
 import { SAMPLE_AUTHOR } from "@/features/seed/sample-author.ts"
 import { authMockState } from "@/test/auth-client-mock.ts"
@@ -426,7 +423,6 @@ export async function profileApiFetch(
     lastDelete = patchFrom(await readBody(init))
     return jsonOk({ deleted: true })
   }
-
 
   return jsonError(404, "NOT_FOUND", "Not found")
 }

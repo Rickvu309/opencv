@@ -149,13 +149,7 @@ export async function paperApiFetch(
     return jsonOk(doc)
   }
 
-
-
-
-  if (
-    method === "POST" &&
-    path === "/api/commands/paper.setStatus"
-  ) {
+  if (method === "POST" && path === "/api/commands/paper.setStatus") {
     const body = (await readBody(init)) as {
       docId?: string
       status?: PaperDocStatus
@@ -166,7 +160,6 @@ export async function paperApiFetch(
     doc.updatedAt = isoNow()
     return jsonOk(doc)
   }
-
 
   if (method === "POST" && path === "/api/commands/paper.create") {
     const body = (await readBody(init)) as {
@@ -290,7 +283,6 @@ export async function paperApiFetch(
     }
     return jsonOk({ jobId: body.jobId })
   }
-
 
   return jsonError(404, "UNKNOWN_COMMAND", "Unknown command")
 }

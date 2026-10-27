@@ -30,7 +30,7 @@ const prefixes =
   "chat|paper|job|inbox|profile|account|notify|actions|activity|coach|threads|apply|pitch"
 const dotted = new RegExp(
   `["'\`/]((?:${prefixes})\\.[a-z][A-Za-z]+)["'\`]`,
-  "g",
+  "g"
 )
 const tool = new RegExp(`["'\`]((?:${prefixes})_[a-z][A-Za-z]+)["'\`]`, "g")
 const fileExtension = /\.(ts|tsx|js|json|css|webp|png|svg)$/
@@ -62,7 +62,7 @@ function referencedNames(): Map<string, Set<string>> {
 describe("registry names", () => {
   const listed = installRegistry().list()
   const registered = new Set(
-    [...listed.commands, ...listed.queries].map((entry) => entry.name),
+    [...listed.commands, ...listed.queries].map((entry) => entry.name)
   )
   const referenced = referencedNames()
 

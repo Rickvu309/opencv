@@ -171,10 +171,5 @@ export async function applyApiFetch(
     return jsonOk(card)
   }
 
-
-
-
-
-
   return jsonError(404, "UNKNOWN_COMMAND", "Unknown command")
 }

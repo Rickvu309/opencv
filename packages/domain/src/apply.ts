@@ -1,6 +1,5 @@
 import { z } from "zod"
 
-
 export { generateKeyBetween } from "./apply-position.js"
 
 export const APPLY_TITLE_MAX = 200

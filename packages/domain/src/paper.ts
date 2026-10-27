@@ -2,7 +2,6 @@ import { z } from "zod"
 
 import { fileIdSchema, jobIdSchema, paperIdSchema } from "./ids.js"
 
-
 export const PAPER_CONTENT_VERSION = 1
 export const PAPER_DOC_NAME_MAX = 200
 
