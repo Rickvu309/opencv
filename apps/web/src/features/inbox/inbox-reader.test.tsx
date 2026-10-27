@@ -99,4 +99,50 @@ describe("inbox reader", () => {
     await userEvent.click(screen.getByRole("button", { name: "Send" }))
     expect(posts.map((post) => post.path)).toEqual(["/api/commands/inbox.send"])
   })
+
+  it("disables Suggest another time when the Coach limit is reached", async () => {
+    vi.stubGlobal(
+      "fetch",
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = pathOf(input)
+        if (
+          path === "/api/commands/inbox.draftReply" &&
+          (init?.method ?? "GET") === "POST"
+        ) {
+          return Response.json(
+            {
+              ok: false,
+              error: {
+                code: "COACH_LIMIT_REACHED",
+                message:
+                  "You've reached today's Free limit. Resets at 7:00. Pro has unlimited Coach chats.",
+              },
+            },
+            { status: 429 }
+          )
+        }
+        if (path === "/api/coach/usage") {
+          return jsonOk({
+            day: { resetsAt: "2026-10-28T00:00:00.000Z" },
+          })
+        }
+        return jsonOk({})
+      }
+    )
+    renderReader(REGIONAL_DETAIL)
+    await userEvent.click(
+      screen.getByRole("button", { name: "Suggest another time" })
+    )
+    expect(
+      await screen.findByText("You've reached today's Free limit.")
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        "You've reached today's Free limit. Resets at 7:00. Pro has unlimited Coach chats."
+      )
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "Coach is back at 7:00 AM" })
+    ).toBeDisabled()
+  })
 })

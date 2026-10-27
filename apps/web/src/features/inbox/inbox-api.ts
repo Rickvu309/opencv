@@ -18,7 +18,18 @@ export type InboxThread = {
 export type InboxList = {
   connected: boolean
   skipped: boolean
+  timeZone: string
   threads: InboxThread[]
+}
+
+export class InboxLimitError extends Error {
+  readonly resetsAt: string | null
+
+  constructor(message: string, resetsAt: string | null) {
+    super(message)
+    this.name = "InboxLimitError"
+    this.resetsAt = resetsAt
+  }
 }
 
 export type InboxMessage = {
@@ -83,12 +94,6 @@ export function fetchThread(id: string) {
   )
 }
 
-export function fetchTimeZone() {
-  return apiFetch<SuccessBody<{ timeZone?: string }>>("/api/profile")
-    .then((body) => unwrapData(body).timeZone || "")
-    .catch(() => "")
-}
-
 export function skipInbox() {
   return post("inbox.skip", {})
 }
@@ -143,14 +148,41 @@ export function undoActivity(activityId: string) {
 }
 
 async function post<T>(name: string, input: unknown): Promise<T> {
-  const body = await apiFetch<SuccessBody<T>>(`/api/commands/${name}`, {
-    method: "POST",
-    body: JSON.stringify({
-      input,
-      idempotencyKey: crypto.randomUUID(),
-    }),
-  })
-  return unwrapData(body)
+  try {
+    const body = await apiFetch<SuccessBody<T>>(`/api/commands/${name}`, {
+      method: "POST",
+      body: JSON.stringify({
+        input,
+        idempotencyKey: crypto.randomUUID(),
+      }),
+    })
+    return unwrapData(body)
+  } catch (error) {
+    if (!isCoachLimit(error)) throw error
+    throw new InboxLimitError(
+      error instanceof ApiError
+        ? error.message
+        : "You've reached today's Free limit.",
+      await readCoachReset()
+    )
+  }
+}
+
+async function readCoachReset() {
+  try {
+    const body = await apiFetch<SuccessBody<unknown>>("/api/coach/usage")
+    return resetsAtOf(unwrapData(body))
+  } catch {
+    return null
+  }
+}
+
+function resetsAtOf(value: unknown) {
+  if (!value || typeof value !== "object") return null
+  const row = value as { resetsAt?: unknown; day?: { resetsAt?: unknown } }
+  if (typeof row.resetsAt === "string") return row.resetsAt
+  if (typeof row.day?.resetsAt === "string") return row.day.resetsAt
+  return null
 }
 
 function parseList(value: unknown): InboxList {
@@ -160,11 +192,14 @@ function parseList(value: unknown): InboxList {
   const row = value as {
     connected?: unknown
     skipped?: unknown
+    timeZone?: unknown
     threads?: unknown
   }
+  const timeZone = row.timeZone
   return {
     connected: row.connected === true,
     skipped: row.skipped === true,
+    timeZone: typeof timeZone === "string" ? timeZone : "",
     threads: Array.isArray(row.threads) ? row.threads.filter(isThread) : [],
   }
 }

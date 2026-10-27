@@ -89,4 +89,85 @@ describe("matchInboxJob", () => {
       ).jobId
     ).toBe("a")
   })
+
+  it("picks the title that shares the most words", () => {
+    expect(
+      matchInboxJob(
+        {
+          company: "Northwind",
+          role: "Marketing Executive",
+          summary: "Hello",
+          suggestedStage: null,
+        },
+        [
+          {
+            id: "older",
+            title: "Marketing executive",
+            company: "Northwind",
+            updatedAt: "2026-10-01T00:00:00.000Z",
+          },
+          {
+            id: "newer",
+            title: "Marketing lead",
+            company: "Northwind",
+            updatedAt: "2026-10-20T00:00:00.000Z",
+          },
+        ]
+      ).jobId
+    ).toBe("older")
+  })
+
+  it("picks the newest job when the shared word count ties", () => {
+    expect(
+      matchInboxJob(
+        {
+          company: "Local startup",
+          role: "Associate PM",
+          summary: "Hello",
+          suggestedStage: null,
+        },
+        [
+          {
+            id: "older",
+            title: "Associate writer",
+            company: "Local startup",
+            updatedAt: "2026-10-01T00:00:00.000Z",
+          },
+          {
+            id: "newer",
+            title: "Associate lead",
+            company: "Local startup",
+            updatedAt: "2026-10-20T00:00:00.000Z",
+          },
+        ]
+      )
+    ).toEqual({ jobId: "newer", suggestedStage: null })
+  })
+
+  it("links nothing when the word count and the update time tie", () => {
+    expect(
+      matchInboxJob(
+        {
+          company: "Local startup",
+          role: "Associate PM",
+          summary: "Interview invite, Thu 10:00",
+          suggestedStage: "interview",
+        },
+        [
+          {
+            id: "a",
+            title: "Associate writer",
+            company: "Local startup",
+            updatedAt: "2026-10-20T00:00:00.000Z",
+          },
+          {
+            id: "b",
+            title: "Associate lead",
+            company: "Local startup",
+            updatedAt: "2026-10-20T00:00:00.000Z",
+          },
+        ]
+      )
+    ).toEqual({ jobId: null, suggestedStage: null })
+  })
 })

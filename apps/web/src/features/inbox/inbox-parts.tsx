@@ -20,6 +20,7 @@ export function InboxRow({
     <Button
       variant={active ? "secondary" : "ghost"}
       className="h-auto w-full justify-start gap-3 px-3 py-2 text-left"
+      data-slot="inbox-row"
       aria-label={`${thread.role}, ${thread.company}, ${thread.summary}`}
       aria-current={active ? "true" : undefined}
       onClick={onOpen}
@@ -37,6 +38,9 @@ export function InboxRow({
         <span className="block truncate text-sm text-muted-foreground">
           {thread.company}
         </span>
+        <span className="block truncate text-sm text-muted-foreground">
+          {thread.summary}
+        </span>
       </span>
       {thread.unread && thread.status === "open" ? (
         <span
@@ -50,7 +54,10 @@ export function InboxRow({
 
 export function CompanyTile({ name }: { name: string }) {
   return (
-    <li className="flex w-16 flex-col items-center gap-2 motion-safe:animate-pulse motion-reduce:animate-none">
+    <li
+      data-slot="company-tile"
+      className="flex w-16 flex-col items-center gap-2 motion-safe:animate-pulse motion-reduce:animate-none"
+    >
       <Avatar>
         <AvatarFallback>{companyInitials(name)}</AvatarFallback>
       </Avatar>

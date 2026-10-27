@@ -27,6 +27,9 @@ const PRIVATE_OUTPUT_KEYS = new Set([
   "previousDocId",
   "fromStage",
   "fromPosition",
+  "previousStatus",
+  "previousSnoozeUntil",
+  "previousStage",
 ])
 
 export function publicCommandOutput(output: unknown) {

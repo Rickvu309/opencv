@@ -26,6 +26,8 @@ type ChatMessage = {
   status?: string
 }
 
+const INBOX_CHAT_TITLE = "Inbox reply"
+
 export async function draftWithHint(
   registry: Registry,
   actor: Actor,
@@ -33,17 +35,7 @@ export async function draftWithHint(
   hint: string
 ) {
   const person = personActor(actor.userId)
-  const created = await registry.execute({
-    name: "chat.create",
-    input: { title: "Inbox reply" },
-    actor: person,
-  })
-  const chatId = idOf(created.output)
-  await registry.execute({
-    name: "chat.setFocus",
-    input: { chatId, focus: { kind: "inbox", id: threadId } },
-    actor: person,
-  })
+  const chatId = await inboxChatId(registry, person, threadId)
   await registry.execute({
     name: "chat.appendMessage",
     input: { chatId, text: hint },
@@ -97,6 +89,51 @@ function coachRuntime(plan: Plan) {
     provider: plan === "free" ? "openrouter" : "anthropic",
     modelId: "routed",
   }
+}
+
+async function inboxChatId(registry: Registry, actor: Actor, threadId: string) {
+  const listed = await registry.read("chat.list", {}, actor)
+  const existing = listedChats(listed).find(
+    (chat) =>
+      chat.title === INBOX_CHAT_TITLE &&
+      chat.focusKind === "inbox" &&
+      chat.focusId === threadId
+  )
+  if (existing) return existing.id
+  const created = await registry.execute({
+    name: "chat.create",
+    input: { title: INBOX_CHAT_TITLE },
+    actor,
+  })
+  const chatId = idOf(created.output)
+  await registry.execute({
+    name: "chat.setFocus",
+    input: { chatId, focus: { kind: "inbox", id: threadId } },
+    actor,
+  })
+  return chatId
+}
+
+function listedChats(value: unknown) {
+  if (!Array.isArray(value)) return []
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object") return []
+    const row = item as {
+      id?: unknown
+      title?: unknown
+      focusKind?: unknown
+      focusId?: unknown
+    }
+    if (typeof row.id !== "string") return []
+    return [
+      {
+        id: row.id,
+        title: typeof row.title === "string" ? row.title : "",
+        focusKind: typeof row.focusKind === "string" ? row.focusKind : null,
+        focusId: typeof row.focusId === "string" ? row.focusId : null,
+      },
+    ]
+  })
 }
 
 function idOf(value: unknown) {

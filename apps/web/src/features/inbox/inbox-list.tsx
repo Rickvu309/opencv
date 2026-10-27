@@ -14,6 +14,7 @@ export function InboxList({
   threads,
   openId,
   now,
+  zone,
   onOpen,
   onScan,
   scanning,
@@ -21,6 +22,7 @@ export function InboxList({
   threads: InboxThread[]
   openId: string | null
   now: Date
+  zone?: string
   onOpen: (id: string) => void
   onScan: () => void
   scanning: boolean
@@ -43,7 +45,7 @@ export function InboxList({
           <InboxRow
             key={thread.id}
             thread={thread}
-            time={inboxWhen(thread.lastMessageAt, now)}
+            time={inboxWhen(thread.lastMessageAt, now, zone)}
             active={thread.id === openId}
             onOpen={() => onOpen(thread.id)}
           />

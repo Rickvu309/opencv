@@ -94,10 +94,14 @@ export async function readInbox(userId: string) {
     .from(inboxThreads)
     .where(eq(inboxThreads.userId, userId))
     .orderBy(desc(inboxThreads.lastMessageAt))
+  const now = Date.now()
   return {
     connected: await gmailConnected(userId),
     skipped: profile.inboxSkippedAt != null,
-    threads: threads.map(toListItem),
+    timeZone: profile.timeZone,
+    threads: threads
+      .filter((row) => visibleWhileSnoozed(row, now))
+      .map(toListItem),
   }
 }
 
@@ -146,9 +150,15 @@ export async function scanInbox(actor: Actor) {
   const connectionId = await fixtureConnection(actor.userId)
   const source = await provider.listThreads()
   const jobRows = await getDb()
-    .select({ id: jobs.id, title: jobs.title, company: jobs.company })
+    .select({
+      id: jobs.id,
+      title: jobs.title,
+      company: jobs.company,
+      updatedAt: jobs.updatedAt,
+    })
     .from(jobs)
     .where(eq(jobs.userId, actor.userId))
+    .orderBy(desc(jobs.updatedAt), desc(jobs.id))
   const companies = new Set<string>()
   const saved: InboxListItem[] = []
   for (const thread of source) {
@@ -447,6 +457,11 @@ async function upsertMessages(threadId: string, messages: MailMessage[]) {
         sentAt: new Date(message.sentAt),
       })
   }
+}
+
+function visibleWhileSnoozed(row: ThreadRow, now: number) {
+  if (row.status !== "snoozed" || !row.snoozeUntil) return true
+  return row.snoozeUntil.getTime() <= now
 }
 
 function toListItem(row: ThreadRow): InboxListItem {

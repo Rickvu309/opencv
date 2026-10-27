@@ -115,8 +115,9 @@ export async function listStarredJobs() {
 }
 
 export function inboxUnreadCount(data: unknown) {
-  if (!Array.isArray(data)) return null
-  const count = data.filter((item) => record(item)?.unread === true).length
+  const threads = record(data)?.threads
+  if (!Array.isArray(threads)) return null
+  const count = threads.filter((item) => record(item)?.unread === true).length
   return count > 0 ? count : null
 }
 

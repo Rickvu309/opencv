@@ -13,6 +13,7 @@ import {
   addToCalendar,
   clearSuggestion,
   draftReply,
+  InboxLimitError,
   isCoachLimit,
   markDone,
   sendReply,
@@ -33,6 +34,17 @@ const STAGES = new Set<Stage>([
 
 function stageOf(value: string): Stage {
   return STAGES.has(value as Stage) ? (value as Stage) : "applied"
+}
+
+function resetClock(iso: string | null, zone: string) {
+  if (!iso) return "later"
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return "later"
+  return date.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: zone,
+  })
 }
 
 export function InboxReader({
@@ -63,7 +75,7 @@ export function InboxReader({
   const [body, setBody] = useState(saved)
   const [savedBody, setSavedBody] = useState(saved)
   const [selected, setSelected] = useState(0)
-  const [limit, setLimit] = useState(false)
+  const [limit, setLimit] = useState<InboxLimitError | null>(null)
   const [busy, setBusy] = useState(false)
   const prompt = Boolean(detail.jobId && detail.suggestedStage === "interview")
   const hasDraft = detail.draft != null
@@ -74,8 +86,12 @@ export function InboxReader({
     try {
       await task()
     } catch (error) {
-      if (isCoachLimit(error)) {
-        setLimit(true)
+      if (error instanceof InboxLimitError) {
+        setLimit(error)
+        return
+      }
+      if (isCoachLimit(error) && error instanceof ApiError) {
+        setLimit(new InboxLimitError(error.message, null))
         return
       }
       toast(
@@ -212,7 +228,16 @@ export function InboxReader({
           <div className="mt-6 flex flex-col gap-3">
             <p className="text-sm text-muted-foreground">Drafted by opencv</p>
             {limit ? (
-              <p role="alert">You've reached today's Free limit.</p>
+              <div role="alert" className="flex flex-col gap-1 text-sm">
+                <p>You've reached today's Free limit.</p>
+                <p>{limit.message}</p>
+                <a
+                  href="/app/settings"
+                  className="text-foreground underline underline-offset-4"
+                >
+                  Upgrade
+                </a>
+              </div>
             ) : null}
             <Textarea
               aria-label="Reply"
@@ -256,7 +281,7 @@ export function InboxReader({
             <div className="flex flex-wrap gap-2">
               <Button
                 variant="ghost"
-                disabled={busy}
+                disabled={busy || limit != null}
                 onClick={() =>
                   run(async () => {
                     const next = await draftReply(detail.id, "another time")
@@ -264,12 +289,14 @@ export function InboxReader({
                       setBody(next.body)
                       setSavedBody(next.body)
                     }
-                    setLimit(false)
+                    setLimit(null)
                     onChanged()
                   })
                 }
               >
-                Suggest another time
+                {limit
+                  ? `Coach is back at ${resetClock(limit.resetsAt, zone)}`
+                  : "Suggest another time"}
               </Button>
               <Button
                 variant={sendGlow ? "glow" : "ghost"}

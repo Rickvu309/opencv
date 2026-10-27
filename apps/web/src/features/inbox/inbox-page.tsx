@@ -5,6 +5,7 @@ import { PageHeader } from "@workspace/ui/components/page-header"
 import { useMediaQuery } from "@workspace/ui/hooks/use-media-query"
 
 import { ApiError } from "@/lib/api.ts"
+import { PROFILE_ZONE } from "@/features/apply/apply-stages.ts"
 
 import { InboxConnect } from "./inbox-connect.tsx"
 import {
@@ -38,6 +39,7 @@ export function InboxPage() {
   const [scanning, setScanning] = useState<ScanProgress | null>(null)
   const [skipping, setSkipping] = useState(false)
   const threads = list.data?.threads ?? []
+  const zone = list.data?.timeZone || PROFILE_ZONE
   const shownId = narrow
     ? openId
     : openId && threads.some((thread) => thread.id === openId)
@@ -128,6 +130,7 @@ export function InboxPage() {
                 threads={threads}
                 openId={shownId}
                 now={now}
+                zone={zone}
                 scanning={false}
                 onOpen={setOpenId}
                 onScan={() => void onScan()}
@@ -142,6 +145,7 @@ export function InboxPage() {
               count={threads.length}
               narrow={narrow}
               now={now}
+              zone={zone}
               onBack={() => setOpenId(null)}
               onPrevious={() => {
                 const previous = threads[index - 1]
