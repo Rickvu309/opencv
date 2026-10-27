@@ -97,7 +97,10 @@ export async function runContractCommand<N extends ContractCommandName>(
 }
 
 /** Undo refreshes everything the reversal may have touched, as the contract says. */
-export function undoActivity(queryClient: QueryClient, activityId: string) {
+export async function undoActivity(
+  queryClient: QueryClient,
+  activityId: string
+) {
   return runContractCommand(queryClient, "activity.undo", {
     activityId: parseActivityId(activityId),
   })

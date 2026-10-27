@@ -1,5 +1,4 @@
 import {
-  ERROR_CODES,
   chatContract,
   parseChatId,
   type ActivityRow,
@@ -7,7 +6,6 @@ import {
 } from "@workspace/domain"
 
 import { bindCommands, tableQuery } from "../registry/bind.js"
-import { CommandError } from "../registry/errors.js"
 import type { Registry } from "../registry/registry.js"
 import {
   appendChatMessage,
@@ -42,12 +40,7 @@ type ActivityDbRow = {
   undoneAt: Date | null
 } & Omit<ActivityRow, "createdAt" | "undoneAt">
 
-function toActivityRow(row: ActivityDbRow | null): ActivityRow {
-  if (!row)
-    throw new CommandError(
-      ERROR_CODES.INTERNAL_ERROR,
-      "Activity row is missing"
-    )
+function toActivityRow(row: ActivityDbRow): ActivityRow {
   return {
     ...row,
     createdAt: row.createdAt.toISOString(),
@@ -105,10 +98,10 @@ export function registerChat(registry: Registry) {
       activity: () => null,
     },
     "actions.approve": {
-      handler: async (input, actor) =>
-        toActivityRow(
-          await registry.approve(actor.userId, input.pendingActionId)
-        ),
+      handler: async (input, actor) => {
+        const row = await registry.approve(actor.userId, input.pendingActionId)
+        return row ? toActivityRow(row) : null
+      },
       reversal: () => null,
       activity: () => null,
     },

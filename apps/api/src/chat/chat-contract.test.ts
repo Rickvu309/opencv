@@ -127,6 +127,56 @@ describe("chat contract", () => {
     await client.close()
   })
 
+  it("approves a confirm-gated delete that writes no activity row", async () => {
+    const { db, client } = await createMigratedTestDb()
+    const registry = installRegistry()
+    const userId = "user-approve-delete"
+    await db.insert(user).values({
+      id: userId,
+      name: "Ada",
+      email: "ada-approve-delete@example.com",
+    })
+    const person = personActor(userId)
+
+    await withDatabase(db, async () => {
+      const chat = (
+        await registry.execute({
+          name: "chat.create",
+          input: { title: "Cleanup" },
+          actor: person,
+        })
+      ).output as { id: string }
+      const job = (
+        await registry.execute({
+          name: "job.create",
+          input: { title: "Associate PM", company: "Northwind" },
+          actor: person,
+        })
+      ).output as { id: string }
+
+      const pending = await registry.execute({
+        name: "job.delete",
+        input: { jobId: job.id },
+        actor: coachActor(userId, chat.id),
+      })
+      if (!pending.pendingActionId) throw new Error("missing pending action")
+      const before = (await registry.read("job.list", {}, person)) as unknown[]
+      expect(before).toHaveLength(1)
+
+      const approved = await registry.execute({
+        name: "actions.approve",
+        input: { pendingActionId: pending.pendingActionId },
+        actor: person,
+      })
+
+      expect(
+        chatContract["actions.approve"].output.safeParse(approved.output)
+      ).toMatchObject({ success: true, data: null })
+      expect(await registry.read("job.list", {}, person)).toHaveLength(0)
+    })
+    await client.close()
+  })
+
   it("keeps the chat reads on the query table", () => {
     expect(QUERY_NAMES).toContain("chat.list")
     expect(QUERY_NAMES).toContain("chat.get")

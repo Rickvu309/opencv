@@ -126,6 +126,8 @@ export const anyWriteChanged = (): QueryRef[] => [
   { query: "paper.list" },
   { query: "paper.get" },
   { query: "paper.files" },
+  { query: "paper.pageCount" },
+  { query: "paper.shared" },
   { query: "inbox.list" },
   { query: "inbox.get" },
   { query: "chat.get" },
@@ -201,7 +203,7 @@ export const chatContract = commandContract({
   "actions.approve": commandEntry({
     description: "Run a pending Coach action.",
     input: actionsApproveInputSchema,
-    output: activityRowSchema,
+    output: activityRowSchema.nullable(),
     coach: "never",
     destructive: false,
     step: () => "Approve",
