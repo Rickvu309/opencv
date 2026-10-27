@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
-  parseJobId,
   parsePaperId,
+  type JobId,
   type JobDetail,
   type JobPriority,
   type JobStage,
@@ -77,11 +77,10 @@ function fieldTarget(target: EventTarget | null) {
   return tag === "INPUT" || tag === "TEXTAREA" || target.isContentEditable
 }
 
-export function ApplyJobDetail({ jobId }: { jobId: string }) {
+export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const run = useRunCommand()
-  const id = parseJobId(jobId)
   const { data: session } = authClient.useSession()
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [step, setStep] = useState("")
@@ -95,8 +94,8 @@ export function ApplyJobDetail({ jobId }: { jobId: string }) {
     queryFn: listJobs,
   })
   const activity = useQuery({
-    queryKey: activityKey(jobId),
-    queryFn: () => listActivity(jobId),
+    queryKey: activityKey(id),
+    queryFn: () => listActivity(id),
   })
 
   useEffect(() => {
@@ -111,7 +110,7 @@ export function ApplyJobDetail({ jobId }: { jobId: string }) {
   }, [])
 
   const ordered = [...(jobs.data ?? [])].sort(compareJobs)
-  const index = ordered.findIndex((job) => job.id === jobId)
+  const index = ordered.findIndex((job) => job.id === id)
   const previous = index > 0 ? ordered[index - 1] : undefined
   const next = index >= 0 ? ordered[index + 1] : undefined
   const job = detail.data

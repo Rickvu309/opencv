@@ -54,7 +54,8 @@ export type CommandResult<T> = T & { activityId?: string }
 export async function runContractCommand<N extends JobCommandName>(
   queryClient: QueryClient,
   name: N,
-  input: CommandInput<JobContract, N>
+  input: CommandInput<JobContract, N>,
+  options: { refresh?: boolean } = {}
 ): Promise<CommandResult<CommandOutput<JobContract, N>>> {
   const body = await apiFetch<
     SuccessBody<CommandResult<CommandOutput<JobContract, N>>>
@@ -62,8 +63,12 @@ export async function runContractCommand<N extends JobCommandName>(
     method: "POST",
     body: JSON.stringify({ input, idempotencyKey: crypto.randomUUID() }),
   })
-  const refs = jobContract[name].invalidates(input as never)
-  void refreshQueries(queryClient, refs)
+  if (options.refresh !== false) {
+    void refreshQueries(
+      queryClient,
+      jobContract[name].invalidates(input as never)
+    )
+  }
   return unwrapData(body)
 }
 
@@ -71,8 +76,11 @@ export async function runContractCommand<N extends JobCommandName>(
 export function useRunCommand() {
   const queryClient = useQueryClient()
   return useCallback(
-    <N extends JobCommandName>(name: N, input: CommandInput<JobContract, N>) =>
-      runContractCommand(queryClient, name, input),
+    <N extends JobCommandName>(
+      name: N,
+      input: CommandInput<JobContract, N>,
+      options?: { refresh?: boolean }
+    ) => runContractCommand(queryClient, name, input, options),
     [queryClient]
   )
 }
