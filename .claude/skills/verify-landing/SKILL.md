@@ -31,7 +31,7 @@ Reading a FAIL: the measured value is what the page does, the rule is what it sh
 
 ## The properties
 
-Ids are the check numbers. The current page is the first-release marketing site. `properties.md` records which checks were kept, which were replaced, and why. Text rules 01 to 08 and 10 to 13 are in `scripts/lib/text-rules.mjs`. Page checks 14 to 28, including 20b, are in `scripts/lib/page-checks.mjs`. Id 09 is judged only.
+Ids are the check numbers. The current page is the first-release marketing site. `properties.md` records which checks were kept, which were replaced, and why. Text rules 01 to 08 and 10 to 13 are in `scripts/lib/text-rules.mjs`. Page checks 14 to 30, including 20b, are in `scripts/lib/page-checks.mjs`. Id 09 is judged only.
 
 - 01 `h1-length-and-aim`: 12 words or fewer; an outcome or audience word. Source: Shapiro litmus test; NN/g 2.2.
 - 02 `statement-names-cv`: a block outside the nav names opencv and CV.
@@ -64,7 +64,7 @@ Ids are the check numbers. The current page is the first-release marketing site.
 - 29 `cta-buttons-match-design`: nav and close button size, type, padding, shadow and border at 1440. Source: opencv.pen. Full rule in `properties.md`.
 - 30 `benefit-art-matches-pen`: Coach benefit art matches `reference/coach-art.png`. Source: opencv.pen node oWS4Z. Crop and tolerance in `properties.md`.
 
-Check 09 (the H1 alone says what is sold) is judged, as J1 below. It is not one of the 28 measured lines. Numbers drawn inside a screenshot (such as a percent on a card) cannot be read from the DOM. Check 12 reads page text, not alt text, and J4 judges the picture.
+Check 09 (the H1 alone says what is sold) is judged, as J1 below. It is not one of the 30 measured lines. Numbers drawn inside a screenshot (such as a percent on a card) cannot be read from the DOM. Check 12 reads page text, not alt text, and J4 judges the picture.
 
 ### Baseline at the sync commit
 

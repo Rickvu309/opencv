@@ -56,9 +56,3 @@ Check 30 compares the live Coach art with that file. The corrected art mismatche
 - 19 lets app logos and customer portraits carry a plain alt; photos of product screens still need a surface name.
 - 07, 08, 24 treat a `/sign-in` link that is not "Log in" as the sign-up link. `/sign-up` in `apps/web/src/router.tsx` redirects to `/sign-in`.
 - Pinned copy now includes `LANDING_PRODUCTS`, `LANDING_STORIES`, and the headline export `LANDING_HEADLINE_LINES`.
-
-## Coach art reference crop (check 30)
-
-`pen-coach-art.png` is 812×778. It is a roughly 2× export of the benefit shot, which is 405×388 (fill about #F4F4F6, radius 16) and centres the 300×300 art node oWS4Z. The art rectangle in shot pixels starts at ((405 − 300) / 2, (388 − 300) / 2) = (52.5, 44). Scaled by 812/405 and 778/388, the crop origin is (105.26, 88.23) and the crop size is (601.48, 601.55). That rectangle was bilinear-resampled to 300×300 and saved as `reference/coach-art.png`.
-
-The corrected Coach art mismatched that crop by 1.05% of pixels (channel delta above 48) on three identical runs. The old centre-rotated art mismatched by 1.47% on three identical runs. The limit is 1.25%, between those two.
