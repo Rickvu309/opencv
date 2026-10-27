@@ -55,7 +55,7 @@ Port = `4000 + (issue# mod 1000)`. Issue 42 gets `4042`; issue 1042 also maps to
 
 The 4000-4999 range avoids common local services (3000 default dev server, 3306 MySQL, 5432 Postgres, 6379 Redis).
 
-`pnpm dev` loads the worktree `.env`. The api listens on `PORT` and the web dev server on `PORT + 1` (4042 and 4043 for issue 42), so the script also skips a port whose `+ 1` is taken. The web's API URL, the api's allowed web origin and its auth URL default from the same `PORT`. Set `VITE_API_URL`, `WEB_ORIGINS` or `AUTH_URL` explicitly to override (Railway does).
+`pnpm dev` loads the worktree `.env`. The api listens on `PORT` and the web dev server on `PORT + 1000` (4042 and 5042 for issue 42). The web's API URL, the api's allowed web origin and its auth URL default from the same `PORT`. Set `VITE_API_URL`, `WEB_ORIGINS` or `AUTH_URL` explicitly to override (Railway does).
 
 ## Clean up after merge
 

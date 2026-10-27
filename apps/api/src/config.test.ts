@@ -177,7 +177,7 @@ describe("coachRuntimeModeFromEnv", () => {
 describe("PORT-derived local defaults", () => {
   it("derives the web origin and auth URL from PORT when unset", () => {
     expect(webOriginsFromEnv({ PORT: "4402" })).toEqual([
-      "http://localhost:4403",
+      "http://localhost:5402",
     ])
     expect(authUrlFromEnv({ PORT: "4402" })).toBe("http://localhost:4402")
     expect(apiPortFromEnv({ PORT: "4402" })).toBe(4402)

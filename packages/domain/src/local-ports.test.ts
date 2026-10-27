@@ -7,9 +7,9 @@ describe("localDevUrls", () => {
   it("puts the web dev server one above the api port", () => {
     assert.deepEqual(localDevUrls("4402"), {
       apiPort: 4402,
-      webPort: 4403,
+      webPort: 5402,
       apiUrl: "http://localhost:4402",
-      webOrigin: "http://localhost:4403",
+      webOrigin: "http://localhost:5402",
     })
   })
 
