@@ -1,9 +1,7 @@
 import { documentHref } from "@/lib/web-origins-env.ts"
 
-import { buttonVariants } from "@workspace/ui/components/button"
-import { cn } from "@workspace/ui/lib/utils"
-
 import "./landing.css"
+import { landingPlanButton } from "./landing-button.ts"
 import {
   PRICING_COMPARE,
   PRICING_DESCRIPTION,
@@ -48,10 +46,7 @@ export function PricingPage() {
               </p>
               <a
                 href={documentHref("/sign-in")}
-                className={cn(
-                  buttonVariants({ variant: "outline", size: "lg" }),
-                  "rounded-full"
-                )}
+                className={landingPlanButton("free")}
               >
                 {PRICING_FREE.cta}
               </a>
@@ -76,7 +71,7 @@ export function PricingPage() {
               </p>
               <a
                 href={documentHref("/sign-in")}
-                className={cn(buttonVariants({ size: "lg" }), "rounded-full")}
+                className={landingPlanButton("pro")}
               >
                 {PRICING_PRO.cta}
               </a>
