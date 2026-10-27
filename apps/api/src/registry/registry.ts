@@ -33,12 +33,28 @@ export type AgentGates = {
   agentEmail: boolean
 }
 
-export function coachToolAllowed(name: string, gates: AgentGates) {
+type CoachRefusal = "never" | "cvs" | "interview" | "email"
+
+const REFUSAL_MESSAGES: Record<CoachRefusal, string> = {
+  never: "The Coach cannot do this",
+  cvs: "Turn on Tailored CVs for the Coach in Settings",
+  interview: "Turn on Interview prep for the Coach in Settings",
+  email: "Turn on Email updates for the Coach in Settings",
+}
+
+/** The one decision on whether a Coach actor may use an entry, for tools, execute, approve and read. */
+export function coachRefusal(
+  entry: { name: string; coach: CoachAccess | boolean },
+  gates: AgentGates
+): CoachRefusal | null {
+  if (entry.coach === "never" || entry.coach === false) return "never"
   // agent_cvs hides paper.replace for letters too. The store still blocks only a CV write.
-  if (name === "paper.replace" && !gates.agentCvs) return false
-  if (CHECKLIST_COMMANDS.has(name) && !gates.agentInterview) return false
-  if (name.startsWith("inbox.") && !gates.agentEmail) return false
-  return true
+  if (entry.name === "paper.replace" && !gates.agentCvs) return "cvs"
+  if (CHECKLIST_COMMANDS.has(entry.name) && !gates.agentInterview) {
+    return "interview"
+  }
+  if (entry.name.startsWith("inbox.") && !gates.agentEmail) return "email"
+  return null
 }
 
 type RanCommand = {
@@ -171,7 +187,6 @@ export class Registry {
         name: command.name,
         coach: command.coach,
         destructive: command.destructive,
-        reversal: command.name.length > 0,
       })),
       queries: [...this.queries.values()].map((query) => ({
         name: query.name,
@@ -191,8 +206,7 @@ export class Registry {
       : null
     const entries: ToolEntry[] = []
     for (const command of this.commands.values()) {
-      if (isCoachActor(branded) && command.coach === "never") continue
-      if (gates && !coachToolAllowed(command.name, gates)) continue
+      if (gates && coachRefusal(command, gates)) continue
       entries.push({
         name: command.name,
         description: command.description,
@@ -204,8 +218,7 @@ export class Registry {
       })
     }
     for (const query of this.queries.values()) {
-      if (isCoachActor(branded) && !query.coach) continue
-      if (gates && !coachToolAllowed(query.name, gates)) continue
+      if (gates && coachRefusal(query, gates)) continue
       entries.push({
         name: query.name,
         description: query.description,
@@ -231,11 +244,14 @@ export class Registry {
       throw new CommandError(ERROR_CODES.UNKNOWN_COMMAND, "Unknown command")
     }
     const actor = brandedActor(options.actor)
-    if (isCoachActor(actor) && command.coach === "never") {
-      throw new CommandError(
-        ERROR_CODES.COACH_NOT_ALLOWED,
-        "The Coach cannot run this command"
-      )
+    if (isCoachActor(actor)) {
+      const refusal = coachRefusal(command, await this.agentGates(actor.userId))
+      if (refusal) {
+        throw new CommandError(
+          ERROR_CODES.COACH_NOT_ALLOWED,
+          REFUSAL_MESSAGES[refusal]
+        )
+      }
     }
     const parsed = parseInput(command.input, options.input)
 
@@ -348,11 +364,14 @@ export class Registry {
       throw new CommandError(ERROR_CODES.UNKNOWN_COMMAND, "Unknown query")
     }
     const branded = brandedActor(actor)
-    if (isCoachActor(branded) && !query.coach) {
-      throw new CommandError(
-        ERROR_CODES.COACH_NOT_ALLOWED,
-        "The Coach cannot read this"
-      )
+    if (isCoachActor(branded)) {
+      const refusal = coachRefusal(query, await this.agentGates(branded.userId))
+      if (refusal) {
+        throw new CommandError(
+          ERROR_CODES.COACH_NOT_ALLOWED,
+          REFUSAL_MESSAGES[refusal]
+        )
+      }
     }
     return query.read(input, branded)
   }
@@ -426,15 +445,19 @@ export class Registry {
           "This action was already undone."
         )
       }
-      if (row.reversalCommand) {
-        await this.execute({
-          name: row.reversalCommand,
-          input: row.reversalInput,
-          actor: personActor(userId),
-          idempotencyKey: `undo:${row.id}`,
-          skipConfirm: true,
-        })
+      if (!row.reversalCommand) {
+        throw new CommandError(
+          ERROR_CODES.CONFLICT,
+          "This action cannot be undone."
+        )
       }
+      await this.execute({
+        name: row.reversalCommand,
+        input: row.reversalInput,
+        actor: personActor(userId),
+        idempotencyKey: `undo:${row.id}`,
+        skipConfirm: true,
+      })
       const undoneAt = new Date()
       await getDb()
         .update(activity)
@@ -454,7 +477,10 @@ export class Registry {
       .from(user)
       .where(eq(user.id, userId))
       .limit(1)
-    return rows[0] ?? { agentCvs: true, agentInterview: true, agentEmail: true }
+    // No user row means no consent to read, so every gated entry stays closed.
+    return (
+      rows[0] ?? { agentCvs: false, agentInterview: false, agentEmail: false }
+    )
   }
 
   private async expireIfStale(userId: string, id: string) {
