@@ -87,7 +87,7 @@ main_checkout=$tmp/repo
 git clone -q "$origin" "$main_checkout"
 quiet_repo "$main_checkout"
 cp "$script" "$main_checkout/scripts/review-pr.sh"
-mkdir -p "$main_checkout/scripts/lib" && cp "$here/lib/result.sh" "$main_checkout/scripts/lib/result.sh"
+mkdir -p "$main_checkout/scripts/lib" && cp "$here/lib/result.sh" "$here/lib/conflict-report.sh" "$main_checkout/scripts/lib/"
 export REVIEW_TEST_RUNS=$tmp/runs
 : >"$REVIEW_TEST_RUNS"
 
@@ -247,10 +247,12 @@ expect "empty net diff" 0 "patch id none" "RESULT: OK"
 echo change >"$work/other.txt"; touch "$work/FAIL_CHECK"; git -C "$work" add -A && git -C "$work" commit -q -m "change again" && git -C "$work" push -q -f origin "$REVIEW_TEST_BRANCH:refs/pull/1/head"
 git -C "$work" checkout -q main
 echo conflict-main >"$work/other.txt"
-git -C "$work" add -A && git -C "$work" commit -q -m "conflicts with the PR" && git -C "$work" push -q origin main
+git -C "$work" add -A && git -C "$work" commit -q -m "feat: change other.txt, which the PR also changes (#41)" && git -C "$work" push -q origin main
+conflict_sha=$(git -C "$work" rev-parse HEAD)
 run --no-install
 expect "merge conflict" 1 "does not merge cleanly with main; author must rebase" "resolve: other.txt" "RESULT: FAIL"
-result status=fail cause=merge-conflict 'files=["other.txt"]' 'next=git fetch origin && git rebase origin/main'
+result status=fail cause=merge-conflict 'files=["other.txt"]' 'next=git fetch origin && git rebase origin/main' "blockedBy={\"pr\":41,\"commit\":\"$conflict_sha\",\"files\":[\"other.txt\"]}"
+expect "conflict report names the commit on main" 1 "other.txt: changed on main in ${conflict_sha:0:9} \"feat: change other.txt, which the PR also changes (#41)\" (PR #41)" "git fetch origin && git rebase origin/main && heavy -- git push --force-with-lease"
 want_runs "conflict" 14
 
 if git -C "$main_checkout" worktree list | grep -q review-pr-; then fail "cleanup" "review worktree left behind"; fi

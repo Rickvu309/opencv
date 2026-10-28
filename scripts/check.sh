@@ -204,9 +204,13 @@ if (( changed_mode )); then
             echo "==> scripts/test-pre-commit.sh"
             run scripts/test-pre-commit.sh || failed+=(pre-commit-tests)
           fi
-          if has_changed scripts/review-pr.sh scripts/test-review-pr.sh scripts/codeowners-lib.sh scripts/lib/result.sh; then
+          if has_changed scripts/review-pr.sh scripts/test-review-pr.sh scripts/codeowners-lib.sh scripts/lib/result.sh scripts/lib/conflict-report.sh; then
             echo "==> scripts/test-review-pr.sh"
             run scripts/test-review-pr.sh || failed+=(review-pr-tests)
+          fi
+          if has_changed scripts/lib/conflict-report.sh scripts/test-conflict-report.sh; then
+            echo "==> scripts/test-conflict-report.sh"
+            run scripts/test-conflict-report.sh || failed+=(conflict-report-tests)
           fi
           if has_changed scripts/lib/disk.sh scripts/test-disk-preflight.sh; then
             echo "==> scripts/test-disk-preflight.sh"
@@ -247,7 +251,7 @@ else
   done
 
   if [[ " ${tasks[*]} " == *" test "* ]]; then
-    for t in test-commit-msg test-pre-commit test-codeowners test-new-task test-review-pr test-merge-pr test-result test-disk-preflight; do
+    for t in test-commit-msg test-pre-commit test-codeowners test-new-task test-review-pr test-merge-pr test-result test-disk-preflight test-conflict-report; do
       echo "==> scripts/$t.sh"
       run "scripts/$t.sh" || failed+=("$t")
     done

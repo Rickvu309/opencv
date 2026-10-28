@@ -22,6 +22,8 @@ set -euo pipefail
 
 # shellcheck source=scripts/lib/result.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib/result.sh"
+# shellcheck source=scripts/lib/conflict-report.sh
+. "$(dirname "${BASH_SOURCE[0]}")/lib/conflict-report.sh"
 result_begin review-pr
 
 BRANCH_RE='^(feat|fix|hotfix|refactor|chore|docs)/([0-9]+)-[a-z0-9]+(-[a-z0-9]+)*$'
@@ -261,10 +263,9 @@ if (( merge_rc == 0 )); then
   fi
 elif (( merge_rc == 1 )); then
   mapfile -t conflict_files < <(tail -n +2 <<<"$merge_out" | sed '/^$/d')
-  conflicts=${conflict_files[*]}
+  conflicts=${conflict_files[*]-}
   bad "does not merge cleanly with main; author must rebase (git rebase origin/main) and resolve: ${conflicts:-see git merge origin/main}"
-  result_file ${conflict_files[@]+"${conflict_files[@]}"}
-  result_fail merge-conflict "does not merge cleanly with main: ${conflicts:-unknown files}" "git fetch origin && git rebase origin/main"
+  conflict_report "$main_checkout" "$merge_base" origin/main "$branch" ${conflict_files[@]+"${conflict_files[@]}"}
 else
   merge_err=$(git -C "$main_checkout" --attr-source=origin/main merge-tree --write-tree --name-only --no-messages origin/main "$head_ref" 2>&1 >/dev/null | head -3 | tr '\n' ' ' || true)
   bad "merge with main failed (git merge-tree exit $merge_rc): ${merge_err:-no message}"
