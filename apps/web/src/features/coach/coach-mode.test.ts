@@ -26,20 +26,28 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-async function chooseMode(label: "Free" | "Light" | "Power") {
+async function chooseMode(label: "Free" | "Light" | "Max") {
   const group = await screen.findByRole("radiogroup", { name: "Coach mode" })
-  fireEvent.click(within(group).getByRole("radio", { name: label }))
+  fireEvent.click(
+    within(group).getByRole("radio", {
+      name: label === "Free" ? label : `${label} · Pro`,
+    })
+  )
 }
 
 function expectChecked(group: HTMLElement, label: string) {
-  expect(within(group).getByRole("radio", { name: label })).toBeChecked()
+  expect(
+    within(group).getByRole("radio", {
+      name: label === "Free" ? label : `${label} · Pro`,
+    })
+  ).toBeChecked()
 }
 
 describe("coach mode copy", () => {
   it("labels the three modes and stays honest about Free", () => {
     expect(coachModeLabel("free")).toBe("Free")
     expect(coachModeLabel("light")).toBe("Light")
-    expect(coachModeLabel("max")).toBe("Power")
+    expect(coachModeLabel("max")).toBe("Max")
     expect(coachModeHelper("free")).toMatch(/free models/)
     expect(coachModeHelper("free")).toMatch(/change between turns/)
     expect(coachModeHelper("free")).not.toMatch(/unlimited/i)
@@ -48,7 +56,7 @@ describe("coach mode copy", () => {
 })
 
 describe("Home dock mode control", () => {
-  it("shows Free, Light, Power in order as one radiogroup in the dock", async () => {
+  it("shows Free, Light, Max in order as one radiogroup in the dock", async () => {
     renderApp(HOME_PATH)
 
     const group = await screen.findByRole("radiogroup", { name: "Coach mode" })
@@ -56,12 +64,12 @@ describe("Home dock mode control", () => {
       within(group)
         .getAllByRole("radio")
         .map((radio) => radio.textContent)
-    ).toEqual(["Free", "Light", "Power"])
+    ).toEqual([expect.stringMatching(/^Free/), "Light · Pro", "Max · Pro"])
     expectChecked(group, "Free")
     expect(screen.queryByRole("menuitem")).not.toBeInTheDocument()
   })
 
-  it("selects Free, Light, and Power and stores Power as max", async () => {
+  it("selects Free, Light, and Max and stores Max as max", async () => {
     setMockPlan("pro")
     renderApp(HOME_PATH)
 
@@ -74,11 +82,11 @@ describe("Home dock mode control", () => {
       expect(getMockCoachMode()).toBe("light")
     })
 
-    await chooseMode("Power")
+    await chooseMode("Max")
     await waitFor(() => {
       expectChecked(
         screen.getByRole("radiogroup", { name: "Coach mode" }),
-        "Power"
+        "Max"
       )
       expect(getMockCoachMode()).toBe("max")
     })
@@ -97,9 +105,12 @@ describe("Home dock mode control", () => {
     await waitFor(() => {
       expect(getMockCoachMode()).toBe("light")
     })
-    fireEvent.keyDown(within(group).getByRole("radio", { name: "Light" }), {
-      key: "ArrowRight",
-    })
+    fireEvent.keyDown(
+      within(group).getByRole("radio", { name: "Light · Pro" }),
+      {
+        key: "ArrowRight",
+      }
+    )
     await waitFor(() => {
       expect(getMockCoachMode()).toBe("max")
     })

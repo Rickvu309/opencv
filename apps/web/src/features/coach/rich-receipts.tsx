@@ -40,9 +40,21 @@ export function DiffBlock({ detail }: { detail: UpdateContentDetail }) {
         <Badge variant="outline">{PAPER_KIND_LABEL[detail.docKind]}</Badge>
         <span className="inline-flex items-center gap-1">
           <FileText className="size-3" aria-hidden />
-          {detail.docName}
+          {detail.docId ? (
+            <a
+              className="underline underline-offset-2"
+              href={`/app/paper/${detail.docId}`}
+            >
+              {detail.docName} · Open
+            </a>
+          ) : (
+            detail.docName
+          )}
         </span>
       </div>
+      <p className="text-xs text-muted-foreground">
+        {changed} change{changed === 1 ? "" : "s"}
+      </p>
       {hunks.map((hunk) => (
         <CodeBlock key={`${hunk.sectionId}-${hunk.section}`} size="sm">
           <CodeBlockHeader>
@@ -145,7 +157,16 @@ function CreateDocBody({
       <Badge variant="secondary">{statusLabel}</Badge>
       <span className="inline-flex items-center gap-1">
         <FilePlus className="size-3" aria-hidden />
-        {detail.name}
+        {detail.docId ? (
+          <a
+            className="underline underline-offset-2"
+            href={`/app/paper/${detail.docId}`}
+          >
+            {detail.name}
+          </a>
+        ) : (
+          detail.name
+        )}
       </span>
     </div>
   )

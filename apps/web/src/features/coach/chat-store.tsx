@@ -28,6 +28,7 @@ export function ChatStoreProvider({ children }: { children: ReactNode }) {
   const {
     messages,
     phase,
+    step,
     error,
     send,
     stop,
@@ -63,10 +64,11 @@ export function ChatStoreProvider({ children }: { children: ReactNode }) {
 
   const openChat = useCallback(
     (id: string) => {
+      if (id === activeChatId) return
       cancelInFlight()
       setActiveChatId(id)
     },
-    [cancelInFlight]
+    [activeChatId, cancelInFlight]
   )
 
   const value = useMemo(
@@ -75,6 +77,7 @@ export function ChatStoreProvider({ children }: { children: ReactNode }) {
       activeChatId,
       messages,
       phase,
+      step,
       error,
       send,
       stop,
@@ -90,6 +93,7 @@ export function ChatStoreProvider({ children }: { children: ReactNode }) {
       activeChatId,
       messages,
       phase,
+      step,
       error,
       send,
       stop,

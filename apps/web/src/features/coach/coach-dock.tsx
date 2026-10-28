@@ -1,6 +1,16 @@
 import { useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
-import { ArrowUp, Paperclip, Plug, Plus, Square, X } from "lucide-react"
+import {
+  ArrowUp,
+  Paperclip,
+  Plug,
+  Plus,
+  Square,
+  X,
+  Briefcase,
+  Link,
+} from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -12,6 +22,7 @@ import {
 import { InputGroupButton } from "@workspace/ui/components/input-group"
 import { SegmentedControl } from "@workspace/ui/components/segmented-control"
 
+import { fetchUsage, usageKey } from "@/lib/account-api.ts"
 import { PromptInput } from "@/components/ai-elements/prompt-input.tsx"
 import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
 import { COACH_MODE_OPTIONS } from "@/features/coach/coach-mode.ts"
@@ -20,6 +31,8 @@ import { settingsSectionHref } from "@/features/settings/sections.ts"
 
 const DOCK_MENU = [
   { id: "attach", label: "Attach from Paper", icon: Paperclip },
+  { id: "job", label: "Attach from Apply", icon: Briefcase },
+  { id: "link", label: "Paste a link", icon: Link },
   { id: "connector", label: "Add connector", icon: Plug },
 ] as const
 
@@ -27,7 +40,7 @@ type MenuId = (typeof DOCK_MENU)[number]["id"]
 
 const MODE_SEGMENTS = COACH_MODE_OPTIONS.map(({ id, label }) => ({
   value: id,
-  label,
+  label: id === "free" ? label : `${label} · Pro`,
 }))
 
 type Props = {
@@ -41,6 +54,9 @@ type Props = {
   showModePicker?: boolean
   /** Paper CoachFloat: attach the open doc. Home still routes to Paper. */
   onAttachFromPaper?: () => void
+  onAttachJob?: () => void
+  onAttachLink?: () => void
+  disabled?: boolean
 }
 
 export function CoachDock({
@@ -53,14 +69,23 @@ export function CoachDock({
   menuPlacement = "below",
   showModePicker = true,
   onAttachFromPaper,
+  onAttachJob,
+  onAttachLink,
+  disabled = false,
 }: Props) {
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
-  const { mode, setMode } = useCoachMode()
-  const canSend = draft.trim().length > 0
+  const { mode, setMode, plan } = useCoachMode()
+  const usage = useQuery({ queryKey: usageKey(), queryFn: fetchUsage })
+  const canSend = draft.trim().length > 0 && !disabled
 
   function handleMenuAction(id: MenuId) {
     setMenuOpen(false)
+    if (id === "job") {
+      if (onAttachJob) onAttachJob()
+      else void navigate({ to: SURFACE_PATHS.apply })
+    }
+    if (id === "link") onAttachLink?.()
     if (id === "connector") {
       void navigate({ href: settingsSectionHref("integrations") })
     }
@@ -93,18 +118,20 @@ export function CoachDock({
           sideOffset={8}
           className="w-56 min-w-56"
         >
-          {DOCK_MENU.map((item) => {
-            const Icon = item.icon
-            return (
-              <DropdownMenuItem
-                key={item.id}
-                onClick={() => handleMenuAction(item.id)}
-              >
-                <Icon className="size-4 shrink-0 text-muted-foreground" />
-                {item.label}
-              </DropdownMenuItem>
-            )
-          })}
+          {DOCK_MENU.filter((item) => item.id !== "link" || onAttachLink).map(
+            (item) => {
+              const Icon = item.icon
+              return (
+                <DropdownMenuItem
+                  key={item.id}
+                  onClick={() => handleMenuAction(item.id)}
+                >
+                  <Icon className="size-4 shrink-0 text-muted-foreground" />
+                  {item.label}
+                </DropdownMenuItem>
+              )
+            }
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
       {showModePicker ? (
@@ -113,9 +140,22 @@ export function CoachDock({
           kind="radio"
           variant="tray"
           size="md"
-          options={MODE_SEGMENTS}
+          options={MODE_SEGMENTS.map((option) => ({
+            ...option,
+            ariaLabel: option.label,
+            count:
+              usage.data?.mode === option.value && usage.data.day.capped
+                ? usage.data.day.remaining
+                : undefined,
+          }))}
           value={mode}
-          onChange={setMode}
+          onChange={(next) => {
+            if (next !== "free" && plan !== "pro") {
+              void navigate({ href: "/app/settings/billing/upgrade" })
+              return
+            }
+            setMode(next)
+          }}
         />
       ) : null}
     </>
@@ -156,7 +196,8 @@ export function CoachDock({
       value={draft}
       onValueChange={setDraft}
       onSubmit={onSend}
-      submitBlocked={turnActive}
+      submitBlocked={turnActive || disabled}
+      disabled={disabled}
       placeholder={placeholder}
       label="Message Coach"
       tools={tools}

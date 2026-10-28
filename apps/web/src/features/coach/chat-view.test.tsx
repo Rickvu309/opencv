@@ -61,7 +61,7 @@ describe("ChatView thinking state", () => {
     render(createElement(ChatView, { messages: [], waiting: true }))
 
     const chat = screen.getByRole("log", { name: "Chat" })
-    expect(within(chat).getByRole("status")).toHaveTextContent("Thinking")
+    expect(within(chat).getByRole("status")).toHaveTextContent("Working, 0s")
     expect(screen.queryByText("Thinking…")).not.toBeInTheDocument()
   })
 

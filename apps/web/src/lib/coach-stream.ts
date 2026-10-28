@@ -8,7 +8,7 @@ import {
 
 import { apiStream } from "@/lib/api.ts"
 import { ApiError } from "@/lib/api-error.ts"
-import { refreshQueries } from "@/lib/contract-client.ts"
+import { refreshReads, refreshQueries } from "@/lib/contract-client.ts"
 import { readSseStream } from "@/lib/sse.ts"
 
 function isCommandName(name: string): name is keyof typeof commands {
@@ -63,6 +63,8 @@ export async function streamChatTurn(input: {
     const event = parseChatTurnEvent(wire)
     if (!event) continue
     refresh(event)
+    if (event.type === "usage")
+      void refreshReads(input.queryClient, [{ query: "coach.usage" }])
     input.onEvent(event)
   }
 }
