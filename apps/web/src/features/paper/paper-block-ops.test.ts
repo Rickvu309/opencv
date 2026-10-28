@@ -3,13 +3,11 @@ import {
   emptyCvDocument,
   type CvBlock,
   type CvBlockDocument,
+  type CvSectionKind,
 } from "@workspace/domain"
 
-import {
-  deleteBlock,
-  dropBlock,
-  readEditorDocument,
-} from "./paper-block-ops.ts"
+import { dropBlock } from "./paper-block-drop.ts"
+import { deleteBlock, readEditorDocument } from "./paper-block-ops.ts"
 
 const document: CvBlockDocument = {
   version: 2,
@@ -113,7 +111,9 @@ describe("drop on a section heading", () => {
       "section-skills",
     ]) {
       const dropped = dropBlock(next, "exp-b", `section:${sectionId}`)
-      expect(dropped).not.toBe(next)
+      // exp-b is already last under Experience, so that drop does not commit.
+      if (sectionId === "section-experience") expect(dropped).toBe(next)
+      else expect(dropped).not.toBe(next)
       commits.push(dropped)
       next = dropped
     }
@@ -191,5 +191,130 @@ describe("drop on a section heading", () => {
       next.sections.find((section) => section.id === "section-experience")
         ?.blocks
     ).toEqual([expA])
+  })
+})
+
+const sectionKinds = [
+  "summary",
+  "experience",
+  "education",
+  "skills",
+  "projects",
+  "activities",
+  "awards",
+  "languages",
+] as const satisfies readonly CvSectionKind[]
+
+const keeperKinds = ["experience", "education", "skills"] as const
+
+function textBlock(id: string, text: string): CvBlock {
+  return { id, type: "text", text }
+}
+
+function sectionDocument(
+  sections: CvBlockDocument["sections"]
+): CvBlockDocument {
+  return { version: 2, header, sections }
+}
+
+describe("drop on every section kind", () => {
+  it.each(sectionKinds)("appends onto a non-empty %s section", (kind) => {
+    const sourceKind = kind === "experience" ? "projects" : "experience"
+    const source = sectionDocument([
+      {
+        id: "section-source",
+        kind: sourceKind,
+        blocks: [expB],
+      },
+      {
+        id: `section-${kind}`,
+        kind,
+        blocks: [textBlock(`stay-${kind}`, "Stay")],
+      },
+    ])
+    const next = dropBlock(source, "exp-b", `section:section-${kind}`)
+    expect(
+      next.sections
+        .find((section) => section.kind === kind)
+        ?.blocks.map((block) => block.id)
+    ).toEqual([`stay-${kind}`, "exp-b"])
+    const leftover = next.sections.find(
+      (section) => section.id === "section-source"
+    )
+    if (sourceKind === "experience") {
+      expect(leftover?.blocks).toEqual([])
+    } else {
+      expect(leftover).toBeUndefined()
+    }
+  })
+
+  it.each(keeperKinds)(
+    "keeps the starter when a block drops onto an empty %s heading",
+    (kind) => {
+      const source = sectionDocument([
+        { id: "section-projects", kind: "projects", blocks: [expB] },
+        { id: `section-${kind}`, kind, blocks: [] },
+      ])
+      const next = dropBlock(source, "exp-b", `section:section-${kind}`)
+      const target = next.sections.find((section) => section.kind === kind)
+      const starter =
+        kind === "skills"
+          ? {
+              id: `draft-section-${kind}`,
+              type: "skills-group" as const,
+              label: "",
+              items: [],
+            }
+          : kind === "education"
+            ? {
+                id: `draft-section-${kind}`,
+                type: "education-entry" as const,
+                school: "",
+                degree: "",
+                period: "",
+                detail: "",
+              }
+            : {
+                id: `draft-section-${kind}`,
+                type: "experience-entry" as const,
+                role: "",
+                company: "",
+                period: "",
+                bullets: [],
+              }
+      expect(target?.blocks).toEqual([starter, expB])
+      expect(
+        next.sections.find((section) => section.kind === "projects")
+      ).toBeUndefined()
+      const onStarter = dropBlock(source, "exp-b", `draft-section-${kind}`)
+      expect(onStarter.sections).toEqual(next.sections)
+    }
+  )
+
+  it.each(sectionKinds)(
+    "keeps a one-block %s section dropped onto its own heading",
+    (kind) => {
+      const block = textBlock(`only-${kind}`, "Only")
+      const source = sectionDocument([
+        { id: `section-${kind}`, kind, blocks: [block] },
+      ])
+      const next = dropBlock(source, block.id, `section:section-${kind}`)
+      expect(next).toBe(source)
+    }
+  )
+
+  it("moves an earlier block to the end of its own section", () => {
+    const source = sectionDocument([
+      {
+        id: "section-projects",
+        kind: "projects",
+        blocks: [textBlock("a", "A"), textBlock("b", "B")],
+      },
+    ])
+    const next = dropBlock(source, "a", "section:section-projects")
+    expect(next.sections[0]?.blocks.map((block) => block.id)).toEqual([
+      "b",
+      "a",
+    ])
   })
 })

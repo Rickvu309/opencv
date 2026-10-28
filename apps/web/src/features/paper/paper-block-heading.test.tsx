@@ -159,4 +159,60 @@ describe("drop on a section heading", () => {
       )
     ).toEqual([["exp-a"], ["edu-1", "exp-b"], ["skill-1"]])
   })
+
+  it("appends when the pointer is inside the heading and the block center is over the first entry", async () => {
+    // Handle at the top of exp-b (top 200, height 120). Releasing at y=112
+    // sits inside the Education heading (100–124). The dragged rect's center
+    // lands on the State entry (center 172), which closestCenter would pick.
+    HTMLElement.prototype.getBoundingClientRect = function () {
+      const id = this.getAttribute("data-sortable-block")
+      const kind = this.parentElement?.getAttribute("data-section")
+      if (id === "exp-b") return box(200, 120)
+      if (id === "edu-1") return box(140, 64)
+      if (id === "exp-a") return box(0, 36)
+      if (id === "skill-1") return box(420, 36)
+      if (this.tagName === "H2" && kind === "education") return box(100, 24)
+      if (this.tagName === "H2" && kind === "experience") return box(0, 20)
+      if (this.tagName === "H2" && kind === "skills") return box(400, 20)
+      return box(9000, 1, 1)
+    }
+    const bodies: {
+      input?: {
+        document?: { sections?: { id: string; blocks?: { id: string }[] }[] }
+      }
+    }[] = []
+    vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      if (url.includes("/api/commands/paper.replace")) {
+        bodies.push(JSON.parse(String(init?.body)) as (typeof bodies)[number])
+        return Promise.resolve(ok({ ...record, contentVersion: 2 }))
+      }
+      return Promise.resolve(ok({}))
+    })
+    render(
+      <PaperCvEditor initial={record} pages={pages} onBack={() => undefined} />
+    )
+    const handle = screen.getAllByRole("button", { name: "Block menu" })[1]!
+    await act(async () => {
+      fireEvent.mouseDown(handle, { button: 0, clientX: 20, clientY: 200 })
+    })
+    await act(async () => {
+      fireEvent.mouseMove(document, { button: 0, clientX: 20, clientY: 188 })
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+    await act(async () => {
+      fireEvent.mouseMove(document, { button: 0, clientX: 20, clientY: 112 })
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+    await act(async () => {
+      fireEvent.mouseUp(document, { button: 0, clientX: 20, clientY: 112 })
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+    expect(bodies).toHaveLength(1)
+    expect(
+      bodies[0]?.input?.document?.sections?.map((section) =>
+        section.blocks?.map((block) => block.id)
+      )
+    ).toEqual([["exp-a"], ["edu-1", "exp-b"], ["skill-1"]])
+  })
 })

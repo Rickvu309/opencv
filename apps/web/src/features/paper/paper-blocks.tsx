@@ -5,9 +5,11 @@ import {
   MouseSensor,
   TouchSensor,
   closestCenter,
+  pointerWithin,
   useDroppable,
   useSensor,
   useSensors,
+  type CollisionDetection,
   type DragEndEvent,
 } from "@dnd-kit/core"
 import {
@@ -29,7 +31,6 @@ import { SortableBlock } from "./paper-sortable-block.tsx"
 import {
   blockFromPlain,
   deleteBlock,
-  dropBlock,
   duplicateBlock,
   editorSections,
   insertSection,
@@ -41,6 +42,17 @@ import {
   replaceBlock,
   starterBlock,
 } from "./paper-block-ops.ts"
+import { dropBlock } from "./paper-block-drop.ts"
+
+// The handle sits on top of a tall block, so the block center can sit on the
+// first entry while the pointer is still inside the heading. Prefer that heading.
+export const headingPointerCollision: CollisionDetection = (args) => {
+  const heading = pointerWithin(args).find((collision) =>
+    String(collision.id).startsWith("section:")
+  )
+  if (heading) return [heading]
+  return closestCenter(args)
+}
 
 const SECTION_LABEL: Record<CvSectionKind, string> = {
   summary: "Summary",
@@ -151,7 +163,7 @@ export function PaperBlocks({
         />
         <DndContext
           sensors={sensors}
-          collisionDetection={closestCenter}
+          collisionDetection={headingPointerCollision}
           onDragEnd={onDragEnd}
         >
           {sections.map((section) => (
