@@ -2,6 +2,7 @@
 import { readdirSync, readFileSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
+import ts from "typescript"
 import { describe, expect, it } from "vitest"
 
 import manifest from "./design-frames.json"
@@ -92,8 +93,6 @@ const snapshots = all.filter((file) =>
   /\.(snapshot|layout)\.(json|ts)$/.test(path.basename(file))
 )
 
-const IMPORT = /^\s*import\s(?:[^;]*?\sfrom\s*)?["']([^"']+)["']/gm
-
 function resolveImport(testFile: string, specifier: string): string | null {
   if (specifier.startsWith("@/")) return path.join(srcDir, specifier.slice(2))
   if (specifier.startsWith("."))
@@ -105,10 +104,12 @@ const imported = new Set(
   all
     .filter((file) => /\.test\.tsx?$/.test(file))
     .flatMap((file) =>
-      [...readFileSync(file, "utf8").matchAll(IMPORT)].flatMap((match) => {
-        const target = resolveImport(file, match[1] ?? "")
-        return target ? [target, `${target}.ts`, `${target}.json`] : []
-      })
+      ts
+        .preProcessFile(readFileSync(file, "utf8"), true, true)
+        .importedFiles.flatMap(({ fileName }) => {
+          const target = resolveImport(file, fileName)
+          return target ? [target, `${target}.ts`, `${target}.json`] : []
+        })
     )
 )
 
