@@ -1,4 +1,4 @@
-// Typechecked by `tsc --noEmit` only. Every expect-error directive below must keep erroring.
+// Typechecked by the api typecheck script. Every expect-error directive below must keep erroring.
 import {
   commandEntry,
   commands,

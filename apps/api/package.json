@@ -11,7 +11,7 @@
     "seed": "node dist/seed.js",
     "db:generate": "drizzle-kit generate",
     "db:seed": "tsx --conditions=opencv-source src/seed.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.build.json --noEmit",
     "test": "vitest run",
     "test:formal": "vitest run --config vitest.formal.config.ts",
     "lint": "eslint",
