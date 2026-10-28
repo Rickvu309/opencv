@@ -1,0 +1,130 @@
+#!/usr/bin/env bash
+# Runs scripts/merge-pr.sh with a stub gh and a stub review command, so no network is needed. The stub gh records
+# every call in $MP_LOG; cases assert on the exit code, the output and which calls were recorded.
+set -euo pipefail
+
+here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+script=$here/merge-pr.sh
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+
+mkdir "$tmp/bin"
+cat >"$tmp/bin/gh" <<'STUB'
+#!/usr/bin/env bash
+echo "$*" >>"$MP_LOG"
+case "$1 $2" in
+  "api user") echo "$MP_ME" ;;
+  "repo view") echo "owner/repo" ;;
+  "pr diff") printf '%s\n' $MP_FILES ;;
+  "pr merge" | "api repos/owner/repo/statuses/"*) ;;
+  "pr view")
+    case "$*" in
+      *"--json author"*) jq -r "${@: -1}" <<<"{\"author\":{\"login\":\"$MP_AUTHOR\"}}" ;;
+      *"--json comments,reviews"*) jq -r "${@: -1}" <<<"$MP_EVIDENCE" ;;
+      *"--json mergeCommit"*) jq -r "${@: -1}" <<<'{"mergeCommit":{"oid":"cafe0000cafe0000cafe0000cafe0000cafe0000"}}' ;;
+      *) echo "stub gh: unexpected: $*" >&2; exit 1 ;;
+    esac ;;
+  *) echo "stub gh: unexpected: $*" >&2; exit 1 ;;
+esac
+STUB
+cat >"$tmp/review" <<'STUB'
+#!/usr/bin/env bash
+echo "review-pr: working on $1"
+printf '%s\n' "$MP_REVIEW_OUT"
+exit "$MP_REVIEW_RC"
+STUB
+chmod +x "$tmp/bin/gh" "$tmp/review"
+export PATH=$tmp/bin:$PATH MP_LOG=$tmp/gh.log MERGE_PR_REVIEW_CMD=$tmp/review
+
+patch=0123456789abcdef0123456789abcdef01234567
+old=ffffffffffffffffffffffffffffffffffffffff
+head=abcdef0123456789abcdef0123456789abcdef01
+ok_line="RESULT: OK (patch id $patch, main 1234567890ab). Check the verify-opencv evidence, then: gh pr merge 5 --squash --match-head-commit $head"
+evidence() { jq -nc --arg c "$1" '{comments:[{body:$c}],reviews:[]}'; }
+full="review-pr.sh: OK (patch id $patch, main 1234567890ab). Independent review: sol-loop, approved. verify-opencv: PASS"
+review_only="review-pr.sh: OK (patch id $patch, main 1234567890ab). Independent review: sol-loop, approved."
+
+reset() {
+  : >"$MP_LOG"
+  export MP_ME=owner MP_AUTHOR=owner MP_REVIEW_RC=0 MP_REVIEW_OUT=$ok_line MP_FILES="scripts/x.sh docs/y.md"
+  MP_EVIDENCE=$(evidence "$full"); export MP_EVIDENCE
+}
+run() {
+  set +e
+  "$script" 5 "$@" >"$tmp/out" 2>"$tmp/err"
+  code=$?
+  set -e
+}
+fail() { printf 'FAIL %s: %s\n' "$1" "$2" >&2; cat "$tmp/out" "$tmp/err" "$MP_LOG" >&2; exit 1; }
+expect() {
+  local name=$1 want=$2; shift 2
+  [[ "$code" -eq "$want" ]] || fail "$name" "exit $code, want $want"
+  local needle
+  cat "$tmp/out" "$tmp/err" >"$tmp/all"
+  for needle in "$@"; do grep -F -q -- "$needle" "$tmp/all" || fail "$name" "output missing: $needle"; done
+  printf 'ok: %s (exit %s)\n' "$name" "$code"
+}
+called() { grep -F -q -- "$2" "$MP_LOG" || fail "$1" "gh was not called with: $2"; }
+never() { grep -F -q -- "$2" "$MP_LOG" && fail "$1" "gh was called with: $2"; return 0; }
+no_writes() { never "$1" "api repos/"; never "$1" "pr merge"; }
+
+reset
+run
+expect "ok path merges" 0 "merged PR #5 as cafe0000cafe0000cafe0000cafe0000cafe0000" "node scripts/verify-deploy.mjs --commit cafe0000cafe0000cafe0000cafe0000cafe0000"
+called "ok path" "api repos/owner/repo/statuses/$head -f state=success -f context=gates/review-pr -f description=OK patch ${patch:0:12} main 1234567890ab"
+called "ok path" "pr merge 5 --squash --admin --match-head-commit $head"
+status_line=$(grep -n 'statuses/' "$MP_LOG" | head -1 | cut -d: -f1); merge_line=$(grep -n 'pr merge' "$MP_LOG" | head -1 | cut -d: -f1)
+(( status_line < merge_line )) || fail "ok path" "status was not posted before the merge"
+
+reset; MP_REVIEW_RC=1 MP_REVIEW_OUT="RESULT: FAIL (2). Request changes" run
+expect "review FAIL exits 1" 1 "did not pass"
+no_writes "review FAIL"
+
+reset; MP_REVIEW_RC=1 MP_REVIEW_OUT="" run
+expect "review error without a RESULT line exits 1" 1 "did not pass"
+no_writes "review error"
+
+reset; MP_REVIEW_RC=2 MP_REVIEW_OUT="RESULT: HUMAN REQUIRED. Do NOT merge." run
+expect "HUMAN REQUIRED exits 2" 2 "do not merge"
+no_writes "HUMAN"
+
+reset; MP_REVIEW_OUT="no result here" run
+expect "exit 0 without an OK line refuses" 1 "without a RESULT: OK line"
+no_writes "no OK line"
+
+reset; MP_EVIDENCE=$(evidence "review-pr.sh: OK (patch id $old, main 1234567890ab). Independent review: sol-loop, approved. verify-opencv: PASS") run
+expect "stale patch id refuses and names the current id" 1 "$patch"
+no_writes "stale"
+
+reset; MP_EVIDENCE=$(evidence "looks good, patch id $patch") run
+expect "no independent review refuses" 1 "Independent review"
+no_writes "no independent review"
+
+reset; MP_EVIDENCE=$(evidence "$review_only") MP_FILES="docs/y.md scripts/x.sh" run
+expect "verify evidence is not needed without apps/" 0 "merged PR #5"
+
+reset; MP_EVIDENCE=$(evidence "$review_only") MP_FILES="docs/y.md apps/web/src/a.tsx" run
+expect "missing verify evidence refuses when apps/ changed" 1 "'verify'"
+no_writes "missing verify"
+
+reset; MP_EVIDENCE=$(jq -nc --arg a "$review_only" --arg b "verify-opencv PASS for patch id $patch" '{comments:[{body:$a}],reviews:[{body:$b}]}') MP_FILES="apps/web/src/a.tsx" run
+expect "evidence may come from a comment and a review" 0 "merged PR #5"
+
+reset; MP_AUTHOR=contributor run
+expect "non-author refuses" 1 "contributor" "never merged with --admin"
+never "non-author" "api repos/"; never "non-author" "pr merge"
+[[ ! -s "$tmp/out" ]] || ! grep -q 'review-pr: working' "$tmp/out" || fail "non-author" "the review ran before the author check"
+
+reset
+run --dry-run
+expect "dry run passes and prints the commands" 0 "dry run, nothing changed" "context=gates/review-pr" "pr merge 5 --squash --admin --match-head-commit $head"
+no_writes "dry run"
+
+reset; MP_AUTHOR=contributor run --dry-run
+expect "dry run still refuses a non-author" 1 "contributor"
+
+reset
+run --nope
+expect "unknown option" 1 "unknown option"
+
+echo "all merge-pr cases passed"
