@@ -56,13 +56,20 @@ async function visit(route, width) {
           titleSize: parseFloat(getComputedStyle(document.querySelector('h1')).fontSize),
           planWidth: Math.max(...plans.map(p => p.getBoundingClientRect().right)) - Math.min(...plans.map(p => p.getBoundingClientRect().left)),
           buttons: plans.map(p => { const a = p.querySelector('a'); return { height: a.getBoundingClientRect().height, width: a.getBoundingClientRect().width, href: a.getAttribute('href') } }),
-          headingSizes: [...document.querySelectorAll('#included-title, #compare-title, #pricing-faq-title')].map(h => parseFloat(getComputedStyle(h).fontSize)),
+          headingSizes: [...document.querySelectorAll('#included-title, #compare-title, #faq-title')].map(h => parseFloat(getComputedStyle(h).fontSize)),
           table: table?.textContent,
+          tableWidth: table?.getBoundingClientRect().width,
+          compareWidth: table?.parentElement.clientWidth,
+          valueWidth: table?.querySelector("thead th:nth-child(2)").getBoundingClientRect().width,
           checks: table?.querySelectorAll('svg').length,
           proBackground: plans[1] ? getComputedStyle(plans[1]).backgroundImage : null
         }
       })()`)
       assert.equal(metrics.buttons.length, 2, "Two pricing plans")
+      assert(
+        metrics.tableWidth <= metrics.compareWidth + 1,
+        "All comparison columns fit on screen"
+      )
       for (const button of metrics.buttons) {
         assert.equal(button.height, 44, "Plan buttons match the 44px design")
         assert(button.href.endsWith("/sign-in"), "Plan CTA reaches sign in")
@@ -88,7 +95,11 @@ async function visit(route, width) {
         )
         assert.equal(metrics.titleSize, 56, "Pricing title has its own scale")
         assert(
-          metrics.headingSizes.length >= 2 &&
+          Math.abs(metrics.valueWidth - 180) < 1,
+          "Desktop comparison values keep their 180px columns"
+        )
+        assert(
+          metrics.headingSizes.length === 3 &&
             metrics.headingSizes.every((size) => size === 24),
           "Pricing section titles are 24px"
         )
