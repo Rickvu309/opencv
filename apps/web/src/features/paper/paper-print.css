@@ -42,18 +42,47 @@
     max-width: 210mm;
   }
 
+  /* Flex and grid columns do not fragment in Chromium, so a long main
+     column was clipped. A float keeps the sidebar on the first page and
+     lets the rest flow. */
   body[data-print="paper"] [data-paper-print] .cv-template-root--product {
-    flex-direction: row;
+    display: block !important;
   }
 
   body[data-print="paper"] [data-paper-print] .cv-template-product-sidebar {
+    float: left;
     width: 32%;
   }
 
+  body[data-print="paper"] [data-paper-print] .cv-template-product-main {
+    margin-left: 32%;
+    overflow: visible;
+  }
+
+  /* paper.css avoids breaks inside every section. A section taller than
+     one page is then clipped instead of continued. */
+  body[data-print="paper"] [data-paper-print] .cv-template-root section,
+  body[data-print="paper"] [data-paper-print] .cv-template-product-main section,
+  body[data-print="paper"]
+    [data-paper-print]
+    .cv-template-product-sidebar
+    > div,
   body[data-print="paper"] [data-paper-print] .cv-print-entry,
   body[data-print="paper"]
     [data-paper-print]
-    [data-paper-section^="experience-"],
+    [data-paper-section^="experience-"] {
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  /* A flex list item does not split, so one long bullet jumped to the next page. */
+  body[data-print="paper"] [data-paper-print] li {
+    display: block;
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  body[data-print="paper"] [data-paper-print] .cv-print-entry-head,
   body[data-print="paper"]
     [data-paper-print]
     [data-paper-section^="education-"],
