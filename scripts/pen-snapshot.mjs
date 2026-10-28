@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Write a stable JSON snapshot of one frame in a .pen file.
-//   node scripts/pen-snapshot.mjs [--pricing] <pen file> <frame id> <out.json|out.ts> [--assets <dir>] [--root <node id>]
+//   node scripts/pen-snapshot.mjs [--pricing] <pen file> <frame id> <out.json|out.ts> [--assets <dir>] [--root <node id>] [--styles]
 // Sections are the frame's direct children, in order. With --root, they are
 // the direct children of the resolved descendant with that id instead, and
 // source.root records it. Each section's texts
@@ -13,6 +13,9 @@
 // (shader, image, mesh_gradient, and anything else that is not a plain color).
 // With --assets, each recorded shader is copied from <pen dir>/<url> into
 // <dir>/<file name>, so the app's shader file is generated from the pen.
+// --styles writes <name>.styles.json beside <name>.snapshot.json for any
+// frame; its marks also count icon nodes, since app screens draw stage and
+// view icons.
 // When out.json is named landing.snapshot.json, the same run also writes
 // landing.styles.json beside it: each text's content and the fields the pen
 // sets, plus inline marks (a non-text child at most 64px on both sides, with
@@ -27,8 +30,13 @@ const positional = []
 let assetsDir = null
 let pricing = false
 let rootId = null
+let stylesFlag = false
 for (let index = 0; index < args.length; index += 1) {
   const arg = args[index]
+  if (arg === "--styles") {
+    stylesFlag = true
+    continue
+  }
   if (arg === "--pricing") {
     pricing = true
     continue
@@ -98,7 +106,8 @@ function applyDescendants(root, descendants) {
   indexNodes(root, map)
   for (const [id, override] of Object.entries(descendants)) {
     if (!override || typeof override !== "object") continue
-    const target = map.get(id)
+    // A key such as "jsloS/Oydaa" is a path; its last id names the target.
+    const target = map.get(id.split("/").pop())
     if (!target) continue
     const { children, ...rest } = override
     Object.assign(target, rest)
@@ -181,6 +190,16 @@ function resolveFill(fill) {
   return `#${match[1].toUpperCase()}`
 }
 
+function resolveNumber(value) {
+  let current = value
+  for (let hop = 0; hop < 4; hop++) {
+    if (typeof current !== "string" || !current.startsWith("$")) break
+    const entry = doc.variables?.[current.slice(1)]
+    current = entry && typeof entry === "object" ? entry.value : entry
+  }
+  return typeof current === "number" ? current : null
+}
+
 function isVerticalFrame(node) {
   return node?.type === "frame" && node.layout === "vertical"
 }
@@ -216,12 +235,10 @@ function collectStyleTexts(node, texts, ancestors) {
       const entry = {
         content,
         fill: resolveFill(node.fill),
-        fontSize: typeof node.fontSize === "number" ? node.fontSize : null,
-        lineHeight:
-          typeof node.lineHeight === "number" ? node.lineHeight : null,
+        fontSize: resolveNumber(node.fontSize),
+        lineHeight: resolveNumber(node.lineHeight),
         fontWeight: node.fontWeight == null ? null : String(node.fontWeight),
-        letterSpacing:
-          typeof node.letterSpacing === "number" ? node.letterSpacing : null,
+        letterSpacing: resolveNumber(node.letterSpacing),
       }
       if (textStartsLine(node, ancestors)) entry.startsLine = true
       texts.push(entry)
@@ -235,7 +252,7 @@ function collectStyleTexts(node, texts, ancestors) {
 
 // A mark is the small symbol that sits in a line of text: Nav, Statement, Footer.
 // Spacer frames and empty icon boxes have no children, so they are not marks.
-function collectMarks(node, marks) {
+function collectMarks(node, marks, icons) {
   const children = node?.children
   if (!Array.isArray(children)) return
   const besideText =
@@ -243,6 +260,9 @@ function collectMarks(node, marks) {
   for (const child of children) {
     const width = child?.width
     const height = child?.height
+    const drawn =
+      (Array.isArray(child?.children) && child.children.length > 0) ||
+      (icons && child?.type === "icon")
     if (
       besideText &&
       child?.type !== "text" &&
@@ -250,8 +270,7 @@ function collectMarks(node, marks) {
       typeof height === "number" &&
       width <= 64 &&
       height <= 64 &&
-      Array.isArray(child.children) &&
-      child.children.length > 0
+      drawn
     ) {
       marks.push({
         id: typeof child.id === "string" ? child.id : "",
@@ -260,7 +279,7 @@ function collectMarks(node, marks) {
         height,
       })
     }
-    collectMarks(child, marks)
+    collectMarks(child, marks, icons)
   }
 }
 
@@ -353,14 +372,15 @@ writeFileSync(
   })
 )
 
-if (path.basename(outFile) === "landing.snapshot.json") {
+const landing = path.basename(outFile) === "landing.snapshot.json"
+if (landing || stylesFlag) {
   const styleSections = (
-    Array.isArray(frame.children) ? frame.children : []
+    Array.isArray(sectionRoot.children) ? sectionRoot.children : []
   ).map((child) => {
     const texts = []
     const marks = []
     collectStyleTexts(child, texts, [])
-    collectMarks(child, marks)
+    collectMarks(child, marks, !landing)
     return {
       id: typeof child.id === "string" ? child.id : "",
       name: typeof child.name === "string" ? child.name : "",
@@ -368,12 +388,19 @@ if (path.basename(outFile) === "landing.snapshot.json") {
       marks,
     }
   })
-  const stylesFile = path.join(path.dirname(outFile), "landing.styles.json")
+  const stylesFile = landing
+    ? path.join(path.dirname(outFile), "landing.styles.json")
+    : outFile.replace(/(\.snapshot)?\.json$/, ".styles.json")
   const stylesOptions = (await prettier.resolveConfig(stylesFile)) ?? options
   writeFileSync(
     stylesFile,
     await prettier.format(
-      JSON.stringify({ source: sourceOf(requested), sections: styleSections }),
+      JSON.stringify({
+        source: rootId
+          ? { ...sourceOf(requested), root: rootId }
+          : sourceOf(requested),
+        sections: styleSections,
+      }),
       { ...stylesOptions, filepath: stylesFile }
     )
   )

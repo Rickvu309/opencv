@@ -1,0 +1,63 @@
+{
+  "source": {
+    "file": "design/opencv.pen",
+    "branch": "chore/350-design-kit-cli-skills",
+    "frameId": "D8PoQ6",
+    "frameName": "W9.1 Board empty",
+    "root": "GIhbq"
+  },
+  "sections": [
+    {
+      "id": "NjM6o",
+      "name": "Header",
+      "texts": ["Apply", "New job"],
+      "fills": []
+    },
+    {
+      "id": "cf4o4",
+      "name": "Toolbar",
+      "texts": ["Board", "List", "Calendar"],
+      "fills": []
+    },
+    {
+      "id": "Eh0Xi",
+      "name": "Board",
+      "texts": [
+        "Track your first job",
+        "Add the jobs you're applying to.",
+        "Add job",
+        "N"
+      ],
+      "fills": [
+        {
+          "type": "mesh_gradient",
+          "enabled": true,
+          "columns": 3,
+          "rows": 3,
+          "colors": [
+            "#EAEFFA",
+            "#D6DFF6",
+            "#E7E3F9",
+            "#D0DAF5",
+            "#BCCAF1",
+            "#DCD6F6",
+            "#E6EBF9",
+            "#CED9F4",
+            "#E9E5F9"
+          ],
+          "points": [
+            [0, 0],
+            [0.5, 0],
+            [1, 0],
+            [0, 0.5],
+            [0.55, 0.6],
+            [1, 0.5],
+            [0, 1],
+            [0.5, 1],
+            [1, 1]
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,413 @@
+{
+  "source": {
+    "file": "design/opencv.pen",
+    "branch": "chore/350-design-kit-cli-skills",
+    "frameId": "f0rS0",
+    "frameName": "W9.4 List",
+    "root": "GIhbq"
+  },
+  "sections": [
+    {
+      "id": "lTrUa",
+      "name": "Header",
+      "texts": [
+        {
+          "content": "Apply",
+          "fill": "#2F2F31",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "New job",
+          "fill": "#1A1A1A",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        }
+      ],
+      "marks": [{ "id": "rEU5m", "name": "Icon", "width": 14, "height": 14 }]
+    },
+    {
+      "id": "l1bsJG",
+      "name": "Toolbar",
+      "texts": [
+        {
+          "content": "Board",
+          "fill": "#59595B",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "List",
+          "fill": "#1A1A1A",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Calendar",
+          "fill": "#59595B",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        }
+      ],
+      "marks": [
+        { "id": "P5oD1T", "name": "Icon", "width": 13, "height": 13 },
+        { "id": "YRe5f", "name": "Icon", "width": 13, "height": 13 },
+        { "id": "FOOvb", "name": "Icon", "width": 13, "height": 13 }
+      ]
+    },
+    {
+      "id": "UaqUt",
+      "name": "List",
+      "texts": [
+        {
+          "content": "Saved",
+          "fill": "#1A1A1A",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null
+        },
+        {
+          "content": "2",
+          "fill": "#969799",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null
+        },
+        {
+          "content": "Junior Marketing",
+          "fill": "#1A1A1A",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Lumière Cosmetics",
+          "fill": "#969799",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Saved today",
+          "fill": "#969799",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Oct 25",
+          "fill": "#969799",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "UX research intern",
+          "fill": "#1A1A1A",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Agency",
+          "fill": "#969799",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Apply by Nov 8",
+          "fill": "#969799",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Oct 22",
+          "fill": "#969799",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Applied",
+          "fill": "#1A1A1A",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "2",
+          "fill": "#969799",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Business analyst intern",
+          "fill": "#1A1A1A",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Regional bank",
+          "fill": "#969799",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Applied Oct 14",
+          "fill": "#969799",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Oct 14",
+          "fill": "#969799",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Marketing intern",
+          "fill": "#1A1A1A",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "E-commerce co.",
+          "fill": "#969799",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Applied Oct 21",
+          "fill": "#969799",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Oct 21",
+          "fill": "#969799",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Interview",
+          "fill": "#1A1A1A",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "2",
+          "fill": "#969799",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Associate PM intern",
+          "fill": "#1A1A1A",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Local startup",
+          "fill": "#969799",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Interview Thu, 10:00",
+          "fill": "#1A1A1A",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Oct 12",
+          "fill": "#969799",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Product analyst intern",
+          "fill": "#1A1A1A",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "E-commerce co.",
+          "fill": "#969799",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Round 2 on Nov 3",
+          "fill": "#969799",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Oct 2",
+          "fill": "#969799",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Offer",
+          "fill": "#1A1A1A",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "0",
+          "fill": "#969799",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Closed",
+          "fill": "#1A1A1A",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "1",
+          "fill": "#969799",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        }
+      ],
+      "marks": [
+        { "id": "GPo46", "name": "Caret", "width": 12, "height": 12 },
+        { "id": "Cfj4F", "name": "OC Stage Saved", "width": 14, "height": 14 },
+        { "id": "DZpvR", "name": "Logo", "width": 20, "height": 20 },
+        { "id": "DZpvR", "name": "Logo", "width": 20, "height": 20 },
+        { "id": "GPo46", "name": "Caret", "width": 12, "height": 12 },
+        {
+          "id": "anzDA",
+          "name": "OC Stage Applied",
+          "width": 14,
+          "height": 14
+        },
+        { "id": "DZpvR", "name": "Logo", "width": 20, "height": 20 },
+        { "id": "DZpvR", "name": "Logo", "width": 20, "height": 20 },
+        { "id": "GPo46", "name": "Caret", "width": 12, "height": 12 },
+        {
+          "id": "Q6oOZa",
+          "name": "OC Stage Interview",
+          "width": 14,
+          "height": 14
+        },
+        { "id": "DZpvR", "name": "Logo", "width": 20, "height": 20 },
+        { "id": "ZSRwr", "name": "Icon", "width": 12, "height": 12 },
+        { "id": "DZpvR", "name": "Logo", "width": 20, "height": 20 },
+        { "id": "GPo46", "name": "Caret", "width": 12, "height": 12 },
+        { "id": "RKlNn", "name": "OC Stage Offer", "width": 14, "height": 14 },
+        { "id": "GPo46", "name": "Caret", "width": 12, "height": 12 },
+        { "id": "mIjuF", "name": "OC Stage Closed", "width": 14, "height": 14 }
+      ]
+    }
+  ]
+}

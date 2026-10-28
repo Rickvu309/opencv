@@ -1,33 +1,32 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate, useRouterState } from "@tanstack/react-router"
 import type { JobView } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyTitle,
-} from "@workspace/ui/components/empty"
-import { Input } from "@workspace/ui/components/input"
-import { Label } from "@workspace/ui/components/label"
-import { PageHeader } from "@workspace/ui/components/page-header"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@workspace/ui/components/popover"
 
 import { ApplyBoard } from "@/features/apply/apply-board.tsx"
+import {
+  ApplyEmpty,
+  ApplyNoResults,
+} from "@/features/apply/apply-board-empty.tsx"
 import { ApplyCalendar } from "@/features/apply/apply-calendar.tsx"
 import { ApplyList } from "@/features/apply/apply-list.tsx"
 import { jobListKey, listJobs } from "@/features/apply/apply-api.ts"
 import { NewJobDialog } from "@/features/apply/apply-new-job-dialog.tsx"
-import type { ApplySpan, ApplyView } from "@/features/apply/apply-search.ts"
+import {
+  activeFilterCount,
+  type ApplyFilters,
+  type ApplySpan,
+  type ApplyView,
+} from "@/features/apply/apply-search.ts"
+import {
+  ActiveFilters,
+  ApplyHeader,
+  ApplyToolbar,
+} from "@/features/apply/apply-toolbar.tsx"
 
-function matches(job: JobView, company: string, location: string) {
+function matches(job: JobView, { company, location }: ApplyFilters) {
   const companyNeedle = company.trim().toLowerCase()
   const locationNeedle = location.trim().toLowerCase()
   if (companyNeedle && !job.company.toLowerCase().includes(companyNeedle)) {
@@ -42,6 +41,14 @@ function matches(job: JobView, company: string, location: string) {
   return true
 }
 
+function typingIn(target: EventTarget | null) {
+  return (
+    target instanceof HTMLElement &&
+    (target.isContentEditable ||
+      ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))
+  )
+}
+
 export function ApplyPage() {
   const navigate = useNavigate()
   const search = useRouterState({
@@ -54,14 +61,14 @@ export function ApplyPage() {
     queryKey: jobListKey(),
     queryFn: listJobs,
   })
-  const [company, setCompany] = useState("")
-  const [location, setLocation] = useState("")
+  const [filters, setFilters] = useState<ApplyFilters>({
+    company: "",
+    location: "",
+  })
   const [dialogOpen, setDialogOpen] = useState(false)
   const [showClosed, setShowClosed] = useState(false)
-  const filtering = company.trim() !== "" || location.trim() !== ""
-  const filtered = (jobs.data ?? []).filter((job) =>
-    matches(job, company, location)
-  )
+  const filtering = activeFilterCount(filters) > 0
+  const filtered = (jobs.data ?? []).filter((job) => matches(job, filters))
   const empty =
     !jobs.isLoading &&
     !jobs.isError &&
@@ -69,7 +76,20 @@ export function ApplyPage() {
     !filtering
   const noMatch =
     !jobs.isLoading && !jobs.isError && filtering && filtered.length === 0
-  const headerGlow = !dialogOpen && !empty
+  const ready = !jobs.isLoading && !jobs.isError && !empty && !noMatch
+
+  useEffect(() => {
+    if (dialogOpen) return
+    function onKey(event: KeyboardEvent) {
+      if (event.key !== "n" || event.defaultPrevented) return
+      if (event.metaKey || event.ctrlKey || event.altKey) return
+      if (typingIn(event.target)) return
+      event.preventDefault()
+      setDialogOpen(true)
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [dialogOpen])
 
   function setView(next: ApplyView) {
     void navigate({
@@ -84,79 +104,23 @@ export function ApplyPage() {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <PageHeader title="Apply">
-        <Button
-          type="button"
-          variant={headerGlow ? "glow" : "ghost"}
-          onClick={() => setDialogOpen(true)}
-        >
-          New job
-        </Button>
-      </PageHeader>
-      <div className="flex flex-wrap items-center gap-2 px-5 py-2">
-        <Button
-          type="button"
-          variant="ghost"
-          aria-pressed={view === "board"}
-          onClick={() => setView("board")}
-        >
-          Board
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          aria-pressed={view === "list"}
-          onClick={() => setView("list")}
-        >
-          List
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          aria-pressed={view === "calendar"}
-          onClick={() => setView("calendar")}
-        >
-          Calendar
-        </Button>
-        <Popover>
-          <PopoverTrigger render={<Button type="button" variant="ghost" />}>
-            Filter
-          </PopoverTrigger>
-          <PopoverContent className="flex flex-col gap-2">
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="filter-company">Company</Label>
-              <Input
-                id="filter-company"
-                value={company}
-                onChange={(event) => setCompany(event.target.value)}
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="filter-location">Location</Label>
-              <Input
-                id="filter-location"
-                value={location}
-                onChange={(event) => setLocation(event.target.value)}
-              />
-            </div>
-          </PopoverContent>
-        </Popover>
-        {!empty ? (
-          <Button
-            type="button"
-            variant="ghost"
-            aria-expanded={showClosed}
-            onClick={() => setShowClosed((open) => !open)}
-          >
-            Hidden columns
-          </Button>
+    <div className="flex h-full min-h-0 flex-col bg-card">
+      <ApplyHeader onNewJob={() => setDialogOpen(true)} />
+      <ApplyToolbar
+        view={view}
+        onView={setView}
+        filters={filters}
+        onFilters={setFilters}
+      />
+      <ActiveFilters filters={filters} onFilters={setFilters} />
+      <div className="flex min-h-0 flex-1 flex-col overflow-auto">
+        {jobs.isLoading ? (
+          <p role="status" className="px-5 text-sm">
+            Loading jobs
+          </p>
         ) : null}
-      </div>
-      <div className="flex min-h-0 flex-1 flex-col overflow-auto px-5 pb-4">
-        {jobs.isLoading ? <p role="status">Loading jobs</p> : null}
         {jobs.isError ? (
-          <div>
+          <div className="px-5">
             <p>Could not load jobs. Refresh the page.</p>
             <Button type="button" onClick={() => void jobs.refetch()}>
               Refresh
@@ -164,70 +128,31 @@ export function ApplyPage() {
           </div>
         ) : null}
         {empty ? (
-          <Empty>
-            <EmptyHeader>
-              <EmptyTitle>
-                <h2>Track your first job</h2>
-              </EmptyTitle>
-              <EmptyDescription>
-                Add the jobs you're applying to.
-              </EmptyDescription>
-            </EmptyHeader>
-            <EmptyContent>
-              <Button
-                type="button"
-                variant={dialogOpen ? "ghost" : "glow"}
-                onClick={() => setDialogOpen(true)}
-              >
-                Add job
-              </Button>
-            </EmptyContent>
-          </Empty>
+          <ApplyEmpty
+            dialogOpen={dialogOpen}
+            onAdd={() => setDialogOpen(true)}
+          />
         ) : null}
         {noMatch ? (
-          <Empty>
-            <EmptyHeader>
-              <EmptyTitle>
-                No jobs match these filters. Try removing one.
-              </EmptyTitle>
-            </EmptyHeader>
-            <EmptyContent>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => {
-                  setCompany("")
-                  setLocation("")
-                }}
-              >
-                Clear filters
-              </Button>
-            </EmptyContent>
-          </Empty>
+          <ApplyNoResults
+            onClear={() => setFilters({ company: "", location: "" })}
+          />
         ) : null}
-        {!jobs.isLoading &&
-        !jobs.isError &&
-        !empty &&
-        !noMatch &&
-        view === "board" ? (
-          <ApplyBoard jobs={filtered} showClosed={showClosed} />
+        {ready && view === "board" ? (
+          <ApplyBoard
+            jobs={filtered}
+            showClosed={showClosed}
+            onShowClosed={setShowClosed}
+          />
         ) : null}
-        {!jobs.isLoading &&
-        !jobs.isError &&
-        !empty &&
-        !noMatch &&
-        view === "list" ? (
-          <ApplyList jobs={filtered} showClosed={showClosed} />
+        {ready && view === "list" ? (
+          <ApplyList jobs={filtered} showClosed />
         ) : null}
-        {!jobs.isLoading &&
-        !jobs.isError &&
-        !empty &&
-        !noMatch &&
-        view === "calendar" ? (
+        {ready && view === "calendar" ? (
           <ApplyCalendar
             span={span}
-            company={company}
-            location={location}
+            company={filters.company}
+            location={filters.location}
             showClosed={showClosed}
             onSpan={(next) =>
               void navigate({

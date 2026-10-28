@@ -1,0 +1,191 @@
+{
+  "source": {
+    "file": "design/opencv.pen",
+    "branch": "chore/350-design-kit-cli-skills",
+    "frameId": "tNZ73",
+    "frameName": "W10.2 Company missing",
+    "root": "GMCMY"
+  },
+  "sections": [
+    {
+      "id": "tHSV6",
+      "name": "Top",
+      "texts": [
+        {
+          "content": "Apply",
+          "fill": "#59595B",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "New job",
+          "fill": "#59595B",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        }
+      ],
+      "marks": [
+        { "id": "P9wGB", "name": "Icon", "width": 13, "height": 13 },
+        { "id": "l6qxP", "name": "Icon", "width": 12, "height": 12 },
+        { "id": "y9aGRQ", "name": "Close", "width": 28, "height": 28 }
+      ]
+    },
+    { "id": "l0pak", "name": "Gap", "texts": [], "marks": [] },
+    {
+      "id": "s0Ie0K",
+      "name": "Job link",
+      "texts": [
+        {
+          "content": "topcv.vn/viec-lam/junior-marketing-lumiere",
+          "fill": "#1A1A1A",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        }
+      ],
+      "marks": [
+        { "id": "uw0lw", "name": "Icon", "width": 14, "height": 14 },
+        { "id": "vG3UT", "name": "Clear", "width": 24, "height": 24 }
+      ]
+    },
+    { "id": "Z8mRxo", "name": "Gap", "texts": [], "marks": [] },
+    {
+      "id": "cDCWZ",
+      "name": "Role",
+      "texts": [
+        {
+          "content": "Junior Marketing",
+          "fill": "#1A1A1A",
+          "fontSize": 20,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": -0.3
+        }
+      ],
+      "marks": []
+    },
+    { "id": "sy2C7", "name": "Gap", "texts": [], "marks": [] },
+    {
+      "id": "gGasa",
+      "name": "Company",
+      "texts": [
+        {
+          "content": "Company",
+          "fill": "#A0A0A2",
+          "fontSize": 15,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null
+        }
+      ],
+      "marks": []
+    },
+    {
+      "id": "KpyzS",
+      "name": "Hint",
+      "texts": [
+        {
+          "content": "Add the company name to save this job.",
+          "fill": "#1A1A1A",
+          "fontSize": 12.5,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        }
+      ],
+      "marks": [{ "id": "k43aD", "name": "Icon", "width": 13, "height": 13 }]
+    },
+    { "id": "S0MsL", "name": "Gap", "texts": [], "marks": [] },
+    {
+      "id": "eKHa9",
+      "name": "Description",
+      "texts": [
+        {
+          "content": "Plan and run social campaigns for three skincare brands. Write short posts and TikTok scripts, and report weekly reach.",
+          "fill": "#59595B",
+          "fontSize": 14,
+          "lineHeight": 1.55,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        }
+      ],
+      "marks": []
+    },
+    { "id": "pYYIv", "name": "Gap", "texts": [], "marks": [] },
+    {
+      "id": "nv24A",
+      "name": "Properties",
+      "texts": [
+        {
+          "content": "Saved",
+          "fill": "#1A1A1A",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Nov 15",
+          "fill": "#1A1A1A",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        }
+      ],
+      "marks": [
+        { "id": "Cfj4F", "name": "OC Stage Saved", "width": 14, "height": 14 },
+        { "id": "f7cMk", "name": "Icon", "width": 13, "height": 13 }
+      ]
+    },
+    { "id": "VJMXa", "name": "Gap", "texts": [], "marks": [] },
+    { "id": "b1pkY", "name": "Divider", "texts": [], "marks": [] },
+    { "id": "tnrBq", "name": "Gap", "texts": [], "marks": [] },
+    {
+      "id": "zV59f",
+      "name": "Footer",
+      "texts": [
+        {
+          "content": "Cancel",
+          "fill": "#59595B",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Add job",
+          "fill": "#1B1B1F",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "↵",
+          "fill": "#1B1B1F",
+          "fontSize": 11,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        }
+      ],
+      "marks": []
+    }
+  ]
+}

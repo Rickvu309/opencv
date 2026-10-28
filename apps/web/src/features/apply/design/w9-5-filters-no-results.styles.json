@@ -1,0 +1,167 @@
+{
+  "source": {
+    "file": "design/opencv.pen",
+    "branch": "chore/350-design-kit-cli-skills",
+    "frameId": "NsAiG",
+    "frameName": "W9.5 Filters no results",
+    "root": "GIhbq"
+  },
+  "sections": [
+    {
+      "id": "S9hmop",
+      "name": "Header",
+      "texts": [
+        {
+          "content": "Apply",
+          "fill": "#2F2F31",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "New job",
+          "fill": "#1A1A1A",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        }
+      ],
+      "marks": [{ "id": "hRuOU", "name": "Icon", "width": 14, "height": 14 }]
+    },
+    {
+      "id": "W30zHe",
+      "name": "Toolbar",
+      "texts": [
+        {
+          "content": "Board",
+          "fill": "#1A1A1A",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "List",
+          "fill": "#59595B",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Calendar",
+          "fill": "#59595B",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "2",
+          "fill": "#1A1A1A",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        }
+      ],
+      "marks": [
+        { "id": "knTCS", "name": "Icon", "width": 13, "height": 13 },
+        { "id": "m03Fv", "name": "Icon", "width": 13, "height": 13 },
+        { "id": "A8NnW", "name": "Icon", "width": 13, "height": 13 },
+        { "id": "JV8An", "name": "Icon", "width": 14, "height": 14 }
+      ]
+    },
+    {
+      "id": "WDvCb",
+      "name": "Active filters",
+      "texts": [
+        {
+          "content": "Company",
+          "fill": "#969799",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Regional bank",
+          "fill": "#1A1A1A",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Location",
+          "fill": "#969799",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Hanoi",
+          "fill": "#1A1A1A",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        }
+      ],
+      "marks": [
+        { "id": "XnYu5", "name": "Remove", "width": 18, "height": 18 },
+        { "id": "jTm71", "name": "Remove", "width": 18, "height": 18 }
+      ]
+    },
+    {
+      "id": "CzM18",
+      "name": "Board",
+      "texts": [
+        {
+          "content": "No jobs match these filters",
+          "fill": "#1A1A1A",
+          "fontSize": 15,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Try removing one.",
+          "fill": "#59595B",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Clear filters",
+          "fill": "#1A1A1A",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        }
+      ],
+      "marks": [
+        { "id": "MuCDq", "name": "Tile", "width": 44, "height": 44 },
+        { "id": "r17WxE", "name": "Icon", "width": 13, "height": 13 }
+      ]
+    }
+  ]
+}

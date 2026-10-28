@@ -1,32 +1,34 @@
 import { useRef, useState } from "react"
 import { useNavigate } from "@tanstack/react-router"
 import { parseJobId, type JobPreview, type JobStage } from "@workspace/domain"
+import {
+  ChevronRight,
+  ClipboardPaste,
+  Kanban,
+  Link as LinkIcon,
+  X,
+} from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogTitle,
 } from "@workspace/ui/components/dialog"
 import { Input } from "@workspace/ui/components/input"
-import { Label } from "@workspace/ui/components/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@workspace/ui/components/select"
+import { Kbd } from "@workspace/ui/components/kbd"
 import { Textarea } from "@workspace/ui/components/textarea"
 import { toast } from "@workspace/ui/components/sonner"
 
 import { ApiError } from "@/lib/api-error.ts"
 import { useRunCommand } from "@/lib/contract-client.ts"
 
-import { previewJob } from "./apply-api.ts"
-import { ALL_STAGES, stageLabel } from "./apply-stages.ts"
-import { CompanyTile } from "./apply-parts.tsx"
+import { previewJob, useApplyCards } from "./apply-api.ts"
+import { ALL_STAGES } from "./apply-stages.ts"
+import { AlreadyTracked, Hint } from "./apply-new-job-parts.tsx"
+import { NewJobProperties } from "./apply-new-job-properties.tsx"
 
 const COMPANY_REQUIRED = "Add the company name to save this job."
 const TITLE_REQUIRED = "Add the role title to save this job."
@@ -59,6 +61,18 @@ function asStage(value: string | undefined): JobStage | null {
     : null
 }
 
+function fullUrl(value: string) {
+  const url = value.trim()
+  return /^https?:\/\//i.test(url) ? url : `https://${url}`
+}
+
+function shownUrl(value: string) {
+  return value.replace(/^https:\/\//i, "")
+}
+
+const INLINE_FIELD =
+  "h-auto rounded-none border-0 bg-transparent p-0 shadow-none focus-visible:border-0 focus-visible:ring-0 aria-invalid:border-0 aria-invalid:ring-0 dark:bg-transparent"
+
 export function NewJobDialog({
   open,
   onOpenChange,
@@ -68,6 +82,8 @@ export function NewJobDialog({
 }) {
   const navigate = useNavigate()
   const run = useRunCommand()
+  const { cards } = useApplyCards()
+  const titleRef = useRef<HTMLInputElement>(null)
   const companyRef = useRef<HTMLInputElement>(null)
   const linkRef = useRef<HTMLInputElement>(null)
   const [draft, setDraft] = useState<Draft>(EMPTY)
@@ -112,7 +128,17 @@ export function NewJobDialog({
   }
 
   async function onPaste() {
-    await runPreview({ url: linkRef.current?.value ?? draft.url })
+    const url = await navigator.clipboard
+      .readText()
+      .then((text) => text.trim())
+      .catch(() => null)
+    if (url === null) {
+      linkRef.current?.focus()
+      return
+    }
+    if (!url) return
+    patch({ url: shownUrl(url) })
+    await runPreview({ url: fullUrl(url) })
   }
 
   function duplicateJob() {
@@ -122,17 +148,12 @@ export function NewJobDialog({
   async function save(anyway = false) {
     const title = draft.title.trim()
     const company = draft.company.trim()
-    if (!title) {
-      setTitleError(TITLE_REQUIRED)
+    setTitleError(title ? "" : TITLE_REQUIRED)
+    setCompanyError(company ? "" : COMPANY_REQUIRED)
+    if (!title || !company) {
+      ;(title ? companyRef : titleRef).current?.focus()
       return
     }
-    setTitleError("")
-    if (!company) {
-      setCompanyError(COMPANY_REQUIRED)
-      companyRef.current?.focus()
-      return
-    }
-    setCompanyError("")
     if (draft.deadline && !/^\d{4}-\d{2}-\d{2}$/.test(draft.deadline)) {
       setDateError("Use a real date.")
       return
@@ -146,7 +167,7 @@ export function NewJobDialog({
         stage: draft.stage,
         ...(draft.description ? { description: draft.description } : {}),
         ...(draft.location ? { location: draft.location } : {}),
-        ...(draft.url ? { jobUrl: draft.url } : {}),
+        ...(draft.url.trim() ? { jobUrl: fullUrl(draft.url) } : {}),
         ...(draft.deadline ? { deadline: draft.deadline } : {}),
         ...(anyway ? { anyway: true } : {}),
       })
@@ -178,10 +199,9 @@ export function NewJobDialog({
   }
 
   const duplicate = duplicateJob()
-  const addDisabled =
-    busy || draft.company.trim() === "" || draft.title.trim() === ""
-  const stageName = stageLabel(draft.stage)
-  const duplicateStageName = stageLabel(duplicate?.stage ?? "saved")
+  const onBoard = duplicate
+    ? cards.find((card) => card.id === duplicate.jobId)
+    : undefined
 
   return (
     <Dialog
@@ -193,173 +213,182 @@ export function NewJobDialog({
     >
       <DialogContent
         data-slot="new-job-dialog"
-        className="max-md:top-0 max-md:left-0 max-md:h-dvh max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-none sm:max-w-2xl"
+        showCloseButton={false}
+        initialFocus={linkRef}
+        overlayClassName="bg-foreground/18 supports-backdrop-filter:backdrop-blur-none"
+        className="gap-0 bg-card p-0 shadow-lg ring-foreground/6 max-md:top-0 max-md:left-0 max-md:h-dvh max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:overflow-y-auto max-md:rounded-none sm:max-w-[620px] md:top-[140px] md:left-[calc(50%+122px)] md:translate-y-0"
         aria-describedby={undefined}
       >
-        <DialogTitle>New job</DialogTitle>
         <DialogDescription className="sr-only">
           Paste the job link
         </DialogDescription>
         <form
-          className="flex flex-col gap-3"
+          className="flex flex-col pt-3 pr-3.5 pb-3.5 pl-5"
           onSubmit={(event) => {
             event.preventDefault()
             void save(duplicate != null)
           }}
         >
-          <div className="flex gap-2">
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <Label htmlFor="job-link">Paste the job link</Label>
-              <Input
-                id="job-link"
-                ref={linkRef}
-                value={draft.url}
-                onChange={(event) => patch({ url: event.target.value })}
-                onBlur={(event) => {
-                  const url = event.currentTarget.value.trim()
-                  if (url) void runPreview({ url })
-                }}
-              />
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              className="mt-5"
-              onClick={() => void onPaste()}
+          <div className="flex h-7 items-center gap-1.5 text-xs text-muted-foreground">
+            <Kanban className="size-[13px]" aria-hidden />
+            <span className="font-medium">Apply</span>
+            <ChevronRight className="size-3" aria-hidden />
+            <DialogTitle className="text-xs leading-normal font-normal text-muted-foreground">
+              New job
+            </DialogTitle>
+            <DialogClose
+              render={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="ml-auto rounded-md text-muted-foreground"
+                />
+              }
             >
-              Paste
-            </Button>
+              <X className="size-7 p-1.5" aria-hidden />
+              <span className="sr-only">Close</span>
+            </DialogClose>
           </div>
-          {preview?.status === "filled" ? <p>Filled</p> : null}
-          {preview?.status === "unreadable" ? (
-            <p>{preview.message || UNREADABLE}</p>
-          ) : null}
-          {duplicate ? (
-            <div className="flex items-center gap-3 rounded-md border border-border bg-muted p-3">
-              <CompanyTile company={duplicate.fields.company} />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium">Already on your board</p>
-                <p className="truncate text-sm">
-                  {duplicate.fields.title} · {duplicate.fields.company} ·{" "}
-                  {duplicateStageName}
-                </p>
-              </div>
+          <div className="mt-3.5 flex h-10 items-center gap-2 rounded-[11px] bg-secondary pr-[5px] pl-3 focus-within:ring-3 focus-within:ring-ring/50">
+            <LinkIcon
+              className="size-3.5 shrink-0 text-muted-foreground"
+              aria-hidden
+            />
+            <Input
+              ref={linkRef}
+              aria-label="Paste the job link"
+              placeholder="Paste the job link"
+              value={draft.url}
+              className={`${INLINE_FIELD} h-full flex-1 text-[13px] text-foreground md:text-[13px]`}
+              onChange={(event) => patch({ url: event.target.value })}
+              onBlur={(event) => {
+                const url = event.currentTarget.value.trim()
+                if (!url) return
+                patch({ url: shownUrl(url) })
+                void runPreview({ url: fullUrl(url) })
+              }}
+            />
+            {duplicate ? null : draft.url ? (
               <Button
                 type="button"
                 variant="ghost"
+                size="icon-xs"
+                aria-label="Clear link"
+                className="size-6 rounded-md text-muted-foreground"
                 onClick={() => {
+                  patch({ url: "" })
+                  setPreview(null)
+                  linkRef.current?.focus()
+                }}
+              >
+                <X className="size-6 p-[5.5px]" aria-hidden />
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                className="h-[30px] gap-1.5 rounded-md px-2.5 text-xs shadow-[0_1px_2px_rgb(0_0_0/0.04)] ring-foreground/6"
+                onClick={() => void onPaste()}
+              >
+                <ClipboardPaste
+                  className="size-[13px] text-muted-foreground"
+                  aria-hidden
+                />
+                Paste
+              </Button>
+            )}
+          </div>
+          {preview?.status === "filled" ? (
+            <p role="status" className="sr-only">
+              Filled
+            </p>
+          ) : null}
+          {preview?.status === "unreadable" ? (
+            <Hint>{preview.message || UNREADABLE}</Hint>
+          ) : null}
+          {duplicate ? (
+            <div className="mt-5">
+              <AlreadyTracked
+                title={onBoard?.title ?? duplicate.fields.title}
+                company={onBoard?.company ?? duplicate.fields.company}
+                stage={onBoard?.stage ?? duplicate.stage}
+                onOpen={() => {
                   onOpenChange(false)
                   void navigate({
                     to: "/apply/$jobId",
                     params: { jobId: duplicate.jobId },
                   })
                 }}
-              >
-                Open
-              </Button>
+              />
             </div>
-          ) : null}
-          {!duplicate ? (
+          ) : (
             <>
-              <div className="flex flex-col gap-1">
-                <Label htmlFor="job-title">Role title</Label>
-                <Input
-                  id="job-title"
-                  value={draft.title}
-                  aria-invalid={titleError ? true : undefined}
-                  onChange={(event) => patch({ title: event.target.value })}
-                />
-                {titleError ? <p>{titleError}</p> : null}
-              </div>
-              <div className="flex flex-col gap-1">
-                <Label htmlFor="job-company">Company</Label>
-                <Input
-                  id="job-company"
-                  ref={companyRef}
-                  value={draft.company}
-                  aria-invalid={companyError ? true : undefined}
-                  aria-describedby={
-                    companyError ? "job-company-error" : undefined
+              <Input
+                ref={titleRef}
+                aria-label="Role title"
+                placeholder="Role title"
+                value={draft.title}
+                aria-invalid={titleError ? true : undefined}
+                className={`${INLINE_FIELD} mt-5 text-xl font-semibold tracking-[-0.3px] text-foreground md:text-xl`}
+                onChange={(event) => {
+                  patch({ title: event.target.value })
+                  if (event.target.value.trim()) setTitleError("")
+                }}
+              />
+              {titleError ? <Hint>{titleError}</Hint> : null}
+              <Input
+                ref={companyRef}
+                aria-label="Company"
+                placeholder="Company"
+                value={draft.company}
+                aria-invalid={companyError ? true : undefined}
+                aria-describedby={
+                  companyError ? "job-company-error" : undefined
+                }
+                className={`${INLINE_FIELD} mt-1.5 text-[15px] text-muted-foreground md:text-[15px]`}
+                onChange={(event) => {
+                  patch({ company: event.target.value })
+                  if (event.target.value.trim()) setCompanyError("")
+                }}
+              />
+              {companyError ? (
+                <Hint id="job-company-error">{companyError}</Hint>
+              ) : null}
+              <Textarea
+                aria-label="Add the job description"
+                placeholder="Add the job description…"
+                value={draft.description}
+                className="mt-4 field-sizing-fixed h-[120px] resize-none rounded-none border-0 bg-transparent p-0 text-sm leading-[1.55] text-muted-foreground shadow-none focus-visible:border-0 focus-visible:ring-0 dark:bg-transparent"
+                onChange={(event) => patch({ description: event.target.value })}
+                onBlur={() => {
+                  if (
+                    preview?.status === "unreadable" &&
+                    draft.description.trim()
+                  ) {
+                    void runPreview({ text: draft.description })
                   }
-                  onChange={(event) => {
-                    patch({ company: event.target.value })
-                    if (event.target.value.trim()) setCompanyError("")
-                  }}
+                }}
+              />
+              <div className="mt-2">
+                <NewJobProperties
+                  stage={draft.stage}
+                  deadline={draft.deadline}
+                  location={draft.location}
+                  dateError={dateError !== ""}
+                  onStage={(stage) => patch({ stage })}
+                  onDeadline={(deadline) => patch({ deadline })}
+                  onLocation={(location) => patch({ location })}
                 />
-                {companyError ? (
-                  <p id="job-company-error" role="alert">
-                    {companyError}
-                  </p>
-                ) : null}
-              </div>
-              <div className="flex flex-col gap-1">
-                <Textarea
-                  id="job-description"
-                  aria-label="Add the job description"
-                  value={draft.description}
-                  placeholder="Add the job description…"
-                  onChange={(event) =>
-                    patch({ description: event.target.value })
-                  }
-                  onBlur={() => {
-                    if (
-                      preview?.status === "unreadable" &&
-                      draft.description.trim()
-                    ) {
-                      void runPreview({ text: draft.description })
-                    }
-                  }}
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <Label htmlFor="job-location">Location</Label>
-                <Input
-                  id="job-location"
-                  value={draft.location}
-                  onChange={(event) => patch({ location: event.target.value })}
-                />
-              </div>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div className="flex flex-col gap-1">
-                  <Label id="job-stage-label">Stage</Label>
-                  <Select
-                    value={draft.stage}
-                    onValueChange={(value) => {
-                      if (value) patch({ stage: value as JobStage })
-                    }}
-                  >
-                    <SelectTrigger aria-labelledby="job-stage-label">
-                      <SelectValue>{stageName}</SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ALL_STAGES.map((stage) => (
-                        <SelectItem key={stage} value={stage}>
-                          {stageLabel(stage)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="job-deadline">Deadline</Label>
-                  <Input
-                    id="job-deadline"
-                    type="date"
-                    value={draft.deadline}
-                    aria-invalid={dateError ? true : undefined}
-                    onChange={(event) =>
-                      patch({ deadline: event.target.value })
-                    }
-                  />
-                  {dateError ? <p>{dateError}</p> : null}
-                </div>
+                {dateError ? <Hint>{dateError}</Hint> : null}
               </div>
             </>
-          ) : null}
-          <div className="flex justify-end gap-2">
+          )}
+          <div className="mt-3.5 h-px bg-border" />
+          <div className="mt-3 flex items-center justify-end gap-2">
             <Button
               type="button"
               variant="ghost"
+              className="h-[30px] rounded-md px-3 text-[13px] font-normal text-muted-foreground"
               onClick={() => {
                 reset()
                 onOpenChange(false)
@@ -367,9 +396,28 @@ export function NewJobDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" variant="glow" disabled={addDisabled}>
-              {duplicate ? "Add anyway" : "Add job"}
-            </Button>
+            {duplicate ? (
+              <Button
+                type="submit"
+                disabled={busy}
+                className="h-[30px] rounded-md px-3 text-[13px] font-semibold"
+              >
+                Add anyway
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                variant="glow"
+                disabled={busy}
+                aria-label="Add job"
+                className="h-[30px] gap-2 rounded-md pr-2 pl-3 text-[13px] font-semibold"
+              >
+                <span>Add job</span>
+                <Kbd className="h-[18px] min-w-0 rounded-[4px] bg-foreground/6 px-[5px] text-[11px] font-normal text-foreground/50">
+                  ↵
+                </Kbd>
+              </Button>
+            )}
           </div>
         </form>
       </DialogContent>

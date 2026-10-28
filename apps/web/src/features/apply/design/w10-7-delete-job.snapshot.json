@@ -1,0 +1,31 @@
+{
+  "source": {
+    "file": "design/opencv.pen",
+    "branch": "chore/350-design-kit-cli-skills",
+    "frameId": "jHl7W",
+    "frameName": "W10.7 Delete job",
+    "root": "K9vZY4"
+  },
+  "sections": [
+    {
+      "id": "vXdKw",
+      "name": "Title",
+      "texts": ["Delete Associate PM intern?"],
+      "fills": []
+    },
+    { "id": "Z0OIFG", "name": "Gap", "texts": [], "fills": [] },
+    {
+      "id": "ZKqnT",
+      "name": "Body",
+      "texts": ["This can't be undone."],
+      "fills": []
+    },
+    { "id": "D52t4K", "name": "Gap", "texts": [], "fills": [] },
+    {
+      "id": "vXUk5",
+      "name": "Footer",
+      "texts": ["Cancel", "Delete job"],
+      "fills": []
+    }
+  ]
+}

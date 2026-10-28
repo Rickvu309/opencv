@@ -32,6 +32,10 @@ Reading a FAIL: the measured value is what the app does, the rule is what it sho
 2. Is the rule right? If the measurement is right but the rule misjudges (a good screen fails, or a bad screen passes), fix the rule in `checks.mjs`, `checks-content.mjs` or `text-rules.mjs` and add a case to `text-rules.test.mjs` when it is a pure text rule.
 3. Both right: it is a finding about the app. Report it. Do not edit the app unless that was the task.
 
+## Apply against opencv.pen
+
+`PORT=4454 heavy -- pnpm --filter web verify:apply-pen` runs `scripts/verify-apply-pen.mjs`. It signs up Linh Nguyen on its own stack, saves the jobs the W9 and W10 frames draw, fixes the page clock at Sunday 25 October 2026 09:00 in Asia/Ho_Chi_Minh, and opens each state (board, list, filters, month, week, New job and its three states, job detail, Paper picker, closed job, delete). For each state it compares every pen text's colour, size, weight, line height and tracking, and every drawn icon's size, with `apps/web/src/features/apply/design/<slug>.styles.json`. A text the live stack cannot draw (server dates, data the product does not store) sits in `NOT_SHOWN` with its reason. Pen greys under 4.5:1 count as matched when the app uses muted-foreground. `VERIFY_APP_UI_SHOTS=<dir>` saves one screenshot per state. W9.6 (mid-drag) is checked by `apply-design-parity.test.tsx`, which also checks every frame's texts and icon count with fixed data.
+
 ## The properties
 
 Forty-four named properties; ids 01 to 30 are the research check numbers, 31 to 38 are app-wide checks the signed-in tour adds, and 39 to 44 are the design text rules (pinned phrases in `scripts/lib/copy.json`). Each has a rule, a source and a note when it is a heuristic: read [properties.md](properties.md). Search the id in `scripts/lib/checks-content.mjs` (01 to 13) or `scripts/lib/checks.mjs` (14 to 44).

@@ -1,0 +1,333 @@
+{
+  "source": {
+    "file": "design/opencv.pen",
+    "branch": "chore/350-design-kit-cli-skills",
+    "frameId": "ZA60d",
+    "frameName": "W9.8 Calendar week",
+    "root": "GIhbq"
+  },
+  "sections": [
+    {
+      "id": "kBEph",
+      "name": "Header",
+      "texts": [
+        {
+          "content": "Apply",
+          "fill": "#2F2F31",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "New job",
+          "fill": "#1A1A1A",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        }
+      ],
+      "marks": [{ "id": "kQ9cv", "name": "Icon", "width": 14, "height": 14 }]
+    },
+    {
+      "id": "lTEQB",
+      "name": "Toolbar",
+      "texts": [
+        {
+          "content": "Board",
+          "fill": "#59595B",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "List",
+          "fill": "#59595B",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Calendar",
+          "fill": "#1A1A1A",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        }
+      ],
+      "marks": [
+        { "id": "sMVz6", "name": "Icon", "width": 13, "height": 13 },
+        { "id": "u7nD4v", "name": "Icon", "width": 13, "height": 13 },
+        { "id": "EIrae", "name": "Icon", "width": 13, "height": 13 }
+      ]
+    },
+    {
+      "id": "zkSeg",
+      "name": "Cal head",
+      "texts": [
+        {
+          "content": "November 2026",
+          "fill": "#1A1A1A",
+          "fontSize": 18,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": -0.5,
+          "startsLine": true
+        },
+        {
+          "content": "Today",
+          "fill": "#1A1A1A",
+          "fontSize": 12.5,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Week",
+          "fill": "#1A1A1A",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Month",
+          "fill": "#8A8F98",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        }
+      ],
+      "marks": [
+        { "id": "s8CRG", "name": "caret-left", "width": 28, "height": 28 },
+        { "id": "fDIMF", "name": "caret-right", "width": 28, "height": 28 }
+      ]
+    },
+    {
+      "id": "J5E1nb",
+      "name": "Week",
+      "texts": [
+        {
+          "content": "8:00",
+          "fill": "#969799",
+          "fontSize": 10.5,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "9:00",
+          "fill": "#969799",
+          "fontSize": 10.5,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "10:00",
+          "fill": "#969799",
+          "fontSize": 10.5,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "11:00",
+          "fill": "#969799",
+          "fontSize": 10.5,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "12:00",
+          "fill": "#969799",
+          "fontSize": 10.5,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "13:00",
+          "fill": "#969799",
+          "fontSize": 10.5,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "14:00",
+          "fill": "#969799",
+          "fontSize": 10.5,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "15:00",
+          "fill": "#969799",
+          "fontSize": 10.5,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "16:00",
+          "fill": "#969799",
+          "fontSize": 10.5,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "17:00",
+          "fill": "#969799",
+          "fontSize": 10.5,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "18:00",
+          "fill": "#969799",
+          "fontSize": 10.5,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "All day",
+          "fill": "#969799",
+          "fontSize": 10,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Mon 2",
+          "fill": "#8A8F98",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Tue 3",
+          "fill": "#8A8F98",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Product analyst",
+          "fill": "#1F6B43",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null
+        },
+        {
+          "content": "Round 2 interview",
+          "fill": "#2E8B57",
+          "fontSize": 11.5,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "14:00 to 15:00",
+          "fill": "#3FA66B",
+          "fontSize": 11,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Wed 4",
+          "fill": "#8A8F98",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Thu 5",
+          "fill": "#8A8F98",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Fri 6",
+          "fill": "#8A8F98",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Sat 7",
+          "fill": "#8A8F98",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Sun 8",
+          "fill": "#8A8F98",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "UX research due",
+          "fill": "#1A1A1A",
+          "fontSize": 11.5,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        }
+      ],
+      "marks": [{ "id": "ZQyAf", "name": "Icon", "width": 11, "height": 11 }]
+    }
+  ]
+}

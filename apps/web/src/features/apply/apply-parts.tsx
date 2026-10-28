@@ -1,15 +1,15 @@
-import type { ReactNode } from "react"
-import { MapPin } from "lucide-react"
+import { Calendar, MapPin } from "lucide-react"
 
-import { Button } from "@workspace/ui/components/button"
 import { StageIcon } from "@workspace/ui/components/stage-icon"
 
-import type { JobPriority, JobView } from "@workspace/domain"
+import type { JobPriority, JobStage, JobView } from "@workspace/domain"
 
-import type { ActivityFeedRow } from "@workspace/domain"
-
-import type { ChecklistItem } from "./apply-api.ts"
-import { companyInitials, monthDay, priorityLabel } from "./apply-stages.ts"
+import {
+  companyInitials,
+  listPhrase,
+  monthDay,
+  priorityLabel,
+} from "./apply-stages.ts"
 
 export function PriorityBars({ level }: { level: JobPriority }) {
   const filled = level === "low" ? 1 : level === "high" ? 3 : 2
@@ -50,29 +50,87 @@ export function CompanyTile({ company }: { company: string }) {
   )
 }
 
-export function JobCard({ job }: { job: JobView }) {
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000
+
+/** A weekday alone is only unambiguous within the next seven days. */
+function interviewTag(job: JobView, now: Date): string | null {
+  if (job.stage !== "interview" || !job.interviewAt) return null
+  const wait = new Date(job.interviewAt).getTime() - now.getTime()
+  if (wait < 0 || wait >= WEEK_MS) return null
+  return listPhrase(job)
+}
+
+const bars = [
+  { x: 0, height: 4 },
+  { x: 4.5, height: 7 },
+  { x: 9, height: 10 },
+]
+
+export function PriorityBox({ level }: { level: JobPriority }) {
+  const filled = level === "low" ? 1 : level === "high" ? 3 : 2
   return (
-    <div data-slot="job-card" className="flex flex-col gap-2 text-left">
-      <span className="flex items-start gap-2.5">
-        <CompanyTile company={job.company} />
-        <span className="flex min-w-0 flex-col">
-          <span className="line-clamp-2 text-sm font-medium">{job.title}</span>
-          <span className="truncate text-xs text-muted-foreground">
+    <svg
+      data-slot="priority-bars"
+      viewBox="0 0 12 10"
+      role="img"
+      aria-label={priorityLabel(level)}
+      className="size-[22px] shrink-0 rounded-[6px] border border-border px-1 py-[5px]"
+    >
+      {bars.map((bar, index) => (
+        <rect
+          key={bar.x}
+          x={bar.x}
+          y={10 - bar.height}
+          width="2.5"
+          height={bar.height}
+          rx="1"
+          className={index < filled ? "fill-muted-foreground" : "fill-input"}
+        />
+      ))}
+    </svg>
+  )
+}
+
+export function JobCard({ job }: { job: JobView }) {
+  const interview = interviewTag(job, new Date())
+  return (
+    <div data-slot="job-card" className="flex flex-col text-left">
+      <span className="flex items-center gap-2.5">
+        <span
+          data-slot="company-tile"
+          aria-hidden
+          className="flex size-7 shrink-0 items-center justify-center rounded-[7px] border border-foreground/8 bg-card text-[7.5px] font-semibold text-muted-foreground"
+        >
+          {companyInitials(job.company)}
+        </span>
+        <span className="flex min-w-0 flex-1 flex-col gap-px">
+          <span className="line-clamp-2 text-[13.5px] leading-[1.35] font-medium">
+            {job.title}
+          </span>
+          <span className="truncate text-xs leading-[1.35] tracking-[-0.1px] text-muted-foreground">
             {job.company}
           </span>
         </span>
       </span>
-      <span className="flex items-center gap-1.5 pl-9">
-        <PriorityBars level={job.priority} />
+      {interview ? (
+        <span className="mt-2.5 flex pl-[38px]">
+          <span className="inline-flex h-6 items-center gap-1.5 rounded-[6px] bg-secondary px-2 text-xs font-medium">
+            <Calendar className="size-3 text-chart-3" aria-hidden />
+            {interview}
+          </span>
+        </span>
+      ) : null}
+      <span className="mt-2.5 flex items-center gap-1 pl-[38px]">
+        <PriorityBox level={job.priority} />
         {job.location ? (
-          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-            <MapPin className="size-3" aria-hidden />
-            {job.location}
+          <span className="inline-flex h-[22px] min-w-0 items-center gap-1 rounded-[6px] border border-border px-[7px] text-[11.5px] text-muted-foreground">
+            <MapPin className="size-[11px] shrink-0 text-chart-1" aria-hidden />
+            <span className="truncate">{job.location}</span>
           </span>
         ) : null}
         <time
           dateTime={job.createdAt}
-          className="ml-auto text-xs text-muted-foreground"
+          className="ml-auto shrink-0 text-[11.5px] text-muted-foreground"
         >
           {monthDay(new Date(job.createdAt))}
         </time>
@@ -81,135 +139,28 @@ export function JobCard({ job }: { job: JobView }) {
   )
 }
 
-export function JobRow({
-  job,
-  phrase,
-  onOpen,
-}: {
-  job: JobView
-  phrase: string
-  onOpen: () => void
-}) {
-  return (
-    <Button
-      type="button"
-      variant="ghost"
-      data-slot="job-row"
-      className="h-10 w-full justify-start gap-2.5 px-4"
-      aria-label={`${job.title}, ${job.company}`}
-      onClick={onOpen}
-    >
-      <StageIcon stage={job.stage} />
-      <CompanyTile company={job.company} />
-      <span className="min-w-24 flex-1 truncate text-left text-sm">
-        {job.title}
-      </span>
-      <span className="max-w-28 min-w-14 truncate text-xs text-muted-foreground md:max-w-none md:shrink-0">
-        {job.company}
-      </span>
-      <span className="max-w-24 min-w-0 shrink truncate text-xs text-muted-foreground sm:max-w-none sm:shrink-0">
-        {phrase}
-      </span>
-      <time
-        dateTime={job.createdAt}
-        className="hidden w-12 shrink-0 text-right text-xs text-muted-foreground md:block"
-      >
-        {monthDay(new Date(job.createdAt))}
-      </time>
-    </Button>
-  )
-}
-
 export function BoardLane({
   name,
   stage,
-  children,
+  count,
 }: {
   name: string
-  stage: string
-  children: ReactNode
+  stage: JobStage
+  count: number
 }) {
   return (
     <div
       data-slot="board-lane"
       data-stage={stage}
-      className="flex min-h-0 flex-1 flex-col"
+      className="flex h-8 items-center gap-2 px-1"
     >
-      <h2 className="px-2 pt-2 text-sm font-semibold" tabIndex={0}>
+      <StageIcon stage={stage} />
+      <h2 className="text-[13px] font-normal" tabIndex={0}>
         {name}
       </h2>
-      {children}
-    </div>
-  )
-}
-
-export function ListGroup({
-  name,
-  children,
-}: {
-  name: string
-  children: ReactNode
-}) {
-  return (
-    <section data-slot="list-group" aria-label={name} className="flex flex-col">
-      <h2 className="px-4 py-2 text-sm font-medium">{name}</h2>
-      {children}
-    </section>
-  )
-}
-
-export function Property({
-  label,
-  children,
-}: {
-  label: string
-  children: ReactNode
-}) {
-  return (
-    <div data-slot="property" className="flex flex-col gap-1">
-      <span className="text-xs text-muted-foreground">{label}</span>
-      {children}
-    </div>
-  )
-}
-
-export function ChecklistItem({
-  item,
-  onToggle,
-}: {
-  item: ChecklistItem
-  onToggle: () => void
-}) {
-  return (
-    <Button
-      type="button"
-      variant="ghost"
-      data-slot="checklist-item"
-      role="checkbox"
-      aria-checked={item.done}
-      aria-label={item.label}
-      className="h-8 w-full justify-start px-2"
-      onClick={onToggle}
-    >
-      <span
-        aria-hidden
-        className={
-          item.done
-            ? "size-3.5 rounded-sm bg-foreground"
-            : "size-3.5 rounded-sm ring-1 ring-border"
-        }
-      />
-      <span className={item.done ? "text-muted-foreground line-through" : ""}>
-        {item.label}
+      <span className="flex-1 text-xs font-normal text-muted-foreground">
+        {count}
       </span>
-    </Button>
-  )
-}
-
-export function ActivityItem({ row }: { row: ActivityFeedRow }) {
-  return (
-    <li data-slot="activity-item" className="text-sm">
-      {row.summary}
-    </li>
+    </div>
   )
 }

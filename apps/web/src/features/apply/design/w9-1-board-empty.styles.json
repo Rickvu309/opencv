@@ -1,0 +1,117 @@
+{
+  "source": {
+    "file": "design/opencv.pen",
+    "branch": "chore/350-design-kit-cli-skills",
+    "frameId": "D8PoQ6",
+    "frameName": "W9.1 Board empty",
+    "root": "GIhbq"
+  },
+  "sections": [
+    {
+      "id": "NjM6o",
+      "name": "Header",
+      "texts": [
+        {
+          "content": "Apply",
+          "fill": "#2F2F31",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "New job",
+          "fill": "#1A1A1A",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        }
+      ],
+      "marks": [{ "id": "FJhzV", "name": "Icon", "width": 14, "height": 14 }]
+    },
+    {
+      "id": "cf4o4",
+      "name": "Toolbar",
+      "texts": [
+        {
+          "content": "Board",
+          "fill": "#1A1A1A",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "500",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "List",
+          "fill": "#59595B",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Calendar",
+          "fill": "#59595B",
+          "fontSize": 12,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        }
+      ],
+      "marks": [
+        { "id": "jlqW5", "name": "Icon", "width": 13, "height": 13 },
+        { "id": "y4vwc", "name": "Icon", "width": 13, "height": 13 },
+        { "id": "DTBO2", "name": "Icon", "width": 13, "height": 13 }
+      ]
+    },
+    {
+      "id": "Eh0Xi",
+      "name": "Board",
+      "texts": [
+        {
+          "content": "Track your first job",
+          "fill": "#1A1A1A",
+          "fontSize": 15,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Add the jobs you're applying to.",
+          "fill": "#59595B",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "Add job",
+          "fill": "#1B1B1F",
+          "fontSize": 13,
+          "lineHeight": null,
+          "fontWeight": "600",
+          "letterSpacing": null,
+          "startsLine": true
+        },
+        {
+          "content": "N",
+          "fill": "#1B1B1F",
+          "fontSize": 11,
+          "lineHeight": null,
+          "fontWeight": "normal",
+          "letterSpacing": null,
+          "startsLine": true
+        }
+      ],
+      "marks": []
+    }
+  ]
+}

@@ -100,7 +100,17 @@ export async function launchBrowser() {
 
   // intercept(request) returns null (let it through), "hold" (keep it paused until release()),
   // "fail" (refuse the connection, as if the api were down) or { status, body } (answer it without reaching the api). Only /api/ calls are offered to it.
-  async function openPage({ width, height, mobile, reducedMotion, intercept }) {
+  // timezone (an IANA name) and now (an ISO instant the page clock starts at) let a check
+  // reproduce a design frame's dates; the page clock then runs forward from now.
+  async function openPage({
+    width,
+    height,
+    mobile,
+    reducedMotion,
+    intercept,
+    timezone,
+    now,
+  }) {
     const { targetId } = await send("Target.createTarget", {
       url: "about:blank",
     })
@@ -172,6 +182,21 @@ export async function launchBrowser() {
       deviceScaleFactor: 1,
       mobile,
     })
+    if (timezone)
+      await call("Emulation.setTimezoneOverride", { timezoneId: timezone })
+    if (now) {
+      const start = new Date(now).getTime()
+      await call("Page.addScriptToEvaluateOnNewDocument", {
+        source: `(() => {
+          const Real = Date, shift = ${start} - Real.now()
+          class Fixed extends Real {
+            constructor(...args) { if (args.length === 0) super(Real.now() + shift); else super(...args) }
+            static now() { return Real.now() + shift }
+          }
+          globalThis.Date = Fixed
+        })()`,
+      })
+    }
     await call("Emulation.setEmulatedMedia", {
       features: [
         {

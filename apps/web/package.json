@@ -14,7 +14,8 @@
     "verify:marketing": "vitest run --config vitest.config.ts src/test/marketing/marketing-links.verify.test.tsx src/test/marketing/help-filter.property.test.ts",
     "verify:landing": "node ../../.claude/skills/verify-landing/scripts/verify-landing.mjs",
     "verify:app-ui": "node ../../.claude/skills/verify-app-ui/scripts/verify-app-ui.mjs",
-    "verify:pen-layout": "node ../../.claude/skills/verify-app-ui/scripts/verify-pen-layout.mjs"
+    "verify:pen-layout": "node ../../.claude/skills/verify-app-ui/scripts/verify-pen-layout.mjs",
+    "verify:apply-pen": "node ../../.claude/skills/verify-app-ui/scripts/verify-apply-pen.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
