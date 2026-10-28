@@ -1,5 +1,6 @@
 import type { Profile, ProfileUpdateInput } from "@workspace/domain"
 
+import { startPagePath } from "@/features/app-shell/start-page.ts"
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
 import { ApiError } from "@/lib/api.ts"
 import { endpoints, fetchBinary } from "@/lib/requests.ts"
@@ -25,16 +26,8 @@ export type SettingsSave = {
   onSave: (patch: ProfileUpdateInput) => void
 }
 
-const START_PATHS: Record<Profile["startPage"], string> = {
-  apply: "/app/apply",
-  paper: "/app/paper",
-  coach: "/app/coach",
-  inbox: "/app/inbox",
-}
-
 export function startPageHref(startPage: Profile["startPage"] | undefined) {
-  if (!startPage) return "/app/apply"
-  return START_PATHS[startPage] ?? "/app/apply"
+  return startPagePath(startPage)
 }
 
 export function photoRejection(file: File) {

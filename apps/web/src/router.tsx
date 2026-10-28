@@ -13,6 +13,7 @@ import {
 
 import { fetchProfile } from "@/lib/account-api.ts"
 import { startPagePath } from "@/features/app-shell/start-page.ts"
+import { SURFACE_PATHS, legacyAppPath } from "@/lib/product-paths.ts"
 
 import { NotFoundPage, UnknownShell } from "@/components/not-found-page.tsx"
 import {
@@ -24,7 +25,7 @@ import { validatePaperSearch } from "@/features/paper/paper-templates.ts"
 import { findBlogPost } from "@/features/landing/blog/blog-copy.ts"
 import { SignInPage } from "@/routes/sign-in.tsx"
 import { authClient } from "@/lib/auth-client.ts"
-import { validateAuthSearch } from "@/lib/auth-redirect.ts"
+import { signInHref, validateAuthSearch } from "@/lib/auth-redirect.ts"
 import { documentTarget } from "@/lib/web-origins.ts"
 import { webOrigins } from "@/lib/web-origins-env.ts"
 
@@ -88,19 +89,54 @@ const blogPostRoute = createRoute({
   ),
 })
 
+function isPublicHost() {
+  return (
+    webOrigins.kind === "split" &&
+    webOrigins.publicHosts.includes(window.location.hostname)
+  )
+}
+
+function isAppHost() {
+  return (
+    webOrigins.kind === "split" &&
+    window.location.hostname === webOrigins.appHost
+  )
+}
+
+function locationHref(location: {
+  pathname: string
+  searchStr: string
+  hash: string
+}) {
+  return `${location.pathname}${location.searchStr}${location.hash ? `#${location.hash}` : ""}`
+}
+
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
-  beforeLoad: async () => {
-    if (
-      webOrigins.kind === "split" &&
-      webOrigins.publicHosts.includes(window.location.hostname)
-    )
-      return
-    const { data } = await authClient.getSession()
-    if (data) {
-      throw redirect({ to: "/app" })
+  beforeLoad: async ({ location }) => {
+    if (isPublicHost()) return
+    const onAppHost = isAppHost()
+    let data
+    try {
+      data = (await authClient.getSession()).data
+    } catch (error) {
+      if (isRedirect(error)) throw error
+      if (onAppHost) throw redirect({ href: startPagePath("apply") })
+      throw error
     }
+    if (!data) {
+      if (!onAppHost) return
+      throw redirect({ href: signInHref(locationHref(location)) })
+    }
+    let startPage: unknown = "apply"
+    try {
+      const profile = await fetchProfile()
+      startPage = profile.startPage
+    } catch (error) {
+      if (isRedirect(error)) throw error
+    }
+    throw redirect({ href: startPagePath(startPage) })
   },
   component: lazyRouteComponent(
     () => import("@/features/landing/landing-page.tsx"),
@@ -115,7 +151,7 @@ const signInRoute = createRoute({
   beforeLoad: async ({ search }) => {
     const { data } = await authClient.getSession()
     if (data) {
-      throw redirect({ href: search.redirect ?? "/app" })
+      throw redirect({ href: search.redirect ?? "/" })
     }
   },
   component: SignInPage,
@@ -134,10 +170,6 @@ const signUpRoute = createRoute({
   component: () => null,
 })
 
-function isAppIndex(pathname: string) {
-  return pathname === "/app" || pathname === "/app/"
-}
-
 async function loadUnknownSession() {
   try {
     const { data } = await authClient.getSession()
@@ -148,37 +180,41 @@ async function loadUnknownSession() {
   }
 }
 
-const appLayoutRoute = createRoute({
+function legacyBeforeLoad({
+  location,
+}: {
+  location: { pathname: string; searchStr: string; hash: string }
+}) {
+  const next = legacyAppPath(locationHref(location))
+  if (next) throw redirect({ href: next, replace: true })
+}
+
+const legacyAppRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/app",
+  beforeLoad: legacyBeforeLoad,
+  component: () => null,
+})
+
+const legacyAppSplatRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/app/$",
+  beforeLoad: legacyBeforeLoad,
+  component: () => null,
+})
+
+const productLayoutRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  id: "product",
   beforeLoad: async ({ location }) => {
-    const index = isAppIndex(location.pathname)
     try {
       const { data } = await authClient.getSession()
       if (!data) {
-        throw redirect({
-          to: "/sign-in",
-          search: {
-            redirect: `${location.pathname}${location.searchStr}${location.hash ? `#${location.hash}` : ""}`,
-          },
-        })
-      }
-      if (index) {
-        let startPage: unknown = "apply"
-        try {
-          const profile = await fetchProfile()
-          startPage = profile.startPage
-        } catch (error) {
-          if (isRedirect(error)) throw error
-        }
-        throw redirect({ href: startPagePath(startPage) })
+        throw redirect({ href: signInHref(locationHref(location)) })
       }
       return { session: data }
     } catch (error) {
       if (isRedirect(error)) throw error
-      // A dead api throws. /app falls back to Apply. A child route renders
-      // so the same failure does not redirect again.
-      if (index) throw redirect({ href: startPagePath("apply") })
       return { session: null }
     }
   },
@@ -188,30 +224,14 @@ const appLayoutRoute = createRoute({
   ),
 })
 
-const appIndexRoute = createRoute({
-  getParentRoute: () => appLayoutRoute,
-  path: "/",
-  beforeLoad: async () => {
-    let startPage: unknown = "apply"
-    try {
-      const profile = await fetchProfile()
-      startPage = profile.startPage
-    } catch (error) {
-      if (isRedirect(error)) throw error
-    }
-    throw redirect({ href: startPagePath(startPage) })
-  },
-  component: () => null,
-})
-
 const homeRoute = createRoute({
-  getParentRoute: () => appLayoutRoute,
+  getParentRoute: () => productLayoutRoute,
   path: "/home",
   component: lazyRouteComponent(() => import("@/routes/home.tsx"), "HomePage"),
 })
 
 const paperRoute = createRoute({
-  getParentRoute: () => appLayoutRoute,
+  getParentRoute: () => productLayoutRoute,
   path: "/paper",
   validateSearch: validatePaperSearch,
   component: lazyRouteComponent(
@@ -221,7 +241,7 @@ const paperRoute = createRoute({
 })
 
 const paperDocRoute = createRoute({
-  getParentRoute: () => appLayoutRoute,
+  getParentRoute: () => productLayoutRoute,
   path: "/paper/$docId",
   component: lazyRouteComponent(
     () => import("@/routes/paper-doc.tsx"),
@@ -239,7 +259,7 @@ const shareRoute = createRoute({
 })
 
 const applyRoute = createRoute({
-  getParentRoute: () => appLayoutRoute,
+  getParentRoute: () => productLayoutRoute,
   path: "/apply",
   validateSearch: validateApplySearch,
   component: lazyRouteComponent(
@@ -249,7 +269,7 @@ const applyRoute = createRoute({
 })
 
 const applyJobRoute = createRoute({
-  getParentRoute: () => appLayoutRoute,
+  getParentRoute: () => productLayoutRoute,
   path: "/apply/$jobId",
   component: lazyRouteComponent(
     () => import("@/routes/apply-job.tsx"),
@@ -261,13 +281,13 @@ const applyJobRoute = createRoute({
 const comingSoonRoute = () => import("@/routes/coming-soon.tsx")
 
 const pitchRoute = createRoute({
-  getParentRoute: () => appLayoutRoute,
+  getParentRoute: () => productLayoutRoute,
   path: "/pitch",
   component: lazyRouteComponent(comingSoonRoute, "PitchPage"),
 })
 
 const coachRoute = createRoute({
-  getParentRoute: () => appLayoutRoute,
+  getParentRoute: () => productLayoutRoute,
   path: "/coach",
   component: lazyRouteComponent(
     () => import("@/routes/coach.tsx"),
@@ -276,28 +296,28 @@ const coachRoute = createRoute({
 })
 
 const jobsRoute = createRoute({
-  getParentRoute: () => appLayoutRoute,
+  getParentRoute: () => productLayoutRoute,
   path: "/jobs",
   component: lazyRouteComponent(comingSoonRoute, "JobsPage"),
 })
 
 const proofsRoute = createRoute({
-  getParentRoute: () => appLayoutRoute,
+  getParentRoute: () => productLayoutRoute,
   path: "/proofs",
   component: lazyRouteComponent(comingSoonRoute, "ProofsPage"),
 })
 
 const proofAliasRoute = createRoute({
-  getParentRoute: () => appLayoutRoute,
+  getParentRoute: () => productLayoutRoute,
   path: "/proof",
   beforeLoad: () => {
-    throw redirect({ href: "/app/proofs", replace: true })
+    throw redirect({ href: SURFACE_PATHS.proofs, replace: true })
   },
   component: () => null,
 })
 
 const inboxRoute = createRoute({
-  getParentRoute: () => appLayoutRoute,
+  getParentRoute: () => productLayoutRoute,
   path: "/inbox",
   component: lazyRouteComponent(
     () => import("@/routes/inbox.tsx"),
@@ -306,7 +326,7 @@ const inboxRoute = createRoute({
 })
 
 const settingsUpgradeRoute = createRoute({
-  getParentRoute: () => appLayoutRoute,
+  getParentRoute: () => productLayoutRoute,
   path: "/settings/billing/upgrade",
   component: lazyRouteComponent(
     () => import("@/routes/settings.tsx"),
@@ -315,13 +335,13 @@ const settingsUpgradeRoute = createRoute({
 })
 
 const settingsRoute = createRoute({
-  getParentRoute: () => appLayoutRoute,
+  getParentRoute: () => productLayoutRoute,
   path: "/settings/{-$section}",
   validateSearch: validateSettingsSearch,
   beforeLoad: ({ params }) => {
     const section = params.section
     if (section && !isSettingsSection(section)) {
-      throw redirect({ href: "/app/settings", replace: true })
+      throw redirect({ href: SURFACE_PATHS.settings, replace: true })
     }
   },
   component: lazyRouteComponent(
@@ -330,8 +350,8 @@ const settingsRoute = createRoute({
   ),
 })
 
-// Misses stay off the app layout. A session renders the 404 inside the shell.
-// No session renders the bare 404, including /app/nothing, with no redirect.
+// Misses stay off the product layout. A session renders the 404 inside the shell.
+// No session renders the bare 404. Legacy /app/* is stripped before this match.
 const userRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/u/$slug",
@@ -341,19 +361,6 @@ const userRoute = createRoute({
 
 const userMissRoute = createRoute({
   getParentRoute: () => userRoute,
-  path: "/",
-  component: NotFoundPage,
-})
-
-const appMissRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/app/$",
-  beforeLoad: loadUnknownSession,
-  component: UnknownShell,
-})
-
-const appMissIndexRoute = createRoute({
-  getParentRoute: () => appMissRoute,
   path: "/",
   component: NotFoundPage,
 })
@@ -382,9 +389,9 @@ const routeTree = rootRoute.addChildren([
   signUpRoute,
   shareRoute,
   userRoute.addChildren([userMissRoute]),
-  appMissRoute.addChildren([appMissIndexRoute]),
-  appLayoutRoute.addChildren([
-    appIndexRoute,
+  legacyAppRoute,
+  legacyAppSplatRoute,
+  productLayoutRoute.addChildren([
     homeRoute,
     paperRoute,
     paperDocRoute,

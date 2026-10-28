@@ -45,7 +45,7 @@ describe("empty api data shows empty states, never sample content", () => {
     ).toBeInTheDocument()
     expect(screen.getByRole("link", { name: "Proof" })).toHaveAttribute(
       "href",
-      "/app/proof"
+      "/proof"
     )
     expect(
       screen.getByRole("button", { name: "Choose file" })

@@ -246,7 +246,7 @@ export function NewJobDialog({
                 onClick={() => {
                   onOpenChange(false)
                   void navigate({
-                    to: "/app/apply/$jobId",
+                    to: "/apply/$jobId",
                     params: { jobId: duplicate.jobId },
                   })
                 }}

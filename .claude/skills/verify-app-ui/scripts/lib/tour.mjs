@@ -8,14 +8,14 @@ import { probeSource } from "./probe.mjs"
 
 const CV_NAME = "Live Check CV"
 const ROUTES = {
-  home: ["/app/home", "document.querySelector('h1')"],
+  home: ["/home", "document.querySelector('h1')"],
   paper: [
-    "/app/paper",
+    "/paper",
     `document.body.innerText.includes(${JSON.stringify(CV_NAME)})`,
   ],
-  apply: ["/app/apply", "document.querySelector('[data-card-id]')"],
-  pitch: ["/app/pitch", "document.querySelector('h1')"],
-  inbox: ["/app/inbox", "document.querySelector('h1')"],
+  apply: ["/apply", "document.querySelector('[data-card-id]')"],
+  pitch: ["/pitch", "document.querySelector('h1')"],
+  inbox: ["/inbox", "document.querySelector('h1')"],
 }
 // Also listed under "Constants the checks assume" in SKILL.md.
 const PRIMARY = {
@@ -177,7 +177,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
     prepared.cv === true && prepared.card === true,
     `creating the tour CV and card failed (${JSON.stringify(prepared)})`
   )
-  await a.goto(`${webUrl}/app/home`)
+  await a.goto(`${webUrl}/home`)
   must(
     await a.waitFor("document.querySelector('textarea')", 20000),
     "welcome did not finish"
@@ -260,7 +260,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
   await a.sleep(1200)
   d.inbox = await snap(a)
   await shot(a, "desktop-inbox")
-  await a.goto(`${webUrl}/app/settings`)
+  await a.goto(`${webUrl}/settings`)
   must(
     await a.waitFor("document.body.innerText.includes('Preferences')", 20000),
     "settings did not render"
@@ -282,7 +282,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
       ? "hold"
       : null
   )
-  await b.goto(`${webUrl}/app/paper`)
+  await b.goto(`${webUrl}/paper`)
   await b.sleep(2500)
   d.paperLoading = await snap(b)
   b.setIntercept(null)
@@ -293,7 +293,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
       ? { status: 200, body: { ok: true, data: [] } }
       : null
   )
-  await b.goto(`${webUrl}/app/paper`)
+  await b.goto(`${webUrl}/paper`)
   await b.waitFor("document.body.innerText.includes('Start a document')", 10000)
   await b.sleep(800)
   d.paperEmpty = await snap(b)
@@ -313,7 +313,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
         }
       : null
   )
-  await b.goto(`${webUrl}/app/home`)
+  await b.goto(`${webUrl}/home`)
   must(
     await b.waitFor("document.querySelector('textarea')", 15000),
     "the start page did not render"
@@ -325,7 +325,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
   await shot(b, "desktop-coach-error")
 
   b.setIntercept((r) => (coachCall(r) ? "fail" : null))
-  await b.goto(`${webUrl}/app/home`)
+  await b.goto(`${webUrl}/home`)
   must(
     await b.waitFor("document.querySelector('textarea')", 15000),
     "the start page did not render"
@@ -353,7 +353,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
     await r.sleep(1200)
     d.reduced[key] = await snap(r)
   }
-  await r.goto(`${webUrl}/app/settings`)
+  await r.goto(`${webUrl}/settings`)
   must(
     await r.waitFor("document.body.innerText.includes('Preferences')", 20000),
     "settings did not render (reduced motion)"
@@ -389,7 +389,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
     d.mobile[key] = await snap(m)
     await shot(m, `mobile-${key}`)
   }
-  await m.goto(`${webUrl}/app/settings`)
+  await m.goto(`${webUrl}/settings`)
   must(
     await m.waitFor("document.body.innerText.includes('Preferences')", 20000),
     "settings did not render at 390px"
@@ -407,7 +407,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
     mobile: false,
     reducedMotion: false,
   })
-  await e.goto(`${webUrl}/app/apply`)
+  await e.goto(`${webUrl}/apply`)
   must(
     await e.waitFor("document.querySelector('[data-card-id]')", 15000),
     "the created board did not render"
@@ -426,7 +426,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
     deleted.total > 0 && deleted.deleted === deleted.total,
     `deleting the created cards (${JSON.stringify(deleted)})`
   )
-  await e.goto(`${webUrl}/app/apply`)
+  await e.goto(`${webUrl}/apply`)
   await e.waitFor(EMPTY_BOARD, 15000)
   await e.sleep(1000)
   d.applyEmpty = await snap(e)

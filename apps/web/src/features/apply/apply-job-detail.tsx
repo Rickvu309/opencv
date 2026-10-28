@@ -166,7 +166,7 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
         aria-label="Breadcrumb"
         className="flex items-center gap-2 px-5 py-3"
       >
-        <Link to="/app/apply" className="text-sm font-medium">
+        <Link to="/apply" className="text-sm font-medium">
           Apply
         </Link>
         <Button
@@ -178,7 +178,7 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
           onClick={() =>
             previous &&
             void navigate({
-              to: "/app/apply/$jobId",
+              to: "/apply/$jobId",
               params: { jobId: previous.id },
             })
           }
@@ -197,7 +197,7 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
           onClick={() =>
             next &&
             void navigate({
-              to: "/app/apply/$jobId",
+              to: "/apply/$jobId",
               params: { jobId: next.id },
             })
           }
@@ -456,11 +456,11 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
                     const destination = next ?? previous
                     if (destination) {
                       void navigate({
-                        to: "/app/apply/$jobId",
+                        to: "/apply/$jobId",
                         params: { jobId: destination.id },
                       })
                     } else {
-                      void navigate({ to: "/app/apply" })
+                      void navigate({ to: "/apply" })
                     }
                     queryClient.removeQueries({ queryKey: jobGetKey(id) })
                     void refreshQueries(
@@ -557,7 +557,7 @@ function PaperField({
         </div>
       ) : null}
       {kind === "letter" ? (
-        <Link to="/app/paper" className="text-sm underline">
+        <Link to="/paper" className="text-sm underline">
           Write a new cover letter
         </Link>
       ) : null}

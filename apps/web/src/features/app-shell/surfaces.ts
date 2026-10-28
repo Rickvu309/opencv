@@ -1,26 +1,9 @@
-export type SurfaceId =
-  | "coach"
-  | "jobs"
-  | "inbox"
-  | "proofs"
-  | "paper"
-  | "apply"
-  | "pitch"
-  | "settings"
+import { HOME_PATH, SURFACE_PATHS } from "@/lib/product-paths.ts"
 
-export const SURFACE_PATHS = {
-  coach: "/app/coach",
-  jobs: "/app/jobs",
-  inbox: "/app/inbox",
-  proofs: "/app/proofs",
-  paper: "/app/paper",
-  apply: "/app/apply",
-  pitch: "/app/pitch",
-  settings: "/app/settings",
-} as const satisfies Record<SurfaceId, string>
+export type SurfaceId = keyof typeof SURFACE_PATHS
 
 /** Left until #377 replaces Home. Not a shell surface. */
-export const HOME_PATH = "/app/home"
+export { HOME_PATH, SURFACE_PATHS }
 
 export const SURFACE_COPY: Record<SurfaceId, { title: string; body: string }> =
   {

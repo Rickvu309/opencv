@@ -21,12 +21,12 @@ describe("lazy routes", () => {
     expect(loaded.paper).toBe(0)
     expect(loaded.apply).toBe(0)
 
-    const { router } = renderApp("/app/home")
+    const { router } = renderApp("/home")
     await screen.findByRole("main")
     expect(loaded.paper).toBe(0)
     expect(loaded.apply).toBe(0)
 
-    await act(() => router.navigate({ to: "/app/paper" }))
+    await act(() => router.navigate({ to: "/paper" }))
     expect(
       await screen.findByRole("heading", { name: "Paper stub" })
     ).toBeInTheDocument()

@@ -87,7 +87,7 @@ function useSettingsSave() {
       await runCommand("profile.update", patch)
     } catch (caught) {
       if (isPlanRequired(caught)) {
-        await navigate({ href: "/app/settings/billing/upgrade" })
+        await navigate({ href: "/settings/billing/upgrade" })
         return
       }
       setErrorKey(key)

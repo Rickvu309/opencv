@@ -68,7 +68,7 @@ local `pnpm dev` wants. The second stage is `caddy:2-alpine` serving
 - Listens on `$PORT`, 8080 when unset.
 - `GET /health` answers `ok` with 200.
 - Every other path tries the file, then falls back to `/index.html`, because
-  TanStack Router routes client-side and a refresh on `/app` must not 404.
+  TanStack Router routes client-side and a refresh on `/coach` must not 404.
 - `/assets/*` is `public, max-age=31536000, immutable`; everything else is
   `no-cache`, so a deploy shows up on the next load.
 
@@ -103,11 +103,14 @@ Setting only one, invalid origins, or overlapping hostnames fails the build.
 Both values are build inputs, including Turbo's cache key. Restarting an old
 image does not change its routing.
 
-When enabled, one web image serves both hosts. Sign-in, sign-up and `/app/*`
-belong to the app origin. Pricing, about, help, `/share/*` and future published
-`/u/*` pages belong to the public origin. The public root stays the landing page
-even for a signed-in visitor. The app root opens `/app`. Unknown hosts and paths,
-health checks and assets keep their existing behavior. This does not add Pitch.
+When enabled, one web image serves both hosts. Sign-in, sign-up and product
+paths such as `/coach` and `/paper` belong to the app origin. Pricing, about,
+help, `/share/*` and future published `/u/*` pages belong to the public origin.
+The public root stays the landing page even for a signed-in visitor. The app
+root is the product entry and opens the start page. A request whose path is
+`/app` or `/app/*` is stripped to that path on the app origin. Unknown hosts
+and paths, health checks and assets keep their existing behavior. This does
+not add Pitch.
 
 The Vite build generates `.generated/host-routing.caddy` from the same policy
 used by the router and landing links. Docker copies it next to the Caddyfile,

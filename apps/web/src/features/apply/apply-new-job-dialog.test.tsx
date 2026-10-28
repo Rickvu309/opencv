@@ -12,7 +12,7 @@ import {
 const posting = "https://careers.verify-posting.dev/associate-pm-intern"
 
 async function openDialog(onRequest?: (input: RequestInfo | URL) => void) {
-  renderApp("/app/apply", onRequest)
+  renderApp("/apply", onRequest)
   fireEvent.click(await screen.findByRole("button", { name: "New job" }))
   return screen.findByRole("dialog", { name: "New job" })
 }
@@ -162,7 +162,7 @@ describe("new job dialog", () => {
       company: "Northwind Labs",
     })
     setMockJobs([existing])
-    const { router } = renderApp("/app/apply")
+    const { router } = renderApp("/apply")
     fireEvent.click(await screen.findByRole("button", { name: "New job" }))
     fireEvent.change(screen.getByLabelText("Paste the job link"), {
       target: { value: "https://jobs.example/create-duplicate" },
@@ -173,7 +173,7 @@ describe("new job dialog", () => {
     expect(await screen.findByText(/in Interview/)).toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "Open" }))
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe(`/app/apply/${existing.id}`)
+      expect(router.state.location.pathname).toBe(`/apply/${existing.id}`)
     })
   })
 })

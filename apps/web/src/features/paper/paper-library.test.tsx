@@ -49,7 +49,7 @@ describe("Paper library", () => {
     ).toBeInTheDocument()
     expect(screen.getByRole("link", { name: "Proof" })).toHaveAttribute(
       "href",
-      "/app/proof"
+      "/proof"
     )
     expect(
       screen.getByRole("button", { name: "Choose file" })

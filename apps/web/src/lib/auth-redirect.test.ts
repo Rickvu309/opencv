@@ -10,10 +10,17 @@ import {
 
 describe("safeRedirectPath", () => {
   it("keeps in-app surface paths", () => {
-    expect(safeRedirectPath("/app/paper")).toBe("/app/paper")
+    expect(safeRedirectPath("/app/paper")).toBe("/paper")
     expect(safeRedirectPath("/app/settings?tab=account")).toBe(
-      "/app/settings?tab=account"
+      "/settings?tab=account"
     )
+    expect(safeRedirectPath("/paper?doc=a%2Fb#page")).toBe(
+      "/paper?doc=a%2Fb#page"
+    )
+    expect(safeRedirectPath("/")).toBeUndefined()
+    expect(safeRedirectPath("/app")).toBeUndefined()
+    expect(safeRedirectPath("/app/")).toBeUndefined()
+    expect(safeRedirectPath("/app?utm=1#start")).toBe("/?utm=1#start")
   })
 
   it("rejects off-origin and auth-screen loops", () => {
@@ -29,7 +36,7 @@ describe("validateAuthSearch", () => {
   it("drops an unsafe redirect", () => {
     expect(validateAuthSearch({ redirect: "https://evil.test" })).toEqual({})
     expect(validateAuthSearch({ redirect: "/app/apply" })).toEqual({
-      redirect: "/app/apply",
+      redirect: "/apply",
     })
     expect(
       validateAuthSearch({ email: "ada@verify.local", error: "google" })
@@ -45,7 +52,7 @@ describe("validateAuthSearch", () => {
 
 describe("redirectFromSearch", () => {
   it("reads a safe redirect from parsed search", () => {
-    expect(redirectFromSearch({ redirect: "/app/paper" })).toBe("/app/paper")
+    expect(redirectFromSearch({ redirect: "/app/paper" })).toBe("/paper")
     expect(
       redirectFromSearch({ redirect: "https://evil.test" })
     ).toBeUndefined()
@@ -54,13 +61,18 @@ describe("redirectFromSearch", () => {
 
 describe("signInHref", () => {
   it("preserves the originally requested surface", () => {
-    expect(signInHref("/app/paper")).toBe("/sign-in?redirect=%2Fapp%2Fpaper")
+    expect(signInHref("/app/paper")).toBe("/sign-in?redirect=%2Fpaper")
   })
 
   it("does not loop on auth screens or Home", () => {
     expect(signInHref("/sign-in")).toBe("/sign-in")
     expect(signInHref("/sign-up")).toBe("/sign-in")
+    expect(signInHref("/")).toBe("/sign-in")
     expect(signInHref("/app")).toBe("/sign-in")
+    expect(signInHref("/app/")).toBe("/sign-in")
+    expect(signInHref("/app?utm=1#start")).toBe(
+      "/sign-in?redirect=%2F%3Futm%3D1%23start"
+    )
     expect(isAuthPath("/sign-up")).toBe(true)
   })
 })

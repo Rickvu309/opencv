@@ -70,7 +70,7 @@ export function ApplyBoard({
 
   function openJob(jobId: string) {
     void navigate({
-      to: "/app/apply/$jobId",
+      to: "/apply/$jobId",
       params: { jobId },
     })
   }

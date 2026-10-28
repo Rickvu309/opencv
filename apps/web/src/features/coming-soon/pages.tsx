@@ -11,7 +11,7 @@ export function JobsPage() {
       title={soonCopy.jobsTitle}
       body={soonCopy.jobsBody}
       primary={{ label: soonCopy.notify, topic: "jobs" }}
-      secondary={{ label: soonCopy.track, to: "/app/apply" }}
+      secondary={{ label: soonCopy.track, to: "/apply" }}
       preview={<JobsPreview />}
     />
   )

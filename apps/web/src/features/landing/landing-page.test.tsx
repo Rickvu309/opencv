@@ -296,7 +296,7 @@ describe("index route guard", () => {
     const { router } = renderApp("/")
 
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe("/app/apply")
+      expect(router.state.location.pathname).toBe("/apply")
     })
     expect(
       screen.queryByRole("heading", { level: 1, name: HEADLINE })

@@ -8,13 +8,13 @@ import { startPagePath } from "@/features/app-shell/start-page.ts"
 
 describe("startPagePath", () => {
   it("maps the four start pages and sends anything else to Apply", () => {
-    expect(startPagePath("apply")).toBe("/app/apply")
-    expect(startPagePath("paper")).toBe("/app/paper")
-    expect(startPagePath("inbox")).toBe("/app/inbox")
-    expect(startPagePath("coach")).toBe("/app/coach")
-    expect(startPagePath("home")).toBe("/app/apply")
-    expect(startPagePath(undefined)).toBe("/app/apply")
-    expect(startPagePath(null)).toBe("/app/apply")
+    expect(startPagePath("apply")).toBe("/apply")
+    expect(startPagePath("paper")).toBe("/paper")
+    expect(startPagePath("inbox")).toBe("/inbox")
+    expect(startPagePath("coach")).toBe("/coach")
+    expect(startPagePath("home")).toBe("/apply")
+    expect(startPagePath(undefined)).toBe("/apply")
+    expect(startPagePath(null)).toBe("/apply")
   })
 })
 

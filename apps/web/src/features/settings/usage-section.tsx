@@ -75,9 +75,7 @@ export function UsageSection({
         <Button
           type="button"
           variant="outline"
-          onClick={() =>
-            void navigate({ href: "/app/settings/billing/upgrade" })
-          }
+          onClick={() => void navigate({ href: "/settings/billing/upgrade" })}
         >
           Upgrade to Pro
         </Button>

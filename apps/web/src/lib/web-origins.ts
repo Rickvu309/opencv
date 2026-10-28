@@ -1,11 +1,15 @@
-const PRODUCT_PATHS = [
+import { HOME_PATH, SURFACE_PATHS, legacyAppPath } from "./product-paths.ts"
+
+const PRODUCT_ROOTS = [
   "/sign-in",
-  "/sign-in/",
   "/sign-up",
-  "/sign-up/",
-  "/app",
-  "/app/*",
+  HOME_PATH,
+  ...Object.values(SURFACE_PATHS),
+  "/proof",
 ]
+const PRODUCT_PREFIXES = (["paper", "apply", "settings"] as const).map(
+  (id) => `${SURFACE_PATHS[id]}/`
+)
 const PUBLIC_PATHS = [
   "/pricing",
   "/pricing/",
@@ -89,6 +93,21 @@ function matchesPath(path: string, patterns: string[]) {
   )
 }
 
+function canonicalPathname(pathname: string) {
+  if (pathname.length > 1 && pathname.endsWith("/")) {
+    return pathname.slice(0, -1)
+  }
+  return pathname
+}
+
+function isProductPath(pathname: string) {
+  const path = canonicalPathname(pathname)
+  return (
+    PRODUCT_ROOTS.includes(path) ||
+    PRODUCT_PREFIXES.some((prefix) => path.startsWith(prefix))
+  )
+}
+
 export function documentTarget(
   current: URL,
   origins: WebOrigins
@@ -96,14 +115,13 @@ export function documentTarget(
   if (origins.kind === "single") return null
   const suffix = `${current.pathname}${current.search}${current.hash}`
   if (origins.publicHosts.includes(current.hostname)) {
-    return matchesPath(current.pathname, PRODUCT_PATHS)
+    const stripped = legacyAppPath(suffix)
+    if (stripped !== undefined) return `${origins.appOrigin}${stripped}`
+    return isProductPath(current.pathname)
       ? `${origins.appOrigin}${suffix}`
       : null
   }
   if (current.hostname !== origins.appHost) return null
-  if (current.pathname === "/") {
-    return `${origins.appOrigin}/app${current.search}${current.hash}`
-  }
   return matchesPath(current.pathname, PUBLIC_PATHS)
     ? `${origins.publicOrigin}${suffix}`
     : null
@@ -118,9 +136,8 @@ export function shareUrl(
   return `${origin}/share/${encodeURIComponent(token)}`
 }
 
-export function caddyRedirects(origins: WebOrigins): string {
-  if (origins.kind === "single") return ""
-  const block = (name: string, match: string[], target: string) => `
+function block(name: string, match: string[], target: string) {
+  return `
 @${name} {
   ${match.join("\n  ")}
 }
@@ -129,27 +146,55 @@ handle @${name} {
   redir ${target} 307
 }
 `
+}
+
+function productCaddyPaths() {
+  const exact = PRODUCT_ROOTS.flatMap((path) => [path, `${path}/`])
+  const wild = PRODUCT_PREFIXES.map((prefix) => `${prefix}*`)
+  return [...exact, ...wild].join(" ")
+}
+
+function legacyBlocks(name: string, host: string, origin: string) {
   return [
     block(
-      "app_root_query",
+      `${name}_legacy_root_query`,
       [
-        `host ${origins.appHost}`,
-        "path /",
+        `host ${host}`,
+        "path /app /app/",
         'expression `{http.request.uri.query} != ""`',
       ],
-      `${origins.appOrigin}/app?{http.request.uri.query}`
+      `${origin}/?{http.request.uri.query}`
     ),
     block(
-      "app_root",
-      [`host ${origins.appHost}`, "path /"],
-      `${origins.appOrigin}/app`
+      `${name}_legacy_root`,
+      [`host ${host}`, "path /app /app/"],
+      `${origin}/`
     ),
+    block(
+      `${name}_legacy`,
+      [
+        `host ${host}`,
+        `path_regexp ${name}_legacy ^/app(/.*)$`,
+        'expression `{http.request.uri.query} != ""`',
+      ],
+      `${origin}{re.${name}_legacy.1}?{http.request.uri.query}`
+    ),
+    block(
+      `${name}_legacy_plain`,
+      [`host ${host}`, `path_regexp ${name}_legacy_plain ^/app(/.*)$`],
+      `${origin}{re.${name}_legacy_plain.1}`
+    ),
+  ].join("")
+}
+
+export function caddyRedirects(origins: WebOrigins): string {
+  if (origins.kind === "single") return ""
+  return [
+    legacyBlocks("public", origins.publicHosts.join(" "), origins.appOrigin),
+    legacyBlocks("app", origins.appHost, origins.appOrigin),
     block(
       "public_product",
-      [
-        `host ${origins.publicHosts.join(" ")}`,
-        `path ${PRODUCT_PATHS.join(" ")}`,
-      ],
+      [`host ${origins.publicHosts.join(" ")}`, `path ${productCaddyPaths()}`],
       `${origins.appOrigin}{uri}`
     ),
     block(

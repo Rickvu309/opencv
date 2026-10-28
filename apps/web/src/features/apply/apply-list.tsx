@@ -38,7 +38,7 @@ export function ApplyList({
               phrase={listPhrase(job)}
               onOpen={() =>
                 void navigate({
-                  to: "/app/apply/$jobId",
+                  to: "/apply/$jobId",
                   params: { jobId: job.id },
                 })
               }

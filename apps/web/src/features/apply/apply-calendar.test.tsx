@@ -27,7 +27,7 @@ describe("apply calendar", () => {
         interviewAt: `${year}-${month}-${day}T03:00:00.000Z`,
       }),
     ])
-    const { router } = renderApp("/app/apply?view=calendar")
+    const { router } = renderApp("/apply?view=calendar")
     expect(await screen.findByText("Week interview")).toBeInTheDocument()
     const dayLabel = new Intl.DateTimeFormat("en-US", {
       weekday: "short",
