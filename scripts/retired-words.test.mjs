@@ -77,13 +77,6 @@ const RETIRED = [
         why: "the ui comment-thread component is a stack of review comments, not a conversation with the Coach",
       },
       {
-        path: /^apps\/web\/src\/features\/paper\/paper-suggestion-(?:bar|thread)(?:\.test)?\.tsx$/,
-        match:
-          /^(?:CommentThread|PaperSuggestionThread|SuggestionThread|SuggestionThreadMessage|ThreadMessage|comment-thread|paper-suggestion-thread|thread)$/,
-        line: /CommentThread|ThreadMessage|comment-thread|SuggestionThread|suggestion-thread|read-only thread/,
-        why: "a read-only comment thread of the Coach's suggested Paper changes, built on the ui comment-thread; not a Chat",
-      },
-      {
         path: /^apps\/web\/src\/features\/coach\/chat-list-port\.test\.ts$/,
         match: /^HomeThread$/,
         line: /HomeThread/,
