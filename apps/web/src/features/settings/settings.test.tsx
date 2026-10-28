@@ -9,7 +9,7 @@ import {
 } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 
-import { DESKTOP_MEDIA_QUERY } from "@/features/app-shell/use-media-query.ts"
+import { DESKTOP_MEDIA_QUERY } from "@/lib/use-media-query.ts"
 import { runContractCommand } from "@/lib/contract-client.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import {

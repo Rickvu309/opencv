@@ -27,7 +27,7 @@ Single-context (`CONTEXT.md` + `docs/adr/` at repo root). See `docs/agents/domai
   - `registry/` runs every command, writes the `activity`, `pending_actions` and idempotency rows, and builds the Coach's tools.
   - `coach/` runs a Coach turn and is the only importer of the AI SDK. It has no contract commands.
   - `mail/` sends sign-in codes. `db/schema.ts` is the schema.
-- `apps/web/src` is the SPA. `routes/` holds pages and `features/<surface>/` holds each surface's components and state. `lib/` is the only place that calls the api.
+- `apps/web/src` is the SPA. `routes/` holds pages, `features/<surface>/` each surface's code and tests, `components/` and `lib/` what features share. Only `lib/` calls the api.
   - `contract-client.ts` runs commands and owns read keys and refresh.
   - `api.ts` (`apiFetch`) and `requests.ts` (`endpoints`) fetch reads.
   - `coach-stream.ts` reads the Coach stream.

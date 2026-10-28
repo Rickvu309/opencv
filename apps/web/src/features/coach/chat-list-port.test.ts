@@ -1,9 +1,6 @@
 import { createElement, type ReactNode } from "react"
 import { QueryClientProvider } from "@tanstack/react-query"
 import { renderHook, waitFor } from "@testing-library/react"
-import { readFileSync } from "node:fs"
-import path from "node:path"
-import { fileURLToPath } from "node:url"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { ChatStoreProvider } from "@/features/coach/chat-store.tsx"
@@ -12,17 +9,6 @@ import { useChatList } from "@/features/coach/use-chat-list.ts"
 import { createQueryClient } from "@/lib/query-client.ts"
 import { FIXTURE_CHATS } from "@/test/chat-fixtures.ts"
 import { installChatApiMock } from "@/test/chat-api-mock.ts"
-
-const here = path.dirname(fileURLToPath(import.meta.url))
-const appShellDir = path.resolve(here, "../app-shell")
-
-const SHELL_FILES = [
-  "app-shell-layout.tsx",
-  "app-shell.tsx",
-  "nav-profile.tsx",
-  "search-chats.ts",
-  "sidebar-nav.ts",
-]
 
 function wrapper({ children }: { children: ReactNode }) {
   installChatApiMock()
@@ -69,13 +55,5 @@ describe("ChatListPort", () => {
     expect(toChatSummaries(FIXTURE_CHATS)).toEqual(
       FIXTURE_CHATS.map(({ id, title }) => ({ id, title }))
     )
-  })
-
-  it("keeps HomeThread and the full store hook out of shell chrome", () => {
-    for (const file of SHELL_FILES) {
-      const src = readFileSync(path.join(appShellDir, file), "utf8")
-      expect(src, file).not.toMatch(/HomeThread/)
-      expect(src, file).not.toMatch(/useChatStore/)
-    }
   })
 })

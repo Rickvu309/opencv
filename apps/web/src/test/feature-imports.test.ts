@@ -9,17 +9,25 @@ const featuresDir = path.join(srcDir, "features")
 
 const FEATURE_IMPORTS: Record<string, string[]> = {
   apply: [],
-  "app-shell": ["apply", "auth", "coach", "command-palette", "inbox", "paper"],
+  "app-shell": [
+    "apply",
+    "auth",
+    "coach",
+    "command-palette",
+    "inbox",
+    "paper",
+    "seed",
+  ],
   auth: [],
-  coach: ["app-shell", "settings"],
+  coach: ["settings"],
   "coming-soon": [],
   "command-palette": [],
   commands: [],
   inbox: ["apply"],
-  landing: ["app-shell"],
+  landing: [],
   paper: ["apply", "coach", "seed"],
   seed: [],
-  settings: ["app-shell", "auth"],
+  settings: ["auth"],
 }
 
 const SPECIFIER = /["'`]((?:@\/features\/|\.{1,2}\/)[^"'`\s]*)["'`]/g
@@ -43,6 +51,26 @@ function importedFeature(file: string, specifier: string): string | null {
     return specifier.slice("@/features/".length).split("/")[0] ?? null
   }
   return featureOf(path.resolve(path.dirname(file), specifier))
+}
+
+function findCycle(graph: Record<string, string[]>): string[] | null {
+  const done = new Set<string>()
+  const walk = (name: string, trail: string[]): string[] | null => {
+    const at = trail.indexOf(name)
+    if (at >= 0) return [...trail.slice(at), name]
+    if (done.has(name)) return null
+    for (const next of graph[name] ?? []) {
+      const cycle = walk(next, [...trail, name])
+      if (cycle) return cycle
+    }
+    done.add(name)
+    return null
+  }
+  for (const name of Object.keys(graph)) {
+    const cycle = walk(name, [])
+    if (cycle) return cycle
+  }
+  return null
 }
 
 describe("feature imports", () => {
@@ -96,5 +124,25 @@ describe("feature imports", () => {
       unused,
       "These FEATURE_IMPORTS edges in apps/web/src/test/feature-imports.test.ts have no import left. Delete them."
     ).toEqual([])
+  })
+
+  it("has no import cycle between features", () => {
+    const cycle = findCycle(FEATURE_IMPORTS)
+    expect(
+      cycle,
+      cycle
+        ? `FEATURE_IMPORTS has an import cycle: ${cycle.join(" -> ")}. Move the code both sides need into apps/web/src/lib or apps/web/src/components.`
+        : ""
+    ).toBeNull()
+  })
+
+  it("names the path of a cycle", () => {
+    expect(findCycle({ a: ["b"], b: ["c"], c: ["a"], d: [] })).toEqual([
+      "a",
+      "b",
+      "c",
+      "a",
+    ])
+    expect(findCycle({ a: ["b"], b: [], c: ["b"] })).toBeNull()
   })
 })

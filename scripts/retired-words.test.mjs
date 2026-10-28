@@ -56,7 +56,7 @@ const RETIRED = [
         why: "the inbox thread route is keyed by an inbox threadId",
       },
       {
-        path: /^apps\/web\/src\/(?:features\/app-shell\/shell-api|test\/shell-api-mock)\.ts$|^apps\/web\/src\/routes\/app-shell\.test\.tsx$/,
+        path: /^apps\/web\/src\/(?:features\/app-shell\/shell-api|test\/shell-api-mock)\.ts$|^apps\/web\/src\/features\/app-shell\/app-shell\.test\.tsx$/,
         match: /^threads$/,
         why: "the inbox list response field is named threads",
       },
@@ -77,7 +77,7 @@ const RETIRED = [
         why: "the ui comment-thread component is a stack of review comments, not a conversation with the Coach",
       },
       {
-        path: /^apps\/web\/src\/features\/coach\/chat-list-port\.test\.ts$/,
+        path: /^apps\/web\/src\/features\/app-shell\/shell-chrome\.test\.ts$/,
         match: /^HomeThread$/,
         line: /HomeThread/,
         why: "tombstone: asserts the retired HomeThread hook stays out of shell chrome",
