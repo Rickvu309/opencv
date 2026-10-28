@@ -9,7 +9,11 @@ import type { AppDatabase } from "./db/context.js"
 import { runMigrations } from "./db/migrate.js"
 import * as schema from "./db/schema.js"
 import { user, verification } from "./db/schema.js"
-import { createMigratedTestDb, createTestApp, testAuthUrl } from "./test/harness.js"
+import {
+  createMigratedTestDb,
+  createTestApp,
+  testAuthUrl,
+} from "./test/harness.js"
 
 import {
   codeLine,
