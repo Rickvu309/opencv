@@ -26,7 +26,6 @@ const PENDING_FRAMES: Record<string, { issue: number; expires: string }> = {
   Vm0eJ: { issue: 498, expires: "2026-12-31" }, // W3.5 Coach working
   wiQ9M: { issue: 498, expires: "2026-12-31" }, // W3.6 Free cap reached
   kmUTI: { issue: 498, expires: "2026-12-31" }, // W3.7 Coach panel
-  NHq3j: { issue: 498, expires: "2026-12-31" }, // W4.1 Jobs coming soon
   YC0lV: { issue: 498, expires: "2026-12-31" }, // W5.1 Paper first run
   mkEKx: { issue: 498, expires: "2026-12-31" }, // W5.2 Paper library
   VH2fp: { issue: 498, expires: "2026-12-31" }, // W5.3 Paper menus

@@ -28,7 +28,7 @@ async function openSearch(path = "/jobs") {
   renderApp(path)
   expect(
     await screen.findByRole("heading", {
-      level: 1,
+      level: 2,
       name: "Jobs, matched to you",
     })
   ).toBeInTheDocument()
@@ -41,7 +41,7 @@ describe("command palette", () => {
     renderApp("/jobs")
     expect(
       await screen.findByRole("heading", {
-        level: 1,
+        level: 2,
         name: "Jobs, matched to you",
       })
     ).toBeInTheDocument()
@@ -156,7 +156,7 @@ describe("command palette", () => {
     const { router } = renderApp("/jobs")
     expect(
       await screen.findByRole("heading", {
-        level: 1,
+        level: 2,
         name: "Jobs, matched to you",
       })
     ).toBeInTheDocument()

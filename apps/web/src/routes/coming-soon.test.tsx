@@ -23,10 +23,10 @@ describe("coming soon and the calm 404", () => {
     renderApp("/jobs")
 
     expect(
-      await screen.findByRole("heading", {
-        level: 1,
-        name: "Jobs, matched to you",
-      })
+      await screen.findByRole("heading", { level: 1, name: "Jobs" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Jobs, matched to you" })
     ).toBeInTheDocument()
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1)
     expect(
