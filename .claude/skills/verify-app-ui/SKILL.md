@@ -45,7 +45,7 @@ Each check has one kind, in `scripts/lib/kinds.mjs` and [properties.md](properti
 
 ## In the PR review
 
-`scripts/review-pr.sh` runs this checker at `VERIFY_TIER=invariant` for a PR that touches `apps/web/`, `packages/ui/` or a verify skill. `known-findings.json` next to this file lists the invariant FAILs that are allowed, each tracked by an issue: `[{ "id": "20", "issue": 553, "since": "2026-10-29", "note": "..." }]`. The review reads the copy on `main`. A FAIL not listed, a listed check that now passes (delete its entry in the fix PR), a STALE and an exit 2 each fail the review. Add an entry only after the issue exists, on `main` in its own PR.
+`scripts/review-pr.sh` runs this checker at `VERIFY_TIER=invariant` for a PR that touches `apps/web/`, `apps/api/`, `packages/ui/`, `packages/domain/` or a verify skill. `known-findings.json` next to this file lists the invariant FAILs that are allowed, each tracked by an issue: `[{ "id": "20", "issue": <number>, "since": "<date>", "note": "..." }]`. The review allows the entries on `main` that the PR still has, so a fix PR deletes its entry (if the check still FAILs, that is a new FAIL). A NEW FAIL is rerun once and counts only when it fails in both runs. A FAIL not listed, a listed check that now passes, a STALE and a checker exit other than 0, 1 or 3 each fail the review. Add an entry only after the issue exists, in its own PR that changes nothing but `known-findings.json` files; a PR that adds an entry and changes anything else fails.
 
 ## Apply against opencv.pen
 

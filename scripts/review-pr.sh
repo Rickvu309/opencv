@@ -9,10 +9,12 @@
 # The checks run on the merge of origin/main and the PR head, which is what a squash merge lands, so a branch behind
 # main needs no rebase. Only a merge conflict does. A passing check is cached by the tested tree (--no-cache reruns it).
 # After check.sh passes, the worktree builds the API and web. A failed build is a FAIL. The cache covers both.
-# A PR that touches apps/web, packages/ui or a verify skill then runs both UI checkers at the invariant tier
-# (VERIFY_TIER=invariant). Each skill's known-findings.json on origin/main lists the FAILs that are allowed; any other
-# FAIL, a listed finding that now passes, a STALE or a checker error is a FAIL of the review. There is no skip flag.
-# The cache covers it and keys on main's copies of both lists, both checkers' scripts/ trees and scripts/lib/verify-gate.mjs.
+# A PR that touches apps/web, apps/api, packages/ui, packages/domain or a verify skill then runs both UI checkers at the
+# invariant tier (VERIFY_TIER=invariant). The allowed FAILs are each skill's known-findings.json on origin/main minus the
+# entries the PR deletes, so a fix PR removes its entry and no PR excuses its own FAIL. A PR may add an entry only when it
+# changes nothing but known-findings.json files (the tier is then skipped, with a note). Any other FAIL (a NEW FAIL must
+# fail in two runs), a listed finding that now passes, a STALE or a checker error is a FAIL of the review. No skip flag.
+# The cache covers it and keys on main's copies of both lists, both checkers' scripts/ trees and scripts/lib/verify-{gate,tier}.
 # The patch id it prints is stable across a rebase that leaves the diff text unchanged; record it with the independent
 # review and the verify evidence so they stay valid for the same patch on a new base. Needs git 2.39 or later.
 #
@@ -42,8 +44,10 @@ APP_DELETE_PCT=80
 # A real env file (not a template) committed by mistake. Templates such as .env.example stay allowed.
 ENV_FILE_RE='(^|/)(\.env|[A-Za-z0-9_-]+\.env)(\.[A-Za-z0-9_-]+)*$'   # matched case-insensitively
 ENV_TEMPLATE_RE='\.(example|sample|template)$'
-VERIFY_RE='^(apps/web/|packages/ui/|\.claude/skills/verify-(app-ui|landing)/)'
-VERIFY_EDIT_RE='^\.claude/skills/verify-(app-ui|landing)/(known-findings\.json|scripts/)'
+# Anything that feeds the stack the app-ui checker drives (web, api, domain, ui), the checkers, and the script that starts the stack.
+VERIFY_RE='^(apps/(web|api)/|packages/(ui|domain)/|\.claude/skills/verify-(app-ui|landing)/|\.claude/skills/verify-opencv/scripts/)'
+VERIFY_EDIT_RE='^\.claude/skills/verify-(app-ui|landing|opencv)/(known-findings\.json|scripts/)'
+VERIFY_LIST_RE='^\.claude/skills/verify-(app-ui|landing)/known-findings\.json$'
 
 die() { result_fail "${DIE_CAUSE:-other}" "$*"; echo "error: $*" >&2; exit 1; }
 fails=(); humans=(); notes=()
@@ -182,8 +186,10 @@ gate=$(grep -E '^(package\.json|scripts/|\.githooks/|\.github/)' <<<"$files" || 
 [[ -z "$gate" ]] || note "changes workflow/check files, review them closely: $(tr '\n' ' ' <<<"$gate")"
 verify_edits=$(grep -E "$VERIFY_EDIT_RE" <<<"$files" || true)
 [[ -z "$verify_edits" ]] || note "edits a verify known-findings.json or checker script, so the review must read that diff: $(tr '\n' ' ' <<<"$verify_edits")"
+verify_scripts=$(git -C "$main_checkout" diff --no-color --no-ext-diff -U0 "origin/main...$head_ref" -- apps/web/package.json | grep -E '^[+-].*"verify:' || true)
+[[ -z "$verify_scripts" ]] || note "edits a verify:* script in apps/web/package.json, so the review must read that diff"
 verify_needed=0
-if grep -qE "$VERIFY_RE" <<<"$files"; then verify_needed=1; else note "touches no apps/web, packages/ui or verify skill file; the verify tier is skipped"; fi
+if grep -qE "$VERIFY_RE" <<<"$files"; then verify_needed=1; else note "touches no apps/web, apps/api, packages/ui, packages/domain or verify skill file; the verify tier is skipped"; fi
 
 echo
 echo "Merge with main and checks"
@@ -221,6 +227,18 @@ set -e
 if (( merge_rc == 0 )); then
   tree=${merge_out%%$'\n'*}
   ok "merges cleanly with main (tested tree ${tree:0:12})"
+  # The allowed list is main's, minus what the PR deletes. A PR adds an entry only alone, in a PR that changes nothing but known-findings.json files.
+  list_adds=$(verify_list_adds)
+  if [[ -n "$list_adds" ]]; then
+    if grep -q ' ERROR ' <<<"$list_adds"; then
+      bad "a known-findings.json does not parse: $(grep ' ERROR ' <<<"$list_adds" | head -1)"
+    elif grep -qvE "$VERIFY_LIST_RE" <<<"$files"; then
+      bad "adds known finding(s) ($(sed 's/ ADDED /:/' <<<"$list_adds" | tr '\n' ' ')) and changes other files; land the entry in its own PR, with its issue, that changes only known-findings.json"
+    else
+      verify_needed=0
+      note "adds known finding(s) ($(sed 's/ ADDED /:/' <<<"$list_adds" | tr '\n' ' ')) and changes nothing else, so the verify tier is skipped; the review must read that diff and check each entry's issue is open"
+    fi
+  fi
   git -C "$main_checkout" worktree add --quiet --detach --no-checkout "$wt" origin/main
   # The checkout writes the PR's .githooks/ too; hooks stay off for this one command so none of them fires here.
   git -C "$wt" -c core.hooksPath=/dev/null read-tree -u --reset "$tree"
