@@ -23,6 +23,7 @@ import {
   stubSilent,
 } from "./check-util.mjs"
 import { keyboardPrimaryCheck, primaryButtonCheck } from "./checks-primary.mjs"
+import { boardLanes } from "./checks-stages.mjs"
 
 export function runChecks(d) {
   const r = contentChecks(d)
@@ -33,33 +34,30 @@ export function runChecks(d) {
   const editor = d.cv.editorRect
   const side = d.cv.sidebarRect
   const widest = Boolean(editor) && (!side || editor.w >= side.w)
-  const noFloat = !d.cv.coachFloat
   const panelClosed = !d.cv.panelRect
   r.push(
     result(
       "15",
       "cv-widest-coach-beside",
-      widest && noFloat && panelClosed,
+      widest && panelClosed,
       editor
-        ? `editor ${editor.w}px, sidebar ${side?.w ?? "none"}px, float ${Boolean(d.cv.coachFloat)}, panel ${d.cv.panelRect ? "open" : "closed"}`
+        ? `editor ${editor.w}px, sidebar ${side?.w ?? "none"}px, panel ${d.cv.panelRect ? "open" : "closed"}`
         : "no editor region",
-      "with the Coach panel closed, the CV editor is the widest region and no second Coach float covers the sheet (an open panel is #377)"
+      "with the Coach panel closed, the CV editor is the widest region (an open panel is #377)"
     )
   )
 
-  const headers = ["Saved", "Applied", "Interview", "Offer"]
-  const headings = d.apply.headingsText ?? []
-  const missing = headers.filter((w) => !headings.includes(w))
-  const closedShown = headings.includes("Closed")
+  const board = boardLanes(d.apply)
   const hs =
     d.apply.docScroll.sw > d.apply.docScroll.cw || d.apply.hScrollers.length > 0
   r.push(
-    result(
+    judged(
       "16",
       "apply-five-stages-no-hscroll",
-      missing.length === 0 && !closedShown && !hs,
-      `missing: ${missing.join(" ") || "none"}; Closed visible: ${closedShown}; horizontal scroll: ${hs ? list(d.apply.hScrollers) || "page" : "none"}`,
-      "at 1440x900 Apply shows Saved, Applied, Interview and Offer as column headings and does not scroll sideways. Closed stays hidden. The 390 pass skips this property"
+      "at 1440x900 Apply shows a lane heading for every stage in JOB_STAGES except closed and does not scroll sideways. Closed stays hidden. The 390 pass skips this property",
+      board.missing.length === 0 && !board.hiddenShown && !hs,
+      `stages ${list(board.stages ?? [], 5) || "unread"}; missing lanes: ${board.missing.join(" ") || "none"}; Closed visible: ${board.hiddenShown}; horizontal scroll: ${hs ? list(d.apply.hScrollers) || "page" : "none"}`,
+      [board.unread]
     )
   )
 
@@ -155,16 +153,20 @@ export function runChecks(d) {
     )
   )
 
-  const stageHeads = ["Saved", "Applied", "Interview", "Offer"].filter((w) =>
-    (d.apply.headingsText ?? []).includes(w)
-  )
+  const shown = board.lanes.filter((l) => l.heading)
   r.push(
-    result(
+    judged(
       "23",
       "stage-word-plus-dot",
-      stageHeads.length === 4,
-      `${stageHeads.length} stage headings; ${list(stageHeads, 4)}`,
-      "Saved, Applied, Interview and Offer are visible headings. Closed is not a heading until Hidden columns"
+      "every stage in JOB_STAGES except closed is a visible lane headed with its own name. Closed is not a heading until Hidden columns",
+      board.missing.length === 0 &&
+        !board.hiddenShown &&
+        board.misnamed.length === 0,
+      `${shown.length} lane headings of ${board.stages?.length ?? "an unread number of"} stages; ${list(
+        shown.map((l) => l.heading),
+        5
+      )}${board.misnamed.map((l) => `; ${l.stage} lane headed "${l.heading}"`).join("")}`,
+      [board.unread]
     )
   )
 
@@ -280,24 +282,21 @@ export function runChecks(d) {
     )
   )
 
-  const rows = d.paper.rows.filter((h) => h > 0)
-  const bad = rows.filter((h) => h < 40 || h > 72)
+  const papers = d.paper.paperCards
+  const longPaper = papers.filter((x) => x.titleLines > 2)
   const tall = d.apply.cards.filter((x) => x.titleLines > 2)
   const untitled = d.apply.cards.filter((x) => x.titleLines === null)
   r.push(
     result(
       "36",
       "row-density",
-      rows.length > 0 &&
-        bad.length === 0 &&
+      papers.length > 0 &&
+        longPaper.length === 0 &&
         d.apply.cards.length > 0 &&
         untitled.length === 0 &&
         tall.length === 0,
-      `Paper rows ${list(
-        rows.map((h) => `${h}px`),
-        6
-      )}; Apply cards over 2 title lines: ${tall.length}${untitled.length ? `; ${untitled.length} cards with no card title element` : ""}${d.apply.cards.length ? "" : "; no cards"}`,
-      "Paper rows are 40 to 72px and no Apply card title runs past two lines (the title is found by its text from the card's aria-label, not by tag; no title element is a FAIL)"
+      `Paper cards ${papers.length}, over 2 title lines: ${longPaper.length}${papers.length ? "" : " (no card found)"}; Apply cards over 2 title lines: ${tall.length}${untitled.length ? `; ${untitled.length} cards with no card title element` : ""}${d.apply.cards.length ? "" : "; no cards"}`,
+      'no Paper card name and no Apply card title runs past two lines. The Paper library is a card grid since #396, so there are no rows to size. A Paper card is a button named "<name>, <edited>" holding those two texts; an Apply card title is found by its text from the card\'s aria-label, not by tag. No card or no title element is a FAIL'
     )
   )
 

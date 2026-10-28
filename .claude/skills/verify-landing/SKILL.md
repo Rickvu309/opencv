@@ -80,7 +80,7 @@ The judged rubric, the protocol, and the reviewer prompt are in [taste-review.md
 
 ## Coverage record
 
-The sync commit, the files and symbols each check reads, the constants the checks assume, and what is not covered are in [coverage.md](coverage.md). Read it before you change a check or the code it covers.
+The sync commit, the files and symbols each check reads, and what is not covered are in [coverage.md](coverage.md). What the checks assume about the app (folders, files, routes, section selectors) is `scripts/lib/assumes.mjs`, and `apps/web/src/test/verify-assumptions.test.ts` holds it against the repo on every push. Read it before you change a check or the code it covers.
 
 ## What else checks the landing
 

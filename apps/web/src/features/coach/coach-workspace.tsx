@@ -63,7 +63,13 @@ function historyGroup(date: string) {
   return timestamp >= week.getTime() ? "Last 7 days" : "Earlier"
 }
 
-export function CoachWorkspace({ chatId = null }: { chatId?: string | null }) {
+export function CoachWorkspace({
+  chatId = null,
+  primaryAction = false,
+}: {
+  chatId?: string | null
+  primaryAction?: boolean
+}) {
   const store = useChatStore()
   const { activeChatId, messages, phase, error, step, chats, openChat } = store
   const [draft, setDraft] = useState(() => takeCoachDraft() ?? "")
@@ -165,6 +171,7 @@ export function CoachWorkspace({ chatId = null }: { chatId?: string | null }) {
       onAttachFromPaper={() => setPicker("paper")}
       onAttachJob={() => setPicker("job")}
       onAttachLink={() => setPicker("link")}
+      primaryAction={primaryAction}
     />
   )
 

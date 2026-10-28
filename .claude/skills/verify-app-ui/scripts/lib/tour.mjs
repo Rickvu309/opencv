@@ -3,26 +3,28 @@
 // A step that does not happen throws (exit 2); it is never counted as a pass.
 import { readFileSync } from "node:fs"
 
+import {
+  API,
+  JOBS_PATH,
+  PATHS,
+  SEL,
+  TOURED,
+  apiMatches,
+  commandPath,
+} from "./assumes.mjs"
 import { colorsSource } from "./probe-colors.mjs"
 import { probeSource } from "./probe.mjs"
 
 const CV_NAME = "Live Check CV"
 const ROUTES = {
-  coach: ["/coach", "document.querySelector('h1')"],
+  coach: [PATHS.coach, "document.querySelector('h1')"],
   paper: [
-    "/paper",
+    PATHS.paper,
     `document.body.innerText.includes(${JSON.stringify(CV_NAME)})`,
   ],
-  apply: ["/apply", "document.querySelector('[data-card-id]')"],
-  pitch: ["/pitch", "document.querySelector('h1')"],
-  inbox: ["/inbox", "document.querySelector('h1')"],
-}
-// Also listed under "Constants the checks assume" in coverage.md.
-export const PRIMARY = {
-  coach: /^Add$/,
-  paper: /^New$/,
-  apply: /^(New job|Add job)$/,
-  pitch: /^Get early access$/,
+  apply: [PATHS.apply, `document.querySelector(${JSON.stringify(SEL.card)})`],
+  pitch: [PATHS.pitch, "document.querySelector('h1')"],
+  inbox: [PATHS.inbox, "document.querySelector('h1')"],
 }
 const EMPTY_BOARD = "document.body.innerText.includes('Track your first job')"
 const must = (ok, what) => {
@@ -59,18 +61,16 @@ const typeInto = (page, text) =>
     t.dispatchEvent(new Event('input', { bubbles: true }))
   })()`)
 
-async function tabWalk(page, key) {
+async function tabWalk(page) {
   await page.evaluate("document.activeElement && document.activeElement.blur()")
   for (let i = 1; i <= 60; i++) {
     await page.key("Tab")
     const hit = await page.evaluate(`(() => {
       const a = document.activeElement
       const l = (a.getAttribute('aria-label') || a.placeholder || a.textContent || '').trim()
-      return a.tagName + '|' + l
+      return { label: l, primary: Boolean(a.closest(${JSON.stringify(SEL.primary)})) }
     })()`)
-    const label = hit.slice(hit.indexOf("|") + 1)
-    if (PRIMARY[key].test(label))
-      return { reached: i, label: label.slice(0, 30) }
+    if (hit.primary) return { reached: i, label: hit.label.slice(0, 30) }
   }
   return { reached: null }
 }
@@ -117,7 +117,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
     mobile: false,
     reducedMotion: false,
   })
-  await a.goto(`${webUrl}/sign-in`)
+  await a.goto(`${webUrl}${PATHS.signIn}`)
   await a.sleep(500)
   const email = `tour-${Date.now()}@verify.local`
   const sent =
@@ -143,7 +143,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
       method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),
     })
-    const createdRes = await post('/api/commands/paper.create', {
+    const createdRes = await post(${JSON.stringify(commandPath("paper.create"))}, {
       kind: 'cv',
       templateId: 'simple',
       name: ${JSON.stringify(CV_NAME)},
@@ -151,7 +151,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
     const createdBody = await createdRes.json()
     const paper = createdBody && createdBody.data
     const replaced = paper && paper.id
-      ? await post('/api/commands/paper.replace', {
+      ? await post(${JSON.stringify(commandPath("paper.replace"))}, {
           docId: paper.id,
           contentVersion: paper.contentVersion,
           document: {
@@ -190,7 +190,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
           },
         })
       : { ok: false }
-    const card = await post('/api/commands/job.create', {
+    const card = await post(${JSON.stringify(commandPath("job.create"))}, {
       title: 'Associate PM intern',
       company: 'Local startup',
       stage: 'interview',
@@ -201,7 +201,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
     prepared.cv === true && prepared.card === true,
     `creating the tour CV and card failed (${JSON.stringify(prepared)})`
   )
-  await a.goto(`${webUrl}/coach`)
+  await a.goto(`${webUrl}${PATHS.coach}`)
   must(
     await a.waitFor("document.querySelector('textarea')", 20000),
     "welcome did not finish"
@@ -217,9 +217,9 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
   }
   for (const key of Object.keys(ROUTES)) await visit(key)
 
-  for (const key of ["coach", "paper", "apply", "pitch"]) {
+  for (const key of TOURED) {
     must(await visit(key), `${key} did not render at ${ROUTES[key][0]}`)
-    d.tabs[key] = await tabWalk(a, key)
+    d.tabs[key] = await tabWalk(a)
     await a.sleep(1200)
     if (key === "coach") {
       const hasComposer = await a.evaluate(
@@ -257,7 +257,10 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
         "the created CV card was not found"
       )
       must(
-        await a.waitFor("document.querySelector('[data-paper-editor]')", 10000),
+        await a.waitFor(
+          `document.querySelector(${JSON.stringify(SEL.paperEditor)})`,
+          10000
+        ),
         "the CV did not open"
       )
       await a.sleep(1500)
@@ -284,7 +287,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
   await a.sleep(1200)
   d.inbox = await snap(a)
   await shot(a, "desktop-inbox")
-  await a.goto(`${webUrl}/settings`)
+  await a.goto(`${webUrl}${PATHS.settings}`)
   must(
     await a.waitFor("document.body.innerText.includes('Preferences')", 20000),
     "settings did not render"
@@ -301,12 +304,8 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
     mobile: false,
     reducedMotion: false,
   })
-  b.setIntercept((r) =>
-    r.method === "GET" && new URL(r.url).pathname === "/api/paper"
-      ? "hold"
-      : null
-  )
-  await b.goto(`${webUrl}/paper`)
+  b.setIntercept((r) => (apiMatches(r, API.paperList) ? "hold" : null))
+  await b.goto(`${webUrl}${PATHS.paper}`)
   await b.sleep(2500)
   d.paperLoading = await snap(b)
   d.paperLoading.stubHits = b.interceptHits()
@@ -314,20 +313,18 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
   await b.release()
 
   b.setIntercept((r) =>
-    r.method === "GET" && new URL(r.url).pathname === "/api/paper"
+    apiMatches(r, API.paperList)
       ? { status: 200, body: { ok: true, data: [] } }
       : null
   )
-  await b.goto(`${webUrl}/paper`)
+  await b.goto(`${webUrl}${PATHS.paper}`)
   await b.waitFor("document.body.innerText.includes('Start a document')", 10000)
   await b.sleep(800)
   d.paperEmpty = await snap(b)
   d.paperEmpty.stubHits = b.interceptHits()
   b.setIntercept(null)
 
-  const coachCall = (r) =>
-    r.method === "POST" &&
-    /^\/api\/chats\/[^/]+\/turns$/.test(new URL(r.url).pathname)
+  const coachCall = (r) => apiMatches(r, API.coachTurn)
   b.setIntercept((r) =>
     coachCall(r)
       ? {
@@ -339,7 +336,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
         }
       : null
   )
-  await b.goto(`${webUrl}/coach`)
+  await b.goto(`${webUrl}${PATHS.coach}`)
   must(
     await b.waitFor("document.querySelector('textarea')", 15000),
     "the start page did not render"
@@ -352,7 +349,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
   await shot(b, "desktop-coach-error")
 
   b.setIntercept((r) => (coachCall(r) ? "fail" : null))
-  await b.goto(`${webUrl}/coach`)
+  await b.goto(`${webUrl}${PATHS.coach}`)
   must(
     await b.waitFor("document.querySelector('textarea')", 15000),
     "the start page did not render"
@@ -381,7 +378,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
     await r.sleep(1200)
     d.reduced[key] = await snap(r)
   }
-  await r.goto(`${webUrl}/settings`)
+  await r.goto(`${webUrl}${PATHS.settings}`)
   must(
     await r.waitFor("document.body.innerText.includes('Preferences')", 20000),
     "settings did not render (reduced motion)"
@@ -417,7 +414,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
     d.mobile[key] = await snap(m)
     await shot(m, `mobile-${key}`)
   }
-  await m.goto(`${webUrl}/settings`)
+  await m.goto(`${webUrl}${PATHS.settings}`)
   must(
     await m.waitFor("document.body.innerText.includes('Preferences')", 20000),
     "settings did not render at 390px"
@@ -435,17 +432,20 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
     mobile: false,
     reducedMotion: false,
   })
-  await e.goto(`${webUrl}/apply`)
+  await e.goto(`${webUrl}${PATHS.apply}`)
   must(
-    await e.waitFor("document.querySelector('[data-card-id]')", 15000),
+    await e.waitFor(
+      `document.querySelector(${JSON.stringify(SEL.card)})`,
+      15000
+    ),
     "the created board did not render"
   )
   const deleted = await e.evaluate(`(async () => {
     const o = { credentials: 'include' }
-    const list = await (await fetch(${JSON.stringify(`${apiUrl}/api/jobs`)}, o)).json()
+    const list = await (await fetch(${JSON.stringify(`${apiUrl}${JOBS_PATH}`)}, o)).json()
     let n = 0
     for (const c of list.data ?? []) {
-      const res = await fetch(${JSON.stringify(`${apiUrl}/api/commands/job.delete`)}, { ...o, method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jobId: c.id }) })
+      const res = await fetch(${JSON.stringify(`${apiUrl}${commandPath("job.delete")}`)}, { ...o, method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jobId: c.id }) })
       if (res.ok) n++
     }
     return { total: list.data.length, deleted: n }
@@ -454,7 +454,7 @@ export async function runTour({ browser, webUrl, apiUrl, logPath, shots }) {
     deleted.total > 0 && deleted.deleted === deleted.total,
     `deleting the created cards (${JSON.stringify(deleted)})`
   )
-  await e.goto(`${webUrl}/apply`)
+  await e.goto(`${webUrl}${PATHS.apply}`)
   await e.waitFor(EMPTY_BOARD, 15000)
   await e.sleep(1000)
   d.applyEmpty = await snap(e)

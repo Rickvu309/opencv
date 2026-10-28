@@ -5,6 +5,7 @@ import test from "node:test"
 import { motionChecks } from "./checks-source.mjs"
 import { coachErrorCheck } from "./checks-content.mjs"
 import { keyboardPrimaryCheck, primaryButtonCheck } from "./checks-primary.mjs"
+import { boardLanes } from "./checks-stages.mjs"
 import {
   judged,
   result,
@@ -120,36 +121,118 @@ test("judged: a found FAIL wins over a missing part, a missing part alone is STA
   assert.equal(judged("01", "a", "r", true, "ok", [null, ""]).status, "PASS")
 })
 
-const buttonSnap = (buttons) => ({ buttons })
+const buttonSnap = (
+  buttons,
+  primaryMarks = buttons.some((b) => b.primary)
+) => ({
+  buttons,
+  primaryMarks: primaryMarks ? 1 : 0,
+})
 const tabsOf = (d) => ({ reached: d })
-test("28: a too-small button FAILs although another surface has no match", () => {
+const marked = (label, h) => ({ label, h, primary: true })
+test("28: a too-small button FAILs although another surface has no marker", () => {
   const d = {
-    apply: buttonSnap([{ label: "New job", h: 28 }]),
-    paper: buttonSnap([]),
-    pitchEdit: buttonSnap([{ label: "Get early access", h: 40 }]),
+    apply: buttonSnap([marked("New job", 28)]),
+    paper: buttonSnap([{ label: "New", h: 32 }]),
+    pitchEdit: buttonSnap([marked("Get early access", 40)]),
   }
   const out = primaryButtonCheck(d)
   assert.equal(out.status, "FAIL")
   assert.match(out.measured, /apply "New job" 28px/)
-  assert.match(out.measured, /not judged: paper \(no button matched/)
-  d.apply = buttonSnap([{ label: "New job", h: 32 }])
+  assert.match(out.measured, /not judged: paper \(no \[data-primary-action\]/)
+  d.apply = buttonSnap([marked("New job", 32)])
   assert.equal(primaryButtonCheck(d).status, "STALE")
-  d.paper = buttonSnap([{ label: "New", h: 32 }])
+  d.paper = buttonSnap([marked("Create", 32)])
   assert.equal(primaryButtonCheck(d).status, "PASS")
 })
 
-test("32: a surface past 30 Tab presses FAILs although another has no match", () => {
+test("28 and 32 follow the marker, not the label", () => {
   const d = {
-    coach: buttonSnap([]),
-    paper: buttonSnap([{ label: "New" }]),
-    apply: buttonSnap([{ label: "New job" }]),
-    tabs: { coach: tabsOf(0), paper: tabsOf(45), apply: tabsOf(12) },
+    apply: buttonSnap([marked("Renamed", 36)]),
+    paper: buttonSnap([marked("Whatever", 36)]),
+    pitchEdit: buttonSnap([marked("Else", 36)]),
+    coach: buttonSnap([], true),
+    pitch: buttonSnap([marked("Else", 36)]),
+    tabs: {
+      coach: tabsOf(5),
+      paper: tabsOf(9),
+      apply: tabsOf(12),
+      pitch: tabsOf(7),
+    },
+  }
+  assert.equal(primaryButtonCheck(d).status, "PASS")
+  assert.equal(keyboardPrimaryCheck(d).status, "PASS")
+})
+
+test("32: a surface past 30 Tab presses FAILs although another has no marker", () => {
+  const d = {
+    coach: buttonSnap([], false),
+    paper: buttonSnap([marked("New")]),
+    apply: buttonSnap([marked("New job")]),
+    tabs: { coach: tabsOf(null), paper: tabsOf(45), apply: tabsOf(12) },
   }
   const out = keyboardPrimaryCheck(d)
   assert.equal(out.status, "FAIL")
-  assert.match(out.measured, /not judged: coach \(no button matched/)
+  assert.match(out.measured, /not judged: coach \(no \[data-primary-action\]/)
   d.tabs.paper = tabsOf(12)
   assert.equal(keyboardPrimaryCheck(d).status, "STALE")
+})
+
+test("32: a marked surface Tab never reaches is a FAIL, not STALE", () => {
+  const d = {
+    coach: buttonSnap([], true),
+    tabs: { coach: { reached: null } },
+  }
+  assert.equal(keyboardPrimaryCheck(d).status, "FAIL")
+})
+
+test("28 and 32: two visible primary actions on one screen FAIL and name the count", () => {
+  const two = { ...buttonSnap([marked("Add", 36)]), primaryMarks: 2 }
+  const d = {
+    apply: buttonSnap([marked("New job", 36)]),
+    paper: two,
+    pitchEdit: buttonSnap([marked("Get early access", 36)]),
+    coach: buttonSnap([], true),
+    tabs: { coach: tabsOf(5), paper: tabsOf(9) },
+  }
+  const size = primaryButtonCheck(d)
+  assert.equal(size.status, "FAIL")
+  assert.match(size.measured, /paper has 2 visible \[data-primary-action\]/)
+  const keys = keyboardPrimaryCheck(d)
+  assert.equal(keys.status, "FAIL")
+  assert.match(keys.measured, /paper has 2 visible \[data-primary-action\]/)
+})
+
+test("board lanes follow the stage list, not pinned words", () => {
+  const lane = (stage, heading) => ({ stage, heading })
+  const full = {
+    lanes: ["saved", "applied", "interview", "offer"].map((s) => lane(s, s)),
+  }
+  assert.deepEqual(
+    boardLanes(full, ["saved", "applied", "interview", "offer"]).missing,
+    []
+  )
+  const five = boardLanes(full, [
+    "saved",
+    "applied",
+    "interview",
+    "offer",
+    "ghosted",
+  ])
+  assert.deepEqual(five.missing, ["ghosted"])
+  const closed = boardLanes(
+    { lanes: [...full.lanes, lane("closed", "Closed")] },
+    ["saved"]
+  )
+  assert.equal(closed.hiddenShown, true)
+  assert.match(boardLanes(full, null).unread, /JOB_STAGES not readable/)
+  assert.deepEqual(
+    boardLanes({ lanes: [lane("saved", "Saved"), lane("applied", "Saved")] }, [
+      "saved",
+      "applied",
+    ]).misnamed,
+    [lane("applied", "Saved")]
+  )
 })
 
 const alertSnap = (text, stubHits) => ({ alerts: [text], stubHits })

@@ -26,7 +26,7 @@ Output is one line per property, `PASS|FAIL|STALE <id> <name>: <measured> | rule
 
 What the tour does, in order, signed in at 1440x900: visits every route once to warm the dev server; then for Coach, Paper, Apply and Pitch it loads the route and times it, walks Tab to the primary action, and measures the screen. On Coach it opens Search with Ctrl-K and sends "Review my CV" for a scripted Coach turn. On Paper it opens the sample CV and the Coach float. On Pitch it reads the coming-soon page and does not open a story. Scenario pages follow: `GET /api/paper` held while the page is read, `GET /api/paper` answered with an empty list, the Coach send answered with `404 USER_NOT_FOUND "User not found."`, and the Coach send with the connection refused. A reduced-motion pass and a 390x844 mobile pass visit the four routes again. Last, the tour deletes the four seeded Apply cards through the api (`apply.deleteCard`) and reads the empty board. A step that does not happen (a click finds nothing, a screen never renders, the deletes fail) throws and the run exits 2; it is never a pass. The api answers are the only mocks, apart from the scripted Coach and the stub posting scan that verify-opencv already isolates; say so in a report. The throwaway account is not reused, and the stack and its data are removed at the end.
 
-Reading a STALE: it means the check could not run that part, and the measured value names it ("not judged: ..."). A STALE hides nothing that was found, since any FAIL in the same check would have shown. Decide whether the checker's setup or the app changed. If the app dropped the call or the button on purpose, repair the tour, the probe or the folder list (`FEATURE_DIRS`, `PRIMARY`, the stub pattern in `tour.mjs`). If the app lost it by accident, that is the regression: fix the app. A check that cannot run never counts as a pass.
+Reading a STALE: it means the check could not run that part, and the measured value names it ("not judged: ..."). A STALE hides nothing that was found, since any FAIL in the same check would have shown. Decide whether the checker's setup or the app changed. If the app dropped the call or the button on purpose, repair the tour, the probe or `scripts/lib/assumes.mjs` (the folders, routes, stub patterns, selectors and `data-primary-action` markers it lists; `apps/web/src/test/verify-assumptions.test.ts` fails on a push when one no longer matches the app). If the app lost it by accident, that is the regression: fix the app. A check that cannot run never counts as a pass.
 
 Reading a FAIL: the measured value is what the app does, the rule is what it should do. Decide whether the app or the checker is wrong, in this order:
 
@@ -44,7 +44,7 @@ Forty-three named properties (id 14 retired with the Home page and is not reused
 
 ## Baseline at the sync commit
 
-This baseline predates #516, which retired check 14 with the Home page. At `8b5f640a` plus #526 the checker prints 35 PASS, 7 FAIL and 1 STALE: FAIL 01 02 20 27 28 36 41, STALE 32. 04 now drives its Coach stub (`POST /api/chats/<id>/turns`, one hit in each scenario) and passes. The design pass of 2026-10-28 (#510) judged the design FAILs against the code; each is a finding about the app, not a defect in the checker:
+At `b031ebf3` plus the assumptions change (#531) the checker prints 36 PASS, 7 FAIL and 0 STALE: FAIL 01 20 27 28 30 34 41. 02 passes since #516 left one Coach composer placeholder. 30 FAILs since `2fdcca38` (#522) deleted the unmounted Paper suggestion bar: its "Undo this change" string was the only Reject the source scan found, and no Coach Reject control is mounted. Check 34 (first render within 2000 ms) is load-sensitive on this box and failed in the latest run, at Paper 2270 ms and Coach 2258 ms. 04 now drives its Coach stub (`POST /api/chats/<id>/turns`, one hit in each scenario) and passes. The design pass of 2026-10-28 (#510) judged the design FAILs against the code; each is a finding about the app, not a defect in the checker:
 
 - 20: eight text nodes under 4.5:1, all on the Inbox connect screen, such as "Skip for now" at 3.36:1 and "Reads job emails only. Nothing is sent without you." at 2.45:1. `inbox-parts.tsx` `SOFT_TEXT` (`text-muted-foreground/70`) and `FAINT_TEXT` (`/55`) copy the pen greys #8A8A8E and #A0A0A2, which fail AA on white. Introduced by `682a1ea7` (#505). Apply ships such greys as the lightest AA grey (`apply-tone.ts`); Inbox does not.
 - 28: Apply's New job is 28px (`apply-toolbar.tsx` `h-7`, from `aa89ba79`, #509). The pen draws that control (node BmWvu) as a 28px ghost header action, so check 28 and the pen disagree. The operator decides which one moves. Paper New is 32px and Pitch Get early access is 40px.
@@ -53,9 +53,9 @@ This baseline predates #516, which retired check 14 with the Home page. At `8b5f
 Seen in the #526 run and not judged in the design pass:
 
 - 27: the Paper conflict banner is `role="region"` (`paper-editor-conflict-banner.tsx`, from `7ea61e9c`, #396), not `role="alert"`. The Coach error is in a live region. The banner part is judged even when the Coach stub never fires.
-- 32: Home has no button starting `Add `, so the `PRIMARY.home` label matched nothing. The line names Home as not judged and is STALE because the other three are judged and pass: Apply, Paper and Pitch reach their primary within 30 Tab presses. A fourth surface over 30 would make it FAIL.
-- 36: the Paper library page has no table rows the probe counts, so the rows list is empty and the line reads `Paper rows ;`.
-- 01 and 02 stay unjudged.
+- 32: passes. Coach's primary is the Add control of the composer (`data-primary-action` in `coach-dock.tsx`); Tab reaches it in 15 presses, Paper 13, Apply 12, Pitch 12.
+- 36: passes. The Paper library has been a card grid since #396, so the probe's table-row locator found nothing. The probe now reads the Paper cards (`PaperCard`'s open button) and the line counts them.
+- 01 stays unjudged.
 
 ## Pen layout check
 
@@ -76,7 +76,7 @@ Ten judged items, J1 to J10, each scored 0, 1 or 2 with anchors for 0 and 2. The
 
 ## Coverage record
 
-The sync commit, the files and symbols each check reads, the constants the checks assume, and what is not covered are in [coverage.md](coverage.md). Read it before you change a check or the code it covers.
+The sync commit, the files and symbols each check reads, and what is not covered are in [coverage.md](coverage.md). What the checks assume about the app (folders, routes, api paths, selectors, markers) is `scripts/lib/assumes.mjs`. Read it before you change a check or the code it covers.
 
 ## Keep it in step
 

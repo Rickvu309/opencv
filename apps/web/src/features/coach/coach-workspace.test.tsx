@@ -28,6 +28,24 @@ beforeEach(() => {
 })
 
 describe("Coach workspace", () => {
+  it("marks one primary action only when the Coach page asks for it", async () => {
+    const view = render(
+      <ChatStoreProvider>
+        <CoachWorkspace />
+        <CoachWorkspace primaryAction />
+      </ChatStoreProvider>
+    )
+    await screen.findAllByRole("button", { name: "Add" })
+    expect(
+      view.container.querySelectorAll("[data-primary-action]")
+    ).toHaveLength(1)
+    expect(
+      screen
+        .getAllByRole("button", { name: "Add" })
+        .map((b) => b.hasAttribute("data-primary-action"))
+    ).toEqual([false, true])
+  })
+
   it("keeps New chat selected when the panel was opened with a saved chat", async () => {
     render(
       <ChatStoreProvider>

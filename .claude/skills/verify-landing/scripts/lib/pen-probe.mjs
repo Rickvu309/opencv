@@ -1,6 +1,8 @@
 // Runs inside the page. Self-contained: it is serialised with toString(), so it cannot close over anything.
 // Measures the landing sections property 31 reads, including whether a text starts a line.
-function penProbe() {
+import { SECTIONS } from "./assumes.mjs"
+
+function penProbe(SECTIONS) {
   const canvas = document.createElement("canvas")
   canvas.width = canvas.height = 1
   const ctx = canvas.getContext("2d", { willReadFrequently: true })
@@ -130,23 +132,8 @@ function penProbe() {
     }
     return starts
   }
-  const SECTION_SELECTOR = {
-    Nav: "header.landing-nav",
-    Hero: "#hero",
-    Logos: "#logos",
-    Statement: "#product",
-    Benefits: "#benefits",
-    "Paper Wrap": "#paper",
-    "Apply Wrap": "#apply",
-    "Coach Wrap": "#coach",
-    "Integrations Wrap": "#integrations",
-    "Coming next Wrap": "#coming-next",
-    Customers: "#stories",
-    Prefooter: "#close",
-    "Footer Wrap": "footer",
-  }
   const penSections = {}
-  for (const [name, selector] of Object.entries(SECTION_SELECTOR)) {
+  for (const [name, selector] of Object.entries(SECTIONS)) {
     const rootEl = document.querySelector(selector)
     if (!rootEl) {
       penSections[name] = null
@@ -208,4 +195,4 @@ function penProbe() {
   return penSections
 }
 
-export const penProbeSource = `(${penProbe})()`
+export const penProbeSource = `(${penProbe})(${JSON.stringify(SECTIONS)})`

@@ -10,6 +10,7 @@ import {
   scanProblem,
   stubSilent,
 } from "./check-util.mjs"
+import { boardLanes } from "./checks-stages.mjs"
 import {
   emptyActionLabels,
   hasBasisSentence,
@@ -191,7 +192,7 @@ export function contentChecks(d) {
 
   // 10. Jobs are deleted through the api. The empty board is one empty state, with no Closed header.
   const ae = d.applyEmpty
-  const closedHeader = (ae.headingsText ?? []).some((t) => t === "Closed")
+  const closedHeader = boardLanes(ae).hiddenShown
   const wells = (ae.text.match(/Drop a (job|opportunity) here/g) ?? []).length
   const confirmed = ae.cards.length === 0 && !closedHeader && wells === 0
   r.push(
