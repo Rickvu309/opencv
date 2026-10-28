@@ -11,9 +11,12 @@ const domainSrc = path.join(root, "packages/domain/src")
 const PACKAGE = "@workspace/domain"
 const SKIPPED_DIRS = new Set(["node_modules", "dist", ".turbo", ".git"])
 const SOURCE_FILE = /\.(?:[cm]?[jt]sx?)$/
-// Read only by tests on purpose: the contract types by registry/contract.type-test.ts,
-// the two schemas by paper-blocks.test.ts, which probes their boundary.
-const KEPT_FOR_TESTS = new Set([
+// Exported with no outside importer on purpose. The contract types are read by
+// registry/contract.type-test.ts, the two schemas by paper-blocks.test.ts. The two
+// id types must stay exported or the declaration build cannot name `brand` (TS4023).
+const KEPT_ON_PURPOSE = new Set([
+  "ActivityId",
+  "PendingActionId",
   "AccountContract",
   "ChatContract",
   "InboxContract",
@@ -132,7 +135,7 @@ test("every export of packages/domain/src is imported by non-test code", () => {
   for (const file of sourceFiles(domainSrc)) {
     if (file === path.join(domainSrc, "index.ts")) continue
     for (const name of exportedNames(parse(file))) {
-      if (!used.has(name) && !KEPT_FOR_TESTS.has(name)) {
+      if (!used.has(name) && !KEPT_ON_PURPOSE.has(name)) {
         unused.push(
           `nothing outside ${path.relative(root, file)} imports ${name}: drop \`export\` if this file uses it, else delete it`
         )
