@@ -36,6 +36,7 @@ exit "$MP_REVIEW_RC"
 STUB
 chmod +x "$tmp/bin/gh" "$tmp/review"
 export PATH=$tmp/bin:$PATH MP_LOG=$tmp/gh.log MERGE_PR_REVIEW_CMD=$tmp/review
+export PR_RESULT_DIR=$tmp/results PR_RESULT_REPO=opencv
 
 patch=0123456789abcdef0123456789abcdef01234567
 old=ffffffffffffffffffffffffffffffffffffffff
@@ -65,6 +66,12 @@ expect() {
   for needle in "$@"; do grep -F -q -- "$needle" "$tmp/all" || fail "$name" "output missing: $needle"; done
   printf 'ok: %s (exit %s)\n' "$name" "$code"
 }
+# The result file of the last run must pass the schema check and these key=value expectations; its path is the last line.
+result() {
+  local f=$PR_RESULT_DIR/opencv-merge-pr-5.json
+  node "$here/lib/result-check.mjs" "$f" script=merge-pr id=5 "$@" >/dev/null || fail "result file" "$(cat "$f" 2>/dev/null)"
+  [[ "$(tail -n1 "$tmp/out")" == "RESULT_JSON: $f" ]] || fail "result file" "RESULT_JSON is not the last line"
+}
 called() { grep -F -q -- "$2" "$MP_LOG" || fail "$1" "gh was not called with: $2"; }
 never() { grep -F -q -- "$2" "$MP_LOG" && fail "$1" "gh was called with: $2"; return 0; }
 no_writes() { never "$1" "api repos/"; never "$1" "pr merge"; }
@@ -76,9 +83,11 @@ called "ok path" "api repos/owner/repo/statuses/$head -f state=success -f contex
 called "ok path" "pr merge 5 --squash --admin --match-head-commit $head"
 status_line=$(grep -n 'statuses/' "$MP_LOG" | head -1 | cut -d: -f1); merge_line=$(grep -n 'pr merge' "$MP_LOG" | head -1 | cut -d: -f1)
 (( status_line < merge_line )) || fail "ok path" "status was not posted before the merge"
+result status=ok cause=none "next=node scripts/verify-deploy.mjs --commit cafe0000cafe0000cafe0000cafe0000cafe0000"
 
 reset; MP_REVIEW_RC=1 MP_REVIEW_OUT="RESULT: FAIL (2). Request changes" run
 expect "review FAIL exits 1" 1 "did not pass"
+result status=fail cause=hygiene
 no_writes "review FAIL"
 
 reset; MP_REVIEW_RC=1 MP_REVIEW_OUT="" run
@@ -87,6 +96,7 @@ no_writes "review error"
 
 reset; MP_REVIEW_RC=2 MP_REVIEW_OUT="RESULT: HUMAN REQUIRED. Do NOT merge." run
 expect "HUMAN REQUIRED exits 2" 2 "do not merge"
+result status=human cause=hygiene
 no_writes "HUMAN"
 
 reset; MP_REVIEW_OUT="no result here" run
@@ -95,6 +105,7 @@ no_writes "no OK line"
 
 reset; MP_EVIDENCE=$(evidence "review-pr.sh: OK (patch id $old, main 1234567890ab). Independent review: sol-loop, approved. verify-opencv: PASS") run
 expect "stale patch id refuses and names the current id" 1 "$patch"
+result status=fail cause=hygiene "next=gh pr comment 5 --body \"review-pr.sh: OK (patch id $patch, main 1234567890ab). Independent review: <who>, approved. verify-<skill>: <result>\""
 no_writes "stale"
 
 reset; MP_EVIDENCE=$(evidence "review-pr.sh: OK (patch id ${patch}0, main 1234567890ab). Independent review: x, approved. verify: PASS") run
@@ -111,6 +122,7 @@ no_writes "diff failure"
 
 reset; MP_MAIN=9999999999990000000000000000000000000000 run
 expect "main moved during the review refuses" 1 "main moved from 1234567890ab"
+result status=fail cause=behind-main "next=heavy -- scripts/merge-pr.sh 5"
 never "main moved" "api repos/owner/repo/statuses/"; never "main moved" "pr merge"
 
 reset; MP_EVIDENCE=$(evidence "looks good, patch id $patch") run

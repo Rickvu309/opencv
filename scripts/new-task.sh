@@ -25,14 +25,18 @@
 #   port      4000 + (issue# mod 1000), or the next free port above it
 set -euo pipefail
 
+# shellcheck source=scripts/lib/result.sh
+. "$(dirname "${BASH_SOURCE[0]}")/lib/result.sh"
+result_begin new-task
+
 TYPES="feat fix hotfix refactor chore docs"
 BRANCH_RE='^(feat|fix|hotfix|refactor|chore|docs)/[0-9]+-[a-z0-9]+(-[a-z0-9]+)*$'
 MAX_WORDS=5
 
-die()  { echo "error: $*" >&2; exit 1; }
+die()  { result_fail "${DIE_CAUSE:-hygiene}" "$*"; echo "error: $*" >&2; exit 1; }
 info() { echo "==> $*"; }
 warn() { echo "warning: $*" >&2; }
-usage() { awk 'NR>1 && /^#/ {sub(/^# ?/, ""); print; next} NR>1 {exit}' "$0"; exit "${1:-0}"; }
+usage() { [[ "${1:-0}" == 0 ]] || result_fail hygiene "usage error"; awk 'NR>1 && /^#/ {sub(/^# ?/, ""); print; next} NR>1 {exit}' "$0"; exit "${1:-0}"; }
 
 slugify() {
   # lowercase, non-alphanumerics -> '-', squeeze, trim, keep first MAX_WORDS words
@@ -79,6 +83,7 @@ done
 [[ ${#positional[@]} -eq 2 ]] || { echo "error: expected <type> and <issue#|title>, got ${#positional[@]} argument(s)" >&2; usage 2; }
 type=${positional[0]}; target=${positional[1]}
 
+result_id "${type}-${target}"
 [[ " $TYPES " == *" $type "* ]] || die "type must be one of: $TYPES"
 
 # ---- locate the main checkout -----------------------------------------------
@@ -116,7 +121,7 @@ if [[ "$target" =~ ^#?([0-9]+)$ ]]; then
     warn "gh not available or not logged in: cannot verify or assign issue #$issue"
   fi
 else
-  (( have_gh )) || die "creating an issue needs the gh CLI, logged in (gh auth login)"
+  (( have_gh )) || DIE_CAUSE=env die "creating an issue needs the gh CLI, logged in (gh auth login)"
   issue_title=$target
   [[ -n "$body" ]] || body="Created with scripts/new-task.sh. Describe the goal and done criteria."
   info "Creating issue: $issue_title"
@@ -138,6 +143,7 @@ slug=$(slugify "$desc")
 [[ -n "$slug" ]] || die "description '$desc' has no usable characters; pass -d"
 
 branch="${type}/${issue}-${slug}"
+result_id "$branch"
 [[ "$branch" =~ $BRANCH_RE ]] || die "built an invalid branch name: $branch"
 words=$(tr '-' '\n' <<<"$slug" | grep -c . || true)
 (( words >= 3 )) || warn "description has $words word(s); 3-5 is the guideline (use -d to change)"
@@ -202,6 +208,7 @@ if (( do_install )) && [[ -f "$wt_path/package.json" ]]; then
   (cd "$wt_path" && "${cmd[@]}") || warn "install failed; run '${cmd[*]}' in $wt_path"
 fi
 
+result_ok "worktree $wt_path on $branch (issue #$issue, port $port)" "cd \"$wt_path\" && heavy -- scripts/open-pr.sh --draft"
 cat <<MSG
 
 Ready.

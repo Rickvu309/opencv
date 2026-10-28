@@ -40,6 +40,7 @@ exit "${REVIEW_TEST_PNPM_EXIT:-0}"
 STUB
 chmod +x "$tmp/bin/gh" "$tmp/bin/pnpm"
 export PATH=$tmp/bin:$PATH
+export PR_RESULT_DIR=$tmp/results PR_RESULT_REPO=opencv
 export REVIEW_TEST_ISSUE=7
 export REVIEW_TEST_BRANCH=chore/7-thing
 export REVIEW_TEST_TITLE='chore: thing (#7)'
@@ -86,6 +87,7 @@ main_checkout=$tmp/repo
 git clone -q "$origin" "$main_checkout"
 quiet_repo "$main_checkout"
 cp "$script" "$main_checkout/scripts/review-pr.sh"
+mkdir -p "$main_checkout/scripts/lib" && cp "$here/lib/result.sh" "$main_checkout/scripts/lib/result.sh"
 export REVIEW_TEST_RUNS=$tmp/runs
 : >"$REVIEW_TEST_RUNS"
 
@@ -103,6 +105,12 @@ expect() {
   for needle in "$@"; do grep -F -q -- "$needle" "$tmp/out" || fail "$name" "output missing: $needle"; done
   printf 'ok: %s (exit %s)\n' "$name" "$code"
 }
+# The result file of the last run must pass the schema check and these key=value expectations; its path is the last line.
+result() {
+  local f=$PR_RESULT_DIR/opencv-review-pr-1.json
+  node "$here/lib/result-check.mjs" "$f" script=review-pr id=1 "$@" >/dev/null || fail "result file" "$(cat "$f" 2>/dev/null)"
+  [[ "$(tail -n1 "$tmp/out")" == "RESULT_JSON: $f" ]] || fail "result file" "RESULT_JSON is not the last line"
+}
 absent() { grep -F -q -- "$2" "$tmp/out" && fail "$1" "output has: $2"; return 0; }
 runs() { grep -c . "$REVIEW_TEST_RUNS" || true; }
 want_runs() { [[ $(runs) -eq "$2" ]] || fail "$1" "check ran $(runs) times, want $2"; }
@@ -115,6 +123,8 @@ main_commit() { git -C "$work" checkout -q main && git -C "$work" add -A && git 
 run --no-install
 expect "behind main merges and passes" 0 "branch is behind main; the checks run on the merge" "merges cleanly" "lint, typecheck, test passed" "running pnpm --filter web build" "web build passed" "RESULT: OK (patch id" "--match-head-commit $(git -C "$work" rev-parse "$REVIEW_TEST_BRANCH")"
 want_runs "behind main" 1
+result status=ok cause=none next="heavy -- scripts/merge-pr.sh 1"
+grep -q "patch id" "$PR_RESULT_DIR/opencv-review-pr-1.json" || fail "ok result" "detail has no patch id"
 grep -q "ran on $(merge_tree)" "$REVIEW_TEST_RUNS" || fail "behind main" "check did not run on the merge tree $(merge_tree)"
 patch1=$(patch_id)
 GIT_CONFIG_PARAMETERS="'color.ui=always' 'diff.noprefix=true'" run --no-install
@@ -149,6 +159,7 @@ printf 'change \n' >"$work/other.txt"
 pr_commit "trailing space"
 REVIEW_TEST_CHANGES=1 run --no-install
 expect "requested changes still runs the check" 1 "a reviewer has requested changes" "lint, typecheck, test passed" "RESULT: FAIL"
+result status=fail cause=hygiene
 absent "soft fail" "skipped the full check"
 absent "soft fail" "(cached;"
 [[ "$(patch_id)" != "$patch1" ]] || fail "whitespace" "patch id unchanged: $patch1"
@@ -161,6 +172,7 @@ want_runs "cleared" 4
 REVIEW_TEST_TITLE='bad title' run --no-install
 expect "checklist FAIL skips the check" 1 "merges cleanly" "skipped the full check" "RESULT: FAIL"
 absent "checklist fail" "web build passed"
+result status=fail cause=hygiene
 want_runs "checklist fail" 4
 
 # The PR's own hooks take no part in the merge or the checkout: merge-tree writes no ref or index, and the checkout runs with hooks off.
@@ -183,6 +195,7 @@ echo '{}' >"$work/package.json"; : >"$work/pnpm-lock.yaml"
 pr_commit "add a package.json"
 REVIEW_TEST_PNPM_EXIT=1 run
 expect "failed install fails" 1 "dependency install failed (pnpm install --frozen-lockfile)" "lint, typecheck, test passed" "RESULT: FAIL"
+result status=fail cause=env
 want_runs "failed install" 6
 REVIEW_TEST_PNPM_EXIT=1 run
 expect "failed install is not cached" 1 "dependency install failed" "RESULT: FAIL"
@@ -198,6 +211,7 @@ echo api-build >"$work/api-build.txt"
 pr_commit "check the API production build"
 REVIEW_TEST_API_BUILD_EXIT=1 run
 expect "failed API build fails" 1 "api build failed" "RESULT: FAIL"
+result status=fail cause=build
 want_runs "failed API build" 9
 REVIEW_TEST_API_BUILD_EXIT=1 run
 expect "failed API build is not cached" 1 "api build failed" "RESULT: FAIL"
@@ -215,6 +229,7 @@ touch "$work/FAIL_CHECK"
 pr_commit "replace check.sh and break the check"
 run --no-install
 expect "main's check.sh runs, not the PR's" 1 "scripts/check.sh failed" "RESULT: FAIL"
+result status=fail cause=test
 want_runs "gate" 12
 run --no-install
 expect "failing check is not cached" 1 "scripts/check.sh failed"
@@ -235,6 +250,7 @@ echo conflict-main >"$work/other.txt"
 git -C "$work" add -A && git -C "$work" commit -q -m "conflicts with the PR" && git -C "$work" push -q origin main
 run --no-install
 expect "merge conflict" 1 "does not merge cleanly with main; author must rebase" "resolve: other.txt" "RESULT: FAIL"
+result status=fail cause=merge-conflict 'files=["other.txt"]' 'next=git fetch origin && git rebase origin/main'
 want_runs "conflict" 14
 
 if git -C "$main_checkout" worktree list | grep -q review-pr-; then fail "cleanup" "review worktree left behind"; fi

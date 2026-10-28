@@ -13,6 +13,22 @@ import { fileURLToPath } from "node:url"
 import test from "node:test"
 
 const script = fileURLToPath(new URL("./open-pr.sh", import.meta.url))
+const resultCheck = fileURLToPath(
+  new URL("./lib/result-check.mjs", import.meta.url)
+)
+
+// The result file the run wrote must pass the schema check plus these key=value expectations.
+function assertResult(result, id, ...expects) {
+  const file = join(result.root, "results", `opencv-open-pr-${id}.json`)
+  const check = spawnSync("node", [resultCheck, file, ...expects], {
+    encoding: "utf8",
+  })
+  assert.equal(check.status, 0, check.stderr)
+  assert.equal(
+    result.stdout.trimEnd().split("\n").at(-1),
+    `RESULT_JSON: ${file}`
+  )
+}
 
 function run(t, pushExit, quiet = false) {
   const scratch = join(homedir(), "tmp")
@@ -50,7 +66,7 @@ esac
 case "$1 $2" in
   'auth status'|'pr list') exit 0 ;;
   'issue view') echo OPEN ;;
-  'pr create') echo create >> "$PROOF_ROOT/events" ;;
+  'pr create') echo create >> "$PROOF_ROOT/events"; echo https://github.com/o/r/pull/77 ;;
   *) echo "unexpected gh call $*" >&2; exit 99 ;;
 esac
 `
@@ -60,6 +76,8 @@ esac
     PROOF_ROOT: root,
     PROOF_PUSH_EXIT: String(pushExit),
     PROOF_QUIET: quiet ? "1" : "0",
+    PR_RESULT_DIR: join(root, "results"),
+    PR_RESULT_REPO: "opencv",
   }
   const result = spawnSync(
     "bash",
@@ -72,7 +90,7 @@ esac
     }
   )
   assert.ifError(result.error)
-  return { ...result, events: readFileSync(join(root, "events"), "utf8") }
+  return { ...result, root, events: readFileSync(join(root, "events"), "utf8") }
 }
 
 test("failed push with an existing remote branch stops before PR creation", (t) => {
@@ -81,11 +99,18 @@ test("failed push with an existing remote branch stops before PR creation", (t) 
   assert.equal(result.events, "push skip=unset\n")
   assert.match(result.stderr, /push transport diagnostic/)
   assert.match(result.stderr, /push failed; no PR created/)
+  assertResult(
+    result,
+    "fix-999-push-failure-proof",
+    "status=fail",
+    "cause=other"
+  )
 })
 
 test("successful push preserves hooks and creates a PR", (t) => {
   const result = run(t, 0)
   assert.equal(result.status, 0, result.stderr)
+  assertResult(result, "77", "status=ok", "cause=none")
   assert.equal(result.events, "push skip=unset\ncreate\n")
   assert.match(result.stderr, /push transport diagnostic/)
 })

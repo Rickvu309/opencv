@@ -25,13 +25,18 @@
 #   2  HUMAN REQUIRED: do not merge
 set -euo pipefail
 
-die() { echo "merge-pr: $*" >&2; exit 1; }
-
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+# shellcheck source=scripts/lib/result.sh
+. "$here/lib/result.sh"
+result_begin merge-pr
+
+die() { result_fail "${DIE_CAUSE:-hygiene}" "$*"; echo "merge-pr: $*" >&2; exit 1; }
 review_cmd=${MERGE_PR_REVIEW_CMD:-$here/review-pr.sh}
 
 [[ $# -ge 1 && "$1" =~ ^#?([0-9]+)$ ]] || { awk 'NR>1 && /^#/ {sub(/^# ?/, ""); print; next} NR>1 {exit}' "$0"; exit 1; }
 pr=${BASH_REMATCH[1]}; shift
+result_id "$pr"
+export PR_RESULT_ID=$pr
 dry_run=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -63,7 +68,7 @@ me=$(gh api user --jq .login)
 
 echo "==> PR #$pr: review gate"
 review_out=$(mktemp)
-trap 'rm -f "$review_out"' EXIT
+result_cleanup() { rm -f "$review_out"; }
 set +e
 "$review_cmd" "$pr" 2>&1 | tee "$review_out"
 review_rc=${PIPESTATUS[0]}
@@ -71,8 +76,9 @@ set -e
 parse_review "$review_out"
 case "$review_rc" in
   0) [[ "$rec_result" == OK ]] || die "review-pr.sh exited 0 without a RESULT: OK line" ;;
-  2) echo "merge-pr: HUMAN REQUIRED, do not merge PR #$pr." >&2; exit 2 ;;
-  *) die "review-pr.sh did not pass (exit $review_rc). Not merging." ;;
+  2) result_human "HUMAN REQUIRED, do not merge PR #$pr"; echo "merge-pr: HUMAN REQUIRED, do not merge PR #$pr." >&2; exit 2 ;;
+  *) result_adopt "$(result_path review-pr)" || true
+     die "review-pr.sh did not pass (exit $review_rc). Not merging." ;;
 esac
 
 echo "==> PR #$pr: evidence for patch id $rec_patch"
@@ -82,6 +88,7 @@ bodies_with() {
     "[.comments[].body, .reviews[].body] | map(select(test(\"(^|[^0-9a-f])$rec_patch(\$|[^0-9a-f])\") and test(\"$1\"; \"i\"))) | length"
 }
 stale() {
+  result_next "gh pr comment $pr --body \"review-pr.sh: OK (patch id $rec_patch, main $rec_main). Independent review: <who>, approved. verify-<skill>: <result>\""
   die "no PR comment or review names the current patch id $rec_patch with '$1'. Evidence for an older patch does not count; post a new comment: review-pr.sh: OK (patch id $rec_patch, main $rec_main). Independent review: <who>, approved. verify-<skill>: <result>"
 }
 (( $(bodies_with 'independent review') > 0 )) || stale "Independent review"
@@ -99,16 +106,20 @@ merge_cmd=(gh pr merge "$pr" --squash --admin --match-head-commit "$rec_head")
 if (( dry_run )); then
   echo "==> dry run, nothing changed. Would run:"
   printf '  %s\n' "${status_cmd[*]}" "${merge_cmd[*]}"
+  result_ok "dry run for patch id $rec_patch, nothing changed" "heavy -- scripts/merge-pr.sh $pr"
   exit 0
 fi
 
 echo "==> PR #$pr: status and merge"
 main_now=$(gh api "repos/$repo/branches/main" --jq .commit.sha) || die "could not read the current main"
-[[ "$main_now" == "$rec_main"* ]] ||
-  die "main moved from $rec_main to ${main_now:0:12} during the review. Rerun: heavy -- scripts/merge-pr.sh $pr"
+if [[ "$main_now" != "$rec_main"* ]]; then
+  result_next "heavy -- scripts/merge-pr.sh $pr"
+  DIE_CAUSE=behind-main die "main moved from $rec_main to ${main_now:0:12} during the review. Rerun: heavy -- scripts/merge-pr.sh $pr"
+fi
 "${status_cmd[@]}" >/dev/null
 "${merge_cmd[@]}"
 
 merge_sha=$(gh pr view "$pr" --json mergeCommit --jq .mergeCommit.oid)
 echo "==> merged PR #$pr as $merge_sha"
+result_ok "merged PR #$pr as $merge_sha" "node scripts/verify-deploy.mjs --commit $merge_sha"
 echo "Next: node scripts/verify-deploy.mjs --commit $merge_sha"

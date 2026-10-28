@@ -32,6 +32,22 @@ esac
 
 cd "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 
+# One JSON result per run (scripts/lib/result.sh). review-pr.sh runs a copy of this file from main, so the helper is read
+# from the tree being checked; without it the run still works and writes nothing.
+if [[ -f scripts/lib/result.sh ]]; then
+  # shellcheck source=scripts/lib/result.sh
+  . scripts/lib/result.sh
+else
+  result_begin() { :; }; result_id() { :; }; result_ok() { :; }; result_fail() { :; }; result_file() { :; }
+  result_log() { :; }; result_next() { :; }; result_retried() { :; }
+fi
+result_begin check "${PR_RESULT_ID:-$(git symbolic-ref --quiet --short HEAD 2>/dev/null || git rev-parse --short HEAD 2>/dev/null || echo detached)}"
+check_log=""
+if [[ "${CHECK_DRY_RUN:-}" != "1" ]]; then
+  check_log="${PR_RESULT_DIR:-${HOME:-.}/tmp/pr-results}/logs/check-$$.log"
+  mkdir -p "$(dirname "$check_log")" 2>/dev/null && : >"$check_log" 2>/dev/null || check_log=""
+fi
+
 changed_mode=0
 tasks=()
 for a in "$@"; do
@@ -41,10 +57,32 @@ done
 dry=0; [[ "${CHECK_DRY_RUN:-}" == "1" ]] && dry=1
 conc=${CHECK_CONCURRENCY:-2}
 
-# Run a command, or only print it when CHECK_DRY_RUN=1.
+# Run a command, or only print it when CHECK_DRY_RUN=1. The output is also kept in $check_log for the result file.
 run() {
   if (( dry )); then echo "[dry-run] $*"; return 0; fi
-  "$@"
+  if [[ -z "$check_log" ]]; then "$@"; return; fi
+  local rc=0
+  "$@" 2>&1 | tee -a "$check_log" || rc=${PIPESTATUS[0]}
+  return "$rc"
+}
+
+# Failing test files named in the kept output, as repo-relative paths. Vitest prints "FAIL [|project|] <file> > ..."
+# and turbo prefixes "<package>:test:", so the package name is mapped to its directory.
+failed_test_files() {
+  [[ -n "$check_log" && -s "$check_log" ]] || return 0
+  local line pkg file dir seen=" "
+  while IFS= read -r line; do
+    pkg=""; [[ "$line" =~ ^([^:\ ]+):[a-z:-]+[[:space:]] ]] && pkg=${BASH_REMATCH[1]}
+    [[ "$line" =~ FAIL[[:space:]]+(\|[^|]+\|[[:space:]]+)?([^[:space:]]+\.(test|spec)\.[a-z]+) ]] || continue
+    file=${BASH_REMATCH[2]}; dir=""
+    if [[ -n "$pkg" ]]; then
+      for d in apps/*/package.json packages/*/package.json; do
+        [[ -f "$d" ]] || continue
+        if [[ "$(node -p "require('./$d').name" 2>/dev/null)" == "$pkg" ]]; then dir=$(dirname "$d")/; break; fi
+      done
+    fi
+    [[ "$seen" == *" $dir$file "* ]] || { seen+="$dir$file "; echo "$dir$file"; }
+  done < <(sed $'s/\033\\[[0-9;]*m//g' "$check_log" | grep -E 'FAIL ' | head -n 200)
 }
 
 if [[ ! -f package.json ]]; then
@@ -55,12 +93,13 @@ fi
 if   [[ -f pnpm-lock.yaml ]];    then pm=pnpm
 elif [[ -f yarn.lock ]];         then pm=yarn
 else pm=npm; fi
-command -v "$pm" >/dev/null 2>&1 || { echo "check: $pm is not installed." >&2; exit 1; }
-command -v node  >/dev/null 2>&1 || { echo "check: node is not installed." >&2; exit 1; }
+command -v "$pm" >/dev/null 2>&1 || { echo "check: $pm is not installed." >&2; result_fail env "$pm is not installed"; exit 1; }
+command -v node  >/dev/null 2>&1 || { echo "check: node is not installed." >&2; result_fail env "node is not installed"; exit 1; }
 
 needs_install=$(node -e "const p=require('./package.json');console.log(Object.keys({...p.dependencies,...p.devDependencies}).length>0?1:0)")
 if [[ "$needs_install" == "1" && ! -d node_modules ]]; then
   echo "check: node_modules missing. Install first ($pm install)." >&2
+  result_fail env "node_modules missing"
   exit 1
 fi
 
@@ -157,7 +196,7 @@ if (( changed_mode )); then
             echo "==> scripts/test-commit-msg.sh"
             run scripts/test-commit-msg.sh || failed+=(commit-msg-tests)
           fi
-          if has_changed scripts/new-task.sh scripts/test-new-task.sh; then
+          if has_changed scripts/new-task.sh scripts/test-new-task.sh scripts/lib/result.sh; then
             echo "==> scripts/test-new-task.sh"
             run scripts/test-new-task.sh || failed+=(new-task-tests)
           fi
@@ -165,11 +204,15 @@ if (( changed_mode )); then
             echo "==> scripts/test-pre-commit.sh"
             run scripts/test-pre-commit.sh || failed+=(pre-commit-tests)
           fi
-          if has_changed scripts/review-pr.sh scripts/test-review-pr.sh scripts/codeowners-lib.sh; then
+          if has_changed scripts/review-pr.sh scripts/test-review-pr.sh scripts/codeowners-lib.sh scripts/lib/result.sh; then
             echo "==> scripts/test-review-pr.sh"
             run scripts/test-review-pr.sh || failed+=(review-pr-tests)
           fi
-          if has_changed scripts/merge-pr.sh scripts/test-merge-pr.sh; then
+          if has_changed scripts/lib/result.sh scripts/lib/result-check.mjs scripts/test-result.sh; then
+            echo "==> scripts/test-result.sh"
+            run scripts/test-result.sh || failed+=(result-tests)
+          fi
+          if has_changed scripts/merge-pr.sh scripts/test-merge-pr.sh scripts/lib/result.sh; then
             echo "==> scripts/test-merge-pr.sh"
             run scripts/test-merge-pr.sh || failed+=(merge-pr-tests)
           fi
@@ -200,7 +243,7 @@ else
   done
 
   if [[ " ${tasks[*]} " == *" test "* ]]; then
-    for t in test-commit-msg test-pre-commit test-codeowners test-new-task test-review-pr test-merge-pr; do
+    for t in test-commit-msg test-pre-commit test-codeowners test-new-task test-review-pr test-merge-pr test-result; do
       echo "==> scripts/$t.sh"
       run "scripts/$t.sh" || failed+=("$t")
     done
@@ -210,6 +253,21 @@ fi
 mode_desc="${tasks[*]}"; (( changed_mode )) && mode_desc="$mode_desc; changed since ${base:0:9}"
 if [[ ${#failed[@]} -gt 0 ]]; then
   echo "check: FAILED: ${failed[*]}" >&2
+  # The first failed task names the cause. A timeout in the output makes a failed test a timing test.
+  case "${failed[0]}" in
+    lint|prettier) cause=lint ;;
+    typecheck) cause=typecheck ;;
+    build) cause=build ;;
+    *) cause=test ;;
+  esac
+  # Only vitest's own error line counts ("Error: Hook timed out in 10000ms."), not a test that prints those words.
+  if [[ "$cause" == test && -n "$check_log" ]] && sed $'s/\033\\[[0-9;]*m//g' "$check_log" | grep -qE '^([A-Za-z0-9@/_.-]+:test: )? *Error: (Hook|Test) timed out in [0-9]+ ?ms'; then cause=timing-test; fi
+  mapfile -t failing_files < <(failed_test_files)
+  [[ ${#failing_files[@]} -eq 0 ]] || result_file "${failing_files[@]}"
+  [[ -z "$check_log" ]] || result_log "$check_log"
+  rerun="heavy -- scripts/check.sh"; (( ! changed_mode )) || rerun+=" --changed"
+  result_fail "$cause" "failed: ${failed[*]}" "$rerun ${tasks[*]}"
   exit 1
 fi
+result_ok "all passed ($mode_desc)$( (( ! dry )) || echo ', dry run')"
 if (( dry )); then echo "check: dry run, nothing ran ($mode_desc)"; else echo "check: all passed ($mode_desc)"; fi

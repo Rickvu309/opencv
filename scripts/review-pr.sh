@@ -20,6 +20,10 @@
 #      APP_DELETE_PCT% or more of one app or package with at least 5 files)
 set -euo pipefail
 
+# shellcheck source=scripts/lib/result.sh
+. "$(dirname "${BASH_SOURCE[0]}")/lib/result.sh"
+result_begin review-pr
+
 BRANCH_RE='^(feat|fix|hotfix|refactor|chore|docs)/([0-9]+)-[a-z0-9]+(-[a-z0-9]+)*$'
 BOT_RE='^(dependabot|renovate)/'
 TITLE_RE='^(feat|fix|hotfix|refactor|chore|docs)(\([a-z0-9-]+\))?!?: [^ ].* \(#([0-9]+)\)$'
@@ -29,7 +33,7 @@ APP_DELETE_PCT=80
 ENV_FILE_RE='(^|/)(\.env|[A-Za-z0-9_-]+\.env)(\.[A-Za-z0-9_-]+)*$'   # matched case-insensitively
 ENV_TEMPLATE_RE='\.(example|sample|template)$'
 
-die() { echo "error: $*" >&2; exit 1; }
+die() { result_fail "${DIE_CAUSE:-other}" "$*"; echo "error: $*" >&2; exit 1; }
 fails=(); humans=(); notes=()
 ok()    { echo "  ok    $*"; }
 bad()   { echo "  FAIL  $*"; fails+=("$*"); }
@@ -41,6 +45,8 @@ note()  { echo "  note  $*"; notes+=("$*"); }
 
 [[ $# -ge 1 && "$1" =~ ^#?([0-9]+)$ ]] || { awk 'NR>1 && /^#/ {sub(/^# ?/, ""); print; next} NR>1 {exit}' "$0"; exit 1; }
 pr=${BASH_REMATCH[1]}; shift
+result_id "$pr"
+export PR_RESULT_ID=$pr
 keep=0; install=1; use_cache=1
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -54,7 +60,7 @@ done
 # shellcheck source=scripts/codeowners-lib.sh
 . "$(dirname "${BASH_SOURCE[0]}")/codeowners-lib.sh"
 
-if ! { command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; }; then die "gh must be installed and logged in"; fi
+if ! { command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; }; then DIE_CAUSE=env die "gh must be installed and logged in"; fi
 common_dir=$(git rev-parse --path-format=absolute --git-common-dir)
 main_checkout=$(dirname "$common_dir")
 repo_name=$(basename "$main_checkout")
@@ -68,8 +74,8 @@ title=$(view title .title)
 body=$(view body .body)
 draft=$(view isDraft .isDraft)
 labels=$(view labels '.labels[].name')
-git -C "$main_checkout" fetch --quiet origin main || die "cannot fetch origin/main"
-git -C "$main_checkout" fetch --quiet origin "pull/$pr/head:refs/remotes/origin/pr/$pr" --force || die "cannot fetch the head of PR #$pr"
+git -C "$main_checkout" fetch --quiet origin main || DIE_CAUSE=env die "cannot fetch origin/main"
+git -C "$main_checkout" fetch --quiet origin "pull/$pr/head:refs/remotes/origin/pr/$pr" --force || DIE_CAUSE=env die "cannot fetch the head of PR #$pr"
 head_ref="refs/remotes/origin/pr/$pr"
 files=$(pr_changed_files "$main_checkout" "origin/main...$head_ref")
 
@@ -185,7 +191,7 @@ cleanup() {
   [[ -z "$checker" ]] || rm -f "$checker"
   if [[ -e "$wt" ]] && (( ! keep )); then git -C "$main_checkout" worktree remove --force "$wt" >/dev/null 2>&1 || true; fi
 }
-trap cleanup EXIT
+result_cleanup() { cleanup; }
 [[ ! -e "$wt" ]] || git -C "$main_checkout" worktree remove --force "$wt"
 mkdir -p "$wt_root"
 # Test what a squash merge would land: main with the PR merged in, not the PR head alone. merge-tree writes no ref, no
@@ -221,7 +227,7 @@ if (( merge_rc == 0 )); then
         elif [[ -f "$wt/yarn.lock" ]];         then cmd=(yarn install)
         elif [[ -f "$wt/package-lock.json" ]]; then cmd=(npm ci)
         else cmd=(npm install); fi
-        (cd "$wt" && "${cmd[@]}") >/dev/null 2>&1 || bad "dependency install failed (${cmd[*]})"
+        (cd "$wt" && "${cmd[@]}") >/dev/null 2>&1 || { bad "dependency install failed (${cmd[*]})"; result_fail env "dependency install failed (${cmd[*]})" "heavy -- scripts/review-pr.sh $pr"; }
       fi
       if [[ -n "$checker_blob" ]]; then
         checker=$(mktemp)
@@ -234,17 +240,18 @@ if (( merge_rc == 0 )); then
           if (cd "$wt" && pnpm --filter api... run build); then
             ok "api build passed"
           else
-            bad "api build failed"
+            bad "api build failed"; result_fail build "api build failed" "heavy -- pnpm --filter api... run build"
           fi
           note "running pnpm --filter web build"
           if (cd "$wt" && pnpm --filter web build); then
             ok "web build passed"
           else
-            bad "web build failed"
+            bad "web build failed"; result_fail build "web build failed" "heavy -- pnpm --filter web build"
           fi
           if (( ${#fails[@]} == fails_before )); then mkdir -p "$cache_dir" && date -u +%Y-%m-%dT%H:%M:%SZ >"$cache_hit"; fi
         else
           bad "scripts/check.sh failed"
+          result_adopt "$(result_path check)" || result_fail test "scripts/check.sh failed" "heavy -- scripts/review-pr.sh $pr"
         fi
         rm -f "$checker"; checker=""
       else
@@ -253,11 +260,15 @@ if (( merge_rc == 0 )); then
     fi
   fi
 elif (( merge_rc == 1 )); then
-  conflicts=$(tail -n +2 <<<"$merge_out" | tr '\n' ' ')
+  mapfile -t conflict_files < <(tail -n +2 <<<"$merge_out" | sed '/^$/d')
+  conflicts=${conflict_files[*]}
   bad "does not merge cleanly with main; author must rebase (git rebase origin/main) and resolve: ${conflicts:-see git merge origin/main}"
+  result_file ${conflict_files[@]+"${conflict_files[@]}"}
+  result_fail merge-conflict "does not merge cleanly with main: ${conflicts:-unknown files}" "git fetch origin && git rebase origin/main"
 else
   merge_err=$(git -C "$main_checkout" --attr-source=origin/main merge-tree --write-tree --name-only --no-messages origin/main "$head_ref" 2>&1 >/dev/null | head -3 | tr '\n' ' ' || true)
   bad "merge with main failed (git merge-tree exit $merge_rc): ${merge_err:-no message}"
+  result_fail other "merge with main failed (git merge-tree exit $merge_rc)"
 fi
 if [[ -e "$wt" ]]; then
   if (( keep )); then note "review worktree kept at $wt"; else git -C "$main_checkout" worktree remove --force "$wt"; fi
@@ -269,12 +280,15 @@ note "check the verify-opencv evidence on the PR (.claude/skills/verify-opencv);
 
 echo
 if [[ ${#fails[@]} -gt 0 ]]; then
+  result_fail hygiene "${fails[0]}"
   echo "RESULT: FAIL (${#fails[@]}). Request changes: gh pr review $pr --request-changes --body \"...\""
   exit 1
 elif [[ ${#humans[@]} -gt 0 ]]; then
+  result_human "${humans[0]}"
   echo "RESULT: HUMAN REQUIRED. Do NOT merge. Comment with your findings and leave the decision to a human."
   exit 2
 else
+  result_ok "patch id ${patch_id:-none}, main ${main_sha:0:12}, head ${head_sha:0:12}" "heavy -- scripts/merge-pr.sh $pr"
   echo "RESULT: OK (patch id ${patch_id:-none}, main ${main_sha:0:12}). Check the verify-opencv evidence and the independent review, then: gh pr merge $pr --squash --match-head-commit $head_sha"
   exit 0
 fi
