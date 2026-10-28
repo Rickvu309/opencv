@@ -42,6 +42,7 @@ function run(t, pushExit, quiet = false, lowDisk = false, noCommonDir = false) {
   const executable = (path, text) =>
     writeFileSync(join(root, path), text, { mode: 0o755 })
   writeFileSync(join(root, "events"), "")
+  writeFileSync(join(root, "env"), "")
   if (lowDisk) {
     // A nearly full filesystem (99% used, 1 GiB free), below the 2 GiB limit.
     executable(
@@ -49,7 +50,13 @@ function run(t, pushExit, quiet = false, lowDisk = false, noCommonDir = false) {
       "#!/bin/sh\necho 'Filesystem 1024-blocks Used Available Capacity Mounted on'\necho '/dev/sda1 157286400 156237824 1048576 99% /'\n"
     )
   }
-  executable("work/repo/scripts/check.sh", "#!/bin/sh\nexit 0\n")
+  executable(
+    "work/repo/scripts/check.sh",
+    `#!/bin/sh
+printf 'check retry=%s\\n' "\${CHECK_RETRY_FAILED_TESTS-unset}" >> "$PROOF_ROOT/env"
+exit 0
+`
+  )
   executable(
     "bin/git",
     `#!/bin/sh
@@ -67,6 +74,7 @@ case "$1" in
       [ "$arg" != --no-verify ] || { echo "hook bypass forbidden" >&2; exit 97; }
     done
     printf 'push skip=%s\\n' "\${SKIP_CHECKS-unset}" >> "$PROOF_ROOT/events"
+    printf 'push retry=%s\\n' "\${CHECK_RETRY_FAILED_TESTS-unset}" >> "$PROOF_ROOT/env"
     if [ "$PROOF_QUIET" != 1 ]; then echo 'push transport diagnostic' >&2; fi
     exit "$PROOF_PUSH_EXIT" ;;
   ls-remote) echo 'oldremote refs/heads/fix/999-push-failure-proof' ;;
@@ -108,7 +116,12 @@ esac
     }
   )
   assert.ifError(result.error)
-  return { ...result, root, events: readFileSync(join(root, "events"), "utf8") }
+  return {
+    ...result,
+    root,
+    events: readFileSync(join(root, "events"), "utf8"),
+    env: readFileSync(join(root, "env"), "utf8"),
+  }
 }
 
 test("failed push with an existing remote branch stops before PR creation", (t) => {
@@ -131,6 +144,12 @@ test("successful push preserves hooks and creates a PR", (t) => {
   assertResult(result, "77", "status=ok", "cause=none")
   assert.equal(result.events, "push skip=unset\ncreate\n")
   assert.match(result.stderr, /push transport diagnostic/)
+})
+
+test("the quick check and the push's pre-push check retry a failed test file once, nothing else does", (t) => {
+  const result = run(t, 0)
+  assert.equal(result.status, 0, result.stderr)
+  assert.equal(result.env, "check retry=1\npush retry=1\n")
 })
 
 test("successful push with no output still creates a PR", (t) => {
