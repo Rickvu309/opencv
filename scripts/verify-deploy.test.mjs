@@ -1,0 +1,197 @@
+import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
+import test from "node:test"
+import { report, services, verifyDeploy } from "./verify-deploy.mjs"
+
+const commit = "5201a8823b0fc9df52cc319512177b254b446efd"
+const older = "86237ebf0000000000000000000000000000000a"
+const code = ["apps/api/src/a.ts", "apps/web/src/b.tsx"]
+
+const deployment = (id, status, hash) => ({
+  id,
+  status,
+  meta: { commitHash: hash },
+})
+
+function boundary({ files = code, deployments = {}, health = {}, clock } = {}) {
+  const calls = []
+  let now = 0
+  const io = {
+    cli(command, args) {
+      const service = args[args.indexOf("--service") + 1]
+      calls.push(`${command} ${service}`)
+      return (
+        deployments[service] ?? [
+          deployment(`${service}-new`, "SUCCESS", commit),
+          deployment(`${service}-old`, "REMOVED", older),
+        ]
+      )
+    },
+    async health(origin) {
+      calls.push(origin)
+      return health[origin] ?? 200
+    },
+    changedFiles: () => files,
+    now: () => now,
+    async sleep(ms) {
+      now += ms
+      clock?.(now)
+    },
+  }
+  return { io, calls }
+}
+
+const states = (run) =>
+  Object.fromEntries(run.results.map((r) => [r.service, r.outcome]))
+
+test("both services deployed with healthy hosts exits 0", async () => {
+  const { io } = boundary()
+  const run = await verifyDeploy({ commit }, io)
+  assert.deepEqual(states(run), { api: "DEPLOYED", web: "DEPLOYED" })
+  assert.equal(run.exitCode, 0)
+  assert.match(report(commit, run), /RESULT OK commit 5201a88$/m)
+})
+
+test("a docs-only commit expects no deploy and never calls Railway", async () => {
+  const { io, calls } = boundary({ files: ["docs/deploy.md", "README.md"] })
+  const run = await verifyDeploy({ commit }, io)
+  assert.deepEqual(states(run), {
+    api: "NOT_EXPECTED",
+    web: "NOT_EXPECTED",
+  })
+  assert.equal(run.exitCode, 0)
+  assert.deepEqual(calls, [])
+})
+
+test("a web-only change expects web and not api", async () => {
+  const { io } = boundary({ files: ["apps/web/src/b.tsx"] })
+  const run = await verifyDeploy({ commit }, io)
+  assert.deepEqual(states(run), { api: "NOT_EXPECTED", web: "DEPLOYED" })
+})
+
+test("a build in progress is DEPLOYING with a rerun command and exit 3", async () => {
+  for (const status of ["QUEUED", "BUILDING", "DEPLOYING"]) {
+    const { io } = boundary({
+      deployments: {
+        web: [
+          deployment("web-new", status, commit),
+          deployment("web-old", "SUCCESS", older),
+        ],
+      },
+    })
+    const run = await verifyDeploy({ commit }, io)
+    assert.equal(states(run).web, "DEPLOYING")
+    assert.equal(run.exitCode, 3)
+    assert.match(
+      report(commit, run),
+      new RegExp(
+        `^Rerun: node scripts/verify-deploy.mjs --commit ${commit} --wait 600$`,
+        "m"
+      )
+    )
+  }
+})
+
+test("a failed or crashed deployment is FAILED with exit 1", async () => {
+  for (const status of ["FAILED", "CRASHED"]) {
+    const { io } = boundary({
+      deployments: {
+        api: [
+          deployment("api-new", status, commit),
+          deployment("api-old", "SUCCESS", older),
+        ],
+      },
+    })
+    const run = await verifyDeploy({ commit }, io)
+    assert.equal(states(run).api, "FAILED")
+    assert.match(run.results[0].detail, /production runs 86237eb/)
+    assert.equal(run.exitCode, 1)
+  }
+})
+
+test("an unhealthy host is FAILED even when the deployment succeeded", async () => {
+  const { io } = boundary({ health: { "https://opencv.me": 502 } })
+  const run = await verifyDeploy({ commit }, io)
+  assert.deepEqual(states(run), { api: "DEPLOYED", web: "FAILED" })
+  assert.match(run.results[1].detail, /HTTP 502/)
+  assert.equal(run.exitCode, 1)
+})
+
+test("production running a different commit is FAILED", async () => {
+  const { io } = boundary({
+    deployments: { api: [deployment("api-old", "SUCCESS", older)] },
+  })
+  const run = await verifyDeploy({ commit }, io)
+  assert.equal(states(run).api, "FAILED")
+  assert.match(run.results[0].detail, /no deployment for this commit/)
+  assert.equal(run.exitCode, 1)
+})
+
+test("a newer commit already live over ours is FAILED", async () => {
+  const newer = "a".repeat(40)
+  const { io } = boundary({
+    deployments: {
+      web: [
+        deployment("web-newer", "SUCCESS", newer),
+        deployment("web-ours", "SUCCESS", commit),
+      ],
+    },
+  })
+  const run = await verifyDeploy({ commit }, io)
+  assert.equal(states(run).web, "FAILED")
+  assert.match(run.results[1].detail, /production runs aaaaaaa/)
+})
+
+test("FAILED wins over DEPLOYING", async () => {
+  const { io } = boundary({
+    deployments: {
+      api: [deployment("api-new", "FAILED", commit)],
+      web: [deployment("web-new", "BUILDING", commit)],
+    },
+  })
+  assert.equal((await verifyDeploy({ commit }, io)).exitCode, 1)
+})
+
+test("--wait rechecks until the deploy lands", async () => {
+  let ready = false
+  const { io, calls } = boundary({ clock: () => (ready = true) })
+  const original = io.cli
+  io.cli = (command, args) =>
+    ready ? original(command, args) : [deployment("x-new", "BUILDING", commit)]
+  const run = await verifyDeploy({ commit, wait: 60 }, io)
+  assert.equal(run.exitCode, 0)
+  assert.equal(calls.filter((c) => c.startsWith("railway")).length, 2)
+})
+
+test("--wait gives up as DEPLOYING when time runs out", async () => {
+  const { io } = boundary({
+    deployments: {
+      api: [deployment("api-new", "BUILDING", commit)],
+    },
+  })
+  const run = await verifyDeploy({ commit, wait: 40 }, io)
+  assert.equal(run.exitCode, 3)
+})
+
+test("rejects a short or missing commit", async () => {
+  const { io } = boundary()
+  await assert.rejects(verifyDeploy({ commit: "5201a88" }, io), /full 40/)
+  await assert.rejects(verifyDeploy({}, io), /full 40/)
+})
+
+test("service watch patterns match .railway/railway.ts", () => {
+  const source = readFileSync(
+    new URL("../.railway/railway.ts", import.meta.url),
+    "utf8"
+  )
+  for (const service of services) {
+    const block = source.slice(source.indexOf(`service("${service.name}"`))
+    const list = block.match(/watchPatterns:\s*\[([^\]]*)\]/)[1]
+    const patterns = [...list.matchAll(/"([^"]+)"/g)].map((m) => m[1])
+    assert.deepEqual(service.watchPatterns, patterns, service.name)
+  }
+  assert.deepEqual(
+    services.map((s) => s.name),
+    [...source.matchAll(/service\("(\w+)"/g)].map((m) => m[1])
+  )
+})
