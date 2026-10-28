@@ -211,6 +211,8 @@ COACH_SMOKE_API=https://api.opencv.me COACH_SMOKE_MODE=production pnpm --filter 
 Production mode asks for advice that cites workspace state and a Command
 (`job.move`) and looks for the receipt.
 
+For production sign-in recovery, use the [auth verification command](deploy/auth.md).
+
 ## Domains and DNS
 
 Add each domain on its Railway service first; Railway then shows the CNAME

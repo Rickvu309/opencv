@@ -129,6 +129,17 @@ For the agent that reviews PRs. Run from the main checkout, for every PR marked 
 
 Full checklist: `docs/git-workflow/review-and-approval.md`.
 
+### Production recovery
+
+Production sign-in recovery needs these checks; a local OTP or HTTP 200 is insufficient.
+
+| Rule                                                                                                                       | Enforced by                                                                                                                            |
+| -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| The API production build must pass before merge                                                                            | `scripts/review-pr.sh` runs `pnpm --filter api... run build`; `scripts/test-review-pr.sh` rejects a failed build and an outdated cache |
+| A sign-in recovery receipt requires the expected deployed commit, configured mail, confirmed delivery and a usable session | `scripts/verify-auth-production.mjs`; its regression cases run in `pnpm test`                                                          |
+
+Run the production check from `docs/deploy.md` after an auth recovery deploy. It discovers Railway and Resend CLI access before sending a test code. Pending delivery fails the check and prints the email ID for a later check without resending.
+
 ### Design system
 
 Stock shadcn/ui on `base-nova` (Base UI) in `packages/ui`, consumed as source by `apps/web`. `docs/adr/0006-design-system-values-and-the-kit-as-generator.md` carries the design-system rule. Import through `@workspace/ui/components/<name>` and `@workspace/ui/globals.css`, and prefer kit components over raw `<button>`/`<input>`/`<textarea>`/`<select>`. Sources in order: shadcn/ui, AI Elements patterns copied into `apps/web/src/components/ai-elements/`, Kibo UI for heavy app pieces, then Cult UI, Magic UI and free affectUI items for showpieces. App code uses shadcn's own CSS variables only (`--background`, `--primary`, `--muted-foreground`, `--chart-1..5`, `--sidebar-*` and the rest of the stock set) and stock Tailwind sizes, with no raw hex or named palette classes (`bg-red-500`) outside the CV print paper. Motion has two token pairs, `--duration-micro` 150 ms with `--ease-micro` and `--duration-panel` 280 ms with `--ease-panel`, defined once in `globals.css`. `apps/web/src/test/design-vocabulary.test.ts` and `ui-kit-contract.test.ts` enforce all of it, and `pnpm --filter web test` fails on a violation.
