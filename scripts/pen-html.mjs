@@ -340,8 +340,34 @@ export function penNodeToHtml(node, parent, ctx) {
   return ""
 }
 
+// Sizes, gaps, paddings and radii may name a number variable ($ds-fs-small).
+// Swap each for its number so the CSS gets 12px, not an invalid value.
+function withNumbers(variables, value) {
+  if (typeof value === "string" && value.startsWith("$")) {
+    const variable = variables[value.slice(1)]
+    const resolved =
+      variable && typeof variable === "object" ? variable.value : variable
+    return typeof resolved === "number" ||
+      (typeof resolved === "string" && resolved.startsWith("$"))
+      ? withNumbers(variables, resolved)
+      : value
+  }
+  if (Array.isArray(value))
+    return value.map((item) => withNumbers(variables, item))
+  if (value && typeof value === "object") {
+    const out = {}
+    for (const [key, item] of Object.entries(value))
+      out[key] =
+        key === "fill" || key === "stroke" || key === "content"
+          ? item
+          : withNumbers(variables, item)
+    return out
+  }
+  return value
+}
+
 export function penFrameToDocument(doc, frame, { assetBase, fontFace }) {
   const ctx = { variables: doc.variables ?? {}, assetBase }
-  const root = { ...frame, x: 0, y: 0 }
+  const root = withNumbers(ctx.variables, { ...frame, x: 0, y: 0 })
   return `<!doctype html><meta charset="utf-8"><style>${fontFace}*{margin:0}html,body{width:${frame.width}px;height:${frame.height}px;overflow:hidden;background:#fff}</style><body>${penNodeToHtml(root, null, ctx)}`
 }

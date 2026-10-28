@@ -1,0 +1,142 @@
+{
+  "frameId": "D8PoQ6",
+  "frameName": "W9.1 Board empty",
+  "route": "/apply",
+  "driver": "verify-apply-pen",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "pane": {
+    "width": 1188,
+    "height": 852
+  },
+  "texts": [
+    {
+      "text": "Apply",
+      "x": 21,
+      "y": 17.5,
+      "width": 36,
+      "height": 16,
+      "fontSize": 13,
+      "fontWeight": 500,
+      "letterSpacing": 0,
+      "lineHeight": 15.5,
+      "color": "rgba(47, 47, 49, 1)",
+      "background": "rgba(255, 255, 255, 1)",
+      "textAlign": "left"
+    },
+    {
+      "text": "New job",
+      "x": 1111.5,
+      "y": 17.5,
+      "width": 50.5,
+      "height": 16,
+      "fontSize": 13,
+      "fontWeight": 400,
+      "letterSpacing": 0,
+      "lineHeight": 15.5,
+      "color": "rgba(26, 26, 26, 1)",
+      "background": "rgba(255, 255, 255, 1)",
+      "textAlign": "left"
+    },
+    {
+      "text": "Board",
+      "x": 43,
+      "y": 67,
+      "width": 34,
+      "height": 15,
+      "fontSize": 12,
+      "fontWeight": 500,
+      "letterSpacing": 0,
+      "lineHeight": 14.5,
+      "color": "rgba(26, 26, 26, 1)",
+      "background": "rgba(232, 232, 233, 1)",
+      "textAlign": "left"
+    },
+    {
+      "text": "List",
+      "x": 124,
+      "y": 67,
+      "width": 20,
+      "height": 15,
+      "fontSize": 12,
+      "fontWeight": 400,
+      "letterSpacing": 0,
+      "lineHeight": 14.5,
+      "color": "rgba(89, 89, 91, 1)",
+      "background": "rgba(255, 255, 255, 1)",
+      "textAlign": "left"
+    },
+    {
+      "text": "Calendar",
+      "x": 191,
+      "y": 67,
+      "width": 51,
+      "height": 15,
+      "fontSize": 12,
+      "fontWeight": 400,
+      "letterSpacing": 0,
+      "lineHeight": 14.5,
+      "color": "rgba(89, 89, 91, 1)",
+      "background": "rgba(255, 255, 255, 1)",
+      "textAlign": "left"
+    },
+    {
+      "text": "Track your first job",
+      "x": 496.5,
+      "y": 446,
+      "width": 136.5,
+      "height": 19,
+      "fontSize": 15,
+      "fontWeight": 600,
+      "letterSpacing": 0,
+      "lineHeight": 18,
+      "color": "rgba(26, 26, 26, 1)",
+      "background": "rgba(249, 249, 250, 1)",
+      "textAlign": "left"
+    },
+    {
+      "text": "Add the jobs you're applying to.",
+      "x": 496.5,
+      "y": 472,
+      "width": 195.5,
+      "height": 16,
+      "fontSize": 13,
+      "fontWeight": 400,
+      "letterSpacing": 0,
+      "lineHeight": 15.5,
+      "color": "rgba(89, 89, 91, 1)",
+      "background": "rgba(249, 249, 250, 1)",
+      "textAlign": "left"
+    },
+    {
+      "text": "Add job",
+      "x": 509.5,
+      "y": 516,
+      "width": 48,
+      "height": 16,
+      "fontSize": 13,
+      "fontWeight": 600,
+      "letterSpacing": 0,
+      "lineHeight": 15.5,
+      "color": "rgba(27, 27, 31, 1)",
+      "background": "rgba(188, 202, 241, 1)",
+      "textAlign": "left"
+    },
+    {
+      "text": "N",
+      "x": 570.5,
+      "y": 517,
+      "width": 8.5,
+      "height": 14,
+      "fontSize": 11,
+      "fontWeight": 400,
+      "letterSpacing": 0,
+      "lineHeight": 13,
+      "color": "rgba(28, 28, 32, 0.5)",
+      "background": "rgba(34, 34, 34, 0.06)",
+      "textAlign": "left"
+    }
+  ]
+}

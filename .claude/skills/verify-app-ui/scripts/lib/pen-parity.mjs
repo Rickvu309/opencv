@@ -6,8 +6,9 @@
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 
-// Pen greys under 4.5:1 on white. The app keeps muted-foreground there, as the
-// landing does (verify-landing 31), so text-contrast (check 20) still holds.
+// Pen greys under 4.5:1 on white. The app ships a neutral grey between the
+// lightest AA grey (verify-pen-layout's rule) and muted-foreground, so
+// text-contrast (check 20) still holds.
 const CONTRAST_FLOOR = new Set([
   "#969799",
   "#A0A0A2",
@@ -15,7 +16,17 @@ const CONTRAST_FLOOR = new Set([
   "#8A8F98",
   "#C9C9CC",
 ])
-const MUTED_FOREGROUND = "#59595B"
+const luminance = (rgb) => {
+  const [r, g, b] = rgb.map((c) => {
+    const unit = c / 255
+    return unit <= 0.03928 ? unit / 12.92 : ((unit + 0.055) / 1.055) ** 2.4
+  })
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+const onWhite = (rgb) => 1.05 / (luminance(rgb) + 0.05)
+const neutral = (rgb) => Math.max(...rgb) - Math.min(...rgb) <= 4
+const floorGrey = (rgb) =>
+  neutral(rgb) && onWhite(rgb) >= 4.3 && onWhite(rgb) <= 7.1
 
 // Runs inside the page; serialised with toString().
 function penProbe(selector) {
@@ -30,11 +41,7 @@ function penProbe(selector) {
     ctx.fillRect(0, 0, 1, 1)
     return [...ctx.getImageData(0, 0, 1, 1).data.slice(0, 3)]
   }
-  const norm = (s) =>
-    s
-      .replace(/[‘']/g, "’")
-      .replace(/\s+/g, " ")
-      .trim()
+  const norm = (s) => s.replace(/[‘']/g, "’").replace(/\s+/g, " ").trim()
   const box = (el) => el.getBoundingClientRect()
   const visible = (el) =>
     box(el).width > 0 &&
@@ -51,7 +58,8 @@ function penProbe(selector) {
       fontWeight: s.fontWeight,
       lineHeight:
         s.lineHeight === "normal" ? "normal" : parseFloat(s.lineHeight) / size,
-      letterSpacing: s.letterSpacing === "normal" ? 0 : parseFloat(s.letterSpacing),
+      letterSpacing:
+        s.letterSpacing === "normal" ? 0 : parseFloat(s.letterSpacing),
     }
   }
   const texts = []
@@ -69,7 +77,8 @@ function penProbe(selector) {
           text: norm(el.placeholder),
           ...measure(el, "::placeholder"),
         })
-      if (field && el.value) texts.push({ text: norm(el.value), ...measure(el) })
+      if (field && el.value)
+        texts.push({ text: norm(el.value), ...measure(el) })
       if (own) texts.push({ text, ...measure(el) })
       else if (text && el.childElementCount > 0)
         texts.push({ text, container: true, ...measure(el) })
@@ -104,7 +113,10 @@ function oklch([r, g, b]) {
   }
 }
 const hex = (rgb) =>
-  `#${rgb.map((c) => c.toString(16).padStart(2, "0")).join("").toUpperCase()}`
+  `#${rgb
+    .map((c) => c.toString(16).padStart(2, "0"))
+    .join("")
+    .toUpperCase()}`
 const fromHex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16))
 const weight = (w) => {
   const text = String(w).toLowerCase()
@@ -112,11 +124,7 @@ const weight = (w) => {
   if (text === "bold") return "700"
   return String(parseInt(text, 10))
 }
-const norm = (s) =>
-  s
-    .replace(/[‘']/g, "’")
-    .replace(/\s+/g, " ")
-    .trim()
+const norm = (s) => s.replace(/[‘']/g, "’").replace(/\s+/g, " ").trim()
 
 // notShown: { text: reason } for pen texts the product cannot show.
 // marksNotDrawn: how many pen marks belong to data the product does not have.
@@ -152,8 +160,7 @@ export function comparePen(
       const a = oklch(found.color)
       const b = oklch(fromHex(spec.fill))
       const close = Math.abs(a.L - b.L) <= 0.02 && Math.abs(a.C - b.C) <= 0.02
-      const floor =
-        CONTRAST_FLOOR.has(spec.fill) && hex(found.color) === MUTED_FOREGROUND
+      const floor = CONTRAST_FLOOR.has(spec.fill) && floorGrey(found.color)
       if (!close && !floor)
         problems.push(`colour ${hex(found.color)} pen ${spec.fill}`)
     }
@@ -162,7 +169,10 @@ export function comparePen(
       Math.abs(found.fontSize - spec.fontSize) > 0.5
     )
       problems.push(`size ${found.fontSize} pen ${spec.fontSize}`)
-    if (spec.fontWeight != null && weight(found.fontWeight) !== weight(spec.fontWeight))
+    if (
+      spec.fontWeight != null &&
+      weight(found.fontWeight) !== weight(spec.fontWeight)
+    )
       problems.push(`weight ${found.fontWeight} pen ${spec.fontWeight}`)
     if (
       typeof spec.lineHeight === "number" &&
@@ -176,7 +186,9 @@ export function comparePen(
     )
       problems.push(`tracking ${found.letterSpacing} pen ${spec.letterSpacing}`)
     if (problems.length)
-      failures.push(`[${spec.section}] "${want.slice(0, 40)}" ${problems.join(", ")}`)
+      failures.push(
+        `[${spec.section}] "${want.slice(0, 40)}" ${problems.join(", ")}`
+      )
   }
   const boxes = [...measured.marks]
   const penMarks = styles.sections.flatMap((section) => section.marks)

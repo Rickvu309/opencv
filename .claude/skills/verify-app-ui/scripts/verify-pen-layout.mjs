@@ -107,6 +107,12 @@ try {
   const raw = {}
   for (const file of files) {
     const layout = JSON.parse(readFileSync(file, "utf8"))
+    if (layout.driver) {
+      console.log(
+        `SKIP ${layout.frameId} ${layout.route}: set up and measured by ${layout.driver}`
+      )
+      continue
+    }
     await tab.goto(`${stack.webUrl}${layout.route}`)
     await tab.waitFor("document.fonts.status === 'loaded'", 10000)
     await tab.waitFor(
