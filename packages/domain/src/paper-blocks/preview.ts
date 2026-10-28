@@ -105,19 +105,45 @@ function readSkills(fragments: PreviewFragment[]): CvSkillGroup[] {
   return groups
 }
 
+function appendDetail(detail: string, items: readonly string[]): string {
+  const extra = items.filter((item) => item.length > 0).join("\n")
+  if (extra.length === 0) return detail
+  return detail.length === 0 ? extra : `${detail}\n${extra}`
+}
+
+/** First line is the name. Slash insert stores a project as one text block. */
+function projectFromText(text: string): CvProject {
+  const split = text.indexOf("\n")
+  if (split === -1) return { name: text, detail: "" }
+  return { name: text.slice(0, split), detail: text.slice(split + 1) }
+}
+
 function readProjects(fragments: PreviewFragment[]): CvProject[] {
   const projects: CvProject[] = []
   const blocks = visible(fragments)
   for (let index = 0; index < blocks.length; index += 1) {
     const fragment = blocks[index]
-    if (!fragment || fragment.kind !== "heading") continue
-    const next = blocks[index + 1]
-    let detail = ""
-    if (next?.kind === "text") {
-      detail = next.text
-      index += 1
+    if (!fragment) continue
+    if (fragment.kind === "heading") {
+      const next = blocks[index + 1]
+      let detail = ""
+      if (next?.kind === "text") {
+        detail = next.text
+        index += 1
+      }
+      projects.push({ name: fragment.text, detail })
+      continue
     }
-    projects.push({ name: fragment.text, detail })
+    if (fragment.kind === "text") {
+      if (fragment.text.trim().length === 0) continue
+      projects.push(projectFromText(fragment.text))
+      continue
+    }
+    if (fragment.kind === "list") {
+      const current = projects[projects.length - 1]
+      if (!current) continue
+      current.detail = appendDetail(current.detail, fragment.items)
+    }
   }
   return projects
 }

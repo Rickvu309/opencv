@@ -294,7 +294,13 @@ describe("version 2 preview", () => {
       projects: [{ name: "OpenCV", detail: "A CV editor" }],
       languages: ["English"],
     })
-    const layouts = ["simple", "modern", "compact", "academic", "with-photo"] as const
+    const layouts = [
+      "simple",
+      "modern",
+      "compact",
+      "academic",
+      "with-photo",
+    ] as const
     for (const templateId of layouts) {
       cleanup()
       vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
@@ -313,10 +319,57 @@ describe("version 2 preview", () => {
       expect(
         await screen.findByRole("heading", { name: "Lan CV" })
       ).toBeInTheDocument()
-      expect(screen.getAllByText("Ships small experiments.").length).toBeGreaterThan(0)
+      expect(
+        screen.getAllByText("Ships small experiments.").length
+      ).toBeGreaterThan(0)
       expect(screen.getAllByText("OpenCV").length).toBeGreaterThan(0)
       expect(screen.getAllByText("A CV editor").length).toBeGreaterThan(0)
       expect(screen.getAllByText(/English/).length).toBeGreaterThan(0)
+    }
+  })
+
+  it("renders a slash-inserted project on every share layout", async () => {
+    const blocks = cvCodecToBlocks(fixture)
+    blocks.sections.push({
+      id: "sec-projects",
+      kind: "projects",
+      blocks: [
+        {
+          id: "proj-1",
+          type: "text",
+          text: "OpenCV project\nTracked the editor",
+        },
+      ],
+    })
+    const layouts = [
+      "simple",
+      "modern",
+      "compact",
+      "academic",
+      "with-photo",
+    ] as const
+    for (const templateId of layouts) {
+      cleanup()
+      vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
+        const url = String(input)
+        if (url.includes("/api/paper/shared/tok")) {
+          return Promise.resolve(
+            Response.json({
+              ok: true,
+              data: { ...view(blocks), templateId },
+            })
+          )
+        }
+        return Promise.resolve(Response.json({ ok: true, data: {} }))
+      })
+      render(<PaperSharePage />)
+      expect(
+        await screen.findByRole("heading", { name: "Lan CV" })
+      ).toBeInTheDocument()
+      expect(screen.getAllByText("OpenCV project").length).toBeGreaterThan(0)
+      expect(screen.getAllByText("Tracked the editor").length).toBeGreaterThan(
+        0
+      )
     }
   })
 })
