@@ -1,5 +1,5 @@
-import { cleanup, fireEvent, screen } from "@testing-library/react"
-import { afterEach, beforeEach, describe, it, vi } from "vitest"
+import { act, cleanup, fireEvent, screen } from "@testing-library/react"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { NOW, fill, penJobs } from "@/test/apply-pen-fixtures.ts"
 import { setMockJobs } from "@/test/apply-jobs-mock.ts"
@@ -15,6 +15,7 @@ import listStyles from "./design/w9-4-list.styles.json"
 import noResults from "./design/w9-5-filters-no-results.snapshot.json"
 import noResultsStyles from "./design/w9-5-filters-no-results.styles.json"
 import drag from "./design/w9-6-drag-to-stage.snapshot.json"
+import dragStyles from "./design/w9-6-drag-to-stage.styles.json"
 import month from "./design/w9-7-calendar-month.snapshot.json"
 import monthStyles from "./design/w9-7-calendar-month.styles.json"
 import week from "./design/w9-8-calendar-week.snapshot.json"
@@ -99,18 +100,58 @@ describe("Apply board, list and calendar match W9 of opencv.pen", () => {
     await screen.findByText("No jobs match these filters")
     expectFrame(main(), noResults, noResultsStyles)
   })
-  it("W9.6 Drag to stage keeps the board texts", async () => {
-    setMockJobs(penJobs())
-    renderApp("/apply")
-    await screen.findByRole("region", { name: "Saved" })
-    expectFrame(main(), drag, null, {
-      ...Object.fromEntries(
-        drag.sections
-          .flatMap((section) => section.texts)
-          .filter((text) => !board.sections.some((s) => s.texts.includes(text)))
-          .map((text) => [text, "drawn only while a card is dragged"])
-      ),
-    })
+  it("W9.6 Drag to stage", async () => {
+    // jsdom has no layout; place each lane 320px apart so the keyboard sensor
+    // can move a card to the next stage, as apply-board.test.tsx does.
+    const order = ["saved", "applied", "interview", "offer", "closed"]
+    const rect = vi
+      .spyOn(HTMLElement.prototype, "getBoundingClientRect")
+      .mockImplementation(function (this: HTMLElement) {
+        const lane = this.closest("[data-slot='kanban-board']")
+        const stage =
+          lane?.getAttribute("data-stage") ?? this.getAttribute("data-stage")
+        const index = stage ? order.indexOf(stage) : -1
+        const card = this.closest("[data-slot='kanban-card']")
+        if (index < 0) return new DOMRect(24, 96, 200, 80)
+        return new DOMRect(
+          index * 320 + (card ? 24 : 0),
+          card ? 96 : 0,
+          card ? 200 : 244,
+          card ? 80 : 480
+        )
+      })
+    const press = async (target: EventTarget, code: string) => {
+      await act(async () => {
+        fireEvent.keyDown(target, { code, key: code === "Space" ? " " : code })
+        await new Promise((resolve) => setTimeout(resolve, 0))
+      })
+    }
+    try {
+      setMockJobs(penJobs())
+      renderApp("/apply")
+      const card = await screen.findByRole("button", {
+        name: "Business analyst intern, Regional bank",
+      })
+      card.focus()
+      await press(card, "Space")
+      await press(document, "ArrowRight")
+      const lifted = document.querySelector("[data-slot=kanban-overlay]")
+      expect(lifted).toHaveTextContent("Business analyst intern")
+      // The drop line needs a pointer over a lane, which jsdom cannot hold;
+      // verify-apply-pen drags with a real pointer and requires it.
+      expectFrame(main(), drag, null)
+      const marks = dragStyles.sections.reduce(
+        (sum, section) => sum + section.marks.length,
+        0
+      )
+      const drawn =
+        main().querySelectorAll("svg, img").length +
+        (lifted?.querySelectorAll("svg, img").length ?? 0)
+      expect(drawn).toBeGreaterThanOrEqual(marks)
+      await press(document, "Escape")
+    } finally {
+      rect.mockRestore()
+    }
   })
   it("W9.7 Calendar month", async () => {
     setMockJobs(penJobs({ "Junior Marketing": { deadline: "2026-10-25" } }))

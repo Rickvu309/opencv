@@ -196,7 +196,7 @@ export function ApplyBoard({
               </KanbanHeader>
               <KanbanCards
                 id={column.id}
-                className="min-h-0 flex-none gap-2 p-0"
+                className="min-h-0 flex-initial gap-2 p-0"
               >
                 {(item: Card) => (
                   <KanbanCard

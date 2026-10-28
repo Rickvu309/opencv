@@ -6,6 +6,14 @@ import { contrast, TOLERANCE } from "./pen-layout-compare.mjs"
 // apply-design-parity.test.tsx checks those with fixed data.
 const SERVER_DATES = "server time, checked by apply-design-parity.test.tsx"
 export const NOT_SHOWN = {
+  "w9-6-drag-to-stage": dates([
+    "Oct 25",
+    "Oct 22",
+    "Oct 14",
+    "Oct 21",
+    "Oct 12",
+    "Oct 2",
+  ]),
   "w9-3-board": dates([
     "Oct 25",
     "Oct 22",

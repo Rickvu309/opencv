@@ -122,7 +122,7 @@ async function main() {
       await page.sleep(300)
     }
 
-    const capture = async (slug, root, prepare) => {
+    const capture = async (slug, root, prepare, release) => {
       await prepare()
       if (shots) await page.screenshot(`${shots}/${slug}.png`, false)
       const measured = await page.evaluate(penProbeSource(root))
@@ -176,6 +176,7 @@ async function main() {
         result.layout = layout.texts.length
       }
       results.push({ slug, ...result })
+      if (release) await release()
     }
 
     await page.goto(`${web}/sign-in`)
@@ -187,6 +188,46 @@ async function main() {
     const apm = ids["Associate PM intern"]
     const lanes = "document.querySelector('[data-slot=board-lane]')"
     await capture("w9-3-board", MAIN, () => open("/apply", lanes))
+    await capture(
+      "w9-6-drag-to-stage",
+      `${MAIN},[data-slot=kanban-overlay]`,
+      async () => {
+        await open("/apply", lanes)
+        // Lift Business analyst intern by its centre and hold it where the
+        // frame draws it (x 536, y 322 in the main panel), over Interview.
+        const spot = await page.evaluate(`(() => {
+          const card = [...document.querySelectorAll("[data-slot=kanban-card]")].find((n) => n.textContent.includes("Business analyst intern"))
+          const pane = document.querySelector("#app-main").getBoundingClientRect()
+          const r = card.getBoundingClientRect()
+          return { x: r.left + r.width / 2, y: r.top + r.height / 2, dx: r.width / 2, dy: r.height / 2, left: pane.left, top: pane.top }
+        })()`)
+        const to = { x: spot.left + 536 + spot.dx, y: spot.top + 322 + spot.dy }
+        await page.mouse("mousePressed", spot.x, spot.y)
+        for (let step = 1; step <= 12; step += 1)
+          await page.mouse(
+            "mouseMoved",
+            spot.x + ((to.x - spot.x) * step) / 12,
+            spot.y + ((to.y - spot.y) * step) / 12
+          )
+        await page.sleep(500)
+        must(
+          await ui(
+            `Boolean(document.querySelector("[data-slot=kanban-overlay] [data-slot=card], [data-slot=kanban-overlay] *"))`
+          ),
+          "the lifted card"
+        )
+        must(
+          await ui(
+            `Boolean([...document.querySelectorAll("[data-slot=drop-line]")].length)`
+          ),
+          "the drop line"
+        )
+      },
+      async () => {
+        await page.key("Escape")
+        await page.mouse("mouseReleased", 0, 0)
+      }
+    )
     await capture("w9-4-list", MAIN, () =>
       open(
         "/apply?view=list",
@@ -309,9 +350,7 @@ try {
     )
   }
   const failed = results.filter((r) => r.failures.length).length
-  console.log(
-    `${results.length - failed} PASS, ${failed} FAIL (W9.6 Drag to stage is checked by apply-design-parity.test.tsx)`
-  )
+  console.log(`${results.length - failed} PASS, ${failed} FAIL`)
 } catch (error) {
   console.error(`verify-apply-pen error: ${error.message}`)
   exit = 2

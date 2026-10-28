@@ -103,13 +103,15 @@ export function NewJobProperties({
           />
         </PopoverContent>
       </Popover>
-      {location || locationOpen ? (
+      {
         <Popover open={locationOpen} onOpenChange={setLocationOpen}>
           <PopoverTrigger
             render={<Button type="button" variant="ghost" className={CHIP} />}
           >
             <MapPin className="text-chart-1" aria-hidden />
-            {location || "Location"}
+            {location || (
+              <span className="text-muted-foreground">Location</span>
+            )}
           </PopoverTrigger>
           <PopoverContent align="start" className="w-56">
             <Input
@@ -119,7 +121,7 @@ export function NewJobProperties({
             />
           </PopoverContent>
         </Popover>
-      ) : null}
+      }
     </div>
   )
 }

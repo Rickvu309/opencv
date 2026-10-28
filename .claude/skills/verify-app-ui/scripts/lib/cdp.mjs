@@ -254,6 +254,16 @@ export async function launchBrowser() {
       await call("Input.dispatchKeyEvent", { type: "rawKeyDown", ...base })
       await call("Input.dispatchKeyEvent", { type: "keyUp", ...base })
     }
+    // type is mousePressed, mouseMoved or mouseReleased; the left button is held between them.
+    const mouse = (type, x, y) =>
+      call("Input.dispatchMouseEvent", {
+        type,
+        x,
+        y,
+        button: "left",
+        buttons: type === "mouseReleased" ? 0 : 1,
+        clickCount: 1,
+      })
     const screenshot = async (file, fullPage) => {
       const { data } = await call("Page.captureScreenshot", {
         format: "png",
@@ -274,6 +284,7 @@ export async function launchBrowser() {
       goto,
       waitFor,
       key,
+      mouse,
       screenshot,
       release,
       setIntercept,

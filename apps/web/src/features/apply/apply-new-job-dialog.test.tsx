@@ -113,6 +113,29 @@ describe("new job dialog", () => {
     })
   })
 
+  it("adds a location to a job typed by hand", async () => {
+    await openDialog()
+    fireEvent.change(screen.getByLabelText("Role title"), {
+      target: { value: "Junior Marketing" },
+    })
+    fireEvent.change(screen.getByLabelText("Company"), {
+      target: { value: "Lumière Cosmetics" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Location" }))
+    fireEvent.change(await screen.findByRole("textbox", { name: "Location" }), {
+      target: { value: "Da Nang" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Add job" }))
+    await waitFor(() => {
+      expect(
+        getMockJobPosts().some(
+          (post) =>
+            post.name === "job.create" && post.input.location === "Da Nang"
+        )
+      ).toBe(true)
+    })
+  })
+
   it("offers Open and Add anyway for a duplicate", async () => {
     const existing = mockJob({
       jobUrl: posting,
