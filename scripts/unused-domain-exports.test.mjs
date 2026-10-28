@@ -132,14 +132,27 @@ test("every export of packages/domain/src is imported by non-test code", () => {
   }
 
   const unused = []
+  const exported = new Set()
   for (const file of sourceFiles(domainSrc)) {
     if (file === path.join(domainSrc, "index.ts")) continue
     for (const name of exportedNames(parse(file))) {
+      exported.add(name)
       if (!used.has(name) && !KEPT_ON_PURPOSE.has(name)) {
         unused.push(
-          `nothing outside ${path.relative(root, file)} imports ${name}: drop \`export\` if this file uses it, else delete it`
+          `nothing outside ${path.relative(root, file)} imports ${name}: drop \`export\` if this file uses it, else delete it. A type named in another export's type must stay exported; add it to KEPT_ON_PURPOSE`
         )
       }
+    }
+  }
+  for (const name of KEPT_ON_PURPOSE) {
+    if (!exported.has(name)) {
+      unused.push(
+        `KEPT_ON_PURPOSE names ${name}, which domain no longer exports: remove the entry`
+      )
+    } else if (used.has(name)) {
+      unused.push(
+        `KEPT_ON_PURPOSE names ${name}, which now has an importer: remove the entry`
+      )
     }
   }
   assert.deepEqual(unused, [], `unused domain exports:\n${unused.join("\n")}`)
