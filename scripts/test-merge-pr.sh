@@ -7,7 +7,8 @@ unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE
 
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 script=$here/merge-pr.sh
-tmp=$(mktemp -d)
+mkdir -p "$HOME/tmp"
+tmp=$(mktemp -d -p "$HOME/tmp")
 trap 'rm -rf "$tmp"' EXIT
 
 mkdir "$tmp/bin"
@@ -23,7 +24,9 @@ case "$1 $2" in
   "pr merge" | "api repos/owner/repo/statuses/"*) ;;
   "pr view")
     case "$*" in
-      *"--json body"*) jq -r "${@: -1}" <<<"{\"body\":\"${MP_BODY:-}\"}" ;;
+      *"--json body"*) jq -r "${@: -1}" < <(jq -nc --arg b "${MP_BODY:-}" '{body:$b}') ;;
+      *"--json headRefOid"*) echo "$MP_HEAD" ;;
+      *"--json headRefName"*) echo "${MP_BRANCH:-feat/9-gone}" ;;
       *"--json author"*) jq -r "${@: -1}" <<<"{\"author\":{\"login\":\"$MP_AUTHOR\"}}" ;;
       *"--json comments,reviews"*) jq -r "${@: -1}" <<<"$MP_EVIDENCE" ;;
       *"--json mergeCommit"*) jq -r "${@: -1}" <<<'{"mergeCommit":{"oid":"cafe0000cafe0000cafe0000cafe0000cafe0000"}}' ;;
@@ -45,20 +48,25 @@ chmod +x "$tmp/bin/gh" "$tmp/review"
 # merge-pr.sh runs from the main checkout: a throwaway repo on main stands in for it.
 git init -q -b main "$tmp/repo" && git -C "$tmp/repo" config core.hooksPath /dev/null
 git -C "$tmp/repo" commit -q --allow-empty -m base
-export HEAVY_SLOT=1
+git -C "$tmp/repo" update-ref refs/remotes/origin/main HEAD
+# The PR head is a real commit on a branch off main, so the commit checks have something to read.
+git -C "$tmp/repo" switch -q -c pr-head
+echo x >"$tmp/repo/x.txt"; git -C "$tmp/repo" add x.txt; git -C "$tmp/repo" commit -q -m "feat: x (#9)"
+head=$(git -C "$tmp/repo" rev-parse HEAD)
+git -C "$tmp/repo" switch -q main
+export HEAVY_SLOT=1 MP_HEAD=$head
 export PATH=$tmp/bin:$PATH MP_LOG=$tmp/gh.log MERGE_PR_REVIEW_CMD=$tmp/review
 export PR_RESULT_DIR=$tmp/results PR_RESULT_REPO=opencv MP_COUNT=$tmp/review-count
 
 patch=0123456789abcdef0123456789abcdef01234567
 old=ffffffffffffffffffffffffffffffffffffffff
-head=abcdef0123456789abcdef0123456789abcdef01
 ok_line="RESULT: OK (patch id $patch, main 1234567890ab). Check the verify-opencv evidence, then: gh pr merge 5 --squash --match-head-commit $head"
 evidence() { jq -nc --arg c "$1" '{comments:[{body:$c}],reviews:[]}'; }
 full="review-pr.sh: OK (patch id $patch, main 1234567890ab). Independent review: sol-loop, approved. verify-opencv: PASS"
 review_only="review-pr.sh: OK (patch id $patch, main 1234567890ab). Independent review: sol-loop, approved."
 
 reset() {
-  : >"$MP_LOG"; rm -f "$MP_COUNT"; unset MP_BODY; rm -rf "$tmp/repo/.git/pre-push-stamps"; export HEAVY_SLOT=1
+  : >"$MP_LOG"; rm -f "$MP_COUNT"; unset MP_BODY MP_BRANCH; export MP_HEAD=$head; rm -rf "$tmp/repo/.git/pre-push-stamps"; export HEAVY_SLOT=1
   mkdir -p "$tmp/repo/.git/pre-push-stamps"; echo ok >"$tmp/repo/.git/pre-push-stamps/$head"
   git -C "$tmp/repo" switch -q main 2>/dev/null || true; git -C "$tmp/repo" reset -q --hard; unset MP_REVIEW_OUT2 MP_REVIEW_RC2 MP_COMPARE_FILES MP_COMPARE_FAIL MP_MAIN
   export MP_ME=owner MP_AUTHOR=owner MP_REVIEW_RC=0 MP_REVIEW_OUT=$ok_line MP_FILES="scripts/x.sh docs/y.md"
@@ -222,21 +230,54 @@ run
 expect "R68: a main checkout on another branch refuses" 1 "is on 'feat/9-x'" "git -C"
 git -C "$tmp/repo" switch -q main
 
+never_gated() { [[ ! -e "$MP_COUNT" ]] || fail "$1" "the review gate ran: a refusal that needs no gate must come before it"; }
+
 reset; MP_FILES="docs/y.md .github/workflows/ci.yml" run
-expect "R105: a workflow file refuses" 1 "GitHub Actions workflow files" ".github/workflows/ci.yml"
-no_merge "workflow"
+expect "R105: a workflow file refuses before the gate" 1 "GitHub Actions workflow files" ".github/workflows/ci.yml"
+no_merge "workflow"; never_gated "workflow"
+# The fix runs in the branch's worktree, never in the main checkout where merge-pr.sh runs, and removes the files for real.
+fix=$(grep '^Fix: ' "$tmp/err" | sed 's/^Fix: //')
+[[ "$fix" == "cd <the worktree of this branch> && git rm -rf -- .github/workflows/ci.yml && git commit --amend --no-edit && heavy -- git push --force-with-lease" ]] || fail "R105 fix" "wrong fix: $fix"
+git -C "$tmp/repo" worktree add -q -b feat/9-wt "$tmp/wt" pr-head
+reset; MP_BRANCH=feat/9-wt MP_FILES=".github/workflows/ci.yml" run
+expect "R105: the fix goes to the worktree that has the branch" 1 "Fix: cd $tmp/wt && git rm -rf -- .github/workflows/ci.yml"
+git -C "$tmp/repo" worktree remove --force "$tmp/wt"; git -C "$tmp/repo" branch -q -D feat/9-wt
 
 reset; rm "$tmp/repo/.git/pre-push-stamps/$head"; echo ok >"$tmp/repo/.git/pre-push-stamps/other"
 run
-expect "R97: a head with no pre-push stamp refuses and names the push" 1 "was pushed without the pre-push hook" "git push --force-with-lease"
-no_merge "no stamp"
+expect "R97: a head with no pre-push stamp refuses before the gate and says to rebase" 1 "was pushed without the pre-push hook" "cd <the worktree of this branch> && git fetch origin main && git rebase origin/main && git commit --amend --no-edit && heavy -- git push --force-with-lease"
+no_merge "no stamp"; never_gated "no stamp"
 
 reset; echo skip >"$tmp/repo/.git/pre-push-stamps/$head"
 run
-expect "R98: a SKIP_CHECKS push that the PR does not mention refuses" 1 "pushed with SKIP_CHECKS=1" "gh pr edit 5"
-no_merge "skip unsaid"
-reset; echo skip >"$tmp/repo/.git/pre-push-stamps/$head"; MP_BODY="SKIP_CHECKS=1: emergency declared by Quan" run
-expect "R98: a SKIP_CHECKS push that the PR mentions merges" 0 "merged PR #5"
+expect "R98: a SKIP_CHECKS push that the PR does not mention refuses" 1 "pushed with SKIP_CHECKS=1" "gh api -X PATCH repos/{owner}/{repo}/pulls/5"
+grep -q 'gh pr edit' "$tmp/err" && fail "R98 fix" "gh pr edit fails on the deprecated Projects API here; the fix must use gh api"
+no_merge "skip unsaid"; never_gated "skip unsaid"
+# A real PR body is built from the template, which has its own line about SKIP_CHECKS. That line is not the declaration.
+reset; echo skip >"$tmp/repo/.git/pre-push-stamps/$head"; MP_BODY=$(cat "$here/../.github/pull_request_template.md") run
+expect "R98: the PR template's own SKIP_CHECKS line is not a declaration" 1 "does not say \"emergency declared by <name>\""
+no_merge "template body"
+reset; echo skip >"$tmp/repo/.git/pre-push-stamps/$head"; MP_BODY="**Checks were skipped (SKIP_CHECKS=1), emergency declared by unknown.**" run
+expect "R98: an unnamed human is not a declaration" 1 "does not say"
+reset; echo skip >"$tmp/repo/.git/pre-push-stamps/$head"
+MP_BODY="**Checks were skipped (SKIP_CHECKS=1), emergency declared by Quan. Reviewer: run scripts/check.sh.**"$'\n\n'"$(cat "$here/../.github/pull_request_template.md")" run
+expect "R98: the line open-pr.sh writes, with a name, merges" 0 "merged PR #5"
+
+# R97 for a commit made with the commit hooks skipped: their refusals are checked again on the head.
+git -C "$tmp/repo" switch -q -c trailer-head pr-head
+echo y >"$tmp/repo/y.txt"; git -C "$tmp/repo" add y.txt
+git -C "$tmp/repo" commit -q -m "feat: y (#9)" -m "Co-""Authored-""By: Someone <s@example.com>"
+trailer_head=$(git -C "$tmp/repo" rev-parse HEAD)
+git -C "$tmp/repo" switch -q -c big-head pr-head
+head -c 30000 /dev/zero | tr '\0' 'a' >"$tmp/repo/big.txt"; git -C "$tmp/repo" add big.txt; git -C "$tmp/repo" commit -q -m "feat: big (#9)"
+big_head=$(git -C "$tmp/repo" rev-parse HEAD)
+git -C "$tmp/repo" switch -q main
+for case in "trailer:$trailer_head:attribution trailer" "big:$big_head:over the 20000-byte"; do
+  IFS=: read -r name sha want <<<"$case"
+  reset; echo ok >"$tmp/repo/.git/pre-push-stamps/$sha"; MP_HEAD=$sha MP_REVIEW_OUT="RESULT: OK (patch id $patch, main 1234567890ab). Check the verify-opencv evidence, then: gh pr merge 5 --squash --match-head-commit $sha" run
+  expect "R97: a $name commit that the commit hooks would refuse is refused before the gate" 1 "$want" "cd <the worktree of this branch> &&"
+  no_merge "$name"; never_gated "$name"
+done
 
 reset
 run --nope

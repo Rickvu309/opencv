@@ -25,7 +25,7 @@ set -euo pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/lib/disk.sh"
 # shellcheck source=scripts/lib/rules.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib/rules.sh"
-orig_args="$*"
+rule_args=$(printf '%q ' "$@")
 result_begin open-pr
 
 BRANCH_RE='^(feat|fix|hotfix|refactor|chore|docs)/([0-9]+)-([a-z0-9]+(-[a-z0-9]+)*)$'
@@ -109,13 +109,18 @@ if (( dry )); then
   exit 0
 fi
 
-# The workflow rules that a script can check (AGENTS.md rule table): heavy, SKIP_CHECKS, main checkout, port, issue label, workflows.
-RULE_ARGS=$orig_args rule_heavy scripts/open-pr.sh
+# The workflow rules that a script can check (docs/git-workflow/rule-enforcement.md): heavy, SKIP_CHECKS, main checkout, port, issue label, workflows, hook-skipped commits.
+RULE_ARGS=$rule_args rule_heavy scripts/open-pr.sh
 rule_skip_declared
 rule_main_clean "$main_checkout"
 rule_port "$top"
-(( ! have_gh )) || rule_not_ready_for_human "$(gh issue view "$issue" --json labels --jq '.labels[].name' 2>/dev/null || true)"
-rule_no_workflows "$(git diff --name-only origin/main...HEAD 2>/dev/null || true)"
+if (( have_gh )); then
+  labels=$(gh issue view "$issue" --json labels --jq '.labels[].name' 2>/dev/null) || die "cannot read the labels of issue #$issue (rule: never pick up ready-for-human); check gh auth and retry"
+  rule_not_ready_for_human "$labels"
+fi
+changed_files=$(git diff --name-only origin/main...HEAD 2>/dev/null) || die "cannot diff against origin/main (git fetch origin main)"
+rule_no_workflows "$changed_files" "$top"
+rule_commits_hooked origin/main HEAD "$top"
 
 [[ -z "$(git status --porcelain)" ]] || die "uncommitted changes. Commit (or stash) them first."
 [[ -n "$(git rev-list origin/main..HEAD 2>/dev/null)" ]] || die "no commits on $branch beyond origin/main"
@@ -137,7 +142,7 @@ fi
 (( ! checked )) || result_adopt_retried "$(result_path check)"
 info "Pushing $branch"
 git push -u origin HEAD || DIE_CAUSE=other die "push failed; no PR created. Fix the push error and retry."
-rule_pushed_through_hook "$(git rev-parse HEAD)"
+rule_pushed_through_hook "$(git rev-parse HEAD)" "$top"
 (( ! checked )) || result_adopt_retried "$(result_path check)"
 (( ${#R_RETRIED[@]} == 0 )) || echo "WARN passed only on retry: ${R_RETRIED[*]}"
 

@@ -7,8 +7,9 @@
 #   heavy -- scripts/merge-pr.sh <pr#> [--dry-run] [--regate]
 #
 # Steps, stopping at the first failure:
-#   1. the PR author is the authenticated gh user
-#   0. it runs through heavy and the main checkout is on main with no edited file (AGENTS.md rule table)
+#   0. it runs through heavy and the main checkout is on main with no edited file (docs/git-workflow/rule-enforcement.md)
+#   1. the PR author is the authenticated gh user, and the head passes the workflow rules (no workflow file, pushed
+#      through the pre-push hook, commits that pass the commit hooks, SKIP_CHECKS named), before the gate spends a slot
 #   2. scripts/review-pr.sh <pr#> exits 0 (override the command with MERGE_PR_REVIEW_CMD)
 #   3. a PR comment or review body names the current patch id and says "Independent review"; a PR that changes
 #      anything under apps/ also needs a body with that patch id that says "verify"
@@ -41,10 +42,11 @@ die() { result_fail "${DIE_CAUSE:-hygiene}" "$*"; echo "merge-pr: $*" >&2; exit 
 review_cmd=${MERGE_PR_REVIEW_CMD:-$here/review-pr.sh}
 
 [[ $# -ge 1 && "$1" =~ ^#?([0-9]+)$ ]] || { awk 'NR>1 && /^#/ {sub(/^# ?/, ""); print; next} NR>1 {exit}' "$0"; exit 1; }
+rule_args=$(printf '%q ' "$@")
 pr=${BASH_REMATCH[1]}; shift
 result_id "$pr"
 export PR_RESULT_ID=$pr
-RULE_ARGS=$pr rule_heavy scripts/merge-pr.sh
+RULE_ARGS=$rule_args rule_heavy scripts/merge-pr.sh
 rule_main_clean "$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"
 dry_run=0; regate=0
 while [[ $# -gt 0 ]]; do
@@ -79,6 +81,24 @@ me=$(gh api user --jq .login)
 review_out=$(mktemp)
 result_cleanup() { rm -f "$review_out"; }
 
+# The workflow rules about the head, checked before the gate takes a heavy slot, and again if the head moved during it.
+# The fix commands run in the branch's worktree: this script runs in the main checkout, which nobody edits.
+checked_head=""
+head_rules() {
+  local sha=$1 branch wt
+  branch=$(gh pr view "$pr" --json headRefName --jq .headRefName)
+  wt=$(rule_wt_of "$branch")
+  changed=$(gh pr diff "$pr" --name-only) || die "could not list the files PR #$pr changes"
+  rule_no_workflows "$changed" "$wt" push
+  rule_pushed_through_hook "$sha" "$wt"
+  git cat-file -e "$sha^{commit}" 2>/dev/null || git fetch --quiet origin "pull/$pr/head" 2>/dev/null || true
+  git cat-file -e "$sha^{commit}" 2>/dev/null || DIE_CAUSE=env die "cannot read commit ${sha:0:9} of PR #$pr to check its commits (git fetch origin pull/$pr/head)"
+  rule_commits_hooked origin/main "$sha" "$wt"
+  rule_skip_said "$sha" "$pr" "$(gh pr view "$pr" --json body --jq .body)"
+  checked_head=$sha
+}
+head_rules "$(gh pr view "$pr" --json headRefOid --jq .headRefOid)"
+
 # Steps 2 and 3: the review gate, then the evidence for the patch id it printed.
 gate() {
   echo "==> PR #$pr: review gate${1:+ ($1)}"
@@ -105,10 +125,7 @@ gate() {
     die "no PR comment or review names the current patch id $rec_patch with '$1'. Evidence for an older patch does not count; post a new comment: review-pr.sh: OK (patch id $rec_patch, main $rec_main). Independent review: <who>, approved. verify-<skill>: <result>"
   }
   (( $(bodies_with 'independent review') > 0 )) || stale "Independent review"
-  changed=$(gh pr diff "$pr" --name-only) || die "could not list the files PR #$pr changes"
-  rule_no_workflows "$changed"
-  rule_pushed_through_hook "$rec_head"
-  rule_skip_said "$rec_head" "$pr" "$(gh pr view "$pr" --json body --jq .body)"
+  [[ "$rec_head" == "$checked_head" ]] || head_rules "$rec_head"
   if grep -q '^apps/' <<<"$changed"; then
     (( $(bodies_with 'verify') > 0 )) || stale "verify"
   fi

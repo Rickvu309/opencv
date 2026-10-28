@@ -79,7 +79,8 @@ case "$1" in
       *) printf '%s\\n' "$PROOF_ROOT/work/repo" ;;
     esac ;;
   branch) echo main ;;
-  diff) printf '%s' "$PROOF_DIFF" ;;
+  diff) case "$*" in *--raw*) ;; *) [ -z "$PROOF_DIFF_FAIL" ] || exit 1; printf '%s' "$PROOF_DIFF" ;; esac ;;
+  log) ;;
   symbolic-ref) echo fix/999-push-failure-proof ;;
   status) if [ "$viaC" = 1 ]; then printf '%s' "$PROOF_DIRTY"; fi; exit 0 ;;
   rev-list) echo local-new-commit ;;
@@ -104,7 +105,7 @@ esac
     `#!/bin/sh
 case "$1 $2" in
   'auth status'|'pr list') exit 0 ;;
-  'issue view') case "$*" in *labels*) printf '%s' "$PROOF_LABELS" ;; *) echo OPEN ;; esac ;;
+  'issue view') case "$*" in *labels*) [ -z "$PROOF_LABELS_FAIL" ] || exit 1; printf '%s' "$PROOF_LABELS" ;; *) echo OPEN ;; esac ;;
   'pr create')
     echo create >> "$PROOF_ROOT/events"
     [ "\${PROOF_CREATE_EXIT-0}" = 0 ] || { echo 'create refused' >&2; exit "$PROOF_CREATE_EXIT"; }
@@ -146,7 +147,10 @@ esac
     // R76: new-task.sh recorded port 4001; .env says otherwise.
     mkdirSync(join(root, "gitdir"))
     writeFileSync(join(root, "gitdir", "assigned-port"), "4001\n")
-    writeFileSync(join(root, "work", "repo", ".env"), `PORT=${extraEnv.PORT_FILES}\n`)
+    writeFileSync(
+      join(root, "work", "repo", ".env"),
+      extraEnv.PORT_RAW ?? `PORT=${extraEnv.PORT_FILES}\n`
+    )
   }
   const result = spawnSync(
     "bash",
@@ -307,7 +311,7 @@ refuses(
   "R90: without heavy it refuses and names the heavy command",
   { HEAVY_SLOT: "" },
   /must run through heavy/,
-  "next=heavy -- scripts/open-pr.sh --draft -d push failure proof"
+  "next=heavy -- scripts/open-pr.sh --draft -d push\\ failure\\ proof"
 )
 refuses(
   "R68: an edited file in the main checkout refuses",
@@ -329,6 +333,59 @@ refuses(
   { PROOF_DIFF: "README.md\n.github/workflows/ci.yml\n" },
   /workflow files/
 )
+test("R105: the fix removes the files from the worktree, not only from the index", (t) => {
+  const result = run(t, 0, false, false, {
+    PROOF_DIFF: "README.md\n.github/workflows/ci.yml\n",
+  })
+  const file = join(
+    result.root,
+    "results",
+    "opencv-open-pr-fix-999-push-failure-proof.json"
+  )
+  assert.match(
+    JSON.parse(readFileSync(file, "utf8")).next,
+    /^cd \S+ && git rm -rf -- \.github\/workflows\/ci\.yml && git commit --amend --no-edit$/
+  )
+})
+refuses(
+  "a label lookup that fails does not pass R103",
+  { PROOF_LABELS_FAIL: "1" },
+  /cannot read the labels of issue #999/
+)
+refuses(
+  "a diff against origin/main that fails does not pass R105",
+  { PROOF_DIFF_FAIL: "1" },
+  /cannot diff against origin\/main/
+)
+
+// The fix of R90 is a command: run through a shell it must give back the original arguments, whatever they contain.
+test("R90: the next command parses back to the original arguments", (t) => {
+  const result = run(t, 0, false, false, { HEAVY_SLOT: "" })
+  const file = join(
+    result.root,
+    "results",
+    "opencv-open-pr-fix-999-push-failure-proof.json"
+  )
+  const next = JSON.parse(readFileSync(file, "utf8")).next
+  const echoed = spawnSync(
+    "bash",
+    ["-c", `heavy() { shift; shift; printf '%s\\n' "$@"; }; ${next}`],
+    { encoding: "utf8" }
+  )
+  assert.equal(echoed.stdout, "--draft\n-d\npush failure proof\n")
+})
+
+for (const [name, raw] of [
+  ["a quoted value", 'PORT="4001"\n'],
+  ["an export prefix", "export PORT=4001\n"],
+  ["a trailing comment", "PORT=4001 # assigned\n"],
+  ["a CRLF line ending", "PORT=4001\r\n"],
+]) {
+  test(`R76: ${name} in .env is the assigned port`, (t) => {
+    const result = run(t, 0, false, false, { PORT_FILES: "x", PORT_RAW: raw })
+    assert.equal(result.status, 0, result.stderr)
+  })
+}
 refuses(
   "R98: SKIP_CHECKS=1 without a named human refuses",
   { SKIP_CHECKS: "1" },

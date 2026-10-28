@@ -48,10 +48,11 @@ human() { echo "  HUMAN $*"; humans+=("$*"); }
 note()  { echo "  note  $*"; notes+=("$*"); }
 
 [[ $# -ge 1 && "$1" =~ ^#?([0-9]+)$ ]] || { awk 'NR>1 && /^#/ {sub(/^# ?/, ""); print; next} NR>1 {exit}' "$0"; exit 1; }
+rule_args=$(printf '%q ' "$@")
 pr=${BASH_REMATCH[1]}; shift
 result_id "$pr"
 export PR_RESULT_ID=$pr
-RULE_ARGS=$pr rule_heavy scripts/review-pr.sh
+RULE_ARGS=$rule_args rule_heavy scripts/review-pr.sh
 keep=0; install=1; use_cache=1
 while [[ $# -gt 0 ]]; do
   case "$1" in

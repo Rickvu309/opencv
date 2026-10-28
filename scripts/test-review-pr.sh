@@ -134,8 +134,8 @@ expect "patch id ignores color and prefix config" 0 "$patch1"
 
 # R90: review-pr.sh 248 and 255 were run without heavy (calls.jsonl, session b3bc055a, 2026-10-23T23:32 and 23:44).
 HEAVY_SLOT= run --no-install
-[[ $code -eq 1 ]] && grep -q 'must run through heavy' "$tmp/err" && grep -q 'Fix: heavy -- scripts/review-pr.sh 1' "$tmp/err" || fail "R90" "no heavy was not refused with the fix"
-result status=fail cause=hygiene "next=heavy -- scripts/review-pr.sh 1"
+[[ $code -eq 1 ]] && grep -q 'must run through heavy' "$tmp/err" && grep -qx 'Fix: heavy -- scripts/review-pr.sh 1 --no-install' "$tmp/err" || fail "R90" "no heavy was not refused with the fix"
+result status=fail cause=hygiene "next=heavy -- scripts/review-pr.sh 1 --no-install"
 echo "ok: R90 without heavy it refuses and names the heavy command"
 want_runs "no heavy" 1
 run --no-install
