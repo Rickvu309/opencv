@@ -24,6 +24,8 @@ set -euo pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/lib/result.sh"
 # shellcheck source=scripts/lib/conflict-report.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib/conflict-report.sh"
+# shellcheck source=scripts/lib/rules.sh
+. "$(dirname "${BASH_SOURCE[0]}")/lib/rules.sh"
 result_begin review-pr
 
 BRANCH_RE='^(feat|fix|hotfix|refactor|chore|docs)/([0-9]+)-[a-z0-9]+(-[a-z0-9]+)*$'
@@ -46,9 +48,11 @@ human() { echo "  HUMAN $*"; humans+=("$*"); }
 note()  { echo "  note  $*"; notes+=("$*"); }
 
 [[ $# -ge 1 && "$1" =~ ^#?([0-9]+)$ ]] || { awk 'NR>1 && /^#/ {sub(/^# ?/, ""); print; next} NR>1 {exit}' "$0"; exit 1; }
+rule_args=; (( $# )) && rule_args=$(printf '%q ' "$@")
 pr=${BASH_REMATCH[1]}; shift
 result_id "$pr"
 export PR_RESULT_ID=$pr
+RULE_ARGS=$rule_args rule_heavy scripts/review-pr.sh
 keep=0; install=1; use_cache=1
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -229,7 +233,7 @@ if (( merge_rc == 0 )); then
         elif [[ -f "$wt/yarn.lock" ]];         then cmd=(yarn install)
         elif [[ -f "$wt/package-lock.json" ]]; then cmd=(npm ci)
         else cmd=(npm install); fi
-        (cd "$wt" && "${cmd[@]}") >/dev/null 2>&1 || { bad "dependency install failed (${cmd[*]})"; result_fail env "dependency install failed (${cmd[*]})" "heavy -- scripts/review-pr.sh $pr"; }
+        (cd "$wt" && "${cmd[@]}") >/dev/null 2>&1 || { bad "dependency install failed (${cmd[*]})"; result_fail env "dependency install failed (${cmd[*]})"; }
       fi
       if [[ -n "$checker_blob" ]]; then
         checker=$(mktemp)
@@ -242,18 +246,18 @@ if (( merge_rc == 0 )); then
           if (cd "$wt" && pnpm --filter api... run build); then
             ok "api build passed"
           else
-            bad "api build failed"; result_fail build "api build failed" "heavy -- pnpm --filter api... run build"
+            bad "api build failed"; result_fail build "api build failed"
           fi
           note "running pnpm --filter web build"
           if (cd "$wt" && pnpm --filter web build); then
             ok "web build passed"
           else
-            bad "web build failed"; result_fail build "web build failed" "heavy -- pnpm --filter web build"
+            bad "web build failed"; result_fail build "web build failed"
           fi
           if (( ${#fails[@]} == fails_before )); then mkdir -p "$cache_dir" && date -u +%Y-%m-%dT%H:%M:%SZ >"$cache_hit"; fi
         else
           bad "scripts/check.sh failed"
-          result_adopt "$(result_path check)" || result_fail test "scripts/check.sh failed" "heavy -- scripts/review-pr.sh $pr"
+          result_adopt "$(result_path check)" || result_fail test "scripts/check.sh failed"
         fi
         rm -f "$checker"; checker=""
       else

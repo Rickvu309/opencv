@@ -235,7 +235,7 @@ if (( changed_mode )); then
             echo "==> scripts/test-commit-msg.sh"
             run scripts/test-commit-msg.sh || failed+=(commit-msg-tests)
           fi
-          if has_changed scripts/new-task.sh scripts/test-new-task.sh scripts/lib/result.sh scripts/lib/disk.sh; then
+          if has_changed scripts/new-task.sh scripts/test-new-task.sh scripts/lib/result.sh scripts/lib/disk.sh scripts/lib/rules.sh; then
             echo "==> scripts/test-new-task.sh"
             run scripts/test-new-task.sh || failed+=(new-task-tests)
           fi
@@ -243,9 +243,13 @@ if (( changed_mode )); then
             echo "==> scripts/test-pre-commit.sh"
             run scripts/test-pre-commit.sh || failed+=(pre-commit-tests)
           fi
-          if has_changed scripts/review-pr.sh scripts/test-review-pr.sh scripts/codeowners-lib.sh scripts/lib/result.sh scripts/lib/conflict-report.sh; then
+          if has_changed scripts/review-pr.sh scripts/test-review-pr.sh scripts/codeowners-lib.sh scripts/lib/result.sh scripts/lib/conflict-report.sh scripts/lib/rules.sh; then
             echo "==> scripts/test-review-pr.sh"
             run scripts/test-review-pr.sh || failed+=(review-pr-tests)
+          fi
+          if has_changed scripts/lib/rules.sh scripts/test-rules.sh .githooks/pre-push; then
+            echo "==> scripts/test-rules.sh"
+            run scripts/test-rules.sh || failed+=(rules-tests)
           fi
           if has_changed scripts/check.sh scripts/test-check-retry.sh scripts/lib/result.sh scripts/lib/result-check.mjs 'scripts/fixtures/check-flaky-*.txt'; then
             echo "==> scripts/test-check-retry.sh"
@@ -263,7 +267,7 @@ if (( changed_mode )); then
             echo "==> scripts/test-result.sh"
             run scripts/test-result.sh || failed+=(result-tests)
           fi
-          if has_changed scripts/merge-pr.sh scripts/test-merge-pr.sh scripts/lib/result.sh; then
+          if has_changed scripts/merge-pr.sh scripts/test-merge-pr.sh scripts/lib/result.sh scripts/lib/rules.sh; then
             echo "==> scripts/test-merge-pr.sh"
             run scripts/test-merge-pr.sh || failed+=(merge-pr-tests)
           fi
@@ -294,7 +298,7 @@ else
   done
 
   if [[ " ${tasks[*]} " == *" test "* ]]; then
-    for t in test-commit-msg test-pre-commit test-codeowners test-new-task test-review-pr test-merge-pr test-result test-disk-preflight test-conflict-report test-check-retry; do
+    for t in test-commit-msg test-pre-commit test-codeowners test-new-task test-review-pr test-merge-pr test-result test-disk-preflight test-conflict-report test-check-retry test-rules; do
       echo "==> scripts/$t.sh"
       run "scripts/$t.sh" || failed+=("$t")
     done

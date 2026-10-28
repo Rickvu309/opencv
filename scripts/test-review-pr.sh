@@ -40,7 +40,7 @@ exit "${REVIEW_TEST_PNPM_EXIT:-0}"
 STUB
 chmod +x "$tmp/bin/gh" "$tmp/bin/pnpm"
 export PATH=$tmp/bin:$PATH
-export PR_RESULT_DIR=$tmp/results PR_RESULT_REPO=opencv
+export PR_RESULT_DIR=$tmp/results PR_RESULT_REPO=opencv HEAVY_SLOT=1
 export REVIEW_TEST_ISSUE=7
 export REVIEW_TEST_BRANCH=chore/7-thing
 export REVIEW_TEST_TITLE='chore: thing (#7)'
@@ -88,7 +88,7 @@ main_checkout=$tmp/repo
 git clone -q "$origin" "$main_checkout"
 quiet_repo "$main_checkout"
 cp "$script" "$main_checkout/scripts/review-pr.sh"
-mkdir -p "$main_checkout/scripts/lib" && cp "$here/lib/result.sh" "$here/lib/conflict-report.sh" "$main_checkout/scripts/lib/"
+mkdir -p "$main_checkout/scripts/lib" && cp "$here/lib/result.sh" "$here/lib/conflict-report.sh" "$here/lib/rules.sh" "$main_checkout/scripts/lib/"
 export REVIEW_TEST_RUNS=$tmp/runs
 : >"$REVIEW_TEST_RUNS"
 
@@ -132,6 +132,12 @@ patch1=$(patch_id)
 GIT_CONFIG_PARAMETERS="'color.ui=always' 'diff.noprefix=true'" run --no-install
 expect "patch id ignores color and prefix config" 0 "$patch1"
 
+# R90: review-pr.sh 248 and 255 were run without heavy (calls.jsonl, session b3bc055a, 2026-10-23T23:32 and 23:44).
+HEAVY_SLOT= run --no-install
+[[ $code -eq 1 ]] && grep -q 'must run through heavy' "$tmp/err" && grep -qx 'Fix: heavy -- scripts/review-pr.sh 1 --no-install' "$tmp/err" || fail "R90" "no heavy was not refused with the fix"
+result status=fail cause=hygiene "next=heavy -- scripts/review-pr.sh 1 --no-install"
+echo "ok: R90 without heavy it refuses and names the heavy command"
+want_runs "no heavy" 1
 run --no-install
 expect "same tree is cached" 0 "(cached; --no-cache reruns)" "RESULT: OK"
 want_runs "cached" 1

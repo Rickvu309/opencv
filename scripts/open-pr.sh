@@ -15,13 +15,17 @@
 # run goes on with "WARN passed only on retry: <files>" and the files are in result.json (retried); a second failure fails.
 # This is done with CHECK_RETRY_FAILED_TESTS=1 for this script's own check.sh runs only; scripts/review-pr.sh never retries.
 #
-# Emergency only: SKIP_CHECKS=1 scripts/open-pr.sh   (say so in the PR body)
+# Emergency only, declared by a human: SKIP_CHECKS=1 SKIP_CHECKS_DECLARED_BY=<who> scripts/open-pr.sh   (the PR body says so)
+# Heavy: run it as heavy -- scripts/open-pr.sh (the HEAVY_SLOT check); --dry-run needs no slot.
 set -euo pipefail
 
 # shellcheck source=scripts/lib/result.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib/result.sh"
 # shellcheck source=scripts/lib/disk.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib/disk.sh"
+# shellcheck source=scripts/lib/rules.sh
+. "$(dirname "${BASH_SOURCE[0]}")/lib/rules.sh"
+rule_args=; (( $# )) && rule_args=$(printf '%q ' "$@")
 result_begin open-pr
 
 BRANCH_RE='^(feat|fix|hotfix|refactor|chore|docs)/([0-9]+)-([a-z0-9]+(-[a-z0-9]+)*)$'
@@ -66,7 +70,7 @@ if (( have_gh )); then
   if [[ -n "$existing" ]]; then
     echo "A PR is already open for $branch: $existing"
     result_id "${existing##*/}"
-    result_ok "a PR is already open: $existing" "heavy -- scripts/review-pr.sh ${existing##*/}"
+    result_ok "a PR is already open: $existing" "cd $(printf '%q' "$main_checkout") && heavy -- scripts/review-pr.sh ${existing##*/}"
     exit 0
   fi
   state=$(gh issue view "$issue" --json state --jq .state 2>/dev/null) || die "issue #$issue not found"
@@ -93,7 +97,7 @@ else
   body="Closes #${issue}"
 fi
 if [[ "${SKIP_CHECKS:-}" == "1" ]]; then
-  body="**Checks were skipped (SKIP_CHECKS=1). Reviewer: run scripts/check.sh.**"$'\n\n'"$body"
+  body="**Checks were skipped (SKIP_CHECKS=1), emergency declared by ${SKIP_CHECKS_DECLARED_BY:-unknown}. Reviewer: run scripts/check.sh.**"$'\n\n'"$body"
 fi
 
 echo "Title: $title"
@@ -104,6 +108,20 @@ if (( dry )); then
   result_ok "dry run, nothing pushed or created"
   exit 0
 fi
+
+# The workflow rules that a script can check (docs/git-workflow/rule-enforcement.md): heavy, SKIP_CHECKS, main checkout, port, issue label, workflows, hook-skipped commits.
+RULE_ARGS=$rule_args rule_heavy scripts/open-pr.sh
+RULE_ARGS=$rule_args rule_skip_declared
+rule_main_clean "$main_checkout"
+rule_port "$top"
+if (( have_gh )); then
+  labels=$(gh issue view "$issue" --json labels --jq '.labels[].name' 2>/dev/null) || die "cannot read the labels of issue #$issue (rule: never pick up ready-for-human); check gh auth and retry"
+  rule_not_ready_for_human "$labels"
+fi
+changed_files=$(git diff --name-only origin/main...HEAD 2>/dev/null) || die "cannot diff against origin/main (git fetch origin main)"
+rule_no_workflows "$changed_files" "$top"
+git fetch --quiet origin main || DIE_CAUSE=env die "cannot fetch origin/main (git fetch origin main)"
+rule_commits_hooked origin/main HEAD "$top"
 
 [[ -z "$(git status --porcelain)" ]] || die "uncommitted changes. Commit (or stash) them first."
 [[ -n "$(git rev-list origin/main..HEAD 2>/dev/null)" ]] || die "no commits on $branch beyond origin/main"
@@ -125,6 +143,7 @@ fi
 (( ! checked )) || result_adopt_retried "$(result_path check)"
 info "Pushing $branch"
 git push -u origin HEAD || DIE_CAUSE=other die "push failed; no PR created. Fix the push error and retry."
+rule_pushed_through_hook "$(git rev-parse HEAD)" "$top"
 (( ! checked )) || result_adopt_retried "$(result_path check)"
 (( ${#R_RETRIED[@]} == 0 )) || echo "WARN passed only on retry: ${R_RETRIED[*]}"
 
@@ -135,7 +154,7 @@ pr_url=$(gh pr create "${args[@]}") || DIE_CAUSE=other die "gh pr create failed;
 [[ -z "$pr_url" ]] || echo "$pr_url"
 if [[ "${pr_url##*/}" =~ ^[0-9]+$ ]]; then
   result_id "${pr_url##*/}"
-  result_ok "opened ${pr_url}" "cd \"$(dirname "$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null || echo .)")\" && heavy -- scripts/review-pr.sh ${pr_url##*/}"
+  result_ok "opened ${pr_url}" "cd $(printf '%q' "$main_checkout") && heavy -- scripts/review-pr.sh ${pr_url##*/}"
 else
   result_ok "PR created"
 fi

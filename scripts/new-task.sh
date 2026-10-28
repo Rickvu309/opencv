@@ -29,6 +29,8 @@ set -euo pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/lib/result.sh"
 # shellcheck source=scripts/lib/disk.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib/disk.sh"
+# shellcheck source=scripts/lib/rules.sh
+. "$(dirname "${BASH_SOURCE[0]}")/lib/rules.sh"
 result_begin new-task
 
 TYPES="feat fix hotfix refactor chore docs"
@@ -113,6 +115,7 @@ if [[ "$target" =~ ^#?([0-9]+)$ ]]; then
       || die "issue #$issue not found in this repo"
     [[ "$state" == "OPEN" ]] || die "issue #$issue is $state; pick an open issue"
     issue_title=$(gh issue view "$issue" --json title --jq .title)
+    rule_not_ready_for_human "$(gh issue view "$issue" --json labels --jq '.labels[].name' 2>/dev/null || true)"
     me=$(gh api user --jq .login 2>/dev/null || true)
     others=$(gh issue view "$issue" --json assignees --jq '.assignees[].login' | grep -vxF "${me:-}" || true)
     if [[ -n "$others" ]] && (( ! take )); then
@@ -202,6 +205,9 @@ else
   warn "no .env.example in repo; wrote .env with PORT only"
 fi
 
+# The port is recorded in the worktree's git dir so open-pr.sh can tell if .env was changed (AGENTS.md: use only your port).
+echo "$port" >"$(git -C "$wt_path" rev-parse --absolute-git-dir)/assigned-port"
+
 # ---- install ----------------------------------------------------------------
 if (( do_install )) && [[ -f "$wt_path/package.json" ]]; then
   if   [[ -f "$wt_path/pnpm-lock.yaml" ]];    then cmd=(pnpm install --frozen-lockfile)
@@ -212,7 +218,7 @@ if (( do_install )) && [[ -f "$wt_path/package.json" ]]; then
   (cd "$wt_path" && "${cmd[@]}") || warn "install failed; run '${cmd[*]}' in $wt_path"
 fi
 
-result_ok "worktree $wt_path on $branch (issue #$issue, port $port)" "cd \"$wt_path\" && heavy -- scripts/open-pr.sh --draft"
+result_ok "worktree $wt_path on $branch (issue #$issue, port $port)" "cd $(printf '%q' "$wt_path") && heavy -- scripts/open-pr.sh --draft"
 cat <<MSG
 
 Ready.
