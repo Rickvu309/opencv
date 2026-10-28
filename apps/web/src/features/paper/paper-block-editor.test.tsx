@@ -5,7 +5,6 @@ import {
   render,
   screen,
   within,
-  waitFor,
 } from "@testing-library/react"
 import { useState } from "react"
 import type {
@@ -217,7 +216,10 @@ describe("With photo template", () => {
         templateId="with-photo"
         value={{
           ...initial,
-          header: { ...initial.header, photo: "data:image/png;base64,YQ==" },
+          header: {
+            ...initial.header,
+            photo: "file:11111111-1111-4111-8111-111111111111",
+          },
         }}
       />
     )
@@ -225,37 +227,11 @@ describe("With photo template", () => {
       screen
         .getByRole("button", { name: "Change profile photo" })
         .querySelector("img")
-    ).toHaveAttribute("src", "data:image/png;base64,YQ==")
-  })
-
-  it("stores an uploaded photo in the document so it survives reload", async () => {
-    const onChange = vi.fn<(document: CvBlockDocument) => void>()
-    const { container } = render(
-      <Harness templateId="with-photo" onChange={onChange} />
-    )
-    expect(
-      screen.getByRole("button", { name: "Add profile photo" })
-    ).toBeInTheDocument()
-    const input = container.querySelector('input[type="file"]')
-    if (!input) throw new Error("Photo picker is missing")
-    fireEvent.change(input, {
-      target: {
-        files: [new File(["photo"], "portrait.png", { type: "image/png" })],
-      },
-    })
-    await waitFor(() =>
-      expect(onChange).toHaveBeenCalledWith(
-        expect.objectContaining({
-          header: expect.objectContaining({
-            photo: "data:image/png;base64,cGhvdG8=",
-          }),
-        })
+    ).toHaveAttribute(
+      "src",
+      expect.stringContaining(
+        "/api/paper/files/11111111-1111-4111-8111-111111111111/bytes"
       )
     )
-    expect(
-      screen
-        .getByRole("button", { name: "Change profile photo" })
-        .querySelector("img")
-    ).toHaveAttribute("src", "data:image/png;base64,cGhvdG8=")
   })
 })

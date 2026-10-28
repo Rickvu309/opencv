@@ -52,7 +52,15 @@ import {
 } from "./paper-templates.ts"
 import { endpoints, fetchBinary } from "@/lib/requests.ts"
 
-function applyPhoto(current: CvDocument, ref: string | undefined): CvDocument {
+type EditableCv = CvDocument | CvBlockDocument
+
+function applyPhoto(current: EditableCv, ref: string | undefined): EditableCv {
+  if (isCvBlockDocument(current)) {
+    const header = { ...current.header }
+    if (ref) header.photo = ref
+    else delete header.photo
+    return { ...current, header }
+  }
   if (ref) return { ...current, photoUrl: ref }
   if (!current.photoUrl) return current
   const next = { ...current }
@@ -103,33 +111,22 @@ export function PaperCvEditor({
   const [templateId, setTemplateId] = useState(initial.templateId)
   const [galleryOpen, setGalleryOpen] = useState(false)
   const [source, setSource] = useState(initial.document)
-  const blockMode = isCvBlockDocument(source)
   const [cv, setCv] = useState(() => cvOf(initial.document, initial.templateId))
-  const cvRef = useRef(cv)
+  const documentRef = useRef<EditableCv>(
+    isCvBlockDocument(source) ? source : cv
+  )
   const dirtyRef = useRef(false)
+  const inputEpochRef = useRef(0)
   useEffect(() => {
-    cvRef.current = cv
-  }, [cv])
-  const { schedule, adopt, versionRef } = usePaperAutosave<CvDocument>({
+    documentRef.current = isCvBlockDocument(source) ? source : cv
+  }, [source, cv])
+  const { schedule, adopt, versionRef } = usePaperAutosave<EditableCv>({
     docId: initial.id,
     initialVersion: initial.contentVersion,
     toDocument: (next) => next,
-    onSaved: (saved) => {
-      adopt(saved.contentVersion)
-      dirtyRef.current = false
-      setUpdatedAt(new Date().toISOString())
-      setConflict(false)
-    },
-    onConflict: () => setConflict(true),
-    onError: (error) => {
-      toastError(error, "Could not save. Try again.")
-    },
-  })
-  const blockAutosave = usePaperAutosave<CvBlockDocument>({
-    docId: initial.id,
-    initialVersion: initial.contentVersion,
-    toDocument: (next) => next,
-    onSaved: () => {
+    readInputEpoch: () => inputEpochRef.current,
+    onSaved: (_saved, inputEpoch) => {
+      if (inputEpoch === inputEpochRef.current) dirtyRef.current = false
       setUpdatedAt(new Date().toISOString())
       setConflict(false)
     },
@@ -142,7 +139,7 @@ export function PaperCvEditor({
 
   async function flushBeforePhoto() {
     if (!dirtyRef.current) return
-    const snapshot = cvRef.current
+    const snapshot = documentRef.current
     adopt(versionRef.current)
     dirtyRef.current = false
     try {
@@ -238,7 +235,6 @@ export function PaperCvEditor({
               setSource(next.document)
               setCv(cvOf(next.document, next.templateId))
               adopt(next.contentVersion)
-              blockAutosave.adopt(next.contentVersion)
             })
           }
         },
@@ -287,7 +283,6 @@ export function PaperCvEditor({
       const next = await getPaper(initial.id)
       setSource(next.document)
       adopt(next.contentVersion)
-      blockAutosave.adopt(next.contentVersion)
       setTemplateId(next.templateId)
       setCv(cvOf(next.document, next.templateId))
       setUpdatedAt(next.updatedAt)
@@ -454,44 +449,49 @@ export function PaperCvEditor({
         </div>
       ) : null}
       <div data-template={previewTemplate(templateId)} className="min-w-0">
-        {isCvBlockDocument(source) ? (
-          <PaperBlockEditor
-            document={source}
-            templateId={templateId ?? "simple"}
-            checks={checks}
-            sourceFileName={sourceFileName}
-            onChange={(next) => {
-              setSource(next)
-              blockAutosave.schedule(next)
-            }}
-            onAskCoach={openCoach}
-            onDismissCheck={(checkId) => void dismissCheck(checkId)}
-          />
-        ) : (
-          <CvPhotoFrame
+        <CvPhotoFrame
           value={{
             docId: initial.id,
             beforePhoto: flushBeforePhoto,
             notePhoto: (ref, version) => {
               versionRef.current = version
-              const next = applyPhoto(cvRef.current, ref)
-              cvRef.current = next
+              const next = applyPhoto(documentRef.current, ref)
+              documentRef.current = next
               if (dirtyRef.current) schedule(next)
-              setCv(next)
+              if (isCvBlockDocument(next)) setSource(next)
+              else setCv(next)
             },
           }}
         >
-          <PaperCvSurface
-            data={cv}
-            onChange={(next) => {
-              dirtyRef.current = true
-              cvRef.current = next
-              setCv(next)
-              schedule(next)
-            }}
-          />
-          </CvPhotoFrame>
-        )}
+          {isCvBlockDocument(source) ? (
+            <PaperBlockEditor
+              document={source}
+              templateId={templateId ?? "simple"}
+              checks={checks}
+              sourceFileName={sourceFileName}
+              onChange={(next) => {
+                dirtyRef.current = true
+                inputEpochRef.current += 1
+                documentRef.current = next
+                setSource(next)
+                schedule(next)
+              }}
+              onAskCoach={openCoach}
+              onDismissCheck={(checkId) => void dismissCheck(checkId)}
+            />
+          ) : (
+            <PaperCvSurface
+              data={cv}
+              onChange={(next) => {
+                dirtyRef.current = true
+                inputEpochRef.current += 1
+                documentRef.current = next
+                setCv(next)
+                schedule(next)
+              }}
+            />
+          )}
+        </CvPhotoFrame>
         {pageState.pages > 1 ? (
           <p className="mt-2 text-sm text-muted-foreground">Page 2</p>
         ) : null}
