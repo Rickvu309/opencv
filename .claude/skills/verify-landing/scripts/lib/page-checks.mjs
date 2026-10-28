@@ -3,6 +3,7 @@ import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 
 import { decodeDataUrl, decodePng, pngMismatch } from "./art-diff.mjs"
+import { textStyleVerdict } from "./text-style-check.mjs"
 import { isSignUpLink } from "./text-rules.mjs"
 
 // Pixels whose max RGB channel delta exceeds this are a mismatch.
@@ -64,6 +65,7 @@ export function pageChecks({
   reduced,
   deep,
   reducedDeep,
+  penSections,
 }) {
   const out = []
 
@@ -460,5 +462,7 @@ export function pageChecks({
       artMeasured
     )
   )
+
+  out.push(textStyleVerdict(penSections))
   return out
 }

@@ -5,65 +5,12 @@ import { setMockSession } from "@/test/auth-client-mock.ts"
 import { renderApp } from "@/test/render-app.tsx"
 
 import snapshotFile from "./design/landing.snapshot.json"
+import omittedFile from "./design/landing.omitted.json"
 
 // Links to pages that do not exist yet, plus the subhead kept off the design
 // line so verify-landing rule 03 passes. An entry whose text is on the page,
 // whose replacedBy text is missing, or whose until date has passed fails.
-const OMITTED = [
-  {
-    text: "Careers",
-    reason: "Footer link to a careers page that does not exist yet.",
-    until: "2026-11-30",
-    approvedBy: "pending operator (quanvu309)",
-  },
-  {
-    text: "Contact us",
-    reason: "Footer link to a contact page that does not exist yet.",
-    until: "2026-11-30",
-    approvedBy: "pending operator (quanvu309)",
-  },
-  {
-    text: "X",
-    reason: "Footer link to an X profile that does not exist yet.",
-    until: "2026-11-30",
-    approvedBy: "pending operator (quanvu309)",
-  },
-  {
-    text: "LinkedIn",
-    reason: "Footer link to a LinkedIn profile that does not exist yet.",
-    until: "2026-11-30",
-    approvedBy: "pending operator (quanvu309)",
-  },
-  {
-    text: "Privacy    Terms",
-    reason:
-      "Footer legal line linking to privacy and terms pages that do not exist yet.",
-    until: "2026-11-30",
-    approvedBy: "pending operator (quanvu309)",
-  },
-  {
-    text: "Read all stories",
-    reason: "Link to a stories index that does not exist yet.",
-    until: "2026-11-30",
-    approvedBy: "pending operator (quanvu309)",
-  },
-  {
-    text: "Tailor your CV for every job. Track every application. Prep with Coach.",
-    reason:
-      "Replaced by a two-sentence version so verify-landing rule 03 passes.",
-    replacedBy:
-      "Tailor your CV for every job and track every application. Prep with Coach.",
-    until: "2026-11-30",
-    approvedBy: "pending operator (quanvu309)",
-  },
-  {
-    text: "Connect",
-    reason:
-      "Every link under this footer heading points to a page or account that does not exist yet.",
-    until: "2026-11-30",
-    approvedBy: "pending operator (quanvu309)",
-  },
-] as const satisfies readonly {
+const OMITTED = omittedFile satisfies readonly {
   text: string
   reason: string
   replacedBy?: string

@@ -153,6 +153,7 @@ Rules and what enforces them:
 | Rule                                              | Enforced by                                                                                      |
 | ------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | Landing text matches the pen frame                | `landing-design-parity.test.tsx`                                                                 |
+| Landing text styles and marks match the frame     | verify-landing 31                                                                                |
 | Auth screens match the pen auth layout            | `auth-design-parity.test.tsx`                                                                    |
 | Pen shader and image fills are built, not dropped | `scripts/pen-snapshot.mjs` fills and the parity tests                                            |
 | Hidden pen nodes stay hidden                      | `scripts/pen-snapshot.mjs` skips `enabled:false`                                                 |

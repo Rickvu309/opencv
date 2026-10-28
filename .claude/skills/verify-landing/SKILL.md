@@ -1,11 +1,11 @@
 ---
 name: verify-landing
-description: Check the OpenCV landing page for quality and taste, writing, logic, structure, visual craft, motion, accessibility and performance. A mechanical checker measures 30 properties in headless Chromium at 1440x900, 390x844 and reduced motion, and a judged rubric scores what a program cannot decide. Use after any change under apps/web/src/features/landing, apps/web/public/landing, a packages/ui component the landing imports (button), or the landing copy, and when asked whether the landing is good.
+description: Check the OpenCV landing page for quality and taste, writing, logic, structure, visual craft, motion, accessibility and performance. A mechanical checker measures 31 properties in headless Chromium at 1440x900, 390x844 and reduced motion, and a judged rubric scores what a program cannot decide. Use after any change under apps/web/src/features/landing, apps/web/public/landing, a packages/ui component the landing imports (button), or the landing copy, and when asked whether the landing is good.
 ---
 
 # verify-landing
 
-Two layers. The checker (`scripts/verify-landing.mjs`) decides what a program can: counts, words, boxes, colors, computed styles, first-paint state. The rubric below decides the rest, and three reviewers from different model families score it. Neither layer replaces the other. A green checker says the page follows the written rules. It does not say the page is good.
+Two layers. The checker (`scripts/verify-landing.mjs`) decides what a program can: counts, words, boxes, colors, computed styles, first-paint state. The rubric in [taste-review.md](taste-review.md) decides the rest, and three reviewers from different model families score it. Neither layer replaces the other. A green checker says the page follows the written rules. It does not say the page is good.
 
 All paths are relative to the repo (or worktree) root. The rules come from the landing research (kept outside the repo) plus the pen parity checks. A property names its source when the checker comment still cites one.
 
@@ -31,7 +31,7 @@ Reading a FAIL: the measured value is what the page does, the rule is what it sh
 
 ## The properties
 
-Ids are the check numbers. The current page is the first-release marketing site. `properties.md` records which checks were kept, which were replaced, and why. Text rules 01 to 08 and 10 to 13 are in `scripts/lib/text-rules.mjs`. Page checks 14 to 30, including 20b, are in `scripts/lib/page-checks.mjs`. Id 09 is judged only.
+Ids are the check numbers. The current page is the first-release marketing site. `properties.md` records which checks were kept, which were replaced, and why. Text rules 01 to 08 and 10 to 13 are in `scripts/lib/text-rules.mjs`. Page checks 14 to 30, including 20b, are in `scripts/lib/page-checks.mjs`. Check 31 is in `scripts/lib/text-style-check.mjs`. Id 09 is judged only.
 
 - 01 `h1-length-and-aim`: 12 words or fewer; an outcome or audience word. Source: Shapiro litmus test; NN/g 2.2.
 - 02 `statement-names-cv`: a block outside the nav names opencv and CV.
@@ -63,8 +63,9 @@ Ids are the check numbers. The current page is the first-release marketing site.
 - 28 `nav-lockup-spacing`: at 1440 the visible gap between the nav mark's right edge and the wordmark's left edge is 9 to 13 px (the mark box has 2 px of inner padding) and the wordmark computed font-size is 16px at weight 600. Source: opencv.pen nav Logo.
 - 29 `cta-buttons-match-design`: nav and close button size, type, padding, shadow and border at 1440. Source: opencv.pen. Full rule in `properties.md`.
 - 30 `benefit-art-matches-pen`: Coach benefit art matches `reference/coach-art.png`. Source: opencv.pen node oWS4Z. Crop and tolerance in `properties.md`.
+- 31 `text-style-matches-pen`: at 1440, each text in `landing.styles.json` that is on the page matches the fields opencv.pen sets (OKLCH colour, size, line height, weight, tracking), and each inline mark has an svg or img within 2px. A text the pen marks `startsLine` must start a line. That check runs at 1440 only. Dated exceptions cover the contrast-floor colours. A pen text missing from its section fails unless `design/landing.omitted.json` omits it. A heading split across inline elements is matched on the element's text, and each text run inside that element is checked. Source: opencv.pen frame w7zeGR.
 
-Check 09 (the H1 alone says what is sold) is judged, as J1 below. It is not one of the 30 measured lines. Numbers drawn inside a screenshot (such as a percent on a card) cannot be read from the DOM. Check 12 reads page text, not alt text, and J4 judges the picture.
+Check 09 (the H1 alone says what is sold) is judged, as J1 in [taste-review.md](taste-review.md). It is not one of the 31 measured lines. Numbers drawn inside a screenshot (such as a percent on a card) cannot be read from the DOM. Check 12 reads page text, not alt text, and J4 judges the picture.
 
 ### Baseline at the sync commit
 
@@ -72,47 +73,7 @@ At `e1ff7ab37b54dac73bb31c06c3b18512eb025de3` the checker printed 28 PASS; #454 
 
 ## Taste review (judged layer)
 
-Eight judged items, each scored 0, 1 or 2, with an anchor text for 0 and for 2 (1 sits between). The anchors live in the reviewer prompt below, which is the single source:
-
-- J1 the H1 alone says what is sold and for whom (research check 9)
-- J2 each section earns the next
-- J3 the objection "will this write a generic CV?" is answered before the first surface
-- J4 the promise is proven
-- J5 the sample is the right story
-- J6 copy is specific
-- J7 visual quiet
-- J8 motion restraint
-
-### Protocol
-
-1. Run the checker with `VERIFY_LANDING_SHOTS=~/tmp/verify-landing/shots-<run>`. The four PNGs are the page every reviewer sees. Do not share the checker output with reviewers.
-2. Spawn three reviewers from different model families, for example Claude, GPT through Codex, and Gemini or Grok through the T3 delegate. Each reads the four images and the source copy (`apps/web/src/features/landing/landing-copy.ts`), alone, with the prompt below. They do not see each other's scores.
-3. A check passes at a median of 2 across the three. Any 0 from any reviewer is a finding, even when the median passes. The report lists each finding with the reviewer's quoted reason.
-4. A reviewer who returns no reason for a score of 0 or 1 is rerun once with the same prompt; the second answer counts.
-
-### Reviewer prompt
-
-Copy this exactly, replacing the four image paths.
-
-```text
-You are reviewing the landing page of OpenCV, a career coach for Vietnamese students and new graduates who want a first job. You see four screenshots: <desktop-first-view.png> (the first screen at 1440x900), <desktop-full.png> (the whole page), <mobile-first-view.png> (the first screen at 390x844), <mobile-full.png> (the whole page). The page copy is in <landing-copy.ts>. Judge only what you can see and read; do not open the code or run anything.
-
-Score each item 0, 1 or 2, using the anchors. 1 sits between them.
-J1 The H1 alone says what is sold and for whom. 0: the reader needs the subhead or picture to know. 2: one sentence tells a stranger the product and who it helps.
-J2 Each section earns the next. 0: a section repeats the last, or the order could be shuffled. 2: each section answers the question the last one raised.
-J3 The objection "will this write a generic CV?" is answered before the first product section. 0: the doubt is still open at the first product section. 2: a sentence above it answers in the reader's terms.
-J4 The promise is proven. 0: the claim is stated and nothing shows how. 2: the page shows what the coach does, with concrete evidence and no invented number.
-J5 The sample is the right story. 0: a stranger, a placeholder title, or a performance figure. 2: a student's first role or school project, a real CV or letter, no percent.
-J6 Copy is specific. 0: a sentence would fit any product, or leans on mood. 2: each sentence names a thing the product does, in the reader's words.
-J7 Visual quiet. 0: competing accents, decoration or crowding fight the one action. 2: grey and one action, whitespace and type carry the hierarchy.
-J8 Motion restraint. You cannot see motion in a still. Score it from the copy and layout: 0 if text or the product shot probably arrives late or decorated, 2 if it reads as present at first paint. If you cannot tell, score 1 and say so.
-
-Answer with JSON only, no other text:
-{"scores":{"J1":{"score":0,"reason":"<one sentence naming what you saw>"},"J2":{...},"J3":{...},"J4":{...},"J5":{...},"J6":{...},"J7":{...},"J8":{...}}}
-Every reason is one sentence and quotes or names the thing on the page. Do not praise. Do not suggest fixes.
-```
-
-J8 is partly decided by checks 20, 21 and 25; the reviewers see stills, so treat J8 as a read on the layout and copy, and trust 20, 21 and 25 for the motion facts.
+The judged rubric, the protocol, and the reviewer prompt are in [taste-review.md](taste-review.md).
 
 ## Coverage record
 
@@ -134,7 +95,8 @@ Component files in this table are under `apps/web/src/features/landing/` unless 
 | 27                     | `landing-figures.tsx` and `figures/*-art.tsx` (viewBox, paths, ellipses, inline hex).                                                                                                                                        |
 | 28                     | `OpenCvLogo` from `apps/web/src/features/app-shell/app-logo.tsx`, rendered by `landing-nav.tsx`.                                                                                                                             |
 | 29, 30                 | `landing-button.ts`; `reference/coach-art.png`.                                                                                                                                                                              |
-| Probes and rules       | `probe.mjs`, `text-rules.mjs`, `page-checks.mjs` in this skill's `scripts/lib/`.                                                                                                                                             |
+| 31                     | `design/landing.styles.json`, `design/landing.omitted.json`, `landing.css`, `OpenCvMark` in `apps/web/src/features/app-shell/app-logo.tsx`.                                                                                  |
+| Probes and rules       | `probe.mjs`, `pen-probe.mjs`, `text-rules.mjs`, `page-checks.mjs`, and `text-style-check.mjs` in this skill's `scripts/lib/`.                                                                                                |
 
 Constants the checks assume: product section ids `paper`, `apply`, and `coach`, the route `/`, an `h1` inside `main > section`, a sign-up link with `href="/sign-in"` whose label is not "Log in", and images under `/landing/`. `/sign-up` in `apps/web/src/router.tsx` redirects to `/sign-in`. Pitch is not a product section this checker scores. If a change moves one, update `probe.mjs` and the rule that reads it in the same PR.
 
@@ -144,7 +106,7 @@ Not covered: pixel content of screenshots (judged, J4 to J7), real-device and Sa
 
 verify-landing checks only `/`.
 
-Text parity with the pen frame is `apps/web/src/features/landing/landing-design-parity.test.tsx`. Dated `OMITTED` rows are the exceptions. Each row has an `until` date and a reason. That test covers copy this checker does not score: the integrations header and sentence, coming-next copy, benefit titles and bodies, and the Join the waitlist and Learn more labels. The integration logo names are alts, which only check 19 sees, and it asks only that they are non-empty.
+Text parity with the pen frame is `apps/web/src/features/landing/landing-design-parity.test.tsx`. Dated omissions live in `apps/web/src/features/landing/design/landing.omitted.json`. Each row has an `until` date and a reason. That test covers copy this checker does not score: the integrations header and sentence, coming-next copy, benefit titles and bodies, and the Join the waitlist and Learn more labels. The integration logo names are alts, which only check 19 sees, and it asks only that they are non-empty.
 
 Links and hashes are `.claude/skills/verify-marketing-links`. Run `pnpm --filter web verify:marketing`. That command covers `/`, `/pricing`, `/about`, `/help`, `/blog`, and every post.
 

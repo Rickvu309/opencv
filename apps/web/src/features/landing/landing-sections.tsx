@@ -1,6 +1,8 @@
 import { documentHref } from "@/lib/web-origins-env.ts"
 import { Link } from "@tanstack/react-router"
 
+import { OpenCvMark } from "@/features/app-shell/app-logo.tsx"
+
 import { landingButton } from "./landing-button.ts"
 
 import {
@@ -11,6 +13,7 @@ import {
   LANDING_PRIMARY_LABEL,
   LANDING_STORIES,
   LANDING_SAMPLE_LABEL,
+  LANDING_STATEMENT_BRAND,
   LANDING_STATEMENT_LEAD,
   LANDING_STATEMENT_REST,
 } from "./landing-copy.ts"
@@ -44,7 +47,12 @@ export function LandingStatement() {
     >
       <p id="product-statement" className="landing-statement">
         <span className="text-foreground">{LANDING_STATEMENT_LEAD}</span>{" "}
-        <span className="text-muted-foreground">{LANDING_STATEMENT_REST}</span>
+        <OpenCvMark className="landing-statement-mark" />{" "}
+        <span className="landing-statement-rest">
+          {LANDING_STATEMENT_BRAND}
+        </span>{" "}
+        <br className="landing-statement-break" />
+        <span className="landing-statement-rest">{LANDING_STATEMENT_REST}</span>
       </p>
     </section>
   )

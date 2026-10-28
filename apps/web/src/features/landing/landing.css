@@ -26,6 +26,15 @@ html:has(.landing-root) {
   scroll-padding-block-start: 5rem;
 }
 
+/* The home frame's l-muted gray. Other marketing pages follow their own frames. */
+.landing-home {
+  --muted-foreground: color-mix(
+    in oklch,
+    var(--foreground) 57%,
+    var(--background)
+  );
+}
+
 .landing-root {
   font-family: Inter, sans-serif;
   overflow-x: clip;
@@ -161,8 +170,9 @@ html:has(.landing-root) {
   max-inline-size: 45rem;
   font-size: clamp(2.5rem, 1.4rem + 3.6vw, 4rem);
   font-weight: 500;
-  letter-spacing: -0.025em;
-  line-height: 1.05;
+  /* −1.4px at the 64px cap, the pen tracking for this heading. */
+  letter-spacing: -0.021875em;
+  line-height: 1;
   text-wrap: balance;
 }
 
@@ -259,7 +269,7 @@ html:has(.landing-root) {
   margin: 0;
   color: var(--muted-foreground);
   font-size: 0.75rem;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.05em;
 }
 
 .landing-logo-row {
@@ -279,12 +289,35 @@ html:has(.landing-root) {
 }
 
 .landing-statement {
-  max-inline-size: 78rem;
+  max-inline-size: 80rem;
   font-size: clamp(1.75rem, 1rem + 2.5vw, 3rem);
   font-weight: 500;
   letter-spacing: -0.022em;
-  line-height: 1.15;
-  text-wrap: pretty;
+  line-height: 1;
+}
+
+.landing-statement-rest,
+.landing-statement .landing-statement-mark {
+  color: color-mix(in oklch, var(--foreground) 43.2%, var(--background));
+}
+
+.landing-statement-mark {
+  display: inline-block;
+  inline-size: 0.8333em;
+  block-size: 0.8333em;
+  margin-inline: calc(14px - 0.249em);
+  vertical-align: -0.05em;
+}
+
+.landing-statement-break {
+  display: none;
+}
+
+/* Only where the lead, mark and "opencv helps" fit on one line. */
+@media (min-width: 90rem) {
+  .landing-statement-break {
+    display: initial;
+  }
 }
 
 .landing-benefits {
@@ -364,14 +397,14 @@ html:has(.landing-root) {
   font-size: clamp(2rem, 1.2rem + 2.2vw, 3rem);
   font-weight: 500;
   letter-spacing: -0.022em;
-  line-height: 1.1;
+  line-height: 1;
   text-wrap: balance;
 }
 
 .landing-section-body {
   max-inline-size: 35.375rem;
   color: var(--muted-foreground);
-  font-size: clamp(1.05rem, 0.9rem + 0.6vw, 1.5rem);
+  font-size: clamp(1.05rem, 0.75rem + 5vw / 6, 1.5rem);
   letter-spacing: -0.012em;
   line-height: 1.33;
   text-wrap: pretty;
@@ -573,6 +606,11 @@ html:has(.landing-root) {
 
 .landing-quote-role {
   color: var(--muted-foreground);
+}
+
+/* 14px on the soft gradient. Shared muted is 4.16:1 there; 59.7% clears 4.5:1. */
+.landing-quote-lead .landing-quote-role {
+  color: color-mix(in oklch, var(--foreground) 59.7%, var(--background));
 }
 
 .landing-story-foot {
