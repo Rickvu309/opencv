@@ -50,6 +50,32 @@ async function expectUpgradePlaceholder() {
 }
 
 describe("settings", () => {
+  it("filters integrations and restores the full catalog after clearing", async () => {
+    const user = userEvent.setup()
+    renderApp("/settings")
+    await user.click(await screen.findByRole("link", { name: "Integrations" }))
+    const input = await screen.findByRole("searchbox", {
+      name: "Search integrations",
+    })
+    expect(screen.getByText("Gmail")).toBeInTheDocument()
+    expect(screen.getByText("Zoom")).toBeInTheDocument()
+
+    await user.type(input, "zoom")
+    expect(screen.getByText("Zoom")).toBeInTheDocument()
+    expect(screen.queryByText("Gmail")).not.toBeInTheDocument()
+
+    await user.clear(input)
+    await user.type(input, "no matching integration")
+    expect(
+      screen.getByRole("heading", { name: "No integrations match" })
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Clear search" }))
+    expect(input).toHaveFocus()
+    expect(screen.getByText("Gmail")).toBeInTheDocument()
+    expect(screen.getByText("Zoom")).toBeInTheDocument()
+  })
+
   it("shows Back to app and the six sections, with Preferences current", async () => {
     renderApp("/settings")
     expect(
