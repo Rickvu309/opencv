@@ -69,14 +69,19 @@ exit 0
   executable(
     "bin/git",
     `#!/bin/sh
+viaC=0; if [ "$1" = -C ]; then viaC=1; shift 2; fi
 case "$1" in
   rev-parse)
     case "$*" in
       *git-common-dir*) [ "$PROOF_NO_COMMON" = 1 ] && exit 1; printf '%s\\n' "$PROOF_ROOT/work/repo/.git" ;;
+      *HEAD*) echo deadbeefdeadbeef ;;
+      *--absolute-git-dir*) echo "$PROOF_ROOT/gitdir" ;;
       *) printf '%s\\n' "$PROOF_ROOT/work/repo" ;;
     esac ;;
+  branch) echo main ;;
+  diff) printf '%s' "$PROOF_DIFF" ;;
   symbolic-ref) echo fix/999-push-failure-proof ;;
-  status) exit 0 ;;
+  status) if [ "$viaC" = 1 ]; then printf '%s' "$PROOF_DIRTY"; fi; exit 0 ;;
   rev-list) echo local-new-commit ;;
   push)
     for arg in "$@"; do
@@ -86,6 +91,7 @@ case "$1" in
     printf 'push retry=%s\\n' "\${CHECK_RETRY_FAILED_TESTS-unset}" >> "$PROOF_ROOT/env"
     mkdir -p "$PR_RESULT_DIR"
     [ -z "$PROOF_PUSH_RETRIED" ] || printf '{"retried":[%s]}' "$PROOF_PUSH_RETRIED" > "$PR_RESULT_DIR/opencv-check-fix-999-push-failure-proof.json"
+    if [ "$PROOF_NOSTAMP" != 1 ]; then mkdir -p "$PROOF_ROOT/work/repo/.git/pre-push-stamps"; echo ok > "$PROOF_ROOT/work/repo/.git/pre-push-stamps/deadbeefdeadbeef"; fi
     if [ "$PROOF_QUIET" != 1 ]; then echo 'push transport diagnostic' >&2; fi
     exit "$PROOF_PUSH_EXIT" ;;
   ls-remote) echo 'oldremote refs/heads/fix/999-push-failure-proof' ;;
@@ -98,7 +104,7 @@ esac
     `#!/bin/sh
 case "$1 $2" in
   'auth status'|'pr list') exit 0 ;;
-  'issue view') echo OPEN ;;
+  'issue view') case "$*" in *labels*) printf '%s' "$PROOF_LABELS" ;; *) echo OPEN ;; esac ;;
   'pr create')
     echo create >> "$PROOF_ROOT/events"
     [ "\${PROOF_CREATE_EXIT-0}" = 0 ] || { echo 'create refused' >&2; exit "$PROOF_CREATE_EXIT"; }
@@ -118,6 +124,7 @@ esac
     PR_RESULT_DIR: join(root, "results"),
     PR_RESULT_REPO: "opencv",
     PR_DISK_MIN_MB: lowDisk ? "2048" : "1", // the real disk's free space must not decide a test
+    HEAVY_SLOT: "1",
     ...extraEnv,
   }
   if (extraEnv.PROOF_OLD_RETRIED) {
@@ -127,6 +134,19 @@ esac
       join(root, "results", "opencv-check-fix-999-push-failure-proof.json"),
       `{"retried":[${extraEnv.PROOF_OLD_RETRIED}]}`
     )
+  }
+  if (extraEnv.PROOF_NOSTAMP) {
+    // The hook has stamped other pushes in this clone, but not this one (pushed with the hook-skip flag).
+    mkdirSync(join(root, "work", "repo", ".git", "pre-push-stamps"), {
+      recursive: true,
+    })
+    writeFileSync(join(root, "work", "repo", ".git", "pre-push-stamps", "0123abcd"), "ok\n")
+  }
+  if (extraEnv.PORT_FILES) {
+    // R76: new-task.sh recorded port 4001; .env says otherwise.
+    mkdirSync(join(root, "gitdir"))
+    writeFileSync(join(root, "gitdir", "assigned-port"), "4001\n")
+    writeFileSync(join(root, "work", "repo", ".env"), `PORT=${extraEnv.PORT_FILES}\n`)
   }
   const result = spawnSync(
     "bash",
@@ -264,4 +284,68 @@ test("a disk failure names the main checkout in next, also when git cannot find 
       `next is ${next}`
     )
   }
+})
+
+// The workflow rules open-pr.sh enforces. Recorded: review-pr.sh run with no heavy (calls.jsonl, session b3bc055a,
+// 2026-10-23T23:32), and issue 255 carrying ready-for-human (label removed by hand at 23:44). The rest are synthetic.
+const refuses = (name, extra, pattern, ...more) =>
+  test(name, (t) => {
+    const result = run(t, 0, false, false, false, extra)
+    assert.equal(result.status, 1, result.stderr)
+    assert.match(result.stderr, pattern)
+    assert.equal(result.events, "", "nothing was pushed or created")
+    assertResult(
+      result,
+      "fix-999-push-failure-proof",
+      "status=fail",
+      "cause=hygiene",
+      ...more
+    )
+  })
+
+refuses(
+  "R90: without heavy it refuses and names the heavy command",
+  { HEAVY_SLOT: "" },
+  /must run through heavy/,
+  "next=heavy -- scripts/open-pr.sh --draft -d push failure proof"
+)
+refuses(
+  "R68: an edited file in the main checkout refuses",
+  { PROOF_DIRTY: " M README.md\n" },
+  /has edited files/
+)
+refuses(
+  "R76: a changed PORT in .env refuses and restores the assigned port",
+  { PORT_FILES: "4999" },
+  /new-task\.sh assigned port 4001/
+)
+refuses(
+  "R103: an issue labeled ready-for-human refuses",
+  { PROOF_LABELS: "chore\nready-for-human\n" },
+  /ready-for-human/
+)
+refuses(
+  "R105: a workflow file refuses",
+  { PROOF_DIFF: "README.md\n.github/workflows/ci.yml\n" },
+  /workflow files/
+)
+refuses(
+  "R98: SKIP_CHECKS=1 without a named human refuses",
+  { SKIP_CHECKS: "1" },
+  /no human is named/
+)
+
+test("R98: SKIP_CHECKS=1 with a named human goes on and the body says who", (t) => {
+  const result = run(t, 0, false, false, false, {
+    SKIP_CHECKS: "1",
+    SKIP_CHECKS_DECLARED_BY: "Quan",
+  })
+  assert.equal(result.status, 0, result.stderr)
+})
+
+test("R97: a push that skipped the pre-push hook creates no PR", (t) => {
+  const result = run(t, 0, false, false, false, { PROOF_NOSTAMP: "1" })
+  assert.equal(result.status, 1, result.stderr)
+  assert.match(result.stderr, /no pre-push stamp/)
+  assert.equal(result.events, "push skip=unset\n")
 })

@@ -20,6 +20,7 @@ case "$1 $2" in
     case "$*" in
       *"--json state"*) echo OPEN ;;
       *"--json title"*) echo "Set up the git workflow" ;;
+      *"--json labels"*) printf '%s\n' "${NT_LABELS:-}" ;;
     esac ;;
   "api user") echo tester ;;
   "issue edit") ;;
@@ -78,6 +79,18 @@ result_ok chore-777-scratch-task-thing status=ok cause=none
 [[ "$(tail -n1 "$tmp/out")" == "RESULT_JSON: $PR_RESULT_DIR/opencv-new-task-chore-777-scratch-task-thing.json" ]] || fail "RESULT_JSON is not the last line"
 grep -q 'scripts/open-pr.sh --draft' "$PR_RESULT_DIR/opencv-new-task-chore-777-scratch-task-thing.json" || fail "next is not the open-pr command"
 echo 'ok: success writes status ok with the next command, path printed last'
+wt777=$tmp/repo.worktrees/777-scratch-task-thing
+[[ "$(cat "$(git -C "$wt777" rev-parse --absolute-git-dir)/assigned-port")" == "$(grep -E '^PORT=' "$wt777/.env" | cut -d= -f2)" ]] || fail "assigned-port is not the PORT in .env"
+echo 'ok: the assigned port is recorded in the worktree git dir (R76)'
+
+# R103: issue 255 carried ready-for-human (calls.jsonl, 2026-10-23T23:44); no agent may pick it up.
+NT_LABELS=$'chore\nready-for-human' run chore 780 --no-install -d "human decision issue"
+[[ $code -eq 1 ]] || fail "ready-for-human: exit $code, want 1"
+grep -q 'labeled ready-for-human' "$tmp/err" || fail "ready-for-human: message"
+[[ ! -d "$tmp/repo.worktrees/780-human-decision-issue" ]] || fail "ready-for-human: a worktree was created"
+! grep -q 'issue edit' "$GH_LOG" || fail "ready-for-human: the issue was assigned"
+result_ok chore-780 status=fail cause=hygiene
+echo 'ok: R103 an issue labeled ready-for-human is refused before any assignment or worktree'
 
 # A filesystem with 1 GiB free (stub df) is below the 2 GiB limit. Nothing is created.
 mkdir "$tmp/lowdisk"

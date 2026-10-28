@@ -8,6 +8,7 @@
 #
 # Steps, stopping at the first failure:
 #   1. the PR author is the authenticated gh user
+#   0. it runs through heavy and the main checkout is on main with no edited file (AGENTS.md rule table)
 #   2. scripts/review-pr.sh <pr#> exits 0 (override the command with MERGE_PR_REVIEW_CMD)
 #   3. a PR comment or review body names the current patch id and says "Independent review"; a PR that changes
 #      anything under apps/ also needs a body with that patch id that says "verify"
@@ -32,6 +33,8 @@ set -euo pipefail
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 # shellcheck source=scripts/lib/result.sh
 . "$here/lib/result.sh"
+# shellcheck source=scripts/lib/rules.sh
+. "$here/lib/rules.sh"
 result_begin merge-pr
 
 die() { result_fail "${DIE_CAUSE:-hygiene}" "$*"; echo "merge-pr: $*" >&2; exit 1; }
@@ -41,6 +44,8 @@ review_cmd=${MERGE_PR_REVIEW_CMD:-$here/review-pr.sh}
 pr=${BASH_REMATCH[1]}; shift
 result_id "$pr"
 export PR_RESULT_ID=$pr
+RULE_ARGS=$pr rule_heavy scripts/merge-pr.sh
+rule_main_clean "$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"
 dry_run=0; regate=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -101,6 +106,9 @@ gate() {
   }
   (( $(bodies_with 'independent review') > 0 )) || stale "Independent review"
   changed=$(gh pr diff "$pr" --name-only) || die "could not list the files PR #$pr changes"
+  rule_no_workflows "$changed"
+  rule_pushed_through_hook "$rec_head"
+  rule_skip_said "$rec_head" "$pr" "$(gh pr view "$pr" --json body --jq .body)"
   if grep -q '^apps/' <<<"$changed"; then
     (( $(bodies_with 'verify') > 0 )) || stale "verify"
   fi

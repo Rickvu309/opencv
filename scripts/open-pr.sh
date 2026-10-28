@@ -15,13 +15,17 @@
 # run goes on with "WARN passed only on retry: <files>" and the files are in result.json (retried); a second failure fails.
 # This is done with CHECK_RETRY_FAILED_TESTS=1 for this script's own check.sh runs only; scripts/review-pr.sh never retries.
 #
-# Emergency only: SKIP_CHECKS=1 scripts/open-pr.sh   (say so in the PR body)
+# Emergency only, declared by a human: SKIP_CHECKS=1 SKIP_CHECKS_DECLARED_BY=<who> scripts/open-pr.sh   (the PR body says so)
+# Heavy: run it as heavy -- scripts/open-pr.sh (the HEAVY_SLOT check); --dry-run needs no slot.
 set -euo pipefail
 
 # shellcheck source=scripts/lib/result.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib/result.sh"
 # shellcheck source=scripts/lib/disk.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib/disk.sh"
+# shellcheck source=scripts/lib/rules.sh
+. "$(dirname "${BASH_SOURCE[0]}")/lib/rules.sh"
+orig_args="$*"
 result_begin open-pr
 
 BRANCH_RE='^(feat|fix|hotfix|refactor|chore|docs)/([0-9]+)-([a-z0-9]+(-[a-z0-9]+)*)$'
@@ -93,7 +97,7 @@ else
   body="Closes #${issue}"
 fi
 if [[ "${SKIP_CHECKS:-}" == "1" ]]; then
-  body="**Checks were skipped (SKIP_CHECKS=1). Reviewer: run scripts/check.sh.**"$'\n\n'"$body"
+  body="**Checks were skipped (SKIP_CHECKS=1), emergency declared by ${SKIP_CHECKS_DECLARED_BY:-unknown}. Reviewer: run scripts/check.sh.**"$'\n\n'"$body"
 fi
 
 echo "Title: $title"
@@ -104,6 +108,14 @@ if (( dry )); then
   result_ok "dry run, nothing pushed or created"
   exit 0
 fi
+
+# The workflow rules that a script can check (AGENTS.md rule table): heavy, SKIP_CHECKS, main checkout, port, issue label, workflows.
+RULE_ARGS=$orig_args rule_heavy scripts/open-pr.sh
+rule_skip_declared
+rule_main_clean "$main_checkout"
+rule_port "$top"
+(( ! have_gh )) || rule_not_ready_for_human "$(gh issue view "$issue" --json labels --jq '.labels[].name' 2>/dev/null || true)"
+rule_no_workflows "$(git diff --name-only origin/main...HEAD 2>/dev/null || true)"
 
 [[ -z "$(git status --porcelain)" ]] || die "uncommitted changes. Commit (or stash) them first."
 [[ -n "$(git rev-list origin/main..HEAD 2>/dev/null)" ]] || die "no commits on $branch beyond origin/main"
@@ -125,6 +137,7 @@ fi
 (( ! checked )) || result_adopt_retried "$(result_path check)"
 info "Pushing $branch"
 git push -u origin HEAD || DIE_CAUSE=other die "push failed; no PR created. Fix the push error and retry."
+rule_pushed_through_hook "$(git rev-parse HEAD)"
 (( ! checked )) || result_adopt_retried "$(result_path check)"
 (( ${#R_RETRIED[@]} == 0 )) || echo "WARN passed only on retry: ${R_RETRIED[*]}"
 

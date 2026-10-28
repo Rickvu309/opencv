@@ -2,6 +2,8 @@
 # Runs scripts/merge-pr.sh with a stub gh and a stub review command, so no network is needed. The stub gh records
 # every call in $MP_LOG; cases assert on the exit code, the output and which calls were recorded.
 set -euo pipefail
+# A git hook exports GIT_DIR; the throwaway repo below must never be the real one.
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE
 
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 script=$here/merge-pr.sh
@@ -21,6 +23,7 @@ case "$1 $2" in
   "pr merge" | "api repos/owner/repo/statuses/"*) ;;
   "pr view")
     case "$*" in
+      *"--json body"*) jq -r "${@: -1}" <<<"{\"body\":\"${MP_BODY:-}\"}" ;;
       *"--json author"*) jq -r "${@: -1}" <<<"{\"author\":{\"login\":\"$MP_AUTHOR\"}}" ;;
       *"--json comments,reviews"*) jq -r "${@: -1}" <<<"$MP_EVIDENCE" ;;
       *"--json mergeCommit"*) jq -r "${@: -1}" <<<'{"mergeCommit":{"oid":"cafe0000cafe0000cafe0000cafe0000cafe0000"}}' ;;
@@ -39,6 +42,10 @@ printf '%s\n' "$MP_REVIEW_OUT"
 exit "$MP_REVIEW_RC"
 STUB
 chmod +x "$tmp/bin/gh" "$tmp/review"
+# merge-pr.sh runs from the main checkout: a throwaway repo on main stands in for it.
+git init -q -b main "$tmp/repo" && git -C "$tmp/repo" config core.hooksPath /dev/null
+git -C "$tmp/repo" commit -q --allow-empty -m base
+export HEAVY_SLOT=1
 export PATH=$tmp/bin:$PATH MP_LOG=$tmp/gh.log MERGE_PR_REVIEW_CMD=$tmp/review
 export PR_RESULT_DIR=$tmp/results PR_RESULT_REPO=opencv MP_COUNT=$tmp/review-count
 
@@ -51,13 +58,15 @@ full="review-pr.sh: OK (patch id $patch, main 1234567890ab). Independent review:
 review_only="review-pr.sh: OK (patch id $patch, main 1234567890ab). Independent review: sol-loop, approved."
 
 reset() {
-  : >"$MP_LOG"; rm -f "$MP_COUNT"; unset MP_REVIEW_OUT2 MP_REVIEW_RC2 MP_COMPARE_FILES MP_COMPARE_FAIL MP_MAIN
+  : >"$MP_LOG"; rm -f "$MP_COUNT"; unset MP_BODY; rm -rf "$tmp/repo/.git/pre-push-stamps"; export HEAVY_SLOT=1
+  mkdir -p "$tmp/repo/.git/pre-push-stamps"; echo ok >"$tmp/repo/.git/pre-push-stamps/$head"
+  git -C "$tmp/repo" switch -q main 2>/dev/null || true; git -C "$tmp/repo" reset -q --hard; unset MP_REVIEW_OUT2 MP_REVIEW_RC2 MP_COMPARE_FILES MP_COMPARE_FAIL MP_MAIN
   export MP_ME=owner MP_AUTHOR=owner MP_REVIEW_RC=0 MP_REVIEW_OUT=$ok_line MP_FILES="scripts/x.sh docs/y.md"
   MP_EVIDENCE=$(evidence "$full"); export MP_EVIDENCE
 }
 run() {
   set +e
-  "$script" 5 "$@" >"$tmp/out" 2>"$tmp/err"
+  (cd "$tmp/repo" && "$script" 5 "$@") >"$tmp/out" 2>"$tmp/err"
   code=$?
   set -e
 }
@@ -195,6 +204,39 @@ no_writes "dry run"
 
 reset; MP_AUTHOR=contributor run --dry-run
 expect "dry run still refuses a non-author" 1 "contributor"
+
+# The rules of AGENTS.md that merge-pr.sh enforces. Past cases: review-pr.sh 248 and 255 were run with no heavy
+# (calls.jsonl, session b3bc055a, 2026-10-23T23:32 and 23:44); the others are synthetic, no past violation was recorded.
+reset; unset HEAVY_SLOT; run
+expect "R90: without heavy it refuses and names the heavy command" 1 "must run through heavy" "heavy -- scripts/merge-pr.sh 5"
+result status=fail cause=hygiene "next=heavy -- scripts/merge-pr.sh 5"
+no_writes "no heavy"; never "no heavy" "pr view"
+
+reset; echo one >"$tmp/repo/README"; git -C "$tmp/repo" add README; git -C "$tmp/repo" commit -q -m readme; echo more >>"$tmp/repo/README"
+run
+expect "R68: an edited file in the main checkout refuses" 1 "has edited files" "README"
+no_writes "dirty main"
+
+reset; git -C "$tmp/repo" switch -q -c feat/9-x
+run
+expect "R68: a main checkout on another branch refuses" 1 "is on 'feat/9-x'" "git -C"
+git -C "$tmp/repo" switch -q main
+
+reset; MP_FILES="docs/y.md .github/workflows/ci.yml" run
+expect "R105: a workflow file refuses" 1 "GitHub Actions workflow files" ".github/workflows/ci.yml"
+no_merge "workflow"
+
+reset; rm "$tmp/repo/.git/pre-push-stamps/$head"; echo ok >"$tmp/repo/.git/pre-push-stamps/other"
+run
+expect "R97: a head with no pre-push stamp refuses and names the push" 1 "was pushed without the pre-push hook" "git push --force-with-lease"
+no_merge "no stamp"
+
+reset; echo skip >"$tmp/repo/.git/pre-push-stamps/$head"
+run
+expect "R98: a SKIP_CHECKS push that the PR does not mention refuses" 1 "pushed with SKIP_CHECKS=1" "gh pr edit 5"
+no_merge "skip unsaid"
+reset; echo skip >"$tmp/repo/.git/pre-push-stamps/$head"; MP_BODY="SKIP_CHECKS=1: emergency declared by Quan" run
+expect "R98: a SKIP_CHECKS push that the PR mentions merges" 0 "merged PR #5"
 
 reset
 run --nope

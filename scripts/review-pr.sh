@@ -24,6 +24,8 @@ set -euo pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/lib/result.sh"
 # shellcheck source=scripts/lib/conflict-report.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib/conflict-report.sh"
+# shellcheck source=scripts/lib/rules.sh
+. "$(dirname "${BASH_SOURCE[0]}")/lib/rules.sh"
 result_begin review-pr
 
 BRANCH_RE='^(feat|fix|hotfix|refactor|chore|docs)/([0-9]+)-[a-z0-9]+(-[a-z0-9]+)*$'
@@ -49,6 +51,7 @@ note()  { echo "  note  $*"; notes+=("$*"); }
 pr=${BASH_REMATCH[1]}; shift
 result_id "$pr"
 export PR_RESULT_ID=$pr
+RULE_ARGS=$pr rule_heavy scripts/review-pr.sh
 keep=0; install=1; use_cache=1
 while [[ $# -gt 0 ]]; do
   case "$1" in
