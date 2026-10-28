@@ -9,7 +9,7 @@ Paper (`/paper`) is a library. A new account sees Start a document. Creating a C
 - `paper-edit` sets Role, company to `Edited for verify.`
 - `paper-save` shows Edited just now with no extra click.
 - `paper-persist` keeps that sentence after a reload and in `GET /api/paper/{id}` as version 2.
-- `paper-blocks` covers slash insert, the block menu, drag, Ask Coach, undo, share, a 390px window, reduced motion, and the keyboard path.
+- `paper-blocks` covers slash insert, the block menu, drag, a drop on a section heading, Ask Coach, undo, share, a 390px window, reduced motion, and the keyboard path.
 - `paper-letter` starts a blank letter for a job and keeps a typed line after a reload.
 
 ## How to get to it (user POV)
@@ -31,6 +31,7 @@ Preconditions: signed in on a new account (see `auth.md`). The library shows Sta
 - **Slash.** Click the textbox What you did, and what changed because of it. Press `/`. A listbox named Insert opens, with Type to filter, CV sections, and Blocks. Press Escape. It closes.
 - **Menu.** Focus a block and open the button Block menu. The menu has Turn into, Duplicate, Move up, Move down, Ask Coach, and Delete.
 - **Drag.** Drag a block by its Block menu handle within a section, then onto another section heading. Reload. The order matches the drop.
+- **Drop on a heading.** With two experience entries, one education entry, and one skills group, drag the second experience entry onto the Education heading. Reload. That education entry is still there and the dragged entry is after it. Drag that entry onto the Skills heading. Reload. The skills group is still there and the dragged entry is after it. `GET /api/paper/{id}` matches both reloads. Save `agent-browser screenshot "$EVIDENCE_DIR/paper-drop-education.png"` and `paper-drop-skills.png`.
 - **Ask Coach.** Choose Ask Coach on a block. The dock Coach panel opens and the composer contains that block's text.
 - **Undo.** Delete a block, then choose Undo. The block comes back.
 - **Share.** Open the share URL. The CV text renders.

@@ -39,6 +39,34 @@ export function isStarterKind(kind: CvSectionKind) {
   return KEEPERS.has(kind)
 }
 
+/** The placeholder the editor shows while a starter section has no stored blocks. */
+export function starterBlock(kind: CvSectionKind, id: string): CvBlock | null {
+  if (kind === "experience") {
+    return {
+      id,
+      type: "experience-entry",
+      role: "",
+      company: "",
+      period: "",
+      bullets: [],
+    }
+  }
+  if (kind === "education") {
+    return {
+      id,
+      type: "education-entry",
+      school: "",
+      degree: "",
+      period: "",
+      detail: "",
+    }
+  }
+  if (kind === "skills") {
+    return { id, type: "skills-group", label: "", items: [] }
+  }
+  return null
+}
+
 function prune(document: CvBlockDocument): CvBlockDocument {
   return {
     ...document,
@@ -86,7 +114,8 @@ export const blockMakers: Record<BlockType, () => CvBlock> = Object.fromEntries(
 
 function withPlainText(block: CvBlock, text: string): CvBlock {
   if (!text) return block
-  if (block.type === "text" || block.type === "heading") return { ...block, text }
+  if (block.type === "text" || block.type === "heading")
+    return { ...block, text }
   if (block.type === "bulleted-list" || block.type === "numbered-list") {
     return { ...block, items: [{ id: newId(), text }] }
   }
@@ -237,88 +266,6 @@ export function deleteBlock(
   blockId: string
 ): CvBlockDocument {
   return withBlock(document, blockId, null)
-}
-
-function sectionOf(document: CvBlockDocument, blockId: string) {
-  return document.sections.find((section) =>
-    section.blocks.some((block) => block.id === blockId)
-  )
-}
-
-export function dropBlock(
-  document: CvBlockDocument,
-  activeId: string,
-  overId: string
-): CvBlockDocument {
-  if (!overId || activeId === overId) return document
-  const from = sectionOf(document, activeId)
-  const block = from?.blocks.find((item) => item.id === activeId)
-  if (!from || !block) return document
-
-  if (!overId.startsWith("section:")) {
-    const overSection = sectionOf(document, overId)
-    if (overSection?.id === from.id) {
-      const oldIndex = from.blocks.findIndex((item) => item.id === activeId)
-      const newIndex = from.blocks.findIndex((item) => item.id === overId)
-      if (oldIndex < 0 || newIndex < 0 || oldIndex === newIndex) return document
-      return {
-        ...document,
-        sections: document.sections.map((section) =>
-          section.id === from.id
-            ? { ...section, blocks: reorder(section.blocks, oldIndex, newIndex) }
-            : section
-        ),
-      }
-    }
-  }
-
-  const stripped = prune({
-    ...document,
-    sections: document.sections.map((section) =>
-      section.id === from.id
-        ? {
-            ...section,
-            blocks: section.blocks.filter((item) => item.id !== activeId),
-          }
-        : section
-    ),
-  })
-
-  if (overId.startsWith("section:ghost-")) {
-    const kind = overId.slice("section:ghost-".length) as CvSectionKind
-    return {
-      ...stripped,
-      sections: [...stripped.sections, { id: newId(), kind, blocks: [block] }],
-    }
-  }
-
-  if (overId.startsWith("section:")) {
-    const sectionId = overId.slice("section:".length)
-    if (!stripped.sections.some((section) => section.id === sectionId)) {
-      return document
-    }
-    return {
-      ...stripped,
-      sections: stripped.sections.map((section) =>
-        section.id === sectionId
-          ? { ...section, blocks: [...section.blocks, block] }
-          : section
-      ),
-    }
-  }
-
-  const target = sectionOf(stripped, overId)
-  if (!target) return document
-  return {
-    ...stripped,
-    sections: stripped.sections.map((section) => {
-      if (section.id !== target.id) return section
-      const index = section.blocks.findIndex((item) => item.id === overId)
-      const blocks = section.blocks.slice()
-      blocks.splice(index < 0 ? blocks.length : index, 0, block)
-      return { ...section, blocks }
-    }),
-  }
 }
 
 export function moveBullet(

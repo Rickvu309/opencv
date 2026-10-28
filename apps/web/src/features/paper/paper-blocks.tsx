@@ -5,9 +5,11 @@ import {
   MouseSensor,
   TouchSensor,
   closestCenter,
+  pointerWithin,
   useDroppable,
   useSensor,
   useSensors,
+  type CollisionDetection,
   type DragEndEvent,
 } from "@dnd-kit/core"
 import {
@@ -29,18 +31,28 @@ import { SortableBlock } from "./paper-sortable-block.tsx"
 import {
   blockFromPlain,
   deleteBlock,
-  dropBlock,
   duplicateBlock,
   editorSections,
   insertSection,
-  isStarterKind,
   moveBlock,
   newId,
   patchBlock,
   patchHeader,
   placeBlock,
   replaceBlock,
+  starterBlock,
 } from "./paper-block-ops.ts"
+import { dropBlock } from "./paper-block-drop.ts"
+
+// The handle sits on top of a tall block, so the block center can sit on the
+// first entry while the pointer is still inside the heading. Prefer that heading.
+export const headingPointerCollision: CollisionDetection = (args) => {
+  const heading = pointerWithin(args).find((collision) =>
+    String(collision.id).startsWith("section:")
+  )
+  if (heading) return [heading]
+  return closestCenter(args)
+}
 
 const SECTION_LABEL: Record<CvSectionKind, string> = {
   summary: "Summary",
@@ -51,26 +63,6 @@ const SECTION_LABEL: Record<CvSectionKind, string> = {
   activities: "Activities",
   awards: "Awards",
   languages: "Languages",
-}
-
-const DRAFTS: Partial<Record<CvSectionKind, (id: string) => CvBlock>> = {
-  experience: (id) => ({
-    id,
-    type: "experience-entry",
-    role: "",
-    company: "",
-    period: "",
-    bullets: [],
-  }),
-  education: (id) => ({
-    id,
-    type: "education-entry",
-    school: "",
-    degree: "",
-    period: "",
-    detail: "",
-  }),
-  skills: (id) => ({ id, type: "skills-group", label: "", items: [] }),
 }
 
 export type BlockCommit = "drop" | "delete" | "change"
@@ -97,7 +89,9 @@ export function PaperBlocks({
   const [slash, setSlash] = useState<SlashState | null>(null)
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 200, tolerance: 8 },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
       keyboardCodes: { start: ["Space"], cancel: ["Escape"], end: ["Space"] },
@@ -112,7 +106,11 @@ export function PaperBlocks({
     onCommit(next, "drop")
   }
 
-  function openSlash(sectionId: string, blockId: string | null, node: HTMLElement) {
+  function openSlash(
+    sectionId: string,
+    blockId: string | null,
+    node: HTMLElement
+  ) {
     const space = window.innerHeight - node.getBoundingClientRect().bottom
     setSlash({
       sectionId,
@@ -128,7 +126,10 @@ export function PaperBlocks({
     const current = slash
     setSlash(null)
     if (choice.group === "section") {
-      onCommit(insertSection(document, current.sectionId, choice.kind), "change")
+      onCommit(
+        insertSection(document, current.sectionId, choice.kind),
+        "change"
+      )
       return
     }
     const section = sections.find((item) => item.id === current.sectionId)
@@ -162,7 +163,7 @@ export function PaperBlocks({
         />
         <DndContext
           sensors={sensors}
-          collisionDetection={closestCenter}
+          collisionDetection={headingPointerCollision}
           onDragEnd={onDragEnd}
         >
           {sections.map((section) => (
@@ -176,10 +177,14 @@ export function PaperBlocks({
               onAskCoach={onAskCoach}
               onOpenSlash={openSlash}
               onSlashQuery={(query) =>
-                setSlash((current) => (current ? { ...current, query, index: 0 } : current))
+                setSlash((current) =>
+                  current ? { ...current, query, index: 0 } : current
+                )
               }
               onSlashActive={(index) =>
-                setSlash((current) => (current ? { ...current, index } : current))
+                setSlash((current) =>
+                  current ? { ...current, index } : current
+                )
               }
               onPick={pick}
               onCloseSlash={() => setSlash(null)}
@@ -210,18 +215,19 @@ function SectionBlock({
   onChange: (next: CvBlockDocument) => void
   onCommit: (next: CvBlockDocument, kind: BlockCommit) => void
   onAskCoach: (text: string) => void
-  onOpenSlash: (sectionId: string, blockId: string | null, node: HTMLElement) => void
+  onOpenSlash: (
+    sectionId: string,
+    blockId: string | null,
+    node: HTMLElement
+  ) => void
   onSlashQuery: (query: string) => void
   onSlashActive: (index: number) => void
   onPick: (choice: SlashChoice) => void
   onCloseSlash: () => void
 }) {
   const { setNodeRef } = useDroppable({ id: `section:${section.id}` })
-  const draftOf = DRAFTS[section.kind]
-  const draft =
-    section.blocks.length === 0 && isStarterKind(section.kind) && draftOf
-      ? draftOf(`draft-${section.id}`)
-      : null
+  const starter = starterBlock(section.kind, `draft-${section.id}`)
+  const draft = section.blocks.length === 0 && starter ? starter : null
   const blocks = draft ? [draft] : section.blocks
 
   function write(block: CvBlock) {
@@ -234,8 +240,10 @@ function SectionBlock({
   }
 
   return (
-    <div ref={setNodeRef} data-section={section.kind} className="flex flex-col gap-2">
-      <h2 className="text-sm font-medium">{SECTION_LABEL[section.kind]}</h2>
+    <div data-section={section.kind} className="flex flex-col gap-2">
+      <h2 ref={setNodeRef} className="text-sm font-medium">
+        {SECTION_LABEL[section.kind]}
+      </h2>
       <SortableContext
         items={blocks.map((block) => block.id)}
         strategy={verticalListSortingStrategy}
