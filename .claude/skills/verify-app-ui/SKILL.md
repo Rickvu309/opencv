@@ -43,6 +43,10 @@ Each check has one kind, in `scripts/lib/kinds.mjs` and [properties.md](properti
 - `verify:pen-layout` and `verify:apply-pen` are separate commands and design by nature. The tier does not touch them.
 - Unlike the landing, this checker has no spec file or recorder yet. After a redesign of the signed-in screens, look at the screenshots (`VERIFY_APP_UI_SHOTS`), then edit the pinned copy in the design checks and re-record the layouts with `scripts/pen-layout.mjs`.
 
+## In the PR review
+
+`scripts/review-pr.sh` runs this checker at `VERIFY_TIER=invariant` for a PR that touches `apps/web/`, `packages/ui/` or a verify skill. `known-findings.json` next to this file lists the invariant FAILs that are allowed, each tracked by an issue: `[{ "id": "20", "issue": 553, "since": "2026-10-29", "note": "..." }]`. The review reads the copy on `main`. A FAIL not listed, a listed check that now passes (delete its entry in the fix PR), a STALE and an exit 2 each fail the review. Add an entry only after the issue exists, on `main` in its own PR.
+
 ## Apply against opencv.pen
 
 `PORT=4454 heavy -- pnpm --filter web verify:apply-pen` holds every Apply state to its pen frame. See [apply-pen.md](apply-pen.md).

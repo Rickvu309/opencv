@@ -90,6 +90,10 @@ Check 09 (the H1 alone says what is sold) is judged, as J1 in [taste-review.md](
 
 At `ceb07502` (main, checked in #510) the checker prints 30 PASS, 1 FAIL and 0 STALE: 31. The FAIL is a finding about the page, not the checker: the Customers foot link "Read all stories" renders as the muted `.landing-link` (`--muted-foreground`, 13px, no weight of its own) where the pen draws #1B1B1F at 14px weight 500, which is the `.landing-link[data-strong]` style. `6d431fdf` (#489) added the link and removed its `landing.omitted.json` row in the same change. The replacements and the reason for each check are in `properties.md`. A change that breaks one should flip its line to FAIL and nothing else.
 
+## In the PR review
+
+`scripts/review-pr.sh` runs this checker at `VERIFY_TIER=invariant` for a PR that touches `apps/web/`, `packages/ui/` or a verify skill. `known-findings.json` next to this file lists the invariant FAILs that are allowed, each tracked by an issue: `[{ "id": "<check id>", "issue": <number>, "since": "<date>", "note": "..." }]`, empty today. The review reads the copy on `main`. A FAIL not listed, a listed check that now passes (delete its entry in the fix PR), a STALE and an exit 2 each fail the review. Add an entry only after the issue exists, on `main` in its own PR.
+
 ## Taste review (judged layer)
 
 The judged rubric, the protocol, and the reviewer prompt are in [taste-review.md](taste-review.md).

@@ -1,0 +1,6 @@
+[
+  { "id": "01", "issue": 556, "since": "2026-10-29", "note": "chrome says Email where the product noun is Letter" },
+  { "id": "20", "issue": 553, "since": "2026-10-29", "note": "Inbox connect text and a few other nodes miss 4.5:1 contrast" },
+  { "id": "27", "issue": 555, "since": "2026-10-29", "note": "the Paper conflict banner lost role=alert" },
+  { "id": "41", "issue": 554, "since": "2026-10-29", "note": "Coach mode labels use a middle dot" }
+]
