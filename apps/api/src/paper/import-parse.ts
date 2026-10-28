@@ -70,19 +70,30 @@ type PdfDocument = {
   destroy?: () => Promise<void> | void
 }
 
-async function defaultPdfText(bytes: Buffer) {
+async function openPdfDocument(bytes: Buffer): Promise<PdfDocument> {
   const unpdf = await import("unpdf")
-  const pdf = (await unpdf.getDocumentProxy(
-    new Uint8Array(bytes)
-  )) as PdfDocument
+  return (await unpdf.getDocumentProxy(new Uint8Array(bytes))) as PdfDocument
+}
+
+async function readPdfPages(pdf: PdfDocument) {
+  const count = Math.min(pdf.numPages, PDF_PAGE_CAP)
+  const pages: string[] = []
+  for (let page = 1; page <= count; page += 1) {
+    const content = await (await pdf.getPage(page)).getTextContent()
+    pages.push(content.items.map((item) => item.str ?? "").join(""))
+  }
+  return pages.join("\n")
+}
+
+async function defaultPdfText(bytes: Buffer) {
+  const pdf = await importParsers.openPdf(bytes)
+  // The deadline must own this function so destroy runs before the 400.
+  bytes = Buffer.alloc(0)
+  void bytes
+  const pending = readPdfPages(pdf)
+  void pending.catch(() => undefined)
   try {
-    const count = Math.min(pdf.numPages, PDF_PAGE_CAP)
-    const pages: string[] = []
-    for (let page = 1; page <= count; page += 1) {
-      const content = await (await pdf.getPage(page)).getTextContent()
-      pages.push(content.items.map((item) => item.str ?? "").join(""))
-    }
-    return pages.join("\n")
+    return await withDeadline(pending)
   } finally {
     await pdf.destroy?.()
   }
@@ -94,27 +105,40 @@ type MammothApi = {
 
 const DOCX_TEXT_CAP = 200_000
 const ZIP_ENTRY_CAP = 128
+const ZIP_DECLARED_CAP = 32_000_000
 
-/** Walk local headers. mammoth does not expose an entry cap. */
-function zipEntryCount(bytes: Buffer) {
+/** Local headers must fit before mammoth. A data-descriptor entry counts as one. */
+function zipAllowsMammoth(bytes: Buffer) {
   let offset = 0
   let count = 0
+  let declared = 0
   while (offset + 30 <= bytes.length && count <= ZIP_ENTRY_CAP) {
-    if (bytes.readUInt32LE(offset) !== 0x04034b50) break
+    const signature = bytes.readUInt32LE(offset)
+    if (signature === 0x02014b50 || signature === 0x06054b50) {
+      return declared <= ZIP_DECLARED_CAP
+    }
+    if (signature !== 0x04034b50) return false
+    const flags = bytes.readUInt16LE(offset + 6)
     const compressed = bytes.readUInt32LE(offset + 18)
+    const uncompressed = bytes.readUInt32LE(offset + 22)
     const nameLength = bytes.readUInt16LE(offset + 26)
     const extraLength = bytes.readUInt16LE(offset + 28)
-    const next = offset + 30 + nameLength + extraLength + compressed
-    if (next <= offset) break
-    offset = next
+    if (uncompressed > ZIP_DECLARED_CAP) return false
+    declared += uncompressed
+    if (declared > ZIP_DECLARED_CAP) return false
     count += 1
+    if (count > ZIP_ENTRY_CAP) return false
+    if ((flags & 0x08) !== 0 && compressed === 0) return true
+    const next = offset + 30 + nameLength + extraLength + compressed
+    if (next <= offset || next > bytes.length) return false
+    offset = next
   }
-  return count
+  return false
 }
 
 /** mammoth is `export =`, so a dynamic import may nest the API under default. */
 async function defaultDocxText(bytes: Buffer) {
-  if (zipEntryCount(bytes) > ZIP_ENTRY_CAP) {
+  if (!zipAllowsMammoth(bytes)) {
     throw new Error("import-zip-entries")
   }
   const loaded = (await import("mammoth")) as MammothApi & {
@@ -139,7 +163,9 @@ function withDeadline<T>(work: Promise<T>) {
 }
 
 function isPdfBytes(bytes: Buffer) {
-  return bytes.length >= 5 && bytes.subarray(0, 5).toString("latin1") === "%PDF-"
+  return (
+    bytes.length >= 5 && bytes.subarray(0, 5).toString("latin1") === "%PDF-"
+  )
 }
 
 function isZipBytes(bytes: Buffer) {
@@ -149,6 +175,34 @@ function isZipBytes(bytes: Buffer) {
     bytes[1] === 0x4b &&
     bytes[2] === 0x03 &&
     bytes[3] === 0x04
+  )
+}
+
+function isMarkup(bytes: Buffer) {
+  let index = 0
+  if (
+    bytes.length >= 3 &&
+    bytes[0] === 0xef &&
+    bytes[1] === 0xbb &&
+    bytes[2] === 0xbf
+  ) {
+    index = 3
+  }
+  const end = Math.min(bytes.length, index + 48)
+  while (index < end) {
+    const byte = bytes[index]
+    if (byte !== 9 && byte !== 10 && byte !== 13 && byte !== 32) break
+    index += 1
+  }
+  const head = bytes
+    .subarray(index, Math.min(bytes.length, index + 12))
+    .toString("latin1")
+    .toLowerCase()
+  return (
+    head.startsWith("<?xml") ||
+    head.startsWith("<svg") ||
+    head.startsWith("<!doctype") ||
+    head.startsWith("<html")
   )
 }
 
@@ -180,17 +234,12 @@ export function classifyImport(input: {
   if (isPages(name, input.mediaType)) return "pages"
   if (isPdfBytes(input.bytes)) return "pdf"
   if (isZipBytes(input.bytes)) return "docx"
+  if (isMarkup(input.bytes)) return "unknown"
   if (input.mediaType === "application/json" || name.endsWith(".json")) {
     return "json"
   }
-  if (
-    isTextLike(input.bytes) ||
-    input.mediaType === "text/plain" ||
-    name.endsWith(".txt")
-  ) {
-    return "text"
-  }
-  return "unknown"
+  if (!isTextLike(input.bytes)) return "unknown"
+  return "text"
 }
 
 export function mediaTypeForImport(kind: ImportKind) {
@@ -207,8 +256,11 @@ export function mediaTypeForImport(kind: ImportKind) {
  */
 export const importParsers = {
   timeoutMs: 10_000,
+  openPdf: openPdfDocument,
   pdfText: defaultPdfText,
   docxText: defaultDocxText,
+  /** Tests abort while the CV row is inserted. Production stays null. */
+  onInsert: null as (() => void) | null,
 }
 
 export function parseImportLink(value: string): ImportParseResult | null {
@@ -230,7 +282,7 @@ export async function parseImportFile(input: {
     return refused("FILE_UNSUPPORTED", IMPORT_GENERIC_MESSAGE)
   }
   if (kind === "pdf") {
-    return textBlocks(await withDeadline(importParsers.pdfText(input.bytes)))
+    return textBlocks(await importParsers.pdfText(input.bytes))
   }
   if (kind === "docx") {
     return textBlocks(await withDeadline(importParsers.docxText(input.bytes)))

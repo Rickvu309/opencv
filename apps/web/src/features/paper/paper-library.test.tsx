@@ -70,7 +70,8 @@ describe("Paper library", () => {
   it("deletes the uploaded file when a cancelled import still returns", async () => {
     const created = {
       ...cv("sample"),
-      sourceFileId: "22222222-2222-4222-8222-222222222222" as PaperView["sourceFileId"],
+      sourceFileId:
+        "22222222-2222-4222-8222-222222222222" as PaperView["sourceFileId"],
     }
     let finish: (value: PaperView) => void = () => undefined
     vi.mocked(importPaperFile).mockImplementation(
@@ -111,7 +112,13 @@ describe("Paper library", () => {
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }))
     await act(async () => {
       finish(created)
-      await Promise.resolve()
+    })
+    await vi.waitFor(() => {
+      expect(
+        calls.some((url) =>
+          url.split("?")[0]?.endsWith("/api/commands/paper.delete")
+        )
+      ).toBe(true)
     })
     expect(onOpen).not.toHaveBeenCalled()
     expect(calls.some((url) => url.includes("paper.deleteFile"))).toBe(true)

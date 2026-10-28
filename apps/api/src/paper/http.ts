@@ -76,9 +76,7 @@ function concatBytes(chunks: Uint8Array[]) {
 /** Declared length is checked before any byte is kept. A stream stops at the cap. */
 async function readImportUpload(
   c: Parameters<typeof jsonWithStatus>[0]
-): Promise<
-  { over: true } | { over: false; file: File | null; link: string }
-> {
+): Promise<{ over: true } | { over: false; file: File | null; link: string }> {
   const declared = Number(c.req.header("content-length"))
   if (Number.isFinite(declared) && declared > IMPORT_FILE_CAP) {
     return { over: true }
@@ -218,14 +216,19 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
         413
       )
     }
-    const saved = await saveFile({
-      userId: parseUserId(c.var.userId),
-      name: file.name,
-      mediaType: file.type || "application/octet-stream",
-      bytes: Buffer.from(await file.arrayBuffer()),
-      purpose: "import",
-    })
+    let bytes: Buffer | undefined = Buffer.from(await file.arrayBuffer())
+    let savedId: string | undefined
     try {
+      const saved = await saveFile({
+        userId: parseUserId(c.var.userId),
+        name: file.name,
+        mediaType: file.type || "application/octet-stream",
+        bytes,
+        purpose: "import",
+      })
+      savedId = saved.id
+      bytes = undefined
+      void bytes
       const imported = await withImportSignal(c.req.raw.signal, () =>
         registry.execute({
           name: "paper.import",
@@ -236,9 +239,13 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
       return c.json(successEnvelope(imported.output))
     } catch (error) {
       // The command transaction rolls back its own delete. Drop the row here.
-      await deleteFile(person(c.var.userId), parseFileId(saved.id)).catch(
-        () => undefined
-      )
+      bytes = undefined
+      void bytes
+      if (savedId) {
+        await deleteFile(person(c.var.userId), parseFileId(savedId)).catch(
+          () => undefined
+        )
+      }
       throw error
     }
   })

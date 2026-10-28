@@ -35,13 +35,17 @@ import {
   IMPORT_FAILED_MESSAGE,
   IMPORT_GENERIC_MESSAGE,
   classifyImport,
+  importParsers,
   mediaTypeForImport,
   parseImportFile,
 } from "./import-parse.js"
 
 const importAbort = new AsyncLocalStorage<AbortSignal>()
 
-export function withImportSignal<T>(signal: AbortSignal, run: () => Promise<T>) {
+export function withImportSignal<T>(
+  signal: AbortSignal,
+  run: () => Promise<T>
+) {
   return importAbort.run(signal, run)
 }
 
@@ -154,6 +158,7 @@ export async function createPaper(
       createdAt: now,
       updatedAt: now,
     })
+  importParsers.onInsert?.()
   return toPaper(await ownedPaper(actor.userId, parsePaperId(id)))
 }
 
@@ -604,10 +609,14 @@ export async function importPaper(actor: Actor, fileId: FileId) {
       parsed.message
     )
   }
-  if (importAbort.getStore()?.aborted) {
+  const giveUp = async (docId?: string) => {
+    if (docId) {
+      await getDb().delete(paperDocs).where(eq(paperDocs.id, docId))
+    }
     await removeImportFile(actor.userId, file.id)
     throw new CommandError(ERROR_CODES.VALIDATION_ERROR, IMPORT_FAILED_MESSAGE)
   }
+  if (importAbort.getStore()?.aborted) await giveUp()
   let created: PaperView
   try {
     created = await createPaper(actor, {
@@ -619,6 +628,7 @@ export async function importPaper(actor: Actor, fileId: FileId) {
     await removeImportFile(actor.userId, file.id)
     throw error
   }
+  if (importAbort.getStore()?.aborted) await giveUp(created.id)
   await getDb()
     .update(paperDocs)
     .set({

@@ -5,7 +5,7 @@ import {
   IMPORT_PHONE_MESSAGE,
   emptyCvDocument,
 } from "@workspace/domain"
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { files, paperDocs } from "../db/schema.js"
 import {
@@ -21,7 +21,7 @@ import {
   IMPORT_GENERIC_MESSAGE,
   importParsers,
 } from "./import-parse.js"
-import { IMPORT_SIZE_MESSAGE } from "./store.js"
+import { IMPORT_FILE_CAP, IMPORT_SIZE_MESSAGE } from "./store.js"
 
 const WORD =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -290,11 +290,14 @@ describe("paper import", () => {
 
 const realPdfText = importParsers.pdfText
 const realDocxText = importParsers.docxText
+const realOpenPdf = importParsers.openPdf
 
 afterEach(() => {
   importParsers.timeoutMs = 10_000
   importParsers.pdfText = realPdfText
   importParsers.docxText = realDocxText
+  importParsers.openPdf = realOpenPdf
+  importParsers.onInsert = null
 })
 
 describe("paper import bounds", () => {
@@ -329,12 +332,22 @@ describe("paper import bounds", () => {
     await client.close()
   })
 
-  it("returns the failure sentence when the parser exceeds the deadline", async () => {
+  it("destroys the PDF parser when the deadline fires and stores nothing", async () => {
     importParsers.timeoutMs = 40
-    importParsers.pdfText = () =>
-      new Promise((resolve) => {
-        setTimeout(() => resolve("LATE"), 400)
-      })
+    let releaseHang: (error: Error) => void = () => undefined
+    const destroy = vi.fn(() => {
+      releaseHang(new Error("destroyed"))
+    })
+    importParsers.openPdf = async () => ({
+      numPages: 1,
+      getPage: async () => ({
+        getTextContent: () =>
+          new Promise<never>((_resolve, reject) => {
+            releaseHang = reject
+          }),
+      }),
+      destroy,
+    })
     const { db, client } = await createMigratedTestDb()
     const app = createTestApp(db)
     const owner = await signUp(app, {
@@ -352,6 +365,7 @@ describe("paper import bounds", () => {
     expect(await response.json()).toMatchObject({
       error: { message: IMPORT_FAILED_MESSAGE },
     })
+    expect(destroy).toHaveBeenCalledOnce()
     expect(await db.select().from(paperDocs)).toEqual([])
     expect(await db.select().from(files)).toEqual([])
     await client.close()
@@ -517,6 +531,125 @@ describe("paper import bounds", () => {
     expect(text.status).toBe(200)
     const textBody = (await text.json()) as { data: Stored }
     expect(JSON.stringify(textBody.data.document)).toContain("First paragraph")
+    await client.close()
+  })
+
+  it("leaves no document when the request aborts during the insert", async () => {
+    const { db, client } = await createMigratedTestDb()
+    const app = createTestApp(db)
+    const owner = await signUp(app, {
+      name: "Mid",
+      email: "mid-import@example.com",
+    })
+    const controller = new AbortController()
+    importParsers.onInsert = () => controller.abort()
+    const response = await Promise.resolve(
+      app.request("/api/paper/import", {
+        method: "POST",
+        headers: { Origin: testWebOrigin, Cookie: owner.cookie },
+        body: formFile(
+          textPdf("Campus newsletter"),
+          "slow.pdf",
+          "application/pdf"
+        ),
+        signal: controller.signal,
+      })
+    ).catch(() => undefined)
+    if (response) expect(response.status).not.toBe(200)
+    expect(await db.select().from(paperDocs)).toEqual([])
+    expect(await db.select().from(files)).toEqual([])
+    await client.close()
+  })
+
+  it("refuses a chunked body with no content-length once it crosses 8 MB", async () => {
+    const { db, client } = await createMigratedTestDb()
+    const app = createTestApp(db)
+    const owner = await signUp(app, {
+      name: "Chunk",
+      email: "chunk-import@example.com",
+    })
+    const boundary = "----cap"
+    const head = `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="big.pdf"\r\nContent-Type: application/pdf\r\n\r\n`
+    const tail = `\r\n--${boundary}--\r\n`
+    const planned = head.length + IMPORT_FILE_CAP + 200_000 + tail.length
+    let pulled = 0
+    const stream = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        if (pulled >= planned) {
+          controller.close()
+          return
+        }
+        const size = Math.min(64 * 1024, planned - pulled)
+        const chunk = new Uint8Array(size)
+        if (pulled < head.length) {
+          chunk.set(Buffer.from(head.slice(pulled, pulled + size)))
+        }
+        pulled += size
+        controller.enqueue(chunk)
+      },
+    })
+    const request = new Request("http://localhost/api/paper/import", {
+      method: "POST",
+      headers: {
+        Origin: testWebOrigin,
+        Cookie: owner.cookie,
+        "content-type": `multipart/form-data; boundary=${boundary}`,
+      },
+      body: stream,
+      duplex: "half",
+    })
+    expect(request.headers.get("content-length")).toBeNull()
+    const response = await app.request(request)
+    expect(response.status).toBe(413)
+    expect(await response.json()).toMatchObject({
+      error: { message: IMPORT_SIZE_MESSAGE },
+    })
+    expect(pulled).toBeGreaterThan(IMPORT_FILE_CAP)
+    expect(pulled).toBeLessThanOrEqual(IMPORT_FILE_CAP + 128 * 1024)
+    expect(await db.select().from(paperDocs)).toEqual([])
+    expect(await db.select().from(files)).toEqual([])
+    await client.close()
+  })
+
+  it("refuses markup disguised as text and still imports UTF-8 text", async () => {
+    const { db, client } = await createMigratedTestDb()
+    const app = createTestApp(db)
+    const owner = await signUp(app, {
+      name: "Mark",
+      email: "mark-import@example.com",
+    })
+    const svg = Buffer.from(
+      "<svg xmlns='http://www.w3.org/2000/svg'><text>Campus</text></svg>"
+    )
+    const html = Buffer.from("<!DOCTYPE html><html><body>Campus</body></html>")
+    const refused = [
+      ["graphic.pdf", svg],
+      ["graphic.txt", svg],
+      ["page.pdf", html],
+      ["page.txt", html],
+      ["binary.txt", Buffer.from([0, 1, 2, 3, 255])],
+    ] as const
+    for (const [name, bytes] of refused) {
+      const response = await postFile(app, owner.cookie, bytes, name, "")
+      expect(response.status).toBe(415)
+      expect(await response.json()).toMatchObject({
+        error: { code: "FILE_UNSUPPORTED", message: IMPORT_GENERIC_MESSAGE },
+      })
+    }
+    expect(await db.select().from(paperDocs)).toEqual([])
+    expect(await db.select().from(files)).toEqual([])
+    const text = await postFile(
+      app,
+      owner.cookie,
+      Buffer.from("Café résumé for the campus role"),
+      "notes.txt",
+      "text/plain"
+    )
+    expect(text.status).toBe(200)
+    const body = (await text.json()) as { data: Stored }
+    expect(JSON.stringify(body.data.document)).toContain("Café résumé")
+    expect(await db.select().from(paperDocs)).toHaveLength(1)
+    expect(await db.select().from(files)).toHaveLength(1)
     await client.close()
   })
 })

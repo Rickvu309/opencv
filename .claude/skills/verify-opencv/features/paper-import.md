@@ -58,6 +58,6 @@ Preconditions: signed in on a new account (see `auth.md`). The library shows Sta
 
 - The file input is visually hidden. Set its files. Do not look for a second Choose file on the error dialog until the dialog is open. That button is `Choose another file`.
 - Typing on the phone field persists where fill does not.
-- `/app/paper` redirects to `/paper`.
+- The legacy `/app/paper` path redirects to `/paper`.
 - A text PDF with no phone and no experience entry shows one check, the phone check.
 - Do not copy the sign-in code from `api.log`.
