@@ -1,0 +1,4 @@
+api:test: ⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+api:test: 
+api:test:  FAIL  src/apply/http.test.ts > apply API
+api:test: Error: Hook timed out in 10000ms.

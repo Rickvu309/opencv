@@ -14,10 +14,14 @@
 # Emergency only: SKIP_CHECKS=1 scripts/open-pr.sh   (say so in the PR body)
 set -euo pipefail
 
+# shellcheck source=scripts/lib/result.sh
+. "$(dirname "${BASH_SOURCE[0]}")/lib/result.sh"
+result_begin open-pr
+
 BRANCH_RE='^(feat|fix|hotfix|refactor|chore|docs)/([0-9]+)-([a-z0-9]+(-[a-z0-9]+)*)$'
 TITLE_RE='^(feat|fix|hotfix|refactor|chore|docs)(\([a-z0-9-]+\))?!?: [^ ].* \(#([0-9]+)\)$'
 
-die()  { echo "error: $*" >&2; exit 1; }
+die()  { result_fail "${DIE_CAUSE:-hygiene}" "$*"; echo "error: $*" >&2; exit 1; }
 info() { echo "==> $*"; }
 
 desc=""; draft=0; dry=0
@@ -38,16 +42,20 @@ branch=$(git symbolic-ref --quiet --short HEAD) || die "detached HEAD; check out
 [[ "$branch" != "main" ]] || die "you are on main. Start a task: scripts/new-task.sh <type> <issue#>"
 [[ "$branch" =~ $BRANCH_RE ]] || die "branch '$branch' is not type/<issue#>-short-description (see docs/git-workflow/branch-naming.md)"
 type=${BASH_REMATCH[1]}; issue=${BASH_REMATCH[2]}; slug=${BASH_REMATCH[3]}
+result_id "$branch"
+export PR_RESULT_ID=$branch
 
 have_gh=0
 if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then have_gh=1; fi
-(( have_gh || dry )) || die "the gh CLI must be installed and logged in (gh auth login)"
+(( have_gh || dry )) || DIE_CAUSE=env die "the gh CLI must be installed and logged in (gh auth login)"
 
 # Existing PR for this branch?
 if (( have_gh )); then
   existing=$(gh pr list --head "$branch" --state open --json url --jq '.[0].url // empty' 2>/dev/null || true)
   if [[ -n "$existing" ]]; then
     echo "A PR is already open for $branch: $existing"
+    result_id "${existing##*/}"
+    result_ok "a PR is already open: $existing" "heavy -- scripts/review-pr.sh ${existing##*/}"
     exit 0
   fi
   state=$(gh issue view "$issue" --json state --jq .state 2>/dev/null) || die "issue #$issue not found"
@@ -82,6 +90,7 @@ echo "Base:  main   Head: $branch   Draft: $([[ $draft == 1 ]] && echo yes || ec
 if (( dry )); then
   echo "----- body -----"; echo "$body"; echo "----------------"
   echo "(dry run: nothing pushed or created)"
+  result_ok "dry run, nothing pushed or created"
   exit 0
 fi
 
@@ -93,13 +102,23 @@ if [[ "${SKIP_CHECKS:-}" == "1" ]]; then
 else
   # Quick check of what changed; the full check runs once, in scripts/review-pr.sh.
   info "Running scripts/check.sh --changed"
-  env -u CHECK_DRY_RUN scripts/check.sh --changed || die "checks failed. Fix them, commit, and run open-pr.sh again."
+  if ! env -u CHECK_DRY_RUN scripts/check.sh --changed; then
+    result_adopt "$(result_path check)" || true
+    DIE_CAUSE=other die "checks failed. Fix them, commit, and run open-pr.sh again."
+  fi
 fi
 
 info "Pushing $branch"
-git push -u origin HEAD || die "push failed; no PR created. Fix the push error and retry."
+git push -u origin HEAD || DIE_CAUSE=other die "push failed; no PR created. Fix the push error and retry."
 
 args=(--base main --head "$branch" --title "$title" --body "$body")
 (( draft )) && args+=(--draft)
 info "Creating PR"
-gh pr create "${args[@]}"
+pr_url=$(gh pr create "${args[@]}") || DIE_CAUSE=other die "gh pr create failed; the branch is pushed. Run open-pr.sh again."
+[[ -z "$pr_url" ]] || echo "$pr_url"
+if [[ "${pr_url##*/}" =~ ^[0-9]+$ ]]; then
+  result_id "${pr_url##*/}"
+  result_ok "opened ${pr_url}" "cd \"$(dirname "$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null || echo .)")\" && heavy -- scripts/review-pr.sh ${pr_url##*/}"
+else
+  result_ok "PR created"
+fi
