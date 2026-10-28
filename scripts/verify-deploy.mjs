@@ -6,7 +6,12 @@
 import { execFileSync } from "node:child_process"
 import { parseArgs } from "node:util"
 import { pathToFileURL } from "node:url"
-import { cli, healthStatus, listDeployments } from "./lib/railway-deploy.mjs"
+import {
+  cli,
+  deploymentLimit,
+  healthStatus,
+  listDeployments,
+} from "./lib/railway-deploy.mjs"
 
 // Must match .railway/railway.ts; verify-deploy.test.mjs asserts it.
 export const services = [
@@ -111,6 +116,11 @@ async function classify(service, commit, changedFiles, io) {
       outcome: "DEPLOYING",
       detail: `deployment ${short(pending.id)} of ${short(pending.meta.commitHash)} is ${pending.status}`,
     }
+  if (covering.length === 0 && deployments.length >= deploymentLimit)
+    return {
+      outcome: "FAILED",
+      detail: `no deployment of this commit in Railway's latest ${deploymentLimit}; ${runs}. Check the Railway dashboard.`,
+    }
   if (covering.length === 0)
     return {
       outcome: "DEPLOYING",
@@ -162,25 +172,41 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 const git = (args) =>
   execFileSync("git", args, { stdio: ["ignore", "pipe", "ignore"] })
 
-// Railway may run a commit this clone has not fetched yet; fetch once before
-// deciding it does not contain ours.
-let fetched = false
-function isAncestor(ancestor, descendant) {
-  try {
-    git(["cat-file", "-e", `${descendant}^{commit}`])
-  } catch {
-    if (!fetched) {
-      fetched = true
-      try {
-        git(["fetch", "--quiet", "origin"])
-      } catch {}
+// Railway may run a commit this clone has not fetched yet. Fetch before
+// deciding, and fail loudly when git cannot answer, so an unknown ancestry
+// never reads as "unrelated".
+export function makeIsAncestor(run) {
+  const has = (sha) => {
+    try {
+      run(["cat-file", "-e", `${sha}^{commit}`])
+      return true
+    } catch {
+      return false
     }
   }
-  try {
-    git(["merge-base", "--is-ancestor", ancestor, descendant])
-    return true
-  } catch {
-    return false
+  return (ancestor, descendant) => {
+    if (!has(descendant)) {
+      try {
+        run(["fetch", "--quiet", "origin"])
+      } catch {
+        throw new Error(
+          `git fetch failed, so whether ${short(descendant)} contains this commit is unknown.`
+        )
+      }
+      if (!has(descendant))
+        throw new Error(
+          `Railway runs ${short(descendant)}, which origin does not have.`
+        )
+    }
+    try {
+      run(["merge-base", "--is-ancestor", ancestor, descendant])
+      return true
+    } catch (error) {
+      if (error.status === 1) return false
+      throw new Error(
+        `git merge-base failed for ${short(ancestor)} and ${short(descendant)}.`
+      )
+    }
   }
 }
 
@@ -214,7 +240,7 @@ if (
         cli,
         health: healthStatus,
         changedFiles,
-        isAncestor,
+        isAncestor: makeIsAncestor(git),
         now: Date.now,
         sleep,
       }

@@ -1,7 +1,12 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
-import { report, services, verifyDeploy } from "./verify-deploy.mjs"
+import {
+  makeIsAncestor,
+  report,
+  services,
+  verifyDeploy,
+} from "./verify-deploy.mjs"
 
 const commit = "5201a8823b0fc9df52cc319512177b254b446efd"
 const older = "86237ebf0000000000000000000000000000000a"
@@ -265,5 +270,66 @@ test("service watch patterns match .railway/railway.ts", () => {
   assert.deepEqual(
     services.map((s) => s.name),
     [...source.matchAll(/service\("(\w+)"/g)].map((m) => m[1])
+  )
+})
+
+test("no covering deployment in a full history window is FAILED, not DEPLOYING", async () => {
+  const unrelated = Array.from({ length: 20 }, (_, i) =>
+    deployment(`web-${i}`, "SUCCESS", `${i}`.padStart(40, "c"))
+  )
+  const { io } = boundary({ deployments: { web: unrelated } })
+  const run = await verifyDeploy({ commit }, io)
+  assert.equal(states(run).web, "FAILED")
+  assert.match(run.results[1].detail, /latest 20/)
+})
+
+function gitFake({
+  present = true,
+  fetchOk = true,
+  appears = true,
+  mergeBase = 0,
+}) {
+  const calls = []
+  let have = present
+  const run = (args) => {
+    calls.push(args[0])
+    if (args[0] === "cat-file" && !have)
+      throw Object.assign(new Error("x"), { status: 1 })
+    if (args[0] === "fetch") {
+      if (!fetchOk) throw Object.assign(new Error("x"), { status: 128 })
+      have = appears
+    }
+    if (args[0] === "merge-base" && mergeBase !== 0)
+      throw Object.assign(new Error("x"), { status: mergeBase })
+    return ""
+  }
+  return { isAncestor: makeIsAncestor(run), calls }
+}
+
+test("ancestry answers from git, fetching a commit this clone lacks", () => {
+  assert.equal(gitFake({}).isAncestor(commit, older), true)
+  assert.equal(gitFake({ mergeBase: 1 }).isAncestor(commit, older), false)
+  const missing = gitFake({ present: false })
+  assert.equal(missing.isAncestor(commit, older), true)
+  assert.deepEqual(missing.calls, [
+    "cat-file",
+    "fetch",
+    "cat-file",
+    "merge-base",
+  ])
+})
+
+test("ancestry that git cannot answer throws instead of reading as unrelated", () => {
+  assert.throws(
+    () => gitFake({ present: false, fetchOk: false }).isAncestor(commit, older),
+    /fetch failed/
+  )
+  assert.throws(
+    () => gitFake({ present: false, appears: false }).isAncestor(commit, older),
+    /origin does not have/
+  )
+  assert.throws(
+    () => gitFake({ mergeBase: 128 }).isAncestor(commit, older),
+    /merge-base failed/
   )
 })
