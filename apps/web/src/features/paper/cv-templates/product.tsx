@@ -12,6 +12,7 @@ import {
   useCvPlaceholders,
 } from "./cv-parts.tsx"
 import { ExperienceList, SkillChips } from "./cv-entries.tsx"
+import { ActivitiesAndAwards } from "./cv-lines.tsx"
 
 export function ProductCv({
   data,
@@ -199,6 +200,7 @@ export function ProductCv({
             ))}
           </section>
         ) : null}
+        <ActivitiesAndAwards data={data} />
       </main>
     </div>
   )

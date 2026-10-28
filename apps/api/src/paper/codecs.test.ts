@@ -46,8 +46,11 @@ describe("paper codecs", () => {
     const blockVersion = decodePaperContent("cv", 1, { version: 3 })
     expect(blockVersion.ok).toBe(false)
     if (blockVersion.ok) throw new Error("expected failure")
-    expect(blockVersion.message).not.toBe("Unsupported content version")
-    expect(blockVersion.message.length).toBeGreaterThan(0)
+    expect(blockVersion.message).toBe("Invalid content")
+
+    const emptyHeader = decodePaperContent("cv", 1, { version: 2, header: {} })
+    expect(emptyHeader).toEqual({ ok: false, message: "Invalid content" })
+    expect(JSON.stringify(emptyHeader)).not.toContain("expected")
   })
 
   it("imports legacy prefixed strings one-way into jsonb documents", () => {

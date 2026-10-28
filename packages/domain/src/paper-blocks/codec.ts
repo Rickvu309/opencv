@@ -12,10 +12,11 @@ import {
   blankBlockDocument,
   isCvBlockDocument,
   makeIds,
+  type CvBlock,
   type CvBlockDocument,
 } from "./document.js"
 import { plainTextOf, printBlock } from "./registry.js"
-import type { CvBlock, PreviewFragment } from "./types.js"
+import type { PreviewFragment } from "./types.js"
 
 /**
  * An empty headline is not stored. A heading block is the headline, so a
@@ -48,6 +49,7 @@ export function cvCodecToBlocks(document: CvDocument): CvBlockDocument {
         role: role.role,
         company: role.company,
         period: role.period,
+        ...(role.location ? { location: role.location } : {}),
         bullets: role.bullets.map((text) => ({ id: id(), text })),
       })),
     })
@@ -109,11 +111,15 @@ export function cvCodecToBlocks(document: CvDocument): CvBlockDocument {
   return { version: 2, header, sections }
 }
 
+function isAside(block: CvBlock): boolean {
+  return block.type === "divider" || block.type === "numbered-list"
+}
+
 function linesOf(fragment: PreviewFragment): string[] {
   if (fragment.kind === "text" || fragment.kind === "heading") {
     return fragment.text ? [fragment.text] : []
   }
-  if (fragment.kind === "list") {
+  if (fragment.kind === "list" && !fragment.ordered) {
     return fragment.items.filter((item) => item.length > 0)
   }
   return []
@@ -128,11 +134,14 @@ function readExperience(blocks: CvBlock[]): CvExperience[] {
   let current: CvExperience | null = null
   for (const block of blocks) {
     if (block.type === "experience-entry") {
+      const printed = printBlock(block)
+      if (printed.kind !== "experience") continue
       current = {
-        role: block.role,
-        company: block.company,
-        period: block.period,
-        bullets: block.bullets.map((bullet) => bullet.text),
+        role: printed.role,
+        company: printed.company,
+        period: printed.period,
+        bullets: [...printed.bullets],
+        ...(printed.location ? { location: printed.location } : {}),
       }
       experience.push(current)
       continue
@@ -158,12 +167,14 @@ function readEducation(blocks: CvBlock[]): CvEducation[] {
   const education: CvEducation[] = []
   for (const block of blocks) {
     if (block.type !== "education-entry") continue
+    const printed = printBlock(block)
+    if (printed.kind !== "education") continue
     const row: CvEducation = {
-      school: block.school,
-      degree: block.degree,
-      period: block.period,
+      school: printed.school,
+      degree: printed.degree,
+      period: printed.period,
     }
-    if (block.detail) row.detail = block.detail
+    if (printed.detail) row.detail = printed.detail
     education.push(row)
   }
   return education
@@ -173,8 +184,12 @@ function readSkills(blocks: CvBlock[]): CvSkillGroup[] {
   const groups: CvSkillGroup[] = []
   for (const block of blocks) {
     if (block.type === "skills-group") {
-      if (block.label || block.items.length > 0) {
-        groups.push({ label: block.label, items: [...block.items] })
+      const printed = printBlock(block)
+      if (
+        printed.kind === "skills" &&
+        (printed.label || printed.items.length > 0)
+      ) {
+        groups.push({ label: printed.label, items: [...printed.items] })
       }
       continue
     }
@@ -228,6 +243,13 @@ function readSummary(blocks: CvBlock[]): { headline: string; summary: string } {
   return { headline, summary: parts.join("\n") }
 }
 
+/**
+ * Activities and awards have no fields on the v1 codec, so this read cannot
+ * return them. They stay on the version 2 document and on the preview model.
+ * Numbered lists and dividers are also left out of the codec fields. The v1
+ * form has no block of those types, and folding their lines in would copy
+ * them into a paragraph.
+ */
 export function blocksToCvCodec(
   document: CvBlockDocument,
   templateId: CvTemplateId = "internship"
@@ -241,20 +263,21 @@ export function blocksToCvCodec(
   let languages: string[] = []
 
   for (const section of document.sections) {
+    const blocks = section.blocks.filter((block) => !isAside(block))
     if (section.kind === "summary") {
-      const read = readSummary(section.blocks)
+      const read = readSummary(blocks)
       headline = read.headline
       summary = read.summary
     } else if (section.kind === "experience") {
-      experience = readExperience(section.blocks)
+      experience = readExperience(blocks)
     } else if (section.kind === "education") {
-      education = readEducation(section.blocks)
+      education = readEducation(blocks)
     } else if (section.kind === "skills") {
-      skills = readSkills(section.blocks)
+      skills = readSkills(blocks)
     } else if (section.kind === "projects") {
-      projects = readProjects(section.blocks)
+      projects = readProjects(blocks)
     } else if (section.kind === "languages") {
-      languages = readLanguages(section.blocks)
+      languages = readLanguages(blocks)
     }
   }
 

@@ -12,6 +12,7 @@ import {
   SectionTitle,
 } from "./cv-parts.tsx"
 import { ExperienceList, SkillChips } from "./cv-entries.tsx"
+import { ActivitiesAndAwards } from "./cv-lines.tsx"
 
 export function ServiceCv({
   data,
@@ -124,6 +125,7 @@ export function ServiceCv({
           />
         </section>
       </div>
+      <ActivitiesAndAwards data={data} />
     </div>
   )
 }

@@ -1,12 +1,12 @@
 import { useQueryClient } from "@tanstack/react-query"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
   blocksToPreviewModel,
   emptyCvDocument,
   isCvBlockDocument,
   isCvDocument,
+  mergeCodecIntoBlocks,
   paperDocNameSchema,
-  previewToCvDocument,
   type CvDocument,
   type PaperPages,
   type PaperTemplateId,
@@ -46,10 +46,14 @@ import { endpoints, fetchBinary } from "@/lib/requests.ts"
 function cvOf(document: unknown, rowTemplateId: string | null): CvDocument {
   const layout = printLayout(rowTemplateId)
   if (isCvBlockDocument(document)) {
-    return previewToCvDocument(blocksToPreviewModel(document, layout))
+    return blocksToPreviewModel(document, layout)
   }
   if (isCvDocument(document)) return { ...document, templateId: layout }
   return { ...emptyCvDocument(), templateId: layout }
+}
+
+function toastError(error: unknown, fallback: string) {
+  toast(error instanceof Error ? error.message : fallback)
 }
 
 export function PaperCvEditor({
@@ -73,19 +77,21 @@ export function PaperCvEditor({
   const [favorite, setFavorite] = useState(false)
   const [templateId, setTemplateId] = useState(initial.templateId)
   const [galleryOpen, setGalleryOpen] = useState(false)
+  const loadedDocument = useRef(initial.document)
   const { schedule, adopt, versionRef } = usePaperAutosave<CvDocument>({
     docId: initial.id,
     initialVersion: initial.contentVersion,
-    toDocument: (next) => next,
+    toDocument: (next) =>
+      isCvBlockDocument(loadedDocument.current)
+        ? mergeCodecIntoBlocks(loadedDocument.current, next)
+        : next,
     onSaved: () => {
       setUpdatedAt(new Date().toISOString())
       setConflict(false)
     },
     onConflict: () => setConflict(true),
     onError: (error) => {
-      toast(
-        error instanceof Error ? error.message : "Could not save. Try again."
-      )
+      toastError(error, "Could not save. Try again.")
     },
   })
   const showBanner = pageState.pages > 1 && pageState.pageChoice === "unset"
@@ -118,11 +124,7 @@ export function PaperCvEditor({
       await navigator.clipboard.writeText(url)
       toast("Link copied")
     } catch (error) {
-      toast(
-        error instanceof Error
-          ? error.message
-          : "Could not copy the link. Try again."
-      )
+      toastError(error, "Could not copy the link. Try again.")
     }
   }
 
@@ -131,11 +133,7 @@ export function PaperCvEditor({
       await run("paper.keepTwoPages", { docId: initial.id })
       setPageState((current) => ({ ...current, pageChoice: "keep" }))
     } catch (error) {
-      toast(
-        error instanceof Error
-          ? error.message
-          : "Could not keep two pages. Try again."
-      )
+      toastError(error, "Could not keep two pages. Try again.")
     }
   }
 
@@ -151,6 +149,7 @@ export function PaperCvEditor({
         onToolResult: (tool) => {
           if (tool === "paper.replace") {
             void getPaper(initial.id).then((next) => {
+              loadedDocument.current = next.document
               setCv(cvOf(next.document, next.templateId))
               versionRef.current = next.contentVersion
             })
@@ -158,11 +157,7 @@ export function PaperCvEditor({
         },
       })
     } catch (error) {
-      toast(
-        error instanceof Error
-          ? error.message
-          : "Could not ask Coach. Try again."
-      )
+      toastError(error, "Could not ask Coach. Try again.")
     }
   }
 
@@ -175,11 +170,7 @@ export function PaperCvEditor({
         document.querySelector<HTMLButtonElement>("[data-dock-coach]")?.click()
       })
       .catch((error: unknown) => {
-        toast(
-          error instanceof Error
-            ? error.message
-            : "Could not open Coach. Use the dock Coach button."
-        )
+        toastError(error, "Could not open Coach. Use the dock Coach button.")
       })
   }
 
@@ -207,17 +198,14 @@ export function PaperCvEditor({
   async function reload() {
     try {
       const next = await getPaper(initial.id)
+      loadedDocument.current = next.document
       adopt(next.contentVersion)
       setTemplateId(next.templateId)
       setCv(cvOf(next.document, next.templateId))
       setUpdatedAt(next.updatedAt)
       setConflict(false)
     } catch (error) {
-      toast(
-        error instanceof Error
-          ? error.message
-          : "Could not reload. Refresh the page."
-      )
+      toastError(error, "Could not reload. Refresh the page.")
     }
   }
 
@@ -234,11 +222,7 @@ export function PaperCvEditor({
       }))
       setGalleryOpen(false)
     } catch (error) {
-      toast(
-        error instanceof Error
-          ? error.message
-          : "Could not change the template. Try again."
-      )
+      toastError(error, "Could not change the template. Try again.")
     }
   }
 

@@ -1,18 +1,5 @@
 import type { ZodType } from "zod"
 
-export const BLOCK_TYPE_NAMES = [
-  "text",
-  "heading",
-  "bulleted-list",
-  "numbered-list",
-  "divider",
-  "experience-entry",
-  "education-entry",
-  "skills-group",
-] as const
-
-export type BlockType = (typeof BLOCK_TYPE_NAMES)[number]
-
 export type ListItem = { id: string; text: string }
 
 export type TextBlock = { id: string; type: "text"; text: string }
@@ -34,6 +21,7 @@ export type ExperienceEntryBlock = {
   role: string
   company: string
   period: string
+  location?: string
   bullets: ListItem[]
 }
 export type EducationEntryBlock = {
@@ -51,15 +39,18 @@ export type SkillsGroupBlock = {
   items: string[]
 }
 
-export type CvBlock =
-  | TextBlock
-  | HeadingBlock
-  | BulletedListBlock
-  | NumberedListBlock
-  | DividerBlock
-  | ExperienceEntryBlock
-  | EducationEntryBlock
-  | SkillsGroupBlock
+export type BlockType =
+  | TextBlock["type"]
+  | HeadingBlock["type"]
+  | BulletedListBlock["type"]
+  | NumberedListBlock["type"]
+  | DividerBlock["type"]
+  | ExperienceEntryBlock["type"]
+  | EducationEntryBlock["type"]
+  | SkillsGroupBlock["type"]
+
+/** Fields every registry entry can read without the document schema. */
+export type BlockShape = { id: string; type: BlockType }
 
 export type PreviewFragment =
   | { kind: "text"; text: string }
@@ -71,6 +62,7 @@ export type PreviewFragment =
       role: string
       company: string
       period: string
+      location?: string
       bullets: string[]
     }
   | {
@@ -90,10 +82,10 @@ export type SlashOffer = {
 
 export type BlockRegistryEntry = {
   type: BlockType
-  schema: ZodType<CvBlock>
-  empty: () => CvBlock
+  schema: ZodType<BlockShape>
+  empty: () => BlockShape
   slash?: SlashOffer
-  print: (block: CvBlock) => PreviewFragment
-  plainText: (block: CvBlock) => string
+  print: (block: BlockShape) => PreviewFragment
+  plainText: (block: BlockShape) => string
   turnInto: readonly BlockType[]
 }

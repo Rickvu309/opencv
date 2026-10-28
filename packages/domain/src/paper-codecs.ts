@@ -189,15 +189,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function decodeCvContent(content: unknown): PaperContentDecode {
   if (isRecord(content) && "version" in content) {
     const parsed = cvBlockDocumentSchema.safeParse(content)
-    if (!parsed.success) {
-      return { ok: false, message: firstIssueMessage(parsed.error) }
-    }
+    if (!parsed.success) return { ok: false, message: "Invalid content" }
     return { ok: true, data: parsed.data }
   }
   const parsed = cvDocumentV1Schema.safeParse(content)
-  if (!parsed.success) {
-    return { ok: false, message: firstIssueMessage(parsed.error) }
-  }
+  if (!parsed.success) return { ok: false, message: "Invalid content" }
   return { ok: true, data: parsed.data }
 }
 

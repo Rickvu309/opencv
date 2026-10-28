@@ -8,7 +8,31 @@ import { headingBlock } from "./blocks/heading.js"
 import { numberedListBlock } from "./blocks/numbered-list.js"
 import { skillsGroupBlock } from "./blocks/skills-group.js"
 import { textBlock } from "./blocks/text.js"
+import { blockRegistry } from "./registry.js"
 import { blockIdSchema } from "./schema.js"
+
+type BlockSchemaTuple = [
+  typeof textBlock.schema,
+  typeof headingBlock.schema,
+  typeof bulletedListBlock.schema,
+  typeof numberedListBlock.schema,
+  typeof dividerBlock.schema,
+  typeof experienceEntryBlock.schema,
+  typeof educationEntryBlock.schema,
+  typeof skillsGroupBlock.schema,
+]
+
+/** A discriminated union of whatever entries you pass. A filtered copy drops that type. */
+export function cvBlockSchemaFrom(entries: readonly { schema: z.ZodType }[]) {
+  const schemas = entries.map((entry) => entry.schema)
+  if (schemas.length < 2) {
+    throw new Error("A block schema needs two types")
+  }
+  return z.discriminatedUnion("type", schemas as unknown as BlockSchemaTuple)
+}
+
+export const cvBlockSchema = cvBlockSchemaFrom(blockRegistry)
+export type CvBlock = z.infer<typeof cvBlockSchema>
 
 export const cvSectionKindSchema = z.enum([
   "summary",
@@ -19,17 +43,6 @@ export const cvSectionKindSchema = z.enum([
   "activities",
   "awards",
   "languages",
-])
-
-export const cvBlockSchema = z.discriminatedUnion("type", [
-  textBlock.schema,
-  headingBlock.schema,
-  bulletedListBlock.schema,
-  numberedListBlock.schema,
-  dividerBlock.schema,
-  experienceEntryBlock.schema,
-  educationEntryBlock.schema,
-  skillsGroupBlock.schema,
 ])
 
 export const cvBlockDocumentSchema = z

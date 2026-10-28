@@ -10,12 +10,12 @@ import { skillsGroupBlock } from "./blocks/skills-group.js"
 import { textBlock } from "./blocks/text.js"
 import type {
   BlockRegistryEntry,
+  BlockShape,
   BlockType,
-  CvBlock,
   PreviewFragment,
 } from "./types.js"
 
-type RawEntry<T extends CvBlock> = {
+type RawEntry<T extends BlockShape> = {
   type: T["type"]
   schema: ZodType<T>
   empty: () => T
@@ -25,12 +25,12 @@ type RawEntry<T extends CvBlock> = {
   turnInto: readonly BlockType[]
 }
 
-function defineBlock<T extends CvBlock>(
+function defineBlock<const T extends BlockShape>(
   entry: RawEntry<T>
-): BlockRegistryEntry {
+): RawEntry<T> & BlockRegistryEntry {
   return {
     type: entry.type,
-    schema: entry.schema as ZodType<CvBlock>,
+    schema: entry.schema as ZodType<T> & ZodType<BlockShape>,
     empty: () => entry.empty(),
     slash: entry.slash,
     print: (block) => entry.print(block as T),
@@ -62,10 +62,10 @@ export function blockEntry(type: BlockType): BlockRegistryEntry {
   return entry
 }
 
-export function printBlock(block: CvBlock): PreviewFragment {
+export function printBlock(block: BlockShape): PreviewFragment {
   return blockEntry(block.type).print(block)
 }
 
-export function plainTextOf(block: CvBlock): string {
+export function plainTextOf(block: BlockShape): string {
   return blockEntry(block.type).plainText(block)
 }

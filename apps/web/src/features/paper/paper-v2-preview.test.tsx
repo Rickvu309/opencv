@@ -173,4 +173,37 @@ describe("version 2 preview", () => {
     expect(seen[0]?.school).toEqual(["UIT"])
     expect(seen[0]?.skill).toEqual(["Interviews", "PRDs"])
   })
+
+  it("draws activities and awards on the share page", async () => {
+    const blocks = cvCodecToBlocks(fixture)
+    blocks.sections.push(
+      {
+        id: "sec-act",
+        kind: "activities",
+        blocks: [{ id: "act-1", type: "text", text: "Debate club" }],
+      },
+      {
+        id: "sec-aw",
+        kind: "awards",
+        blocks: [{ id: "aw-1", type: "text", text: "Dean list" }],
+      }
+    )
+    vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes("/api/paper/shared/tok")) {
+        return Promise.resolve(Response.json({ ok: true, data: view(blocks) }))
+      }
+      return Promise.resolve(Response.json({ ok: true, data: {} }))
+    })
+    render(<PaperSharePage />)
+    expect(
+      await screen.findByRole("heading", { name: "Lan CV" })
+    ).toBeInTheDocument()
+    expect(screen.getByText("Debate club")).toBeInTheDocument()
+    expect(screen.getByText("Dean list")).toBeInTheDocument()
+    expect(
+      screen.getByRole("heading", { name: "Activities" })
+    ).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Awards" })).toBeInTheDocument()
+  })
 })

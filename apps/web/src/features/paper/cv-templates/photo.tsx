@@ -7,6 +7,7 @@ import {
   CvPhoto,
 } from "./cv-parts.tsx"
 import { ExperienceList, EducationList, SkillChips } from "./cv-entries.tsx"
+import { ActivitiesAndAwards } from "./cv-lines.tsx"
 
 export function PhotoCv({
   data,
@@ -85,6 +86,7 @@ export function PhotoCv({
         <SectionTitle>Skills</SectionTitle>
         <SkillChips groups={data.skills} onChange={setSkills} />
       </section>
+      <ActivitiesAndAwards data={data} />
     </div>
   )
 }

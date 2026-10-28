@@ -4,7 +4,6 @@ import {
   blocksToPreviewModel,
   isCvBlockDocument,
   isCvDocument,
-  previewToCvDocument,
   type CvDocument as CvDocumentData,
 } from "@workspace/domain"
 
@@ -18,7 +17,7 @@ function sharedCv(
 ): CvDocumentData | null {
   const layout = printLayout(templateId)
   if (isCvBlockDocument(document)) {
-    return previewToCvDocument(blocksToPreviewModel(document, layout))
+    return blocksToPreviewModel(document, layout)
   }
   if (!isCvDocument(document)) return null
   return { ...document, templateId: layout }

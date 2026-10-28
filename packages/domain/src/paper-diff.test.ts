@@ -1,0 +1,72 @@
+import assert from "node:assert/strict"
+import { describe, it } from "node:test"
+
+import { diffPaperContent } from "./paper-diff.ts"
+import { cvCodecToBlocks } from "./paper-blocks/codec.ts"
+import { emptyCvDocument, type CvDocument } from "./paper-codecs.ts"
+import type { CvBlockDocument } from "./paper-blocks/document.ts"
+
+function fixture(): CvDocument {
+  return {
+    ...emptyCvDocument(),
+    name: "Ada",
+    summary: "Ships interview notes.",
+    experience: [
+      {
+        role: "Discovery lead",
+        company: "UIT",
+        period: "2024",
+        bullets: ["Ran interviews"],
+      },
+    ],
+  }
+}
+
+function withLines(document: CvDocument): CvBlockDocument {
+  const blocks = cvCodecToBlocks(document)
+  blocks.sections.push(
+    {
+      id: "sec-act",
+      kind: "activities",
+      blocks: [{ id: "act-1", type: "text", text: "Debate club" }],
+    },
+    {
+      id: "sec-aw",
+      kind: "awards",
+      blocks: [{ id: "aw-1", type: "text", text: "Dean list" }],
+    }
+  )
+  return blocks
+}
+
+describe("diffPaperContent version 2", () => {
+  it("reports a changed bullet and a changed award", () => {
+    const before = withLines(fixture())
+    const after = structuredClone(before)
+    const experience = after.sections.find(
+      (section) => section.kind === "experience"
+    )
+    const role = experience?.blocks.find(
+      (block) => block.type === "experience-entry"
+    )
+    if (role?.type === "experience-entry")
+      role.bullets[0]!.text = "Ran the room"
+    const awards = after.sections.find((section) => section.kind === "awards")
+    const award = awards?.blocks[0]
+    if (award?.type === "text") award.text = "Chancellor list"
+    const hunks = diffPaperContent("cv", before, after)
+    const added = hunks.flatMap((hunk) =>
+      hunk.lines.filter((line) => line.kind === "add").map((line) => line.text)
+    )
+    assert.ok(added.includes("Ran the room"))
+    assert.ok(added.includes("Chancellor list"))
+    assert.equal(hunks.filter((hunk) => hunk.section === "Awards").length, 1)
+  })
+
+  it("still diffs two version 1 documents", () => {
+    const before = fixture()
+    const after = { ...fixture(), summary: "A new summary." }
+    const hunks = diffPaperContent("cv", before, after)
+    assert.ok(hunks.some((hunk) => hunk.section === "Summary"))
+  })
+})

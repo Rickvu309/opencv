@@ -12,6 +12,7 @@ export const experienceEntryBlock = {
       role: z.string(),
       company: z.string(),
       period: z.string(),
+      location: z.string().optional(),
       bullets: z.array(listItemSchema),
     })
     .strict(),
@@ -28,6 +29,7 @@ export const experienceEntryBlock = {
     role: block.role,
     company: block.company,
     period: block.period,
+    ...(block.location ? { location: block.location } : {}),
     bullets: block.bullets.map((bullet) => bullet.text),
   }),
   plainText: (block: ExperienceEntryBlock) =>
@@ -35,6 +37,7 @@ export const experienceEntryBlock = {
       block.role,
       block.company,
       block.period,
+      block.location ?? "",
       ...block.bullets.map((bullet) => bullet.text),
     ]
       .filter((part) => part.length > 0)
