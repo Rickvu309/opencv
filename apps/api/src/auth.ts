@@ -11,7 +11,11 @@ import { eq } from "drizzle-orm"
 import type { AppDatabase } from "./db/context.js"
 import { user } from "./db/schema.js"
 import { authSchema } from "./db/schema.js"
-import { authMailFailed, createAuthCodeSender } from "./mail/auth-code.js"
+import {
+  authMailFailed,
+  authMailId,
+  createAuthCodeSender,
+} from "./mail/auth-code.js"
 import { isAllowedOrigin } from "./origin.js"
 
 export type AuthDatabase = Parameters<typeof drizzleAdapter>[0]
@@ -126,14 +130,22 @@ export function createAuth({
         async (ctx): Promise<Response | undefined> => {
           if (
             ctx.path !== "/email-otp/send-verification-otp" ||
-            ctx.body?.type !== "sign-in" ||
-            !authMailFailed(ctx)
+            ctx.body?.type !== "sign-in"
           )
             return
-          return new Response(JSON.stringify(AUTH_EMAIL_FAILED), {
-            status: 503,
-            headers: { "content-type": "application/json" },
-          })
+          if (authMailFailed(ctx)) {
+            return new Response(JSON.stringify(AUTH_EMAIL_FAILED), {
+              status: 503,
+              headers: { "content-type": "application/json" },
+            })
+          }
+          const emailId = authMailId(ctx)
+          if (emailId) {
+            return new Response(JSON.stringify({ success: true, emailId }), {
+              status: 200,
+              headers: { "content-type": "application/json" },
+            })
+          }
         }
       ),
     },

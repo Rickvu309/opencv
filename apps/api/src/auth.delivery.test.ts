@@ -53,7 +53,12 @@ describe("auth code delivery", () => {
   it("posts the code to Resend and hides it from the log", async () => {
     const fetchMock = vi.fn<
       (u: string, init?: RequestInit) => Promise<Response>
-    >(async () => new Response("{}", { status: 200 }))
+    >(
+      async () =>
+        new Response(JSON.stringify({ id: "test-provider-message" }), {
+          status: 200,
+        })
+    )
     vi.stubGlobal("fetch", fetchMock)
     const log = vi.spyOn(console, "log").mockImplementation(() => {})
     const errorLog = vi.spyOn(console, "error").mockImplementation(() => {})
@@ -73,7 +78,10 @@ describe("auth code delivery", () => {
         }
       )
       expect(res.status).toBe(200)
-      await expect(res.json()).resolves.toEqual({ success: true })
+      await expect(res.json()).resolves.toEqual({
+        success: true,
+        emailId: "test-provider-message",
+      })
       const init = fetchMock.mock.calls[0]?.[1] as RequestInit
       expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
         "https://api.resend.com/emails"
@@ -99,6 +107,45 @@ describe("auth code delivery", () => {
     } finally {
       log.mockRestore()
       errorLog.mockRestore()
+      await client.close()
+    }
+  })
+
+  it("returns each concurrent sign-in's own provider message ID", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async (_url: string, init?: RequestInit) =>
+          new Response(
+            JSON.stringify({ id: `mail-for-${mailField(init, "to")}` }),
+            { status: 200 }
+          )
+      )
+    )
+    const { client, db } = await createMigratedTestDb()
+    try {
+      const app = createAuthedApp(db, testAuthUrl, {
+        resendApiKey: "test-key",
+        authEmailFrom: "codes@opencv.me",
+        logAuthMail: false,
+      })
+      const addresses = ["first@verify.local", "second@verify.local"]
+      const responses = await Promise.all(
+        addresses.map((email) =>
+          postJson(app, "/api/auth/email-otp/send-verification-otp", {
+            email,
+            type: "sign-in",
+          })
+        )
+      )
+      for (const [index, response] of responses.entries()) {
+        expect(response.status).toBe(200)
+        await expect(response.json()).resolves.toEqual({
+          success: true,
+          emailId: `mail-for-${addresses[index]}`,
+        })
+      }
+    } finally {
       await client.close()
     }
   })

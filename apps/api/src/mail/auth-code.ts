@@ -1,3 +1,5 @@
+import { z } from "zod"
+
 const SUBJECT = "Your opencv code"
 
 type AuthCodeType =
@@ -14,6 +16,8 @@ type AuthEndpointContext = {
 }
 
 const authMailFailure = Symbol("authMailFailure")
+const authMailDelivery = Symbol("authMailDelivery")
+const deliverySchema = z.object({ id: z.string().min(1) })
 
 function codeText(type: AuthCodeType, otp: string) {
   const line =
@@ -47,6 +51,13 @@ function markAuthMailFailed(ctx: AuthEndpointContext | undefined) {
 export function authMailFailed(ctx: AuthEndpointContext | undefined) {
   const target = ctx?.context
   return Boolean(target && authMailFailure in target)
+}
+
+export function authMailId(ctx: AuthEndpointContext | undefined) {
+  const target = ctx?.context
+  if (!target || !(authMailDelivery in target)) return undefined
+  const id = target[authMailDelivery]
+  return typeof id === "string" ? id : undefined
 }
 
 function rejectAuthMail(ctx: AuthEndpointContext | undefined): never {
@@ -103,6 +114,14 @@ export function createAuthCodeSender({
     if (!res.ok) {
       failLine(address, type, res.status)
       rejectAuthMail(ctx)
+    }
+    const delivery = deliverySchema.safeParse(
+      await res.json().catch(() => null)
+    )
+    if (delivery.success && ctx?.context) {
+      Object.defineProperty(ctx.context, authMailDelivery, {
+        value: delivery.data.id,
+      })
     }
   }
 }
