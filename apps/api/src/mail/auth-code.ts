@@ -54,10 +54,6 @@ function rejectAuthMail(ctx: AuthEndpointContext | undefined): never {
   throw new Error("auth email send failed")
 }
 
-/**
- * Resend when both values are set. Log the code only when logOtp is set.
- * A missing sender or a failed send rejects.
- */
 export function createAuthCodeSender({
   resendApiKey,
   from,

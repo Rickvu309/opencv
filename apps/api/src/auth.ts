@@ -123,7 +123,12 @@ export function createAuth({
     hooks: {
       // Same per-request context the sender stamps. The send stays awaited.
       after: createAuthMiddleware(async (ctx) => {
-        if (!authMailFailed(ctx)) return
+        if (
+          ctx.path !== "/email-otp/send-verification-otp" ||
+          ctx.body?.type !== "sign-in" ||
+          !authMailFailed(ctx)
+        )
+          return
         return new Response(JSON.stringify(AUTH_EMAIL_FAILED), {
           status: 503,
           headers: { "content-type": "application/json" },

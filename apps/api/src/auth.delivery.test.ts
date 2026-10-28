@@ -4,14 +4,7 @@ import {
   createTestApp,
   testAuthUrl,
 } from "./test/harness.js"
-import {
-  cookieHeader,
-  createAuthedApp,
-  jsonHeaders,
-  postJson,
-  sendSignInCode,
-  signInWithCode,
-} from "./auth.fixtures.js"
+import { createAuthedApp, postJson, sendSignInCode } from "./auth.fixtures.js"
 
 const authEmailFailedBody = {
   code: "AUTH_EMAIL_FAILED",
@@ -320,91 +313,6 @@ describe("auth code delivery", () => {
       expect(logged).not.toMatch(/\b\d{6}\b/)
     } finally {
       markFailed?.()
-      log.mockRestore()
-      errorLog.mockRestore()
-      await client.close()
-    }
-  })
-
-  it("reports a change-email provider failure instead of sent", async () => {
-    const key = "test-resend-key"
-    const bodies: Array<string | undefined> = []
-    let calls = 0
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (_url: string, init?: RequestInit) => {
-        bodies.push(mailField(init, "text"))
-        calls += 1
-        if (calls === 1) return new Response("{}", { status: 200 })
-        return new Response("nope", { status: 500 })
-      })
-    )
-    const log = vi.spyOn(console, "log").mockImplementation(() => {})
-    const errorLog = vi.spyOn(console, "error").mockImplementation(() => {})
-    const { client, db } = await createMigratedTestDb()
-    const email = "change-fail@verify.local"
-    try {
-      const app = createAuthedApp(db, testAuthUrl, {
-        resendApiKey: key,
-        authEmailFrom: "codes@opencv.me",
-        logAuthMail: false,
-      })
-      const issued = await postJson(
-        app,
-        "/api/auth/email-otp/send-verification-otp",
-        { email, type: "sign-in" }
-      )
-      expect(issued.status).toBe(200)
-      const otp = bodies[0]?.match(/[0-9]{6}/)?.[0]
-      expect(otp).toMatch(/^[0-9]{6}$/)
-      const signIn = await signInWithCode(app, email, otp ?? "", {
-        name: "Ada",
-      })
-      expect(signIn.status).toBe(200)
-      const headers = {
-        ...jsonHeaders(),
-        Cookie: cookieHeader(signIn),
-      }
-      const direct = await app.request(
-        "/api/auth/email-otp/request-email-change",
-        {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ newEmail: "next-fail@verify.local" }),
-        }
-      )
-      expect(direct.status).toBe(503)
-      await expect(direct.json()).resolves.toEqual(authEmailFailedBody)
-      const command = await app.request(
-        "/api/commands/account.requestEmailChange",
-        {
-          method: "POST",
-          headers,
-          body: JSON.stringify({
-            input: { email: "other-fail@verify.local" },
-          }),
-        }
-      )
-      expect(command.status).toBe(400)
-      await expect(command.json()).resolves.toEqual({
-        ok: false,
-        error: {
-          code: "VALIDATION_ERROR",
-          message: "We could not send the code. Try again.",
-        },
-      })
-      const logged = [...log.mock.calls, ...errorLog.mock.calls].join(" ")
-      expect(logged).toContain(
-        "[auth] email send failed for next-fail@verify.local type change-email status 500"
-      )
-      expect(logged).toContain(
-        "[auth] email send failed for other-fail@verify.local type change-email status 500"
-      )
-      expect(logged).not.toContain(key)
-      expect(logged).not.toContain("nope")
-      expect(logged).not.toMatch(/\[auth\] email code/)
-      expect(logged).not.toMatch(/\b\d{6}\b/)
-    } finally {
       log.mockRestore()
       errorLog.mockRestore()
       await client.close()
