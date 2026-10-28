@@ -75,39 +75,52 @@ async function classify(service, commit, changedFiles, io) {
       detail: "no changed file matches the service watch patterns",
     }
   const deployments = listDeployments(service.name, io)
-  const ours = deployments.find((d) => d.meta?.commitHash === commit)
   const running = deployments.find((d) => d.status === "SUCCESS")
   const live = running?.meta?.commitHash
   const runs = `production runs ${short(live ?? "unknown")}`
   // A later merge can replace or skip our deployment; its commit still contains ours.
-  const superseded = live && live !== commit && io.isAncestor(commit, live)
-  if (!superseded) {
-    if (!ours)
-      return {
-        outcome: "DEPLOYING",
-        detail: `no deployment for this commit yet; ${runs}`,
-      }
-    if (inProgress.has(ours.status))
-      return {
-        outcome: "DEPLOYING",
-        detail: `deployment ${short(ours.id)} is ${ours.status}`,
-      }
-    if (ours.status !== "SUCCESS" || running.id !== ours.id)
+  const covers = (d) => {
+    const hash = d.meta?.commitHash
+    return hash === commit || (!!hash && io.isAncestor(commit, hash))
+  }
+  const covering = deployments.filter(covers)
+  if (running && covering.includes(running)) {
+    const via =
+      live === commit
+        ? `deployment ${short(running.id)} succeeded`
+        : `live in later commit ${short(live)}`
+    let health
+    try {
+      health = await io.health(service.origin)
+    } catch (error) {
       return {
         outcome: "FAILED",
-        detail: `deployment ${short(ours.id)} is ${ours.status}; ${runs}`,
+        detail: `${via} but /health failed: ${error.message}`,
       }
-  }
-  const via = superseded
-    ? `live in later commit ${short(live)}`
-    : `deployment ${short(ours.id)} succeeded`
-  const health = await io.health(service.origin)
-  if (health !== 200)
-    return {
-      outcome: "FAILED",
-      detail: `${via} but /health returned HTTP ${health}`,
     }
-  return { outcome: "DEPLOYED", detail: `${via}, /health 200` }
+    if (health !== 200)
+      return {
+        outcome: "FAILED",
+        detail: `${via} but /health returned HTTP ${health}`,
+      }
+    return { outcome: "DEPLOYED", detail: `${via}, /health 200` }
+  }
+  const pending = covering.find((d) => inProgress.has(d.status))
+  if (pending)
+    return {
+      outcome: "DEPLOYING",
+      detail: `deployment ${short(pending.id)} of ${short(pending.meta.commitHash)} is ${pending.status}`,
+    }
+  if (covering.length === 0)
+    return {
+      outcome: "DEPLOYING",
+      detail: `no deployment for this commit yet; ${runs}`,
+    }
+  const [latest] = covering
+  return {
+    outcome: "FAILED",
+    detail: `deployment ${short(latest.id)} is ${latest.status}; ${runs}`,
+  }
 }
 
 export async function verifyDeploy({ commit, wait = 0 }, io) {
@@ -146,11 +159,25 @@ export function report(commit, { results, exitCode }) {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
+const git = (args) =>
+  execFileSync("git", args, { stdio: ["ignore", "pipe", "ignore"] })
+
+// Railway may run a commit this clone has not fetched yet; fetch once before
+// deciding it does not contain ours.
+let fetched = false
 function isAncestor(ancestor, descendant) {
   try {
-    execFileSync("git", ["merge-base", "--is-ancestor", ancestor, descendant], {
-      stdio: "ignore",
-    })
+    git(["cat-file", "-e", `${descendant}^{commit}`])
+  } catch {
+    if (!fetched) {
+      fetched = true
+      try {
+        git(["fetch", "--quiet", "origin"])
+      } catch {}
+    }
+  }
+  try {
+    git(["merge-base", "--is-ancestor", ancestor, descendant])
     return true
   } catch {
     return false
@@ -158,12 +185,16 @@ function isAncestor(ancestor, descendant) {
 }
 
 function changedFiles(commit) {
-  return execFileSync("git", ["diff", "--name-only", `${commit}^`, commit], {
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "pipe"],
-  })
-    .split("\n")
-    .filter(Boolean)
+  try {
+    return git(["diff", "--name-only", `${commit}^`, commit])
+      .toString()
+      .split("\n")
+      .filter(Boolean)
+  } catch {
+    throw new Error(
+      `commit ${commit} is not in this clone. Run git fetch first.`
+    )
+  }
 }
 
 if (

@@ -154,6 +154,51 @@ test("a later commit that contains ours is DEPLOYED", async () => {
   }
 })
 
+test("a skipped deployment waits for the later commit that contains it", async () => {
+  const newer = "a".repeat(40)
+  const web = (status) => [
+    deployment("web-newer", status, newer),
+    deployment("web-ours", "SKIPPED", commit),
+    deployment("web-old", "SUCCESS", older),
+  ]
+  const building = boundary({
+    descendants: [newer],
+    deployments: { web: web("BUILDING") },
+  })
+  const pending = await verifyDeploy({ commit }, building.io)
+  assert.equal(states(pending).web, "DEPLOYING")
+  assert.equal(pending.exitCode, 3)
+  const landed = boundary({
+    descendants: [newer],
+    deployments: { web: web("SUCCESS") },
+  })
+  assert.equal(
+    states(await verifyDeploy({ commit }, landed.io)).web,
+    "DEPLOYED"
+  )
+})
+
+test("a health request that throws fails that service and checks the rest", async () => {
+  for (const message of [
+    "fetch failed",
+    "The operation was aborted due to timeout",
+  ]) {
+    const { io, calls } = boundary()
+    io.health = async (origin) => {
+      calls.push(origin)
+      if (origin.includes("api.")) throw new TypeError(message)
+      return 200
+    }
+    const run = await verifyDeploy({ commit }, io)
+    assert.deepEqual(states(run), { api: "FAILED", web: "DEPLOYED" })
+    assert.match(
+      run.results[0].detail,
+      new RegExp(`/health failed: ${message}`)
+    )
+    assert.equal(run.exitCode, 1)
+  }
+})
+
 test("a newer unrelated commit live over ours is FAILED", async () => {
   const other = "b".repeat(40)
   const { io } = boundary({
