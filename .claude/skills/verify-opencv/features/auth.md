@@ -4,10 +4,10 @@ Auth lets a visitor sign in with an email code, sign out, and sign in again. The
 
 ## Sub-features
 
-- `auth-code` sends a code, shows Welcome, then lands on `/app`.
-- `auth-guard` redirects a signed-out visit to `/app` to `/sign-in`.
+- `auth-code` sends a code, shows Welcome, then lands on the start page, `/apply`.
+- `auth-guard` redirects a signed-out visit to `/apply` to `/sign-in`.
 - `auth-signout` ends the session from Settings.
-- `auth-signin` signs back in by code and lands on `/app` without Welcome.
+- `auth-signin` signs back in by code and lands on `/apply` without Welcome.
 - `auth-wrong-code` shows an inline error and stays on `/sign-in`.
 - `auth-language` stores VI and leaves the heading in English.
 
@@ -16,19 +16,19 @@ Auth lets a visitor sign in with an email code, sign out, and sign in again. The
 - Open `/sign-in`. The heading is `Log in to opencv`. There is no Password field.
 - Fill Email `ada@verify.local`, choose `Continue`.
 - Read the code from `api.log` with `^\[auth\] email code for (.+) type ([a-z-]+): ([0-9]{6})$` and `type sign-in`.
-- Fill the six boxes. The heading becomes `Welcome to opencv`, then the URL is `/app`.
+- Fill the six boxes. The heading becomes `Welcome to opencv`, then the URL is `/apply`.
 - Sign out: choose the sidebar link named `profile and settings`, open the `Account` tab, choose `Sign out`.
 
 ## Driving it with agent-browser
 
 Preconditions: a green `doctor.sh <run>`; `export AGENT_BROWSER_SESSION=verify-<run>`; `set -a; . ~/tmp/opencv-verify/<run>/run.env; set +a`; an email not used before in this run (`ada@verify.local`).
 
-- **Sign in.** `agent-browser open "$WEB_URL/sign-in"`. The heading is `Log in to opencv`. There is no Password field. `agent-browser find role textbox fill "ada@verify.local" --name "Email"`, `agent-browser find role button click --name "Continue"`. Read the last matching line from `$EVIDENCE_DIR/api.log`. Fill the six boxes by typing or by pasting the six digits into Digit 1. `agent-browser wait --text "Welcome to opencv"`. Save `agent-browser screenshot "$EVIDENCE_DIR/signup.png"`. Then `agent-browser wait --url "**/app"`. The account name is empty. Do not wait for a person's name.
+- **Sign in.** `agent-browser open "$WEB_URL/sign-in"`. The heading is `Log in to opencv`. There is no Password field. `agent-browser find role textbox fill "ada@verify.local" --name "Email"`, `agent-browser find role button click --name "Continue"`. Read the last matching line from `$EVIDENCE_DIR/api.log`. Fill the six boxes by typing or by pasting the six digits into Digit 1. `agent-browser wait --text "Welcome to opencv"`. Save `agent-browser screenshot "$EVIDENCE_DIR/signup.png"`. Then `agent-browser wait --url "**/apply"`. The account name is empty. Do not wait for a person's name.
 - **Read the session.** `agent-browser eval "fetch('$API_URL/api/session',{credentials:'include'}).then(r=>r.text())"` returns `{"ok":true,"user":{...},"session":{...}}` with the email.
-- **Guard.** After Log out, `agent-browser open "$WEB_URL/app"` ends on a URL starting `/sign-in?redirect=`.
+- **Guard.** After Log out, `agent-browser open "$WEB_URL/apply"` ends on a URL starting `/sign-in?redirect=`.
 - **Sign out.** `agent-browser find role link click --name "profile and settings"`, `agent-browser wait --text "Connected apps"`, `agent-browser find role tab click --name "Account"`, `agent-browser find role button click --name "Sign out"`. The URL becomes `/sign-in`.
 - **Wrong code.** On `/sign-in` choose `Continue` for the same email, then enter `000000`. The alert is `That code is incorrect or expired.` and the URL stays on `/sign-in`.
-- **Sign in again.** Request a new code, fill it, and `agent-browser wait --url "**/app"`. Welcome does not show. Save `agent-browser screenshot "$EVIDENCE_DIR/signin.png"`.
+- **Sign in again.** Request a new code, fill it, and `agent-browser wait --url "**/apply"`. Welcome does not show. Save `agent-browser screenshot "$EVIDENCE_DIR/signin.png"`.
 - **Language.** On the code step, choose `VI`. The heading stays English. After sign-in, `GET /api/profile` has `"language":"vi"`.
 - **390.** Set the viewport to 390 wide. The hero line `Write your CV with a coach.` is not visible. The form is. Save `agent-browser screenshot "$EVIDENCE_DIR/signin-390.png"`.
 - **Proof.** `signup.png` shows Welcome. `signin.png` shows Home after the second sign-in. The session read returns `"ok":true` after each sign-in. The wrong-code step left the URL on `/sign-in`.
@@ -37,7 +37,7 @@ Preconditions: a green `doctor.sh <run>`; `export AGENT_BROWSER_SESSION=verify-<
 ## Gotchas
 
 - The code is in `api.log`, one line per send. Parse `type sign-in` and the six digits. Do not reuse `PROBE_EMAIL` from `run.env`.
-- Welcome replaces the app until it finishes. Wait for the Welcome heading, then for `/app`.
+- Welcome replaces the app until it finishes. Wait for the Welcome heading, then for `/apply`.
 - A second sign-in of the same address skips Welcome.
 - Wait for the Settings tabs to render before choosing `Account`. Without the wait the tab lookup fails with `No element found`.
 - Locators match by accessible name as a case-insensitive substring. Keep the quoted names exact, and use `--exact` when two controls share a prefix.

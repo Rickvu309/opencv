@@ -1,6 +1,6 @@
 # Apply board, list, calendar, and detail
 
-Apply (`/app/apply`) is a board with columns Saved, Applied, Interview, and Offer. Closed stays behind Hidden columns. A new account has no jobs. New job pastes a posting link. In verification the posting fetch is a stub, so no network is used.
+Apply (`/apply`) is a board with columns Saved, Applied, Interview, and Offer. Closed stays behind Hidden columns. A new account has no jobs. New job pastes a posting link. In verification the posting fetch is a stub, so no network is used.
 
 ## Sub-features
 
@@ -20,7 +20,7 @@ Apply (`/app/apply`) is a board with columns Saved, Applied, Interview, and Offe
 
 Preconditions: signed in on a new account (see `auth.md`). The board has no jobs. `AGENT_BROWSER_SESSION=verify-376`.
 
-- **Board.** `agent-browser open "$WEB_URL/app/apply"`. The page shows Track your first job. Closed is not visible. Create two jobs with `POST /api/commands/job.create`: Associate PM intern at Local startup in `interview`, and Business Analyst at Regional bank in `applied`. Reload. Those titles sit under Interview and Applied.
+- **Board.** `agent-browser open "$WEB_URL/apply"`. The page shows Track your first job. Closed is not visible. Create two jobs with `POST /api/commands/job.create`: Associate PM intern at Local startup in `interview`, and Business Analyst at Regional bank in `applied`. Reload. Those titles sit under Interview and Applied.
 - **Move.** Drag the Business Analyst card onto the Interview lane. Reload. It stays under Interview. `GET /api/jobs` shows `stage` `interview` for that job.
 - **Preview.** `agent-browser find role button click --name "New job"`, fill the link textbox with `https://careers.verify-posting.dev/associate-pm-intern`, then `agent-browser find role button click --name "Paste"`. Wait 3 s. The dialog shows Filled, Associate Product Manager Intern, and Northwind Labs. Choose Add job. Saved holds that card.
 - **Detail.** Open the new card. The posting text is on the page. Leave a note `Bring the checkout study.` and submit Add note. Reload. The note is in the activity list.

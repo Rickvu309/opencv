@@ -1,6 +1,6 @@
 # Coach page and panel
 
-The Coach page is `/app/coach`. The shell panel and Paper entry point share the
+The Coach page is `/coach`. The shell panel and Paper entry point share the
 same chat store. The verification launcher uses the scripted runtime with an
 isolated database, so no paid model request occurs.
 
@@ -12,7 +12,7 @@ Use the printed web port and an isolated agent-browser session. Sign in using
 
 ## Walkthrough
 
-1. Open `/app/coach`. Check six starter buttons and choose More ideas; check
+1. Open `/coach`. Check six starter buttons and choose More ideas; check
    that five more appear below them. Choose a starter and inspect the composer.
 2. Open Add. Attach a Paper document and a saved Apply job when fixtures exist.
    Choose Paste a link. Reject a `javascript:` URL, then attach an HTTPS URL.

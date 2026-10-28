@@ -19,16 +19,16 @@ This directory is the maintained source for verifying the user-facing behavior o
 
 ## Features
 
-| File                      | Feature                                 | Entry           |
-| ------------------------- | --------------------------------------- | --------------- |
-| `auth.md`                 | Sign in by code, sign out, sign in      | `/sign-in`      |
-| `shell.md`                | Sidebar, dock, chat panel, drawer       | `/app`          |
-| `home-coach-turn.md`      | One Coach turn streams a scripted reply | `/app`          |
-| `paper-edit-save.md`      | Create a CV, edit it, reload            | `/app/paper`    |
-| `apply-board-and-scan.md` | Add a card, move it, scan a posting URL | `/app/apply`    |
-| `coming-soon.md`          | Jobs, Proofs and Pitch coming soon      | `/app/jobs`     |
-| `settings.md`             | Settings sections, export, upgrade      | `/app/settings` |
-| `inbox.md`                | Inbox connect, scan, read, reply        | `/app/inbox`    |
+| File                      | Feature                                 | Entry       |
+| ------------------------- | --------------------------------------- | ----------- |
+| `auth.md`                 | Sign in by code, sign out, sign in      | `/sign-in`  |
+| `shell.md`                | Sidebar, dock, chat panel, drawer       | `/apply`    |
+| `home-coach-turn.md`      | One Coach turn streams a scripted reply | `/coach`    |
+| `paper-edit-save.md`      | Create a CV, edit it, reload            | `/paper`    |
+| `apply-board-and-scan.md` | Add a card, move it, scan a posting URL | `/apply`    |
+| `coming-soon.md`          | Jobs, Proofs and Pitch coming soon      | `/jobs`     |
+| `settings.md`             | Settings sections, export, upgrade      | `/settings` |
+| `inbox.md`                | Inbox connect, scan, read, reply        | `/inbox`    |
 
 ## Proof and skip reporting
 
