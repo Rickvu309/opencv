@@ -193,7 +193,7 @@ test("files that passed only on retry are warned about and recorded in result.js
 })
 
 test("the retry WARN is printed even when gh pr create fails", (t) => {
-  const result = run(t, 0, false, false, {
+  const result = run(t, 0, false, false, false, {
     PROOF_RETRIED: retried,
     PROOF_CREATE_EXIT: "1",
   })
@@ -207,7 +207,7 @@ test("the retry WARN is printed even when gh pr create fails", (t) => {
 })
 
 test("files retried by the quick check and by the push's check are all recorded", (t) => {
-  const result = run(t, 0, false, false, {
+  const result = run(t, 0, false, false, false, {
     PROOF_RETRIED: '"apps/web/a.test.tsx"',
     PROOF_PUSH_RETRIED: '"apps/api/b.test.ts"',
   })
