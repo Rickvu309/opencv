@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, screen, within } from "@testing-library/react"
 
-import { expectHomeIdle } from "@/test/home-helpers.ts"
+import { SURFACE_PATHS } from "@/features/app-shell/surfaces.ts"
+import { expectCoachIdle } from "@/test/coach-chat-helpers.ts"
+import { FIXTURE_CHATS } from "@/test/chat-fixtures.ts"
 import { renderApp } from "@/test/render-app.tsx"
 
 beforeEach(() => {
@@ -15,8 +17,8 @@ afterEach(() => {
 
 describe("App shell sidebar", () => {
   it("shows the Search shortcut and opens the same dialog as the key", async () => {
-    renderApp()
-    await expectHomeIdle()
+    renderApp(SURFACE_PATHS.coach)
+    await expectCoachIdle()
 
     const search = screen.getByRole("button", { name: "Search" })
     expect(within(search).getByText(/^(⌘K|Ctrl K)$/)).toBeInTheDocument()
@@ -34,8 +36,8 @@ describe("App shell sidebar", () => {
   })
 
   it("shows every first action in the dialog without a Show all step", async () => {
-    renderApp()
-    await expectHomeIdle()
+    renderApp(SURFACE_PATHS.coach)
+    await expectCoachIdle()
 
     fireEvent.keyDown(window, { key: "k", ctrlKey: true })
     const dialog = await screen.findByRole("dialog")
@@ -56,12 +58,34 @@ describe("App shell sidebar", () => {
   })
 
   it("does not paint an always-on status mark on Apply", async () => {
-    renderApp()
-    await expectHomeIdle()
+    renderApp(SURFACE_PATHS.coach)
+    await expectCoachIdle()
 
     const nav = screen.getByRole("navigation", { name: "Main" })
     const apply = within(nav).getByRole("link", { name: "Apply" })
     expect(apply).toHaveTextContent(/^Apply$/)
     expect(apply.querySelector("[aria-hidden]:not(svg)")).toBeNull()
+  })
+
+  it("opens a chosen chat in the Coach panel without leaving the page", async () => {
+    const chat = FIXTURE_CHATS[0]!
+    const { router } = renderApp(SURFACE_PATHS.apply)
+    await screen.findByRole("heading", { level: 1, name: "Apply" })
+
+    fireEvent.click(screen.getByRole("button", { name: "Search" }))
+    const dialog = await screen.findByRole("dialog", { name: "Search" })
+    fireEvent.click(
+      await within(dialog).findByRole("button", {
+        name: new RegExp(chat.title),
+      })
+    )
+
+    const panel = await screen.findByRole("region", {
+      name: chat.title,
+    })
+    expect(
+      await within(panel).findByRole("log", { name: "Chat" })
+    ).toHaveTextContent(chat.messages[0]!.text)
+    expect(router.state.location.pathname).toBe(SURFACE_PATHS.apply)
   })
 })
