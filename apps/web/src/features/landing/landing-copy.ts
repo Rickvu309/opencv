@@ -8,8 +8,10 @@ export const LANDING_SUBHEAD =
 
 export const LANDING_STATEMENT_LEAD = "You’ve done more than your CV says."
 
+export const LANDING_STATEMENT_BRAND = "opencv helps"
+
 export const LANDING_STATEMENT_REST =
-  "opencv helps you show it: a CV and letter written for each role, a board for every application, and a coach that knows both."
+  "you show it: a CV and letter written for each role, a board for every application, and a coach that knows both."
 
 export const LANDING_CLOSE = "Be the obvious hire. Start today."
 
@@ -21,7 +23,7 @@ export const LANDING_SAMPLE_LABEL = "See a sample"
 
 export const LANDING_TITLE = "opencv. Get your butt in your dream seat."
 
-export const LANDING_DESCRIPTION = `${LANDING_SUBHEAD} ${LANDING_STATEMENT_REST}`
+export const LANDING_DESCRIPTION = `${LANDING_SUBHEAD} ${LANDING_STATEMENT_BRAND} ${LANDING_STATEMENT_REST}`
 
 export const LANDING_LOGO_LABEL = "PEOPLE USING OPENCV HAVE INTERVIEWED AT"
 

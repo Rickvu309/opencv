@@ -309,6 +309,16 @@ html:has(.landing-root) {
   vertical-align: -0.05em;
 }
 
+.landing-statement-break {
+  display: none;
+}
+
+@media (min-width: 80rem) {
+  .landing-statement-break {
+    display: initial;
+  }
+}
+
 .landing-benefits {
   padding-block-start: clamp(3rem, 9.45vw, 8.5rem);
 }
