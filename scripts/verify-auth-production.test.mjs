@@ -7,6 +7,7 @@ const options = { commit, email: "owner@example.com" }
 
 function boundary(overrides = {}) {
   const calls = []
+  let signedOut = false
   const mail = {
     id: "test-email",
     to: [options.email],
@@ -47,22 +48,31 @@ function boundary(overrides = {}) {
       if (args[1] === "list") return { data: overrides.emails ?? [mail] }
       return { ...mail, ...overrides.mail }
     },
-    async request(path) {
+    async request(path, requestOptions) {
       calls.push(path)
       if (path === "/health") return { status: 200, body: { ok: true } }
       if (path.endsWith("send-verification-otp"))
-        return { status: 200, body: { success: true } }
-      if (path.endsWith("sign-in/email-otp"))
+        return {
+          status: 200,
+          body: overrides.sendBody ?? { success: true, emailId: mail.id },
+        }
+      if (path.endsWith("sign-in/email-otp")) {
+        assert.equal(requestOptions.body.email, options.email)
         return { status: 200, cookie: "secret-test-cookie", body: {} }
+      }
       if (path === "/api/session")
         return (
-          overrides.session ?? {
+          (signedOut && !overrides.signOutIgnored
+            ? { status: 401, body: {} }
+            : overrides.session) ?? {
             status: 200,
             body: { ok: true, user: { email: options.email } },
           }
         )
-      if (path.endsWith("sign-out"))
+      if (path.endsWith("sign-out")) {
+        signedOut = true
         return { status: 200, body: { success: true } }
+      }
       assert.fail(`Unexpected request ${path}`)
     },
   }
@@ -93,7 +103,7 @@ test("discovers missing mail configuration and names CLI provisioning instead of
 })
 
 test("HTTP 200 without a provider email is a failure", async () => {
-  const { io } = boundary({ emails: [] })
+  const { io } = boundary({ emails: [], sendBody: { success: true } })
   await assert.rejects(
     verifyAuthProduction(options, io),
     /HTTP 200 alone does not prove delivery/
@@ -117,7 +127,7 @@ test("delivered mail with an unusable session fails and still signs out", async 
     verifyAuthProduction(options, io),
     /cannot read the expected account session/
   )
-  assert.equal(calls.at(-1), "/api/auth/sign-out")
+  assert.equal(calls.includes("/api/auth/sign-out"), true)
 })
 
 test("resuming a pending email checks it without sending another code", async () => {
@@ -136,6 +146,51 @@ test("success proves deployment, delivery and session without retaining secrets"
   assert.equal(proof.emailId, "test-email")
   assert.equal(proof.delivery, "delivered")
   assert.equal(proof.session, "verified and signed out")
-  assert.equal(calls.at(-1), "/api/auth/sign-out")
+  assert.equal(calls.includes("/api/auth/sign-out"), true)
   assert.doesNotMatch(JSON.stringify(proof), /123456|secret-test|owner@example/)
+})
+
+test("a recent unrelated delivered email cannot replace a missing message ID", async () => {
+  const { io, calls } = boundary({ sendBody: { success: true } })
+  await assert.rejects(
+    verifyAuthProduction(options, io),
+    /HTTP 200 alone does not prove delivery/
+  )
+  assert.equal(calls.includes("resend emails list"), false)
+  assert.equal(calls.includes("/api/auth/sign-in/email-otp"), false)
+})
+
+test("retrieves the exact provider message ID returned by the request", async () => {
+  const { io } = boundary()
+  const original = io.cli
+  io.cli = (command, args) => {
+    if (command === "resend" && args[0] === "emails") {
+      assert.deepEqual(args, ["emails", "get", "test-email", "--json"])
+    }
+    return original(command, args)
+  }
+  await verifyAuthProduction(options, io)
+})
+
+test("opened and clicked events still prove delivery", async () => {
+  for (const last_event of ["opened", "clicked"]) {
+    const { io } = boundary({ mail: { last_event } })
+    assert.equal(
+      (await verifyAuthProduction(options, io)).delivery,
+      "delivered"
+    )
+  }
+})
+
+test("normalizes the recipient just like the production sender", async () => {
+  const { io } = boundary()
+  await verifyAuthProduction({ ...options, email: "Owner@Example.com" }, io)
+})
+
+test("sign-out HTTP 200 is insufficient while the session still works", async () => {
+  const { io } = boundary({ signOutIgnored: true })
+  await assert.rejects(
+    verifyAuthProduction(options, io),
+    /session is still usable after sign-out/
+  )
 })

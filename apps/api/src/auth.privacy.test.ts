@@ -14,7 +14,7 @@ describe("auth email privacy", () => {
     vi.restoreAllMocks()
   })
 
-  it.each(["missing configuration", "provider outage"])(
+  it.each(["missing configuration", "provider outage", "provider success"])(
     "keeps registered and unregistered addresses indistinguishable during %s",
     async (failure) => {
       const { client, db } = await createMigratedTestDb()
@@ -43,12 +43,18 @@ describe("auth email privacy", () => {
 
         vi.stubGlobal(
           "fetch",
-          vi.fn(async () => new Response("unavailable", { status: 500 }))
+          vi.fn(async () =>
+            failure === "provider success"
+              ? new Response(JSON.stringify({ id: "private-provider-id" }), {
+                  status: 200,
+                })
+              : new Response("unavailable", { status: 500 })
+          )
         )
         vi.spyOn(console, "error").mockImplementation(() => {})
         const app = createAuthedApp(db, testAuthUrl, {
           logAuthMail: false,
-          ...(failure === "provider outage"
+          ...(failure !== "missing configuration"
             ? { resendApiKey: "test-key", authEmailFrom: "codes@opencv.me" }
             : {}),
         })

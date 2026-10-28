@@ -66,7 +66,6 @@ async function request(path, { body, cookie } = {}) {
   }
 }
 
-// CLI output, OTPs and session cookies remain in memory. Only this receipt is public.
 export async function verifyAuthProduction(
   { commit, email, mailId },
   io = { cli, request }
@@ -79,7 +78,7 @@ export async function verifyAuthProduction(
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email ?? ""),
     "Use --email with an address you control. This sends and consumes a sign-in code."
   )
-  const started = Date.now()
+  email = email.toLowerCase()
   const deployments = io.cli("railway", [
     "deployment",
     "list",
@@ -133,24 +132,11 @@ export async function verifyAuthProduction(
       sent.status === 200 && sent.body.success === true,
       "Production rejected the sign-in email request."
     )
-    const emails = io.cli("resend", [
-      "emails",
-      "list",
-      "--limit",
-      "100",
-      "--json",
-    ])
-    const matches = emails.data.filter(
-      (mail) =>
-        mail.to.includes(email) &&
-        mail.subject === "Your opencv code" &&
-        Date.parse(mail.created_at) >= started - 2_000
-    )
     requireProof(
-      matches.length === 1,
-      "Could not identify exactly one new sign-in email in Resend. HTTP 200 alone does not prove delivery."
+      typeof sent.body.emailId === "string" && sent.body.emailId.length > 0,
+      "The sign-in response has no provider message ID. HTTP 200 alone does not prove delivery."
     )
-    mailId = matches[0].id
+    mailId = sent.body.emailId
   }
   const mail = io.cli("resend", ["emails", "get", mailId, "--json"])
   requireProof(
@@ -160,7 +146,7 @@ export async function verifyAuthProduction(
     "The selected email does not match this sign-in test."
   )
   requireProof(
-    mail.last_event === "delivered",
+    ["delivered", "opened", "clicked"].includes(mail.last_event),
     `Resend has not confirmed delivery (email ${mailId}). Check again with --mail-id ${mailId}; do not send another code just to wait.`
   )
   requireProof(
@@ -196,6 +182,13 @@ export async function verifyAuthProduction(
       "The verification session could not be signed out."
     )
   }
+  const endedSession = await io.request("/api/session", {
+    cookie: signedIn.cookie,
+  })
+  requireProof(
+    endedSession.status === 401,
+    "The verification session is still usable after sign-out."
+  )
   return {
     verifiedAt: new Date().toISOString(),
     commit,
