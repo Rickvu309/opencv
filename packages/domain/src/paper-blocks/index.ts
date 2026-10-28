@@ -16,7 +16,6 @@ export {
 } from "./document.js"
 export type { CvBlock, CvBlockDocument, CvSectionKind } from "./document.js"
 export { blocksToCvCodec, cvCodecToBlocks, readCvBlocks } from "./codec.js"
-export { mergeCodecIntoBlocks } from "./merge.js"
 export { blocksToPreviewModel, previewToCvDocument } from "./preview.js"
 export type { CvPreviewModel } from "./preview.js"
 export {
@@ -31,10 +30,10 @@ export {
   unreadableImportLink,
 } from "./checks.js"
 export type { CvImportCheck } from "./checks.js"
+export type { BlockType } from "./registry.js"
 export type {
   BlockRegistryEntry,
   BlockShape,
-  BlockType,
   PreviewFragment,
   SlashOffer,
 } from "./types.js"

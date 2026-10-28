@@ -31,8 +31,12 @@ describe("paper codecs", () => {
     if (letter.ok) throw new Error("expected failure")
     expect(letter.message.length).toBeGreaterThan(0)
 
-    const cv = decodePaperContent("cv", 1, { name: "nope" })
-    expect(cv.ok).toBe(false)
+    const cv = decodePaperContent("cv", 1, { name: 5 })
+    expect(cv).toEqual({
+      ok: false,
+      message:
+        'Invalid option: expected one of "internship"|"product"|"service"|"academic"|"photo"',
+    })
 
     const prefixed = decodePaperContent("cv", 1, `${LEGACY_CV_PREFIX}{}`)
     expect(prefixed.ok).toBe(false)

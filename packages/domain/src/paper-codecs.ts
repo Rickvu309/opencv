@@ -193,7 +193,9 @@ function decodeCvContent(content: unknown): PaperContentDecode {
     return { ok: true, data: parsed.data }
   }
   const parsed = cvDocumentV1Schema.safeParse(content)
-  if (!parsed.success) return { ok: false, message: "Invalid content" }
+  if (!parsed.success) {
+    return { ok: false, message: firstIssueMessage(parsed.error) }
+  }
   return { ok: true, data: parsed.data }
 }
 

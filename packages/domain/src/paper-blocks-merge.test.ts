@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
 import { describe, it } from "node:test"
 
 import {
@@ -7,163 +8,51 @@ import {
   blockEntry,
   blockRegistry,
   blocksToCvCodec,
-  blocksToPreviewModel,
   cvBlockSchema,
   cvBlockSchemaFrom,
   cvCodecToBlocks,
   decodePaperContent,
   emptyCvDocument,
-  mergeCodecIntoBlocks,
-  previewToCvDocument,
-  type CvBlockDocument,
   type CvDocument,
 } from "./index.ts"
 
-function richDocument(): CvBlockDocument {
-  return {
-    version: 2,
-    header: {
-      name: "Ada Verify",
-      email: "ada@example.com",
-      phone: "1",
-      city: "Hanoi",
-      linkedin: "",
-    },
-    sections: [
-      {
-        id: "sec-summary",
-        kind: "summary",
-        blocks: [
-          { id: "head-1", type: "heading", text: "Discovery lead" },
-          { id: "sum-1", type: "text", text: "Ships interview notes." },
-          { id: "div-1", type: "divider" },
-          {
-            id: "num-1",
-            type: "numbered-list",
-            items: [{ id: "step-1", text: "Step one" }],
-          },
-        ],
-      },
-      {
-        id: "sec-exp",
-        kind: "experience",
-        blocks: [
-          {
-            id: "role-1",
-            type: "experience-entry",
-            role: "Discovery lead",
-            company: "UIT",
-            period: "2024",
-            location: "Hanoi",
-            bullets: [{ id: "bullet-1", text: "Ran interviews" }],
-          },
-        ],
-      },
-      {
-        id: "sec-skills",
-        kind: "skills",
-        blocks: [
-          {
-            id: "skill-1",
-            type: "skills-group",
-            label: "Interviews",
-            items: ["Notes"],
-          },
-          {
-            id: "skill-2",
-            type: "skills-group",
-            label: "PRDs",
-            items: ["Specs"],
-          },
-        ],
-      },
-      {
-        id: "sec-act",
-        kind: "activities",
-        blocks: [{ id: "act-1", type: "text", text: "Debate club" }],
-      },
-      {
-        id: "sec-aw",
-        kind: "awards",
-        blocks: [{ id: "aw-1", type: "text", text: "Dean list" }],
-      },
-    ],
-  }
-}
-
-describe("mergeCodecIntoBlocks", () => {
-  it("keeps version 2, ids, and the sections the form cannot hold", () => {
-    const stored = richDocument()
-    const edited = previewToCvDocument(
-      blocksToPreviewModel(stored, "internship")
-    )
-    edited.summary = "Ships interview notes.X"
-    const merged = mergeCodecIntoBlocks(stored, edited)
-    assert.equal(merged.version, 2)
-    const summary = merged.sections.find(
-      (section) => section.id === "sec-summary"
-    )
-    assert.ok(summary)
-    assert.equal(
-      summary.blocks.find(
-        (block) => block.id === "sum-1" && block.type === "text"
-      )?.text,
-      "Ships interview notes.X"
-    )
-    assert.equal(
-      summary.blocks.some(
-        (block) => block.id === "div-1" && block.type === "divider"
-      ),
-      true
-    )
-    assert.equal(
-      summary.blocks.some(
-        (block) => block.id === "num-1" && block.type === "numbered-list"
-      ),
-      true
-    )
-    const experience = merged.sections.find(
-      (section) => section.id === "sec-exp"
-    )
-    const role = experience?.blocks.find((block) => block.id === "role-1")
-    assert.equal(role?.type, "experience-entry")
-    if (role?.type === "experience-entry") assert.equal(role.location, "Hanoi")
-    const skills = merged.sections.find(
-      (section) => section.id === "sec-skills"
-    )
-    assert.deepEqual(
-      skills?.blocks
-        .filter((block) => block.type === "skills-group")
-        .map((block) => block.label),
-      ["Interviews", "PRDs"]
-    )
-    assert.deepEqual(
-      merged.sections.find((section) => section.id === "sec-act"),
-      stored.sections.find((section) => section.id === "sec-act")
-    )
-    assert.deepEqual(
-      merged.sections.find((section) => section.id === "sec-aw"),
-      stored.sections.find((section) => section.id === "sec-aw")
-    )
-    assert.equal(
-      cvBlockSchema.safeParse(merged.sections[0]?.blocks[0]).success,
-      true
-    )
-  })
-})
-
 describe("block schema source", () => {
-  it("accepts every registry empty block and rejects a type removed from a copy", () => {
-    for (const type of BLOCK_TYPES) {
+  it("derives the block types from the registry and rejects every removed type", () => {
+    const documentSource = readFileSync(
+      new URL("./paper-blocks/document.ts", import.meta.url),
+      "utf8"
+    )
+    const typesSource = readFileSync(
+      new URL("./paper-blocks/types.ts", import.meta.url),
+      "utf8"
+    )
+    assert.equal(documentSource.includes("BlockSchemaTuple"), false)
+    assert.equal(typesSource.includes("export type BlockType ="), false)
+    const required = [
+      "text",
+      "heading",
+      "bulleted-list",
+      "numbered-list",
+      "divider",
+      "experience-entry",
+      "education-entry",
+      "skills-group",
+    ] as const
+    assert.deepEqual(BLOCK_TYPES, required)
+    for (const type of required) {
       assert.equal(
         cvBlockSchema.safeParse(blockEntry(type).empty()).success,
         true,
         type
       )
+      const filtered = blockRegistry.filter((entry) => entry.type !== type)
+      const schema = cvBlockSchemaFrom(filtered)
+      assert.equal(
+        schema.safeParse(blockEntry(type).empty()).success,
+        false,
+        type
+      )
     }
-    const filtered = blockRegistry.filter((entry) => entry.type !== "divider")
-    const schema = cvBlockSchemaFrom(filtered)
-    assert.equal(schema.safeParse(blockEntry("divider").empty()).success, false)
   })
 })
 
@@ -210,14 +99,20 @@ describe("codec losses", () => {
     assert.equal(blankBlockDocument().version, 2)
   })
 
-  it("rejects a CV body that is neither v1 nor version 2 as Invalid content", () => {
+  it("says Invalid content for a versioned body and the zod issue for a version-less body", () => {
     const version = decodePaperContent("cv", 1, { version: 3 })
     const header = decodePaperContent("cv", 1, { version: 2, header: {} })
-    const v1 = decodePaperContent("cv", 1, { name: "nope" })
-    for (const result of [version, header, v1]) {
+    for (const result of [version, header]) {
       assert.equal(result.ok, false)
       if (result.ok) continue
       assert.equal(result.message, "Invalid content")
     }
+    const versionLess = decodePaperContent("cv", 1, { name: 5 })
+    assert.equal(versionLess.ok, false)
+    if (versionLess.ok) return
+    assert.equal(
+      versionLess.message,
+      'Invalid option: expected one of "internship"|"product"|"service"|"academic"|"photo"'
+    )
   })
 })

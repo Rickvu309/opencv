@@ -1,10 +1,4 @@
-import {
-  blocksToPreviewModel,
-  emptyCvDocument,
-  mergeCodecIntoBlocks,
-  previewToCvDocument,
-  type CvBlockDocument,
-} from "@workspace/domain"
+import { emptyCvDocument, type CvBlockDocument } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
 
 import {
@@ -56,7 +50,7 @@ const v1Fixture = {
 }
 
 describe("version 2 CV documents", () => {
-  it("stores version 2 on create and still accepts a v1 replace", async () => {
+  it("stores version 1 on create and still accepts a v1 replace", async () => {
     const { db, client } = await createMigratedTestDb()
     const app = createTestApp(db)
     const { cookie } = await signUp(app, {
@@ -73,26 +67,12 @@ describe("version 2 CV documents", () => {
     expect(createdRes.status).toBe(200)
     const created = await jsonOf(createdRes)
     const docId = String(created.data?.id)
-    expect(created.data?.document?.version).toBe(2)
+    expect(created.data?.document?.version).toBeUndefined()
 
     const readRes = await app.request(`/api/paper/${docId}`, { headers })
     expect(readRes.status).toBe(200)
     const read = await jsonOf(readRes)
-    expect(read.data?.document?.version).toBe(2)
-    expect(read.data?.document).toMatchObject({
-      header: {
-        name: "",
-        email: "",
-        phone: "",
-        city: "",
-        linkedin: "",
-      },
-      sections: [
-        { kind: "experience" },
-        { kind: "education" },
-        { kind: "skills" },
-      ],
-    })
+    expect(read.data?.document).toEqual(emptyCvDocument())
 
     const replaceRes = await app.request("/api/commands/paper.replace", {
       method: "POST",
@@ -115,7 +95,7 @@ describe("version 2 CV documents", () => {
     await client.close()
   })
 
-  it("stores a merged version 2 document and rejects a body that is neither", async () => {
+  it("reads a replaced version 2 body unchanged and rejects the other shapes", async () => {
     const { db, client } = await createMigratedTestDb()
     const app = createTestApp(db)
     const { cookie } = await signUp(app, {
@@ -159,11 +139,6 @@ describe("version 2 CV documents", () => {
         },
       ],
     }
-    const edited = previewToCvDocument(
-      blocksToPreviewModel(stored, "internship")
-    )
-    edited.summary = "Ships interview notes.X"
-    const output = mergeCodecIntoBlocks(stored, edited)
     const replaceRes = await app.request("/api/commands/paper.replace", {
       method: "POST",
       headers,
@@ -171,32 +146,21 @@ describe("version 2 CV documents", () => {
         input: {
           docId,
           contentVersion: created.data?.contentVersion,
-          document: output,
+          document: stored,
         },
       }),
     })
     expect(replaceRes.status).toBe(200)
+    const replaced = (await replaceRes.json()) as {
+      data?: { contentVersion?: number; document?: CvBlockDocument }
+    }
+    expect(replaced.data?.document).toEqual(stored)
     const readRes = await app.request(`/api/paper/${docId}`, { headers })
     const read = (await readRes.json()) as {
-      data?: {
-        document?: {
-          version?: number
-          sections?: { id: string; blocks: { text?: string }[] }[]
-        }
-      }
+      data?: { document?: CvBlockDocument }
     }
-    expect(read.data?.document?.version).toBe(2)
-    expect(JSON.stringify(read.data?.document)).toContain(
-      "Ships interview notes.X"
-    )
-    expect(
-      read.data?.document?.sections?.find((section) => section.id === "sec-act")
-        ?.blocks[0]?.text
-    ).toBe("Debate club")
-    expect(
-      read.data?.document?.sections?.find((section) => section.id === "sec-aw")
-        ?.blocks[0]?.text
-    ).toBe("Dean list")
+    expect(read.data?.document).toEqual(stored)
+    const versionAfter = replaced.data?.contentVersion
 
     const rejected = await app.request("/api/commands/paper.replace", {
       method: "POST",
@@ -204,7 +168,7 @@ describe("version 2 CV documents", () => {
       body: JSON.stringify({
         input: {
           docId,
-          contentVersion: (created.data?.contentVersion ?? 1) + 1,
+          contentVersion: versionAfter,
           document: { version: 3 },
         },
       }),
@@ -223,7 +187,7 @@ describe("version 2 CV documents", () => {
       body: JSON.stringify({
         input: {
           docId,
-          contentVersion: (created.data?.contentVersion ?? 1) + 1,
+          contentVersion: versionAfter,
           document: { version: 2, header: {} },
         },
       }),
@@ -231,6 +195,25 @@ describe("version 2 CV documents", () => {
     expect(header.status).toBe(400)
     await expect(header.json()).resolves.toMatchObject({
       error: { code: "VALIDATION_ERROR", message: "Invalid content" },
+    })
+    const versionLess = await app.request("/api/commands/paper.replace", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        input: {
+          docId,
+          contentVersion: versionAfter,
+          document: { name: 5 },
+        },
+      }),
+    })
+    expect(versionLess.status).toBe(400)
+    await expect(versionLess.json()).resolves.toMatchObject({
+      error: {
+        code: "VALIDATION_ERROR",
+        message:
+          'Invalid option: expected one of "internship"|"product"|"service"|"academic"|"photo"',
+      },
     })
     await client.close()
   })

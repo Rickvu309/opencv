@@ -53,7 +53,7 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
       undoAssert: async (result) => {
         await undo(result)
         const doc = await paperOf(ctx.docId)
-        expect(text(record(record(doc, "document"), "header"), "name")).toBe("")
+        expect(text(record(doc, "document"), "name")).toBe("")
       },
     },
     {

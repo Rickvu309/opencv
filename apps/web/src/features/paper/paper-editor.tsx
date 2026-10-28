@@ -1,11 +1,10 @@
 import { useQueryClient } from "@tanstack/react-query"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import {
   blocksToPreviewModel,
   emptyCvDocument,
   isCvBlockDocument,
   isCvDocument,
-  mergeCodecIntoBlocks,
   paperDocNameSchema,
   type CvDocument,
   type PaperPages,
@@ -77,15 +76,14 @@ export function PaperCvEditor({
   const [favorite, setFavorite] = useState(false)
   const [templateId, setTemplateId] = useState(initial.templateId)
   const [galleryOpen, setGalleryOpen] = useState(false)
-  const loadedDocument = useRef(initial.document)
-  const { schedule, adopt, versionRef } = usePaperAutosave<CvDocument>({
+  const [source, setSource] = useState(initial.document)
+  const blockMode = isCvBlockDocument(source)
+  const { schedule, adopt } = usePaperAutosave<CvDocument>({
     docId: initial.id,
     initialVersion: initial.contentVersion,
-    toDocument: (next) =>
-      isCvBlockDocument(loadedDocument.current)
-        ? mergeCodecIntoBlocks(loadedDocument.current, next)
-        : next,
-    onSaved: () => {
+    toDocument: (next) => next,
+    onSaved: (saved) => {
+      adopt(saved.contentVersion)
       setUpdatedAt(new Date().toISOString())
       setConflict(false)
     },
@@ -149,9 +147,9 @@ export function PaperCvEditor({
         onToolResult: (tool) => {
           if (tool === "paper.replace") {
             void getPaper(initial.id).then((next) => {
-              loadedDocument.current = next.document
+              setSource(next.document)
               setCv(cvOf(next.document, next.templateId))
-              versionRef.current = next.contentVersion
+              adopt(next.contentVersion)
             })
           }
         },
@@ -198,7 +196,7 @@ export function PaperCvEditor({
   async function reload() {
     try {
       const next = await getPaper(initial.id)
-      loadedDocument.current = next.document
+      setSource(next.document)
       adopt(next.contentVersion)
       setTemplateId(next.templateId)
       setCv(cvOf(next.document, next.templateId))
@@ -343,10 +341,16 @@ export function PaperCvEditor({
           </div>
         </div>
       ) : null}
+      {blockMode ? (
+        <p className="text-sm text-muted-foreground">
+          This CV uses blocks. The block editor is coming.
+        </p>
+      ) : null}
       <div data-template={previewTemplate(templateId)} className="min-w-0">
         <PaperCvSurface
           data={cv}
           onChange={(next) => {
+            if (blockMode) return
             setCv(next)
             schedule(next)
           }}

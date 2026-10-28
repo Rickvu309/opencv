@@ -174,7 +174,7 @@ describe("version 2 preview", () => {
     expect(seen[0]?.skill).toEqual(["Interviews", "PRDs"])
   })
 
-  it("draws activities and awards on the share page", async () => {
+  it("draws activities and awards on every share layout", async () => {
     const blocks = cvCodecToBlocks(fixture)
     blocks.sections.push(
       {
@@ -188,22 +188,39 @@ describe("version 2 preview", () => {
         blocks: [{ id: "aw-1", type: "text", text: "Dean list" }],
       }
     )
-    vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
-      const url = String(input)
-      if (url.includes("/api/paper/shared/tok")) {
-        return Promise.resolve(Response.json({ ok: true, data: view(blocks) }))
-      }
-      return Promise.resolve(Response.json({ ok: true, data: {} }))
-    })
-    render(<PaperSharePage />)
-    expect(
-      await screen.findByRole("heading", { name: "Lan CV" })
-    ).toBeInTheDocument()
-    expect(screen.getByText("Debate club")).toBeInTheDocument()
-    expect(screen.getByText("Dean list")).toBeInTheDocument()
-    expect(
-      screen.getByRole("heading", { name: "Activities" })
-    ).toBeInTheDocument()
-    expect(screen.getByRole("heading", { name: "Awards" })).toBeInTheDocument()
+    const layouts = [
+      "simple",
+      "modern",
+      "compact",
+      "academic",
+      "with-photo",
+    ] as const
+    for (const templateId of layouts) {
+      cleanup()
+      vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
+        const url = String(input)
+        if (url.includes("/api/paper/shared/tok")) {
+          return Promise.resolve(
+            Response.json({
+              ok: true,
+              data: { ...view(blocks), templateId },
+            })
+          )
+        }
+        return Promise.resolve(Response.json({ ok: true, data: {} }))
+      })
+      render(<PaperSharePage />)
+      expect(
+        await screen.findByRole("heading", { name: "Lan CV" })
+      ).toBeInTheDocument()
+      expect(screen.getByText("Debate club")).toBeInTheDocument()
+      expect(screen.getByText("Dean list")).toBeInTheDocument()
+      expect(
+        screen.getByRole("heading", { name: "Activities" })
+      ).toBeInTheDocument()
+      expect(
+        screen.getByRole("heading", { name: "Awards" })
+      ).toBeInTheDocument()
+    }
   })
 })

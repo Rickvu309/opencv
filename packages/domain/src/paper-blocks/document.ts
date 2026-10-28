@@ -1,37 +1,32 @@
 import { z } from "zod"
 
-import { bulletedListBlock } from "./blocks/bulleted-list.js"
-import { dividerBlock } from "./blocks/divider.js"
-import { educationEntryBlock } from "./blocks/education-entry.js"
-import { experienceEntryBlock } from "./blocks/experience-entry.js"
-import { headingBlock } from "./blocks/heading.js"
-import { numberedListBlock } from "./blocks/numbered-list.js"
-import { skillsGroupBlock } from "./blocks/skills-group.js"
-import { textBlock } from "./blocks/text.js"
 import { blockRegistry } from "./registry.js"
 import { blockIdSchema } from "./schema.js"
 
-type BlockSchemaTuple = [
-  typeof textBlock.schema,
-  typeof headingBlock.schema,
-  typeof bulletedListBlock.schema,
-  typeof numberedListBlock.schema,
-  typeof dividerBlock.schema,
-  typeof experienceEntryBlock.schema,
-  typeof educationEntryBlock.schema,
-  typeof skillsGroupBlock.schema,
-]
+type SchemaEntry = { readonly schema: z.ZodType }
+
+type SchemasOf<T extends readonly SchemaEntry[]> = {
+  [I in keyof T]: T[I]["schema"]
+}
+
+function registrySchemas<const T extends readonly SchemaEntry[]>(entries: T) {
+  return entries.map((entry) => entry.schema) as SchemasOf<T>
+}
+
+const blockSchemas = registrySchemas(blockRegistry)
 
 /** A discriminated union of whatever entries you pass. A filtered copy drops that type. */
-export function cvBlockSchemaFrom(entries: readonly { schema: z.ZodType }[]) {
-  const schemas = entries.map((entry) => entry.schema)
+export function cvBlockSchemaFrom<const T extends readonly SchemaEntry[]>(
+  entries: T
+) {
+  const schemas = registrySchemas(entries)
   if (schemas.length < 2) {
     throw new Error("A block schema needs two types")
   }
-  return z.discriminatedUnion("type", schemas as unknown as BlockSchemaTuple)
+  return z.discriminatedUnion("type", schemas as typeof blockSchemas)
 }
 
-export const cvBlockSchema = cvBlockSchemaFrom(blockRegistry)
+export const cvBlockSchema = z.discriminatedUnion("type", blockSchemas)
 export type CvBlock = z.infer<typeof cvBlockSchema>
 
 export const cvSectionKindSchema = z.enum([

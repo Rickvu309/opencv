@@ -11,7 +11,6 @@ import { textBlock } from "./blocks/text.js"
 import type {
   BlockRegistryEntry,
   BlockShape,
-  BlockType,
   PreviewFragment,
 } from "./types.js"
 
@@ -22,24 +21,24 @@ type RawEntry<T extends BlockShape> = {
   slash?: BlockRegistryEntry["slash"]
   print: (block: T) => PreviewFragment
   plainText: (block: T) => string
-  turnInto: readonly BlockType[]
+  turnInto: readonly string[]
 }
 
-function defineBlock<const T extends BlockShape>(
-  entry: RawEntry<T>
-): RawEntry<T> & BlockRegistryEntry {
+function defineBlock<const T extends BlockShape, S extends ZodType<T>>(
+  entry: Omit<RawEntry<T>, "schema"> & { schema: S }
+) {
   return {
     type: entry.type,
-    schema: entry.schema as ZodType<T> & ZodType<BlockShape>,
+    schema: entry.schema,
     empty: () => entry.empty(),
     slash: entry.slash,
-    print: (block) => entry.print(block as T),
-    plainText: (block) => entry.plainText(block as T),
+    print: (block: BlockShape) => entry.print(block as T),
+    plainText: (block: BlockShape) => entry.plainText(block as T),
     turnInto: entry.turnInto,
   }
 }
 
-export const blockRegistry: readonly BlockRegistryEntry[] = [
+export const blockRegistry = [
   defineBlock(textBlock),
   defineBlock(headingBlock),
   defineBlock(bulletedListBlock),
@@ -48,24 +47,28 @@ export const blockRegistry: readonly BlockRegistryEntry[] = [
   defineBlock(experienceEntryBlock),
   defineBlock(educationEntryBlock),
   defineBlock(skillsGroupBlock),
-]
+] as const
+
+export type BlockType = (typeof blockRegistry)[number]["type"]
 
 export const BLOCK_TYPES: readonly BlockType[] = blockRegistry.map(
   (entry) => entry.type
 )
 
-const byType = new Map(blockRegistry.map((entry) => [entry.type, entry]))
+const byType = new Map<BlockType, (typeof blockRegistry)[number]>(
+  blockRegistry.map((entry) => [entry.type, entry])
+)
 
-export function blockEntry(type: BlockType): BlockRegistryEntry {
+export function blockEntry(type: BlockType): (typeof blockRegistry)[number] {
   const entry = byType.get(type)
   if (!entry) throw new Error(`Unknown block type ${type}`)
   return entry
 }
 
 export function printBlock(block: BlockShape): PreviewFragment {
-  return blockEntry(block.type).print(block)
+  return blockEntry(block.type as BlockType).print(block)
 }
 
 export function plainTextOf(block: BlockShape): string {
-  return blockEntry(block.type).plainText(block)
+  return blockEntry(block.type as BlockType).plainText(block)
 }

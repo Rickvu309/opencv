@@ -56,8 +56,10 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe("CV editor version 2 save", () => {
-  it("keeps version 2, the typed summary, and activities and awards", async () => {
+const NOTICE = "This CV uses blocks. The block editor is coming."
+
+describe("CV editor version 2", () => {
+  it("shows the block notice and does not save a field edit", async () => {
     const document: CvBlockDocument = {
       version: 2,
       header: {
@@ -87,18 +89,9 @@ describe("CV editor version 2 save", () => {
         },
       ],
     }
-    const bodies: {
-      document?: {
-        version?: number
-        sections?: { id: string; kind: string; blocks: { text?: string }[] }[]
-      }
-    }[] = []
-    vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = String(input)
-      if (url.includes("/api/commands/paper.replace")) {
-        bodies.push(inputOf(init))
-        return Promise.resolve(ok({ ...record, contentVersion: 2 }))
-      }
+    const calls: string[] = []
+    vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
+      calls.push(String(input))
       return Promise.resolve(ok({}))
     })
     render(
@@ -108,6 +101,7 @@ describe("CV editor version 2 save", () => {
         onBack={() => undefined}
       />
     )
+    expect(screen.getByText(NOTICE)).toBeInTheDocument()
     expect(screen.getByText("Debate club")).toBeInTheDocument()
     expect(screen.getByText("Dean list")).toBeInTheDocument()
     const summary = screen.getByRole("textbox", { name: "Summary" })
@@ -117,16 +111,86 @@ describe("CV editor version 2 save", () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(700)
     })
-    const saved = bodies[0]?.document
-    expect(saved?.version).toBe(2)
-    expect(JSON.stringify(saved)).toContain("Ships interview notes.X")
-    expect(
-      saved?.sections?.find((section) => section.id === "sec-act")?.blocks[0]
-        ?.text
-    ).toBe("Debate club")
-    expect(
-      saved?.sections?.find((section) => section.id === "sec-aw")?.blocks[0]
-        ?.text
-    ).toBe("Dean list")
+    expect(calls.some((url) => url.includes("/api/commands/"))).toBe(false)
+  })
+
+  it("saves the keystroke after Fit at the Coach version with the Coach fields", async () => {
+    const coach = {
+      ...emptyCvDocument(),
+      name: "Ada Verify",
+      summary: "Coach summary",
+      experience: [
+        {
+          role: "Coach role",
+          company: "UIT",
+          period: "2024",
+          bullets: ["Ran interviews"],
+        },
+      ],
+    }
+    const replaces: {
+      contentVersion?: number
+      document?: {
+        summary?: string
+        experience?: { role?: string }[]
+      }
+    }[] = []
+    const turn =
+      'event: tool-result\ndata: {"toolCallId":"t","name":"paper.replace","summary":"Saved","ok":true,"result":{"ok":true,"data":{}}}\n\n'
+    vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      if (url.includes("/api/commands/chat.create")) {
+        return Promise.resolve(ok({ id: "chat-1" }))
+      }
+      if (url.includes("/api/chats/chat-1/turns")) {
+        return Promise.resolve(new Response(turn, { status: 200 }))
+      }
+      if (url.includes(`/api/paper/${record.id}`)) {
+        return Promise.resolve(
+          ok({ ...record, contentVersion: 5, document: coach })
+        )
+      }
+      if (url.includes("/api/commands/paper.replace")) {
+        replaces.push(inputOf(init))
+        return Promise.resolve(
+          ok({ ...record, contentVersion: 6, document: coach })
+        )
+      }
+      return Promise.resolve(ok({}))
+    })
+    render(
+      <PaperCvEditor
+        initial={record}
+        pages={pages(2)}
+        onBack={() => undefined}
+      />
+    )
+    const summary = screen.getByRole("textbox", { name: "Summary" })
+    vi.useFakeTimers()
+    summary.textContent = "Queued before fit"
+    fireEvent.input(summary)
+    fireEvent.click(screen.getByRole("button", { name: "Fit to one page" }))
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0)
+    })
+    expect(screen.getByRole("textbox", { name: "Role" }).textContent).toBe(
+      "Coach role"
+    )
+    expect(replaces).toEqual([])
+
+    summary.textContent = "Coach summary X"
+    fireEvent.input(summary)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(700)
+    })
+    expect(replaces).toEqual([
+      expect.objectContaining({
+        contentVersion: 5,
+        document: expect.objectContaining({
+          summary: "Coach summary X",
+          experience: [expect.objectContaining({ role: "Coach role" })],
+        }),
+      }),
+    ])
   })
 })

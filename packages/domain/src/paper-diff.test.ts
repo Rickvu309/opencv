@@ -69,4 +69,15 @@ describe("diffPaperContent version 2", () => {
     const hunks = diffPaperContent("cv", before, after)
     assert.ok(hunks.some((hunk) => hunk.section === "Summary"))
   })
+
+  it("diffs a version 1 document against a version 2 document", () => {
+    const before = fixture()
+    const after = cvCodecToBlocks({ ...before, summary: "A new summary." })
+    const hunks = diffPaperContent("cv", before, after)
+    const changed = hunks.flatMap((hunk) =>
+      hunk.lines.filter((line) => line.kind !== "eq").map((line) => line.text)
+    )
+    assert.ok(changed.includes("A new summary."))
+    assert.ok(hunks.some((hunk) => hunk.section === "Summary"))
+  })
 })
