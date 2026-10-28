@@ -13,6 +13,7 @@ import {
   coachModelForModeFromEnv,
   coachRuntimeModeFromEnv,
   databaseUrlFromEnv,
+  logAuthMailFromEnv,
   dbDriverFromEnv,
   pgliteDataDirFromEnv,
   openRouterApiKeyFromEnv,
@@ -20,6 +21,21 @@ import {
   sessionSecretFromEnv,
   webOriginsFromEnv,
 } from "./config.js"
+
+describe("logAuthMailFromEnv", () => {
+  it.each([
+    [{}, true],
+    [{ AUTH_URL: "http://localhost:4465" }, true],
+    [{ AUTH_URL: "http://127.0.0.1:4465" }, true],
+    [{ AUTH_URL: "http://[::1]:4465" }, true],
+    [{ NODE_ENV: "production" }, false],
+    [{ NODE_ENV: "", AUTH_URL: "https://api.opencv.me" }, false],
+    [{ AUTH_URL: "https://api.opencv.me" }, false],
+    [{ AUTH_URL: "invalid" }, false],
+  ])("uses log delivery only for local development: %j", (env, expected) => {
+    expect(logAuthMailFromEnv(env)).toBe(expected)
+  })
+})
 
 describe("webOriginsFromEnv", () => {
   it("reads a comma-separated WEB_ORIGINS list, ignoring blanks and padding", () => {
