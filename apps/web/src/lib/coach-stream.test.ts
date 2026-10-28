@@ -1,4 +1,4 @@
-import { QueryClient } from "@tanstack/react-query"
+import { QueryClient, QueryObserver } from "@tanstack/react-query"
 import { parseJobId } from "@workspace/domain"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
@@ -25,6 +25,41 @@ const ok = { ok: true, data: {} }
 afterEach(() => vi.unstubAllGlobals())
 
 describe("streamChatTurn", () => {
+  it("refreshes the final remaining turn when Stop precedes the usage event", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, staleTime: Infinity } },
+    })
+    const key = queryKey({ query: "coach.usage" })
+    let remaining = 1
+    const queryFn = async () => ({ day: { capped: true, remaining } })
+    await queryClient.fetchQuery({ queryKey: key, queryFn })
+    const observer = new QueryObserver(queryClient, { queryKey: key, queryFn })
+    const unsubscribe = observer.subscribe(() => {})
+    const controller = new AbortController()
+    vi.stubGlobal("fetch", async () => {
+      remaining = 0
+      return new Response(sse(["text-delta", { text: "Partial reply" }]))
+    })
+    try {
+      await streamChatTurn({
+        queryClient,
+        chatId: "c",
+        body: { text: "Hello" },
+        signal: controller.signal,
+        onEvent: () => controller.abort(),
+      }).catch((error: unknown) => {
+        expect(error).toMatchObject({ name: "AbortError" })
+      })
+      await vi.waitFor(() =>
+        expect(queryClient.getQueryData(key)).toEqual({
+          day: { capped: true, remaining: 0 },
+        })
+      )
+    } finally {
+      unsubscribe()
+    }
+  })
+
   it("refreshes the Apply reads when the Coach moves a job", async () => {
     const queryClient = new QueryClient()
     const list = queryKey({ query: "job.list" })

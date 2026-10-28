@@ -37,10 +37,6 @@ export function withAbortedCoach({
 }: KeepAbortedInput): ChatRecord | null {
   const now = new Date().toISOString()
   const text = textFromParts(parts)
-  if (prev?.messages.some((m) => m.role === "coach" && m.text === text)) {
-    return null
-  }
-
   const existing = prev?.messages ?? []
   const addUser =
     user != null &&

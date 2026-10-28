@@ -215,7 +215,13 @@ export function useCoachTurn({
         }
         const detail = await hydrateChat(chatKey)
         if (stale()) return
-        if (!detail && parts.length > 0) keepStreamedCoach(chatKey, user, parts)
+        const hasSavedReply = detail?.messages.some(
+          (message) =>
+            message.role === "coach" &&
+            !prefix.some((previous) => previous.id === message.id)
+        )
+        if (!hasSavedReply && parts.length > 0)
+          keepStreamedCoach(chatKey, user, parts)
         dispatch({ type: "abort", messages: settled(chatKey) })
       }
       const handlers: CoachStreamHandlers = {

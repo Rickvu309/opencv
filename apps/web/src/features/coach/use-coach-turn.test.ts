@@ -1,3 +1,4 @@
+import { chatDetailSchema } from "@workspace/domain"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { act, renderHook, waitFor } from "@testing-library/react"
 import { createElement, useState, type ReactNode } from "react"
@@ -92,55 +93,87 @@ describe("useCoachTurn turn lifecycle", () => {
   beforeEach(() => installChatApiMock())
   afterEach(() => vi.unstubAllGlobals())
 
-  it("regenerates after an aborted send without duplicating the new reply", async () => {
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    })
-    const wrapper = ({ children }: { children: ReactNode }) =>
-      createElement(QueryClientProvider, { client: queryClient }, children)
-    const { result } = renderHook(
-      () => {
-        const [chatId, setChatId] = useState<string | null>(null)
-        return useCoachTurn({
-          chatId,
-          setChatId,
-          titleForCreate: (text) => text,
-        })
-      },
-      { wrapper }
-    )
-    const coachTexts = () =>
-      result.current.messages
-        .filter((message) => message.role === "coach")
-        .map((message) => message.text)
+  it.each([false, true])(
+    "retains one aborted reply and regenerates with delayed persistence %s",
+    async (delayed) => {
+      const queryClient = new QueryClient({
+        defaultOptions: { queries: { retry: false } },
+      })
+      const wrapper = ({ children }: { children: ReactNode }) =>
+        createElement(QueryClientProvider, { client: queryClient }, children)
+      const { result } = renderHook(
+        () => {
+          const [chatId, setChatId] = useState<string | null>(null)
+          return useCoachTurn({
+            chatId,
+            setChatId,
+            titleForCreate: (text) => text,
+          })
+        },
+        { wrapper }
+      )
+      const coachTexts = () =>
+        result.current.messages
+          .filter((message) => message.role === "coach")
+          .map((message) => message.text)
 
-    const stream = scriptCoachStream({
-      gated: true,
-      texts: ["Partial reply", " never shown"],
-    })
-    act(() => {
-      result.current.send("Stop me")
-    })
-    expect(result.current.phase).toBe("waiting")
-    stream.release(2)
-    await waitFor(() => expect(result.current.phase).toBe("streaming"))
+      const stream = scriptCoachStream({
+        gated: true,
+        texts: ["Partial reply", " never shown"],
+      })
+      act(() => {
+        result.current.send("Stop me")
+      })
+      expect(result.current.phase).toBe("waiting")
+      stream.release(2)
+      await waitFor(() => expect(result.current.phase).toBe("streaming"))
 
-    act(() => result.current.stop())
-    await waitFor(() => expect(result.current.phase).toBe("idle"))
-    expect(coachTexts()).toEqual(["Partial reply"])
-    expect(result.current.error).toBeNull()
+      if (delayed) {
+        let hideReply = true
+        vi.stubGlobal(
+          "fetch",
+          async (input: RequestInfo | URL, init?: RequestInit) => {
+            const response = await chatApiFetchOrThrow(input, init)
+            const url = typeof input === "string" ? input : String(input)
+            if (
+              hideReply &&
+              (init?.method ?? "GET") === "GET" &&
+              /\/api\/chats\/[^/?]+$/.test(new URL(url, "http://x").pathname)
+            ) {
+              hideReply = false
+              const envelope: { data: unknown } = await response.json()
+              const detail = chatDetailSchema.parse(envelope.data)
+              return Response.json({
+                ok: true,
+                data: {
+                  ...detail,
+                  messages: detail.messages.filter(
+                    (message) => message.role !== "coach"
+                  ),
+                },
+              })
+            }
+            return response
+          }
+        )
+      }
+      act(() => result.current.stop())
+      await waitFor(() => expect(result.current.phase).toBe("idle"))
+      expect(coachTexts()).toEqual(["Partial reply"])
+      expect(result.current.error).toBeNull()
 
-    scriptCoachStream({ texts: ["Fresh reply"] })
-    act(() => {
-      result.current.regenerate()
-    })
-    await waitFor(() => expect(coachTexts()).toContain("Fresh reply"))
-    await waitFor(() => expect(result.current.phase).toBe("idle"))
-    expect(coachTexts()).toEqual(["Partial reply", "Fresh reply"])
-    const ids = result.current.messages.map((message) => message.id)
-    expect(new Set(ids).size).toBe(ids.length)
-    expect(ids).not.toContain(STREAMING_COACH_ID)
-  })
+      scriptCoachStream({ texts: ["Fresh reply"] })
+      act(() => {
+        result.current.regenerate()
+      })
+      await waitFor(() => expect(coachTexts()).toContain("Fresh reply"))
+      await waitFor(() => expect(result.current.phase).toBe("idle"))
+      expect(coachTexts()).toEqual(["Partial reply", "Fresh reply"])
+      const ids = result.current.messages.map((message) => message.id)
+      expect(new Set(ids).size).toBe(ids.length)
+      expect(ids).not.toContain(STREAMING_COACH_ID)
+    }
+  )
 
   it("keeps the streamed reply on screen when re-reading the chat fails", async () => {
     const queryClient = new QueryClient({
