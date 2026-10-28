@@ -320,9 +320,11 @@ export function PaperLetterEditor({
     },
   })
   const scheduleRef = useRef(schedule)
-  scheduleRef.current = schedule
   const adoptRef = useRef(adopt)
-  adoptRef.current = adopt
+  useEffect(() => {
+    scheduleRef.current = schedule
+    adoptRef.current = adopt
+  }, [schedule, adopt])
   const caretRef = useRef<number | null>(null)
   const onLetterInput = useCallback(() => {
     const node = editorRef.current
@@ -342,7 +344,7 @@ export function PaperLetterEditor({
     if (doc.contentVersion === versionRef.current && next === markdown) return
     adoptRef.current(doc.contentVersion)
     setMarkdown(next)
-  }, [doc, markdown])
+  }, [doc, markdown, versionRef])
 
   useEffect(() => {
     const node = editorRef.current
