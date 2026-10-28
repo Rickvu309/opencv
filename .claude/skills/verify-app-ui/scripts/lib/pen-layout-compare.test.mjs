@@ -194,3 +194,20 @@ test("a grey that still fails AA does not get the contrast floor", () => {
   const pen = small("rgba(138, 138, 142, 1)")
   assert.equal(colorMatches(pen, small("rgba(89, 89, 91, 0.8)"), tokens), false)
 })
+
+test("a pen grey that fails AA does not pass by being copied exactly", () => {
+  const pen = small("rgba(138, 138, 142, 1)")
+  assert.equal(
+    colorMatches(pen, small("rgba(138, 138, 142, 1)"), tokens),
+    false
+  )
+})
+
+test("white text on a dark fill is judged against that fill", () => {
+  const onDark = {
+    ...small("rgba(255, 255, 255, 1)"),
+    background: "rgba(17, 17, 17, 1)",
+  }
+  const app = { ...onDark, background: "rgba(26, 26, 26, 1)" }
+  assert.equal(colorMatches(onDark, app, tokens), true)
+})

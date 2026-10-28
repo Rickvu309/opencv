@@ -48,41 +48,55 @@ export function colorDistance(a, b) {
   return Math.hypot(left.L - right.L, left.a - right.a, left.b - right.b)
 }
 
-const luminance = (css) => {
-  const { r, g, b, a } = parseRgba(css)
-  const lin = (v) => {
-    const unit = (v * a + 255 * (1 - a)) / 255
-    return unit <= 0.04045 ? unit / 12.92 : ((unit + 0.055) / 1.055) ** 2.4
-  }
-  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b)
+const WHITE = "rgba(255, 255, 255, 1)"
+
+const over = (css, under = WHITE) => {
+  const top = parseRgba(css)
+  const base = parseRgba(under)
+  return [top.r, top.g, top.b].map(
+    (v, i) => v * top.a + [base.r, base.g, base.b][i] * (1 - top.a)
+  )
 }
 
-export const contrastOnWhite = (css) => 1.05 / (luminance(css) + 0.05)
+const luminance = (rgb) => {
+  const lin = (v) => {
+    const unit = v / 255
+    return unit <= 0.04045 ? unit / 12.92 : ((unit + 0.055) / 1.055) ** 2.4
+  }
+  const [r, g, b] = rgb.map(lin)
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+
+// Contrast of a text colour on the nearest solid background behind it.
+export function contrast(color, background = WHITE) {
+  const base = `rgba(${over(background).join(", ")}, 1)`
+  const pair = [luminance(over(color, base)), luminance(over(base))]
+  return (Math.max(...pair) + 0.05) / (Math.min(...pair) + 0.05)
+}
 
 // WCAG AA: 3:1 for large text (24px, or 18.66px at weight 700), 4.5:1 below.
 const contrastNeed = ({ fontSize, fontWeight }) =>
   fontSize >= 24 || (fontSize >= 18.66 && fontWeight >= 700) ? 3 : 4.5
 
 export function colorMatches(want, got, tokens = {}) {
+  const need = contrastNeed(want)
+  const shipped = contrast(got.color, got.background)
+  // A pen colour too faint for AA must not ship as drawn. The app colour
+  // passes when it is about the lightest colour that meets AA.
+  if (contrast(want.color, want.background) < need)
+    return (
+      shipped >= need &&
+      shipped <= need * TOLERANCE.contrastHeadroom &&
+      colorDistance(want.color, got.color) <= TOLERANCE.contrastFloor
+    )
   if (colorDistance(want.color, got.color) <= TOLERANCE.color) return true
   const nearest = Object.values(tokens)
     .map((token) => ({ token, away: colorDistance(want.color, token) }))
     .sort((left, right) => left.away - right.away)[0]
-  if (
+  return Boolean(
     nearest &&
     nearest.away <= TOLERANCE.token &&
     colorDistance(got.color, nearest.token) <= 0.01
-  )
-    return true
-  // A pen colour too faint for AA on white must not ship as drawn. The app
-  // colour passes when it is about the lightest colour that meets AA.
-  const need = contrastNeed(want)
-  const contrast = contrastOnWhite(got.color)
-  return (
-    contrastOnWhite(want.color) < need &&
-    contrast >= need &&
-    contrast <= need * TOLERANCE.contrastHeadroom &&
-    colorDistance(want.color, got.color) <= TOLERANCE.contrastFloor
   )
 }
 

@@ -84,6 +84,13 @@ function probe(args) {
   const pane = document.querySelector(args.pane)
   if (!pane) return { error: `pane ${args.pane} not found` }
   const paneRect = pane.getBoundingClientRect()
+  const background = (element) => {
+    for (let up = element; up; up = up.parentElement) {
+      const color = toRgba(getComputedStyle(up).backgroundColor)
+      if (!color.endsWith(", 0)")) return color
+    }
+    return "rgba(255, 255, 255, 1)"
+  }
   const describe = (element, box) => {
     const style = getComputedStyle(element)
     const spacing = parseFloat(style.letterSpacing)
@@ -99,6 +106,7 @@ function probe(args) {
       letterSpacing: Number.isNaN(spacing) ? 0 : spacing,
       lineHeight: Number.isNaN(lineHeight) ? null : lineHeight,
       color: toRgba(style.color),
+      background: background(element),
       textAlign: ["start", "left"].includes(style.textAlign)
         ? "left"
         : ["end", "right"].includes(style.textAlign)

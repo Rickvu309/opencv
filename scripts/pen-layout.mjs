@@ -61,9 +61,10 @@ function shape(entry) {
     height: round(entry.height),
     fontSize: round(entry.fontSize),
     fontWeight: entry.fontWeight,
-    letterSpacing: round(entry.letterSpacing),
+    letterSpacing: Math.round(entry.letterSpacing * 100) / 100,
     lineHeight: entry.lineHeight == null ? null : round(entry.lineHeight),
     color: entry.color,
+    background: entry.background,
     textAlign: entry.textAlign,
   }
 }
