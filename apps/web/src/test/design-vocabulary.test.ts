@@ -122,6 +122,9 @@ const READABLE_VARIABLES = new Set<string>([
   // Landing hero fluid size, declared in features/landing/landing.css.
   "landing-h1-mobile",
   "landing-h1-desktop",
+  // Per-element entrance stagger the landing figures and copy reveals set
+  // inline as a style custom property; the animation delay reads it.
+  "landing-delay",
 ])
 
 /** CV print variables declared in paper.css, the documented exception. */

@@ -3,13 +3,14 @@ import { Link } from "@tanstack/react-router"
 
 import { OpenCvMark } from "@/features/app-shell/app-logo.tsx"
 
+import { LogoMarquee } from "./figures/oc/logo-marquee.tsx"
+import { Reveal, RevealText } from "./figures/oc/reveal.tsx"
 import { landingButton } from "./landing-button.ts"
 
 import {
   LANDING_CUSTOMERS_LABEL,
   LANDING_CUSTOMERS_LINE,
   LANDING_LOGO_LABEL,
-  LANDING_LOGOS,
   LANDING_PRIMARY_LABEL,
   LANDING_STORIES,
   LANDING_SAMPLE_LABEL,
@@ -19,6 +20,11 @@ import {
 } from "./landing-copy.ts"
 import { LandingFigures } from "./landing-figures.tsx"
 
+const wordCount = (text: string) => text.split(/\s+/).length
+const STATEMENT_STAGGER = 45
+const LEAD_WORDS = wordCount(LANDING_STATEMENT_LEAD)
+const BRAND_WORDS = wordCount(LANDING_STATEMENT_BRAND)
+
 export function LandingLogos() {
   return (
     <section
@@ -26,11 +32,7 @@ export function LandingLogos() {
       aria-labelledby="landing-logos"
       className="landing-section landing-stack landing-logos"
     >
-      <ul className="landing-logo-row">
-        {LANDING_LOGOS.map((name) => (
-          <li key={name}>{name}</li>
-        ))}
-      </ul>
+      <LogoMarquee />
       <h2 id="landing-logos" className="landing-kicker">
         {LANDING_LOGO_LABEL}
       </h2>
@@ -46,13 +48,19 @@ export function LandingStatement() {
       className="landing-section"
     >
       <p id="product-statement" className="landing-statement">
-        <span className="text-foreground">{LANDING_STATEMENT_LEAD}</span>{" "}
+        <RevealText className="text-foreground" text={LANDING_STATEMENT_LEAD} />{" "}
         <OpenCvMark className="landing-statement-mark" />{" "}
-        <span className="landing-statement-rest">
-          {LANDING_STATEMENT_BRAND}
-        </span>{" "}
+        <RevealText
+          className="landing-statement-rest"
+          text={LANDING_STATEMENT_BRAND}
+          delay={LEAD_WORDS * STATEMENT_STAGGER}
+        />{" "}
         <br className="landing-statement-break" />
-        <span className="landing-statement-rest">{LANDING_STATEMENT_REST}</span>
+        <RevealText
+          className="landing-statement-rest"
+          text={LANDING_STATEMENT_REST}
+          delay={(LEAD_WORDS + BRAND_WORDS) * STATEMENT_STAGGER}
+        />
       </p>
     </section>
   )
@@ -148,10 +156,9 @@ export function LandingClose() {
       className="landing-section landing-stack"
     >
       <p className="landing-close">
-        Be the obvious hire. <br />
-        Start today.
+        <RevealText text={"Be the obvious hire.\nStart today."} />
       </p>
-      <div className="landing-close-actions">
+      <Reveal className="landing-close-actions" delay={300}>
         <a
           href={documentHref("/sign-in")}
           className={landingButton({ tone: "primary", size: "close" })}
@@ -165,7 +172,7 @@ export function LandingClose() {
         >
           {LANDING_SAMPLE_LABEL}
         </Link>
-      </div>
+      </Reveal>
     </section>
   )
 }
