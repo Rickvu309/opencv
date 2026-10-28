@@ -2,7 +2,7 @@
 
 `SKILL.md` links here. This file records which code each check reads and the commit where the checks were last confirmed against it.
 
-Sync commit: `ceb07502` (main, #510). The checker printed 30 PASS and 1 FAIL (31, above) there. The checks describe the landing as of that commit.
+Sync commit: `ceb07502` (main, checked in #510). The checker printed 30 PASS and 1 FAIL (31, explained under the baseline in `SKILL.md`) there. The checks describe the landing as of that commit.
 
 Component files in this table are under `apps/web/src/features/landing/` unless a path is written out.
 

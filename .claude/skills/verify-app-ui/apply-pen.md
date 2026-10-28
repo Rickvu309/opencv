@@ -11,4 +11,4 @@ node scripts/pen-layout.mjs <pen> <frame id> apps/web/src/features/apply/design/
 
 `--driver` makes `verify:pen-layout` skip the layout, since only this script can seed the data and open the dialog. Pen greys that fail AA ship as the lightest AA grey on their surface (`apps/web/src/features/apply/apply-tone.ts`). Positions the product cannot match (a chip for data it does not store) sit in `LAYOUT_EXCEPTIONS` in `scripts/lib/apply-pen-gaps.mjs`, dated and pending the operator.
 
-Sync commit: `ceb07502` (#510). There it printed 15 PASS, 0 FAIL, one line per state from w9-1 to w10-7. It was written at `aa89ba79` (#509); no commit between them changed `features/apply`, `routes/apply.tsx` or the job api. The `kanban.tsx` drag overlay wrapper came in #509 itself.
+Sync commit: `ceb07502` (main, checked in #510). There it printed 15 PASS, 0 FAIL, one line per state from w9-1 to w10-7. It was written at `aa89ba79` (#509); no commit between them changed `features/apply`, `routes/apply.tsx` or the job api. The `kanban.tsx` drag overlay wrapper came in #509 itself.
