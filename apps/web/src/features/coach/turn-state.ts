@@ -1,4 +1,4 @@
-import type { CoachSelection } from "@workspace/domain"
+import type { CoachContextItem, CoachSelection } from "@workspace/domain"
 
 import type { TurnPhase } from "@/features/coach/chat-store-context.ts"
 import type { ChatViewMessage } from "@/features/coach/chat-messages.ts"
@@ -11,6 +11,7 @@ export type SendError = {
   text: string
   local: boolean
   selection?: CoachSelection
+  context?: CoachContextItem[]
 }
 
 export type TurnState =

@@ -1,3 +1,7 @@
+import { useQueryClient } from "@tanstack/react-query"
+import { parseChatId, parsePendingActionId } from "@workspace/domain"
+import { useChatStore } from "./use-chat-store.ts"
+import { refreshReads, runContractCommand } from "@/lib/contract-client.ts"
 import { useState } from "react"
 
 import { Button } from "@workspace/ui/components/button"
@@ -18,10 +22,17 @@ export const UNDO_FAILED_COPY =
 // eslint-disable-next-line react-refresh/only-export-components -- shared with the grouped renderer
 export function toolCardProps(tool: CoachToolPart) {
   const failed = tool.status === "error"
+  const needsApproval = tool.part.approval === "pending"
   return {
-    name: tool.label,
+    name: needsApproval ? `Awaiting approval: ${tool.label}` : tool.label,
     args: { command: tool.name },
-    status: failed ? "error" : tool.status === "done" ? "success" : "running",
+    status: needsApproval
+      ? "running"
+      : failed
+        ? "error"
+        : tool.status === "done"
+          ? "success"
+          : "running",
     result: tool.status === "done" ? tool.part.summary : undefined,
     error: failed ? "Nothing changed." : undefined,
     defaultOpen: failed,
@@ -69,6 +80,12 @@ export function CoachToolExtras({
 
   return (
     <div className="min-w-0 space-y-2 text-xs text-muted-foreground">
+      {part.pendingActionId ? (
+        <CoachApproval
+          id={part.pendingActionId}
+          status={part.approval ?? "pending"}
+        />
+      ) : null}
       {part.ok && part.detail ? <ReceiptDetail detail={part.detail} /> : null}
       {note ? (
         <p className="min-w-0 [overflow-wrap:anywhere] break-words">{note}</p>
@@ -97,6 +114,79 @@ export function CoachToolLine(props: ExtrasProps) {
     <div className="min-w-0 space-y-2">
       <CoachToolCard tool={props.tool} />
       <CoachToolExtras {...props} />
+    </div>
+  )
+}
+
+function CoachApproval({
+  id,
+  status,
+}: {
+  id: string
+  status: "pending" | "approved" | "denied" | "expired"
+}) {
+  const client = useQueryClient()
+  const { activeChatId } = useChatStore()
+  const [working, setWorking] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  async function decide(approve: boolean) {
+    if (working) return
+    setWorking(true)
+    setError(null)
+    try {
+      await runContractCommand(
+        client,
+        approve ? "actions.approve" : "actions.deny",
+        { pendingActionId: parsePendingActionId(id) }
+      )
+      await refreshReads(client, [{ query: "chat.list" }])
+      if (activeChatId)
+        await refreshReads(client, [
+          { query: "chat.get", input: { chatId: parseChatId(activeChatId) } },
+        ])
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Could not update this action. Try again."
+      )
+    } finally {
+      setWorking(false)
+    }
+  }
+  return (
+    <div className="space-y-2">
+      {status === "pending" ? (
+        <>
+          <p>Review this action before it runs.</p>
+          <div className="flex gap-2">
+            <Button
+              size="xs"
+              disabled={working}
+              onClick={() => void decide(true)}
+            >
+              Approve
+            </Button>
+            <Button
+              size="xs"
+              variant="outline"
+              disabled={working}
+              onClick={() => void decide(false)}
+            >
+              Deny
+            </Button>
+          </div>
+        </>
+      ) : (
+        <p>
+          {status === "approved"
+            ? "Approved"
+            : status === "denied"
+              ? "Denied · nothing changed"
+              : "Expired · ask Coach again"}
+        </p>
+      )}
+      {error ? <ErrorBanner variant="inline">{error}</ErrorBanner> : null}
     </div>
   )
 }

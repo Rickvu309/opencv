@@ -15,7 +15,7 @@ export const COACH_MODE_OPTIONS = [
   },
   {
     id: "max" as const,
-    label: "Power",
+    label: "Max",
     helper:
       "Highest quality for hard turns. The smallest daily cap of the three modes.",
   },

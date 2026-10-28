@@ -50,6 +50,8 @@ export function useCoachMode() {
 
   return {
     mode,
+    plan: query.data?.plan ?? "free",
+    enabled: query.data?.agentChat ?? true,
     setMode: (next: CoachMode) => {
       if (next === mode) return
       mutation.mutate(next)

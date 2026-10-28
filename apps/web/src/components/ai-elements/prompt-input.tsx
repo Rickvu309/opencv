@@ -13,6 +13,7 @@ type PromptInputProps = Omit<ComponentProps<"div">, "onSubmit" | "children"> & {
   onSubmit: () => void
   /** Enter does nothing while a turn runs. */
   submitBlocked?: boolean
+  disabled?: boolean
   placeholder: string
   label: string
   tools?: ReactNode
@@ -24,6 +25,7 @@ export function PromptInput({
   onValueChange,
   onSubmit,
   submitBlocked = false,
+  disabled = false,
   placeholder,
   label,
   tools,
@@ -41,6 +43,7 @@ export function PromptInput({
       {...props}
     >
       <InputGroupTextarea
+        disabled={disabled}
         value={value}
         rows={1}
         aria-label={label}
@@ -50,7 +53,7 @@ export function PromptInput({
           if (event.key !== "Enter" || event.shiftKey) return
           if (event.nativeEvent.isComposing) return
           event.preventDefault()
-          if (!submitBlocked) onSubmit()
+          if (!submitBlocked && !disabled) onSubmit()
         }}
         className="max-h-48 min-h-14 px-4 py-3.5 text-base md:text-base"
       />

@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { act, cleanup, fireEvent, screen } from "@testing-library/react"
-import { render } from "@/test/render-with-client.tsx"
+import type { ReactElement } from "react"
+import { render as renderWithClient } from "@/test/render-with-client.tsx"
+import { ChatStoreProvider } from "@/features/coach/chat-store.tsx"
 import {
   emptyCvDocument,
   type PaperPages,
@@ -8,6 +10,17 @@ import {
 } from "@workspace/domain"
 
 import { PaperCvEditor } from "./paper-editor.tsx"
+
+function render(ui: ReactElement) {
+  const wrap = (content: ReactElement) => (
+    <ChatStoreProvider>{content}</ChatStoreProvider>
+  )
+  const view = renderWithClient(wrap(ui))
+  return {
+    ...view,
+    rerender: (next: ReactElement) => view.rerender(wrap(next)),
+  }
+}
 
 const record: PaperView = {
   id: "doc-1",

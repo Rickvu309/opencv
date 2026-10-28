@@ -8,7 +8,7 @@ import {
 
 import { apiStream } from "@/lib/api.ts"
 import { ApiError } from "@/lib/api-error.ts"
-import { refreshQueries } from "@/lib/contract-client.ts"
+import { refreshReads, refreshQueries } from "@/lib/contract-client.ts"
 import { readSseStream } from "@/lib/sse.ts"
 
 function isCommandName(name: string): name is keyof typeof commands {
@@ -55,14 +55,20 @@ export async function streamChatTurn(input: {
     body: JSON.stringify(input.body),
     signal: input.signal,
   })
-  if (!res.body) {
-    throw new ApiError(502, "REQUEST_FAILED", "Coach stream was empty")
-  }
-  const refresh = createToolRefresher(input.queryClient)
-  for await (const wire of readSseStream(res.body, { signal: input.signal })) {
-    const event = parseChatTurnEvent(wire)
-    if (!event) continue
-    refresh(event)
-    input.onEvent(event)
+  try {
+    if (!res.body) {
+      throw new ApiError(502, "REQUEST_FAILED", "Coach stream was empty")
+    }
+    const refresh = createToolRefresher(input.queryClient)
+    for await (const wire of readSseStream(res.body, {
+      signal: input.signal,
+    })) {
+      const event = parseChatTurnEvent(wire)
+      if (!event) continue
+      refresh(event)
+      input.onEvent(event)
+    }
+  } finally {
+    await refreshReads(input.queryClient, [{ query: "coach.usage" }])
   }
 }

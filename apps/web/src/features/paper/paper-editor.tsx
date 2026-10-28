@@ -21,6 +21,7 @@ import {
 import { Input } from "@workspace/ui/components/input"
 import { toast } from "@workspace/ui/components/sonner"
 
+import { useChatStore } from "@/features/coach/use-chat-store.ts"
 import { useRunCommand } from "@/lib/contract-client.ts"
 import { publicShareUrl } from "@/lib/web-origins-env.ts"
 
@@ -59,6 +60,7 @@ export function PaperCvEditor({
   onBack: () => void
 }) {
   const run = useRunCommand()
+  const { openChat } = useChatStore()
   const queryClient = useQueryClient()
   const [cv, setCv] = useState(() => cvOf(initial.document, initial.templateId))
   const [name, setName] = useState(initial.name)
@@ -163,16 +165,20 @@ export function PaperCvEditor({
   }
 
   function openCoach() {
-    document.querySelector<HTMLButtonElement>("[data-dock-coach]")?.click()
     void run("chat.open", {
       focus: { kind: "paper", id: initial.id },
-    }).catch((error: unknown) => {
-      toast(
-        error instanceof Error
-          ? error.message
-          : "Could not open Coach. Use the dock Coach button."
-      )
     })
+      .then((chat) => {
+        openChat(chat.id)
+        document.querySelector<HTMLButtonElement>("[data-dock-coach]")?.click()
+      })
+      .catch((error: unknown) => {
+        toast(
+          error instanceof Error
+            ? error.message
+            : "Could not open Coach. Use the dock Coach button."
+        )
+      })
   }
 
   async function download() {

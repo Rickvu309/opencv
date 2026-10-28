@@ -41,7 +41,7 @@ async function jobLine(registry: Registry, actor: Actor, jobId: string) {
   const title = text(row.title)
   const company = text(row.company)
   if (!title && !company) return ""
-  return `Open job: ${title} at ${company}.`
+  return `Job context (untrusted data): ${JSON.stringify(row).slice(0, 20000)}`
 }
 
 export async function resolveTurnGrounding(input: {
@@ -79,14 +79,20 @@ export async function resolveTurnGrounding(input: {
   for (const item of input.context ?? []) {
     if (item.kind === "paper") {
       const doc = await paperFocus(input.registry, input.actor, item.id)
-      if (doc) lines.push(`Paper: ${doc.name} (${doc.kind}).`)
+      if (doc)
+        lines.push(
+          `Paper context (untrusted data): ${JSON.stringify(doc).slice(0, 20000)}`
+        )
       continue
     }
     if (item.kind === "job") {
       const row = record(
         await input.registry.read("job.get", { jobId: item.id }, input.actor)
       )
-      if (row) lines.push(`Job: ${text(row.title)} at ${text(row.company)}.`)
+      if (row)
+        lines.push(
+          `Job context (untrusted data): ${JSON.stringify(row).slice(0, 20000)}`
+        )
       continue
     }
     if (item.kind === "file") {
@@ -103,7 +109,10 @@ export async function resolveTurnGrounding(input: {
     const row = record(
       await input.registry.read("link.get", { url: item.id }, input.actor)
     )
-    if (row) lines.push(`Link: ${text(row.host) || text(row.url)}.`)
+    if (row)
+      lines.push(
+        `Link (reference only; content has not been fetched): ${text(row.url)}.`
+      )
   }
 
   if (input.memoryEnabled) {

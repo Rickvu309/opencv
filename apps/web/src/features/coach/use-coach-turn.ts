@@ -1,8 +1,10 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { useCallback, useMemo, useReducer, useRef } from "react"
+import { useCallback, useMemo, useReducer, useRef, useState } from "react"
 import {
   appendCoachPart,
   parsePaperId,
+  parseChatId,
+  type CoachContextItem,
   textFromParts,
   type CoachSelection,
   type ChatRecord,
@@ -11,7 +13,7 @@ import {
 
 import { coachSendErrorMessage } from "@/features/coach/coach-error.ts"
 import { useCoachMode } from "@/features/coach/use-coach-mode.ts"
-import { undoActivity } from "@/lib/contract-client.ts"
+import { undoActivity, runContractCommand } from "@/lib/contract-client.ts"
 import {
   createChat,
   getChat,
@@ -40,6 +42,7 @@ import {
 export type CoachSendOptions = {
   retrying?: boolean
   selection?: CoachSelection
+  context?: CoachContextItem[]
 }
 
 export type UseCoachTurnOptions = {
@@ -76,6 +79,7 @@ export function useCoachTurn({
 }: UseCoachTurnOptions) {
   const queryClient = useQueryClient()
   const [state, dispatch] = useReducer(turnReducer, IDLE_TURN)
+  const [step, setStep] = useState<string | null>(null)
   const sendGeneration = useRef(0)
   const abortRef = useRef<AbortController | null>(null)
   const { mode } = useCoachMode()
@@ -159,8 +163,15 @@ export function useCoachTurn({
   }, [])
 
   const stop = useCallback(() => {
-    abortRef.current?.abort()
-  }, [])
+    const controller = abortRef.current
+    if (chatId && controller) {
+      void runContractCommand(queryClient, "coach.stop", {
+        chatId: parseChatId(chatId),
+      })
+        .catch(() => undefined)
+        .finally(() => controller.abort())
+    } else controller?.abort()
+  }, [chatId, queryClient])
 
   const runCoachStream = useCallback(
     async (run: CoachStreamRun) => {
@@ -169,6 +180,7 @@ export function useCoachTurn({
       const controller = new AbortController()
       abortRef.current = controller
       const stale = () => generation !== sendGeneration.current
+      setStep(null)
       dispatch({ type: "start", kind, messages: prefix })
 
       let parts: ChatEntryPart[] = []
@@ -201,12 +213,29 @@ export function useCoachTurn({
           dispatch({ type: "abort", messages: prefix })
           return
         }
-        await hydrateChat(chatKey)
+        const detail = await hydrateChat(chatKey)
         if (stale()) return
-        if (parts.length > 0) keepStreamedCoach(chatKey, user, parts)
+        const previousReplies = prefix.filter(
+          (message) => message.role === "coach"
+        ).length
+        const savedReplies = detail?.messages.filter(
+          (message) => message.role === "coach"
+        ).length
+        const hasSavedReply =
+          savedReplies != null && savedReplies > previousReplies
+        if (!hasSavedReply && parts.length > 0)
+          keepStreamedCoach(chatKey, user, parts)
         dispatch({ type: "abort", messages: settled(chatKey) })
       }
       const handlers: CoachStreamHandlers = {
+        onStep({ label }) {
+          if (!stale())
+            setStep((current) =>
+              current?.split("\n").includes(label)
+                ? current
+                : [current, label].filter(Boolean).join("\n")
+            )
+        },
         onTextDelta({ text }) {
           if (stale()) return
           paint(appendCoachPart(parts, { type: "text-delta", text }))
@@ -214,6 +243,22 @@ export function useCoachTurn({
         onToolResult(data) {
           if (stale()) return
           paint(appendCoachPart(parts, data))
+        },
+        onConfirm(data) {
+          if (stale()) return
+          paint(
+            parts.map((part) =>
+              part.type === "tool" &&
+              part.name === data.command &&
+              !part.pendingActionId
+                ? {
+                    ...part,
+                    pendingActionId: data.pendingActionId,
+                    approval: "pending" as const,
+                  }
+                : part
+            )
+          )
         },
         onMessageEnd() {
           ended = true
@@ -268,7 +313,14 @@ export function useCoachTurn({
 
         await hydrateChat(id)
         if (stale()) return
-        dispatch({ type: "finish", messages: null })
+        dispatch({
+          type: "fail",
+          error: makeError(
+            "The connection ended before Coach finished. Try again.",
+            false
+          ),
+          messages: painted,
+        })
       } catch (error) {
         if (stale()) return
         if (isAbortError(error) || controller.signal.aborted) {
@@ -293,6 +345,7 @@ export function useCoachTurn({
         typeof options === "boolean" ? options : options.retrying === true
       const selection =
         typeof options === "boolean" ? undefined : options.selection
+      const context = typeof options === "boolean" ? undefined : options.context
       const trimmed = text.trim()
       if (!trimmed || phase !== "idle") return false
 
@@ -321,7 +374,8 @@ export function useCoachTurn({
             signal,
             mode,
             focusDocId,
-            selection
+            selection,
+            context
           ),
         makeError: (message, local, userMessageId) => ({
           message,
@@ -329,6 +383,7 @@ export function useCoachTurn({
           text: trimmed,
           local,
           selection,
+          context,
         }),
       })
       return true
@@ -351,7 +406,8 @@ export function useCoachTurn({
     if (!id) return false
 
     const lastCoach = baseline.findLast((message) => message.role === "coach")
-    if (!lastCoach) return false
+    if (!lastCoach && !baseline.some((message) => message.role === "user"))
+      return false
     const lastUser = baseline.findLast((message) => message.role === "user")
 
     void runCoachStream({
@@ -366,24 +422,39 @@ export function useCoachTurn({
           handlers,
           signal,
           mode,
-          focusDocId
+          focusDocId,
+          sendError?.selection,
+          sendError?.context
         ),
       makeError: (message, local) => ({
         message,
         userMessageId: lastUser?.id ?? "",
         text: "",
         local,
+        selection: sendError?.selection,
+        context: sendError?.context,
       }),
     })
     return true
-  }, [baseline, focusDocId, mode, phase, queryClient, runCoachStream, chatId])
+  }, [
+    baseline,
+    focusDocId,
+    mode,
+    phase,
+    queryClient,
+    runCoachStream,
+    chatId,
+    sendError,
+  ])
 
   const retry = useCallback(() => {
     if (!failure) return false
-    if (failure.kind === "regenerate") return regenerate()
+    if (failure.kind === "regenerate" || !failure.error.local)
+      return regenerate()
     return send(failure.error.text, {
       retrying: true,
       selection: failure.error.selection,
+      context: failure.error.context,
     })
   }, [failure, regenerate, send])
 
@@ -403,6 +474,7 @@ export function useCoachTurn({
   return {
     messages,
     phase,
+    step,
     error: actionError,
     send,
     stop,

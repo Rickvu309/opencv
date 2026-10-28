@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, screen } from "@testing-library/react"
 import { render } from "@/test/render-with-client.tsx"
+import { ChatStoreProvider } from "@/features/coach/chat-store.tsx"
 import {
   emptyCvDocument,
   type PaperPages,
@@ -118,7 +119,13 @@ describe("Paper template gallery", () => {
         ) as Promise<Response>
     )
     render(
-      <PaperCvEditor initial={record} pages={pages} onBack={() => undefined} />
+      <ChatStoreProvider>
+        <PaperCvEditor
+          initial={record}
+          pages={pages}
+          onBack={() => undefined}
+        />
+      </ChatStoreProvider>
     )
     fireEvent.click(screen.getByRole("button", { name: "Change template" }))
     wideDialog()

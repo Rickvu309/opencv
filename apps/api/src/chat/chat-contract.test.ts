@@ -105,9 +105,50 @@ describe("chat contract", () => {
         if (!pending.pendingActionId) throw new Error("missing pending action")
         return pending.pendingActionId
       }
-      await run("actions.approve", {
-        pendingActionId: await pendingFor("interview"),
+      const pendingActionId = await pendingFor("interview")
+      await insertCoachMessage({
+        chatId: approveChat.id as never,
+        userId: userId as never,
+        text: "Review this move.",
+        parts: [
+          {
+            type: "tool",
+            name: "job.move",
+            summary: "Move",
+            ok: true,
+            pendingActionId,
+            approval: "pending",
+            reversal: { possible: false, description: "Awaiting approval" },
+          },
+        ],
+        status: "final",
+        workedMs: 1,
       })
+      await run("actions.approve", { pendingActionId })
+      const receipt = () =>
+        registry
+          .read("chat.get", { chatId: approveChat.id }, person)
+          .then((output) =>
+            chatContract["chat.appendMessage"].output
+              .parse(output)
+              .messages.flatMap((message) => message.parts)
+              .find(
+                (part) =>
+                  part.type === "tool" &&
+                  part.pendingActionId === pendingActionId
+              )
+          )
+      expect(await receipt()).toMatchObject({
+        approval: "approved",
+        activityId: expect.any(String),
+        reversal: { possible: true },
+        detail: { type: "job.move", from: "inbox", to: "live" },
+        undone: false,
+      })
+      const approved = await receipt()
+      if (approved?.type !== "tool") throw new Error("missing receipt")
+      await run("activity.undo", { activityId: approved.activityId })
+      expect(await receipt()).toMatchObject({ undone: true })
       await run("actions.deny", {
         pendingActionId: await pendingFor("applied"),
       })

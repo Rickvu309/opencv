@@ -18,20 +18,23 @@ import {
   setChatFocus,
 } from "./store.js"
 
-const stops = new Map<string, AbortController>()
+const stops = new Map<string, Set<AbortController>>()
 
 export function stopChat(chatId: string) {
-  const controller = stops.get(chatId)
-  if (!controller) return false
-  controller.abort()
+  const controllers = stops.get(chatId)
+  if (!controllers) return false
+  for (const controller of controllers) controller.abort()
   stops.delete(chatId)
   return true
 }
 
 export function trackChatTurn(chatId: string, controller: AbortController) {
-  stops.set(chatId, controller)
+  const controllers = stops.get(chatId) ?? new Set<AbortController>()
+  controllers.add(controller)
+  stops.set(chatId, controllers)
   return () => {
-    if (stops.get(chatId) === controller) stops.delete(chatId)
+    controllers.delete(controller)
+    if (controllers.size === 0) stops.delete(chatId)
   }
 }
 
@@ -93,7 +96,10 @@ export function registerChat(registry: Registry) {
       activity: () => null,
     },
     "coach.stop": {
-      handler: async (input) => ({ stopped: stopChat(input.chatId) }),
+      handler: async (input, actor) => {
+        await getChat(actor.userId, input.chatId)
+        return { stopped: stopChat(input.chatId) }
+      },
       reversal: () => null,
       activity: () => null,
     },

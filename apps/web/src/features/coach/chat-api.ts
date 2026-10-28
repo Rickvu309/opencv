@@ -7,6 +7,7 @@ import {
   type ChatListItem,
   type ChatMessage,
   type CoachMode,
+  type CoachContextItem,
   type CoachSelection,
   type ChatRecord,
   type ChatSummary,
@@ -114,6 +115,9 @@ export type CoachStreamHandlers = {
   onTextDelta?: (data: ChatTurnEventOf<"text-delta">) => void
   onToolCall?: (data: ChatTurnEventOf<"tool-call">) => void
   onToolResult?: (data: ChatTurnEventOf<"tool-result">) => void
+  onStep?: (data: ChatTurnEventOf<"step">) => void
+  onConfirm?: (data: ChatTurnEventOf<"confirm">) => void
+  onUsage?: (data: ChatTurnEventOf<"usage">) => void
   onMessageEnd?: (data: ChatTurnEventOf<"message-end">) => void
   onError?: (data: ChatTurnEventOf<"error">) => void
 }
@@ -124,6 +128,7 @@ type CoachStreamBody =
       mode?: CoachMode
       focusDocId?: string | null
       selection?: CoachSelection
+      context?: CoachContextItem[]
     }
   | { regenerate: true; mode?: CoachMode; focusDocId?: string | null }
 
@@ -159,8 +164,19 @@ function consumeCoachStream(
         case "error":
           handlers.onError?.(event)
           break
-        default:
+        case "step":
+          handlers.onStep?.(event)
           break
+        case "confirm":
+          handlers.onConfirm?.(event)
+          break
+        case "usage":
+          handlers.onUsage?.(event)
+          break
+        default: {
+          const unexpected: never = event
+          throw new Error(`Unknown Coach event: ${String(unexpected)}`)
+        }
       }
     },
   })
@@ -174,7 +190,8 @@ export async function streamCoachTurn(
   signal?: AbortSignal,
   mode?: CoachMode,
   focusDocId?: string | null,
-  selection?: CoachSelection
+  selection?: CoachSelection,
+  context?: CoachContextItem[]
 ): Promise<void> {
   await consumeCoachStream(
     queryClient,
@@ -184,6 +201,7 @@ export async function streamCoachTurn(
       ...(mode ? { mode } : {}),
       ...(focusDocId !== undefined ? { focusDocId } : {}),
       ...(selection ? { selection } : {}),
+      ...(context?.length ? { context } : {}),
     },
     handlers,
     signal
@@ -196,13 +214,17 @@ export async function streamCoachRegenerate(
   handlers: CoachStreamHandlers,
   signal?: AbortSignal,
   mode?: CoachMode,
-  focusDocId?: string | null
+  focusDocId?: string | null,
+  selection?: CoachSelection,
+  context?: CoachContextItem[]
 ): Promise<void> {
   await consumeCoachStream(
     queryClient,
     chatId,
     {
       regenerate: true,
+      ...(selection ? { selection } : {}),
+      ...(context?.length ? { context } : {}),
       ...(mode ? { mode } : {}),
       ...(focusDocId !== undefined ? { focusDocId } : {}),
     },

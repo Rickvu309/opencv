@@ -1,7 +1,12 @@
 import { z } from "zod"
 
 import { applyStageSchema } from "./apply.js"
-import { CHAT_MESSAGE_MAX } from "./chat.js"
+import { CHAT_MESSAGE_MAX, coachSelectionSchema } from "./chat.js"
+export {
+  COACH_SELECTION_TEXT_MAX,
+  COACH_SELECTION_SECTION_ID_MAX,
+  coachSelectionSchema,
+} from "./chat.js"
 import { coachModeSchema } from "./coach.js"
 import { reversalDescriptorSchema } from "./commands.js"
 import {
@@ -27,24 +32,13 @@ export const chatMessageTextSchema = z
   .min(1, "Message text is required")
   .max(CHAT_MESSAGE_MAX, "Message text is too long")
 
-export const COACH_SELECTION_TEXT_MAX = 2000
-export const COACH_SELECTION_SECTION_ID_MAX = 80
-
-export const coachSelectionSchema = z
+export const coachContextItemSchema = z
   .object({
-    text: z
-      .string()
-      .trim()
-      .min(1, "Selection text is required")
-      .max(COACH_SELECTION_TEXT_MAX, "Selection is too long"),
-    sectionId: z
-      .string()
-      .trim()
-      .min(1)
-      .max(COACH_SELECTION_SECTION_ID_MAX)
-      .optional(),
+    kind: z.enum(["paper", "job", "link", "file"]),
+    id: z.string().trim().min(1).max(2000),
   })
   .strict()
+export type CoachContextItem = z.infer<typeof coachContextItemSchema>
 
 export type CoachSelection = z.infer<typeof coachSelectionSchema>
 
@@ -60,17 +54,7 @@ export const coachTurnRequestSchema = z
     focusDocId: paperDocIdSchema.nullish(),
     /** Highlighted Paper text when the User sends from the editor. */
     selection: coachSelectionSchema.optional(),
-    context: z
-      .array(
-        z
-          .object({
-            kind: z.enum(["paper", "job", "link", "file"]),
-            id: z.string().trim().min(1).max(2000),
-          })
-          .strict()
-      )
-      .max(8)
-      .optional(),
+    context: z.array(coachContextItemSchema).max(8).optional(),
   })
   .strict()
   .superRefine((value, ctx) => {
@@ -103,6 +87,7 @@ export const coachReceiptDetailSchema = z.discriminatedUnion("type", [
   z
     .object({
       type: z.literal("paper.replace"),
+      docId: z.string().optional(),
       docKind: paperContentKindSchema,
       docName: z.string(),
       hunks: z.array(receiptDiffHunkSchema),
@@ -120,6 +105,7 @@ export const coachReceiptDetailSchema = z.discriminatedUnion("type", [
   z
     .object({
       type: z.literal("paper.create"),
+      docId: z.string().optional(),
       docKind: paperContentKindSchema,
       name: z.string(),
       status: paperDocStatusSchema,
@@ -137,6 +123,7 @@ export const chatTextPartSchema = z
   .object({
     type: z.literal("text"),
     text: z.string(),
+    selection: coachSelectionSchema.optional(),
   })
   .strict()
 
@@ -150,6 +137,8 @@ export const chatToolPartSchema = z
     toolCallId: z.string().optional(),
     /** The activity row the command wrote; `activity.undo` takes this id. */
     activityId: z.string().optional(),
+    pendingActionId: z.string().optional(),
+    approval: z.enum(["pending", "approved", "denied", "expired"]).optional(),
     /** Set after a successful one-click undo of this receipt. */
     undone: z.boolean().optional(),
     /** Per-command scan payload for the three rich receipts. */

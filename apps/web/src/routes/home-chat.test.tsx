@@ -51,7 +51,7 @@ describe("Home Chat mode and History", { timeout: 15_000 }, () => {
     const working = within(screen.getByRole("log", { name: "Chat" })).getByRole(
       "status"
     )
-    expect(working).toHaveTextContent("Thinking")
+    expect(working).toHaveTextContent("Working,")
     expect(screen.queryByText("Thinking…")).not.toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Stop" })).toBeInTheDocument()
     expect(
@@ -67,7 +67,7 @@ describe("Home Chat mode and History", { timeout: 15_000 }, () => {
     stream.release(2)
     expect(await screen.findByText("Hello")).toBeInTheDocument()
     await waitFor(() => {
-      expect(screen.queryByText("Thinking")).not.toBeInTheDocument()
+      expect(screen.queryByRole("status")).not.toBeInTheDocument()
     })
     expect(screen.queryByText("Hello world")).not.toBeInTheDocument()
 

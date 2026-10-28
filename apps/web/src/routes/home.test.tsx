@@ -57,7 +57,7 @@ describe("Home idle", () => {
     )
     expect(
       within(screen.getByRole("log", { name: "Chat" })).getByRole("status")
-    ).toHaveTextContent("Thinking")
+    ).toHaveTextContent("Working,")
     expect(
       screen.queryByRole("heading", {
         level: 1,
@@ -70,7 +70,7 @@ describe("Home idle", () => {
       "Help me plan the week"
     )
     await waitFor(() => {
-      expect(screen.queryByText("Thinking")).not.toBeInTheDocument()
+      expect(screen.queryByRole("status")).not.toBeInTheDocument()
     })
   })
 
