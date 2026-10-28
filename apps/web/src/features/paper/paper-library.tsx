@@ -36,8 +36,9 @@ import {
   type PaperImportState,
 } from "./paper-import-state.tsx"
 import { NewPaperCard, PaperCard, SectionHead } from "./paper-parts.tsx"
+import { PaperPrintSheet } from "./paper-print-sheet.tsx"
+import { printPaper } from "./paper-print.ts"
 import { paperEditedLabel } from "./paper-templates.ts"
-import { endpoints, fetchBinary } from "@/lib/requests.ts"
 
 const IMPORT_ACCEPT =
   ".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
@@ -86,6 +87,8 @@ export function PaperLibrary({
   const [renameError, setRenameError] = useState<string | null>(null)
   const [jobs, setJobs] = useState<JobView[]>([])
   const [jobsError, setJobsError] = useState<string | null>(null)
+  const [printTarget, setPrintTarget] = useState<PaperView | null>(null)
+  const [printNonce, setPrintNonce] = useState(0)
   const dialogOpen = mode !== null
   const needle = query.trim().toLowerCase()
   const documents = docs.filter(
@@ -104,6 +107,11 @@ export function PaperLibrary({
   const firstRun = !loading && !error && documents.length === 0 && needle === ""
 
   useEffect(() => () => importRequest.current?.abort(), [])
+
+  useEffect(() => {
+    if (printNonce === 0 || !printTarget) return
+    printPaper(printTarget.name)
+  }, [printNonce, printTarget])
 
   async function rememberUndo(subjectId: string, label: string) {
     try {
@@ -238,25 +246,9 @@ export function PaperLibrary({
     }
   }
 
-  async function download(doc: PaperView) {
-    try {
-      const res = await fetchBinary(endpoints.paperPdf(doc.id), {
-        credentials: "include",
-      })
-      if (!res.ok) {
-        toast("Could not download the PDF. Try again.")
-        return
-      }
-      const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-      const anchor = document.createElement("a")
-      anchor.href = url
-      anchor.download = `${doc.name}.pdf`
-      anchor.click()
-      URL.revokeObjectURL(url)
-    } catch {
-      toast("Could not download the PDF. Try again.")
-    }
+  function download(doc: PaperView) {
+    setPrintTarget(doc)
+    setPrintNonce((value) => value + 1)
   }
 
   function renderCard(doc: PaperView) {
@@ -309,6 +301,15 @@ export function PaperLibrary({
         accept={IMPORT_ACCEPT}
         onFile={(file) => void onImport(file)}
       />
+      {printTarget ? (
+        <PaperPrintSheet
+          name={printTarget.name}
+          kind={printTarget.kind}
+          source={printTarget.document}
+          templateId={printTarget.templateId}
+          docId={printTarget.id}
+        />
+      ) : null}
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-lg font-medium">Paper</h1>
         <Button

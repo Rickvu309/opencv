@@ -88,10 +88,9 @@ function requireDocument(kind: PaperStoredKind, document: unknown) {
 }
 
 function blankDocument(kind: PaperStoredKind) {
-  return (kind === "cv" ? blankBlockDocument() : emptyLetterDocument()) as Record<
-    string,
-    unknown
-  >
+  return (
+    kind === "cv" ? blankBlockDocument() : emptyLetterDocument()
+  ) as Record<string, unknown>
 }
 
 export async function listPapers(
@@ -295,24 +294,9 @@ export async function keepTwoPages(actor: Actor, docId: PaperId) {
 
 export async function pageCount(actor: Actor, docId: PaperId) {
   const doc = await ownedPaper(actor.userId, docId)
+  // Coach estimate from the stored JSON. The editor counts pages from the preview.
   const weight = JSON.stringify(doc.document).length
   return { docId, pages: weight > 3500 ? 2 : 1, pageChoice: doc.pageChoice }
-}
-
-export function renderPdf(name: string) {
-  const safe = name.replace(/[()\\]/g, " ").slice(0, 80)
-  const stream = `BT /F1 18 Tf 72 720 Td (${safe || "Document"}) Tj ET`
-  const body = `%PDF-1.4
-1 0 obj<< /Type /Catalog /Pages 2 0 R >>endobj
-2 0 obj<< /Type /Pages /Count 1 /Kids [3 0 R] >>endobj
-3 0 obj<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources<< /Font<< /F1 5 0 R >> >> >>endobj
-4 0 obj<< /Length ${stream.length} >>stream
-${stream}
-endstream endobj
-5 0 obj<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>endobj
-trailer<< /Root 1 0 R >>
-%%EOF`
-  return Buffer.from(body, "utf8")
 }
 
 function photoRefOf(document: PaperView["document"]) {

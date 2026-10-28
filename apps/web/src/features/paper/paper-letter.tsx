@@ -9,6 +9,8 @@ import { useQueryClient } from "@tanstack/react-query"
 
 import { getPaper, paperGetKey } from "./paper-api.ts"
 import { usePaperAutosave } from "./paper-autosave.ts"
+import { PaperPrintSheet } from "./paper-print-sheet.tsx"
+import { printPaper } from "./paper-print.ts"
 import { PaperEditorConflictBanner } from "./paper-editor-conflict-banner.tsx"
 import { PaperLetterArticle } from "./paper-letter-article.tsx"
 import { editorEditedLabel } from "./paper-templates.ts"
@@ -65,6 +67,9 @@ export function PaperLetterEditor({
   const [updatedAt, setUpdatedAt] = useState(doc.updatedAt)
   const [hiddenGap, setHiddenGap] = useState(false)
   const [conflict, setConflict] = useState(false)
+  const [printNonce, setPrintNonce] = useState(0)
+  const printNameRef = useRef(doc.name)
+  printNameRef.current = doc.name
   const { schedule, adopt, versionRef } = usePaperAutosave<string>({
     docId: doc.id,
     initialVersion: doc.contentVersion,
@@ -113,6 +118,11 @@ export function PaperLetterEditor({
     adoptRef.current(doc.contentVersion)
     setMarkdown(next)
   }, [doc, markdown, versionRef])
+
+  useEffect(() => {
+    if (printNonce === 0) return
+    printPaper(printNameRef.current)
+  }, [printNonce])
 
   useEffect(() => {
     const node = editorRef.current
@@ -188,7 +198,22 @@ export function PaperLetterEditor({
         <p className="text-sm text-muted-foreground">
           {editorEditedLabel(updatedAt)}
         </p>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setPrintNonce((value) => value + 1)}
+        >
+          Download PDF
+        </Button>
       </div>
+      {printNonce > 0 ? (
+        <PaperPrintSheet
+          name={doc.name}
+          kind="letter"
+          source={{ markdown }}
+          templateId={null}
+        />
+      ) : null}
       {conflict ? (
         <PaperEditorConflictBanner onReload={() => void reloadLetter()} />
       ) : null}

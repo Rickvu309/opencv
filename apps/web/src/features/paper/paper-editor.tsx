@@ -1,6 +1,6 @@
 import { Bell, Ellipsis, LayoutTemplate, Link2, Star } from "lucide-react"
 import { useQueryClient } from "@tanstack/react-query"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import {
   paperDocNameSchema,
   type CvBlockDocument,
@@ -24,7 +24,6 @@ import { useChatStore } from "@/features/coach/use-chat-store.ts"
 import { ApiError } from "@/lib/api-error.ts"
 import { publishCoachDraft } from "@/lib/coach-draft.ts"
 import { useRunCommand } from "@/lib/contract-client.ts"
-import { endpoints, fetchBinary } from "@/lib/requests.ts"
 import { publicShareUrl } from "@/lib/web-origins-env.ts"
 
 import { CvPhoto, CvPhotoFrame } from "./cv-templates/cv-parts.tsx"
@@ -37,13 +36,18 @@ import {
   PaperTemplateGallery,
 } from "./paper-template-gallery.tsx"
 import { getPaper, streamPaperTurn } from "./paper-api.ts"
+import { PaperPrintSheet } from "./paper-print-sheet.tsx"
+import { printPaper, readPreviewPageCount } from "./paper-print.ts"
 import { editorEditedLabel, previewTemplate } from "./paper-templates.ts"
 
 function toastError(error: unknown, fallback: string) {
   toast(error instanceof Error ? error.message : fallback)
 }
 
-function applyPhoto(current: CvBlockDocument, ref: string | undefined): CvBlockDocument {
+function applyPhoto(
+  current: CvBlockDocument,
+  ref: string | undefined
+): CvBlockDocument {
   const header = { ...current.header }
   if (ref) header.photo = ref
   else delete header.photo
@@ -92,7 +96,32 @@ export function PaperCvEditor({
         toastError(error, "Could not save. Try again.")
       },
     })
-  const showBanner = pageState.pages > 1 && pageState.pageChoice === "unset"
+  const previewRef = useRef<HTMLDivElement>(null)
+  const [previewPages, setPreviewPages] = useState(1)
+  const [printNonce, setPrintNonce] = useState(0)
+  const printNameRef = useRef(name)
+  printNameRef.current = name
+  const showBanner = previewPages > 1 && pageState.pageChoice === "unset"
+
+  useLayoutEffect(() => {
+    const content =
+      previewRef.current?.querySelector<HTMLElement>("[data-cv-preview]") ??
+      null
+    const apply = () => {
+      const next = readPreviewPageCount(content)
+      setPreviewPages((current) => (current === next ? current : next))
+    }
+    apply()
+    if (!content || typeof ResizeObserver === "undefined") return
+    const observer = new ResizeObserver(apply)
+    observer.observe(content)
+    return () => observer.disconnect()
+  }, [doc])
+
+  useEffect(() => {
+    if (printNonce === 0) return
+    printPaper(printNameRef.current)
+  }, [printNonce])
 
   useEffect(() => {
     setPageState(pages)
@@ -262,25 +291,8 @@ export function PaperCvEditor({
       })
   }
 
-  async function download() {
-    try {
-      const res = await fetchBinary(endpoints.paperPdf(initial.id), {
-        credentials: "include",
-      })
-      if (!res.ok) {
-        toast("Could not download the PDF. Try again.")
-        return
-      }
-      const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-      const anchor = document.createElement("a")
-      anchor.href = url
-      anchor.download = `${name}.pdf`
-      anchor.click()
-      URL.revokeObjectURL(url)
-    } catch {
-      toast("Could not download the PDF. Try again.")
-    }
+  function download() {
+    setPrintNonce((value) => value + 1)
   }
 
   async function reload() {
@@ -381,12 +393,30 @@ export function PaperCvEditor({
           </Button>
         </div>
       </div>
-      <div className="flex flex-wrap gap-1" role="toolbar" aria-label="Selection">
-        <Button type="button" variant="ghost" size="sm" onClick={() => askCoach("")}>
+      <div
+        className="flex flex-wrap gap-1"
+        role="toolbar"
+        aria-label="Selection"
+      >
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => askCoach("")}
+        >
           Coach
         </Button>
-        <Button type="button" variant="ghost" size="sm" onClick={undo} disabled={conflict}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={undo}
+          disabled={conflict}
+        >
           Undo
+        </Button>
+        <Button type="button" variant="ghost" size="sm" onClick={download}>
+          Download PDF
         </Button>
       </div>
       {conflict ? (
@@ -401,16 +431,28 @@ export function PaperCvEditor({
             </p>
           </div>
           <div className="flex gap-2">
-            <Button type="button" variant="glow" onClick={() => void fitOnePage()}>
+            <Button
+              type="button"
+              variant="glow"
+              onClick={() => void fitOnePage()}
+            >
               Fit to one page
             </Button>
-            <Button type="button" variant="ghost" onClick={() => void keepPages()}>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => void keepPages()}
+            >
               Keep 2 pages
             </Button>
           </div>
         </div>
       ) : null}
-      <div data-template={previewTemplate(templateId)} className="min-w-0">
+      <div
+        ref={previewRef}
+        data-template={previewTemplate(templateId)}
+        className="min-w-0"
+      >
         <CvPhotoFrame
           value={{
             docId: initial.id,
@@ -438,11 +480,22 @@ export function PaperCvEditor({
             onAskCoach={askCoach}
           />
         </CvPhotoFrame>
-        {pageState.pages > 1 ? (
+        {previewPages > 1 ? (
           <p className="mt-2 text-sm text-muted-foreground">Page 2</p>
         ) : null}
       </div>
-      {nameError ? <p className="text-sm text-destructive">{nameError}</p> : null}
+      {nameError ? (
+        <p className="text-sm text-destructive">{nameError}</p>
+      ) : null}
+      {printNonce > 0 ? (
+        <PaperPrintSheet
+          name={name}
+          kind="cv"
+          source={doc}
+          templateId={templateId}
+          docId={initial.id}
+        />
+      ) : null}
       <Dialog
         open={galleryOpen}
         onOpenChange={(open) => {

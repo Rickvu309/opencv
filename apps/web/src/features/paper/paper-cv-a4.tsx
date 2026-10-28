@@ -86,7 +86,7 @@ export function CvA4Canvas({ children, className, preview = false }: Props) {
           height: totalHeight,
         }}
       >
-        <div ref={contentRef} className="cv-a4-content">
+        <div ref={contentRef} className="cv-a4-content" data-cv-preview="">
           {children}
         </div>
 

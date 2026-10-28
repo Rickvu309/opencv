@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { cleanup, fireEvent, screen } from "@testing-library/react"
+import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 import { render } from "@/test/render-with-client.tsx"
 import { emptyCvDocument, type PaperView } from "@workspace/domain"
 
@@ -29,8 +29,10 @@ function cv(name: string): PaperView {
 }
 
 afterEach(() => {
+  document.body.removeAttribute("data-print")
   cleanup()
   vi.clearAllMocks()
+  vi.restoreAllMocks()
 })
 
 function renderLibrary(docs: PaperView[]) {
@@ -123,6 +125,25 @@ describe("Paper library", () => {
     expect(
       screen.getByText("Try another word, or clear the search.")
     ).toBeInTheDocument()
+  })
+
+  it("prints the card from Download PDF", async () => {
+    const print = vi.spyOn(window, "print").mockImplementation(() => {
+      expect(document.body).toHaveAttribute("data-print", "paper")
+      expect(
+        document.querySelector("[data-paper-print] .cv-template-internship")
+      ).not.toBeNull()
+      window.dispatchEvent(new Event("afterprint"))
+    })
+    renderLibrary([cv("PM track CV")])
+    fireEvent.click(screen.getByRole("button", { name: "PM track CV menu" }))
+    fireEvent.click(
+      await screen.findByRole("menuitem", { name: "Download PDF" })
+    )
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+    expect(print).toHaveBeenCalledTimes(1)
   })
 
   it("exposes Rename and Delete on the card menu", async () => {

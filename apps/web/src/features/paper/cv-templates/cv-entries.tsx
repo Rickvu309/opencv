@@ -120,7 +120,11 @@ export function ExperienceBlock({
 }) {
   return (
     <div
-      className={cn(PAPER_CANVAS_BLOCK_CLASS, "mb-3 last:mb-0")}
+      className={cn(
+        PAPER_CANVAS_BLOCK_CLASS,
+        "cv-print-entry",
+        "mb-3 last:mb-0"
+      )}
       data-paper-section={`experience-${index}`}
     >
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
@@ -265,7 +269,11 @@ export function EducationBlock({
 }) {
   return (
     <div
-      className={cn(PAPER_CANVAS_BLOCK_CLASS, "mb-3 last:mb-0")}
+      className={cn(
+        PAPER_CANVAS_BLOCK_CLASS,
+        "cv-print-entry",
+        "mb-3 last:mb-0"
+      )}
       data-paper-section={`education-${index}`}
     >
       <div className="flex flex-wrap items-baseline justify-between gap-2">

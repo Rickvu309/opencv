@@ -111,10 +111,6 @@ export const paperQueries = queryContract({
     input: z.object({ docId: paperIdSchema }).strict(),
     output: paperPagesSchema,
   }),
-  "paper.pdf": queryEntry({
-    input: z.object({ docId: paperIdSchema }).strict(),
-    output: z.object({ docId: paperIdSchema, name: z.string() }).strict(),
-  }),
   "paper.shared": queryEntry({
     input: z.object({ token: z.string().min(8) }).strict(),
     output: paperViewSchema,

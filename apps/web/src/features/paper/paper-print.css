@@ -1,0 +1,76 @@
+@page {
+  size: A4;
+  margin: 0;
+}
+
+.paper-print-sheet {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 210mm;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+@media print {
+  body[data-print="paper"] {
+    margin: 0;
+    background: var(--background);
+    color: var(--foreground);
+  }
+
+  body[data-print="paper"] > :not([data-paper-print]) {
+    display: none !important;
+  }
+
+  body[data-print="paper"] > [data-paper-print] {
+    display: block !important;
+    position: static !important;
+    width: 210mm;
+    height: auto !important;
+    overflow: visible !important;
+    pointer-events: auto;
+    background: var(--background);
+    color: var(--foreground);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body[data-print="paper"] [data-paper-print] .cv-template-root {
+    width: 210mm;
+    max-width: 210mm;
+  }
+
+  body[data-print="paper"] [data-paper-print] .cv-template-root--product {
+    flex-direction: row;
+  }
+
+  body[data-print="paper"] [data-paper-print] .cv-template-product-sidebar {
+    width: 32%;
+  }
+
+  body[data-print="paper"] [data-paper-print] .cv-print-entry,
+  body[data-print="paper"]
+    [data-paper-print]
+    [data-paper-section^="experience-"],
+  body[data-print="paper"]
+    [data-paper-print]
+    [data-paper-section^="education-"],
+  body[data-print="paper"] [data-paper-print] [data-paper-section^="project-"] {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  body[data-print="paper"] [data-paper-print] .paper-canvas-affordance,
+  body[data-print="paper"] [data-paper-print] .paper-canvas-next-step {
+    display: none;
+  }
+
+  body[data-print="paper"] [data-paper-letter] {
+    box-sizing: border-box;
+    width: 210mm;
+    min-height: var(--cv-page-height);
+    padding: var(--cv-padding-y) var(--cv-padding-x);
+  }
+}

@@ -1,6 +1,6 @@
 import { emptyCvDocument, type PaperView } from "@workspace/domain"
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { cleanup, screen } from "@testing-library/react"
+import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 
 import { PaperSharePage } from "@/features/paper/paper-share-page.tsx"
 import { render } from "@/test/render-with-client.tsx"
@@ -29,8 +29,10 @@ const shared: PaperView = {
 }
 
 afterEach(() => {
+  document.body.removeAttribute("data-print")
   cleanup()
   vi.unstubAllGlobals()
+  vi.restoreAllMocks()
   state.pathname = "/share/tok"
 })
 
@@ -50,5 +52,28 @@ describe("Paper share page", () => {
     ).toBeInTheDocument()
     expect(view.container.querySelector(".cv-template-product")).not.toBeNull()
     expect(view.container.querySelector(".cv-template-internship")).toBeNull()
+  })
+
+  it("prints the shared template from Download PDF", async () => {
+    vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes("/api/paper/shared/tok")) {
+        return Promise.resolve(Response.json({ ok: true, data: shared }))
+      }
+      return Promise.resolve(Response.json({ ok: true, data: {} }))
+    })
+    const print = vi.spyOn(window, "print").mockImplementation(() => {
+      expect(document.body).toHaveAttribute("data-print", "paper")
+      expect(
+        document.querySelector("[data-paper-print] .cv-template-product")
+      ).not.toBeNull()
+      window.dispatchEvent(new Event("afterprint"))
+    })
+    render(<PaperSharePage />)
+    fireEvent.click(await screen.findByRole("button", { name: "Download PDF" }))
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+    expect(print).toHaveBeenCalledTimes(1)
   })
 })

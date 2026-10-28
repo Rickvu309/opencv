@@ -108,7 +108,6 @@ describe("paper contract", () => {
         pageChoice: "keep",
       })
       await read("paper.pageCount", { docId: cv })
-      await read("paper.pdf", { docId: cv })
       const shared = (await registry.read(
         "paper.shared",
         {

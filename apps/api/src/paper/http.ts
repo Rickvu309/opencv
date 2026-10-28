@@ -16,12 +16,7 @@ import { readJsonBody } from "../http-json.js"
 import { requireSession, type SessionVariables } from "../middleware.js"
 import { CommandError } from "../registry/errors.js"
 import { registry } from "../registry/registry.js"
-import {
-  readOwnedPhoto,
-  readSharedPhoto,
-  renderPdf,
-  saveFile,
-} from "./store.js"
+import { readOwnedPhoto, readSharedPhoto, saveFile } from "./store.js"
 
 function person(userId: string) {
   return personActor(userId)
@@ -161,20 +156,6 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
       fileIdOrMissing(c.req.param("id"))
     )
     return photoBytes(photo, "private, no-store")
-  })
-
-  routes.get("/:id/pdf", async (c) => {
-    const data = await registry.read(
-      "paper.pdf",
-      { docId: c.req.param("id") },
-      person(c.var.userId)
-    )
-    const named = data as { name: string }
-    const bytes = renderPdf(named.name)
-    return new Response(new Uint8Array(bytes), {
-      status: 200,
-      headers: { "content-type": "application/pdf" },
-    })
   })
 
   routes.get("/:id/pages", async (c) => {

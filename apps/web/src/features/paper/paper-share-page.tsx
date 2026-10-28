@@ -1,5 +1,6 @@
 import { useRouterState } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
+import { useEffect, useRef, useState } from "react"
 import {
   blocksToPreviewModel,
   isCvBlockDocument,
@@ -7,9 +8,13 @@ import {
   type CvDocument as CvDocumentData,
 } from "@workspace/domain"
 
+import { Button } from "@workspace/ui/components/button"
+
 import { CvDocument } from "./cv-print-document.tsx"
 import { CvPhotoFrame } from "./cv-templates/cv-parts.tsx"
 import { getSharedPaper, paperSharedKey } from "./paper-api.ts"
+import { PaperPrintSheet } from "./paper-print-sheet.tsx"
+import { printPaper } from "./paper-print.ts"
 import { printLayout } from "./paper-templates.ts"
 
 function sharedCv(
@@ -39,6 +44,14 @@ export function PaperSharePage() {
     queryFn: () => getSharedPaper(token),
     enabled: token.length > 0,
   })
+  const [printNonce, setPrintNonce] = useState(0)
+  const printNameRef = useRef("")
+  printNameRef.current = query.data?.name ?? ""
+
+  useEffect(() => {
+    if (printNonce === 0 || !printNameRef.current) return
+    printPaper(printNameRef.current)
+  }, [printNonce])
 
   if (!token || query.isError) {
     return (
@@ -67,7 +80,26 @@ export function PaperSharePage() {
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-4 p-4 sm:p-8">
-      <h1 className="text-lg font-medium">{doc.name}</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-lg font-medium">{doc.name}</h1>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setPrintNonce((value) => value + 1)}
+        >
+          Download PDF
+        </Button>
+      </div>
+      {printNonce > 0 ? (
+        <PaperPrintSheet
+          name={doc.name}
+          kind={doc.kind}
+          source={doc.document}
+          templateId={doc.templateId}
+          docId={doc.id}
+          shareToken={token}
+        />
+      ) : null}
       <div inert className="min-w-0">
         {cv ? (
           <CvPhotoFrame value={{ shareToken: token }}>

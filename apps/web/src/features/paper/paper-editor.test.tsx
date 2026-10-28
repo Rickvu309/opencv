@@ -10,6 +10,7 @@ import {
 } from "@workspace/domain"
 
 import { PaperCvEditor } from "./paper-editor.tsx"
+import * as paperPrint from "./paper-print.ts"
 
 function render(ui: ReactElement) {
   const wrap = (content: ReactElement) => (
@@ -82,9 +83,11 @@ function installFetch(conflict = false) {
 }
 
 afterEach(() => {
+  document.body.removeAttribute("data-print")
   vi.useRealTimers()
   cleanup()
   vi.unstubAllGlobals()
+  vi.restoreAllMocks()
 })
 
 describe("CV editor chrome", () => {
@@ -131,6 +134,7 @@ describe("CV editor chrome", () => {
   })
 
   it("keeps two pages and shows a conflict", async () => {
+    vi.spyOn(paperPrint, "readPreviewPageCount").mockReturnValue(2)
     const calls = installFetch(true)
     render(
       <PaperCvEditor
@@ -166,19 +170,24 @@ describe("CV editor chrome", () => {
     expect(screen.getByRole("button", { name: "Undo" })).toBeDisabled()
   })
 
-  it("shows page 2 when a later read says keep", () => {
-    const view = render(
+  it("ignores the stored page count when the preview fits one page", () => {
+    render(
       <PaperCvEditor
-        initial={{ ...record, pageChoice: "keep" }}
-        pages={{ docId: record.id, pages: 1, pageChoice: "keep" }}
+        initial={record}
+        pages={pages(2)}
         onBack={() => undefined}
       />
     )
+    expect(screen.queryByText("Over one page")).not.toBeInTheDocument()
     expect(screen.queryByText("Page 2")).not.toBeInTheDocument()
-    view.rerender(
+  })
+
+  it("shows page 2 from the preview and hides the banner when kept", () => {
+    vi.spyOn(paperPrint, "readPreviewPageCount").mockReturnValue(2)
+    render(
       <PaperCvEditor
         initial={{ ...record, pageChoice: "keep" }}
-        pages={{ docId: record.id, pages: 2, pageChoice: "keep" }}
+        pages={{ docId: record.id, pages: 1, pageChoice: "keep" }}
         onBack={() => undefined}
       />
     )
@@ -186,6 +195,31 @@ describe("CV editor chrome", () => {
     expect(
       screen.queryByRole("button", { name: "Fit to one page" })
     ).not.toBeInTheDocument()
+  })
+
+  it("prints the template from Download PDF", async () => {
+    installFetch()
+    const print = vi.spyOn(window, "print").mockImplementation(() => {
+      expect(document.body).toHaveAttribute("data-print", "paper")
+      expect(document.title).toBe("PM track CV")
+      expect(
+        document.querySelector("[data-paper-print] .cv-template-internship")
+      ).not.toBeNull()
+      window.dispatchEvent(new Event("afterprint"))
+    })
+    render(
+      <PaperCvEditor
+        initial={record}
+        pages={pages(1)}
+        onBack={() => undefined}
+      />
+    )
+    fireEvent.click(screen.getByRole("button", { name: "Download PDF" }))
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+    expect(print).toHaveBeenCalledTimes(1)
+    expect(document.body).not.toHaveAttribute("data-print")
   })
 
   it("shows blank CV placeholders and does not save them", () => {
@@ -222,8 +256,12 @@ describe("CV editor chrome", () => {
     expect(screen.getAllByRole("textbox", { name: "Dates" })[0]).toHaveClass(
       "block"
     )
-    expect(screen.queryByRole("button", { name: "Bold" })).not.toBeInTheDocument()
-    expect(screen.queryByRole("button", { name: "Italic" })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "Bold" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "Italic" })
+    ).not.toBeInTheDocument()
     expect(
       screen.queryByRole("button", { name: "Underline" })
     ).not.toBeInTheDocument()
@@ -493,8 +531,8 @@ describe("CV editor chrome", () => {
         header: { photo: `file:${fileId}` },
       },
     })
-    expect(JSON.stringify(replacements.at(-1)?.body?.input?.document)).toContain(
-      "Edited after photo"
-    )
+    expect(
+      JSON.stringify(replacements.at(-1)?.body?.input?.document)
+    ).toContain("Edited after photo")
   })
 })

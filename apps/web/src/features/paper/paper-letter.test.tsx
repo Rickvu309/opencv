@@ -111,11 +111,36 @@ function start() {
 }
 
 afterEach(() => {
+  document.body.removeAttribute("data-print")
   cleanup()
   vi.unstubAllGlobals()
+  vi.restoreAllMocks()
 })
 
 describe("Cover letter", () => {
+  it("prints the letter from Download PDF", async () => {
+    vi.stubGlobal("fetch", () => Promise.resolve(ok({})))
+    const print = vi.spyOn(window, "print").mockImplementation(() => {
+      expect(document.body).toHaveAttribute("data-print", "paper")
+      const sheet = document.querySelector("[data-paper-letter]")
+      expect(sheet?.textContent).toContain("I write clearly.")
+      window.dispatchEvent(new Event("afterprint"))
+    })
+    render(
+      <PaperLetterEditor
+        doc={letter}
+        job={job}
+        cvName={null}
+        onBack={() => undefined}
+      />
+    )
+    fireEvent.click(screen.getByRole("button", { name: "Download PDF" }))
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+    expect(print).toHaveBeenCalledTimes(1)
+  })
+
   it("drafts with the job title and refetches on a paper replace tool result", async () => {
     const calls = installFetch("tool")
     start()
