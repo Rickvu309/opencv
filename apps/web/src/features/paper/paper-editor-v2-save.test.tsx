@@ -168,7 +168,10 @@ describe("CV editor version 2", () => {
         onBack={() => undefined}
       />
     )
-    const name = screen.getByRole("textbox", { name: "Name" })
+    const name = screen
+      .getAllByRole("textbox", { name: "Name" })
+      .find((node) => node.getAttribute("data-placeholder") === "Name")
+    if (!name) throw new Error("header name field missing")
     vi.useFakeTimers()
     name.textContent = "First edit"
     fireEvent.input(name)

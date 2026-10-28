@@ -476,22 +476,25 @@ describe("CV editor chrome", () => {
     expect(view.container.querySelector("img")?.getAttribute("src")).toContain(
       `/api/paper/files/${fileId}/bytes`
     )
-    role.textContent = "Edited after photo"
-    fireEvent.input(role)
-    await vi.waitFor(() => {
-      const replacements = calls.filter((call) =>
-        call.url.includes("paper.replace")
-      )
-      expect(replacements.length).toBeGreaterThan(1)
-      expect(replacements.at(-1)?.body?.input).toMatchObject({
-        contentVersion: 3,
-        document: {
-          header: { photo: `file:${fileId}` },
-        },
-      })
-      expect(JSON.stringify(replacements.at(-1)?.body?.input?.document)).toContain(
-        "Edited after photo"
-      )
+    const roleAgain = screen.getByRole("textbox", { name: "Role" })
+    vi.useFakeTimers()
+    roleAgain.textContent = "Edited after photo"
+    fireEvent.input(roleAgain)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(700)
     })
+    const replacements = calls.filter((call) =>
+      call.url.includes("paper.replace")
+    )
+    expect(replacements.length).toBeGreaterThan(1)
+    expect(replacements.at(-1)?.body?.input).toMatchObject({
+      contentVersion: 3,
+      document: {
+        header: { photo: `file:${fileId}` },
+      },
+    })
+    expect(JSON.stringify(replacements.at(-1)?.body?.input?.document)).toContain(
+      "Edited after photo"
+    )
   })
 })

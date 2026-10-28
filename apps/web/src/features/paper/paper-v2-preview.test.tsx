@@ -126,34 +126,33 @@ afterEach(() => {
 })
 
 describe("version 2 preview", () => {
-  it("preserves readable v2 content in editable fields", () => {
+  it("renders a version 2 CV and a v1 CV with the same editor text", () => {
     vi.stubGlobal("fetch", () =>
       Promise.resolve(Response.json({ ok: true, data: {} }))
     )
-    const blocks = cvCodecToBlocks(fixture)
-    render(
+    const v1 = render(
       <PaperCvEditor
-        initial={view(blocks)}
+        initial={view(fixture)}
         pages={pages}
         onBack={() => undefined}
       />
     )
-    expect(
-      screen
-        .getAllByRole("textbox", { name: "Name" })
-        .find(
-          (node) =>
-            node.getAttribute("aria-label") === "Name" &&
-            (node as HTMLInputElement).value === "Lan Nguyen"
-        )
-    ).toHaveValue("Lan Nguyen")
-    expect(screen.getByRole("textbox", { name: "Role" })).toHaveValue(
-      "Discovery lead"
+    const fromV1 = visibleText("editor")
+    v1.unmount()
+
+    render(
+      <PaperCvEditor
+        initial={view(cvCodecToBlocks(fixture))}
+        pages={pages}
+        onBack={() => undefined}
+      />
     )
-    expect(screen.getByRole("textbox", { name: "School" })).toHaveValue("UIT")
-    expect(
-      screen.getByRole("textbox", { name: "Skills, comma separated" })
-    ).toHaveValue("Interviews,PRDs")
+    expect(visibleText("editor")).toEqual(fromV1)
+    expect(fromV1.role).toEqual(["Discovery lead"])
+    expect(fromV1.period).toContain("2024 – Present")
+    expect(fromV1.bullet).toEqual(["Ran interviews"])
+    expect(fromV1.school).toEqual(["UIT"])
+    expect(fromV1.skill).toEqual(["Interviews", "PRDs"])
   })
 
   it("keeps comma and multiword skill typing intact", () => {
@@ -186,18 +185,18 @@ describe("version 2 preview", () => {
 
   it("uses the selected print layout while retaining editable block content", () => {
     const layouts = [
-      ["simple", "cv-template-internship"],
-      ["modern", "cv-template-product"],
-      ["compact", "cv-template-service"],
-      ["academic", "cv-template-academic"],
-      ["with-photo", "cv-template-photo"],
+      ["simple", "simple"],
+      ["modern", "modern"],
+      ["compact", "compact"],
+      ["academic", "academic"],
+      ["with-photo", "with-photo"],
     ] as const
-    for (const [templateId, className] of layouts) {
+    for (const [templateId, template] of layouts) {
       cleanup()
       vi.stubGlobal("fetch", () =>
         Promise.resolve(Response.json({ ok: true, data: {} }))
       )
-      render(
+      const viewNode = render(
         <PaperCvEditor
           initial={{ ...view(cvCodecToBlocks(fixture)), templateId }}
           pages={pages}
@@ -205,9 +204,9 @@ describe("version 2 preview", () => {
         />
       )
       expect(
-        screen.getByRole("region", { name: "CV block canvas" })
-      ).toHaveClass(className)
-      expect(screen.getByRole("textbox", { name: "Role" })).toHaveValue(
+        viewNode.container.querySelector("[data-paper-editor] [data-template]")
+      ).toHaveAttribute("data-template", template)
+      expect(screen.getByRole("textbox", { name: "Role" }).textContent).toBe(
         "Discovery lead"
       )
     }
