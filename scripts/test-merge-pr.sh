@@ -236,9 +236,10 @@ never_gated() { [[ ! -e "$MP_COUNT" ]] || fail "$1" "the review gate ran: a refu
 reset; MP_FILES="docs/y.md .github/workflows/ci.yml" run
 expect "R105: a workflow file refuses before the gate" 1 "GitHub Actions workflow files" ".github/workflows/ci.yml"
 no_merge "workflow"; never_gated "workflow"
+lookup_gone='wt=$(git worktree list --porcelain | awk -v b=refs/heads/feat/9-gone '"'"'/^worktree /{w=substr($0,10)} $0=="branch " b {print w; exit}'"'"') && [ -n "$wt" ] && cd "$wt" &&'
 # The fix runs in the branch's worktree, never in the main checkout where merge-pr.sh runs, and removes the files for real.
 fix=$(grep '^Fix: ' "$tmp/err" | sed 's/^Fix: //')
-[[ "$fix" == "cd <the worktree of this branch> && git rm -rf -- .github/workflows/ci.yml && git commit --amend --no-edit && heavy -- git push --force-with-lease" ]] || fail "R105 fix" "wrong fix: $fix"
+[[ "$fix" == "$lookup_gone git rm -rf -- .github/workflows/ci.yml && git commit --amend --no-edit && heavy -- git push --force-with-lease" ]] || fail "R105 fix" "wrong fix: $fix"
 git -C "$tmp/repo" worktree add -q -b feat/9-wt "$tmp/wt" pr-head
 reset; MP_BRANCH=feat/9-wt MP_FILES=".github/workflows/ci.yml" run
 expect "R105: the fix goes to the worktree that has the branch" 1 "Fix: cd $tmp/wt && git rm -rf -- .github/workflows/ci.yml"
@@ -246,7 +247,7 @@ git -C "$tmp/repo" worktree remove --force "$tmp/wt"; git -C "$tmp/repo" branch 
 
 reset; rm "$tmp/repo/.git/pre-push-stamps/$head"; echo ok >"$tmp/repo/.git/pre-push-stamps/other"
 run
-expect "R97: a head with no pre-push stamp refuses before the gate and says to rebase" 1 "was pushed without the pre-push hook" "cd <the worktree of this branch> && git fetch origin main && git rebase origin/main && git commit --amend --no-edit && heavy -- git push --force-with-lease"
+expect "R97: a head with no pre-push stamp refuses before the gate and says to rebase" 1 "was pushed without the pre-push hook" "$lookup_gone git fetch origin main && git rebase origin/main && git commit --amend --no-edit && heavy -- git push --force-with-lease"
 no_merge "no stamp"; never_gated "no stamp"
 
 reset; echo skip >"$tmp/repo/.git/pre-push-stamps/$head"
@@ -276,8 +277,8 @@ git -C "$tmp/repo" switch -q main
 for case in "trailer:$trailer_head:attribution trailer" "big:$big_head:over the 20000-byte"; do
   IFS=: read -r name sha want <<<"$case"
   reset; echo ok >"$tmp/repo/.git/pre-push-stamps/$sha"; MP_HEAD=$sha MP_REVIEW_OUT="RESULT: OK (patch id $patch, main 1234567890ab). Check the verify-opencv evidence, then: gh pr merge 5 --squash --match-head-commit $sha" run
-  if [[ $name == big ]]; then fixcmd="cd <the worktree of this branch> && git add -A && git commit -m \"fix: split oversize files under the 20000-byte limit\" && heavy -- git push origin HEAD"
-  else fixcmd="cd <the worktree of this branch> &&"; fi
+  if [[ $name == big ]]; then fixcmd="$lookup_gone git add -A && git commit -m \"fix: split oversize files under the 20000-byte limit\" && heavy -- git push origin HEAD"
+  else fixcmd="$lookup_gone"; fi
   expect "R97: a $name commit that the commit hooks would refuse is refused before the gate" 1 "$want" "$fixcmd"
   no_merge "$name"; never_gated "$name"
 done

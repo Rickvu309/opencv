@@ -45,11 +45,22 @@ printf '#!/usr/bin/env bash\nset -euo pipefail\n. "%s/lib/result.sh"\n. "%s/lib/
 set +e; bash "$tmp/r.sh" "$sha" >"$tmp/out" 2>"$tmp/err"; code=$?; set -e
 [[ $code -eq 0 ]] || fail "a stamped sha passes"
 set +e; bash "$tmp/r.sh" "0123456789abcdef0123456789abcdef01234567" >"$tmp/out" 2>"$tmp/err"; code=$?; set -e
-[[ $code -eq 1 ]] && grep -q 'Fix: cd <the worktree of this branch> && git fetch origin main && git rebase origin/main && git commit --amend --no-edit && heavy -- git push --force-with-lease' "$tmp/err" || fail "an unstamped sha is refused with the fix"
+[[ $code -eq 1 ]] && grep -q 'Fix: git fetch origin main && git rebase origin/main && git commit --amend --no-edit && heavy -- git push --force-with-lease' "$tmp/err" || fail "an unstamped sha is refused with the fix"
 rm -rf "$repo/.git/pre-push-stamps"
 set +e; bash "$tmp/r.sh" "0123456789abcdef0123456789abcdef01234567" >"$tmp/out" 2>"$tmp/err"; code=$?; set -e
 [[ $code -eq 0 ]] || fail "a clone whose hook never stamped is not blocked"
 echo "ok: an unstamped sha is refused with the push command; a clone with no stamps yet is not blocked"
+
+# rule_cd with no worktree path looks the branch's worktree up, and stops when the branch has none.
+printf '#!/usr/bin/env bash\nset -euo pipefail\n. "%s/lib/result.sh"\n. "%s/lib/rules.sh"\nRULE_BRANCH=$1\nrule_cd\n' "$here" "$here" >"$tmp/c.sh"
+git -C "$repo" worktree add -q -b feat/9-a-b "$tmp/wt" main
+prefix=$(cd "$repo" && bash "$tmp/c.sh" feat/9-a-b)
+[[ "$(cd "$repo" && bash -c "${prefix}pwd")" == "$tmp/wt" ]] || fail "the cd prefix lands in the worktree of the branch: $prefix"
+prefix=$(cd "$repo" && bash "$tmp/c.sh" feat/9-nowhere)
+set +e; out=$(cd "$repo" && bash -c "${prefix}echo ran" 2>/dev/null); code=$?; set -e
+[[ $code -ne 0 && -z "$out" ]] || fail "a branch with no worktree must stop the fix, not run it in the current directory"
+git -C "$repo" worktree remove --force "$tmp/wt"
+echo "ok: a fix with no known worktree finds the branch's worktree or stops"
 
 # rule_skip_said: the PR template carries its own SKIP_CHECKS line, so only "emergency declared by <name>" counts.
 printf '#!/usr/bin/env bash\nset -euo pipefail\n. "%s/lib/result.sh"\n. "%s/lib/rules.sh"\nresult_begin merge-pr 5\ncd "%s"\nrule_skip_said "$1" 5 "$2"\nresult_ok fine\n' "$here" "$here" "$repo" >"$tmp/s.sh"
@@ -62,6 +73,27 @@ skip "emergency declared by unknown."; [[ $code -eq 1 ]] || fail "unknown is not
 skip "SKIP_CHECKS=1, emergency declared by Quan."; [[ $code -eq 0 ]] || fail "a named human is a declaration"
 skip "SKIP_CHECKS=1, emergency declared by Đức."; [[ $code -eq 0 ]] || fail "a non-ASCII name is a declaration"
 skip "no emergency declared by anyone"; [[ $code -eq 1 ]] || fail "prose that merely contains the phrase is not a declaration"
+# The fix the refusal prints must clear the refusal when run: the body it writes is accepted by the rule it came from.
+mkdir -p "$tmp/bin"
+cat >"$tmp/bin/gh" <<'STUB'
+#!/usr/bin/env bash
+case "$1" in
+  pr) printf '%s\n' "${STUB_OLD_BODY:?}" ;;
+  api) while (( $# )); do case "$1" in -f) printf '%s' "${2#body=}" >"${STUB_OUT:?}"; shift ;; esac; shift; done ;;
+esac
+STUB
+chmod +x "$tmp/bin/gh"
+old_body="$(cat "$here/../.github/pull_request_template.md")"
+skip "$old_body"
+[[ $code -eq 1 ]] || fail "the template body is refused before the fix"
+fix=$(grep '^Fix: ' "$tmp/err" | head -n 1 | sed 's/^Fix: //')
+fix=${fix//<who>/Quan}
+PATH="$tmp/bin:$PATH" STUB_OLD_BODY=$old_body STUB_OUT=$tmp/new-body bash -c "$fix" || fail "the printed fix command runs as written"
+[[ -s "$tmp/new-body" ]] || fail "the printed fix command writes a body"
+skip "$(<"$tmp/new-body")"
+[[ $code -eq 0 ]] || fail "the body the printed fix writes must clear the refusal: $(<"$tmp/new-body")"
+grep -q 'Quan' "$tmp/new-body" && grep -qF "$old_body" "$tmp/new-body" || fail "the fix keeps the old body and adds the name"
+echo "ok: the R98 fix command, run with a name, writes a body the rule accepts"
 echo ok >"$stamp"; skip "no mention"; [[ $code -eq 0 ]] || fail "an ok stamp needs no declaration"
 echo "ok: only \"emergency declared by <name>\" declares a SKIP_CHECKS push; the template line and a placeholder do not"
 

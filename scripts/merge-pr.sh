@@ -88,6 +88,7 @@ head_rules() {
   local sha=$1 branch wt
   branch=$(gh pr view "$pr" --json headRefName --jq .headRefName)
   wt=$(rule_wt_of "$branch")
+  RULE_BRANCH=$branch
   changed=$(gh pr diff "$pr" --name-only) || die "could not list the files PR #$pr changes"
   rule_no_workflows "$changed" "$wt" push
   rule_pushed_through_hook "$sha" "$wt"

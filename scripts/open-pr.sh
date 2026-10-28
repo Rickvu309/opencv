@@ -70,7 +70,7 @@ if (( have_gh )); then
   if [[ -n "$existing" ]]; then
     echo "A PR is already open for $branch: $existing"
     result_id "${existing##*/}"
-    result_ok "a PR is already open: $existing" "heavy -- scripts/review-pr.sh ${existing##*/}"
+    result_ok "a PR is already open: $existing" "cd $(printf '%q' "$main_checkout") && heavy -- scripts/review-pr.sh ${existing##*/}"
     exit 0
   fi
   state=$(gh issue view "$issue" --json state --jq .state 2>/dev/null) || die "issue #$issue not found"
@@ -111,7 +111,7 @@ fi
 
 # The workflow rules that a script can check (docs/git-workflow/rule-enforcement.md): heavy, SKIP_CHECKS, main checkout, port, issue label, workflows, hook-skipped commits.
 RULE_ARGS=$rule_args rule_heavy scripts/open-pr.sh
-rule_skip_declared
+RULE_ARGS=$rule_args rule_skip_declared
 rule_main_clean "$main_checkout"
 rule_port "$top"
 if (( have_gh )); then
@@ -154,7 +154,7 @@ pr_url=$(gh pr create "${args[@]}") || DIE_CAUSE=other die "gh pr create failed;
 [[ -z "$pr_url" ]] || echo "$pr_url"
 if [[ "${pr_url##*/}" =~ ^[0-9]+$ ]]; then
   result_id "${pr_url##*/}"
-  result_ok "opened ${pr_url}" "cd \"$(dirname "$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null || echo .)")\" && heavy -- scripts/review-pr.sh ${pr_url##*/}"
+  result_ok "opened ${pr_url}" "cd $(printf '%q' "$main_checkout") && heavy -- scripts/review-pr.sh ${pr_url##*/}"
 else
   result_ok "PR created"
 fi

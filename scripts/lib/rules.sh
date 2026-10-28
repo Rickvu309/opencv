@@ -23,7 +23,14 @@ rule_fail() {  # rule_fail <message> <fix command>
   exit 1
 }
 
-rule_cd() { if [[ -n "${1:-}" ]]; then printf 'cd %q && ' "$1"; else printf 'cd <the worktree of this branch> && '; fi; }
+rule_cd() {  # rule_cd [wt]: the prefix that puts a fix in the branch's worktree; with no wt it looks the worktree of $RULE_BRANCH up and stops when there is none
+  local look='git worktree list --porcelain | awk -v b=%q '"'"'/^worktree /{w=substr($0,10)} $0=="branch " b {print w; exit}'"'"
+  if [[ -n "${1:-}" ]]; then printf 'cd %q && ' "$1"
+  elif [[ -n "${RULE_BRANCH:-}" ]]; then
+    # shellcheck disable=SC2059
+    printf "wt=\$($look) && [ -n \"\$wt\" ] && cd \"\$wt\" && " "refs/heads/$RULE_BRANCH"
+  fi
+}
 
 rule_wt_of() {
   git worktree list --porcelain 2>/dev/null |
@@ -76,7 +83,7 @@ rule_no_workflows() {  # rule_no_workflows <files> [wt] [push]: push adds the fo
 rule_skip_declared() {
   [[ "${SKIP_CHECKS:-}" == 1 ]] || return 0
   [[ -n "${SKIP_CHECKS_DECLARED_BY:-}" ]] ||
-    rule_fail "SKIP_CHECKS=1 is for a production emergency a human declared; no human is named" "SKIP_CHECKS=1 SKIP_CHECKS_DECLARED_BY=<who declared the emergency> heavy -- scripts/open-pr.sh ... (or drop SKIP_CHECKS=1)"
+    rule_fail "SKIP_CHECKS=1 is for a production emergency a human declared; no human is named" "env -u SKIP_CHECKS heavy -- scripts/open-pr.sh${RULE_ARGS:+ ${RULE_ARGS% }}   # or, only when a human declared the emergency: SKIP_CHECKS_DECLARED_BY=<their name> in front"
 }
 
 rule_stamp_dir() { printf '%s/pre-push-stamps' "$(git rev-parse --path-format=absolute --git-common-dir)"; }
@@ -87,7 +94,7 @@ rule_skip_said() {  # rule_skip_said <sha> <pr#> <pr body>: the marker open-pr.s
   [[ -f "$f" && "$(<"$f")" == skip ]] || return 0
   who=$(grep -oiE '(^|[,(*] *)emergency declared by [^[:space:]*.,;)<>]+' <<<"$body" | head -n 1 | sed -E 's/^.*emergency declared by //I' || true)
   [[ -n "$who" && "${who,,}" != unknown ]] ||
-    rule_fail "head ${sha:0:9} was pushed with SKIP_CHECKS=1 (only for an emergency a human declared) and PR #$pr does not say \"emergency declared by <name>\"" "gh api -X PATCH repos/{owner}/{repo}/pulls/$pr -f body=\"SKIP_CHECKS=1: emergency declared by <who>. \$(gh pr view $pr --json body --jq .body)\""
+    rule_fail "head ${sha:0:9} was pushed with SKIP_CHECKS=1 (only for an emergency a human declared) and PR #$pr does not say \"emergency declared by <name>\"" "gh api -X PATCH repos/{owner}/{repo}/pulls/$pr -f body=\"SKIP_CHECKS=1, emergency declared by <who>. \$(gh pr view $pr --json body --jq .body)\""
 }
 
 rule_pushed_through_hook() {  # rule_pushed_through_hook <sha> [wt]

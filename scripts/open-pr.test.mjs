@@ -252,6 +252,7 @@ test("files retried by the quick check and by the push's check are all recorded"
 test("with SKIP_CHECKS=1 an old check result's retried list is not adopted", (t) => {
   const result = run(t, 0, false, false, false, {
     SKIP_CHECKS: "1",
+    SKIP_CHECKS_DECLARED_BY: "Quan",
     PROOF_OLD_RETRIED: retried,
   })
   assert.equal(result.status, 0, result.stderr)
