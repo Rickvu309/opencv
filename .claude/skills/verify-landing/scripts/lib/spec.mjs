@@ -19,18 +19,57 @@ export function readDesignFile(path, encoding) {
 
 export const loadSpec = () => JSON.parse(readDesignFile(FILES.spec, "utf8"))
 
-const SECTIONS = ["27", "28", "29", "30"]
+const FIELDS = {
+  27: { viewBox: "string", cards: "number", shapes: "number" },
+  28: {
+    gapMin: "number",
+    gapMax: "number",
+    fontSize: "number",
+    fontWeight: "number",
+    markInset: "number",
+  },
+  29: { tolerance: "number", fontWeight: "number" },
+  30: {
+    reference: "string",
+    title: "string",
+    raster: "number",
+    channelDelta: "number",
+    maxRatio: "number",
+  },
+}
+const BUTTON = {
+  scope: "string",
+  label: "string",
+  height: "number",
+  fontSize: "number",
+  padInline: "number",
+  inset: "boolean",
+  outer: "boolean",
+  borderVisible: "boolean",
+  pill: "boolean",
+}
+const lacking = (where, shape) =>
+  Object.entries(shape)
+    .filter(([key, type]) => typeof where?.[key] !== type)
+    .map(([key]) => key)
+
+// The first section or field a spec lacks, so a half-edited spec is named instead of reading as a page regression.
 export const specProblem = (spec) => {
-  const missing = SECTIONS.filter(
-    (id) => typeof spec?.[id] !== "object" || !spec[id]
-  )
-  if (missing.length) return `no section ${missing.join(", ")}`
-  return Object.keys(spec["29"].buttons ?? {}).length === 0
-    ? "section 29 has no buttons"
-    : null
+  for (const [id, shape] of Object.entries(FIELDS)) {
+    if (typeof spec?.[id] !== "object" || !spec[id]) return `no section ${id}`
+    const bad = lacking(spec[id], shape)
+    if (bad.length) return `section ${id} lacks ${bad.join(", ")}`
+  }
+  const buttons = Object.entries(spec["29"].buttons ?? {})
+  if (buttons.length === 0) return "section 29 has no buttons"
+  for (const [key, button] of buttons) {
+    const bad = lacking(button, BUTTON)
+    if (bad.length) return `29 button ${key} lacks ${bad.join(", ")}`
+  }
+  return null
 }
 
-// A spec that is missing or malformed gives { error }, so 27 to 30 report STALE instead of the run throwing.
+// A spec that is missing or malformed gives { error }, which the checker reports as an error (exit 2): a setup problem, not a verdict.
 export function loadSpecOrError() {
   try {
     const spec = loadSpec()

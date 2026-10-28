@@ -2,7 +2,7 @@
 // frame, a pinned count, size, copy or picture. The unit test holds this table to the ids the checker emits.
 export const KINDS = {
   "01": "invariant",
-  "02": "invariant",
+  "02": "design",
   "03": "invariant",
   "04": "invariant",
   "05": "invariant",

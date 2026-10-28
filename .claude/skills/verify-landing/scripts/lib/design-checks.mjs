@@ -6,23 +6,12 @@
 // 29 judges every CTA it found and names the others as not judged.
 import { decodeDataUrl, decodePng, pngMismatch } from "./art-diff.mjs"
 import { readDesignFile } from "./spec.mjs"
-import { judged, stale, staleIf, verdict } from "./verdict.mjs"
+import { judged, staleIf, verdict } from "./verdict.mjs"
 
 const place = (scope) =>
   ({ nav: "the header", close: "#close" })[scope] ?? scope
 
-const DESIGN_CHECKS = [
-  ["27", "benefit-art-from-design"],
-  ["28", "nav-lockup-spacing"],
-  ["29", "cta-buttons-match-design"],
-  ["30", "benefit-art-matches-pen"],
-]
-
 export function designChecks(desktop, spec) {
-  if (spec?.error)
-    return DESIGN_CHECKS.map(([id, name]) =>
-      stale(id, name, spec.error, "the design spec holds this check's numbers")
-    )
   const out = []
 
   const s27 = spec["27"]

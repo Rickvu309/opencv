@@ -45,4 +45,5 @@ export const KINDS = {
   42: "design",
   43: "invariant",
   44: "invariant",
+  45: "invariant",
 }

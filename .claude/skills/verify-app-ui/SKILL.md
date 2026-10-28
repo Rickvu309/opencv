@@ -38,7 +38,7 @@ Reading a FAIL: the measured value is what the app does, the rule is what it sho
 
 Each check has one kind, in `scripts/lib/kinds.mjs` and [properties.md](properties.md). An invariant check holds for any good design: WCAG, reduced motion, tokens only, writing rules, no sideways scroll, the render budget. A design check holds only for the current one: a pinned copy line, size, label, theme or surface list (06, 08, 11, 12, 16, 19, 23, 28, 29, 30, 36, 38, 40, 42).
 
-- `VERIFY_TIER=invariant` runs the invariant checks only. The design checks are not computed. The tour still visits every screen and scenario, because invariant checks read its data (10 reads the empty board, the contrast and layout checks read every snapshot), so the run takes about as long (163 s measured on the shared machine).
+- `VERIFY_TIER=invariant` runs the invariant checks only. The design checks are not computed. The tour still visits every screen and scenario, because invariant checks read its data (10 reads the empty board, the contrast and layout checks read every snapshot, 45 reads every page's scroll width). Only the Paper empty-list scenario, which only design check 29 reads, is run without need. The run takes about as long (163 s measured on the shared machine).
 - `VERIFY_TIER=design` reports only the design checks. `VERIFY_TIER=all` (default) runs both.
 - `verify:pen-layout` and `verify:apply-pen` are separate commands and design by nature. The tier does not touch them.
 - Unlike the landing, this checker has no spec file or recorder yet. After a redesign of the signed-in screens, look at the screenshots (`VERIFY_APP_UI_SHOTS`), then edit the pinned copy in the design checks and re-record the layouts with `scripts/pen-layout.mjs`.
@@ -49,7 +49,7 @@ Each check has one kind, in `scripts/lib/kinds.mjs` and [properties.md](properti
 
 ## The properties
 
-Forty-three named properties (id 14 retired with the Home page and is not reused). Ids 01 to 30 are the research check numbers, 31 to 38 are app-wide checks the signed-in tour adds, and 39 to 44 are the design text rules (pinned phrases in `scripts/lib/copy.json`). Each has a rule, a source and a note when it is a heuristic: read [properties.md](properties.md). Search the id in `scripts/lib/checks-content.mjs` (01 to 13) or `scripts/lib/checks-source.mjs` (24 to 27), `scripts/lib/checks-primary.mjs` (28 and 32) or `scripts/lib/checks.mjs` (the rest of 14 to 44).
+Forty-four named properties (id 14 retired with the Home page and is not reused). Ids 01 to 30 are the research check numbers, 31 to 38 are app-wide checks the signed-in tour adds, 39 to 44 are the design text rules, and 45 is the sideways-scroll check (pinned phrases in `scripts/lib/copy.json`). Each has a rule, a source and a note when it is a heuristic: read [properties.md](properties.md). Search the id in `scripts/lib/checks-content.mjs` (01 to 13) or `scripts/lib/checks-source.mjs` (24 to 27), `scripts/lib/checks-primary.mjs` (28 and 32) or `scripts/lib/checks.mjs` (the rest of 14 to 44).
 
 ## Baseline at the sync commit
 

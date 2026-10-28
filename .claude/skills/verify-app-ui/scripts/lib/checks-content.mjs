@@ -10,7 +10,6 @@ import {
   scanProblem,
   stubSilent,
 } from "./check-util.mjs"
-import { boardLanes } from "./checks-stages.mjs"
 import {
   emptyActionLabels,
   hasBasisSentence,
@@ -194,20 +193,19 @@ export function contentChecks(d, want = () => true) {
   )
 
   {
-    // 10. Jobs are deleted through the api. The empty board is one empty state, with no Closed header.
+    // 10. Jobs are deleted through the api. The empty board is one empty state.
     const ae = d.applyEmpty
-    const closedHeader = boardLanes(ae).hiddenShown
     const wells = (ae.text.match(/Drop a (job|opportunity) here/g) ?? []).length
-    const confirmed = ae.cards.length === 0 && !closedHeader && wells === 0
+    const confirmed = ae.cards.length === 0 && wells === 0
     r.push(
       result(
         "10",
         "empty-board-one-empty-state",
         confirmed && ae.emptyStates === 1,
         confirmed
-          ? `after deleting ${ae.deleted?.deleted} jobs: 0 cards, ${ae.emptyStates} empty states, Closed header ${closedHeader}`
-          : `the zero-job board was not reached: ${ae.cards.length} cards, Closed header ${closedHeader}, ${wells} wells`,
-        "with every job deleted the board shows one empty state and no Closed header. Closed stays behind Hidden columns. A board that was not confirmed empty is a FAIL"
+          ? `after deleting ${ae.deleted?.deleted} jobs: 0 cards, ${ae.emptyStates} empty states`
+          : `the zero-job board was not reached: ${ae.cards.length} cards, ${wells} wells`,
+        "with every job deleted the board shows one empty state. A board that was not confirmed empty is a FAIL"
       )
     )
   }

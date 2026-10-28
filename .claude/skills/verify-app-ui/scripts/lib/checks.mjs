@@ -24,6 +24,7 @@ import {
 } from "./check-util.mjs"
 import { keyboardPrimaryCheck, primaryButtonCheck } from "./checks-primary.mjs"
 import { boardLanes } from "./checks-stages.mjs"
+import { sidewaysScroll } from "./checks-scroll.mjs"
 
 export function runChecks(d, want = () => true) {
   const r = contentChecks(d, want)
@@ -364,6 +365,8 @@ export function runChecks(d, want = () => true) {
       )
     )
   }
+
+  r.push(sidewaysScroll(d))
 
   const settingsSnaps = [
     d.settings,

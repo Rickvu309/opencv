@@ -2,7 +2,7 @@
 
 The list the checker measures. `SKILL.md` links here. Each id carries its kind in brackets: invariant (holds for any good design) or design (holds only for the current one). `scripts/lib/kinds.mjs` is the table and `VERIFY_TIER` picks which run (see SKILL.md, Tiers).
 
-Ids 01 to 30 are the research check numbers. 31 to 38 are app-wide checks the signed-in tour adds. 39 to 44 are the design text rules, and their pinned phrases live in `scripts/lib/copy.json`. A heuristic is a word list or threshold that can misjudge; it says so in its rule text. Search the id in `scripts/lib/checks-content.mjs` (01 to 13) or `scripts/lib/checks.mjs` (14 to 44).
+Ids 01 to 30 are the research check numbers. 31 to 38 are app-wide checks the signed-in tour adds. 39 to 44 are the design text rules, and their pinned phrases live in `scripts/lib/copy.json`. 45 is the sideways-scroll check, split out of 16 and 38 so it stays invariant. A heuristic is a word list or threshold that can misjudge; it says so in its rule text. Search the id in `scripts/lib/checks-content.mjs` (01 to 13) or `scripts/lib/checks.mjs` (14 to 44).
 
 Writing and logic:
 
@@ -15,7 +15,7 @@ Writing and logic:
 - 07 `pitch-starter-no-metric` (invariant): Pitch coming-soon copy has no percentage, no "N percent", and no add-to-cart. Preview text marked aria-hidden is not counted. Source: NN/g hallucinations.
 - 08 `confirm-before-write` (design): a JSX label or quoted string Approve and Deny exists in the Coach features (source read; comments and type names do not count; the scripted Coach never writes). Source: shadcn Confirmation; Gemini.
 - 09 `tool-line-names-object` (invariant): a Coach step status line that is not an error names Apply, CV, Letter, Proof, Pitch, Job or card (case-sensitive; driven with a read turn, not a write). Source: shadcn AI Elements.
-- 10 `empty-board-one-empty-state` (invariant): the tour deletes the jobs through the api, reloads Apply, and requires 0 cards and exactly one empty state. Closed is not a visible heading. A board that was not confirmed empty is a FAIL. Source: NN/g.
+- 10 `empty-board-one-empty-state` (invariant): the tour deletes the jobs through the api, reloads Apply, and requires 0 cards and exactly one empty state. A board that was not confirmed empty is a FAIL. Source: NN/g.
 - 11 `loading-not-empty` (design): while the Paper call is held the page says "Loading documents" or "Loading..." and not "Start a document". Source: NN/g.
 - 12 `unpublished-banner-has-publish` (design): Pitch is coming soon and does not show a Hit Publish banner. The check fails only when that banner is present without a Publish button. The tour does not look for Publish. Source: NN/g.
 - 13 `fit-not-bare-number` (invariant): a percentage on a board card passes only with a basis phrase (because, based on, from your, matches your) inside that same card; a percentage outside any card fails. Source: NN/g.
@@ -68,16 +68,17 @@ Design text, properties 39 to 44. Phrases are pinned in `scripts/lib/copy.json`.
 - 42 `toggle-enabled-disabled` (design): a toggle label is Enabled or Disabled. On, Off, and Connected fail.
 - 43 `title-before-company` (invariant): a job line does not start with "at" and no title.
 - 44 `no-exclamation` (invariant): chrome has no exclamation mark and does not say Oops.
+- 45 `no-sideways-scroll` (invariant): every toured page at 1440x900 (the surfaces, the Coach and Pitch states, the scenario pages, settings, and the reduced-motion pass) and at 390x844 (the four surfaces with the drawer open, and settings) has a document no wider than its window (`docScroll`). A snapshot with no scroll size is STALE. 16 keeps the Apply board part (its inner scrollers) and 38 keeps the drawer links; both are design.
 
 ## Kind decisions (#550 review)
 
-| Id  | Kind      | Why                                                                                         |
-| --- | --------- | ------------------------------------------------------------------------------------------- |
-| 08  | design    | needs the labels Approve and Deny                                                           |
-| 16  | design    | needs every JOB_STAGES lane as a heading at 1440 (the 390 no-sideways-scroll part is in 35) |
-| 19  | design    | needs luminance 0.85 or more, so a good dark theme fails                                    |
-| 23  | design    | needs a lane heading per stage and no Closed heading                                        |
-| 30  | design    | needs Undo plus Reject or "Undo this change"                                                |
-| 40  | design    | pins the kit's glow utility                                                                 |
-| 42  | design    | needs Enabled and Disabled, while On and Off is a fine design                               |
-| 10  | invariant | one empty state on an empty board holds for any good design                                 |
+| Id  | Kind      | Why                                                                                           |
+| --- | --------- | --------------------------------------------------------------------------------------------- |
+| 08  | design    | needs the labels Approve and Deny                                                             |
+| 16  | design    | needs every JOB_STAGES lane as a heading at 1440 (the page-level sideways scroll is check 45) |
+| 19  | design    | needs luminance 0.85 or more, so a good dark theme fails                                      |
+| 23  | design    | needs a lane heading per stage and no Closed heading                                          |
+| 30  | design    | needs Undo plus Reject or "Undo this change"                                                  |
+| 40  | design    | pins the kit's glow utility                                                                   |
+| 42  | design    | needs Enabled and Disabled, while On and Off is a fine design                                 |
+| 10  | invariant | one empty state on an empty board holds for any good design                                   |

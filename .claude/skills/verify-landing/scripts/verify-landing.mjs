@@ -88,7 +88,7 @@ async function visit(
     snap.first = await page.evaluate(probeSource("first"))
     await sleep(1500)
     if (wanted.top) snap.top = await page.evaluate(probeSource("top"))
-    if (wanted.design && spec && !spec.error)
+    if (wanted.design && spec)
       snap.design = await page.evaluate(designProbeSource(spec))
     if (keep)
       await page.screenshot(`${shots}/${wanted.shot}-first-view.png`, false)
@@ -136,7 +136,10 @@ let server = null
 let browser = null
 let exit = 0
 try {
-  if (tier !== "invariant") spec = loadSpecOrError()
+  if (tier !== "invariant") {
+    spec = loadSpecOrError()
+    if (spec.error) throw new Error(spec.error)
+  }
   if (await answers()) {
     if (!process.env.VERIFY_LANDING_REUSE) {
       throw new Error(

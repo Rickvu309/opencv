@@ -43,9 +43,10 @@ Each check has one kind, in `scripts/lib/kinds.mjs` and [properties.md](properti
 
 After a redesign:
 
-1. Run with `VERIFY_LANDING_SHOTS=<dir>` and look at the screenshots. The next step records whatever is built, so the look comes first.
-2. `node scripts/design-spec.mjs record --from-app <origin>`. It measures the page with the checker's probes and rewrites the spec with the measured counts, sizes, type and flags. The spec holds design values only; rules such as "no inline hex" stay in the checker. The recorder keeps the committed tolerances and locators (the nav gap band, the CTA tolerance, the art delta and ratio, the button labels, the Coach card title, the mark inset), and it exits 2 without writing when a measurement is outside a committed tolerance or the Coach art is over its pixel ratio, so a regression cannot be recorded. To redesign, change the numbers or tolerances in the spec by hand, review that diff, then run the recorder. It never writes `reference/coach-art.png`: that picture comes from the design tool or a screenshot a human approved, never from the page it judges. Replace it in its own reviewed commit.
-3. Review the spec diff and commit it.
+1. Run with `VERIFY_LANDING_SHOTS=<dir>` and look at the screenshots. A spec value is only as good as the page it was measured from, so the look comes first.
+2. `node scripts/design-spec.mjs record --from-app <origin>`. It writes nothing. It prints one line per spec value, `unchanged` or `<id>.<path>: <committed> -> <measured>`, and exits 1 when anything differs (or a value sits outside a committed tolerance), 0 when nothing does. A recorder cannot tell a redesign from a regression, since any value it writes becomes the truth. Read its diff against the screenshots: a card count that fell from 3 to 2 or a type size that shrank is a regression to fix in the page, not a number to record.
+3. Only when the diff is the redesign, run it again with `--accept` (optionally `--out <path>`) and commit the spec. `--accept` keeps the committed tolerances and locators (the nav gap band, the CTA tolerance, the art delta and ratio, the button labels, the Coach card title, the mark inset) and exits 2 without writing when a measurement is outside one, so move a tolerance by hand first. The spec holds design values only; rules such as "no inline hex" stay in the checker. It never writes `reference/coach-art.png`: that picture comes from the design tool or a screenshot a human approved, never from the page it judges. Replace it in its own reviewed commit.
+4. The reviewer of that PR reads the spec diff the same way, against the same screenshots.
 
 ## The properties
 

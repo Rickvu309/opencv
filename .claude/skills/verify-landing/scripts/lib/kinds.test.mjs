@@ -7,7 +7,13 @@ import test from "node:test"
 import { fileURLToPath } from "node:url"
 
 import { gate, selectTier } from "../../../verify-app-ui/scripts/lib/tier.mjs"
-import { artProblem, recordSpec } from "../design-spec.mjs"
+import {
+  artProblem,
+  diffLines,
+  finish,
+  plan,
+  recordSpec,
+} from "../design-spec.mjs"
 import { designChecks } from "./design-checks.mjs"
 import { KINDS } from "./kinds.mjs"
 import { pageChecks } from "./page-checks.mjs"
@@ -160,6 +166,29 @@ const measuredPage = () => ({
   },
 })
 
+const coachRaster = (spec, file = "../../reference/coach-art.png") => ({
+  title: spec["30"].title,
+  png: `data:image/png;base64,${readFileSync(join(here, file)).toString("base64")}`,
+})
+const page = (spec, edit = () => {}) => {
+  const measured = { ...measuredPage(), benefitRasters: [coachRaster(spec)] }
+  edit(measured)
+  return measured
+}
+const quiet = (decision) => {
+  const written = []
+  const log = console.log
+  console.log = () => {}
+  try {
+    const exit = finish(decision, "out.json", (path, text) =>
+      written.push([path, text])
+    )
+    return { exit, written }
+  } finally {
+    console.log = log
+  }
+}
+
 test("the recorder turns measurements into the committed spec shape and keeps the committed tolerances", () => {
   const spec = loadSpec()
   const measured = measuredPage()
@@ -174,41 +203,110 @@ test("the recorder turns measurements into the committed spec shape and keeps th
   assert.throws(() => recordSpec(spec, missing), /no nav button/)
 })
 
-test("the recorder refuses a page outside the committed tolerances", () => {
+test("dry run: prints one line per value, exits 0 when none differs, and writes nothing", () => {
   const spec = loadSpec()
-  const gap = measuredPage()
-  gap.navLockup.gap = 14.4
-  assert.throws(
-    () => recordSpec(spec, gap),
-    /refusing to record[^]*28 nav gap 14.40px is outside the committed 9 to 13px/
-  )
-  const narrow = structuredClone(spec)
-  narrow["28"].gapMax = 10
-  assert.throws(() => recordSpec(narrow, measuredPage()), /28 nav gap 11.04px/)
-  const tall = measuredPage()
-  tall.ctas.nav = sampleButton(36)
-  assert.throws(() => recordSpec(spec, tall), /29 nav height 36.00px/)
-  const wide = measuredPage()
-  wide.ctas.close.padInline = 22
-  assert.throws(() => recordSpec(spec, wide), /29 close padInline 22.00px/)
+  const decision = plan(spec, page(spec))
+  assert.equal(decision.exit, 0)
+  assert.equal(decision.write, null)
+  assert.ok(decision.lines.length > 20)
+  assert.ok(decision.lines.every((line) => line.endsWith(": unchanged")))
+  assert.deepEqual(quiet(decision), { exit: 0, written: [] })
 })
 
-test("the recorder refuses Coach art over the committed pixel ratio, and never writes a reference", () => {
+test("dry run: prints committed -> measured for a differing value, exits 1, and writes nothing", () => {
   const spec = loadSpec()
-  const png = readFileSync(join(here, "../../reference/coach-art.png"))
-  const raster = (bytes) => ({
-    title: spec["30"].title,
-    png: `data:image/png;base64,${bytes.toString("base64")}`,
+  const regressed = page(spec, (m) => {
+    m.benefitArt.count = 2
+    m.navLockup.fontSize = "12px"
+    m.ctas.nav.inset = false
   })
-  const same = { benefitRasters: [raster(png)] }
+  const decision = plan(spec, regressed)
+  assert.equal(decision.exit, 1)
+  assert.equal(decision.write, null)
+  assert.ok(decision.lines.includes("27.cards: 3 -> 2"))
+  assert.ok(decision.lines.includes("28.fontSize: 16 -> 12"))
+  assert.ok(decision.lines.includes("29.buttons.nav.inset: true -> false"))
+  assert.ok(decision.lines.includes("27.viewBox: unchanged"))
+  assert.deepEqual(quiet(decision), { exit: 1, written: [] })
+})
+
+test("dry run: a value outside a committed tolerance exits 1 even when no spec value moves", () => {
+  const spec = loadSpec()
+  const decision = plan(
+    spec,
+    page(spec, (m) => {
+      m.navLockup.gap = 14.4
+    })
+  )
+  assert.equal(decision.exit, 1)
+  assert.ok(decision.lines.every((l) => !l.includes("->")))
+  assert.match(decision.lines.at(-1), /outside tolerance: 28 nav gap 14.40px/)
+})
+
+test("--accept writes the measured spec, and a second accept of the same page changes nothing", () => {
+  const spec = loadSpec()
+  const redesign = page(spec, (m) => {
+    m.benefitArt.count = 2
+  })
+  const decision = plan(spec, redesign, { accept: true })
+  assert.equal(decision.exit, 0)
+  assert.equal(decision.write["27"].cards, 2)
+  const done = quiet(decision)
+  assert.equal(done.exit, 0)
+  assert.equal(done.written.length, 1)
+  assert.equal(done.written[0][0], "out.json")
+  assert.deepEqual(JSON.parse(done.written[0][1]), decision.write)
+  const again = plan(decision.write, redesign, { accept: true })
+  assert.ok(again.lines.every((line) => line.endsWith(": unchanged")))
+})
+
+test("--accept refuses a page outside the committed tolerances and writes nothing", () => {
+  const spec = loadSpec()
+  const attempts = {
+    "28 nav gap 14.40px is outside the committed 9 to 13px": (m) => {
+      m.navLockup.gap = 14.4
+    },
+    "29 nav height 36.00px": (m) => {
+      m.ctas.nav = sampleButton(36)
+    },
+    "29 close padInline 22.00px": (m) => {
+      m.ctas.close.padInline = 22
+    },
+  }
+  for (const [message, edit] of Object.entries(attempts)) {
+    const decision = plan(spec, page(spec, edit), { accept: true })
+    assert.equal(decision.exit, 2, message)
+    assert.equal(decision.write, null, message)
+    assert.match(decision.lines.join("\n"), /refusing to record/)
+    assert.ok(decision.lines.join("\n").includes(message), message)
+    assert.deepEqual(quiet(decision), { exit: 2, written: [] })
+  }
+  const narrow = structuredClone(spec)
+  narrow["28"].gapMax = 10
+  assert.equal(plan(narrow, page(narrow), { accept: true }).exit, 2)
+})
+
+test("--accept refuses Coach art over the committed pixel ratio, and never writes a reference", () => {
+  const spec = loadSpec()
+  const same = { benefitRasters: [coachRaster(spec)] }
   assert.equal(artProblem(spec, same), null)
   assert.match(artProblem(spec, { benefitRasters: [] }), /no raster/)
   const strict = structuredClone(spec)
   strict["30"].maxRatio = -1
   assert.match(artProblem(strict, same), /over the committed/)
+  const decision = plan(strict, page(strict), { accept: true })
+  assert.equal(decision.exit, 2)
+  assert.equal(decision.write, null)
   const source = readFileSync(join(here, "../design-spec.mjs"), "utf8")
-  assert.equal(source.match(/writeFileSync\(/g).length, 1)
+  assert.equal(source.match(/writeFileSync/g).length, 2)
   assert.doesNotMatch(source, /--reference|png\.split/)
+})
+
+test("a value only one side has shows as none", () => {
+  assert.deepEqual(diffLines({ 27: { a: 1 } }, { 27: { b: 2 } }), [
+    "27.a: 1 -> none",
+    "27.b: none -> 2",
+  ])
 })
 
 test("a spec flag that is missing or false never turns a FAIL into a PASS", () => {
@@ -264,17 +362,28 @@ test("inline hex is a rule held in the checker, not a spec number", () => {
   assert.equal(status(3), "FAIL")
 })
 
-test("a missing or malformed spec makes 27 to 30 STALE instead of throwing", () => {
-  const results = designChecks({}, { error: "cannot read the spec" })
-  assert.deepEqual(
-    results.map((r) => [r.id, r.status]),
-    [
-      ["27", "STALE"],
-      ["28", "STALE"],
-      ["29", "STALE"],
-      ["30", "STALE"],
-    ]
+test("specProblem names the first section or field the spec lacks", () => {
+  assert.equal(
+    specProblem({ 27: {} }),
+    "section 27 lacks viewBox, cards, shapes"
   )
-  assert.equal(specProblem({ 27: {} }), "no section 28, 29, 30")
+  assert.equal(specProblem({}), "no section 27")
   assert.equal(specProblem(loadSpec()), null)
+  const noGap = structuredClone(loadSpec())
+  delete noGap["28"].gapMax
+  assert.equal(specProblem(noGap), "section 28 lacks gapMax")
+  const noTolerance = structuredClone(loadSpec())
+  delete noTolerance["29"].tolerance
+  assert.equal(specProblem(noTolerance), "section 29 lacks tolerance")
+  const noInset = structuredClone(loadSpec())
+  delete noInset["29"].buttons.close.inset
+  assert.equal(specProblem(noInset), "29 button close lacks inset")
+  const noButtons = structuredClone(loadSpec())
+  noButtons["29"].buttons = {}
+  assert.equal(specProblem(noButtons), "section 29 has no buttons")
+})
+
+test("a missing or malformed spec is an error for the checker, not a verdict", () => {
+  const source = readFileSync(join(here, "../verify-landing.mjs"), "utf8")
+  assert.match(source, /if \(spec\.error\) throw new Error\(spec\.error\)/)
 })

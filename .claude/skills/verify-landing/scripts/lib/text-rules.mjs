@@ -60,15 +60,16 @@ export function textRules(top, want = () => true) {
       b.region !== "nav" && /\bopencv\b/.test(b.text) && /\bCV\b/.test(b.text)
   )
   // The first-release hero is the outcome line. The statement names opencv and the CV.
-  out.push(
-    verdict(
-      "02",
-      "statement-names-cv",
-      'A block outside the nav names "opencv" and "CV" (the statement carries the product, not the H1)',
-      namesWork,
-      `statement names opencv and CV=${namesWork}`
+  if (want("02"))
+    out.push(
+      verdict(
+        "02",
+        "statement-names-cv",
+        'A block outside the nav names "opencv" and "CV" (the statement carries the product, not the H1)',
+        namesWork,
+        `statement names opencv and CV=${namesWork}`
+      )
     )
-  )
 
   const listItems = Math.max(
     0,

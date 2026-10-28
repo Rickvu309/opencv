@@ -1,15 +1,17 @@
 #!/usr/bin/env node
-// design-spec record: measures the landing at 1440x900 with the checker's own probes and writes the spec the
-// design checks (27 to 30) read.
-//   node scripts/design-spec.mjs record --from-app <origin> [--out <path>]
-// The spec holds design values only (counts, sizes, gaps, type, the pill and ring flags). Rules ("no inline hex")
-// live in the checker. The recorder writes measured values and keeps the committed tolerances and locators: the
-// nav gap band, the CTA tolerance, the art channel delta and pixel ratio, the button labels and scopes, the Coach
-// card title, the mark inset and the raster size. It exits 2 and writes nothing when a measurement falls outside a
-// committed tolerance (the nav gap outside its band, a CTA height or padding more than the tolerance off, the Coach
-// art over its pixel ratio), so a regression cannot be recorded. To redesign, edit the spec numbers or tolerances
-// by hand, review that diff, then run the recorder. The reference picture (reference/coach-art.png) is never written
-// from the page it judges: it comes from the design tool or a human-approved screenshot.
+// design-spec record: measures the landing at 1440x900 with the checker's own probes and compares the values
+// the design checks (27 to 30) read with the committed spec.
+//   node scripts/design-spec.mjs record --from-app <origin> [--accept [--out <path>]]
+// Without --accept it writes nothing. It prints one line per spec value, "unchanged" or
+// "<id>.<path>: <committed> -> <measured>", and exits 1 when anything differs, 0 when nothing does.
+// Whatever it writes becomes the truth, so a recorder cannot tell a redesign from a regression. A human decides:
+// read the diff against the screenshots (VERIFY_LANDING_SHOTS), then run it again with --accept and commit the
+// spec. The reviewer of that commit reads the spec diff the same way.
+// --accept keeps the committed tolerances and locators (the nav gap band, the CTA tolerance, the art channel
+// delta and pixel ratio, the button labels and scopes, the Coach card title, the mark inset and the raster size)
+// and exits 2 without writing when a measurement is outside a committed tolerance. To move a tolerance, edit the
+// spec by hand first. The reference picture (reference/coach-art.png) is never written from the page it judges:
+// it comes from the design tool or a human-approved screenshot.
 import { writeFileSync } from "node:fs"
 import { basename, join } from "node:path"
 import { parseArgs } from "node:util"
@@ -26,8 +28,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const outside = (what, value, low, high, unit = "") =>
   `${what} ${value}${unit} is outside the committed ${low} to ${high}${unit}`
 
-// The committed tolerances are the band a measurement must sit in. A measurement outside it is a regression or a
-// redesign, and neither is recorded silently: edit the committed spec by hand first.
+// The committed tolerances are the band --accept holds a measurement to. Outside it, move the band by hand first.
 export function bandProblems(prior, measured) {
   const { navLockup: lockup, ctas } = measured
   const problems = []
@@ -88,11 +89,6 @@ export function recordSpec(prior, measured) {
   }
   if (!art.section || art.count === 0) throw new Error("no benefit art found")
   if (!lockup) throw new Error("no nav mark and wordmark found")
-  const problems = bandProblems(prior, measured)
-  if (problems.length)
-    throw new Error(
-      `refusing to record, the page is outside the committed tolerances (edit the spec by hand first):\n  ${problems.join("\n  ")}`
-    )
   const buttons = Object.fromEntries(
     Object.entries(prior["29"].buttons).map(([key, was]) => {
       const b = ctas[key]
@@ -142,17 +138,79 @@ export function recordSpec(prior, measured) {
   }
 }
 
+const leaves = (value, path = []) =>
+  value !== null && typeof value === "object"
+    ? Object.entries(value).flatMap(([key, inner]) =>
+        leaves(inner, [...path, key])
+      )
+    : [[path.join("."), value]]
+
+// One line per spec value, in the committed spec's order, then any value only the measurement has.
+export function diffLines(committed, recorded) {
+  const before = new Map(leaves(committed))
+  const after = new Map(leaves(recorded))
+  const show = (value) => (value === undefined ? "none" : JSON.stringify(value))
+  return [...new Set([...before.keys(), ...after.keys()])].map((key) =>
+    before.get(key) === after.get(key)
+      ? `${key}: unchanged`
+      : `${key}: ${show(before.get(key))} -> ${show(after.get(key))}`
+  )
+}
+
+// The recorder's decision: lines to print, an exit code, and the spec to write (null when nothing is written).
+// A value outside a committed tolerance counts as a difference in the dry run and as a refusal under --accept.
+export function plan(prior, measured, { accept = false, readReference } = {}) {
+  const spec = recordSpec(prior, measured)
+  const problems = [
+    ...bandProblems(prior, measured),
+    artProblem(prior, measured, readReference),
+  ].filter(Boolean)
+  const lines = diffLines(prior, spec)
+  const differs = lines.some((line) => !line.endsWith(": unchanged"))
+  if (!accept)
+    return {
+      lines: [...lines, ...problems.map((p) => `outside tolerance: ${p}`)],
+      exit: differs || problems.length ? 1 : 0,
+      write: null,
+    }
+  if (problems.length)
+    return {
+      lines: [
+        ...lines,
+        `refusing to record, the page is outside the committed tolerances (edit the spec by hand first):`,
+        ...problems.map((p) => `  ${p}`),
+      ],
+      exit: 2,
+      write: null,
+    }
+  return { lines, exit: 0, write: spec }
+}
+
+export function finish(decision, out, write = writeFileSync) {
+  console.log(decision.lines.join("\n"))
+  if (decision.write) {
+    write(out, `${JSON.stringify(decision.write, null, 2)}\n`)
+    console.log(`wrote ${out}`)
+  }
+  return decision.exit
+}
+
 async function main() {
   const { values } = parseArgs({
     args: process.argv.slice(3),
     options: {
       "from-app": { type: "string" },
+      accept: { type: "boolean" },
       out: { type: "string" },
     },
   })
-  if (process.argv[2] !== "record" || !values["from-app"])
+  if (
+    process.argv[2] !== "record" ||
+    !values["from-app"] ||
+    (values.out && !values.accept)
+  )
     throw new Error(
-      "usage: design-spec.mjs record --from-app <origin> [--out <path>]"
+      "usage: design-spec.mjs record --from-app <origin> [--accept [--out <path>]]"
     )
   const prior = loadSpec()
   const browser = await launchBrowser()
@@ -168,15 +226,10 @@ async function main() {
       await page.evaluate(probeSource("first"))
       await sleep(1500)
       const measured = await page.evaluate(designProbeSource(prior))
-      const spec = recordSpec(prior, measured)
-      const art = artProblem(prior, measured)
-      if (art)
-        throw new Error(
-          `refusing to record, the page is outside the committed tolerances:\n  ${art}`
-        )
-      const out = values.out ?? join(repo, FILES.spec)
-      writeFileSync(out, `${JSON.stringify(spec, null, 2)}\n`)
-      console.log(`wrote ${out}`)
+      process.exitCode = finish(
+        plan(prior, measured, { accept: values.accept }),
+        values.out ?? join(repo, FILES.spec)
+      )
     } finally {
       await page.close()
     }

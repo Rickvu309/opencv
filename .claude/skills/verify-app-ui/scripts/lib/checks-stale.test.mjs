@@ -6,6 +6,7 @@ import { motionChecks } from "./checks-source.mjs"
 import { coachErrorCheck } from "./checks-content.mjs"
 import { keyboardPrimaryCheck, primaryButtonCheck } from "./checks-primary.mjs"
 import { boardLanes } from "./checks-stages.mjs"
+import { WIDE_PAGES, sidewaysScroll } from "./checks-scroll.mjs"
 import {
   judged,
   result,
@@ -292,4 +293,34 @@ test("summary and exit code: STALE is 3, FAIL is 1, all PASS is 0", () => {
   const clean = summarize([pass])
   assert.equal(clean.exit, 0)
   assert.equal(clean.lines.at(-1), "1 PASS, 0 FAIL, 0 STALE")
+})
+
+const fits = { docScroll: { sw: 1440, cw: 1440 } }
+const toured = () => ({
+  ...Object.fromEntries(WIDE_PAGES.map((k) => [k, fits])),
+  reduced: { coach: fits },
+  mobile: { apply: { docScroll: { sw: 390, cw: 390 } } },
+  settingsMobile: { docScroll: { sw: 390, cw: 390 } },
+})
+test("45: a page wider than its window FAILs, at 1440 and at 390; every page fitting PASSes", () => {
+  assert.equal(sidewaysScroll(toured()).status, "PASS")
+  const wide = toured()
+  wide.apply = { docScroll: { sw: 1500, cw: 1440 } }
+  const out = sidewaysScroll(wide)
+  assert.equal(out.status, "FAIL")
+  assert.match(out.measured, /apply 1440 1500>1440/)
+  const phone = toured()
+  phone.mobile.apply = { docScroll: { sw: 520, cw: 390 } }
+  assert.match(sidewaysScroll(phone).measured, /apply 390 520>390/)
+  assert.equal(sidewaysScroll(phone).status, "FAIL")
+})
+
+test("45: a snapshot with no scroll size is STALE, and a found FAIL still wins", () => {
+  const missing = toured()
+  delete missing.pitchEdit
+  const out = sidewaysScroll(missing)
+  assert.equal(out.status, "STALE")
+  assert.match(out.measured, /no scroll size for pitchEdit 1440/)
+  missing.mobile.apply = { docScroll: { sw: 520, cw: 390 } }
+  assert.equal(sidewaysScroll(missing).status, "FAIL")
 })

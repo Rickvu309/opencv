@@ -5,7 +5,7 @@ The checker measures its properties at 1440x900, 390x844 and reduced motion. Ids
 | Id  | Kind      | Name                              | Why it changed                                                                                                                                                                                                                                                                                                                                                                                                              |
 | --- | --------- | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 01  | invariant | h1-length-and-aim                 | Kept. "seat" counts as the outcome, because the design H1 is "Get your butt in your dream seat."                                                                                                                                                                                                                                                                                                                            |
-| 02  | invariant | statement-names-cv                | A block outside the nav names opencv and CV. Replaces audience-in-h1-or-subhead. The design does not put "Vietnamese students" in the H1.                                                                                                                                                                                                                                                                                   |
+| 02  | design    | statement-names-cv                | A block outside the nav names opencv and CV. Replaces audience-in-h1-or-subhead. The design does not put "Vietnamese students" in the H1.                                                                                                                                                                                                                                                                                   |
 | 03  | invariant | subhead-two-beats                 | The subhead is 1 to 2 sentences and not a 3+ item list.                                                                                                                                                                                                                                                                                                                                                                     |
 | 04  | invariant | no-marketese                      | Ban the marketese list in text-rules.mjs. Exempt phrases are "your best work", "dream seat", and "fits best".                                                                                                                                                                                                                                                                                                               |
 | 05  | invariant | plain-sentences                   | Hero and product sentences are 24 words or fewer and not passive. The sentences are the hero paragraph and each product section paragraph. The word cap moved from 20 to 24.                                                                                                                                                                                                                                                |
@@ -43,13 +43,13 @@ Sync commit: e1ff7ab37b54dac73bb31c06c3b18512eb025de3. The checker printed 28 PA
 
 ## Kind decisions (#550 review)
 
-| Id  | Kind      | Why                                                        |
-| --- | --------- | ---------------------------------------------------------- |
-| 07  | design    | pins "no hero button" and the nav and close layout         |
-| 13  | design    | needs a portrait alt and a CV alt, pinned content          |
-| 14  | design    | needs a 120px hero visual in the first view, pinned layout |
-| 17  | design    | needs luminance 0.85 or more, so a good dark theme fails   |
-| 02  | invariant | kept: "opencv" and "CV" are the brand and product nouns    |
+| Id  | Kind   | Why                                                                     |
+| --- | ------ | ----------------------------------------------------------------------- |
+| 07  | design | pins "no hero button" and the nav and close layout                      |
+| 13  | design | needs a portrait alt and a CV alt, pinned content                       |
+| 14  | design | needs a 120px hero visual in the first view, pinned layout              |
+| 17  | design | needs luminance 0.85 or more, so a good dark theme fails                |
+| 02  | design | a rebrand changes "opencv" and "CV", the pinned brand and product nouns |
 
 ## Coach art reference crop (check 30)
 
