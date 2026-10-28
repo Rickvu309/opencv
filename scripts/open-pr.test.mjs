@@ -30,7 +30,7 @@ function assertResult(result, id, ...expects) {
   )
 }
 
-function run(t, pushExit, quiet = false) {
+function run(t, pushExit, quiet = false, lowDisk = false) {
   const scratch = join(homedir(), "tmp")
   mkdirSync(scratch, { recursive: true })
   const root = mkdtempSync(join(scratch, "open-pr-test-"))
@@ -39,6 +39,14 @@ function run(t, pushExit, quiet = false) {
   mkdirSync(join(root, "scripts"))
   const executable = (path, text) =>
     writeFileSync(join(root, path), text, { mode: 0o755 })
+  writeFileSync(join(root, "events"), "")
+  if (lowDisk) {
+    // The recorded failure: a nearly full filesystem (99% used, 1 GiB free).
+    executable(
+      "bin/df",
+      "#!/bin/sh\necho 'Filesystem 1024-blocks Used Available Capacity Mounted on'\necho '/dev/sda1 157286400 156237824 1048576 99% /'\n"
+    )
+  }
   executable("scripts/check.sh", "#!/bin/sh\nexit 0\n")
   executable(
     "bin/git",
@@ -78,6 +86,7 @@ esac
     PROOF_QUIET: quiet ? "1" : "0",
     PR_RESULT_DIR: join(root, "results"),
     PR_RESULT_REPO: "opencv",
+    PR_DISK_MIN_MB: lowDisk ? "2048" : "1", // the real disk's free space must not decide a test
   }
   const result = spawnSync(
     "bash",
@@ -119,4 +128,18 @@ test("successful push with no output still creates a PR", (t) => {
   const result = run(t, 0, true)
   assert.equal(result.status, 0, result.stderr)
   assert.equal(result.events, "push skip=unset\ncreate\n")
+})
+
+test("a nearly full disk fails with cause disk before the check, push or PR", (t) => {
+  const result = run(t, 0, false, true)
+  assert.equal(result.status, 1)
+  assert.equal(result.events, "")
+  assert.match(result.stderr, /disk preflight failed: only 1024 MiB free/)
+  assert.match(result.stderr, /scripts\/cleanup-worktree\.sh/)
+  assertResult(
+    result,
+    "fix-999-push-failure-proof",
+    "status=fail",
+    "cause=disk"
+  )
 })
