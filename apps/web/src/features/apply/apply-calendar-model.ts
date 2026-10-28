@@ -189,6 +189,5 @@ export const TONE = {
   label: FAINT_TEXT.card,
   faint: FAINT_TEXT.card,
   faintOnTint: FAINT_TEXT.background,
-  number:
-    "text-[color-mix(in_oklab,var(--foreground),var(--muted-foreground)_53%)]",
+  number: "text-foreground/86",
 } as const

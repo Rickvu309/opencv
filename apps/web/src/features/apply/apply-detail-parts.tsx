@@ -17,8 +17,7 @@ import { railStageLabel } from "./apply-detail-labels.ts"
 import { monthDay, stageLabel } from "./apply-stages.ts"
 import { FAINT_TEXT } from "./apply-tone.ts"
 
-export const TITLE_TEXT =
-  "text-[color-mix(in_oklch,var(--foreground)_65%,var(--muted-foreground))]"
+export const TITLE_TEXT = "text-foreground/91"
 
 export const RAIL_ROW =
   "h-8 w-full justify-start gap-[9px] rounded-[6px] px-2 text-[13px] font-normal text-foreground hover:bg-secondary aria-expanded:bg-secondary dark:hover:bg-secondary"
@@ -110,7 +109,7 @@ export function RailSection({
         className={cn(
           "h-7 w-full justify-start gap-1.5 rounded-[6px] px-2 text-xs font-medium hover:bg-secondary aria-expanded:bg-transparent",
           FAINT_TEXT.card,
-          "aria-expanded:text-[color-mix(in_srgb,var(--muted-foreground)_84%,var(--card))]"
+          "aria-expanded:text-muted-foreground/84"
         )}
       >
         {title}

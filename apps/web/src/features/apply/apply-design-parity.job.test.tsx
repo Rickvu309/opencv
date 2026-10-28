@@ -60,8 +60,7 @@ const NOT_SHOWN: Record<string, Record<string, string>> = {
 const ICONS_NOT_DRAWN: Record<string, { count: number; reason: string }> = {
   detail: {
     count: 1,
-    reason:
-      "the note composer paperclip has no behavior",
+    reason: "the note composer paperclip has no behavior",
   },
 }
 

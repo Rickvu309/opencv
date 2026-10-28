@@ -4,9 +4,7 @@
  * surface, as verify-pen-layout requires.
  */
 export const FAINT_TEXT = {
-  card: "text-[color-mix(in_srgb,var(--muted-foreground)_84%,var(--card))]",
-  background:
-    "text-[color-mix(in_srgb,var(--muted-foreground)_86%,var(--background))]",
-  secondary:
-    "text-[color-mix(in_srgb,var(--muted-foreground)_88%,var(--secondary))]",
+  card: "text-muted-foreground/84",
+  background: "text-muted-foreground/86",
+  secondary: "text-muted-foreground/88",
 } as const

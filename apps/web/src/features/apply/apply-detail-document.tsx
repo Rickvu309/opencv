@@ -18,8 +18,7 @@ import {
 import { companyInitials, monthDay } from "./apply-stages.ts"
 import { FAINT_TEXT } from "./apply-tone.ts"
 
-const NOTE_PLACEHOLDER =
-  "placeholder:text-[color-mix(in_srgb,var(--muted-foreground)_84%,var(--card))]"
+const NOTE_PLACEHOLDER = "placeholder:text-muted-foreground/84"
 
 const POSTING = [
   ["What you'll do", "duties"],

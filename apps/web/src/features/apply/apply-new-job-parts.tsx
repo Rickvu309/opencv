@@ -6,10 +6,8 @@ import { Button } from "@workspace/ui/components/button"
 import { stageLabel } from "./apply-stages.ts"
 import type { JobStage } from "@workspace/domain"
 
-export const PLACEHOLDER_CARD =
-  "placeholder:text-[color-mix(in_srgb,var(--muted-foreground)_84%,var(--card))]"
-export const PLACEHOLDER_SECONDARY =
-  "placeholder:text-[color-mix(in_srgb,var(--muted-foreground)_88%,var(--secondary))]"
+export const PLACEHOLDER_CARD = "placeholder:text-muted-foreground/84"
+export const PLACEHOLDER_SECONDARY = "placeholder:text-muted-foreground/88"
 
 export function Hint({ id, children }: { id?: string; children: ReactNode }) {
   return (

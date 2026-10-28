@@ -42,7 +42,7 @@ export function DeleteJobDialog({
           </Button>
           <Button
             type="button"
-            className="h-[30px] gap-1.5 rounded-md bg-[color-mix(in_oklch,var(--foreground)_65%,var(--muted-foreground))] px-3 text-[13px] font-semibold text-card ring-0 hover:bg-foreground"
+            className="h-[30px] gap-1.5 rounded-md bg-foreground/91 px-3 text-[13px] font-semibold text-card ring-0 hover:bg-foreground"
             onClick={onDelete}
           >
             Delete job

@@ -35,11 +35,27 @@ function penProbe(selector) {
   )
   if (!roots.length) return null
   const ctx = document.createElement("canvas").getContext("2d")
-  const rgb = (css) => {
+  const rgba = (css) => {
+    ctx.clearRect(0, 0, 1, 1)
     ctx.fillStyle = "#000"
     ctx.fillStyle = css
     ctx.fillRect(0, 0, 1, 1)
-    return [...ctx.getImageData(0, 0, 1, 1).data.slice(0, 3)]
+    const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data
+    return [r, g, b, a / 255]
+  }
+  // A colour with alpha shows over the nearest opaque surface behind it.
+  const surface = (el) => {
+    for (let up = el; up; up = up.parentElement) {
+      const bg = rgba(getComputedStyle(up).backgroundColor)
+      if (bg[3] > 0.99) return bg
+    }
+    return [255, 255, 255, 1]
+  }
+  const shown = (el, css) => {
+    const [r, g, b, a] = rgba(css)
+    if (a > 0.99) return [r, g, b]
+    const under = surface(el)
+    return [r, g, b].map((c, i) => Math.round(c * a + under[i] * (1 - a)))
   }
   const norm = (s) => s.replace(/[‘']/g, "’").replace(/\s+/g, " ").trim()
   const box = (el) => el.getBoundingClientRect()
@@ -53,7 +69,7 @@ function penProbe(selector) {
     const s = getComputedStyle(el, pseudo)
     const size = parseFloat(s.fontSize)
     return {
-      color: rgb(s.color),
+      color: shown(el, s.color),
       fontSize: size,
       fontWeight: s.fontWeight,
       lineHeight:

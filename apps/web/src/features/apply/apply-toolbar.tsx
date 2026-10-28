@@ -31,7 +31,7 @@ export function ApplyHeader({ onNewJob }: { onNewJob: () => void }) {
       data-slot="page-header"
       className="flex h-[52px] shrink-0 items-center gap-2 border-b border-foreground/8 pr-4 pl-5"
     >
-      <h1 className="min-w-0 flex-1 truncate text-[13px] font-medium text-[color-mix(in_oklch,var(--foreground)_67%,var(--muted-foreground))]">
+      <h1 className="min-w-0 flex-1 truncate text-[13px] font-medium text-foreground/91">
         Apply
       </h1>
       <Button

@@ -104,10 +104,12 @@ try {
   await signUpThrowaway({ page: tab, ...stack })
 
   let failed = 0
+  let skipped = 0
   const raw = {}
   for (const file of files) {
     const layout = JSON.parse(readFileSync(file, "utf8"))
     if (layout.driver) {
+      skipped += 1
       console.log(
         `SKIP ${layout.frameId} ${layout.route}: set up and measured by ${layout.driver}`
       )
@@ -141,7 +143,7 @@ try {
       JSON.stringify(raw, null, 1)
     )
   console.log(
-    `${files.length - failed} PASS, ${failed} FAIL of ${files.length} layouts`
+    `${files.length - failed - skipped} PASS, ${failed} FAIL, ${skipped} SKIP of ${files.length} layouts`
   )
   if (failed) exit = 1
 } catch (error) {

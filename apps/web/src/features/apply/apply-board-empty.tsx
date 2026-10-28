@@ -1,6 +1,7 @@
 import { FunnelX, X } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
+import { Empty } from "@workspace/ui/components/empty"
 import { Kbd } from "@workspace/ui/components/kbd"
 
 function StageCoins() {
@@ -53,10 +54,7 @@ export function ApplyEmpty({
   onAdd: () => void
 }) {
   return (
-    <div
-      data-slot="apply-empty"
-      className="flex min-h-0 flex-1 flex-col items-center justify-center bg-background pb-20"
-    >
+    <Empty className="min-h-0 gap-0 rounded-none border-0 bg-background p-0 pb-20 text-start">
       <div className="flex flex-col items-start">
         <StageCoins />
         <h2 className="mt-7 text-[15px] font-semibold">Track your first job</h2>
@@ -77,7 +75,7 @@ export function ApplyEmpty({
           </Kbd>
         </Button>
       </div>
-    </div>
+    </Empty>
   )
 }
 
