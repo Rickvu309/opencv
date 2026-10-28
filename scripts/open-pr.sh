@@ -48,7 +48,8 @@ result_id "$branch"
 export PR_RESULT_ID=$branch
 
 # Before anything is pushed or created: the worktree, its siblings and the scratch dirs must have room and accept writes.
-main_checkout=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null || echo "$top")")
+common_dir=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)
+if [[ "$(basename "$common_dir")" == ".git" ]]; then main_checkout=$(dirname "$common_dir"); else main_checkout=$top; fi
 disk_guard "$main_checkout" "$(dirname "$main_checkout")/$(basename "$main_checkout").worktrees" "$top"
 
 have_gh=0
