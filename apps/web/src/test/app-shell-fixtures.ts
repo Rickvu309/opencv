@@ -33,11 +33,9 @@ async function expectHeading(name: string) {
 }
 
 export async function expectPitch() {
+  await expectHeading("Pitch")
   expect(
-    await screen.findByRole("heading", {
-      level: 1,
-      name: "One link that sells you",
-    })
+    screen.getByRole("heading", { level: 2, name: "One link that sells you" })
   ).toBeInTheDocument()
 }
 

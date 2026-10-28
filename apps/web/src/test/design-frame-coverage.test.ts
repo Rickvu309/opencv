@@ -47,7 +47,6 @@ const PENDING_FRAMES: Record<string, { issue: number; expires: string }> = {
   tsfNR: { issue: 498, expires: "2026-12-31" }, // W7.2 Drafting
   sgAtL: { issue: 498, expires: "2026-12-31" }, // W7.3 Letter + suggestion
   D1s74Z: { issue: 498, expires: "2026-12-31" }, // W7.4 Can't read job link
-  FCDYX: { issue: 498, expires: "2026-12-31" }, // W8.1 Proof coming soon
   D8PoQ6: { issue: 498, expires: "2026-12-31" }, // W9.1 Board empty
   c4KwjR: { issue: 498, expires: "2026-12-31" }, // W9.2 New job
   aLOFO: { issue: 498, expires: "2026-12-31" }, // W9.3 Board
@@ -63,7 +62,6 @@ const PENDING_FRAMES: Record<string, { issue: number; expires: string }> = {
   MWsZM: { issue: 498, expires: "2026-12-31" }, // W10.5 Link from Paper
   Wlp2X: { issue: 498, expires: "2026-12-31" }, // W10.6 Closed job
   jHl7W: { issue: 498, expires: "2026-12-31" }, // W10.7 Delete job
-  RAl5t: { issue: 498, expires: "2026-12-31" }, // W11.1 Pitch coming soon
   qCgR7: { issue: 498, expires: "2026-12-31" }, // W12.1 Preferences
   LiQPl: { issue: 498, expires: "2026-12-31" }, // W12.2 Coach
   K5FuN: { issue: 498, expires: "2026-12-31" }, // W12.3 Integrations

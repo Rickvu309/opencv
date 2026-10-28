@@ -385,7 +385,7 @@ describe("Home first-café checklist", () => {
     })
     expect(
       await screen.findByRole("heading", {
-        level: 1,
+        level: 2,
         name: "One link that sells you",
       })
     ).toBeInTheDocument()

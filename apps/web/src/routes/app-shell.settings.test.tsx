@@ -94,7 +94,7 @@ describe("settings workspace", () => {
     renderApp(SURFACE_PATHS.pitch)
     expect(
       await screen.findByRole("heading", {
-        level: 1,
+        level: 2,
         name: "One link that sells you",
       })
     ).toBeInTheDocument()
